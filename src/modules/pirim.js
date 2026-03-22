@@ -56,64 +56,66 @@ const TIER_SADIK_CIFTCI = [
  * @returns {{ gross, net, breakdown, appliedRate, tier }}
  */
 function calcSatinalimaPrim(amount, type, opts = {}) {
-  // Temel kademe tablosu
+  // Admin'in özelleştirdiği tier tabloları, yoksa varsayılan
+  const tiersNA = opts.tiersNA || TIER_YENI_AVCI;
+  const tiersSC = opts.tiersSC || TIER_SADIK_CIFTCI;
+
   let tiers;
   if (type === 'NA') {
-    tiers = TIER_YENI_AVCI;
+    tiers = tiersNA;
   } else if (type === 'YT') {
-    // Yeni Tedarikçi = Yeni Avcı gibi hesap (mevcut>%10 ucuz bulundu)
-    tiers = TIER_YENI_AVCI;
+    tiers = tiersNA; // YT = Yeni Avcı oranı
   } else {
-    tiers = TIER_SADIK_CIFTCI;
+    tiers = tiersSC;
   }
 
-  // Kademe bul (tutar hangi kademede?)
   const tier = tiers.find(t => amount >= t.min && amount < t.max) || tiers[tiers.length - 1];
   let rate = tier.rate;
 
   const breakdown = [];
 
-  // Tedarikçi yönetimi bonusu: Yeni+iyi tedarikçi = +%15 artırım
+  // Admin'in belirlediği çarpanlar (yoksa yönetmelik varsayılanı)
+  const mYT  = opts.multYeniTedarikci  ?? 0.15;
+  const mCS  = opts.multCapraz         ?? 0.25;
+  const mYU  = opts.multYeniUrun       ?? 0.25;
+  const mFA  = opts.multFiyatAvantaji  ?? 0.30;
+  const mTI  = opts.multTamamlayici    ?? 0.30;
+  const mRV  = opts.multRevizyon       ?? 0.07;
+
   if (opts.yeniTedarikci && (type === 'SC' || type === 'YT')) {
-    const bonus = rate * 0.15;
-    breakdown.push({ label: 'Yeni Tedarikçi +%15', value: bonus, positive: true });
+    const bonus = rate * mYT;
+    breakdown.push({ label: `Yeni Tedarikçi +%${(mYT*100).toFixed(0)}`, value: bonus, positive: true });
     rate += bonus;
   }
 
-  // Çapraz satış: +%25 (CB tipinde ayrı giriş, ama burada da flag varsa)
   if (opts.caprazSatis) {
-    const bonus = rate * 0.25;
-    breakdown.push({ label: 'Çapraz Satış +%25', value: bonus, positive: true });
+    const bonus = rate * mCS;
+    breakdown.push({ label: `Çapraz Satış +%${(mCS*100).toFixed(0)}`, value: bonus, positive: true });
     rate += bonus;
   }
 
-  // Fiyat avantajı: İndirim toplamının %30'u ek prim
-  if (opts.fiyatAvantajiTL && opts.fiyatAvantajiTL > 0) {
-    const bonusTL = opts.fiyatAvantajiTL * 0.30;
-    breakdown.push({ label: `Fiyat Avantajı +%30 (${_fmtTL(opts.fiyatAvantajiTL)} indirim)`, valueTL: bonusTL, positive: true });
-  }
-
-  // Yeni ürün: rutin prim %25 artar
   if (opts.yeniUrun && type === 'SC') {
-    const bonus = rate * 0.25;
-    breakdown.push({ label: 'Yeni Ürün +%25', value: bonus, positive: true });
+    const bonus = rate * mYU;
+    breakdown.push({ label: `Yeni Ürün +%${(mYU*100).toFixed(0)}`, value: bonus, positive: true });
     rate += bonus;
   }
 
   let gross = Math.round(amount * rate * 100) / 100;
-  if (opts.fiyatAvantajiTL) gross += Math.round(opts.fiyatAvantajiTL * 0.30 * 100) / 100;
 
-  // ── CEZA HESAPLAMALARI ──────────────────────────────────────────
+  if (opts.fiyatAvantajiTL && opts.fiyatAvantajiTL > 0) {
+    const bonusTL = Math.round(opts.fiyatAvantajiTL * mFA * 100) / 100;
+    breakdown.push({ label: `Fiyat Avantajı +%${(mFA*100).toFixed(0)} (${_fmtTL(opts.fiyatAvantajiTL)} indirim)`, valueTL: bonusTL, positive: true });
+    gross += bonusTL;
+  }
 
-  // Yönetici müdahalesi: aldığı indirimin 3 katı oransal kesinti
+  // ── Cezalar ──────────────────────────────────────────────────
   if (opts.yoneticiIndirimOran && opts.yoneticiIndirimOran > 0) {
-    const penaltyRate = Math.min(opts.yoneticiIndirimOran * 3, 1); // max %100
+    const penaltyRate = Math.min(opts.yoneticiIndirimOran * 3, 1);
     const penaltyTL   = Math.round(gross * penaltyRate * 100) / 100;
-    breakdown.push({ label: `Yetersiz Müzakere -%${(penaltyRate*100).toFixed(0)} (Yönetici indirimi x3)`, value: -penaltyRate, penaltyTL, positive: false });
+    breakdown.push({ label: `Yetersiz Müzakere -%${(penaltyRate*100).toFixed(0)} (Yönetici indirimi x3)`, penaltyTL, positive: false });
     gross -= penaltyTL;
   }
 
-  // Gecikme: 1 gün -%10, 3+ gün -%20
   if (opts.gecikmeGun && opts.gecikmeGun > 0) {
     const penaltyRate = opts.gecikmeGun >= 3 ? 0.20 : 0.10;
     const penaltyTL   = Math.round(gross * penaltyRate * 100) / 100;
@@ -121,17 +123,15 @@ function calcSatinalimaPrim(amount, type, opts = {}) {
     gross -= penaltyTL;
   }
 
-  // Tamamlayıcı ürün ihmali: -%30
   if (opts.tamamlayiciIhmal) {
-    const penaltyTL = Math.round(gross * 0.30 * 100) / 100;
-    breakdown.push({ label: 'Tamamlayıcı Ürün İhmali -%30', penaltyTL, positive: false });
+    const penaltyTL = Math.round(gross * mTI * 100) / 100;
+    breakdown.push({ label: `Tamamlayıcı Ürün İhmali -%${(mTI*100).toFixed(0)}`, penaltyTL, positive: false });
     gross -= penaltyTL;
   }
 
-  // Operasyonel revizyon: -%7
   if (opts.revizyonPenalty) {
-    const penaltyTL = Math.round(gross * 0.07 * 100) / 100;
-    breakdown.push({ label: 'Operasyonel Revizyon -%7', penaltyTL, positive: false });
+    const penaltyTL = Math.round(gross * mRV * 100) / 100;
+    breakdown.push({ label: `Operasyonel Revizyon -%${(mRV*100).toFixed(0)}`, penaltyTL, positive: false });
     gross -= penaltyTL;
   }
 
@@ -150,10 +150,11 @@ function _fmtTL(n) {
 }
 
 const PIRIM_STATUS = {
-  pending:  { l: 'Onay Bekliyor', c: 'ba', emoji: '⏳' },
-  approved: { l: 'Onaylandı',     c: 'bg', emoji: '✅' },
-  rejected: { l: 'Reddedildi',    c: 'br', emoji: '❌' },
-  paid:     { l: 'Ödendi',        c: 'bb', emoji: '💸' },
+  pending:     { l: 'Onay Bekliyor',    c: 'ba', emoji: '⏳' },
+  peer_review: { l: 'Ara Onay Bekliyor',c: 'ba', emoji: '👤' },  // ikinci onay bekleniyor
+  approved:    { l: 'Onaylandı',        c: 'bg', emoji: '✅' },
+  rejected:    { l: 'Reddedildi',       c: 'br', emoji: '❌' },
+  paid:        { l: 'Ödendi',           c: 'bb', emoji: '💸' },
 };
 
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
@@ -420,20 +421,48 @@ function _injectPirimPanel() {
   </div>
 </div>
 
-<!-- MODAL: Parametreler -->
+<!-- MODAL: Parametreler — Admin Prim Tipi & Oran Yönetimi -->
 <div class="mo" id="mo-pirim-params">
-  <div class="moc" style="max-width:520px">
+  <div class="moc" style="max-width:680px">
     <div class="moh">
-      <span class="mot">⚙️ Prim Parametreleri</span>
+      <span class="mot">⚙️ Prim Türleri & Oran Yönetimi</span>
       <button class="mcl" onclick="window.closeMo?.('mo-pirim-params')">✕</button>
     </div>
     <div class="mob">
-      <div id="pirim-params-list"></div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:8px;line-height:1.6">
+        ℹ️ Her prim türü için oran belirleyin. Kullanıcı form açtığında seçtiği türe göre oran <strong>otomatik</strong> yüklenir.
+        Kademe tabanlı türlerde (NA/SC/YT) kademeli oranlar aşağıda düzenlenir.
+      </div>
+
+      <!-- Sabit Tip Oranları -->
+      <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">
+        📊 Prim Türü Oranları
+      </div>
+      <div id="pirim-params-type-list" style="margin-bottom:20px"></div>
+
+      <!-- Kademe Tablosu: Yeni Avcı -->
+      <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;border-top:1px solid var(--b);padding-top:14px">
+        🐣 Yeni Avcı (NA) — Kademe Oranları
+      </div>
+      <div id="pirim-params-tier-na" style="margin-bottom:16px"></div>
+      <button class="btn btns" onclick="Pirim.addTierRow('NA')" style="font-size:11px;margin-bottom:16px">+ Kademe Ekle</button>
+
+      <!-- Kademe Tablosu: Sadık Çiftçi -->
+      <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;border-top:1px solid var(--b);padding-top:14px">
+        🌱 Sadık Çiftçi (SC/YT) — Kademe Oranları
+      </div>
+      <div id="pirim-params-tier-sc" style="margin-bottom:16px"></div>
+      <button class="btn btns" onclick="Pirim.addTierRow('SC')" style="font-size:11px;margin-bottom:16px">+ Kademe Ekle</button>
+
+      <!-- Ek Parametreler (bonus çarpanları) -->
+      <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;border-top:1px solid var(--b);padding-top:14px">
+        ⚡ Bonus / Ceza Çarpanları (%)
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="pirim-params-multipliers"></div>
     </div>
     <div class="mof">
       <button class="btn" onclick="window.closeMo?.('mo-pirim-params')">İptal</button>
-      <button class="btn btns" onclick="Pirim.addParam()">+ Ekle</button>
-      <button class="btn btnp" onclick="Pirim.saveParams()">💾 Kaydet</button>
+      <button class="btn btnp" onclick="Pirim.saveParams()">💾 Değişiklikleri Kaydet</button>
     </div>
   </div>
 </div>
@@ -467,6 +496,37 @@ function _injectPirimPanel() {
     <div class="mof">
       <button class="btn" onclick="window.closeMo?.('mo-pirim-detail')">Kapat</button>
       <button class="btn btns" onclick="Pirim.printSlip(window._pirimDetailId)">🖨 Fiş Yazdır</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ara Onay Yönlendir (Admin) -->
+<div class="mo" id="mo-pirim-peer">
+  <div class="moc" style="max-width:420px">
+    <div class="moh">
+      <span class="mot">👤 Ara Onaya Yönlendir</span>
+      <button class="mcl" onclick="window.closeMo?.('mo-pirim-peer')">✕</button>
+    </div>
+    <div class="mob">
+      <input type="hidden" id="peer-pirim-id">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:14px;line-height:1.6">
+        Bu prim kaydını önce başka bir kullanıcının onayına gönderin.<br>
+        O kişi onayladıktan sonra <strong>siz</strong> (Admin) nihai onay vereceksiniz.
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="fl">Onayı Beklenecek Kişi</label>
+        <select class="fi" id="peer-user-sel">
+          <option value="">— Kişi seçin —</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Not (opsiyonel)</label>
+        <textarea class="fi" id="peer-note" rows="2" placeholder="Neden yönlendiriyorsunuz?"></textarea>
+      </div>
+    </div>
+    <div class="mof">
+      <button class="btn" onclick="window.closeMo?.('mo-pirim-peer')">İptal</button>
+      <button class="btn btnp" onclick="Pirim.sendToPeer()">📨 Yönlendir</button>
     </div>
   </div>
 </div>
@@ -594,16 +654,31 @@ function renderPirim() {
       </td>
       <td style="font-weight:700;font-family:'DM Mono',monospace;color:var(--ac)">${_fmt(p.amount)}</td>
       <td style="font-size:12px;font-family:'DM Mono',monospace;color:var(--t2)">${p.date||'—'}</td>
-      <td><span class="badge ${st2.c}" style="font-size:11px">${st2.emoji} ${st2.l}</span></td>
+      <td>
+        <span class="badge ${st2.c}" style="font-size:11px">${st2.emoji} ${st2.l}</span>
+        ${p.status === 'peer_review' && p.peerUser ? `<div style="font-size:10px;color:var(--t3);margin-top:2px">👤 ${(users.find(x=>x.id===p.peerUser)||{name:'?'}).name}</div>` : ''}
+      </td>
       <td>
         <div style="display:flex;gap:4px;flex-wrap:wrap">
-          ${admin && p.status === 'pending' ? `
-            <button class="btn btns btng" onclick="Pirim.approve(${p.id})" style="font-size:11px">✓ Onayla</button>
-            <button class="btn btns btnd" onclick="Pirim.reject(${p.id})"  style="font-size:11px">✕</button>` : ''}
-          ${admin && p.status === 'approved' ? `
+          ${/* Admin: pending → Onayla / Yönlendir / Reddet */
+            admin && p.status === 'pending' ? `
+            <button class="btn btns btng" onclick="Pirim.approve(${p.id})" style="font-size:11px" title="Onayla">✓ Onayla</button>
+            <button class="btn btns" onclick="Pirim.openPeer(${p.id})" style="font-size:11px;color:var(--bl)" title="Önce başka biri onaylasın">👤 Yönlendir</button>
+            <button class="btn btns btnd" onclick="Pirim.reject(${p.id})" style="font-size:11px" title="Reddet">✕</button>` : ''}
+          ${/* Peer (ikinci onayçı): kendi adına atanmış ara onay */
+            !admin && cu && p.status === 'peer_review' && p.peerUser === cu.id ? `
+            <button class="btn btns btng" onclick="Pirim.peerApprove(${p.id})" style="font-size:11px">✓ Onayla</button>
+            <button class="btn btns btnd" onclick="Pirim.peerReject(${p.id})"  style="font-size:11px">✕ Reddet</button>` : ''}
+          ${/* Admin: peer_review tamamlandı → nihai onay */
+            admin && p.status === 'peer_review' && p.peerApprovedAt ? `
+            <div style="font-size:10px;color:var(--gr);margin-bottom:2px;width:100%">👤 Ara onay verildi</div>
+            <button class="btn btns btng" onclick="Pirim.approve(${p.id})" style="font-size:11px">✓ Nihai Onayla</button>
+            <button class="btn btns btnd" onclick="Pirim.reject(${p.id})" style="font-size:11px">✕</button>` : ''}
+          ${/* Admin: approved → Ödendi */
+            admin && p.status === 'approved' ? `
             <button class="btn btns" style="font-size:11px;color:var(--bl)" onclick="Pirim.markPaid(${p.id})">💸 Ödendi</button>` : ''}
           <button class="btn btns" onclick="Pirim.showDetail(${p.id})" style="font-size:11px" title="Detay">🔍</button>
-          ${admin || p.uid === cu?.id ? `<button class="btn btns" onclick="Pirim.openModal(${p.id})" style="font-size:11px">✏️</button>` : ''}
+          ${admin || (p.uid === cu?.id && p.status === 'pending') ? `<button class="btn btns" onclick="Pirim.openModal(${p.id})" style="font-size:11px">✏️</button>` : ''}
           ${admin ? `<button class="btn btns btnd" onclick="Pirim.del(${p.id})" style="font-size:11px">🗑</button>` : ''}
         </div>
       </td>`;
@@ -801,31 +876,46 @@ function selectPirimType(type) {
     card.style.transform   = sel ? 'scale(1.02)' : 'scale(1)';
   });
 
-  const td = PIRIM_TYPES[type];
+  const td     = PIRIM_TYPES[type];
   const oranEl = window.g('prm-oran');
   const hintEl = window.g('prm-rate-hint');
+  const isAlim = td?.base === 'alim';
 
-  // Alım tabanlı tipler: oran otomatik hesaplanır (salt okunur)
-  if (td?.base === 'alim') {
+  // Admin'in kaydettiği parametrelerden bu tipe ait oranı bul
+  const params   = window.loadPirimParams?.() || {};
+  const typeRate = params.typeRates?.[type]; // ör: { rate: 0.005 }
+
+  if (isAlim) {
+    // Kademe tabanlı → oran tutara göre otomatik hesaplanır
     if (oranEl) {
       oranEl.readOnly = true;
       oranEl.style.background = 'var(--s2)';
       oranEl.style.color      = 'var(--t2)';
+      oranEl.value = '';
     }
     if (hintEl) hintEl.textContent = 'Kademe otomatik';
   } else {
+    // Serbest tip → admin'in belirlediği sabit oran varsa doldur, yoksa manuel
     if (oranEl) {
-      oranEl.readOnly = false;
-      oranEl.style.background = '';
-      oranEl.style.color      = '';
+      if (typeRate?.rate != null) {
+        oranEl.value    = (typeRate.rate * 100).toFixed(2);
+        oranEl.readOnly = true;
+        oranEl.style.background = 'var(--s2)';
+        oranEl.style.color      = 'var(--t2)';
+        if (hintEl) hintEl.textContent = `Yönetici: %${(typeRate.rate * 100).toFixed(2)}`;
+      } else {
+        oranEl.readOnly = false;
+        oranEl.style.background = '';
+        oranEl.style.color      = '';
+        if (hintEl) hintEl.textContent = 'Oran belirlenmemiş';
+      }
     }
-    if (hintEl) hintEl.textContent = 'Serbest';
   }
-  // Alım tabanlı tipler için bonus/ceza panelini göster
+
+  // Bonus/ceza paneli sadece alım tiplerinde
   const bonusPanel = window.g('prm-bonus-panel');
-  if (bonusPanel) {
-    bonusPanel.style.display = td?.base === 'alim' ? 'block' : 'none';
-  }
+  if (bonusPanel) bonusPanel.style.display = isAlim ? 'block' : 'none';
+
   calcPirimAuto();
 }
 
@@ -834,18 +924,35 @@ function calcPirimAuto() {
   const td   = PIRIM_TYPES[type] || {};
   const base = parseFloat(window.g('prm-base-amount')?.value || '0') || 0;
 
+  // Admin parametrelerinden güncel tier tablolarını al (yoksa varsayılan)
+  const params = window.loadPirimParams?.() || {};
+
   if (td.base === 'alim' && ['NA','SC','YT'].includes(type)) {
-    // Kademeli hesaplama — bonus/ceza checkboxları
+    // Kademeli hesaplama — admin'in kaydettiği tier'ları kullan
+    const adminTiersNA = params.tiersNA || TIER_YENI_AVCI;
+    const adminTiersSC = params.tiersSC || TIER_SADIK_CIFTCI;
+    const adminMult    = params.multipliers || {};
+
     const opts = {
-      yeniTedarikci:      window.g('chk-yeni-tedarikci')?.checked,
-      caprazSatis:        window.g('chk-capraz')?.checked,
-      yeniUrun:           window.g('chk-yeni-urun')?.checked,
-      tamamlayiciIhmal:   window.g('chk-tamamlayici-ihmal')?.checked,
-      revizyonPenalty:    window.g('chk-revizyon')?.checked,
-      gecikmeGun:         parseInt(window.g('inp-gecikme-gun')?.value || '0') || 0,
+      yeniTedarikci:       window.g('chk-yeni-tedarikci')?.checked,
+      caprazSatis:         window.g('chk-capraz')?.checked,
+      yeniUrun:            window.g('chk-yeni-urun')?.checked,
+      tamamlayiciIhmal:    window.g('chk-tamamlayici-ihmal')?.checked,
+      revizyonPenalty:     window.g('chk-revizyon')?.checked,
+      gecikmeGun:          parseInt(window.g('inp-gecikme-gun')?.value  || '0') || 0,
       yoneticiIndirimOran: parseFloat(window.g('inp-yonetici-indirim')?.value || '0') / 100 || 0,
-      fiyatAvantajiTL:    parseFloat(window.g('inp-fiyat-avantaji')?.value || '0') || 0,
+      fiyatAvantajiTL:     parseFloat(window.g('inp-fiyat-avantaji')?.value  || '0') || 0,
+      // Bonus çarpanlarını admin'in değerlerinden al
+      multYeniTedarikci:   adminMult.yeniTedarikci   ?? 0.15,
+      multCapraz:          adminMult.capraz           ?? 0.25,
+      multYeniUrun:        adminMult.yeniUrun         ?? 0.25,
+      multFiyatAvantaji:   adminMult.fiyatAvantaji    ?? 0.30,
+      multTamamlayici:     adminMult.tamamlayiciIhmal ?? 0.30,
+      multRevizyon:        adminMult.revizyon         ?? 0.07,
+      tiersNA:             adminTiersNA,
+      tiersSC:             adminTiersSC,
     };
+
     const result = calcSatinalimaPrim(base, type, opts);
     const oranEl = window.g('prm-oran');
     const hintEl = window.g('prm-rate-hint');
@@ -853,29 +960,32 @@ function calcPirimAuto() {
     if (hintEl) hintEl.textContent = `Kademe: ${result.tier}`;
     if (window.g('prm-total')) window.g('prm-total').value = result.gross || '';
 
-    // Hesaplama detay göster
+    // Hesaplama özet kutusu
     const detDiv = window.g('prm-calc-detail');
-    if (detDiv && result.breakdown.length > 0) {
-      detDiv.innerHTML = `<div style="font-size:11px;color:var(--t2);margin-top:6px;padding:6px 8px;background:var(--sf);border-radius:6px;line-height:1.7">
-        <strong>Hesaplama Detayı:</strong><br>
-        Temel Oran: %${((result.appliedRate)*100).toFixed(3)} | Kademe: ${result.tier}<br>
-        ${result.breakdown.map(b => `${b.positive ? '✅' : '❌'} ${b.label}`).join('<br>')}
-        <br><strong>Net Prim: ${_fmtTL(result.gross)}</strong>
-      </div>`;
-      detDiv.style.display = 'block';
-    } else if (detDiv) {
-      const baseRate = (type === 'NA' ? TIER_YENI_AVCI : TIER_SADIK_CIFTCI)
-        .find(t => base >= t.min && base < t.max) || (type === 'NA' ? TIER_YENI_AVCI : TIER_SADIK_CIFTCI).at(-1);
-      detDiv.innerHTML = base > 0 ? `<div style="font-size:11px;color:var(--t2);margin-top:6px;padding:6px 8px;background:var(--sf);border-radius:6px">Kademe: ${baseRate?.label || '-'} → Oran: %${((baseRate?.rate||0)*100).toFixed(2)} → <strong>Net: ${_fmtTL(result.gross)}</strong></div>` : '';
+    if (detDiv) {
+      const lines = result.breakdown.map(b => `${b.positive ? '✅' : '❌'} ${b.label}`).join('<br>');
+      detDiv.innerHTML = base > 0 ? `
+        <div style="font-size:11px;color:var(--t2);margin-top:8px;padding:8px 12px;background:var(--sf);border-radius:8px;line-height:1.8;border:1px solid var(--b)">
+          <strong>📊 Hesaplama Özeti</strong><br>
+          Kademe: <strong>${result.tier}</strong> → Uygulanan Oran: <strong>%${(result.appliedRate*100).toFixed(3)}</strong><br>
+          ${lines ? lines + '<br>' : ''}
+          <span style="color:var(--ac);font-weight:700">Net Prim: ${_fmtTL(result.gross)}</span>
+        </div>` : '';
       detDiv.style.display = base > 0 ? 'block' : 'none';
     }
   } else {
-    // Serbest tip: manuel oran
+    // Serbest tip: admin'in belirlediği sabit oran veya manuel
     const rate  = parseFloat(window.g('prm-oran')?.value || '0') || 0;
-    const total = Math.round(base * rate * 100) / 100;
+    const total = base && rate ? Math.round(base * rate / 100 * 100) / 100 : 0;
     if (window.g('prm-total')) window.g('prm-total').value = total || '';
     const detDiv = window.g('prm-calc-detail');
-    if (detDiv) detDiv.style.display = 'none';
+    if (detDiv) {
+      detDiv.innerHTML = base > 0 && rate > 0 ? `
+        <div style="font-size:11px;color:var(--t2);margin-top:8px;padding:8px 12px;background:var(--sf);border-radius:8px;border:1px solid var(--b)">
+          ${_fmtTL(base)} × %${rate} = <strong style="color:var(--ac)">${_fmtTL(total)}</strong>
+        </div>` : '';
+      detDiv.style.display = (base > 0 && rate > 0) ? 'block' : 'none';
+    }
   }
 }
 
@@ -900,7 +1010,7 @@ function savePirim() {
     rate:       parseFloat(window.g('prm-oran')?.value || '0') || 0,
     baseAmount: parseFloat(window.g('prm-base-amount')?.value || '0') || 0,
     payDate:    _calcExpiry(date),
-    status:     window.isAdmin() ? 'approved' : 'pending',
+    status:     'pending', // Her zaman onay bekliyor olarak gönderilir
     updatedAt:  _now(),
     // Satınalma bonus/ceza meta
     bonusCeza: {
@@ -932,34 +1042,125 @@ function savePirim() {
 }
 
 // ════════════════════════════════════════════════════════════════
-// BÖLÜM 5 — ONAY / RED / ÖDEME / SİLME
+// BÖLÜM 5 — ONAY AKIŞI
+// pending → [peer_review] → approved → paid
 // ════════════════════════════════════════════════════════════════
+
+/** Admin: doğrudan onayla (peer review atla veya peer tamamlandıktan sonra nihai) */
 function approvePirim(id) {
-  if (!window.isAdmin()) return;
+  if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
   const d = window.loadPirim?.() || [];
   const p = d.find(x => x.id === id); if (!p) return;
-  p.status     = 'approved';
-  p.approvedBy = window.CU()?.id;
-  p.approvedAt = _now();
+
+  // Peer review bekleniyorsa ve tamamlanmamışsa uyar
+  if (p.status === 'peer_review' && !p.peerApprovedAt) {
+    if (!confirm(`"${p.title}" için ara onay henüz verilmedi. Yine de onaylamak istiyor musunuz?`)) return;
+  }
+
+  p.status         = 'approved';
+  p.approvedBy     = window.CU()?.id;
+  p.approvedAt     = _now();
   window.storePirim?.(d);
   renderPirim();
   window.toast?.('✅ Prim onaylandı', 'ok');
-  window.logActivity?.('view', `Prim onaylandı: "${p.title}"`);
+  window.logActivity?.('view', `Prim onaylandı: "${p.title}" — ${_fmt(p.amount)}`);
 }
 
+/** Admin: ara onay modalını aç — başka kullanıcıya yönlendir */
+function openPirimPeer(id) {
+  if (!window.isAdmin()) return;
+  _injectPirimPanel();
+  const peerIdEl = window.g('peer-pirim-id');
+  if (peerIdEl) peerIdEl.value = id;
+
+  // Kullanıcı listesini doldur (mevcut admin hariç)
+  const sel   = window.g('peer-user-sel');
+  const cu    = window.CU();
+  const users = (window.loadUsers?.() || []).filter(u => u.id !== cu?.id && !u.admin);
+  if (sel) {
+    sel.innerHTML = `<option value="">— Kişi seçin —</option>` +
+      users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  }
+  const noteEl = window.g('peer-note');
+  if (noteEl) noteEl.value = '';
+  window.openMo?.('mo-pirim-peer');
+}
+
+/** Admin: peer'a gönder */
+function sendToPeer() {
+  const id   = parseInt(window.g('peer-pirim-id')?.value || '0');
+  const uid  = parseInt(window.g('peer-user-sel')?.value || '0');
+  const note = (window.g('peer-note')?.value || '').trim();
+  if (!uid) { window.toast?.('Kişi seçin', 'err'); return; }
+
+  const d = window.loadPirim?.() || [];
+  const p = d.find(x => x.id === id); if (!p) return;
+
+  p.status        = 'peer_review';
+  p.peerUser      = uid;
+  p.peerNote      = note;
+  p.peerSentAt    = _now();
+  p.peerSentBy    = window.CU()?.id;
+  p.peerApprovedAt = null;
+
+  window.storePirim?.(d);
+  window.closeMo?.('mo-pirim-peer');
+  renderPirim();
+  const u = (window.loadUsers?.() || []).find(x => x.id === uid);
+  window.toast?.(`📨 ${u?.name || 'Kullanıcı'} onayına gönderildi`, 'ok');
+  window.logActivity?.('view', `Prim ara onaya gönderildi: "${p.title}" → ${u?.name}`);
+}
+
+/** İkinci onayçı (peer): onaylar */
+function peerApprovePirim(id) {
+  const cu = window.CU();
+  const d  = window.loadPirim?.() || [];
+  const p  = d.find(x => x.id === id); if (!p) return;
+  if (p.peerUser !== cu?.id) { window.toast?.('Bu kayıt size yönlendirilmemiş', 'err'); return; }
+
+  p.peerApprovedAt = _now();
+  p.peerApprovedBy = cu.id;
+  // Durum peer_review kalır — admin nihai onayını bekler
+  window.storePirim?.(d);
+  renderPirim();
+  window.toast?.('✅ Ara onay verildi. Admin nihai onaylayacak.', 'ok');
+  window.logActivity?.('view', `Ara onay verildi: "${p.title}"`);
+}
+
+/** İkinci onayçı (peer): reddeder */
+function peerRejectPirim(id) {
+  const cu     = window.CU();
+  const reason = prompt('Red nedeni:') ?? '';
+  const d      = window.loadPirim?.() || [];
+  const p      = d.find(x => x.id === id); if (!p) return;
+  if (p.peerUser !== cu?.id) { window.toast?.('Bu kayıt size yönlendirilmemiş', 'err'); return; }
+
+  p.status        = 'rejected';
+  p.rejectedBy    = cu.id;
+  p.rejectedAt    = _now();
+  p.rejectReason  = `[Ara Onay Red] ${reason}`;
+  window.storePirim?.(d);
+  renderPirim();
+  window.toast?.('Prim ara onayda reddedildi', 'ok');
+  window.logActivity?.('view', `Ara onay reddedildi: "${p.title}"`);
+}
+
+/** Admin: reddet */
 function rejectPirim(id) {
   if (!window.isAdmin()) return;
   const reason = prompt('Red nedeni (opsiyonel):') ?? '';
   const d = window.loadPirim?.() || [];
   const p = d.find(x => x.id === id); if (!p) return;
-  p.status      = 'rejected';
-  p.rejectedBy  = window.CU()?.id;
-  p.rejectedAt  = _now();
+  p.status       = 'rejected';
+  p.rejectedBy   = window.CU()?.id;
+  p.rejectedAt   = _now();
   p.rejectReason = reason;
   window.storePirim?.(d);
   renderPirim();
   window.toast?.('Prim reddedildi', 'ok');
+  window.logActivity?.('view', `Prim reddedildi: "${p.title}"`);
 }
+
 
 function markPirimPaid(id) {
   if (!window.isAdmin()) return;
@@ -1117,48 +1318,137 @@ function _loadPdf() {
 }
 
 // ════════════════════════════════════════════════════════════════
-// BÖLÜM 8 — PARAMETRELER
+// BÖLÜM 8 — PARAMETRELER (Admin: Tip Oranları + Tier Tabloları)
 // ════════════════════════════════════════════════════════════════
-let _PARAMS_TEMP = [];
+let _PT = {}; // temp params editing object
 
 function openPirimParams() {
   _injectPirimPanel();
   if (!window.isAdmin()) { window.toast?.('Sadece yönetici erişebilir', 'err'); return; }
-  _PARAMS_TEMP = JSON.parse(JSON.stringify(window.loadPirimParams?.() || []));
-  _renderParamsList();
+
+  // Mevcut parametreleri yükle (derin kopyala)
+  const saved  = window.loadPirimParams?.() || {};
+  _PT = {
+    typeRates:   JSON.parse(JSON.stringify(saved.typeRates   || {})),
+    tiersNA:     JSON.parse(JSON.stringify(saved.tiersNA     || TIER_YENI_AVCI)),
+    tiersSC:     JSON.parse(JSON.stringify(saved.tiersSC     || TIER_SADIK_CIFTCI)),
+    multipliers: JSON.parse(JSON.stringify(saved.multipliers || {
+      yeniTedarikci: 0.15, capraz: 0.25, yeniUrun: 0.25,
+      fiyatAvantaji: 0.30, tamamlayiciIhmal: 0.30, revizyon: 0.07,
+    })),
+  };
+
+  _renderParamsTypeRates();
+  _renderParamsTiers('NA');
+  _renderParamsTiers('SC');
+  _renderParamsMult();
   window.openMo?.('mo-pirim-params');
 }
 
-function _renderParamsList() {
-  const cont = window.g('pirim-params-list');
+function _renderParamsTypeRates() {
+  const cont = window.g('pirim-params-type-list');
   if (!cont) return;
-  cont.innerHTML = _PARAMS_TEMP.map((p, i) => `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-      <input class="fi" value="${p.label||p.name||''}" style="flex:3;min-width:120px;padding:5px 8px;font-size:12px"
-        oninput="_PARAMS_TEMP[${i}].label=this.value" placeholder="Parametre adı">
-      <input class="fi" value="${p.code||''}" style="flex:1;min-width:60px;padding:5px 8px;font-size:12px"
-        oninput="_PARAMS_TEMP[${i}].code=this.value" placeholder="KOD">
-      <input type="number" class="fi" value="${p.rate!=null?(p.rate*100).toFixed(0):''}" style="flex:1;min-width:60px;padding:5px 8px;font-size:12px"
-        oninput="_PARAMS_TEMP[${i}].rate=parseFloat(this.value)/100||null" placeholder="% oran">
-      <button onclick="_PARAMS_TEMP.splice(${i},1);_renderParamsList()"
-        style="background:var(--rdb);border:none;border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--rdt);font-size:12px">✕</button>
-    </div>`).join('');
+
+  // Sadece serbest (non-alim) tipler için oran ayarlanabilir
+  // Alım tipleri (NA/SC/YT) tier tablosundan otomatik gelir
+  const freeTypes = Object.entries(PIRIM_TYPES).filter(([,v]) => v.base !== 'alim');
+
+  cont.innerHTML = `
+    <div style="background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:var(--t2)">
+      🐣 <strong>NA / 🌱 SC / 🔄 YT</strong> tipleri kademe tablosundan otomatik hesaplanır. Aşağıda yalnızca <strong>serbest tipler</strong> düzenlenir.
+    </div>
+    ${freeTypes.map(([k, v]) => {
+      const cur = _PT.typeRates[k];
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:var(--sf);border:1px solid var(--b);border-radius:8px">
+        <span style="font-size:18px;width:24px;text-align:center">${v.emoji}</span>
+        <span style="flex:1;font-size:12px;font-weight:600;color:var(--t)">${v.label}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:11px;color:var(--t2)">Oran (%)</label>
+          <input type="number" value="${cur?.rate != null ? (cur.rate * 100).toFixed(2) : ''}"
+            placeholder="—"
+            style="width:80px;padding:5px 8px;font-size:12px;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t)"
+            oninput="_PT.typeRates['${k}'] = this.value ? { rate: parseFloat(this.value)/100 } : null">
+        </div>
+        <span style="font-size:10px;color:var(--t3)">Boş=serbest</span>
+      </div>`;
+    }).join('')}`;
 }
 
-function addPirimParam() {
-  _PARAMS_TEMP.push({ id: Date.now(), label: '', code: '', rate: 0, locked: false });
-  _renderParamsList();
+function _renderParamsTiers(which) {
+  const contId = which === 'NA' ? 'pirim-params-tier-na' : 'pirim-params-tier-sc';
+  const cont = window.g(contId);
+  if (!cont) return;
+  const tiers = which === 'NA' ? _PT.tiersNA : _PT.tiersSC;
+  const arr   = which === 'NA' ? '_PT.tiersNA' : '_PT.tiersSC';
+
+  cont.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;padding:0 4px">
+      <span style="font-size:10px;color:var(--t2);font-weight:600">Alt Sınır (₺)</span>
+      <span style="font-size:10px;color:var(--t2);font-weight:600">Üst Sınır (₺)</span>
+      <span style="font-size:10px;color:var(--t2);font-weight:600">Oran (%)</span>
+      <span></span>
+    </div>
+    ${tiers.map((t, i) => `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center">
+        <input type="number" value="${t.min}" placeholder="0"
+          style="padding:5px 8px;font-size:12px;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t)"
+          oninput="${arr}[${i}].min=parseFloat(this.value)||0">
+        <input type="number" value="${t.max === Infinity ? '' : t.max}" placeholder="∞"
+          style="padding:5px 8px;font-size:12px;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t)"
+          oninput="${arr}[${i}].max=this.value?parseFloat(this.value):Infinity">
+        <input type="number" value="${(t.rate * 100).toFixed(3)}" step="0.001" placeholder="0.000"
+          style="padding:5px 8px;font-size:12px;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t)"
+          oninput="${arr}[${i}].rate=parseFloat(this.value)/100||0">
+        <button onclick="${arr}.splice(${i},1);Pirim._renderTiers('${which}')"
+          style="padding:4px 8px;background:var(--rdb,#fee2e2);border:none;border-radius:6px;cursor:pointer;color:var(--rdt,#ef4444);font-size:12px">✕</button>
+      </div>`).join('')}`;
+}
+
+function addPirimTierRow(which) {
+  const last = which === 'NA' ? _PT.tiersNA.at(-1) : _PT.tiersSC.at(-1);
+  const newMin = last?.max === Infinity ? (last?.min || 0) + 500000 : (last?.max || 0);
+  const arr = { min: newMin, max: Infinity, rate: last?.rate || 0, label: '' };
+  if (which === 'NA') _PT.tiersNA.push(arr);
+  else                _PT.tiersSC.push(arr);
+  _renderParamsTiers(which);
+}
+
+function _renderParamsMult() {
+  const cont = window.g('pirim-params-multipliers');
+  if (!cont) return;
+  const m = _PT.multipliers;
+  const rows = [
+    { key: 'yeniTedarikci',   label: '🔄 Yeni Tedarikçi bonus (%)',    hint: 'Varsayılan: 15' },
+    { key: 'capraz',          label: '➕ Çapraz Satış bonus (%)',       hint: 'Varsayılan: 25' },
+    { key: 'yeniUrun',        label: '🆕 Yeni Ürün bonus (%)',          hint: 'Varsayılan: 25' },
+    { key: 'fiyatAvantaji',   label: '💰 Fiyat Avantajı bonus (%)',     hint: 'Varsayılan: 30' },
+    { key: 'tamamlayiciIhmal',label: '❌ Tamamlayıcı İhmal ceza (%)',  hint: 'Varsayılan: 30' },
+    { key: 'revizyon',        label: '❌ Revizyon Cezası (%)',          hint: 'Varsayılan: 7'  },
+  ];
+  cont.innerHTML = rows.map(r => `
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:8px 12px">
+      <label style="font-size:11px;color:var(--t2);display:block;margin-bottom:4px">${r.label}</label>
+      <input type="number" value="${((m[r.key]||0)*100).toFixed(1)}" step="0.1" placeholder="${r.hint}"
+        style="width:100%;padding:5px 8px;font-size:13px;font-weight:600;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t)"
+        oninput="_PT.multipliers['${r.key}']=parseFloat(this.value)/100||0">
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">${r.hint}</div>
+    </div>`).join('');
 }
 
 function savePirimParams() {
   if (!window.isAdmin()) return;
-  const valid = _PARAMS_TEMP.filter(p => (p.label||p.name||'').trim());
-  window.storePirimParams?.(valid);
+  // Tier label'larını otomatik oluştur
+  _PT.tiersNA.forEach((t, i) => { t.label = `Kademe ${i+1}`; });
+  _PT.tiersSC.forEach((t, i) => { t.label = `Kademe ${i+1}`; });
+  window.storePirimParams?.(_PT);
   window.closeMo?.('mo-pirim-params');
   renderPirim();
-  window.toast?.('✅ Parametreler kaydedildi', 'ok');
+  window.toast?.('✅ Prim parametreleri kaydedildi', 'ok');
   window.logActivity?.('view', 'Prim parametreleri güncellendi');
 }
+
+// compat alias
+function addPirimParam() { addPirimTierRow('NA'); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 9 — EXCEL EXPORT
@@ -1299,26 +1589,32 @@ function clearPirimFilters() {
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Pirim = {
-  render:          renderPirim,
-  openModal:       openPirimModal,
-  save:            savePirim,
-  approve:         approvePirim,
-  reject:          rejectPirim,
-  markPaid:        markPirimPaid,
-  del:             delPirim,
-  selectType:      selectPirimType,
-  calcAuto:        calcPirimAuto,
-  showDetail:      showPirimDetail,
-  showPdf:         showPirimPdf,
-  _uploadPdf:      _uploadPdf,
-  _deletePdf:      _deletePdf,
-  exportXlsx:      exportPirimXlsx,
-  openParams:      openPirimParams,
-  addParam:        addPirimParam,
-  saveParams:      savePirimParams,
+  render:           renderPirim,
+  openModal:        openPirimModal,
+  save:             savePirim,
+  approve:          approvePirim,
+  reject:           rejectPirim,
+  openPeer:         openPirimPeer,
+  sendToPeer:       sendToPeer,
+  peerApprove:      peerApprovePirim,
+  peerReject:       peerRejectPirim,
+  markPaid:         markPirimPaid,
+  del:              delPirim,
+  selectType:       selectPirimType,
+  calcAuto:         calcPirimAuto,
+  showDetail:       showPirimDetail,
+  showPdf:          showPirimPdf,
+  _uploadPdf:       _uploadPdf,
+  _deletePdf:       _deletePdf,
+  exportXlsx:       exportPirimXlsx,
+  openParams:       openPirimParams,
+  addParam:         addPirimParam,
+  addTierRow:       addPirimTierRow,
+  saveParams:       savePirimParams,
+  _renderTiers:     _renderParamsTiers,
   renderLeaderboard: renderLeaderboard,
-  printSlip:       printPirimSlip,
-  clearFilters:    clearPirimFilters,
+  printSlip:        printPirimSlip,
+  clearFilters:     clearPirimFilters,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1326,20 +1622,24 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
   window.Pirim = Pirim;
   // Geriye uyumluluk
-  window.renderPirim        = renderPirim;
-  window.openPirimModal     = openPirimModal;
-  window.savePirim          = savePirim;
-  window.approvePirim       = approvePirim;
-  window.rejectPirim        = rejectPirim;
-  window.markPirimPaid      = markPirimPaid;
-  window.delPirim           = delPirim;
-  window.selectPirimType    = selectPirimType;
-  window.calcPirimAuto      = calcPirimAuto;
-  window.exportPirimXlsx    = exportPirimXlsx;
-  window.openPirimParams    = openPirimParams;
-  window.addPirimParam      = addPirimParam;
-  window.savePirimParams    = savePirimParams;
-  window._renderParamsList  = _renderParamsList;
-  window._PARAMS_TEMP       = _PARAMS_TEMP;
-  window.printPirimSlip     = printPirimSlip;
+  window.renderPirim         = renderPirim;
+  window.openPirimModal      = openPirimModal;
+  window.savePirim           = savePirim;
+  window.approvePirim        = approvePirim;
+  window.rejectPirim         = rejectPirim;
+  window.openPirimPeer       = openPirimPeer;
+  window.sendToPeer          = sendToPeer;
+  window.peerApprovePirim    = peerApprovePirim;
+  window.peerRejectPirim     = peerRejectPirim;
+  window.markPirimPaid       = markPirimPaid;
+  window.delPirim            = delPirim;
+  window.selectPirimType     = selectPirimType;
+  window.calcPirimAuto       = calcPirimAuto;
+  window.exportPirimXlsx     = exportPirimXlsx;
+  window.openPirimParams     = openPirimParams;
+  window.addPirimParam       = addPirimParam;
+  window.addPirimTierRow     = addPirimTierRow;
+  window.savePirimParams     = savePirimParams;
+  window._renderParamsTiers  = _renderParamsTiers;
+  window.printPirimSlip      = printPirimSlip;
 }
