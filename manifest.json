@@ -1,0 +1,41 @@
+{
+  "name": "Duay Global Trade — Operasyon Platformu",
+  "short_name": "Duay Platform",
+  "description": "Operasyon, Kargo, İK, CRM ve Finans yönetim platformu",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#6366F1",
+  "orientation": "portrait-primary",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Görevler",
+      "short_name": "Pusula",
+      "url": "/index.html#pusula",
+      "description": "Görev yönetimine git"
+    },
+    {
+      "name": "Kargo",
+      "short_name": "Kargo",
+      "url": "/index.html#kargo",
+      "description": "Kargo takibine git"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": []
+}
