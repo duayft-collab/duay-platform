@@ -229,7 +229,7 @@ function _injectPirimPanel() {
 
 <!-- FİLTRELER -->
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:var(--s2);padding:10px 14px;border-radius:14px">
-  <select class="fi" id="prm-period-f" style="width:150px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
+  <select class="fi" id="prm-period-f" style="width:140px;max-width:140px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
     <option value="">Tüm Dönemler</option>
     <option value="thismonth">Bu Ay</option>
     <option value="lastmonth">Geçen Ay</option>
@@ -239,22 +239,22 @@ function _injectPirimPanel() {
     <option value="q4">Q4 (Eki-Ara)</option>
     <option value="thisyear">Bu Yıl</option>
   </select>
-  <select class="fi" id="prm-status-f" style="width:150px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
+  <select class="fi" id="prm-status-f" style="width:140px;max-width:140px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
     <option value="">Tüm Durumlar</option>
     <option value="pending">⏳ Bekliyor</option>
     <option value="approved">✅ Onaylı</option>
     <option value="rejected">❌ Reddedildi</option>
     <option value="paid">💸 Ödendi</option>
   </select>
-  <select class="fi" id="prm-type-f" style="width:160px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
+  <select class="fi" id="prm-type-f" style="width:150px;max-width:150px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
     <option value="">Tüm Türler</option>
     ${Object.entries(PIRIM_TYPES).map(([k,v]) => `<option value="${k}">${v.emoji} ${v.label}</option>`).join('')}
   </select>
-  <select class="fi" id="prm-user-f" style="width:160px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
+  <select class="fi" id="prm-user-f" style="width:140px;max-width:140px;padding:6px 10px;font-size:12px" onchange="Pirim.render()">
     <option value="0">Tüm Personel</option>
   </select>
-  <input class="fi" id="prm-search" style="flex:1;min-width:150px;padding:6px 12px;font-size:12px" placeholder="🔍 Ara..." oninput="Pirim.render()">
-  <button class="btn btns" onclick="Pirim.clearFilters()" style="font-size:11px">✕ Temizle</button>
+  <input class="fi" id="prm-search" style="flex:1;min-width:120px;padding:6px 12px;font-size:12px" placeholder="🔍 Ara..." oninput="Pirim.render()">
+  <button class="btn btns" onclick="Pirim.clearFilters()" style="font-size:11px;white-space:nowrap">✕ Temizle</button>
 </div>
 
 <!-- ANA İÇERİK — tablo + liderlik tablosu -->
@@ -320,14 +320,13 @@ function _injectPirimPanel() {
       <!-- Prim Türü Kartları -->
       <div class="fg" style="margin-bottom:14px">
         <label class="fl">Prim Türü</label>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="prm-type-cards">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px" id="prm-type-cards">
           ${Object.entries(PIRIM_TYPES).map(([k,v]) => `
           <div class="prm-type-card" data-type="${k}" onclick="Pirim.selectType('${k}')"
             title="${v.desc||v.label}"
-            style="border:1.5px solid var(--b);border-radius:10px;padding:8px;cursor:pointer;transition:all .15s;background:var(--sf);text-align:center">
-            <div style="font-size:16px">${v.emoji}</div>
-            <div style="font-size:10px;font-weight:600;margin-top:3px;color:var(--t)">${v.label}</div>
-            ${v.desc ? `<div style="font-size:9px;color:var(--t2);margin-top:2px;line-height:1.3">${v.desc}</div>` : ''}
+            style="border:1.5px solid var(--b);border-radius:10px;padding:8px 6px;cursor:pointer;transition:all .15s;background:var(--sf);text-align:center;overflow:hidden">
+            <div style="font-size:18px;line-height:1">${v.emoji}</div>
+            <div style="font-size:10px;font-weight:600;margin-top:4px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3" title="${v.label}">${v.label}</div>
           </div>`).join('')}
         </div>
         <input type="hidden" id="prm-type">
@@ -1040,24 +1039,34 @@ function showPirimPdf() {
   const stored = _loadPdf();
 
   // Footer: admin için yükleme butonu
-  footer.innerHTML = window.isAdmin() ? `
-    <div style="display:flex;align-items:center;gap:8px;flex:1">
-      <label class="btn btns" style="cursor:pointer">
+  if (window.isAdmin()) {
+    footer.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap">
+      <button class="btn btns" onclick="document.getElementById('pirim-pdf-input').click()" style="cursor:pointer">
         📎 PDF Yükle
-        <input type="file" accept=".pdf" style="display:none" onchange="Pirim._uploadPdf(this)">
-      </label>
+      </button>
+      <input type="file" id="pirim-pdf-input" accept=".pdf,application/pdf" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
+        onchange="Pirim._uploadPdf(this)">
       ${stored ? `<button class="btn btns btnd" onclick="Pirim._deletePdf()">🗑 Kaldır</button>` : ''}
-      <span style="font-size:11px;color:var(--t3)">${stored ? 'Yüklenmiş PDF var' : 'Henüz PDF yüklenmedi'}</span>
+      <span style="font-size:11px;color:var(--t2)">${stored ? '✅ Yüklenmiş PDF mevcut' : 'Henüz PDF yüklenmedi'}</span>
     </div>
-    <button class="btn" onclick="window.closeMo?.('mo-pirim-pdf')">Kapat</button>
-  ` : `<button class="btn" onclick="window.closeMo?.('mo-pirim-pdf')">Kapat</button>`;
+    <div style="font-size:10px;color:var(--t3);text-align:right;line-height:1.5;margin-top:4px">
+      ⚠️ Yalnızca <strong>.pdf</strong> formatı · Maks. <strong>3 MB</strong><br>
+      Tarayıcı önbelleğine kaydedilir (localStorage)
+    </div>
+    <button class="btn" onclick="window.closeMo?.('mo-pirim-pdf')" style="flex-shrink:0">Kapat</button>`;
+  } else {
+    footer.innerHTML = `<button class="btn" onclick="window.closeMo?.('mo-pirim-pdf')">Kapat</button>`;
+  }
 
   if (!stored) {
     viewer.innerHTML = `
       <div style="text-align:center;padding:40px;color:var(--t2)">
         <div style="font-size:40px;margin-bottom:12px">📄</div>
         <div style="font-weight:600;margin-bottom:6px">Yönetmelik henüz yüklenmedi</div>
-        <div style="font-size:13px">${window.isAdmin() ? 'Aşağıdaki "PDF Yükle" butonunu kullanın.' : 'Yöneticinizden yönetmeliği yüklemesini isteyin.'}</div>
+        <div style="font-size:13px">${window.isAdmin()
+          ? '📎 "PDF Yükle" butonunu kullanın. <br><small style="color:var(--t3)">Maks. 3 MB · Yalnızca .pdf</small>'
+          : 'Yöneticinizden yönetmeliği sisteme yüklemesini isteyin.'}</div>
       </div>`;
   } else {
     viewer.innerHTML = `
@@ -1068,22 +1077,31 @@ function showPirimPdf() {
 }
 
 function _uploadPdf(input) {
-  const file = input.files[0];
+  const file = input?.files?.[0];
   if (!file) return;
-  if (file.type !== 'application/pdf') { window.toast?.('Sadece PDF dosyası yükleyin', 'err'); return; }
-  if (file.size > 5 * 1024 * 1024) { window.toast?.('PDF 5MB\'dan küçük olmalı', 'err'); return; }
+  if (!file.type.includes('pdf')) { window.toast?.('Sadece PDF dosyası yükleyin', 'err'); input.value = ''; return; }
+  // 3MB limit (localStorage güvenliği için konservatif)
+  const MAX_MB = 3;
+  if (file.size > MAX_MB * 1024 * 1024) {
+    window.toast?.(`PDF ${MAX_MB}MB'dan küçük olmalı (seçilen: ${(file.size/1024/1024).toFixed(1)}MB)`, 'err');
+    input.value = '';
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = e => {
     try {
       localStorage.setItem(PDF_KEY, e.target.result);
+      input.value = '';
       window.toast?.('✅ PDF yüklendi', 'ok');
       window.logActivity?.('view', `Prim yönetmeliği PDF güncellendi`);
       showPirimPdf(); // modal'ı yenile
     } catch (err) {
-      window.toast?.('PDF kaydedilemedi — dosya çok büyük olabilir', 'err');
+      input.value = '';
+      window.toast?.(`PDF kaydedilemedi — tarayıcı depolama alanı dolu olabilir (${(file.size/1024/1024).toFixed(1)}MB)`, 'err');
     }
   };
+  reader.onerror = () => { window.toast?.('Dosya okunamadı', 'err'); input.value = ''; };
   reader.readAsDataURL(file);
 }
 
