@@ -18,14 +18,136 @@
 
 // ── Sabitler ─────────────────────────────────────────────────────
 const PIRIM_TYPES = {
-  YA: { label: 'Yıllık Artan',        emoji: '📈', base: 'maas',    locked: true  },
-  SC: { label: 'Satış Cirosu',         emoji: '💰', base: 'ciro',    locked: true  },
-  NY: { label: 'Yeni Müşteri',         emoji: '🤝', base: 'sabit',   locked: true  },
-  CA: { label: 'Ciro Artış',           emoji: '📊', base: 'ciro',    locked: true  },
-  DD: { label: 'Dönem Değerlendirme',  emoji: '🎯', base: 'serbest', locked: false },
-  RD: { label: 'Referans Dönüşüm',     emoji: '🔄', base: 'serbest', locked: false },
-  CE: { label: 'CEO Takdir',           emoji: '⭐', base: 'serbest', locked: false },
+  // === SATINALMA PRİM SİSTEMİ (2025 Yönetmeliği) ===
+  NA: { label: 'Yeni Avcı (İlk Alım)',     emoji: '🐣', base: 'alim',    locked: true,  desc: 'İlk kez yapılan tedarik/alım' },
+  SC: { label: 'Sadık Çiftçi (Tekrar)',     emoji: '🌱', base: 'alim',    locked: true,  desc: 'Mevcut tedarikçi/ürün, tekrar alım' },
+  YT: { label: 'Yeni Tedarikçi',           emoji: '🔄', base: 'alim',    locked: true,  desc: 'Tekrar alımda yeni+daha iyi tedarikçi' },
+  CB: { label: 'Çapraz Satış Bonusu',      emoji: '➕', base: 'serbest', locked: false, desc: '+%25 ekstra — tamamlayıcı ürün önerildi' },
+  DB: { label: 'Dedektif Bonusu',          emoji: '🕵️', base: 'serbest', locked: false, desc: 'Gizli zam/hile/kalite tuzağı tespit edildi' },
+  RD: { label: 'Ürün Geliştirme (R&D)',    emoji: '🔬', base: 'serbest', locked: false, desc: 'Ürün geliştirme ile satış artışı sağlandı' },
+  CE: { label: 'CEO / Yönetim Takdiri',    emoji: '⭐', base: 'serbest', locked: false, desc: 'Özel yönetim ödülü' },
+  DD: { label: 'Dönem Değerlendirme',      emoji: '🎯', base: 'serbest', locked: false, desc: 'Yıllık şampiyonlar ligi ödülü' },
 };
+
+// ── Satınalma Kademe Tabloları (2025 Yönetmeliği) ────────────────
+// Yeni Avcı (NA): İlk kez yapılan alımlar
+const TIER_YENI_AVCI = [
+  { min: 0,          max: 100000,   rate: 0.0030, label: '0-100K'   }, // %0.30
+  { min: 100000,     max: 250000,   rate: 0.0050, label: '100-250K' }, // %0.50
+  { min: 250000,     max: 500000,   rate: 0.0070, label: '250-500K' }, // %0.70
+  { min: 500000,     max: 1000000,  rate: 0.0100, label: '500K-1M'  }, // %1.00
+  { min: 1000000,    max: Infinity, rate: 0.0100, label: '1M+'      }, // %1.00 (son kademe devam)
+];
+
+// Sadık Çiftçi (SC): Tekrar eden alımlar
+const TIER_SADIK_CIFTCI = [
+  { min: 0,          max: 100000,   rate: 0.0010, label: '0-100K'   }, // %0.10
+  { min: 100000,     max: 250000,   rate: 0.0020, label: '100-250K' }, // %0.20
+  { min: 250000,     max: 500000,   rate: 0.0025, label: '250-500K' }, // %0.25
+  { min: 500000,     max: 1000000,  rate: 0.0030, label: '500K-1M'  }, // %0.30
+  { min: 1000000,    max: Infinity, rate: 0.0030, label: '1M+'      }, // %0.30
+];
+
+/**
+ * Kademeli prim hesapla (her kademe kendi oranıyla)
+ * @param {number} amount - KDV'siz alım tutarı (TL)
+ * @param {'NA'|'SC'|'YT'} type - prim tipi
+ * @param {Object} opts - bonus/ceza çarpanları
+ * @returns {{ gross, net, breakdown, appliedRate, tier }}
+ */
+function calcSatinalimaPrim(amount, type, opts = {}) {
+  // Temel kademe tablosu
+  let tiers;
+  if (type === 'NA') {
+    tiers = TIER_YENI_AVCI;
+  } else if (type === 'YT') {
+    // Yeni Tedarikçi = Yeni Avcı gibi hesap (mevcut>%10 ucuz bulundu)
+    tiers = TIER_YENI_AVCI;
+  } else {
+    tiers = TIER_SADIK_CIFTCI;
+  }
+
+  // Kademe bul (tutar hangi kademede?)
+  const tier = tiers.find(t => amount >= t.min && amount < t.max) || tiers[tiers.length - 1];
+  let rate = tier.rate;
+
+  const breakdown = [];
+
+  // Tedarikçi yönetimi bonusu: Yeni+iyi tedarikçi = +%15 artırım
+  if (opts.yeniTedarikci && (type === 'SC' || type === 'YT')) {
+    const bonus = rate * 0.15;
+    breakdown.push({ label: 'Yeni Tedarikçi +%15', value: bonus, positive: true });
+    rate += bonus;
+  }
+
+  // Çapraz satış: +%25 (CB tipinde ayrı giriş, ama burada da flag varsa)
+  if (opts.caprazSatis) {
+    const bonus = rate * 0.25;
+    breakdown.push({ label: 'Çapraz Satış +%25', value: bonus, positive: true });
+    rate += bonus;
+  }
+
+  // Fiyat avantajı: İndirim toplamının %30'u ek prim
+  if (opts.fiyatAvantajiTL && opts.fiyatAvantajiTL > 0) {
+    const bonusTL = opts.fiyatAvantajiTL * 0.30;
+    breakdown.push({ label: `Fiyat Avantajı +%30 (${_fmtTL(opts.fiyatAvantajiTL)} indirim)`, valueTL: bonusTL, positive: true });
+  }
+
+  // Yeni ürün: rutin prim %25 artar
+  if (opts.yeniUrun && type === 'SC') {
+    const bonus = rate * 0.25;
+    breakdown.push({ label: 'Yeni Ürün +%25', value: bonus, positive: true });
+    rate += bonus;
+  }
+
+  let gross = Math.round(amount * rate * 100) / 100;
+  if (opts.fiyatAvantajiTL) gross += Math.round(opts.fiyatAvantajiTL * 0.30 * 100) / 100;
+
+  // ── CEZA HESAPLAMALARI ──────────────────────────────────────────
+
+  // Yönetici müdahalesi: aldığı indirimin 3 katı oransal kesinti
+  if (opts.yoneticiIndirimOran && opts.yoneticiIndirimOran > 0) {
+    const penaltyRate = Math.min(opts.yoneticiIndirimOran * 3, 1); // max %100
+    const penaltyTL   = Math.round(gross * penaltyRate * 100) / 100;
+    breakdown.push({ label: `Yetersiz Müzakere -%${(penaltyRate*100).toFixed(0)} (Yönetici indirimi x3)`, value: -penaltyRate, penaltyTL, positive: false });
+    gross -= penaltyTL;
+  }
+
+  // Gecikme: 1 gün -%10, 3+ gün -%20
+  if (opts.gecikmeGun && opts.gecikmeGun > 0) {
+    const penaltyRate = opts.gecikmeGun >= 3 ? 0.20 : 0.10;
+    const penaltyTL   = Math.round(gross * penaltyRate * 100) / 100;
+    breakdown.push({ label: `Gecikme (${opts.gecikmeGun} gün) -%${(penaltyRate*100).toFixed(0)}`, penaltyTL, positive: false });
+    gross -= penaltyTL;
+  }
+
+  // Tamamlayıcı ürün ihmali: -%30
+  if (opts.tamamlayiciIhmal) {
+    const penaltyTL = Math.round(gross * 0.30 * 100) / 100;
+    breakdown.push({ label: 'Tamamlayıcı Ürün İhmali -%30', penaltyTL, positive: false });
+    gross -= penaltyTL;
+  }
+
+  // Operasyonel revizyon: -%7
+  if (opts.revizyonPenalty) {
+    const penaltyTL = Math.round(gross * 0.07 * 100) / 100;
+    breakdown.push({ label: 'Operasyonel Revizyon -%7', penaltyTL, positive: false });
+    gross -= penaltyTL;
+  }
+
+  return {
+    gross:       Math.max(0, Math.round(gross * 100) / 100),
+    appliedRate: rate,
+    tier:        tier.label,
+    breakdown,
+  };
+}
+
+// ── Yardımcı: TL formatla ──────────────────────────────────────────
+function _fmtTL(n) {
+  if (!n && n !== 0) return '';
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 }).format(n);
+}
 
 const PIRIM_STATUS = {
   pending:  { l: 'Onay Bekliyor', c: 'ba', emoji: '⏳' },
@@ -201,9 +323,11 @@ function _injectPirimPanel() {
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="prm-type-cards">
           ${Object.entries(PIRIM_TYPES).map(([k,v]) => `
           <div class="prm-type-card" data-type="${k}" onclick="Pirim.selectType('${k}')"
+            title="${v.desc||v.label}"
             style="border:1.5px solid var(--b);border-radius:10px;padding:8px;cursor:pointer;transition:all .15s;background:var(--sf);text-align:center">
             <div style="font-size:16px">${v.emoji}</div>
             <div style="font-size:10px;font-weight:600;margin-top:3px;color:var(--t)">${v.label}</div>
+            ${v.desc ? `<div style="font-size:9px;color:var(--t2);margin-top:2px;line-height:1.3">${v.desc}</div>` : ''}
           </div>`).join('')}
         </div>
         <input type="hidden" id="prm-type">
@@ -226,18 +350,62 @@ function _injectPirimPanel() {
         <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tutar Hesaplama</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div class="fg">
-            <label class="fl">Baz Tutar (₺)</label>
+            <label class="fl">KDV'siz Alım Tutarı (₺)</label>
             <input type="number" class="fi" id="prm-base-amount" placeholder="0" oninput="Pirim.calcAuto()" style="font-weight:600">
           </div>
           <div class="fg">
             <label class="fl">Oran (%) <span id="prm-rate-hint" style="font-size:9px;color:var(--ac);font-weight:700"></span></label>
-            <input type="number" class="fi" id="prm-oran" placeholder="0.00" step="0.01" min="0" max="5" oninput="Pirim.calcAuto()">
+            <input type="number" class="fi" id="prm-oran" placeholder="0.00" step="0.001" min="0" max="5" oninput="Pirim.calcAuto()">
           </div>
           <div class="fg">
             <label class="fl">Net Prim (₺)</label>
             <input type="number" class="fi" id="prm-total" placeholder="0" style="font-weight:700;color:var(--ac);background:var(--sf)">
           </div>
         </div>
+
+        <!-- Bonus / Ceza Paneli (sadece NA/SC/YT tiplerinde görünür) -->
+        <div id="prm-bonus-panel" style="display:none;margin-top:12px;border-top:1px solid var(--b);padding-top:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px">⚡ Bonus & Ceza Ayarları</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="chk-yeni-tedarikci" onchange="Pirim.calcAuto()">
+              🔄 Yeni+daha iyi tedarikçi <small style="color:var(--t2)">(+%15)</small>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="chk-capraz" onchange="Pirim.calcAuto()">
+              ➕ Çapraz satış bonusu <small style="color:var(--t2)">(+%25)</small>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="chk-yeni-urun" onchange="Pirim.calcAuto()">
+              🆕 Yeni ürün (tekrar alımda) <small style="color:var(--t2)">(+%25)</small>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="chk-tamamlayici-ihmal" onchange="Pirim.calcAuto()">
+              ❌ Tamamlayıcı ürün ihmali <small style="color:var(--br,-red)">(-%30)</small>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="chk-revizyon" onchange="Pirim.calcAuto()">
+              ❌ Operasyonel revizyon cezası <small style="color:var(--br,-red)">(-%7)</small>
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+            <div class="fg">
+              <label class="fl">Gecikme (gün) <small>(1g=-%10, 3g+=-%20)</small></label>
+              <input type="number" class="fi" id="inp-gecikme-gun" placeholder="0" min="0" oninput="Pirim.calcAuto()">
+            </div>
+            <div class="fg">
+              <label class="fl">Yönetici İndirimi (%) <small>(x3 ceza)</small></label>
+              <input type="number" class="fi" id="inp-yonetici-indirim" placeholder="0" min="0" max="100" step="0.1" oninput="Pirim.calcAuto()">
+            </div>
+            <div class="fg">
+              <label class="fl">Fiyat Avantajı (₺ indirim) <small>(+%30)</small></label>
+              <input type="number" class="fi" id="inp-fiyat-avantaji" placeholder="0" min="0" oninput="Pirim.calcAuto()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Hesaplama detay -->
+        <div id="prm-calc-detail" style="display:none"></div>
       </div>
 
       <!-- Not -->
@@ -588,16 +756,39 @@ function openPirimModal(id) {
     if (window.g('prm-user'))        window.g('prm-user').value        = p.uid;
     if (window.g('prm-eid'))         window.g('prm-eid').value         = id;
     if (window.g('mo-prm-t'))        window.g('mo-prm-t').textContent  = '✏️ Prim Düzenle';
+    // Bonus/ceza alanlarını yükle
+    const bc = p.bonusCeza || {};
+    const _chk = (id, v) => { const el = window.g(id); if (el) el.checked = !!v; };
+    const _inp = (id, v) => { const el = window.g(id); if (el) el.value = v || ''; };
+    _chk('chk-yeni-tedarikci',    bc.yeniTedarikci);
+    _chk('chk-capraz',            bc.caprazSatis);
+    _chk('chk-yeni-urun',         bc.yeniUrun);
+    _chk('chk-tamamlayici-ihmal', bc.tamamlayiciIhmal);
+    _chk('chk-revizyon',          bc.revizyonPenalty);
+    _inp('inp-gecikme-gun',        bc.gecikmeGun);
+    _inp('inp-yonetici-indirim',   bc.yoneticiIndirimOran ? (bc.yoneticiIndirimOran * 100).toFixed(1) : '');
+    _inp('inp-fiyat-avantaji',     bc.fiyatAvantajiTL);
     if (p.type) selectPirimType(p.type);
   } else {
     ['prm-title','prm-code','prm-note','prm-oran','prm-base-amount','prm-total'].forEach(x => {
       const el = window.g(x); if (el) el.value = '';
     });
+    // Bonus/ceza alanlarını temizle
+    ['chk-yeni-tedarikci','chk-capraz','chk-yeni-urun','chk-tamamlayici-ihmal','chk-revizyon'].forEach(id => {
+      const el = window.g(id); if (el) el.checked = false;
+    });
+    ['inp-gecikme-gun','inp-yonetici-indirim','inp-fiyat-avantaji'].forEach(id => {
+      const el = window.g(id); if (el) el.value = '';
+    });
+    const detDiv = window.g('prm-calc-detail');
+    if (detDiv) { detDiv.innerHTML = ''; detDiv.style.display = 'none'; }
     if (window.g('prm-date'))  window.g('prm-date').valueAsDate = new Date();
     if (window.g('prm-user'))  window.g('prm-user').value = window.CU()?.id;
     if (window.g('prm-eid'))   window.g('prm-eid').value  = '';
     if (window.g('mo-prm-t'))  window.g('mo-prm-t').textContent = '+ Prim Ekle';
     if (window.g('prm-type'))  window.g('prm-type').value = '';
+    const bonusPanel = window.g('prm-bonus-panel');
+    if (bonusPanel) bonusPanel.style.display = 'none';
   }
   window.openMo?.('mo-pirim');
 }
@@ -611,35 +802,82 @@ function selectPirimType(type) {
     card.style.transform   = sel ? 'scale(1.02)' : 'scale(1)';
   });
 
-  // Oran otomatik doldur
-  const params  = window.loadPirimParams?.() || [];
-  const param   = params.find(p => p.code === type);
-  const oranEl  = window.g('prm-oran');
-  const hintEl  = window.g('prm-rate-hint');
-  const td      = PIRIM_TYPES[type];
+  const td = PIRIM_TYPES[type];
+  const oranEl = window.g('prm-oran');
+  const hintEl = window.g('prm-rate-hint');
 
-  if (oranEl) {
-    if (td?.locked && param?.rate != null) {
-      oranEl.value    = param.rate;
+  // Alım tabanlı tipler: oran otomatik hesaplanır (salt okunur)
+  if (td?.base === 'alim') {
+    if (oranEl) {
       oranEl.readOnly = true;
       oranEl.style.background = 'var(--s2)';
       oranEl.style.color      = 'var(--t2)';
-      if (hintEl) hintEl.textContent = `Sabit: %${(param.rate*100).toFixed(0)}`;
-    } else {
+    }
+    if (hintEl) hintEl.textContent = 'Kademe otomatik';
+  } else {
+    if (oranEl) {
       oranEl.readOnly = false;
       oranEl.style.background = '';
       oranEl.style.color      = '';
-      if (hintEl) hintEl.textContent = 'Serbest';
     }
+    if (hintEl) hintEl.textContent = 'Serbest';
+  }
+  // Alım tabanlı tipler için bonus/ceza panelini göster
+  const bonusPanel = window.g('prm-bonus-panel');
+  if (bonusPanel) {
+    bonusPanel.style.display = td?.base === 'alim' ? 'block' : 'none';
   }
   calcPirimAuto();
 }
 
 function calcPirimAuto() {
-  const rate  = parseFloat(window.g('prm-oran')?.value  || '0') || 0;
-  const base  = parseFloat(window.g('prm-base-amount')?.value || '0') || 0;
-  const total = Math.round(base * rate * 100) / 100;
-  if (window.g('prm-total')) window.g('prm-total').value = total || '';
+  const type = window.g('prm-type')?.value;
+  const td   = PIRIM_TYPES[type] || {};
+  const base = parseFloat(window.g('prm-base-amount')?.value || '0') || 0;
+
+  if (td.base === 'alim' && ['NA','SC','YT'].includes(type)) {
+    // Kademeli hesaplama — bonus/ceza checkboxları
+    const opts = {
+      yeniTedarikci:      window.g('chk-yeni-tedarikci')?.checked,
+      caprazSatis:        window.g('chk-capraz')?.checked,
+      yeniUrun:           window.g('chk-yeni-urun')?.checked,
+      tamamlayiciIhmal:   window.g('chk-tamamlayici-ihmal')?.checked,
+      revizyonPenalty:    window.g('chk-revizyon')?.checked,
+      gecikmeGun:         parseInt(window.g('inp-gecikme-gun')?.value || '0') || 0,
+      yoneticiIndirimOran: parseFloat(window.g('inp-yonetici-indirim')?.value || '0') / 100 || 0,
+      fiyatAvantajiTL:    parseFloat(window.g('inp-fiyat-avantaji')?.value || '0') || 0,
+    };
+    const result = calcSatinalimaPrim(base, type, opts);
+    const oranEl = window.g('prm-oran');
+    const hintEl = window.g('prm-rate-hint');
+    if (oranEl) oranEl.value = (result.appliedRate * 100).toFixed(3);
+    if (hintEl) hintEl.textContent = `Kademe: ${result.tier}`;
+    if (window.g('prm-total')) window.g('prm-total').value = result.gross || '';
+
+    // Hesaplama detay göster
+    const detDiv = window.g('prm-calc-detail');
+    if (detDiv && result.breakdown.length > 0) {
+      detDiv.innerHTML = `<div style="font-size:11px;color:var(--t2);margin-top:6px;padding:6px 8px;background:var(--sf);border-radius:6px;line-height:1.7">
+        <strong>Hesaplama Detayı:</strong><br>
+        Temel Oran: %${((result.appliedRate)*100).toFixed(3)} | Kademe: ${result.tier}<br>
+        ${result.breakdown.map(b => `${b.positive ? '✅' : '❌'} ${b.label}`).join('<br>')}
+        <br><strong>Net Prim: ${_fmtTL(result.gross)}</strong>
+      </div>`;
+      detDiv.style.display = 'block';
+    } else if (detDiv) {
+      const baseRate = (type === 'NA' ? TIER_YENI_AVCI : TIER_SADIK_CIFTCI)
+        .find(t => base >= t.min && base < t.max) || (type === 'NA' ? TIER_YENI_AVCI : TIER_SADIK_CIFTCI).at(-1);
+      detDiv.innerHTML = base > 0 ? `<div style="font-size:11px;color:var(--t2);margin-top:6px;padding:6px 8px;background:var(--sf);border-radius:6px">Kademe: ${baseRate?.label || '-'} → Oran: %${((baseRate?.rate||0)*100).toFixed(2)} → <strong>Net: ${_fmtTL(result.gross)}</strong></div>` : '';
+      detDiv.style.display = base > 0 ? 'block' : 'none';
+    }
+  } else {
+    // Serbest tip: manuel oran
+    const rate  = parseFloat(window.g('prm-oran')?.value || '0') || 0;
+    const total = Math.round(base * rate * 100) / 100;
+    if (window.g('prm-total')) window.g('prm-total').value = total || '';
+    const detDiv = window.g('prm-calc-detail');
+    if (detDiv) detDiv.style.display = 'none';
+  }
 }
 
 function savePirim() {
@@ -665,6 +903,17 @@ function savePirim() {
     payDate:    _calcExpiry(date),
     status:     window.isAdmin() ? 'approved' : 'pending',
     updatedAt:  _now(),
+    // Satınalma bonus/ceza meta
+    bonusCeza: {
+      yeniTedarikci:       window.g('chk-yeni-tedarikci')?.checked || false,
+      caprazSatis:         window.g('chk-capraz')?.checked         || false,
+      yeniUrun:            window.g('chk-yeni-urun')?.checked      || false,
+      tamamlayiciIhmal:    window.g('chk-tamamlayici-ihmal')?.checked || false,
+      revizyonPenalty:     window.g('chk-revizyon')?.checked       || false,
+      gecikmeGun:          parseInt(window.g('inp-gecikme-gun')?.value  || '0') || 0,
+      yoneticiIndirimOran: parseFloat(window.g('inp-yonetici-indirim')?.value || '0') / 100 || 0,
+      fiyatAvantajiTL:     parseFloat(window.g('inp-fiyat-avantaji')?.value || '0') || 0,
+    },
   };
 
   if (eid) {
