@@ -38,13 +38,13 @@ const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
                    'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 // ── Yardımcılar ──────────────────────────────────────────────────
-const _g   = id => document.getElementById(id);
-const _st  = (id, v) => { const e = _g(id); if (e) e.textContent = v; };
-const _p2  = n => String(n).padStart(2, '0');
+// _g → window.g (app.js)
+// _st → window.st (app.js)
+// _p2 → local
 const _now = () => { const n = new Date(); return `${n.getFullYear()}-${_p2(n.getMonth()+1)}-${_p2(n.getDate())} ${_p2(n.getHours())}:${_p2(n.getMinutes())}:${_p2(n.getSeconds())}`; };
 const _fmt = n => (n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
-const _isAdm = () => window.Auth?.getCU?.()?.role === 'admin';
-const _cu    = () => window.Auth?.getCU?.();
+// _isAdm → window.isAdmin
+// _cu → window.CU
 
 // PDF localStorage key
 const PDF_KEY = 'ak_pirim_pdf_v1';
@@ -53,7 +53,7 @@ const PDF_KEY = 'ak_pirim_pdf_v1';
 // BÖLÜM 1 — PANEL HTML (inject)
 // ════════════════════════════════════════════════════════════════
 function _injectPirimPanel() {
-  const panel = _g('panel-pirim');
+  const panel = window.g('panel-pirim');
   if (!panel || panel.dataset.injected) return;
   panel.dataset.injected = '1';
   panel.innerHTML = `
@@ -312,13 +312,13 @@ function _injectPirimPanel() {
 function renderPirim() {
   _injectPirimPanel();
 
-  const cu     = _cu();
-  const admin  = _isAdm();
+  const cu     = window.CU();
+  const admin  = window.isAdmin();
   let   pirim  = admin ? window.loadPirim?.() || [] : (window.loadPirim?.() || []).filter(p => p.uid === cu?.id);
   const users  = window.loadUsers?.() || [];
 
   // Filtre seçenekleri doldur (ilk açılışta)
-  const uSel = _g('prm-user-f');
+  const uSel = window.g('prm-user-f');
   if (uSel && uSel.options.length <= 1) {
     users.forEach(u => {
       const o = document.createElement('option');
@@ -328,11 +328,11 @@ function renderPirim() {
   }
 
   // Filtrele
-  const statusF = _g('prm-status-f')?.value || '';
-  const typeF   = _g('prm-type-f')?.value   || '';
-  const userF   = parseInt(_g('prm-user-f')?.value || '0');
-  const search  = (_g('prm-search')?.value  || '').toLowerCase().trim();
-  const period  = _g('prm-period-f')?.value || '';
+  const statusF = window.g('prm-status-f')?.value || '';
+  const typeF   = window.g('prm-type-f')?.value   || '';
+  const userF   = parseInt(window.g('prm-user-f')?.value || '0');
+  const search  = (window.g('prm-search')?.value  || '').toLowerCase().trim();
+  const period  = window.g('prm-period-f')?.value || '';
 
   let fl = [...pirim];
   if (statusF) fl = fl.filter(p => p.status === statusF);
@@ -348,18 +348,18 @@ function renderPirim() {
   const totalAmt = pirim.filter(p => ['approved','paid'].includes(p.status))
                         .reduce((a, p) => a + (p.amount || 0), 0);
 
-  _st('prm-stat-total',    pirim.length);
-  _st('prm-stat-pending',  pending);
-  _st('prm-stat-approved', approved);
-  _st('prm-stat-paid',     paid);
-  _st('prm-stat-amount',   totalAmt.toLocaleString('tr-TR') + ' ₺');
+  window.st('prm-stat-total',    pirim.length);
+  window.st('prm-stat-pending',  pending);
+  window.st('prm-stat-approved', approved);
+  window.st('prm-stat-paid',     paid);
+  window.st('prm-stat-amount',   totalAmt.toLocaleString('tr-TR') + ' ₺');
 
   // Badge
-  const nb = _g('nb-pirim-b');
+  const nb = window.g('nb-pirim-b');
   if (nb) { nb.textContent = pending; nb.style.display = pending > 0 ? 'inline' : 'none'; }
 
   // Kişisel banner (admin değilse)
-  const banner = _g('prm-personal-banner');
+  const banner = window.g('prm-personal-banner');
   if (banner && !admin && cu) {
     const myAll   = pirim.filter(p => p.uid === cu.id && ['approved','paid'].includes(p.status));
     const thisM   = new Date(); const mKey = `${thisM.getFullYear()}-${_p2(thisM.getMonth()+1)}`;
@@ -375,15 +375,15 @@ function renderPirim() {
     const sorted = Object.entries(rankMap).sort((a,b) => b[1]-a[1]);
     const rank   = sorted.findIndex(([uid]) => parseInt(uid) === cu.id) + 1;
 
-    _st('prm-my-month',   myMonth.toLocaleString('tr-TR') + ' ₺');
-    _st('prm-my-total',   myTotal.toLocaleString('tr-TR') + ' ₺');
-    _st('prm-my-pending', myPend);
-    _st('prm-my-rank',    rank > 0 ? `#${rank}` : '#—');
+    window.st('prm-my-month',   myMonth.toLocaleString('tr-TR') + ' ₺');
+    window.st('prm-my-total',   myTotal.toLocaleString('tr-TR') + ' ₺');
+    window.st('prm-my-pending', myPend);
+    window.st('prm-my-rank',    rank > 0 ? `#${rank}` : '#—');
     banner.style.display = '';
   }
 
   // Liste
-  const cont = _g('pirim-list');
+  const cont = window.g('pirim-list');
   if (!cont) return;
 
   if (!fl.length) {
@@ -455,9 +455,9 @@ function renderPirim() {
 // BÖLÜM 3 — YAN PANEL BİLEŞENLERİ
 // ════════════════════════════════════════════════════════════════
 function renderLeaderboard() {
-  const cont = _g('pirim-leaderboard');
+  const cont = window.g('pirim-leaderboard');
   if (!cont) return;
-  const period = _g('prm-lb-period')?.value || 'month';
+  const period = window.g('prm-lb-period')?.value || 'month';
   const users  = window.loadUsers?.() || [];
   let   pirim  = (window.loadPirim?.() || []).filter(p => ['approved','paid'].includes(p.status));
   pirim = _filterByPeriod(pirim, period === 'month' ? 'thismonth' : period === 'quarter' ? 'q'+Math.ceil((new Date().getMonth()+1)/3) : period === 'year' ? 'thisyear' : '');
@@ -474,7 +474,7 @@ function renderLeaderboard() {
   const medals = ['🥇','🥈','🥉'];
   cont.innerHTML = sorted.map(([uid, amt], i) => {
     const u  = users.find(x => x.id === parseInt(uid)) || { name: '?' };
-    const cu = _cu();
+    const cu = window.CU();
     const isMe = parseInt(uid) === cu?.id;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);${isMe?'background:rgba(99,102,241,.05);border-radius:8px;padding:8px;margin:-0 -4px;':''}">
       <span style="font-size:16px;width:22px;text-align:center">${medals[i] || `${i+1}`}</span>
@@ -488,7 +488,7 @@ function renderLeaderboard() {
 }
 
 function renderUpcoming() {
-  const cont = _g('pirim-upcoming');
+  const cont = window.g('pirim-upcoming');
   if (!cont) return;
   const pirim = (window.loadPirim?.() || []).filter(p => p.status === 'approved');
   const today = new Date().toISOString().slice(0,10);
@@ -525,7 +525,7 @@ function renderUpcoming() {
 }
 
 function renderTrend() {
-  const chart = _g('pirim-trend-chart');
+  const chart = window.g('pirim-trend-chart');
   if (!chart) return;
   const pirim = window.loadPirim?.() || [];
   const now   = new Date();
@@ -565,7 +565,7 @@ function renderTrend() {
 function openPirimModal(id) {
   _injectPirimPanel();
   const users = window.loadUsers?.() || [];
-  const usel  = _g('prm-user');
+  const usel  = window.g('prm-user');
   if (usel) usel.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
 
   // Tip kartlarını sıfırla
@@ -578,32 +578,32 @@ function openPirimModal(id) {
   if (id) {
     const p = (window.loadPirim?.() || []).find(x => x.id === id);
     if (!p) return;
-    if (_g('prm-title'))       _g('prm-title').value       = p.title       || '';
-    if (_g('prm-code'))        _g('prm-code').value        = p.code        || '';
-    if (_g('prm-note'))        _g('prm-note').value        = p.note        || '';
-    if (_g('prm-oran'))        _g('prm-oran').value        = p.rate        || '';
-    if (_g('prm-base-amount')) _g('prm-base-amount').value = p.baseAmount  || '';
-    if (_g('prm-total'))       _g('prm-total').value       = p.amount      || '';
-    if (_g('prm-date'))        _g('prm-date').value        = p.date        || '';
-    if (_g('prm-user'))        _g('prm-user').value        = p.uid;
-    if (_g('prm-eid'))         _g('prm-eid').value         = id;
-    if (_g('mo-prm-t'))        _g('mo-prm-t').textContent  = '✏️ Prim Düzenle';
+    if (window.g('prm-title'))       window.g('prm-title').value       = p.title       || '';
+    if (window.g('prm-code'))        window.g('prm-code').value        = p.code        || '';
+    if (window.g('prm-note'))        window.g('prm-note').value        = p.note        || '';
+    if (window.g('prm-oran'))        window.g('prm-oran').value        = p.rate        || '';
+    if (window.g('prm-base-amount')) window.g('prm-base-amount').value = p.baseAmount  || '';
+    if (window.g('prm-total'))       window.g('prm-total').value       = p.amount      || '';
+    if (window.g('prm-date'))        window.g('prm-date').value        = p.date        || '';
+    if (window.g('prm-user'))        window.g('prm-user').value        = p.uid;
+    if (window.g('prm-eid'))         window.g('prm-eid').value         = id;
+    if (window.g('mo-prm-t'))        window.g('mo-prm-t').textContent  = '✏️ Prim Düzenle';
     if (p.type) selectPirimType(p.type);
   } else {
     ['prm-title','prm-code','prm-note','prm-oran','prm-base-amount','prm-total'].forEach(x => {
-      const el = _g(x); if (el) el.value = '';
+      const el = window.g(x); if (el) el.value = '';
     });
-    if (_g('prm-date'))  _g('prm-date').valueAsDate = new Date();
-    if (_g('prm-user'))  _g('prm-user').value = _cu()?.id;
-    if (_g('prm-eid'))   _g('prm-eid').value  = '';
-    if (_g('mo-prm-t'))  _g('mo-prm-t').textContent = '+ Prim Ekle';
-    if (_g('prm-type'))  _g('prm-type').value = '';
+    if (window.g('prm-date'))  window.g('prm-date').valueAsDate = new Date();
+    if (window.g('prm-user'))  window.g('prm-user').value = window.CU()?.id;
+    if (window.g('prm-eid'))   window.g('prm-eid').value  = '';
+    if (window.g('mo-prm-t'))  window.g('mo-prm-t').textContent = '+ Prim Ekle';
+    if (window.g('prm-type'))  window.g('prm-type').value = '';
   }
   window.openMo?.('mo-pirim');
 }
 
 function selectPirimType(type) {
-  if (_g('prm-type')) _g('prm-type').value = type;
+  if (window.g('prm-type')) window.g('prm-type').value = type;
   document.querySelectorAll('.prm-type-card').forEach(card => {
     const sel = card.dataset.type === type;
     card.style.borderColor = sel ? '#6366F1' : 'var(--b)';
@@ -614,8 +614,8 @@ function selectPirimType(type) {
   // Oran otomatik doldur
   const params  = window.loadPirimParams?.() || [];
   const param   = params.find(p => p.code === type);
-  const oranEl  = _g('prm-oran');
-  const hintEl  = _g('prm-rate-hint');
+  const oranEl  = window.g('prm-oran');
+  const hintEl  = window.g('prm-rate-hint');
   const td      = PIRIM_TYPES[type];
 
   if (oranEl) {
@@ -636,19 +636,19 @@ function selectPirimType(type) {
 }
 
 function calcPirimAuto() {
-  const rate  = parseFloat(_g('prm-oran')?.value  || '0') || 0;
-  const base  = parseFloat(_g('prm-base-amount')?.value || '0') || 0;
+  const rate  = parseFloat(window.g('prm-oran')?.value  || '0') || 0;
+  const base  = parseFloat(window.g('prm-base-amount')?.value || '0') || 0;
   const total = Math.round(base * rate * 100) / 100;
-  if (_g('prm-total')) _g('prm-total').value = total || '';
+  if (window.g('prm-total')) window.g('prm-total').value = total || '';
 }
 
 function savePirim() {
-  const type   = _g('prm-type')?.value;
-  const title  = (_g('prm-title')?.value || '').trim();
-  const amount = parseFloat(_g('prm-total')?.value || '0');
-  const date   = _g('prm-date')?.value || '';
-  const uid    = parseInt(_g('prm-user')?.value || _cu()?.id);
-  const eid    = parseInt(_g('prm-eid')?.value  || '0');
+  const type   = window.g('prm-type')?.value;
+  const title  = (window.g('prm-title')?.value || '').trim();
+  const amount = parseFloat(window.g('prm-total')?.value || '0');
+  const date   = window.g('prm-date')?.value || '';
+  const uid    = parseInt(window.g('prm-user')?.value || window.CU()?.id);
+  const eid    = parseInt(window.g('prm-eid')?.value  || '0');
 
   if (!type)   { window.toast?.('Prim türü seçin', 'err');     return; }
   if (!title)  { window.toast?.('Açıklama zorunludur', 'err'); return; }
@@ -658,12 +658,12 @@ function savePirim() {
   const d     = window.loadPirim?.() || [];
   const entry = {
     type, title, amount, date, uid,
-    code:       (_g('prm-code')?.value || '').trim(),
-    note:       (_g('prm-note')?.value || '').trim(),
-    rate:       parseFloat(_g('prm-oran')?.value || '0') || 0,
-    baseAmount: parseFloat(_g('prm-base-amount')?.value || '0') || 0,
+    code:       (window.g('prm-code')?.value || '').trim(),
+    note:       (window.g('prm-note')?.value || '').trim(),
+    rate:       parseFloat(window.g('prm-oran')?.value || '0') || 0,
+    baseAmount: parseFloat(window.g('prm-base-amount')?.value || '0') || 0,
     payDate:    _calcExpiry(date),
-    status:     _isAdm() ? 'approved' : 'pending',
+    status:     window.isAdmin() ? 'approved' : 'pending',
     updatedAt:  _now(),
   };
 
@@ -672,7 +672,7 @@ function savePirim() {
     if (item) Object.assign(item, entry);
   } else {
     entry.createdAt = _now();
-    entry.createdBy = _cu()?.id;
+    entry.createdBy = window.CU()?.id;
     d.push({ id: Date.now(), ...entry });
   }
 
@@ -687,11 +687,11 @@ function savePirim() {
 // BÖLÜM 5 — ONAY / RED / ÖDEME / SİLME
 // ════════════════════════════════════════════════════════════════
 function approvePirim(id) {
-  if (!_isAdm()) return;
+  if (!window.isAdmin()) return;
   const d = window.loadPirim?.() || [];
   const p = d.find(x => x.id === id); if (!p) return;
   p.status     = 'approved';
-  p.approvedBy = _cu()?.id;
+  p.approvedBy = window.CU()?.id;
   p.approvedAt = _now();
   window.storePirim?.(d);
   renderPirim();
@@ -700,12 +700,12 @@ function approvePirim(id) {
 }
 
 function rejectPirim(id) {
-  if (!_isAdm()) return;
+  if (!window.isAdmin()) return;
   const reason = prompt('Red nedeni (opsiyonel):') ?? '';
   const d = window.loadPirim?.() || [];
   const p = d.find(x => x.id === id); if (!p) return;
   p.status      = 'rejected';
-  p.rejectedBy  = _cu()?.id;
+  p.rejectedBy  = window.CU()?.id;
   p.rejectedAt  = _now();
   p.rejectReason = reason;
   window.storePirim?.(d);
@@ -714,12 +714,12 @@ function rejectPirim(id) {
 }
 
 function markPirimPaid(id) {
-  if (!_isAdm()) return;
+  if (!window.isAdmin()) return;
   const d = window.loadPirim?.() || [];
   const p = d.find(x => x.id === id); if (!p) return;
   p.status = 'paid';
   p.paidAt = _now();
-  p.paidBy = _cu()?.id;
+  p.paidBy = window.CU()?.id;
   window.storePirim?.(d);
   renderPirim();
   window.toast?.('💸 Ödendi olarak işaretlendi', 'ok');
@@ -727,7 +727,7 @@ function markPirimPaid(id) {
 }
 
 function delPirim(id) {
-  if (!_isAdm()) { window.toast?.('Yetki yok', 'err'); return; }
+  if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
   if (!confirm('Bu prim kaydını silmek istediğinizden emin misiniz?')) return;
   window.storePirim?.((window.loadPirim?.() || []).filter(x => x.id !== id));
   renderPirim();
@@ -748,7 +748,7 @@ function showPirimDetail(id) {
   const payD  = p.payDate || _calcExpiry(p.date);
   const over  = p.status !== 'paid' && payD < new Date().toISOString().slice(0,10);
 
-  const body = _g('pirim-detail-body');
+  const body = window.g('pirim-detail-body');
   if (!body) return;
   body.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -783,15 +783,15 @@ function _dRow(label, value) {
 // ════════════════════════════════════════════════════════════════
 function showPirimPdf() {
   _injectPirimPanel();
-  const area   = _g('pirim-pdf-area');
-  const viewer = _g('pirim-pdf-viewer');
-  const footer = _g('pirim-pdf-footer');
+  const area   = window.g('pirim-pdf-area');
+  const viewer = window.g('pirim-pdf-viewer');
+  const footer = window.g('pirim-pdf-footer');
   if (!area || !viewer || !footer) return;
 
   const stored = _loadPdf();
 
   // Footer: admin için yükleme butonu
-  footer.innerHTML = _isAdm() ? `
+  footer.innerHTML = window.isAdmin() ? `
     <div style="display:flex;align-items:center;gap:8px;flex:1">
       <label class="btn btns" style="cursor:pointer">
         📎 PDF Yükle
@@ -808,7 +808,7 @@ function showPirimPdf() {
       <div style="text-align:center;padding:40px;color:var(--t2)">
         <div style="font-size:40px;margin-bottom:12px">📄</div>
         <div style="font-weight:600;margin-bottom:6px">Yönetmelik henüz yüklenmedi</div>
-        <div style="font-size:13px">${_isAdm() ? 'Aşağıdaki "PDF Yükle" butonunu kullanın.' : 'Yöneticinizden yönetmeliği yüklemesini isteyin.'}</div>
+        <div style="font-size:13px">${window.isAdmin() ? 'Aşağıdaki "PDF Yükle" butonunu kullanın.' : 'Yöneticinizden yönetmeliği yüklemesini isteyin.'}</div>
       </div>`;
   } else {
     viewer.innerHTML = `
@@ -856,14 +856,14 @@ let _PARAMS_TEMP = [];
 
 function openPirimParams() {
   _injectPirimPanel();
-  if (!_isAdm()) { window.toast?.('Sadece yönetici erişebilir', 'err'); return; }
+  if (!window.isAdmin()) { window.toast?.('Sadece yönetici erişebilir', 'err'); return; }
   _PARAMS_TEMP = JSON.parse(JSON.stringify(window.loadPirimParams?.() || []));
   _renderParamsList();
   window.openMo?.('mo-pirim-params');
 }
 
 function _renderParamsList() {
-  const cont = _g('pirim-params-list');
+  const cont = window.g('pirim-params-list');
   if (!cont) return;
   cont.innerHTML = _PARAMS_TEMP.map((p, i) => `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
@@ -884,7 +884,7 @@ function addPirimParam() {
 }
 
 function savePirimParams() {
-  if (!_isAdm()) return;
+  if (!window.isAdmin()) return;
   const valid = _PARAMS_TEMP.filter(p => (p.label||p.name||'').trim());
   window.storePirimParams?.(valid);
   window.closeMo?.('mo-pirim-params');
@@ -1022,9 +1022,9 @@ function _filterByPeriod(arr, period) {
 
 function clearPirimFilters() {
   ['prm-period-f','prm-status-f','prm-type-f','prm-user-f'].forEach(id => {
-    const el = _g(id); if (el) el.value = el.id === 'prm-user-f' ? '0' : '';
+    const el = window.g(id); if (el) el.value = el.id === 'prm-user-f' ? '0' : '';
   });
-  const s = _g('prm-search'); if (s) s.value = '';
+  const s = window.g('prm-search'); if (s) s.value = '';
   renderPirim();
 }
 
