@@ -67,14 +67,13 @@
       </div>
     </div>
 
-    <!-- Dil seçici -->
+  <!-- Dil seçici -->
     <div class="llang" role="group" aria-label="Dil seçimi">
-      <button class="lpill on" data-lang-btn="tr" onclick="App.setLang('tr',this)">TR</button>
-      <button class="lpill"    data-lang-btn="en" onclick="App.setLang('en',this)">EN</button>
-      <button class="lpill"    data-lang-btn="fr" onclick="App.setLang('fr',this)">FR</button>
+      <button class="lpill on" data-lang-btn="tr" onclick="window.App&&window.App.setLang?window.App.setLang('tr',this):null">TR</button>
+      <button class="lpill"    data-lang-btn="en" onclick="window.App&&window.App.setLang?window.App.setLang('en',this):null">EN</button>
+      <button class="lpill"    data-lang-btn="fr" onclick="window.App&&window.App.setLang?window.App.setLang('fr',this):null">FR</button>
     </div>
 
-    <!-- Hata mesajı -->
     <div class="lerr" id="l-err" role="alert" aria-live="polite"></div>
 
     <div class="ltitle" id="l-title" data-i18n="login.title">Giriş Yap</div>
@@ -86,21 +85,42 @@
              placeholder="ad@sirket.com"
              onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()">
     </div>
+
     <div class="lfield">
       <div class="lfl" data-i18n="login.password">ŞİFRE</div>
       <input class="linp" type="password" id="lpwd" autocomplete="current-password"
              placeholder="••••••••"
-             onkeydown="if(event.key==='Enter')App.login()">
+             onkeydown="if(event.key==='Enter')_doLogin()">
     </div>
 
-    <button class="lbtn" id="lbtn" onclick="App.login()" data-i18n="login.btn">Giriş Yap</button>
+    <button class="lbtn" id="lbtn" onclick="_doLogin()" data-i18n="login.btn">Giriş Yap</button>
 
     <div class="lfoot">
-      <button class="ltheme-btn" onclick="App.toggleTheme()">Tema</button>
-      <button class="lreset-btn" onclick="App.resetDemoData()">Veri Sıfırla</button>
+      <button class="ltheme-btn" onclick="window.App&&window.App.toggleTheme?window.App.toggleTheme():document.documentElement.setAttribute('data-theme',document.documentElement.getAttribute('data-theme')==='dark'?'':'dark')">Tema</button>
+      <button class="lreset-btn" onclick="if(confirm('Tüm veriyi sıfırla?')){localStorage.clear();location.reload();}">Veri Sıfırla</button>
     </div>
   </div>
 </div>
+
+<script>
+function _doLogin() {
+  var email = document.getElementById('lemail').value.trim();
+  var pwd   = document.getElementById('lpwd').value;
+  var errEl = document.getElementById('l-err');
+  var btn   = document.getElementById('lbtn');
+  if (!email || !pwd) { if(errEl){errEl.textContent='E-posta ve şifre zorunludur.';errEl.style.display='block';} return; }
+  if (btn) { btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true; }
+  window.Auth.login(email, pwd).then(function(r) {
+    if (btn) { btn.textContent = 'Giriş Yap'; btn.disabled = false; }
+    if (r.ok) {
+      if (window.App && window.App.init) { window.App.init(); }
+      else { location.reload(); }
+    } else {
+      if (errEl) { errEl.textContent = r.error || 'E-posta veya şifre hatalı.'; errEl.style.display = 'block'; }
+    }
+  });
+}
+</script>
 
 <!-- ════════════════════════════════════════════════════════════
      ANA UYGULAMA
