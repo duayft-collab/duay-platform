@@ -471,7 +471,6 @@ function openPusDetail(taskId) {
   const task = loadTasks().find(t => t.id === taskId);
   if (!task) return;
   const users   = loadUsers();
-  const owner   = users.find(u => u.id === task.uid) || { name: '?' };
   const todayS  = new Date().toISOString().slice(0, 10);
   PUS_DETAIL_ID = taskId;
 
@@ -479,7 +478,7 @@ function openPusDetail(taskId) {
   if (!panel) return;
 
   const priNames  = { 1: '🔴 Kritik', 2: '🟠 Önemli', 3: '🔵 Normal', 4: '⚪ Düşük' };
-  const priColors = { 1: '#ef4444',   2: '#f97316',   3: '#3b82f6',   4: '#9ca3af' };
+  const priColors = { 1: '#ef4444', 2: '#f97316', 3: '#3b82f6', 4: '#9ca3af' };
   const stKey     = task.done ? 'done' : (task.status || 'todo');
   const statusCfg = {
     todo:       { l: '📋 Yapılacak', bg: 'var(--s2)',  c: 'var(--t2)'  },
@@ -488,14 +487,13 @@ function openPusDetail(taskId) {
     done:       { l: '✅ Tamam',     bg: 'var(--grb)', c: 'var(--grt)' },
   };
 
-  // Başlık ve meta
   const titleEl = g('pdp-title');
   if (titleEl) titleEl.textContent = task.title;
 
   const metaEl = g('pdp-meta');
   if (metaEl) {
-    const sc = statusCfg[stKey] || statusCfg.todo;
-    const dl = task.due ? Math.ceil((new Date(task.due) - new Date(todayS)) / 86400000) : null;
+    const sc  = statusCfg[stKey] || statusCfg.todo;
+    const dl  = task.due ? Math.ceil((new Date(task.due) - new Date(todayS)) / 86400000) : null;
     const dueStr = task.due
       ? (dl < 0
           ? `<span style="color:var(--rd);font-size:11px">⚠ ${Math.abs(dl)}g gecikmiş</span>`
@@ -507,113 +505,499 @@ function openPusDetail(taskId) {
       ${dueStr}`;
   }
 
-  // Gövde
-  const idx  = users.indexOf(owner);
-  const avc  = AVC[Math.max(idx, 0) % AVC.length];
   const body = g('pus-detail-body');
-  if (body) {
-    body.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:20px">
-        <!-- Durum hızlı değiştir -->
-        <div>
-          <div class="pdp-section-label">DURUM</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            ${['todo','inprogress','review','done'].map(s => {
-              const sc      = statusCfg[s];
-              const isActive = s === stKey;
-              return `<button onclick="Pusula.quickUpdate(${taskId},'status','${s}');Pusula.openDetail(${taskId})"
-                style="padding:6px 12px;border-radius:7px;border:1px solid ${isActive ? sc.c : 'var(--b)'};background:${isActive ? sc.bg : 'var(--sf)'};color:${isActive ? sc.c : 'var(--t2)'};font-size:12px;cursor:pointer;font-family:inherit;font-weight:${isActive ? '600' : '400'};transition:all .12s">${sc.l}</button>`;
-            }).join('')}
-          </div>
-        </div>
+  if (!body) { panel.classList.add('open'); panel.style.display = 'flex'; return; }
 
-        <!-- Meta kartlar -->
-        <div class="pdp-meta-grid">
-          <div class="pdp-meta-card">
-            <div class="pdp-meta-card-label">SORUMLU</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-              <div style="width:28px;height:28px;border-radius:50%;background:${avc[0]};color:${avc[1]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${_pusInitials(owner.name)}</div>
-              <span style="font-size:13px;font-weight:500">${owner.name}</span>
-            </div>
-          </div>
-          <div class="pdp-meta-card">
-            <div class="pdp-meta-card-label">SON TARİH</div>
-            <div style="margin-top:4px">${task.due
-              ? getDueChip(task.due, task.done, todayS) + ` <span style="font-size:11px;color:var(--t2);margin-left:4px">${task.due}</span>`
-              : '<span style="color:var(--t3);font-size:13px">Belirtilmemiş</span>'
-            }</div>
-          </div>
-          ${task.start ? `<div class="pdp-meta-card"><div class="pdp-meta-card-label">BAŞLANGIÇ</div><div style="font-size:13px;color:var(--t2);margin-top:4px">${task.start}</div></div>` : ''}
-          <div class="pdp-meta-card">
-            <div class="pdp-meta-card-label">ÖNCELİK</div>
-            <div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap">
-              ${[1,2,3,4].map(p => `<button onclick="Pusula.quickUpdate(${taskId},'pri',${p});Pusula.openDetail(${taskId})"
-                style="padding:2px 8px;border-radius:5px;border:1px solid ${p === task.pri ? priColors[p] : 'var(--b)'};background:${p === task.pri ? priColors[p] + '22' : 'var(--sf)'};color:${p === task.pri ? priColors[p] : 'var(--t2)'};font-size:10px;cursor:pointer;font-family:inherit">${priNames[p]}</button>`).join('')}
-            </div>
-          </div>
-        </div>
+  const chatCount = (loadTaskChats()[taskId] || []).length;
+  const files     = task.files || (task.file ? [task.file] : []);
+  const managers  = task.managers || [task.uid];
 
-        ${task.desc ? `<div class="pdp-section">
-          <div class="pdp-section-label">AÇIKLAMA</div>
-          <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--t2);background:var(--s2);border-radius:8px;padding:12px 14px">${task.desc}</div>
-        </div>` : ''}
+  body.innerHTML = `
+    <div style="display:flex;background:var(--s2);border-bottom:1px solid var(--b);flex-shrink:0;position:sticky;top:0;z-index:2">
+      <button class="pdp-tab-btn" id="pdp-tab-info"  onclick="_pdpTab('info',${taskId})"  style="flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--ac);border-bottom:2px solid var(--ac);font-family:inherit;transition:all .15s">👤 Atananlar</button>
+      <button class="pdp-tab-btn" id="pdp-tab-chat"  onclick="_pdpTab('chat',${taskId})"  style="flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;font-family:inherit;transition:all .15s">💬 Mesajlar${chatCount ? ` <span style="background:var(--rd);color:#fff;border-radius:99px;padding:0 5px;font-size:9px;vertical-align:middle">${chatCount}</span>` : ''}</button>
+      <button class="pdp-tab-btn" id="pdp-tab-files" onclick="_pdpTab('files',${taskId})" style="flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;font-family:inherit;transition:all .15s">📎 Dosyalar${files.length ? ` <span style="background:var(--ac);color:#fff;border-radius:99px;padding:0 5px;font-size:9px;vertical-align:middle">${files.length}</span>` : ''}</button>
+      <button class="pdp-tab-btn" id="pdp-tab-perms" onclick="_pdpTab('perms',${taskId})" style="flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;font-family:inherit;transition:all .15s">🔒 İzinler</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+      <div id="pdp-pane-info"  style="padding:16px"></div>
+      <div id="pdp-pane-chat"  style="display:none;flex-direction:column;height:100%"></div>
+      <div id="pdp-pane-files" style="display:none;padding:16px"></div>
+      <div id="pdp-pane-perms" style="display:none;padding:16px"></div>
+    </div>`;
 
-        ${(task.tags || []).length ? `<div class="pdp-section">
-          <div class="pdp-section-label">ETİKETLER</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-            ${(task.tags || []).map(tg => `<span style="background:var(--al);color:var(--at);padding:3px 10px;border-radius:6px;font-size:12px">${tg}</span>`).join('')}
-          </div>
-        </div>` : ''}
-
-        ${(task.link || task.file) ? `<div class="pdp-section">
-          <div class="pdp-section-label">EKLER</div>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-            ${task.link ? `<a href="${task.link}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--blb);color:var(--blt);border-radius:8px;text-decoration:none;font-size:12px">🔗 <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${task.link}</span></a>` : ''}
-            ${task.file ? `<a href="${task.file.data}" download="${task.file.name}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--s2);color:var(--t);border-radius:8px;text-decoration:none;font-size:12px">📎 ${task.file.name}</a>` : ''}
-          </div>
-        </div>` : ''}
-
-        <!-- Alt Görevler -->
-        <div class="pdp-section">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div class="pdp-section-label" style="margin-bottom:0">ALT GÖREVLER <span style="color:var(--t3);font-weight:400">(${(task.subTasks || []).length})</span></div>
-            <button onclick="addSubTask(${taskId})" class="tk-action-btn" style="font-size:11px;padding:4px 10px;border-style:dashed">+ Alt Görev</button>
-          </div>
-          <div id="pdp-subtasks"></div>
-        </div>
-
-        ${(task.participants || []).length || (task.viewers || []).length ? `
-        <div class="pdp-section" style="background:var(--s2);border-radius:12px;padding:12px 14px">
-          ${(task.participants || []).length ? `
-          <div style="margin-bottom:${(task.viewers || []).length ? '12px' : '0'}">
-            <div style="font-size:10px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px">✅ Katılımcılar — göreve müdahil</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">
-              ${(task.participants || []).map(uid => { const u = users.find(x => x.id === uid) || { name: '?' }; const i2 = users.indexOf(u); const av2 = AVC[Math.max(i2, 0) % AVC.length]; return `<div style="display:flex;align-items:center;gap:5px;background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:4px 9px"><div style="width:22px;height:22px;border-radius:50%;background:${av2[0]};color:${av2[1]};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0">${_pusInitials(u.name)}</div><span style="font-size:12px;font-weight:500">${u.name}</span></div>`; }).join('')}
-            </div>
-          </div>` : ''}
-          ${(task.viewers || []).length ? `
-          <div>
-            <div style="font-size:10px;font-weight:700;color:#8B5CF6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px">👁 İzleyiciler — sadece görüntüler</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">
-              ${(task.viewers || []).map(uid => { const u = users.find(x => x.id === uid) || { name: '?' }; const i2 = users.indexOf(u); const av2 = AVC[Math.max(i2, 0) % AVC.length]; return `<div style="display:flex;align-items:center;gap:5px;background:var(--sf);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:4px 9px;opacity:.8"><div style="width:22px;height:22px;border-radius:50%;background:${av2[0]};color:${av2[1]};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0">${_pusInitials(u.name)}</div><span style="font-size:12px;font-weight:500">${u.name}</span><span style="font-size:9px;color:#8B5CF6;font-weight:700">👁</span></div>`; }).join('')}
-            </div>
-          </div>` : ''}
-        </div>` : ''}
-
-        <!-- Yazışma butonu -->
-        <button onclick="Pusula.openChat(${taskId})" class="btn btns" style="width:100%;justify-content:center;border-radius:8px;padding:10px">
-          💬 Yazışmalar
-          ${(loadTaskChats()[taskId] || []).length ? `<span style="background:var(--rd);color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;margin-left:4px">${(loadTaskChats()[taskId] || []).length}</span>` : ''}
-        </button>
-      </div>`;
-  }
-
-  // Alt görevler
-  const stEl = g('pdp-subtasks');
-  if (stEl) renderSubTasks(taskId, task.subTasks || [], stEl);
-
+  _pdpRenderInfo(taskId);
   panel.classList.add('open');
   panel.style.display = 'flex';
+}
+
+// ── Sekme geçişi ─────────────────────────────────────────────────
+function _pdpTab(tab, taskId) {
+  document.querySelectorAll('.pdp-tab-btn').forEach(b => {
+    b.style.color       = 'var(--t2)';
+    b.style.fontWeight  = '500';
+    b.style.borderBottom = '2px solid transparent';
+  });
+  const active = g('pdp-tab-' + tab);
+  if (active) {
+    active.style.color       = 'var(--ac)';
+    active.style.fontWeight  = '600';
+    active.style.borderBottom = '2px solid var(--ac)';
+  }
+  ['info','chat','files','perms'].forEach(p => {
+    const el = g('pdp-pane-' + p);
+    if (!el) return;
+    if (p === tab) {
+      el.style.display = (p === 'chat') ? 'flex' : 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+  if (tab === 'info')  _pdpRenderInfo(taskId);
+  if (tab === 'chat')  _pdpRenderChat(taskId);
+  if (tab === 'files') _pdpRenderFiles(taskId);
+  if (tab === 'perms') _pdpRenderPerms(taskId);
+}
+
+// ── SEKME 1: Atananlar ────────────────────────────────────────────
+function _pdpRenderInfo(taskId) {
+  const pane = g('pdp-pane-info');
+  if (!pane) return;
+  const task  = loadTasks().find(t => t.id === taskId);
+  if (!task) return;
+  const users = loadUsers();
+  const todayS = new Date().toISOString().slice(0, 10);
+  const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
+  const priNames  = { 1:'🔴 Kritik', 2:'🟠 Önemli', 3:'🔵 Normal', 4:'⚪ Düşük' };
+  const statusCfg = {
+    todo:       { l:'📋 Yapılacak', bg:'var(--s2)',  c:'var(--t2)'  },
+    inprogress: { l:'🔄 Devam',     bg:'var(--blb)', c:'var(--blt)' },
+    review:     { l:'👀 İnceleme',  bg:'var(--amb)', c:'var(--amt)' },
+    done:       { l:'✅ Tamam',     bg:'var(--grb)', c:'var(--grt)' },
+  };
+  const stKey  = task.done ? 'done' : (task.status || 'todo');
+  const managers = task.managers || [task.uid];
+
+  const _av = uid => {
+    const u = users.find(x => x.id === uid) || { name: '?' };
+    const c = AVC[Math.max(users.indexOf(u), 0) % AVC.length];
+    return `<div style="width:26px;height:26px;border-radius:50%;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${_pusInitials(u.name)}</div>`;
+  };
+
+  const _chip = (uid, badge, borderColor) => {
+    const u = users.find(x => x.id === uid) || { name: '?' };
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--sf);border:1px solid ${borderColor || 'var(--b)'}">
+      ${_av(uid)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;color:var(--t)">${u.name}</div>
+        <div style="font-size:10px;color:var(--t3)">${u.role || '—'}</div>
+      </div>
+      ${badge ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;background:${borderColor||'var(--b)'}22;color:${borderColor||'var(--t3)'}">${badge}</span>` : ''}
+    </div>`;
+  };
+
+  pane.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Durum hızlı güncelle -->
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px">DURUM</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${['todo','inprogress','review','done'].map(s => {
+            const sc = statusCfg[s]; const isA = s === stKey;
+            return `<button onclick="Pusula.quickUpdate(${taskId},'status','${s}');_pdpRenderInfo(${taskId})"
+              style="padding:5px 11px;border-radius:7px;border:1px solid ${isA?sc.c:'var(--b)'};background:${isA?sc.bg:'var(--sf)'};color:${isA?sc.c:'var(--t2)'};font-size:12px;cursor:pointer;font-family:inherit;font-weight:${isA?'600':'400'}">${sc.l}</button>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Meta -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--s2);border-radius:10px;padding:10px 12px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">SON TARİH</div>
+          <div style="font-size:13px;font-weight:500">${task.due ? getDueChip(task.due,task.done,todayS)+' '+task.due : '<span style="color:var(--t3);font-size:12px">Belirtilmemiş</span>'}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:10px 12px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">ÖNCELİK</div>
+          <div style="font-size:13px;font-weight:600;color:${priColors[task.pri]||'var(--t2)'}">${priNames[task.pri]||'—'}</div>
+        </div>
+      </div>
+
+      ${task.desc ? `<div>
+        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">AÇIKLAMA</div>
+        <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--t2);background:var(--s2);border-radius:8px;padding:10px 12px">${task.desc}</div>
+      </div>` : ''}
+
+      ${(task.tags||[]).length ? `<div>
+        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">ETİKETLER</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${(task.tags||[]).map(tg=>`<span style="background:var(--al);color:var(--at);padding:3px 10px;border-radius:6px;font-size:11px">${tg}</span>`).join('')}</div>
+      </div>` : ''}
+
+      <!-- Yöneticiler -->
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#007AFF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">👑 YÖNETİCİLER</div>
+        <div style="display:flex;flex-direction:column;gap:5px">${managers.map(uid=>_chip(uid,'Yönetici','#007AFF')).join('') || '<div style="font-size:12px;color:var(--t3);padding:4px">—</div>'}</div>
+      </div>
+
+      <!-- Katılımcılar -->
+      ${(task.participants||[]).length ? `<div>
+        <div style="font-size:10px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✅ KATILIMCILAR</div>
+        <div style="display:flex;flex-direction:column;gap:5px">${(task.participants||[]).map(uid=>_chip(uid,'Katılımcı','var(--ac)')).join('')}</div>
+      </div>` : ''}
+
+      <!-- İzleyiciler -->
+      ${(task.viewers||[]).length ? `<div>
+        <div style="font-size:10px;font-weight:700;color:#8B5CF6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">👁 İZLEYİCİLER</div>
+        <div style="display:flex;flex-direction:column;gap:5px">${(task.viewers||[]).map(uid=>_chip(uid,'İzleyici','#8B5CF6')).join('')}</div>
+      </div>` : ''}
+
+      <!-- Alt görevler -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">ALT GÖREVLER (${(task.subTasks||[]).length})</div>
+          <button onclick="addSubTask(${taskId})" class="tk-action-btn" style="font-size:11px;padding:3px 9px;border-style:dashed">+ Ekle</button>
+        </div>
+        <div id="pdp-subtasks"></div>
+      </div>
+
+    </div>`;
+
+  const stEl = g('pdp-subtasks');
+  if (stEl) renderSubTasks(taskId, task.subTasks || [], stEl);
+}
+
+// ── SEKME 2: Mesajlar ─────────────────────────────────────────────
+function _pdpRenderChat(taskId) {
+  const pane = g('pdp-pane-chat');
+  if (!pane) return;
+  pane.style.flexDirection = 'column';
+  pane.style.height = '100%';
+
+  if (!pane.querySelector('#pdp-chat-msgs')) {
+    pane.innerHTML = `
+      <div id="pdp-chat-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:0"></div>
+      <div style="padding:10px 14px;border-top:1px solid var(--b);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--sf)">
+        <textarea id="pdp-chat-input" class="fi" rows="2" style="resize:none;flex:1;font-size:13px;min-height:42px" placeholder="Mesaj yaz..."></textarea>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <input type="file" id="pdp-chat-file" style="display:none" onchange="_pdpSendChat(${taskId})">
+          <button class="btn btns" onclick="document.getElementById('pdp-chat-file').click()" style="font-size:12px;padding:6px 10px" title="Dosya ekle">📎</button>
+          <button class="btn btnp" onclick="_pdpSendChat(${taskId})" style="font-size:14px;padding:6px 12px" title="Gönder">➤</button>
+        </div>
+      </div>`;
+
+    const inp = g('pdp-chat-input');
+    if (inp) inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _pdpSendChat(taskId); }
+    });
+  }
+  _pdpRefreshChat(taskId);
+}
+
+function _pdpRefreshChat(taskId) {
+  const msgs  = loadTaskChats()[taskId] || [];
+  const users = loadUsers();
+  const cont  = g('pdp-chat-msgs');
+  if (!cont) return;
+  const todayS  = new Date().toISOString().slice(0, 10);
+  let lastDate  = '';
+  const frag    = document.createDocumentFragment();
+
+  if (!msgs.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:var(--t2);font-size:13px;padding:32px 16px;margin:auto';
+    empty.innerHTML = '<div style="font-size:32px;margin-bottom:8px">💬</div><div>Henüz mesaj yok.</div>';
+    frag.appendChild(empty);
+  } else {
+    msgs.forEach(m => {
+      const cu   = CU();
+      const isMe = m.uid === cu?.id;
+      const u    = users.find(x => x.id === m.uid) || { name: m.name || '?' };
+      const msgDate = (m.ts || '').slice(0, 10);
+      if (msgDate && msgDate !== lastDate) {
+        lastDate = msgDate;
+        const sep = document.createElement('div');
+        sep.style.cssText = 'text-align:center;font-size:10px;color:var(--t3);margin:4px 0;display:flex;align-items:center;gap:6px';
+        sep.innerHTML = `<div style="flex:1;height:1px;background:var(--b)"></div>${msgDate === todayS ? 'Bugün' : msgDate}<div style="flex:1;height:1px;background:var(--b)"></div>`;
+        frag.appendChild(sep);
+      }
+      const idx = users.indexOf(u);
+      const c   = AVC[Math.max(idx, 0) % AVC.length];
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;flex-direction:${isMe ? 'row-reverse' : 'row'};align-items:flex-end;gap:6px`;
+      row.innerHTML = `
+        <div style="width:24px;height:24px;border-radius:50%;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${_pusInitials(u.name)}</div>
+        <div style="max-width:74%">
+          ${!isMe ? `<div style="font-size:10px;color:var(--t3);margin-bottom:2px">${u.name}</div>` : ''}
+          <div style="background:${isMe ? 'var(--ac)' : 'var(--sf)'};color:${isMe ? '#fff' : 'var(--t)'};border:${isMe ? 'none' : '1px solid var(--b)'};border-radius:${isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px'};padding:7px 11px;font-size:13px;line-height:1.5;word-break:break-word">
+            ${m.text ? `<div>${m.text}</div>` : ''}
+            ${m.file ? `<div style="margin-top:4px"><a href="${m.file.data}" download="${m.file.name}" style="font-size:11px;color:${isMe ? 'rgba(255,255,255,.85)' : 'var(--ac)'};display:inline-flex;align-items:center;gap:4px">📎 ${m.file.name}</a></div>` : ''}
+          </div>
+          <div style="font-size:9px;color:var(--t3);margin-top:2px;${isMe ? 'text-align:right' : ''}">${(m.ts || '').slice(11, 16)}</div>
+        </div>`;
+      frag.appendChild(row);
+    });
+  }
+  cont.replaceChildren(frag);
+  cont.scrollTop = cont.scrollHeight;
+}
+
+function _pdpSendChat(taskId) {
+  const text   = (g('pdp-chat-input')?.value || '').trim();
+  const fileEl = g('pdp-chat-file');
+  if (!text && !fileEl?.files?.length) { window.toast?.('Mesaj yazın veya dosya seçin', 'err'); return; }
+
+  const doSend = fd => {
+    const chats = loadTaskChats();
+    if (!chats[taskId]) chats[taskId] = [];
+    const msg = { id: Date.now(), uid: CU()?.id, name: CU()?.name, text, ts: nowTs() };
+    if (fd) msg.file = fd;
+    chats[taskId].push(msg);
+    storeTaskChats(chats);
+    if (g('pdp-chat-input'))  g('pdp-chat-input').value = '';
+    if (fileEl)               fileEl.value = '';
+    _pdpRefreshChat(taskId);
+    // Tab badge güncelle
+    const chatBtn = g('pdp-tab-chat');
+    if (chatBtn) {
+      const cnt = chats[taskId].length;
+      chatBtn.innerHTML = `💬 Mesajlar <span style="background:var(--rd);color:#fff;border-radius:99px;padding:0 5px;font-size:9px;vertical-align:middle">${cnt}</span>`;
+    }
+    const task = loadTasks().find(t => t.id === taskId);
+    if (task && task.uid !== CU()?.id) window.addNotif?.('💬', `"${task.title}" görevinde yeni mesaj`, 'info', 'pusula');
+  };
+
+  if (fileEl?.files?.[0]) {
+    const r = new FileReader();
+    r.onload = ev => doSend({ name: fileEl.files[0].name, data: ev.target.result });
+    r.readAsDataURL(fileEl.files[0]);
+  } else { doSend(null); }
+}
+
+// ── SEKME 3: Dosyalar ─────────────────────────────────────────────
+function _pdpRenderFiles(taskId) {
+  const pane = g('pdp-pane-files');
+  if (!pane) return;
+  const task    = loadTasks().find(t => t.id === taskId);
+  if (!task) return;
+  const files   = task.files || (task.file ? [task.file] : []);
+  const managers= task.managers || [task.uid];
+  const canEdit = isAdmin() || managers.includes(CU()?.id) || task.uid === CU()?.id
+                || (task.participants||[]).includes(CU()?.id);
+
+  const extIcon = name => {
+    const ext = (name || '').split('.').pop().toLowerCase();
+    if (ext === 'pdf')                           return '📄';
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼';
+    if (['xlsx','xls','csv'].includes(ext))      return '📊';
+    if (['docx','doc'].includes(ext))            return '📝';
+    if (['zip','rar'].includes(ext))             return '🗜';
+    return '📎';
+  };
+
+  const fmtSize = b => b > 1024*1024 ? (b/1024/1024).toFixed(1)+' MB' : b > 1024 ? Math.round(b/1024)+' KB' : (b||'—');
+
+  pane.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+      ${files.length
+        ? files.map((f, i) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s2);border-radius:10px;border:1px solid var(--b)">
+            <span style="font-size:22px;flex-shrink:0">${extIcon(f.name)}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t)">${f.name}</div>
+              <div style="font-size:11px;color:var(--t3)">${f.size ? fmtSize(f.size) : ''}</div>
+            </div>
+            <a href="${f.data}" download="${f.name}" class="btn btns" style="font-size:11px;padding:5px 10px;flex-shrink:0;text-decoration:none">⬇ İndir</a>
+            ${canEdit ? `<button onclick="_pdpDelFile(${taskId},${i})" class="btn btns" style="font-size:12px;padding:5px 8px;color:var(--rd);flex-shrink:0" title="Sil">✕</button>` : ''}
+          </div>`)
+          .join('')
+        : `<div style="text-align:center;padding:28px 16px;color:var(--t3);font-size:13px">
+            <div style="font-size:32px;margin-bottom:8px">📂</div>
+            Henüz dosya eklenmemiş.
+           </div>`}
+    </div>
+    ${canEdit ? `
+    <div id="pdp-upload-zone"
+      style="border:1.5px dashed var(--b);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .2s"
+      onclick="document.getElementById('pdp-upload-input').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--ac)';this.style.background='var(--al)'"
+      ondragleave="this.style.borderColor='var(--b)';this.style.background=''"
+      ondrop="_pdpHandleDrop(event,${taskId})"
+      onmouseover="this.style.borderColor='var(--ac)'"
+      onmouseout="this.style.borderColor='var(--b)'">
+      <div style="font-size:28px;margin-bottom:6px">📤</div>
+      <div style="font-size:13px;font-weight:500;color:var(--t2)">Dosya yükle veya sürükle bırak</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:3px">PDF, resim, Word, Excel — birden fazla seçilebilir</div>
+      <input type="file" id="pdp-upload-input" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv,.zip" style="display:none"
+        onchange="_pdpUploadFiles(${taskId},this)">
+    </div>` : ''}`;
+}
+
+function _pdpHandleDrop(e, taskId) {
+  e.preventDefault();
+  const zone = g('pdp-upload-zone');
+  if (zone) { zone.style.borderColor='var(--b)'; zone.style.background=''; }
+  const input = g('pdp-upload-input');
+  if (!input) return;
+  const dt = new DataTransfer();
+  Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+  input.files = dt.files;
+  _pdpUploadFiles(taskId, input);
+}
+
+function _pdpUploadFiles(taskId, input) {
+  const selected = Array.from(input.files || []);
+  if (!selected.length) return;
+  const d    = loadTasks();
+  const task = d.find(t => t.id === taskId);
+  if (!task) return;
+  if (!task.files) task.files = task.file ? [task.file] : [];
+
+  let done2 = 0;
+  selected.forEach(file => {
+    if (file.size > 10 * 1024 * 1024) {
+      window.toast?.(`${file.name} çok büyük (maks 10 MB)`, 'err');
+      done2++;
+      if (done2 === selected.length) { saveTasks(d); _pdpRenderFiles(taskId); _pdpUpdateFileBadge(taskId); }
+      return;
+    }
+    const r = new FileReader();
+    r.onload = ev => {
+      task.files.push({ name: file.name, data: ev.target.result, size: file.size, type: file.type, ts: nowTs() });
+      task.file = task.files[0];
+      done2++;
+      if (done2 === selected.length) {
+        saveTasks(d);
+        _pdpRenderFiles(taskId);
+        _pdpUpdateFileBadge(taskId);
+        window.toast?.(`${done2} dosya yüklendi ✓`, 'ok');
+        logActivity('task', `"${task.title}" görevine ${done2} dosya eklendi`);
+      }
+    };
+    r.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function _pdpUpdateFileBadge(taskId) {
+  const task = loadTasks().find(t => t.id === taskId);
+  const btn  = g('pdp-tab-files');
+  if (btn && task) {
+    const cnt = (task.files||[]).length;
+    btn.innerHTML = cnt
+      ? `📎 Dosyalar <span style="background:var(--ac);color:#fff;border-radius:99px;padding:0 5px;font-size:9px;vertical-align:middle">${cnt}</span>`
+      : '📎 Dosyalar';
+  }
+}
+
+function _pdpDelFile(taskId, idx) {
+  const d    = loadTasks();
+  const task = d.find(t => t.id === taskId);
+  if (!task) return;
+  if (!task.files) task.files = task.file ? [task.file] : [];
+  task.files.splice(idx, 1);
+  task.file = task.files[0] || null;
+  saveTasks(d);
+  _pdpRenderFiles(taskId);
+  _pdpUpdateFileBadge(taskId);
+  window.toast?.('Dosya silindi', 'ok');
+}
+
+// ── SEKME 4: İzinler ─────────────────────────────────────────────
+function _pdpRenderPerms(taskId) {
+  const pane = g('pdp-pane-perms');
+  if (!pane) return;
+  const task     = loadTasks().find(t => t.id === taskId);
+  if (!task) return;
+  const users    = loadUsers();
+  const managers = task.managers || [task.uid];
+  const canEdit  = isAdmin() || managers.includes(CU()?.id);
+
+  const _av = uid => {
+    const u = users.find(x => x.id === uid) || { name: '?' };
+    const c = AVC[Math.max(users.indexOf(u), 0) % AVC.length];
+    return `<div style="width:26px;height:26px;border-radius:50%;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${_pusInitials(u.name)}</div>`;
+  };
+
+  const getRole = uid => {
+    if (managers.includes(uid))                 return 'Yönetici';
+    if ((task.participants||[]).includes(uid))  return 'Düzenleyebilir';
+    return 'Görüntüleyebilir';
+  };
+
+  const allPeople = [...new Set([...managers, ...(task.participants||[]), ...(task.viewers||[])])];
+
+  const roleColor = r => r === 'Yönetici' ? '#007AFF' : r === 'Düzenleyebilir' ? 'var(--ac)' : '#8B5CF6';
+
+  pane.innerHTML = `
+    <div style="font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.5">Bu görevde kimin hangi yetkiye sahip olduğunu buradan yönetin.</div>
+
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">
+      ${allPeople.map(uid => {
+        const u    = users.find(x => x.id === uid) || { name: '?' };
+        const role = getRole(uid);
+        const isOwner = uid === task.uid;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s2);border-radius:10px">
+          ${_av(uid)}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:500;color:var(--t);display:flex;align-items:center;gap:5px">
+              ${u.name}
+              ${isOwner ? '<span style="font-size:9px;background:rgba(0,122,255,.12);color:#007AFF;padding:1px 6px;border-radius:4px;font-weight:700">Sorumlu</span>' : ''}
+            </div>
+            <div style="font-size:10px;color:var(--t3)">${u.role || '—'}</div>
+          </div>
+          ${canEdit && !isOwner
+            ? `<select class="fi" style="width:150px;padding:5px 8px;font-size:12px" onchange="_pdpUpdatePerm(${taskId},${uid},this.value)">
+                <option ${role==='Yönetici'?'selected':''}>Yönetici</option>
+                <option ${role==='Düzenleyebilir'?'selected':''}>Düzenleyebilir</option>
+                <option ${role==='Görüntüleyebilir'?'selected':''}>Görüntüleyebilir</option>
+               </select>`
+            : `<span style="font-size:11px;font-weight:600;color:${roleColor(role)};white-space:nowrap">${role}</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+
+    ${canEdit ? `
+    <div style="border-top:1px solid var(--b);padding-top:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px">KULLANICI EKLE</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select class="fi" id="pdp-perm-add-user" style="flex:1;min-width:140px;padding:7px 10px;font-size:13px">
+          <option value="">Kullanıcı seç...</option>
+          ${users.filter(u => !allPeople.includes(u.id)).map(u => `<option value="${u.id}">${u.name}</option>`).join('')}
+        </select>
+        <select class="fi" id="pdp-perm-add-role" style="width:154px;padding:7px 10px;font-size:13px">
+          <option>Görüntüleyebilir</option>
+          <option>Düzenleyebilir</option>
+          <option>Yönetici</option>
+        </select>
+        <button class="btn btnp" onclick="_pdpAddPerm(${taskId})" style="white-space:nowrap;padding:7px 14px">+ Ekle</button>
+      </div>
+    </div>` : ''}`;
+}
+
+function _pdpUpdatePerm(taskId, uid, newRole) {
+  const d    = loadTasks();
+  const task = d.find(t => t.id === taskId);
+  if (!task) return;
+  // Tüm listelerden çıkar
+  task.managers     = (task.managers    || [task.uid]).filter(x => x !== uid);
+  task.participants = (task.participants || []).filter(x => x !== uid);
+  task.viewers      = (task.viewers     || []).filter(x => x !== uid);
+  // Yeni role ekle
+  if (newRole === 'Yönetici')           task.managers.push(uid);
+  else if (newRole === 'Düzenleyebilir') task.participants.push(uid);
+  else                                   task.viewers.push(uid);
+  // Görev sahibi her zaman yönetici kalır
+  if (!task.managers.includes(task.uid)) task.managers.unshift(task.uid);
+  saveTasks(d);
+  window.toast?.('Yetki güncellendi ✓', 'ok');
+  _pdpRenderPerms(taskId);
+}
+
+function _pdpAddPerm(taskId) {
+  const uid  = parseInt(g('pdp-perm-add-user')?.value || '0');
+  const role = g('pdp-perm-add-role')?.value || 'Görüntüleyebilir';
+  if (!uid) { window.toast?.('Kullanıcı seçin', 'err'); return; }
+  _pdpUpdatePerm(taskId, uid, role);
 }
 
 function closePusDetail() {
@@ -687,7 +1071,15 @@ function editTask(id) {
   if (g('tk-eid'))    g('tk-eid').value    = t.id;
   if (g('tk-tags'))   g('tk-tags').value   = (t.tags || []).join(', ');
   if (g('tk-link'))   g('tk-link').value   = t.link || '';
-  if (g('tk-fp') && t.file) g('tk-fp').textContent = '📎 ' + t.file.name + ' (kayıtlı)';
+
+  // Çoklu dosyaları listele
+  const files = t.files || (t.file ? [t.file] : []);
+  if (g('tk-fp')) {
+    g('tk-fp').innerHTML = files.length
+      ? files.map(f => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--al);color:var(--at);border-radius:5px;padding:1px 7px;font-size:11px;margin:1px">📎 ${f.name}</span>`).join(' ')
+      : '';
+  }
+
   const sel = g('tk-user');
   if (sel) sel.value = t.uid;
   st('mo-tk-t', '✏️ Görevi Düzenle');
@@ -707,27 +1099,49 @@ function saveTask() {
   const eid  = parseInt(g('tk-eid')?.value || '0');
   const participants = [];
   const viewers      = [];
+  const managers     = [];
+
   document.querySelectorAll('[id^="tk-part-"]:checked').forEach(cb => participants.push(parseInt(cb.value)));
   document.querySelectorAll('[id^="tk-view-"]:checked').forEach(cb => viewers.push(parseInt(cb.value)));
+  document.querySelectorAll('[id^="tk-mgr-"]:checked').forEach(cb  => managers.push(parseInt(cb.value)));
+
+  // Görev sahibi her zaman yönetici listesinde
+  if (!managers.includes(uid)) managers.unshift(uid);
 
   const fields = {
     title,
-    desc:   g('tk-desc')?.value   || '',
-    pri:    parseInt(g('tk-pri')?.value  || '2'),
-    due:    g('tk-due')?.value    || null,
-    start:  g('tk-start')?.value  || null,
-    status: g('tk-status')?.value || 'todo',
-    tags:   (g('tk-tags')?.value  || '').split(',').map(t => t.trim()).filter(Boolean),
-    link:   g('tk-link')?.value   || '',
+    desc:     g('tk-desc')?.value   || '',
+    pri:      parseInt(g('tk-pri')?.value  || '2'),
+    due:      g('tk-due')?.value    || null,
+    start:    g('tk-start')?.value  || null,
+    status:   g('tk-status')?.value || 'todo',
+    tags:     (g('tk-tags')?.value  || '').split(',').map(t => t.trim()).filter(Boolean),
+    link:     g('tk-link')?.value   || '',
     uid,
-    done:   g('tk-status')?.value === 'done',
+    done:     g('tk-status')?.value === 'done',
     participants,
     viewers,
+    managers,
   };
 
-  const doSave = fileData => {
-    if (fileData) fields.file = fileData;
-    else if (eid) { const old = d.find(x => x.id === eid); if (old?.file) fields.file = old.file; }
+  // Çoklu dosya: mevcut + yeni dosyaları birleştir
+  const doSaveWithFiles = (newFiles) => {
+    if (newFiles.length > 0) {
+      if (eid) {
+        const old = d.find(x => x.id === eid);
+        fields.files = [...(old?.files || (old?.file ? [old.file] : [])), ...newFiles];
+      } else {
+        fields.files = newFiles;
+      }
+    } else if (eid) {
+      const old = d.find(x => x.id === eid);
+      fields.files = old?.files || (old?.file ? [old.file] : []);
+    } else {
+      fields.files = [];
+    }
+    // Geriye uyumluluk: ilk dosyayı file'a da yaz
+    fields.file = fields.files[0] || null;
+
     if (eid) {
       const t = d.find(x => x.id === eid);
       if (t) Object.assign(t, fields);
@@ -745,12 +1159,22 @@ function saveTask() {
   };
 
   const fi = g('tk-file');
-  if (fi?.files?.[0]) {
-    const r = new FileReader();
-    r.onload = ev => doSave({ name: fi.files[0].name, data: ev.target.result });
-    r.readAsDataURL(fi.files[0]);
+  const selectedFiles = fi?.files ? Array.from(fi.files) : [];
+
+  if (selectedFiles.length > 0) {
+    const results = [];
+    let done2 = 0;
+    selectedFiles.forEach(file => {
+      const r = new FileReader();
+      r.onload = ev => {
+        results.push({ name: file.name, data: ev.target.result, size: file.size, type: file.type });
+        done2++;
+        if (done2 === selectedFiles.length) doSaveWithFiles(results);
+      };
+      r.readAsDataURL(file);
+    });
   } else {
-    doSave(null);
+    doSaveWithFiles([]);
   }
 }
 
@@ -780,16 +1204,30 @@ function delTask(id) {
   window.toast?.('Silindi', 'ok');
 }
 
-/** Katılımcı / İzleyici listelerini doldurur (mutex) */
+/** Katılımcı / İzleyici / Yönetici listelerini doldurur */
 function populateTaskParticipants(task) {
   const users     = loadUsers().filter(u => u.status === 'active');
   const ownerUid  = parseInt(g('tk-user')?.value || '0') || task?.uid || 0;
   const others    = users.filter(u => u.id !== ownerUid);
   const existingP = task?.participants || [];
   const existingV = task?.viewers      || [];
+  const existingM = task?.managers     || [];
 
   const partEl = g('tk-participants-list');
   const viewEl = g('tk-viewers-list');
+  const mgrEl  = g('tk-managers-list');
+
+  // Yöneticiler listesi
+  if (mgrEl) {
+    mgrEl.innerHTML = users.map(u => `
+      <label style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:12px;background:var(--sf);border:1px solid var(--b);transition:all .12s" onmouseenter="this.style.borderColor='#007AFF'" onmouseleave="this.style.borderColor='var(--b)'">
+        <input type="checkbox" id="tk-mgr-${u.id}" value="${u.id}" ${existingM.includes(u.id) || u.id === ownerUid ? 'checked' : ''} ${u.id === ownerUid ? 'disabled' : ''} style="accent-color:#007AFF">
+        <span style="font-weight:500">${u.name}</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:auto">${u.role}</span>
+        ${u.id === ownerUid ? '<span style="font-size:9px;background:rgba(0,122,255,.1);color:#007AFF;padding:1px 6px;border-radius:4px;font-weight:700">Sorumlu</span>' : ''}
+      </label>`).join('');
+  }
+
   if (!partEl || !viewEl) return;
 
   partEl.innerHTML = others.map(u => `
@@ -1376,6 +1814,19 @@ if (typeof window !== 'undefined') {
   window.delTask               = delTask;
   window.toggleTask            = toggleTask;
   window.openPusDetail         = openPusDetail;
+  window._pdpTab               = _pdpTab;
+  window._pdpRenderInfo        = _pdpRenderInfo;
+  window._pdpRenderChat        = _pdpRenderChat;
+  window._pdpRefreshChat       = _pdpRefreshChat;
+  window._pdpSendChat          = _pdpSendChat;
+  window._pdpRenderFiles       = _pdpRenderFiles;
+  window._pdpUploadFiles       = _pdpUploadFiles;
+  window._pdpHandleDrop        = _pdpHandleDrop;
+  window._pdpDelFile           = _pdpDelFile;
+  window._pdpUpdateFileBadge   = _pdpUpdateFileBadge;
+  window._pdpRenderPerms       = _pdpRenderPerms;
+  window._pdpUpdatePerm        = _pdpUpdatePerm;
+  window._pdpAddPerm           = _pdpAddPerm;
   window.closePusDetail        = closePusDetail;
   window.quickUpdateTask       = quickUpdateTask;
   window.setPusView            = setPusView;
