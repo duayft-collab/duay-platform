@@ -479,6 +479,13 @@ function _initApp(user) {
 
   // Firebase durum rozetini güncelle
   setTimeout(() => window.Auth?.checkFirebaseStatus?.(), 1500);
+  // Bekleyen gorev bildirimleri
+  setTimeout(() => _checkPendingTaskNotifs(user), 1500);
+  setTimeout(() => _startMorningRoutine(user), 2500);
+  // Gunluk sozu yukle
+  setTimeout(async () => {
+    try { const q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {}
+  }, 3000);
 
   // Kargo & Konteyner polling
   setTimeout(() => {
@@ -1568,6 +1575,9 @@ window.updateDashboardActs = updateDashboardActs;
 window.updateVersionUI  = updateVersionUI;
 window.generateSystemNotifs    = generateSystemNotifs;
 window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._startMorningRoutine    = _startMorningRoutine;
+window._fetchDailyQuote        = _fetchDailyQuote;
 window.printModuleReport = printModuleReport;
 window.initials         = initials;
 window.canModule        = canModule;
