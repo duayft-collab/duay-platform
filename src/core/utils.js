@@ -37,6 +37,7 @@ const isManager= () => ['admin','manager'].includes(window.Auth?.getCU?.()?.role
 
 // ── Zaman Yardımcıları ────────────────────────────────────────────
 const _nowTs = () => { const n=new Date(),p=v=>String(v).padStart(2,'0'); return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`; };
+const nowTs = _nowTs;  // alias — modüller window.nowTs bekliyor
 const _p = n => String(n).padStart(2, '0');
 
 /**
@@ -264,13 +265,14 @@ if (typeof module !== 'undefined' && module.exports) {
   window.Utils = Utils;
   // Geriye uyumluluk — modüller window.* üzerinden erişebilir
   Object.assign(window, {
-    $u: $, $tu: $t,            // prefix'li (çakışma önleme)
+    $u: $, $tu: $t,
     initials, escapeHtml,
     relativeTime, formatDate, formatMoney,
     avatarColor, AV_COLORS,
     debounce, throttle, safeGet, groupBy,
     showSkeleton, withErrorBoundary,
-    nowTsUtil: nowTs,          // modüllerin kendi nowTs'leri varsa çakışmaz
+    nowTsUtil: nowTs,
+    nowTs: nowTs,              // global erişim için
   });
 }
 
