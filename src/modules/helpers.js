@@ -436,12 +436,125 @@ function calGoTo(ds) {
 }
 
 // ── Etkinlik modal & CRUD ────────────────────────────────────────
-function openEvModal() {
-  const evTitle = _gh('ev-title'); if (evTitle) evTitle.value = '';
-  const evDesc  = _gh('ev-desc');  if (evDesc)  evDesc.value  = '';
-  const evTime  = _gh('ev-time');  if (evTime)  evTime.value  = '09:00';
-  const evDate  = _gh('ev-date');  if (evDate)  evDate.value  = CAL_SEL || new Date().toISOString().slice(0, 10);
-  window.openMo?.('mo-event');
+function openEvModal(editId) {
+  // Eski dinamik modal varsa kaldır
+  const existing = document.getElementById('mo-cal-form');
+  if (existing) existing.remove();
+
+  const ev     = editId ? loadCal().find(e => e.id === editId) : null;
+  const users  = loadUsers().filter(u => u.status === 'active');
+  const today  = new Date().toISOString().slice(0, 10);
+  const cu     = _CUh();
+
+  const userOpts = users.map(u =>
+    `<option value="${u.id}" ${(ev?.participants||[]).includes(u.id)?'selected':''}>${u.name} (${u.role})</option>`
+  ).join('');
+
+  const mo = document.createElement('div');
+  mo.className = 'mo';
+  mo.id = 'mo-cal-form';
+  mo.style.zIndex = '2100';
+  mo.innerHTML = `
+<div class="moc" style="max-width:520px;padding:0;overflow:hidden">
+  <div style="padding:16px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+    <div class="mt" style="margin-bottom:0">${ev ? '✏️ Etkinlik Düzenle' : '+ Etkinlik Ekle'}</div>
+    <button onclick="document.getElementById('mo-cal-form').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px">×</button>
+  </div>
+  <div style="padding:20px 22px">
+    <input type="hidden" id="cal-form-eid" value="${ev?.id||''}">
+    <div class="fr"><div class="fl">BAŞLIK <span style="color:var(--rd)">*</span></div>
+      <input class="fi" id="cal-form-title" placeholder="Etkinlik adı…" value="${ev?.title||''}">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fr"><div class="fl">TARİH *</div>
+        <input type="date" class="fi" id="cal-form-date" value="${ev?.date||CAL_SEL||today}">
+      </div>
+      <div class="fr"><div class="fl">SAAT</div>
+        <input type="time" class="fi" id="cal-form-time" value="${ev?.time||'09:00'}">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fr"><div class="fl">TÜR</div>
+        <select class="fi" id="cal-form-type">
+          <option value="meeting"  ${ev?.type==='meeting' ?'selected':''}>🤝 Toplantı</option>
+          <option value="deadline" ${ev?.type==='deadline'?'selected':''}>⏰ Son Tarih</option>
+          <option value="holiday"  ${ev?.type==='holiday' ?'selected':''}>🎉 Tatil / Etkinlik</option>
+          <option value="task"     ${ev?.type==='task'    ?'selected':''}>📋 Görev</option>
+        </select>
+      </div>
+      <div class="fr"><div class="fl">DURUM</div>
+        <select class="fi" id="cal-form-status" ${!_isAdminH()?'disabled':''}>
+          <option value="approved" ${(ev?.status==='approved'||!ev)?'selected':''}>✅ Onaylı</option>
+          <option value="pending"  ${ev?.status==='pending' ?'selected':''}>⏳ Onay Bekliyor</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr"><div class="fl">AÇIKLAMA</div>
+      <textarea class="fi" id="cal-form-desc" rows="3" style="resize:vertical" placeholder="Detay, gündem…">${ev?.desc||''}</textarea>
+    </div>
+    <div class="fr"><div class="fl">👥 KATILIMCILAR <span style="font-weight:400;color:var(--t3)">(opsiyonel — boş = herkese açık)</span></div>
+      <select class="fi" id="cal-form-part" multiple size="4" style="height:auto">
+        ${userOpts}
+      </select>
+    </div>
+  </div>
+  <div style="padding:14px 22px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
+    <button class="btn" onclick="document.getElementById('mo-cal-form').remove()">İptal</button>
+    <button class="btn btnp" onclick="saveCalForm()">Kaydet</button>
+  </div>
+</div>`;
+
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => { mo.classList.add('open'); document.getElementById('cal-form-title')?.focus(); }, 10);
+}
+
+
+
+function saveCalForm() {
+  const eid   = parseInt(document.getElementById('cal-form-eid')?.value || '0');
+  const title = (document.getElementById('cal-form-title')?.value || '').trim();
+  const date  = document.getElementById('cal-form-date')?.value  || '';
+  if (!title || !date) { window.toast?.('Başlık ve tarih zorunludur', 'err'); return; }
+
+  const cu   = _CUh();
+  const d    = loadCal();
+  const part = Array.from(document.getElementById('cal-form-part')?.selectedOptions || []).map(o => parseInt(o.value));
+
+  const fields = {
+    title,
+    date,
+    time:         document.getElementById('cal-form-time')?.value   || '09:00',
+    type:         document.getElementById('cal-form-type')?.value   || 'meeting',
+    status:       _isAdminH() ? (document.getElementById('cal-form-status')?.value || 'approved') : 'pending',
+    desc:         document.getElementById('cal-form-desc')?.value   || '',
+    participants: part,
+    own:          _isAdminH() ? 0 : cu?.id,
+    reqBy:        cu?.id,
+    reqByName:    cu?.name,
+  };
+
+  if (eid) {
+    const ev = d.find(e => e.id === eid);
+    if (ev) Object.assign(ev, fields);
+    window.toast?.('Güncellendi ✓', 'ok');
+    window.logActivity?.('cal', `"${title}" etkinliği güncellendi`);
+  } else {
+    d.push({ id: Date.now(), ...fields });
+    window.logActivity?.('cal', `"${title}" etkinliği ${_isAdminH()?'eklendi':'onay için gönderildi'} (${date})`);
+    if (!_isAdminH()) {
+      window.toast?.('Etkinlik yönetici onayına gönderildi ✓', 'ok');
+      window.addNotif?.('📅', `Onay bekleyen etkinlik: "${title}" (${date}) — ${cu?.name}`, 'warn', 'takvim');
+    } else {
+      window.toast?.('Etkinlik eklendi ✓', 'ok');
+    }
+  }
+
+  saveCal(d);
+  invalidateCalCache();
+  document.getElementById('mo-cal-form')?.remove();
+  renderCal();
+  if (CAL_SEL) selCalDay(CAL_SEL);
 }
 
 function saveEvent() {
@@ -495,8 +608,8 @@ function delEvent(id) {
   const ev = d.find(e => e.id === id); if (!ev) return;
   const cu = _CUh();
   if (ev.own !== 0 && ev.own !== cu?.id && !_isAdminH()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('Bu etkinliği silmek istediğinizden emin misiniz?')) return;
   saveCal(d.filter(e => e.id !== id));
+  invalidateCalCache();
   if (CAL_SEL) selCalDay(CAL_SEL); else renderCal();
   window.toast?.('"' + ev.title + '" silindi', 'ok');
   window.logActivity?.('cal', `"${ev.title}" etkinliği silindi`);
@@ -505,20 +618,210 @@ function delEvent(id) {
 // ── Tatil yaklaşma bildirimi ─────────────────────────────────────
 function checkYaklasanTatiller() {
   if (!_isAdminH()) return;
-  const ayarlar = loadTatilAyarlar?.() || { calisan: true, uyariGun: 7, otoDuyuru: false };
-  if (!ayarlar.calisan) return;
   const today = new Date();
-  getTatillerThisYear().forEach(t => {
+  const todayS = today.toISOString().slice(0, 10);
+
+  // Hem yasal tatiller hem de takvime eklenmiş tatil/bayram etkinlikleri
+  const calHolidays = loadCal().filter(e =>
+    e.type === 'holiday' && e.status === 'approved' && e.date >= todayS
+  );
+  const yasal = getTatillerThisYear().map(t => ({
+    ad: t.ad, tarih: t.tarih, gun_sayisi: t.gun_sayisi || 1, kaynak: 'yasal'
+  }));
+  const calEvs = calHolidays.map(e => ({
+    ad: e.title, tarih: e.date, gun_sayisi: 1, kaynak: 'takvim', desc: e.desc || ''
+  }));
+
+  // Birleştir, tekrarları çıkar
+  const allHolidays = [...yasal];
+  calEvs.forEach(c => {
+    if (!allHolidays.some(y => y.tarih === c.tarih && y.ad === c.ad)) {
+      allHolidays.push(c);
+    }
+  });
+
+  allHolidays.forEach(t => {
     const tatilDate = new Date(t.tarih);
     const daysLeft  = Math.ceil((tatilDate - today) / 86400000);
-    if (daysLeft > 0 && daysLeft <= (ayarlar.uyariGun || 7)) {
-      const key = 'tatil_soruldu_' + t.tarih;
+    if (daysLeft > 0 && daysLeft <= 10) {
+      const key = 'tatil_modal_' + t.tarih;
       if (!localStorage.getItem(key)) {
-        localStorage.setItem(key, '1');
-        window.addNotif?.('🎉', `${t.ad} (${t.tarih}) için ${daysLeft} gün kaldı!`, 'warn', 'takvim');
+        // Modal aç — yöneticiden tatil gün sayısı ve duyuru onayı iste
+        openTatilUyariModal({
+          ad: t.ad,
+          tarih: t.tarih,
+          gun_sayisi: t.gun_sayisi || 1,
+          daysLeft,
+          key
+        });
       }
     }
   });
+}
+
+// ── Tatil uyarı modalını aç ──────────────────────────────────────
+function openTatilUyariModal(tatil) {
+  // Önce eski modal varsa kaldır
+  const existing = document.getElementById('mo-tatil-uyari');
+  if (existing) existing.remove();
+
+  const mo = document.createElement('div');
+  mo.className = 'mo';
+  mo.id = 'mo-tatil-uyari';
+  mo.style.zIndex = '2200';
+
+  const users = loadUsers().filter(u => u.status === 'active');
+  const userOpts = `<option value="all">👥 Tüm Personel</option>`
+    + users.map(u => `<option value="uid:${u.id}">${u.name} (${u.role})</option>`).join('');
+
+  // Varsayılan duyuru metni
+  const defaultMsg = `${tatil.ad} nedeniyle ${tatil.tarih} tarihinde ${tatil.gun_sayisi} gün tatilimiz bulunmaktadır. Tüm personelimize iyi bayramlar ve tatiller dileriz.`;
+  // Varsayılan yayın tarihi: şimdi
+  const now = new Date();
+  const defaultPubDate = now.toISOString().slice(0, 10);
+  const defaultPubTime = now.toTimeString().slice(0, 5);
+
+  mo.innerHTML = `
+<div class="moc" style="max-width:560px;padding:0;overflow:hidden">
+  <div style="background:linear-gradient(135deg,var(--ac),#6366F1);padding:20px 24px;color:#fff">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">🎉 Yaklaşan Tatil</div>
+    <div style="font-size:13px;opacity:.85">${tatil.ad} — <strong>${tatil.daysLeft} gün kaldı</strong> (${tatil.tarih})</div>
+  </div>
+  <div style="padding:20px 24px">
+    <div class="fr" style="margin-bottom:14px">
+      <div class="fl">📅 Tatil Kaç Gün?</div>
+      <input class="fi" type="number" id="tatil-gun-sayisi" value="${tatil.gun_sayisi}" min="1" max="30" style="width:100px">
+    </div>
+    <div class="fr" style="margin-bottom:14px">
+      <div class="fl">👥 Kimlere Gönderilsin?</div>
+      <select class="fi" id="tatil-hedef" multiple size="4" style="height:auto">
+        ${userOpts}
+      </select>
+      <div style="font-size:10px;color:var(--t3);margin-top:3px">Çoklu seçim için Ctrl/Cmd basılı tutun</div>
+    </div>
+    <div class="fr" style="margin-bottom:14px">
+      <div class="fl">📢 Duyuru Metni <span style="color:var(--rd)">*</span></div>
+      <textarea class="fi" id="tatil-duyuru-metin" rows="4" style="resize:vertical">${defaultMsg}</textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px">
+      <div class="fr">
+        <div class="fl">📆 Yayın Tarihi</div>
+        <input class="fi" type="date" id="tatil-pub-tarih" value="${defaultPubDate}">
+      </div>
+      <div class="fr">
+        <div class="fl">🕐 Yayın Saati</div>
+        <input class="fi" type="time" id="tatil-pub-saat" value="${defaultPubTime}">
+      </div>
+    </div>
+    <div style="background:var(--al);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--at)">
+      💡 Onaylarsanız duyuru belirlenen tarih ve saatte otomatik yayınlanır ve personel ekranında görünür.
+    </div>
+  </div>
+  <div style="padding:14px 24px;border-top:1px solid var(--b);display:flex;justify-content:space-between;gap:10px;background:var(--s2)">
+    <button class="btn" onclick="tatilUyariAtla('${tatil.key}')">Şimdi Değil</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btns" onclick="tatilUyariAtlaVeHatirlatma('${tatil.key}')">Daha Sonra Hatırlat</button>
+      <button class="btn btnp" onclick="tatilUyariOnayla('${tatil.tarih}','${tatil.ad}')">✓ Duyuru Oluştur</button>
+    </div>
+  </div>
+</div>`;
+
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) tatilUyariAtlaVeHatirlatma(tatil.key); });
+  setTimeout(() => mo.classList.add('open'), 10);
+
+  // Tüm personel seçili gelsin varsayılan
+  const sel = document.getElementById('tatil-hedef');
+  if (sel && sel.options[0]) sel.options[0].selected = true;
+}
+
+function tatilUyariAtla(key) {
+  localStorage.setItem(key, '1');
+  document.getElementById('mo-tatil-uyari')?.remove();
+}
+
+function tatilUyariAtlaVeHatirlatma(key) {
+  // Sadece modalı kapat, key'i kaydetme — yarın tekrar sorar
+  document.getElementById('mo-tatil-uyari')?.remove();
+}
+
+function tatilUyariOnayla(tarih, ad) {
+  const gunSayisi  = parseInt(document.getElementById('tatil-gun-sayisi')?.value || '1');
+  const metin      = (document.getElementById('tatil-duyuru-metin')?.value || '').trim();
+  const pubTarih   = document.getElementById('tatil-pub-tarih')?.value || new Date().toISOString().slice(0,10);
+  const pubSaat    = document.getElementById('tatil-pub-saat')?.value  || '09:00';
+  const hedefSel   = document.getElementById('tatil-hedef');
+
+  if (!metin) { window.toast?.('Duyuru metni boş olamaz', 'err'); return; }
+
+  // Hedef kitle
+  let targetUsers = [];
+  let target = 'all';
+  if (hedefSel) {
+    const selected = Array.from(hedefSel.selectedOptions).map(o => o.value);
+    if (!selected.includes('all') && selected.length > 0) {
+      target = 'users';
+      targetUsers = selected.filter(v => v.startsWith('uid:')).map(v => parseInt(v.replace('uid:', '')));
+    }
+  }
+
+  // Takvim etkinliğini güncelle — gün sayısını ekle
+  const cal = loadCal();
+  const ev  = cal.find(e => e.date === tarih && e.type === 'holiday');
+  if (ev) {
+    ev.gun_sayisi = gunSayisi;
+    ev.desc = (ev.desc || '') + (gunSayisi > 1 ? ` · ${gunSayisi} gün` : '');
+    saveCal(cal);
+  }
+
+  // Duyuru oluştur
+  const cu   = _CUh();
+  const anns = loadAnn();
+  const pubTs = pubTarih + ' ' + pubSaat + ':00';
+  const nowTs = _nowTsh();
+  const isScheduled = pubTs > nowTs;
+
+  anns.unshift({
+    id:          Date.now(),
+    title:       `🎉 ${ad}`,
+    body:        metin,
+    type:        'info',
+    ts:          nowTs,
+    publishAt:   pubTs,        // zamanlanmış yayın
+    published:   !isScheduled, // hemen mi yayınlansın?
+    read:        [],
+    target,
+    targetUsers,
+    addedBy:     cu?.id,
+    addedByName: cu?.name,
+    tatilGun:    gunSayisi,
+    tatilTarih:  tarih,
+  });
+  storeAnn(anns);
+  window.updateAnnBadge?.();
+
+  // Anında yayınlanıyorsa bildirim de gönder
+  if (!isScheduled) {
+    const users = loadUsers().filter(u => {
+      if (target === 'all') return true;
+      return targetUsers.includes(u.id);
+    });
+    users.forEach(u => {
+      window.addNotif?.('🎉', `${ad} duyurusu: ${metin.slice(0, 60)}…`, 'info', 'duyurular');
+    });
+    window.toast?.('Duyuru yayınlandı ✓', 'ok');
+  } else {
+    window.toast?.(`Duyuru ${pubTarih} ${pubSaat}'de yayınlanacak ✓`, 'ok');
+  }
+
+  // Key kaydet — bu tatil için tekrar sormayalım
+  const key = 'tatil_modal_' + tarih;
+  localStorage.setItem(key, '1');
+  document.getElementById('mo-tatil-uyari')?.remove();
+  window.logActivity?.('cal', `"${ad}" tatili için duyuru oluşturuldu (${pubTs})`);
+
+  // Duyurular paneli varsa yenile
+  window.renderAnnouncements?.();
 }
 
 // ── Yasal tatilleri takvime otomatik ekle ────────────────────────
@@ -554,6 +857,26 @@ function tatilDuyuruYap(tatil) {
 }
 
 // ── Excel export ─────────────────────────────────────────────────
+
+// ── Zamanlanmış duyuruları kontrol et & yayınla ──────────────────
+function checkScheduledAnnouncements() {
+  const anns    = loadAnn();
+  const nowTs   = _nowTsh();
+  let   changed = false;
+  anns.forEach(a => {
+    if (a.publishAt && !a.published && a.publishAt <= nowTs) {
+      a.published = true;
+      changed = true;
+      window.addNotif?.('📢', `Duyuru yayınlandı: "${a.title}"`, 'info', 'duyurular');
+    }
+  });
+  if (changed) {
+    storeAnn(anns);
+    window.updateAnnBadge?.();
+    window.renderAnnouncements?.();
+  }
+}
+
 function exportCalXlsx() {
   if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
   const rows = loadCal().map(e => ({
@@ -1857,7 +2180,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'selCalDay','calNav','calNavToDay','calGoTo',
     'setCalView','setCalTypeFilter','invalidateCalCache',
     'openEvModal','saveEvent','approveCalEvent','rejectCalEvent','delEvent',
-    'checkYaklasanTatiller','initTrYasalEvents','tatilDuyuruYap','exportCalXlsx',
+    'checkYaklasanTatiller','initTrYasalEvents','tatilDuyuruYap','exportCalXlsx','openTatilUyariModal','tatilUyariAtla','tatilUyariAtlaVeHatirlatma','tatilUyariOnayla','openEvModal','saveCalForm','checkScheduledAnnouncements',
     'renderNotes','openNoteModal','saveNote','delNote','pinNote','viewNote',
     'editNoteView','delNoteView','setNoteView','pickNtColor','ntFmt','renderNoteBody',
     'renderRehber','openRehberModal','saveRehber','delRehber',
