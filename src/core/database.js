@@ -265,8 +265,9 @@ const DEFAULT_PUAN = [
 /** @returns {Array<Object>} */
 function loadPuan()        { const d = _read(KEYS.puan); return Array.isArray(d) ? d : DEFAULT_PUAN; }
 /** @param {Array<Object>} d */
-function savePuan(d)       { _write(KEYS.puan, d); }
+function savePuan(d)       { _write(KEYS.puan, d); 
   const _fp_puan = _fsPath('puan'); if (_fp_puan) _syncFirestore(_fp_puan, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 3 — GÖREVLER (Pusula)
@@ -284,8 +285,9 @@ const DEFAULT_TASKS = [
 /** @returns {Array<Object>} */
 function loadTasks()       { const d = _read(KEYS.tasks); return Array.isArray(d) ? d : DEFAULT_TASKS; }
 /** @param {Array<Object>} d */
-function saveTasks(d)      { _write(KEYS.tasks, d); }
+function saveTasks(d)      { _write(KEYS.tasks, d); 
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 4 — TAKVİM
@@ -305,8 +307,9 @@ function setCalInvalidator(fn) { _calInvalidate = fn; }
 /** @returns {Array<Object>} */
 function loadCal()         { const d = _read(KEYS.calendar); return Array.isArray(d) ? d : DEFAULT_CAL; }
 /** @param {Array<Object>} d */
-function saveCal(d)        { _write(KEYS.calendar, d); if (typeof _calInvalidate === 'function') _calInvalidate(); }
+function saveCal(d)        { _write(KEYS.calendar, d); if (typeof _calInvalidate === 'function') _calInvalidate(); 
   const _fp_calendar = _fsPath('calendar'); if (_fp_calendar) _syncFirestore(_fp_calendar, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 5 — ÖNERİLER, DUYURULAR, NOTLAR, LİNKLER
@@ -329,20 +332,24 @@ const DEFAULT_NOTES = [
 ];
 
 /** @returns {Array<Object>} */ function loadSugg()    { const d = _read(KEYS.suggestions);   return Array.isArray(d) ? d : DEFAULT_SUGGESTIONS; }
-/** @param {Array<Object>} d */ function storeSugg(d)  { _write(KEYS.suggestions, d); }
+/** @param {Array<Object>} d */ function storeSugg(d)  { _write(KEYS.suggestions, d); 
   const _fp_suggestions = _fsPath('suggestions'); if (_fp_suggestions) _syncFirestore(_fp_suggestions, d);
+}
 
 /** @returns {Array<Object>} */ function loadAnn()     { const d = _read(KEYS.announcements); return Array.isArray(d) ? d : DEFAULT_ANN; }
-/** @param {Array<Object>} d */ function storeAnn(d)   { _write(KEYS.announcements, d); }
+/** @param {Array<Object>} d */ function storeAnn(d)   { _write(KEYS.announcements, d); 
   const _fp_announcements = _fsPath('announcements'); if (_fp_announcements) _syncFirestore(_fp_announcements, d);
+}
 
 /** @returns {Array<Object>} */ function loadLinks()   { const d = _read(KEYS.links);         return (Array.isArray(d) && d.length) ? d : DEFAULT_LINKS; }
-/** @param {Array<Object>} d */ function saveLinks(d)  { _write(KEYS.links, d); }
+/** @param {Array<Object>} d */ function saveLinks(d)  { _write(KEYS.links, d); 
   const _fp_links = _fsPath('links'); if (_fp_links) _syncFirestore(_fp_links, d);
+}
 
 /** @returns {Array<Object>} */ function loadNotes()   { const d = _read(KEYS.notes);         return Array.isArray(d) ? d : DEFAULT_NOTES; }
-/** @param {Array<Object>} d */ function saveNotes(d)  { _write(KEYS.notes, d); }
+/** @param {Array<Object>} d */ function saveNotes(d)  { _write(KEYS.notes, d); 
   const _fp_notes = _fsPath('notes'); if (_fp_notes) _syncFirestore(_fp_notes, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 6 — AKTİVİTE LOGU
@@ -403,8 +410,9 @@ const DEFAULT_IK = [
 ];
 
 /** @returns {Array<Object>} */ function loadIk()       { const d = _read(KEYS.ik); return Array.isArray(d) ? d : DEFAULT_IK; }
-/** @param {Array<Object>} d */ function storeIk(d)     { _write(KEYS.ik, d); }
+/** @param {Array<Object>} d */ function storeIk(d)     { _write(KEYS.ik, d); 
   const _fp_ik = _fsPath('ik'); if (_fp_ik) _syncFirestore(_fp_ik, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 9 — KARGO & KONTEYNER
@@ -413,8 +421,9 @@ const DEFAULT_IK = [
 const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx','TNT'];
 
 /** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo);      return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeKargo(d)       { _write(KEYS.kargo, d); }
+/** @param {Array<Object>} d */ function storeKargo(d)       { _write(KEYS.kargo, d); 
   const _fp_kargo = _fsPath('kargo'); if (_fp_kargo) _syncFirestore(_fp_kargo, d);
+}
 
 /** @returns {Array<string>} */ function loadKargoFirmalar() { const d = _read(KEYS.kargoFirms); return (Array.isArray(d) && d.length) ? d : DEFAULT_KARGO_FIRMALAR; }
 /** @param {Array<string>} d */ function storeKargoFirmalar(d) { _write(KEYS.kargoFirms, d); }
@@ -440,8 +449,9 @@ const DEFAULT_PIRIM_PARAMS = [
 ];
 
 /** @returns {Array<Object>} */ function loadPirim()          { const d = _read(KEYS.pirim);       return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storePirim(d)        { _write(KEYS.pirim, d); }
+/** @param {Array<Object>} d */ function storePirim(d)        { _write(KEYS.pirim, d); 
   const _fp_pirim = _fsPath('pirim'); if (_fp_pirim) _syncFirestore(_fp_pirim, d);
+}
 
 /** @returns {Array<Object>} */ function loadPirimParams()    { const d = _read(KEYS.pirimParams); return (Array.isArray(d) && d.length) ? d : DEFAULT_PIRIM_PARAMS; }
 /** @param {Array<Object>} d */ function storePirimParams(d)  { _write(KEYS.pirimParams, d); }
@@ -451,16 +461,18 @@ const DEFAULT_PIRIM_PARAMS = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadStok()    { const d = _read(KEYS.stok);   return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeStok(d)  { _write(KEYS.stok, d); }
+/** @param {Array<Object>} d */ function storeStok(d)  { _write(KEYS.stok, d); 
   const _fp_stok = _fsPath('stok'); if (_fp_stok) _syncFirestore(_fp_stok, d);
+}
 
 const DEFAULT_NUMUNE = [
   { id: 1, dir: 'giris', name: 'Model A Kumaş Numunesi', code: 'NM-001', qty: 3, date: '2026-03-10', uid: 2, iadeDate: '2026-04-10', returned: false, note: 'Müşteriye gösterim için', img: null },
   { id: 2, dir: 'cikis', name: 'Renk Kartı Seti',         code: 'NM-002', qty: 1, date: '2026-03-15', uid: 3, iadeDate: '2026-03-30', returned: false, note: 'Fuar için çıkartıldı',  img: null },
 ];
 /** @returns {Array<Object>} */ function loadNumune()  { const d = _read(KEYS.numune);  return Array.isArray(d) ? d : DEFAULT_NUMUNE; }
-/** @param {Array<Object>} d */ function storeNumune(d){ _write(KEYS.numune, d); }
+/** @param {Array<Object>} d */ function storeNumune(d){ _write(KEYS.numune, d); 
   const _fp_numune = _fsPath('numune'); if (_fp_numune) _syncFirestore(_fp_numune, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 12 — CRM
@@ -472,16 +484,18 @@ const DEFAULT_CRM = [
   { id: 3, name: 'Mavi Lojistik',  contact: 'Emre Bey',    phone: '0312 333 30 30', email: 'emre@example.com',  city: 'Ankara',   status: 'lead',   value: 80000,  owner: 2, note: 'İlk görüşme yapıldı',        ts: '2026-03-10' },
 ];
 /** @returns {Array<Object>} */ function loadCrmData()    { const d = _read(KEYS.crm);  return Array.isArray(d) ? d : DEFAULT_CRM; }
-/** @param {Array<Object>} d */ function storeCrmData(d)  { _write(KEYS.crm, d); }
+/** @param {Array<Object>} d */ function storeCrmData(d)  { _write(KEYS.crm, d); 
   const _fp_crm = _fsPath('crm'); if (_fp_crm) _syncFirestore(_fp_crm, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 13 — REHBER
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadRehber()  { const d = _read(KEYS.rehber); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeRehber(d){ _write(KEYS.rehber, d); }
+/** @param {Array<Object>} d */ function storeRehber(d){ _write(KEYS.rehber, d); 
   const _fp_rehber = _fsPath('rehber'); if (_fp_rehber) _syncFirestore(_fp_rehber, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 14 — HEDEFLER
@@ -491,8 +505,9 @@ const DEFAULT_HDF = [
   { id: 1, uid: 0, title: 'Q1 2026 Satış Hedefi', desc: 'Aylık satış 500K TL — aylık raporlarla ölçülecek', from: '2026-01-01', to: '2026-03-31', status: 'progress', steps: [] },
 ];
 /** @returns {Array<Object>} */ function loadHdf()     { const d = _read(KEYS.hedefler); return Array.isArray(d) ? d : DEFAULT_HDF; }
-/** @param {Array<Object>} d */ function storeHdf(d)   { _write(KEYS.hedefler, d); }
+/** @param {Array<Object>} d */ function storeHdf(d)   { _write(KEYS.hedefler, d); 
   const _fp_hedefler = _fsPath('hedefler'); if (_fp_hedefler) _syncFirestore(_fp_hedefler, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 15 — ÇÖP KUTUSU (Soft Delete)
@@ -506,8 +521,9 @@ const DEFAULT_HDF = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadOdm()     { const d = _read(KEYS.odemeler); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d); }
+/** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d); 
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
@@ -535,8 +551,9 @@ function storeIzin(d)  {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadTebligat()   { const d = _read(KEYS.tebligat); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeTebligat(d) { _write(KEYS.tebligat, d); }
+/** @param {Array<Object>} d */ function storeTebligat(d) { _write(KEYS.tebligat, d); 
   const _fp_tebligat = _fsPath('tebligat'); if (_fp_tebligat) _syncFirestore(_fp_tebligat, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 19 — TEMİZLİK ROTİNLERİ
@@ -554,8 +571,9 @@ const DEFAULT_KPI = [
   { id: 2, title: 'Müşteri Memnuniyeti', current: 87,   target: 95,     unit: '%', period: 'Mart 2026' },
 ];
 /** @returns {Array<Object>} */ function loadKpi()         { const d = _read(KEYS.kpi);    return Array.isArray(d) ? d : DEFAULT_KPI; }
-/** @param {Array<Object>} d */ function storeKpi(d)       { _write(KEYS.kpi, d); }
+/** @param {Array<Object>} d */ function storeKpi(d)       { _write(KEYS.kpi, d); 
   const _fp_kpi = _fsPath('kpi'); if (_fp_kpi) _syncFirestore(_fp_kpi, d);
+}
 
 /** @returns {Array<Object>} */ function loadKpiLog()      { const d = _read(KEYS.kpiLog); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 2000 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 2000)); }
