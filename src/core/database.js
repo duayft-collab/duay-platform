@@ -67,10 +67,6 @@ const KEYS = {
   kpiLog        : 'ak_kpi_log1',
   taskChats     : 'ak_task_chat1',
   theme         : 'ak_theme',
-  company       : 'ak_company_info',
-  notifPrefs    : 'ak_notif_prefs',
-  accentColor   : 'ak_accent_color',
-  sessionPrefs  : 'ak_session_prefs',
   lang          : 'ak_lang',
   pusView       : 'ak_pus_view',
   noteView      : 'ak_nview',
@@ -146,16 +142,41 @@ function _syncFirestore(path, data, mode = 'set') {
   try {
     const FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) return;
-    const ref = FB_DB.doc(path);
     const payload = { data, syncedAt: new Date().toISOString() };
     if (mode === 'set') {
-      ref.set(payload, { merge: true }).catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
+      FB_DB.doc(path).set(payload, { merge: true })
+        .catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
     } else {
-      FB_DB.collection(path).add({ ...payload }).catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
+      FB_DB.collection(path).add({ ...payload })
+        .catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
     }
   } catch (e) {
     GlobalErrorHandler('_syncFirestore', e, 'warn');
   }
+}
+
+// paths nesnesini her zaman güvenli al
+function _getPaths() {
+  return window.FirebaseConfig?.paths
+      || window.FS_PATHS
+      || window._getFirestorePaths?.()
+      || null;
+}
+
+// Tenant ID'yi güvenli al
+function _getTid() {
+  return window.Auth?.getTenantId?.()
+      || window.DEFAULT_TENANT_ID
+      || 'tenant_default';
+}
+
+// Koleksiyon için Firestore doc path üret
+function _fsPath(collection) {
+  const paths = _getPaths();
+  const tid   = _getTid();
+  if (!paths) return null;
+  const base = (typeof paths.tenant === 'function') ? paths.tenant(tid) : `tenants/${tid}`;
+  return base + '/' + collection;
 }
 
 // Zaman damgası yardımcısı
@@ -225,9 +246,8 @@ _migrateUserPasswords();
  */
 function saveUsers(data) {
   _write(KEYS.users, data);
-  const tid = window.Auth?.getTenantId?.() || 'tenant_default';
-  const paths = window.FirebaseConfig?.paths;
-  if (paths) _syncFirestore(paths.tenant(tid) + '/meta/users', data);
+  const _fp_users = _fsPath('users');
+  if (_fp_users) _syncFirestore(_fp_users, data);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -246,6 +266,7 @@ const DEFAULT_PUAN = [
 function loadPuan()        { const d = _read(KEYS.puan); return Array.isArray(d) ? d : DEFAULT_PUAN; }
 /** @param {Array<Object>} d */
 function savePuan(d)       { _write(KEYS.puan, d); }
+  const _fp_puan = _fsPath('puan'); if (_fp_puan) _syncFirestore(_fp_puan, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 3 — GÖREVLER (Pusula)
@@ -264,122 +285,16 @@ const DEFAULT_TASKS = [
 function loadTasks()       { const d = _read(KEYS.tasks); return Array.isArray(d) ? d : DEFAULT_TASKS; }
 /** @param {Array<Object>} d */
 function saveTasks(d)      { _write(KEYS.tasks, d); }
+  const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 4 — TAKVİM
 // ════════════════════════════════════════════════════════════════
 
 const DEFAULT_CAL = [
-  {"id": 200, "own": 0, "title": "🇹🇷 Yılbaşı", "date": "2026-01-01", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Yılbaşı. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 155, "own": 0, "title": "🗓 Q1 Kickoff — 90 Günlük Rocks Başlangıcı", "date": "2026-01-05", "time": "09:00", "type": "meeting", "desc": "EOS Q1 Rocks belirleme oturumu. Şirket 1 yıllık hedeflerden 90 günlük öncelikleri seçin. ActionCOACH: \"90 gün odak, 1 yıl momentum.\" Katılım: Tüm liderler zorunlu.", "status": "approved", "recurring": true},
-  {"id": 215, "own": 0, "title": "⚡ L10 Kickoff — Q1 Başlangıcı", "date": "2026-01-05", "time": "09:00", "type": "meeting", "desc": "Q1 başlıyor. EOS L10 ritmi başlatın: Scorecard, Rocks, Headlines, IDS. 90 günde neye odaklanıyorsunuz? Rocks belirleyin ve tüm ekiple paylaşın.", "status": "approved", "recurring": false},
-  {"id": 168, "own": 0, "title": "Aylık Genel Toplantı — Ocak", "date": "2026-01-05", "time": "14:00", "type": "meeting", "desc": "Ocak ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 184, "own": 0, "title": "Yıllık Scorecard & KPI Belirleme", "date": "2026-01-12", "time": "09:00", "type": "meeting", "desc": "Scaling Up: Yıl için kritik sayıları belirle. Her departman için 1 haftalık önde görünen gösterge (leading indicator) + 1 haftalık arkadan gelen gösterge (lagging). Max 10 KPI.", "status": "approved", "recurring": true},
-  {"id": 188, "own": 0, "title": "Organizasyon Şeması Güncelleme", "date": "2026-01-19", "time": "10:00", "type": "task", "desc": "EOS Accountability Chart güncelleme. Her koltuğun 3-5 sorumluluğu belli mi? Boş koltuklar var mı? E-Myth: Doğru pozisyonlar, doğru insanlar.", "status": "approved", "recurring": true},
-  {"id": 196, "own": 0, "title": "İşe Alım Planlama — Q1", "date": "2026-01-19", "time": "10:00", "type": "task", "desc": "EOS People Analyzer: Hangi koltuklarda doğru kişi yok? İşe alım planı. E-Myth: Mükemmel işe alım sistemi — iş tanımı, test, referans, deneme süreci.", "status": "approved", "recurring": true},
-  {"id": 101, "own": 0, "title": "KDV Beyannamesi — Ocak", "date": "2026-01-26", "time": "17:00", "type": "deadline", "desc": "Ocak ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 113, "own": 0, "title": "Muhtasar Beyanname — Ocak", "date": "2026-01-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 125, "own": 0, "title": "SGK Aylık Prim Ödeme — Ocak", "date": "2026-01-31", "time": "17:00", "type": "deadline", "desc": "Ocak ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 143, "own": 0, "title": "Ba-Bs Formu — Ocak", "date": "2026-01-31", "time": "17:00", "type": "deadline", "desc": "Ocak ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 169, "own": 0, "title": "Aylık Genel Toplantı — Şubat", "date": "2026-02-02", "time": "14:00", "type": "meeting", "desc": "Şubat ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 197, "own": 0, "title": "Şirket Kültür & Değerler Toplantısı", "date": "2026-02-09", "time": "14:00", "type": "meeting", "desc": "EOS Core Values: Şirket değerleri yaşanıyor mu? ActionCOACH: Kültür = Lider davranışı. Değer uyumu en üst liderlikten başlar.", "status": "approved", "recurring": true},
-  {"id": 102, "own": 0, "title": "KDV Beyannamesi — Şubat", "date": "2026-02-26", "time": "17:00", "type": "deadline", "desc": "Şubat ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 114, "own": 0, "title": "Muhtasar Beyanname — Şubat", "date": "2026-02-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 189, "own": 0, "title": "Liderlik Gelişim Günü — H1", "date": "2026-02-27", "time": "09:00", "type": "holiday", "desc": "ActionCOACH: Liderlik eğitim günü. 5 Ways (Leads, Conversion, Transactions, Average Sale, Margins) analizi. Şirket büyüme matematikini gözden geçir.", "status": "approved", "recurring": true},
-  {"id": 126, "own": 0, "title": "SGK Aylık Prim Ödeme — Şubat", "date": "2026-02-28", "time": "17:00", "type": "deadline", "desc": "Şubat ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 144, "own": 0, "title": "Ba-Bs Formu — Şubat", "date": "2026-02-28", "time": "17:00", "type": "deadline", "desc": "Şubat ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 170, "own": 0, "title": "Aylık Genel Toplantı — Mart", "date": "2026-03-02", "time": "14:00", "type": "meeting", "desc": "Mart ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 194, "own": 0, "title": "Nakit Akışı Değerlendirmesi — Q1", "date": "2026-03-09", "time": "10:00", "type": "task", "desc": "Q1 nakit pozisyonu, alacak yaşlandırması, borç yapısı. Scaling Up: Nakit = Oksijen.", "status": "approved", "recurring": true},
-  {"id": 186, "own": 0, "title": "Süreç & SOP Gözden Geçirme — Q1", "date": "2026-03-16", "time": "10:00", "type": "task", "desc": "E-Myth Franchise Prototype güncelleme. Her departman: hangi süreçler belgelendi, hangisi eksik? Hedef: Her iş tekrarlı ve devredilir olmalı.", "status": "approved", "recurring": true},
-  {"id": 180, "own": 0, "title": "Bireysel Performans Görüşmeleri — Q1", "date": "2026-03-23", "time": "09:00", "type": "task", "desc": "Tüm çalışanlarla birebir Q1 performans görüşmeleri. ActionCOACH: Feedback kültürü, GAS hedefleri (Goals-Accountability-Support). 3 gün içinde tamamlanmalı.", "status": "approved", "recurring": true},
-  {"id": 216, "own": 0, "title": "🏁 L10 Kapanış — Q1 Bitiyor", "date": "2026-03-23", "time": "09:00", "type": "meeting", "desc": "Q1 bitiyor — son hafta. Rocks tamamlandı mı? Tamamlanmayan'lar Q2'ye mi taşınıyor, düşürülüyor mu? Q2 Quarterly Review'e hazırlanın.", "status": "approved", "recurring": false},
-  {"id": 103, "own": 0, "title": "KDV Beyannamesi — Mart", "date": "2026-03-26", "time": "17:00", "type": "deadline", "desc": "Mart ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 115, "own": 0, "title": "Muhtasar Beyanname — Mart", "date": "2026-03-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 156, "own": 0, "title": "📊 Q1 Quarterly Review (EOS)", "date": "2026-03-30", "time": "09:00", "type": "meeting", "desc": "Q1 değerlendirmesi: Rocks tamamlama %, Scorecard analizi, Issues listesi temizleme, Q2 Rocks hazırlığı. Scaling Up: 4 karar — People, Strategy, Execution, Cash.", "status": "approved", "recurring": true},
-  {"id": 127, "own": 0, "title": "SGK Aylık Prim Ödeme — Mart", "date": "2026-03-31", "time": "17:00", "type": "deadline", "desc": "Mart ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 142, "own": 0, "title": "Gelir Vergisi Beyanı", "date": "2026-03-31", "time": "17:00", "type": "deadline", "desc": "2025 yılı yıllık gelir vergisi beyanname son günü.", "status": "approved", "recurring": true},
-  {"id": 145, "own": 0, "title": "Ba-Bs Formu — Mart", "date": "2026-03-31", "time": "17:00", "type": "deadline", "desc": "Mart ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 157, "own": 0, "title": "🗓 Q2 Kickoff — 90 Günlük Rocks", "date": "2026-04-06", "time": "09:00", "type": "meeting", "desc": "Q2 Rocks belirleme. Her Rock: 90 günde tamamlanabilir, ölçülebilir, sorumlusu belli. E-Myth: Sistemler insanı değil, insanlar sistemi yönetir.", "status": "approved", "recurring": true},
-  {"id": 217, "own": 0, "title": "⚡ L10 Kickoff — Q2 Başlangıcı", "date": "2026-04-06", "time": "09:00", "type": "meeting", "desc": "Q2 başlıyor. Q1 Rocks'u gözden geçirin. Yeni 90 günlük öncelikleri belirleyin. Scaling Up: Strateji hâlâ geçerli mi?", "status": "approved", "recurring": false},
-  {"id": 171, "own": 0, "title": "Aylık Genel Toplantı — Nisan", "date": "2026-04-06", "time": "14:00", "type": "meeting", "desc": "Nisan ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 199, "own": 0, "title": "Onboarding Süreç Gözden Geçirme", "date": "2026-04-20", "time": "10:00", "type": "task", "desc": "E-Myth: Yeni çalışan oryantasyon sistemi güncelle. İlk 90 gün planı her pozisyon için belli mi?", "status": "approved", "recurring": true},
-  {"id": 201, "own": 0, "title": "🇹🇷 Ulusal Egemenlik ve Çocuk Bayramı", "date": "2026-04-23", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Ulusal Egemenlik ve Çocuk Bayramı. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 104, "own": 0, "title": "KDV Beyannamesi — Nisan", "date": "2026-04-26", "time": "17:00", "type": "deadline", "desc": "Nisan ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 116, "own": 0, "title": "Muhtasar Beyanname — Nisan", "date": "2026-04-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 128, "own": 0, "title": "SGK Aylık Prim Ödeme — Nisan", "date": "2026-04-30", "time": "17:00", "type": "deadline", "desc": "Nisan ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 140, "own": 0, "title": "Kurumlar Vergisi Beyanı", "date": "2026-04-30", "time": "17:00", "type": "deadline", "desc": "2025 yılı kurumlar vergisi beyannamesi son günü. CEO + CFO onay süreci önceden tamamlanmalı.", "status": "approved", "recurring": true},
-  {"id": 141, "own": 0, "title": "Kurumlar Vergisi Ödemesi", "date": "2026-04-30", "time": "17:00", "type": "deadline", "desc": "Kurumlar vergisi birinci taksit ödemesi.", "status": "approved", "recurring": true},
-  {"id": 146, "own": 0, "title": "Ba-Bs Formu — Nisan", "date": "2026-04-30", "time": "17:00", "type": "deadline", "desc": "Nisan ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 202, "own": 0, "title": "🇹🇷 Emek ve Dayanışma Günü", "date": "2026-05-01", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Emek ve Dayanışma Günü. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 172, "own": 0, "title": "Aylık Genel Toplantı — Mayıs", "date": "2026-05-04", "time": "14:00", "type": "meeting", "desc": "Mayıs ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 137, "own": 0, "title": "Geçici Vergi — Q1 Beyan", "date": "2026-05-14", "time": "17:00", "type": "deadline", "desc": "Ocak-Mart 2026 dönemi geçici kurumlar vergisi beyanı. EOS Q1 sonuçlarıyla birlikte değerlendirin.", "status": "approved", "recurring": true},
-  {"id": 203, "own": 0, "title": "🇹🇷 Atatürk'ü Anma, Gençlik ve Spor Bayramı", "date": "2026-05-19", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Atatürk'ü Anma, Gençlik ve Spor Bayramı. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 105, "own": 0, "title": "KDV Beyannamesi — Mayıs", "date": "2026-05-26", "time": "17:00", "type": "deadline", "desc": "Mayıs ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 117, "own": 0, "title": "Muhtasar Beyanname — Mayıs", "date": "2026-05-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 129, "own": 0, "title": "SGK Aylık Prim Ödeme — Mayıs", "date": "2026-05-31", "time": "17:00", "type": "deadline", "desc": "Mayıs ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 147, "own": 0, "title": "Ba-Bs Formu — Mayıs", "date": "2026-05-31", "time": "17:00", "type": "deadline", "desc": "Mayıs ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 173, "own": 0, "title": "Aylık Genel Toplantı — Haziran", "date": "2026-06-01", "time": "14:00", "type": "meeting", "desc": "Haziran ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 198, "own": 0, "title": "Çalışan Bağlılık Anketi", "date": "2026-06-08", "time": "09:00", "type": "task", "desc": "Yıllık çalışan bağlılık anketi. EOS: eNPS ölçümü. Sonuçları Q3 Rocks'a entegre et.", "status": "approved", "recurring": true},
-  {"id": 191, "own": 0, "title": "Müşteri Memnuniyeti Analizi — Q2", "date": "2026-06-15", "time": "10:00", "type": "task", "desc": "ActionCOACH: NPS (Net Promoter Score) ölçümü. Müşteri geri bildirim analizi. 9-10 veren müşterilerden referans, 6 altına müdahale planı.", "status": "approved", "recurring": true},
-  {"id": 181, "own": 0, "title": "Bireysel Performans Görüşmeleri — Q2", "date": "2026-06-22", "time": "09:00", "type": "task", "desc": "Q2 performans görüşmeleri. Rocks katkısı, değer uyumu, gelişim alanları.", "status": "approved", "recurring": true},
-  {"id": 218, "own": 0, "title": "🏁 L10 Kapanış — Q2 Bitiyor", "date": "2026-06-22", "time": "09:00", "type": "meeting", "desc": "Q2 bitiyor. Yarı yıl kontrolü. Scorecard'daki kırmızı sayılar çözüldü mü? Q3 Rocks'u belirlemek için Quarterly Review'e gidin.", "status": "approved", "recurring": false},
-  {"id": 106, "own": 0, "title": "KDV Beyannamesi — Haziran", "date": "2026-06-26", "time": "17:00", "type": "deadline", "desc": "Haziran ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 118, "own": 0, "title": "Muhtasar Beyanname — Haziran", "date": "2026-06-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 158, "own": 0, "title": "📊 Q2 Quarterly Review (EOS)", "date": "2026-06-29", "time": "09:00", "type": "meeting", "desc": "Q2 değerlendirmesi + Yarı yıl performans analizi. Scaling Up: Yıllık hedeflerin %50 kontrolü. BHAG ile uyumu kontrol et.", "status": "approved", "recurring": true},
-  {"id": 130, "own": 0, "title": "SGK Aylık Prim Ödeme — Haziran", "date": "2026-06-30", "time": "17:00", "type": "deadline", "desc": "Haziran ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 148, "own": 0, "title": "Ba-Bs Formu — Haziran", "date": "2026-06-30", "time": "17:00", "type": "deadline", "desc": "Haziran ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 159, "own": 0, "title": "🗓 Q3 Kickoff — 90 Günlük Rocks", "date": "2026-07-06", "time": "09:00", "type": "meeting", "desc": "Q3 Rocks. ActionCOACH: \"Measure what matters.\" Scorecard güncellemesi ve ekip hizalaması.", "status": "approved", "recurring": true},
-  {"id": 219, "own": 0, "title": "⚡ L10 Kickoff — Q3 Başlangıcı", "date": "2026-07-06", "time": "09:00", "type": "meeting", "desc": "Q3 başlıyor. Yılın yarısı geride. BHAG'a doğru gidiyor musunuz? Nakit pozisyonu kontrol edin. Q3 Rocks belirleyin.", "status": "approved", "recurring": false},
-  {"id": 185, "own": 0, "title": "Yarı Yıl Strateji Revizyonu", "date": "2026-07-06", "time": "10:00", "type": "meeting", "desc": "Yıllık planın yarı yıl kontrolü. Scaling Up 4 Karar: Doğru insanlar mı? Strateji hâlâ geçerli mi? Yürütme etkin mi? Nakit yeterli mi?", "status": "approved", "recurring": true},
-  {"id": 174, "own": 0, "title": "Aylık Genel Toplantı — Temmuz", "date": "2026-07-06", "time": "14:00", "type": "meeting", "desc": "Temmuz ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 204, "own": 0, "title": "🇹🇷 Demokrasi ve Millî Birlik Günü", "date": "2026-07-15", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Demokrasi ve Millî Birlik Günü. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 107, "own": 0, "title": "KDV Beyannamesi — Temmuz", "date": "2026-07-26", "time": "17:00", "type": "deadline", "desc": "Temmuz ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 119, "own": 0, "title": "Muhtasar Beyanname — Temmuz", "date": "2026-07-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 131, "own": 0, "title": "SGK Aylık Prim Ödeme — Temmuz", "date": "2026-07-31", "time": "17:00", "type": "deadline", "desc": "Temmuz ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 149, "own": 0, "title": "Ba-Bs Formu — Temmuz", "date": "2026-07-31", "time": "17:00", "type": "deadline", "desc": "Temmuz ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 175, "own": 0, "title": "Aylık Genel Toplantı — Ağustos", "date": "2026-08-03", "time": "14:00", "type": "meeting", "desc": "Ağustos ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 138, "own": 0, "title": "Geçici Vergi — Q2 Beyan", "date": "2026-08-14", "time": "17:00", "type": "deadline", "desc": "Nisan-Haziran 2026 dönemi geçici kurumlar vergisi beyanı.", "status": "approved", "recurring": true},
-  {"id": 108, "own": 0, "title": "KDV Beyannamesi — Ağustos", "date": "2026-08-26", "time": "17:00", "type": "deadline", "desc": "Ağustos ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 120, "own": 0, "title": "Muhtasar Beyanname — Ağustos", "date": "2026-08-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 190, "own": 0, "title": "Liderlik Gelişim Günü — H2", "date": "2026-08-28", "time": "09:00", "type": "holiday", "desc": "İkinci yarı liderlik gelişim günü. ActionCOACH: Mastery (Destination, Money, Delivery, People, Systems, Business). Hangi alanda eksiksiniz?", "status": "approved", "recurring": true},
-  {"id": 205, "own": 0, "title": "🇹🇷 Zafer Bayramı", "date": "2026-08-30", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Zafer Bayramı. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 132, "own": 0, "title": "SGK Aylık Prim Ödeme — Ağustos", "date": "2026-08-31", "time": "17:00", "type": "deadline", "desc": "Ağustos ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 150, "own": 0, "title": "Ba-Bs Formu — Ağustos", "date": "2026-08-31", "time": "17:00", "type": "deadline", "desc": "Ağustos ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 195, "own": 0, "title": "Nakit Akışı Değerlendirmesi — Q3", "date": "2026-09-07", "time": "10:00", "type": "task", "desc": "Q3 nakit değerlendirmesi. Yıl sonu nakit projeksiyonu. Vergi karşılığı yeterli mi?", "status": "approved", "recurring": true},
-  {"id": 176, "own": 0, "title": "Aylık Genel Toplantı — Eylül", "date": "2026-09-07", "time": "14:00", "type": "meeting", "desc": "Eylül ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 187, "own": 0, "title": "Süreç & SOP Gözden Geçirme — Q3", "date": "2026-09-14", "time": "10:00", "type": "task", "desc": "Sistemler denetimi. E-Myth: \"Sisteminiz sizin yerinize çalışıyor mu?\" Onboarding, satış, teslimat, müşteri hizmetleri süreçleri güncelle.", "status": "approved", "recurring": true},
-  {"id": 182, "own": 0, "title": "Bireysel Performans Görüşmeleri — Q3", "date": "2026-09-21", "time": "09:00", "type": "task", "desc": "Q3 performans görüşmeleri. Yıl sonu bonus/pirim simülasyonu.", "status": "approved", "recurring": true},
-  {"id": 220, "own": 0, "title": "🏁 L10 Kapanış — Q3 Bitiyor", "date": "2026-09-21", "time": "09:00", "type": "meeting", "desc": "Q3 bitiyor. Yıl sonu hedeflere ulaşabilecek misiniz? Nakit projeksiyonu yapın. Q4 Rocks son kez netleştirin.", "status": "approved", "recurring": false},
-  {"id": 109, "own": 0, "title": "KDV Beyannamesi — Eylül", "date": "2026-09-26", "time": "17:00", "type": "deadline", "desc": "Eylül ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 121, "own": 0, "title": "Muhtasar Beyanname — Eylül", "date": "2026-09-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 160, "own": 0, "title": "📊 Q3 Quarterly Review (EOS)", "date": "2026-09-28", "time": "09:00", "type": "meeting", "desc": "Q3 değerlendirmesi + Yıl sonu tahmini. Q4 Rocks + 2027 yıllık plan ön hazırlığı başlar.", "status": "approved", "recurring": true},
-  {"id": 133, "own": 0, "title": "SGK Aylık Prim Ödeme — Eylül", "date": "2026-09-30", "time": "17:00", "type": "deadline", "desc": "Eylül ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 151, "own": 0, "title": "Ba-Bs Formu — Eylül", "date": "2026-09-30", "time": "17:00", "type": "deadline", "desc": "Eylül ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 161, "own": 0, "title": "🗓 Q4 Kickoff — 90 Günlük Rocks", "date": "2026-10-05", "time": "09:00", "type": "meeting", "desc": "Q4 Rocks. Yılı güçlü kapatma hedefleri. Scaling Up: Kritik sayıları ve nakit döngüsünü takip et.", "status": "approved", "recurring": true},
-  {"id": 221, "own": 0, "title": "⚡ L10 Kickoff — Q4 Başlangıcı", "date": "2026-10-05", "time": "09:00", "type": "meeting", "desc": "Q4 başlıyor — yılı kapatma zamanı. Q4 Rocks + 2027 yıllık plan hazırlığı başlar. E-Myth: Sistemler hazır mı?", "status": "approved", "recurring": false},
-  {"id": 177, "own": 0, "title": "Aylık Genel Toplantı — Ekim", "date": "2026-10-05", "time": "14:00", "type": "meeting", "desc": "Ekim ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 110, "own": 0, "title": "KDV Beyannamesi — Ekim", "date": "2026-10-26", "time": "17:00", "type": "deadline", "desc": "Ekim ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 122, "own": 0, "title": "Muhtasar Beyanname — Ekim", "date": "2026-10-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 206, "own": 0, "title": "🇹🇷 Cumhuriyet Bayramı", "date": "2026-10-29", "time": "00:00", "type": "holiday", "desc": "Resmî tatil — Cumhuriyet Bayramı. Çalışma planlamasını bu güne göre yapın.", "status": "approved", "recurring": true},
-  {"id": 134, "own": 0, "title": "SGK Aylık Prim Ödeme — Ekim", "date": "2026-10-31", "time": "17:00", "type": "deadline", "desc": "Ekim ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 152, "own": 0, "title": "Ba-Bs Formu — Ekim", "date": "2026-10-31", "time": "17:00", "type": "deadline", "desc": "Ekim ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 178, "own": 0, "title": "Aylık Genel Toplantı — Kasım", "date": "2026-11-02", "time": "14:00", "type": "meeting", "desc": "Kasım ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 193, "own": 0, "title": "Yıllık Bütçe Planlaması — 2027", "date": "2026-11-09", "time": "09:00", "type": "meeting", "desc": "Scaling Up: Bir sonraki yıl bütçe ve nakit akışı planlaması. CFO + CEO + departman liderleri. CANI (Cash Acceleration Strategies): Fiyatlandırma, ön ödeme, stok, alacak/borç döngüsü.", "status": "approved", "recurring": true},
-  {"id": 139, "own": 0, "title": "Geçici Vergi — Q3 Beyan", "date": "2026-11-14", "time": "17:00", "type": "deadline", "desc": "Temmuz-Eylül 2026 dönemi geçici kurumlar vergisi beyanı.", "status": "approved", "recurring": true},
-  {"id": 192, "own": 0, "title": "Müşteri Memnuniyeti Analizi — Q4", "date": "2026-11-16", "time": "10:00", "type": "task", "desc": "Yıl sonu NPS analizi. Sadakat programı değerlendirme. ActionCOACH: En iyi müşterini koru, en kötüsünü bırak.", "status": "approved", "recurring": true},
-  {"id": 111, "own": 0, "title": "KDV Beyannamesi — Kasım", "date": "2026-11-26", "time": "17:00", "type": "deadline", "desc": "Kasım ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 123, "own": 0, "title": "Muhtasar Beyanname — Kasım", "date": "2026-11-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 135, "own": 0, "title": "SGK Aylık Prim Ödeme — Kasım", "date": "2026-11-30", "time": "17:00", "type": "deadline", "desc": "Kasım ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 153, "own": 0, "title": "Ba-Bs Formu — Kasım", "date": "2026-11-30", "time": "17:00", "type": "deadline", "desc": "Kasım ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true},
-  {"id": 162, "own": 0, "title": "📊 Q4 Annual Planning — 2027 Strateji", "date": "2026-12-07", "time": "09:00", "type": "meeting", "desc": "Yıllık strateji toplantısı (2 gün). EOS Annual Plan: 1 yıl, 3 yıl, 10 yıl hedefleri. BHAG gözden geçirme. Scaling Up: People, Strategy, Execution, Cash planlaması. E-Myth: Franchise Prototype güncelleme.", "status": "approved", "recurring": true},
-  {"id": 179, "own": 0, "title": "Aylık Genel Toplantı — Aralık", "date": "2026-12-07", "time": "14:00", "type": "meeting", "desc": "Aralık ayı tüm şirket toplantısı. Gündem: Geçen ay sonuçları (KPIler), Bu ay öncelikleri (Rocks), Şirket haberleri, Soru-cevap. Scaling Up: Şeffaflık kültürü için tüm ekip görmeli.", "status": "approved", "recurring": true},
-  {"id": 183, "own": 0, "title": "Yıllık Performans Değerlendirmesi", "date": "2026-12-14", "time": "09:00", "type": "task", "desc": "Yıllık birebir değerlendirmeler. E-Myth: Doğru kişi, doğru koltuğa. EOS: People Analyzer (GGPD: Get it, Want it, Capacity to do it, Demonstrates values).", "status": "approved", "recurring": true},
-  {"id": 222, "own": 0, "title": "🏁 L10 Kapanış — Q4 Bitiyor", "date": "2026-12-14", "time": "09:00", "type": "meeting", "desc": "Q4 bitiyor — yıl kapanıyor. Rocks tamamlama oranı? 2027 planı hazır mı? Yıl sonu kutlaması için tarih belirleyin.", "status": "approved", "recurring": false},
-  {"id": 163, "own": 0, "title": "🏁 Yıl Sonu Kapanış & Kutlama", "date": "2026-12-25", "time": "16:00", "type": "holiday", "desc": "Yıl sonu şirket değerlendirmesi ve kutlama etkinliği. ActionCOACH: Başarıları kutlamak kültür oluşturur.", "status": "approved", "recurring": true},
-  {"id": 112, "own": 0, "title": "KDV Beyannamesi — Aralık", "date": "2026-12-26", "time": "17:00", "type": "deadline", "desc": "Aralık ayı KDV-1 beyannamesi son günü. E-Beyan zorunlu. Muhasebe birimi ile koordinasyon sağlayın.", "status": "approved", "recurring": true},
-  {"id": 124, "own": 0, "title": "Muhtasar Beyanname — Aralık", "date": "2026-12-26", "time": "17:00", "type": "deadline", "desc": "Aylık muhtasar ve prim hizmet beyannamesi. SGK + stopaj bildirimi.", "status": "approved", "recurring": true},
-  {"id": 136, "own": 0, "title": "SGK Aylık Prim Ödeme — Aralık", "date": "2026-12-31", "time": "17:00", "type": "deadline", "desc": "Aralık ayı SGK işçi ve işveren primi ödeme günü. Geç ödeme gecikme zammına yol açar.", "status": "approved", "recurring": true},
-  {"id": 154, "own": 0, "title": "Ba-Bs Formu — Aralık", "date": "2026-12-31", "time": "17:00", "type": "deadline", "desc": "Aralık ayı Ba (alış) ve Bs (satış) bildirim formu. 5.000 TL üzeri işlemler bildirilmeli.", "status": "approved", "recurring": true}
+  { id: 1, own: 0, title: 'Yönetim Toplantısı',   date: '2026-03-17', time: '10:00', type: 'meeting',  desc: 'Aylık toplantı',   status: 'approved' },
+  { id: 2, own: 0, title: 'Q1 Rapor Son Tarihi',  date: '2026-03-31', time: '17:00', type: 'deadline', desc: 'Finansal rapor',   status: 'approved' },
+  { id: 3, own: 0, title: 'Takım Yemeği',          date: '2026-03-20', time: '12:30', type: 'holiday',  desc: 'Öğle yemeği',     status: 'approved' },
 ];
 
 // Takvim önbellek temizleme referansı (renderCal kullananlar için)
@@ -391,22 +306,7 @@ function setCalInvalidator(fn) { _calInvalidate = fn; }
 function loadCal()         { const d = _read(KEYS.calendar); return Array.isArray(d) ? d : DEFAULT_CAL; }
 /** @param {Array<Object>} d */
 function saveCal(d)        { _write(KEYS.calendar, d); if (typeof _calInvalidate === 'function') _calInvalidate(); }
-
-/** Şirket yıllık ritim takvimini mevcut takvimiyle birleştirir.
- *  localStorage zaten doluysa DEFAULT_CAL görmezden gelinir.
- *  Bu fonksiyon uygulama açılışında bir kez çağrılır. */
-function mergeCompanyCalendar() {
-  const existing = _read(KEYS.calendar);
-  if (!Array.isArray(existing)) return; // boşsa DEFAULT_CAL zaten kullanılıyor
-  const existingIds = new Set(existing.map(e => e.id));
-  const toAdd = DEFAULT_CAL.filter(e => !existingIds.has(e.id));
-  if (toAdd.length > 0) {
-    const merged = [...existing, ...toAdd];
-    _write(KEYS.calendar, merged);
-    console.log('[DB] Şirket takvimi güncellendi:', toAdd.length, 'etkinlik eklendi');
-  }
-}
-
+  const _fp_calendar = _fsPath('calendar'); if (_fp_calendar) _syncFirestore(_fp_calendar, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 5 — ÖNERİLER, DUYURULAR, NOTLAR, LİNKLER
@@ -430,55 +330,19 @@ const DEFAULT_NOTES = [
 
 /** @returns {Array<Object>} */ function loadSugg()    { const d = _read(KEYS.suggestions);   return Array.isArray(d) ? d : DEFAULT_SUGGESTIONS; }
 /** @param {Array<Object>} d */ function storeSugg(d)  { _write(KEYS.suggestions, d); }
-
-
-// ── Şirket Bilgileri ──────────────────────────────────────────────
-function loadCompanyInfo() {
-  return _read(KEYS.company) || {
-    name: 'Duay Global Trade',
-    email: '',
-    phone: '',
-    address: '',
-    taxNo: '',
-    taxOffice: '',
-    website: '',
-    logo: null,
-  };
-}
-function saveCompanyInfo(d) { _write(KEYS.company, d); }
-
-// ── Bildirim Tercihleri ───────────────────────────────────────────
-function loadNotifPrefs() {
-  return _read(KEYS.notifPrefs) || {
-    taskAssigned: true,
-    taskDue: true,
-    holidayAlert: true,
-    newUser: true,
-    systemUpdates: false,
-    chatMessages: true,
-    calendarReminder: true,
-  };
-}
-function saveNotifPrefs(d) { _write(KEYS.notifPrefs, d); }
-
-// ── Oturum & Güvenlik Prefs ───────────────────────────────────────
-function loadSessionPrefs() {
-  return _read(KEYS.sessionPrefs) || {
-    timeout: 30,    // dakika
-    requireConfirm: true,
-    showLastLogin: true,
-  };
-}
-function saveSessionPrefs(d) { _write(KEYS.sessionPrefs, d); }
+  const _fp_suggestions = _fsPath('suggestions'); if (_fp_suggestions) _syncFirestore(_fp_suggestions, d);
 
 /** @returns {Array<Object>} */ function loadAnn()     { const d = _read(KEYS.announcements); return Array.isArray(d) ? d : DEFAULT_ANN; }
 /** @param {Array<Object>} d */ function storeAnn(d)   { _write(KEYS.announcements, d); }
+  const _fp_announcements = _fsPath('announcements'); if (_fp_announcements) _syncFirestore(_fp_announcements, d);
 
 /** @returns {Array<Object>} */ function loadLinks()   { const d = _read(KEYS.links);         return (Array.isArray(d) && d.length) ? d : DEFAULT_LINKS; }
 /** @param {Array<Object>} d */ function saveLinks(d)  { _write(KEYS.links, d); }
+  const _fp_links = _fsPath('links'); if (_fp_links) _syncFirestore(_fp_links, d);
 
 /** @returns {Array<Object>} */ function loadNotes()   { const d = _read(KEYS.notes);         return Array.isArray(d) ? d : DEFAULT_NOTES; }
 /** @param {Array<Object>} d */ function saveNotes(d)  { _write(KEYS.notes, d); }
+  const _fp_notes = _fsPath('notes'); if (_fp_notes) _syncFirestore(_fp_notes, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 6 — AKTİVİTE LOGU
@@ -540,6 +404,7 @@ const DEFAULT_IK = [
 
 /** @returns {Array<Object>} */ function loadIk()       { const d = _read(KEYS.ik); return Array.isArray(d) ? d : DEFAULT_IK; }
 /** @param {Array<Object>} d */ function storeIk(d)     { _write(KEYS.ik, d); }
+  const _fp_ik = _fsPath('ik'); if (_fp_ik) _syncFirestore(_fp_ik, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 9 — KARGO & KONTEYNER
@@ -549,6 +414,7 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 
 /** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo);      return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeKargo(d)       { _write(KEYS.kargo, d); }
+  const _fp_kargo = _fsPath('kargo'); if (_fp_kargo) _syncFirestore(_fp_kargo, d);
 
 /** @returns {Array<string>} */ function loadKargoFirmalar() { const d = _read(KEYS.kargoFirms); return (Array.isArray(d) && d.length) ? d : DEFAULT_KARGO_FIRMALAR; }
 /** @param {Array<string>} d */ function storeKargoFirmalar(d) { _write(KEYS.kargoFirms, d); }
@@ -575,6 +441,7 @@ const DEFAULT_PIRIM_PARAMS = [
 
 /** @returns {Array<Object>} */ function loadPirim()          { const d = _read(KEYS.pirim);       return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storePirim(d)        { _write(KEYS.pirim, d); }
+  const _fp_pirim = _fsPath('pirim'); if (_fp_pirim) _syncFirestore(_fp_pirim, d);
 
 /** @returns {Array<Object>} */ function loadPirimParams()    { const d = _read(KEYS.pirimParams); return (Array.isArray(d) && d.length) ? d : DEFAULT_PIRIM_PARAMS; }
 /** @param {Array<Object>} d */ function storePirimParams(d)  { _write(KEYS.pirimParams, d); }
@@ -585,6 +452,7 @@ const DEFAULT_PIRIM_PARAMS = [
 
 /** @returns {Array<Object>} */ function loadStok()    { const d = _read(KEYS.stok);   return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeStok(d)  { _write(KEYS.stok, d); }
+  const _fp_stok = _fsPath('stok'); if (_fp_stok) _syncFirestore(_fp_stok, d);
 
 const DEFAULT_NUMUNE = [
   { id: 1, dir: 'giris', name: 'Model A Kumaş Numunesi', code: 'NM-001', qty: 3, date: '2026-03-10', uid: 2, iadeDate: '2026-04-10', returned: false, note: 'Müşteriye gösterim için', img: null },
@@ -592,6 +460,7 @@ const DEFAULT_NUMUNE = [
 ];
 /** @returns {Array<Object>} */ function loadNumune()  { const d = _read(KEYS.numune);  return Array.isArray(d) ? d : DEFAULT_NUMUNE; }
 /** @param {Array<Object>} d */ function storeNumune(d){ _write(KEYS.numune, d); }
+  const _fp_numune = _fsPath('numune'); if (_fp_numune) _syncFirestore(_fp_numune, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 12 — CRM
@@ -604,6 +473,7 @@ const DEFAULT_CRM = [
 ];
 /** @returns {Array<Object>} */ function loadCrmData()    { const d = _read(KEYS.crm);  return Array.isArray(d) ? d : DEFAULT_CRM; }
 /** @param {Array<Object>} d */ function storeCrmData(d)  { _write(KEYS.crm, d); }
+  const _fp_crm = _fsPath('crm'); if (_fp_crm) _syncFirestore(_fp_crm, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 13 — REHBER
@@ -611,6 +481,7 @@ const DEFAULT_CRM = [
 
 /** @returns {Array<Object>} */ function loadRehber()  { const d = _read(KEYS.rehber); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeRehber(d){ _write(KEYS.rehber, d); }
+  const _fp_rehber = _fsPath('rehber'); if (_fp_rehber) _syncFirestore(_fp_rehber, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 14 — HEDEFLER
@@ -621,6 +492,7 @@ const DEFAULT_HDF = [
 ];
 /** @returns {Array<Object>} */ function loadHdf()     { const d = _read(KEYS.hedefler); return Array.isArray(d) ? d : DEFAULT_HDF; }
 /** @param {Array<Object>} d */ function storeHdf(d)   { _write(KEYS.hedefler, d); }
+  const _fp_hedefler = _fsPath('hedefler'); if (_fp_hedefler) _syncFirestore(_fp_hedefler, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 15 — ÇÖP KUTUSU (Soft Delete)
@@ -635,6 +507,7 @@ const DEFAULT_HDF = [
 
 /** @returns {Array<Object>} */ function loadOdm()     { const d = _read(KEYS.odemeler); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d); }
+  const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
@@ -652,6 +525,7 @@ function loadIzin()    { const d = _read(KEYS.izin); return Array.isArray(d) ? d
  */
 function storeIzin(d)  {
   const ok = _write(KEYS.izin, d);
+  const _fp_izin = _fsPath('izin'); if (_fp_izin) _syncFirestore(_fp_izin, d);
   if (!ok) GlobalErrorHandler('storeIzin', new Error('localStorage yazılamadı'), 'err');
   return ok;
 }
@@ -662,6 +536,7 @@ function storeIzin(d)  {
 
 /** @returns {Array<Object>} */ function loadTebligat()   { const d = _read(KEYS.tebligat); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeTebligat(d) { _write(KEYS.tebligat, d); }
+  const _fp_tebligat = _fsPath('tebligat'); if (_fp_tebligat) _syncFirestore(_fp_tebligat, d);
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 19 — TEMİZLİK ROTİNLERİ
@@ -680,6 +555,7 @@ const DEFAULT_KPI = [
 ];
 /** @returns {Array<Object>} */ function loadKpi()         { const d = _read(KEYS.kpi);    return Array.isArray(d) ? d : DEFAULT_KPI; }
 /** @param {Array<Object>} d */ function storeKpi(d)       { _write(KEYS.kpi, d); }
+  const _fp_kpi = _fsPath('kpi'); if (_fp_kpi) _syncFirestore(_fp_kpi, d);
 
 /** @returns {Array<Object>} */ function loadKpiLog()      { const d = _read(KEYS.kpiLog); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 2000 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 2000)); }
@@ -793,9 +669,12 @@ async function migrateToFirestore() {
   const isAdmin = window.Auth?.isAdmin?.();
   if (!isAdmin) { GlobalErrorHandler('migrate', new Error('Admin yetkisi gereklidir'), 'err'); return; }
 
-  const tid   = window.Auth?.getTenantId?.() || 'tenant_default';
-  const paths = window.FirebaseConfig?.paths;
-  if (!paths) return;
+  const tid   = _getTid();
+  const paths = _getPaths();
+  if (!paths) {
+    if (typeof window.toast === 'function') window.toast('Firebase path yapılandırması eksik', 'err');
+    return;
+  }
 
   const collections = {
     users:     loadUsers(),
@@ -818,7 +697,8 @@ async function migrateToFirestore() {
 
   for (const [colName, data] of Object.entries(collections)) {
     try {
-      const docRef = FB_DB.collection(paths.tenant(tid)).doc(colName);
+      const _mbase = (typeof paths.tenant === 'function') ? paths.tenant(tid) : `tenants/${tid}`;
+      const docRef = FB_DB.collection(_mbase).doc(colName);
       const payload = { data, syncedAt: new Date().toISOString(), migratedBy: window.Auth?.getCU?.()?.id };
       if (batch) {
         batch.set(docRef, payload, { merge: true });
@@ -865,8 +745,8 @@ function _listenCollection(collection, localKey, onUpdate) {
     const FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) return; // Firebase bağlı değil
 
-    const tid  = window.Auth?.getTenantId?.() || 'tenant_default';
-    const paths = window.FirebaseConfig?.paths;
+    const tid   = _getTid();
+    const paths = _getPaths();
     if (!paths) return;
 
     // Önceki listener varsa kapat
@@ -875,9 +755,14 @@ function _listenCollection(collection, localKey, onUpdate) {
       delete _listeners[collection];
     }
 
-    const docRef = FB_DB.collection(paths.tenant(tid)).doc(collection);
+    const _base2 = (typeof paths.tenant === 'function') ? paths.tenant(tid) : `tenants/${tid}`;
+    const docRef = FB_DB.collection(_base2).doc(collection);
     const unsubscribe = docRef.onSnapshot(snap => {
-      if (!snap.exists) return;
+      if (!snap.exists) {
+        // Firestore'da veri yok — localStorage'ı kaynak olarak kullan
+        console.info('[DB:realtime]', collection, '→ Firestore boş, localStorage kullanılıyor');
+        return;
+      }
       const data = snap.data()?.data;
       if (!Array.isArray(data)) return;
 
@@ -885,18 +770,23 @@ function _listenCollection(collection, localKey, onUpdate) {
       try { localStorage.setItem(localKey, JSON.stringify(data)); }
       catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
 
-      // UI'ı yenile (throttled — çok sık tetiklenmesin)
+      // UI'ı yenile (throttled)
       if (typeof onUpdate === 'function') {
         clearTimeout(_listeners[collection + '_timer']);
         _listeners[collection + '_timer'] = setTimeout(() => {
           try { onUpdate(data); }
           catch (e) { GlobalErrorHandler('realtime:render', e, 'warn'); }
-        }, 200);
+        }, 300);
       }
 
-      console.info('[DB:realtime]', collection, '→', data.length, 'kayıt');
+      console.info('[DB:realtime]', collection, '→', Array.isArray(data) ? data.length : '?', 'kayıt');
     }, err => {
-      GlobalErrorHandler('realtime:' + collection, err, 'warn');
+      // İzin hatası veya bağlantı problemi — sadece log, crash yok
+      if (err.code === 'permission-denied') {
+        console.warn('[DB:realtime]', collection, '→ Firestore izni yok, offline mod');
+      } else {
+        GlobalErrorHandler('realtime:' + collection, err, 'warn');
+      }
     });
 
     _listeners[collection] = unsubscribe;
@@ -912,15 +802,24 @@ function _listenCollection(collection, localKey, onUpdate) {
 function startRealtimeSync() {
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
-    ['tasks',      KEYS.tasks,    () => window.Pusula?.render?.()],
-    ['kargo',      KEYS.kargo,    () => window.Kargo?.render?.()],
+    // Kritik — her kullanıcı için
+    ['tasks',         KEYS.tasks,         () => window.Pusula?.render?.()],
+    ['calendar',      KEYS.calendar,      () => window.renderCal?.()],
     ['announcements', KEYS.announcements, () => window.renderAnnouncements?.()],
-    ['izin',       KEYS.izin,     () => window.renderIzin?.()],
-    ['pirim',      KEYS.pirim,    () => window.Pirim?.render?.()],
-    ['crm',        KEYS.crm,      () => window.renderCrm?.()],
-    ['stok',       KEYS.stok,     () => window.Stok?.render?.()],
-    ['ik',         KEYS.ik,       () => window.renderIk?.()],
-    ['calendar',   KEYS.calendar, () => window.renderCal?.()],
+    // Operasyon
+    ['kargo',         KEYS.kargo,         () => window.Kargo?.render?.()],
+    ['stok',          KEYS.stok,          () => window.Stok?.render?.()],
+    ['crm',           KEYS.crm,           () => window.renderCrm?.()],
+    // İK & Personel
+    ['ik',            KEYS.ik,            () => window.renderIk?.()],
+    ['izin',          KEYS.izin,          () => window.renderIzin?.()],
+    ['pirim',         KEYS.pirim,         () => window.Pirim?.render?.()],
+    // Diğer
+    ['hedefler',      KEYS.hedefler,      () => window.renderHedefler?.()],
+    ['odemeler',      KEYS.odemeler,      () => window.renderOdemeler?.()],
+    ['kpi',           KEYS.kpi,           () => window.renderKpi?.()],
+    ['notes',         KEYS.notes,         () => window.renderNotes?.()],
+    ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
   ];
 
   SYNC_MAP.forEach(([col, key, render]) => {
@@ -958,13 +857,10 @@ const DB = {
   // Görevler
   loadTasks, saveTasks,
   // Takvim
-  loadCal, saveCal, setCalInvalidator, mergeCompanyCalendar,
+  loadCal, saveCal, setCalInvalidator,
   // Öneri & Duyuru & Not & Link
   loadSugg, storeSugg,
   loadAnn, storeAnn,
-  loadCompanyInfo, saveCompanyInfo,
-  loadNotifPrefs, saveNotifPrefs,
-  loadSessionPrefs, saveSessionPrefs,
   loadLinks, saveLinks,
   loadNotes, saveNotes,
   // Aktivite
@@ -1037,8 +933,8 @@ if (typeof module !== 'undefined' && module.exports) {
   // doğrudan window.loadUsers() gibi çağırabilir
   const fns = [
     'loadUsers','saveUsers','loadPuan','savePuan','loadTasks','saveTasks',
-    'loadCal','saveCal','mergeCompanyCalendar','loadSugg',
-    'loadCompanyInfo','saveCompanyInfo','loadNotifPrefs','saveNotifPrefs','loadSessionPrefs','saveSessionPrefs','storeSugg','loadAnn','storeAnn',
+    'loadCal','saveCal','loadSugg','storeSugg','loadAnn','storeAnn',
+    '_fsPath','_getPaths','_getTid','startRealtimeSync','stopRealtimeSync',
     'loadLinks','saveLinks','loadNotes','saveNotes','loadAct','saveAct',
     'logActivity','addNotif','loadNotifs','storeNotifs',
     'loadIk','storeIk','loadKargo','storeKargo',
