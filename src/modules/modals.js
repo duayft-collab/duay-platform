@@ -152,8 +152,8 @@ function injectAllModals() {
           </select>
         </div>
       </div>
-      <!-- 2'li grid: Tarihler -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <!-- 3'lü grid: Tarihler + Süre -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
           <div class="fl" style="margin-bottom:5px">BAŞLANGIÇ TARİHİ</div>
           <input type="date" class="fi" id="tk-start" style="padding:7px 10px">
@@ -161,6 +161,14 @@ function injectAllModals() {
         <div>
           <div class="fl" style="margin-bottom:5px">SON TARİH</div>
           <input type="date" class="fi" id="tk-due" style="padding:7px 10px">
+        </div>
+        <div>
+          <div class="fl" style="margin-bottom:5px">⏱ TAHMİNİ SÜRE</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" class="fi" id="tk-duration" min="5" max="480" step="5"
+              placeholder="dk" style="padding:7px 10px;width:70px">
+            <span style="font-size:11px;color:var(--t3);white-space:nowrap">dakika</span>
+          </div>
         </div>
       </div>
       <!-- Etiket -->
@@ -726,130 +734,128 @@ function injectAllModals() {
                  adm-dept, adm-color, adm-pwd, mo-adm-t
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-admin-user">
-  <div class="moc" style="max-width:700px;width:95vw;padding:0;overflow:hidden;border-radius:16px">
-    <div style="background:linear-gradient(135deg,#3C3489,#6366F1);padding:18px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:17px;font-weight:700;letter-spacing:-.3px" id="mo-u-title">Kullanıcı</div>
-        <div style="font-size:12px;opacity:.75;margin-top:2px">Bilgileri doldurun, modül erişimini ayarlayın</div>
-      </div>
-      <button onclick="closeMo('mo-admin-user')" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;width:28px;height:28px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">x</button>
+  <div class="moc" style="max-width:680px;width:95vw;padding:0;overflow:hidden;border-radius:20px">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#007AFF,#5856D6);padding:20px 24px;color:#fff">
+      <div style="font-size:18px;font-weight:700;letter-spacing:-.3px" id="mo-u-title">Kullanıcı</div>
+      <div style="font-size:12px;opacity:.75;margin-top:2px">Kullanıcı bilgileri ve modül erişim yetkilerini yönetin</div>
     </div>
-    <div style="padding:18px 24px;max-height:68vh;overflow-y:auto">
-      <!-- Avatar -->
-      <div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start">
-        <div style="flex-shrink:0;cursor:pointer;position:relative" onclick="document.getElementById('adm-avatar-file').click()" title="Fotograf yukle">
-          <div id="adm-avatar-wrap" style="width:56px;height:56px;border-radius:14px;background:var(--al);color:var(--ac);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;overflow:hidden">
-            <img id="adm-avatar-preview" style="width:100%;height:100%;object-fit:cover;display:none" alt="">
-            <span id="adm-avatar-initials">?</span>
-          </div>
-          <div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;background:var(--ac);border-radius:50%;border:2px solid var(--sf);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">+</div>
-          <input type="file" id="adm-avatar-file" accept="image/*" style="display:none" onchange="(function(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){var img=document.getElementById('adm-avatar-preview');var ini=document.getElementById('adm-avatar-initials');img.src=e.target.result;img.style.display='block';ini.style.display='none';};r.readAsDataURL(f);})(this)">
-        </div>
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="fg"><div class="fl">AD SOYAD *</div><input class="fi" id="adm-name" placeholder="Ahmet Yilmaz" style="border-radius:8px"></div>
-          <div class="fg"><div class="fl">E-POSTA *</div><input class="fi" id="adm-email" type="email" placeholder="ahmet@sirket.com" style="border-radius:8px"></div>
-        </div>
+
+    <!-- Temel Bilgiler -->
+    <div style="padding:20px 24px 0">
+      <div style="font-size:10px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">TEMEL BİLGİLER</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="fg"><div class="fl">AD SOYAD</div><input class="fi" id="f-name" placeholder="Ad Soyad"></div>
+        <div class="fg"><div class="fl">E-POSTA / KULLANICI ADI</div><input class="fi" id="f-email" placeholder="kullanici@sirket.com"></div>
       </div>
-      <!-- Rol + Departman + Durum + Sifre -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-        <div class="fg"><div class="fl">ROL</div>
-          <select class="fi" id="adm-role" onchange="autoSetRolePerms()" style="border-radius:8px">
-            <option value="staff">Personel</option>
-            <option value="lead">Takim Lideri</option>
-            <option value="manager">Yonetici</option>
-            <option value="admin">Admin</option>
-          </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:6px">
+        <div class="fg">
+          <div class="fl">ŞİFRE</div>
+          <input class="fi" type="password" id="f-pw" placeholder="Şifre burada saklanmaz" disabled style="background:var(--s2);color:var(--t3)">
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">🔐 Firebase Console → Authentication</div>
         </div>
-        <div class="fg"><div class="fl">DEPARTMAN</div>
-          <select class="fi" id="adm-dept" style="border-radius:8px">
-            <option value="">-- Sec --</option>
+        <div class="fg">
+          <div class="fl">ROL</div>
+          <select class="fi" id="f-role" onchange="autoSetRolePerms()">
+            <option value="staff">👤 Personel</option>
+            <option value="lead">⭐ Takım Lideri</option>
+            <option value="manager">👔 Yönetici</option>
+            <option value="admin">🔑 Admin</option>
           </select>
         </div>
         <div class="fg"><div class="fl">DURUM</div>
-          <select class="fi" id="adm-st" style="border-radius:8px">
-            <option value="active">Aktif</option>
-            <option value="suspended">Askida</option>
+          <select class="fi" id="f-st">
+            <option value="active">✅ Aktif</option>
+            <option value="inactive">⭕ Pasif</option>
           </select>
-        </div>
-        <div class="fg">
-          <div class="fl">SIFRE <span style="font-weight:400;color:var(--t3)">(yeni icin zorunlu)</span></div>
-          <input class="fi" type="password" id="adm-pwd" placeholder="Min 6 karakter" style="border-radius:8px">
-        </div>
-      </div>
-      <!-- Modul Yetkileri -->
-      <div style="border-top:1px solid var(--b);padding-top:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">MODUL ERISIM YETKILERI</div>
-          <div style="display:flex;gap:6px">
-            <button type="button" onclick="setAllPerms(true)" style="background:var(--grb);border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:var(--grt);font-weight:600;font-family:inherit">Tumunu Ac</button>
-            <button type="button" onclick="setAllPerms(false)" style="background:var(--rdb);border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:var(--rdt);font-weight:600;font-family:inherit">Tumunu Kapat</button>
-            <button type="button" onclick="autoSetRolePerms()" style="background:var(--al);border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:var(--ac);font-weight:600;font-family:inherit">Role Gore</button>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:var(--blb);color:var(--blt);border-radius:4px;padding:1px 7px">Temel</span></div>
-            <div class="ckg">
-              <label class="pm-label"><input type="checkbox" id="pm-dashboard" class="perm-cb"> Dashboard</label>
-              <label class="pm-label"><input type="checkbox" id="pm-pusula" class="perm-cb"> Gorevler</label>
-              <label class="pm-label"><input type="checkbox" id="pm-takvim" class="perm-cb"> Takvim</label>
-              <label class="pm-label"><input type="checkbox" id="pm-notes" class="perm-cb"> Notlar</label>
-              <label class="pm-label"><input type="checkbox" id="pm-announce" class="perm-cb"> Duyurular</label>
-              <label class="pm-label"><input type="checkbox" id="pm-links" class="perm-cb"> Linkler</label>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:var(--grb);color:var(--grt);border-radius:4px;padding:1px 7px">IK ve Personel</span></div>
-            <div class="ckg">
-              <label class="pm-label"><input type="checkbox" id="pm-puantaj" class="perm-cb"> Puantaj</label>
-              <label class="pm-label"><input type="checkbox" id="pm-izin" class="perm-cb"> Izin</label>
-              <label class="pm-label"><input type="checkbox" id="pm-ik" class="perm-cb"> IK</label>
-              <label class="pm-label"><input type="checkbox" id="pm-evrak" class="perm-cb"> Evrak</label>
-              <label class="pm-label"><input type="checkbox" id="pm-pirim" class="perm-cb"> Pirim</label>
-              <label class="pm-label"><input type="checkbox" id="pm-tebligat" class="perm-cb"> Tebligat</label>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:var(--amb);color:var(--amt);border-radius:4px;padding:1px 7px">Operasyon</span></div>
-            <div class="ckg">
-              <label class="pm-label"><input type="checkbox" id="pm-kargo" class="perm-cb"> Kargo</label>
-              <label class="pm-label"><input type="checkbox" id="pm-stok" class="perm-cb"> Stok</label>
-              <label class="pm-label"><input type="checkbox" id="pm-numune" class="perm-cb"> Numune</label>
-              <label class="pm-label"><input type="checkbox" id="pm-temizlik" class="perm-cb"> Temizlik</label>
-              <label class="pm-label"><input type="checkbox" id="pm-etkinlik" class="perm-cb"> Fuar</label>
-              <label class="pm-label"><input type="checkbox" id="pm-crm" class="perm-cb"> CRM</label>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:var(--rdb);color:var(--rdt);border-radius:4px;padding:1px 7px">Finans ve Yonetim</span></div>
-            <div class="ckg">
-              <label class="pm-label"><input type="checkbox" id="pm-odemeler" class="perm-cb"> Odemeler</label>
-              <label class="pm-label"><input type="checkbox" id="pm-hedefler" class="perm-cb"> Hedefler</label>
-              <label class="pm-label"><input type="checkbox" id="pm-arsiv" class="perm-cb"> Arsiv</label>
-              <label class="pm-label"><input type="checkbox" id="pm-rehber" class="perm-cb"> Rehber</label>
-              <label class="pm-label"><input type="checkbox" id="pm-settings" class="perm-cb"> Ayarlar</label>
-              <label class="pm-label"><input type="checkbox" id="pm-admin" class="perm-cb"> Admin</label>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Dokuman Kategori -->
-      <div style="border-top:1px solid var(--b);padding-top:12px;margin-top:12px">
-        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">DOKUMAN KATEGORI ERISIMI</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <label class="pm-label"><input type="checkbox" id="pa-ik"> IK</label>
-          <label class="pm-label"><input type="checkbox" id="pa-fn"> Finans</label>
-          <label class="pm-label"><input type="checkbox" id="pa-op"> Operasyon</label>
-          <label class="pm-label"><input type="checkbox" id="pa-tk"> Teknik</label>
-          <label class="pm-label"><input type="checkbox" id="pa-ms"> Maas</label>
-          <label class="pm-label"><input type="checkbox" id="pa-ss"> Sistem</label>
         </div>
       </div>
     </div>
-    <input type="hidden" id="adm-eid">
-    <div style="padding:12px 24px 16px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:space-between;background:var(--s2)">
-      <button class="btn" onclick="closeMo('mo-admin-user')">Iptal</button>
-      <button class="btn btnp" onclick="saveUser()" style="padding:9px 24px;border-radius:9px">Kaydet</button>
+
+    <!-- Modül Yetkileri - Gruplu -->
+    <div style="padding:16px 24px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.08em">🔐 MODÜL ERİŞİM YETKİLERİ</div>
+        <div style="display:flex;gap:6px">
+          <button type="button" onclick="setAllPerms(true)" style="background:rgba(52,199,89,.12);border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;color:#34C759;font-weight:600;font-family:inherit">✓ Tümünü Aç</button>
+          <button type="button" onclick="setAllPerms(false)" style="background:rgba(255,59,48,.1);border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;color:#FF3B30;font-weight:600;font-family:inherit">✕ Tümünü Kapat</button>
+          <button type="button" onclick="autoSetRolePerms()" style="background:rgba(0,122,255,.1);border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;color:#007AFF;font-weight:600;font-family:inherit">↻ Role Göre Ayarla</button>
+        </div>
+      </div>
+      <!-- Grup: Temel -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="background:rgba(0,122,255,.1);color:#007AFF;border-radius:4px;padding:1px 6px">Temel</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <label class="pm-label"><input type="checkbox" id="pm-dashboard"> 🏠 Dashboard</label>
+          <label class="pm-label"><input type="checkbox" id="pm-pusula"> 🧭 Görevler</label>
+          <label class="pm-label"><input type="checkbox" id="pm-takvim"> 📅 Takvim</label>
+          <label class="pm-label"><input type="checkbox" id="pm-notes"> 📝 Notlar</label>
+          <label class="pm-label"><input type="checkbox" id="pm-announce"> 📣 Duyurular</label>
+          <label class="pm-label"><input type="checkbox" id="pm-links"> 🔗 Linkler</label>
+          <label class="pm-label"><input type="checkbox" id="pm-docs"> 📄 Dökümanlar</label>
+          <label class="pm-label"><input type="checkbox" id="pm-suggestions"> 💡 Öneriler</label>
+        </div>
+      </div>
+      <!-- Grup: İK & Personel -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:rgba(52,199,89,.1);color:#34C759;border-radius:4px;padding:1px 6px">İK & Personel</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <label class="pm-label"><input type="checkbox" id="pm-puantaj"> 📋 Puantaj</label>
+          <label class="pm-label"><input type="checkbox" id="pm-izin"> 🏖️ İzin</label>
+          <label class="pm-label"><input type="checkbox" id="pm-ik"> 👥 İK Yönetimi</label>
+          <label class="pm-label"><input type="checkbox" id="pm-evrak"> 📋 Personel Evrak</label>
+          <label class="pm-label"><input type="checkbox" id="pm-gorusme"> 🗣️ Görüşme</label>
+          <label class="pm-label"><input type="checkbox" id="pm-formlar"> 📋 Formlar</label>
+          <label class="pm-label"><input type="checkbox" id="pm-pirim"> ⭐ Pirim</label>
+          <label class="pm-label"><input type="checkbox" id="pm-tebligat"> 📬 Tebligat</label>
+        </div>
+      </div>
+      <!-- Grup: Operasyon -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:rgba(255,149,0,.12);color:#FF9500;border-radius:4px;padding:1px 6px">Operasyon</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <label class="pm-label"><input type="checkbox" id="pm-kargo"> 📦 Kargo</label>
+          <label class="pm-label"><input type="checkbox" id="pm-stok"> 📦 Ürün/Zimmet</label>
+          <label class="pm-label"><input type="checkbox" id="pm-numune"> 🧪 Numune</label>
+          <label class="pm-label"><input type="checkbox" id="pm-temizlik"> 🧹 Temizlik</label>
+          <label class="pm-label"><input type="checkbox" id="pm-etkinlik"> 🎪 Fuar/Etkinlik</label>
+          <label class="pm-label"><input type="checkbox" id="pm-crm"> 🤝 CRM</label>
+          <label class="pm-label"><input type="checkbox" id="pm-gorusme"> 🗣️ Görüşme</label>
+        </div>
+      </div>
+      <!-- Grup: Finans & Yönetim -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px"><span style="background:rgba(255,59,48,.1);color:#FF3B30;border-radius:4px;padding:1px 6px">Finans & Yönetim</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <label class="pm-label"><input type="checkbox" id="pm-finans"> 💰 Finans</label>
+          <label class="pm-label"><input type="checkbox" id="pm-odemeler"> 💳 Ödemeler</label>
+          <label class="pm-label"><input type="checkbox" id="pm-hedefler"> 🎯 Hedefler</label>
+          <label class="pm-label"><input type="checkbox" id="pm-rehber"> 📒 Rehber</label>
+          <label class="pm-label"><input type="checkbox" id="pm-arsiv"> 🗄️ Arşiv</label>
+          <label class="pm-label"><input type="checkbox" id="pm-resmi"> 🏛️ Resmi Evrak</label>
+          <label class="pm-label"><input type="checkbox" id="pm-ceo"> 👁️ CEO Paneli</label>
+          <label class="pm-label"><input type="checkbox" id="pm-settings"> ⚙️ Ayarlar</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Döküman Kategori Erişimi -->
+    <div style="padding:0 24px 14px">
+      <div style="font-size:10px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">📁 DÖKÜMAN KATEGORİ ERİŞİMİ</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <label class="pm-label"><input type="checkbox" id="pa-ik"> 📋 İK</label>
+        <label class="pm-label"><input type="checkbox" id="pa-fn"> 💰 Finans</label>
+        <label class="pm-label"><input type="checkbox" id="pa-op"> 🏢 Operasyon</label>
+        <label class="pm-label"><input type="checkbox" id="pa-tk"> ⚙️ Teknik</label>
+        <label class="pm-label"><input type="checkbox" id="pa-ms"> 💳 Maaş</label>
+        <label class="pm-label"><input type="checkbox" id="pa-ss"> 🖥 Sistem</label>
+      </div>
+    </div>
+
+    <input type="hidden" id="f-edit-id">
+    <div style="padding:14px 24px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end;background:var(--s2)">
+      <button class="btn" onclick="closeMo('mo-admin-user')">İptal</button>
+      <button class="btn btnp" onclick="saveUser()">💾 Kaydet</button>
     </div>
   </div>
 </div>
