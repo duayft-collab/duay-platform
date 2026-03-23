@@ -67,6 +67,10 @@ const KEYS = {
   kpiLog        : 'ak_kpi_log1',
   taskChats     : 'ak_task_chat1',
   theme         : 'ak_theme',
+  company       : 'ak_company_info',
+  notifPrefs    : 'ak_notif_prefs',
+  accentColor   : 'ak_accent_color',
+  sessionPrefs  : 'ak_session_prefs',
   lang          : 'ak_lang',
   pusView       : 'ak_pus_view',
   noteView      : 'ak_nview',
@@ -426,6 +430,46 @@ const DEFAULT_NOTES = [
 
 /** @returns {Array<Object>} */ function loadSugg()    { const d = _read(KEYS.suggestions);   return Array.isArray(d) ? d : DEFAULT_SUGGESTIONS; }
 /** @param {Array<Object>} d */ function storeSugg(d)  { _write(KEYS.suggestions, d); }
+
+
+// ── Şirket Bilgileri ──────────────────────────────────────────────
+function loadCompanyInfo() {
+  return _read(KEYS.company) || {
+    name: 'Duay Global Trade',
+    email: '',
+    phone: '',
+    address: '',
+    taxNo: '',
+    taxOffice: '',
+    website: '',
+    logo: null,
+  };
+}
+function saveCompanyInfo(d) { _write(KEYS.company, d); }
+
+// ── Bildirim Tercihleri ───────────────────────────────────────────
+function loadNotifPrefs() {
+  return _read(KEYS.notifPrefs) || {
+    taskAssigned: true,
+    taskDue: true,
+    holidayAlert: true,
+    newUser: true,
+    systemUpdates: false,
+    chatMessages: true,
+    calendarReminder: true,
+  };
+}
+function saveNotifPrefs(d) { _write(KEYS.notifPrefs, d); }
+
+// ── Oturum & Güvenlik Prefs ───────────────────────────────────────
+function loadSessionPrefs() {
+  return _read(KEYS.sessionPrefs) || {
+    timeout: 30,    // dakika
+    requireConfirm: true,
+    showLastLogin: true,
+  };
+}
+function saveSessionPrefs(d) { _write(KEYS.sessionPrefs, d); }
 
 /** @returns {Array<Object>} */ function loadAnn()     { const d = _read(KEYS.announcements); return Array.isArray(d) ? d : DEFAULT_ANN; }
 /** @param {Array<Object>} d */ function storeAnn(d)   { _write(KEYS.announcements, d); }
@@ -918,6 +962,9 @@ const DB = {
   // Öneri & Duyuru & Not & Link
   loadSugg, storeSugg,
   loadAnn, storeAnn,
+  loadCompanyInfo, saveCompanyInfo,
+  loadNotifPrefs, saveNotifPrefs,
+  loadSessionPrefs, saveSessionPrefs,
   loadLinks, saveLinks,
   loadNotes, saveNotes,
   // Aktivite
@@ -990,7 +1037,8 @@ if (typeof module !== 'undefined' && module.exports) {
   // doğrudan window.loadUsers() gibi çağırabilir
   const fns = [
     'loadUsers','saveUsers','loadPuan','savePuan','loadTasks','saveTasks',
-    'loadCal','saveCal','mergeCompanyCalendar','loadSugg','storeSugg','loadAnn','storeAnn',
+    'loadCal','saveCal','mergeCompanyCalendar','loadSugg',
+    'loadCompanyInfo','saveCompanyInfo','loadNotifPrefs','saveNotifPrefs','loadSessionPrefs','saveSessionPrefs','storeSugg','loadAnn','storeAnn',
     'loadLinks','saveLinks','loadNotes','saveNotes','loadAct','saveAct',
     'logActivity','addNotif','loadNotifs','storeNotifs',
     'loadIk','storeIk','loadKargo','storeKargo',
