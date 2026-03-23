@@ -475,7 +475,7 @@ function _initApp(user) {
   // Sistem bildirimleri (800ms sonra — UI hazır olsun)
   setTimeout(generateSystemNotifs, 800);
   // Bekleyen görev atama bildirimleri
-  setTimeout(() => _checkPendingTaskNotifs(user), 1200);
+  setTimeout(() => window._checkPendingTaskNotifs?.(user), 1200);
 
   // Firebase durum rozetini güncelle
   setTimeout(() => window.Auth?.checkFirebaseStatus?.(), 1500);
