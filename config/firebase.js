@@ -20,11 +20,16 @@ const DEFAULT_TENANT_ID = 'tenant_default';
 // Firestore koleksiyon yolları
 const FS_PATHS = {
   tenantBase : tid => `tenants/${tid}`,
+  tenant     : tid => `tenants/${tid}`,          // database.js uyumluluğu
   meta       : tid => `tenants/${tid}/meta`,
   data       : tid => `tenants/${tid}/data`,
   logs       : tid => `tenants/${tid}/logs`,
   users      : tid => `tenants/${tid}/meta/users`,
 };
+
+// database.js window.FirebaseConfig?.paths kullanıyor — bunu FS_PATHS ile eşle
+// Firebase başlatıldıktan sonra paths property'si inject edilir
+window.FS_PATHS = FS_PATHS;
 
 // Firebase başlatma
 let FirebaseConfig = null;
@@ -47,3 +52,12 @@ window.FIREBASE_CONFIG     = FIREBASE_CONFIG;
 window.DEFAULT_TENANT_ID   = DEFAULT_TENANT_ID;
 window.FS_PATHS            = FS_PATHS;
 window.FirebaseConfig      = FirebaseConfig;
+
+// database.js window.FirebaseConfig?.paths kullandığı için
+// paths fonksiyonlarını FirebaseConfig objesine enjekte et
+if (window.FirebaseConfig) {
+  window.FirebaseConfig.paths     = FS_PATHS;
+  window.FirebaseConfig.tenantId  = DEFAULT_TENANT_ID;
+}
+// FirebaseConfig null ise (SDK yok) — yine de paths erişimini sağla
+window._getFirestorePaths = () => FS_PATHS;
