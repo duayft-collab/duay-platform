@@ -46,69 +46,48 @@ function _injectKargoPanel() {
   if (!panel || panel.dataset.v9) return;
   panel.dataset.v9 = '1';
 
-  // Header
   const ph = panel.querySelector('.ph');
   if (ph) {
     ph.innerHTML = [
-      '<div>',
-        '<div class="pht">Kargo Yönetimi</div>',
-        '<div class="phs">Gelen/giden kargo, konteyner ve lojistik operasyonları</div>',
-      '</div>',
+      '<div><div class="pht">Kargo Yönetimi</div><div class="phs">Gelen/giden kargo ve konteyner operasyonları</div></div>',
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">',
-        // Görünüm toggle
-        '<div style="display:flex;background:var(--s2);border-radius:8px;padding:2px;gap:1px">',
-          '<button id="krg-v-card"  class="cvb on" data-kview="card"  style="font-size:11px;padding:5px 10px">⊞ Kart</button>',
-          '<button id="krg-v-table" class="cvb"    data-kview="table" style="font-size:11px;padding:5px 10px">≡ Tablo</button>',
-        '</div>',
-        '<button class="btn btns" onclick="importKargoFile()" style="border-radius:9px;font-size:12px">',
-          '↑ Excel Yükle',
-        '</button>',
-        '<button class="btn btns" onclick="exportKargoXlsx()" style="border-radius:9px;font-size:12px">',
-          '⬇ Excel İndir',
-        '</button>',
-        '<button class="btn btns" onclick="printKargoRapor()" style="border-radius:9px;font-size:12px">',
-          '🖨 PDF Rapor',
-        '</button>',
-        '<button class="btn btns" onclick="openKargoFirmaModal()" style="border-radius:9px;font-size:12px">⚙️ Firmalar</button>',
-        '<button class="btn btns" onclick="openKargoModal(\'gelen\')" style="border-radius:9px;font-size:12px">📥 Gelen</button>',
-        '<button class="btn btnp" onclick="openKargoModal(\'giden\')" style="border-radius:9px;font-size:12px">📤 Giden</button>',
+        '<button class="btn btns" onclick="importKargoFile()" style="font-size:12px">Excel Yükle</button>',
+        '<button class="btn btns" onclick="exportKargoXlsx()" style="font-size:12px">Excel İndir</button>',
+        '<button class="btn btns" onclick="printKargoRapor()" style="font-size:12px">PDF Rapor</button>',
+        '<button class="btn btns" onclick="openKargoFirmaModal()" style="font-size:12px">Firmalar</button>',
+        '<button class="btn btns" onclick="openKargoModal(\'gelen\')" style="font-size:12px">+ Gelen</button>',
+        '<button class="btn btnp" onclick="openKargoModal(\'giden\')" style="font-size:12px">+ Giden</button>',
         '<input type="file" id="krg-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="processKargoImport(this)">',
       '</div>',
     ].join('');
   }
 
-  // Filtre bar güncelle — tarih aralığı + sıralama ekle
   const filterBar = panel.querySelector('[id^="krg-search"]')?.closest('div[style]');
   if (filterBar) {
+    filterBar.style.cssText = 'border-top:1px solid var(--b);border-bottom:1px solid var(--b);padding:10px 0;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--sf)';
     filterBar.innerHTML = [
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">',
-        '<button class="chip on" data-kf="all"    onclick="setKargoFilter(\'all\',this)">Tümü</button>',
-        '<button class="chip"    data-kf="gelen"  onclick="setKargoFilter(\'gelen\',this)">📥 Gelen</button>',
-        '<button class="chip"    data-kf="giden"  onclick="setKargoFilter(\'giden\',this)">📤 Giden</button>',
-        '<button class="chip"    data-kf="bekle"  onclick="setKargoFilter(\'bekle\',this)">⏳ Beklemede</button>',
-        '<button class="chip"    data-kf="yolda"  onclick="setKargoFilter(\'yolda\',this)">🚛 Yolda</button>',
-        '<button class="chip"    data-kf="teslim" onclick="setKargoFilter(\'teslim\',this)">✅ Teslim</button>',
+      '<div style="display:flex;gap:4px;padding-right:10px;border-right:1px solid var(--b)">',
+        '<button class="chip on" data-kf="all"    onclick="setKargoFilter(\'all\',this)"    style="font-size:11px">Tümü</button>',
+        '<button class="chip"    data-kf="gelen"  onclick="setKargoFilter(\'gelen\',this)"  style="font-size:11px">Gelen</button>',
+        '<button class="chip"    data-kf="giden"  onclick="setKargoFilter(\'giden\',this)"  style="font-size:11px">Giden</button>',
+        '<button class="chip"    data-kf="bekle"  onclick="setKargoFilter(\'bekle\',this)"  style="font-size:11px">Beklemede</button>',
+        '<button class="chip"    data-kf="yolda"  onclick="setKargoFilter(\'yolda\',this)"  style="font-size:11px">Yolda</button>',
+        '<button class="chip"    data-kf="teslim" onclick="setKargoFilter(\'teslim\',this)" style="font-size:11px">Teslim</button>',
       '</div>',
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
-        '<div style="position:relative;flex:1;min-width:160px">',
-          '<svg style="position:absolute;left:8px;top:50%;transform:translateY(-50%)" width="12" height="12" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
-          '<input class="fi" id="krg-search" placeholder="Firma, gönderici, alıcı…" oninput="renderKargo()" style="padding-left:26px;border-radius:8px">',
-        '</div>',
-        '<input type="date" class="fi" id="krg-date-from" onchange="renderKargo()" style="border-radius:8px;min-width:130px">',
-        '<span style="font-size:11px;color:var(--t3)">—</span>',
-        '<input type="date" class="fi" id="krg-date-to"   onchange="renderKargo()" style="border-radius:8px;min-width:130px">',
-        '<select class="fi" id="krg-sort" onchange="renderKargo()" style="border-radius:8px;min-width:120px">',
-          '<option value="date-desc">↓ Tarih (Yeni)</option>',
-          '<option value="date-asc">↑ Tarih (Eski)</option>',
-          '<option value="firm">A→Z Firma</option>',
-          '<option value="status">Durum</option>',
-        '</select>',
-        '<button class="btn btns" onclick="_clearKargoFilters()" style="font-size:11px;border-radius:8px">✕ Temizle</button>',
-      '</div>',
+      '<input class="fi" id="krg-search" placeholder="Ara: firma, gönderici, alıcı…" oninput="renderKargo()" style="font-size:12px;flex:1;min-width:180px">',
+      '<input type="date" class="fi" id="krg-date-from" onchange="renderKargo()" style="font-size:12px;width:140px">',
+      '<span style="font-size:11px;color:var(--t3)">–</span>',
+      '<input type="date" class="fi" id="krg-date-to" onchange="renderKargo()" style="font-size:12px;width:140px">',
+      '<select class="fi" id="krg-sort" onchange="renderKargo()" style="font-size:12px;width:150px">',
+        '<option value="date-desc">Yeniden eskiye</option>',
+        '<option value="date-asc">Eskiden yeniye</option>',
+        '<option value="firm">Firmaya göre</option>',
+        '<option value="status">Duruma göre</option>',
+      '</select>',
+      '<button class="btn btns" onclick="_clearKargoFilters()" style="font-size:11px">Temizle</button>',
     ].join('');
   }
 
-  // View toggle event delegation
   panel.addEventListener('click', function(e) {
     const btn = e.target.closest('[data-kview]');
     if (!btn) return;
@@ -621,15 +600,14 @@ function renderKonteyn() {
 
   const buildTrackUrl = (hat, no) => (KTN_TRACKING_URLS[hat] || '') + encodeURIComponent(no);
 
-  const renderStep = (id, key, label, icon, ts) => {
+  const renderStep = (id, key, label, ts) => {
     const done = !!ts;
-    return '<div onclick="Kargo.toggleKonteynStep(' + id + ',\'' + key + '\')"'
-      + ' style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;cursor:pointer;border:1.5px solid ' + (done?'rgba(34,197,94,.4)':'var(--b)') + ';background:' + (done?'rgba(34,197,94,.07)':'var(--sf)') + ';transition:all .18s;flex:1;min-width:140px">'
-      + '<div style="width:20px;height:20px;border-radius:50%;border:2px solid ' + (done?'#22C55E':'#CBD5E1') + ';background:' + (done?'#22C55E':'transparent') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:#fff;font-weight:900">' + (done?'✓':'') + '</div>'
-      + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:11px;font-weight:700;color:' + (done?'#16A34A':'var(--t2)') + '">' + icon + ' ' + label + '</div>'
-        + (ts ? '<div style="font-size:9px;color:#22C55E;font-family:monospace">' + ts.slice(0,10) + '</div>'
-              : '<div style="font-size:9px;color:var(--t3)">Bekliyor</div>')
+    return '<div onclick="Kargo.toggleKonteynStep(' + id + ',\'' + key + '\'" style="display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-bottom:1px solid var(--b);background:' + (done?'rgba(59,109,17,.03)':'var(--sf)') + ';transition:background .12s">'
+      + '<div style="width:16px;height:16px;border-radius:50%;border:1.5px solid ' + (done?'#3B6D11':'var(--b)') + ';background:' + (done?'#3B6D11':'transparent') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+        + (done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4L3.5 6L6.5 2" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')
+      + '</div>'
+      + '<div style="flex:1"><div style="font-size:12px;color:' + (done?'var(--t)':'var(--t2)') + ';font-weight:' + (done?'500':'400') + '">' + label + '</div>'
+        + (ts?'<div style="font-size:10px;color:#3B6D11;font-family:monospace;margin-top:1px">' + ts.slice(0,10) + '</div>':'<div style="font-size:10px;color:var(--t3);margin-top:1px">Bekliyor</div>')
       + '</div>'
     + '</div>';
   };
@@ -638,159 +616,156 @@ function renderKonteyn() {
     const u        = users.find(x => x.id === k.uid) || { name: '?' };
     const etaDate  = k.eta ? new Date(k.eta) : null;
     const daysLeft = etaDate ? Math.ceil((etaDate - today) / 86400000) : null;
-    const urgent   = !isArchived && daysLeft !== null && daysLeft <= 5  && daysLeft > 0;
-    const near     = !isArchived && daysLeft !== null && daysLeft <= 10 && daysLeft > 0;
     const overdue  = !isArchived && daysLeft !== null && daysLeft <= 0;
+    const urgent   = !isArchived && daysLeft !== null && daysLeft > 0 && daysLeft <= 5;
+    const near     = !isArchived && daysLeft !== null && daysLeft > 5 && daysLeft <= 10;
     const trackUrl = k.url || buildTrackUrl(k.hat, k.no);
-    const stepsDone = [k.evrakGon, k.evrakUlasti, k.inspectionBitti, k.malTeslim, k.closed].filter(Boolean).length;
-    const pct       = Math.round(stepsDone / 5 * 100);
-    const borderColor = isArchived ? 'var(--b)' : urgent||overdue ? '#EF4444' : near ? '#F59E0B' : 'var(--b)';
+    const steps    = [k.evrakGon,k.evrakUlasti,k.inspectionBitti,k.malTeslim,k.closed].filter(Boolean).length;
+    const pct      = Math.round(steps/5*100);
+    const etaColor = overdue?'#A32D2D':urgent?'#854F0B':near?'#854F0B':'#3B6D11';
+    const etaText  = daysLeft===null?'—':overdue?'ETA geçti':daysLeft+' gün';
+    const topBorder= isArchived?'':overdue?'border-top:2px solid #A32D2D;':urgent?'border-top:2px solid #854F0B;':'';
 
-    return '<div style="border:2px solid ' + borderColor + ';border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:12px">'
-      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">'
-        + '<div>'
-          + '<div style="font-size:16px;font-weight:800;font-family:monospace">🚢 ' + k.no + '</div>'
-          + (k.hat ? '<span style="font-size:10px;font-weight:700;background:rgba(99,102,241,.1);color:#6366F1;padding:2px 9px;border-radius:6px">' + k.hat + '</span>' : '')
-          + (urgent  ? ' <span style="font-size:10px;font-weight:700;background:rgba(239,68,68,.12);color:#DC2626;padding:2px 9px;border-radius:6px">🚨 ' + daysLeft + ' Gün!</span>' : '')
-          + (near && !urgent ? ' <span style="font-size:10px;font-weight:700;background:rgba(245,158,11,.12);color:#D97706;padding:2px 9px;border-radius:6px">⏰ ' + daysLeft + ' Gün</span>' : '')
-          + (overdue ? ' <span style="font-size:10px;font-weight:700;background:rgba(239,68,68,.12);color:#DC2626;padding:2px 9px;border-radius:6px">⚠️ ETA Geçti</span>' : '')
-          + '<div style="font-size:11px;color:var(--t3);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap">'
-            + (k.musteri ? '<span>🏢 ' + k.musteri + '</span>' : '')
-            + (k.etd ? '<span>ETD: <strong>' + k.etd + '</strong></span>' : '')
-            + (k.eta ? '<span>ETA: <strong style="color:' + (overdue||urgent?'#DC2626':'var(--t)') + '">' + k.eta + '</strong></span>' : '')
-            + '<span>👤 ' + u.name + '</span>'
-          + '</div>'
+    return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px;' + topBorder + '">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--b)">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<span style="font-size:13px;font-weight:600;font-family:monospace">' + k.no + '</span>'
+          + (k.hat?'<span style="font-size:11px;padding:1px 7px;border-radius:4px;background:rgba(24,95,165,.09);color:#185FA5">'+k.hat+'</span>':'')
+          + (k.musteri?'<span style="font-size:11px;color:var(--t3)">'+k.musteri+'</span>':'')
         + '</div>'
-        + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'
-          + '<div style="font-size:18px;font-weight:800;color:' + (pct===100?'#22C55E':'var(--ac)') + '">'
-            + pct + '% <span style="font-size:10px;color:var(--t3)">' + stepsDone + '/5</span>'
-          + '</div>'
-          + '<div style="display:flex;gap:5px">'
-            + (trackUrl ? '<a href="' + trackUrl + '" target="_blank" class="btn btns" style="text-decoration:none;font-size:11px;background:rgba(99,102,241,.1);color:#6366F1;border-color:rgba(99,102,241,.2);border-radius:8px">🔗 Takip</a>' : '')
-            + '<button class="btn btns" onclick="openKonteynDetail(' + k.id + ')" style="font-size:11px;border-radius:8px">📋 Detay</button>'
-            + (!isArchived ? '<button class="btn btns" onclick="openKonteynModal(' + k.id + ')" style="font-size:11px;border-radius:8px">✏️</button>' : '')
-            + (_isAdminK() && !isArchived ? '<button class="btn btns" onclick="Kargo.delKonteyn(' + k.id + ')" style="font-size:11px;border-radius:8px;color:var(--rdt)">🗑</button>' : '')
-          + '</div>'
+        + '<div style="display:flex;gap:5px">'
+          + (trackUrl?'<a href="'+trackUrl+'" target="_blank" class="btn btns" style="text-decoration:none;font-size:11px;padding:3px 10px">Takip</a>':'')
+          + '<button onclick="openKonteynDetail('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Detay</button>'
+          + (!isArchived?'<button onclick="openKonteynModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Düzenle</button>':'')
         + '</div>'
       + '</div>'
-      + '<div style="height:5px;background:var(--s2);border-radius:99px;margin-bottom:14px;overflow:hidden">'
-        + '<div style="height:100%;background:' + (pct===100?'#22C55E':'linear-gradient(90deg,#6366F1,#8B5CF6)') + ';width:' + pct + '%;border-radius:99px;transition:width .5s"></div>'
+      + '<div style="display:flex;align-items:stretch;border-bottom:1px solid var(--b)">'
+        + (k.fromPort||k.toPort?'<div style="padding:8px 14px;border-right:1px solid var(--b);font-size:12px;color:var(--t2);display:flex;align-items:center">'+(k.fromPort||'?')+' → '+(k.toPort||'?')+'</div>':'')
+        + (k.etd?'<div style="padding:8px 12px;border-right:1px solid var(--b);font-size:11px;color:var(--t3);display:flex;align-items:center">ETD <span style="color:var(--t);font-weight:500;margin-left:4px">'+k.etd+'</span></div>':'')
+        + (k.eta?'<div style="padding:8px 12px;border-right:1px solid var(--b);font-size:11px;color:var(--t3);display:flex;align-items:center">ETA <span style="color:'+etaColor+';font-weight:500;margin-left:4px">'+k.eta+'</span></div>':'')
+        + '<div style="padding:8px 12px;font-size:11px;color:var(--t3);display:flex;align-items:center">'+u.name+'</div>'
+        + '<div style="margin-left:auto;padding:8px 14px;display:flex;align-items:center;gap:8px;border-left:1px solid var(--b)">'
+          + '<div style="width:80px;height:4px;background:var(--s2);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#3B6D11':'#185FA5')+';border-radius:2px"></div></div>'
+          + '<span style="font-size:11px;font-weight:500;color:'+(pct===100?'#3B6D11':'var(--t2)')+'">'+pct+'%</span>'
+        + '</div>'
+        + (daysLeft!==null&&!isArchived?'<div style="padding:8px 14px;font-size:11px;font-weight:500;color:'+etaColor+';border-left:1px solid var(--b);display:flex;align-items:center">'+etaText+'</div>':'')
       + '</div>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-        + renderStep(k.id, 'evrakGon',       'Evrak Gönderildi',           '📄', k.evrakTarih)
-        + renderStep(k.id, 'evrakUlasti',    'Müşteri Evrak Teslim Aldı',  '📬', k.evrakUlastiTarih)
-        + renderStep(k.id, 'inspectionBitti','Inspection Bitti',            '🔍', k.inspectionTarih)
-        + renderStep(k.id, 'malTeslim',      'Müşteri Malları Teslim Aldı','📦', k.malTeslimTarih)
+      + '<div>'
+        + renderStep(k.id,'evrakGon',      'Evrak Gönderildi',          k.evrakTarih)
+        + renderStep(k.id,'evrakUlasti',   'Müşteri Evrak Teslim Aldı', k.evrakUlastiTarih)
+        + renderStep(k.id,'inspectionBitti','Inspection Tamamlandı',     k.inspectionTarih)
+        + renderStep(k.id,'malTeslim',     'Müşteri Malları Teslim Aldı',k.malTeslimTarih)
       + '</div>'
     + '</div>';
   };
 
   let html = '';
   if (active.length) {
-    html += '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🚢 Aktif — ' + active.length + ' konteyner</div>';
+    html += '<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Aktif — ' + active.length + ' konteyner</div>';
     html += active.map(k => renderCard(k, false)).join('');
   }
   if (archived.length) {
-    html += '<details style="margin-top:16px"><summary style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;cursor:pointer;padding:8px 0">✅ Tamamlananlar — ' + archived.length + ' konteyner</summary>'
-      + '<div style="margin-top:8px;opacity:.7">' + archived.map(k => renderCard(k, true)).join('') + '</div></details>';
+    html += '<details style="margin-top:14px"><summary style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;cursor:pointer;padding:8px 0;letter-spacing:.05em">Tamamlananlar — ' + archived.length + ' konteyner</summary><div style="margin-top:8px;opacity:.8">' + archived.map(k => renderCard(k, true)).join('') + '</div></details>';
   }
   cont.innerHTML = html;
 }
 
 // ── Konteyner Detay Modal (Onay 5) ───────────────────────────────
 function openKonteynDetail(id) {
-  const konts = loadKonteyn();
-  const k     = konts.find(x => x.id === id);
+  const k = (typeof loadKonteyn==='function'?loadKonteyn():[]).find(x=>x.id===id);
   if (!k) return;
-  const users   = loadUsers();
-  const u       = users.find(x => x.id === k.uid) || { name: '?' };
+  const users   = typeof loadUsers==='function'?loadUsers():[];
+  const u       = users.find(x=>x.id===k.uid)||{name:'?'};
   const today   = new Date();
-  const etaDate = k.eta ? new Date(k.eta) : null;
-  const daysLeft = etaDate ? Math.ceil((etaDate - today) / 86400000) : null;
+  const etaDate = k.eta?new Date(k.eta):null;
+  const dl      = etaDate?Math.ceil((etaDate-today)/86400000):null;
+  const isOver  = dl!==null&&dl<=0;
+  const isUrg   = dl!==null&&dl>0&&dl<=5;
 
-  const existing = g('mo-konteyn-detail'); if (existing) existing.remove();
+  document.getElementById('mo-konteyn-detail')?.remove();
   const mo = document.createElement('div');
-  mo.className = 'mo open'; mo.id = 'mo-konteyn-detail'; mo.style.zIndex = '2200';
+  mo.className='mo open'; mo.id='mo-konteyn-detail'; mo.style.zIndex='2200';
 
   const steps = [
-    { key: 'evrakGon',       ts: k.evrakTarih,        label: 'Evrak Gönderildi',            icon: '📄' },
-    { key: 'evrakUlasti',    ts: k.evrakUlastiTarih,  label: 'Müşteri Evrak Teslim Aldı',   icon: '📬' },
-    { key: 'inspectionBitti',ts: k.inspectionTarih,   label: 'Inspection Tamamlandı',        icon: '🔍' },
-    { key: 'malTeslim',      ts: k.malTeslimTarih,    label: 'Müşteri Malları Teslim Aldı',  icon: '📦' },
-    { key: 'closed',         ts: k.closedAt,          label: 'Konteyner Kapatıldı',          icon: '✅' },
+    {key:'evrakGon',       ts:k.evrakTarih,       label:'Evrak Gönderildi'},
+    {key:'evrakUlasti',    ts:k.evrakUlastiTarih,  label:'Müşteri Evrak Teslim Aldı'},
+    {key:'inspectionBitti',ts:k.inspectionTarih,   label:'Inspection Tamamlandı'},
+    {key:'malTeslim',      ts:k.malTeslimTarih,    label:'Müşteri Malları Teslim Aldı'},
+    {key:'closed',         ts:k.closedAt,          label:'Konteyner Kapatıldı'},
   ];
+  const done  = steps.filter(s=>k[s.key]).length;
+  const pct   = Math.round(done/steps.length*100);
+  const trackUrl = k.url||((typeof KTN_TRACKING_URLS!=='undefined'?KTN_TRACKING_URLS[k.hat]||'':'')+encodeURIComponent(k.no));
 
-  const stepsDone = steps.filter(s => k[s.key]).length;
-  const pct = Math.round(stepsDone / steps.length * 100);
-
-  const timeline = steps.map((s, i) => {
-    const done = !!k[s.key];
-    return '<div style="display:flex;gap:14px;align-items:flex-start;padding-bottom:' + (i<steps.length-1?'16':'0') + 'px;position:relative">'
-      + (i<steps.length-1 ? '<div style="position:absolute;left:11px;top:24px;bottom:0;width:2px;background:' + (done?'rgba(34,197,94,.3)':'var(--b)') + '"></div>' : '')
-      + '<div style="width:24px;height:24px;border-radius:50%;border:2px solid ' + (done?'#22C55E':'var(--b)') + ';background:' + (done?'#22C55E':'var(--sf)') + ';display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:900;flex-shrink:0;z-index:1">' + (done?'✓':'') + '</div>'
-      + '<div style="flex:1;padding-top:2px">'
-        + '<div style="font-size:13px;font-weight:600;color:' + (done?'var(--t)':'var(--t3)') + '">' + s.icon + ' ' + s.label + '</div>'
-        + (s.ts ? '<div style="font-size:11px;color:#22C55E;font-family:monospace;margin-top:2px">' + s.ts.slice(0,10) + '</div>'
-                : '<div style="font-size:11px;color:var(--t3);margin-top:2px">Henüz tamamlanmadı</div>')
+  const timeline = steps.map((s,i)=>{
+    const d=!!k[s.key];
+    return '<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;'+(i<steps.length-1?'border-bottom:1px solid var(--b)':'')+'">'
+      + '<div style="position:relative;flex-shrink:0">'
+        + '<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(d?'#3B6D11':'var(--b)')+';background:'+(d?'#3B6D11':'var(--sf)')+';display:flex;align-items:center;justify-content:center">'
+          + (d?'<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 4.5L4 6.5L7 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')
+        + '</div>'
       + '</div>'
-    + '</div>';
+      + '<div style="flex:1;padding-top:1px">'
+        + '<div style="font-size:12px;font-weight:'+(d?'500':'400')+';color:'+(d?'var(--t)':'var(--t3)')+'">'+s.label+'</div>'
+        + (s.ts?'<div style="font-size:11px;color:#3B6D11;font-family:monospace;margin-top:2px">'+s.ts.slice(0,10)+'</div>':'<div style="font-size:11px;color:var(--t3);margin-top:2px">Bekliyor</div>')
+      + '</div>'
+    +'</div>';
   }).join('');
 
-  const trackUrl = k.url || (KTN_TRACKING_URLS[k.hat] || '') + encodeURIComponent(k.no);
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:10px;overflow:hidden">'
 
-  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:18px;overflow:hidden">'
-    + '<div style="padding:18px 22px 16px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center">'
+    // Header
+    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div>'
-        + '<div style="font-size:18px;font-weight:800;font-family:monospace">🚢 ' + k.no + '</div>'
-        + (k.hat ? '<span style="font-size:11px;background:rgba(99,102,241,.1);color:#6366F1;padding:2px 9px;border-radius:6px;font-weight:600">' + k.hat + '</span>' : '')
-        + (k.musteri ? ' <span style="font-size:11px;color:var(--t3)">' + k.musteri + '</span>' : '')
+        + '<div style="font-size:14px;font-weight:600;font-family:monospace">'+k.no+'</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">'+(k.hat||'')+(k.musteri?' · '+k.musteri:'')+'</div>'
       + '</div>'
-      + '<button onclick="document.getElementById(\'mo-konteyn-detail\').remove()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--t3)">×</button>'
+      + '<button onclick="document.getElementById(\"mo-konteyn-detail\").remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>'
     + '</div>'
 
-    + '<div style="padding:18px 22px;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:16px">'
-
-      // İlerleme
-      + '<div>'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
-          + '<span style="font-size:12px;color:var(--t2);font-weight:600">İlerleme</span>'
-          + '<span style="font-size:14px;font-weight:700;color:' + (pct===100?'#22C55E':'var(--ac)') + '">' + pct + '%</span>'
-        + '</div>'
-        + '<div style="height:8px;background:var(--s2);border-radius:99px;overflow:hidden">'
-          + '<div style="height:100%;background:' + (pct===100?'#22C55E':'linear-gradient(90deg,#6366F1,#8B5CF6)') + ';width:' + pct + '%;border-radius:99px;transition:width .5s"></div>'
-        + '</div>'
+    // İlerleme şeridi
+    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        + '<span style="font-size:12px;color:var(--t2)">İlerleme</span>'
+        + '<span style="font-size:12px;font-weight:500;color:'+(pct===100?'#3B6D11':'var(--t)')+'">'+pct+'%</span>'
       + '</div>'
-
-      // Bilgiler
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-        + '<div style="background:var(--s2);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:3px">Yükleme Limanı</div><div style="font-size:13px;font-weight:600">' + (k.fromPort||'—') + '</div></div>'
-        + '<div style="background:var(--s2);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:3px">Varış Limanı</div><div style="font-size:13px;font-weight:600">' + (k.toPort||'—') + '</div></div>'
-        + '<div style="background:var(--s2);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:3px">ETD</div><div style="font-size:13px;font-weight:600;font-family:monospace">' + (k.etd||'—') + '</div></div>'
-        + '<div style="background:' + (daysLeft !== null && daysLeft <= 5 ? 'rgba(239,68,68,.07)' : 'var(--s2)') + ';border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:3px">ETA ' + (daysLeft !== null ? ('(' + (daysLeft<0?'Gecikmiş':''+daysLeft+' gün kaldı)')) : '') + '</div><div style="font-size:13px;font-weight:700;color:' + (daysLeft!==null&&daysLeft<=5?'#DC2626':'var(--t)') + ';font-family:monospace">' + (k.eta||'—') + '</div></div>'
-        + '<div style="background:var(--s2);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:3px">Sorumlu</div><div style="font-size:13px;font-weight:600">👤 ' + u.name + '</div></div>'
-        + '<div style="background:var(--s2);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:3px">Oluşturulma</div><div style="font-size:12px;font-family:monospace;color:var(--t2)">' + (k.createdAt||'—').slice(0,16) + '</div></div>'
+      + '<div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden">'
+        + '<div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#3B6D11':'#185FA5')+';border-radius:2px;transition:width .4s"></div>'
       + '</div>'
-
-      // Açıklama
-      + (k.desc ? '<div style="background:var(--s2);border-radius:10px;padding:12px 14px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:5px">NOT</div><div style="font-size:13px;color:var(--t2);line-height:1.6">' + k.desc + '</div></div>' : '')
-
-      // Timeline
-      + '<div>'
-        + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">SÜRECİ</div>'
-        + '<div style="padding-left:4px">' + timeline + '</div>'
-      + '</div>'
-
     + '</div>'
 
-    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;gap:8px;background:var(--s2)">'
-      + (trackUrl ? '<a href="' + trackUrl + '" target="_blank" class="btn btns" style="text-decoration:none;font-size:12px;flex:1;justify-content:center;background:rgba(99,102,241,.1);color:#6366F1;border-color:rgba(99,102,241,.2);border-radius:9px">🔗 Canlı Takip</a>' : '')
-      + '<button class="btn btns" onclick="document.getElementById(\'mo-konteyn-detail\').remove();openKonteynModal(' + k.id + ')" style="font-size:12px;border-radius:9px">✏️ Düzenle</button>'
-      + '<button class="btn" onclick="document.getElementById(\'mo-konteyn-detail\').remove()" style="font-size:12px;border-radius:9px">Kapat</button>'
+    // Bilgi grid
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--b)">'
+      + '<div style="padding:10px 16px;border-right:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Yükleme</div><div style="font-size:13px;font-weight:500">'+(k.fromPort||'—')+'</div></div>'
+      + '<div style="padding:10px 16px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Varış</div><div style="font-size:13px;font-weight:500">'+(k.toPort||'—')+'</div></div>'
+      + '<div style="padding:10px 16px;border-right:1px solid var(--b);border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">ETD</div><div style="font-size:13px;font-family:monospace">'+(k.etd||'—')+'</div></div>'
+      + '<div style="padding:10px 16px;border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">ETA '+(dl!==null?'('+( isOver?'Geçti':dl+' gün')+')'  :'')+'</div><div style="font-size:13px;font-family:monospace;color:'+(isOver?'#A32D2D':isUrg?'#854F0B':'var(--t)')+'"> '+(k.eta||'—')+'</div></div>'
+      + '<div style="padding:10px 16px;border-right:1px solid var(--b);border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Sorumlu</div><div style="font-size:13px">'+u.name+'</div></div>'
+      + '<div style="padding:10px 16px;border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Oluşturulma</div><div style="font-size:12px;font-family:monospace;color:var(--t2)">'+(k.createdAt||'—').slice(0,16)+'</div></div>'
     + '</div>'
+
+    // Not
+    + (k.desc?'<div style="padding:10px 16px;border-bottom:1px solid var(--b);font-size:12px;color:var(--t2)">'+k.desc+'</div>':'')
+
+    // Timeline
+    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Süreç</div>'
+      + timeline
+    + '</div>'
+
+    // Footer
+    + '<div style="padding:11px 16px;background:var(--s2);display:flex;justify-content:space-between;align-items:center">'
+      + (trackUrl?'<a href="'+trackUrl+'" target="_blank" class="btn btns" style="text-decoration:none;font-size:12px">Canlı Takip</a>':'<div></div>')
+      + '<div style="display:flex;gap:6px">'
+        + '<button onclick="document.getElementById(\"mo-konteyn-detail\").remove();openKonteynModal('+k.id+')" class="btn btns" style="font-size:12px">Düzenle</button>'
+        + '<button onclick="document.getElementById(\"mo-konteyn-detail\").remove()" class="btn" style="font-size:12px">Kapat</button>'
+      + '</div>'
+    + '</div>'
+
   + '</div>';
 
   document.body.appendChild(mo);
-  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  mo.addEventListener('click', e=>{if(e.target===mo)mo.remove();});
 }
 
 // ════════════════════════════════════════════════════════════════
