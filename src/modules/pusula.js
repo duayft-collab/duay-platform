@@ -68,6 +68,109 @@ function _getCU() {
 
 // ── Modül düzeyinde durum ────────────────────────────────────────
 let PUS_VIEW         = localStorage.getItem('ak_pus_view') || 'list';
+let PUS_WEEK_FOCUS   = JSON.parse(localStorage.getItem('ak_pus_week_focus') || '[]');  // max 3 task id
+let PUS_DAY_FOCUS    = JSON.parse(localStorage.getItem('ak_pus_day_focus')  || '[]');  // max 3 task id
+
+function _saveFocus() {
+  localStorage.setItem('ak_pus_week_focus', JSON.stringify(PUS_WEEK_FOCUS));
+  localStorage.setItem('ak_pus_day_focus',  JSON.stringify(PUS_DAY_FOCUS));
+}
+
+function toggleFocus(taskId, type) {
+  // type: 'week' | 'day'
+  const list = type === 'week' ? PUS_WEEK_FOCUS : PUS_DAY_FOCUS;
+  const idx  = list.indexOf(taskId);
+  if (idx > -1) {
+    list.splice(idx, 1);
+  } else {
+    if (list.length >= 3) { window.toast?.('En fazla 3 görev seçebilirsiniz', 'warn'); return; }
+    list.push(taskId);
+  }
+  _saveFocus();
+  renderPusula();
+  renderFocusPanel();
+}
+
+function renderFocusPanel() {
+  const cont = g('pus-focus-panel');
+  if (!cont) return;
+  const tasks = loadTasks();
+  const users = loadUsers();
+  const today = new Date().toISOString().slice(0,10);
+
+  function _focusCard(taskId, type) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return '';
+    const u   = users.find(x => x.id === t.uid);
+    const avc = typeof AVC !== 'undefined' ? AVC : [['#EEEDFE','#26215C']];
+    const idx = users.indexOf(u);
+    const c   = avc[Math.max(idx,0) % avc.length];
+    const ini = (u?.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const isLate = !t.done && t.due && t.due < today;
+    const priColors = ['','#EF4444','#F97316','#EAB308','#22C55E'];
+    const priC = priColors[t.pri||2]||'#EAB308';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf);border:1px solid var(--b);border-radius:10px;margin-bottom:6px;cursor:pointer" onclick="openPusDetail(' + taskId + ')">'
+      + '<div style="width:4px;height:36px;border-radius:2px;background:' + priC + ';flex-shrink:0"></div>'
+      + (u ? '<div style="width:26px;height:26px;border-radius:7px;background:' + c[0] + ';color:' + c[1] + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">' + ini + '</div>' : '')
+      + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12px;font-weight:600;color:' + (t.done?'var(--t3)':'var(--t)') + ';text-decoration:' + (t.done?'line-through':'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>'
+        + '<div style="font-size:10px;color:var(--t3);display:flex;gap:8px">'
+        + (t.due ? '<span style="color:' + (isLate?'var(--rdt)':'var(--t3)') + '">' + (isLate?'⚠️ ':'') + t.due + '</span>' : '')
+        + (t.duration ? '<span style="color:var(--ac)">⏱ ' + (t.duration >= 60 ? Math.floor(t.duration/60) + 's ' + (t.duration%60||'') + (t.duration%60?'dk':'') : t.duration + 'dk') + '</span>' : '')
+        + '</div>'
+      + '</div>'
+      + '<button data-tid="' + taskId + '" data-type="' + type + '" class="pus-focus-rm" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:var(--t3)">x</button>'
+    + '</div>';
+  }
+
+  // Toplam süre hesapla
+  const _calcTotal = (ids) => {
+    const mins = ids.reduce((sum, id) => {
+      const t2 = tasks.find(x => x.id === id);
+      return sum + (t2?.duration || 0);
+    }, 0);
+    if (!mins) return '';
+    return mins >= 60
+      ? Math.floor(mins/60) + ' saat' + (mins%60 ? ' ' + mins%60 + ' dk' : '')
+      : mins + ' dk';
+  };
+  const weekTotal = _calcTotal(PUS_WEEK_FOCUS);
+  const dayTotal  = _calcTotal(PUS_DAY_FOCUS);
+  const weekCards = PUS_WEEK_FOCUS.map(id => _focusCard(id, 'week')).join('');
+  const dayCards  = PUS_DAY_FOCUS.map(id => _focusCard(id, 'day')).join('');
+
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    // Haftanın en önemlileri
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:12px 14px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="width:8px;height:8px;border-radius:50%;background:#6366F1"></div>'
+          + '<span style="font-size:11px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Haftanın En Önemlileri</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">' + (weekTotal ? '<span style="font-size:10px;background:var(--al);color:var(--ac);padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + weekTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + PUS_WEEK_FOCUS.length + '/3</span></div>'
+      + '</div>'
+      + (weekCards || '<div style="font-size:12px;color:var(--t3);text-align:center;padding:10px 0">Görev seçin — listeden ⭐ basın</div>')
+    + '</div>'
+    // Günün en önemlileri
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:12px 14px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="width:8px;height:8px;border-radius:50%;background:#F97316"></div>'
+          + '<span style="font-size:11px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Günün En Önemlileri</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">' + (dayTotal ? '<span style="font-size:10px;background:rgba(249,115,22,.1);color:#F97316;padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + dayTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + PUS_DAY_FOCUS.length + '/3</span></div>'
+      + '</div>'
+      + (dayCards || '<div style="font-size:12px;color:var(--t3);text-align:center;padding:10px 0">Görev seçin — listeden 🔥 basın</div>')
+    + '</div>'
+  + '</div>';
+  // Event delegation — remove button
+  cont.querySelectorAll('.pus-focus-rm').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleFocus(parseInt(this.dataset.tid), this.dataset.type);
+    });
+  });
+}
 let PUS_QUICK_FILTER = 'all';
 let PUS_DETAIL_ID    = null;
 
@@ -287,6 +390,9 @@ function renderPusula() {
     ? `${fl.length} görev`
     : `${fl.length} / ${allVis.length} görev gösteriliyor`;
 
+  // Focus panel güncelle
+  renderFocusPanel();
+
   const main = g('pus-main-view');
   if (!main) return;
 
@@ -372,6 +478,7 @@ function renderPusulaList(fl, users, todayS, cont) {
           ${subTasks.length ? `<span style="font-size:10px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:6px;font-weight:700">⬜ ${subDone}/${subTasks.length}</span>` : ''}
           ${tags}
           ${t.link ? `<a href="${t.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#6366F1;text-decoration:none;padding:2px 7px;border-radius:5px;background:rgba(99,102,241,.1);font-weight:700">🔗</a>` : ''}
+          ${t.duration ? `<span style="font-size:10px;background:var(--al);color:var(--ac);padding:2px 7px;border-radius:5px;font-weight:600">⏱ ${t.duration>=60?Math.floor(t.duration/60)+'s'+(t.duration%60?' '+t.duration%60+'dk':''):t.duration+'dk'}</span>` : ''}
           ${t.file ? `<span style="font-size:10px;background:var(--s2);color:var(--t3);padding:2px 7px;border-radius:5px;font-weight:600">📎</span>` : ''}
           ${(t.participants || []).length ? `<span style="font-size:10px;color:var(--ac);padding:1px 6px;border-radius:4px;background:var(--al);font-weight:600">+${(t.participants || []).length} katılımcı</span>` : ''}
           ${(t.viewers || []).length ? `<span style="font-size:10px;color:#8B5CF6;padding:1px 6px;border-radius:4px;background:rgba(139,92,246,.08);font-weight:600">👁${(t.viewers || []).length}</span>` : ''}
@@ -384,8 +491,10 @@ function renderPusulaList(fl, users, todayS, cont) {
             ? `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-active">💬 ${chatCount}</button>`
             : `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-empty">💬</button>`
           }
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'week')" class="tk-action-btn" title="Haftanın en önemlisi" style="opacity:${PUS_WEEK_FOCUS.includes(t.id)?1:.25}">⭐</button>
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'day')"  class="tk-action-btn" title="Günün en önemlisi"     style="opacity:${PUS_DAY_FOCUS.includes(t.id)?1:.25}">🔥</button>
           ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
-          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})" class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})"  class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
         </div>
       </div>`;
 
@@ -1184,8 +1293,9 @@ function editTask(id) {
   if (g('tk-start'))  g('tk-start').value  = t.start || '';
   if (g('tk-status')) g('tk-status').value = t.status || (t.done ? 'done' : 'todo');
   if (g('tk-eid'))    g('tk-eid').value    = t.id;
-  if (g('tk-tags'))   g('tk-tags').value   = (t.tags || []).join(', ');
-  if (g('tk-link'))   g('tk-link').value   = t.link || '';
+  if (g('tk-tags'))     g('tk-tags').value     = (t.tags || []).join(', ');
+  if (g('tk-link'))     g('tk-link').value     = t.link || '';
+  if (g('tk-duration')) g('tk-duration').value = t.duration || '';
   if (g('tk-fp') && t.file) g('tk-fp').textContent = '📎 ' + t.file.name + ' (kayıtlı)';
   const sel = g('tk-user');
   if (sel) sel.value = t.uid;
@@ -1217,7 +1327,8 @@ function saveTask() {
     start:  g('tk-start')?.value  || null,
     status: g('tk-status')?.value || 'todo',
     tags:   (g('tk-tags')?.value  || '').split(',').map(t => t.trim()).filter(Boolean),
-    link:   g('tk-link')?.value   || '',
+    link:     g('tk-link')?.value     || '',
+    duration: parseInt(g('tk-duration')?.value || '0') || null,
     uid,
     done:   g('tk-status')?.value === 'done',
     participants,
@@ -1235,16 +1346,16 @@ function saveTask() {
         if (_oldUid !== fields.uid) {
           try {
             const _cu3 = _getCU();
-            const _n2  = (typeof loadNotifs==='function'?loadNotifs():(window.loadNotifs?.() || []));
-            _n2.unshift({ id: Date.now()+1, icon: '📋',
-              msg: '"' + title + '" görevi size atandı — ' + (_cu3?.name||''),
-              type: 'info', link: 'pusula', ts: (typeof nowTs==='function'?nowTs():new Date().toLocaleString('tr-TR')),
-              read: false, targetUid: fields.uid, taskId: eid, taskTitle: title,
-              priority: fields.pri, due: fields.due, assigner: _cu3?.name||'',
-              needsAck: true, acked: false });
+            const _n2  = (typeof loadNotifs==='function' ? loadNotifs() : (window.loadNotifs?.() || []));
+            _n2.unshift({ id:Date.now()+1, icon:'📋',
+              msg:'"'+title+'" görevi size atandı — '+(_cu3?.name||''),
+              type:'info', link:'pusula', ts:nowTs(), read:false,
+              targetUid:fields.uid, taskId:eid, taskTitle:title,
+              priority:fields.pri, due:fields.due, assigner:_cu3?.name||'',
+              needsAck:true, acked:false });
             if (typeof storeNotifs==='function') storeNotifs(_n2);
-            else if (window.storeNotifs) window.storeNotifs(_n2);
-            if (window.updateNotifBadge) window.updateNotifBadge();
+            else window.storeNotifs?.(_n2);
+            window.updateNotifBadge?.();
           } catch(e) { console.error('[Pusula] Güncelleme bildirim hatası:', e); }
         }
       }
@@ -1255,22 +1366,21 @@ function saveTask() {
       d.push({ id: _nid, subTasks: [], ...fields });
       logActivity('task', `"${title}" ekledi`);
       window.toast?.('Görev eklendi ✓', 'ok');
-      // Bildirim — atanan farklı kişiyse
       try {
         const _cu2 = _getCU();
         if (uid && _cu2 && uid !== _cu2.id) {
-          const _n = (typeof loadNotifs === 'function' ? loadNotifs() : (window.loadNotifs?.() || []));
-          const _assignee = (typeof loadUsers === 'function' ? loadUsers() : []).find(u => u.id === uid);
-          _n.unshift({ id: _nid + 1, icon: '📋',
-            msg: '"' + title + '" görevi size atandı — ' + (_cu2.name || ''),
-            type: 'info', link: 'pusula', ts: (typeof nowTs==='function'?nowTs():new Date().toLocaleString('tr-TR')),
-            read: false, targetUid: uid, taskId: _nid, taskTitle: title,
-            priority: fields.pri, due: fields.due, assigner: _cu2.name || '',
-            needsAck: true, acked: false });
-          if (typeof storeNotifs === 'function') storeNotifs(_n);
-          else if (window.storeNotifs) window.storeNotifs(_n);
-          if (window.updateNotifBadge) window.updateNotifBadge();
-          console.log('[Pusula] Bildirim gönderildi →', _assignee?.name, 'taskId:', _nid);
+          const _n = (typeof loadNotifs==='function' ? loadNotifs() : (window.loadNotifs?.() || []));
+          const _assignee = loadUsers().find(u => u.id === uid);
+          _n.unshift({ id: _nid+1, icon:'📋',
+            msg: '"'+title+'" görevi size atandı — '+(_cu2.name||''),
+            type:'info', link:'pusula', ts: nowTs(), read:false,
+            targetUid:uid, taskId:_nid, taskTitle:title,
+            priority:fields.pri, due:fields.due, assigner:_cu2.name||'',
+            needsAck:true, acked:false });
+          if (typeof storeNotifs==='function') storeNotifs(_n);
+          else window.storeNotifs?.(_n);
+          window.updateNotifBadge?.();
+          console.log('[Pusula] Bildirim →', _assignee?.name);
         }
       } catch(e) { console.error('[Pusula] Bildirim hatası:', e); }
     }
@@ -1918,6 +2028,16 @@ if (typeof window !== 'undefined') {
 
   // ── Geriye uyumluluk: eski HTML inline onclick'ler çalışmaya devam eder ──
   window.renderPusula = renderPusula;
+window.toggleFocus     = toggleFocus;
+window.getPusDayTotal  = function() {
+  const tasks = loadTasks();
+  const mins  = PUS_DAY_FOCUS.reduce((s,id) => {
+    const t = tasks.find(x=>x.id===id); return s+(t?.duration||0);
+  }, 0);
+  if (!mins) return null;
+  return mins>=60 ? Math.floor(mins/60)+' saat'+(mins%60?' '+mins%60+' dk':'') : mins+' dk';
+};
+window.renderFocusPanel = renderFocusPanel;
   window.openAddTask           = openAddTask;
   window.editTask              = editTask;
   window.saveTask              = saveTask;
