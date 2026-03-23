@@ -1229,13 +1229,43 @@ function saveTask() {
     else if (eid) { const old = d.find(x => x.id === eid); if (old?.file) fields.file = old.file; }
     if (eid) {
       const t = d.find(x => x.id === eid);
-      if (t) Object.assign(t, fields);
+      if (t) {
+        const _oldUid = t.uid;
+        Object.assign(t, fields);
+        if (_oldUid !== fields.uid) {
+          const _cu3 = _getCU();
+          const _n2  = loadNotifs ? loadNotifs() : [];
+          _n2.unshift({ id: Date.now() + 1, icon: '📋',
+            msg: '"' + title + '" görevi size atandı — ' + (_cu3?.name || ''),
+            type: 'info', link: 'pusula', ts: nowTs(), read: false,
+            targetUid: fields.uid, taskId: eid, taskTitle: title,
+            priority: fields.pri, due: fields.due, assigner: _cu3?.name || '',
+            needsAck: true, acked: false });
+          if (window.storeNotifs) storeNotifs(_n2);
+          if (window.updateNotifBadge) updateNotifBadge();
+        }
+      }
       logActivity('task', `"${title}" güncelledi`);
       window.toast?.('Güncellendi ✓', 'ok');
     } else {
-      d.push({ id: Date.now(), subTasks: [], ...fields });
+      const _nid = Date.now();
+      d.push({ id: _nid, subTasks: [], ...fields });
       logActivity('task', `"${title}" ekledi`);
       window.toast?.('Görev eklendi ✓', 'ok');
+      // Atanan farklı kişiyse bildirim gönder
+      const _cu2 = _getCU();
+      if (uid && _cu2 && uid !== _cu2.id) {
+        const _n = loadNotifs ? loadNotifs() : [];
+        _n.unshift({ id: _nid + 1, icon: '📋',
+          msg: '"' + title + '" görevi size atandı — ' + (_cu2.name || ''),
+          type: 'info', link: 'pusula', ts: nowTs(), read: false,
+          targetUid: uid, taskId: _nid, taskTitle: title,
+          priority: fields.pri, due: fields.due, assigner: _cu2.name || '',
+          needsAck: true, acked: false });
+        if (window.storeNotifs) storeNotifs(_n);
+        if (window.updateNotifBadge) updateNotifBadge();
+        window.toast?.('📬 ' + (loadUsers().find(u=>u.id===uid)?.name||'Kullanıcı') + '\'a bildirim gönderildi', 'ok');
+      }
     }
     saveTasks(d);
     window.closeMo?.('mo-task');
