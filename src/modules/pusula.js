@@ -37,6 +37,18 @@
 
 'use strict';
 
+
+// ── Dosya seçim handler — HTML attribute'ta güvenli ──────────────
+function tkFileChange(input) {
+  var fp = document.getElementById('tk-fp');
+  if (!fp) return;
+  var files = Array.from(input.files || []);
+  if (!files.length) { fp.innerHTML = ''; return; }
+  fp.innerHTML = files.map(function(f) {
+    return '<span style="background:var(--al);color:var(--ac);border-radius:4px;padding:1px 7px;font-size:10px;display:inline-flex;align-items:center;gap:3px">📎 ' + f.name + '</span>';
+  }).join('');
+}
+
 // ── Güvenli CU erişimi — app.js yükleme sırasından bağımsız ──────
 function _isAdmin() {
   return window.isAdmin?.() || window.Auth?.getCU?.()?.role === 'admin' || false;
@@ -1276,33 +1288,55 @@ function populateTaskParticipants(task) {
   const others    = users.filter(u => u.id !== ownerUid);
   const existingP = task?.participants || [];
   const existingV = task?.viewers      || [];
+  const existingM = (task?.managers    || []).filter(id => id !== ownerUid); // sorumlu hariç
 
+  // ── Yöneticiler (sorumlu hariç, o zaten yönetici) ────────────
+  const mgrEl = g('tk-managers-list');
+  if (mgrEl) {
+    if (!others.length) {
+      mgrEl.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:4px">Başka kullanıcı yok.</div>';
+    } else {
+      mgrEl.innerHTML = others.map(u =>
+        '<label style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:12px;background:var(--sf);border:1px solid var(--b)">'
+        + '<input type="checkbox" id="tk-mgr-' + u.id + '" value="' + u.id + '" ' + (existingM.includes(u.id) ? 'checked' : '') + ' style="accent-color:#007AFF">'
+        + '<span style="font-weight:500">' + u.name + '</span>'
+        + '<span style="font-size:10px;color:var(--t3);margin-left:auto">' + u.role + '</span>'
+        + '</label>'
+      ).join('');
+    }
+  }
+
+  // ── Katılımcılar ──────────────────────────────────────────────
   const partEl = g('tk-participants-list');
   const viewEl = g('tk-viewers-list');
   if (!partEl || !viewEl) return;
 
-  partEl.innerHTML = others.map(u => `
-    <label style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:12px;background:var(--sf);border:1px solid var(--b);transition:all .12s" onmouseenter="this.style.borderColor='var(--ac)'" onmouseleave="this.style.borderColor='var(--b)'">
-      <input type="checkbox" id="tk-part-${u.id}" value="${u.id}" ${existingP.includes(u.id) ? 'checked' : ''} style="accent-color:var(--ac)">
-      <span style="font-weight:500">${u.name}</span>
-      <span style="font-size:10px;color:var(--t3);margin-left:auto">${u.role}</span>
-    </label>`).join('');
+  partEl.innerHTML = others.map(u =>
+    '<label style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:12px;background:var(--sf);border:1px solid var(--b)">'
+    + '<input type="checkbox" id="tk-part-' + u.id + '" value="' + u.id + '" ' + (existingP.includes(u.id) ? 'checked' : '') + ' style="accent-color:var(--ac)">'
+    + '<span style="font-weight:500">' + u.name + '</span>'
+    + '<span style="font-size:10px;color:var(--t3);margin-left:auto">' + u.role + '</span>'
+    + '</label>'
+  ).join('');
 
-  viewEl.innerHTML = others.map(u => `
-    <label style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:12px;background:var(--sf);border:1px solid var(--b);transition:all .12s" onmouseenter="this.style.borderColor='#8B5CF6'" onmouseleave="this.style.borderColor='var(--b)'">
-      <input type="checkbox" id="tk-view-${u.id}" value="${u.id}" ${existingV.includes(u.id) ? 'checked' : ''} style="accent-color:#8B5CF6">
-      <span style="font-weight:500">${u.name}</span>
-      <span style="font-size:10px;color:var(--t3);margin-left:auto">${u.role}</span>
-    </label>`).join('');
+  viewEl.innerHTML = others.map(u =>
+    '<label style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:12px;background:var(--sf);border:1px solid var(--b)">'
+    + '<input type="checkbox" id="tk-view-' + u.id + '" value="' + u.id + '" ' + (existingV.includes(u.id) ? 'checked' : '') + ' style="accent-color:#8B5CF6">'
+    + '<span style="font-weight:500">' + u.name + '</span>'
+    + '<span style="font-size:10px;color:var(--t3);margin-left:auto">' + u.role + '</span>'
+    + '</label>'
+  ).join('');
 
-  // Mutex: katılımcı seçilince izleyiciden çıkar ve tersi
+  // Mutex: katılımcı ↔ izleyici birbirini dışlar
   others.forEach(u => {
     const pCb = g('tk-part-' + u.id);
     const vCb = g('tk-view-' + u.id);
+    const mCb = g('tk-mgr-'  + u.id);
     if (pCb && vCb) {
       pCb.onchange = () => { if (pCb.checked && vCb.checked) vCb.checked = false; };
       vCb.onchange = () => { if (vCb.checked && pCb.checked) pCb.checked = false; };
     }
+    // Yönetici seçilince diğer kutular temizlenmez — birisi hem yönetici hem katılımcı olabilir
   });
 }
 
