@@ -186,36 +186,47 @@ function injectAllModals() {
                  krg-date, krg-status, krg-eid
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-kargo">
-  <div class="moc" style="max-width:500px">
-    <div class="mt" id="mo-krg-t">Kargo Kaydı</div>
-    <input type="hidden" id="krg-dir">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="fg"><div class="fl">GÖNDERİCİ</div><input class="fi" id="krg-from" placeholder="Ad / Firma"></div>
-      <div class="fg"><div class="fl">ALICI</div><input class="fi" id="krg-to" placeholder="Ad / Firma"></div>
+  <div class="moc" style="max-width:520px;padding:0;border-radius:10px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span class="mt" id="mo-krg-t" style="margin:0;font-size:15px">Kargo Kaydı</span>
+      <button onclick="closeMo('mo-kargo')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
-      <div class="fg"><div class="fl">GÖN. TELEFON</div><input class="fi" id="krg-from-tel" placeholder="0212…"></div>
-      <div class="fg"><div class="fl">GÖN. CEP</div><input class="fi" id="krg-from-gsm" placeholder="0532…"></div>
-      <div class="fg"><div class="fl">ALICI TELEFON</div><input class="fi" id="krg-to-tel" placeholder="0212…"></div>
-      <div class="fg"><div class="fl">ALICI CEP</div><input class="fi" id="krg-to-gsm" placeholder="0532…"></div>
-    </div>
-    <div class="fg"><div class="fl">ADRES</div><textarea class="fi" id="krg-addr" rows="2" style="resize:vertical" placeholder="…"></textarea></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-      <div class="fg"><div class="fl">KARGO FİRMASI</div>
-        <select class="fi" id="krg-firm"><option>Yurtiçi</option><option>Aras</option><option>MNG</option><option>PTT</option><option>DHL</option><option>UPS</option><option>Diğer</option></select>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <input type="hidden" id="krg-dir">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div class="fl">GÖNDERİCİ</div><input class="fi" id="krg-from" placeholder="Ad / Firma"></div>
+        <div><div class="fl">ALICI</div><input class="fi" id="krg-to" placeholder="Ad / Firma"></div>
       </div>
-      <div class="fg"><div class="fl">TARİH</div><input type="date" class="fi" id="krg-date"></div>
-      <div class="fg"><div class="fl">DURUM</div>
-        <select class="fi" id="krg-status"><option value="bekle">⏳ Beklemede</option><option value="yolda">🚚 Yolda</option><option value="teslim">✅ Teslim</option></select>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div><div class="fl">GÖN. TELEFON</div><input class="fi" id="krg-from-tel" placeholder="0212…"></div>
+        <div><div class="fl">GÖN. CEP</div><input class="fi" id="krg-from-gsm" placeholder="0532…"></div>
+        <div><div class="fl">ALICI TELEFON</div><input class="fi" id="krg-to-tel" placeholder="0212…"></div>
+        <div><div class="fl">ALICI CEP</div><input class="fi" id="krg-to-gsm" placeholder="0532…"></div>
       </div>
+      <div><div class="fl">ADRES</div><textarea class="fi" id="krg-addr" rows="2" style="resize:none" placeholder="Teslimat adresi…"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div><div class="fl">KARGO FİRMASI</div>
+          <select class="fi" id="krg-firm"><option>Yurtiçi</option><option>Aras</option><option>MNG</option><option>PTT</option><option>DHL</option><option>UPS</option><option>Diğer</option></select>
+        </div>
+        <div><div class="fl">TARİH</div><input type="date" class="fi" id="krg-date"></div>
+        <div><div class="fl">DURUM</div>
+          <select class="fi" id="krg-status">
+            <option value="bekle">Beklemede</option>
+            <option value="yolda">Yolda</option>
+            <option value="teslim">Teslim</option>
+          </select>
+        </div>
+      </div>
+      <div><div class="fl">TAKİP NO</div><input class="fi" id="krg-note" placeholder="Takip numarası…"></div>
+      <div><div class="fl">AÇIKLAMA</div><textarea class="fi" id="krg-desc" rows="2" style="resize:none" placeholder="Kargo içeriği, özel talimat…"></textarea></div>
+      <input type="hidden" id="krg-eid">
     </div>
-    <div class="fg"><div class="fl">NOT / TAKİP NO</div><input class="fi" id="krg-note" placeholder="Takip numarası…"></div>
-    <div class="fg"><div class="fl">AÇIKLAMA (Gelen kargo içeriği / Giden kargo detayı)</div><textarea class="fi" id="krg-desc" rows="2" style="resize:vertical" placeholder="Kargo içeriği, teslim notu, özel talimat…"></textarea></div>
-    <input type="hidden" id="krg-eid">
-    <div class="mof">
-      <button class="btn" onclick="closeMo('mo-kargo')">İptal</button>
-      <button class="btn" onclick="printKargoLabel()" id="btn-krg-label">🖨 Etiket</button>
-      <button class="btn btnp" onclick="saveKargo()">Kaydet</button>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:space-between;align-items:center">
+      <button class="btn btns" onclick="printKargoLabel()" id="btn-krg-label" style="font-size:12px">Etiket Yazdır</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeMo('mo-kargo')" style="font-size:13px">İptal</button>
+        <button class="btn btnp" onclick="saveKargo()" style="font-size:13px">Kaydet</button>
+      </div>
     </div>
   </div>
 </div>
@@ -226,29 +237,33 @@ function injectAllModals() {
                  ktn-uid, ktn-url, ktn-eid
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-konteyn">
-  <div class="moc" style="max-width:520px">
-    <div class="mt" id="mo-ktn-t">🚢 Konteyner Ekle</div>
+  <div class="moc" style="max-width:560px;padding:0;border-radius:10px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span class="mt" id="mo-ktn-t" style="margin:0;font-size:15px">Konteyner Ekle</span>
+      <button onclick="closeMo('mo-konteyn')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>
+    </div>
+    <div style="padding:20px;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
     <div class="fg">
       <div class="fl">KONTEYNER NUMARASI <span style="color:var(--rd)">*</span></div>
       <input class="fi" id="ktn-no" placeholder="MSCU1234567, MSKU9876543…" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;letter-spacing:.05em" autocomplete="off">
       <div style="font-size:10px;color:var(--t3);margin-top:4px">Format: 4 harf + 7 rakam (ör: MSCU1234567)</div>
     </div>
     <!-- İhracat / Sipariş ID — öne çıkar -->
-    <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.03));border:1.5px solid rgba(99,102,241,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🔗 Bağlantı Bilgisi</div>
+    <div style="border:1px solid var(--b);border-radius:8px;padding:12px 14px">
+      <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Bağlantı Bilgisi</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fr" style="margin:0">
-          <div class="fl" style="margin-bottom:4px">İHRACAT / İŞLEM ID</div>
-          <input class="fi" id="ktn-ihracat-id" placeholder="EXP-2026-001, PO-123…" style="font-family:'DM Mono',monospace;font-weight:600">
+        <div>
+          <div class="fl">İHRACAT / İŞLEM ID</div>
+          <input class="fi" id="ktn-ihracat-id" placeholder="EXP-2026-001, PO-123…" style="font-family:'DM Mono',monospace">
         </div>
-        <div class="fr" style="margin:0">
-          <div class="fl" style="margin-bottom:4px">MÜŞTERİ / FİRMA ADI</div>
+        <div>
+          <div class="fl">MÜŞTERİ / FİRMA ADI</div>
           <input class="fi" id="ktn-musteri" placeholder="Alıcı firma adı…">
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="fg"><div class="fl">HAT / ŞIRKETI <span style="font-size:10px;color:var(--t2)">(2025 Top 10 Dünya Sıralaması)</span></div>
+      <div class="fg"><div class="fl">HAT / ARMATÖR</div>
         <select class="fi" id="ktn-hat" onchange="autoFillKonteynUrl()">
           <option value="">Seçin…</option>
           <option value="MSC">MSC — Mediterranean Shipping Co.</option>
@@ -281,32 +296,34 @@ function injectAllModals() {
       <div class="fl">TAKİP LİNKİ (opsiyonel)</div>
       <input class="fi" id="ktn-url" placeholder="https://www.msc.com/tr/track-a-shipment…">
     </div>
-        <div style="background:var(--al);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:var(--at);margin-bottom:10px">📋 Süreç Adımları</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sf);border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:500">
-            <input type="checkbox" id="ktn-evrak-gon" style="width:15px;height:15px;accent-color:var(--gr)">
-            📄 Evrak Gönderildi
-          </label>
-          <div><input type="date" class="fi" id="ktn-evrak-tarih" style="padding:6px 8px;font-size:12px" title="Gönderim tarihi"></div>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sf);border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:500">
-          <input type="checkbox" id="ktn-evrak-ulasti" style="width:15px;height:15px;accent-color:var(--gr)">
-          📬 Müşteri Evrakları Teslim Aldı
+    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Süreç Adımları</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--b)">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12px;border-right:1px solid var(--b)">
+          <input type="checkbox" id="ktn-evrak-gon" style="accent-color:var(--ac)">
+          Evrak Gönderildi
         </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sf);border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:500">
-          <input type="checkbox" id="ktn-inspection" style="width:15px;height:15px;accent-color:var(--gr)">
-          🔍 Inspection Bitti
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sf);border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:500">
-          <input type="checkbox" id="ktn-mal-teslim" style="width:15px;height:15px;accent-color:var(--gr)">
-          📦 Müşteri Malları Teslim Aldı
-        </label>
+        <div style="padding:8px 14px"><input type="date" class="fi" id="ktn-evrak-tarih" style="font-size:12px"></div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--b)">
+        <input type="checkbox" id="ktn-evrak-ulasti" style="accent-color:var(--ac)">
+        Müşteri Evrakları Teslim Aldı
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--b)">
+        <input type="checkbox" id="ktn-inspection" style="accent-color:var(--ac)">
+        Inspection Tamamlandı
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12px">
+        <input type="checkbox" id="ktn-mal-teslim" style="accent-color:var(--ac)">
+        Müşteri Malları Teslim Aldı
+      </label>
     </div>
-    <input type="hidden" id="ktn-eid">
-    <div class="mof"><button class="btn" onclick="closeMo('mo-konteyn')">İptal</button><button class="btn btnp" onclick="saveKonteyn()">Kaydet</button></div>
+      <input type="hidden" id="ktn-eid">
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeMo('mo-konteyn')" style="font-size:13px">İptal</button>
+      <button class="btn btnp" onclick="saveKonteyn()" style="font-size:13px">Kaydet</button>
+    </div>
   </div>
 </div>
 
@@ -404,7 +421,7 @@ function injectAllModals() {
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-krg-firma">
   <div class="moc" style="max-width:460px">
-    <div class="moh"><span class="mot">⚙️ Kargo Firmaları Yönetimi</div>
+    <div style="padding:14px 18px;border-bottom:1px solid var(--b)"><span style="font-size:14px;font-weight:500">Kargo Firmaları</span></div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:14px">Admin onayı ile yeni firma eklenebilir veya silinebilir.</div>
     <div id="krg-firma-list" style="margin-bottom:14px;max-height:200px;overflow-y:auto;border:1px solid var(--b);border-radius:var(--rs)"></div>
     <div id="krg-firma-add-row" style="display:none">
