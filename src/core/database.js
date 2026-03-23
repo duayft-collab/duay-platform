@@ -245,8 +245,12 @@ _migrateUserPasswords();
  */
 function saveUsers(data) {
   _write(KEYS.users, data);
-  const _fp_users = _fsPath('users');
-  if (_fp_users) _syncFirestore(_fp_users, data);
+  // Sadece giriş yapılmışsa Firestore'a yaz
+  const _cu = window.Auth?.getCU?.();
+  if (_cu) {
+    const _fp_users = _fsPath('users');
+    if (_fp_users) _syncFirestore(_fp_users, data);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
