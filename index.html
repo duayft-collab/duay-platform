@@ -113,7 +113,9 @@ function _doLogin() {
   window.Auth.login(email, pwd).then(function(r) {
     if (btn) { btn.textContent = 'Giriş Yap'; btn.disabled = false; }
     if (r.ok) {
-      if (window.App && window.App.init) { window.App.init(); }
+      if (window.App && window.App.init) { window.App.init();
+  // Liman autocomplete global init
+  document.addEventListener('DOMContentLoaded', function() { window.initAllPortInputs?.(); }); }
       else { location.reload(); }
     } else {
       if (errEl) { errEl.textContent = r.error || 'E-posta veya şifre hatalı.'; errEl.style.display = 'block'; }
@@ -1150,6 +1152,7 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <!-- 3. MODÜLLER -->
 <script src="src/modules/admin.js"></script>
 <script src="src/modules/kargo.js"></script>
+<script src="src/modules/navlun.js"></script>
 <script src="src/modules/pirim.js"></script>
 <script src="src/modules/pusula.js"></script>
 <script src="src/modules/ik.js"></script>
