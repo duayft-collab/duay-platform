@@ -70,7 +70,6 @@ const ALL_MODULES = [
   { id:'links',      label:'Hızlı Linkler'        },
   { id:'hedefler',   label:'Hedefler'             },
   { id:'odemeler',   label:'Rutin Ödemeler'       },
-  { id:'lojistik',   label:'Lojistik Merkezi'     },
   { id:'kargo',      label:'Kargo'                },
   { id:'stok',       label:'Stok'                 },
   { id:'ik',         label:'İK Yönetimi'          },
@@ -93,7 +92,7 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','odemeler','lojistik','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings'],
+  manager: ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings'],
   lead:    ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber'],
   staff:   ['dashboard','announce','pusula','takvim','notes','links','izin','pirim'],
 };
@@ -480,6 +479,9 @@ function _initApp(user) {
 
   // Firebase durum rozetini güncelle
   setTimeout(() => window.Auth?.checkFirebaseStatus?.(), 1500);
+  setTimeout(() => window._checkPendingTaskNotifs?.(user), 1500);
+  setTimeout(() => window._startMorningRoutine?.(user), 2500);
+  setTimeout(async () => { try { const q = await window._fetchDailyQuote?.(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {} }, 3000);
   setTimeout(() => _checkPendingTaskNotifs(user), 1500);
   setTimeout(() => _startMorningRoutine(user), 2500);
   setTimeout(async () => { try { const q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {} }, 3000);
@@ -1072,6 +1074,96 @@ function clearAllNotifs() {
  * Gecikmiş ödeme, hedef, kargo, tebligat bildirimlerini üretir.
  * Her _initApp sonrası 800ms gecikmeyle çağrılır.
  */
+// ── Görev Bildirim Popup ─────────────────────────────────────────
+function _checkPendingTaskNotifs(user) {
+  if (!user) return;
+  var notifs = window.loadNotifs ? window.loadNotifs() : [];
+  var pending = notifs.filter(function(n) { return n.targetUid===user.id && n.needsAck && !n.acked && !n.read; });
+  if (pending.length) _showTaskAssignPopup(pending, 0);
+}
+
+function _showTaskAssignPopup(pending, idx) {
+  if (idx >= pending.length) return;
+  var n = pending[idx];
+  document.getElementById('task-assign-popup')?.remove();
+  var pop = document.createElement('div');
+  pop.id = 'task-assign-popup';
+  pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999';
+  var priLabels = ['','Kritik','Yuksek','Normal','Dusuk'];
+  var priColors = ['','#EF4444','#F97316','#EAB308','#22C55E'];
+  pop.innerHTML = '<div style="background:var(--sf);border-radius:20px;padding:28px 32px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">'
+    + '<div style="width:52px;height:52px;border-radius:16px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📋</div>'
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Yeni Gorev Atandi</div>'
+    + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + (n.taskTitle||'Yeni Gorev') + '</div></div></div>'
+    + '<div style="background:var(--s2);border-radius:12px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">ATAYAN</div><div style="font-size:13px;font-weight:600">' + (n.assigner||'---') + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">ONCELIK</div><div style="font-size:13px;font-weight:700;color:' + (priColors[n.priority||2]||'#EAB308') + '">' + (priLabels[n.priority||2]||'Normal') + '</div></div>'
+    + (n.due ? '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">SON TARIH</div><div style="font-size:13px;font-weight:600">' + n.due + '</div></div>' : '')
+    + '</div>'
+    + '<div style="display:flex;gap:10px">'
+    + '<button id="tapop-go" style="flex:1;background:var(--ac);color:#fff;border:none;border-radius:11px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Goreve Git</button>'
+    + '<button id="tapop-ok" style="background:var(--s2);color:var(--t);border:none;border-radius:11px;padding:12px 18px;font-size:13px;cursor:pointer;font-family:inherit">Tamam</button></div>'
+    + '</div>';
+  document.body.appendChild(pop);
+  var _ack = function() {
+    var all = window.loadNotifs ? window.loadNotifs() : [];
+    var f = all.find(function(x){ return x.id===n.id; });
+    if (f) { f.acked=true; f.read=true; }
+    if (window.storeNotifs) window.storeNotifs(all);
+    if (window.updateNotifBadge) window.updateNotifBadge();
+    pop.remove();
+    setTimeout(function(){ _showTaskAssignPopup(pending, idx+1); }, 400);
+  };
+  document.getElementById('tapop-ok').addEventListener('click', _ack);
+  document.getElementById('tapop-go').addEventListener('click', function(){ _ack(); if(typeof nav==='function') nav('pusula',null); });
+  pop.addEventListener('click', function(e){ if(e.target===pop) _ack(); });
+}
+
+var _MORNING_KEY = 'ak_morning_done_';
+var _QUOTE_KEY   = 'ak_pus_quote_';
+
+async function _fetchDailyQuote() {
+  var today = new Date().toISOString().slice(0,10);
+  var cached = localStorage.getItem(_QUOTE_KEY + today);
+  if (cached) { try { return JSON.parse(cached); } catch(e) {} }
+  try {
+    var r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://zenquotes.io/api/today'));
+    var j = await r.json();
+    var d = JSON.parse(j.contents);
+    var q = { text: d[0].q, author: d[0].a };
+    localStorage.setItem(_QUOTE_KEY + today, JSON.stringify(q));
+    return q;
+  } catch(e) {
+    var fb = [
+      { text: "Zamani yonetemeyen hicbir seyi yonetemez.", author: "Peter Drucker" },
+      { text: "Bugun yapabileceğini yarına bırakma.", author: "Benjamin Franklin" },
+    ];
+    return fb[new Date().getDate() % fb.length];
+  }
+}
+
+function _startMorningRoutine(user) {
+  if (!user) return;
+  setInterval(function() {
+    var now = new Date(); var today = now.toISOString().slice(0,10);
+    var key = _MORNING_KEY + today;
+    if (now.getHours()===9 && now.getMinutes()===0 && !localStorage.getItem(key)) {
+      localStorage.setItem(key,'1'); _triggerMorningAlert(user);
+    }
+  }, 60000);
+}
+
+async function _triggerMorningAlert(user) {
+  var cu = user || window.Auth?.getCU?.();
+  var dayFocus = JSON.parse(localStorage.getItem('ak_pus_day_focus_'+(cu?.id||''))||'[]');
+  var dayEmpty = dayFocus.length===0;
+  if (window.addNotif) window.addNotif('☀️', dayEmpty ? "Gunaydin! Odak gorevleri secilmedi." : 'Gunaydin! '+dayFocus.length+' odak goreviniz var.', dayEmpty?'warn':'ok', 'pusula');
+  if (window.toast) setTimeout(function(){ window.toast(dayEmpty?'☀️ Odak gorevleri!':'☀️ Gunaydin!', dayEmpty?'warn':'ok'); }, 500);
+  try { var q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {}
+}
+
+
 function generateSystemNotifs() {
   const today = new Date().toISOString().slice(0, 10);
   const soon  = new Date(); soon.setDate(soon.getDate() + 7);
@@ -1643,6 +1735,14 @@ window.updateAllBadges  = updateAllBadges;
 window.updateDashboardActs = updateDashboardActs;
 window.updateVersionUI  = updateVersionUI;
 window.generateSystemNotifs    = generateSystemNotifs;
+window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._startMorningRoutine    = _startMorningRoutine;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._fetchDailyQuote        = _fetchDailyQuote;
+window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._startMorningRoutine    = _startMorningRoutine;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._fetchDailyQuote        = _fetchDailyQuote;
 window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
 window._triggerMorningAlert    = _triggerMorningAlert;
 window._startMorningRoutine    = _startMorningRoutine;
