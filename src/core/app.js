@@ -396,47 +396,8 @@ async function logout() {
  * Giriş sonrası uygulama UI'ını hazırlar.
  * @param {Object} user
  */
-
-/** Planlanmış (publishAt) duyuruları zamanı gelince yayınlar */
-function _checkScheduledAnnouncements() {
-  if (typeof loadAnn !== 'function' || typeof storeAnn !== 'function') return;
-  const now  = new Date();
-  const anns = loadAnn();
-  let changed = false;
-  anns.forEach(a => {
-    if (a.published || !a.publishAt) return;
-    if (new Date(a.publishAt) <= now) {
-      a.published = true;
-      changed = true;
-      window.addNotif?.('📣', '"' + a.title + '" duyurusu yayınlandı', 'ok', 'duyurular');
-    }
-  });
-  if (changed) {
-    storeAnn(anns);
-    window.updateAnnBadge?.();
-    window.renderAnnouncements?.();
-  }
-}
-
 function _initApp(user) {
   if (!user) return;
-
-
-  // Planlanmış duyuruları kontrol et
-  _checkScheduledAnnouncements();
-
-  // Şirket yıllık takvimini localStorage'a merge et (yoksa ekle, varsa atla)
-  if (typeof window.mergeCompanyCalendar === 'function') {
-    window.mergeCompanyCalendar();
-  }
-  // Zamanlanmış duyuruları kontrol et
-  if (typeof window.checkScheduledAnnouncements === 'function') {
-    window.checkScheduledAnnouncements();
-    // Her 5 dakikada bir kontrol et
-    setInterval(() => window.checkScheduledAnnouncements?.(), 5 * 60 * 1000);
-  }
-  // Yaklaşan tatilleri 10 gün önceden yöneticiye sor
-  setTimeout(() => window.checkYaklasanTatiller?.(), 2000);
 
   // Nav avatar
   const users = loadUsers();
@@ -477,6 +438,9 @@ function _initApp(user) {
 
   // Firebase durum rozetini güncelle
   setTimeout(() => window.Auth?.checkFirebaseStatus?.(), 1500);
+
+  // Bekleyen görev atama bildirimleri — giriş sonrası kontrol
+  setTimeout(() => _checkPendingTaskNotifs(user), 1200);
 
   // Kargo & Konteyner polling
   setTimeout(() => {
@@ -994,6 +958,86 @@ function clearAllNotifs() {
  * Gecikmiş ödeme, hedef, kargo, tebligat bildirimlerini üretir.
  * Her _initApp sonrası 800ms gecikmeyle çağrılır.
  */
+// ── Bekleyen Görev Bildirimleri ───────────────────────────────────
+function _checkPendingTaskNotifs(user) {
+  if (!user) return;
+  const notifs = window.loadNotifs ? loadNotifs() : [];
+  // Bu kullanıcıya ait, okunmamış, onay bekleyen görev bildirimleri
+  const pending = notifs.filter(function(n) {
+    return n.targetUid === user.id && n.needsAck && !n.acked && !n.read;
+  });
+  if (!pending.length) return;
+  // Her bildirim için sırayla pop-up göster
+  _showTaskAssignPopup(pending, 0);
+}
+
+function _showTaskAssignPopup(pending, idx) {
+  if (idx >= pending.length) return;
+  var n = pending[idx];
+  var existing = document.getElementById('task-assign-popup');
+  if (existing) existing.remove();
+
+  var popup = document.createElement('div');
+  popup.id = 'task-assign-popup';
+  popup.style.cssText = [
+    'position:fixed;top:0;left:0;right:0;bottom:0;',
+    'background:rgba(0,0,0,.55);backdrop-filter:blur(3px);',
+    'display:flex;align-items:center;justify-content:center;',
+    'z-index:9999;animation:fadeIn .2s ease',
+  ].join('');
+
+  var pri = n.priority || 2;
+  var priLabel = ['','🔴 Kritik','🟠 Yüksek','🟡 Normal','🟢 Düşük'][pri] || '🟡 Normal';
+  var dueText = n.due ? ' · Son tarih: ' + n.due : '';
+
+  popup.innerHTML = '<div style="background:var(--sf);border-radius:20px;padding:28px 32px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pus-in .25s ease">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">'
+      + '<div style="width:48px;height:48px;border-radius:14px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📋</div>'
+      + '<div>'
+        + '<div style="font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Yeni Görev Atandı</div>'
+        + '<div style="font-size:17px;font-weight:700;color:var(--t);line-height:1.3">' + (n.taskTitle || 'Yeni Görev') + '</div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="background:var(--s2);border-radius:12px;padding:12px 14px;margin-bottom:18px;display:flex;flex-direction:column;gap:7px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px">'
+        + '<span style="color:var(--t3)">Atayan</span><span style="font-weight:600;color:var(--t)">' + (n.assigner || '—') + '</span>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:12px">'
+        + '<span style="color:var(--t3)">Öncelik</span><span style="font-weight:600">' + priLabel + '</span>'
+      + '</div>'
+      + (n.due ? '<div style="display:flex;justify-content:space-between;font-size:12px">'
+        + '<span style="color:var(--t3)">Son Tarih</span><span style="font-weight:600;color:var(--t)">' + n.due + '</span>'
+      + '</div>' : '')
+    + '</div>'
+    + '<div style="display:flex;gap:10px">'
+      + '<button id="task-notif-go" style="flex:1;background:var(--ac);color:#fff;border:none;border-radius:11px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Göreve Git →</button>'
+      + '<button id="task-notif-ok" style="background:var(--s2);color:var(--t);border:none;border-radius:11px;padding:11px 16px;font-size:13px;cursor:pointer;font-family:inherit">Tamam, Okudum</button>'
+    + '</div>'
+    + (pending.length > 1 ? '<div style="text-align:center;font-size:11px;color:var(--t3);margin-top:10px">' + (idx+1) + ' / ' + pending.length + ' bildirim</div>' : '')
+  + '</div>';
+
+  document.body.appendChild(popup);
+
+  function _markRead() {
+    var notifs2 = window.loadNotifs ? loadNotifs() : [];
+    var found = notifs2.find(function(x){ return x.id === n.id; });
+    if (found) { found.acked = true; found.read = true; }
+    if (window.storeNotifs) storeNotifs(notifs2);
+    if (window.updateNotifBadge) updateNotifBadge();
+    popup.remove();
+    // Sonraki bildirimi göster
+    setTimeout(function(){ _showTaskAssignPopup(pending, idx + 1); }, 300);
+  }
+
+  document.getElementById('task-notif-ok').addEventListener('click', _markRead);
+  document.getElementById('task-notif-go').addEventListener('click', function() {
+    _markRead();
+    // Pusula paneline git
+    if (typeof window.nav === 'function') window.nav('pusula', null);
+    else if (typeof nav === 'function') nav('pusula', null);
+  });
+}
+
 function generateSystemNotifs() {
   const today = new Date().toISOString().slice(0, 10);
   const soon  = new Date(); soon.setDate(soon.getDate() + 7);
