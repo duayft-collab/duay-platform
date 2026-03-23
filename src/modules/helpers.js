@@ -307,6 +307,8 @@ function renderCal() {
   if (CAL_VIEW === 'agenda') { const mc = _gh('cal-month-card'); if (mc) mc.style.display = 'none'; renderCalAgenda(); renderCalUpcoming(); renderCalMonthStats(); renderCalLegend(); _calAllEvs = null; return; }
 
   const mc = _gh('cal-month-card'); if (mc) mc.style.display = '';
+  const wkEl2 = _gh('cal-week-view');   if (wkEl2)  wkEl2.style.display  = 'none';
+  const agEl2 = _gh('cal-agenda-view'); if (agEl2)  agEl2.style.display  = 'none';
 
   const wdays = _gh('cal-wd');
   if (wdays && !wdays._rendered) {
@@ -390,6 +392,8 @@ function renderCal() {
 // ── Haftalık görünüm ─────────────────────────────────────────────
 function renderCalWeek(Y, M) {
   const weekEl = _gh('cal-week-view'); if (!weekEl) return;
+  weekEl.style.display = 'block';
+  const agEl = _gh('cal-agenda-view'); if (agEl) agEl.style.display = 'none';
   const today  = new Date();
   const start  = new Date(CAL_DATE);
   const day    = start.getDay(); const diff = day === 0 ? -6 : 1 - day;
@@ -425,6 +429,8 @@ function renderCalWeek(Y, M) {
 // ── Ajanda görünümü ──────────────────────────────────────────────
 function renderCalAgenda() {
   const agendaEl = _gh('cal-agenda-view'); if (!agendaEl) return;
+  agendaEl.style.display = 'block';
+  const wkEl = _gh('cal-week-view'); if (wkEl) wkEl.style.display = 'none';
   const today    = new Date().toISOString().slice(0, 10);
   const vis      = visEvs().filter(e => e.date >= today)
                            .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
