@@ -276,11 +276,13 @@ function markKargoTeslim(id) {
   const d = loadKargo();
   const k = d.find(x => x.id === id);
   if (!k) return;
+  const _oldSt = k.status;
   k.status   = 'teslim';
   k.teslimAt = _nowTsK();
   storeKargo(d);
+  window._logKargoStatus?.(id, _oldSt, 'teslim', window.Auth?.getCU?.()?.id);
   renderKargo();
-  window.toast?.('📦 Kargo teslim alındı ✓', 'ok');
+  window.toast?.('Kargo teslim alındı ✓', 'ok');
   window.logActivity?.('kargo', 'Kargo teslim: ' + k.firm + ' — ' + k.to);
 }
 
@@ -635,7 +637,11 @@ function renderKonteyn() {
         + '</div>'
         + '<div style="display:flex;gap:5px">'
           + (trackUrl?'<a href="'+trackUrl+'" target="_blank" class="btn btns" style="text-decoration:none;font-size:11px;padding:3px 10px">Takip</a>':'')
+          + '<button onclick="toggleKonteynSelect('+k.id+')" id="ktn-sel-'+k.id+'" class="btn btns" style="font-size:11px;padding:3px 9px" title="Toplu seç">☐</button>'
           + '<button onclick="openKonteynDetail('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Detay</button>'
+          + '<button onclick="showKonteynTimeline('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Zaman</button>'
+          + '<button onclick="showMasrafModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Masraf</button>'
+          + '<button onclick="showBelgeModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Belgeler</button>'
           + (!isArchived?'<button onclick="openKonteynModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Düzenle</button>':'')
         + '</div>'
       + '</div>'
@@ -807,6 +813,7 @@ function toggleKonteynStep(id, key) {
     }
   }
   storeKonteyn(d);
+  window._logKonteynEvent?.(id, key + (k[key]?' tamamlandı':' geri alındı'));
   renderKonteyn();
   window.logActivity?.('kargo', 'Konteyner ' + k.no + ': ' + key + ' güncellendi');
 }
@@ -839,6 +846,11 @@ function checkAllKonteyn() {
 function startKonteynPolling() {
   clearInterval(KRG_KONTEYN_TIMER);
   KRG_KONTEYN_TIMER = setInterval(checkAllKonteyn, 3 * 60 * 60 * 1000);
+  // #3 ETA alarmları
+  if (typeof startEtaAlarms === 'function') {
+    startEtaAlarms();
+    requestEtaNotifPermission?.();
+  }
 }
 
 function exportKargoXlsx() {
