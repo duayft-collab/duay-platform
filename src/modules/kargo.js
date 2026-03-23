@@ -29,12 +29,11 @@ const KTN_TRACKING_URLS = {
 };
 
 let KRG_KONTEYN_TIMER = null;
-let KARGO_VIEW        = localStorage.getItem('ak_kargo_view') || 'card'; // 'card' | 'table'
-let KARGO_FILTER      = 'all';
+let KARGO_VIEW = localStorage.getItem('ak_kargo_view') || 'card';
+if (typeof KARGO_FILTER === 'undefined') var KARGO_FILTER = 'all';
 
 // ── Yardımcılar ───────────────────────────────────────────────────
-function _g(id)  { return document.getElementById(id); }
-function _isAdminK() { return window.isAdmin?.() || window.Auth?.getCU?.()?.role === 'admin'; }
+function _isAdminK() { return window.isAdmin?.() || window.Auth?.getCU?.()?.role === 'admin' || window.Auth?.getCU?.()?.role === 'manager'; }
 function _getCUK()   { return window.Auth?.getCU?.(); }
 function _nowTsK()   { return typeof nowTs === 'function' ? nowTs() : new Date().toLocaleString('tr-TR'); }
 
@@ -43,7 +42,7 @@ function _nowTsK()   { return typeof nowTs === 'function' ? nowTs() : new Date()
 // ════════════════════════════════════════════════════════════════
 
 function _injectKargoPanel() {
-  const panel = _g('panel-kargo');
+  const panel = g('panel-kargo');
   if (!panel || panel.dataset.v9) return;
   panel.dataset.v9 = '1';
 
@@ -123,8 +122,8 @@ function _injectKargoPanel() {
 
 function _clearKargoFilters() {
   const ids = ['krg-search','krg-date-from','krg-date-to'];
-  ids.forEach(id => { const el = _g(id); if (el) el.value = ''; });
-  const sort = _g('krg-sort'); if (sort) sort.value = 'date-desc';
+  ids.forEach(id => { const el = g(id); if (el) el.value = ''; });
+  const sort = g('krg-sort'); if (sort) sort.value = 'date-desc';
   KARGO_FILTER = 'all';
   document.querySelectorAll('#panel-kargo .chip[data-kf]').forEach(b => {
     b.classList.toggle('on', b.dataset.kf === 'all');
@@ -143,10 +142,10 @@ function renderKargo() {
   const today   = new Date().toISOString().slice(0,10);
 
   // Filtrele
-  const search   = (_g('krg-search')?.value || '').toLowerCase();
-  const dateFrom = _g('krg-date-from')?.value || '';
-  const dateTo   = _g('krg-date-to')?.value   || '';
-  const sortBy   = _g('krg-sort')?.value       || 'date-desc';
+  const search   = (g('krg-search')?.value || '').toLowerCase();
+  const dateFrom = g('krg-date-from')?.value || '';
+  const dateTo   = g('krg-date-to')?.value   || '';
+  const sortBy   = g('krg-sort')?.value       || 'date-desc';
 
   let fl = kargo.filter(k => {
     if (KARGO_FILTER === 'gelen'  && k.dir    !== 'gelen')  return false;
@@ -180,14 +179,14 @@ function renderKargo() {
     st('krg-giden',  kargo.filter(k => k.dir    === 'giden').length);
   }
 
-  const nb = _g('nb-krg-b');
+  const nb = g('nb-krg-b');
   if (nb) {
     const n = kargo.filter(k => k.status === 'bekle').length;
     nb.textContent   = n;
     nb.style.display = n > 0 ? 'inline' : 'none';
   }
 
-  const cont = _g('kargo-list');
+  const cont = g('kargo-list');
   if (!cont) return;
 
   if (!fl.length) {
@@ -323,28 +322,28 @@ function markKargoTeslim(id) {
 function openKargoModal(idOrDir) {
   window.openMo?.('mo-kargo');
   if (typeof idOrDir === 'string') {
-    const dir = _g('krg-dir');
+    const dir = g('krg-dir');
     if (dir) dir.value = idOrDir;
   } else if (typeof idOrDir === 'number') {
     const k = loadKargo().find(x => x.id === idOrDir);
     if (!k) return;
     ['krg-dir','krg-from','krg-to','krg-firm','krg-date','krg-status'].forEach(id => {
-      const el = _g(id); if (!el) return;
+      const el = g(id); if (!el) return;
       const key = id.replace('krg-','');
       if (k[key] !== undefined) el.value = k[key];
     });
-    const eid = _g('krg-eid'); if (eid) eid.value = idOrDir;
+    const eid = g('krg-eid'); if (eid) eid.value = idOrDir;
   }
 }
 
 function saveKargo() {
-  const dir    = _g('krg-dir')?.value    || 'gelen';
-  const from   = (_g('krg-from')?.value  || '').trim();
-  const to     = (_g('krg-to')?.value    || '').trim();
-  const firm   = (_g('krg-firm')?.value  || '').trim();
-  const date   = _g('krg-date')?.value   || '';
-  const status = _g('krg-status')?.value || 'bekle';
-  const eid    = parseInt(_g('krg-eid')?.value || '0');
+  const dir    = g('krg-dir')?.value    || 'gelen';
+  const from   = (g('krg-from')?.value  || '').trim();
+  const to     = (g('krg-to')?.value    || '').trim();
+  const firm   = (g('krg-firm')?.value  || '').trim();
+  const date   = g('krg-date')?.value   || '';
+  const status = g('krg-status')?.value || 'bekle';
+  const eid    = parseInt(g('krg-eid')?.value || '0');
 
   if (!from || !to) { window.toast?.('Gönderici ve alıcı zorunludur', 'err'); return; }
 
@@ -377,7 +376,7 @@ function delKargo(id) {
 // BÖLÜM 4 — EXCEL IMPORT (Onay 2)
 // ════════════════════════════════════════════════════════════════
 
-function importKargoFile() { _g('krg-import-file')?.click(); }
+function importKargoFile() { g('krg-import-file')?.click(); }
 
 function processKargoImport(inp) {
   const file = inp?.files?.[0]; if (!file) return;
@@ -436,7 +435,7 @@ function _parseExcelDate(val) {
 }
 
 function _showImportPreview(preview, allRows, colMap) {
-  const existing = _g('krg-import-modal'); if (existing) existing.remove();
+  const existing = g('krg-import-modal'); if (existing) existing.remove();
   const mo = document.createElement('div');
   mo.className = 'mo open'; mo.id = 'krg-import-modal'; mo.style.zIndex = '2200';
 
@@ -474,7 +473,7 @@ function _showImportPreview(preview, allRows, colMap) {
 
   document.body.appendChild(mo);
 
-  _g('krg-import-confirm').addEventListener('click', function() {
+  g('krg-import-confirm').addEventListener('click', function() {
     const existing2 = loadKargo();
     let added = 0;
     allRows.slice(1).forEach(row => {
@@ -605,7 +604,7 @@ function printKargoRapor() {
 function renderKonteyn() {
   const konts   = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
   const users   = typeof loadUsers   === 'function' ? loadUsers()   : [];
-  const cont    = _g('konteyn-list');
+  const cont    = g('konteyn-list');
   if (!cont) return;
 
   const today   = new Date();
@@ -622,7 +621,7 @@ function renderKonteyn() {
   const active   = konts.filter(k => !k.closed);
   const archived = konts.filter(k => k.closed);
 
-  _renderKonteynAlarms(active, today, _g('konteyn-alarm-bar'));
+  _renderKonteynAlarms(active, today, g('konteyn-alarm-bar'));
 
   if (!active.length && !archived.length) {
     cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t2)">'
@@ -723,7 +722,7 @@ function openKonteynDetail(id) {
   const etaDate = k.eta ? new Date(k.eta) : null;
   const daysLeft = etaDate ? Math.ceil((etaDate - today) / 86400000) : null;
 
-  const existing = _g('mo-konteyn-detail'); if (existing) existing.remove();
+  const existing = g('mo-konteyn-detail'); if (existing) existing.remove();
   const mo = document.createElement('div');
   mo.className = 'mo open'; mo.id = 'mo-konteyn-detail'; mo.style.zIndex = '2200';
 
@@ -907,14 +906,14 @@ function setKargoFilter(f, btn) {
 
 function openKargoFirmaModal() {
   renderKargoFirmaList();
-  _g('krg-firma-add-row') && (_g('krg-firma-add-row').style.display = 'none');
-  _g('krg-firma-new-name') && (_g('krg-firma-new-name').value = '');
+  g('krg-firma-add-row') && (g('krg-firma-add-row').style.display = 'none');
+  g('krg-firma-new-name') && (g('krg-firma-new-name').value = '');
   window.openMo?.('mo-krg-firma');
 }
 
 function renderKargoFirmaList() {
   const firms = loadKargoFirmalar();
-  const cont  = _g('krg-firma-list');
+  const cont  = g('krg-firma-list');
   if (!cont) return;
   cont.innerHTML = firms.map(f =>
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--b)">'
@@ -922,18 +921,18 @@ function renderKargoFirmaList() {
     + (_isAdminK() ? '<button class="btn btns btnd" onclick="delKargoFirma(\'' + f + '\')">🗑</button>' : '')
     + '</div>'
   ).join('');
-  const sel = _g('krg-firm');
+  const sel = g('krg-firm');
   if (sel) sel.innerHTML = firms.map(f => '<option>' + f + '</option>').join('');
 }
 
 function addKargoFirma() {
-  const name = (_g('krg-firma-new-name')?.value || '').trim();
+  const name = (g('krg-firma-new-name')?.value || '').trim();
   if (!name) { window.toast?.('Firma adı zorunludur', 'err'); return; }
   const firms = loadKargoFirmalar();
   if (firms.includes(name)) { window.toast?.('Bu firma zaten mevcut', 'err'); return; }
   if (!_isAdminK()) { window.toast?.('Ekleme talebi yöneticiye iletildi', 'ok'); window.closeMo?.('mo-krg-firma'); return; }
   firms.push(name); storeKargoFirmalar(firms); renderKargoFirmaList();
-  _g('krg-firma-add-row') && (_g('krg-firma-add-row').style.display = 'none');
+  g('krg-firma-add-row') && (g('krg-firma-add-row').style.display = 'none');
   window.toast?.(name + ' eklendi ✓', 'ok');
 }
 
@@ -946,10 +945,10 @@ function delKargoFirma(name) {
 }
 
 function printKargoLabel() {
-  const from  = _g('krg-from')?.value || '—';
-  const to    = _g('krg-to')?.value   || '—';
-  const firm  = _g('krg-firm')?.value || '';
-  const note  = _g('krg-note')?.value || '';
+  const from  = g('krg-from')?.value || '—';
+  const to    = g('krg-to')?.value   || '—';
+  const firm  = g('krg-firm')?.value || '';
+  const note  = g('krg-note')?.value || '';
   const win   = window.open('', '_blank', 'width=420,height=420');
   win.document.write('<!DOCTYPE html><html><head><title>Kargo Etiketi</title>'
     + '<style>body{font-family:sans-serif;padding:20px;border:2px solid #000;max-width:380px}h2{text-align:center;margin-bottom:16px;font-size:16px}.row{margin-bottom:10px;font-size:13px}.lbl{font-weight:700;font-size:10px;text-transform:uppercase;color:#666}hr{margin:12px 0;border-color:#000}</style>'
@@ -962,23 +961,23 @@ function printKargoLabel() {
 
 function openKargoTeslimModal(id) {
   const users = loadUsers();
-  const sel   = _g('krg-teslim-user');
+  const sel   = g('krg-teslim-user');
   if (sel) sel.innerHTML = users.map(u => '<option value="' + u.id + '">' + u.name + '</option>').join('');
-  if (_g('krg-teslim-id'))   _g('krg-teslim-id').value   = id;
-  if (_g('krg-teslim-date')) _g('krg-teslim-date').valueAsDate = new Date();
-  if (_g('krg-teslim-note')) _g('krg-teslim-note').value  = '';
+  if (g('krg-teslim-id'))   g('krg-teslim-id').value   = id;
+  if (g('krg-teslim-date')) g('krg-teslim-date').valueAsDate = new Date();
+  if (g('krg-teslim-note')) g('krg-teslim-note').value  = '';
   window.openMo?.('mo-krg-teslim');
 }
 
 function saveKargoTeslim() {
-  const id   = parseInt(_g('krg-teslim-id')?.value || '0');
+  const id   = parseInt(g('krg-teslim-id')?.value || '0');
   if (!id) return;
-  const date = _g('krg-teslim-date')?.value;
+  const date = g('krg-teslim-date')?.value;
   if (!date) { window.toast?.('Teslim tarihi zorunludur', 'err'); return; }
   const d = loadKargo(); const k = d.find(x => x.id === id); if (!k) return;
-  const uid  = parseInt(_g('krg-teslim-user')?.value || '0');
-  const note = _g('krg-teslim-note')?.value?.trim() || '';
-  const fileInput = _g('krg-teslim-file');
+  const uid  = parseInt(g('krg-teslim-user')?.value || '0');
+  const note = g('krg-teslim-note')?.value?.trim() || '';
+  const fileInput = g('krg-teslim-file');
   const processUpdate = fileData => {
     k.status = 'teslim'; k.teslimDate = date; k.teslimUid = uid; k.teslimNote = note;
     if (fileData) k.teslimFile = fileData;
@@ -995,11 +994,11 @@ function saveKargoTeslim() {
 }
 
 function saveKonteyn() {
-  const no  = _g('ktn-no')?.value?.trim();
+  const no  = g('ktn-no')?.value?.trim();
   if (!no) { window.toast?.('Konteyner no zorunludur', 'err'); return; }
   const d   = loadKonteyn();
-  const eid = parseInt(_g('ktn-eid')?.value || '0');
-  const hat = _g('ktn-hat')?.value || '';
+  const eid = parseInt(g('ktn-eid')?.value || '0');
+  const hat = g('ktn-hat')?.value || '';
   const noEnc = encodeURIComponent(no);
   const deepLinks = {
     'MSC':'https://www.msc.com/en/track-a-shipment?trackingNumber='+noEnc,
@@ -1013,25 +1012,25 @@ function saveKonteyn() {
     'ZIM':'https://www.zim.com/tools/track-a-shipment?container='+noEnc,
   };
   const today = new Date().toISOString().slice(0,10);
-  const evrakGon       = _g('ktn-evrak-gon')?.checked       || false;
-  const evrakUlasti    = _g('ktn-evrak-ulasti')?.checked     || false;
-  const inspectionBitti= _g('ktn-inspection')?.checked       || false;
-  const malTeslim      = _g('ktn-mal-teslim')?.checked       || false;
-  const userUrl        = _g('ktn-url')?.value?.trim()        || '';
+  const evrakGon       = g('ktn-evrak-gon')?.checked       || false;
+  const evrakUlasti    = g('ktn-evrak-ulasti')?.checked     || false;
+  const inspectionBitti= g('ktn-inspection')?.checked       || false;
+  const malTeslim      = g('ktn-mal-teslim')?.checked       || false;
+  const userUrl        = g('ktn-url')?.value?.trim()        || '';
   const finalUrl       = userUrl || deepLinks[hat] || KTN_TRACKING_URLS[hat] || '';
 
   const entry = {
     no, hat,
-    fromPort: _g('ktn-from-port')?.value || '',
-    toPort:   _g('ktn-to-port')?.value   || '',
-    etd:      _g('ktn-etd')?.value       || '',
-    eta:      _g('ktn-eta')?.value       || '',
-    desc:     _g('ktn-desc')?.value      || '',
+    fromPort: g('ktn-from-port')?.value || '',
+    toPort:   g('ktn-to-port')?.value   || '',
+    etd:      g('ktn-etd')?.value       || '',
+    eta:      g('ktn-eta')?.value       || '',
+    desc:     g('ktn-desc')?.value      || '',
     url: finalUrl,
-    uid: parseInt(_g('ktn-user')?.value || _getCUK()?.id || '0'),
-    ihracatId: _g('ktn-ihracat-id')?.value || '',
-    musteri:   _g('ktn-musteri')?.value    || '',
-    evrakGon,    evrakTarih:       evrakGon       ? (_g('ktn-evrak-tarih')?.value || today) : '',
+    uid: parseInt(g('ktn-user')?.value || _getCUK()?.id || '0'),
+    ihracatId: g('ktn-ihracat-id')?.value || '',
+    musteri:   g('ktn-musteri')?.value    || '',
+    evrakGon,    evrakTarih:       evrakGon       ? (g('ktn-evrak-tarih')?.value || today) : '',
     evrakUlasti, evrakUlastiTarih: evrakUlasti    ? today : '',
     inspectionBitti, inspectionTarih: inspectionBitti ? today : '',
     malTeslim,   malTeslimTarih:   malTeslim      ? today : '',
