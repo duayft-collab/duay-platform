@@ -1068,6 +1068,70 @@ function clearAllNotifs() {
 
 /**
  * Gecikmiş ödeme, hedef, kargo, tebligat bildirimlerini üretir.
+// ── Anlık Görev Bildirimi (user açıkken) ─────────────────────────
+window._showInstantTaskNotif = function(targetUid, taskId, taskTitle, priority, due, assigner) {
+  var cu = window.Auth && window.Auth.getCU ? window.Auth.getCU() : null;
+  if (!cu || cu.id !== targetUid) return;
+  var existing = document.getElementById('task-instant-popup');
+  if (existing) existing.remove();
+
+  var priLabels = ['', '🔴 Kritik', '🟠 Önemli', '🔵 Normal', '⚪ Düşük'];
+  var priLabel  = priLabels[priority || 2] || '🟠 Önemli';
+
+  var pop = document.createElement('div');
+  pop.id = 'task-instant-popup';
+  pop.style.cssText = [
+    'position:fixed;bottom:24px;right:24px',
+    'background:var(--sf)',
+    'border:1px solid var(--b)',
+    'border-left:4px solid var(--ac)',
+    'border-radius:16px',
+    'padding:16px 18px',
+    'box-shadow:0 8px 32px rgba(0,0,0,.2)',
+    'max-width:320px;width:calc(100% - 48px)',
+    'z-index:9998',
+    'animation:slideInRight .3s ease',
+  ].join(';');
+
+  var html = '<div style="display:flex;align-items:flex-start;gap:12px">';
+  html += '<div style="width:40px;height:40px;border-radius:12px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📋</div>';
+  html += '<div style="flex:1;min-width:0">';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Yeni Görev Atandı</div>';
+  html += '<div style="font-size:14px;font-weight:700;color:var(--t);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + taskTitle + '</div>';
+  html += '<div style="display:flex;gap:8px;font-size:11px;color:var(--t2);flex-wrap:wrap">';
+  html += '<span style="font-weight:600">' + priLabel + '</span>';
+  if (due)      html += '<span>Son: ' + due + '</span>';
+  if (assigner) html += '<span>Atayan: ' + assigner + '</span>';
+  html += '</div></div>';
+  html += '<button id="tipop-close" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);padding:0;line-height:1;flex-shrink:0">×</button>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;margin-top:12px">';
+  html += '<button id="tipop-go" style="flex:1;background:var(--ac);color:#fff;border:none;border-radius:9px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Göreve Git →</button>';
+  html += '<button id="tipop-ok" style="background:var(--s2);color:var(--t);border:none;border-radius:9px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit">Tamam</button>';
+  html += '</div>';
+  pop.innerHTML = html;
+
+  if (!document.getElementById('instant-notif-style')) {
+    var st = document.createElement('style');
+    st.id = 'instant-notif-style';
+    st.textContent = '@keyframes slideInRight{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+    document.head.appendChild(st);
+  }
+
+  document.body.appendChild(pop);
+
+  var _close = function() { pop.remove(); };
+  document.getElementById('tipop-close').addEventListener('click', _close);
+  document.getElementById('tipop-ok').addEventListener('click', _close);
+  document.getElementById('tipop-go').addEventListener('click', function() {
+    _close();
+    if (typeof nav === 'function') nav('pusula', null);
+  });
+
+  setTimeout(_close, 8000);
+};
+
+
  * Her _initApp sonrası 800ms gecikmeyle çağrılır.
  */
 function generateSystemNotifs() {
