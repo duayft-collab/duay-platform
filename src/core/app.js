@@ -769,24 +769,106 @@ function _renderDashboard() {
 
   if (!myTasks.length) {
     content.innerHTML = `<div class="card" style="padding:32px;text-align:center;color:var(--t2)"><div style="font-size:32px;margin-bottom:10px">🎉</div><div style="font-weight:500">Bugün tüm görevler tamamlandı!</div></div>`;
-    return;
+  } else {
+    const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
+    content.innerHTML = `<div class="card">
+      <div class="ch"><span class="ct">Günün Görevleri</span><button class="btn btns" onclick="App.nav('pusula',document.querySelector('.nb[onclick*=\'pusula\']'))">Tümünü Gör →</button></div>
+      <div style="padding:0 16px 12px">
+        ${myTasks.map(t => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
+            <div style="width:4px;height:36px;border-radius:2px;flex-shrink:0;background:${priColors[t.pri]||priColors[4]}"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
+              ${t.due ? `<div style="font-size:10px;color:${t.due < today ? 'var(--rd)' : 'var(--t3)'};margin-top:2px">${t.due < today ? '⚠ ' : ''}${t.due}</div>` : ''}
+            </div>
+            <input type="checkbox" onchange="Pusula?.toggle(${t.id},this.checked)" style="accent-color:var(--ac);width:16px;height:16px;flex-shrink:0">
+          </div>`).join('')}
+      </div>
+    </div>`;
   }
-  const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
-  content.innerHTML = `<div class="card">
-    <div class="ch"><span class="ct">Günün Görevleri</span><button class="btn btns" onclick="App.nav('pusula',document.querySelector('.nb[onclick*=\\'pusula\\']'))">Tümünü Gör →</button></div>
-    <div style="padding:0 16px 12px">
-      ${myTasks.map(t => `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
-          <div style="width:4px;height:36px;border-radius:2px;flex-shrink:0;background:${priColors[t.pri]||priColors[4]}"></div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
-            ${t.due ? `<div style="font-size:10px;color:${t.due < today ? 'var(--rd)' : 'var(--t3)'};margin-top:2px">${t.due < today ? '⚠ ' : ''}${t.due}</div>` : ''}
-          </div>
-          <input type="checkbox" onchange="Pusula?.toggle(${t.id},this.checked)" style="accent-color:var(--ac);width:16px;height:16px;flex-shrink:0">
-        </div>`).join('')}
-    </div>
-  </div>`;
+
+  // ── Pusula Dashboard Widget ────────────────────────────────────
+  _renderDashboardPusulaWidget(cu, tasks, today);
 }
+
+function _renderDashboardPusulaWidget(cu, tasks, today) {
+  // Odak görevleri widget
+  const dayFocusEl = _g('db-day-focus');
+  if (dayFocusEl) {
+    const dayFocusIds = (() => { try { return JSON.parse(localStorage.getItem('ak_pus_day_focus_' + cu.id) || '[]'); } catch(e) { return []; } })();
+    if (!dayFocusIds.length) {
+      dayFocusEl.innerHTML = '<div style="padding:18px 16px;text-align:center;color:var(--t3);font-size:12px">Odak listesi bos — Pusula da gorev secin</div>';
+    } else {
+      const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
+      const rows = dayFocusIds.map(id => {
+        const t = tasks.find(x => x.id === id);
+        if (!t) return '';
+        const isLate = !t.done && t.due && t.due < today;
+        const durText = t.duration ? (t.duration >= 60 ? Math.floor(t.duration/60) + 's' + (t.duration%60?' '+t.duration%60+'dk':'') : t.duration+'dk') : '';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--b)" onclick="App.nav('pusula',null)" style="cursor:pointer">
+          <div style="width:3px;height:32px;border-radius:2px;background:${priColors[t.pri]||priColors[4]};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:${t.done?400:600};color:${t.done?'var(--t3)':'var(--t)'};text-decoration:${t.done?'line-through':'none'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
+            <div style="display:flex;gap:8px;margin-top:2px">
+              ${t.due ? `<span style="font-size:10px;color:${isLate?'var(--rdt)':'var(--t3)'}">${isLate?'⚠ ':''}${t.due}</span>` : ''}
+              ${durText ? `<span style="font-size:10px;color:var(--ac)">⏱ ${durText}</span>` : ''}
+            </div>
+          </div>
+          ${t.done ? '<span style="font-size:16px">✅</span>' : ''}
+        </div>`;
+      }).join('');
+      dayFocusEl.innerHTML = rows || '<div style="padding:14px;color:var(--t3);font-size:12px;text-align:center">Görevler yüklenemedi</div>';
+    }
+  }
+
+  // Görev istatistik widget
+  const statsEl = _g('db-pusula-stats');
+  if (statsEl) {
+    const myTasks2 = tasks.filter(t => t.uid === cu.id || (t.participants||[]).includes(cu.id));
+    const total    = myTasks2.length;
+    const done     = myTasks2.filter(t => t.done || t.status === 'done').length;
+    const inprog   = myTasks2.filter(t => t.status === 'inprogress').length;
+    const overdue  = myTasks2.filter(t => !t.done && t.due && t.due < today).length;
+    const critical = myTasks2.filter(t => !t.done && t.pri === 1).length;
+    const pct      = total ? Math.round(done / total * 100) : 0;
+
+    // Haftalık odak sayısı
+    const weekIds = (() => { try { return JSON.parse(localStorage.getItem('ak_pus_week_focus_' + cu.id) || '[]'); } catch(e) { return []; } })();
+
+    statsEl.innerHTML = `
+      <div style="padding:14px 16px">
+        <!-- Progress bar -->
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--t2)">Genel İlerleme</span>
+            <span style="font-size:13px;font-weight:700;color:${pct>=80?'var(--grt)':pct>=50?'var(--amt)':'var(--ac)'}">${pct}%</span>
+          </div>
+          <div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${pct>=80?'var(--gr)':pct>=50?'var(--am)':'var(--ac)'};border-radius:3px;transition:width .4s"></div>
+          </div>
+        </div>
+        <!-- Mini istatistikler -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:var(--s2);border-radius:9px;padding:9px 11px">
+            <div style="font-size:18px;font-weight:700;color:var(--t)">${done}<span style="font-size:11px;color:var(--t3);font-weight:400">/${total}</span></div>
+            <div style="font-size:10px;color:var(--t3);margin-top:1px">Tamamlanan</div>
+          </div>
+          <div style="background:var(--s2);border-radius:9px;padding:9px 11px">
+            <div style="font-size:18px;font-weight:700;color:var(--ac)">${inprog}</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:1px">Devam Eden</div>
+          </div>
+          <div style="background:${overdue?'rgba(239,68,68,.08)':'var(--s2)'};border-radius:9px;padding:9px 11px;border:1px solid ${overdue?'rgba(239,68,68,.2)':'transparent'}">
+            <div style="font-size:18px;font-weight:700;color:${overdue?'var(--rdt)':'var(--t)'}">${overdue}</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:1px">Gecikmiş</div>
+          </div>
+          <div style="background:${critical?'rgba(239,68,68,.06)':'var(--s2)'};border-radius:9px;padding:9px 11px">
+            <div style="font-size:18px;font-weight:700;color:${critical?'#ef4444':'var(--t)'}">${critical}</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:1px">Kritik</div>
+          </div>
+        </div>
+        ${weekIds.length ? `<div style="margin-top:10px;background:rgba(99,102,241,.06);border-radius:8px;padding:8px 11px;font-size:11px;color:var(--t2)">⭐ Bu hafta <strong style="color:var(--ac)">${weekIds.length}</strong> odak görev seçildi</div>` : ''}
+      </div>`;
+  }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 13 — SÜRÜM GEÇMİŞİ
@@ -1588,4 +1670,6 @@ window.saveProfile      = saveProfile;
 // ── Otomatik başlatma ────────────────────────────────────────────
 // DOMContentLoaded beklemeden çağrılır — script defer olmadığından
 // DOM zaten hazırdır (index.html'de body sonunda yüklenir).
+}
+
 App.init();
