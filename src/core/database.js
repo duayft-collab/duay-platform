@@ -120,6 +120,8 @@ function _read(key, fallback = null) {
  * @returns {boolean} Başarılı mı?
  */
 function _write(key, value) {
+  // Son güncelleme zamanını kaydet
+  try { localStorage.setItem('ak_db_last_write', new Date().toISOString()); } catch(e) {}
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
