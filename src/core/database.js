@@ -171,12 +171,11 @@ function _getTid() {
 }
 
 // Koleksiyon için Firestore doc path üret
+// Firestore doc referansı çift sayıda segment gerektirir
+// tenants_default/tasks = 2 segment = geçerli döküman referansı
 function _fsPath(collection) {
-  const paths = _getPaths();
-  const tid   = _getTid();
-  if (!paths) return null;
-  const base = (typeof paths.tenant === 'function') ? paths.tenant(tid) : `tenants/${tid}`;
-  return base + '/' + collection;
+  const tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
+  return 'duay_' + tid + '/' + collection;
 }
 
 // Zaman damgası yardımcısı
@@ -371,9 +370,14 @@ function logActivity(type, detail) {
   acts.unshift(entry);
   saveAct(acts);
   // Firestore log (Anayasa Kural 3 — her hareket tarih + UID)
-  const tid   = window.Auth?.getTenantId?.() || 'tenant_default';
-  const paths = window.FirebaseConfig?.paths;
-  if (paths) _syncFirestore(paths.logs(tid), entry, 'add');
+  // Firestore activity log
+  const _fp_act = window.Auth?.getFBDB?.();
+  if (_fp_act) {
+    const _logTid = (_getTid()).replace(/[^a-zA-Z0-9_]/g, '_');
+    _fp_act.collection('duay_' + _logTid + '_logs').add({
+      ...entry, serverTs: window.firebase?.firestore?.FieldValue?.serverTimestamp?.() || null
+    }).catch(() => {});
+  }
   // Dashboard badge güncelle (varsa)
   if (typeof window.updateDashboardActs === 'function') window.updateDashboardActs();
 }
@@ -715,7 +719,7 @@ async function migrateToFirestore() {
 
   for (const [colName, data] of Object.entries(collections)) {
     try {
-      const _mbase = (typeof paths.tenant === 'function') ? paths.tenant(tid) : `tenants/${tid}`;
+      const _mbase = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
       const docRef = FB_DB.collection(_mbase).doc(colName);
       const payload = { data, syncedAt: new Date().toISOString(), migratedBy: window.Auth?.getCU?.()?.id };
       if (batch) {
@@ -773,7 +777,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       delete _listeners[collection];
     }
 
-    const _base2 = (typeof paths.tenant === 'function') ? paths.tenant(tid) : `tenants/${tid}`;
+    const _base2 = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
     const docRef = FB_DB.collection(_base2).doc(collection);
     const unsubscribe = docRef.onSnapshot(snap => {
       if (!snap.exists) {
