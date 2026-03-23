@@ -55,7 +55,7 @@ function _getCU() {
   if (typeof window.Auth === 'object' && typeof window.Auth.getCU === 'function') {
     return window.Auth.getCU();
   }
-  if (typeof window.CU === 'function') return window._getCU();
+  if (typeof window.CU === 'function') return window.CU();
   if (typeof window.CU === 'object' && window.CU !== null) return window.CU;
   return null;
 }
@@ -1233,16 +1233,19 @@ function saveTask() {
         const _oldUid = t.uid;
         Object.assign(t, fields);
         if (_oldUid !== fields.uid) {
-          const _cu3 = _getCU();
-          const _n2  = loadNotifs ? loadNotifs() : [];
-          _n2.unshift({ id: Date.now() + 1, icon: '📋',
-            msg: '"' + title + '" görevi size atandı — ' + (_cu3?.name || ''),
-            type: 'info', link: 'pusula', ts: nowTs(), read: false,
-            targetUid: fields.uid, taskId: eid, taskTitle: title,
-            priority: fields.pri, due: fields.due, assigner: _cu3?.name || '',
-            needsAck: true, acked: false });
-          if (window.storeNotifs) storeNotifs(_n2);
-          if (window.updateNotifBadge) updateNotifBadge();
+          try {
+            const _cu3 = _getCU();
+            const _n2  = (typeof loadNotifs==='function'?loadNotifs():(window.loadNotifs?.() || []));
+            _n2.unshift({ id: Date.now()+1, icon: '📋',
+              msg: '"' + title + '" görevi size atandı — ' + (_cu3?.name||''),
+              type: 'info', link: 'pusula', ts: (typeof nowTs==='function'?nowTs():new Date().toLocaleString('tr-TR')),
+              read: false, targetUid: fields.uid, taskId: eid, taskTitle: title,
+              priority: fields.pri, due: fields.due, assigner: _cu3?.name||'',
+              needsAck: true, acked: false });
+            if (typeof storeNotifs==='function') storeNotifs(_n2);
+            else if (window.storeNotifs) window.storeNotifs(_n2);
+            if (window.updateNotifBadge) window.updateNotifBadge();
+          } catch(e) { console.error('[Pusula] Güncelleme bildirim hatası:', e); }
         }
       }
       logActivity('task', `"${title}" güncelledi`);
@@ -1252,20 +1255,24 @@ function saveTask() {
       d.push({ id: _nid, subTasks: [], ...fields });
       logActivity('task', `"${title}" ekledi`);
       window.toast?.('Görev eklendi ✓', 'ok');
-      // Atanan farklı kişiyse bildirim gönder
-      const _cu2 = _getCU();
-      if (uid && _cu2 && uid !== _cu2.id) {
-        const _n = loadNotifs ? loadNotifs() : [];
-        _n.unshift({ id: _nid + 1, icon: '📋',
-          msg: '"' + title + '" görevi size atandı — ' + (_cu2.name || ''),
-          type: 'info', link: 'pusula', ts: nowTs(), read: false,
-          targetUid: uid, taskId: _nid, taskTitle: title,
-          priority: fields.pri, due: fields.due, assigner: _cu2.name || '',
-          needsAck: true, acked: false });
-        if (window.storeNotifs) storeNotifs(_n);
-        if (window.updateNotifBadge) updateNotifBadge();
-        window.toast?.('📬 ' + (loadUsers().find(u=>u.id===uid)?.name||'Kullanıcı') + '\'a bildirim gönderildi', 'ok');
-      }
+      // Bildirim — atanan farklı kişiyse
+      try {
+        const _cu2 = _getCU();
+        if (uid && _cu2 && uid !== _cu2.id) {
+          const _n = (typeof loadNotifs === 'function' ? loadNotifs() : (window.loadNotifs?.() || []));
+          const _assignee = (typeof loadUsers === 'function' ? loadUsers() : []).find(u => u.id === uid);
+          _n.unshift({ id: _nid + 1, icon: '📋',
+            msg: '"' + title + '" görevi size atandı — ' + (_cu2.name || ''),
+            type: 'info', link: 'pusula', ts: (typeof nowTs==='function'?nowTs():new Date().toLocaleString('tr-TR')),
+            read: false, targetUid: uid, taskId: _nid, taskTitle: title,
+            priority: fields.pri, due: fields.due, assigner: _cu2.name || '',
+            needsAck: true, acked: false });
+          if (typeof storeNotifs === 'function') storeNotifs(_n);
+          else if (window.storeNotifs) window.storeNotifs(_n);
+          if (window.updateNotifBadge) window.updateNotifBadge();
+          console.log('[Pusula] Bildirim gönderildi →', _assignee?.name, 'taskId:', _nid);
+        }
+      } catch(e) { console.error('[Pusula] Bildirim hatası:', e); }
     }
     saveTasks(d);
     window.closeMo?.('mo-task');
