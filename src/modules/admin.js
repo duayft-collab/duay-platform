@@ -22,14 +22,13 @@ const logActivity= (...a) => window.logActivity?.(...a);
 // openMo → window.openMo (app.js)
 
 // ── V18 uyumluluk shim'leri ──────────────────────────────────────
-// Güvenli CU erişimi — IIFE scope'unda CU obje veya fonksiyon olabilir
 function _getCU() {
-  if (typeof window.Auth?.getCU === 'function') return window.Auth.getCU();
-  if (typeof CU === 'function') return CU();
-  if (CU && typeof CU === 'object') return CU;
-  return null;
+  if (typeof window.Auth !== 'undefined' && typeof window.Auth.getCU === 'function') return window.Auth.getCU();
+  if (typeof CU === 'function') try { return CU(); } catch(e) {}
+  if (typeof CU === 'object' && CU !== null) return CU;
+  return window.Auth?.getCU?.() || null;
 }
-function _isAdminCheck() {
+function _isAdminSafe() {
   return window.isAdmin?.() || _getCU()?.role === 'admin' || false;
 }
 
@@ -146,132 +145,28 @@ function _userRow(u) {
 }
 
 // ── Modal: Kullanıcı Ekleme / Düzenleme ──────────────────────────
-function autoSetRolePerms() {
-  const role = g('adm-role')?.value || 'staff';
-  const defaults = (typeof ROLE_DEFAULT_MODULES !== 'undefined')
-    ? ROLE_DEFAULT_MODULES[role] || ROLE_DEFAULT_MODULES.staff
-    : [];
-  const isAdmin2 = role === 'admin';
-  document.querySelectorAll('.perm-cb').forEach(cb => {
-    const modId = cb.id.replace('pm-', '');
-    cb.checked  = isAdmin2 || defaults.includes(modId);
-  });
-}
-
-// ── setAllPerms — tümünü aç/kapat ───────────────────────────────
-function setAllPerms(checked) {
-  document.querySelectorAll('.perm-cb').forEach(cb => { cb.checked = checked; });
-}
-
-// ── Departman yönetimi ─────────────────────────────────────────
-function loadDepts() {
-  return JSON.parse(localStorage.getItem('ak_depts') || '[]');
-}
-function saveDepts(d) { localStorage.setItem('ak_depts', JSON.stringify(d)); }
-
-function renderDeptList() {
-  const cont = g('dept-list'); if (!cont) return;
-  const depts = loadDepts();
-  if (!depts.length) {
-    cont.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--t3)">Henüz departman yok.</div>';
-    return;
-  }
-  const users = loadUsers();
-  cont.innerHTML = depts.map((d, i) => {
-    const cnt = users.filter(u => u.dept === d.name).length;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:var(--s2);margin-bottom:6px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${d.color||'var(--ac)'}"></div>
-      <span style="flex:1;font-size:13px;font-weight:500">${d.name}</span>
-      <span style="font-size:11px;color:var(--t3)">${cnt} kişi</span>
-      <button onclick="deleteDept(${i})" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px;padding:0 2px">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function addDept() {
-  const nameEl  = g('dept-name-inp');
-  const colorEl = g('dept-color-inp');
-  const name    = (nameEl?.value || '').trim();
-  if (!name) { window.toast?.('Departman adı zorunludur', 'err'); return; }
-  const depts = loadDepts();
-  if (depts.find(d => d.name === name)) { window.toast?.('Bu departman zaten var', 'err'); return; }
-  depts.push({ name, color: colorEl?.value || '#3C3489' });
-  saveDepts(depts);
-  if (nameEl) nameEl.value = '';
-  renderDeptList();
-  updateDeptSelect();
-  window.toast?.(`"${name}" eklendi ✓`, 'ok');
-}
-
-function deleteDept(idx) {
-  const depts = loadDepts();
-  const name  = depts[idx]?.name;
-  depts.splice(idx, 1);
-  saveDepts(depts);
-  renderDeptList();
-  updateDeptSelect();
-  window.toast?.(`"${name}" silindi`, 'ok');
-}
-
-function updateDeptSelect() {
-  const sel = g('adm-dept'); if (!sel) return;
-  const cur   = sel.value;
-  const depts = loadDepts();
-  sel.innerHTML = '<option value="">-- Seç --</option>'
-    + depts.map(d => `<option value="${d.name}"${cur===d.name?' selected':''}>${d.name}</option>`).join('');
-}
-
 function openAdminModal(id) {
   if (!isAdmin()) return;
-  updateDeptSelect();
-
-  // Avatar sıfırla
-  const avatarPreview  = g('adm-avatar-preview');
-  const avatarInitials = g('adm-avatar-initials');
-  const avatarFile     = g('adm-avatar-file');
-  if (avatarFile) avatarFile.value = '';
 
   if (id) {
     const u = loadUsers().find(x => x.id === id);
     if (!u) return;
-    if (g('adm-name'))  g('adm-name').value  = u.name  || '';
-    if (g('adm-email')) g('adm-email').value = u.email || '';
-    if (g('adm-role'))  g('adm-role').value  = u.role  || 'staff';
-    if (g('adm-dept'))  g('adm-dept').value  = u.dept  || '';
-    if (g('adm-st'))    g('adm-st').value    = u.status || 'active';
-    if (g('adm-pwd'))   g('adm-pwd').value   = '';
-    if (g('adm-eid'))   g('adm-eid').value   = id;
-    if (g('mo-u-title')) g('mo-u-title').textContent = u.name + ' Duzenle';
-    // Avatar
-    if (u.avatar && avatarPreview) {
-      avatarPreview.src = u.avatar; avatarPreview.style.display = 'block';
-      if (avatarInitials) avatarInitials.style.display = 'none';
-    } else {
-      if (avatarPreview) avatarPreview.style.display = 'none';
-      if (avatarInitials) { avatarInitials.style.display = ''; avatarInitials.textContent = '?'; }
-    }
-    // Modül checkboxları
-    const userMods = u.modules || (typeof ROLE_DEFAULT_MODULES !== 'undefined' ? ROLE_DEFAULT_MODULES[u.role] || [] : []);
-    const isAdminRole = u.role === 'admin';
-    document.querySelectorAll('.perm-cb').forEach(cb => {
-      const modId = cb.id.replace('pm-', '');
-      cb.checked  = isAdminRole || (Array.isArray(userMods) && userMods.includes(modId));
-    });
-    // Döküman erişimi
-    const accMap = { 'pa-ik':'İK', 'pa-fn':'Finans', 'pa-op':'Operasyon', 'pa-tk':'Teknik', 'pa-ms':'Maaş', 'pa-ss':'Sistem' };
-    Object.entries(accMap).forEach(([eid2, v]) => { const el = g(eid2); if (el) el.checked = (u.access||[]).includes(v); });
+    if (g('adm-name'))   g('adm-name').value   = u.name  || '';
+    if (g('adm-email'))  g('adm-email').value  = u.email || '';
+    if (g('adm-role'))   g('adm-role').value   = u.role  || 'user';
+    if (g('adm-dept'))   g('adm-dept').value   = u.dept  || '';
+    if (g('adm-color'))  g('adm-color').value  = u.color || '#3C3489';
+    if (g('adm-pwd'))    g('adm-pwd').value    = '';
+    if (g('adm-eid'))    g('adm-eid').value    = id;
+    if (g('mo-adm-t'))   g('mo-adm-t').textContent = '✏️ Kullanıcı Düzenle';
   } else {
-    ['adm-name','adm-email','adm-pwd'].forEach(x => { const el = g(x); if (el) el.value = ''; });
-    if (g('adm-role'))   g('adm-role').value   = 'staff';
-    if (g('adm-dept'))   g('adm-dept').value   = '';
-    if (g('adm-st'))     g('adm-st').value     = 'active';
-    if (g('adm-eid'))    g('adm-eid').value    = '';
-    if (g('mo-u-title')) g('mo-u-title').textContent = '+ Kullanici Ekle';
-    if (avatarPreview)  avatarPreview.style.display = 'none';
-    if (avatarInitials) { avatarInitials.style.display = ''; avatarInitials.textContent = '?'; }
-    // Rol varsayılan modüller
-    autoSetRolePerms();
-    ['pa-ik','pa-fn','pa-op','pa-tk','pa-ms','pa-ss'].forEach((id2,i) => { const el = g(id2); if(el) el.checked = [true,false,true,false,false,false][i]; });
+    ['adm-name', 'adm-email', 'adm-dept', 'adm-pwd'].forEach(x => {
+      const el = g(x); if (el) el.value = '';
+    });
+    if (g('adm-role'))  g('adm-role').value  = 'user';
+    if (g('adm-color')) g('adm-color').value = '#3C3489';
+    if (g('adm-eid'))   g('adm-eid').value   = '';
+    if (g('mo-adm-t'))  g('mo-adm-t').textContent = '+ Kullanıcı Ekle';
   }
   window.openMo?.('mo-admin-user');
 }
@@ -532,7 +427,7 @@ function renderSuggestions() {
   if (!cont) return;
 
   const suggs = loadSugg();
-  const cu    = CU();
+  const cu = _getCU();
 
   // Admin hepsini görür; kullanıcı yalnızca kendi önerilerini
   const visible = isAdmin() ? suggs : suggs.filter(s => s.uid === cu?.id);
@@ -578,7 +473,7 @@ function renderSuggestions() {
 }
 
 function submitSuggestion() {
-  const cu  = CU();
+  const cu = _getCU();
   if (!cu) { window.toast?.(t('err.permission'), 'err'); return; }
   const el  = g('suggest-input');
   const text = (el?.value || '').trim();
@@ -950,6 +845,14 @@ if (typeof module !== 'undefined' && module.exports) {
   window.openNewUser         = openNewUser;
   window.toggleUser          = toggleUser;
   window.renderSettingsAdmin = renderSettingsAdmin;
+  window._injectUsersPanel   = _injectUsersPanel;
+  window.saveUser            = saveUser;
+  window.autoSetRolePerms    = autoSetRolePerms;
+  window.setAllPerms         = setAllPerms;
+  window.addDept             = addDept;
+  window.deleteDept          = deleteDept;
+  window.updateDeptSelect    = updateDeptSelect;
+  window.renderDeptList      = renderDeptList;
   window.saveUser          = saveUser;
   window.autoSetRolePerms  = autoSetRolePerms;
   window.setAllPerms       = setAllPerms;
@@ -975,7 +878,6 @@ if (typeof module !== 'undefined' && module.exports) {
   window.showAllUpdateBanners  = showAllUpdateBanners;
 }
 
-})();
 function saveUser() {
   if (!isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
 
@@ -1953,10 +1855,6 @@ if (typeof module !== 'undefined' && module.exports) {
   window.openNewUser         = openNewUser;
   window.toggleUser          = toggleUser;
   window.renderSettingsAdmin = renderSettingsAdmin;
-  window._injectUsersPanel   = _injectUsersPanel;
-  window._renderUsersCards   = _renderUsersCards;
-  window._renderUsersTable   = _renderUsersTable;
-  window._renderOrgChart     = _renderOrgChart;
   // Geriye uyumluluk
   window.renderAdmin = function(...args) {
   try {
@@ -1974,3 +1872,5 @@ if (typeof module !== 'undefined' && module.exports) {
   window.showPanelUpdateBanner = showPanelUpdateBanner;
   window.showAllUpdateBanners  = showAllUpdateBanners;
 }
+
+})();
