@@ -1140,6 +1140,28 @@ if (typeof module !== 'undefined' && module.exports) {
   window.updKargoSt           = updKargoSt;
   window.permDeleteKonteyn    = permDeleteKonteyn;
   window.openKonteynDetail    = openKonteynDetail;
+  window.openKonteynModal     = function(id) {
+    if (id) {
+      var konts = loadKonteyn();
+      var k = konts.find(function(x){ return x.id===id; });
+      if (k) {
+        ['ktn-no','ktn-hat','ktn-from-port','ktn-to-port','ktn-etd','ktn-eta','ktn-desc','ktn-url','ktn-musteri','ktn-ihracat-id'].forEach(function(fid) {
+          var el = g(fid); if (!el) return;
+          var key = fid.replace('ktn-','').replace(/-([a-z])/g, function(m,c){ return c.toUpperCase(); });
+          if (k[key] !== undefined) el.value = k[key];
+        });
+        var eid = g('ktn-eid'); if (eid) eid.value = id;
+        ['ktn-evrak-gon','ktn-evrak-ulasti','ktn-inspection','ktn-mal-teslim'].forEach(function(fid) {
+          var el = g(fid); if (el) el.checked = !!k[fid.replace('ktn-','').replace(/-([a-z])/g,function(m,c){return c.toUpperCase();})];
+        });
+      }
+    } else {
+      var eid2 = g('ktn-eid'); if (eid2) eid2.value = '';
+      ['ktn-no','ktn-hat','ktn-from-port','ktn-to-port','ktn-etd','ktn-eta','ktn-desc','ktn-url','ktn-musteri','ktn-ihracat-id'].forEach(function(fid){ var el=g(fid);if(el)el.value=''; });
+      ['ktn-evrak-gon','ktn-evrak-ulasti','ktn-inspection','ktn-mal-teslim'].forEach(function(fid){ var el=g(fid);if(el)el.checked=false; });
+    }
+    window.openMo?.('mo-konteyn');
+  };
   window.importKargoFile      = importKargoFile;
   window.processKargoImport   = processKargoImport;
   window.printKargoRapor      = printKargoRapor;
