@@ -21,7 +21,7 @@
  *   localStorage key: 'ak_task_chat1'    → { [taskId]: Message[] }
  *
  * Global bağımlılıklar:
- *   window.Auth      → getCU(), _isAdmin()
+ *   window.Auth      → getCU(), window.isAdmin?.()
  *   window.DB        → loadTasks(), saveTasks(), loadUsers(),
  *                       loadTaskChats(), storeTaskChats(), logActivity()
  *   window.toast()   → bildirim
@@ -50,9 +50,7 @@ function tkFileChange(input) {
 }
 
 // ── Güvenli CU erişimi — app.js yükleme sırasından bağımsız ──────
-function _isAdmin() {
-  return window.isAdmin?.() || window.Auth?.getCU?.()?.role === 'admin' || false;
-}
+// _isAdmin kaldırıldı — window.isAdmin kullanılıyor (ik.js ile çakışma önlendi)
 function _getCU() {
   if (typeof window.Auth === 'object' && typeof window.Auth.getCU === 'function') {
     return window.Auth.getCU();
@@ -99,7 +97,7 @@ const PRI_COLOR = { 1:'#FF3B30', 2:'#FF9500', 3:'#007AFF', 4:'#C7C7CC' };
  */
 function visTasks() {
   const d = loadTasks();
-  if (_isAdmin()) {
+  if (window.isAdmin?.()) {
     const uid = parseInt(g('pus-usel')?.value || '0');
     return uid ? d.filter(t => t.uid === uid) : d;
   }
@@ -159,12 +157,12 @@ function populatePusUsers() {
   const sel   = g('pus-usel');
   const tsel  = g('tk-user');
 
-  if (sel && _isAdmin()) {
+  if (sel && window.isAdmin?.()) {
     sel.innerHTML = `<option value="0">👥 Tüm Personel</option>` +
       users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
   }
   if (tsel) {
-    if (_isAdmin()) {
+    if (window.isAdmin?.()) {
       tsel.innerHTML = users.map(u =>
         `<option value="${u.id}">${u.name} (${u.role})</option>`
       ).join('');
@@ -178,7 +176,7 @@ function populatePusUsers() {
 
 /** Kritik görev sayısını sidebar badge'ine yazar */
 function updatePusBadge() {
-  const tasks  = _isAdmin() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
+  const tasks  = window.isAdmin?.() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
   const undone = tasks.filter(t => !t.done && t.pri === 1).length;
   const b      = g('nb-pus-b');
   if (b) { b.textContent = undone; b.style.display = undone > 0 ? 'inline' : 'none'; }
@@ -386,8 +384,8 @@ function renderPusulaList(fl, users, todayS, cont) {
             ? `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-active">💬 ${chatCount}</button>`
             : `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-empty">💬</button>`
           }
-          ${t.uid === cu?.id || _isAdmin() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
-          ${t.uid === cu?.id || _isAdmin() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})" class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})" class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
         </div>
       </div>`;
 
@@ -891,7 +889,7 @@ function pdpRenderFiles() {
   var files   = task.files || (task.file ? [task.file] : []);
   var managers= task.managers || [task.uid];
   var cu      = _getCU();
-  var canEdit = _isAdmin() || managers.indexOf(cu && cu.id) > -1 || task.uid === (cu && cu.id)
+  var canEdit = window.isAdmin?.() || managers.indexOf(cu && cu.id) > -1 || task.uid === (cu && cu.id)
                 || (task.participants || []).indexOf(cu && cu.id) > -1;
 
   function extIcon(name) {
@@ -1024,7 +1022,7 @@ function pdpRenderPerms() {
   var users    = loadUsers();
   var managers = task.managers || [task.uid];
   var cu       = _getCU();
-  var canEdit  = _isAdmin() || managers.indexOf(cu && cu.id) > -1;
+  var canEdit  = window.isAdmin?.() || managers.indexOf(cu && cu.id) > -1;
 
   function getRole(uid) {
     if (managers.indexOf(uid) > -1)                        return 'Yönetici';
@@ -1160,7 +1158,7 @@ function openAddTask() {
   if (g('tk-fp'))     g('tk-fp').textContent = '';
   const s = g('tk-user');
   if (s) {
-    if (!_isAdmin()) {
+    if (!window.isAdmin?.()) {
       s.innerHTML = `<option value="${_getCU()?.id}">${_getCU()?.name || 'Ben'}</option>`;
       s.value = String(_getCU()?.id);
     } else {
@@ -1201,7 +1199,7 @@ function saveTask() {
   const title = (g('tk-title')?.value || '').trim();
   if (!title) { window.toast?.('Başlık zorunludur', 'err'); return; }
   const uid = parseInt(g('tk-user')?.value || '0') || parseInt(_getCU()?.id || '0');
-  if (!_isAdmin() && uid !== parseInt(_getCU()?.id || '0')) { window.toast?.('Yetki yok', 'err'); return; }
+  if (!window.isAdmin?.() && uid !== parseInt(_getCU()?.id || '0')) { window.toast?.('Yetki yok', 'err'); return; }
   if (!uid) { window.toast?.('Kullanıcı belirlenemedi — tekrar giriş yapın', 'err'); return; }
 
   const d    = loadTasks();
@@ -1274,7 +1272,7 @@ function toggleTask(id, done) {
 function delTask(id) {
   const d = loadTasks();
   const t = d.find(x => x.id === id);
-  if (!t || (t.uid !== _getCU()?.id && !_isAdmin())) { window.toast?.('Yetki yok', 'err'); return; }
+  if (!t || (t.uid !== _getCU()?.id && !window.isAdmin?.())) { window.toast?.('Yetki yok', 'err'); return; }
   saveTasks(d.filter(x => x.id !== id));
   renderPusula();
   logActivity('task', `"${t.title}" görevini sildi`);
@@ -1763,7 +1761,7 @@ function checkYaklasanEtkinlikler(){
     if(localStorage.getItem(key))return;
     localStorage.setItem(key,'1');
     const forMe=ev.own===0||ev.own===CU?.id||(ev.participants||[]).includes(CU?.id);
-    if(!forMe&&!_isAdmin())return;
+    if(!forMe&&!window.isAdmin?.())return;
     const icon=daysLeft===0?'🔔':daysLeft<=2?'⏰':'📅';
     const msg=daysLeft===0
       ?`Bugün etkinlik var: "${ev.title}" (${ev.time})`
@@ -1833,7 +1831,7 @@ function saveEtkinlik(){
   storeEtkinlik(d);closeMo('mo-etkinlik');renderEtkinlik();logActivity('view',`"${name}" etkinliği kaydedildi`);toast(name+' kaydedildi ✓','ok');
 }
 
-function delEtkinlik(id){if(!_isAdmin())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}
+function delEtkinlik(id){if(!window.isAdmin?.())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}
 
 
 const Pusula = {
