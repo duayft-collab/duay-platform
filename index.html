@@ -526,6 +526,26 @@ function _doLogin() {
           </div>
         </div>
 
+        <!-- Pusula Özet Widget -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px" id="db-pusula-row">
+          <!-- Odak Görevleri -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">🔥 Bugünün Odak Listesi</span>
+              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Pusula →</button>
+            </div>
+            <div id="db-day-focus"></div>
+          </div>
+          <!-- Pusula özet istatistik -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">📊 Görev Durumu</span>
+              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-pusula-stats"></div>
+          </div>
+        </div>
+
         <!-- İkinci satır -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
           <!-- Kargo Takibi -->
