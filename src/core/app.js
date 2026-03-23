@@ -1,0 +1,1764 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * src/core/app.js  —  v8.0.0
+ * Operasyon Platformu — Ana Uygulama Motoru
+ *
+ * Sorumluluklar:
+ *   1. App.init()      — sayfa yükleme, Auth state, tema, dil
+ *   2. App.nav()       — panel yönlendirme + yetki guard
+ *   3. UI yardımcıları — toast, openMo, closeMo, toggleSidebar
+ *   4. Profil paneli   — renderProfilePanel, saveProfile
+ *   5. Bildirimler     — toggleNotifPanel, markAllNotifRead
+ *   6. Global arama    — openGSearch, doGSearch (Ctrl+K)
+ *   7. Canlı saat      — tickClock (footer dinamik, login statik)
+ *   8. Pinbar          — renderPinbar, openPinModal
+ *   9. Sistem bildirimleri — generateSystemNotifs
+ *  10. PDF raporu      — printModuleReport
+ *  11. Sürüm geçmişi  — updateVersionUI, CHANGELOG
+ *
+ * Anayasa Kural 1 : i18n TR+EN, gece/gündüz tema
+ * Anayasa Kural 3 : Her login/logout logActivity ile kayıt
+ * Anayasa Kural 5 : Login versiyon STATIK, footer saati DİNAMİK
+ *
+ * Bağımlılıklar (bu dosyadan önce yüklenmiş olmalı):
+ *   config/firebase.js → src/i18n/translations.js
+ *   src/core/database.js → src/core/auth.js
+ *   src/modules/*.js
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+'use strict';
+
+// Zaman yardımcıları (database.js'den de erişilebilir)
+
+// ── Global Yardımcılar — tüm modüller bu fonksiyonlara window üzerinden erişir ──
+window.g        = id  => document.getElementById(id);
+window.st       = (id, v) => { const el = window.g(id); if (el) el.textContent = v; };
+window.CU       = () => window.Auth?.getCU?.();
+window.isAdmin  = () => window.Auth?.getCU?.()?.role === 'admin';
+window.initials = name => (name||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 1 — SABITLER & DURUM
+// ════════════════════════════════════════════════════════════════
+
+/** Anayasa Kural 5 — bu versiyon hiçbir zaman runtime'da değişmez */
+const APP_VER   = '8.0.0';
+const APP_BUILD = '2026-03-19 14:50';
+
+/** CHANGELOG — Sürüm Geçmişi */
+const CHANGELOG = [
+  { v:'8.0.0', ts:'2026-03-19 14:50', note:'Tam modüler mimari: database.js, auth.js, pusula.js, kargo.js, pirim.js, admin.js ayrıştırıldı. DocumentFragment performans iyileştirmesi.' },
+  { v:'7.6.0', ts:'2026-03-19 12:00', note:'app.js modülerleştirildi, GlobalErrorHandler entegrasyonu, multi-tenant Firebase hazırlığı.' },
+  { v:'4.1.0', ts:'2026-03-18 14:30', note:'Takvim performans, 15 form, Fuar kriter motoru, Temizlik rutinleri, Yetkilendirme yenileme.' },
+  { v:'3.0.0', ts:'2026-03-16 22:00', note:'KPI & Personel Performans Paneli — haftalık/aylık/yıllık skor, liderlik tablosu, Excel+PDF.' },
+  { v:'2.9.1', ts:'2026-03-16 21:00', note:'Güvenlik: demo şifreler silindi, sadece Firebase Auth.' },
+  { v:'2.9.0', ts:'2026-03-16 20:00', note:'Sidebar tamamen yeniden gruplandı, toggle düzeltildi.' },
+  { v:'2.5.0', ts:'2026-03-15 11:00', note:'İzin, Tebligat, Pirim SOP 2025, Konteyner, Firebase entegrasyonu.' },
+  { v:'1.0.0', ts:'2026-03-14 09:00', note:'İlk sürüm: Dashboard, Kullanıcılar, Dökümanlar.' },
+];
+
+/** Tüm platform modülleri — RBAC için kayıt noktası */
+const ALL_MODULES = [
+  { id:'dashboard',  label:'Dashboard'           },
+  { id:'announce',   label:'Duyurular'            },
+  { id:'pusula',     label:'Görevler'             },
+  { id:'puantaj',    label:'Puantaj'              },
+  { id:'takvim',     label:'Takvim'               },
+  { id:'notes',      label:'Notlar'               },
+  { id:'links',      label:'Hızlı Linkler'        },
+  { id:'hedefler',   label:'Hedefler'             },
+  { id:'odemeler',   label:'Rutin Ödemeler'       },
+  { id:'kargo',      label:'Kargo'                },
+  { id:'stok',       label:'Stok'                 },
+  { id:'ik',         label:'İK Yönetimi'          },
+  { id:'izin',       label:'İzin Yönetimi'        },
+  { id:'tebligat',   label:'Tebligat Takibi'      },
+  { id:'evrak',      label:'Personel Evrak'       },
+  { id:'arsiv',      label:'Şirket Arşivi'        },
+  { id:'kpi',        label:'KPI & Performans'     },
+  { id:'crm',        label:'CRM / Müşteriler'     },
+  { id:'numune',     label:'Numune Arşivi'        },
+  { id:'temizlik',   label:'Temizlik Kontrol'     },
+  { id:'resmi',      label:'Resmi Evrak'          },
+  { id:'etkinlik',   label:'Etkinlik / Fuar'      },
+  { id:'pirim',      label:'Prim Yönetimi'        },
+  { id:'rehber',     label:'Acil Rehber'          },
+  { id:'settings',   label:'Ayarlar'              },
+  { id:'admin',      label:'Kullanıcı Yönetimi'   },
+];
+
+/** Rol bazlı varsayılan modül erişimleri */
+const ROLE_DEFAULT_MODULES = {
+  admin:   ALL_MODULES.map(m => m.id),
+  manager: ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings'],
+  lead:    ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber'],
+  staff:   ['dashboard','announce','pusula','takvim','notes','links','izin','pirim'],
+};
+
+/** Admin-only paneller */
+const ADMIN_ONLY_PANELS = ['admin','activity','ceo','kpi-panel','trash'];
+
+// Uygulama durumu
+let _DARK      = localStorage.getItem('ak_theme') === 'dark';
+let _LANG      = localStorage.getItem('ak_lang')  || 'tr';
+let _GS_SEL    = -1;
+let _IDLE_TIMER= null;
+let _toastTimer= null;
+
+// Avatar renk paleti (shared)
+const AVC = [
+  ['#EEEDFE','#26215C'], ['#E1F5EE','#085041'],
+  ['#E6F1FB','#0C447C'], ['#FAECE7','#993C1D'],
+  ['#EAF3DE','#27500A'], ['#FAEEDA','#854F0B'],
+  ['#FBEAF0','#72243E'], ['#F1EFE8','#2C2C2A'],
+];
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 2 — YARDIMCI FONKSİYONLAR
+// ════════════════════════════════════════════════════════════════
+
+const _g  = id  => document.getElementById(id);
+const _st = (id, v) => { const el = _g(id); if (el) el.textContent = v; };
+const _p2 = n   => String(n).padStart(2, '0');
+
+/** İsimden baş harfler */
+function initials(name = '') {
+  return (name || '?').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+}
+
+/** 'YYYY-MM-DD HH:MM:SS' formatında şu anki zaman */
+
+/** Sayıyı 2 haneli string'e çevirir */
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 3 — YETKİ KONTROLÜ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Aktif kullanıcının belirtilen modüle erişimi var mı?
+ * @param {string} modId
+ * @returns {boolean}
+ */
+function canModule(modId) {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return false;
+  if (cu.role === 'admin' || cu.modules === null) return true;
+  const mods = cu.modules || ROLE_DEFAULT_MODULES[cu.role] || ROLE_DEFAULT_MODULES.staff;
+  return mods.includes(modId);
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 4 — CANLISAAT (Anayasa Kural 5)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Saat güncelleyici — saniye başı çalışır.
+ *
+ * Anayasa Kural 5:
+ *   • Login ekranındaki versiyon (#l-pf) → STATIK → bu fonksiyon dokunmaz
+ *   • Footer'daki saat (#clock-strip, #clock-el) → DİNAMİK → her saniye güncellenir
+ */
+function tickClock() {
+  const n   = new Date();
+  const hms = `${_p2(n.getHours())}:${_p2(n.getMinutes())}:${_p2(n.getSeconds())}`;
+  const ymd = `${n.getFullYear()}-${_p2(n.getMonth()+1)}-${_p2(n.getDate())}`;
+
+  // ── Footer şeridindeki dinamik saat ─────────────────────────
+  const clockStrip = _g('clock-strip');
+  if (clockStrip) clockStrip.textContent = `${ymd} ${hms}`;
+
+  // ── Topnav brand alt yazı ────────────────────────────────────
+  const clockEl = _g('clock-el');
+  if (clockEl) clockEl.textContent = hms;
+
+  // ── Login ekranı — versiyon STATIK, saat dinamik ─────────────
+  // #l-pf zaten HTML'de statik olarak "v8.0.0 / 2026-03-19 14:50" içeriyor.
+  // Bu fonksiyon onu ASLA değiştirmez.
+  // Sadece login ekranındaki canlı saat alanı (eski #l-ver-time) varsa güncellenir.
+  const lTime = _g('l-ver-time');
+  if (lTime) lTime.textContent = hms;
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 5 — TOAST BİLDİRİMİ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Geçici bildirim banner'ı gösterir.
+ * @param {string} msg   Mesaj metni
+ * @param {string} [type] 'ok' | 'err' | '' (info)
+ */
+function toast(msg, type = '') {
+  const el = _g('toast-el');
+  if (!el) return;
+  el.textContent = msg;
+  el.className   = 'toast' + (type ? ' ' + type : '');
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 6 — MODAL YÖNETİMİ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Modalı açar (CSS class 'open' ekler).
+ * @param {string} id  Element ID
+ */
+function openMo(id) {
+  const el = _g(id);
+  if (el) el.classList.add('open');
+}
+
+/**
+ * Modalı kapatır (CSS class 'open' kaldırır).
+ * @param {string} id  Element ID
+ */
+function closeMo(id) {
+  const el = _g(id);
+  if (el) el.classList.remove('open');
+}
+
+// Overlay tıklamasıyla modal kapatma
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('mo')) {
+    e.target.classList.remove('open');
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 7 — TEMA & DİL
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Mevcut temayı DOM'a uygular (gece/gündüz).
+ */
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', _DARK ? 'dark' : '');
+  const tm = document.querySelector('meta[name="theme-color"]');
+  if (tm) tm.content = _DARK ? '#1C1C1A' : '#3C3489';
+  // Tema butonu metni
+  const lBtn = _g('l-theme-btn');
+  if (lBtn) lBtn.textContent = _DARK ? '☀️ Gündüz' : '🌙 Gece';
+}
+
+/**
+ * Temayı geçiştirir ve kaydeder.
+ */
+function toggleTheme() {
+  _DARK = !_DARK;
+  localStorage.setItem('ak_theme', _DARK ? 'dark' : '');
+  applyTheme();
+}
+
+/**
+ * Dili değiştirir, DOM'daki data-i18n attribute'larını günceller.
+ * @param {string} lang  'tr' | 'en' | 'fr'
+ * @param {HTMLElement} [btn]  Aktif buton (class 'on' için)
+ */
+function setLang(lang, btn) {
+  _LANG = lang;
+  localStorage.setItem('ak_lang', lang);
+  document.documentElement.lang = lang;
+  // Dil pill butonları
+  document.querySelectorAll('[data-lang-btn]').forEach(b => {
+    b.classList.toggle('on', b.dataset.langBtn === lang);
+  });
+  // I18n motoru mevcutsa uygula (src/i18n/translations.js)
+  if (window.I18n?.setLang) {
+    window.I18n.setLang(lang);
+  } else {
+    // Fallback: data-i18n attribute'larını temizle
+    _applyI18nFallback(lang);
+  }
+  applyTheme();
+}
+
+/**
+ * I18n motoru yoksa basit TR/EN fallback uygulanır.
+ * @param {string} lang
+ */
+function _applyI18nFallback(lang) {
+  const MAP_EN = {
+    'login.title': 'Sign In', 'login.subtitle': 'Access your account.',
+    'login.email': 'EMAIL',  'login.password': 'PASSWORD', 'login.btn': 'Sign In',
+    'btn.logout':  'Sign Out', 'nav.dashboard': 'Dashboard',
+  };
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (lang === 'en' && MAP_EN[key]) el.textContent = MAP_EN[key];
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 8 — GİRİŞ & ÇIKIŞ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Login butonuna basılınca çalışır.
+ * Auth.login() sonucuna göre finishLogin veya hata gösterir.
+ */
+async function login() {
+  const email    = (_g('lemail')?.value || '').trim().toLowerCase();
+  const password = _g('lpwd')?.value || '';
+  const errEl    = _g('l-err');
+  const btn      = _g('lbtn');
+
+  if (!email || !password) {
+    if (errEl) { errEl.textContent = 'E-posta ve şifre zorunludur.'; errEl.classList.add('show'); }
+    return;
+  }
+  if (errEl) errEl.classList.remove('show');
+  if (btn)   { btn.disabled = true; btn.textContent = 'Giriş yapılıyor…'; }
+
+  // Auth modülü hazır değilse kullanıcıya bildir
+  if (!window.Auth?.login) {
+    if (btn)   { btn.disabled = false; btn.textContent = 'Giriş Yap'; }
+    if (errEl) { errEl.textContent = 'Sistem hazırlanıyor, lütfen sayfayı yenileyin (F5).'; errEl.classList.add('show'); }
+    return;
+  }
+
+  const result = await window.Auth.login(email, password);
+
+  if (result?.ok) {
+    // auth.js artık {ok:true, user} döndürüyor — doğrudan kullan
+    // Fallback: user yoksa restoreSession() ile bul (session _localLogin'de yazıldı)
+    const cu = result.user || window.Auth.restoreSession();
+
+    if (cu) {
+      _finishLogin(cu);
+    } else {
+      if (btn)  { btn.disabled = false; btn.textContent = 'Giriş Yap'; }
+      if (errEl){ errEl.textContent = 'Hesabınız platforma eklenmemiş. Yöneticinizle iletişime geçin.'; errEl.classList.add('show'); }
+    }
+  } else {
+    if (btn)  { btn.disabled = false; btn.textContent = 'Giriş Yap'; }
+    if (errEl){ errEl.textContent = result?.error || 'E-posta veya şifre hatalı.'; errEl.classList.add('show'); }
+    if (_g('lpwd')) _g('lpwd').value = '';
+  }
+}
+
+/**
+ * Başarılı giriş sonrası UI geçişini tamamlar.
+ * @param {Object} user  Platform kullanıcı nesnesi
+ */
+function _finishLogin(user) {
+  const users = loadUsers();
+  const u     = users.find(x => x.id === user.id) || user;
+  u.lastLogin = nowTs();
+  saveUsers(users);
+
+  const errEl = _g('l-err');
+  if (errEl) errEl.classList.remove('show');
+  if (_g('lbtn')) { _g('lbtn').disabled = false; _g('lbtn').textContent = 'Giriş Yap'; }
+
+  // Ekran geçişi
+  const ls = _g('login-screen');
+  const ap = _g('app');
+  if (ls) { ls.classList.add('out'); setTimeout(() => { ls.style.display = 'none'; }, 300); }
+  if (ap) ap.classList.add('on');
+
+  logActivity('login', 'sisteme giriş yaptı');
+  _initApp(u);
+}
+
+/**
+ * Oturumu kapatır, login ekranına döner.
+ */
+async function logout() {
+  logActivity('logout', 'sistemden çıkış yaptı');
+  await window.Auth?.logout?.();
+
+  const ls = _g('login-screen');
+  const ap = _g('app');
+  if (ls) { ls.style.display = 'flex'; ls.classList.remove('out'); }
+  if (ap) ap.classList.remove('on');
+  if (_g('lemail')) _g('lemail').value = '';
+  if (_g('lpwd'))   _g('lpwd').value   = '';
+
+  // Panelleri sıfırla
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  const dbPanel = _g('panel-dashboard');
+  if (dbPanel) dbPanel.classList.add('on');
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  const firstBtn = document.querySelector('.nb');
+  if (firstBtn) firstBtn.classList.add('on');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 9 — UYGULAMA BAŞLATICI
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Giriş sonrası uygulama UI'ını hazırlar.
+ * @param {Object} user
+ */
+
+/** Planlanmış (publishAt) duyuruları zamanı gelince yayınlar */
+function _checkScheduledAnnouncements() {
+  if (typeof loadAnn !== 'function' || typeof storeAnn !== 'function') return;
+  const now  = new Date();
+  const anns = loadAnn();
+  let changed = false;
+  anns.forEach(a => {
+    if (a.published || !a.publishAt) return;
+    if (new Date(a.publishAt) <= now) {
+      a.published = true;
+      changed = true;
+      window.addNotif?.('📣', '"' + a.title + '" duyurusu yayınlandı', 'ok', 'duyurular');
+    }
+  });
+  if (changed) {
+    storeAnn(anns);
+    window.updateAnnBadge?.();
+    window.renderAnnouncements?.();
+  }
+}
+
+function _initApp(user) {
+  if (!user) return;
+
+
+  // Planlanmış duyuruları kontrol et
+  _checkScheduledAnnouncements();
+
+  // Şirket yıllık takvimini localStorage'a merge et (yoksa ekle, varsa atla)
+  if (typeof window.mergeCompanyCalendar === 'function') {
+    window.mergeCompanyCalendar();
+  }
+  // Zamanlanmış duyuruları kontrol et
+  if (typeof window.checkScheduledAnnouncements === 'function') {
+    window.checkScheduledAnnouncements();
+    // Her 5 dakikada bir kontrol et
+    setInterval(() => window.checkScheduledAnnouncements?.(), 5 * 60 * 1000);
+  }
+  // Yaklaşan tatilleri 10 gün önceden yöneticiye sor
+  setTimeout(() => window.checkYaklasanTatiller?.(), 2000);
+
+  // Nav avatar
+  const users = loadUsers();
+  const idx   = users.findIndex(x => x.id === user.id);
+  const c     = AVC[Math.max(idx, 0) % AVC.length];
+  const avEl  = _g('nav-av');
+  if (avEl)  { avEl.textContent = initials(user.name); avEl.style.background = c[0]; avEl.style.color = c[1]; }
+  _st('nav-name', user.name);
+  _st('nav-role', _roleLabel(user.role));
+
+  // Sidebar yetki filtresi — yalnızca erişimi olan modüller görünür
+  _applySidebarPermissions(user);
+
+  // Admin-only elementler
+  const nbAdmin = _g('nb-admin');
+  if (nbAdmin) nbAdmin.style.display = user.role === 'admin' ? 'flex' : 'none';
+
+  // Personel filtresi (Pusula)
+  const pusel = _g('pus-usel');
+  if (pusel) pusel.style.display = user.role === 'admin' ? 'inline-block' : 'none';
+
+  // i18n uygula
+  if (window.I18n?.apply) window.I18n.apply();
+  else _applyI18nFallback(_LANG);
+
+  applyTheme();
+  updateVersionUI();
+  renderPinbar();
+  updateAllBadges();
+  _initNsecState();
+  _resetIdleTimer();
+
+  // Modüllerin ilk yüklemesi
+  if (typeof window.renderPusula === 'function') { /* panele gidilince render edilir */ }
+
+  // Sistem bildirimleri (800ms sonra — UI hazır olsun)
+  setTimeout(generateSystemNotifs, 800);
+  // Bekleyen görev atama bildirimleri
+  setTimeout(() => window._checkPendingTaskNotifs?.(user), 1200);
+
+  // Firebase durum rozetini güncelle
+  setTimeout(() => window.Auth?.checkFirebaseStatus?.(), 1500);
+  setTimeout(() => window._checkPendingTaskNotifs?.(user), 1500);
+  setTimeout(() => window._startMorningRoutine?.(user), 2500);
+  setTimeout(async () => { try { const q = await window._fetchDailyQuote?.(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {} }, 3000);
+  setTimeout(() => _checkPendingTaskNotifs(user), 1500);
+  setTimeout(() => _startMorningRoutine(user), 2500);
+  setTimeout(async () => { try { const q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {} }, 3000);
+  // Bekleyen gorev bildirimleri
+  setTimeout(() => _checkPendingTaskNotifs(user), 1500);
+  setTimeout(() => _startMorningRoutine(user), 2500);
+  // Gunluk sozu yukle
+  setTimeout(async () => {
+    try { const q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {}
+  }, 3000);
+
+  // Kargo & Konteyner polling
+  setTimeout(() => {
+    try { window.startKargoPolling?.();   } catch (e) {}
+    try { window.startKonteynPolling?.(); } catch (e) {}
+    try { window.checkAllKonteyn?.();    } catch (e) {}
+  }, 2000);
+
+  // Tatil ve etkinlik kontrolleri
+  setTimeout(() => { try { window.checkYaklasanTatiller?.();   } catch (e) {} }, 3000);
+  setTimeout(() => { try { window.checkYaklasanEtkinlikler?.(); } catch (e) {} }, 4000);
+  setInterval(()  => { try { window.checkYaklasanTatiller?.();   } catch (e) {} }, 6 * 3600 * 1000);
+  setInterval(()  => { try { window.checkYaklasanEtkinlikler?.(); } catch (e) {} }, 3600 * 1000);
+  setInterval(()  => { try { window.checkTebligatAlarms?.();    } catch (e) {} }, 6 * 3600 * 1000);
+
+  // Pirim oran ipucu
+  if (_g('prm-type') && typeof window.updatePirimRateHint === 'function') {
+    window.updatePirimRateHint();
+  }
+
+  // beforeunload: KPI çıkış logu
+  window.addEventListener('beforeunload', () => {
+    try { window.logKpiExit?.(); } catch (e) {}
+  });
+
+  // Dashboard ilk render
+  try { _renderDashboard(); } catch (e) {}
+}
+
+/**
+ * Rol etiketini Türkçe döndürür.
+ * @param {string} role
+ * @returns {string}
+ */
+function _roleLabel(role) {
+  return { admin:'👑 Yönetici', manager:'🏛️ Müdür', lead:'⭐ Takım Lideri', staff:'👤 Personel' }[role] || role;
+}
+
+/**
+ * Sidebar nav butonlarına RBAC filtresi uygular.
+ * @param {Object} user
+ */
+function _applySidebarPermissions(user) {
+  document.querySelectorAll('.nb[onclick]').forEach(btn => {
+    const match = btn.getAttribute('onclick').match(/App\.nav\('([^']+)'|nav\('([^']+)'/);
+    if (!match) return;
+    const modId = match[1] || match[2];
+    if (!modId) return;
+    if (user.role === 'admin') { btn.style.display = 'flex'; return; }
+    if (modId === 'settings' || modId === 'admin') { btn.style.display = 'none'; return; }
+    btn.style.display = canModule(modId) ? 'flex' : 'none';
+  });
+  // Dashboard her zaman görünür
+  const dbBtn = document.querySelector(".nb[onclick*=\"'dashboard'\"]");
+  if (dbBtn) dbBtn.style.display = 'flex';
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 10 — PANELLERi BAŞLATICI (App.init)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Sayfa yüklendiğinde çağrılır.
+ * Firebase Auth durumunu dinler; oturum varsa uygulamayı başlatır.
+ */
+function init() {
+  // Dil & tema
+  _LANG = localStorage.getItem('ak_lang') || 'tr';
+  _DARK = localStorage.getItem('ak_theme') === 'dark';
+  applyTheme();
+  if (window.I18n?.loadLang) _LANG = window.I18n.loadLang();
+  if (window.I18n?.apply)    window.I18n.apply();
+
+  // Firebase Auth durum dinleyicisi
+  window.Auth?.listenAuthState?.(
+    fbUser => {
+      const cu = window.Auth.resolveCurrentUser(fbUser.email);
+      if (cu) _finishLogin(cu);
+      else logout();
+    },
+    () => {
+      // Oturum yok — localStorage oturumu dene
+      const cu = window.Auth?.restoreSession?.();
+      if (cu) _finishLogin(cu);
+      // else: login ekranı zaten görünür
+    }
+  );
+
+  // Firebase bağlı değilse localStorage oturumunu dene
+  if (!window.Auth?.getFBAuth?.()) {
+    const cu = window.Auth?.restoreSession?.();
+    if (cu) _finishLogin(cu);
+  }
+
+  // Canlı saat — hemen başlat
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // Klavye kısayolları
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openGSearch(); }
+    if (e.key === 'Escape') { closeGSearch(); document.querySelectorAll('.mo.open').forEach(m => m.classList.remove('open')); }
+  });
+
+  // Mobil sidebar — nav butonuna basınca kapat
+  document.addEventListener('click', e => {
+    if (e.target.closest('.nb') && window.innerWidth <= 860) {
+      const sb = document.querySelector('.sidebar');
+      const ov = _g('mob-overlay');
+      if (sb) sb.classList.remove('open');
+      if (ov) ov.classList.remove('show');
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 11 — PANEL ROUTER (App.nav)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Paneller arası geçiş — RBAC guard dahil.
+ * @param {string}       id   Panel kimliği (panel-{id} elementine karşılık gelir)
+ * @param {HTMLElement}  [el] Tıklanan sidebar butonu (aktif class için)
+ */
+function nav(id, el) {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) { toast('Oturum bulunamadı.', 'err'); return; }
+
+  // ── YETKİ GUARD ─────────────────────────────────────────────
+  if (id === 'settings' && cu.role !== 'admin') {
+    toast('Bu bölüme erişim yetkiniz yok.', 'err'); return;
+  }
+  if (ADMIN_ONLY_PANELS.includes(id) && cu.role !== 'admin') {
+    toast('Bu bölüm yalnızca yöneticilere açıktır.', 'err'); return;
+  }
+  if (cu.role !== 'admin' && !canModule(id) && id !== 'dashboard') {
+    toast('Bu modüle erişim izniniz yok.', 'err'); return;
+  }
+  // ────────────────────────────────────────────────────────────
+
+  // Tüm panelleri kapat, tüm nav butonlarını pasif yap
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+
+  const target = _g('panel-' + id);
+  if (!target) { console.warn('[App.nav] Panel bulunamadı:', 'panel-' + id); return; }
+  target.classList.add('on');
+  if (el) el.classList.add('on');
+
+  // Mobil: sidebar kapat
+  if (window.innerWidth <= 860) {
+    const sb = document.querySelector('.sidebar');
+    const ov = _g('mob-overlay');
+    if (sb) sb.classList.remove('open');
+    if (ov) ov.classList.remove('show');
+  }
+
+  // 24 saatlik panel güncelleme banner'ı (Admin modülünden)
+  try { window.Admin?.showAllUpdateBanners?.(); } catch (e) {}
+
+  // ── Panel render yönlendirmeleri ─────────────────────────────
+  _renderPanel(id);
+}
+
+/**
+ * Panel ID'ye göre ilgili modülün render fonksiyonunu çağırır.
+ * Her modül tamamlandıkça buraya kayıt eklenir.
+ * @param {string} id
+ */
+function _renderPanel(id) {
+  const safe = fn => { try { fn(); } catch (e) { console.warn('[App.nav] render hatası:', id, e); } };
+
+  const RENDERS = {
+    dashboard:  () => safe(_renderDashboard),
+    pusula:     () => safe(() => { window.Pusula?.init?.(); window.Pusula?.render?.(); }),
+    kargo:      () => safe(() => { window.Kargo?.render?.(); window.Kargo?.renderKonteyn?.(); }),
+    lojistik:   () => safe(() => { window.renderLojistik?.(); }),
+    pirim:      () => safe(() => window.Pirim?.render?.()),
+    admin:      () => safe(() => { window.Admin?.render?.(); window.Admin?.renderLog?.(); }),
+    announce:   () => safe(() => { window.renderAnnouncements?.(); window.updateAnnBadge?.(); }),
+    takvim:     () => safe(() => { window.renderCal?.(); setTimeout(() => window.checkYaklasanEtkinlikler?.(), 100); }),
+    puantaj:    () => safe(() => window.renderPuantaj?.()),
+    notes:      () => safe(() => window.renderNotes?.()),
+    links:      () => safe(() => window.renderLinks?.()),
+    hedefler:   () => safe(() => window.renderHedefler?.()),
+    odemeler:   () => safe(() => window.renderOdemeler?.()),
+    ik:         () => safe(() => { window.renderIk?.(); window.renderIkZimmet?.(); }),
+    izin:       () => safe(() => window.renderIzin?.()),
+    tebligat:   () => safe(() => window.renderTebligat?.()),
+    evrak:      () => safe(() => window.renderEvrak?.()),
+    arsiv:      () => safe(() => window.renderArsiv?.()),
+    kpi:        () => safe(() => window.Kpi?.render?.() || window.renderKpiPanel?.()),
+    crm:        () => safe(() => window.CrmHub?.render?.() || window.renderCrm?.()),
+    numune:     () => safe(() => window.renderNumune?.()),
+    temizlik:   () => safe(() => window.renderTemizlik?.()),
+    resmi:      () => safe(() => window.renderResmi?.()),
+    etkinlik:   () => safe(() => { window.renderEtkinlik?.(); setTimeout(() => window.applyFuarKriterleriToForm?.(), 50); }),
+    rehber:     () => safe(() => window.renderRehber?.()),
+    settings:   () => safe(() => { updateVersionUI(); window.Auth?.checkFirebaseStatus?.(); window.renderSettingsAdmin?.(); }),
+    activity:   () => safe(() => window.renderActivity?.()),
+    suggestions:() => safe(() => window.renderSugg?.()),
+    trash:      () => safe(() => window.renderTrashPanel?.()),
+    hesap:      () => safe(() => window.renderHesapHistory?.()),
+  };
+
+  // app_patch ve hub modülleri için fallback
+  if (RENDERS[id]) {
+    RENDERS[id]();
+  } else {
+    // Hub modülleri ve ek paneller
+    const hubRenders = {
+      'ik-hub':    () => safe(() => window.IkHub?.render?.()),
+      'crm-hub':   () => safe(() => window.CrmHub?.render?.()),
+      gorevler:    () => safe(() => window.Pusula?.render?.()),
+      'kpi-panel': () => safe(() => window.renderKpiPanel?.() || window.KPI?.render?.()),
+    };
+    if (hubRenders[id]) hubRenders[id]();
+    else window._patchRender?.(id);
+  }
+}
+
+/**
+ * Nav wrapper — sidebar butonunu otomatik bulur.
+ * @param {string} id
+ */
+function goTo(id) {
+  const btn = document.querySelector(`.nb[onclick*="'${id}'"]`);
+  nav(id, btn);
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 12 — DASHBOARD RENDER
+// ════════════════════════════════════════════════════════════════
+
+function _renderDashboard() {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return;
+
+  const n    = new Date();
+  const lang = _LANG;
+  _st('db-date', n.toLocaleDateString(
+    lang === 'en' ? 'en-GB' : lang === 'fr' ? 'fr-FR' : 'tr-TR',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  ));
+  _st('db-welcome', (lang === 'en' ? 'Welcome' : lang === 'fr' ? 'Bienvenue' : 'Hoş geldiniz') + ', ' + cu.name + '!');
+
+  // Modüle özel istatistik sayaçları
+  const sg = _g('db-sg');
+  if (!sg) return;
+
+  const users  = loadUsers();
+  const tasks  = loadTasks();
+  const kargo  = loadKargo();
+  const pirim  = loadPirim();
+  const izin   = loadIzin();
+  const today  = new Date().toISOString().slice(0, 10);
+
+  const stats = [
+    { icon: '👥', label: 'Aktif Kullanıcı',  val: cu.role === 'admin' ? users.filter(u => u.status === 'active').length : '—' },
+    { icon: '📋', label: 'Açık Görev',        val: tasks.filter(t => !t.done && t.status !== 'done').length },
+    { icon: '📦', label: 'Bekleyen Kargo',    val: kargo.filter(k => k.status === 'bekle').length },
+    { icon: '⭐', label: 'Onay Bekleyen Prim',val: pirim.filter(p => p.status === 'pending').length },
+    { icon: '🏖️', label: 'Bekleyen İzin',     val: izin.filter(i => i.status === 'pending').length },
+    { icon: '🎯', label: 'Kritik Görev',      val: tasks.filter(t => !t.done && t.pri === 1).length },
+    { icon: '⚠️', label: 'Gecikmiş Görev',   val: tasks.filter(t => !t.done && t.due && t.due < today).length },
+    { icon: '🔔', label: 'Okunmamış Bildirim',val: loadNotifs().filter(n => !n.read).length },
+  ];
+
+  sg.innerHTML = stats.map(s => `
+    <div class="sc">
+      <div class="sci">${s.icon}</div>
+      <div class="scv">${s.val}</div>
+      <div class="scl">${s.label}</div>
+    </div>`).join('');
+
+  // Günün görevleri — hızlı bakış
+  const content = _g('db-content');
+  if (!content) return;
+  const myTasks = tasks.filter(t =>
+    (t.uid === cu.id || (t.participants || []).includes(cu.id)) && !t.done
+  ).sort((a, b) => a.pri - b.pri).slice(0, 5);
+
+  if (!myTasks.length) {
+    content.innerHTML = `<div class="card" style="padding:32px;text-align:center;color:var(--t2)"><div style="font-size:32px;margin-bottom:10px">🎉</div><div style="font-weight:500">Bugün tüm görevler tamamlandı!</div></div>`;
+    return;
+  }
+  const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
+  content.innerHTML = `<div class="card">
+    <div class="ch"><span class="ct">Günün Görevleri</span><button class="btn btns" onclick="App.nav('pusula',document.querySelector('.nb[onclick*=\\'pusula\\']'))">Tümünü Gör →</button></div>
+    <div style="padding:0 16px 12px">
+      ${myTasks.map(t => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
+          <div style="width:4px;height:36px;border-radius:2px;flex-shrink:0;background:${priColors[t.pri]||priColors[4]}"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
+            ${t.due ? `<div style="font-size:10px;color:${t.due < today ? 'var(--rd)' : 'var(--t3)'};margin-top:2px">${t.due < today ? '⚠ ' : ''}${t.due}</div>` : ''}
+          </div>
+          <input type="checkbox" onchange="Pusula?.toggle(${t.id},this.checked)" style="accent-color:var(--ac);width:16px;height:16px;flex-shrink:0">
+        </div>`).join('')}
+    </div>
+  </div>`;
+
+  _renderDashboardPusulaWidget(cu, tasks, today);
+}
+
+// ── Pusula Dashboard Widget ────────────────────────────────────────
+function _renderDashboardPusulaWidget(cu, tasks, today) {
+  const dayFocusEl = document.getElementById('db-day-focus');
+  if (dayFocusEl) {
+    const ids = (() => { try { return JSON.parse(localStorage.getItem('ak_pus_day_focus_' + cu.id) || '[]'); } catch(e) { return []; } })();
+    if (!ids.length) {
+      dayFocusEl.innerHTML = '<div style="padding:18px 16px;text-align:center;color:var(--t3);font-size:12px">Odak listesi bos. Pusula da gorev secin.</div>';
+    } else {
+      const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
+      const rows = ids.map(id => {
+        const t = tasks.find(x => x.id === id);
+        if (!t) return '';
+        const isLate = !t.done && t.due && t.due < today;
+        const dur = t.duration ? (t.duration >= 60 ? Math.floor(t.duration/60) + 's' + (t.duration%60 ? ' '+t.duration%60+'dk' : '') : t.duration+'dk') : '';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--b);cursor:pointer" data-nav="pusula" class="db-focus-row">'
+          + '<div style="width:3px;height:32px;border-radius:2px;background:' + (priColors[t.pri]||priColors[4]) + ';flex-shrink:0"></div>'
+          + '<div style="flex:1;min-width:0">'
+            + '<div style="font-size:13px;font-weight:' + (t.done?400:600) + ';color:' + (t.done?'var(--t3)':'var(--t)') + ';text-decoration:' + (t.done?'line-through':'none') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + t.title + '</div>'
+            + '<div style="display:flex;gap:8px;margin-top:2px">'
+              + (t.due ? '<span style="font-size:10px;color:' + (isLate?'var(--rdt)':'var(--t3)') + '">' + (isLate?'⚠ ':'') + t.due + '</span>' : '')
+              + (dur ? '<span style="font-size:10px;color:var(--ac)">⏱ ' + dur + '</span>' : '')
+            + '</div>'
+          + '</div>'
+          + (t.done ? '<span style="font-size:14px">✅</span>' : '')
+        + '</div>';
+      }).join('');
+      dayFocusEl.innerHTML = rows;
+    }
+  }
+
+  const statsEl = document.getElementById('db-pusula-stats');
+  if (statsEl) {
+    const myT   = tasks.filter(t => t.uid === cu.id || (t.participants||[]).includes(cu.id));
+    const total = myT.length;
+    const done  = myT.filter(t => t.done || t.status === 'done').length;
+    const inprog = myT.filter(t => t.status === 'inprogress').length;
+    const overdue = myT.filter(t => !t.done && t.due && t.due < today).length;
+    const critical = myT.filter(t => !t.done && t.pri === 1).length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const weekIds = (() => { try { return JSON.parse(localStorage.getItem('ak_pus_week_focus_' + cu.id) || '[]'); } catch(e) { return []; } })();
+    statsEl.innerHTML = '<div style="padding:14px 16px">'
+      + '<div style="margin-bottom:14px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+          + '<span style="font-size:12px;color:var(--t2)">Genel Ilerleme</span>'
+          + '<span style="font-size:13px;font-weight:700;color:' + (pct>=80?'var(--grt)':pct>=50?'var(--amt)':'var(--ac)') + '">' + pct + '%</span>'
+        + '</div>'
+        + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden">'
+          + '<div style="height:100%;width:' + pct + '%;background:' + (pct>=80?'var(--gr)':pct>=50?'var(--am)':'var(--ac)') + ';border-radius:3px;transition:width .4s"></div>'
+        + '</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + '<div style="background:var(--s2);border-radius:9px;padding:9px 11px"><div style="font-size:18px;font-weight:700;color:var(--t)">' + done + '<span style="font-size:11px;color:var(--t3);font-weight:400">/' + total + '</span></div><div style="font-size:10px;color:var(--t3);margin-top:1px">Tamamlanan</div></div>'
+        + '<div style="background:var(--s2);border-radius:9px;padding:9px 11px"><div style="font-size:18px;font-weight:700;color:var(--ac)">' + inprog + '</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Devam Eden</div></div>'
+        + '<div style="background:' + (overdue?'rgba(239,68,68,.08)':'var(--s2)') + ';border-radius:9px;padding:9px 11px;border:1px solid ' + (overdue?'rgba(239,68,68,.2)':'transparent') + '"><div style="font-size:18px;font-weight:700;color:' + (overdue?'var(--rdt)':'var(--t)') + '">' + overdue + '</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Gecikmiş</div></div>'
+        + '<div style="background:var(--s2);border-radius:9px;padding:9px 11px"><div style="font-size:18px;font-weight:700;color:' + (critical?'#ef4444':'var(--t)') + '">' + critical + '</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Kritik</div></div>'
+      + '</div>'
+      + (weekIds.length ? '<div style="margin-top:10px;background:rgba(99,102,241,.06);border-radius:8px;padding:8px 11px;font-size:11px;color:var(--t2)">Bu hafta <strong style="color:var(--ac)">' + weekIds.length + '</strong> odak gorev secildi</div>' : '')
+    + '</div>';
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 13 — SÜRÜM GEÇMİŞİ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Ayarlar panelindeki sürüm geçmişi bölümünü render eder.
+ */
+function updateVersionUI() {
+  const el = _g('ver-hist');
+  if (!el) return;
+  el.innerHTML = CHANGELOG.map(c => `
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--b)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--ac)">v${c.v}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--t3)">${c.ts}</span>
+      </div>
+      <div style="font-size:12px;color:var(--t2)">${c.note}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 14 — PROFIL PANELİ
+// ════════════════════════════════════════════════════════════════
+
+function toggleProfilePanel() {
+  const p  = _g('profile-panel');
+  const np = _g('notif-panel');
+  if (np) np.classList.remove('open');
+  if (!p) return;
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) {
+    _renderProfilePanel();
+    document.addEventListener('click', _closeProfileOnBlur);
+  } else {
+    document.removeEventListener('click', _closeProfileOnBlur);
+  }
+}
+
+function _closeProfilePanel() {
+  const p = _g('profile-panel');
+  if (p) p.classList.remove('open');
+  document.removeEventListener('click', _closeProfileOnBlur);
+}
+
+function _closeProfileOnBlur(e) {
+  if (!e.target.closest('#profile-panel') && !e.target.closest('.uchip')) {
+    _closeProfilePanel();
+  }
+}
+
+function _renderProfilePanel() {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return;
+  const users = loadUsers();
+  const idx   = users.findIndex(x => x.id === cu.id);
+  const c     = AVC[Math.max(idx, 0) % AVC.length];
+  const av    = _g('pp-av');
+  if (av) { av.textContent = initials(cu.name); av.style.background = c[0]; av.style.color = c[1]; }
+  _st('pp-name',  cu.name);
+  _st('pp-role',  _roleLabel(cu.role));
+  _st('pp-email', cu.email || '');
+  const modsEl = _g('pp-modules');
+  if (modsEl) {
+    const userMods = cu.modules || ROLE_DEFAULT_MODULES[cu.role] || [];
+    modsEl.innerHTML = userMods.slice(0, 12).map(m => {
+      const def = ALL_MODULES.find(x => x.id === m);
+      return def ? `<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--al);color:var(--at)">${def.label}</span>` : '';
+    }).join('');
+  }
+}
+
+/**
+ * Profil düzenleme modalını açar.
+ */
+function openProfileEdit() {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return;
+  if (_g('prof-name'))  _g('prof-name').value  = cu.name || '';
+  if (_g('prof-oldpw')) _g('prof-oldpw').value = '';
+  if (_g('prof-newpw')) _g('prof-newpw').value = '';
+  if (_g('prof-newpw2'))_g('prof-newpw2').value= '';
+  _closeProfilePanel();
+  openMo('mo-profile');
+}
+
+/**
+ * Profil bilgilerini kaydeder (isim + isteğe bağlı şifre değişimi).
+ */
+function saveProfile() {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return;
+  const name    = (_g('prof-name')?.value  || '').trim();
+  if (!name) { toast('Ad zorunludur', 'err'); return; }
+
+  const oldpw   = _g('prof-oldpw')?.value  || '';
+  const newpw   = _g('prof-newpw')?.value  || '';
+  const newpw2  = _g('prof-newpw2')?.value || '';
+
+  if (newpw) {
+    const chRes = window.Auth?.changePassword?.(oldpw, newpw);
+    if (chRes && !chRes.ok) { toast(chRes.error || 'Şifre hatası', 'err'); return; }
+    if (newpw !== newpw2)   { toast('Şifreler eşleşmiyor', 'err'); return; }
+  }
+
+  const users = loadUsers();
+  const u     = users.find(x => x.id === cu.id);
+  if (u) { u.name = name; saveUsers(users); }
+
+  _st('nav-name', name);
+  closeMo('mo-profile');
+  logActivity('user', 'profilini güncelledi');
+  toast('Profil güncellendi ✓', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 15 — BİLDİRİM PANELİ
+// ════════════════════════════════════════════════════════════════
+
+function toggleNotifPanel() {
+  const p  = _g('notif-panel');
+  const pp = _g('profile-panel');
+  if (pp) pp.classList.remove('open');
+  if (!p) return;
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) {
+    _renderNotifPanel();
+    document.addEventListener('click', _closeNotifOnBlur);
+  } else {
+    document.removeEventListener('click', _closeNotifOnBlur);
+  }
+}
+
+function _closeNotifPanel() {
+  const p = _g('notif-panel');
+  if (p) p.classList.remove('open');
+  document.removeEventListener('click', _closeNotifOnBlur);
+}
+
+function _closeNotifOnBlur(e) {
+  if (!e.target.closest('#notif-panel') && !e.target.closest('.notif-btn')) {
+    _closeNotifPanel();
+  }
+}
+
+function _renderNotifPanel() {
+  const list = _g('notif-list');
+  if (!list) return;
+  const d      = loadNotifs();
+  const unread = d.filter(n => !n.read).length;
+  const hdr    = _g('notif-unread-count');
+  if (hdr) hdr.textContent = unread > 0 ? `(${unread} okunmamış)` : '';
+
+  if (!d.length) {
+    list.innerHTML = `<div style="padding:32px;text-align:center;color:var(--t2);font-size:13px">🔕 Bildirim yok</div>`;
+    return;
+  }
+  list.innerHTML = d.slice(0, 30).map(n => `
+    <div class="notif-item${n.read ? '' : ' unread'}" data-id="${n.id}" data-link="${n.link || ''}">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;flex-shrink:0">${n.icon || '🔔'}</span>
+        <div style="flex:1">
+          <div style="font-size:12px;line-height:1.4;color:${n.read ? 'var(--t2)' : 'var(--t)'};font-weight:${n.read ? '400' : '600'}">${n.msg}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px;font-family:'DM Mono',monospace">${n.ts}</div>
+        </div>
+        ${!n.read ? `<div style="width:8px;height:8px;background:var(--ac);border-radius:50%;flex-shrink:0;margin-top:4px"></div>` : ''}
+      </div>
+    </div>`).join('');
+
+  // Event delegation — tek listener
+  list.onclick = e => {
+    const item = e.target.closest('[data-id]');
+    if (!item) return;
+    const id   = parseInt(item.dataset.id);
+    const link = item.dataset.link || '';
+    const data = loadNotifs();
+    const n    = data.find(x => x.id === id);
+    if (n) n.read = true;
+    storeNotifs(data);
+    updateNotifBadge();
+    _renderNotifPanel();
+    if (link) { goTo(link); _closeNotifPanel(); }
+  };
+}
+
+function updateNotifBadge() {
+  const n   = loadNotifs().filter(x => !x.read).length;
+  const dot = _g('notif-dot');
+  if (dot) dot.classList.toggle('show', n > 0);
+}
+
+function markAllNotifRead() {
+  const d = loadNotifs();
+  d.forEach(n => n.read = true);
+  storeNotifs(d);
+  updateNotifBadge();
+  _renderNotifPanel();
+  toast('Tümü okundu işaretlendi ✓', 'ok');
+}
+
+function clearAllNotifs() {
+  if (!confirm('Tüm bildirimler silinsin mi?')) return;
+  storeNotifs([]);
+  updateNotifBadge();
+  _renderNotifPanel();
+  toast('Bildirimler temizlendi ✓', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 16 — OTOMATİK SİSTEM BİLDİRİMLERİ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Gecikmiş ödeme, hedef, kargo, tebligat bildirimlerini üretir.
+ * Her _initApp sonrası 800ms gecikmeyle çağrılır.
+ */
+// ── Görev Bildirim Popup ─────────────────────────────────────────
+function _checkPendingTaskNotifs(user) {
+  if (!user) return;
+  var notifs = window.loadNotifs ? window.loadNotifs() : [];
+  var pending = notifs.filter(function(n) { return n.targetUid===user.id && n.needsAck && !n.acked && !n.read; });
+  if (pending.length) _showTaskAssignPopup(pending, 0);
+}
+
+function _showTaskAssignPopup(pending, idx) {
+  if (idx >= pending.length) return;
+  var n = pending[idx];
+  document.getElementById('task-assign-popup')?.remove();
+  var pop = document.createElement('div');
+  pop.id = 'task-assign-popup';
+  pop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999';
+  var priLabels = ['','Kritik','Yuksek','Normal','Dusuk'];
+  var priColors = ['','#EF4444','#F97316','#EAB308','#22C55E'];
+  pop.innerHTML = '<div style="background:var(--sf);border-radius:20px;padding:28px 32px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">'
+    + '<div style="width:52px;height:52px;border-radius:16px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📋</div>'
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Yeni Gorev Atandi</div>'
+    + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + (n.taskTitle||'Yeni Gorev') + '</div></div></div>'
+    + '<div style="background:var(--s2);border-radius:12px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">ATAYAN</div><div style="font-size:13px;font-weight:600">' + (n.assigner||'---') + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">ONCELIK</div><div style="font-size:13px;font-weight:700;color:' + (priColors[n.priority||2]||'#EAB308') + '">' + (priLabels[n.priority||2]||'Normal') + '</div></div>'
+    + (n.due ? '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">SON TARIH</div><div style="font-size:13px;font-weight:600">' + n.due + '</div></div>' : '')
+    + '</div>'
+    + '<div style="display:flex;gap:10px">'
+    + '<button id="tapop-go" style="flex:1;background:var(--ac);color:#fff;border:none;border-radius:11px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Goreve Git</button>'
+    + '<button id="tapop-ok" style="background:var(--s2);color:var(--t);border:none;border-radius:11px;padding:12px 18px;font-size:13px;cursor:pointer;font-family:inherit">Tamam</button></div>'
+    + '</div>';
+  document.body.appendChild(pop);
+  var _ack = function() {
+    var all = window.loadNotifs ? window.loadNotifs() : [];
+    var f = all.find(function(x){ return x.id===n.id; });
+    if (f) { f.acked=true; f.read=true; }
+    if (window.storeNotifs) window.storeNotifs(all);
+    if (window.updateNotifBadge) window.updateNotifBadge();
+    pop.remove();
+    setTimeout(function(){ _showTaskAssignPopup(pending, idx+1); }, 400);
+  };
+  document.getElementById('tapop-ok').addEventListener('click', _ack);
+  document.getElementById('tapop-go').addEventListener('click', function(){ _ack(); if(typeof nav==='function') nav('pusula',null); });
+  pop.addEventListener('click', function(e){ if(e.target===pop) _ack(); });
+}
+
+var _MORNING_KEY = 'ak_morning_done_';
+var _QUOTE_KEY   = 'ak_pus_quote_';
+
+async function _fetchDailyQuote() {
+  var today = new Date().toISOString().slice(0,10);
+  var cached = localStorage.getItem(_QUOTE_KEY + today);
+  if (cached) { try { return JSON.parse(cached); } catch(e) {} }
+  try {
+    var r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://zenquotes.io/api/today'));
+    var j = await r.json();
+    var d = JSON.parse(j.contents);
+    var q = { text: d[0].q, author: d[0].a };
+    localStorage.setItem(_QUOTE_KEY + today, JSON.stringify(q));
+    return q;
+  } catch(e) {
+    var fb = [
+      { text: "Zamani yonetemeyen hicbir seyi yonetemez.", author: "Peter Drucker" },
+      { text: "Bugun yapabileceğini yarına bırakma.", author: "Benjamin Franklin" },
+    ];
+    return fb[new Date().getDate() % fb.length];
+  }
+}
+
+function _startMorningRoutine(user) {
+  if (!user) return;
+  setInterval(function() {
+    var now = new Date(); var today = now.toISOString().slice(0,10);
+    var key = _MORNING_KEY + today;
+    if (now.getHours()===9 && now.getMinutes()===0 && !localStorage.getItem(key)) {
+      localStorage.setItem(key,'1'); _triggerMorningAlert(user);
+    }
+  }, 60000);
+}
+
+async function _triggerMorningAlert(user) {
+  var cu = user || window.Auth?.getCU?.();
+  var dayFocus = JSON.parse(localStorage.getItem('ak_pus_day_focus_'+(cu?.id||''))||'[]');
+  var dayEmpty = dayFocus.length===0;
+  if (window.addNotif) window.addNotif('☀️', dayEmpty ? "Gunaydin! Odak gorevleri secilmedi." : 'Gunaydin! '+dayFocus.length+' odak goreviniz var.', dayEmpty?'warn':'ok', 'pusula');
+  if (window.toast) setTimeout(function(){ window.toast(dayEmpty?'☀️ Odak gorevleri!':'☀️ Gunaydin!', dayEmpty?'warn':'ok'); }, 500);
+  try { var q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {}
+}
+
+
+function generateSystemNotifs() {
+  const today = new Date().toISOString().slice(0, 10);
+  const soon  = new Date(); soon.setDate(soon.getDate() + 7);
+  const soonS = soon.toISOString().slice(0, 10);
+
+  // Geciken rutin ödemeler
+  try {
+    loadOdm().filter(o => o.status !== 'paid' && o.date && o.date < today).forEach(o => {
+      addNotif('💳', `Geciken ödeme: ${o.title} (${(o.amount || 0).toLocaleString('tr-TR')} ₺)`, 'warn', 'odemeler');
+    });
+  } catch (e) {}
+
+  // Geciken hedefler
+  try {
+    loadHdf().filter(h => h.to < today && h.status !== 'done').forEach(h => {
+      addNotif('🎯', `Gecikmiş hedef: ${h.title}`, 'warn', 'hedefler');
+    });
+  } catch (e) {}
+
+  // 7 gün içinde sona erecek resmi belgeler
+  try {
+    loadResmi().filter(r => r.exp && r.exp >= today && r.exp <= soonS).forEach(r => {
+      addNotif('🏛️', `${r.name} belgesi 7 gün içinde sona eriyor!`, 'warn', 'resmi');
+    });
+  } catch (e) {}
+
+  // Onay bekleyen kargo
+  try {
+    loadKargo().filter(k => k.status === 'bekle').slice(0, 2).forEach(k => {
+      addNotif('📦', `Bekleyen kargo: ${k.from} → ${k.to}`, 'info', 'kargo');
+    });
+  } catch (e) {}
+
+  // Tebligat 3 gün alarm
+  try {
+    const now = new Date();
+    loadTebligat().filter(t => t.status === 'open').forEach(t => {
+      const days = Math.floor((now - new Date(t.date)) / 86400000);
+      if (days >= 3) addNotif('📬', `Tebligat ${days} gündür açık: "${t.title}"`, 'warn', 'tebligat');
+    });
+  } catch (e) {}
+
+  // Platform güncelleme bildirimi (her sürümde bir kez)
+  const lastSeen = localStorage.getItem('ak_last_seen_ver') || '0';
+  if (lastSeen !== APP_VER) {
+    const cl = CHANGELOG.find(c => c.v === APP_VER);
+    if (cl) {
+      addNotif('🆕', `Platform güncellendi v${APP_VER}: ${cl.note.slice(0, 80)}…`, 'info', 'settings');
+    }
+    localStorage.setItem('ak_last_seen_ver', APP_VER);
+  }
+
+  updateNotifBadge();
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 17 — GLOBAL ARAMA (Ctrl+K)
+// ════════════════════════════════════════════════════════════════
+
+function openGSearch() {
+  const overlay = _g('gsearch-overlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  setTimeout(() => _g('gsearch-inp')?.focus(), 50);
+  const inp = _g('gsearch-inp');
+  if (inp) inp.value = '';
+  const res = _g('gsearch-results');
+  if (res) res.innerHTML = `<div class="gsr-empty">Tüm modüllerde arama yapın…<br><span style="font-size:11px;color:var(--t3)">Görev, müşteri, kargo, belge, rehber, not…</span></div>`;
+  _GS_SEL = -1;
+}
+
+function closeGSearch(e) {
+  if (!e || e.target === _g('gsearch-overlay')) {
+    _g('gsearch-overlay')?.classList.remove('open');
+  }
+}
+
+function gSearchKey(e) {
+  const items = _g('gsearch-results')?.querySelectorAll('.gsr-item') || [];
+  if (e.key === 'ArrowDown') {
+    _GS_SEL = Math.min(_GS_SEL + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('sel', i === _GS_SEL));
+    if (items[_GS_SEL]) items[_GS_SEL].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    _GS_SEL = Math.max(_GS_SEL - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('sel', i === _GS_SEL));
+  } else if (e.key === 'Enter' && _GS_SEL >= 0) {
+    items[_GS_SEL]?.click();
+  }
+}
+
+function doGSearch(q) {
+  q = (q || '').trim().toLowerCase();
+  const res = _g('gsearch-results');
+  if (!res) return;
+  _GS_SEL = -1;
+
+  if (q.length < 2) {
+    res.innerHTML = `<div class="gsr-empty">En az 2 karakter girin…</div>`;
+    return;
+  }
+
+  const cu      = window.Auth?.getCU?.();
+  const results = [];
+
+  // Görevler
+  try {
+    loadTasks()
+      .filter(t => (t.title || '').toLowerCase().includes(q) || (t.desc || '').toLowerCase().includes(q))
+      .slice(0, 3).forEach(t => results.push({
+        icon: '🧭', title: t.title, sub: `Görev · ${t.done ? 'Tamamlandı' : 'Devam ediyor'}`,
+        module: 'pusula',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('pusula'); setTimeout(() => window.Pusula?.openDetail?.(t.id), 300); }
+      }));
+  } catch (e) {}
+
+  // Notlar
+  try {
+    loadNotes()
+      .filter(n => n.uid === cu?.id && ((n.title || '').toLowerCase().includes(q) || (n.body || '').toLowerCase().includes(q)))
+      .slice(0, 3).forEach(n => results.push({
+        icon: '📝', title: n.title, sub: `Not · ${n.cat || ''}`,
+        module: 'notes',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('notes'); setTimeout(() => window.viewNote?.(n.id), 300); }
+      }));
+  } catch (e) {}
+
+  // CRM
+  try {
+    loadCrmData()
+      .filter(c => (c.name || '').toLowerCase().includes(q) || (c.contact || '').toLowerCase().includes(q))
+      .slice(0, 3).forEach(c => results.push({
+        icon: '🤝', title: c.name, sub: `CRM · ${c.contact || ''}`,
+        module: 'crm',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('crm'); setTimeout(() => window.openCrmModal?.(c.id), 300); }
+      }));
+  } catch (e) {}
+
+  // Kargo
+  try {
+    loadKargo()
+      .filter(k => (k.from || '').toLowerCase().includes(q) || (k.to || '').toLowerCase().includes(q) || (k.note || '').toLowerCase().includes(q))
+      .slice(0, 3).forEach(k => results.push({
+        icon: '📦', title: `${k.from} → ${k.to}`, sub: `Kargo · ${k.firm || ''} ${k.note ? '· ' + k.note : ''}`,
+        module: 'kargo',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('kargo'); }
+      }));
+  } catch (e) {}
+
+  // Rehber
+  try {
+    loadRehber()
+      .filter(r => (r.name || '').toLowerCase().includes(q) || (r.phone || '').includes(q) || (r.company || '').toLowerCase().includes(q))
+      .slice(0, 3).forEach(r => results.push({
+        icon: '📒', title: r.name, sub: `Rehber · ${r.company || r.phone || ''}`,
+        module: 'rehber',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('rehber'); }
+      }));
+  } catch (e) {}
+
+  // Hedefler
+  try {
+    loadHdf()
+      .filter(h => (h.title || '').toLowerCase().includes(q))
+      .slice(0, 2).forEach(h => results.push({
+        icon: '🎯', title: h.title, sub: `Hedef · ${h.status || ''}`,
+        module: 'hedefler',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('hedefler'); }
+      }));
+  } catch (e) {}
+
+  // Duyurular
+  try {
+    loadAnn()
+      .filter(a => (a.title || '').toLowerCase().includes(q) || (a.body || '').toLowerCase().includes(q))
+      .slice(0, 2).forEach(a => results.push({
+        icon: '📣', title: a.title, sub: `Duyuru · ${a.type || ''}`,
+        module: 'announce',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('announce'); }
+      }));
+  } catch (e) {}
+
+  // Numune
+  try {
+    loadNumune()
+      .filter(n => (n.name || '').toLowerCase().includes(q) || (n.code || '').toLowerCase().includes(q))
+      .slice(0, 2).forEach(n => results.push({
+        icon: '🧪', title: n.name, sub: `Numune · ${n.code || ''}`,
+        module: 'numune',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('numune'); }
+      }));
+  } catch (e) {}
+
+  // İK
+  try {
+    loadIk()
+      .filter(p => (p.name || '').toLowerCase().includes(q) || (p.pos || '').toLowerCase().includes(q))
+      .slice(0, 2).forEach(p => results.push({
+        icon: '👥', title: p.name, sub: `İK · ${p.pos || ''}`,
+        module: 'ik',
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('ik'); }
+      }));
+  } catch (e) {}
+
+  // Kullanıcılar (admin)
+  try {
+    if (cu?.role === 'admin') {
+      loadUsers()
+        .filter(u => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q))
+        .slice(0, 2).forEach(u => results.push({
+          icon: '👤', title: u.name, sub: `Kullanıcı · ${u.email || ''}`,
+          module: 'admin',
+          action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('admin'); }
+        }));
+    }
+  } catch (e) {}
+
+  if (!results.length) {
+    res.innerHTML = `<div class="gsr-empty">❌ "<strong>${q}</strong>" için sonuç bulunamadı.</div>`;
+    return;
+  }
+
+  res.innerHTML = results.map((r, i) => `
+    <div class="gsr-item${i === _GS_SEL ? ' sel' : ''}" data-idx="${i}">
+      <span style="font-size:16px;flex-shrink:0">${r.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.title}</div>
+        <div style="font-size:11px;color:var(--t2)">${r.sub || ''}</div>
+      </div>
+      <span class="gsr-mod">${r.module}</span>
+    </div>`).join('');
+
+  // Event delegation — direct callbacks
+  res.querySelectorAll('.gsr-item').forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    el.addEventListener('click', () => { if (results[idx]) results[idx].action(); });
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 18 — SİDEBAR & MOBİL
+// ════════════════════════════════════════════════════════════════
+
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = _g('mob-overlay');
+  if (!sb || !ov) return;
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
+
+/**
+ * Sidebar grup başlıklarının aç/kapat durumunu yönetir.
+ * @param {string} nsId  nsec element ID
+ */
+function toggleNsec(nsId) {
+  const nsEl = _g(nsId);
+  if (!nsEl) return;
+  const sidebar    = nsEl.closest('aside') || nsEl.parentElement;
+  const allNsec    = [...sidebar.querySelectorAll('.nsec')];
+  const nsIdx      = allNsec.indexOf(nsEl);
+  const nextNsec   = allNsec[nsIdx + 1];
+  const buttons    = [];
+  let sib          = nsEl.nextElementSibling;
+  while (sib && sib !== nextNsec) {
+    if (sib.classList.contains('nb')) buttons.push(sib);
+    sib = sib.nextElementSibling;
+  }
+  const isCollapsed = nsEl.classList.contains('collapsed');
+  if (isCollapsed) {
+    nsEl.classList.remove('collapsed');
+    buttons.forEach(b => { b.style.display = 'flex'; b.style.opacity = '1'; });
+  } else {
+    nsEl.classList.add('collapsed');
+    buttons.forEach(b => { b.style.display = 'none'; });
+  }
+  const state = loadNsecState();
+  state[nsId] = !isCollapsed;
+  saveNsecState(state);
+}
+
+/** Sidebar grup durumlarını localStorage'dan geri yükler */
+function _initNsecState() {
+  const state   = loadNsecState();
+  const sidebar = document.querySelector('aside.sidebar');
+  if (!sidebar) return;
+  const allNsec = [...sidebar.querySelectorAll('.nsec')];
+  allNsec.forEach(nsEl => {
+    const nsId = nsEl.id;
+    if (!nsId) return;
+    const nsIdx   = allNsec.indexOf(nsEl);
+    const nextSec = allNsec[nsIdx + 1];
+    const buttons = [];
+    let sib       = nsEl.nextElementSibling;
+    while (sib && sib !== nextSec) {
+      if (sib.classList.contains('nb')) buttons.push(sib);
+      sib = sib.nextElementSibling;
+    }
+    if (state[nsId] === true) {
+      nsEl.classList.add('collapsed');
+      buttons.forEach(b => { b.style.display = 'none'; });
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 19 — PIN BAR
+// ════════════════════════════════════════════════════════════════
+
+function renderPinbar() {
+  const cont = _g('pinbar-links');
+  if (!cont) return;
+  cont.innerHTML = '';
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return;
+
+  loadLinks()
+    .filter(l => _canSeeLink(l, cu))
+    .forEach(l => {
+      const a     = document.createElement('a');
+      a.className = 'plink';
+      a.href      = l.url;
+      a.target    = '_blank';
+      a.rel       = 'noopener noreferrer';
+      const canDel = cu.role === 'admin' || l.owner === cu.id;
+      a.innerHTML = `<span style="font-size:13px">${l.icon || '🌐'}</span>
+        <span style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</span>
+        ${canDel ? `<span class="pldel" onclick="event.preventDefault();event.stopPropagation();App.deletePin(${l.id})" title="Kaldır">✕</span>` : ''}
+        <span class="ptip">${(l.desc || l.url || '').slice(0, 60)}</span>`;
+      cont.appendChild(a);
+    });
+}
+
+function _canSeeLink(l, cu) {
+  if (!cu) return false;
+  if (cu.role === 'admin') return true;
+  if (l.owner === cu.id)  return true;
+  if (l.owner !== 0)      return false;
+  if (l.vis === 'all')    return true;
+  if (l.vis === 'roles')  return (l.visRoles || []).includes(cu.role);
+  if (l.vis === 'users')  return (l.visUsers || []).includes(cu.id);
+  return false;
+}
+
+function openPinModal(editId) {
+  if (_g('pin-url'))    _g('pin-url').value    = '';
+  if (_g('pin-name'))   _g('pin-name').value   = '';
+  if (_g('pin-icon'))   _g('pin-icon').value   = '';
+  if (_g('pin-eid'))    _g('pin-eid').value     = editId || '';
+  if (_g('pin-desc'))   _g('pin-desc').value   = '';
+  const as = _g('pin-admin-sec');
+  const cu = window.Auth?.getCU?.();
+  if (as) as.style.display = cu?.role === 'admin' ? 'block' : 'none';
+  const vs = _g('pin-vis');
+  if (vs) vs.value = 'private';
+  openMo('mo-pin');
+}
+
+function deletePin(id) {
+  if (!confirm('Bu linki kaldırmak istediğinizden emin misiniz?')) return;
+  saveLinks(loadLinks().filter(l => l.id !== id));
+  renderPinbar();
+  toast('Link kaldırıldı', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 20 — TÜM BADGE'LARI GÜNCELLE
+// ════════════════════════════════════════════════════════════════
+
+/** Tüm sidebar badge'lerini tek seferde günceller */
+function updateAllBadges() {
+  const safe = fn => { try { fn(); } catch (e) {} };
+
+  // Duyuru
+  safe(() => window.updateAnnBadge?.());
+  // Görev
+  safe(() => window.Pusula?.updateBadge?.());
+  // Puantaj
+  safe(() => window.updatePuanBadge?.());
+  // Bildirim noktası
+  safe(updateNotifBadge);
+  // İzin
+  safe(() => {
+    const iz  = loadIzin();
+    const nb  = _g('nb-izin-b');
+    if (nb) { const n = iz.filter(x => x.status === 'pending').length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
+  });
+  // Prim
+  safe(() => {
+    const prm = loadPirim();
+    const nb  = _g('nb-pirim-b');
+    if (nb) { const n = prm.filter(p => p.status === 'pending').length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
+  });
+  // Kargo
+  safe(() => {
+    const krg = loadKargo();
+    const nb  = _g('nb-krg-b');
+    if (nb) { const n = krg.filter(k => k.status === 'bekle').length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
+  });
+  // Hedefler
+  safe(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const nb    = _g('nb-hdf-b');
+    if (nb) { const n = loadHdf().filter(h => h.to < today && h.status !== 'done').length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
+  });
+}
+
+function updateDashboardActs() {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return;
+  if (_g('panel-dashboard')?.classList.contains('on')) _renderDashboard();
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 21 — ATIL OTURUM ZAMANLAYICISI
+// ════════════════════════════════════════════════════════════════
+
+function _resetIdleTimer() {
+  clearTimeout(_IDLE_TIMER);
+  // 25 dakika hareketsizlik → uyarı bildirimi
+  _IDLE_TIMER = setTimeout(() => {
+    const cu = window.Auth?.getCU?.();
+    if (cu) addNotif('⏰', 'Oturum 5 dakika içinde kapanacak. Hareket edin.', 'warn');
+  }, 25 * 60 * 1000);
+}
+
+document.addEventListener('mousemove', _resetIdleTimer);
+document.addEventListener('keydown',   _resetIdleTimer);
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 22 — PDF MODÜL RAPORU
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Seçilen modül için print penceresi açar.
+ * @param {string} modId  'pusula' | 'ik' | 'crm' | 'resmi' | ...
+ */
+function printModuleReport(modId) {
+  const cu    = window.Auth?.getCU?.();
+  const TITLES = { pusula:'Görev Raporu', puantaj:'Puantaj Raporu', kargo:'Kargo Raporu', ik:'İK Raporu', crm:'CRM Raporu', odemeler:'Ödeme Raporu', hedefler:'Hedefler Raporu', numune:'Numune Raporu', resmi:'Resmi Evrak Raporu' };
+  const win   = window.open('', '_blank', 'width=800,height=900');
+  if (!win) { toast('Popup engellendi. Tarayıcı ayarlarını kontrol edin.', 'err'); return; }
+  let body = '';
+
+  if (modId === 'pusula') {
+    const users = loadUsers();
+    const tasks = window.Pusula?.visTasks?.() || loadTasks();
+    body = `<table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:#f5f5f5"><tr><th>Görev</th><th>Sorumlu</th><th>Öncelik</th><th>Son Tarih</th><th>Durum</th></tr></thead>
+      <tbody>${tasks.map(t => { const u = users.find(x => x.id === t.uid) || { name:'?' }; return `<tr><td>${t.title}</td><td>${u.name}</td><td>${{1:'Kritik',2:'Önemli',3:'Normal',4:'Düşük'}[t.pri]||'?'}</td><td>${t.due||'—'}</td><td>${t.done?'Tamamlandı':'Devam'}</td></tr>`; }).join('')}</tbody>
+    </table>`;
+  } else if (modId === 'ik') {
+    const ik = loadIk();
+    const IK_STAGES = ['1.Teklif','2.Belgeler','3.SGK','4.Oryantasyon','5.Deneme','6.Tam Kadro'];
+    body = `<table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:#f5f5f5"><tr><th>Ad Soyad</th><th>Pozisyon</th><th>Başlangıç</th><th>Durum</th><th>Aşama</th></tr></thead>
+      <tbody>${ik.map(p => `<tr><td>${p.name}</td><td>${p.pos||'—'}</td><td>${p.start||'—'}</td><td>${p.status}</td><td>${IK_STAGES[p.stage]||'—'}</td></tr>`).join('')}</tbody>
+    </table>`;
+  } else if (modId === 'crm') {
+    const crm   = loadCrmData();
+    const users = loadUsers();
+    body = `<table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:#f5f5f5"><tr><th>Firma</th><th>Yetkili</th><th>Şehir</th><th>Durum</th><th>Potansiyel</th></tr></thead>
+      <tbody>${crm.map(c => { const u = users.find(x => x.id === c.owner) || { name:'?' }; return `<tr><td>${c.name}</td><td>${c.contact||'—'}</td><td>${c.city||'—'}</td><td>${c.status}</td><td>${(c.value||0).toLocaleString('tr-TR')} ₺</td></tr>`; }).join('')}</tbody>
+    </table>`;
+  } else if (modId === 'resmi') {
+    const rm = loadResmi();
+    body = `<table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:#f5f5f5"><tr><th>Belge</th><th>Tür</th><th>Kurum</th><th>Son Geçerlilik</th></tr></thead>
+      <tbody>${rm.map(r => `<tr><td>${r.name}</td><td>${r.cat}</td><td>${r.inst||'—'}</td><td>${r.exp||'Süresiz'}</td></tr>`).join('')}</tbody>
+    </table>`;
+  } else {
+    body = `<p>Bu modül için PDF raporu henüz desteklenmiyor. Excel çıktısı kullanınız.</p>`;
+  }
+
+  win.document.write(`<!DOCTYPE html><html><head><title>${TITLES[modId]||'Rapor'}</title>
+    <style>body{font-family:Arial,sans-serif;padding:30px;color:#333}h1{font-size:18px;margin-bottom:6px}h2{font-size:13px;font-weight:normal;color:#666;margin-bottom:20px}table{width:100%}th{text-align:left}footer{margin-top:30px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px}</style>
+    </head><body>
+    <h1>AkademiHub — ${TITLES[modId]||'Rapor'}</h1>
+    <h2>Oluşturulma: ${nowTs()} · ${cu?.name||'?'}</h2>
+    ${body}
+    <footer>AkademiHub v${APP_VER} · Gizli ve Şirkete Özel</footer>
+    <script>window.print();<\/script></body></html>`);
+}
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 23 — VERİ SIFIRLAMA
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Demo verilerini localStorage'dan temizler ve sayfayı yeniden yükler.
+ * (Yalnızca geliştirme/test için)
+ */
+function resetDemoData() {
+  if (!confirm('Tüm veriler sıfırlanacak.\n\nBu işlem geri alınamaz!')) return;
+  const KEYS_TO_CLEAR = [
+    'ak_u3','ak_pn2','ak_tk2','ak_cal2','ak_sk1','ak_ann1','ak_lnk2','ak_nt1',
+    'ak_act1','ak_lang','ak_theme','ak_nview','ak_pus_view','ak_session',
+  ];
+  KEYS_TO_CLEAR.forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  location.reload();
+}
+
+// ════════════════════════════════════════════════════════════════
+// DIŞA AKTARIM — window.App
+// ════════════════════════════════════════════════════════════════
+
+/** Tüm public fonksiyonlar App nesnesi üzerinden erişilebilir */
+const App = {
+  // Init
+  init,
+  // Panel
+  nav, goTo,
+  // Auth
+  login, logout,
+  // UI yardımcıları
+  toast, openMo, closeMo, toggleSidebar,
+  // Tema & Dil
+  toggleTheme, setLang,
+  // Profil
+  toggleProfilePanel, openProfileEdit, saveProfile,
+  // Bildirimler
+  toggleNotifPanel, markAllNotifRead, clearAllNotifs, updateNotifBadge,
+  // Global arama
+  openGSearch, closeGSearch, doGSearch, gSearchKey,
+  // Pinbar
+  renderPinbar, openPinModal, deletePin,
+  // Badge'ler
+  updateAllBadges, updateDashboardActs,
+  // Sürüm
+  updateVersionUI,
+  // Sistem bildirimleri
+  generateSystemNotifs,
+  // PDF
+  printModuleReport,
+  // Veri
+  resetDemoData,
+  // Yardımcılar
+  initials, canModule,
+  // Sabitler
+  APP_VER, APP_BUILD, CHANGELOG, ALL_MODULES, ROLE_DEFAULT_MODULES,
+};
+
+window.ALL_MODULES = ALL_MODULES;
+window.ROLE_DEFAULT_MODULES = ROLE_DEFAULT_MODULES;
+window.App = App;
+
+// ── Geriye uyumluluk — eski HTML inline onclick='nav(...)' çağrıları ──
+window.nav              = nav;
+window.goTo             = goTo;
+window.toast            = toast;
+window.openMo           = openMo;
+window.closeMo          = closeMo;
+window.toggleTheme      = toggleTheme;
+window.setLang          = setLang;
+window.toggleSidebar    = toggleSidebar;
+window.toggleNsec       = toggleNsec;
+window.openGSearch      = openGSearch;
+window.closeGSearch     = closeGSearch;
+window.doGSearch        = doGSearch;
+window.gSearchKey       = gSearchKey;
+window.toggleNotifPanel = toggleNotifPanel;
+window.markAllNotifRead = markAllNotifRead;
+window.clearAllNotifs   = clearAllNotifs;
+window.updateNotifBadge = updateNotifBadge;
+window.renderPinbar     = renderPinbar;
+window.openPinModal     = openPinModal;
+window.updateAllBadges  = updateAllBadges;
+window.updateDashboardActs = updateDashboardActs;
+window.updateVersionUI  = updateVersionUI;
+window.generateSystemNotifs    = generateSystemNotifs;
+window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._startMorningRoutine    = _startMorningRoutine;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._fetchDailyQuote        = _fetchDailyQuote;
+window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._startMorningRoutine    = _startMorningRoutine;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._fetchDailyQuote        = _fetchDailyQuote;
+window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._startMorningRoutine    = _startMorningRoutine;
+window._fetchDailyQuote        = _fetchDailyQuote;
+window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
+window._triggerMorningAlert    = _triggerMorningAlert;
+window._startMorningRoutine    = _startMorningRoutine;
+window._fetchDailyQuote        = _fetchDailyQuote;
+window.printModuleReport = printModuleReport;
+window.initials         = initials;
+window.canModule        = canModule;
+window.toggleProfilePanel = toggleProfilePanel;
+window.openProfileEdit  = openProfileEdit;
+window.saveProfile      = saveProfile;
+
+// ── Otomatik başlatma ────────────────────────────────────────────
+// DOMContentLoaded beklemeden çağrılır — script defer olmadığından
+// DOM zaten hazırdır (index.html'de body sonunda yüklenir).
+App.init();
