@@ -51,7 +51,7 @@ function _injectKargoPanel() {
   if (ph) {
     ph.innerHTML = [
       '<div>',
-        '<div class="pht">📦 Kargo Yönetimi</div>',
+        '<div class="pht">Kargo Yönetimi</div>',
         '<div class="phs">Gelen/giden kargo, konteyner ve lojistik operasyonları</div>',
       '</div>',
       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">',
@@ -213,68 +213,51 @@ function renderKargo() {
 
 // ── Kart Görünümü ────────────────────────────────────────────────
 function _renderKargoCards(fl, users, today, cont) {
-  const avc = typeof AVC !== 'undefined' ? AVC : [['#EEEDFE','#26215C']];
+  const ST = {
+    bekle:  { l:'Beklemede', bg:'rgba(133,79,11,.09)',  c:'#854F0B' },
+    yolda:  { l:'Yolda',     bg:'rgba(24,95,165,.09)',  c:'#185FA5' },
+    teslim: { l:'Teslim',    bg:'rgba(59,109,17,.09)',  c:'#3B6D11' },
+    iade:   { l:'İade',      bg:'rgba(163,45,45,.09)',  c:'#A32D2D' },
+  };
+  const badge = s => { const x=ST[s]||ST.bekle; return `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${x.bg};color:${x.c}">${x.l}</span>`; };
+  const mono  = "font-family:'DM Mono',monospace";
+  const t3    = 'color:var(--t3)';
+  const border = 'border-bottom:1px solid var(--b)';
+
   const frag = document.createDocumentFragment();
-  const grid = document.createElement('div');
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden';
+
+  // Tablo başlığı
+  const head = document.createElement('div');
+  head.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 130px 110px 100px 120px;background:var(--s2);border-bottom:1px solid var(--b)';
+  head.innerHTML = ['Yön','Gönderici','Alıcı','Firma','Tarih','Durum','']
+    .map(h => `<div style="padding:9px 12px;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">${h}</div>`).join('');
+  wrap.appendChild(head);
 
   fl.forEach(k => {
     const u    = users.find(x => x.id === k.uid) || { name: '—' };
-    const st2  = KARGO_STATUS[k.status] || KARGO_STATUS.bekle;
     const isL  = k.status !== 'teslim' && k.date && k.date < today;
-    const idx  = users.indexOf(u);
-    const c    = avc[Math.max(idx,0) % avc.length];
-    const ini  = (u.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-
-    const card = document.createElement('div');
-    card.style.cssText = 'background:var(--sf);border:1.5px solid ' + (isL ? 'var(--rd)' : 'var(--b)') + ';border-radius:14px;overflow:hidden;transition:box-shadow .15s';
-    card.onmouseenter = () => card.style.boxShadow = '0 4px 20px rgba(0,0,0,.1)';
-    card.onmouseleave = () => card.style.boxShadow = '';
-
-    card.innerHTML = [
-      // Renk şeridi + yön
-      '<div style="height:3px;background:' + (k.dir === 'gelen' ? '#3B82F6' : '#8B5CF6') + '"></div>',
-      '<div style="padding:14px 16px">',
-        // Üst satır
-        '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">',
-          '<div style="display:flex;align-items:center;gap:8px">',
-            '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;background:' + (k.dir==='gelen'?'rgba(59,130,246,.1)':'rgba(139,92,246,.1)') + ';color:' + (k.dir==='gelen'?'#3B82F6':'#8B5CF6') + '">' + (k.dir==='gelen'?'📥 Gelen':'📤 Giden') + '</span>',
-            '<span class="badge ' + st2.c + '" style="font-size:10px">' + st2.ic + ' ' + st2.l + '</span>',
-            (isL ? '<span style="font-size:10px;font-weight:700;color:var(--rdt);background:var(--rdb);padding:2px 7px;border-radius:5px">⚠️ Gecikmiş</span>' : ''),
-          '</div>',
-          '<div style="width:28px;height:28px;border-radius:8px;background:' + c[0] + ';color:' + c[1] + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">' + ini + '</div>',
-        '</div>',
-        // Güzergah
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">',
-          '<div style="flex:1;min-width:0">',
-            '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">GÖNDERİCİ</div>',
-            '<div style="font-size:13px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (k.from||'—') + '</div>',
-          '</div>',
-          '<div style="font-size:18px;color:var(--t3)">→</div>',
-          '<div style="flex:1;min-width:0;text-align:right">',
-            '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">ALICI</div>',
-            '<div style="font-size:13px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (k.to||'—') + '</div>',
-          '</div>',
-        '</div>',
-        // Alt bilgi
-        '<div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b)">',
-          '<div>',
-            '<div style="font-size:11px;font-weight:600;color:var(--t)">' + (k.firm||'—') + '</div>',
-            '<div style="font-size:10px;color:var(--t3);font-family:monospace">' + (k.date||'') + '</div>',
-          '</div>',
-          '<div style="display:flex;gap:5px">',
-            (k.status !== 'teslim' ? '<button class="btn btns" onclick="Kargo.markTeslim(' + k.id + ')" style="font-size:11px;border-radius:7px;padding:5px 10px;background:rgba(34,197,94,.1);color:#16A34A;border-color:rgba(34,197,94,.2)">✓ Teslim</button>' : ''),
-            '<button class="btn btns" onclick="Kargo.openModal(' + k.id + ')" style="font-size:11px;border-radius:7px;padding:5px 9px">✏️</button>',
-            (_isAdminK() ? '<button class="btn btns" onclick="Kargo.del(' + k.id + ')" style="font-size:11px;border-radius:7px;padding:5px 9px;color:var(--rdt)">🗑</button>' : ''),
-          '</div>',
-        '</div>',
-      '</div>',
-    ].join('');
-
-    grid.appendChild(card);
+    const row  = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 130px 110px 100px 120px;align-items:center;' + border + (isL?';background:rgba(163,45,45,.02)':'');
+    row.innerHTML = `
+      <div style="padding:10px 12px">
+        <span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${k.dir==='gelen'?'rgba(24,95,165,.09)':'rgba(139,92,246,.09)'};color:${k.dir==='gelen'?'#185FA5':'#6D28D9'}">${k.dir==='gelen'?'Gelen':'Giden'}</span>
+      </div>
+      <div style="padding:10px 12px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.from||'—'}</div>
+      <div style="padding:10px 12px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.to||'—'}</div>
+      <div style="padding:10px 12px;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.firm||'—'}</div>
+      <div style="padding:10px 12px;font-size:12px;${mono};color:${isL?'#A32D2D':'var(--t2)'}">${k.date||'—'}${isL?' ⚠':''}</div>
+      <div style="padding:10px 12px">${badge(k.status)}</div>
+      <div style="padding:10px 12px;display:flex;gap:4px">
+        ${k.status!=='teslim'?`<button class="btn btns" onclick="Kargo.markTeslim(${k.id})" style="font-size:11px;padding:3px 9px">Teslim</button>`:''}
+        <button class="btn btns" onclick="Kargo.openModal(${k.id})" style="font-size:11px;padding:3px 9px">Düzenle</button>
+        ${g&&typeof isAdmin==='function'&&isAdmin()?`<button class="btn btns" onclick="Kargo.del(${k.id})" style="font-size:11px;padding:3px 9px;color:var(--rdt)">Sil</button>`:''}
+      </div>`;
+    wrap.appendChild(row);
   });
 
-  frag.appendChild(grid);
+  frag.appendChild(wrap);
   cont.replaceChildren(frag);
 }
 
