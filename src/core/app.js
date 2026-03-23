@@ -396,8 +396,47 @@ async function logout() {
  * Giriş sonrası uygulama UI'ını hazırlar.
  * @param {Object} user
  */
+
+/** Planlanmış (publishAt) duyuruları zamanı gelince yayınlar */
+function _checkScheduledAnnouncements() {
+  if (typeof loadAnn !== 'function' || typeof storeAnn !== 'function') return;
+  const now  = new Date();
+  const anns = loadAnn();
+  let changed = false;
+  anns.forEach(a => {
+    if (a.published || !a.publishAt) return;
+    if (new Date(a.publishAt) <= now) {
+      a.published = true;
+      changed = true;
+      window.addNotif?.('📣', '"' + a.title + '" duyurusu yayınlandı', 'ok', 'duyurular');
+    }
+  });
+  if (changed) {
+    storeAnn(anns);
+    window.updateAnnBadge?.();
+    window.renderAnnouncements?.();
+  }
+}
+
 function _initApp(user) {
   if (!user) return;
+
+
+  // Planlanmış duyuruları kontrol et
+  _checkScheduledAnnouncements();
+
+  // Şirket yıllık takvimini localStorage'a merge et (yoksa ekle, varsa atla)
+  if (typeof window.mergeCompanyCalendar === 'function') {
+    window.mergeCompanyCalendar();
+  }
+  // Zamanlanmış duyuruları kontrol et
+  if (typeof window.checkScheduledAnnouncements === 'function') {
+    window.checkScheduledAnnouncements();
+    // Her 5 dakikada bir kontrol et
+    setInterval(() => window.checkScheduledAnnouncements?.(), 5 * 60 * 1000);
+  }
+  // Yaklaşan tatilleri 10 gün önceden yöneticiye sor
+  setTimeout(() => window.checkYaklasanTatiller?.(), 2000);
 
   // Nav avatar
   const users = loadUsers();
