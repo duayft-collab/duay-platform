@@ -49,7 +49,7 @@ function injectAllModals() {
                  tk-eid, tk-fp, tk-participants-list, mo-tk-t
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-task">
-  <div class="moc" style="max-width:560px;padding:0;overflow:hidden">
+  <div class="moc" style="max-width:560px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column">
     <!-- Modal header -->
     <div style="padding:18px 24px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
       <div class="mt" id="mo-tk-t" style="margin-bottom:0">Görev</div>
@@ -186,12 +186,12 @@ function injectAllModals() {
                  krg-date, krg-status, krg-eid
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-kargo">
-  <div class="moc" style="max-width:520px;padding:0;border-radius:10px;overflow:hidden">
+  <div class="moc" style="max-width:520px;padding:0;border-radius:10px;overflow:hidden;max-height:92vh;display:flex;flex-direction:column">
     <div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
       <span class="mt" id="mo-krg-t" style="margin:0;font-size:15px">Kargo Kaydı</span>
       <button onclick="closeMo('mo-kargo')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>
     </div>
-    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1">
       <input type="hidden" id="krg-dir">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><div class="fl">GÖNDERİCİ</div><input class="fi" id="krg-from" placeholder="Ad / Firma"></div>
@@ -238,11 +238,17 @@ function injectAllModals() {
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-konteyn">
   <div class="moc" style="max-width:560px;padding:0;border-radius:10px;overflow:hidden">
-    <div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
       <span class="mt" id="mo-ktn-t" style="margin:0;font-size:15px">Konteyner Ekle</span>
-      <button onclick="closeMo('mo-konteyn')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;background:var(--s2);border-radius:6px;padding:2px;gap:1px" title="Form düzeni">
+          <button id="ktn-layout-v" onclick="setKtnLayout('v')" style="background:var(--ac);color:#fff;border:none;cursor:pointer;font-size:10px;padding:3px 8px;border-radius:4px;font-family:inherit">Dikey</button>
+          <button id="ktn-layout-h" onclick="setKtnLayout('h')" style="background:none;color:var(--t2);border:none;cursor:pointer;font-size:10px;padding:3px 8px;border-radius:4px;font-family:inherit">Yatay</button>
+        </div>
+        <button onclick="closeMo('mo-konteyn')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>
+      </div>
     </div>
-    <div style="padding:20px;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+    <div style="padding:20px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
     <div class="fg">
       <div class="fl">KONTEYNER NUMARASI <span style="color:var(--rd)">*</span></div>
       <input class="fi" id="ktn-no" placeholder="MSCU1234567, MSKU9876543…" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;letter-spacing:.05em" autocomplete="off">
