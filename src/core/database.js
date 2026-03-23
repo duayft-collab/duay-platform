@@ -59,6 +59,11 @@ const KEYS = {
   pirimParams   : 'ak_pirim_params1',
   localDocs     : 'ak_docs_local1',
   kargoChecks   : 'ak_krg_checks1',
+  kargoHistory  : 'ak_krg_history1',   // #4 durum geçmişi
+  kargoMasraf   : 'ak_krg_masraf1',    // #6 masraf takibi
+  kargoBelge    : 'ak_krg_belge1',     // #9 belge yönetimi
+  navlunKarsi   : 'ak_nvl_karsi1',     // #2 karşılaştırma
+  lojPerf       : 'ak_loj_perf1',      // #10 performans
   konteyner     : 'ak_konteyn1',
   nsecState     : 'ak_nsec_state',
   izin          : 'ak_izin1',
@@ -563,6 +568,15 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @returns {Array<Object>} */ function loadKonteyn()       { const d = _read(KEYS.konteyner);  return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d); }
 
+/** @returns {Object}        */ function loadKargoHistory()  { const d = _read(KEYS.kargoHistory);  return (d && typeof d==='object') ? d : {}; }
+/** @param  {Object} d       */ function storeKargoHistory(d) { _write(KEYS.kargoHistory, d); }
+
+/** @returns {Object}        */ function loadKargoMasraf()   { const d = _read(KEYS.kargoMasraf);   return (d && typeof d==='object') ? d : {}; }
+/** @param  {Object} d       */ function storeKargoMasraf(d) { _write(KEYS.kargoMasraf, d); }
+
+/** @returns {Object}        */ function loadKargoBelge()    { const d = _read(KEYS.kargoBelge);    return (d && typeof d==='object') ? d : {}; }
+/** @param  {Object} d       */ function storeKargoBelge(d)  { _write(KEYS.kargoBelge, d); }
+
 /** @returns {Object}        */ function loadKargoChecks()   { const d = _read(KEYS.kargoChecks); return (d && typeof d === 'object') ? d : {}; }
 /** @param {Object} d        */ function storeKargoChecks(d) { _write(KEYS.kargoChecks, d); }
 
@@ -1024,6 +1038,9 @@ const DB = {
   loadKargoFirmalar, storeKargoFirmalar,
   loadKonteyn, storeKonteyn,
   loadKargoChecks, storeKargoChecks,
+  loadKargoHistory, storeKargoHistory,
+  loadKargoMasraf, storeKargoMasraf,
+  loadKargoBelge, storeKargoBelge,
   // Prim
   loadPirim, storePirim,
   loadPirimParams, storePirimParams,
