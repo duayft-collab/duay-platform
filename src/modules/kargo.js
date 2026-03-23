@@ -137,6 +137,9 @@ function _clearKargoFilters() {
 
 function renderKargo() {
   _injectKargoPanel();
+  // Navlun bölümünü inject et
+  if (typeof window._injectNavlunSection === 'function') window._injectNavlunSection();
+  if (typeof window.renderNavlun === 'function') window.renderNavlun();
   const kargo   = typeof loadKargo === 'function' ? loadKargo() : [];
   const users   = typeof loadUsers === 'function' ? loadUsers() : [];
   const today   = new Date().toISOString().slice(0,10);

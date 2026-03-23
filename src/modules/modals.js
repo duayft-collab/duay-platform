@@ -152,8 +152,8 @@ function injectAllModals() {
           </select>
         </div>
       </div>
-      <!-- 3'lü grid: Tarihler + Süre -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <!-- 2'li grid: Tarihler -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
           <div class="fl" style="margin-bottom:5px">BAŞLANGIÇ TARİHİ</div>
           <input type="date" class="fi" id="tk-start" style="padding:7px 10px">
@@ -161,14 +161,6 @@ function injectAllModals() {
         <div>
           <div class="fl" style="margin-bottom:5px">SON TARİH</div>
           <input type="date" class="fi" id="tk-due" style="padding:7px 10px">
-        </div>
-        <div>
-          <div class="fl" style="margin-bottom:5px">⏱ TAHMİNİ SÜRE</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input type="number" class="fi" id="tk-duration" min="5" max="480" step="5"
-              placeholder="dk" style="padding:7px 10px;width:70px">
-            <span style="font-size:11px;color:var(--t3);white-space:nowrap">dakika</span>
-          </div>
         </div>
       </div>
       <!-- Etiket -->
@@ -332,8 +324,8 @@ function injectAllModals() {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="fg"><div class="fl">GÖNDERİ LİMANI</div><input class="fi" id="ktn-from-port" placeholder="Shanghai, Hamburg…"></div>
-      <div class="fg"><div class="fl">VARIŞI LİMANI</div><input class="fi" id="ktn-to-port" placeholder="İstanbul, Mersin…"></div>
+      <div class="fg"><div class="fl">GÖNDERİ LİMANI</div><div style="position:relative"><input class="fi" id="ktn-from-port" placeholder="Shanghai, Hamburg…" autocomplete="off"></div></div>
+      <div class="fg"><div class="fl">VARIŞI LİMANI</div><input class="fi" id="ktn-to-port" placeholder="İstanbul, Mersin…" autocomplete="off"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="fg"><div class="fl">YÜKLEME TARİHİ (ETD)</div><input type="date" class="fi" id="ktn-etd"></div>
