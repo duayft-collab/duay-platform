@@ -37,6 +37,14 @@
 
 'use strict';
 
+// ── Stripe Design Tokens ─────────────────────────────────────────
+const _PUS_B  = 'border:1px solid var(--b)';
+const _PUS_Bh = 'border-bottom:1px solid var(--b)';
+const _PUS_Br = 'border-right:1px solid var(--b)';
+const _PUS_t2 = 'color:var(--t2)';
+const _PUS_t3 = 'color:var(--t3)';
+const _PUS_mono = "font-family:'DM Mono',monospace";
+
 
 // ── Dosya seçim handler — HTML attribute'ta güvenli ──────────────
 function tkFileChange(input) {
@@ -125,9 +133,9 @@ function renderFocusPanel() {
     const isLate = !t.done && t.due && t.due < today;
     const priColors = ['','#EF4444','#F97316','#EAB308','#22C55E'];
     const priC = priColors[t.pri||2]||'#EAB308';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf);border:1px solid var(--b);border-radius:10px;margin-bottom:6px;cursor:pointer" onclick="openPusDetail(' + taskId + ')">'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf);border:1px solid var(--b);border-radius:6px;margin-bottom:5px;cursor:pointer" onclick="openPusDetail(' + taskId + ')">'
       + '<div style="width:4px;height:36px;border-radius:2px;background:' + priC + ';flex-shrink:0"></div>'
-      + (u ? '<div style="width:26px;height:26px;border-radius:7px;background:' + c[0] + ';color:' + c[1] + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">' + ini + '</div>' : '')
+      + (u ? '<div style="width:26px;height:26px;border-radius:7px;background:' + c[0] + ';color:' + c[1] + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0">' + ini + '</div>' : '')
       + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:12px;font-weight:600;color:' + (t.done?'var(--t3)':'var(--t)') + ';text-decoration:' + (t.done?'line-through':'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>'
         + '<div style="font-size:10px;color:var(--t3);display:flex;gap:8px">'
@@ -159,7 +167,7 @@ function renderFocusPanel() {
 
   cont.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
     // Haftanın en önemlileri
-    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:12px 14px">'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:12px 14px">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:6px">'
           + '<div style="width:8px;height:8px;border-radius:50%;background:#6366F1"></div>'
@@ -170,7 +178,7 @@ function renderFocusPanel() {
       + (weekCards || '<div style="font-size:12px;color:var(--t2);text-align:center;padding:10px 0">Görev seçin — listeden ⭐ basın</div>')
     + '</div>'
     // Günün en önemlileri
-    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:12px 14px">'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:12px 14px">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:6px">'
           + '<div style="width:8px;height:8px;border-radius:50%;background:#F97316"></div>'
@@ -851,7 +859,7 @@ function pdpRenderInfo() {
 
   // Katılımcılar
   if ((task.participants || []).length) {
-    html += '<div><div style="font-size:10px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✅ KATILIMCILAR</div><div style="display:flex;flex-direction:column;gap:5px">';
+    html += '<div><div style="font-size:10px;font-weight:600;color:var(--ac);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✅ KATILIMCILAR</div><div style="display:flex;flex-direction:column;gap:5px">';
     for (var pi = 0; pi < task.participants.length; pi++) {
       html += _pusPeopleChip(task.participants[pi], users, 'Katılımcı', 'var(--ac)');
     }
@@ -1105,7 +1113,7 @@ function pdpRenderFiles() {
   html += '</div>';
 
   if (canEdit) {
-    html += '<div id="pdp-upload-zone" style="border:1.5px dashed var(--b);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:border-color .2s"'
+    html += '<div id="pdp-upload-zone" style="border:1.5px dashed var(--b);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:border-color .2s"'
       + ' onclick="document.getElementById(\'pdp-upload-inp\').click()"'
       + ' onmouseover="this.style.borderColor=\'var(--ac)\'"'
       + ' onmouseout="this.style.borderColor=\'var(--b)\'"'
@@ -2003,8 +2011,8 @@ function renderEtkinlik(){
   if(nb){const n=d.filter(e=>e.status==='onay').length;nb.textContent=n;nb.style.display=n>0?'inline':'none';}
   const cont=g('etkinlik-list');if(!cont)return;
   if(!d.length){
-    cont.innerHTML=`<div style="padding:48px;text-align:center;color:var(--t2)">
-      <div style="font-size:40px;margin-bottom:12px">🎪</div>
+    cont.innerHTML=`<div style="padding:32px;text-align:center;color:var(--t2)">
+      <div style="font-size:28px;margin-bottom:12px">🎪</div>
       <div style="font-size:15px;font-weight:600;margin-bottom:8px">Henüz etkinlik yok</div>
       <div style="font-size:13px;margin-bottom:20px;color:var(--t3)">Kriter girerek dünya fuarlarını tarayın veya manuel ekleyin.</div>
       <button class="btn btnp" onclick="fetchFuarlarWithCriteria()">↻ Şimdi Tara</button>
