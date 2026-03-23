@@ -200,10 +200,10 @@ let PUS_DETAIL_ID    = null;
 
 // ── Öncelik haritası ─────────────────────────────────────────────
 const PRI_MAP = {
-  1: { color: '#DC2626', glow: 'rgba(220,38,38,.25)',  badge: 'tk-pri-badge-1', label: 'KRİTİK'  },
-  2: { color: '#D97706', glow: 'rgba(217,119,6,.2)',   badge: 'tk-pri-badge-2', label: 'ÖNEMLİ'  },
-  3: { color: '#4F46E5', glow: 'rgba(79,70,229,.2)',   badge: 'tk-pri-badge-3', label: 'NORMAL'  },
-  4: { color: '#64748B', glow: 'rgba(100,116,139,.15)',badge: 'tk-pri-badge-4', label: 'DÜŞÜK'   },
+  1: { color: '#DC2626', glow: 'rgba(220,38,38,.3)',   badge: 'tk-pri-badge-1', label: '🔴 KRİTİK' },
+  2: { color: '#D97706', glow: 'rgba(217,119,6,.25)',  badge: 'tk-pri-badge-2', label: '🟠 ÖNEMLİ' },
+  3: { color: '#4F46E5', glow: 'rgba(79,70,229,.2)',   badge: 'tk-pri-badge-3', label: '🔵 NORMAL' },
+  4: { color: '#64748B', glow: 'rgba(100,116,139,.15)',badge: 'tk-pri-badge-4', label: '⚪ DÜŞÜK'  },
 };
 
 const PRI_COLOR = { 1:'#FF3B30', 2:'#FF9500', 3:'#007AFF', 4:'#C7C7CC' };
@@ -749,6 +749,14 @@ function openPusDetail(taskId) {
 
   pdpRenderInfo();
 
+  // Açılma zaman mührü
+  const _openTs = new Date().toLocaleString('tr-TR', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+  const _openEl = g('pdp-opened-at');
+  if (_openEl) _openEl.textContent = '👁 ' + _openTs + ' tarihinde açıldı';
+
   panel.classList.add('open');
   panel.style.display = 'flex';
 }
@@ -879,6 +887,18 @@ function pdpRenderInfo() {
     + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">ALT GÖREVLER (' + (task.subTasks || []).length + ')</div>'
     + '<button onclick="addSubTask(' + _PDP_TASK_ID + ')" class="tk-action-btn" style="font-size:11px;padding:3px 9px;border-style:dashed">+ Ekle</button>'
     + '</div><div id="pdp-subtasks"></div></div>';
+
+  // Zaman bilgileri
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:4px;border-top:1px solid var(--b)">'
+    + '<div style="background:var(--s2);border-radius:9px;padding:9px 12px">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">OLUŞTURULMA</div>'
+      + '<div style="font-size:11px;color:var(--t2);font-family:monospace">' + (task.createdAt || task.ts || '—') + '</div>'
+    + '</div>'
+    + '<div style="background:var(--s2);border-radius:9px;padding:9px 12px" id="pdp-opened-at-card">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">SON AÇILMA</div>'
+      + '<div id="pdp-opened-at" style="font-size:11px;color:var(--t2);font-family:monospace">—</div>'
+    + '</div>'
+  + '</div>';
 
   html += '</div>';
   pane.innerHTML = html;
@@ -1406,6 +1426,7 @@ function saveTask() {
             if (typeof storeNotifs==='function') storeNotifs(_n2);
             else window.storeNotifs?.(_n2);
             window.updateNotifBadge?.();
+            if (window._showInstantTaskNotif) window._showInstantTaskNotif(fields.uid, eid, title, fields.pri, fields.due, _cu3?.name || '');
           } catch(e) { console.error('[Pusula] Güncelleme bildirim hatası:', e); }
         }
       }
@@ -1431,6 +1452,8 @@ function saveTask() {
           else window.storeNotifs?.(_n);
           window.updateNotifBadge?.();
           console.log('[Pusula] Bildirim →', _assignee?.name);
+          // Kullanıcı şu an açıksa anlık popup göster
+          if (window._showInstantTaskNotif) window._showInstantTaskNotif(uid, _nid, title, fields.pri, fields.due, _cu2?.name || '');
         }
       } catch(e) { console.error('[Pusula] Bildirim hatası:', e); }
     }
