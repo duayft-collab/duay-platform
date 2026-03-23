@@ -22,6 +22,17 @@ const logActivity= (...a) => window.logActivity?.(...a);
 // openMo → window.openMo (app.js)
 
 // ── V18 uyumluluk shim'leri ──────────────────────────────────────
+// Güvenli CU erişimi — IIFE scope'unda CU obje veya fonksiyon olabilir
+function _getCU() {
+  if (typeof window.Auth?.getCU === 'function') return window.Auth.getCU();
+  if (typeof CU === 'function') return CU();
+  if (CU && typeof CU === 'object') return CU;
+  return null;
+}
+function _isAdminCheck() {
+  return window.isAdmin?.() || _getCU()?.role === 'admin' || false;
+}
+
 const ROLE_META={
   admin:{label:'Admin',icon:'🔑',color:'#7C3AED',bg:'rgba(124,58,237,.1)',border:'rgba(124,58,237,.2)'},
   manager:{label:'Yönetici',icon:'👔',color:'#0369A1',bg:'rgba(3,105,161,.1)',border:'rgba(3,105,161,.2)'},
@@ -86,7 +97,7 @@ function renderAdmin() {
 }
 
 function _userRow(u) {
-  const isSelf    = u.id === CU()?.id;
+  const isSelf    = u.id === _getCU()?.id;
   const roleLabel = u.role === 'admin'
     ? `<span class="badge bp">${window.t ? t('admin.role.admin') : '👑 Yönetici'}</span>`
     : `<span class="badge bgr">${window.t ? t('admin.role.user')  : '👤 Kullanıcı'}</span>`;
@@ -300,7 +311,7 @@ function saveAdminUser() {
       password: pwd,
       status:   'active',
       modules:  null,  // null = tüm modüllere erişim
-      createdBy: CU()?.id,
+      createdBy: _getCU()?.id,
       createdAt: nowTs(),
     });
     logActivity('user', `Yeni kullanıcı oluşturuldu: "${name}" (${email})`);
@@ -315,13 +326,13 @@ function saveAdminUser() {
 // ── Askıya Alma / Aktifleştirme ───────────────────────────────────
 function suspendUser(id) {
   if (!isAdmin()) return;
-  if (id === CU()?.id) { window.toast?.('Kendinizi askıya alamazsınız', 'err'); return; }
+  if (id === _getCU()?.id) { window.toast?.('Kendinizi askıya alamazsınız', 'err'); return; }
   const users = loadUsers();
   const u     = users.find(x => x.id === id);
   if (!u) return;
   if (!confirm(window.t ? t('confirm.suspend', undefined, { name: u.name }) : `"${u.name}" askıya alınsın mı?`)) return;
   u.status        = 'suspended';
-  u.suspendedBy   = CU()?.id;
+  u.suspendedBy   = _getCU()?.id;
   u.suspendedAt   = nowTs();
   saveUsers(users);
   renderAdmin();
@@ -335,7 +346,7 @@ function activateUser(id) {
   const u     = users.find(x => x.id === id);
   if (!u) return;
   u.status      = 'active';
-  u.activatedBy = CU()?.id;
+  u.activatedBy = _getCU()?.id;
   u.activatedAt = nowTs();
   saveUsers(users);
   renderAdmin();
@@ -355,7 +366,7 @@ function resetPassword(id) {
   if (newPwd.length < 6) { window.toast?.('Şifre en az 6 karakter olmalıdır', 'err'); return; }
 
   u.password      = newPwd;
-  u.pwdResetBy    = CU()?.id;
+  u.pwdResetBy    = _getCU()?.id;
   u.pwdResetAt    = nowTs();
   saveUsers(users);
   logActivity('user', `Şifre sıfırlandı: "${u.name}"`);
@@ -373,7 +384,7 @@ function resetPassword(id) {
 // ── Kullanıcı Silme ───────────────────────────────────────────────
 function deleteUser(id) {
   if (!isAdmin()) return;
-  if (id === CU()?.id) { window.toast?.('Kendinizi silemezsiniz', 'err'); return; }
+  if (id === _getCU()?.id) { window.toast?.('Kendinizi silemezsiniz', 'err'); return; }
   const users = loadUsers();
   const u     = users.find(x => x.id === id);
   if (!u) return;
@@ -595,7 +606,7 @@ function updateSuggStatus(id, status) {
   const s     = suggs.find(x => x.id === id);
   if (!s) return;
   s.status     = status;
-  s.reviewedBy = CU()?.id;
+  s.reviewedBy = _getCU()?.id;
   s.reviewedAt = nowTs();
   storeSugg(suggs);
   renderSuggestions();
@@ -623,7 +634,7 @@ function addUpdateBanner(panelId, msg, ver) {
     ver,
     ts:      nowTs(),
     expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 saat
-    addedBy:   CU()?.id,
+    addedBy:   _getCU()?.id,
   };
   localStorage.setItem('ak_panel_updates', JSON.stringify(banners));
   showPanelUpdateBanner(panelId);
@@ -994,7 +1005,7 @@ function saveUser() {
   const access = Object.entries(accessMap).filter(([id]) => g(id)?.checked).map(([,v]) => v);
 
   const doSave = (avatarData) => {
-    const cu = typeof CU === 'function' ? CU() : (window.Auth?.getCU?.() || null);
+    const cu = _getCU();
     if (eid) {
       const u = users.find(x => x.id === eid);
       if (!u) return;
@@ -1101,7 +1112,7 @@ function saveAdminUser() {
       password: pwd,
       status:   'active',
       modules:  null,  // null = tüm modüllere erişim
-      createdBy: CU()?.id,
+      createdBy: _getCU()?.id,
       createdAt: nowTs(),
     });
     logActivity('user', `Yeni kullanıcı oluşturuldu: "${name}" (${email})`);
@@ -1116,13 +1127,13 @@ function saveAdminUser() {
 // ── Askıya Alma / Aktifleştirme ───────────────────────────────────
 function suspendUser(id) {
   if (!isAdmin()) return;
-  if (id === CU()?.id) { window.toast?.('Kendinizi askıya alamazsınız', 'err'); return; }
+  if (id === _getCU()?.id) { window.toast?.('Kendinizi askıya alamazsınız', 'err'); return; }
   const users = loadUsers();
   const u     = users.find(x => x.id === id);
   if (!u) return;
   if (!confirm(window.t ? t('confirm.suspend', undefined, { name: u.name }) : `"${u.name}" askıya alınsın mı?`)) return;
   u.status        = 'suspended';
-  u.suspendedBy   = CU()?.id;
+  u.suspendedBy   = _getCU()?.id;
   u.suspendedAt   = nowTs();
   saveUsers(users);
   renderAdmin();
@@ -1136,7 +1147,7 @@ function activateUser(id) {
   const u     = users.find(x => x.id === id);
   if (!u) return;
   u.status      = 'active';
-  u.activatedBy = CU()?.id;
+  u.activatedBy = _getCU()?.id;
   u.activatedAt = nowTs();
   saveUsers(users);
   renderAdmin();
@@ -1156,7 +1167,7 @@ function resetPassword(id) {
   if (newPwd.length < 6) { window.toast?.('Şifre en az 6 karakter olmalıdır', 'err'); return; }
 
   u.password      = newPwd;
-  u.pwdResetBy    = CU()?.id;
+  u.pwdResetBy    = _getCU()?.id;
   u.pwdResetAt    = nowTs();
   saveUsers(users);
   logActivity('user', `Şifre sıfırlandı: "${u.name}"`);
@@ -1174,7 +1185,7 @@ function resetPassword(id) {
 // ── Kullanıcı Silme ───────────────────────────────────────────────
 function deleteUser(id) {
   if (!isAdmin()) return;
-  if (id === CU()?.id) { window.toast?.('Kendinizi silemezsiniz', 'err'); return; }
+  if (id === _getCU()?.id) { window.toast?.('Kendinizi silemezsiniz', 'err'); return; }
   const users = loadUsers();
   const u     = users.find(x => x.id === id);
   if (!u) return;
@@ -1396,7 +1407,7 @@ function updateSuggStatus(id, status) {
   const s     = suggs.find(x => x.id === id);
   if (!s) return;
   s.status     = status;
-  s.reviewedBy = CU()?.id;
+  s.reviewedBy = _getCU()?.id;
   s.reviewedAt = nowTs();
   storeSugg(suggs);
   renderSuggestions();
@@ -1424,7 +1435,7 @@ function addUpdateBanner(panelId, msg, ver) {
     ver,
     ts:      nowTs(),
     expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 saat
-    addedBy:   CU()?.id,
+    addedBy:   _getCU()?.id,
   };
   localStorage.setItem('ak_panel_updates', JSON.stringify(banners));
   showPanelUpdateBanner(panelId);
