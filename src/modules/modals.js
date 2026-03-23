@@ -31,68 +31,7 @@ const logActivity= (...a) => window.logActivity?.(...a);
 
 'use strict';
 
-if (typeof window !== 'undefined' && !window.saveKonteyn) {
-  function saveKonteyn(){
-  const no=g('ktn-no').value.trim();if(!no){toast('Konteyner no zorunludur','err');return;}
-  const d=loadKonteyn();const eid=parseInt(g('ktn-eid').value||'0');
-  const hat=g('ktn-hat')?.value||'';
-  const noEncoded=encodeURIComponent(no.trim());
-  const deepLinks={
-    'MSC':'https://www.msc.com/en/track-a-shipment?trackingNumber='+noEncoded,
-    'Maersk':'https://www.maersk.com/tracking/'+noEncoded,
-    'CMA CGM':'https://www.cma-cgm.com/ebusiness/tracking/search?SearchBy=Container&Reference='+noEncoded,
-    'COSCO':'https://elines.coscoshipping.com/ebtracking/visible?trNo='+noEncoded,
-    'Hapag-Lloyd':'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container='+noEncoded,
-    'ONE':'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?cntrNo='+noEncoded,
-    'Evergreen':'https://www.evergreen-line.com/eservice/cargotracking/ct_input.do?searchType=CT&cntrNum='+noEncoded,
-    'Yang Ming':'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx?SearchType=3&CNTNO='+noEncoded,
-    'ZIM':'https://www.zim.com/tools/track-a-shipment?container='+noEncoded,
-  };
-  const userUrl=g('ktn-url').value.trim();
-  const autoUrl=deepLinks[hat]||KTN_TRACKING_URLS[hat]||'';
-  const finalUrl=userUrl||autoUrl;
-  const today=new Date().toISOString().slice(0,10);
-  const evrakGon=g('ktn-evrak-gon')?.checked||false;
-  const evrakUlasti=g('ktn-evrak-ulasti')?.checked||false;
-  const inspectionBitti=g('ktn-inspection')?.checked||false;
-  const malTeslim=g('ktn-mal-teslim')?.checked||false;
 
-  const entry={no,hat,fromPort:g('ktn-from-port').value,toPort:g('ktn-to-port').value,
-    etd:g('ktn-etd').value,eta:g('ktn-eta').value,desc:g('ktn-desc').value,
-    url:finalUrl,uid:parseInt(g('ktn-user').value||CU?.id),ihracatId:g('ktn-ihracat-id')?.value||'',musteri:g('ktn-musteri')?.value||'',
-    evrakGon,evrakTarih:evrakGon?(g('ktn-evrak-tarih')?.value||today):'',
-    evrakUlasti,evrakUlastiTarih:evrakUlasti?today:'',
-    inspectionBitti,inspectionTarih:inspectionBitti?today:'',
-    malTeslim,malTeslimTarih:malTeslim?today:'',
-    status:'Aktif',lastCheck:'',createdAt:nowTs()};
-
-  // Tüm adımlar tamam mı?
-  if(evrakGon&&evrakUlasti&&inspectionBitti&&malTeslim){
-    entry.closed=true;entry.closedAt=today;
-    toast('Tüm adımlar tamamlandı — konteyner kapatıldı ✓','ok');
-  }else{
-    entry.closed=false;entry.closedAt='';
-  }
-
-  if(eid){
-    const e=d.find(x=>x.id===eid);
-    if(e){
-      // Tarih bilgilerini koru (daha önce girilmiş ise)
-      if(!entry.evrakTarih&&e.evrakTarih)entry.evrakTarih=e.evrakTarih;
-      if(!entry.evrakUlastiTarih&&e.evrakUlastiTarih)entry.evrakUlastiTarih=e.evrakUlastiTarih;
-      if(!entry.inspectionTarih&&e.inspectionTarih)entry.inspectionTarih=e.inspectionTarih;
-      if(!entry.malTeslimTarih&&e.malTeslimTarih)entry.malTeslimTarih=e.malTeslimTarih;
-      Object.assign(e,entry);
-    }
-  }else{
-    d.push({id:Date.now(),...entry});
-  }
-  storeKonteyn(d);closeMo('mo-konteyn');renderKonteyn();
-  logActivity('view','Konteyner kaydedildi: '+no);
-  if(!entry.closed)toast('Konteyner kaydedildi ✓','ok');
-}
-  window.saveKonteyn = saveKonteyn;
-}
 
 function injectAllModals() {
   // Zaten inject edilmişse tekrar yapma
@@ -289,6 +228,11 @@ function injectAllModals() {
 <div class="mo" id="mo-konteyn">
   <div class="moc" style="max-width:520px">
     <div class="mt" id="mo-ktn-t">🚢 Konteyner Ekle</div>
+    <div class="fg">
+      <div class="fl">KONTEYNER NUMARASI <span style="color:var(--rd)">*</span></div>
+      <input class="fi" id="ktn-no" placeholder="MSCU1234567, MSKU9876543…" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;letter-spacing:.05em" autocomplete="off">
+      <div style="font-size:10px;color:var(--t3);margin-top:4px">Format: 4 harf + 7 rakam (ör: MSCU1234567)</div>
+    </div>
     <!-- İhracat / Sipariş ID — öne çıkar -->
     <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.03));border:1.5px solid rgba(99,102,241,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🔗 Bağlantı Bilgisi</div>
@@ -307,25 +251,25 @@ function injectAllModals() {
       <div class="fg"><div class="fl">HAT / ŞIRKETI <span style="font-size:10px;color:var(--t2)">(2025 Top 10 Dünya Sıralaması)</span></div>
         <select class="fi" id="ktn-hat" onchange="autoFillKonteynUrl()">
           <option value="">Seçin…</option>
-          <option value="MSC">🥇 MSC — Mediterranean Shipping Company (#1, İsviçre)</option>
-          <option value="Maersk">🥈 Maersk Line (#2, Danimarka)</option>
-          <option value="CMA CGM">🥉 CMA CGM (#3, Fransa)</option>
-          <option value="COSCO">4️⃣ COSCO Shipping (#4, Çin)</option>
-          <option value="Hapag-Lloyd">5️⃣ Hapag-Lloyd (#5, Almanya)</option>
-          <option value="ONE">6️⃣ ONE — Ocean Network Express (#6, Japonya)</option>
-          <option value="Evergreen">7️⃣ Evergreen Marine (#7, Tayvan)</option>
-          <option value="Yang Ming">8️⃣ Yang Ming Marine (#8, Tayvan)</option>
-          <option value="HMM">9️⃣ HMM — Hyundai Merchant Marine (#9, Güney Kore)</option>
-          <option value="ZIM">🔟 ZIM Integrated Shipping (#10, İsrail)</option>
-          <option value="PIL">PIL — Pacific International Lines (Singapur)</option>
-          <option value="OOCL">OOCL — Orient Overseas Container Line (HK)</option>
-          <option value="Diger">📌 Diğer / Bilinmiyor</option>
+          <option value="MSC">MSC — Mediterranean Shipping Co.</option>
+          <option value="Maersk">Maersk Line</option>
+          <option value="CMA CGM">CMA CGM</option>
+          <option value="COSCO">COSCO Shipping</option>
+          <option value="Hapag-Lloyd">Hapag-Lloyd</option>
+          <option value="ONE">ONE — Ocean Network Express</option>
+          <option value="Evergreen">Evergreen Marine</option>
+          <option value="Yang Ming">Yang Ming Marine</option>
+          <option value="HMM">HMM — Hyundai Merchant Marine</option>
+          <option value="ZIM">ZIM Integrated Shipping</option>
+          <option value="PIL">PIL — Pacific International Lines</option>
+          <option value="OOCL">OOCL — Orient Overseas Container Line</option>
+          <option value="Diger">Diğer / Bilinmiyor</option>
         </select>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="fg"><div class="fl">GÖNDERİ LİMANI</div><div style="position:relative"><input class="fi" id="ktn-from-port" placeholder="Shanghai, Hamburg…" autocomplete="off"></div></div>
-      <div class="fg"><div class="fl">VARIŞI LİMANI</div><input class="fi" id="ktn-to-port" placeholder="İstanbul, Mersin…" autocomplete="off"></div>
+      <div class="fg"><div class="fl">YÜKLEME LİMANI</div><div style="position:relative"><input class="fi" id="ktn-from-port" placeholder="Shanghai, Hamburg…" autocomplete="off"></div></div>
+      <div class="fg"><div class="fl">VARIŞ LİMANI</div><div style="position:relative"><input class="fi" id="ktn-to-port" placeholder="İstanbul, Mersin…" autocomplete="off"></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="fg"><div class="fl">YÜKLEME TARİHİ (ETD)</div><input type="date" class="fi" id="ktn-etd"></div>
