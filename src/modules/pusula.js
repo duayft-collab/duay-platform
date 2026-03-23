@@ -308,6 +308,35 @@ function updatePusBadge() {
  * Ana render fonksiyonu.
  * Hero istatistikleri, progress strip, filtreler ve list/board görünümü.
  */
+
+// Günlük söz
+let _pusQuoteData = null;
+
+window.setPusQuote = function(q) {
+  _pusQuoteData = q;
+  _renderPusQuoteBanner();
+};
+
+function _renderPusQuoteBanner() {
+  const el = g('ph-pus-quote');
+  if (!el) return;
+  if (!_pusQuoteData) {
+    // Cache'den dene
+    const today = new Date().toISOString().slice(0,10);
+    const cached = localStorage.getItem('ak_pus_quote_' + today);
+    if (cached) { try { _pusQuoteData = JSON.parse(cached); } catch(e) {} }
+  }
+  if (!_pusQuoteData) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px">'
+    + '<div style="font-size:18px;opacity:.5;flex-shrink:0;margin-top:1px">❝</div>'
+    + '<div>'
+      + '<div style="font-size:12px;font-style:italic;color:var(--t2);line-height:1.6">' + (_pusQuoteData.text||'') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:600">— ' + (_pusQuoteData.author||'') + '</div>'
+    + '</div>'
+  + '</div>';
+}
+
 function renderPusula() {
   populatePusUsers();
   const todayS  = new Date().toISOString().slice(0, 10);
@@ -2050,33 +2079,6 @@ if (typeof window !== 'undefined') {
   // ── Geriye uyumluluk: eski HTML inline onclick'ler çalışmaya devam eder ──
   window.renderPusula = renderPusula;
 window.toggleFocus     = toggleFocus;
-// Günlük söz
-let _pusQuoteData = null;
-
-window.setPusQuote = function(q) {
-  _pusQuoteData = q;
-  _renderPusQuoteBanner();
-};
-
-function _renderPusQuoteBanner() {
-  const el = g('ph-pus-quote');
-  if (!el) return;
-  if (!_pusQuoteData) {
-    // Cache'den dene
-    const today = new Date().toISOString().slice(0,10);
-    const cached = localStorage.getItem('ak_pus_quote_' + today);
-    if (cached) { try { _pusQuoteData = JSON.parse(cached); } catch(e) {} }
-  }
-  if (!_pusQuoteData) return;
-  el.style.display = 'block';
-  el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px">'
-    + '<div style="font-size:18px;opacity:.5;flex-shrink:0;margin-top:1px">❝</div>'
-    + '<div>'
-      + '<div style="font-size:12px;font-style:italic;color:var(--t2);line-height:1.6">' + (_pusQuoteData.text||'') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:600">— ' + (_pusQuoteData.author||'') + '</div>'
-    + '</div>'
-  + '</div>';
-}
 
 window.getPusDayTotal  = function() {
   const tasks = loadTasks();
