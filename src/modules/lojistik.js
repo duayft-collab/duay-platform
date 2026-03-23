@@ -76,6 +76,10 @@ function renderLojistik() {
     </div>`,
 
     // Alarm
+    // #8 Demuraj banner
+    (typeof renderDemurajBanner === 'function' ? (() => { renderDemurajBanner('konteyn-demuraj-bar'); return ''; })() : ''),
+
+    // #10 Performans linki lojistik hub header'a
     alarms.length ? `<div style="border:1px solid rgba(163,45,45,.2);border-left:3px solid #A32D2D;border-radius:0 6px 6px 0;padding:11px 14px;margin-bottom:16px;background:rgba(163,45,45,.03)">
       <div style="font-size:12px;font-weight:600;color:#A32D2D;margin-bottom:7px">${alarms.length} konteyner işlem bekliyor</div>
       ${alarms.map(k=>{
@@ -169,6 +173,8 @@ function renderLojistik() {
           {l:'Excel İndir',      fn:'exportKargoXlsx()'},
           {l:'Excel Yükle',      fn:'importKargoFile()'},
           {l:'PDF Rapor',        fn:'printKargoRapor()'},
+          {l:'Navlun Karşılaştır',fn:'showNavlunKarsilastir()'},
+          {l:'Performans Raporu', fn:'showLojPerformansRaporu()'},
           {l:'Tüm Kargolar',     fn:"nav('kargo',null)"},
         ].map((b,i)=>`<button onclick="${b.fn}" style="padding:13px 12px;border:none;${i%4!==3?Br:''};${i<4?Bh:''};background:var(--sf);cursor:pointer;font-size:12px;${t2};font-family:inherit;text-align:left;transition:background .1s" onmouseenter="this.style.background='var(--s2)'" onmouseleave="this.style.background='var(--sf)'">${b.l}</button>`).join('')}
       </div>
