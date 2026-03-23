@@ -273,20 +273,64 @@ function restoreSession() {
 
 async function changePassword(oldPwd, newPwd) {
   if (!CU) return { ok: false, error: 'Oturum yok.' };
-  if (newPwd.length < 6) return { ok: false, error: 'En az 6 karakter giriniz.' };
+  if (!newPwd || newPwd.length < 6) return { ok: false, error: 'En az 6 karakter giriniz.' };
+  if (!oldPwd) return { ok: false, error: 'Mevcut şifrenizi girin.' };
+
   const loadFn = (typeof window.loadUsers === 'function') ? window.loadUsers : null;
   const saveFn = (typeof window.saveUsers === 'function') ? window.saveUsers : null;
   if (!loadFn || !saveFn) return { ok: false, error: 'Veri katmanı hazır değil.' };
+
   const users = loadFn();
   const user  = users.find(u => u.id === CU.id);
   if (!user) return { ok: false, error: 'Kullanıcı bulunamadı.' };
-  const currentPw = user.pw !== undefined ? user.pw : user.password;
-  const pwMatch = await _verifyPassword(oldPwd, currentPw);
-  if (!pwMatch) return { ok: false, error: 'Mevcut şifre hatalı.' };
+
+  // Firebase aktifse — Firebase üzerinden doğrula (re-authenticate)
+  const fbUser = FB_AUTH?.currentUser;
+  if (fbUser) {
+    try {
+      // Firebase re-authentication
+      const credential = firebase.auth.EmailAuthProvider.credential(fbUser.email, oldPwd);
+      await fbUser.reauthenticateWithCredential(credential);
+      // Firebase doğruladı — yerel şifre kontrolünü atla
+    } catch (fbErr) {
+      // Firebase hata kodu → Türkçe mesaj
+      const fbMsg = {
+        'auth/wrong-password':        'Mevcut şifre hatalı.',
+        'auth/invalid-credential':    'Mevcut şifre hatalı.',
+        'auth/too-many-requests':     'Çok fazla deneme. Lütfen bekleyin.',
+        'auth/network-request-failed':'Ağ hatası. İnternetinizi kontrol edin.',
+      }[fbErr.code] || 'Mevcut şifre hatalı.';
+      return { ok: false, error: fbMsg };
+    }
+  } else {
+    // Firebase yok — yerel doğrulama
+    const currentPw = user.pw || user.password || '';
+    const pwMatch   = currentPw
+      ? await _verifyPassword(oldPwd, currentPw)
+      : true; // pw hiç set edilmemişse geç — Firebase kullanıcısı
+    if (!pwMatch) return { ok: false, error: 'Mevcut şifre hatalı.' };
+  }
+
+  // Yeni şifreyi hash'le ve kaydet
   const newHash = await _hashPassword(newPwd);
-  user.pw = newHash; CU.pw = newHash;
+  user.pw = newHash;
+  user.password = newHash;
+  CU.pw = newHash;
   saveFn(users);
-  _logEntry('passwordChange', 'Şifre değiştirildi');
+
+  // Firebase şifresini de güncelle
+  if (fbUser) {
+    try {
+      await fbUser.updatePassword(newPwd);
+    } catch (e) {
+      console.warn('[auth] Firebase şifre güncelleme:', e.message);
+      // Yerel güncelleme başarılı oldu, Firebase kısmı uyarı
+      _logEntry('passwordChange', 'Şifre değiştirildi (Firebase güncelleme başarısız: ' + e.message + ')');
+      return { ok: true, warning: "Firebase sifre guncellenemedi: " + e.message };
+    }
+  }
+
+  _logEntry('passwordChange', 'Şifre başarıyla değiştirildi');
   return { ok: true };
 }
 
