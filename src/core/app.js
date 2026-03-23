@@ -877,6 +877,18 @@ function updateVersionUI() {
       </div>
       <div style="font-size:12px;color:var(--t2)">${c.note}</div>
     </div>`).join('');
+  // DB son güncelleme zamanı — fb-sync-time elementini güncelle
+  const _updateDbSync = () => {
+    const val = window.getDbLastSync ? window.getDbLastSync() : '—';
+    const el1 = document.getElementById('fb-sync-time');
+    const el2 = document.getElementById('db-last-sync');
+    if (el1) el1.textContent = val;
+    if (el2) el2.textContent = val;
+  };
+  _updateDbSync();
+  if (!window._dbSyncInterval) {
+    window._dbSyncInterval = setInterval(_updateDbSync, 5000);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
