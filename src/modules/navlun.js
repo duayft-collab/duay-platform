@@ -351,49 +351,46 @@ function renderNavlun() {
         ? Math.ceil((new Date(n.gecerlilikBitis) - new Date()) / 86400000) : null;
 
       const card = document.createElement('div');
-      card.style.cssText = 'background:var(--sf);border:1.5px solid ' + (isEn?'#22C55E':isGec?'var(--rd)':'var(--b)') + ';border-radius:14px;overflow:hidden;position:relative';
+      card.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden' + (isEn?';border-top:2px solid #3B6D11':'');
 
-      card.innerHTML = '<div style="height:3px;background:' + (isEn?'#22C55E':isGec?'#EF4444':'var(--ac)') + '"></div>'
-        + '<div style="padding:14px 16px">'
-          + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">'
-            + '<div>'
-              + '<div style="font-size:14px;font-weight:800;color:var(--t)">' + n.hat + '</div>'
-              + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (n.konteynerTipi||'—') + '</div>'
-            + '</div>'
-            + '<div style="text-align:right">'
-              + '<div style="font-size:18px;font-weight:800;color:' + (isEn?'#22C55E':'var(--ac)') + '">'
-                + (n.para||'USD') + ' ' + Number(n.birimFiyat||0).toLocaleString('tr-TR')
-              + '</div>'
-              + (isEn ? '<div style="font-size:10px;font-weight:700;color:#22C55E;background:rgba(34,197,94,.1);padding:1px 7px;border-radius:5px;margin-top:2px">EN DÜŞÜK</div>' : '')
-            + '</div>'
+      const dirBg  = k.hat?'rgba(24,95,165,.09)':'rgba(99,102,241,.09)';
+      const dirC   = '#185FA5';
+      const durBg  = isGec?'rgba(163,45,45,.09)':daysLeft!==null&&daysLeft<=5?'rgba(133,79,11,.09)':'rgba(59,109,17,.09)';
+      const durC   = isGec?'#A32D2D':daysLeft!==null&&daysLeft<=5?'#854F0B':'#3B6D11';
+      const durTxt = daysLeft===null?'—':isGec?'Süresi geçti':daysLeft+'g kaldı';
+
+      card.innerHTML =
+        // Başlık satırı
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--b)">'
+        + '<div>'
+          + '<div style="font-size:13px;font-weight:600">' + n.hat + '</div>'
+          + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (n.konteynerTipi||'—') + '</div>'
+        + '</div>'
+        + '<div style="text-align:right">'
+          + '<div style="font-size:16px;font-weight:600;color:' + (isEn?'#3B6D11':'var(--t)') + '">' + (n.para||'USD') + ' ' + Number(n.birimFiyat||0).toLocaleString('tr-TR') + '</div>'
+          + (isEn?'<div style="font-size:10px;font-weight:600;color:#3B6D11">En düşük</div>':'')
+        + '</div>'
+        + '</div>'
+        // Detay satırları
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--b)">'
+          + '<div style="padding:9px 14px;border-right:1px solid var(--b)">'
+            + '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">GEÇERLİLİK</div>'
+            + '<div style="font-size:12px;background:' + durBg + ';color:' + durC + ';padding:2px 8px;border-radius:4px;display:inline-block">' + durTxt + '</div>'
           + '</div>'
-
-          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
-            + '<div style="background:var(--s2);border-radius:8px;padding:7px 9px">'
-              + '<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:2px">GEÇERLİLİK</div>'
-              + '<div style="font-size:11px;font-family:monospace;color:' + (isGec?'var(--rdt)':'var(--t2)') + '">'
-                + (n.gecerlilikBitis||'—')
-                + (daysLeft !== null && !isGec ? '<span style="color:var(--t3)"> (' + daysLeft + 'g)</span>' : '')
-                + (isGec ? ' ⌛' : '')
-              + '</div>'
-            + '</div>'
-            + '<div style="background:var(--s2);border-radius:8px;padding:7px 9px">'
-              + '<div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;margin-bottom:2px">EKLEYEN</div>'
-              + '<div style="font-size:11px;color:var(--t2)">' + u.name + '</div>'
-            + '</div>'
+          + '<div style="padding:9px 14px">'
+            + '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">EKLEYEN</div>'
+            + '<div style="font-size:12px;color:var(--t2)">' + u.name + '</div>'
           + '</div>'
-
-          + (n.notlar ? '<div style="font-size:11px;color:var(--t3);margin-bottom:10px;padding:7px 9px;background:var(--s2);border-radius:8px;line-height:1.5">' + n.notlar + '</div>' : '')
-
-          + '<div style="display:flex;align-items:center;justify-content:space-between">'
-            + '<span class="badge ' + st.c + '" style="font-size:10px">' + st.ic + ' ' + st.l + '</span>'
-            + '<div style="display:flex;gap:5px">'
-              + (n.durum === 'onaylandi' ? '<button onclick="navlunToKonteyn(' + n.id + ')" class="btn btns" style="font-size:11px;border-radius:8px;background:rgba(99,102,241,.1);color:#6366F1;border-color:rgba(99,102,241,.2)">→ Konteyner</button>' : '')
-              + (n.durum === 'bekliyor' ? '<button onclick="navlunOnayla(' + n.id + ')" class="btn btns" style="font-size:11px;border-radius:8px;background:rgba(34,197,94,.1);color:#16A34A;border-color:rgba(34,197,94,.2)">✓ Onayla</button>' : '')
-              + (n.durum === 'bekliyor' ? '<button onclick="navlunReddet(' + n.id + ')" class="btn btns" style="font-size:11px;border-radius:8px;color:var(--rdt)">✕</button>' : '')
-              + '<button onclick="openNavlunModal(' + n.id + ')" class="btn btns" style="font-size:11px;border-radius:8px">✏️</button>'
-              + (typeof isAdmin === 'function' && isAdmin() ? '<button onclick="delNavlun(' + n.id + ')" class="btn btns" style="font-size:11px;border-radius:8px;color:var(--rdt)">🗑</button>' : '')
-            + '</div>'
+        + '</div>'
+        + (n.notlar?'<div style="padding:9px 14px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--b)">' + n.notlar + '</div>':'')
+        // Aksiyonlar
+        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px">'
+          + '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:' + (NAVLUN_STATUS[n.durum]?NAVLUN_STATUS[n.durum].c:'ba') + 'rgba(0,0,0,.06)">' + (NAVLUN_STATUS[n.durum]?.l||n.durum) + '</span>'
+          + '<div style="display:flex;gap:4px">'
+            + (n.durum==='onaylandi'?'<button onclick="navlunToKonteyn('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">→ Konteyner</button>':'')
+            + (n.durum==='bekliyor'?'<button onclick="navlunOnayla('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">Onayla</button>':'')
+            + (n.durum==='bekliyor'?'<button onclick="navlunReddet('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px;color:var(--rdt)">Reddet</button>':'')
+            + '<button onclick="openNavlunModal('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">Düzenle</button>'
           + '</div>'
         + '</div>';
 
