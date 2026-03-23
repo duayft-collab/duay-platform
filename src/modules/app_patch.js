@@ -218,13 +218,34 @@ window.checkFirebaseStatus = window.checkFirebaseStatus || function() {
 };
 
 // migrateLocalToFirestore, resetAll, exportAllXlsx
-window.migrateLocalToFirestore = window.migrateLocalToFirestore || function() {};
+window.migrateLocalToFirestore = function() {
+  const fn = window.DB?.migrateToFirestore || window.migrateToFirestore;
+  if (typeof fn === 'function') {
+    fn().catch(e => {
+      console.error('[migrate]', e);
+      window.toast?.('Aktarım başarısız: ' + e.message, 'err');
+    });
+  } else {
+    window.toast?.('Firebase bağlantısı kurulamadı', 'err');
+  }
+};
 window.resetAll = window.resetAll || function() {
   if (confirm('Tüm veriyi sıfırlamak istediğinizden emin misiniz? Bu işlem GERİ ALINAMAZ.')) {
     window.App?.resetDemoData?.();
   }
 };
-window.exportAllXlsx = window.exportAllXlsx || function() {};
+window.exportAllXlsx = window.exportAllXlsx || function() {
+  // Her modülün export fonksiyonunu çağır
+  const fns = [
+    window.exportTasksXlsx,
+    window.Kargo?.exportXlsx,
+    window.exportCalXlsx,
+  ];
+  let ran = 0;
+  fns.forEach(fn => { if (typeof fn === 'function') { try { fn(); ran++; } catch(e) {} } });
+  if (!ran) window.toast?.('Export fonksiyonu bulunamadı', 'err');
+  else window.toast?.(`${ran} modül export edildi ✓`, 'ok');
+};
 
 // installPWA
 window.installPWA = window.installPWA || function() {};
