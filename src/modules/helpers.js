@@ -114,23 +114,156 @@ function _getTatilAd(ds) {
 // ── Takvim önbellek yönetimi ─────────────────────────────────────
 function invalidateCalCache() { _calEvCache = null; _calEvCacheKey = ''; }
 
+
+// ════════════════════════════════════════════════════════════════
+// TEKRARLAYıCı ETKİNLİK MOTORU
+// Desteklenen tipler: daily, weekly, biweekly, monthly, yearly,
+//                    weekdays (Pzt-Cum), custom (belirli günler)
+// Veri yapısı:
+//   recur: { freq, interval, endDate, days, count, seriesId }
+//   freq: 'daily'|'weekly'|'biweekly'|'monthly'|'yearly'|'weekdays'|'custom'
+//   days: [0-6] (0=Pzt) custom haftalık günler için
+//   endDate: 'YYYY-MM-DD' bitiş tarihi (opsiyonel)
+//   count: max tekrar sayısı (opsiyonel)
+//   seriesId: orijinal event id'si (tüm tekrarlarda aynı)
+// ════════════════════════════════════════════════════════════════
+
+function _expandRecurring(evs, fromDate, toDate) {
+  var result = [];
+  var fromD  = new Date(fromDate + 'T00:00:00');
+  var toD    = new Date(toDate   + 'T23:59:59');
+
+  evs.forEach(function(ev) {
+    if (!ev.recur || !ev.recur.freq) {
+      // Tekrarlamayan: aralıkta mı kontrol et
+      if (ev.date >= fromDate && ev.date <= toDate) result.push(ev);
+      return;
+    }
+
+    var freq      = ev.recur.freq;
+    var interval  = ev.recur.interval || 1;
+    var endDate   = ev.recur.endDate  || null;
+    var maxCount  = ev.recur.count    || 365;
+    var days      = ev.recur.days     || [];   // [0-6] 0=Pzt
+    var seriesId  = ev.recur.seriesId || ev.id;
+    var startD    = new Date(ev.date  + 'T00:00:00');
+
+    // Başlangıç tarihi aralığın dışında ve eski ise devam et
+    if (startD > toD) return;
+    var endD = endDate ? new Date(endDate + 'T23:59:59') : toD;
+    if (endD > toD) endD = toD;
+
+    var count = 0;
+    var cur   = new Date(startD);
+
+    function _pad(n) { return String(n).padStart(2,'0'); }
+    function _dateStr(d) {
+      return d.getFullYear() + '-' + _pad(d.getMonth()+1) + '-' + _pad(d.getDate());
+    }
+    var exceptions = (ev.recur && ev.recur.exceptions) || [];
+    function _pushOccurrence(d) {
+      var ds = _dateStr(d);
+      if (ds < fromDate || ds > toDate) return;
+      if (exceptions.indexOf(ds) > -1) return; // hariç tutulan gün
+      result.push(Object.assign({}, ev, {
+        id:         seriesId + '_' + ds,
+        date:       ds,
+        isOccurrence: true,
+        seriesId:   seriesId,
+        originalId: ev.id,
+      }));
+    }
+
+    if (freq === 'daily') {
+      while (cur <= endD && count < maxCount) {
+        _pushOccurrence(cur);
+        cur = new Date(cur); cur.setDate(cur.getDate() + interval);
+        count++;
+      }
+    } else if (freq === 'weekly' || freq === 'biweekly') {
+      var weekInterval = (freq === 'biweekly') ? 2 : interval;
+      while (cur <= endD && count < maxCount) {
+        _pushOccurrence(cur);
+        cur = new Date(cur); cur.setDate(cur.getDate() + 7 * weekInterval);
+        count++;
+      }
+    } else if (freq === 'weekdays') {
+      // Pazartesi–Cuma her gün
+      while (cur <= endD && count < maxCount) {
+        var dow = cur.getDay(); // 0=Paz, 1=Pzt...6=Cmt
+        if (dow >= 1 && dow <= 5) _pushOccurrence(cur);
+        cur = new Date(cur); cur.setDate(cur.getDate() + 1);
+        count++;
+      }
+    } else if (freq === 'custom') {
+      // Belirli hafta günleri: days=[0,2,4] → Pzt,Çar,Cum
+      // days: 0=Pzt,1=Sal,...,6=Paz (JS'ten farklı)
+      while (cur <= endD && count < maxCount) {
+        var jsDow = cur.getDay(); // 0=Paz, 1=Pzt...
+        var ourDow = jsDow === 0 ? 6 : jsDow - 1; // 0=Pzt
+        if (days.indexOf(ourDow) > -1) _pushOccurrence(cur);
+        cur = new Date(cur); cur.setDate(cur.getDate() + 1);
+        count++;
+      }
+    } else if (freq === 'monthly') {
+      while (cur <= endD && count < maxCount) {
+        _pushOccurrence(cur);
+        cur = new Date(cur); cur.setMonth(cur.getMonth() + interval);
+        count++;
+      }
+    } else if (freq === 'yearly') {
+      while (cur <= endD && count < maxCount) {
+        _pushOccurrence(cur);
+        cur = new Date(cur); cur.setFullYear(cur.getFullYear() + interval);
+        count++;
+      }
+    }
+  });
+
+  // Tekrarsız + tekrarlı birleştir, sırala, aynı tarih-id tekrarını çıkar
+  var seen = {};
+  return result.filter(function(e) {
+    var k = e.id + '_' + e.date;
+    if (seen[k]) return false;
+    seen[k] = true;
+    return true;
+  });
+}
+
 function visEvs() {
   if (_calAllEvs) return _calAllEvs;
-  const d = loadCal();
+  const d  = loadCal();
   const cu = _CUh();
-  let evs = _isAdminH() ? d : d.filter(e => e.own === 0 || e.own === cu?.id || e.status === 'approved');
-  if (CAL_TYPE_FILTER && CAL_TYPE_FILTER !== 'all') evs = evs.filter(e => e.type === CAL_TYPE_FILTER);
-  return evs;
+  let base = _isAdminH() ? d : d.filter(e => e.own === 0 || e.own === cu?.id || e.status === 'approved');
+  if (CAL_TYPE_FILTER && CAL_TYPE_FILTER !== 'all') base = base.filter(e => e.type === CAL_TYPE_FILTER);
+  return base; // ham liste — genişletme visEvsForMonth yapar
 }
 
 function visEvsForMonth(Y, M) {
-  const cu = _CUh();
-  const key = `${Y}-${M}-${CAL_TYPE_FILTER}-${_isAdminH() ? 'a' : 'u' + cu?.id}`;
+  const cu  = _CUh();
+  const key = Y + '-' + M + '-' + CAL_TYPE_FILTER + '-' + (_isAdminH() ? 'a' : 'u' + (cu && cu.id));
   if (_calEvCacheKey === key && _calEvCache) return _calEvCache;
-  const prefix = `${Y}-${_p2h(M + 1)}`;
-  _calEvCache = visEvs().filter(e => e.date && e.date.startsWith(prefix));
+
+  const firstDay = Y + '-' + _p2h(M + 1) + '-01';
+  const lastDay  = Y + '-' + _p2h(M + 1) + '-' + _p2h(new Date(Y, M + 1, 0).getDate());
+
+  // Recurring expansion: tüm etkinlikleri bu ay için genişlet
+  const expanded = _expandRecurring(visEvs(), firstDay, lastDay);
+  _calEvCache    = expanded;
   _calEvCacheKey = key;
   return _calEvCache;
+}
+
+// Belirli bir gün için genişletilmiş etkinlikler
+function visEvsForDay(ds) {
+  const d  = new Date(ds + 'T12:00');
+  const Y  = d.getFullYear(), M = d.getMonth();
+  // Ay cache varsa kullan, yoksa o gün için expand et
+  const monthKey = Y + '-' + M + '-' + CAL_TYPE_FILTER + '-' + (_isAdminH() ? 'a' : 'u' + (_CUh() && _CUh().id));
+  if (_calEvCacheKey === monthKey && _calEvCache) {
+    return _calEvCache.filter(function(e) { return e.date === ds; });
+  }
+  return _expandRecurring(visEvs(), ds, ds);
 }
 
 // ── Debounced render ─────────────────────────────────────────────
@@ -326,24 +459,37 @@ function renderCalAgenda() {
 // ── Yaklaşan etkinlikler ─────────────────────────────────────────
 function renderCalUpcoming() {
   const t  = new Date().toISOString().slice(0, 10);
-  const up = visEvs().filter(e => e.date >= t).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
+  // Yaklaşan 60 gün için recurring genişlet
+  const _upEnd = new Date(); _upEnd.setDate(_upEnd.getDate() + 60);
+  const _upEndStr = _upEnd.toISOString().slice(0,10);
+  const up = _expandRecurring(visEvs(), t, _upEndStr)
+    .filter(function(e){ return e.date >= t; })
+    .sort(function(a,b){ return a.date.localeCompare(b.date); })
+    .slice(0, 8);
   const c  = _gh('cal-upc'); if (!c) return;
   if (!up.length) { c.innerHTML = `<div style="font-size:12px;color:var(--t2)">Yaklaşan etkinlik yok.</div>`; return; }
   const today = new Date().toISOString().slice(0, 10);
 
   // DocumentFragment
-  const frag = document.createDocumentFragment();
-  up.forEach(e => {
-    const ev = EVC[e.type] || {bg:'var(--s2)',tx:'var(--t)',ic:'📅'};
-    const dl = Math.ceil((new Date(e.date) - new Date(today)) / 86400000);
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);align-items:flex-start;cursor:pointer';
-    row.addEventListener('click', () => calNavToDay(e.date));
-    row.innerHTML = `<div style="width:32px;height:32px;background:${ev.bg};color:${ev.tx};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ev.ic}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.title}</div>
-        <div style="font-size:10px;color:var(--t2);margin-top:2px">${dl===0?'Bugün':dl===1?'Yarın':dl+' gün sonra'} · ${e.time}</div>
-      </div>`;
+  var frag = document.createDocumentFragment();
+  up.forEach(function(e) {
+    var ev  = EVC[e.type] || {bg:'var(--s2)',tx:'var(--t)',ic:'📅'};
+    var dl  = Math.ceil((new Date(e.date) - new Date(today)) / 86400000);
+    var dlLabel = dl===0?'<span style="color:var(--ac);font-weight:700">Bugün</span>'
+                : dl===1?'<span style="color:var(--am);font-weight:600">Yarın</span>'
+                : '<span style="color:var(--t3)">'+dl+' gün</span>';
+    var isRec = e.recur && e.recur.freq && e.recur.freq !== 'none';
+    var row = document.createElement('div');
+    row.className = 'cal-upc-row';
+    row.innerHTML = '<div class="cal-upc-icon" style="background:'+ev.bg+';color:'+ev.tx+'">'+ev.ic+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      + e.title + (isRec?'<span class="recur-badge">🔁</span>':'') + '</div>'
+      + '<div style="font-size:10px;margin-top:2px;display:flex;align-items:center;gap:4px">'
+      + dlLabel + '<span style="color:var(--b)">·</span><span style="color:var(--t2)">'+e.time+'</span>'
+      + '</div>'
+      + '</div>';
+    row.addEventListener('click', function(){ calNavToDay(e.date); });
     frag.appendChild(row);
   });
   c.replaceChildren(frag);
@@ -356,31 +502,44 @@ function renderCalMonthStats() {
   const monthEvs = visEvs().filter(e => e.date.startsWith(`${Y}-${_p2h(M+1)}`));
   const byType = {}; monthEvs.forEach(e => { byType[e.type] = (byType[e.type]||0) + 1; });
   if (!monthEvs.length) { c.innerHTML = `<div style="font-size:12px;color:var(--t2)">Bu ay etkinlik yok.</div>`; return; }
-  c.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--ac);margin-bottom:8px">${monthEvs.length} etkinlik</div>`
-    + Object.entries(byType).map(([type, cnt]) => {
-        const ev = EVC[type] || {tx:'var(--ac)',label:type};
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="width:8px;height:8px;border-radius:50%;background:${ev.tx};display:inline-block;flex-shrink:0"></span>
-          <span style="font-size:11px;flex:1">${ev.label||type}</span>
-          <span style="font-size:11px;font-weight:600;color:var(--t)">${cnt}</span>
-        </div>`;
+  var total = monthEvs.length;
+  c.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--t);letter-spacing:-.3px;margin-bottom:2px">'+total+'</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px">etkinlik bu ay</div>'
+    + Object.entries(byType).map(function(entry) {
+        var type = entry[0], cnt = entry[1];
+        var ev = EVC[type] || {bg:'var(--s2)',tx:'var(--ac)',label:type,ic:'📅'};
+        var pct = Math.round(cnt/total*100);
+        return '<div style="margin-bottom:8px">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
+          + '<span style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px"><span style="font-size:12px">'+ev.ic+'</span>'+ev.label+'</span>'
+          + '<span style="font-size:11px;font-weight:600;color:var(--t)">'+cnt+'</span>'
+          + '</div>'
+          + '<div style="height:3px;background:var(--s2);border-radius:99px;overflow:hidden">'
+          + '<div style="height:100%;width:'+pct+'%;background:'+ev.tx+';border-radius:99px;transition:width .4s ease"></div>'
+          + '</div></div>';
       }).join('');
 }
 
 // ── Renk açıklaması ──────────────────────────────────────────────
 function renderCalLegend() {
-  const c = _gh('cal-legend'); if (!c) return;
-  c.innerHTML = Object.entries(EVC).map(([k, v]) =>
-    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <div style="width:10px;height:10px;border-radius:3px;background:${v.tx};flex-shrink:0"></div>
-      <span style="font-size:11px;color:var(--t2)">${v.ic} ${v.label||k}</span>
-    </div>`).join('');
+  var c = _gh('cal-legend'); if (!c) return;
+  var frag = document.createDocumentFragment();
+  Object.entries(EVC).forEach(function(entry) {
+    var k = entry[0], v = entry[1];
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer';
+    row.innerHTML = '<div style="width:26px;height:18px;border-radius:4px;background:'+v.bg+';display:flex;align-items:center;justify-content:center;font-size:11px">'+v.ic+'</div>'
+      + '<span style="font-size:11px;color:var(--t2);flex:1">'+v.label+'</span>';
+    row.addEventListener('click', function(){ setCalTypeFilter(k, null); });
+    frag.appendChild(row);
+  });
+  c.replaceChildren(frag);
 }
 
 // ── Gün seçimi ───────────────────────────────────────────────────
 function selCalDay(ds) {
   CAL_SEL = ds;
-  const evs = visEvs().filter(e => e.date === ds);
+  const evs = visEvsForDay(ds);
   const dateStr = new Date(ds + 'T12:00:00').toLocaleDateString('tr-TR', {weekday:'long',day:'numeric',month:'long'});
   const tatilAd = _getTatilAd(ds);
   _sth('cal-sel-l', dateStr + (tatilAd ? ' · 🎉 ' + tatilAd : ''));
@@ -399,9 +558,28 @@ function selCalDay(ds) {
       const ev = EVC[e.type] || {bg:'var(--s2)',tx:'var(--t)',ic:'📅'};
       const card = document.createElement('div');
       card.className = 'cse'; card.style.borderColor = ev.tx;
-      card.innerHTML = `<div style="font-weight:600;font-size:13px">${ev.ic} ${e.title}</div>
-        <div class="cse-time">${e.time}${e.desc?' · '+e.desc:''}</div>
-        ${(_isAdminH()||e.own===cu?.id)?`<button onclick="delEvent(${e.id})" style="font-size:10px;color:var(--rdt);background:none;border:none;cursor:pointer;margin-top:6px;padding:0">✕ Sil</button>`:''}`;
+      var canEdit2 = _isAdminH() || e.own === (cu && cu.id);
+      var isRec2   = !!(e.recur && e.recur.freq && e.recur.freq !== 'none');
+      var editId2  = e.originalId || e.id;
+      var sid2     = e.seriesId   || e.id;
+      card.innerHTML = '<div style="display:flex;align-items:flex-start;gap:6px">'
+        + '<div style="flex:1">'
+        + '<div style="font-weight:600;font-size:13px;color:var(--t)">'+ ev.ic +' '+ e.title + (isRec2?'<span style="font-size:9px;color:var(--ac);background:var(--al);padding:1px 5px;border-radius:3px;margin-left:4px">🔁</span>':'')+  '</div>'
+        + '<div class="cse-time">'+ e.time + (e.desc?' · '+e.desc:'') +'</div>'
+        + '</div>'
+        + (canEdit2 ? '<div style="display:flex;gap:4px;flex-shrink:0">'
+          + '<button class="cal-ev-edit" data-id="'+ editId2 +'" style="background:var(--s2);border:1px solid var(--b);border-radius:5px;cursor:pointer;font-size:11px;padding:2px 7px;color:var(--t2);font-family:inherit">✏️</button>'
+          + '<button class="cal-ev-del" data-id="'+ e.id +'" data-sid="'+ sid2 +'" data-rec="'+ (isRec2?'1':'0') +'" style="background:var(--rdb);border:1px solid var(--rd);border-radius:5px;cursor:pointer;font-size:11px;padding:2px 7px;color:var(--rdt);font-family:inherit">✕</button>'
+          + '</div>' : '')
+        + '</div>';
+      card.querySelector('.cal-ev-edit') && card.querySelector('.cal-ev-edit').addEventListener('click', function(){
+        openEvModal(parseInt(this.dataset.id));
+      });
+      var delBtn2 = card.querySelector('.cal-ev-del');
+      if (delBtn2) delBtn2.addEventListener('click', function(){
+        if (this.dataset.rec === '1') delEventWithOption(parseInt(this.dataset.id), parseInt(this.dataset.sid));
+        else delEvent(parseInt(this.dataset.id));
+      });
       frag.appendChild(card);
     });
   }
@@ -437,124 +615,248 @@ function calGoTo(ds) {
 
 // ── Etkinlik modal & CRUD ────────────────────────────────────────
 function openEvModal(editId) {
-  // Eski dinamik modal varsa kaldır
-  const existing = document.getElementById('mo-cal-form');
+  var existing = document.getElementById('mo-cal-form');
   if (existing) existing.remove();
 
-  const ev     = editId ? loadCal().find(e => e.id === editId) : null;
-  const users  = loadUsers().filter(u => u.status === 'active');
-  const today  = new Date().toISOString().slice(0, 10);
-  const cu     = _CUh();
+  var ev     = editId ? loadCal().find(function(e){ return e.id === editId; }) : null;
+  var users  = loadUsers().filter(function(u){ return u.status === 'active'; });
+  var today  = new Date().toISOString().slice(0, 10);
+  var cu     = _CUh();
+  var recur  = (ev && ev.recur) || null;
 
-  const userOpts = users.map(u =>
-    `<option value="${u.id}" ${(ev?.participants||[]).includes(u.id)?'selected':''}>${u.name} (${u.role})</option>`
-  ).join('');
+  var userOpts = users.map(function(u) {
+    return '<option value="' + u.id + '"' + ((ev && (ev.participants||[]).indexOf(u.id) > -1) ? ' selected' : '') + '>' + u.name + ' (' + u.role + ')</option>';
+  }).join('');
 
-  const mo = document.createElement('div');
+  var mo = document.createElement('div');
   mo.className = 'mo';
   mo.id = 'mo-cal-form';
   mo.style.zIndex = '2100';
-  mo.innerHTML = `
-<div class="moc" style="max-width:520px;padding:0;overflow:hidden">
-  <div style="padding:16px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
-    <div class="mt" style="margin-bottom:0">${ev ? '✏️ Etkinlik Düzenle' : '+ Etkinlik Ekle'}</div>
-    <button onclick="document.getElementById('mo-cal-form').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px">×</button>
-  </div>
-  <div style="padding:20px 22px">
-    <input type="hidden" id="cal-form-eid" value="${ev?.id||''}">
-    <div class="fr"><div class="fl">BAŞLIK <span style="color:var(--rd)">*</span></div>
-      <input class="fi" id="cal-form-title" placeholder="Etkinlik adı…" value="${ev?.title||''}">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="fr"><div class="fl">TARİH *</div>
-        <input type="date" class="fi" id="cal-form-date" value="${ev?.date||CAL_SEL||today}">
-      </div>
-      <div class="fr"><div class="fl">SAAT</div>
-        <input type="time" class="fi" id="cal-form-time" value="${ev?.time||'09:00'}">
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="fr"><div class="fl">TÜR</div>
-        <select class="fi" id="cal-form-type">
-          <option value="meeting"  ${ev?.type==='meeting' ?'selected':''}>🤝 Toplantı</option>
-          <option value="deadline" ${ev?.type==='deadline'?'selected':''}>⏰ Son Tarih</option>
-          <option value="holiday"  ${ev?.type==='holiday' ?'selected':''}>🎉 Tatil / Etkinlik</option>
-          <option value="task"     ${ev?.type==='task'    ?'selected':''}>📋 Görev</option>
-        </select>
-      </div>
-      <div class="fr"><div class="fl">DURUM</div>
-        <select class="fi" id="cal-form-status" ${!_isAdminH()?'disabled':''}>
-          <option value="approved" ${(ev?.status==='approved'||!ev)?'selected':''}>✅ Onaylı</option>
-          <option value="pending"  ${ev?.status==='pending' ?'selected':''}>⏳ Onay Bekliyor</option>
-        </select>
-      </div>
-    </div>
-    <div class="fr"><div class="fl">AÇIKLAMA</div>
-      <textarea class="fi" id="cal-form-desc" rows="3" style="resize:vertical" placeholder="Detay, gündem…">${ev?.desc||''}</textarea>
-    </div>
-    <div class="fr"><div class="fl">👥 KATILIMCILAR <span style="font-weight:400;color:var(--t3)">(opsiyonel — boş = herkese açık)</span></div>
-      <select class="fi" id="cal-form-part" multiple size="4" style="height:auto">
-        ${userOpts}
-      </select>
-    </div>
-  </div>
-  <div style="padding:14px 22px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
-    <button class="btn" onclick="document.getElementById('mo-cal-form').remove()">İptal</button>
-    <button class="btn btnp" onclick="saveCalForm()">Kaydet</button>
-  </div>
-</div>`;
+
+  var recurHtml = [
+    '<div class="fr" style="margin-top:4px">',
+    '<div class="fl">🔁 TEKRARLAMA</div>',
+    '<select class="fi" id="cal-recur-freq" onchange="calRecurFreqChange(this.value)">',
+    '<option value="none"'  + (!recur||recur.freq==='none'  ?'selected':'') + '>Tekrarsız</option>',
+    '<option value="daily"' + (recur&&recur.freq==='daily'  ?'selected':'') + '>Her Gün</option>',
+    '<option value="weekly"'+ (recur&&recur.freq==='weekly' ?'selected':'') + '>Her Hafta</option>',
+    '<option value="biweekly"'+(recur&&recur.freq==='biweekly'?'selected':'')+'>' + 'Her 2 Haftada Bir</option>',
+    '<option value="weekdays"'+(recur&&recur.freq==='weekdays'?'selected':'')+'>' + 'Hft İçi (Pzt-Cum)</option>',
+    '<option value="custom"'+(recur&&recur.freq==='custom'  ?'selected':'') + '>Özel Günler</option>',
+    '<option value="monthly"'+(recur&&recur.freq==='monthly'?'selected':'')+'>' + 'Her Ay</option>',
+    '<option value="yearly"'+(recur&&recur.freq==='yearly'  ?'selected':'') + '>Her Yıl</option>',
+    '</select>',
+    '</div>',
+
+    // Özel günler seçici
+    '<div id="cal-recur-days-wrap" style="display:' + (recur&&recur.freq==='custom'?'block':'none') + ';margin-top:8px">',
+    '<div class="fl" style="margin-bottom:6px">GÜNLER</div>',
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">',
+    ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(function(d, i) {
+      var chk = (recur&&recur.days&&recur.days.indexOf(i)>-1)?'checked':'';
+      return '<label style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;border:1px solid var(--b);cursor:pointer;font-size:12px;background:var(--sf)">'
+           + '<input type="checkbox" class="cal-recur-day" value="' + i + '" ' + chk + ' style="accent-color:var(--ac)">' + d + '</label>';
+    }).join(''),
+    '</div></div>',
+
+    // Bitiş
+    '<div id="cal-recur-end-wrap" style="display:' + (recur&&recur.freq&&recur.freq!=='none'?'grid':'none') + ';grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">',
+    '<div class="fr"><div class="fl">BİTİŞ TARİHİ</div>',
+    '<input type="date" class="fi" id="cal-recur-end" value="' + (recur&&recur.endDate||'') + '"></div>',
+    '<div class="fr"><div class="fl">MAKS. TEKRAR</div>',
+    '<input type="number" class="fi" id="cal-recur-count" placeholder="∞" min="1" max="500" value="' + (recur&&recur.count||'') + '" style="width:100%"></div>',
+    '</div>',
+  ].join('');
+
+  mo.innerHTML = [
+    '<div class="moc" style="max-width:540px;padding:0;overflow:hidden">',
+    '<div style="padding:16px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">',
+    '<div class="mt" style="margin-bottom:0">' + (ev ? '✏️ Etkinlik Düzenle' : '+ Etkinlik Ekle') + '</div>',
+    '<button onclick="document.getElementById(\'mo-cal-form\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px">×</button>',
+    '</div>',
+    '<div style="padding:18px 22px;max-height:70vh;overflow-y:auto">',
+    '<input type="hidden" id="cal-form-eid" value="' + (ev&&ev.id||'') + '">',
+    '<div class="fr"><div class="fl">BAŞLIK *</div>',
+    '<input class="fi" id="cal-form-title" placeholder="Etkinlik adı…" value="' + (ev&&ev.title||'') + '"></div>',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">',
+    '<div class="fr"><div class="fl">TARİH *</div>',
+    '<input type="date" class="fi" id="cal-form-date" value="' + (ev&&ev.date||(window.CAL_SEL||today)) + '"></div>',
+    '<div class="fr"><div class="fl">SAAT</div>',
+    '<input type="time" class="fi" id="cal-form-time" value="' + (ev&&ev.time||'09:00') + '"></div>',
+    '</div>',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">',
+    '<div class="fr"><div class="fl">TÜR</div>',
+    '<select class="fi" id="cal-form-type">',
+    '<option value="meeting"'  + ((ev&&ev.type==='meeting') ?'selected':'') + '>🤝 Toplantı</option>',
+    '<option value="deadline"' + ((ev&&ev.type==='deadline')?'selected':'') + '>⏰ Son Tarih</option>',
+    '<option value="holiday"'  + ((ev&&ev.type==='holiday') ?'selected':'') + '>🎉 Tatil / Etkinlik</option>',
+    '<option value="task"'     + ((ev&&ev.type==='task')    ?'selected':'') + '>📋 Görev</option>',
+    '</select></div>',
+    '<div class="fr"><div class="fl">DURUM</div>',
+    '<select class="fi" id="cal-form-status"' + (_isAdminH()?'':' disabled') + '>',
+    '<option value="approved"' + ((!ev||ev.status==='approved')?'selected':'') + '>✅ Onaylı</option>',
+    '<option value="pending"'  + ((ev&&ev.status==='pending') ?'selected':'') + '>⏳ Onay Bekliyor</option>',
+    '</select></div>',
+    '</div>',
+    '<div class="fr"><div class="fl">AÇIKLAMA</div>',
+    '<textarea class="fi" id="cal-form-desc" rows="2" style="resize:vertical" placeholder="Gündem, detay…">' + (ev&&ev.desc||'') + '</textarea></div>',
+    '<div class="fr"><div class="fl">👥 KATILIMCILAR <span style="font-weight:400;color:var(--t3)">(boş = herkese açık)</span></div>',
+    '<select class="fi" id="cal-form-part" multiple size="3" style="height:auto">' + userOpts + '</select></div>',
+
+    // Tekrarlama bölümü
+    '<div style="border-top:1px solid var(--b);padding-top:14px;margin-top:6px">',
+    '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🔁 Tekrarlama</div>',
+    recurHtml,
+    '</div>',
+    '</div>',
+    '<div style="padding:14px 22px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">',
+    '<button class="btn" onclick="document.getElementById(\'mo-cal-form\').remove()">İptal</button>',
+    '<button class="btn btnp" onclick="saveCalForm()" style="padding:9px 22px">Kaydet</button>',
+    '</div>',
+    '</div>'
+  ].join('');
 
   document.body.appendChild(mo);
-  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
-  setTimeout(() => { mo.classList.add('open'); document.getElementById('cal-form-title')?.focus(); }, 10);
+  mo.addEventListener('click', function(e){ if (e.target === mo) mo.remove(); });
+  setTimeout(function(){
+    mo.classList.add('open');
+    var titleEl = document.getElementById('cal-form-title');
+    if (titleEl) titleEl.focus();
+  }, 10);
+}
+
+// Tekrarlama frekansı değişince UI güncelle
+function calRecurFreqChange(freq) {
+  var daysWrap = document.getElementById('cal-recur-days-wrap');
+  var endWrap  = document.getElementById('cal-recur-end-wrap');
+  if (daysWrap) daysWrap.style.display = freq === 'custom' ? 'block' : 'none';
+  if (endWrap)  endWrap.style.display  = (freq && freq !== 'none') ? 'grid' : 'none';
 }
 
 
 
 function saveCalForm() {
-  const eid   = parseInt(document.getElementById('cal-form-eid')?.value || '0');
-  const title = (document.getElementById('cal-form-title')?.value || '').trim();
-  const date  = document.getElementById('cal-form-date')?.value  || '';
+  var eid   = parseInt((document.getElementById('cal-form-eid')  || {}).value || '0');
+  var title = ((document.getElementById('cal-form-title') || {}).value || '').trim();
+  var date  = (document.getElementById('cal-form-date')  || {}).value  || '';
   if (!title || !date) { window.toast?.('Başlık ve tarih zorunludur', 'err'); return; }
 
-  const cu   = _CUh();
-  const d    = loadCal();
-  const part = Array.from(document.getElementById('cal-form-part')?.selectedOptions || []).map(o => parseInt(o.value));
+  var cu   = _CUh();
+  var d    = loadCal();
+  var partSel = document.getElementById('cal-form-part');
+  var part = partSel ? Array.from(partSel.selectedOptions).map(function(o){ return parseInt(o.value); }) : [];
 
-  const fields = {
-    title,
-    date,
-    time:         document.getElementById('cal-form-time')?.value   || '09:00',
-    type:         document.getElementById('cal-form-type')?.value   || 'meeting',
-    status:       _isAdminH() ? (document.getElementById('cal-form-status')?.value || 'approved') : 'pending',
-    desc:         document.getElementById('cal-form-desc')?.value   || '',
+  // Tekrarlama ayarları
+  var recurFreq    = (document.getElementById('cal-recur-freq')    || {}).value || 'none';
+  var recurEnd     = (document.getElementById('cal-recur-end')     || {}).value || '';
+  var recurCount   = parseInt((document.getElementById('cal-recur-count') || {}).value || '0') || 0;
+  var recurInterval= parseInt((document.getElementById('cal-recur-interval') || {}).value || '1') || 1;
+  // Özel günler checkboxları
+  var customDays = [];
+  document.querySelectorAll('.cal-recur-day:checked').forEach(function(cb) {
+    customDays.push(parseInt(cb.value));
+  });
+
+  var recur = null;
+  if (recurFreq && recurFreq !== 'none') {
+    recur = { freq: recurFreq, interval: recurInterval, seriesId: eid || Date.now() };
+    if (recurEnd)   recur.endDate = recurEnd;
+    if (recurCount) recur.count   = recurCount;
+    if (recurFreq === 'custom' && customDays.length) recur.days = customDays;
+    if (recurFreq === 'biweekly') recur.interval = 2;
+  }
+
+  var fields = {
+    title, date,
+    time:         (document.getElementById('cal-form-time')   || {}).value || '09:00',
+    type:         (document.getElementById('cal-form-type')   || {}).value || 'meeting',
+    status:       _isAdminH() ? ((document.getElementById('cal-form-status') || {}).value || 'approved') : 'pending',
+    desc:         (document.getElementById('cal-form-desc')   || {}).value || '',
     participants: part,
-    own:          _isAdminH() ? 0 : cu?.id,
-    reqBy:        cu?.id,
-    reqByName:    cu?.name,
+    own:          _isAdminH() ? 0 : cu && cu.id,
+    reqBy:        cu && cu.id,
+    reqByName:    cu && cu.name,
   };
+  if (recur) fields.recur = recur;
+  else delete fields.recur;
 
   if (eid) {
-    const ev = d.find(e => e.id === eid);
-    if (ev) Object.assign(ev, fields);
+    // Tekrar serisini düzenliyorsa: sadece bu mi, hepsi mi?
+    var origEv = d.find(function(e){ return e.id === eid; });
+    if (origEv && origEv.recur && recur) {
+      // Serinin tüm gelecek etkinlikleri güncellenir (master değişir)
+      Object.assign(origEv, fields);
+    } else if (origEv) {
+      Object.assign(origEv, fields);
+    }
     window.toast?.('Güncellendi ✓', 'ok');
-    window.logActivity?.('cal', `"${title}" etkinliği güncellendi`);
+    window.logActivity?.('cal', '"' + title + '" etkinliği güncellendi');
   } else {
-    d.push({ id: Date.now(), ...fields });
-    window.logActivity?.('cal', `"${title}" etkinliği ${_isAdminH()?'eklendi':'onay için gönderildi'} (${date})`);
+    var newId = Date.now();
+    if (recur) recur.seriesId = newId;
+    d.push(Object.assign({ id: newId }, fields));
+    window.logActivity?.('cal', '"' + title + '" ' + (recur ? '(tekrarlayan) ' : '') + 'etkinliği ' + (_isAdminH()?'eklendi':'onay için gönderildi') + ' (' + date + ')');
     if (!_isAdminH()) {
       window.toast?.('Etkinlik yönetici onayına gönderildi ✓', 'ok');
-      window.addNotif?.('📅', `Onay bekleyen etkinlik: "${title}" (${date}) — ${cu?.name}`, 'warn', 'takvim');
+      window.addNotif?.('📅', 'Onay bekleyen etkinlik: "' + title + '" (' + date + ') — ' + (cu && cu.name), 'warn', 'takvim');
     } else {
-      window.toast?.('Etkinlik eklendi ✓', 'ok');
+      window.toast?.((recur ? '🔁 Tekrarlayan etkinlik' : 'Etkinlik') + ' eklendi ✓', 'ok');
     }
   }
 
   saveCal(d);
   invalidateCalCache();
-  document.getElementById('mo-cal-form')?.remove();
+  document.getElementById('mo-cal-form') && document.getElementById('mo-cal-form').remove();
   renderCal();
   if (CAL_SEL) selCalDay(CAL_SEL);
+}
+
+// Tekrarlayan etkinliğin bir oluşumunu sil veya tüm seriyi sil
+function delEventWithOption(evId, seriesId) {
+  if (!seriesId) { delEvent(evId); return; }
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2200';
+  var _sid = seriesId;
+  var _oid = evId;
+  mo.innerHTML = [
+    '<div class="moc" style="max-width:400px">',
+    '<div class="mt">Tekrarlayan Etkinliği Sil</div>',
+    '<p style="margin-bottom:20px;color:var(--t2);font-size:13px">Bu tekrarlayan etkinliği nasıl silmek istersiniz?</p>',
+    '<div class="mof" style="flex-direction:column;gap:8px">',
+    '<button class="btn btns" style="justify-content:flex-start;text-align:left" id="del-one-btn">📅 Sadece bu tarihi sil</button>',
+    '<button class="btn btns" style="justify-content:flex-start;text-align:left;color:var(--rdt)" id="del-series-btn">🗑 Tüm seriyi sil</button>',
+    '<button class="btn" id="del-cancel-btn">İptal</button>',
+    '</div></div>'
+  ].join('');
+  document.body.appendChild(mo);
+  setTimeout(function(){ mo.classList.add('open'); }, 10);
+  mo.addEventListener('click', function(e){ if (e.target === mo) mo.remove(); });
+  document.getElementById('del-one-btn').addEventListener('click', function(){
+    _delOneOccurrence(_sid, _oid); mo.remove();
+  });
+  document.getElementById('del-series-btn').addEventListener('click', function(){
+    _delEntireSeries(_sid); mo.remove();
+  });
+  document.getElementById('del-cancel-btn').addEventListener('click', function(){ mo.remove(); });
+}
+
+function _delOneOccurrence(seriesId, occurrenceId) {
+  var d = loadCal();
+  var master = d.find(function(e){ return e.id === seriesId; });
+  if (!master) return;
+  if (!master.recur) { master.recur = {}; }
+  if (!master.recur.exceptions) master.recur.exceptions = [];
+  // Hariç tutulan tarih ekle
+  var occDate = String(occurrenceId).split('_').pop();
+  if (master.recur.exceptions.indexOf(occDate) === -1) master.recur.exceptions.push(occDate);
+  saveCal(d); invalidateCalCache(); renderCal();
+  window.toast?.('Bu tarih silindi', 'ok');
+}
+
+function _delEntireSeries(seriesId) {
+  var d = loadCal().filter(function(e){ return e.id !== seriesId; });
+  saveCal(d); invalidateCalCache(); renderCal();
+  window.toast?.('Tüm seri silindi', 'ok');
 }
 
 function saveEvent() {
@@ -2180,7 +2482,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'selCalDay','calNav','calNavToDay','calGoTo',
     'setCalView','setCalTypeFilter','invalidateCalCache',
     'openEvModal','saveEvent','approveCalEvent','rejectCalEvent','delEvent',
-    'checkYaklasanTatiller','initTrYasalEvents','tatilDuyuruYap','exportCalXlsx','openTatilUyariModal','tatilUyariAtla','tatilUyariAtlaVeHatirlatma','tatilUyariOnayla','openEvModal','saveCalForm','checkScheduledAnnouncements',
+    'checkYaklasanTatiller','initTrYasalEvents','tatilDuyuruYap','exportCalXlsx','openTatilUyariModal','tatilUyariAtla','tatilUyariAtlaVeHatirlatma','tatilUyariOnayla','openEvModal','saveCalForm','calRecurFreqChange','checkScheduledAnnouncements','visEvsForDay','_expandRecurring','delEventWithOption','_delOneOccurrence','_delEntireSeries',
     'renderNotes','openNoteModal','saveNote','delNote','pinNote','viewNote',
     'editNoteView','delNoteView','setNoteView','pickNtColor','ntFmt','renderNoteBody',
     'renderRehber','openRehberModal','saveRehber','delRehber',
