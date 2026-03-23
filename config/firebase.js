@@ -53,11 +53,12 @@ window.DEFAULT_TENANT_ID   = DEFAULT_TENANT_ID;
 window.FS_PATHS            = FS_PATHS;
 window.FirebaseConfig      = FirebaseConfig;
 
-// database.js window.FirebaseConfig?.paths kullandığı için
-// paths fonksiyonlarını FirebaseConfig objesine enjekte et
-if (window.FirebaseConfig) {
-  window.FirebaseConfig.paths     = FS_PATHS;
-  window.FirebaseConfig.tenantId  = DEFAULT_TENANT_ID;
+// auth.js FirebaseConfig.config bekliyor — inject et
+// database.js FirebaseConfig.paths bekliyor — inject et
+if (!window.FirebaseConfig || typeof window.FirebaseConfig !== 'object') {
+  window.FirebaseConfig = {};
 }
-// FirebaseConfig null ise (SDK yok) — yine de paths erişimini sağla
+window.FirebaseConfig.config    = FIREBASE_CONFIG;   // auth.js için
+window.FirebaseConfig.paths     = FS_PATHS;           // database.js için
+window.FirebaseConfig.tenantId  = DEFAULT_TENANT_ID;
 window._getFirestorePaths = () => FS_PATHS;
