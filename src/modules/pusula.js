@@ -68,17 +68,27 @@ function _getCU() {
 
 // ── Modül düzeyinde durum ────────────────────────────────────────
 let PUS_VIEW         = localStorage.getItem('ak_pus_view') || 'list';
-let PUS_WEEK_FOCUS   = JSON.parse(localStorage.getItem('ak_pus_week_focus') || '[]');  // max 3 task id
-let PUS_DAY_FOCUS    = JSON.parse(localStorage.getItem('ak_pus_day_focus')  || '[]');  // max 3 task id
+// Focus listesi — kullanıcı başına izole
+function _focusKey(type) {
+  const uid = _getCU()?.id || 'anon';
+  return 'ak_pus_' + type + '_focus_' + uid;
+}
+function _loadFocus(type) {
+  try { return JSON.parse(localStorage.getItem(_focusKey(type)) || '[]'); } catch(e) { return []; }
+}
+function _saveFocusList(type, list) {
+  localStorage.setItem(_focusKey(type), JSON.stringify(list));
+}
+// Getter'lar — her erişimde güncel veriyi okur
+Object.defineProperty(window, 'PUS_WEEK_FOCUS', { get: () => _loadFocus('week'), set: v => _saveFocusList('week', v) });
+Object.defineProperty(window, 'PUS_DAY_FOCUS',  { get: () => _loadFocus('day'),  set: v => _saveFocusList('day', v) });
 
 function _saveFocus() {
-  localStorage.setItem('ak_pus_week_focus', JSON.stringify(PUS_WEEK_FOCUS));
-  localStorage.setItem('ak_pus_day_focus',  JSON.stringify(PUS_DAY_FOCUS));
+  // Artık kullanılmıyor — setter otomatik kaydediyor
 }
 
 function toggleFocus(taskId, type) {
-  // type: 'week' | 'day'
-  const list = type === 'week' ? PUS_WEEK_FOCUS : PUS_DAY_FOCUS;
+  const list = _loadFocus(type);
   const idx  = list.indexOf(taskId);
   if (idx > -1) {
     list.splice(idx, 1);
@@ -86,7 +96,7 @@ function toggleFocus(taskId, type) {
     if (list.length >= 3) { window.toast?.('En fazla 3 görev seçebilirsiniz', 'warn'); return; }
     list.push(taskId);
   }
-  _saveFocus();
+  _saveFocusList(type, list);
   renderPusula();
   renderFocusPanel();
 }
@@ -94,9 +104,15 @@ function toggleFocus(taskId, type) {
 function renderFocusPanel() {
   const cont = g('pus-focus-panel');
   if (!cont) return;
-  const tasks = loadTasks();
-  const users = loadUsers();
-  const today = new Date().toISOString().slice(0,10);
+  const tasks    = loadTasks();
+  const users    = loadUsers();
+  const today    = new Date().toISOString().slice(0,10);
+  const isAdmin2 = window.isAdmin?.();
+  // Admin: tüm kullanıcıların focus listelerini göster
+  // User: sadece kendi listesi
+  const _getIds  = (type) => isAdmin2
+    ? users.flatMap(u => { try { return JSON.parse(localStorage.getItem('ak_pus_' + type + '_focus_' + u.id) || '[]'); } catch(e) { return []; } }).filter((v,i,a)=>a.indexOf(v)===i)
+    : _loadFocus(type);
 
   function _focusCard(taskId, type) {
     const t = tasks.find(x => x.id === taskId);
@@ -119,7 +135,7 @@ function renderFocusPanel() {
         + (t.duration ? '<span style="color:var(--ac)">⏱ ' + (t.duration >= 60 ? Math.floor(t.duration/60) + 's ' + (t.duration%60||'') + (t.duration%60?'dk':'') : t.duration + 'dk') + '</span>' : '')
         + '</div>'
       + '</div>'
-      + '<button data-tid="' + taskId + '" data-type="' + type + '" class="pus-focus-rm" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:var(--t3)">x</button>'
+      + '<button data-tid="' + taskId + '" data-type="' + type + '" class="pus-focus-rm" style="background:none;border:none;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;color:var(--t2);border-radius:4px">×</button>'
     + '</div>';
   }
 
@@ -134,10 +150,12 @@ function renderFocusPanel() {
       ? Math.floor(mins/60) + ' saat' + (mins%60 ? ' ' + mins%60 + ' dk' : '')
       : mins + ' dk';
   };
-  const weekTotal = _calcTotal(PUS_WEEK_FOCUS);
-  const dayTotal  = _calcTotal(PUS_DAY_FOCUS);
-  const weekCards = PUS_WEEK_FOCUS.map(id => _focusCard(id, 'week')).join('');
-  const dayCards  = PUS_DAY_FOCUS.map(id => _focusCard(id, 'day')).join('');
+  const _wIds    = _getIds('week');
+  const _dIds    = _getIds('day');
+  const weekTotal = _calcTotal(_wIds);
+  const dayTotal  = _calcTotal(_dIds);
+  const weekCards = _wIds.map(id => _focusCard(id, 'week')).join('');
+  const dayCards  = _dIds.map(id => _focusCard(id, 'day')).join('');
 
   cont.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
     // Haftanın en önemlileri
@@ -147,9 +165,9 @@ function renderFocusPanel() {
           + '<div style="width:8px;height:8px;border-radius:50%;background:#6366F1"></div>'
           + '<span style="font-size:11px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Haftanın En Önemlileri</span>'
         + '</div>'
-        + '<div style="display:flex;align-items:center;gap:8px">' + (weekTotal ? '<span style="font-size:10px;background:var(--al);color:var(--ac);padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + weekTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + PUS_WEEK_FOCUS.length + '/3</span></div>'
+        + '<div style="display:flex;align-items:center;gap:8px">' + (weekTotal ? '<span style="font-size:10px;background:var(--al);color:var(--ac);padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + weekTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + _wIds.length + '/3</span></div>'
       + '</div>'
-      + (weekCards || '<div style="font-size:12px;color:var(--t3);text-align:center;padding:10px 0">Görev seçin — listeden ⭐ basın</div>')
+      + (weekCards || '<div style="font-size:12px;color:var(--t2);text-align:center;padding:10px 0">Görev seçin — listeden ⭐ basın</div>')
     + '</div>'
     // Günün en önemlileri
     + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:12px 14px">'
@@ -158,9 +176,9 @@ function renderFocusPanel() {
           + '<div style="width:8px;height:8px;border-radius:50%;background:#F97316"></div>'
           + '<span style="font-size:11px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Günün En Önemlileri</span>'
         + '</div>'
-        + '<div style="display:flex;align-items:center;gap:8px">' + (dayTotal ? '<span style="font-size:10px;background:rgba(249,115,22,.1);color:#F97316;padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + dayTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + PUS_DAY_FOCUS.length + '/3</span></div>'
+        + '<div style="display:flex;align-items:center;gap:8px">' + (dayTotal ? '<span style="font-size:10px;background:rgba(249,115,22,.1);color:#F97316;padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + dayTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + _dIds.length + '/3</span></div>'
       + '</div>'
-      + (dayCards || '<div style="font-size:12px;color:var(--t3);text-align:center;padding:10px 0">Görev seçin — listeden 🔥 basın</div>')
+      + (dayCards || '<div style="font-size:12px;color:var(--t2);text-align:center;padding:10px 0">Görev seçin — listeden 🔥 basın</div>')
     + '</div>'
   + '</div>';
   // Event delegation — remove button
@@ -337,16 +355,19 @@ function renderPusula() {
   if (subEl && allVis.length) {
     const pct  = Math.round(doneCount / allVis.length * 100);
     const msgs = [
-      [100, '🎉 Tüm görevler tamamlandı! Harika iş!'],
-      [80,  '🚀 Neredeyse bitti, son düzlüktesiniz!'],
-      [60,  '💪 İyi gidiyorsunuz, devam edin!'],
-      [40,  '⚡ Orta noktayı geçtiniz, devam!'],
-      [20,  '🎯 Başladınız! Her adım önemli.'],
-      [0,   '📋 Görevler sizi bekliyor.'],
+      [100, 'Tum gorevler tamamlandi! Harika is!'],
+      [80,  'Neredeyse bitti, son duzluktesiniz!'],
+      [60,  'Iyi gidiyorsunuz, devam edin!'],
+      [40,  'Orta noktayi gectiniz, devam!'],
+      [20,  'Basladiniz! Her adim onemli.'],
+      [0,   'Gorevler sizi bekliyor.'],
     ];
     const msg = msgs.find(([t]) => pct >= t);
-    subEl.textContent = msg ? msg[1] : 'Görev yönetim merkezi';
+    subEl.textContent = msg ? msg[1] : 'Gorev yonetim merkezi';
   }
+
+  // ── Gunluk söz banner (ph-pus-quote) ──────────────────────────
+  _renderPusQuoteBanner();
 
   // ── Filtreler ──────────────────────────────────────────────────
   let fl = [...allVis];
@@ -2029,6 +2050,34 @@ if (typeof window !== 'undefined') {
   // ── Geriye uyumluluk: eski HTML inline onclick'ler çalışmaya devam eder ──
   window.renderPusula = renderPusula;
 window.toggleFocus     = toggleFocus;
+// Günlük söz
+let _pusQuoteData = null;
+
+window.setPusQuote = function(q) {
+  _pusQuoteData = q;
+  _renderPusQuoteBanner();
+};
+
+function _renderPusQuoteBanner() {
+  const el = g('ph-pus-quote');
+  if (!el) return;
+  if (!_pusQuoteData) {
+    // Cache'den dene
+    const today = new Date().toISOString().slice(0,10);
+    const cached = localStorage.getItem('ak_pus_quote_' + today);
+    if (cached) { try { _pusQuoteData = JSON.parse(cached); } catch(e) {} }
+  }
+  if (!_pusQuoteData) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px">'
+    + '<div style="font-size:18px;opacity:.5;flex-shrink:0;margin-top:1px">❝</div>'
+    + '<div>'
+      + '<div style="font-size:12px;font-style:italic;color:var(--t2);line-height:1.6">' + (_pusQuoteData.text||'') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:600">— ' + (_pusQuoteData.author||'') + '</div>'
+    + '</div>'
+  + '</div>';
+}
+
 window.getPusDayTotal  = function() {
   const tasks = loadTasks();
   const mins  = PUS_DAY_FOCUS.reduce((s,id) => {
