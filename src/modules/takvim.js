@@ -98,13 +98,25 @@ function renderTakvimPanel() {
 
 // setCalView — helpers.js'den gelir, panel view butonlarını aktifler
 function setCalView(view, btn) {
+  // Buton toggle
   document.querySelectorAll('.cvb[id^="cal-v-"]').forEach(function(b){ b.classList.remove('on','active'); });
   if (btn) btn.classList.add('on');
-  if (typeof window.CAL_VIEW !== 'undefined') window.CAL_VIEW = view;
-  // helpers.js'deki set fonksiyonlarına yönlendir
-  if (view === 'week')   { window.CAL_VIEW = 'week';   }
-  if (view === 'agenda') { window.CAL_VIEW = 'agenda'; }
-  if (view === 'month')  { window.CAL_VIEW = 'month';  }
+
+  // CAL_VIEW güncelle — Object.defineProperty setter tetikler
+  try { window.CAL_VIEW = view; } catch(e) {}
+
+  // Cache temizle
+  if (typeof window.invalidateCalCache === 'function') window.invalidateCalCache();
+
+  // Görünüm divlerini anında ayarla (renderCal beklenmeden)
+  var mc  = document.getElementById('cal-month-card');
+  var wkv = document.getElementById('cal-week-view');
+  var agv = document.getElementById('cal-agenda-view');
+  if (mc)  mc.style.display  = (view === 'month')  ? '' : 'none';
+  if (wkv) wkv.style.display = (view === 'week')   ? 'block' : 'none';
+  if (agv) agv.style.display = (view === 'agenda') ? 'block' : 'none';
+
+  // renderCal çağır
   if (typeof window.renderCal === 'function') window.renderCal();
 }
 
