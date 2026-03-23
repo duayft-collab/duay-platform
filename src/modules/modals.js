@@ -178,23 +178,23 @@ function injectAllModals() {
           <input class="fi" id="tk-link" placeholder="https://…" style="padding:7px 10px">
         </div>
         <div>
-          <div class="fl" style="margin-bottom:5px">📎 DOSYA EKİ <span style="font-weight:400;color:var(--t3)">(birden fazla seçilebilir)</span></div>
-          <input type="file" class="fi" id="tk-file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv,.zip" multiple style="font-size:12px;padding:7px 10px" onchange="if(g('tk-fp')){const fs=Array.from(this.files);g('tk-fp').innerHTML=fs.map(f=>'<span style=\"background:var(--al);color:var(--at);border-radius:4px;padding:1px 6px;font-size:10px;margin:1px;display:inline-block\">📎 '+f.name+'</span>').join('');}">
+          <div class="fl" style="margin-bottom:5px">📎 DOSYA EKİ <span style="font-weight:400;color:var(--t3)">(çoklu seçim)</span></div>
+          <input type="file" class="fi" id="tk-file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv,.zip" multiple style="font-size:12px;padding:7px 10px" onchange="tkFileChange(this)">
         </div>
       </div>
-      <div id="tk-fp" style="font-size:11px;min-height:14px;margin-bottom:4px;display:flex;flex-wrap:wrap;gap:2px"></div>
+      <div id="tk-fp" style="font-size:11px;margin-bottom:4px;min-height:14px;display:flex;flex-wrap:wrap;gap:3px"></div>
 
       <!-- Yöneticiler, Katılımcılar ve İzleyiciler -->
       <div style="border-top:1px solid var(--b);padding-top:14px;margin-top:6px">
-        <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">👥 Yöneticiler & Katılımcılar</div>
+        <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">👥 Ekip & Erişim</div>
         <!-- Yöneticiler -->
         <div style="margin-bottom:12px">
-          <div class="fl" style="margin-bottom:6px;color:#007AFF">👑 Yöneticiler <span style="font-weight:400;color:var(--t3)">(görevi yönetir, düzenleyebilir)</span></div>
-          <div id="tk-managers-list" style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto"></div>
+          <div class="fl" style="margin-bottom:6px;color:#007AFF">👑 Ek Yöneticiler <span style="font-weight:400;color:var(--t3)">(sorumlu zaten yönetici)</span></div>
+          <div id="tk-managers-list" style="display:flex;flex-direction:column;gap:4px;max-height:110px;overflow-y:auto"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
-            <div class="fl" style="margin-bottom:6px;color:var(--ac)">✅ Katılımcılar <span style="font-weight:400;color:var(--t3)">(göreve müdahil)</span></div>
+            <div class="fl" style="margin-bottom:6px;color:var(--ac)">✅ Katılımcılar <span style="font-weight:400;color:var(--t3)">(düzenleyebilir)</span></div>
             <div id="tk-participants-list" style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto"></div>
           </div>
           <div>
@@ -202,7 +202,7 @@ function injectAllModals() {
             <div id="tk-viewers-list" style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto"></div>
           </div>
         </div>
-        <div style="font-size:10px;color:var(--t3);margin-top:6px">💡 Sorumlu kişi otomatik olarak yönetici listesine eklenir.</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:6px">💡 Sorumlu kişi otomatik yöneticidir — listeden çıkarmak için İzinler sekmesini kullanın.</div>
       </div>
     </div>
     <!-- Modal footer -->
