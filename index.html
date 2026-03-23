@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Operasyon Platformu">
+  <meta name="theme-color" content="#3C3489">
+  <meta name="description" content="Satın Alma, Tedarik Zinciri & Operasyon Yönetim Platformu">
+  <link rel="manifest" href="manifest.json" id="manifest-link">
+  <meta name="theme-color" content="#6366F1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Duay Platform">
+  <title>Operasyon Platformu — v8.0.0</title>
+
+  <!--
+  ── GitHub Pages Alt Klasör Desteği ──────────────────────────────
+  URL'in  kullanici.github.io/REPO-ADI/  şeklindeyse
+  aşağıdaki satırın başındaki  //  kısmını SİL ve repo adını yaz.
+  Örnek:  <base href="/duay-platform/">
+  Ana domain kullanıyorsan (kullanici.github.io/) bu satıra gerek yok.
+  ─────────────────────────────────────────────────────────────────
+  -->
+  <!-- <base href="/REPO-ADI/"> -->
+
+  <!-- ── Harici kütüphaneler ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+
+  <!-- Firebase SDK — aktif -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- ── Stil ── -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     GİRİŞ EKRANI
+     ════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="lcard">
+
+    <!-- Logo -->
+    <div class="llogo">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="52" height="52" rx="14" fill="#1E1B4B"/>
+        <circle cx="26" cy="26" r="18" fill="#2D2A6E" opacity=".6"/>
+        <text x="26" y="32" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="18" font-weight="700" fill="#FACC15">A</text>
+        <circle cx="26" cy="9"    r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="26" cy="43"   r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="9"  cy="26"   r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="43" cy="26"   r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="14.5" cy="14.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="37.5" cy="37.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="37.5" cy="14.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="14.5" cy="37.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="26" cy="26" r="17" stroke="#FACC15" stroke-width="1" opacity=".4" fill="none"/>
+      </svg>
+      <div>
+        <div class="llogoname">Operasyon Platformu</div>
+        <!-- Anayasa Kural 5: Login versiyon STATIK — App.init() bu değere dokunmaz -->
+        <div class="llogosub" id="l-pf">v8.0.0 / 2026-03-19 14:50</div>
+      </div>
+    </div>
+
+  <!-- Dil seçici -->
+    <div class="llang" role="group" aria-label="Dil seçimi">
+      <button class="lpill on" data-lang-btn="tr" onclick="window.App&&window.App.setLang?window.App.setLang('tr',this):null">TR</button>
+      <button class="lpill"    data-lang-btn="en" onclick="window.App&&window.App.setLang?window.App.setLang('en',this):null">EN</button>
+      <button class="lpill"    data-lang-btn="fr" onclick="window.App&&window.App.setLang?window.App.setLang('fr',this):null">FR</button>
+    </div>
+
+    <div class="lerr" id="l-err" role="alert" aria-live="polite"></div>
+
+    <div class="ltitle" id="l-title" data-i18n="login.title">Giriş Yap</div>
+    <div class="lsubt"  id="l-sub"   data-i18n="login.subtitle">Hesabınıza erişin</div>
+
+    <div class="lfield">
+      <div class="lfl" data-i18n="login.email">E-POSTA</div>
+      <input class="linp" type="email" id="lemail" autocomplete="email"
+             placeholder="ad@sirket.com"
+             onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()">
+    </div>
+
+    <div class="lfield">
+      <div class="lfl" data-i18n="login.password">ŞİFRE</div>
+      <input class="linp" type="password" id="lpwd" autocomplete="current-password"
+             placeholder="••••••••"
+             onkeydown="if(event.key==='Enter')_doLogin()">
+    </div>
+
+    <button class="lbtn" id="lbtn" onclick="_doLogin()" data-i18n="login.btn">Giriş Yap</button>
+
+    <div class="lfoot">
+      <button class="ltheme-btn" onclick="window.App&&window.App.toggleTheme?window.App.toggleTheme():document.documentElement.setAttribute('data-theme',document.documentElement.getAttribute('data-theme')==='dark'?'':'dark')">Tema</button>
+      <button class="lreset-btn" onclick="if(confirm('Tüm veriyi sıfırla?')){localStorage.clear();location.reload();}">Veri Sıfırla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function _doLogin() {
+  var email = document.getElementById('lemail').value.trim();
+  var pwd   = document.getElementById('lpwd').value;
+  var errEl = document.getElementById('l-err');
+  var btn   = document.getElementById('lbtn');
+  if (!email || !pwd) { if(errEl){errEl.textContent='E-posta ve şifre zorunludur.';errEl.style.display='block';} return; }
+  if (btn) { btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true; }
+  window.Auth.login(email, pwd).then(function(r) {
+    if (btn) { btn.textContent = 'Giriş Yap'; btn.disabled = false; }
+    if (r.ok) {
+      if (window.App && window.App.init) { window.App.init(); }
+      else { location.reload(); }
+    } else {
+      if (errEl) { errEl.textContent = r.error || 'E-posta veya şifre hatalı.'; errEl.style.display = 'block'; }
+    }
+  });
+}
+</script>
+
+<!-- ════════════════════════════════════════════════════════════
+     ANA UYGULAMA
+     ════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── Üst Navigasyon ─────────────────────────────────────── -->
+  <header class="topnav" role="banner">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="ham-btn" onclick="App.toggleSidebar()" aria-label="Menü">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+          <rect width="30" height="30" rx="8" fill="#3C3489"/>
+          <text y="21" x="50%" text-anchor="middle" fill="white" font-size="17" font-family="sans-serif">A</text>
+        </svg>
+        <div>
+          <div class="brand-name">AkademiHub</div>
+          <div class="brand-sub" id="clock-el">--:--</div>
+        </div>
+      </div>
+    </div>
+    <div class="tnr" role="toolbar">
+      <button class="ibtn" onclick="App.openGSearch()" aria-label="Ara (Ctrl+K)">&#128269;</button>
+      <div class="notif-btn ibtn" onclick="App.toggleNotifPanel()" role="button" tabindex="0" aria-label="Bildirimler"
+           onkeydown="if(event.key==='Enter')App.toggleNotifPanel()">
+        &#128276; <div class="notif-dot" id="notif-dot" aria-hidden="true"></div>
+      </div>
+      <div class="uchip" onclick="App.toggleProfilePanel()" role="button" tabindex="0" style="cursor:pointer"
+           onkeydown="if(event.key==='Enter')App.toggleProfilePanel()">
+        <div class="av" id="nav-av" style="background:#3C3489;color:#fff" aria-hidden="true">?</div>
+        <div>
+          <div class="ucn" id="nav-name">—</div>
+          <div class="ucr" id="nav-role">—</div>
+        </div>
+      </div>
+      <button class="lout" onclick="App.logout()" data-i18n="btn.logout">Çıkış</button>
+    </div>
+  </header>
+
+  <!-- ── Bildirim Paneli ─────────────────────────────────────── -->
+  <div class="notif-panel" id="notif-panel" role="dialog" aria-label="Bildirimler">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600">Bildirimler
+        <span id="notif-unread-count" style="font-size:11px;color:var(--ac);font-weight:400"></span>
+      </span>
+      <div style="display:flex;gap:6px">
+        <button onclick="App.markAllNotifRead()" style="font-size:11px;color:var(--ac);background:none;border:none;cursor:pointer;font-family:inherit">Tümü Okundu</button>
+        <button onclick="App.clearAllNotifs()"   style="font-size:11px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:inherit">Temizle</button>
+      </div>
+    </div>
+    <div id="notif-list"></div>
+  </div>
+
+  <!-- ── Profil Paneli ───────────────────────────────────────── -->
+  <div class="profile-panel" id="profile-panel" role="dialog" aria-label="Profil">
+    <div class="pp-head">
+      <div class="pp-av" id="pp-av"></div>
+      <div style="font-weight:600;font-size:15px" id="pp-name">—</div>
+      <div style="font-size:12px;color:var(--at);margin-top:2px" id="pp-role">—</div>
+      <div style="font-size:11px;color:var(--at);opacity:.7;margin-top:2px" id="pp-email">—</div>
+    </div>
+    <div style="padding:12px">
+      <div id="pp-modules" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px"></div>
+      <button class="btn" style="width:100%;justify-content:center;margin-bottom:8px" onclick="App.openProfileEdit()">Profili Düzenle</button>
+      <button class="btn btnd" style="width:100%;justify-content:center" onclick="App.logout()">Çıkış Yap</button>
+    </div>
+  </div>
+
+  <!-- ── Global Arama ────────────────────────────────────────── -->
+  <div class="gsearch-overlay" id="gsearch-overlay" onclick="App.closeGSearch(event)" role="dialog" aria-label="Global arama">
+    <div class="gsearch-box" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;gap:10px;padding:0 16px">
+        <input class="gsearch-inp" id="gsearch-inp"
+               placeholder="Tüm modüllerde ara… (Esc ile kapat)"
+               oninput="App.doGSearch(this.value)"
+               onkeydown="App.gSearchKey(event)"
+               aria-label="Arama">
+        <span style="font-size:11px;color:var(--t3);flex-shrink:0;cursor:pointer" onclick="App.closeGSearch()">ESC</span>
+      </div>
+      <div id="gsearch-results" role="listbox"></div>
+    </div>
+  </div>
+
+  <!-- ── Pin Bar ─────────────────────────────────────────────── -->
+  <div id="pinbar" style="height:auto;min-height:36px;padding:0 12px" role="navigation" aria-label="Sabit linkler">
+    <div id="pinbar-links" style="display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;min-width:0;padding:4px 0" class="pinbar-scroll"></div>
+    <div class="psep" style="flex-shrink:0"></div>
+    <button class="padd-btn" onclick="App.openPinModal(null)" id="btn-pin-add" style="flex-shrink:0">+ Link</button>
+  </div>
+
+  <!-- ── Mobile Overlay ─────────────────────────────────────── -->
+  <div id="mob-overlay" onclick="App.toggleSidebar()" aria-hidden="true"></div>
+
+  <!-- ════════════════════════════════════════════════════════
+       ANA LAYOUT
+       ════════════════════════════════════════════════════════ -->
+  <div class="layout">
+
+    <!-- ── Sidebar ──────────────────────────────────────────── -->
+    <aside class="sidebar">
+
+  <!-- ═══ GENEL ═══ -->
+  <div class="nsec-header">GENEL</div>
+      <button class="nb on" onclick="nav('dashboard',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span id="nb-db">Dashboard</span>
+  </button>
+      <button class="nb" onclick="nav('announce',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 6h2v4H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M4 6l7-4v12L4 10" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span id="nb-ann">Duyurular</span>
+    <span class="nbdg" id="nb-ann-b" style="background:var(--rd);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('takvim',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 7h14M5 3V1M11 3V1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="4" y="9" width="2" height="2" rx=".5" fill="currentColor"/><rect x="7" y="9" width="2" height="2" rx=".5" fill="currentColor"/></svg>
+    <span id="nb-tak">Takvim</span>
+  </button>
+      <button class="nb" onclick="nav('notes',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-nt">Notlar</span>
+  </button>
+
+  <!-- ═══ SATIŞ & MÜŞTERİ ═══ -->
+  <div class="nsec-header">SATIŞ &amp; MÜŞTERİ</div>
+      <button class="nb" onclick="nav('crm',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="8" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="6" y="5" width="4" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="2" width="4" height="12" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>CRM / Müşteriler</span>
+    <span class="nbdg" id="nb-crm-b" style="background:var(--gr);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('gorusme',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v6a1 1 0 01-1 1H9l-3 2v-2H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Görüşme Talepleri</span>
+    <span class="nbdg" id="nb-grt-b" style="background:var(--ac);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('etkinlik',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 7h14M5 3V1M11 3V1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 10l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Etkinlik / Fuar</span>
+    <span class="nbdg" id="nb-etk-b" style="background:var(--ac);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('numune',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6 1h4v6l2 4H4L6 7V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Numune Arşivi</span>
+    <span class="nbdg" id="nb-nm-b" style="background:var(--am);display:none">0</span>
+  </button>
+
+  <!-- ═══ LOJİSTİK ═══ -->
+  <div class="nsec-header">LOJİSTİK</div>
+      <button class="nb" onclick="App.nav('lojistik',this)" id="nb-lojistik">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 8h2l2 3v2h-4V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="4" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/><circle cx="12" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/></svg>
+        <span>Lojistik Merkezi</span>
+        <span class="nbdg" id="nb-lojistik-b" style="display:none">0</span>
+      </button>
+      <button class="nb" onclick="nav('stok',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Ürün Giriş / Çıkış</span>
+  </button>
+      <button class="nb" onclick="nav('odemeler',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 6.5h14" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="10" r="1" fill="currentColor"/></svg>
+    <span>Rutin Ödemeler</span>
+    <span class="nbdg" id="nb-odm-b" style="background:var(--rd);display:none">!</span>
+  </button>
+
+  <!-- ═══ FİNANS ═══ -->
+  <div class="nsec-header">FİNANS</div>
+      <button class="nb" onclick="nav('finans',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M1 12V5a1 1 0 011-1h12a1 1 0 011 1v7a1 1 0 01-1 1H2a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8.5" r="2" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Finans Paneli</span>
+  </button>
+      <button class="nb" onclick="nav('pirim',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 2l1.5 4h4l-3.5 2.5 1.5 4L8 10l-3.5 2.5 1.5-4L2.5 6h4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span>Pirim Sistemi</span>
+    <span class="nbdg" id="nb-pirim-b" style="background:var(--ac);display:none">0</span>
+  </button>
+      <button class="nb" onclick="App.nav('hesap',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h8M4 8h5M4 11h3M11 9l1.5 1.5L14 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Hesap Makinesi</span>
+      </button>
+
+  <!-- ═══ DÖKÜMAN & FORMLAR ═══ -->
+  <div class="nsec-header">DÖKÜMAN &amp; FORMLAR</div>
+      <button class="nb" onclick="nav('docs',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 8h5M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-doc">Dökümanlar</span>
+  </button>
+      <button class="nb" onclick="nav('formlar',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Kurumsal Formlar</span>
+  </button>
+      <button class="nb" onclick="nav('tebligat',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span>Tebligat Takibi</span>
+    <span class="nbdg" id="nb-teb-b" style="background:var(--rd);display:none">!</span>
+  </button>
+      <button class="nb" onclick="nav('resmi',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Resmi Evrak Arşivi</span>
+    <span class="nbdg" id="nb-rm-b" style="background:var(--rd);display:none">!</span>
+  </button>
+      <button class="nb" onclick="nav('arsiv',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M1 3h14M1 1h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Şirket Arşivi</span>
+    <span class="nbdg" id="nb-arsiv-b" style="background:var(--am);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('links',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5l-1 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5l1-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-lnk">Hızlı Linkler</span>
+  </button>
+
+  <!-- ═══ İNSAN KAYNAKLARI ═══ -->
+  <div class="nsec-header">İNSAN KAYNAKLARI</div>
+      <button class="nb" onclick="App.nav('ik-hub',this)" id="nb-ik-hub">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="4" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>İnsan Kaynakları</span>
+        <span class="nbdg" id="nb-ik-b" style="display:none">0</span>
+      </button>
+      <button class="nb" onclick="nav('evrak',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Personel Evrak</span>
+    <span class="nbdg" id="nb-evrak-b" style="background:var(--rd);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('temizlik',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M3 13L7 5M7 5L9 3M7 5h5l1 2-5 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.5" cy="11.5" r="2" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Temizlik Kontrol</span>
+    <span class="nbdg" id="nb-tmz-b" style="background:var(--bl);display:none">0</span>
+  </button>
+
+  <!-- ═══ OPERASYON ═══ -->
+  <div class="nsec-header">OPERASYON</div>
+      <button class="nb" onclick="nav('pusula',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5.5l-2 4-4 2 2-4 4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span id="nb-pus">Görevler</span>
+    <span class="nbdg" id="nb-pus-b" style="background:var(--rd);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('hedefler',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r=".75" fill="currentColor"/></svg>
+    <span>Hedefler</span>
+    <span class="nbdg" id="nb-hdf-b" style="background:var(--am);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('rehber',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Acil Rehber</span>
+  </button>
+
+  <!-- ═══ YÖNETİM ═══ -->
+  <div class="nsec-header">YÖNETİM</div>
+      <button class="nb" onclick="nav('ceo',this)" id="nb-ceo">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 11L6 7l3 3 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="13" cy="6" r="1.5" fill="currentColor"/></svg>
+    <span>CEO Paneli</span>
+  </button>
+      <button class="nb" onclick="nav('kpi-panel',this)" id="nb-kpi-panel">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>KPI & Performans</span>
+    <span class="nbdg" id="nb-kpi-b" style="background:var(--ac);display:none">!</span>
+  </button>
+      <button class="nb" onclick="App.nav('admin',this)" id="nb-admin">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 1l1.5 3h3l-2.5 2 1 3L8 7.5 5 9l1-3L3.5 4h3L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        <span data-i18n="nav.admin">Kullanıcı Yönetimi</span>
+      </button>
+      <button class="nb" onclick="nav('activity',this)" id="nb-activity">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><polyline points="1,10 4,6 7,8 10,4 13,7 15,5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="nb-act">Aktiviteler</span>
+  </button>
+      <button class="nb" onclick="nav('trash',this)" id="nb-trash">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Çöp Kutusu</span>
+    <span class="nbdg" id="nb-trash-b" style="background:var(--t3);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('settings',this)" id="nb-settings">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.54 11.54l1.41 1.41M3.05 12.95l1.42-1.42M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Ayarlar</span>
+  </button>
+
+</aside>
+
+    <!-- ── Ana İçerik Alanı ──────────────────────────────────── -->
+    <main class="main" id="main-content" role="main">
+
+      <!-- Panel: Dashboard -->
+            <div class="panel on" id="panel-dashboard">
+        <div class="ph">
+          <div><div class="pht" id="ph-db">Dashboard</div><div class="phs" id="db-welcome"></div></div>
+          <span id="db-date" style="font-size:12px;color:var(--t2)"></span>
+        </div>
+        <!-- Ana istatistikler -->
+        <div class="sg" id="db-stats">
+          <div class="sc" style="cursor:pointer" onclick="goTo('users')" id="sc-u"><div class="sci" style="background:var(--al)">👥</div><div class="scv" id="sv-u">—</div><div class="scl" id="sl-u">Kullanıcılar</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('docs')"><div class="sci" style="background:var(--blb)">📄</div><div class="scv" id="sv-d">—</div><div class="scl">Dökümanlar</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('pusula')"><div class="sci" style="background:var(--rdb)">🎯</div><div class="scv" id="sv-c">0</div><div class="scl">Kritik Görev</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('puantaj')"><div class="sci" style="background:var(--amb)">⏳</div><div class="scv" id="sv-p">0</div><div class="scl">Bekleyen Onay</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('izin')"><div class="sci" style="background:rgba(16,185,129,.12)">🏖️</div><div class="scv" id="sv-izin">0</div><div class="scl">İzin Talebi</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('kargo')"><div class="sci" style="background:rgba(59,130,246,.12)">📦</div><div class="scv" id="sv-kargo">0</div><div class="scl">Aktif Kargo</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('pirim')"><div class="sci" style="background:rgba(245,158,11,.12)">⭐</div><div class="scv" id="sv-pirim">0</div><div class="scl">Bekleyen Pirim</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('crm')"><div class="sci" style="background:rgba(99,102,241,.12)">🤝</div><div class="scv" id="sv-crm">0</div><div class="scl">Aktif Lead</div></div>
+        </div>
+
+        <!-- Duyurular (okunmamış) -->
+        <div id="db-ann-preview"></div>
+
+        <!-- Ana grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <!-- Sol: Kritik Görevler (Top 3) -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">🔥 Acil 3 İş</span>
+              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-top3"></div>
+          </div>
+          <!-- Sağ: Çeyrek Hedefler -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">🎯 Çeyrek Hedefler</span>
+              <button class="btn btns" onclick="goTo('hedefler')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-hedefler"></div>
+          </div>
+        </div>
+
+        <!-- İkinci satır -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <!-- Kargo Takibi -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">📦 Takipteki Kargolar</span>
+              <button class="btn btns" onclick="goTo('kargo')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-kargo"></div>
+          </div>
+          <!-- Son Aktiviteler -->
+          <div class="card">
+            <div class="ch"><span class="ct" id="ct-rec">Son Aktiviteler</span></div>
+            <div id="db-acts"></div>
+          </div>
+        </div>
+
+        <!-- Üçüncü satır: Hızlı Erişim + Ödemeler -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card">
+            <div class="ch"><span class="ct">⚡ Hızlı Erişim</span></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px">
+              <div class="qi" onclick="goTo('pusula')"><span class="qi-i">🧭</span><span>Pusula</span></div>
+              <div class="qi" onclick="goTo('puantaj')"><span class="qi-i">🗓</span><span>Puantaj</span></div>
+              <div class="qi" onclick="goTo('takvim')"><span class="qi-i">📅</span><span>Takvim</span></div>
+              <div class="qi" onclick="goTo('notes')"><span class="qi-i">📝</span><span>Notlar</span></div>
+              <div class="qi" onclick="goTo('kargo')"><span class="qi-i">📦</span><span>Kargo</span></div>
+              <div class="qi" onclick="goTo('rehber')"><span class="qi-i">📒</span><span>Rehber</span></div>
+              <div class="qi" onclick="goTo('odemeler')"><span class="qi-i">💳</span><span>Ödemeler</span></div>
+              <div class="qi" onclick="goTo('finans')"><span class="qi-i">💰</span><span>Finans</span></div>
+            </div>
+          </div>
+          <!-- Yaklaşan ödemeler -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">💳 Yaklaşan Ödemeler</span>
+              <button class="btn btns" onclick="goTo('odemeler')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-odemeler"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Pusula (Görev Yönetimi) -->
+            <div class="panel" id="panel-pusula">
+
+        <!-- ── HERO ── -->
+        <div class="pus-hero">
+          <div class="pus-hero-inner">
+            <div class="pus-hero-top">
+              <div>
+                <div class="pus-hero-title">
+                  <div class="pus-hero-title-icon">🧭</div>
+                  Pusula
+                </div>
+                <div class="pus-hero-sub" id="ph-pus-s">Görev yönetim merkezi</div>
+              </div>
+              <div class="pus-hero-actions">
+                <div class="pus-view-toggle">
+                  <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)">
+                    <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="2" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="5.6" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="9.2" width="11" height="1.8" rx=".9" fill="currentColor"/></svg>
+                    Liste
+                  </button>
+                  <button id="pus-v-board" class="pvt-btn" onclick="setPusView('board',this)">
+                    <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/><rect x="5" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/></svg>
+                    Board
+                  </button>
+                  <button id="pus-v-me" class="pvt-btn" onclick="setPusView('me',this)">
+                    <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6.5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    Benim
+                  </button>
+                </div>
+                <button onclick="exportTasksXlsx()" id="btn-tk-xl" style="display:none;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em">⬇ Excel</button>
+                <button class="pus-add-btn" onclick="openAddTask()">
+                  <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  Görev Ekle
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Apple tab bar — stat filters -->
+          <div class="pus-stats-row">
+            <div class="pus-stat-pill active" id="psf-all" onclick="setPusQuickFilter('all',this)">
+              <span class="psp-count" id="pv-tot">0</span>
+              <span class="psp-label">Tümü</span>
+            </div>
+            <div class="pus-stat-pill" id="psf-todo" onclick="setPusQuickFilter('todo',this)">
+              <span class="psp-count" id="psf-todo-n">0</span>
+              <span class="psp-label">Yapılacak</span>
+            </div>
+            <div class="pus-stat-pill" id="psf-ip" onclick="setPusQuickFilter('inprogress',this)">
+              <span class="psp-count" id="psf-ip-n">0</span>
+              <span class="psp-label">Devam</span>
+            </div>
+            <div class="pus-stat-pill" id="psf-rv" onclick="setPusQuickFilter('review',this)">
+              <span class="psp-count" id="psf-rv-n">0</span>
+              <span class="psp-label">İnceleme</span>
+            </div>
+            <div class="pus-stat-pill" id="psf-done" onclick="setPusQuickFilter('done',this)">
+              <span class="psp-count" id="psf-done-n">0</span>
+              <span class="psp-label">Tamamlandı</span>
+            </div>
+            <div class="pus-stat-pill pus-stat-pill-danger" id="psf-ov" onclick="setPusQuickFilter('overdue',this)">
+              <span class="psp-count" id="pv-ov">0</span>
+              <span class="psp-label">Gecikmiş</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress strip -->
+        <div class="pus-progress-strip">
+          <span class="pus-prog-label">İlerleme</span>
+          <div class="pus-prog-bar-wrap"><div class="pus-prog-bar-fill" id="pus-prog-fill"></div></div>
+          <span class="pus-prog-pct-txt" id="pus-prog-pct">0%</span>
+          <div class="pus-prog-stats" id="pus-prog-stats"></div>
+        </div>
+
+        <!-- Apple search + filters -->
+        <div class="pus-toolbar">
+          <div class="pus-toolbar-left">
+            <div class="pus-search-wrap">
+              <svg class="pus-search-icon" width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <input type="text" class="pus-search-inp" id="pf-search" placeholder="Ara…" oninput="renderPusula()">
+            </div>
+            <select class="pus-filter-sel" id="pus-usel" style="display:none" onchange="renderPusula()"><option value="0">Tüm Personel</option></select>
+            <select class="pus-filter-sel" id="pf-pri" onchange="renderPusula()">
+              <option value="0">Tüm Öncelik</option>
+              <option value="1">🔴 Kritik</option>
+              <option value="2">🟠 Önemli</option>
+              <option value="3">🔵 Normal</option>
+              <option value="4">⚪ Düşük</option>
+            </select>
+            <input type="date" class="pus-filter-sel" id="pf-dfrom" onchange="renderPusula()" title="Başlangıç">
+            <input type="date" class="pus-filter-sel" id="pf-dto" onchange="renderPusula()" title="Bitiş">
+          </div>
+          <div class="pus-toolbar-right">
+            <select class="pus-filter-sel" id="pf-sort" onchange="renderPusula()">
+              <option value="pri">Önceliğe göre</option>
+              <option value="due">Son tarihe göre</option>
+              <option value="newest">En yeni</option>
+              <option value="oldest">En eski</option>
+              <option value="az">A→Z</option>
+            </select>
+            <button class="pus-clear-btn" onclick="clearPusFilters()">✕ Temizle</button>
+          </div>
+        </div>
+
+        <div class="pus-summary-row" id="pf-summary"></div>
+        <div id="pus-main-view"></div>
+
+        <!-- Apple slide-in detail panel -->
+        <div id="pus-detail-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:440px;max-width:95vw;z-index:500;flex-direction:column;overflow:hidden">
+          <div class="pdp-header">
+            <div style="flex:1;min-width:0">
+              <div class="pdp-title" id="pdp-title"></div>
+              <div class="pdp-meta-row" id="pdp-meta"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <button onclick="editTask(PUS_DETAIL_ID)" style="background:rgba(0,122,255,.1);color:#007AFF;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Düzenle</button>
+              <button class="pdp-close-btn" onclick="closePusDetail()">×</button>
+            </div>
+          </div>
+          <div id="pus-detail-body" style="flex:1;overflow-y:auto;padding:20px;background:#F2F2F7"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Kargo -->
+            <div class="panel" id="panel-kargo">
+        <div class="ph">
+          <div><div class="pht">📦 Kargo Yönetimi</div><div class="phs">Gelen ve giden kargo kayıtları.</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btns" onclick="exportKargoXlsx()">⬇ Excel</button>
+            <button class="btn btns" onclick="openKargoFirmaModal()" id="btn-krg-firma">⚙️ Firmalar</button>
+            <button class="btn" onclick="openKargoModal('gelen')">📥 Gelen Kayıt</button>
+            <button class="btn btnp" onclick="openKargoModal('giden')">📤 Giden Etiket</button>
+          </div>
+        </div>
+        <div class="sg">
+          <div class="ms"><div class="msv" id="krg-total">0</div><div class="msl">Toplam</div></div>
+          <div class="ms"><div class="msv" style="color:var(--bl)" id="krg-gelen">0</div><div class="msl">📥 Gelen</div></div>
+          <div class="ms"><div class="msv" style="color:var(--gr)" id="krg-giden">0</div><div class="msl">📤 Giden</div></div>
+          <div class="ms"><div class="msv" style="color:var(--am)" id="krg-bekle">0</div><div class="msl">⏳ Beklemede</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <button class="chip on" onclick="setKargoFilter('all',this)">Tümü</button>
+          <button class="chip" onclick="setKargoFilter('gelen',this)">📥 Gelen</button>
+          <button class="chip" onclick="setKargoFilter('giden',this)">📤 Giden</button>
+          <button class="chip" onclick="setKargoFilter('bekle',this)">⏳ Beklemede</button>
+          <input class="si" id="krg-search" style="margin-left:auto;width:200px;padding:5px 10px;font-size:12px" placeholder="🔍 Ara..." oninput="renderKargo()">
+        </div>
+        <div id="kargo-list"></div>
+        <!-- Konteyner Takip -->
+        <div class="card" style="margin-top:18px">
+          <div class="ch">
+            <span class="ct">🚢 Konteyner / Hat Takibi</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span id="konteyn-last-check" style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace"></span>
+              <button class="btn btns" onclick="checkAllKonteyn()">↻ Hepsini Kontrol Et</button>
+              <button class="btn btnp btns" onclick="openKonteynModal(null)">+ Konteyner Ekle</button>
+            </div>
+          </div>
+          <div id="konteyn-alarm-bar" style="margin-bottom:8px"></div>
+          <div id="konteyn-list" style="padding:8px 0"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Prim -->
+            <div class="panel" id="panel-pirim">
+        <!-- Hero Header -->
+        <div style="background:linear-gradient(135deg,#1E1B4B 0%,#3C3489 60%,#534AB7 100%);border-radius:14px;padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+          <div style="position:absolute;bottom:-50px;right:80px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.03)"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
+            <div>
+              <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.4px;display:flex;align-items:center;gap:10px">
+                <span style="background:rgba(255,255,255,.15);border-radius:10px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center">⭐</span>
+                Pirim & Performans
+              </div>
+              <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">İşlem bazlı pirim takibi, ödüller ve liderlik tablosu</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <select id="prm-year-sel" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:7px 12px;font-size:12px;font-family:inherit;cursor:pointer" onchange="renderPirim()">
+                <option style="color:#333" value="">Tüm Dönemler</option>
+              </select>
+              <button class="btn btns" onclick="exportPirimXlsx()" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff">⬇ Excel</button>
+              <button id="btn-pirim-params" onclick="openPirimParams()" style="display:none;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:7px 12px;font-size:12px;cursor:pointer">⚙️ Parametreler</button>
+              <button onclick="openPirimModal(null)" style="background:#fff;color:var(--ac);border:none;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Pirim Kaydı</button>
+            </div>
+          </div>
+          <!-- Hero stats -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:20px;border-top:1px solid rgba(255,255,255,.1);padding-top:16px">
+            <div style="text-align:center;padding:8px">
+              <div style="font-size:26px;font-weight:700;color:#fff" id="prm-total">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Toplam Kayıt</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-left:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:26px;font-weight:700;color:#FBBF24" id="prm-pending">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Onay Bekliyor</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-left:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:26px;font-weight:700;color:#34D399" id="prm-approved">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Onaylı</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-left:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:20px;font-weight:700;color:#A78BFA;font-family:'DM Mono',monospace" id="prm-total-amount">0 ₺</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Toplam Pirim</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard grid: Liderlik + Ödüller + Grafik -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <!-- Liderlik tablosu -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct" style="display:flex;align-items:center;gap:6px">🏆 Liderlik Tablosu</span>
+              <span style="font-size:11px;color:var(--t2)" id="prm-period-label"></span>
+            </div>
+            <div id="pirim-leaderboard"></div>
+          </div>
+          <!-- Ödüller -->
+          <div class="card">
+            <div class="ch"><span class="ct">🎖️ Dönem Ödülleri & Başarılar</span></div>
+            <div id="pirim-awards"></div>
+          </div>
+        </div>
+
+        <!-- Aylık trend grafiği -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="ch">
+            <span class="ct">📈 Aylık Pirim Trendi</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="si" id="prm-trend-user" style="width:160px;padding:5px 8px;font-size:12px" onchange="renderPirimTrend()"><option value="0">Tüm Personel</option></select>
+            </div>
+          </div>
+          <div id="pirim-trend-chart" style="padding:8px 16px 16px"></div>
+        </div>
+
+        <!-- Filtre + Liste -->
+        <div class="card">
+          <div class="ch">
+            <span class="ct">İşlem Listesi</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="si" id="prm-user-f" style="width:160px;padding:5px 8px;font-size:12px" onchange="renderPirim()"><option value="0">Tüm Personel</option></select>
+              <select class="si" id="prm-status-f" style="width:140px;padding:5px 8px;font-size:12px" onchange="renderPirim()">
+                <option value="">Tüm Durum</option>
+                <option value="pending">⏳ Bekliyor</option>
+                <option value="approved">✅ Onaylı</option>
+                <option value="rejected">❌ Reddedildi</option>
+              </select>
+              <input type="month" class="si" id="prm-month-f" style="width:160px;padding:5px 8px;font-size:12px" onchange="renderPirim()" title="Ay filtresi">
+            </div>
+          </div>
+          <div id="pirim-list"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Admin -->
+      <div id="panel-admin" class="panel">
+
+        <!-- ── Header ── -->
+        <div class="ph">
+          <div>
+            <div class="pht">👥 Kullanıcı Yönetimi</div>
+            <div class="phs">Ekibinizi yönetin, yetki ve rol atayın</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <!-- Görünüm toggle -->
+            <div style="display:flex;background:var(--s2);border-radius:8px;padding:2px;gap:1px">
+              <button class="cvb on" id="admin-v-card" onclick="USERS_VIEW_SET('card');this.parentNode.querySelectorAll('.cvb').forEach(b=>b.classList.remove('on'));this.classList.add('on')" style="font-size:11px;padding:4px 10px">
+                ⊞ Kart
+              </button>
+              <button class="cvb" id="admin-v-table" onclick="USERS_VIEW_SET('table');this.parentNode.querySelectorAll('.cvb').forEach(b=>b.classList.remove('on'));this.classList.add('on')" style="font-size:11px;padding:4px 10px">
+                ≡ Tablo
+              </button>
+            </div>
+            <button class="btn btnp" onclick="Admin.openModal()" style="border-radius:9px;gap:6px">
+              <svg width="11" height="11" fill="none" viewBox="0 0 11 11"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Kullanıcı Ekle
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Kullanıcı Rehberi Notu ── -->
+        <div style="background:linear-gradient(135deg,var(--al),rgba(99,102,241,.06));border:1px solid var(--ac)26;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;gap:14px;align-items:flex-start">
+          <div style="font-size:22px;flex-shrink:0">💡</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px">Kullanıcı Ekleme Rehberi</div>
+            <div style="font-size:12px;color:var(--t2);line-height:1.7">
+              <strong>+ Kullanıcı Ekle</strong> → Ad, e-posta ve şifre girin → Rol seçin → Kaydedin.<br>
+              Kullanıcı sisteme giriş yapabilmek için <em>E-posta + Şifre</em> kullanır.<br>
+              <strong>🔑 Modül Yetkileri</strong> → Hangi panellere erişeceğini belirleyin.<br>
+              <strong>Toplu Import:</strong> CSV/Excel ile birden fazla kullanıcıyı tek seferde ekleyin.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── İstatistik kartları ── -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+          <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:18px">👥</div>
+            <div><div style="font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.5px" id="admin-total">0</div><div style="font-size:11px;color:var(--t3)">Toplam</div></div>
+          </div>
+          <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:var(--grb);display:flex;align-items:center;justify-content:center;font-size:18px">✅</div>
+            <div><div style="font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.5px" id="admin-active">0</div><div style="font-size:11px;color:var(--t3)">Aktif</div></div>
+          </div>
+          <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:var(--rdb);display:flex;align-items:center;justify-content:center;font-size:18px">⏸</div>
+            <div><div style="font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.5px" id="admin-suspended">0</div><div style="font-size:11px;color:var(--t3)">Askıda</div></div>
+          </div>
+          <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:18px">👑</div>
+            <div><div style="font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.5px" id="admin-admins">0</div><div style="font-size:11px;color:var(--t3)">Yönetici</div></div>
+          </div>
+        </div>
+
+        <!-- ── Arama & Filtreler ── -->
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="position:relative;flex:1;min-width:200px">
+            <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3)" width="13" height="13" fill="none" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <input class="fi" type="search" id="admin-search" placeholder="İsim veya e-posta ara…" oninput="Admin.render()" style="padding-left:30px;border-radius:8px">
+          </div>
+          <select class="fi" id="admin-role-f" onchange="Admin.render()" style="border-radius:8px;min-width:130px">
+            <option value="">Tüm Roller</option>
+            <option value="admin">👑 Admin</option>
+            <option value="manager">👔 Yönetici</option>
+            <option value="lead">⭐ Takım Lideri</option>
+            <option value="staff">👤 Personel</option>
+          </select>
+          <select class="fi" id="admin-status-f" onchange="Admin.render()" style="border-radius:8px;min-width:130px">
+            <option value="">Tüm Durumlar</option>
+            <option value="active">✅ Aktif</option>
+            <option value="suspended">⏸ Askıda</option>
+          </select>
+        </div>
+
+        <!-- ── Kullanıcı Listesi ── -->
+        <div id="admin-list" style="margin-bottom:18px"></div>
+
+        <!-- ── Davet Linki ── -->
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;margin-bottom:16px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;background:var(--grb);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🔗</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--t)">Davet Linki ile Kullanıcı Ekle</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px">7 gün geçerli davet linki — gelen kişi formu doldurur</div>
+            </div>
+          </div>
+          <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px">
+            <div style="background:var(--al);border-radius:9px;padding:10px 12px;font-size:12px;color:var(--ac)">
+              💡 Link gönderilen kişi, sisteme kendi bilgilerini girerek hesap oluşturabilir. Admin onayına gelmez — otomatik <strong>Personel</strong> rolü atanır.
+            </div>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="invite-link-output" readonly placeholder="Link oluşturmak için butona tıklayın…" class="fi" style="flex:1;border-radius:8px;font-size:12px;font-family:'DM Mono',monospace;color:var(--t2)">
+              <button class="btn btns" onclick="generateInviteLink()" style="border-radius:9px;white-space:nowrap">🔗 Oluştur</button>
+              <button class="btn btnp" onclick="copyInviteLink()" style="border-radius:9px;white-space:nowrap">📋 Kopyala</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Toplu Import ── -->
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;margin-bottom:16px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;background:var(--blb);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">📥</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--t)">Toplu Kullanıcı Import</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:2px">CSV veya Excel ile birden fazla kullanıcı ekleyin</div>
+            </div>
+          </div>
+          <div style="padding:14px 18px">
+            <div style="background:var(--s2);border-radius:9px;padding:12px;font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.7">
+              📋 <strong>Format:</strong> İlk satır başlık olmalı: <code style="background:var(--sf);padding:1px 5px;border-radius:4px;font-size:11px">ad, email, rol, departman, sifre</code><br>
+              Rol: <code style="background:var(--sf);padding:1px 5px;border-radius:4px;font-size:11px">admin / manager / lead / staff</code> · Şifre boşsa <em>Duay2026!</em> atanır.
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <input type="file" id="import-users-file" accept=".csv,.xlsx,.xls" class="fi" style="flex:1;min-width:200px;border-radius:8px;font-size:12px">
+              <button class="btn btnp" onclick="importUsersCSV()" style="border-radius:9px;white-space:nowrap">⬆ İçe Aktar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Aktivite Logu ── -->
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;margin-bottom:16px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div style="font-size:14px;font-weight:600;color:var(--t)">📋 Aktivite Logu</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <input class="fi" type="search" id="log-search" placeholder="Ara…" oninput="Admin.renderLog()" style="border-radius:8px;width:160px">
+              <select class="fi" id="log-type-f" onchange="Admin.renderLog()" style="border-radius:8px">
+                <option value="">Tüm Türler</option>
+                <option value="login">🟢 Giriş</option>
+                <option value="task">📋 Görev</option>
+                <option value="user">👤 Kullanıcı</option>
+                <option value="kargo">📦 Kargo</option>
+              </select>
+              <span id="log-total" style="font-size:11px;color:var(--t3)"></span>
+            </div>
+          </div>
+          <div id="activity-log-list"></div>
+        </div>
+
+        <!-- ── Geliştirme Önerileri ── -->
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--b)">
+            <div style="font-size:14px;font-weight:600;color:var(--t)">💡 Geliştirme Önerileri</div>
+          </div>
+          <div style="padding:16px 18px">
+            <textarea class="fi" id="suggest-input" rows="3" style="margin-bottom:10px;resize:vertical;border-radius:9px" placeholder="Platform ile ilgili önerinizi paylaşın…"></textarea>
+            <button class="btn btnp" onclick="Admin.submitSuggestion()" style="border-radius:9px">Gönder</button>
+          </div>
+          <div id="suggestions-list"></div>
+        </div>
+
+      </div>
+
+      <!-- Panel: Ayarlar -->
+      <div class="panel" id="panel-settings">
+
+        <!-- ── Header ── -->
+        <div class="ph">
+          <div>
+            <div class="pht">⚙️ Sistem Ayarları</div>
+            <div class="phs">Platform yapılandırması — yalnızca yöneticiler</div>
+          </div>
+          <span style="background:rgba(124,58,237,.1);color:#7C3AED;border:1px solid rgba(124,58,237,.2);padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700">🔒 Admin Only</span>
+        </div>
+
+        <!-- ── Firebase Durum Şeridi ── -->
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:20px">🔥</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--t)">Firebase Bağlantısı</div>
+              <div style="font-size:11px;color:var(--t3)" id="fb-auth-info">Kontrol ediliyor…</div>
+            </div>
+            <span id="fb-status-badge" class="badge ba" style="margin-left:6px">Kontrol ediliyor…</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="text-align:center;padding:6px 14px;background:var(--s2);border-radius:8px">
+              <div style="font-size:16px;font-weight:700;color:var(--t)" id="fb-user-count">—</div>
+              <div style="font-size:10px;color:var(--t3)">Koleksiyon</div>
+            </div>
+            <div style="text-align:center;padding:6px 14px;background:var(--s2);border-radius:8px">
+              <div style="font-size:11px;font-weight:600;font-family:'DM Mono',monospace;color:var(--t)" id="fb-sync-time">—</div>
+              <div style="font-size:10px;color:var(--t3)">Son Kontrol</div>
+            </div>
+            <button class="btn btns" onclick="checkFirebaseStatus()" style="border-radius:8px;font-size:12px">↻ Kontrol</button>
+          </div>
+        </div>
+
+        <!-- ── 3 sütun grid ── -->
+        <div class="settings-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+          <!-- SOL KOLON -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- ŞİRKET BİLGİLERİ -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:var(--al);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🏢</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Şirket Bilgileri</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <div class="fr"><div class="fl">Şirket Adı</div><input class="fi" id="set-company-name" placeholder="Duay Global Trade" style="border-radius:8px"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div class="fr"><div class="fl">E-posta</div><input class="fi" id="set-company-email" type="email" placeholder="info@sirket.com" style="border-radius:8px"></div>
+                  <div class="fr"><div class="fl">Telefon</div><input class="fi" id="set-company-phone" placeholder="+90 212 000 0000" style="border-radius:8px"></div>
+                </div>
+                <div class="fr"><div class="fl">Adres</div><textarea class="fi" id="set-company-address" rows="2" style="resize:none;border-radius:8px" placeholder="Tam adres…"></textarea></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div class="fr"><div class="fl">Vergi No</div><input class="fi" id="set-company-taxno" placeholder="1234567890" style="border-radius:8px"></div>
+                  <div class="fr"><div class="fl">Vergi Dairesi</div><input class="fi" id="set-company-taxoff" placeholder="Daire Adı" style="border-radius:8px"></div>
+                </div>
+                <div class="fr"><div class="fl">Website</div><input class="fi" id="set-company-website" placeholder="https://www.sirket.com" style="border-radius:8px"></div>
+                <div class="fr">
+                  <div class="fl">Logo <span style="font-weight:400;color:var(--t3)">(opsiyonel)</span></div>
+                  <input type="file" class="fi" id="set-company-logo" accept="image/*" style="border-radius:8px;font-size:12px">
+                </div>
+                <button class="btn btnp" onclick="saveCompanySettings()" style="border-radius:9px;margin-top:4px">Kaydet</button>
+              </div>
+            </div>
+
+            <!-- BİLDİRİM TERCİHLERİ -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:var(--amb);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🔔</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Bildirim Tercihleri</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b)">
+                  <div><div style="font-size:13px;font-weight:500">📋 Görev Ataması</div><div style="font-size:11px;color:var(--t3)">Yeni görev atandığında</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-task"><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b)">
+                  <div><div style="font-size:13px;font-weight:500">⏰ Görev Son Tarihi</div><div style="font-size:11px;color:var(--t3)">Yaklaşan ve geciken görevler</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-due"><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b)">
+                  <div><div style="font-size:13px;font-weight:500">🎉 Tatil & Bayram Uyarısı</div><div style="font-size:11px;color:var(--t3)">10 gün önceden hatırlat</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-holiday"><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b)">
+                  <div><div style="font-size:13px;font-weight:500">👤 Yeni Kullanıcı</div><div style="font-size:11px;color:var(--t3)">Sisteme yeni kullanıcı eklendiğinde</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-newuser"><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b)">
+                  <div><div style="font-size:13px;font-weight:500">💬 Görev Mesajları</div><div style="font-size:11px;color:var(--t3)">Yeni chat mesajı geldiğinde</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-chat"><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b)">
+                  <div><div style="font-size:13px;font-weight:500">📅 Takvim Hatırlatıcı</div><div style="font-size:11px;color:var(--t3)">Yaklaşan etkinlikler</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-calendar"><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+                  <div><div style="font-size:13px;font-weight:500">🆕 Sistem Güncellemeleri</div><div style="font-size:11px;color:var(--t3)">Platform güncelleme duyuruları</div></div>
+                  <label class="psw"><input type="checkbox" id="notif-system"><span class="psl"></span></label>
+                </div>
+                <button class="btn btnp" onclick="saveNotifSettings()" style="border-radius:9px;margin-top:4px">Kaydet</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- SAĞ KOLON -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- GÖRÜNÜM & DİL & TEMA -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:rgba(99,102,241,.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🎨</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Görünüm & Tema</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:13px;font-weight:500">Koyu / Açık Tema</span>
+                  <button class="btn btns" onclick="toggleTheme()" id="a-theme-settings" style="border-radius:8px;font-size:12px">🌙 Değiştir</button>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:13px;font-weight:500">Dil</span>
+                  <div style="display:flex;gap:5px">
+                    <button class="lpill on" onclick="setLang('tr',this)" style="font-size:11px;padding:4px 12px;border-radius:7px">TR</button>
+                    <button class="lpill" onclick="setLang('en',this)" style="font-size:11px;padding:4px 12px;border-radius:7px">EN</button>
+                    <button class="lpill" onclick="setLang('fr',this)" style="font-size:11px;padding:4px 12px;border-radius:7px">FR</button>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;margin-bottom:8px">Accent Rengi</div>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <input type="color" id="set-accent-color" value="#3C3489" style="width:40px;height:34px;border:1px solid var(--b);border-radius:8px;cursor:pointer;padding:2px">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button onclick="applyAccentColor('#3C3489')" style="width:28px;height:28px;border-radius:7px;background:#3C3489;border:2px solid var(--b);cursor:pointer" title="Mor (varsayılan)"></button>
+                      <button onclick="applyAccentColor('#0369A1')" style="width:28px;height:28px;border-radius:7px;background:#0369A1;border:2px solid var(--b);cursor:pointer" title="Mavi"></button>
+                      <button onclick="applyAccentColor('#0F6E56')" style="width:28px;height:28px;border-radius:7px;background:#0F6E56;border:2px solid var(--b);cursor:pointer" title="Yeşil"></button>
+                      <button onclick="applyAccentColor('#D97706')" style="width:28px;height:28px;border-radius:7px;background:#D97706;border:2px solid var(--b);cursor:pointer" title="Turuncu"></button>
+                      <button onclick="applyAccentColor('#A32D2D')" style="width:28px;height:28px;border-radius:7px;background:#A32D2D;border:2px solid var(--b);cursor:pointer" title="Kırmızı"></button>
+                      <button onclick="applyAccentColor('#7C3AED')" style="width:28px;height:28px;border-radius:7px;background:#7C3AED;border:2px solid var(--b);cursor:pointer" title="Menekşe"></button>
+                    </div>
+                    <button class="btn btns" onclick="applyAccentColor(document.getElementById('set-accent-color').value)" style="border-radius:8px;font-size:12px">Uygula</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- OTURUM & GÜVENLİK -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:var(--rdb);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🔒</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Oturum & Güvenlik</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b)">
+                  <span style="font-size:13px">Firebase Auth</span><span style="background:var(--grb);color:var(--grt);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700">✓ Aktif</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b)">
+                  <span style="font-size:13px">Şifre lokal saklanmıyor</span><span style="background:var(--grb);color:var(--grt);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700">✓</span>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;margin-bottom:6px">Oturum Zaman Aşımı</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <input class="fi" type="number" id="set-session-timeout" min="5" max="480" value="30" style="width:80px;border-radius:8px">
+                    <span style="font-size:12px;color:var(--t2)">dakika</span>
+                    <button class="btn btns" onclick="saveSessionSettings()" style="border-radius:8px;font-size:12px">Kaydet</button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0">
+                  <span style="font-size:13px">Soft Delete (çöp kutusu)</span><span style="background:var(--grb);color:var(--grt);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700">✓ Aktif</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- VERİ YÖNETİMİ -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:var(--blb);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🗄️</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Veri Yönetimi</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+                <button class="btn btnp" onclick="exportAllXlsx()" style="border-radius:9px;justify-content:flex-start;gap:8px">📊 Tüm Veriyi Excel'e Aktar</button>
+                <button class="btn btns" onclick="migrateLocalToFirestore()" id="btn-migrate" style="border-radius:9px;justify-content:flex-start;gap:8px">☁️ Firestore'a Aktar</button>
+                <button class="btn btns" onclick="checkFirebaseStatus()" style="border-radius:9px;justify-content:flex-start;gap:8px">↻ Firebase Durumunu Kontrol Et</button>
+                <div style="border-top:1px solid var(--b);padding-top:10px;margin-top:4px">
+                  <button class="btn btnd btns" onclick="resetAll()" style="border-radius:9px;justify-content:flex-start;width:100%;gap:8px">⚠️ Tüm Veriyi Sıfırla</button>
+                  <div style="font-size:11px;color:var(--t3);margin-top:6px">Bu işlem geri alınamaz. Önce buluta yedekleyin.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DEPARTMAN YÖNETİMİ -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:rgba(217,119,6,.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🏗️</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Departman Yönetimi</div>
+              </div>
+              <div style="padding:16px 18px">
+                <div id="dept-list" style="margin-bottom:12px"></div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input class="fi" id="dept-name-inp" placeholder="Departman adı…" style="flex:1;border-radius:8px">
+                  <input type="color" id="dept-color-inp" value="#3C3489" style="width:36px;height:34px;border:1px solid var(--b);border-radius:8px;cursor:pointer;padding:2px">
+                  <button class="btn btnp" onclick="addDept()" style="border-radius:9px;white-space:nowrap">+ Ekle</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ŞİFRE POLİTİKASI -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:var(--rdb);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🔑</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">Şifre Politikası</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <div class="fr">
+                  <div class="fl">Minimum Uzunluk</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <input type="range" id="pwd-minlen" min="6" max="20" value="8" style="flex:1" oninput="document.getElementById('pwd-minlen-val').textContent=this.value">
+                    <span id="pwd-minlen-val" style="font-size:13px;font-weight:700;color:var(--ac);min-width:24px;text-align:center">8</span>
+                    <span style="font-size:12px;color:var(--t3)">karakter</span>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)">
+                  <span style="font-size:13px">Büyük Harf Zorunlu (A-Z)</span>
+                  <label class="psw"><input type="checkbox" id="pwd-upper" checked><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b)">
+                  <span style="font-size:13px">Rakam Zorunlu (0-9)</span>
+                  <label class="psw"><input type="checkbox" id="pwd-number" checked><span class="psl"></span></label>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
+                  <span style="font-size:13px">Özel Karakter (!@#$…)</span>
+                  <label class="psw"><input type="checkbox" id="pwd-special"><span class="psl"></span></label>
+                </div>
+                <button class="btn btnp" onclick="savePwdPolicyForm()" style="border-radius:9px;margin-top:4px">Kaydet</button>
+              </div>
+            </div>
+
+            <!-- PWA -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;background:rgba(34,197,94,.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">📱</div>
+                <div style="font-size:14px;font-weight:600;color:var(--t)">PWA / Mobil Kurulum</div>
+              </div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+                <div style="background:var(--s2);border-radius:9px;padding:10px 12px;font-size:12px;color:var(--t2)"><strong style="color:var(--t)">iOS (Safari):</strong> Paylaş → Ana Ekrana Ekle</div>
+                <div style="background:var(--s2);border-radius:9px;padding:10px 12px;font-size:12px;color:var(--t2)"><strong style="color:var(--t)">Android (Chrome):</strong> ⋮ Menü → Uygulamayı Yükle</div>
+                <div id="pwa-install-btn" style="display:none;margin-top:4px">
+                  <button class="btn btnp" onclick="installPWA()" style="border-radius:9px">📲 Uygulamayı Yükle</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SÜRÜM GEÇMİŞİ -->
+            <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:32px;height:32px;background:var(--s2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">📋</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--t)">Sürüm Geçmişi</div>
+                </div>
+                <span id="v-ts" style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace"></span>
+              </div>
+              <div style="padding:14px 18px" id="ver-hist"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Puantaj yetki kartı dinamik olarak eklenir -->
+      </div>
+      <!-- Boş panel containerları — ilgili modüller tarafından doldurulur -->
+      <div id="panel-ik"        class="panel"></div>
+      <div id="panel-puantaj"   class="panel"></div>
+      <div id="panel-izin"      class="panel"></div>
+      <div id="panel-kpi"       class="panel"></div>
+      <div id="panel-crm"       class="panel"></div>
+      <div id="panel-stok"      class="panel"></div>
+      <div id="panel-odemeler"  class="panel"></div>
+      <div id="panel-hedefler"  class="panel"></div>
+      <div id="panel-takvim"    class="panel"></div>
+      <div id="panel-notes"     class="panel"></div>
+            <div class="panel" id="panel-announce">
+        <div class="ph">
+          <div><div class="pht">📣 <span id="ph-ann">Duyurular</span></div><div class="phs" id="ph-ann-s">Şirket haberleri ve önemli bildirimler.</div></div>
+          <button class="btn btnp" id="btn-ann-new" style="display:none" onclick="openAnnModal()">+ Duyuru</button>
+        </div>
+        <div id="ann-list"></div>
+      </div>
+
+      <!-- V18 Yeni Paneller -->
+      <div id="panel-activity" class="panel"></div>
+      <div id="panel-suggestions" class="panel"></div>
+      <div id="panel-arsiv" class="panel"></div>
+      <div id="panel-etkinlik" class="panel"></div>
+      <div id="panel-evrak" class="panel"></div>
+      <div id="panel-finans" class="panel"></div>
+      <div id="panel-kpi-panel" class="panel"></div>
+      <div id="panel-links" class="panel"></div>
+      <div id="panel-numune" class="panel"></div>
+      <div id="panel-rehber" class="panel"></div>
+      <div id="panel-resmi" class="panel"></div>
+      <div id="panel-tebligat" class="panel"></div>
+      <div id="panel-temizlik" class="panel"></div>
+      <div id="panel-trash" class="panel"></div>
+      <div id="panel-users" class="panel"></div>
+      <div id="panel-docs"    class="panel"></div>
+      <div id="panel-formlar" class="panel"></div>
+      <div id="panel-gorusme" class="panel"></div>
+      <div id="panel-ceo"     class="panel"></div>
+      <div id="panel-hesap"   class="panel"></div>
+
+      <div id="panel-lojistik" class="panel"></div>
+      <div id="panel-ik-hub" class="panel"></div>
+    </main>
+  </div>
+
+  <!-- ── Toast ─────────────────────────────────────────────────── -->
+  <div class="mo" id="mo-admin-user">
+  <div class="moc" style="max-width:500px;padding:0;overflow:hidden">
+    <div style="padding:16px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div class="mt" style="margin-bottom:0" id="mo-adm-t">+ Kullanıcı Ekle</div>
+      <button onclick="closeMo('mo-admin-user')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px">×</button>
+    </div>
+    <div style="padding:18px 22px;max-height:72vh;overflow-y:auto">
+      <input type="hidden" id="adm-eid">
+
+      <!-- Avatar -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:14px;background:var(--s2);border-radius:12px">
+        <div id="adm-avatar-wrap" style="position:relative;cursor:pointer" onclick="document.getElementById('adm-avatar-file').click()">
+          <img id="adm-avatar-preview" style="width:52px;height:52px;border-radius:14px;object-fit:cover;display:none" alt="">
+          <div id="adm-avatar-fallback" style="width:52px;height:52px;border-radius:14px;background:var(--al);color:var(--ac);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">👤</div>
+          <div style="position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;background:var(--ac);border-radius:50%;border:2px solid var(--sf);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">+</div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:3px">Profil Fotoğrafı</div>
+          <div style="font-size:11px;color:var(--t3)">JPG, PNG · Maks 2MB · Tıkla veya sürükle</div>
+          <input type="file" id="adm-avatar-file" accept="image/*" style="display:none" onchange="
+            var f=this.files[0]; if(!f)return;
+            var r=new FileReader(); r.onload=function(e){
+              var img=document.getElementById('adm-avatar-preview');
+              var fb=document.getElementById('adm-avatar-fallback');
+              img.src=e.target.result; img.style.display='';
+              if(fb) fb.style.display='none';
+            }; r.readAsDataURL(f);">
+        </div>
+      </div>
+
+      <!-- Ad ve E-posta -->
+      <div class="fr"><div class="fl">Ad Soyad <span style="color:var(--rd)">*</span></div>
+        <input class="fi" id="adm-name" placeholder="Örn: Ahmet Yılmaz" style="border-radius:8px">
+      </div>
+      <div class="fr"><div class="fl">E-posta <span style="color:var(--rd)">*</span></div>
+        <input class="fi" id="adm-email" type="email" placeholder="ahmet@sirket.com" style="border-radius:8px">
+      </div>
+
+      <!-- Rol ve Departman -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fr"><div class="fl">Rol</div>
+          <select class="fi" id="adm-role" style="border-radius:8px">
+            <option value="staff">👤 Personel</option>
+            <option value="lead">⭐ Takım Lideri</option>
+            <option value="manager">👔 Yönetici</option>
+            <option value="admin">👑 Admin</option>
+          </select>
+        </div>
+        <div class="fr"><div class="fl">Departman</div>
+          <select class="fi" id="adm-dept" style="border-radius:8px">
+            <option value="">— Seç —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Şifre -->
+      <div class="fr">
+        <div class="fl">Şifre <span style="font-weight:400;color:var(--t3)">(düzenlemede boş bırakın)</span></div>
+        <input class="fi" id="adm-pwd" type="password" placeholder="Min 8 karakter" style="border-radius:8px">
+      </div>
+
+      <!-- Şifre politikası özeti -->
+      <div style="background:var(--al);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--ac)">
+        🔒 Şifre politikası — <span id="adm-pwd-hint">min 8 karakter, büyük harf, rakam</span>
+      </div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
+      <button class="btn" onclick="closeMo('mo-admin-user')">İptal</button>
+      <button class="btn btnp" onclick="Admin.save()" style="padding:9px 22px;border-radius:9px">Kaydet</button>
+    </div>
+  </div>
+</div>
+</div><!-- /#app -->
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPT YÜKLEME SIRASI — Anayasa Kural 2, 4
+     ────────────────────────────────────────────────────────────
+     1. CONFIG      → Firebase yapılandırması
+     2. CORE        → i18n → database → auth
+     3. MODÜLLER    → iş mantığı (bağımsız)
+     4. APP INIT    → app.js — en son (tüm bağımlılıklar hazır)
+     ════════════════════════════════════════════════════════════ -->
+
+<!-- 1. CONFIG -->
+
+<script>
+// ── Modül Çakışma Önleyici Patch ─────────────────────────────
+// 'use strict' modunda const yeniden tanımlaması sorununu çözer
+// Her modül yüklenmeden önce çakışan değişkenleri temizler
+(function() {
+  // Orijinal defineProperty'yi kullanarak const tanımlarını
+  // yeniden tanımlanabilir hale getir
+  const _safeDefine = function(obj, name, value) {
+    try {
+      if (Object.getOwnPropertyDescriptor(obj, name)?.configurable === false) {
+        // Zaten tanımlı ve configurable değil - atla
+        return;
+      }
+      Object.defineProperty(obj, name, {
+        value: value,
+        writable: true,
+        configurable: true,
+        enumerable: true
+      });
+    } catch(e) {}
+  };
+  
+  // Modül yükleme hatalarını yakala - sayfa çökmesini engelle
+  window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('has already been declared')) {
+      console.warn('[Patch] Çakışma yakalandı, devam ediliyor:', e.message);
+      e.preventDefault();
+      return true;
+    }
+  }, true);
+})();
+</script>
+
+<script>
+// ── Global Platform Kısayolları ─────────────────────────────────
+if(typeof g==='undefined')           window.g            = function(id){ return document.getElementById(id); };
+if(typeof qs==='undefined')          window.qs           = function(sel,ctx){ return (ctx||document).querySelector(sel); };
+if(typeof qsa==='undefined')         window.qsa          = function(sel,ctx){ return Array.from((ctx||document).querySelectorAll(sel)); };
+if(typeof isAdmin==='undefined')     window.isAdmin      = function(){ return window.Auth?.getCU?.()?.role==='admin'; };
+if(typeof CU==='undefined')          window.CU           = function(){ return window.Auth?.getCU?.(); };
+if(typeof loadUsers==='undefined')   window.loadUsers    = function(){ return window._loadUsers?.() || []; };
+if(typeof loadTasks==='undefined')   window.loadTasks    = function(){ return window._loadTasks?.() || (function(){ try{ return JSON.parse(localStorage.getItem('ak_tasks')||'[]'); }catch(e){ return []; } })(); };
+if(typeof toast==='undefined')       window.toast        = function(m,t){ console.log('[toast]',m,t); };
+if(typeof logActivity==='undefined') window.logActivity  = function(){ };
+if(typeof openMo==='undefined')      window.openMo       = function(id){ var e=document.getElementById(id); if(e) e.classList.add('open'); };
+if(typeof closeMo==='undefined')     window.closeMo      = function(id){ var e=document.getElementById(id); if(e) e.classList.remove('open'); };
+if(typeof addNotif==='undefined')     window.addNotif     = function(){ };
+if(typeof App==="undefined") window.App={login:function(){},logout:function(){},setLang:function(){},toggleTheme:function(){},toggleSidebar:function(){},toggleNotifPanel:function(){},toggleProfilePanel:function(){},openGSearch:function(){},closeGSearch:function(){},markAllNotifRead:function(){},clearAllNotifs:function(){},openProfileEdit:function(){},resetDemoData:function(){},nav:function(){}};
+if(typeof st==='undefined')          window.st           = function(pre,id,btn){
+  document.querySelectorAll('[id^="'+pre+'-"].tpanel,[id^="'+pre+'-"].tab-panel,[id^="'+pre+'-"].ikh-tab-content').forEach(function(p){ p.style.display='none'; p.classList.remove('active'); });
+  var el=document.getElementById(pre+'-'+id); if(el){ el.style.display=''; el.classList.add('active'); }
+  if(btn){ document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.remove('on','active'); }); btn.classList.add('on','active'); }
+};
+</script>
+
+<script src="config/firebase.js"></script>
+
+<!-- 2. CORE -->
+<script src="src/i18n/translations.js"></script>
+<script src="src/core/database.js"></script>
+<script src="src/core/utils.js"></script>
+<script src="src/core/auth.js"></script>
+
+<!-- 3. MODÜLLER -->
+<script src="src/modules/admin.js"></script>
+<script src="src/modules/kargo.js"></script>
+<script src="src/modules/pirim.js"></script>
+<script src="src/modules/pusula.js"></script>
+<script src="src/modules/ik.js"></script>
+<script src="src/modules/crm.js"></script>
+<script src="src/modules/stok.js"></script>
+<script src="src/modules/finans.js"></script>
+<script src="src/modules/helpers.js"></script>
+
+<!-- 3b. Panel HTML Inject + Modals (helpers.js ve ik.js sonrasi) -->
+<script src="src/modules/announce.js"></script>
+<script src="src/modules/takvim.js"></script>
+<script src="src/modules/notes.js"></script>
+<script src="src/modules/hedefler.js"></script>
+<script src="src/modules/odemeler.js"></script>
+<script src="src/modules/kpi.js"></script>
+<script src="src/modules/ik_panel.js"></script>
+<script src="src/modules/puantaj.js"></script>
+<script src="src/modules/izin.js"></script>
+<script src="src/modules/crm_panel.js"></script>
+<script src="src/modules/extra_panels.js"></script>
+<script src="src/modules/panel_stubs.js"></script>
+<script src="src/modules/docs.js"></script>
+<script src="src/modules/formlar.js"></script>
+<script src="src/modules/gorusme.js"></script>
+<script src="src/modules/ceo.js"></script>
+<script src="src/modules/hesap.js"></script>
+<script src="src/modules/modals.js"></script>
+
+<!-- 4. APP INIT — her zaman en son -->
+<script src="src/core/app.js"></script>
+<script src="src/modules/app_patch.js"></script>
+<script src="src/modules/lojistik.js"></script>
+<script src="src/modules/ik_hub.js"></script>
+<script src="src/modules/crm_hub.js"></script>
+
+
+  <script>
+    // Service Worker kaydı
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.info('[SW] Kayıtlı:', reg.scope))
+          .catch(err => console.warn('[SW] Kayıt hatası:', err));
+      });
+    }
+  </script>
+</body>
+</html>
