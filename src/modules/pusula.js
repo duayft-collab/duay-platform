@@ -21,7 +21,7 @@
  *   localStorage key: 'ak_task_chat1'    → { [taskId]: Message[] }
  *
  * Global bağımlılıklar:
- *   window.Auth      → getCU(), isAdmin()
+ *   window.Auth      → getCU(), _isAdmin()
  *   window.DB        → loadTasks(), saveTasks(), loadUsers(),
  *                       loadTaskChats(), storeTaskChats(), logActivity()
  *   window.toast()   → bildirim
@@ -36,6 +36,20 @@
  */
 
 'use strict';
+
+// ── Güvenli CU erişimi — app.js yükleme sırasından bağımsız ──────
+function _isAdmin() {
+  return window.isAdmin?.() || window.Auth?.getCU?.()?.role === 'admin' || false;
+}
+function _getCU() {
+  if (typeof window.Auth === 'object' && typeof window.Auth.getCU === 'function') {
+    return window.Auth.getCU();
+  }
+  if (typeof window.CU === 'function') return window._getCU();
+  if (typeof window.CU === 'object' && window.CU !== null) return window.CU;
+  return null;
+}
+
 
 // ── Global shortcut'lar ─────────────────────────────────────────
 
@@ -73,11 +87,11 @@ const PRI_COLOR = { 1:'#FF3B30', 2:'#FF9500', 3:'#007AFF', 4:'#C7C7CC' };
  */
 function visTasks() {
   const d = loadTasks();
-  if (isAdmin()) {
+  if (_isAdmin()) {
     const uid = parseInt(g('pus-usel')?.value || '0');
     return uid ? d.filter(t => t.uid === uid) : d;
   }
-  const myId = CU()?.id;
+  const myId = _getCU()?.id;
   return d.filter(t =>
     t.uid === myId ||
     (t.participants || []).includes(myId) ||
@@ -133,18 +147,18 @@ function populatePusUsers() {
   const sel   = g('pus-usel');
   const tsel  = g('tk-user');
 
-  if (sel && isAdmin()) {
+  if (sel && _isAdmin()) {
     sel.innerHTML = `<option value="0">👥 Tüm Personel</option>` +
       users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
   }
   if (tsel) {
-    if (isAdmin()) {
+    if (_isAdmin()) {
       tsel.innerHTML = users.map(u =>
         `<option value="${u.id}">${u.name} (${u.role})</option>`
       ).join('');
     } else {
-      const uid = CU()?.id || 0;
-      tsel.innerHTML = `<option value="${uid}">${CU()?.name || 'Ben'}</option>`;
+      const uid = _getCU()?.id || 0;
+      tsel.innerHTML = `<option value="${uid}">${_getCU()?.name || 'Ben'}</option>`;
       tsel.value = String(uid);
     }
   }
@@ -152,7 +166,7 @@ function populatePusUsers() {
 
 /** Kritik görev sayısını sidebar badge'ine yazar */
 function updatePusBadge() {
-  const tasks  = isAdmin() ? loadTasks() : loadTasks().filter(t => t.uid === CU()?.id);
+  const tasks  = _isAdmin() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
   const undone = tasks.filter(t => !t.done && t.pri === 1).length;
   const b      = g('nb-pus-b');
   if (b) { b.textContent = undone; b.style.display = undone > 0 ? 'inline' : 'none'; }
@@ -232,7 +246,7 @@ function renderPusula() {
   else if (PUS_QUICK_FILTER === 'overdue')    fl = fl.filter(t => !t.done && t.status !== 'done' && t.due && t.due < todayS);
 
   // "Yalnızca benimkiler" görünümü
-  if (PUS_VIEW === 'me') fl = fl.filter(t => t.uid === CU()?.id);
+  if (PUS_VIEW === 'me') fl = fl.filter(t => t.uid === _getCU()?.id);
 
   // Panel filtreleri
   const fPri    = parseInt(g('pf-pri')?.value   || '0');
@@ -321,7 +335,7 @@ function renderPusulaList(fl, users, todayS, cont) {
       `<span style="background:var(--al);color:var(--ac);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">${tg}</span>`
     ).join('');
     const isDone = t.done || t.status === 'done';
-    const cu     = CU();
+    const cu     = _getCU();
 
     // Ana satır
     const row = document.createElement('div');
@@ -360,8 +374,8 @@ function renderPusulaList(fl, users, todayS, cont) {
             ? `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-active">💬 ${chatCount}</button>`
             : `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-empty">💬</button>`
           }
-          ${t.uid === cu?.id || isAdmin() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
-          ${t.uid === cu?.id || isAdmin() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})" class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
+          ${t.uid === cu?.id || _isAdmin() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
+          ${t.uid === cu?.id || _isAdmin() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})" class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
         </div>
       </div>`;
 
@@ -773,7 +787,7 @@ function pdpRefreshChatMsgs() {
   } else {
     for (var i = 0; i < msgs.length; i++) {
       var m   = msgs[i];
-      var cu  = CU();
+      var cu  = _getCU();
       var isMe = m.uid === (cu && cu.id);
       var u   = users.find(function(x){ return x.id === m.uid; }) || { name: m.name || '?' };
       var msgDate = (m.ts || '').slice(0, 10);
@@ -832,7 +846,7 @@ function pdpSendChat() {
   function doSend(fd) {
     var chats = loadTaskChats();
     if (!chats[_PDP_TASK_ID]) chats[_PDP_TASK_ID] = [];
-    var cu  = CU();
+    var cu  = _getCU();
     var msg = { id: Date.now(), uid: cu && cu.id, name: cu && cu.name, text: text, ts: nowTs() };
     if (fd) msg.file = fd;
     chats[_PDP_TASK_ID].push(msg);
@@ -841,7 +855,7 @@ function pdpSendChat() {
     if (fileEl)             fileEl.value = '';
     pdpRefreshChatMsgs();
     var task = loadTasks().find(function(t){ return t.id === _PDP_TASK_ID; });
-    var cu2  = CU();
+    var cu2  = _getCU();
     if (task && task.uid !== (cu2 && cu2.id)) {
       window.addNotif && window.addNotif('💬', '"' + task.title + '" görevinde yeni mesaj', 'info', 'pusula');
     }
@@ -864,8 +878,8 @@ function pdpRenderFiles() {
   if (!task) return;
   var files   = task.files || (task.file ? [task.file] : []);
   var managers= task.managers || [task.uid];
-  var cu      = CU();
-  var canEdit = isAdmin() || managers.indexOf(cu && cu.id) > -1 || task.uid === (cu && cu.id)
+  var cu      = _getCU();
+  var canEdit = _isAdmin() || managers.indexOf(cu && cu.id) > -1 || task.uid === (cu && cu.id)
                 || (task.participants || []).indexOf(cu && cu.id) > -1;
 
   function extIcon(name) {
@@ -997,8 +1011,8 @@ function pdpRenderPerms() {
   if (!task) return;
   var users    = loadUsers();
   var managers = task.managers || [task.uid];
-  var cu       = CU();
-  var canEdit  = isAdmin() || managers.indexOf(cu && cu.id) > -1;
+  var cu       = _getCU();
+  var canEdit  = _isAdmin() || managers.indexOf(cu && cu.id) > -1;
 
   function getRole(uid) {
     if (managers.indexOf(uid) > -1)                        return 'Yönetici';
@@ -1134,9 +1148,9 @@ function openAddTask() {
   if (g('tk-fp'))     g('tk-fp').textContent = '';
   const s = g('tk-user');
   if (s) {
-    if (!isAdmin()) {
-      s.innerHTML = `<option value="${CU()?.id}">${CU()?.name || 'Ben'}</option>`;
-      s.value = String(CU()?.id);
+    if (!_isAdmin()) {
+      s.innerHTML = `<option value="${_getCU()?.id}">${_getCU()?.name || 'Ben'}</option>`;
+      s.value = String(_getCU()?.id);
     } else {
       const uid = parseInt(g('pus-usel')?.value || '0');
       if (uid > 0) s.value = String(uid);
@@ -1174,8 +1188,8 @@ function editTask(id) {
 function saveTask() {
   const title = (g('tk-title')?.value || '').trim();
   if (!title) { window.toast?.('Başlık zorunludur', 'err'); return; }
-  const uid = parseInt(g('tk-user')?.value || '0') || parseInt(CU()?.id || '0');
-  if (!isAdmin() && uid !== parseInt(CU()?.id || '0')) { window.toast?.('Yetki yok', 'err'); return; }
+  const uid = parseInt(g('tk-user')?.value || '0') || parseInt(_getCU()?.id || '0');
+  if (!_isAdmin() && uid !== parseInt(_getCU()?.id || '0')) { window.toast?.('Yetki yok', 'err'); return; }
   if (!uid) { window.toast?.('Kullanıcı belirlenemedi — tekrar giriş yapın', 'err'); return; }
 
   const d    = loadTasks();
@@ -1248,7 +1262,7 @@ function toggleTask(id, done) {
 function delTask(id) {
   const d = loadTasks();
   const t = d.find(x => x.id === id);
-  if (!t || (t.uid !== CU()?.id && !isAdmin())) { window.toast?.('Yetki yok', 'err'); return; }
+  if (!t || (t.uid !== _getCU()?.id && !_isAdmin())) { window.toast?.('Yetki yok', 'err'); return; }
   saveTasks(d.filter(x => x.id !== id));
   renderPusula();
   logActivity('task', `"${t.title}" görevini sildi`);
@@ -1348,7 +1362,7 @@ function addSubTask(parentId) {
   mo.style.zIndex = '2100';
 
   const userOpts = users.map(u =>
-    `<option value="${u.id}"${u.id === CU()?.id ? ' selected' : ''}>${u.name}</option>`
+    `<option value="${u.id}"${u.id === _getCU()?.id ? ' selected' : ''}>${u.name}</option>`
   ).join('');
 
   mo.innerHTML = `<div class="modal" style="max-width:420px">
@@ -1397,7 +1411,7 @@ function _saveSubTask(parentId) {
   parent.subTasks.push({
     id:        Date.now(),
     title,
-    uid:       parseInt(g('subadd-user')?.value) || CU()?.id,
+    uid:       parseInt(g('subadd-user')?.value) || _getCU()?.id,
     pri:       parseInt(g('subadd-pri')?.value)  || 2,
     start:     g('subadd-start')?.value  || null,
     due:       g('subadd-due')?.value    || null,
@@ -1587,7 +1601,7 @@ function renderTaskChatMsgs(taskId) {
 
   const frag = document.createDocumentFragment();
   msgs.forEach(m => {
-    const cu   = CU();
+    const cu   = _getCU();
     const isMe = m.uid === cu?.id;
     const u    = users.find(x => x.id === m.uid) || { name: m.name || '?' };
     const msgDate = (m.ts || '').slice(0, 10);
@@ -1629,7 +1643,7 @@ function sendTaskChatMsg() {
   const doSend = fd => {
     const chats = loadTaskChats();
     if (!chats[taskId]) chats[taskId] = [];
-    const msg = { id: Date.now(), uid: CU()?.id, name: CU()?.name, text, ts: nowTs() };
+    const msg = { id: Date.now(), uid: _getCU()?.id, name: _getCU()?.name, text, ts: nowTs() };
     if (fd) msg.file = fd;
     chats[taskId].push(msg);
     storeTaskChats(chats);
@@ -1639,7 +1653,7 @@ function sendTaskChatMsg() {
     renderTaskChatMsgs(taskId);
     // Görev sahibine bildirim
     const task = loadTasks().find(t => t.id === taskId);
-    if (task && task.uid !== CU()?.id) {
+    if (task && task.uid !== _getCU()?.id) {
       window.addNotif?.('💬', `"${task.title}" görevinde yeni mesaj`, 'info', 'pusula');
     }
   };
@@ -1715,7 +1729,7 @@ function checkYaklasanEtkinlikler(){
     if(localStorage.getItem(key))return;
     localStorage.setItem(key,'1');
     const forMe=ev.own===0||ev.own===CU?.id||(ev.participants||[]).includes(CU?.id);
-    if(!forMe&&!isAdmin())return;
+    if(!forMe&&!_isAdmin())return;
     const icon=daysLeft===0?'🔔':daysLeft<=2?'⏰':'📅';
     const msg=daysLeft===0
       ?`Bugün etkinlik var: "${ev.title}" (${ev.time})`
@@ -1785,7 +1799,7 @@ function saveEtkinlik(){
   storeEtkinlik(d);closeMo('mo-etkinlik');renderEtkinlik();logActivity('view',`"${name}" etkinliği kaydedildi`);toast(name+' kaydedildi ✓','ok');
 }
 
-function delEtkinlik(id){if(!isAdmin())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}
+function delEtkinlik(id){if(!_isAdmin())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}
 
 
 const Pusula = {
@@ -1834,17 +1848,7 @@ if (typeof window !== 'undefined') {
   window.delEtkinlik         = delEtkinlik;
 
   // ── Geriye uyumluluk: eski HTML inline onclick'ler çalışmaya devam eder ──
-  window.renderPusula = function(...args) {
-  try {
-    return renderPusula(...args);
-  } catch(err) {
-    console.error('[renderPusula]', err);
-    const el = document.getElementById('pusula-list') ||
-               document.querySelector('[id*="pusula"]');
-    if (el) el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--t2)">⚠️ Yüklenemedi. Sayfayı yenileyin.</div>';
-    window.toast?.('Panel yüklenemedi', 'err');
-  }
-};
+  window.renderPusula = renderPusula;
   window.openAddTask           = openAddTask;
   window.editTask              = editTask;
   window.saveTask              = saveTask;
