@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════
- * src/core/auth.js  —  v8.0.1  (login-fix)
+ * src/core/auth.js  —  v8.2.1 — Firestore user sync fix
  * Firebase Auth + Yerel Fallback + Multi-tenant + Oturum Yönetimi
  *
  * v8.0.1 düzeltmeleri:
@@ -228,19 +228,19 @@ async function _localLogin(email, password, skipPwCheck = false) {
       // Kullanıcı localStorage'da yoksa — yeni cihaz veya temiz tarayıcı
       if (!user) {
         try {
-          // Firebase login başarılı — currentUser kesinlikle var
-          const fbDB = window.Auth?.getFBDB?.();
+          // FB_DB direkt kullan — window.Auth henüz set edilmemiş olabilir
+          const fbDB = FB_DB;
           if (fbDB) {
             // Firestore path: duay_tenant_default/users → { data: [...users] }
-            const tid = (window.DB?._getTid?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g,'_');
+            const tid = TENANT_ID.replace(/[^a-zA-Z0-9_]/g,'_');
             const docPath = 'duay_' + tid;
             console.info('[auth] Firestore verisinden users cekiliyor:', docPath + '/users');
             const snap = await fbDB.collection(docPath).doc('users').get();
             if (snap.exists) {
               const remoteUsers = snap.data()?.data;
               if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-                // localStorage'a kaydet (cache'i güncelle)
-                try { localStorage.setItem('ak_users', JSON.stringify(remoteUsers)); } catch(e) {}
+                // localStorage'a DOĞRU key ile kaydet (database.js KEYS.users = 'ak_u3')
+                try { localStorage.setItem('ak_u3', JSON.stringify(remoteUsers)); } catch(e) {}
                 if (window._cache) window._cache['users'] = remoteUsers;
                 user = remoteUsers.find(u =>
                   u.email && u.email.toLowerCase() === email.toLowerCase() &&
