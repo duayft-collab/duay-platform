@@ -639,22 +639,54 @@ function _doLogin() {
                     <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                   </button>
                   <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
-                    <!-- Excel grubu -->
+                    <!-- Veri grubu -->
                     <div class="ptm-section-label">📊 Veri</div>
-                    <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()">⬇ Excel İndir</button>
-                    <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()">⬆ Excel Yükle</button>
-                    <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()">📋 Şablon İndir</button>
+                    <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()">
+                      <span class="ptm-icon">⬇️</span>
+                      <div><div class="ptm-title">Excel İndir</div><div class="ptm-desc">Görev listesini xlsx olarak indir</div></div>
+                    </button>
+                    <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()">
+                      <span class="ptm-icon">⬆️</span>
+                      <div><div class="ptm-title">Excel Yükle</div><div class="ptm-desc">xlsx dosyasından görev içe aktar</div></div>
+                    </button>
+                    <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()">
+                      <span class="ptm-icon">📋</span>
+                      <div><div class="ptm-title">Şablon İndir</div><div class="ptm-desc">Boş import şablonu indir</div></div>
+                    </button>
                     <div class="ptm-divider"></div>
-                    <!-- Araçlar -->
+                    <!-- Araçlar grubu -->
                     <div class="ptm-section-label">⚡ Araçlar</div>
-                    <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()">🎯 Odak Modu</button>
-                    <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(document.getElementById('btn-pus-sticky'));window._closeToolsMenu?.()">📌 Yapışkan Notlar</button>
-                    <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()">🔁 Şablon Kütüphanesi</button>
+                    <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()">
+                      <span class="ptm-icon">🎯</span>
+                      <div><div class="ptm-title">Odak Modu</div><div class="ptm-desc">Pomodoro zamanlayıcısı başlat</div></div>
+                    </button>
+                    <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(null);window._closeToolsMenu?.()">
+                      <span class="ptm-icon">📌</span>
+                      <div><div class="ptm-title">Yapışkan Notlar</div><div class="ptm-desc">Hızlı not al, göreve dönüştür</div></div>
+                    </button>
+                    <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()">
+                      <span class="ptm-icon">🔁</span>
+                      <div><div class="ptm-title">Şablon Kütüphanesi</div><div class="ptm-desc">Hazır şablonla görev oluştur</div></div>
+                    </button>
+                    <button class="ptm-item" onclick="window._renderEisenhower?.() || setPusView('matrix',null);window._closeToolsMenu?.()">
+                      <span class="ptm-icon">📐</span>
+                      <div><div class="ptm-title">Eisenhower Matrix</div><div class="ptm-desc">Görevi 4 kadranda önceliklendir</div></div>
+                    </button>
                     <div class="ptm-divider"></div>
-                    <!-- Analiz -->
+                    <!-- Analiz grubu -->
                     <div class="ptm-section-label">📈 Analiz</div>
-                    <button class="ptm-item" onclick="openPersonalDashboard();window._closeToolsMenu?.()">📊 Performansım</button>
-                    <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()">👥 Personel Analizi</button>
+                    <button class="ptm-item" onclick="openPersonalDashboard();window._closeToolsMenu?.()">
+                      <span class="ptm-icon">📊</span>
+                      <div><div class="ptm-title">Performansım</div><div class="ptm-desc">Kişisel dashboard & istatistik</div></div>
+                    </button>
+                    <button class="ptm-item" onclick="window._openGamifDashboard?.();window._closeToolsMenu?.()">
+                      <span class="ptm-icon">🏆</span>
+                      <div><div class="ptm-title">Rozetlerim</div><div class="ptm-desc">XP, seviye ve rozet vitrinleri</div></div>
+                    </button>
+                    <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()">
+                      <span class="ptm-icon">👥</span>
+                      <div><div class="ptm-title">Personel Analizi</div><div class="ptm-desc">İş yükü & performans tablosu</div></div>
+                    </button>
                   </div>
                 </div>
 

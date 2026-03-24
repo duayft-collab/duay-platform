@@ -154,8 +154,11 @@ function _saveFocusList(type, list) {
   localStorage.setItem(_focusKey(type), JSON.stringify(list));
 }
 // Getter'lar — her erişimde güncel veriyi okur
-Object.defineProperty(window, 'PUS_WEEK_FOCUS', { get: () => _loadFocus('week'), set: v => _saveFocusList('week', v) });
-Object.defineProperty(window, 'PUS_DAY_FOCUS',  { get: () => _loadFocus('day'),  set: v => _saveFocusList('day', v) });
+Object.defineProperty(window, 'PUS_WEEK_FOCUS',    { get: () => _loadFocus('week'),    set: v => _saveFocusList('week', v) });
+Object.defineProperty(window, 'PUS_DAY_FOCUS',     { get: () => _loadFocus('day'),     set: v => _saveFocusList('day', v) });
+Object.defineProperty(window, 'PUS_MONTH_FOCUS',   { get: () => _loadFocus('month'),   set: v => _saveFocusList('month', v) });
+Object.defineProperty(window, 'PUS_QUARTER_FOCUS', { get: () => _loadFocus('quarter'), set: v => _saveFocusList('quarter', v) });
+Object.defineProperty(window, 'PUS_YEAR_FOCUS',    { get: () => _loadFocus('year'),    set: v => _saveFocusList('year', v) });
 
 function _saveFocus() {
   // Artık kullanılmıyor — setter otomatik kaydediyor
@@ -231,30 +234,43 @@ function renderFocusPanel() {
   const weekCards = _wIds.map(id => _focusCard(id, 'week')).join('');
   const dayCards  = _dIds.map(id => _focusCard(id, 'day')).join('');
 
-  cont.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-    // Haftanın en önemlileri
-    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:12px 14px">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-        + '<div style="display:flex;align-items:center;gap:6px">'
-          + '<div style="width:8px;height:8px;border-radius:50%;background:#6366F1"></div>'
-          + '<span style="font-size:11px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Haftanın En Önemlileri</span>'
+  // Yeni focus listeleri
+  const _mIds = _getIds('month');
+  const _qIds = _getIds('quarter');
+  const _yIds = _getIds('year');
+  const monthCards   = _mIds.map(id => _focusCard(id, 'month')).join('');
+  const quarterCards = _qIds.map(id => _focusCard(id, 'quarter')).join('');
+  const yearCards    = _yIds.map(id => _focusCard(id, 'year')).join('');
+  const monthTotal   = _calcTotal(_mIds);
+  const quarterTotal = _calcTotal(_qIds);
+  const yearTotal    = _calcTotal(_yIds);
+
+  const FOCUS_WIDGETS = [
+    { type:'day',     label:"Günün En Önemlileri",      icon:'🔥', color:'#F97316', bg:'rgba(249,115,22,.1)',  ids:_dIds,  cards:dayCards,     total:dayTotal,     hint:'listeden 🔥 basın' },
+    { type:'week',    label:"Haftanın En Önemlileri",   icon:'⭐', color:'#6366F1', bg:'rgba(99,102,241,.1)',  ids:_wIds,  cards:weekCards,    total:weekTotal,    hint:'listeden ⭐ basın' },
+    { type:'month',   label:"Ayın En Önemlileri",       icon:'📅', color:'#10B981', bg:'rgba(16,185,129,.1)', ids:_mIds,  cards:monthCards,   total:monthTotal,   hint:'listeden 📅 basın' },
+    { type:'quarter', label:"Çeyreğin En Önemlileri",   icon:'🎯', color:'#8B5CF6', bg:'rgba(139,92,246,.1)', ids:_qIds,  cards:quarterCards, total:quarterTotal, hint:'listeden 🎯 basın' },
+    { type:'year',    label:"Yılın En Önemlileri",      icon:'🏆', color:'#DC2626', bg:'rgba(220,38,38,.1)',  ids:_yIds,  cards:yearCards,    total:yearTotal,    hint:'listeden 🏆 basın' },
+  ];
+
+  cont.innerHTML = '<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin">'
+    + FOCUS_WIDGETS.map(w =>
+      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:12px 14px;min-width:220px;flex-shrink:0">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + '<span style="font-size:15px">' + w.icon + '</span>'
+            + '<span style="font-size:11px;font-weight:700;color:var(--t)">' + w.label + '</span>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + (w.total ? '<span style="font-size:10px;background:' + w.bg + ';color:' + w.color + ';padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + w.total + '</span>' : '')
+            + '<span style="font-size:10px;color:var(--t3);font-family:monospace">' + w.ids.length + '/3</span>'
+          + '</div>'
         + '</div>'
-        + '<div style="display:flex;align-items:center;gap:8px">' + (weekTotal ? '<span style="font-size:10px;background:var(--al);color:var(--ac);padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + weekTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + _wIds.length + '/3</span></div>'
+        + (w.cards || '<div style="font-size:11px;color:var(--t2);text-align:center;padding:12px 0;opacity:.7">' + w.hint + '</div>')
       + '</div>'
-      + (weekCards || '<div style="font-size:12px;color:var(--t2);text-align:center;padding:10px 0">Görev seçin — listeden ⭐ basın</div>')
-    + '</div>'
-    // Günün en önemlileri
-    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:12px 14px">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-        + '<div style="display:flex;align-items:center;gap:6px">'
-          + '<div style="width:8px;height:8px;border-radius:50%;background:#F97316"></div>'
-          + '<span style="font-size:11px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Günün En Önemlileri</span>'
-        + '</div>'
-        + '<div style="display:flex;align-items:center;gap:8px">' + (dayTotal ? '<span style="font-size:10px;background:rgba(249,115,22,.1);color:#F97316;padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + dayTotal + '</span>' : '') + '<span style="font-size:10px;color:var(--t3)">' + _dIds.length + '/3</span></div>'
-      + '</div>'
-      + (dayCards || '<div style="font-size:12px;color:var(--t2);text-align:center;padding:10px 0">Görev seçin — listeden 🔥 basın</div>')
-    + '</div>'
+    ).join('')
   + '</div>';
+
   // Event delegation — remove button
   cont.querySelectorAll('.pus-focus-rm').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
@@ -620,8 +636,11 @@ function renderPusulaList(fl, users, todayS, cont) {
             ? `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-active">💬 ${chatCount}</button>`
             : `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-empty">💬</button>`
           }
-          <button onclick="event.stopPropagation();toggleFocus(${t.id},'week')" class="tk-action-btn" title="Haftanın en önemlisi" style="opacity:${PUS_WEEK_FOCUS.includes(t.id)?1:.25}">⭐</button>
-          <button onclick="event.stopPropagation();toggleFocus(${t.id},'day')"  class="tk-action-btn" title="Günün en önemlisi"     style="opacity:${PUS_DAY_FOCUS.includes(t.id)?1:.25}">🔥</button>
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'day')"     class="tk-action-btn" title="Günün en önemlisi"      style="opacity:${PUS_DAY_FOCUS.includes(t.id)?1:.25}">🔥</button>
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'week')"    class="tk-action-btn" title="Haftanın en önemlisi"    style="opacity:${PUS_WEEK_FOCUS.includes(t.id)?1:.25}">⭐</button>
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'month')"   class="tk-action-btn" title="Ayın en önemlisi"        style="opacity:${(_loadFocus('month')).includes(t.id)?1:.25}">📅</button>
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'quarter')" class="tk-action-btn" title="Çeyreğin en önemlisi"    style="opacity:${(_loadFocus('quarter')).includes(t.id)?1:.25}">🎯</button>
+          <button onclick="event.stopPropagation();toggleFocus(${t.id},'year')"    class="tk-action-btn" title="Yılın en önemlisi"       style="opacity:${(_loadFocus('year')).includes(t.id)?1:.25}">🏆</button>
           ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
           ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})"  class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
         </div>
@@ -5459,25 +5478,58 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
     .ptm-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       background: none;
       border: none;
-      border-radius: 8px;
+      border-radius: 9px;
       padding: 8px 10px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--t);
       cursor: pointer;
       font-family: inherit;
       text-align: left;
       transition: background .12s;
     }
     .ptm-item:hover { background: var(--s2); }
+    .ptm-item:hover .ptm-title { color: var(--ac); }
+    .ptm-icon {
+      font-size: 18px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--s2);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .ptm-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--t);
+      transition: color .12s;
+    }
+    .ptm-desc {
+      font-size: 10px;
+      color: var(--t3);
+      margin-top: 1px;
+    }
     .ptm-divider {
       height: 1px;
       background: var(--b);
       margin: 5px 6px;
+    }
+    .pus-tools-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 240px;
+      background: var(--sf);
+      border: 1px solid var(--b);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      padding: 8px;
+      z-index: 6000;
+      animation: ptm-in .15s ease;
     }
   `;
   if (!document.getElementById('pus-tools-css')) document.head.appendChild(s);
