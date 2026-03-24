@@ -480,27 +480,6 @@ function _initApp(user) {
 
   // Sistem bildirimleri (800ms sonra — UI hazır olsun)
   setTimeout(generateSystemNotifs, 800);
-  // Bekleyen delege davetleri kontrol et
-  try {
-    if (typeof loadTasks === 'function' && typeof loadNotifs === 'function') {
-      const _cu3 = window.Auth?.getCU?.();
-      if (_cu3) {
-        const _tasks3 = loadTasks();
-        _tasks3.forEach(task => {
-          (task.delegateRequests || []).forEach(req => {
-            if (req.toUid === _cu3.id && req.status === 'pending') {
-              // Bildirim zaten var mı?
-              const existing = (loadNotifs()||[]).find(n => n.delegateReqId === req.id);
-              if (!existing) {
-                addNotif('📨', `"${task.title}" devir daveti — ${req.fromName}`, 'warn', 'pusula');
-              }
-            }
-          });
-        });
-      }
-    }
-  } catch(e) {}
-
   // Bekleyen görev atama bildirimleri
   setTimeout(() => window._checkPendingTaskNotifs?.(user), 1200);
 
