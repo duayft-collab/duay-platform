@@ -2666,9 +2666,8 @@ function _pfRenderGantt() {
 // ════════════════════════════════════════════════════════════════
 // DETAY PANELİ — YENİ SEKMELER (⏱ Süre, 📝 Notlar, 🎙 Ses, 🔗 Bağımlılık, 🔁 Tekrar)
 // ════════════════════════════════════════════════════════════════
-const _pfOrigOpenDetail = openPusDetail;
-function openPusDetail(taskId) {
-  _pfOrigOpenDetail(taskId);
+// openPusDetail hook — export bloğunda wrap edilir
+function _pfOpenDetailHook(taskId) {
   setTimeout(()=>{ _pfInjectExtraTabs(taskId); _pfCheckBlockerWarn(taskId); }, 150);
 }
 
@@ -2756,10 +2755,10 @@ function _pfPatchTaskModal() {
   }
 }
 
-// setPusView Gantt toggle eklentisi
-const _pfOrigSetPusView = setPusView;
-function setPusView(v, btn) {
-  _pfOrigSetPusView(v, btn);
+// setPusView Gantt toggle eklentisi — hoisting sorununu önlemek için export'ta wrap edilir
+// _pfSmartSetPusView export bloğunda tanımlanır
+function _pfSetPusViewGanttHook(v, btn) {
+  if (window._pfRealSetPusView) window._pfRealSetPusView(v, btn);
   // Gantt özeldir — ayrıca handle et
   if (v==='gantt') { setTimeout(_pfRenderGantt, 50); }
 }
@@ -2947,7 +2946,12 @@ window.renderFocusPanel = renderFocusPanel;
   window.saveTask              = saveTask;
   window.delTask               = delTask;
   window.toggleTask            = toggleTask;
-  window.openPusDetail         = openPusDetail;
+  // openPusDetail — extra tab hook ile birlikte
+  window._pfRealOpenDetail = openPusDetail;  // satır 766'daki orijinal
+  window.openPusDetail = function(taskId) {
+    window._pfRealOpenDetail(taskId);
+    _pfOpenDetailHook(taskId);
+  };
   window.closePusDetail        = closePusDetail;
   window.pdpSwitch             = pdpSwitch;
   window.pdpRenderInfo         = pdpRenderInfo;
@@ -2965,7 +2969,12 @@ window.renderFocusPanel = renderFocusPanel;
   window.pdpAddPerm            = pdpAddPerm;
   window.closePusDetail        = closePusDetail;
   window.quickUpdateTask       = quickUpdateTask;
-  window.setPusView            = setPusView;
+  // setPusView — Gantt destekli wrapper (hoisting sorunu olmadan)
+  window._pfRealSetPusView = setPusView;  // satır 1658'deki orijinal
+  window.setPusView = function(v, btn) {
+    window._pfRealSetPusView(v, btn);
+    _pfSetPusViewGanttHook(v, btn);
+  };
   window.setPusQuickFilter     = setPusQuickFilter;
   window.clearPusFilters       = clearPusFilters;
   window.updatePusBadge        = updatePusBadge;
