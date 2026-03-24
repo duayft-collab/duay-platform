@@ -2629,9 +2629,9 @@ function _pfSaveRecurringRule(taskId) {
 // ════════════════════════════════════════════════════════════════
 // 10. GANTT TOGGLE (Görev Haritası)
 // ════════════════════════════════════════════════════════════════
-const _pfOrigRenderPusula = renderPusula;
-function renderPusula() {
-  _pfOrigRenderPusula();
+// renderPusula Gantt hook — hoisting sorununu önlemek için export bloğunda wrap edilir
+// burada sadece Gantt flag'ini kontrol eden helper tanımlanır
+function _pfGanttCheck() {
   if (localStorage.getItem('ak_pus_view')==='gantt') _pfRenderGantt();
 }
 
@@ -2921,7 +2921,12 @@ if (typeof window !== 'undefined') {
   window.delEtkinlik         = delEtkinlik;
 
   // ── Geriye uyumluluk: eski HTML inline onclick'ler çalışmaya devam eder ──
-  window.renderPusula = renderPusula;
+  // renderPusula — Gantt destekli wrapper (hoisting sorunu olmadan)
+  const _realRenderPusula = renderPusula;
+  window.renderPusula = function() {
+    _realRenderPusula();
+    _pfGanttCheck();
+  };
 window.toggleFocus     = toggleFocus;
 
 window.getPusDayTotal  = function() {
