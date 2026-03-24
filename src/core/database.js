@@ -140,7 +140,7 @@ function _write(key, value) {
 }
 
 /**
- * Firestore'a arka planda yazar — bağlı değilse sessizce atlar.
+ * Firestore\'a arka planda yazar — bağlı değilse sessizce atlar.
  * @param {string}   path    Firestore koleksiyon yolu (FS_PATHS fonksiyonu ile)
  * @param {*}        data    Yazılacak veri
  * @param {'set'|'add'} [mode='set']
@@ -148,8 +148,14 @@ function _write(key, value) {
 function _syncFirestore(path, data, mode = 'set') {
   try {
     const FB_DB = window.Auth?.getFBDB?.();
-    if (!FB_DB) return;
-    const payload = { data, syncedAt: new Date().toISOString() };
+    if (!FB_DB) {
+      console.warn('[DB:sync] Firebase DB yok — offline mod');
+      return;
+    }
+    const syncedAt = new Date().toISOString();
+    const payload = { data, syncedAt };
+    // localStorage'a timestamp kaydet
+    try { localStorage.setItem(path.split('/').pop() + '_ts', syncedAt); } catch(e) {}
     if (mode === 'set') {
       FB_DB.doc(path).set(payload, { merge: true })
         .catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
@@ -247,12 +253,12 @@ function _migrateUserPasswords() {
 _migrateUserPasswords();
 
 /**
- * Kullanıcı listesini localStorage'a yazar ve Firestore'a senkronize eder.
+ * Kullanıcı listesini localStorage'a yazar ve Firestore\'a senkronize eder.
  * @param {Array<Object>} data
  */
 function saveUsers(data) {
   _write(KEYS.users, data);
-  // Sadece giriş yapılmışsa Firestore'a yaz
+  // Sadece giriş yapılmışsa Firestore\'a yaz
   const _cu = window.Auth?.getCU?.();
   if (_cu) {
     const _fp_users = _fsPath('users');
@@ -491,7 +497,7 @@ const DEFAULT_NOTES = [
 /** @param {Array<Object>} d Son 500 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 500)); }
 
 /**
- * Kullanıcı hareketini loglar. Hem localStorage'a hem Firestore'a yazar.
+ * Kullanıcı hareketini loglar. Hem localStorage'a hem Firestore\'a yazar.
  * @param {string} type    'task' | 'user' | 'kargo' | 'view' | ...
  * @param {string} detail  Okunabilir eylem açıklaması
  */
@@ -823,7 +829,7 @@ function storeTatilAyarlar(d)  { _write(KEYS.tatilAyarlar, d); }
 // ════════════════════════════════════════════════════════════════
 
 /**
- * Tüm localStorage verisini Firestore'a aktarır.
+ * Tüm localStorage verisini Firestore\'a aktarır.
  * Admin yetkisi gerektirir.
  * @returns {Promise<void>}
  */
@@ -910,8 +916,7 @@ function _listenCollection(collection, localKey, onUpdate) {
     if (!FB_DB) return; // Firebase bağlı değil
 
     const tid   = _getTid();
-    const paths = _getPaths();
-    if (!paths) return;
+    // paths kontrolü kaldırıldı — _base2 kendi path'ini oluşturuyor
 
     // Önceki listener varsa kapat
     if (_listeners[collection]) {
@@ -921,18 +926,39 @@ function _listenCollection(collection, localKey, onUpdate) {
 
     const _base2 = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
     const docRef = FB_DB.collection(_base2).doc(collection);
+    // Anlık ilk çekme — yeni cihazlarda localStorage boş olabilir
+    docRef.get().then(snap => {
+      if (!snap.exists) return;
+      const data = snap.data()?.data;
+      if (!Array.isArray(data)) return;
+      const local = JSON.parse(localStorage.getItem(localKey) || 'null');
+      // Firestore daha güncel veya local boşsa — Firestore verisini kullan
+      const fsTime  = snap.data()?.syncedAt || '';
+      const locTime = localStorage.getItem(localKey + '_ts') || '';
+      if (!local || !local.length || fsTime > locTime) {
+        try { localStorage.setItem(localKey, JSON.stringify(data)); } catch(e) {}
+        if (typeof onUpdate === 'function') {
+          try { onUpdate(data); } catch(e) {}
+        }
+        console.info('[DB:init]', collection, '→', data.length, 'kayıt Firestore yuklenl');
+      }
+    }).catch(e => {
+      if (e.code !== 'permission-denied') console.warn('[DB:init]', collection, e.message);
+    });
+
     const unsubscribe = docRef.onSnapshot(snap => {
       if (!snap.exists) {
-        // Firestore'da veri yok — localStorage'ı kaynak olarak kullan
         console.info('[DB:realtime]', collection, '→ Firestore boş, localStorage kullanılıyor');
         return;
       }
       const data = snap.data()?.data;
       if (!Array.isArray(data)) return;
 
-      // localStorage güncelle
-      try { localStorage.setItem(localKey, JSON.stringify(data)); }
-      catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
+      // localStorage güncelle + zaman damgası kaydet
+      try {
+        localStorage.setItem(localKey, JSON.stringify(data));
+        localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
+      } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
 
       // UI'ı yenile (throttled)
       if (typeof onUpdate === 'function') {
@@ -945,7 +971,6 @@ function _listenCollection(collection, localKey, onUpdate) {
 
       console.info('[DB:realtime]', collection, '→', Array.isArray(data) ? data.length : '?', 'kayıt');
     }, err => {
-      // İzin hatası veya bağlantı problemi — sadece log, crash yok
       if (err.code === 'permission-denied') {
         console.warn('[DB:realtime]', collection, '→ Firestore izni yok, offline mod');
       } else {
@@ -993,6 +1018,53 @@ function startRealtimeSync() {
   });
 
   console.info('[DB] Realtime sync başlatıldı:', SYNC_MAP.length, 'koleksiyon');
+
+  // Otomatik veri aktarımı — Firestore boşsa localStorage'ı yükle
+  setTimeout(_autoUploadIfEmpty, 2000);
+}
+
+/**
+ * Firestore boşsa localStorage verilerini otomatik yükler.
+ * Her login'de bir kez çalışır — veri kaybını önler.
+ */
+async function _autoUploadIfEmpty() {
+  const FB_DB = window.Auth?.getFBDB?.();
+  if (!FB_DB) return;
+  const tid  = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
+  const base = 'duay_' + tid;
+
+  const UPLOAD_MAP = [
+    ['tasks',  KEYS.tasks,  loadTasks],
+    ['users',  KEYS.users,  loadUsers],
+    ['kargo',  KEYS.kargo,  () => { try { return JSON.parse(localStorage.getItem(KEYS.kargo)||'[]'); } catch(e){return [];} }],
+    ['ik',     KEYS.ik,     () => { try { return JSON.parse(localStorage.getItem(KEYS.ik)||'[]'); } catch(e){return [];} }],
+  ];
+
+  let uploaded = 0;
+  for (const [col, key, loader] of UPLOAD_MAP) {
+    try {
+      const docRef = FB_DB.collection(base).doc(col);
+      const snap   = await docRef.get();
+      const fsData = snap.exists ? snap.data()?.data : null;
+
+      // Firestore boş veya az veri varsa, local'deki daha fazlaysa yükle
+      const localData = loader();
+      if (Array.isArray(localData) && localData.length > 0) {
+        if (!fsData || !Array.isArray(fsData) || fsData.length < localData.length) {
+          await docRef.set({ data: localData, syncedAt: new Date().toISOString(), autoUploaded: true }, { merge: true });
+          uploaded++;
+          console.info('[DB:auto-upload]', col, '→', localData.length, 'kayıt yüklendi');
+        }
+      }
+    } catch(e) {
+      console.warn('[DB:auto-upload]', col, e.message);
+    }
+  }
+
+  if (uploaded > 0) {
+    console.info('[DB:auto-upload] Toplam', uploaded, 'koleksiyon Firestore\'a yüklendi');
+    window.toast?.('☁️ Veriler buluta aktarıldı (' + uploaded + ' koleksiyon)', 'ok');
+  }
 }
 
 /**

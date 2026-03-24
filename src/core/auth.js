@@ -228,13 +228,13 @@ async function _localLogin(email, password, skipPwCheck = false) {
       // Kullanıcı localStorage'da yoksa — yeni cihaz veya temiz tarayıcı
       if (!user) {
         try {
+          // Firebase login başarılı — currentUser kesinlikle var
           const fbDB = window.Auth?.getFBDB?.();
-          // Firestore'dan users sadece Firebase auth token'ı varsa çekilebilir
-          const hasToken = !!(FB_AUTH?.currentUser);
-          if (fbDB && hasToken) {
+          if (fbDB) {
             // Firestore path: duay_tenant_default/users → { data: [...users] }
             const tid = (window.DB?._getTid?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g,'_');
             const docPath = 'duay_' + tid;
+            console.info('[auth] Firestore verisinden users cekiliyor:', docPath + '/users');
             const snap = await fbDB.collection(docPath).doc('users').get();
             if (snap.exists) {
               const remoteUsers = snap.data()?.data;
