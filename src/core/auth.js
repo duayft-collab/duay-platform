@@ -13,44 +13,86 @@
 'use strict';
 
 // ════════════════════════════════════════════════════════════════
-// BÖLÜM 0 — ŞİFRE HASH (SHA-256 + SubtleCrypto)
+// BÖLÜM 0 — ŞİFRE HASH (PBKDF2 + per-user salt)
 // ════════════════════════════════════════════════════════════════
+// Güvenlik: PBKDF2-SHA256, 100.000 iterasyon, 16 byte random salt
+// Format  : "pbkdf2$<salt_hex>$<hash_hex>"
+// Geriye uyumluluk: eski SHA-256 (64-char hex) ve plaintext da kabul edilir
 
 /**
- * Şifreyi SHA-256 ile hash'ler.
+ * Şifreyi PBKDF2 ile hash'ler (per-user random salt).
  * @param {string} password
- * @returns {Promise<string>} hex string
+ * @param {string} [saltHex]  — Belirtilmezse yeni random salt üretilir
+ * @returns {Promise<string>} "pbkdf2$saltHex$hashHex"
  */
-async function _hashPassword(password) {
+async function _hashPassword(password, saltHex) {
   try {
-    const encoder = new TextEncoder();
-    const data    = encoder.encode(password + 'duay_salt_v1'); // uygulama salt
-    const hash    = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    const enc    = new TextEncoder();
+    // Salt: belirtilmişse kullan, yoksa yeni üret
+    let saltBuf;
+    if (saltHex) {
+      saltBuf = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+    } else {
+      saltBuf = crypto.getRandomValues(new Uint8Array(16));
+    }
+    const saltH = Array.from(saltBuf).map(b => b.toString(16).padStart(2,'0')).join('');
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+    );
+    const hashBuf = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: saltBuf, iterations: 100000 },
+      keyMaterial, 256
+    );
+    const hashH = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    return 'pbkdf2$' + saltH + '$' + hashH;
   } catch (e) {
-    // SubtleCrypto yoksa (eski tarayıcı) plaintext'e düş
-    console.warn('[auth] SubtleCrypto yok, plaintext mod.');
-    return password;
+    // PBKDF2 desteklenmiyor — SHA-256 fallback (eski tarayıcı)
+    console.warn('[auth] PBKDF2 desteklenmiyor, SHA-256 fallback.');
+    return _hashPasswordLegacy(password);
+  }
+}
+
+/** Eski SHA-256 hash — migration ve fallback için */
+async function _hashPasswordLegacy(password) {
+  try {
+    const enc  = new TextEncoder();
+    const data = enc.encode(password + 'duay_salt_v1');
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+  } catch (e) {
+    return password; // son çare plaintext
   }
 }
 
 /**
  * Hash'lenmiş şifreyi doğrular.
- * Eski plaintext kayıtlarla da geriye dönük uyumlu.
- * @param {string} inputPassword  — kullanıcının girdiği şifre
- * @param {string} storedHash     — kayıttaki hash veya eski plaintext
+ * 3 format desteklenir (geriye uyumluluk):
+ *   1. PBKDF2: "pbkdf2$salt$hash"
+ *   2. SHA-256: 64-char hex
+ *   3. Eski: plaintext
+ * @param {string} inputPassword
+ * @param {string} storedHash
  * @returns {Promise<boolean>}
  */
 async function _verifyPassword(inputPassword, storedHash) {
   if (!storedHash) return false;
-  // Yeni format: 64 karakter hex (SHA-256)
+
+  // Format 1: PBKDF2
+  if (storedHash.startsWith('pbkdf2$')) {
+    const parts = storedHash.split('$');
+    if (parts.length !== 3) return false;
+    const saltHex = parts[1];
+    const computed = await _hashPassword(inputPassword, saltHex);
+    return computed === storedHash;
+  }
+
+  // Format 2: eski SHA-256 (64-char hex) — kabul et, login sonrası upgrade
   if (storedHash.length === 64 && /^[0-9a-f]+$/.test(storedHash)) {
-    const inputHash = await _hashPassword(inputPassword);
+    const inputHash = await _hashPasswordLegacy(inputPassword);
     return inputHash === storedHash;
   }
-  // Eski format: plaintext — kabul et ve migration flag koy
+
+  // Format 3: plaintext (çok eski kayıtlar)
   return inputPassword === storedHash;
 }
 
@@ -63,9 +105,9 @@ async function _verifyPassword(inputPassword, storedHash) {
 async function _migratePasswordHash(user, plainPassword) {
   try {
     const stored = user.pw || user.password || '';
-    // Zaten hash'lenmiş mi?
-    if (stored.length === 64 && /^[0-9a-f]+$/.test(stored)) return;
-    // Plaintext → hash'e çevir
+    // Zaten PBKDF2 formatında mı? Migration gerekmez
+    if (stored.startsWith('pbkdf2$')) return;
+    // SHA-256 veya plaintext → PBKDF2'ye yükselt
     const hash = await _hashPassword(plainPassword);
     user.pw = hash;
     if (user.password !== undefined) user.password = hash;
@@ -182,6 +224,55 @@ async function _localLogin(email, password, skipPwCheck = false) {
         u.email && u.email.toLowerCase() === email.toLowerCase() &&
         u.status === 'active'
       );
+
+      // Kullanıcı localStorage'da yoksa — yeni cihaz/tarayıcı
+      // Firestore'dan kullanıcı listesini çekmeyi dene
+      if (!user) {
+        try {
+          const fbDB = window.Auth?.getFBDB?.() || window.DB?.getFBDB?.();
+          if (fbDB) {
+            const tid = window.DB?._getTid?.() || 'default';
+            const snap = await fbDB.collection('duay_' + tid + '_users').get();
+            if (!snap.empty) {
+              const remoteUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+              // localStorage'a kaydet
+              if (typeof window.saveUsers === 'function') window.saveUsers(remoteUsers);
+              user = remoteUsers.find(u =>
+                u.email && u.email.toLowerCase() === email.toLowerCase() &&
+                u.status === 'active'
+              );
+              console.info('[auth] Kullanıcı Firestore\'tan yüklendi:', email);
+            }
+          }
+        } catch(e) {
+          console.warn('[auth] Firestore kullanıcı çekme hatası:', e);
+        }
+
+        // Firestore'da da yoksa — Firebase e-postasından otomatik kullanıcı oluştur
+        if (!user) {
+          const fbUser = FB_AUTH?.currentUser;
+          if (fbUser) {
+            user = {
+              id: Date.now(),
+              name: fbUser.displayName || email.split('@')[0],
+              email: email.toLowerCase(),
+              role: 'staff',
+              status: 'active',
+              modules: null,
+              access: [],
+              pw: '',
+              createdAt: new Date().toISOString().slice(0,10),
+              autoCreated: true
+            };
+            try {
+              const allUsers = (typeof window.loadUsers === 'function' ? window.loadUsers() : []);
+              allUsers.push(user);
+              if (typeof window.saveUsers === 'function') window.saveUsers(allUsers);
+              console.info('[auth] Yeni kullanıcı otomatik oluşturuldu:', email);
+            } catch(e) {}
+          }
+        }
+      }
     } else {
       // Yerel doğrulama — hash veya plaintext (geriye dönük uyumlu)
       const _matchingUsers = users.filter(u =>
