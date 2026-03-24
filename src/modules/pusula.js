@@ -3380,33 +3380,78 @@ window._tkAddSubtask = function() {
   const list = g('tk-subtasks-list');
   if (!list) return;
   const idx = _v85TempSubtasks.length;
-  const id = 'v85-st-' + idx;
-  _v85TempSubtasks.push({ title: '', status: 'todo', uid: 0, done: false });
+  _v85TempSubtasks.push({ title: '', status: 'todo', uid: 0, done: false, pri: 3 });
 
   const users = loadUsers();
   const userOpts = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
 
   const row = document.createElement('div');
-  row.id = id;
-  row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;gap:6px;margin-bottom:6px;align-items:center';
+  row.className = 'tk-st-row';
+  row.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;flex-direction:column;gap:8px';
   row.innerHTML = `
-    <input class="fi" placeholder="Alt görev…" style="padding:6px 10px;font-size:12px"
-      oninput="_v85TempSubtasks[${idx}].title=this.value">
-    <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].status=this.value">
-      <option value="todo">📋</option>
-      <option value="inprogress">🔄</option>
-      <option value="done">✅</option>
-    </select>
-    <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].uid=parseInt(this.value)">
-      <option value="0">Sorumlu</option>
-      ${userOpts}
-    </select>
-    <button type="button" onclick="this.parentElement.remove();_v85TempSubtasks[${idx}]=null"
-      style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;padding:0 4px">×</button>`;
-  list.appendChild(row);
+    <!-- Başlık satırı -->
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--b);flex-shrink:0;margin-top:1px" id="st-dot-${idx}"></div>
+      <input class="fi" placeholder="Alt görev başlığı…" style="flex:1;padding:7px 10px;font-size:13px;border-radius:8px;font-weight:500"
+        oninput="_v85TempSubtasks[${idx}].title=this.value;window._updateStDot?.(${idx},this.value)">
+      <button type="button" onclick="this.closest('.tk-st-row').remove();_v85TempSubtasks[${idx}]=null;window._updateStCount?.()"
+        style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:15px;padding:2px 4px;border-radius:5px;flex-shrink:0;transition:color .15s"
+        onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='var(--t3)'">✕</button>
+    </div>
+    <!-- Detay satırı -->
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:7px;padding-left:14px">
+      <div>
+        <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">SORUMLU</div>
+        <select class="fi" style="padding:5px 8px;font-size:11px;border-radius:7px" onchange="_v85TempSubtasks[${idx}].uid=parseInt(this.value)">
+          <option value="0">— Seçiniz —</option>
+          ${userOpts}
+        </select>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">DURUM</div>
+        <select class="fi" style="padding:5px 8px;font-size:11px;border-radius:7px" onchange="_v85TempSubtasks[${idx}].status=this.value;window._updateStDotStatus?.(${idx},this.value)">
+          <option value="todo">📋 Yapılacak</option>
+          <option value="inprogress">🔄 Devam</option>
+          <option value="review">👀 İnceleme</option>
+          <option value="done">✅ Bitti</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">ÖNCELİK</div>
+        <select class="fi" style="padding:5px 8px;font-size:11px;border-radius:7px" onchange="_v85TempSubtasks[${idx}].pri=parseInt(this.value)">
+          <option value="1">🔴</option>
+          <option value="2">🟠</option>
+          <option value="3" selected>🔵</option>
+          <option value="4">⚪</option>
+        </select>
+      </div>
+    </div>`;
 
-  const cnt = g('tk-st-count');
-  if (cnt) cnt.textContent = list.children.length + ' alt görev';
+  list.appendChild(row);
+  window._updateStCount?.();
+
+  // Focus input
+  const inp = row.querySelector('input');
+  if (inp) setTimeout(() => inp.focus(), 50);
+};
+
+// Dot rengi — durum takip
+window._updateStDot = function(idx, val) {
+  const dot = document.getElementById('st-dot-' + idx);
+  if (dot) dot.style.background = val.trim() ? 'var(--ac)' : 'var(--b)';
+};
+window._updateStDotStatus = function(idx, status) {
+  const dot = document.getElementById('st-dot-' + idx);
+  if (!dot) return;
+  const colors = { todo:'var(--b)', inprogress:'#3B82F6', review:'#F59E0B', done:'#10B981' };
+  dot.style.background = colors[status] || 'var(--b)';
+};
+window._updateStCount = function() {
+  const list = document.getElementById('tk-subtasks-list');
+  const cnt  = document.getElementById('tk-st-count');
+  if (!list || !cnt) return;
+  const n = list.querySelectorAll('.tk-st-row').length;
+  cnt.textContent = n ? n + ' alt görev' : '';
 };
 
 function _v85GetTempSubtasks() {
@@ -3422,24 +3467,50 @@ function _v85ResetSubtasks(existing) {
   if (existing && existing.length) {
     existing.forEach((s, idx) => {
       _v85TempSubtasks.push({ ...s });
-      const users = loadUsers();
+      const users   = loadUsers();
       const userOpts = users.map(u => `<option value="${u.id}" ${u.id===s.uid?'selected':''}>${u.name}</option>`).join('');
+      const dotColors = { todo:'var(--b)', inprogress:'#3B82F6', review:'#F59E0B', done:'#10B981' };
+      const dotColor  = dotColors[s.status] || 'var(--b)';
       const row = document.createElement('div');
-      row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;gap:6px;margin-bottom:6px;align-items:center';
+      row.className = 'tk-st-row';
+      row.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;flex-direction:column;gap:8px';
       row.innerHTML = `
-        <input class="fi" value="${s.title||''}" placeholder="Alt görev…" style="padding:6px 10px;font-size:12px"
-          oninput="_v85TempSubtasks[${idx}].title=this.value">
-        <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].status=this.value">
-          <option value="todo" ${s.status==='todo'?'selected':''}>📋</option>
-          <option value="inprogress" ${s.status==='inprogress'?'selected':''}>🔄</option>
-          <option value="done" ${s.status==='done'?'selected':''}>✅</option>
-        </select>
-        <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].uid=parseInt(this.value)">
-          <option value="0">Sorumlu</option>
-          ${userOpts}
-        </select>
-        <button type="button" onclick="this.parentElement.remove();_v85TempSubtasks[${idx}]=null"
-          style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;padding:0 4px">×</button>`;
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:1px" id="st-dot-${idx}"></div>
+          <input class="fi" value="${(s.title||'').replace(/"/g,'&quot;')}" placeholder="Alt görev başlığı…"
+            style="flex:1;padding:7px 10px;font-size:13px;border-radius:8px;font-weight:500"
+            oninput="_v85TempSubtasks[${idx}].title=this.value;window._updateStDot?.(${idx},this.value)">
+          <button type="button" onclick="this.closest('.tk-st-row').remove();_v85TempSubtasks[${idx}]=null;window._updateStCount?.()"
+            style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:15px;padding:2px 4px;border-radius:5px;flex-shrink:0;transition:color .15s"
+            onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='var(--t3)'">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:7px;padding-left:14px">
+          <div>
+            <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">SORUMLU</div>
+            <select class="fi" style="padding:5px 8px;font-size:11px;border-radius:7px" onchange="_v85TempSubtasks[${idx}].uid=parseInt(this.value)">
+              <option value="0">— Seçiniz —</option>
+              ${userOpts}
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">DURUM</div>
+            <select class="fi" style="padding:5px 8px;font-size:11px;border-radius:7px" onchange="_v85TempSubtasks[${idx}].status=this.value;window._updateStDotStatus?.(${idx},this.value)">
+              <option value="todo" ${s.status==='todo'?'selected':''}>📋 Yapılacak</option>
+              <option value="inprogress" ${s.status==='inprogress'?'selected':''}>🔄 Devam</option>
+              <option value="review" ${s.status==='review'?'selected':''}>👀 İnceleme</option>
+              <option value="done" ${s.status==='done'?'selected':''}>✅ Bitti</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">ÖNCELİK</div>
+            <select class="fi" style="padding:5px 8px;font-size:11px;border-radius:7px" onchange="_v85TempSubtasks[${idx}].pri=parseInt(this.value)">
+              <option value="1" ${s.pri===1?'selected':''}>🔴</option>
+              <option value="2" ${s.pri===2?'selected':''}>🟠</option>
+              <option value="3" ${(!s.pri||s.pri===3)?'selected':''}>🔵</option>
+              <option value="4" ${s.pri===4?'selected':''}>⚪</option>
+            </select>
+          </div>
+        </div>`;
       list.appendChild(row);
     });
   }
@@ -5327,6 +5398,122 @@ window._pfRealOpenAdd = function() {
 
 console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
 
+
+
+// ── Araçlar Dropdown Menüsü ──────────────────────────────────────
+(function _initToolsMenu() {
+  // CSS
+  const s = document.createElement('style');
+  s.id = 'pus-tools-css';
+  s.textContent = `
+    .pus-tools-group {
+      position: relative;
+    }
+    .pus-tools-trigger {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 10px;
+      color: rgba(255,255,255,.9);
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .pus-tools-trigger:hover,
+    .pus-tools-trigger.open {
+      background: rgba(255,255,255,.22);
+      border-color: rgba(255,255,255,.45);
+      color: #fff;
+    }
+    .pus-tools-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 210px;
+      background: var(--sf);
+      border: 1px solid var(--b);
+      border-radius: 14px;
+      box-shadow: 0 16px 48px rgba(0,0,0,.18);
+      padding: 8px;
+      z-index: 6000;
+      animation: ptm-in .15s ease;
+    }
+    @keyframes ptm-in {
+      from { opacity:0; transform:translateY(-6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .ptm-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 6px 10px 3px;
+    }
+    .ptm-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t);
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      transition: background .12s;
+    }
+    .ptm-item:hover { background: var(--s2); }
+    .ptm-divider {
+      height: 1px;
+      background: var(--b);
+      margin: 5px 6px;
+    }
+  `;
+  if (!document.getElementById('pus-tools-css')) document.head.appendChild(s);
+
+  // Toggle
+  window._toggleToolsMenu = function(btn) {
+    const menu = document.getElementById('pus-tools-menu');
+    if (!menu) return;
+    const isOpen = menu.style.display !== 'none';
+    if (isOpen) {
+      menu.style.display = 'none';
+      btn?.classList.remove('open');
+    } else {
+      menu.style.display = 'block';
+      btn?.classList.add('open');
+      // Dışarı tıklanınca kapat
+      setTimeout(() => {
+        const closer = (e) => {
+          if (!menu.contains(e.target) && e.target !== btn) {
+            menu.style.display = 'none';
+            btn?.classList.remove('open');
+          }
+          document.removeEventListener('click', closer);
+        };
+        document.addEventListener('click', closer);
+      }, 0);
+    }
+  };
+
+  window._closeToolsMenu = function() {
+    const menu = document.getElementById('pus-tools-menu');
+    const btn  = document.querySelector('.pus-tools-trigger');
+    if (menu) menu.style.display = 'none';
+    if (btn)  btn.classList.remove('open');
+  };
+})();
 
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {

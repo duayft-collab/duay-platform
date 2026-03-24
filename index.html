@@ -615,6 +615,7 @@ function _doLogin() {
               </div>
               </div>
               <div class="pus-hero-actions">
+                <!-- Görünüm toggle -->
                 <div class="pus-view-toggle" id="pus-view-row">
                   <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)">
                     <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="2" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="5.6" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="9.2" width="11" height="1.8" rx=".9" fill="currentColor"/></svg>
@@ -629,24 +630,42 @@ function _doLogin() {
                     Benim
                   </button>
                 </div>
-                <div id="btn-tk-xl" style="display:flex;gap:6px">
-                  <button onclick="exportTasksXlsx()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:10px;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em" title="Görevleri Excel'e aktar">⬇ Excel</button>
-                  <button onclick="importTasksXlsx()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:10px;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em" title="Excel'den görev al">⬆ İçe Aktar</button>
-                  <button onclick="downloadTaskTemplate()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.9);padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" title="Boş şablon indir">📋 Şablon</button>
+
+                <!-- Araçlar grubu — tek dropdown -->
+                <div class="pus-tools-group" id="pus-tools-group">
+                  <button class="pus-tools-trigger" onclick="window._toggleToolsMenu?.(this)" title="Araçlar">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="2" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="12" r="1.3" fill="currentColor"/></svg>
+                    Araçlar
+                    <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
+                    <!-- Excel grubu -->
+                    <div class="ptm-section-label">📊 Veri</div>
+                    <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()">⬇ Excel İndir</button>
+                    <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()">⬆ Excel Yükle</button>
+                    <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()">📋 Şablon İndir</button>
+                    <div class="ptm-divider"></div>
+                    <!-- Araçlar -->
+                    <div class="ptm-section-label">⚡ Araçlar</div>
+                    <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()">🎯 Odak Modu</button>
+                    <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(document.getElementById('btn-pus-sticky'));window._closeToolsMenu?.()">📌 Yapışkan Notlar</button>
+                    <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()">🔁 Şablon Kütüphanesi</button>
+                    <div class="ptm-divider"></div>
+                    <!-- Analiz -->
+                    <div class="ptm-section-label">📈 Analiz</div>
+                    <button class="ptm-item" onclick="openPersonalDashboard();window._closeToolsMenu?.()">📊 Performansım</button>
+                    <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()">👥 Personel Analizi</button>
+                  </div>
                 </div>
-                <button id="btn-pus-sticky" onclick="window._toggleStickyBoard?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Yapışkan notlar">
-                  📌 Notlar
-                </button>
-                <button id="btn-pus-perf" onclick="openPersonalDashboard()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Kişisel performans dashboard">
-                  📊 Raporum
-                </button>
-                <button id="btn-pus-analiz" class="admin-only" onclick="window._toggleWorkloadPanel?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Personel iş yükü ve performans analizi">
-                  👥 Personel
-                </button>
+
+                <!-- Görev Ekle — ana CTA -->
                 <button class="pus-add-btn" onclick="openAddTask()">
                   <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
                   Görev Ekle
                 </button>
+
+                <!-- Gizli referans buton (toggle state için) -->
+                <button id="btn-pus-sticky" style="display:none"></button>
               </div>
             </div>
           </div>
