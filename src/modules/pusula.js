@@ -5515,6 +5515,700 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
   };
 })();
 
+
+// ════════════════════════════════════════════════════════════════
+// PUSULA — 3 GELİŞTİRME
+// 1. Yorum & Aktivite Akışı  2. Eisenhower Matrix  3. Gamification
+// ════════════════════════════════════════════════════════════════
+
+// ────────────────────────────────────────────────────────────────
+// 1. 📬 GELİŞMİŞ YORUM & AKTİVİTE AKIŞI
+// ────────────────────────────────────────────────────────────────
+(function _initActivityFeed() {
+  const ACT_KEY = 'ak_task_activity';
+
+  function _loadActivity(taskId) {
+    try {
+      const all = JSON.parse(localStorage.getItem(ACT_KEY) || '{}');
+      return all[taskId] || [];
+    } catch(e) { return []; }
+  }
+
+  function _saveActivity(taskId, entries) {
+    try {
+      const all = JSON.parse(localStorage.getItem(ACT_KEY) || '{}');
+      all[taskId] = entries;
+      localStorage.setItem(ACT_KEY, JSON.stringify(all));
+    } catch(e) {}
+  }
+
+  function _addActivity(taskId, type, data) {
+    const cu      = _getCU();
+    const entries = _loadActivity(taskId);
+    entries.push({
+      id:   Date.now(),
+      ts:   nowTs(),
+      uid:  cu?.id,
+      name: cu?.name || '?',
+      type, // 'comment' | 'status' | 'assign' | 'create' | 'edit' | 'complete'
+      data,
+    });
+    _saveActivity(taskId, entries);
+    _renderActivityFeed(taskId);
+  }
+
+  function _renderActivityFeed(taskId) {
+    const cont = document.getElementById('pus-act-feed');
+    if (!cont) return;
+    const entries = _loadActivity(taskId).slice().reverse();
+    const users   = loadUsers();
+
+    if (!entries.length) {
+      cont.innerHTML = '<div style="text-align:center;padding:32px;color:var(--t3);font-size:13px"><div style="font-size:28px;margin-bottom:8px">📬</div>Henüz aktivite yok</div>';
+      return;
+    }
+
+    const avc = _getAVC?.() || window.AVC || [['#EEEDFE','#26215C']];
+
+    cont.innerHTML = entries.map(e => {
+      const u    = users.find(x => x.id === e.uid);
+      const idx  = users.indexOf(u);
+      const c    = avc[Math.max(idx,0) % avc.length];
+      const av   = `<div style="width:30px;height:30px;border-radius:9px;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">${_pusInitials(u?.name||e.name||'?')}</div>`;
+      const time = e.ts ? `<span style="font-size:10px;color:var(--t3)">${e.ts.slice(5,16).replace('T',' ')}</span>` : '';
+
+      // Yorum tipi
+      if (e.type === 'comment') {
+        const canDel = window.isAdmin?.() || e.uid === _getCU()?.id;
+        return `
+          <div class="pus-act-item" data-id="${e.id}">
+            ${av}
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap">
+                <span style="font-size:12px;font-weight:700;color:var(--t)">${u?.name||e.name||'?'}</span>
+                <span style="font-size:10px;padding:1px 7px;border-radius:4px;background:var(--s2);color:var(--t3)">yorum yaptı</span>
+                ${time}
+                ${canDel ? `<button onclick="window._delActivity?.(${taskId},${e.id})" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--t3);font-size:11px;padding:2px 5px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='var(--t3)'">✕</button>` : ''}
+              </div>
+              <div style="background:var(--s2);border-radius:0 10px 10px 10px;padding:10px 14px;font-size:13px;color:var(--t);line-height:1.6;border:1px solid var(--b);white-space:pre-wrap">${e.data?.text||''}</div>
+              ${e.data?.reactions ? _renderReactions(taskId, e.id, e.data.reactions) : _renderReactions(taskId, e.id, {})}
+            </div>
+          </div>`;
+      }
+
+      // Sistem olayları
+      const icons = { status:'🔄', assign:'👤', create:'✅', edit:'✏️', complete:'🎉', file:'📎' };
+      const icon  = icons[e.type] || '📝';
+      const desc  = e.data?.text || e.type;
+      return `
+        <div class="pus-act-item pus-act-system">
+          <div style="width:30px;display:flex;justify-content:center;color:var(--t3);font-size:14px;flex-shrink:0">${icon}</div>
+          <div style="flex:1;min-width:0">
+            <span style="font-size:12px;color:var(--t2)"><strong>${u?.name||e.name||'Sistem'}</strong> ${desc}</span>
+            <span style="font-size:10px;color:var(--t3);margin-left:6px">${e.ts?.slice(5,16)||''}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function _renderReactions(taskId, entryId, reactions) {
+    const EMOJIS = ['👍','❤️','🎉','🔥','👀'];
+    const cu = _getCU();
+    return `<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
+      ${EMOJIS.map(em => {
+        const users = (reactions[em] || []);
+        const hasMe = users.includes(cu?.id);
+        return `<button onclick="window._toggleReaction?.(${taskId},${entryId},'${em}')"
+          style="background:${hasMe?'var(--al)':'var(--s2)'};border:1px solid ${hasMe?'var(--ac)':'var(--b)'};border-radius:20px;padding:2px 8px;font-size:12px;cursor:pointer;transition:all .15s;color:${hasMe?'var(--ac)':'var(--t3)'}">${em}${users.length > 0 ? ` <span style="font-size:10px">${users.length}</span>` : ''}</button>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function _renderCommentBox(taskId) {
+    return `
+      <div style="border-top:1px solid var(--b);padding:12px 14px;background:var(--sf);flex-shrink:0">
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea id="pus-act-inp" class="fi" rows="2"
+            style="flex:1;resize:none;font-size:13px;border-radius:10px;padding:8px 12px;line-height:1.5"
+            placeholder="Yorum yaz… (@mention için @ kullan)"></textarea>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <button onclick="window._sendComment?.(${taskId})"
+              style="background:var(--ac);color:#fff;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:700;transition:all .15s">
+              ➤
+            </button>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--t3);margin-top:5px;padding-left:2px">Enter → gönder · Shift+Enter → yeni satır · @isim → mention</div>
+      </div>`;
+  }
+
+  // Görev detay pane'ine aktivite sekmesi ekle
+  window._injectActivityTab = function(taskId) {
+    // Mevcut chat pane'ini aktivite akışıyla güçlendir
+    const chatPane = document.getElementById('pdp-pane-chat');
+    if (!chatPane) return;
+
+    // Zaten enjekte edildiyse skip
+    if (chatPane.dataset.activityInjected) {
+      _renderActivityFeed(taskId);
+      return;
+    }
+    chatPane.dataset.activityInjected = '1';
+    chatPane.style.cssText = 'flex:1;display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden';
+
+    chatPane.innerHTML = `
+      <!-- Tab switcher: Yorumlar / Aktivite -->
+      <div style="display:flex;border-bottom:1px solid var(--b);background:var(--s2);flex-shrink:0">
+        <button id="pus-act-tab-comments" onclick="window._switchActivityTab?.('comments')"
+          style="flex:1;padding:8px;border:none;background:none;cursor:pointer;font-size:11px;font-weight:700;color:var(--ac);border-bottom:2px solid var(--ac);font-family:inherit">💬 Yorumlar</button>
+        <button id="pus-act-tab-activity" onclick="window._switchActivityTab?.('activity')"
+          style="flex:1;padding:8px;border:none;background:none;cursor:pointer;font-size:11px;font-weight:500;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">📋 Aktivite</button>
+      </div>
+      <!-- Feed -->
+      <div id="pus-act-feed" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px"></div>
+      <!-- Yorum kutusu (sadece yorum sekmesinde) -->
+      <div id="pus-act-comment-box">${_renderCommentBox(taskId)}</div>`;
+
+    // Activity CSS
+    if (!document.getElementById('pus-act-css')) {
+      const s = document.createElement('style');
+      s.id = 'pus-act-css';
+      s.textContent = `
+        .pus-act-item { display:flex; gap:10px; align-items:flex-start; }
+        .pus-act-system { opacity:.75; }
+        #pus-act-feed { scroll-behavior:smooth; }
+        #pus-act-inp:focus { border-color:var(--ac); }
+      `;
+      document.head.appendChild(s);
+    }
+
+    // Enter gönder
+    setTimeout(() => {
+      const inp = document.getElementById('pus-act-inp');
+      if (inp) inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window._sendComment?.(taskId); }
+      });
+    }, 100);
+
+    _renderActivityFeed(taskId);
+    // Önceki mesajları aktivite olarak al
+    const oldChats = (loadTaskChats()[taskId] || []);
+    if (oldChats.length && !_loadActivity(taskId).length) {
+      // Eski chat mesajlarını aktiviteye geçir
+      const entries = _loadActivity(taskId);
+      oldChats.forEach(m => {
+        if (!entries.find(e => e.id === m.id)) {
+          entries.push({ id: m.id, ts: m.ts, uid: m.uid, name: m.name, type: 'comment', data: { text: m.text } });
+        }
+      });
+      _saveActivity(taskId, entries);
+      _renderActivityFeed(taskId);
+    }
+  };
+
+  window._switchActivityTab = function(tab) {
+    const commentBtn = document.getElementById('pus-act-tab-comments');
+    const activityBtn = document.getElementById('pus-act-tab-activity');
+    const box = document.getElementById('pus-act-comment-box');
+    const feed = document.getElementById('pus-act-feed');
+    if (!commentBtn || !activityBtn) return;
+
+    if (tab === 'comments') {
+      commentBtn.style.color = 'var(--ac)'; commentBtn.style.borderBottomColor = 'var(--ac)'; commentBtn.style.fontWeight = '700';
+      activityBtn.style.color = 'var(--t3)'; activityBtn.style.borderBottomColor = 'transparent'; activityBtn.style.fontWeight = '500';
+      if (box) box.style.display = '';
+    } else {
+      activityBtn.style.color = 'var(--ac)'; activityBtn.style.borderBottomColor = 'var(--ac)'; activityBtn.style.fontWeight = '700';
+      commentBtn.style.color = 'var(--t3)'; commentBtn.style.borderBottomColor = 'transparent'; commentBtn.style.fontWeight = '500';
+      if (box) box.style.display = 'none';
+    }
+    if (feed && _PDP_TASK_ID) _renderActivityFeed(_PDP_TASK_ID);
+  };
+
+  window._sendComment = function(taskId) {
+    const inp = document.getElementById('pus-act-inp');
+    if (!inp) return;
+    const text = inp.value.trim();
+    if (!text) { window.toast?.('Yorum boş olamaz', 'warn'); return; }
+    _addActivity(taskId, 'comment', { text });
+    inp.value = '';
+    // Scroll en alta
+    setTimeout(() => {
+      const feed = document.getElementById('pus-act-feed');
+      if (feed) feed.scrollTop = feed.scrollHeight;
+    }, 100);
+    window.toast?.('Yorum eklendi ✓', 'ok');
+  };
+
+  window._delActivity = function(taskId, entryId) {
+    const entries = _loadActivity(taskId).filter(e => e.id !== entryId);
+    _saveActivity(taskId, entries);
+    _renderActivityFeed(taskId);
+  };
+
+  window._toggleReaction = function(taskId, entryId, emoji) {
+    const entries = _loadActivity(taskId);
+    const e = entries.find(x => x.id === entryId);
+    if (!e) return;
+    if (!e.data) e.data = {};
+    if (!e.data.reactions) e.data.reactions = {};
+    const cu = _getCU();
+    if (!cu) return;
+    const users = e.data.reactions[emoji] || [];
+    const idx   = users.indexOf(cu.id);
+    if (idx > -1) users.splice(idx, 1);
+    else users.push(cu.id);
+    e.data.reactions[emoji] = users;
+    _saveActivity(taskId, entries);
+    _renderActivityFeed(taskId);
+  };
+
+  // openPusDetail'e aktivite enjeksiyonunu bağla
+  const _actOrigDetail = window._pfRealOpenDetail || window.openPusDetail;
+  function _actHook(taskId) {
+    _actOrigDetail?.(taskId);
+    setTimeout(() => {
+      window._injectActivityTab?.(taskId);
+      // Görev açılmasını logla
+      const entries = _loadActivity(taskId);
+      if (!entries.find(e => e.type === 'create')) {
+        const task = loadTasks().find(t => t.id === taskId);
+        if (task) _addActivity(taskId, 'create', { text: `"${task.title}" görevi oluşturuldu` });
+      }
+    }, 250);
+  }
+  if (window._pfRealOpenDetail) window._pfRealOpenDetail = _actHook;
+  else window.openPusDetail = _actHook;
+
+  // toggleTask'a aktivite logu ekle
+  const _actOrigToggle = window.Pusula?.toggle;
+  if (window.Pusula && _actOrigToggle) {
+    window.Pusula.toggle = function(id, done) {
+      _actOrigToggle.call(window.Pusula, id, done);
+      _addActivity(id, done ? 'complete' : 'edit', { text: done ? 'görevi tamamladı' : 'görevi yeniden açtı' });
+    };
+  }
+
+  // Global export
+  window._loadActivity = _loadActivity;
+  window._addActivity  = _addActivity;
+  console.info('[Pusula] Aktivite akışı aktif ✓');
+})();
+
+// ────────────────────────────────────────────────────────────────
+// 2. 📐 EİSENHOWER MATRİX — 4 Kadran Önceliklendirme
+// ────────────────────────────────────────────────────────────────
+(function _initEisenhower() {
+
+  function _calcTaskQuadrant(t, todayS) {
+    const isUrgent    = t.pri <= 2 || (t.due && t.due <= new Date(Date.now() + 3*86400000).toISOString().slice(0,10));
+    const isImportant = t.pri <= 2 || (t.due && t.due <= new Date(Date.now() + 7*86400000).toISOString().slice(0,10));
+    if (isUrgent && isImportant) return 'q1'; // Kritik — Hemen Yap
+    if (!isUrgent && isImportant) return 'q2'; // Planla
+    if (isUrgent && !isImportant) return 'q3'; // Devret
+    return 'q4'; // Elemek
+  }
+
+  function _renderEisenhower() {
+    const main  = document.getElementById('pus-main-view');
+    if (!main) return;
+
+    const tasks  = window.visTasks?.() || loadTasks();
+    const active = tasks.filter(t => !t.done && t.status !== 'done');
+    const todayS = new Date().toISOString().slice(0,10);
+    const users  = loadUsers();
+
+    const Q = { q1:[], q2:[], q3:[], q4:[] };
+    active.forEach(t => Q[_calcTaskQuadrant(t, todayS)].push(t));
+
+    const QUADS = [
+      { id:'q1', label:'🔴 Hemen Yap',   sub:'Önemli & Acil',         bg:'rgba(239,68,68,.06)',   border:'rgba(239,68,68,.2)',   color:'#EF4444' },
+      { id:'q2', label:'🟡 Planla',       sub:'Önemli & Acil Değil',   bg:'rgba(245,158,11,.06)',  border:'rgba(245,158,11,.2)',  color:'#D97706' },
+      { id:'q3', label:'🔵 Devret',       sub:'Acil & Önemli Değil',   bg:'rgba(59,130,246,.06)',  border:'rgba(59,130,246,.2)',  color:'#3B82F6' },
+      { id:'q4', label:'⚪ Ele',          sub:'Ne Acil Ne Önemli',      bg:'rgba(100,116,139,.06)', border:'rgba(100,116,139,.2)', color:'#6B7280' },
+    ];
+
+    main.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 0">
+        ${QUADS.map(q => `
+          <div style="background:${q.bg};border:1px solid ${q.border};border-radius:14px;padding:14px;min-height:180px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:${q.color}">${q.label}</div>
+                <div style="font-size:10px;color:var(--t3);margin-top:1px">${q.sub}</div>
+              </div>
+              <div style="font-size:18px;font-weight:800;color:${q.color};font-family:monospace">${Q[q.id].length}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              ${Q[q.id].slice(0,6).map(t => {
+                const u = users.find(x => x.id === t.uid);
+                return `
+                  <div onclick="openPusDetail(${t.id})" style="background:var(--sf);border:1px solid var(--b);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px"
+                    onmouseover="this.style.borderColor='${q.color}';this.style.transform='translateX(2px)'"
+                    onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
+                    <div style="width:4px;height:32px;border-radius:2px;background:${q.color};flex-shrink:0"></div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+                      <div style="font-size:10px;color:var(--t3);margin-top:2px">${u?.name||'—'} ${t.due?'· '+t.due:''}</div>
+                    </div>
+                  </div>`;
+              }).join('')}
+              ${Q[q.id].length > 6 ? `<div style="font-size:11px;color:var(--t3);text-align:center;padding:4px">+${Q[q.id].length-6} daha…</div>` : ''}
+              ${Q[q.id].length === 0 ? `<div style="font-size:12px;color:var(--t3);text-align:center;padding:16px;opacity:.6">Görev yok ✓</div>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--t3)">
+        Öncelik + bitiş tarihine göre otomatik sınıflandırma · <button onclick="setPusView('list',null)" style="background:none;border:none;cursor:pointer;color:var(--ac);font-size:11px;text-decoration:underline;font-family:inherit">Listeye dön</button>
+      </div>`;
+  }
+
+  // View sistemine matrix görünümü ekle
+  const _emOrigSetView = window._pfRealSetPusView || window.setPusView;
+  window._pfRealSetPusView = function(v, btn) {
+    _emOrigSetView?.(v, btn);
+    if (v === 'matrix') {
+      setTimeout(_renderEisenhower, 50);
+    }
+  };
+
+  // index.html'e matrix butonu ekle (JS ile)
+  function _addMatrixBtn() {
+    const viewRow = document.getElementById('pus-view-row');
+    if (!viewRow || viewRow.querySelector('#pus-v-matrix')) return;
+    const btn = document.createElement('button');
+    btn.id = 'pus-v-matrix';
+    btn.className = 'pvt-btn';
+    btn.title = 'Eisenhower Matrix';
+    btn.innerHTML = `<svg width="13" height="13" fill="none" viewBox="0 0 13 13">
+      <line x1="6.5" y1="1" x2="6.5" y2="12" stroke="currentColor" stroke-width="1.4"/>
+      <line x1="1" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.4"/>
+      <rect x="1.5" y="1.5" width="4" height="4" rx=".5" fill="currentColor" opacity=".7"/>
+    </svg> Matrix`;
+    btn.onclick = () => {
+      document.querySelectorAll('.pvt-btn,.cvb').forEach(b => b.classList.remove('on','active'));
+      btn.classList.add('on','active');
+      window._pfRealSetPusView?.('matrix', btn);
+      window.PUS_VIEW = 'matrix';
+      localStorage.setItem('ak_pus_view','matrix');
+    };
+    viewRow.appendChild(btn);
+  }
+
+  const _emOrigRender = window.renderPusula;
+  window.renderPusula = function() {
+    _emOrigRender?.();
+    setTimeout(_addMatrixBtn, 200);
+    if (localStorage.getItem('ak_pus_view') === 'matrix') {
+      setTimeout(_renderEisenhower, 100);
+    }
+  };
+
+  window._renderEisenhower = _renderEisenhower;
+  console.info('[Pusula] Eisenhower Matrix aktif ✓');
+})();
+
+// ────────────────────────────────────────────────────────────────
+// 3. 🏆 GAMİFİCATİON — Puan, Rozet & Streak Sistemi
+// ────────────────────────────────────────────────────────────────
+(function _initGamification() {
+  const GF_KEY   = 'ak_pus_gamif';
+  const BADGES   = [
+    { id:'first_task',   icon:'🎯', name:'İlk Adım',      desc:'İlk görevini tamamladın',          req: s => s.totalDone >= 1 },
+    { id:'speed5',       icon:'⚡', name:'Hız Ustası',     desc:'5 görevi zamanında bitir',          req: s => s.onTime >= 5 },
+    { id:'streak3',      icon:'🔥', name:'3 Gün Serisi',   desc:'3 gün art arda görev tamamla',     req: s => s.streak >= 3 },
+    { id:'streak7',      icon:'🚀', name:'Haftalık Kahraman',desc:'7 gün art arda görev tamamla',   req: s => s.streak >= 7 },
+    { id:'done10',       icon:'💎', name:'10 Görev',       desc:'Toplam 10 görev tamamla',           req: s => s.totalDone >= 10 },
+    { id:'done50',       icon:'👑', name:'50 Görev',       desc:'Toplam 50 görev tamamla',           req: s => s.totalDone >= 50 },
+    { id:'early_bird',   icon:'🌅', name:'Erken Kuş',      desc:'Görev süresinden önce bitir',       req: s => s.earlyDone >= 3 },
+    { id:'team_player',  icon:'🤝', name:'Takım Oyuncusu', desc:'5 farklı kişiyle çalış',           req: s => s.uniqueCollab >= 5 },
+    { id:'multi_dept',   icon:'🌐', name:'Çok Yönlü',      desc:'3 farklı departmanda görev tamamla', req: s => s.depts >= 3 },
+    { id:'no_overdue',   icon:'⏰', name:'Dakik',          desc:'10 görevi gecikme olmadan bitir',   req: s => s.noOverdue >= 10 },
+  ];
+
+  function _loadGF() {
+    try { return JSON.parse(localStorage.getItem(GF_KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function _saveGF(d) { localStorage.setItem(GF_KEY, JSON.stringify(d)); }
+
+  function _getUserGF(uid) {
+    const all = _loadGF();
+    if (!all[uid]) all[uid] = { xp:0, level:1, totalDone:0, onTime:0, earlyDone:0, streak:0, lastDoneDate:'', noOverdue:0, uniqueCollab:[], depts:[], badges:[] };
+    return all[uid];
+  }
+  function _saveUserGF(uid, data) {
+    const all = _loadGF();
+    all[uid] = data;
+    _saveGF(all);
+  }
+
+  function _levelFromXP(xp) {
+    return Math.floor(Math.sqrt(xp / 50)) + 1;
+  }
+  function _xpForLevel(lvl) {
+    return Math.pow(lvl - 1, 2) * 50;
+  }
+
+  function _awardXP(uid, amount, reason) {
+    const gf   = _getUserGF(uid);
+    gf.xp     += amount;
+    const newLvl = _levelFromXP(gf.xp);
+    const levelUp = newLvl > gf.level;
+    gf.level = newLvl;
+    _saveUserGF(uid, gf);
+
+    // Toast
+    window.toast?.(`+${amount} XP — ${reason}`, 'ok');
+    if (levelUp) {
+      setTimeout(() => {
+        _showLevelUpCelebration(newLvl);
+      }, 500);
+    }
+    return gf;
+  }
+
+  function _checkBadges(uid) {
+    const gf = _getUserGF(uid);
+    const newBadges = [];
+    BADGES.forEach(b => {
+      if (!gf.badges.includes(b.id)) {
+        const stats = {
+          totalDone: gf.totalDone, onTime: gf.onTime, streak: gf.streak,
+          earlyDone: gf.earlyDone, noOverdue: gf.noOverdue,
+          uniqueCollab: (gf.uniqueCollab||[]).length, depts: (gf.depts||[]).length,
+        };
+        if (b.req(stats)) {
+          gf.badges.push(b.id);
+          newBadges.push(b);
+        }
+      }
+    });
+    if (newBadges.length) {
+      _saveUserGF(uid, gf);
+      newBadges.forEach(b => _showBadgeNotif(b));
+    }
+  }
+
+  function _showBadgeNotif(badge) {
+    const el = document.createElement('div');
+    el.style.cssText = [
+      'position:fixed', 'bottom:80px', 'right:24px', 'z-index:9999',
+      'background:linear-gradient(135deg,#6366F1,#8B5CF6)',
+      'color:#fff', 'border-radius:16px', 'padding:14px 18px',
+      'display:flex', 'align-items:center', 'gap:12px',
+      'box-shadow:0 8px 32px rgba(99,102,241,.4)',
+      'animation:badge-in .4s ease', 'max-width:300px',
+    ].join(';');
+    el.innerHTML = `
+      <div style="font-size:28px">${badge.icon}</div>
+      <div>
+        <div style="font-size:11px;opacity:.8;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Yeni Rozet!</div>
+        <div style="font-size:14px;font-weight:800">${badge.name}</div>
+        <div style="font-size:11px;opacity:.75;margin-top:2px">${badge.desc}</div>
+      </div>`;
+    document.body.appendChild(el);
+    if (!document.getElementById('badge-anim-css')) {
+      const s = document.createElement('style');
+      s.id = 'badge-anim-css';
+      s.textContent = `@keyframes badge-in{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}`;
+      document.head.appendChild(s);
+    }
+    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(60px)'; el.style.transition='all .4s'; setTimeout(()=>el.remove(), 400); }, 3500);
+  }
+
+  function _showLevelUpCelebration(level) {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;pointer-events:none';
+    el.innerHTML = `
+      <div style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border-radius:24px;padding:28px 40px;text-align:center;box-shadow:0 20px 60px rgba(99,102,241,.5);animation:badge-in .4s ease">
+        <div style="font-size:48px;margin-bottom:8px">🎊</div>
+        <div style="font-size:12px;opacity:.8;text-transform:uppercase;letter-spacing:.1em;font-weight:700">Seviye Atladın!</div>
+        <div style="font-size:48px;font-weight:900;font-family:monospace">LVL ${level}</div>
+        <div style="font-size:13px;opacity:.8;margin-top:4px">Harika iş çıkardın!</div>
+      </div>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+
+  // Görev tamamlandığında XP ver
+  function _onTaskComplete(taskId) {
+    const cu   = _getCU();
+    if (!cu) return;
+    const task = loadTasks().find(t => t.id === taskId);
+    if (!task) return;
+    const gf   = _getUserGF(cu.id);
+    const todayS = new Date().toISOString().slice(0,10);
+
+    // Temel XP
+    const baseXP = { 1:50, 2:30, 3:20, 4:10 }[task.pri] || 20;
+    let totalXP  = baseXP;
+    let reasons  = [];
+
+    // Zamanında mı?
+    const isOnTime = !task.due || task.due >= todayS;
+    if (isOnTime) { gf.onTime++; totalXP += 10; reasons.push('zamanında'); }
+
+    // Erken mi?
+    if (task.due && task.due > todayS) { gf.earlyDone++; totalXP += 15; reasons.push('erken +15'); }
+    if (isOnTime) gf.noOverdue++;
+
+    // Streak
+    if (gf.lastDoneDate === new Date(Date.now()-86400000).toISOString().slice(0,10)) {
+      gf.streak++;
+      if (gf.streak >= 3) { totalXP += gf.streak * 5; reasons.push(`${gf.streak} seri +${gf.streak*5}`); }
+    } else if (gf.lastDoneDate !== todayS) {
+      gf.streak = 1;
+    }
+    gf.lastDoneDate = todayS;
+    gf.totalDone++;
+
+    // Departman
+    if (task.department && !(gf.depts||[]).includes(task.department)) {
+      (gf.depts = gf.depts||[]).push(task.department);
+    }
+    // Kolab
+    if (task.uid !== cu.id && !(gf.uniqueCollab||[]).includes(task.uid)) {
+      (gf.uniqueCollab = gf.uniqueCollab||[]).push(task.uid);
+    }
+
+    _saveUserGF(cu.id, gf);
+    _awardXP(cu.id, totalXP, reasons.join(', ') || 'görev tamamlandı');
+    _checkBadges(cu.id);
+  }
+
+  // toggleTask hook
+  const _gfOrigToggle = window.Pusula?.toggle;
+  if (window.Pusula && _gfOrigToggle) {
+    const _gfWrapped = window.Pusula.toggle;
+    window.Pusula.toggle = function(id, done) {
+      _gfWrapped.call(window.Pusula, id, done);
+      if (done) setTimeout(() => _onTaskComplete(id), 300);
+    };
+  }
+
+  // XP bar — hero'ya enjekte et
+  function _injectXPBar() {
+    if (document.getElementById('pus-xp-bar-wrap')) return;
+    const heroInner = document.querySelector('.pus-hero-inner');
+    if (!heroInner) return;
+    const cu = _getCU();
+    if (!cu) return;
+    const gf     = _getUserGF(cu.id);
+    const lvl    = _levelFromXP(gf.xp);
+    const xpCur  = gf.xp - _xpForLevel(lvl);
+    const xpNext = _xpForLevel(lvl+1) - _xpForLevel(lvl);
+    const pct    = Math.min(100, Math.round(xpCur / xpNext * 100));
+    const earnedBadges = BADGES.filter(b => gf.badges.includes(b.id));
+
+    const wrap = document.createElement('div');
+    wrap.id = 'pus-xp-bar-wrap';
+    wrap.style.cssText = 'padding:0 0 12px;cursor:pointer';
+    wrap.title = 'Performans rozetlerim';
+    wrap.onclick = () => window._openGamifDashboard?.();
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
+        <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:3px 10px;font-size:11px;font-weight:800;color:#fff">LVL ${lvl}</div>
+        <div style="flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden">
+          <div style="height:100%;background:#FACC15;width:${pct}%;border-radius:4px;transition:width .6s ease"></div>
+        </div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65)">${gf.xp} XP</div>
+        ${earnedBadges.slice(0,4).map(b=>`<span title="${b.name}" style="font-size:14px">${b.icon}</span>`).join('')}
+      </div>`;
+    heroInner.appendChild(wrap);
+  }
+
+  // Gamification Dashboard
+  window._openGamifDashboard = function() {
+    const cu = _getCU();
+    if (!cu) return;
+    const gf = _getUserGF(cu.id);
+    const lvl = _levelFromXP(gf.xp);
+    const xpCur = gf.xp - _xpForLevel(lvl);
+    const xpNext = _xpForLevel(lvl+1) - _xpForLevel(lvl);
+    const pct = Math.min(100, Math.round(xpCur / xpNext * 100));
+    const earnedBadges = BADGES.filter(b => gf.badges.includes(b.id));
+    const lockedBadges = BADGES.filter(b => !gf.badges.includes(b.id));
+
+    let overlay = document.getElementById('pus-gamif-overlay');
+    if (overlay) overlay.remove();
+    overlay = document.createElement('div');
+    overlay.id = 'pus-gamif-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:8800;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+
+    overlay.innerHTML = `
+      <div style="background:var(--sf);border-radius:24px;padding:28px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;position:relative">
+        <button onclick="document.getElementById('pus-gamif-overlay').remove()" style="position:absolute;top:18px;right:20px;background:var(--s2);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--t3)">×</button>
+
+        <!-- Profil -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+          <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff">${lvl}</div>
+          <div style="flex:1">
+            <div style="font-size:17px;font-weight:800;color:var(--t)">${cu.name}</div>
+            <div style="font-size:12px;color:var(--t3);margin-bottom:6px">Seviye ${lvl} · ${gf.xp} XP toplam</div>
+            <div style="height:8px;background:var(--b);border-radius:6px;overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,#6366F1,#FACC15);width:${pct}%;border-radius:6px;transition:width .8s ease"></div>
+            </div>
+            <div style="font-size:10px;color:var(--t3);margin-top:3px">${xpCur}/${xpNext} XP → Seviye ${lvl+1}</div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px">
+          ${[
+            ['🎯', gf.totalDone||0, 'Tamamlanan'],
+            ['🔥', gf.streak||0, 'Günlük Seri'],
+            ['⚡', gf.onTime||0, 'Zamanında'],
+            ['🏅', earnedBadges.length, 'Rozet'],
+          ].map(([ic,v,l]) => `
+            <div style="background:var(--s2);border-radius:12px;padding:12px;text-align:center">
+              <div style="font-size:18px;margin-bottom:4px">${ic}</div>
+              <div style="font-size:22px;font-weight:800;color:var(--t);font-family:monospace">${v}</div>
+              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">${l}</div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Kazanılan rozetler -->
+        ${earnedBadges.length ? `
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px">🏆 Rozetlerim (${earnedBadges.length})</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+              ${earnedBadges.map(b => `
+                <div style="background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(139,92,246,.1));border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:12px;text-align:center">
+                  <div style="font-size:24px;margin-bottom:5px">${b.icon}</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--ac)">${b.name}</div>
+                  <div style="font-size:10px;color:var(--t3);margin-top:2px">${b.desc}</div>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+
+        <!-- Kilitli rozetler -->
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:10px">🔒 Kilitli (${lockedBadges.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+            ${lockedBadges.map(b => `
+              <div style="background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:12px;text-align:center;opacity:.5">
+                <div style="font-size:24px;margin-bottom:5px;filter:grayscale(1)">${b.icon}</div>
+                <div style="font-size:11px;font-weight:600;color:var(--t2)">${b.name}</div>
+                <div style="font-size:10px;color:var(--t3);margin-top:2px">${b.desc}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  };
+
+  const _gfOrigRender = window.renderPusula;
+  window.renderPusula = function() {
+    _gfOrigRender?.();
+    setTimeout(_injectXPBar, 300);
+  };
+
+  console.info('[Pusula] Gamification aktif ✓');
+})();
+
+
+
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Pusula;
