@@ -637,7 +637,10 @@ function _doLogin() {
                 <button id="btn-pus-sticky" onclick="window._toggleStickyBoard?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Yapışkan notlar">
                   📌 Notlar
                 </button>
-                <button id="btn-pus-analiz" onclick="window._toggleWorkloadPanel?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Personel iş yükü ve performans analizi">
+                <button id="btn-pus-perf" onclick="openPersonalDashboard()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Kişisel performans dashboard">
+                  📊 Raporum
+                </button>
+                <button id="btn-pus-analiz" class="admin-only" onclick="window._toggleWorkloadPanel?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Personel iş yükü ve performans analizi">
                   👥 Personel
                 </button>
                 <button class="pus-add-btn" onclick="openAddTask()">

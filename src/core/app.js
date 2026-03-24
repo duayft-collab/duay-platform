@@ -457,9 +457,12 @@ function _initApp(user) {
   const nbAdmin = _g('nb-admin');
   if (nbAdmin) nbAdmin.style.display = user.role === 'admin' ? 'flex' : 'none';
 
-  // Personel filtresi (Pusula)
+  // Personel filtresi (Pusula) — sadece admin
   const pusel = _g('pus-usel');
   if (pusel) pusel.style.display = user.role === 'admin' ? 'inline-block' : 'none';
+
+  // ── Admin vs User UI Ayrımı ──────────────────────────────────
+  _applyRoleUI(user);
 
   // i18n uygula
   if (window.I18n?.apply) window.I18n.apply();
@@ -1789,3 +1792,82 @@ window.saveProfile      = saveProfile;
 // DOMContentLoaded beklemeden çağrılır — script defer olmadığından
 // DOM zaten hazırdır (index.html'de body sonunda yüklenir).
 App.init();
+
+// ════════════════════════════════════════════════════════════════
+// ADMIN vs USER UI AYRIMI
+// ════════════════════════════════════════════════════════════════
+function _applyRoleUI(user) {
+  if (!user) return;
+  const isAdm = (user.role === 'admin' || user.role === 'manager');
+  const isLead = (user.role === 'lead');
+
+  // Pusula hero butonları
+  const adminOnlyBtns = [
+    'btn-pus-analiz',   // Personel analizi
+  ];
+  // Excel butonları user için de görünür (kendi verilerini indirebilir)
+  // Gantt, Odak, Notlar, Şablonlar herkese açık
+
+  adminOnlyBtns.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isAdm ? '' : 'none';
+  });
+
+  // Görev listesi — user sadece kendi görevlerini görür
+  // Bu zaten visTasks() içinde kontrol ediliyor ama
+  // hero'daki Tüm Personel filtresi gizlensin
+  const pusUsel = document.getElementById('pus-usel');
+  if (pusUsel) pusUsel.style.display = isAdm ? '' : 'none';
+
+  // User için hero başlığını kişiselleştir
+  const heroSub = document.getElementById('ph-pus-s');
+  if (heroSub && !isAdm) {
+    heroSub.textContent = 'Görevleriniz · ' + user.name;
+  } else if (heroSub && isAdm) {
+    heroSub.textContent = 'Görev yönetim merkezi';
+  }
+
+  // User için görev ekleme — sadece kendine
+  // saveTask'ta uid zaten CU.id'ye kilitleniyor — kontrol var
+
+  // User ekranında Gantt butonu görünür
+  // Board, Liste, Benim, Gantt — hepsi görünür
+
+  // Workload paneli butonu — user için gizle
+  const btnAnaliz = document.getElementById('btn-pus-analiz');
+  if (btnAnaliz) btnAnaliz.style.display = isAdm || isLead ? '' : 'none';
+
+  // Body'e role class'ı ekle — CSS hook için
+  document.body.classList.remove('role-admin','role-manager','role-lead','role-staff');
+  document.body.classList.add('role-' + (user.role || 'staff'));
+
+  // User için kişisel dashboard badge'leri güncelle
+  if (!isAdm) {
+    // User sadece kendi görevlerini sayar
+    setTimeout(() => window.updatePusBadge?.(), 500);
+  }
+
+  console.info('[UI] Role applied:', user.role);
+}
+
+// CSS role classes
+(function _injectRoleCSS() {
+  if (document.getElementById('role-ui-css')) return;
+  const s = document.createElement('style');
+  s.id = 'role-ui-css';
+  s.textContent = `
+    /* User ekranı — admin-only elementleri gizle */
+    .role-staff .admin-only { display: none !important; }
+    .role-staff .manager-only { display: none !important; }
+
+    /* User hero — daha sade görünüm */
+    .role-staff .pus-hero { background: linear-gradient(135deg, #1E3A5F 0%, #2D5A8E 100%); }
+
+    /* User için görev kartları — sadece kendi kartları */
+    .role-staff .tk-row .tk-action-btn { opacity: 1; }
+  `;
+  document.head.appendChild(s);
+})();
+
+window._applyRoleUI = _applyRoleUI;
+

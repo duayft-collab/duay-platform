@@ -4722,6 +4722,612 @@ if (typeof renderPusulaList !== 'undefined') {
 console.info('[Pusula v9] 5 yeni özellik + Personel Analizi aktif ✓');
 
 
+
+// ════════════════════════════════════════════════════════════════
+// PUSULA — 4 YENİ ÖZELLİK
+// 1. Akıllı Bildirim  2. Kişisel Dashboard  3. Takvim Entegrasyon  4. AI Asistan
+// ════════════════════════════════════════════════════════════════
+
+// ────────────────────────────────────────────────────────────────
+// 1. 🔔 AKILLI BİLDİRİM SİSTEMİ
+// ────────────────────────────────────────────────────────────────
+(function _initSmartNotif() {
+  const NOTIF_KEY = 'ak_pus_notif_sent';
+
+  function _getSentLog() {
+    try { return JSON.parse(localStorage.getItem(NOTIF_KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function _markSent(key) {
+    const log = _getSentLog();
+    log[key] = Date.now();
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(log));
+  }
+  function _alreadySent(key) {
+    const log = _getSentLog();
+    return !!log[key];
+  }
+
+  function _requestPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  function _sendNotif(title, body, icon) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(title, {
+        body, icon: icon || '/assets/icons/icon.svg',
+        badge: '/assets/icons/icon.svg',
+        tag: title,
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch(e) {}
+  }
+
+  function _checkTaskNotifications() {
+    const cu = _getCU();
+    if (!cu) return;
+    const tasks = loadTasks().filter(t =>
+      t.uid === cu.id && !t.done && t.status !== 'done' && t.deadline_full
+    );
+    const now = Date.now();
+
+    tasks.forEach(t => {
+      const deadline = new Date(t.deadline_full.replace(' ', 'T')).getTime();
+      if (isNaN(deadline)) return;
+      const diff = deadline - now;
+      const diffH = diff / 3600000;
+
+      // 24 saat kala
+      if (diffH > 0 && diffH <= 24) {
+        const key = `24h_${t.id}`;
+        if (!_alreadySent(key)) {
+          _sendNotif(
+            '⏰ Görev Yaklaşıyor',
+            `"${t.title}" — 24 saat içinde bitmesi gerekiyor`,
+          );
+          _markSent(key);
+          window.addNotif?.('⏰', `"${t.title}" — 24 saat kaldı`, 'warn', 'pusula');
+        }
+      }
+
+      // 1 saat kala
+      if (diffH > 0 && diffH <= 1) {
+        const key = `1h_${t.id}`;
+        if (!_alreadySent(key)) {
+          _sendNotif(
+            '🚨 Son 1 Saat!',
+            `"${t.title}" — 1 saat içinde bitirilmeli!`,
+          );
+          _markSent(key);
+          window.addNotif?.('🚨', `"${t.title}" — 1 saat kaldı!`, 'err', 'pusula');
+        }
+      }
+
+      // Süre doldu
+      if (diff <= 0 && diffH > -2) {
+        const key = `expired_${t.id}`;
+        if (!_alreadySent(key)) {
+          _sendNotif(
+            '❗ Süre Doldu',
+            `"${t.title}" tamamlanmadı!`,
+          );
+          _markSent(key);
+          window.addNotif?.('❗', `"${t.title}" süresi doldu!`, 'err', 'pusula');
+        }
+      }
+    });
+  }
+
+  // İzin iste ve başlat
+  window._initTaskNotifications = function() {
+    _requestPermission();
+    _checkTaskNotifications();
+    setInterval(_checkTaskNotifications, 5 * 60 * 1000); // 5 dk'da bir
+  };
+
+  // Login sonrası başlat
+  const _origInitApp = window._applyRoleUI;
+  const _notifCheckOnRender = window.renderPusula;
+  window.renderPusula = function() {
+    _notifCheckOnRender?.();
+    // İlk render'da izin iste
+    if (!window._notifInited) {
+      window._notifInited = true;
+      setTimeout(window._initTaskNotifications, 2000);
+    }
+  };
+})();
+
+// ────────────────────────────────────────────────────────────────
+// 2. 📊 KİŞİSEL PERFORMANS DASHBOARD
+// ────────────────────────────────────────────────────────────────
+function openPersonalDashboard() {
+  const cu = _getCU();
+  if (!cu) return;
+
+  const tasks    = loadTasks();
+  const myTasks  = tasks.filter(t => t.uid === cu.id);
+  const todayS   = new Date().toISOString().slice(0, 10);
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const lastMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+
+  const active    = myTasks.filter(t => !t.done && t.status !== 'done');
+  const done      = myTasks.filter(t => t.done || t.status === 'done');
+  const overdue   = active.filter(t => t.due && t.due < todayS);
+  const doneThisM = done.filter(t => (t.created_at || t.due || '').slice(0, 7) === thisMonth);
+  const doneLastM = done.filter(t => (t.created_at || t.due || '').slice(0, 7) === lastMonth);
+  const compRate  = myTasks.length > 0 ? Math.round(done.length / myTasks.length * 100) : 0;
+
+  // Departman dağılımı
+  const deptMap = {};
+  myTasks.forEach(t => {
+    const d = t.department || 'Diğer';
+    deptMap[d] = (deptMap[d] || 0) + 1;
+  });
+  const deptSorted = Object.entries(deptMap).sort((a,b) => b[1]-a[1]);
+
+  // Son 8 hafta trendi
+  const weekData = Array.from({length:8}, (_,i) => {
+    const weekStart = new Date(Date.now() - (7-i)*7*86400000);
+    const weekEnd   = new Date(weekStart.getTime() + 7*86400000);
+    const ws = weekStart.toISOString().slice(0,10);
+    const we = weekEnd.toISOString().slice(0,10);
+    const count = done.filter(t => {
+      const d = (t.created_at || '').slice(0,10);
+      return d >= ws && d < we;
+    }).length;
+    return { label: `H${i+1}`, count };
+  });
+  const maxWeek = Math.max(...weekData.map(w => w.count), 1);
+
+  // Son 30 gün — günlük aktivite ısı haritası
+  const heatDays = Array.from({length:30}, (_,i) => {
+    const d = new Date(Date.now() - (29-i)*86400000).toISOString().slice(0,10);
+    const cnt = done.filter(t => (t.created_at||'').slice(0,10) === d).length;
+    return { d, cnt };
+  });
+  const maxHeat = Math.max(...heatDays.map(h => h.cnt), 1);
+
+  let overlay = document.getElementById('pus-perf-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'pus-perf-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+
+  const perf = compRate >= 80 ? {l:'Mükemmel 🚀',c:'#10B981'} : compRate >= 60 ? {l:'İyi 👍',c:'#3B82F6'} : compRate >= 40 ? {l:'Orta ⚡',c:'#F59E0B'} : {l:'Gelişiyor 📈',c:'#EF4444'};
+
+  overlay.innerHTML = `
+  <div style="background:var(--sf);border-radius:24px;padding:28px;max-width:680px;width:100%;max-height:88vh;overflow-y:auto;position:relative">
+    <button onclick="document.getElementById('pus-perf-overlay').remove()" style="position:absolute;top:18px;right:20px;background:var(--s2);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--t3)">×</button>
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px">
+      <div style="width:52px;height:52px;border-radius:16px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:22px">📊</div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:var(--t)">${cu.name} — Performans</div>
+        <div style="font-size:12px;color:var(--t3)">${cu.role} · ${new Date().toLocaleDateString('tr-TR',{month:'long',year:'numeric'})}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:28px;font-weight:800;color:${perf.c}">${compRate}%</div>
+        <div style="font-size:11px;color:var(--t3)">${perf.l}</div>
+      </div>
+    </div>
+
+    <!-- Özet grid -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+      ${[
+        ['Toplam Görev', myTasks.length, 'var(--ac)'],
+        ['Tamamlanan', done.length, '#10B981'],
+        ['Aktif', active.length, '#3B82F6'],
+        ['Gecikmiş', overdue.length, overdue.length > 0 ? '#EF4444' : '#10B981'],
+      ].map(([l,v,c]) => `
+        <div style="background:var(--s2);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:${c};font-family:monospace">${v}</div>
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px">${l}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Bu ay vs geçen ay -->
+    <div style="background:var(--s2);border-radius:14px;padding:16px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px">📅 Aylık Karşılaştırma</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="text-align:center">
+          <div style="font-size:24px;font-weight:800;color:var(--ac)">${doneThisM.length}</div>
+          <div style="font-size:11px;color:var(--t3)">Bu ay tamamlanan</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:24px;font-weight:800;color:var(--t3)">${doneLastM.length}</div>
+          <div style="font-size:11px;color:var(--t3)">Geçen ay</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:${doneThisM.length>=doneLastM.length?'#10B981':'#EF4444'};text-align:center;font-weight:700">
+        ${doneThisM.length > doneLastM.length ? '📈 Geçen aya göre daha verimli!' : doneThisM.length === doneLastM.length ? '➡️ Geçen ayla aynı seviye' : '📉 Geçen aydan daha az tamamlandı'}
+      </div>
+    </div>
+
+    <!-- 8 haftalık trend bar -->
+    <div style="background:var(--s2);border-radius:14px;padding:16px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:12px">📈 Son 8 Hafta Trendi</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:64px">
+        ${weekData.map(w => `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="font-size:9px;color:${w.count>0?'var(--ac)':'var(--t3)'};font-weight:700">${w.count||''}</div>
+            <div style="width:100%;background:${w.count>0?'var(--ac)':'var(--b)'};border-radius:4px 4px 0 0;min-height:4px;height:${Math.max(4,Math.round(w.count/maxWeek*52))}px;transition:height .5s"></div>
+            <div style="font-size:9px;color:var(--t3)">${w.label}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Departman dağılımı -->
+    ${deptSorted.length ? `
+    <div style="background:var(--s2);border-radius:14px;padding:16px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px">🏷️ Departman Dağılımı</div>
+      ${deptSorted.map(([dept,cnt]) => `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+          <div style="font-size:12px;color:var(--t);min-width:90px">${dept}</div>
+          <div style="flex:1;height:8px;background:var(--b);border-radius:4px;overflow:hidden">
+            <div style="height:100%;background:var(--ac);border-radius:4px;width:${Math.round(cnt/myTasks.length*100)}%;transition:width .5s"></div>
+          </div>
+          <div style="font-size:11px;color:var(--t3);font-weight:700;min-width:28px;text-align:right">${cnt}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Son 30 gün ısı haritası -->
+    <div style="background:var(--s2);border-radius:14px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px">🌡️ Son 30 Gün Aktivitesi</div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap">
+        ${heatDays.map(h => {
+          const intensity = h.cnt / maxHeat;
+          const bg = h.cnt === 0 ? 'var(--b)' : `rgba(99,102,241,${0.2 + intensity * 0.8})`;
+          return `<div title="${h.d}: ${h.cnt} görev" style="width:18px;height:18px;border-radius:4px;background:${bg};cursor:default"></div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--t3)">
+        <div style="width:12px;height:12px;border-radius:3px;background:var(--b)"></div> Az
+        <div style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,.5)"></div> Orta
+        <div style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,1)"></div> Çok
+      </div>
+    </div>
+  </div>`;
+}
+window.openPersonalDashboard = openPersonalDashboard;
+
+// ────────────────────────────────────────────────────────────────
+// 3. 📅 TAKVİM ENTEGRASYONU
+// ────────────────────────────────────────────────────────────────
+function _syncTasksToCalendar() {
+  const cal   = (typeof loadCal === 'function' ? loadCal() : window.loadCal?.()) || [];
+  const tasks = loadTasks();
+  const today = new Date().toISOString().slice(0, 10);
+  const cu    = _getCU();
+
+  let changed = false;
+
+  tasks.forEach(t => {
+    if (!t.due || t.done || t.status === 'done') return;
+    // Sadece CU'nun görevleri veya admin
+    if (cu && !window.isAdmin?.() && t.uid !== cu.id) return;
+    // Geçmiş görevleri ekleme
+    if (t.due < today) return;
+
+    const calId = 'task_' + t.id;
+    const exists = cal.find(e => e.id === calId);
+    if (!exists) {
+      cal.push({
+        id:     calId,
+        own:    t.uid,
+        title:  '📋 ' + t.title,
+        date:   t.due,
+        time:   t.due_time || '09:00',
+        type:   'task',
+        desc:   t.desc || '',
+        status: 'approved',
+        taskId: t.id,
+        fromPusula: true,
+      });
+      changed = true;
+    } else {
+      // Güncelle
+      if (exists.title !== '📋 ' + t.title || exists.date !== t.due) {
+        exists.title = '📋 ' + t.title;
+        exists.date  = t.due;
+        exists.time  = t.due_time || '09:00';
+        changed = true;
+      }
+    }
+  });
+
+  // Silinmiş görevlerin takvim etkinliklerini kaldır
+  const taskIds = new Set(tasks.map(t => 'task_' + t.id));
+  const before  = cal.length;
+  const filtered = cal.filter(e => !e.fromPusula || taskIds.has(String(e.id)));
+  if (filtered.length !== before) changed = true;
+
+  if (changed) {
+    if (typeof saveCal === 'function') saveCal(filtered);
+    else window.saveCal?.(filtered);
+    console.info('[Pusula] Takvim senkronize edildi');
+  }
+}
+
+function _checkCalendarConflicts(taskDue) {
+  if (!taskDue) return [];
+  const cal   = (typeof loadCal === 'function' ? loadCal() : window.loadCal?.()) || [];
+  const izin  = (typeof loadIzin === 'function' ? loadIzin() : window.loadIzin?.()) || [];
+  const cu    = _getCU();
+
+  const conflicts = [];
+
+  // Resmi tatil çakışması
+  const holiday = cal.find(e => e.type === 'holiday' && e.date === taskDue);
+  if (holiday) conflicts.push({ type: 'holiday', msg: `⚠️ ${taskDue} — ${holiday.title.replace('🇹🇷 ', '')} (Resmi Tatil)` });
+
+  // İzin çakışması
+  if (cu) {
+    const myIzin = izin.find(i =>
+      i.uid === cu.id && i.status === 'approved' &&
+      taskDue >= i.start && taskDue <= (i.end || i.start)
+    );
+    if (myIzin) conflicts.push({ type: 'izin', msg: `🏖️ ${taskDue} — İzin gününüz` });
+  }
+
+  return conflicts;
+}
+
+// saveTask'a takvim sync hook ekle
+const _calOrigSave = window.saveTask;
+window.saveTask = function() {
+  // Önce kaydet
+  _calOrigSave?.();
+  // Sonra takvim sync
+  setTimeout(_syncTasksToCalendar, 200);
+};
+
+// Görev tarih seçilince çakışma uyar
+window._checkTaskDateConflict = function(due) {
+  if (!due) return;
+  const conflicts = _checkCalendarConflicts(due);
+  if (conflicts.length) {
+    const hint = document.getElementById('tk-date-conflict');
+    if (hint) {
+      hint.innerHTML = conflicts.map(c => `<div>${c.msg}</div>`).join('');
+      hint.style.display = 'block';
+    } else {
+      window.toast?.(conflicts[0].msg, 'warn');
+    }
+  } else {
+    const hint = document.getElementById('tk-date-conflict');
+    if (hint) hint.style.display = 'none';
+  }
+};
+
+window._syncTasksToCalendar = _syncTasksToCalendar;
+
+// ────────────────────────────────────────────────────────────────
+// 4. 💬 GÖREV İÇİ AI ASISTAN (Sadece atanan kişi)
+// ────────────────────────────────────────────────────────────────
+function _openAiAssistant(taskId) {
+  const task = loadTasks().find(t => t.id === taskId);
+  if (!task) return;
+  const cu = _getCU();
+  if (!cu) return;
+
+  // Sadece atanan kişi veya admin görebilir
+  const canUse = (task.uid === cu.id) || window.isAdmin?.() ||
+    (task.participants || []).includes(cu.id) ||
+    (task.managers || []).includes(cu.id);
+  if (!canUse) { window.toast?.('Bu göreve erişim yetkiniz yok', 'err'); return; }
+
+  let el = document.getElementById('pus-ai-panel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pus-ai-panel';
+    el.style.cssText = [
+      'position:fixed', 'bottom:24px', 'right:24px', 'width:380px',
+      'max-height:520px', 'z-index:7500',
+      'background:var(--sf)', 'border:1px solid var(--b)',
+      'border-radius:20px', 'box-shadow:0 20px 60px rgba(0,0,0,.15)',
+      'display:flex', 'flex-direction:column', 'overflow:hidden',
+    ].join(';');
+    document.body.appendChild(el);
+  }
+
+  el.innerHTML = `
+    <div style="padding:14px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:20px 20px 0 0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:18px">🤖</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#fff">AI Asistan</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">${task.title}</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('pus-ai-panel').remove()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;width:28px;height:28px;cursor:pointer;font-size:14px">×</button>
+    </div>
+
+    <!-- Hızlı aksiyonlar -->
+    <div style="padding:12px 14px;border-bottom:1px solid var(--b);display:flex;gap:6px;flex-wrap:wrap">
+      <button onclick="window._aiAsk?.(${taskId},'summarize')" class="pus-ai-chip">📝 Özetle</button>
+      <button onclick="window._aiAsk?.(${taskId},'subtasks')" class="pus-ai-chip">⬜ Alt görev öner</button>
+      <button onclick="window._aiAsk?.(${taskId},'similar')" class="pus-ai-chip">🔍 Benzer görevler</button>
+      <button onclick="window._aiAsk?.(${taskId},'priority')" class="pus-ai-chip">⚡ Öncelik analizi</button>
+    </div>
+
+    <!-- Mesaj listesi -->
+    <div id="pus-ai-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:150px">
+      <div style="text-align:center;color:var(--t3);font-size:12px;padding:16px 0">Bir aksiyon seçin veya soru sorun 👆</div>
+    </div>
+
+    <!-- Input -->
+    <div style="padding:12px 14px;border-top:1px solid var(--b);display:flex;gap:8px">
+      <input id="pus-ai-inp" class="fi" placeholder="Soru sor…" style="flex:1;padding:8px 12px;font-size:12px;border-radius:10px"
+        onkeydown="if(event.key==='Enter')window._aiSend?.(${taskId})">
+      <button onclick="window._aiSend?.(${taskId})" style="background:var(--ac);color:#fff;border:none;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit">Sor</button>
+    </div>`;
+
+  // CSS
+  if (!document.getElementById('pus-ai-css')) {
+    const s = document.createElement('style');
+    s.id = 'pus-ai-css';
+    s.textContent = `
+      .pus-ai-chip {
+        background:var(--s2);border:1px solid var(--b);border-radius:8px;
+        padding:5px 10px;font-size:11px;font-weight:600;color:var(--t2);
+        cursor:pointer;font-family:inherit;transition:all .15s;
+      }
+      .pus-ai-chip:hover { background:var(--al);color:var(--ac);border-color:var(--ac); }
+      .pus-ai-msg-user { background:var(--ac);color:#fff;border-radius:12px 12px 4px 12px;padding:8px 12px;font-size:12px;align-self:flex-end;max-width:85%; }
+      .pus-ai-msg-ai   { background:var(--s2);color:var(--t);border-radius:12px 12px 12px 4px;padding:8px 12px;font-size:12px;align-self:flex-start;max-width:90%;line-height:1.6; }
+      .pus-ai-loading  { color:var(--t3);font-size:12px;align-self:flex-start;padding:8px 0;font-style:italic; }
+    `;
+    document.head.appendChild(s);
+  }
+}
+
+function _aiAddMsg(type, text) {
+  const msgs = document.getElementById('pus-ai-msgs');
+  if (!msgs) return;
+  // İlk mesajsa temizle
+  if (msgs.querySelector('div[style*="text-align:center"]')) msgs.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = type === 'user' ? 'pus-ai-msg-user' : type === 'ai' ? 'pus-ai-msg-ai' : 'pus-ai-loading';
+  div.innerHTML = text.replace(/\n/g, '<br>');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function _aiCallClaude(prompt) {
+  const loadingEl = _aiAddMsg('loading', '⏳ Düşünüyor…');
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await resp.json();
+    if (loadingEl) loadingEl.remove();
+    const text = data.content?.[0]?.text || 'Yanıt alınamadı.';
+    _aiAddMsg('ai', text);
+    return text;
+  } catch(e) {
+    if (loadingEl) loadingEl.remove();
+    _aiAddMsg('ai', '❌ Bağlantı hatası: ' + e.message);
+    return null;
+  }
+}
+
+window._aiAsk = async function(taskId, action) {
+  const task  = loadTasks().find(t => t.id === taskId);
+  const tasks = loadTasks();
+  if (!task) return;
+
+  let prompt = '';
+  const ctx = `Görev: "${task.title}"\nAçıklama: ${task.desc || '(yok)'}\nDepartman: ${task.department || '?'}\nÖncelik: ${{1:'Kritik',2:'Önemli',3:'Normal',4:'Düşük'}[task.pri]}\nDurum: ${task.status}\nAlt görevler: ${(task.subTasks||[]).map(s=>s.title).join(', ')||'(yok)'}`;
+
+  if (action === 'summarize') {
+    _aiAddMsg('user', '📝 Bu görevi özetle');
+    prompt = `${ctx}\n\nBu görevi 2-3 cümleyle Türkçe özetle. Net ve pratik ol.`;
+  } else if (action === 'subtasks') {
+    _aiAddMsg('user', '⬜ Alt görev öner');
+    prompt = `${ctx}\n\nBu görev için 4-6 tane pratik alt görev öner. Her satırda sadece bir alt görev olsun, numarasız, madde işaretsiz, Türkçe.`;
+  } else if (action === 'similar') {
+    const similar = tasks
+      .filter(t => t.id !== taskId && t.department === task.department && !t.done)
+      .slice(0, 5)
+      .map(t => `- ${t.title} (${t.status})`)
+      .join('\n');
+    _aiAddMsg('user', '🔍 Benzer görevler');
+    _aiAddMsg('ai', similar ? `Aynı departmanda açık görevler:\n${similar}` : 'Aynı departmanda başka görev bulunamadı.');
+    return;
+  } else if (action === 'priority') {
+    _aiAddMsg('user', '⚡ Öncelik analizi');
+    const overdue = task.due && task.due < new Date().toISOString().slice(0,10);
+    prompt = `${ctx}\nGecikmiş: ${overdue ? 'Evet' : 'Hayır'}\n\nBu görevin önceliğini analiz et. Neden bu öncelikte olmalı? Kısaca Türkçe açıkla.`;
+  }
+
+  if (prompt) await _aiCallClaude(prompt);
+};
+
+window._aiSend = async function(taskId) {
+  const inp  = document.getElementById('pus-ai-inp');
+  const task = loadTasks().find(t => t.id === taskId);
+  if (!inp || !task) return;
+  const q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+  _aiAddMsg('user', q);
+  const ctx = `Görev: "${task.title}" | Departman: ${task.department||'?'} | Durum: ${task.status}`;
+  await _aiCallClaude(`${ctx}\n\nKullanıcı sorusu: ${q}\n\nTürkçe, kısa ve pratik yanıt ver.`);
+};
+
+window._openAiAssistant = _openAiAssistant;
+
+// ── Detail panel'e AI butonu ekle ────────────────────────────────
+const _aiOrigOpenDetail = window._pfRealOpenDetail;
+window._pfRealOpenDetail = function(taskId) {
+  _aiOrigOpenDetail?.(taskId);
+  setTimeout(() => {
+    const task = loadTasks().find(t => t.id === taskId);
+    const cu   = _getCU();
+    if (!task || !cu) return;
+
+    // Sadece atanan kişi veya katılımcı görebilir
+    const canUse = task.uid === cu.id || window.isAdmin?.() ||
+      (task.participants||[]).includes(cu.id) ||
+      (task.managers||[]).includes(cu.id);
+    if (!canUse) return;
+
+    // pdp-tabbar'a AI sekmesi ekle
+    const tabbar = document.getElementById('pdp-tabbar');
+    if (!tabbar || tabbar.querySelector('#pdp-tab-ai')) return;
+    const aiTab = document.createElement('button');
+    aiTab.id = 'pdp-tab-ai';
+    aiTab.style.cssText = 'flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;font-family:inherit';
+    aiTab.innerHTML = '🤖 AI';
+    aiTab.onclick = () => _openAiAssistant(taskId);
+    tabbar.appendChild(aiTab);
+  }, 200);
+};
+
+// ── Takvim sync başlangıcı ────────────────────────────────────────
+const _calSyncOnRender = window.renderPusula;
+window.renderPusula = function() {
+  _calSyncOnRender?.();
+  setTimeout(_syncTasksToCalendar, 1000);
+};
+
+// ── Görev modalına takvim çakışma uyarısı ekle ────────────────────
+const _calOrigModal = window._pfRealOpenAdd;
+window._pfRealOpenAdd = function() {
+  _calOrigModal?.();
+  setTimeout(() => {
+    const dueInp = document.getElementById('tk-due');
+    if (dueInp) {
+      dueInp.onchange = e => window._checkTaskDateConflict?.(e.target.value);
+      // Çakışma uyarı alanı ekle
+      if (!document.getElementById('tk-date-conflict')) {
+        const warn = document.createElement('div');
+        warn.id = 'tk-date-conflict';
+        warn.style.cssText = 'display:none;margin-top:5px;padding:6px 10px;background:rgba(245,158,11,.1);border-radius:8px;font-size:11px;color:#D97706;font-weight:600';
+        dueInp.parentElement?.appendChild(warn);
+      }
+    }
+  }, 150);
+};
+
+console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
+
+
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Pusula;
