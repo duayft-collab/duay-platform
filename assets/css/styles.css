@@ -1524,3 +1524,125 @@ input:checked+.psl::before{transform:translateX(17px)}
 #pus-focus-panel .fi-ic,
 #pus-focus-panel [class*="icon"],
 #pus-focus-panel svg { opacity: 1 !important; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   PUSULA YENİ TASARIM — B+A KOMBİNASYONU  [v2.3.0]
+   Tablo sekmeler + Sol sidebar + Sütunlu liste
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Topbar ── */
+.pus-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--b);
+  background: var(--sf); position: sticky; top: 0; z-index: 10;
+}
+.pus-topbar-left  { display: flex; align-items: center; gap: 10px; }
+.pus-topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pus-topbar-sep   { width: 1px; height: 20px; background: var(--b); flex-shrink: 0; }
+.pus-brand {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 14px; font-weight: 600; color: var(--t);
+}
+
+/* ── Sekme Filtreler ── */
+.pus-tabs-row {
+  display: flex; align-items: stretch; border-bottom: 1px solid var(--b);
+  background: var(--sf); overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+}
+.pus-tabs-row::-webkit-scrollbar { display: none; }
+.pus-tab {
+  padding: 10px 16px; font-size: 12px; font-weight: 500;
+  color: var(--t3); cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.pus-tab:hover { color: var(--t2); }
+.pus-tab.active { color: var(--ac); border-bottom-color: var(--ac); }
+.pus-tab-danger.active { color: var(--rd); border-bottom-color: var(--rd); }
+.pus-tab-count {
+  font-size: 11px; font-weight: 600; padding: 1px 6px;
+  border-radius: 99px; background: var(--s2); color: var(--t3);
+}
+.pus-tab.active .pus-tab-count { background: rgba(99,102,241,.12); color: var(--ac); }
+.pus-tab-danger.active .pus-tab-count { background: rgba(239,68,68,.1); color: var(--rd); }
+
+/* ── Ana Layout ── */
+.pus-layout {
+  display: grid; grid-template-columns: 200px 1fr; min-height: 0;
+}
+
+/* ── Sol Sidebar ── */
+.pus-sidebar {
+  border-right: 1px solid var(--b); padding: 14px 12px;
+  background: var(--s2); overflow-y: auto;
+}
+.pus-sb-section-title {
+  font-size: 9px; font-weight: 700; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px;
+}
+.pus-sb-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 7px; cursor: pointer;
+  font-size: 12px; color: var(--t2); margin-bottom: 2px;
+  transition: background .1s, color .1s;
+}
+.pus-sb-item:hover { background: var(--sf); }
+.pus-sb-item.active { background: var(--sf); color: var(--ac); font-weight: 500; border: 0.5px solid var(--b); }
+.pus-sb-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.pus-sb-count {
+  margin-left: auto; font-size: 10px; color: var(--t3);
+  background: var(--s2); padding: 1px 5px; border-radius: 99px;
+}
+.pus-sb-progress { padding: 4px 0; }
+
+/* ── Sağ İçerik ── */
+.pus-content { overflow: hidden; display: flex; flex-direction: column; }
+
+/* ── Toolbar ── */
+.pus-toolbar {
+  padding: 10px 14px; border-bottom: 1px solid var(--b);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--sf);
+}
+
+/* ── View toggle butonları ── */
+.pus-view-toggle {
+  display: flex; background: var(--s2); border-radius: 7px;
+  padding: 2px; gap: 1px;
+}
+.pvt-btn {
+  display: flex; align-items: center; gap: 5px; padding: 4px 10px;
+  border-radius: 5px; font-size: 11px; font-weight: 500;
+  color: var(--t3); cursor: pointer; border: none; background: none;
+  transition: all .12s;
+}
+.pvt-btn:hover { color: var(--t2); }
+.pvt-btn.on, .pvt-btn.active {
+  background: var(--sf); color: var(--ac);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 0.5px solid var(--b);
+}
+
+/* ── Add buton ── */
+.pus-add-btn {
+  display: flex; align-items: center; gap: 6px; padding: 6px 14px;
+  background: var(--ac); color: #fff; border: none; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: opacity .15s;
+}
+.pus-add-btn:hover { opacity: .88; }
+
+/* ── Mobil ── */
+@media (max-width: 768px) {
+  .pus-layout { grid-template-columns: 1fr; }
+  .pus-sidebar { display: none; }
+  .pus-topbar { flex-wrap: wrap; gap: 8px; }
+  .pus-topbar-right { width: 100%; }
+}
+
+/* Eski stiller override — artık kullanılmıyor */
+.pus-hero { display: none !important; }
+.pus-stats-row { display: none !important; }
+.pus-progress-strip { display: none !important; }

@@ -614,201 +614,167 @@ function _doLogin() {
       <!-- Panel: Pusula (Görev Yönetimi) -->
             <div class="panel" id="panel-pusula">
 
-        <!-- ── HERO ── -->
-        <div class="pus-hero">
-          <div class="pus-hero-inner">
-            <div class="pus-hero-top">
-              <div>
-                <div class="pus-hero-title">
-                  <div class="pus-hero-title-icon">🧭</div>
-                  Pusula
-                </div>
-                <div class="pus-hero-sub" id="ph-pus-s">Görev yönetim merkezi</div>
-              <!-- ph-pus-quote kaldırıldı — özlü söz footer motivasyon şeridine taşındı -->
-              <!-- Quick Add -->
-              <div class="pus-quick-add-wrap" id="pus-quick-add-wrap">
-                <div class="pus-qa-inner">
-                  <span class="pus-qa-icon">⚡</span>
-                  <input class="pus-qa-inp" id="pus-qa-inp" type="text"
-                    placeholder="Hızlı görev ekle… (Enter)"
-                    onkeydown="if(event.key==='Enter')window._qaSubmit?.()"
-                    oninput="window._qaHint?.(this.value)">
-                  <button class="pus-qa-btn" onclick="window._qaSubmit?.()">+</button>
-                </div>
-                <div class="pus-qa-hint" id="pus-qa-hint"></div>
-              </div>
-              </div>
-              <div class="pus-hero-actions">
-                <!-- Görünüm toggle -->
-                <div class="pus-view-toggle" id="pus-view-row">
-                  <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)">
-                    <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="2" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="5.6" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="9.2" width="11" height="1.8" rx=".9" fill="currentColor"/></svg>
-                    Liste
-                  </button>
-                  <button id="pus-v-board" class="pvt-btn" onclick="setPusView('board',this)">
-                    <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/><rect x="5" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/></svg>
-                    Board
-                  </button>
-                  <button id="pus-v-me" class="pvt-btn" onclick="setPusView('me',this)">
-                    <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6.5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                    Benim
-                  </button>
-                </div>
-
-                <!-- Araçlar grubu — tek dropdown -->
-                <div class="pus-tools-group" id="pus-tools-group">
-                  <button class="pus-tools-trigger" onclick="window._toggleToolsMenu?.(this)" title="Araçlar">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="2" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="12" r="1.3" fill="currentColor"/></svg>
-                    Araçlar
-                    <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
-                    <!-- Veri grubu -->
-                    <div class="ptm-section-label">📊 Veri</div>
-                    <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()">
-                      <span class="ptm-icon">⬇️</span>
-                      <div><div class="ptm-title">Excel İndir</div><div class="ptm-desc">Görev listesini xlsx olarak indir</div></div>
-                    </button>
-                    <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()">
-                      <span class="ptm-icon">⬆️</span>
-                      <div><div class="ptm-title">Excel Yükle</div><div class="ptm-desc">xlsx dosyasından görev içe aktar</div></div>
-                    </button>
-                    <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()">
-                      <span class="ptm-icon">📋</span>
-                      <div><div class="ptm-title">Şablon İndir</div><div class="ptm-desc">Boş import şablonu indir</div></div>
-                    </button>
-                    <div class="ptm-divider"></div>
-                    <!-- Araçlar grubu -->
-                    <div class="ptm-section-label">⚡ Araçlar</div>
-                    <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()">
-                      <span class="ptm-icon">🎯</span>
-                      <div><div class="ptm-title">Odak Modu</div><div class="ptm-desc">Pomodoro zamanlayıcısı başlat</div></div>
-                    </button>
-                    <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(null);window._closeToolsMenu?.()">
-                      <span class="ptm-icon">📌</span>
-                      <div><div class="ptm-title">Yapışkan Notlar</div><div class="ptm-desc">Hızlı not al, göreve dönüştür</div></div>
-                    </button>
-                    <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()">
-                      <span class="ptm-icon">🔁</span>
-                      <div><div class="ptm-title">Şablon Kütüphanesi</div><div class="ptm-desc">Hazır şablonla görev oluştur</div></div>
-                    </button>
-                    <button class="ptm-item" onclick="window._renderEisenhower?.() || setPusView('matrix',null);window._closeToolsMenu?.()">
-                      <span class="ptm-icon">📐</span>
-                      <div><div class="ptm-title">Eisenhower Matrix</div><div class="ptm-desc">Görevi 4 kadranda önceliklendir</div></div>
-                    </button>
-                    <div class="ptm-divider"></div>
-                    <!-- Analiz grubu -->
-                    <div class="ptm-section-label">📈 Analiz</div>
-                    <button class="ptm-item" onclick="openPersonalDashboard();window._closeToolsMenu?.()">
-                      <span class="ptm-icon">📊</span>
-                      <div><div class="ptm-title">Performansım</div><div class="ptm-desc">Kişisel dashboard & istatistik</div></div>
-                    </button>
-                    <button class="ptm-item" onclick="window._openGamifDashboard?.();window._closeToolsMenu?.()">
-                      <span class="ptm-icon">🏆</span>
-                      <div><div class="ptm-title">Rozetlerim</div><div class="ptm-desc">XP, seviye ve rozet vitrinleri</div></div>
-                    </button>
-                    <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()">
-                      <span class="ptm-icon">👥</span>
-                      <div><div class="ptm-title">Personel Analizi</div><div class="ptm-desc">İş yükü & performans tablosu</div></div>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Görev Ekle — ana CTA -->
-                <button class="pus-add-btn" onclick="openAddTask()">
-                  <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                  Görev Ekle
-                </button>
-
-                <!-- Gizli referans buton (toggle state için) -->
-                <button id="btn-pus-sticky" style="display:none"></button>
-              </div>
+        <!-- ── YENİ PUSULA TOPBAR ── -->
+        <div class="pus-topbar">
+          <div class="pus-topbar-left">
+            <div class="pus-brand">
+              <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="var(--ac)" stroke-width="1.3"/><path d="M10.5 5.5l-2 4-4 2 2-4 4-2z" stroke="var(--ac)" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              Pusula
+            </div>
+            <div class="pus-topbar-sep"></div>
+            <div class="pus-view-toggle" id="pus-view-row">
+              <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)">
+                <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="1.6" rx=".8" fill="currentColor"/><rect x="1" y="5.2" width="10" height="1.6" rx=".8" fill="currentColor"/><rect x="1" y="8.4" width="10" height="1.6" rx=".8" fill="currentColor"/></svg>
+                Liste
+              </button>
+              <button id="pus-v-board" class="pvt-btn" onclick="setPusView('board',this)">
+                <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><rect x="1" y="1" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".8"/><rect x="4.75" y="1" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".8"/><rect x="8.5" y="1" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".8"/></svg>
+                Board
+              </button>
+              <button id="pus-v-me" class="pvt-btn" onclick="setPusView('me',this)">
+                <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><circle cx="6" cy="3.5" r="1.8" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 10c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                Benim
+              </button>
             </div>
           </div>
-
-          <!-- Stat filtreler — kompakt -->
-          <div class="pus-stats-row" style="gap:4px;flex-wrap:nowrap;overflow-x:auto">
-            <div class="pus-stat-pill active" id="psf-all" onclick="setPusQuickFilter('all',this)" style="flex:1;min-width:52px">
-              <span class="psp-count" id="pv-tot">0</span>
-              <span class="psp-label">Tümü</span>
+          <div class="pus-topbar-right">
+            <!-- Quick Add -->
+            <div class="pus-quick-add-wrap" id="pus-quick-add-wrap" style="margin:0">
+              <div class="pus-qa-inner" style="border-radius:7px;padding:4px 10px">
+                <span class="pus-qa-icon" style="font-size:12px">⚡</span>
+                <input class="pus-qa-inp" id="pus-qa-inp" type="text"
+                  placeholder="Hızlı görev…"
+                  onkeydown="if(event.key==='Enter')window._qaSubmit?.()"
+                  oninput="window._qaHint?.(this.value)"
+                  style="width:140px">
+                <button class="pus-qa-btn" onclick="window._qaSubmit?.()">+</button>
+              </div>
+              <div class="pus-qa-hint" id="pus-qa-hint"></div>
             </div>
-            <div class="pus-stat-pill" id="psf-todo" onclick="setPusQuickFilter('todo',this)" style="flex:1;min-width:52px">
-              <span class="psp-count" id="psf-todo-n">0</span>
-              <span class="psp-label">Yapılacak</span>
+            <div class="pus-topbar-sep"></div>
+            <!-- Araçlar -->
+            <div class="pus-tools-group" id="pus-tools-group" style="position:relative">
+              <button class="pus-tools-trigger" onclick="window._toggleToolsMenu?.(this)" title="Araçlar">
+                <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="2" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="12" r="1.3" fill="currentColor"/></svg>
+                Araçlar
+                <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
+                <div class="ptm-section-label">📊 Veri</div>
+                <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬇️</span><div><div class="ptm-title">Excel İndir</div><div class="ptm-desc">Görev listesini xlsx olarak indir</div></div></button>
+                <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬆️</span><div><div class="ptm-title">Excel Yükle</div><div class="ptm-desc">xlsx dosyasından görev içe aktar</div></div></button>
+                <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()"><span class="ptm-icon">📋</span><div><div class="ptm-title">Şablon İndir</div><div class="ptm-desc">Boş import şablonu indir</div></div></button>
+                <div class="ptm-divider"></div>
+                <div class="ptm-section-label">⚡ Araçlar</div>
+                <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()"><span class="ptm-icon">🎯</span><div><div class="ptm-title">Odak Modu</div><div class="ptm-desc">Pomodoro zamanlayıcısı başlat</div></div></button>
+                <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(null);window._closeToolsMenu?.()"><span class="ptm-icon">📌</span><div><div class="ptm-title">Yapışkan Notlar</div><div class="ptm-desc">Hızlı not al, göreve dönüştür</div></div></button>
+                <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()"><span class="ptm-icon">🔁</span><div><div class="ptm-title">Şablon Kütüphanesi</div><div class="ptm-desc">Hazır şablonla görev oluştur</div></div></button>
+                <button class="ptm-item" onclick="window._renderEisenhower?.() || setPusView('matrix',null);window._closeToolsMenu?.()"><span class="ptm-icon">📐</span><div><div class="ptm-title">Eisenhower Matrix</div><div class="ptm-desc">Görevi 4 kadranda önceliklendir</div></div></button>
+                <div class="ptm-divider"></div>
+                <div class="ptm-section-label">📈 Analiz</div>
+                <button class="ptm-item" onclick="openPersonalDashboard();window._closeToolsMenu?.()"><span class="ptm-icon">📊</span><div><div class="ptm-title">Performansım</div><div class="ptm-desc">Kişisel dashboard & istatistik</div></div></button>
+                <button class="ptm-item" onclick="window._openGamifDashboard?.();window._closeToolsMenu?.()"><span class="ptm-icon">🏆</span><div><div class="ptm-title">Rozetlerim</div><div class="ptm-desc">XP, seviye ve rozet vitrinleri</div></div></button>
+                <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()"><span class="ptm-icon">👥</span><div><div class="ptm-title">Personel Analizi</div><div class="ptm-desc">İş yükü & performans tablosu</div></div></button>
+              </div>
             </div>
-            <div class="pus-stat-pill" id="psf-ip" onclick="setPusQuickFilter('inprogress',this)" style="flex:1;min-width:52px">
-              <span class="psp-count" id="psf-ip-n">0</span>
-              <span class="psp-label">Devam</span>
-            </div>
-            <div class="pus-stat-pill" id="psf-rv" onclick="setPusQuickFilter('review',this)" style="flex:1;min-width:52px">
-              <span class="psp-count" id="psf-rv-n">0</span>
-              <span class="psp-label">İnceleme</span>
-            </div>
-            <div class="pus-stat-pill" id="psf-done" onclick="setPusQuickFilter('done',this)" style="flex:1;min-width:52px">
-              <span class="psp-count" id="psf-done-n">0</span>
-              <span class="psp-label">Tamam</span>
-            </div>
-            <div class="pus-stat-pill pus-stat-pill-danger" id="psf-ov" onclick="setPusQuickFilter('overdue',this)" style="flex:1;min-width:52px">
-              <span class="psp-count" id="pv-ov">0</span>
-              <span class="psp-label">Gecikmiş</span>
-            </div>
+            <button class="pus-add-btn" onclick="openAddTask()">
+              <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Görev Ekle
+            </button>
+            <button id="btn-pus-sticky" style="display:none"></button>
           </div>
         </div>
 
-        <!-- Progress strip -->
-        <div class="pus-progress-strip">
-          <span class="pus-prog-label">İlerleme</span>
-          <div class="pus-prog-bar-wrap"><div class="pus-prog-bar-fill" id="pus-prog-fill"></div></div>
-          <span class="pus-prog-pct-txt" id="pus-prog-pct">0%</span>
-          <div class="pus-prog-stats" id="pus-prog-stats"></div>
+        <!-- ── SEKME FİLTRELER (Tablo sekmesi gibi) ── -->
+        <div class="pus-tabs-row">
+          <div class="pus-tab active" id="psf-all" onclick="setPusQuickFilter('all',this)">
+            Tümü <span class="pus-tab-count" id="pv-tot">0</span>
+          </div>
+          <div class="pus-tab" id="psf-todo" onclick="setPusQuickFilter('todo',this)">
+            Yapılacak <span class="pus-tab-count" id="psf-todo-n">0</span>
+          </div>
+          <div class="pus-tab" id="psf-ip" onclick="setPusQuickFilter('inprogress',this)">
+            Devam <span class="pus-tab-count" id="psf-ip-n">0</span>
+          </div>
+          <div class="pus-tab" id="psf-rv" onclick="setPusQuickFilter('review',this)">
+            İnceleme <span class="pus-tab-count" id="psf-rv-n">0</span>
+          </div>
+          <div class="pus-tab" id="psf-done" onclick="setPusQuickFilter('done',this)">
+            Tamamlandı <span class="pus-tab-count" id="psf-done-n">0</span>
+          </div>
+          <div class="pus-tab pus-tab-danger" id="psf-ov" onclick="setPusQuickFilter('overdue',this)">
+            Gecikmiş <span class="pus-tab-count" id="pv-ov">0</span>
+          </div>
         </div>
 
-        <!-- Apple search + filters -->
-        <div class="pus-toolbar">
-          <div class="pus-toolbar-left">
-            <div class="pus-search-wrap">
-              <svg class="pus-search-icon" width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-              <input type="text" class="pus-search-inp" id="pf-search" placeholder="Ara…" oninput="renderPusula()">
+        <!-- ── ANA LAYOUT: Sol Sidebar + Sağ İçerik ── -->
+        <div class="pus-layout">
+
+          <!-- Sol Sidebar -->
+          <div class="pus-sidebar" id="pus-sidebar">
+            <div class="pus-sb-section-title">Departman</div>
+            <div id="pus-dept-nav">
+              <div class="pus-sb-item active" onclick="window._filterDept?.('')">
+                <span class="pus-sb-dot" style="background:var(--ac)"></span>
+                Tümü
+              </div>
             </div>
-            <select class="pus-filter-sel" id="pus-usel" style="display:none" onchange="renderPusula()"><option value="0">Tüm Personel</option></select>
-            <select class="pus-filter-sel" id="pf-pri" onchange="renderPusula()">
-              <option value="0">Tüm Öncelik</option>
-              <option value="1">🔴 Kritik</option>
-              <option value="2">🟠 Önemli</option>
-              <option value="3">🔵 Normal</option>
-              <option value="4">⚪ Düşük</option>
-            </select>
-            <select class="pus-filter-sel" id="pf-dept" onchange="renderPusula()" title="Departman filtresi">
-              <option value="">Tüm Departmanlar</option>
-            </select>
-            <input type="date" class="pus-filter-sel" id="pf-dfrom" onchange="renderPusula()" title="Başlangıç">
-            <input type="date" class="pus-filter-sel" id="pf-dto" onchange="renderPusula()" title="Bitiş">
+            <div class="pus-sb-section-title" style="margin-top:16px">İlerleme</div>
+            <div class="pus-sb-progress">
+              <div class="pus-prog-bar-wrap" style="height:5px;border-radius:99px;overflow:hidden;background:var(--b);margin-bottom:4px">
+                <div class="pus-prog-bar-fill" id="pus-prog-fill" style="height:100%"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <div class="pus-prog-stats" id="pus-prog-stats" style="font-size:10px"></div>
+                <span class="pus-prog-pct-txt" id="pus-prog-pct" style="font-size:11px;font-weight:500"></span>
+              </div>
+            </div>
           </div>
-          <div class="pus-toolbar-right">
-            <select class="pus-filter-sel" id="pf-sort" onchange="renderPusula()">
-              <option value="pri">Önceliğe göre</option>
-              <option value="due">Son tarihe göre</option>
-              <option value="newest">En yeni</option>
-              <option value="oldest">En eski</option>
-              <option value="az">A→Z</option>
-            </select>
-            <button class="pus-clear-btn" onclick="clearPusFilters()">✕ Temizle</button>
+
+          <!-- Sağ içerik -->
+          <div class="pus-content">
+            <!-- Arama + Filtreler -->
+            <div class="pus-toolbar">
+              <div class="pus-toolbar-left">
+                <div class="pus-search-wrap">
+                  <svg class="pus-search-icon" width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                  <input type="text" class="pus-search-inp" id="pf-search" placeholder="Ara…" oninput="renderPusula()">
+                </div>
+                <select class="pus-filter-sel" id="pus-usel" style="display:none" onchange="renderPusula()"><option value="0">Tüm Personel</option></select>
+                <select class="pus-filter-sel" id="pf-pri" onchange="renderPusula()">
+                  <option value="0">Tüm Öncelik</option>
+                  <option value="1">🔴 Kritik</option>
+                  <option value="2">🟠 Önemli</option>
+                  <option value="3">🔵 Normal</option>
+                  <option value="4">⚪ Düşük</option>
+                </select>
+                <select class="pus-filter-sel" id="pf-dept" onchange="renderPusula()" title="Departman filtresi">
+                  <option value="">Tüm Departmanlar</option>
+                </select>
+                <input type="date" class="pus-filter-sel" id="pf-dfrom" onchange="renderPusula()" title="Başlangıç">
+                <input type="date" class="pus-filter-sel" id="pf-dto" onchange="renderPusula()" title="Bitiş">
+              </div>
+              <div class="pus-toolbar-right">
+                <select class="pus-filter-sel" id="pf-sort" onchange="renderPusula()">
+                  <option value="pri">Önceliğe göre</option>
+                  <option value="due">Son tarihe göre</option>
+                  <option value="newest">En yeni</option>
+                  <option value="oldest">En eski</option>
+                  <option value="az">A→Z</option>
+                </select>
+                <button class="pus-clear-btn" onclick="clearPusFilters()">✕ Temizle</button>
+              </div>
+            </div>
+
+            <div id="pus-workload-panel" style="display:none;margin-bottom:14px;animation:pus-row-in .25s ease"></div>
+            <div class="pus-summary-row" id="pf-summary"></div>
+            <div id="pus-focus-panel" style="margin-bottom:14px;width:100%"></div>
+            <div id="pus-sticky-board" style="display:none;margin-bottom:14px"></div>
+            <div id="pus-main-view"></div>
           </div>
         </div>
 
-        <!-- Personel Analizi — toggle ile açılır -->
-        <div id="pus-workload-panel" style="display:none;margin-bottom:14px;animation:pus-row-in .25s ease"></div>
-
-        <div class="pus-summary-row" id="pf-summary"></div>
-
-        <!-- Focus Panel — tam genişlik grid -->
-        <div id="pus-focus-panel" style="margin-bottom:14px;width:100%"></div>
-        <!-- Sticky Board Panel -->
-        <div id="pus-sticky-board" style="display:none;margin-bottom:14px"></div>
-
-        <div id="pus-main-view"></div>
-
-        <!-- Apple slide-in detail panel -->
+        <!-- Slide-in detail panel -->
         <div id="pus-detail-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:440px;max-width:95vw;z-index:500;flex-direction:column;overflow:hidden">
           <div class="pdp-header">
             <div style="flex:1;min-width:0">
@@ -822,6 +788,9 @@ function _doLogin() {
           </div>
           <div id="pus-detail-body" style="flex:1;overflow-y:auto;padding:20px;background:var(--s2)"></div>
         </div>
+
+        <!-- Eski pus-hero-sub gizli tutuyoruz (JS referansları için) -->
+        <span id="ph-pus-s" style="display:none">Görev yönetim merkezi</span>
       </div>
 
       <!-- Panel: Kargo -->

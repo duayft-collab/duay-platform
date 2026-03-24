@@ -461,6 +461,44 @@ function checkOverdueTasks() {
 }
 window.checkOverdueTasks = checkOverdueTasks;
 
+
+// ════════════════════════════════════════════════════════════════
+// SOL SIDEBAR DEPARTMAN NAVİGASYONU  [v2.3.0 Tasarım]
+// ════════════════════════════════════════════════════════════════
+function _renderDeptSidebar() {
+  const nav = document.getElementById('pus-dept-nav');
+  if (!nav) return;
+  const tasks = loadTasks();
+  const depts = [...new Set(tasks.map(t => t.department).filter(Boolean))].sort();
+  const currentDept = document.getElementById('pf-dept')?.value || '';
+
+  const allItem = `<div class="pus-sb-item ${currentDept===''?'active':''}" onclick="window._filterDept?.('')">
+    <span class="pus-sb-dot" style="background:var(--ac)"></span>
+    Tümü
+    <span class="pus-sb-count">${tasks.length}</span>
+  </div>`;
+
+  const deptItems = depts.map(d => {
+    const c = getDeptColor(d);
+    const count = tasks.filter(t => t.department === d).length;
+    return `<div class="pus-sb-item ${currentDept===d?'active':''}" onclick="window._filterDept?.('${d}')">
+      <span class="pus-sb-dot" style="background:${c}"></span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d}</span>
+      <span class="pus-sb-count">${count}</span>
+    </div>`;
+  }).join('');
+
+  nav.innerHTML = allItem + deptItems;
+}
+
+window._filterDept = function(dept) {
+  const sel = document.getElementById('pf-dept');
+  if (sel) sel.value = dept;
+  renderPusula();
+};
+
+window._renderDeptSidebar = _renderDeptSidebar;
+
 function updatePusBadge() {
   const tasks  = window.isAdmin?.() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
   // v8.5 fix: sadece status !== 'done' VE !t.done olanları say
@@ -505,6 +543,7 @@ function _renderPusQuoteBanner() {
 
 function renderPusula() {
   populatePusUsers();
+  setTimeout(_renderDeptSidebar, 50);
   // Gecikmiş görev kontrolü (her renderda değil, 5 dakikada bir)
   const _ovKey = '_pus_ov_check';
   if (!window[_ovKey] || Date.now() - window[_ovKey] > 300000) {
