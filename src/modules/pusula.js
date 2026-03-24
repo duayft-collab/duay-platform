@@ -253,19 +253,20 @@ function renderFocusPanel() {
     { type:'year',    label:"Yılın En Önemlileri",      icon:'🏆', color:'#DC2626', bg:'rgba(220,38,38,.1)',  ids:_yIds,  cards:yearCards,    total:yearTotal,    hint:'listeden 🏆 basın' },
   ];
 
-  // 5 bölüm grid — tam genişlik, sağda boşluk yok (madde 8)
-  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:100%">'
+  cont.innerHTML = '<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin">'
     + FOCUS_WIDGETS.map(w =>
-      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:10px 12px;min-width:0">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-          + '<div style="display:flex;align-items:center;gap:5px;min-width:0">'
-            + '<span style="font-size:14px;flex-shrink:0">' + w.icon + '</span>'
-            + '<span style="font-size:10px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
+      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:12px 14px;min-width:220px;flex-shrink:0">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + '<span style="font-size:15px">' + w.icon + '</span>'
+            + '<span style="font-size:11px;font-weight:700;color:var(--t)">' + w.label + '</span>'
           + '</div>'
-          + '<span style="font-size:10px;color:var(--t3);font-family:monospace;flex-shrink:0;margin-left:4px">' + w.ids.length + '</span>'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + (w.total ? '<span style="font-size:10px;background:' + w.bg + ';color:' + w.color + ';padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + w.total + '</span>' : '')
+            + '<span style="font-size:10px;color:var(--t3);font-family:monospace">' + w.ids.length + '/3</span>'
+          + '</div>'
         + '</div>'
-        + (w.total ? '<div style="font-size:9px;background:' + w.bg + ';color:' + w.color + ';padding:1px 6px;border-radius:4px;font-weight:600;margin-bottom:6px;display:inline-block">⏱ ' + w.total + '</div>' : '')
-        + (w.cards || '<div style="font-size:10px;color:var(--t2);text-align:center;padding:8px 0;opacity:.6">' + w.hint + '</div>')
+        + (w.cards || '<div style="font-size:11px;color:var(--t2);text-align:center;padding:12px 0;opacity:.7">' + w.hint + '</div>')
       + '</div>'
     ).join('')
   + '</div>';
@@ -1509,61 +1510,6 @@ function quickUpdateTask(id, field, val) {
 }
 
 /** Yeni görev modalını açar */
-
-// ════════════════════════════════════════════════════════════════
-// DEPARTMAN AUTOCOMPLETE  [v2.2.0]
-// Görev modalındaki departman alanına mevcut departmanları öner
-// Kullanıcı yeni departman da yazabilir
-// ════════════════════════════════════════════════════════════════
-function _initDeptAutocomplete() {
-  const inp = document.getElementById('tk-dept');
-  if (!inp || inp.dataset.acInit) return;
-  inp.dataset.acInit = '1';
-  inp.setAttribute('placeholder', 'Yazın veya seçin…');
-  inp.setAttribute('autocomplete', 'off');
-
-  let suggest = null;
-
-  function _showSuggest(filter) {
-    _hideSuggest();
-    const tasks = loadTasks();
-    const all   = [...new Set(tasks.map(t => t.department).filter(Boolean))].sort();
-    const match = filter ? all.filter(d => d.toLowerCase().includes(filter.toLowerCase())) : all;
-    if (!match.length) return;
-
-    suggest = document.createElement('div');
-    suggest.className = 'dept-suggest';
-    suggest.style.cssText = 'position:absolute;z-index:9999;top:100%;left:0;right:0';
-    match.forEach(d => {
-      const item = document.createElement('div');
-      item.className = 'dept-suggest-item';
-      item.textContent = d;
-      item.onmousedown = (e) => {
-        e.preventDefault();
-        inp.value = d;
-        _hideSuggest();
-      };
-      suggest.appendChild(item);
-    });
-
-    inp.parentElement.style.position = 'relative';
-    inp.parentElement.appendChild(suggest);
-  }
-
-  function _hideSuggest() {
-    if (suggest) { suggest.remove(); suggest = null; }
-  }
-
-  inp.addEventListener('input',  () => _showSuggest(inp.value));
-  inp.addEventListener('focus',  () => _showSuggest(inp.value));
-  inp.addEventListener('blur',   () => setTimeout(_hideSuggest, 150));
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Escape') _hideSuggest();
-  });
-}
-
-window._initDeptAutocomplete = _initDeptAutocomplete;
-
 function openAddTask() {
   populatePusUsers();
   ['tk-title','tk-desc','tk-tags','tk-link'].forEach(id => { const el = g(id); if (el) el.value = ''; });
@@ -1586,7 +1532,7 @@ function openAddTask() {
   }
   st('mo-tk-t', '➕ Görev Ekle');
   window.openMo?.('mo-task');
-  setTimeout(() => { populateTaskParticipants(null); _initDeptAutocomplete(); }, 50);
+  setTimeout(() => populateTaskParticipants(null), 50);
 }
 
 /** Mevcut görevi düzenleme modalında açar */
@@ -1903,17 +1849,6 @@ function addSubTask(parentId) {
         </select>
       </div>
     </div>
-    <div class="fr" style="margin-top:2px">
-      <div class="fl">📎 DÖKÜMAN (opsiyonel)</div>
-      <input type="file" class="fi" id="subadd-file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" style="font-size:12px">
-    </div>
-    <div class="fr" style="margin-top:2px">
-      <div class="fl">🚢 KONTEYNER BAĞLA (opsiyonel)</div>
-      <select class="fi" id="subadd-konteyn">
-        <option value="">Konteyner seçin...</option>
-        ${(typeof loadKonteyn === 'function' ? loadKonteyn() : []).filter(k=>!k.closed).map(k=>'<option value="'+k.id+'">'+(k.no||k.id)+(k.hat?' — '+k.hat:'')+'</option>').join('')}
-      </select>
-    </div>
     <div class="mf">
       <button class="btn" onclick="document.getElementById('mo-subadd').remove()">İptal</button>
       <button class="btn btnp" onclick="_saveSubTask(${parentId})">Ekle</button>
@@ -1935,25 +1870,8 @@ function _saveSubTask(parentId) {
   if (!parent) return;
   if (!parent.subTasks) parent.subTasks = [];
 
-  // Döküman dosyası
-  const fileInp = g('subadd-file');
-  let fileData = null;
-  if (fileInp && fileInp.files && fileInp.files[0]) {
-    const f = fileInp.files[0];
-    const reader = new FileReader();
-    reader.onload = e => {
-      const tasks2 = loadTasks();
-      const par2   = tasks2.find(t => t.id === parentId);
-      const sub2   = par2?.subTasks?.find(s => s.id === newSubId);
-      if (sub2) { sub2.file = { name: f.name, data: e.target.result }; saveTasks(tasks2); }
-    };
-    reader.readAsDataURL(f);
-  }
-  const newSubId = Date.now();
-  const konteynId = parseInt(g('subadd-konteyn')?.value) || null;
-
   parent.subTasks.push({
-    id:        newSubId,
+    id:        Date.now(),
     title,
     uid:       parseInt(g('subadd-user')?.value) || _getCU()?.id,
     pri:       parseInt(g('subadd-pri')?.value)  || 2,
@@ -1961,7 +1879,6 @@ function _saveSubTask(parentId) {
     due:       g('subadd-due')?.value    || null,
     time:      g('subadd-time')?.value   || null,
     alarm:     g('subadd-alarm')?.value  || null,
-    konteynId: konteynId,
     done:      false,
     createdAt: nowTs(),
   });
@@ -2108,8 +2025,6 @@ function renderSubTasks(parentId, subTasks, container) {
       <span style="font-size:10px;color:var(--t3)">${u.name.split(' ')[0]}</span>
       ${s.due ? `<span style="font-size:10px;color:${dueColor}">📅 ${s.due.slice(5)}</span>` : ''}
       ${s.time ? `<span style="font-size:10px;color:var(--t3)">⏰ ${s.time}</span>` : ''}
-      ${s.konteynId ? (() => { const k=(typeof loadKonteyn==='function'?loadKonteyn():[]).find(x=>x.id===s.konteynId); return k?`<span style="font-size:10px;color:var(--bl);background:var(--blb);padding:1px 5px;border-radius:4px">🚢 ${k.no||k.id}</span>`:''; })() : ''}
-      ${s.file ? `<span style="font-size:10px;color:var(--ac)">📎</span>` : ''}
       <button onclick="Pusula.editSub(${parentId},${s.id})" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:1px 3px">✏️</button>
       <button onclick="Pusula.delSub(${parentId},${s.id})" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:1px 3px">✕</button>`;
     subBody.appendChild(row);
@@ -3354,35 +3269,6 @@ function _checkMonthlyExport() {
 // Uygulama açılışında ve her saat kontrol et
 window._monthlyExportTimer = setInterval(_checkMonthlyExport, 60 * 60 * 1000);
 setTimeout(_checkMonthlyExport, 5000); // İlk açılışta 5sn sonra kontrol
-
-
-// ════════════════════════════════════════════════════════════════
-// VİZYON: SELF MANAGING COMPANY  [v2.2.0]
-// Managing → Improving → Getting Bigger & Better
-//
-// Planlanan 5 Geliştirme (Sprint 3):
-//
-// 1. GÖREV OTOMASYONu — Tekrarlayan süreçler şablona dönüşür
-//    Bir görev tamamlandığında bir sonraki otomatik açılır
-//    Hedef: Yöneticinin onayı olmadan rutin işler çalışsın
-//
-// 2. PERFORMANS SKORU — Her kullanıcı kendi KPI'ını görsün
-//    Tamamlanan görev / gecikme / kalite puanı
-//    Haftalık otomatik rapor e-posta ile gönderilsin
-//
-// 3. GÖREV DEVİR SİSTEMİ — Delege & Takip
-//    Bir görevi başkasına devret, kabul/ret bildirimi al
-//    Üst görevin sahibi tüm delegasyonları tek ekranda görsün
-//
-// 4. AKILLI ÖNCELIKLENDIRME — AI destekli
-//    Son tarihe, iş yüküne ve geçmiş performansa göre
-//    "Bugün ne yapmalısın?" önerisi her sabah 09:00'da
-//
-// 5. DEPARTMAN BAZLI RAPORLAMA — Yönetim paneli
-//    Her departmanın aylık görev tamamlama oranı
-//    Tıklanan departman → detay drill-down
-//
-// ════════════════════════════════════════════════════════════════
 
 const Pusula = {
   init: _pusInit,
@@ -6197,10 +6083,7 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
     main.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 0">
         ${QUADS.map(q => `
-          <div style="background:${q.bg};border:1px solid ${q.border};border-radius:14px;padding:14px;min-height:180px"
-            ondragover="event.preventDefault();this.style.borderColor='${q.color}';this.style.borderWidth='2px'"
-            ondragleave="this.style.borderColor='${q.border}';this.style.borderWidth='1px'"
-            ondrop="event.preventDefault();this.style.borderColor='${q.border}';this.style.borderWidth='1px';window._eisDrop(event,'${q.id}')">
+          <div style="background:${q.bg};border:1px solid ${q.border};border-radius:14px;padding:14px;min-height:180px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <div>
                 <div style="font-size:13px;font-weight:700;color:${q.color}">${q.label}</div>
@@ -6212,9 +6095,7 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
               ${Q[q.id].slice(0,6).map(t => {
                 const u = users.find(x => x.id === t.uid);
                 return `
-                  <div onclick="openPusDetail(${t.id})" draggable="true"
-                    ondragstart="event.dataTransfer.setData('taskId',${t.id})"
-                    style="background:var(--sf);border:1px solid var(--b);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px"
+                  <div onclick="openPusDetail(${t.id})" style="background:var(--sf);border:1px solid var(--b);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px"
                     onmouseover="this.style.borderColor='${q.color}';this.style.transform='translateX(2px)'"
                     onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
                     <div style="width:4px;height:32px;border-radius:2px;background:${q.color};flex-shrink:0"></div>
@@ -6271,32 +6152,6 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
     _emOrigRender?.();
     setTimeout(_addMatrixBtn, 200);
     if (localStorage.getItem('ak_pus_view') === 'matrix') {
-      setTimeout(_renderEisenhower, 100);
-    }
-  };
-
-  // Drag & drop handler — görevi kadranlara taşı
-  window._eisDrop = function(event, quadId) {
-    const taskId = parseInt(event.dataTransfer.getData('taskId'));
-    if (!taskId) return;
-    const tasks = loadTasks();
-    const t = tasks.find(x => x.id === taskId);
-    if (!t) return;
-    // Kadrana göre öncelik ve durum güncelle
-    const Q_MAP = {
-      q1: { pri: 1, status: 'inprogress' }, // Önemli + Acil → Kritik + Devam
-      q2: { pri: 1, status: 'todo'       }, // Önemli + Planlı → Kritik + Yapılacak
-      q3: { pri: 3, status: 'inprogress' }, // Az önemli + Acil → Normal + Devam
-      q4: { pri: 4, status: 'todo'       }, // Az önemli + Plansız → Düşük + Yapılacak
-    };
-    const map = Q_MAP[quadId];
-    if (map) {
-      t.pri    = map.pri;
-      t.status = map.status;
-      t.quadrant = quadId;
-      saveTasks(tasks);
-      logActivity('task', `"${t.title}" Matrix'te ${quadId} kadranına taşındı`);
-      window.toast?.('Görev güncellendi ✓', 'ok');
       setTimeout(_renderEisenhower, 100);
     }
   };

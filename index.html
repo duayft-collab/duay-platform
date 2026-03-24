@@ -217,7 +217,7 @@ function _doLogin() {
           🔐 Şifre Değiştir
         </button>
         <div id="pp-pwd-form" style="display:none;background:var(--s2);border-radius:10px;padding:10px;margin-top:4px">
-          <div style="position:relative"><input type="password" id="pp-old-pwd" placeholder="Mevcut şifre" class="fi" style="padding-right:38px"
+          <input type="password" id="pp-old-pwd" placeholder="Mevcut şifre" class="fi"
             style="margin-bottom:6px;font-size:12px;border-radius:7px">
           <input type="password" id="pp-new-pwd" placeholder="Yeni şifre (min 6 karakter)" class="fi"
             style="margin-bottom:6px;font-size:12px;border-radius:7px">
@@ -638,27 +638,25 @@ function _doLogin() {
                 <div class="pus-qa-hint" id="pus-qa-hint"></div>
               </div>
               </div>
-              <div class="pus-hero-actions" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                <!-- Görünüm grubu -->
-                <div class="pus-view-toggle" id="pus-view-row" style="display:flex;gap:2px;background:var(--s2);border-radius:8px;padding:2px">
-                  <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)" title="Liste görünümü">
+              <div class="pus-hero-actions">
+                <!-- Görünüm toggle -->
+                <div class="pus-view-toggle" id="pus-view-row">
+                  <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)">
                     <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="2" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="5.6" width="11" height="1.8" rx=".9" fill="currentColor"/><rect x="1" y="9.2" width="11" height="1.8" rx=".9" fill="currentColor"/></svg>
                     Liste
                   </button>
-                  <button id="pus-v-board" class="pvt-btn" onclick="setPusView('board',this)" title="Board görünümü">
+                  <button id="pus-v-board" class="pvt-btn" onclick="setPusView('board',this)">
                     <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><rect x="1" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/><rect x="5" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor" opacity=".8"/></svg>
                     Board
                   </button>
-                  <button id="pus-v-me" class="pvt-btn" onclick="setPusView('me',this)" title="Sadece benim görevlerim">
+                  <button id="pus-v-me" class="pvt-btn" onclick="setPusView('me',this)">
                     <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6.5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                     Benim
                   </button>
                 </div>
-                <!-- Ayraç -->
-                <div style="width:1px;height:22px;background:var(--b);flex-shrink:0"></div>
 
                 <!-- Araçlar grubu — tek dropdown -->
-                <div class="pus-tools-group" id="pus-tools-group" style="position:relative">
+                <div class="pus-tools-group" id="pus-tools-group">
                   <button class="pus-tools-trigger" onclick="window._toggleToolsMenu?.(this)" title="Araçlar">
                     <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="2" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="12" r="1.3" fill="currentColor"/></svg>
                     Araçlar
@@ -716,8 +714,6 @@ function _doLogin() {
                   </div>
                 </div>
 
-                <!-- Ayraç -->
-                <div style="width:1px;height:22px;background:var(--b);flex-shrink:0"></div>
                 <!-- Görev Ekle — ana CTA -->
                 <button class="pus-add-btn" onclick="openAddTask()">
                   <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
