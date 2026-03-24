@@ -8,13 +8,7 @@
  */
 'use strict';
 
-const _gs  = id  => document.getElementById(id);
 // ── V18 eklenti alias ─────────────────────────────────────────
-const _sts = (id, v) => { const el = _gs(id); if (el) el.textContent = v; };
-const _p2s = n   => String(n).padStart(2, '0');
-const _nowTss = () => { const n = new Date(); return `${n.getFullYear()}-${_p2s(n.getMonth()+1)}-${_p2s(n.getDate())} ${_p2s(n.getHours())}:${_p2s(n.getMinutes())}:${_p2s(n.getSeconds())}`; };
-const _isAdminS = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUs      = () => window.Auth?.getCU?.();
 const _initsS   = n  => (n||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
 
 // ════════════════════════════════════════════════════════════════
@@ -38,9 +32,9 @@ let STOK_FILTER = 'all';
 function openStokModalTur(tur){
   openStokModal('giris');
   setTimeout(()=>{
-    const sel=_gs('stk-tür');
+    const sel=g('stk-tür');
     if(sel){sel.value=tur;updateStokForm();}
-    const title=_gs('mo-stk-t');
+    const title=g('mo-stk-t');
     if(title){
       const labels={stok:'📦 Ürün Girişi',zimmet:'🔑 Zimmet Ver',demirbaş:'🖥️ Demirbaş Kaydı'};
       title.textContent=labels[tur]||'📦 Kayıt Ekle';
@@ -49,17 +43,17 @@ function openStokModalTur(tur){
 }
 
 function updateStokForm(){
-  const tür=_gs('stk-tür')?.value||'stok';
+  const tür=g('stk-tür')?.value||'stok';
   const isZimmet=tür==='zimmet'||tür==='demirbaş';
-  const imeiRow=_gs('stk-imei-row');if(imeiRow)imeiRow.style.display=isZimmet?'block':'none';
-  const zimmetRow=_gs('stk-zimmet-row');if(zimmetRow)zimmetRow.style.display=tür==='zimmet'?'block':'none';
-  const reqEl=_gs('stk-foto-required');if(reqEl)reqEl.style.display=isZimmet?'inline':'none';
-  const optEl=_gs('stk-foto-opt');if(optEl)optEl.style.display=isZimmet?'none':'inline';
-  const tutBtn=_gs('btn-stk-tutanak');if(tutBtn)tutBtn.style.display='none';
+  const imeiRow=g('stk-imei-row');if(imeiRow)imeiRow.style.display=isZimmet?'block':'none';
+  const zimmetRow=g('stk-zimmet-row');if(zimmetRow)zimmetRow.style.display=tür==='zimmet'?'block':'none';
+  const reqEl=g('stk-foto-required');if(reqEl)reqEl.style.display=isZimmet?'inline':'none';
+  const optEl=g('stk-foto-opt');if(optEl)optEl.style.display=isZimmet?'none':'inline';
+  const tutBtn=g('btn-stk-tutanak');if(tutBtn)tutBtn.style.display='none';
 }
 
 function previewStokImg(input){
-  const prev=_gs('stk-img-preview');if(!prev)return;
+  const prev=g('stk-img-preview');if(!prev)return;
   if(input.files&&input.files[0]){
     const r=new FileReader();
     r.onload=e=>{prev.style.display='block';prev.innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:6px;border:1px solid var(--b)">`};
@@ -69,73 +63,73 @@ function previewStokImg(input){
 
 function openStokModal(dir,editId){
   const users=loadUsers();
-  const su=_gs('stk-user');if(su)su.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-  const zu=_gs('stk-zimmet-user');if(zu)zu.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-  if(_gs('stk-eid'))_gs('stk-eid').value=editId||'';
+  const su=g('stk-user');if(su)su.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  const zu=g('stk-zimmet-user');if(zu)zu.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  if(g('stk-eid'))g('stk-eid').value=editId||'';
   if(editId){
     const e=loadStok().find(x=>x.id===editId);if(!e)return;
-    if(_gs('stk-name'))      _gs('stk-name').value      =e.name||'';
-    if(_gs('stk-qty'))       _gs('stk-qty').value       =e.qty||1;
-    if(_gs('stk-date'))      _gs('stk-date').value      =e.date||'';
-    if(_gs('stk-note'))      _gs('stk-note').value      =e.note||'';
-    if(_gs('stk-dir'))       _gs('stk-dir').value       =e.dir||dir||'giris';
-    if(_gs('stk-tür'))       _gs('stk-tür').value       =e.tür||'stok';
-    if(_gs('stk-imei'))      _gs('stk-imei').value      =e.imei||'';
-    if(_gs('stk-kod'))       _gs('stk-kod').value       =e.kod||'';
-    if(_gs('stk-bilgi-notu'))_gs('stk-bilgi-notu').value=e.bilgiNotu||'';
+    if(g('stk-name'))      g('stk-name').value      =e.name||'';
+    if(g('stk-qty'))       g('stk-qty').value       =e.qty||1;
+    if(g('stk-date'))      g('stk-date').value      =e.date||'';
+    if(g('stk-note'))      g('stk-note').value      =e.note||'';
+    if(g('stk-dir'))       g('stk-dir').value       =e.dir||dir||'giris';
+    if(g('stk-tür'))       g('stk-tür').value       =e.tür||'stok';
+    if(g('stk-imei'))      g('stk-imei').value      =e.imei||'';
+    if(g('stk-kod'))       g('stk-kod').value       =e.kod||'';
+    if(g('stk-bilgi-notu'))g('stk-bilgi-notu').value=e.bilgiNotu||'';
     if(su)su.value=e.uid;
     if(zu&&e.zimmetUid)zu.value=e.zimmetUid;
-    if(_gs('stk-zimmet-date'))_gs('stk-zimmet-date').value=e.zimmetDate||'';
-    if(_gs('stk-iade-date')) _gs('stk-iade-date').value =e.iadeDate||'';
-    _sts('mo-stk-t','✏️ Kayıt Düzenle');
-    const tutBtn=_gs('btn-stk-tutanak');
+    if(g('stk-zimmet-date'))g('stk-zimmet-date').value=e.zimmetDate||'';
+    if(g('stk-iade-date')) g('stk-iade-date').value =e.iadeDate||'';
+    st('mo-stk-t','✏️ Kayıt Düzenle');
+    const tutBtn=g('btn-stk-tutanak');
     if(tutBtn&&(e.tür==='zimmet'||e.tür==='demirbaş'))tutBtn.style.display='inline-flex';
   }else{
-    ['stk-name','stk-note','stk-imei','stk-kod','stk-bilgi-notu'].forEach(i=>{const el=_gs(i);if(el)el.value='';});
-    if(_gs('stk-qty'))        _gs('stk-qty').value='1';
-    if(_gs('stk-dir'))        _gs('stk-dir').value=dir||'giris';
-    if(_gs('stk-date'))       _gs('stk-date').valueAsDate=new Date();
-    if(_gs('stk-zimmet-date'))_gs('stk-zimmet-date').valueAsDate=new Date();
-    if(_gs('stk-iade-date'))  _gs('stk-iade-date').value='';
-    if(_gs('stk-tür'))        _gs('stk-tür').value=dir==='giris'?'zimmet':'stok';
-    if(su)su.value=_CUs()?.id;
-    if(zu)zu.value=_CUs()?.id;
-    _sts('mo-stk-t',dir==='giris'?'📥 Zimmet / Giriş':'📤 İade / Çıkış');
-    const prev=_gs('stk-img-preview');if(prev){prev.style.display='none';prev.innerHTML='';}
-    const tutBtn=_gs('btn-stk-tutanak');if(tutBtn)tutBtn.style.display='none';
+    ['stk-name','stk-note','stk-imei','stk-kod','stk-bilgi-notu'].forEach(i=>{const el=g(i);if(el)el.value='';});
+    if(g('stk-qty'))        g('stk-qty').value='1';
+    if(g('stk-dir'))        g('stk-dir').value=dir||'giris';
+    if(g('stk-date'))       g('stk-date').valueAsDate=new Date();
+    if(g('stk-zimmet-date'))g('stk-zimmet-date').valueAsDate=new Date();
+    if(g('stk-iade-date'))  g('stk-iade-date').value='';
+    if(g('stk-tür'))        g('stk-tür').value=dir==='giris'?'zimmet':'stok';
+    if(su)su.value=window.Auth?.getCU?.()?.id;
+    if(zu)zu.value=window.Auth?.getCU?.()?.id;
+    st('mo-stk-t',dir==='giris'?'📥 Zimmet / Giriş':'📤 İade / Çıkış');
+    const prev=g('stk-img-preview');if(prev){prev.style.display='none';prev.innerHTML='';}
+    const tutBtn=g('btn-stk-tutanak');if(tutBtn)tutBtn.style.display='none';
   }
   updateStokForm();
   window.openMo?.('mo-stok');
 }
 
 function saveStok(){
-  const name=(_gs('stk-name')?.value||'').trim();
+  const name=(g('stk-name')?.value||'').trim();
   if(!name){window.toast?.('Ürün/cihaz adı zorunludur','err');return;}
-  const tür=_gs('stk-tür')?.value||'stok';
+  const tür=g('stk-tür')?.value||'stok';
   const isZimmet=tür==='zimmet'||tür==='demirbaş';
-  const imgInput=_gs('stk-img');
-  const eid=parseInt(_gs('stk-eid')?.value||'0');
+  const imgInput=g('stk-img');
+  const eid=parseInt(g('stk-eid')?.value||'0');
   const existingEntry=eid?loadStok().find(x=>x.id===eid):null;
   if(isZimmet&&!eid&&(!imgInput?.files?.length)){
     window.toast?.('Zimmet ve demirbaş kayıtlarında fotoğraf zorunludur 📸','err');return;
   }
   const d=loadStok();
-  const newStatus=_isAdminS()?'giris':'bekle';
+  const newStatus=window.isAdmin()?'giris':'bekle';
   const entry={
-    dir:      _gs('stk-dir')?.value||'giris',
+    dir:      g('stk-dir')?.value||'giris',
     tür,name,
-    qty:      parseInt(_gs('stk-qty')?.value)||1,
-    date:     _gs('stk-date')?.value||'',
-    uid:      parseInt(_gs('stk-user')?.value||_CUs()?.id),
-    note:     _gs('stk-note')?.value||'',
-    imei:     _gs('stk-imei')?.value||'',
-    kod:      _gs('stk-kod')?.value||'',
-    zimmetUid:parseInt(_gs('stk-zimmet-user')?.value||'0')||null,
-    zimmetDate:_gs('stk-zimmet-date')?.value||'',
-    iadeDate: _gs('stk-iade-date')?.value||'',
-    bilgiNotu:_gs('stk-bilgi-notu')?.value||'',
+    qty:      parseInt(g('stk-qty')?.value)||1,
+    date:     g('stk-date')?.value||'',
+    uid:      parseInt(g('stk-user')?.value||window.Auth?.getCU?.()?.id),
+    note:     g('stk-note')?.value||'',
+    imei:     g('stk-imei')?.value||'',
+    kod:      g('stk-kod')?.value||'',
+    zimmetUid:parseInt(g('stk-zimmet-user')?.value||'0')||null,
+    zimmetDate:g('stk-zimmet-date')?.value||'',
+    iadeDate: g('stk-iade-date')?.value||'',
+    bilgiNotu:g('stk-bilgi-notu')?.value||'',
     status:   newStatus,
-    approved: _isAdminS(),
+    approved: window.isAdmin(),
   };
   const readFile=(input,cb)=>{
     if(input?.files?.[0]){const r=new FileReader();r.onload=e=>cb({name:input.files[0].name,data:e.target.result});r.readAsDataURL(input.files[0]);}
@@ -152,33 +146,33 @@ function saveStok(){
     window.closeMo?.('mo-stok');
     renderStok();
     setTimeout(()=>{try{renderDemirbaslar();}catch(ex){}},80);
-    if(!_isAdminS()){
+    if(!window.isAdmin()){
       const users=loadUsers();const u=users.find(x=>x.id===(entry.zimmetUid||entry.uid))||{name:'?'};
       window.addNotif?.('🔑',`Zimmet kaydı onay bekliyor: ${name} — ${u.name}`,'warn','stok');
     }
     window.logActivity?.('view',`"${name}" ${tür} kaydı ${eid?'güncellendi':'oluşturuldu'}`);
-    window.toast?.(_isAdminS()?'Kayıt eklendi ✓':'Onay için gönderildi ✓','ok');
+    window.toast?.(window.isAdmin()?'Kayıt eklendi ✓':'Onay için gönderildi ✓','ok');
     if(isZimmet&&!eid){
       const newEntry=d[0];
-      const tutBtn=_gs('btn-stk-tutanak');
+      const tutBtn=g('btn-stk-tutanak');
       if(tutBtn){tutBtn.style.display='inline-flex';tutBtn.onclick=()=>printZimmetTutanak(newEntry.id);}
     }
   };
-  readFile(_gs('stk-img'),(imgData)=>readFile(_gs('stk-doc'),(docData)=>doSave(imgData,docData)));
+  readFile(g('stk-img'),(imgData)=>readFile(g('stk-doc'),(docData)=>doSave(imgData,docData)));
 }
 
 function approveStok(id){
   const d=loadStok();const e=d.find(x=>x.id===id);
-  if(!e||!_isAdminS())return;
+  if(!e||!window.isAdmin())return;
   e.status=e.dir==='cikis'?'cikis':(e.tür==='demirbaş'?'demirbaş':'giris');
-  e.approved=true;e.approvedBy=_CUs()?.id;e.approveTs=_nowTss();
+  e.approved=true;e.approvedBy=window.Auth?.getCU?.()?.id;e.approveTs=nowTs();
   storeStok(d);renderStok();
   window.toast?.('Onaylandı ✓','ok');
   window.logActivity?.('view',`"${e.name}" zimmet/demirbaş kaydı onaylandı`);
 }
 
 function delStok(id){
-  if(!_isAdminS())return;
+  if(!window.isAdmin())return;
   const d=loadStok();const e=d.find(x=>x.id===id);if(!e)return;
   if(!confirm(`"${e.name}" kaydı silinsin mi?`))return;
   storeStok(d.filter(x=>x.id!==id));
@@ -203,15 +197,15 @@ function renderStok(){
   if (_skCont && typeof showSkeleton === 'function') showSkeleton(_skCont, 3);
 
   const users=loadUsers();
-  let items=_isAdminS()?loadStok():loadStok().filter(s=>s.uid===_CUs()?.id||s.zimmetUid===_CUs()?.id);
-  const all=_isAdminS()?loadStok():loadStok().filter(s=>s.uid===_CUs()?.id||s.zimmetUid===_CUs()?.id);
-  _sts('stk-total',   all.length);
-  _sts('stk-giris',   all.filter(s=>s.status==='giris').length);
-  _sts('stk-cikis',   all.filter(s=>s.status==='cikis').length);
-  _sts('stk-bekle',   all.filter(s=>s.status==='bekle').length);
-  _sts('stk-demirbaş',all.filter(s=>s.tür==='demirbaş'&&s.status!=='bekle').length);
+  let items=window.isAdmin()?loadStok():loadStok().filter(s=>s.uid===window.Auth?.getCU?.()?.id||s.zimmetUid===window.Auth?.getCU?.()?.id);
+  const all=window.isAdmin()?loadStok():loadStok().filter(s=>s.uid===window.Auth?.getCU?.()?.id||s.zimmetUid===window.Auth?.getCU?.()?.id);
+  st('stk-total',   all.length);
+  st('stk-giris',   all.filter(s=>s.status==='giris').length);
+  st('stk-cikis',   all.filter(s=>s.status==='cikis').length);
+  st('stk-bekle',   all.filter(s=>s.status==='bekle').length);
+  st('stk-demirbaş',all.filter(s=>s.tür==='demirbaş'&&s.status!=='bekle').length);
   if(STOK_FILTER!=='all')items=items.filter(s=>s.status===STOK_FILTER||s.tür===STOK_FILTER);
-  const cont=_gs('stok-list');if(!cont)return;
+  const cont=g('stok-list');if(!cont)return;
   if(!items.length){
     cont.innerHTML=`<div style="padding:32px;text-align:center;color:var(--t2)"><div style="font-size:32px">🔑</div><div style="margin-top:10px">Kayıt bulunamadı.</div></div>`;
     return;
@@ -256,11 +250,11 @@ function renderStok(){
       <td><span class="badge ${st2.c}">${st2.l}</span></td>
       <td>
         <div style="display:flex;gap:4px">
-          ${s.status==='bekle'&&_isAdminS()?`<button class="btn btns btng" onclick="approveStok(${s.id})">✓</button>`:''}
+          ${s.status==='bekle'&&window.isAdmin()?`<button class="btn btns btng" onclick="approveStok(${s.id})">✓</button>`:''}
           ${(s.tür==='zimmet'||s.tür==='demirbaş')?`<button class="btn btns" onclick="printZimmetTutanak(${s.id})" title="Tutanak">🖨</button>`:''}
           ${s.doc?`<a href="${s.doc.data}" download="${s.doc.name}" class="btn btns" style="text-decoration:none" title="Belge">📄</a>`:''}
           <button class="btn btns" onclick="openStokModal('${s.dir||'giris'}',${s.id})">✏️</button>
-          ${_isAdminS()?`<button class="btn btns btnd" onclick="delStok(${s.id})">🗑</button>`:''}
+          ${window.isAdmin()?`<button class="btn btns btnd" onclick="delStok(${s.id})">🗑</button>`:''}
         </div>
       </td>`;
     tbody.appendChild(tr);
@@ -276,21 +270,21 @@ function renderStok(){
 
 function renderDemirbaslar(){
   const users=loadUsers();
-  const uSel=_gs('db-filter-user');
+  const uSel=g('db-filter-user');
   if(uSel&&uSel.options.length<=1)
     uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-  const filterUid=parseInt(_gs('db-filter-user')?.value||'0');
-  const filterStatus=_gs('db-filter-status')?.value||'';
+  const filterUid=parseInt(g('db-filter-user')?.value||'0');
+  const filterStatus=g('db-filter-status')?.value||'';
   let items=loadStok().filter(s=>s.tür==='demirbaş');
-  if(!_isAdminS())items=items.filter(s=>s.uid===_CUs()?.id||s.zimmetUid===_CUs()?.id);
-  const allDb=_isAdminS()?loadStok().filter(s=>s.tür==='demirbaş'):loadStok().filter(s=>s.tür==='demirbaş'&&(s.uid===_CUs()?.id||s.zimmetUid===_CUs()?.id));
-  _sts('db-total', allDb.length);
-  _sts('db-active',allDb.filter(s=>s.status==='giris').length);
-  _sts('db-bekle', allDb.filter(s=>s.status==='bekle').length);
-  _sts('db-iade',  allDb.filter(s=>s.status==='cikis').length);
+  if(!window.isAdmin())items=items.filter(s=>s.uid===window.Auth?.getCU?.()?.id||s.zimmetUid===window.Auth?.getCU?.()?.id);
+  const allDb=window.isAdmin()?loadStok().filter(s=>s.tür==='demirbaş'):loadStok().filter(s=>s.tür==='demirbaş'&&(s.uid===window.Auth?.getCU?.()?.id||s.zimmetUid===window.Auth?.getCU?.()?.id));
+  st('db-total', allDb.length);
+  st('db-active',allDb.filter(s=>s.status==='giris').length);
+  st('db-bekle', allDb.filter(s=>s.status==='bekle').length);
+  st('db-iade',  allDb.filter(s=>s.status==='cikis').length);
   if(filterUid)   items=items.filter(s=>s.zimmetUid===filterUid||s.uid===filterUid);
   if(filterStatus)items=items.filter(s=>s.status===filterStatus);
-  const cont=_gs('demirbaslar-list');if(!cont)return;
+  const cont=g('demirbaslar-list');if(!cont)return;
   if(!items.length){
     cont.innerHTML=`<div style="padding:28px;text-align:center;color:var(--t2);font-size:13px"><div style="font-size:32px;margin-bottom:8px">🖥️</div>Demirbaş kaydı bulunamadı.<div style="margin-top:12px"><button class="btn btnp" onclick="openStokModalTur('demirbaş')">+ İlk Demirbaşı Ekle</button></div></div>`;
     return;
@@ -313,7 +307,7 @@ function renderDemirbaslar(){
     const zu=s.zimmetUid?users.find(x=>x.id===s.zimmetUid):null;
     const st2=ST2[s.status]||ST2.bekle;
     const tr=document.createElement('tr');
-    tr.style.background=s.status==='bekle'&&_isAdminS()?'rgba(245,158,11,.04)':'';
+    tr.style.background=s.status==='bekle'&&window.isAdmin()?'rgba(245,158,11,.04)':'';
     tr.innerHTML=`
       <td>
         <div style="font-weight:600;font-size:13px">${s.name}${s.qty>1?` ×${s.qty}`:''}</div>
@@ -342,11 +336,11 @@ function renderDemirbaslar(){
       </td>
       <td>
         <div style="display:flex;gap:4px">
-          ${s.status==='bekle'&&_isAdminS()?`<button class="btn btns btng" onclick="approveStok(${s.id})">✓ Onayla</button>`:''}
+          ${s.status==='bekle'&&window.isAdmin()?`<button class="btn btns btng" onclick="approveStok(${s.id})">✓ Onayla</button>`:''}
           <button class="btn btns" onclick="printZimmetTutanak(${s.id})" title="Tutanak">🖨</button>
           ${s.doc?`<a href="${s.doc.data}" download="${s.doc.name}" class="btn btns" style="text-decoration:none" title="${s.doc.name}">📄</a>`:''}
           <button class="btn btns" onclick="openStokModal('giris',${s.id})">✏️</button>
-          ${_isAdminS()?`<button class="btn btns btnd" onclick="delStok(${s.id})">🗑</button>`:''}
+          ${window.isAdmin()?`<button class="btn btns btnd" onclick="delStok(${s.id})">🗑</button>`:''}
         </div>
       </td>`;
     tbody.appendChild(tr);
@@ -401,7 +395,7 @@ function printZimmetTutanak(id){
     <div class="sign-row">
       <div class="sign-box">Teslim Eden<br><br><span style="font-weight:600">${u.name}</span></div>
       <div class="sign-box">Teslim Alan<br><br><span style="font-weight:600">${zimmetAlan}</span></div>
-      ${_isAdminS()?`<div class="sign-box">Yönetici Onayı<br><br><span style="font-weight:600">${_CUs()?.name||''}</span></div>`:''}
+      ${window.isAdmin()?`<div class="sign-box">Yönetici Onayı<br><br><span style="font-weight:600">${window.Auth?.getCU?.()?.name||''}</span></div>`:''}
     </div>
     <footer>AkademiHub Zimmet Sistemi · Belge No: ZMT-${id} · ${new Date().toLocaleDateString('tr-TR')}</footer>
     <script>window.print();<\/script>
@@ -418,7 +412,7 @@ function exportStokXlsx(){
   });
   const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Stok');
-  XLSX.writeFile(wb,`Stok_${_nowTss().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb,`Stok_${nowTs().slice(0,10)}.xlsx`);
   window.toast?.('Excel ✓','ok');
 }
 
@@ -440,7 +434,7 @@ function processStokImport(input){
     try{
       const wb=XLSX.read(e.target.result,{type:'binary'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws);
       const d=loadStok();let added=0;
-      rows.forEach(r=>{if(r['Ürün']){d.push({id:Date.now()+added,dir:(r['Yön']||'').includes('Çıkış')?'cikis':'giris',name:r['Ürün'],qty:parseInt(r['Miktar'])||1,date:r['Tarih']||nowTs().slice(0,10),uid:CU.id,note:r['Not']||'',status:isAdmin()?'giris':'bekle',approved:isAdmin()});added++;}});
+      rows.forEach(r=>{if(r['Ürün']){d.push({id:Date.now()+added,dir:(r['Yön']||'').includes('Çıkış')?'cikis':'giris',name:r['Ürün'],qty:parseInt(r['Miktar'])||1,date:r['Tarih']||nowTs().slice(0,10),uid:window.Auth?.getCU?.()?.id,note:r['Not']||'',status:isAdmin()?'giris':'bekle',approved:isAdmin()});added++;}});
       storeStok(d);renderStok();input.value='';toast(`${added} kayıt içe aktarıldı ✓`,'ok');
     }catch(err){toast('Dosya okunamadı: '+err.message,'err');}
   };reader.readAsBinaryString(file);

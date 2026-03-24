@@ -1,24 +1,41 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * src/modules/pusula.js  —  v1.0
+ * src/modules/pusula.js  —  v2.0
  * Görev Yönetimi (Pusula) Modülü
  *
- * Kapsam:
+ * Kapsam (v1 + v2 yeni özellikler):
  *   • Görev CRUD  (openAddTask / editTask / saveTask / delTask)
  *   • toggleTask  (tamamlandı / yeniden aç)
  *   • Board görünümü  (renderPusulaBoard)
  *   • List görünümü   (renderPusulaList)   — DocumentFragment
  *   • Detay paneli    (openPusDetail / closePusDetail)
- *   • Alt Görevler    (addSubTask / toggleSubTask / delSubTask / openSubTaskEdit / renderSubTasks)
+ *   • Alt Görevler    (addSubTask / toggleSubTask / delSubTask)
  *   • Görev Yazışma   (openTaskChat / renderTaskChatMsgs / sendTaskChatMsg)
  *   • Katılımcı / İzleyici yönetimi (populateTaskParticipants)
  *   • Filtre & sıralama (visTasks / clearPusFilters)
  *   • Excel export   (exportTasksXlsx)
  *   • Badge güncelle  (updatePusBadge)
  *
- * Veri yapısı (değiştirilmez):
+ * YENİ — v2.0:
+ *   1.  Akıllı Görev Şablonları     (openTaskTemplates / applyTaskTemplate)
+ *   2.  Görev Bağımlılık Zinciri    (addTaskDep / taskIsBlocked)
+ *   3.  Zaman Takipçisi             (ttStart / ttStop / renderTimeTracker)
+ *   4.  Görev Puanı & Skor Tablosu  (openScoreBoard — XP sistemi)
+ *   5.  Sesli Görev Notu            (vnStart / vnStop / renderVoiceNotes)
+ *   6.  Akıllı Tarih Önerisi        (smartDateParse — "yarın", "cuma", "2 hafta")
+ *   7.  Görev Yorumu & Güncelleme   (addTaskLogEntry / renderTaskLog)
+ *   8.  Odak Modu (Pomodoro)        (pomoStart / pomoStop — widget + ses)
+ *   9.  Görev Tekrarlama Kuralları  (setTaskRecurring / processRecurringTasks)
+ *  10.  Görev Haritası (Gantt)      (setPusView('gantt') — timeline görünümü)
+ *
+ * Veri yapısı:
  *   localStorage key: 'ak_tk2'           → Görev dizisi
  *   localStorage key: 'ak_task_chat1'    → { [taskId]: Message[] }
+ *   localStorage key: 'ak_tk_templates1' → Şablon kütüphanesi
+ *   localStorage key: 'ak_tk_deps1'      → Bağımlılık zinciri
+ *   localStorage key: 'ak_tk_timelog1'   → Zaman takip kayıtları
+ *   localStorage key: 'ak_tk_scores1'    → XP skorları
+ *   localStorage key: 'ak_tk_tasklog1'   → Güncelleme notları
  *
  * Global bağımlılıklar:
  *   window.Auth      → getCU(), window.isAdmin?.()
@@ -28,10 +45,6 @@
  *   window.openMo()  / window.closeMo()
  *   window.addNotif()
  *   XLSX             → CDN'den yüklenmiş olmalı
- *
- * Anayasa Kural 3 (Performans):
- *   renderPusulaList → DocumentFragment ile tek DOM işlemi
- *   renderPusulaBoard→ DocumentFragment per-kolon
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -74,7 +87,60 @@ function _getCU() {
 
 'use strict';
 
-// ── Modül düzeyinde durum ────────────────────────────────────────
+// ── Güvenli global erişim — app.js henüz yüklenmemişse fallback ─
+// AVC: app.js'den önce yüklendiğimiz için window.AVC hazır olmayabilir
+// _getAVC() her çağrıda güncel değeri okur
+function _getAVC() {
+  return window.AVC || [
+    ['#EEEDFE','#26215C'], ['#E1F5EE','#085041'],
+    ['#E6F1FB','#0C447C'], ['#FAECE7','#993C1D'],
+    ['#EAF3DE','#27500A'], ['#FAEEDA','#854F0B'],
+    ['#FBEAF0','#72243E'], ['#F1EFE8','#2C2C2A'],
+  ];
+}
+
+// ── Eksik fonksiyon stub'ları ────────────────────────────────────
+// Bu fonksiyonlar kargo.js / extra_panels.js'den gelir.
+// Henüz yüklenmemişse crash'i önlemek için safe stub tanımlanır.
+
+/** Kargo/lojistik alarm bildirimi — kargo.js tarafından override edilir */
+function showKargoAlert(title, body, type) {
+  // kargo.js yüklendikten sonra bu stub override edilir
+  if (typeof window._showKargoAlertReal === 'function') {
+    window._showKargoAlertReal(title, body, type);
+    return;
+  }
+  // Fallback: toast bildirimi
+  const icon = type === 'bekle' ? '⏳' : '📦';
+  window.toast?.(`${icon} ${title} ${body}`, 'warn');
+}
+window.showKargoAlert = showKargoAlert;
+
+/** Fuar/Etkinlik kart render — etkinlik modülü yüklenince override edilir */
+function renderEtkinlikKart(e) {
+  if (typeof window._renderEtkinlikKartReal === 'function') {
+    return window._renderEtkinlikKartReal(e);
+  }
+  return `<div style="padding:12px;border:1px solid var(--b);border-radius:8px;background:var(--sf)">
+    <div style="font-weight:600;font-size:13px">${e.name || '—'}</div>
+    <div style="font-size:11px;color:var(--t3)">${e.date || ''} · ${e.city || ''}</div>
+  </div>`;
+}
+window.renderEtkinlikKart = renderEtkinlikKart;
+
+/** Fuar tarama — etkinlik modülü yüklenince override edilir */
+function fetchFuarlarWithCriteria() {
+  if (typeof window._fetchFuarlarReal === 'function') {
+    return window._fetchFuarlarReal();
+  }
+  window.toast?.('Fuar tarama modülü yükleniyor…', 'warn');
+}
+window.fetchFuarlarWithCriteria = fetchFuarlarWithCriteria;
+
+/** Fuar son güncelleme key */
+const FUAR_LAST_UPDATE_KEY = 'ak_fuar_last_update';
+
+
 let PUS_VIEW         = localStorage.getItem('ak_pus_view') || 'list';
 // Focus listesi — kullanıcı başına izole
 function _focusKey(type) {
@@ -126,7 +192,7 @@ function renderFocusPanel() {
     const t = tasks.find(x => x.id === taskId);
     if (!t) return '';
     const u   = users.find(x => x.id === t.uid);
-    const avc = typeof AVC !== 'undefined' ? AVC : [['#EEEDFE','#26215C']];
+    const avc = _getAVC();
     const idx = users.indexOf(u);
     const c   = avc[Math.max(idx,0) % avc.length];
     const ini = (u?.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
@@ -266,7 +332,7 @@ function getAvatar(uid, users, size = 22) {
   const u = users.find(x => x.id === uid);
   if (!u) return '';
   const idx = users.indexOf(u);
-  const c   = AVC[idx % AVC.length];
+  const c   = _getAVC()[idx % _getAVC().length];
   return `<span class="tk-av-sm" style="background:${c[0]};color:${c[1]};width:${size}px;height:${size}px" title="${u.name}">${_pusInitials(u.name)}</span>`;
 }
 
@@ -679,7 +745,7 @@ function _pusAv(uid, users, size) {
   size = size || 26;
   const u = users.find(function(x){ return x.id === uid; }) || { name: '?' };
   const idx = users.indexOf(u);
-  const c = AVC[Math.max(idx, 0) % AVC.length];
+  const c = _getAVC()[Math.max(idx, 0) % _getAVC().length];
   return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + c[0] + ';color:' + c[1] + ';display:flex;align-items:center;justify-content:center;font-size:' + Math.floor(size * 0.38) + 'px;font-weight:700;flex-shrink:0">' + _pusInitials(u.name) + '</div>';
 }
 
@@ -786,6 +852,9 @@ function pdpSwitch(tab) {
   }
 
   var panes = ['info','chat','files','perms'];
+  // Yeni özellikler pane'ini de gizle
+  var extraPane = g('pdp-pane-extra');
+  if (extraPane) extraPane.style.display = 'none';
   for (var j = 0; j < panes.length; j++) {
     var el = g('pdp-pane-' + panes[j]);
     if (!el) continue;
@@ -998,7 +1067,7 @@ function pdpRefreshChatMsgs() {
       }
 
       var idx2 = users.indexOf(u);
-      var c2   = AVC[Math.max(idx2, 0) % AVC.length];
+      var c2   = _getAVC()[Math.max(idx2, 0) % _getAVC().length];
       var row  = document.createElement('div');
       row.style.cssText = 'display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';align-items:flex-end;gap:6px';
 
@@ -1442,7 +1511,12 @@ function saveTask() {
       window.toast?.('Güncellendi ✓', 'ok');
     } else {
       const _nid = Date.now();
-      d.push({ id: _nid, subTasks: [], ...fields });
+      // Şablon alt görevleri varsa uygula
+      const _initSubs = (window._pendingSubTasks && window._pendingSubTasks.length)
+        ? window._pendingSubTasks.map((s, i) => ({ ...s, id: _nid + i + 1 }))
+        : [];
+      window._pendingSubTasks = null; // temizle
+      d.push({ id: _nid, subTasks: _initSubs, ...fields });
       logActivity('task', `"${title}" ekledi`);
       window.toast?.('Görev eklendi ✓', 'ok');
       try {
@@ -2062,6 +2136,726 @@ function saveEtkinlik(){
 function delEtkinlik(id){if(!window.isAdmin?.())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}
 
 
+
+// ════════════════════════════════════════════════════════════════
+// ═════ YENİ ÖZELLİKLER BLOĞU — v2.0 ══════════════════════════
+// 1. Akıllı Görev Şablonları
+// 2. Görev Bağımlılık Zinciri
+// 3. Zaman Takipçisi (Time Tracker)
+// 4. Görev Puanı & Skor Tablosu
+// 5. Sesli Görev Notu
+// 6. Akıllı Tarih Önerisi
+// 7. Görev Yorumu & Güncelleme Akışı
+// 8. Odak Modu (Pomodoro)
+// 9. Görev Tekrarlama Kuralları
+// 10. Görev Haritası (Gantt Toggle)
+// ════════════════════════════════════════════════════════════════
+
+// ── Yeni localStorage anahtarları ────────────────────────────────
+const _PF = {
+  templates  : 'ak_tk_templates1',
+  deps       : 'ak_tk_deps1',
+  timeLog    : 'ak_tk_timelog1',
+  scores     : 'ak_tk_scores1',
+  taskLog    : 'ak_tk_tasklog1',
+  recurring  : 'ak_tk_recurring1',
+  ttRunning  : 'ak_tt_running',
+};
+const _pfR = (k,fb) => { try{ const r=localStorage.getItem(k); return r===null?fb:JSON.parse(r); }catch{ return fb; } };
+const _pfW = (k,v)  => { try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){ console.warn('[PF]',e); } };
+
+// ════════════════════════════════════════════════════════════════
+// 1. AKILLI GÖREV ŞABLONLARI
+// ════════════════════════════════════════════════════════════════
+const _PF_TPL_DEFAULT = [
+  { id:'tpl_tedarikci', name:'Yeni Tedarikçi Onboarding', icon:'🤝', subTasks:['Tedarikçi belgelerini talep et (vergi levhası, imza sirküleri)','Fiyat teklifi ve numune al','Kalite kontrol değerlendirmesi yap','Sözleşme taslağı hazırla','Hukuki onay al','Sisteme tedarikçi kaydını gir','İlk sipariş test sürecini planla'] },
+  { id:'tpl_ihracat',   name:'İhracat Dosyası Açma',       icon:'📦', subTasks:['Müşteri sipariş onayını al','Pro forma fatura hazırla','Gümrük tarife kodu tespit et','Ambalajlama ve etiketlemeyi tamamla','Gümrük beyannamesi hazırla','Navlun ve sigorta düzenle','Sevk belgelerini (konşimento/CMR) al','Müşteriye belge gönder ve takibe al'] },
+  { id:'tpl_kapani',    name:'Aylık Kapanış',              icon:'📊', subTasks:['Banka mutabakatını tamamla','Açık faturaları kontrol et','KDV beyannamesi için verileri hazırla','SGK bildirimini kontrol et','Gider tahakkuklarını gir','P&L özeti hazırla','Yönetim raporunu paylaş'] },
+  { id:'tpl_isealim',   name:'İşe Alım Süreci',           icon:'👥', subTasks:['İş ilanı hazırla ve yayınla','CV ön eleme yap','Telefon görüşmesi gerçekleştir','Yüz yüze mülakat düzenle','Referans kontrolü yap','Teklif mektubunu hazırla ve gönder','İşe başlama evraklarını hazırla'] },
+  { id:'tpl_sprint',    name:'Sprint Hazırlığı',           icon:'🚀', subTasks:['Backlog önceliklendirmesini güncelle','Ekip kapasitesini belirle','Sprint hedefini yaz','Görevleri tahmin et (story points)','Sprint board\'unu hazırla','Kickoff toplantısını yönet'] },
+];
+
+function _pfLoadTemplates() {
+  const d = _pfR(_PF.templates, null);
+  if (!d) { _pfW(_PF.templates, _PF_TPL_DEFAULT); return _PF_TPL_DEFAULT; }
+  return d;
+}
+function _pfSaveTemplates(d) { _pfW(_PF.templates, d); }
+
+window.openTaskTemplates = function() {
+  _ensurePfModals();
+  _pfRenderTplList();
+  window.openMo?.('mo-pf-templates');
+};
+window.applyTaskTemplate = function(tplId) {
+  const tpl = _pfLoadTemplates().find(t => t.id === tplId);
+  if (!tpl) return;
+  window.closeMo?.('mo-pf-templates');
+  window.Pusula?.openAdd?.() || window.openAddTask?.();
+  setTimeout(() => {
+    const titleEl = g('tk-title');
+    if (titleEl && !titleEl.value) titleEl.value = tpl.name;
+    window._pendingSubTasks = tpl.subTasks.map((s,i) => ({ id: Date.now()+i, title:s, done:false }));
+    _pfRenderPendingSubTasks();
+  }, 120);
+};
+window.saveCurrentAsTemplate = function() {
+  const title = (g('tk-title')?.value||'').trim();
+  if (!title) { toast('Önce görev başlığı girin','warn'); return; }
+  const subEls = document.querySelectorAll('#tk-subtask-preview .pf-st-lbl');
+  const subs   = Array.from(subEls).map(e=>e.textContent.trim()).filter(Boolean);
+  const tpls   = _pfLoadTemplates();
+  tpls.push({ id:'tpl_custom_'+Date.now(), name:title+' Şablonu', icon:'⭐', subTasks:subs, custom:true });
+  _pfSaveTemplates(tpls);
+  toast('Şablon kaydedildi ✓');
+};
+window.deleteTaskTemplate = function(id) {
+  _pfSaveTemplates(_pfLoadTemplates().filter(t=>t.id!==id));
+  _pfRenderTplList();
+  toast('Şablon silindi');
+};
+function _pfRenderTplList() {
+  const cont = g('pf-tpl-cont');
+  if (!cont) return;
+  const tpls = _pfLoadTemplates();
+  if (!tpls.length) { cont.innerHTML='<p style="color:var(--t3);text-align:center;padding:24px">Henüz şablon yok.</p>'; return; }
+  cont.innerHTML = tpls.map(t=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--b);border-radius:10px;background:var(--sf);cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--b)'">
+      <div style="font-size:24px;flex-shrink:0">${t.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--t)">${t.name}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px">${t.subTasks.length} alt görev</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btnp" style="font-size:11px;padding:5px 12px" onclick="applyTaskTemplate('${t.id}')">Uygula</button>
+        ${t.custom?`<button class="btn btns" style="font-size:11px;padding:5px 10px;color:var(--rd)" onclick="deleteTaskTemplate('${t.id}');event.stopPropagation()">✕</button>`:''}
+      </div>
+    </div>`).join('');
+}
+function _pfRenderPendingSubTasks() {
+  const cont = g('tk-subtask-preview');
+  if (!cont || !window._pendingSubTasks?.length) return;
+  cont.style.display='block';
+  cont.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">📋 Şablondan Alt Görevler (${window._pendingSubTasks.length})</div>`
+    + window._pendingSubTasks.map((s,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:var(--s2);margin-bottom:4px"><span style="font-size:11px;color:var(--t3)">${i+1}</span><span class="pf-st-lbl" style="font-size:12px;color:var(--t);flex:1">${s.title}</span></div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// 2. GÖREV BAĞIMLILIK ZİNCİRİ
+// ════════════════════════════════════════════════════════════════
+function _pfLoadDeps()  { return _pfR(_PF.deps,{}); }
+function _pfSaveDeps(d) { _pfW(_PF.deps,d); }
+
+window.taskIsBlocked = function(taskId) {
+  const deps = _pfLoadDeps();
+  const blockers = deps[taskId] || [];
+  if (!blockers.length) return false;
+  return blockers.some(bid => { const bt=loadTasks().find(t=>t.id===bid); return bt&&!bt.done; });
+};
+window.addTaskDep = function(taskId, blockerId) {
+  blockerId = parseInt(blockerId);
+  if (!blockerId || taskId===blockerId) return;
+  const deps = _pfLoadDeps();
+  if (!deps[taskId]) deps[taskId]=[];
+  if (!deps[taskId].includes(blockerId)) deps[taskId].push(blockerId);
+  _pfSaveDeps(deps);
+  window.renderTaskDepChain?.(taskId);
+};
+window.removeTaskDep = function(taskId, blockerId) {
+  const deps = _pfLoadDeps();
+  deps[taskId] = (deps[taskId]||[]).filter(b=>b!==blockerId);
+  _pfSaveDeps(deps);
+  window.renderTaskDepChain?.(taskId);
+};
+window.renderTaskDepChain = function(taskId) {
+  const cont = g('pdp-dep-chain');
+  if (!cont) return;
+  const deps  = _pfLoadDeps();
+  const tasks = loadTasks();
+  const blockers = (deps[taskId]||[]).map(bid=>tasks.find(t=>t.id===bid)).filter(Boolean);
+  const blocked  = Object.entries(deps).filter(([tid,bids])=>bids.includes(taskId)).map(([tid])=>tasks.find(t=>t.id===parseInt(tid))).filter(Boolean);
+  const chip = (t,role) => `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:var(--s2);border:1px solid ${t.done?'#22C55E':'var(--b)'};margin-bottom:5px">
+    <span style="font-size:14px">${t.done?'✅':(role==='blocker'?'🔒':'⏳')}</span>
+    <span style="flex:1;font-size:12px;font-weight:500;color:${t.done?'var(--t3)':'var(--t)'};text-decoration:${t.done?'line-through':'none'}">${t.title}</span>
+    ${role==='blocker'?`<button onclick="removeTaskDep(${taskId},${t.id})" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--rd)">✕</button>`:''}
+  </div>`;
+  const available = tasks.filter(t=>t.id!==taskId&&!(deps[taskId]||[]).includes(t.id)&&!t.done);
+  cont.innerHTML=`
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--rd);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🔒 Bu görev başlamadan önce şunlar bitmeli</div>
+      ${blockers.length?blockers.map(t=>chip(t,'blocker')).join(''):'<div style="font-size:12px;color:var(--t3);padding:4px">Bağımlılık yok.</div>'}
+    </div>
+    ${blocked.length?`<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">⏳ Bu görev bitince şunlar açılacak</div>${blocked.map(t=>chip(t,'blocked')).join('')}</div>`:''}
+    ${available.length?`<div style="display:flex;gap:6px;margin-top:6px"><select id="dep-add-sel" class="fi" style="flex:1;padding:6px 8px;font-size:12px"><option value="">— Blocker görev seç —</option>${available.map(t=>`<option value="${t.id}">${t.title}</option>`).join('')}</select><button class="btn btnp" style="font-size:11px;padding:6px 12px" onclick="addTaskDep(${taskId},parseInt(g('dep-add-sel').value)||0)">+ Ekle</button></div>`:''}`;
+};
+
+// ════════════════════════════════════════════════════════════════
+// 3. ZAMAN TAKİPÇİSİ (Time Tracker)
+// ════════════════════════════════════════════════════════════════
+function _pfLoadTimeLog()  { return _pfR(_PF.timeLog,{}); }
+function _pfSaveTimeLog(d) { _pfW(_PF.timeLog,d); }
+function _pfGetRunning()   { return _pfR(_PF.ttRunning,null); }
+function _pfSetRunning(v)  { v?_pfW(_PF.ttRunning,v):localStorage.removeItem(_PF.ttRunning); }
+
+let _ttInterval = null;
+window.ttStart = function(taskId) {
+  const running = _pfGetRunning();
+  if (running && running.taskId!==taskId) window.ttStop(running.taskId);
+  if (running?.taskId===taskId) { toast('Zaten sayılıyor ⏱','warn'); return; }
+  _pfSetRunning({ taskId, startMs:Date.now() });
+  _ttTickAll();
+  toast('⏱ Süre sayacı başlatıldı');
+};
+window.ttStop = function(taskId) {
+  const running = _pfGetRunning();
+  if (!running||running.taskId!==taskId) return;
+  const elapsed = Math.floor((Date.now()-running.startMs)/60000);
+  _pfSetRunning(null);
+  if (elapsed<1) { toast('1 dakikadan kısa — kaydedilmedi','warn'); return; }
+  const log = _pfLoadTimeLog();
+  if (!log[taskId]) log[taskId]=[];
+  log[taskId].push({ ms:running.startMs, min:elapsed, date:new Date().toISOString().slice(0,10), by:_getCU()?.id });
+  _pfSaveTimeLog(log);
+  const tasks=loadTasks(); const t=tasks.find(x=>x.id===taskId);
+  if (t) { t.trackedMin=(t.trackedMin||0)+elapsed; saveTasks(tasks); }
+  window.renderTimeTracker?.(taskId);
+  toast(`⏱ ${elapsed} dk kaydedildi ✓`);
+  renderPusula();
+};
+function _ttTickAll() {
+  clearInterval(_ttInterval);
+  _ttInterval = setInterval(()=>{
+    const running=_pfGetRunning(); if (!running){clearInterval(_ttInterval);return;}
+    const elMin=Math.floor((Date.now()-running.startMs)/60000);
+    const elSec=Math.floor(((Date.now()-running.startMs)%60000)/1000);
+    const label=`${String(elMin).padStart(2,'0')}:${String(elSec).padStart(2,'0')}`;
+    document.querySelectorAll('.pf-tt-display').forEach(el=>{ if(parseInt(el.dataset.tid)===running.taskId) el.textContent=label; });
+  },1000);
+}
+window.renderTimeTracker = function(taskId) {
+  const cont = g('pdp-tt-cont'); if (!cont) return;
+  const log=_pfLoadTimeLog(); const entries=(log[taskId]||[]).slice(-10).reverse();
+  const running=_pfGetRunning(); const isRunning=running?.taskId===taskId;
+  const totalMin=(log[taskId]||[]).reduce((s,e)=>s+e.min,0);
+  const tasks=loadTasks(); const t=tasks.find(x=>x.id===taskId);
+  const estimMin=t?.duration||0;
+  cont.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">TOPLAM SÜRE</div>
+        <div style="font-size:20px;font-weight:700;color:var(--t);font-family:'DM Mono',monospace">${totalMin>=60?Math.floor(totalMin/60)+' sa '+totalMin%60+' dk':totalMin+' dk'}</div>
+        ${estimMin?`<div style="font-size:11px;color:${totalMin>estimMin?'var(--rd)':'var(--ac)'}">Tahmini: ${estimMin}dk — ${totalMin>estimMin?'⚠️ Aşıldı':'✓'}</div>`:''}
+      </div>
+      <div style="text-align:center">
+        ${isRunning
+          ?`<div class="pf-tt-display" data-tid="${taskId}" style="font-family:'DM Mono',monospace;font-size:22px;color:#EF4444;font-weight:700">00:00</div><button onclick="ttStop(${taskId})" class="btn" style="background:#EF4444;color:#fff;border-color:#EF4444;margin-top:4px;font-size:12px;padding:6px 14px">⏹ Durdur</button>`
+          :`<button onclick="ttStart(${taskId})" class="btn btnp" style="font-size:13px;padding:8px 18px">▶ Başlat</button>`}
+      </div>
+    </div>
+    ${entries.length?`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px">SON OTURUMLAR</div>`+''+entries.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b);font-size:12px"><span style="color:var(--t2)">${e.date}</span><span style="font-weight:600;color:var(--t)">${e.min} dk</span></div>`).join(''):'<div style="font-size:12px;color:var(--t3);text-align:center;padding:12px 0">Henüz oturum yok.</div>'}`;
+  if (isRunning) _ttTickAll();
+};
+
+// ════════════════════════════════════════════════════════════════
+// 4. GÖREV PUANI & SKOR TABLOSU
+// ════════════════════════════════════════════════════════════════
+function _pfLoadScores()  { return _pfR(_PF.scores,{}); }
+function _pfSaveScores(d) { _pfW(_PF.scores,d); }
+
+function _pfAwardXP(taskId) {
+  const t=loadTasks().find(x=>x.id===taskId); if (!t) return;
+  const priXP={1:50,2:30,3:15,4:5}; let xp=priXP[t.pri]||15;
+  const label=[]; const now=new Date().toISOString().slice(0,10);
+  if (t.due&&now<=t.due) { xp+=20; label.push('⚡ Zamanında +20'); }
+  if (t.createdAt&&Math.floor((new Date()-new Date(t.createdAt))/86400000)>=7) { xp+=10; label.push('🏋️ Uzun iş +10'); }
+  const scores=_pfLoadScores(); const month=now.slice(0,7); const uid=t.uid;
+  if (!scores[uid]) scores[uid]={};
+  if (!scores[uid][month]) scores[uid][month]=0;
+  scores[uid][month]+=xp;
+  _pfSaveScores(scores);
+  const user=loadUsers().find(u=>u.id===uid);
+  toast(`🏆 ${user?.name||'Kullanıcı'} +${xp} XP!${label.length?' ('+label.join(', ')+')':''}`, 'ok');
+}
+
+// toggleTask hook — XP ödülü
+const _origToggleTask = toggleTask;
+function toggleTask(id, done) {
+  _origToggleTask(id, done);
+  if (done) _pfAwardXP(id);
+}
+
+window.openScoreBoard = function() {
+  _ensurePfModals();
+  _pfRenderScoreBoard();
+  window.openMo?.('mo-pf-scores');
+};
+function _pfRenderScoreBoard() {
+  const cont=g('pf-sb-cont'); if (!cont) return;
+  const scores=_pfLoadScores(); const users=loadUsers();
+  const month=new Date().toISOString().slice(0,7);
+  const rows=users.map(u=>({ user:u, monthly:scores[u.id]?.[month]||0, total:Object.values(scores[u.id]||{}).reduce((a,b)=>a+b,0) })).sort((a,b)=>b.monthly-a.monthly);
+  const medals=['🥇','🥈','🥉'];
+  cont.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">${month} Ayı Sıralaması</div>`
+    +rows.map((r,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:${i===0?'linear-gradient(135deg,rgba(234,179,8,.12),var(--sf))':'var(--sf)'};border:1px solid ${i===0?'rgba(234,179,8,.35)':'var(--b)'};margin-bottom:8px">
+      <div style="font-size:22px;width:30px;text-align:center">${medals[i]||'🎯'}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t)">${r.user.name}</div><div style="font-size:11px;color:var(--t3)">${r.user.role}</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:${i===0?'#EAB308':'var(--t)'}">${r.monthly} <span style="font-size:11px;font-weight:400">XP</span></div><div style="font-size:10px;color:var(--t3)">Toplam: ${r.total} XP</div></div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// 5. SESLİ GÖREV NOTU
+// ════════════════════════════════════════════════════════════════
+let _vn_rec=null, _vn_chunks=[], _vn_taskId=null;
+
+window.vnStart = function(taskId) {
+  if (!navigator.mediaDevices?.getUserMedia) { toast('Mikrofon desteklenmiyor','err'); return; }
+  _vn_taskId=taskId;
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    _vn_chunks=[]; _vn_rec=new MediaRecorder(stream);
+    _vn_rec.ondataavailable=e=>_vn_chunks.push(e.data);
+    _vn_rec.onstop=_vnSave;
+    _vn_rec.start();
+    const btn=g('pdp-vn-btn');
+    if (btn) { btn.textContent='⏹ Durdur'; btn.style.background='#EF4444'; btn.style.borderColor='#EF4444'; btn.onclick=()=>vnStop(); }
+    let s=0;
+    const timer=g('pdp-vn-timer');
+    if (timer) { timer._int=setInterval(()=>{ s++; timer.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; if(s>=120) window.vnStop(); },1000); }
+    toast('🎙️ Kayıt başladı…');
+  }).catch(()=>toast('Mikrofon izni verilmedi','err'));
+};
+window.vnStop = function() {
+  if (_vn_rec?.state==='recording') _vn_rec.stop();
+  const timer=g('pdp-vn-timer'); if (timer?._int) clearInterval(timer._int);
+  const btn=g('pdp-vn-btn'); if (btn) { btn.textContent='🎙️ Sesli Not Ekle'; btn.style.background=''; btn.style.borderColor=''; btn.onclick=()=>window.vnStart(_vn_taskId); }
+};
+function _vnSave() {
+  const blob=new Blob(_vn_chunks,{type:'audio/webm'}); const r=new FileReader();
+  r.onload=ev=>{
+    const tasks=loadTasks(); const t=tasks.find(x=>x.id===_vn_taskId); if(!t) return;
+    if (!t.voiceNotes) t.voiceNotes=[];
+    t.voiceNotes.push({ts:nowTs(),data:ev.target.result,by:_getCU()?.id});
+    saveTasks(tasks); window.renderVoiceNotes?.(_vn_taskId); toast('🎙️ Sesli not kaydedildi ✓');
+  };
+  r.readAsDataURL(blob);
+}
+window.renderVoiceNotes = function(taskId) {
+  const cont=g('pdp-vn-list'); if (!cont) return;
+  const t=loadTasks().find(x=>x.id===taskId); const notes=t?.voiceNotes||[]; const users=loadUsers();
+  cont.innerHTML=notes.slice().reverse().map(n=>{
+    const u=users.find(x=>x.id===n.by);
+    return `<div style="padding:8px 10px;border:1px solid var(--b);border-radius:8px;background:var(--sf);margin-bottom:6px"><div style="font-size:10px;color:var(--t3);margin-bottom:5px">${u?.name||'?'} — ${n.ts.slice(0,16)}</div><audio controls src="${n.data}" style="width:100%;height:32px"></audio></div>`;
+  }).join('')||'<div style="font-size:12px;color:var(--t3);text-align:center;padding:10px">Henüz sesli not yok.</div>';
+};
+
+// ════════════════════════════════════════════════════════════════
+// 6. AKILLI TARİH ÖNERİSİ
+// ════════════════════════════════════════════════════════════════
+window.smartDateParse = function(input) {
+  const s=(input||'').trim().toLowerCase(); const d=new Date(); const iso=()=>d.toISOString().slice(0,10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (s==='bugün'||s==='today') return iso();
+  if (s==='yarın'||s==='tomorrow') { d.setDate(d.getDate()+1); return iso(); }
+  if (s==='öbür gün'||s==='öbürsü gün') { d.setDate(d.getDate()+2); return iso(); }
+  const days={pazartesi:1,salı:2,çarşamba:3,perşembe:4,cuma:5,cumartesi:6,pazar:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};
+  for (const [k,v] of Object.entries(days)) { if(s===k){const diff=(v-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return iso();} }
+  const m1=s.match(/(\d+)\s*(gün|day)/); if (m1) { d.setDate(d.getDate()+parseInt(m1[1])); return iso(); }
+  const m2=s.match(/(\d+)\s*(hafta|week)/); if (m2) { d.setDate(d.getDate()+parseInt(m2[1])*7); return iso(); }
+  const m3=s.match(/(\d+)\s*(ay|month)/); if (m3) { d.setMonth(d.getMonth()+parseInt(m3[1])); return iso(); }
+  if (s.includes('ay sonu')||s.includes('month end')) { d.setMonth(d.getMonth()+1); d.setDate(0); return iso(); }
+  if (s.includes('ay başı')) { d.setDate(1); return iso(); }
+  return null;
+};
+
+function _pfAttachSmartDate() {
+  const inp=g('tk-due'); if (!inp||inp.dataset.sdReady) return;
+  inp.dataset.sdReady='1'; inp.type='text';
+  inp.placeholder='YYYY-AA-GG veya "yarın", "cuma", "2 hafta"…';
+  let hint=g('tk-due-hint');
+  if (!hint) { hint=document.createElement('div'); hint.id='tk-due-hint'; hint.style.cssText='font-size:11px;color:var(--ac);margin-top:2px;min-height:14px'; inp.parentNode.appendChild(hint); }
+  inp.addEventListener('input',()=>{ const p=window.smartDateParse(inp.value); hint.textContent=p?'→ '+p:''; });
+  inp.addEventListener('blur',()=>{ const p=window.smartDateParse(inp.value); if(p){inp.value=p;hint.textContent='';inp.style.borderColor='#22C55E';setTimeout(()=>inp.style.borderColor='',1200);} });
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key==='Tab'){const p=window.smartDateParse(inp.value);if(p)inp.value=p;} });
+}
+// openAddTask / editTask hook — smart date attach
+const _pfOrigOpenAdd  = openAddTask;
+const _pfOrigEditTask = editTask;
+function openAddTask() { _pfOrigOpenAdd(); setTimeout(_pfAttachSmartDate,200); }
+function editTask(id)  { _pfOrigEditTask(id); setTimeout(_pfAttachSmartDate,200); }
+
+// ════════════════════════════════════════════════════════════════
+// 7. GÖREV YORUMU & GÜNCELLEME AKIŞI (Task Log)
+// ════════════════════════════════════════════════════════════════
+function _pfLoadTaskLog()  { return _pfR(_PF.taskLog,{}); }
+function _pfSaveTaskLog(d) { _pfW(_PF.taskLog,d); }
+
+window.addTaskLogEntry = function(taskId, text) {
+  text=(text||'').trim(); if(!text){toast('Yorum boş olamaz','warn');return;}
+  const log=_pfLoadTaskLog(); if(!log[taskId]) log[taskId]=[];
+  log[taskId].push({id:Date.now(),ts:nowTs(),by:_getCU()?.id,text});
+  _pfSaveTaskLog(log); window.renderTaskLog?.(taskId);
+  const inp=g('pdp-log-inp'); if(inp) inp.value=''; toast('Not eklendi ✓');
+};
+window.delTaskLogEntry = function(taskId, entryId) {
+  const log=_pfLoadTaskLog(); if(!log[taskId]) return;
+  log[taskId]=log[taskId].filter(e=>e.id!==entryId); _pfSaveTaskLog(log); window.renderTaskLog?.(taskId);
+};
+window.renderTaskLog = function(taskId) {
+  const cont=g('pdp-log-cont'); if (!cont) return;
+  const log=_pfLoadTaskLog(); const entries=(log[taskId]||[]).slice().reverse();
+  const users=loadUsers(); const cu=_getCU();
+  cont.innerHTML=entries.length?entries.map(e=>{
+    const u=users.find(x=>x.id===e.by); const canDel=window.isAdmin?.()||e.by===cu?.id;
+    return `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--b)">
+      <div style="flex-shrink:0;width:28px;height:28px;border-radius:7px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac)">${(u?.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--t2);margin-bottom:3px"><span style="font-weight:600;color:var(--t)">${u?.name||'?'}</span><span style="margin-left:6px;color:var(--t3)">${e.ts.slice(0,16)}</span></div>
+        <div style="font-size:13px;color:var(--t);line-height:1.6;white-space:pre-wrap">${e.text}</div>
+      </div>
+      ${canDel?`<button onclick="delTaskLogEntry(${taskId},${e.id})" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3);align-self:flex-start;padding:2px">✕</button>`:''}
+    </div>`;
+  }).join(''):'<div style="font-size:12px;color:var(--t3);text-align:center;padding:16px">Henüz güncelleme notu yok.</div>';
+};
+
+// ════════════════════════════════════════════════════════════════
+// 8. ODAK MODU — POMODORO
+// ════════════════════════════════════════════════════════════════
+let _pomo = null;
+
+window.pomoStart = function(taskId, workMin) {
+  workMin = workMin||25; _pfPomoStop();
+  const endMs=Date.now()+workMin*60000;
+  _pomo={taskId,endMs,mode:'work'};
+  _pfEnsurePomoWidget(); _pfPomoTick();
+  _pomo.int=setInterval(_pfPomoTick,1000);
+  toast(`🍅 ${workMin} dk odak modu başladı!`);
+  document.title=`🍅 Odak — ${_pfPomoTitle(taskId)}`;
+};
+function _pfPomoStop() {
+  if (!_pomo) return; clearInterval(_pomo.int); _pomo=null;
+  const w=g('pf-pomo-widget'); if(w) w.style.display='none';
+  document.title=document.title.replace(/^🍅.*?— /,'');
+}
+window.pomoStop=_pfPomoStop;
+function _pfPomoTitle(taskId) { const t=loadTasks().find(x=>x.id===taskId); return t?.title?.slice(0,30)||'Görev'; }
+function _pfPomoTick() {
+  if (!_pomo) return;
+  const rem=Math.max(0,_pomo.endMs-Date.now());
+  const m=String(Math.floor(rem/60000)).padStart(2,'0'); const s=String(Math.floor((rem%60000)/1000)).padStart(2,'0');
+  const label=`${m}:${s}`; const el=g('pf-pomo-time'); if(el) el.textContent=label;
+  document.title=`🍅 ${label} — ${_pfPomoTitle(_pomo.taskId)}`;
+  if (rem<=0) { clearInterval(_pomo.int); _pfPomoComplete(); }
+}
+function _pfPomoComplete() {
+  const taskId=_pomo?.taskId; const mode=_pomo?.mode; _pomo=null; document.title='';
+  try { const ctx=new(window.AudioContext||window.webkitAudioContext)(); const osc=ctx.createOscillator(); const gain=ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.frequency.value=880; gain.gain.setValueAtTime(0.4,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1); osc.start(); osc.stop(ctx.currentTime+1); }catch(e){}
+  if (mode==='work') {
+    const log=_pfLoadTimeLog(); if(!log[taskId]) log[taskId]=[]; log[taskId].push({ms:Date.now()-25*60000,min:25,date:new Date().toISOString().slice(0,10),by:_getCU()?.id,pomo:true}); _pfSaveTimeLog(log);
+    const tasks=loadTasks(); const t=tasks.find(x=>x.id===taskId); if(t){t.trackedMin=(t.trackedMin||0)+25;saveTasks(tasks);}
+    const w=g('pf-pomo-widget');
+    if (w) { w.innerHTML=`<span style="font-size:18px">🍅</span><span style="font-weight:700;font-size:14px">Pomodoro bitti!</span><button onclick="pomoStart(${taskId},5)" class="btn btnp" style="font-size:11px;padding:4px 10px">5 dk Mola</button><button onclick="pomoStart(${taskId},25)" class="btn btns" style="font-size:11px;padding:4px 10px">Yeniden</button><button onclick="pomoStop()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3)">×</button>`; }
+    toast('🍅 Pomodoro tamamlandı! Kısa mola ver.');
+  } else { _pfPomoStop(); toast('☕ Mola bitti, hazır olduğunda başlat.'); }
+}
+function _pfEnsurePomoWidget() {
+  let w=g('pf-pomo-widget');
+  if (!w) { w=document.createElement('div'); w.id='pf-pomo-widget'; w.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);font-family:inherit'; document.body.appendChild(w); }
+  w.style.display='flex'; const taskId=_pomo?.taskId;
+  w.innerHTML=`<span style="font-size:20px">🍅</span><div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">ODAK MODU</div><div style="font-size:12px;font-weight:600;color:var(--t);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_pfPomoTitle(taskId)}</div></div><div id="pf-pomo-time" style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--t);min-width:52px;text-align:center">25:00</div><button onclick="pomoStop()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1" title="İptal">×</button>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// 9. GÖREV TEKRARLAMA KURALLARI
+// ════════════════════════════════════════════════════════════════
+window.setTaskRecurring = function(taskId, rule) {
+  const tasks=loadTasks(); const t=tasks.find(x=>x.id===taskId); if(!t) return;
+  t.recurring=rule; saveTasks(tasks); toast('Tekrarlama kuralı kaydedildi ✓');
+};
+window.removeTaskRecurring = function(taskId) {
+  const tasks=loadTasks(); const t=tasks.find(x=>x.id===taskId); if(!t) return;
+  delete t.recurring; saveTasks(tasks); toast('Tekrarlama kaldırıldı');
+};
+window.processRecurringTasks = function() {
+  const tasks=loadTasks(); const todayS=new Date().toISOString().slice(0,10); let changed=false;
+  tasks.filter(t=>t.done&&t.recurring).forEach(t=>{
+    const nextDue=_pfCalcNextDue(t.due||todayS,t.recurring); if(!nextDue||nextDue>todayS) return;
+    const exists=tasks.find(x=>x.recurringOrigin===t.id&&x.due===nextDue&&!x.done); if(exists) return;
+    tasks.push({...t,id:Date.now()+Math.random(),done:false,status:'todo',due:nextDue,createdAt:nowTs(),recurringOrigin:t.id,subTasks:(t.subTasks||[]).map(s=>({...s,done:false}))});
+    changed=true;
+  });
+  if (changed) { saveTasks(tasks); renderPusula(); console.info('[PF] Recurring görevler oluşturuldu'); }
+};
+function _pfCalcNextDue(fromDate, rule) {
+  if (!rule||!fromDate) return null;
+  const d=new Date(fromDate);
+  if (rule.type==='weekly') d.setDate(d.getDate()+7);
+  else if (rule.type==='monthly') { d.setMonth(d.getMonth()+1); if(rule.dayOfMonth) d.setDate(Math.min(rule.dayOfMonth,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); }
+  else if (rule.type==='interval') { const n=rule.interval||1; if(rule.unit==='day') d.setDate(d.getDate()+n); else if(rule.unit==='week') d.setDate(d.getDate()+n*7); else if(rule.unit==='month') d.setMonth(d.getMonth()+n); }
+  else return null;
+  return d.toISOString().slice(0,10);
+}
+window.renderRecurringUI = function(taskId) {
+  const cont=g('pdp-recurring-cont'); if(!cont) return;
+  const t=loadTasks().find(x=>x.id===taskId); const r=t?.recurring;
+  const lbl=()=>{ if(!r) return 'Yok'; if(r.type==='weekly') return 'Her Hafta'; if(r.type==='monthly') return `Her Ay${r.dayOfMonth?' '+r.dayOfMonth+'. gün':''}`; if(r.type==='interval') return `Her ${r.interval} ${r.unit==='day'?'Gün':r.unit==='week'?'Hafta':'Ay'}`; return 'Özel'; };
+  cont.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">TEKRARLAMA</div><div style="font-size:13px;font-weight:600;color:var(--t);margin-top:2px">${lbl()}</div></div><button onclick="openRecurringEditor(${taskId})" class="btn btns" style="font-size:11px;padding:5px 11px">✏️ Kural Belirle</button></div>${r?`<button onclick="removeTaskRecurring(${taskId});renderRecurringUI(${taskId})" class="btn" style="font-size:11px;padding:4px 10px;color:var(--rd)">Tekrarlamayı Kaldır</button>`:''}`;
+};
+window.openRecurringEditor = function(taskId) {
+  _ensurePfModals();
+  const saveBtn=g('pf-rec-save-btn'); if(saveBtn) saveBtn.onclick=()=>_pfSaveRecurringRule(taskId);
+  window.updateRecurringForm?.();
+  window.openMo?.('mo-pf-recurring');
+};
+window.updateRecurringForm = function() {
+  const type=g('pf-rec-type')?.value;
+  if(g('pf-rec-day-row'))      g('pf-rec-day-row').style.display      =type==='monthly' ?'block':'none';
+  if(g('pf-rec-interval-row')) g('pf-rec-interval-row').style.display =type==='interval'?'block':'none';
+};
+function _pfSaveRecurringRule(taskId) {
+  const type=g('pf-rec-type')?.value||'weekly'; const rule={type};
+  if(type==='monthly') rule.dayOfMonth=parseInt(g('pf-rec-day')?.value||'1');
+  if(type==='interval') { rule.interval=parseInt(g('pf-rec-interval')?.value||'1'); rule.unit=g('pf-rec-unit')?.value||'day'; }
+  window.setTaskRecurring(taskId,rule);
+  window.closeMo?.('mo-pf-recurring');
+  window.renderRecurringUI?.(taskId);
+}
+
+// ════════════════════════════════════════════════════════════════
+// 10. GANTT TOGGLE (Görev Haritası)
+// ════════════════════════════════════════════════════════════════
+const _pfOrigRenderPusula = renderPusula;
+function renderPusula() {
+  _pfOrigRenderPusula();
+  if (localStorage.getItem('ak_pus_view')==='gantt') _pfRenderGantt();
+}
+
+function _pfRenderGantt() {
+  const main=g('pus-main-view'); if (!main) return;
+  const tasks=visTasks(); const users=loadUsers(); const todayS=new Date().toISOString().slice(0,10);
+  const withDates=tasks.filter(t=>t.due||t.start);
+  if (!withDates.length) { main.innerHTML=`<div style="text-align:center;padding:48px;color:var(--t2)"><div style="font-size:36px;margin-bottom:12px">📅</div><div style="font-size:15px;font-weight:600">Gantt görünümü için görevlere tarih ekleyin</div></div>`; return; }
+  const dates=withDates.flatMap(t=>[t.start,t.due].filter(Boolean)).sort();
+  const startD=new Date(dates[0]); const endD=new Date(dates[dates.length-1]);
+  startD.setDate(startD.getDate()-2); endD.setDate(endD.getDate()+4);
+  const totalDays=Math.ceil((endD-startD)/86400000);
+  const dayW=Math.max(28,Math.floor((main.clientWidth-220)/totalDays)); const colW=220;
+  const PRI_COLOR={1:'#EF4444',2:'#F97316',3:'#6366F1',4:'#94A3B8'};
+  const headerCells=[];
+  for (let i=0;i<totalDays;i++) { const d=new Date(startD); d.setDate(d.getDate()+i); const ds=d.toISOString().slice(0,10); const isT=ds===todayS; const isW=d.getDay()===0||d.getDay()===6; headerCells.push(`<div style="width:${dayW}px;min-width:${dayW}px;flex-shrink:0;text-align:center;font-size:9px;font-weight:${isT?'700':'400'};color:${isT?'var(--ac)':isW?'var(--t3)':'var(--t2)'};border-right:1px solid var(--b);padding:5px 0;background:${isT?'rgba(99,102,241,.06)':''}">${d.getDate()}<br><span style="font-size:8px">${['Pa','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()]}</span></div>`); }
+  const rows=withDates.map(t=>{
+    const u=users.find(x=>x.id===t.uid); const ini=(u?.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const tS=new Date(t.start||t.due); const tE=new Date(t.due||t.start);
+    const offL=Math.max(0,Math.floor((tS-startD)/86400000)); const barW=Math.max(1,Math.ceil((tE-tS)/86400000)+1);
+    const color=PRI_COLOR[t.pri]||'#6366F1'; const isDone=t.done||t.status==='done';
+    const barCells=[];
+    for (let i=0;i<totalDays;i++) {
+      if (i<offL||i>=offL+barW) { const d2=new Date(startD); d2.setDate(d2.getDate()+i); barCells.push(`<div style="width:${dayW}px;min-width:${dayW}px;flex-shrink:0;border-right:1px solid var(--b);height:36px;background:${d2.getDay()===0||d2.getDay()===6?'rgba(0,0,0,.02)':''}"></div>`); }
+      else if (i===offL) { barCells.push(`<div style="width:${dayW*barW}px;min-width:${dayW*barW}px;flex-shrink:0;height:36px;padding:6px 4px;box-sizing:border-box;cursor:pointer" onclick="openPusDetail(${t.id})"><div style="height:100%;border-radius:4px;background:${isDone?'#22C55E':color}22;border:1.5px solid ${isDone?'#22C55E':color};display:flex;align-items:center;padding:0 7px;overflow:hidden"><span style="font-size:10px;font-weight:600;color:${isDone?'#22C55E':color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${isDone?'✓ ':''} ${t.title}</span></div></div>`); i+=barW-1; }
+    }
+    return `<div style="display:flex;align-items:stretch;border-bottom:1px solid var(--b);min-height:44px"><div style="width:${colW}px;min-width:${colW}px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 12px;border-right:1px solid var(--b);cursor:pointer" onclick="openPusDetail(${t.id})"><div style="width:4px;height:28px;border-radius:2px;background:${color};flex-shrink:0"></div><div style="width:22px;height:22px;border-radius:6px;background:var(--al);color:var(--ac);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${ini}</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:${isDone?'var(--t3)':'var(--t)'};text-decoration:${isDone?'line-through':'none'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div><div style="font-size:10px;color:var(--t3)">${t.due||'—'}</div></div></div><div style="display:flex;flex:1">${barCells.join('')}</div></div>`;
+  });
+  main.innerHTML=`<div style="overflow-x:auto;border:1px solid var(--b);border-radius:10px"><div style="display:flex;position:sticky;top:0;z-index:10;background:var(--sf);border-bottom:1px solid var(--b)"><div style="width:${colW}px;min-width:${colW}px;padding:10px 12px;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;border-right:1px solid var(--b)">GÖREV</div><div style="display:flex">${headerCells.join('')}</div></div>${rows.join('')}</div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// DETAY PANELİ — YENİ SEKMELER (⏱ Süre, 📝 Notlar, 🎙 Ses, 🔗 Bağımlılık, 🔁 Tekrar)
+// ════════════════════════════════════════════════════════════════
+const _pfOrigOpenDetail = openPusDetail;
+function openPusDetail(taskId) {
+  _pfOrigOpenDetail(taskId);
+  setTimeout(()=>{ _pfInjectExtraTabs(taskId); _pfCheckBlockerWarn(taskId); }, 150);
+}
+
+function _pfInjectExtraTabs(taskId) {
+  const tabbar=g('pdp-tabbar'); if (!tabbar||tabbar.dataset.pfExtended) return;
+  tabbar.dataset.pfExtended='1';
+  const extraTabs=[
+    {key:'timelog',icon:'⏱',label:'Süre'},
+    {key:'tasklog',icon:'📝',label:'Notlar'},
+    {key:'voice',  icon:'🎙️',label:'Ses'},
+    {key:'deps',   icon:'🔗',label:'Bağımlılık'},
+    {key:'recur',  icon:'🔁',label:'Tekrar'},
+  ];
+  extraTabs.forEach(tab=>{
+    if (g('pdp-tab-'+tab.key)) return;
+    const btn=document.createElement('button');
+    btn.id='pdp-tab-'+tab.key; btn.className='pdp-t';
+    btn.style.cssText='flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;font-family:inherit';
+    btn.innerHTML=`${tab.icon} ${tab.label}`;
+    btn.onclick=()=>_pfSwitchExtra(taskId,tab.key,btn);
+    tabbar.appendChild(btn);
+  });
+  // Extra pane konteyneri
+  const bodyScroll=tabbar.nextElementSibling; if(!bodyScroll) return;
+  if (!g('pdp-pane-extra')) {
+    const pane=document.createElement('div'); pane.id='pdp-pane-extra';
+    pane.style.cssText='display:none;padding:16px;overflow-y:auto';
+    bodyScroll.appendChild(pane);
+  }
+}
+
+function _pfSwitchExtra(taskId, key, activeBtn) {
+  // Tüm tab butonlarını sıfırla
+  document.querySelectorAll('.pdp-t').forEach(b=>{ b.style.color='var(--t2)'; b.style.fontWeight='500'; b.style.borderBottom='2px solid transparent'; });
+  activeBtn.style.color='var(--ac)'; activeBtn.style.fontWeight='600'; activeBtn.style.borderBottom='2px solid var(--ac)';
+  // Orijinal panellerı gizle
+  ['info','chat','files','perms'].forEach(k=>{ const el=g('pdp-pane-'+k); if(el) el.style.display='none'; });
+  const extra=g('pdp-pane-extra'); if (!extra) return;
+  extra.style.display='block';
+
+  if (key==='timelog') {
+    extra.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">⏱ ZAMAN TAKİPÇİSİ</div><div id="pdp-tt-cont"></div>`;
+    window.renderTimeTracker?.(taskId);
+  } else if (key==='tasklog') {
+    extra.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">📝 GÜNCELLEME NOTLARI</div><div id="pdp-log-cont" style="margin-bottom:14px"></div><div style="display:flex;gap:8px"><textarea class="fi" id="pdp-log-inp" rows="2" style="flex:1;resize:none;font-size:13px" placeholder="Kısa güncelleme notu… (tedarikçiden geri dönüş bekleniyor, vs.)"></textarea><button class="btn btnp" onclick="addTaskLogEntry(${taskId},document.getElementById('pdp-log-inp')?.value)" style="align-self:flex-end;padding:9px 14px;font-size:13px">➤</button></div>`;
+    window.renderTaskLog?.(taskId);
+  } else if (key==='voice') {
+    extra.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">🎙️ SESLİ NOTLAR</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px;background:var(--s2);border-radius:10px"><button id="pdp-vn-btn" class="btn btnp" onclick="vnStart(${taskId})" style="font-size:13px;padding:9px 16px">🎙️ Sesli Not Ekle</button><div id="pdp-vn-timer" style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--t2)">00:00</div></div><div id="pdp-vn-list" style="display:flex;flex-direction:column;gap:8px"></div>`;
+    window.renderVoiceNotes?.(taskId);
+  } else if (key==='deps') {
+    extra.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">🔗 BAĞIMLILIK ZİNCİRİ</div><div id="pdp-dep-chain"></div>`;
+    window.renderTaskDepChain?.(taskId);
+  } else if (key==='recur') {
+    extra.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">🔁 TEKRARLAMA KURALI</div><div id="pdp-recurring-cont"></div>`;
+    window.renderRecurringUI?.(taskId);
+  }
+}
+
+function _pfCheckBlockerWarn(taskId) {
+  if (!window.taskIsBlocked?.(taskId)) return;
+  const metaEl=g('pdp-meta'); if(!metaEl||metaEl.querySelector('.pf-dep-warn')) return;
+  const warn=document.createElement('span'); warn.className='pf-dep-warn';
+  warn.style.cssText='padding:3px 9px;border-radius:6px;font-size:11px;background:rgba(239,68,68,.1);color:#EF4444;margin-left:6px';
+  warn.textContent='🔒 Bekleyen bağımlılık var'; metaEl.appendChild(warn);
+}
+
+// ════════════════════════════════════════════════════════════════
+// GÖREV MODAL — ŞABLON + SMART DATE PATCH
+// ════════════════════════════════════════════════════════════════
+function _pfPatchTaskModal() {
+  const footer=document.querySelector('#mo-task .moc > div:last-of-type');
+  if (!footer||footer.dataset.pfPatched) return;
+  footer.dataset.pfPatched='1';
+  // Şablon butonu — footer başına ekle
+  const tplBtn=document.createElement('button');
+  tplBtn.className='btn btns'; tplBtn.style.fontSize='12px'; tplBtn.textContent='📋 Şablon';
+  tplBtn.onclick=()=>window.openTaskTemplates?.();
+  const firstBtn=footer.querySelector('button'); if(firstBtn) footer.insertBefore(tplBtn,firstBtn);
+  // Alt görev önizleme konteyneri
+  const body=document.querySelector('#mo-task .moc > div:not(:first-child):not(:last-child)');
+  if (body&&!g('tk-subtask-preview')) {
+    const prev=document.createElement('div'); prev.id='tk-subtask-preview';
+    prev.style.cssText='display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--b)';
+    body.appendChild(prev);
+  }
+}
+
+// setPusView Gantt toggle eklentisi
+const _pfOrigSetPusView = setPusView;
+function setPusView(v, btn) {
+  _pfOrigSetPusView(v, btn);
+  // Gantt özeldir — ayrıca handle et
+  if (v==='gantt') { setTimeout(_pfRenderGantt, 50); }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MODALLER — ensurePfModals()
+// ════════════════════════════════════════════════════════════════
+function _ensurePfModals() {
+  if (g('mo-pf-templates')) return;
+  const wrap=document.createElement('div'); wrap.id='pf-modals-root';
+  wrap.innerHTML=`
+<!-- Şablonlar -->
+<div class="mo" id="mo-pf-templates">
+  <div class="moc" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="padding:18px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:15px;font-weight:700;color:var(--t)">📋 Görev Şablonları</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Tek tıkla alt görevli iş paketi oluştur</div></div>
+      <button onclick="closeMo('mo-pf-templates')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>
+    </div>
+    <div id="pf-tpl-cont" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+<!-- Skor Tablosu -->
+<div class="mo" id="mo-pf-scores">
+  <div class="moc" style="max-width:440px;padding:0;overflow:hidden;max-height:85vh;display:flex;flex-direction:column">
+    <div style="padding:18px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:15px;font-weight:700;color:var(--t)">🏆 Skor Tablosu</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Aylık XP sıralaması</div></div>
+      <button onclick="closeMo('mo-pf-scores')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>
+    </div>
+    <div id="pf-sb-cont" style="flex:1;overflow-y:auto;padding:18px 16px"></div>
+  </div>
+</div>
+<!-- Tekrarlama Kural Editörü -->
+<div class="mo" id="mo-pf-recurring">
+  <div class="moc" style="max-width:400px;padding:0;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:700;color:var(--t)">🔁 Tekrarlama Kuralı</div>
+      <button onclick="closeMo('mo-pf-recurring')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div><div class="fl" style="margin-bottom:6px">TİP</div>
+        <select class="fi" id="pf-rec-type" onchange="updateRecurringForm()">
+          <option value="weekly">Her Hafta</option>
+          <option value="monthly">Her Ay (belirli gün)</option>
+          <option value="interval">Özel Aralık</option>
+        </select>
+      </div>
+      <div id="pf-rec-day-row" style="display:none"><div class="fl" style="margin-bottom:6px">AY'IN GÜNÜ</div><input type="number" class="fi" id="pf-rec-day" min="1" max="31" value="1"></div>
+      <div id="pf-rec-interval-row" style="display:none"><div class="fl" style="margin-bottom:6px">ARALIK</div><div style="display:flex;gap:8px"><input type="number" class="fi" id="pf-rec-interval" min="1" value="1" style="width:90px"><select class="fi" id="pf-rec-unit"><option value="day">Gün</option><option value="week">Hafta</option><option value="month">Ay</option></select></div></div>
+      <div style="background:var(--al);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ac)">💡 Görev tamamlandığında bir sonraki otomatik oluşturulur.</div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btns" onclick="closeMo('mo-pf-recurring')">İptal</button>
+      <button class="btn btnp" id="pf-rec-save-btn">Kaydet</button>
+    </div>
+  </div>
+</div>`;
+  document.body.appendChild(wrap);
+}
+
+// ════════════════════════════════════════════════════════════════
+// PUSULA ARAÇ ÇUBUĞU — Gantt + Skor + Şablon butonları
+// ════════════════════════════════════════════════════════════════
+function _pfInjectToolbarBtns() {
+  // index.html'de pus-view-toggle class'ı ile id="pus-view-row" var
+  const vRow = document.getElementById('pus-view-row')
+    || document.querySelector('.pus-view-toggle')
+    || document.querySelector('.pus-view-tabs, .pvt-row, [id^="pus-v-"]')?.parentElement;
+  if (!vRow||vRow.dataset.pfBtns) return;
+  vRow.dataset.pfBtns='1';
+  const btns=[
+    {id:'pus-v-gantt', cls:'pvt-btn cvb', text:'📅 Gantt', onclick:()=>{ document.querySelectorAll('.pvt-btn,.cvb').forEach(b=>b.classList.remove('on','active')); const b=g('pus-v-gantt'); b?.classList.add('on','active'); setPusView('gantt',b); } },
+    {cls:'pvt-btn', text:'🏆', title:'Skor Tablosu', onclick:()=>window.openScoreBoard?.() },
+    {cls:'pvt-btn', text:'📋', title:'Görev Şablonları', onclick:()=>window.openTaskTemplates?.() },
+  ];
+  btns.forEach(cfg=>{ const b=document.createElement('button'); b.className=cfg.cls; if(cfg.id)b.id=cfg.id; if(cfg.title)b.title=cfg.title; b.style.fontSize='12px'; b.innerHTML=cfg.text; b.onclick=cfg.onclick; vRow.appendChild(b); });
+}
+
+// ════════════════════════════════════════════════════════════════
+// BAŞLANGIÇ
+// ════════════════════════════════════════════════════════════════
+(function _pfInit() {
+  // Recurring görevleri kontrol (günde bir)
+  const lastCheck=localStorage.getItem('ak_pf_rec_check');
+  const todayStr=new Date().toISOString().slice(0,10);
+  if (lastCheck!==todayStr) { localStorage.setItem('ak_pf_rec_check',todayStr); window.processRecurringTasks?.(); }
+
+  // Çalışan zamanlayıcı varsa devam et
+  if (_pfGetRunning()) _ttTickAll();
+
+  // DOM hazır olduğunda araç çubuğu butonlarını inject et
+  const _setup=()=>{ setTimeout(()=>{ _pfInjectToolbarBtns(); _pfPatchTaskModal(); _ensurePfModals(); },800); };
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',_setup); else _setup();
+
+  // openMo hook — her modal açılışında şablon patch kontrol
+  const _origOpenMo2=window.openMo;
+  window.openMo=function(id,...args){
+    _origOpenMo2?.(id,...args);
+    if (id==='mo-task') setTimeout(_pfPatchTaskModal,80);
+  };
+
+  console.info('[Pusula v2.0] 10 yeni özellik aktif ✓');
+})();
 const Pusula = {
   init: _pusInit,
   render:       renderPusula,
@@ -2095,6 +2889,19 @@ const Pusula = {
   getDueChip,
   getStatusPill,
   getAvatar,
+  // ── Yeni Özellikler v2.0 ────────────────────────────────────
+  openTemplates:    openTaskTemplates,
+  applyTemplate:    applyTaskTemplate,
+  openScoreBoard:   openScoreBoard,
+  ttStart, ttStop,
+  vnStart, vnStop,
+  pomoStart, pomoStop,
+  smartDateParse,
+  taskIsBlocked,
+  addTaskDep, removeTaskDep,
+  addTaskLogEntry,
+  setTaskRecurring, removeTaskRecurring,
+  processRecurringTasks,
 };
 
 // Tarayıcı global nesnesi
@@ -2165,6 +2972,34 @@ window.renderFocusPanel = renderFocusPanel;
   window.getDueChip            = getDueChip;
   window.getStatusPill         = getStatusPill;
   window.getAvatar             = getAvatar;
+  // ── Yeni Özellikler (v2.0) ──────────────────────────────────
+  window.openTaskTemplates     = openTaskTemplates;
+  window.applyTaskTemplate     = applyTaskTemplate;
+  window.saveCurrentAsTemplate = saveCurrentAsTemplate;
+  window.deleteTaskTemplate    = deleteTaskTemplate;
+  window.taskIsBlocked         = taskIsBlocked;
+  window.addTaskDep            = addTaskDep;
+  window.removeTaskDep         = removeTaskDep;
+  window.renderTaskDepChain    = renderTaskDepChain;
+  window.ttStart               = ttStart;
+  window.ttStop                = ttStop;
+  window.renderTimeTracker     = renderTimeTracker;
+  window.openScoreBoard        = openScoreBoard;
+  window.vnStart               = vnStart;
+  window.vnStop                = vnStop;
+  window.renderVoiceNotes      = renderVoiceNotes;
+  window.smartDateParse        = smartDateParse;
+  window.addTaskLogEntry       = addTaskLogEntry;
+  window.delTaskLogEntry       = delTaskLogEntry;
+  window.renderTaskLog         = renderTaskLog;
+  window.pomoStart             = pomoStart;
+  window.pomoStop              = pomoStop;
+  window.setTaskRecurring      = setTaskRecurring;
+  window.removeTaskRecurring   = removeTaskRecurring;
+  window.processRecurringTasks = processRecurringTasks;
+  window.renderRecurringUI     = renderRecurringUI;
+  window.openRecurringEditor   = openRecurringEditor;
+  window.updateRecurringForm   = updateRecurringForm;
 }
 
 // Node.js (test ortamı)

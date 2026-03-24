@@ -6,11 +6,9 @@
  */
 'use strict';
 
-const _gt  = id  => document.getElementById(id);
-const _p2t = n   => String(n).padStart(2,'0');
 
 function _injectTakvimPanel() {
-  var panel = _gt('panel-takvim');
+  var panel = g('panel-takvim');
   if (!panel || panel.dataset.injected) return;
   panel.dataset.injected = '1';
 

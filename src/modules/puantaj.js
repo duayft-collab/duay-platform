@@ -6,11 +6,9 @@
  */
 'use strict';
 
-const _gpt  = id => document.getElementById(id);
-const _stpt = (id,v) => { const el = _gpt(id); if (el) el.textContent = v; };
 
 function _injectPuantajPanel() {
-  const panel = _gpt('panel-puantaj');
+  const panel = g('panel-puantaj');
   if (!panel || panel.dataset.injected) return;
   panel.dataset.injected = '1';
   panel.innerHTML = `
