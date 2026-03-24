@@ -37,6 +37,14 @@ window.st       = (id, v) => { const el = window.g(id); if (el) el.textContent =
 window.CU       = () => window.Auth?.getCU?.();
 window.isAdmin  = () => window.Auth?.getCU?.()?.role === 'admin';
 window.initials = name => (name||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+// AVC — Avatar renk paleti, pusula.js ve diğer modüller tarafından kullanılır
+// app.js'den ÖNCE yüklenen modüller için buraya erken export yapılır
+window.AVC = [
+  ['#EEEDFE','#26215C'], ['#E1F5EE','#085041'],
+  ['#E6F1FB','#0C447C'], ['#FAECE7','#993C1D'],
+  ['#EAF3DE','#27500A'], ['#FAEEDA','#854F0B'],
+  ['#FBEAF0','#72243E'], ['#F1EFE8','#2C2C2A'],
+];
 
 
 // ════════════════════════════════════════════════════════════════
@@ -107,13 +115,8 @@ let _GS_SEL    = -1;
 let _IDLE_TIMER= null;
 let _toastTimer= null;
 
-// Avatar renk paleti (shared)
-const AVC = [
-  ['#EEEDFE','#26215C'], ['#E1F5EE','#085041'],
-  ['#E6F1FB','#0C447C'], ['#FAECE7','#993C1D'],
-  ['#EAF3DE','#27500A'], ['#FAEEDA','#854F0B'],
-  ['#FBEAF0','#72243E'], ['#F1EFE8','#2C2C2A'],
-];
+// Avatar renk paleti (shared) — window.AVC yukarıda erken export edildi, burada sync
+const AVC = window.AVC;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 2 — YARDIMCI FONKSİYONLAR
@@ -1139,20 +1142,44 @@ async function _fetchDailyQuote() {
   var today = new Date().toISOString().slice(0,10);
   var cached = localStorage.getItem(_QUOTE_KEY + today);
   if (cached) { try { return JSON.parse(cached); } catch(e) {} }
-  try {
-    var r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://zenquotes.io/api/today'));
-    var j = await r.json();
-    var d = JSON.parse(j.contents);
-    var q = { text: d[0].q, author: d[0].a };
-    localStorage.setItem(_QUOTE_KEY + today, JSON.stringify(q));
-    return q;
-  } catch(e) {
-    var fb = [
-      { text: "Zamani yonetemeyen hicbir seyi yonetemez.", author: "Peter Drucker" },
-      { text: "Bugun yapabileceğini yarına bırakma.", author: "Benjamin Franklin" },
-    ];
-    return fb[new Date().getDate() % fb.length];
-  }
+  // Günlük alıntı listesi — API yerine local (CORS sorunu olmaz)
+  var quotes = [
+    { text: 'Zamanı yönetemeyen hiçbir şeyi yönetemez.', author: 'Peter Drucker' },
+    { text: 'Bugün yapabileceğini yarına bırakma.', author: 'Benjamin Franklin' },
+    { text: 'Başarı tesadüf değil, hazırlık, sıkı çalışma ve hatalardan öğrenmektir.', author: 'Colin Powell' },
+    { text: 'Önce işi bitir, sonra mükemmelleştir.', author: 'Mark Twain' },
+    { text: 'Büyük işler küçük adımlarla yapılır.', author: 'Lao Tzu' },
+    { text: 'Fırsatlar çalışkan insanların zihninde parlar.', author: 'Thomas Edison' },
+    { text: 'Zorluklar içinde fırsatlar yatar.', author: 'Albert Einstein' },
+    { text: 'Başarının sırrı başlamaktır.', author: 'Mark Twain' },
+    { text: 'Disiplin, motivasyonun bittiği yerde devreye girer.', author: 'Elbert Hubbard' },
+    { text: 'Küçük adımlar büyük değişimler yaratır.', author: 'Lao Tzu' },
+    { text: 'Planlama yaparken uzun düşün, uygularken hızlı hareket et.', author: 'Sun Tzu' },
+    { text: 'Kalite tesadüfen oluşmaz; her zaman yüksek niyetin sonucudur.', author: 'John Ruskin' },
+    { text: 'Bir takımın gücü her üyesinden, her üyenin gücü takımdan gelir.', author: 'Phil Jackson' },
+    { text: 'Verimliliğin sırrı önceliklendirmedir.', author: 'Stephen Covey' },
+    { text: 'Hiçbir rüzgar, nereye gittiğini bilmeyen gemiye yardım edemez.', author: 'Seneca' },
+    { text: 'İyi yapılmış iş, erken yapılmış iştir.', author: 'Konfüçyüs' },
+    { text: 'Düşüncelerine iyi bak, çünkü onlar eylemlerin tohumu olur.', author: 'Ralph Emerson' },
+    { text: 'Mükemmellik bir eylem değil, bir alışkanlıktır.', author: 'Aristoteles' },
+    { text: 'Zor günler sizi daha güçlü yapar.', author: 'Roy T. Bennett' },
+    { text: 'Her büyük başarı bir zamanlar imkansız görünüyordu.', author: 'Nelson Mandela' },
+    { text: 'Enerjiyi değiştiremezsek davranışı değiştiremeyiz.', author: 'Jim Loehr' },
+    { text: 'Detaylara dikkat etmek, mükemmelliğin başlangıcıdır.', author: 'Leonardo da Vinci' },
+    { text: 'Takım çalışması hayali gerçeğe dönüştürür.', author: 'John C. Maxwell' },
+    { text: 'Önce anlamaya çalış, sonra anlaşılmaya.', author: 'Stephen Covey' },
+    { text: 'Bilgi güçtür, ama uygulanmış bilgi daha güçlüdür.', author: 'Francis Bacon' },
+    { text: 'Sabah planla, öğlen uygula, akşam değerlendir.', author: 'Konfüçyüs' },
+    { text: 'En büyük risk, hiç risk almamaktır.', author: 'Mark Zuckerberg' },
+    { text: 'Odak noktanız sonucunuzu belirler.', author: 'T. Harv Eker' },
+    { text: 'Kalıcı başarı için güven inşa et.', author: 'Stephen Covey' },
+    { text: 'Fikirlerin değil uygulamanın peşinden git.', author: 'Thomas Edison' },
+  ];
+  // Günün tarihine göre sabit alıntı seç (her gün aynı alıntı)
+  var dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+  var q = quotes[dayOfYear % quotes.length];
+  localStorage.setItem(_QUOTE_KEY + today, JSON.stringify(q));
+  return q;
 }
 
 function _startMorningRoutine(user) {
@@ -1750,18 +1777,6 @@ window.generateSystemNotifs    = generateSystemNotifs;
 window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
 window._startMorningRoutine    = _startMorningRoutine;
 window._triggerMorningAlert    = _triggerMorningAlert;
-window._fetchDailyQuote        = _fetchDailyQuote;
-window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
-window._startMorningRoutine    = _startMorningRoutine;
-window._triggerMorningAlert    = _triggerMorningAlert;
-window._fetchDailyQuote        = _fetchDailyQuote;
-window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
-window._triggerMorningAlert    = _triggerMorningAlert;
-window._startMorningRoutine    = _startMorningRoutine;
-window._fetchDailyQuote        = _fetchDailyQuote;
-window._checkPendingTaskNotifs = _checkPendingTaskNotifs;
-window._triggerMorningAlert    = _triggerMorningAlert;
-window._startMorningRoutine    = _startMorningRoutine;
 window._fetchDailyQuote        = _fetchDailyQuote;
 window.printModuleReport = printModuleReport;
 window.initials         = initials;
