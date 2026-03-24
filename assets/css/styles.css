@@ -1524,3 +1524,19 @@ input:checked+.psl::before{transform:translateX(17px)}
 #pus-focus-panel .fi-ic,
 #pus-focus-panel [class*="icon"],
 #pus-focus-panel svg { opacity: 1 !important; }
+
+/* ── Departman input autocomplete v2.2.0 ── */
+#tk-dept { list-style: none; }
+.dept-suggest { position:absolute; z-index:999; background:var(--sf);
+  border:1px solid var(--b); border-radius:8px; padding:4px 0;
+  box-shadow:0 4px 12px rgba(0,0,0,.1); min-width:200px; max-height:180px;
+  overflow-y:auto; }
+.dept-suggest-item { padding:6px 12px; font-size:12px; cursor:pointer;
+  color:var(--t); transition:background .1s; }
+.dept-suggest-item:hover { background:var(--s2); }
+
+/* ── Matrix drag & drop v2.2.0 ── */
+[ondragover] { transition: border-color .15s, border-width .15s; }
+
+/* ── Toolbar ayraç v2.2.0 ── */
+.pus-hero-actions .pvt-btn { font-size:12px !important; padding:5px 9px !important; }
