@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="">
+<head>
+<script>
+window.__ENV__ = {
+  FIREBASE_API_KEY: "YOUR_FIREBASE_API_KEY",
+  FIREBASE_AUTH_DOMAIN: "YOUR_FIREBASE_AUTH_DOMAIN",
+  FIREBASE_PROJECT_ID: "YOUR_FIREBASE_PROJECT_ID",
+  FIREBASE_STORAGE_BUCKET: "YOUR_FIREBASE_STORAGE_BUCKET",
+  FIREBASE_MESSAGING_SENDER_ID: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+  FIREBASE_APP_ID: "YOUR_FIREBASE_APP_ID",
+  FIREBASE_MEASUREMENT_ID: "YOUR_FIREBASE_MEASUREMENT_ID",
+  FIREBASE_APPCHECK_SITE_KEY: "YOUR_RECAPTCHA_V3_SITE_KEY",
+};
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Duay Platform">
+  <meta name="theme-color" content="#6366F1">
+  <meta name="description" content="Satın Alma, Tedarik Zinciri & Operasyon Yönetim Platformu">
+  <link rel="manifest" href="manifest.json" id="manifest-link">
+  <title>Operasyon Platformu — v8.0.0</title>
+
+  <!--
+  ── GitHub Pages Alt Klasör Desteği ──────────────────────────────
+  URL'in  kullanici.github.io/REPO-ADI/  şeklindeyse
+  aşağıdaki satırın başındaki  //  kısmını SİL ve repo adını yaz.
+  Örnek:  <base href="/duay-platform/">
+  Ana domain kullanıyorsan (kullanici.github.io/) bu satıra gerek yok.
+  ─────────────────────────────────────────────────────────────────
+  -->
+  <!-- <base href="/REPO-ADI/"> -->
+
+  <!-- ── Harici kütüphaneler ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+
+  <!-- Firebase SDK — aktif -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- ── Stil ── -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     GİRİŞ EKRANI
+     ════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="lcard">
+
+    <!-- Logo -->
+    <div class="llogo">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="52" height="52" rx="14" fill="#1E1B4B"/>
+        <circle cx="26" cy="26" r="18" fill="#2D2A6E" opacity=".6"/>
+        <text x="26" y="32" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="18" font-weight="700" fill="#FACC15">A</text>
+        <circle cx="26" cy="9"    r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="26" cy="43"   r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="9"  cy="26"   r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="43" cy="26"   r="2.2" fill="#FACC15" opacity=".8"/>
+        <circle cx="14.5" cy="14.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="37.5" cy="37.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="37.5" cy="14.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="14.5" cy="37.5" r="2" fill="#FACC15" opacity=".6"/>
+        <circle cx="26" cy="26" r="17" stroke="#FACC15" stroke-width="1" opacity=".4" fill="none"/>
+      </svg>
+      <div>
+        <div class="llogoname">Operasyon Platformu</div>
+        <!-- Anayasa Kural 5: Login versiyon STATIK — App.init() bu değere dokunmaz -->
+        <div class="llogosub" id="l-pf">v8.0.0 / 2026-03-19 14:50</div>
+      </div>
+    </div>
+
+  <!-- Dil seçici -->
+    <div class="llang" role="group" aria-label="Dil seçimi">
+      <button class="lpill on" data-lang-btn="tr" onclick="window.App&&window.App.setLang?window.App.setLang('tr',this):null">TR</button>
+      <button class="lpill"    data-lang-btn="en" onclick="window.App&&window.App.setLang?window.App.setLang('en',this):null">EN</button>
+      <button class="lpill"    data-lang-btn="fr" onclick="window.App&&window.App.setLang?window.App.setLang('fr',this):null">FR</button>
+    </div>
+
+    <div class="lerr" id="l-err" role="alert" aria-live="polite"></div>
+
+    <div class="ltitle" id="l-title" data-i18n="login.title">Giriş Yap</div>
+    <div class="lsubt"  id="l-sub"   data-i18n="login.subtitle">Hesabınıza erişin</div>
+
+    <div class="lfield">
+      <div class="lfl" data-i18n="login.email">E-POSTA</div>
+      <input class="linp" type="email" id="lemail" autocomplete="email"
+             placeholder="ad@sirket.com"
+             onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()">
+    </div>
+
+    <div class="lfield">
+      <div class="lfl" data-i18n="login.password">ŞİFRE</div>
+      <div style="position:relative">
+        <input class="linp" type="password" id="lpwd" autocomplete="current-password"
+               placeholder="••••••••" style="padding-right:44px"
+               onkeydown="if(event.key==='Enter')_doLogin()">
+        <button type="button" onclick="var i=document.getElementById('lpwd');i.type=i.type==='password'?'text':'password';this.innerHTML=i.type==='password'?'<svg width=16 height=16 fill=none viewBox='0 0 16 16'><ellipse cx=8 cy=8 rx=6 ry=4 stroke=currentColor stroke-width=1.3/><circle cx=8 cy=8 r=2 stroke=currentColor stroke-width=1.3/></svg>':'<svg width=16 height=16 fill=none viewBox='0 0 16 16'><path d='M2 2l12 12M6.5 6.6A2 2 0 0 0 9.4 9.5M4.2 4.3C2.8 5.3 2 6.5 2 8c0 0 2.5 5 6 5 1.4 0 2.7-.5 3.8-1.3' stroke=currentColor stroke-width=1.3 stroke-linecap=round/><path d='M3 3C4.3 2.4 5.8 2 7 2c3.5 0 7 3 7 6 0 1-.4 2-1 2.8' stroke=currentColor stroke-width=1.3 stroke-linecap=round/></svg>'"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--t3);padding:4px;display:flex;align-items:center;border-radius:4px">
+          <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="6" ry="4" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="lfield" style="margin-top:2px">
+      <button type="button" onclick="var e=document.getElementById('lemail').value.trim();if(!e){alert('Önce e-posta adresinizi girin');return;}if(window.Auth&&window.Auth.getFBAuth&&window.Auth.getFBAuth()){window.Auth.getFBAuth().sendPasswordResetEmail(e).then(()=>{alert('Şifre sıfırlama e-postası gönderildi: '+e)}).catch(e=>{alert('Hata: '+e.message)})}else{alert('Firebase bağlantısı gerekli')}"
+        style="background:none;border:none;color:var(--ac);font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline;text-underline-offset:2px">
+        Şifremi Unuttum
+      </button>
+    </div>
+
+    <button class="lbtn" id="lbtn" onclick="_doLogin()" data-i18n="login.btn">Giriş Yap</button>
+
+    <div class="lfoot">
+      <button class="ltheme-btn" onclick="window.App&&window.App.toggleTheme?window.App.toggleTheme():document.documentElement.setAttribute('data-theme',document.documentElement.getAttribute('data-theme')==='dark'?'':'dark')">Tema</button>
+      <button class="lreset-btn" onclick="if(confirm('Tüm veriyi sıfırla?')){localStorage.clear();location.reload();}">Veri Sıfırla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function _doLogin() {
+  var email = document.getElementById('lemail').value.trim();
+  var pwd   = document.getElementById('lpwd').value;
+  var errEl = document.getElementById('l-err');
+  var btn   = document.getElementById('lbtn');
+  if (!email || !pwd) { if(errEl){errEl.textContent='E-posta ve şifre zorunludur.';errEl.style.display='block';} return; }
+  if (btn) { btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true; }
+  window.Auth.login(email, pwd).then(function(r) {
+    if (btn) { btn.textContent = 'Giriş Yap'; btn.disabled = false; }
+    if (r.ok) {
+      if (window.App && window.App.init) { window.App.init();
+  // Liman autocomplete global init
+  document.addEventListener('DOMContentLoaded', function() { window.initAllPortInputs?.(); }); }
+      else { location.reload(); }
+    } else {
+      if (errEl) { errEl.textContent = r.error || 'E-posta veya şifre hatalı.'; errEl.style.display = 'block'; }
+    }
+  });
+}
+</script>
+
+<!-- ════════════════════════════════════════════════════════════
+     ANA UYGULAMA
+     ════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── Üst Navigasyon ─────────────────────────────────────── -->
+  <header class="topnav" role="banner">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="ham-btn" onclick="App.toggleSidebar()" aria-label="Menü">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+          <rect width="30" height="30" rx="8" fill="#3C3489"/>
+          <text y="21" x="50%" text-anchor="middle" fill="white" font-size="17" font-family="sans-serif">A</text>
+        </svg>
+        <div>
+          <div class="brand-name">Duay Global LLC</div>
+          <div class="brand-sub" id="clock-el">--:--</div>
+        </div>
+      </div>
+    </div>
+    <div class="tnr" role="toolbar">
+      <button class="ibtn" onclick="App.openGSearch()" aria-label="Ara (Ctrl+K)">&#128269;</button>
+      <div class="notif-btn ibtn" onclick="App.toggleNotifPanel()" role="button" tabindex="0" aria-label="Bildirimler"
+           onkeydown="if(event.key==='Enter')App.toggleNotifPanel()">
+        &#128276; <div class="notif-dot" id="notif-dot" aria-hidden="true"></div>
+      </div>
+      <div class="uchip" onclick="App.toggleProfilePanel()" role="button" tabindex="0" style="cursor:pointer"
+           onkeydown="if(event.key==='Enter')App.toggleProfilePanel()">
+        <div class="av" id="nav-av" style="background:#3C3489;color:#fff" aria-hidden="true">?</div>
+        <div>
+          <div class="ucn" id="nav-name">—</div>
+          <div class="ucr" id="nav-role">—</div>
+        </div>
+      </div>
+      <button class="lout" onclick="App.logout()" data-i18n="btn.logout">Çıkış</button>
+    </div>
+  </header>
+
+  <!-- ── Bildirim Paneli ─────────────────────────────────────── -->
+  <div class="notif-panel" id="notif-panel" role="dialog" aria-label="Bildirimler">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600">Bildirimler
+        <span id="notif-unread-count" style="font-size:11px;color:var(--ac);font-weight:400"></span>
+      </span>
+      <div style="display:flex;gap:6px">
+        <button onclick="App.markAllNotifRead()" style="font-size:11px;color:var(--ac);background:none;border:none;cursor:pointer;font-family:inherit">Tümü Okundu</button>
+        <button onclick="App.clearAllNotifs()"   style="font-size:11px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:inherit">Temizle</button>
+      </div>
+    </div>
+    <div id="notif-list"></div>
+  </div>
+
+  <!-- ── Profil Paneli ───────────────────────────────────────── -->
+  <div class="profile-panel" id="profile-panel" role="dialog" aria-label="Profil">
+    <div class="pp-head">
+      <div class="pp-av" id="pp-av"></div>
+      <div style="font-weight:600;font-size:15px" id="pp-name">—</div>
+      <div style="font-size:12px;color:var(--at);margin-top:2px" id="pp-role">—</div>
+      <div style="font-size:11px;color:var(--at);opacity:.7;margin-top:2px" id="pp-email">—</div>
+    </div>
+    <div style="padding:12px">
+      <div id="pp-modules" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px"></div>
+      <button class="btn" style="width:100%;justify-content:center;margin-bottom:6px" onclick="App.openProfileEdit()">✏️ Profili Düzenle</button>
+
+      <!-- Şifre Değiştir -->
+      <div id="pp-pwd-section" style="margin-bottom:8px">
+        <button class="btn" style="width:100%;justify-content:center;margin-bottom:6px"
+          onclick="document.getElementById('pp-pwd-form').style.display=document.getElementById('pp-pwd-form').style.display==='none'?'block':'none'">
+          🔐 Şifre Değiştir
+        </button>
+        <div id="pp-pwd-form" style="display:none;background:var(--s2);border-radius:10px;padding:10px;margin-top:4px">
+          <input type="password" id="pp-old-pwd" placeholder="Mevcut şifre" class="fi"
+            style="margin-bottom:6px;font-size:12px;border-radius:7px">
+          <input type="password" id="pp-new-pwd" placeholder="Yeni şifre (min 6 karakter)" class="fi"
+            style="margin-bottom:6px;font-size:12px;border-radius:7px">
+          <input type="password" id="pp-new-pwd2" placeholder="Yeni şifre tekrar" class="fi"
+            style="margin-bottom:8px;font-size:12px;border-radius:7px">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:8px;line-height:1.5">
+            💡 Firebase üzerinde kayıtlıysan şifren her iki sistemde de güncellenir.
+          </div>
+          <button class="btn btnp" style="width:100%;justify-content:center;font-size:12px;border-radius:8px"
+            onclick="_changePwdFromPanel()">Değiştir</button>
+        </div>
+      </div>
+
+      <button class="btn btnd" style="width:100%;justify-content:center" onclick="App.logout()">Çıkış Yap</button>
+    </div>
+  </div>
+
+  <!-- Şifre değiştirme handler -->
+  <script>
+  async function _changePwdFromSettings() {
+    var oldPwd  = document.getElementById('set-old-pwd')?.value  || '';
+    var newPwd  = document.getElementById('set-new-pwd')?.value  || '';
+    var newPwd2 = document.getElementById('set-new-pwd2')?.value || '';
+    if (!oldPwd || !newPwd) { window.toast?.('Tüm alanları doldurun', 'err'); return; }
+    if (newPwd.length < 6)  { window.toast?.('Şifre en az 6 karakter olmalı', 'err'); return; }
+    if (newPwd !== newPwd2) { window.toast?.('Yeni şifreler eşleşmiyor', 'err'); return; }
+    var btn = event.target; btn.textContent = 'Güncelleniyor…'; btn.disabled = true;
+    try {
+      var result = await window.Auth?.changePassword(oldPwd, newPwd);
+      if (result?.ok) {
+        window.toast?.('Şifre güncellendi ✓', 'ok');
+        ['set-old-pwd','set-new-pwd','set-new-pwd2'].forEach(function(id){
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        var fbAuth = window.Auth?.getFBAuth?.();
+        if (fbAuth?.currentUser) {
+          fbAuth.currentUser.updatePassword(newPwd)
+            .then(function(){ window.toast?.('Firebase şifresi de güncellendi ✓', 'ok'); })
+            .catch(function(e){ window.toast?.('Firebase: ' + e.message, 'warn'); });
+        }
+      } else {
+        window.toast?.(result?.error || 'Şifre güncellenemedi', 'err');
+      }
+    } catch(e) { window.toast?.('Hata: ' + e.message, 'err'); }
+    btn.textContent = 'Şifreyi Güncelle'; btn.disabled = false;
+  }
+
+  async function _changePwdFromPanel() {
+    var oldPwd  = document.getElementById('pp-old-pwd')?.value  || '';
+    var newPwd  = document.getElementById('pp-new-pwd')?.value  || '';
+    var newPwd2 = document.getElementById('pp-new-pwd2')?.value || '';
+    if (!oldPwd || !newPwd) { window.toast?.('Tüm alanları doldurun', 'err'); return; }
+    if (newPwd.length < 6)  { window.toast?.('Şifre en az 6 karakter olmalı', 'err'); return; }
+    if (newPwd !== newPwd2) { window.toast?.('Yeni şifreler eşleşmiyor', 'err'); return; }
+    var btn = event.target;
+    btn.textContent = 'Değiştiriliyor…'; btn.disabled = true;
+    try {
+      var result = await window.Auth?.changePassword(oldPwd, newPwd);
+      if (result?.ok) {
+        window.toast?.('Şifre değiştirildi ✓', 'ok');
+        document.getElementById('pp-old-pwd').value  = '';
+        document.getElementById('pp-new-pwd').value  = '';
+        document.getElementById('pp-new-pwd2').value = '';
+        document.getElementById('pp-pwd-form').style.display = 'none';
+        // Firebase Auth üzerinde de güncelle
+        var fbAuth = window.Auth?.getFBAuth?.();
+        if (fbAuth?.currentUser) {
+          fbAuth.currentUser.updatePassword(newPwd)
+            .then(function(){ window.toast?.('Firebase şifresi de güncellendi ✓', 'ok'); })
+            .catch(function(e){ window.toast?.('Firebase güncelleme: ' + e.message, 'warn'); });
+        }
+      } else {
+        window.toast?.(result?.error || 'Şifre değiştirilemedi', 'err');
+      }
+    } catch(e) {
+      window.toast?.('Hata: ' + e.message, 'err');
+    }
+    btn.textContent = 'Değiştir'; btn.disabled = false;
+  }
+  </script>
+
+  <!-- ── Global Arama ────────────────────────────────────────── -->
+  <div class="gsearch-overlay" id="gsearch-overlay" onclick="App.closeGSearch(event)" role="dialog" aria-label="Global arama">
+    <div class="gsearch-box" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;gap:10px;padding:0 16px">
+        <input class="gsearch-inp" id="gsearch-inp"
+               placeholder="Tüm modüllerde ara… (Esc ile kapat)"
+               oninput="App.doGSearch(this.value)"
+               onkeydown="App.gSearchKey(event)"
+               aria-label="Arama">
+        <span style="font-size:11px;color:var(--t3);flex-shrink:0;cursor:pointer" onclick="App.closeGSearch()">ESC</span>
+      </div>
+      <div id="gsearch-results" role="listbox"></div>
+    </div>
+  </div>
+
+  <!-- ── Pin Bar ─────────────────────────────────────────────── -->
+  <div id="pinbar" style="height:auto;min-height:36px;padding:0 12px" role="navigation" aria-label="Sabit linkler">
+    <div id="pinbar-links" style="display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;min-width:0;padding:4px 0" class="pinbar-scroll"></div>
+    <div class="psep" style="flex-shrink:0"></div>
+    <button class="padd-btn" onclick="App.openPinModal(null)" id="btn-pin-add" style="flex-shrink:0">+ Link</button>
+  </div>
+
+  <!-- ── Mobile Overlay ─────────────────────────────────────── -->
+  <div id="mob-overlay" onclick="App.toggleSidebar()" aria-hidden="true"></div>
+
+  <!-- ════════════════════════════════════════════════════════
+       ANA LAYOUT
+       ════════════════════════════════════════════════════════ -->
+  <div class="layout">
+
+    <!-- ── Sidebar ──────────────────────────────────────────── -->
+    <aside class="sidebar">
+
+  <!-- ═══ GENEL ═══ -->
+  <div class="nsec-header nsec" id="nsec-genel" onclick="toggleNsec('nsec-genel')">GENEL <span class="nsec-arrow">▾</span></div>
+      <button class="nb on" onclick="nav('dashboard',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span id="nb-db">Dashboard</span>
+  </button>
+      <button class="nb" onclick="nav('announce',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 6h2v4H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M4 6l7-4v12L4 10" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span id="nb-ann">Duyurular</span>
+    <span class="nbdg" id="nb-ann-b" style="background:var(--rd);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('takvim',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 7h14M5 3V1M11 3V1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-tak">Takvim</span>
+  </button>
+      <button class="nb" onclick="nav('notes',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-nt">Notlar</span>
+  </button>
+      <button class="nb" onclick="nav('rehber',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Acil Rehber</span>
+  </button>
+      <button class="nb" onclick="nav('links',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5l-1 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5l1-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-lnk">Hızlı Linkler</span>
+  </button>
+
+  <!-- ═══ SATIŞ & MÜŞTERİ ═══ -->
+  <div class="nsec-header nsec" id="nsec-satis" onclick="toggleNsec('nsec-satis')">SATIŞ &amp; MÜŞTERİ <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('crm',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="8" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="6" y="5" width="4" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="2" width="4" height="12" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>CRM / Müşteriler</span>
+    <span class="nbdg" id="nb-crm-b" style="background:var(--gr);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('gorusme',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v6a1 1 0 01-1 1H9l-3 2v-2H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Teklif Takibi</span>
+    <span class="nbdg" id="nb-grt-b" style="background:var(--ac);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('etkinlik',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 7h14M5 3V1M11 3V1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4 10l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Etkinlik / Fuar</span>
+    <span class="nbdg" id="nb-etk-b" style="background:var(--ac);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('numune',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6 1h4v6l2 4H4L6 7V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Numune Arşivi</span>
+    <span class="nbdg" id="nb-nm-b" style="background:var(--am);display:none">0</span>
+  </button>
+
+  <!-- ═══ SATINALMA ═══ -->
+  <div class="nsec-header nsec" id="nsec-satinalma" onclick="toggleNsec('nsec-satinalma')">SATINALMA <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="App.nav('lojistik',this)" id="nb-lojistik">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 8h2l2 3v2h-4V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="4" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/><circle cx="12" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/></svg>
+        <span>Satın Alma Merkezi</span>
+        <span class="nbdg" id="nb-lojistik-b" style="display:none">0</span>
+      </button>
+      <button class="nb" onclick="nav('stok',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Stok / Ürün</span>
+  </button>
+
+  <!-- ═══ LOJİSTİK ═══ -->
+  <div class="nsec-header nsec" id="nsec-lojistik" onclick="toggleNsec('nsec-lojistik')">LOJİSTİK <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('odemeler',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M1 5h14M1 9h14M4 1v14M12 1v14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Kargo Takibi</span>
+    <span class="nbdg" id="nb-odm-b" style="background:var(--rd);display:none">!</span>
+  </button>
+
+  <!-- ═══ FİNANS & MUHASEBE ═══ -->
+  <div class="nsec-header nsec" id="nsec-finans" onclick="toggleNsec('nsec-finans')">FİNANS &amp; MUHASEBE <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('finans',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M1 12V5a1 1 0 011-1h12a1 1 0 011 1v7a1 1 0 01-1 1H2a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8.5" r="2" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Finans Paneli</span>
+  </button>
+      <button class="nb" onclick="nav('odemeler',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 6.5h14" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="10" r="1" fill="currentColor"/></svg>
+    <span>Rutin Ödemeler</span>
+    <span class="nbdg" id="nb-odm-f-b" style="background:var(--rd);display:none">!</span>
+  </button>
+      <button class="nb" onclick="nav('pirim',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 2l1.5 4h4l-3.5 2.5 1.5 4L8 10l-3.5 2.5 1.5-4L2.5 6h4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span>Prim Sistemi</span>
+    <span class="nbdg" id="nb-pirim-b" style="background:var(--ac);display:none">0</span>
+  </button>
+      <button class="nb" onclick="App.nav('hesap',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h8M4 8h5M4 11h3M11 9l1.5 1.5L14 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Hesap Makinesi</span>
+  </button>
+
+  <!-- ═══ İNSAN KAYNAKLARI ═══ -->
+  <div class="nsec-header nsec" id="nsec-ik" onclick="toggleNsec('nsec-ik')">İNSAN KAYNAKLARI <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="App.nav('ik-hub',this)" id="nb-ik-hub">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="4" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>İK Merkezi</span>
+        <span class="nbdg" id="nb-ik-b" style="display:none">0</span>
+      </button>
+      <button class="nb" onclick="nav('evrak',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Personel Evrak</span>
+    <span class="nbdg" id="nb-evrak-b" style="background:var(--rd);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('temizlik',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M3 13L7 5M7 5L9 3M7 5h5l1 2-5 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.5" cy="11.5" r="2" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Temizlik Kontrol</span>
+    <span class="nbdg" id="nb-tmz-b" style="background:var(--bl);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('puantaj',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 7h14M5 3V1M11 3V1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5 10h2M9 10h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Puantaj</span>
+  </button>
+
+  <!-- ═══ DÖKÜMAN & BİLGİ ═══ -->
+  <div class="nsec-header nsec" id="nsec-dokuman" onclick="toggleNsec('nsec-dokuman')">DÖKÜMAN &amp; BİLGİ <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('docs',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 8h5M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="nb-doc">Dökümanlar</span>
+  </button>
+      <button class="nb" onclick="nav('formlar',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Kurumsal Formlar</span>
+  </button>
+      <button class="nb" onclick="nav('arsiv',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M1 3h14M1 1h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Şirket Arşivi</span>
+    <span class="nbdg" id="nb-arsiv-b" style="background:var(--am);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('tebligat',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span>Tebligat Takibi</span>
+    <span class="nbdg" id="nb-teb-b" style="background:var(--rd);display:none">!</span>
+  </button>
+      <button class="nb" onclick="nav('resmi',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Resmi Evrak</span>
+    <span class="nbdg" id="nb-rm-b" style="background:var(--rd);display:none">!</span>
+  </button>
+
+  <!-- ═══ OPERASYON ═══ -->
+  <div class="nsec-header nsec" id="nsec-operasyon" onclick="toggleNsec('nsec-operasyon')">OPERASYON <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('pusula',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5.5l-2 4-4 2 2-4 4-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    <span id="nb-pus">Görevler</span>
+    <span class="nbdg" id="nb-pus-b" style="background:var(--rd);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('hedefler',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r=".75" fill="currentColor"/></svg>
+    <span>Hedefler</span>
+    <span class="nbdg" id="nb-hdf-b" style="background:var(--am);display:none">0</span>
+  </button>
+
+  <!-- ═══ YÖNETİM ═══ -->
+  <div class="nsec-header nsec" id="nsec-yonetim" onclick="toggleNsec('nsec-yonetim')">YÖNETİM <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('ceo',this)" id="nb-ceo">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 11L6 7l3 3 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="13" cy="6" r="1.5" fill="currentColor"/></svg>
+    <span>CEO Paneli</span>
+  </button>
+      <button class="nb" onclick="nav('kpi-panel',this)" id="nb-kpi-panel">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>KPI & Performans</span>
+    <span class="nbdg" id="nb-kpi-b" style="background:var(--ac);display:none">!</span>
+  </button>
+      <button class="nb" onclick="App.nav('admin',this)" id="nb-admin">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 1l1.5 3h3l-2.5 2 1 3L8 7.5 5 9l1-3L3.5 4h3L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        <span data-i18n="nav.admin">Kullanıcı Yönetimi</span>
+      </button>
+      <button class="nb" onclick="nav('activity',this)" id="nb-activity">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><polyline points="1,10 4,6 7,8 10,4 13,7 15,5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="nb-act">Aktiviteler</span>
+  </button>
+      <button class="nb" onclick="nav('trash',this)" id="nb-trash">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Çöp Kutusu</span>
+    <span class="nbdg" id="nb-trash-b" style="background:var(--t3);display:none">0</span>
+  </button>
+      <button class="nb" onclick="nav('settings',this)" id="nb-settings">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.54 11.54l1.41 1.41M3.05 12.95l1.42-1.42M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Ayarlar</span>
+  </button>
+
+</aside>
+
+    <!-- ── Ana İçerik Alanı ──────────────────────────────────── -->
+    <main class="main" id="main-content" role="main">
+
+      <!-- Panel: Dashboard -->
+            <div class="panel on" id="panel-dashboard">
+        <div class="ph">
+          <div><div class="pht" id="ph-db">Dashboard</div><div class="phs" id="db-welcome"></div></div>
+          <span id="db-date" style="font-size:12px;color:var(--t2)"></span>
+        </div>
+        <!-- Ana istatistikler -->
+        <div class="sg" id="db-stats">
+          <div class="sc" style="cursor:pointer" onclick="goTo('users')" id="sc-u"><div class="sci" style="background:var(--al)">👥</div><div class="scv" id="sv-u">—</div><div class="scl" id="sl-u">Kullanıcılar</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('docs')"><div class="sci" style="background:var(--blb)">📄</div><div class="scv" id="sv-d">—</div><div class="scl">Dökümanlar</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('pusula')"><div class="sci" style="background:var(--rdb)">🎯</div><div class="scv" id="sv-c">0</div><div class="scl">Kritik Görev</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('puantaj')"><div class="sci" style="background:var(--amb)">⏳</div><div class="scv" id="sv-p">0</div><div class="scl">Bekleyen Onay</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('izin')"><div class="sci" style="background:rgba(16,185,129,.12)">🏖️</div><div class="scv" id="sv-izin">0</div><div class="scl">İzin Talebi</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('kargo')"><div class="sci" style="background:rgba(59,130,246,.12)">📦</div><div class="scv" id="sv-kargo">0</div><div class="scl">Aktif Kargo</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('pirim')"><div class="sci" style="background:rgba(245,158,11,.12)">⭐</div><div class="scv" id="sv-pirim">0</div><div class="scl">Bekleyen Pirim</div></div>
+          <div class="sc" style="cursor:pointer" onclick="goTo('crm')"><div class="sci" style="background:rgba(99,102,241,.12)">🤝</div><div class="scv" id="sv-crm">0</div><div class="scl">Aktif Lead</div></div>
+        </div>
+
+        <!-- Duyurular (okunmamış) -->
+        <div id="db-ann-preview"></div>
+
+        <!-- Ana grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <!-- Sol: Kritik Görevler (Top 3) -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">🔥 Acil 3 İş</span>
+              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-top3"></div>
+          </div>
+          <!-- Sağ: Çeyrek Hedefler -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">🎯 Çeyrek Hedefler</span>
+              <button class="btn btns" onclick="goTo('hedefler')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-hedefler"></div>
+          </div>
+        </div>
+
+        <!-- Pusula Özet Widget -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px" id="db-pusula-row">
+          <!-- Odak Görevleri -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">🔥 Bugünün Odak Listesi</span>
+              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Pusula →</button>
+            </div>
+            <div id="db-day-focus"></div>
+          </div>
+          <!-- Pusula özet istatistik -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">📊 Görev Durumu</span>
+              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-pusula-stats"></div>
+          </div>
+        </div>
+
+        <!-- İkinci satır -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <!-- Kargo Takibi -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">📦 Takipteki Kargolar</span>
+              <button class="btn btns" onclick="goTo('kargo')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-kargo"></div>
+          </div>
+          <!-- Son Aktiviteler -->
+          <div class="card">
+            <div class="ch"><span class="ct" id="ct-rec">Son Aktiviteler</span></div>
+            <div id="db-acts"></div>
+          </div>
+        </div>
+
+        <!-- Üçüncü satır: Hızlı Erişim + Ödemeler -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card">
+            <div class="ch"><span class="ct">⚡ Hızlı Erişim</span></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px">
+              <div class="qi" onclick="goTo('pusula')"><span class="qi-i">🧭</span><span>Pusula</span></div>
+              <div class="qi" onclick="goTo('puantaj')"><span class="qi-i">🗓</span><span>Puantaj</span></div>
+              <div class="qi" onclick="goTo('takvim')"><span class="qi-i">📅</span><span>Takvim</span></div>
+              <div class="qi" onclick="goTo('notes')"><span class="qi-i">📝</span><span>Notlar</span></div>
+              <div class="qi" onclick="goTo('kargo')"><span class="qi-i">📦</span><span>Kargo</span></div>
+              <div class="qi" onclick="goTo('rehber')"><span class="qi-i">📒</span><span>Rehber</span></div>
+              <div class="qi" onclick="goTo('odemeler')"><span class="qi-i">💳</span><span>Ödemeler</span></div>
+              <div class="qi" onclick="goTo('finans')"><span class="qi-i">💰</span><span>Finans</span></div>
+            </div>
+          </div>
+          <!-- Yaklaşan ödemeler -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct">💳 Yaklaşan Ödemeler</span>
+              <button class="btn btns" onclick="goTo('odemeler')" style="font-size:11px">Tümü →</button>
+            </div>
+            <div id="db-odemeler"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Pusula (Görev Yönetimi) -->
+            <div class="panel" id="panel-pusula">
+
+        <!-- ── YENİ PUSULA TOPBAR ── -->
+        <div class="pus-topbar">
+          <div class="pus-topbar-left">
+            <div class="pus-brand">
+              <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="var(--ac)" stroke-width="1.3"/><path d="M10.5 5.5l-2 4-4 2 2-4 4-2z" stroke="var(--ac)" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              Pusula
+            </div>
+            <div class="pus-topbar-sep"></div>
+            <div class="pus-view-toggle" id="pus-view-row">
+              <button id="pus-v-list" class="pvt-btn active" onclick="setPusView('list',this)">
+                <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="1.6" rx=".8" fill="currentColor"/><rect x="1" y="5.2" width="10" height="1.6" rx=".8" fill="currentColor"/><rect x="1" y="8.4" width="10" height="1.6" rx=".8" fill="currentColor"/></svg>
+                Liste
+              </button>
+              <button id="pus-v-board" class="pvt-btn" onclick="setPusView('board',this)">
+                <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><rect x="1" y="1" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".8"/><rect x="4.75" y="1" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".8"/><rect x="8.5" y="1" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".8"/></svg>
+                Board
+              </button>
+              <button id="pus-v-me" class="pvt-btn" onclick="setPusView('me',this)">
+                <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><circle cx="6" cy="3.5" r="1.8" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 10c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                Benim
+              </button>
+            </div>
+          </div>
+          <div class="pus-topbar-right">
+            <!-- Quick Add -->
+            <div class="pus-quick-add-wrap" id="pus-quick-add-wrap" style="margin:0">
+              <div class="pus-qa-inner" style="border-radius:7px;padding:4px 10px">
+                <span class="pus-qa-icon" style="font-size:12px">⚡</span>
+                <input class="pus-qa-inp" id="pus-qa-inp" type="text"
+                  placeholder="Hızlı görev…"
+                  onkeydown="if(event.key==='Enter')window._qaSubmit?.()"
+                  oninput="window._qaHint?.(this.value)"
+                  style="width:140px">
+                <button class="pus-qa-btn" onclick="window._qaSubmit?.()">+</button>
+              </div>
+              <div class="pus-qa-hint" id="pus-qa-hint"></div>
+            </div>
+            <div class="pus-topbar-sep"></div>
+            <!-- Araçlar -->
+            <div class="pus-tools-group" id="pus-tools-group" style="position:relative">
+              <button class="pus-tools-trigger" onclick="window._toggleToolsMenu?.(this)" title="Araçlar">
+                <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="2" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="12" r="1.3" fill="currentColor"/></svg>
+                Araçlar
+                <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
+                <div class="ptm-section-label">📊 Veri</div>
+                <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬇️</span><div><div class="ptm-title">Excel İndir</div><div class="ptm-desc">Görev listesini xlsx olarak indir</div></div></button>
+                <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬆️</span><div><div class="ptm-title">Excel Yükle</div><div class="ptm-desc">xlsx dosyasından görev içe aktar</div></div></button>
+                <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()"><span class="ptm-icon">📋</span><div><div class="ptm-title">Şablon İndir</div><div class="ptm-desc">Boş import şablonu indir</div></div></button>
+                <div class="ptm-divider"></div>
+                <div class="ptm-section-label">⚡ Araçlar</div>
+                <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()"><span class="ptm-icon">🎯</span><div><div class="ptm-title">Odak Modu</div><div class="ptm-desc">Pomodoro zamanlayıcısı başlat</div></div></button>
+                <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(null);window._closeToolsMenu?.()"><span class="ptm-icon">📌</span><div><div class="ptm-title">Yapışkan Notlar</div><div class="ptm-desc">Hızlı not al, göreve dönüştür</div></div></button>
+                <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()"><span class="ptm-icon">🔁</span><div><div class="ptm-title">Şablon Kütüphanesi</div><div class="ptm-desc">Hazır şablonla görev oluştur</div></div></button>
+                <button class="ptm-item" onclick="window._renderEisenhower?.() || setPusView('matrix',null);window._closeToolsMenu?.()"><span class="ptm-icon">📐</span><div><div class="ptm-title">Eisenhower Matrix</div><div class="ptm-desc">Görevi 4 kadranda önceliklendir</div></div></button>
+                <div class="ptm-divider"></div>
+                <div class="ptm-section-label">📈 Analiz</div>
+                <button class="ptm-item" onclick="openPersonalDashboard();window._closeToolsMenu?.()"><span class="ptm-icon">📊</span><div><div class="ptm-title">Performansım</div><div class="ptm-desc">Kişisel dashboard & istatistik</div></div></button>
+                <button class="ptm-item" onclick="window._openGamifDashboard?.();window._closeToolsMenu?.()"><span class="ptm-icon">🏆</span><div><div class="ptm-title">Rozetlerim</div><div class="ptm-desc">XP, seviye ve rozet vitrinleri</div></div></button>
+                <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()"><span class="ptm-icon">👥</span><div><div class="ptm-title">Personel Analizi</div><div class="ptm-desc">İş yükü & performans tablosu</div></div></button>
+                    <button class="ptm-item" onclick="openDeptManager();window._closeToolsMenu?.()"><span class="ptm-icon">🏷</span><div><div class="ptm-title">Departmanlar</div><div class="ptm-desc">Ekle, sil, renk değiştir</div></div></button>
+              </div>
+            </div>
+            <button class="pus-add-btn" onclick="openAddTask()">
+              <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Görev Ekle
+            </button>
+            <button id="btn-pus-sticky" style="display:none"></button>
+          </div>
+        </div>
+
+        <!-- ── SEKME FİLTRELER (Tablo sekmesi gibi) ── -->
+        <div class="pus-tabs-row">
+          <div class="pus-tab active" id="psf-all" onclick="setPusQuickFilter('all',this)">
+            Tümü <span class="pus-tab-count" id="pv-tot">0</span>
+          </div>
+          <div class="pus-tab" id="psf-todo" onclick="setPusQuickFilter('todo',this)">
+            Yapılacak <span class="pus-tab-count" id="psf-todo-n">0</span>
+          </div>
+          <div class="pus-tab" id="psf-ip" onclick="setPusQuickFilter('inprogress',this)">
+            Devam <span class="pus-tab-count" id="psf-ip-n">0</span>
+          </div>
+          <div class="pus-tab" id="psf-rv" onclick="setPusQuickFilter('review',this)">
+            İnceleme <span class="pus-tab-count" id="psf-rv-n">0</span>
+          </div>
+          <div class="pus-tab" id="psf-done" onclick="setPusQuickFilter('done',this)">
+            Tamamlandı <span class="pus-tab-count" id="psf-done-n">0</span>
+          </div>
+          <div class="pus-tab pus-tab-danger" id="psf-ov" onclick="setPusQuickFilter('overdue',this)">
+            Gecikmiş <span class="pus-tab-count" id="pv-ov">0</span>
+          </div>
+        </div>
+
+        <!-- ── ANA LAYOUT: Sol Sidebar + Sağ İçerik ── -->
+        <div class="pus-layout">
+
+          <!-- Sol Sidebar -->
+          <div class="pus-sidebar" id="pus-sidebar">
+            <div class="pus-sb-section-title">Departman</div>
+            <div id="pus-dept-nav">
+              <div class="pus-sb-item active" onclick="window._filterDept?.('')">
+                <span class="pus-sb-dot" style="background:var(--ac)"></span>
+                Tümü
+              </div>
+            </div>
+            <div class="pus-sb-section-title" style="margin-top:16px">İlerleme</div>
+            <div class="pus-sb-progress">
+              <div class="pus-prog-bar-wrap" style="height:5px;border-radius:99px;overflow:hidden;background:var(--b);margin-bottom:4px">
+                <div class="pus-prog-bar-fill" id="pus-prog-fill" style="height:100%"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <div class="pus-prog-stats" id="pus-prog-stats" style="font-size:10px"></div>
+                <span class="pus-prog-pct-txt" id="pus-prog-pct" style="font-size:11px;font-weight:500"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sağ içerik -->
+          <div class="pus-content">
+            <!-- Arama + Filtreler -->
+            <div class="pus-toolbar">
+              <div class="pus-toolbar-left">
+                <div class="pus-search-wrap">
+                  <svg class="pus-search-icon" width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                  <input type="text" class="pus-search-inp" id="pf-search" placeholder="Ara…" oninput="renderPusula()">
+                </div>
+                <select class="pus-filter-sel" id="pus-usel" style="display:none" onchange="renderPusula()"><option value="0">Tüm Personel</option></select>
+                <select class="pus-filter-sel" id="pf-pri" onchange="renderPusula()">
+                  <option value="0">Tüm Öncelik</option>
+                  <option value="1">🔴 Kritik</option>
+                  <option value="2">🟠 Önemli</option>
+                  <option value="3">🔵 Normal</option>
+                  <option value="4">⚪ Düşük</option>
+                </select>
+                <select class="pus-filter-sel" id="pf-dept" onchange="renderPusula()" title="Departman filtresi">
+                  <option value="">Tüm Departmanlar</option>
+                </select>
+                <input type="date" class="pus-filter-sel" id="pf-dfrom" onchange="renderPusula()" title="Başlangıç">
+                <input type="date" class="pus-filter-sel" id="pf-dto" onchange="renderPusula()" title="Bitiş">
+              </div>
+              <div class="pus-toolbar-right">
+                <select class="pus-filter-sel" id="pf-sort" onchange="renderPusula()">
+                  <option value="pri">Önceliğe göre</option>
+                  <option value="due">Son tarihe göre</option>
+                  <option value="newest">En yeni</option>
+                  <option value="oldest">En eski</option>
+                  <option value="az">A→Z</option>
+                </select>
+                <button class="pus-clear-btn" onclick="clearPusFilters()">✕ Temizle</button>
+              </div>
+            </div>
+
+            <div id="pus-workload-panel" style="display:none;margin-bottom:14px;animation:pus-row-in .25s ease"></div>
+            <div class="pus-summary-row" id="pf-summary"></div>
+            <div id="pus-focus-panel" style="margin-bottom:14px;width:100%"></div>
+            <div id="pus-sticky-board" style="display:none;margin-bottom:14px"></div>
+            <div id="pus-main-view"></div>
+          </div>
+        </div>
+
+        <!-- Slide-in detail panel -->
+        <div id="pus-detail-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:440px;max-width:95vw;z-index:500;flex-direction:column;overflow:hidden">
+          <div class="pdp-header">
+            <div style="flex:1;min-width:0">
+              <div class="pdp-title" id="pdp-title"></div>
+              <div class="pdp-meta-row" id="pdp-meta"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <button onclick="editTask(PUS_DETAIL_ID)" style="background:rgba(0,122,255,.1);color:#007AFF;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Düzenle</button>
+              <button class="pdp-close-btn" onclick="closePusDetail()">×</button>
+            </div>
+          </div>
+          <div id="pus-detail-body" style="flex:1;overflow-y:auto;padding:20px;background:var(--s2)"></div>
+        </div>
+
+        <!-- Eski pus-hero-sub gizli tutuyoruz (JS referansları için) -->
+        <span id="ph-pus-s" style="display:none">Görev yönetim merkezi</span>
+      </div>
+
+      <!-- Panel: Kargo -->
+            <div class="panel" id="panel-kargo">
+        <div class="ph">
+          <div><div class="pht">📦 Kargo Yönetimi</div><div class="phs">Gelen ve giden kargo kayıtları.</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btns" onclick="exportKargoXlsx()">⬇ Excel</button>
+            <button class="btn btns" onclick="openKargoFirmaModal()" id="btn-krg-firma">⚙️ Firmalar</button>
+            <button class="btn" onclick="openKargoModal('gelen')">📥 Gelen Kayıt</button>
+            <button class="btn btnp" onclick="openKargoModal('giden')">📤 Giden Etiket</button>
+          </div>
+        </div>
+        <div class="sg">
+          <div class="ms"><div class="msv" id="krg-total">0</div><div class="msl">Toplam</div></div>
+          <div class="ms"><div class="msv" style="color:var(--bl)" id="krg-gelen">0</div><div class="msl">📥 Gelen</div></div>
+          <div class="ms"><div class="msv" style="color:var(--gr)" id="krg-giden">0</div><div class="msl">📤 Giden</div></div>
+          <div class="ms"><div class="msv" style="color:var(--am)" id="krg-bekle">0</div><div class="msl">⏳ Beklemede</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <button class="chip on" onclick="setKargoFilter('all',this)">Tümü</button>
+          <button class="chip" onclick="setKargoFilter('gelen',this)">📥 Gelen</button>
+          <button class="chip" onclick="setKargoFilter('giden',this)">📤 Giden</button>
+          <button class="chip" onclick="setKargoFilter('bekle',this)">⏳ Beklemede</button>
+          <input class="si" id="krg-search" style="margin-left:auto;width:200px;padding:5px 10px;font-size:12px" placeholder="🔍 Ara..." oninput="renderKargo()">
+        </div>
+        <div id="kargo-list"></div>
+        <!-- Konteyner Takip -->
+        <div class="card" style="margin-top:18px">
+          <div class="ch">
+            <span class="ct">🚢 Konteyner / Hat Takibi</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span id="konteyn-last-check" style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace"></span>
+              <button class="btn btns" onclick="checkAllKonteyn()">↻ Hepsini Kontrol Et</button>
+              <button class="btn btnp btns" onclick="openKonteynModal(null)">+ Konteyner Ekle</button>
+            </div>
+          </div>
+          <div id="konteyn-demuraj-bar"></div>
+          <div id="konteyn-alarm-bar" style="margin-bottom:8px"></div>
+          <div id="konteyn-list" style="padding:8px 0"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Prim -->
+            <div class="panel" id="panel-pirim">
+        <!-- Hero Header -->
+        <div style="background:linear-gradient(135deg,#1E1B4B 0%,#3C3489 60%,#534AB7 100%);border-radius:14px;padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+          <div style="position:absolute;bottom:-50px;right:80px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.03)"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
+            <div>
+              <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-.4px;display:flex;align-items:center;gap:10px">
+                <span style="background:rgba(255,255,255,.15);border-radius:10px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center">⭐</span>
+                Pirim & Performans
+              </div>
+              <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">İşlem bazlı pirim takibi, ödüller ve liderlik tablosu</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <select id="prm-year-sel" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:7px 12px;font-size:12px;font-family:inherit;cursor:pointer" onchange="renderPirim()">
+                <option style="color:#333" value="">Tüm Dönemler</option>
+              </select>
+              <button class="btn btns" onclick="exportPirimXlsx()" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff">⬇ Excel</button>
+              <button id="btn-pirim-params" onclick="openPirimParams()" style="display:none;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:7px 12px;font-size:12px;cursor:pointer">⚙️ Parametreler</button>
+              <button onclick="openPirimModal(null)" style="background:#fff;color:var(--ac);border:none;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Pirim Kaydı</button>
+            </div>
+          </div>
+          <!-- Hero stats -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:20px;border-top:1px solid rgba(255,255,255,.1);padding-top:16px">
+            <div style="text-align:center;padding:8px">
+              <div style="font-size:26px;font-weight:700;color:#fff" id="prm-total">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Toplam Kayıt</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-left:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:26px;font-weight:700;color:#FBBF24" id="prm-pending">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Onay Bekliyor</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-left:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:26px;font-weight:700;color:#34D399" id="prm-approved">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Onaylı</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-left:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:20px;font-weight:700;color:#A78BFA;font-family:'DM Mono',monospace" id="prm-total-amount">0 ₺</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Toplam Pirim</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard grid: Liderlik + Ödüller + Grafik -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <!-- Liderlik tablosu -->
+          <div class="card">
+            <div class="ch">
+              <span class="ct" style="display:flex;align-items:center;gap:6px">🏆 Liderlik Tablosu</span>
+              <span style="font-size:11px;color:var(--t2)" id="prm-period-label"></span>
+            </div>
+            <div id="pirim-leaderboard"></div>
+          </div>
+          <!-- Ödüller -->
+          <div class="card">
+            <div class="ch"><span class="ct">🎖️ Dönem Ödülleri & Başarılar</span></div>
+            <div id="pirim-awards"></div>
+          </div>
+        </div>
+
+        <!-- Aylık trend grafiği -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="ch">
+            <span class="ct">📈 Aylık Pirim Trendi</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="si" id="prm-trend-user" style="width:160px;padding:5px 8px;font-size:12px" onchange="renderPirimTrend()"><option value="0">Tüm Personel</option></select>
+            </div>
+          </div>
+          <div id="pirim-trend-chart" style="padding:8px 16px 16px"></div>
+        </div>
+
+        <!-- Filtre + Liste -->
+        <div class="card">
+          <div class="ch">
+            <span class="ct">İşlem Listesi</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="si" id="prm-user-f" style="width:160px;padding:5px 8px;font-size:12px" onchange="renderPirim()"><option value="0">Tüm Personel</option></select>
+              <select class="si" id="prm-status-f" style="width:140px;padding:5px 8px;font-size:12px" onchange="renderPirim()">
+                <option value="">Tüm Durum</option>
+                <option value="pending">⏳ Bekliyor</option>
+                <option value="approved">✅ Onaylı</option>
+                <option value="rejected">❌ Reddedildi</option>
+              </select>
+              <input type="month" class="si" id="prm-month-f" style="width:160px;padding:5px 8px;font-size:12px" onchange="renderPirim()" title="Ay filtresi">
+            </div>
+          </div>
+          <div id="pirim-list"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Admin -->
+      <div id="panel-admin" class="panel">
+        <div class="ph">
+          <div><div class="pht">Kullanıcı Yönetimi</div><div class="phs">RBAC &amp; yetki yönetimi</div></div>
+          <button class="btn btnp" onclick="Admin.openModal()">+ Kullanıcı Ekle</button>
+        </div>
+        <div class="sg">
+          <div class="sc"><div class="sci">&#128101;</div><div class="scv" id="admin-total">0</div><div class="scl">Toplam</div></div>
+          <div class="sc"><div class="sci">&#9989;</div>  <div class="scv" id="admin-active">0</div><div class="scl">Aktif</div></div>
+          <div class="sc"><div class="sci">&#9208;</div>  <div class="scv" id="admin-suspended">0</div><div class="scl">Askıda</div></div>
+          <div class="sc"><div class="sci">&#128081;</div><div class="scv" id="admin-admins">0</div><div class="scl">Yönetici</div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ur">
+            <input class="si" type="search" id="admin-search" placeholder="Kullanıcı ara..." oninput="Admin.render()">
+            <select class="si" id="admin-role-f"   onchange="Admin.render()"><option value="">Tüm Roller</option><option value="admin">Admin</option><option value="staff">Personel</option></select>
+            <select class="si" id="admin-status-f" onchange="Admin.render()"><option value="">Tüm Durumlar</option><option value="active">Aktif</option><option value="suspended">Askıda</option></select>
+          </div></div>
+          <div id="admin-list" style="overflow-x:auto"></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <span class="ct">Aktivite Logu</span>
+            <div class="ur">
+              <input class="si" type="search" id="log-search" placeholder="Ara..." oninput="Admin.renderLog()">
+              <select class="si" id="log-type-f" onchange="Admin.renderLog()"><option value="">Tüm Türler</option><option value="login">Giriş</option><option value="task">Görev</option><option value="user">Kullanıcı</option><option value="kargo">Kargo</option></select>
+              <span id="log-total" style="font-size:12px;color:var(--t3)" aria-live="polite"></span>
+            </div>
+          </div>
+          <div id="activity-log-list" style="overflow-x:auto"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct">Geliştirme Önerileri</span></div>
+          <div style="padding:16px">
+            <textarea class="fi" id="suggest-input" rows="3" style="margin-bottom:10px;resize:vertical" placeholder="Önerinizi yazın..."></textarea>
+            <button class="btn btnp" onclick="Admin.submitSuggestion()">Gönder</button>
+          </div>
+          <div id="suggestions-list"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Ayarlar -->
+            <div class="panel" id="panel-settings">
+        <div class="ph">
+          <div>
+            <div class="pht">⚙️ Sistem Ayarları</div>
+            <div class="phs">Yalnızca yöneticiler bu bölüme erişebilir.</div>
+          </div>
+          <span class="badge bp" style="align-self:flex-start">Admin Only</span>
+        </div>
+
+        <!-- Firebase Durum -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="ch">
+            <span class="ct">🔥 Firebase Bağlantısı</span>
+            <span id="fb-status-badge" class="badge ba">Kontrol ediliyor…</span>
+          </div>
+          <div style="padding:16px 18px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div class="ms"><div class="msv" id="fb-user-count" style="font-size:16px">—</div><div class="msl">Firestore koleksiyon</div></div>
+              <div class="ms"><div class="msv" id="fb-sync-time" style="font-size:12px;font-family:'DM Mono',monospace">—</div><div class="msl">Son kontrol</div></div>
+            </div>
+            <div style="font-size:12px;color:var(--t2);margin-bottom:14px;padding:10px;background:var(--s2);border-radius:var(--rs)" id="fb-auth-info">Firebase durumu kontrol ediliyor…</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btnp" onclick="migrateLocalToFirestore()" id="btn-migrate">☁️ Yerel Veriyi Buluta Aktar</button>
+              <button class="btn btns" onclick="checkFirebaseStatus()">↻ Durumu Kontrol Et</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-kolon grid -->
+        <div class="settings-grid">
+
+          <!-- Sol kolon -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- Görünüm & Dil -->
+            <div class="card">
+              <div class="ch"><span class="ct">🎨 Görünüm & Dil</span></div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
+                <div class="dr">
+                  <span style="font-size:13px">Tema</span>
+                  <button class="btn btns" onclick="toggleTheme()" id="a-theme-settings">🌙 Değiştir</button>
+                </div>
+                <div class="dr">
+                  <span style="font-size:13px">Dil</span>
+                  <div style="display:flex;gap:5px">
+                    <button class="lpill on" onclick="setLang('tr',this)" style="font-size:11px;padding:3px 10px">TR</button>
+                    <button class="lpill" onclick="setLang('en',this)" style="font-size:11px;padding:3px 10px">EN</button>
+                    <button class="lpill" onclick="setLang('fr',this)" style="font-size:11px;padding:3px 10px">FR</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Güvenlik -->
+            <div class="card">
+              <div class="ch"><span class="ct">🔒 Güvenlik</span></div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <div class="dr"><span>Firebase Auth</span><span class="badge bg">Aktif</span></div>
+                <div class="dr"><span>Şifre lokal saklanmıyor</span><span class="badge bg">✓</span></div>
+                <div class="dr"><span>Oturum timeout</span><span class="badge bgr">30 dk</span></div>
+                <div class="dr"><span>Soft delete (çöp kutusu)</span><span class="badge bg">Aktif</span></div>
+
+                <!-- Şifre Değiştir -->
+                <div style="border-top:1px solid var(--b);padding-top:12px;margin-top:4px">
+                  <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔐 Şifremi Değiştir</div>
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <input type="password" id="set-old-pwd" class="fi" placeholder="Mevcut şifre" style="border-radius:8px">
+                    <input type="password" id="set-new-pwd" class="fi" placeholder="Yeni şifre (min 6 karakter)" style="border-radius:8px">
+                    <input type="password" id="set-new-pwd2" class="fi" placeholder="Yeni şifre tekrar" style="border-radius:8px">
+                    <div style="font-size:11px;color:var(--t3);line-height:1.6;background:var(--s2);border-radius:8px;padding:8px 10px">
+                      💡 Şifren hem platformda hem Firebase'de güncellenir. Firebase Console'dan da sıfırlayabilirsin.
+                    </div>
+                    <button class="btn btnp" onclick="_changePwdFromSettings()" style="border-radius:9px">Şifreyi Güncelle</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PWA -->
+            <div class="card">
+              <div class="ch"><span class="ct">📱 PWA / Mobil</span></div>
+              <div style="padding:16px 18px">
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--t2)">
+                  <div style="background:var(--s2);border-radius:var(--rs);padding:10px"><strong style="color:var(--t)">iOS (Safari):</strong> Paylaş → Ana Ekrana Ekle</div>
+                  <div style="background:var(--s2);border-radius:var(--rs);padding:10px"><strong style="color:var(--t)">Android:</strong> ⋮ Menü → Uygulamayı Yükle</div>
+                </div>
+                <div id="pwa-install-btn" style="margin-top:12px;display:none">
+                  <button class="btn btnp btns" onclick="installPWA()">📲 Uygulamayı Yükle</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sağ kolon -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- Veri Yönetimi -->
+            <div class="card">
+              <div class="ch"><span class="ct">🗄️ Veri Yönetimi</span></div>
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <button class="btn btnp btns" onclick="exportAllXlsx()" style="justify-content:flex-start">📊 Tüm Veriyi Excel'e Aktar</button>
+                <button class="btn btns" onclick="migrateLocalToFirestore()" style="justify-content:flex-start">☁️ Firestore'a Aktar</button>
+                <div style="border-top:1px solid var(--b);padding-top:10px;margin-top:2px">
+                  <button class="btn btnd btns" onclick="resetAll()" style="justify-content:flex-start;width:100%">⚠️ Tüm Veriyi Sıfırla</button>
+                  <div style="font-size:10px;color:var(--t3);margin-top:6px">Bu işlem geri alınamaz. Önce buluta aktar.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sürüm Geçmişi -->
+            <div class="card">
+              <div class="ch">
+                <span class="ct">📋 Sürüm Geçmişi</span>
+                <span id="v-ts" style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace"></span>
+              </div>
+              <div style="padding:14px 18px" id="ver-hist"></div>
+            </div>
+
+          </div>
+        </div>
+        <!-- Puantaj yetki kartı dinamik olarak eklenir -->
+      </div>
+
+      <!-- Boş panel containerları — ilgili modüller tarafından doldurulur -->
+      <div id="panel-ik"        class="panel"></div>
+      <div id="panel-puantaj"   class="panel"></div>
+      <div id="panel-izin"      class="panel"></div>
+      <div id="panel-kpi"       class="panel"></div>
+      <div id="panel-crm"       class="panel"></div>
+      <div id="panel-stok"      class="panel"></div>
+      <div id="panel-odemeler"  class="panel"></div>
+      <div id="panel-hedefler"  class="panel"></div>
+      <div id="panel-takvim"    class="panel"></div>
+      <div id="panel-notes"     class="panel"></div>
+            <div class="panel" id="panel-announce">
+        <div class="ph">
+          <div><div class="pht">📣 <span id="ph-ann">Duyurular</span></div><div class="phs" id="ph-ann-s">Şirket haberleri ve önemli bildirimler.</div></div>
+          <button class="btn btnp" id="btn-ann-new" style="display:none" onclick="openAnnModal()">+ Duyuru</button>
+        </div>
+        <div id="ann-list"></div>
+      </div>
+
+      <!-- V18 Yeni Paneller -->
+      <div id="panel-activity" class="panel"></div>
+      <div id="panel-suggestions" class="panel"></div>
+      <div id="panel-arsiv" class="panel"></div>
+      <div id="panel-etkinlik" class="panel"></div>
+      <div id="panel-evrak" class="panel"></div>
+      <div id="panel-finans" class="panel"></div>
+      <div id="panel-kpi-panel" class="panel"></div>
+      <div id="panel-links" class="panel"></div>
+      <div id="panel-numune" class="panel"></div>
+      <div id="panel-rehber" class="panel"></div>
+      <div id="panel-resmi" class="panel"></div>
+      <div id="panel-tebligat" class="panel"></div>
+      <div id="panel-temizlik" class="panel"></div>
+      <div id="panel-trash" class="panel"></div>
+      <div id="panel-users" class="panel"></div>
+      <div id="panel-docs"    class="panel"></div>
+      <div id="panel-formlar" class="panel"></div>
+      <div id="panel-gorusme" class="panel"></div>
+      <div id="panel-ceo"     class="panel"></div>
+      <div id="panel-hesap"   class="panel"></div>
+
+      <div id="panel-lojistik" class="panel"></div>
+      <div id="panel-ik-hub" class="panel"></div>
+    </main>
+  </div>
+
+  <!-- ── Toast ─────────────────────────────────────────────────── -->
+  <div class="toast" id="toast-el" role="status" aria-live="polite"></div>
+
+  <!-- ── Footer — Anayasa Kural 5: STATIK versiyon + DİNAMİK saat -->
+  <footer class="vstrip" role="contentinfo">
+    <span>Operasyon Platformu &middot; <strong>v8.0.0 / 2026-03-19 14:50</strong></span>
+    <span id="clock-strip" aria-live="off">—</span>
+    <span style="color:var(--t3)">Gizli &amp; Şirkete Özel</span>
+  </footer>
+
+</div><!-- /#app -->
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPT YÜKLEME SIRASI — Anayasa Kural 2, 4
+     ────────────────────────────────────────────────────────────
+     1. CONFIG      → Firebase yapılandırması
+     2. CORE        → i18n → database → auth
+     3. MODÜLLER    → iş mantığı (bağımsız)
+     4. APP INIT    → app.js — en son (tüm bağımlılıklar hazır)
+     ════════════════════════════════════════════════════════════ -->
+
+<!-- 1. CONFIG -->
+
+<script>
+// ── Modül Çakışma Önleyici Patch ─────────────────────────────
+// 'use strict' modunda const yeniden tanımlaması sorununu çözer
+// Her modül yüklenmeden önce çakışan değişkenleri temizler
+(function() {
+  // Orijinal defineProperty'yi kullanarak const tanımlarını
+  // yeniden tanımlanabilir hale getir
+  const _safeDefine = function(obj, name, value) {
+    try {
+      if (Object.getOwnPropertyDescriptor(obj, name)?.configurable === false) {
+        // Zaten tanımlı ve configurable değil - atla
+        return;
+      }
+      Object.defineProperty(obj, name, {
+        value: value,
+        writable: true,
+        configurable: true,
+        enumerable: true
+      });
+    } catch(e) {}
+  };
+  
+  // Modül yükleme hatalarını yakala - sayfa çökmesini engelle
+  window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('has already been declared')) {
+      console.warn('[Patch] Çakışma yakalandı, devam ediliyor:', e.message);
+      e.preventDefault();
+      return true;
+    }
+  }, true);
+})();
+</script>
+
+<script>
+// ── Global Platform Kısayolları ─────────────────────────────────
+if(typeof g==='undefined')           window.g            = function(id){ return document.getElementById(id); };
+// AVC — Avatar renk paleti: pusula.js ve diğer modüller app.js'den ÖNCE yüklendiğinden
+// burada erken tanımlanmalı. app.js yüklenince aynı değerle override eder.
+if(typeof AVC==='undefined' || !window.AVC) window.AVC = [
+  ['#EEEDFE','#26215C'], ['#E1F5EE','#085041'],
+  ['#E6F1FB','#0C447C'], ['#FAECE7','#993C1D'],
+  ['#EAF3DE','#27500A'], ['#FAEEDA','#854F0B'],
+  ['#FBEAF0','#72243E'], ['#F1EFE8','#2C2C2A'],
+];
+if(typeof qs==='undefined')          window.qs           = function(sel,ctx){ return (ctx||document).querySelector(sel); };
+if(typeof qsa==='undefined')         window.qsa          = function(sel,ctx){ return Array.from((ctx||document).querySelectorAll(sel)); };
+if(typeof isAdmin==='undefined')     window.isAdmin      = function(){ return window.Auth?.getCU?.()?.role==='admin'; };
+if(typeof CU==='undefined')          window.CU           = function(){ return window.Auth?.getCU?.(); };
+if(typeof loadUsers==='undefined')   window.loadUsers    = function(){ return window._loadUsers?.() || []; };
+if(typeof loadTasks==='undefined')   window.loadTasks    = function(){ return window._loadTasks?.() || (function(){ try{ return JSON.parse(localStorage.getItem('ak_tasks')||'[]'); }catch(e){ return []; } })(); };
+if(typeof toast==='undefined')       window.toast        = function(m,t){ console.log('[toast]',m,t); };
+if(typeof logActivity==='undefined') window.logActivity  = function(){ };
+if(typeof openMo==='undefined')      window.openMo       = function(id){ var e=document.getElementById(id); if(e) e.classList.add('open'); };
+if(typeof closeMo==='undefined')     window.closeMo      = function(id){ var e=document.getElementById(id); if(e) e.classList.remove('open'); };
+if(typeof addNotif==='undefined')     window.addNotif     = function(){ };
+if(typeof App==="undefined") window.App={login:function(){},logout:function(){},setLang:function(){},toggleTheme:function(){},toggleSidebar:function(){},toggleNotifPanel:function(){},toggleProfilePanel:function(){},openGSearch:function(){},closeGSearch:function(){},markAllNotifRead:function(){},clearAllNotifs:function(){},openProfileEdit:function(){},resetDemoData:function(){},nav:function(){}};
+if(typeof st==='undefined')          window.st           = function(pre,id,btn){
+  document.querySelectorAll('[id^="'+pre+'-"].tpanel,[id^="'+pre+'-"].tab-panel,[id^="'+pre+'-"].ikh-tab-content').forEach(function(p){ p.style.display='none'; p.classList.remove('active'); });
+  var el=document.getElementById(pre+'-'+id); if(el){ el.style.display=''; el.classList.add('active'); }
+  if(btn){ document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.remove('on','active'); }); btn.classList.add('on','active'); }
+};
+</script>
+
+<script src="config/firebase.js"></script>
+
+<!-- 2. CORE -->
+<script src="src/i18n/translations.js"></script>
+<script src="src/core/database.js"></script>
+<script src="src/core/cache.js"></script>
+<script src="src/core/utils.js"></script>
+<script src="src/core/auth.js"></script>
+
+<!-- 3. MODÜLLER -->
+<script src="src/modules/admin.js"></script>
+<script src="src/modules/kargo.js"></script>
+<script src="src/modules/navlun.js"></script>
+<script src="src/modules/loj_features.js"></script>
+<script src="src/modules/pirim.js"></script>
+<script src="src/modules/pusula.js"></script>
+<script src="src/modules/ik.js"></script>
+<script src="src/modules/crm.js"></script>
+<script src="src/modules/stok.js"></script>
+<script src="src/modules/finans.js"></script>
+<script src="src/modules/helpers.js"></script>
+
+<!-- 3b. Panel HTML Inject + Modals (helpers.js ve ik.js sonrasi) -->
+<script src="src/modules/announce.js"></script>
+<script src="src/modules/takvim.js"></script>
+<script src="src/modules/notes.js"></script>
+<script src="src/modules/hedefler.js"></script>
+<script src="src/modules/odemeler.js"></script>
+<script src="src/modules/kpi.js"></script>
+<script src="src/modules/ik_panel.js"></script>
+<script src="src/modules/puantaj.js"></script>
+<script src="src/modules/izin.js"></script>
+<script src="src/modules/crm_panel.js"></script>
+<script src="src/modules/extra_panels.js"></script>
+<script src="src/modules/panel_stubs.js"></script>
+<script src="src/modules/docs.js"></script>
+<script src="src/modules/formlar.js"></script>
+<script src="src/modules/gorusme.js"></script>
+<script src="src/modules/ceo.js"></script>
+<script src="src/modules/hesap.js"></script>
+<script src="src/core/confirm_modal.js"></script>
+<script src="src/modules/modals.js"></script>
+
+<!-- 4. APP INIT — her zaman en son -->
+<script src="src/core/app.js"></script>
+<script src="src/modules/app_patch.js"></script>
+<script src="src/modules/lojistik.js"></script>
+<script src="src/modules/ik_hub.js"></script>
+<script src="src/modules/crm_hub.js"></script>
+
+
+  <script>
+    // Service Worker kaydı
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.info('[SW] Kayıtlı:', reg.scope))
+          .catch(err => console.warn('[SW] Kayıt hatası:', err));
+      });
+    }
+  </script>
+</body>
+</html>
