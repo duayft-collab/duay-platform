@@ -253,16 +253,16 @@ function renderFocusPanel() {
     { type:'year',    label:"Yılın En Önemlileri",      icon:'🏆', color:'#DC2626', bg:'rgba(220,38,38,.1)',  ids:_yIds,  cards:yearCards,    total:yearTotal,    hint:'listeden 🏆 basın' },
   ];
 
-  cont.innerHTML = '<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin">'
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:100%">'
     + FOCUS_WIDGETS.map(w =>
-      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:12px 14px;min-width:220px;flex-shrink:0">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-          + '<div style="display:flex;align-items:center;gap:6px">'
-            + '<span style="font-size:15px">' + w.icon + '</span>'
-            + '<span style="font-size:11px;font-weight:700;color:var(--t)">' + w.label + '</span>'
+      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:10px 12px;min-width:0;overflow:hidden">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+          + '<div style="display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden">'
+            + '<span style="font-size:14px;flex-shrink:0">' + w.icon + '</span>'
+            + '<span style="font-size:10px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
           + '</div>'
-          + '<div style="display:flex;align-items:center;gap:6px">'
-            + (w.total ? '<span style="font-size:10px;background:' + w.bg + ';color:' + w.color + ';padding:1px 7px;border-radius:5px;font-weight:600">⏱ ' + w.total + '</span>' : '')
+          + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+            + (w.total ? '<span style="font-size:9px;background:' + w.bg + ';color:' + w.color + ';padding:1px 5px;border-radius:4px;font-weight:600">' + w.total + '</span>' : '')
             + '<span style="font-size:10px;color:var(--t3);font-family:monospace">' + w.ids.length + '/3</span>'
           + '</div>'
         + '</div>'
@@ -2039,10 +2039,13 @@ function renderSubTasks(parentId, subTasks, container) {
     if (arrow) arrow.classList.toggle('collapsed', !collapsed);
   };
   collapseWrap.innerHTML = `
-    <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--t3)"/></svg>
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16" style="flex-shrink:0;color:var(--ac)">
+      <rect x="1" y="1" width="14" height="14" rx="3" fill="rgba(99,102,241,.1)" stroke="rgba(99,102,241,.3)" stroke-width="1"/>
+      <path d="${isCollapsed?'M5 8h6M8 5v6':'M5 8h6'}" stroke="var(--ac)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
     <span class="_sub_collapse_label">Alt Görevler</span>
-    <span class="_sub_collapse_count">${done}/${total}</span>
-    <span class="_sub_arrow_icon${isCollapsed?' collapsed':''}">›</span>`;
+    <span class="_sub_collapse_count">${done} / ${total}</span>
+    <span style="margin-left:auto;font-size:10px;color:var(--t3)">${isCollapsed?'göster':'gizle'}</span>`;
   frag.appendChild(collapseWrap);
 
   // Alt görev body — gizlenebilir
@@ -3323,28 +3326,28 @@ setTimeout(_checkMonthlyExport, 5000); // İlk açılışta 5sn sonra kontrol
 // EISENHOWer MATRIX DRAG & DROP  [fix v2.3.1]
 // ════════════════════════════════════════════════════════════
 window._eisDrop = function(event, quadId) {
+  event.preventDefault();
   const taskId = parseInt(event.dataTransfer.getData('taskId'));
-  if (!taskId) return;
+  if (!taskId || !quadId) return;
   const tasks = loadTasks();
   const t = tasks.find(x => x.id === taskId);
   if (!t) return;
+  // Kadrana göre öncelik + durum haritası
   const Q_MAP = {
-    q1: { pri: 1, status: 'inprogress' },
-    q2: { pri: 1, status: 'todo'       },
-    q3: { pri: 3, status: 'inprogress' },
-    q4: { pri: 4, status: 'todo'       },
+    q1: { pri: 1, status: 'inprogress', label: 'Hemen Yap'   },
+    q2: { pri: 1, status: 'todo',       label: 'Planla'       },
+    q3: { pri: 3, status: 'inprogress', label: 'Devret'       },
+    q4: { pri: 4, status: 'todo',       label: 'Ele'          },
   };
   const map = Q_MAP[quadId];
-  if (map) {
-    t.pri      = map.pri;
-    t.status   = map.status;
-    t.quadrant = quadId;
-    saveTasks(tasks);
-    logActivity('task', t.title + ' Matrix kadrani degistirildi: ' + quadId);
-    window.toast?.('Görev güncellendi ✓', 'ok');
-    const re = window._renderEisenhower;
-    if (re) setTimeout(re, 100);
-  }
+  if (!map) return;
+  t.pri      = map.pri;
+  t.status   = map.status;
+  t.quadrant = quadId;
+  saveTasks(tasks);
+  window.toast?.('Kadran: ' + map.label + ' ✓', 'ok');
+  const re = window._renderEisenhower;
+  if (re) setTimeout(re, 80);
 };
 
 
@@ -3364,6 +3367,80 @@ window._eisDrop = function(event, quadId) {
 //    Ana görev şablonuna bağlı tekrarlama kuralı
 //
 // ════════════════════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════════
+// DEPARTMAN YÖNETİMİ  [v2.3.2]
+// Ayarlar üzerinden departman ekle / sil / renklendir
+// ════════════════════════════════════════════════════════════════
+function openDeptManager() {
+  const existing = document.getElementById('mo-dept-mgr');
+  if (existing) existing.remove();
+
+  const tasks = loadTasks();
+  const depts = [...new Set(tasks.map(t => t.department).filter(Boolean))].sort();
+
+  const mo = document.createElement('div');
+  mo.className = 'mo';
+  mo.id = 'mo-dept-mgr';
+  mo.style.zIndex = '2200';
+
+  const listHTML = depts.length
+    ? depts.map(d => {
+        const c = getDeptColor(d);
+        const count = tasks.filter(t => t.department === d).length;
+        return `<div class="dept-mgr-item">
+          <div class="dept-mgr-dot" style="background:${c}"></div>
+          <span class="dept-mgr-name">${d}</span>
+          <span style="font-size:10px;color:var(--t3);margin-right:8px">${count} görev</span>
+          <input type="color" value="${c}" onchange="setDeptColor('${d}',this.value)"
+            style="width:24px;height:24px;border:none;border-radius:4px;cursor:pointer;padding:0"
+            title="Rengi değiştir">
+        </div>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--t3);padding:8px">Henüz departman yok</div>';
+
+  mo.innerHTML = `<div class="modal" style="max-width:420px">
+    <div class="mt">🏷 Departman Yönetimi</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:12px">
+      Görev eklerken <strong>Departman</strong> alanına yazarak yeni departman oluşturabilirsiniz.
+      Burada mevcut departmanları görebilir ve renklerini değiştirebilirsiniz.
+    </div>
+
+    <div class="fr">
+      <div class="fl">YENİ DEPARTMAN EKLE</div>
+      <div style="display:flex;gap:6px">
+        <input class="fi" id="new-dept-inp" placeholder="Örn: IT, Satınalma, Üretim…" style="flex:1">
+        <button class="btn btnp" onclick="
+          const v=document.getElementById('new-dept-inp').value.trim();
+          if(!v){window.toast?.('Departman adı girin','err');return;}
+          const tasks=loadTasks();
+          const exists=tasks.some(t=>t.department===v);
+          if(exists){window.toast?.('Bu departman zaten var','warn');return;}
+          const dummy={id:Date.now(),title:'__dept_init__',department:v,status:'done',done:true,uid:window.Auth?.getCU?.()?.id||0,pri:4,createdAt:nowTs()};
+          tasks.push(dummy);
+          saveTasks(tasks);
+          window.toast?.(v+' departmanı eklendi ✓','ok');
+          document.getElementById('mo-dept-mgr').remove();
+          setTimeout(openDeptManager,100);
+        ">Ekle</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">MEVCUT DEPARTMANLAR</div>
+      <div id="dept-mgr-list">${listHTML}</div>
+    </div>
+
+    <div class="mf">
+      <button class="btn" onclick="document.getElementById('mo-dept-mgr').remove()">Kapat</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openDeptManager = openDeptManager;
 
 const Pusula = {
   init: _pusInit,
