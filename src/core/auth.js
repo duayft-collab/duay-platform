@@ -229,7 +229,9 @@ async function _localLogin(email, password, skipPwCheck = false) {
       if (!user) {
         try {
           const fbDB = window.Auth?.getFBDB?.();
-          if (fbDB) {
+          // Firestore'dan users sadece Firebase auth token'ı varsa çekilebilir
+          const hasToken = !!(FB_AUTH?.currentUser);
+          if (fbDB && hasToken) {
             // Firestore path: duay_tenant_default/users → { data: [...users] }
             const tid = (window.DB?._getTid?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g,'_');
             const docPath = 'duay_' + tid;

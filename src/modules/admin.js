@@ -149,25 +149,34 @@ function _userRow(u) {
 function openAdminModal(id) {
   if (!isAdmin()) return;
 
+  // Modülleri temizle
+  document.querySelectorAll('[id^="pm-"],[id^="pa-"]').forEach(cb => { if (cb.type==='checkbox') cb.checked = false; });
+
   if (id) {
     const u = loadUsers().find(x => x.id === id);
     if (!u) return;
-    if (g('adm-name'))   g('adm-name').value   = u.name  || '';
-    if (g('adm-email'))  g('adm-email').value  = u.email || '';
-    if (g('adm-role'))   g('adm-role').value   = u.role  || 'user';
-    if (g('adm-dept'))   g('adm-dept').value   = u.dept  || '';
-    if (g('adm-color'))  g('adm-color').value  = u.color || '#3C3489';
-    if (g('adm-pwd'))    g('adm-pwd').value    = '';
-    if (g('adm-eid'))    g('adm-eid').value    = id;
-    if (g('mo-adm-t'))   g('mo-adm-t').textContent = '✏️ Kullanıcı Düzenle';
-  } else {
-    ['adm-name', 'adm-email', 'adm-dept', 'adm-pwd'].forEach(x => {
-      const el = g(x); if (el) el.value = '';
+    if (g('f-name'))    g('f-name').value    = u.name  || '';
+    if (g('f-email'))   g('f-email').value   = u.email || '';
+    if (g('f-role'))    g('f-role').value    = u.role  || 'staff';
+    if (g('f-st'))      g('f-st').value      = u.status || 'active';
+    if (g('f-pw'))      g('f-pw').value      = '';
+    if (g('f-edit-id')) g('f-edit-id').value = id;
+    if (g('mo-u-title')) g('mo-u-title').textContent = '✏️ Kullanıcı Düzenle';
+    // Modül checkboxları
+    const mods = u.modules || window.ROLE_DEFAULT_MODULES?.[u.role] || [];
+    mods.forEach(m => { const cb = g('pm-' + m); if (cb) cb.checked = true; });
+    // Döküman erişim checkboxları
+    (u.access || []).forEach(a => {
+      const map = { 'İK':'ik', 'Finans':'fn', 'Operasyon':'op', 'Teknik':'tk', 'Maaş':'ms', 'Sistem':'ss' };
+      const cbId = 'pa-' + (map[a] || a.toLowerCase());
+      const cb = g(cbId); if (cb) cb.checked = true;
     });
-    if (g('adm-role'))  g('adm-role').value  = 'user';
-    if (g('adm-color')) g('adm-color').value = '#3C3489';
-    if (g('adm-eid'))   g('adm-eid').value   = '';
-    if (g('mo-adm-t'))  g('mo-adm-t').textContent = '+ Kullanıcı Ekle';
+  } else {
+    ['f-name','f-email','f-pw'].forEach(x => { const el = g(x); if (el) el.value = ''; });
+    if (g('f-role'))    g('f-role').value    = 'staff';
+    if (g('f-st'))      g('f-st').value      = 'active';
+    if (g('f-edit-id')) g('f-edit-id').value = '';
+    if (g('mo-u-title')) g('mo-u-title').textContent = '+ Yeni Kullanıcı';
   }
   window.openMo?.('mo-admin-user');
 }
@@ -175,49 +184,76 @@ function openAdminModal(id) {
 function saveAdminUser() {
   if (!isAdmin()) { window.toast?.(t('err.permission'), 'err'); return; }
 
-  const name  = (g('adm-name')?.value  || '').trim();
-  const email = (g('adm-email')?.value || '').trim().toLowerCase();
-  const role  = g('adm-role')?.value   || 'user';
-  const dept  = (g('adm-dept')?.value  || '').trim();
-  const color = g('adm-color')?.value  || '#3C3489';
-  const pwd   = (g('adm-pwd')?.value   || '').trim();
-  const eid   = parseInt(g('adm-eid')?.value || '0');
+  const name  = (g('f-name')?.value    || '').trim();
+  const email = (g('f-email')?.value   || '').trim().toLowerCase();
+  const role  = g('f-role')?.value     || 'staff';
+  const status= g('f-st')?.value       || 'active';
+  const pwd   = (g('f-pw')?.value      || '').trim();
+  const eid   = parseInt(g('f-edit-id')?.value || '0');
 
   if (!name)  { window.toast?.('İsim zorunludur', 'err');    return; }
   if (!email) { window.toast?.('E-posta zorunludur', 'err'); return; }
 
-  const users = loadUsers();
+  // Seçili modüller
+  const modules = [];
+  document.querySelectorAll('[id^="pm-"]').forEach(cb => { if (cb.checked) modules.push(cb.id.replace('pm-','')); });
 
-  // E-posta benzersizlik kontrolü
+  // Döküman erişim
+  const accessMap = { 'ik':'İK', 'fn':'Finans', 'op':'Operasyon', 'tk':'Teknik', 'ms':'Maaş', 'ss':'Sistem' };
+  const access = [];
+  document.querySelectorAll('[id^="pa-"]').forEach(cb => { if (cb.checked) { const k=cb.id.replace('pa-',''); if(accessMap[k]) access.push(accessMap[k]); } });
+
+  const users = loadUsers();
   const duplicate = users.find(u => u.email === email && u.id !== eid);
   if (duplicate) { window.toast?.('Bu e-posta zaten kayıtlı', 'err'); return; }
 
   if (eid) {
+    // Mevcut kullanıcı güncelle
     const u = users.find(x => x.id === eid);
     if (!u) return;
-    Object.assign(u, { name, email, role, dept, color });
-    if (pwd) u.password = pwd;
+    Object.assign(u, { name, email, role, status, modules: modules.length ? modules : null, access });
+    if (pwd) u.pw = pwd;
     logActivity('user', `Kullanıcı güncellendi: "${name}" (${email})`);
     window.toast?.(`${name} güncellendi ✓`, 'ok');
   } else {
-    if (!pwd) { window.toast?.('Yeni kullanıcı için şifre zorunludur', 'err'); return; }
-    users.push({
+    // Yeni kullanıcı ekle
+    // Firebase Auth kullanan sistemde şifre zorunlu değil
+    // Kullanıcı Firebase Console'dan eklenmişse oradan giriş yapar
+    const newUser = {
       id:       Date.now(),
-      name, email, role, dept, color,
-      password: pwd,
-      status:   'active',
-      modules:  null,  // null = tüm modüllere erişim
+      name, email, role, status,
+      modules:  modules.length ? modules : null,
+      access,
       createdBy: _getCU()?.id,
       createdAt: nowTs(),
-    });
+    };
+    // Şifre girilmişse kaydet, girilmemişse Firebase Auth ile giriş yapacak
+    if (pwd) newUser.pw = pwd;
+    users.push(newUser);
     logActivity('user', `Yeni kullanıcı oluşturuldu: "${name}" (${email})`);
-    window.toast?.(`${name} eklendi ✓`, 'ok');
+    window.toast?.(`${name} eklendi ✓ — Firebase Console'dan şifre belirleyin`, 'ok');
   }
 
   saveUsers(users);
   window.closeMo?.('mo-admin-user');
-  renderAdmin();
+  renderUsers();
 }
+
+/** Role göre modül checkboxlarını otomatik seç */
+function autoSetRolePerms() {
+  const role = g('f-role')?.value || 'staff';
+  const defaults = window.ROLE_DEFAULT_MODULES?.[role] || [];
+  document.querySelectorAll('[id^="pm-"]').forEach(cb => {
+    cb.checked = defaults.includes(cb.id.replace('pm-',''));
+  });
+}
+
+/** Tüm modül checkboxlarını aç/kapat */
+function setAllPerms(checked) {
+  document.querySelectorAll('[id^="pm-"],[id^="pa-"]').forEach(cb => { cb.checked = checked; });
+}
+
+
 
 // ── Askıya Alma / Aktifleştirme ───────────────────────────────────
 function suspendUser(id) {
@@ -695,10 +731,11 @@ function renderUsers(filter=''){
   }
 
   if(USERS_VIEW==='card'){
+    const _cuSelf = _getCU();
     grid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
       ${list.map((u)=>{
         const rm=ROLE_META[u.role]||ROLE_META.staff;
-        const isSelf=u.id===CU.id;
+        const isSelf=u.id===_cuSelf?.id;
         const isActive=u.status==='active';
         const idx=users.indexOf(u);
         const avBg=AV_COLORS[idx%AV_COLORS.length];
@@ -763,6 +800,7 @@ function renderUsers(filter=''){
 
   }else{
     // Professional table view
+    const _cuSelf2 = _getCU();
     grid.innerHTML=`<div style="border:1.5px solid var(--b);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.05)">
       <table style="width:100%;border-collapse:collapse">
         <thead>
@@ -778,7 +816,7 @@ function renderUsers(filter=''){
         <tbody>
           ${list.map((u,rowIdx)=>{
             const rm=ROLE_META[u.role]||ROLE_META.staff;
-            const isSelf=u.id===CU.id;
+            const isSelf=u.id===_cuSelf2?.id;
             const isActive=u.status==='active';
             const idx=users.indexOf(u);
             const avBg=AV_COLORS[idx%AV_COLORS.length];
@@ -835,7 +873,7 @@ function editUser(id){
   // Load module permissions
   const userMods=u.modules||ROLE_DEFAULT_MODULES[u.role]||ROLE_DEFAULT_MODULES.staff;
   ALL_MODULES.forEach(m=>{const cb=g('pm-'+m.id);if(cb)cb.checked=userMods.includes(m.id);});
-  openMo('mo-user');
+  openMo('mo-admin-user');
 }
 
 function openNewUser(){
@@ -845,7 +883,7 @@ function openNewUser(){
   ['pa-ik','pa-fn','pa-op','pa-tk','pa-ms','pa-ss'].forEach((id,i)=>g(id).checked=[true,false,true,false,false,false][i]);
   // Default staff modules
   ALL_MODULES.forEach(m=>{const cb=g('pm-'+m.id);if(cb)cb.checked=ROLE_DEFAULT_MODULES.staff.includes(m.id);});
-  openMo('mo-user');
+  openMo('mo-admin-user');
 }
 
 function filterUsers(v){renderUsers(v);}
@@ -875,6 +913,7 @@ const Admin = {
   renderSuggestions,
   openModal:         openAdminModal,
   save:              saveAdminUser,
+  saveUser:          saveAdminUser,
   suspend:           suspendUser,
   activate:          activateUser,
   resetPassword,
@@ -882,6 +921,8 @@ const Admin = {
   openPermModal,
   savePermissions,
   _toggleAllPerms,
+  autoSetRolePerms,
+  setAllPerms,
   updateSuggStatus,
   deleteSugg,
   submitSuggestion,
@@ -908,6 +949,9 @@ if (typeof module !== 'undefined' && module.exports) {
   window.filterUsers         = filterUsers;
   window.editUser            = editUser;
   window.openNewUser         = openNewUser;
+  window.saveUser            = saveAdminUser;   // modals.js onclick="saveUser()" için
+  window.autoSetRolePerms    = autoSetRolePerms; // modals.js onclick="autoSetRolePerms()" için
+  window.setAllPerms         = setAllPerms;      // modals.js onclick="setAllPerms()" için
   window.toggleUser          = toggleUser;
   window.renderSettingsAdmin = renderSettingsAdmin;
   window._injectUsersPanel   = _injectUsersPanel;

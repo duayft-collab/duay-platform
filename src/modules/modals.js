@@ -710,8 +710,8 @@ function injectAllModals() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:6px">
         <div class="fg">
           <div class="fl">ŞİFRE</div>
-          <input class="fi" type="password" id="f-pw" placeholder="Şifre burada saklanmaz" disabled style="background:var(--s2);color:var(--t3)">
-          <div style="font-size:10px;color:var(--t3);margin-top:3px">🔐 Firebase Console → Authentication</div>
+          <input class="fi" type="password" id="f-pw" placeholder="Opsiyonel — boş bırakılabilir">
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">🔐 Firebase'de kayıtlıysa boş bırakın. Değilse geçici şifre girin.</div>
         </div>
         <div class="fg">
           <div class="fl">ROL</div>
@@ -1123,6 +1123,7 @@ function savePinLink() {
 // App.savePin olarak da erişilebilir
 if (typeof window !== 'undefined') {
   window.savePinLink = savePinLink;
+  window.savePin     = savePinLink;  // onclick="savePin()" için alias
   // App nesnesi yüklendikten sonra ata
   document.addEventListener('DOMContentLoaded', () => {
     if (window.App && !window.App.savePin) window.App.savePin = savePinLink;
