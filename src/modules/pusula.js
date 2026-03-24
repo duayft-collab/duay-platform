@@ -393,23 +393,23 @@ window.setPusQuote = function(q) {
 };
 
 function _renderPusQuoteBanner() {
-  const el = g('ph-pus-quote');
-  if (!el) return;
+  // Hero banner kaldırıldı — özlü söz footer motivasyon şeridine yönlendirildi
   if (!_pusQuoteData) {
-    // Cache'den dene
     const today = new Date().toISOString().slice(0,10);
     const cached = localStorage.getItem('ak_pus_quote_' + today);
     if (cached) { try { _pusQuoteData = JSON.parse(cached); } catch(e) {} }
   }
   if (!_pusQuoteData) return;
-  el.style.display = 'block';
-  el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px">'
-    + '<div style="font-size:18px;opacity:.5;flex-shrink:0;margin-top:1px">❝</div>'
-    + '<div>'
-      + '<div style="font-size:12px;font-style:italic;color:var(--t2);line-height:1.6">' + (_pusQuoteData.text||'') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:600">— ' + (_pusQuoteData.author||'') + '</div>'
-    + '</div>'
-  + '</div>';
+  // Footer bar'ı güncelle
+  const bar = document.getElementById('pusula-v85-motivebar');
+  if (bar) {
+    bar.style.opacity = '0';
+    bar.style.transition = 'opacity .6s ease';
+    setTimeout(() => {
+      bar.innerHTML = `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);font-style:italic">"${_pusQuoteData.text||''}"</span><span style="font-size:10px;color:var(--t3);opacity:.5;margin-left:8px">— ${_pusQuoteData.author||''}</span>`;
+      bar.style.opacity = '1';
+    }, 300);
+  }
 }
 
 function renderPusula() {
@@ -581,6 +581,7 @@ function renderPusulaList(fl, users, todayS, cont) {
     // Ana satır
     const row = document.createElement('div');
     row.className  = `tk-row${isDone ? ' done-row' : ''}`;
+    row.dataset.taskId = t.id;
     row.style.animation = `pus-row-in ${.04 + idx * .025}s ease both`;
     row.addEventListener('click', () => openPusDetail(t.id));
 
@@ -3512,25 +3513,36 @@ function _v85InjectMotivationBar() {
 
   const bar = document.createElement('div');
   bar.id = 'pusula-v85-motivebar';
-  bar.style.cssText = `
-    margin-top: 24px; padding: 14px 20px;
-    border-top: 1px solid var(--b);
-    text-align: center;
-  `;
+  bar.style.cssText = [
+    'margin-top:20px',
+    'padding:10px 24px',
+    'border-top:1px solid var(--b)',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'gap:10px',
+    'opacity:0',
+    'transition:opacity .6s ease',
+    'overflow:hidden',
+    'white-space:nowrap',
+  ].join(';');
   panel.appendChild(bar);
 
   function _showQuote() {
     const q = _v85Quotes[Math.floor(Math.random() * _v85Quotes.length)];
     bar.style.opacity = '0';
-    bar.style.transition = 'opacity .6s ease';
     setTimeout(() => {
-      bar.innerHTML = `<span style="font-family:'JetBrains Mono',monospace,monospace;font-size:11px;color:var(--t3);font-style:italic">"${q.text}"</span> <span style="font-size:10px;color:var(--t3);opacity:.6">— ${q.author}</span>`;
+      bar.innerHTML = [
+        '<span style="font-size:13px;color:var(--t3);opacity:.4;flex-shrink:0">❝</span>',
+        `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis">${q.text}</span>`,
+        `<span style="font-size:10px;color:var(--t3);opacity:.55;flex-shrink:0;font-weight:600">— ${q.author}</span>`,
+      ].join('');
       bar.style.opacity = '1';
-    }, 300);
+    }, 400);
   }
 
   _showQuote();
-  setInterval(_showQuote, 15000);
+  setInterval(_showQuote, 12000);
 }
 
 // ── 9. CSS EKLEMELERİ ───────────────────────────────────────────
@@ -4018,15 +4030,696 @@ window._wlFilterByUser = function(uid, name) {
 })();
 
 // ── renderPusula hook'una bağla ─────────────────────────────────
-const _wlOrigRender = window.renderPusula;
-window.renderPusula = function() {
-  _wlOrigRender?.();
-  renderWorkloadPanel();
-};
+// Workload paneli artık toggle ile açılıyor — renderPusula hook'u kaldırıldı
+// Buton: hero alanındaki "👥 Personel Analizi" butonu
 
 // Export
+
+// ── Workload Panel Toggle ────────────────────────────────────────
+window._toggleWorkloadPanel = function(btn) {
+  const panel = g('pus-workload-panel');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  if (isOpen) {
+    panel.style.display = 'none';
+    if (btn) { btn.style.background = 'rgba(255,255,255,.12)'; btn.style.color = 'rgba(255,255,255,.85)'; }
+  } else {
+    panel.style.display = 'block';
+    renderWorkloadPanel();
+    if (btn) { btn.style.background = 'rgba(255,255,255,.25)'; btn.style.color = '#fff'; }
+  }
+};
 window.renderWorkloadPanel = renderWorkloadPanel;
 console.info('[Pusula] İş Yükü & Performans paneli aktif ✓');
+
+
+
+// ════════════════════════════════════════════════════════════════
+// PUSULA v9 — 5 YENİ ÖZELLİK + PERSONEL ANALİZİ GELİŞTİRMESİ
+// ════════════════════════════════════════════════════════════════
+
+// ────────────────────────────────────────────────────────────────
+// 1. ⚡ HIZLI GÖREV (QUICK ADD)
+// ────────────────────────────────────────────────────────────────
+(function _initQuickAdd() {
+  // Akıllı tarih ipucu — "yarın finans raporu" → bitiş tarihi atar
+  window._qaHint = function(val) {
+    const hint = g('pus-qa-hint');
+    if (!hint) return;
+    const parsed = window.smartDateParse?.(val);
+    hint.textContent = parsed ? `📅 → ${parsed}` : '';
+    hint.style.color = 'rgba(255,255,255,.6)';
+  };
+
+  window._qaSubmit = function() {
+    const inp = g('pus-qa-inp');
+    if (!inp) return;
+    let val = inp.value.trim();
+    if (!val) return;
+
+    // Akıllı tarih parse
+    const due = window.smartDateParse?.(val) || null;
+
+    // Başlıktan tarih ifadesini temizle
+    const title = val
+      .replace(/\b(yarın|bugün|pazartesi|salı|çarşamba|perşembe|cuma|cumartesi|pazar|\d+\s*gün\s*sonra|gelecek\s+hafta)\b/gi, '')
+      .trim();
+
+    if (!title) { window.toast?.('Görev başlığı boş', 'err'); return; }
+
+    const cu = _getCU();
+    if (!cu) { window.toast?.('Giriş yapmanız gerekiyor', 'err'); return; }
+
+    const tasks = loadTasks();
+    const newTask = {
+      id:         Date.now(),
+      title,
+      desc:       '',
+      pri:        3,
+      due,
+      due_time:   '',
+      deadline_full: due ? due + ' 23:59' : null,
+      start:      null,
+      status:     'todo',
+      department: '',
+      cost:       null,
+      tags:       [],
+      link:       '',
+      duration:   null,
+      uid:        cu.id,
+      done:       false,
+      subTasks:   [],
+      created_at: nowTs(),
+    };
+    tasks.push(newTask);
+    saveTasks(tasks);
+
+    // Animasyonlu geri bildirim
+    inp.value = '';
+    inp.placeholder = '✅ Eklendi!';
+    setTimeout(() => { inp.placeholder = 'Hızlı görev ekle… (Enter)'; }, 1200);
+    if (g('pus-qa-hint')) g('pus-qa-hint').textContent = '';
+
+    window.renderPusula?.();
+    window.toast?.(`⚡ "${title}" eklendi`, 'ok');
+    logActivity('task', `Hızlı görev: "${title}"`);
+  };
+})();
+
+// ────────────────────────────────────────────────────────────────
+// 2. 🎯 ODAK MODU — Gelişmiş Focus Timer (Pomodoro+)
+// ────────────────────────────────────────────────────────────────
+(function _initFocusMode() {
+  let _fmTask   = null;
+  let _fmTimer  = null;
+  let _fmEnd    = null;
+  let _fmPhase  = 'work'; // 'work' | 'break'
+  let _fmCycles = 0;
+
+  function _fmRender() {
+    let el = document.getElementById('pus-focus-overlay');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'pus-focus-overlay';
+      el.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:9000',
+        'background:rgba(10,10,20,.92)', 'backdrop-filter:blur(16px)',
+        'display:flex', 'flex-direction:column',
+        'align-items:center', 'justify-content:center',
+        'color:#fff', 'font-family:inherit',
+      ].join(';');
+      document.body.appendChild(el);
+    }
+
+    const task = _fmTask;
+    const remaining = Math.max(0, Math.ceil((_fmEnd - Date.now()) / 1000));
+    const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const s = String(remaining % 60).padStart(2, '0');
+    const isWork  = _fmPhase === 'work';
+    const accent  = isWork ? '#6366F1' : '#10B981';
+    const emoji   = isWork ? '🎯' : '☕';
+    const phLabel = isWork ? 'Odak Süresi' : 'Mola';
+
+    el.innerHTML = `
+      <div style="text-align:center;max-width:480px;padding:32px">
+        <!-- Kapatma -->
+        <button onclick="window._fmStop?.()" style="position:absolute;top:24px;right:28px;background:rgba(255,255,255,.08);border:none;border-radius:8px;color:rgba(255,255,255,.6);width:36px;height:36px;font-size:18px;cursor:pointer">×</button>
+
+        <!-- Phase badge -->
+        <div style="background:${accent}22;border:1px solid ${accent}55;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;color:${accent};display:inline-block;margin-bottom:24px;letter-spacing:.08em;text-transform:uppercase">${emoji} ${phLabel} · Tur ${_fmCycles + 1}</div>
+
+        <!-- Görev adı -->
+        <div style="font-size:15px;color:rgba(255,255,255,.6);margin-bottom:8px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${task?.title || 'Serbest Odak'}</div>
+
+        <!-- Timer ring -->
+        <div style="position:relative;width:200px;height:200px;margin:0 auto 28px">
+          <svg viewBox="0 0 200 200" style="transform:rotate(-90deg);width:200px;height:200px">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+            <circle id="pus-fm-ring" cx="100" cy="100" r="88" fill="none" stroke="${accent}" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="0"
+              style="transition:stroke-dashoffset 1s linear"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div id="pus-fm-time" style="font-size:52px;font-weight:800;font-family:monospace;letter-spacing:-.02em;color:#fff">${m}:${s}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em">kalan</div>
+          </div>
+        </div>
+
+        <!-- Kontroller -->
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button onclick="window._fmSkip?.()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;padding:11px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏭ Atla</button>
+          <button onclick="window._fmStop?.()" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:12px;color:#EF4444;padding:11px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏹ Bitir</button>
+          ${task ? `<button onclick="window._fmComplete?.()" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:12px;color:#10B981;padding:11px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✅ Görevi Tamamla</button>` : ''}
+        </div>
+      </div>`;
+
+    // Ring animasyonu
+    const totalSec = isWork ? 25 * 60 : (_fmCycles % 4 === 3 ? 15 * 60 : 5 * 60);
+    const pct = remaining / totalSec;
+    const ring = document.getElementById('pus-fm-ring');
+    if (ring) ring.style.strokeDashoffset = String(Math.round(553 * (1 - pct)));
+  }
+
+  function _fmTick() {
+    const remaining = Math.max(0, Math.ceil((_fmEnd - Date.now()) / 1000));
+    const el = document.getElementById('pus-focus-overlay');
+    if (!el) { clearInterval(_fmTimer); return; }
+
+    const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const s = String(remaining % 60).padStart(2, '0');
+    const timeEl = document.getElementById('pus-fm-time');
+    if (timeEl) timeEl.textContent = `${m}:${s}`;
+
+    const isWork   = _fmPhase === 'work';
+    const totalSec = isWork ? 25 * 60 : (_fmCycles % 4 === 3 ? 15 * 60 : 5 * 60);
+    const pct      = remaining / totalSec;
+    const ring = document.getElementById('pus-fm-ring');
+    if (ring) ring.style.strokeDashoffset = String(Math.round(553 * (1 - pct)));
+
+    // Dönem bitti
+    if (remaining <= 0) {
+      clearInterval(_fmTimer);
+      if (_fmPhase === 'work') {
+        _fmCycles++;
+        const breakMin = _fmCycles % 4 === 0 ? 15 : 5;
+        _fmPhase = 'break';
+        _fmEnd   = Date.now() + breakMin * 60 * 1000;
+        window.toast?.(`☕ ${breakMin} dakika mola!`, 'ok');
+        try { new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA==').play().catch(()=>{}); } catch(e) {}
+      } else {
+        _fmPhase = 'work';
+        _fmEnd   = Date.now() + 25 * 60 * 1000;
+        window.toast?.('🎯 Odak süresi başlıyor!', 'ok');
+      }
+      _fmRender();
+      _fmTimer = setInterval(_fmTick, 1000);
+    }
+  }
+
+  window.openFocusMode = function(taskId) {
+    _fmTask   = taskId ? loadTasks().find(t => t.id === taskId) : null;
+    _fmPhase  = 'work';
+    _fmCycles = 0;
+    _fmEnd    = Date.now() + 25 * 60 * 1000;
+    clearInterval(_fmTimer);
+    _fmRender();
+    _fmTimer = setInterval(_fmTick, 1000);
+    logActivity('task', `Odak modu başlatıldı${_fmTask ? ': ' + _fmTask.title : ''}`);
+  };
+
+  window._fmStop = function() {
+    clearInterval(_fmTimer);
+    const el = document.getElementById('pus-focus-overlay');
+    if (el) el.remove();
+    window.renderPusula?.();
+  };
+
+  window._fmSkip = function() {
+    clearInterval(_fmTimer);
+    if (_fmPhase === 'work') {
+      _fmCycles++;
+      _fmPhase = 'break';
+      _fmEnd   = Date.now() + 5 * 60 * 1000;
+    } else {
+      _fmPhase = 'work';
+      _fmEnd   = Date.now() + 25 * 60 * 1000;
+    }
+    _fmRender();
+    _fmTimer = setInterval(_fmTick, 1000);
+  };
+
+  window._fmComplete = function() {
+    if (_fmTask) {
+      const tasks = loadTasks();
+      const t = tasks.find(x => x.id === _fmTask.id);
+      if (t) { t.done = true; t.status = 'done'; saveTasks(tasks); }
+      window.toast?.(`✅ "${_fmTask.title}" tamamlandı!`, 'ok');
+    }
+    window._fmStop?.();
+  };
+})();
+
+// ────────────────────────────────────────────────────────────────
+// 3. 📌 YAPIŞKAN NOTLAR (STICKY BOARD)
+// ────────────────────────────────────────────────────────────────
+(function _initStickyBoard() {
+  const STICKY_KEY = 'ak_pus_sticky_notes';
+  const COLORS = ['#FEF9C3','#DCFCE7','#E0F2FE','#FEE2E2','#F3E8FF','#FFEDD5'];
+
+  function _loadStickies() {
+    try { return JSON.parse(localStorage.getItem(STICKY_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function _saveStickies(d) {
+    localStorage.setItem(STICKY_KEY, JSON.stringify(d));
+  }
+
+  function _renderStickyBoard() {
+    const cont = g('pus-sticky-board');
+    if (!cont || cont.style.display === 'none') return;
+    const notes = _loadStickies();
+
+    const cards = notes.map((n, i) => `
+      <div class="pus-sticky-card" style="background:${n.color || COLORS[0]};border-radius:14px;padding:14px;position:relative;min-height:100px;display:flex;flex-direction:column;gap:8px;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <button onclick="window._deleteSticky?.(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:rgba(0,0,0,.3);font-size:14px;padding:2px 5px;border-radius:4px" onmouseover="this.style.color='rgba(0,0,0,.7)'" onmouseout="this.style.color='rgba(0,0,0,.3)'">×</button>
+        <textarea style="background:none;border:none;outline:none;resize:none;font-size:13px;color:#1a1a1a;font-family:inherit;flex:1;width:100%;line-height:1.5;padding-right:16px"
+          rows="3" placeholder="Not yaz…"
+          onblur="window._updateSticky?.(${i}, this.value)">${n.text || ''}</textarea>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <button onclick="window._convertToTask?.(${i})" style="background:rgba(0,0,0,.08);border:none;border-radius:7px;padding:4px 10px;font-size:11px;color:#333;cursor:pointer;font-family:inherit;font-weight:600">⚡ Göreve Dönüştür</button>
+          <div style="display:flex;gap:4px">
+            ${COLORS.map(c => `<div onclick="window._colorSticky?.(${i},'${c}')" style="width:14px;height:14px;border-radius:50%;background:${c};cursor:pointer;border:2px solid ${n.color===c?'#333':'transparent'};transition:border .15s"></div>`).join('')}
+          </div>
+        </div>
+      </div>`).join('');
+
+    cont.innerHTML = `
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:16px;padding:16px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--t)">📌 Yapışkan Notlar</div>
+          <button onclick="window._addSticky?.()" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">+ Not Ekle</button>
+        </div>
+        ${notes.length
+          ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">${cards}</div>`
+          : `<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">📌 Henüz not yok — ekle butona bas</div>`}
+      </div>`;
+  }
+
+  window._addSticky = function() {
+    const notes = _loadStickies();
+    notes.push({ text: '', color: COLORS[notes.length % COLORS.length], created: nowTs() });
+    _saveStickies(notes);
+    _renderStickyBoard();
+  };
+
+  window._updateSticky = function(idx, text) {
+    const notes = _loadStickies();
+    if (notes[idx]) { notes[idx].text = text; _saveStickies(notes); }
+  };
+
+  window._deleteSticky = function(idx) {
+    const notes = _loadStickies();
+    notes.splice(idx, 1);
+    _saveStickies(notes);
+    _renderStickyBoard();
+  };
+
+  window._colorSticky = function(idx, color) {
+    const notes = _loadStickies();
+    if (notes[idx]) { notes[idx].color = color; _saveStickies(notes); }
+    _renderStickyBoard();
+  };
+
+  window._convertToTask = function(idx) {
+    const notes = _loadStickies();
+    const n = notes[idx];
+    if (!n || !n.text.trim()) { window.toast?.('Not boş', 'err'); return; }
+    const cu = _getCU();
+    const tasks = loadTasks();
+    tasks.push({
+      id: Date.now(), title: n.text.trim().slice(0, 80),
+      desc: n.text.length > 80 ? n.text : '',
+      pri: 3, due: null, status: 'todo', done: false,
+      uid: cu?.id || 1, subTasks: [], created_at: nowTs(),
+      tags: ['sticky-not'],
+    });
+    saveTasks(tasks);
+    notes.splice(idx, 1);
+    _saveStickies(notes);
+    _renderStickyBoard();
+    window.renderPusula?.();
+    window.toast?.('⚡ Göreve dönüştürüldü ✓', 'ok');
+  };
+
+  window._toggleStickyBoard = function(btn) {
+    const panel = g('pus-sticky-board');
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (btn) {
+      btn.style.background = isOpen ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.25)';
+      btn.style.color = isOpen ? 'rgba(255,255,255,.85)' : '#fff';
+    }
+    if (!isOpen) _renderStickyBoard();
+  };
+})();
+
+// ────────────────────────────────────────────────────────────────
+// 4. 🔁 TEKRARLAYAN GÖREV ŞABLONLARI — Kütüphane
+// ────────────────────────────────────────────────────────────────
+const _PUS_BUILT_IN_TEMPLATES = [
+  {
+    name: 'Haftalık Rapor', icon: '📊', dept: 'Finans', pri: 2,
+    desc: 'Haftalık performans ve durum raporu hazırla',
+    subTasks: [
+      { title: 'Verileri topla', status: 'todo' },
+      { title: 'Raporu yaz', status: 'todo' },
+      { title: 'Yönetime sun', status: 'todo' },
+    ],
+  },
+  {
+    name: 'Konteyner Takibi', icon: '🚢', dept: 'Lojistik', pri: 1,
+    desc: 'Aktif konteynerlerin durumunu kontrol et',
+    subTasks: [
+      { title: 'Tracking sistemini kontrol et', status: 'todo' },
+      { title: 'Gecikmeli konteynerleri bildir', status: 'todo' },
+      { title: 'ETA güncellemelerini kaydet', status: 'todo' },
+    ],
+  },
+  {
+    name: 'Fatura Kontrolü', icon: '💰', dept: 'Finans', pri: 2,
+    desc: 'Aylık faturaları kontrol et ve onayla',
+    subTasks: [
+      { title: 'Gelen faturaları listele', status: 'todo' },
+      { title: 'Tutarları doğrula', status: 'todo' },
+      { title: 'Ödeme talimatı ver', status: 'todo' },
+    ],
+  },
+  {
+    name: 'Yeni Personel Onboard', icon: '👤', dept: 'İK', pri: 2,
+    desc: 'Yeni personel işe alım süreci',
+    subTasks: [
+      { title: 'Hesapları oluştur', status: 'todo' },
+      { title: 'Oryantasyon planla', status: 'todo' },
+      { title: 'Evrakları tamamla', status: 'todo' },
+      { title: 'Sisteme tanıt', status: 'todo' },
+    ],
+  },
+  {
+    name: 'Tedarikçi Değerlendirmesi', icon: '🤝', dept: 'Operasyon', pri: 3,
+    desc: 'Mevcut tedarikçileri değerlendir',
+    subTasks: [
+      { title: 'Performans verilerini topla', status: 'todo' },
+      { title: 'Fiyat karşılaştırması yap', status: 'todo' },
+      { title: 'Rapor hazırla', status: 'todo' },
+    ],
+  },
+  {
+    name: 'IT Güvenlik Taraması', icon: '🔒', dept: 'IT', pri: 1,
+    desc: 'Aylık güvenlik kontrolü',
+    subTasks: [
+      { title: 'Şifre politikasını kontrol et', status: 'todo' },
+      { title: 'Yedeklemeleri doğrula', status: 'todo' },
+      { title: 'Erişim yetkilerini gözden geçir', status: 'todo' },
+    ],
+  },
+];
+
+function openTaskTemplateLibrary() {
+  let overlay = document.getElementById('pus-tpl-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'pus-tpl-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+  }
+
+  const cards = _PUS_BUILT_IN_TEMPLATES.map((tpl, i) => `
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .15s"
+      onmouseover="this.style.borderColor='var(--ac)';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.borderColor='var(--b)';this.style.transform=''"
+      onclick="window._applyBuiltInTemplate?.(${i});document.getElementById('pus-tpl-overlay')?.remove()">
+      <div style="font-size:22px;margin-bottom:6px">${tpl.icon}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:3px">${tpl.name}</div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:8px">${tpl.desc}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(99,102,241,.1);color:#6366F1;font-weight:600">${tpl.dept}</span>
+        <span style="font-size:10px;padding:2px 8px;border-radius:5px;background:var(--s2);color:var(--t3)">${tpl.subTasks.length} alt görev</span>
+      </div>
+    </div>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:var(--sf);border-radius:20px;padding:24px;max-width:720px;width:100%;max-height:80vh;overflow-y:auto;position:relative">
+      <button onclick="document.getElementById('pus-tpl-overlay')?.remove()" style="position:absolute;top:16px;right:16px;background:var(--s2);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--t3)">×</button>
+      <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:4px">🔁 Görev Şablonları</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:18px">Hazır şablonla tek tıkla görev oluştur</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">${cards}</div>
+    </div>`;
+}
+
+window._applyBuiltInTemplate = function(idx) {
+  const tpl = _PUS_BUILT_IN_TEMPLATES[idx];
+  if (!tpl) return;
+  const cu = _getCU();
+  const tasks = loadTasks();
+  const nid = Date.now();
+  tasks.push({
+    id: nid,
+    title: tpl.name,
+    desc: tpl.desc,
+    pri: tpl.pri,
+    due: null,
+    status: 'todo',
+    done: false,
+    department: tpl.dept,
+    uid: cu?.id || 1,
+    subTasks: tpl.subTasks.map((s, i) => ({ id: nid + i + 1, title: s.title, done: false, status: s.status })),
+    created_at: nowTs(),
+    tags: [tpl.dept.toLowerCase()],
+  });
+  saveTasks(tasks);
+  window.renderPusula?.();
+  window.toast?.(`✅ "${tpl.name}" şablonu eklendi`, 'ok');
+};
+window.openTaskTemplateLibrary = openTaskTemplateLibrary;
+
+// ────────────────────────────────────────────────────────────────
+// 5. 📱 MOBİL SWIPE AKSİYONLARI
+// ────────────────────────────────────────────────────────────────
+(function _initSwipeActions() {
+  let _swStartX = 0, _swStartY = 0, _swEl = null, _swTaskId = null;
+  const THRESHOLD = 80; // px
+
+  function _onTouchStart(e) {
+    const row = e.target.closest('.tk-row');
+    if (!row) return;
+    _swStartX  = e.touches[0].clientX;
+    _swStartY  = e.touches[0].clientY;
+    _swEl      = row;
+    // taskId'yi data attribute'dan al — tk-row üzerinde
+    _swTaskId  = row.dataset.taskId ? parseInt(row.dataset.taskId) : null;
+    row.style.transition = '';
+  }
+
+  function _onTouchMove(e) {
+    if (!_swEl) return;
+    const dx = e.touches[0].clientX - _swStartX;
+    const dy = Math.abs(e.touches[0].clientY - _swStartY);
+    if (dy > 30) { _swEl = null; return; } // dikey scroll
+    if (Math.abs(dx) < 10) return;
+    e.preventDefault();
+    _swEl.style.transform = `translateX(${dx}px)`;
+    // Renk ipucu
+    if (dx > 40) {
+      _swEl.style.background = 'rgba(16,185,129,.08)'; // yeşil — tamamla
+    } else if (dx < -40) {
+      _swEl.style.background = 'rgba(239,68,68,.08)';  // kırmızı — sil
+    } else {
+      _swEl.style.background = '';
+    }
+  }
+
+  function _onTouchEnd(e) {
+    if (!_swEl) return;
+    const dx = e.changedTouches[0].clientX - _swStartX;
+    _swEl.style.transition = 'transform .25s ease, background .25s';
+    _swEl.style.transform = '';
+    _swEl.style.background = '';
+
+    if (dx > THRESHOLD && _swTaskId) {
+      // Sağa — tamamla
+      const tasks = loadTasks();
+      const t = tasks.find(x => x.id === _swTaskId);
+      if (t && !t.done) {
+        t.done = true; t.status = 'done';
+        saveTasks(tasks);
+        window.renderPusula?.();
+        window.toast?.('✅ Tamamlandı', 'ok');
+      }
+    } else if (dx < -THRESHOLD && _swTaskId) {
+      // Sola — sil onayı
+      window.confirmModal?.(`Görevi silmek istediğinizden emin misiniz?`, {
+        danger: true,
+        confirmText: 'Evet, Sil',
+        onConfirm: () => {
+          const tasks = loadTasks();
+          saveTasks(tasks.filter(x => x.id !== _swTaskId));
+          window.renderPusula?.();
+          window.toast?.('🗑 Silindi', 'ok');
+        }
+      }) || (confirm('Görevi sil?') && (() => {
+        saveTasks(loadTasks().filter(x => x.id !== _swTaskId));
+        window.renderPusula?.();
+      })());
+    }
+    _swEl = null; _swTaskId = null;
+  }
+
+  // Görev listesi container'ına touch listener ekle
+  function _attachSwipeListeners() {
+    const cont = g('pus-main-view');
+    if (!cont || cont._swipeAttached) return;
+    cont._swipeAttached = true;
+    cont.addEventListener('touchstart', _onTouchStart, { passive: true });
+    cont.addEventListener('touchmove', _onTouchMove, { passive: false });
+    cont.addEventListener('touchend', _onTouchEnd, { passive: true });
+  }
+
+  // renderPusula sonrası attach et
+  const _swOrigRender = window.renderPusula;
+  window.renderPusula = function() {
+    _swOrigRender?.();
+    setTimeout(_attachSwipeListeners, 100);
+  };
+})();
+
+// ── renderPusulaList'e swipe için data-task-id ekle ──────────────
+// (tk-row'lara data attribute eklenmeli)
+
+// ────────────────────────────────────────────────────────────────
+// 6. CSS — Tüm yeni özellikler için
+// ────────────────────────────────────────────────────────────────
+(function _injectV9CSS() {
+  if (document.getElementById('pusula-v9-css')) return;
+  const s = document.createElement('style');
+  s.id = 'pusula-v9-css';
+  s.textContent = `
+    /* Quick Add */
+    .pus-quick-add-wrap {
+      margin-top: 14px;
+      max-width: 480px;
+    }
+    .pus-qa-inner {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .pus-qa-inner:focus-within {
+      border-color: rgba(255,255,255,.5);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.08);
+    }
+    .pus-qa-icon {
+      padding: 0 10px 0 14px;
+      font-size: 14px;
+      opacity: .7;
+    }
+    .pus-qa-inp {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      padding: 10px 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      font-family: inherit;
+    }
+    .pus-qa-inp::placeholder { color: rgba(255,255,255,.45); }
+    .pus-qa-btn {
+      background: rgba(255,255,255,.15);
+      border: none;
+      border-left: 1px solid rgba(255,255,255,.15);
+      color: #fff;
+      width: 42px;
+      height: 100%;
+      font-size: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s;
+      padding: 0;
+    }
+    .pus-qa-btn:hover { background: rgba(255,255,255,.25); }
+    .pus-qa-hint {
+      font-size: 11px;
+      margin-top: 5px;
+      padding-left: 4px;
+      min-height: 16px;
+      transition: opacity .2s;
+    }
+
+    /* Swipe göstergesi */
+    .tk-row { touch-action: pan-y; }
+
+    /* Şablon kartı hover */
+    @media (max-width: 768px) {
+      .pus-qa-wrap { max-width: 100%; }
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── Şablon butonunu hero actions'a ekle (JS ile) ─────────────────
+(function _addTemplateBtn() {
+  function _inject() {
+    if (document.getElementById('btn-pus-tpl')) return;
+    const analiz = document.getElementById('btn-pus-analiz');
+    if (!analiz) return;
+    const btn = document.createElement('button');
+    btn.id = 'btn-pus-tpl';
+    btn.title = 'Görev şablonları';
+    btn.style.cssText = 'background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s';
+    btn.textContent = '🔁 Şablonlar';
+    btn.onclick = () => openTaskTemplateLibrary();
+    analiz.parentElement.insertBefore(btn, analiz);
+
+    // Odak Modu butonu
+    const focusBtn = document.createElement('button');
+    focusBtn.id = 'btn-pus-focus';
+    focusBtn.title = 'Odak modu — Pomodoro';
+    focusBtn.style.cssText = btn.style.cssText;
+    focusBtn.textContent = '🎯 Odak';
+    focusBtn.onclick = () => openFocusMode(null);
+    analiz.parentElement.insertBefore(focusBtn, btn);
+  }
+
+  // DOM hazır olunca ekle
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _inject);
+  } else {
+    setTimeout(_inject, 500);
+  }
+  // App.init sonrası da dene
+  const _origNav = window.nav;
+  window.nav = function(id, el) {
+    _origNav?.(id, el);
+    if (id === 'pusula') setTimeout(_inject, 200);
+  };
+})();
+
+// ── Swipe için tk-row'a taskId data attribute ekle ──────────────
+// renderPusulaList sonrası çağrılır
+const _v9OrigRenderList = window.renderPusulaList;
+if (typeof renderPusulaList !== 'undefined') {
+  // renderPusulaList global değil — pusula.js içinde tanımlı
+  // Swipe için pus-main-view'daki checkbox'lardan taskId çekilecek
+}
+
+console.info('[Pusula v9] 5 yeni özellik + Personel Analizi aktif ✓');
 
 
 // Node.js (test ortamı)

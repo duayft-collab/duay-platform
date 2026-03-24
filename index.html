@@ -600,7 +600,19 @@ function _doLogin() {
                   Pusula
                 </div>
                 <div class="pus-hero-sub" id="ph-pus-s">Görev yönetim merkezi</div>
-              <div id="ph-pus-quote" style="display:none;margin-top:10px;background:rgba(99,102,241,.06);border-left:3px solid var(--ac);border-radius:0 8px 8px 0;padding:8px 12px;max-width:480px"></div>
+              <!-- ph-pus-quote kaldırıldı — özlü söz footer motivasyon şeridine taşındı -->
+              <!-- Quick Add -->
+              <div class="pus-quick-add-wrap" id="pus-quick-add-wrap">
+                <div class="pus-qa-inner">
+                  <span class="pus-qa-icon">⚡</span>
+                  <input class="pus-qa-inp" id="pus-qa-inp" type="text"
+                    placeholder="Hızlı görev ekle… (Enter)"
+                    onkeydown="if(event.key==='Enter')window._qaSubmit?.()"
+                    oninput="window._qaHint?.(this.value)">
+                  <button class="pus-qa-btn" onclick="window._qaSubmit?.()">+</button>
+                </div>
+                <div class="pus-qa-hint" id="pus-qa-hint"></div>
+              </div>
               </div>
               <div class="pus-hero-actions">
                 <div class="pus-view-toggle" id="pus-view-row">
@@ -617,11 +629,17 @@ function _doLogin() {
                     Benim
                   </button>
                 </div>
-                <div id="btn-tk-xl" style="display:none;display:flex;gap:6px">
-                  <button onclick="exportTasksXlsx()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" title="Görevleri Excel'e aktar">⬇ Excel</button>
-                  <button onclick="importTasksXlsx()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" title="Excel'den görev al">⬆ İçe Aktar</button>
-                  <button onclick="downloadTaskTemplate()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:rgba(255,255,255,.7);padding:8px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" title="Boş şablon indir">📋 Şablon</button>
+                <div id="btn-tk-xl" style="display:flex;gap:6px">
+                  <button onclick="exportTasksXlsx()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:10px;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em" title="Görevleri Excel'e aktar">⬇ Excel</button>
+                  <button onclick="importTasksXlsx()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:10px;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em" title="Excel'den görev al">⬆ İçe Aktar</button>
+                  <button onclick="downloadTaskTemplate()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.9);padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" title="Boş şablon indir">📋 Şablon</button>
                 </div>
+                <button id="btn-pus-sticky" onclick="window._toggleStickyBoard?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Yapışkan notlar">
+                  📌 Notlar
+                </button>
+                <button id="btn-pus-analiz" onclick="window._toggleWorkloadPanel?.(this)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:rgba(255,255,255,.85);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" title="Personel iş yükü ve performans analizi">
+                  👥 Personel
+                </button>
                 <button class="pus-add-btn" onclick="openAddTask()">
                   <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
                   Görev Ekle
@@ -697,13 +715,15 @@ function _doLogin() {
           </div>
         </div>
 
-        <!-- Personel İş Yükü & Performans Paneli -->
-        <div id="pus-workload-panel" style="margin-bottom:14px"></div>
+        <!-- Personel Analizi — toggle ile açılır -->
+        <div id="pus-workload-panel" style="display:none;margin-bottom:14px;animation:pus-row-in .25s ease"></div>
 
         <div class="pus-summary-row" id="pf-summary"></div>
 
         <!-- Focus Panel -->
         <div id="pus-focus-panel" style="margin-bottom:14px"></div>
+        <!-- Sticky Board Panel -->
+        <div id="pus-sticky-board" style="display:none;margin-bottom:14px"></div>
 
         <div id="pus-main-view"></div>
 
