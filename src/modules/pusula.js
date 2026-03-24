@@ -2016,27 +2016,205 @@ function sendTaskChatMsg() {
 // BÖLÜM 11 — EXCEL EXPORT
 // ════════════════════════════════════════════════════════════════
 
+// ── Excel Export ─────────────────────────────────────────────────
 function exportTasksXlsx() {
-  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
   const users = loadUsers();
-  const rows  = visTasks().map(t => {
-    const u = users.find(x => x.id === t.uid) || { name: '?' };
+  const tasks = visTasks();
+
+  // Ana görevler sayfası
+  const rows = tasks.map(t => {
+    const u    = users.find(x => x.id === t.uid) || { name: '?' };
+    const subs = (t.subTasks || []);
     return {
-      Personel:    u.name,
-      Görev:       t.title,
-      Açıklama:    t.desc || '',
-      Öncelik:     { 1:'Kritik', 2:'Önemli', 3:'Normal', 4:'Düşük' }[t.pri] || '?',
-      'Son Tarih': t.due  || '—',
-      Durum:       t.done ? 'Tamamlandı' : (t.status || 'Yapılacak'),
-      Etiketler:   (t.tags || []).join(', '),
+      'ID':             t.id,
+      'Görev':          t.title,
+      'Açıklama':       t.desc || '',
+      'Personel':       u.name,
+      'Öncelik':        { 1:'Kritik', 2:'Önemli', 3:'Normal', 4:'Düşük' }[t.pri] || '?',
+      'Durum':          t.done ? 'Tamamlandı' : ({ todo:'Yapılacak', inprogress:'Devam', review:'İnceleme', done:'Tamamlandı' }[t.status] || 'Yapılacak'),
+      'Departman':      t.department || '',
+      'Başlangıç':      t.start || '',
+      'Son Tarih':      t.due || '',
+      'Son Tarih Saat': t.due_time || '',
+      'İşlem Tutarı':   t.cost ? Number(t.cost).toLocaleString('tr-TR') : '',
+      'Etiketler':      (t.tags || []).join(', '),
+      'Alt Görev Sayısı': subs.length,
+      'Tamamlanan Alt': subs.filter(s => s.done || s.status === 'done').length,
+      'Oluşturulma':    t.created_at || '',
+      'Link':           t.link || '',
     };
   });
-  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Alt görevler sayfası
+  const subRows = [];
+  tasks.forEach(t => {
+    const u = users.find(x => x.id === t.uid) || { name: '?' };
+    (t.subTasks || []).forEach(s => {
+      const su = users.find(x => x.id === s.uid) || { name: '?' };
+      subRows.push({
+        'Ana Görev ID':  t.id,
+        'Ana Görev':     t.title,
+        'Alt Görev':     s.title,
+        'Sorumlu':       su.name,
+        'Durum':         s.done ? 'Tamamlandı' : ({ todo:'Yapılacak', inprogress:'Devam', done:'Tamamlandı' }[s.status] || 'Yapılacak'),
+      });
+    });
+  });
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Görevler');
-  XLSX.writeFile(wb, `Gorevler_${nowTs().slice(0, 10)}.xlsx`);
-  logActivity('task', 'Görev listesini Excel olarak indirdi');
-  window.toast?.('Excel ✓', 'ok');
+  const ws1 = XLSX.utils.json_to_sheet(rows);
+  const ws2 = XLSX.utils.json_to_sheet(subRows.length ? subRows : [{ Bilgi: 'Alt görev yok' }]);
+
+  // Kolon genişlikleri
+  ws1['!cols'] = [
+    {wch:10},{wch:35},{wch:30},{wch:18},{wch:10},{wch:14},
+    {wch:14},{wch:12},{wch:12},{wch:12},{wch:14},{wch:20},
+    {wch:14},{wch:14},{wch:18},{wch:30}
+  ];
+  ws2['!cols'] = [{wch:12},{wch:35},{wch:35},{wch:18},{wch:14}];
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Görevler');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Alt Görevler');
+
+  const fname = `Gorevler_${nowTs().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  logActivity('task', `Görev listesi Excel olarak indirildi (${tasks.length} görev)`);
+  window.toast?.(`✅ ${tasks.length} görev Excel'e aktarıldı`, 'ok');
+}
+
+// ── Excel Import ─────────────────────────────────────────────────
+function importTasksXlsx() {
+  // Gizli input oluştur
+  let inp = document.getElementById('_tk-xlsx-import-inp');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file';
+    inp.id   = '_tk-xlsx-import-inp';
+    inp.accept = '.xlsx,.xls,.csv';
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+  }
+  inp.value = '';
+  inp.onchange = function() {
+    const file = inp.files[0];
+    if (!file) return;
+    if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wb   = XLSX.read(e.target.result, { type: 'binary' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws);
+
+        if (!rows.length) { window.toast?.('Dosya boş', 'err'); return; }
+
+        const users    = loadUsers();
+        const existing = loadTasks();
+        const cu       = _getCU();
+        let added = 0, skipped = 0;
+
+        rows.forEach(row => {
+          const title = (row['Görev'] || row['gorev'] || row['title'] || '').toString().trim();
+          if (!title) { skipped++; return; }
+
+          // Personel eşleştir — isim veya e-posta
+          const personelStr = (row['Personel'] || row['personel'] || '').toString().trim();
+          const assignee = users.find(u =>
+            u.name?.toLowerCase() === personelStr.toLowerCase() ||
+            u.email?.toLowerCase() === personelStr.toLowerCase()
+          ) || cu;
+
+          // Öncelik parse
+          const priStr = (row['Öncelik'] || row['oncelik'] || '').toString().toLowerCase();
+          const pri = priStr.includes('kritik') ? 1 : priStr.includes('önemli') || priStr.includes('onemli') ? 2 : priStr.includes('düşük') || priStr.includes('dusuk') ? 4 : 3;
+
+          // Durum parse
+          const statusStr = (row['Durum'] || row['durum'] || '').toString().toLowerCase();
+          const status = statusStr.includes('devam') ? 'inprogress' : statusStr.includes('inceleme') ? 'review' : statusStr.includes('tamam') ? 'done' : 'todo';
+
+          const newTask = {
+            id:         Date.now() + added,
+            title,
+            desc:       (row['Açıklama'] || row['aciklama'] || '').toString(),
+            uid:        assignee?.id || cu?.id || 1,
+            pri,
+            status,
+            done:       status === 'done',
+            due:        (row['Son Tarih'] || row['son_tarih'] || '').toString().slice(0,10) || null,
+            due_time:   (row['Son Tarih Saat'] || '').toString().trim() || '',
+            start:      (row['Başlangıç'] || '').toString().slice(0,10) || null,
+            department: (row['Departman'] || '').toString().trim(),
+            cost:       parseFloat((row['İşlem Tutarı'] || '').toString().replace(/[^0-9.]/g,'')) || null,
+            tags:       (row['Etiketler'] || '').toString().split(',').map(t=>t.trim()).filter(Boolean),
+            link:       (row['Link'] || '').toString().trim(),
+            subTasks:   [],
+            created_at: nowTs(),
+            importedAt: nowTs(),
+          };
+
+          // Aynı başlıklı görev var mı? (duplicate check)
+          const dup = existing.find(t => t.title.trim().toLowerCase() === title.toLowerCase() && t.uid === newTask.uid);
+          if (dup) { skipped++; return; }
+
+          existing.push(newTask);
+          added++;
+        });
+
+        saveTasks(existing);
+        renderPusula();
+        logActivity('task', `Excel'den ${added} görev içe aktarıldı`);
+        window.toast?.(`✅ ${added} görev eklendi${skipped ? `, ${skipped} atlandı` : ''}`, 'ok');
+      } catch(err) {
+        console.error('[importTasksXlsx]', err);
+        window.toast?.('Dosya okunamadı: ' + err.message, 'err');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+  inp.click();
+}
+
+// Import şablonu indir
+function downloadTaskTemplate() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  const template = [
+    {
+      'Görev':          'Örnek Görev 1',
+      'Açıklama':       'Görevin detaylı açıklaması',
+      'Personel':       'Ad Soyad (kullanıcı listesindeki isim)',
+      'Öncelik':        'Kritik / Önemli / Normal / Düşük',
+      'Durum':          'Yapılacak / Devam / İnceleme / Tamamlandı',
+      'Departman':      'Finans / Lojistik / İK / IT / Satış / Operasyon',
+      'Başlangıç':      '2026-03-24',
+      'Son Tarih':      '2026-03-31',
+      'Son Tarih Saat': '17:00',
+      'İşlem Tutarı':   '1500',
+      'Etiketler':      'etiket1, etiket2',
+      'Link':           'https://...',
+    },
+    {
+      'Görev':          'Örnek Görev 2',
+      'Açıklama':       '',
+      'Personel':       '',
+      'Öncelik':        'Normal',
+      'Durum':          'Yapılacak',
+      'Departman':      'IT',
+      'Başlangıç':      '',
+      'Son Tarih':      '',
+      'Son Tarih Saat': '',
+      'İşlem Tutarı':   '',
+      'Etiketler':      '',
+      'Link':           '',
+    }
+  ];
+  const ws = XLSX.utils.json_to_sheet(template);
+  ws['!cols'] = Array(12).fill({wch: 22});
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Görev Şablonu');
+  XLSX.writeFile(wb, 'Gorev_Import_Sablonu.xlsx');
+  window.toast?.('📥 Şablon indirildi', 'ok');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2991,6 +3169,8 @@ window.renderFocusPanel = renderFocusPanel;
   window.updatePusBadge        = updatePusBadge;
   window.updateTkPriBar        = updateTkPriBar;
   window.exportTasksXlsx       = exportTasksXlsx;
+  window.importTasksXlsx       = importTasksXlsx;
+  window.downloadTaskTemplate  = downloadTaskTemplate;
   window.visTasks              = visTasks;
   window.populatePusUsers      = populatePusUsers;
   window.populateTaskParticipants = populateTaskParticipants;
