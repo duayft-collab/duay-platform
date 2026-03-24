@@ -1646,3 +1646,60 @@ input:checked+.psl::before{transform:translateX(17px)}
 .pus-hero { display: none !important; }
 .pus-stats-row { display: none !important; }
 .pus-progress-strip { display: none !important; }
+
+
+/* ════════════════════════════════════════════
+   DÜZELTMELER v2.3.1
+   ════════════════════════════════════════════ */
+
+/* 1. Araçlar + görünüm butonları topbar'da görünür */
+.pus-topbar .pus-tools-trigger {
+  background: var(--s2) !important;
+  border: 0.5px solid var(--b) !important;
+  color: var(--t2) !important;
+  border-radius: 8px !important;
+  padding: 5px 12px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+.pus-topbar .pus-tools-trigger:hover {
+  background: var(--sf) !important;
+  color: var(--t) !important;
+}
+
+/* 2. Alt görev collapse butonu büyük ve belirgin */
+._sub_collapse_btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  background: var(--s2); border: 0.5px solid var(--b);
+  margin-bottom: 6px; transition: background .1s;
+  user-select: none;
+}
+._sub_collapse_btn:hover { background: var(--sf); }
+._sub_collapse_label {
+  font-size: 11px; font-weight: 600; color: var(--t2);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+._sub_collapse_count {
+  font-size: 11px; color: var(--t3);
+  background: var(--sf); padding: 1px 6px;
+  border-radius: 99px; border: 0.5px solid var(--b);
+}
+._sub_arrow_icon {
+  font-size: 12px; color: var(--t3);
+  transition: transform .2s; margin-left: auto;
+}
+._sub_arrow_icon.collapsed { transform: rotate(-90deg); }
+
+/* 3. Sol sidebar kaldırıldı — layout düz */
+.pus-layout { display: block !important; }
+.pus-sidebar { display: none !important; }
+.pus-content { display: flex; flex-direction: column; }
+
+/* 4. Matrix kartları draggable görünüm */
+[draggable="true"] { cursor: grab; }
+[draggable="true"]:active { cursor: grabbing; opacity: .8; }
+.eis-drop-active {
+  border-width: 2px !important;
+  background: rgba(99,102,241,.06) !important;
+}

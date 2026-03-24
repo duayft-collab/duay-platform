@@ -1888,6 +1888,13 @@ function addSubTask(parentId) {
         </select>
       </div>
     </div>
+    <div class="fr" style="margin-top:2px">
+      <div class="fl">🏷 DEPARTMAN</div>
+      <input class="fi" id="subadd-dept" placeholder="Departman yazın veya seçin..." list="subadd-dept-list">
+      <datalist id="subadd-dept-list">
+        ${[...new Set(loadTasks().map(t=>t.department).filter(Boolean))].sort().map(d=>`<option value="${d}">`).join('')}
+      </datalist>
+    </div>
     <div class="mf">
       <button class="btn" onclick="document.getElementById('mo-subadd').remove()">İptal</button>
       <button class="btn btnp" onclick="_saveSubTask(${parentId})">Ekle</button>
@@ -1910,16 +1917,17 @@ function _saveSubTask(parentId) {
   if (!parent.subTasks) parent.subTasks = [];
 
   parent.subTasks.push({
-    id:        Date.now(),
+    id:         Date.now(),
     title,
-    uid:       parseInt(g('subadd-user')?.value) || _getCU()?.id,
-    pri:       parseInt(g('subadd-pri')?.value)  || 2,
-    start:     g('subadd-start')?.value  || null,
-    due:       g('subadd-due')?.value    || null,
-    time:      g('subadd-time')?.value   || null,
-    alarm:     g('subadd-alarm')?.value  || null,
-    done:      false,
-    createdAt: nowTs(),
+    uid:        parseInt(g('subadd-user')?.value) || _getCU()?.id,
+    pri:        parseInt(g('subadd-pri')?.value)  || 2,
+    department: g('subadd-dept')?.value  || '',
+    start:      g('subadd-start')?.value || null,
+    due:        g('subadd-due')?.value   || null,
+    time:       g('subadd-time')?.value  || null,
+    alarm:      g('subadd-alarm')?.value || null,
+    done:       false,
+    createdAt:  nowTs(),
   });
 
   saveTasks(d);
@@ -2021,19 +2029,20 @@ function renderSubTasks(parentId, subTasks, container) {
   const collapseKey = 'pus_sub_collapsed_' + parentId;
   const isCollapsed = localStorage.getItem(collapseKey) === '1';
   const collapseWrap = document.createElement('div');
-  collapseWrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;padding:2px 0';
+  collapseWrap.className = '_sub_collapse_btn';
   collapseWrap.onclick = () => {
     const collapsed = localStorage.getItem(collapseKey) === '1';
     localStorage.setItem(collapseKey, collapsed ? '0' : '1');
     const body = container.querySelector('._sub_body');
     if (body) body.style.display = collapsed ? '' : 'none';
-    const arrow = collapseWrap.querySelector('._sub_arrow');
-    if (arrow) arrow.style.transform = collapsed ? '' : 'rotate(-90deg)';
+    const arrow = collapseWrap.querySelector('._sub_arrow_icon');
+    if (arrow) arrow.classList.toggle('collapsed', !collapsed);
   };
   collapseWrap.innerHTML = `
-    <span class="_sub_arrow" style="font-size:9px;color:var(--t3);transition:transform .2s;${isCollapsed?'transform:rotate(-90deg)':''}">▾</span>
-    <span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Alt Görevler</span>
-    <span style="font-size:10px;color:var(--t3)">(${done}/${total})</span>`;
+    <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--t3)"/></svg>
+    <span class="_sub_collapse_label">Alt Görevler</span>
+    <span class="_sub_collapse_count">${done}/${total}</span>
+    <span class="_sub_arrow_icon${isCollapsed?' collapsed':''}">›</span>`;
   frag.appendChild(collapseWrap);
 
   // Alt görev body — gizlenebilir
@@ -3308,6 +3317,53 @@ function _checkMonthlyExport() {
 // Uygulama açılışında ve her saat kontrol et
 window._monthlyExportTimer = setInterval(_checkMonthlyExport, 60 * 60 * 1000);
 setTimeout(_checkMonthlyExport, 5000); // İlk açılışta 5sn sonra kontrol
+
+
+// ════════════════════════════════════════════════════════════
+// EISENHOWer MATRIX DRAG & DROP  [fix v2.3.1]
+// ════════════════════════════════════════════════════════════
+window._eisDrop = function(event, quadId) {
+  const taskId = parseInt(event.dataTransfer.getData('taskId'));
+  if (!taskId) return;
+  const tasks = loadTasks();
+  const t = tasks.find(x => x.id === taskId);
+  if (!t) return;
+  const Q_MAP = {
+    q1: { pri: 1, status: 'inprogress' },
+    q2: { pri: 1, status: 'todo'       },
+    q3: { pri: 3, status: 'inprogress' },
+    q4: { pri: 4, status: 'todo'       },
+  };
+  const map = Q_MAP[quadId];
+  if (map) {
+    t.pri      = map.pri;
+    t.status   = map.status;
+    t.quadrant = quadId;
+    saveTasks(tasks);
+    logActivity('task', t.title + ' Matrix kadrani degistirildi: ' + quadId);
+    window.toast?.('Görev güncellendi ✓', 'ok');
+    const re = window._renderEisenhower;
+    if (re) setTimeout(re, 100);
+  }
+};
+
+
+// ════════════════════════════════════════════════════════════════
+// ALT GÖREV GELİŞTİRME ÖNERİLERİ  [v2.3.1]
+//
+// 1. AKILLI DELEGE — Alt görevi başka kullanıcıya devret
+//    Davet gönder → Karşı taraf kabul/ret etsin
+//    Admin: direkt ata, Staff: davet gönder
+//
+// 2. BAĞIMLILIK ZİNCİRİ — Alt görevler sıralı tamamlansın
+//    "Bu alt görevi tamamlamadan şunu başlatamazsın"
+//    Bloklanmış alt görev gri + kilit ikonu ile gösterilsin
+//
+// 3. TEKRARLAYAN ALT GÖREV — Her hafta/ay otomatik oluşsun
+//    "Her Pazartesi kontrol listesi" gibi rutin alt görevler
+//    Ana görev şablonuna bağlı tekrarlama kuralı
+//
+// ════════════════════════════════════════════════════════════════
 
 const Pusula = {
   init: _pusInit,
@@ -6122,7 +6178,7 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
     main.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 0">
         ${QUADS.map(q => `
-          <div style="background:${q.bg};border:1px solid ${q.border};border-radius:14px;padding:14px;min-height:180px">
+          <div ondragover="event.preventDefault()" ondrop="window._eisDrop?.(event,'${q.id}')" style="background:${q.bg};border:1px solid ${q.border};border-radius:14px;padding:14px;min-height:180px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <div>
                 <div style="font-size:13px;font-weight:700;color:${q.color}">${q.label}</div>
@@ -6134,7 +6190,7 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
               ${Q[q.id].slice(0,6).map(t => {
                 const u = users.find(x => x.id === t.uid);
                 return `
-                  <div onclick="openPusDetail(${t.id})" style="background:var(--sf);border:1px solid var(--b);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px"
+                  <div onclick="openPusDetail(${t.id})" draggable="true" ondragstart="event.dataTransfer.setData('taskId',${t.id})" style="background:var(--sf);border:1px solid var(--b);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px"
                     onmouseover="this.style.borderColor='${q.color}';this.style.transform='translateX(2px)'"
                     onmouseout="this.style.borderColor='var(--b)';this.style.transform=''">
                     <div style="width:4px;height:32px;border-radius:2px;background:${q.color};flex-shrink:0"></div>
