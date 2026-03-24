@@ -460,6 +460,321 @@ function checkOverdueTasks() {
 }
 window.checkOverdueTasks = checkOverdueTasks;
 
+
+// ════════════════════════════════════════════════════════════════
+// DELEGATİON DAVET KONTROLÜ  [v2.3.0]
+// Giriş yapınca bekleyen devir davetlerini göster
+// ════════════════════════════════════════════════════════════════
+function checkPendingDelegates() {
+  const cu = _getCU();
+  if (!cu) return;
+  const tasks = loadTasks();
+  const pending = [];
+  tasks.forEach(task => {
+    (task.delegateRequests || []).forEach(req => {
+      if (req.toUid === cu.id && req.status === 'pending') {
+        pending.push({ task, req });
+      }
+    });
+  });
+  if (!pending.length) return;
+
+  pending.forEach(({ task, req }) => {
+    window.addNotif?.('📨',
+      `"${task.title}" devir daveti — ${req.fromName}. Kabul/Ret için Görevler'e gidin.`,
+      'warn', 'pusula');
+  });
+  window.toast?.(`📨 ${pending.length} bekleyen devir davetiniz var`, 'warn');
+}
+window.checkPendingDelegates = checkPendingDelegates;
+
+
+// ════════════════════════════════════════════════════════════════
+// PERFORMANS SKORU PANELİ  [v2.3.0]
+// Haftalık tamamlanan / gecikmiş / toplam görev oranı
+// openPersonalDashboard'ı genişletir
+// ════════════════════════════════════════════════════════════════
+function renderPerformanceScore(container, uid) {
+  if (!container) return;
+  const tasks   = loadTasks();
+  const users   = loadUsers();
+  const cu      = uid ? users.find(u => u.id === uid) : _getCU();
+  if (!cu) return;
+
+  const todayS  = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0, 10);
+  const monthAgo= new Date(Date.now() - 30*86400000).toISOString().slice(0, 10);
+
+  const myTasks   = tasks.filter(t => t.uid === cu.id || (t.participants||[]).includes(cu.id));
+  const done7     = myTasks.filter(t => (t.done||t.status==='done') && (t.updated_at||t.created_at||'') >= weekAgo).length;
+  const overdue   = myTasks.filter(t => !t.done && t.status!=='done' && t.due && t.due < todayS).length;
+  const inprog    = myTasks.filter(t => t.status === 'inprogress').length;
+  const total     = myTasks.length;
+  const doneAll   = myTasks.filter(t => t.done || t.status==='done').length;
+  const rate      = total ? Math.round(doneAll/total*100) : 0;
+
+  // Skor hesapla: tamamlama oranı + gecikme cezası
+  const score = Math.max(0, Math.min(100, rate - (overdue * 5)));
+  const scoreColor = score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444';
+  const scoreLabel = score >= 80 ? 'Mükemmel' : score >= 60 ? 'İyi' : score >= 40 ? 'Gelişiyor' : 'Dikkat';
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-bottom:16px">
+      <div style="width:72px;height:72px;border-radius:50%;background:conic-gradient(${scoreColor} ${score*3.6}deg,var(--s2) 0);display:flex;align-items:center;justify-content:center">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--sf);display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-size:18px;font-weight:800;color:${scoreColor}">${score}</div>
+          <div style="font-size:8px;color:var(--t3)">SKOR</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--t)">${cu.name}</div>
+        <div style="font-size:12px;color:${scoreColor};font-weight:600;margin-top:2px">${scoreLabel}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:4px">${cu.department||cu.role||''}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      ${[
+        {label:'Toplam',    val:total,   color:'var(--t)'},
+        {label:'Tamamlanan',val:doneAll, color:'#10B981'},
+        {label:'Devam',     val:inprog,  color:'#3B82F6'},
+        {label:'Gecikmiş',  val:overdue, color:'#EF4444'},
+      ].map(s=>`
+        <div style="background:var(--s2);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:${s.color}">${s.val}</div>
+          <div style="font-size:9px;color:var(--t3);margin-top:2px">${s.label}</div>
+        </div>`).join('')}
+    </div>
+    <div style="background:var(--s2);border-radius:8px;padding:8px 12px">
+      <div style="font-size:10px;color:var(--t3);margin-bottom:6px;font-weight:700">TAMAMLAMA ORANI</div>
+      <div style="height:6px;background:var(--b);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${rate}%;background:${scoreColor};border-radius:99px;transition:width .5s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-size:10px;color:var(--t3)">Bu hafta: ${done7} görev</span>
+        <span style="font-size:10px;color:${scoreColor};font-weight:600">%${rate}</span>
+      </div>
+    </div>`;
+}
+window.renderPerformanceScore = renderPerformanceScore;
+
+
+// ════════════════════════════════════════════════════════════════
+// AKILLI ÖNCELİKLENDİRME  [v2.3.0]
+// "Bugün ne yapmalısın?" — son tarih + iş yükü + gecikme analizi
+// Her sabah 09:00'da öneri üretir
+// ════════════════════════════════════════════════════════════════
+function getSmartTodayTasks(limit) {
+  limit = limit || 5;
+  const cu      = _getCU();
+  if (!cu) return [];
+  const todayS  = new Date().toISOString().slice(0, 10);
+  const tasks   = loadTasks();
+
+  const myActive = tasks.filter(t =>
+    !t.done && t.status !== 'done' &&
+    (t.uid === cu.id || (t.participants||[]).includes(cu.id))
+  );
+
+  // Skor hesapla: düşük skor = daha önce yapılmalı
+  const scored = myActive.map(t => {
+    let score = 0;
+    // Gecikmiş: en yüksek öncelik
+    if (t.due && t.due < todayS) score -= 100;
+    // Bugün bitiyor
+    else if (t.due === todayS) score -= 80;
+    // 3 gün içinde bitiyor
+    else if (t.due) {
+      const days = Math.ceil((new Date(t.due) - new Date(todayS)) / 86400000);
+      if (days <= 3) score -= (30 - days * 5);
+    }
+    // Öncelik
+    score -= (5 - (t.pri || 3)) * 10;
+    // Devam edenler hafif öncelikli
+    if (t.status === 'inprogress') score -= 5;
+    return { task: t, score };
+  });
+
+  return scored
+    .sort((a, b) => a.score - b.score)
+    .slice(0, limit)
+    .map(s => s.task);
+}
+
+function renderSmartSuggest() {
+  const tasks = getSmartTodayTasks(5);
+  if (!tasks.length) return;
+  const todayS = new Date().toISOString().slice(0, 10);
+
+  const existing = document.getElementById('pus-smart-suggest');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'pus-smart-suggest';
+  banner.style.cssText = 'margin-bottom:12px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(16,185,129,.06));border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:12px 14px';
+
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:.06em">⚡ Bugün Yapılması Önerilen</div>
+      <button onclick="document.getElementById('pus-smart-suggest').remove()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3);padding:0">×</button>
+    </div>
+    ${tasks.map(t => {
+      const isLate = t.due && t.due < todayS;
+      const isToday = t.due === todayS;
+      const priColors = { 1:'#EF4444', 2:'#F97316', 3:'#3B82F6', 4:'#6B7280' };
+      const c = priColors[t.pri] || '#6366F1';
+      return `<div onclick="openPusDetail(${t.id})" style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;cursor:pointer;margin-bottom:4px;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.5)'" onmouseout="this.style.background='transparent'">
+        <div style="width:3px;height:28px;border-radius:2px;background:${c};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+          <div style="font-size:10px;color:${isLate?'#EF4444':isToday?'#F97316':'var(--t3)'}">${isLate?'⚠️ Gecikmiş':isToday?'⏰ Bugün bitiyor':t.due?'📅 '+t.due:''}</div>
+        </div>
+      </div>`;
+    }).join('')}`;
+
+  const mainView = document.getElementById('pus-main-view');
+  if (mainView && mainView.parentElement) {
+    mainView.parentElement.insertBefore(banner, mainView);
+  }
+}
+
+window.getSmartTodayTasks = getSmartTodayTasks;
+window.renderSmartSuggest = renderSmartSuggest;
+
+// Sabah 09:00'da otomatik göster (sayfa açıksa)
+(function _scheduleSmartSuggest() {
+  const now    = new Date();
+  const target = new Date(now);
+  target.setHours(9, 0, 0, 0);
+  if (now >= target) target.setDate(target.getDate() + 1);
+  const ms = target - now;
+  setTimeout(() => {
+    renderSmartSuggest();
+    setInterval(renderSmartSuggest, 86400000);
+  }, ms);
+})();
+
+
+// ════════════════════════════════════════════════════════════════
+// DEPARTMAN BAZLI RAPORLAMA  [v2.3.0]
+// Admin panelinde departman tamamlama oranı
+// Tıklanınca drill-down açılır
+// ════════════════════════════════════════════════════════════════
+function renderDeptReport(container) {
+  if (!container) return;
+  const tasks  = loadTasks();
+  const todayS = new Date().toISOString().slice(0, 10);
+
+  // Departman bazında grupla
+  const depts = {};
+  tasks.forEach(t => {
+    const d = t.department || 'Genel';
+    if (!depts[d]) depts[d] = { total:0, done:0, overdue:0, inprog:0, color: getDeptColor(d) };
+    depts[d].total++;
+    if (t.done || t.status === 'done') depts[d].done++;
+    else if (t.due && t.due < todayS) depts[d].overdue++;
+    else if (t.status === 'inprogress') depts[d].inprog++;
+  });
+
+  const sorted = Object.entries(depts)
+    .sort((a, b) => b[1].total - a[1].total);
+
+  if (!sorted.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">Henüz görev yok</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="margin-bottom:10px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">📊 Departman Raporları</div>
+    ${sorted.map(([dept, stats]) => {
+      const rate = stats.total ? Math.round(stats.done / stats.total * 100) : 0;
+      const c    = stats.color;
+      return `<div onclick="window._deptDrillDown?.('${dept}')"
+        style="margin-bottom:8px;padding:10px 12px;background:var(--s2);border-radius:10px;cursor:pointer;border-left:3px solid ${c};transition:all .15s"
+        onmouseover="this.style.background='var(--sf)'" onmouseout="this.style.background='var(--s2)'">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:12px;font-weight:700;color:var(--t)">${dept}</div>
+          <div style="display:flex;gap:8px;font-size:10px">
+            <span style="color:#10B981">${stats.done} ✓</span>
+            ${stats.overdue ? `<span style="color:#EF4444">${stats.overdue} ⚠️</span>` : ''}
+            <span style="color:var(--t3)">${stats.total} toplam</span>
+          </div>
+        </div>
+        <div style="height:4px;background:var(--b);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${rate}%;background:${c};border-radius:99px;transition:width .5s"></div>
+        </div>
+        <div style="font-size:10px;color:var(--t3);margin-top:4px">%${rate} tamamlandı</div>
+      </div>`;
+    }).join('')}`;
+
+  // Drill-down fonksiyonu
+  window._deptDrillDown = function(dept) {
+    const deptTasks = tasks.filter(t => (t.department || 'Genel') === dept);
+    const users = loadUsers();
+    const mo = document.createElement('div');
+    mo.className = 'mo';
+    mo.style.zIndex = '2300';
+    mo.innerHTML = `<div class="modal" style="max-width:500px;max-height:80vh;overflow-y:auto">
+      <div class="mt">📊 ${dept} — Detay</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        ${[
+          ['Toplam', deptTasks.length, 'var(--t)'],
+          ['Tamamlanan', deptTasks.filter(t=>t.done||t.status==='done').length, '#10B981'],
+          ['Gecikmiş', deptTasks.filter(t=>!t.done&&t.status!=='done'&&t.due&&t.due<todayS).length, '#EF4444'],
+        ].map(([l,v,c])=>`<div style="background:var(--s2);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:${c}">${v}</div>
+          <div style="font-size:9px;color:var(--t3)">${l}</div>
+        </div>`).join('')}
+      </div>
+      ${deptTasks.slice(0, 15).map(t => {
+        const u = users.find(x=>x.id===t.uid);
+        const late = !t.done && t.status!=='done' && t.due && t.due < todayS;
+        return `<div onclick="closeMo('mo-dept-drill');openPusDetail(${t.id})"
+          style="display:flex;gap:8px;padding:7px 8px;border-radius:7px;cursor:pointer;margin-bottom:4px;background:var(--s2)"
+          onmouseover="this.style.background='var(--sf)'" onmouseout="this.style.background='var(--s2)'">
+          <div style="font-size:11px;flex:1">
+            <div style="font-weight:600;color:var(--t)">${t.title}</div>
+            <div style="color:var(--t3);font-size:10px">${u?.name||'—'} ${t.due?'· '+t.due:''}</div>
+          </div>
+          <span style="font-size:10px;padding:2px 7px;border-radius:5px;align-self:center;${late?'background:rgba(239,68,68,.1);color:#EF4444':'background:var(--sf);color:var(--t3)'}">${late?'Gecikmiş':t.status==='done'||t.done?'Tamam':t.status==='inprogress'?'Devam':'Bekliyor'}</span>
+        </div>`;
+      }).join('')}
+      ${deptTasks.length > 15 ? `<div style="text-align:center;font-size:11px;color:var(--t3);padding:8px">+${deptTasks.length-15} daha...</div>` : ''}
+      <div class="mf"><button class="btn" onclick="this.closest('.mo').remove()">Kapat</button></div>
+    </div>`;
+    mo.id = 'mo-dept-drill';
+    document.body.appendChild(mo);
+    setTimeout(() => mo.classList.add('open'), 10);
+  };
+}
+window.renderDeptReport = renderDeptReport;
+
+
+function _openDeptReport() {
+  const mo = document.createElement('div');
+  mo.className = 'mo';
+  mo.id = 'mo-dept-report';
+  mo.style.zIndex = '2100';
+  const inner = document.createElement('div');
+  inner.className = 'modal';
+  inner.style.cssText = 'max-width:480px;max-height:80vh;overflow-y:auto';
+  inner.innerHTML = '<div class="mt">📊 Departman Raporları</div><div id="dept-report-inner" style="padding:4px 0"></div>';
+  const mf = document.createElement('div');
+  mf.className = 'mf';
+  const cb = document.createElement('button');
+  cb.className = 'btn';
+  cb.textContent = 'Kapat';
+  cb.onclick = () => mo.remove();
+  mf.appendChild(cb);
+  inner.appendChild(mf);
+  mo.appendChild(inner);
+  document.body.appendChild(mo);
+  setTimeout(() => {
+    mo.classList.add('open');
+    renderDeptReport(document.getElementById('dept-report-inner'));
+  }, 50);
+}
+window._openDeptReport = _openDeptReport;
+
 function updatePusBadge() {
   const tasks  = window.isAdmin?.() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
   // v8.5 fix: sadece status !== 'done' VE !t.done olanları say
@@ -504,11 +819,14 @@ function _renderPusQuoteBanner() {
 
 function renderPusula() {
   populatePusUsers();
-  // Gecikmiş görev kontrolü (her renderda değil, 5 dakikada bir)
+  // Gecikmiş görev + delege davet + akıllı öneri kontrolü (5 dakikada bir)
   const _ovKey = '_pus_ov_check';
   if (!window[_ovKey] || Date.now() - window[_ovKey] > 300000) {
     window[_ovKey] = Date.now();
     setTimeout(checkOverdueTasks, 500);
+    setTimeout(checkPendingDelegates, 1500);
+    // İlk açılışta akıllı öneri göster
+    if (!window._smartShown) { window._smartShown = true; setTimeout(renderSmartSuggest, 800); }
   }
   const todayS  = new Date().toISOString().slice(0, 10);
   const allVis  = visTasks();
@@ -724,8 +1042,9 @@ function renderPusulaList(fl, users, todayS, cont) {
           <button onclick="event.stopPropagation();toggleFocus(${t.id},'month')"   class="tk-action-btn" title="Ayın en önemlisi"        style="opacity:${(_loadFocus('month')).includes(t.id)?1:.25}">📅</button>
           <button onclick="event.stopPropagation();toggleFocus(${t.id},'quarter')" class="tk-action-btn" title="Çeyreğin en önemlisi"    style="opacity:${(_loadFocus('quarter')).includes(t.id)?1:.25}">🎯</button>
           <button onclick="event.stopPropagation();toggleFocus(${t.id},'year')"    class="tk-action-btn" title="Yılın en önemlisi"       style="opacity:${(_loadFocus('year')).includes(t.id)?1:.25}">🏆</button>
-          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
-          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})"  class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn" title="Düzenle">✏️</button>` : ''}
+          <button onclick="event.stopPropagation();openDelegateModal(${t.id})" class="tk-action-btn" title="Devret">🔄</button>
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})"  class="tk-action-btn" style="color:#EF4444" title="Sil">✕</button>` : ''}
         </div>
       </div>`;
 
@@ -3384,6 +3703,175 @@ setTimeout(_checkMonthlyExport, 5000); // İlk açılışta 5sn sonra kontrol
 //
 // ════════════════════════════════════════════════════════════════
 
+
+// ════════════════════════════════════════════════════════════════
+// GÖREV DEVİR SİSTEMİ  [v2.3.0 Sprint 3]
+// Admin → direkt atar, bildirim gönderir
+// Staff → davet gönderir, karşı taraf kabul/ret eder
+// ════════════════════════════════════════════════════════════════
+
+function delegateTask(taskId, toUid) {
+  const tasks  = loadTasks();
+  const task   = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const cu     = _getCU();
+  const users  = loadUsers();
+  const toUser = users.find(u => u.id === toUid);
+  if (!toUser) { window.toast?.('Kullanıcı bulunamadı', 'err'); return; }
+
+  const isAdminUser = window.isAdmin?.();
+
+  if (isAdminUser) {
+    // Admin: direkt ata + bilgilendirme bildirimi
+    const oldUid   = task.uid;
+    task.uid       = toUid;
+    task.delegatedBy = cu.id;
+    task.delegatedAt = nowTs();
+    saveTasks(tasks);
+
+    // Bildirim ekle
+    _addDelegateNotif(taskId, task.title, toUid, cu.name, 'assigned');
+    logActivity('task', `"${task.title}" → ${toUser.name} (admin devir)`);
+    window.toast?.(`✓ "${task.title}" → ${toUser.name}`, 'ok');
+    renderPusula();
+  } else {
+    // Staff: davet gönder
+    if (!task.delegateRequests) task.delegateRequests = [];
+    // Aynı kişiye zaten davet var mı?
+    const exists = task.delegateRequests.find(r => r.toUid === toUid && r.status === 'pending');
+    if (exists) { window.toast?.('Bu kişiye zaten davet gönderildi', 'warn'); return; }
+
+    task.delegateRequests.push({
+      id:        Date.now(),
+      fromUid:   cu.id,
+      fromName:  cu.name,
+      toUid,
+      toName:    toUser.name,
+      taskId,
+      taskTitle: task.title,
+      status:    'pending',
+      ts:        nowTs(),
+    });
+    saveTasks(tasks);
+    _addDelegateNotif(taskId, task.title, toUid, cu.name, 'invite');
+    logActivity('task', `"${task.title}" devir daveti → ${toUser.name}`);
+    window.toast?.(`📨 Davet gönderildi → ${toUser.name}`, 'ok');
+  }
+}
+
+function respondDelegateRequest(taskId, requestId, accept) {
+  const tasks   = loadTasks();
+  const task    = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const cu      = _getCU();
+  const req     = (task.delegateRequests || []).find(r => r.id === requestId);
+  if (!req) return;
+
+  req.status    = accept ? 'accepted' : 'rejected';
+  req.respondedAt = nowTs();
+
+  if (accept) {
+    task.uid          = req.toUid;
+    task.delegatedBy  = req.fromUid;
+    task.delegatedAt  = nowTs();
+    // Gönderene bildir
+    _addDelegateNotif(taskId, task.title, req.fromUid, cu.name, 'accepted');
+    window.toast?.('✓ Görev kabul edildi', 'ok');
+    logActivity('task', `"${task.title}" devir kabul edildi`);
+  } else {
+    _addDelegateNotif(taskId, task.title, req.fromUid, cu.name, 'rejected');
+    window.toast?.('Görev reddedildi', 'warn');
+    logActivity('task', `"${task.title}" devir reddedildi`);
+  }
+  saveTasks(tasks);
+  renderPusula();
+}
+
+function _addDelegateNotif(taskId, taskTitle, toUid, fromName, type) {
+  try {
+    const msgs = {
+      assigned: `📋 "${taskTitle}" size atandı — ${fromName}`,
+      invite:   `📨 "${taskTitle}" devir daveti — ${fromName}`,
+      accepted: `✅ "${taskTitle}" kabul edildi — ${fromName}`,
+      rejected: `❌ "${taskTitle}" reddedildi — ${fromName}`,
+    };
+    const notifs = (typeof loadNotifs==='function' ? loadNotifs() : []) || [];
+    notifs.unshift({
+      id:         Date.now(),
+      icon:       type === 'invite' ? '📨' : type === 'accepted' ? '✅' : type === 'rejected' ? '❌' : '📋',
+      msg:        msgs[type] || `Görev bildirimi`,
+      type:       type === 'rejected' ? 'warn' : 'info',
+      link:       'pusula',
+      ts:         nowTs(),
+      read:       false,
+      targetUid:  toUid,
+      taskId,
+      taskTitle,
+      delegateType: type,
+      needsAck:   type === 'invite',
+      acked:      false,
+    });
+    if (typeof storeNotifs==='function') storeNotifs(notifs);
+    else window.storeNotifs?.(notifs);
+    window.updateNotifBadge?.();
+  } catch(e) { console.warn('[Pusula] Devir bildirimi hatası:', e); }
+}
+
+function openDelegateModal(taskId) {
+  const task  = loadTasks().find(t => t.id === taskId);
+  if (!task) return;
+  const cu    = _getCU();
+  const users = loadUsers().filter(u => u.status === 'active' && u.id !== cu?.id);
+  const isAdminUser = window.isAdmin?.();
+
+  const existing = document.getElementById('mo-delegate');
+  if (existing) existing.remove();
+
+  const mo = document.createElement('div');
+  mo.className = 'mo';
+  mo.id = 'mo-delegate';
+  mo.style.zIndex = '2200';
+
+  const pendingReqs = (task.delegateRequests || []).filter(r => r.status === 'pending');
+
+  mo.innerHTML = `<div class="modal" style="max-width:420px">
+    <div class="mt">🔄 Görevi Devret</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:12px;padding:8px;background:var(--s2);border-radius:8px">
+      <strong>${task.title}</strong>
+      ${isAdminUser ? '<div style="margin-top:4px;color:var(--gr)">Admin: Direkt atama yapabilirsiniz</div>' : '<div style="margin-top:4px;color:var(--am)">Davet gönderilecek, karşı tarafın onayı gerekli</div>'}
+    </div>
+    ${pendingReqs.length ? `<div style="margin-bottom:12px;padding:8px;background:rgba(245,158,11,.1);border-radius:8px;font-size:12px">
+      <div style="font-weight:700;margin-bottom:6px;color:var(--am)">⏳ Bekleyen Davetler</div>
+      ${pendingReqs.map(r => `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span>${r.toName}</span>
+        <span style="font-size:10px;color:var(--t3)">${r.ts?.slice(0,10)||''}</span>
+      </div>`).join('')}
+    </div>` : ''}
+    <div class="fr"><div class="fl">KİME DEVREDİLSİN?</div>
+      <select class="fi" id="delegate-user-sel">
+        <option value="">Seçin...</option>
+        ${users.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="document.getElementById('mo-delegate').remove()">İptal</button>
+      <button class="btn btnp" onclick="
+        const uid=parseInt(document.getElementById('delegate-user-sel').value);
+        if(!uid){window.toast?.('Kullanıcı seçin','err');return;}
+        delegateTask(${taskId},uid);
+        document.getElementById('mo-delegate').remove();
+      ">${isAdminUser ? '✓ Ata' : '📨 Davet Gönder'}</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+window.delegateTask          = delegateTask;
+window.respondDelegateRequest = respondDelegateRequest;
+window.openDelegateModal     = openDelegateModal;
+
 const Pusula = {
   init: _pusInit,
   render:       renderPusula,
@@ -5336,6 +5824,9 @@ function openPersonalDashboard() {
           <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px">${l}</div>
         </div>`).join('')}
     </div>
+
+    <!-- Performans Skoru Kartı -->
+    <div id="pf-perf-score" style="margin-bottom:14px;background:var(--s2);border-radius:14px;padding:14px"></div>
 
     <!-- Bu ay vs geçen ay -->
     <div style="background:var(--s2);border-radius:14px;padding:16px;margin-bottom:14px">
