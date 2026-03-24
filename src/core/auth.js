@@ -225,30 +225,34 @@ async function _localLogin(email, password, skipPwCheck = false) {
         u.status === 'active'
       );
 
-      // Kullanıcı localStorage'da yoksa — yeni cihaz/tarayıcı
-      // Firestore'dan kullanıcı listesini çekmeyi dene
+      // Kullanıcı localStorage'da yoksa — yeni cihaz veya temiz tarayıcı
       if (!user) {
         try {
-          const fbDB = window.Auth?.getFBDB?.() || window.DB?.getFBDB?.();
+          const fbDB = window.Auth?.getFBDB?.();
           if (fbDB) {
-            const tid = window.DB?._getTid?.() || 'default';
-            const snap = await fbDB.collection('duay_' + tid + '_users').get();
-            if (!snap.empty) {
-              const remoteUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-              // localStorage'a kaydet
-              if (typeof window.saveUsers === 'function') window.saveUsers(remoteUsers);
-              user = remoteUsers.find(u =>
-                u.email && u.email.toLowerCase() === email.toLowerCase() &&
-                u.status === 'active'
-              );
-              console.info('[auth] Kullanıcı Firestore\'tan yüklendi:', email);
+            // Firestore path: duay_tenant_default/users → { data: [...users] }
+            const tid = (window.DB?._getTid?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g,'_');
+            const docPath = 'duay_' + tid;
+            const snap = await fbDB.collection(docPath).doc('users').get();
+            if (snap.exists) {
+              const remoteUsers = snap.data()?.data;
+              if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+                // localStorage'a kaydet (cache'i güncelle)
+                try { localStorage.setItem('ak_users', JSON.stringify(remoteUsers)); } catch(e) {}
+                if (window._cache) window._cache['users'] = remoteUsers;
+                user = remoteUsers.find(u =>
+                  u.email && u.email.toLowerCase() === email.toLowerCase() &&
+                  u.status === 'active'
+                );
+                console.info('[auth] Kullanıcılar Firestore\'tan yüklendi (' + remoteUsers.length + ')');
+              }
             }
           }
         } catch(e) {
           console.warn('[auth] Firestore kullanıcı çekme hatası:', e);
         }
 
-        // Firestore'da da yoksa — Firebase e-postasından otomatik kullanıcı oluştur
+        // Hâlâ bulunamadıysa — Firebase hesabından otomatik staff kullanıcı oluştur
         if (!user) {
           const fbUser = FB_AUTH?.currentUser;
           if (fbUser) {
@@ -269,7 +273,7 @@ async function _localLogin(email, password, skipPwCheck = false) {
               allUsers.push(user);
               if (typeof window.saveUsers === 'function') window.saveUsers(allUsers);
               console.info('[auth] Yeni kullanıcı otomatik oluşturuldu:', email);
-            } catch(e) {}
+            } catch(e) { console.warn('[auth] Kullanıcı oluşturma hatası:', e); }
           }
         }
       }

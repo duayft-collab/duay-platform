@@ -966,6 +966,8 @@ function _listenCollection(collection, localKey, onUpdate) {
 function startRealtimeSync() {
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
+    // Kullanıcılar — tüm cihazlarda güncel kalmalı
+    ['users',         KEYS.users,         () => window.renderUsers?.()],
     // Kritik — her kullanıcı için
     ['tasks',         KEYS.tasks,         () => window.Pusula?.render?.()],
     ['calendar',      KEYS.calendar,      () => window.renderCal?.()],
