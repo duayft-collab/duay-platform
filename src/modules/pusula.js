@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * src/modules/pusula.js  —  v2.0
+ * src/modules/pusula.js  —  v2.1.0 / 2026-03-24
  * Görev Yönetimi (Pusula) Modülü
  *
  * Kapsam (v1 + v2 yeni özellikler):
@@ -288,6 +288,44 @@ let PUS_DETAIL_ID    = null;
 
 // ── Avatar renk paleti ───────────────────────────────────────────
 
+
+// ════════════════════════════════════════════════════════════════
+// DEPARTMAN RENK SİSTEMİ  [v2.1.0]
+// Her departman benzersiz bir renk alır
+// Kullanıcı localStorage'dan özel renk atayabilir
+// ════════════════════════════════════════════════════════════════
+const DEPT_DEFAULT_COLORS = [
+  '#6366F1','#0EA5E9','#10B981','#F59E0B','#EF4444',
+  '#8B5CF6','#EC4899','#14B8A6','#F97316','#06B6D4',
+  '#84CC16','#A855F7','#FB7185','#34D399','#FBBF24',
+];
+
+function getDeptColor(deptName) {
+  if (!deptName) return '#6B7280';
+  // Önce kullanıcı özel rengi
+  try {
+    const custom = JSON.parse(localStorage.getItem('ak_dept_colors') || '{}');
+    if (custom[deptName]) return custom[deptName];
+  } catch(e) {}
+  // Departman adından deterministik renk
+  let hash = 0;
+  for (let i = 0; i < deptName.length; i++) hash = deptName.charCodeAt(i) + ((hash << 5) - hash);
+  return DEPT_DEFAULT_COLORS[Math.abs(hash) % DEPT_DEFAULT_COLORS.length];
+}
+
+function setDeptColor(deptName, color) {
+  try {
+    const custom = JSON.parse(localStorage.getItem('ak_dept_colors') || '{}');
+    if (color) custom[deptName] = color;
+    else delete custom[deptName];
+    localStorage.setItem('ak_dept_colors', JSON.stringify(custom));
+    renderPusula();
+  } catch(e) {}
+}
+
+window.getDeptColor = getDeptColor;
+window.setDeptColor = setDeptColor;
+
 // ── Öncelik haritası ─────────────────────────────────────────────
 const PRI_MAP = {
   1: { color: '#DC2626', glow: 'rgba(220,38,38,.3)',   badge: 'tk-pri-badge-1', label: '🔴 KRİTİK' },
@@ -306,6 +344,16 @@ const PRI_COLOR = { 1:'#FF3B30', 2:'#FF9500', 3:'#007AFF', 4:'#C7C7CC' };
  * Aktif kullanıcının görebileceği görevleri döndürür.
  * Admin → filtre seçimine göre; Personel → sadece kendi/katılımcı/izleyici
  */
+function _populateDeptFilter() {
+  const sel = document.getElementById('pf-dept');
+  if (!sel) return;
+  const tasks = loadTasks();
+  const depts = [...new Set(tasks.map(t => t.department).filter(Boolean))].sort();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tüm Departmanlar</option>' +
+    depts.map(d => `<option value="${d}"${d===cur?' selected':''}>${d}</option>`).join('');
+}
+
 function visTasks() {
   const d = loadTasks();
   if (window.isAdmin?.()) {
@@ -386,6 +434,33 @@ function populatePusUsers() {
 }
 
 /** Kritik görev sayısını sidebar badge'ine yazar */
+
+// ════════════════════════════════════════════════════════════════
+// GECİKMİŞ GÖREV BİLDİRİMİ  [v2.1.0]
+// Login sonrası + panel açılışında gecikmiş görevleri uyar
+// ════════════════════════════════════════════════════════════════
+function checkOverdueTasks() {
+  const CU = _getCU();
+  if (!CU) return;
+  const todayS = new Date().toISOString().slice(0, 10);
+  const tasks  = loadTasks();
+  const overdue = tasks.filter(t =>
+    !t.done && t.status !== 'done' && t.due && t.due < todayS &&
+    (t.uid === CU.id || (t.managers||[]).includes(CU.id) || window.isAdmin?.())
+  );
+  if (!overdue.length) return;
+  // Toast bildirimi
+  const msg = overdue.length === 1
+    ? `⚠️ "${overdue[0].title}" görevi gecikmiş!`
+    : `⚠️ ${overdue.length} gecikmiş göreviniz var`;
+  window.toast?.(msg, 'warn');
+  // Bildirim paneline ekle
+  overdue.slice(0, 3).forEach(t => {
+    window.addNotif?.('⚠️', `"${t.title}" görevi gecikmiş (${t.due})`, 'warn', 'pusula');
+  });
+}
+window.checkOverdueTasks = checkOverdueTasks;
+
 function updatePusBadge() {
   const tasks  = window.isAdmin?.() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
   // v8.5 fix: sadece status !== 'done' VE !t.done olanları say
@@ -430,6 +505,12 @@ function _renderPusQuoteBanner() {
 
 function renderPusula() {
   populatePusUsers();
+  // Gecikmiş görev kontrolü (her renderda değil, 5 dakikada bir)
+  const _ovKey = '_pus_ov_check';
+  if (!window[_ovKey] || Date.now() - window[_ovKey] > 300000) {
+    window[_ovKey] = Date.now();
+    setTimeout(checkOverdueTasks, 500);
+  }
   const todayS  = new Date().toISOString().slice(0, 10);
   const allVis  = visTasks();
   const users   = loadUsers();
@@ -508,6 +589,8 @@ function renderPusula() {
   const fFrom   = g('pf-dfrom')?.value          || '';
   const fTo     = g('pf-dto')?.value            || '';
   const fSort   = g('pf-sort')?.value           || 'pri';
+  const fDept   = g('pf-dept')?.value           || '';
+  _populateDeptFilter();
 
   if (fPri > 0)  fl = fl.filter(t => t.pri === fPri);
   if (fSearch)   fl = fl.filter(t =>
@@ -617,9 +700,10 @@ function renderPusulaList(fl, users, todayS, cont) {
         <div class="tk-meta">
           <span class="tk-pri-badge ${p.badge}">${p.label}</span>
           ${statusPill}${dueChip}
-          ${t.department ? `<span class="pusula-v85-dept-badge" style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:rgba(99,102,241,.1);color:#6366F1">🏷 ${t.department}</span>` : ''}
+          ${t.department ? (() => { const dc = getDeptColor(t.department); return `<span class="pusula-v85-dept-badge" style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${dc}22;color:${dc}">● ${t.department}</span>`; })() : ''}
           ${t.cost ? `<span style="font-size:10px;background:rgba(16,185,129,.1);color:#059669;padding:2px 8px;border-radius:6px;font-weight:700">₺${Number(t.cost).toLocaleString('tr-TR')}</span>` : ''}
           ${subTasks.length ? `<span style="font-size:10px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:6px;font-weight:700">⬜ ${subDone}/${subTasks.length}</span>` : ''}
+          ${(() => { const ct = t.createdAt||t.ts; if(!ct) return ''; const days=Math.floor((Date.now()-new Date(ct.replace(' ','T')).getTime())/86400000); if(days<1) return ''; const color = days>14 ? 'var(--rd)' : 'var(--t3)'; return `<span style="font-size:10px;color:${color};padding:2px 6px;border-radius:6px;background:var(--s2)">${days}g</span>`; })()}
           ${tags}
           ${t.link ? `<a href="${t.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#6366F1;text-decoration:none;padding:2px 7px;border-radius:5px;background:rgba(99,102,241,.1);font-weight:700">🔗</a>` : ''}
           ${t.duration ? `<span style="font-size:10px;background:var(--al);color:var(--ac);padding:2px 7px;border-radius:5px;font-weight:600">⏱ ${t.duration>=60?Math.floor(t.duration/60)+'s'+(t.duration%60?' '+t.duration%60+'dk':''):t.duration+'dk'}</span>` : ''}
@@ -1730,7 +1814,7 @@ function addSubTask(parentId) {
     `<option value="${u.id}"${u.id === _getCU()?.id ? ' selected' : ''}>${u.name}</option>`
   ).join('');
 
-  mo.innerHTML = `<div class="modal" style="max-width:420px">
+  mo.innerHTML = `<div class="modal" style="max-width:440px">
     <div class="mt">➕ Alt Görev Ekle</div>
     <div class="fr"><div class="fl">BAŞLIK <span style="color:var(--rd)">*</span></div>
       <input class="fi" id="subadd-title" placeholder="Alt görev ne?">
@@ -1750,7 +1834,20 @@ function addSubTask(parentId) {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="fr"><div class="fl">BAŞLANGIÇ</div><input type="date" class="fi" id="subadd-start"></div>
-      <div class="fr"><div class="fl">BİTİŞ</div><input type="date" class="fi" id="subadd-due"></div>
+      <div class="fr"><div class="fl">BİTİŞ TARİHİ</div><input type="date" class="fi" id="subadd-due"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fr"><div class="fl">⏰ SAAT</div><input type="time" class="fi" id="subadd-time" placeholder="09:00"></div>
+      <div class="fr"><div class="fl">🔔 ALARM</div>
+        <select class="fi" id="subadd-alarm">
+          <option value="">Alarm yok</option>
+          <option value="5">5 dakika önce</option>
+          <option value="15">15 dakika önce</option>
+          <option value="30">30 dakika önce</option>
+          <option value="60">1 saat önce</option>
+          <option value="1440">1 gün önce</option>
+        </select>
+      </div>
     </div>
     <div class="mf">
       <button class="btn" onclick="document.getElementById('mo-subadd').remove()">İptal</button>
@@ -1780,6 +1877,8 @@ function _saveSubTask(parentId) {
     pri:       parseInt(g('subadd-pri')?.value)  || 2,
     start:     g('subadd-start')?.value  || null,
     due:       g('subadd-due')?.value    || null,
+    time:      g('subadd-time')?.value   || null,
+    alarm:     g('subadd-alarm')?.value  || null,
     done:      false,
     createdAt: nowTs(),
   });
@@ -1879,14 +1978,38 @@ function renderSubTasks(parentId, subTasks, container) {
 
   const frag = document.createDocumentFragment();
 
+  // Collapse toggle başlığı
+  const collapseKey = 'pus_sub_collapsed_' + parentId;
+  const isCollapsed = localStorage.getItem(collapseKey) === '1';
+  const collapseWrap = document.createElement('div');
+  collapseWrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;padding:2px 0';
+  collapseWrap.onclick = () => {
+    const collapsed = localStorage.getItem(collapseKey) === '1';
+    localStorage.setItem(collapseKey, collapsed ? '0' : '1');
+    const body = container.querySelector('._sub_body');
+    if (body) body.style.display = collapsed ? '' : 'none';
+    const arrow = collapseWrap.querySelector('._sub_arrow');
+    if (arrow) arrow.style.transform = collapsed ? '' : 'rotate(-90deg)';
+  };
+  collapseWrap.innerHTML = `
+    <span class="_sub_arrow" style="font-size:9px;color:var(--t3);transition:transform .2s;${isCollapsed?'transform:rotate(-90deg)':''}">▾</span>
+    <span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Alt Görevler</span>
+    <span style="font-size:10px;color:var(--t3)">(${done}/${total})</span>`;
+  frag.appendChild(collapseWrap);
+
+  // Alt görev body — gizlenebilir
+  const subBody = document.createElement('div');
+  subBody.className = '_sub_body';
+  if (isCollapsed) subBody.style.display = 'none';
+
   // Progress bar
   if (total > 0) {
     const pbWrap = document.createElement('div');
-    pbWrap.style.cssText = 'height:3px;background:var(--s2);border-radius:99px;margin:6px 8px 8px 32px;overflow:hidden';
+    pbWrap.style.cssText = 'height:3px;background:var(--s2);border-radius:99px;margin:2px 0 8px;overflow:hidden';
     const pbFill = document.createElement('div');
     pbFill.style.cssText = `height:100%;width:${Math.round(done / total * 100)}%;background:var(--gr);border-radius:99px;transition:width .3s`;
     pbWrap.appendChild(pbFill);
-    frag.appendChild(pbWrap);
+    subBody.appendChild(pbWrap);
   }
 
   subTasks.forEach(s => {
@@ -1894,22 +2017,26 @@ function renderSubTasks(parentId, subTasks, container) {
     const od     = s.due && s.due < todayS && !s.done;
     const row    = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px 4px 32px;border-radius:5px;margin-bottom:2px;background:var(--s2)';
+    const dueColor = od ? 'var(--rd)' : (s.due && Math.ceil((new Date(s.due)-new Date(todayS))/86400000) <= 1 ? 'var(--am)' : 'var(--t3)');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:5px;margin-bottom:2px;background:var(--s2)';
     row.innerHTML = `
       <input type="checkbox" ${s.done ? 'checked' : ''} onchange="Pusula.toggleSub(${parentId},${s.id},this.checked)" style="flex-shrink:0;accent-color:var(--ac)">
       <span style="flex:1;font-size:12px;${s.done ? 'text-decoration:line-through;opacity:.5' : ''}">${s.title}</span>
       <span style="font-size:10px;color:var(--t3)">${u.name.split(' ')[0]}</span>
-      ${s.due ? `<span style="font-size:10px;color:${od ? 'var(--rd)' : 'var(--t3)'}">${s.due.slice(5)}</span>` : ''}
+      ${s.due ? `<span style="font-size:10px;color:${dueColor}">📅 ${s.due.slice(5)}</span>` : ''}
+      ${s.time ? `<span style="font-size:10px;color:var(--t3)">⏰ ${s.time}</span>` : ''}
       <button onclick="Pusula.editSub(${parentId},${s.id})" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:1px 3px">✏️</button>
       <button onclick="Pusula.delSub(${parentId},${s.id})" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:1px 3px">✕</button>`;
-    frag.appendChild(row);
+    subBody.appendChild(row);
   });
 
   // "Alt Görev Ekle" butonu
   const addBtn = document.createElement('button');
-  addBtn.style.cssText = 'font-size:11px;color:var(--ac);background:none;border:1px dashed var(--bm);border-radius:5px;cursor:pointer;padding:3px 10px;margin:3px 8px 0 32px;width:calc(100% - 40px)';
+  addBtn.style.cssText = 'font-size:11px;color:var(--ac);background:none;border:1px dashed var(--bm);border-radius:5px;cursor:pointer;padding:3px 10px;margin:3px 0 0;width:100%';
   addBtn.textContent = '+ Alt Görev Ekle';
   addBtn.addEventListener('click', () => addSubTask(parentId));
-  frag.appendChild(addBtn);
+  subBody.appendChild(addBtn);
+  frag.appendChild(subBody);
 
   container.replaceChildren(frag);
 }
@@ -2082,20 +2209,55 @@ function exportTasksXlsx() {
     });
   });
 
+  // 3. sayfa: görev + hemen altında alt görevleri (madde 9)
+  const combinedRows = [];
+  tasks.forEach(t => {
+    const u = users.find(x => x.id === t.uid) || { name: '?' };
+    combinedRows.push({
+      'Tür':       'ANA GÖREV',
+      'ID':        t.id,
+      'Başlık':    t.title,
+      'Personel':  u.name,
+      'Öncelik':   { 1:'Kritik', 2:'Önemli', 3:'Normal', 4:'Düşük' }[t.pri] || '?',
+      'Durum':     t.done ? 'Tamamlandı' : (t.status || 'todo'),
+      'Departman': t.department || '',
+      'Son Tarih': t.due || '',
+      'Saat':      '',
+      'Açıklama':  t.desc || '',
+    });
+    (t.subTasks || []).forEach((s, si) => {
+      const su = users.find(x => x.id === s.uid) || { name: '?' };
+      combinedRows.push({
+        'Tür':       `  └ Alt Görev ${si+1}`,
+        'ID':        `${t.id}.${si+1}`,
+        'Başlık':    s.title,
+        'Personel':  su.name,
+        'Öncelik':   { 1:'Kritik', 2:'Önemli', 3:'Normal', 4:'Düşük' }[s.pri] || '',
+        'Durum':     s.done ? '✓ Tamamlandı' : 'Devam',
+        'Departman': '',
+        'Son Tarih': s.due || '',
+        'Saat':      s.time || '',
+        'Açıklama':  '',
+      });
+    });
+  });
+
   const wb = XLSX.utils.book_new();
   const ws1 = XLSX.utils.json_to_sheet(rows);
   const ws2 = XLSX.utils.json_to_sheet(subRows.length ? subRows : [{ Bilgi: 'Alt görev yok' }]);
+  const ws3 = XLSX.utils.json_to_sheet(combinedRows);
 
-  // Kolon genişlikleri
   ws1['!cols'] = [
     {wch:10},{wch:35},{wch:30},{wch:18},{wch:10},{wch:14},
     {wch:14},{wch:12},{wch:12},{wch:12},{wch:14},{wch:20},
     {wch:14},{wch:14},{wch:18},{wch:30}
   ];
   ws2['!cols'] = [{wch:12},{wch:35},{wch:35},{wch:18},{wch:14}];
+  ws3['!cols'] = [{wch:14},{wch:10},{wch:35},{wch:18},{wch:10},{wch:14},{wch:14},{wch:12},{wch:8},{wch:30}];
 
   XLSX.utils.book_append_sheet(wb, ws1, 'Görevler');
   XLSX.utils.book_append_sheet(wb, ws2, 'Alt Görevler');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Görev + Alt Görev');
 
   const fname = `Gorevler_${nowTs().slice(0,10)}.xlsx`;
   XLSX.writeFile(wb, fname);
@@ -3070,6 +3232,44 @@ function _pfInjectToolbarBtns() {
 
   console.info('[Pusula v2.0] 10 yeni özellik aktif ✓');
 })();
+
+// ════════════════════════════════════════════════════════════════
+// AYLIK OTOMATİK EXCEL İNDİRME  [v2.1.0]
+// Her ayın son günü saat 00:00'da tüm görevleri Excel'e indirir
+// ════════════════════════════════════════════════════════════════
+function _checkMonthlyExport() {
+  try {
+    const now      = new Date();
+    const lastKey  = 'ak_pus_monthly_export';
+    const lastDone = localStorage.getItem(lastKey);
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    if (lastDone === monthKey) return; // Bu ay zaten yapıldı
+
+    // Son gün mü?
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isLastDay = tomorrow.getMonth() !== now.getMonth();
+    if (!isLastDay) return;
+
+    // Saat 00:00-01:00 arası mı?
+    if (now.getHours() > 1) return;
+
+    // Export yap
+    if (typeof exportTasksXlsx === 'function') {
+      exportTasksXlsx();
+      localStorage.setItem(lastKey, monthKey);
+      window.toast?.('📊 Aylık görev raporu otomatik indirildi', 'ok');
+      logActivity('system', `Aylık otomatik Excel export: ${monthKey}`);
+    }
+  } catch(e) {
+    console.warn('[Pusula] Aylık export hatası:', e);
+  }
+}
+
+// Uygulama açılışında ve her saat kontrol et
+window._monthlyExportTimer = setInterval(_checkMonthlyExport, 60 * 60 * 1000);
+setTimeout(_checkMonthlyExport, 5000); // İlk açılışta 5sn sonra kontrol
+
 const Pusula = {
   init: _pusInit,
   render:       renderPusula,

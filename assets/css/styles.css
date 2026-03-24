@@ -1507,3 +1507,20 @@ input:checked+.psl::before{transform:translateX(17px)}
 .qi:hover{background:var(--al);border-color:var(--ac);color:var(--ac);transform:translateY(-2px)}
 
 .pus-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+
+/* ── Pusula Hero Optimizasyon v2.1.0 ── */
+.pus-hero { border-bottom: 1px solid var(--b); }
+.pus-hero-inner { padding: 10px 16px 6px !important; }
+.pus-hero-top { margin-bottom: 6px !important; }
+.pus-hero-title { font-size: 17px !important; line-height: 1.2 !important; }
+.pus-hero-sub { font-size: 11px !important; margin-top: 1px !important; }
+.pus-quick-add-wrap { margin-top: 6px !important; }
+.pus-stats-row { padding: 4px 12px 6px !important; gap: 4px !important; }
+.pus-stat-pill { padding: 5px 8px !important; min-height: 42px !important; border-radius: 8px !important; }
+.psp-count { font-size: 17px !important; line-height: 1.1 !important; }
+.psp-label { font-size: 9.5px !important; opacity: 0.9 !important; }
+.pus-progress-strip { padding: 4px 16px !important; }
+/* Focus panel sembolleri daha belirgin */
+#pus-focus-panel .fi-ic,
+#pus-focus-panel [class*="icon"],
+#pus-focus-panel svg { opacity: 1 !important; }

@@ -1684,10 +1684,10 @@ function printModuleReport(modId) {
   win.document.write(`<!DOCTYPE html><html><head><title>${TITLES[modId]||'Rapor'}</title>
     <style>body{font-family:Arial,sans-serif;padding:30px;color:#333}h1{font-size:18px;margin-bottom:6px}h2{font-size:13px;font-weight:normal;color:#666;margin-bottom:20px}table{width:100%}th{text-align:left}footer{margin-top:30px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px}</style>
     </head><body>
-    <h1>AkademiHub — ${TITLES[modId]||'Rapor'}</h1>
+    <h1>Duay Global LLC — ${TITLES[modId]||'Rapor'}</h1>
     <h2>Oluşturulma: ${nowTs()} · ${cu?.name||'?'}</h2>
     ${body}
-    <footer>AkademiHub v${APP_VER} · Gizli ve Şirkete Özel</footer>
+    <footer>Duay Global LLC v${APP_VER} · Gizli ve Şirkete Özel</footer>
     <script>window.print();<\/script></body></html>`);
 }
 

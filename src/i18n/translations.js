@@ -16,7 +16,7 @@
 let TRANSLATIONS = {
   tr: {
     // ── Genel ──────────────────────────────────────────────────
-    'app.name':            'AkademiHub',
+    'app.name':            'Duay Global LLC',
     'app.tagline':         'Operasyon Platformu',
     'app.description':     'Satın Alma, Tedarik Zinciri & Operasyon Yönetimi',
     'btn.save':            'Kaydet',
@@ -213,7 +213,7 @@ let TRANSLATIONS = {
   // ─────────────────────────────────────────────────────────────
   en: {
     // ── General ────────────────────────────────────────────────
-    'app.name':            'AkademiHub',
+    'app.name':            'Duay Global LLC',
     'app.tagline':         'Operations Platform',
     'app.description':     'Procurement, Supply Chain & Operations Management',
     'btn.save':            'Save',

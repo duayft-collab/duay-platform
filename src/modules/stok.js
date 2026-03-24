@@ -376,7 +376,7 @@ function printZimmetTutanak(id){
     footer{margin-top:30px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px;text-align:center}
   </style></head><body>
     <h2>ZİMMET TUTANAĞI</h2>
-    <div class="meta">${new Date().toLocaleDateString('tr-TR')} · AkademiHub v8.0.0</div>
+    <div class="meta">${new Date().toLocaleDateString('tr-TR')} · Duay Global LLC v8.0.0</div>
     <table><tbody>
       <tr><th>Zimmet Türü</th><td>${s.tür==='demirbaş'?'🖥️ Demirbaş':'🔑 Zimmet'}</td></tr>
       <tr><th>Ürün / Cihaz Adı</th><td>${s.name}${s.qty>1?` (×${s.qty})`:''}</td></tr>
@@ -397,7 +397,7 @@ function printZimmetTutanak(id){
       <div class="sign-box">Teslim Alan<br><br><span style="font-weight:600">${zimmetAlan}</span></div>
       ${window.isAdmin()?`<div class="sign-box">Yönetici Onayı<br><br><span style="font-weight:600">${window.Auth?.getCU?.()?.name||''}</span></div>`:''}
     </div>
-    <footer>AkademiHub Zimmet Sistemi · Belge No: ZMT-${id} · ${new Date().toLocaleDateString('tr-TR')}</footer>
+    <footer>Duay Global LLC Zimmet Sistemi · Belge No: ZMT-${id} · ${new Date().toLocaleDateString('tr-TR')}</footer>
     <script>window.print();<\/script>
   </body></html>`);
 }

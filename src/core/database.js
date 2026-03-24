@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * src/core/database.js  —  v8.2.0 / 2026-03-24 00:00
+ * src/core/database.js  —  v8.1.0
  * Merkezi Veri Katmanı — Tüm load* / store* / save* fonksiyonları
  *
  * Anayasa Kural 2 : Firebase senkronizasyon mantığı korunur.
@@ -18,7 +18,7 @@
 'use strict';
 
 // ── Versiyon ─────────────────────────────────────────────────────
-const DB_VERSION = '8.2.0';
+const DB_VERSION = '8.0.0';
 
 // ── localStorage Anahtar Sabitleri ───────────────────────────────
 /** @type {Object.<string,string>} Tüm localStorage key'leri tek yerden */
@@ -458,7 +458,7 @@ const DEFAULT_SUGGESTIONS = [
   { id: 2, uid: 3, title: 'Bildirim Sistemi', desc: 'E-posta bildirimi.',     type: 'improvement', status: 'pending', ts: '2026-03-14 14:05:00' },
 ];
 const DEFAULT_ANN = [
-  { id: 1, title: 'Platforma Hoş Geldiniz!', body: 'AkademiHub v8.0 kullanıma açıldı.', type: 'info', ts: '2026-03-19 10:00:00', read: [], audience: 'all' },
+  { id: 1, title: 'Platforma Hoş Geldiniz!', body: 'Duay Global LLC v8.0 kullanıma açıldı.', type: 'info', ts: '2026-03-19 10:00:00', read: [], audience: 'all' },
 ];
 const DEFAULT_LINKS = [
   { id: 1, owner: 0, name: 'Google', url: 'https://google.com', icon: '🔍', vis: 'all', visRoles: [], visUsers: [] },
@@ -662,250 +662,11 @@ const DEFAULT_HDF = [
 }
 
 // ════════════════════════════════════════════════════════════════
-// BÖLÜM 15 — ÇÖP KUTUSU & SOFT DELETE  [v8.2.0 GÜNCELLENDİ]
-//
-// Anayasa Kural 08 & 10 — Fiziksel silme yasak.
-// Tüm silme işlemleri softDelete() üzerinden yapılır.
-//
-// Şema:
-//   {
-//     isDeleted    : true,
-//     deletedAt    : 'YYYY-MM-DD HH:MM:SS',
-//     deletedBy    : uid,
-//     deletedByName: string,
-//     deletedReason: string,   (opsiyonel)
-//     _collection  : string,   (hangi koleksiyondan geldi)
-//     _originalId  : any,      (orijinal kayıt id'si)
-//     ...originalRecord        (tüm orijinal alanlar)
-//   }
-//
-// Kullanım (tüm del* fonksiyonları bu şekilde değiştirilmeli):
-//
-//   // ESKİ (yasak):
-//   saveTasks(loadTasks().filter(x => x.id !== id));
-//
-//   // YENİ (zorunlu):
-//   softDelete('tasks', id, 'Kullanıcı sildi');
-//
+// BÖLÜM 15 — ÇÖP KUTUSU (Soft Delete)
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadTrash()   { const d = _read(KEYS.trash); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 500 kayıt */ function storeTrash(d) { _write(KEYS.trash, d.slice(0, 500)); }
-
-/**
- * Bir kaydı fiziksel olarak silmek yerine çöp kutusuna taşır.
- * Anayasa Kural 08 & 10 — Tüm del* fonksiyonları bunu kullanmalı.
- *
- * @param {string}      collection   Koleksiyon adı: 'tasks'|'kargo'|'crm'|'ik'|...
- * @param {number|string} id         Silinecek kaydın id'si
- * @param {string}      [reason='']  Silme nedeni (audit log için)
- * @returns {{ success: boolean, record: Object|null, undoFn: Function }}
- *   success: true ise silme başarılı
- *   record:  silinen kaydın kopyası
- *   undoFn:  30 saniye içinde geri almak için çağrılabilir fonksiyon
- *
- * @example
- * const { success, undoFn } = softDelete('tasks', taskId, 'Panel silme butonu');
- * if (success) {
- *   window.toast('Görev silindi', 'ok', { action: 'Geri Al', onAction: undoFn });
- * }
- */
-function softDelete(collection, id, reason) {
-  reason = reason || '';
-  const CU = window.Auth?.getCU?.();
-
-  // Koleksiyon → load/store fonksiyon eşleşmesi
-  const COLLECTION_MAP = {
-    tasks        : { load: loadTasks,    store: saveTasks    },
-    kargo        : { load: loadKargo,    store: storeKargo   },
-    konteyn      : { load: loadKonteyn,  store: storeKonteyn },
-    ik           : { load: loadIk,       store: storeIk      },
-    crm          : { load: loadCrmData,  store: storeCrmData },
-    pirim        : { load: loadPirim,    store: storePirim   },
-    stok         : { load: loadStok,     store: storeStok    },
-    hedefler     : { load: loadHdf,      store: storeHdf     },
-    announcements: { load: loadAnn,      store: storeAnn     },
-    notes        : { load: loadNotes,    store: saveNotes    },
-    izin         : { load: loadIzin,     store: storeIzin    },
-    tebligat     : { load: loadTebligat, store: storeTebligat},
-    kpi          : { load: loadKpi,      store: storeKpi     },
-    numune       : { load: loadNumune,   store: storeNumune  },
-    etkinlik     : { load: loadEtkinlik, store: storeEtkinlik},
-    rehber       : { load: loadRehber,   store: storeRehber  },
-    odemeler     : { load: loadOdm,      store: storeOdm     },
-  };
-
-  const col = COLLECTION_MAP[collection];
-  if (!col) {
-    GlobalErrorHandler('softDelete', new Error('Bilinmeyen koleksiyon: ' + collection), 'warn');
-    return { success: false, record: null, undoFn: () => {} };
-  }
-
-  try {
-    const data   = col.load();
-    const idx    = data.findIndex(x => String(x.id) === String(id));
-    if (idx === -1) {
-      GlobalErrorHandler('softDelete', new Error(collection + ' içinde id bulunamadı: ' + id), 'warn');
-      return { success: false, record: null, undoFn: () => {} };
-    }
-
-    const record = data[idx];
-
-    // Soft delete şeması
-    const deletedRecord = {
-      ...record,
-      isDeleted    : true,
-      deletedAt    : nowTs(),
-      deletedBy    : CU ? CU.id   : 0,
-      deletedByName: CU ? CU.name : 'Sistem',
-      deletedReason: reason,
-      _collection  : collection,
-      _originalId  : record.id,
-    };
-
-    // Koleksiyondan kaldır
-    data.splice(idx, 1);
-    col.store(data);
-
-    // Çöp kutusuna ekle
-    const trash = loadTrash();
-    trash.unshift(deletedRecord);
-    storeTrash(trash);
-
-    // Audit log — Anayasa Kural 05 (silme logActivity zorunlu)
-    logActivity('delete', `[${collection}] "${record.title || record.name || record.no || id}" silindi${reason ? ' — ' + reason : ''}`);
-
-    // Firestore'a soft delete yaz
-    const FB_DB = window.Auth?.getFBDB?.();
-    if (FB_DB) {
-      const tid  = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
-      const base = 'duay_' + tid;
-      FB_DB.collection(base + '_trash').add({
-        ...deletedRecord,
-        serverDeletedAt: window.firebase?.firestore?.FieldValue?.serverTimestamp?.() || null,
-      }).catch(() => {});
-    }
-
-    // Undo fonksiyonu — 30 saniye içinde geri al
-    const undoFn = () => {
-      try {
-        const currentData = col.load();
-        // id çakışması kontrolü
-        if (!currentData.find(x => String(x.id) === String(record.id))) {
-          const restored = { ...record };
-          delete restored.isDeleted;
-          delete restored.deletedAt;
-          delete restored.deletedBy;
-          delete restored.deletedByName;
-          delete restored.deletedReason;
-          delete restored._collection;
-          delete restored._originalId;
-          currentData.push(restored);
-          col.store(currentData);
-          // Çöp kutusundan da kaldır
-          storeTrash(loadTrash().filter(x => !(x._collection === collection && String(x._originalId) === String(id))));
-          logActivity('restore', `[${collection}] "${record.title || record.name || record.no || id}" geri alındı`);
-          if (typeof window.toast === 'function') window.toast('Geri alındı ✓', 'ok');
-        }
-      } catch (e) {
-        GlobalErrorHandler('softDelete:undo', e, 'warn');
-      }
-    };
-
-    return { success: true, record: deletedRecord, undoFn };
-
-  } catch (e) {
-    GlobalErrorHandler('softDelete', e, 'err');
-    return { success: false, record: null, undoFn: () => {} };
-  }
-}
-
-/**
- * Çöp kutusundaki bir kaydı orijinal koleksiyonuna geri yükler.
- * @param {string|number} originalId   Orijinal kayıt id'si
- * @param {string}        collection   Koleksiyon adı
- * @returns {boolean} Başarılı mı?
- */
-function restoreFromTrash(originalId, collection) {
-  const trash   = loadTrash();
-  const idx     = trash.findIndex(x =>
-    String(x._originalId) === String(originalId) && x._collection === collection
-  );
-  if (idx === -1) {
-    if (typeof window.toast === 'function') window.toast('Kayıt çöp kutusunda bulunamadı', 'err');
-    return false;
-  }
-
-  const record = trash[idx];
-  // Çöp kutusundan çıkar
-  trash.splice(idx, 1);
-  storeTrash(trash);
-
-  // Orijinal koleksiyona ekle (temizlenmiş haliyle)
-  const restored = { ...record };
-  ['isDeleted','deletedAt','deletedBy','deletedByName','deletedReason','_collection','_originalId']
-    .forEach(k => delete restored[k]);
-
-  // Koleksiyon load/store
-  const STORE_MAP = {
-    tasks: { load: loadTasks, store: saveTasks },
-    kargo: { load: loadKargo, store: storeKargo },
-    ik:    { load: loadIk,    store: storeIk    },
-    crm:   { load: loadCrmData, store: storeCrmData },
-    pirim: { load: loadPirim, store: storePirim },
-    stok:  { load: loadStok,  store: storeStok  },
-    hedefler: { load: loadHdf, store: storeHdf  },
-    notes: { load: loadNotes, store: saveNotes  },
-    izin:  { load: loadIzin,  store: storeIzin  },
-  };
-
-  const col = STORE_MAP[collection];
-  if (col) {
-    const data = col.load();
-    if (!data.find(x => String(x.id) === String(restored.id))) {
-      data.push(restored);
-      col.store(data);
-    }
-  }
-
-  logActivity('restore', `[${collection}] "${record.title || record.name || record._originalId}" çöp kutusundan geri yüklendi`);
-  if (typeof window.toast === 'function') window.toast('Kayıt geri yüklendi ✓', 'ok');
-  return true;
-}
-
-/**
- * 30 günden eski çöp kutusu kayıtlarını kalıcı olarak temizler.
- * Uygulama başlangıcında veya admin panelinden çağrılabilir.
- * @returns {number} Temizlenen kayıt sayısı
- */
-function emptyOldTrash() {
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-  const cutoff         = Date.now() - THIRTY_DAYS_MS;
-  const trash          = loadTrash();
-  const before         = trash.length;
-  const fresh          = trash.filter(x => {
-    if (!x.deletedAt) return true;
-    return new Date(x.deletedAt.replace(' ','T')).getTime() > cutoff;
-  });
-  if (fresh.length < before) {
-    storeTrash(fresh);
-    const removed = before - fresh.length;
-    logActivity('system', `Çöp kutusu temizlendi — ${removed} eski kayıt kalıcı silindi`);
-    return removed;
-  }
-  return 0;
-}
-
-/**
- * Belirli bir koleksiyonun soft-deleted kayıtlarını döner.
- * @param {string} [collection]  Belirtilmezse tüm çöp kutusu
- * @returns {Array<Object>}
- */
-function getSoftDeleted(collection) {
-  const trash = loadTrash();
-  if (!collection) return trash;
-  return trash.filter(x => x._collection === collection);
-}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16 — RUTİN ÖDEMELER
@@ -1366,9 +1127,8 @@ const DB = {
   loadRehber, storeRehber,
   // Hedefler
   loadHdf, storeHdf,
-  // Çöp Kutusu & Soft Delete [v8.2.0]
+  // Çöp
   loadTrash, storeTrash,
-  softDelete, restoreFromTrash, emptyOldTrash, getSoftDeleted,
   // Ödemeler
   loadOdm, storeOdm,
   // İzin & Tebligat & Temizlik
@@ -1424,7 +1184,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','softDelete','restoreFromTrash','emptyOldTrash','getSoftDeleted','loadOdm','storeOdm',
+    'loadTrash','storeTrash','loadOdm','storeOdm',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',
