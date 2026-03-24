@@ -48,29 +48,34 @@ function injectAllModals() {
                  tk-start, tk-status, tk-tags, tk-link, tk-file,
                  tk-eid, tk-fp, tk-participants-list, mo-tk-t
      ════════════════════════════════════════════════════════ -->
-<div class="mo" id="mo-task">
-  <div class="moc" style="max-width:560px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column">
-    <!-- Modal header -->
-    <div style="padding:18px 24px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
-      <div class="mt" id="mo-tk-t" style="margin-bottom:0">Görev</div>
-      <button onclick="closeMo('mo-task')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='none'">×</button>
-    </div>
+<div class="mo" id="mo-task" role="dialog" aria-modal="true" aria-labelledby="mo-tk-t">
+  <div class="moc pusula-v85-modal" style="max-width:620px;padding:0;overflow:hidden;max-height:94vh;display:flex;flex-direction:column;border-radius:20px;background:var(--sf);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)">
+
     <!-- Öncelik renk çubuğu -->
-    <div id="tk-pri-bar" style="height:3px;background:var(--ac);transition:background .2s"></div>
-    <div style="padding:20px 24px">
-      <!-- Başlık - büyük input -->
-      <div style="margin-bottom:16px">
-        <input class="fi" id="tk-title" placeholder="Görevi kısaca tanımlayın…" style="font-size:15px;font-weight:500;padding:10px 14px;border-radius:8px" oninput="updateTkPriBar()">
+    <div id="tk-pri-bar" style="height:4px;background:var(--ac);transition:background .25s;border-radius:20px 20px 0 0"></div>
+
+    <!-- Header -->
+    <div style="padding:18px 24px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="mt" id="mo-tk-t" style="margin:0;font-size:16px">➕ Görev Ekle</div>
+        <div id="tk-dept-workload-mini" style="font-size:11px;color:var(--t3);margin-top:2px"></div>
       </div>
-      <!-- Açıklama -->
-      <div style="margin-bottom:16px">
-        <textarea class="fi" id="tk-desc" rows="3" style="resize:vertical;font-size:13px" placeholder="Detay, bağlam, gereksinimler… (opsiyonel)"></textarea>
+      <button onclick="closeMo('mo-task')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:background .15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='none'">×</button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div style="flex:1;overflow-y:auto;padding:20px 24px">
+
+      <!-- Başlık -->
+      <div style="margin-bottom:14px">
+        <input class="fi" id="tk-title" placeholder="Görevi kısaca tanımlayın…" style="font-size:15px;font-weight:500;padding:12px 14px;border-radius:10px" oninput="updateTkPriBar();window._tkUpdateDeptWorkload?.()">
       </div>
-      <!-- 3'lü grid: Öncelik, Personel, Durum -->
+
+      <!-- 3lü grid: Öncelik + Personel + Durum -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
           <div class="fl" style="margin-bottom:5px">ÖNCELİK</div>
-          <select class="fi" id="tk-pri" style="padding:7px 10px" onchange="updateTkPriBar()">
+          <select class="fi" id="tk-pri" style="padding:8px 10px" onchange="updateTkPriBar()">
             <option value="1">🔴 Kritik</option>
             <option value="2" selected>🟠 Önemli</option>
             <option value="3">🔵 Normal</option>
@@ -79,11 +84,11 @@ function injectAllModals() {
         </div>
         <div>
           <div class="fl" style="margin-bottom:5px">PERSONEL</div>
-          <select class="fi" id="tk-user" style="padding:7px 10px"></select>
+          <select class="fi" id="tk-user" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.()"></select>
         </div>
         <div>
           <div class="fl" style="margin-bottom:5px">DURUM</div>
-          <select class="fi" id="tk-status" style="padding:7px 10px">
+          <select class="fi" id="tk-status" style="padding:8px 10px">
             <option value="todo">📋 Yapılacak</option>
             <option value="inprogress">🔄 Devam</option>
             <option value="review">👀 İnceleme</option>
@@ -91,62 +96,137 @@ function injectAllModals() {
           </select>
         </div>
       </div>
-      <!-- 2'li grid: Tarihler -->
+
+      <!-- Departman + İş Yükü Barı -->
+      <div style="margin-bottom:14px">
+        <div class="fl" style="margin-bottom:5px">DEPARTMAN</div>
+        <select class="fi" id="tk-dept" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.()">
+          <option value="">— Seçiniz —</option>
+          <option value="Finans">💰 Finans</option>
+          <option value="Lojistik">🚢 Lojistik</option>
+          <option value="İK">👥 İK</option>
+          <option value="IT">💻 IT</option>
+          <option value="Satış">📈 Satış</option>
+          <option value="Operasyon">⚙️ Operasyon</option>
+          <option value="Diğer">📌 Diğer</option>
+        </select>
+        <!-- Departman iş yükü barı -->
+        <div id="tk-dept-workload" style="display:none;margin-top:8px;background:var(--s2);border-radius:8px;padding:8px 12px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px">
+            <span id="tk-dept-wl-label">İş Yükü</span>
+            <span id="tk-dept-wl-pct">0%</span>
+          </div>
+          <div style="height:6px;background:var(--b);border-radius:4px;overflow:hidden">
+            <div id="tk-dept-wl-bar" style="height:100%;background:var(--ac);border-radius:4px;transition:width .4s ease;width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarih + Saat -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
-          <div class="fl" style="margin-bottom:5px">BAŞLANGIÇ TARİHİ</div>
-          <input type="date" class="fi" id="tk-start" style="padding:7px 10px">
+          <div class="fl" style="margin-bottom:5px">BAŞLANGIÇ</div>
+          <input type="date" class="fi" id="tk-start" style="padding:8px 10px">
         </div>
         <div>
-          <div class="fl" style="margin-bottom:5px">SON TARİH</div>
-          <input type="date" class="fi" id="tk-due" style="padding:7px 10px">
+          <div class="fl" style="margin-bottom:5px">BİTİŞ TARİHİ & SAATİ</div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:6px">
+            <input type="date" class="fi" id="tk-due" style="padding:8px 10px">
+            <input type="time" class="fi" id="tk-due-time" style="padding:8px 10px;width:100px" placeholder="--:--">
+          </div>
         </div>
       </div>
-      <!-- Etiket -->
-      <div style="margin-bottom:14px">
-        <div class="fl" style="margin-bottom:5px">ETİKETLER <span style="font-weight:400;color:var(--t3)">(virgülle ayır)</span></div>
-        <div style="position:relative">
-          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px">🏷️</span>
-          <input class="fi" id="tk-tags" placeholder="satınalma, acil, operasyon…" style="padding:7px 10px 7px 28px">
-        </div>
-      </div>
-      <!-- Link + Dosya yan yana -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px">
-        <div>
-          <div class="fl" style="margin-bottom:5px">🔗 REFERANS LİNK</div>
-          <input class="fi" id="tk-link" placeholder="https://…" style="padding:7px 10px">
-        </div>
-        <div>
-          <div class="fl" style="margin-bottom:5px">📎 DOSYA EKİ</div>
-          <input type="file" class="fi" id="tk-file" accept=".pdf,.jpg,.png,.docx,.xlsx" style="font-size:12px;padding:7px 10px" onchange="if(g('tk-fp'))g('tk-fp').textContent=this.files[0]?'📎 '+this.files[0].name:''">
-        </div>
-      </div>
-      <div id="tk-fp" style="font-size:11px;color:var(--ac);margin-bottom:2px;min-height:14px"></div>
 
-      <!-- Katılımcılar ve İzleyiciler -->
-      <div style="border-top:1px solid var(--b);padding-top:14px;margin-top:6px">
-        <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">👥 Katılımcılar & İzleyiciler</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <div class="fl" style="margin-bottom:6px;color:var(--ac)">✅ Aktif Katılımcılar <span style="font-weight:400;color:var(--t3)">(göreve müdahil olabilir)</span></div>
-            <div id="tk-participants-list" style="display:flex;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto"></div>
-          </div>
-          <div>
-            <div class="fl" style="margin-bottom:6px;color:#8B5CF6">👁 İzleyiciler <span style="font-weight:400;color:var(--t3)">(sadece görür, müdahale edemez)</span></div>
-            <div id="tk-viewers-list" style="display:flex;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto"></div>
+      <!-- Maliyet Etiketi -->
+      <div style="margin-bottom:14px">
+        <div class="fl" style="margin-bottom:5px">💰 İŞLEM TUTARI <span style="font-weight:400;color:var(--t3)">(opsiyonel)</span></div>
+        <div style="position:relative">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--t3)">₺</span>
+          <input class="fi" type="number" id="tk-cost" placeholder="0.00" style="padding:8px 10px 8px 28px">
+        </div>
+      </div>
+
+      <!-- Açıklama -->
+      <div style="margin-bottom:14px">
+        <div class="fl" style="margin-bottom:5px">AÇIKLAMA</div>
+        <textarea class="fi" id="tk-desc" rows="2" style="resize:vertical;font-size:13px;border-radius:10px" placeholder="Detay, bağlam, gereksinimler…"></textarea>
+      </div>
+
+      <!-- Alt Görevler -->
+      <div style="margin-bottom:14px;border:1px solid var(--b);border-radius:12px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--s2);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="window._tkToggleSubtasks?.()">
+          <span style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">⬜ Alt Görevler</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="tk-st-count" style="font-size:11px;color:var(--ac)"></span>
+            <span id="tk-st-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
           </div>
         </div>
-        <div style="font-size:10px;color:var(--t3);margin-top:6px">💡 Sorumlu kişi her iki listeden hariç tutulur.</div>
+        <div id="tk-subtasks-wrap" style="padding:12px 14px;display:block">
+          <div id="tk-subtasks-list"></div>
+          <button type="button" onclick="window._tkAddSubtask?.()" style="margin-top:8px;background:none;border:1px dashed var(--b);border-radius:8px;width:100%;padding:7px;font-size:12px;color:var(--t3);cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b)';this.style.color='var(--t3)'">+ Alt Görev Ekle</button>
+        </div>
       </div>
-    </div>
-    <!-- Modal footer -->
+
+      <!-- Gelişmiş Seçenekler -->
+      <div style="border:1px solid var(--b);border-radius:12px;overflow:hidden;margin-bottom:14px">
+        <div style="padding:10px 14px;background:var(--s2);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="window._tkToggleAdvanced?.()">
+          <span style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">⚙️ Gelişmiş Seçenekler</span>
+          <span id="tk-adv-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▶</span>
+        </div>
+        <div id="tk-advanced-wrap" style="display:none;padding:14px">
+          <!-- Etiketler -->
+          <div style="margin-bottom:12px">
+            <div class="fl" style="margin-bottom:5px">ETİKETLER <span style="font-weight:400;color:var(--t3)">(virgülle ayır)</span></div>
+            <div style="position:relative">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px">🏷️</span>
+              <input class="fi" id="tk-tags" placeholder="satınalma, acil, operasyon…" style="padding:7px 10px 7px 28px">
+            </div>
+          </div>
+          <!-- Link + Süre -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <div class="fl" style="margin-bottom:5px">🔗 REFERANS LİNK</div>
+              <input class="fi" id="tk-link" placeholder="https://…" style="padding:7px 10px">
+            </div>
+            <div>
+              <div class="fl" style="margin-bottom:5px">⏱ SÜRE (dk)</div>
+              <input class="fi" type="number" id="tk-duration" placeholder="60" style="padding:7px 10px">
+            </div>
+          </div>
+          <!-- Dosya Eki -->
+          <div style="margin-bottom:12px">
+            <div class="fl" style="margin-bottom:5px">📎 DOSYA EKİ</div>
+            <input type="file" class="fi" id="tk-file" accept=".pdf,.jpg,.png,.docx,.xlsx" style="font-size:12px;padding:7px 10px" onchange="if(g('tk-fp'))g('tk-fp').textContent=this.files[0]?'📎 '+this.files[0].name:''">
+            <div id="tk-fp" style="font-size:11px;color:var(--ac);margin-top:4px;min-height:14px"></div>
+          </div>
+          <!-- Katılımcılar -->
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">👥 Katılımcılar & İzleyiciler</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <div class="fl" style="margin-bottom:6px;color:var(--ac)">✅ Katılımcılar</div>
+                <div id="tk-participants-list" style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto"></div>
+              </div>
+              <div>
+                <div class="fl" style="margin-bottom:6px;color:#8B5CF6">👁 İzleyiciler</div>
+                <div id="tk-viewers-list" style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /body -->
+
+    <!-- Footer -->
     <div style="padding:14px 24px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;background:var(--s2)">
       <button class="btn btns" onclick="closeMo('mo-task')" style="font-size:12px">İptal</button>
-      <button class="btn btnp" onclick="saveTask()" style="padding:9px 22px">Kaydet</button>
+      <button class="btn btnp" onclick="saveTask()" style="padding:10px 28px;border-radius:10px;font-size:13px;font-weight:700">💾 Kaydet</button>
     </div>
     <input type="hidden" id="tk-eid">
   </div>
 </div>
+
 
 <!-- ════════════════════════════════════════════════════════
      GÖREV YAZIŞMA (pusula.js)

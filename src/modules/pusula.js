@@ -372,7 +372,8 @@ function populatePusUsers() {
 /** Kritik görev sayısını sidebar badge'ine yazar */
 function updatePusBadge() {
   const tasks  = window.isAdmin?.() ? loadTasks() : loadTasks().filter(t => t.uid === _getCU()?.id);
-  const undone = tasks.filter(t => !t.done && t.pri === 1).length;
+  // v8.5 fix: sadece status !== 'done' VE !t.done olanları say
+  const undone = tasks.filter(t => !t.done && t.status !== 'done' && t.pri === 1).length;
   const b      = g('nb-pus-b');
   if (b) { b.textContent = undone; b.style.display = undone > 0 ? 'inline' : 'none'; }
   st('sv-c', undone);
@@ -599,6 +600,8 @@ function renderPusulaList(fl, users, todayS, cont) {
         <div class="tk-meta">
           <span class="tk-pri-badge ${p.badge}">${p.label}</span>
           ${statusPill}${dueChip}
+          ${t.department ? `<span class="pusula-v85-dept-badge" style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:rgba(99,102,241,.1);color:#6366F1">🏷 ${t.department}</span>` : ''}
+          ${t.cost ? `<span style="font-size:10px;background:rgba(16,185,129,.1);color:#059669;padding:2px 8px;border-radius:6px;font-weight:700">₺${Number(t.cost).toLocaleString('tr-TR')}</span>` : ''}
           ${subTasks.length ? `<span style="font-size:10px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:6px;font-weight:700">⬜ ${subDone}/${subTasks.length}</span>` : ''}
           ${tags}
           ${t.link ? `<a href="${t.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#6366F1;text-decoration:none;padding:2px 7px;border-radius:5px;background:rgba(99,102,241,.1);font-weight:700">🔗</a>` : ''}
@@ -606,6 +609,7 @@ function renderPusulaList(fl, users, todayS, cont) {
           ${t.file ? `<span style="font-size:10px;background:var(--s2);color:var(--t3);padding:2px 7px;border-radius:5px;font-weight:600">📎</span>` : ''}
           ${(t.participants || []).length ? `<span style="font-size:10px;color:var(--ac);padding:1px 6px;border-radius:4px;background:var(--al);font-weight:600">+${(t.participants || []).length} katılımcı</span>` : ''}
           ${(t.viewers || []).length ? `<span style="font-size:10px;color:#8B5CF6;padding:1px 6px;border-radius:4px;background:rgba(139,92,246,.08);font-weight:600">👁${(t.viewers || []).length}</span>` : ''}
+          ${(!isDone && t.deadline_full) ? `<span class="pusula-v85-countdown" id="cd-${t.id}" data-deadline="${t.deadline_full}" style="font-size:10px;font-family:monospace;padding:2px 8px;border-radius:6px;background:var(--s2);color:var(--t3);font-weight:700"></span>` : ''}
         </div>
       </div>
       <div class="tk-right">
@@ -1466,20 +1470,27 @@ function saveTask() {
   document.querySelectorAll('[id^="tk-part-"]:checked').forEach(cb => participants.push(parseInt(cb.value)));
   document.querySelectorAll('[id^="tk-view-"]:checked').forEach(cb => viewers.push(parseInt(cb.value)));
 
+  const dueDate = g('tk-due')?.value || null;
+  const dueTime = g('tk-due-time')?.value || '';
   const fields = {
     title,
-    desc:   g('tk-desc')?.value   || '',
-    pri:    parseInt(g('tk-pri')?.value  || '2'),
-    due:    g('tk-due')?.value    || null,
-    start:  g('tk-start')?.value  || null,
-    status: g('tk-status')?.value || 'todo',
-    tags:   (g('tk-tags')?.value  || '').split(',').map(t => t.trim()).filter(Boolean),
-    link:     g('tk-link')?.value     || '',
-    duration: parseInt(g('tk-duration')?.value || '0') || null,
+    desc:       g('tk-desc')?.value   || '',
+    pri:        parseInt(g('tk-pri')?.value  || '2'),
+    due:        dueDate,
+    due_time:   dueTime,
+    deadline_full: dueDate ? (dueDate + (dueTime ? ' ' + dueTime : ' 23:59')) : null,
+    start:      g('tk-start')?.value  || null,
+    status:     g('tk-status')?.value || 'todo',
+    department: g('tk-dept')?.value   || '',
+    cost:       parseFloat(g('tk-cost')?.value || '0') || null,
+    tags:       (g('tk-tags')?.value  || '').split(',').map(t => t.trim()).filter(Boolean),
+    link:       g('tk-link')?.value     || '',
+    duration:   parseInt(g('tk-duration')?.value || '0') || null,
     uid,
-    done:   g('tk-status')?.value === 'done',
+    done:       g('tk-status')?.value === 'done',
     participants,
     viewers,
+    created_at: nowTs(),
   };
 
   const doSave = fileData => {
@@ -3025,6 +3036,391 @@ window.renderFocusPanel = renderFocusPanel;
   window.openRecurringEditor   = openRecurringEditor;
   window.updateRecurringForm   = updateRecurringForm;
 }
+
+
+// ════════════════════════════════════════════════════════════════
+// PUSULA v8.5 — YENİ ÖZELLİKLER
+// ════════════════════════════════════════════════════════════════
+
+// ── 1. COUNTDOWN (Canlı Geri Sayım) ─────────────────────────────
+let _v85CountdownInterval = null;
+
+function _v85StartCountdown() {
+  if (_v85CountdownInterval) clearInterval(_v85CountdownInterval);
+  _v85UpdateCountdowns();
+  _v85CountdownInterval = setInterval(_v85UpdateCountdowns, 1000);
+}
+
+function _v85UpdateCountdowns() {
+  const now = Date.now();
+  document.querySelectorAll('.pusula-v85-countdown[data-deadline]').forEach(el => {
+    const deadline = new Date(el.dataset.deadline.replace(' ', 'T')).getTime();
+    if (isNaN(deadline)) return;
+    const diff = deadline - now;
+    if (diff <= 0) {
+      el.textContent = '⚠️ Süre doldu!';
+      el.style.background = 'rgba(239,68,68,.15)';
+      el.style.color = '#EF4444';
+      return;
+    }
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const d = Math.floor(h / 24);
+
+    let txt, bg, color, anim = '';
+    if (h < 1) {
+      // < 1 saat — kırmızı + titreme
+      txt = `${m}d ${s}s`;
+      bg = 'rgba(239,68,68,.15)';
+      color = '#EF4444';
+      anim = 'pusula-v85-shake 0.5s infinite';
+    } else if (h < 5) {
+      // < 5 saat — turuncu
+      txt = `${h}s ${m}d`;
+      bg = 'rgba(245,158,11,.12)';
+      color = '#D97706';
+      anim = '';
+    } else if (d > 0) {
+      txt = `${d}g ${h % 24}s`;
+      bg = 'var(--s2)';
+      color = 'var(--t3)';
+    } else {
+      txt = `${h}s ${m}d`;
+      bg = 'var(--s2)';
+      color = 'var(--t3)';
+    }
+    el.textContent = '⏱ ' + txt;
+    el.style.background = bg;
+    el.style.color = color;
+    el.style.animation = anim;
+  });
+}
+
+// ── 2. DEPARTMAN İŞ YÜKÜ HEATMAP ────────────────────────────────
+function _v85RenderHeatmap() {
+  const tasks = loadTasks().filter(t => !t.done && t.status !== 'done');
+  const total = tasks.length || 1;
+  const depts = {};
+  tasks.forEach(t => {
+    const d = t.department || 'Diğer';
+    depts[d] = (depts[d] || 0) + 1;
+  });
+
+  const sorted = Object.entries(depts).sort((a, b) => b[1] - a[1]);
+  if (!sorted.length) return '';
+
+  const colors = {
+    'Finans':    '#6366F1', 'Lojistik': '#3B82F6', 'İK':    '#10B981',
+    'IT':        '#8B5CF6', 'Satış':    '#F59E0B', 'Operasyon': '#EF4444', 'Diğer': '#6B7280'
+  };
+
+  const items = sorted.map(([dept, count]) => {
+    const pct = Math.round(count / total * 100);
+    const col = colors[dept] || '#6B7280';
+    return `<div class="pusula-v85-hm-item">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:700;color:var(--t)">${dept}</span>
+        <span style="font-size:11px;font-family:monospace;color:var(--t3)">${count} iş · ${pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--b);border-radius:4px;overflow:hidden">
+        <div style="height:100%;background:${col};border-radius:4px;width:${pct}%;transition:width .5s ease"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="pusula-v85-heatmap">
+    <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🌡️ Departman İş Yükü</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+      ${items}
+    </div>
+  </div>`;
+}
+
+function _v85InjectHeatmap() {
+  const toolbar = document.querySelector('.pus-toolbar');
+  if (!toolbar) return;
+  let hm = document.getElementById('pusula-v85-heatmap-wrap');
+  if (!hm) {
+    hm = document.createElement('div');
+    hm.id = 'pusula-v85-heatmap-wrap';
+    hm.style.cssText = 'margin-bottom:12px';
+    toolbar.insertAdjacentElement('beforebegin', hm);
+  }
+  hm.innerHTML = _v85RenderHeatmap();
+}
+
+// ── 3. MODALDAKİ DEPARTMAN İŞ YÜKÜ ─────────────────────────────
+window._tkUpdateDeptWorkload = function() {
+  const dept = g('tk-dept')?.value;
+  const wrap = g('tk-dept-workload');
+  const bar  = g('tk-dept-wl-bar');
+  const pct  = g('tk-dept-wl-pct');
+  const lbl  = g('tk-dept-wl-label');
+  if (!dept || !wrap) { if (wrap) wrap.style.display = 'none'; return; }
+
+  const tasks = loadTasks().filter(t => !t.done && t.status !== 'done');
+  const total = tasks.length || 1;
+  const deptCount = tasks.filter(t => t.department === dept).length;
+  const p = Math.round(deptCount / total * 100);
+
+  wrap.style.display = 'block';
+  if (lbl) lbl.textContent = `${dept} departmanı iş yükü`;
+  if (pct) pct.textContent = p + '%';
+  if (bar) {
+    bar.style.width = p + '%';
+    bar.style.background = p > 60 ? '#EF4444' : p > 30 ? '#F59E0B' : 'var(--ac)';
+  }
+};
+
+// ── 4. MODAL ACCORDION KONTROLLERI ──────────────────────────────
+window._tkToggleSubtasks = function() {
+  const wrap  = g('tk-subtasks-wrap');
+  const arrow = g('tk-st-arrow');
+  if (!wrap) return;
+  const open = wrap.style.display !== 'none';
+  wrap.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+};
+
+window._tkToggleAdvanced = function() {
+  const wrap  = g('tk-advanced-wrap');
+  const arrow = g('tk-adv-arrow');
+  if (!wrap) return;
+  const open = wrap.style.display !== 'none';
+  wrap.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? '' : 'rotate(90deg)';
+};
+
+// ── 5. MODAL ALT GÖREV EKLEME ────────────────────────────────────
+let _v85TempSubtasks = [];
+
+window._tkAddSubtask = function() {
+  const list = g('tk-subtasks-list');
+  if (!list) return;
+  const idx = _v85TempSubtasks.length;
+  const id = 'v85-st-' + idx;
+  _v85TempSubtasks.push({ title: '', status: 'todo', uid: 0, done: false });
+
+  const users = loadUsers();
+  const userOpts = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;gap:6px;margin-bottom:6px;align-items:center';
+  row.innerHTML = `
+    <input class="fi" placeholder="Alt görev…" style="padding:6px 10px;font-size:12px"
+      oninput="_v85TempSubtasks[${idx}].title=this.value">
+    <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].status=this.value">
+      <option value="todo">📋</option>
+      <option value="inprogress">🔄</option>
+      <option value="done">✅</option>
+    </select>
+    <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].uid=parseInt(this.value)">
+      <option value="0">Sorumlu</option>
+      ${userOpts}
+    </select>
+    <button type="button" onclick="this.parentElement.remove();_v85TempSubtasks[${idx}]=null"
+      style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;padding:0 4px">×</button>`;
+  list.appendChild(row);
+
+  const cnt = g('tk-st-count');
+  if (cnt) cnt.textContent = list.children.length + ' alt görev';
+};
+
+function _v85GetTempSubtasks() {
+  return _v85TempSubtasks.filter(Boolean).filter(s => s.title.trim());
+}
+
+function _v85ResetSubtasks(existing) {
+  _v85TempSubtasks = [];
+  const list = g('tk-subtasks-list');
+  const cnt  = g('tk-st-count');
+  if (!list) return;
+  list.innerHTML = '';
+  if (existing && existing.length) {
+    existing.forEach((s, idx) => {
+      _v85TempSubtasks.push({ ...s });
+      const users = loadUsers();
+      const userOpts = users.map(u => `<option value="${u.id}" ${u.id===s.uid?'selected':''}>${u.name}</option>`).join('');
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;gap:6px;margin-bottom:6px;align-items:center';
+      row.innerHTML = `
+        <input class="fi" value="${s.title||''}" placeholder="Alt görev…" style="padding:6px 10px;font-size:12px"
+          oninput="_v85TempSubtasks[${idx}].title=this.value">
+        <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].status=this.value">
+          <option value="todo" ${s.status==='todo'?'selected':''}>📋</option>
+          <option value="inprogress" ${s.status==='inprogress'?'selected':''}>🔄</option>
+          <option value="done" ${s.status==='done'?'selected':''}>✅</option>
+        </select>
+        <select class="fi" style="padding:6px 8px;font-size:11px" onchange="_v85TempSubtasks[${idx}].uid=parseInt(this.value)">
+          <option value="0">Sorumlu</option>
+          ${userOpts}
+        </select>
+        <button type="button" onclick="this.parentElement.remove();_v85TempSubtasks[${idx}]=null"
+          style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;padding:0 4px">×</button>`;
+      list.appendChild(row);
+    });
+  }
+  if (cnt) cnt.textContent = list.children.length ? list.children.length + ' alt görev' : '';
+}
+
+// ── 6. openAddTask / editTask HOOK — dept + time alanlarını doldur
+const _v85OrigOpenAdd = window.openAddTask;
+const _v85OrigEditTask = window.editTask;
+
+window.openAddTask = function() {
+  _v85ResetSubtasks([]);
+  if (g('tk-dept')) g('tk-dept').value = '';
+  if (g('tk-due-time')) g('tk-due-time').value = '';
+  if (g('tk-cost')) g('tk-cost').value = '';
+  if (g('tk-dept-workload')) g('tk-dept-workload').style.display = 'none';
+  window._pfRealOpenAdd?.();
+};
+
+window.editTask = function(id) {
+  const t = loadTasks().find(x => x.id === id);
+  if (t) {
+    _v85ResetSubtasks(t.subTasks || []);
+    setTimeout(() => {
+      if (g('tk-dept') && t.department) { g('tk-dept').value = t.department; window._tkUpdateDeptWorkload?.(); }
+      if (g('tk-due-time') && t.due_time) g('tk-due-time').value = t.due_time;
+      if (g('tk-cost') && t.cost) g('tk-cost').value = t.cost;
+    }, 100);
+  }
+  window._pfRealEditTask?.(id);
+};
+
+// ── 7. saveTask HOOK — v85 subtask'ları ekle ────────────────────
+const _v85OrigSave = window.saveTask;
+window.saveTask = function() {
+  // v85 temp subtask'larını window._pendingSubTasks'a enjekte et
+  const subs = _v85GetTempSubtasks();
+  if (subs.length) {
+    window._pendingSubTasks = subs.map((s, i) => ({
+      id: Date.now() + i,
+      title: s.title,
+      done: s.status === 'done',
+      status: s.status || 'todo',
+      uid: s.uid || 0
+    }));
+  }
+  _v85OrigSave?.();
+};
+
+// ── 8. MOTİVASYON ŞERİDİ ───────────────────────────────────────
+const _v85Quotes = [
+  { text: 'Zamanı yönetemeyen hiçbir şeyi yönetemez.', author: 'Peter Drucker' },
+  { text: 'Başarı tesadüf değil; hazırlık, sıkı çalışma ve hatalardan öğrenmektir.', author: 'Colin Powell' },
+  { text: 'Fırsatlar çalışkan insanların zihninde parlar.', author: 'Thomas Edison' },
+  { text: 'Zorluklar içinde fırsatlar yatar.', author: 'Albert Einstein' },
+  { text: 'Disiplin, motivasyonun bittiği yerde devreye girer.', author: 'Elbert Hubbard' },
+  { text: 'Planlama yaparken uzun düşün, uygularken hızlı hareket et.', author: 'Sun Tzu' },
+  { text: 'Bir takımın gücü her üyesinden, her üyenin gücü takımdan gelir.', author: 'Phil Jackson' },
+  { text: 'Verimliliğin sırrı önceliklendirmedir.', author: 'Stephen Covey' },
+  { text: 'Hiçbir rüzgar, nereye gittiğini bilmeyen gemiye yardım edemez.', author: 'Seneca' },
+  { text: 'Mükemmellik bir eylem değil, bir alışkanlıktır.', author: 'Aristoteles' },
+  { text: 'Her büyük başarı bir zamanlar imkansız görünüyordu.', author: 'Nelson Mandela' },
+  { text: 'Önce anlamaya çalış, sonra anlaşılmaya.', author: 'Stephen Covey' },
+  { text: 'En büyük risk, hiç risk almamaktır.', author: 'Mark Zuckerberg' },
+];
+
+function _v85InjectMotivationBar() {
+  const panel = document.getElementById('panel-pusula');
+  if (!panel) return;
+  if (document.getElementById('pusula-v85-motivebar')) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'pusula-v85-motivebar';
+  bar.style.cssText = `
+    margin-top: 24px; padding: 14px 20px;
+    border-top: 1px solid var(--b);
+    text-align: center;
+  `;
+  panel.appendChild(bar);
+
+  function _showQuote() {
+    const q = _v85Quotes[Math.floor(Math.random() * _v85Quotes.length)];
+    bar.style.opacity = '0';
+    bar.style.transition = 'opacity .6s ease';
+    setTimeout(() => {
+      bar.innerHTML = `<span style="font-family:'JetBrains Mono',monospace,monospace;font-size:11px;color:var(--t3);font-style:italic">"${q.text}"</span> <span style="font-size:10px;color:var(--t3);opacity:.6">— ${q.author}</span>`;
+      bar.style.opacity = '1';
+    }, 300);
+  }
+
+  _showQuote();
+  setInterval(_showQuote, 15000);
+}
+
+// ── 9. CSS EKLEMELERİ ───────────────────────────────────────────
+(function _v85InjectCSS() {
+  if (document.getElementById('pusula-v85-css')) return;
+  const s = document.createElement('style');
+  s.id = 'pusula-v85-css';
+  s.textContent = `
+    @keyframes pusula-v85-shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-2px); }
+      75%      { transform: translateX(2px); }
+    }
+    .pusula-v85-modal {
+      box-shadow: 0 25px 60px rgba(0,0,0,.18);
+    }
+    .pusula-v85-heatmap {
+      background: var(--sf);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .pusula-v85-hm-item {
+      padding: 6px 0;
+    }
+    .pusula-v85-dept-badge {
+      display: inline-block;
+    }
+    /* Focus widget Apple Card stili */
+    #db-day-focus .card, #db-pusula-stats .card {
+      border-radius: 16px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,.06) !important;
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── 10. renderPusula SONRASI HOOK ────────────────────────────────
+const _v85OrigRenderPusula = window.renderPusula;
+window.renderPusula = function() {
+  _v85OrigRenderPusula?.();
+  setTimeout(() => {
+    _v85StartCountdown();
+    _v85InjectHeatmap();
+    _v85InjectMotivationBar();
+  }, 50);
+};
+
+// ── 11. TASK DEPENDENCİ — alt görevler bitmeden tamamlanmasın ───
+const _v85OrigToggle = window.Pusula?.toggle;
+if (window.Pusula) {
+  const _origToggle = window.Pusula.toggle;
+  window.Pusula.toggle = function(id, done) {
+    if (done) {
+      const task = loadTasks().find(t => t.id === id);
+      if (task && task.subTasks && task.subTasks.length > 0) {
+        const unfinished = task.subTasks.filter(s => !s.done && s.status !== 'done');
+        if (unfinished.length > 0) {
+          window.toast?.(`⚠️ ${unfinished.length} alt görev henüz tamamlanmadı!`, 'warn');
+          return;
+        }
+      }
+    }
+    _origToggle?.call(window.Pusula, id, done);
+  };
+}
+
+console.info('[Pusula v8.5] Modernizasyon aktif ✓');
+
 
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {
