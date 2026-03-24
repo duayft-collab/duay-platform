@@ -2478,10 +2478,16 @@ function _pfAttachSmartDate() {
   inp.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key==='Tab'){const p=window.smartDateParse(inp.value);if(p)inp.value=p;} });
 }
 // openAddTask / editTask hook — smart date attach
-const _pfOrigOpenAdd  = openAddTask;
-const _pfOrigEditTask = editTask;
-function openAddTask() { _pfOrigOpenAdd(); setTimeout(_pfAttachSmartDate,200); }
-function editTask(id)  { _pfOrigEditTask(id); setTimeout(_pfAttachSmartDate,200); }
+// NOT: function hoisting sorununu önlemek için arrow function kullan
+const _pfSmartOpenAdd = function() {
+  // Orijinal openAddTask'ı çağır (window üzerinden, override'dan önce kaydedilmiş)
+  if (window._pfRealOpenAdd) { window._pfRealOpenAdd(); }
+  setTimeout(_pfAttachSmartDate, 200);
+};
+const _pfSmartEditTask = function(id) {
+  if (window._pfRealEditTask) { window._pfRealEditTask(id); }
+  setTimeout(_pfAttachSmartDate, 200);
+};
 
 // ════════════════════════════════════════════════════════════════
 // 7. GÖREV YORUMU & GÜNCELLEME AKIŞI (Task Log)
@@ -2927,8 +2933,12 @@ window.getPusDayTotal  = function() {
   return mins>=60 ? Math.floor(mins/60)+' saat'+(mins%60?' '+mins%60+' dk':'') : mins+' dk';
 };
 window.renderFocusPanel = renderFocusPanel;
-  window.openAddTask           = openAddTask;
-  window.editTask              = editTask;
+  // Orijinal fonksiyonları _pfReal* olarak kaydet (hoisting öncesi)
+  window._pfRealOpenAdd        = openAddTask;   // satır 1405'teki orijinal
+  window._pfRealEditTask       = editTask;      // satır 1431'deki orijinal
+  // Smart date wrapper'ları global yap
+  window.openAddTask           = _pfSmartOpenAdd;
+  window.editTask              = _pfSmartEditTask;
   window.saveTask              = saveTask;
   window.delTask               = delTask;
   window.toggleTask            = toggleTask;

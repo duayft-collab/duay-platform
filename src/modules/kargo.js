@@ -30,10 +30,10 @@ const KTN_TRACKING_URLS = {
 
 let KRG_KONTEYN_TIMER = null;
 let KARGO_VIEW = localStorage.getItem('ak_kargo_view') || 'card';
-if (typeof KARGO_FILTER === 'undefined') var KARGO_FILTER = 'all';
+if (typeof window.KARGO_FILTER === 'undefined') window.KARGO_FILTER = 'all';
 
 // ── Yardımcılar ───────────────────────────────────────────────────
-function _isAdminK() { return window.isAdmin?.() || window.Auth?.getCU?.()?.role === 'admin' || window.Auth?.getCU?.()?.role === 'manager'; }
+function _isAdminKargo() { return window.Auth?.getCU?.()?.role === "admin" || window.Auth?.getCU?.()?.role === "manager"; }
 function _getCUK()   { return window.Auth?.getCU?.(); }
 function _nowTsK()   { return typeof nowTs === 'function' ? nowTs() : new Date().toLocaleString('tr-TR'); }
 
@@ -103,7 +103,7 @@ function _clearKargoFilters() {
   const ids = ['krg-search','krg-date-from','krg-date-to'];
   ids.forEach(id => { const el = g(id); if (el) el.value = ''; });
   const sort = g('krg-sort'); if (sort) sort.value = 'date-desc';
-  KARGO_FILTER = 'all';
+  window.KARGO_FILTER = 'all';
   document.querySelectorAll('#panel-kargo .chip[data-kf]').forEach(b => {
     b.classList.toggle('on', b.dataset.kf === 'all');
   });
@@ -130,11 +130,11 @@ function renderKargo() {
   const sortBy   = g('krg-sort')?.value       || 'date-desc';
 
   let fl = kargo.filter(k => {
-    if (KARGO_FILTER === 'gelen'  && k.dir    !== 'gelen')  return false;
-    if (KARGO_FILTER === 'giden'  && k.dir    !== 'giden')  return false;
-    if (KARGO_FILTER === 'bekle'  && k.status !== 'bekle')  return false;
-    if (KARGO_FILTER === 'yolda'  && k.status !== 'yolda')  return false;
-    if (KARGO_FILTER === 'teslim' && k.status !== 'teslim') return false;
+    if (window.KARGO_FILTER === 'gelen'  && k.dir    !== 'gelen')  return false;
+    if (window.KARGO_FILTER === 'giden'  && k.dir    !== 'giden')  return false;
+    if (window.KARGO_FILTER === 'bekle'  && k.status !== 'bekle')  return false;
+    if (window.KARGO_FILTER === 'yolda'  && k.status !== 'yolda')  return false;
+    if (window.KARGO_FILTER === 'teslim' && k.status !== 'teslim') return false;
     if (search && !(
       (k.firm||'').toLowerCase().includes(search) ||
       (k.from||'').toLowerCase().includes(search) ||
@@ -257,7 +257,7 @@ function _renderKargoTable(fl, users, today, cont) {
       + '<td><div style="display:flex;gap:4px">'
         + (k.status !== 'teslim' ? '<button class="btn btns btng" onclick="Kargo.markTeslim(' + k.id + ')" style="font-size:11px">✓</button>' : '')
         + '<button class="btn btns" onclick="Kargo.openModal(' + k.id + ')" style="font-size:11px">✏️</button>'
-        + (_isAdminK() ? '<button class="btn btns btnd" onclick="Kargo.del(' + k.id + ')" style="font-size:11px">🗑</button>' : '')
+        + (window.isAdmin?.() ? '<button class="btn btns btnd" onclick="Kargo.del(' + k.id + ')" style="font-size:11px">🗑</button>' : '')
       + '</div></td>'
     + '</tr>';
   }).join('');
@@ -332,7 +332,7 @@ function saveKargo() {
 }
 
 function delKargo(id) {
-  if (!_isAdminK()) { window.toast?.('Yetki yok', 'err'); return; }
+  if (!window.isAdmin?.()) { window.toast?.('Yetki yok', 'err'); return; }
   if (!confirm('Bu kargo kaydını silmek istediğinizden emin misiniz?')) return;
   storeKargo(loadKargo().filter(x => x.id !== id));
   renderKargo();
@@ -478,11 +478,11 @@ function printKargoRapor() {
 
   // Aktif filtre uygula
   let fl = kargo;
-  if (KARGO_FILTER === 'gelen')  fl = fl.filter(k => k.dir    === 'gelen');
-  if (KARGO_FILTER === 'giden')  fl = fl.filter(k => k.dir    === 'giden');
-  if (KARGO_FILTER === 'bekle')  fl = fl.filter(k => k.status === 'bekle');
-  if (KARGO_FILTER === 'yolda')  fl = fl.filter(k => k.status === 'yolda');
-  if (KARGO_FILTER === 'teslim') fl = fl.filter(k => k.status === 'teslim');
+  if (window.KARGO_FILTER === 'gelen')  fl = fl.filter(k => k.dir    === 'gelen');
+  if (window.KARGO_FILTER === 'giden')  fl = fl.filter(k => k.dir    === 'giden');
+  if (window.KARGO_FILTER === 'bekle')  fl = fl.filter(k => k.status === 'bekle');
+  if (window.KARGO_FILTER === 'yolda')  fl = fl.filter(k => k.status === 'yolda');
+  if (window.KARGO_FILTER === 'teslim') fl = fl.filter(k => k.status === 'teslim');
 
   const rows = fl.map(k => {
     const u   = users.find(x => x.id === k.uid) || { name: '—' };
@@ -819,7 +819,7 @@ function toggleKonteynStep(id, key) {
 }
 
 function delKonteyn(id) {
-  if (!_isAdminK()) return;
+  if (!window.isAdmin?.()) return;
   if (!confirm('Konteyner silinsin mi?')) return;
   storeKonteyn(loadKonteyn().filter(x => x.id !== id));
   renderKonteyn();
@@ -891,7 +891,7 @@ function renderKargoFirmaList() {
   cont.innerHTML = firms.map(f =>
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--b)">'
     + '<span style="font-size:13px">🚚 ' + f + '</span>'
-    + (_isAdminK() ? '<button class="btn btns btnd" onclick="delKargoFirma(\'' + f + '\')">🗑</button>' : '')
+    + (window.isAdmin?.() ? '<button class="btn btns btnd" onclick="delKargoFirma(\'' + f + '\')">🗑</button>' : '')
     + '</div>'
   ).join('');
   const sel = g('krg-firm');
@@ -903,14 +903,14 @@ function addKargoFirma() {
   if (!name) { window.toast?.('Firma adı zorunludur', 'err'); return; }
   const firms = loadKargoFirmalar();
   if (firms.includes(name)) { window.toast?.('Bu firma zaten mevcut', 'err'); return; }
-  if (!_isAdminK()) { window.toast?.('Ekleme talebi yöneticiye iletildi', 'ok'); window.closeMo?.('mo-krg-firma'); return; }
+  if (!window.isAdmin?.()) { window.toast?.('Ekleme talebi yöneticiye iletildi', 'ok'); window.closeMo?.('mo-krg-firma'); return; }
   firms.push(name); storeKargoFirmalar(firms); renderKargoFirmaList();
   g('krg-firma-add-row') && (g('krg-firma-add-row').style.display = 'none');
   window.toast?.(name + ' eklendi ✓', 'ok');
 }
 
 function delKargoFirma(name) {
-  if (!_isAdminK()) { window.toast?.('Yetki yok', 'err'); return; }
+  if (!window.isAdmin?.()) { window.toast?.('Yetki yok', 'err'); return; }
   if (!confirm('"' + name + '" kargo firmasını silmek istediğinizden emin misiniz?')) return;
   storeKargoFirmalar(loadKargoFirmalar().filter(f => f !== name));
   renderKargoFirmaList();
@@ -1047,7 +1047,7 @@ function updKargoSt(id) {
 }
 
 function permDeleteKonteyn(id) {
-  if (!_isAdminK()) return;
+  if (!window.isAdmin?.()) return;
   if (!confirm('Arşivlenen konteyner kalıcı silinsin mi?')) return;
   storeKonteyn(loadKonteyn().filter(x => x.id !== id));
   renderKonteyn(); window.toast?.('Silindi', 'ok');
@@ -1142,8 +1142,9 @@ if (typeof module !== 'undefined' && module.exports) {
   window.checkAllKonteyn      = checkAllKonteyn;
   window.toggleKonteynStep    = toggleKonteynStep;
 
+  const _localRenderKargo = renderKargo;
   window.renderKargo = function(...args) {
-    try { return renderKargo(...args); }
+    try { return _localRenderKargo(...args); }
     catch(err) {
       console.error('[renderKargo]', err);
       const el = document.getElementById('kargo-list');
@@ -1151,8 +1152,10 @@ if (typeof module !== 'undefined' && module.exports) {
       window.toast?.('Panel yüklenemedi', 'err');
     }
   };
+  // renderKonteyn'i local referansa al — window.renderKonteyn override'dan önce
+  const _localRenderKonteyn = renderKonteyn;
   window.renderKonteyn = function(...args) {
-    try { return renderKonteyn(...args); }
+    try { return _localRenderKonteyn(...args); }
     catch(err) {
       console.error('[renderKonteyn]', err);
       const el = document.getElementById('konteyn-list');
