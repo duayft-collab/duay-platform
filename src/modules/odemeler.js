@@ -19,14 +19,26 @@ const _todayStr = () => new Date().toISOString().slice(0,10);
 // ════════════════════════════════════════════════════════════════
 
 const ODM_CATS = {
-  kira:     { l:'Kira',           ic:'🏢', c:'ba' },
-  fatura:   { l:'Fatura',         ic:'💡', c:'bb' },
-  abonelik: { l:'Abonelik',       ic:'🔄', c:'bp' },
-  vergi:    { l:'Vergi/SGK',      ic:'📋', c:'br' },
-  sigorta:  { l:'Sigorta',        ic:'🛡️', c:'ba' },
-  kredi:    { l:'Kredi',          ic:'🏦', c:'bb' },
-  maas:     { l:'Maaş/Personel',  ic:'👥', c:'bg' },
-  diger:    { l:'Diğer',          ic:'📌', c:'bg' },
+  kira:      { l:'Kira',           ic:'🏢', c:'ba' },
+  fatura:    { l:'Fatura',         ic:'💡', c:'bb' },
+  abonelik:  { l:'Abonelik',       ic:'🔄', c:'bp' },
+  kredi_k:   { l:'Kredi Kartı',    ic:'💳', c:'bp' },
+  vergi:     { l:'Vergi/SGK',      ic:'📋', c:'br' },
+  sigorta:   { l:'Sigorta',        ic:'🛡️', c:'ba' },
+  kredi:     { l:'Kredi',          ic:'🏦', c:'bb' },
+  maas:      { l:'Maaş/Personel',  ic:'👥', c:'bg' },
+  diger:     { l:'Diğer',          ic:'📌', c:'bg' },
+};
+
+// Abonelik alt tipleri
+const ODM_ABONE_TYPES = {
+  su:        { l:'Su',        ic:'💧' },
+  elektrik:  { l:'Elektrik',  ic:'⚡' },
+  dogalgaz:  { l:'Doğalgaz',  ic:'🔥' },
+  telefon:   { l:'Telefon',   ic:'📱' },
+  internet:  { l:'İnternet',  ic:'🌐' },
+  yazilim:   { l:'Yazılım',   ic:'💻' },
+  diger:     { l:'Diğer',     ic:'🔄' },
 };
 const ODM_FREQ = {
   haftalik: 'Haftalık',
@@ -106,25 +118,29 @@ function _injectOdmPanel() {
 
   panel.innerHTML = [
 
-    // Header
-    '<div class="ph">',
-      '<div>',
-        '<div class="pht">💳 Rutin Ödemeler</div>',
-        '<div class="phs">Periyodik ödeme takibi — alarm, dekont, sorumluluk atama</div>',
+    // ── YENİ TOPBAR ──
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">',
+      '<div style="display:flex;align-items:center;gap:10px">',
+        '<div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--t)">',
+          '<svg width="18" height="18" fill="none" viewBox="0 0 18 18"><rect x="1" y="3" width="16" height="12" rx="2.5" stroke="var(--ac)" stroke-width="1.5"/><path d="M1 7h16" stroke="var(--ac)" stroke-width="1.5"/><circle cx="5" cy="11" r="1.2" fill="var(--ac)"/></svg>',
+          'Rutin Ödemeler',
+        '</div>',
+        // Sekme filtreleri
+        '<div style="display:flex;background:var(--s2);border-radius:8px;padding:2px;gap:1px;margin-left:16px">',
+          '<button id="odm-tab-all" onclick="setOdmTab(\'all\')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;background:var(--ac);color:#fff;font-family:inherit;font-weight:500">Tümü</button>',
+          '<button id="odm-tab-abonelik" onclick="setOdmTab(\'abonelik\')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;background:none;color:var(--t2);font-family:inherit">Abonelikler</button>',
+          '<button id="odm-tab-kredi_k" onclick="setOdmTab(\'kredi_k\')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;background:none;color:var(--t2);font-family:inherit">Kredi Kartları</button>',
+          '<button id="odm-tab-bekliyor" onclick="setOdmTab(\'bekliyor\')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;background:none;color:var(--t2);font-family:inherit">Bekleyen</button>',
+          '<button id="odm-tab-gecikti" onclick="setOdmTab(\'gecikti\')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;background:none;color:#EF4444;font-family:inherit">Gecikmiş</button>',
+        '</div>',
       '</div>',
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
-        '<button class="btn btns" onclick="exportOdmXlsx()" style="border-radius:9px;gap:5px">',
-          '<svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v8M3 6l3.5 3.5L10 6M2 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-          'Excel İndir',
-        '</button>',
-        '<button class="btn btns" onclick="_go(\'odm-import-file\').click()" style="border-radius:9px;gap:5px">',
-          '<svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 9V1M3 4l3.5-3.5L10 4M2 11h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-          'Excel Yükle',
-        '</button>',
+      '<div style="display:flex;gap:8px;align-items:center">',
+        '<button class="btn btns" onclick="exportOdmXlsx()" style="border-radius:8px;font-size:11px">Excel İndir</button>',
+        '<button class="btn btns" onclick="_go(\'odm-import-file\').click()" style="border-radius:8px;font-size:11px">Excel Yükle</button>',
         '<input type="file" id="odm-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="processOdmImport(this)">',
-        '<button class="btn btnp" onclick="openOdmModal(null)" style="border-radius:9px;gap:6px">',
+        '<button class="btn btnp" onclick="openOdmModal(null)" style="border-radius:8px;font-size:12px;font-weight:600;gap:6px">',
           '<svg width="11" height="11" fill="none" viewBox="0 0 11 11"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-          'Ödeme Ekle',
+          '+ Ödeme Ekle',
         '</button>',
       '</div>',
     '</div>',
@@ -192,6 +208,130 @@ function _fillOdmUserFilter() {
     + users.map(u => `<option value="${u.id}"${cur==u.id?' selected':''}>${u.name}</option>`).join('');
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// SEKME YÖNETİMİ  [v2.0]
+// ════════════════════════════════════════════════════════════════
+let _odmCurrentTab = 'all';
+
+function setOdmTab(tab) {
+  _odmCurrentTab = tab;
+  // Buton stillerini güncelle
+  ['all','abonelik','kredi_k','bekliyor','gecikti'].forEach(t => {
+    const btn = _go('odm-tab-' + t);
+    if (!btn) return;
+    if (t === tab) {
+      btn.style.background = t === 'gecikti' ? '#EF4444' : 'var(--ac)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'none';
+      btn.style.color = t === 'gecikti' ? '#EF4444' : 'var(--t2)';
+    }
+  });
+  renderOdemeler();
+}
+
+// ════════════════════════════════════════════════════════════════
+// KREDİ KARTI ÖZEL KART  [v2.0]
+// ════════════════════════════════════════════════════════════════
+function _renderKrediKarti(o, users) {
+  const today   = _todayStr();
+  const todayD  = new Date(today);
+  const kd      = o.kesiimTarihi || '';  // hesap kesim günü
+  const od      = o.odemeGunu    || '';  // ödeme günü
+  const limit   = parseFloat(o.limit  || 0);
+  const bakiye  = parseFloat(o.bakiye || 0);
+  const kul     = limit > 0 ? Math.round(bakiye / limit * 100) : 0;
+  const kulColor = kul >= 80 ? '#EF4444' : kul >= 50 ? '#F97316' : '#10B981';
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:0;margin-bottom:10px;overflow:hidden;transition:box-shadow .15s';
+  card.onmouseenter = () => card.style.boxShadow = '0 4px 16px rgba(0,0,0,.08)';
+  card.onmouseleave = () => card.style.boxShadow = '';
+
+  card.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:16px 20px;color:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${o.name}</div>
+          <div style="font-size:11px;opacity:.7">${o.banka||'Banka'} • ${o.sonDortHane?'**** '+o.sonDortHane:''}</div>
+        </div>
+        <svg width="32" height="24" viewBox="0 0 32 24" fill="none"><rect width="32" height="24" rx="4" fill="rgba(255,255,255,.15)"/><circle cx="12" cy="12" r="8" fill="#EB001B" opacity=".8"/><circle cx="20" cy="12" r="8" fill="#F79E1B" opacity=".8"/></svg>
+      </div>
+      <div style="display:flex;gap:24px">
+        <div>
+          <div style="font-size:10px;opacity:.6">Limit</div>
+          <div style="font-size:15px;font-weight:600">₺${limit.toLocaleString('tr-TR')}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;opacity:.6">Kullanılan</div>
+          <div style="font-size:15px;font-weight:600">₺${bakiye.toLocaleString('tr-TR')}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;opacity:.6">Kullanım</div>
+          <div style="font-size:15px;font-weight:600;color:${kulColor === '#EF4444'?'#fca5a5':kulColor==='#F97316'?'#fed7aa':'#86efac'}">${kul}%</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 20px">
+      <div style="height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-bottom:12px">
+        <div style="height:100%;width:${kul}%;background:${kulColor};border-radius:99px;transition:width .5s"></div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--t3)">Hesap Kesim</div><div style="font-size:12px;font-weight:600;color:var(--t)">${kd ? 'Her ayın '+kd+'. günü' : '—'}</div></div>
+        <div><div style="font-size:10px;color:var(--t3)">Son Ödeme</div><div style="font-size:12px;font-weight:600;color:${o.due&&o.due<today?'#EF4444':'var(--t)'};">${o.due||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--t3)">Minimum Ödeme</div><div style="font-size:12px;font-weight:600;color:var(--t)">₺${(parseFloat(o.minOdeme||0)).toLocaleString('tr-TR')}</div></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${!o.paid ? `<button onclick="markOdmPaid(${o.id})" class="btn btnp" style="font-size:11px;border-radius:8px;padding:5px 12px">✓ Ödendi</button>` : `<button onclick="toggleOdmPaid(${o.id})" class="btn btns" style="font-size:11px;border-radius:8px;padding:5px 12px">↩ Geri Al</button>`}
+        ${o.paid && !o.receipt ? `<button onclick="uploadOdmReceipt(${o.id})" class="btn btns" style="font-size:11px;border-radius:8px;padding:5px 12px;color:#D97706">📎 Dekont</button>` : ''}
+        <button onclick="openOdmModal(${o.id})" class="btn btns" style="font-size:11px;padding:5px 10px;border-radius:8px">✏️ Düzenle</button>
+      </div>
+    </div>`;
+
+  return card;
+}
+
+// ════════════════════════════════════════════════════════════════
+// ABONELİK ÖZEL KART  [v2.0]
+// ════════════════════════════════════════════════════════════════
+function _renderAbonelikKart(o, users, today, todayD) {
+  const status  = o.paid ? 'odendi' : (o.due && o.due < today ? 'gecikti' : (o.due && Math.ceil((new Date(o.due)-todayD)/86400000) <= 7 ? 'yaklasan' : 'bekliyor'));
+  const sta     = ODM_STATUS[status];
+  const dueD    = o.due ? new Date(o.due) : null;
+  const diff    = dueD ? Math.ceil((dueD - todayD) / 86400000) : null;
+  const abone   = ODM_ABONE_TYPES[o.abonelikTipi] || ODM_ABONE_TYPES.diger;
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;transition:box-shadow .15s';
+  if (status === 'gecikti') card.style.borderColor = 'var(--rd)';
+  if (status === 'yaklasan') card.style.borderColor = 'var(--am)';
+  card.onmouseenter = () => card.style.boxShadow = '0 2px 12px rgba(0,0,0,.07)';
+  card.onmouseleave = () => card.style.boxShadow = '';
+
+  card.innerHTML = `
+    <div style="width:44px;height:44px;border-radius:12px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${abone.ic}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--t)">${o.name}</span>
+        <span style="font-size:10px;padding:1px 7px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5">${abone.l}</span>
+        <span class="badge ${sta.cls}" style="font-size:10px">${sta.ic} ${sta.l}</span>
+        ${o.sozlesme ? '<span style="font-size:10px;color:var(--ac);cursor:pointer" onclick="viewOdmReceipt('+o.id+')">📄 Sözleşme</span>' : ''}
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:14px;font-weight:700;color:var(--t)">₺${(parseFloat(o.amount)||0).toLocaleString('tr-TR',{minimumFractionDigits:2})}<span style="font-size:10px;font-weight:400;color:var(--t3)">/${ODM_FREQ[o.freq]||'ay'}</span></span>
+        <span style="font-size:11px;color:${status==='gecikti'?'var(--rdt)':status==='yaklasan'?'var(--amt)':'var(--t3)'}">📅 ${o.due||'—'} ${diff!==null?'('+( diff<0?Math.abs(diff)+' gün gecikti':diff===0?'Bugün!':diff+' gün kaldı')+')'  :''}</span>
+        ${o.sozlesmeBitis ? '<span style="font-size:10px;color:var(--t3)">Sözleşme bitiş: '+o.sozlesmeBitis+'</span>' : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      ${!o.paid ? `<button onclick="markOdmPaid(${o.id})" class="btn btnp" style="font-size:11px;border-radius:7px;padding:4px 10px">✓ Ödendi</button>` : ''}
+      <button onclick="openOdmModal(${o.id})" class="btn btns" style="font-size:11px;padding:4px 8px;border-radius:7px">✏️</button>
+    </div>`;
+
+  return card;
+}
+
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 4 — RENDER
 // ════════════════════════════════════════════════════════════════
@@ -220,7 +360,15 @@ function renderOdemeler() {
     return 'bekliyor';
   }
 
+  // Tab filtresi
+  const today2 = _todayStr();
   let items = all.filter(o => {
+    // Tab filtresi
+    if (_odmCurrentTab === 'abonelik' && o.cat !== 'abonelik') return false;
+    if (_odmCurrentTab === 'kredi_k'  && o.cat !== 'kredi_k')  return false;
+    if (_odmCurrentTab === 'bekliyor' && (_getStatus(o) !== 'bekliyor' && _getStatus(o) !== 'yaklasan')) return false;
+    if (_odmCurrentTab === 'gecikti'  && _getStatus(o) !== 'gecikti')  return false;
+
     if (q && !o.name.toLowerCase().includes(q) && !(o.note||'').toLowerCase().includes(q)) return false;
     if (catF  && o.cat  !== catF)  return false;
     if (freqF && o.freq !== freqF) return false;
@@ -259,6 +407,17 @@ function renderOdemeler() {
   const frag = document.createDocumentFragment();
 
   items.forEach(o => {
+    // Kredi kartı özel render
+    if (o.cat === 'kredi_k') {
+      frag.appendChild(_renderKrediKarti(o, users));
+      return;
+    }
+    // Abonelik özel render
+    if (o.cat === 'abonelik') {
+      frag.appendChild(_renderAbonelikKart(o, users, today, todayD));
+      return;
+    }
+
     const cat    = ODM_CATS[o.cat]  || ODM_CATS.diger;
     const freq   = ODM_FREQ[o.freq] || '—';
     const status = _getStatus(o);
@@ -441,6 +600,52 @@ function openOdmModal(id) {
   setTimeout(() => { mo.classList.add('open'); _go('odm-f-name')?.focus(); }, 10);
 }
 
+
+
+// ════════════════════════════════════════════════════════════════
+// MODAL KATEGORI DEĞİŞİKLİĞİ  [v2.0]
+// ════════════════════════════════════════════════════════════════
+function _onOdmCatChange() {
+  const cat = _go('odm-f-cat')?.value;
+  const kEl = _go('odm-kredi-extra');
+  const aEl = _go('odm-abone-extra');
+  if (kEl) kEl.style.display = cat === 'kredi_k'  ? 'flex' : 'none';
+  if (aEl) aEl.style.display = cat === 'abonelik' ? 'flex' : 'none';
+}
+
+function uploadOdmSozlesme() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.pdf,image/*';
+  inp.onchange = function() {
+    const file = this.files[0]; if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { window.toast?.('Dosya 10MB den kucuk olmali', 'err'); return; }
+    const r = new FileReader();
+    r.onload = e => {
+      const dataEl = _go('odm-f-sozlesme-data');
+      const nameEl = _go('odm-f-sozlesme-name');
+      if (dataEl) dataEl.value = e.target.result;
+      if (nameEl) nameEl.value = file.name;
+      window.toast?.('Döküman hazır — kaydetmeyi unutmayın', 'ok');
+    };
+    r.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+function viewOdmSozlesme(id) {
+  const o = (window.loadOdm ? loadOdm() : []).find(x => x.id === id);
+  if (!o || !o.sozlesme) return;
+  const win = window.open('', '_blank');
+  win.document.write('<html><body style="margin:0">'
+    + (o.sozlesme.startsWith('data:image')
+      ? '<img src="' + o.sozlesme + '" style="max-width:100%">'
+      : '<iframe src="' + o.sozlesme + '" style="width:100vw;height:100vh;border:none"></iframe>')
+    + '</body></html>');
+}
+window.viewOdmSozlesme   = viewOdmSozlesme;
+window.uploadOdmSozlesme = uploadOdmSozlesme;
+window._onOdmCatChange   = _onOdmCatChange;
+
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 6 — CRUD
 // ════════════════════════════════════════════════════════════════
@@ -450,9 +655,10 @@ function saveOdm() {
   if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
   const eid  = parseInt(_go('odm-f-eid')?.value || '0');
   const d    = window.loadOdm ? loadOdm() : [];
+  const cat = _go('odm-f-cat')?.value || 'diger';
   const entry = {
     name,
-    cat:        _go('odm-f-cat')?.value      || 'diger',
+    cat,
     freq:       _go('odm-f-freq')?.value     || 'aylik',
     amount:     parseFloat(_go('odm-f-amount')?.value || '0') || 0,
     due:        _go('odm-f-due')?.value      || '',
@@ -462,7 +668,27 @@ function saveOdm() {
     assignedTo: parseInt(_go('odm-f-assigned')?.value || '0') || null,
     ts:         _nowTso(),
     updatedBy:  _CUo()?.id,
+    // Kredi kartı alanları
+    ...(cat === 'kredi_k' ? {
+      banka:        _go('odm-f-banka')?.value   || '',
+      sonDortHane:  _go('odm-f-son4')?.value    || '',
+      limit:        parseFloat(_go('odm-f-limit')?.value  || '0') || 0,
+      bakiye:       parseFloat(_go('odm-f-bakiye')?.value || '0') || 0,
+      minOdeme:     parseFloat(_go('odm-f-min')?.value    || '0') || 0,
+      kesiimTarihi: _go('odm-f-kesim')?.value  || '',
+      odemeGunu:    _go('odm-f-odgun')?.value   || '',
+    } : {}),
+    // Abonelik alanları
+    ...(cat === 'abonelik' ? {
+      abonelikTipi:  _go('odm-f-abtype')?.value || 'diger',
+      sozlesmeBitis: _go('odm-f-sozbitis')?.value || '',
+      sozlesme:      _go('odm-f-sozlesme-data')?.value || undefined,
+      sozlesmeName:  _go('odm-f-sozlesme-name')?.value || undefined,
+    } : {}),
   };
+  // sozlesme undefined ise sil
+  if (entry.sozlesme === undefined) delete entry.sozlesme;
+  if (entry.sozlesmeName === undefined) delete entry.sozlesmeName;
   if (eid) {
     const o = d.find(x => x.id === eid);
     if (o) {
