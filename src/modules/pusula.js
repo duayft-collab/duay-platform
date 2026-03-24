@@ -3602,6 +3602,433 @@ if (window.Pusula) {
 console.info('[Pusula v8.5] Modernizasyon aktif ✓');
 
 
+
+// ════════════════════════════════════════════════════════════════
+// PUSULA v8.5 — PERSONELİŞ YÜKÜ & PERFORMANS MODÜLü
+// ════════════════════════════════════════════════════════════════
+
+let _wlPanelOpen = false;
+let _wlTab = 'workload'; // 'workload' | 'perf' | 'trends'
+
+/**
+ * Ana render — panel-pusula içindeki #pus-workload-panel'e yazar
+ */
+function renderWorkloadPanel() {
+  const cont = g('pus-workload-panel');
+  if (!cont) return;
+
+  const users   = loadUsers().filter(u => u.status === 'active');
+  const tasks   = loadTasks();
+  const todayS  = new Date().toISOString().slice(0, 10);
+
+  // ── Veri hesapla ────────────────────────────────────────────
+  const userData = users.map(u => {
+    const myTasks    = tasks.filter(t => t.uid === u.id);
+    const active     = myTasks.filter(t => !t.done && t.status !== 'done');
+    const done       = myTasks.filter(t => t.done || t.status === 'done');
+    const overdue    = active.filter(t => t.due && t.due < todayS);
+    const critical   = active.filter(t => t.pri === 1);
+    const inprogress = active.filter(t => t.status === 'inprogress');
+    const review     = active.filter(t => t.status === 'review');
+
+    // Bu ay tamamlanan
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const doneThisMonth = done.filter(t => (t.created_at || t.due || '').slice(0, 7) === thisMonth);
+
+    // Ortalama tamamlama süresi (gün)
+    const avgDays = done.filter(t => t.created_at && t.due).reduce((acc, t, _, arr) => {
+      const diff = (new Date(t.due) - new Date(t.created_at.slice(0,10))) / 86400000;
+      return acc + (isNaN(diff) ? 0 : Math.abs(diff)) / arr.length;
+    }, 0);
+
+    // Tamamlama oranı
+    const completionRate = myTasks.length > 0
+      ? Math.round(done.length / myTasks.length * 100) : 0;
+
+    // İş yükü skoru (daha yüksek = daha yüklü)
+    const workloadScore = active.length + (critical.length * 2) + (overdue.length * 3);
+
+    // Verimlilik skoru (tamamlama oranı - gecikme oranı)
+    const efficiencyScore = Math.max(0, Math.min(100,
+      completionRate - (myTasks.length > 0 ? Math.round(overdue.length / myTasks.length * 30) : 0)
+    ));
+
+    // Trend: son 7 günde tamamlanan
+    const week7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const recentDone = done.filter(t => (t.created_at || '') > week7).length;
+
+    return {
+      user: u, myTasks, active, done, overdue, critical,
+      inprogress, review, doneThisMonth, avgDays,
+      completionRate, workloadScore, efficiencyScore, recentDone
+    };
+  }).sort((a, b) => b.workloadScore - a.workloadScore);
+
+  const maxWorkload = Math.max(...userData.map(d => d.workloadScore), 1);
+  const maxTasks    = Math.max(...userData.map(d => d.active.length), 1);
+
+  cont.innerHTML = _buildWorkloadHTML(userData, maxWorkload, maxTasks, todayS);
+
+  // Event: tab switch
+  cont.querySelectorAll('[data-wl-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _wlTab = btn.dataset.wlTab;
+      cont.querySelectorAll('[data-wl-tab]').forEach(b => {
+        b.style.background = b === btn ? 'var(--ac)' : 'var(--s2)';
+        b.style.color = b === btn ? '#fff' : 'var(--t3)';
+      });
+      cont.querySelector('#pus-wl-content').innerHTML =
+        _wlTab === 'workload' ? _buildWorkloadRows(userData, maxWorkload, maxTasks, todayS)
+        : _wlTab === 'perf'    ? _buildPerfRows(userData)
+        : _buildTrendsRows(userData);
+    });
+  });
+}
+
+function _buildWorkloadHTML(userData, maxWorkload, maxTasks, todayS) {
+  const cu = _getCU();
+  const isAdm = window.isAdmin?.();
+
+  return `
+  <div class="pusula-v85-wl-panel">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:15px;font-weight:700;color:var(--t)">👥 Personel Analizi</div>
+        <div style="font-size:11px;color:var(--t3)">${userData.length} aktif personel</div>
+      </div>
+      <!-- Tab bar -->
+      <div style="display:flex;background:var(--s2);border-radius:10px;padding:3px;gap:2px">
+        <button data-wl-tab="workload" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">⚖️ İş Yükü</button>
+        <button data-wl-tab="perf" style="background:var(--s2);color:var(--t3);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">📊 Performans</button>
+        <button data-wl-tab="trends" style="background:var(--s2);color:var(--t3);border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">📈 Trend</button>
+      </div>
+    </div>
+
+    <!-- Özet kartlar -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+      ${_buildSummaryCards(userData)}
+    </div>
+
+    <!-- İçerik alanı -->
+    <div id="pus-wl-content">
+      ${_buildWorkloadRows(userData, maxWorkload, maxTasks, todayS)}
+    </div>
+  </div>`;
+}
+
+function _buildSummaryCards(userData) {
+  const totalActive   = userData.reduce((a, d) => a + d.active.length, 0);
+  const totalOverdue  = userData.reduce((a, d) => a + d.overdue.length, 0);
+  const avgCompletion = userData.length
+    ? Math.round(userData.reduce((a, d) => a + d.completionRate, 0) / userData.length) : 0;
+  const topPerf = userData.sort((a,b) => b.efficiencyScore - a.efficiencyScore)[0];
+
+  return `
+    <div class="pusula-v85-wl-summary-card">
+      <div class="pusula-v85-wl-sc-val" style="color:var(--ac)">${totalActive}</div>
+      <div class="pusula-v85-wl-sc-lbl">Aktif Görev</div>
+    </div>
+    <div class="pusula-v85-wl-summary-card">
+      <div class="pusula-v85-wl-sc-val" style="color:${totalOverdue > 0 ? 'var(--rd)' : 'var(--gr)'}">${totalOverdue}</div>
+      <div class="pusula-v85-wl-sc-lbl">Gecikmiş</div>
+    </div>
+    <div class="pusula-v85-wl-summary-card">
+      <div class="pusula-v85-wl-sc-val" style="color:${avgCompletion >= 70 ? 'var(--gr)' : avgCompletion >= 40 ? 'var(--am)' : 'var(--rd)'}">${avgCompletion}%</div>
+      <div class="pusula-v85-wl-sc-lbl">Ort. Tamamlama</div>
+    </div>
+    <div class="pusula-v85-wl-summary-card">
+      <div class="pusula-v85-wl-sc-val" style="color:var(--gr);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${topPerf?.user?.name || '—'}">${topPerf?.user?.name?.split(' ')[0] || '—'}</div>
+      <div class="pusula-v85-wl-sc-lbl">🏆 En Verimli</div>
+    </div>`;
+}
+
+function _buildWorkloadRows(userData, maxWorkload, maxTasks, todayS) {
+  if (!userData.length) return '<div style="padding:24px;text-align:center;color:var(--t3)">Personel bulunamadı</div>';
+
+  const rows = userData.map(d => {
+    const { user: u, active, done, overdue, critical, inprogress, review, workloadScore } = d;
+    const idx   = loadUsers().indexOf(loadUsers().find(x => x.id === u.id));
+    const avc   = window.AVC || window._getAVC?.() || [['#EEEDFE','#26215C']];
+    const c     = avc[Math.max(idx,0) % avc.length];
+    const av    = `<div style="width:32px;height:32px;border-radius:10px;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">${window.initials?.(u.name) || u.name.slice(0,2).toUpperCase()}</div>`;
+    const barW  = Math.round((workloadScore / maxWorkload) * 100);
+    const barColor = barW > 70 ? '#EF4444' : barW > 40 ? '#F59E0B' : '#10B981';
+    const load  = barW > 70 ? '🔴 Yüksek' : barW > 40 ? '🟡 Orta' : '🟢 Düşük';
+
+    return `
+    <div class="pusula-v85-wl-row" onclick="window._wlFilterByUser?.(${u.id}, '${u.name}')" title="${u.name} için görevleri filtrele">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+        ${av}
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600;color:var(--t)">${u.name}</span>
+            <span style="font-size:10px;padding:1px 7px;border-radius:5px;background:var(--s2);color:var(--t3);font-weight:600">${u.role === 'admin' ? '👑' : u.role === 'manager' ? '👔' : u.role === 'lead' ? '⭐' : '👤'} ${u.role}</span>
+            <span style="font-size:10px;padding:1px 7px;border-radius:5px;font-weight:700;background:${barW>70?'rgba(239,68,68,.1)':barW>40?'rgba(245,158,11,.1)':'rgba(16,185,129,.1)'};color:${barColor}">${load}</span>
+          </div>
+          <!-- Yük barı -->
+          <div style="height:5px;background:var(--b);border-radius:4px;overflow:hidden;margin-bottom:6px">
+            <div style="height:100%;background:${barColor};border-radius:4px;width:${barW}%;transition:width .5s ease"></div>
+          </div>
+          <!-- Chip'ler -->
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${active.length ? `<span class="pusula-v85-wl-chip pusula-v85-wl-chip-blue">${active.length} aktif</span>` : ''}
+            ${inprogress.length ? `<span class="pusula-v85-wl-chip pusula-v85-wl-chip-purple">${inprogress.length} devam</span>` : ''}
+            ${review.length ? `<span class="pusula-v85-wl-chip pusula-v85-wl-chip-orange">${review.length} inceleme</span>` : ''}
+            ${critical.length ? `<span class="pusula-v85-wl-chip pusula-v85-wl-chip-red">⚠️ ${critical.length} kritik</span>` : ''}
+            ${overdue.length ? `<span class="pusula-v85-wl-chip pusula-v85-wl-chip-red">🕐 ${overdue.length} gecikmiş</span>` : ''}
+            ${done.length ? `<span class="pusula-v85-wl-chip pusula-v85-wl-chip-green">✅ ${done.length} bitti</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;padding-left:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--t);font-family:monospace">${active.length}</div>
+        <div style="font-size:10px;color:var(--t3)">aktif iş</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`;
+}
+
+function _buildPerfRows(userData) {
+  if (!userData.length) return '<div style="padding:24px;text-align:center;color:var(--t3)">Personel bulunamadı</div>';
+
+  // Sıralama: verimlilik skoruna göre
+  const sorted = [...userData].sort((a, b) => b.efficiencyScore - a.efficiencyScore);
+
+  const rows = sorted.map((d, rank) => {
+    const { user: u, active, done, overdue, completionRate, efficiencyScore, avgDays, doneThisMonth, recentDone } = d;
+    const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `${rank+1}.`;
+    const perf  = efficiencyScore >= 80 ? { label:'Mükemmel', color:'#10B981', bg:'rgba(16,185,129,.1)' }
+                : efficiencyScore >= 60 ? { label:'İyi',       color:'#3B82F6', bg:'rgba(59,130,246,.1)' }
+                : efficiencyScore >= 40 ? { label:'Orta',      color:'#F59E0B', bg:'rgba(245,158,11,.1)' }
+                : { label:'Gelişmeli',   color:'#EF4444', bg:'rgba(239,68,68,.1)' };
+
+    const avc = window.AVC || window._getAVC?.() || [['#EEEDFE','#26215C']];
+    const idx = loadUsers().indexOf(loadUsers().find(x => x.id === u.id));
+    const c   = avc[Math.max(idx,0) % avc.length];
+
+    return `
+    <div class="pusula-v85-wl-row" style="cursor:default">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+        <!-- Sıra -->
+        <div style="font-size:18px;width:28px;text-align:center;flex-shrink:0">${medal}</div>
+        <!-- Avatar -->
+        <div style="width:36px;height:36px;border-radius:11px;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">${window.initials?.(u.name)||u.name.slice(0,2).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600;color:var(--t)">${u.name}</span>
+            <span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${perf.bg};color:${perf.color}">${perf.label}</span>
+          </div>
+          <!-- Metrik grid -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div class="pusula-v85-perf-metric">
+              <div class="pusula-v85-perf-metric-val" style="color:${completionRate>=70?'#10B981':completionRate>=40?'#F59E0B':'#EF4444'}">${completionRate}%</div>
+              <div class="pusula-v85-perf-metric-lbl">Tamamlama</div>
+            </div>
+            <div class="pusula-v85-perf-metric">
+              <div class="pusula-v85-perf-metric-val">${doneThisMonth.length}</div>
+              <div class="pusula-v85-perf-metric-lbl">Bu ay</div>
+            </div>
+            <div class="pusula-v85-perf-metric">
+              <div class="pusula-v85-perf-metric-val" style="color:${overdue.length>0?'#EF4444':'#10B981'}">${overdue.length}</div>
+              <div class="pusula-v85-perf-metric-lbl">Gecikmiş</div>
+            </div>
+            <div class="pusula-v85-perf-metric">
+              <div class="pusula-v85-perf-metric-val">${avgDays > 0 ? avgDays.toFixed(1) : '—'}</div>
+              <div class="pusula-v85-perf-metric-lbl">Ort. Gün</div>
+            </div>
+          </div>
+          <!-- Verimlilik barı -->
+          <div style="margin-top:8px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:3px">
+              <span>Verimlilik Skoru</span>
+              <span style="font-weight:700;color:${perf.color}">${efficiencyScore}/100</span>
+            </div>
+            <div style="height:5px;background:var(--b);border-radius:4px;overflow:hidden">
+              <div style="height:100%;background:${perf.color};width:${efficiencyScore}%;border-radius:4px;transition:width .6s ease"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`;
+}
+
+function _buildTrendsRows(userData) {
+  // Son 7 gün günlük tamamlama trendi
+  const days = Array.from({length:7}, (_,i) => {
+    const d = new Date(Date.now() - (6-i)*86400000);
+    return {
+      label: ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][d.getDay()],
+      date:  d.toISOString().slice(0,10)
+    };
+  });
+
+  const tasks = loadTasks();
+  const users = loadUsers().filter(u => u.status === 'active');
+
+  // Her gün kaç görev tamamlandı
+  const dailyCounts = days.map(day => {
+    const count = tasks.filter(t =>
+      (t.done || t.status === 'done') &&
+      (t.created_at || '').slice(0,10) === day.date
+    ).length;
+    return { ...day, count };
+  });
+  const maxDay = Math.max(...dailyCounts.map(d => d.count), 1);
+
+  // Mini bar chart
+  const barChart = `
+  <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:12px">📆 Son 7 Gün — Tamamlanan Görevler</div>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:60px">
+      ${dailyCounts.map(d => `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:10px;color:${d.count>0?'var(--ac)':'var(--t3)'};font-weight:700">${d.count||''}</div>
+          <div style="width:100%;background:${d.count>0?'var(--ac)':'var(--b)'};border-radius:4px 4px 0 0;min-height:4px;height:${Math.max(4, Math.round(d.count/maxDay*48))}px;transition:height .4s ease"></div>
+          <div style="font-size:10px;color:var(--t3)">${d.label}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+
+  // Personel bazlı trend
+  const userTrends = [...userData]
+    .sort((a,b) => b.recentDone - a.recentDone)
+    .slice(0, 5)
+    .map(d => {
+      const { user: u, recentDone, done, active } = d;
+      const momentum = recentDone >= 3 ? '🚀' : recentDone >= 1 ? '📈' : '📉';
+      const avc = window.AVC || window._getAVC?.() || [['#EEEDFE','#26215C']];
+      const idx = users.indexOf(users.find(x => x.id === u.id));
+      const c   = avc[Math.max(idx,0) % avc.length];
+      return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
+        <div style="width:30px;height:30px;border-radius:9px;background:${c[0]};color:${c[1]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">${window.initials?.(u.name)||u.name.slice(0,2).toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:var(--t)">${u.name}</div>
+          <div style="font-size:11px;color:var(--t3)">Son 7 gün: <strong style="color:var(--t)">${recentDone}</strong> tamamlandı · Toplam: ${done.length} · Aktif: ${active.length}</div>
+        </div>
+        <div style="font-size:20px">${momentum}</div>
+      </div>`;
+    }).join('');
+
+  return barChart + `
+  <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px">
+    <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">🏃 Personel Momentum (Son 7 Gün)</div>
+    ${userTrends || '<div style="color:var(--t3);font-size:12px">Veri yok</div>'}
+  </div>`;
+}
+
+// ── Personele göre filtreleme ──────────────────────────────────
+window._wlFilterByUser = function(uid, name) {
+  const sel = g('pus-usel');
+  if (sel) {
+    sel.value = uid;
+    sel.style.display = '';
+    window.renderPusula?.();
+    window.toast?.(`👤 ${name} filtresi aktif`, 'ok');
+  }
+};
+
+// ── CSS ─────────────────────────────────────────────────────────
+(function _wlInjectCSS() {
+  if (document.getElementById('pusula-wl-css')) return;
+  const s = document.createElement('style');
+  s.id = 'pusula-wl-css';
+  s.textContent = `
+    .pusula-v85-wl-panel {
+      background: var(--sf);
+      border: 1px solid var(--b);
+      border-radius: 16px;
+      padding: 18px 20px;
+    }
+    .pusula-v85-wl-row {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .pusula-v85-wl-row:hover {
+      border-color: var(--ac);
+      box-shadow: 0 2px 12px rgba(99,102,241,.08);
+      transform: translateY(-1px);
+    }
+    .pusula-v85-wl-summary-card {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .pusula-v85-wl-sc-val {
+      font-size: 26px;
+      font-weight: 800;
+      font-family: monospace;
+      color: var(--t);
+      line-height: 1.1;
+    }
+    .pusula-v85-wl-sc-lbl {
+      font-size: 10px;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-top: 3px;
+    }
+    .pusula-v85-wl-chip {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .pusula-v85-wl-chip-blue   { background:rgba(59,130,246,.1);  color:#3B82F6; }
+    .pusula-v85-wl-chip-purple { background:rgba(139,92,246,.1);  color:#8B5CF6; }
+    .pusula-v85-wl-chip-orange { background:rgba(245,158,11,.1);  color:#D97706; }
+    .pusula-v85-wl-chip-red    { background:rgba(239,68,68,.1);   color:#EF4444; }
+    .pusula-v85-wl-chip-green  { background:rgba(16,185,129,.1);  color:#059669; }
+    .pusula-v85-perf-metric {
+      background: var(--sf);
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-align: center;
+    }
+    .pusula-v85-perf-metric-val {
+      font-size: 16px;
+      font-weight: 800;
+      font-family: monospace;
+      color: var(--t);
+    }
+    .pusula-v85-perf-metric-lbl {
+      font-size: 9px;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-top: 2px;
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── renderPusula hook'una bağla ─────────────────────────────────
+const _wlOrigRender = window.renderPusula;
+window.renderPusula = function() {
+  _wlOrigRender?.();
+  renderWorkloadPanel();
+};
+
+// Export
+window.renderWorkloadPanel = renderWorkloadPanel;
+console.info('[Pusula] İş Yükü & Performans paneli aktif ✓');
+
+
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Pusula;
