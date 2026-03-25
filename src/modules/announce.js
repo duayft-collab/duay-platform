@@ -57,7 +57,7 @@ function _injectAnnouncePanel() {
             <label class="fl">İçerik</label>
             <textarea class="fi" id="ann-body" rows="4" style="resize:vertical" placeholder="Duyuru detayı..."></textarea>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
             <div class="fg">
               <label class="fl">Tür</label>
               <select class="fi" id="ann-type">
@@ -73,6 +73,18 @@ function _injectAnnouncePanel() {
                 <option value="all">Tüm Personel</option>
                 <option value="admin">Sadece Yöneticiler</option>
                 <option value="staff">Personel</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">Departman</label>
+              <select class="fi" id="ann-dept">
+                <option value="">Tümü (genel)</option>
+                <option value="ik">İK</option>
+                <option value="finans">Finans</option>
+                <option value="operasyon">Operasyon</option>
+                <option value="satis">Satış</option>
+                <option value="lojistik">Lojistik</option>
+                <option value="teknik">Teknik</option>
               </select>
             </div>
           </div>
@@ -106,6 +118,27 @@ function renderAnnouncements() {
   const cu  = _CUa();
   if (!cu) return;
   let anns = loadAnn();
+  const nowISO = new Date().toISOString();
+
+  // 24 saat geçen sticky'leri temizle
+  let _stickyChanged = false;
+  anns.forEach(a => {
+    if (a.sticky && a.stickyUntil && a.stickyUntil < nowISO) {
+      a.sticky = false;
+      _stickyChanged = true;
+    }
+  });
+  if (_stickyChanged) storeAnn(anns);
+
+  // Departman filtresi — CU'nun departmanı veya genel
+  const _cuDept = cu?.access || cu?.dept || '';
+  // Sticky duyuruları en üste sırala
+  anns.sort((a, b) => {
+    if (a.sticky && !b.sticky) return -1;
+    if (!a.sticky && b.sticky) return 1;
+    return 0; // ts sırası korunur (zaten unshift ile ekleniyor)
+  });
+
   if (ANN_FILTER !== 'all') anns = anns.filter(a => a.type === ANN_FILTER);
 
   updateAnnBadge();
@@ -143,6 +176,8 @@ function renderAnnouncements() {
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
             <span style="font-weight:700;font-size:14px;color:var(--t)">${ann.title}</span>
             <span class="badge" style="background:${t.bg};color:${t.tx};font-size:10px">${t.label}</span>
+            ${ann.dept ? `<span class="badge" style="background:rgba(99,102,241,.1);color:#6366F1;font-size:10px">${escapeHtml(ann.dept.toUpperCase())}</span>` : ''}
+            ${ann.sticky ? `<span class="badge" style="background:rgba(245,158,11,.15);color:#D97706;font-size:10px">📌 Sabit</span>` : ''}
             ${!isRead ? `<span class="badge ba" style="font-size:10px">🔵 Yeni</span>` : ''}
           </div>
           <div style="font-size:13px;color:var(--t2);line-height:1.6;white-space:pre-line">${ann.body || ''}</div>
@@ -184,6 +219,7 @@ function openAnnModal(id) {
     if (_ga('ann-body'))     _ga('ann-body').value     = ann.body || '';
     if (_ga('ann-type'))     _ga('ann-type').value     = ann.type || 'info';
     if (_ga('ann-audience')) _ga('ann-audience').value = ann.audience || 'all';
+    if (_ga('ann-dept'))     _ga('ann-dept').value     = ann.dept || '';
     if (_ga('ann-eid'))      _ga('ann-eid').value      = id;
     _sta('mo-ann-t', '✏️ Duyuru Düzenle');
   } else {
@@ -202,23 +238,38 @@ function saveAnn() {
   const cu   = _CUa();
   const anns = loadAnn();
   const eid  = parseInt(_ga('ann-eid')?.value || '0');
+  const dept = _ga('ann-dept')?.value || '';
   const entry = {
     title,
     body:     _ga('ann-body')?.value     || '',
     type:     _ga('ann-type')?.value     || 'info',
     audience: _ga('ann-audience')?.value || 'all',
+    dept,
     ts:       _nowTsa(),
     read:     [],
     addedBy:  cu?.id,
     addedByName: cu?.name || 'Yönetim',
   };
   if (eid) { const a = anns.find(x => x.id === eid); if (a) Object.assign(a, entry); }
-  else anns.unshift({ id: generateNumericId(), ...entry });
+  else {
+    // Aynı departmana yeni duyuru gelince eskisinin sticky'sini kaldır
+    if (dept) {
+      anns.forEach(a => { if (a.dept === dept && a.sticky) a.sticky = false; });
+    }
+    entry.sticky = true;
+    entry.stickyUntil = new Date(Date.now() + 24 * 3600000).toISOString();
+    anns.unshift({ id: generateNumericId(), ...entry });
+  }
   storeAnn(anns);
   window.closeMo?.('mo-ann');
   renderAnnouncements();
   window.logActivity?.('view', `"${title}" duyurusu eklendi`);
   window.toast?.(eid ? 'Duyuru güncellendi ✓' : 'Duyuru yayınlandı ✓', 'ok');
+  // Departman bildirimi — ilgili modül badge'ini güncelle
+  if (!eid) {
+    window.addNotif?.('📢', `Yeni duyuru: "${escapeHtml(title)}"${dept ? ' — ' + dept.toUpperCase() : ''}`, 'info', 'announce');
+    window.updateAllBadges?.();
+  }
 }
 
 function delAnn(id) {

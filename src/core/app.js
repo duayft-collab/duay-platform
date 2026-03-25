@@ -1623,6 +1623,22 @@ function updateAllBadges() {
     const nb    = _g('nb-hdf-b');
     if (nb) { const n = loadHdf().filter(h => h.to < today && h.status !== 'done').length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
   });
+  // Görüşme onay bekleyen
+  safe(() => { window.updateGrtBadge?.(); });
+  // Stok onay bekleyen
+  safe(() => {
+    const stk = window.loadStok?.() || [];
+    const nb  = _g('nb-stok-b');
+    if (nb) { const n = stk.filter(s => s.status === 'bekle' && !s.approved).length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
+  });
+  // Tebligat alarm
+  safe(() => {
+    const teb = window.loadTebligat?.() || [];
+    const nb  = _g('nb-teb-b');
+    if (nb) { const n = teb.filter(t => t.status === 'open').length; nb.textContent = n; nb.style.display = n > 0 ? 'inline' : 'none'; }
+  });
+  // CRM lead
+  safe(() => { window.renderCrm && window.renderCrm(); });
 }
 
 function updateDashboardActs() {
