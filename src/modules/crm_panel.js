@@ -296,7 +296,7 @@ if (typeof window !== 'undefined') {
     const ownerSel = _gcp('crm-owner');
     if (ownerSel && ownerSel.options.length === 0) {
       const users = (typeof loadUsers === 'function') ? loadUsers() : [];
-      ownerSel.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+      ownerSel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
     }
   });
 

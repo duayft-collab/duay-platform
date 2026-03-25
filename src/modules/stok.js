@@ -63,8 +63,8 @@ function previewStokImg(input){
 
 function openStokModal(dir,editId){
   const users=loadUsers();
-  const su=g('stk-user');if(su)su.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-  const zu=g('stk-zimmet-user');if(zu)zu.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  const su=g('stk-user');if(su)su.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+  const zu=g('stk-zimmet-user');if(zu)zu.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   if(g('stk-eid'))g('stk-eid').value=editId||'';
   if(editId){
     const e=loadStok().find(x=>x.id===editId);if(!e)return;
@@ -278,7 +278,7 @@ function renderDemirbaslar(){
   const users=loadUsers();
   const uSel=g('db-filter-user');
   if(uSel&&uSel.options.length<=1)
-    uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+    uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   const filterUid=parseInt(g('db-filter-user')?.value||'0');
   const filterStatus=g('db-filter-status')?.value||'';
   let items=loadStok().filter(s=>s.tür==='demirbaş');

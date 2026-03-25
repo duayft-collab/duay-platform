@@ -801,7 +801,7 @@ function openPirimModal(id) {
   _injectPirimPanel();
   const users = window.loadUsers?.() || [];
   const usel  = window.g('prm-user');
-  if (usel) usel.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  if (usel) usel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
 
   // Tip kartlarını sıfırla
   document.querySelectorAll('.prm-type-card').forEach(c => {
@@ -1102,7 +1102,7 @@ function openPirimPeer(id) {
   const users = (window.loadUsers?.() || []).filter(u => u.id !== cu?.id && !u.admin);
   if (sel) {
     sel.innerHTML = `<option value="">— Kişi seçin —</option>` +
-      users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+      users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   }
   const noteEl = window.g('peer-note');
   if (noteEl) noteEl.value = '';

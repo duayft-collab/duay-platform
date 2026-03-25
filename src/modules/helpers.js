@@ -1526,7 +1526,7 @@ const TEB_BOLUMLER = {
 function openTebModal(id) {
   const users = loadUsers();
   const sel   = _gh('teb-sorumlu');
-  if (sel) sel.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  if (sel) sel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   if (id) {
     const e = loadTebligat().find(x => x.id === id); if (!e) return;
     if (_gh('teb-title'))    _gh('teb-title').value    = e.title;
@@ -1859,9 +1859,9 @@ function renderHdfStepsEditor() {
 function openHdfModal(id) {
   const users = loadUsers();
   const sel   = _gh('hdf-user');
-  if (sel) sel.innerHTML = '<option value="0">Tüm Şirket</option>' + users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  if (sel) sel.innerHTML = '<option value="0">Tüm Şirket</option>' + users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   const fuSel = _gh('hdf-filter-usr');
-  if (fuSel) fuSel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  if (fuSel) fuSel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   if (id) {
     const e = loadHdf().find(x => x.id === id); if (!e) return;
     if (_gh('hdf-title'))  _gh('hdf-title').value  = e.title;
@@ -1998,7 +1998,7 @@ function renderHedefler() {
   const users  = loadUsers();
   const fuSel  = _gh('hdf-filter-usr');
   if (fuSel && fuSel.options.length <= 1)
-    fuSel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+    fuSel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   let hdfs = _isAdminH() ? loadHdf() : loadHdf().filter(h => h.uid === 0 || h.uid === cu?.id);
   if (fSt)    hdfs = hdfs.filter(h => h.status === fSt);
   if (fUsr)   hdfs = hdfs.filter(h => h.uid === fUsr);
@@ -2125,7 +2125,7 @@ function openRutinSablon() {
         </label>`).join('')}
     </div>
     <div class="fr"><div class="fl">SORUMLU PERSONEL</div>
-      <select class="fi" id="rutin-sorumlu">${loadUsers().map(u => `<option value="${u.id}">${u.name}</option>`).join('')}</select>
+      <select class="fi" id="rutin-sorumlu">${loadUsers().map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('')}</select>
     </div>
     <div class="mf">
       <button class="btn" onclick="window.closeMo?.('mo-tmz-rutin')">İptal</button>
@@ -2164,7 +2164,7 @@ function addSeciliRutinler() {
 function openTemizlikModal(id) {
   const users = loadUsers();
   const sel   = _gh('tmz-user');
-  if (sel) sel.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  if (sel) sel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   if (id) {
     const e = loadTemizlik().find(x => x.id === id); if (!e) return;
     if (_gh('tmz-title'))      _gh('tmz-title').value      = e.title;
@@ -2254,7 +2254,7 @@ function renderTemizlik() {
   }
   const usel = _gh('tmz-user-f');
   if (usel && usel.options.length <= 1)
-    usel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+    usel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
 
   let d = loadTemizlik();
   if (!_isAdminH()) d = d.filter(t => t.uid === cu?.id);

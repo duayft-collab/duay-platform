@@ -230,7 +230,7 @@ function renderIkZimmet(){
   const users=loadUsers();
   const uSel=_gi('ik-zimmet-user-f');
   if(uSel&&uSel.options.length<=1)
-    uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+    uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   const filterUid=parseInt(uSel?.value||'0');
   let stok=loadStok().filter(s=>s.tür==='zimmet'||s.tür==='demirbaş');
   if(filterUid)stok=stok.filter(s=>s.zimmetUid===filterUid||s.uid===filterUid);
@@ -352,7 +352,7 @@ function openIzinModal(id){
   const users=loadUsers();
   const sel=_gi('izin-user-inp');
   if(sel){
-    if(_isAdmin()){sel.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');sel.disabled=false;}
+    if(_isAdmin()){sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');sel.disabled=false;}
     else{sel.innerHTML=`<option value="${_CU()?.id}">${_CU()?.name||'Ben'}</option>`;sel.disabled=true;}
   }
   if(id){
@@ -463,7 +463,7 @@ function renderIzin(){
   const sf=_gi('izin-status-f')?.value||'';
   const uSel=_gi('izin-user-f');
   if(uSel&&uSel.options.length<=1)
-    uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+    uSel.innerHTML='<option value="0">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   const thisYear=new Date().getFullYear().toString();
   let myD=_isAdmin()?d:d.filter(x=>x.uid===_CU()?.id);
   let fl=myD;
@@ -610,15 +610,15 @@ function renderPuantaj(){
   const users=loadUsers();
   const fu=_gi('pf-puser');
   if(fu){
-    if(_isAdmin()){fu.innerHTML='<option value="">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');fu.style.display='inline-block';}
-    else if(hasPuantajYetki()){const allowed=[cu,...getPuantajSorumluIds().map(uid=>users.find(x=>x.id===uid)).filter(Boolean)];fu.innerHTML='<option value="">Sorumlu Personelim</option>'+allowed.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');fu.style.display='inline-block';}
+    if(_isAdmin()){fu.innerHTML='<option value="">Tüm Personel</option>'+users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');fu.style.display='inline-block';}
+    else if(hasPuantajYetki()){const allowed=[cu,...getPuantajSorumluIds().map(uid=>users.find(x=>x.id===uid)).filter(Boolean)];fu.innerHTML='<option value="">Sorumlu Personelim</option>'+allowed.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');fu.style.display='inline-block';}
     else fu.style.display='none';
   }
   const mu=_gi('mp-user');
   if(mu){
-    if(_isAdmin())mu.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-    else if(hasPuantajYetki()){const allowed=[cu,...getPuantajSorumluIds().map(uid=>users.find(x=>x.id===uid)).filter(Boolean)];mu.innerHTML=allowed.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');}
-    else mu.innerHTML=`<option value="${cu.id}">${cu.name}</option>`;
+    if(_isAdmin())mu.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+    else if(hasPuantajYetki()){const allowed=[cu,...getPuantajSorumluIds().map(uid=>users.find(x=>x.id===uid)).filter(Boolean)];mu.innerHTML=allowed.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');}
+    else mu.innerHTML=`<option value="${cu.id}">${escapeHtml(cu.name)}</option>`;
     mu.disabled=(!_isAdmin()&&!hasPuantajYetki());
   }
   const mn=_gi('pf-month');
@@ -752,7 +752,7 @@ function renderPuantajSummary(data,users){
     tr.style.cssText=`border-top:1px solid var(--b);background:${i%2===0?'var(--sf)':'var(--s2)'}`;
     tr.addEventListener('mouseenter',()=>tr.style.background='var(--al)');
     tr.addEventListener('mouseleave',()=>tr.style.background=i%2===0?'var(--sf)':'var(--s2)');
-    tr.innerHTML=`<td style="padding:11px 14px"><div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:9px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${_initials(u.name)}</div><div><div style="font-size:13px;font-weight:600;color:var(--t)">${u.name}</div><div style="display:flex;align-items:center;gap:4px;margin-top:2px"><div style="height:4px;width:48px;background:var(--b);border-radius:2px;overflow:hidden"><div style="height:100%;background:${attendRate>=90?'#22C55E':attendRate>=70?'#F59E0B':'#EF4444'};width:${attendRate}%"></div></div><span style="font-size:10px;color:var(--t3)">%${attendRate} devam</span></div></div></div></td>
+    tr.innerHTML=`<td style="padding:11px 14px"><div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:9px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${_initials(u.name)}</div><div><div style="font-size:13px;font-weight:600;color:var(--t)">${escapeHtml(u.name)}</div><div style="display:flex;align-items:center;gap:4px;margin-top:2px"><div style="height:4px;width:48px;background:var(--b);border-radius:2px;overflow:hidden"><div style="height:100%;background:${attendRate>=90?'#22C55E':attendRate>=70?'#F59E0B':'#EF4444'};width:${attendRate}%"></div></div><span style="font-size:10px;color:var(--t3)">%${attendRate} devam</span></div></div></div></td>
     <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:700;color:var(--t)">${r.days}</td>
     <td style="padding:11px 14px;text-align:center"><span style="font-size:12px;font-weight:700;color:#16A34A">${r.ok}</span><span style="font-size:10px;color:var(--t3)">/${r.days}</span></td>
     <td style="padding:11px 14px;text-align:center">${r.abs>0?`<span style="background:rgba(239,68,68,.1);color:#DC2626;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700">${r.abs}</span>`:`<span style="color:var(--t3);font-size:12px">—</span>`}</td>
@@ -782,7 +782,7 @@ function puanExportSummary(){
 
 function openPuanModal(id){
   const users=loadUsers();
-  const mu=_gi('mp-user');if(mu)mu.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  const mu=_gi('mp-user');if(mu)mu.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   if(id){
     const r=loadPuan().find(x=>x.id===id);if(!r)return;
     if(mu)mu.value=r.uid;

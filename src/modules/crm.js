@@ -34,7 +34,7 @@ let CRM_VIEW = 'list';
 function openCrmModal(id){
   const users=loadUsers();
   const osel=_gc('crm-owner');
-  if(osel)osel.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  if(osel)osel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   if(id){
     const e=loadCrmData().find(x=>x.id===id);if(!e)return;
     if(_gc('crm-name'))   _gc('crm-name').value   =e.name;
@@ -269,7 +269,7 @@ function setNumuneFilter(f,btn){
 
 function openNumuneModal(dir){
   const users=loadUsers();
-  const sel=_gc('nm-user');if(sel)sel.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  const sel=_gc('nm-user');if(sel)sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   ['nm-name','nm-code','nm-note'].forEach(i=>{const el=_gc(i);if(el)el.value='';});
   if(_gc('nm-qty'))       _gc('nm-qty').value='1';
   if(_gc('nm-dir'))       _gc('nm-dir').value=dir||'giris';
@@ -283,7 +283,7 @@ function openNumuneModal(dir){
 function editNumuneModal(id){
   const n=loadNumune().find(x=>x.id===id);if(!n)return;
   const users=loadUsers();
-  const sel=_gc('nm-user');if(sel){sel.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');sel.value=n.uid;}
+  const sel=_gc('nm-user');if(sel){sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');sel.value=n.uid;}
   if(_gc('nm-name'))      _gc('nm-name').value      =n.name;
   if(_gc('nm-code'))      _gc('nm-code').value      =n.code||'';
   if(_gc('nm-note'))      _gc('nm-note').value      =n.note||'';

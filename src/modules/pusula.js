@@ -427,7 +427,7 @@ function populatePusUsers() {
       ).join('');
     } else {
       const uid = _getCU()?.id || 0;
-      tsel.innerHTML = `<option value="${uid}">${_getCU()?.name || 'Ben'}</option>`;
+      tsel.innerHTML = `<option value="${uid}">${escapeHtml(_getCU()?.name || 'Ben')}</option>`;
       tsel.value = String(uid);
     }
   }
@@ -1562,7 +1562,7 @@ function openAddTask() {
   const s = g('tk-user');
   if (s) {
     if (!window.isAdmin?.()) {
-      s.innerHTML = `<option value="${_getCU()?.id}">${_getCU()?.name || 'Ben'}</option>`;
+      s.innerHTML = `<option value="${_getCU()?.id}">${escapeHtml(_getCU()?.name || 'Ben')}</option>`;
       s.value = String(_getCU()?.id);
     } else {
       const uid = parseInt(g('pus-usel')?.value || '0');

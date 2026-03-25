@@ -519,8 +519,8 @@ function renderResmi() {
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><span class="badge ${r.dir==='gelen'?'bb':'bg'}">${r.dir==='gelen'?'📥 Gelen':'📤 Giden'}</span></td>
-      <td><div style="font-weight:500;font-size:13px">${r.konu||'—'}</div>${r.not?`<div style="font-size:10px;color:var(--t3)">${r.not.slice(0,60)}</div>`:''}</td>
-      <td style="font-size:12px;color:var(--t2)">${r.taraf||'—'}</td>
+      <td><div style="font-weight:500;font-size:13px">${escapeHtml(r.konu||'—')}</div>${r.not?`<div style="font-size:10px;color:var(--t3)">${escapeHtml(r.not.slice(0,60))}</div>`:''}</td>
+      <td style="font-size:12px;color:var(--t2)">${escapeHtml(r.taraf||'—')}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${r.tarih||'—'}</td>
       <td>
         <div style="display:flex;gap:4px">
