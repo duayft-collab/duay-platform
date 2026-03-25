@@ -2303,3 +2303,707 @@ if (typeof module !== 'undefined' && module.exports) {
     setTimeout(startOdmAlarmTimer, 2000);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// 11 GELİŞTİRME — Odemeler v4.0
+// ═══════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────
+// 1. BÜTÇE TAKİBİ — Kategori bazlı aylık limit
+// ─────────────────────────────────────────────────────────────────
+function loadOdmBudgets() {
+  try { return JSON.parse(localStorage.getItem('duay_odm_budgets') || '{}'); } catch { return {}; }
+}
+function saveOdmBudgets(d) { localStorage.setItem('duay_odm_budgets', JSON.stringify(d)); }
+
+function openBudgetManager() {
+  const ex = document.getElementById('mo-odm-budget');
+  if (ex) { ex.remove(); return; }
+  const budgets = loadOdmBudgets();
+  const all = window.loadOdm ? loadOdm() : [];
+  const thisMonth = _todayStr().slice(0,7);
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-budget'; mo.style.zIndex = '2300';
+
+  let html = '<div class="moc" style="max-width:520px;padding:0;overflow:hidden;border-radius:16px">';
+  html += '<div style="background:#1e1b4b;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">';
+  html += '<div><div style="font-size:14px;font-weight:600">📊 Bütçe Takibi</div><div style="font-size:10px;opacity:.7;margin-top:2px">' + thisMonth + ' — Kategori bazlı aylık limitler</div></div>';
+  html += '<button onclick="_go(\"mo-odm-budget\")?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button></div>';
+  html += '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto">';
+
+  Object.entries(ODM_CATS).forEach(([k, v]) => {
+    const limit = budgets[k] || 0;
+    const spent = all.filter(o => o.cat === k && (o.paidTs||o.due||'').startsWith(thisMonth))
+                     .reduce((s, o) => s + (_odmToTRY(o.amount, o.currency||'TRY')), 0);
+    const pct   = limit > 0 ? Math.min(Math.round(spent/limit*100), 100) : 0;
+    const over  = limit > 0 && spent > limit;
+    const barColor = over ? '#EF4444' : pct > 70 ? '#F97316' : '#6366F1';
+
+    html += '<div style="padding:10px 12px;background:var(--s2);border-radius:9px">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    html += '<span style="font-size:12px;font-weight:500">' + v.ic + ' ' + v.l + '</span>';
+    html += '<div style="display:flex;align-items:center;gap:6px">';
+    html += '<span style="font-size:11px;color:var(--t3)">₺' + Math.round(spent).toLocaleString('tr-TR') + ' / </span>';
+    html += '<input type="number" data-cat="' + k + '" value="' + limit + '" placeholder="Limit" ';
+    html += 'style="width:90px;font-size:11px;padding:2px 6px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf)" ';
+    html += 'oninput="_odmSaveBudgetInline(this)" min="0">';
+    if (over) html += '<span style="font-size:10px;color:#EF4444;font-weight:600">⚠ Aşıldı!</span>';
+    html += '</div></div>';
+    html += '<div style="height:4px;background:var(--b);border-radius:99px;overflow:hidden">';
+    html += '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:99px;transition:width .4s"></div></div>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  html += '<div style="padding:12px 22px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;background:var(--s2)">';
+  html += '<button class="btn btnp" onclick="_go(\"mo-odm-budget\")?.remove()">Kapat</button></div></div>';
+
+  mo.innerHTML = html;
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _odmSaveBudgetInline(el) {
+  const budgets = loadOdmBudgets();
+  const cat = el.dataset.cat;
+  budgets[cat] = parseFloat(el.value) || 0;
+  saveOdmBudgets(budgets);
+}
+
+function checkOdmBudgets() {
+  const budgets = loadOdmBudgets();
+  const all = window.loadOdm ? loadOdm() : [];
+  const thisMonth = _todayStr().slice(0,7);
+  Object.entries(budgets).forEach(([cat, limit]) => {
+    if (!limit) return;
+    const spent = all.filter(o => o.cat === cat && (o.paidTs||o.due||'').startsWith(thisMonth))
+                     .reduce((s,o) => s + (_odmToTRY(o.amount,o.currency||'TRY')), 0);
+    if (spent > limit) {
+      const key = 'odm_budget_warn_' + cat + '_' + thisMonth;
+      if (!localStorage.getItem(key)) {
+        const catL = ODM_CATS[cat]?.l || cat;
+        window.addNotif?.('⚠', catL + ' bütçesi aşıldı! ₺' + Math.round(spent).toLocaleString('tr-TR') + ' / ₺' + limit.toLocaleString('tr-TR'), 'err', 'odemeler');
+        localStorage.setItem(key, '1');
+      }
+    }
+  });
+}
+
+window.openBudgetManager     = openBudgetManager;
+window._odmSaveBudgetInline  = _odmSaveBudgetInline;
+window.checkOdmBudgets       = checkOdmBudgets;
+
+// ─────────────────────────────────────────────────────────────────
+// 2. TEKRARLAYANTAHSİLAT — Kira geliri vb. otomatik oluştur
+// ─────────────────────────────────────────────────────────────────
+function checkRecurringTahsilat() {
+  const all = loadTahsilat();
+  const thisMonth = _todayStr().slice(0,7);
+  let added = 0;
+
+  all.filter(o => o.recurringRule && !o.planned).forEach(o => {
+    if ((o.lastRecurMonth||'') === thisMonth) return;
+    const due = new Date(o.due||_todayStr());
+    due.setMonth(due.getMonth() + 1);
+    all.unshift({
+      id: Date.now() + added++,
+      name: o.name, type: o.type, amount: o.amount,
+      currency: o.currency||'TRY', due: due.toISOString().slice(0,10),
+      banka: o.banka||'', yontem: o.yontem||'',
+      assignedTo: o.assignedTo||null, planned: false,
+      collected: false, recurParentId: o.id,
+      ts: _nowTso(), createdBy: _CUo()?.id,
+    });
+    o.lastRecurMonth = thisMonth;
+  });
+
+  if (added > 0) { storeTahsilat(all); window.toast?.(added + ' tekrarlayan tahsilat oluşturuldu', 'ok'); }
+}
+window.checkRecurringTahsilat = checkRecurringTahsilat;
+
+// ─────────────────────────────────────────────────────────────────
+// 3. BANKA MUTABAKATI — CSV/Excel ekstresi yükle, eşleştir
+// ─────────────────────────────────────────────────────────────────
+function openBankaMutabakat() {
+  const ex = document.getElementById('mo-mutabakat');
+  if (ex) { ex.remove(); return; }
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-mutabakat'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:560px">'
+    + '<div class="mt">🏦 Banka Mutabakatı</div>'
+    + '<p style="font-size:12px;color:var(--t3);margin-bottom:12px">Banka ekstrenizi yükleyin. Sistem ödeme kayıtlarıyla otomatik eşleştirir.</p>'
+    + '<div class="fr"><div class="fl">BANKA</div>'
+    + '<select class="fi" id="mut-banka"><option value="">— Seçin —</option>'
+    + ['Garanti','İş Bankası','Yapı Kredi','Ziraat','Halkbank','Vakıfbank','Akbank','Diğer'].map(b=>'<option>'+b+'</option>').join('')
+    + '</select></div>'
+    + '<div class="fr"><div class="fl">DÖNEM</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<input type="date" class="fi" id="mut-from"><input type="date" class="fi" id="mut-to"></div></div>'
+    + '<div class="fr"><div class="fl">EKSTRE DOSYASI (CSV / XLSX)</div>'
+    + '<div style="border:2px dashed var(--b);border-radius:9px;padding:20px;text-align:center;cursor:pointer" onclick="_go(\"mut-file\").click()">'
+    + '<div style="font-size:24px;margin-bottom:6px">📂</div>'
+    + '<div style="font-size:12px;color:var(--t3)">Tıklayın veya dosyayı buraya sürükleyin</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:4px">CSV veya XLSX — maksimum 10MB</div>'
+    + '</div>'
+    + '<input type="file" id="mut-file" accept=".csv,.xlsx" style="display:none" onchange="_processMutabakat(this)"></div>'
+    + '<div id="mut-result"></div>'
+    + '<div class="mf"><button class="btn" onclick="_go(\"mo-mutabakat\")?.remove()">Kapat</button></div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _processMutabakat(inp) {
+  const file = inp?.files?.[0]; if (!file) return;
+  const res = document.getElementById('mut-result');
+  if (res) res.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--t3)">⏳ Analiz ediliyor...</div>';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const lines = text.split('\n').filter(l => l.trim());
+      const all = window.loadOdm ? loadOdm() : [];
+      let matched = 0, unmatched = [];
+
+      lines.slice(1).forEach(line => {
+        const cols = line.split(',').map(c => c.replace(/"/g,'').trim());
+        const amount = parseFloat(cols[2]||cols[3]||'0');
+        const desc   = (cols[1]||cols[2]||'').toLowerCase();
+        if (!amount) return;
+
+        const found = all.find(o => {
+          const nameMatch = desc.includes((o.name||'').toLowerCase().slice(0,8));
+          const amtMatch  = Math.abs(_odmToTRY(o.amount,o.currency||'TRY') - Math.abs(amount)) < 10;
+          return nameMatch && amtMatch && !o.mutabakatEslesti;
+        });
+
+        if (found) {
+          found.mutabakatEslesti = true;
+          found.mutabakatTs = _nowTso();
+          if (!found.paid) { found.paid = true; found.paidTs = _nowTso(); }
+          matched++;
+        } else {
+          unmatched.push({ amount: Math.abs(amount), desc: cols[1]||'' });
+        }
+      });
+
+      if (matched) { window.storeOdm?.(all); }
+
+      if (res) res.innerHTML = '<div style="padding:12px;background:var(--s2);border-radius:8px;margin-top:8px">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--grt);margin-bottom:6px">✅ ' + matched + ' ödeme eşleşti</div>'
+        + (unmatched.length ? '<div style="font-size:11px;color:var(--t3)">' + unmatched.length + ' satır eşleşmedi:</div>'
+          + unmatched.slice(0,5).map(u=>'<div style="font-size:10px;color:var(--t3)">• ' + u.desc + ' — ₺' + u.amount.toLocaleString('tr-TR') + '</div>').join('') : '')
+        + '</div>';
+
+      window.toast?.('Mutabakat tamamlandı: ' + matched + ' eşleşme', 'ok');
+      renderOdemeler();
+    } catch(err) {
+      if (res) res.innerHTML = '<div style="color:var(--rdt);font-size:12px">Hata: ' + err.message + '</div>';
+    }
+  };
+  reader.readAsText(file);
+}
+window.openBankaMutabakat = openBankaMutabakat;
+window._processMutabakat  = _processMutabakat;
+
+// ─────────────────────────────────────────────────────────────────
+// 4. SMS/WHATSAPP HATIRLATICI TASLAK
+// ─────────────────────────────────────────────────────────────────
+function openOdmReminderModal(id) {
+  const o = (window.loadOdm?loadOdm():[]).find(x=>x.id===id);
+  if (!o) return;
+  const users = window.loadUsers ? loadUsers() : [];
+  const u = users.find(x => x.id === o.assignedTo);
+  const msg = `Sayın ${u?.name||'İlgili'},\n\n"${o.name}" ödemesi için son tarih: ${o.due||'—'}\nTutar: ${_odmFmtAmt(o.amount,o.currency||'TRY')} ${_odmTLKarsiligi(o.amount,o.currency||'TRY')}\n\nLütfen zamanında işlem yapınız.\n\nDuay Global Trade`;
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:480px">'
+    + '<div class="mt">📱 Hatırlatıcı Gönder</div>'
+    + '<div class="fr"><div class="fl">ALICI</div>'
+    + '<select class="fi" id="rem-user"><option value="">— Seçin —</option>'
+    + users.map(u=>'<option value="'+u.id+'"'+( u.id===o.assignedTo?' selected':'')+'>'+u.name+'</option>').join('')
+    + '</select></div>'
+    + '<div class="fr"><div class="fl">KANAL</div>'
+    + '<div style="display:flex;gap:8px">'
+    + ['WhatsApp','SMS','E-posta'].map(c=>'<label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="radio" name="rem-ch" value="'+c+'"'+( c==='WhatsApp'?' checked':'')+'>'+c+'</label>').join('')
+    + '</div></div>'
+    + '<div class="fr"><div class="fl">MESAJ</div>'
+    + '<textarea class="fi" id="rem-msg" rows="5" style="resize:none">' + msg + '</textarea></div>'
+    + '<div class="mf">'
+    + '<button class="btn" onclick="this.closest(\'.mo\').remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="_sendOdmReminder('+id+')">📤 Gönder</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _sendOdmReminder(id) {
+  const ch  = document.querySelector('input[name="rem-ch"]:checked')?.value || 'WhatsApp';
+  const msg = document.getElementById('rem-msg')?.value || '';
+  const uid = document.getElementById('rem-user')?.value;
+  const users = window.loadUsers ? loadUsers() : [];
+  const u = users.find(x => String(x.id) === uid);
+  const phone = u?.phone || '';
+
+  if (ch === 'WhatsApp' && phone) {
+    window.open('https://wa.me/' + phone.replace(/\D/g,'') + '?text=' + encodeURIComponent(msg), '_blank');
+  } else {
+    navigator.clipboard?.writeText(msg);
+    window.toast?.('Mesaj panoya kopyalandı — ' + ch + ' ile gönderin', 'ok');
+  }
+
+  window.logActivity?.('view', '"' + (u?.name||'?') + '" için ödeme hatırlatıcısı gönderildi');
+  document.querySelector('.mo.open')?.remove();
+}
+window.openOdmReminderModal = openOdmReminderModal;
+window._sendOdmReminder     = _sendOdmReminder;
+
+// ─────────────────────────────────────────────────────────────────
+// 5. GECİKME FAİZİ HESAPLAYICI
+// ─────────────────────────────────────────────────────────────────
+function openFaizHesap(id) {
+  const o = (window.loadOdm?loadOdm():[]).find(x=>x.id===id);
+  if (!o || !o.due) { window.toast?.('Son tarih girilmemiş', 'warn'); return; }
+
+  const today = _todayStr();
+  const dueD  = new Date(o.due);
+  const todayD = new Date(today);
+  const gun    = Math.max(0, Math.ceil((todayD - dueD) / 86400000));
+  const anapar = _odmToTRY(o.amount, o.currency||'TRY');
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:420px">'
+    + '<div class="mt">📐 Gecikme Faizi Hesaplayıcı</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px">'
+    + '<div style="font-size:10px;color:var(--t3)">Anapar</div>'
+    + '<div style="font-size:16px;font-weight:600;color:var(--t)">₺' + Math.round(anapar).toLocaleString('tr-TR') + '</div></div>'
+    + '<div style="background:rgba(239,68,68,.08);border-radius:8px;padding:10px">'
+    + '<div style="font-size:10px;color:var(--t3)">Gecikme süresi</div>'
+    + '<div style="font-size:16px;font-weight:600;color:#EF4444">' + gun + ' gün</div></div>'
+    + '</div>'
+    + '<div class="fr"><div class="fl">YASAL FAİZ ORANI (yıllık %)</div>'
+    + '<input class="fi" type="number" id="faiz-oran" value="9" step="0.1" oninput="_calcFaiz(' + anapar + ',' + gun + ')"></div>'
+    + '<div id="faiz-result" style="background:var(--s2);border-radius:9px;padding:12px;margin-top:4px">'
+    + '<div style="font-size:11px;color:var(--t3)">Hesapla düğmesine basın</div></div>'
+    + '<div class="mf">'
+    + '<button class="btn btnp" onclick="_calcFaiz(' + anapar + ',' + gun + ')">Hesapla</button>'
+    + '<button class="btn" onclick="this.closest(\'.mo\').remove()">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => { mo.classList.add('open'); _calcFaiz(anapar, gun); }, 10);
+}
+
+function _calcFaiz(anapar, gun) {
+  const oran = parseFloat(document.getElementById('faiz-oran')?.value || '9') / 100;
+  const faiz  = anapar * oran * gun / 365;
+  const toplam = anapar + faiz;
+  const el = document.getElementById('faiz-result');
+  if (el) el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div><div style="font-size:10px;color:var(--t3)">Faiz tutarı</div><div style="font-size:15px;font-weight:600;color:#EF4444">₺' + faiz.toLocaleString('tr-TR',{minimumFractionDigits:2}) + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--t3)">Toplam ödeme</div><div style="font-size:15px;font-weight:600;color:var(--t)">₺' + toplam.toLocaleString('tr-TR',{minimumFractionDigits:2}) + '</div></div>'
+    + '</div>';
+}
+window.openFaizHesap = openFaizHesap;
+window._calcFaiz     = _calcFaiz;
+
+// ─────────────────────────────────────────────────────────────────
+// 6. TEDARİKÇİ KARTI — Ödeme kaynağı profili
+// ─────────────────────────────────────────────────────────────────
+function openTedarikciKart(name) {
+  const all = window.loadOdm ? loadOdm() : [];
+  const items = all.filter(o => o.name === name || (o.note||'').includes(name));
+  const total  = items.reduce((s,o) => s + _odmToTRY(o.amount,o.currency||'TRY'), 0);
+  const paid   = items.filter(o => o.paid).reduce((s,o) => s + _odmToTRY(o.amount,o.currency||'TRY'), 0);
+  const late   = items.filter(o => !o.paid && o.due && o.due < _todayStr()).length;
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:480px">'
+    + '<div class="mt">🏢 ' + name + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center">'
+    + '<div style="font-size:18px;font-weight:600;color:var(--t)">' + items.length + '</div>'
+    + '<div style="font-size:10px;color:var(--t3)">Toplam İşlem</div></div>'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center">'
+    + '<div style="font-size:18px;font-weight:600;color:var(--ac)">₺' + Math.round(total/1000) + 'k</div>'
+    + '<div style="font-size:10px;color:var(--t3)">Toplam Tutar</div></div>'
+    + '<div style="background:' + (late?'rgba(239,68,68,.08)':'var(--s2)') + ';border-radius:8px;padding:10px;text-align:center">'
+    + '<div style="font-size:18px;font-weight:600;color:' + (late?'#EF4444':'var(--grt)') + '">' + late + '</div>'
+    + '<div style="font-size:10px;color:var(--t3)">Gecikmiş</div></div>'
+    + '</div>'
+    + '<div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px">Son İşlemler</div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px">'
+    + items.slice(0,6).map(o => '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--s2);border-radius:6px;font-size:11px">'
+      + '<span>' + (o.due||'—') + ' · ' + (ODM_CATS[o.cat]?.l||o.cat) + '</span>'
+      + '<span style="font-weight:500;color:' + (o.paid?'var(--grt)':o.due&&o.due<_todayStr()?'#EF4444':'var(--t)') + '">'
+      + _odmFmtAmt(o.amount,o.currency||'TRY') + (o.paid?' ✓':'') + '</span></div>').join('')
+    + '</div>'
+    + '<div class="mf"><button class="btn" onclick="this.closest(\'.mo\').remove()">Kapat</button></div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openTedarikciKart = openTedarikciKart;
+
+// ─────────────────────────────────────────────────────────────────
+// 7. ÇOKLU PARA RAPORU — TL bazlı özet
+// ─────────────────────────────────────────────────────────────────
+function openCurrencyReport() {
+  const all = window.loadOdm ? loadOdm() : [];
+  const tah = window.loadTahsilat ? loadTahsilat() : [];
+  const thisMonth = _todayStr().slice(0,7);
+
+  const byMonth = {};
+  [...all, ...tah].forEach(o => {
+    const m = (o.due||o.actualDate||o.ts||'').slice(0,7);
+    if (!m) return;
+    if (!byMonth[m]) byMonth[m] = { odeme: 0, tahsilat: 0 };
+    const tl = _odmToTRY(o.amount||0, o.currency||'TRY');
+    if (tah.includes(o)) byMonth[m].tahsilat += tl;
+    else byMonth[m].odeme += tl;
+  });
+
+  const curGroups = {};
+  all.forEach(o => {
+    const c = o.currency||'TRY';
+    if (!curGroups[c]) curGroups[c] = { total: 0, count: 0 };
+    curGroups[c].total += parseFloat(o.amount||0);
+    curGroups[c].count++;
+  });
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  let html = '<div class="moc" style="max-width:540px">';
+  html += '<div class="mt">💱 Çoklu Para Raporu</div>';
+
+  // Döviz dağılımı
+  html += '<div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:8px">Döviz Dağılımı</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">';
+  Object.entries(curGroups).forEach(([c, d]) => {
+    const cur = ODM_CURRENCY[c] || { sym: c, flag: '' };
+    const tl = all.filter(o=>(o.currency||'TRY')===c).reduce((s,o)=>s+_odmToTRY(o.amount||0,c),0);
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);border-radius:8px">';
+    html += '<span style="font-size:16px">' + (cur.flag||'💰') + '</span>';
+    html += '<span style="font-size:12px;font-weight:500;flex:1">' + c + ' — ' + (cur.name||c) + '</span>';
+    html += '<span style="font-size:11px;color:var(--t3)">' + d.count + ' işlem</span>';
+    html += '<span style="font-size:12px;font-weight:600;color:var(--t)">' + cur.sym + d.total.toLocaleString('tr-TR',{minimumFractionDigits:0}) + '</span>';
+    if (c !== 'TRY') html += '<span style="font-size:10px;color:var(--ac)">≈ ₺' + Math.round(tl).toLocaleString('tr-TR') + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Aylık özet (son 4 ay)
+  html += '<div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:8px">Son 4 Ay</div>';
+  const months = Object.keys(byMonth).sort().slice(-4);
+  months.forEach(m => {
+    const b = byMonth[m];
+    const net = b.tahsilat - b.odeme;
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:4px">';
+    html += '<span style="font-size:11px;font-weight:500;color:var(--t);flex:1">' + m + '</span>';
+    html += '<span style="font-size:10px;color:#EF4444">Ödeme: ₺' + Math.round(b.odeme).toLocaleString('tr-TR') + '</span>';
+    html += '<span style="font-size:10px;color:#10B981">Tahsilat: ₺' + Math.round(b.tahsilat).toLocaleString('tr-TR') + '</span>';
+    html += '<span style="font-size:11px;font-weight:600;color:' + (net>=0?'#10B981':'#EF4444') + '">' + (net>=0?'+':'') + '₺' + Math.round(net).toLocaleString('tr-TR') + '</span>';
+    html += '</div>';
+  });
+
+  html += '<div class="mf"><button class="btn" onclick="this.closest(\'.mo\').remove()">Kapat</button>';
+  html += '<button class="btn btns" onclick="exportCurrencyReportXlsx()">Excel İndir</button></div></div>';
+  mo.innerHTML = html;
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openCurrencyReport = openCurrencyReport;
+
+// ─────────────────────────────────────────────────────────────────
+// 8. ÖDEME TAKVİMİ GÖRÜNÜMİ
+// ─────────────────────────────────────────────────────────────────
+function renderOdmCalendar(cont) {
+  if (!cont) return;
+  const all  = window.loadOdm ? loadOdm() : [];
+  const tah  = window.loadTahsilat ? loadTahsilat() : [];
+  const now  = new Date();
+  const year = now.getFullYear();
+  const mon  = now.getMonth();
+  const dim  = new Date(year, mon+1, 0).getDate();
+  const start= new Date(year, mon, 1).getDay();
+
+  const dayMap = {};
+  all.forEach(o => {
+    if (!o.due || !o.due.startsWith(year+'-'+(String(mon+1).padStart(2,'0')))) return;
+    const d = parseInt(o.due.slice(8));
+    if (!dayMap[d]) dayMap[d] = { odeme: [], tah: [] };
+    dayMap[d].odeme.push(o);
+  });
+  tah.forEach(o => {
+    const date = o.actualDate || o.due;
+    if (!date || !date.startsWith(year+'-'+(String(mon+1).padStart(2,'0')))) return;
+    const d = parseInt(date.slice(8));
+    if (!dayMap[d]) dayMap[d] = { odeme: [], tah: [] };
+    dayMap[d].tah.push(o);
+  });
+
+  const days = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  let html = '<div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">';
+  html += '<span style="font-size:13px;font-weight:600;color:var(--t)">' + now.toLocaleString('tr-TR',{month:'long',year:'numeric'}) + '</span>';
+  html += '<button class="btn btns" onclick="setOdmTab(\'all\')" style="font-size:11px">Listeye Dön</button></div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
+  days.forEach(d => { html += '<div style="text-align:center;font-size:9px;font-weight:600;color:var(--t3);padding:4px 0">' + d + '</div>'; });
+
+  const offset = (start + 6) % 7;
+  for (let i = 0; i < offset; i++) html += '<div></div>';
+
+  for (let d = 1; d <= dim; d++) {
+    const isToday = d === now.getDate();
+    const data    = dayMap[d];
+    html += '<div style="min-height:52px;border:0.5px solid var(--b);border-radius:6px;padding:3px;background:' + (isToday?'rgba(99,102,241,.06)':'var(--sf)') + '">';
+    html += '<div style="font-size:10px;font-weight:' + (isToday?'700':'400') + ';color:' + (isToday?'var(--ac)':'var(--t2)') + ';text-align:center">' + d + '</div>';
+    if (data) {
+      data.odeme.slice(0,2).forEach(o => {
+        const c = o.paid ? '#10B981' : (o.due<_todayStr()?'#EF4444':'#EF4444');
+        html += '<div style="font-size:8px;padding:1px 3px;border-radius:3px;margin-top:1px;background:' + (o.paid?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)') + ';color:' + c + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + o.name + '">' + o.name.slice(0,10) + '</div>';
+      });
+      data.tah.slice(0,1).forEach(o => {
+        html += '<div style="font-size:8px;padding:1px 3px;border-radius:3px;margin-top:1px;background:rgba(16,185,129,.1);color:#10B981;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + o.name + '">↑' + o.name.slice(0,8) + '</div>';
+      });
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+}
+window.renderOdmCalendar = renderOdmCalendar;
+
+// ─────────────────────────────────────────────────────────────────
+// 9. E-FATURA DIŞA AKTARMA (GİB formatı hazırlığı)
+// ─────────────────────────────────────────────────────────────────
+function exportEFatura(id) {
+  const o = (window.loadOdm?loadOdm():[]).find(x=>x.id===id);
+  if (!o) return;
+  const tl = _odmToTRY(o.amount||0, o.currency||'TRY');
+  const kdv = tl * 0.20;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <ID>${o.id}</ID>
+  <IssueDate>${_todayStr()}</IssueDate>
+  <DueDate>${o.due||_todayStr()}</DueDate>
+  <Note>${o.note||''}</Note>
+  <InvoiceLine>
+    <Item><Name>${o.name}</Name></Item>
+    <Price><PriceAmount currencyID="TRY">${tl.toFixed(2)}</PriceAmount></Price>
+    <TaxTotal>
+      <TaxAmount currencyID="TRY">${kdv.toFixed(2)}</TaxAmount>
+      <TaxSubtotal><TaxCategory><ID>0015</ID></TaxCategory></TaxSubtotal>
+    </TaxTotal>
+    <LineExtensionAmount currencyID="TRY">${(tl+kdv).toFixed(2)}</LineExtensionAmount>
+  </InvoiceLine>
+</Invoice>`;
+  const blob = new Blob([xml], { type: 'application/xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'efatura-' + o.id + '.xml';
+  a.click();
+  window.toast?.('E-fatura XML indirildi', 'ok');
+}
+window.exportEFatura = exportEFatura;
+
+// ─────────────────────────────────────────────────────────────────
+// 10. KPI DASHBOARD — Nakit akışı + ödeme/tahsilat karşılaştırması
+// ─────────────────────────────────────────────────────────────────
+function openOdmKPIDashboard() {
+  const all = window.loadOdm ? loadOdm() : [];
+  const tah = window.loadTahsilat ? loadTahsilat() : [];
+  const today = _todayStr();
+  const thisMonth = today.slice(0,7);
+
+  const paidThisMonth = all.filter(o=>o.paid&&(o.paidTs||'').startsWith(thisMonth));
+  const paidAmt = paidThisMonth.reduce((s,o)=>s+_odmToTRY(o.amount||0,o.currency||'TRY'),0);
+  const tahAmt  = tah.filter(o=>o.collected&&(o.collectedTs||'').startsWith(thisMonth))
+                     .reduce((s,o)=>s+_odmToTRY(o.amount||0,o.currency||'TRY'),0);
+  const pendAmt = all.filter(o=>!o.paid&&!(o.approvalNeeded&&!o.approved))
+                     .reduce((s,o)=>s+_odmToTRY(o.amount||0,o.currency||'TRY'),0);
+  const lateAmt = all.filter(o=>!o.paid&&o.due&&o.due<today)
+                     .reduce((s,o)=>s+_odmToTRY(o.amount||0,o.currency||'TRY'),0);
+  const netCash = tahAmt - paidAmt;
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:580px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:16px 22px;color:#fff">'
+    + '<div style="font-size:15px;font-weight:600;margin-bottom:2px">📊 KPI Dashboard</div>'
+    + '<div style="font-size:10px;opacity:.7">' + thisMonth + ' — Ödeme & Tahsilat Analizi</div></div>'
+    + '<div style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">'
+
+    // Ana metrikler
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + _kpiCard('Bu Ay Ödeme','₺'+Math.round(paidAmt).toLocaleString('tr-TR'),'#EF4444','rgba(239,68,68,.08)')
+    + _kpiCard('Bu Ay Tahsilat','₺'+Math.round(tahAmt).toLocaleString('tr-TR'),'#10B981','rgba(16,185,129,.08)')
+    + _kpiCard('Net Nakit Akışı',(netCash>=0?'+':'')+'₺'+Math.round(Math.abs(netCash)).toLocaleString('tr-TR'),netCash>=0?'#10B981':'#EF4444',netCash>=0?'rgba(16,185,129,.08)':'rgba(239,68,68,.08)')
+    + _kpiCard('Gecikmiş Tutar','₺'+Math.round(lateAmt).toLocaleString('tr-TR'),'#F97316','rgba(249,115,22,.08)')
+    + '</div>'
+
+    // Onay bekleyen özet
+    + (all.filter(o=>o.approvalStatus==='pending').length ? '<div style="padding:10px 12px;background:rgba(245,158,11,.08);border-left:3px solid #F59E0B;border-radius:0 8px 8px 0">'
+      + '<div style="font-size:12px;font-weight:600;color:#D97706">' + all.filter(o=>o.approvalStatus==='pending').length + ' ödeme yönetici onayı bekliyor</div>'
+      + all.filter(o=>o.approvalStatus==='pending').slice(0,3).map(o=>'<div style="font-size:11px;color:var(--t3);margin-top:3px">• '+o.name+' — ₺'+Math.round(_odmToTRY(o.amount||0,o.currency||'TRY')).toLocaleString('tr-TR')+'</div>').join('')
+      + '</div>' : '')
+
+    + '</div>'
+    + '<div style="padding:12px 22px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">'
+    + '<button class="btn" onclick="this.closest(\'.mo\').remove()">Kapat</button>'
+    + '<button class="btn btns" onclick="openOdmChart()">Grafik Görünümü</button>'
+    + '</div></div>';
+
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _kpiCard(label, val, color, bg) {
+  return '<div style="background:' + bg + ';border-radius:10px;padding:12px 14px">'
+    + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">' + label + '</div>'
+    + '<div style="font-size:20px;font-weight:600;color:' + color + '">' + val + '</div>'
+    + '</div>';
+}
+window.openOdmKPIDashboard = openOdmKPIDashboard;
+
+// ─────────────────────────────────────────────────────────────────
+// 11. ONAY BİLDİRİMİ — Yöneticiye sistem + taslak e-posta
+// ─────────────────────────────────────────────────────────────────
+function notifyApprovalNeeded(id) {
+  const o = (window.loadOdm?loadOdm():[]).find(x=>x.id===id);
+  if (!o) return;
+  const cu = window.Auth?.getCU?.();
+  const users = window.loadUsers ? loadUsers() : [];
+  const admins = users.filter(u => ['admin','manager'].includes(u.role));
+
+  // Sistem bildirimi
+  admins.forEach(a => {
+    window.addNotif?.('💰', '"' + o.name + '" ödemesi onayınızı bekliyor — ₺' + Math.round(_odmToTRY(o.amount||0,o.currency||'TRY')).toLocaleString('tr-TR'), 'warn', 'odemeler');
+  });
+
+  // E-posta taslağı modal
+  const emailBody = `Sayın Yönetici,
+
+"${o.name}" adlı ödeme için onayınız beklenmektedir.
+
+Tutar: ${_odmFmtAmt(o.amount||0, o.currency||'TRY')} ${_odmTLKarsiligi(o.amount||0, o.currency||'TRY')}
+Son Tarih: ${o.due||'—'}
+Kategori: ${ODM_CATS[o.cat]?.l||o.cat}
+Talep Eden: ${cu?.name||'—'}
+Not: ${o.note||'—'}
+
+Lütfen Duay Platform üzerinden onaylayın.
+Duay Global Trade`;
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:480px">'
+    + '<div class="mt">📧 Onay Bildirimi Gönderildi</div>'
+    + '<p style="font-size:12px;color:var(--grt);margin-bottom:10px">✅ Sistem bildirimi tüm yöneticilere iletildi.</p>'
+    + '<div class="fr"><div class="fl">E-POSTA TASLAK</div>'
+    + '<textarea class="fi" id="notif-email" rows="8" style="resize:none;font-size:11px">' + emailBody + '</textarea></div>'
+    + '<div class="mf">'
+    + '<button class="btn" onclick="this.closest(\'.mo\').remove()">Kapat</button>'
+    + '<button class="btn btnp" onclick="navigator.clipboard?.writeText(document.getElementById(\'notif-email\').value);window.toast?.(\'Kopyalandı\',\'ok\')">📋 Kopyala</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+  window.toast?.('Onay bildirimi gönderildi', 'ok');
+}
+window.notifyApprovalNeeded = notifyApprovalNeeded;
+
+// ─────────────────────────────────────────────────────────────────
+// ARAÇLAR MENÜSÜNE YENİ BUTONLAR — _injectOdmPanel güncelleniyor
+// ─────────────────────────────────────────────────────────────────
+function _odmInjectExtraButtons() {
+  const topbar = document.querySelector('#panel-odemeler .pus-topbar, #panel-odemeler [style*="position:sticky"]');
+  if (!topbar || topbar.dataset.extraInjected) return;
+  topbar.dataset.extraInjected = '1';
+
+  // Araçlar dropdown butonu ekle
+  const extraBtn = document.createElement('div');
+  extraBtn.style.cssText = 'position:relative;display:inline-block';
+  extraBtn.innerHTML = '<button class="btn btns" onclick="_odmToggleTools(this)" style="border-radius:8px;font-size:11px">🛠 Araçlar ▾</button>'
+    + '<div id="odm-extra-tools" style="display:none;position:absolute;right:0;top:calc(100%+4px);background:var(--sf);border:1px solid var(--b);border-radius:10px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;overflow:hidden">'
+    + '<button onclick="openBudgetManager();_go(\'odm-extra-tools\').style.display=\'none\'" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">📊 Bütçe Takibi</button>'
+    + '<button onclick="openBankaMutabakat();_go(\'odm-extra-tools\').style.display=\'none\'" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">🏦 Banka Mutabakatı</button>'
+    + '<button onclick="openCurrencyReport();_go(\'odm-extra-tools\').style.display=\'none\'" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">💱 Döviz Raporu</button>'
+    + '<button onclick="openOdmKPIDashboard();_go(\'odm-extra-tools\').style.display=\'none\'" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">📈 KPI Dashboard</button>'
+    + '<button onclick="openOdmChart();_go(\'odm-extra-tools\').style.display=\'none\'" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">📉 Harcama Grafiği</button>'
+    + '</div>';
+  topbar.querySelector('[style*="gap"]')?.insertBefore(extraBtn, topbar.querySelector('.btn.btnp'));
+}
+
+function _odmToggleTools(btn) {
+  const menu = document.getElementById('odm-extra-tools');
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+window._odmToggleTools = _odmToggleTools;
+
+// Sayfa dışı tıklanda araçlar menüsünü kapat
+document.addEventListener('click', e => {
+  if (!e.target.closest('#odm-extra-tools') && !e.target.textContent?.includes('Araçlar')) {
+    const m = document.getElementById('odm-extra-tools');
+    if (m) m.style.display = 'none';
+  }
+});
+
+// Tablo satırı context menüsü — sağ tık extra aksiyonlar
+function _odmRowContextMenu(e, id) {
+  e.preventDefault();
+  document.getElementById('odm-ctx-menu')?.remove();
+  const o = (window.loadOdm?loadOdm():[]).find(x=>x.id===id);
+  if (!o) return;
+
+  const menu = document.createElement('div');
+  menu.id = 'odm-ctx-menu';
+  menu.style.cssText = 'position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;background:var(--sf);border:1px solid var(--b);border-radius:9px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:9999;overflow:hidden';
+  const items = [
+    ['✏️ Düzenle',         () => openOdmModal(id)],
+    ['📱 Hatırlatıcı',    () => openOdmReminderModal(id)],
+    ['🏢 Tedarikçi Kartı', () => openTedarikciKart(o.name)],
+    ['📐 Gecikme Faizi',   () => openFaizHesap(id)],
+    ['📄 E-Fatura',        () => exportEFatura(id)],
+    ['📋 Geçmiş & Not',    () => viewOdmHistory(id)],
+    ['📎 PDF Talimatı',    () => exportOdmPaymentPDF(id)],
+  ];
+  if (_isAdminO()) items.push(['✓ Onayla', () => approveOdm(id)]);
+  menu.innerHTML = items.map(([l,f]) => '<button style="width:100%;text-align:left;border:none;border-radius:0;padding:8px 14px;font-size:12px;background:none;cursor:pointer;font-family:inherit;color:var(--t2)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'none\'" onclick="(' + f.toString() + ')();document.getElementById(\'odm-ctx-menu\').remove()">' + l + '</button>').join('');
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', () => menu.remove(), {once:true}), 10);
+}
+window._odmRowContextMenu = _odmRowContextMenu;
+
+// renderOdemeler sonunda çalıştır
+const _origRenderOdemeler = renderOdemeler;
+window.renderOdemeler = function() {
+  _origRenderOdemeler();
+  setTimeout(() => {
+    checkOdmBudgets();
+    _odmInjectExtraButtons();
+    // Tablo satırlarına sağ-tık menüsü ekle
+    document.querySelectorAll('#odm-list > div[onmouseenter]').forEach(row => {
+      const onclick = row.getAttribute('onclick') || '';
+      const idMatch = onclick.match(/openOdmModal\((\d+)\)/);
+      if (idMatch) {
+        row.setAttribute('oncontextmenu', '_odmRowContextMenu(event,' + idMatch[1] + ')');
+      }
+    });
+  }, 100);
+};
+
+// Export listesine ekle
+if (typeof Odemeler !== 'undefined') {
+  Odemeler.openBudgetManager    = openBudgetManager;
+  Odemeler.openBankaMutabakat   = openBankaMutabakat;
+  Odemeler.openCurrencyReport   = openCurrencyReport;
+  Odemeler.renderOdmCalendar    = renderOdmCalendar;
+  Odemeler.openOdmKPIDashboard  = openOdmKPIDashboard;
+  Odemeler.notifyApprovalNeeded = notifyApprovalNeeded;
+  Odemeler.checkRecurringTah    = checkRecurringTahsilat;
+  Odemeler.exportEFatura        = exportEFatura;
+}
