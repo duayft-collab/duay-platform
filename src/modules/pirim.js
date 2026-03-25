@@ -486,6 +486,7 @@ function renderPirim() {
             <button class="btn btns" style="font-size:11px;color:var(--bl)" onclick="Pirim.markPaid(${p.id})">💸 Ödendi</button>` : ''}
           <button class="btn btns" onclick="Pirim.showDetail(${p.id})" style="font-size:11px" title="Detay">🔍</button>
           ${admin || (p.uid === cu?.id && p.status === 'pending') ? `<button class="btn btns" onclick="Pirim.openModal(${p.id})" style="font-size:11px">✏️</button>` : ''}
+          ${!admin && cu && p.uid === cu.id && p.status === 'rejected' ? `<button class="btn btns" style="font-size:11px;color:var(--ac)" onclick="Pirim.resubmit(${p.id})" title="Düzenleyip tekrar gönder">↩ Tekrar Gönder</button>` : ''}
           ${admin ? `<button class="btn btns btnd" onclick="Pirim.del(${p.id})" style="font-size:11px">🗑</button>` : ''}
         </div>
       </td>`;
@@ -709,10 +710,13 @@ function selectPirimType(type) {
         oranEl.style.color      = 'var(--t2)';
         if (hintEl) hintEl.textContent = `Yönetici: %${(typeRate.rate * 100).toFixed(2)}`;
       } else {
-        oranEl.readOnly = false;
-        oranEl.style.background = '';
-        oranEl.style.color      = '';
-        if (hintEl) hintEl.textContent = 'Oran belirlenmemiş';
+        // Admin değilse oran alanı her zaman readonly
+        const adminCheck = window.isAdmin?.() || false;
+        oranEl.readOnly = !adminCheck;
+        oranEl.style.background = adminCheck ? '' : 'var(--s2)';
+        oranEl.style.color      = adminCheck ? '' : 'var(--t3)';
+        oranEl.title = adminCheck ? '' : 'Prim oranı yalnızca yönetici tarafından belirlenebilir';
+        if (hintEl) hintEl.textContent = adminCheck ? 'Manuel giriş (yönetici)' : 'Yönetici tarafından belirlenir';
       }
     }
   }
@@ -843,7 +847,12 @@ function savePirim() {
   window.closeMo?.('mo-pirim');
   renderPirim();
   window.logActivity?.('view', `Prim kaydedildi: "${title}" — ${_fmt(amount)}`);
-  window.toast?.(`Prim kaydedildi ✓`, 'ok');
+  window.toast?.('Prim onaya gönderildi ✓', 'ok');
+  // Yöneticilere sistem bildirimi
+  window.addNotif?.('⭐', '"' + title + '" — ' + _fmt(amount) + ' prim onay bekliyor', 'warn', 'pirim');
+  // Ödemeler paneli de haberdar olsun
+  window.addNotif?.('⭐', '"' + title + '" prim onaylanırsa ödeme planına alınacak', 'info', 'odemeler');
+  _pirimDuyur('⭐ Yeni Prim Onay Bekliyor', '"' + title + '" — ' + _fmt(amount) + ' tutarındaki prim yönetici onayı bekliyor.', 'warn');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -867,8 +876,21 @@ function approvePirim(id) {
   p.approvedAt     = _now();
   window.storePirim?.(d);
   renderPirim();
-  window.toast?.('✅ Prim onaylandı', 'ok');
+  window.toast?.('✅ Prim onaylandı — ödeme planına alındı', 'ok');
   window.logActivity?.('view', `Prim onaylandı: "${p.title}" — ${_fmt(p.amount)}`);
+  _pirimDuyur('✅ Prim Onaylandı', '"' + (p.title||'') + '" — ' + _fmt(p.amount) + ' onaylandı ve ödeme planına alındı.', 'ok');
+  // Ödemeler modülüne otomatik kayıt
+  if (window.createOdmFromPurchase) {
+    window.createOdmFromPurchase({
+      id:         p.id,
+      name:       'Prim: ' + (p.title||''),
+      totalAmount: p.amount,
+      balanceDate: p.payDate || _calcExpiry(p.date),
+      assignedTo:  p.uid,
+    });
+  } else {
+    window.addNotif?.('💸', '"' + (p.title||'') + '" — ' + _fmt(p.amount) + ' ödeme planına eklendi', 'ok', 'odemeler');
+  }
 }
 
 /** Admin: ara onay modalını aç — başka kullanıcıya yönlendir */
@@ -934,26 +956,86 @@ function peerApprovePirim(id) {
 
 /** İkinci onayçı (peer): reddeder */
 function peerRejectPirim(id) {
-  const cu     = window.CU();
-  const reason = prompt('Red nedeni:') ?? '';
-  const d      = window.loadPirim?.() || [];
-  const p      = d.find(x => x.id === id); if (!p) return;
+  const cu = window.CU();
+  const d  = window.loadPirim?.() || [];
+  const p  = d.find(x => x.id === id); if (!p) return;
   if (p.peerUser !== cu?.id) { window.toast?.('Bu kayıt size yönlendirilmemiş', 'err'); return; }
 
-  p.status        = 'rejected';
-  p.rejectedBy    = cu.id;
-  p.rejectedAt    = _now();
-  p.rejectReason  = `[Ara Onay Red] ${reason}`;
-  window.storePirim?.(d);
-  renderPirim();
-  window.toast?.('Prim ara onayda reddedildi', 'ok');
-  window.logActivity?.('view', `Ara onay reddedildi: "${p.title}"`);
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-peer-reject'; mo.style.zIndex = '2400';
+  mo.innerHTML = `
+    <div class="moc" style="max-width:420px">
+      <div class="mt" style="color:#EF4444">❌ Ara Onay — Reddet</div>
+      <div style="padding:8px 12px;background:var(--s2);border-radius:8px;margin-bottom:12px;font-size:12px">
+        <b>${p.title||'—'}</b> — ${_fmt(p.amount)}
+      </div>
+      <div class="fr"><div class="fl">RED NEDENİ *</div>
+        <textarea class="fi" id="peer-reject-reason" rows="3" style="resize:none" placeholder="Açıklamanız..."></textarea>
+      </div>
+      <div class="mf">
+        <button class="btn" onclick="document.getElementById('mo-peer-reject').remove()">İptal</button>
+        <button class="btn btnp" style="background:#EF4444;border-color:#EF4444" onclick="_confirmPeerReject(${id})">Reddet</button>
+      </div>
+    </div>`;
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
 }
 
-/** Admin: reddet */
+function _confirmPeerReject(id) {
+  const reason = (document.getElementById('peer-reject-reason')?.value || '').trim();
+  if (!reason) { window.toast?.('Neden zorunludur', 'err'); return; }
+  const cu = window.CU();
+  const d  = window.loadPirim?.() || [];
+  const p  = d.find(x => x.id === id); if (!p) return;
+  p.status       = 'rejected';
+  p.rejectedBy   = cu.id;
+  p.rejectedAt   = _now();
+  p.rejectReason = '[Ara Onay Red] ' + reason;
+  window.storePirim?.(d);
+  document.getElementById('mo-peer-reject')?.remove();
+  renderPirim();
+  window.toast?.('Ara onay reddedildi', 'ok');
+  _pirimDuyur('❌ Ara Onay Reddedildi', '"' + (p.title||'') + '" ara onayda reddedildi. Neden: ' + reason, 'err');
+  window.logActivity?.('view', `Ara onay reddedildi: "${p.title}"`);
+}
+window._confirmPeerReject = _confirmPeerReject;
+
+/** Admin: red modal'ı aç */
 function rejectPirim(id) {
-  if (!window.isAdmin()) return;
-  const reason = prompt('Red nedeni (opsiyonel):') ?? '';
+  if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
+  const p = (window.loadPirim?.() || []).find(x => x.id === id); if (!p) return;
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-pirim-reject'; mo.style.zIndex = '2400';
+  mo.innerHTML = `
+    <div class="moc" style="max-width:440px;padding:0;border-radius:14px;overflow:hidden">
+      <div style="background:#EF4444;padding:14px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:600">❌ Prim Reddet</div>
+        <button onclick="document.getElementById('mo-pirim-reject').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:16px">×</button>
+      </div>
+      <div style="padding:18px 20px">
+        <div style="padding:10px 12px;background:rgba(239,68,68,.06);border-radius:8px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--t3)">Reddedilecek prim</div>
+          <div style="font-size:13px;font-weight:600;color:var(--t)">${p.title || '—'} — ${_fmt(p.amount)}</div>
+        </div>
+        <div class="fr">
+          <div class="fl">RED NEDENİ <span style="color:var(--rdt)">*</span></div>
+          <textarea class="fi" id="pirim-reject-reason" rows="3" style="resize:none" placeholder="Neden reddediyorsunuz? (personel görecek)"></textarea>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:6px">💡 Personel bu açıklamayı görecek ve prim kaydını düzenleyerek tekrar gönderebilecek.</div>
+      </div>
+      <div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
+        <button class="btn" onclick="document.getElementById('mo-pirim-reject').remove()">İptal</button>
+        <button class="btn btnp" style="background:#EF4444;border-color:#EF4444" onclick="_confirmRejectPirim(${id})">❌ Reddet</button>
+      </div>
+    </div>`;
+  document.body.appendChild(mo);
+  setTimeout(() => { mo.classList.add('open'); document.getElementById('pirim-reject-reason')?.focus(); }, 10);
+}
+
+function _confirmRejectPirim(id) {
+  const reason = (document.getElementById('pirim-reject-reason')?.value || '').trim();
+  if (!reason) { window.toast?.('Red nedeni zorunludur', 'err'); return; }
   const d = window.loadPirim?.() || [];
   const p = d.find(x => x.id === id); if (!p) return;
   p.status       = 'rejected';
@@ -961,11 +1043,13 @@ function rejectPirim(id) {
   p.rejectedAt   = _now();
   p.rejectReason = reason;
   window.storePirim?.(d);
+  document.getElementById('mo-pirim-reject')?.remove();
   renderPirim();
   window.toast?.('Prim reddedildi', 'ok');
-  _pirimDuyur('❌ Prim Reddedildi', '"' + (p.title||'') + '" başlıklı prim reddedildi.', 'err');
-  window.logActivity?.('view', `Prim reddedildi: "${p.title}"`);
+  _pirimDuyur('❌ Prim Reddedildi', '"' + (p.title||'') + '" reddedildi. Neden: ' + reason, 'err');
+  window.logActivity?.('view', `Prim reddedildi: "${p.title}" — ${reason}`);
 }
+window._confirmRejectPirim = _confirmRejectPirim;
 
 
 function markPirimPaid(id) {
@@ -1023,6 +1107,16 @@ function showPirimDetail(id) {
       ${p.paidAt ? _dRow('Ödeme T.', p.paidAt) : ''}
       ${p.rejectReason ? _dRow('Red Nedeni', `<span style="color:var(--rd)">${p.rejectReason}</span>`) : ''}
     </div>`;
+  // Reddedilmişse ve kendi primseyse tekrar gönder butonu
+  const footer = window.g('pirim-detail-footer');
+  if (footer) {
+    const cu2 = window.CU?.();
+    if (!window.isAdmin?.() && p.uid === cu2?.id && p.status === 'rejected') {
+      footer.innerHTML = `<button class="btn btnp" onclick="Pirim.resubmit(${id});window.closeMo?.('mo-pirim-detail')">↩ Düzenle & Tekrar Gönder</button>`;
+    } else {
+      footer.innerHTML = '';
+    }
+  }
   window.openMo?.('mo-pirim-detail');
 }
 
@@ -1037,7 +1131,25 @@ function _dRow(label, value) {
 // BÖLÜM 7 — PDF YÖNETMELİK
 // ════════════════════════════════════════════════════════════════
 function showPirimPdf() {
-  _injectPirimPanel();
+  // Modal dinamik oluştur — index.html'e bağımlılık yok
+  let mo = document.getElementById('mo-pirim-pdf');
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-pirim-pdf'; mo.style.zIndex = '2300';
+    mo.innerHTML = `
+      <div class="moc" style="max-width:700px;padding:0;border-radius:14px;overflow:hidden">
+        <div style="background:#1e1b4b;padding:14px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:600">📄 Prim Yönetmeliği</div>
+          <button onclick="window.closeMo?.('mo-pirim-pdf')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:16px">×</button>
+        </div>
+        <div id="pirim-pdf-area" style="padding:0">
+          <div id="pirim-pdf-viewer" style="min-height:400px"></div>
+        </div>
+        <div id="pirim-pdf-footer" style="padding:12px 20px;border-top:1px solid var(--b);display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;background:var(--s2)"></div>
+      </div>`;
+    document.body.appendChild(mo);
+  }
+
   const area   = window.g('pirim-pdf-area');
   const viewer = window.g('pirim-pdf-viewer');
   const footer = window.g('pirim-pdf-footer');
@@ -1779,6 +1891,263 @@ function checkPirimApprovalDelay() {
 setTimeout(() => checkPirimApprovalDelay(), 6000);
 window.checkPirimApprovalDelay = checkPirimApprovalDelay;
 
+
+// Reddedilen primi düzenleyip tekrar onaya gönder
+function resubmitPirim(id) {
+  const d = window.loadPirim?.() || [];
+  const p = d.find(x => x.id === id); if (!p) return;
+  const cu = window.CU?.();
+  if (p.uid !== cu?.id) { window.toast?.('Bu size ait değil', 'err'); return; }
+  if (p.status !== 'rejected') { window.toast?.('Sadece reddedilen primler tekrar gönderilebilir', 'err'); return; }
+
+  // Düzenleme modalını aç
+  Pirim.openModal(id);
+
+  // Modal açıldıktan sonra kırmızı banner ekle
+  setTimeout(() => {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(239,68,68,.08);border-left:3px solid #EF4444;padding:8px 12px;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:11px;color:#EF4444';
+    banner.innerHTML = '⚠️ <b>Red nedeni:</b> ' + (p.rejectReason || '—') + '<br><span style="color:var(--t3)">Değişiklik yapın ve kaydedin — tekrar onaya gönderilecek.</span>';
+    const firstField = document.querySelector('#mo-pirim .mob, #mo-pirim .moc > div:nth-child(2)');
+    if (firstField) firstField.insertBefore(banner, firstField.firstChild);
+  }, 200);
+}
+window.resubmitPirim = resubmitPirim;
+
+
+// ════════════════════════════════════════════════════════════════
+// 5 TASARIM ÖNERİSİ — Görsel referanslar
+// Şu an aktif: Bento + inline grid tablo (B)
+//
+// A) Stripe Dashboard — Sol sidebar KPI + sağda tablo
+//    Üstte: büyük ₺ rakamı, progress bar, küçük istatistikler
+//    Orta: işlem tablosu (yoğun, çok veri)
+//    Sağ: liderlik + trendler
+//
+// B) [AKTİF] Bento Grid — Apple Settings tarzı
+//    Üstte: 5 metrik kutu yan yana (tıklanabilir)
+//    Gradient kişisel banner (streak, hedef bar dahil)
+//    Grid tablo + sağ panel
+//
+// C) Kanban Board — Trello / Linear tarzı
+//    4 sütun: Bekliyor | Peer Review | Onaylı | Ödendi
+//    Her prim sürükle-bırak ile sütun değiştirir
+//    Üstte toplam tutar her sütunda ayrı
+//
+// D) Timeline — Notion tarzı
+//    Sol: takvim görünümü (ay bazlı)
+//    Sağ: seçilen aya ait prim listesi
+//    Renk kodlu işlem türleri
+//    Her işlem satırında mini progress
+//
+// E) Leaderboard Odaklı — Oyun / Gamification tarzı
+//    Üstte büyük podium (1. 2. 3. kişi profil fotoğrafıyla)
+//    Altında tam sıralama tablosu (rank badge'leriyle)
+//    Sağda kişisel kart: XP bar, rozet vitrin, hedef
+//    Renk: altın/gümüş/bronz vurgular
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+// 6 GELİŞTİRME ÖNERİSİ (ek)
+// ════════════════════════════════════════════════════════════════
+
+// GELİŞTİRME 1: Prim Tahmini — Bu ay ne kadar kazanacağını göster
+function showPirimForecast(userId) {
+  const all  = (window.loadPirim?.() || []).filter(p => p.uid === (userId||window.CU?.()?.id));
+  const now  = new Date();
+  const thisM = now.toISOString().slice(0,7);
+  // Son 3 ayın ortalaması
+  const months = [0,1,2].map(i => {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    return d.toISOString().slice(0,7);
+  });
+  const avgs = months.map(m =>
+    all.filter(p => ['approved','paid'].includes(p.status) && (p.date||'').startsWith(m))
+       .reduce((s,p) => s+(p.amount||0), 0)
+  );
+  const avg3 = avgs.reduce((s,v) => s+v, 0) / 3;
+  const thisMonthSoFar = all.filter(p => (p.date||'').startsWith(thisM)).reduce((s,p)=>s+(p.amount||0),0);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysPassed  = now.getDate();
+  const dailyRate   = thisMonthSoFar / daysPassed;
+  const forecast    = Math.round(dailyRate * daysInMonth);
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:380px">'
+    + '<div class="mt">🔮 Bu Ay Tahmini</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
+    + '<div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Günlük ort.</div><div style="font-size:16px;font-weight:600;color:var(--ac)">' + _fmt(dailyRate) + '</div></div>'
+    + '<div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Ay sonu tahmini</div><div style="font-size:16px;font-weight:600;color:#10B981">' + _fmt(forecast) + '</div></div>'
+    + '<div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">3 aylık ort.</div><div style="font-size:16px;font-weight:600;color:var(--t2)">' + _fmt(avg3) + '</div></div>'
+    + '<div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Şu ana kadar</div><div style="font-size:16px;font-weight:600;color:var(--t)">' + _fmt(thisMonthSoFar) + '</div></div>'
+    + '</div>'
+    + '<div class="mf"><button class="btn" onclick="this.closest(".mo").remove()">Kapat</button></div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.showPirimForecast = showPirimForecast;
+
+// GELİŞTİRME 2: Prim Takvimi — Ay görünümü (renderOdmCalendar benzeri)
+function renderPirimCalendar(cont) {
+  if (!cont) { cont = document.getElementById('pirim-list'); }
+  if (!cont) return;
+  const all  = window.loadPirim?.() || [];
+  const now  = new Date();
+  const y    = now.getFullYear();
+  const m    = now.getMonth();
+  const dim  = new Date(y, m+1, 0).getDate();
+  const start = (new Date(y, m, 1).getDay() + 6) % 7; // Pzt=0
+
+  const dayMap = {};
+  all.forEach(p => {
+    if (!(p.date||'').startsWith(y+'-'+String(m+1).padStart(2,'0'))) return;
+    const d = parseInt((p.date||'').slice(8));
+    if (!dayMap[d]) dayMap[d] = [];
+    dayMap[d].push(p);
+  });
+
+  const days = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:12px">';
+  days.forEach(d => { html += '<div style="text-align:center;font-size:9px;font-weight:600;color:var(--t3);padding:4px 0">' + d + '</div>'; });
+  for (let i=0;i<start;i++) html += '<div></div>';
+  for (let d=1;d<=dim;d++) {
+    const isToday = d === now.getDate();
+    const items   = dayMap[d] || [];
+    const total   = items.reduce((s,p)=>s+(p.amount||0),0);
+    html += '<div style="min-height:52px;border:0.5px solid var(--b);border-radius:6px;padding:3px;background:' + (isToday?'rgba(99,102,241,.06)':'var(--sf)') + '">';
+    html += '<div style="font-size:10px;font-weight:' + (isToday?'700':'400') + ';color:' + (isToday?'var(--ac)':'var(--t2)') + ';text-align:center">' + d + '</div>';
+    if (items.length) {
+      html += '<div style="font-size:8px;padding:1px 3px;background:rgba(99,102,241,.1);color:var(--ac);border-radius:3px;margin-top:1px">' + items.length + ' prim</div>';
+      html += '<div style="font-size:8px;color:var(--ac);font-weight:600">' + Math.round(total/1000) + 'k₺</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+}
+window.renderPirimCalendar = renderPirimCalendar;
+
+// GELİŞTİRME 3: Ekip Performans Özeti — Admin için
+function showTeamPerformance() {
+  const all   = window.loadPirim?.() || [];
+  const users = (window.loadUsers?.() || []).filter(u => u.status === 'active');
+  const thisM = new Date().toISOString().slice(0,7);
+
+  const rows = users.map(u => {
+    const mine   = all.filter(p => p.uid === u.id);
+    const monthA = mine.filter(p => ['approved','paid'].includes(p.status) && (p.date||'').startsWith(thisM));
+    return {
+      name:     u.name,
+      month:    monthA.reduce((s,p)=>s+(p.amount||0),0),
+      pending:  mine.filter(p=>p.status==='pending').length,
+      streak:   calcPirimStreak ? calcPirimStreak(u.id) : 0,
+      badges:   getUserBadges ? getUserBadges(u.id).length : 0,
+    };
+  }).filter(r => r.month > 0 || r.pending > 0).sort((a,b) => b.month-a.month);
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  let html = '<div class="moc" style="max-width:560px"><div class="mt">👥 Ekip Performansı — ' + thisM + '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px">';
+  rows.forEach((r,i) => {
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border-radius:8px">';
+    html += '<span style="font-size:14px;min-width:24px;text-align:center">' + (i===0?'🥇':i===1?'🥈':i===2?'🥉':'  ') + '</span>';
+    html += '<div style="flex:1"><div style="font-size:12px;font-weight:500">' + r.name + '</div>';
+    html += '<div style="font-size:10px;color:var(--t3)">' + r.streak + ' ay seri 🔥 · ' + r.badges + ' rozet</div></div>';
+    html += '<div style="text-align:right"><div style="font-size:13px;font-weight:600;color:var(--ac)">' + _fmt(r.month) + '</div>';
+    html += '<div style="font-size:10px;color:var(--amt)">' + (r.pending?r.pending+' bekliyor':'') + '</div></div></div>';
+  });
+  html += '</div><div class="mf"><button class="btn" onclick="this.closest(".mo").remove()">Kapat</button></div></div>';
+  mo.innerHTML = html;
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.showTeamPerformance = showTeamPerformance;
+
+// GELİŞTİRME 4: Prim Politikası — Inline açıklamalar
+function openPirimPolicy() {
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:500px"><div class="mt">📋 Prim Politikası</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--t2)">'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>⏳ Onay Süreci:</b> Prim girilir → Yönetici onayı beklenir → İsteğe bağlı peer review → Kesin onay → Ödeme planı</div>'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>💰 Oran Belirleme:</b> Prim oranları yalnızca yönetici tarafından belirlenir. Personel oran giremez.</div>'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>❌ Red Durumu:</b> Reddedilen primler düzenlenip tekrar gönderilebilir. Red nedeni personele bildirilir.</div>'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>📅 Ödeme Tarihi:</b> Onaylanan primler otomatik olarak ödeme planına eklenir.</div>'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>🔥 Seri Bonus:</b> Üst üste prim kazanan personele ek katsayı uygulanır.</div>'
+    + '</div>'
+    + '<div class="mf"><button class="btn" onclick="this.closest(".mo").remove()">Kapat</button>'
+    + '<button class="btn btns" onclick="Pirim.showPdf()">📄 Tam Yönetmelik</button></div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openPirimPolicy = openPirimPolicy;
+
+// GELİŞTİRME 5: Toplu Ödendi İşaretle
+function bulkMarkPirimPaid() {
+  if (!window.isAdmin()) return;
+  const approved = (window.loadPirim?.() || []).filter(p => p.status === 'approved');
+  if (!approved.length) { window.toast?.('Ödendi işaretlenecek onaylı prim yok', 'warn'); return; }
+  if (!confirm(approved.length + ' onaylı primi ödendi olarak işaretlemek istiyor musunuz?')) return;
+  const all = window.loadPirim?.() || [];
+  approved.forEach(p => { p.status = 'paid'; p.paidAt = _now(); p.paidBy = window.CU?.()?.id; });
+  window.storePirim?.(all);
+  _pirimDuyur('💸 Toplu Prim Ödemesi', approved.length + ' prim ödendi olarak işaretlendi.', 'ok');
+  window.toast?.(approved.length + ' prim ödendi işaretlendi ✓', 'ok');
+  renderPirim();
+}
+window.bulkMarkPirimPaid = bulkMarkPirimPaid;
+
+// GELİŞTİRME 6: Araçlar buton satırına ekstra butonlar
+function _injectPirimExtraTools() {
+  const topbar = document.querySelector('#panel-pirim [style*="position:sticky"]');
+  if (!topbar || topbar.dataset.extraInjected) return;
+  topbar.dataset.extraInjected = '1';
+  const extraBtn = document.createElement('div');
+  extraBtn.style.cssText = 'position:relative;display:inline-block';
+  extraBtn.innerHTML = '<button class="btn btns" onclick="_togglePirimTools(this)" style="font-size:11px">🛠 Araçlar ▾</button>'
+    + '<div id="pirim-extra-tools" style="display:none;position:absolute;right:0;top:calc(100%+4px);background:var(--sf);border:1px solid var(--b);border-radius:10px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;overflow:hidden">'
+    + ['📊 Ekip Performansı:showTeamPerformance()',
+       '🔮 Ay Sonu Tahmini:showPirimForecast()',
+       '📈 Dönem Karşılaştır:openPirimPeriodCompare()',
+       '👥 Personel Karşılaştır:openPirimCompare()',
+       '🧮 Prim Hesaplayıcı:openPirimCalc()',
+       '📋 Prim Politikası:openPirimPolicy()',
+       '💸 Toplu Ödendi:bulkMarkPirimPaid()',
+       '📥 Excel den Aktar:importPirimFromXlsx()',
+    ].map(item => {
+      const [label, fn] = item.split(':');
+      return '<button onclick="' + fn + ';_go("pirim-extra-tools").style.display="none"" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">' + label + '</button>';
+    }).join('')
+    + '</div>';
+  const btns = topbar.querySelector('[style*="gap"]');
+  if (btns) btns.insertBefore(extraBtn, btns.firstChild);
+}
+
+function _togglePirimTools(btn) {
+  const menu = document.getElementById('pirim-extra-tools');
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+window._togglePirimTools = _togglePirimTools;
+
+// renderPirim'e araçlar enjeksiyonu ekle
+const _origRenderPirim = renderPirim;
+renderPirim = function() {
+  _origRenderPirim();
+  setTimeout(_injectPirimExtraTools, 100);
+};
+window.renderPirim = renderPirim;
+if (window.Pirim) window.Pirim.render = renderPirim;
+
+// Dışarı tıklayınca kapat
+document.addEventListener('click', e => {
+  if (!e.target.closest('#pirim-extra-tools') && !e.target.textContent?.includes('Araçlar')) {
+    const m = document.getElementById('pirim-extra-tools');
+    if (m) m.style.display = 'none';
+  }
+});
+
 // ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
@@ -1808,6 +2177,7 @@ const Pirim = {
   _renderTiers:     _renderParamsTiers,
   renderLeaderboard: renderLeaderboard,
   printSlip:        printPirimSlip,
+  resubmit:         resubmitPirim,
   clearFilters:     clearPirimFilters,
   bulkApprove:      bulkApprovePirim,
   importXlsx:       importPirimFromXlsx,
@@ -1843,4 +2213,5 @@ if (typeof module !== 'undefined' && module.exports) {
   window.savePirimParams     = savePirimParams;
   window._renderParamsTiers  = _renderParamsTiers;
   window.printPirimSlip      = printPirimSlip;
+  window.resubmitPirim       = resubmitPirim;
 }
