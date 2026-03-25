@@ -39,8 +39,16 @@ const ROLE_META={
   lead:{label:'Takım Lideri',icon:'⭐',color:'#D97706',bg:'rgba(217,119,6,.1)',border:'rgba(217,119,6,.2)'},
   staff:{label:'Personel',icon:'👤',color:'#475569',bg:'rgba(71,85,105,.08)',border:'rgba(71,85,105,.15)'},
 };
-let USERS_VIEW='card'; // 'card' | 'table';
+let USERS_VIEW='card'; // 'card' | 'table' | 'org'
+let USERS_SORT = { col: '', dir: 1 }; // G7: sıralama state
+let _usersSearchTimer = null; // G6: debounce timer
 function initials(n){return n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);}
+
+// G6: Debounce ile arama
+function _debouncedSearch(val) {
+  clearTimeout(_usersSearchTimer);
+  _usersSearchTimer = setTimeout(() => renderUsers(val), 180);
+}
 
 
 // ── Sabitler ─────────────────────────────────────────────────────
@@ -217,8 +225,6 @@ function saveAdminUser() {
     window.toast?.(`${name} güncellendi ✓`, 'ok');
   } else {
     // Yeni kullanıcı ekle
-    // Firebase Auth kullanan sistemde şifre zorunlu değil
-    // Kullanıcı Firebase Console'dan eklenmişse oradan giriş yapar
     const newUser = {
       id:       Date.now(),
       name, email, role, status,
@@ -227,11 +233,18 @@ function saveAdminUser() {
       createdBy: _getCU()?.id,
       createdAt: nowTs(),
     };
-    // Şifre girilmişse kaydet, girilmemişse Firebase Auth ile giriş yapacak
     if (pwd) newUser.pw = pwd;
     users.push(newUser);
     logActivity('user', `Yeni kullanıcı oluşturuldu: "${name}" (${email})`);
     window.toast?.(`${name} eklendi ✓ — Firebase Console'dan şifre belirleyin`, 'ok');
+
+    // G3/G11: announce.js ile otomatik duyuru (admin hariç sessiz bildirim)
+    if (typeof window.Announce?.autoNotify === 'function') {
+      window.Announce.autoNotify(`👤 Yeni ekip üyesi: ${name} (${ROLE_META[role]?.label || role})`);
+    } else {
+      // addNotif ile bildirim kuyruğuna ekle
+      window.addNotif?.('👤', `Yeni ekip üyesi: ${name}`, 'user', null);
+    }
   }
 
   saveUsers(users);
@@ -322,12 +335,17 @@ function deleteUser(id) {
   if (!u) return;
   if (!confirm(window.t
     ? t('confirm.delete', undefined, { label: u.name })
-    : `"${u.name}" kalıcı olarak silinecek. Emin misiniz?`)) return;
+    : `"${u.name}" silinecek. Emin misiniz?`)) return;
+
+  // G10: Soft-delete — çöp kutusuna gönder
+  const trash = JSON.parse(localStorage.getItem('ak_trash') || '[]');
+  trash.unshift({ ...u, _trashType: 'user', _deletedAt: nowTs(), _deletedBy: _getCU()?.id });
+  localStorage.setItem('ak_trash', JSON.stringify(trash));
 
   saveUsers(users.filter(x => x.id !== id));
   renderAdmin();
   logActivity('user', `Kullanıcı silindi: "${u.name}" (${u.email})`);
-  window.toast?.(`${u.name} silindi`, 'ok');
+  window.toast?.(`${u.name} silindi (çöp kutusundan geri alınabilir)`, 'ok');
 }
 
 // ── RBAC: Modül Yetki Modalı ──────────────────────────────────────
@@ -622,6 +640,126 @@ function showAllUpdateBanners() {
 
 // ── Dışa Aktarım ─────────────────────────────────────────────────
 
+// G4: Kullanıcıları Excel'e aktar
+function exportUsersXlsx() {
+  if (!isAdmin()) return;
+  const users = loadUsers();
+  const rows = [['Ad Soyad','E-posta','Rol','Durum','Modül Sayısı','Son Giriş','Oluşturma']];
+  users.forEach(u => rows.push([
+    u.name, u.email||'',
+    ROLE_META[u.role]?.label||u.role||'',
+    u.status==='active'?'Aktif':'Pasif',
+    u.modules?.length||'Tümü',
+    u.lastLogin||'—',
+    u.createdAt||'—',
+  ]));
+  // CSV fallback (SheetJS yoksa)
+  if (typeof window.XLSX !== 'undefined') {
+    const ws = window.XLSX.utils.aoa_to_sheet(rows);
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, 'Kullanıcılar');
+    window.XLSX.writeFile(wb, `kullaniciler_${nowTs().slice(0,10)}.xlsx`);
+  } else {
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    a.download = `kullaniciler_${nowTs().slice(0,10)}.csv`;
+    a.click();
+  }
+  logActivity('view','Kullanıcı listesi dışa aktarıldı');
+  window.toast?.('Kullanıcı listesi indirildi ✓','ok');
+}
+
+// G5: Bulk actions
+function _onBulkCb() {
+  const cbs = document.querySelectorAll('.u-bulk-cb:checked');
+  const bar = document.getElementById('u-bulk-bar');
+  const countEl = document.getElementById('u-bulk-count');
+  if (bar) bar.style.display = cbs.length ? 'flex' : 'none';
+  if (countEl) countEl.textContent = cbs.length + ' seçili';
+}
+function _bulkSelectAll(checked) {
+  document.querySelectorAll('.u-bulk-cb').forEach(cb => { cb.checked = checked; });
+  _onBulkCb();
+}
+function _clearBulk() {
+  document.querySelectorAll('.u-bulk-cb').forEach(cb => { cb.checked = false; });
+  const saEl = document.getElementById('u-select-all'); if(saEl) saEl.checked = false;
+  const bar = document.getElementById('u-bulk-bar'); if(bar) bar.style.display='none';
+}
+function _getSelectedIds() {
+  return [...document.querySelectorAll('.u-bulk-cb:checked')].map(cb => parseInt(cb.dataset.uid));
+}
+function _bulkToggle(newStatus) {
+  const ids = _getSelectedIds();
+  if (!ids.length) return;
+  const label = newStatus==='suspended'?'askıya alındı':'aktifleştirildi';
+  if (!confirm(`${ids.length} kullanıcı ${label} olarak işaretlensin mi?`)) return;
+  const users = loadUsers();
+  ids.forEach(id => {
+    const u = users.find(x=>x.id===id);
+    if (u) { u.status=newStatus; }
+  });
+  saveUsers(users);
+  logActivity('user', `Toplu durum güncelleme: ${ids.length} kullanıcı → ${newStatus}`);
+  window.toast?.(`${ids.length} kullanıcı ${label} ✓`, 'ok');
+  _clearBulk(); renderUsers();
+}
+function _bulkDelete() {
+  const ids = _getSelectedIds();
+  if (!ids.length) return;
+  if (!confirm(`${ids.length} kullanıcı silinecek. Emin misiniz?`)) return;
+  const users = loadUsers();
+  const trash = JSON.parse(localStorage.getItem('ak_trash')||'[]');
+  ids.forEach(id => {
+    const u = users.find(x=>x.id===id);
+    if (u) trash.unshift({...u,_trashType:'user',_deletedAt:nowTs(),_deletedBy:_getCU()?.id});
+  });
+  localStorage.setItem('ak_trash', JSON.stringify(trash));
+  saveUsers(users.filter(u => !ids.includes(u.id)));
+  logActivity('user', `Toplu silme: ${ids.length} kullanıcı`);
+  window.toast?.(`${ids.length} kullanıcı silindi ✓`, 'ok');
+  _clearBulk(); renderUsers();
+}
+
+// G7: Sıralama fonksiyonu
+function _sortUsers(col) {
+  if (USERS_SORT.col===col) USERS_SORT.dir *= -1;
+  else { USERS_SORT.col=col; USERS_SORT.dir=1; }
+  renderUsers(document.getElementById('u-search')?.value||'');
+}
+
+// G8: Şifre güç seviyesi göstergesi
+function _pwStrength(pw) {
+  if (!pw) return { score:0, label:'', color:'' };
+  let score = 0;
+  if (pw.length>=6)  score++;
+  if (pw.length>=10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = [
+    {label:'',color:''},
+    {label:'Zayıf',color:'#EF4444'},
+    {label:'Orta',color:'#F59E0B'},
+    {label:'İyi',color:'#3B82F6'},
+    {label:'Güçlü',color:'#22C55E'},
+    {label:'Mükemmel',color:'#10B981'},
+  ];
+  return { score, ...levels[Math.min(score, levels.length-1)] };
+}
+function _onPwInput(val) {
+  const s = _pwStrength(val);
+  const el = document.getElementById('f-pw-strength');
+  if (!el) return;
+  if (!val) { el.innerHTML=''; return; }
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+    ${[1,2,3,4,5].map(i=>`<div style="height:3px;flex:1;border-radius:2px;background:${i<=s.score?s.color:'var(--b)'}"></div>`).join('')}
+    <span style="font-size:10px;font-weight:600;color:${s.color};min-width:56px">${s.label}</span>
+  </div>`;
+}
+
+
 // ════════════════════════════════════════════════════════════════
 // V18 EKSİK FONKSİYONLAR — ADMIN
 // ════════════════════════════════════════════════════════════════
@@ -641,6 +779,7 @@ function _injectUsersPanel() {
           '<button class="cvb" id="u-v-org" data-uview="org" style="font-size:11px;padding:5px 11px">🏢 Org</button>',
         '</div>',
         '<button class="btn btnp" onclick="openNewUser()" style="border-radius:9px">+ Kullanıcı Ekle</button>',
+        '<button class="btn btns" onclick="exportUsersXlsx()" title="Excel İndir" style="border-radius:9px">⬇️ Excel</button>',
       '</div>',
     '</div>',
     '<div style="background:var(--al);border:1px solid var(--ac)33;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--t2);line-height:1.7">',
@@ -666,7 +805,7 @@ function _injectUsersPanel() {
       '</div>',
     '</div>',
     '<div style="background:var(--sf);border:1px solid var(--b);border-radius:11px;padding:10px 13px;margin-bottom:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
-      '<input class="fi" type="search" id="u-search" placeholder="İsim veya e-posta ara…" oninput="renderUsers(this.value)" style="flex:1;min-width:160px;border-radius:8px">',
+      '<input class="fi" type="search" id="u-search" placeholder="İsim veya e-posta ara…" oninput="_debouncedSearch(this.value)" style="flex:1;min-width:160px;border-radius:8px">',
       '<select class="fi" id="u-role-filter" onchange="renderUsers()" style="border-radius:8px;min-width:120px">',
         '<option value="">Tüm Roller</option>',
         '<option value="admin">👑 Admin</option>',
@@ -709,8 +848,30 @@ function renderUsers(filter=''){
     return matchQ&&matchRole&&matchStatus;
   });
 
-  // Stats
-  const sv=(id,v)=>{const el=g(id);if(el)el.textContent=v;};
+  // G7: Sıralama uygula
+  if (USERS_SORT.col) {
+    const col = USERS_SORT.col;
+    list.sort((a, b) => {
+      let va = a[col] || ''; let vb = b[col] || '';
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      return va < vb ? -USERS_SORT.dir : va > vb ? USERS_SORT.dir : 0;
+    });
+  }
+
+  // Stats — T2: sayaç animasyonu
+  const sv=(id,v)=>{
+    const el=g(id);
+    if(el){
+      const prev=el.textContent;
+      el.textContent=v;
+      if(String(prev)!==String(v)){ // değişti → pop animasyonu
+        el.classList.remove('u-stat-updated');
+        void el.offsetWidth; // reflow
+        el.classList.add('u-stat-updated');
+      }
+    }
+  };
   sv('u-stat-total',   users.length);
   sv('u-stat-active',  users.filter(x=>x.status==='active').length);
   sv('u-stat-managers',users.filter(x=>x.role==='admin'||x.role==='manager').length);
@@ -798,18 +959,80 @@ function renderUsers(filter=''){
       }).join('')}
     </div>`;
 
+  }else if(USERS_VIEW==='org'){
+    // G2: Org Chart view
+    const byRole = {};
+    list.forEach(u => { (byRole[u.role] = byRole[u.role]||[]).push(u); });
+    const roleOrder = ['admin','manager','lead','staff'];
+    grid.innerHTML = `<div style="padding:8px 0">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--al);border:1.5px solid var(--ac);border-radius:12px;padding:10px 22px">
+          <span style="font-size:18px">🏢</span>
+          <span style="font-size:13px;font-weight:700;color:var(--t)">Duay Organizasyon Şeması</span>
+          <span style="font-size:11px;color:var(--t3)">${list.length} kişi</span>
+        </div>
+      </div>
+      ${roleOrder.filter(r=>byRole[r]?.length).map(role=>{
+        const rm = ROLE_META[role]||ROLE_META.staff;
+        const members = byRole[role];
+        return `<div style="margin-bottom:24px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:0 4px">
+            <div style="height:1px;flex:1;background:var(--b)"></div>
+            <span style="background:${rm.bg};color:${rm.color};border:1px solid ${rm.border};padding:4px 14px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap">${rm.icon} ${rm.label} · ${members.length} kişi</span>
+            <div style="height:1px;flex:1;background:var(--b)"></div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+            ${members.map((u,idx)=>{
+              const avBg = AV_COLORS[users.indexOf(u)%AV_COLORS.length];
+              const isActive = u.status==='active';
+              const isSelf = u.id===_getCU()?.id;
+              return `<div style="background:var(--sf);border:1.5px solid ${isSelf?'#6366F1':'var(--b)'};border-radius:14px;padding:14px 16px;text-align:center;width:140px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.05)"
+                onclick="editUser(${u.id})"
+                onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(0,0,0,.1)'"
+                onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.05)'">
+                <div style="position:relative;display:inline-block;margin-bottom:8px">
+                  <div style="width:44px;height:44px;border-radius:50%;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;margin:0 auto">${initials(u.name)}</div>
+                  <div style="position:absolute;bottom:0;right:-1px;width:12px;height:12px;border-radius:50%;background:${isActive?'#22C55E':'#EF4444'};border:2px solid var(--sf)"></div>
+                </div>
+                <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name.split(' ')[0]}</div>
+                <div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.email?.split('@')[0]||'—'}</div>
+                ${isSelf?`<div style="margin-top:5px"><span style="background:#6366F1;color:#fff;font-size:8px;font-weight:700;padding:1px 6px;border-radius:4px">SİZ</span></div>`:''}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
   }else{
-    // Professional table view
+    // Professional table view — G7: sortable columns, G5: bulk select
     const _cuSelf2 = _getCU();
-    grid.innerHTML=`<div style="border:1.5px solid var(--b);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.05)">
+    const _th = (label, col) => {
+      const isActive = USERS_SORT.col === col;
+      const arrow = isActive ? (USERS_SORT.dir===1 ? ' ↑' : ' ↓') : '';
+      return `<th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:${isActive?'var(--ac)':'var(--t3)'};text-transform:uppercase;letter-spacing:.07em;cursor:pointer;user-select:none" onclick="_sortUsers('${col}')">${label}${arrow}</th>`;
+    };
+    grid.innerHTML=`
+    <!-- G5: Bulk action toolbar (gizli) -->
+    <div id="u-bulk-bar" style="display:none;background:var(--al);border:1px solid var(--ac);border-radius:10px;padding:8px 14px;margin-bottom:10px;display:none;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="u-bulk-count" style="font-size:12px;font-weight:600;color:var(--t)">0 seçili</span>
+      <button class="btn btns" style="font-size:11px;color:#D97706" onclick="_bulkToggle('suspended')">⏸ Askıya Al</button>
+      <button class="btn btns" style="font-size:11px;color:#16A34A" onclick="_bulkToggle('active')">▶ Aktifleştir</button>
+      <button class="btn btns" style="font-size:11px;color:#EF4444" onclick="_bulkDelete()">🗑 Sil</button>
+      <button class="btn btns" style="font-size:11px;margin-left:auto" onclick="_clearBulk()">✕ İptal</button>
+    </div>
+    <div style="border:1.5px solid var(--b);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.05)">
       <table style="width:100%;border-collapse:collapse">
         <thead>
           <tr style="background:var(--s2);border-bottom:2px solid var(--b)">
-            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Kullanıcı</th>
-            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Rol</th>
-            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Durum</th>
+            <th style="padding:12px 16px;width:36px">
+              <input type="checkbox" id="u-select-all" onchange="_bulkSelectAll(this.checked)" style="accent-color:var(--ac);cursor:pointer" title="Tümünü seç">
+            </th>
+            ${_th('Kullanıcı','name')}
+            ${_th('Rol','role')}
+            ${_th('Durum','status')}
             <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Erişim</th>
-            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Son Giriş</th>
+            ${_th('Son Giriş','lastLogin')}
             <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">İşlemler</th>
           </tr>
         </thead>
@@ -821,6 +1044,10 @@ function renderUsers(filter=''){
             const idx=users.indexOf(u);
             const avBg=AV_COLORS[idx%AV_COLORS.length];
             return`<tr style="border-bottom:1px solid var(--b);background:${rowIdx%2===0?'var(--sf)':'var(--s2)'};opacity:${isActive?1:.6};transition:background .1s" onmouseenter="this.style.background='var(--al)'" onmouseleave="this.style.background='${rowIdx%2===0?'var(--sf)':'var(--s2)'}'">
+              <td style="padding:12px 16px;width:36px">
+                ${!isSelf?`<input type="checkbox" class="u-bulk-cb" data-uid="${u.id}" onchange="_onBulkCb()" style="accent-color:var(--ac);cursor:pointer">`:
+                  `<span style="font-size:10px;color:var(--t3)">—</span>`}
+              </td>
               <td style="padding:12px 16px">
                 <div style="display:flex;align-items:center;gap:10px">
                   <div style="width:34px;height:34px;border-radius:10px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name)}</div>
@@ -889,10 +1116,16 @@ function openNewUser(){
 function filterUsers(v){renderUsers(v);}
 
 function toggleUser(id){
+  // G9 fix: 'inactive' → 'suspended' (sistem 'suspended' bekliyor)
   const users=loadUsers();const u=users.find(x=>x.id===id);if(!u)return;
-  u.status=u.status==='active'?'inactive':'active';saveUsers(users);
-  logActivity('user',`"${u.name}" kullanıcısını ${u.status==='active'?'aktif etti':'devre dışı bıraktı'}`);
-  toast(u.name+' '+(u.status==='active'?'aktif':'pasif'),'ok');renderUsers();
+  const wasActive = u.status==='active';
+  u.status = wasActive ? 'suspended' : 'active';
+  if (wasActive) { u.suspendedBy=_getCU()?.id; u.suspendedAt=nowTs(); }
+  else           { u.activatedBy=_getCU()?.id; u.activatedAt=nowTs(); }
+  saveUsers(users);
+  logActivity('user',`"${u.name}" kullanıcısını ${u.status==='active'?'aktif etti':'askıya aldı'}`);
+  window.toast?.(u.name+' '+(u.status==='active'?'aktifleştirildi ✓':'askıya alındı'),'ok');
+  renderUsers();
 }
 
 function renderSettingsAdmin(){
@@ -903,8 +1136,9 @@ function renderSettingsAdmin(){
   if(vh&&!vh.innerHTML.trim()){
     vh.innerHTML=CHANGELOG.slice(0,8).map(c=>`<div class="dr"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${c.v}</span><span style="font-size:11px;color:var(--t2)">${c.note}</span><span style="font-size:10px;color:var(--t3)">${c.ts.slice(0,10)}</span></div>`).join('');
   }
-  // Puantaj Yetki Kartı — dinamik render
-  renderPuantajYetkiKart();
+  // Puantaj Yetki Kartı — dinamik render (G1: undefined guard)
+  if (typeof renderPuantajYetkiKart === 'function') renderPuantajYetkiKart();
+  else if (typeof window.renderPuantajYetkiKart === 'function') window.renderPuantajYetkiKart();
 }
 
 
@@ -957,6 +1191,21 @@ if (typeof module !== 'undefined' && module.exports) {
   window.toggleUser          = toggleUser;
   window.renderSettingsAdmin = renderSettingsAdmin;
   window._injectUsersPanel   = _injectUsersPanel;
+  // G4: Excel export
+  window.exportUsersXlsx     = exportUsersXlsx;
+  // G5: Bulk actions
+  window._onBulkCb           = _onBulkCb;
+  window._bulkSelectAll      = _bulkSelectAll;
+  window._clearBulk          = _clearBulk;
+  window._bulkToggle         = _bulkToggle;
+  window._bulkDelete         = _bulkDelete;
+  // G7: Sort
+  window._sortUsers          = _sortUsers;
+  // G8: Password strength
+  window._pwStrength         = _pwStrength;
+  window._onPwInput          = _onPwInput;
+  // G6: Debounce search
+  window._debouncedSearch    = _debouncedSearch;
   // Geriye uyumluluk
   window.renderAdmin = function(...args) {
   try {
