@@ -230,9 +230,12 @@ window.migrateLocalToFirestore = function() {
   }
 };
 window.resetAll = window.resetAll || function() {
-  if (confirm('Tüm veriyi sıfırlamak istediğinizden emin misiniz? Bu işlem GERİ ALINAMAZ.')) {
-    window.App?.resetDemoData?.();
-  }
+  window.confirmModal('Tüm veriyi sıfırlamak istediğinizden emin misiniz? Bu işlem GERİ ALINAMAZ.', {
+    title: 'Tüm Veriyi Sıfırla',
+    danger: true,
+    confirmText: 'Evet, Sıfırla',
+    onConfirm: () => { window.App?.resetDemoData?.(); }
+  });
 };
 window.exportAllXlsx = window.exportAllXlsx || function() {
   // Her modülün export fonksiyonunu çağır

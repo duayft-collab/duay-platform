@@ -114,10 +114,16 @@ function saveIk(){
 
 function delIk(id){
   if(!_isAdmin()){window.toast?.('Yetki yok','err');return;}
-  if(!confirm('Bu kaydı silmek istediğinizden emin misiniz?'))return;
-  storeIk(loadIk().filter(x=>x.id!==id));
-  renderIk();
-  window.toast?.('Silindi','ok');
+  window.confirmModal('Bu kaydı silmek istediğinizden emin misiniz?', {
+    title: 'İK Kaydı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeIk(loadIk().filter(x=>x.id!==id));
+      renderIk();
+      window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 function renderIk(){
@@ -691,8 +697,14 @@ function puanToggle(id){
 function delPuan(id){
   if(!_isAdmin())return;
   const d=loadPuan();const r=d.find(x=>x.id===id);if(!r)return;
-  if(!confirm('Bu puantaj kaydını silmek istediğinizden emin misiniz?'))return;
-  savePuan(d.filter(x=>x.id!==id));renderPuantaj();window.toast?.('Kayıt silindi','ok');
+  window.confirmModal('Bu puantaj kaydını silmek istediğinizden emin misiniz?', {
+    title: 'Puantaj Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      savePuan(d.filter(x=>x.id!==id));renderPuantaj();window.toast?.('Kayıt silindi','ok');
+    }
+  });
 }
 
 function renderPuantajSummary(data,users){

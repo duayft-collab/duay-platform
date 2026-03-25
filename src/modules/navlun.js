@@ -451,8 +451,14 @@ function navlunReddet(id) {
 }
 
 function delNavlun(id) {
-  if(!confirm('Bu teklifi silmek istediğinizden emin misiniz?')) return;
-  storeNavlun(loadNavlun().filter(x=>x.id!==id)); renderNavlun(); window.toast?.('Silindi','ok');
+  window.confirmModal('Bu teklifi silmek istediğinizden emin misiniz?', {
+    title: 'Teklif Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeNavlun(loadNavlun().filter(x=>x.id!==id)); renderNavlun(); window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 function navlunToKonteyn(id) {

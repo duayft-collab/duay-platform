@@ -262,14 +262,21 @@ function suspendUser(id) {
   const users = loadUsers();
   const u     = users.find(x => x.id === id);
   if (!u) return;
-  if (!confirm(window.t ? t('confirm.suspend', undefined, { name: u.name }) : `"${u.name}" askıya alınsın mı?`)) return;
-  u.status        = 'suspended';
-  u.suspendedBy   = _getCU()?.id;
-  u.suspendedAt   = nowTs();
-  saveUsers(users);
-  renderAdmin();
-  logActivity('user', `Kullanıcı askıya alındı: "${u.name}"`);
-  window.toast?.(`${u.name} askıya alındı`, 'ok');
+  const msg = window.t ? t('confirm.suspend', undefined, { name: u.name }) : `"${u.name}" askıya alınsın mı?`;
+  window.confirmModal(msg, {
+    title: 'Kullanıcı Askıya Al',
+    danger: true,
+    confirmText: 'Evet, Askıya Al',
+    onConfirm: () => {
+      u.status        = 'suspended';
+      u.suspendedBy   = _getCU()?.id;
+      u.suspendedAt   = nowTs();
+      saveUsers(users);
+      renderAdmin();
+      logActivity('user', `Kullanıcı askıya alındı: "${u.name}"`);
+      window.toast?.(`${u.name} askıya alındı`, 'ok');
+    }
+  });
 }
 
 function activateUser(id) {
@@ -320,14 +327,20 @@ function deleteUser(id) {
   const users = loadUsers();
   const u     = users.find(x => x.id === id);
   if (!u) return;
-  if (!confirm(window.t
+  const msg = window.t
     ? t('confirm.delete', undefined, { label: u.name })
-    : `"${u.name}" kalıcı olarak silinecek. Emin misiniz?`)) return;
-
-  saveUsers(users.filter(x => x.id !== id));
-  renderAdmin();
-  logActivity('user', `Kullanıcı silindi: "${u.name}" (${u.email})`);
-  window.toast?.(`${u.name} silindi`, 'ok');
+    : `"${u.name}" kalıcı olarak silinecek. Emin misiniz?`;
+  window.confirmModal(msg, {
+    title: 'Kullanıcı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      saveUsers(users.filter(x => x.id !== id));
+      renderAdmin();
+      logActivity('user', `Kullanıcı silindi: "${u.name}" (${u.email})`);
+      window.toast?.(`${u.name} silindi`, 'ok');
+    }
+  });
 }
 
 // ── RBAC: Modül Yetki Modalı ──────────────────────────────────────

@@ -5029,10 +5029,7 @@ window.openTaskTemplateLibrary = openTaskTemplateLibrary;
           window.renderPusula?.();
           window.toast?.('🗑 Silindi', 'ok');
         }
-      }) || (confirm('Görevi sil?') && (() => {
-        saveTasks(loadTasks().filter(x => x.id !== _swTaskId));
-        window.renderPusula?.();
-      })());
+      });
     }
     _swEl = null; _swTaskId = null;
   }

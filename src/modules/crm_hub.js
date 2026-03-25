@@ -356,13 +356,20 @@ function delCrmMusteri(id) {
   if(!_isAdminC()) return;
   const d=typeof loadCrmData==='function'?loadCrmData():[];
   const m=d.find(x=>x.id===id);
-  if(!m||!confirm(`"${m.name}" müşterisi silinsin mi?`)) return;
-  m.isDeleted=true;m.deletedAt=_tsC();m.deletedBy=_CUc()?.id;
-  if(typeof storeCrmData==='function') storeCrmData(d);
-  _syncCrmFirestore('crm',d);
-  renderCrmMusteriler();
-  _logC('crm',`Müşteri silindi: ${m.name}`);
-  _toastC('Silindi','ok');
+  if(!m) return;
+  window.confirmModal(`"${m.name}" müşterisi silinsin mi?`, {
+    title: 'Müşteri Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      m.isDeleted=true;m.deletedAt=_tsC();m.deletedBy=_CUc()?.id;
+      if(typeof storeCrmData==='function') storeCrmData(d);
+      _syncCrmFirestore('crm',d);
+      renderCrmMusteriler();
+      _logC('crm',`Müşteri silindi: ${m.name}`);
+      _toastC('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -517,10 +524,17 @@ function tamamlaCrmGorusme(id) {
 
 function delCrmGorusme(id) {
   const data=_loadGorusmeler();const g=data.find(x=>x.id===id);
-  if(!g||!confirm('Bu görüşme silinsin mi?')) return;
-  g.isDeleted=true;g.deletedAt=_tsC();g.deletedBy=_CUc()?.id;
-  _storeGorusmeler(data);_syncCrmFirestore('gorusme',data);
-  renderCrmGorusmeler();_toastC('Silindi','ok');
+  if(!g) return;
+  window.confirmModal('Bu görüşme silinsin mi?', {
+    title: 'Görüşme Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      g.isDeleted=true;g.deletedAt=_tsC();g.deletedBy=_CUc()?.id;
+      _storeGorusmeler(data);_syncCrmFirestore('gorusme',data);
+      renderCrmGorusmeler();_toastC('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -682,10 +696,17 @@ function updateCrmTeklifAsama(id, asama) {
 
 function delCrmTeklif(id) {
   const data=_loadTeklifler();const t=data.find(x=>x.id===id);
-  if(!t||!confirm(`"${t.no}" teklifi silinsin mi?`)) return;
-  t.isDeleted=true;t.deletedAt=_tsC();t.deletedBy=_CUc()?.id;
-  _storeTeklifler(data);_syncCrmFirestore('teklif',data);
-  renderCrmTeklifler();_toastC('Silindi','ok');
+  if(!t) return;
+  window.confirmModal(`"${t.no}" teklifi silinsin mi?`, {
+    title: 'Teklif Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      t.isDeleted=true;t.deletedAt=_tsC();t.deletedBy=_CUc()?.id;
+      _storeTeklifler(data);_syncCrmFirestore('teklif',data);
+      renderCrmTeklifler();_toastC('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -766,11 +787,18 @@ function delCrmNumune(id) {
   if(!_isAdminC()) return;
   const d=typeof loadNumune==='function'?loadNumune():[];
   const n=d.find(x=>x.id===id);
-  if(!n||!confirm(`"${n.name}" numunesi silinsin mi?`)) return;
-  n.isDeleted=true;n.deletedAt=_tsC();n.deletedBy=_CUc()?.id;
-  if(typeof storeNumune==='function') storeNumune(d);
-  _syncCrmFirestore('numune',d);
-  renderCrmNumune();_toastC('Silindi','ok');
+  if(!n) return;
+  window.confirmModal(`"${n.name}" numunesi silinsin mi?`, {
+    title: 'Numune Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      n.isDeleted=true;n.deletedAt=_tsC();n.deletedBy=_CUc()?.id;
+      if(typeof storeNumune==='function') storeNumune(d);
+      _syncCrmFirestore('numune',d);
+      renderCrmNumune();_toastC('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -846,10 +874,17 @@ function delCrmEtkinlik(id) {
   if(!_isAdminC()) return;
   const d=typeof loadEtkinlik==='function'?loadEtkinlik():[];
   const e=d.find(x=>x.id===id);
-  if(!e||!confirm(`"${e.ad||e.title}" silinsin mi?`)) return;
-  e.isDeleted=true;e.deletedAt=_tsC();e.deletedBy=_CUc()?.id;
-  if(typeof storeEtkinlik==='function') storeEtkinlik(d);
-  renderCrmEtkinlik();_toastC('Silindi','ok');
+  if(!e) return;
+  window.confirmModal(`"${e.ad||e.title}" silinsin mi?`, {
+    title: 'Etkinlik Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      e.isDeleted=true;e.deletedAt=_tsC();e.deletedBy=_CUc()?.id;
+      if(typeof storeEtkinlik==='function') storeEtkinlik(d);
+      renderCrmEtkinlik();_toastC('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

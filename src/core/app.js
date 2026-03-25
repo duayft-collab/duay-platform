@@ -1077,11 +1077,17 @@ function markAllNotifRead() {
 }
 
 function clearAllNotifs() {
-  if (!confirm('Tüm bildirimler silinsin mi?')) return;
-  storeNotifs([]);
-  updateNotifBadge();
-  _renderNotifPanel();
-  toast('Bildirimler temizlendi ✓', 'ok');
+  window.confirmModal('Tüm bildirimler silinsin mi?', {
+    title: 'Bildirimleri Temizle',
+    danger: true,
+    confirmText: 'Evet, Temizle',
+    onConfirm: () => {
+      storeNotifs([]);
+      updateNotifBadge();
+      _renderNotifPanel();
+      toast('Bildirimler temizlendi ✓', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1565,10 +1571,16 @@ function openPinModal(editId) {
 }
 
 function deletePin(id) {
-  if (!confirm('Bu linki kaldırmak istediğinizden emin misiniz?')) return;
-  saveLinks(loadLinks().filter(l => l.id !== id));
-  renderPinbar();
-  toast('Link kaldırıldı', 'ok');
+  window.confirmModal('Bu linki kaldırmak istediğinizden emin misiniz?', {
+    title: 'Link Kaldır',
+    danger: true,
+    confirmText: 'Evet, Kaldır',
+    onConfirm: () => {
+      saveLinks(loadLinks().filter(l => l.id !== id));
+      renderPinbar();
+      toast('Link kaldırıldı', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1700,13 +1712,19 @@ function printModuleReport(modId) {
  * (Yalnızca geliştirme/test için)
  */
 function resetDemoData() {
-  if (!confirm('Tüm veriler sıfırlanacak.\n\nBu işlem geri alınamaz!')) return;
-  const KEYS_TO_CLEAR = [
-    'ak_u3','ak_pn2','ak_tk2','ak_cal2','ak_sk1','ak_ann1','ak_lnk2','ak_nt1',
-    'ak_act1','ak_lang','ak_theme','ak_nview','ak_pus_view','ak_session',
-  ];
-  KEYS_TO_CLEAR.forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
-  location.reload();
+  window.confirmModal('Tüm veriler sıfırlanacak.\n\nBu işlem geri alınamaz!', {
+    title: 'Veriyi Sıfırla',
+    danger: true,
+    confirmText: 'Evet, Sıfırla',
+    onConfirm: () => {
+      const KEYS_TO_CLEAR = [
+        'ak_u3','ak_pn2','ak_tk2','ak_cal2','ak_sk1','ak_ann1','ak_lnk2','ak_nt1',
+        'ak_act1','ak_lang','ak_theme','ak_nview','ak_pus_view','ak_session',
+      ];
+      KEYS_TO_CLEAR.forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+      location.reload();
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

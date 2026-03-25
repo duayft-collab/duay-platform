@@ -861,25 +861,15 @@ function savePirim() {
 // ════════════════════════════════════════════════════════════════
 
 /** Admin: doğrudan onayla (peer review atla veya peer tamamlandıktan sonra nihai) */
-function approvePirim(id) {
-  if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
-  const d = window.loadPirim?.() || [];
-  const p = d.find(x => x.id === id); if (!p) return;
-
-  // Peer review bekleniyorsa ve tamamlanmamışsa uyar
-  if (p.status === 'peer_review' && !p.peerApprovedAt) {
-    if (!confirm(`"${p.title}" için ara onay henüz verilmedi. Yine de onaylamak istiyor musunuz?`)) return;
-  }
-
+function _doApprovePirim(d, p) {
   p.status         = 'approved';
   p.approvedBy     = window.CU()?.id;
   p.approvedAt     = _now();
   window.storePirim?.(d);
   renderPirim();
-  window.toast?.('✅ Prim onaylandı — ödeme planına alındı', 'ok');
+  window.toast?.('Prim onaylandı — ödeme planına alındı', 'ok');
   window.logActivity?.('view', `Prim onaylandı: "${p.title}" — ${_fmt(p.amount)}`);
-  _pirimDuyur('✅ Prim Onaylandı', '"' + (p.title||'') + '" — ' + _fmt(p.amount) + ' onaylandı ve ödeme planına alındı.', 'ok');
-  // Ödemeler modülüne otomatik kayıt
+  _pirimDuyur('Prim Onaylandı', '"' + (p.title||'') + '" — ' + _fmt(p.amount) + ' onaylandı ve ödeme planına alındı.', 'ok');
   if (window.createOdmFromPurchase) {
     window.createOdmFromPurchase({
       id:         p.id,
@@ -891,6 +881,25 @@ function approvePirim(id) {
   } else {
     window.addNotif?.('💸', '"' + (p.title||'') + '" — ' + _fmt(p.amount) + ' ödeme planına eklendi', 'ok', 'odemeler');
   }
+}
+
+function approvePirim(id) {
+  if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
+  const d = window.loadPirim?.() || [];
+  const p = d.find(x => x.id === id); if (!p) return;
+
+  // Peer review bekleniyorsa ve tamamlanmamışsa uyar
+  if (p.status === 'peer_review' && !p.peerApprovedAt) {
+    window.confirmModal(`"${p.title}" için ara onay henüz verilmedi. Yine de onaylamak istiyor musunuz?`, {
+      title: 'Ara Onay Atla',
+      danger: false,
+      confirmText: 'Evet, Onayla',
+      onConfirm: () => { _doApprovePirim(d, p); }
+    });
+    return;
+  }
+
+  _doApprovePirim(d, p);
 }
 
 /** Admin: ara onay modalını aç — başka kullanıcıya yönlendir */
@@ -1067,10 +1076,16 @@ function markPirimPaid(id) {
 
 function delPirim(id) {
   if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('Bu prim kaydını silmek istediğinizden emin misiniz?')) return;
-  window.storePirim?.((window.loadPirim?.() || []).filter(x => x.id !== id));
-  renderPirim();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Bu prim kaydını silmek istediğinizden emin misiniz?', {
+    title: 'Prim Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      window.storePirim?.((window.loadPirim?.() || []).filter(x => x.id !== id));
+      renderPirim();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1225,10 +1240,16 @@ function _uploadPdf(input) {
 }
 
 function _deletePdf() {
-  if (!confirm('Yönetmelik PDF\'i kaldırmak istediğinizden emin misiniz?')) return;
-  try { localStorage.removeItem(PDF_KEY); } catch(e) {}
-  window.toast?.('PDF kaldırıldı', 'ok');
-  showPirimPdf();
+  window.confirmModal('Yönetmelik PDF\'i kaldırmak istediğinizden emin misiniz?', {
+    title: 'PDF Kaldır',
+    danger: true,
+    confirmText: 'Evet, Kaldır',
+    onConfirm: () => {
+      try { localStorage.removeItem(PDF_KEY); } catch(e) {}
+      window.toast?.('PDF kaldırıldı', 'ok');
+      showPirimPdf();
+    }
+  });
 }
 
 function _loadPdf() {
@@ -2089,13 +2110,19 @@ function bulkMarkPirimPaid() {
   if (!window.isAdmin()) return;
   const approved = (window.loadPirim?.() || []).filter(p => p.status === 'approved');
   if (!approved.length) { window.toast?.('Ödendi işaretlenecek onaylı prim yok', 'warn'); return; }
-  if (!confirm(approved.length + ' onaylı primi ödendi olarak işaretlemek istiyor musunuz?')) return;
-  const all = window.loadPirim?.() || [];
-  approved.forEach(p => { p.status = 'paid'; p.paidAt = _now(); p.paidBy = window.CU?.()?.id; });
-  window.storePirim?.(all);
-  _pirimDuyur('💸 Toplu Prim Ödemesi', approved.length + ' prim ödendi olarak işaretlendi.', 'ok');
-  window.toast?.(approved.length + ' prim ödendi işaretlendi ✓', 'ok');
-  renderPirim();
+  window.confirmModal(approved.length + ' onaylı primi ödendi olarak işaretlemek istiyor musunuz?', {
+    title: 'Toplu Ödeme',
+    danger: false,
+    confirmText: 'Evet, İşaretle',
+    onConfirm: () => {
+      const all = window.loadPirim?.() || [];
+      approved.forEach(p => { p.status = 'paid'; p.paidAt = _now(); p.paidBy = window.CU?.()?.id; });
+      window.storePirim?.(all);
+      _pirimDuyur('Toplu Prim Ödemesi', approved.length + ' prim ödendi olarak işaretlendi.', 'ok');
+      window.toast?.(approved.length + ' prim ödendi işaretlendi', 'ok');
+      renderPirim();
+    }
+  });
 }
 window.bulkMarkPirimPaid = bulkMarkPirimPaid;
 

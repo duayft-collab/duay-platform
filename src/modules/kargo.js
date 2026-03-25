@@ -333,10 +333,16 @@ function saveKargo() {
 
 function delKargo(id) {
   if (!window.isAdmin?.()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('Bu kargo kaydını silmek istediğinizden emin misiniz?')) return;
-  storeKargo(loadKargo().filter(x => x.id !== id));
-  renderKargo();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Bu kargo kaydını silmek istediğinizden emin misiniz?', {
+    title: 'Kargo Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeKargo(loadKargo().filter(x => x.id !== id));
+      renderKargo();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -820,9 +826,15 @@ function toggleKonteynStep(id, key) {
 
 function delKonteyn(id) {
   if (!window.isAdmin?.()) return;
-  if (!confirm('Konteyner silinsin mi?')) return;
-  storeKonteyn(loadKonteyn().filter(x => x.id !== id));
-  renderKonteyn();
+  window.confirmModal('Konteyner silinsin mi?', {
+    title: 'Konteyner Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeKonteyn(loadKonteyn().filter(x => x.id !== id));
+      renderKonteyn();
+    }
+  });
 }
 
 function checkAllKonteyn() {
@@ -911,10 +923,16 @@ function addKargoFirma() {
 
 function delKargoFirma(name) {
   if (!window.isAdmin?.()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('"' + name + '" kargo firmasını silmek istediğinizden emin misiniz?')) return;
-  storeKargoFirmalar(loadKargoFirmalar().filter(f => f !== name));
-  renderKargoFirmaList();
-  window.toast?.(name + ' silindi', 'ok');
+  window.confirmModal('"' + name + '" kargo firmasını silmek istediğinizden emin misiniz?', {
+    title: 'Kargo Firması Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeKargoFirmalar(loadKargoFirmalar().filter(f => f !== name));
+      renderKargoFirmaList();
+      window.toast?.(name + ' silindi', 'ok');
+    }
+  });
 }
 
 function printKargoLabel() {
@@ -1048,9 +1066,15 @@ function updKargoSt(id) {
 
 function permDeleteKonteyn(id) {
   if (!window.isAdmin?.()) return;
-  if (!confirm('Arşivlenen konteyner kalıcı silinsin mi?')) return;
-  storeKonteyn(loadKonteyn().filter(x => x.id !== id));
-  renderKonteyn(); window.toast?.('Silindi', 'ok');
+  window.confirmModal('Arşivlenen konteyner kalıcı silinsin mi?', {
+    title: 'Konteyner Kalıcı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeKonteyn(loadKonteyn().filter(x => x.id !== id));
+      renderKonteyn(); window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 function checkAllKargoStatus() {

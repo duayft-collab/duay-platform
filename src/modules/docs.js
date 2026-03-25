@@ -391,11 +391,17 @@ function delLocalDoc(id) {
   const doc = d.find(x => x.id === id);
   if (!doc) return;
   if (!_isAdminD() && doc.uid !== _CUd()?.id) { window.toast?.('Sadece yükleyen veya admin silebilir', 'err'); return; }
-  if (!confirm(`"${doc.name}" kalıcı olarak silinsin mi?`)) return;
-  if (typeof storeLocalDocs === 'function') storeLocalDocs(d.filter(x => x.id !== id));
-  renderDocs();
-  window.logActivity?.('doc', `"${doc.name}" dökümanını sildi`);
-  window.toast?.(doc.name + ' silindi', 'ok');
+  window.confirmModal(`"${doc.name}" kalıcı olarak silinsin mi?`, {
+    title: 'Doküman Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if (typeof storeLocalDocs === 'function') storeLocalDocs(d.filter(x => x.id !== id));
+      renderDocs();
+      window.logActivity?.('doc', `"${doc.name}" dökümanını sildi`);
+      window.toast?.(doc.name + ' silindi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

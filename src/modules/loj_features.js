@@ -593,11 +593,17 @@ function _addBelge(konteynId) {
 }
 
 function _delBelge(konteynId, idx) {
-  if (!confirm('Bu belgeyi silmek istediğinizden emin misiniz?')) return;
-  const d = typeof loadKargoBelge==='function' ? loadKargoBelge() : {};
-  if (d[konteynId]) d[konteynId].splice(idx, 1);
-  if (typeof storeKargoBelge==='function') storeKargoBelge(d);
-  showBelgeModal(konteynId);
+  window.confirmModal('Bu belgeyi silmek istediğinizden emin misiniz?', {
+    title: 'Belge Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      const d = typeof loadKargoBelge==='function' ? loadKargoBelge() : {};
+      if (d[konteynId]) d[konteynId].splice(idx, 1);
+      if (typeof storeKargoBelge==='function') storeKargoBelge(d);
+      showBelgeModal(konteynId);
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

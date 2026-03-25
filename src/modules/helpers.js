@@ -1299,15 +1299,21 @@ function saveNote() {
 }
 
 function delNote(id) {
-  if (!confirm('Notu silmek istediğinizden emin misiniz?')) return;
-  const cu    = _CUh();
-  const notes = loadNotes();
-  const n     = notes.find(x => x.id === id);
-  if (!n || (n.uid !== cu?.id && !_isAdminH())) { window.toast?.('Yetki yok', 'err'); return; }
-  saveNotes(notes.filter(x => x.id !== id));
-  renderNotes();
-  window.logActivity?.('note', `"${n.title}" notunu sildi`);
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Notu silmek istediğinizden emin misiniz?', {
+    title: 'Not Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      const cu    = _CUh();
+      const notes = loadNotes();
+      const n     = notes.find(x => x.id === id);
+      if (!n || (n.uid !== cu?.id && !_isAdminH())) { window.toast?.('Yetki yok', 'err'); return; }
+      saveNotes(notes.filter(x => x.id !== id));
+      renderNotes();
+      window.logActivity?.('note', `"${n.title}" notunu sildi`);
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 function pinNote(id) {
@@ -1455,10 +1461,16 @@ function saveRehber() {
 
 function delRehber(id) {
   if (!_isAdminH()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
-  storeRehber(loadRehber().filter(x => x.id !== id));
-  renderRehber();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Bu kaydı silmek istediğinizden emin misiniz?', {
+    title: 'Rehber Kaydı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeRehber(loadRehber().filter(x => x.id !== id));
+      renderRehber();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 // ── Render — DocumentFragment ────────────────────────────────────
@@ -1650,22 +1662,34 @@ function approveTebAsama(tebId, asamaId) {
 
 function closeTebligat(id) {
   if (!_isAdminH()) { window.toast?.('Dosya kapatma admin yetkisi gerektirir', 'err'); return; }
-  if (!confirm('Bu tebligat dosyasını kapatmak istediğinizden emin misiniz?')) return;
-  const cu = _CUh();
-  const d  = loadTebligat(); const teb = d.find(x => x.id === id); if (!teb) return;
-  teb.status = 'closed'; teb.closedAt = _nowTsh(); teb.closedBy = cu?.name;
-  storeTebligat(d); renderTebligat();
-  window.toast?.('Dosya kapatıldı ✓', 'ok');
-  window.logActivity?.('view', `"${teb.title}" tebligat dosyası kapatıldı`);
+  window.confirmModal('Bu tebligat dosyasını kapatmak istediğinizden emin misiniz?', {
+    title: 'Tebligat Kapat',
+    danger: true,
+    confirmText: 'Evet, Kapat',
+    onConfirm: () => {
+      const cu = _CUh();
+      const d  = loadTebligat(); const teb = d.find(x => x.id === id); if (!teb) return;
+      teb.status = 'closed'; teb.closedAt = _nowTsh(); teb.closedBy = cu?.name;
+      storeTebligat(d); renderTebligat();
+      window.toast?.('Dosya kapatıldı ✓', 'ok');
+      window.logActivity?.('view', `"${teb.title}" tebligat dosyası kapatıldı`);
+    }
+  });
 }
 
 function delTebligat(id) {
   if (!_isAdminH()) return;
   const d = loadTebligat(); const t = d.find(x => x.id === id); if (!t) return;
-  if (!confirm(`"${t.title}" silinsin mi?`)) return;
-  storeTebligat(d.filter(x => x.id !== id));
-  renderTebligat();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal(`"${t.title}" silinsin mi?`, {
+    title: 'Tebligat Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeTebligat(d.filter(x => x.id !== id));
+      renderTebligat();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 function checkTebligatAlarms() {
@@ -1940,10 +1964,16 @@ function toggleHdfSubstep(hid, sid, subid) {
 function delHdf(id) {
   if (!_isAdminH()) { window.toast?.('Yetki yok', 'err'); return; }
   const d = loadHdf(); const h = d.find(x => x.id === id); if (!h) return;
-  if (!confirm(`"${h.title}" silinsin mi?`)) return;
-  storeHdf(d.filter(x => x.id !== id));
-  renderHedefler();
-  window.toast?.('"' + h.title + '" silindi', 'ok');
+  window.confirmModal(`"${h.title}" silinsin mi?`, {
+    title: 'Hedef Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeHdf(d.filter(x => x.id !== id));
+      renderHedefler();
+      window.toast?.('"' + h.title + '" silindi', 'ok');
+    }
+  });
 }
 
 function exportHdfXlsx() {

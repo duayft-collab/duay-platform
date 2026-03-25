@@ -1100,10 +1100,16 @@ function toggleOdmPaid(id) {
 
 function delOdm(id) {
   if (!_isAdminO()) return;
-  if (!confirm('Bu ödemeyi silmek istediğinizden emin misiniz?')) return;
-  window.storeOdm ? storeOdm(loadOdm().filter(x => x.id !== id)) : null;
-  renderOdemeler();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Bu ödemeyi silmek istediğinizden emin misiniz?', {
+    title: 'Ödeme Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      window.storeOdm ? storeOdm(loadOdm().filter(x => x.id !== id)) : null;
+      renderOdemeler();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2214,16 +2220,22 @@ function saveOdmTalimat() {
 }
 
 function removeOdmTalimat(id) {
-  if (!confirm('Otomatik ödeme talimatını kaldırmak istiyor musunuz?')) return;
-  const all = window.loadOdm ? loadOdm() : [];
-  const o = all.find(x => x.id === id);
-  if (!o) return;
-  delete o.talimat;
-  o.source = 'manual';
-  window.storeOdm ? storeOdm(all) : null;
-  _go('mo-odm-talimat')?.remove();
-  window.toast?.('Talimat kaldırıldı', 'ok');
-  renderOdemeler();
+  window.confirmModal('Otomatik ödeme talimatını kaldırmak istiyor musunuz?', {
+    title: 'Talimat Kaldır',
+    danger: true,
+    confirmText: 'Evet, Kaldır',
+    onConfirm: () => {
+      const all = window.loadOdm ? loadOdm() : [];
+      const o = all.find(x => x.id === id);
+      if (!o) return;
+      delete o.talimat;
+      o.source = 'manual';
+      window.storeOdm ? storeOdm(all) : null;
+      _go('mo-odm-talimat')?.remove();
+      window.toast?.('Talimat kaldırıldı', 'ok');
+      renderOdemeler();
+    }
+  });
 }
 
 window.openOdmTalimatModal = openOdmTalimatModal;

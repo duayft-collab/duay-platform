@@ -224,10 +224,16 @@ function saveAnn() {
 
 function delAnn(id) {
   if (!_isAdminA()) return;
-  if (!confirm('Bu duyuruyu silmek istediğinizden emin misiniz?')) return;
-  storeAnn(loadAnn().filter(a => a.id !== id));
-  renderAnnouncements();
-  window.toast?.('Duyuru silindi', 'ok');
+  window.confirmModal('Bu duyuruyu silmek istediğinizden emin misiniz?', {
+    title: 'Duyuru Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeAnn(loadAnn().filter(a => a.id !== id));
+      renderAnnouncements();
+      window.toast?.('Duyuru silindi', 'ok');
+    }
+  });
 }
 
 function updateAnnBadge() {

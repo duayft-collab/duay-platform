@@ -1,18 +1,24 @@
 
 // ── Soft Delete Helper (Anayasa Kural 08) ───────────────────────
-function _softDel(data, id, label) {
+function _softDel(data, id, label, callback) {
   if (!window.Auth?.getCU?.()?.role !== 'admin' && window.Auth?.getCU?.()?.role !== 'admin') {
     window.toast?.('Silme işlemi yalnızca yöneticiler yapabilir.','err');
-    return false;
+    return;
   }
-  if (!confirm(`"${label || id}" silinsin mi?`)) return false;
-  const item = data.find(x => x.id === id);
-  if (!item) return false;
-  item.isDeleted = true;
-  item.deletedAt = new Date().toISOString().slice(0,19).replace('T',' ');
-  item.deletedBy = window.Auth?.getCU?.()?.id;
-  window.logActivity?.('delete', `Silindi: ${label || id}`);
-  return true;
+  window.confirmModal(`"${label || id}" silinsin mi?`, {
+    title: 'Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      const item = data.find(x => x.id === id);
+      if (!item) return;
+      item.isDeleted = true;
+      item.deletedAt = new Date().toISOString().slice(0,19).replace('T',' ');
+      item.deletedBy = window.Auth?.getCU?.()?.id;
+      window.logActivity?.('delete', `Silindi: ${label || id}`);
+      if (typeof callback === 'function') callback();
+    }
+  });
 }
 
 /**
@@ -140,9 +146,15 @@ function saveLink() {
 }
 
 function delLink(id) {
-  if (!confirm('Bu linki silmek istediğinizden emin misiniz?')) return;
-  if (typeof saveLinks==='function') saveLinks((typeof loadLinks==='function'?loadLinks():[]).filter(x=>x.id!==id));
-  _renderLinksPanel(); window.toast?.('Silindi','ok');
+  window.confirmModal('Bu linki silmek istediğinizden emin misiniz?', {
+    title: 'Link Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if (typeof saveLinks==='function') saveLinks((typeof loadLinks==='function'?loadLinks():[]).filter(x=>x.id!==id));
+      _renderLinksPanel(); window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

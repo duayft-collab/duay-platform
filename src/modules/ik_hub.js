@@ -1047,12 +1047,19 @@ function delIkIzin(id) {
   if (!_isAdminIk()) return;
   const d = typeof loadIzin==='function' ? loadIzin() : [];
   const iz = d.find(x=>x.id===id);
-  if (!iz || !confirm('İzin kaydı silinsin mi?')) return;
-  iz.isDeleted=true; iz.deletedAt=_tsIk(); iz.deletedBy=_CUik()?.id;
-  if (typeof storeIzin==='function') storeIzin(d);
-  _syncIkFirestore('izin', d);
-  renderIkIzin();
-  _toastIk('Silindi','ok');
+  if (!iz) return;
+  window.confirmModal('İzin kaydı silinsin mi?', {
+    title: 'İzin Kaydı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      iz.isDeleted=true; iz.deletedAt=_tsIk(); iz.deletedBy=_CUik()?.id;
+      if (typeof storeIzin==='function') storeIzin(d);
+      _syncIkFirestore('izin', d);
+      renderIkIzin();
+      _toastIk('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1219,10 +1226,16 @@ function markIkMaasOdendi(id) {
 
 function delIkMaas(id) {
   const data=_loadMaas(); const m=data.find(x=>x.id===id); if(!m) return;
-  if(!confirm('Bu bordro kaydı silinsin mi?')) return;
-  m.isDeleted=true; m.deletedAt=_tsIk(); m.deletedBy=_CUik()?.id;
-  _storeMaas(data); _syncIkFirestore('maas',data);
-  renderIkMaas(); _toastIk('Silindi','ok');
+  window.confirmModal('Bu bordro kaydı silinsin mi?', {
+    title: 'Bordro Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      m.isDeleted=true; m.deletedAt=_tsIk(); m.deletedBy=_CUik()?.id;
+      _storeMaas(data); _syncIkFirestore('maas',data);
+      renderIkMaas(); _toastIk('Silindi','ok');
+    }
+  });
 }
 
 function exportIkBordroXlsx() {
@@ -1378,10 +1391,17 @@ function saveIkPerf() {
 
 function delIkPerf(id) {
   const data=_loadPerf();const p=data.find(x=>x.id===id);
-  if(!p||!confirm('Bu değerlendirme silinsin mi?')) return;
-  p.isDeleted=true;p.deletedAt=_tsIk();p.deletedBy=_CUik()?.id;
-  _storePerf(data);_syncIkFirestore('performans',data);
-  renderIkPerformans();_toastIk('Silindi','ok');
+  if(!p) return;
+  window.confirmModal('Bu değerlendirme silinsin mi?', {
+    title: 'Değerlendirme Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      p.isDeleted=true;p.deletedAt=_tsIk();p.deletedBy=_CUik()?.id;
+      _storePerf(data);_syncIkFirestore('performans',data);
+      renderIkPerformans();_toastIk('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1517,10 +1537,17 @@ function saveIkSozlesme() {
 
 function delIkSozlesme(id) {
   const data=_loadSoz();const s=data.find(x=>x.id===id);
-  if(!s||!confirm('Bu sözleşme silinsin mi?')) return;
-  s.isDeleted=true;s.deletedAt=_tsIk();s.deletedBy=_CUik()?.id;
-  _storeSoz(data);_syncIkFirestore('sozlesme',data);
-  renderIkSozlesme();_toastIk('Silindi','ok');
+  if(!s) return;
+  window.confirmModal('Bu sözleşme silinsin mi?', {
+    title: 'Sözleşme Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      s.isDeleted=true;s.deletedAt=_tsIk();s.deletedBy=_CUik()?.id;
+      _storeSoz(data);_syncIkFirestore('sozlesme',data);
+      renderIkSozlesme();_toastIk('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1532,13 +1559,20 @@ function delIkPersonel(id) {
   if(!_isAdminIk()) return;
   const d=typeof loadIk==='function'?loadIk():[];
   const p=d.find(x=>x.id===id);
-  if(!p||!confirm(`"${p.name}" kaydı silinsin mi?`)) return;
-  p.isDeleted=true;p.deletedAt=_tsIk();p.deletedBy=_CUik()?.id;
-  if(typeof storeIk==='function') storeIk(d);
-  _syncIkFirestore('ik',d);
-  renderIkPersonel();
-  _logIk('ik',`Personel silindi: ${p.name}`);
-  _toastIk('Silindi','ok');
+  if(!p) return;
+  window.confirmModal(`"${p.name}" kaydı silinsin mi?`, {
+    title: 'Personel Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      p.isDeleted=true;p.deletedAt=_tsIk();p.deletedBy=_CUik()?.id;
+      if(typeof storeIk==='function') storeIk(d);
+      _syncIkFirestore('ik',d);
+      renderIkPersonel();
+      _logIk('ik',`Personel silindi: ${p.name}`);
+      _toastIk('Silindi','ok');
+    }
+  });
 }
 
 function exportIkHubXlsx() {
@@ -2514,9 +2548,15 @@ function viewKayit(idx){
   </body></html>`);w.document.close();
 }
 function deleteKayit(idx){
-  if(!confirm(_ikT('delete')+'?')) return;
-  const k = usrGet('kayitlar') || []; k.splice(idx,1);
-  usrSet('kayitlar', k); updateBadge(); renderKayitlar();
+  window.confirmModal(_ikT('delete')+'?', {
+    title: _ikT('delete'),
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      const k = usrGet('kayitlar') || []; k.splice(idx,1);
+      usrSet('kayitlar', k); updateBadge(); renderKayitlar();
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -2563,7 +2603,7 @@ function renderEval(){
       <div class="flabel" style="margin-bottom:5px">Gözlemler</div>
       <textarea style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text);background:var(--bg2);min-height:70px;resize:vertical;font-family:DM Sans,sans-serif" placeholder="Kanaat notu..."></textarea>
       <div style="display:flex;gap:8px;margin-top:9px">
-        <button class="ik-btn ik-btn-full" style="flex:1;background:#10b981;color:#fff" onclick="alert('İşe alım onaylandı!')">✓ Onayla</button>
+        <button class="ik-btn ik-btn-full" style="flex:1;background:#10b981;color:#fff" onclick="window.toast?.('İşe alım onaylandı!','ok')">✓ Onayla</button>
         <button class="ik-btn ik-btn-s" style="flex:1" onclick="go('tesekkur',null,'Teşekkür Mektubu')">✉ Teşekkür</button>
       </div>
     </div>
@@ -2582,8 +2622,8 @@ function updateTsk(){
 }
 function copyTsk(){
   navigator.clipboard.writeText(document.getElementById('tsk-preview').textContent)
-    .then(()=>alert(_ikT('copy_text')+' ✓'))
-    .catch(()=>alert('Manuel olarak seçip kopyalayın.'));
+    .then(()=>window.toast?.(_ikT('copy_text')+' ✓','ok'))
+    .catch(()=>window.toast?.('Manuel olarak seçip kopyalayın.','warn'));
 }
 
 // ══════════════════════════════════════════════════
@@ -2899,10 +2939,10 @@ function saveEditUser(){
   const active  = document.getElementById('eu-active').checked;
   const perms   = uid==='usr_admin' ? ALL_PERMISSIONS.map(p=>p.key) : getCheckedPerms('eu');
 
-  if(!uname||!display){ alert('Kullanıcı adı ve görünen ad zorunludur.'); return; }
+  if(!uname||!display){ window.toast?.('Kullanıcı adı ve görünen ad zorunludur.','err'); return; }
 
   // Kullanıcı adı başkasıyla çakışıyor mu?
-  if(users.find((u,i)=>u.user===uname && i!==idx)){ alert('Bu kullanıcı adı başka bir kullanıcıya ait.'); return; }
+  if(users.find((u,i)=>u.user===uname && i!==idx)){ window.toast?.('Bu kullanıcı adı başka bir kullanıcıya ait.','err'); return; }
 
   users[idx] = {
     ...users[idx],
@@ -2928,7 +2968,7 @@ function saveEditUser(){
 }
 
 function toggleUserActive(uid){
-  if(uid==='usr_admin'){ alert('Sistem admin pasif yapılamaz.'); return; }
+  if(uid==='usr_admin'){ window.toast?.('Sistem admin pasif yapılamaz.','err'); return; }
   const users = getUsers();
   const u = users.find(x=>x.id===uid);
   if(!u) return;
@@ -2938,15 +2978,20 @@ function toggleUserActive(uid){
 }
 
 function _ikDeleteUser(uid){
-  if(uid==='usr_admin'){ alert('Sistem admin silinemez.'); return; }
+  if(uid==='usr_admin'){ window.toast?.('Sistem admin silinemez.', 'err'); return; }
   const users = getUsers();
   const u = users.find(x=>x.id===uid);
   if(!u) return;
-  if(!confirm(u.display+' adlı kullanıcıyı silmek istediğinize emin misiniz?\nBu kullanıcıya ait tüm kayıtlar da silinecektir.')) return;
-  // Kullanıcı verilerini temizle
-  Object.keys(localStorage).filter(k=>k.includes(uid)).forEach(k=>localStorage.removeItem(k));
-  _ikSaveUsers(users.filter(x=>x.id!==uid));
-  renderAdminUserList();
+  window.confirmModal(u.display+' adlı kullanıcıyı silmek istediğinize emin misiniz?\nBu kullanıcıya ait tüm kayıtlar da silinecektir.', {
+    title: 'Kullanıcı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      Object.keys(localStorage).filter(k=>k.includes(uid)).forEach(k=>localStorage.removeItem(k));
+      _ikSaveUsers(users.filter(x=>x.id!==uid));
+      renderAdminUserList();
+    }
+  });
 }
 
 function aiAddToForm(idx){

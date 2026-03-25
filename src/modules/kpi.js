@@ -337,10 +337,16 @@ function saveKpi() {
 
 function delKpi(id) {
   if (!_isAdminK()) return;
-  if (!confirm('Bu KPI kaydını silmek istediğinizden emin misiniz?')) return;
-  storeKpi((loadKpi ? loadKpi() : []).filter(x => x.id !== id));
-  renderKpiPanel();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Bu KPI kaydını silmek istediğinizden emin misiniz?', {
+    title: 'KPI Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeKpi((loadKpi ? loadKpi() : []).filter(x => x.id !== id));
+      renderKpiPanel();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

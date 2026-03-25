@@ -174,10 +174,16 @@ function approveStok(id){
 function delStok(id){
   if(!window.isAdmin())return;
   const d=loadStok();const e=d.find(x=>x.id===id);if(!e)return;
-  if(!confirm(`"${e.name}" kaydı silinsin mi?`))return;
-  storeStok(d.filter(x=>x.id!==id));
-  renderStok();
-  window.toast?.('Silindi','ok');
+  window.confirmModal(`"${e.name}" kaydı silinsin mi?`, {
+    title: 'Stok Kaydı Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeStok(d.filter(x=>x.id!==id));
+      renderStok();
+      window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 function setStokFilter(f,btn){

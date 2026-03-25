@@ -1,18 +1,24 @@
 
 // ── Soft Delete Helper (Anayasa Kural 08) ───────────────────────
-function _softDel(data, id, label) {
+function _softDel(data, id, label, callback) {
   if (!window.Auth?.getCU?.()?.role !== 'admin' && window.Auth?.getCU?.()?.role !== 'admin') {
     window.toast?.('Silme işlemi yalnızca yöneticiler yapabilir.','err');
-    return false;
+    return;
   }
-  if (!confirm(`"${label || id}" silinsin mi?`)) return false;
-  const item = data.find(x => x.id === id);
-  if (!item) return false;
-  item.isDeleted = true;
-  item.deletedAt = new Date().toISOString().slice(0,19).replace('T',' ');
-  item.deletedBy = window.Auth?.getCU?.()?.id;
-  window.logActivity?.('delete', `Silindi: ${label || id}`);
-  return true;
+  window.confirmModal(`"${label || id}" silinsin mi?`, {
+    title: 'Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      const item = data.find(x => x.id === id);
+      if (!item) return;
+      item.isDeleted = true;
+      item.deletedAt = new Date().toISOString().slice(0,19).replace('T',' ');
+      item.deletedBy = window.Auth?.getCU?.()?.id;
+      window.logActivity?.('delete', `Silindi: ${label || id}`);
+      if (typeof callback === 'function') callback();
+    }
+  });
 }
 
 /**
@@ -270,10 +276,16 @@ function saveEvrak() {
 
 function delEvrakItem(id) {
   if (!_isAdminSt()) return;
-  if (!confirm('Bu evrakı silmek istediğinizden emin misiniz?')) return;
-  if (typeof storeEvrak === 'function') storeEvrak((typeof loadEvrak==='function'?loadEvrak():[]).filter(x=>x.id!==id));
-  renderEvrak();
-  window.toast?.('Silindi', 'ok');
+  window.confirmModal('Bu evrakı silmek istediğinizden emin misiniz?', {
+    title: 'Evrak Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if (typeof storeEvrak === 'function') storeEvrak((typeof loadEvrak==='function'?loadEvrak():[]).filter(x=>x.id!==id));
+      renderEvrak();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -413,15 +425,29 @@ function saveDolap() {
 }
 
 function delDolap(id) {
-  if (!_isAdminSt()||!confirm('Bu dolabı silmek istediğinizden emin misiniz?')) return;
-  if (typeof storeDolaplar==='function') storeDolaplar((typeof loadDolaplar==='function'?loadDolaplar():[]).filter(x=>x.id!==id));
-  renderArsiv(); window.toast?.('Silindi','ok');
+  if (!_isAdminSt()) return;
+  window.confirmModal('Bu dolabı silmek istediğinizden emin misiniz?', {
+    title: 'Dolap Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if (typeof storeDolaplar==='function') storeDolaplar((typeof loadDolaplar==='function'?loadDolaplar():[]).filter(x=>x.id!==id));
+      renderArsiv(); window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 function delArsivBelge(id) {
-  if (!_isAdminSt()||!confirm('Bu belgeyi silmek istediğinizden emin misiniz?')) return;
-  if (typeof storeArsivBelgeler==='function') storeArsivBelgeler((typeof loadArsivBelgeler==='function'?loadArsivBelgeler():[]).filter(x=>x.id!==id));
-  renderArsiv(); window.toast?.('Silindi','ok');
+  if (!_isAdminSt()) return;
+  window.confirmModal('Bu belgeyi silmek istediğinizden emin misiniz?', {
+    title: 'Belge Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if (typeof storeArsivBelgeler==='function') storeArsivBelgeler((typeof loadArsivBelgeler==='function'?loadArsivBelgeler():[]).filter(x=>x.id!==id));
+      renderArsiv(); window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -541,9 +567,16 @@ function saveResmiEvrak() {
 }
 
 function delResmiEvrak(id) {
-  if(!_isAdminSt()||!confirm('Bu evrakı silmek istediğinizden emin misiniz?'))return;
-  if(typeof storeResmi==='function')storeResmi((typeof loadResmi==='function'?loadResmi():[]).filter(x=>x.id!==id));
-  renderResmi();window.toast?.('Silindi','ok');
+  if(!_isAdminSt()) return;
+  window.confirmModal('Bu evrakı silmek istediğinizden emin misiniz?', {
+    title: 'Resmi Evrak Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if(typeof storeResmi==='function')storeResmi((typeof loadResmi==='function'?loadResmi():[]).filter(x=>x.id!==id));
+      renderResmi();window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -551,9 +584,16 @@ function delResmiEvrak(id) {
 // ════════════════════════════════════════════════════════════════
 
 function delEtkinlikItem(id){
-  if(!_isAdminSt()||!confirm('Bu etkinliği silmek istediğinizden emin misiniz?'))return;
-  if(typeof storeEtkinlik==='function')storeEtkinlik((typeof loadEtkinlik==='function'?loadEtkinlik():[]).filter(x=>x.id!==id));
-  renderEtkinlik();window.toast?.('Silindi','ok');
+  if(!_isAdminSt()) return;
+  window.confirmModal('Bu etkinliği silmek istediğinizden emin misiniz?', {
+    title: 'Etkinlik Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if(typeof storeEtkinlik==='function')storeEtkinlik((typeof loadEtkinlik==='function'?loadEtkinlik():[]).filter(x=>x.id!==id));
+      renderEtkinlik();window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -597,11 +637,17 @@ function renderTrashPanel() {
 
 function emptyTrash() {
   if (!_isAdminSt()) return;
-  if (!confirm('Çöp kutusunu tamamen temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
-  if (typeof storeTrash === 'function') storeTrash([]);
-  renderTrashPanel();
-  window.toast?.('Çöp kutusu temizlendi ✓', 'ok');
-  window.logActivity?.('system', 'Çöp kutusu temizlendi');
+  window.confirmModal('Çöp kutusunu tamamen temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.', {
+    title: 'Çöp Kutusunu Temizle',
+    danger: true,
+    confirmText: 'Evet, Temizle',
+    onConfirm: () => {
+      if (typeof storeTrash === 'function') storeTrash([]);
+      renderTrashPanel();
+      window.toast?.('Çöp kutusu temizlendi ✓', 'ok');
+      window.logActivity?.('system', 'Çöp kutusu temizlendi');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

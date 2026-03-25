@@ -87,10 +87,16 @@ function saveCrm(){
 
 function delCrm(id){
   if(!_isAdminCLegacy()){window.toast?.('Yetki yok','err');return;}
-  if(!confirm('Müşteri kaydını silmek istediğinizden emin misiniz?'))return;
-  storeCrmData(loadCrmData().filter(x=>x.id!==id));
-  renderCrm();
-  window.toast?.('Silindi','ok');
+  window.confirmModal('Müşteri kaydını silmek istediğinizden emin misiniz?', {
+    title: 'Müşteri Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeCrmData(loadCrmData().filter(x=>x.id!==id));
+      renderCrm();
+      window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 function setCrmStatus(id,status){
@@ -330,10 +336,16 @@ function returnNumune(id){
 
 function delNumune(id){
   if(!_isAdminCLegacy())return;
-  if(!confirm('Silinsin mi?'))return;
-  storeNumune(loadNumune().filter(x=>x.id!==id));
-  renderNumune();
-  window.toast?.('Silindi','ok');
+  window.confirmModal('Silinsin mi?', {
+    title: 'Numune Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      storeNumune(loadNumune().filter(x=>x.id!==id));
+      renderNumune();
+      window.toast?.('Silindi','ok');
+    }
+  });
 }
 
 function renderNumune(){

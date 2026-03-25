@@ -424,10 +424,16 @@ function saveKpiCeo() {
 
 function delKpiCeo(id) {
   if (!_isAdminCeo()) return;
-  if (!confirm('Bu KPI kaydını silmek istediğinizden emin misiniz?')) return;
-  if (typeof storeKpi === 'function') storeKpi((typeof loadKpi==='function'?loadKpi():[]).filter(x => x.id !== id));
-  renderCeo();
-  window.toast?.('KPI silindi', 'ok');
+  window.confirmModal('Bu KPI kaydını silmek istediğinizden emin misiniz?', {
+    title: 'KPI Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      if (typeof storeKpi === 'function') storeKpi((typeof loadKpi==='function'?loadKpi():[]).filter(x => x.id !== id));
+      renderCeo();
+      window.toast?.('KPI silindi', 'ok');
+    }
+  });
 }
 
 function openKararModal() {

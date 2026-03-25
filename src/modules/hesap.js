@@ -221,10 +221,16 @@ function clearHesap() {
 }
 
 function clearHesapHistory() {
-  if (!confirm('Hesap geçmişi temizlensin mi?')) return;
-  if (typeof storeHesapHistory === 'function') storeHesapHistory([]);
-  renderHesapHistory();
-  window.toast?.('Temizlendi', 'ok');
+  window.confirmModal('Hesap geçmişi temizlensin mi?', {
+    title: 'Geçmişi Temizle',
+    danger: true,
+    confirmText: 'Evet, Temizle',
+    onConfirm: () => {
+      if (typeof storeHesapHistory === 'function') storeHesapHistory([]);
+      renderHesapHistory();
+      window.toast?.('Temizlendi', 'ok');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
