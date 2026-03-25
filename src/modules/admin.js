@@ -907,6 +907,615 @@ function renderSettingsAdmin(){
   renderPuantajYetkiKart();
 }
 
+
+
+// ════════════════════════════════════════════════════════════════
+// MODÜL ↔ NAV EŞLEŞTİRME + YETKİ UYGULAMA  [DÜZELTME v2]
+// Kullanıcıya verilen modül izinleri sol menüde yansımalı
+// ════════════════════════════════════════════════════════════════
+
+// Modül ID → Sidebar nav butonu eşleşmesi
+const MODULE_NAV_MAP = {
+  // Genel
+  'dashboard':  ['nb-db'],
+  'announce':   ['nb-ann'],
+  'takvim':     ['nb-tak'],
+  'notes':      ['nb-nt'],
+  'rehber':     [],
+  'links':      ['nb-lnk'],
+
+  // Satış & Müşteri
+  'crm':        ['nb-crm-nav'],
+  'gorusme':    [],
+  'etkinlik':   [],
+  'numune':     [],
+
+  // Satınalma
+  'lojistik':   ['nb-lojistik'],
+  'stok':       [],
+
+  // Lojistik
+  'kargo':      [],
+
+  // Finans & Muhasebe
+  'finans':     [],
+  'odemeler':   [],
+  'pirim':      [],
+  'hesap':      [],
+
+  // İK
+  'ik':         ['nb-ik-hub'],
+  'evrak':      [],
+  'temizlik':   [],
+  'puantaj':    [],
+
+  // Döküman
+  'docs':       ['nb-doc'],
+  'formlar':    [],
+  'arsiv':      [],
+  'tebligat':   [],
+  'resmi':      [],
+
+  // Operasyon
+  'pusula':     ['nb-pus'],
+  'hedefler':   [],
+
+  // Yönetim (sadece admin)
+  'ceo':        ['nb-ceo'],
+  'kpi':        ['nb-kpi-panel'],
+  'admin':      ['nb-admin'],
+  'activity':   ['nb-activity'],
+  'settings':   ['nb-settings'],
+  'trash':      ['nb-trash'],
+};
+
+// Panel ID → Modül ID eşleşmesi (nav tıklaması paneli açar)
+const PANEL_MODULE_MAP = {
+  'panel-dashboard':  'dashboard',
+  'panel-announce':   'announce',
+  'panel-takvim':     'takvim',
+  'panel-notes':      'notes',
+  'panel-rehber':     'rehber',
+  'panel-links':      'links',
+  'panel-crm':        'crm',
+  'panel-gorusme':    'gorusme',
+  'panel-etkinlik':   'etkinlik',
+  'panel-numune':     'numune',
+  'panel-lojistik':   'lojistik',
+  'panel-stok':       'stok',
+  'panel-kargo':      'kargo',
+  'panel-finans':     'finans',
+  'panel-odemeler':   'odemeler',
+  'panel-pirim':      'pirim',
+  'panel-hesap':      'hesap',
+  'panel-ik-hub':     'ik',
+  'panel-ik':         'ik',
+  'panel-evrak':      'evrak',
+  'panel-temizlik':   'temizlik',
+  'panel-puantaj':    'puantaj',
+  'panel-docs':       'docs',
+  'panel-formlar':    'formlar',
+  'panel-arsiv':      'arsiv',
+  'panel-tebligat':   'tebligat',
+  'panel-resmi':      'resmi',
+  'panel-pusula':     'pusula',
+  'panel-hedefler':   'hedefler',
+  'panel-ceo':        'ceo',
+  'panel-kpi-panel':  'kpi',
+  'panel-admin':      'admin',
+  'panel-activity':   'activity',
+  'panel-settings':   'settings',
+  'panel-trash':      'trash',
+};
+
+// Yönetici her zaman erişebilir
+const ADMIN_ALWAYS_MODULES = ['dashboard', 'admin', 'activity', 'settings', 'trash', 'ceo', 'kpi'];
+
+/**
+ * Kullanıcının modül izinlerine göre sidebar'ı güncelle
+ * ve panel erişimini kısıtla — app.js'den çağrılmalı
+ */
+function _applyRoleUI(user) {
+  if (!user) return;
+
+  const role    = user.role || 'staff';
+  const modules = user.modules || window.ROLE_DEFAULT_MODULES?.[role] || [];
+  const isAdm   = role === 'admin';
+
+  // ── 1. Tüm nb butonlarını göster (reset) ──────────────────────
+  document.querySelectorAll('.nb').forEach(btn => {
+    btn.style.display = '';
+    btn.style.opacity = '';
+    btn.removeAttribute('data-locked');
+  });
+
+  // ── 2. Admin her şeyi görebilir ───────────────────────────────
+  if (isAdm) {
+    console.log('[UI] Role applied: admin');
+    return;
+  }
+
+  // ── 3. Staff: modül listesine göre filtrele ───────────────────
+  // Hangi modüllere erişim var?
+  const allowed = new Set([...modules, ...ADMIN_ALWAYS_MODULES.filter(m => m === 'dashboard')]);
+
+  // Tüm sidebar butonlarını gizle/göster
+  Object.entries(MODULE_NAV_MAP).forEach(([modId, navIds]) => {
+    const hasAccess = isAdm || allowed.has(modId);
+    navIds.forEach(navId => {
+      const btn = document.getElementById(navId);
+      if (!btn) return;
+      if (!hasAccess) {
+        btn.style.display = 'none';
+      }
+    });
+  });
+
+  // ── 4. Bölüm başlıklarını gizle (tüm butonları gizliyse) ─────
+  document.querySelectorAll('.nsec-header').forEach(header => {
+    const section = header.nextElementSibling;
+    if (!section) return;
+    // Bu bölümdeki tüm nb butonları gizli mi?
+    let sibling = header.nextElementSibling;
+    let allHidden = true;
+    while (sibling && !sibling.classList.contains('nsec-header')) {
+      if (sibling.classList.contains('nb') && sibling.style.display !== 'none') {
+        allHidden = false;
+        break;
+      }
+      sibling = sibling.nextElementSibling;
+    }
+    if (allHidden) header.style.display = 'none';
+    else header.style.display = '';
+  });
+
+  // ── 5. Panel erişim kontrolü — nav tıklamasında kontrol ───────
+  // App.nav override — yetkisiz panele girişi engelle
+  if (window.App?.nav) {
+    const _origNav = window.App._origNav || window.App.nav;
+    window.App._origNav = _origNav;
+    window.App.nav = function(panelId, btn) {
+      // Dashboard her zaman açık
+      if (panelId === 'dashboard') return _origNav(panelId, btn);
+
+      // Admin her şeye girebilir
+      const cu = window.Auth?.getCU?.() || {};
+      if (cu.role === 'admin' || cu.role === 'manager') return _origNav(panelId, btn);
+
+      // Modül kontrolü
+      const requiredModule = PANEL_MODULE_MAP['panel-' + panelId] || panelId;
+      const userMods = cu.modules || window.ROLE_DEFAULT_MODULES?.[cu.role] || [];
+
+      if (!userMods.includes(requiredModule)) {
+        window.toast?.('Bu bölüme erişim yetkiniz yok', 'err');
+        console.warn('[Yetki] Erişim reddedildi:', panelId, '— Gerekli modül:', requiredModule);
+        // Erişim denemesini logla
+        window.logActivity?.('auth', '"' + panelId + '" paneline yetkisiz erişim denemesi');
+        window.addNotif?.('🔒', '"' + panelId + '" bölümüne erişim yetkiniz yok', 'err', 'admin');
+        return;
+      }
+
+      return _origNav(panelId, btn);
+    };
+  }
+
+  console.log('[UI] Role applied:', role, '— Modüller:', modules.join(', '));
+}
+
+// ── Sayfa yüklenince ve kullanıcı değişince çalıştır ─────────────
+function _initRoleUI() {
+  const cu = window.Auth?.getCU?.();
+  if (cu) {
+    _applyRoleUI(cu);
+  } else {
+    // Auth hazır olana kadar bekle
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const u = window.Auth?.getCU?.();
+      if (u || ++attempts > 20) {
+        clearInterval(interval);
+        if (u) _applyRoleUI(u);
+      }
+    }, 300);
+  }
+}
+
+window._applyRoleUI = _applyRoleUI;
+window._initRoleUI  = _initRoleUI;
+window.MODULE_NAV_MAP   = MODULE_NAV_MAP;
+window.PANEL_MODULE_MAP = PANEL_MODULE_MAP;
+
+// Sayfa yüklendikten sonra çalıştır
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(_initRoleUI, 800));
+} else {
+  setTimeout(_initRoleUI, 800);
+}
+
+// Auth değişince tekrar uygula (login/logout)
+window.addEventListener('auth-changed', () => setTimeout(_initRoleUI, 200));
+
+
+
+// ════════════════════════════════════════════════════════════════
+// 13 GELİŞTİRME — Kullanıcı Yönetimi v2
+// ════════════════════════════════════════════════════════════════
+
+// ─── 1. GRANÜLER İZİNLER (okuma/yazma/silme) ─────────────────────
+const MODULE_PERMS = ['read','write','delete'];
+
+function getModulePerm(user, modId, perm) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const perms = user.modulePerms?.[modId] || {};
+  if (user.modules?.includes(modId)) {
+    return perms[perm] !== false; // varsayılan: okuma ve yazma açık
+  }
+  return false;
+}
+window.getModulePerm = getModulePerm;
+
+// ─── 2. ZAMAN BAZLI ERİŞİM ───────────────────────────────────────
+function checkTimeAccess(user) {
+  if (!user?.timeAccess) return true; // kısıt yok
+  const now = new Date();
+  const day = now.getDay(); // 0=Paz, 1-5=Hafta içi, 6=Cmt
+  const hour = now.getHours();
+  const { startHour=8, endHour=18, weekdaysOnly=false } = user.timeAccess;
+  if (weekdaysOnly && (day === 0 || day === 6)) return false;
+  return hour >= startHour && hour < endHour;
+}
+window.checkTimeAccess = checkTimeAccess;
+
+// ─── 3. ROL HİYERARŞİSİ ──────────────────────────────────────────
+const ROLE_HIERARCHY = { admin: 4, manager: 3, lead: 2, staff: 1 };
+
+function roleAbove(roleA, roleB) {
+  return (ROLE_HIERARCHY[roleA] || 0) > (ROLE_HIERARCHY[roleB] || 0);
+}
+window.roleAbove = roleAbove;
+
+// ─── 4. IP KISITLAMA ─────────────────────────────────────────────
+async function checkIPAccess(user) {
+  if (!user?.allowedIPs || user.allowedIPs.length === 0) return true;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const { ip } = await res.json();
+    const ok = user.allowedIPs.some(range => ip.startsWith(range));
+    if (!ok) console.warn('[Güvenlik] IP kısıtlaması: ' + ip);
+    return ok;
+  } catch { return true; } // network hatasında izin ver
+}
+window.checkIPAccess = checkIPAccess;
+
+// ─── 5. OTURUM YÖNETİMİ ──────────────────────────────────────────
+function getSessions() {
+  try { return JSON.parse(localStorage.getItem('duay_sessions') || '[]'); } catch { return []; }
+}
+function saveSessions(d) { localStorage.setItem('duay_sessions', JSON.stringify(d)); }
+
+function registerSession() {
+  const cu = window.Auth?.getCU?.(); if (!cu) return;
+  const sessions = getSessions().filter(s => s.userId === cu.id);
+  const session = {
+    id:        Date.now(),
+    userId:    cu.id,
+    userName:  cu.name,
+    startedAt: new Date().toISOString(),
+    lastSeen:  new Date().toISOString(),
+    ua:        navigator.userAgent.slice(0,80),
+    active:    true,
+  };
+  sessions.push(session);
+  saveSessions([...getSessions().filter(s=>s.userId!==cu.id), ...sessions].slice(-20));
+}
+
+function terminateSession(sessionId) {
+  const sessions = getSessions().map(s => s.id === sessionId ? {...s, active:false, endedAt:new Date().toISOString()} : s);
+  saveSessions(sessions);
+  window.toast?.('Oturum sonlandırıldı', 'ok');
+}
+
+function openSessionManager() {
+  const sessions = getSessions().filter(s => s.active);
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:500px">'
+    + '<div class="mt">🖥 Aktif Oturumlar</div>'
+    + (sessions.length === 0 ? '<p style="color:var(--t3);text-align:center;padding:20px">Aktif oturum bulunamadı</p>'
+      : sessions.map(s => '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:6px">'
+        + '<div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">' + s.userName + '</div>'
+        + '<div style="font-size:10px;color:var(--t3)">' + s.ua + '</div>'
+        + '<div style="font-size:10px;color:var(--t3)">Başlangıç: ' + s.startedAt.slice(0,16) + '</div></div>'
+        + '<button onclick="terminateSession(' + s.id + ');this.closest(".mo").remove();openSessionManager()" class="btn btns" style="font-size:11px;color:var(--rdt)">Sonlandır</button>'
+        + '</div>').join(''))
+    + '<div class="mf"><button class="btn" onclick="this.closest(".mo").remove()">Kapat</button></div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openSessionManager = openSessionManager;
+window.registerSession    = registerSession;
+window.terminateSession   = terminateSession;
+setTimeout(registerSession, 2000);
+
+// ─── 6. 2FA HAZIRLIK ─────────────────────────────────────────────
+function enable2FA(userId) {
+  const users = loadUsers();
+  const u = users.find(x => x.id === userId); if (!u) return;
+  const secret = btoa(Math.random().toString(36) + Date.now()).slice(0,20).toUpperCase();
+  u.twoFA = { enabled: true, secret, enabledAt: new Date().toISOString() };
+  window.saveUsers(users);
+  window.toast?.('2FA etkinleştirildi — Authenticator uygulamanıza ekleyin: ' + secret, 'ok');
+  logActivity('user', '"' + u.name + '" için 2FA etkinleştirildi');
+}
+window.enable2FA = enable2FA;
+
+// ─── 7. AKTİVİTE TAKİBİ ──────────────────────────────────────────
+function getUserActivity(userId) {
+  try {
+    const logs = JSON.parse(localStorage.getItem('ak_activity') || '[]');
+    return logs.filter(l => l.userId === userId || l.uid === userId).slice(0, 50);
+  } catch { return []; }
+}
+
+function openUserActivity(userId) {
+  const users = loadUsers();
+  const u = users.find(x => x.id === userId); if (!u) return;
+  const logs = getUserActivity(userId);
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:520px">'
+    + '<div class="mt">📋 ' + u.name + ' — Aktivite Geçmişi</div>'
+    + '<div style="max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px">'
+    + (logs.length === 0 ? '<p style="color:var(--t3);text-align:center;padding:20px">Aktivite kaydı bulunamadı</p>'
+      : logs.map(l => '<div style="display:flex;gap:8px;padding:6px 8px;background:var(--s2);border-radius:6px">'
+        + '<span style="font-size:10px;color:var(--t3);min-width:120px">' + (l.ts||l.time||'').slice(0,16) + '</span>'
+        + '<span style="font-size:11px;color:var(--t)">' + (l.msg||l.action||'—') + '</span>'
+        + '</div>').join(''))
+    + '</div>'
+    + '<div class="mf"><button class="btn" onclick="this.closest(".mo").remove()">Kapat</button>'
+    + '<button class="btn btns" onclick="exportUserActivity(' + userId + ')">Excel İndir</button></div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openUserActivity = openUserActivity;
+
+function exportUserActivity(userId) {
+  const users = loadUsers();
+  const u = users.find(x => x.id === userId);
+  const logs = getUserActivity(userId);
+  const csv = 'Tarih,Aksiyon\n' + logs.map(l => '"'+(l.ts||l.time||'')+'",'+(l.msg||l.action||'')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = (u?.name||userId) + '-aktivite.csv';
+  a.click();
+}
+window.exportUserActivity = exportUserActivity;
+
+// ─── 8. TOPLU İŞLEMLER ───────────────────────────────────────────
+let _selectedUsers = new Set();
+
+function toggleUserSelect(id) {
+  if (_selectedUsers.has(id)) _selectedUsers.delete(id);
+  else _selectedUsers.add(id);
+  _updateBulkUserBar();
+}
+
+function _updateBulkUserBar() {
+  let bar = document.getElementById('user-bulk-bar');
+  if (_selectedUsers.size === 0) { if (bar) bar.remove(); return; }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'user-bulk-bar';
+    bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;padding:10px 20px;border-radius:99px;display:flex;align-items:center;gap:12px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.2)';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML = '<span style="font-size:12px;font-weight:500">' + _selectedUsers.size + ' kullanıcı seçili</span>'
+    + '<button onclick="bulkSetRole(prompt("Rol:","staff"))" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">Rol Ata</button>'
+    + '<button onclick="bulkSuspend()" style="background:rgba(255,0,0,.3);border:none;color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">Askıya Al</button>'
+    + '<button onclick="_selectedUsers.clear();_updateBulkUserBar()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">✕</button>';
+}
+
+function bulkSetRole(role) {
+  if (!role || !_selectedUsers.size) return;
+  const users = loadUsers();
+  _selectedUsers.forEach(id => {
+    const u = users.find(x => x.id === id);
+    if (u) u.role = role;
+  });
+  window.saveUsers(users);
+  window.toast?.(_selectedUsers.size + ' kullanıcıya ' + role + ' rolü atandı', 'ok');
+  _selectedUsers.clear();
+  _updateBulkUserBar();
+  renderAdmin?.();
+}
+
+function bulkSuspend() {
+  if (!_selectedUsers.size) return;
+  if (!confirm(_selectedUsers.size + ' kullanıcıyı askıya almak istediğinizden emin misiniz?')) return;
+  const users = loadUsers();
+  _selectedUsers.forEach(id => {
+    const u = users.find(x => x.id === id);
+    if (u) u.status = 'suspended';
+  });
+  window.saveUsers(users);
+  window.toast?.(_selectedUsers.size + ' kullanıcı askıya alındı', 'ok');
+  _selectedUsers.clear();
+  _updateBulkUserBar();
+  renderAdmin?.();
+}
+
+window.toggleUserSelect    = toggleUserSelect;
+window.bulkSetRole         = bulkSetRole;
+window.bulkSuspend         = bulkSuspend;
+
+// ─── 9. GEÇİCİ ERİŞİM ───────────────────────────────────────────
+function grantTempAccess(userId, moduleId, durationMin) {
+  const users = loadUsers();
+  const u = users.find(x => x.id === userId); if (!u) return;
+  if (!u.tempAccess) u.tempAccess = [];
+  const expiresAt = new Date(Date.now() + durationMin * 60000).toISOString();
+  u.tempAccess = u.tempAccess.filter(t => t.module !== moduleId);
+  u.tempAccess.push({ module: moduleId, expiresAt, grantedBy: window.Auth?.getCU?.()?.id });
+  window.saveUsers(users);
+  window.toast?.(u.name + ' — ' + moduleId + ' modülüne ' + durationMin + ' dk erişim verildi', 'ok');
+  logActivity('user', '"'+u.name+'" için "'+moduleId+'" modülüne '+durationMin+' dk geçici erişim verildi');
+}
+
+function checkTempAccess(user, moduleId) {
+  if (!user?.tempAccess) return false;
+  const entry = user.tempAccess.find(t => t.module === moduleId);
+  if (!entry) return false;
+  const expired = new Date(entry.expiresAt) < new Date();
+  if (expired) {
+    user.tempAccess = user.tempAccess.filter(t => t.module !== moduleId);
+    window.saveUsers(loadUsers().map(u => u.id === user.id ? user : u));
+    return false;
+  }
+  return true;
+}
+
+window.grantTempAccess  = grantTempAccess;
+window.checkTempAccess  = checkTempAccess;
+
+// ─── 10. YEDEK ADMIN ─────────────────────────────────────────────
+function setBackupAdmin(userId) {
+  const users = loadUsers();
+  users.forEach(u => { delete u.isBackupAdmin; });
+  const u = users.find(x => x.id === userId);
+  if (u) { u.isBackupAdmin = true; }
+  window.saveUsers(users);
+  window.toast?.(u?.name + ' yedek admin olarak atandı', 'ok');
+  logActivity('user', '"'+(u?.name||userId)+'" yedek admin yapıldı');
+}
+
+function getBackupAdmin() {
+  return loadUsers().find(u => u.isBackupAdmin && u.status === 'active');
+}
+
+window.setBackupAdmin = setBackupAdmin;
+window.getBackupAdmin = getBackupAdmin;
+
+// ─── 11. KULLANICI DAVET SİSTEMİ ─────────────────────────────────
+function inviteUser(email, role, modules) {
+  const token = btoa(email + ':' + Date.now()).replace(/[+/=]/g,'');
+  const invites = JSON.parse(localStorage.getItem('duay_invites')||'[]');
+  invites.push({
+    token, email, role: role||'staff',
+    modules: modules||[],
+    invitedBy: window.Auth?.getCU?.()?.id,
+    expiresAt: new Date(Date.now() + 7*24*3600000).toISOString(),
+    used: false,
+  });
+  localStorage.setItem('duay_invites', JSON.stringify(invites));
+
+  const link = window.location.origin + window.location.pathname + '?invite=' + token;
+  const msg = 'Duay Global Trade platformuna davet edildiniz.\n\nBaglanти: ' + link + '\n\nLink 7 gun gecerlidir.';
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:460px">'
+    + '<div class="mt">📧 Davet Oluşturuldu</div>'
+    + '<div style="background:var(--s2);border-radius:9px;padding:12px;margin-bottom:12px">'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:6px">Davet linki (7 gün geçerli)</div>'
+    + '<div style="font-size:11px;word-break:break-all;color:var(--ac)">' + link + '</div>'
+    + '</div>'
+    + '<div class="fr"><div class="fl">E-POSTA TASLAK</div>'
+    + '<textarea class="fi" rows="5" style="font-size:11px;resize:none">' + msg + '</textarea></div>'
+    + '<div class="mf">'
+    + '<button class="btn" onclick="this.closest(".mo").remove()">Kapat</button>'
+    + '<button class="btn btnp" onclick="navigator.clipboard?.writeText(document.querySelector(&quot;.mo a&quot;)?.href||window.location.href);window.toast?.(&quot;Link kopyaland\u0131&quot;,&quot;ok&quot;)">🔗 Linki Kopyala</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+  logActivity('user', email + ' e-posta adresine davet gönderildi');
+}
+window.inviteUser = inviteUser;
+
+// ─── 12. ERİŞİM LOG ALARMI ───────────────────────────────────────
+function _logUnauthorizedAccess(userId, panel) {
+  const users = loadUsers();
+  const u = users.find(x => x.id === userId);
+  if (!u.accessViolations) u.accessViolations = [];
+  u.accessViolations.push({ panel, ts: new Date().toISOString() });
+  window.saveUsers(users);
+  // Admin'lere bildirim
+  const admins = users.filter(x => x.role === 'admin');
+  admins.forEach(() => {
+    window.addNotif?.('🚨', '"'+(u.name||userId)+'" yetkisiz erişim: ' + panel, 'err', 'admin');
+  });
+}
+window._logUnauthorizedAccess = _logUnauthorizedAccess;
+
+// ─── 13. KULLANICI PROFİL SAYFASI ────────────────────────────────
+function openMyProfile() {
+  const cu = window.Auth?.getCU?.(); if (!cu) return;
+  const users = loadUsers();
+  const u = users.find(x => x.id === cu.id) || cu;
+  const mods = u.modules || window.ROLE_DEFAULT_MODULES?.[u.role] || [];
+  const ini  = (u.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:460px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:24px;color:#fff;text-align:center">'
+    + '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 10px">' + ini + '</div>'
+    + '<div style="font-size:16px;font-weight:600">' + (u.name||'—') + '</div>'
+    + '<div style="font-size:11px;opacity:.7;margin-top:3px">' + (u.email||'—') + '</div>'
+    + '<div style="margin-top:8px">'
+    + '<span style="font-size:10px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.2)">'
+    + (ROLE_META[u.role]?.icon||'👤') + ' ' + (ROLE_META[u.role]?.label||u.role) + '</span></div></div>'
+    + '<div style="padding:18px 22px">'
+    + '<div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:10px">ERİŞEBİLDİĞİM MODÜLLER (' + mods.length + ')</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">'
+    + mods.map(m => {
+        const info = ALL_MODULES?.find?.(x=>x.id===m);
+        return '<span style="font-size:10px;padding:3px 9px;border-radius:99px;background:var(--s2);color:var(--t2)">' + (info?.icon||'📦') + ' ' + (info?.label||m) + '</span>';
+      }).join('')
+    + '</div>'
+    + '<div class="fr"><div class="fl">PAROLAMI DEĞİŞTİR</div>'
+    + '<div style="display:flex;gap:6px"><input class="fi" type="password" id="prof-pw1" placeholder="Yeni parola"><input class="fi" type="password" id="prof-pw2" placeholder="Tekrar"></div></div>'
+    + '</div>'
+    + '<div style="padding:12px 22px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">'
+    + '<button class="btn" onclick="this.closest(".mo").remove()">Kapat</button>'
+    + '<button class="btn btnp" onclick="_saveMyProfile()">💾 Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _saveMyProfile() {
+  const cu = window.Auth?.getCU?.(); if (!cu) return;
+  const pw1 = document.getElementById('prof-pw1')?.value;
+  const pw2 = document.getElementById('prof-pw2')?.value;
+  if (pw1 || pw2) {
+    if (pw1 !== pw2) { window.toast?.('Parolalar eşleşmiyor', 'err'); return; }
+    if (pw1.length < 6) { window.toast?.('En az 6 karakter', 'err'); return; }
+    const users = loadUsers();
+    const u = users.find(x => x.id === cu.id);
+    if (u) { u.pw = pw1; window.saveUsers(users); }
+    window.toast?.('Parola güncellendi ✓', 'ok');
+  }
+  document.querySelector('.mo.open')?.remove();
+}
+
+window.openMyProfile  = openMyProfile;
+window._saveMyProfile = _saveMyProfile;
+
+// Üst navdaki profil ikonuna bağla
+document.addEventListener('DOMContentLoaded', () => {
+  const profileBtn = document.getElementById('uc') || document.querySelector('.uc');
+  if (profileBtn && !profileBtn.dataset.profileBound) {
+    profileBtn.dataset.profileBound = '1';
+    profileBtn.style.cursor = 'pointer';
+    profileBtn.title = 'Profilim';
+    profileBtn.addEventListener('click', openMyProfile);
+  }
+});
+
 const Admin = {
   render:            renderAdmin,
   renderLog:         renderActivityLog,
