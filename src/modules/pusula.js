@@ -81,6 +81,26 @@ function _getCU() {
   return null;
 }
 
+// ── Görev Yetki Yardımcıları ──────────────────────────────────────
+/** Kullanıcı görevin sahibi mi? (uid eşleşmesi) */
+function _isTaskOwner(task) {
+  const cu = _getCU();
+  return cu && task && (task.uid === cu.id || task.uid === parseInt(cu.id));
+}
+/** Kullanıcı görevde yönetici yetkisi mi? (owner, admin, veya managers listesinde) */
+function _canEditTask(task) {
+  if (window.isAdmin?.()) return true;
+  if (_isTaskOwner(task)) return true;
+  const cu = _getCU();
+  return cu && Array.isArray(task.managers) && task.managers.includes(cu.id);
+}
+/** Kullanıcı görevde katılımcı mı? (participants veya viewers) */
+function _isParticipant(task) {
+  const cu = _getCU();
+  if (!cu || !task) return false;
+  return (task.participants || []).includes(cu.id) || (task.viewers || []).includes(cu.id);
+}
+
 
 // ── Global shortcut'lar ─────────────────────────────────────────
 
@@ -838,8 +858,8 @@ function renderPusulaBoard(fl, users, todayS, cont) {
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px">
           <div style="width:4px;min-height:36px;border-radius:3px;flex-shrink:0;margin-top:1px;background:${p.color}"></div>
           <div class="tk-card-title" style="flex:1">${t.title}</div>
-          <button onclick="event.stopPropagation();Pusula.edit(${t.id})"
-            style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;padding:0;min-width:28px;min-height:28px;flex-shrink:0;opacity:0;transition:.14s;display:inline-flex;align-items:center;justify-content:center" class="tk-card-edit">✏️</button>
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})"
+            style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;padding:0;min-width:28px;min-height:28px;flex-shrink:0;opacity:0;transition:.14s;display:inline-flex;align-items:center;justify-content:center" class="tk-card-edit">✏️</button>` : ''}
         </div>
         <div class="tk-card-meta">
           ${dueChip}${tags}
@@ -1546,6 +1566,7 @@ function quickUpdateTask(id, field, val) {
   const d = loadTasks();
   const t = d.find(x => x.id === id);
   if (!t) return;
+  if (!_canEditTask(t)) { window.toast?.('Bu görevi güncelleme yetkiniz yok', 'err'); return; }
   t[field] = val;
   if (field === 'status') t.done = val === 'done';
   saveTasks(d);
@@ -1584,6 +1605,7 @@ function editTask(id) {
   const d = loadTasks();
   const t = d.find(x => x.id === id);
   if (!t) return;
+  if (!_canEditTask(t)) { window.toast?.('Bu görevi düzenleme yetkiniz yok', 'err'); return; }
   populatePusUsers();
   if (g('tk-title'))  g('tk-title').value  = t.title;
   if (g('tk-desc'))   g('tk-desc').value   = t.desc || '';
@@ -1617,6 +1639,28 @@ function saveTask() {
   const viewers      = [];
   document.querySelectorAll('[id^="tk-part-"]:checked').forEach(cb => participants.push(parseInt(cb.value)));
   document.querySelectorAll('[id^="tk-view-"]:checked').forEach(cb => viewers.push(parseInt(cb.value)));
+
+  // Katılımcı onay mekanizması — user yeni katılımcı eklerse onaya düşer
+  // Admin ayarla devre dışı bırakabilir: window._pusParticipantApprovalOff
+  if (!window.isAdmin?.() && eid && !window._pusParticipantApprovalOff) {
+    const oldTask = d.find(x => x.id === eid);
+    if (oldTask) {
+      const oldParts = new Set([...(oldTask.participants || []), ...(oldTask.viewers || [])]);
+      const newParts = [...participants, ...viewers].filter(id => !oldParts.has(id));
+      if (newParts.length > 0) {
+        const pending = oldTask.pendingParticipants || [];
+        newParts.forEach(pid => { if (!pending.find(p => p.uid === pid)) pending.push({ uid: pid, requestedBy: _getCU()?.id, requestedAt: nowTs() }); });
+        oldTask.pendingParticipants = pending;
+        // Yeni eklenenler onaya düştü — eski listeyi koru
+        participants.length = 0; viewers.length = 0;
+        (oldTask.participants || []).forEach(p => participants.push(p));
+        (oldTask.viewers || []).forEach(v => viewers.push(v));
+        saveTasks(d);
+        window.addNotif?.('👥', `"${oldTask.title}" görevine katılımcı ekleme onay bekliyor`, 'warn', 'pusula');
+        window.toast?.('Katılımcı ekleme talebi yöneticiye gönderildi', 'ok');
+      }
+    }
+  }
 
   const dueDate = g('tk-due')?.value || null;
   const dueTime = g('tk-due-time')?.value || '';
@@ -1719,6 +1763,7 @@ function toggleTask(id, done) {
   const d = loadTasks();
   const t = d.find(x => x.id === id);
   if (!t) return;
+  if (!_canEditTask(t)) { window.toast?.('Bu görevin durumunu değiştirme yetkiniz yok', 'err'); return; }
   t.done   = done;
   if (done) t.status = 'done';
   else if (t.status === 'done') t.status = 'todo';
@@ -1959,11 +2004,12 @@ function toggleSubTask(parentId, subId, done) {
   renderPusula();
 }
 
-/** Alt görevi siler */
+/** Alt görevi siler — sadece görev sahibi/admin */
 function delSubTask(parentId, subId) {
   const d      = loadTasks();
   const parent = d.find(t => t.id === parentId);
   if (!parent) return;
+  if (!_canEditTask(parent)) { window.toast?.('Alt görev silme yetkiniz yok', 'err'); return; }
   parent.subTasks = (parent.subTasks || []).filter(s => s.id !== subId);
   saveTasks(d);
   renderPusula();
@@ -3485,6 +3531,9 @@ const Pusula = {
   openChat:     openTaskChat,
   renderChat:   renderTaskChatMsgs,
   sendChat:     sendTaskChatMsg,
+  // Yetki yardımcıları
+  canEdit:      _canEditTask,
+  isOwner:      _isTaskOwner,
   // İç yardımcılar (gerektiğinde dışarıdan çağrılabilir)
   populateUsers:        populatePusUsers,
   populateParticipants: populateTaskParticipants,
