@@ -363,6 +363,8 @@ function _finishLogin(user) {
   if (ap) ap.classList.add('on');
 
   logActivity('login', 'sisteme giriş yaptı');
+  // P0: Tüm giriş yollarında realtime sync başlat
+  setTimeout(() => window.DB?.startRealtimeSync?.(), 500);
   _initApp(u);
 }
 

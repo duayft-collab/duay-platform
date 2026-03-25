@@ -152,10 +152,13 @@ function _syncFirestore(path, data, mode = 'set') {
       console.warn('[DB:sync] Firebase DB yok — offline mod');
       return;
     }
+    const collection = path.split('/').pop();
     const syncedAt = new Date().toISOString();
     const payload = { data, syncedAt };
+    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle (2s pencere)
+    _writingNow[collection] = Date.now() + 2000;
     // localStorage'a timestamp kaydet
-    try { localStorage.setItem(path.split('/').pop() + '_ts', syncedAt); } catch(e) {}
+    try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     if (mode === 'set') {
       FB_DB.doc(path).set(payload, { merge: true })
         .catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
@@ -906,6 +909,13 @@ async function migrateToFirestore() {
 const _listeners = {};
 
 /**
+ * P1: Kendi yazdığımız koleksiyonları takip eder.
+ * onSnapshot kendi yazımımızı geri okumasın diye kullanılır.
+ * @type {Object.<string, number>} collection → expiry timestamp
+ */
+const _writingNow = {};
+
+/**
  * Firestore koleksiyonuna realtime listener kurar.
  * Değişiklik gelince localStorage'ı günceller ve UI'ı yeniler.
  *
@@ -954,6 +964,12 @@ function _listenCollection(collection, localKey, onUpdate) {
         console.info('[DB:realtime]', collection, '→ Firestore boş, localStorage kullanılıyor');
         return;
       }
+      // P1: Kendi yazmamızdan gelen echo'yu atla
+      if (_writingNow[collection] && Date.now() < _writingNow[collection]) {
+        return;
+      }
+      delete _writingNow[collection];
+
       const data = snap.data()?.data;
       if (!Array.isArray(data)) return;
 
