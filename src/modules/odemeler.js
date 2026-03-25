@@ -1059,7 +1059,7 @@ function saveOdm() {
       Object.assign(o, entry);
     }
   } else {
-    d.unshift({ id: Date.now(), ...entry, createdBy: _CUo()?.id });
+    d.unshift({ id: generateNumericId(), ...entry, createdBy: _CUo()?.id });
   }
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
@@ -1259,7 +1259,7 @@ function processOdmImport(inp) {
         }
 
         existing.unshift({
-          id:        Date.now() + added,
+          id:        generateNumericId(),
           name,
           cat,
           freq,
@@ -1316,7 +1316,7 @@ function _checkRecurringOdm() {
     if (nextStr > today) return;
     const exists = d.some(x => x.name === o.name && x.due === nextStr);
     if (!exists) {
-      d.push({ ...o, id: Date.now() + Math.random(), paid: false, paidTs: null, receipt: null, due: nextStr, createdAt: _nowTso() });
+      d.push({ ...o, id: generateNumericId(), paid: false, paidTs: null, receipt: null, due: nextStr, createdAt: _nowTso() });
       localStorage.setItem(key, '1');
       changed = true;
     }
@@ -1347,7 +1347,7 @@ function openOdmTahsilat() {
       <input class="fi" type="number" id="tah-amt" placeholder="Tutar (₺)" style="width:120px">
       <input type="date" class="fi" id="tah-due" style="width:130px">
       <button class="btn btnp" onclick="
-        const t={id:Date.now(),name:_go('tah-name').value,amount:parseFloat(_go('tah-amt').value)||0,due:_go('tah-due').value,from:'',createdAt:_nowTso()};
+        const t={id:generateNumericId(),name:_go('tah-name').value,amount:parseFloat(_go('tah-amt').value)||0,due:_go('tah-due').value,from:'',createdAt:_nowTso()};
         const d=window.loadTahsilat?loadTahsilat():[];d.unshift(t);
         if(window.storeTahsilat)storeTahsilat(d);
         document.getElementById('mo-tahsilat').remove();openOdmTahsilat();
@@ -1515,7 +1515,7 @@ function checkOdmRecurring() {
 
     const all = window.loadOdm ? loadOdm() : [];
     all.unshift({
-      id: Date.now() + added,
+      id: generateNumericId(),
       name: o.name,
       cat: o.cat, freq: o.freq, amount: o.amount,
       currency: o.currency || 'TRY',
@@ -1729,7 +1729,7 @@ function saveTahsilat() {
     const o = d.find(x => x.id === eid);
     if (o) Object.assign(o, entry);
   } else {
-    d.unshift({ id: Date.now(), ...entry, createdBy: _CUo()?.id });
+    d.unshift({ id: generateNumericId(), ...entry, createdBy: _CUo()?.id });
   }
   storeTahsilat(d);
   document.getElementById('mo-tahsilat')?.remove();
@@ -2001,7 +2001,7 @@ function createOdmFromPurchase(purchase) {
   // Avans ödemesi
   if (purchase.advanceAmount && purchase.advanceDate) {
     d.unshift({
-      id: Date.now(),
+      id: generateNumericId(),
       name: purchase.name + ' — Avans',
       source: 'satinalma',
       cat: 'diger', freq: 'teksefer',
@@ -2019,7 +2019,7 @@ function createOdmFromPurchase(purchase) {
   const balance = purchase.totalAmount - (purchase.advanceAmount || 0);
   if (balance > 0 && purchase.balanceDate) {
     d.unshift({
-      id: Date.now() + 1,
+      id: generateNumericId(),
       name: purchase.name + ' — Bakiye',
       source: 'satinalma',
       cat: 'diger', freq: 'teksefer',
@@ -2419,7 +2419,7 @@ function checkRecurringTahsilat() {
     const due = new Date(o.due||_todayStr());
     due.setMonth(due.getMonth() + 1);
     all.unshift({
-      id: Date.now() + added++,
+      id: generateNumericId(),
       name: o.name, type: o.type, amount: o.amount,
       currency: o.currency||'TRY', due: due.toISOString().slice(0,10),
       banka: o.banka||'', yontem: o.yontem||'',

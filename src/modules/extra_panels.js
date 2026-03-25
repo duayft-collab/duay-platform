@@ -140,7 +140,7 @@ function saveLink() {
   const eid = parseInt(_gex('link-eid')?.value||'0');
   const cu  = window.Auth?.getCU?.();
   const entry = { name, url, icon:_gex('link-icon')?.value||'🔗', vis:_gex('link-vis')?.value||'all', owner:cu?.id };
-  if (eid) { const l=d.find(x=>x.id===eid); if(l) Object.assign(l,entry); } else d.push({id:Date.now(),...entry});
+  if (eid) { const l=d.find(x=>x.id===eid); if(l) Object.assign(l,entry); } else d.push({id:generateNumericId(),...entry});
   if (typeof saveLinks==='function') saveLinks(d);
   window.closeMo?.('mo-link'); _renderLinksPanel(); window.toast?.('Kaydedildi ✓','ok');
 }

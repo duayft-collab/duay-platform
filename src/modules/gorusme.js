@@ -234,7 +234,7 @@ function saveGrt() {
   if (new Date(date) < minDate) { window.toast?.('Randevu en az 3 iş günü öncesinden talep edilmelidir', 'err'); return; }
   const cu = _CUgr();
   const d  = _loadGrt();
-  d.push({ id: Date.now(), uid: cu?.id, uname: cu?.name, title, type: _ggr('grt-type')?.value, desc, date, status: 'pending', ts: _nowTsGr(), adminNotes: [] });
+  d.push({ id: generateNumericId(), uid: cu?.id, uname: cu?.name, title, type: _ggr('grt-type')?.value, desc, date, status: 'pending', ts: _nowTsGr(), adminNotes: [] });
   _storeGrt(d);
   window.closeMo?.('mo-grt');
   renderGorusme();
@@ -295,7 +295,7 @@ function _saveAdminNote(id) {
   const d = _loadGrt();
   const e = d.find(x => x.id === id); if (!e) return;
   if (!Array.isArray(e.adminNotes)) e.adminNotes = [];
-  e.adminNotes.push({ id: Date.now(), text, byName: cu?.name, ts: _nowTsGr(), sharedWith });
+  e.adminNotes.push({ id: generateNumericId(), text, byName: cu?.name, ts: _nowTsGr(), sharedWith });
   _storeGrt(d);
 }
 

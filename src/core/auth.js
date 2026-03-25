@@ -259,7 +259,7 @@ async function _localLogin(email, password, skipPwCheck = false) {
           const fbUser = FB_AUTH?.currentUser;
           if (fbUser) {
             user = {
-              id: Date.now(),
+              id: generateNumericId(),
               name: fbUser.displayName || email.split('@')[0],
               email: email.toLowerCase(),
               role: 'staff',
@@ -484,7 +484,7 @@ function _logEntry(type, message) {
     const KEY  = 'ak_activity_v1';
     const logs = JSON.parse(localStorage.getItem(KEY) || '[]');
     logs.unshift({
-      id: Date.now(), type,
+      id: (typeof generateNumericId==='function'?generateNumericId():Date.now()), type,
       uid: CU?.id || 0, uname: CU?.name || 'Sistem',
       message, ts: new Date().toISOString().slice(0,19).replace('T',' '),
       tenantId: TENANT_ID,

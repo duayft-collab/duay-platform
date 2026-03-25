@@ -274,7 +274,7 @@ function saveFormRecord() {
   const values = ACTIVE_FORM.fields.map(f => { const el = _gfm(f.id); return { label: f.l, value: el ? el.value : '—' }; });
   const cu = _CUfm();
   const recs = JSON.parse((()=>{try{return JSON.parse(localStorage.getItem('ak_form_recs'))||[];}catch{return [];}})() || '[]');
-  recs.unshift({ id: Date.now(), formId: ACTIVE_FORM.id, formTitle: ACTIVE_FORM.title, uid: cu?.id, uname: cu?.name, ts: window.DB?.nowTs?.() || new Date().toISOString().slice(0,19).replace('T',' '), values });
+  recs.unshift({ id: generateNumericId(), formId: ACTIVE_FORM.id, formTitle: ACTIVE_FORM.title, uid: cu?.id, uname: cu?.name, ts: window.DB?.nowTs?.() || new Date().toISOString().slice(0,19).replace('T',' '), values });
   localStorage.setItem('ak_form_recs', JSON.stringify(recs.slice(0, 500)));
   window.toast?.(ACTIVE_FORM.title + ' kaydedildi ✓', 'ok');
   window.logActivity?.('view', `"${ACTIVE_FORM.title}" formunu doldurdu`);

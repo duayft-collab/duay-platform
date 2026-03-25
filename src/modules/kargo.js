@@ -609,7 +609,7 @@ function _saveNav(){
     var k=kargo.find(function(x){return x.id===eid;});
     if(k)Object.assign(k,{firm,from,to,teslimEden:teden,teslimAlan:talan,tasimaTipi:tip,dir,status:isAdmin?k.status:'onay_bekle',date,note,imgdata});
   } else {
-    var yeni={id:Date.now(),firm,from,to,teslimEden:teden,teslimAlan:talan,tasimaTipi:tip,dir,status:status,date,note,imgdata,uid:cu?.id,createdAt:_nowK()};
+    var yeni={id:generateNumericId(),firm,from,to,teslimEden:teden,teslimAlan:talan,tasimaTipi:tip,dir,status:status,date,note,imgdata,uid:cu?.id,createdAt:_nowK()};
     kargo.push(yeni);
     // Bildirim: admin değilse yöneticiye bildir
     if(!isAdmin){
@@ -717,12 +717,12 @@ function _saveLok(){
   var cu=window.Auth?.getCU?.();
   if(eid){var k=kayit.find(function(x){return x.id===eid;});if(k)Object.assign(k,{dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama});}
   else{
-    var yeni={id:Date.now(),dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama,durum,uid:cu?.id,createdAt:_nowK()};
+    var yeni={id:generateNumericId(),dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama,durum,uid:cu?.id,createdAt:_nowK()};
     kayit.push(yeni);
     if(stokBagla&&typeof window.storeStok==='function'){
       try{
         var stoklar=typeof window.loadStok==='function'?window.loadStok():[];
-        stoklar.push({id:Date.now()+1,name:urun,tur:'stok',status:dir==='giris'?'giris':'cikis',quantity:miktar,unit:birim,note:'[Lokasyon] '+lok+' '+dir,uid:cu?.id,approved:_isAK(),ts:_nowK(),lokKargoId:yeni.id});
+        stoklar.push({id:generateNumericId(),name:urun,tur:'stok',status:dir==='giris'?'giris':'cikis',quantity:miktar,unit:birim,note:'[Lokasyon] '+lok+' '+dir,uid:cu?.id,approved:_isAK(),ts:_nowK(),lokKargoId:yeni.id});
         window.storeStok(stoklar);
       }catch(e){console.warn('[kargo] stok',e);}
     }
@@ -786,7 +786,7 @@ function _saveKur(){
   if(!kurye){_toastK('Kurye firması seçiniz','err');return;}
   var kayit=_loadKurye();
   if(eid){var k=kayit.find(function(x){return x.id===eid;});if(k)Object.assign(k,{kurye,takipNo,gonderen,alici,durum,tarih,not});}
-  else{kayit.push({id:Date.now(),kurye,takipNo,gonderen,alici,durum,tarih,not,uid:window.Auth?.getCU?.()?.id,createdAt:_nowK()});}
+  else{kayit.push({id:generateNumericId(),kurye,takipNo,gonderen,alici,durum,tarih,not,uid:window.Auth?.getCU?.()?.id,createdAt:_nowK()});}
   _saveKurye2(kayit);
   window.closeMo?.('mo-kv10-kur');
   _logK('Kurye '+(eid?'güncellendi':'eklendi')+': '+kurye+' '+takipNo);
@@ -820,7 +820,7 @@ function _addLok(){
   var tip=document.getElementById('kv10-ylon-tip')?.value||'ofis';
   if(!ad){_toastK('Lokasyon adı zorunludur','err');return;}
   var loks=_loadLoks();
-  loks.push({id:ad.toLowerCase().replace(/\s+/g,'')+Date.now(),ad,tip,aktif:true});
+  loks.push({id:ad.toLowerCase().replace(/\s+/g,'')+'_'+generateNumericId(),ad,tip,aktif:true});
   _saveLoks(loks);
   var e=document.getElementById('kv10-ylon-ad');if(e)e.value='';
   _toastK(ad+' eklendi ✓','ok');

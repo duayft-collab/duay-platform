@@ -141,7 +141,7 @@ function saveStok(){
     if(eid){
       const e=d.find(x=>x.id===eid);
       if(e){Object.assign(e,entry);if(!imgData&&existingEntry?.img)e.img=existingEntry.img;}
-    }else{entry.id=Date.now();d.unshift(entry);}
+    }else{entry.id=generateNumericId();d.unshift(entry);}
     storeStok(d);
     window.closeMo?.('mo-stok');
     renderStok();
@@ -440,7 +440,7 @@ function processStokImport(input){
     try{
       const wb=XLSX.read(e.target.result,{type:'binary'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws);
       const d=loadStok();let added=0;
-      rows.forEach(r=>{if(r['Ürün']){d.push({id:Date.now()+added,dir:(r['Yön']||'').includes('Çıkış')?'cikis':'giris',name:r['Ürün'],qty:parseInt(r['Miktar'])||1,date:r['Tarih']||nowTs().slice(0,10),uid:window.Auth?.getCU?.()?.id,note:r['Not']||'',status:isAdmin()?'giris':'bekle',approved:isAdmin()});added++;}});
+      rows.forEach(r=>{if(r['Ürün']){d.push({id:generateNumericId(),dir:(r['Yön']||'').includes('Çıkış')?'cikis':'giris',name:r['Ürün'],qty:parseInt(r['Miktar'])||1,date:r['Tarih']||nowTs().slice(0,10),uid:window.Auth?.getCU?.()?.id,note:r['Not']||'',status:isAdmin()?'giris':'bekle',approved:isAdmin()});added++;}});
       storeStok(d);renderStok();input.value='';toast(`${added} kayıt içe aktarıldı ✓`,'ok');
     }catch(err){toast('Dosya okunamadı: '+err.message,'err');}
   };reader.readAsBinaryString(file);

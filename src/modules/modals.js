@@ -1191,7 +1191,7 @@ function savePinLink() {
     const l = links.find(x => x.id === eid);
     if (l) Object.assign(l, entry);
   } else {
-    links.push({ id: Date.now(), ...entry });
+    links.push({ id: generateNumericId(), ...entry });
   }
 
   if (typeof saveLinks === 'function') saveLinks(links);

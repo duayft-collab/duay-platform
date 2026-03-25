@@ -439,7 +439,7 @@ function saveNavlun() {
     const item = d.find(x=>x.id===eid);
     if (item) Object.assign(item, entry);
   } else {
-    d.unshift({id:Date.now(), createdAt:ts, ...entry});
+    d.unshift({id:generateNumericId(), createdAt:ts, ...entry});
   }
 
   storeNavlun(d);

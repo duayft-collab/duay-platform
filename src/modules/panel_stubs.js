@@ -260,7 +260,7 @@ function saveEvrak() {
   const doSave = (fd) => {
     if (fd) entry.file = fd;
     if (eid) { const ex = d.find(x=>x.id===eid); if(ex) Object.assign(ex, entry); }
-    else d.unshift({ id: Date.now(), ...entry });
+    else d.unshift({ id: generateNumericId(), ...entry });
     if (typeof storeEvrak === 'function') storeEvrak(d);
     window.closeMo?.('mo-evrak');
     renderEvrak();
@@ -419,7 +419,7 @@ function saveDolap() {
   const eid = parseInt(_gst('dolap-eid')?.value||'0');
   const entry = { name, loc:_gst('dolap-loc')?.value||'', desc:_gst('dolap-desc')?.value||'', uid:_CUst()?.id, color:'var(--blb)' };
   if (eid) { const ex=d.find(x=>x.id===eid); if(ex) Object.assign(ex,entry); }
-  else d.push({id:Date.now(),...entry});
+  else d.push({id:generateNumericId(),...entry});
   if (typeof storeDolaplar==='function') storeDolaplar(d);
   window.closeMo?.('mo-dolap'); renderArsiv(); window.toast?.('Kaydedildi ✓','ok');
 }
@@ -561,7 +561,7 @@ function saveResmiEvrak() {
   const d=typeof loadResmi==='function'?loadResmi():[];
   const eid=parseInt(_gst('resmi-eid')?.value||'0');
   const entry={konu,dir:_gst('resmi-dir')?.value||'gelen',tarih:_gst('resmi-tarih')?.value||'',taraf:_gst('resmi-taraf')?.value||'',not:_gst('resmi-not')?.value||'',ts:_nowTsst(),uid:_CUst()?.id};
-  if(eid){const ex=d.find(x=>x.id===eid);if(ex)Object.assign(ex,entry);}else d.unshift({id:Date.now(),...entry});
+  if(eid){const ex=d.find(x=>x.id===eid);if(ex)Object.assign(ex,entry);}else d.unshift({id:generateNumericId(),...entry});
   if(typeof storeResmi==='function')storeResmi(d);
   window.closeMo?.('mo-resmi');renderResmi();window.toast?.(eid?'Güncellendi ✓':'Evrak eklendi ✓','ok');
 }

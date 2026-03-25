@@ -1208,7 +1208,7 @@ function saveIkMaas() {
     odendi:false, uid_kayit:_CUik()?.id, ts:_tsIk(),
   };
   if (eid) { const idx=data.findIndex(m=>m.id===eid); if(idx!==-1) data[idx]={...data[idx],...entry}; }
-  else data.unshift({id:Date.now(),...entry});
+  else data.unshift({id:generateNumericId(),...entry});
   _storeMaas(data);
   _syncIkFirestore('maas',data);
   _closeMoIk('mo-ik-maas');
@@ -1382,7 +1382,7 @@ function saveIkPerf() {
     hedef:_gik('ikperf-hedef')?.value||'',
     degUid:_CUik()?.id, ts:_tsIk()};
   if(eid){const idx=data.findIndex(p=>p.id===eid);if(idx!==-1)data[idx]={...data[idx],...entry};}
-  else data.unshift({id:Date.now(),...entry});
+  else data.unshift({id:generateNumericId(),...entry});
   _storePerf(data); _syncIkFirestore('performans',data);
   _closeMoIk('mo-ik-perf'); renderIkPerformans();
   _logIk('ik',`Performans değerlendirmesi girildi: uid=${uid}, puan=${puan}`);
@@ -1528,7 +1528,7 @@ function saveIkSozlesme() {
     dosya:_gik('iksoz-dosya')?.value||'',not:_gik('iksoz-not')?.value||'',
     uid_kayit:_CUik()?.id,ts:_tsIk()};
   if(eid){const idx=data.findIndex(s=>s.id===eid);if(idx!==-1)data[idx]={...data[idx],...entry};}
-  else data.unshift({id:Date.now(),...entry});
+  else data.unshift({id:generateNumericId(),...entry});
   _storeSoz(data);_syncIkFirestore('sozlesme',data);
   _closeMoIk('mo-ik-soz');renderIkSozlesme();
   _logIk('ik',`Sözleşme kaydedildi: uid=${uid}`);
@@ -2197,7 +2197,7 @@ function renderPipe(){
 function addCand(sid){
   const name=prompt(_ikT('candidate_name')+':');if(!name?.trim()) return;
   const pos=prompt(_ikT('position')+':')||'—';
-  candidates.push({id:Date.now(),name:name.trim(),position:pos,stage:sid,score:0,notes:'',disc:'N/A',loc:'Belirtilmedi'});
+  candidates.push({id:generateNumericId(),name:name.trim(),position:pos,stage:sid,score:0,notes:'',disc:'N/A',loc:'Belirtilmedi'});
   renderPipe();
 }
 function moveC(id,dir){
@@ -2297,7 +2297,7 @@ function renderIQList(){
 function toggleHint(id){ const el=document.getElementById(id); if(el) el.style.display=el.style.display==='none'?'block':'none'; }
 
 function addIQ(soruText){
-  const id='iq'+Date.now();
+  const id='iq_'+generateNumericId();
   iqItems.push({id,soru:soruText||'',yanit:''});
   renderIQList();
   if(!soruText){setTimeout(()=>{const el=document.getElementById('iq-q-'+id);if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}},60);}
@@ -2349,7 +2349,7 @@ function bankAddItem(idx){
   if(!item) return;
   const exists = iqItems.findIndex(i => i.soru === item.soru);
   if(exists !== -1){ iqItems.splice(exists,1); }
-  else { iqItems.push({id:'iq'+Date.now()+Math.random(), soru:item.soru, yanit:'', amac:item.amac, ideal:item.ideal, kirmizi:item.kirmizi}); }
+  else { iqItems.push({id:'iq_'+generateNumericId(), soru:item.soru, yanit:'', amac:item.amac, ideal:item.ideal, kirmizi:item.kirmizi}); }
   renderIQList();
   addFromBank();
 }
@@ -2385,7 +2385,7 @@ function bankStaticAdd(idx){
   const item = (window._bankFlatStatic||[])[idx];
   if(!item) return;
   if(!iqItems.some(i => i.soru === item.soru)){
-    iqItems.push({id:'iq'+Date.now()+Math.random(), soru:item.soru, yanit:'', amac:item.amac||'', ideal:item.ideal||'', kirmizi:item.kirmizi||''});
+    iqItems.push({id:'iq_'+generateNumericId(), soru:item.soru, yanit:'', amac:item.amac||'', ideal:item.ideal||'', kirmizi:item.kirmizi||''});
   }
   renderIQList();
   const formTab = document.querySelectorAll('#panel-mulakat .tab')[1];
@@ -2402,7 +2402,7 @@ async function saveInterview(){
   const answeredCount = iqItems.filter(i=>i.yanit&&i.yanit.trim().length>10).length;
 
   // Kaydet
-  const kayit={id:Date.now(),aday,poz,
+  const kayit={id:generateNumericId(),aday,poz,
     tarih:document.getElementById('mf-tarih').value?new Date(document.getElementById('mf-tarih').value).toLocaleString('tr-TR'):'—',
     gorusen:document.getElementById('mf-gorusen').value.trim()||'—',
     not:document.getElementById('mf-not').value.trim(),
@@ -2488,7 +2488,7 @@ JSON formatında döndür — başka hiçbir şey yazma:
 function clearForm(){
   ['mf-aday','mf-pozisyon','mf-gorusen','mf-not'].forEach(id=>document.getElementById(id).value='');
   try { const mfT=document.getElementById('mf-tarih'); if(mfT) mfT.value=new Date().toISOString().slice(0,16); } catch(e) {}
-  initDefaultIQ(); iqItems.forEach((item,i)=>{ item.id='iq_def_reset_'+i+'_'+Date.now(); });
+  initDefaultIQ(); iqItems.forEach((item,i)=>{ item.id='iq_def_reset_'+i+'_'+generateNumericId(); });
   renderIQList();document.getElementById('save-msg').innerHTML='';
 }
 function updateBadge(){
@@ -2688,7 +2688,7 @@ function _ikSubmitSuggestion(){
   const desc=document.getElementById('sg-desc').value.trim();
   const msgEl=document.getElementById('sg-msg');
   if(!title||!desc){msgEl.innerHTML='<div class="err-box">'+_ikT('suggestion_err')+'</div>';return;}
-  const sug={id:Date.now(),name:name||'Anonim',cat,title,desc,votes:0,status:'beklemede',date:new Date().toLocaleString('tr-TR')};
+  const sug={id:generateNumericId(),name:name||'Anonim',cat,title,desc,votes:0,status:'beklemede',date:new Date().toLocaleString('tr-TR')};
   const list = usrGet('suggestions') || [];
   list.unshift(sug); usrSet('suggestions', list);
   msgEl.innerHTML='<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:7px 11px;font-size:11px;color:#065f46">'+_ikT('suggestion_saved')+'</div>';
@@ -2884,7 +2884,7 @@ function createUser(){
   if(users.find(u=>u.user===uname)){ errEl.innerHTML='<div class="err-box">Bu kullanıcı adı zaten kullanılıyor.</div>'; return; }
 
   const newUser = {
-    id: 'usr_'+Date.now(),
+    id: 'usr_'+generateNumericId(),
     user: uname,
     pass,
     display,
@@ -2999,7 +2999,7 @@ function aiAddToForm(idx){
   const s = (window._aiSorular||[])[idx];
   if(!s) return;
   if(!iqItems.some(i=>i.soru===s.soru)){
-    iqItems.push({id:'iq'+Date.now()+Math.random(), soru:s.soru, yanit:''});
+    iqItems.push({id:'iq_'+generateNumericId(), soru:s.soru, yanit:''});
   }
   renderIQList();
   go('mulakat',null,_ikT('interview_form_nav'));

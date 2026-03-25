@@ -506,7 +506,7 @@ function saveCrmGorusme() {
     randevuTarih:_gc('crmg-randevu')?.value||'',sonuc:_gc('crmg-sonuc')?.value||'',
     tamamlandi:false,uid:_CUc()?.id,ts:_tsC()};
   if(eid){const idx=data.findIndex(g=>g.id===eid);if(idx!==-1)data[idx]={...data[idx],...entry};}
-  else data.unshift({id:Date.now(),...entry});
+  else data.unshift({id:generateNumericId(),...entry});
   _storeGorusmeler(data);_syncCrmFirestore('gorusme',data);
   _closeMoC('mo-crm-gorusme');renderCrmGorusmeler();
   const crm=typeof loadCrmData==='function'?loadCrmData():[];
@@ -680,7 +680,7 @@ function saveCrmTeklif() {
     asama:_gc('crkt-asama')?.value||'hazirlik',not:_gc('crkt-not')?.value||'',
     uid:_CUc()?.id,ts:_tsC()};
   if(eid){const idx=data.findIndex(t=>t.id===eid);if(idx!==-1)data[idx]={...data[idx],...entry};}
-  else data.unshift({id:Date.now(),...entry});
+  else data.unshift({id:generateNumericId(),...entry});
   _storeTeklifler(data);_syncCrmFirestore('teklif',data);
   _closeMoC('mo-crm-teklif');renderCrmTeklifler();
   _logC('crm',`Teklif kaydedildi: ${entry.no}, ${tutar}₺`);

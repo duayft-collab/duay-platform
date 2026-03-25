@@ -214,7 +214,7 @@ function saveAnn() {
     addedByName: cu?.name || 'Yönetim',
   };
   if (eid) { const a = anns.find(x => x.id === eid); if (a) Object.assign(a, entry); }
-  else anns.unshift({ id: Date.now(), ...entry });
+  else anns.unshift({ id: generateNumericId(), ...entry });
   storeAnn(anns);
   window.closeMo?.('mo-ann');
   renderAnnouncements();

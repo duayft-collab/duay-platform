@@ -765,7 +765,7 @@ function saveCalForm() {
 
   var recur = null;
   if (recurFreq && recurFreq !== 'none') {
-    recur = { freq: recurFreq, interval: recurInterval, seriesId: eid || Date.now() };
+    recur = { freq: recurFreq, interval: recurInterval, seriesId: eid || generateNumericId() };
     if (recurEnd)   recur.endDate = recurEnd;
     if (recurCount) recur.count   = recurCount;
     if (recurFreq === 'custom' && customDays.length) recur.days = customDays;
@@ -798,7 +798,7 @@ function saveCalForm() {
     window.toast?.('Güncellendi ✓', 'ok');
     window.logActivity?.('cal', '"' + title + '" etkinliği güncellendi');
   } else {
-    var newId = Date.now();
+    var newId = generateNumericId();
     if (recur) recur.seriesId = newId;
     d.push(Object.assign({ id: newId }, fields));
     window.logActivity?.('cal', '"' + title + '" ' + (recur ? '(tekrarlayan) ' : '') + 'etkinliği ' + (_isAdminH()?'eklendi':'onay için gönderildi') + ' (' + date + ')');
@@ -873,7 +873,7 @@ function saveEvent() {
   const d  = loadCal();
   const status = _isAdminH() ? 'approved' : 'pending';
   const newEv = {
-    id: Date.now(), own: _isAdminH() ? 0 : cu?.id,
+    id: generateNumericId(), own: _isAdminH() ? 0 : cu?.id,
     title, date,
     time:  _gh('ev-time')?.value  || '09:00',
     type:  _gh('ev-type')?.value  || 'meeting',
@@ -1090,7 +1090,7 @@ function tatilUyariOnayla(tarih, ad) {
   const isScheduled = pubTs > nowTs;
 
   anns.unshift({
-    id:          Date.now(),
+    id:          generateNumericId(),
     title:       `🎉 ${ad}`,
     body:        metin,
     type:        'info',
@@ -1140,7 +1140,7 @@ function initTrYasalEvents() {
   tatiller.forEach(t => {
     if (existing.some(e => e.date === t.tarih && e.type === 'holiday' && e.title === t.ad)) return;
     existing.push({
-      id: Date.now() + added++, own: 0,
+      id: generateNumericId(), own: 0,
       title: t.ad, date: t.tarih, time: '00:00',
       type: 'holiday', desc: `${t.tip === 'milli' ? 'Milli Bayram' : 'Dini Bayram'} · ${t.gun_sayisi} gün`,
       status: 'approved', reqBy: 0, reqByName: 'Sistem',
@@ -1155,7 +1155,7 @@ function tatilDuyuruYap(tatil) {
   if (anns.some(a => a.title && a.title.includes(tatil.ad))) return;
   const cu = _CUh();
   anns.unshift({
-    id: Date.now(), title: '🎉 ' + tatil.ad,
+    id: generateNumericId(), title: '🎉 ' + tatil.ad,
     body: `${tatil.ad} nedeniyle ${tatil.tarih} tarihinde tatil olacaktır. İyi bayramlar!`,
     type: 'info', ts: _nowTsh(), read: [], target: 'all', targetRoles: [], targetUsers: [],
     addedBy: cu?.id, addedByName: cu?.name,
@@ -1289,7 +1289,7 @@ function saveNote() {
     window.logActivity?.('note', `"${title}" notunu güncelledi`);
     window.toast?.('Not güncellendi ✓', 'ok');
   } else {
-    notes.push({id: Date.now(), uid: cu?.id, title, body, cat: _gh('nt-cat')?.value || 'genel', pinned: _gh('nt-pin')?.checked || false, color: _gh('nt-color')?.value || '', ts: now, updated: now});
+    notes.push({id: generateNumericId(), uid: cu?.id, title, body, cat: _gh('nt-cat')?.value || 'genel', pinned: _gh('nt-pin')?.checked || false, color: _gh('nt-color')?.value || '', ts: now, updated: now});
     window.logActivity?.('note', `"${title}" notu ekledi`);
     window.toast?.('Not eklendi ✓', 'ok');
   }
@@ -1451,7 +1451,7 @@ function saveRehber() {
     note:    (_gh('rh-note')?.value    || '').trim(),
   };
   if (eid) { const e = d.find(x => x.id === eid); if (e) Object.assign(e, entry); }
-  else d.push({id: Date.now(), ...entry});
+  else d.push({id: generateNumericId(), ...entry});
   storeRehber(d);
   window.closeMo?.('mo-rehber');
   renderRehber();
@@ -1582,7 +1582,7 @@ function saveTebligat() {
     if (eid) {
       if (!_isAdminH()) { window.toast?.('Değişiklik için admin onayı gereklidir', 'err'); return; }
       const e = d.find(x => x.id === eid); if (e) Object.assign(e, entry);
-    } else { d.push({id: Date.now(), ...entry}); }
+    } else { d.push({id: generateNumericId(), ...entry}); }
     storeTebligat(d);
     window.closeMo?.('mo-tebligat');
     renderTebligat();
@@ -1614,7 +1614,7 @@ function saveTebAsama() {
   const newStatus = _gh('teb-asama-status')?.value || '';
   const fi        = _gh('teb-asama-file');
   const asama = {
-    id: Date.now(), desc,
+    id: generateNumericId(), desc,
     date: _gh('teb-asama-date')?.value || '',
     addedBy: cu?.id, addedByName: cu?.name,
     ts: _nowTsh(), statusChange: newStatus || null,
@@ -1828,13 +1828,13 @@ let HDF_STEPS_TEMP = [];
 
 // ── Adım editörü ─────────────────────────────────────────────────
 function addHdfStep() {
-  HDF_STEPS_TEMP.push({id: Date.now(), text: '', done: false, substeps: []});
+  HDF_STEPS_TEMP.push({id: generateNumericId(), text: '', done: false, substeps: []});
   renderHdfStepsEditor();
 }
 
 function addHdfSubstep(stepId) {
   const step = HDF_STEPS_TEMP.find(s => s.id === stepId); if (!step) return;
-  step.substeps.push({id: Date.now(), text: '', done: false});
+  step.substeps.push({id: generateNumericId(), text: '', done: false});
   renderHdfStepsEditor();
 }
 
@@ -1918,12 +1918,12 @@ function saveHdf() {
     if (e) Object.assign(e, entry);
   } else {
     if (!_isAdminH()) {
-      const pending = {id: Date.now(), ...entry, approvalStatus: 'pending', reqBy: cu?.id, reqByName: cu?.name, reqTs: _nowTsh()};
+      const pending = {id: generateNumericId(), ...entry, approvalStatus: 'pending', reqBy: cu?.id, reqByName: cu?.name, reqTs: _nowTsh()};
       d.push(pending); storeHdf(d); window.closeMo?.('mo-hdf'); renderHedefler();
       window.addNotif?.('🎯', `Yeni hedef onay bekliyor: "${title}"`, 'warn', 'hedefler');
       window.toast?.('Hedef yönetici onayına gönderildi ✓', 'ok'); return;
     }
-    d.push({id: Date.now(), ...entry});
+    d.push({id: generateNumericId(), ...entry});
   }
   storeHdf(d); window.closeMo?.('mo-hdf'); renderHedefler();
   window.logActivity?.('view', `"${title}" hedefi kaydetti`);
@@ -2098,7 +2098,7 @@ let TMZ_ITEMS_TEMP = [];
 
 // ── Checklist editörü ────────────────────────────────────────────
 function addTmzItem() {
-  TMZ_ITEMS_TEMP.push({id: Date.now(), text: '', done: false});
+  TMZ_ITEMS_TEMP.push({id: generateNumericId(), text: '', done: false});
   renderTmzChecklist();
 }
 
@@ -2149,7 +2149,7 @@ function addSeciliRutinler() {
   TMZ_RUTIN_SABLONLAR.forEach((s, i) => {
     if (_gh('rutin-sel-' + i)?.checked) {
       d.push({
-        id: Date.now() + i, title: s.title, area: s.area,
+        id: generateNumericId(), title: s.title, area: s.area,
         period: s.period, uid,
         checklist: s.checklist.map(c => ({...c, done: false})),
         start: new Date().toISOString().slice(0, 10),
@@ -2210,7 +2210,7 @@ function saveTemizlik() {
     status: 'pending',
   };
   if (eid) { const e = d.find(x => x.id === eid); if (e) Object.assign(e, entry); }
-  else d.push({id: Date.now(), ...entry});
+  else d.push({id: generateNumericId(), ...entry});
   storeTemizlik(d);
   window.closeMo?.('mo-temizlik');
   renderTemizlik();
@@ -2484,7 +2484,7 @@ function addGrtNote(id){
   });
   const d=loadGrt();const e=d.find(x=>x.id===id);if(!e)return;
   if(!e.adminNotes)e.adminNotes=[];
-  e.adminNotes.push({id:Date.now(),text:note,by:CU.id,byName:CU.name,ts:nowTs(),sharedWith:shareWith});
+  e.adminNotes.push({id:generateNumericId(),text:note,by:CU.id,byName:CU.name,ts:nowTs(),sharedWith:shareWith});
   storeGrt(d);renderGorusme();
   toast('Not kaydedildi ✓'+(shareWith.length?' — '+shareWith.length+' kişiyle paylaşıldı':''),'ok');
 }

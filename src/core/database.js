@@ -508,7 +508,7 @@ function logActivity(type, detail) {
   const CU = window.Auth?.getCU?.();
   if (!CU) return;
   const acts = loadAct();
-  const entry = { id: Date.now(), uid: CU.id, uname: CU.name, type, detail, ts: nowTs() };
+  const entry = { id: generateNumericId(), uid: CU.id, uname: CU.name, type, detail, ts: nowTs() };
   acts.unshift(entry);
   saveAct(acts);
   // Firestore log (Anayasa Kural 3 — her hareket tarih + UID)
@@ -540,7 +540,7 @@ function logActivity(type, detail) {
  */
 function addNotif(icon, msg, type = 'info', link = '') {
   const d = loadNotifs();
-  d.unshift({ id: Date.now(), icon, msg, type, link, ts: nowTs(), read: false });
+  d.unshift({ id: generateNumericId(), icon, msg, type, link, ts: nowTs(), read: false });
   storeNotifs(d);
   if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
 }

@@ -414,7 +414,7 @@ function saveKpiCeo() {
     trend:   _gceo('kpi-trend')?.value   || 'stable',
   };
   if (eid) { const k = d.find(x => x.id === eid); if (k) Object.assign(k, entry); }
-  else d.push({ id: Date.now(), ...entry });
+  else d.push({ id: generateNumericId(), ...entry });
   if (typeof storeKpi === 'function') storeKpi(d);
   window.closeMo?.('mo-kpi');
   renderCeo();
@@ -451,7 +451,7 @@ function saveKarar() {
   if (!title) { window.toast?.('Başlık zorunludur', 'err'); return; }
   const d = (typeof loadKarar === 'function') ? loadKarar() : [];
   d.unshift({
-    id: Date.now(), title,
+    id: generateNumericId(), title,
     desc: _gceo('karar-desc')?.value || '',
     date: _gceo('karar-date')?.value || '',
     pri:  _gceo('karar-pri')?.value  || 'high',

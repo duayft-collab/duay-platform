@@ -226,7 +226,7 @@ function saveAdminUser() {
   } else {
     // Yeni kullanıcı ekle
     const newUser = {
-      id:       Date.now(),
+      id:       generateNumericId(),
       name, email, role, status,
       modules:  modules.length ? modules : null,
       access,
@@ -549,7 +549,7 @@ function submitSuggestion() {
 
   const suggs = loadSugg();
   suggs.unshift({
-    id:     Date.now(),
+    id:     generateNumericId(),
     uid:    cu.id,
     uname:  cu.name,
     text,

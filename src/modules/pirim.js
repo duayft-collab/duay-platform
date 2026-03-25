@@ -1027,7 +1027,7 @@ function savePirim() {
   } else {
     entry.createdAt = _now();
     entry.createdBy = window.CU()?.id;
-    d.push({ id: Date.now(), ...entry });
+    d.push({ id: generateNumericId(), ...entry });
   }
 
   window.storePirim?.(d);
@@ -1722,7 +1722,7 @@ function _pirimDuyur(title, body, type) {
     const ann = window.loadAnn?.() || [];
     const cu  = window.CU?.() || {};
     ann.unshift({
-      id:          Date.now(),
+      id:          generateNumericId(),
       title,
       body,
       type:        type || 'ok',
@@ -1863,7 +1863,7 @@ function importPirimFromXlsx() {
         const users = window.loadUsers?.() || [];
         const u = users.find(x => x.name.toLowerCase().includes(name.toLowerCase()));
         if (!u) return;
-        all.unshift({ id: Date.now() + added, uid: u.id, type: type||'diger', title: title||'', amount: parseFloat(amount)||0, date: date||new Date().toISOString().slice(0,10), status: 'pending', ts: new Date().toISOString() });
+        all.unshift({ id: generateNumericId(), uid: u.id, type: type||'diger', title: title||'', amount: parseFloat(amount)||0, date: date||new Date().toISOString().slice(0,10), status: 'pending', ts: new Date().toISOString() });
         added++;
       });
       window.storePirim?.(all);

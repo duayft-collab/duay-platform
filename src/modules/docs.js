@@ -356,7 +356,7 @@ function saveDocUpload() {
     } else {
       if (!fileData) { window.toast?.('Dosya seçiniz', 'err'); resetBtn(); return; }
       const newDoc = {
-        id: Date.now(), name, cat, acc, desc, tags,
+        id: generateNumericId(), name, cat, acc, desc, tags,
         type:  fileData.name.split('.').pop().toUpperCase(),
         size:  fileData.sizeStr,
         upd:   nowTsFn(),

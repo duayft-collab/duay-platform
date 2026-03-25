@@ -77,7 +77,7 @@ function saveCrm(){
     ts:     _nowTsc(),
   };
   if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}
-  else d.push({id:Date.now(),...entry});
+  else d.push({id:generateNumericId(),...entry});
   storeCrmData(d);
   window.closeMo?.('mo-crm');
   renderCrm();
@@ -316,7 +316,7 @@ function saveNumune(){
   const save2=img=>{
     if(img)entry.img=img;
     if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}
-    else d.push({id:Date.now(),...entry});
+    else d.push({id:generateNumericId(),...entry});
     storeNumune(d);
     window.closeMo?.('mo-numune');
     renderNumune();

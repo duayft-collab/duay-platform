@@ -104,7 +104,7 @@ function saveIk(){
     note:  _gi('ik-note')?.value||'',
   };
   if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}
-  else d.push({id:Date.now(),...entry});
+  else d.push({id:generateNumericId(),...entry});
   storeIk(d);
   window.closeMo?.('mo-ik');
   renderIk();
@@ -412,7 +412,7 @@ function saveIzin(){
   const doSave=fd=>{
     if(fd)entry.file=fd;
     if(editId){const existing=d.find(x=>x.id===editId);if(existing)Object.assign(existing,entry);}
-    else d.push({id:Date.now(),...entry});
+    else d.push({id:generateNumericId(),...entry});
     storeIzin(d);
     window.closeMo?.('mo-izin');
     renderIzin();
@@ -813,7 +813,7 @@ function savePuanRecord(){
   const eid=parseInt(_gi('mp-eid')?.value||'0');
   const entry={uid,date,pI:_gi('mp-pin')?.value||'09:00',pO:_gi('mp-pout')?.value||'18:00',aI:_gi('mp-in')?.value||null,aO:_gi('mp-out')?.value||null,ok:false};
   if(eid){const r=d.find(x=>x.id===eid);if(r)Object.assign(r,entry);}
-  else d.push({id:Date.now(),...entry});
+  else d.push({id:generateNumericId(),...entry});
   savePuan(d);window.closeMo?.('mo-puan');renderPuantaj();window.toast?.('Kaydedildi ✓','ok');
   window.logActivity?.('view',`Puantaj kaydı ${eid?'güncellendi':'eklendi'}`);
 }

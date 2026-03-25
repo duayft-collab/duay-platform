@@ -327,7 +327,7 @@ function saveKpi() {
     uid:     _CUk()?.id,
   };
   if (eid) { const k = d.find(x => x.id === eid); if (k) Object.assign(k, entry); }
-  else d.unshift({ id: Date.now(), ...entry });
+  else d.unshift({ id: generateNumericId(), ...entry });
   storeKpi(d);
   window.closeMo?.('mo-kpi');
   renderKpiPanel();

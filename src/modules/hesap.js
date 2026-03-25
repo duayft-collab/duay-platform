@@ -193,7 +193,7 @@ function saveHesap() {
   const cu         = _CUhs();
 
   const record = {
-    id: Date.now(),
+    id: generateNumericId(),
     tip:  _ghs('hsp-tip')?.value  || 'doviz',
     cins: _ghs('hsp-cins')?.value || 'USD',
     miktar, yer: _ghs('hsp-yer')?.value || '—',
@@ -238,7 +238,7 @@ function clearHesapHistory() {
 // ════════════════════════════════════════════════════════════════
 
 function addCompareRow() {
-  const id   = Date.now();
+  const id   = generateNumericId();
   HSP_COMPARE.push({ id, yer:'', alis:0, satis:0 });
   const cont = _ghs('hsp-compare-list');
   if (!cont) return;

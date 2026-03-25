@@ -1260,7 +1260,7 @@ function pdpSendChat() {
     var chats = loadTaskChats();
     if (!chats[_PDP_TASK_ID]) chats[_PDP_TASK_ID] = [];
     var cu  = _getCU();
-    var msg = { id: Date.now(), uid: cu && cu.id, name: cu && cu.name, text: text, ts: nowTs() };
+    var msg = { id: generateNumericId(), uid: cu && cu.id, name: cu && cu.name, text: text, ts: nowTs() };
     if (fd) msg.file = fd;
     chats[_PDP_TASK_ID].push(msg);
     storeTaskChats(chats);
@@ -1648,7 +1648,7 @@ function saveTask() {
           try {
             const _cu3 = _getCU();
             const _n2  = (typeof loadNotifs==='function' ? loadNotifs() : (window.loadNotifs?.() || []));
-            _n2.unshift({ id:Date.now()+1, icon:'📋',
+            _n2.unshift({ id:generateNumericId(), icon:'📋',
               msg:'"'+title+'" görevi size atandı — '+(_cu3?.name||''),
               type:'info', link:'pusula', ts:nowTs(), read:false,
               targetUid:fields.uid, taskId:eid, taskTitle:title,
@@ -1664,7 +1664,7 @@ function saveTask() {
       logActivity('task', `"${title}" güncelledi`);
       window.toast?.('Güncellendi ✓', 'ok');
     } else {
-      const _nid = Date.now();
+      const _nid = generateNumericId();
       // Şablon alt görevleri varsa uygula
       const _initSubs = (window._pendingSubTasks && window._pendingSubTasks.length)
         ? window._pendingSubTasks.map((s, i) => ({ ...s, id: _nid + i + 1 }))
@@ -1917,7 +1917,7 @@ function _saveSubTask(parentId) {
   if (!parent.subTasks) parent.subTasks = [];
 
   parent.subTasks.push({
-    id:         Date.now(),
+    id:         generateNumericId(),
     title,
     uid:        parseInt(g('subadd-user')?.value) || _getCU()?.id,
     pri:        parseInt(g('subadd-pri')?.value)  || 2,
@@ -2186,7 +2186,7 @@ function sendTaskChatMsg() {
   const doSend = fd => {
     const chats = loadTaskChats();
     if (!chats[taskId]) chats[taskId] = [];
-    const msg = { id: Date.now(), uid: _getCU()?.id, name: _getCU()?.name, text, ts: nowTs() };
+    const msg = { id: generateNumericId(), uid: _getCU()?.id, name: _getCU()?.name, text, ts: nowTs() };
     if (fd) msg.file = fd;
     chats[taskId].push(msg);
     storeTaskChats(chats);
@@ -2368,7 +2368,7 @@ function importTasksXlsx() {
           const status = statusStr.includes('devam') ? 'inprogress' : statusStr.includes('inceleme') ? 'review' : statusStr.includes('tamam') ? 'done' : 'todo';
 
           const newTask = {
-            id:         Date.now() + added,
+            id:         generateNumericId(),
             title,
             desc:       (row['Açıklama'] || row['aciklama'] || '').toString(),
             uid:        assignee?.id || cu?.id || 1,
@@ -2551,7 +2551,7 @@ function saveEtkinlik(){
   const name=g('etk-name').value.trim();if(!name){toast('Etkinlik adı zorunludur','err');return;}
   const d=loadEtkinlik();const eid=parseInt(g('etk-eid').value||'0');
   const entry={name,type:g('etk-type-inp').value,sektor:g('etk-sektor-inp').value,city:g('etk-city').value,date:g('etk-date').value,end:g('etk-end').value,venue:g('etk-venue').value,url:g('etk-url').value,desc:g('etk-desc').value,status:g('etk-status').value};
-  if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}else d.push({id:Date.now(),...entry});
+  if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}else d.push({id:generateNumericId(),...entry});
   storeEtkinlik(d);closeMo('mo-etkinlik');renderEtkinlik();logActivity('view',`"${name}" etkinliği kaydedildi`);toast(name+' kaydedildi ✓','ok');
 }
 
@@ -2617,7 +2617,7 @@ window.applyTaskTemplate = function(tplId) {
   setTimeout(() => {
     const titleEl = g('tk-title');
     if (titleEl && !titleEl.value) titleEl.value = tpl.name;
-    window._pendingSubTasks = tpl.subTasks.map((s,i) => ({ id: Date.now()+i, title:s, done:false }));
+    window._pendingSubTasks = tpl.subTasks.map((s,i) => ({ id: generateNumericId(), title:s, done:false }));
     _pfRenderPendingSubTasks();
   }, 120);
 };
@@ -2627,7 +2627,7 @@ window.saveCurrentAsTemplate = function() {
   const subEls = document.querySelectorAll('#tk-subtask-preview .pf-st-lbl');
   const subs   = Array.from(subEls).map(e=>e.textContent.trim()).filter(Boolean);
   const tpls   = _pfLoadTemplates();
-  tpls.push({ id:'tpl_custom_'+Date.now(), name:title+' Şablonu', icon:'⭐', subTasks:subs, custom:true });
+  tpls.push({ id:'tpl_custom_'+generateNumericId(), name:title+' Şablonu', icon:'⭐', subTasks:subs, custom:true });
   _pfSaveTemplates(tpls);
   toast('Şablon kaydedildi ✓');
 };
@@ -2920,7 +2920,7 @@ function _pfSaveTaskLog(d) { _pfW(_PF.taskLog,d); }
 window.addTaskLogEntry = function(taskId, text) {
   text=(text||'').trim(); if(!text){toast('Yorum boş olamaz','warn');return;}
   const log=_pfLoadTaskLog(); if(!log[taskId]) log[taskId]=[];
-  log[taskId].push({id:Date.now(),ts:nowTs(),by:_getCU()?.id,text});
+  log[taskId].push({id:generateNumericId(),ts:nowTs(),by:_getCU()?.id,text});
   _pfSaveTaskLog(log); window.renderTaskLog?.(taskId);
   const inp=g('pdp-log-inp'); if(inp) inp.value=''; toast('Not eklendi ✓');
 };
@@ -3008,7 +3008,7 @@ window.processRecurringTasks = function() {
   tasks.filter(t=>t.done&&t.recurring).forEach(t=>{
     const nextDue=_pfCalcNextDue(t.due||todayS,t.recurring); if(!nextDue||nextDue>todayS) return;
     const exists=tasks.find(x=>x.recurringOrigin===t.id&&x.due===nextDue&&!x.done); if(exists) return;
-    tasks.push({...t,id:Date.now()+Math.random(),done:false,status:'todo',due:nextDue,createdAt:nowTs(),recurringOrigin:t.id,subTasks:(t.subTasks||[]).map(s=>({...s,done:false}))});
+    tasks.push({...t,id:generateNumericId(),done:false,status:'todo',due:nextDue,createdAt:nowTs(),recurringOrigin:t.id,subTasks:(t.subTasks||[]).map(s=>({...s,done:false}))});
     changed=true;
   });
   if (changed) { saveTasks(tasks); renderPusula(); console.info('[PF] Recurring görevler oluşturuldu'); }
@@ -3417,7 +3417,7 @@ function openDeptManager() {
           const tasks=loadTasks();
           const exists=tasks.some(t=>t.department===v);
           if(exists){window.toast?.('Bu departman zaten var','warn');return;}
-          const dummy={id:Date.now(),title:'__dept_init__',department:v,status:'done',done:true,uid:window.Auth?.getCU?.()?.id||0,pri:4,createdAt:nowTs()};
+          const dummy={id:generateNumericId(),title:'__dept_init__',department:v,status:'done',done:true,uid:window.Auth?.getCU?.()?.id||0,pri:4,createdAt:nowTs()};
           tasks.push(dummy);
           saveTasks(tasks);
           window.toast?.(v+' departmanı eklendi ✓','ok');
@@ -3941,7 +3941,7 @@ window.saveTask = function() {
   const subs = _v85GetTempSubtasks();
   if (subs.length) {
     window._pendingSubTasks = subs.map((s, i) => ({
-      id: Date.now() + i,
+      id: generateNumericId(),
       title: s.title,
       done: s.status === 'done',
       status: s.status || 'todo',
@@ -4554,7 +4554,7 @@ console.info('[Pusula] İş Yükü & Performans paneli aktif ✓');
 
     const tasks = loadTasks();
     const newTask = {
-      id:         Date.now(),
+      id:         generateNumericId(),
       title,
       desc:       '',
       pri:        3,
@@ -4818,7 +4818,7 @@ console.info('[Pusula] İş Yükü & Performans paneli aktif ✓');
     const cu = _getCU();
     const tasks = loadTasks();
     tasks.push({
-      id: Date.now(), title: n.text.trim().slice(0, 80),
+      id: generateNumericId(), title: n.text.trim().slice(0, 80),
       desc: n.text.length > 80 ? n.text : '',
       pri: 3, due: null, status: 'todo', done: false,
       uid: cu?.id || 1, subTasks: [], created_at: nowTs(),
@@ -4944,7 +4944,7 @@ window._applyBuiltInTemplate = function(idx) {
   if (!tpl) return;
   const cu = _getCU();
   const tasks = loadTasks();
-  const nid = Date.now();
+  const nid = generateNumericId();
   tasks.push({
     id: nid,
     title: tpl.name,
@@ -5967,7 +5967,7 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
     const cu      = _getCU();
     const entries = _loadActivity(taskId);
     entries.push({
-      id:   Date.now(),
+      id:   generateNumericId(),
       ts:   nowTs(),
       uid:  cu?.id,
       name: cu?.name || '?',
