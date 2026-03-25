@@ -926,9 +926,9 @@ body {
 
 /* â•â• ACTION BUTTONS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-action-btn {
-  padding: 3px 7px; border-radius: 5px; border: 1px solid var(--b);
-  background: transparent; cursor: pointer; font-size: 11px;
-  font-family: inherit; color: var(--t2); transition: all .12s; display: inline-flex; align-items: center;
+  min-width: 36px; min-height: 36px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--b);
+  background: transparent; cursor: pointer; font-size: 18px;
+  font-family: inherit; color: var(--t2); transition: all .12s; display: inline-flex; align-items: center; justify-content: center;
 }
 .tk-action-btn:hover { background: var(--s2); border-color: var(--bm); }
 .tk-del-btn:hover    { background: var(--rdb); color: var(--rd); border-color: var(--rd); }

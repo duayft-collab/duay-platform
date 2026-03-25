@@ -741,7 +741,7 @@ function renderPusulaList(fl, users, todayS, cont) {
           ${statusPill}${dueChip}
           ${t.department ? (() => { const dc = getDeptColor(t.department); return `<span class="pusula-v85-dept-badge" style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${dc}22;color:${dc}">● ${t.department}</span>`; })() : ''}
           ${t.cost ? `<span style="font-size:10px;background:rgba(16,185,129,.1);color:#059669;padding:2px 8px;border-radius:6px;font-weight:700">₺${Number(t.cost).toLocaleString('tr-TR')}</span>` : ''}
-          ${subTasks.length ? `<span style="font-size:10px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:6px;font-weight:700">⬜ ${subDone}/${subTasks.length}</span>` : ''}
+          ${subTasks.length ? `<span style="font-size:12px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:6px;font-weight:700">⬜ ${subDone}/${subTasks.length}</span>` : ''}
           ${(() => { const ct = t.createdAt||t.ts; if(!ct) return ''; const days=Math.floor((Date.now()-new Date(ct.replace(' ','T')).getTime())/86400000); if(days<1) return ''; const color = days>14 ? 'var(--rd)' : 'var(--t3)'; return `<span style="font-size:10px;color:${color};padding:2px 6px;border-radius:6px;background:var(--s2)">${days}g</span>`; })()}
           ${tags}
           ${t.link ? `<a href="${t.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#6366F1;text-decoration:none;padding:2px 7px;border-radius:5px;background:rgba(99,102,241,.1);font-weight:700">🔗</a>` : ''}
@@ -765,7 +765,7 @@ function renderPusulaList(fl, users, todayS, cont) {
           <button onclick="event.stopPropagation();toggleFocus(${t.id},'quarter')" class="tk-action-btn" title="Çeyreğin en önemlisi"    style="opacity:${(_loadFocus('quarter')).includes(t.id)?1:.25}">🎯</button>
           <button onclick="event.stopPropagation();toggleFocus(${t.id},'year')"    class="tk-action-btn" title="Yılın en önemlisi"       style="opacity:${(_loadFocus('year')).includes(t.id)?1:.25}">🏆</button>
           ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})" class="tk-action-btn">✏️</button>` : ''}
-          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})"  class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
+          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.del(${t.id})"  class="tk-action-btn" style="color:#EF4444;font-size:14px">✕</button>` : ''}
         </div>
       </div>`;
 
@@ -839,12 +839,12 @@ function renderPusulaBoard(fl, users, todayS, cont) {
           <div style="width:4px;min-height:36px;border-radius:3px;flex-shrink:0;margin-top:1px;background:${p.color}"></div>
           <div class="tk-card-title" style="flex:1">${t.title}</div>
           <button onclick="event.stopPropagation();Pusula.edit(${t.id})"
-            style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:12px;padding:0;flex-shrink:0;opacity:0;transition:.14s" class="tk-card-edit">✏️</button>
+            style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;padding:0;min-width:28px;min-height:28px;flex-shrink:0;opacity:0;transition:.14s;display:inline-flex;align-items:center;justify-content:center" class="tk-card-edit">✏️</button>
         </div>
         <div class="tk-card-meta">
           ${dueChip}${tags}
-          ${subTasks.length ? `<span style="font-size:9px;color:var(--t3);background:var(--s2);padding:1px 6px;border-radius:5px;font-weight:700">⬜${subDone}/${subTasks.length}</span>` : ''}
-          ${chatCount ? `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-active" style="font-size:9px">💬${chatCount}</button>` : ''}
+          ${subTasks.length ? `<span style="font-size:12px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:5px;font-weight:700">⬜${subDone}/${subTasks.length}</span>` : ''}
+          ${chatCount ? `<button onclick="event.stopPropagation();Pusula.openChat(${t.id})" class="tk-chat-btn-active" style="font-size:12px">💬${chatCount}</button>` : ''}
           <span style="margin-left:auto">${av}</span>
         </div>`;
       colFrag.appendChild(card);
@@ -1109,7 +1109,7 @@ function pdpRenderInfo() {
   // Alt görevler
   html += '<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
     + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">ALT GÖREVLER (' + (task.subTasks || []).length + ')</div>'
-    + '<button onclick="addSubTask(' + _PDP_TASK_ID + ')" class="tk-action-btn" style="font-size:11px;padding:3px 9px;border-style:dashed">+ Ekle</button>'
+    + '<button onclick="addSubTask(' + _PDP_TASK_ID + ')" class="tk-action-btn" style="font-size:13px;padding:6px 12px;border-style:dashed;min-height:36px">+ Ekle</button>'
     + '</div><div id="pdp-subtasks"></div></div>';
 
   // Zaman bilgileri
@@ -5101,7 +5101,7 @@ window.openTaskTemplateLibrary = openTaskTemplateLibrary;
     }
     .pus-qa-icon {
       padding: 0 10px 0 14px;
-      font-size: 14px;
+      font-size: 18px;
       opacity: .7;
     }
     .pus-qa-inp {
