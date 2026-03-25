@@ -2286,54 +2286,92 @@ function bulkMarkPirimPaid() {
 }
 window.bulkMarkPirimPaid = bulkMarkPirimPaid;
 
-// GELİŞTİRME 6: Araçlar buton satırına ekstra butonlar
+// GELİŞTİRME 6: Araçlar menüsü — tam çalışan versiyon
+const _PIRIM_TOOLS = [
+  { label: '📊 Ekip Performansı',     fn: 'showTeamPerformance',    desc: 'Tüm personelin aylık prim karşılaştırması' },
+  { label: '🔮 Ay Sonu Tahmini',      fn: 'showPirimForecast',      desc: 'Günlük ortalamaya göre ay sonu tahmini' },
+  { label: '📈 Dönem Karşılaştır',    fn: 'openPirimPeriodCompare', desc: 'Bu ay vs geçen ay karşılaştırması' },
+  { label: '👥 Personel Karşılaştır', fn: 'openPirimCompare',       desc: 'Personeller arası prim sıralaması' },
+  { label: '🧮 Prim Hesaplayıcı',     fn: 'openPirimCalc',          desc: 'Tutar ve oran girerek prim hesapla' },
+  { label: '📋 Prim Politikası',      fn: 'openPirimPolicy',        desc: 'Prim kuralları ve onay akışı özeti' },
+  { label: '💸 Toplu Ödendi',         fn: 'bulkMarkPirimPaid',      desc: 'Tüm onaylıları ödendi işaretle' },
+  { label: '📥 Excel den İçe Aktar',  fn: 'importPirimFromXlsx',    desc: 'CSV ile toplu prim girişi' },
+];
+
 function _injectPirimExtraTools() {
-  const topbar = document.querySelector('#panel-pirim [style*="position:sticky"]');
-  if (!topbar || topbar.dataset.extraInjected) return;
-  topbar.dataset.extraInjected = '1';
-  const extraBtn = document.createElement('div');
-  extraBtn.style.cssText = 'position:relative;display:inline-block';
-  extraBtn.innerHTML = '<button class="btn btns" onclick="_togglePirimTools(this)" style="font-size:11px">🛠 Araçlar ▾</button>'
-    + '<div id="pirim-extra-tools" style="display:none;position:absolute;right:0;top:calc(100%+4px);background:var(--sf);border:1px solid var(--b);border-radius:10px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;overflow:hidden">'
-    + ['📊 Ekip Performansı:showTeamPerformance()',
-       '🔮 Ay Sonu Tahmini:showPirimForecast()',
-       '📈 Dönem Karşılaştır:openPirimPeriodCompare()',
-       '👥 Personel Karşılaştır:openPirimCompare()',
-       '🧮 Prim Hesaplayıcı:openPirimCalc()',
-       '📋 Prim Politikası:openPirimPolicy()',
-       '💸 Toplu Ödendi:bulkMarkPirimPaid()',
-       '📥 Excel den Aktar:importPirimFromXlsx()',
-    ].map(item => {
-      const [label, fn] = item.split(':');
-      return '<button onclick="' + fn + ';_go("pirim-extra-tools").style.display="none"" class="btn btns" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px">' + label + '</button>';
-    }).join('')
-    + '</div>';
-  const btns = topbar.querySelector('[style*="gap"]');
-  if (btns) btns.insertBefore(extraBtn, btns.firstChild);
+  if (document.getElementById('pirim-tools-btn')) return;
+
+  const topbar = document.querySelector('#panel-pirim [style*="sticky"]')
+               || document.querySelector('#panel-pirim .ph')
+               || document.getElementById('panel-pirim')?.firstElementChild;
+  if (!topbar) return;
+
+  const wrap = document.createElement('div');
+  wrap.id = 'pirim-tools-wrap';
+  wrap.style.cssText = 'position:relative;display:inline-block';
+
+  const btn = document.createElement('button');
+  btn.id = 'pirim-tools-btn';
+  btn.className = 'btn btns';
+  btn.style.fontSize = '11px';
+  btn.textContent = '🛠 Araçlar ▾';
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const m = document.getElementById('pirim-tools-menu');
+    if (m) m.style.display = m.style.display === 'block' ? 'none' : 'block';
+  });
+
+  const menu = document.createElement('div');
+  menu.id = 'pirim-tools-menu';
+  menu.style.cssText = 'display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--sf);border:1px solid var(--b);border-radius:12px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:9999;overflow:hidden';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:8px 14px;border-bottom:1px solid var(--b);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em';
+  hdr.textContent = 'Araçlar';
+  menu.appendChild(hdr);
+
+  _PIRIM_TOOLS.forEach(function(tool) {
+    const item = document.createElement('button');
+    item.className = 'btn btns';
+    item.style.cssText = 'width:100%;text-align:left;border:none;border-radius:0;padding:9px 14px;font-size:12px;display:flex;flex-direction:column;gap:1px';
+    item.innerHTML = '<span style="font-weight:500">' + tool.label + '</span>'
+      + '<span style="font-size:10px;color:var(--t3)">' + tool.desc + '</span>';
+    item.addEventListener('click', function() {
+      menu.style.display = 'none';
+      var fn = window[tool.fn];
+      if (typeof fn === 'function') {
+        fn();
+      } else {
+        window.toast?.('Yükleniyor, tekrar deneyin', 'warn');
+        console.warn('[Pirim Araçlar] Bulunamadı:', tool.fn, '— typeof:', typeof window[tool.fn]);
+      }
+    });
+    menu.appendChild(item);
+  });
+
+  wrap.appendChild(btn);
+  wrap.appendChild(menu);
+
+  var btnGroup = topbar.querySelector('div[style*="gap"]') || topbar.querySelector('.ur') || topbar;
+  if (btnGroup.firstChild) btnGroup.insertBefore(wrap, btnGroup.firstChild);
+  else btnGroup.appendChild(wrap);
 }
 
-function _togglePirimTools(btn) {
-  const menu = document.getElementById('pirim-extra-tools');
-  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-}
-window._togglePirimTools = _togglePirimTools;
-
-// renderPirim'e araçlar enjeksiyonu ekle
-const _origRenderPirim = renderPirim;
-renderPirim = function() {
-  _origRenderPirim();
-  setTimeout(_injectPirimExtraTools, 100);
-};
-window.renderPirim = renderPirim;
-if (window.Pirim) window.Pirim.render = renderPirim;
-
-// Dışarı tıklayınca kapat
-document.addEventListener('click', e => {
-  if (!e.target.closest('#pirim-extra-tools') && !e.target.textContent?.includes('Araçlar')) {
-    const m = document.getElementById('pirim-extra-tools');
-    if (m) m.style.display = 'none';
-  }
+document.addEventListener('click', function(e) {
+  var m = document.getElementById('pirim-tools-menu');
+  var w = document.getElementById('pirim-tools-wrap');
+  if (m && w && !w.contains(e.target)) m.style.display = 'none';
 });
+
+
+
+// Araçlar enjeksiyonu — renderPirim her çalışınca kontrol et
+(function() {
+  var _base = renderPirim;
+  renderPirim = function() { _base(); setTimeout(_injectPirimExtraTools, 200); };
+  window.renderPirim = renderPirim;
+  if (window.Pirim) window.Pirim.render = renderPirim;
+})();
 
 // ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
