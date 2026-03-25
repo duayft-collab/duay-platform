@@ -199,32 +199,58 @@ function _injectOdmPanel() {
       '<div id="odm-stab-kredi_k" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Kredi Kartları</div>',
     '</div>',
 
-    // ARAMA + FİLTRELER
-    '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--s2)">',
-      '<div style="position:relative;flex:1;min-width:160px">',
-        '<svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%)" width="12" height="12" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
-        '<input class="fi" type="search" id="odm-search" placeholder="Ödeme ara…" oninput="renderOdemeler()" style="padding-left:28px;border-radius:8px">',
+    // ARAMA + FİLTRELER — OPTİMİZE
+    '<div style="border-bottom:1px solid var(--b);background:var(--sf)">',
+      // Satır 1: Arama
+      '<div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:0.5px solid var(--b)">',
+        '<div style="position:relative;flex:1">',
+          '<svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%)" width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
+          '<input class="fi" type="search" id="odm-search" placeholder="Ödeme, kategori veya sorumlu ara…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:8px;background:var(--s2)">',
+        '</div>',
+        '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:150px;max-width:180px">',
+          '<option value="">👤 Tüm Sorumlular</option>',
+        '</select>',
+        '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:130px;max-width:160px">',
+          '<option value="">🔁 Tüm Sıklıklar</option>',
+          Object.entries(ODM_FREQ).map(([k,v]) => `<option value="${k}">${v}</option>`).join(''),
+        '</select>',
+        '<button class="btn btns" onclick="bulkMarkOdmPaid()" style="border-radius:8px;font-size:11px;white-space:nowrap">☑ Toplu Ödendi</button>',
+        '<button class="btn btns" onclick="_odmClearFilters()" style="border-radius:8px;font-size:11px;white-space:nowrap">✕ Temizle</button>',
       '</div>',
-      '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:130px">',
-        '<option value="">Tüm Kategoriler</option>',
-        Object.entries(ODM_CATS).map(([k,v]) => `<option value="${k}">${v.ic} ${v.l}</option>`).join(''),
-      '</select>',
-      '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:120px">',
-        '<option value="">Tüm Sıklıklar</option>',
-        Object.entries(ODM_FREQ).map(([k,v]) => `<option value="${k}">${v}</option>`).join(''),
-      '</select>',
-      '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:120px">',
-        '<option value="">Tüm Durumlar</option>',
-        '<option value="bekliyor">📅 Bekliyor</option>',
-        '<option value="gecikti">🚨 Gecikmiş</option>',
-        '<option value="odendi">✅ Ödendi</option>',
-        '<option value="no-receipt">📎 Dekont Eksik</option>',
-      '</select>',
-      '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:140px">',
-        '<option value="">Tüm Sorumlular</option>',
-      '</select>',
-      '<button class="btn btns" onclick="bulkMarkOdmPaid()" style="border-radius:8px;font-size:11px">Toplu Ödendi</button>',
+      // Satır 2: Hızlı chip filtreler
+      '<div style="padding:6px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">',
+        '<span style="font-size:10px;color:var(--t3);font-weight:500;margin-right:2px">Filtrele:</span>',
+        // Kaynak chip'leri
+        '<div id="odm-src-chips" style="display:flex;gap:4px;flex-wrap:wrap">',
+          '<div class="odm-chip odm-chip-active" data-filter="src" data-val="" onclick="_odmChipClick(this)">Tümü</div>',
+          '<div class="odm-chip" data-filter="src" data-val="manual" onclick="_odmChipClick(this)">✍ Manuel</div>',
+          '<div class="odm-chip" data-filter="src" data-val="satinalma" onclick="_odmChipClick(this)">🛒 Satınalma</div>',
+          '<div class="odm-chip" data-filter="src" data-val="fatura" onclick="_odmChipClick(this)">📄 Fatura</div>',
+          '<div class="odm-chip" data-filter="src" data-val="otomatik" onclick="_odmChipClick(this)">🏦 Otomatik</div>',
+        '</div>',
+        '<div style="width:1px;height:16px;background:var(--b);margin:0 4px"></div>',
+        // Kategori chip'leri
+        '<div id="odm-cat-chips" style="display:flex;gap:4px;flex-wrap:wrap">',
+          '<div class="odm-chip" data-filter="cat" data-val="fatura" onclick="_odmChipClick(this)">💡 Fatura</div>',
+          '<div class="odm-chip" data-filter="cat" data-val="abonelik" onclick="_odmChipClick(this)">🔄 Abonelik</div>',
+          '<div class="odm-chip" data-filter="cat" data-val="kredi_k" onclick="_odmChipClick(this)">💳 Kredi Kartı</div>',
+          '<div class="odm-chip" data-filter="cat" data-val="kira" onclick="_odmChipClick(this)">🏢 Kira</div>',
+          '<div class="odm-chip" data-filter="cat" data-val="vergi" onclick="_odmChipClick(this)">📋 Vergi</div>',
+          '<div class="odm-chip" data-filter="cat" data-val="sigorta" onclick="_odmChipClick(this)">🛡 Sigorta</div>',
+        '</div>',
+        // Durum chip'leri
+        '<div style="width:1px;height:16px;background:var(--b);margin:0 4px"></div>',
+        '<div class="odm-chip" data-filter="status" data-val="gecikti" onclick="_odmChipClick(this)">🚨 Gecikmiş</div>',
+        '<div class="odm-chip" data-filter="status" data-val="no-receipt" onclick="_odmChipClick(this)">📎 Dekont Eksik</div>',
+        '<div class="odm-chip" data-filter="status" data-val="pending-approval" onclick="_odmChipClick(this)">⏳ Onay Bekleyen</div>',
+        // hidden select (eski uyumluluk için)
+        '<select id="odm-cat-f" onchange="renderOdemeler()" style="display:none"><option value=""></option>' + Object.entries(ODM_CATS).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('') + '</select>',
+        '<select id="odm-status-f" onchange="renderOdemeler()" style="display:none"><option value=""></option><option value="bekliyor">Bekliyor</option><option value="gecikti">Gecikmiş</option><option value="odendi">Ödendi</option><option value="no-receipt">Dekont Eksik</option></select>',
+      '</div>',
     '</div>',
+
+    // Chip CSS — dinamik enjekte
+    '<style>.odm-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s}.odm-chip:hover{border-color:var(--ac);color:var(--ac)}.odm-chip-active{background:var(--ac)!important;color:#fff!important;border-color:var(--ac)!important}</style>',
 
     // TABLO BAŞLIK
     '<div id="odm-thead" style="display:grid;grid-template-columns:32px 1fr 110px 100px 90px 130px;gap:0;padding:6px 16px;border-bottom:1px solid var(--b);background:var(--s2)">',
@@ -421,22 +447,54 @@ function renderOdemeler() {
     return 'bekliyor';
   }
 
-  // Tab filtresi
+  // Tab + Chip filtresi
   const today2 = _todayStr();
+  const chipSrc    = _odmActiveFilters?.src    || '';
+  const chipCat    = _odmActiveFilters?.cat    || '';
+  const chipStatus = _odmActiveFilters?.status || '';
+
   let items = all.filter(o => {
-    // Tab filtresi
+    const st = _getStatus(o);
+
+    // Sekme filtresi
     if (_odmCurrentTab === 'abonelik' && o.cat !== 'abonelik') return false;
     if (_odmCurrentTab === 'kredi_k'  && o.cat !== 'kredi_k')  return false;
-    if (_odmCurrentTab === 'bekliyor' && (_getStatus(o) !== 'bekliyor' && _getStatus(o) !== 'yaklasan')) return false;
-    if (_odmCurrentTab === 'gecikti'  && _getStatus(o) !== 'gecikti')  return false;
+    if (_odmCurrentTab === 'bekliyor' && st !== 'bekliyor' && st !== 'yaklasan') return false;
+    if (_odmCurrentTab === 'gecikti'  && st !== 'gecikti')  return false;
+    if (_odmCurrentTab === 'ay') {
+      if (!(o.due||'').startsWith(thisMonth) && !(o.paidTs||'').startsWith(thisMonth)) return false;
+    }
 
-    if (q && !o.name.toLowerCase().includes(q) && !(o.note||'').toLowerCase().includes(q)) return false;
+    // Chip: Kaynak filtresi
+    if (chipSrc === 'manual'    && o.source && o.source !== 'manual') return false;
+    if (chipSrc === 'satinalma' && o.source !== 'satinalma') return false;
+    if (chipSrc === 'fatura'    && o.source !== 'fatura') return false;
+    if (chipSrc === 'otomatik'  && o.source !== 'otomatik') return false;
+    if (chipSrc === 'manual' && !o.source) {} // manuel = kaynak yok = normal
+
+    // Chip: Kategori filtresi
+    if (chipCat && o.cat !== chipCat) return false;
+
+    // Chip: Durum filtresi
+    if (chipStatus === 'gecikti'         && st !== 'gecikti') return false;
+    if (chipStatus === 'no-receipt'      && !(o.paid && !o.receipt)) return false;
+    if (chipStatus === 'pending-approval' && o.approvalStatus !== 'pending') return false;
+
+    // Metin arama
+    if (q) {
+      const users2 = window.loadUsers ? loadUsers() : [];
+      const asgn = users2.find(u => u.id === o.assignedTo);
+      const searchStr = [o.name, o.note, o.source, asgn?.name, ODM_CATS[o.cat]?.l].filter(Boolean).join(' ').toLowerCase();
+      if (!searchStr.includes(q)) return false;
+    }
+
+    // Eski select filtreleri (geriye dönük uyumluluk)
     if (catF  && o.cat  !== catF)  return false;
     if (freqF && o.freq !== freqF) return false;
     if (userF && String(o.assignedTo) !== userF) return false;
     if (statF) {
       if (statF === 'no-receipt' && !(o.paid && !o.receipt)) return false;
-      else if (statF !== 'no-receipt' && _getStatus(o) !== statF) return false;
+      else if (statF !== 'no-receipt' && st !== statF) return false;
     }
     return true;
   });
@@ -561,8 +619,8 @@ function renderOdemeler() {
       + '<div style="display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer" onclick="openOdmModal('+o.id+')">'
         + '<div style="width:32px;height:32px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">' + cat.ic + '</div>'
         + '<div style="min-width:0">'
-          + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + o.name + '</div>'
-          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (noReceipt?' · <span style="color:var(--amt)">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + '</div>'
+          + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + o.name + _odmSourceBadge(o) + (o.talimat?.durum==='aktif'?'<span style="font-size:9px;margin-left:3px" title="Otomatik ödeme talimatı aktif">🏦</span>':'') + '</div>'
+          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt)">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + '</div>'
         + '</div>'
       + '</div>'
       + '<div>'
@@ -585,6 +643,8 @@ function renderOdemeler() {
           : '<button onclick="toggleOdmPaid('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 7px">↩</button>')
         + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 6px;color:var(--amt)">📎</button>' : '')
         + '<button onclick="viewOdmHistory('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 5px;border-radius:6px" title="Geçmiş & Not">📋</button>'
+        + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 5px;border-radius:6px;color:'+(o.talimat?.durum==='aktif'?'#10B981':'var(--t3)')+'" title="Ödeme Talimatı">🏦</button>' : '')
+        + (o.approvalStatus==='pending' && _isAdminO() ? '<button onclick="approveOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 7px;border-radius:6px;color:var(--grt)" title="Onayla">✓</button>' : '')
         + '<button onclick="openOdmModal('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px">✏️</button>'
         + (_isAdminO() ? '<button onclick="delOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px;color:var(--rdt)">🗑</button>' : '')
       + '</div>';
@@ -1550,6 +1610,21 @@ window.viewOdmHistory = viewOdmHistory;
 // ════════════════════════════════════════════════════════════════
 // 10. SATINALMA → ÖDEME OTOMATİK BAĞLANTISI (API hazır)
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// KAYNAK ETİKETİ — Tablo satırında kaynak göster
+// ════════════════════════════════════════════════════════════════
+const ODM_SOURCES = {
+  manual:    { l: 'Manuel',     ic: '✍', c: '#6B7280' },
+  satinalma: { l: 'Satınalma',  ic: '🛒', c: '#6366F1' },
+  fatura:    { l: 'Fatura',     ic: '📄', c: '#F97316' },
+  otomatik:  { l: 'Oto.Ödeme',  ic: '🏦', c: '#10B981' },
+};
+
+function _odmSourceBadge(o) {
+  const src = ODM_SOURCES[o.source] || ODM_SOURCES.manual;
+  return '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(107,114,128,.1);color:' + src.c + ';margin-left:4px">' + src.ic + ' ' + src.l + '</span>';
+}
+
 function createOdmFromPurchase(purchase) {
   if (!purchase || !purchase.totalAmount) return;
   const d = window.loadOdm ? loadOdm() : [];
@@ -1560,6 +1635,7 @@ function createOdmFromPurchase(purchase) {
     d.unshift({
       id: Date.now(),
       name: purchase.name + ' — Avans',
+      source: 'satinalma',
       cat: 'diger', freq: 'teksefer',
       amount: purchase.advanceAmount,
       due: purchase.advanceDate,
@@ -1577,6 +1653,7 @@ function createOdmFromPurchase(purchase) {
     d.unshift({
       id: Date.now() + 1,
       name: purchase.name + ' — Bakiye',
+      source: 'satinalma',
       cat: 'diger', freq: 'teksefer',
       amount: balance,
       due: purchase.balanceDate,
@@ -1593,6 +1670,231 @@ function createOdmFromPurchase(purchase) {
   renderOdemeler();
 }
 window.createOdmFromPurchase = createOdmFromPurchase;
+
+
+// ════════════════════════════════════════════════════════════════
+// CHİP FİLTRE SİSTEMİ
+// ════════════════════════════════════════════════════════════════
+let _odmActiveFilters = { src: '', cat: '', status: '' };
+
+function _odmChipClick(el) {
+  const filter = el.dataset.filter;
+  const val    = el.dataset.val;
+
+  // Aynı chip'e tıklanırsa kaldır
+  const isSame = _odmActiveFilters[filter] === val;
+  _odmActiveFilters[filter] = isSame ? '' : val;
+
+  // Chip görünümünü güncelle
+  document.querySelectorAll(`.odm-chip[data-filter="${filter}"]`).forEach(c => {
+    c.classList.remove('odm-chip-active');
+  });
+
+  if (!isSame) el.classList.add('odm-chip-active');
+
+  // "Tümü" chip'i — sadece src için
+  if (filter === 'src') {
+    const allChip = document.querySelector('.odm-chip[data-filter="src"][data-val=""]');
+    if (allChip) {
+      if (_odmActiveFilters.src === '') allChip.classList.add('odm-chip-active');
+      else allChip.classList.remove('odm-chip-active');
+    }
+  }
+
+  // hidden select'leri güncelle (eski uyumluluk)
+  if (filter === 'cat') {
+    const sel = document.getElementById('odm-cat-f');
+    if (sel) sel.value = _odmActiveFilters.cat;
+  }
+  if (filter === 'status') {
+    const sel = document.getElementById('odm-status-f');
+    if (sel) sel.value = _odmActiveFilters.status;
+  }
+
+  renderOdemeler();
+}
+
+function _odmClearFilters() {
+  _odmActiveFilters = { src: '', cat: '', status: '' };
+  document.querySelectorAll('.odm-chip').forEach(c => c.classList.remove('odm-chip-active'));
+  const allChip = document.querySelector('.odm-chip[data-filter="src"][data-val=""]');
+  if (allChip) allChip.classList.add('odm-chip-active');
+  const s = document.getElementById('odm-search');
+  if (s) s.value = '';
+  const uf = document.getElementById('odm-user-f');
+  if (uf) uf.value = '';
+  const ff = document.getElementById('odm-freq-f');
+  if (ff) ff.value = '';
+  renderOdemeler();
+}
+
+window._odmChipClick    = _odmChipClick;
+window._odmClearFilters = _odmClearFilters;
+
+
+// ════════════════════════════════════════════════════════════════
+// OTOMATİK ÖDEME TALİMATI SİSTEMİ
+// Elektrik, su, telefon vb. bankadan otomatik ödeniyor
+// ════════════════════════════════════════════════════════════════
+function openOdmTalimatModal(id) {
+  const existing = document.getElementById('mo-odm-talimat');
+  if (existing) existing.remove();
+
+  const all = window.loadOdm ? loadOdm() : [];
+  const o = id ? all.find(x => x.id === id) : null;
+  if (!o) return;
+
+  const t = o.talimat || {};
+  const users = window.loadUsers ? loadUsers().filter(u => u.status === 'active') : [];
+
+  const BANKALAR = ['Garanti', 'İş Bankası', 'Yapı Kredi', 'Ziraat', 'Halkbank', 'Vakıfbank', 'Akbank', 'QNB Finansbank', 'Denizbank', 'ING', 'HSBC', 'Diğer'];
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-talimat'; mo.style.zIndex = '2300';
+
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="background:#1e1b4b;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">'
+    + '<div>'
+    + '<div style="font-size:14px;font-weight:600">🏦 Otomatik Ödeme Talimatı</div>'
+    + '<div style="font-size:11px;opacity:.7;margin-top:2px">' + o.name + '</div>'
+    + '</div>'
+    + '<button onclick="_go("mo-odm-talimat")?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:18px">×</button>'
+    + '</div>'
+    + '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">'
+
+    // Banka seç
+    + '<div class="fr"><div class="fl">BANKA</div>'
+    + '<select class="fi" id="tal-f-banka" style="border-radius:8px">'
+    + '<option value="">— Banka Seçin —</option>'
+    + BANKALAR.map(b => '<option value="' + b + '"' + (t.banka === b ? ' selected' : '') + '>' + b + '</option>').join('')
+    + '</select></div>'
+
+    // Hesap / IBAN
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fr"><div class="fl">HESAP / IBAN</div><input class="fi" id="tal-f-iban" placeholder="TR..." value="' + (t.iban || '') + '" style="border-radius:8px"></div>'
+    + '<div class="fr"><div class="fl">TALİMAT NO</div><input class="fi" id="tal-f-no" placeholder="Opsiyonel" value="' + (t.no || '') + '" style="border-radius:8px"></div>'
+    + '</div>'
+
+    // Talimat tarihi + talimat veren
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fr"><div class="fl">TALİMAT TARİHİ</div><input type="date" class="fi" id="tal-f-tarih" value="' + (t.tarih || '') + '" style="border-radius:8px"></div>'
+    + '<div class="fr"><div class="fl">TALİMAT VEREN</div>'
+    + '<select class="fi" id="tal-f-veren" style="border-radius:8px">'
+    + '<option value="">— Seçin —</option>'
+    + users.map(u => '<option value="' + u.id + '"' + (t.verenId === u.id ? ' selected' : '') + '>' + u.name + '</option>').join('')
+    + '</select></div>'
+    + '</div>'
+
+    // Ödeme günü + limit
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fr"><div class="fl">HER AYIN KAÇ. GÜNÜ</div><input class="fi" type="number" id="tal-f-gun" min="1" max="31" placeholder="15" value="' + (t.gun || '') + '" style="border-radius:8px"></div>'
+    + '<div class="fr"><div class="fl">MAKSİMUM LİMİT (₺)</div><input class="fi" type="number" id="tal-f-limit" placeholder="Sınırsız" value="' + (t.limit || '') + '" style="border-radius:8px"></div>'
+    + '</div>'
+
+    // Durum + not
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fr"><div class="fl">DURUM</div>'
+    + '<select class="fi" id="tal-f-durum" style="border-radius:8px">'
+    + '<option value="aktif"' + ((!t.durum || t.durum === 'aktif') ? ' selected' : '') + '>✅ Aktif</option>'
+    + '<option value="iptal"' + (t.durum === 'iptal' ? ' selected' : '') + '>❌ İptal Edildi</option>'
+    + '<option value="bekle"' + (t.durum === 'bekle' ? ' selected' : '') + '>⏳ Bekleniyor</option>'
+    + '</select></div>'
+    + '<div class="fr"><div class="fl">İLGİLİ KURUM</div><input class="fi" id="tal-f-kurum" placeholder="BEDAŞ, Türk Telekom..." value="' + (t.kurum || '') + '" style="border-radius:8px"></div>'
+    + '</div>'
+
+    + '<div class="fr"><div class="fl">NOT / AÇIKLAMA</div>'
+    + '<textarea class="fi" id="tal-f-not" rows="2" style="resize:none;border-radius:8px" placeholder="Ek bilgi...">' + (t.not || '') + '</textarea></div>'
+
+    + '<input type="hidden" id="tal-f-odmid" value="' + o.id + '">'
+    + '</div>'
+    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">'
+    + (t.banka ? '<button class="btn btns" onclick="removeOdmTalimat(' + o.id + ')" style="color:var(--rdt)">Talimatı Kaldır</button>' : '<div></div>')
+    + '<div style="display:flex;gap:8px">'
+    + '<button class="btn" onclick="_go("mo-odm-talimat")?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="saveOdmTalimat()" style="padding:8px 20px;border-radius:9px">💾 Kaydet</button>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+
+  document.body.appendChild(mo);
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function saveOdmTalimat() {
+  const odmId = parseInt(_go('tal-f-odmid')?.value || '0');
+  const all = window.loadOdm ? loadOdm() : [];
+  const o = all.find(x => x.id === odmId);
+  if (!o) return;
+
+  const users = window.loadUsers ? loadUsers() : [];
+  const verenId = parseInt(_go('tal-f-veren')?.value || '0') || null;
+  const veren = users.find(u => u.id === verenId);
+
+  o.talimat = {
+    banka:   _go('tal-f-banka')?.value   || '',
+    iban:    _go('tal-f-iban')?.value    || '',
+    no:      _go('tal-f-no')?.value      || '',
+    tarih:   _go('tal-f-tarih')?.value   || '',
+    verenId: verenId,
+    verenAd: veren?.name || '',
+    gun:     parseInt(_go('tal-f-gun')?.value || '0') || null,
+    limit:   parseFloat(_go('tal-f-limit')?.value || '0') || null,
+    durum:   _go('tal-f-durum')?.value   || 'aktif',
+    kurum:   _go('tal-f-kurum')?.value   || '',
+    not:     _go('tal-f-not')?.value     || '',
+    ts:      _nowTso(),
+  };
+  o.source = 'otomatik';
+  window.storeOdm ? storeOdm(all) : null;
+  _go('mo-odm-talimat')?.remove();
+  window.toast?.('✅ Otomatik ödeme talimatı kaydedildi', 'ok');
+  renderOdemeler();
+}
+
+function removeOdmTalimat(id) {
+  if (!confirm('Otomatik ödeme talimatını kaldırmak istiyor musunuz?')) return;
+  const all = window.loadOdm ? loadOdm() : [];
+  const o = all.find(x => x.id === id);
+  if (!o) return;
+  delete o.talimat;
+  o.source = 'manual';
+  window.storeOdm ? storeOdm(all) : null;
+  _go('mo-odm-talimat')?.remove();
+  window.toast?.('Talimat kaldırıldı', 'ok');
+  renderOdemeler();
+}
+
+window.openOdmTalimatModal = openOdmTalimatModal;
+window.saveOdmTalimat      = saveOdmTalimat;
+window.removeOdmTalimat    = removeOdmTalimat;
+
+// ════════════════════════════════════════════════════════════════
+// YÖNETİCİ ONAY AKIŞI — Abonelik & otomatik hariç
+// ════════════════════════════════════════════════════════════════
+const ODM_AUTO_CATS = ['abonelik', 'fatura']; // Bunlar onay gerektirmez
+
+function _odmNeedsApproval(o) {
+  if (ODM_AUTO_CATS.includes(o.cat)) return false;
+  if (o.source === 'otomatik') return false;
+  if (o.talimat?.durum === 'aktif') return false;
+  return o.approvalNeeded || (parseFloat(o.amount) >= 5000 && !o.approved);
+}
+
+function approveOdm(id) {
+  if (!window.Auth?.getCU?.()?.role || !['admin','manager'].includes(window.Auth.getCU().role)) {
+    window.toast?.('Bu işlem için yönetici yetkisi gerekli', 'err'); return;
+  }
+  const all = window.loadOdm ? loadOdm() : [];
+  const o = all.find(x => x.id === id); if (!o) return;
+  o.approvalStatus = 'approved';
+  o.approved       = true;
+  o.approvedBy     = window.Auth.getCU().id;
+  o.approvedAt     = _nowTso();
+  window.storeOdm ? storeOdm(all) : null;
+  window.toast?.('✅ Ödeme onaylandı', 'ok');
+  renderOdemeler();
+}
+window.approveOdm = approveOdm;
 
 const Odemeler = {
   render:      renderOdemeler,
