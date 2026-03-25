@@ -640,6 +640,111 @@ function showAllUpdateBanners() {
 
 // ── Dışa Aktarım ─────────────────────────────────────────────────
 
+// ── T2: YETKİ MATRİSİ ────────────────────────────────────────────
+function _renderMatrix(users) {
+  const grid = g('u-grid'); if (!grid) return;
+
+  // Gösterilecek modüller (en önemli 10)
+  const COLS = [
+    {id:'finans',   label:'Finans'},
+    {id:'lojistik', label:'Lojistik'},
+    {id:'crm',      label:'CRM'},
+    {id:'ik',       label:'İK'},
+    {id:'pirim',    label:'Pirim'},
+    {id:'pusula',   label:'Görevler'},
+    {id:'kargo',    label:'Kargo'},
+    {id:'docs',     label:'Döküman'},
+    {id:'odemeler', label:'Ödemeler'},
+    {id:'ceo',      label:'CEO'},
+  ];
+
+  let changed = {}; // {uid: {modId: bool}} — değişiklikleri takip et
+
+  function _hasMod(u, modId) {
+    if (u.role === 'admin') return true;
+    if (!u.modules) return true; // tümü
+    return u.modules.includes(modId);
+  }
+
+  function _toggleMx(uid, modId, el) {
+    if (!changed[uid]) changed[uid] = {};
+    const cur = el.classList.contains('on');
+    el.classList.toggle('on', !cur);
+    el.textContent = !cur ? '✓' : '';
+    changed[uid][modId] = !cur;
+    const saveBtn = document.getElementById('mx-save-btn');
+    if (saveBtn) saveBtn.disabled = Object.keys(changed).length === 0;
+    const chCount = document.getElementById('mx-change-count');
+    const total = Object.values(changed).reduce((a,o)=>a+Object.keys(o).length,0);
+    if (chCount) chCount.textContent = total ? total + ' değişiklik bekliyor' : '';
+  }
+
+  function _saveMx() {
+    const allUsers = loadUsers();
+    Object.entries(changed).forEach(([uid, mods]) => {
+      const u = allUsers.find(x => x.id === parseInt(uid));
+      if (!u || u.role === 'admin') return;
+      if (!u.modules) u.modules = COLS.map(c => c.id); // tümü → listeye al
+      Object.entries(mods).forEach(([modId, val]) => {
+        if (val && !u.modules.includes(modId)) u.modules.push(modId);
+        if (!val) u.modules = u.modules.filter(m => m !== modId);
+      });
+      if (u.modules.length === COLS.length) u.modules = null; // tümü
+    });
+    saveUsers(allUsers);
+    changed = {};
+    logActivity('user', 'Yetki matrisi güncellendi');
+    window.toast?.('Yetki matrisi kaydedildi ✓', 'ok');
+    renderUsers();
+  }
+
+  window._toggleMx = _toggleMx;
+  window._saveMx   = _saveMx;
+
+  grid.innerHTML = `
+    <div class="perm-matrix-wrap">
+      <table class="perm-matrix">
+        <thead>
+          <tr>
+            <th class="u-col">Kullanıcı</th>
+            ${COLS.map(c=>`<th title="${c.id}">${c.label}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(u => {
+            const rm = ROLE_META[u.role] || ROLE_META.staff;
+            const isAdm = u.role === 'admin';
+            return `<tr>
+              <td class="u-col">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:28px;height:28px;border-radius:8px;background:${AV_COLORS[users.indexOf(u)%AV_COLORS.length]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name)}</div>
+                  <div>
+                    <div style="font-size:12px;font-weight:600">${u.name}</div>
+                    <div style="font-size:10px;color:var(--t3)">${rm.icon} ${rm.label}</div>
+                  </div>
+                </div>
+              </td>
+              ${COLS.map(c => {
+                const has = _hasMod(u, c.id);
+                return `<td>
+                  <span class="mx-cb ${has?'on':''}"
+                    onclick="${isAdm?'':"_toggleMx("+u.id+",'"+c.id+"',this)"}"
+                    title="${isAdm?'Admin — tüm erişim':''}"
+                    style="${isAdm?'opacity:.4;cursor:default':''}"
+                  >${has?'✓':''}</span>
+                </td>`;
+              }).join('')}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="mx-save-row">
+        <span id="mx-change-count" style="color:var(--ac);font-weight:600"></span>
+        <button id="mx-save-btn" class="btn btnp" onclick="_saveMx()" style="font-size:12px;padding:6px 16px">Değişiklikleri Kaydet</button>
+      </div>
+    </div>`;
+}
+
 // G4: Kullanıcıları Excel'e aktar
 function exportUsersXlsx() {
   if (!isAdmin()) return;
@@ -777,6 +882,7 @@ function _injectUsersPanel() {
           '<button class="cvb on" id="u-v-card" data-uview="card" style="font-size:11px;padding:5px 11px">⊞ Kart</button>',
           '<button class="cvb" id="u-v-table" data-uview="table" style="font-size:11px;padding:5px 11px">≡ Tablo</button>',
           '<button class="cvb" id="u-v-org" data-uview="org" style="font-size:11px;padding:5px 11px">🏢 Org</button>',
+        '<button class="cvb" id="u-v-matrix" data-uview="matrix" style="font-size:11px;padding:5px 11px">⊞ Matris</button>',
         '</div>',
         '<button class="btn btnp" onclick="openNewUser()" style="border-radius:9px">+ Kullanıcı Ekle</button>',
         '<button class="btn btns" onclick="exportUsersXlsx()" title="Excel İndir" style="border-radius:9px">⬇️ Excel</button>',
@@ -891,6 +997,11 @@ function renderUsers(filter=''){
     return;
   }
 
+  if(USERS_VIEW==='matrix'){
+    _renderMatrix(list);
+    return;
+  }
+
   if(USERS_VIEW==='card'){
     const _cuSelf = _getCU();
     grid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
@@ -903,7 +1014,16 @@ function renderUsers(filter=''){
         const lastSeen=u.lastLogin?u.lastLogin.slice(0,16):'—';
         const modCount=(u.modules||[]).length;
         const loginRecently=u.lastLogin&&(Date.now()-new Date(u.lastLogin.replace(' ','T')).getTime())<7*86400000;
-        return`<div style="background:var(--sf);border:2px solid ${isSelf?'#6366F1':'var(--b)'};border-radius:18px;overflow:hidden;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.06)" onmouseenter="this.style.boxShadow='0 8px 28px rgba(0,0,0,.12)'" onmouseleave="this.style.boxShadow='0 2px 12px rgba(0,0,0,.06)'">
+        // T3: Durum şeridi — yeşil=aktif+son7gün, sarı=aktif+uzun süre yok, kırmızı=askıda
+        const daysSince = u.lastLogin ? (Date.now()-new Date(u.lastLogin.replace(' ','T')).getTime())/86400000 : 999;
+        const stripeClass = u.status==='suspended' ? 'suspended'
+          : !isActive ? 'inactive'
+          : daysSince > 7 ? 'warning'
+          : 'active';
+        return`<div style="position:relative;background:var(--sf);border:2px solid ${isSelf?'#6366F1':'var(--b)'};border-radius:18px;overflow:hidden;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.06)" onmouseenter="this.style.boxShadow='0 8px 28px rgba(0,0,0,.12)'" onmouseleave="this.style.boxShadow='0 2px 12px rgba(0,0,0,.06)'">
+
+          <!-- T3: Durum renk şeridi -->
+          <div class="u-status-stripe ${stripeClass}"></div>
 
           <!-- Card header strip -->
           <div style="height:4px;background:${avBg}"></div>

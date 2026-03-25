@@ -405,13 +405,27 @@ function _applyRoleUI(user) {
     return;
   }
 
-  const allowed = new Set([...modules, 'dashboard']);
+  const allowed = new Set([...modules, 'dashboard', 'settings']);
 
-  // 1. sidebar butonlarını gizle/göster
-  document.querySelectorAll('.nb[id]').forEach(btn => {
-    // Hangi modüle ait bu buton?
-    const modId = Object.entries(window.MODULE_NAV_MAP).find(([, ids]) => ids.includes(btn.id))?.[0];
-    if (modId) btn.style.display = allowed.has(modId) ? '' : 'none';
+  // Yardımcı: butondan panel ID çıkar
+  // Önce onclick içeriğini okur (id olmayan butonlar için de çalışır)
+  function _getPanelId(btn) {
+    if (btn.dataset.panel) return btn.dataset.panel;
+    const oc = btn.getAttribute('onclick') || '';
+    const m  = oc.match(/nav\s*\(\s*['"]([^'"]+)['"]/);
+    if (m) return m[1];
+    if (btn.id && btn.id.startsWith('nb-')) return btn.id.replace('nb-', '');
+    return null;
+  }
+
+  // 1. TÜM sidebar butonlarını tara — id'si olan da olmayan da
+  document.querySelectorAll('.nb').forEach(btn => {
+    const panelId = _getPanelId(btn);
+    if (!panelId) return;
+    if (['dashboard', 'settings'].includes(panelId)) { btn.style.display = ''; return; }
+    // ik-hub → ik modülü
+    const checkId = panelId === 'ik-hub' ? 'ik' : panelId;
+    btn.style.display = (allowed.has(checkId) || allowed.has(panelId)) ? '' : 'none';
   });
 
   // 2. Bölüm başlıklarını — altında görünür buton yoksa gizle
@@ -432,10 +446,14 @@ function _applyRoleUI(user) {
     window.App._origNav        = _baseNav;
     const _wrapped = function(panelId, btn) {
       const cu = window.Auth?.getCU?.() || {};
-      if (['admin','manager'].includes(cu.role)) return _baseNav(panelId, btn);
-      const reqMod = window.PANEL_MODULE_MAP[panelId] || panelId;
+      // Admin her zaman geçer
+      if (cu.role === 'admin') return _baseNav(panelId, btn);
+      // dashboard ve settings her zaman erişilebilir
+      if (['dashboard','settings'].includes(panelId)) return _baseNav(panelId, btn);
+      // Modül kontrolü — manager dahil herkes
+      const reqMod = panelId === 'ik-hub' ? 'ik' : (window.PANEL_MODULE_MAP[panelId] || panelId);
       const mods   = cu.modules || window.ROLE_DEFAULT_MODULES?.[cu.role] || [];
-      if (panelId !== 'dashboard' && !mods.includes(reqMod)) {
+      if (!mods.includes(reqMod)) {
         window.toast?.('Bu bölüme erişim yetkiniz yok', 'err');
         return;
       }

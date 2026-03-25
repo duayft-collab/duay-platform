@@ -1,14 +1,14 @@
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   OPERASYON PLATFORMU Ã¢â‚¬â€ Ana Stil DosyasÃ„Â±
-   Kaynak: index_v7-6.html'den ayÃ„Â±rÃ„Â±ldÃ„Â±
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   OPERASYON PLATFORMU â€” Ana Stil DosyasÄ±
+   Kaynak: index_v7-6.html'den ayÄ±rÄ±ldÄ±
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ CSS CUSTOM PROPERTIES Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ CSS CUSTOM PROPERTIES â”€â”€ */
 :root {
   --bg: #F7F6F3; --sf: #FFF; --s2: #F2F1ED; --s3: #E8E7E3;
   --b: rgba(0,0,0,.08); --bm: rgba(0,0,0,.15);
@@ -44,12 +44,12 @@ body {
   transition: background .25s, color .25s;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ SCROLLBAR Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ SCROLLBAR â”€â”€ */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bm); border-radius: 99px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ LOGIN SCREEN Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ LOGIN SCREEN â”€â”€ */
 #login-screen {
   position: fixed; inset: 0; background: var(--bg);
   display: flex; align-items: center; justify-content: center;
@@ -113,11 +113,11 @@ body {
 }
 .lreset-btn:hover { color: var(--rdt); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ APP SHELL Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ APP SHELL â”€â”€ */
 #app { display: none; flex-direction: column; min-height: 100vh; }
 #app.on { display: flex; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ TOP NAV Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ TOP NAV â”€â”€ */
 .topnav {
   background: var(--sf); border-bottom: 1px solid var(--b);
   padding: 0 20px; height: 52px; display: flex;
@@ -154,7 +154,7 @@ body {
 }
 .lout:hover { background: var(--rdb); color: var(--rdt); border-color: transparent; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PIN BAR Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PIN BAR â”€â”€ */
 #pinbar {
   background: var(--sf); border-bottom: 1px solid var(--b);
   padding: 0 20px; height: 36px; display: flex; align-items: center;
@@ -192,7 +192,7 @@ body {
 .padd-btn:hover { color: var(--ac); border-color: var(--ac); }
 .psep { width: 1px; height: 16px; background: var(--b); margin: 0 4px; flex-shrink: 0; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ LAYOUT Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ LAYOUT â”€â”€ */
 .layout { display: flex; flex: 1; min-height: calc(100vh - 88px); }
 .sidebar {
   width: 218px; background: var(--sf); border-right: 2px solid var(--b);
@@ -200,7 +200,7 @@ body {
   position: sticky; top: 88px; height: calc(100vh - 88px); overflow-y: auto;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ SIDEBAR NAV Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ SIDEBAR NAV â”€â”€ */
 .nsec {
   font-size: 9.5px; font-weight: 700; color: var(--t3); letter-spacing: .1em;
   text-transform: uppercase; padding: 14px 10px 4px;
@@ -239,7 +239,7 @@ body {
   padding: 1px 6px; border-radius: 99px; background: var(--ac);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ MAIN CONTENT Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ MAIN CONTENT â”€â”€ */
 .main { flex: 1; padding: 26px 30px; overflow-y: auto; }
 .ph {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -250,7 +250,7 @@ body {
 .panel { display: none; }
 .panel.on { display: block; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ BUTTONS Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ BUTTONS â”€â”€ */
 .btn {
   padding: 8px 16px; border-radius: var(--rs); font-size: 13px; font-weight: 500;
   font-family: inherit; cursor: pointer; border: 1px solid var(--bm);
@@ -265,7 +265,7 @@ body {
 .btnd:hover { background: #f5c4c4; }
 .btng { background: var(--grb); color: var(--grt); border-color: transparent; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ STAT GRID Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ STAT GRID â”€â”€ */
 .sg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
 .sg5 { grid-template-columns: repeat(5, 1fr); }
 .sc {
@@ -280,7 +280,7 @@ body {
 .scv { font-size: 26px; font-weight: 600; letter-spacing: -.5px; }
 .scl { font-size: 12px; color: var(--t2); margin-top: 2px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ CARD Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ CARD â”€â”€ */
 .card {
   background: var(--sf); border-radius: var(--r);
   border: 1px solid var(--b); box-shadow: var(--sh); margin-bottom: 18px;
@@ -292,7 +292,7 @@ body {
 }
 .ct { font-size: 14px; font-weight: 600; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ TABLE Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ TABLE â”€â”€ */
 .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th {
   padding: 9px 18px; text-align: left; font-size: 10px; font-weight: 600;
@@ -303,7 +303,7 @@ body {
 .tbl tr:last-child td { border-bottom: none; }
 .tbl tr:hover td { background: var(--s2); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ BADGES Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ BADGES â”€â”€ */
 .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; }
 .bg  { background: var(--grb); color: var(--grt); }
 .bb  { background: var(--blb); color: var(--blt); }
@@ -312,7 +312,7 @@ body {
 .bp  { background: var(--al);  color: var(--at);  }
 .bgr { background: var(--s2);  color: var(--t2);  }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ MODAL Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ MODAL â”€â”€ */
 .mo {
   position: fixed; inset: 0; background: rgba(0,0,0,.5);
   display: none; align-items: center; justify-content: center;
@@ -360,7 +360,7 @@ body {
 .dr:last-child { border-bottom: none; }
 .dl { color: var(--t2); font-size: 12px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ TOAST Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ TOAST â”€â”€ */
 .toast {
   position: fixed; bottom: 22px; right: 22px;
   background: var(--t); color: var(--bg); padding: 11px 18px;
@@ -372,7 +372,7 @@ body {
 .toast.ok  { background: var(--gr); color: #fff; }
 .toast.err { background: var(--rd); color: #fff; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ MISC COMPONENTS Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ MISC COMPONENTS â”€â”€ */
 .ur { display: flex; align-items: center; gap: 10px; }
 .si {
   padding: 7px 12px; border-radius: var(--rs); border: 1px solid var(--bm);
@@ -408,7 +408,7 @@ body {
 }
 .dc:hover { border-color: var(--ac); box-shadow: var(--shm); transform: translateY(-1px); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PUANTAJ Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PUANTAJ â”€â”€ */
 .psw { position: relative; display: inline-block; width: 36px; height: 19px; }
 .psw input { opacity: 0; width: 0; height: 0; }
 .psl { position: absolute; cursor: pointer; inset: 0; background: var(--s3); border-radius: 19px; transition: .3s; }
@@ -427,13 +427,13 @@ body {
 .ptbl td { padding: 8px 13px; border-bottom: 1px solid var(--b); }
 .ptbl tr:hover td { background: var(--s2); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ TASK PRIORITY BADGES Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ TASK PRIORITY BADGES â”€â”€ */
 .pb { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
 .p1 { background: var(--rdb); color: var(--rdt); }
 .p2 { background: var(--amb); color: var(--amt); }
 .p3 { background: var(--blb); color: var(--blt); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ NOTES Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ NOTES â”€â”€ */
 .note-card {
   background: var(--sf); border: 1px solid var(--b); border-radius: var(--r);
   padding: 16px; cursor: pointer; transition: all .18s; box-shadow: var(--sh);
@@ -455,27 +455,27 @@ body {
 .note-li:hover { background: var(--s2); border-color: var(--ac); }
 .note-li.pinned { border-left: 3px solid var(--ac); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ ACTIVITY LOG Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ ACTIVITY LOG â”€â”€ */
 .alog-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--b); font-size: 12px; }
 .alog-item:last-child { border-bottom: none; }
 .alog-ico { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ SUGGEST Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ SUGGEST â”€â”€ */
 .sgi { padding: 14px 18px; border-bottom: 1px solid var(--b); }
 .sgi:last-child { border-bottom: none; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ ANNOUNCEMENTS Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ ANNOUNCEMENTS â”€â”€ */
 .ann-card { border: 1px solid var(--b); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; box-shadow: var(--sh); }
 .ann-unread { border-color: var(--ac); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ VERSION STRIP Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ VERSION STRIP â”€â”€ */
 .vstrip {
   background: var(--s2); border-top: 1px solid var(--b); padding: 4px 20px;
   font-size: 10px; color: var(--t3); font-family: 'DM Mono', monospace;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ LINK TABLES Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ LINK TABLES â”€â”€ */
 .lnk-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .lnk-tbl th { padding: 9px 16px; text-align: left; font-size: 10px; font-weight: 600; color: var(--t2); text-transform: uppercase; background: var(--s2); letter-spacing: .04em; }
 .lnk-tbl td { padding: 10px 16px; border-bottom: 1px solid var(--b); vertical-align: middle; }
@@ -488,7 +488,7 @@ body {
 .lnk-card:hover { border-color: var(--ac); box-shadow: var(--shm); }
 .lnkg { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ NOTIFICATION BELL Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ NOTIFICATION BELL â”€â”€ */
 .notif-btn { position: relative; }
 .notif-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: var(--rd); border-radius: 50%; border: 2px solid var(--sf); display: none; }
 .notif-dot.show { display: block; }
@@ -502,7 +502,7 @@ body {
 .notif-item:hover { background: var(--s2); }
 .notif-item.unread { border-left: 3px solid var(--ac); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ GLOBAL SEARCH Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ GLOBAL SEARCH â”€â”€ */
 .gsearch-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000;
   display: none; align-items: flex-start; justify-content: center; padding-top: 80px;
@@ -527,7 +527,7 @@ body {
 .gsr-mod { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--s2); color: var(--t3); margin-left: auto; flex-shrink: 0; }
 .gsr-empty { padding: 32px; text-align: center; color: var(--t2); font-size: 13px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PROFILE PANEL Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PROFILE PANEL â”€â”€ */
 .profile-panel {
   position: fixed; top: 56px; right: 14px; width: 300px;
   background: var(--sf); border: 1px solid var(--bm); border-radius: var(--r);
@@ -537,14 +537,14 @@ body {
 .pp-head { padding: 20px; background: var(--al); border-radius: var(--r) var(--r) 0 0; text-align: center; }
 .pp-av { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ SETTINGS Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ SETTINGS â”€â”€ */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   YENÃ„Â° MODAL SÃ„Â°STEMÃ„Â° Ã¢â‚¬â€ .moc / .moh / .mob / .mof / .mot / .mcl
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   YENÄ° MODAL SÄ°STEMÄ° â€” .moc / .moh / .mob / .mof / .mot / .mcl
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Modal container (overlay iÃƒÂ§indeki kutu) */
+/* Modal container (overlay iÃ§indeki kutu) */
 .moc {
   background: var(--sf);
   border-radius: 16px;
@@ -612,13 +612,13 @@ body {
   flex-shrink: 0;
 }
 
-/* Form group Ã¢â‚¬â€ label + input sarmalayÃ„Â±cÃ„Â±sÃ„Â± */
+/* Form group â€” label + input sarmalayÄ±cÄ±sÄ± */
 .fg {
   margin-bottom: 14px;
 }
 .fg:last-child { margin-bottom: 0; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ RENK UTILITY SINIFLARI Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ RENK UTILITY SINIFLARI â”€â”€ */
 /* Metin renkleri */
 .grc  { color: var(--gr); }
 .blc  { color: var(--bl); }
@@ -626,10 +626,10 @@ body {
 .rdc  { color: var(--rd); }
 .acc  { color: var(--ac); }
 
-/* Badge arka plan renkleri Ã¢â‚¬â€ mevcut .bg .bb .ba .br .bp'ye ek */
+/* Badge arka plan renkleri â€” mevcut .bg .bb .ba .br .bp'ye ek */
 .bac  { background: var(--ac);  color: #fff; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ CH (card header) Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ CH (card header) â”€â”€ */
 .ch {
   display: flex;
   align-items: center;
@@ -644,7 +644,7 @@ body {
   letter-spacing: -.1px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ GENEL YARDIMCILAR Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ GENEL YARDIMCILAR â”€â”€ */
 .vstrip {
   display: flex;
   align-items: center;
@@ -656,7 +656,7 @@ body {
   border-top: 1px solid var(--b);
 }
 
-/* Varolan .sg geniÃ…Å¸letme Ã¢â‚¬â€ 5 kolon */
+/* Varolan .sg geniÅŸletme â€” 5 kolon */
 .sg5 { grid-template-columns: repeat(5, 1fr); }
 @media (max-width: 860px) {
   .sg5 { grid-template-columns: repeat(3, 1fr); }
@@ -665,7 +665,7 @@ body {
   .sg5 { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PUSULA PANEL KEYFRAMES Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PUSULA PANEL KEYFRAMES â”€â”€ */
 @keyframes pus-slide-up { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: translateY(0); } }
 @keyframes pus-check { 0% { transform: scale(1); } 35% { transform: scale(1.45) rotate(-10deg); } 70% { transform: scale(.9); } 100% { transform: scale(1); } }
 @keyframes pus-shine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
@@ -681,12 +681,12 @@ body {
   animation: pus-slide-up .3s cubic-bezier(.34, 1.56, .64, 1);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ HAMBURGER / MOBILE Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ HAMBURGER / MOBILE â”€â”€ */
 .ham-btn { display: none; flex-direction: column; gap: 4px; background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; }
 .ham-btn span { display: block; width: 18px; height: 2px; background: var(--t2); border-radius: 2px; transition: all .2s; }
 #mob-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 149; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ RESPONSIVE Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ RESPONSIVE â”€â”€ */
 @media (max-width: 860px) {
   .sidebar { display: none; }
   .sg { grid-template-columns: repeat(2, 1fr); }
@@ -709,10 +709,10 @@ body {
   .sidebar.open { display: flex; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   PUSULA Ã¢â‚¬â€ GÃƒÂ¶rev Merkezi  v2.0
-   TasarÃ„Â±m: ÃƒÅ“st dÃƒÂ¼zey, motivasyon verici, temiz
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PUSULA â€” GÃ¶rev Merkezi  v2.0
+   TasarÄ±m: Ãœst dÃ¼zey, motivasyon verici, temiz
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 @keyframes pus-in    { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
 @keyframes pus-row   { from { opacity:0; transform:translateX(-8px) } to { opacity:1; transform:translateX(0) } }
@@ -727,7 +727,7 @@ body {
   background: var(--bg);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â HEADER Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-hero {
   background: var(--sf);
   border-bottom: 1px solid var(--b);
@@ -747,7 +747,7 @@ body {
 .pus-hero-sub { font-size: 12px; color: var(--t3); margin-top: 2px; font-weight: 400; }
 .pus-hero-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â STAT TABS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• STAT TABS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-stats-row {
   display: flex; gap: 0; flex-wrap: nowrap;
   overflow-x: auto; scrollbar-width: none;
@@ -774,7 +774,7 @@ body {
 .psp-count { font-size: 18px; font-weight: 700; letter-spacing: -.4px; line-height: 1; }
 .psp-label { font-size: 9px; font-weight: 600; letter-spacing: .06em; margin-top: 2px; text-transform: uppercase; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â VIEW TOGGLE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• VIEW TOGGLE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-view-toggle {
   display: flex; background: var(--s2); border-radius: 8px; padding: 2px; gap: 1px;
 }
@@ -789,7 +789,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â ADD BUTTON Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• ADD BUTTON â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-add-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 7px 16px; border-radius: 8px;
@@ -801,7 +801,7 @@ body {
 .pus-add-btn:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(60,52,137,.3); }
 .pus-add-btn:active { transform: translateY(0); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PROGRESS STRIP Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• PROGRESS STRIP â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-progress-strip {
   display: flex; align-items: center; gap: 10px;
   background: var(--sf); padding: 8px 20px;
@@ -815,7 +815,7 @@ body {
 .pus-prog-stat { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--t2); }
 .pus-prog-stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â TOOLBAR Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• TOOLBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 16px; background: var(--sf); border-bottom: 1px solid var(--b); gap: 8px; flex-wrap: wrap;
@@ -845,7 +845,7 @@ body {
   font-size: 11px; color: var(--t3); min-height: 28px; display: flex; align-items: center;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â GÃƒâ€“REV LÃ„Â°STESÃ„Â° Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• GÃ–REV LÄ°STESÄ° â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-list-wrap { background: var(--sf); }
 
 .tk-row {
@@ -876,7 +876,7 @@ body {
 .tk-name.done { text-decoration: line-through; color: var(--t3); font-weight: 400; }
 .tk-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 
-/* KÃƒÂ¼ÃƒÂ§ÃƒÂ¼k rozet sÃ„Â±nÃ„Â±flarÃ„Â± */
+/* KÃ¼Ã§Ã¼k rozet sÄ±nÄ±flarÄ± */
 .tk-role-badge {
   font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
 }
@@ -894,7 +894,7 @@ body {
 .tk-row-actions { display: flex; align-items: center; gap: 3px; opacity: 0; transition: opacity .12s; }
 .tk-row:hover .tk-row-actions { opacity: 1; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â PRIORITY BADGES Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• PRIORITY BADGES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-pri-badge {
   display: inline-flex; align-items: center; padding: 1px 7px;
   border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: .02em;
@@ -904,7 +904,7 @@ body {
 .tk-pri-badge-3 { background: rgba(59,130,246,.1); color: #2563EB; }
 .tk-pri-badge-4 { background: var(--s2); color: var(--t3); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â STATUS PILLS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• STATUS PILLS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-status-pill {
   display: inline-flex; align-items: center; gap: 3px;
   padding: 1px 7px; border-radius: 4px; font-size: 10px; font-weight: 600;
@@ -914,7 +914,7 @@ body {
 .tk-status-pill.review     { background: var(--amb); color: var(--amt); }
 .tk-status-pill.todo       { background: var(--s2);  color: var(--t2);  }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â DUE CHIPS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• DUE CHIPS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-due-chip {
   display: inline-flex; align-items: center; padding: 1px 6px;
   border-radius: 4px; font-size: 10px; font-weight: 600;
@@ -924,7 +924,7 @@ body {
 .tk-due-chip.today   { background: rgba(229,57,53,.1); color: var(--rd); }
 .tk-due-chip.overdue { background: var(--rdb); color: var(--rdt); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â ACTION BUTTONS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• ACTION BUTTONS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-action-btn {
   padding: 3px 7px; border-radius: 5px; border: 1px solid var(--b);
   background: transparent; cursor: pointer; font-size: 11px;
@@ -933,14 +933,14 @@ body {
 .tk-action-btn:hover { background: var(--s2); border-color: var(--bm); }
 .tk-del-btn:hover    { background: var(--rdb); color: var(--rd); border-color: var(--rd); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â AVATAR Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• AVATAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-av-sm {
   width: 22px; height: 22px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 9px; font-weight: 700; flex-shrink: 0;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â CHAT BUTTONS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• CHAT BUTTONS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-chat-btn-empty, .tk-chat-btn-active {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 8px; border-radius: 5px; font-size: 11px;
@@ -950,7 +950,7 @@ body {
 .tk-chat-btn-empty  { background: transparent; color: var(--t3); }
 .tk-chat-btn-active { background: var(--al); color: var(--ac); border-color: transparent; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â ALT GÃƒâ€“REV SATIRI Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• ALT GÃ–REV SATIRI â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-sub-row {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 8px 4px 32px; border-radius: 5px; margin-bottom: 2px;
@@ -970,7 +970,7 @@ body {
 }
 .tk-sub-add:hover { border-color: var(--ac); background: var(--al); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â BOARD Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• BOARD â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-board {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 14px; padding: 16px;
@@ -1009,7 +1009,7 @@ body {
 }
 .pus-board-add:hover { background: var(--sf); color: var(--ac); border-color: var(--ac); }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â BOÃ…Å¾ DURUM Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• BOÅž DURUM â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-empty {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 60px 24px; text-align: center; background: var(--sf);
@@ -1018,7 +1018,7 @@ body {
 .pus-empty-title { font-size: 15px; font-weight: 600; color: var(--t); margin-bottom: 5px; }
 .pus-empty-sub   { font-size: 12px; color: var(--t3); margin-bottom: 16px; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â DETAY PANELÃ„Â° Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• DETAY PANELÄ° â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 #pus-detail-panel {
   background: var(--sf);
   box-shadow: -4px 0 24px rgba(0,0,0,.08);
@@ -1064,7 +1064,7 @@ body {
 .pdp-pane.active { display: block; }
 #pus-detail-body { background: var(--s2) !important; }
 
-/* Ã„Â°ÃƒÂ§erik bÃƒÂ¶lÃƒÂ¼mleri */
+/* Ä°Ã§erik bÃ¶lÃ¼mleri */
 .pdp-section { margin-bottom: 16px; }
 .pdp-section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .pdp-label {
@@ -1085,7 +1085,7 @@ body {
 .pdp-meta-label { font-size: 9px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
 .pdp-meta-val   { font-size: 13px; font-weight: 500; color: var(--t); }
 
-/* Durum butonlarÃ„Â± */
+/* Durum butonlarÄ± */
 .pdp-status-row { display: flex; gap: 5px; flex-wrap: wrap; }
 .pdp-status-btn {
   padding: 5px 12px; border-radius: 7px; border: 1px solid var(--b);
@@ -1095,7 +1095,7 @@ body {
 .pdp-status-btn:hover { border-color: var(--bm); background: var(--s2); }
 .pdp-status-btn.active { font-weight: 600; }
 
-/* KiÃ…Å¸i chip */
+/* KiÅŸi chip */
 .pdp-person-chip {
   display: flex; align-items: center; gap: 8px;
   padding: 7px 10px; border-radius: 9px; background: var(--sf);
@@ -1175,7 +1175,7 @@ body {
 .pdp-upload-title { font-size: 13px; font-weight: 500; color: var(--t2); margin-bottom: 3px; }
 .pdp-upload-sub   { font-size: 11px; color: var(--t3); }
 
-/* Ã„Â°ZÃ„Â°NLER SEKME */
+/* Ä°ZÄ°NLER SEKME */
 .pdp-perm-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
 .pdp-perm-row {
   display: flex; align-items: center; gap: 10px;
@@ -1194,7 +1194,7 @@ body {
 #pdp-pane-files,
 #pdp-pane-perms { padding: 16px; }
 
-/* Ã¢â€¢ÂÃ¢â€¢Â RESPONSIVE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â• RESPONSIVE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (max-width: 860px) {
   .pus-board { grid-template-columns: repeat(2, 1fr); }
   .pus-hero-top { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -1209,7 +1209,7 @@ body {
   .pdp-tabs .pdp-tab { font-size: 10px; padding: 8px 2px; }
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ FINANS / DÃƒâ€“VÃ„Â°Z Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ FINANS / DÃ–VÄ°Z â”€â”€ */
 .currency-card {
   background: var(--sf); border: 1px solid var(--b);
   border-radius: var(--r); padding: 14px 16px;
@@ -1218,11 +1218,11 @@ body {
 .currency-code { font-weight: 700; font-size: 13px; }
 .currency-rate { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PANEL HEADER YARDIMCILARI Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PANEL HEADER YARDIMCILARI â”€â”€ */
 .panel { padding: 20px; }
 .panel > .ph:first-child { margin-bottom: 16px; }
 
-/* Eksik sc5 (5 sÃƒÂ¼tunlu stat grid) */
+/* Eksik sc5 (5 sÃ¼tunlu stat grid) */
 .sc { 
   background: var(--sf); border: 1px solid var(--b);
   border-radius: var(--r); padding: 16px;
@@ -1232,7 +1232,7 @@ body {
 .scv { font-size: 22px; font-weight: 700; letter-spacing: -.5px; color: var(--t); }
 .scl { font-size: 11px; color: var(--t2); }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PRIM TÃƒÅ“RÃƒÅ“ KARTLARI Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PRIM TÃœRÃœ KARTLARI â”€â”€ */
 .prm-type-card {
   padding: 12px; border: 1.5px solid var(--b);
   border-radius: 10px; cursor: pointer;
@@ -1249,15 +1249,15 @@ body {
   background: var(--al);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ RESPONSIVE PANEL Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ RESPONSIVE PANEL â”€â”€ */
 @media (max-width: 860px) {
   .panel { padding: 14px; }
   .pdp-meta-grid { grid-template-columns: 1fr; }
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   DÃƒâ€“KÃƒÅ“MAN PANELÃ„Â° (.dc = dÃƒÂ¶kÃƒÂ¼man kartÃ„Â±, .docg = grid)
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DÃ–KÃœMAN PANELÄ° (.dc = dÃ¶kÃ¼man kartÄ±, .docg = grid)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 .docg {
   display: grid;
@@ -1277,7 +1277,7 @@ body {
   box-shadow: var(--sh);
 }
 
-/* DÃƒÂ¶kÃƒÂ¼man detay satÃ„Â±rÃ„Â± */
+/* DÃ¶kÃ¼man detay satÄ±rÄ± */
 .dr {
   display: flex;
   align-items: center;
@@ -1296,17 +1296,17 @@ body {
   min-width: 90px;
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    FORM KARTLARI - grid
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 #form-grid > div:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,.1);
 }
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   GÃƒâ€“RÃƒÅ“Ã…Å¾ME - sgi item
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GÃ–RÃœÅžME - sgi item
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .sgi {
   border-radius: 14px;
   border: 1.5px solid var(--b);
@@ -1321,21 +1321,21 @@ body {
 }
 
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   V18 PANELLERÃ„Â° Ã¢â‚¬â€ Stat KartlarÃ„Â±, Takvim, Dashboard, Settings
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   V18 PANELLERÄ° â€” Stat KartlarÄ±, Takvim, Dashboard, Settings
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-   TAKVÃ„Â°M Ã¢â‚¬â€ v3.0  Apple Calendar tarzÃ„Â±
-   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TAKVÄ°M â€” v3.0  Apple Calendar tarzÄ±
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @keyframes cal-fade  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 @keyframes cal-pulse { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Kart Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Kart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cal-card        { background:var(--sf); border:1px solid var(--b); border-radius:14px; overflow:hidden; }
 .cal-side-card   { background:var(--sf); border:1px solid var(--b); border-radius:12px; padding:16px 18px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ GÃƒÂ¶rÃƒÂ¼nÃƒÂ¼m toggle Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ GÃ¶rÃ¼nÃ¼m toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cal-view-toggle { display:flex; background:var(--s2); border-radius:9px; padding:3px; gap:1px; }
 .cvb {
   display:flex; align-items:center; gap:5px;
@@ -1349,7 +1349,7 @@ body {
   box-shadow:0 1px 4px rgba(0,0,0,.1);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Filtre chips Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Filtre chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cal-chip {
   display:inline-flex; align-items:center; gap:5px;
   padding:5px 14px; border-radius:20px; border:1px solid var(--b);
@@ -1359,7 +1359,7 @@ body {
 .cal-chip:hover  { border-color:var(--bm); color:var(--t); }
 .cal-chip.on     { background:var(--ac); color:#fff; border-color:var(--ac); font-weight:600; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ HaftanÃ„Â±n gÃƒÂ¼nleri Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ HaftanÄ±n gÃ¼nleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cg  { display:grid; grid-template-columns:repeat(7,1fr); }
 .chd {
   font-size:10px; font-weight:700; color:var(--t3); text-align:center;
@@ -1367,7 +1367,7 @@ body {
   border-bottom:1px solid var(--b);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ GÃƒÂ¼n hÃƒÂ¼cresi Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ GÃ¼n hÃ¼cresi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cd {
   min-height:82px; padding:5px 5px 3px; cursor:pointer;
   border-right:1px solid var(--b); border-bottom:1px solid var(--b);
@@ -1386,7 +1386,7 @@ body {
   outline:2px solid var(--ac); outline-offset:-2px; z-index:1;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ GÃƒÂ¼n numarasÃ„Â± Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ GÃ¼n numarasÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cdn {
   font-size:12px; font-weight:500; color:var(--t2);
   width:22px; height:22px; border-radius:50%; display:flex;
@@ -1399,7 +1399,7 @@ body {
 }
 .cd.sel .cdn { color:var(--ac); font-weight:700; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Etkinlik pill Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Etkinlik pill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ced {
   display:block; font-size:10px; font-weight:600;
   padding:2px 5px; border-radius:4px; margin-top:2px;
@@ -1409,7 +1409,7 @@ body {
 .ced:hover { filter:brightness(.93); }
 .cd-more   { font-size:9px; color:var(--t3); font-weight:600; padding:1px 5px; margin-top:1px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ SeÃƒÂ§ili gÃƒÂ¼n kart Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ SeÃ§ili gÃ¼n kart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cse {
   border-left:3px solid; border-radius:0 8px 8px 0;
   background:var(--s2); padding:10px 12px; margin-bottom:7px;
@@ -1418,7 +1418,7 @@ body {
 .cse:last-child { margin-bottom:0; }
 .cse-time { font-size:11px; color:var(--t2); margin-top:3px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ YaklaÃ…Å¸an satÃ„Â±r Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ YaklaÅŸan satÄ±r â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cal-upc-row {
   display:flex; gap:10px; padding:8px 0;
   border-bottom:1px solid var(--b); align-items:center; cursor:pointer;
@@ -1431,7 +1431,7 @@ body {
   display:flex; align-items:center; justify-content:center; font-size:14px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ HaftalÃ„Â±k gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼m Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ HaftalÄ±k gÃ¶rÃ¼nÃ¼m â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cal-week-wrap { border:1px solid var(--b); border-radius:12px; overflow:hidden; }
 .cal-week-grid { display:grid; grid-template-columns:44px repeat(7,1fr); }
 .cal-week-header {
@@ -1456,7 +1456,7 @@ body {
   margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Ajanda gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼mÃƒÂ¼ Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Ajanda gÃ¶rÃ¼nÃ¼mÃ¼ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cal-agenda-day { padding:10px 0; border-bottom:1px solid var(--b); }
 .cal-agenda-day:last-child { border-bottom:none; }
 .cal-agenda-date {
@@ -1471,13 +1471,13 @@ body {
 .cal-agenda-ev:hover { background:var(--al); }
 .cal-agenda-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Tekrarlama badge Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Tekrarlama badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .recur-badge {
   font-size:9px; background:var(--al); color:var(--ac);
   padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:700;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Responsive Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width:900px) {
   #cal-main-grid { grid-template-columns:1fr !important; }
   .cd { min-height:52px; padding:3px; }
@@ -1491,24 +1491,24 @@ body {
 }
 
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PuAntaj toggle switch Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ PuAntaj toggle switch â”€â”€ */
 .psw input{opacity:0;width:0;height:0}
 .psl::before{content:"";position:absolute;height:13px;width:13px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
 input:checked+.psl{background:var(--ac)}
 input:checked+.psl::before{transform:translateX(17px)}
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Takvim gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼m butonu active Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Takvim gÃ¶rÃ¼nÃ¼m butonu active â”€â”€ */
 .cvb.on{background:rgba(255,255,255,.2);color:#fff}
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Dil pill active Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Dil pill active â”€â”€ */
 .lpill.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ HÃ„Â±zlÃ„Â± eriÃ…Å¸im kart hover Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ HÄ±zlÄ± eriÅŸim kart hover â”€â”€ */
 .qi:hover{background:var(--al);border-color:var(--ac);color:var(--ac);transform:translateY(-2px)}
 
 .pus-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
 
-/* â”€â”€ Pusula Hero Optimizasyon v2.1.0 â”€â”€ */
+/* ── Pusula Hero Optimizasyon v2.1.0 ── */
 .pus-hero { border-bottom: 1px solid var(--b); }
 .pus-hero-inner { padding: 10px 16px 6px !important; }
 .pus-hero-top { margin-bottom: 6px !important; }
@@ -1526,12 +1526,12 @@ input:checked+.psl::before{transform:translateX(17px)}
 #pus-focus-panel svg { opacity: 1 !important; }
 
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   PUSULA YENÄ° TASARIM â€” B+A KOMBÄ°NASYONU  [v2.3.0]
-   Tablo sekmeler + Sol sidebar + SÃ¼tunlu liste
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════════════
+   PUSULA YENİ TASARIM — B+A KOMBİNASYONU  [v2.3.0]
+   Tablo sekmeler + Sol sidebar + Sütunlu liste
+   ════════════════════════════════════════════════════════════════ */
 
-/* â”€â”€ Topbar â”€â”€ */
+/* ── Topbar ── */
 .pus-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 16px; border-bottom: 1px solid var(--b);
@@ -1545,7 +1545,7 @@ input:checked+.psl::before{transform:translateX(17px)}
   font-size: 14px; font-weight: 600; color: var(--t);
 }
 
-/* â”€â”€ Sekme Filtreler â”€â”€ */
+/* ── Sekme Filtreler ── */
 .pus-tabs-row {
   display: flex; align-items: stretch; border-bottom: 1px solid var(--b);
   background: var(--sf); overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
@@ -1567,12 +1567,12 @@ input:checked+.psl::before{transform:translateX(17px)}
 .pus-tab.active .pus-tab-count { background: rgba(99,102,241,.12); color: var(--ac); }
 .pus-tab-danger.active .pus-tab-count { background: rgba(239,68,68,.1); color: var(--rd); }
 
-/* â”€â”€ Ana Layout â”€â”€ */
+/* ── Ana Layout ── */
 .pus-layout {
   display: grid; grid-template-columns: 200px 1fr; min-height: 0;
 }
 
-/* â”€â”€ Sol Sidebar â”€â”€ */
+/* ── Sol Sidebar ── */
 .pus-sidebar {
   border-right: 1px solid var(--b); padding: 14px 12px;
   background: var(--s2); overflow-y: auto;
@@ -1598,17 +1598,17 @@ input:checked+.psl::before{transform:translateX(17px)}
 }
 .pus-sb-progress { padding: 4px 0; }
 
-/* â”€â”€ SaÄŸ Ä°Ã§erik â”€â”€ */
+/* ── Sağ İçerik ── */
 .pus-content { overflow: hidden; display: flex; flex-direction: column; }
 
-/* â”€â”€ Toolbar â”€â”€ */
+/* ── Toolbar ── */
 .pus-toolbar {
   padding: 10px 14px; border-bottom: 1px solid var(--b);
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   background: var(--sf);
 }
 
-/* â”€â”€ View toggle butonlarÄ± â”€â”€ */
+/* ── View toggle butonları ── */
 .pus-view-toggle {
   display: flex; background: var(--s2); border-radius: 7px;
   padding: 2px; gap: 1px;
@@ -1625,7 +1625,7 @@ input:checked+.psl::before{transform:translateX(17px)}
   box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 0.5px solid var(--b);
 }
 
-/* â”€â”€ Add buton â”€â”€ */
+/* ── Add buton ── */
 .pus-add-btn {
   display: flex; align-items: center; gap: 6px; padding: 6px 14px;
   background: var(--ac); color: #fff; border: none; border-radius: 8px;
@@ -1634,7 +1634,7 @@ input:checked+.psl::before{transform:translateX(17px)}
 }
 .pus-add-btn:hover { opacity: .88; }
 
-/* â”€â”€ Mobil â”€â”€ */
+/* ── Mobil ── */
 @media (max-width: 768px) {
   .pus-layout { grid-template-columns: 1fr; }
   .pus-sidebar { display: none; }
@@ -1642,17 +1642,17 @@ input:checked+.psl::before{transform:translateX(17px)}
   .pus-topbar-right { width: 100%; }
 }
 
-/* Eski stiller override â€” artÄ±k kullanÄ±lmÄ±yor */
+/* Eski stiller override — artık kullanılmıyor */
 .pus-hero { display: none !important; }
 .pus-stats-row { display: none !important; }
 .pus-progress-strip { display: none !important; }
 
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   DÃœZELTMELER v2.3.1
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════
+   DÜZELTMELER v2.3.1
+   ════════════════════════════════════════════ */
 
-/* 1. AraÃ§lar + gÃ¶rÃ¼nÃ¼m butonlarÄ± topbar'da gÃ¶rÃ¼nÃ¼r */
+/* 1. Araçlar + görünüm butonları topbar'da görünür */
 .pus-topbar .pus-tools-trigger {
   background: var(--s2) !important;
   border: 0.5px solid var(--b) !important;
@@ -1667,7 +1667,7 @@ input:checked+.psl::before{transform:translateX(17px)}
   color: var(--t) !important;
 }
 
-/* 2. Alt gÃ¶rev collapse butonu bÃ¼yÃ¼k ve belirgin */
+/* 2. Alt görev collapse butonu büyük ve belirgin */
 ._sub_collapse_btn {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px; border-radius: 8px; cursor: pointer;
@@ -1691,12 +1691,12 @@ input:checked+.psl::before{transform:translateX(17px)}
 }
 ._sub_arrow_icon.collapsed { transform: rotate(-90deg); }
 
-/* 3. Sol sidebar kaldÄ±rÄ±ldÄ± â€” layout dÃ¼z */
+/* 3. Sol sidebar kaldırıldı — layout düz */
 .pus-layout { display: block !important; }
 .pus-sidebar { display: none !important; }
 .pus-content { display: flex; flex-direction: column; }
 
-/* 4. Matrix kartlarÄ± draggable gÃ¶rÃ¼nÃ¼m */
+/* 4. Matrix kartları draggable görünüm */
 [draggable="true"] { cursor: grab; }
 [draggable="true"]:active { cursor: grabbing; opacity: .8; }
 .eis-drop-active {
@@ -1705,9 +1705,9 @@ input:checked+.psl::before{transform:translateX(17px)}
 }
 
 
-/* â•â•â•â•â•â•â•â•â•â•â•â• DÃœZELTMELER v2.3.2 â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════ DÜZELTMELER v2.3.2 ════════════ */
 
-/* 1. Topbar butonlarÄ± â€” zorla gÃ¶rÃ¼nÃ¼r */
+/* 1. Topbar butonları — zorla görünür */
 .pus-topbar { background: var(--sf) !important; }
 
 .pus-topbar .pus-tools-trigger,
@@ -1756,7 +1756,7 @@ input:checked+.psl::before{transform:translateX(17px)}
   background: var(--s2) !important;
 }
 
-/* 2. Alt gÃ¶rev collapse â€” bÃ¼yÃ¼k, belirgin, ÅŸÄ±k */
+/* 2. Alt görev collapse — büyük, belirgin, şık */
 ._sub_collapse_btn {
   display: flex !important;
   align-items: center !important;
@@ -1795,11 +1795,11 @@ input:checked+.psl::before{transform:translateX(17px)}
 }
 ._sub_arrow_icon.collapsed { transform: rotate(-90deg) !important; }
 
-/* 3. Matrix drag & drop gÃ¶rsel feedback */
+/* 3. Matrix drag & drop görsel feedback */
 .eis-quad { transition: all .15s; }
 .eis-quad[ondragover]:hover { box-shadow: inset 0 0 0 2px var(--ac); }
 
-/* 4. Focus panel â€” 5 sabit grid, kaymaz */
+/* 4. Focus panel — 5 sabit grid, kaymaz */
 #pus-focus-panel > div {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
@@ -1811,7 +1811,7 @@ input:checked+.psl::before{transform:translateX(17px)}
   flex-shrink: 0 !important;
 }
 
-/* 5. Departman yÃ¶netimi modal */
+/* 5. Departman yönetimi modal */
 .dept-mgr-item {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px; border-radius: 8px; margin-bottom: 4px;
@@ -1820,19 +1820,19 @@ input:checked+.psl::before{transform:translateX(17px)}
 .dept-mgr-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 .dept-mgr-name { flex: 1; font-size: 12px; color: var(--t); }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   Ã–DEMELER YENÄ° TASARIM  [v2.0]
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════
+   ÖDEMELER YENİ TASARIM  [v2.0]
+   ════════════════════════════════════════════════════════ */
 #panel-odemeler .ph { display: none !important; }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   KULLANICI YÃ–NETÄ°MÄ° â€” 3 TASARIM GELÄ°ÅžTÄ°RME  [v8.1+]
-   T1: Kart hover animasyonu â€” yumuÅŸak scale + shadow
-   T2: Ä°statistik kartlarÄ± â€” sayaÃ§ animasyonu (count-up)
-   T3: Rol badge'leri â€” gradient pill tasarÄ±mÄ±
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════
+   KULLANICI YÖNETİMİ — 3 TASARIM GELİŞTİRME  [v8.1+]
+   T1: Kart hover animasyonu — yumuşak scale + shadow
+   T2: İstatistik kartları — sayaç animasyonu (count-up)
+   T3: Rol badge'leri — gradient pill tasarımı
+   ════════════════════════════════════════════════════════ */
 
-/* T1: KullanÄ±cÄ± kartÄ± hover animasyonu */
+/* T1: Kullanıcı kartı hover animasyonu */
 @keyframes u-card-in {
   from { opacity: 0; transform: translateY(10px) scale(.97); }
   to   { opacity: 1; transform: translateY(0)    scale(1);   }
@@ -1847,7 +1847,7 @@ input:checked+.psl::before{transform:translateX(17px)}
 #u-grid > div > div:nth-child(5) { animation-delay: .15s; }
 #u-grid > div > div:nth-child(6) { animation-delay: .18s; }
 
-/* T2: Ä°statistik sayaÃ§ animasyonu */
+/* T2: İstatistik sayaç animasyonu */
 @keyframes u-stat-pop {
   0%   { transform: scale(1);    }
   40%  { transform: scale(1.18); }
@@ -1880,7 +1880,7 @@ input:checked+.psl::before{transform:translateX(17px)}
   animation: bulk-bar-in .2s ease;
 }
 
-/* Åžifre gÃ¼Ã§ gÃ¶stergesi Ã§ubuklarÄ± */
+/* Şifre güç göstergesi çubukları */
 #f-pw-strength div[style*="height:3px"] {
   transition: background .25s ease;
 }
@@ -1889,4 +1889,89 @@ input:checked+.psl::before{transform:translateX(17px)}
 th[onclick*="_sortUsers"]:hover {
   color: var(--ac) !important;
   background: var(--al);
+}
+
+/* ════════════════════════════════════════════════════════
+   T3: DURUM RENK ŞERİDİ — Kullanıcı kartı sol kenar
+   ════════════════════════════════════════════════════════ */
+.u-status-stripe {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: var(--rs) 0 0 var(--rs);
+}
+.u-status-stripe.active    { background: #22C55E; }
+.u-status-stripe.warning   { background: #F59E0B; }
+.u-status-stripe.suspended { background: #EF4444; }
+.u-status-stripe.inactive  { background: var(--b); }
+
+/* T2: YETKİ MATRİSİ */
+.perm-matrix-wrap {
+  overflow-x: auto;
+  border: 1.5px solid var(--b);
+  border-radius: 14px;
+  background: var(--sf);
+}
+.perm-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 600px;
+}
+.perm-matrix th {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 10px 10px;
+  text-align: center;
+  background: var(--s2);
+  border-bottom: 1.5px solid var(--b);
+  white-space: nowrap;
+}
+.perm-matrix th.u-col { text-align: left; padding-left: 16px; min-width: 160px; }
+.perm-matrix td {
+  padding: 9px 10px;
+  border-bottom: 0.5px solid var(--b);
+  text-align: center;
+  vertical-align: middle;
+}
+.perm-matrix td.u-col {
+  text-align: left;
+  padding-left: 16px;
+  font-weight: 600;
+  color: var(--t);
+}
+.perm-matrix tr:last-child td { border-bottom: none; }
+.perm-matrix tr:hover td { background: var(--al); }
+.mx-cb {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--b);
+  background: var(--s2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all .15s;
+  user-select: none;
+}
+.mx-cb.on {
+  background: var(--grb);
+  border-color: var(--gr);
+  color: var(--grt);
+}
+.mx-cb:hover { border-color: var(--ac); }
+.mx-save-row {
+  padding: 10px 16px;
+  background: var(--s2);
+  border-top: 1.5px solid var(--b);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0 0 14px 14px;
+  font-size: 12px;
+  color: var(--t2);
 }
