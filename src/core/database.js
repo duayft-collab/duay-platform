@@ -211,9 +211,12 @@ let nowTs = () => { const n = new Date(); return `${n.getFullYear()}-${p2(n.getM
  *   Personel→ personel@sirket.com / personel123
  */
 const DEFAULT_USERS = [
-  { id: 1, name: 'Admin',        email: 'admin@sirket.com',     pw: '023e1829391a235dc15adcf2c9719c76a74e87e0454fb3f8ef6eda4f4358c972', role: 'admin', access: ['İK','Finans','Operasyon','Teknik','Maaş','Sistem'], modules: null, status: 'active', lastLogin: null },
-  { id: 7, name: 'Duay Admin', email: 'duayft@gmail.com',   pw: '023e1829391a235dc15adcf2c9719c76a74e87e0454fb3f8ef6eda4f4358c972', role: 'admin', access: ['İK','Finans','Operasyon','Teknik','Maaş','Sistem'], modules: null, status: 'active', lastLogin: null },
-  { id: 2, name: 'Demo Personel', email: 'personel@sirket.com', pw: '1e22ed1e01b436e0b1d0a027d224d52b68825dd84a263953412b47cf12b6dcc3', role: 'staff', access: ['İK'], modules: null, status: 'active', lastLogin: null },
+  // Firebase Auth: duayft@gmail.com — Admin
+  { id: 1, name: 'Duay Admin',    email: 'duayft@gmail.com',         pw: '', role: 'admin',   access: ['İK','Finans','Operasyon','Teknik','Maaş','Sistem'], modules: null, status: 'active', lastLogin: null },
+  // Firebase Auth: muhasebe@duaycor.com — Muhasebe personeli
+  { id: 2, name: 'Muhasebe',      email: 'muhasebe@duaycor.com',      pw: '', role: 'staff',   access: ['Finans','Operasyon'], modules: null, status: 'active', lastLogin: null },
+  // Firebase Auth: duaymuhasebe@gmail.com — Muhasebe (Gmail)
+  { id: 3, name: 'Duay Muhasebe', email: 'duaymuhasebe@gmail.com',    pw: '', role: 'staff',   access: ['Finans'], modules: null, status: 'active', lastLogin: null },
 ];
 
 /**
