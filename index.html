@@ -3,13 +3,13 @@
 <head>
 <script>
 window.__ENV__ = {
-  FIREBASE_API_KEY: "YOUR_FIREBASE_API_KEY",
-  FIREBASE_AUTH_DOMAIN: "YOUR_FIREBASE_AUTH_DOMAIN",
-  FIREBASE_PROJECT_ID: "YOUR_FIREBASE_PROJECT_ID",
-  FIREBASE_STORAGE_BUCKET: "YOUR_FIREBASE_STORAGE_BUCKET",
-  FIREBASE_MESSAGING_SENDER_ID: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
-  FIREBASE_APP_ID: "YOUR_FIREBASE_APP_ID",
-  FIREBASE_MEASUREMENT_ID: "YOUR_FIREBASE_MEASUREMENT_ID",
+  FIREBASE_API_KEY: "AIzaSyDNWvZjgjpzM3eUcA_xDsapWZZaOs0qwWE",
+  FIREBASE_AUTH_DOMAIN: "operasyon-platform.firebaseapp.com",
+  FIREBASE_PROJECT_ID: "operasyon-platform",
+  FIREBASE_STORAGE_BUCKET: "operasyon-platform.firebasestorage.app",
+  FIREBASE_MESSAGING_SENDER_ID: "810645052589",
+  FIREBASE_APP_ID: "1:810645052589:web:3ac500eefa029904727a24",
+  FIREBASE_MEASUREMENT_ID: "G-6JL2CSM886",
   FIREBASE_APPCHECK_SITE_KEY: "YOUR_RECAPTCHA_V3_SITE_KEY",
 };
 </script>
@@ -397,7 +397,7 @@ function _doLogin() {
 
   <!-- ═══ LOJİSTİK ═══ -->
   <div class="nsec-header nsec" id="nsec-lojistik" onclick="toggleNsec('nsec-lojistik')">LOJİSTİK <span class="nsec-arrow">▾</span></div>
-      <button class="nb" onclick="nav('odemeler',this)">
+      <button class="nb" onclick="nav('kargo',this)">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M1 5h14M1 9h14M4 1v14M12 1v14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
     <span>Kargo Takibi</span>
     <span class="nbdg" id="nb-odm-b" style="background:var(--rd);display:none">!</span>
@@ -1246,6 +1246,7 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/core/auth.js"></script>
 
 <!-- 3. MODÜLLER -->
+<script src="src/modules/panel_stubs.js"></script>
 <script src="src/modules/admin.js"></script>
 <script src="src/modules/kargo.js"></script>
 <script src="src/modules/navlun.js"></script>
@@ -1270,7 +1271,6 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/izin.js"></script>
 <script src="src/modules/crm_panel.js"></script>
 <script src="src/modules/extra_panels.js"></script>
-<script src="src/modules/panel_stubs.js"></script>
 <script src="src/modules/docs.js"></script>
 <script src="src/modules/formlar.js"></script>
 <script src="src/modules/gorusme.js"></script>

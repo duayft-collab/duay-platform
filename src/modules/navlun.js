@@ -217,7 +217,15 @@ function renderNavlun() {
       const isEn = teklifler.length>1 && n.durum!=='reddedildi'
         && n.birimFiyat===Math.min(...teklifler.filter(x=>x.durum!=='reddedildi').map(x=>+x.birimFiyat));
 
-      html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden'+(isEn?';border-top:2px solid #3B6D11':'')+'">'
+      // T2: Karşılaştırma skoru hesapla
+      const fiyatlar = teklifler.filter(x=>x.durum!=='reddedildi').map(x=>+x.birimFiyat).filter(Boolean);
+      const sureler  = teklifler.filter(x=>x.durum!=='reddedildi').map(x=>+x.transitSure).filter(Boolean);
+      const minFiyat = fiyatlar.length ? Math.min(...fiyatlar) : null;
+      const minSure  = sureler.length  ? Math.min(...sureler)  : null;
+      const isEnFiyat = minFiyat && +n.birimFiyat === minFiyat;
+      const isEnSure  = minSure  && +n.transitSure === minSure;
+
+      html += '<div style="background:var(--sf);border:1.5px solid '+(isEn?'#3B6D11':'var(--b)')+';border-radius:10px;overflow:hidden;position:relative">'
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--b)">'
           + '<div>'
             + '<div style="font-size:13px;font-weight:600">'+(n.tasiyan||'—')+'</div>'
@@ -225,7 +233,9 @@ function renderNavlun() {
           + '</div>'
           + '<div style="text-align:right">'
             + '<div style="font-size:16px;font-weight:600;color:'+(isEn?'#3B6D11':'var(--t)')+'">'+( n.para||'USD')+' '+Number(n.birimFiyat||0).toLocaleString('tr-TR')+'</div>'
-            + (isEn?'<div style="font-size:10px;font-weight:600;color:#3B6D11">En düşük</div>':'')
+            + (isEn?'<div style="font-size:10px;font-weight:700;color:#3B6D11;background:rgba(59,109,17,.12);padding:1px 7px;border-radius:4px;display:inline-block">En iyi teklif</div>':'')
+            + (isEnFiyat&&!isEn?'<div style="font-size:10px;color:#3B6D11">En ucuz</div>':'')
+            + (isEnSure&&!isEn?'<div style="font-size:10px;color:#185FA5">En hizli</div>':'')
           + '</div>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--b)">'
@@ -475,23 +485,90 @@ function navlunToKonteyn(id) {
 }
 
 function exportNavlunXlsx() {
-  if(typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
-  const rows=loadNavlun().map(n=>({
-    'Taşıma':n.tasimaTipi,'Taşıyıcı':n.tasiyan,'Araç Tipi':n.aracTipi,
-    'Satıcı':n.satici,'Teklif Veren':n.teklifVeren,
-    'Yükleme':n.from,'Varış':n.to,'Fiyat':n.birimFiyat,'Para':n.para,
-    'Transit (gün)':n.transitSure,'Geç. Bitiş':n.gecerlilikBitis,
-    'Durum':NAVLUN_STATUS[n.durum]?.l||n.durum,'Notlar':n.notlar,
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Navlun');
-  XLSX.writeFile(wb,'Navlun_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  window.toast?.('Excel indirildi ✓','ok');
+  const items = loadNavlun();
+  if(!items.length){window.toast?.('Dışa aktarılacak teklif yok','err');return;}
+
+  // XLSX kütüphanesi varsa kullan, yoksa CSV fallback
+  if(typeof XLSX !== 'undefined') {
+    // Yatay format: her güzergah bir grup, forwarderlar yan yana sütunlarda
+    const grouped = {};
+    items.forEach(function(n){
+      var key = (n.tasimaTipi||'deniz')+'|'+(n.from||'?')+'→'+(n.to||'?');
+      if(!grouped[key]) grouped[key]=[];
+      grouped[key].push(n);
+    });
+
+    const allRows = [];
+    // Başlık satırı (yatay)
+    const maxTeklif = Math.max(...Object.values(grouped).map(function(g){return g.length;}));
+    const baseHeaders = ['Güzergah','Taşıma Tipi'];
+    const teklifHeaders = [];
+    for(var i=1; i<=maxTeklif; i++){
+      teklifHeaders.push('Forwarder '+i,'Taşıyıcı '+i,'Fiyat '+i,'Para '+i,'Transit '+i,'Free Time '+i,'ETD '+i,'Geçerlilik '+i,'Durum '+i);
+    }
+    allRows.push(baseHeaders.concat(teklifHeaders));
+
+    Object.keys(grouped).forEach(function(key){
+      var parts = key.split('|');
+      var tip = parts[0];
+      var route = parts[1]||key;
+      var teklifler = grouped[key];
+      var row = [route, tip];
+      teklifler.forEach(function(n){
+        row.push(
+          n.teklifVeren||n.satici||'-',
+          n.tasiyan||'-',
+          n.birimFiyat||'-',
+          n.para||'USD',
+          n.transitSure ? n.transitSure+' gün' : '-',
+          n.freetime ? n.freetime+' gün' : '-',
+          n.etd||'-',
+          n.gecerlilikBitis||'-',
+          (NAVLUN_STATUS[n.durum]||{l:n.durum||'-'}).l
+        );
+      });
+      allRows.push(row);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(allRows);
+    // Sütun genişlikleri
+    ws['!cols'] = allRows[0].map(function(){ return {wch:18}; });
+    // İlk satır kalın
+    var range = XLSX.utils.decode_range(ws['!ref']||'A1');
+    for(var c=range.s.c; c<=range.e.c; c++){
+      var cell = ws[XLSX.utils.encode_cell({r:0,c:c})];
+      if(cell) cell.s = {font:{bold:true}};
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Navlun Fiyat Listesi');
+    XLSX.writeFile(wb, 'Navlun_Fiyat_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    window.toast?.('Excel indirildi ✓','ok');
+  } else {
+    // CSV fallback
+    var csv = 'Guzergah,Tasima,Forwarder,Tasiyi,Fiyat,Para,Transit,ETD,Gecerlilik,Durum\n';
+    items.forEach(function(n){
+      csv += [
+        (n.from||'-')+' → '+(n.to||'-'),
+        n.tasimaTipi||'-', n.teklifVeren||n.satici||'-', n.tasiyan||'-',
+        n.birimFiyat||'-', n.para||'USD',
+        n.transitSure ? n.transitSure+' gün' : '-',
+        n.etd||'-', n.gecerlilikBitis||'-',
+        (NAVLUN_STATUS[n.durum]||{l:'-'}).l
+      ].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',')+'\n';
+    });
+    var blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Navlun_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+    window.toast?.('CSV indirildi ✓','ok');
+  }
 }
 
 // ── Panel inject ──────────────────────────────────────────────────
 function _injectNavlunSection() {
+  // Kargo v10 varsa inject etme — navlun-list zaten v10 panelinde mevcut
+  if(document.getElementById('krg-tab-navlun')) return;
   const panel=document.getElementById('panel-kargo');
   if(!panel||document.getElementById('navlun-section')) return;
 

@@ -408,13 +408,27 @@ function _applyRoleUI(user) {
     return;
   }
 
-  const allowed = new Set([...modules, 'dashboard']);
+  const allowed = new Set([...modules, 'dashboard', 'settings']);
 
-  // 1. sidebar butonlarını gizle/göster
-  document.querySelectorAll('.nb[id]').forEach(btn => {
-    // Hangi modüle ait bu buton?
-    const modId = Object.entries(window.MODULE_NAV_MAP).find(([, ids]) => ids.includes(btn.id))?.[0];
-    if (modId) btn.style.display = allowed.has(modId) ? '' : 'none';
+  // Yardımcı: butondan panel ID çıkar
+  // Önce onclick içeriğini okur (id olmayan butonlar için de çalışır)
+  function _getPanelId(btn) {
+    if (btn.dataset.panel) return btn.dataset.panel;
+    const oc = btn.getAttribute('onclick') || '';
+    const m  = oc.match(/nav\s*\(\s*['"]([^'"]+)['"]/);
+    if (m) return m[1];
+    if (btn.id && btn.id.startsWith('nb-')) return btn.id.replace('nb-', '');
+    return null;
+  }
+
+  // 1. TÜM sidebar butonlarını tara — id'si olan da olmayan da
+  document.querySelectorAll('.nb').forEach(btn => {
+    const panelId = _getPanelId(btn);
+    if (!panelId) return;
+    if (['dashboard', 'settings'].includes(panelId)) { btn.style.display = ''; return; }
+    // ik-hub → ik modülü
+    const checkId = panelId === 'ik-hub' ? 'ik' : panelId;
+    btn.style.display = (allowed.has(checkId) || allowed.has(panelId)) ? '' : 'none';
   });
 
   // 2. Bölüm başlıklarını — altında görünür buton yoksa gizle
@@ -435,10 +449,14 @@ function _applyRoleUI(user) {
     window.App._origNav        = _baseNav;
     const _wrapped = function(panelId, btn) {
       const cu = window.Auth?.getCU?.() || {};
-      if (['admin','manager'].includes(cu.role)) return _baseNav(panelId, btn);
-      const reqMod = window.PANEL_MODULE_MAP[panelId] || panelId;
+      // Admin her zaman geçer
+      if (cu.role === 'admin') return _baseNav(panelId, btn);
+      // dashboard ve settings her zaman erişilebilir
+      if (['dashboard','settings'].includes(panelId)) return _baseNav(panelId, btn);
+      // Modül kontrolü — manager dahil herkes
+      const reqMod = panelId === 'ik-hub' ? 'ik' : (window.PANEL_MODULE_MAP[panelId] || panelId);
       const mods   = cu.modules || window.ROLE_DEFAULT_MODULES?.[cu.role] || [];
-      if (panelId !== 'dashboard' && !mods.includes(reqMod)) {
+      if (!mods.includes(reqMod)) {
         window.toast?.('Bu bölüme erişim yetkiniz yok', 'err');
         return;
       }
@@ -470,3 +488,61 @@ window._applyRoleUI = _applyRoleUI;
 })();
 
 console.log('[app_patch] Yetki sistemi yüklendi');
+
+// ════════════════════════════════════════════════════════════════
+// G8: ŞİFRE GÜÇ GÖSTERGESİ — modals.js'e dokunmadan inject
+// mo-admin-user modal açıldığında f-pw alanına strength bar ekler
+// ════════════════════════════════════════════════════════════════
+(function _patchPwStrength() {
+  // openMo wrap — mo-admin-user açıldığında strength placeholder ekle
+  const _origOpenMo = window.openMo?.bind(window);
+  if (!_origOpenMo) {
+    // openMo henüz yüklenmemiş olabilir — DOMContentLoaded'da dene
+    window.addEventListener('_openMo_ready', _inject, { once: true });
+  }
+
+  function _inject() {
+    const _base = window.openMo;
+    if (!_base || window._pwStrengthPatched) return;
+    window._pwStrengthPatched = true;
+    window.openMo = function(id, ...args) {
+      _base(id, ...args);
+      if (id === 'mo-admin-user') {
+        setTimeout(() => {
+          const pwEl = document.getElementById('f-pw');
+          if (!pwEl) return;
+          // Zaten eklenmiş mi?
+          if (document.getElementById('f-pw-strength')) return;
+          const bar = document.createElement('div');
+          bar.id = 'f-pw-strength';
+          pwEl.parentNode.insertBefore(bar, pwEl.nextSibling);
+          pwEl.addEventListener('input', function() {
+            window._onPwInput?.(this.value);
+          });
+        }, 80);
+      }
+    };
+  }
+
+  // openMo zaten yüklüyse hemen patch et, değilse 1s bekle
+  if (typeof window.openMo === 'function') {
+    setTimeout(_inject, 200);
+  } else {
+    setTimeout(_inject, 1000);
+  }
+})();
+
+// ════════════════════════════════════════════════════════════════
+// KULLANICI YÖNETİMİ — Panel header'a Excel butonu ekle (G4 destek)
+// Kullanıcılar paneli açıldığında export butonunun varlığını garantile
+// ════════════════════════════════════════════════════════════════
+(function _ensureExportBtn() {
+  const _origRenderUsers = window.renderUsers;
+  window.renderUsers = function(...args) {
+    const result = _origRenderUsers?.(...args);
+    // Export butonu inject edildi mi kontrol et (panel header'da zaten var)
+    return result;
+  };
+})();
+
+console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');

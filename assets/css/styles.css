@@ -1824,3 +1824,154 @@ input:checked+.psl::before{transform:translateX(17px)}
    ÖDEMELER YENİ TASARIM  [v2.0]
    ════════════════════════════════════════════════════════ */
 #panel-odemeler .ph { display: none !important; }
+
+/* ════════════════════════════════════════════════════════
+   KULLANICI YÖNETİMİ — 3 TASARIM GELİŞTİRME  [v8.1+]
+   T1: Kart hover animasyonu — yumuşak scale + shadow
+   T2: İstatistik kartları — sayaç animasyonu (count-up)
+   T3: Rol badge'leri — gradient pill tasarımı
+   ════════════════════════════════════════════════════════ */
+
+/* T1: Kullanıcı kartı hover animasyonu */
+@keyframes u-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+#u-grid > div > div {
+  animation: u-card-in .25s ease both;
+}
+#u-grid > div > div:nth-child(1) { animation-delay: .03s; }
+#u-grid > div > div:nth-child(2) { animation-delay: .06s; }
+#u-grid > div > div:nth-child(3) { animation-delay: .09s; }
+#u-grid > div > div:nth-child(4) { animation-delay: .12s; }
+#u-grid > div > div:nth-child(5) { animation-delay: .15s; }
+#u-grid > div > div:nth-child(6) { animation-delay: .18s; }
+
+/* T2: İstatistik sayaç animasyonu */
+@keyframes u-stat-pop {
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(1.18); }
+  70%  { transform: scale(.95);  }
+  100% { transform: scale(1);    }
+}
+#u-stat-total, #u-stat-active, #u-stat-managers, #u-stat-inactive {
+  display: inline-block;
+  transition: color .3s;
+}
+.u-stat-updated {
+  animation: u-stat-pop .4s ease;
+}
+
+/* T3: Org chart kart hover */
+@keyframes org-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+#u-grid [onclick*="editUser"] {
+  animation: org-card-in .2s ease both;
+}
+
+/* T3: Bulk action bar slide-in */
+@keyframes bulk-bar-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+#u-bulk-bar[style*="flex"] {
+  animation: bulk-bar-in .2s ease;
+}
+
+/* Şifre güç göstergesi çubukları */
+#f-pw-strength div[style*="height:3px"] {
+  transition: background .25s ease;
+}
+
+/* Sortable tablo header hover */
+th[onclick*="_sortUsers"]:hover {
+  color: var(--ac) !important;
+  background: var(--al);
+}
+
+/* ════════════════════════════════════════════════════════
+   T3: DURUM RENK ŞERİDİ — Kullanıcı kartı sol kenar
+   ════════════════════════════════════════════════════════ */
+.u-status-stripe {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: var(--rs) 0 0 var(--rs);
+}
+.u-status-stripe.active    { background: #22C55E; }
+.u-status-stripe.warning   { background: #F59E0B; }
+.u-status-stripe.suspended { background: #EF4444; }
+.u-status-stripe.inactive  { background: var(--b); }
+
+/* T2: YETKİ MATRİSİ */
+.perm-matrix-wrap {
+  overflow-x: auto;
+  border: 1.5px solid var(--b);
+  border-radius: 14px;
+  background: var(--sf);
+}
+.perm-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 600px;
+}
+.perm-matrix th {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 10px 10px;
+  text-align: center;
+  background: var(--s2);
+  border-bottom: 1.5px solid var(--b);
+  white-space: nowrap;
+}
+.perm-matrix th.u-col { text-align: left; padding-left: 16px; min-width: 160px; }
+.perm-matrix td {
+  padding: 9px 10px;
+  border-bottom: 0.5px solid var(--b);
+  text-align: center;
+  vertical-align: middle;
+}
+.perm-matrix td.u-col {
+  text-align: left;
+  padding-left: 16px;
+  font-weight: 600;
+  color: var(--t);
+}
+.perm-matrix tr:last-child td { border-bottom: none; }
+.perm-matrix tr:hover td { background: var(--al); }
+.mx-cb {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--b);
+  background: var(--s2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all .15s;
+  user-select: none;
+}
+.mx-cb.on {
+  background: var(--grb);
+  border-color: var(--gr);
+  color: var(--grt);
+}
+.mx-cb:hover { border-color: var(--ac); }
+.mx-save-row {
+  padding: 10px 16px;
+  background: var(--s2);
+  border-top: 1.5px solid var(--b);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0 0 14px 14px;
+  font-size: 12px;
+  color: var(--t2);
+}
