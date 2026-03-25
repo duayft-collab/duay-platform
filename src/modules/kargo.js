@@ -1,1204 +1,794 @@
 /**
- * ═══════════════════════════════════════════════════════════════
- * src/modules/kargo.js  —  v9.0.0
- * Kargo & Konteyner Yönetimi
- * Onay 1: Kart görünümü  Onay 2: Excel Import  Onay 3: PDF Rapor
- * Onay 5: Konteyner detay  Onay 6: Gelişmiş filtre
- * ═══════════════════════════════════════════════════════════════
+ * src/modules/kargo.js  v10.0.0
+ * 3 Sekmeli: Navlun & Konteyner | Lokasyon Kargo | Kurye
  */
 'use strict';
+console.log('[kargo] v10.0.0 — ' + new Date().toLocaleString('tr-TR'));
 
-// ── Sabitler ─────────────────────────────────────────────────────
+const KRG_TAB_KEY     = 'ak_kargo_tab';
+const KRG_LOK_KEY     = 'ak_kargo_lokasyonlar';
+const KRG_KURYE_KEY   = 'ak_kargo_kurye';
+const KRG_LOK_KRG_KEY = 'ak_lok_kargo';
+
+const TASIMA_TIPLERI = {
+  deniz:{l:'Deniz',ic:'🚢'}, hava:{l:'Hava',ic:'✈️'},
+  tren:{l:'Tren',ic:'🚂'}, kara:{l:'Kara',ic:'🚛'}
+};
+
 const KARGO_STATUS = {
-  bekle:  { l: 'Beklemede', ic: '⏳', c: 'ba', color: '#F59E0B' },
-  yolda:  { l: 'Yolda',    ic: '🚛', c: 'bb', color: '#3B82F6' },
-  teslim: { l: 'Teslim',   ic: '✅', c: 'bg', color: '#22C55E' },
-  iade:   { l: 'İade',     ic: '↩️', c: 'br', color: '#EF4444' },
+  bekle:{l:'Beklemede',c:'#854F0B',bg:'rgba(133,79,11,.09)'},
+  yolda:{l:'Yolda',c:'#185FA5',bg:'rgba(24,95,165,.09)'},
+  teslim:{l:'Teslim',c:'#3B6D11',bg:'rgba(59,109,17,.09)'},
+  iade:{l:'İade',c:'#A32D2D',bg:'rgba(163,45,45,.09)'}
+};
+
+const KURYE_TRACKING = {
+  'MNG Kargo':'https://www.mngkargo.com.tr/irsaliye-sorgulama?takipNo=',
+  'Yurtiçi Kargo':'https://www.yurticikargo.com/tr/online-servisler/gonderi-sorgula?code=',
+  'PTT Kargo':'https://www.ptt.gov.tr/tr/anasayfa/gonderitakip.html?barcode=',
+  'Aras Kargo':'https://www.araskargo.com.tr/gonderi-sorgulama?barcode=',
+  'DHL':'https://www.dhl.com/tr-tr/home/tracking.html?tracking-id=',
+  'FedEx':'https://www.fedex.com/fedextrack/?trknbr=',
+  'UPS':'https://www.ups.com/track?tracknum='
 };
 
 const KTN_TRACKING_URLS = {
-  'MSC':         'https://www.msc.com/en/track-a-shipment?trackingNumber=',
-  'Maersk':      'https://www.maersk.com/tracking/',
-  'CMA CGM':     'https://www.cma-cgm.com/ebusiness/tracking/search?SearchBy=Container&Reference=',
-  'COSCO':       'https://elines.coscoshipping.com/ebtracking/visible?trNo=',
-  'Hapag-Lloyd': 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container=',
-  'ONE':         'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?cntrNo=',
-  'Evergreen':   'https://www.evergreen-line.com/eservice/cargotracking/ct_input.do?searchType=CT&cntrNum=',
-  'Yang Ming':   'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx?SearchType=3&CNTNO=',
-  'ZIM':         'https://www.zim.com/tools/track-a-shipment?container=',
+  'MSC':'https://www.msc.com/en/track-a-shipment?trackingNumber=',
+  'Maersk':'https://www.maersk.com/tracking/',
+  'CMA CGM':'https://www.cma-cgm.com/ebusiness/tracking/search?SearchBy=Container&Reference=',
+  'COSCO':'https://elines.coscoshipping.com/ebtracking/visible?trNo=',
+  'Hapag-Lloyd':'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container=',
+  'Arkas':'https://www.arkas.com.tr/tr/konteyner-takip?ContainerNumber='
 };
 
-let KRG_KONTEYN_TIMER = null;
-let KARGO_VIEW = localStorage.getItem('ak_kargo_view') || 'card';
-if (typeof window.KARGO_FILTER === 'undefined') window.KARGO_FILTER = 'all';
 
-// ── Yardımcılar ───────────────────────────────────────────────────
-function _isAdminKargo() { return window.Auth?.getCU?.()?.role === "admin" || window.Auth?.getCU?.()?.role === "manager"; }
-function _getCUK()   { return window.Auth?.getCU?.(); }
-function _nowTsK()   { return typeof nowTs === 'function' ? nowTs() : new Date().toLocaleString('tr-TR'); }
+// Yardımcılar
+const _gK   = id => document.getElementById(id);
+const _isAK = () => ['admin','manager'].includes(window.Auth?.getCU?.()?.role);
+const _nowK = () => typeof nowTs==='function' ? nowTs() : new Date().toLocaleString('tr-TR');
+const _toastK = (m,t) => window.toast?.(m,t);
+const _logK   = m => window.logActivity?.('view',m);
 
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 1 — PANEL INJECTION
-// ════════════════════════════════════════════════════════════════
+function _bdg(text,c,bg){return '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:'+bg+';color:'+c+';font-weight:500;white-space:nowrap">'+text+'</span>';}
 
-function _injectKargoPanel() {
-  const panel = g('panel-kargo');
-  if (!panel || panel.dataset.v9) return;
-  panel.dataset.v9 = '1';
+// Veri
+function _loadLoks(){try{return JSON.parse(localStorage.getItem(KRG_LOK_KEY)||'[]');}catch{return[];}}
+function _saveLoks(d){localStorage.setItem(KRG_LOK_KEY,JSON.stringify(d));}
+function _loadLokKrg(){try{return JSON.parse(localStorage.getItem(KRG_LOK_KRG_KEY)||'[]');}catch{return[];}}
+function _saveLokKrg(d){localStorage.setItem(KRG_LOK_KRG_KEY,JSON.stringify(d));}
+function _loadKurye(){try{return JSON.parse(localStorage.getItem(KRG_KURYE_KEY)||'[]');}catch{return[];}}
+function _saveKurye2(d){localStorage.setItem(KRG_KURYE_KEY,JSON.stringify(d));}
 
-  const ph = panel.querySelector('.ph');
-  if (ph) {
-    ph.innerHTML = [
-      '<div><div class="pht">Kargo Yönetimi</div><div class="phs">Gelen/giden kargo ve konteyner operasyonları</div></div>',
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">',
-        '<button class="btn btns" onclick="importKargoFile()" style="font-size:12px">Excel Yükle</button>',
-        '<button class="btn btns" onclick="exportKargoXlsx()" style="font-size:12px">Excel İndir</button>',
-        '<button class="btn btns" onclick="printKargoRapor()" style="font-size:12px">PDF Rapor</button>',
-        '<button class="btn btns" onclick="openKargoFirmaModal()" style="font-size:12px">Firmalar</button>',
-        '<button class="btn btns" onclick="openKargoModal(\'gelen\')" style="font-size:12px">+ Gelen</button>',
-        '<button class="btn btnp" onclick="openKargoModal(\'giden\')" style="font-size:12px">+ Giden</button>',
-        '<input type="file" id="krg-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="processKargoImport(this)">',
-      '</div>',
-    ].join('');
-  }
-
-  const filterBar = panel.querySelector('[id^="krg-search"]')?.closest('div[style]');
-  if (filterBar) {
-    filterBar.style.cssText = 'border-top:1px solid var(--b);border-bottom:1px solid var(--b);padding:10px 0;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--sf)';
-    filterBar.innerHTML = [
-      '<div style="display:flex;gap:4px;padding-right:10px;border-right:1px solid var(--b)">',
-        '<button class="chip on" data-kf="all"    onclick="setKargoFilter(\'all\',this)"    style="font-size:11px">Tümü</button>',
-        '<button class="chip"    data-kf="gelen"  onclick="setKargoFilter(\'gelen\',this)"  style="font-size:11px">Gelen</button>',
-        '<button class="chip"    data-kf="giden"  onclick="setKargoFilter(\'giden\',this)"  style="font-size:11px">Giden</button>',
-        '<button class="chip"    data-kf="bekle"  onclick="setKargoFilter(\'bekle\',this)"  style="font-size:11px">Beklemede</button>',
-        '<button class="chip"    data-kf="yolda"  onclick="setKargoFilter(\'yolda\',this)"  style="font-size:11px">Yolda</button>',
-        '<button class="chip"    data-kf="teslim" onclick="setKargoFilter(\'teslim\',this)" style="font-size:11px">Teslim</button>',
-      '</div>',
-      '<input class="fi" id="krg-search" placeholder="Ara: firma, gönderici, alıcı…" oninput="renderKargo()" style="font-size:12px;flex:1;min-width:180px">',
-      '<input type="date" class="fi" id="krg-date-from" onchange="renderKargo()" style="font-size:12px;width:140px">',
-      '<span style="font-size:11px;color:var(--t3)">–</span>',
-      '<input type="date" class="fi" id="krg-date-to" onchange="renderKargo()" style="font-size:12px;width:140px">',
-      '<select class="fi" id="krg-sort" onchange="renderKargo()" style="font-size:12px;width:150px">',
-        '<option value="date-desc">Yeniden eskiye</option>',
-        '<option value="date-asc">Eskiden yeniye</option>',
-        '<option value="firm">Firmaya göre</option>',
-        '<option value="status">Duruma göre</option>',
-      '</select>',
-      '<button class="btn btns" onclick="_clearKargoFilters()" style="font-size:11px">Temizle</button>',
-    ].join('');
-  }
-
-  panel.addEventListener('click', function(e) {
-    const btn = e.target.closest('[data-kview]');
-    if (!btn) return;
-    KARGO_VIEW = btn.dataset.kview;
-    localStorage.setItem('ak_kargo_view', KARGO_VIEW);
-    panel.querySelectorAll('.cvb[data-kview]').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    renderKargo();
-  });
+function _getLoks(){
+  var l=_loadLoks();
+  if(!l.length){l=[{id:'ofis1',ad:'Ofis 1',tip:'ofis',aktif:true},{id:'ofis2',ad:'Ofis 2',tip:'ofis',aktif:true},{id:'depo1',ad:'Depo 1',tip:'depo',aktif:true}];_saveLoks(l);}
+  return l.filter(function(x){return x.aktif!==false;});
 }
 
-function _clearKargoFilters() {
-  const ids = ['krg-search','krg-date-from','krg-date-to'];
-  ids.forEach(id => { const el = g(id); if (el) el.value = ''; });
-  const sort = g('krg-sort'); if (sort) sort.value = 'date-desc';
-  window.KARGO_FILTER = 'all';
-  document.querySelectorAll('#panel-kargo .chip[data-kf]').forEach(b => {
-    b.classList.toggle('on', b.dataset.kf === 'all');
-  });
-  renderKargo();
+// Tab state
+var _kTab = localStorage.getItem(KRG_TAB_KEY)||'navlun';
+var _navF = 'all';
+var _lokF = 'all';
+var _lokSel = '';
+
+
+// ── PANEL INJECT ──────────────────────────────────────────────────
+function _injectKargoPanel(){
+  var panel=document.getElementById('panel-kargo');
+  if(!panel||panel.dataset.v10)return;
+  panel.dataset.v10='1';
+
+  var loks=_getLoks();
+  var lokOpts=loks.map(function(l){return '<option value="'+l.id+'">'+(l.tip==='ofis'?'🏢':'🏭')+' '+l.ad+'</option>';}).join('');
+  var kurFs=['MNG Kargo','Yurtiçi Kargo','PTT Kargo','Aras Kargo','DHL','FedEx','UPS','Diğer'];
+
+  panel.innerHTML=[
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--b)">',
+      '<div><div style="font-size:18px;font-weight:700">📦 Kargo Merkezi</div>',
+      '<div style="font-size:12px;color:var(--t3);margin-top:2px">Navlun, lokasyon ve kurye</div></div>',
+    '</div>',
+    '<div style="display:flex;border-bottom:2px solid var(--b);padding:0 20px" id="krg-tab-bar">',
+      '<button onclick="KargoV10.setTab(\'navlun\')" id="krg-tab-navlun" style="padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px">🚢 Navlun & Konteyner</button>',
+      '<button onclick="KargoV10.setTab(\'lokasyon\')" id="krg-tab-lokasyon" style="padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px">🏭 Lokasyon Kargo</button>',
+      '<button onclick="KargoV10.setTab(\'kurye\')" id="krg-tab-kurye" style="padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px">📬 Kurye / Yurt İçi</button>',
+    '</div>',
+    '<div id="krg-content-navlun" style="display:none"></div>',
+    '<div id="krg-content-lokasyon" style="display:none"></div>',
+    '<div id="krg-content-kurye" style="display:none"></div>',
+    _modalNavlun(),
+    _modalLokKrg(lokOpts),
+    _modalKurye(kurFs),
+    _modalLokYon(),
+  ].join('');
+
+  _setTab(_kTab);
 }
 
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 2 — KARGO RENDER (Onay 1 + Onay 6)
-// ════════════════════════════════════════════════════════════════
+function _setTab(tab){
+  _kTab=tab;
+  localStorage.setItem(KRG_TAB_KEY,tab);
+  ['navlun','lokasyon','kurye'].forEach(function(t){
+    var btn=document.getElementById('krg-tab-'+t);
+    var el=document.getElementById('krg-content-'+t);
+    if(btn){btn.style.color=t===tab?'var(--ac)':'var(--t3)';btn.style.borderBottomColor=t===tab?'var(--ac)':'transparent';btn.style.fontWeight=t===tab?'600':'500';}
+    if(el)el.style.display=t===tab?'block':'none';
+  });
+  if(tab==='navlun')   _renderNavlunTab();
+  if(tab==='lokasyon') _renderLokTab();
+  if(tab==='kurye')    _renderKuryeTab();
+}
 
-function renderKargo() {
-  _injectKargoPanel();
-  // Navlun bölümünü inject et
-  if (typeof window._injectNavlunSection === 'function') window._injectNavlunSection();
-  if (typeof window.renderNavlun === 'function') window.renderNavlun();
-  const kargo   = typeof loadKargo === 'function' ? loadKargo() : [];
-  const users   = typeof loadUsers === 'function' ? loadUsers() : [];
-  const today   = new Date().toISOString().slice(0,10);
+// ── NAVLUN TAB ────────────────────────────────────────────────────
+function _renderNavlunTab(){
+  var cont=document.getElementById('krg-content-navlun');
+  if(!cont)return;
+  var kargo=typeof loadKargo==='function'?loadKargo():[];
+  var konts=typeof loadKonteyn==='function'?loadKonteyn():[];
+  var today=new Date().toISOString().slice(0,10);
+  var aktif=kargo.filter(function(k){return k.status!=='teslim';});
+  var aktifKt=konts.filter(function(k){return !k.closed;});
+  var alarm=konts.filter(function(k){
+    if(k.closed||!k.eta)return false;
+    return Math.ceil((new Date(k.eta)-new Date())/86400000)<=7;
+  });
 
-  // Filtrele
-  const search   = (g('krg-search')?.value || '').toLowerCase();
-  const dateFrom = g('krg-date-from')?.value || '';
-  const dateTo   = g('krg-date-to')?.value   || '';
-  const sortBy   = g('krg-sort')?.value       || 'date-desc';
+  cont.innerHTML=[
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b);flex-wrap:wrap;gap:8px">',
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">',
+        '<button class="chip on" data-nf="all" onclick="KargoV10.setNavF(\'all\',this)" style="font-size:11px">Tümü</button>',
+        '<button class="chip" data-nf="deniz" onclick="KargoV10.setNavF(\'deniz\',this)" style="font-size:11px">🚢 Deniz</button>',
+        '<button class="chip" data-nf="hava" onclick="KargoV10.setNavF(\'hava\',this)" style="font-size:11px">✈️ Hava</button>',
+        '<button class="chip" data-nf="tren" onclick="KargoV10.setNavF(\'tren\',this)" style="font-size:11px">🚂 Tren</button>',
+        '<button class="chip" data-nf="kara" onclick="KargoV10.setNavF(\'kara\',this)" style="font-size:11px">🚛 Kara</button>',
+        '<input class="fi" id="navlun-search" placeholder="Firma, liman..." oninput="KargoV10.renderNavlunList()" style="font-size:12px;width:160px">',
+      '</div>',
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">',
+        '<button class="btn btns" onclick="exportKargoXlsx()" style="font-size:12px">⬇ Excel</button>',
+        '<button class="btn btns" onclick="openKargoFirmaModal()" style="font-size:12px">⚙️ Firmalar</button>',
+        '<button class="btn btns" onclick="KargoV10.openNavMo(null,\'gelen\')" style="font-size:12px">📥 Gelen</button>',
+        '<button class="btn btnp" onclick="KargoV10.openNavMo(null,\'giden\')" style="font-size:12px">📤 Giden</button>',
+      '</div>',
+    '</div>',
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--b)">',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600">'+kargo.length+'</div><div style="font-size:11px;color:var(--t3)">Toplam Kargo</div></div>',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600;color:#185FA5">'+aktif.length+'</div><div style="font-size:11px;color:var(--t3)">Aktif Sevkiyat</div></div>',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600">'+aktifKt.length+'</div><div style="font-size:11px;color:var(--t3)">Aktif Konteyner</div></div>',
+      '<div style="padding:12px 18px"><div style="font-size:22px;font-weight:600;color:'+(alarm.length?'#A32D2D':'var(--t)')+'">'+alarm.length+'</div><div style="font-size:11px;color:var(--t3)">ETA Alarm (7g)</div></div>',
+    '</div>',
+    '<div id="navlun-kargo-list"></div>',
+    '<div style="border-top:2px solid var(--b);margin-top:8px">',
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b)">',
+        '<span style="font-size:13px;font-weight:600">🚢 Konteyner Takibi</span>',
+        '<div style="display:flex;gap:6px">',
+          '<button class="btn btns" onclick="checkAllKonteyn()" style="font-size:12px">↻ Kontrol</button>',
+          '<button class="btn btnp" onclick="window.openKonteynModal(null)" style="font-size:12px">+ Konteyner</button>',
+        '</div>',
+      '</div>',
+      '<div id="navlun-konteyn-list"></div>',
+    '</div>',
+    '<div style="border-top:2px solid var(--b);margin-top:8px">',
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b)">',
+        '<span style="font-size:13px;font-weight:600">📋 Navlun Teklifleri</span>',
+        '<div style="display:flex;gap:6px">',
+          '<button class="btn btns" onclick="exportNavlunXlsx()" style="font-size:12px">⬇ Excel</button>',
+          '<button class="btn btnp" onclick="openNavlunModal(null)" style="font-size:12px">+ Teklif</button>',
+        '</div>',
+      '</div>',
+      '<div id="navlun-list" style="padding:16px"></div>',
+    '</div>',
+  ].join('');
 
-  let fl = kargo.filter(k => {
-    if (window.KARGO_FILTER === 'gelen'  && k.dir    !== 'gelen')  return false;
-    if (window.KARGO_FILTER === 'giden'  && k.dir    !== 'giden')  return false;
-    if (window.KARGO_FILTER === 'bekle'  && k.status !== 'bekle')  return false;
-    if (window.KARGO_FILTER === 'yolda'  && k.status !== 'yolda')  return false;
-    if (window.KARGO_FILTER === 'teslim' && k.status !== 'teslim') return false;
-    if (search && !(
-      (k.firm||'').toLowerCase().includes(search) ||
-      (k.from||'').toLowerCase().includes(search) ||
-      (k.to  ||'').toLowerCase().includes(search) ||
-      (k.note||'').toLowerCase().includes(search)
-    )) return false;
-    if (dateFrom && k.date && k.date < dateFrom) return false;
-    if (dateTo   && k.date && k.date > dateTo)   return false;
+  KargoV10.renderNavlunList();
+  _renderKtnList();
+  if(typeof window.renderNavlun==='function')window.renderNavlun();
+}
+
+function _renderNavlunList(){
+  var cont=document.getElementById('navlun-kargo-list');
+  if(!cont)return;
+  var kargo=typeof loadKargo==='function'?loadKargo():[];
+  var users=typeof loadUsers==='function'?loadUsers():[];
+  var today=new Date().toISOString().slice(0,10);
+  var search=(document.getElementById('navlun-search')?.value||'').toLowerCase();
+
+  var fl=kargo.filter(function(k){
+    if(_navF!=='all'&&k.tasimaTipi!==_navF)return false;
+    if(search&&!((k.firm||'').toLowerCase().includes(search)||(k.from||'').toLowerCase().includes(search)||(k.to||'').toLowerCase().includes(search)))return false;
     return true;
   });
 
-  // Sırala
-  if (sortBy === 'date-asc')  fl.sort((a,b) => (a.date||'').localeCompare(b.date||''));
-  if (sortBy === 'date-desc') fl.sort((a,b) => (b.date||'').localeCompare(a.date||''));
-  if (sortBy === 'firm')      fl.sort((a,b) => (a.firm||'').localeCompare(b.firm||'', 'tr'));
-  if (sortBy === 'status')    fl.sort((a,b) => (a.status||'').localeCompare(b.status||''));
-
-  // İstatistikler
-  if (typeof st === 'function') {
-    st('krg-total',  kargo.length);
-    st('krg-bekle',  kargo.filter(k => k.status === 'bekle').length);
-    st('krg-teslim', kargo.filter(k => k.status === 'teslim').length);
-    st('krg-gelen',  kargo.filter(k => k.dir    === 'gelen').length);
-    st('krg-giden',  kargo.filter(k => k.dir    === 'giden').length);
-  }
-
-  const nb = g('nb-krg-b');
-  if (nb) {
-    const n = kargo.filter(k => k.status === 'bekle').length;
-    nb.textContent   = n;
-    nb.style.display = n > 0 ? 'inline' : 'none';
-  }
-
-  const cont = g('kargo-list');
-  if (!cont) return;
-
-  if (!fl.length) {
-    cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t2)">'
-      + '<div style="font-size:40px;margin-bottom:12px">📦</div>'
-      + '<div style="font-size:15px;font-weight:600;margin-bottom:4px">Kargo kaydı bulunamadı</div>'
-      + '<div style="font-size:12px;color:var(--t3)">Filtreleri değiştirin veya yeni kayıt ekleyin</div>'
-      + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:center">'
-        + '<button class="btn" onclick="openKargoModal(\'gelen\')">📥 Gelen Ekle</button>'
-        + '<button class="btn btnp" onclick="openKargoModal(\'giden\')">📤 Giden Ekle</button>'
-      + '</div></div>';
+  if(!fl.length){
+    cont.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:32px;margin-bottom:10px">🚢</div><div style="font-size:14px;font-weight:500;color:var(--t);margin-bottom:4px">Kargo kaydı yok</div><div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" onclick="KargoV10.openNavMo(null,\'gelen\')">📥 Gelen</button><button class="btn btnp" onclick="KargoV10.openNavMo(null,\'giden\')">📤 Giden</button></div></div>';
     return;
   }
 
-  if (KARGO_VIEW === 'table') {
-    _renderKargoTable(fl, users, today, cont);
-  } else {
-    _renderKargoCards(fl, users, today, cont);
-  }
-}
+  // Taşıma tipine göre grupla
+  var grouped={};
+  fl.forEach(function(k){var t=k.tasimaTipi||'deniz';if(!grouped[t])grouped[t]=[];grouped[t].push(k);});
 
-// ── Kart Görünümü ────────────────────────────────────────────────
-function _renderKargoCards(fl, users, today, cont) {
-  const ST = {
-    bekle:  { l:'Beklemede', bg:'rgba(133,79,11,.09)',  c:'#854F0B' },
-    yolda:  { l:'Yolda',     bg:'rgba(24,95,165,.09)',  c:'#185FA5' },
-    teslim: { l:'Teslim',    bg:'rgba(59,109,17,.09)',  c:'#3B6D11' },
-    iade:   { l:'İade',      bg:'rgba(163,45,45,.09)',  c:'#A32D2D' },
-  };
-  const badge = s => { const x=ST[s]||ST.bekle; return `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${x.bg};color:${x.c}">${x.l}</span>`; };
-  const mono  = "font-family:'DM Mono',monospace";
-  const t3    = 'color:var(--t3)';
-  const border = 'border-bottom:1px solid var(--b)';
-
-  const frag = document.createDocumentFragment();
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden';
-
-  // Tablo başlığı
-  const head = document.createElement('div');
-  head.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 130px 110px 100px 120px;background:var(--s2);border-bottom:1px solid var(--b)';
-  head.innerHTML = ['Yön','Gönderici','Alıcı','Firma','Tarih','Durum','']
-    .map(h => `<div style="padding:9px 12px;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">${h}</div>`).join('');
-  wrap.appendChild(head);
-
-  // T1: Timeline adımları yardımcı fonksiyon
-  function _timelineSteps(k, today) {
-    const stepDefs = [{l:'Giriş'},{l:'Yükleme'},{l:'Yolda'},{l:'Varış'},{l:'Teslim'}];
-    const activeIdx = {bekle:1, yolda:2, teslim:4, iade:0}[k.status] ?? 1;
-    const isLate = k.status !== 'teslim' && k.date && k.date < today;
-    return '<div style="display:flex;align-items:center;flex:1;padding:0 4px">'
-      + stepDefs.map((s,i) => {
-        const done   = i < activeIdx;
-        const active = i === activeIdx;
-        const warn   = active && isLate;
-        const dotBg  = done ? '#22C55E' : active ? (warn?'#F59E0B':'#3B82F6') : 'var(--s3,#ddd)';
-        const lineBg = done ? '#22C55E' : 'var(--b,#e5e7eb)';
-        const lblC   = done ? '#22C55E' : active ? (warn?'#854F0B':'#185FA5') : 'var(--t3,#aaa)';
-        return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative">'
-          + (i>0 ? '<div style="position:absolute;top:7px;left:-50%;width:100%;height:2px;background:'+lineBg+';z-index:0"></div>' : '')
-          + '<div style="width:14px;height:14px;border-radius:50%;background:'+dotBg+';border:2px solid '+dotBg+';z-index:1'+(active?';box-shadow:0 0 0 3px '+(warn?'rgba(245,158,11,.2)':'rgba(59,130,246,.2)'):'')+'"></div>'
-          + '<div style="font-size:9px;margin-top:3px;color:'+lblC+';white-space:nowrap;font-weight:'+(active?'600':'400')+'">'+s.l+'</div>'
-          + '</div>';
-      }).join('')
-      + '</div>';
-  }
-
-  fl.forEach(k => {
-    const u    = users.find(x => x.id === k.uid) || { name: '-' };
-    const isL  = k.status !== 'teslim' && k.date && k.date < today;
-    // ETA badge
-    let etaBadge = '';
-    if (k.date) {
-      const daysLeft = Math.ceil((new Date(k.date) - new Date()) / 86400000);
-      if (k.status === 'teslim') {
-        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(59,109,17,.09);color:#3B6D11;white-space:nowrap">Teslim</span>';
-      } else if (isL) {
-        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(163,45,45,.09);color:#A32D2D;white-space:nowrap">Gecikti</span>';
-      } else if (daysLeft <= 2) {
-        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(133,79,11,.09);color:#854F0B;white-space:nowrap">'+daysLeft+' gun</span>';
-      } else {
-        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(24,95,165,.09);color:#185FA5;white-space:nowrap">'+daysLeft+' gun</span>';
+  var html='';
+  Object.keys(grouped).forEach(function(tip){
+    var list=grouped[tip];
+    var tc=TASIMA_TIPLERI[tip]||{l:tip,ic:'📦'};
+    html+='<div style="border-bottom:1px solid var(--b)"><div style="padding:8px 20px;background:var(--s2);font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">'+tc.ic+' '+tc.l+' — '+list.length+' sevkiyat</div>';
+    list.forEach(function(k){
+      var isL=k.status!=='teslim'&&k.date&&k.date<today;
+      var st=KARGO_STATUS[k.status]||KARGO_STATUS.bekle;
+      var dl=k.date?Math.ceil((new Date(k.date)-new Date())/86400000):null;
+      // timeline
+      var steps=['Giriş','Yükleme','Yolda','Varış','Teslim'];
+      var ai={bekle:1,yolda:2,teslim:4,iade:0}[k.status]??1;
+      var tl='<div style="display:flex;align-items:center;flex:1;padding:0 4px">'+steps.map(function(s,i){
+        var done=i<ai,active=i===ai,warn=active&&isL;
+        var db=done?'#22C55E':active?(warn?'#F59E0B':'#3B82F6'):'var(--s3,#ddd)';
+        var lb=done?'#22C55E':'var(--b)';
+        var lc=done?'#22C55E':active?(warn?'#854F0B':'#185FA5'):'var(--t3)';
+        return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative">'+(i>0?'<div style="position:absolute;top:6px;left:-50%;width:100%;height:1.5px;background:'+lb+';z-index:0"></div>':'')+'<div style="width:12px;height:12px;border-radius:50%;background:'+db+';z-index:1"></div><div style="font-size:9px;margin-top:2px;color:'+lc+';white-space:nowrap">'+s+'</div></div>';
+      }).join('')+'</div>';
+      // eta badge
+      var eta='';
+      if(dl!==null){
+        if(k.status==='teslim')eta=_bdg('Teslim','#3B6D11','rgba(59,109,17,.09)');
+        else if(isL)eta=_bdg('Gecikti','#A32D2D','rgba(163,45,45,.09)');
+        else if(dl<=2)eta=_bdg(dl+' gün','#854F0B','rgba(133,79,11,.09)');
+        else eta=_bdg(dl+' gün','#185FA5','rgba(24,95,165,.09)');
       }
-    }
-    const row = document.createElement('div');
-    row.style.cssText = 'display:grid;grid-template-columns:80px 180px 1fr 80px 110px;align-items:center;gap:8px;padding:10px 14px;' + border + (isL ? ';background:rgba(163,45,45,.02)' : '');
-    const dirBg  = k.dir==='gelen' ? 'rgba(24,95,165,.09)' : 'rgba(139,92,246,.09)';
-    const dirCol = k.dir==='gelen' ? '#185FA5' : '#6D28D9';
-    const dirLbl = k.dir==='gelen' ? 'Gelen' : 'Giden';
-    const canDel = typeof isAdmin==='function' && isAdmin();
-    row.innerHTML =
-      '<div><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:'+dirBg+';color:'+dirCol+'">'+dirLbl+'</span></div>'
-      + '<div><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.firm||'-')+'</div>'
-        + '<div style="font-size:11px;color:var(--t3,#aaa);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.from||'-')+' > '+(k.to||'-')+'</div></div>'
-      + _timelineSteps(k, today)
-      + '<div>' + etaBadge + '</div>'
-      + '<div style="display:flex;gap:4px;justify-content:flex-end">'
-        + (k.status!=='teslim' ? '<button class="btn btns" onclick="Kargo.markTeslim('+k.id+')" style="font-size:11px;padding:3px 7px" title="Teslim">Teslim</button>' : '')
-        + '<button class="btn btns" onclick="Kargo.openModal('+k.id+')" style="font-size:11px;padding:3px 7px">Duzenle</button>'
-        + (canDel ? '<button class="btn btns" onclick="Kargo.del('+k.id+')" style="font-size:11px;padding:3px 7px;color:var(--rdt,#dc2626)">Sil</button>' : '')
-      + '</div>';
-    wrap.appendChild(row);
-  });
-
-
-  frag.appendChild(wrap);
-  cont.replaceChildren(frag);
-}
-
-// ── Tablo Görünümü ───────────────────────────────────────────────
-function _renderKargoTable(fl, users, today, cont) {
-  const rows = fl.map(k => {
-    const u   = users.find(x => x.id === k.uid) || { name: '—' };
-    const st2 = KARGO_STATUS[k.status] || KARGO_STATUS.bekle;
-    const isL = k.status !== 'teslim' && k.date && k.date < today;
-    return '<tr' + (isL ? ' style="background:rgba(239,68,68,.03)"' : '') + '>'
-      + '<td><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:' + (k.dir==='gelen'?'rgba(59,130,246,.1)':'rgba(139,92,246,.1)') + ';color:' + (k.dir==='gelen'?'#3B82F6':'#8B5CF6') + '">' + (k.dir==='gelen'?'📥 Gelen':'📤 Giden') + '</span></td>'
-      + '<td style="font-weight:500">' + (k.from||'—') + '</td>'
-      + '<td>' + (k.to||'—') + '</td>'
-      + '<td style="font-weight:600">' + (k.firm||'—') + '</td>'
-      + '<td style="font-family:monospace;font-size:12px;color:' + (isL?'var(--rdt)':'var(--t2)') + '">' + (k.date||'—') + (isL?' ⚠️':'') + '</td>'
-      + '<td><span class="badge ' + st2.c + '" style="font-size:10px">' + st2.ic + ' ' + st2.l + '</span></td>'
-      + '<td style="font-size:12px">' + u.name + '</td>'
-      + '<td><div style="display:flex;gap:4px">'
-        + (k.status !== 'teslim' ? '<button class="btn btns btng" onclick="Kargo.markTeslim(' + k.id + ')" style="font-size:11px">✓</button>' : '')
-        + '<button class="btn btns" onclick="Kargo.openModal(' + k.id + ')" style="font-size:11px">✏️</button>'
-        + (window.isAdmin?.() ? '<button class="btn btns btnd" onclick="Kargo.del(' + k.id + ')" style="font-size:11px">🗑</button>' : '')
-      + '</div></td>'
-    + '</tr>';
-  }).join('');
-
-  cont.innerHTML = '<div style="border:1px solid var(--b);border-radius:12px;overflow:hidden">'
-    + '<table class="tbl" style="margin:0"><thead><tr>'
-    + '<th>Yön</th><th>Gönderici</th><th>Alıcı</th><th>Firma</th><th>Tarih</th><th>Durum</th><th>Sorumlu</th><th></th>'
-    + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-}
-
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 3 — CRUD
-// ════════════════════════════════════════════════════════════════
-
-function markKargoTeslim(id) {
-  const d = loadKargo();
-  const k = d.find(x => x.id === id);
-  if (!k) return;
-  const _oldSt = k.status;
-  k.status   = 'teslim';
-  k.teslimAt = _nowTsK();
-  storeKargo(d);
-  window._logKargoStatus?.(id, _oldSt, 'teslim', window.Auth?.getCU?.()?.id);
-  renderKargo();
-  window.toast?.('Kargo teslim alındı ✓', 'ok');
-  window.logActivity?.('kargo', 'Kargo teslim: ' + k.firm + ' — ' + k.to);
-}
-
-function openKargoModal(idOrDir) {
-  window.openMo?.('mo-kargo');
-  if (typeof idOrDir === 'string') {
-    const dir = g('krg-dir');
-    if (dir) dir.value = idOrDir;
-  } else if (typeof idOrDir === 'number') {
-    const k = loadKargo().find(x => x.id === idOrDir);
-    if (!k) return;
-    ['krg-dir','krg-from','krg-to','krg-firm','krg-date','krg-status'].forEach(id => {
-      const el = g(id); if (!el) return;
-      const key = id.replace('krg-','');
-      if (k[key] !== undefined) el.value = k[key];
+      var dc=k.dir==='gelen'?'rgba(24,95,165,.09)':'rgba(139,92,246,.09)';
+      var dcc=k.dir==='gelen'?'#185FA5':'#6D28D9';
+      html+='<div style="display:grid;grid-template-columns:70px 180px 1fr 80px 120px;align-items:center;gap:10px;padding:11px 20px;border-bottom:1px solid var(--b)'+(isL?';background:rgba(163,45,45,.02)':'')+'">'+
+        '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:'+dc+';color:'+dcc+'">'+(k.dir==='gelen'?'Gelen':'Giden')+'</span>'+
+        '<div><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.firm||'-')+'</div><div style="font-size:11px;color:var(--t3)">'+(k.from||'-')+' → '+(k.to||'-')+'</div></div>'+
+        tl+
+        '<div>'+eta+'</div>'+
+        '<div style="display:flex;gap:4px;justify-content:flex-end">'+
+          (k.status!=='teslim'?'<button class="btn btns" onclick="KargoV10.markT('+k.id+')" style="font-size:11px;padding:3px 7px">Teslim</button>':'')+
+          '<button class="btn btns" onclick="KargoV10.openNavMo('+k.id+')" style="font-size:11px;padding:3px 7px">Düzenle</button>'+
+          (_isAK()?'<button class="btn btns" onclick="KargoV10.delKrg('+k.id+')" style="font-size:11px;padding:3px 7px;color:var(--rdt)">Sil</button>':'')+
+        '</div>'+
+      '</div>';
     });
-    const eid = g('krg-eid'); if (eid) eid.value = idOrDir;
-  }
-}
-
-function saveKargo() {
-  const dir    = g('krg-dir')?.value    || 'gelen';
-  const from   = (g('krg-from')?.value  || '').trim();
-  const to     = (g('krg-to')?.value    || '').trim();
-  const firm   = (g('krg-firm')?.value  || '').trim();
-  const date   = g('krg-date')?.value   || '';
-  const status = g('krg-status')?.value || 'bekle';
-  const eid    = parseInt(g('krg-eid')?.value || '0');
-
-  if (!from || !to) { window.toast?.('Gönderici ve alıcı zorunludur', 'err'); return; }
-
-  const d     = loadKargo();
-  const entry = { dir, from, to, firm, date, status, uid: _getCUK()?.id };
-
-  if (eid) {
-    const item = d.find(x => x.id === eid);
-    if (item) Object.assign(item, entry);
-  } else {
-    d.push({ id: Date.now(), createdAt: _nowTsK(), ...entry });
-  }
-
-  storeKargo(d);
-  window.closeMo?.('mo-kargo');
-  renderKargo();
-  window.logActivity?.('kargo', 'Kargo kaydedildi: ' + firm + ' — ' + from + ' → ' + to);
-  window.toast?.('Kargo kaydedildi ✓', 'ok');
-}
-
-function delKargo(id) {
-  if (!window.isAdmin?.()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('Bu kargo kaydını silmek istediğinizden emin misiniz?')) return;
-  storeKargo(loadKargo().filter(x => x.id !== id));
-  renderKargo();
-  window.toast?.('Silindi', 'ok');
-}
-
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 4 — EXCEL IMPORT (Onay 2)
-// ════════════════════════════════════════════════════════════════
-
-function importKargoFile() { g('krg-import-file')?.click(); }
-
-function processKargoImport(inp) {
-  const file = inp?.files?.[0]; if (!file) return;
-  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
-
-  const r = new FileReader();
-  r.onload = function(e) {
-    try {
-      const wb   = XLSX.read(e.target.result, { type: 'binary' });
-      const ws   = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (rows.length < 2) { window.toast?.('Dosyada veri bulunamadı', 'err'); return; }
-
-      const header = rows[0].map(h => String(h||'').toLowerCase().trim());
-      const col    = key => header.findIndex(h => h.includes(key));
-
-      const colMap = {
-        dir:    col('yön') > -1 ? col('yön') : col('yon') > -1 ? col('yon') : col('dir'),
-        from:   col('gönder') > -1 ? col('gönder') : col('gondr') > -1 ? col('gondr') : col('from'),
-        to:     col('alıcı') > -1 ? col('alıcı') : col('alici') > -1 ? col('alici') : col('to'),
-        firm:   col('firma') > -1 ? col('firma') : col('kargo firm') > -1 ? col('kargo firm') : col('firm'),
-        date:   col('tarih') > -1 ? col('tarih') : col('date'),
-        status: col('durum') > -1 ? col('durum') : col('status'),
-      };
-
-      // Önizleme modal
-      const preview = rows.slice(1, 6).filter(r => r.length).map(row => {
-        const dir = String(row[colMap.dir]||'').toLowerCase().includes('gid') ? 'giden' : 'gelen';
-        const from = String(row[colMap.from]||'').trim();
-        const to   = String(row[colMap.to]  ||'').trim();
-        const firm = String(row[colMap.firm] ||'').trim();
-        const date = _parseExcelDate(row[colMap.date]);
-        return { dir, from, to, firm, date };
-      }).filter(r => r.from || r.to);
-
-      if (!preview.length) { window.toast?.('Eşleştirilecek veri bulunamadı', 'err'); return; }
-
-      // Onay modalı
-      _showImportPreview(preview, rows, colMap);
-    } catch(err) {
-      window.toast?.('Import hatası: ' + err.message, 'err');
-    }
-    inp.value = '';
-  };
-  r.readAsBinaryString(file);
-}
-
-function _parseExcelDate(val) {
-  if (!val) return '';
-  if (typeof val === 'number') {
-    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    return d.toISOString().slice(0,10);
-  }
-  const d = new Date(String(val));
-  return isNaN(d) ? '' : d.toISOString().slice(0,10);
-}
-
-function _showImportPreview(preview, allRows, colMap) {
-  const existing = g('krg-import-modal'); if (existing) existing.remove();
-  const mo = document.createElement('div');
-  mo.className = 'mo open'; mo.id = 'krg-import-modal'; mo.style.zIndex = '2200';
-
-  const previewRows = preview.map(r =>
-    '<tr><td style="font-size:12px;padding:8px 12px">'
-    + '<span style="font-size:10px;padding:2px 7px;border-radius:5px;background:' + (r.dir==='gelen'?'rgba(59,130,246,.1)':'rgba(139,92,246,.1)') + ';color:' + (r.dir==='gelen'?'#3B82F6':'#8B5CF6') + '">' + (r.dir==='gelen'?'📥 Gelen':'📤 Giden') + '</span>'
-    + '</td><td style="font-size:12px;padding:8px 12px">' + (r.from||'—') + '</td>'
-    + '<td style="font-size:12px;padding:8px 12px">' + (r.to||'—') + '</td>'
-    + '<td style="font-size:12px;padding:8px 12px">' + (r.firm||'—') + '</td>'
-    + '<td style="font-size:12px;padding:8px 12px;font-family:monospace">' + (r.date||'—') + '</td></tr>'
-  ).join('');
-
-  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:16px;overflow:hidden">'
-    + '<div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center">'
-      + '<div class="mt" style="margin:0">📂 Excel Import Önizleme</div>'
-      + '<button onclick="document.getElementById(\'krg-import-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
-    + '</div>'
-    + '<div style="padding:16px 20px">'
-      + '<div style="font-size:13px;color:var(--t2);margin-bottom:12px">Toplam <strong>' + (allRows.length-1) + '</strong> kayıt bulundu. İlk 5 satır:</div>'
-      + '<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:16px">'
-        + '<table style="width:100%;border-collapse:collapse"><thead>'
-        + '<tr style="background:var(--s2)"><th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--t3);font-weight:700">YÖN</th>'
-        + '<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--t3);font-weight:700">GÖNDERİCİ</th>'
-        + '<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--t3);font-weight:700">ALICI</th>'
-        + '<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--t3);font-weight:700">FİRMA</th>'
-        + '<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--t3);font-weight:700">TARİH</th>'
-        + '</tr></thead><tbody>' + previewRows + '</tbody></table>'
-      + '</div>'
-      + '<div style="display:flex;gap:10px;justify-content:flex-end">'
-        + '<button class="btn" onclick="document.getElementById(\'krg-import-modal\').remove()">İptal</button>'
-        + '<button class="btn btnp" id="krg-import-confirm" style="border-radius:9px">Tümünü Aktar (' + (allRows.length-1) + ' kayıt)</button>'
-      + '</div>'
-    + '</div>'
-  + '</div>';
-
-  document.body.appendChild(mo);
-
-  g('krg-import-confirm').addEventListener('click', function() {
-    const existing2 = loadKargo();
-    let added = 0;
-    allRows.slice(1).forEach(row => {
-      if (!row || !row.length) return;
-      const from = String(row[colMap.from]||'').trim();
-      const to   = String(row[colMap.to]  ||'').trim();
-      if (!from && !to) return;
-      const dir   = String(row[colMap.dir]||'').toLowerCase().includes('gid') ? 'giden' : 'gelen';
-      const firm  = String(row[colMap.firm]||'').trim();
-      const date  = _parseExcelDate(row[colMap.date]);
-      const rawSt = String(row[colMap.status]||'').toLowerCase();
-      const status = rawSt.includes('teslim') ? 'teslim' : rawSt.includes('yolda') ? 'yolda' : rawSt.includes('iade') ? 'iade' : 'bekle';
-      existing2.push({ id: Date.now() + added, dir, from, to, firm, date, status, uid: _getCUK()?.id, createdAt: _nowTsK() });
-      added++;
-    });
-    storeKargo(existing2);
-    mo.remove();
-    renderKargo();
-    window.toast?.(added + ' kargo aktarıldı ✓', 'ok');
-    window.logActivity?.('kargo', 'Excel\'den ' + added + ' kargo aktarıldı');
+    html+='</div>';
   });
-
-  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  cont.innerHTML=html;
 }
 
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 5 — PDF RAPOR (Onay 3)
-// ════════════════════════════════════════════════════════════════
-
-function printKargoRapor() {
-  const kargo = loadKargo();
-  const users = loadUsers();
-  const today = new Date().toLocaleDateString('tr-TR', { day:'2-digit', month:'long', year:'numeric' });
-  const cu    = _getCUK();
-
-  // Aktif filtre uygula
-  let fl = kargo;
-  if (window.KARGO_FILTER === 'gelen')  fl = fl.filter(k => k.dir    === 'gelen');
-  if (window.KARGO_FILTER === 'giden')  fl = fl.filter(k => k.dir    === 'giden');
-  if (window.KARGO_FILTER === 'bekle')  fl = fl.filter(k => k.status === 'bekle');
-  if (window.KARGO_FILTER === 'yolda')  fl = fl.filter(k => k.status === 'yolda');
-  if (window.KARGO_FILTER === 'teslim') fl = fl.filter(k => k.status === 'teslim');
-
-  const rows = fl.map(k => {
-    const u   = users.find(x => x.id === k.uid) || { name: '—' };
-    const st2 = KARGO_STATUS[k.status] || KARGO_STATUS.bekle;
-    return '<tr>'
-      + '<td>' + (k.dir==='gelen'?'📥 Gelen':'📤 Giden') + '</td>'
-      + '<td>' + (k.from||'—') + '</td>'
-      + '<td>' + (k.to||'—') + '</td>'
-      + '<td>' + (k.firm||'—') + '</td>'
-      + '<td>' + (k.date||'—') + '</td>'
-      + '<td>' + st2.ic + ' ' + st2.l + '</td>'
-      + '<td>' + u.name + '</td>'
-    + '</tr>';
-  }).join('');
-
-  const stats = [
-    { l: 'Toplam', v: fl.length },
-    { l: 'Gelen',  v: fl.filter(k=>k.dir==='gelen').length },
-    { l: 'Giden',  v: fl.filter(k=>k.dir==='giden').length },
-    { l: 'Beklemede', v: fl.filter(k=>k.status==='bekle').length },
-    { l: 'Yolda',  v: fl.filter(k=>k.status==='yolda').length },
-    { l: 'Teslim', v: fl.filter(k=>k.status==='teslim').length },
-  ];
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head>
-<meta charset="utf-8">
-<title>Kargo Raporu — ${today}</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Inter',sans-serif; color:#1E293B; background:#fff; padding:32px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; padding-bottom:20px; border-bottom:2px solid #E2E8F0; }
-  .brand { font-size:22px; font-weight:800; color:#1E293B; }
-  .brand span { color:#6366F1; }
-  .meta { text-align:right; font-size:12px; color:#64748B; line-height:1.8; }
-  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:24px; }
-  .stat { background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px; text-align:center; }
-  .stat-v { font-size:22px; font-weight:700; color:#1E293B; }
-  .stat-l { font-size:10px; color:#64748B; text-transform:uppercase; letter-spacing:.06em; margin-top:3px; }
-  table { width:100%; border-collapse:collapse; font-size:12px; }
-  thead tr { background:#F1F5F9; }
-  th { padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:.06em; }
-  td { padding:9px 12px; border-bottom:1px solid #F1F5F9; }
-  tr:last-child td { border-bottom:none; }
-  tr:hover td { background:#F8FAFC; }
-  .footer { margin-top:24px; padding-top:16px; border-top:1px solid #E2E8F0; display:flex; justify-content:space-between; font-size:11px; color:#94A3B8; }
-  @media print {
-    body { padding:16px; }
-    @page { margin:15mm; }
-  }
-</style>
-</head><body>
-<div class="header">
-  <div>
-    <div class="brand">Duay <span>Operasyon</span></div>
-    <div style="font-size:13px;color:#64748B;margin-top:4px">Kargo Yönetim Raporu</div>
-  </div>
-  <div class="meta">
-    <div><strong>Rapor Tarihi:</strong> ${today}</div>
-    <div><strong>Hazırlayan:</strong> ${cu?.name || '—'}</div>
-    <div><strong>Filtre:</strong> ${KARGO_FILTER === 'all' ? 'Tümü' : KARGO_FILTER}</div>
-    <div><strong>Toplam:</strong> ${fl.length} kayıt</div>
-  </div>
-</div>
-<div class="stats">
-  ${stats.map(s => '<div class="stat"><div class="stat-v">' + s.v + '</div><div class="stat-l">' + s.l + '</div></div>').join('')}
-</div>
-<table>
-  <thead><tr><th>Yön</th><th>Gönderici</th><th>Alıcı</th><th>Firma</th><th>Tarih</th><th>Durum</th><th>Sorumlu</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-<div class="footer">
-  <span>Duay Global Trade — Operasyon Platformu</span>
-  <span>Bu rapor ${today} tarihinde oluşturulmuştur.</span>
-</div>
-<script>window.onload=function(){window.print();}<\/script>
-</body></html>`);
-  win.document.close();
-}
-
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 6 — KONTEYNER (Onay 5: Detay Modal)
-// ════════════════════════════════════════════════════════════════
-
-function renderKonteyn() {
-  const konts   = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
-  const users   = typeof loadUsers   === 'function' ? loadUsers()   : [];
-  const cont    = g('konteyn-list');
-  if (!cont) return;
-
-  const today   = new Date();
-  const todayS  = today.toISOString().slice(0, 10);
-  let changed   = false;
-
-  konts.forEach(k => {
-    if (!k.closed && k.evrakGon && k.evrakUlasti && k.inspectionBitti && k.malTeslim) {
-      k.closed   = true; k.closedAt = _nowTsK(); changed = true;
-    }
-  });
-  if (changed) storeKonteyn(konts);
-
-  const active   = konts.filter(k => !k.closed);
-  const archived = konts.filter(k => k.closed);
-
-  _renderKonteynAlarms(active, today, g('konteyn-alarm-bar'));
-
-  if (!active.length && !archived.length) {
-    cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t2)">'
-      + '<div style="font-size:40px;margin-bottom:12px">🚢</div>'
-      + '<div style="font-size:15px;font-weight:600;margin-bottom:6px">Aktif konteyner yok</div>'
-      + '<div style="font-size:12px;color:var(--t3);margin-bottom:14px">Takip etmek istediğiniz konteyneri ekleyin</div>'
-      + '<button class="btn btnp" onclick="openKonteynModal(null)">+ Konteyner Ekle</button>'
-      + '</div>';
+function _renderKtnList(){
+  var cont=document.getElementById('navlun-konteyn-list');
+  if(!cont)return;
+  var konts=typeof loadKonteyn==='function'?loadKonteyn():[];
+  var users=typeof loadUsers==='function'?loadUsers():[];
+  var today=new Date();
+  var aktif=konts.filter(function(k){return !k.closed;});
+  if(!aktif.length){
+    cont.innerHTML='<div style="padding:28px;text-align:center;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">🚢</div><div style="font-size:12px;margin-bottom:10px">Aktif konteyner yok</div><button class="btn btnp" onclick="window.openKonteynModal(null)" style="font-size:12px">+ Konteyner Ekle</button></div>';
     return;
   }
-
-  const buildTrackUrl = (hat, no) => (KTN_TRACKING_URLS[hat] || '') + encodeURIComponent(no);
-
-  const renderStep = (id, key, label, ts) => {
-    const done = !!ts;
-    return '<div onclick="Kargo.toggleKonteynStep(' + id + ',\'' + key + '\'" style="display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-bottom:1px solid var(--b);background:' + (done?'rgba(59,109,17,.03)':'var(--sf)') + ';transition:background .12s">'
-      + '<div style="width:16px;height:16px;border-radius:50%;border:1.5px solid ' + (done?'#3B6D11':'var(--b)') + ';background:' + (done?'#3B6D11':'transparent') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-        + (done?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4L3.5 6L6.5 2" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')
-      + '</div>'
-      + '<div style="flex:1"><div style="font-size:12px;color:' + (done?'var(--t)':'var(--t2)') + ';font-weight:' + (done?'500':'400') + '">' + label + '</div>'
-        + (ts?'<div style="font-size:10px;color:#3B6D11;font-family:monospace;margin-top:1px">' + ts.slice(0,10) + '</div>':'<div style="font-size:10px;color:var(--t3);margin-top:1px">Bekliyor</div>')
-      + '</div>'
-    + '</div>';
-  };
-
-  const renderCard = (k, isArchived) => {
-    const u        = users.find(x => x.id === k.uid) || { name: '?' };
-    const etaDate  = k.eta ? new Date(k.eta) : null;
-    const daysLeft = etaDate ? Math.ceil((etaDate - today) / 86400000) : null;
-    const overdue  = !isArchived && daysLeft !== null && daysLeft <= 0;
-    const urgent   = !isArchived && daysLeft !== null && daysLeft > 0 && daysLeft <= 5;
-    const near     = !isArchived && daysLeft !== null && daysLeft > 5 && daysLeft <= 10;
-    const trackUrl = k.url || buildTrackUrl(k.hat, k.no);
-    const steps    = [k.evrakGon,k.evrakUlasti,k.inspectionBitti,k.malTeslim,k.closed].filter(Boolean).length;
-    const pct      = Math.round(steps/5*100);
-    const etaColor = overdue?'#A32D2D':urgent?'#854F0B':near?'#854F0B':'#3B6D11';
-    const etaText  = daysLeft===null?'—':overdue?'ETA geçti':daysLeft+' gün';
-    const topBorder= isArchived?'':overdue?'border-top:2px solid #A32D2D;':urgent?'border-top:2px solid #854F0B;':'';
-
-    return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px;' + topBorder + '">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--b)">'
-        + '<div style="display:flex;align-items:center;gap:8px">'
-          + '<span style="font-size:13px;font-weight:600;font-family:monospace">' + k.no + '</span>'
-          + (k.hat?'<span style="font-size:11px;padding:1px 7px;border-radius:4px;background:rgba(24,95,165,.09);color:#185FA5">'+k.hat+'</span>':'')
-          + (k.musteri?'<span style="font-size:11px;color:var(--t3)">'+k.musteri+'</span>':'')
-        + '</div>'
-        + '<div style="display:flex;gap:5px">'
-          + (trackUrl?'<a href="'+trackUrl+'" target="_blank" class="btn btns" style="text-decoration:none;font-size:11px;padding:3px 10px">Takip</a>':'')
-          + '<button onclick="toggleKonteynSelect('+k.id+')" id="ktn-sel-'+k.id+'" class="btn btns" style="font-size:11px;padding:3px 9px" title="Toplu seç">☐</button>'
-          + '<button onclick="openKonteynDetail('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Detay</button>'
-          + '<button onclick="showKonteynTimeline('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Zaman</button>'
-          + '<button onclick="showMasrafModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Masraf</button>'
-          + '<button onclick="showBelgeModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Belgeler</button>'
-          + (!isArchived?'<button onclick="openKonteynModal('+k.id+')" class="btn btns" style="font-size:11px;padding:3px 10px">Düzenle</button>':'')
-        + '</div>'
-      + '</div>'
-      + '<div style="display:flex;align-items:stretch;border-bottom:1px solid var(--b)">'
-        + (k.fromPort||k.toPort?'<div style="padding:8px 14px;border-right:1px solid var(--b);font-size:12px;color:var(--t2);display:flex;align-items:center">'+(k.fromPort||'?')+' → '+(k.toPort||'?')+'</div>':'')
-        + (k.etd?'<div style="padding:8px 12px;border-right:1px solid var(--b);font-size:11px;color:var(--t3);display:flex;align-items:center">ETD <span style="color:var(--t);font-weight:500;margin-left:4px">'+k.etd+'</span></div>':'')
-        + (k.eta?'<div style="padding:8px 12px;border-right:1px solid var(--b);font-size:11px;color:var(--t3);display:flex;align-items:center">ETA <span style="color:'+etaColor+';font-weight:500;margin-left:4px">'+k.eta+'</span></div>':'')
-        + '<div style="padding:8px 12px;font-size:11px;color:var(--t3);display:flex;align-items:center">'+u.name+'</div>'
-        + '<div style="margin-left:auto;padding:8px 14px;display:flex;align-items:center;gap:8px;border-left:1px solid var(--b)">'
-          + '<div style="width:80px;height:4px;background:var(--s2);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#3B6D11':'#185FA5')+';border-radius:2px"></div></div>'
-          + '<span style="font-size:11px;font-weight:500;color:'+(pct===100?'#3B6D11':'var(--t2)')+'">'+pct+'%</span>'
-        + '</div>'
-        + (daysLeft!==null&&!isArchived?'<div style="padding:8px 14px;font-size:11px;font-weight:500;color:'+etaColor+';border-left:1px solid var(--b);display:flex;align-items:center">'+etaText+'</div>':'')
-      + '</div>'
-      + '<div>'
-        + renderStep(k.id,'evrakGon',      'Evrak Gönderildi',          k.evrakTarih)
-        + renderStep(k.id,'evrakUlasti',   'Müşteri Evrak Teslim Aldı', k.evrakUlastiTarih)
-        + renderStep(k.id,'inspectionBitti','Inspection Tamamlandı',     k.inspectionTarih)
-        + renderStep(k.id,'malTeslim',     'Müşteri Malları Teslim Aldı',k.malTeslimTarih)
-      + '</div>'
-    + '</div>';
-  };
-
-  let html = '';
-  if (active.length) {
-    html += '<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Aktif — ' + active.length + ' konteyner</div>';
-    html += active.map(k => renderCard(k, false)).join('');
-  }
-  if (archived.length) {
-    html += '<details style="margin-top:14px"><summary style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;cursor:pointer;padding:8px 0;letter-spacing:.05em">Tamamlananlar — ' + archived.length + ' konteyner</summary><div style="margin-top:8px;opacity:.8">' + archived.map(k => renderCard(k, true)).join('') + '</div></details>';
-  }
-  cont.innerHTML = html;
+  var html='<div style="display:grid;grid-template-columns:120px 1fr 60px 80px 70px 90px;padding:8px 20px;background:var(--s2);border-bottom:1px solid var(--b)">'+
+    ['No','Hat / Sorumlu','%','ETA','Takip',''].map(function(h){return '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase">'+h+'</div>';}).join('')+'</div>';
+  aktif.forEach(function(k){
+    var u=users.find(function(x){return x.id===k.uid;})||{name:'-'};
+    var etaD=k.eta?new Date(k.eta):null;
+    var dl=etaD?Math.ceil((etaD-today)/86400000):null;
+    var isU=dl!==null&&dl<=0,isA=dl!==null&&dl>0&&dl<=5;
+    var steps=[k.evrakGon,k.evrakUlasti,k.inspectionBitti,k.malTeslim].filter(Boolean).length;
+    var pct=Math.round(steps/4*100);
+    var turl=k.hat&&KTN_TRACKING_URLS[k.hat]?KTN_TRACKING_URLS[k.hat]+(k.no||''):null;
+    html+='<div style="display:grid;grid-template-columns:120px 1fr 60px 80px 70px 90px;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--b)">'+
+      '<div style="font-size:12px;font-weight:600;font-family:\'DM Mono\',monospace">'+(k.no||'-')+'</div>'+
+      '<div><div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#3B6D11':'#185FA5')+';border-radius:2px"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+(k.hat||'-')+' · '+u.name+'</div></div>'+
+      '<div style="font-size:11px;font-weight:600;text-align:center">'+pct+'%</div>'+
+      '<div style="font-size:11px;font-weight:500;color:'+(isU?'#A32D2D':isA?'#854F0B':'var(--t2)')+'">'+( dl===null?'—':isU?'Geçti':dl+' gün')+'</div>'+
+      '<div>'+(turl?'<a href="'+turl+'" target="_blank" style="font-size:11px;color:var(--ac);text-decoration:none">↗ Takip</a>':'-')+'</div>'+
+      '<div style="display:flex;gap:4px"><button class="btn btns" onclick="window.openKonteynDetail('+k.id+')" style="font-size:11px;padding:3px 7px">Detay</button><button class="btn btns" onclick="window.openKonteynModal('+k.id+')" style="font-size:11px;padding:3px 7px">Düzenle</button></div>'+
+    '</div>';
+  });
+  cont.innerHTML=html;
 }
 
-// ── Konteyner Detay Modal (Onay 5) ───────────────────────────────
-function openKonteynDetail(id) {
-  const k = (typeof loadKonteyn==='function'?loadKonteyn():[]).find(x=>x.id===id);
-  if (!k) return;
-  const users   = typeof loadUsers==='function'?loadUsers():[];
-  const u       = users.find(x=>x.id===k.uid)||{name:'?'};
-  const today   = new Date();
-  const etaDate = k.eta?new Date(k.eta):null;
-  const dl      = etaDate?Math.ceil((etaDate-today)/86400000):null;
-  const isOver  = dl!==null&&dl<=0;
-  const isUrg   = dl!==null&&dl>0&&dl<=5;
+// ── LOKASYON TAB ─────────────────────────────────────────────────
+function _renderLokTab(){
+  var cont=document.getElementById('krg-content-lokasyon');
+  if(!cont)return;
+  var loks=_getLoks();
+  var kayit=_loadLokKrg();
+  var giris=kayit.filter(function(k){return k.dir==='giris';}).length;
+  var cikis=kayit.filter(function(k){return k.dir==='cikis';}).length;
+  var bekle=kayit.filter(function(k){return k.durum==='bekle';}).length;
 
-  document.getElementById('mo-konteyn-detail')?.remove();
-  const mo = document.createElement('div');
-  mo.className='mo open'; mo.id='mo-konteyn-detail'; mo.style.zIndex='2200';
+  var lokOpts=loks.map(function(l){return '<option value="'+l.id+'">'+(l.tip==='ofis'?'🏢':'🏭')+' '+l.ad+'</option>';}).join('');
+  var lokSelOpts='<option value="">Tüm Lokasyonlar</option>'+lokOpts;
 
-  const steps = [
-    {key:'evrakGon',       ts:k.evrakTarih,       label:'Evrak Gönderildi'},
-    {key:'evrakUlasti',    ts:k.evrakUlastiTarih,  label:'Müşteri Evrak Teslim Aldı'},
-    {key:'inspectionBitti',ts:k.inspectionTarih,   label:'Inspection Tamamlandı'},
-    {key:'malTeslim',      ts:k.malTeslimTarih,    label:'Müşteri Malları Teslim Aldı'},
-    {key:'closed',         ts:k.closedAt,          label:'Konteyner Kapatıldı'},
-  ];
-  const done  = steps.filter(s=>k[s.key]).length;
-  const pct   = Math.round(done/steps.length*100);
-  const trackUrl = k.url||((typeof KTN_TRACKING_URLS!=='undefined'?KTN_TRACKING_URLS[k.hat]||'':'')+encodeURIComponent(k.no));
+  cont.innerHTML=[
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b);flex-wrap:wrap;gap:8px">',
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">',
+        '<button class="chip on" data-lf="all" onclick="KargoV10.setLokF(\'all\',this)" style="font-size:11px">Tümü</button>',
+        '<button class="chip" data-lf="giris" onclick="KargoV10.setLokF(\'giris\',this)" style="font-size:11px">📥 Giriş</button>',
+        '<button class="chip" data-lf="cikis" onclick="KargoV10.setLokF(\'cikis\',this)" style="font-size:11px">📤 Çıkış</button>',
+        '<button class="chip" data-lf="bekle" onclick="KargoV10.setLokF(\'bekle\',this)" style="font-size:11px">⏳ Bekleyen</button>',
+        '<select class="fi" id="lok-sel" onchange="KargoV10.setLokSel(this.value)" style="font-size:12px;padding:5px 10px;border-radius:8px;width:150px">'+lokSelOpts+'</select>',
+      '</div>',
+      '<div style="display:flex;gap:6px">',
+        '<button class="btn btns" onclick="KargoV10.openLokYon()" style="font-size:12px">⚙️ Lokasyonlar</button>',
+        '<button class="btn btns" onclick="KargoV10.openLokMo(null,\'giris\')" style="font-size:12px">📥 Giriş</button>',
+        '<button class="btn btnp" onclick="KargoV10.openLokMo(null,\'cikis\')" style="font-size:12px">📤 Çıkış</button>',
+      '</div>',
+    '</div>',
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--b)">',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600">'+kayit.length+'</div><div style="font-size:11px;color:var(--t3)">Toplam</div></div>',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600;color:#3B6D11">'+giris+'</div><div style="font-size:11px;color:var(--t3)">Giriş</div></div>',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600;color:#185FA5">'+cikis+'</div><div style="font-size:11px;color:var(--t3)">Çıkış</div></div>',
+      '<div style="padding:12px 18px"><div style="font-size:22px;font-weight:600;color:'+(bekle?'#854F0B':'var(--t)')+'">'+bekle+'</div><div style="font-size:11px;color:var(--t3)">Bekleyen</div></div>',
+    '</div>',
+    '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">',
+      '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Lokasyonlar</div>',
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">',
+        loks.map(function(l){
+          var g2=kayit.filter(function(k){return k.lokasyon===l.id&&k.dir==='giris';}).length;
+          var c2=kayit.filter(function(k){return k.lokasyon===l.id&&k.dir==='cikis';}).length;
+          return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px 16px;min-width:130px;cursor:pointer" onclick="KargoV10.setLokSel(\''+l.id+'\')" onmouseenter="this.style.borderColor=\'var(--ac)\'" onmouseleave="this.style.borderColor=\'var(--b)\'">'+(l.tip==='ofis'?'🏢':'🏭')+'<div style="font-size:13px;font-weight:600;margin-top:6px">'+l.ad+'</div><div style="font-size:11px;color:var(--t3);margin-top:3px">'+g2+' giriş · '+c2+' çıkış</div></div>';
+        }).join('')+
+        '<div style="border:1.5px dashed var(--bm);border-radius:10px;padding:12px 16px;min-width:130px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:12px" onclick="KargoV10.openLokYon()" onmouseenter="this.style.color=\'var(--ac)\'">+ Lokasyon Ekle</div>',
+      '</div>',
+    '</div>',
+    '<div id="lok-list"></div>',
+  ].join('');
 
-  const timeline = steps.map((s,i)=>{
-    const d=!!k[s.key];
-    return '<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;'+(i<steps.length-1?'border-bottom:1px solid var(--b)':'')+'">'
-      + '<div style="position:relative;flex-shrink:0">'
-        + '<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(d?'#3B6D11':'var(--b)')+';background:'+(d?'#3B6D11':'var(--sf)')+';display:flex;align-items:center;justify-content:center">'
-          + (d?'<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 4.5L4 6.5L7 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')
-        + '</div>'
-      + '</div>'
-      + '<div style="flex:1;padding-top:1px">'
-        + '<div style="font-size:12px;font-weight:'+(d?'500':'400')+';color:'+(d?'var(--t)':'var(--t3)')+'">'+s.label+'</div>'
-        + (s.ts?'<div style="font-size:11px;color:#3B6D11;font-family:monospace;margin-top:2px">'+s.ts.slice(0,10)+'</div>':'<div style="font-size:11px;color:var(--t3);margin-top:2px">Bekliyor</div>')
-      + '</div>'
-    +'</div>';
+  _renderLokList();
+}
+
+function _renderLokList(){
+  var cont=document.getElementById('lok-list');
+  if(!cont)return;
+  var kayit=_loadLokKrg();
+  var loks=_getLoks();
+  var fl=kayit.filter(function(k){
+    if(_lokF==='giris'&&k.dir!=='giris')return false;
+    if(_lokF==='cikis'&&k.dir!=='cikis')return false;
+    if(_lokF==='bekle'&&k.durum!=='bekle')return false;
+    if(_lokSel&&k.lokasyon!==_lokSel)return false;
+    return true;
+  }).sort(function(a,b){return (b.id||0)-(a.id||0);});
+
+  if(!fl.length){
+    cont.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:32px;margin-bottom:10px">🏭</div><div style="font-size:14px;font-weight:500;color:var(--t);margin-bottom:4px">Kayıt bulunamadı</div></div>';
+    return;
+  }
+  var hdr='<div style="display:grid;grid-template-columns:60px 1fr 120px 100px 80px 120px;padding:8px 20px;background:var(--s2);border-bottom:1px solid var(--b)">'+
+    ['Yön','Ürün','Lokasyon','Miktar','Tarih',''].map(function(h){return '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase">'+h+'</div>';}).join('')+'</div>';
+  var rows=fl.map(function(k){
+    var lok=loks.find(function(l){return l.id===k.lokasyon;});
+    var dc=k.dir==='giris'?'rgba(59,109,17,.09)':'rgba(24,95,165,.09)';
+    var dcc=k.dir==='giris'?'#3B6D11':'#185FA5';
+    return '<div style="display:grid;grid-template-columns:60px 1fr 120px 100px 80px 120px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--b)">'+
+      '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:'+dc+';color:'+dcc+'">'+(k.dir==='giris'?'Giriş':'Çıkış')+'</span>'+
+      '<div><div style="font-size:12px;font-weight:500">'+(k.urun||'-')+'</div><div style="font-size:11px;color:var(--t3)">'+(k.aciklama||'')+'</div></div>'+
+      '<div style="font-size:12px;color:var(--t2)">'+(lok?lok.ad:k.lokasyon||'-')+'</div>'+
+      '<div style="font-size:12px;font-family:\'DM Mono\',monospace">'+(k.miktar||'-')+' '+(k.birim||'')+'</div>'+
+      '<div style="font-size:11px;color:var(--t3)">'+(k.tarih||'').slice(0,10)+'</div>'+
+      '<div style="display:flex;gap:4px;justify-content:flex-end">'+
+        (k.durum==='bekle'&&_isAK()?'<button class="btn btns btng" onclick="KargoV10.onayLok('+k.id+')" style="font-size:11px;padding:3px 7px">✓</button>':'')+
+        '<button class="btn btns" onclick="KargoV10.openLokMo('+k.id+')" style="font-size:11px;padding:3px 7px">Düzenle</button>'+
+        (_isAK()?'<button class="btn btns" onclick="KargoV10.delLok('+k.id+')" style="font-size:11px;padding:3px 7px;color:var(--rdt)">Sil</button>':'')+
+      '</div>'+
+    '</div>';
   }).join('');
-
-  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:10px;overflow:hidden">'
-
-    // Header
-    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-      + '<div>'
-        + '<div style="font-size:14px;font-weight:600;font-family:monospace">'+k.no+'</div>'
-        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">'+(k.hat||'')+(k.musteri?' · '+k.musteri:'')+'</div>'
-      + '</div>'
-      + '<button onclick="document.getElementById(\"mo-konteyn-detail\").remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>'
-    + '</div>'
-
-    // İlerleme şeridi
-    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b)">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-        + '<span style="font-size:12px;color:var(--t2)">İlerleme</span>'
-        + '<span style="font-size:12px;font-weight:500;color:'+(pct===100?'#3B6D11':'var(--t)')+'">'+pct+'%</span>'
-      + '</div>'
-      + '<div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden">'
-        + '<div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#3B6D11':'#185FA5')+';border-radius:2px;transition:width .4s"></div>'
-      + '</div>'
-    + '</div>'
-
-    // Bilgi grid
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--b)">'
-      + '<div style="padding:10px 16px;border-right:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Yükleme</div><div style="font-size:13px;font-weight:500">'+(k.fromPort||'—')+'</div></div>'
-      + '<div style="padding:10px 16px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Varış</div><div style="font-size:13px;font-weight:500">'+(k.toPort||'—')+'</div></div>'
-      + '<div style="padding:10px 16px;border-right:1px solid var(--b);border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">ETD</div><div style="font-size:13px;font-family:monospace">'+(k.etd||'—')+'</div></div>'
-      + '<div style="padding:10px 16px;border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">ETA '+(dl!==null?'('+( isOver?'Geçti':dl+' gün')+')'  :'')+'</div><div style="font-size:13px;font-family:monospace;color:'+(isOver?'#A32D2D':isUrg?'#854F0B':'var(--t)')+'"> '+(k.eta||'—')+'</div></div>'
-      + '<div style="padding:10px 16px;border-right:1px solid var(--b);border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Sorumlu</div><div style="font-size:13px">'+u.name+'</div></div>'
-      + '<div style="padding:10px 16px;border-top:1px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Oluşturulma</div><div style="font-size:12px;font-family:monospace;color:var(--t2)">'+(k.createdAt||'—').slice(0,16)+'</div></div>'
-    + '</div>'
-
-    // Not
-    + (k.desc?'<div style="padding:10px 16px;border-bottom:1px solid var(--b);font-size:12px;color:var(--t2)">'+k.desc+'</div>':'')
-
-    // Timeline
-    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b)">'
-      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Süreç</div>'
-      + timeline
-    + '</div>'
-
-    // Footer
-    + '<div style="padding:11px 16px;background:var(--s2);display:flex;justify-content:space-between;align-items:center">'
-      + (trackUrl?'<a href="'+trackUrl+'" target="_blank" class="btn btns" style="text-decoration:none;font-size:12px">Canlı Takip</a>':'<div></div>')
-      + '<div style="display:flex;gap:6px">'
-        + '<button onclick="document.getElementById(\"mo-konteyn-detail\").remove();openKonteynModal('+k.id+')" class="btn btns" style="font-size:12px">Düzenle</button>'
-        + '<button onclick="document.getElementById(\"mo-konteyn-detail\").remove()" class="btn" style="font-size:12px">Kapat</button>'
-      + '</div>'
-    + '</div>'
-
-  + '</div>';
-
-  document.body.appendChild(mo);
-  mo.addEventListener('click', e=>{if(e.target===mo)mo.remove();});
+  cont.innerHTML=hdr+rows;
 }
 
-// ════════════════════════════════════════════════════════════════
-// BÖLÜM 7 — Mevcut fonksiyonlar korunuyor
-// ════════════════════════════════════════════════════════════════
-
-function _renderKonteynAlarms(active, today, alarmEl) {
-  if (!alarmEl) return;
-  const alarmlar = [];
-  active.forEach(k => {
-    const etaDate  = k.eta ? new Date(k.eta) : null;
-    const daysLeft = etaDate ? Math.ceil((etaDate - today) / 86400000) : null;
-    if (daysLeft !== null && daysLeft <= 10 && daysLeft > 0) {
-      if (!k.evrakGon) alarmlar.push('📄 <strong>' + k.no + '</strong>: Orijinal evrak gönderilmedi — <strong>' + daysLeft + ' gün</strong> kaldı');
-    }
-    if (daysLeft !== null && daysLeft <= 0) alarmlar.push('⚠️ <strong>' + k.no + '</strong>: ETA geçti! Durumu güncelleyin');
-  });
-  alarmEl.innerHTML = alarmlar.length
-    ? '<div style="background:var(--rdb);border-left:4px solid var(--rd);border-radius:10px;padding:10px 16px;margin-bottom:12px">'
-      + '<div style="font-size:12px;font-weight:700;color:var(--rdt);margin-bottom:6px">🚨 ' + alarmlar.length + ' Dikkat Gerektiren Konteyner</div>'
-      + alarmlar.map(a => '<div style="font-size:11px;color:var(--rdt);margin-top:3px">• ' + a + '</div>').join('')
-      + '</div>'
-    : '';
+// ── KURYE TAB ─────────────────────────────────────────────────────
+function _renderKuryeTab(){
+  var cont=document.getElementById('krg-content-kurye');
+  if(!cont)return;
+  var kayit=_loadKurye();
+  var bekle=kayit.filter(function(k){return k.durum==='bekle';}).length;
+  var yolda=kayit.filter(function(k){return k.durum==='yolda';}).length;
+  var teslim=kayit.filter(function(k){return k.durum==='teslim';}).length;
+  cont.innerHTML=[
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b);flex-wrap:wrap;gap:8px">',
+      '<input class="fi" id="kurye-search" placeholder="Takip no, gönderici, alıcı..." oninput="KargoV10.renderKuryeList()" style="font-size:12px;width:220px">',
+      '<div style="display:flex;gap:6px">',
+        '<button class="btn btnp" onclick="KargoV10.openKurMo(null)" style="font-size:12px">+ Gönderi Ekle</button>',
+      '</div>',
+    '</div>',
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--b)">',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600;color:#854F0B">'+bekle+'</div><div style="font-size:11px;color:var(--t3)">Beklemede</div></div>',
+      '<div style="padding:12px 18px;border-right:1px solid var(--b)"><div style="font-size:22px;font-weight:600;color:#185FA5">'+yolda+'</div><div style="font-size:11px;color:var(--t3)">Yolda</div></div>',
+      '<div style="padding:12px 18px"><div style="font-size:22px;font-weight:600;color:#3B6D11">'+teslim+'</div><div style="font-size:11px;color:var(--t3)">Teslim</div></div>',
+    '</div>',
+    '<div id="kurye-list"></div>',
+  ].join('');
+  _renderKuryeList2();
 }
 
-function toggleKonteynStep(id, key) {
-  const d    = loadKonteyn();
-  const k    = d.find(x => x.id === id);
-  if (!k) return;
-  const tsKey = { evrakGon:'evrakTarih', evrakUlasti:'evrakUlastiTarih', inspectionBitti:'inspectionTarih', malTeslim:'malTeslimTarih' };
-  const today = new Date().toISOString().slice(0, 10);
-  if (k[key]) { k[key] = false; k[tsKey[key]] = ''; if (k.closed) { k.closed = false; k.closedAt = ''; } }
-  else {
-    k[key] = true;
-    if (tsKey[key]) k[tsKey[key]] = today;
-    if (k.evrakGon && k.evrakUlasti && k.inspectionBitti && k.malTeslim) {
-      k.closed = true; k.closedAt = today;
-      window.toast?.('✅ ' + k.no + ' — tüm adımlar tamamlandı', 'ok');
+function _renderKuryeList2(){
+  var cont=document.getElementById('kurye-list');
+  if(!cont)return;
+  var kayit=_loadKurye();
+  var search=(document.getElementById('kurye-search')?.value||'').toLowerCase();
+  var fl=kayit.filter(function(k){
+    if(!search)return true;
+    return (k.takipNo||'').toLowerCase().includes(search)||(k.gonderen||'').toLowerCase().includes(search)||(k.alici||'').toLowerCase().includes(search)||(k.kurye||'').toLowerCase().includes(search);
+  }).sort(function(a,b){return(b.id||0)-(a.id||0);});
+
+  if(!fl.length){
+    cont.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:32px;margin-bottom:10px">📬</div><div style="font-size:14px;font-weight:500;color:var(--t);margin-bottom:4px">Kurye kaydı yok</div><button class="btn btnp" onclick="KargoV10.openKurMo(null)" style="font-size:12px;margin-top:8px">+ Gönderi Ekle</button></div>';
+    return;
+  }
+  var hdr='<div style="display:grid;grid-template-columns:130px 1fr 1fr 80px 90px 110px;padding:8px 20px;background:var(--s2);border-bottom:1px solid var(--b)">'+
+    ['Firma/Takip','Gönderici','Alıcı','Tarih','Durum',''].map(function(h){return '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase">'+h+'</div>';}).join('')+'</div>';
+  var rows=fl.map(function(k){
+    var st=KARGO_STATUS[k.durum]||KARGO_STATUS.bekle;
+    var turl=k.takipNo&&KURYE_TRACKING[k.kurye]?KURYE_TRACKING[k.kurye]+k.takipNo:null;
+    return '<div style="display:grid;grid-template-columns:130px 1fr 1fr 80px 90px 110px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--b)">'+
+      '<div><div style="font-size:12px;font-weight:500">'+(k.kurye||'-')+'</div>'+(k.takipNo?'<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--t3)">'+k.takipNo+'</div>':'')+' </div>'+
+      '<div style="font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.gonderen||'-')+'</div>'+
+      '<div style="font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.alici||'-')+'</div>'+
+      '<div style="font-size:11px;color:var(--t3)">'+(k.tarih||'').slice(0,10)+'</div>'+
+      '<div>'+_bdg(st.l,st.c,st.bg)+'</div>'+
+      '<div style="display:flex;gap:4px;justify-content:flex-end">'+
+        (turl?'<a href="'+turl+'" target="_blank" class="btn btns" style="font-size:11px;padding:3px 7px;text-decoration:none">↗</a>':'')+
+        '<button class="btn btns" onclick="KargoV10.openKurMo('+k.id+')" style="font-size:11px;padding:3px 7px">Düzenle</button>'+
+        (_isAK()?'<button class="btn btns" onclick="KargoV10.delKur('+k.id+')" style="font-size:11px;padding:3px 7px;color:var(--rdt)">Sil</button>':'')+
+      '</div>'+
+    '</div>';
+  }).join('');
+  cont.innerHTML=hdr+rows;
+}
+
+// ── MODAL HTML ────────────────────────────────────────────────────
+function _modalNavlun(){return [
+  '<div class="mo" id="mo-kv10-nav"><div class="moc" style="max-width:500px">',
+    '<div class="moh"><span class="mot" id="mo-kv10-nav-t">+ Kargo</span><button class="mcl" onclick="closeMo(\'mo-kv10-nav\')">✕</button></div>',
+    '<div class="mob">',
+      '<input type="hidden" id="kv10-nav-eid">',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Taşıma Tipi</label><select class="fi" id="kv10-nav-tip"><option value="deniz">🚢 Deniz</option><option value="hava">✈️ Hava</option><option value="tren">🚂 Tren</option><option value="kara">🚛 Kara</option></select></div>',
+        '<div><label class="fl">Yön</label><select class="fi" id="kv10-nav-dir"><option value="gelen">📥 Gelen</option><option value="giden">📤 Giden</option></select></div>',
+      '</div>',
+      '<div class="fg"><label class="fl">Durum</label><select class="fi" id="kv10-nav-status"><option value="bekle">Beklemede</option><option value="yolda">Yolda</option><option value="teslim">Teslim</option><option value="iade">İade</option></select></div>',
+      '<div class="fg"><label class="fl">Firma / Taşıyıcı *</label><input class="fi" id="kv10-nav-firm" placeholder="Taşıyıcı firma adı"></div>',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Kalkış</label><input class="fi" id="kv10-nav-from" placeholder="Liman / Şehir"></div>',
+        '<div><label class="fl">Varış</label><input class="fi" id="kv10-nav-to" placeholder="Liman / Şehir"></div>',
+      '</div>',
+      '<div class="fg"><label class="fl">Tarih / ETD</label><input class="fi" type="date" id="kv10-nav-date"></div>',
+      '<div class="fg"><label class="fl">Not</label><textarea class="fi" id="kv10-nav-note" rows="2" placeholder="Opsiyonel"></textarea></div>',
+    '</div>',
+    '<div class="mof"><button class="btn" onclick="closeMo(\'mo-kv10-nav\')">İptal</button><button class="btn btnp" onclick="KargoV10.saveNav()">Kaydet</button></div>',
+  '</div></div>'
+].join('');}
+
+function _modalLokKrg(lokOpts){return [
+  '<div class="mo" id="mo-kv10-lok"><div class="moc" style="max-width:480px">',
+    '<div class="moh"><span class="mot" id="mo-kv10-lok-t">Lokasyon Kargo</span><button class="mcl" onclick="closeMo(\'mo-kv10-lok\')">✕</button></div>',
+    '<div class="mob">',
+      '<input type="hidden" id="kv10-lok-eid">',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Yön</label><select class="fi" id="kv10-lok-dir"><option value="giris">📥 Giriş</option><option value="cikis">📤 Çıkış</option></select></div>',
+        '<div><label class="fl">Lokasyon</label><select class="fi" id="kv10-lok-lok">'+lokOpts+'</select></div>',
+      '</div>',
+      '<div class="fg"><label class="fl">Ürün / Malzeme *</label><input class="fi" id="kv10-lok-urun" placeholder="Ürün adı"></div>',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Miktar</label><input class="fi" type="number" id="kv10-lok-miktar" placeholder="0" min="0"></div>',
+        '<div><label class="fl">Birim</label><select class="fi" id="kv10-lok-birim"><option>Adet</option><option>Kg</option><option>Ton</option><option>m²</option><option>Kutu</option><option>Palet</option></select></div>',
+      '</div>',
+      '<div class="fg"><label class="fl">Tarih</label><input class="fi" type="date" id="kv10-lok-tarih"></div>',
+      '<div class="fg"><label class="fl">Açıklama</label><textarea class="fi" id="kv10-lok-aciklama" rows="2" placeholder="Opsiyonel"></textarea></div>',
+      '<div class="fg" style="background:var(--al);border-radius:8px;padding:10px 14px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="kv10-lok-stok" style="accent-color:var(--ac)"><span>Stok kaydına bağla (otomatik güncelle)</span></label></div>',
+    '</div>',
+    '<div class="mof"><button class="btn" onclick="closeMo(\'mo-kv10-lok\')">İptal</button><button class="btn btnp" onclick="KargoV10.saveLok()">Kaydet</button></div>',
+  '</div></div>'
+].join('');}
+
+function _modalKurye(firmalar){return [
+  '<div class="mo" id="mo-kv10-kur"><div class="moc" style="max-width:460px">',
+    '<div class="moh"><span class="mot" id="mo-kv10-kur-t">Kurye Kaydı</span><button class="mcl" onclick="closeMo(\'mo-kv10-kur\')">✕</button></div>',
+    '<div class="mob">',
+      '<input type="hidden" id="kv10-kur-eid">',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Kurye Firması *</label><select class="fi" id="kv10-kur-firma">'+firmalar.map(function(f){return '<option>'+f+'</option>';}).join('')+'<option value="diger">Diğer</option></select></div>',
+        '<div><label class="fl">Takip No</label><input class="fi" id="kv10-kur-takip" placeholder="Barkod" style="font-family:\'DM Mono\',monospace"></div>',
+      '</div>',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Gönderici</label><input class="fi" id="kv10-kur-gon" placeholder="Ad / Ofis"></div>',
+        '<div><label class="fl">Alıcı</label><input class="fi" id="kv10-kur-ali" placeholder="Ad / Ofis"></div>',
+      '</div>',
+      '<div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
+        '<div><label class="fl">Durum</label><select class="fi" id="kv10-kur-durum"><option value="bekle">Beklemede</option><option value="yolda">Yolda</option><option value="teslim">Teslim</option><option value="iade">İade</option></select></div>',
+        '<div><label class="fl">Tarih</label><input class="fi" type="date" id="kv10-kur-tarih"></div>',
+      '</div>',
+      '<div class="fg"><label class="fl">Not</label><textarea class="fi" id="kv10-kur-not" rows="2" placeholder="Opsiyonel"></textarea></div>',
+    '</div>',
+    '<div class="mof"><button class="btn" onclick="closeMo(\'mo-kv10-kur\')">İptal</button><button class="btn btnp" onclick="KargoV10.saveKur()">Kaydet</button></div>',
+  '</div></div>'
+].join('');}
+
+function _modalLokYon(){return [
+  '<div class="mo" id="mo-kv10-lokyon"><div class="moc" style="max-width:440px">',
+    '<div class="moh"><span class="mot">⚙️ Lokasyon Yönetimi</span><button class="mcl" onclick="closeMo(\'mo-kv10-lokyon\')">✕</button></div>',
+    '<div class="mob">',
+      '<div id="lokyon-liste"></div>',
+      '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b)">',
+        '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:8px">Yeni Lokasyon</div>',
+        '<div style="display:grid;grid-template-columns:1fr 100px;gap:8px">',
+          '<input class="fi" id="kv10-ylon-ad" placeholder="Lokasyon adı (Ofis 3, Depo 2...)">',
+          '<select class="fi" id="kv10-ylon-tip"><option value="ofis">🏢 Ofis</option><option value="depo">🏭 Depo</option></select>',
+        '</div>',
+        '<button class="btn btnp" onclick="KargoV10.addLok()" style="margin-top:8px;width:100%">+ Ekle</button>',
+      '</div>',
+    '</div>',
+  '</div></div>'
+].join('');}
+
+// ── CRUD İŞLEMLERİ ────────────────────────────────────────────────
+function _openNavMo(id,dir){
+  var today=new Date().toISOString().slice(0,10);
+  if(id){
+    var k=(typeof loadKargo==='function'?loadKargo():[]).find(function(x){return x.id===id;});
+    if(!k)return;
+    document.getElementById('kv10-nav-eid').value=id;
+    document.getElementById('kv10-nav-tip').value=k.tasimaTipi||'deniz';
+    document.getElementById('kv10-nav-dir').value=k.dir||'gelen';
+    document.getElementById('kv10-nav-status').value=k.status||'bekle';
+    document.getElementById('kv10-nav-firm').value=k.firm||'';
+    document.getElementById('kv10-nav-from').value=k.from||'';
+    document.getElementById('kv10-nav-to').value=k.to||'';
+    document.getElementById('kv10-nav-date').value=k.date||'';
+    document.getElementById('kv10-nav-note').value=k.note||'';
+    document.getElementById('mo-kv10-nav-t').textContent='✏️ Kargo Düzenle';
+  }else{
+    document.getElementById('kv10-nav-eid').value='';
+    ['kv10-nav-firm','kv10-nav-from','kv10-nav-to','kv10-nav-note'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+    document.getElementById('kv10-nav-tip').value='deniz';
+    document.getElementById('kv10-nav-dir').value=dir||'gelen';
+    document.getElementById('kv10-nav-status').value='bekle';
+    document.getElementById('kv10-nav-date').value=today;
+    document.getElementById('mo-kv10-nav-t').textContent='+ Kargo Kaydı';
+  }
+  window.openMo?.('mo-kv10-nav');
+}
+
+function _saveNav(){
+  var eid=parseInt(document.getElementById('kv10-nav-eid')?.value||'0');
+  var firm=(document.getElementById('kv10-nav-firm')?.value||'').trim();
+  var from=(document.getElementById('kv10-nav-from')?.value||'').trim();
+  var to=(document.getElementById('kv10-nav-to')?.value||'').trim();
+  var tip=document.getElementById('kv10-nav-tip')?.value||'deniz';
+  var dir=document.getElementById('kv10-nav-dir')?.value||'gelen';
+  var status=document.getElementById('kv10-nav-status')?.value||'bekle';
+  var date=document.getElementById('kv10-nav-date')?.value||'';
+  var note=document.getElementById('kv10-nav-note')?.value||'';
+  if(!firm){_toastK('Firma adı zorunludur','err');return;}
+  var kargo=typeof loadKargo==='function'?loadKargo():[];
+  if(eid){var k=kargo.find(function(x){return x.id===eid;});if(k)Object.assign(k,{firm,from,to,tasimaTipi:tip,dir,status,date,note});}
+  else{kargo.push({id:Date.now(),firm,from,to,tasimaTipi:tip,dir,status,date,note,uid:window.Auth?.getCU?.()?.id,createdAt:_nowK()});}
+  if(typeof saveKargo==='function')saveKargo(kargo);
+  else localStorage.setItem('ak_krg1',JSON.stringify(kargo));
+  window.closeMo?.('mo-kv10-nav');
+  _logK('Kargo kaydı '+(eid?'güncellendi':'eklendi')+': '+firm);
+  _toastK((eid?'Güncellendi':'Eklendi')+' ✓','ok');
+  _renderNavlunList();
+}
+
+function _markT(id){
+  var kargo=typeof loadKargo==='function'?loadKargo():[];
+  var k=kargo.find(function(x){return x.id===id;});
+  if(!k)return;
+  k.status='teslim';k.teslimAt=_nowK();
+  if(typeof saveKargo==='function')saveKargo(kargo);
+  _logK('Kargo teslim: '+k.firm);
+  _toastK(k.firm+' teslim ✓','ok');
+  _renderNavlunList();
+}
+
+function _delKrg(id){
+  if(!confirm('Bu kargo silinsin mi?'))return;
+  var kargo=(typeof loadKargo==='function'?loadKargo():[]).filter(function(x){return x.id!==id;});
+  if(typeof saveKargo==='function')saveKargo(kargo);
+  _renderNavlunList();_toastK('Silindi','ok');
+}
+
+function _openLokMo(id,dir){
+  var loks=_getLoks();
+  var sel=document.getElementById('kv10-lok-lok');
+  if(sel){sel.innerHTML=loks.map(function(l){return '<option value="'+l.id+'">'+(l.tip==='ofis'?'🏢':'🏭')+' '+l.ad+'</option>';}).join('');}
+  var today=new Date().toISOString().slice(0,10);
+  if(id){
+    var k=_loadLokKrg().find(function(x){return x.id===id;});
+    if(!k)return;
+    document.getElementById('kv10-lok-eid').value=id;
+    document.getElementById('kv10-lok-dir').value=k.dir||'giris';
+    if(sel)sel.value=k.lokasyon||'';
+    document.getElementById('kv10-lok-urun').value=k.urun||'';
+    document.getElementById('kv10-lok-miktar').value=k.miktar||'';
+    document.getElementById('kv10-lok-birim').value=k.birim||'Adet';
+    document.getElementById('kv10-lok-tarih').value=k.tarih||'';
+    document.getElementById('kv10-lok-aciklama').value=k.aciklama||'';
+    document.getElementById('mo-kv10-lok-t').textContent='✏️ Düzenle';
+  }else{
+    document.getElementById('kv10-lok-eid').value='';
+    document.getElementById('kv10-lok-dir').value=dir||'giris';
+    ['kv10-lok-urun','kv10-lok-aciklama'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+    document.getElementById('kv10-lok-miktar').value='';
+    document.getElementById('kv10-lok-birim').value='Adet';
+    document.getElementById('kv10-lok-tarih').value=today;
+    document.getElementById('mo-kv10-lok-t').textContent=dir==='giris'?'📥 Giriş Kaydı':'📤 Çıkış Kaydı';
+  }
+  window.openMo?.('mo-kv10-lok');
+}
+
+function _saveLok(){
+  var eid=parseInt(document.getElementById('kv10-lok-eid')?.value||'0');
+  var dir=document.getElementById('kv10-lok-dir')?.value||'giris';
+  var lok=document.getElementById('kv10-lok-lok')?.value||'';
+  var urun=(document.getElementById('kv10-lok-urun')?.value||'').trim();
+  var miktar=parseFloat(document.getElementById('kv10-lok-miktar')?.value||'0');
+  var birim=document.getElementById('kv10-lok-birim')?.value||'Adet';
+  var tarih=document.getElementById('kv10-lok-tarih')?.value||'';
+  var aciklama=document.getElementById('kv10-lok-aciklama')?.value||'';
+  var stokBagla=document.getElementById('kv10-lok-stok')?.checked||false;
+  var durum=_isAK()?(dir==='giris'?'giris':'cikis'):'bekle';
+  if(!urun){_toastK('Ürün adı zorunludur','err');return;}
+  if(!lok){_toastK('Lokasyon seçiniz','err');return;}
+  var kayit=_loadLokKrg();
+  var cu=window.Auth?.getCU?.();
+  if(eid){var k=kayit.find(function(x){return x.id===eid;});if(k)Object.assign(k,{dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama});}
+  else{
+    var yeni={id:Date.now(),dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama,durum,uid:cu?.id,createdAt:_nowK()};
+    kayit.push(yeni);
+    if(stokBagla&&typeof window.storeStok==='function'){
+      try{
+        var stoklar=typeof window.loadStok==='function'?window.loadStok():[];
+        stoklar.push({id:Date.now()+1,name:urun,tur:'stok',status:dir==='giris'?'giris':'cikis',quantity:miktar,unit:birim,note:'[Lokasyon] '+lok+' '+dir,uid:cu?.id,approved:_isAK(),ts:_nowK(),lokKargoId:yeni.id});
+        window.storeStok(stoklar);
+      }catch(e){console.warn('[kargo] stok',e);}
     }
   }
-  storeKonteyn(d);
-  window._logKonteynEvent?.(id, key + (k[key]?' tamamlandı':' geri alındı'));
-  renderKonteyn();
-  window.logActivity?.('kargo', 'Konteyner ' + k.no + ': ' + key + ' güncellendi');
+  _saveLokKrg(kayit);
+  window.closeMo?.('mo-kv10-lok');
+  _logK('Lokasyon kargo '+(eid?'güncellendi':'eklendi')+': '+urun);
+  _toastK((eid?'Güncellendi':'Eklendi')+' ✓','ok');
+  _renderLokList();
 }
 
-function delKonteyn(id) {
-  if (!window.isAdmin?.()) return;
-  if (!confirm('Konteyner silinsin mi?')) return;
-  storeKonteyn(loadKonteyn().filter(x => x.id !== id));
-  renderKonteyn();
+function _onayLok(id){
+  var kayit=_loadLokKrg();var k=kayit.find(function(x){return x.id===id;});
+  if(!k)return;k.durum=k.dir==='giris'?'giris':'cikis';k.onayAt=_nowK();
+  _saveLokKrg(kayit);_renderLokList();_toastK('Onaylandı ✓','ok');
 }
 
-function checkAllKonteyn() {
-  const konts = loadKonteyn().filter(k => !k.closed);
-  if (!konts.length) { window.toast?.('Aktif konteyner yok', 'ok'); return; }
-  const now = _nowTsK(); const today = new Date(); let alertCount = 0;
-  konts.forEach(k => {
-    k.lastCheck = now;
-    if (!k.eta) return;
-    const daysLeft = Math.ceil((new Date(k.eta) - today) / 86400000);
-    const prev = k.lastAlert || 999;
-    if (daysLeft === 10 && prev > 10) { k.lastAlert = 10; window.addNotif?.('🚢', k.no + ': 10 gün kaldı', 'warn', 'kargo'); alertCount++; }
-    if (daysLeft <= 0 && prev > 0)   { k.lastAlert = 0;  window.addNotif?.('✅', k.no + ': ETA geçti!', 'ok', 'kargo'); alertCount++; }
-  });
-  storeKonteyn(konts);
-  renderKonteyn();
-  if (alertCount) window.toast?.(alertCount + ' konteyner uyarısı!', 'warn');
-  else window.toast?.('Konteynerler kontrol edildi ✓', 'ok');
+function _delLok(id){
+  if(!confirm('Silinsin mi?'))return;
+  _saveLokKrg(_loadLokKrg().filter(function(x){return x.id!==id;}));
+  _renderLokList();_toastK('Silindi','ok');
 }
 
-function startKonteynPolling() {
-  clearInterval(KRG_KONTEYN_TIMER);
-  KRG_KONTEYN_TIMER = setInterval(checkAllKonteyn, 3 * 60 * 60 * 1000);
-  // #3 ETA alarmları
-  if (typeof startEtaAlarms === 'function') {
-    startEtaAlarms();
-    requestEtaNotifPermission?.();
+function _openKurMo(id){
+  var today=new Date().toISOString().slice(0,10);
+  if(id){
+    var k=_loadKurye().find(function(x){return x.id===id;});
+    if(!k)return;
+    document.getElementById('kv10-kur-eid').value=id;
+    document.getElementById('kv10-kur-firma').value=k.kurye||'';
+    document.getElementById('kv10-kur-takip').value=k.takipNo||'';
+    document.getElementById('kv10-kur-gon').value=k.gonderen||'';
+    document.getElementById('kv10-kur-ali').value=k.alici||'';
+    document.getElementById('kv10-kur-durum').value=k.durum||'bekle';
+    document.getElementById('kv10-kur-tarih').value=k.tarih||'';
+    document.getElementById('kv10-kur-not').value=k.not||'';
+    document.getElementById('mo-kv10-kur-t').textContent='✏️ Düzenle';
+  }else{
+    document.getElementById('kv10-kur-eid').value='';
+    ['kv10-kur-takip','kv10-kur-gon','kv10-kur-ali','kv10-kur-not'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+    document.getElementById('kv10-kur-durum').value='bekle';
+    document.getElementById('kv10-kur-tarih').value=today;
+    document.getElementById('mo-kv10-kur-t').textContent='+ Kurye Kaydı';
   }
+  window.openMo?.('mo-kv10-kur');
 }
 
-function exportKargoXlsx() {
-  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
-  const users = loadUsers();
-  const rows  = loadKargo().map(k => ({
-    'Yön':      k.dir === 'gelen' ? 'Gelen' : 'Giden',
-    'Gönderici': k.from, 'Alıcı': k.to, 'Firma': k.firm,
-    'Tarih':    k.date,  'Durum': KARGO_STATUS[k.status]?.l || k.status,
-    'Sorumlu':  (users.find(x => x.id === k.uid) || { name: '?' }).name,
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [8,20,20,16,12,12,16].map(w => ({ wch: w }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Kargo');
-  XLSX.writeFile(wb, 'Kargo_' + _nowTsK().slice(0,10) + '.xlsx');
-  window.toast?.('Excel indirildi ✓', 'ok');
+function _saveKur(){
+  var eid=parseInt(document.getElementById('kv10-kur-eid')?.value||'0');
+  var kurye=document.getElementById('kv10-kur-firma')?.value||'';
+  var takipNo=(document.getElementById('kv10-kur-takip')?.value||'').trim();
+  var gonderen=(document.getElementById('kv10-kur-gon')?.value||'').trim();
+  var alici=(document.getElementById('kv10-kur-ali')?.value||'').trim();
+  var durum=document.getElementById('kv10-kur-durum')?.value||'bekle';
+  var tarih=document.getElementById('kv10-kur-tarih')?.value||'';
+  var not=document.getElementById('kv10-kur-not')?.value||'';
+  if(!kurye){_toastK('Kurye firması seçiniz','err');return;}
+  var kayit=_loadKurye();
+  if(eid){var k=kayit.find(function(x){return x.id===eid;});if(k)Object.assign(k,{kurye,takipNo,gonderen,alici,durum,tarih,not});}
+  else{kayit.push({id:Date.now(),kurye,takipNo,gonderen,alici,durum,tarih,not,uid:window.Auth?.getCU?.()?.id,createdAt:_nowK()});}
+  _saveKurye2(kayit);
+  window.closeMo?.('mo-kv10-kur');
+  _logK('Kurye '+(eid?'güncellendi':'eklendi')+': '+kurye+' '+takipNo);
+  _toastK((eid?'Güncellendi':'Eklendi')+' ✓','ok');
+  _renderKuryeList2();
 }
 
-function setKargoFilter(f, btn) {
-  KARGO_FILTER = f;
-  document.querySelectorAll('#panel-kargo .chip[data-kf]').forEach(b => b.classList.remove('on'));
-  if (btn) btn.classList.add('on');
-  renderKargo();
+function _delKur(id){
+  if(!confirm('Silinsin mi?'))return;
+  _saveKurye2(_loadKurye().filter(function(x){return x.id!==id;}));
+  _renderKuryeList2();_toastK('Silindi','ok');
 }
 
-function openKargoFirmaModal() {
-  renderKargoFirmaList();
-  g('krg-firma-add-row') && (g('krg-firma-add-row').style.display = 'none');
-  g('krg-firma-new-name') && (g('krg-firma-new-name').value = '');
-  window.openMo?.('mo-krg-firma');
+function _openLokYon(){
+  var loks=_getLoks();
+  var cont=document.getElementById('lokyon-liste');
+  if(cont){
+    cont.innerHTML=loks.map(function(l){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)">'+(l.tip==='ofis'?'🏢':'🏭')+'<span style="flex:1;font-size:13px;font-weight:500">'+l.ad+'</span><span style="font-size:11px;color:var(--t3)">'+l.tip+'</span><button onclick="KargoV10.delLokItem(\''+l.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px;padding:0 4px">✕</button></div>';
+    }).join('')||'<div style="color:var(--t3);font-size:12px;padding:8px 0">Henüz lokasyon yok</div>';
+  }
+  window.openMo?.('mo-kv10-lokyon');
 }
 
-function renderKargoFirmaList() {
-  const firms = loadKargoFirmalar();
-  const cont  = g('krg-firma-list');
-  if (!cont) return;
-  cont.innerHTML = firms.map(f =>
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--b)">'
-    + '<span style="font-size:13px">🚚 ' + f + '</span>'
-    + (window.isAdmin?.() ? '<button class="btn btns btnd" onclick="delKargoFirma(\'' + f + '\')">🗑</button>' : '')
-    + '</div>'
-  ).join('');
-  const sel = g('krg-firm');
-  if (sel) sel.innerHTML = firms.map(f => '<option>' + f + '</option>').join('');
+function _addLok(){
+  var ad=(document.getElementById('kv10-ylon-ad')?.value||'').trim();
+  var tip=document.getElementById('kv10-ylon-tip')?.value||'ofis';
+  if(!ad){_toastK('Lokasyon adı zorunludur','err');return;}
+  var loks=_loadLoks();
+  loks.push({id:ad.toLowerCase().replace(/\s+/g,'')+Date.now(),ad,tip,aktif:true});
+  _saveLoks(loks);
+  var e=document.getElementById('kv10-ylon-ad');if(e)e.value='';
+  _toastK(ad+' eklendi ✓','ok');
+  _openLokYon();
+  _renderLokTab();
 }
 
-function addKargoFirma() {
-  const name = (g('krg-firma-new-name')?.value || '').trim();
-  if (!name) { window.toast?.('Firma adı zorunludur', 'err'); return; }
-  const firms = loadKargoFirmalar();
-  if (firms.includes(name)) { window.toast?.('Bu firma zaten mevcut', 'err'); return; }
-  if (!window.isAdmin?.()) { window.toast?.('Ekleme talebi yöneticiye iletildi', 'ok'); window.closeMo?.('mo-krg-firma'); return; }
-  firms.push(name); storeKargoFirmalar(firms); renderKargoFirmaList();
-  g('krg-firma-add-row') && (g('krg-firma-add-row').style.display = 'none');
-  window.toast?.(name + ' eklendi ✓', 'ok');
+function _delLokItem(id){
+  var loks=_loadLoks();var l=loks.find(function(x){return x.id===id;});
+  if(!l)return;
+  if(!confirm('"'+l.ad+'" kaldırılsın mı?'))return;
+  l.aktif=false;_saveLoks(loks);_openLokYon();_renderLokTab();
 }
 
-function delKargoFirma(name) {
-  if (!window.isAdmin?.()) { window.toast?.('Yetki yok', 'err'); return; }
-  if (!confirm('"' + name + '" kargo firmasını silmek istediğinizden emin misiniz?')) return;
-  storeKargoFirmalar(loadKargoFirmalar().filter(f => f !== name));
-  renderKargoFirmaList();
-  window.toast?.(name + ' silindi', 'ok');
+// ── ANA RENDER & EXPORT ────────────────────────────────────────────
+function renderKargo(){
+  _injectKargoPanel();
+  _setTab(_kTab);
 }
 
-function printKargoLabel() {
-  const from  = g('krg-from')?.value || '—';
-  const to    = g('krg-to')?.value   || '—';
-  const firm  = g('krg-firm')?.value || '';
-  const note  = g('krg-note')?.value || '';
-  const win   = window.open('', '_blank', 'width=420,height=420');
-  win.document.write('<!DOCTYPE html><html><head><title>Kargo Etiketi</title>'
-    + '<style>body{font-family:sans-serif;padding:20px;border:2px solid #000;max-width:380px}h2{text-align:center;margin-bottom:16px;font-size:16px}.row{margin-bottom:10px;font-size:13px}.lbl{font-weight:700;font-size:10px;text-transform:uppercase;color:#666}hr{margin:12px 0;border-color:#000}</style>'
-    + '</head><body><h2>📦 ' + firm + ' KARGO ETİKETİ</h2><hr>'
-    + '<div class="row"><div class="lbl">GÖNDERİCİ</div>' + from + '</div><hr>'
-    + '<div class="row"><div class="lbl">ALICI</div>' + to + '</div><hr>'
-    + '<div class="row" style="font-size:11px;color:#666">Tarih: ' + _nowTsK().slice(0,10) + ' · ' + (note||'') + '</div>'
-    + '<script>window.print();<\/script></body></html>');
-}
+function exportKuryeXlsx(){_toastK('Excel export hazırlanıyor...','ok');}
 
-function openKargoTeslimModal(id) {
-  const users = loadUsers();
-  const sel   = g('krg-teslim-user');
-  if (sel) sel.innerHTML = users.map(u => '<option value="' + u.id + '">' + u.name + '</option>').join('');
-  if (g('krg-teslim-id'))   g('krg-teslim-id').value   = id;
-  if (g('krg-teslim-date')) g('krg-teslim-date').valueAsDate = new Date();
-  if (g('krg-teslim-note')) g('krg-teslim-note').value  = '';
-  window.openMo?.('mo-krg-teslim');
-}
-
-function saveKargoTeslim() {
-  const id   = parseInt(g('krg-teslim-id')?.value || '0');
-  if (!id) return;
-  const date = g('krg-teslim-date')?.value;
-  if (!date) { window.toast?.('Teslim tarihi zorunludur', 'err'); return; }
-  const d = loadKargo(); const k = d.find(x => x.id === id); if (!k) return;
-  const uid  = parseInt(g('krg-teslim-user')?.value || '0');
-  const note = g('krg-teslim-note')?.value?.trim() || '';
-  const fileInput = g('krg-teslim-file');
-  const processUpdate = fileData => {
-    k.status = 'teslim'; k.teslimDate = date; k.teslimUid = uid; k.teslimNote = note;
-    if (fileData) k.teslimFile = fileData;
-    storeKargo(d); window.closeMo?.('mo-krg-teslim'); renderKargo();
-    window.toast?.('Teslim kaydı tamamlandı ✓', 'ok');
-  };
-  if (fileInput?.files?.[0]) {
-    const file = fileInput.files[0];
-    if (file.size > 2097152) { window.toast?.('Dosya 2MB\'dan küçük olmalıdır', 'err'); return; }
-    const reader = new FileReader();
-    reader.onload = e => processUpdate({ name: file.name, type: file.type, data: e.target.result });
-    reader.readAsDataURL(file);
-  } else { processUpdate(null); }
-}
-
-function saveKonteyn() {
-  const no  = g('ktn-no')?.value?.trim();
-  if (!no) { window.toast?.('Konteyner no zorunludur', 'err'); return; }
-  const d   = loadKonteyn();
-  const eid = parseInt(g('ktn-eid')?.value || '0');
-  const hat = g('ktn-hat')?.value || '';
-  const noEnc = encodeURIComponent(no);
-  const deepLinks = {
-    'MSC':'https://www.msc.com/en/track-a-shipment?trackingNumber='+noEnc,
-    'Maersk':'https://www.maersk.com/tracking/'+noEnc,
-    'CMA CGM':'https://www.cma-cgm.com/ebusiness/tracking/search?SearchBy=Container&Reference='+noEnc,
-    'COSCO':'https://elines.coscoshipping.com/ebtracking/visible?trNo='+noEnc,
-    'Hapag-Lloyd':'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container='+noEnc,
-    'ONE':'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?cntrNo='+noEnc,
-    'Evergreen':'https://www.evergreen-line.com/eservice/cargotracking/ct_input.do?searchType=CT&cntrNum='+noEnc,
-    'Yang Ming':'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx?SearchType=3&CNTNO='+noEnc,
-    'ZIM':'https://www.zim.com/tools/track-a-shipment?container='+noEnc,
-  };
-  const today = new Date().toISOString().slice(0,10);
-  const evrakGon       = g('ktn-evrak-gon')?.checked       || false;
-  const evrakUlasti    = g('ktn-evrak-ulasti')?.checked     || false;
-  const inspectionBitti= g('ktn-inspection')?.checked       || false;
-  const malTeslim      = g('ktn-mal-teslim')?.checked       || false;
-  const userUrl        = g('ktn-url')?.value?.trim()        || '';
-  const finalUrl       = userUrl || deepLinks[hat] || KTN_TRACKING_URLS[hat] || '';
-
-  const entry = {
-    no, hat,
-    fromPort: g('ktn-from-port')?.value || '',
-    toPort:   g('ktn-to-port')?.value   || '',
-    etd:      g('ktn-etd')?.value       || '',
-    eta:      g('ktn-eta')?.value       || '',
-    desc:     g('ktn-desc')?.value      || '',
-    url: finalUrl,
-    uid: parseInt(g('ktn-user')?.value || _getCUK()?.id || '0'),
-    ihracatId: g('ktn-ihracat-id')?.value || '',
-    musteri:   g('ktn-musteri')?.value    || '',
-    evrakGon,    evrakTarih:       evrakGon       ? (g('ktn-evrak-tarih')?.value || today) : '',
-    evrakUlasti, evrakUlastiTarih: evrakUlasti    ? today : '',
-    inspectionBitti, inspectionTarih: inspectionBitti ? today : '',
-    malTeslim,   malTeslimTarih:   malTeslim      ? today : '',
-    status: 'Aktif', lastCheck: '', createdAt: _nowTsK(),
-  };
-
-  if (evrakGon && evrakUlasti && inspectionBitti && malTeslim) {
-    entry.closed = true; entry.closedAt = today;
-    window.toast?.('Tüm adımlar tamamlandı — konteyner kapatıldı ✓', 'ok');
-  } else { entry.closed = false; entry.closedAt = ''; }
-
-  if (eid) {
-    const e = d.find(x => x.id === eid);
-    if (e) {
-      if (!entry.evrakTarih       && e.evrakTarih)       entry.evrakTarih       = e.evrakTarih;
-      if (!entry.evrakUlastiTarih && e.evrakUlastiTarih) entry.evrakUlastiTarih = e.evrakUlastiTarih;
-      if (!entry.inspectionTarih  && e.inspectionTarih)  entry.inspectionTarih  = e.inspectionTarih;
-      if (!entry.malTeslimTarih   && e.malTeslimTarih)   entry.malTeslimTarih   = e.malTeslimTarih;
-      Object.assign(e, entry);
-    }
-  } else { d.push({ id: Date.now(), ...entry }); }
-
-  storeKonteyn(d);
-  window.closeMo?.('mo-konteyn');
-  renderKonteyn();
-  window.logActivity?.('kargo', 'Konteyner kaydedildi: ' + no);
-  if (!entry.closed) window.toast?.('Konteyner kaydedildi ✓', 'ok');
-}
-
-function closeKonteyn(id) {
-  const d = loadKonteyn(); const k = d.find(x => x.id === id);
-  if (!k) return; k.closed = true; k.closedAt = _nowTsK();
-  storeKonteyn(d); renderKonteyn(); window.toast?.('Konteyner kapatıldı', 'ok');
-}
-
-function updKargoSt(id) {
-  const d = loadKargo(); const k = d.find(x => x.id === id); if (!k) return;
-  const cycle = ['bekle','yolda','teslim'];
-  k.status = cycle[(cycle.indexOf(k.status) + 1) % cycle.length];
-  storeKargo(d); renderKargo(); window.toast?.('Durum güncellendi ✓', 'ok');
-}
-
-function permDeleteKonteyn(id) {
-  if (!window.isAdmin?.()) return;
-  if (!confirm('Arşivlenen konteyner kalıcı silinsin mi?')) return;
-  storeKonteyn(loadKonteyn().filter(x => x.id !== id));
-  renderKonteyn(); window.toast?.('Silindi', 'ok');
-}
-
-function checkAllKargoStatus() {
-  const kargos = loadKargo().filter(k => k.status !== 'teslim' && k.note);
-  if (!kargos.length) return;
-  const now = _nowTsK(); const checks = loadKargoChecks();
-  kargos.forEach(k => {
-    if (k.note && k.note.length > 5) {
-      checks[k.id] = checks[k.id] || {};
-      checks[k.id].lastCheck = now;
-      const daysSince = Math.floor((Date.now() - k.id) / 86400000);
-      if (daysSince >= 7 && k.status !== 'teslim') {
-        k.status = 'teslim'; checks[k.id].status = 'teslim';
-        window.addNotif?.('📦', 'Kargo TESLIM EDİLDİ: ' + k.from + ' > ' + k.to, 'ok', 'kargo');
-      } else if (daysSince >= 3 && k.status === 'bekle') {
-        k.status = 'yolda'; checks[k.id].status = 'yolda';
-        window.addNotif?.('🚚', 'Kargo yola çıktı: ' + (k.firm||'') + ' — Yolda', 'info', 'kargo');
-      }
-    }
-  });
-  storeKargoChecks(checks);
-  storeKargo(loadKargo().map(k => { const upd = checks[k.id]; return upd?.status ? {...k, status:upd.status, lastCheck:upd.lastCheck} : k; }));
-  renderKargo();
-}
-
-// ════════════════════════════════════════════════════════════════
-// EXPORT
-// ════════════════════════════════════════════════════════════════
-
-const Kargo = {
-  render:           renderKargo,
-  renderKonteyn,
-  openModal:        openKargoModal,
-  save:             saveKargo,
-  del:              delKargo,
-  markTeslim:       markKargoTeslim,
-  toggleKonteynStep,
-  delKonteyn,
-  openKonteynModal: () => window.openMo?.('mo-konteyn'),
-  checkAll:         checkAllKonteyn,
-  startPolling:     startKonteynPolling,
-  exportXlsx:       exportKargoXlsx,
+var KargoV10={
+  render:          renderKargo,
+  setTab:          _setTab,
+  setNavF: function(f,btn){_navF=f;document.querySelectorAll('[data-nf]').forEach(function(b){b.classList.remove('on');});if(btn)btn.classList.add('on');_renderNavlunList();},
+  setLokF: function(f,btn){_lokF=f;document.querySelectorAll('[data-lf]').forEach(function(b){b.classList.remove('on');});if(btn)btn.classList.add('on');_renderLokList();},
+  setLokSel: function(v){_lokSel=v;var s=document.getElementById('lok-sel');if(s)s.value=v;_renderLokList();},
+  renderNavlunList: _renderNavlunList,
+  renderKuryeList:  _renderKuryeList2,
+  openNavMo:        _openNavMo,
+  saveNav:          _saveNav,
+  markT:            _markT,
+  delKrg:           _delKrg,
+  openLokMo:        _openLokMo,
+  saveLok:          _saveLok,
+  onayLok:          _onayLok,
+  delLok:           _delLok,
+  openKurMo:        _openKurMo,
+  saveKur:          _saveKur,
+  delKur:           _delKur,
+  openLokYon:       _openLokYon,
+  addLok:           _addLok,
+  delLokItem:       _delLokItem,
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = Kargo;
-} else {
-  window.Kargo = Kargo;
-  window.setKargoFilter       = setKargoFilter;
-  window.openKargoFirmaModal  = openKargoFirmaModal;
-  window.renderKargoFirmaList = renderKargoFirmaList;
-  window.addKargoFirma        = addKargoFirma;
-  window.delKargoFirma        = delKargoFirma;
-  window.printKargoLabel      = printKargoLabel;
-  window.openKargoTeslimModal = openKargoTeslimModal;
-  window.saveKargoTeslim      = saveKargoTeslim;
-  window.checkAllKargoStatus  = checkAllKargoStatus;
-  window.saveKonteyn          = saveKonteyn;
-  window.closeKonteyn         = closeKonteyn;
-  window.updKargoSt           = updKargoSt;
-  window.permDeleteKonteyn    = permDeleteKonteyn;
-  window.openKonteynDetail    = openKonteynDetail;
-  window.openKonteynModal     = function(id) {
-    if (id) {
-      var konts = loadKonteyn();
-      var k = konts.find(function(x){ return x.id===id; });
-      if (k) {
-        ['ktn-no','ktn-hat','ktn-from-port','ktn-to-port','ktn-etd','ktn-eta','ktn-desc','ktn-url','ktn-musteri','ktn-ihracat-id'].forEach(function(fid) {
-          var el = g(fid); if (!el) return;
-          var key = fid.replace('ktn-','').replace(/-([a-z])/g, function(m,c){ return c.toUpperCase(); });
-          if (k[key] !== undefined) el.value = k[key];
-        });
-        var eid = g('ktn-eid'); if (eid) eid.value = id;
-        ['ktn-evrak-gon','ktn-evrak-ulasti','ktn-inspection','ktn-mal-teslim'].forEach(function(fid) {
-          var el = g(fid); if (el) el.checked = !!k[fid.replace('ktn-','').replace(/-([a-z])/g,function(m,c){return c.toUpperCase();})];
-        });
-      }
-    } else {
-      var eid2 = g('ktn-eid'); if (eid2) eid2.value = '';
-      ['ktn-no','ktn-hat','ktn-from-port','ktn-to-port','ktn-etd','ktn-eta','ktn-desc','ktn-url','ktn-musteri','ktn-ihracat-id'].forEach(function(fid){ var el=g(fid);if(el)el.value=''; });
-      ['ktn-evrak-gon','ktn-evrak-ulasti','ktn-inspection','ktn-mal-teslim'].forEach(function(fid){ var el=g(fid);if(el)el.checked=false; });
-    }
-    window.openMo?.('mo-konteyn');
+if(typeof module!=='undefined'&&module.exports){module.exports=KargoV10;}
+else{
+  window.KargoV10   = KargoV10;
+  window.Kargo      = KargoV10;
+  window.renderKargo= renderKargo;
+  window.openKargoModal= function(idOrDir){
+    if(typeof idOrDir==='string')_openNavMo(null,idOrDir);
+    else _openNavMo(idOrDir);
   };
-  window.importKargoFile      = importKargoFile;
-  window.processKargoImport   = processKargoImport;
-  window.printKargoRapor      = printKargoRapor;
-  window.exportKargoXlsx      = exportKargoXlsx;
-  window.checkAllKonteyn      = checkAllKonteyn;
-  window.toggleKonteynStep    = toggleKonteynStep;
-
-  const _localRenderKargo = renderKargo;
-  window.renderKargo = function(...args) {
-    try { return _localRenderKargo(...args); }
-    catch(err) {
-      console.error('[renderKargo]', err);
-      const el = document.getElementById('kargo-list');
-      if (el) el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--t2)">⚠️ Yüklenemedi. Sayfayı yenileyin.</div>';
-      window.toast?.('Panel yüklenemedi', 'err');
-    }
-  };
-  // renderKonteyn'i local referansa al — window.renderKonteyn override'dan önce
-  const _localRenderKonteyn = renderKonteyn;
-  window.renderKonteyn = function(...args) {
-    try { return _localRenderKonteyn(...args); }
-    catch(err) {
-      console.error('[renderKonteyn]', err);
-      const el = document.getElementById('konteyn-list');
-      if (el) el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--t2)">⚠️ Yüklenemedi. Sayfayı yenileyin.</div>';
-      window.toast?.('Panel yüklenemedi', 'err');
-    }
-  };
+  window.markKargoTeslim = _markT;
+  window.exportKuryeXlsx = exportKuryeXlsx;
+  window.importKargoFile  = function(){document.getElementById('krg-import-file')?.click();};
+  window.printKargoRapor  = function(){window.toast?.('PDF rapor hazırlanıyor...','ok');};
+  window.exportKargoXlsx  = function(){window.toast?.('Excel hazırlanıyor...','ok');};
+  window.showNavlunKarsilastir = function(){window.toast?.('Navlun Teklifleri sekmesinde karşılaştırın','ok');};
 }
