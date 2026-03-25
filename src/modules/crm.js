@@ -129,14 +129,15 @@ function renderCrm(){
   if(statusF)fl=fl.filter(c=>c.status===statusF);
   if(sehirF) fl=fl.filter(c=>c.city===sehirF);
   if(search) fl=fl.filter(c=>c.name.toLowerCase().includes(search)||(c.contact||'').toLowerCase().includes(search)||(c.city||'').toLowerCase().includes(search));
-  _stcLegacy('crm-total',   crm.length);
-  _stcLegacy('crm-active',  crm.filter(c=>c.status==='aktif').length);
-  _stcLegacy('crm-lead',    crm.filter(c=>c.status==='lead').length);
-  _stcLegacy('crm-pipeline',crm.filter(c=>['teklif','muzakere'].includes(c.status)).length);
-  const totalVal=crm.reduce((a,c)=>a+(c.value||0),0);
+  const _crmStats = _isAdminCLegacy() ? crm : crm.filter(c=>c.owner===_CUcLegacy()?.id);
+  _stcLegacy('crm-total',   _crmStats.length);
+  _stcLegacy('crm-active',  _crmStats.filter(c=>c.status==='aktif').length);
+  _stcLegacy('crm-lead',    _crmStats.filter(c=>c.status==='lead').length);
+  _stcLegacy('crm-pipeline',_crmStats.filter(c=>['teklif','muzakere'].includes(c.status)).length);
+  const totalVal=_crmStats.reduce((a,c)=>a+(c.value||0),0);
   _stcLegacy('crm-value',totalVal.toLocaleString('tr-TR'));
   const nb=_gc('nb-crm-b');
-  if(nb){const n=crm.filter(c=>c.status==='lead').length;nb.textContent=n;nb.style.display=n>0?'inline':'none';}
+  if(nb){const n=_crmStats.filter(c=>c.status==='lead').length;nb.textContent=n;nb.style.display=n>0?'inline':'none';}
   const cont=_gc('crm-view-cont');if(!cont)return;
   if(!fl.length){
     cont.innerHTML=`<div style="padding:40px;text-align:center;color:var(--t2)"><div style="font-size:32px;margin-bottom:10px">🤝</div>Müşteri bulunamadı.</div>`;

@@ -553,7 +553,9 @@ function renderOdemeler() {
   const weekEndStr = weekEnd.toISOString().slice(0,10);
   const thisMonth  = today.slice(0,7);
 
-  const all = window.loadOdm ? loadOdm() : [];
+  const _allRaw = window.loadOdm ? loadOdm() : [];
+  const _cuOdm  = _CUo();
+  const all     = _isAdminO() ? _allRaw : _allRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
 
   // Filtreler
   const q      = (_go('odm-search')?.value || '').toLowerCase();

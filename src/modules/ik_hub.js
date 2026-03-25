@@ -779,7 +779,29 @@ function renderIkPersonel() {
   const dept   = _gik('ikp-dept')?.value   || '';
   const status = _gik('ikp-status')?.value || '';
 
+  const _cuPer = _CUik();
   const all = data.filter(p => !p.isDeleted);
+  // Non-admin: sadece kendi kaydını görsün
+  if (!_isAdminIk()) {
+    const myRecord = all.filter(p => p.email === _cuPer?.email || p.id === _cuPer?.id);
+    if (myRecord.length) {
+      _stik('ikp-total', 1); _stik('ikp-aktif', myRecord[0].status==='active'?1:0);
+      _stik('ikp-deneme', myRecord[0].status==='probation'?1:0);
+      _stik('ikp-cikis', 0); _stik('ikp-aday', 0);
+      const frag = document.createDocumentFragment();
+      // Tek kart render — kendi kaydı
+      myRecord.forEach(p => {
+        const card = document.createElement('div');
+        card.style.cssText = 'padding:16px;background:var(--s2);border-radius:10px;border:1px solid var(--b)';
+        card.innerHTML = `<div style="font-weight:600;font-size:14px;color:var(--t)">${escapeHtml(p.name)}</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:4px">${escapeHtml(p.pos||'')} — ${escapeHtml(p.dept||'')}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:4px">Başlangıç: ${p.start||'—'} / Durum: ${p.status||'—'}</div>`;
+        frag.appendChild(card);
+      });
+      cont.replaceChildren(frag);
+      return;
+    }
+  }
   _stik('ikp-total',  all.length);
   _stik('ikp-aktif',  all.filter(p=>p.status==='active').length);
   _stik('ikp-deneme', all.filter(p=>p.status==='probation').length);
@@ -1426,7 +1448,9 @@ function renderIkSozlesme() {
   const today=new Date().toISOString().slice(0,10);
   const soon=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
   const users=typeof loadUsers==='function'?loadUsers():[];
+  const _cuSoz=_CUik();
   let data=_loadSoz().filter(s=>!s.isDeleted);
+  if(!_isAdminIk()) data=data.filter(s=>s.uid===_cuSoz?.id);
 
   _stik('iksoz-total', data.length);
   _stik('iksoz-aktif', data.filter(s=>!s.bitis||s.bitis>=today).length);

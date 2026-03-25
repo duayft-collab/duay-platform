@@ -1707,7 +1707,9 @@ function checkTebligatAlarms() {
 
 // ── Render — DocumentFragment ────────────────────────────────────
 function renderTebligat() {
-  const d      = loadTebligat();
+  const _cuTeb = _CUh();
+  const _allTeb = loadTebligat();
+  const d      = _isAdminH() ? _allTeb : _allTeb.filter(t => t.uid === _cuTeb?.id || t.assignee === _cuTeb?.id);
   const users  = loadUsers();
   const todayS = new Date().toISOString().slice(0, 10);
   const today  = new Date();
