@@ -2603,6 +2603,105 @@ function _pusInit() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// ANLIK GÖREV ATAMA BİLDİRİMİ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Görev atanınca/devredilince ekranda dikkat çekici banner gösterir.
+ * CU atanan kişiyse hemen gösterir; değilse atlanır.
+ * Banner 8 saniye kalır, tıklanınca görev detayına gider.
+ *
+ * @param {number} targetUid  Atanan kullanıcı ID
+ * @param {number} taskId     Görev ID
+ * @param {string} title      Görev başlığı
+ * @param {number} pri        Öncelik (1-4)
+ * @param {string} due        Bitiş tarihi
+ * @param {string} assigner   Atayan kişi adı
+ */
+function _showInstantTaskNotif(targetUid, taskId, title, pri, due, assigner) {
+  // Sadece atanan kişinin ekranında göster
+  const cu = _getCU();
+  if (!cu || cu.id !== targetUid) return;
+
+  // Mevcut banner varsa kaldır
+  const old = document.getElementById('pus-instant-notif');
+  if (old) old.remove();
+
+  const PRI_MAP = { 1: { l:'Kritik', c:'#EF4444', bg:'#FEF2F2' }, 2: { l:'Yuksek', c:'#F59E0B', bg:'#FFFBEB' }, 3: { l:'Normal', c:'#3B82F6', bg:'#EFF6FF' }, 4: { l:'Dusuk', c:'#6B7280', bg:'#F9FAFB' } };
+  const p = PRI_MAP[pri] || PRI_MAP[3];
+  const dueTxt = due ? due : 'Tarih yok';
+
+  const banner = document.createElement('div');
+  banner.id = 'pus-instant-notif';
+  banner.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;max-width:400px;min-width:320px;' +
+    'background:var(--s,#fff);border:2px solid ' + p.c + ';border-radius:14px;padding:0;' +
+    'box-shadow:0 8px 32px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.04);' +
+    'cursor:pointer;animation:_pusNotifSlide .35s ease-out;overflow:hidden;font-family:inherit';
+
+  banner.innerHTML = `
+    <div style="background:${p.c};padding:10px 16px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">📋</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#fff">Yeni Gorev Atandi</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.8)">${escapeHtml(assigner)} tarafindan</div>
+      </div>
+      <button onclick="event.stopPropagation();document.getElementById('pus-instant-notif')?.remove()"
+        style="background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;padding:0 2px;line-height:1">&times;</button>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="font-size:15px;font-weight:700;color:var(--t,#1a1a2e);margin-bottom:8px;line-height:1.3">${escapeHtml(title)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:${p.bg};color:${p.c};border:1px solid ${p.c}30">${p.l}</span>
+        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--s2,#f1f5f9);color:var(--t2,#475569)">📅 ${escapeHtml(dueTxt)}</span>
+      </div>
+    </div>
+    <div style="padding:0 16px 12px;display:flex;gap:8px">
+      <span style="flex:1;font-size:10px;color:var(--t3,#94a3b8);align-self:center">Gorevi gormek icin tiklayin</span>
+      <div style="width:100%;height:3px;background:var(--s2,#e2e8f0);border-radius:2px;position:absolute;bottom:0;left:0">
+        <div id="pus-notif-progress" style="height:100%;background:${p.c};border-radius:2px;width:100%;transition:width linear"></div>
+      </div>
+    </div>`;
+
+  // CSS animasyonu ekle (yoksa)
+  if (!document.getElementById('pus-notif-style')) {
+    const style = document.createElement('style');
+    style.id = 'pus-notif-style';
+    style.textContent = '@keyframes _pusNotifSlide{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(banner);
+
+  // Progress bar — 8 saniyede daralır
+  const prog = document.getElementById('pus-notif-progress');
+  if (prog) requestAnimationFrame(() => { prog.style.width = '0%'; prog.style.transitionDuration = '8s'; });
+
+  // Tıklanınca göreve git
+  banner.addEventListener('click', () => {
+    banner.remove();
+    // Pusula paneline geç
+    if (window.nav) window.nav('pusula');
+    // Görev detayını aç
+    setTimeout(() => {
+      if (typeof openPusDetail === 'function') openPusDetail(taskId);
+      else window.Pusula?.openDetail?.(taskId);
+    }, 300);
+  });
+
+  // 8 saniye sonra kaldır (slide-out)
+  setTimeout(() => {
+    if (!document.getElementById('pus-instant-notif')) return;
+    banner.style.transition = 'transform .3s ease-in, opacity .3s ease-in';
+    banner.style.transform = 'translateX(120%)';
+    banner.style.opacity = '0';
+    setTimeout(() => banner.remove(), 350);
+  }, 8000);
+}
+
+// Global'e at — saveTask'tan erişilebilsin
+window._showInstantTaskNotif = _showInstantTaskNotif;
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 
@@ -3606,6 +3705,7 @@ const Pusula = {
   editSub:      openSubTaskEdit,
   renderSubs:   renderSubTasks,
   checkAlarms:  checkSubTaskAlarms,
+  showInstantNotif: _showInstantTaskNotif,
   // Chat
   openChat:     openTaskChat,
   renderChat:   renderTaskChatMsgs,
