@@ -1952,6 +1952,14 @@ function addSubTask(parentId) {
         ${[...new Set(loadTasks().map(t=>t.department).filter(Boolean))].sort().map(d=>`<option value="${d}">`).join('')}
       </datalist>
     </div>
+    <div class="fr" style="margin-top:2px">
+      <div class="fl">📎 DOKÜMAN</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="file" id="subadd-file" style="flex:1;font-size:12px" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip">
+        <span id="subadd-file-name" style="font-size:11px;color:var(--t3)"></span>
+      </div>
+      <input class="fi" id="subadd-link" placeholder="veya doküman linki yapıştır..." style="margin-top:6px">
+    </div>
     <div class="mf">
       <button class="btn" onclick="document.getElementById('mo-subadd').remove()">İptal</button>
       <button class="btn btnp" onclick="_saveSubTask(${parentId})">Ekle</button>
@@ -1973,24 +1981,90 @@ function _saveSubTask(parentId) {
   if (!parent) return;
   if (!parent.subTasks) parent.subTasks = [];
 
-  parent.subTasks.push({
-    id:         generateNumericId(),
-    title,
-    uid:        parseInt(g('subadd-user')?.value) || _getCU()?.id,
-    pri:        parseInt(g('subadd-pri')?.value)  || 2,
-    department: g('subadd-dept')?.value  || '',
-    start:      g('subadd-start')?.value || null,
-    due:        g('subadd-due')?.value   || null,
-    time:       g('subadd-time')?.value  || null,
-    alarm:      g('subadd-alarm')?.value || null,
-    done:       false,
-    createdAt:  nowTs(),
-  });
+  const link    = (g('subadd-link')?.value || '').trim();
+  const fileEl  = g('subadd-file');
 
-  saveTasks(d);
-  g('mo-subadd')?.remove();
-  renderPusula();
-  window.toast?.('Alt görev eklendi ✓', 'ok');
+  const doSave = (fileData) => {
+    const sub = {
+      id:         generateNumericId(),
+      title,
+      uid:        parseInt(g('subadd-user')?.value) || _getCU()?.id,
+      pri:        parseInt(g('subadd-pri')?.value)  || 2,
+      department: g('subadd-dept')?.value  || '',
+      start:      g('subadd-start')?.value || null,
+      due:        g('subadd-due')?.value   || null,
+      time:       g('subadd-time')?.value  || null,
+      alarm:      g('subadd-alarm')?.value || null,
+      doc:        fileData || null,
+      docLink:    link || null,
+      done:       false,
+      createdAt:  nowTs(),
+    };
+
+    parent.subTasks.push(sub);
+    saveTasks(d);
+
+    // Alarm bildirim kaydı — due + alarm varsa zamanlayıcıya ekle
+    if (sub.due && sub.alarm) {
+      _scheduleSubTaskAlarm(parent, sub);
+    }
+
+    g('mo-subadd')?.remove();
+    renderPusula();
+    window.toast?.('Alt görev eklendi ✓', 'ok');
+  };
+
+  // Dosya varsa oku, yoksa direkt kaydet
+  if (fileEl?.files?.[0]) {
+    const reader = new FileReader();
+    reader.onload = ev => doSave({ name: fileEl.files[0].name, data: ev.target.result });
+    reader.readAsDataURL(fileEl.files[0]);
+  } else {
+    doSave(null);
+  }
+}
+
+/**
+ * Alt görev alarmını zamanlayıcıya ekler.
+ * due + time + alarm (dakika) hesaplanarak setTimeout ile bildirim planlar.
+ * Sayfa kapanırsa alarm kaybolur — checkSubTaskAlarms() ile yeniden kurulur.
+ */
+function _scheduleSubTaskAlarm(parent, sub) {
+  if (!sub.due || !sub.alarm) return;
+  const alarmMin  = parseInt(sub.alarm) || 0;
+  if (!alarmMin) return;
+  const dueStr    = sub.due + (sub.time ? 'T' + sub.time : 'T09:00');
+  const dueMs     = new Date(dueStr).getTime();
+  const alarmMs   = dueMs - alarmMin * 60000;
+  const delay     = alarmMs - Date.now();
+  if (delay <= 0) return; // geçmiş — bildirim gerekmiyor
+  if (delay > 86400000 * 7) return; // 7 günden fazla — sayfa açık kalmaz
+
+  setTimeout(() => {
+    const cu = _getCU();
+    // Alarm hâlâ geçerli mi kontrol et (silinmiş/tamamlanmış olabilir)
+    const tasks  = loadTasks();
+    const pTask  = tasks.find(t => t.id === parent.id);
+    const subNow = pTask?.subTasks?.find(s => s.id === sub.id);
+    if (!subNow || subNow.done) return;
+    window.addNotif?.('🔔', `"${escapeHtml(subNow.title)}" — ${alarmMin < 60 ? alarmMin + ' dk' : Math.floor(alarmMin/60) + ' saat'} sonra bitiş`, 'warn', 'pusula');
+    window.toast?.(`🔔 "${subNow.title}" hatırlatıcısı`, 'warn');
+  }, delay);
+}
+
+/**
+ * Sayfa yüklendiğinde mevcut alt görev alarmlarını tarar ve kurar.
+ * startRealtimeSync sonrasında veya init'te çağrılmalı.
+ */
+function checkSubTaskAlarms() {
+  const tasks = loadTasks();
+  tasks.forEach(parent => {
+    (parent.subTasks || []).forEach(sub => {
+      if (!sub.done && sub.due && sub.alarm) {
+        _scheduleSubTaskAlarm(parent, sub);
+      }
+    });
+  });
 }
 
 /** Alt görevi tamamlandı olarak işaretler */
@@ -2134,6 +2208,8 @@ function renderSubTasks(parentId, subTasks, container) {
       <span style="font-size:10px;color:var(--t3)">${u.name.split(' ')[0]}</span>
       ${s.due ? `<span style="font-size:10px;color:${dueColor}">📅 ${s.due.slice(5)}</span>` : ''}
       ${s.time ? `<span style="font-size:10px;color:var(--t3)">⏰ ${s.time}</span>` : ''}
+      ${s.alarm ? `<span style="font-size:10px;color:var(--am)" title="${s.alarm} dk önce hatırlatıcı">🔔</span>` : ''}
+      ${s.doc || s.docLink ? `<a ${s.docLink ? 'href="'+escapeHtml(s.docLink)+'" target="_blank"' : 'href="#" onclick="event.preventDefault()"'} style="font-size:10px;color:var(--ac);text-decoration:none" title="${s.doc ? escapeHtml(s.doc.name) : 'Doküman linki'}">📎</a>` : ''}
       <button onclick="Pusula.editSub(${parentId},${s.id})" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:1px 3px">✏️</button>
       <button onclick="Pusula.delSub(${parentId},${s.id})" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:1px 3px">✕</button>`;
     subBody.appendChild(row);
@@ -2522,6 +2598,8 @@ function _pusInit() {
   PUS_VIEW = localStorage.getItem('ak_pus_view') || 'list';
   const vBtn = g('pus-v-' + PUS_VIEW);
   if (vBtn) vBtn.classList.add('on', 'active');
+  // Alt görev alarmlarını tara ve zamanlayıcıları kur
+  setTimeout(checkSubTaskAlarms, 1000);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3527,6 +3605,7 @@ const Pusula = {
   delSub:       delSubTask,
   editSub:      openSubTaskEdit,
   renderSubs:   renderSubTasks,
+  checkAlarms:  checkSubTaskAlarms,
   // Chat
   openChat:     openTaskChat,
   renderChat:   renderTaskChatMsgs,
