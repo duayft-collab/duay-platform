@@ -175,7 +175,193 @@ const PDF_KEY = 'ak_pirim_pdf_v1';
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — PANEL HTML (inject)
 // ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+// DİNAMİK MODAL OLUŞTURUCU — index.html / modals.js bağımlılığı yok
+// ════════════════════════════════════════════════════════════════
+function _ensurePirimModals() {
+  // mo-pirim-params
+  if (!document.getElementById('mo-pirim-params')) {
+    const mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-pirim-params'; mo.style.zIndex = '2300';
+    mo.innerHTML = `
+      <div class="moc" style="max-width:640px;padding:0;border-radius:14px;overflow:hidden">
+        <div style="background:#1e1b4b;padding:14px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:600">⚙️ Prim Parametreleri</div>
+          <button onclick="window.closeMo?.('mo-pirim-params')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:16px">×</button>
+        </div>
+        <div style="max-height:72vh;overflow-y:auto">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--b)">
+            <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">İşlem Türü Oranları</div>
+            <div id="pirim-params-type-list"></div>
+          </div>
+          <div style="padding:16px 20px;border-bottom:1px solid var(--b)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Kademeler — Yeni Avcı</div>
+              <button onclick="Pirim.addTierRow('NA')" class="btn btns" style="font-size:11px">+ Kademe</button>
+            </div>
+            <div id="pirim-params-tier-na"></div>
+          </div>
+          <div style="padding:16px 20px;border-bottom:1px solid var(--b)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Kademeler — Sadık Çiftçi</div>
+              <button onclick="Pirim.addTierRow('SC')" class="btn btns" style="font-size:11px">+ Kademe</button>
+            </div>
+            <div id="pirim-params-tier-sc"></div>
+          </div>
+          <div style="padding:16px 20px">
+            <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Çarpanlar</div>
+            <div id="pirim-params-multipliers"></div>
+          </div>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
+          <button class="btn" onclick="window.closeMo?.('mo-pirim-params')">İptal</button>
+          <button class="btn btnp" onclick="Pirim.saveParams()">💾 Kaydet</button>
+        </div>
+      </div>`;
+    document.body.appendChild(mo);
+  }
+
+  // mo-pirim-peer
+  if (!document.getElementById('mo-pirim-peer')) {
+    const mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-pirim-peer'; mo.style.zIndex = '2300';
+    mo.innerHTML = `
+      <div class="moc" style="max-width:420px;padding:0;border-radius:14px;overflow:hidden">
+        <div style="background:#0369A1;padding:14px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:600">👤 Ara Onaya Yönlendir</div>
+          <button onclick="window.closeMo?.('mo-pirim-peer')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:16px">×</button>
+        </div>
+        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+          <input type="hidden" id="peer-pirim-id">
+          <div class="fr">
+            <div class="fl">ONAYCI KİŞİ *</div>
+            <select class="fi" id="peer-user-sel"><option value="">— Kişi seçin —</option></select>
+          </div>
+          <div class="fr">
+            <div class="fl">NOT (opsiyonel)</div>
+            <textarea class="fi" id="peer-note" rows="3" style="resize:none" placeholder="Neden yönlendiriyorsunuz?"></textarea>
+          </div>
+          <div style="font-size:11px;color:var(--t3);padding:8px;background:var(--s2);border-radius:7px">
+            💡 Seçilen kişi onayladıktan sonra siz nihai onayı vereceksiniz.
+          </div>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
+          <button class="btn" onclick="window.closeMo?.('mo-pirim-peer')">İptal</button>
+          <button class="btn btnp" onclick="Pirim.sendToPeer()">📨 Yönlendir</button>
+        </div>
+      </div>`;
+    document.body.appendChild(mo);
+  }
+
+  // mo-pirim-detail
+  if (!document.getElementById('mo-pirim-detail')) {
+    const mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-pirim-detail'; mo.style.zIndex = '2300';
+    mo.innerHTML = `
+      <div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">
+        <div style="background:#1e1b4b;padding:14px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:600">🔍 Prim Detayı</div>
+          <button onclick="window.closeMo?.('mo-pirim-detail')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:16px">×</button>
+        </div>
+        <div id="pirim-detail-body" style="padding:18px 20px;max-height:65vh;overflow-y:auto"></div>
+        <div id="pirim-detail-footer" style="padding:12px 20px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--s2)">
+          <button class="btn" onclick="window.closeMo?.('mo-pirim-detail')">Kapat</button>
+        </div>
+      </div>`;
+    document.body.appendChild(mo);
+  }
+
+  // mo-pirim (prim ekleme/düzenleme modalı)
+  if (!document.getElementById('mo-pirim')) {
+    const mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-pirim'; mo.style.zIndex = '2200';
+    mo.innerHTML = `
+      <div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden">
+        <div style="background:#1e1b4b;padding:14px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:600" id="mo-pirim-t">+ Prim Ekle</div>
+          <button onclick="window.closeMo?.('mo-pirim')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:3px 10px;cursor:pointer;font-size:16px">×</button>
+        </div>
+        <div class="mob" style="padding:18px 22px;max-height:72vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+          <input type="hidden" id="prm-eid">
+          <!-- Tip seçici -->
+          <div class="fr"><div class="fl">İŞLEM TÜRÜ *</div>
+            <div id="prm-type-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+            <input type="hidden" id="prm-type">
+          </div>
+          <!-- Personel (admin için) -->
+          <div class="fr" id="prm-uid-row">
+            <div class="fl">PERSONEL *</div>
+            <select class="fi" id="prm-uid"><option value="">— Seçin —</option></select>
+          </div>
+          <!-- Baz tutar -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="fr"><div class="fl">BAZ TUTAR (₺) *</div>
+              <input class="fi" type="number" id="prm-base-amount" placeholder="0" min="0" oninput="Pirim.calcAuto()">
+            </div>
+            <div class="fr"><div class="fl">ORAN (%)
+              <span id="prm-rate-hint" style="font-size:10px;color:var(--t3);font-weight:400;margin-left:4px"></span>
+            </div>
+              <input class="fi" type="number" id="prm-oran" placeholder="—" step="0.01">
+            </div>
+          </div>
+          <!-- Net prim -->
+          <div style="padding:10px 14px;background:linear-gradient(135deg,var(--alb),var(--sf));border:1px solid var(--ac);border-radius:10px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;color:var(--t2)">Net Prim Tutarı</span>
+            <span style="font-size:22px;font-weight:800;color:var(--ac)" id="prm-total">—</span>
+          </div>
+          <input type="hidden" id="prm-base-amount-hidden">
+          <!-- Açıklama + kod -->
+          <div class="fr"><div class="fl">AÇIKLAMA *</div>
+            <input class="fi" id="prm-title" placeholder="Kısa açıklama...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="fr"><div class="fl">İŞLEM KODU</div>
+              <input class="fi" id="prm-code" placeholder="Opsiyonel">
+            </div>
+            <div class="fr"><div class="fl">TARİH *</div>
+              <input class="fi" type="date" id="prm-date">
+            </div>
+          </div>
+          <!-- Not -->
+          <div class="fr"><div class="fl">NOT</div>
+            <textarea class="fi" id="prm-note" rows="2" style="resize:none" placeholder="Ek bilgi..."></textarea>
+          </div>
+          <!-- Bonus/ceza (alım tipleri için) -->
+          <div id="prm-bonus-panel" style="display:none">
+            <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Bonus / Ceza Faktörleri</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px"><input type="checkbox" id="chk-yeni-tedarikci"> Yeni tedarikçi (+%15)</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px"><input type="checkbox" id="chk-capraz"> Çapraz satış (+%25)</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px"><input type="checkbox" id="chk-yeni-urun"> Yeni ürün grubu (+%25)</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px"><input type="checkbox" id="chk-tamamlayici-ihmal"> Tamamlayıcı ihmal (-%30)</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px"><input type="checkbox" id="chk-revizyon"> Revizyon cezası (-%7)</label>
+              <div style="display:flex;gap:10px;margin-top:4px">
+                <div class="fr" style="flex:1"><div class="fl">Gecikme (gün)</div>
+                  <input class="fi" type="number" id="inp-gecikme-gun" min="0" placeholder="0" oninput="Pirim.calcAuto()">
+                </div>
+                <div class="fr" style="flex:1"><div class="fl">Yönetici indirim (%)</div>
+                  <input class="fi" type="number" id="inp-yonetici-indirim" min="0" max="100" placeholder="0" oninput="Pirim.calcAuto()">
+                </div>
+                <div class="fr" style="flex:1"><div class="fl">Fiyat avantajı (₺)</div>
+                  <input class="fi" type="number" id="inp-fiyat-avantaji" min="0" placeholder="0" oninput="Pirim.calcAuto()">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">
+          <button class="btn" onclick="window.closeMo?.('mo-pirim')">İptal</button>
+          <button class="btn btnp" onclick="Pirim.save()" style="padding:9px 24px">💾 Onaya Gönder</button>
+        </div>
+      </div>`;
+    document.body.appendChild(mo);
+  }
+}
+window._ensurePirimModals = _ensurePirimModals;
+
 function _injectPirimPanel() {
+  _ensurePirimModals(); // Tüm modalleri DOM'a hazırla
   const panel = window.g('panel-pirim');
   if (!panel || panel.dataset.injected) return;
   panel.dataset.injected = '1';
@@ -611,6 +797,7 @@ function renderTrend() {
 // BÖLÜM 4 — MODAL AÇMA & KAYDET
 // ════════════════════════════════════════════════════════════════
 function openPirimModal(id) {
+  _ensurePirimModals();
   _injectPirimPanel();
   const users = window.loadUsers?.() || [];
   const usel  = window.g('prm-user');
@@ -895,8 +1082,8 @@ function approvePirim(id) {
 
 /** Admin: ara onay modalını aç — başka kullanıcıya yönlendir */
 function openPirimPeer(id) {
-  if (!window.isAdmin()) return;
-  _injectPirimPanel();
+  if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
+  _ensurePirimModals();
   const peerIdEl = window.g('peer-pirim-id');
   if (peerIdEl) peerIdEl.value = id;
 
@@ -1077,7 +1264,7 @@ function delPirim(id) {
 // BÖLÜM 6 — DETAY MODAL
 // ════════════════════════════════════════════════════════════════
 function showPirimDetail(id) {
-  _injectPirimPanel();
+  _ensurePirimModals();
   window._pirimDetailId = id;
   const p     = (window.loadPirim?.() || []).find(x => x.id === id); if (!p) return;
   const users = window.loadUsers?.() || [];
@@ -1241,7 +1428,7 @@ function _loadPdf() {
 let _PT = {}; // temp params editing object
 
 function openPirimParams() {
-  _injectPirimPanel();
+  _ensurePirimModals();
   if (!window.isAdmin()) { window.toast?.('Sadece yönetici erişebilir', 'err'); return; }
 
   // Mevcut parametreleri yükle (derin kopyala)
