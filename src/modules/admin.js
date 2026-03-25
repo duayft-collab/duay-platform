@@ -1291,6 +1291,7 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
   window.Admin = Admin;
   // V18 eklenen fonksiyonlar
+  window._adminRenderUsers = renderUsers; // panel_stubs.js tarafından çağrılır
   window.renderUsers = function(...args) {
   try {
     return renderUsers(...args);
