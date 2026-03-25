@@ -105,29 +105,202 @@ window.openKonteynModal = window.openKonteynModal || function(editId) {
   const eidEl = document.getElementById('ktn-eid');
   if (eidEl) eidEl.value = editId || '';
   // Personel select'i doldur
-  const sel = document.getElementById('ktn-uid');
+  const sel = document.getElementById('ktn-user');
   if (sel && sel.options.length <= 1) {
     const users = typeof loadUsers === 'function' ? loadUsers() : [];
     sel.innerHTML = '<option value="">Sorumlu seçin...</option>' +
-      users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+      users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
   }
   if (editId) {
     const k = (typeof loadKonteyn === 'function' ? loadKonteyn() : []).find(x => x.id === editId);
     if (k) {
-      ['ktn-no','ktn-hat','ktn-etd','ktn-eta','ktn-url'].forEach(id => {
+      ['ktn-no','ktn-seal','ktn-hat','ktn-etd','ktn-eta','ktn-url','ktn-desc','ktn-ihracat-id','ktn-musteri'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.value = k[id.replace('ktn-','')] || '';
+        const key = id.replace('ktn-','').replace('-','_');
+        if (el) el.value = k[key] || k[id.replace('ktn-','')] || '';
       });
+      const sealEl = document.getElementById('ktn-seal');
+      if (sealEl) sealEl.value = k.seal || '';
       if (sel) sel.value = String(k.uid || '');
+      // Süreç checkbox'ları
+      ['ktn-evrak-gon','ktn-evrak-ulasti','ktn-inspection','ktn-mal-teslim'].forEach(id => {
+        const el = document.getElementById(id);
+        const key = id.replace('ktn-','').replace(/-/g,'').replace('evrakgon','evrakGon').replace('evrakulasti','evrakUlasti').replace('inspection','inspectionBitti').replace('malteslim','malTeslim');
+        if (el) el.checked = !!k[key];
+      });
       document.getElementById('mo-ktn-t') && (document.getElementById('mo-ktn-t').textContent = '✏️ Konteyner Düzenle');
     }
   } else {
-    ['ktn-no','ktn-hat','ktn-etd','ktn-eta','ktn-url'].forEach(id => {
+    ['ktn-no','ktn-seal','ktn-hat','ktn-etd','ktn-eta','ktn-url','ktn-desc','ktn-ihracat-id','ktn-musteri'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
+    });
+    ['ktn-evrak-gon','ktn-evrak-ulasti','ktn-inspection','ktn-mal-teslim'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.checked = false;
     });
     document.getElementById('mo-ktn-t') && (document.getElementById('mo-ktn-t').textContent = '+ Konteyner Ekle');
   }
   window.openMo?.('mo-konteyn');
+};
+
+// saveKonteyn — Konteyner kaydetme (yeni/güncelleme)
+window.saveKonteyn = window.saveKonteyn || function() {
+  const no   = (document.getElementById('ktn-no')?.value || '').trim();
+  const seal = (document.getElementById('ktn-seal')?.value || '').trim();
+  if (!no)   { window.toast?.('Konteyner numarası zorunludur', 'err'); return; }
+  if (!seal) { window.toast?.('Mühür numarası zorunludur', 'err'); return; }
+
+  const eid = parseInt(document.getElementById('ktn-eid')?.value || '0');
+  const d   = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  const entry = {
+    no, seal,
+    hat:            document.getElementById('ktn-hat')?.value || '',
+    'from-port':    document.getElementById('ktn-from-port')?.value || '',
+    'to-port':      document.getElementById('ktn-to-port')?.value || '',
+    etd:            document.getElementById('ktn-etd')?.value || '',
+    eta:            document.getElementById('ktn-eta')?.value || '',
+    desc:           document.getElementById('ktn-desc')?.value || '',
+    uid:            parseInt(document.getElementById('ktn-user')?.value || '0') || null,
+    url:            document.getElementById('ktn-url')?.value || '',
+    ihracatId:      document.getElementById('ktn-ihracat-id')?.value || '',
+    musteri:        document.getElementById('ktn-musteri')?.value || '',
+    evrakGon:       document.getElementById('ktn-evrak-gon')?.checked || false,
+    evrakUlasti:    document.getElementById('ktn-evrak-ulasti')?.checked || false,
+    inspectionBitti:document.getElementById('ktn-inspection')?.checked || false,
+    malTeslim:      document.getElementById('ktn-mal-teslim')?.checked || false,
+  };
+
+  if (eid) {
+    const k = d.find(x => x.id === eid);
+    if (k) Object.assign(k, entry);
+  } else {
+    d.push({ id: generateNumericId(), closed: false, viewers: [], ...entry, createdAt: window.nowTs?.() || new Date().toISOString() });
+  }
+  if (typeof storeKonteyn === 'function') storeKonteyn(d);
+  window.closeMo?.('mo-konteyn');
+  window.toast?.(eid ? 'Konteyner güncellendi ✓' : 'Konteyner eklendi ✓', 'ok');
+  window.logActivity?.('kargo', (eid ? 'Konteyner güncellendi: ' : 'Konteyner eklendi: ') + no);
+  // Render tetikle
+  if (typeof window._renderNavlunList === 'function') window._renderNavlunList();
+  if (typeof window.renderKargo === 'function') window.renderKargo();
+  if (typeof window.Lojistik?.render === 'function') window.Lojistik.render();
+};
+
+// openKonteynDetail — Konteyner detay modalı (accordion yapıda)
+window.openKonteynDetail = window.openKonteynDetail || function(id) {
+  const konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  const k = konts.find(x => x.id === id);
+  if (!k) return;
+  const users = typeof loadUsers === 'function' ? loadUsers() : [];
+  const u = users.find(x => x.id === k.uid) || { name: '—' };
+  const steps = [
+    { key:'evrakGon',       l:'Evrak Gönderildi',           v:k.evrakGon },
+    { key:'evrakUlasti',    l:'Müşteri Evrakları Teslim Aldı', v:k.evrakUlasti },
+    { key:'inspectionBitti',l:'Inspection Tamamlandı',        v:k.inspectionBitti },
+    { key:'malTeslim',      l:'Müşteri Malları Teslim Aldı',  v:k.malTeslim },
+  ];
+  const pct = Math.round(steps.filter(s => s.v).length / steps.length * 100);
+  const isAdmin = window.isAdmin?.();
+
+  // Viewers/izin listesi
+  const viewerNames = (k.viewers || []).map(vid => {
+    const vu = users.find(x => x.id === vid);
+    return vu ? escapeHtml(vu.name) : '?';
+  });
+
+  const old = document.getElementById('mo-ktn-detail');
+  if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-ktn-detail'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:520px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:700;color:var(--t)">🚢 ${escapeHtml(k.no || '—')}</span>
+      <button onclick="document.getElementById('mo-ktn-detail').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:16px 20px;max-height:75vh;overflow-y:auto">
+      <!-- Mühür + Hat -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div><div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Mühür No</div><div style="font-size:13px;font-weight:600;color:var(--t);font-family:'DM Mono',monospace">${escapeHtml(k.seal || '—')}</div></div>
+        <div><div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Hat / Armatör</div><div style="font-size:13px;color:var(--t)">${escapeHtml(k.hat || '—')}</div></div>
+      </div>
+      <!-- Progress -->
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;font-weight:600;color:var(--t3)">İLERLEME</span><span style="font-size:11px;font-weight:700;color:var(--ac)">${pct}%</span></div>
+        <div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${pct===100?'#22C55E':'var(--ac)'};border-radius:3px;transition:width .3s"></div></div>
+      </div>
+      <!-- Accordion: Süreç Adımları -->
+      <div class="ktn-acc" style="border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px">
+        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('._arr').classList.toggle('_open')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+          <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase">Süreç Adımları</span>
+          <span class="_arr" style="font-size:10px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div style="display:none">${steps.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--b)"><span style="font-size:14px">${s.v ? '✅' : '⬜'}</span><span style="font-size:12px;color:var(--t)">${s.l}</span></div>`).join('')}</div>
+      </div>
+      <!-- Accordion: Rota & Tarihler -->
+      <div class="ktn-acc" style="border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px">
+        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('._arr').classList.toggle('_open')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+          <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase">Rota & Tarihler</span>
+          <span class="_arr" style="font-size:10px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div style="display:none;padding:10px 14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+            <div><span style="color:var(--t3)">Yükleme:</span> ${escapeHtml(k['from-port'] || '—')}</div>
+            <div><span style="color:var(--t3)">Varış:</span> ${escapeHtml(k['to-port'] || '—')}</div>
+            <div><span style="color:var(--t3)">ETD:</span> ${k.etd || '—'}</div>
+            <div><span style="color:var(--t3)">ETA:</span> ${k.eta || '—'}</div>
+          </div>
+          <div style="margin-top:8px;font-size:12px"><span style="color:var(--t3)">Sorumlu:</span> ${escapeHtml(u.name)}</div>
+          ${k.desc ? `<div style="margin-top:6px;font-size:12px;color:var(--t2)">${escapeHtml(k.desc)}</div>` : ''}
+        </div>
+      </div>
+      <!-- Accordion: Takip İzinleri (admin) -->
+      ${isAdmin ? `<div class="ktn-acc" style="border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px">
+        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('._arr').classList.toggle('_open')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+          <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase">Takip İzinleri (${(k.viewers||[]).length} kişi)</span>
+          <span class="_arr" style="font-size:10px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div style="display:none;padding:10px 14px">
+          <div id="ktn-viewers-${id}" style="margin-bottom:8px">${viewerNames.length ? viewerNames.map(n => `<span style="display:inline-block;font-size:11px;background:var(--s2);padding:2px 8px;border-radius:5px;margin:2px">${n}</span>`).join('') : '<span style="font-size:11px;color:var(--t3)">Henüz izin verilmemiş</span>'}</div>
+          <div style="display:flex;gap:6px">
+            <select id="ktn-add-viewer-${id}" class="fi" style="flex:1;font-size:12px">
+              <option value="">Kullanıcı seçin…</option>
+              ${users.filter(ux => ux.id !== k.uid && !(k.viewers||[]).includes(ux.id)).map(ux => `<option value="${ux.id}">${escapeHtml(ux.name)}</option>`).join('')}
+            </select>
+            <button class="btn btnp" style="font-size:11px;padding:4px 12px" onclick="window._addKtnViewer(${id})">+ İzin Ver</button>
+          </div>
+        </div>
+      </div>` : ''}
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+};
+
+// Konteyner takip izni ekle/kaldır
+window._addKtnViewer = function(ktnId) {
+  const sel = document.getElementById('ktn-add-viewer-' + ktnId);
+  const uid = parseInt(sel?.value || '0');
+  if (!uid) { window.toast?.('Kullanıcı seçin', 'err'); return; }
+  const d = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  const k = d.find(x => x.id === ktnId);
+  if (!k) return;
+  if (!k.viewers) k.viewers = [];
+  if (!k.viewers.includes(uid)) k.viewers.push(uid);
+  if (typeof storeKonteyn === 'function') storeKonteyn(d);
+  window.toast?.('Takip izni verildi ✓', 'ok');
+  // Detay modalını yeniden aç
+  document.getElementById('mo-ktn-detail')?.remove();
+  window.openKonteynDetail(ktnId);
+};
+window._removeKtnViewer = function(ktnId, uid) {
+  const d = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  const k = d.find(x => x.id === ktnId);
+  if (!k) return;
+  k.viewers = (k.viewers || []).filter(v => v !== uid);
+  if (typeof storeKonteyn === 'function') storeKonteyn(d);
+  window.toast?.('Takip izni kaldırıldı', 'ok');
+  document.getElementById('mo-ktn-detail')?.remove();
+  window.openKonteynDetail(ktnId);
 };
 
 // exportTasksXlsx — Pusula'dan alias

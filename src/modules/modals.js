@@ -329,10 +329,17 @@ function injectAllModals() {
       </div>
     </div>
     <div style="padding:20px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
-    <div class="fg">
-      <div class="fl">KONTEYNER NUMARASI <span style="color:var(--rd)">*</span></div>
-      <input class="fi" id="ktn-no" placeholder="MSCU1234567, MSKU9876543…" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;letter-spacing:.05em" autocomplete="off">
-      <div style="font-size:10px;color:var(--t3);margin-top:4px">Format: 4 harf + 7 rakam (ör: MSCU1234567)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg">
+        <div class="fl">KONTEYNER NUMARASI <span style="color:var(--rd)">*</span></div>
+        <input class="fi" id="ktn-no" placeholder="MSCU1234567…" style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;letter-spacing:.05em" autocomplete="off">
+        <div style="font-size:10px;color:var(--t3);margin-top:4px">4 harf + 7 rakam</div>
+      </div>
+      <div class="fg">
+        <div class="fl">MÜHÜR NUMARASI <span style="color:var(--rd)">*</span></div>
+        <input class="fi" id="ktn-seal" placeholder="SL-12345678…" style="font-family:'DM Mono',monospace;font-weight:600;font-size:14px;letter-spacing:.03em" autocomplete="off">
+        <div style="font-size:10px;color:var(--t3);margin-top:4px">Konteyner mühür no</div>
+      </div>
     </div>
     <!-- İhracat / Sipariş ID — öne çıkar -->
     <div style="border:1px solid var(--b);border-radius:8px;padding:12px 14px">

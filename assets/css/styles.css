@@ -933,6 +933,10 @@ body {
 .tk-action-btn:hover { background: var(--s2); border-color: var(--bm); }
 .tk-del-btn:hover    { background: var(--rdb); color: var(--rd); border-color: var(--rd); }
 
+
+/* KONTEYNER ACCORDION */
+.ktn-acc ._arr { display:inline-block; transition:transform .2s; }
+.ktn-acc ._arr._open { transform:rotate(180deg); }
 /* â•â• AVATAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .tk-av-sm {
   width: 22px; height: 22px; border-radius: 50%;

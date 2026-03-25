@@ -274,7 +274,15 @@ function _renderKtnList(){
   var konts=typeof loadKonteyn==='function'?loadKonteyn():[];
   var users=typeof loadUsers==='function'?loadUsers():[];
   var today=new Date();
-  var aktif=konts.filter(function(k){return !k.closed;});
+  var cu=window.Auth?.getCU?.();
+  // İzolasyon: admin tümünü, diğerleri kendi + izin verilenleri görür
+  var aktif=konts.filter(function(k){
+    if(k.closed) return false;
+    if(window.isAdmin?.()) return true;
+    if(cu && k.uid===cu.id) return true;
+    if(cu && Array.isArray(k.viewers) && k.viewers.includes(cu.id)) return true;
+    return false;
+  });
   if(!aktif.length){
     cont.innerHTML='<div style="padding:28px;text-align:center;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">🚢</div><div style="font-size:12px;margin-bottom:10px">Aktif konteyner yok</div><button class="btn btnp" onclick="window.openKonteynModal(null)" style="font-size:12px">+ Konteyner Ekle</button></div>';
     return;
