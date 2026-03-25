@@ -757,18 +757,21 @@ function renderOdemeler() {
       + '</div>'
       + '<div>'
         + '<span class="badge ' + sta.cls + '" style="font-size:10px">' + sta.ic + ' ' + sta.l + '</span>'
-        + (o.approvalNeeded && !o.approved ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Onay bekliyor</div>' : '')
+        + (o.approvalStatus==='pending' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Onay bekliyor</div>' : '')
+        + (o.approvalStatus==='pending_postpone' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Erteleme onayı</div>' : '')
       + '</div>'
       + '<div style="display:flex;gap:3px;flex-shrink:0">'
         + (!o.paid
-          ? (o.approvalNeeded && !o.approved
+          ? (_odmNeedsApproval(o) && o.approvalStatus !== 'approved'
             ? '<button onclick="requestOdmApproval('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Onay İste</button>'
-            : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" class="btn btnp" style="font-size:10px;border-radius:6px;padding:3px 9px;white-space:nowrap">✓ Ödendi</button>')
+            : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" class="btn btnp" style="font-size:10px;border-radius:6px;padding:3px 9px;white-space:nowrap">Ödendi</button>')
           : '<button onclick="toggleOdmPaid('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 7px">↩</button>')
+        + (!o.paid && o.approvalStatus !== 'pending_postpone' ? '<button onclick="postponeOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt);white-space:nowrap">Ertele</button>' : '')
+        + (o.approvalStatus === 'pending_postpone' ? '<span style="font-size:9px;color:var(--amt);padding:3px 6px">⏳ Erteleme bekliyor</span>' : '')
         + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 6px;color:var(--amt)">📎</button>' : '')
         + '<button onclick="viewOdmHistory('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 5px;border-radius:6px" title="Geçmiş & Not">📋</button>'
         + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 5px;border-radius:6px;color:'+(o.talimat?.durum==='aktif'?'#10B981':'var(--t3)')+'" title="Ödeme Talimatı">🏦</button>' : '')
-        + (o.approvalStatus==='pending' && _isAdminO() ? '<button onclick="approveOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 7px;border-radius:6px;color:var(--grt)" title="Onayla">✓</button>' : '')
+        + ((o.approvalStatus==='pending' || o.approvalStatus==='pending_postpone') && _isAdminO() ? '<button onclick="approveOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 7px;border-radius:6px;color:var(--grt)" title="'+(o.approvalStatus==='pending_postpone'?'Erteleme Onayla':'Ödeme Onayla')+'">'+(o.approvalStatus==='pending_postpone'?'✓ Ertele':'✓ Onayla')+'</button>' : '')
         + '<button onclick="openOdmModal('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px">✏️</button>'
         + (_isAdminO() ? '<button onclick="delOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px;color:var(--rdt)">🗑</button>' : '')
       + '</div>';
@@ -1060,18 +1063,40 @@ function saveOdm() {
       Object.assign(o, entry);
     }
   } else {
-    d.unshift({ id: generateNumericId(), ...entry, createdBy: _CUo()?.id });
+    const newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
+    // Admin/manager oluşturursa otomatik onaylı
+    if (_isAdminO()) {
+      newEntry.approved = true;
+      newEntry.approvedBy = _CUo()?.id;
+      newEntry.approvedAt = _nowTso();
+      newEntry.approvalStatus = 'approved';
+    } else {
+      newEntry.approvalStatus = 'pending';
+      newEntry.approvalRequestedBy = _CUo()?.id;
+      newEntry.approvalRequestedAt = _nowTso();
+    }
+    d.unshift(newEntry);
   }
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
   renderOdemeler();
   window.logActivity?.('view', `"${name}" ödeme ${eid?'güncellendi':'eklendi'}`);
-  window.toast?.(eid ? 'Güncellendi ✓' : 'Ödeme eklendi ✓', 'ok');
+  if (!eid && !_isAdminO()) {
+    window.addNotif?.('💰', '"' + escapeHtml(name) + '" onay bekliyor', 'warn', 'odemeler');
+    window.toast?.('Ödeme eklendi — yönetici onayı bekleniyor', 'ok');
+  } else {
+    window.toast?.(eid ? 'Güncellendi ✓' : 'Ödeme eklendi ✓', 'ok');
+  }
 }
 
 function markOdmPaid(id) {
   const d = window.loadOdm ? loadOdm() : [];
   const o = d.find(x => x.id === id); if (!o) return;
+  // Onay bekleyen ödeme ödendi işaretlenemez
+  if (_odmNeedsApproval(o) && o.approvalStatus !== 'approved') {
+    window.toast?.('Bu ödeme henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
+    return;
+  }
   o.paid   = true;
   o.paidTs = _nowTso();
   o.paidBy = _CUo()?.id;
@@ -1079,14 +1104,78 @@ function markOdmPaid(id) {
   _logOdmAction(id, 'Odendi isaretlendi');
   renderOdemeler();
   localStorage.removeItem('odm_alarm_late_' + id);
-  window.toast?.('✅ Ödendi olarak işaretlendi', 'ok');
+  window.toast?.('Ödendi olarak işaretlendi', 'ok');
 
   // Dekont uyarısı
   setTimeout(() => {
-    window.toast?.('📎 Lütfen dekontu yüklemeyi unutmayın', 'warn');
-    window.addNotif?.('📎', `"${o.name}" için dekont yüklenmedi`, 'warn', 'odemeler');
+    window.toast?.('Lütfen dekontu yüklemeyi unutmayın', 'warn');
+    window.addNotif?.('📎', `"${escapeHtml(o.name)}" için dekont yüklenmedi`, 'warn', 'odemeler');
   }, 1500);
 }
+
+/** Erteleme — neden yazma popup'ı gösterir, sonra yönetici onayına gönderir */
+function postponeOdm(id) {
+  const d = window.loadOdm ? loadOdm() : [];
+  const o = d.find(x => x.id === id); if (!o) return;
+
+  const old = _go('mo-odm-postpone');
+  if (old) old.remove();
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-postpone'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:400px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">Ödeme Erteleme</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:2px">${escapeHtml(o.name)} — ${o.due || '—'}</div>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="fg"><div class="fl">YENİ TARİH <span style="color:var(--rd)">*</span></div>
+        <input type="date" class="fi" id="odm-pp-date" value="${o.due || ''}">
+      </div>
+      <div class="fg"><div class="fl">ERTELEME NEDENİ <span style="color:var(--rd)">*</span></div>
+        <textarea class="fi" id="odm-pp-reason" rows="3" placeholder="Neden erteleniyor?" style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="document.getElementById('mo-odm-postpone').remove()">İptal</button>
+      <button class="btn btnp" onclick="_savePostpone(${id})" style="background:#F59E0B;border-color:#F59E0B">Ertele & Onay İste</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => { mo.classList.add('open'); _go('odm-pp-reason')?.focus(); }, 10);
+}
+
+function _savePostpone(id) {
+  const newDate = (_go('odm-pp-date')?.value || '').trim();
+  const reason  = (_go('odm-pp-reason')?.value || '').trim();
+  if (!newDate) { window.toast?.('Yeni tarih zorunludur', 'err'); return; }
+  if (!reason)  { window.toast?.('Erteleme nedeni zorunludur', 'err'); return; }
+
+  const d = window.loadOdm ? loadOdm() : [];
+  const o = d.find(x => x.id === id); if (!o) return;
+
+  const cu = _CUo();
+  o.postponed = true;
+  o.postponeDate   = newDate;
+  o.postponeReason = reason;
+  o.postponeBy     = cu?.id;
+  o.postponeAt     = _nowTso();
+  o.oldDue         = o.due;
+  // Erteleme yönetici onayına düşer
+  o.approvalStatus = 'pending_postpone';
+  o.approvalRequestedBy = cu?.id;
+  o.approvalRequestedAt = _nowTso();
+
+  window.storeOdm ? storeOdm(d) : null;
+  _go('mo-odm-postpone')?.remove();
+  _logOdmAction(id, 'Erteleme talebi: ' + reason + ' → ' + newDate);
+  window.addNotif?.('⏳', '"' + escapeHtml(o.name) + '" erteleme onayı bekliyor — ' + escapeHtml(reason), 'warn', 'odemeler');
+  window.toast?.('Erteleme talebi yöneticiye gönderildi', 'ok');
+  renderOdemeler();
+}
+window.postponeOdm = postponeOdm;
+window._savePostpone = _savePostpone;
 
 function toggleOdmPaid(id) {
   const d = window.loadOdm ? loadOdm() : [];
@@ -2249,10 +2338,13 @@ window.removeOdmTalimat    = removeOdmTalimat;
 const ODM_AUTO_CATS = ['abonelik', 'fatura']; // Bunlar onay gerektirmez
 
 function _odmNeedsApproval(o) {
-  if (ODM_AUTO_CATS.includes(o.cat)) return false;
-  if (o.source === 'otomatik') return false;
+  // Admin/manager oluşturmuşsa onay gerekmez
+  if (o.approvedBy) return false;
+  if (o.approved) return false;
+  // Otomatik ödeme talimatı aktifse onay gerekmez
   if (o.talimat?.durum === 'aktif') return false;
-  return o.approvalNeeded || (parseFloat(o.amount) >= 5000 && !o.approved);
+  // Diğer tüm ödemeler onay gerektirir
+  return true;
 }
 
 function approveOdm(id) {
@@ -2261,12 +2353,22 @@ function approveOdm(id) {
   }
   const all = window.loadOdm ? loadOdm() : [];
   const o = all.find(x => x.id === id); if (!o) return;
+
+  // Erteleme onayıysa tarihi güncelle
+  if (o.approvalStatus === 'pending_postpone' && o.postponeDate) {
+    o.due = o.postponeDate;
+    o.postponeApproved = true;
+    window.toast?.('Erteleme onaylandı — yeni tarih: ' + o.due, 'ok');
+    window.addNotif?.('✅', '"' + escapeHtml(o.name) + '" erteleme onaylandı → ' + o.due, 'ok', 'odemeler');
+  } else {
+    window.toast?.('Ödeme onaylandı', 'ok');
+  }
+
   o.approvalStatus = 'approved';
   o.approved       = true;
   o.approvedBy     = window.Auth.getCU().id;
   o.approvedAt     = _nowTso();
   window.storeOdm ? storeOdm(all) : null;
-  window.toast?.('✅ Ödeme onaylandı', 'ok');
   renderOdemeler();
 }
 window.approveOdm = approveOdm;
@@ -2278,6 +2380,8 @@ const Odemeler = {
   del:         delOdm,
   togglePaid:  toggleOdmPaid,
   markPaid:    markOdmPaid,
+  postpone:    postponeOdm,
+  approve:     approveOdm,
   checkAlarms:    checkOdmAlarms,
   startAlarms:    startOdmAlarmTimer,
   checkRecurring: checkOdmRecurring,
