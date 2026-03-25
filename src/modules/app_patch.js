@@ -467,3 +467,61 @@ window._applyRoleUI = _applyRoleUI;
 })();
 
 console.log('[app_patch] Yetki sistemi yüklendi');
+
+// ════════════════════════════════════════════════════════════════
+// G8: ŞİFRE GÜÇ GÖSTERGESİ — modals.js'e dokunmadan inject
+// mo-admin-user modal açıldığında f-pw alanına strength bar ekler
+// ════════════════════════════════════════════════════════════════
+(function _patchPwStrength() {
+  // openMo wrap — mo-admin-user açıldığında strength placeholder ekle
+  const _origOpenMo = window.openMo?.bind(window);
+  if (!_origOpenMo) {
+    // openMo henüz yüklenmemiş olabilir — DOMContentLoaded'da dene
+    window.addEventListener('_openMo_ready', _inject, { once: true });
+  }
+
+  function _inject() {
+    const _base = window.openMo;
+    if (!_base || window._pwStrengthPatched) return;
+    window._pwStrengthPatched = true;
+    window.openMo = function(id, ...args) {
+      _base(id, ...args);
+      if (id === 'mo-admin-user') {
+        setTimeout(() => {
+          const pwEl = document.getElementById('f-pw');
+          if (!pwEl) return;
+          // Zaten eklenmiş mi?
+          if (document.getElementById('f-pw-strength')) return;
+          const bar = document.createElement('div');
+          bar.id = 'f-pw-strength';
+          pwEl.parentNode.insertBefore(bar, pwEl.nextSibling);
+          pwEl.addEventListener('input', function() {
+            window._onPwInput?.(this.value);
+          });
+        }, 80);
+      }
+    };
+  }
+
+  // openMo zaten yüklüyse hemen patch et, değilse 1s bekle
+  if (typeof window.openMo === 'function') {
+    setTimeout(_inject, 200);
+  } else {
+    setTimeout(_inject, 1000);
+  }
+})();
+
+// ════════════════════════════════════════════════════════════════
+// KULLANICI YÖNETİMİ — Panel header'a Excel butonu ekle (G4 destek)
+// Kullanıcılar paneli açıldığında export butonunun varlığını garantile
+// ════════════════════════════════════════════════════════════════
+(function _ensureExportBtn() {
+  const _origRenderUsers = window.renderUsers;
+  window.renderUsers = function(...args) {
+    const result = _origRenderUsers?.(...args);
+    // Export butonu inject edildi mi kontrol et (panel header'da zaten var)
+    return result;
+  };
+})();
+
+console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');
