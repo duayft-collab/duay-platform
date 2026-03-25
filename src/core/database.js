@@ -780,7 +780,9 @@ const DEFAULT_ARSIV_BELGELER = [
 
 /** @returns {Object.<number,Array>} taskId → mesaj dizisi */
 function loadTaskChats()    { const d = _read(KEYS.taskChats); return (d && typeof d === 'object') ? d : {}; }
-/** @param {Object} d       */ function storeTaskChats(d) { _write(KEYS.taskChats, d); }
+/** @param {Object} d       */ function storeTaskChats(d) { _write(KEYS.taskChats, d);
+  const _fp_chats = _fsPath('taskChats'); if (_fp_chats) _syncFirestore(_fp_chats, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 24 — KUTLAMA / TEBRIK
@@ -1030,6 +1032,8 @@ function startRealtimeSync() {
     ['kpi',           KEYS.kpi,           () => window.renderKpi?.()],
     ['notes',         KEYS.notes,         () => window.renderNotes?.()],
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
+    // Görev yazışmaları — cihazlar arası senkronize olmalı
+    ['taskChats',     KEYS.taskChats,     () => {}],
   ];
 
   SYNC_MAP.forEach(([col, key, render]) => {

@@ -1267,10 +1267,15 @@ function pdpSendChat() {
     if (g('pdp-chat-inp'))  g('pdp-chat-inp').value = '';
     if (fileEl)             fileEl.value = '';
     pdpRefreshChatMsgs();
+    // S3: Görev sahibi + katılımcılara bildirim gönder
     var task = loadTasks().find(function(t){ return t.id === _PDP_TASK_ID; });
     var cu2  = _getCU();
-    if (task && task.uid !== (cu2 && cu2.id)) {
-      window.addNotif && window.addNotif('💬', '"' + task.title + '" görevinde yeni mesaj', 'info', 'pusula');
+    if (task && cu2) {
+      var _targets = new Set([task.uid].concat(task.participants || []).concat(task.viewers || []));
+      _targets.delete(cu2.id);
+      if (_targets.size > 0) {
+        window.addNotif?.('💬', '"' + escapeHtml(task.title) + '" görevinde yeni mesaj — ' + escapeHtml(cu2.name || ''), 'info', 'pusula');
+      }
     }
   }
 
@@ -1722,6 +1727,13 @@ function toggleTask(id, done) {
   updatePusBadge();
   logActivity('task', `"${t.title}" görevini ${done ? 'tamamladı' : 'yeniden açtı'}`);
   window.toast?.(done ? '✓ Tamamlandı' : 'Yeniden açıldı', 'ok');
+  // S2: Görev sahibi/atayan farklıysa bildirim gönder
+  const _cuToggle = _getCU();
+  if (t.uid && _cuToggle && t.uid !== _cuToggle.id) {
+    window.addNotif?.( done ? '✅' : '🔄',
+      `"${t.title}" görevi ${done ? 'tamamlandı' : 'yeniden açıldı'} — ${_cuToggle.name || ''}`,
+      'info', 'pusula');
+  }
 }
 
 /** Görevi siler */
@@ -2194,10 +2206,15 @@ function sendTaskChatMsg() {
     if (fileEl)               fileEl.value = '';
     if (g('chat-fp'))         g('chat-fp').textContent   = '';
     renderTaskChatMsgs(taskId);
-    // Görev sahibine bildirim
+    // S3: Görev sahibi + katılımcılara bildirim gönder
     const task = loadTasks().find(t => t.id === taskId);
-    if (task && task.uid !== _getCU()?.id) {
-      window.addNotif?.('💬', `"${task.title}" görevinde yeni mesaj`, 'info', 'pusula');
+    const _cuChat = _getCU();
+    if (task && _cuChat) {
+      const _targets = new Set([task.uid, ...(task.participants || []), ...(task.viewers || [])]);
+      _targets.delete(_cuChat.id);
+      if (_targets.size > 0) {
+        window.addNotif?.('💬', `"${escapeHtml(task.title)}" görevinde yeni mesaj — ${escapeHtml(_cuChat.name || '')}`, 'info', 'pusula');
+      }
     }
   };
 
