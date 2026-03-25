@@ -247,6 +247,9 @@ const Announce = { render: renderAnnouncements, openModal: openAnnModal, save: s
 if (typeof module !== 'undefined' && module.exports) { module.exports = Announce; }
 else {
   window.Announce = Announce;
+  // Diğer modüllerin duyuru oluşturabilmesi için
+  window.loadAnn  = window.loadAnn  || function() { try { return JSON.parse(localStorage.getItem('ak_ann') || '[]'); } catch { return []; } };
+  window.storeAnn = window.storeAnn || function(d) { localStorage.setItem('ak_ann', JSON.stringify(d)); };
   window.renderAnnouncements = renderAnnouncements;
   window.openAnnModal        = openAnnModal;
   window.saveAnn             = saveAnn;
