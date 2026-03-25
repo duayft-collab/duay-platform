@@ -217,7 +217,15 @@ function renderNavlun() {
       const isEn = teklifler.length>1 && n.durum!=='reddedildi'
         && n.birimFiyat===Math.min(...teklifler.filter(x=>x.durum!=='reddedildi').map(x=>+x.birimFiyat));
 
-      html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;overflow:hidden'+(isEn?';border-top:2px solid #3B6D11':'')+'">'
+      // T2: Karşılaştırma skoru hesapla
+      const fiyatlar = teklifler.filter(x=>x.durum!=='reddedildi').map(x=>+x.birimFiyat).filter(Boolean);
+      const sureler  = teklifler.filter(x=>x.durum!=='reddedildi').map(x=>+x.transitSure).filter(Boolean);
+      const minFiyat = fiyatlar.length ? Math.min(...fiyatlar) : null;
+      const minSure  = sureler.length  ? Math.min(...sureler)  : null;
+      const isEnFiyat = minFiyat && +n.birimFiyat === minFiyat;
+      const isEnSure  = minSure  && +n.transitSure === minSure;
+
+      html += '<div style="background:var(--sf);border:1.5px solid '+(isEn?'#3B6D11':'var(--b)')+';border-radius:10px;overflow:hidden;position:relative">'
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--b)">'
           + '<div>'
             + '<div style="font-size:13px;font-weight:600">'+(n.tasiyan||'—')+'</div>'
@@ -225,7 +233,9 @@ function renderNavlun() {
           + '</div>'
           + '<div style="text-align:right">'
             + '<div style="font-size:16px;font-weight:600;color:'+(isEn?'#3B6D11':'var(--t)')+'">'+( n.para||'USD')+' '+Number(n.birimFiyat||0).toLocaleString('tr-TR')+'</div>'
-            + (isEn?'<div style="font-size:10px;font-weight:600;color:#3B6D11">En düşük</div>':'')
+            + (isEn?'<div style="font-size:10px;font-weight:700;color:#3B6D11;background:rgba(59,109,17,.12);padding:1px 7px;border-radius:4px;display:inline-block">En iyi teklif</div>':'')
+            + (isEnFiyat&&!isEn?'<div style="font-size:10px;color:#3B6D11">En ucuz</div>':'')
+            + (isEnSure&&!isEn?'<div style="font-size:10px;color:#185FA5">En hizli</div>':'')
           + '</div>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--b)">'

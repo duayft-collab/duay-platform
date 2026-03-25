@@ -214,27 +214,65 @@ function _renderKargoCards(fl, users, today, cont) {
     .map(h => `<div style="padding:9px 12px;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">${h}</div>`).join('');
   wrap.appendChild(head);
 
+  // T1: Timeline adımları yardımcı fonksiyon
+  function _timelineSteps(k, today) {
+    const stepDefs = [{l:'Giriş'},{l:'Yükleme'},{l:'Yolda'},{l:'Varış'},{l:'Teslim'}];
+    const activeIdx = {bekle:1, yolda:2, teslim:4, iade:0}[k.status] ?? 1;
+    const isLate = k.status !== 'teslim' && k.date && k.date < today;
+    return '<div style="display:flex;align-items:center;flex:1;padding:0 4px">'
+      + stepDefs.map((s,i) => {
+        const done   = i < activeIdx;
+        const active = i === activeIdx;
+        const warn   = active && isLate;
+        const dotBg  = done ? '#22C55E' : active ? (warn?'#F59E0B':'#3B82F6') : 'var(--s3,#ddd)';
+        const lineBg = done ? '#22C55E' : 'var(--b,#e5e7eb)';
+        const lblC   = done ? '#22C55E' : active ? (warn?'#854F0B':'#185FA5') : 'var(--t3,#aaa)';
+        return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative">'
+          + (i>0 ? '<div style="position:absolute;top:7px;left:-50%;width:100%;height:2px;background:'+lineBg+';z-index:0"></div>' : '')
+          + '<div style="width:14px;height:14px;border-radius:50%;background:'+dotBg+';border:2px solid '+dotBg+';z-index:1'+(active?';box-shadow:0 0 0 3px '+(warn?'rgba(245,158,11,.2)':'rgba(59,130,246,.2)'):'')+'"></div>'
+          + '<div style="font-size:9px;margin-top:3px;color:'+lblC+';white-space:nowrap;font-weight:'+(active?'600':'400')+'">'+s.l+'</div>'
+          + '</div>';
+      }).join('')
+      + '</div>';
+  }
+
   fl.forEach(k => {
-    const u    = users.find(x => x.id === k.uid) || { name: '—' };
+    const u    = users.find(x => x.id === k.uid) || { name: '-' };
     const isL  = k.status !== 'teslim' && k.date && k.date < today;
-    const row  = document.createElement('div');
-    row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 130px 110px 100px 120px;align-items:center;' + border + (isL?';background:rgba(163,45,45,.02)':'');
-    row.innerHTML = `
-      <div style="padding:10px 12px">
-        <span style="font-size:11px;padding:2px 8px;border-radius:4px;background:${k.dir==='gelen'?'rgba(24,95,165,.09)':'rgba(139,92,246,.09)'};color:${k.dir==='gelen'?'#185FA5':'#6D28D9'}">${k.dir==='gelen'?'Gelen':'Giden'}</span>
-      </div>
-      <div style="padding:10px 12px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.from||'—'}</div>
-      <div style="padding:10px 12px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.to||'—'}</div>
-      <div style="padding:10px 12px;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.firm||'—'}</div>
-      <div style="padding:10px 12px;font-size:12px;${mono};color:${isL?'#A32D2D':'var(--t2)'}">${k.date||'—'}${isL?' ⚠':''}</div>
-      <div style="padding:10px 12px">${badge(k.status)}</div>
-      <div style="padding:10px 12px;display:flex;gap:4px">
-        ${k.status!=='teslim'?`<button class="btn btns" onclick="Kargo.markTeslim(${k.id})" style="font-size:11px;padding:3px 9px">Teslim</button>`:''}
-        <button class="btn btns" onclick="Kargo.openModal(${k.id})" style="font-size:11px;padding:3px 9px">Düzenle</button>
-        ${g&&typeof isAdmin==='function'&&isAdmin()?`<button class="btn btns" onclick="Kargo.del(${k.id})" style="font-size:11px;padding:3px 9px;color:var(--rdt)">Sil</button>`:''}
-      </div>`;
+    // ETA badge
+    let etaBadge = '';
+    if (k.date) {
+      const daysLeft = Math.ceil((new Date(k.date) - new Date()) / 86400000);
+      if (k.status === 'teslim') {
+        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(59,109,17,.09);color:#3B6D11;white-space:nowrap">Teslim</span>';
+      } else if (isL) {
+        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(163,45,45,.09);color:#A32D2D;white-space:nowrap">Gecikti</span>';
+      } else if (daysLeft <= 2) {
+        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(133,79,11,.09);color:#854F0B;white-space:nowrap">'+daysLeft+' gun</span>';
+      } else {
+        etaBadge = '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(24,95,165,.09);color:#185FA5;white-space:nowrap">'+daysLeft+' gun</span>';
+      }
+    }
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:80px 180px 1fr 80px 110px;align-items:center;gap:8px;padding:10px 14px;' + border + (isL ? ';background:rgba(163,45,45,.02)' : '');
+    const dirBg  = k.dir==='gelen' ? 'rgba(24,95,165,.09)' : 'rgba(139,92,246,.09)';
+    const dirCol = k.dir==='gelen' ? '#185FA5' : '#6D28D9';
+    const dirLbl = k.dir==='gelen' ? 'Gelen' : 'Giden';
+    const canDel = typeof isAdmin==='function' && isAdmin();
+    row.innerHTML =
+      '<div><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:'+dirBg+';color:'+dirCol+'">'+dirLbl+'</span></div>'
+      + '<div><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.firm||'-')+'</div>'
+        + '<div style="font-size:11px;color:var(--t3,#aaa);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.from||'-')+' > '+(k.to||'-')+'</div></div>'
+      + _timelineSteps(k, today)
+      + '<div>' + etaBadge + '</div>'
+      + '<div style="display:flex;gap:4px;justify-content:flex-end">'
+        + (k.status!=='teslim' ? '<button class="btn btns" onclick="Kargo.markTeslim('+k.id+')" style="font-size:11px;padding:3px 7px" title="Teslim">Teslim</button>' : '')
+        + '<button class="btn btns" onclick="Kargo.openModal('+k.id+')" style="font-size:11px;padding:3px 7px">Duzenle</button>'
+        + (canDel ? '<button class="btn btns" onclick="Kargo.del('+k.id+')" style="font-size:11px;padding:3px 7px;color:var(--rdt,#dc2626)">Sil</button>' : '')
+      + '</div>';
     wrap.appendChild(row);
   });
+
 
   frag.appendChild(wrap);
   cont.replaceChildren(frag);
