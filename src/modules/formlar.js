@@ -7,9 +7,9 @@
  */
 'use strict';
 
-const _gfm  = id => document.getElementById(id);
-const _isAdminFm = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUfm      = () => window.Auth?.getCU?.();
+const _gfm  = window.g;
+const _isAdminFm = window.isAdmin;
+const _CUfm      = window.CU;
 
 let FORMS_CAT_FILTER = 'all';
 let ACTIVE_FORM      = null;

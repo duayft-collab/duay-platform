@@ -10,12 +10,12 @@
 'use strict';
 
 // ── Kısayollar ───────────────────────────────────────────────────
-const _gi = id => document.getElementById(id);
+const _gi = window.g;
 // ── V18 eklenti alias ─────────────────────────────────────────
-const _sti = (id, v) => { const el = _gi(id); if (el) el.textContent = v; };
-const _isAdmin  = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CU       = () => window.Auth?.getCU?.();
-const _initials = n => (n||'?').split(' ').map(w => w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+const _sti = window.st;
+const _isAdmin  = window.isAdmin;
+const _CU       = window.CU;
+const _initials = window.initials;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — İK SABİTLERİ

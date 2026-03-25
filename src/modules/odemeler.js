@@ -6,12 +6,11 @@
  */
 'use strict';
 
-const _go    = id  => document.getElementById(id);
-const _sto   = (id,v) => { const el = _go(id); if (el) el.textContent = v; };
-const _p2o   = n   => String(n).padStart(2,'0');
-const _nowTso = () => { const n=new Date(); return `${n.getFullYear()}-${_p2o(n.getMonth()+1)}-${_p2o(n.getDate())} ${_p2o(n.getHours())}:${_p2o(n.getMinutes())}:${_p2o(n.getSeconds())}`; };
+const _go    = window.g;
+const _sto   = window.st;
+const _nowTso = window.nowTs;
 const _isAdminO = () => window.Auth?.getCU?.()?.role === 'admin' || window.Auth?.getCU?.()?.role === 'manager';
-const _CUo      = () => window.Auth?.getCU?.();
+const _CUo      = window.CU;
 const _todayStr = () => new Date().toISOString().slice(0,10);
 
 // ════════════════════════════════════════════════════════════════

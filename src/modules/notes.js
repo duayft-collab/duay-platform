@@ -7,8 +7,8 @@
 (function(){
 'use strict';
 
-const _gn  = id => document.getElementById(id);
-const _stn = (id,v) => { const el = _gn(id); if (el) el.textContent = v; };
+const _gn  = window.g;
+const _stn = window.st;
 
 function _injectNotesPanel() {
   const panel = _gn('panel-notes');

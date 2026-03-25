@@ -32,9 +32,9 @@ function _softDel(data, id, label, callback) {
 // loadUsers → window.loadUsers (database.js)
 // closeMo → window.closeMo (app.js)
 
-const _gex  = id => document.getElementById(id);
+const _gex  = window.g;
 const _stex = (id,v) => { const el = _gex(id); if (el) el.textContent = v; };
-const _isAdminEx = () => window.Auth?.getCU?.()?.role === 'admin';
+const _isAdminEx = window.isAdmin;
 
 // ════════════════════════════════════════════════════════════════
 // YARDIMCI — render wrap

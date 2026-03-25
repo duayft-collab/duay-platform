@@ -9,12 +9,11 @@
 // loadTasks → window.loadTasks (database.js)
 // closeMo → window.closeMo (app.js)
 
-const _gk  = id  => document.getElementById(id);
-const _stk = (id,v) => { const el = _gk(id); if (el) el.textContent = v; };
-const _p2k = n   => String(n).padStart(2,'0');
-const _nowTsk = () => { const n=new Date(); return `${n.getFullYear()}-${_p2k(n.getMonth()+1)}-${_p2k(n.getDate())} ${_p2k(n.getHours())}:${_p2k(n.getMinutes())}:${_p2k(n.getSeconds())}`; };
-const _isAdminK = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUk      = () => window.Auth?.getCU?.();
+const _gk  = window.g;
+const _stk = window.st;
+const _nowTsk = window.nowTs;
+const _isAdminK = window.isAdmin;
+const _CUk      = window.CU;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — PANEL HTML INJECT

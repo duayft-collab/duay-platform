@@ -9,12 +9,12 @@
 // loadTasks → window.loadTasks (database.js)
 // closeMo → window.closeMo (app.js)
 
-const _gceo  = id => document.getElementById(id);
+const _gceo  = window.g;
 const _stceo = (id,v) => { const el = _gceo(id); if (el) el.textContent = v; };
-const _isAdminCeo = () => window.Auth?.getCU?.()?.role === 'admin';
+const _isAdminCeo = window.isAdmin;
 const _isMgrCeo   = () => { const r = window.Auth?.getCU?.()?.role; return r === 'admin' || r === 'manager'; };
-const _CUceo      = () => window.Auth?.getCU?.();
-const _nowTsCeo   = () => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; };
+const _CUceo      = window.CU;
+const _nowTsCeo   = window.nowTs;
 
 const KPI_CATS = { sales:'💰 Satış', ops:'⚙️ Operasyon', hr:'👥 İK', finance:'📊 Finans', customer:'🤝 Müşteri', other:'📌 Diğer' };
 

@@ -41,12 +41,11 @@ function _softDel(data, id, label, callback) {
 
 'use strict';
 
-const _gst  = id  => document.getElementById(id);
-const _stst = (id,v) => { const el = _gst(id); if (el) el.textContent = v; };
-const _p2st = n   => String(n).padStart(2,'0');
-const _nowTsst = () => { const n=new Date(); return `${n.getFullYear()}-${_p2st(n.getMonth()+1)}-${_p2st(n.getDate())} ${_p2st(n.getHours())}:${_p2st(n.getMinutes())}:${_p2st(n.getSeconds())}`; };
-const _isAdminSt = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUst      = () => window.Auth?.getCU?.();
+const _gst  = window.g;
+const _stst = window.st;
+const _nowTsst = window.nowTs;
+const _isAdminSt = window.isAdmin;
+const _CUst      = window.CU;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — ALIAS'LAR (isim uyumsuzluğu düzeltme)

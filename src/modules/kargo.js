@@ -43,7 +43,7 @@ const KTN_TRACKING_URLS = {
 
 
 // Yardımcılar
-const _gK   = id => document.getElementById(id);
+const _gK   = window.g;
 const _isAK = () => ['admin','manager'].includes(window.Auth?.getCU?.()?.role);
 const _nowK = () => typeof nowTs==='function' ? nowTs() : new Date().toLocaleString('tr-TR');
 const _toastK = (m,t) => window.toast?.(m,t);

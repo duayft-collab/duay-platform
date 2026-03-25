@@ -7,9 +7,9 @@
  */
 'use strict';
 
-const _gik2  = id => document.getElementById(id);
+const _gik2  = window.g;
 const _stik2 = (id,v) => { const el = _gik2(id); if (el) el.textContent = v; };
-const _isAdminIk2 = () => window.Auth?.getCU?.()?.role === 'admin';
+const _isAdminIk2 = window.isAdmin;
 
 function _injectIkPanel() {
   const panel = _gik2('panel-ik');

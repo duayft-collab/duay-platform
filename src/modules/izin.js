@@ -6,9 +6,9 @@
  */
 'use strict';
 
-const _giz  = id => document.getElementById(id);
+const _giz  = window.g;
 const _stiz = (id,v) => { const el = _giz(id); if (el) el.textContent = v; };
-const _isAdminIz = () => window.Auth?.getCU?.()?.role === 'admin';
+const _isAdminIz = window.isAdmin;
 
 function _injectIzinPanel() {
   const panel = _giz('panel-izin');

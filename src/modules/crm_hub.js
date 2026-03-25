@@ -20,10 +20,9 @@
 // closeMo → window.closeMo (app.js)
 
 const _stc = (id,v) => { const e=_gc(id); if(e) e.textContent=v; };
-const _p2c = n   => String(n).padStart(2,'0');
-const _tsC = ()  => { const n=new Date(); return `${n.getFullYear()}-${_p2c(n.getMonth()+1)}-${_p2c(n.getDate())} ${_p2c(n.getHours())}:${_p2c(n.getMinutes())}:${_p2c(n.getSeconds())}`; };
-const _CUc      = () => window.Auth?.getCU?.();
-const _isAdminC = () => window.Auth?.getCU?.()?.role === 'admin';
+const _tsC = window.nowTs;
+const _CUc      = window.CU;
+const _isAdminC = window.isAdmin;
 const _toastC   = (m,t) => window.toast?.(m,t);
 const _logC     = (t,d) => window.logActivity?.(t,d);
 const _openMoC  = id => window.openMo?.(id);

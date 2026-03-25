@@ -6,8 +6,8 @@
  */
 'use strict';
 
-const _ghf  = id => document.getElementById(id);
-const _sthf = (id,v) => { const el = _ghf(id); if (el) el.textContent = v; };
+const _ghf  = window.g;
+const _sthf = window.st;
 
 function _injectHedeflerPanel() {
   const panel = _ghf('panel-hedefler');

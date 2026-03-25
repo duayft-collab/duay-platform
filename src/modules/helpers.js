@@ -23,17 +23,12 @@
 // toast → window.toast (app.js)
 
 // ── Ortak kısayollar ─────────────────────────────────────────────
-const _gh      = id  => document.getElementById(id);
+const _gh      = window.g;
 // ── V18 eklenti alias ─────────────────────────────────────────
-const _sth     = (id,v) => { const el = _gh(id); if (el) el.textContent = v; };
-const _p2h     = n   => String(n).padStart(2, '0');
-const _nowTsh  = () => {
-  const n = new Date();
-  return `${n.getFullYear()}-${_p2h(n.getMonth()+1)}-${_p2h(n.getDate())} `
-       + `${_p2h(n.getHours())}:${_p2h(n.getMinutes())}:${_p2h(n.getSeconds())}`;
-};
-const _isAdminH = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUh      = () => window.Auth?.getCU?.();
+const _sth     = window.st;
+const _nowTsh  = window.nowTs;
+const _isAdminH = window.isAdmin;
+const _CUh      = window.CU;
 
 
 // ════════════════════════════════════════════════════════════════

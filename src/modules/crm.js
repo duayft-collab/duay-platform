@@ -9,10 +9,9 @@
 'use strict';
 
 const _stcLegacy = (id, v) => { const el = _gc(id); if (el) el.textContent = v; };
-const _p2cLegacy = n   => String(n).padStart(2, '0');
-const _nowTsc = () => { const n = new Date(); return `${n.getFullYear()}-${_p2cLegacy(n.getMonth()+1)}-${_p2cLegacy(n.getDate())} ${_p2cLegacy(n.getHours())}:${_p2cLegacy(n.getMinutes())}:${_p2cLegacy(n.getSeconds())}`; };
-const _isAdminCLegacy = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUcLegacy      = () => window.Auth?.getCU?.();
+const _nowTsc = window.nowTs;
+const _isAdminCLegacy = window.isAdmin;
+const _CUcLegacy      = window.CU;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — CRM SABİTLERİ

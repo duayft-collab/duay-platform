@@ -9,9 +9,9 @@
 // loadUsers → window.loadUsers (database.js)
 // closeMo → window.closeMo (app.js)
 
-const _gcp  = id => document.getElementById(id);
+const _gcp  = window.g;
 const _stcp = (id,v) => { const el = _gcp(id); if (el) el.textContent = v; };
-const _isAdminCp = () => window.Auth?.getCU?.()?.role === 'admin';
+const _isAdminCp = window.isAdmin;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — CRM PANELİ INJECT

@@ -42,7 +42,7 @@ const ROLE_META={
 let USERS_VIEW='card'; // 'card' | 'table' | 'org'
 let USERS_SORT = { col: '', dir: 1 }; // G7: sıralama state
 let _usersSearchTimer = null; // G6: debounce timer
-function initials(n){return n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);}
+const initials = window.initials;
 
 // G6: Debounce ile arama
 function _debouncedSearch(val) {

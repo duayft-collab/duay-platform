@@ -122,14 +122,12 @@ const AVC = window.AVC;
 // BÖLÜM 2 — YARDIMCI FONKSİYONLAR
 // ════════════════════════════════════════════════════════════════
 
-const _g  = id  => document.getElementById(id);
+const _g  = window.g;
 const _st = (id, v) => { const el = _g(id); if (el) el.textContent = v; };
 const _p2 = n   => String(n).padStart(2, '0');
 
 /** İsimden baş harfler */
-function initials(name = '') {
-  return (name || '?').split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
-}
+const initials = window.initials;
 
 /** 'YYYY-MM-DD HH:MM:SS' formatında şu anki zaman */
 

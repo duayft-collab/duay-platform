@@ -9,11 +9,11 @@
 // loadUsers → window.loadUsers (database.js)
 // closeMo → window.closeMo (app.js)
 
-const _ggr  = id => document.getElementById(id);
+const _ggr  = window.g;
 const _stgr = (id,v) => { const el = _ggr(id); if (el) el.textContent = v; };
-const _isAdminGr = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUgr      = () => window.Auth?.getCU?.();
-const _nowTsGr   = () => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; };
+const _isAdminGr = window.isAdmin;
+const _CUgr      = window.CU;
+const _nowTsGr   = window.nowTs;
 
 const GRT_T  = { manager:'👔 Yönetici', hr:'📋 İK', suggest:'💡 Öneri', other:'📌 Diğer' };
 const GRT_ST = {

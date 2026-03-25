@@ -21,12 +21,11 @@
 console.log('[IK_HUB] Yükleniyor...');
 
 // ── Yardımcılar ───────────────────────────────────────────────────
-const _gik  = id  => document.getElementById(id);
+const _gik  = window.g;
 const _stik = (id,v) => { const e=_gik(id); if(e) e.textContent=v; };
-const _p2ik = n   => String(n).padStart(2,'0');
-const _tsIk = ()  => { const n=new Date(); return `${n.getFullYear()}-${_p2ik(n.getMonth()+1)}-${_p2ik(n.getDate())} ${_p2ik(n.getHours())}:${_p2ik(n.getMinutes())}:${_p2ik(n.getSeconds())}`; };
-const _CUik      = () => window.Auth?.getCU?.();
-const _isAdminIk = () => window.Auth?.getCU?.()?.role === 'admin';
+const _tsIk = window.nowTs;
+const _CUik      = window.CU;
+const _isAdminIk = window.isAdmin;
 const _toastIk   = (m,t) => window.toast?.(m,t);
 const _logIk     = (t,d) => window.logActivity?.(t,d);
 const _openMoIk  = id => window.openMo?.(id);

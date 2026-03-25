@@ -10,11 +10,10 @@
 (function(){
 'use strict';
 
-const _gf  = id  => document.getElementById(id);
-const _stf = (id, v) => { const el = _gf(id); if (el) el.textContent = v; };
-const _p2f = n   => String(n).padStart(2, '0');
-const _nowTsf = () => { const n = new Date(); return `${n.getFullYear()}-${_p2f(n.getMonth()+1)}-${_p2f(n.getDate())} ${_p2f(n.getHours())}:${_p2f(n.getMinutes())}:${_p2f(n.getSeconds())}`; };
-const _isAdminF = () => window.Auth?.getCU?.()?.role === 'admin';
+const _gf  = window.g;
+const _stf = window.st;
+const _nowTsf = window.nowTs;
+const _isAdminF = window.isAdmin;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — CANLI KUR DURUMU

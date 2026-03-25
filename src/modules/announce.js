@@ -7,12 +7,11 @@
 'use strict';
 // closeMo → window.closeMo (app.js)
 
-const _ga  = id  => document.getElementById(id);
-const _sta = (id,v) => { const el = _ga(id); if (el) el.textContent = v; };
-const _p2a = n   => String(n).padStart(2,'0');
-const _nowTsa = () => { const n=new Date(); return `${n.getFullYear()}-${_p2a(n.getMonth()+1)}-${_p2a(n.getDate())} ${_p2a(n.getHours())}:${_p2a(n.getMinutes())}:${_p2a(n.getSeconds())}`; };
-const _isAdminA = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUa      = () => window.Auth?.getCU?.();
+const _ga  = window.g;
+const _sta = window.st;
+const _nowTsa = window.nowTs;
+const _isAdminA = window.isAdmin;
+const _CUa      = window.CU;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — PANEL HTML INJECT

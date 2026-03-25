@@ -8,10 +8,10 @@
 'use strict';
 // closeMo → window.closeMo (app.js)
 
-const _gd  = id => document.getElementById(id);
+const _gd  = window.g;
 const _std = (id,v) => { const el = _gd(id); if (el) el.textContent = v; };
-const _isAdminD = () => window.Auth?.getCU?.()?.role === 'admin';
-const _CUd      = () => window.Auth?.getCU?.();
+const _isAdminD = window.isAdmin;
+const _CUd      = window.CU;
 
 // Kategori badge renkleri
 const DOC_CC = { İK:'bp', Finans:'bb', Operasyon:'bg', Teknik:'ba', Hukuk:'ba', Diğer:'bgr' };
@@ -341,7 +341,7 @@ function saveDocUpload() {
 
   const doSave = (fileData) => {
     const d = (typeof loadLocalDocs === 'function') ? loadLocalDocs() : [];
-    const nowTsFn = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; };
+    const nowTsFn = () => (window.nowTs ? window.nowTs().slice(0,10) : new Date().toISOString().slice(0,10));
 
     if (eid) {
       const idx = d.findIndex(x => x.id === eid);
