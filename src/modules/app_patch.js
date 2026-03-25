@@ -334,3 +334,136 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     window.App._addRender('crm', () => window.renderCrm());
   }
 })();
+
+// ════════════════════════════════════════════════════════════════
+// MODÜL YETKİ SİSTEMİ — _applyRoleUI  [v2]
+// Kullanıcının modules listesine göre sidebar gizle/göster
+// App.nav wrap ile yetkisiz panel erişimini engelle
+// ════════════════════════════════════════════════════════════════
+
+window.MODULE_NAV_MAP = {
+  'dashboard':  [],
+  'announce':   ['nb-ann'],
+  'takvim':     ['nb-tak'],
+  'notes':      ['nb-nt'],
+  'links':      ['nb-lnk'],
+  'rehber':     [],
+  'crm':        [],
+  'gorusme':    [],
+  'etkinlik':   [],
+  'numune':     [],
+  'lojistik':   ['nb-lojistik'],
+  'stok':       [],
+  'kargo':      [],
+  'finans':     [],
+  'odemeler':   [],
+  'pirim':      [],
+  'hesap':      [],
+  'ik':         ['nb-ik-hub'],
+  'ik-hub':     ['nb-ik-hub'],
+  'evrak':      [],
+  'temizlik':   [],
+  'puantaj':    [],
+  'docs':       ['nb-doc'],
+  'formlar':    [],
+  'arsiv':      [],
+  'tebligat':   [],
+  'resmi':      [],
+  'pusula':     ['nb-pus'],
+  'hedefler':   [],
+  'ceo':        ['nb-ceo'],
+  'kpi-panel':  ['nb-kpi-panel'],
+  'admin':      ['nb-admin'],
+  'activity':   ['nb-activity'],
+  'settings':   ['nb-settings'],
+  'trash':      ['nb-trash'],
+};
+
+window.PANEL_MODULE_MAP = {
+  'dashboard':'dashboard','announce':'announce','takvim':'takvim',
+  'notes':'notes','links':'links','rehber':'rehber',
+  'crm':'crm','gorusme':'gorusme','etkinlik':'etkinlik','numune':'numune',
+  'lojistik':'lojistik','stok':'stok','kargo':'kargo',
+  'finans':'finans','odemeler':'odemeler','pirim':'pirim','hesap':'hesap',
+  'ik-hub':'ik','ik':'ik','evrak':'evrak','temizlik':'temizlik','puantaj':'puantaj',
+  'docs':'docs','formlar':'formlar','arsiv':'arsiv','tebligat':'tebligat','resmi':'resmi',
+  'pusula':'pusula','hedefler':'hedefler',
+  'ceo':'ceo','kpi-panel':'kpi-panel','admin':'admin',
+  'activity':'activity','settings':'settings','trash':'trash',
+};
+
+function _applyRoleUI(user) {
+  if (!user) return;
+  const role    = user.role || 'staff';
+  const isAdmin = role === 'admin';
+  const modules = user.modules || window.ROLE_DEFAULT_MODULES?.[role] || [];
+
+  // Admin — her şey görünür
+  if (isAdmin) {
+    document.querySelectorAll('.nb').forEach(b => b.style.display = '');
+    document.querySelectorAll('.nsec-header, .nsec').forEach(h => h.style.display = '');
+    return;
+  }
+
+  const allowed = new Set([...modules, 'dashboard']);
+
+  // 1. sidebar butonlarını gizle/göster
+  document.querySelectorAll('.nb[id]').forEach(btn => {
+    // Hangi modüle ait bu buton?
+    const modId = Object.entries(window.MODULE_NAV_MAP).find(([, ids]) => ids.includes(btn.id))?.[0];
+    if (modId) btn.style.display = allowed.has(modId) ? '' : 'none';
+  });
+
+  // 2. Bölüm başlıklarını — altında görünür buton yoksa gizle
+  document.querySelectorAll('.nsec-header, .nsec').forEach(header => {
+    let sib = header.nextElementSibling;
+    let visible = false;
+    while (sib && !sib.classList.contains('nsec-header') && !sib.classList.contains('nsec')) {
+      if (sib.classList.contains('nb') && sib.style.display !== 'none') { visible = true; break; }
+      sib = sib.nextElementSibling;
+    }
+    header.style.display = visible ? '' : 'none';
+  });
+
+  // 3. App.nav wrap — sadece bir kez wrap et
+  const _baseNav = window.App?._origNav || window.App?.nav;
+  if (_baseNav && !window.App?._navRoleWrapped) {
+    window.App._navRoleWrapped = true;
+    window.App._origNav        = _baseNav;
+    const _wrapped = function(panelId, btn) {
+      const cu = window.Auth?.getCU?.() || {};
+      if (['admin','manager'].includes(cu.role)) return _baseNav(panelId, btn);
+      const reqMod = window.PANEL_MODULE_MAP[panelId] || panelId;
+      const mods   = cu.modules || window.ROLE_DEFAULT_MODULES?.[cu.role] || [];
+      if (panelId !== 'dashboard' && !mods.includes(reqMod)) {
+        window.toast?.('Bu bölüme erişim yetkiniz yok', 'err');
+        return;
+      }
+      return _baseNav(panelId, btn);
+    };
+    window.App.nav = _wrapped;
+    window.nav     = _wrapped;
+  }
+
+  console.log('[UI] Role applied:', role, '| modüller:', modules.join(', ') || '—');
+}
+
+window._applyRoleUI = _applyRoleUI;
+
+// Auth hazır olunca ve auth değişince uygula
+(function() {
+  const run = () => {
+    const cu = window.Auth?.getCU?.();
+    if (cu) { _applyRoleUI(cu); return; }
+    let n = 0;
+    const t = setInterval(() => {
+      const u = window.Auth?.getCU?.();
+      if (u || ++n > 30) { clearInterval(t); if (u) _applyRoleUI(u); }
+    }, 300);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(run, 700));
+  else setTimeout(run, 700);
+  window.addEventListener('auth-changed', () => setTimeout(() => _applyRoleUI(window.Auth?.getCU?.()), 200));
+})();
+
+console.log('[app_patch] Yetki sistemi yüklendi');
