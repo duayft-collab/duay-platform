@@ -948,17 +948,19 @@ function _listenCollection(collection, localKey, onUpdate) {
     docRef.get().then(snap => {
       if (!snap.exists) return;
       const data = snap.data()?.data;
-      if (!Array.isArray(data)) return;
+      if (data === null || data === undefined) return;
       const local = JSON.parse(localStorage.getItem(localKey) || 'null');
       // Firestore daha güncel veya local boşsa — Firestore verisini kullan
       const fsTime  = snap.data()?.syncedAt || '';
       const locTime = localStorage.getItem(localKey + '_ts') || '';
-      if (!local || !local.length || fsTime > locTime) {
+      const localEmpty = !local || (Array.isArray(local) ? !local.length : !Object.keys(local).length);
+      if (localEmpty || fsTime > locTime) {
         try { localStorage.setItem(localKey, JSON.stringify(data)); } catch(e) {}
         if (typeof onUpdate === 'function') {
           try { onUpdate(data); } catch(e) {}
         }
-        console.info('[DB:init]', collection, '→', data.length, 'kayıt Firestore yuklenl');
+        const count = Array.isArray(data) ? data.length : Object.keys(data).length;
+        console.info('[DB:init]', collection, '→', count, 'kayıt Firestore yüklendi');
       }
     }).catch(e => {
       if (e.code !== 'permission-denied') console.warn('[DB:init]', collection, e.message);
@@ -976,7 +978,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       delete _writingNow[collection];
 
       const data = snap.data()?.data;
-      if (!Array.isArray(data)) return;
+      if (data === null || data === undefined) return;
 
       // localStorage güncelle + zaman damgası kaydet
       try {
@@ -1071,7 +1073,14 @@ function startRealtimeSync() {
     ['notes',         KEYS.notes,         () => window.renderNotes?.()],
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
-    ['taskChats',     KEYS.taskChats,     () => {}],
+    ['taskChats',     KEYS.taskChats,     () => {
+      // Açık chat varsa yenile
+      try { window.pdpRefreshChatMsgs?.(); } catch(e) {}
+      try {
+        const tid = document.getElementById('taskchat-tid')?.value;
+        if (tid) window.renderTaskChatMsgs?.(parseInt(tid));
+      } catch(e) {}
+    }],
   ];
 
   SYNC_MAP.forEach(([col, key, render]) => {
