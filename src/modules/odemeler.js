@@ -1008,7 +1008,7 @@ window.viewOdmDoc   = viewOdmDoc;
 function saveOdm() {
   console.log('[ODM] saveOdm cagirildi, role:', window.Auth?.getCU?.()?.role);
   console.log('[ODM] _isAdminO:', _isAdminO());
-  const _allUsers = typeof loadUsers === 'function' ? loadUsers() : [];
+  const _allUsers = window.loadUsers?.() || [];
   console.log('[ODM] yonetici listesi:', _allUsers.filter(function(u){ return u.role==='admin'||u.role==='manager'; }).map(function(u){ return u.name; }));
   const name = (_go('odm-f-name')?.value || '').trim();
   if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
@@ -1088,7 +1088,7 @@ function saveOdm() {
   console.log('[ODM] bildirim kosulu: eid=', eid, '_isAdminO=', _isAdminO(), '→', !eid && !_isAdminO() ? 'BILDIRIM GIDECEK' : 'BILDIRIM GITMEYECEK');
   if (!eid && !_isAdminO()) {
     // Admin'lere bildirim gönder (manager dahil herkes pending → admin'e bildirim)
-    const _managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => u.role === 'admin' && u.status === 'active');
+    const _managers = (window.loadUsers?.() || []).filter(u => u.role === 'admin' && u.status === 'active');
     const _amt = parseFloat(entry.amount||0).toLocaleString('tr-TR');
     console.log('[ONAY BİLDİRİMİ GÖNDERİLİYOR]', _managers.length, 'yonetici, role:', _CUo()?.role, '| odeme:', name, '| tutar:', _amt);
     _managers.forEach(m => {
@@ -1828,7 +1828,7 @@ function saveTahsilat() {
   storeTahsilat(d);
   document.getElementById('mo-tahsilat')?.remove();
   if (!eid && !_isAdminO()) {
-    const _admins = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => u.role === 'admin' && u.status === 'active');
+    const _admins = (window.loadUsers?.() || []).filter(u => u.role === 'admin' && u.status === 'active');
     _admins.forEach(a => {
       window.addNotif?.('💰', 'Yeni tahsilat onay bekliyor: ' + escapeHtml(name) + ' - ' + amount + ' ' + currency, 'warn', 'odemeler', a.id);
     });
@@ -2421,7 +2421,7 @@ function _addApprovalLog(odmId, action, note) {
 
 // Dinamik onay modalı — kişi seçimi
 function openApprovalFlow(odmId) {
-  const users = typeof loadUsers === 'function' ? loadUsers() : [];
+  const users = window.loadUsers?.() || [];
   const managers = users.filter(u => ['admin','manager'].includes(u.role) && u.status === 'active');
   const o = (window.loadOdm ? loadOdm() : []).find(x => x.id === odmId);
   if (!o) return;

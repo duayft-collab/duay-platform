@@ -540,7 +540,9 @@ function logActivity(type, detail) {
 
 /** @returns {Array<Object>} */ function loadNotifs()    { const d = _read(KEYS.notifications); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 100 kayıt */ function storeNotifs(d) { _write(KEYS.notifications, d.slice(0, 100));
-  const _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, d.slice(0, 100));
+  if (window.Auth?.getFBAuth?.()?.currentUser) {
+    const _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, d.slice(0, 100));
+  }
 }
 
 /**
