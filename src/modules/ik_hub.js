@@ -1178,23 +1178,32 @@ function openIkMaasModal(id) {
   mo.innerHTML = `
     <div class="moc" style="max-width:480px">
       <div class="mt">${entry?'✏️ Bordro Düzenle':'💰 Bordro Girişi'}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div style="grid-column:1/-1"><label class="fl">Personel *</label>
-          <select class="fi" id="ikm-uid">
-            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${u.name}</option>`).join('')}
-          </select></div>
-        <div><label class="fl">Dönem (Ay)</label>
-          <input class="fi" type="month" id="ikm-ay-modal" value="${entry?.ay||ay}"></div>
-        <div><label class="fl">Brüt Maaş (₺) *</label>
-          <input class="fi" type="number" id="ikm-brut" value="${entry?.brut||''}" placeholder="0.00" oninput="IkHub.calcNetMaas()"></div>
-        <div><label class="fl">Net Maaş (₺)</label>
-          <input class="fi" type="number" id="ikm-net" value="${entry?.net||''}" placeholder="Otomatik hesaplanır" readonly></div>
-        <div><label class="fl">İkramiye (₺)</label>
-          <input class="fi" type="number" id="ikm-ikramiye" value="${entry?.ikramiye||0}" placeholder="0"></div>
-        <div><label class="fl">Kesinti (₺)</label>
-          <input class="fi" type="number" id="ikm-kesinti" value="${entry?.kesinti||0}" placeholder="0"></div>
-        <div style="grid-column:1/-1"><label class="fl">Not</label>
-          <input class="fi" id="ikm-not" value="${entry?.not||''}" placeholder="Ek bilgi..."></div>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px">
+        <!-- Bölüm 1: Personel -->
+        <div style="background:var(--s2);border-radius:10px;padding:14px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">PERSONEL BILGISI</div>
+          <select class="fi" id="ikm-uid" required style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'">
+            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${escapeHtml(u.name)}</option>`).join('')}
+          </select>
+          <input class="fi" type="month" id="ikm-ay-modal" value="${entry?.ay||ay}" required style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);margin-top:8px;transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'">
+        </div>
+        <!-- Bölüm 2: Ücret -->
+        <div style="background:var(--s2);border-radius:10px;padding:14px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">UCRET DETAYLARI</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><div class="fl" style="margin-bottom:4px">Brut Maas * <span style="color:var(--rd)">₺</span></div>
+              <input class="fi" type="number" id="ikm-brut" value="${entry?.brut||''}" placeholder="0.00" min="0" step="0.01" required oninput="IkHub.calcNetMaas()" style="font-size:15px;font-weight:600;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'"></div>
+            <div><div class="fl" style="margin-bottom:4px">Net Maas <span style="color:var(--grt)">₺</span></div>
+              <input class="fi" type="number" id="ikm-net" value="${entry?.net||''}" placeholder="Otomatik" readonly style="font-size:15px;font-weight:600;padding:10px 12px;border-radius:8px;background:var(--sf);color:var(--grt);border:1.5px solid var(--b)"></div>
+            <div><div class="fl" style="margin-bottom:4px">Ikramiye ₺</div>
+              <input class="fi" type="number" id="ikm-ikramiye" value="${entry?.ikramiye||0}" placeholder="0" min="0" step="0.01" style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'"></div>
+            <div><div class="fl" style="margin-bottom:4px">Kesinti ₺</div>
+              <input class="fi" type="number" id="ikm-kesinti" value="${entry?.kesinti||0}" placeholder="0" min="0" step="0.01" style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'"></div>
+          </div>
+        </div>
+        <!-- Bölüm 3: Not -->
+        <div><div class="fl" style="margin-bottom:4px">Not</div>
+          <input class="fi" id="ikm-not" value="${entry?.not||''}" placeholder="Ek bilgi..." style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'"></div>
       </div>
       <input type="hidden" id="ikm-eid" value="${id||''}">
       <div class="mf">
