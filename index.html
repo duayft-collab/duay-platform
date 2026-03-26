@@ -940,47 +940,58 @@ function _doLogin() {
 
       <!-- Panel: Admin -->
       <div id="panel-admin" class="panel">
-        <div class="ph">
-          <div><div class="pht">Kullanıcı Yönetimi</div><div class="phs">RBAC &amp; yetki yönetimi</div></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btns" onclick="Admin.openSessionManager()" style="font-size:11px">🖥 Oturumlar</button>
-            <button class="btn btns" onclick="Admin.openInviteModal()" style="font-size:11px">✉️ Davet</button>
-            <button class="btn btns" onclick="Admin.openNotifPrefs()" style="font-size:11px">🔔 Tercihler</button>
-            <button class="btn btnp" onclick="Admin.openModal()">+ Kullanıcı Ekle</button>
-          </div>
-        </div>
-        <div class="sg">
-          <div class="sc"><div class="sci">&#128101;</div><div class="scv" id="admin-total">0</div><div class="scl">Toplam</div></div>
-          <div class="sc"><div class="sci">&#9989;</div>  <div class="scv" id="admin-active">0</div><div class="scl">Aktif</div></div>
-          <div class="sc"><div class="sci">&#9208;</div>  <div class="scv" id="admin-suspended">0</div><div class="scl">Askıda</div></div>
-          <div class="sc"><div class="sci">&#128081;</div><div class="scv" id="admin-admins">0</div><div class="scl">Yönetici</div></div>
-        </div>
-        <div class="card">
-          <div class="ch"><div class="ur">
-            <input class="si" type="search" id="admin-search" placeholder="Kullanıcı ara..." oninput="Admin.render()">
-            <select class="si" id="admin-role-f"   onchange="Admin.render()"><option value="">Tüm Roller</option><option value="admin">Admin</option><option value="staff">Personel</option></select>
-            <select class="si" id="admin-status-f" onchange="Admin.render()"><option value="">Tüm Durumlar</option><option value="active">Aktif</option><option value="suspended">Askıda</option></select>
-          </div></div>
-          <div id="admin-list" style="overflow-x:auto"></div>
-        </div>
-        <div class="card">
-          <div class="ch">
-            <span class="ct">Aktivite Logu</span>
-            <div class="ur">
-              <input class="si" type="search" id="log-search" placeholder="Ara..." oninput="Admin.renderLog()">
-              <select class="si" id="log-type-f" onchange="Admin.renderLog()"><option value="">Tüm Türler</option><option value="login">Giriş</option><option value="task">Görev</option><option value="user">Kullanıcı</option><option value="kargo">Kargo</option></select>
-              <span id="log-total" style="font-size:12px;color:var(--t3)" aria-live="polite"></span>
+        <!-- V2 Tasarım: Split Layout -->
+        <div style="display:flex;height:100%;min-height:calc(100vh - 60px)">
+
+          <!-- SOL: Kullanıcı Listesi -->
+          <div style="width:320px;min-width:280px;border-right:1px solid var(--b);display:flex;flex-direction:column;background:var(--sf);flex-shrink:0" id="adm-sidebar">
+            <!-- Üst bar -->
+            <div style="padding:16px;border-bottom:1px solid var(--b)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <div style="font-size:15px;font-weight:700;color:var(--t)">Kullanicilar</div>
+                <button class="btn btnp" onclick="Admin.openModal()" style="font-size:11px;padding:5px 12px;border-radius:7px">+ Ekle</button>
+              </div>
+              <input type="search" id="admin-search" placeholder="Ara..." oninput="Admin.render()" style="width:100%;padding:8px 12px;border:1.5px solid var(--b);border-radius:8px;font-size:13px;background:var(--s);color:var(--t);outline:none;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'">
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <select id="admin-role-f" onchange="Admin.render()" style="flex:1;padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit"><option value="">Tum Roller</option><option value="admin">Admin</option><option value="manager">Yonetici</option><option value="lead">Lider</option><option value="staff">Personel</option></select>
+                <select id="admin-status-f" onchange="Admin.render()" style="flex:1;padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit"><option value="">Tum Durum</option><option value="active">Aktif</option><option value="suspended">Pasif</option></select>
+              </div>
+            </div>
+            <!-- Stat chips -->
+            <div style="display:flex;gap:0;border-bottom:1px solid var(--b)">
+              <div style="flex:1;padding:10px;text-align:center;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:700;color:var(--t)" id="admin-total">0</div><div style="font-size:9px;color:var(--t3)">Toplam</div></div>
+              <div style="flex:1;padding:10px;text-align:center;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:700;color:#16A34A" id="admin-active">0</div><div style="font-size:9px;color:var(--t3)">Aktif</div></div>
+              <div style="flex:1;padding:10px;text-align:center;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:700;color:#DC2626" id="admin-suspended">0</div><div style="font-size:9px;color:var(--t3)">Pasif</div></div>
+              <div style="flex:1;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:#7C3AED" id="admin-admins">0</div><div style="font-size:9px;color:var(--t3)">Admin</div></div>
+            </div>
+            <!-- Kullanıcı listesi -->
+            <div id="admin-list" style="flex:1;overflow-y:auto"></div>
+            <!-- Alt araçlar -->
+            <div style="padding:8px;border-top:1px solid var(--b);display:flex;gap:4px;flex-wrap:wrap">
+              <button class="btn btns" onclick="Admin.openSessionManager()" style="font-size:10px;flex:1">Oturumlar</button>
+              <button class="btn btns" onclick="Admin.openInviteModal()" style="font-size:10px;flex:1">Davet</button>
+              <button class="btn btns" onclick="exportUsersXlsx?.()" style="font-size:10px;flex:1">Excel</button>
             </div>
           </div>
-          <div id="activity-log-list" style="overflow-x:auto"></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Geliştirme Önerileri</span></div>
-          <div style="padding:16px">
-            <textarea class="fi" id="suggest-input" rows="3" style="margin-bottom:10px;resize:vertical" placeholder="Önerinizi yazın..."></textarea>
-            <button class="btn btnp" onclick="Admin.submitSuggestion()">Gönder</button>
+
+          <!-- SAG: Profil Detay + Log -->
+          <div style="flex:1;overflow-y:auto;background:var(--s2)">
+            <!-- Seçili kullanıcı profil alanı -->
+            <div id="adm-detail" style="padding:24px"></div>
+            <!-- Aktivite Logu -->
+            <div style="padding:0 24px 24px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <span style="font-size:13px;font-weight:600;color:var(--t)">Aktivite Logu</span>
+                <div style="display:flex;gap:6px">
+                  <input type="search" id="log-search" placeholder="Ara..." oninput="Admin.renderLog()" style="padding:5px 10px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);width:120px;font-family:inherit">
+                  <select id="log-type-f" onchange="Admin.renderLog()" style="padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit"><option value="">Tumu</option><option value="login">Giris</option><option value="task">Gorev</option><option value="user">Kullanici</option></select>
+                  <span id="log-total" style="font-size:11px;color:var(--t3);align-self:center"></span>
+                </div>
+              </div>
+              <div id="activity-log-list" style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden"></div>
+            </div>
           </div>
-          <div id="suggestions-list"></div>
+
         </div>
       </div>
 

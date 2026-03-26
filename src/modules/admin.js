@@ -55,17 +55,16 @@ function _debouncedSearch(val) {
 
 // ── Yardımcılar ──────────────────────────────────────────────────
 
-// ── Render: Kullanıcı Listesi ─────────────────────────────────────
+// ── Render: Split Layout ─────────────────────────────────────────
+let _selectedUserId = null;
+
 function renderAdmin() {
   if (!isAdmin()) {
     const cont = g('admin-list');
-    if (cont) cont.innerHTML = `<div style="padding:32px;text-align:center;color:var(--t2)">
-      ${window.t ? t('err.permission') : 'Bu panele erişim yetkiniz yok.'}</div>`;
+    if (cont) cont.innerHTML = `<div style="padding:32px;text-align:center;color:var(--t2)">Bu panele erisim yetkiniz yok.</div>`;
     return;
   }
-  // Özellik 6: Otomatik pasif kontrolü (30 gün)
   checkInactiveUsers();
-  // Oturum kaydı
   registerSession();
 
   const users  = loadUsers();
@@ -74,66 +73,135 @@ function renderAdmin() {
   const statF  = g('admin-status-f')?.value || '';
 
   let fl = users;
-  if (search) fl = fl.filter(u =>
-    u.name.toLowerCase().includes(search) ||
-    (u.email || '').toLowerCase().includes(search)
-  );
-  if (roleF)  fl = fl.filter(u => u.role   === roleF);
+  if (search) fl = fl.filter(u => (u.name||'').toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search));
+  if (roleF)  fl = fl.filter(u => u.role === roleF);
   if (statF)  fl = fl.filter(u => u.status === statF);
 
-  // İstatistikler
-  st('admin-total',     users.length);
-  st('admin-active',    users.filter(u => u.status === 'active').length);
-  st('admin-suspended', users.filter(u => u.status === 'suspended').length);
-  st('admin-admins',    users.filter(u => u.role   === 'admin').length);
+  // Istatistikler
+  const _s = (id,v) => { const el = g(id); if(el) el.textContent = v; };
+  _s('admin-total',     users.length);
+  _s('admin-active',    users.filter(u => u.status === 'active').length);
+  _s('admin-suspended', users.filter(u => u.status !== 'active').length);
+  _s('admin-admins',    users.filter(u => u.role   === 'admin').length);
 
   const cont = g('admin-list');
   if (!cont) return;
+
+  // Bos state
   if (!fl.length) {
-    cont.innerHTML = `<div style="padding:32px;text-align:center;color:var(--t2)">
-      <div style="font-size:28px;margin-bottom:8px">👤</div>
-      ${window.t ? t('lbl.noData') : 'Kullanıcı bulunamadı.'}</div>`;
+    cont.innerHTML = `<div style="padding:48px 20px;text-align:center">
+      <div style="width:64px;height:64px;border-radius:16px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px">👥</div>
+      <div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:4px">Kullanici bulunamadi</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px">${search ? 'Arama kriterlerini degistirin' : 'Ilk kullaniciyi ekleyin'}</div>
+      <button class="btn btnp" onclick="Admin.openModal()" style="font-size:12px">+ Kullanici Ekle</button>
+    </div>`;
     return;
   }
 
+  // Sidebar liste
   const frag = document.createDocumentFragment();
-  fl.forEach(u => { const card = _userCard(u); frag.appendChild(card); });
+  fl.forEach(u => frag.appendChild(_sidebarItem(u)));
   cont.replaceChildren(frag);
+
+  // Ilk kullanici veya secili kullaniciyi goster
+  if (!_selectedUserId || !fl.find(x => x.id === _selectedUserId)) {
+    _selectedUserId = fl[0].id;
+  }
+  _renderDetail(_selectedUserId);
 }
 
-function _userCard(u) {
-  const isSelf = u.id === _getCU()?.id;
+function _sidebarItem(u) {
   const rm = ROLE_META[u.role] || ROLE_META.staff;
   const av = initials(u.name);
-  const moduleCount = (u.modules && u.role !== 'admin') ? u.modules.length + ' modül' : 'Tümü';
+  const isSelected = u.id === _selectedUserId;
+  const daysSince = u.lastLogin ? Math.floor((Date.now() - new Date(u.lastLogin.replace(' ','T')).getTime()) / 86400000) : null;
+  const online = daysSince !== null && daysSince < 1;
 
-  const card = document.createElement('div');
-  card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--b);transition:background .1s';
-  card.onmouseenter = () => card.style.background = 'var(--s2)';
-  card.onmouseleave = () => card.style.background = '';
+  const el = document.createElement('div');
+  el.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:3px solid ${isSelected?'var(--ac)':'transparent'};background:${isSelected?'var(--al)':'transparent'};transition:all .1s`;
+  el.onmouseenter = () => { if(!isSelected) el.style.background='var(--s2)'; };
+  el.onmouseleave = () => { if(!isSelected) el.style.background=''; };
+  el.onclick = () => { _selectedUserId = u.id; renderAdmin(); };
 
-  card.innerHTML = `
-    <div style="width:38px;height:38px;border-radius:10px;background:${rm.bg};border:1.5px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${rm.color};flex-shrink:0">${escapeHtml(av)}</div>
-    <div style="flex:1;min-width:0">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:600;color:var(--t)">${escapeHtml(u.name)}</span>
-        <span style="font-size:10px;padding:1px 7px;border-radius:5px;background:${rm.bg};color:${rm.color};border:1px solid ${rm.border}">${rm.icon} ${rm.label}</span>
-        ${u.status === 'active'
-          ? '<span style="font-size:10px;padding:1px 7px;border-radius:5px;background:rgba(34,197,94,.08);color:#16A34A">Aktif</span>'
-          : '<span style="font-size:10px;padding:1px 7px;border-radius:5px;background:rgba(239,68,68,.08);color:#DC2626">Askıda</span>'}
-      </div>
-      <div style="font-size:11px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(u.email || '—')}${u.dept ? ' · ' + escapeHtml(u.dept) : ''} · ${moduleCount}${u.lastLogin ? ' · ' + u.lastLogin.slice(0,10) : ''}${u.autoLocked ? ' · <span style="color:var(--rdt)">🔒 Oto-pasif</span>' : ''}</div>
+  el.innerHTML = `
+    <div style="position:relative;flex-shrink:0">
+      <div style="width:36px;height:36px;border-radius:10px;background:${rm.bg};border:1.5px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${rm.color}">${escapeHtml(av)}</div>
+      <div style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;border:2px solid var(--sf);background:${online?'#22C55E':u.status==='active'?'#9CA3AF':'#EF4444'}"></div>
     </div>
-    <div style="display:flex;gap:4px;flex-shrink:0">
-      <button class="tk-action-btn" onclick="Admin.showUserActivity(${u.id})" title="Aktivite">📊</button>
-      <button class="tk-action-btn" onclick="Admin.openModal(${u.id})" title="Düzenle">✏️</button>
-      <button class="tk-action-btn" onclick="Admin.openPermModal(${u.id})" title="Yetkiler">🔑</button>
-      ${u.status === 'active'
-        ? `<button class="tk-action-btn" onclick="Admin.suspend(${u.id})" title="Askıya Al" ${isSelf ? 'disabled style="opacity:.3"' : ''}>⏸</button>`
-        : `<button class="tk-action-btn" onclick="Admin.activate(${u.id})" title="Aktif Et" style="color:#16A34A">▶</button>`}
-      <button class="tk-action-btn" onclick="Admin.deleteUser(${u.id})" title="Sil" style="color:#EF4444;font-size:14px" ${isSelf ? 'disabled style="opacity:.3"' : ''}>✕</button>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:${isSelected?'700':'500'};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(u.name)}</div>
+      <div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(u.email||'—')}</div>
+    </div>
+    <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${rm.bg};color:${rm.color};flex-shrink:0">${rm.label}</span>`;
+  return el;
+}
+
+function _renderDetail(uid) {
+  const cont = g('adm-detail');
+  if (!cont) return;
+  const users = loadUsers();
+  const u = users.find(x => x.id === uid);
+  if (!u) { cont.innerHTML = ''; return; }
+
+  const rm = ROLE_META[u.role] || ROLE_META.staff;
+  const av = initials(u.name);
+  const isSelf = u.id === _getCU()?.id;
+  const moduleCount = (u.modules && u.role !== 'admin') ? u.modules.length : 'Tumu';
+  const daysSince = u.lastLogin ? Math.floor((Date.now() - new Date(u.lastLogin.replace(' ','T')).getTime()) / 86400000) : null;
+  const permLevel = u.permissions ? Object.values(u.permissions).filter(Boolean).length + ' ozel' : 'Varsayilan';
+
+  cont.innerHTML = `
+    <!-- Profil Basligi -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:16px">
+      <div style="padding:24px;display:flex;align-items:center;gap:20px">
+        <div style="width:72px;height:72px;border-radius:18px;background:${rm.bg};border:2px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:${rm.color};flex-shrink:0">${escapeHtml(av)}</div>
+        <div style="flex:1">
+          <div style="font-size:20px;font-weight:700;color:var(--t);margin-bottom:4px">${escapeHtml(u.name)}</div>
+          <div style="font-size:13px;color:var(--t2);margin-bottom:6px">${escapeHtml(u.email||'—')}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;padding:3px 10px;border-radius:6px;background:${rm.bg};color:${rm.color};border:1px solid ${rm.border};font-weight:600">${rm.icon} ${rm.label}</span>
+            ${u.status==='active'
+              ?'<span style="font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(34,197,94,.08);color:#16A34A;font-weight:600">Aktif</span>'
+              :'<span style="font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(239,68,68,.08);color:#DC2626;font-weight:600">Pasif</span>'}
+            ${u.autoLocked?'<span style="font-size:11px;padding:3px 10px;border-radius:6px;background:rgba(239,68,68,.05);color:#DC2626">Oto-kilitli</span>':''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="btn btnp" onclick="Admin.openModal(${u.id})" style="font-size:12px">Duzenle</button>
+          <button class="btn btns" onclick="Admin.openPermModal(${u.id})" style="font-size:12px">Yetkiler</button>
+        </div>
+      </div>
+
+      <!-- Bilgi Grid -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--b)">
+        <div style="padding:14px;border-right:1px solid var(--b)">
+          <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Departman</div>
+          <div style="font-size:13px;color:var(--t);font-weight:500">${escapeHtml(u.dept||'Belirtilmedi')}</div>
+        </div>
+        <div style="padding:14px;border-right:1px solid var(--b)">
+          <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Moduller</div>
+          <div style="font-size:13px;color:var(--t);font-weight:500">${moduleCount}</div>
+        </div>
+        <div style="padding:14px;border-right:1px solid var(--b)">
+          <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Son Giris</div>
+          <div style="font-size:13px;color:${daysSince!==null&&daysSince>14?'var(--rdt)':'var(--t)'};font-weight:500">${u.lastLogin?u.lastLogin.slice(0,10):'Hic'}</div>
+        </div>
+        <div style="padding:14px">
+          <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Yetki</div>
+          <div style="font-size:13px;color:var(--t);font-weight:500">${permLevel}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hizli Aksiyonlar -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btns" onclick="Admin.showUserActivity(${u.id})" style="font-size:12px">Aktivite Gecmisi</button>
+      <button class="btn btns" onclick="Admin.resetPassword(${u.id})" style="font-size:12px">Sifre Sifirla</button>
+      <button class="btn btns" onclick="Admin.openNotifPrefs()" style="font-size:12px">Bildirim Tercihleri</button>
+      ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${u.id})" style="font-size:12px;color:#DC2626">Askiya Al</button>`:''}
+      ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${u.id})" style="font-size:12px;color:#16A34A">Aktif Et</button>`:''}
+      ${!isSelf?`<button class="btn btns" onclick="Admin.deleteUser(${u.id})" style="font-size:12px;color:#DC2626">Sil</button>`:''}
     </div>`;
-  return card;
 }
 
 // ── Modal: Kullanıcı Ekleme / Düzenleme ──────────────────────────
