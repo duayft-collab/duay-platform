@@ -555,9 +555,15 @@ function renderOdemeler() {
   const weekEndStr = weekEnd.toISOString().slice(0,10);
   const thisMonth  = today.slice(0,7);
 
-  const _allRaw = window.loadOdm ? loadOdm() : [];
+  // Tahsilat tab'ı seçiliyse loadTahsilat, diğer tab'larda loadOdm
   const _cuOdm  = _CUo();
-  const all     = _isManagerO() ? _allRaw : _allRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
+  let _allRaw;
+  if (_odmCurrentTab === 'tahsilat') {
+    _allRaw = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  } else {
+    _allRaw = window.loadOdm ? loadOdm() : [];
+  }
+  const all = _isManagerO() ? _allRaw : _allRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
 
   // Filtreler
   const q      = (_go('odm-search')?.value || '').toLowerCase();
@@ -585,7 +591,7 @@ function renderOdemeler() {
     // Sekme filtresi
     if (_odmCurrentTab === 'abonelik' && o.cat !== 'abonelik') return false;
     if (_odmCurrentTab === 'kredi_k'  && o.cat !== 'kredi_k')  return false;
-    if (_odmCurrentTab === 'bekliyor' && st !== 'bekliyor' && st !== 'yaklasan') return false;
+    if (_odmCurrentTab === 'bekliyor' && st !== 'bekliyor' && st !== 'yaklasan' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor'].includes(o.approvalStatus)) return false;
     if (_odmCurrentTab === 'gecikti'  && st !== 'gecikti')  return false;
     if (_odmCurrentTab === 'ay') {
       if (!(o.due||'').startsWith(thisMonth) && !(o.paidTs||'').startsWith(thisMonth)) return false;
@@ -604,7 +610,7 @@ function renderOdemeler() {
     // Chip: Durum filtresi
     if (chipStatus === 'gecikti'         && st !== 'gecikti') return false;
     if (chipStatus === 'no-receipt'      && !(o.paid && !o.receipt)) return false;
-    if (chipStatus === 'pending-approval' && o.approvalStatus !== 'pending') return false;
+    if (chipStatus === 'pending-approval' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor'].includes(o.approvalStatus)) return false;
 
     // Metin arama
     if (q) {
@@ -1078,6 +1084,7 @@ function saveOdm() {
     // Admin'lere bildirim gönder (manager dahil herkes pending → admin'e bildirim)
     const _managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => u.role === 'admin' && u.status === 'active');
     const _amt = parseFloat(entry.amount||0).toLocaleString('tr-TR');
+    console.log('[ONAY BİLDİRİMİ GÖNDERİLİYOR]', _managers.length, 'yonetici, role:', _CUo()?.role, '| odeme:', name, '| tutar:', _amt);
     _managers.forEach(m => {
       window.addNotif?.('💰', 'Yeni odeme onay bekliyor: ' + escapeHtml(name) + ' - ' + _amt + ' TL', 'warn', 'odemeler', m.id);
     });
