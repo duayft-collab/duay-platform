@@ -9,7 +9,8 @@
 const _go    = window.g;
 const _sto   = window.st;
 const _nowTso = window.nowTs;
-const _isAdminO = () => window.Auth?.getCU?.()?.role === 'admin' || window.Auth?.getCU?.()?.role === 'manager';
+const _isAdminO = () => window.Auth?.getCU?.()?.role === 'admin';
+const _isManagerO = () => window.Auth?.getCU?.()?.role === 'manager' || window.Auth?.getCU?.()?.role === 'admin';
 const _CUo      = window.CU;
 const _todayStr = () => new Date().toISOString().slice(0,10);
 
@@ -556,7 +557,7 @@ function renderOdemeler() {
 
   const _allRaw = window.loadOdm ? loadOdm() : [];
   const _cuOdm  = _CUo();
-  const all     = _isAdminO() ? _allRaw : _allRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
+  const all     = _isManagerO() ? _allRaw : _allRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
 
   // Filtreler
   const q      = (_go('odm-search')?.value || '').toLowerCase();
@@ -771,7 +772,7 @@ function renderOdemeler() {
             : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" class="btn btnp" style="font-size:10px;border-radius:6px;padding:3px 9px;white-space:nowrap">Odendi</button>')
           : '<button onclick="toggleOdmPaid('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 7px">↩</button>')
         + (!o.paid && o.approvalStatus !== 'pending_postpone' ? '<button onclick="postponeOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Ertele</button>' : '')
-        + ((o.approvalStatus==='pending' || o.approvalStatus==='ara_onay_bekleniyor' || o.approvalStatus==='final_onay_bekleniyor' || o.approvalStatus==='pending_postpone') && _isAdminO()
+        + ((o.approvalStatus==='pending' || o.approvalStatus==='ara_onay_bekleniyor' || o.approvalStatus==='final_onay_bekleniyor' || o.approvalStatus==='pending_postpone') && _isManagerO()
           ? '<button onclick="processOdmApproval('+o.id+',\''+(o.approvalStatus==='final_onay_bekleniyor'?'final_onayla':'ara_onayla')+'\');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 7px;border-radius:6px;color:var(--grt)">✓ Onayla</button>' : '')
         // ··· dropdown (ikincil butonlar)
         + '<div style="position:relative" onclick="event.stopPropagation()">'
@@ -781,7 +782,7 @@ function renderOdemeler() {
             + '<button onclick="openOdmModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">✏️ Duzenle</button>'
             + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--amt);font-family:inherit;border-bottom:1px solid var(--b)" title="Fatura belgesi yuklenmemis">📎 Dekont Yukle (eksik)</button>' : '')
             + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🏦 Odeme Talimati</button>' : '')
-            + (_isAdminO() ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
+            + (_isManagerO() ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
           + '</div>'
         + '</div>'
       + '</div>';
@@ -815,13 +816,6 @@ function openOdmModal(id) {
     + '<button onclick="document.getElementById(\'mo-odm-v9\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
     + '</div>'
     + '<div style="padding:18px 22px;max-height:74vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">'
-
-    // Gerçekleşen / Planlanan
-    + '<div style="display:flex;background:var(--s2);border-radius:9px;padding:3px;gap:2px">'
-    + '<button id="odm-btn-gercek" onclick="_odmSetType(false)" style="flex:1;padding:7px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;background:' + (!(o?.planned)?'var(--sf)':'none') + ';color:' + (!(o?.planned)?'var(--ac)':'var(--t3)') + '">💳 Gerçekleşen</button>'
-    + '<button id="odm-btn-plan" onclick="_odmSetType(true)" style="flex:1;padding:7px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;background:' + (o?.planned?'var(--sf)':'none') + ';color:' + (o?.planned?'#6366F1':'var(--t3)') + '">📅 Planlanan</button>'
-    + '</div>'
-    + '<input type="hidden" id="odm-f-planned" value="' + (o?.planned?'1':'0') + '">'
 
     // İsim
     + '<div class="fr"><div class="fl">ÖDEME ADI *</div>'
@@ -1035,7 +1029,6 @@ function saveOdm() {
     kurRate:        _odmGetRates()[currency] || 1,
     due:            _go('odm-f-due')?.value      || '',
     actualDate:     _go('odm-f-actual')?.value   || '',
-    planned:        _go('odm-f-planned')?.value === '1',
     note:           _go('odm-f-note')?.value     || '',
     paid:           !!_go('odm-f-paid')?.checked,
     alarmDays:      parseInt(_go('odm-f-alarm')?.value || '3'),
@@ -1074,7 +1067,7 @@ function saveOdm() {
     }
   } else {
     const newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
-    // Admin/manager oluşturursa otomatik onaylı
+    // Sadece admin otomatik onaylı — manager dahil diğerleri pending
     if (_isAdminO()) {
       newEntry.approved = true;
       newEntry.approvedBy = _CUo()?.id;
@@ -1092,8 +1085,8 @@ function saveOdm() {
   renderOdemeler();
   window.logActivity?.('view', `"${name}" ödeme ${eid?'güncellendi':'eklendi'}`);
   if (!eid && !_isAdminO()) {
-    // Tüm yöneticilere bildirim gönder
-    const _managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => ['admin','manager'].includes(u.role) && u.status === 'active');
+    // Admin'lere bildirim gönder (manager dahil herkes pending → admin'e bildirim)
+    const _managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => u.role === 'admin' && u.status === 'active');
     const _amt = parseFloat(entry.amount||0).toLocaleString('tr-TR');
     _managers.forEach(m => {
       window.addNotif?.('💰', 'Yeni odeme onay bekliyor: ' + escapeHtml(name) + ' - ' + _amt + ' TL', 'warn', 'odemeler', m.id);
@@ -1822,7 +1815,7 @@ function saveTahsilat() {
     actualDate: document.getElementById('tah-f-actual')?.value   || '',
     banka:      document.getElementById('tah-f-banka')?.value    || '',
     yontem:     document.getElementById('tah-f-yontem')?.value   || '',
-    planned:    document.getElementById('tah-f-planned')?.value === '1',
+    // planned alanı kaldırıldı
     collected:  !!document.getElementById('tah-f-collected')?.checked,
     assignedTo: parseInt(document.getElementById('tah-f-user')?.value || '0') || null,
     alarmDays:  parseInt(document.getElementById('tah-f-alarm')?.value || '3'),
@@ -1834,11 +1827,29 @@ function saveTahsilat() {
     const o = d.find(x => x.id === eid);
     if (o) Object.assign(o, entry);
   } else {
-    d.unshift({ id: generateNumericId(), ...entry, createdBy: _CUo()?.id });
+    const newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
+    if (_isAdminO()) {
+      newEntry.approved = true;
+      newEntry.approvedBy = _CUo()?.id;
+      newEntry.approvalStatus = 'approved';
+    } else {
+      newEntry.approvalStatus = 'pending';
+      newEntry.approvalRequestedBy = _CUo()?.id;
+      newEntry.approvalRequestedAt = _nowTso();
+    }
+    d.unshift(newEntry);
   }
   storeTahsilat(d);
   document.getElementById('mo-tahsilat')?.remove();
-  window.toast?.(eid ? 'Güncellendi ✓' : 'Tahsilat eklendi ✓', 'ok');
+  if (!eid && !_isAdminO()) {
+    const _admins = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => u.role === 'admin' && u.status === 'active');
+    _admins.forEach(a => {
+      window.addNotif?.('💰', 'Yeni tahsilat onay bekliyor: ' + escapeHtml(name) + ' - ' + amount + ' ' + currency, 'warn', 'odemeler', a.id);
+    });
+    window.toast?.('Tahsilat eklendi — yönetici onayı bekleniyor', 'ok');
+  } else {
+    window.toast?.(eid ? 'Güncellendi ✓' : 'Tahsilat eklendi ✓', 'ok');
+  }
   if (window._renderTahsilatPanel) window._renderTahsilatPanel();
   renderOdemeler();
 }
