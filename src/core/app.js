@@ -573,8 +573,8 @@ function init() {
 
   // Firebase Auth durum dinleyicisi
   window.Auth?.listenAuthState?.(
-    fbUser => {
-      const cu = window.Auth.resolveCurrentUser(fbUser.email);
+    async fbUser => {
+      const cu = await window.Auth.resolveCurrentUser(fbUser.email);
       if (cu) _finishLogin(cu);
       else logout();
     },

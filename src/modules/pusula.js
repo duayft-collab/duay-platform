@@ -1218,7 +1218,8 @@ function pdpRenderChat() {
 
   if (!g('pdp-chat-msgs')) {
     pane.innerHTML =
-      '<div id="pdp-chat-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:0"></div>'
+      '<div style="padding:8px 14px;border-bottom:1px solid var(--b);flex-shrink:0"><input type="search" id="pdp-chat-search" class="fi" placeholder="Mesajlarda ara..." style="font-size:12px;padding:6px 10px" oninput="pdpRefreshChatMsgs()"></div>'
+      + '<div id="pdp-chat-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:0"></div>'
       + '<div style="padding:10px 14px;border-top:1px solid var(--b);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--sf)">'
       + '<textarea id="pdp-chat-inp" class="fi" rows="2" style="resize:none;flex:1;font-size:13px;min-height:42px" placeholder="Mesaj yaz..."></textarea>'
       + '<div style="display:flex;flex-direction:column;gap:5px">'
@@ -1238,7 +1239,9 @@ function pdpRenderChat() {
 }
 
 function pdpRefreshChatMsgs() {
-  var msgs  = loadTaskChats()[_PDP_TASK_ID] || [];
+  var allMsgs = loadTaskChats()[_PDP_TASK_ID] || [];
+  var searchQ = (g('pdp-chat-search')?.value || '').toLowerCase();
+  var msgs = searchQ ? allMsgs.filter(m => (m.text||'').toLowerCase().includes(searchQ) || (m.name||'').toLowerCase().includes(searchQ)) : allMsgs;
   var users = loadUsers();
   var cont  = g('pdp-chat-msgs');
   if (!cont) return;
@@ -1609,9 +1612,23 @@ function quickUpdateTask(id, field, val) {
 }
 
 /** Yeni görev modalını açar */
+function _populateDeptSelect() {
+  const sel = g('tk-dept'); if (!sel) return;
+  const current = sel.value;
+  let depts = [];
+  try { const saved = JSON.parse(localStorage.getItem('ak_departments')||'[]'); if (saved.length) depts = saved; } catch(e) {}
+  if (!depts.length) depts = ['Finans','Lojistik','IK','IT','Satis','Operasyon','Diger'];
+  try { const tasks = loadTasks(); tasks.forEach(t => { if (t.department && !depts.includes(t.department)) depts.push(t.department); }); } catch(e) {}
+  sel.innerHTML = '<option value="">— Seciniz —</option>' + depts.map(d => '<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>').join('');
+  if (current) sel.value = current;
+}
+
 function openAddTask() {
   populatePusUsers();
-  ['tk-title','tk-desc','tk-tags','tk-link'].forEach(id => { const el = g(id); if (el) el.value = ''; });
+  _populateDeptSelect();
+  ['tk-title','tk-tags','tk-link'].forEach(id => { const el = g(id); if (el) el.value = ''; });
+  const _descRich = g('tk-desc-rich'); if (_descRich) _descRich.innerHTML = '';
+  if (g('tk-desc')) g('tk-desc').value = '';
   if (g('tk-pri'))    g('tk-pri').value    = '2';
   if (g('tk-due'))    g('tk-due').value    = '';
   if (g('tk-start'))  g('tk-start').value  = '';
@@ -1641,8 +1658,11 @@ function editTask(id) {
   if (!t) return;
   if (!_canEditTask(t)) { window.toast?.('Bu görevi düzenleme yetkiniz yok', 'err'); return; }
   populatePusUsers();
+  _populateDeptSelect();
   if (g('tk-title'))  g('tk-title').value  = t.title;
-  if (g('tk-desc'))   g('tk-desc').value   = t.desc || '';
+  const _editRich = g('tk-desc-rich');
+  if (_editRich) _editRich.innerHTML = t.desc || '';
+  if (g('tk-desc')) g('tk-desc').value = t.desc || '';
   if (g('tk-pri'))    g('tk-pri').value    = t.pri || 2;
   if (g('tk-due'))    g('tk-due').value    = t.due || '';
   if (g('tk-start'))  g('tk-start').value  = t.start || '';
@@ -1700,7 +1720,7 @@ function saveTask() {
   const dueTime = g('tk-due-time')?.value || '';
   const fields = {
     title,
-    desc:       g('tk-desc')?.value   || '',
+    desc:       g('tk-desc-rich')?.innerHTML?.trim() || g('tk-desc')?.value || '',
     pri:        parseInt(g('tk-pri')?.value  || '2'),
     due:        dueDate,
     due_time:   dueTime,

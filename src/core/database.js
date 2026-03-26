@@ -1047,6 +1047,56 @@ function _refreshCU(usersData) {
   } catch(e) { console.warn('[DB] _refreshCU hatası:', e); }
 }
 
+/**
+ * Realtime sync'ten gelen görev verisinde yeni atama var mı kontrol eder.
+ * CU'ya atanan yeni görev varsa anlık modal gösterir.
+ */
+const _lastSeenTaskIds = new Set();
+function _checkNewAssignments(tasksData) {
+  try {
+    const cu = window.Auth?.getCU?.();
+    if (!cu || !Array.isArray(tasksData)) return;
+    // İlk yüklemede mevcut görevleri kaydet, modal gösterme
+    if (!_lastSeenTaskIds.size) {
+      tasksData.forEach(t => _lastSeenTaskIds.add(t.id));
+      return;
+    }
+    tasksData.forEach(t => {
+      if (_lastSeenTaskIds.has(t.id)) return;
+      _lastSeenTaskIds.add(t.id);
+      // Yeni görev ve bana atanmış mı?
+      if (t.uid === cu.id) {
+        _showAssignmentModal(t);
+      }
+    });
+  } catch(e) {}
+}
+
+function _showAssignmentModal(task) {
+  const old = document.getElementById('mo-task-assigned'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-task-assigned'; mo.style.zIndex='9999';
+  mo.innerHTML = `<div class="moc" style="max-width:400px;padding:0;border-radius:16px;overflow:hidden;animation:_pusNotifSlide .3s ease-out">
+    <div style="background:linear-gradient(135deg,#6366F1,#8B5CF6);padding:24px;text-align:center;color:#fff">
+      <div style="font-size:36px;margin-bottom:8px">📋</div>
+      <div style="font-size:18px;font-weight:700">Yeni Gorev Atandi!</div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px">Sana yeni bir gorev atandi, basarilar!</div>
+    </div>
+    <div style="padding:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:8px">${window.escapeHtml?.(task.title)||task.title}</div>
+      ${task.due ? '<div style="font-size:12px;color:var(--t3);margin-bottom:4px">Bitis: '+task.due+'</div>' : ''}
+      ${task.department ? '<div style="font-size:12px;color:var(--t3)">Departman: '+task.department+'</div>' : ''}
+    </div>
+    <div style="padding:0 20px 20px;display:flex;gap:8px">
+      <button onclick="document.getElementById('mo-task-assigned').remove()" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>
+      <button onclick="document.getElementById('mo-task-assigned').remove();window.nav?.('pusula');setTimeout(()=>window.Pusula?.openDetail?.(${task.id}),300)" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
 function startRealtimeSync() {
   if (_syncStarted) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
   _syncStarted = true;
@@ -1055,7 +1105,7 @@ function startRealtimeSync() {
     // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
     ['users',         KEYS.users,         (data) => { _refreshCU(data); window.renderUsers?.(); }],
     // Kritik — her kullanıcı için
-    ['tasks',         KEYS.tasks,         () => window.Pusula?.render?.()],
+    ['tasks',         KEYS.tasks,         (data) => { _checkNewAssignments(data); window.Pusula?.render?.(); }],
     ['calendar',      KEYS.calendar,      () => window.renderCal?.()],
     ['announcements', KEYS.announcements, () => window.renderAnnouncements?.()],
     // Operasyon

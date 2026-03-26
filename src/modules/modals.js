@@ -103,18 +103,6 @@ function injectAllModals() {
         <select class="fi" id="tk-dept" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.()">
           <option value="">— Seciniz —</option>
         </select>
-        <script>
-          // Departman listesini dinamik doldur (admin.js + gorev'lerden)
-          (function(){
-            var sel=document.getElementById('tk-dept'); if(!sel||sel.options.length>1) return;
-            var depts=[];
-            try{ var saved=JSON.parse(localStorage.getItem('ak_departments')||'[]'); if(saved.length) depts=saved; } catch(e){}
-            if(!depts.length) depts=['Finans','Lojistik','IK','IT','Satis','Operasyon','Diger'];
-            // Gorevlerdeki departmanlari da ekle
-            try{ var tasks=JSON.parse(localStorage.getItem('ak_tk2')||'[]'); tasks.forEach(function(t){ if(t.department&&depts.indexOf(t.department)<0) depts.push(t.department); }); } catch(e){}
-            depts.forEach(function(d){ var o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
-          })();
-        </script>
         <!-- Departman iş yükü barı -->
         <div id="tk-dept-workload" style="display:none;margin-top:8px;background:var(--s2);border-radius:8px;padding:8px 12px">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px">
@@ -153,8 +141,19 @@ function injectAllModals() {
 
       <!-- Açıklama -->
       <div style="margin-bottom:14px">
-        <div class="fl" style="margin-bottom:5px">AÇIKLAMA</div>
-        <textarea class="fi" id="tk-desc" rows="2" style="resize:vertical;font-size:13px;border-radius:10px" placeholder="Detay, bağlam, gereksinimler…"></textarea>
+        <div class="fl" style="margin-bottom:5px">ACIKLAMA</div>
+        <div style="border:1.5px solid var(--b);border-radius:10px;overflow:hidden">
+          <div style="display:flex;gap:2px;padding:4px 8px;border-bottom:1px solid var(--b);background:var(--s2)">
+            <button type="button" onclick="document.execCommand('bold')" style="background:none;border:none;cursor:pointer;font-weight:700;font-size:13px;padding:3px 8px;border-radius:4px;color:var(--t);font-family:inherit" title="Kalin">B</button>
+            <button type="button" onclick="document.execCommand('italic')" style="background:none;border:none;cursor:pointer;font-style:italic;font-size:13px;padding:3px 8px;border-radius:4px;color:var(--t);font-family:inherit" title="Italik">I</button>
+            <button type="button" onclick="document.execCommand('underline')" style="background:none;border:none;cursor:pointer;text-decoration:underline;font-size:13px;padding:3px 8px;border-radius:4px;color:var(--t);font-family:inherit" title="Alti Cizili">U</button>
+            <div style="width:1px;background:var(--b);margin:2px 4px"></div>
+            <button type="button" onclick="document.execCommand('insertUnorderedList')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:3px 8px;border-radius:4px;color:var(--t)" title="Liste">&#8226;</button>
+            <button type="button" onclick="var u=prompt('Link URL:');if(u)document.execCommand('createLink',false,u)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:3px 8px;border-radius:4px;color:var(--t)" title="Link">🔗</button>
+          </div>
+          <div contenteditable="true" id="tk-desc-rich" style="min-height:60px;max-height:150px;overflow-y:auto;padding:10px 12px;font-size:13px;color:var(--t);outline:none;font-family:inherit;line-height:1.6" data-placeholder="Detay, baglam, gereksinimler..."></div>
+        </div>
+        <input type="hidden" id="tk-desc">
       </div>
 
       <!-- Alt Görevler -->
