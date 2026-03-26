@@ -1848,18 +1848,18 @@ function toggleTask(id, done) {
   }
 }
 
-/** Görevi siler */
+/** Görevi siler — sadece oluşturan silebilir */
 function delTask(id) {
   const d = loadTasks();
   const t = d.find(x => x.id === id); if (!t) return;
   const cu = _getCU();
-  // Yetki kontrolü
-  if (!window.isAdmin?.()) {
-    // createdBy yoksa (eski görevler) → uid sahibi silebilir
-    if (t.createdBy && t.createdBy !== cu?.id && t.uid === cu?.id) {
-      window.toast?.('Atanan gorevler silinemez — sadece olusturan silebilir', 'err'); return;
-    }
-    if (t.uid !== cu?.id && t.createdBy !== cu?.id) { window.toast?.('Silme yetkiniz yok', 'err'); return; }
+  // Sadece oluşturan silebilir (admin dahil)
+  if (t.createdBy && t.createdBy !== cu?.id) {
+    window.toast?.('Bu gorevi sadece olusturan kisi silebilir', 'err'); return;
+  }
+  // createdBy yoksa (eski görevler) → uid sahibi veya admin silebilir
+  if (!t.createdBy && t.uid !== cu?.id && !window.isAdmin?.()) {
+    window.toast?.('Silme yetkiniz yok', 'err'); return;
   }
   window.confirmModal('"' + escapeHtml(t.title) + '" silinsin mi?', {
     title: 'Gorev Sil', danger: true, confirmText: 'Evet, Sil',

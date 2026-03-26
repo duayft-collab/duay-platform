@@ -1085,9 +1085,13 @@ window._goToTask = function(tid) {
   document.getElementById('mo-task-assigned')?.remove();
   if (typeof window.nav === 'function') window.nav('pusula');
   setTimeout(function() {
-    if (typeof window.openPusDetail === 'function') window.openPusDetail(tid);
-    else if (window.Pusula && typeof window.Pusula.openDetail === 'function') window.Pusula.openDetail(tid);
-  }, 500);
+    if (typeof window.renderPusula === 'function') window.renderPusula();
+    else if (window.Pusula && typeof window.Pusula.render === 'function') window.Pusula.render();
+    setTimeout(function() {
+      if (typeof window.openPusDetail === 'function') window.openPusDetail(tid);
+      else if (window.Pusula && typeof window.Pusula.openDetail === 'function') window.Pusula.openDetail(tid);
+    }, 500);
+  }, 300);
 };
 
 function _showAssignmentModal(task) {
