@@ -19,6 +19,7 @@
 // loadUsers → window.loadUsers (database.js)
 // closeMo → window.closeMo (app.js)
 
+const _gc = window.g;
 const _stc = (id,v) => { const e=_gc(id); if(e) e.textContent=v; };
 const _tsC = window.nowTs;
 const _CUc      = window.CU;

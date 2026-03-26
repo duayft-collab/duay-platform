@@ -302,8 +302,7 @@ const Finans={
   // Yasal
   renderYasalGostergeler,
   YASAL_GOSTERGELER,
-  // Kargo firmaları
-  openKargoFirmaModal, renderKargoFirmaList, addKargoFirma, delKargoFirma,
+  // Kargo firmaları (window.* üzerinden erişilir, burada referans yok)
   // Durum
   LIVE_RATES,
   FALLBACK_RATES,

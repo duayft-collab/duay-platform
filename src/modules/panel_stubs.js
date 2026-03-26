@@ -590,7 +590,7 @@ function delEtkinlikItem(id){
     confirmText: 'Evet, Sil',
     onConfirm: () => {
       if(typeof storeEtkinlik==='function')storeEtkinlik((typeof loadEtkinlik==='function'?loadEtkinlik():[]).filter(x=>x.id!==id));
-      renderEtkinlik();window.toast?.('Silindi','ok');
+      window.renderEtkinlik?.();window.toast?.('Silindi','ok');
     }
   });
 }
@@ -702,7 +702,7 @@ function _injectActivityPanel() {
 // ════════════════════════════════════════════════════════════════
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderEvrak, renderArsiv, renderResmi, renderEtkinlik, renderTrashPanel };
+  module.exports = { renderEvrak, renderArsiv, renderResmi, renderTrashPanel };
 } else {
   // Hesap paneli wrap
   const _origHesap = window.renderHesapHistory;
@@ -728,7 +728,7 @@ if (typeof module !== 'undefined' && module.exports) {
   window.renderEvrak        = renderEvrak;
   window.renderArsiv        = renderArsiv;
   window.renderResmi        = renderResmi;
-  window.renderEtkinlik     = renderEtkinlik;
+  window.renderEtkinlik     = window.renderEtkinlik || function() { console.warn('[panel_stubs] renderEtkinlik henüz yüklenmedi'); };
   window.renderTrashPanel   = renderTrashPanel;
   // CRUD
   window.openEvrakModal     = openEvrakModal;

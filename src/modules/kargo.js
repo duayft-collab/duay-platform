@@ -10,7 +10,7 @@ const KRG_LOK_KEY     = 'ak_kargo_lokasyonlar';
 const KRG_KURYE_KEY   = 'ak_kargo_kurye';
 const KRG_LOK_KRG_KEY = 'ak_lok_kargo';
 
-const TASIMA_TIPLERI = {
+const KRG_TASIMA = {
   deniz:{l:'Deniz',ic:'🚢'}, hava:{l:'Hava',ic:'✈️'},
   tren:{l:'Tren',ic:'🚂'}, kara:{l:'Kara',ic:'🚛'}
 };
@@ -224,7 +224,7 @@ function _renderNavlunList(){
   var html='';
   Object.keys(grouped).forEach(function(tip){
     var list=grouped[tip];
-    var tc=TASIMA_TIPLERI[tip]||{l:tip,ic:'📦'};
+    var tc=KRG_TASIMA[tip]||{l:tip,ic:'📦'};
     html+='<div style="border-bottom:1px solid var(--b)"><div style="padding:8px 20px;background:var(--s2);font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">'+tc.ic+' '+tc.l+' — '+list.length+' sevkiyat</div>';
     list.forEach(function(k){
       var isL=k.status!=='teslim'&&k.date&&k.date<today;
