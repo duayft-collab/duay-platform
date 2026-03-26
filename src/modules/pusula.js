@@ -1280,11 +1280,18 @@ function pdpRefreshChatMsgs() {
       var nameHtml = !isMe ? '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">' + u.name + '</div>' : '';
       var fileHtml = m.file ? '<div style="margin-top:4px"><a href="' + m.file.data + '" download="' + m.file.name + '" style="font-size:11px;color:' + (isMe ? 'rgba(255,255,255,.85)' : 'var(--ac)') + ';display:inline-flex;align-items:center;gap:4px">📎 ' + m.file.name + '</a></div>' : '';
 
+      // Arama highlight
+      var displayText = m.text || '';
+      if (searchQ && displayText) {
+        var re = new RegExp('(' + searchQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+        displayText = displayText.replace(re, '<mark style="background:#FBBF24;color:#000;padding:0 2px;border-radius:2px">$1</mark>');
+      }
+
       row.innerHTML = avHtml
         + '<div style="max-width:74%">'
         + nameHtml
         + '<div style="background:' + (isMe ? 'var(--ac)' : 'var(--sf)') + ';color:' + (isMe ? '#fff' : 'var(--t)') + ';border:' + (isMe ? 'none' : '1px solid var(--b)') + ';border-radius:' + (isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px') + ';padding:7px 11px;font-size:13px;line-height:1.5;word-break:break-word">'
-        + (m.text ? '<div>' + m.text + '</div>' : '')
+        + (displayText ? '<div>' + displayText + '</div>' : '')
         + fileHtml
         + '</div>'
         + '<div style="font-size:9px;color:var(--t3);margin-top:2px;' + (isMe ? 'text-align:right' : '') + '">' + (m.ts || '').slice(11, 16) + '</div>'
@@ -1657,7 +1664,11 @@ function editTask(id) {
   const d = loadTasks();
   const t = d.find(x => x.id === id);
   if (!t) return;
-  if (!_canEditTask(t)) { window.toast?.('Bu görevi düzenleme yetkiniz yok', 'err'); return; }
+  const _editCu = _getCU();
+  if (!window.isAdmin?.() && t.uid === _editCu?.id && t.createdBy && t.createdBy !== _editCu?.id) {
+    window.toast?.('Atanan gorevler duzenlenemez — sadece olusturan duzenleyebilir', 'err'); return;
+  }
+  if (!_canEditTask(t)) { window.toast?.('Bu gorevi duzenleme yetkiniz yok', 'err'); return; }
   populatePusUsers();
   _populateDeptSelect();
   if (g('tk-title'))  g('tk-title').value  = t.title;
@@ -1839,12 +1850,24 @@ function toggleTask(id, done) {
 /** Görevi siler */
 function delTask(id) {
   const d = loadTasks();
-  const t = d.find(x => x.id === id);
-  if (!t || (t.uid !== _getCU()?.id && !window.isAdmin?.())) { window.toast?.('Yetki yok', 'err'); return; }
-  saveTasks(d.filter(x => x.id !== id));
-  renderPusula();
-  logActivity('task', `"${t.title}" görevini sildi`);
-  window.toast?.('Silindi', 'ok');
+  const t = d.find(x => x.id === id); if (!t) return;
+  const cu = _getCU();
+  // Yetki kontrolü
+  if (!window.isAdmin?.()) {
+    if (t.uid === cu?.id && t.createdBy && t.createdBy !== cu?.id) {
+      window.toast?.('Atanan gorevler silinemez — sadece olusturan silebilir', 'err'); return;
+    }
+    if (t.uid !== cu?.id) { window.toast?.('Silme yetkiniz yok', 'err'); return; }
+  }
+  window.confirmModal('"' + escapeHtml(t.title) + '" silinsin mi?', {
+    title: 'Gorev Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      saveTasks(d.filter(x => x.id !== id));
+      renderPusula();
+      logActivity('task', `"${t.title}" görevini sildi`);
+      window.toast?.('Silindi', 'ok');
+    }
+  });
 }
 
 /** Katılımcı / İzleyici listelerini doldurur (mutex) */

@@ -1119,12 +1119,27 @@ function _showAssignmentModal(task) {
       ${assigner.name ? '<div style="font-size:12px;color:var(--t3)">Atayan: <span style="font-weight:600;color:var(--t2)">' + esc(assigner.name) + '</span></div>' : ''}
     </div>
     <div style="padding:0 20px 20px;display:flex;gap:8px">
-      <button onclick="document.getElementById('mo-task-assigned').remove()" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>
-      <button onclick="document.getElementById('mo-task-assigned').remove();if(typeof window.nav==='function')window.nav('pusula');setTimeout(function(){if(typeof window.openPusDetail==='function')window.openPusDetail(${task.id});else if(window.Pusula&&typeof window.Pusula.openDetail==='function')window.Pusula.openDetail(${task.id});},300)" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
+      <button id="_asgn-close" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>
+      <button id="_asgn-view" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
     </div>
   </div>`;
   document.body.appendChild(mo);
   mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+
+  // Buton event'leri — inline onclick yerine addEventListener
+  document.getElementById('_asgn-close')?.addEventListener('click', () => mo.remove());
+  document.getElementById('_asgn-view')?.addEventListener('click', () => {
+    const tid = task.id;
+    mo.remove();
+    // Panel geçişi
+    if (typeof window.nav === 'function') window.nav('pusula');
+    // 400ms bekle — panel render tamamlansın
+    setTimeout(() => {
+      try { window['openPusDetail'](tid); }
+      catch(e) { try { window['Pusula']['openDetail'](tid); } catch(e2) { console.error('[assign] Gorev acilamadi:', tid, e2); } }
+    }, 400);
+  });
+
   setTimeout(() => mo.classList.add('open'), 10);
 }
 
