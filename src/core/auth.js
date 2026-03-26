@@ -178,20 +178,24 @@ function listenAuthState(onIn, onOut) {
 // ════════════════════════════════════════════════════════════════
 
 async function login(email, password) {
+  console.log('[AUTH] login başladı. FB_AUTH:', !!FB_AUTH, '| FB_DB:', !!FB_DB);
   // Firebase varsa önce dene
   if (FB_AUTH) {
     try {
       await FB_AUTH.signInWithEmailAndPassword(email, password);
+      console.log('[AUTH] Firebase signIn başarılı. currentUser:', FB_AUTH.currentUser?.email);
       // Firebase başarılı — CU'yu platform tablosundan çöz
       const fbEmail = FB_AUTH.currentUser?.email || email;
       return await _localLogin(fbEmail, password, true); // skipPwCheck=true
     } catch (e) {
+      console.warn('[AUTH] Firebase signIn başarısız:', e.code, '→ yerel login deneniyor');
       // Firebase başarısız → yerel dene
       const local = await _localLogin(email, password);
-      if (local.ok) return local;
+      if (local.ok) { console.log('[AUTH] Yerel login başarılı (Firebase Auth token YOK)'); return local; }
       return { ok: false, error: _translateFirebaseError(e.code) };
     }
   }
+  console.warn('[AUTH] FB_AUTH yok → direkt yerel login');
   // Firebase yok → direkt yerel
   return await _localLogin(email, password);
 }

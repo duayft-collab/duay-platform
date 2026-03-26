@@ -363,6 +363,7 @@ function _finishLogin(user) {
   if (ap) ap.classList.add('on');
 
   logActivity('login', 'sisteme giriş yaptı');
+  console.log('[LOGIN] _finishLogin çağrıldı. user:', user?.name, '| FB_AUTH:', !!window.Auth?.getFBAuth?.(), '| FB_AUTH.currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
   // P0: Tüm giriş yollarında realtime sync başlat
   setTimeout(() => window.DB?.startRealtimeSync?.(), 500);
   _initApp(u);

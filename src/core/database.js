@@ -149,7 +149,7 @@ function _syncFirestore(path, data, mode = 'set') {
   try {
     const FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) {
-      console.warn('[DB:sync] Firebase DB yok — offline mod');
+      console.warn('[DB:sync] Firebase DB yok — offline mod. Auth durum:', !!window.Auth?.getFBAuth?.()?.currentUser);
       return;
     }
     const collection = path.split('/').pop();
@@ -159,14 +159,18 @@ function _syncFirestore(path, data, mode = 'set') {
     _writingNow[collection] = Date.now() + 2000;
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
+    console.log('[FIRESTORE WRITE]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : typeof data, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
     if (mode === 'set') {
       FB_DB.doc(path).set(payload, { merge: true })
-        .catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
+        .then(() => console.log('[FIRESTORE OK]', path))
+        .catch(e => { console.error('[FIRESTORE ERROR]', path, e.code, e.message); GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'); });
     } else {
       FB_DB.collection(path).add({ ...payload })
-        .catch(e => GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'));
+        .then(() => console.log('[FIRESTORE OK]', path))
+        .catch(e => { console.error('[FIRESTORE ERROR]', path, e.code, e.message); GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'); });
     }
   } catch (e) {
+    console.error('[FIRESTORE EXCEPTION]', e);
     GlobalErrorHandler('_syncFirestore', e, 'warn');
   }
 }
@@ -931,7 +935,7 @@ let _syncStarted = false;
 function _listenCollection(collection, localKey, onUpdate) {
   try {
     const FB_DB = window.Auth?.getFBDB?.();
-    if (!FB_DB) return; // Firebase bağlı değil
+    if (!FB_DB) { console.warn('[LISTEN] FB_DB yok, atlanıyor:', collection); return; }
 
     const tid   = _getTid();
     // paths kontrolü kaldırıldı — _base2 kendi path'ini oluşturuyor
@@ -944,6 +948,7 @@ function _listenCollection(collection, localKey, onUpdate) {
 
     const _base2 = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
     const docRef = FB_DB.collection(_base2).doc(collection);
+    console.log('[LISTEN]', collection, '→', _base2 + '/' + collection, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
     // Anlık ilk çekme — yeni cihazlarda localStorage boş olabilir
     docRef.get().then(snap => {
       if (!snap.exists) return;
@@ -1098,6 +1103,7 @@ function _showAssignmentModal(task) {
 }
 
 function startRealtimeSync() {
+  console.log('[SYNC] startRealtimeSync çağrıldı. _syncStarted:', _syncStarted, '| FB_DB:', !!window.Auth?.getFBDB?.(), '| FB_AUTH currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
   if (_syncStarted) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
   _syncStarted = true;
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
