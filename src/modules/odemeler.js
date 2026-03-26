@@ -768,7 +768,9 @@ function renderOdemeler() {
         // Ana butonlar (her zaman görünür)
         + (!o.paid
           ? (_odmNeedsApproval(o) && o.approvalStatus !== 'approved' && o.approvalStatus !== 'kesinlesti'
-            ? '<button onclick="openApprovalFlow('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Onay Iste</button>'
+            ? (o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor'
+              ? '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(245,158,11,.08);color:#D97706;font-weight:500">⏳ Onay Bekleniyor</span>'
+              : '<button onclick="openApprovalFlow('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Onay Iste</button>')
             : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" class="btn btnp" style="font-size:10px;border-radius:6px;padding:3px 9px;white-space:nowrap">Odendi</button>')
           : '<button onclick="toggleOdmPaid('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 7px">↩</button>')
         + (!o.paid && o.approvalStatus !== 'pending_postpone' ? '<button onclick="postponeOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Ertele</button>' : '')
@@ -1679,7 +1681,7 @@ function openTahsilatModal(id) {
   // Tarihler
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   html += '<div class="fr"><div class="fl">BEKLENEN / PLANLANAN TARİH</div><input type="date" class="fi" id="tah-f-due" value="' + (o?o.due||'':'') + '"></div>';
-  html += '<div class="fr" id="tah-gercek-wrap" style="opacity:' + (isPlanned?'.4':'1') + '"><div class="fl">GERÇEKLEŞEN TARİH</div><input type="date" class="fi" id="tah-f-actual" value="' + (o?o.actualDate||'':'') + '"' + (isPlanned?' disabled':'') + '></div></div>';
+  html += '<div class="fr" id="tah-gercek-wrap"><div class="fl">GERÇEKLEŞEN TARİH</div><input type="date" class="fi" id="tah-f-actual" value="' + (o?o.actualDate||'':'') + '"></div></div>';
 
   // Banka + Yöntem
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
