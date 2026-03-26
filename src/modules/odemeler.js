@@ -1,7 +1,7 @@
 /**
  * ════════════════════════════════════════════════════════════════
  * src/modules/odemeler.js  —  v9.0.0
- * Rutin Ödemeler — Kullanıcı Atama, Alarm, Dekont, Excel Import/Export
+ * Nakit Akisi — Kullanıcı Atama, Alarm, Dekont, Excel Import/Export
  * ════════════════════════════════════════════════════════════════
  */
 'use strict';
@@ -269,7 +269,7 @@ function _injectOdmPanel() {
     // TOPBAR
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">',
       '<div>',
-        '<div style="font-size:14px;font-weight:600;color:var(--t)">Rutin Ödemeler</div>',
+        '<div style="font-size:14px;font-weight:600;color:var(--t)">Nakit Akisi</div>',
         '<div style="font-size:10px;color:var(--t3);margin-top:1px" id="odm-sub-title">Yükleniyor...</div>',
       '</div>',
       '<div style="display:flex;gap:6px;align-items:center">',
@@ -550,6 +550,8 @@ function _renderAbonelikKart(o, users, today, todayD) {
 function renderOdemeler() {
   _injectOdmPanel();
   checkOdmSLA();
+  renderKurTicker();
+  if (!window._odmKurInterval) { window._odmKurInterval = setInterval(fetchKurRates, 180000); fetchKurRates(); }
   const today   = _todayStr();
   const todayD  = new Date(today);
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
@@ -769,6 +771,7 @@ function renderOdemeler() {
       + '<div>'
         + '<span class="badge ' + sta.cls + '" style="font-size:10px">' + sta.ic + ' ' + sta.l + '</span>'
         + (o.approvalStatus==='pending' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Onay bekliyor</div>' : '')
+        + (status==='gecikti' || (diff!==null && diff>=0 && diff<=2) ? '<div style="font-size:9px;font-weight:700;color:#EF4444;margin-top:2px">🔴 Kritik</div>' : '')
         + (o.approvalStatus==='pending_postpone' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Erteleme onayı</div>' : '')
       + '</div>'
       + '<div style="display:flex;gap:3px;flex-shrink:0;align-items:center">'
@@ -1010,7 +1013,11 @@ function saveOdm() {
   var cu = window.Auth?.getCU?.();
   var isAdmin = cu?.role === 'admin';
   var name = (document.getElementById('odm-f-name')?.value || '').trim();
-  if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
+  if (!name) { window.toast?.('Odeme adi zorunludur', 'err'); return; }
+  var _fAmt = parseFloat(document.getElementById('odm-f-amount')?.value || '0');
+  if (!_fAmt) { window.toast?.('Tutar zorunludur', 'err'); return; }
+  var _fDue = document.getElementById('odm-f-due')?.value || '';
+  if (!_fDue) { window.toast?.('Tarih zorunludur', 'err'); return; }
   var eidVal = document.getElementById('odm-f-eid')?.value || '';
   var eid = eidVal ? parseInt(eidVal) : 0;
   var isNew = !eid;
@@ -1292,7 +1299,7 @@ function exportOdmXlsx() {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   // Sütun genişlikleri
   ws['!cols'] = [8,24,14,12,12,12,10,16,12,24,18,8].map(w => ({ wch: w }));
-  XLSX.utils.book_append_sheet(wb, ws, 'Rutin Ödemeler');
+  XLSX.utils.book_append_sheet(wb, ws, 'Nakit Akisi');
   XLSX.writeFile(wb, 'rutin-odemeler-' + _todayStr() + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
   window.logActivity?.('view', 'Rutin ödemeler Excel olarak indirildi');
@@ -2633,6 +2640,67 @@ window._odmTaskSearch = function(val) {
   window.delOdm = delOdm;
 })();
 
+// Canlı kur bandı
+var _tickerRates = { USD: 32.5, EUR: 35.2, GBP: 41.1, ALTIN: 2450 };
+function renderKurTicker() {
+  var el = document.getElementById('odm-kur-ticker');
+  if (!el) return;
+  el.innerHTML = Object.entries(_tickerRates).map(function(e) {
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--t);white-space:nowrap">'
+      + '<span style="color:var(--ac)">' + e[0] + '</span> ' + e[1].toLocaleString('tr-TR') + ' TL</span>';
+  }).join('<span style="color:var(--b);padding:0 4px">|</span>');
+}
+function fetchKurRates() {
+  fetch('https://open.er-api.com/v6/latest/USD').then(function(r) { return r.json(); }).then(function(d) {
+    if (d.rates) {
+      _tickerRates.USD = Math.round((1 / (d.rates.TRY || 1)) * (d.rates.TRY || 32.5) * 100) / 100;
+      _tickerRates.EUR = Math.round((d.rates.TRY || 35) / (d.rates.EUR || 1) * 100) / 100;
+      _tickerRates.GBP = Math.round((d.rates.TRY || 41) / (d.rates.GBP || 1) * 100) / 100;
+      if (d.rates.TRY) _tickerRates.USD = Math.round(d.rates.TRY * 100) / 100;
+      renderKurTicker();
+    }
+  }).catch(function() { renderKurTicker(); });
+}
+window._odmFetchKur = fetchKurRates;
+
+// Nakit projeksiyon (15 gün)
+function renderNakitProjeksiyon() {
+  var cont = document.getElementById('odm-projeksiyon');
+  if (!cont) return;
+  var odm = window.loadOdm?.() || [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var today = new Date();
+  var days = [];
+  for (var i = 0; i < 15; i++) {
+    var d = new Date(today); d.setDate(d.getDate() + i);
+    var ds = d.toISOString().slice(0, 10);
+    var odmDay = odm.filter(function(o) { return o.due === ds && !o.paid; }).reduce(function(s, o) { return s + (parseFloat(o.amount) || 0); }, 0);
+    var tahDay = tah.filter(function(t) { return t.due === ds && !t.collected; }).reduce(function(s, t) { return s + (parseFloat(t.amount) || 0); }, 0);
+    days.push({ date: ds, label: ds.slice(5), odeme: odmDay, tahsilat: tahDay, net: tahDay - odmDay });
+  }
+  var maxVal = Math.max.apply(null, days.map(function(d) { return Math.max(d.odeme, d.tahsilat, 1); }));
+  var cumNet = 0;
+  cont.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">15 Gunluk Nakit Projeksiyon</div>'
+    + '<div style="display:flex;gap:4px;align-items:flex-end;height:120px;margin-bottom:8px">'
+    + days.map(function(d) {
+        cumNet += d.net;
+        var hO = Math.max(2, Math.round(d.odeme / maxVal * 100));
+        var hT = Math.max(2, Math.round(d.tahsilat / maxVal * 100));
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0">'
+          + '<div style="width:100%;height:' + hT + 'px;background:#10B981;border-radius:3px 3px 0 0"></div>'
+          + '<div style="width:100%;height:' + hO + 'px;background:#EF4444;border-radius:0 0 3px 3px"></div>'
+          + '<div style="font-size:8px;color:var(--t3);white-space:nowrap">' + d.label + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '<div style="display:flex;gap:12px;font-size:10px;color:var(--t3)">'
+      + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10B981;margin-right:3px"></span>Tahsilat</span>'
+      + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#EF4444;margin-right:3px"></span>Odeme</span>'
+      + '<span style="font-weight:600;color:' + (cumNet >= 0 ? '#10B981' : '#EF4444') + '">Net: ' + (cumNet >= 0 ? '+' : '') + Math.round(cumNet).toLocaleString('tr-TR') + ' TL</span>'
+    + '</div>';
+}
+window.renderNakitProjeksiyon = renderNakitProjeksiyon;
+
 const Odemeler = {
   render:      renderOdemeler,
   openModal:   openOdmModal,
@@ -2653,6 +2721,9 @@ const Odemeler = {
   importFile:  processOdmImport,
   CATS:        ODM_CATS,
   FREQ:        ODM_FREQ,
+  renderTicker: renderKurTicker,
+  fetchKur:     fetchKurRates,
+  renderProjeksiyon: renderNakitProjeksiyon,
   BANKS:       ODM_BANKS,
   openApprovalFlow,
   processApproval: processOdmApproval,
