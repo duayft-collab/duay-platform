@@ -155,6 +155,7 @@ const PIRIM_STATUS = {
   approved:    { l: 'Onaylandı',        c: 'bg', emoji: '✅' },
   rejected:    { l: 'Reddedildi',       c: 'br', emoji: '❌' },
   paid:        { l: 'Ödendi',           c: 'bb', emoji: '💸' },
+  expired:     { l: 'Süresi Doldu',     c: 'br', emoji: '⏰' },
 };
 
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
@@ -327,6 +328,12 @@ function _ensurePirimModals() {
           <div class="fr"><div class="fl">NOT</div>
             <textarea class="fi" id="prm-note" rows="2" style="resize:none" placeholder="Ek bilgi..."></textarea>
           </div>
+          <!-- Kanıt Dosyası (zorunlu) -->
+          <div class="fr">
+            <div class="fl">KANIT DOSYASI <span style="color:var(--rd)">*</span></div>
+            <input type="file" id="prm-evidence-file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" style="font-size:12px">
+            <div id="prm-evidence-preview" style="font-size:10px;color:var(--t3);margin-top:3px">Fatura, ekran görüntüsü veya belge yükleyin</div>
+          </div>
           <!-- Bonus/ceza (alım tipleri için) -->
           <div id="prm-bonus-panel" style="display:none">
             <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Bonus / Ceza Faktörleri</div>
@@ -375,6 +382,8 @@ function _injectPirimPanel() {
   </div>
   <div style="display:flex;gap:6px;align-items:center">
     <button class="btn btns" onclick="Pirim.openSimulator()" style="font-size:11px">🧮 Simülatör</button>
+    <button class="btn btns" onclick="Pirim.openPenaltyCalc()" style="font-size:11px">⚠️ Ceza</button>
+    <button class="btn btns" onclick="Pirim.openCalendar()" style="font-size:11px">📅 Takvim</button>
     <button class="btn btns" onclick="Pirim.openGlossary()" style="font-size:11px">📖 Sözlük</button>
     <button class="btn btns" onclick="Pirim.showPdf()" style="font-size:11px">📄 Yönetmelik</button>
     <button class="btn btns" onclick="Pirim.exportXlsx()" style="font-size:11px">⬇ Excel</button>
@@ -530,6 +539,8 @@ function _injectPirimPanel() {
 // ════════════════════════════════════════════════════════════════
 function renderPirim() {
   _injectPirimPanel();
+  // Hak kayıp kontrolü — süresi dolan onaylı primleri iptal et
+  checkPirimExpiry();
 
   const cu     = window.CU();
   const admin  = window.isAdmin();
@@ -708,19 +719,24 @@ function renderLeaderboard() {
   }
 
   const medals = ['🥇','🥈','🥉'];
+  const cuLb = window.CU();
+  const isAdminLb = window.isAdmin?.();
+  // Non-admin: sadece kendi sıralamasını görsün (isimsiz)
+  const myRank = sorted.findIndex(([uid]) => parseInt(uid) === cuLb?.id);
   cont.innerHTML = sorted.map(([uid, amt], i) => {
     const u  = users.find(x => x.id === parseInt(uid)) || { name: '?' };
-    const cu = window.CU();
-    const isMe = parseInt(uid) === cu?.id;
+    const isMe = parseInt(uid) === cuLb?.id;
+    const showName = isAdminLb || isMe;
+    const displayName = showName ? escapeHtml(u.name) + (isMe ? ' (sen)' : '') : `Kullanıcı #${i+1}`;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);${isMe?'background:rgba(99,102,241,.05);border-radius:8px;padding:8px;margin:-0 -4px;':''}">
       <span style="font-size:16px;width:22px;text-align:center">${medals[i] || `${i+1}`}</span>
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0">${(u.name||'?')[0]}</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0">${showName ? (u.name||'?')[0] : '?'}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:${isMe?'700':'500'};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}${isMe?' (sen)':''}</div>
+        <div style="font-size:12px;font-weight:${isMe?'700':'500'};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${displayName}</div>
       </div>
-      <div style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ac)">${amt.toLocaleString('tr-TR')} ₺</div>
+      <div style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ac)">${isAdminLb || isMe ? amt.toLocaleString('tr-TR') + ' ₺' : '***'}</div>
     </div>`;
-  }).join('');
+  }).join('') + (!isAdminLb && myRank < 0 ? '<div style="padding:8px;font-size:11px;color:var(--t3);text-align:center">Bu dönemde henüz priminiz yok</div>' : '');
 }
 
 function renderUpcoming() {
@@ -2595,6 +2611,233 @@ window.uploadPirimDoc = uploadPirimDoc;
 window.deletePirimDoc = deletePirimDoc;
 
 // ════════════════════════════════════════════════════════════════
+// CEZA HESAPLAYICI
+// ════════════════════════════════════════════════════════════════
+
+function openPenaltyCalc() {
+  const old = document.getElementById('mo-pirim-penalty');
+  if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-pirim-penalty'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:440px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:700;color:var(--t)">⚠️ Ceza Hesaplayıcı</span>
+      <button onclick="document.getElementById('mo-pirim-penalty').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="fg"><div class="fl">BRÜT PRİM TUTARI (TL)</div>
+        <input type="number" class="fi" id="pen-gross" placeholder="3500" min="0" oninput="_penCalc()" style="font-size:15px;font-weight:600">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="fg"><div class="fl">YÖNETİCİ İNDİRİMİ (%)</div>
+          <input type="number" class="fi" id="pen-mgr" placeholder="5" min="0" max="100" step="0.1" oninput="_penCalc()">
+          <div style="font-size:10px;color:var(--rdt);margin-top:2px">×3 ceza çarpanı uygulanır</div>
+        </div>
+        <div class="fg"><div class="fl">GECİKME (GÜN)</div>
+          <input type="number" class="fi" id="pen-delay" placeholder="0" min="0" oninput="_penCalc()">
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">1-2 gün: -%10 · 3+ gün: -%20</div>
+        </div>
+      </div>
+      <div id="pen-result" style="background:var(--s2);border-radius:10px;padding:16px;min-height:60px">
+        <div style="font-size:12px;color:var(--t3)">Değer girin — ceza anında hesaplanacak</div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _penCalc() {
+  const gross = parseFloat(document.getElementById('pen-gross')?.value || '0');
+  const mgrPct = parseFloat(document.getElementById('pen-mgr')?.value || '0');
+  const delay  = parseInt(document.getElementById('pen-delay')?.value || '0');
+  const res    = document.getElementById('pen-result');
+  if (!res || !gross) { if (res) res.innerHTML = '<div style="font-size:12px;color:var(--t3)">Değer girin</div>'; return; }
+
+  let net = gross;
+  const lines = [];
+
+  if (mgrPct > 0) {
+    const penRate = Math.min((mgrPct / 100) * 3, 1);
+    const penTL   = Math.round(gross * penRate * 100) / 100;
+    lines.push({ label: `Yönetici Müdahalesi: %${mgrPct} × 3 = -%${(penRate*100).toFixed(0)}`, amount: -penTL });
+    net -= penTL;
+  }
+  if (delay > 0) {
+    const dRate = delay >= 3 ? 0.20 : 0.10;
+    const dTL   = Math.round(net * dRate * 100) / 100;
+    lines.push({ label: `Gecikme (${delay} gün): -%${(dRate*100).toFixed(0)}`, amount: -dTL });
+    net -= dTL;
+  }
+
+  const lost = gross - Math.max(0, net);
+  res.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--t2)">Brüt Prim</span>
+      <span style="font-size:12px;font-weight:600">${_fmtTL(gross)}</span>
+    </div>
+    ${lines.map(l => `<div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:11px;color:var(--rdt)">${l.label}</span>
+      <span style="font-size:11px;font-weight:600;color:var(--rdt)">${_fmtTL(l.amount)}</span>
+    </div>`).join('')}
+    <div style="border-top:2px solid var(--b);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:var(--t)">Net Prim</span>
+      <span style="font-size:20px;font-weight:800;color:${net > 0 ? 'var(--ac)' : 'var(--rdt)'}">${_fmtTL(Math.max(0, net))}</span>
+    </div>
+    <div style="font-size:11px;color:var(--rdt);margin-top:4px;text-align:right">Toplam kesinti: ${_fmtTL(lost)}</div>`;
+}
+window._penCalc = _penCalc;
+
+// ════════════════════════════════════════════════════════════════
+// PRİM TAKVİMİ (Çeyrek Sonu Tarihleri)
+// ════════════════════════════════════════════════════════════════
+
+function openPirimCalendar() {
+  const old = document.getElementById('mo-pirim-cal');
+  if (old) old.remove();
+  const year = new Date().getFullYear();
+  const quarters = [
+    { q: 'Q1', date: year + '-03-31', label: '31 Mart ' + year },
+    { q: 'Q2', date: year + '-06-30', label: '30 Haziran ' + year },
+    { q: 'Q3', date: year + '-09-30', label: '30 Eylül ' + year },
+    { q: 'Q4', date: year + '-12-31', label: '31 Aralık ' + year },
+  ];
+  const today = new Date();
+
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-pirim-cal'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">📅 Prim Ödeme Takvimi — ${year}</div>
+    </div>
+    <div style="padding:16px 20px">
+      ${quarters.map(q => {
+        const qDate = new Date(q.date);
+        const diff  = Math.ceil((qDate - today) / 86400000);
+        const past  = diff < 0;
+        const warn  = !past && diff <= 7;
+        const caution = !past && !warn && diff <= 14;
+        const color = past ? 'var(--t3)' : warn ? '#EF4444' : caution ? '#F59E0B' : '#10B981';
+        const bg    = past ? 'var(--s2)' : warn ? 'rgba(239,68,68,.08)' : caution ? 'rgba(245,158,11,.08)' : 'rgba(16,185,129,.08)';
+        const badge = past ? 'Geçti' : warn ? `${diff} gün kaldı!` : caution ? `${diff} gün kaldı` : `${diff} gün`;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:${bg};margin-bottom:8px;border:1px solid ${color}20">
+          <div style="width:44px;height:44px;border-radius:10px;background:${color}18;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${color}">${q.q}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${q.label}</div>
+            <div style="font-size:11px;color:${color};font-weight:600;margin-top:2px">${badge}</div>
+          </div>
+          <div style="font-size:18px">${past ? '✅' : warn ? '🔴' : caution ? '🟡' : '🟢'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-pirim-cal').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+// ════════════════════════════════════════════════════════════════
+// HAK KAYIP SAYACI — onaylı primlerin son kullanma kontrolü
+// ════════════════════════════════════════════════════════════════
+
+const PIRIM_EXPIRY_DAYS = 30; // Onaydan itibaren 30 gün hak süresi
+
+/**
+ * Onaylı bir primin kalan gününü hesaplar.
+ * @param {Object} p — prim kaydı
+ * @returns {{ daysLeft:number, color:string, expired:boolean }}
+ */
+function _calcPirimExpiry(p) {
+  if (p.status !== 'approved') return { daysLeft: -1, color: '', expired: false };
+  const approvedDate = p.approvedAt || p.updatedAt || p.createdAt || '';
+  if (!approvedDate) return { daysLeft: -1, color: '', expired: false };
+  const approvedMs = new Date(approvedDate.replace(' ', 'T')).getTime();
+  if (isNaN(approvedMs)) return { daysLeft: -1, color: '', expired: false };
+  const expiryMs = approvedMs + PIRIM_EXPIRY_DAYS * 86400000;
+  const daysLeft = Math.ceil((expiryMs - Date.now()) / 86400000);
+  const expired  = daysLeft <= 0;
+  const color    = expired ? '#EF4444' : daysLeft <= 3 ? '#EF4444' : daysLeft <= 7 ? '#F59E0B' : '#10B981';
+  return { daysLeft, color, expired };
+}
+
+/**
+ * Süresi dolan primleri otomatik iptal eder ve bildirim gönderir.
+ * renderPirim() her çağrıldığında çalışır.
+ */
+function checkPirimExpiry() {
+  const d = window.loadPirim?.() || [];
+  let changed = false;
+  d.forEach(p => {
+    if (p.status !== 'approved') return;
+    const { expired } = _calcPirimExpiry(p);
+    if (expired) {
+      p.status = 'expired';
+      p.expiredAt = _now();
+      changed = true;
+      window.addNotif?.('⏰', '"' + escapeHtml(p.title) + '" hak süresi doldu — iptal edildi', 'err', 'pirim');
+    }
+  });
+  if (changed) window.storePirim?.(d);
+}
+
+// ════════════════════════════════════════════════════════════════
+// KANIT ZORUNLULUĞU — savePirim'e dosya kontrolü
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Prim talebi kaydedilmeden önce kanıt dosyası kontrolü yapar.
+ * Mevcut savePirim'i wrap eder — kanıt yoksa engeller.
+ */
+(function _patchSavePirimEvidence() {
+  const _origSave = savePirim;
+  savePirim = function() {
+    const eid = parseInt(window.g('prm-eid')?.value || '0');
+    // Düzenlemede kanıt kontrolü atla (zaten eklenmiş olabilir)
+    if (!eid) {
+      const fileEl = window.g('prm-evidence-file');
+      const hasFile = fileEl?.files?.length > 0;
+      const existing = window.g('prm-evidence-preview')?.dataset?.hasEvidence === '1';
+      if (!hasFile && !existing) {
+        window.toast?.('Kanıt dosyası/ekran görüntüsü zorunludur — lütfen yükleyin', 'err');
+        return;
+      }
+    }
+    // Dosya varsa oku ve entry'ye ekle
+    const fileEl = window.g('prm-evidence-file');
+    if (fileEl?.files?.[0]) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        window._pirimEvidenceData = { name: fileEl.files[0].name, data: ev.target.result };
+        _origSave();
+      };
+      reader.readAsDataURL(fileEl.files[0]);
+    } else {
+      _origSave();
+    }
+  };
+  window.savePirim = savePirim;
+  if (window.Pirim) window.Pirim.save = savePirim;
+})();
+
+// savePirim sonrası kanıt verisini entry'ye ekle
+(function _patchStorePirimEvidence() {
+  const _origStore = window.storePirim;
+  if (!_origStore) return;
+  window.storePirim = function(d) {
+    if (window._pirimEvidenceData && d?.length) {
+      const last = d[d.length - 1] || d[0];
+      if (last && !last.evidence) last.evidence = window._pirimEvidenceData;
+      window._pirimEvidenceData = null;
+    }
+    return _origStore(d);
+  };
+})();
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Pirim = {
@@ -2636,6 +2879,10 @@ const Pirim = {
   openGlossary:     openPirimGlossary,
   uploadDoc:        uploadPirimDoc,
   deleteDoc:        deletePirimDoc,
+  openPenaltyCalc:  openPenaltyCalc,
+  openCalendar:     openPirimCalendar,
+  checkExpiry:      checkPirimExpiry,
+  calcExpiry:       _calcPirimExpiry,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
