@@ -88,7 +88,6 @@ function _injectIkHub() {
   <button class="ikh-tab"    data-tab="degerlendirme"  onclick="IkHub.setTab('degerlendirme',this)">⭐ Değerlendirme</button>
   <button class="ikh-tab"    data-tab="ai_asistan"     onclick="IkHub.setTab('ai_asistan',this)">🤖 AI Asistan</button>
   <button class="ikh-tab"    data-tab="adaylar"        onclick="IkHub.setTab('adaylar',this)">📋 Adaylar</button>
-  <button class="ikh-tab"    data-tab="raporlar"       onclick="IkHub.setTab('raporlar',this)">📊 Raporlar</button>
 </div>
 
 <!-- ── PERSONEL ── -->
@@ -352,14 +351,6 @@ function _injectIkHub() {
       <button class="btn btns" onclick="IkHub._exportKayitlar()">⬇ Excel</button>
     </div>
     <div id="ikh-kayit-listesi"></div>
-  </div>
-</div>
-
-<!-- ── RAPORLAR ── -->
-<div id="ikh-tab-raporlar" class="ikh-tab-content" style="display:none">
-  <div class="ik-wrap">
-    <div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:14px">IK Raporlari</div>
-    <div id="ikh-rapor-body"></div>
   </div>
 </div>
 
@@ -746,7 +737,7 @@ function setIkTab(tab, btn) {
   _IK_TAB = tab;
   document.querySelectorAll('#panel-ik-hub .ikh-tab').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
-  ['personel','puantaj','izin','maas','performans','sozlesme','pipeline','on_gorusme','mulakat','test_drive','degerlendirme','ai_asistan','adaylar','raporlar'].forEach(t => {
+  ['personel','puantaj','izin','maas','performans','sozlesme','pipeline','on_gorusme','mulakat','test_drive','degerlendirme','ai_asistan','adaylar'].forEach(t => {
     const el = _gik('ikh-tab-' + t);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
@@ -763,7 +754,6 @@ function setIkTab(tab, btn) {
   if (tab === 'degerlendirme')  _ikRenderEval();
   if (tab === 'ai_asistan')     _ikRenderAI();
   if (tab === 'adaylar')        _ikRenderKayitlar();
-  if (tab === 'raporlar')       renderIkRaporlar();
 }
 
 function openIkAddModal() {
@@ -2094,12 +2084,11 @@ function st(pre,id,btn){
 // DATA
 // ══════════════════════════════════════════════════
 var STAGES=[
-  {id:'basvuru',         label:'Basvuru',      color:'#6366F1'},
-  {id:'phone-screening', label:'On Gorusme',   color:'#0EA5E9'},
-  {id:'interview',       label:'Mulakat',      color:'#F59E0B'},
-  {id:'teklif',          label:'Teklif',       color:'#8B5CF6'},
-  {id:'kabul',           label:'Kabul',        color:'#10B981'},
-  {id:'red',             label:'Red',          color:'#EF4444'},
+  {id:'phone-screening',i18n:'phone_screen'},
+  {id:'interview',i18n:'interview_form_nav'},
+  {id:'test-drive',i18n:'test_drive_nav'},
+  {id:'evaluation',i18n:'evaluation'},
+  {id:'onboarding',i18n:'thanks'},
 ];
 // Adaylar — localStorage persistansı
 const CAND_KEY = 'ak_ik_candidates';
@@ -2223,79 +2212,25 @@ function initDefaultIQ(){
 var KONTROL_ITEMS=['Mülakat takımını seçin (diğer personel üyeleri katılacaksa).','Görüşme için sessiz bir ortam hazırlayın.','Adayın özgeçmişini, telefon görüşmesi notlarını ve DISC profil sonuçlarını inceleyin.','Aday için firmanız ve pozisyonla ilgili bir bilgi paketi hazırlayın.','Adayı selamlayın ve tesisinizde kısa gezintiye çıkarın. İçecek bir şeyler teklif edin.','Görüşmenin amacını açıklayın.','Pozisyonla ilgili açık bir genel bakış sunun.','Adayın özgeçmişi ve çalışma hayatıyla ilgili soruları sorun.','Deneyimler, eğitim ve becerilerle ilgili hazırladığınız soruları sorun.','Mülakatı bitirin. Sürecin bundan sonraki kısmını açıklayın.','Adaya başka bir sorusu olup olmadığını sorun ve teşekkür ettikten sonra kapıya kadar eşlik edin.'];
 
 // ══════════════════════════════════════════════════
-// OTOMATİK ADAY SKORU
-// ══════════════════════════════════════════════════
-
-function _calcCandScore(c) {
-  // Mülakat puanları ortalaması (40%)
-  var interviewAvg = 0;
-  if (c.interviewScores) {
-    var vals = Object.values(c.interviewScores);
-    if (vals.length) interviewAvg = vals.reduce(function(a,b){return a+b;},0) / vals.length;
-  } else if (c.score) { interviewAvg = c.score; }
-  var interviewPct = (interviewAvg / 5) * 100;
-
-  // Test drive puanı (30%)
-  var tdPuan = 0;
-  try { var td = JSON.parse(localStorage.getItem('ak_ik_test_drive')||'{}'); if(td[c.id]) tdPuan = parseInt(td[c.id].puan||0); } catch(e){}
-  var tdPct = (tdPuan / 5) * 100;
-
-  // Değerlendirme puanı (30%)
-  var evalAvg = 0;
-  try { var ev = JSON.parse(localStorage.getItem('ak_ik_eval_scores')||'{}'); var evVals = Object.values(ev); if(evVals.length) evalAvg = evVals.reduce(function(a,b){return a+b;},0)/evVals.length; } catch(e){}
-  var evalPct = (evalAvg / 5) * 100;
-
-  var total = Math.round(interviewPct * 0.4 + tdPct * 0.3 + evalPct * 0.3);
-  var color = total >= 70 ? '#10B981' : total >= 40 ? '#F59E0B' : '#EF4444';
-  return { total: total, color: color, interview: Math.round(interviewPct), td: Math.round(tdPct), eval: Math.round(evalPct) };
-}
-
-// ══════════════════════════════════════════════════
-// PIPELINE KANBAN
+// PIPELINE
 // ══════════════════════════════════════════════════
 function renderPipe(){
-  var board=document.getElementById('pipe-board');
+  const board=document.getElementById('pipe-board');
   if(!board) return;
   board.innerHTML='';
-  board.style.cssText='display:grid;grid-template-columns:repeat('+STAGES.length+',1fr);gap:10px;padding:14px;overflow-x:auto;min-height:300px';
-
-  STAGES.forEach(function(stage){
-    var cards=candidates.filter(function(c){return c.stage===stage.id;});
-    var col=document.createElement('div');
-    col.style.cssText='background:var(--s2,#f8f9fa);border-radius:10px;padding:10px;min-width:150px;display:flex;flex-direction:column';
-
-    // Başlık
-    col.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid '+stage.color+'">'
-      + '<span style="font-size:11px;font-weight:700;color:'+stage.color+';text-transform:uppercase;letter-spacing:.05em">'+stage.label+'</span>'
-      + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+stage.color+'18;color:'+stage.color+'">'+cards.length+'</span>'
-    + '</div>';
-
-    // Kartlar
-    var cardsHtml = '';
-    cards.forEach(function(c){
-      var sc = _calcCandScore(c);
-      var daysSince = c.createdAt ? Math.floor((Date.now()-new Date(c.createdAt).getTime())/86400000) : 0;
-      var stageIds = STAGES.map(function(s){return s.id;});
-      var idx = stageIds.indexOf(c.stage);
-
-      cardsHtml += '<div onclick="openModal('+c.id+')" style="background:var(--sf,#fff);border:1px solid var(--b,#e5e7eb);border-radius:8px;padding:10px;margin-bottom:6px;cursor:pointer;transition:box-shadow .15s" onmouseenter="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.08)\'" onmouseleave="this.style.boxShadow=\'\'">'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t,#1a1a2e);margin-bottom:3px">'+escapeHtml(c.name)+'</div>'
-        + '<div style="font-size:10px;color:var(--t3,#9ca3af);margin-bottom:6px">'+escapeHtml(c.position)+'</div>'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-          + '<span style="font-size:10px;color:var(--t3)">'+daysSince+'g once</span>'
-          + (sc.total > 0 ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:'+sc.color+'14;color:'+sc.color+'">'+sc.total+'/100</span>' : '')
-        + '</div>'
-        + '<div style="display:flex;gap:3px">'
-          + (idx > 0 ? '<button onclick="event.stopPropagation();moveC('+c.id+\',\'prev\')" style="background:none;border:1px solid var(--b);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 6px;color:var(--t3)">←</button>' : '')
-          + (idx < stageIds.length - 1 ? '<button onclick="event.stopPropagation();moveC('+c.id+',\'next\')" style="background:none;border:1px solid var(--b);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 6px;color:var(--t3)">→</button>' : '')
-          + '<button onclick="event.stopPropagation();openAiAnalysis('+c.id+')" style="background:none;border:1px solid var(--b);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--t3)">AI</button>'
-          + '<button onclick="event.stopPropagation();startFocusInterview('+c.id+')" style="background:none;border:1px solid var(--b);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--t3)">📝</button>'
-        + '</div>'
-      + '</div>';
-    });
-
-    col.innerHTML += cardsHtml;
-    col.innerHTML += '<button onclick="addCand(\''+stage.id+'\')" style="width:100%;padding:7px;border:1.5px dashed var(--b);border-radius:7px;background:none;cursor:pointer;font-size:11px;color:var(--t3);font-family:inherit;margin-top:auto">+ Aday Ekle</button>';
+  STAGES.forEach(stage=>{
+    const cards=candidates.filter(c=>c.stage===stage.id);
+    const col=document.createElement('div');col.className='stage-col';
+    col.innerHTML=`<div class="stage-hdr"><span class="stage-lbl">${T(stage.i18n)}</span><span class="stage-cnt">${cards.length}</span></div>
+    <div class="stage-body">${cards.map(c=>`<div class="pcard" onclick="openModal(${c.id})">
+      <div class="pcard-pos">${c.position}</div><div class="pcard-name">${c.name}</div>
+      <div class="pcard-meta">3 gün önce · ${c.loc}</div>
+      <div class="pcard-foot"><div style="display:flex;gap:3px">
+        <button onclick="event.stopPropagation();openAiAnalysis(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">AI</button>
+        <button onclick="event.stopPropagation();toggleCompare(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">VS</button>
+        <button onclick="event.stopPropagation();startFocusInterview(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">📝</button>
+      </div>${c.score>0?`<div class="pcard-score">★ ${c.score}</div>`:''}</div></div>`).join('')}
+    <button class="add-btn" onclick="addCand('${stage.id}')">+ ${_ikT('add_candidate')}</button></div>`;
     board.appendChild(col);
   });
 }
@@ -3743,88 +3678,6 @@ function openRejectionLetter(candId) {
 }
 window.openRejectionLetter = openRejectionLetter;
 
-// ══════════════════════════════════════════════════
-// IK RAPORLAMA
-// ══════════════════════════════════════════════════
-
-function renderIkRaporlar() {
-  var body = document.getElementById('ikh-rapor-body');
-  if (!body) return;
-  var all = _loadCandidates();
-  var thisMonth = new Date().toISOString().slice(0,7);
-  var thisMonthCands = all.filter(function(c){ return (c.createdAt||'').startsWith(thisMonth); });
-
-  // Aşama dağılımı
-  var stageCounts = {};
-  STAGES.forEach(function(s){ stageCounts[s.id] = 0; });
-  all.forEach(function(c){ if(stageCounts[c.stage] !== undefined) stageCounts[c.stage]++; });
-  var maxStage = Math.max.apply(null, Object.values(stageCounts).concat([1]));
-
-  // Pozisyon dağılımı
-  var posCounts = {};
-  all.forEach(function(c){ var p = c.position || 'Belirtilmedi'; posCounts[p] = (posCounts[p]||0) + 1; });
-  var maxPos = Math.max.apply(null, Object.values(posCounts).concat([1]));
-
-  // Kabul/Red/Bekleyen oranı
-  var kabul = all.filter(function(c){return c.stage==='kabul';}).length;
-  var red = all.filter(function(c){return c.stage==='red';}).length;
-  var bekleyen = all.length - kabul - red;
-  var total = all.length || 1;
-
-  // Ortalama süreç günü
-  var totalDays = 0; var countDays = 0;
-  all.forEach(function(c){
-    if(c.createdAt){ var d = Math.floor((Date.now()-new Date(c.createdAt).getTime())/86400000); totalDays += d; countDays++; }
-  });
-  var avgDays = countDays ? Math.round(totalDays/countDays) : 0;
-
-  body.innerHTML = ''
-    // İstatistik kartları
-    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px">'
-      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--ac)">' + thisMonthCands.length + '</div><div style="font-size:10px;color:var(--t3)">Bu Ay Eklenen</div></div>'
-      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--t)">' + avgDays + '</div><div style="font-size:10px;color:var(--t3)">Ort. Surec (gun)</div></div>'
-      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:#10B981">' + kabul + '</div><div style="font-size:10px;color:var(--t3)">Kabul</div></div>'
-      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:#EF4444">' + red + '</div><div style="font-size:10px;color:var(--t3)">Red</div></div>'
-    + '</div>'
-
-    // Kabul/Red/Bekleyen daire grafik (CSS)
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">'
-      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:16px">'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Karar Orani</div>'
-        + '<div style="display:flex;align-items:center;gap:14px">'
-          + '<div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(#10B981 0% '+Math.round(kabul/total*100)+'%, #EF4444 '+Math.round(kabul/total*100)+'% '+Math.round((kabul+red)/total*100)+'%, #F59E0B '+Math.round((kabul+red)/total*100)+'% 100%);flex-shrink:0"></div>'
-          + '<div style="font-size:11px;color:var(--t2);line-height:2">'
-            + '<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10B981;margin-right:4px"></span>Kabul %' + Math.round(kabul/total*100) + '</div>'
-            + '<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#EF4444;margin-right:4px"></span>Red %' + Math.round(red/total*100) + '</div>'
-            + '<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#F59E0B;margin-right:4px"></span>Bekleyen %' + Math.round(bekleyen/total*100) + '</div>'
-          + '</div>'
-        + '</div>'
-      + '</div>'
-
-      // Huni grafik — aşama dağılımı
-      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:16px">'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Asama Hunisi</div>'
-        + STAGES.map(function(s){
-            var cnt = stageCounts[s.id]||0;
-            var pct = Math.round(cnt/maxStage*100);
-            return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span style="color:var(--t2)">' + s.label + '</span><span style="font-weight:600;color:' + s.color + '">' + cnt + '</span></div>'
-              + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + s.color + ';border-radius:3px"></div></div></div>';
-          }).join('')
-      + '</div>'
-    + '</div>'
-
-    // Pozisyon dağılımı — yatay bar
-    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:16px">'
-      + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Pozisyon Dagilimi</div>'
-      + Object.entries(posCounts).sort(function(a,b){return b[1]-a[1];}).map(function(e){
-          var pct = Math.round(e[1]/maxPos*100);
-          return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:var(--t2)">' + escapeHtml(e[0]) + '</span><span style="font-weight:600;color:var(--ac)">' + e[1] + '</span></div>'
-            + '<div style="height:8px;background:var(--s2);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--ac);border-radius:4px"></div></div></div>';
-        }).join('')
-    + '</div>';
-}
-window.renderIkRaporlar = renderIkRaporlar;
-
 const IkHub = {
   render:          renderIkHub,
   setTab:          setIkTab,
@@ -3867,8 +3720,6 @@ const IkHub = {
   compareCandidate: toggleCompare,
   focusInterview:  startFocusInterview,
   rejectLetter:    openRejectionLetter,
-  renderRaporlar:  renderIkRaporlar,
-  calcCandScore:   _calcCandScore,
   _ikSt:           _ikStTab,
   _saveInterview:  _ikSaveInterview,
   _clearForm:      _ikClearForm,
