@@ -737,8 +737,8 @@ function setIkTab(tab, btn) {
   _IK_TAB = tab;
   document.querySelectorAll('#panel-ik-hub .ikh-tab').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
-  ['personel','puantaj','izin','maas','performans','sozlesme'].forEach(t => {
-    const el = _gik(`ikh-tab-${t}`);
+  ['personel','puantaj','izin','maas','performans','sozlesme','pipeline','on_gorusme','mulakat','test_drive','degerlendirme','ai_asistan','adaylar'].forEach(t => {
+    const el = _gik('ikh-tab-' + t);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
   if (tab === 'personel')       renderIkPersonel();
@@ -1837,7 +1837,7 @@ function hasPerm(panel){
 
 // _ikT - i18n helper (platform I18n yoksa kendi TRANSLATIONS'ı kullan)
 function _ikT(key, lang){
-  const l = lang || localStorage.getItem('ik_lang') || 'tr';
+  const l = lang || localStorage.getItem('ak_lang') || 'tr';
   // Önce kendi TRANSLATIONS, sonra platform i18n
   if (typeof IK_TRANSLATIONS !== 'undefined' && IK_TRANSLATIONS[l]?.[key]) 
     return IK_TRANSLATIONS[l][key];
@@ -1875,7 +1875,8 @@ function doLogin(){
   const users = getUsers();
   const found = users.find(u => u.user === user && u.pass === pass && u.active !== false);
   if(found){
-    localStorage.setItem('ik_cu', JSON.stringify(found));
+    // ik_cu kaldırıldı — platform Auth kullanılır
+    // localStorage.setItem('ik_cu', JSON.stringify(found));
     const ls = document.getElementById('login-screen');
     const app = document.getElementById('app');
     if(ls) ls.style.display = 'none';
@@ -1979,9 +1980,7 @@ let currentUser = null;
 
 
 
-// ── Kullanıcı listesi yönetimi ──
-
-function _ikSaveUsers(users){ localStorage.setItem('duay-ik-users', JSON.stringify(users)); }
+// ── Kullanıcı listesi yönetimi ── (satır 1824'teki delegasyon kullanılır)
 
 
 
@@ -2104,7 +2103,7 @@ function _storeCandidates(d) { localStorage.setItem(CAND_KEY, JSON.stringify(d))
 let candidates = _loadCandidates();
 let selCand=null;
 var FACTORS=['Dış görünüş','Dikkat','Deneyim (miktar)','Deneyim (kalite)','Merak','Hırs','Kararlılık','Yenilikçilik','Kendini yönetme','Analitik yetenek','Karar alma','Öğrenci Zihniyeti','Referanslar'];
-let evalSc=Object.fromEntries(FACTORS.map(f=>[f,3]));
+let evalSc = (function(){ try { var s = JSON.parse(localStorage.getItem('ak_ik_eval_scores')); if(s && typeof s === 'object') return s; } catch(e){} return Object.fromEntries(FACTORS.map(f=>[f,3])); })();
 // DEFAULT_SORULAR — SORU_BANKASI yüklendikten sonra buildBankFlat() ile zenginleştirilir
 // Başlangıç değeri: basit string listesi (SORU_BANKASI henüz tanımlanmadı)
 var DEFAULT_SORU_METINLERI = [
@@ -2433,6 +2432,11 @@ function renderTelefon(){
       <div>✅ Metro ile <strong>aktarmasız</strong> gelebiliyorsa 10 km de kabul edilebilir.</div>
       <div style="font-size:10px;color:var(--text3);font-style:italic;margin-top:6px">Bir gün konaklayacağın otele özenmezsin, ama içinde yaşayacağın evi seçerken çok daha dikkatli olursun.</div>
     </div>
+  </div>
+  <div class="ik-card" style="margin-top:10px">
+    <div style="font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px">Gorusme Notlari</div>
+    <textarea id="ik-on-gorusme-not" style="width:100%;min-height:80px;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);background:var(--bg2);resize:vertical;font-family:inherit" placeholder="On gorusme notlarini yazin...">${(function(){try{return JSON.parse(localStorage.getItem('ak_ik_on_gorusme')||'{}').notes||'';}catch(e){return '';}}())}</textarea>
+    <button onclick="localStorage.setItem('ak_ik_on_gorusme',JSON.stringify({notes:document.getElementById('ik-on-gorusme-not').value,ts:new Date().toISOString()}));window.toast?.('Kaydedildi','ok')" style="margin-top:6px;padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit">Kaydet</button>
   </div>`;
 }
 
@@ -2761,6 +2765,25 @@ function renderTests(){
     {title:'Uygulama Testi (30+30)',desc:'3-4 iş zorluğu yaz → 30 dk düşünsün → birlikte çalış.',c:'#6366f1',badge:'Kapasite'},
   ].map(mkC).join('');
   document.getElementById('yonler-wrap').innerHTML=['Pratiklik','Kararlılık','Sabırlılık','Kıvrak Zeka','Dış Görünüş','Kendini Yönetme','Coşku','Dinamizm','Araştırmacılık','Detaycılık','Dikkat','Analitik Yetenek','Yenilikçilik','Hırs','Dakiklik','Pazarlık / İkna','Soğuk Kanlılık','Karar Alma','Merak','Hızlı İş Yapma','Fedakarlık','İşi Küçük Görmeme','Öğrenci Zihniyeti','Öz Güven','İletişim','Çalışkanlık'].map(y=>`<span style="background:var(--bg3);color:var(--text2);font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500">${y}</span>`).join('');
+  // Test sonucu kaydetme formu
+  var tdWrap = document.getElementById('tg2')?.parentElement;
+  if (tdWrap) {
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem('ak_ik_test_drive')||'{}'); } catch(e) {}
+    tdWrap.insertAdjacentHTML('beforeend', '<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">'
+      + '<div style="font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px">Test Sonucu Kaydet</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + '<select id="td-aday" style="padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text)">'
+          + candidates.map(function(c){return '<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>';}).join('')
+        + '</select>'
+        + '<select id="td-puan" style="padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text)">'
+          + '<option value="1">1 — Zayif</option><option value="2">2 — Orta</option><option value="3" selected>3 — Iyi</option><option value="4">4 — Cok Iyi</option><option value="5">5 — Mukemmel</option>'
+        + '</select>'
+      + '</div>'
+      + '<textarea id="td-not" style="width:100%;margin-top:8px;min-height:50px;padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text);resize:vertical" placeholder="Test gozlemleri...">' + (saved.notes||'') + '</textarea>'
+      + '<button onclick="var d={};try{d=JSON.parse(localStorage.getItem(\'ak_ik_test_drive\')||\'{}\')}catch(e){};d[document.getElementById(\'td-aday\').value]={puan:document.getElementById(\'td-puan\').value,notes:document.getElementById(\'td-not\').value,ts:new Date().toISOString()};localStorage.setItem(\'ak_ik_test_drive\',JSON.stringify(d));window.toast?.(\'Kaydedildi\',\'ok\')" style="margin-top:8px;padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit">Kaydet</button>'
+    + '</div>');
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -2786,7 +2809,7 @@ function renderEval(){
     </div>
   </div>`;
 }
-function setSc(f,v){evalSc[f]=v;renderEval();}
+function setSc(f,v){evalSc[f]=v;try{localStorage.setItem('ak_ik_eval_scores',JSON.stringify(evalSc));}catch(e){} renderEval();}
 
 // ══════════════════════════════════════════════════
 // TEŞEKKÜR
