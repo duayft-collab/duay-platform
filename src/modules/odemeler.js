@@ -893,9 +893,10 @@ function openOdmModal(id) {
 
     // Tekrar + Onay + Ödendi
     + '<div style="display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:var(--s2);border-radius:9px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:500">Tekrarlayan ödeme</span><label class="psw"><input type="checkbox" id="odm-f-recurring"' + (o&&o.recurringRule?' checked':'') + '><span class="psl"></span></label></div>'
-    + '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:500">Yönetici onayı gereksin</span><label class="psw"><input type="checkbox" id="odm-f-approval"' + (o&&o.approvalNeeded?' checked':'') + '><span class="psl"></span></label></div>'
-    + '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:500">Ödendi olarak işaretle</span><label class="psw"><input type="checkbox" id="odm-f-paid"' + (o&&o.paid?' checked':'') + '><span class="psl"></span></label></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + '<div class="fr"><div class="fl">DOKUMAN NO</div><input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" value="' + (o?o.docNo||'':'') + '" style="border-radius:8px"></div>'
+      + '<div class="fr"><div class="fl">GOREV ID</div><input class="fi" id="odm-f-taskid" placeholder="Gorev ara..." value="' + (o?o.taskId||'':'') + '" oninput="window._odmTaskSearch(this.value)" style="border-radius:8px"><div id="odm-task-badge" style="font-size:11px;margin-top:4px"></div></div>'
+    + '</div>'
     + '</div>'
 
     + '<input type="hidden" id="odm-f-eid" value="' + (o?o.id:'') + '">'
@@ -1033,11 +1034,10 @@ function saveOdm() {
     due:            _go('odm-f-due')?.value      || '',
     actualDate:     _go('odm-f-actual')?.value   || '',
     note:           _go('odm-f-note')?.value     || '',
-    paid:           !!_go('odm-f-paid')?.checked,
     alarmDays:      parseInt(_go('odm-f-alarm')?.value || '3'),
     assignedTo:     parseInt(_go('odm-f-assigned')?.value || '0') || null,
-    recurringRule:  !!_go('odm-f-recurring')?.checked,
-    approvalNeeded: !!_go('odm-f-approval')?.checked,
+    docNo:          (_go('odm-f-docno')?.value || '').trim(),
+    taskId:         parseInt(_go('odm-f-taskid')?.value || '0') || null,
     docs,
     ts:         _nowTso(),
     updatedBy:  _CUo()?.id,
@@ -1066,6 +1066,15 @@ function saveOdm() {
     const o = d.find(x => x.id === eid);
     if (o) {
       if (!o.paid && entry.paid) { entry.paidTs = _nowTso(); entry.paidBy = _CUo()?.id; }
+      // Audit diff — değişen alanları kaydet
+      var _diffs = [];
+      if (o.amount !== entry.amount) _diffs.push('Tutar: ' + (o.amount||0) + ' → ' + entry.amount);
+      if (o.due !== entry.due) _diffs.push('Tarih: ' + (o.due||'-') + ' → ' + (entry.due||'-'));
+      if (o.name !== entry.name) _diffs.push('Ad: ' + (o.name||'-') + ' → ' + entry.name);
+      if (_diffs.length && !_isAdminO()) {
+        var _admins = (window.loadUsers?.() || []).filter(function(u) { return u.role === 'admin' && u.status === 'active'; });
+        _admins.forEach(function(a) { window.addNotif?.('📝', 'Odeme duzenlendi: ' + _diffs.join(', '), 'info', 'odemeler', a.id); });
+      }
       Object.assign(o, entry);
     }
   } else {
@@ -2573,6 +2582,61 @@ function showOdmApprovalTimeline(odmId) {
   setTimeout(() => mo.classList.add('open'), 10);
 }
 window.showOdmApprovalTimeline = showOdmApprovalTimeline;
+
+// Görev ID arama (debounce)
+var _odmTaskTimer = null;
+window._odmTaskSearch = function(val) {
+  clearTimeout(_odmTaskTimer);
+  var badge = document.getElementById('odm-task-badge');
+  if (!badge) return;
+  if (!val || !val.trim()) { badge.innerHTML = ''; return; }
+  _odmTaskTimer = setTimeout(function() {
+    var tasks = window.loadTasks?.() || [];
+    var q = val.trim().toLowerCase();
+    var found = tasks.find(function(t) { return String(t.id) === q || (t.title || '').toLowerCase().includes(q); });
+    if (found) {
+      badge.innerHTML = '<span style="color:#10B981;font-weight:600">&#10003; ' + escapeHtml(found.title) + '</span>';
+      var inp = document.getElementById('odm-f-taskid');
+      if (inp) inp.value = found.id;
+    } else {
+      badge.innerHTML = '<span style="color:#EF4444">Gorev bulunamadi</span>';
+    }
+  }, 500);
+};
+
+// Yüksek tutar uyarısı — saveOdm'u wrap et
+(function() {
+  var _origSaveOdm = saveOdm;
+  saveOdm = function() {
+    var amt = parseFloat(document.getElementById('odm-f-amount')?.value || '0') || 0;
+    if (amt >= 50000) {
+      window.confirmModal('Yuksek Tutar Uyarisi: ' + amt.toLocaleString('tr-TR') + ' TL. Devam etmek istiyor musunuz?', {
+        title: 'Yuksek Tutar', danger: false, confirmText: 'Evet, Kaydet',
+        onConfirm: function() { _origSaveOdm(); }
+      });
+    } else {
+      _origSaveOdm();
+    }
+  };
+  window.saveOdm = saveOdm;
+})();
+
+// Silme yetkisi — onay sürecindeki kayıtlar silinemez
+(function() {
+  var _origDel = delOdm;
+  delOdm = function(id) {
+    var all = window.loadOdm ? loadOdm() : [];
+    var o = all.find(function(x) { return x.id === id; });
+    if (o && o.approvalStatus && o.approvalStatus !== 'draft' && o.approvalStatus !== null) {
+      if (!window.isAdmin?.()) {
+        window.toast?.('Onay surecindeki kayitlar silinemez — yonetici onayi gerekli', 'err');
+        return;
+      }
+    }
+    _origDel(id);
+  };
+  window.delOdm = delOdm;
+})();
 
 const Odemeler = {
   render:      renderOdemeler,
