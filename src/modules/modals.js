@@ -101,15 +101,20 @@ function injectAllModals() {
       <div style="margin-bottom:14px">
         <div class="fl" style="margin-bottom:5px">DEPARTMAN</div>
         <select class="fi" id="tk-dept" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.()">
-          <option value="">— Seçiniz —</option>
-          <option value="Finans">💰 Finans</option>
-          <option value="Lojistik">🚢 Lojistik</option>
-          <option value="İK">👥 İK</option>
-          <option value="IT">💻 IT</option>
-          <option value="Satış">📈 Satış</option>
-          <option value="Operasyon">⚙️ Operasyon</option>
-          <option value="Diğer">📌 Diğer</option>
+          <option value="">— Seciniz —</option>
         </select>
+        <script>
+          // Departman listesini dinamik doldur (admin.js + gorev'lerden)
+          (function(){
+            var sel=document.getElementById('tk-dept'); if(!sel||sel.options.length>1) return;
+            var depts=[];
+            try{ var saved=JSON.parse(localStorage.getItem('ak_departments')||'[]'); if(saved.length) depts=saved; } catch(e){}
+            if(!depts.length) depts=['Finans','Lojistik','IK','IT','Satis','Operasyon','Diger'];
+            // Gorevlerdeki departmanlari da ekle
+            try{ var tasks=JSON.parse(localStorage.getItem('ak_tk2')||'[]'); tasks.forEach(function(t){ if(t.department&&depts.indexOf(t.department)<0) depts.push(t.department); }); } catch(e){}
+            depts.forEach(function(d){ var o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
+          })();
+        </script>
         <!-- Departman iş yükü barı -->
         <div id="tk-dept-workload" style="display:none;margin-top:8px;background:var(--s2);border-radius:8px;padding:8px 12px">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px">

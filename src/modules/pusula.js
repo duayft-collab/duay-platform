@@ -561,9 +561,42 @@ function _renderPusQuoteBanner() {
   }
 }
 
+// ── Motivasyon Sözleri (günde bir, deterministik) ───────────────
+const _MOTIVATION_QUOTES = [
+  { text:'Yapilacak en onemli is, her zaman bir sonraki adimdir.', author:'Herbert Simon' },
+  { text:'Zamaninizi yonetmek, hayatinizi yonetmek demektir.', author:'Alan Lakein' },
+  { text:'Kusursuzluk erisilemez. Ama onu kovalarsaniz mukemmellige ulasirsiniz.', author:'Vince Lombardi' },
+  { text:'Basarinin sirri, her gun baslamaktir.', author:'Mark Twain' },
+  { text:'Bugunku isini yarina birakma.', author:'Benjamin Franklin' },
+  { text:'Odaklanma, bir seye evet demek degil; diger yuz seye hayir demektir.', author:'Steve Jobs' },
+  { text:'Planlama yaparken uzun dusun, uygularken hizli hareket et.', author:'Sun Tzu' },
+  { text:'Basari, kucuk cabalarin her gun tekrar edilmesidir.', author:'Robert Collier' },
+  { text:'En iyi zaman yonetimi araci hayir demeyi ogrenmektir.', author:'Peter Drucker' },
+  { text:'Vakit nakittir.', author:'Benjamin Franklin' },
+  { text:'Mukemmel plan yarin degil, iyi plan bugundur.', author:'George Patton' },
+  { text:'Disiplin, basarinin anasıdır.', author:'Harry S. Truman' },
+  { text:'Bir isi yapmak icin en iyi zaman, elindeki zamandır.', author:'Napoleon Hill' },
+  { text:'Hedef koymak, gorunmeyeni gorunur kilmaktir.', author:'Tony Robbins' },
+  { text:'Buyuk isler kucuk adimlarla baslar.', author:'Lao Tzu' },
+  { text:'Zamanin degeri, kaybedildiginde anlasilir.', author:'Theophrastus' },
+  { text:'Her sabah iki seciminiz var: uyumaya devam veya kalkip hayallerinizin pesinden kosmak.', author:'Carmelo Anthony' },
+  { text:'Verimlilik, dogru isi yapmaktir. Etkililik, isi dogru yapmaktir.', author:'Peter Drucker' },
+  { text:'Gelecegi tahmin etmenin en iyi yolu, onu yaratmaktir.', author:'Abraham Lincoln' },
+  { text:'Az is yapan cok dusunur, cok is yapan az konusur.', author:'Mevlana' },
+];
+function _getDailyQuote() {
+  const d = new Date();
+  const idx = (d.getFullYear() * 366 + d.getMonth() * 31 + d.getDate()) % _MOTIVATION_QUOTES.length;
+  return _MOTIVATION_QUOTES[idx];
+}
+
 function renderPusula() {
   populatePusUsers();
   setTimeout(_renderDeptSidebar, 50);
+  // Motivasyon sözü güncelle
+  const _q = _getDailyQuote();
+  const _qEl = g('pus-motivation');
+  if (_qEl) _qEl.innerHTML = `<span style="font-style:italic;color:var(--t2)">"${escapeHtml(_q.text)}"</span> <span style="color:var(--t3);font-size:10px">— ${escapeHtml(_q.author)}</span>`;
   // Gecikmiş görev kontrolü (her renderda değil, 5 dakikada bir)
   const _ovKey = '_pus_ov_check';
   if (!window[_ovKey] || Date.now() - window[_ovKey] > 300000) {
@@ -767,6 +800,7 @@ function renderPusulaList(fl, users, todayS, cont) {
           ${t.link ? `<a href="${t.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#6366F1;text-decoration:none;padding:2px 7px;border-radius:5px;background:rgba(99,102,241,.1);font-weight:700">🔗</a>` : ''}
           ${t.duration ? `<span style="font-size:10px;background:var(--al);color:var(--ac);padding:2px 7px;border-radius:5px;font-weight:600">⏱ ${t.duration>=60?Math.floor(t.duration/60)+'s'+(t.duration%60?' '+t.duration%60+'dk':''):t.duration+'dk'}</span>` : ''}
           ${t.file ? `<span style="font-size:10px;background:var(--s2);color:var(--t3);padding:2px 7px;border-radius:5px;font-weight:600">📎</span>` : ''}
+          ${(t.dependsOn||[]).length ? `<span style="font-size:10px;color:${isTaskBlocked(t)?'var(--rdt)':'var(--grt)'};padding:1px 6px;border-radius:4px;background:${isTaskBlocked(t)?'rgba(239,68,68,.08)':'rgba(34,197,94,.08)'};font-weight:600">${isTaskBlocked(t)?'🔒 Engelli':'🔗 Bagli'}</span>` : ''}
           ${(t.participants || []).length ? `<span style="font-size:10px;color:var(--ac);padding:1px 6px;border-radius:4px;background:var(--al);font-weight:600">+${(t.participants || []).length} katılımcı</span>` : ''}
           ${(t.viewers || []).length ? `<span style="font-size:10px;color:#8B5CF6;padding:1px 6px;border-radius:4px;background:rgba(139,92,246,.08);font-weight:600">👁${(t.viewers || []).length}</span>` : ''}
           ${(!isDone && t.deadline_full) ? `<span class="pusula-v85-countdown" id="cd-${t.id}" data-deadline="${t.deadline_full}" style="font-size:10px;font-family:monospace;padding:2px 8px;border-radius:6px;background:var(--s2);color:var(--t3);font-weight:700"></span>` : ''}
@@ -2702,6 +2736,99 @@ function _showInstantTaskNotif(targetUid, taskId, title, pri, due, assigner) {
 window._showInstantTaskNotif = _showInstantTaskNotif;
 
 // ════════════════════════════════════════════════════════════════
+// GÖREV BAĞIMLILIKLARI
+// ════════════════════════════════════════════════════════════════
+
+function setTaskDependency(taskId, dependsOnId) {
+  const d = loadTasks();
+  const t = d.find(x => x.id === taskId); if (!t) return;
+  if (!t.dependsOn) t.dependsOn = [];
+  if (taskId === dependsOnId) { window.toast?.('Gorev kendisine bagli olamaz', 'err'); return; }
+  if (t.dependsOn.includes(dependsOnId)) { window.toast?.('Bagimlilik zaten var', 'err'); return; }
+  // Dairesel bagimlilik kontrolu
+  const dep = d.find(x => x.id === dependsOnId);
+  if (dep?.dependsOn?.includes(taskId)) { window.toast?.('Dairesel bagimlilik olusur', 'err'); return; }
+  t.dependsOn.push(dependsOnId);
+  saveTasks(d);
+  window.toast?.('Bagimlilik eklendi', 'ok');
+  renderPusula();
+}
+function removeTaskDependency(taskId, depId) {
+  const d = loadTasks();
+  const t = d.find(x => x.id === taskId); if (!t) return;
+  t.dependsOn = (t.dependsOn || []).filter(id => id !== depId);
+  saveTasks(d);
+  renderPusula();
+}
+function isTaskBlocked(task) {
+  if (!task.dependsOn?.length) return false;
+  const tasks = loadTasks();
+  return task.dependsOn.some(depId => {
+    const dep = tasks.find(x => x.id === depId);
+    return dep && !dep.done && dep.status !== 'done';
+  });
+}
+window.setTaskDependency = setTaskDependency;
+window.removeTaskDependency = removeTaskDependency;
+
+// ════════════════════════════════════════════════════════════════
+// TOPLU GÖREV ATAMA
+// ════════════════════════════════════════════════════════════════
+
+function openBulkAssign() {
+  if (!window.isAdmin?.()) { window.toast?.('Yetki gerekli', 'err'); return; }
+  const users = loadUsers();
+  const tasks = loadTasks().filter(t => !t.done && t.status !== 'done');
+
+  const old = document.getElementById('mo-bulk-assign'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-bulk-assign'; mo.style.zIndex='2100';
+  mo.innerHTML = `<div class="moc" style="max-width:500px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">Toplu Gorev Atama</div>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="fg"><div class="fl">HEDEF KİSİ</div>
+        <select class="fi" id="ba-user">${users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('')}</select>
+      </div>
+      <div class="fg" style="margin-top:8px"><div class="fl">GOREVLER (${tasks.length} acik gorev)</div>
+        <div style="max-height:250px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">
+          ${tasks.map(t=>`<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px">
+            <input type="checkbox" class="ba-cb" value="${t.id}" style="accent-color:var(--ac)">
+            <span style="flex:1">${escapeHtml(t.title)}</span>
+            <span style="font-size:10px;color:var(--t3)">${t.department||''}</span>
+          </label>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="document.getElementById('mo-bulk-assign').remove()">Iptal</button>
+      <button class="btn btnp" onclick="_doBulkAssign()">Ata</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _doBulkAssign() {
+  const uid = parseInt(document.getElementById('ba-user')?.value || '0');
+  if (!uid) { window.toast?.('Kullanici secin', 'err'); return; }
+  const ids = [...document.querySelectorAll('.ba-cb:checked')].map(cb => parseInt(cb.value));
+  if (!ids.length) { window.toast?.('Gorev secin', 'err'); return; }
+  const d = loadTasks();
+  const u = loadUsers().find(x => x.id === uid);
+  ids.forEach(id => { const t = d.find(x => x.id === id); if (t) t.uid = uid; });
+  saveTasks(d);
+  document.getElementById('mo-bulk-assign')?.remove();
+  window.toast?.(ids.length + ' gorev ' + (u?.name||'') + ' kullanicisina atandi', 'ok');
+  logActivity('task', 'Toplu atama: ' + ids.length + ' gorev → ' + (u?.name||''));
+  renderPusula();
+}
+window.openBulkAssign = openBulkAssign;
+window._doBulkAssign = _doBulkAssign;
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 
@@ -3728,8 +3855,10 @@ const Pusula = {
   vnStart, vnStop,
   pomoStart, pomoStop,
   smartDateParse,
-  taskIsBlocked,
-  addTaskDep, removeTaskDep,
+  taskIsBlocked:  isTaskBlocked,
+  addTaskDep:     setTaskDependency,
+  removeTaskDep:  removeTaskDependency,
+  openBulkAssign,
   addTaskLogEntry,
   setTaskRecurring, removeTaskRecurring,
   processRecurringTasks,
