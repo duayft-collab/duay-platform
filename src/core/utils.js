@@ -550,3 +550,105 @@ window.st = window.st || ((id, show) => {
 });
 window.qs  = window.qs  || ((sel, ctx) => (ctx||document).querySelector(sel));
 window.qsa = window.qsa || ((sel, ctx) => [...(ctx||document).querySelectorAll(sel)]);
+
+// ════════════════════════════════════════════════════════════════
+// KULLANICI YETKİ SEVİYELERİ
+// ════════════════════════════════════════════════════════════════
+//
+// Seviyeler:
+//   'full'   — Tam yetki (admin varsayılanı)
+//   'manage' — Düzenleyebilir ama silme onaya düşer
+//   'view'   — Sadece okuma, hiçbir değişiklik yapamaz
+//   'count'  — Sadece kayıt sayısını görür, içeriği göremez
+//
+// Kullanıcı objesi: user.permissions = { pusula:'view', odemeler:'count', ... }
+// Tanımsız modül → role varsayılanı kullanılır
+//
+// 12 Saat Kuralı:
+//   Bir kayıt oluşturulduktan 12 saat sonra güncelleme yapılmak istenirse
+//   güncelleme onaya düşer. Admin'ler bu kuraldan muaftır.
+//   Kullanıcı bazında etkinleştirilebilir: user.rule12h = true
+// ════════════════════════════════════════════════════════════════
+
+const PERM_LEVELS = { full: 4, manage: 3, view: 2, count: 1 };
+const ROLE_PERM_DEFAULTS = {
+  admin:   'full',
+  manager: 'manage',
+  lead:    'view',
+  staff:   'view',
+};
+
+/**
+ * Kullanıcının belirli modüldeki yetki seviyesini döndürür.
+ * @param {string} moduleId — Modül adı (pusula, odemeler, crm vb.)
+ * @returns {'full'|'manage'|'view'|'count'}
+ */
+function getPermLevel(moduleId) {
+  const cu = window.Auth?.getCU?.();
+  if (!cu) return 'count';
+  if (cu.role === 'admin') return 'full';
+  const perms = cu.permissions || {};
+  if (perms[moduleId]) return perms[moduleId];
+  return ROLE_PERM_DEFAULTS[cu.role] || 'view';
+}
+
+/**
+ * Kullanıcının belirli modülde belirli bir aksiyona yetkisi var mı kontrol eder.
+ * @param {string} moduleId — Modül adı
+ * @param {'read'|'edit'|'delete'|'count'} action — İstenen aksiyon
+ * @returns {boolean}
+ */
+function canAction(moduleId, action) {
+  const level = getPermLevel(moduleId);
+  const lvl   = PERM_LEVELS[level] || 0;
+  switch (action) {
+    case 'count':  return lvl >= 1;
+    case 'read':   return lvl >= 2;
+    case 'edit':   return lvl >= 3;
+    case 'delete': return lvl >= 4; // full — manage'de silme onaya düşer
+    default:       return lvl >= 2;
+  }
+}
+
+/**
+ * 12 saat kuralını kontrol eder.
+ * Kayıt oluşturulduktan 12 saat geçtiyse güncelleme onay gerektirir.
+ * @param {Object} record — Kontrol edilecek kayıt ({ createdAt })
+ * @returns {{needsApproval:boolean, hoursAgo:number}}
+ */
+function check12hRule(record) {
+  const cu = window.Auth?.getCU?.();
+  if (!cu || cu.role === 'admin') return { needsApproval: false, hoursAgo: 0 };
+  if (!cu.rule12h) return { needsApproval: false, hoursAgo: 0 };
+  const created = record?.createdAt;
+  if (!created) return { needsApproval: false, hoursAgo: 0 };
+  const createdMs = new Date(created.replace(' ', 'T')).getTime();
+  if (isNaN(createdMs)) return { needsApproval: false, hoursAgo: 0 };
+  const hoursAgo = (Date.now() - createdMs) / 3600000;
+  return { needsApproval: hoursAgo >= 12, hoursAgo: Math.floor(hoursAgo) };
+}
+
+/**
+ * Yetki yetersizliğinde toast gösterir, false döndürür.
+ * @param {string} moduleId
+ * @param {'read'|'edit'|'delete'|'count'} action
+ * @returns {boolean} — true: izin var, false: izin yok
+ */
+function requireAction(moduleId, action) {
+  if (canAction(moduleId, action)) return true;
+  const msgs = {
+    count:  'Bu modüle erişim izniniz yok',
+    read:   'Bu bölümü görüntüleme yetkiniz yok — sadece kayıt sayısı gösterilir',
+    edit:   'Bu bölümde düzenleme yetkiniz yok — sadece görüntüleyebilirsiniz',
+    delete: 'Silme işlemi için yönetici onayı gerekiyor',
+  };
+  window.toast?.(msgs[action] || 'Yetki yetersiz', 'err');
+  return false;
+}
+
+window.PERM_LEVELS        = PERM_LEVELS;
+window.ROLE_PERM_DEFAULTS = ROLE_PERM_DEFAULTS;
+window.getPermLevel       = getPermLevel;
+window.canAction          = canAction;
+window.check12hRule       = check12hRule;
+window.requireAction      = requireAction;

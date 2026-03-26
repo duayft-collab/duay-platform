@@ -377,6 +377,8 @@ function openPermModal(id) {
   const isUserAdmin = u.role === 'admin';
   const allowed     = u.modules; // null = tümü, array = seçili modüller
 
+  const perms = u.permissions || {};
+
   cont.innerHTML = `
     ${isUserAdmin
       ? `<div style="background:var(--al);border-radius:8px;padding:12px;font-size:13px;color:var(--ac);margin-bottom:12px">
@@ -394,15 +396,35 @@ function openPermModal(id) {
         Tümüne İzin Ver
       </label>
     </div>
-    <div class="ckg">
-      ${ALL_MODULES.map(m => `
-        <label class="pm-label${isUserAdmin ? ' disabled' : ''}">
-          <input type="checkbox" class="perm-cb" value="${m.id}"
-            ${isUserAdmin || !allowed || allowed.includes(m.id) ? 'checked' : ''}
-            ${isUserAdmin ? 'disabled' : ''}
-            style="accent-color:var(--ac)">
-          ${m.label}
-        </label>`).join('')}
+    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 130px;gap:0;padding:8px 12px;background:var(--s2);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;border-bottom:1px solid var(--b)">
+        <span>Modül</span><span>Yetki Seviyesi</span>
+      </div>
+      ${ALL_MODULES.map(m => {
+        const curLevel = perms[m.id] || (window.ROLE_PERM_DEFAULTS || {})[u.role] || 'view';
+        return `<div style="display:grid;grid-template-columns:1fr 130px;gap:0;padding:6px 12px;border-bottom:1px solid var(--b);align-items:center">
+          <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer${isUserAdmin ? ';opacity:.5' : ''}">
+            <input type="checkbox" class="perm-cb" value="${m.id}"
+              ${isUserAdmin || !allowed || allowed.includes(m.id) ? 'checked' : ''}
+              ${isUserAdmin ? 'disabled' : ''}
+              style="accent-color:var(--ac)">
+            ${m.label}
+          </label>
+          <select class="perm-level" data-mod="${m.id}" style="font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:5px;background:var(--s);color:var(--t)" ${isUserAdmin ? 'disabled' : ''}>
+            <option value="full"${curLevel==='full'?' selected':''}>Tam Yetki</option>
+            <option value="manage"${curLevel==='manage'?' selected':''}>Yönetir</option>
+            <option value="view"${curLevel==='view'?' selected':''}>Görebilir</option>
+            <option value="count"${curLevel==='count'?' selected':''}>Rakamla</option>
+          </select>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="border:1px solid var(--b);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--t)">12 Saat Kuralı</div>
+        <div style="font-size:10px;color:var(--t3)">Kayıt oluşturulduktan 12 saat sonra güncelleme yönetici onayı gerektirir</div>
+      </div>
+      <input type="checkbox" id="perm-rule12h" ${u.rule12h ? 'checked' : ''} ${isUserAdmin ? 'disabled' : ''} style="accent-color:var(--ac);width:18px;height:18px">
     </div>`;
 
   window.openMo?.('mo-perm');
@@ -428,10 +450,22 @@ function savePermissions() {
     u.modules = [...document.querySelectorAll('.perm-cb:checked')].map(cb => cb.value);
   }
 
+  // Yetki seviyeleri kaydet
+  const permissions = {};
+  document.querySelectorAll('.perm-level').forEach(sel => {
+    const mod = sel.dataset.mod;
+    const val = sel.value;
+    if (mod && val) permissions[mod] = val;
+  });
+  u.permissions = permissions;
+
+  // 12 saat kuralı
+  u.rule12h = !!g('perm-rule12h')?.checked;
+
   saveUsers(users);
   window.closeMo?.('mo-perm');
   renderAdmin();
-  logActivity('user', `Modül yetkileri güncellendi: "${u.name}" → ${u.modules ? u.modules.join(', ') : 'Tümü'}`);
+  logActivity('user', `Yetki seviyeleri güncellendi: "${u.name}" (12h kuralı: ${u.rule12h ? 'aktif' : 'kapalı'})`);
   window.toast?.(`${u.name} yetkileri güncellendi ✓`, 'ok');
 }
 
