@@ -63,6 +63,10 @@ function renderAdmin() {
       ${window.t ? t('err.permission') : 'Bu panele erişim yetkiniz yok.'}</div>`;
     return;
   }
+  // Özellik 6: Otomatik pasif kontrolü (30 gün)
+  checkInactiveUsers();
+  // Oturum kaydı
+  registerSession();
 
   const users  = loadUsers();
   const search = (g('admin-search')?.value || '').toLowerCase();
@@ -118,9 +122,10 @@ function _userCard(u) {
           ? '<span style="font-size:10px;padding:1px 7px;border-radius:5px;background:rgba(34,197,94,.08);color:#16A34A">Aktif</span>'
           : '<span style="font-size:10px;padding:1px 7px;border-radius:5px;background:rgba(239,68,68,.08);color:#DC2626">Askıda</span>'}
       </div>
-      <div style="font-size:11px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(u.email || '—')}${u.dept ? ' · ' + escapeHtml(u.dept) : ''} · ${moduleCount}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(u.email || '—')}${u.dept ? ' · ' + escapeHtml(u.dept) : ''} · ${moduleCount}${u.lastLogin ? ' · ' + u.lastLogin.slice(0,10) : ''}${u.autoLocked ? ' · <span style="color:var(--rdt)">🔒 Oto-pasif</span>' : ''}</div>
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0">
+      <button class="tk-action-btn" onclick="Admin.showUserActivity(${u.id})" title="Aktivite">📊</button>
       <button class="tk-action-btn" onclick="Admin.openModal(${u.id})" title="Düzenle">✏️</button>
       <button class="tk-action-btn" onclick="Admin.openPermModal(${u.id})" title="Yetkiler">🔑</button>
       ${u.status === 'active'
@@ -1300,6 +1305,279 @@ function renderSettingsAdmin(){
 
 
 
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 2: KULLANICI AKTİVİTE GEÇMİŞİ
+// ════════════════════════════════════════════════════════════════
+
+function showUserActivity(uid) {
+  const users = loadUsers();
+  const u = users.find(x => x.id === uid); if (!u) return;
+  const acts = (typeof loadAct === 'function' ? loadAct() : []).filter(a => a.uid === uid).slice(0, 20);
+  const daysSince = u.lastLogin ? Math.floor((Date.now() - new Date(u.lastLogin.replace(' ','T')).getTime()) / 86400000) : null;
+  const isOnline = daysSince !== null && daysSince < 1;
+
+  const old = document.getElementById('mo-user-activity'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-user-activity'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${isOnline?'#22C55E':'#9CA3AF'};flex-shrink:0"></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--t)">${escapeHtml(u.name)}</div>
+      <div style="font-size:11px;color:var(--t3)">${u.lastLogin ? 'Son giriş: '+u.lastLogin : 'Hiç giriş yapmadı'}${daysSince!==null?' · '+daysSince+' gün önce':''}</div></div>
+      <button onclick="document.getElementById('mo-user-activity').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:8px 20px;max-height:50vh;overflow-y:auto">
+      ${acts.length ? acts.map(a => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--b)">
+        <div style="font-size:10px;color:var(--t3);white-space:nowrap;min-width:70px">${(a.ts||'').slice(5,16)}</div>
+        <div style="font-size:12px;color:var(--t)">${escapeHtml(a.detail||a.message||'')}</div>
+      </div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--t3);font-size:12px">Aktivite kaydı yok</div>'}
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-user-activity').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 4: OTURUM YÖNETİMİ
+// ════════════════════════════════════════════════════════════════
+
+const SESSIONS_KEY = 'ak_active_sessions';
+
+function _loadSessions() { try { return JSON.parse(localStorage.getItem(SESSIONS_KEY)||'{}'); } catch { return {}; } }
+function _storeSessions(d) { localStorage.setItem(SESSIONS_KEY, JSON.stringify(d)); }
+
+function registerSession() {
+  const cu = _getCU(); if (!cu) return;
+  const sessions = _loadSessions();
+  sessions[cu.id] = { uid: cu.id, name: cu.name, email: cu.email, ts: Date.now(), device: navigator.userAgent.slice(0,60) };
+  _storeSessions(sessions);
+}
+
+function openSessionManager() {
+  if (!isAdmin()) return;
+  const sessions = _loadSessions();
+  const users = loadUsers();
+  const entries = Object.values(sessions).sort((a,b) => b.ts - a.ts);
+
+  const old = document.getElementById('mo-sessions'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-sessions'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:520px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">🖥 Aktif Oturumlar (${entries.length})</div>
+    </div>
+    <div style="padding:8px 20px;max-height:50vh;overflow-y:auto">
+      ${entries.length ? entries.map(s => {
+        const age = Math.floor((Date.now()-s.ts)/3600000);
+        const isSelf = s.uid === _getCU()?.id;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
+          <div style="width:8px;height:8px;border-radius:50%;background:${age<1?'#22C55E':age<24?'#F59E0B':'#9CA3AF'};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--t)">${escapeHtml(s.name)}${isSelf?' (sen)':''}</div>
+            <div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.device||'—')}</div>
+          </div>
+          <div style="font-size:10px;color:var(--t3);white-space:nowrap">${age<1?'Az önce':age+'s önce'}</div>
+          ${!isSelf?`<button class="btn btns btnd" onclick="_terminateSession(${s.uid})" style="font-size:10px;padding:2px 8px">Sonlandır</button>`:''}
+        </div>`;
+      }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Aktif oturum yok</div>'}
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-sessions').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _terminateSession(uid) {
+  const sessions = _loadSessions();
+  delete sessions[uid];
+  _storeSessions(sessions);
+  // Kullanıcıyı askıya al (zorunlu çıkış)
+  const users = loadUsers();
+  const u = users.find(x => x.id === uid);
+  if (u) { u.forceLogout = Date.now(); saveUsers(users); }
+  window.toast?.('Oturum sonlandırıldı', 'ok');
+  document.getElementById('mo-sessions')?.remove();
+  openSessionManager();
+}
+window._terminateSession = _terminateSession;
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 5: BİLDİRİM TERCİHLERİ
+// ════════════════════════════════════════════════════════════════
+
+const NOTIF_PREFS_KEY = 'ak_notif_prefs';
+const NOTIF_CATEGORIES = [
+  { id:'task',     label:'Görev Bildirimleri',    icon:'📋', desc:'Atama, tamamlama, yorum' },
+  { id:'approval', label:'Onay Bildirimleri',     icon:'✅', desc:'Prim, ödeme, izin onayları' },
+  { id:'announce', label:'Duyuru Bildirimleri',    icon:'📢', desc:'Şirket duyuruları' },
+  { id:'kargo',    label:'Kargo Bildirimleri',     icon:'📦', desc:'Sevkiyat, konteyner' },
+  { id:'hr',       label:'İK Bildirimleri',        icon:'👥', desc:'Personel, izin, puantaj' },
+  { id:'system',   label:'Sistem Bildirimleri',    icon:'⚙️', desc:'Güncelleme, bakım' },
+];
+
+function openNotifPrefs() {
+  const cu = _getCU(); if (!cu) return;
+  const prefs = JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY+'_'+cu.id) || '{}');
+
+  const old = document.getElementById('mo-notif-prefs'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-notif-prefs'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:440px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">🔔 Bildirim Tercihleri</div>
+    </div>
+    <div style="padding:8px 20px">
+      ${NOTIF_CATEGORIES.map(c => `<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b);cursor:pointer">
+        <input type="checkbox" id="npref-${c.id}" ${prefs[c.id]!==false?'checked':''} style="accent-color:var(--ac);width:18px;height:18px;flex-shrink:0">
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--t)">${c.icon} ${c.label}</div>
+        <div style="font-size:11px;color:var(--t3)">${c.desc}</div></div>
+      </label>`).join('')}
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="document.getElementById('mo-notif-prefs').remove()">İptal</button>
+      <button class="btn btnp" onclick="_saveNotifPrefs()">Kaydet</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+function _saveNotifPrefs() {
+  const cu = _getCU(); if (!cu) return;
+  const prefs = {};
+  NOTIF_CATEGORIES.forEach(c => { prefs[c.id] = !!document.getElementById('npref-'+c.id)?.checked; });
+  localStorage.setItem(NOTIF_PREFS_KEY+'_'+cu.id, JSON.stringify(prefs));
+  document.getElementById('mo-notif-prefs')?.remove();
+  window.toast?.('Bildirim tercihleri kaydedildi ✓', 'ok');
+}
+window._saveNotifPrefs = _saveNotifPrefs;
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 6: OTOMATİK HESAP KİLİTLEME (30 gün)
+// ════════════════════════════════════════════════════════════════
+
+function checkInactiveUsers() {
+  if (!isAdmin()) return;
+  const users = loadUsers();
+  const now = Date.now();
+  let changed = false;
+  users.forEach(u => {
+    if (u.role === 'admin' || u.status !== 'active') return;
+    if (!u.lastLogin) return;
+    const lastMs = new Date(u.lastLogin.replace(' ','T')).getTime();
+    if (isNaN(lastMs)) return;
+    const daysSince = Math.floor((now - lastMs) / 86400000);
+    if (daysSince >= 30) {
+      u.status = 'suspended';
+      u.suspendedBy = 'system';
+      u.suspendedAt = nowTs();
+      u.autoLocked = true;
+      changed = true;
+      window.addNotif?.('🔒', escapeHtml(u.name) + ' 30+ gün giriş yapmadı — otomatik pasif', 'warn', 'admin');
+    }
+  });
+  if (changed) { saveUsers(users); renderAdmin(); }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 7: DAVET SİSTEMİ
+// ════════════════════════════════════════════════════════════════
+
+const INVITE_KEY = 'ak_invites';
+function _loadInvites() { try { return JSON.parse(localStorage.getItem(INVITE_KEY)||'[]'); } catch { return []; } }
+function _storeInvites(d) { localStorage.setItem(INVITE_KEY, JSON.stringify(d)); }
+
+function openInviteModal() {
+  if (!isAdmin()) return;
+  const old = document.getElementById('mo-invite'); if (old) old.remove();
+  const invites = _loadInvites();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-invite'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">✉️ Kullanıcı Davet Et</div>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="fg"><div class="fl">E-POSTA ADRESİ <span style="color:var(--rd)">*</span></div>
+        <input type="email" class="fi" id="inv-email" placeholder="ali@sirket.com" style="font-size:14px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><div class="fl">ROL</div>
+          <select class="fi" id="inv-role">
+            <option value="staff">👤 Personel</option>
+            <option value="lead">⭐ Takım Lideri</option>
+            <option value="manager">👔 Yönetici</option>
+          </select></div>
+        <div class="fg"><div class="fl">DEPARTMAN</div>
+          <input class="fi" id="inv-dept" placeholder="İK, Finans..."></div>
+      </div>
+    </div>
+    <div style="padding:0 20px 12px;display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="document.getElementById('mo-invite').remove()">İptal</button>
+      <button class="btn btnp" onclick="_sendInvite()">Davet Gönder</button>
+    </div>
+    ${invites.length ? `<div style="border-top:1px solid var(--b);padding:10px 20px;max-height:30vh;overflow-y:auto">
+      <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Bekleyen Davetler (${invites.filter(i=>!i.used).length})</div>
+      ${invites.filter(i=>!i.used).map(i => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--b)">
+        <div style="flex:1;font-size:12px;color:var(--t)">${escapeHtml(i.email)}</div>
+        <code style="font-size:10px;background:var(--s2);padding:2px 6px;border-radius:4px;color:var(--ac)">${i.code}</code>
+        <button onclick="_copyInviteCode('${i.code}')" class="btn btns" style="font-size:10px;padding:2px 6px">Kopyala</button>
+      </div>`).join('')}
+    </div>` : ''}
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => { mo.classList.add('open'); document.getElementById('inv-email')?.focus(); }, 10);
+}
+
+function _sendInvite() {
+  const email = (document.getElementById('inv-email')?.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) { window.toast?.('Geçerli e-posta girin', 'err'); return; }
+  const role = document.getElementById('inv-role')?.value || 'staff';
+  const dept = (document.getElementById('inv-dept')?.value || '').trim();
+
+  // Mevcut kullanıcıda var mı
+  if (loadUsers().find(u => u.email === email)) { window.toast?.('Bu e-posta zaten kayıtlı', 'err'); return; }
+
+  // 6 haneli davet kodu
+  const code = 'DY-' + String(Math.floor(100000 + Math.random() * 900000));
+  const invites = _loadInvites();
+  invites.unshift({ id: generateNumericId(), email, role, dept, code, createdBy: _getCU()?.id, createdAt: nowTs(), used: false });
+  _storeInvites(invites);
+  document.getElementById('mo-invite')?.remove();
+  openInviteModal(); // Listeyi yenile
+  window.toast?.('Davet oluşturuldu: ' + code, 'ok');
+  logActivity('user', 'Davet gönderildi: ' + email + ' (' + code + ')');
+  // Clipboard'a kopyala
+  navigator.clipboard?.writeText(code).catch(() => {});
+}
+
+function _copyInviteCode(code) {
+  navigator.clipboard?.writeText(code).then(() => window.toast?.('Kod kopyalandı: ' + code, 'ok')).catch(() => window.toast?.(code, 'ok'));
+}
+
+function redeemInvite(code) {
+  const invites = _loadInvites();
+  const inv = invites.find(i => i.code === code && !i.used);
+  if (!inv) return null;
+  inv.used = true;
+  inv.usedAt = nowTs();
+  _storeInvites(invites);
+  return inv; // { email, role, dept }
+}
+window._sendInvite = _sendInvite;
+window._copyInviteCode = _copyInviteCode;
+
+// ════════════════════════════════════════════════════════════════
+// DIŞA AKTARIM
+// ════════════════════════════════════════════════════════════════
 const Admin = {
   render:            renderAdmin,
   renderLog:         renderActivityLog,
@@ -1321,6 +1599,14 @@ const Admin = {
   submitSuggestion,
   addUpdateBanner,
   showAllUpdateBanners,
+  // Yeni özellikler
+  showUserActivity,
+  openSessionManager,
+  registerSession,
+  openNotifPrefs,
+  checkInactiveUsers,
+  openInviteModal,
+  redeemInvite,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

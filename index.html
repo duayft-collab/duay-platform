@@ -942,7 +942,12 @@ function _doLogin() {
       <div id="panel-admin" class="panel">
         <div class="ph">
           <div><div class="pht">Kullanıcı Yönetimi</div><div class="phs">RBAC &amp; yetki yönetimi</div></div>
-          <button class="btn btnp" onclick="Admin.openModal()">+ Kullanıcı Ekle</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btns" onclick="Admin.openSessionManager()" style="font-size:11px">🖥 Oturumlar</button>
+            <button class="btn btns" onclick="Admin.openInviteModal()" style="font-size:11px">✉️ Davet</button>
+            <button class="btn btns" onclick="Admin.openNotifPrefs()" style="font-size:11px">🔔 Tercihler</button>
+            <button class="btn btnp" onclick="Admin.openModal()">+ Kullanıcı Ekle</button>
+          </div>
         </div>
         <div class="sg">
           <div class="sc"><div class="sci">&#128101;</div><div class="scv" id="admin-total">0</div><div class="scl">Toplam</div></div>
