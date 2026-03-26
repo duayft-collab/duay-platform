@@ -1007,15 +1007,13 @@ window.uploadOdmDoc = uploadOdmDoc;
 window.viewOdmDoc   = viewOdmDoc;
 
 function saveOdm() {
-  console.log('[ODM] saveOdm cagirildi, role:', window.Auth?.getCU?.()?.role);
-  console.log('[ODM] _isAdminO:', _isAdminO());
-  const _allUsers = window.loadUsers?.() || [];
-  console.log('[ODM] yonetici listesi:', _allUsers.filter(function(u){ return u.role==='admin'||u.role==='manager'; }).map(function(u){ return u.name; }));
-  const name = (_go('odm-f-name')?.value || '').trim();
+  var cu = window.Auth?.getCU?.();
+  var isAdmin = cu?.role === 'admin';
+  var name = (document.getElementById('odm-f-name')?.value || '').trim();
   if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
-  const _eidRaw = _go('odm-f-eid')?.value;
-  const eid  = parseInt(_eidRaw || '0');
-  console.log('[ODM] eid raw:', JSON.stringify(_eidRaw), '→ parsed:', eid, '→ yeni kayit mi:', !eid);
+  var eidVal = document.getElementById('odm-f-eid')?.value || '';
+  var eid = eidVal ? parseInt(eidVal) : 0;
+  var isNew = !eid;
   const d    = window.loadOdm ? loadOdm() : [];
   const cat = _go('odm-f-cat')?.value || 'diger';
   const currency = _go('odm-f-currency')?.value || 'TRY';
@@ -1095,19 +1093,16 @@ function saveOdm() {
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
   renderOdemeler();
-  window.logActivity?.('view', `"${name}" ödeme ${eid?'güncellendi':'eklendi'}`);
-  console.log('[ODM] bildirim kosulu: eid=', eid, '_isAdminO=', _isAdminO(), '→', !eid && !_isAdminO() ? 'BILDIRIM GIDECEK' : 'BILDIRIM GITMEYECEK');
-  if (!eid && !_isAdminO()) {
-    // Admin'lere bildirim gönder (manager dahil herkes pending → admin'e bildirim)
-    const _managers = (window.loadUsers?.() || []).filter(u => u.role === 'admin' && u.status === 'active');
-    const _amt = parseFloat(entry.amount||0).toLocaleString('tr-TR');
-    console.log('[ONAY BİLDİRİMİ GÖNDERİLİYOR]', _managers.length, 'yonetici, role:', _CUo()?.role, '| odeme:', name, '| tutar:', _amt);
-    _managers.forEach(m => {
-      window.addNotif?.('💰', 'Yeni odeme onay bekliyor: ' + escapeHtml(name) + ' - ' + _amt + ' TL', 'warn', 'odemeler', m.id);
+  window.logActivity?.('view', '"' + name + '" odeme ' + (isNew ? 'eklendi' : 'guncellendi'));
+  // Yeni kayıt + admin değilse yöneticilere bildirim gönder
+  if (isNew && !isAdmin) {
+    var yoneticiler = (window.loadUsers?.() || []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
+    yoneticiler.forEach(function(m) {
+      window.addNotif?.('💰', 'Yeni odeme onay bekliyor: ' + name + ' - ' + (cu?.name || ''), 'warn', 'odemeler', m.id);
     });
-    window.toast?.('Ödeme eklendi — yönetici onayı bekleniyor', 'ok');
+    window.toast?.('Yonetici onayina gonderildi', 'ok');
   } else {
-    window.toast?.(eid ? 'Güncellendi ✓' : 'Ödeme eklendi ✓', 'ok');
+    window.toast?.(isNew ? 'Odeme eklendi' : 'Guncellendi', 'ok');
   }
 }
 
