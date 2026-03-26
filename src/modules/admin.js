@@ -201,6 +201,43 @@ function _renderDetail(uid) {
       ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${u.id})" style="font-size:12px;color:#DC2626">Askiya Al</button>`:''}
       ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${u.id})" style="font-size:12px;color:#16A34A">Aktif Et</button>`:''}
       ${!isSelf?`<button class="btn btns" onclick="Admin.deleteUser(${u.id})" style="font-size:12px;color:#DC2626">Sil</button>`:''}
+      <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:12px">Audit Log</button>
+      <button class="btn btns" onclick="Admin.openDeptModal()" style="font-size:12px">Departmanlar</button>
+      <button class="btn btns" onclick="window.Auth?.openIpWhitelist?.()" style="font-size:12px">IP Kisitlama</button>
+    </div>
+
+    <!-- Performans Skoru -->
+    ${(() => {
+      const s = calcUserScore(u.id);
+      const color = s.overall >= 80 ? '#22C55E' : s.overall >= 50 ? '#F59E0B' : '#EF4444';
+      return `<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:13px;font-weight:600;color:var(--t)">Performans Skoru</span>
+          <span style="font-size:24px;font-weight:800;color:${color}">${s.overall}%</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div style="text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+            <div style="font-size:16px;font-weight:700;color:var(--t)">${s.taskRate}%</div>
+            <div style="font-size:10px;color:var(--t3)">Gorev (${s.tasksDone}/${s.tasksTotal})</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+            <div style="font-size:16px;font-weight:700;color:var(--t)">${s.timeRate}%</div>
+            <div style="font-size:10px;color:var(--t3)">Zamaninda</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+            <div style="font-size:16px;font-weight:700;color:var(--t)">${s.primTotal.toLocaleString('tr-TR')} TL</div>
+            <div style="font-size:10px;color:var(--t3)">Toplam Prim</div>
+          </div>
+        </div>
+      </div>`;
+    })()}
+
+    <!-- Yetki Sablonu Uygula -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">Hizli Yetki Sablonu</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${Object.entries(PERM_TEMPLATES).map(([k,v]) => `<button class="btn btns" onclick="applyPermTemplate(${u.id},'${k}')" style="font-size:11px">${escapeHtml(v.label)}</button>`).join('')}
+      </div>
     </div>`;
 }
 
@@ -1644,6 +1681,173 @@ window._sendInvite = _sendInvite;
 window._copyInviteCode = _copyInviteCode;
 
 // ════════════════════════════════════════════════════════════════
+// ÖZELLİK 3: YETKİ ŞABLONLARI
+// ════════════════════════════════════════════════════════════════
+
+const PERM_TEMPLATES = {
+  muhasebe: { label:'Muhasebe', modules:['dashboard','odemeler','pirim','kpi','settings'], permissions:{odemeler:'manage',pirim:'view',kpi:'view'} },
+  satinalma:{ label:'Satin Alma', modules:['dashboard','pusula','kargo','stok','crm','navlun','pirim','settings'], permissions:{pusula:'manage',kargo:'manage',stok:'manage',crm:'manage',pirim:'manage'} },
+  lojistik: { label:'Lojistik', modules:['dashboard','kargo','stok','navlun','lojistik','settings'], permissions:{kargo:'full',stok:'manage'} },
+  satis:    { label:'Satis', modules:['dashboard','pusula','crm','pirim','settings'], permissions:{pusula:'manage',crm:'full',pirim:'view'} },
+  ik:       { label:'IK', modules:['dashboard','ik','izin','puantaj','pirim','settings'], permissions:{ik:'full',izin:'manage',puantaj:'manage'} },
+};
+
+function applyPermTemplate(uid, templateId) {
+  if (!isAdmin()) return;
+  const tpl = PERM_TEMPLATES[templateId]; if (!tpl) return;
+  const users = loadUsers();
+  const u = users.find(x => x.id === uid); if (!u) return;
+  u.modules = [...tpl.modules];
+  u.permissions = { ...tpl.permissions };
+  saveUsers(users);
+  _auditLog('perm_template', uid, `Sablon uygulandi: ${tpl.label}`);
+  window.toast?.(tpl.label + ' sablonu uygulandi', 'ok');
+  renderAdmin();
+}
+window.applyPermTemplate = applyPermTemplate;
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 4: KULLANICI PERFORMANS SKORU
+// ════════════════════════════════════════════════════════════════
+
+function calcUserScore(uid) {
+  const tasks = typeof window.loadTasks==='function' ? window.loadTasks() : [];
+  const pirim = typeof window.loadPirim==='function' ? window.loadPirim() : [];
+  const myTasks = tasks.filter(t => t.uid === uid);
+  const done = myTasks.filter(t => t.done || t.status==='done').length;
+  const total = myTasks.length || 1;
+  const taskRate = Math.round(done / total * 100);
+
+  // Zamaninda bitirme
+  const onTime = myTasks.filter(t => t.done && t.due && t.completedAt && t.completedAt <= t.due).length;
+  const withDue = myTasks.filter(t => t.done && t.due).length || 1;
+  const timeRate = Math.round(onTime / withDue * 100);
+
+  // Prim puani
+  const myPrims = pirim.filter(p => p.uid === uid && ['approved','paid'].includes(p.status));
+  const primTotal = myPrims.reduce((a,p) => a + (p.amount||0), 0);
+  const primScore = Math.min(100, Math.round(primTotal / 1000));
+
+  const overall = Math.round((taskRate * 0.4) + (timeRate * 0.3) + (primScore * 0.3));
+  return { taskRate, timeRate, primScore, overall, tasksDone: done, tasksTotal: myTasks.length, primTotal };
+}
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 5: DEPARTMAN YÖNETİMİ
+// ════════════════════════════════════════════════════════════════
+
+const DEPT_KEY = 'ak_departments';
+function _loadDepts() { try { return JSON.parse(localStorage.getItem(DEPT_KEY)||'[]'); } catch { return []; } }
+function _storeDepts(d) { localStorage.setItem(DEPT_KEY, JSON.stringify(d)); }
+
+function openDeptModal() {
+  if (!isAdmin()) return;
+  let depts = _loadDepts();
+  if (!depts.length) depts = ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe'];
+  const old = document.getElementById('mo-dept'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-dept'; mo.style.zIndex='2100';
+  const users = loadUsers();
+  mo.innerHTML = `<div class="moc" style="max-width:460px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">Departman Yonetimi</div>
+    </div>
+    <div style="padding:12px 20px;max-height:50vh;overflow-y:auto">
+      ${depts.map(d => {
+        const count = users.filter(u => u.dept === d).length;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)">
+          <span style="flex:1;font-size:13px;font-weight:500;color:var(--t)">${escapeHtml(d)}</span>
+          <span style="font-size:11px;color:var(--t3)">${count} kisi</span>
+          <button onclick="_delDept('${escapeHtml(d)}')" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3);padding:2px">✕</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px">
+      <input class="fi" id="dept-new" placeholder="Yeni departman..." style="flex:1;font-size:13px">
+      <button class="btn btnp" onclick="_addDept()" style="font-size:12px">Ekle</button>
+    </div>
+    <div style="padding:8px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-dept').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window._addDept = function() {
+  const name = (document.getElementById('dept-new')?.value||'').trim();
+  if (!name) return;
+  const depts = _loadDepts().length ? _loadDepts() : ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe'];
+  if (depts.includes(name)) { window.toast?.('Bu departman zaten var','err'); return; }
+  depts.push(name);
+  _storeDepts(depts);
+  _auditLog('dept_add', 0, 'Departman eklendi: '+name);
+  document.getElementById('mo-dept')?.remove();
+  openDeptModal();
+};
+window._delDept = function(name) {
+  const depts = _loadDepts().filter(d => d !== name);
+  _storeDepts(depts);
+  _auditLog('dept_del', 0, 'Departman silindi: '+name);
+  document.getElementById('mo-dept')?.remove();
+  openDeptModal();
+};
+
+// ════════════════════════════════════════════════════════════════
+// ÖZELLİK 6: AUDIT LOG
+// ════════════════════════════════════════════════════════════════
+
+const AUDIT_KEY = 'ak_audit_log';
+function _loadAudit() { try { return JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]'); } catch { return []; } }
+function _storeAudit(d) { localStorage.setItem(AUDIT_KEY, JSON.stringify(d.slice(0,2000))); }
+
+function _auditLog(action, targetUid, detail) {
+  const cu = _getCU();
+  const d = _loadAudit();
+  d.unshift({ id: generateNumericId(), action, targetUid, detail, by: cu?.id, byName: cu?.name||'Sistem', ts: nowTs() });
+  _storeAudit(d);
+}
+
+function openAuditLog() {
+  if (!isAdmin()) return;
+  const logs = _loadAudit().slice(0, 50);
+  const old = document.getElementById('mo-audit'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-audit'; mo.style.zIndex='2100';
+  mo.innerHTML = `<div class="moc" style="max-width:560px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">Audit Log (${logs.length})</div>
+    </div>
+    <div style="max-height:60vh;overflow-y:auto">
+      ${logs.length ? logs.map(l => `<div style="display:flex;gap:8px;padding:8px 20px;border-bottom:1px solid var(--b);font-size:12px">
+        <span style="color:var(--t3);white-space:nowrap;min-width:90px">${(l.ts||'').slice(0,16)}</span>
+        <span style="color:var(--ac);font-weight:500;min-width:60px">${escapeHtml(l.byName||'?')}</span>
+        <span style="color:var(--t);flex:1">${escapeHtml(l.detail||'')}</span>
+      </div>`).join('') : '<div style="padding:32px;text-align:center;color:var(--t3)">Kayit yok</div>'}
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-audit').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+// Mevcut fonksiyonlara audit ekleme — saveAdminUser ve deleteUser'ı wrap et
+(function _patchAudit() {
+  const _origSave = saveAdminUser;
+  saveAdminUser = function() {
+    const eid = parseInt(g('f-edit-id')?.value || '0');
+    const name = (g('f-name')?.value || '').trim();
+    _origSave();
+    _auditLog(eid ? 'user_update' : 'user_create', eid || 0, (eid ? 'Guncellendi: ' : 'Olusturuldu: ') + name);
+  };
+  window.saveAdminUser = saveAdminUser;
+  window.saveUser = saveAdminUser;
+})();
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Admin = {
@@ -1675,6 +1879,11 @@ const Admin = {
   checkInactiveUsers,
   openInviteModal,
   redeemInvite,
+  applyPermTemplate,
+  calcUserScore,
+  openDeptModal,
+  openAuditLog,
+  PERM_TEMPLATES,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

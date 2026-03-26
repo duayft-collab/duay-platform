@@ -527,18 +527,168 @@ function _translateFirebaseError(code) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// GOOGLE SSO
+// ════════════════════════════════════════════════════════════════
+
+async function loginWithGoogle() {
+  if (!FB_AUTH) { window.toast?.('Firebase baglantisi gerekli', 'err'); return; }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await FB_AUTH.signInWithPopup(provider);
+    if (result?.user) {
+      const localResult = await _localLogin(result.user.email, '', true);
+      if (localResult.ok) {
+        // Onboarding kontrolu
+        if (!localResult.user.onboardingDone) _showOnboarding(localResult.user);
+        return localResult;
+      }
+    }
+    return { ok: false, error: 'Google girisi basarisiz' };
+  } catch(e) {
+    if (e.code === 'auth/popup-closed-by-user') return { ok: false, error: '' };
+    console.warn('[auth] Google SSO:', e.message);
+    return { ok: false, error: _translateFirebaseError(e.code) || e.message };
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ONBOARDING SIHIRBAZI (3 adim)
+// ════════════════════════════════════════════════════════════════
+
+function _showOnboarding(user) {
+  if (user.onboardingDone) return;
+  const AVATARS = ['#7C3AED','#0369A1','#D97706','#DC2626','#059669','#DB2777','#2563EB','#EA580C'];
+  const DEPTS = ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe','Yonetim'];
+  let step = 1, selColor = user.color || AVATARS[0], selDept = user.dept || '';
+
+  function render() {
+    const old = document.getElementById('mo-onboarding'); if (old) old.remove();
+    const mo = document.createElement('div');
+    mo.className='mo open'; mo.id='mo-onboarding'; mo.style.zIndex='9999';
+    const dots = [1,2,3].map(i=>`<div style="width:${i===step?'24px':'8px'};height:8px;border-radius:4px;background:${i===step?'var(--ac)':'var(--b)'};transition:all .2s"></div>`).join('');
+
+    let content = '';
+    if (step===1) {
+      content = `<div style="text-align:center;margin-bottom:16px"><div style="font-size:16px;font-weight:700;color:var(--t)">Avatar Secin</div><div style="font-size:12px;color:var(--t3)">Profilinizi kisisellestirilmis</div></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">${AVATARS.map(c=>`<button onclick="window._obSelColor='${c}';window._obRender()" style="width:48px;height:48px;border-radius:14px;background:${c};border:3px solid ${selColor===c?'var(--t)':'transparent'};cursor:pointer;font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;transition:all .15s">${(user.name||'?')[0]}</button>`).join('')}</div>`;
+    } else if (step===2) {
+      content = `<div style="text-align:center;margin-bottom:16px"><div style="font-size:16px;font-weight:700;color:var(--t)">Departman Secin</div><div style="font-size:12px;color:var(--t3)">Hangi ekiptesiniz?</div></div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">${DEPTS.map(d=>`<button onclick="window._obSelDept='${d}';window._obRender()" style="padding:10px;border-radius:8px;border:1.5px solid ${selDept===d?'var(--ac)':'var(--b)'};background:${selDept===d?'var(--al)':'var(--sf)'};cursor:pointer;font-size:12px;font-weight:500;color:${selDept===d?'var(--ac)':'var(--t)'};font-family:inherit;transition:all .12s">${d}</button>`).join('')}</div>`;
+    } else {
+      content = `<div style="text-align:center"><div style="font-size:40px;margin-bottom:12px">🎉</div><div style="font-size:18px;font-weight:700;color:var(--t);margin-bottom:6px">Hazirsiniz!</div><div style="font-size:13px;color:var(--t3)">Platformu kesfetmeye baslayin</div></div>`;
+    }
+
+    mo.innerHTML = `<div class="moc" style="max-width:420px;padding:0;border-radius:16px;overflow:hidden">
+      <div style="padding:24px 24px 16px">${content}</div>
+      <div style="padding:12px 24px 20px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:4px">${dots}</div>
+        <div style="display:flex;gap:8px">
+          ${step>1?`<button class="btn btns" onclick="window._obStep=${step-1};window._obRender()">Geri</button>`:''}
+          <button class="btn btnp" onclick="window._obNext()">${step===3?'Baslayalim':'Devam'}</button>
+        </div>
+      </div>
+    </div>`;
+    document.body.appendChild(mo);
+  }
+
+  window._obSelColor = selColor;
+  window._obSelDept = selDept;
+  window._obStep = step;
+  window._obRender = () => { selColor=window._obSelColor; selDept=window._obSelDept; step=window._obStep; render(); };
+  window._obNext = () => {
+    if (step < 3) { step++; window._obStep=step; render(); return; }
+    // Kaydet
+    const users = typeof window.loadUsers==='function' ? window.loadUsers() : [];
+    const u = users.find(x=>x.id===user.id);
+    if (u) { u.color=selColor; u.dept=selDept; u.onboardingDone=true; if(typeof window.saveUsers==='function') window.saveUsers(users); }
+    if (CU) { CU.color=selColor; CU.dept=selDept; CU.onboardingDone=true; }
+    document.getElementById('mo-onboarding')?.remove();
+    window.toast?.('Profiliniz hazirlandi', 'ok');
+  };
+  render();
+}
+
+// ════════════════════════════════════════════════════════════════
+// IP BAZLI ERISIM KISITLAMA
+// ════════════════════════════════════════════════════════════════
+
+const IP_WHITELIST_KEY = 'ak_ip_whitelist';
+
+function _loadIpWhitelist() {
+  try { return JSON.parse(localStorage.getItem(IP_WHITELIST_KEY)||'{"enabled":false,"ips":[]}'); }
+  catch { return {enabled:false,ips:[]}; }
+}
+function _storeIpWhitelist(d) { localStorage.setItem(IP_WHITELIST_KEY, JSON.stringify(d)); }
+
+async function checkIpAccess() {
+  const wl = _loadIpWhitelist();
+  if (!wl.enabled || !wl.ips.length) return true;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    const userIp = data.ip;
+    if (wl.ips.includes(userIp)) return true;
+    window.toast?.('Bu IP adresinden erisim engellendi: '+userIp, 'err');
+    return false;
+  } catch(e) {
+    console.warn('[auth] IP kontrolu basarisiz:', e.message);
+    return true; // API hatasi durumunda izin ver
+  }
+}
+
+function openIpWhitelistModal() {
+  if (!isAdmin()) return;
+  const wl = _loadIpWhitelist();
+  const old = document.getElementById('mo-ip-wl'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-ip-wl'; mo.style.zIndex='2100';
+  mo.innerHTML = `<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">IP Erisim Kisitlama</div>
+    </div>
+    <div style="padding:16px 20px">
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer">
+        <input type="checkbox" id="ip-wl-enabled" ${wl.enabled?'checked':''} style="accent-color:var(--ac);width:18px;height:18px">
+        <div><div style="font-size:13px;font-weight:500;color:var(--t)">IP Kisitlama Aktif</div>
+        <div style="font-size:10px;color:var(--t3)">Kapali iken tum IP'lere izin verilir</div></div>
+      </label>
+      <div class="fg"><div class="fl">IZIN VERILEN IP'LER</div>
+        <textarea class="fi" id="ip-wl-list" rows="4" style="font-family:'DM Mono',monospace;font-size:12px" placeholder="192.168.1.1&#10;10.0.0.1&#10;Her satira bir IP">${(wl.ips||[]).join('\\n')}</textarea>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="document.getElementById('mo-ip-wl').remove()">Iptal</button>
+      <button class="btn btnp" onclick="window._saveIpWl()">Kaydet</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window._saveIpWl = function() {
+  const enabled = document.getElementById('ip-wl-enabled')?.checked || false;
+  const raw = (document.getElementById('ip-wl-list')?.value || '').trim();
+  const ips = raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  _storeIpWhitelist({ enabled, ips });
+  document.getElementById('mo-ip-wl')?.remove();
+  window.toast?.('IP ayarlari kaydedildi', 'ok');
+};
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 
 const Auth = {
   initFirebase, listenAuthState,
-  login, logout, resolveCurrentUser, restoreSession, changePassword,
-  isAdmin, canAccess, checkFirebaseStatus,
+  login, loginWithGoogle, logout, resolveCurrentUser, restoreSession, changePassword,
+  isAdmin, canAccess, checkFirebaseStatus, checkIpAccess,
   getCU:       () => CU,
   getFBAuth:   () => FB_AUTH,
   getFBDB:     () => FB_DB,
   getTenantId: () => TENANT_ID,
   logAction:   _logEntry,
+  openIpWhitelist: openIpWhitelistModal,
 };
 
 // Firebase başlat
