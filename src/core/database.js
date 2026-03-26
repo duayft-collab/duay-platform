@@ -1077,15 +1077,26 @@ function _checkNewAssignments(tasksData) {
   } catch(e) {}
 }
 
+// Global fonksiyon — inline onclick'ten çağrılır
+window._closeAssignModal = function() {
+  document.getElementById('mo-task-assigned')?.remove();
+};
+window._goToTask = function(tid) {
+  document.getElementById('mo-task-assigned')?.remove();
+  if (typeof window.nav === 'function') window.nav('pusula');
+  setTimeout(function() {
+    if (typeof window.openPusDetail === 'function') window.openPusDetail(tid);
+    else if (window.Pusula && typeof window.Pusula.openDetail === 'function') window.Pusula.openDetail(tid);
+  }, 500);
+};
+
 function _showAssignmentModal(task) {
   const old = document.getElementById('mo-task-assigned'); if (old) old.remove();
   const esc = window.escapeHtml || (s => s);
 
-  // Öncelik
   const PRI = { 1:{l:'Kritik',ic:'🔴',c:'#EF4444',bg:'#FEF2F2'}, 2:{l:'Yuksek',ic:'🟡',c:'#F59E0B',bg:'#FFFBEB'}, 3:{l:'Normal',ic:'🟢',c:'#10B981',bg:'#ECFDF5'}, 4:{l:'Dusuk',ic:'⚪',c:'#9CA3AF',bg:'#F9FAFB'} };
   const p = PRI[task.pri] || PRI[3];
 
-  // Bitiş tarihi
   let dueText = '';
   if (task.due) {
     const diff = Math.ceil((new Date(task.due) - new Date()) / 86400000);
@@ -1097,50 +1108,36 @@ function _showAssignmentModal(task) {
     else dueText = '<span style="color:#10B981">' + diff + ' gun kaldi</span>';
   }
 
-  // Atayan kişi
   const users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
   const assigner = users.find(u => u.id === task.createdBy) || {};
+  const tid = task.id;
 
   const mo = document.createElement('div');
   mo.className='mo'; mo.id='mo-task-assigned'; mo.style.zIndex='9999';
-  mo.innerHTML = `<div class="moc" style="max-width:420px;padding:0;border-radius:16px;overflow:hidden;animation:_pusNotifSlide .3s ease-out">
-    <div style="background:linear-gradient(135deg,${p.c}dd,${p.c}99);padding:24px;text-align:center;color:#fff">
-      <div style="font-size:36px;margin-bottom:8px">📋</div>
-      <div style="font-size:18px;font-weight:700">Yeni Gorev Atandi!</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px">Sana yeni bir gorev atandi, basarilar!</div>
-    </div>
-    <div style="padding:20px">
-      <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:12px;line-height:1.3">${esc(task.title)}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-        <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;background:${p.bg};color:${p.c};border:1px solid ${p.c}30">${p.ic} ${p.l}</span>
-        ${task.department ? '<span style="font-size:11px;padding:4px 10px;border-radius:6px;background:var(--s2);color:var(--t2)">' + esc(task.department) + '</span>' : ''}
-      </div>
-      ${dueText ? '<div style="font-size:13px;margin-bottom:8px">📅 ' + dueText + '</div>' : ''}
-      ${assigner.name ? '<div style="font-size:12px;color:var(--t3)">Atayan: <span style="font-weight:600;color:var(--t2)">' + esc(assigner.name) + '</span></div>' : ''}
-    </div>
-    <div style="padding:0 20px 20px;display:flex;gap:8px">
-      <button id="_asgn-close" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>
-      <button id="_asgn-view" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
-    </div>
-  </div>`;
+  mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:16px;overflow:hidden;animation:_pusNotifSlide .3s ease-out">'
+    + '<div style="background:linear-gradient(135deg,' + p.c + 'dd,' + p.c + '99);padding:24px;text-align:center;color:#fff">'
+      + '<div style="font-size:36px;margin-bottom:8px">📋</div>'
+      + '<div style="font-size:18px;font-weight:700">Yeni Gorev Atandi!</div>'
+      + '<div style="font-size:13px;opacity:.85;margin-top:4px">Sana yeni bir gorev atandi, basarilar!</div>'
+    + '</div>'
+    + '<div style="padding:20px">'
+      + '<div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:12px;line-height:1.3">' + esc(task.title) + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'
+        + '<span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;background:' + p.bg + ';color:' + p.c + ';border:1px solid ' + p.c + '30">' + p.ic + ' ' + p.l + '</span>'
+        + (task.department ? '<span style="font-size:11px;padding:4px 10px;border-radius:6px;background:var(--s2);color:var(--t2)">' + esc(task.department) + '</span>' : '')
+      + '</div>'
+      + (dueText ? '<div style="font-size:13px;margin-bottom:8px">📅 ' + dueText + '</div>' : '')
+      + (assigner.name ? '<div style="font-size:12px;color:var(--t3)">Atayan: <span style="font-weight:600;color:var(--t2)">' + esc(assigner.name) + '</span></div>' : '')
+    + '</div>'
+    + '<div style="padding:0 20px 20px;display:flex;gap:8px">'
+      + '<button onclick="window._closeAssignModal()" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>'
+      + '<button onclick="window._goToTask(' + tid + ')" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>'
+    + '</div>'
+  + '</div>';
+
   document.body.appendChild(mo);
-  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
-
-  // Buton event'leri — mo.querySelector ile (getElementById yerine, DOM scope garantili)
-  const _btnClose = mo.querySelector('#_asgn-close');
-  const _btnView  = mo.querySelector('#_asgn-view');
-  if (_btnClose) _btnClose.addEventListener('click', () => mo.remove());
-  if (_btnView) _btnView.addEventListener('click', () => {
-    const tid = task.id;
-    mo.remove();
-    if (typeof window.nav === 'function') window.nav('pusula');
-    setTimeout(() => {
-      try { window['openPusDetail'](tid); }
-      catch(e) { try { window['Pusula']['openDetail'](tid); } catch(e2) { console.error('[assign] Gorev acilamadi:', tid, e2); } }
-    }, 400);
-  });
-
-  setTimeout(() => mo.classList.add('open'), 10);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
 }
 
 function startRealtimeSync() {
