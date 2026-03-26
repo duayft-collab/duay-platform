@@ -237,9 +237,28 @@ function _renderDetail(uid) {
 
     <!-- Yetki Sablonu Uygula -->
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">Hizli Yetki Sablonu</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:600;color:var(--t)">Hizli Yetki Sablonu</span>
+        <button class="btn btns" onclick="window._openTempPerm(${u.id})" style="font-size:10px">Gecici Yetki</button>
+      </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${Object.entries(PERM_TEMPLATES).map(([k,v]) => `<button class="btn btns" onclick="applyPermTemplate(${u.id},'${k}')" style="font-size:11px">${escapeHtml(v.label)}</button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Modul Erisim Dashboard -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">Modul Erisimleri</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px">
+        ${ALL_MODULES.filter(m=>m.id!=='dashboard'&&m.id!=='settings').map(m => {
+          const hasAccess = u.role==='admin' || !u.modules || (u.modules||[]).includes(m.id);
+          const expiry = u.permExpiry?.[m.id];
+          return '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:'+(hasAccess?'rgba(34,197,94,.06)':'var(--s2)')+';border:1px solid '+(hasAccess?'rgba(34,197,94,.2)':'var(--b)')+'">'
+            + '<div style="width:8px;height:8px;border-radius:50%;background:'+(hasAccess?'#22C55E':'#D1D5DB')+';flex-shrink:0"></div>'
+            + '<span style="font-size:11px;color:'+(hasAccess?'var(--t)':'var(--t3)')+';flex:1">' + escapeHtml(m.label) + '</span>'
+            + (expiry ? '<span style="font-size:9px;color:#F59E0B" title="Suresi: '+expiry+'">⏰</span>' : '')
+            + '</div>';
+        }).join('')}
       </div>
     </div>`;
 }
@@ -1699,6 +1718,8 @@ const PERM_TEMPLATES = {
   lojistik: { label:'Lojistik', modules:['dashboard','kargo','stok','navlun','lojistik','settings'], permissions:{kargo:'full',stok:'manage'} },
   satis:    { label:'Satis', modules:['dashboard','pusula','crm','pirim','settings'], permissions:{pusula:'manage',crm:'full',pirim:'view'} },
   ik:       { label:'IK', modules:['dashboard','ik','izin','puantaj','pirim','settings'], permissions:{ik:'full',izin:'manage',puantaj:'manage'} },
+  stajyer:  { label:'Stajyer', modules:['dashboard','pusula','takvim','notes','announce'], permissions:{pusula:'view',takvim:'view',notes:'view',announce:'view'} },
+  finans:   { label:'Finans', modules:['dashboard','odemeler','pirim','kargo','kpi','crm','settings'], permissions:{odemeler:'full',pirim:'full',kargo:'manage',kpi:'manage',crm:'view'} },
 };
 
 function applyPermTemplate(uid, templateId) {
@@ -1914,6 +1935,41 @@ function setPermExpiry(uid, moduleId, expiryDate) {
   _auditLog('perm_expiry', uid, 'Yetki suresi: ' + moduleId + ' → ' + expiryDate);
   window.toast?.(moduleId + ' yetkisi ' + expiryDate + ' tarihine kadar gecerli', 'ok');
 }
+
+window._openTempPerm = function(uid) {
+  if (!isAdmin()) return;
+  const old = document.getElementById('mo-temp-perm'); if (old) old.remove();
+  const mods = ALL_MODULES.filter(m => m.id !== 'dashboard' && m.id !== 'settings' && m.id !== 'admin');
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-temp-perm'; mo.style.zIndex = '2100';
+  mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:12px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Gecici Yetki Ver</div></div>'
+    + '<div style="padding:16px 20px">'
+      + '<div class="fg"><div class="fl">MODUL</div><select class="fi" id="tp-mod">' + mods.map(m => '<option value="' + m.id + '">' + escapeHtml(m.label) + '</option>').join('') + '</select></div>'
+      + '<div class="fg"><div class="fl">BITIS TARIHI</div><input type="date" class="fi" id="tp-date"></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-temp-perm\').remove()">Iptal</button>'
+      + '<button class="btn btnp" onclick="window._saveTempPerm(' + uid + ')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+};
+window._saveTempPerm = function(uid) {
+  const mod = document.getElementById('tp-mod')?.value;
+  const date = document.getElementById('tp-date')?.value;
+  if (!mod || !date) { window.toast?.('Modul ve tarih zorunlu', 'err'); return; }
+  setPermExpiry(uid, mod, date);
+  // Modülü ekle (yoksa)
+  const users = loadUsers();
+  const u = users.find(x => x.id === uid);
+  if (u) {
+    if (Array.isArray(u.modules) && !u.modules.includes(mod)) { u.modules.push(mod); saveUsers(users); }
+  }
+  document.getElementById('mo-temp-perm')?.remove();
+  renderAdmin();
+};
 
 function checkPermExpiry() {
   const users = loadUsers();

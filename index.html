@@ -990,29 +990,33 @@ function _doLogin() {
             </div>
             <!-- Kullanıcı listesi -->
             <div id="admin-list" style="flex:1;overflow-y:auto"></div>
-            <!-- Alt araçlar -->
-            <div style="padding:8px;border-top:1px solid var(--b);display:flex;gap:4px;flex-wrap:wrap">
-              <button class="btn btns" onclick="Admin.openSessionManager()" style="font-size:10px;flex:1">Oturumlar</button>
-              <button class="btn btns" onclick="Admin.openInviteModal()" style="font-size:10px;flex:1">Davet</button>
-              <button class="btn btns" onclick="exportUsersXlsx?.()" style="font-size:10px;flex:1">Excel</button>
-            </div>
           </div>
 
           <!-- SAG: Profil Detay + Log -->
           <div class="adm-main">
+            <!-- Action bar (footer'dan taşındı) -->
+            <div style="padding:10px clamp(12px,3vw,24px);border-bottom:1px solid var(--b);display:flex;gap:6px;flex-wrap:wrap;background:var(--sf)">
+              <button class="btn btns" onclick="Admin.openSessionManager()" style="font-size:11px">Oturumlar</button>
+              <button class="btn btns" onclick="Admin.openInviteModal()" style="font-size:11px">Davet</button>
+              <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:11px">Audit Log</button>
+              <button class="btn btns" onclick="Admin.openBulkRoleChange()" style="font-size:11px">Toplu Rol</button>
+              <button class="btn btns" onclick="exportUsersXlsx?.()" style="font-size:11px">Excel</button>
+            </div>
             <!-- Seçili kullanıcı profil alanı -->
             <div id="adm-detail" style="padding:clamp(12px,3vw,24px)"></div>
-            <!-- Aktivite Logu -->
-            <div style="padding:0 24px 24px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                <span style="font-size:13px;font-weight:600;color:var(--t)">Aktivite Logu</span>
-                <div style="display:flex;gap:6px">
-                  <input type="search" id="log-search" placeholder="Ara..." oninput="Admin.renderLog()" style="padding:5px 10px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);width:120px;font-family:inherit">
-                  <select id="log-type-f" onchange="Admin.renderLog()" style="padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit"><option value="">Tumu</option><option value="login">Giris</option><option value="task">Gorev</option><option value="user">Kullanici</option></select>
-                  <span id="log-total" style="font-size:11px;color:var(--t3);align-self:center"></span>
-                </div>
+            <!-- Aktivite Logu (collapsible) -->
+            <div style="padding:0 clamp(12px,3vw,24px) 24px">
+              <div onclick="var b=document.getElementById('adm-log-body');var a=this.querySelector('._arr');if(b){b.style.display=b.style.display==='none'?'':'none';if(a)a.classList.toggle('_open')}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:var(--sf);border:1px solid var(--b);border-radius:10px 10px 0 0">
+                <span style="font-size:13px;font-weight:600;color:var(--t)">Aktivite Logu <span id="log-total" style="font-size:11px;color:var(--t3);font-weight:400"></span></span>
+                <span class="_arr" style="font-size:10px;color:var(--t3);transition:transform .2s;display:inline-block">▼</span>
               </div>
-              <div id="activity-log-list" style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden"></div>
+              <div id="adm-log-body" style="display:none;border:1px solid var(--b);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;background:var(--sf)">
+                <div style="display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--b)">
+                  <input type="search" id="log-search" placeholder="Ara..." oninput="Admin.renderLog()" style="flex:1;padding:5px 10px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit">
+                  <select id="log-type-f" onchange="Admin.renderLog()" style="padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit"><option value="">Tumu</option><option value="login">Giris</option><option value="task">Gorev</option><option value="user">Kullanici</option></select>
+                </div>
+                <div id="activity-log-list"></div>
+              </div>
             </div>
           </div>
 
