@@ -180,14 +180,22 @@ function _renderNavlunTab(){
 
   KargoV10.renderNavlunList();
   _renderKtnList();
-  // Navlun inject — _injectNavlunSection yerine direkt render
-  setTimeout(function(){
-    if(typeof window.renderNavlun==='function') window.renderNavlun();
-    else {
-      var nl=document.getElementById('navlun-list');
-      if(nl) nl.innerHTML='<div style="padding:32px;text-align:center;color:var(--t3)">Navlun modülü yükleniyor...</div>';
-    }
-  }, 100);
+  // Navlun inject — retry + event listener
+  if (typeof window.renderNavlun === 'function') {
+    window.renderNavlun();
+  } else {
+    var nl2 = document.getElementById('navlun-list');
+    if (nl2) nl2.innerHTML = '<div style="padding:32px;text-align:center;color:var(--t3)">Navlun modülü yükleniyor...</div>';
+    window.addEventListener('navlun-ready', function() {
+      if (typeof window.renderNavlun === 'function') window.renderNavlun();
+    }, { once: true });
+    // Fallback: 5 saniye sonra hâlâ yüklenmediyse
+    setTimeout(function() {
+      if (typeof window.renderNavlun === 'function') { window.renderNavlun(); return; }
+      var nl3 = document.getElementById('navlun-list');
+      if (nl3 && nl3.innerHTML.includes('yükleniyor')) nl3.innerHTML = '<div style="padding:32px;text-align:center;color:var(--rdt)">Navlun modülü yüklenemedi — sayfayı yenileyin</div>';
+    }, 5000);
+  }
 }
 
 function _renderNavlunList(){

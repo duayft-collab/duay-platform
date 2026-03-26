@@ -406,12 +406,9 @@ function saveNavlun() {
 
   const errs = [];
   if (!tasiyan) errs.push('Taşıyıcı');
-  if (!satici)  errs.push('Satıcı');
-  if (!tveren)  errs.push('Teklif veren');
   if (!from)    errs.push('Yükleme noktası');
   if (!to)      errs.push('Varış noktası');
   if (!fiyat)   errs.push('Birim fiyat');
-  if (!transit) errs.push('Transit süre');
 
   if (errs.length) {
     window.toast?.('Zorunlu: ' + errs.join(', '), 'err');
@@ -661,4 +658,6 @@ if (typeof module!=='undefined'&&module.exports) {
   window.loadNavlun             = loadNavlun;
   window.storeNavlun            = storeNavlun;
   window._injectNavlunSection   = _injectNavlunSection;
+  // Navlun hazır — bekleyen modülleri bilgilendir
+  try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) {}
 }

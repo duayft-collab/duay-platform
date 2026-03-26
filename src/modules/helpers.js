@@ -26,6 +26,7 @@
 const _gh      = window.g;
 // ── V18 eklenti alias ─────────────────────────────────────────
 const _sth     = window.st;
+const _p2h     = n => String(n).padStart(2, '0');
 const _nowTsh  = window.nowTs;
 const _isAdminH = window.isAdmin;
 const _CUh      = window.CU;
