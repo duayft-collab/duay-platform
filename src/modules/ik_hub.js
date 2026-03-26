@@ -88,6 +88,7 @@ function _injectIkHub() {
   <button class="ikh-tab"    data-tab="degerlendirme"  onclick="IkHub.setTab('degerlendirme',this)">⭐ Değerlendirme</button>
   <button class="ikh-tab"    data-tab="ai_asistan"     onclick="IkHub.setTab('ai_asistan',this)">🤖 AI Asistan</button>
   <button class="ikh-tab"    data-tab="adaylar"        onclick="IkHub.setTab('adaylar',this)">📋 Adaylar</button>
+  <button class="ikh-tab"    data-tab="raporlar"       onclick="IkHub.setTab('raporlar',this)">📊 Raporlar</button>
 </div>
 
 <!-- ── PERSONEL ── -->
@@ -352,6 +353,10 @@ function _injectIkHub() {
     </div>
     <div id="ikh-kayit-listesi"></div>
   </div>
+</div>
+
+<div id="ikh-tab-raporlar" class="ikh-tab-content" style="display:none">
+  <div class="ik-wrap"><div id="ikh-rapor-body"></div></div>
 </div>
 
 <!-- ── CSS ── -->
@@ -737,7 +742,7 @@ function setIkTab(tab, btn) {
   _IK_TAB = tab;
   document.querySelectorAll('#panel-ik-hub .ikh-tab').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
-  ['personel','puantaj','izin','maas','performans','sozlesme','pipeline','on_gorusme','mulakat','test_drive','degerlendirme','ai_asistan','adaylar'].forEach(t => {
+  ['personel','puantaj','izin','maas','performans','sozlesme','pipeline','on_gorusme','mulakat','test_drive','degerlendirme','ai_asistan','adaylar','raporlar'].forEach(t => {
     const el = _gik('ikh-tab-' + t);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
@@ -754,6 +759,7 @@ function setIkTab(tab, btn) {
   if (tab === 'degerlendirme')  _ikRenderEval();
   if (tab === 'ai_asistan')     _ikRenderAI();
   if (tab === 'adaylar')        _ikRenderKayitlar();
+  if (tab === 'raporlar')       renderIkRaporlar();
 }
 
 function openIkAddModal() {
@@ -2229,7 +2235,7 @@ function renderPipe(){
         <button onclick="event.stopPropagation();openAiAnalysis(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">AI</button>
         <button onclick="event.stopPropagation();toggleCompare(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">VS</button>
         <button onclick="event.stopPropagation();startFocusInterview(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">📝</button>
-      </div>${c.score>0?`<div class="pcard-score">★ ${c.score}</div>`:''}</div></div>`).join('')}
+      </div>${(function(){var s=_calcCandScore(c);return s.total>0?'<div style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:'+s.color+'14;color:'+s.color+'">'+s.total+'/100</div>':'';})()}</div></div>`).join('')}
     <button class="add-btn" onclick="addCand('${stage.id}')">+ ${_ikT('add_candidate')}</button></div>`;
     board.appendChild(col);
   });
@@ -3678,6 +3684,64 @@ function openRejectionLetter(candId) {
 }
 window.openRejectionLetter = openRejectionLetter;
 
+function _calcCandScore(c) {
+  var interviewAvg = 0;
+  if (c.interviewScores) {
+    var vals = Object.values(c.interviewScores);
+    if (vals.length) interviewAvg = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+  } else if (c.score) {
+    interviewAvg = c.score;
+  }
+  var interviewPct = (interviewAvg / 5) * 100;
+  var tdPuan = 0;
+  try { var td = JSON.parse(localStorage.getItem('ak_ik_test_drive') || '{}'); if (td[c.id]) tdPuan = parseInt(td[c.id].puan || 0); } catch (e) { /* ignore */ }
+  var tdPct = (tdPuan / 5) * 100;
+  var evalAvg = 0;
+  try { var ev = JSON.parse(localStorage.getItem('ak_ik_eval_scores') || '{}'); var evVals = Object.values(ev); if (evVals.length) evalAvg = evVals.reduce(function(a, b) { return a + b; }, 0) / evVals.length; } catch (e) { /* ignore */ }
+  var evalPct = (evalAvg / 5) * 100;
+  var total = Math.round(interviewPct * 0.4 + tdPct * 0.3 + evalPct * 0.3);
+  var color = total >= 70 ? '#10B981' : total >= 40 ? '#F59E0B' : '#EF4444';
+  return { total: total, color: color };
+}
+window._calcCandScore = _calcCandScore;
+
+function renderIkRaporlar() {
+  var body = document.getElementById('ikh-rapor-body');
+  if (!body) return;
+  var all = _loadCandidates();
+  var thisMonth = new Date().toISOString().slice(0, 7);
+  var thisMonthN = all.filter(function(c) { return (c.createdAt || '').startsWith(thisMonth); }).length;
+  var kabul = all.filter(function(c) { return c.stage === 'kabul'; }).length;
+  var red = all.filter(function(c) { return c.stage === 'red'; }).length;
+  var bekleyen = all.length - kabul - red;
+  var total = all.length || 1;
+  var posCounts = {};
+  all.forEach(function(c) { var p = c.position || 'Belirtilmedi'; posCounts[p] = (posCounts[p] || 0) + 1; });
+  var maxPos = Math.max.apply(null, Object.values(posCounts).concat([1]));
+  body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--ac)">' + thisMonthN + '</div><div style="font-size:10px;color:var(--t3)">Bu Ay</div></div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:20px;font-weight:700;color:#10B981">' + kabul + '</div><div style="font-size:10px;color:var(--t3)">Kabul</div></div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:20px;font-weight:700;color:#EF4444">' + red + '</div><div style="font-size:10px;color:var(--t3)">Red</div></div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center"><div style="font-size:20px;font-weight:700;color:#F59E0B">' + bekleyen + '</div><div style="font-size:10px;color:var(--t3)">Bekleyen</div></div>'
+    + '</div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:16px;margin-bottom:16px">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Oran: Kabul %' + Math.round(kabul / total * 100) + ' · Red %' + Math.round(red / total * 100) + ' · Bekleyen %' + Math.round(bekleyen / total * 100) + '</div>'
+      + '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;display:flex">'
+        + '<div style="width:' + Math.round(kabul / total * 100) + '%;background:#10B981"></div>'
+        + '<div style="width:' + Math.round(red / total * 100) + '%;background:#EF4444"></div>'
+        + '<div style="width:' + Math.round(bekleyen / total * 100) + '%;background:#F59E0B"></div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:16px">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Pozisyon Dagilimi</div>'
+      + Object.entries(posCounts).sort(function(a, b) { return b[1] - a[1]; }).map(function(e) {
+          return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:var(--t2)">' + escapeHtml(e[0]) + '</span><span style="font-weight:600;color:var(--ac)">' + e[1] + '</span></div>'
+            + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.round(e[1] / maxPos * 100) + '%;background:var(--ac);border-radius:3px"></div></div></div>';
+        }).join('')
+    + '</div>';
+}
+window.renderIkRaporlar = renderIkRaporlar;
+
 const IkHub = {
   render:          renderIkHub,
   setTab:          setIkTab,
@@ -3720,6 +3784,8 @@ const IkHub = {
   compareCandidate: toggleCompare,
   focusInterview:  startFocusInterview,
   rejectLetter:    openRejectionLetter,
+  renderRaporlar:  renderIkRaporlar,
+  calcCandScore:   _calcCandScore,
   _ikSt:           _ikStTab,
   _saveInterview:  _ikSaveInterview,
   _clearForm:      _ikClearForm,
