@@ -917,6 +917,9 @@ const _listeners = {};
  */
 const _writingNow = {};
 
+/** Double-call guard — startRealtimeSync birden fazla çağrılmasını engeller */
+let _syncStarted = false;
+
 /**
  * Firestore koleksiyonuna realtime listener kurar.
  * Değişiklik gelince localStorage'ı günceller ve UI'ı yeniler.
@@ -1010,6 +1013,8 @@ function _listenCollection(collection, localKey, onUpdate) {
  * Auth başarılı olduktan sonra çağrılır.
  */
 function startRealtimeSync() {
+  if (_syncStarted) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
+  _syncStarted = true;
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
     // Kullanıcılar — tüm cihazlarda güncel kalmalı
@@ -1100,6 +1105,7 @@ function stopRealtimeSync() {
     }
     delete _listeners[key];
   });
+  _syncStarted = false;
   console.info('[DB] Realtime sync durduruldu.');
 }
 

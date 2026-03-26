@@ -2522,6 +2522,7 @@ function _simRenderTiers() {
     </div>`;
 }
 window._simCalc = _simCalc;
+window._simRenderTiers = _simRenderTiers;
 
 // ════════════════════════════════════════════════════════════════
 // TABİR SÖZLÜĞÜ

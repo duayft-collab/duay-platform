@@ -300,8 +300,7 @@ async function _localLogin(email, password, skipPwCheck = false) {
     _logEntry('login', `Giriş: ${user.name}`);
     // Arka planda şifreyi hash'e migrate et (plaintext ise)
     if (!skipPwCheck) _migratePasswordHash(user, password);
-    // Realtime sync başlat (Firebase varsa)
-    setTimeout(() => window.DB?.startRealtimeSync?.(), 500);
+    // Realtime sync _finishLogin'den başlatılır — burada ÇAĞIRMA (duplike olur)
     // user nesnesini de döndür — app.js doğrudan kullansın
     return { ok: true, user };
   } catch (e) {
