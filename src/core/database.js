@@ -1126,14 +1126,14 @@ function _showAssignmentModal(task) {
   document.body.appendChild(mo);
   mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
 
-  // Buton event'leri — inline onclick yerine addEventListener
-  document.getElementById('_asgn-close')?.addEventListener('click', () => mo.remove());
-  document.getElementById('_asgn-view')?.addEventListener('click', () => {
+  // Buton event'leri — mo.querySelector ile (getElementById yerine, DOM scope garantili)
+  const _btnClose = mo.querySelector('#_asgn-close');
+  const _btnView  = mo.querySelector('#_asgn-view');
+  if (_btnClose) _btnClose.addEventListener('click', () => mo.remove());
+  if (_btnView) _btnView.addEventListener('click', () => {
     const tid = task.id;
     mo.remove();
-    // Panel geçişi
     if (typeof window.nav === 'function') window.nav('pusula');
-    // 400ms bekle — panel render tamamlansın
     setTimeout(() => {
       try { window['openPusDetail'](tid); }
       catch(e) { try { window['Pusula']['openDetail'](tid); } catch(e2) { console.error('[assign] Gorev acilamadi:', tid, e2); } }

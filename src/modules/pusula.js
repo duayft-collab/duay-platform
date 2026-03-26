@@ -1665,7 +1665,8 @@ function editTask(id) {
   const t = d.find(x => x.id === id);
   if (!t) return;
   const _editCu = _getCU();
-  if (!window.isAdmin?.() && t.uid === _editCu?.id && t.createdBy && t.createdBy !== _editCu?.id) {
+  // createdBy yoksa (eski görevler) → uid sahibi düzenleyebilir
+  if (!window.isAdmin?.() && t.createdBy && t.createdBy !== _editCu?.id && t.uid === _editCu?.id) {
     window.toast?.('Atanan gorevler duzenlenemez — sadece olusturan duzenleyebilir', 'err'); return;
   }
   if (!_canEditTask(t)) { window.toast?.('Bu gorevi duzenleme yetkiniz yok', 'err'); return; }
@@ -1854,10 +1855,11 @@ function delTask(id) {
   const cu = _getCU();
   // Yetki kontrolü
   if (!window.isAdmin?.()) {
-    if (t.uid === cu?.id && t.createdBy && t.createdBy !== cu?.id) {
+    // createdBy yoksa (eski görevler) → uid sahibi silebilir
+    if (t.createdBy && t.createdBy !== cu?.id && t.uid === cu?.id) {
       window.toast?.('Atanan gorevler silinemez — sadece olusturan silebilir', 'err'); return;
     }
-    if (t.uid !== cu?.id) { window.toast?.('Silme yetkiniz yok', 'err'); return; }
+    if (t.uid !== cu?.id && t.createdBy !== cu?.id) { window.toast?.('Silme yetkiniz yok', 'err'); return; }
   }
   window.confirmModal('"' + escapeHtml(t.title) + '" silinsin mi?', {
     title: 'Gorev Sil', danger: true, confirmText: 'Evet, Sil',
