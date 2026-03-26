@@ -547,6 +547,7 @@ function _renderAbonelikKart(o, users, today, todayD) {
 
 function renderOdemeler() {
   _injectOdmPanel();
+  checkOdmSLA();
   const today   = _todayStr();
   const todayD  = new Date(today);
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
@@ -637,7 +638,9 @@ function renderOdemeler() {
                      .reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
   const paidAmt = all.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth))
                      .reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
-  const totalAmt = all.reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
+  // Onaylanmamış ödemeler finansal toplamdan hariç
+  const confirmedAll = all.filter(o => o.approved || o.approvalStatus === 'kesinlesti' || o.approvalStatus === 'approved' || !_odmNeedsApproval(o));
+  const totalAmt = confirmedAll.reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
 
   // Sekme badge güncelle
   _sto('odm-stat-total', totalN);
@@ -2373,6 +2376,193 @@ function approveOdm(id) {
 }
 window.approveOdm = approveOdm;
 
+// ════════════════════════════════════════════════════════════════
+// DİNAMİK ONAY HİYERARŞİSİ + APPROVAL LOG + SLA + BANKA
+// ════════════════════════════════════════════════════════════════
+
+const ODM_APPROVAL_STATUS = {
+  pending:                { l:'Onay Bekliyor',           c:'#F59E0B', bg:'rgba(245,158,11,.08)' },
+  ara_onay_bekleniyor:    { l:'Ara Onay Bekliyor',       c:'#3B82F6', bg:'rgba(59,130,246,.08)' },
+  final_onay_bekleniyor:  { l:'Final Onay Bekliyor',     c:'#8B5CF6', bg:'rgba(139,92,246,.08)' },
+  kesinlesti:             { l:'Kesinleşti',              c:'#10B981', bg:'rgba(16,185,129,.08)' },
+  approved:               { l:'Onaylı',                  c:'#10B981', bg:'rgba(16,185,129,.08)' },
+  pending_postpone:       { l:'Erteleme Onayı',          c:'#F97316', bg:'rgba(249,115,22,.08)' },
+};
+
+const ODM_BANKS = [
+  {id:'garanti',  l:'Garanti BBVA',    ic:'🏦'},
+  {id:'isbank',   l:'İş Bankası',      ic:'🏦'},
+  {id:'akbank',   l:'Akbank',          ic:'🏦'},
+  {id:'yapi',     l:'Yapı Kredi',      ic:'🏦'},
+  {id:'qnb',      l:'QNB Finansbank',  ic:'🏦'},
+  {id:'ziraat',   l:'Ziraat Bankası',  ic:'🏦'},
+  {id:'vakif',    l:'VakıfBank',       ic:'🏦'},
+  {id:'diger',    l:'Diğer',           ic:'🏢'},
+];
+
+// Approval Log — her ödeme için onay geçmişi
+function _addApprovalLog(odmId, action, note) {
+  const d = window.loadOdm ? loadOdm() : [];
+  const o = d.find(x => x.id === odmId); if (!o) return;
+  if (!o.approvalLog) o.approvalLog = [];
+  const cu = _CUo();
+  o.approvalLog.push({ ts: _nowTso(), action, actorId: cu?.id, actorName: cu?.name||'Sistem', note: note||'' });
+  window.storeOdm ? storeOdm(d) : null;
+}
+
+// Dinamik onay modalı — kişi seçimi
+function openApprovalFlow(odmId) {
+  const users = typeof loadUsers === 'function' ? loadUsers() : [];
+  const managers = users.filter(u => ['admin','manager'].includes(u.role) && u.status === 'active');
+  const o = (window.loadOdm ? loadOdm() : []).find(x => x.id === odmId);
+  if (!o) return;
+
+  const old = document.getElementById('mo-odm-approval'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-odm-approval'; mo.style.zIndex='2100';
+  const amount = parseFloat(o.amount||0);
+  const needsDualApproval = amount >= 5000;
+
+  mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:16px 20px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:15px;font-weight:700;color:var(--t)">Onaya Gonder</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + escapeHtml(o.name) + ' — ' + amount.toLocaleString('tr-TR') + ' TL</div>'
+      + (needsDualApproval ? '<div style="font-size:10px;color:#F59E0B;margin-top:4px;font-weight:600">5.000 TL ustu — cift onay gerekli</div>' : '')
+    + '</div>'
+    + '<div style="padding:16px 20px">'
+      + '<div class="fg"><div class="fl">ARA ONAYCI <span style="color:var(--rd)">*</span></div>'
+        + '<select class="fi" id="oaf-approver">' + managers.map(u => '<option value="' + u.id + '">' + escapeHtml(u.name) + ' (' + u.role + ')</option>').join('') + '</select></div>'
+      + (needsDualApproval ? '<div class="fg"><div class="fl">FİNAL ONAYCI</div><div style="font-size:11px;color:var(--t3);padding:6px 0">Ara onay sonrasi ilk yoneticiye otomatik gider</div></div>' : '')
+      + '<div class="fg"><div class="fl">NOT (opsiyonel)</div><input class="fi" id="oaf-note" placeholder="Onay notu..."></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-odm-approval\').remove()">Iptal</button>'
+      + '<button class="btn btnp" onclick="window._submitApprovalFlow(' + odmId + ')">Gonder</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+window._submitApprovalFlow = function(odmId) {
+  const approverId = parseInt(document.getElementById('oaf-approver')?.value || '0');
+  const note = (document.getElementById('oaf-note')?.value || '').trim();
+  if (!approverId) { window.toast?.('Onayci secin', 'err'); return; }
+
+  const d = window.loadOdm ? loadOdm() : [];
+  const o = d.find(x => x.id === odmId); if (!o) return;
+
+  o.approvalStatus = 'ara_onay_bekleniyor';
+  o.araOnayci = approverId;
+  o.approvalRequestedBy = _CUo()?.id;
+  o.approvalRequestedAt = _nowTso();
+  if (!o.approvalLog) o.approvalLog = [];
+  o.approvalLog.push({ ts: _nowTso(), action: 'onaya_gonderildi', actorId: _CUo()?.id, actorName: _CUo()?.name||'', note });
+
+  window.storeOdm ? storeOdm(d) : null;
+  document.getElementById('mo-odm-approval')?.remove();
+  window.addNotif?.('💰', '"' + escapeHtml(o.name) + '" onayinizi bekliyor', 'warn', 'odemeler', approverId);
+  window.toast?.('Onaya gonderildi', 'ok');
+  renderOdemeler();
+};
+
+// Ara onay + final onay
+function processOdmApproval(odmId, action) {
+  if (!_isAdminO()) { window.toast?.('Yetki gerekli', 'err'); return; }
+  const d = window.loadOdm ? loadOdm() : [];
+  const o = d.find(x => x.id === odmId); if (!o) return;
+  const cu = _CUo();
+
+  if (!o.approvalLog) o.approvalLog = [];
+
+  if (action === 'ara_onayla') {
+    const amount = parseFloat(o.amount||0);
+    if (amount >= 5000) {
+      // Çift onay — final onaya gönder
+      o.approvalStatus = 'final_onay_bekleniyor';
+      o.araOnaylayanId = cu?.id;
+      o.araOnaylayanAt = _nowTso();
+      o.approvalLog.push({ ts: _nowTso(), action: 'ara_onaylandi', actorId: cu?.id, actorName: cu?.name||'', note: '' });
+      window.toast?.('Ara onay verildi — final onay bekleniyor', 'ok');
+    } else {
+      // Tek onay — direkt kesinleş
+      o.approvalStatus = 'kesinlesti';
+      o.approved = true;
+      o.approvedBy = cu?.id;
+      o.approvedAt = _nowTso();
+      o.approvalLog.push({ ts: _nowTso(), action: 'kesinlesti', actorId: cu?.id, actorName: cu?.name||'', note: '' });
+      window.toast?.('Odeme kesinlesti', 'ok');
+    }
+  } else if (action === 'final_onayla') {
+    o.approvalStatus = 'kesinlesti';
+    o.approved = true;
+    o.approvedBy = cu?.id;
+    o.approvedAt = _nowTso();
+    o.approvalLog.push({ ts: _nowTso(), action: 'final_onaylandi', actorId: cu?.id, actorName: cu?.name||'', note: '' });
+    window.toast?.('Final onay verildi — odeme kesinlesti', 'ok');
+  } else if (action === 'reddet') {
+    o.approvalStatus = 'rejected';
+    o.approvalLog.push({ ts: _nowTso(), action: 'reddedildi', actorId: cu?.id, actorName: cu?.name||'', note: '' });
+    window.toast?.('Odeme reddedildi', 'ok');
+  }
+
+  window.storeOdm ? storeOdm(d) : null;
+  renderOdemeler();
+}
+window.openApprovalFlow = openApprovalFlow;
+window.processOdmApproval = processOdmApproval;
+
+// SLA takibi — 24 saat geçen onay bekleyen ödemeler için hatırlatıcı
+function checkOdmSLA() {
+  const d = window.loadOdm ? loadOdm() : [];
+  const now = Date.now();
+  d.forEach(o => {
+    if (!o.approvalRequestedAt) return;
+    if (o.approvalStatus === 'kesinlesti' || o.approvalStatus === 'approved' || o.approved) return;
+    const reqMs = new Date(o.approvalRequestedAt.replace(' ','T')).getTime();
+    if (isNaN(reqMs)) return;
+    const hoursSince = (now - reqMs) / 3600000;
+    if (hoursSince >= 24 && !o._slaNotified) {
+      o._slaNotified = true;
+      window.addNotif?.('⏰', '"' + (o.name||'Odeme') + '" 24+ saattir onay bekliyor!', 'err', 'odemeler');
+    }
+  });
+  window.storeOdm ? storeOdm(d) : null;
+}
+
+// Approval timeline gösterimi
+function showOdmApprovalTimeline(odmId) {
+  const o = (window.loadOdm ? loadOdm() : []).find(x => x.id === odmId);
+  if (!o) return;
+  const log = o.approvalLog || [];
+  const st = ODM_APPROVAL_STATUS[o.approvalStatus] || ODM_APPROVAL_STATUS.pending;
+
+  const old = document.getElementById('mo-odm-timeline'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-odm-timeline'; mo.style.zIndex='2100';
+  mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">Onay Gecmisi</div>'
+        + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(o.name||'') + '</div></div>'
+      + '<span style="font-size:10px;padding:3px 10px;border-radius:6px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span>'
+    + '</div>'
+    + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+      + (log.length ? log.map((l,i) => '<div style="display:flex;gap:10px;padding-bottom:12px;'+(i<log.length-1?'border-left:2px solid var(--b);margin-left:5px;padding-left:16px':'margin-left:5px;padding-left:16px')+'">'
+        + '<div style="width:12px;height:12px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:2px;margin-left:-22px"></div>'
+        + '<div><div style="font-size:12px;font-weight:500;color:var(--t)">' + escapeHtml(l.actorName||'?') + ' — ' + escapeHtml(l.action||'') + '</div>'
+          + '<div style="font-size:10px;color:var(--t3)">' + (l.ts||'').slice(0,16) + '</div>'
+          + (l.note ? '<div style="font-size:11px;color:var(--t2);margin-top:2px">' + escapeHtml(l.note) + '</div>' : '')
+        + '</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--t3);font-size:12px">Henuz onay gecmisi yok</div>')
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-odm-timeline\').remove()">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.showOdmApprovalTimeline = showOdmApprovalTimeline;
+
 const Odemeler = {
   render:      renderOdemeler,
   openModal:   openOdmModal,
@@ -2393,6 +2583,11 @@ const Odemeler = {
   importFile:  processOdmImport,
   CATS:        ODM_CATS,
   FREQ:        ODM_FREQ,
+  BANKS:       ODM_BANKS,
+  openApprovalFlow,
+  processApproval: processOdmApproval,
+  showTimeline: showOdmApprovalTimeline,
+  checkSLA:    checkOdmSLA,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
