@@ -1089,11 +1089,12 @@ function _showAssignmentModal(task) {
   let dueText = '';
   if (task.due) {
     const diff = Math.ceil((new Date(task.due) - new Date()) / 86400000);
-    if (diff < 0) dueText = '<span style="color:#EF4444;font-weight:700">GECİKTİ (' + Math.abs(diff) + ' gün)</span>';
-    else if (diff === 0) dueText = '<span style="color:#EF4444;font-weight:700">BUGÜN!</span>';
-    else if (diff === 1) dueText = '<span style="color:#F59E0B;font-weight:600">YARIN</span>';
-    else if (diff <= 3) dueText = '<span style="color:#F59E0B">' + diff + ' gun kaldi</span>';
-    else dueText = '<span style="color:var(--t2)">' + diff + ' gun kaldi (' + task.due + ')</span>';
+    if (diff < 0) dueText = '<span style="color:#EF4444;font-weight:700">' + Math.abs(diff) + ' gun GECİKTİ!</span>';
+    else if (diff === 0) dueText = '<span style="color:#EF4444;font-weight:700">BUGUN!</span>';
+    else if (diff === 1) dueText = '<span style="color:#F97316;font-weight:600">YARIN</span>';
+    else if (diff <= 3) dueText = '<span style="color:#F97316;font-weight:600">' + diff + ' gun kaldi</span>';
+    else if (diff <= 7) dueText = '<span style="color:#F59E0B">' + diff + ' gun kaldi</span>';
+    else dueText = '<span style="color:#10B981">' + diff + ' gun kaldi</span>';
   }
 
   // Atayan kişi
@@ -1119,7 +1120,7 @@ function _showAssignmentModal(task) {
     </div>
     <div style="padding:0 20px 20px;display:flex;gap:8px">
       <button onclick="document.getElementById('mo-task-assigned').remove()" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>
-      <button onclick="document.getElementById('mo-task-assigned').remove();window.nav?.('pusula');setTimeout(function(){window.openPusDetail?.(${task.id})||window.Pusula?.openDetail?.(${task.id})},200)" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
+      <button onclick="document.getElementById('mo-task-assigned').remove();if(typeof window.nav==='function')window.nav('pusula');setTimeout(function(){if(typeof window.openPusDetail==='function')window.openPusDetail(${task.id});else if(window.Pusula&&typeof window.Pusula.openDetail==='function')window.Pusula.openDetail(${task.id});},300)" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
     </div>
   </div>`;
   document.body.appendChild(mo);

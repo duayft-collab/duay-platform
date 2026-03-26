@@ -841,6 +841,7 @@ function renderPusulaList(fl, users, todayS, cont) {
 // ════════════════════════════════════════════════════════════════
 
 function renderPusulaBoard(fl, users, todayS, cont) {
+  const cu = _getCU();
   const PRI_B = {
     1: { color: '#DC2626', glow: 'rgba(220,38,38,.3)'  },
     2: { color: '#D97706', glow: 'rgba(217,119,6,.25)' },
