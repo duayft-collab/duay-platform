@@ -1807,15 +1807,14 @@ function usrSet(k, v){
   localStorage.setItem(usrKey(k), JSON.stringify(v)); 
 }
 
-// getUsers / saveUsers - platform ile köprü
+// getUsers / saveUsers - platform delegasyonu (duay-ik-users kaldırıldı)
 function getUsers(){
-  try{ 
-    const saved = localStorage.getItem('duay-ik-users');
-    if(saved) return JSON.parse(saved);
-  } catch(e){}
-  return DEFAULT_USERS; 
+  if (typeof window.loadUsers === 'function') return window.loadUsers();
+  return DEFAULT_USERS;
 }
-function _ikSaveUsers(u){ localStorage.setItem('duay-ik-users', JSON.stringify(u)); }
+function _ikSaveUsers(u){
+  if (typeof window.saveUsers === 'function') window.saveUsers(u);
+}
 
 // hasPerm - platform kullanıcısıyla çalış
 function hasPerm(panel){

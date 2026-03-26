@@ -1012,13 +1012,46 @@ function _listenCollection(collection, localKey, onUpdate) {
  * Tüm kritik koleksiyonlar için realtime sync başlatır.
  * Auth başarılı olduktan sonra çağrılır.
  */
+/**
+ * Realtime sync'ten gelen kullanıcı verisinde CU'yu günceller.
+ * Rol, isim, durum değişikliklerini anında yansıtır.
+ */
+function _refreshCU(usersData) {
+  try {
+    const cu = window.Auth?.getCU?.();
+    if (!cu || !Array.isArray(usersData)) return;
+    const updated = usersData.find(u => u.id === cu.id || (u.email && cu.email && u.email.toLowerCase() === cu.email.toLowerCase()));
+    if (!updated) return;
+    // Değişiklik var mı kontrol et
+    const changed = updated.name !== cu.name || updated.role !== cu.role || updated.status !== cu.status
+                 || JSON.stringify(updated.modules) !== JSON.stringify(cu.modules)
+                 || JSON.stringify(updated.permissions) !== JSON.stringify(cu.permissions);
+    if (!changed) return;
+    // CU'yu güncelle (auth.js CU değişkenine doğrudan erişim)
+    Object.assign(cu, { name: updated.name, role: updated.role, status: updated.status, modules: updated.modules, permissions: updated.permissions, access: updated.access, dept: updated.dept, rule12h: updated.rule12h });
+    // Session'ı güncelle
+    try { localStorage.setItem('ak_session', JSON.stringify({ uid: cu.id, email: cu.email, tenantId: window.DEFAULT_TENANT_ID || 'tenant_default', ts: Date.now() })); } catch(e) {}
+    // Tüm modüllere bildir
+    try { window.dispatchEvent(new CustomEvent('auth-changed', { detail: cu })); } catch(e) {}
+    // UI güncelle
+    const navName = document.getElementById('nav-name');
+    if (navName) navName.textContent = cu.name;
+    console.info('[DB] CU güncellendi:', cu.name, cu.role);
+    // Askıya alınmışsa çıkış yap
+    if (updated.status === 'suspended') {
+      window.toast?.('Hesabınız askıya alındı', 'err');
+      setTimeout(() => window.App?.logout?.(), 1500);
+    }
+  } catch(e) { console.warn('[DB] _refreshCU hatası:', e); }
+}
+
 function startRealtimeSync() {
   if (_syncStarted) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
   _syncStarted = true;
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
-    // Kullanıcılar — tüm cihazlarda güncel kalmalı
-    ['users',         KEYS.users,         () => window.renderUsers?.()],
+    // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
+    ['users',         KEYS.users,         (data) => { _refreshCU(data); window.renderUsers?.(); }],
     // Kritik — her kullanıcı için
     ['tasks',         KEYS.tasks,         () => window.Pusula?.render?.()],
     ['calendar',      KEYS.calendar,      () => window.renderCal?.()],

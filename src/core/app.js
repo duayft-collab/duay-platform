@@ -985,6 +985,16 @@ function saveProfile() {
   const u     = users.find(x => x.id === cu.id);
   if (u) { u.name = name; saveUsers(users); }
 
+  // S1: CU objesini güncelle (in-memory)
+  if (cu) cu.name = name;
+  // S3: Session'ı güncelle
+  try { localStorage.setItem('ak_session', JSON.stringify({ uid: cu.id, email: cu.email, tenantId: window.DEFAULT_TENANT_ID || 'tenant_default', ts: Date.now() })); } catch(e) {}
+  // S5: Firebase Auth displayName güncelle
+  try {
+    const fbUser = window.Auth?.getFBAuth?.()?.currentUser;
+    if (fbUser) fbUser.updateProfile({ displayName: name }).catch(() => {});
+  } catch(e) {}
+
   _st('nav-name', name);
   closeMo('mo-profile');
   logActivity('user', 'profilini güncelledi');

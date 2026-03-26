@@ -313,16 +313,31 @@ async function _localLogin(email, password, skipPwCheck = false) {
 // BÖLÜM 4 — KULLANICI ÇÖZÜMLEME
 // ════════════════════════════════════════════════════════════════
 
-function resolveCurrentUser(email) {
+async function resolveCurrentUser(email) {
   try {
     const loadFn = (typeof window !== 'undefined' && typeof window.loadUsers === 'function')
       ? window.loadUsers
       : (typeof loadUsers === 'function' ? loadUsers : null);
     if (!loadFn) return null;
-    const users = loadFn();
-    const user  = users.find(u =>
+    let users = loadFn();
+    let user  = users.find(u =>
       u.email && u.email.toLowerCase() === email.toLowerCase() && u.status === 'active'
     );
+    // S6: Firestore fallback — localStorage'da yoksa Firestore'dan çek
+    if (!user && FB_DB) {
+      try {
+        const tid = TENANT_ID.replace(/[^a-zA-Z0-9_]/g, '_');
+        const snap = await FB_DB.collection('duay_' + tid).doc('users').get();
+        if (snap.exists) {
+          const remoteUsers = snap.data()?.data;
+          if (Array.isArray(remoteUsers) && remoteUsers.length) {
+            try { localStorage.setItem('ak_u3', JSON.stringify(remoteUsers)); } catch(e) {}
+            user = remoteUsers.find(u => u.email && u.email.toLowerCase() === email.toLowerCase() && u.status === 'active');
+            console.info('[auth] resolveCurrentUser: Firestore fallback kullanıldı');
+          }
+        }
+      } catch(e) { console.warn('[auth] resolveCurrentUser Firestore fallback:', e.message); }
+    }
     if (user) { CU = user; _persistSession(user); _logEntry('login', `Firebase: ${user.name}`); }
     return user || null;
   } catch (e) {

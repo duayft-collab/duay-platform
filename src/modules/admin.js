@@ -92,65 +92,43 @@ function renderAdmin() {
     return;
   }
 
-  cont.innerHTML = `<table class="tbl"><thead><tr>
-    <th>${window.t ? t('admin.col.name')    : 'Ad Soyad'}</th>
-    <th>${window.t ? t('admin.col.email')   : 'E-posta'}</th>
-    <th>${window.t ? t('admin.col.role')    : 'Rol'}</th>
-    <th>${window.t ? t('admin.col.status')  : 'Durum'}</th>
-    <th>${window.t ? t('admin.col.modules') : 'Modüller'}</th>
-    <th>${window.t ? t('admin.col.action')  : 'İşlem'}</th>
-  </tr></thead><tbody>
-  ${fl.map(u => _userRow(u)).join('')}
-  </tbody></table>`;
+  const frag = document.createDocumentFragment();
+  fl.forEach(u => { const card = _userCard(u); frag.appendChild(card); });
+  cont.replaceChildren(frag);
 }
 
-function _userRow(u) {
-  const isSelf    = u.id === _getCU()?.id;
-  const roleLabel = u.role === 'admin'
-    ? `<span class="badge bp">${window.t ? t('admin.role.admin') : '👑 Yönetici'}</span>`
-    : `<span class="badge bgr">${window.t ? t('admin.role.user')  : '👤 Kullanıcı'}</span>`;
-  const statusLabel = u.status === 'active'
-    ? `<span class="badge bg">${window.t ? t('admin.status.active') : '✅ Aktif'}</span>`
-    : `<span class="badge br">${window.t ? t('admin.status.suspended') : '⏸ Askıda'}</span>`;
+function _userCard(u) {
+  const isSelf = u.id === _getCU()?.id;
+  const rm = ROLE_META[u.role] || ROLE_META.staff;
+  const av = initials(u.name);
+  const moduleCount = (u.modules && u.role !== 'admin') ? u.modules.length + ' modül' : 'Tümü';
 
-  const moduleCount = (u.modules && u.role !== 'admin')
-    ? `<span style="font-size:11px;color:var(--t2)">${u.modules.length} modül</span>`
-    : `<span style="font-size:11px;color:var(--gr)">Tümü</span>`;
+  const card = document.createElement('div');
+  card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--b);transition:background .1s';
+  card.onmouseenter = () => card.style.background = 'var(--s2)';
+  card.onmouseleave = () => card.style.background = '';
 
-  const av = (u.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-
-  return `<tr>
-    <td>
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:50%;background:${u.color || '#3C3489'};
-             display:flex;align-items:center;justify-content:center;font-size:11px;
-             font-weight:700;color:#fff;flex-shrink:0">${av}</div>
-        <div>
-          <div style="font-weight:600">${u.name}</div>
-          ${u.dept ? `<div style="font-size:11px;color:var(--t3)">${u.dept}</div>` : ''}
-        </div>
-      </div>
-    </td>
-    <td style="font-size:12px;color:var(--t2)">${u.email || '—'}</td>
-    <td>${roleLabel}</td>
-    <td>${statusLabel}</td>
-    <td>${moduleCount}</td>
-    <td>
-      <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button class="btn btns" onclick="Admin.openModal(${u.id})" title="Düzenle">✏️</button>
-        <button class="btn btns" onclick="Admin.openPermModal(${u.id})" title="Modül Yetkileri">🔑</button>
+  card.innerHTML = `
+    <div style="width:38px;height:38px;border-radius:10px;background:${rm.bg};border:1.5px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${rm.color};flex-shrink:0">${escapeHtml(av)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--t)">${escapeHtml(u.name)}</span>
+        <span style="font-size:10px;padding:1px 7px;border-radius:5px;background:${rm.bg};color:${rm.color};border:1px solid ${rm.border}">${rm.icon} ${rm.label}</span>
         ${u.status === 'active'
-          ? `<button class="btn btns ba" onclick="Admin.suspend(${u.id})" title="${window.t ? t('admin.suspend') : 'Askıya Al'}"
-               ${isSelf ? 'disabled style="opacity:.4"' : ''}>⏸</button>`
-          : `<button class="btn btns btng" onclick="Admin.activate(${u.id})" title="${window.t ? t('admin.activate') : 'Aktif Et'}">▶</button>`
-        }
-        <button class="btn btns" onclick="Admin.resetPassword(${u.id})" title="${window.t ? t('admin.resetPwd') : 'Şifre Sıfırla'}">🔒</button>
-        <button class="btn btns btnd" onclick="Admin.deleteUser(${u.id})"
-          title="${window.t ? t('admin.deleteUser') : 'Sil'}"
-          ${isSelf ? 'disabled style="opacity:.4"' : ''}>🗑</button>
+          ? '<span style="font-size:10px;padding:1px 7px;border-radius:5px;background:rgba(34,197,94,.08);color:#16A34A">Aktif</span>'
+          : '<span style="font-size:10px;padding:1px 7px;border-radius:5px;background:rgba(239,68,68,.08);color:#DC2626">Askıda</span>'}
       </div>
-    </td>
-  </tr>`;
+      <div style="font-size:11px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(u.email || '—')}${u.dept ? ' · ' + escapeHtml(u.dept) : ''} · ${moduleCount}</div>
+    </div>
+    <div style="display:flex;gap:4px;flex-shrink:0">
+      <button class="tk-action-btn" onclick="Admin.openModal(${u.id})" title="Düzenle">✏️</button>
+      <button class="tk-action-btn" onclick="Admin.openPermModal(${u.id})" title="Yetkiler">🔑</button>
+      ${u.status === 'active'
+        ? `<button class="tk-action-btn" onclick="Admin.suspend(${u.id})" title="Askıya Al" ${isSelf ? 'disabled style="opacity:.3"' : ''}>⏸</button>`
+        : `<button class="tk-action-btn" onclick="Admin.activate(${u.id})" title="Aktif Et" style="color:#16A34A">▶</button>`}
+      <button class="tk-action-btn" onclick="Admin.deleteUser(${u.id})" title="Sil" style="color:#EF4444;font-size:14px" ${isSelf ? 'disabled style="opacity:.3"' : ''}>✕</button>
+    </div>`;
+  return card;
 }
 
 // ── Modal: Kullanıcı Ekleme / Düzenleme ──────────────────────────
