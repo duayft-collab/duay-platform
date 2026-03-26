@@ -320,6 +320,7 @@ function _injectOdmPanel() {
       '<div id="odm-stab-ay" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Bu Ay <span id="odm-stat-paid2">0</span></div>',
       '<div id="odm-stab-abonelik" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Abonelikler</div>',
       '<div id="odm-stab-kredi_k" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Kredi Kartları</div>',
+      '<div id="odm-stab-tahsilat" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:#0F6E56">💰 Tahsilat</div>',
     '</div>',
 
     // ARAMA + FİLTRELER — OPTİMİZE
@@ -1005,6 +1006,10 @@ window.uploadOdmDoc = uploadOdmDoc;
 window.viewOdmDoc   = viewOdmDoc;
 
 function saveOdm() {
+  console.log('[ODM] saveOdm cagirildi, role:', window.Auth?.getCU?.()?.role);
+  console.log('[ODM] _isAdminO:', _isAdminO());
+  const _allUsers = typeof loadUsers === 'function' ? loadUsers() : [];
+  console.log('[ODM] yonetici listesi:', _allUsers.filter(function(u){ return u.role==='admin'||u.role==='manager'; }).map(function(u){ return u.name; }));
   const name = (_go('odm-f-name')?.value || '').trim();
   if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
   const eid  = parseInt(_go('odm-f-eid')?.value || '0');
@@ -1080,6 +1085,7 @@ function saveOdm() {
   _go('mo-odm-v9')?.remove();
   renderOdemeler();
   window.logActivity?.('view', `"${name}" ödeme ${eid?'güncellendi':'eklendi'}`);
+  console.log('[ODM] bildirim kosulu: eid=', eid, '_isAdminO=', _isAdminO(), '→', !eid && !_isAdminO() ? 'BILDIRIM GIDECEK' : 'BILDIRIM GITMEYECEK');
   if (!eid && !_isAdminO()) {
     // Admin'lere bildirim gönder (manager dahil herkes pending → admin'e bildirim)
     const _managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(u => u.role === 'admin' && u.status === 'active');
