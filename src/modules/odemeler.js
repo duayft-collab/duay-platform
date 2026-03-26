@@ -850,8 +850,8 @@ function openOdmModal(id) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="fr"><div class="fl">PLANLANAN / SON TARİH</div>'
     + '<input type="date" class="fi" id="odm-f-due" style="border-radius:8px" value="' + (o?o.due||'':'') + '"></div>'
-    + '<div class="fr" id="odm-actual-wrap" style="opacity:' + (o?.planned?'.4':'1') + '"><div class="fl">ÖDENDİĞİ TARİH</div>'
-    + '<input type="date" class="fi" id="odm-f-actual" value="' + (o?o.actualDate||'':'') + '"' + (o?.planned?' disabled':'') + '></div>'
+    + '<div class="fr" id="odm-actual-wrap"><div class="fl">ÖDENDİĞİ TARİH</div>'
+    + '<input type="date" class="fi" id="odm-f-actual" value="' + (o?o.actualDate||'':'') + '"></div>'
     + '</div>'
 
     // Sorumlu + Alarm
@@ -954,19 +954,7 @@ window._onOdmCatChange   = _onOdmCatChange;
 // ════════════════════════════════════════════════════════════════
 
 
-// Ödeme formu helpers
-function _odmSetType(isPlanned) {
-  document.getElementById('odm-f-planned').value = isPlanned ? '1' : '0';
-  const btn1 = document.getElementById('odm-btn-gercek');
-  const btn2 = document.getElementById('odm-btn-plan');
-  const wrap = document.getElementById('odm-actual-wrap');
-  const act  = document.getElementById('odm-f-actual');
-  if (btn1) { btn1.style.background = isPlanned?'none':'var(--sf)'; btn1.style.color = isPlanned?'var(--t3)':'var(--ac)'; }
-  if (btn2) { btn2.style.background = isPlanned?'var(--sf)':'none'; btn2.style.color = isPlanned?'#6366F1':'var(--t3)'; }
-  if (wrap) wrap.style.opacity = isPlanned ? '.4' : '1';
-  if (act)  act.disabled = isPlanned;
-}
-window._odmSetType = _odmSetType;
+// _odmSetType kaldırıldı (Gerçekleşen/Planlanan toggle kaldırıldı)
 
 function _odmCurChange(cur) {
   const wrap = document.getElementById('odm-kur-wrap');
@@ -1650,7 +1638,7 @@ function openTahsilatModal(id) {
   if (existing) existing.remove();
   const users = window.loadUsers ? loadUsers().filter(u => u.status === 'active') : [];
   const o = id ? loadTahsilat().find(x => x.id === id) : null;
-  const isPlanned = o ? !!o.planned : false;
+  // isPlanned kaldırıldı
 
   const TAH_TYPES = {
     musteri:'👥 Müşteri Ödemesi', satis:'🛒 Satış Geliri', iade:'↩ İade',
@@ -1666,15 +1654,9 @@ function openTahsilatModal(id) {
   let html = '<div class="moc" style="max-width:580px;padding:0;overflow:hidden;border-radius:16px">';
   html += '<div style="background:#0F6E56;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">';
   html += '<div><div style="font-size:15px;font-weight:600">💰 ' + (o ? 'Tahsilat Düzenle' : 'Yeni Tahsilat') + '</div>';
-  html += '<div style="font-size:10px;opacity:.7;margin-top:2px">Gerçekleşen veya planlanan tahsilatı kaydedin</div></div>';
-  html += '<button onclick="_go("mo-tahsilat")?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button></div>';
+  html += '<div style="font-size:10px;opacity:.7;margin-top:2px">Tahsilat kaydini olusturun</div></div>';
+  html += '<button onclick="_go(\'mo-tahsilat\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button></div>';
   html += '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px;max-height:74vh;overflow-y:auto">';
-
-  // Gerçekleşen / Planlanan toggle
-  html += '<div style="display:flex;background:var(--s2);border-radius:9px;padding:3px;gap:2px">';
-  html += '<button id="tah-btn-gercek" onclick="_tahSetType(false)" style="flex:1;padding:7px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;background:' + (!isPlanned?'var(--sf)':'none') + ';color:' + (!isPlanned?'#0F6E56':'var(--t3)') + '">✅ Gerçekleşen</button>';
-  html += '<button id="tah-btn-plan" onclick="_tahSetType(true)" style="flex:1;padding:7px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;background:' + (isPlanned?'var(--sf)':'none') + ';color:' + (isPlanned?'#6366F1':'var(--t3)') + '">📅 Planlanan</button>';
-  html += '</div><input type="hidden" id="tah-f-planned" value="' + (isPlanned?'1':'0') + '">';
 
   // Müşteri + Tür
   html += '<div class="fr"><div class="fl">MÜŞTERİ / KAYNAK *</div><input class="fi" id="tah-f-name" placeholder="Müşteri adı veya kaynak..." value="' + (o?o.name||'':'') + '"></div>';
@@ -1740,18 +1722,7 @@ function openTahsilatModal(id) {
   setTimeout(() => mo.classList.add('open'), 10);
 }
 
-function _tahSetType(isPlanned) {
-  document.getElementById('tah-f-planned').value = isPlanned ? '1' : '0';
-  const btn1 = document.getElementById('tah-btn-gercek');
-  const btn2 = document.getElementById('tah-btn-plan');
-  const wrap = document.getElementById('tah-gercek-wrap');
-  const act  = document.getElementById('tah-f-actual');
-  if (btn1) { btn1.style.background = isPlanned?'none':'var(--sf)'; btn1.style.color = isPlanned?'var(--t3)':'#0F6E56'; }
-  if (btn2) { btn2.style.background = isPlanned?'var(--sf)':'none'; btn2.style.color = isPlanned?'#6366F1':'var(--t3)'; }
-  if (wrap) wrap.style.opacity = isPlanned ? '.4' : '1';
-  if (act)  act.disabled = isPlanned;
-}
-window._tahSetType = _tahSetType;
+// _tahSetType kaldırıldı (Gerçekleşen/Planlanan toggle kaldırıldı)
 
 function _tahCurChange(cur) {
   const wrap = document.getElementById('tah-kur-wrap');
@@ -2737,7 +2708,7 @@ function checkRecurringTahsilat() {
   const thisMonth = _todayStr().slice(0,7);
   let added = 0;
 
-  all.filter(o => o.recurringRule && !o.planned).forEach(o => {
+  all.filter(o => o.recurringRule).forEach(o => {
     if ((o.lastRecurMonth||'') === thisMonth) return;
     const due = new Date(o.due||_todayStr());
     due.setMonth(due.getMonth() + 1);
@@ -2746,7 +2717,7 @@ function checkRecurringTahsilat() {
       name: o.name, type: o.type, amount: o.amount,
       currency: o.currency||'TRY', due: due.toISOString().slice(0,10),
       banka: o.banka||'', yontem: o.yontem||'',
-      assignedTo: o.assignedTo||null, planned: false,
+      assignedTo: o.assignedTo||null,
       collected: false, recurParentId: o.id,
       ts: _nowTso(), createdBy: _CUo()?.id,
     });
