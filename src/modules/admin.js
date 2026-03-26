@@ -65,6 +65,7 @@ function renderAdmin() {
     return;
   }
   checkInactiveUsers();
+  checkPermExpiry();
   registerSession();
 
   const users  = loadUsers();
@@ -203,6 +204,8 @@ function _renderDetail(uid) {
       ${!isSelf?`<button class="btn btns" onclick="Admin.deleteUser(${u.id})" style="font-size:12px;color:#DC2626">Sil</button>`:''}
       <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:12px">Audit Log</button>
       <button class="btn btns" onclick="Admin.openDeptModal()" style="font-size:12px">Departmanlar</button>
+      <button class="btn btns" onclick="Admin.openBulkRoleChange()" style="font-size:12px">Toplu Rol</button>
+      ${!isSelf?'<button class="btn btns" onclick="Admin.startImpersonation('+u.id+')" style="font-size:12px">Goruntulenme</button>':''}
       <button class="btn btns" onclick="window.Auth?.openIpWhitelist?.()" style="font-size:12px">IP Kisitlama</button>
     </div>
 
@@ -307,9 +310,15 @@ function saveAdminUser() {
     // Mevcut kullanıcı güncelle
     const u = users.find(x => x.id === eid);
     if (!u) return;
+    const oldRole = u.role;
     Object.assign(u, { name, email, role, status, modules: modules.length ? modules : null, access });
     if (pwd) u.pw = pwd;
     logActivity('user', `Kullanıcı güncellendi: "${name}" (${email})`);
+    _auditLog('user_update', eid, 'Guncellendi: ' + name + (oldRole !== role ? ' (rol: ' + oldRole + ' → ' + role + ')' : ''));
+    // Rol değiştiyse kullanıcıya bildirim
+    if (oldRole !== role) {
+      window.addNotif?.('🔑', 'Rolunuz degistirildi: ' + (ROLE_META[role]?.label || role), 'warn', 'admin');
+    }
     window.toast?.(`${name} güncellendi ✓`, 'ok');
   } else {
     // Yeni kullanıcı ekle
@@ -1848,6 +1857,127 @@ function openAuditLog() {
 })();
 
 // ════════════════════════════════════════════════════════════════
+// IMPERSONATION MODU — admin başka kullanıcı olarak görüntüler
+// ════════════════════════════════════════════════════════════════
+
+let _impersonating = null;
+
+function startImpersonation(uid) {
+  if (!isAdmin()) return;
+  const users = loadUsers();
+  const target = users.find(x => x.id === uid); if (!target) return;
+  _impersonating = window.Auth?.getCU?.(); // gerçek admin'i sakla
+  // CU'yu hedef kullanıcıya geçir
+  const cu = window.Auth?.getCU?.();
+  if (cu) {
+    Object.assign(cu, { id: target.id, name: target.name, role: target.role, email: target.email, modules: target.modules, permissions: target.permissions, dept: target.dept });
+  }
+  // Impersonation banner göster
+  const banner = document.createElement('div');
+  banner.id = 'impersonation-bar';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#F59E0B;color:#000;padding:6px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;font-family:inherit';
+  banner.innerHTML = '<span>Goruntulenme modu: ' + escapeHtml(target.name) + ' (' + (ROLE_META[target.role]?.label||target.role) + ') olarak goruntuluyorsunuz</span>'
+    + '<button onclick="Admin.stopImpersonation()" style="background:#000;color:#F59E0B;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit">Cikar</button>';
+  document.body.prepend(banner);
+  window.toast?.('Goruntulenme modu: ' + target.name, 'ok');
+  _auditLog('impersonation_start', uid, 'Goruntulenme basladi: ' + target.name);
+  // UI güncelle
+  const navName = document.getElementById('nav-name');
+  if (navName) navName.textContent = target.name + ' (goruntulenme)';
+}
+
+function stopImpersonation() {
+  if (!_impersonating) return;
+  const cu = window.Auth?.getCU?.();
+  if (cu && _impersonating) {
+    Object.assign(cu, { id: _impersonating.id, name: _impersonating.name, role: _impersonating.role, email: _impersonating.email, modules: _impersonating.modules, permissions: _impersonating.permissions, dept: _impersonating.dept });
+  }
+  _auditLog('impersonation_stop', 0, 'Goruntulenme bitti');
+  _impersonating = null;
+  document.getElementById('impersonation-bar')?.remove();
+  const navName = document.getElementById('nav-name');
+  if (navName && cu) navName.textContent = cu.name;
+  window.toast?.('Goruntulenme modu kapatildi', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════
+// ZAMAN AYARLI YETKİ — tarih bazlı expiry
+// ════════════════════════════════════════════════════════════════
+
+function setPermExpiry(uid, moduleId, expiryDate) {
+  if (!isAdmin()) return;
+  const users = loadUsers();
+  const u = users.find(x => x.id === uid); if (!u) return;
+  if (!u.permExpiry) u.permExpiry = {};
+  u.permExpiry[moduleId] = expiryDate; // 'YYYY-MM-DD' formatında
+  saveUsers(users);
+  _auditLog('perm_expiry', uid, 'Yetki suresi: ' + moduleId + ' → ' + expiryDate);
+  window.toast?.(moduleId + ' yetkisi ' + expiryDate + ' tarihine kadar gecerli', 'ok');
+}
+
+function checkPermExpiry() {
+  const users = loadUsers();
+  const today = new Date().toISOString().slice(0, 10);
+  let changed = false;
+  users.forEach(u => {
+    if (!u.permExpiry) return;
+    Object.entries(u.permExpiry).forEach(([mod, expiry]) => {
+      if (expiry && expiry < today) {
+        // Modülü kaldır
+        if (Array.isArray(u.modules)) {
+          u.modules = u.modules.filter(m => m !== mod);
+        }
+        delete u.permExpiry[mod];
+        changed = true;
+        window.addNotif?.('⏰', escapeHtml(u.name) + ' — ' + mod + ' yetkisi suresi doldu', 'warn', 'admin');
+        _auditLog('perm_expired', u.id, mod + ' yetkisi suresi doldu');
+      }
+    });
+  });
+  if (changed) saveUsers(users);
+}
+
+// ════════════════════════════════════════════════════════════════
+// BULK ROLE CHANGE — toplu rol değiştir
+// ════════════════════════════════════════════════════════════════
+
+function openBulkRoleChange() {
+  if (!isAdmin()) return;
+  const users = loadUsers().filter(u => u.role !== 'admin');
+  const old = document.getElementById('mo-bulk-role'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-bulk-role'; mo.style.zIndex = '2100';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Toplu Rol Degistir</div></div>'
+    + '<div style="padding:16px 20px">'
+      + '<div class="fg"><div class="fl">HEDEF ROL</div><select class="fi" id="br-role"><option value="staff">Personel</option><option value="lead">Takim Lideri</option><option value="manager">Yonetici</option></select></div>'
+      + '<div class="fg" style="margin-top:8px"><div class="fl">KULLANICILAR</div>'
+        + '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">'
+          + users.map(u => '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px"><input type="checkbox" class="br-cb" value="' + u.id + '" style="accent-color:var(--ac)"><span style="flex:1">' + escapeHtml(u.name) + '</span><span style="font-size:10px;color:var(--t3)">' + (ROLE_META[u.role]?.label||u.role) + '</span></label>').join('')
+        + '</div></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-bulk-role\').remove()">Iptal</button>'
+      + '<button class="btn btnp" onclick="window._doBulkRole()">Uygula</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window._doBulkRole = function() {
+  const role = document.getElementById('br-role')?.value || 'staff';
+  const ids = [...document.querySelectorAll('.br-cb:checked')].map(cb => parseInt(cb.value));
+  if (!ids.length) { window.toast?.('Kullanici secin', 'err'); return; }
+  const users = loadUsers();
+  ids.forEach(id => { const u = users.find(x => x.id === id); if (u) { u.role = role; } });
+  saveUsers(users);
+  document.getElementById('mo-bulk-role')?.remove();
+  _auditLog('bulk_role', 0, ids.length + ' kullanicinin rolu degistirildi: ' + role);
+  window.toast?.(ids.length + ' kullanici → ' + (ROLE_META[role]?.label||role), 'ok');
+  renderAdmin();
+};
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Admin = {
@@ -1884,6 +2014,11 @@ const Admin = {
   openDeptModal,
   openAuditLog,
   PERM_TEMPLATES,
+  startImpersonation,
+  stopImpersonation,
+  setPermExpiry,
+  checkPermExpiry,
+  openBulkRoleChange,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
