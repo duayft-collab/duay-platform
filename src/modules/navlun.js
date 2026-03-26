@@ -257,6 +257,7 @@ function renderNavlun() {
             + (n.durum==='onaylandi'?'<button onclick="navlunToKonteyn('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">→ Konteyner</button>':'')
             + (n.durum==='bekliyor'?'<button onclick="navlunOnayla('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">Onayla</button>':'')
             + (n.durum==='bekliyor'?'<button onclick="navlunReddet('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px;color:var(--rdt)">Reddet</button>':'')
+            + '<button onclick="openSatisTeklif('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px;color:var(--ac)">📤 Satış</button>'
             + '<button onclick="openNavlunModal('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">Düzenle</button>'
           + '</div>'
         + '</div>'
@@ -577,6 +578,9 @@ function _injectNavlunSection() {
     +'<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--b)">'
       +'<span style="font-size:13px;font-weight:500">Navlun Teklifleri</span>'
       +'<div style="display:flex;gap:6px">'
+        +'<button class="btn btns" onclick="openNavlunCompare()" style="font-size:11px">⚖️ Karşılaştır</button>'
+        +'<button class="btn btns" onclick="openNavlunTrend()" style="font-size:11px">📈 Trend</button>'
+        +'<button class="btn btns" onclick="openNavlunPerformans()" style="font-size:11px">🏆 Skor</button>'
         +'<button class="btn btns" onclick="exportNavlunXlsx()" style="font-size:11px">Excel</button>'
         +'<button class="btn btnp" onclick="openNavlunModal(null)" style="font-size:12px">+ Teklif Ekle</button>'
       +'</div>'
@@ -639,6 +643,324 @@ window.setKtnLayout = function(mode) {
   }
 };
 
+// ════════════════════════════════════════════════════════════════
+// 1. NAVLUN SATIŞ TEKLİFİ
+// ════════════════════════════════════════════════════════════════
+
+const SATIS_KEY = 'ak_navlun_satis1';
+function _loadSatis() { try { return JSON.parse(localStorage.getItem(SATIS_KEY)||'[]'); } catch { return []; } }
+function _storeSatis(d) { localStorage.setItem(SATIS_KEY, JSON.stringify(d.slice(0,300))); }
+
+function openSatisTeklif(alisId) {
+  const alis = loadNavlun().find(x=>x.id===alisId);
+  if (!alis) { window.toast?.('Alış teklifi bulunamadı','err'); return; }
+  const old = document.getElementById('mo-nvl-satis'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-nvl-satis'; mo.style.zIndex='2100';
+  mo.innerHTML = `<div class="moc" style="max-width:500px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">📤 Satış Teklifi Oluştur</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:2px">Kaynak: ${escapeHtml(alis.from)} → ${escapeHtml(alis.to)} · ${alis.birimFiyat} ${alis.para}</div>
+    </div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><div class="fl">ALIŞ FİYATI</div>
+          <div style="font-size:16px;font-weight:700;color:var(--t);font-family:'DM Mono',monospace">${alis.birimFiyat} ${alis.para}</div>
+        </div>
+        <div class="fg"><div class="fl">KAR MARJI</div>
+          <div style="display:flex;gap:4px">
+            <input type="number" class="fi" id="nvs-marj" value="15" min="0" step="0.1" style="flex:1" oninput="_nvsSatisCalc(${alis.birimFiyat})">
+            <select class="fi" id="nvs-marj-tip" style="width:60px" onchange="_nvsSatisCalc(${alis.birimFiyat})">
+              <option value="pct" selected>%</option>
+              <option value="tl">${alis.para}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--al);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--ac);font-weight:600">SATIŞ FİYATI</div>
+        <div style="font-size:24px;font-weight:800;color:var(--ac);font-family:'DM Mono',monospace" id="nvs-satis-fiyat">—</div>
+        <div style="font-size:10px;color:var(--t3)" id="nvs-kar-tutar">—</div>
+      </div>
+      <div class="fg"><div class="fl">MÜŞTERİ ADI <span style="color:var(--rd)">*</span></div>
+        <input class="fi" id="nvs-musteri" placeholder="Alıcı firma adı...">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><div class="fl">GEÇERLİLİK BAŞLANGIÇ</div><input type="date" class="fi" id="nvs-bas"></div>
+        <div class="fg"><div class="fl">GEÇERLİLİK BİTİŞ</div><input type="date" class="fi" id="nvs-bit"></div>
+      </div>
+      <div class="fg"><div class="fl">NOT</div>
+        <textarea class="fi" id="nvs-not" rows="2" style="resize:none" placeholder="Ek şartlar..."></textarea>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="document.getElementById('mo-nvl-satis').remove()">İptal</button>
+      <button class="btn btns" onclick="_nvsSatisPreview(${alisId})">👁 Önizle</button>
+      <button class="btn btnp" onclick="_nvsSatisSave(${alisId})">Kaydet</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => { mo.classList.add('open'); _nvsSatisCalc(alis.birimFiyat); }, 10);
+}
+
+function _nvsSatisCalc(alisFiyat) {
+  const marj = parseFloat(document.getElementById('nvs-marj')?.value||'0');
+  const tip  = document.getElementById('nvs-marj-tip')?.value||'pct';
+  const el   = document.getElementById('nvs-satis-fiyat');
+  const kar  = document.getElementById('nvs-kar-tutar');
+  if (!el) return;
+  let satis, karTL;
+  if (tip==='pct') { karTL = alisFiyat * marj / 100; satis = alisFiyat + karTL; }
+  else { karTL = marj; satis = alisFiyat + marj; }
+  el.textContent = satis.toFixed(2);
+  if (kar) kar.textContent = 'Kar: ' + karTL.toFixed(2) + ' (' + (karTL/alisFiyat*100).toFixed(1) + '%)';
+}
+
+function _nvsSatisSave(alisId) {
+  const musteri = (document.getElementById('nvs-musteri')?.value||'').trim();
+  if (!musteri) { window.toast?.('Müşteri adı zorunludur','err'); return; }
+  const alis = loadNavlun().find(x=>x.id===alisId); if (!alis) return;
+  const marj = parseFloat(document.getElementById('nvs-marj')?.value||'0');
+  const tip  = document.getElementById('nvs-marj-tip')?.value||'pct';
+  const satis = tip==='pct' ? alis.birimFiyat*(1+marj/100) : alis.birimFiyat+marj;
+  const d = _loadSatis();
+  d.unshift({
+    id: generateNumericId(), alisId, musteri, satisFiyat: Math.round(satis*100)/100,
+    alisFiyat: alis.birimFiyat, para: alis.para, marj, marjTip: tip,
+    from: alis.from, to: alis.to, tasiyan: alis.tasiyan, tasimaTipi: alis.tasimaTipi,
+    gecBaslangic: document.getElementById('nvs-bas')?.value||'',
+    gecBitis: document.getElementById('nvs-bit')?.value||'',
+    not: (document.getElementById('nvs-not')?.value||'').trim(),
+    createdBy: window.CU?.()?.id, createdAt: window.nowTs?.() || new Date().toISOString(),
+  });
+  _storeSatis(d);
+  document.getElementById('mo-nvl-satis')?.remove();
+  window.toast?.('Satış teklifi kaydedildi ✓','ok');
+  window.logActivity?.('view','Navlun satış teklifi: '+musteri+' '+alis.from+'→'+alis.to);
+}
+
+function _nvsSatisPreview(alisId) {
+  const alis = loadNavlun().find(x=>x.id===alisId); if (!alis) return;
+  const musteri = (document.getElementById('nvs-musteri')?.value||'').trim() || '—';
+  const satisFiyat = document.getElementById('nvs-satis-fiyat')?.textContent || '—';
+  const bas = document.getElementById('nvs-bas')?.value||'';
+  const bit = document.getElementById('nvs-bit')?.value||'';
+  const not = (document.getElementById('nvs-not')?.value||'').trim();
+  const w = window.open('','_blank','width=700,height=800');
+  w.document.write(`<!DOCTYPE html><html><head><title>Navlun Teklifi</title>
+    <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#1a1a2e;max-width:650px;margin:0 auto}
+    .hdr{border-bottom:3px solid #6366F1;padding-bottom:16px;margin-bottom:24px}
+    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
+    .lbl{color:#6b7280;font-size:13px}.val{font-weight:600;font-size:13px}
+    .price{font-size:28px;font-weight:800;color:#6366F1;text-align:center;padding:20px;background:#f5f3ff;border-radius:12px;margin:20px 0}
+    .ft{margin-top:40px;border-top:2px solid #eee;padding-top:16px;font-size:11px;color:#9ca3af}</style></head>
+    <body>
+    <div class="hdr"><div style="font-size:20px;font-weight:700">Duay Global LLC</div>
+    <div style="font-size:12px;color:#6b7280">Navlun Fiyat Teklifi</div></div>
+    <div class="row"><span class="lbl">Müşteri</span><span class="val">${escapeHtml(musteri)}</span></div>
+    <div class="row"><span class="lbl">Güzergah</span><span class="val">${escapeHtml(alis.from)} → ${escapeHtml(alis.to)}</span></div>
+    <div class="row"><span class="lbl">Taşıma Tipi</span><span class="val">${(TASIMA_TIPLERI[alis.tasimaTipi]||{}).l||alis.tasimaTipi}</span></div>
+    <div class="row"><span class="lbl">Taşıyıcı</span><span class="val">${escapeHtml(alis.tasiyan||'—')}</span></div>
+    <div class="row"><span class="lbl">Araç Tipi</span><span class="val">${escapeHtml(alis.aracTipi||'—')}</span></div>
+    <div class="row"><span class="lbl">Transit Süre</span><span class="val">${alis.transitSure||'—'} gün</span></div>
+    <div class="price">${satisFiyat} ${alis.para}</div>
+    ${bas||bit ? `<div class="row"><span class="lbl">Geçerlilik</span><span class="val">${bas||'—'} — ${bit||'—'}</span></div>` : ''}
+    ${not ? `<div class="row"><span class="lbl">Not</span><span class="val">${escapeHtml(not)}</span></div>` : ''}
+    <div class="ft">Bu teklif bilgilendirme amaçlıdır. Duay Global LLC · ${new Date().toLocaleDateString('tr-TR')}</div>
+    <div style="margin-top:20px"><button onclick="window.print()" style="padding:8px 20px;background:#6366F1;color:#fff;border:none;border-radius:8px;cursor:pointer">Yazdır / PDF</button></div>
+    </body></html>`);
+  w.document.close();
+}
+window.openSatisTeklif    = openSatisTeklif;
+window._nvsSatisCalc      = _nvsSatisCalc;
+window._nvsSatisSave      = _nvsSatisSave;
+window._nvsSatisPreview   = _nvsSatisPreview;
+
+// ════════════════════════════════════════════════════════════════
+// 2. TEKLİF KARŞILAŞTIRMA
+// ════════════════════════════════════════════════════════════════
+
+function openNavlunCompare() {
+  const items = loadNavlun().filter(n=>n.durum==='bekliyor'||n.durum==='onaylandi');
+  if (items.length < 2) { window.toast?.('Karşılaştırma için en az 2 teklif gerekli','err'); return; }
+  const old = document.getElementById('mo-nvl-compare'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-nvl-compare'; mo.style.zIndex='2100';
+
+  // Aynı güzergah grupları
+  const groups = {};
+  items.forEach(n => {
+    const key = (n.from||'')+'→'+(n.to||'');
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(n);
+  });
+  // Sadece 2+ teklifli güzergahlar
+  const compGroups = Object.entries(groups).filter(([,v])=>v.length>=2);
+
+  const groupHTML = compGroups.length ? compGroups.map(([route, teklifler]) => {
+    const minFiyat = Math.min(...teklifler.map(t=>t.birimFiyat||Infinity));
+    const minTransit = Math.min(...teklifler.map(t=>t.transitSure||Infinity));
+    return `<div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">📍 ${escapeHtml(route)}</div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+        <tr style="background:var(--s2)">
+          <th style="padding:6px 10px;text-align:left;border:1px solid var(--b)">Taşıyıcı</th>
+          <th style="padding:6px 10px;text-align:left;border:1px solid var(--b)">Forwarder</th>
+          <th style="padding:6px 10px;text-align:right;border:1px solid var(--b)">Fiyat</th>
+          <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Para</th>
+          <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Transit</th>
+          <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Araç</th>
+          <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">İşlem</th>
+        </tr>
+        ${teklifler.map(t => {
+          const isCheapest = t.birimFiyat === minFiyat;
+          const isFastest  = t.transitSure === minTransit;
+          const bg = isCheapest ? 'rgba(34,197,94,.08)' : '';
+          return `<tr style="background:${bg}">
+            <td style="padding:6px 10px;border:1px solid var(--b);font-weight:500">${escapeHtml(t.tasiyan||'—')}${isCheapest?' <span style="color:#22C55E;font-size:9px">★ En ucuz</span>':''}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b)">${escapeHtml(t.teklifVeren||t.satici||'—')}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:right;font-weight:700;font-family:'DM Mono',monospace;color:${isCheapest?'#22C55E':'var(--t)'}">${(t.birimFiyat||0).toLocaleString('tr-TR')}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center">${t.para||'USD'}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;color:${isFastest?'#22C55E':'var(--t)'}">${t.transitSure||'—'} gün${isFastest?' ⚡':''}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;font-size:10px">${t.aracTipi||'—'}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center">
+              <button onclick="openSatisTeklif(${t.id})" class="btn btns" style="font-size:10px;padding:2px 6px">📤 Satış</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </table></div>
+    </div>`;
+  }).join('') : '<div style="padding:24px;text-align:center;color:var(--t3)">Aynı güzergahta 2+ teklif yok — karşılaştırma yapılamıyor</div>';
+
+  mo.innerHTML = `<div class="moc" style="max-width:700px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:700;color:var(--t)">⚖️ Teklif Karşılaştırma</span>
+      <button onclick="document.getElementById('mo-nvl-compare').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:16px 20px;max-height:70vh;overflow-y:auto">${groupHTML}</div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-nvl-compare').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openNavlunCompare = openNavlunCompare;
+
+// ════════════════════════════════════════════════════════════════
+// 3. ADMIN/MANAGER ÖNERİLERİ (Kur Çevirisi + Trend + Skor)
+// ════════════════════════════════════════════════════════════════
+
+// 3a. Otomatik Kur Çevirisi
+const NVL_RATES = { USD:1, EUR:0.92, TRY:32.5, GBP:0.79, CNY:7.25 }; // fallback oranlar
+
+function nvlConvertCurrency(amount, fromCur, toCur) {
+  const rates = window._liveRates || NVL_RATES;
+  const inUsd = amount / (rates[fromCur]||1);
+  return Math.round(inUsd * (rates[toCur]||1) * 100) / 100;
+}
+window.nvlConvertCurrency = nvlConvertCurrency;
+
+// 3b. Navlun Trend Grafiği (son 6 ay)
+function openNavlunTrend() {
+  const items = loadNavlun();
+  const now   = new Date();
+  const months = [];
+  for (let i=5; i>=0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()] + ' ' + d.getFullYear();
+    const monthItems = items.filter(n => (n.createdAt||'').startsWith(key));
+    const avg = monthItems.length ? Math.round(monthItems.reduce((a,n)=>a+(n.birimFiyat||0),0)/monthItems.length) : 0;
+    months.push({ key, label, count: monthItems.length, avg });
+  }
+  const maxAvg = Math.max(...months.map(m=>m.avg), 1);
+
+  const old = document.getElementById('mo-nvl-trend'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-nvl-trend'; mo.style.zIndex='2100';
+  mo.innerHTML = `<div class="moc" style="max-width:500px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">📈 Navlun Fiyat Trendi (6 Ay)</div>
+    </div>
+    <div style="padding:16px 20px">
+      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;margin-bottom:12px">
+        ${months.map(m => {
+          const h = m.avg ? Math.max(8, Math.round(m.avg/maxAvg*120)) : 4;
+          const color = m.avg > months[0].avg*1.1 ? '#EF4444' : m.avg < months[0].avg*0.9 ? '#22C55E' : 'var(--ac)';
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="font-size:9px;font-weight:700;color:var(--t)">${m.avg ? '$'+m.avg : '—'}</div>
+            <div style="width:100%;height:${h}px;background:${color};border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:var(--t3)">${m.label.split(' ')[0]}</div>
+            <div style="font-size:8px;color:var(--t3)">${m.count} teklif</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-nvl-trend').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openNavlunTrend = openNavlunTrend;
+
+// 3c. Tedarikçi Performans Skoru
+function openNavlunPerformans() {
+  const items = loadNavlun();
+  const byCarrier = {};
+  items.forEach(n => {
+    const key = n.tasiyan || 'Bilinmeyen';
+    if (!byCarrier[key]) byCarrier[key] = { total:0, approved:0, rejected:0, expired:0, avgTransit:0, transitSum:0, transitCount:0 };
+    byCarrier[key].total++;
+    if (n.durum==='onaylandi') byCarrier[key].approved++;
+    if (n.durum==='reddedildi') byCarrier[key].rejected++;
+    if (n.durum==='suresi_gec') byCarrier[key].expired++;
+    if (n.transitSure) { byCarrier[key].transitSum += n.transitSure; byCarrier[key].transitCount++; }
+  });
+  const sorted = Object.entries(byCarrier).map(([name, s]) => {
+    s.avgTransit = s.transitCount ? Math.round(s.transitSum / s.transitCount) : 0;
+    s.score = s.total ? Math.round((s.approved / s.total) * 100) : 0;
+    return { name, ...s };
+  }).sort((a,b) => b.score - a.score);
+
+  const old = document.getElementById('mo-nvl-perf'); if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-nvl-perf'; mo.style.zIndex='2100';
+  mo.innerHTML = `<div class="moc" style="max-width:520px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">🏆 Tedarikçi Performans Skoru</div>
+    </div>
+    <div style="padding:8px 20px;max-height:60vh;overflow-y:auto">
+      ${sorted.length ? sorted.map((s,i) => {
+        const color = s.score >= 80 ? '#22C55E' : s.score >= 50 ? '#F59E0B' : '#EF4444';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
+          <div style="width:24px;font-size:12px;font-weight:700;color:var(--t3);text-align:center">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${escapeHtml(s.name)}</div>
+            <div style="font-size:10px;color:var(--t3)">${s.total} teklif · Ort. ${s.avgTransit} gün transit</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:16px;font-weight:800;color:${color}">${s.score}%</div>
+            <div style="font-size:9px;color:var(--t3)">${s.approved}✓ ${s.rejected}✗ ${s.expired}⏰</div>
+          </div>
+        </div>`;
+      }).join('') : '<div style="padding:24px;text-align:center;color:var(--t3)">Henüz veri yok</div>'}
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+      <button class="btn" onclick="document.getElementById('mo-nvl-perf').remove()">Kapat</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window.openNavlunPerformans = openNavlunPerformans;
+
 // ── Export ────────────────────────────────────────────────────────
 if (typeof module!=='undefined'&&module.exports) {
   module.exports={WORLD_PORTS,renderNavlun,openNavlunModal,saveNavlun,initAllPortInputs};
@@ -658,6 +980,11 @@ if (typeof module!=='undefined'&&module.exports) {
   window.loadNavlun             = loadNavlun;
   window.storeNavlun            = storeNavlun;
   window._injectNavlunSection   = _injectNavlunSection;
+  window.openSatisTeklif         = openSatisTeklif;
+  window.openNavlunCompare       = openNavlunCompare;
+  window.openNavlunTrend         = openNavlunTrend;
+  window.openNavlunPerformans    = openNavlunPerformans;
+  window.nvlConvertCurrency      = nvlConvertCurrency;
   // Navlun hazır — bekleyen modülleri bilgilendir
   try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) {}
 }
