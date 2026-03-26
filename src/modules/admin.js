@@ -317,7 +317,7 @@ function saveAdminUser() {
     _auditLog('user_update', eid, 'Guncellendi: ' + name + (oldRole !== role ? ' (rol: ' + oldRole + ' → ' + role + ')' : ''));
     // Rol değiştiyse kullanıcıya bildirim
     if (oldRole !== role) {
-      window.addNotif?.('🔑', 'Rolunuz degistirildi: ' + (ROLE_META[role]?.label || role), 'warn', 'admin');
+      window.addNotif?.('🔑', 'Rolunuz degistirildi: ' + (ROLE_META[role]?.label || role), 'warn', 'admin', eid);
     }
     window.toast?.(`${name} güncellendi ✓`, 'ok');
   } else {

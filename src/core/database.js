@@ -267,8 +267,11 @@ _migrateUserPasswords();
  * @param {Array<Object>} data
  */
 function saveUsers(data) {
+  // Race condition koruması: yazma zamanını kaydet
+  const _writeTs = new Date().toISOString();
   _write(KEYS.users, data);
-  // Sadece giriş yapılmışsa Firestore\'a yaz
+  try { localStorage.setItem('users_last_write', _writeTs); } catch(e) {}
+  // Sadece giriş yapılmışsa Firestore'a yaz
   const _cu = window.Auth?.getCU?.();
   if (_cu) {
     const _fp_users = _fsPath('users');
@@ -545,9 +548,9 @@ function logActivity(type, detail) {
  * @param {string} [type='info'] 'info' | 'warn' | 'ok' | 'err'
  * @param {string} [link='']    Tıklandığında gidilecek panel
  */
-function addNotif(icon, msg, type = 'info', link = '') {
+function addNotif(icon, msg, type = 'info', link = '', targetUid = null) {
   const d = loadNotifs();
-  d.unshift({ id: generateNumericId(), icon, msg, type, link, ts: nowTs(), read: false });
+  d.unshift({ id: generateNumericId(), icon, msg, type, link, ts: nowTs(), read: false, targetUid: targetUid || null });
   storeNotifs(d);
   if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
 }

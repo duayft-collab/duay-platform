@@ -1035,7 +1035,9 @@ function _closeNotifOnBlur(e) {
 function _renderNotifPanel() {
   const list = _g('notif-list');
   if (!list) return;
-  const d      = loadNotifs();
+  const _cuNotif = window.Auth?.getCU?.();
+  // targetUid filtresi: null/undefined → herkese, değer varsa → sadece hedef
+  const d      = loadNotifs().filter(n => !n.targetUid || n.targetUid === _cuNotif?.id);
   const unread = d.filter(n => !n.read).length;
   const hdr    = _g('notif-unread-count');
   if (hdr) hdr.textContent = unread > 0 ? `(${unread} okunmamış)` : '';
@@ -1073,7 +1075,8 @@ function _renderNotifPanel() {
 }
 
 function updateNotifBadge() {
-  const n   = loadNotifs().filter(x => !x.read).length;
+  const _cuBadge = window.Auth?.getCU?.();
+  const n   = loadNotifs().filter(x => !x.read && (!x.targetUid || x.targetUid === _cuBadge?.id)).length;
   const dot = _g('notif-dot');
   if (dot) dot.classList.toggle('show', n > 0);
 }

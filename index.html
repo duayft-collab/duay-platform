@@ -953,11 +953,22 @@ function _doLogin() {
 
       <!-- Panel: Admin -->
       <div id="panel-admin" class="panel">
-        <!-- V2 Tasarım: Split Layout -->
-        <div style="display:flex;height:100%;min-height:calc(100vh - 60px)">
+        <style>
+          .adm-split{display:flex;height:100%;min-height:calc(100vh - 60px)}
+          .adm-side{width:320px;min-width:0;border-right:1px solid var(--b);display:flex;flex-direction:column;background:var(--sf);flex-shrink:0}
+          .adm-main{flex:1;overflow-y:auto;background:var(--s2);min-width:0}
+          .adm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:0;border-bottom:1px solid var(--b)}
+          @media(max-width:768px){
+            .adm-split{flex-direction:column}
+            .adm-side{width:100%;border-right:none;border-bottom:1px solid var(--b);max-height:50vh}
+            .adm-main{min-height:50vh}
+          }
+        </style>
+        <!-- V3 Tasarım: Responsive Split Layout -->
+        <div class="adm-split">
 
           <!-- SOL: Kullanıcı Listesi -->
-          <div style="width:320px;min-width:280px;border-right:1px solid var(--b);display:flex;flex-direction:column;background:var(--sf);flex-shrink:0" id="adm-sidebar">
+          <div class="adm-side" id="adm-sidebar">
             <!-- Üst bar -->
             <div style="padding:16px;border-bottom:1px solid var(--b)">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -970,12 +981,12 @@ function _doLogin() {
                 <select id="admin-status-f" onchange="Admin.render()" style="flex:1;padding:5px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;background:var(--s);color:var(--t);font-family:inherit"><option value="">Tum Durum</option><option value="active">Aktif</option><option value="suspended">Pasif</option></select>
               </div>
             </div>
-            <!-- Stat chips -->
-            <div style="display:flex;gap:0;border-bottom:1px solid var(--b)">
-              <div style="flex:1;padding:10px;text-align:center;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:700;color:var(--t)" id="admin-total">0</div><div style="font-size:9px;color:var(--t3)">Toplam</div></div>
-              <div style="flex:1;padding:10px;text-align:center;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:700;color:#16A34A" id="admin-active">0</div><div style="font-size:9px;color:var(--t3)">Aktif</div></div>
-              <div style="flex:1;padding:10px;text-align:center;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:700;color:#DC2626" id="admin-suspended">0</div><div style="font-size:9px;color:var(--t3)">Pasif</div></div>
-              <div style="flex:1;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:#7C3AED" id="admin-admins">0</div><div style="font-size:9px;color:var(--t3)">Admin</div></div>
+            <!-- Stat chips (responsive grid) -->
+            <div class="adm-stats">
+              <div style="padding:clamp(6px,1.5vw,10px);text-align:center;border-right:1px solid var(--b)"><div style="font-size:clamp(14px,2vw,18px);font-weight:700;color:var(--t)" id="admin-total">0</div><div style="font-size:9px;color:var(--t3)">Toplam</div></div>
+              <div style="padding:clamp(6px,1.5vw,10px);text-align:center;border-right:1px solid var(--b)"><div style="font-size:clamp(14px,2vw,18px);font-weight:700;color:#16A34A" id="admin-active">0</div><div style="font-size:9px;color:var(--t3)">Aktif</div></div>
+              <div style="padding:clamp(6px,1.5vw,10px);text-align:center;border-right:1px solid var(--b)"><div style="font-size:clamp(14px,2vw,18px);font-weight:700;color:#DC2626" id="admin-suspended">0</div><div style="font-size:9px;color:var(--t3)">Pasif</div></div>
+              <div style="padding:clamp(6px,1.5vw,10px);text-align:center"><div style="font-size:clamp(14px,2vw,18px);font-weight:700;color:#7C3AED" id="admin-admins">0</div><div style="font-size:9px;color:var(--t3)">Admin</div></div>
             </div>
             <!-- Kullanıcı listesi -->
             <div id="admin-list" style="flex:1;overflow-y:auto"></div>
@@ -988,9 +999,9 @@ function _doLogin() {
           </div>
 
           <!-- SAG: Profil Detay + Log -->
-          <div style="flex:1;overflow-y:auto;background:var(--s2)">
+          <div class="adm-main">
             <!-- Seçili kullanıcı profil alanı -->
-            <div id="adm-detail" style="padding:24px"></div>
+            <div id="adm-detail" style="padding:clamp(12px,3vw,24px)"></div>
             <!-- Aktivite Logu -->
             <div style="padding:0 24px 24px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
