@@ -2082,11 +2082,17 @@ var STAGES=[
   {id:'evaluation',i18n:'evaluation'},
   {id:'onboarding',i18n:'thanks'},
 ];
-let candidates=[
-  {id:1,name:'Ahmet Yılmaz',position:'Satınalma Asistanı',stage:'test-drive',score:4.2,notes:'Web sitesini incelemiş, istekli. İndirim hikayesi başarılı.',disc:'D (Dominant)',loc:'Eyüpsultan (3km)'},
-  {id:2,name:'Ayşe Kaya',position:'IK Yöneticisi',stage:'interview',score:3.8,notes:'Sertifikaları tam, kariyer hedefi net.',disc:'S (Uyumlu)',loc:'Beşiktaş (12km - Tek metro)'},
-  {id:3,name:'Mehmet Demir',position:'Satınalma Asistanı',stage:'phone-screening',score:0,notes:'Henüz aranmadı.',disc:'N/A',loc:'Kadıköy'},
-];
+// Adaylar — localStorage persistansı
+const CAND_KEY = 'ak_ik_candidates';
+function _loadCandidates() {
+  try { const d = JSON.parse(localStorage.getItem(CAND_KEY)||'null'); if(Array.isArray(d)) return d; } catch(e) {}
+  return [
+    {id:1,name:'Ahmet Yilmaz',position:'Satinalma Asistani',stage:'test-drive',score:4.2,notes:'Web sitesini incelemis, istekli.',disc:'D',loc:'Eyupsultan',phone:'',email:'',status:'mulakat',createdAt:'2026-03-20'},
+    {id:2,name:'Ayse Kaya',position:'IK Yoneticisi',stage:'interview',score:3.8,notes:'Sertifikalari tam.',disc:'S',loc:'Besiktas',phone:'',email:'',status:'yeni',createdAt:'2026-03-22'},
+  ];
+}
+function _storeCandidates(d) { localStorage.setItem(CAND_KEY, JSON.stringify(d)); }
+let candidates = _loadCandidates();
 let selCand=null;
 var FACTORS=['Dış görünüş','Dikkat','Deneyim (miktar)','Deneyim (kalite)','Merak','Hırs','Kararlılık','Yenilikçilik','Kendini yönetme','Analitik yetenek','Karar alma','Öğrenci Zihniyeti','Referanslar'];
 let evalSc=Object.fromEntries(FACTORS.map(f=>[f,3]));
@@ -2217,15 +2223,132 @@ function renderPipe(){
   });
 }
 function addCand(sid){
-  const name=prompt(_ikT('candidate_name')+':');if(!name?.trim()) return;
-  const pos=prompt(_ikT('position')+':')||'—';
-  candidates.push({id:generateNumericId(),name:name.trim(),position:pos,stage:sid,score:0,notes:'',disc:'N/A',loc:'Belirtilmedi'});
+  const old = document.getElementById('mo-cand-form'); if(old) old.remove();
+  const mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-cand-form'; mo.style.zIndex='2200';
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Yeni Aday Ekle</div></div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;max-height:65vh;overflow-y:auto">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div class="fg"><div class="fl">AD SOYAD *</div><input class="fi" id="cf-name" placeholder="Ad Soyad"></div>'
+        + '<div class="fg"><div class="fl">POZISYON *</div><input class="fi" id="cf-pos" placeholder="Satin Alma Asistani"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div class="fg"><div class="fl">TELEFON</div><input class="fi" id="cf-phone" placeholder="0555 123 4567"></div>'
+        + '<div class="fg"><div class="fl">E-POSTA</div><input class="fi" id="cf-email" type="email" placeholder="ali@email.com"></div>'
+      + '</div>'
+      + '<div class="fg"><div class="fl">CV YUKLE (PDF)</div><input type="file" id="cf-cv" accept=".pdf,.doc,.docx" style="font-size:12px"></div>'
+      + '<div class="fg"><div class="fl">ON GORUSME NOTU</div><textarea class="fi" id="cf-notes" rows="3" style="resize:vertical" placeholder="Ilk izlenim, motivasyon, beklentiler..."></textarea></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div class="fg"><div class="fl">RANDEVU TARIH+SAAT</div><input type="datetime-local" class="fi" id="cf-date"></div>'
+        + '<div class="fg"><div class="fl">GORUSME TIPI</div><select class="fi" id="cf-type"><option value="yuzyuze">Yuz yuze</option><option value="online">Online</option></select></div>'
+      + '</div>'
+      + '<div class="fg"><div class="fl">TOPLANTI LINKI (online ise)</div><input class="fi" id="cf-link" placeholder="https://meet.google.com/..."></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-cand-form\').remove()">Iptal</button>'
+      + '<button class="btn btnp" onclick="window._saveCandForm(\'' + (sid||'phone-screening') + '\')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+window._saveCandForm = function(stageId) {
+  var name = (document.getElementById('cf-name')?.value||'').trim();
+  var pos = (document.getElementById('cf-pos')?.value||'').trim();
+  if (!name) { window.toast?.('Ad Soyad zorunlu', 'err'); return; }
+  if (!pos) { window.toast?.('Pozisyon zorunlu', 'err'); return; }
+
+  var entry = {
+    id: generateNumericId(), name: name, position: pos, stage: stageId,
+    phone: (document.getElementById('cf-phone')?.value||'').trim(),
+    email: (document.getElementById('cf-email')?.value||'').trim(),
+    notes: (document.getElementById('cf-notes')?.value||'').trim(),
+    meetDate: document.getElementById('cf-date')?.value || '',
+    meetType: document.getElementById('cf-type')?.value || 'yuzyuze',
+    meetLink: (document.getElementById('cf-link')?.value||'').trim(),
+    score: 0, disc: 'N/A', loc: '',
+    status: 'yeni', createdAt: new Date().toISOString().slice(0,10),
+    createdBy: window.CU?.()?.id,
+    approvalStatus: null,
+    timeline: [{ ts: window.nowTs?.() || new Date().toISOString(), action: 'Basvuru olusturuldu', by: window.CU?.()?.name || 'Sistem' }],
+  };
+
+  // CV upload
+  var fileEl = document.getElementById('cf-cv');
+  if (fileEl?.files?.[0]) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      entry.cv = { name: fileEl.files[0].name, data: ev.target.result };
+      _finishSaveCand(entry);
+    };
+    reader.readAsDataURL(fileEl.files[0]);
+  } else {
+    _finishSaveCand(entry);
+  }
+};
+
+function _finishSaveCand(entry) {
+  candidates.push(entry);
+  _storeCandidates(candidates);
+  document.getElementById('mo-cand-form')?.remove();
+  renderPipe();
+  window.toast?.('Aday eklendi: ' + entry.name, 'ok');
+  window.logActivity?.('ik', 'Yeni aday: ' + entry.name + ' (' + entry.position + ')');
+}
+
+// Adayı yöneticiye gönder (onay akışı)
+function sendCandForApproval(candId) {
+  var c = candidates.find(function(x){ return x.id === candId; }); if(!c) return;
+  c.approvalStatus = 'pending';
+  c.timeline = c.timeline || [];
+  c.timeline.push({ ts: window.nowTs?.() || new Date().toISOString(), action: 'Yoneticiye gonderildi', by: window.CU?.()?.name || '' });
+  _storeCandidates(candidates);
+
+  // Admin/manager'lara bildirim
+  var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
+  users.filter(function(u){ return (u.role==='admin'||u.role==='manager') && u.status==='active'; }).forEach(function(m){
+    window.addNotif?.('👤', 'Yeni aday onay bekliyor: ' + c.name + ' — ' + c.position, 'warn', 'ik', m.id);
+  });
+  window.toast?.('Aday yoneticiye gonderildi', 'ok');
   renderPipe();
 }
+
+// Aday onayla + takvime ekle
+function approveCand(candId) {
+  if (!_isAdminIk()) { window.toast?.('Yetki gerekli', 'err'); return; }
+  var c = candidates.find(function(x){ return x.id === candId; }); if(!c) return;
+  c.approvalStatus = 'approved';
+  c.status = 'mulakat';
+  c.timeline = c.timeline || [];
+  c.timeline.push({ ts: window.nowTs?.() || new Date().toISOString(), action: 'Yonetici onayladi', by: window.CU?.()?.name || '' });
+  _storeCandidates(candidates);
+
+  // Takvime otomatik ekle
+  if (c.meetDate && typeof window.saveCal === 'function') {
+    var cal = typeof window.loadCal === 'function' ? window.loadCal() : [];
+    cal.push({
+      id: generateNumericId(), own: 0, title: 'Mulakat: ' + c.name + ' — ' + c.position,
+      date: c.meetDate.slice(0,10), time: c.meetDate.slice(11,16) || '10:00',
+      type: 'meeting', status: 'approved', desc: 'Aday mulakati. ' + (c.meetType==='online'?'Online: '+c.meetLink:'Yuz yuze'),
+    });
+    window.saveCal(cal);
+    window.toast?.('Mulakat takvime eklendi', 'ok');
+  }
+  window.toast?.('Aday onaylandi: ' + c.name, 'ok');
+  renderPipe();
+}
+window.sendCandForApproval = sendCandForApproval;
+window.approveCand = approveCand;
 function moveC(id,dir){
   const ids=STAGES.map(s=>s.id);const c=candidates.find(c=>c.id===id);if(!c) return;
   const idx=ids.indexOf(c.stage);const next=idx+(dir==='next'?1:-1);
-  if(next>=0&&next<ids.length) c.stage=ids[next];
+  if(next>=0&&next<ids.length) {
+    c.stage=ids[next];
+    c.timeline = c.timeline || [];
+    c.timeline.push({ ts: window.nowTs?.() || new Date().toISOString(), action: 'Asama degisti: ' + ids[next], by: window.CU?.()?.name || '' });
+    _storeCandidates(candidates);
+  }
   renderPipe();document.getElementById('mo').classList.remove('open');
 }
 
@@ -2248,9 +2371,27 @@ function openModal(id){
     <div><div style="font-weight:700;font-size:11px;color:var(--text);margin-bottom:5px">🔄 Süreç</div><div>${STAGES.map((s,i)=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:6px;border:1px solid ${s.id===c.stage?'var(--accent)':'transparent'};background:${s.id===c.stage?'var(--bg3)':'transparent'};margin-bottom:3px">
       <div style="width:18px;height:18px;border-radius:50%;background:${i<ci?'#10b981':s.id===c.stage?'var(--accent)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:${i<ci||s.id===c.stage?'#fff':'var(--text3)'}">${i<ci?'✓':i+1}</div>
       <span style="font-size:11px;font-weight:${s.id===c.stage?'600':'400'};color:${s.id===c.stage?'var(--accent)':'var(--text2)'}">${T(s.i18n)}</span></div>`).join('')}</div></div>`;
+  // Timeline + Onay butonları
+  var tlHtml = '';
+  if (c.timeline && c.timeline.length) {
+    tlHtml = '<div style="margin-top:8px"><div style="font-weight:700;font-size:11px;color:var(--text);margin-bottom:5px">Surec Timeline</div>';
+    c.timeline.forEach(function(t,i){
+      tlHtml += '<div style="display:flex;gap:8px;padding:4px 0;'+(i<c.timeline.length-1?'border-left:2px solid var(--border);margin-left:5px;padding-left:12px':'margin-left:5px;padding-left:12px')+'">'
+        + '<div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:3px;margin-left:-16px"></div>'
+        + '<div><div style="font-size:10px;color:var(--text)">' + (t.action||'') + '</div>'
+        + '<div style="font-size:9px;color:var(--text3)">' + (t.ts||'').slice(0,16) + ' — ' + (t.by||'') + '</div></div></div>';
+    });
+    tlHtml += '</div>';
+  }
+
   document.getElementById('m-foot').innerHTML=`
-    ${ci<STAGES.length-1?`<button style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="moveC(${c.id},'next')">→ Bir Sonraki</button>`:''}
-    <button style="padding:8px 12px;background:transparent;color:#9a7ab0;border:1px solid var(--sidebar2);border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="document.getElementById('mo').classList.remove('open')">✕</button>`;
+    ${c.approvalStatus!=='approved'?'<button style="flex:1;padding:8px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="sendCandForApproval('+c.id+')">Yoneticiye Gonder</button>':''}
+    ${_isAdminIk()&&c.approvalStatus==='pending'?'<button style="flex:1;padding:8px;background:#10B981;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="approveCand('+c.id+')">Onayla + Takvime Ekle</button>':''}
+    ${ci<STAGES.length-1?'<button style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="moveC('+c.id+',\'next\')">Sonraki Asama</button>':''}
+    <button style="padding:8px 12px;background:transparent;color:#9a7ab0;border:1px solid var(--sidebar2);border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="document.getElementById('mo').classList.remove('open')">Kapat</button>`;
+
+  // Timeline'ı body'ye ekle
+  document.getElementById('m-body').innerHTML += tlHtml;
   document.getElementById('mo').classList.add('open');
 }
 function closeMO(e){if(e.target===document.getElementById('mo')) document.getElementById('mo').classList.remove('open');}
@@ -3231,10 +3372,7 @@ function _ikGenIlan() {
 }
 
 function _ikAddCand() {
-  const name = prompt('Aday Adı Soyadı:');
-  if (!name) return;
-  const pos  = prompt('Pozisyon:') || '';
-  if (typeof addCand === 'function') addCand(name, pos);
+  addCand('phone-screening');
   _ikRenderPipeline();
 }
 
