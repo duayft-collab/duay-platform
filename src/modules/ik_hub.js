@@ -2217,7 +2217,11 @@ function renderPipe(){
     <div class="stage-body">${cards.map(c=>`<div class="pcard" onclick="openModal(${c.id})">
       <div class="pcard-pos">${c.position}</div><div class="pcard-name">${c.name}</div>
       <div class="pcard-meta">3 gün önce · ${c.loc}</div>
-      <div class="pcard-foot"><div style="display:flex">${[0,1,2].map(i=>`<div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--bg2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:var(--text3);margin-left:${i?'-5px':'0'}">IK</div>`).join('')}</div>${c.score>0?`<div class="pcard-score">★ ${c.score}</div>`:''}</div></div>`).join('')}
+      <div class="pcard-foot"><div style="display:flex;gap:3px">
+        <button onclick="event.stopPropagation();openAiAnalysis(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">AI</button>
+        <button onclick="event.stopPropagation();toggleCompare(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">VS</button>
+        <button onclick="event.stopPropagation();startFocusInterview(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">📝</button>
+      </div>${c.score>0?`<div class="pcard-score">★ ${c.score}</div>`:''}</div></div>`).join('')}
     <button class="add-btn" onclick="addCand('${stage.id}')">+ ${_ikT('add_candidate')}</button></div>`;
     board.appendChild(col);
   });
@@ -2388,6 +2392,7 @@ function openModal(id){
     ${c.approvalStatus!=='approved'?'<button style="flex:1;padding:8px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="sendCandForApproval('+c.id+')">Yoneticiye Gonder</button>':''}
     ${_isAdminIk()&&c.approvalStatus==='pending'?'<button style="flex:1;padding:8px;background:#10B981;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="approveCand('+c.id+')">Onayla + Takvime Ekle</button>':''}
     ${ci<STAGES.length-1?'<button style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="moveC('+c.id+',\'next\')">Sonraki Asama</button>':''}
+    <button style="padding:8px;background:#EF4444;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="openRejectionLetter('+c.id+')">Reddet</button>
     <button style="padding:8px 12px;background:transparent;color:#9a7ab0;border:1px solid var(--sidebar2);border-radius:8px;font-weight:700;font-size:11px;cursor:pointer" onclick="document.getElementById('mo').classList.remove('open')">Kapat</button>`;
 
   // Timeline'ı body'ye ekle
@@ -3400,6 +3405,247 @@ function _ikStTab(group, tab, btn) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// 1. AI ADAY ÖZETİ
+// ════════════════════════════════════════════════════════════════
+
+function openAiAnalysis(candId) {
+  var c = candidates.find(function(x){ return x.id === candId; }); if(!c) return;
+  var old = document.getElementById('mo-ai-cand'); if(old) old.remove();
+  var mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-ai-cand'; mo.style.zIndex='2300';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:15px;font-weight:700;color:var(--t)">AI Aday Analizi</div>'
+      + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(c.name) + ' — ' + escapeHtml(c.position) + '</div>'
+    + '</div>'
+    + '<div id="ai-cand-body" style="padding:20px;min-height:120px;display:flex;align-items:center;justify-content:center">'
+      + '<div style="text-align:center;color:var(--t3)"><div class="spinner" style="width:24px;height:24px;border:3px solid var(--b);border-top-color:var(--ac);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 8px"></div><div style="font-size:12px">AI analiz yapiliyor...</div></div>'
+    + '</div>'
+    + '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-ai-cand\').remove()">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e){ if(e.target===mo) mo.remove(); });
+  setTimeout(function(){ mo.classList.add('open'); }, 10);
+
+  // API çağrısı
+  var cvText = c.cv ? '(CV yuklu: ' + c.cv.name + ')' : '(CV yok)';
+  var prompt = 'Aday: ' + c.name + '\nPozisyon: ' + c.position + '\nNotlar: ' + (c.notes||'Yok') + '\nTelefon gorusme notu: ' + (c.disc||'N/A') + '\n' + cvText + '\n\nBu adayi 3 bolumde analiz et: 1) Guclu Yonler 2) Zayif Yonler 3) Genel Profil Degerlendirmesi. Kisa ve net yaz.';
+
+  var apiKey = window.__ENV__?.ANTHROPIC_API_KEY || '';
+  if (!apiKey) {
+    // API key yoksa mock yanıt
+    setTimeout(function(){
+      var body = document.getElementById('ai-cand-body');
+      if(body) body.innerHTML = '<div style="font-size:12px;color:var(--t);line-height:1.7">'
+        + '<div style="font-weight:700;color:#10B981;margin-bottom:6px">Guclu Yonler</div>'
+        + '<div style="margin-bottom:12px;color:var(--t2)">' + escapeHtml(c.position) + ' pozisyonu icin basvurmus. ' + (c.notes ? escapeHtml(c.notes) : 'On gorusme notu mevcut degil.') + '</div>'
+        + '<div style="font-weight:700;color:#F59E0B;margin-bottom:6px">Zayif Yonler</div>'
+        + '<div style="margin-bottom:12px;color:var(--t2)">Detayli degerlendirme icin mulakat sonuclari beklenmeli.</div>'
+        + '<div style="font-weight:700;color:#6366F1;margin-bottom:6px">Genel Profil</div>'
+        + '<div style="color:var(--t2)">AI analizi icin Anthropic API anahtari gerekli (window.__ENV__.ANTHROPIC_API_KEY). Simdilik on gorusme notlarina dayanilarak degerlendirme yapildi.</div>'
+        + '</div>';
+    }, 1200);
+    return;
+  }
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      system: 'Sen deneyimli bir Turkce IK uzmanisin. Aday degerlendirmelerini kisa, net ve profesyonel yap.',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  }).then(function(r){ return r.json(); }).then(function(data){
+    var text = data.content?.[0]?.text || 'Yanit alinamadi';
+    var body = document.getElementById('ai-cand-body');
+    if(body) body.innerHTML = '<div style="font-size:12px;color:var(--t);line-height:1.7;white-space:pre-line">' + escapeHtml(text) + '</div>';
+  }).catch(function(e){
+    var body = document.getElementById('ai-cand-body');
+    if(body) body.innerHTML = '<div style="color:var(--rdt);font-size:12px">API hatasi: ' + escapeHtml(e.message) + '</div>';
+  });
+}
+window.openAiAnalysis = openAiAnalysis;
+
+// ════════════════════════════════════════════════════════════════
+// 2. ADAY KARŞILAŞTIRMA
+// ════════════════════════════════════════════════════════════════
+
+var _compareIds = [];
+function toggleCompare(candId) {
+  var idx = _compareIds.indexOf(candId);
+  if (idx >= 0) _compareIds.splice(idx, 1);
+  else if (_compareIds.length < 2) _compareIds.push(candId);
+  else { window.toast?.('En fazla 2 aday secilebilir', 'err'); return; }
+  if (_compareIds.length === 2) openCompareModal();
+}
+function openCompareModal() {
+  var a = candidates.find(function(x){ return x.id === _compareIds[0]; });
+  var b = candidates.find(function(x){ return x.id === _compareIds[1]; });
+  if (!a || !b) return;
+  var old = document.getElementById('mo-cand-compare'); if(old) old.remove();
+  var mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-cand-compare'; mo.style.zIndex='2300';
+
+  var rows = FACTORS.map(function(f){
+    var sa = (evalSc[f]||3); var sb = (evalSc[f]||3); // Mock — gerçek skorda aday bazlı olmalı
+    var winner = sa > sb ? 'a' : sb > sa ? 'b' : '';
+    return '<tr><td style="padding:6px 10px;font-size:11px;border:1px solid var(--b)">' + escapeHtml(f) + '</td>'
+      + '<td style="padding:6px 10px;text-align:center;font-weight:600;border:1px solid var(--b);background:' + (winner==='a'?'rgba(34,197,94,.08)':'') + '">' + sa + '/5</td>'
+      + '<td style="padding:6px 10px;text-align:center;font-weight:600;border:1px solid var(--b);background:' + (winner==='b'?'rgba(34,197,94,.08)':'') + '">' + sb + '/5</td></tr>';
+  }).join('');
+
+  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Aday Karsilastirma</div></div>'
+    + '<div style="padding:16px 20px;max-height:60vh;overflow-y:auto">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+        + '<div style="text-align:center;padding:16px;background:var(--s2);border-radius:10px">'
+          + '<div style="width:48px;height:48px;border-radius:14px;background:var(--al);color:var(--ac);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;margin:0 auto 8px">' + (a.name||'?')[0] + '</div>'
+          + '<div style="font-size:14px;font-weight:600;color:var(--t)">' + escapeHtml(a.name) + '</div>'
+          + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(a.position) + '</div>'
+          + '<div style="font-size:18px;font-weight:800;color:var(--ac);margin-top:4px">' + (a.score||0) + '</div>'
+        + '</div>'
+        + '<div style="text-align:center;padding:16px;background:var(--s2);border-radius:10px">'
+          + '<div style="width:48px;height:48px;border-radius:14px;background:rgba(245,158,11,.1);color:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;margin:0 auto 8px">' + (b.name||'?')[0] + '</div>'
+          + '<div style="font-size:14px;font-weight:600;color:var(--t)">' + escapeHtml(b.name) + '</div>'
+          + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(b.position) + '</div>'
+          + '<div style="font-size:18px;font-weight:800;color:#F59E0B;margin-top:4px">' + (b.score||0) + '</div>'
+        + '</div>'
+      + '</div>'
+      + '<table style="width:100%;border-collapse:collapse"><tr style="background:var(--s2)"><th style="padding:6px 10px;text-align:left;font-size:10px;border:1px solid var(--b)">Kriter</th><th style="padding:6px 10px;text-align:center;font-size:10px;border:1px solid var(--b)">' + escapeHtml(a.name.split(' ')[0]) + '</th><th style="padding:6px 10px;text-align:center;font-size:10px;border:1px solid var(--b)">' + escapeHtml(b.name.split(' ')[0]) + '</th></tr>' + rows + '</table>'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
+      + '<button class="btn" onclick="_compareIds=[];document.getElementById(\'mo-cand-compare\').remove()">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e){ if(e.target===mo) mo.remove(); });
+  setTimeout(function(){ mo.classList.add('open'); }, 10);
+  _compareIds = [];
+}
+window.toggleCompare = toggleCompare;
+
+// ════════════════════════════════════════════════════════════════
+// 3. FOCUS MODE (Mülakat)
+// ════════════════════════════════════════════════════════════════
+
+function startFocusInterview(candId) {
+  var c = candidates.find(function(x){ return x.id === candId; });
+  if (!c) { c = { name: 'Aday', position: '' }; }
+  var overlay = document.createElement('div');
+  overlay.id = 'ik-focus-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var qIdx = 0;
+  var scores = {};
+  var notes = {};
+  var questions = DEFAULT_SORU_METINLERI.slice(0, 10);
+
+  function renderQ() {
+    var q = questions[qIdx] || '';
+    var pct = Math.round((qIdx+1)/questions.length*100);
+    overlay.innerHTML = '<div style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;background:var(--sf);border-radius:16px;padding:0">'
+      + '<div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+        + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">Mulakat — ' + escapeHtml(c.name) + '</div>'
+          + '<div style="font-size:11px;color:var(--t3)">Soru ' + (qIdx+1) + '/' + questions.length + '</div></div>'
+        + '<button onclick="document.getElementById(\'ik-focus-overlay\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">ESC</button>'
+      + '</div>'
+      + '<div style="height:3px;background:var(--s2)"><div style="height:100%;width:' + pct + '%;background:var(--ac);transition:width .3s"></div></div>'
+      + '<div style="padding:24px 20px">'
+        + '<div style="font-size:16px;font-weight:600;color:var(--t);line-height:1.5;margin-bottom:20px">' + escapeHtml(q) + '</div>'
+        + '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px">PUAN (1-5)</div>'
+          + '<div style="display:flex;gap:6px">' + [1,2,3,4,5].map(function(n){ return '<button onclick="window._fmScore(' + qIdx + ',' + n + ')" style="width:40px;height:40px;border-radius:10px;border:2px solid ' + ((scores[qIdx]===n)?'var(--ac)':'var(--b)') + ';background:' + ((scores[qIdx]===n)?'var(--al)':'var(--sf)') + ';cursor:pointer;font-size:14px;font-weight:700;color:' + ((scores[qIdx]===n)?'var(--ac)':'var(--t3)') + ';font-family:inherit">' + n + '</button>'; }).join('') + '</div>'
+        + '</div>'
+        + '<div><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px">NOT</div>'
+          + '<textarea id="fm-note" style="width:100%;padding:10px;border:1.5px solid var(--b);border-radius:8px;font-size:13px;color:var(--t);background:var(--s);resize:vertical;min-height:60px;font-family:inherit;outline:none" placeholder="Gozlemler...">' + (notes[qIdx]||'') + '</textarea>'
+        + '</div>'
+      + '</div>'
+      + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;justify-content:space-between">'
+        + (qIdx > 0 ? '<button class="btn btns" onclick="window._fmPrev()">Onceki</button>' : '<div></div>')
+        + (qIdx < questions.length - 1
+          ? '<button class="btn btnp" onclick="window._fmNext()">Sonraki</button>'
+          : '<button class="btn btnp" onclick="window._fmFinish(' + (candId||0) + ')" style="background:#10B981;border-color:#10B981">Mulakati Bitir</button>')
+      + '</div></div>';
+  }
+
+  window._fmScore = function(qi, val) { scores[qi] = val; renderQ(); };
+  window._fmPrev = function() { notes[qIdx] = document.getElementById('fm-note')?.value||''; if(qIdx>0) qIdx--; renderQ(); };
+  window._fmNext = function() { notes[qIdx] = document.getElementById('fm-note')?.value||''; qIdx++; renderQ(); };
+  window._fmFinish = function(cid) {
+    notes[qIdx] = document.getElementById('fm-note')?.value||'';
+    var total = 0; var count = 0;
+    Object.values(scores).forEach(function(v){ total += v; count++; });
+    var avg = count ? (total / count).toFixed(1) : 0;
+    // Adaya skoru kaydet
+    var cand = candidates.find(function(x){ return x.id === cid; });
+    if (cand) {
+      cand.score = parseFloat(avg);
+      cand.interviewScores = scores;
+      cand.interviewNotes = notes;
+      cand.timeline = cand.timeline || [];
+      cand.timeline.push({ ts: window.nowTs?.() || new Date().toISOString(), action: 'Mulakat tamamlandi — Skor: ' + avg, by: window.CU?.()?.name || '' });
+      _storeCandidates(candidates);
+    }
+    document.getElementById('ik-focus-overlay')?.remove();
+    window.toast?.('Mulakat tamamlandi — Ortalama: ' + avg + '/5', 'ok');
+    renderPipe();
+  };
+
+  document.body.appendChild(overlay);
+  document.addEventListener('keydown', function _escHandler(e) {
+    if (e.key === 'Escape') { document.getElementById('ik-focus-overlay')?.remove(); document.removeEventListener('keydown', _escHandler); }
+  });
+  renderQ();
+}
+window.startFocusInterview = startFocusInterview;
+
+// ════════════════════════════════════════════════════════════════
+// 4. OTOMATİK RED MEKTUBU
+// ════════════════════════════════════════════════════════════════
+
+function openRejectionLetter(candId) {
+  var c = candidates.find(function(x){ return x.id === candId; }); if(!c) return;
+  var tarih = new Date().toLocaleDateString('tr-TR', { year:'numeric', month:'long', day:'numeric' });
+  var letter = 'Sayın ' + c.name + ',\n\n'
+    + c.position + ' pozisyonu icin yapmis oldugunuz basvuru icin tesekkur ederiz.\n\n'
+    + 'Basvurunuzu dikkatle inceledik. Ancak, su an icin ihtiyaclarimiza daha uygun adaylarla ilerleme karari aldik.\n\n'
+    + 'Bu karar sizin yetkinliklerinizle ilgili degil, tamamen pozisyon gereksinimleriyle ilgilidir. Gelecekte uygun pozisyonlar icin sizi tekrar degerlendirmekten memnuniyet duyariz.\n\n'
+    + 'Kariyer yolculugunuzda basarilar dileriz.\n\n'
+    + 'Saygilarimizla,\n'
+    + (window.CU?.()?.name || 'IK Departmani') + '\n'
+    + 'Duay Global LLC\n'
+    + tarih;
+
+  var old = document.getElementById('mo-reject-letter'); if(old) old.remove();
+  var mo = document.createElement('div');
+  mo.className='mo'; mo.id='mo-reject-letter'; mo.style.zIndex='2300';
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:15px;font-weight:700;color:var(--t)">Red Mektubu</div>'
+      + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(c.name) + ' — ' + escapeHtml(c.position) + '</div>'
+    + '</div>'
+    + '<div style="padding:16px 20px">'
+      + '<textarea id="reject-letter-text" style="width:100%;min-height:250px;padding:14px;border:1.5px solid var(--b);border-radius:10px;font-size:13px;color:var(--t);background:var(--s);line-height:1.7;font-family:inherit;resize:vertical">' + escapeHtml(letter) + '</textarea>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-reject-letter\').remove()">Kapat</button>'
+      + '<button class="btn btnp" onclick="navigator.clipboard?.writeText(document.getElementById(\'reject-letter-text\').value).then(function(){window.toast?.(\'Kopyalandi\',\'ok\')})">Kopyala</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e){ if(e.target===mo) mo.remove(); });
+  setTimeout(function(){ mo.classList.add('open'); }, 10);
+
+  // Adayı reddet
+  c.status = 'reddedildi';
+  c.timeline = c.timeline || [];
+  c.timeline.push({ ts: window.nowTs?.() || new Date().toISOString(), action: 'Aday reddedildi', by: window.CU?.()?.name || '' });
+  _storeCandidates(candidates);
+}
+window.openRejectionLetter = openRejectionLetter;
+
 const IkHub = {
   render:          renderIkHub,
   setTab:          setIkTab,
@@ -3438,6 +3684,10 @@ const IkHub = {
   inject:          _injectIkHub,
   // İşe Alım bridge'leri
   addCandidate:    _ikAddCand,
+  aiAnalysis:      openAiAnalysis,
+  compareCandidate: toggleCompare,
+  focusInterview:  startFocusInterview,
+  rejectLetter:    openRejectionLetter,
   _ikSt:           _ikStTab,
   _saveInterview:  _ikSaveInterview,
   _clearForm:      _ikClearForm,
