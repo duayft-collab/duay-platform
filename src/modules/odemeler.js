@@ -1012,7 +1012,9 @@ function saveOdm() {
   console.log('[ODM] yonetici listesi:', _allUsers.filter(function(u){ return u.role==='admin'||u.role==='manager'; }).map(function(u){ return u.name; }));
   const name = (_go('odm-f-name')?.value || '').trim();
   if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
-  const eid  = parseInt(_go('odm-f-eid')?.value || '0');
+  const _eidRaw = _go('odm-f-eid')?.value;
+  const eid  = parseInt(_eidRaw || '0');
+  console.log('[ODM] eid raw:', JSON.stringify(_eidRaw), '→ parsed:', eid, '→ yeni kayit mi:', !eid);
   const d    = window.loadOdm ? loadOdm() : [];
   const cat = _go('odm-f-cat')?.value || 'diger';
   const currency = _go('odm-f-currency')?.value || 'TRY';
