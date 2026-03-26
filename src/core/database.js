@@ -1079,22 +1079,47 @@ function _checkNewAssignments(tasksData) {
 
 function _showAssignmentModal(task) {
   const old = document.getElementById('mo-task-assigned'); if (old) old.remove();
+  const esc = window.escapeHtml || (s => s);
+
+  // Öncelik
+  const PRI = { 1:{l:'Kritik',ic:'🔴',c:'#EF4444',bg:'#FEF2F2'}, 2:{l:'Yuksek',ic:'🟡',c:'#F59E0B',bg:'#FFFBEB'}, 3:{l:'Normal',ic:'🟢',c:'#10B981',bg:'#ECFDF5'}, 4:{l:'Dusuk',ic:'⚪',c:'#9CA3AF',bg:'#F9FAFB'} };
+  const p = PRI[task.pri] || PRI[3];
+
+  // Bitiş tarihi
+  let dueText = '';
+  if (task.due) {
+    const diff = Math.ceil((new Date(task.due) - new Date()) / 86400000);
+    if (diff < 0) dueText = '<span style="color:#EF4444;font-weight:700">GECİKTİ (' + Math.abs(diff) + ' gün)</span>';
+    else if (diff === 0) dueText = '<span style="color:#EF4444;font-weight:700">BUGÜN!</span>';
+    else if (diff === 1) dueText = '<span style="color:#F59E0B;font-weight:600">YARIN</span>';
+    else if (diff <= 3) dueText = '<span style="color:#F59E0B">' + diff + ' gun kaldi</span>';
+    else dueText = '<span style="color:var(--t2)">' + diff + ' gun kaldi (' + task.due + ')</span>';
+  }
+
+  // Atayan kişi
+  const users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
+  const assigner = users.find(u => u.id === task.createdBy) || {};
+
   const mo = document.createElement('div');
   mo.className='mo'; mo.id='mo-task-assigned'; mo.style.zIndex='9999';
-  mo.innerHTML = `<div class="moc" style="max-width:400px;padding:0;border-radius:16px;overflow:hidden;animation:_pusNotifSlide .3s ease-out">
-    <div style="background:linear-gradient(135deg,#6366F1,#8B5CF6);padding:24px;text-align:center;color:#fff">
+  mo.innerHTML = `<div class="moc" style="max-width:420px;padding:0;border-radius:16px;overflow:hidden;animation:_pusNotifSlide .3s ease-out">
+    <div style="background:linear-gradient(135deg,${p.c}dd,${p.c}99);padding:24px;text-align:center;color:#fff">
       <div style="font-size:36px;margin-bottom:8px">📋</div>
       <div style="font-size:18px;font-weight:700">Yeni Gorev Atandi!</div>
       <div style="font-size:13px;opacity:.85;margin-top:4px">Sana yeni bir gorev atandi, basarilar!</div>
     </div>
     <div style="padding:20px">
-      <div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:8px">${window.escapeHtml?.(task.title)||task.title}</div>
-      ${task.due ? '<div style="font-size:12px;color:var(--t3);margin-bottom:4px">Bitis: '+task.due+'</div>' : ''}
-      ${task.department ? '<div style="font-size:12px;color:var(--t3)">Departman: '+task.department+'</div>' : ''}
+      <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:12px;line-height:1.3">${esc(task.title)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;background:${p.bg};color:${p.c};border:1px solid ${p.c}30">${p.ic} ${p.l}</span>
+        ${task.department ? '<span style="font-size:11px;padding:4px 10px;border-radius:6px;background:var(--s2);color:var(--t2)">' + esc(task.department) + '</span>' : ''}
+      </div>
+      ${dueText ? '<div style="font-size:13px;margin-bottom:8px">📅 ' + dueText + '</div>' : ''}
+      ${assigner.name ? '<div style="font-size:12px;color:var(--t3)">Atayan: <span style="font-weight:600;color:var(--t2)">' + esc(assigner.name) + '</span></div>' : ''}
     </div>
     <div style="padding:0 20px 20px;display:flex;gap:8px">
       <button onclick="document.getElementById('mo-task-assigned').remove()" class="btn btns" style="flex:1;padding:10px;font-size:13px">Tamam</button>
-      <button onclick="document.getElementById('mo-task-assigned').remove();window.nav?.('pusula');setTimeout(()=>window.Pusula?.openDetail?.(${task.id}),300)" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
+      <button onclick="document.getElementById('mo-task-assigned').remove();window.nav?.('pusula');setTimeout(function(){window.openPusDetail?.(${task.id})||window.Pusula?.openDetail?.(${task.id})},200)" class="btn btnp" style="flex:1;padding:10px;font-size:13px">Gorevi Gor</button>
     </div>
   </div>`;
   document.body.appendChild(mo);

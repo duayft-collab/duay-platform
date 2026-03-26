@@ -741,8 +741,8 @@ if (typeof module !== 'undefined' && module.exports) {
   window.openResmiModal     = openResmiModal;
   window.saveResmiEvrak     = saveResmiEvrak;
   window.delResmiEvrak      = delResmiEvrak;
-  window.openEtkinlikModal  = openEtkinlikModal;
-  window.saveEtkinlik       = saveEtkinlik;
+  window.openEtkinlikModal  = window.openEtkinlikModal  || function() { console.warn('[panel_stubs] openEtkinlikModal henüz yüklenmedi'); };
+  window.saveEtkinlik       = window.saveEtkinlik       || function() { console.warn('[panel_stubs] saveEtkinlik henüz yüklenmedi'); };
   window.delEtkinlikItem    = delEtkinlikItem;
   window.emptyTrash         = emptyTrash;
 }
