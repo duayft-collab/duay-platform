@@ -374,6 +374,8 @@ function _injectPirimPanel() {
     <div style="font-size:10px;color:var(--t3)" id="prm-sub">Yükleniyor...</div>
   </div>
   <div style="display:flex;gap:6px;align-items:center">
+    <button class="btn btns" onclick="Pirim.openSimulator()" style="font-size:11px">🧮 Simülatör</button>
+    <button class="btn btns" onclick="Pirim.openGlossary()" style="font-size:11px">📖 Sözlük</button>
     <button class="btn btns" onclick="Pirim.showPdf()" style="font-size:11px">📄 Yönetmelik</button>
     <button class="btn btns" onclick="Pirim.exportXlsx()" style="font-size:11px">⬇ Excel</button>
     <button class="btn btns" onclick="Pirim.openParams()" style="font-size:11px">⚙️</button>
@@ -1380,6 +1382,23 @@ function showPirimPdf() {
     footer.innerHTML = `<button class="btn" onclick="window.closeMo?.('mo-pirim-pdf')">Kapat</button>`;
   }
 
+  // Ek dokümanlar listesi
+  const extraDocs = _loadPirimDocs();
+  const docsHtml = extraDocs.length ? `
+    <div style="padding:10px 20px;border-top:1px solid var(--b)">
+      <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">EK DOKÜMANLAR (${extraDocs.length})</div>
+      ${extraDocs.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--b)">
+        <span style="font-size:14px">${d.name.endsWith('.pdf')?'📄':d.name.match(/\.(png|jpg|jpeg)$/i)?'🖼':'📎'}</span>
+        <a href="${d.data}" download="${escapeHtml(d.name)}" style="flex:1;font-size:12px;color:var(--ac);text-decoration:none">${escapeHtml(d.name)}</a>
+        <span style="font-size:10px;color:var(--t3)">${d.uploadedAt?.slice(0,10)||''}</span>
+        ${window.isAdmin?.() ? `<button onclick="deletePirimDoc(${d.id})" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3)">🗑</button>` : ''}
+      </div>`).join('')}
+      ${window.isAdmin?.() ? `<button class="btn btns" onclick="uploadPirimDoc()" style="font-size:11px;margin-top:6px">+ Doküman Ekle</button>` : ''}
+    </div>` : (window.isAdmin?.() ? `
+    <div style="padding:10px 20px;border-top:1px solid var(--b)">
+      <button class="btn btns" onclick="uploadPirimDoc()" style="font-size:11px">+ Ek Doküman Yükle (PDF/görsel)</button>
+    </div>` : '');
+
   if (!stored) {
     viewer.innerHTML = `
       <div style="text-align:center;padding:40px;color:var(--t2)">
@@ -1388,10 +1407,10 @@ function showPirimPdf() {
         <div style="font-size:13px">${window.isAdmin()
           ? '📎 "PDF Yükle" butonunu kullanın. <br><small style="color:var(--t3)">Maks. 3 MB · Yalnızca .pdf</small>'
           : 'Yöneticinizden yönetmeliği sisteme yüklemesini isteyin.'}</div>
-      </div>`;
+      </div>` + docsHtml;
   } else {
     viewer.innerHTML = `
-      <iframe src="${stored}" style="width:100%;height:520px;border:none;border-radius:8px" title="Prim Yönetmeliği"></iframe>`;
+      <iframe src="${stored}" style="width:100%;height:520px;border:none;border-radius:8px" title="Prim Yönetmeliği"></iframe>` + docsHtml;
   }
 
   window.openMo?.('mo-pirim-pdf');
@@ -2401,6 +2420,181 @@ document.addEventListener('click', function(e) {
 })();
 
 // ════════════════════════════════════════════════════════════════
+// PRİM SİMÜLATÖRÜ
+// ════════════════════════════════════════════════════════════════
+
+function openPirimSimulator() {
+  const old = document.getElementById('mo-pirim-sim');
+  if (old) old.remove();
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-pirim-sim'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:700;color:var(--t)">🧮 Prim Simülatörü</span>
+      <button onclick="document.getElementById('mo-pirim-sim').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="fg"><div class="fl">ALIM TUTARI (TL)</div>
+          <input type="number" class="fi" id="sim-amount" placeholder="500000" min="0" oninput="_simCalc()" style="font-size:15px;font-weight:600">
+        </div>
+        <div class="fg"><div class="fl">PRİM TİPİ</div>
+          <select class="fi" id="sim-type" onchange="_simCalc()">
+            <option value="NA">🐣 Yeni Avcı (İlk Alım)</option>
+            <option value="SC">🌱 Sadık Çiftçi (Tekrar)</option>
+            <option value="YT">🔄 Yeni Tedarikçi</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="sim-capraz" onchange="_simCalc()" style="accent-color:var(--ac)">Çapraz Satış +%25</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="sim-yeni-ted" onchange="_simCalc()" style="accent-color:var(--ac)">Yeni Tedarikçi +%15</label>
+        <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="sim-yeni-urun" onchange="_simCalc()" style="accent-color:var(--ac)">Yeni Ürün +%25</label>
+      </div>
+      <div id="sim-result" style="background:var(--s2);border-radius:10px;padding:16px;min-height:60px">
+        <div style="font-size:12px;color:var(--t3)">Tutar girin — prim anında hesaplanacak</div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Kademe Tablosu</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="sim-tier-table"></div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => { mo.classList.add('open'); _simRenderTiers(); }, 10);
+}
+
+function _simCalc() {
+  const amount = parseFloat(document.getElementById('sim-amount')?.value || '0');
+  const type   = document.getElementById('sim-type')?.value || 'NA';
+  const res    = document.getElementById('sim-result');
+  if (!res || !amount) { if (res) res.innerHTML = '<div style="font-size:12px;color:var(--t3)">Tutar girin</div>'; return; }
+  const opts = {
+    caprazSatis:    document.getElementById('sim-capraz')?.checked,
+    yeniTedarikci:  document.getElementById('sim-yeni-ted')?.checked,
+    yeniUrun:       document.getElementById('sim-yeni-urun')?.checked,
+  };
+  const r = calcSatinalimaPrim(amount, type, opts);
+  res.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--t2)">Kademe: <b>${r.tier}</b></span>
+      <span style="font-size:12px;color:var(--t2)">Oran: <b>%${(r.appliedRate * 100).toFixed(2)}</b></span>
+    </div>
+    <div style="font-size:28px;font-weight:800;color:var(--ac)">${_fmtTL(r.gross)}</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:4px">${_fmtTL(amount)} alım × %${(r.appliedRate * 100).toFixed(2)}</div>
+    ${r.breakdown.length ? '<div style="margin-top:8px;border-top:1px solid var(--b);padding-top:8px">' + r.breakdown.map(b =>
+      `<div style="font-size:11px;color:${b.positive ? 'var(--grt)' : 'var(--rdt)'};margin-bottom:2px">${b.positive ? '▲' : '▼'} ${b.label}</div>`
+    ).join('') + '</div>' : ''}`;
+  _simRenderTiers();
+}
+
+function _simRenderTiers() {
+  const type = document.getElementById('sim-type')?.value || 'NA';
+  const cont = document.getElementById('sim-tier-table');
+  if (!cont) return;
+  const tiers = type === 'SC' ? TIER_SADIK_CIFTCI : TIER_YENI_AVCI;
+  const amount = parseFloat(document.getElementById('sim-amount')?.value || '0');
+  cont.innerHTML = `
+    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">
+      <div style="padding:6px 10px;background:var(--s2);font-size:10px;font-weight:700;color:var(--t3)">🐣 Yeni Avcı</div>
+      ${TIER_YENI_AVCI.map(t => `<div style="padding:4px 10px;font-size:11px;border-top:1px solid var(--b);display:flex;justify-content:space-between;${type==='NA'&&amount>=t.min&&amount<t.max?'background:var(--al);font-weight:600':''}"><span>${t.label}</span><span>%${(t.rate*100).toFixed(2)}</span></div>`).join('')}
+    </div>
+    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">
+      <div style="padding:6px 10px;background:var(--s2);font-size:10px;font-weight:700;color:var(--t3)">🌱 Sadık Çiftçi</div>
+      ${TIER_SADIK_CIFTCI.map(t => `<div style="padding:4px 10px;font-size:11px;border-top:1px solid var(--b);display:flex;justify-content:space-between;${type==='SC'&&amount>=t.min&&amount<t.max?'background:var(--al);font-weight:600':''}"><span>${t.label}</span><span>%${(t.rate*100).toFixed(2)}</span></div>`).join('')}
+    </div>`;
+}
+window._simCalc = _simCalc;
+
+// ════════════════════════════════════════════════════════════════
+// TABİR SÖZLÜĞÜ
+// ════════════════════════════════════════════════════════════════
+
+function openPirimGlossary() {
+  const old = document.getElementById('mo-pirim-glossary');
+  if (old) old.remove();
+  const GLOSSARY = [
+    { term:'Yeni Avcı',     emoji:'🐣', desc:'İlk kez yapılan tedarik/alım. En yüksek prim oranı uygulanır.', rate:'%0.30 → %1.00', example:'500K ilk alım = 500.000 × %0.70 = 3.500 ₺' },
+    { term:'Sadık Çiftçi',  emoji:'🌱', desc:'Mevcut tedarikçi/üründen tekrar alım. Daha düşük oran.', rate:'%0.10 → %0.30', example:'500K tekrar alım = 500.000 × %0.25 = 1.250 ₺' },
+    { term:'Yeni Tedarikçi', emoji:'🔄', desc:'Tekrar alımda yeni ve daha iyi tedarikçi bulundu.', rate:'Yeni Avcı oranı + %15 bonus', example:'250K + yeni tedarikçi = 250.000 × %0.575 = 1.437 ₺' },
+    { term:'Çapraz Satış',  emoji:'➕', desc:'Tamamlayıcı ürün önerildi ve satışa dönüştü.', rate:'+%25 ekstra bonus', example:'Temel prim 2.000 ₺ + %25 = 2.500 ₺' },
+    { term:'Dedektif Bonusu',emoji:'🕵️', desc:'Tedarikçinin gizli zam, hile veya kalite tuzağı tespit edildi.', rate:'Serbest (yönetici belirler)', example:'Tespit edilen zarar: 50.000 ₺ → Bonus: 5.000 ₺' },
+    { term:'R&D Bonusu',    emoji:'🔬', desc:'Ürün geliştirme çalışması ile satış artışı sağlandı.', rate:'Serbest (proje bazlı)', example:'Yeni ambalaj → %15 satış artışı → 3.000 ₺ bonus' },
+    { term:'Erken Kalkan',  emoji:'🌅', desc:'Sipariş teslim süresini kısaltan proaktif çalışma.', rate:'Hız bonusu (opsiyonel)', example:'3 gün erken teslim → 1.000 ₺ bonus' },
+    { term:'Yönetici Müdahalesi', emoji:'⚠️', desc:'Müzakereye yönetici müdahale etti — ceza uygulanır.', rate:'Yönetici indirimi × 3 (ceza)', example:'%5 yönetici indirimi → prim × %15 ceza' },
+  ];
+  const mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-pirim-glossary'; mo.style.zIndex = '2100';
+  mo.innerHTML = `<div class="moc" style="max-width:560px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:700;color:var(--t)">📖 Prim Tabir Sözlüğü</span>
+      <button onclick="document.getElementById('mo-pirim-glossary').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+    </div>
+    <div style="padding:8px 20px;max-height:70vh;overflow-y:auto">
+      ${GLOSSARY.map(g => `<div style="border-bottom:1px solid var(--b);padding:12px 0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:20px">${g.emoji}</span>
+          <span style="font-size:14px;font-weight:700;color:var(--t)">${escapeHtml(g.term)}</span>
+          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--al);color:var(--ac)">${g.rate}</span>
+        </div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:4px">${escapeHtml(g.desc)}</div>
+        <div style="font-size:11px;color:var(--t3);background:var(--s2);padding:6px 10px;border-radius:6px;font-family:'DM Mono',monospace">Örnek: ${escapeHtml(g.example)}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  document.body.appendChild(mo);
+  mo.addEventListener('click', e => { if (e.target === mo) mo.remove(); });
+  setTimeout(() => mo.classList.add('open'), 10);
+}
+
+// ════════════════════════════════════════════════════════════════
+// YÖNETMELİK DOKÜMAN YÜKLEMESİ GELİŞTİRME
+// ════════════════════════════════════════════════════════════════
+
+const PIRIM_DOC_KEY = 'ak_pirim_docs';
+
+function _loadPirimDocs() {
+  try { return JSON.parse(localStorage.getItem(PIRIM_DOC_KEY) || '[]'); } catch { return []; }
+}
+function _storePirimDocs(d) {
+  try { localStorage.setItem(PIRIM_DOC_KEY, JSON.stringify(d)); } catch(e) {}
+}
+
+function uploadPirimDoc() {
+  if (!window.isAdmin?.()) { window.toast?.('Doküman yükleme admin yetkisi gerektirir', 'err'); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.pdf,.png,.jpg,.jpeg,.doc,.docx';
+  inp.onchange = () => {
+    const file = inp.files[0]; if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { window.toast?.('Dosya 5MB\'den büyük olamaz', 'err'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const docs = _loadPirimDocs();
+      docs.unshift({ id: generateNumericId(), name: file.name, data: ev.target.result, uploadedBy: window.CU?.()?.id, uploadedAt: window.nowTs?.() || new Date().toISOString() });
+      _storePirimDocs(docs);
+      window.toast?.(file.name + ' yüklendi ✓', 'ok');
+      showPirimPdf(); // modalı yenile
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+function deletePirimDoc(id) {
+  if (!window.isAdmin?.()) return;
+  window.confirmModal('Bu dokümanı silmek istediğinizden emin misiniz?', {
+    title: 'Doküman Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: () => {
+      _storePirimDocs(_loadPirimDocs().filter(d => d.id !== id));
+      window.toast?.('Silindi', 'ok');
+      showPirimPdf();
+    }
+  });
+}
+window.uploadPirimDoc = uploadPirimDoc;
+window.deletePirimDoc = deletePirimDoc;
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Pirim = {
@@ -2438,6 +2632,10 @@ const Pirim = {
   periodCompare:    openPirimPeriodCompare,
   calc:             openPirimCalc,
   reminder:         sendPirimReminder,
+  openSimulator:    openPirimSimulator,
+  openGlossary:     openPirimGlossary,
+  uploadDoc:        uploadPirimDoc,
+  deleteDoc:        deletePirimDoc,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
