@@ -363,6 +363,10 @@ function _doLogin() {
     <span>CRM / Müşteriler</span>
     <span class="nbdg" id="nb-crm-b" style="background:var(--gr);display:none">0</span>
   </button>
+      <button class="nb" onclick="nav('satis-teklif',this)">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Satış Teklifi</span>
+  </button>
       <button class="nb" onclick="nav('gorusme',this)">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v6a1 1 0 01-1 1H9l-3 2v-2H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/></svg>
     <span>Teklif Takibi</span>
@@ -1128,6 +1132,8 @@ function _doLogin() {
       <div id="panel-crm"       class="panel"></div>
       <div id="panel-satinalma" class="panel"></div>
       <div id="panel-stok"      class="panel"></div>
+      <div id="panel-urun-db"   class="panel"></div>
+      <div id="panel-satis-teklif" class="panel"></div>
       <div id="panel-odemeler" class="panel">
         <div id="odm-kur-ticker" style="padding:0;border-bottom:1px solid var(--b);background:var(--s2);overflow:hidden;white-space:nowrap;font-size:11px;position:relative;height:28px">
           <style>
@@ -1283,6 +1289,8 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/ik.js"></script>
 <script src="src/modules/crm.js"></script>
 <script src="src/modules/stok.js"></script>
+<script src="src/modules/urun_db.js"></script>
+<script src="src/modules/satis_teklif.js"></script>
 <script src="src/modules/satin_alma.js"></script>
 <script src="src/modules/finans.js"></script>
 <script src="src/modules/helpers.js"></script>
