@@ -463,6 +463,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'numune',    label:'Numune Arşivi'        },
     { id:'etkinlik',  label:'Etkinlik / Fuar'      },
     { id:'links',     label:'Hızlı Linkler'        },
+    { id:'satinalma', label:'Satın Alma'           },
+    { id:'cari',      label:'Cari Yönetimi'        },
   ];
 
   const existing = new Set(window.ALL_MODULES.map(m => m.id));
@@ -484,7 +486,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
   // Manager rolüne uygun olanları ekle
   const managerExtras = ['docs','formlar','gorusme','hesap','finans',
                          'arsiv','tebligat','evrak','resmi','temizlik',
-                         'rehber','numune','etkinlik','links'];
+                         'rehber','numune','etkinlik','links',
+                         'satinalma','cari'];
   if (window.ROLE_DEFAULT_MODULES?.manager) {
     managerExtras.forEach(id => {
       if (!window.ROLE_DEFAULT_MODULES.manager.includes(id)) {
@@ -492,6 +495,18 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
       }
     });
   }
+
+  // Lead ve Staff rollerine satinalma + hesap ekle
+  const leadStaffExtras = ['satinalma','hesap'];
+  ['lead','staff'].forEach(role => {
+    if (window.ROLE_DEFAULT_MODULES?.[role]) {
+      leadStaffExtras.forEach(id => {
+        if (!window.ROLE_DEFAULT_MODULES[role].includes(id)) {
+          window.ROLE_DEFAULT_MODULES[role].push(id);
+        }
+      });
+    }
+  });
 
   console.info('[app_patch] ALL_MODULES genişletildi:', window.ALL_MODULES.length, 'modül');
 })();
