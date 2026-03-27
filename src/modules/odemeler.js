@@ -84,25 +84,38 @@ async function _odmFetchTCMB() {
   const today = new Date().toISOString().slice(0, 10);
   if (_odmRatesDate === today && _odmRatesCache) return;
   try {
-    const proxy = 'https://api.exchangerate-api.com/v4/latest/TRY';
-    const res = await fetch(proxy);
-    if (!res.ok) throw new Error('API hatası');
-    const data = await res.json();
-    // ExchangeRate API TRY bazlı verir (1 TRY = X döviz), biz tersi istiyoruz
+    // TCMB XML kur
+    const res = await fetch('https://www.tcmb.gov.tr/kurlar/today.xml');
+    const xml = await res.text();
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
     _odmRatesCache = {};
-    Object.keys(ODM_CURRENCY).forEach(k => {
-      if (k === 'TRY' || k === 'XAU' || k === 'XAG') return;
-      if (data.rates[k]) _odmRatesCache[k] = 1 / data.rates[k];
+    doc.querySelectorAll('Currency').forEach(function(c) {
+      var code = c.getAttribute('CurrencyCode');
+      var buying = c.querySelector('ForexBuying');
+      if (buying && buying.textContent) {
+        var rate = parseFloat(buying.textContent.replace(',', '.'));
+        if (rate > 0 && ODM_CURRENCY[code]) _odmRatesCache[code] = rate;
+      }
     });
     _odmRatesDate = today;
     localStorage.setItem('odm_rates_cache', JSON.stringify({ d: today, r: _odmRatesCache }));
-    console.log('[Ödemeler] Kur güncellendi:', today);
+    console.log('[Ödemeler] TCMB kur güncellendi:', today);
   } catch (e) {
-    // Fallback: localStorage cache
+    // Fallback: exchangerate-api
     try {
-      const c = JSON.parse(localStorage.getItem('odm_rates_cache') || '{}');
-      if (c.r) { _odmRatesCache = c.r; _odmRatesDate = c.d; }
-    } catch {}
+      const res2 = await fetch('https://api.exchangerate-api.com/v4/latest/TRY');
+      const data = await res2.json();
+      _odmRatesCache = {};
+      Object.keys(ODM_CURRENCY).forEach(function(k) {
+        if (k === 'TRY' || k === 'XAU' || k === 'XAG') return;
+        if (data.rates[k]) _odmRatesCache[k] = Math.round(1 / data.rates[k] * 100) / 100;
+      });
+      _odmRatesDate = today;
+      localStorage.setItem('odm_rates_cache', JSON.stringify({ d: today, r: _odmRatesCache }));
+    } catch (e2) {
+      // LocalStorage cache
+      try { var c = JSON.parse(localStorage.getItem('odm_rates_cache') || '{}'); if (c.r) { _odmRatesCache = c.r; _odmRatesDate = c.d; } } catch(e3) {}
+    }
   }
 }
 
@@ -771,6 +784,7 @@ function renderOdemeler() {
           + '<button onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'flex\':\'none\'" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px">···</button>'
           + '<div style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--b);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:50;flex-direction:column;min-width:140px;overflow:hidden">'
             + '<button onclick="showOdmApprovalTimeline('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📋 Onay Gecmisi</button>'
+            + '<button onclick="window._odmToggleQuickView?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">👁 Hızlı Bakış</button>'
             + '<button onclick="window._odmInlineEditRow?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">✏️ Inline Düzenle</button>'
             + '<button onclick="openOdmModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📝 Detay Düzenle</button>'
             + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--amt);font-family:inherit;border-bottom:1px solid var(--b)" title="Fatura belgesi yuklenmemis">📎 Dekont Yukle (eksik)</button>' : '')
@@ -4553,6 +4567,67 @@ window._odmBulkApprove = function() {
     window.toast?.('✅ ' + count + ' kayıt onaylandı', 'ok');
     window.logActivity?.('view', 'Toplu onay: ' + count + ' ödeme');
   }
+};
+
+// ════════════════════════════════════════════════════════════════
+// HIZLI BAKIŞ (Quick View Accordion) — Nakit Akışı
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Ödeme satırının altında accordion hızlı bakış aç/kapat.
+ */
+window._odmToggleQuickView = function(id) {
+  var existing = document.getElementById('odm-qv-' + id);
+  if (existing) { existing.remove(); return; }
+  document.querySelectorAll('[id^="odm-qv-"]').forEach(function(el) { el.remove(); });
+
+  var d = window.loadOdm ? loadOdm() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var cat = ODM_CATS[o.cat] || ODM_CATS.diger;
+  var curSym = o.currency === 'USD' ? '$' : o.currency === 'EUR' ? '€' : '₺';
+  var rates = _odmGetRates();
+  var kurRate = o.kurRate || rates[o.currency] || 1;
+  var tlAmt = o.currency && o.currency !== 'TRY' ? Math.round((parseFloat(o.amount) || 0) * kurRate) : null;
+
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+  var assigned = users.find(function(u) { return u.id === o.assignedTo; });
+
+  var qv = document.createElement('div');
+  qv.id = 'odm-qv-' + id;
+  qv.style.cssText = 'padding:12px 20px;background:var(--s2);border-bottom:2px solid var(--ac);animation:pus-row-in .15s ease';
+
+  qv.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:11px">'
+    // Sol: Tutar + TL
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Finansal</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Tutar:</span> <b style="font-size:14px;color:var(--t)">' + curSym + Number(o.amount || 0).toLocaleString('tr-TR') + '</b></div>'
+      + (tlAmt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">TL Karşılığı:</span> <b>₺' + tlAmt.toLocaleString('tr-TR') + '</b> <span style="font-size:9px;color:var(--t3)">(kur: ' + kurRate + ')</span></div>' : '')
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Kategori:</span> ' + cat.ic + ' ' + cat.l + '</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sıklık:</span> ' + (ODM_FREQ[o.freq] || o.freq || '—') + '</div>'
+    + '</div>'
+    // Orta: Cari + Vade
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Detay</div>'
+      + (assigned ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sorumlu:</span> ' + esc(assigned.name) + '</div>' : '')
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Vade:</span> ' + (o.due || '—') + '</div>'
+      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari/Not:</span> ' + esc(o.note) + '</div>' : '')
+      + (o.docNo ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Doküman No:</span> ' + esc(o.docNo) + '</div>' : '')
+    + '</div>'
+    // Sağ: Onay
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Onay Durumu</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Durum:</span> ' + (o.approvalStatus || 'bekliyor') + '</div>'
+      + (o.approvedAt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Onay:</span> ' + o.approvedAt + '</div>' : '')
+      + (o.paid ? '<div style="margin-bottom:4px;color:#16A34A">✅ Ödendi' + (o.paidTs ? ' — ' + o.paidTs : '') + '</div>' : '')
+      + (o.receipt ? '<div style="margin-bottom:4px">📎 Dekont mevcut</div>' : '')
+    + '</div>'
+  + '</div>';
+
+  var row = document.querySelector('[data-oid="' + id + '"]');
+  if (row && row.nextSibling) row.parentNode.insertBefore(qv, row.nextSibling);
+  else if (row) row.parentNode.appendChild(qv);
 };
 
 // Exports

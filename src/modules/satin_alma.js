@@ -261,7 +261,7 @@ function renderSatinAlma() {
         + '<input type="checkbox" class="sa-bulk-chk" data-said="' + s.id + '" style="display:' + (_isAdmSA() && s.status === 'pending' ? 'block' : 'none') + ';width:14px;height:14px;accent-color:var(--ac)">'
         + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._approveSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#16A34A">✓</button>' : '')
         + (_isAdmSA() && (s.status === 'pending' || s.status === 'revize_gerekli') ? '<button onclick="window._rejectSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">✗</button>' : '')
-        + '<button onclick="window._openSADetail?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">👁</button>'
+        + '<button onclick="window._saToggleQuickView?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Hızlı Bakış">👁</button>'
         + '<button onclick="window._openSAModal?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Düzenle">✏️</button>'
         + '<button onclick="window._deleteSA?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button>'
       + '</div>'
@@ -273,6 +273,69 @@ function renderSatinAlma() {
   cont.innerHTML = html;
   if (inlineEl) cont.appendChild(inlineEl);
 }
+
+// ════════════════════════════════════════════════════════════════
+// HIZLI BAKIŞ (Quick View Accordion)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Satırın altında accordion tarzı hızlı bakış aç/kapat.
+ */
+window._saToggleQuickView = function(id) {
+  var existing = document.getElementById('sa-qv-' + id);
+  if (existing) { existing.remove(); return; }
+
+  // Diğer açık quick view'ları kapat
+  document.querySelectorAll('[id^="sa-qv-"]').forEach(function(el) { el.remove(); });
+
+  var d = _loadSA();
+  var s = d.find(function(x) { return x.id === id; });
+  if (!s) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var sym = SA_CURRENCIES[s.currency] || '$';
+  var st = SA_STATUS[s.status] || SA_STATUS.draft;
+  var ftypes = _saGetFaturaTypes();
+  var ft = ftypes.find(function(t) { return t.value === s.faturaType; });
+
+  var qv = document.createElement('div');
+  qv.id = 'sa-qv-' + id;
+  qv.style.cssText = 'padding:14px 20px;background:var(--s2);border-bottom:2px solid var(--ac);animation:pus-row-in .15s ease';
+
+  qv.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:11px">'
+    // Sol: Satıcı + Fatura
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Satıcı & Fatura</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Satıcı:</span> <b>' + esc(s.supplier || s.piNo || '—') + '</b></div>'
+      + (s.vendor?.name ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Firma:</span> ' + esc(s.vendor.name) + (s.vendor.country ? ' (' + esc(s.vendor.country) + ')' : '') + '</div>' : '')
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Fatura:</span> ' + (ft ? ft.label : '—') + '</div>'
+      + (s.lockedRate ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Kur:</span> 🔒 ' + s.lockedRate + ' ₺/' + s.currency + ' <span style="font-size:9px;color:var(--t3)">(' + (_saKurSource === 'tcmb' ? 'TCMB' : 'API') + ')</span></div>' : '')
+      + (s.notes ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Not:</span> ' + esc(s.notes) + '</div>' : '')
+    + '</div>'
+    // Orta: Ödeme Dilimleri
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Ödeme Planı</div>'
+      + (s.installments && s.installments.length ? s.installments.map(function(inst) {
+          return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--b)">'
+            + '<span>' + esc(inst.name) + '</span><span style="font-weight:600">' + sym + Number(inst.amount || 0).toLocaleString('tr-TR') + '</span>'
+          + '</div>';
+        }).join('') : '<div style="color:var(--t3)">Avans: ' + sym + Math.round(s.advanceAmount || 0).toLocaleString('tr-TR') + '<br>Kalan: ' + sym + Math.round(s.remainingAmount || 0).toLocaleString('tr-TR') + '</div>')
+    + '</div>'
+    // Sağ: Belgeler + Onay
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Belgeler & Onay</div>'
+      + '<div style="margin-bottom:4px">' + (s.piFileName ? '📎 PI: ' + esc(s.piFileName) : '⚠️ PI dosyası yok') + '</div>'
+      + '<div style="margin-bottom:4px">' + (s.sozFileName ? '📎 Sözleşme: ' + esc(s.sozFileName) : '⚠️ Sözleşme yok') + '</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Durum:</span> <span style="color:' + st.c + ';font-weight:600">' + st.l + '</span></div>'
+      + (s.approvedAt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Onay:</span> ' + s.approvedAt + '</div>' : '')
+      + (s.rejectReason ? '<div style="margin-bottom:4px;color:#DC2626"><span style="color:var(--t3)">Red:</span> ' + esc(s.rejectReason) + '</div>' : '')
+    + '</div>'
+  + '</div>';
+
+  // Satırın hemen altına ekle
+  var row = document.querySelector('[data-said="' + id + '"]');
+  if (row && row.nextSibling) row.parentNode.insertBefore(qv, row.nextSibling);
+  else if (row) row.parentNode.appendChild(qv);
+};
 
 // ════════════════════════════════════════════════════════════════
 // INLINE TABLO GİRİŞİ
@@ -615,20 +678,54 @@ window._saInlineFileSave = function(id) {
 /** @type {string} Mevcut form layout: 'vertical' | 'horizontal' */
 var _saFormLayout = 'vertical';
 
-/** @type {{ USD: number, EUR: number }} Canlı kurlar */
-var _saLiveRates = { USD: 38.50, EUR: 41.20 };
+/** @type {{ USD: number, EUR: number, GBP: number }} Canlı kurlar */
+var _saLiveRates = { USD: 38.50, EUR: 41.20, GBP: 48.90 };
+var _saKurSource = 'fallback'; // 'tcmb' | 'fallback'
 
-// Kur çek (sayfa açılışında)
-(function _saFetchRates() {
-  fetch('https://api.exchangerate-api.com/v4/latest/USD')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d && d.rates && d.rates.TRY) {
-        _saLiveRates.USD = Math.round(d.rates.TRY * 100) / 100;
-        _saLiveRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100;
-      }
-    }).catch(function() {});
-})();
+/**
+ * TCMB XML kurlarını çeker. CORS sorunu varsa exchangerate-api fallback.
+ */
+function _fetchTCMBRates() {
+  fetch('https://www.tcmb.gov.tr/kurlar/today.xml')
+    .then(function(r) { return r.text(); })
+    .then(function(xml) {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(xml, 'text/xml');
+      var currencies = doc.querySelectorAll('Currency');
+      currencies.forEach(function(c) {
+        var code = c.getAttribute('CurrencyCode');
+        var buying = c.querySelector('ForexBuying');
+        if (buying && buying.textContent) {
+          var rate = parseFloat(buying.textContent.replace(',', '.'));
+          if (rate > 0) {
+            if (code === 'USD') _saLiveRates.USD = rate;
+            if (code === 'EUR') _saLiveRates.EUR = rate;
+            if (code === 'GBP') _saLiveRates.GBP = rate;
+          }
+        }
+      });
+      _saKurSource = 'tcmb';
+      localStorage.setItem('ak_tcmb_cache', JSON.stringify({ ts: Date.now(), rates: _saLiveRates }));
+    })
+    .catch(function() {
+      // CORS fallback: exchangerate-api
+      fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d?.rates?.TRY) {
+            _saLiveRates.USD = Math.round(d.rates.TRY * 100) / 100;
+            _saLiveRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100;
+            _saLiveRates.GBP = Math.round(d.rates.TRY / (d.rates.GBP || 1) * 100) / 100;
+            _saKurSource = 'fallback';
+          }
+        }).catch(function() {
+          // LocalStorage cache
+          try { var c = JSON.parse(localStorage.getItem('ak_tcmb_cache') || '{}'); if (c.rates) Object.assign(_saLiveRates, c.rates); } catch(e) {}
+        });
+    });
+}
+_fetchTCMBRates();
+window._fetchTCMBRates = _fetchTCMBRates;
 
 function _openSAModal(id) {
   var old = document.getElementById('mo-satinalma'); if (old) old.remove();
