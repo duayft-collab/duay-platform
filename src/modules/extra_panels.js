@@ -485,7 +485,24 @@ function _injectEtkinlikPanel() {
         <button class="btn btnp" onclick="openEtkinlikModal?.()">+ Etkinlik Ekle</button>
       </div>
     </div>
-    <div id="etkinlik-list"></div>`;
+    <div style="display:flex;min-height:500px">
+      <div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">
+        ${[['takvim','📅 Takvim'],['yeni','➕ Yeni Etkinlik'],['butce','📊 Bütçe'],['ekip','👥 Ekip'],['checklist','✅ Checklist'],['roi','📈 ROI'],['arsiv','🗂️ Arşiv']].map(function(c){return '<button onclick="window._etkNavClick?.(\''+c[0]+'\')" class="etk-nav-btn" data-nav="'+c[0]+'" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px">'+c[1]+'</button>';}).join('')}
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <div id="etkinlik-list"></div>
+      </div>
+    </div>`;
+
+  window._etkNavClick = function(cat) {
+    if (cat === 'yeni') { window.openEtkinlikModal?.(); return; }
+    document.querySelectorAll('.etk-nav-btn').forEach(function(b) {
+      var active = b.dataset.nav === cat;
+      b.style.background = active ? '#EBF2FF' : 'transparent';
+      b.style.color = active ? '#007AFF' : '#333';
+      b.style.fontWeight = active ? '600' : '400';
+    });
+  };
 }
 
 // ════════════════════════════════════════════════════════════════

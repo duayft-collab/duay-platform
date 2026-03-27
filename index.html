@@ -187,6 +187,7 @@ function _doLogin() {
         <button onclick="nav('links',this)" title="Hızlı Linkler" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:16px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">🔗</button>
         <button onclick="nav('rehber',this)" title="Acil Rehber" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:16px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">🚨</button>
         <button onclick="nav('announce',this)" title="Duyurular" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:16px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">📢</button>
+        <button onclick="nav('etkinlik',this)" title="Etkinlik / Fuar" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:16px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">🎪</button>
         <button onclick="nav('ceo',this)" title="CEO Paneli" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:16px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">👑</button>
         <div style="width:1px;height:20px;background:#e0e0e0;margin:0 6px;"></div>
       </div>
@@ -372,11 +373,6 @@ function _doLogin() {
     <span>Etkinlik / Fuar</span>
     <span class="nbdg" id="nb-etk-b" style="background:var(--ac);display:none">0</span>
   </button>
-      <button class="nb" onclick="nav('numune',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6 1h4v6l2 4H4L6 7V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span>Numune Arşivi</span>
-    <span class="nbdg" id="nb-nm-b" style="background:var(--am);display:none">0</span>
-  </button>
 
   <!-- ═══ SATINALMA ═══ -->
   <div class="nsec-header nsec" id="nsec-satinalma" onclick="toggleNsec('nsec-satinalma')">TEDARİK <span class="nsec-arrow">▾</span></div>
@@ -392,7 +388,7 @@ function _doLogin() {
       </button>
       <button class="nb" onclick="nav('stok',this)">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span>Stok / Ürün</span>
+    <span>Ürünler</span>
   </button>
 
   <!-- ═══ LOJİSTİK ═══ -->
@@ -420,7 +416,7 @@ function _doLogin() {
   </button>
       <button class="nb" onclick="nav('pirim',this)">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 2l1.5 4h4l-3.5 2.5 1.5 4L8 10l-3.5 2.5 1.5-4L2.5 6h4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-    <span>Prim Sistemi</span>
+    <span>Prim</span>
     <span class="nbdg" id="nb-pirim-b" style="background:var(--ac);display:none">0</span>
   </button>
       <button class="nb" onclick="App.nav('hesap',this)">

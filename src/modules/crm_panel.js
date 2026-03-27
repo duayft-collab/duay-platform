@@ -113,7 +113,7 @@ function _injectStokPanel() {
 
   panel.innerHTML = `
     <div class="ph">
-  <div><div class="pht">📦 Ürün & Zimmet Yönetimi</div><div class="phs">Stok girişi, kişisel zimmet ve demirbaş takibi.</div></div>
+  <div><div class="pht">📦 Ürünler</div><div class="phs">Stok, zimmet, demirbaş ve numune takibi</div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn btns" onclick="exportStokXlsx()">⬇ Excel</button>
     <button class="btn btns" onclick="importStokXlsx()">↑ İçe Aktar</button>
@@ -123,6 +123,13 @@ function _injectStokPanel() {
     <button class="btn btnp" onclick="openStokModalTur('zimmet')">🔑 Zimmet Ver</button>
   </div>
 </div>
+<!-- SOL PANEL WRAPPER -->
+<div style="display:flex;min-height:600px">
+<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">
+${[['urunler','📦 Ürün Listesi'],['stok_takip','🔍 Stok Takip'],['raporlar','📊 Raporlar'],['kategoriler','🏷️ Kategoriler'],['numune','📋 Numune Arşivi']].map(function(c){return '<button onclick="window._stokNavClick?.(\''+c[0]+'\')" class="stk-nav-btn" data-nav="'+c[0]+'" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px">'+c[1]+'</button>';}).join('')}
+</div>
+<div style="flex:1;overflow-y:auto">
+
 <!-- Hızlı tür seçim kartları -->
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">
   <div style="background:var(--blb);border-radius:10px;padding:14px 16px;cursor:pointer;border:2px solid transparent;transition:all .15s" onclick="openStokModalTur('stok')">
@@ -190,7 +197,19 @@ function _injectStokPanel() {
   </div>
   <div id="demirbaslar-list" style="padding:0 0 8px"></div>
 </div>
+</div></div>
   `;
+
+window._stokNavClick = function(cat) {
+  window._stokActiveCat = cat;
+  if (cat === 'numune') { window.nav?.('numune'); return; }
+  document.querySelectorAll('.stk-nav-btn').forEach(function(b) {
+    var active = b.dataset.nav === cat;
+    b.style.background = active ? '#EBF2FF' : 'transparent';
+    b.style.color = active ? '#007AFF' : '#333';
+    b.style.fontWeight = active ? '600' : '400';
+  });
+};
 }
 
 // ════════════════════════════════════════════════════════════════
