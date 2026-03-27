@@ -915,7 +915,7 @@ function injectAllModals() {
      Elementler: perm-uid, perm-uname, perm-modules-cont
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-perm" role="dialog" aria-modal="true">
-  <div class="moc" style="min-width:min(90vw,1200px);max-width:1200px;height:85vh;padding:0;border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+  <div class="moc" style="min-width:min(90vw,1200px);max-width:1200px;height:85vh;padding:0;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;background:#FFFFFF">
     <div style="padding:14px 24px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--sf)">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--t)">🔑 Modül İzinleri</div>
