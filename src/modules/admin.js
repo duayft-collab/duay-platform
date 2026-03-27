@@ -551,17 +551,39 @@ var _PERM_CATEGORIES = {
 };
 
 var _PERM_LEVELS = [
-  { value: 'none',   label: '🚫 Erişim Yok',   desc: 'Bu modülü göremez' },
-  { value: 'view',   label: '👁 Görebilir',     desc: 'Sadece okuyabilir' },
-  { value: 'edit',   label: '✏️ Düzenleyebilir', desc: 'Ekleyip güncelleyebilir' },
-  { value: 'manage', label: '⚙️ Yönetir',       desc: 'Tüm işlemler, silme dahil' },
+  { value: 'none',   label: '⛔', full: '⛔ Yok',     desc: 'Bu modülü göremez',             color: '#6B7280', bg: 'rgba(107,114,128,.08)' },
+  { value: 'view',   label: '👁', full: '👁 Görür',    desc: 'Sadece okuyabilir',             color: '#3B82F6', bg: 'rgba(59,130,246,.08)' },
+  { value: 'edit',   label: '✏️', full: '✏️ Yönetir',  desc: 'Ekleyip güncelleyebilir',       color: '#D97706', bg: 'rgba(245,158,11,.08)' },
+  { value: 'manage', label: '👑', full: '👑 Tam',      desc: 'Tüm işlemler, silme dahil',     color: '#16A34A', bg: 'rgba(34,197,94,.08)' },
 ];
 
 var _PERM_PRESETS = {
-  viewOnly: { label: '👁 Sadece Görüntüle', level: 'view' },
-  standard: { label: '✏️ Standart Kullanıcı', level: 'edit' },
-  full:     { label: '⚙️ Tam Yetki', level: 'manage' },
+  intern:   { label: '🎓 Stajyer',   level: 'view',   desc: 'Sadece görüntüleme' },
+  staff:    { label: '👤 Personel',   level: 'view',   desc: 'Temel erişim' },
+  expert:   { label: '⭐ Uzman',      level: 'edit',   desc: 'Düzenleme yetkisi' },
+  manager:  { label: '👔 Yönetici',   level: 'manage', desc: 'Tam yetki' },
 };
+
+var MOD_ICONS = {
+  dashboard:'📊', announce:'📢', pusula:'🎯', takvim:'📅', notes:'📝', links:'🔗', rehber:'🆘',
+  odemeler:'💳', pirim:'⭐', hedefler:'🏆', kargo:'📦', stok:'📋', numune:'🧪', temizlik:'🧹',
+  ik:'👥', izin:'🏖', puantaj:'⏱', evrak:'📄', crm:'📈', etkinlik:'🎪',
+  arsiv:'🗄', tebligat:'📮', resmi:'📑', kpi:'📊', settings:'⚙️', admin:'🔐'
+};
+
+// Responsive CSS inject (bir kez)
+(function _injectPermCSS() {
+  if (document.getElementById('perm-responsive-css')) return;
+  var style = document.createElement('style');
+  style.id = 'perm-responsive-css';
+  style.textContent = '.perm-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}'
+    + '@media(max-width:1200px){.perm-grid{grid-template-columns:repeat(3,1fr)}}'
+    + '@media(max-width:900px){.perm-grid{grid-template-columns:repeat(2,1fr)}}'
+    + '.perm-lvl-btn{border:1.5px solid var(--b);border-radius:6px;padding:4px 0;font-size:11px;cursor:pointer;background:var(--sf);color:var(--t3);font-family:inherit;transition:all .12s;flex:1;text-align:center}'
+    + '.perm-lvl-btn:hover{border-color:var(--ac);color:var(--ac)}'
+    + '.perm-lvl-btn.active{font-weight:700;border-width:2px}';
+  document.head.appendChild(style);
+})();
 
 function openPermModal(id) {
   if (!isAdmin()) return;
@@ -580,79 +602,84 @@ function openPermModal(id) {
   var modMap      = {};
   ALL_MODULES.forEach(function(m) { modMap[m.id] = m; });
 
-  // Modül ikonu haritası
-  var MOD_ICONS = {
-    dashboard:'📊', announce:'📢', pusula:'🎯', takvim:'📅', notes:'📝', links:'🔗', rehber:'🆘',
-    odemeler:'💳', pirim:'⭐', hedefler:'🏆', kargo:'📦', stok:'📋', numune:'🧪', temizlik:'🧹',
-    ik:'👥', izin:'🏖', puantaj:'⏱', evrak:'📄', crm:'📈', etkinlik:'🎪',
-    arsiv:'🗄', tebligat:'📮', resmi:'📑', kpi:'📊', settings:'⚙️', admin:'🔐'
-  };
-
   cont.innerHTML = ''
-    // 12 Saat Kuralı — üstte belirgin
-    + '<div style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(99,102,241,.02));border:1.5px solid rgba(99,102,241,.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">'
-      + '<div>'
-        + '<div style="font-size:13px;font-weight:700;color:var(--ac)">⏰ 12 Saat Kuralı</div>'
-        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Kayıt oluşturulduktan 12 saat sonra güncelleme yönetici onayı gerektirir</div>'
-      + '</div>'
-      + '<label style="position:relative;width:44px;height:24px;flex-shrink:0">'
-        + '<input type="checkbox" id="perm-rule12h" ' + (u.rule12h ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' style="opacity:0;width:0;height:0" onchange="this.nextElementSibling.style.background=this.checked?\'var(--ac)\':\'var(--s2)\'">'
-        + '<span style="position:absolute;inset:0;background:' + (u.rule12h ? 'var(--ac)' : 'var(--s2)') + ';border-radius:12px;cursor:pointer;transition:background .2s;border:1px solid var(--b)"></span>'
-        + '<span style="position:absolute;left:' + (u.rule12h ? '22px' : '3px') + ';top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)"></span>'
+    // 12 Saat Kuralı
+    + '<div style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(99,102,241,.02));border:1.5px solid rgba(99,102,241,.2);border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">'
+      + '<div><div style="font-size:14px;font-weight:700;color:var(--ac)">⏰ 12 Saat Kuralı</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">Kayıt oluşturulduktan 12 saat sonra güncelleme yönetici onayı gerektirir</div></div>'
+      + '<label style="position:relative;width:48px;height:26px;flex-shrink:0">'
+        + '<input type="checkbox" id="perm-rule12h" ' + (u.rule12h ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' style="opacity:0;width:0;height:0" onchange="var s=this.parentElement;s.querySelector(\'._track\').style.background=this.checked?\'var(--ac)\':\'var(--s2)\';s.querySelector(\'._thumb\').style.left=this.checked?\'24px\':\'3px\'">'
+        + '<span class="_track" style="position:absolute;inset:0;background:' + (u.rule12h ? 'var(--ac)' : 'var(--s2)') + ';border-radius:13px;cursor:pointer;transition:background .2s;border:1px solid var(--b)"></span>'
+        + '<span class="_thumb" style="position:absolute;left:' + (u.rule12h ? '24px' : '3px') + ';top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)"></span>'
       + '</label>'
     + '</div>'
 
-    // Admin badge
-    + (isUserAdmin ? '<div style="background:var(--al);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--ac);margin-bottom:14px;font-weight:500">👑 Admin kullanıcılar tüm modüllere otomatik erişir.</div>' : '')
+    + (isUserAdmin ? '<div style="background:var(--al);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--ac);margin-bottom:18px;font-weight:500">👑 Admin kullanıcılar tüm modüllere otomatik erişir.</div>' : '')
 
-    // Yetki açıklama bandı
-    + '<div style="display:flex;gap:0;border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:14px">'
+    // Legend — büyük, okunaklı, yan yana
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">'
       + _PERM_LEVELS.map(function(l) {
-          return '<div style="flex:1;padding:8px;text-align:center;border-right:1px solid var(--b);font-size:10px">'
-            + '<div style="font-weight:700;color:var(--t);margin-bottom:2px">' + l.label.split(' ')[0] + '</div>'
-            + '<div style="color:var(--t3);font-size:9px">' + l.desc + '</div>'
+          return '<div style="background:' + l.bg + ';border:1px solid ' + l.color + '33;border-radius:10px;padding:12px 14px;text-align:center">'
+            + '<div style="font-size:22px;margin-bottom:4px">' + l.label + '</div>'
+            + '<div style="font-size:12px;font-weight:700;color:' + l.color + '">' + l.full.split(' ').slice(1).join(' ') + '</div>'
+            + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + l.desc + '</div>'
           + '</div>';
         }).join('')
     + '</div>'
 
-    // Hızlı seçim + arama satırı
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">'
+    // Hızlı şablon butonları — büyük
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">'
       + Object.entries(_PERM_PRESETS).map(function(e) {
-          return '<button class="btn btns" onclick="window._permApplyPreset(\'' + e[0] + '\')" style="font-size:10px;padding:4px 10px;border-radius:6px">' + e[1].label + '</button>';
+          return '<button class="btn btns" onclick="window._permApplyPreset(\'' + e[0] + '\')" style="padding:10px;border-radius:10px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px">'
+            + '<span>' + e[1].label + '</span>'
+            + '<span style="font-size:10px;font-weight:400;color:var(--t3)">' + e[1].desc + '</span>'
+          + '</button>';
         }).join('')
-      + '<div style="margin-left:auto;position:relative;flex-shrink:0">'
-        + '<input class="fi" id="perm-search" placeholder="🔍 Modül ara..." oninput="window._permFilterModules?.()" style="font-size:11px;padding:5px 10px;width:160px">'
-      + '</div>'
-      + '<label style="font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;flex-shrink:0">'
-        + '<input type="checkbox" id="perm-all" ' + (!allowed ? 'checked' : '') + ' onchange="Admin._toggleAllPerms(this.checked)" style="accent-color:var(--ac)">'
-        + 'Tümü'
+    + '</div>'
+
+    // Arama + Tümü toggle
+    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+      + '<input class="fi" id="perm-search" placeholder="🔍 Modül ara..." oninput="window._permFilterModules?.()" style="font-size:12px;padding:8px 12px;flex:1;max-width:300px;border-radius:8px">'
+      + '<label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto">'
+        + '<input type="checkbox" id="perm-all" ' + (!allowed ? 'checked' : '') + ' onchange="Admin._toggleAllPerms(this.checked)" style="accent-color:var(--ac);width:16px;height:16px">'
+        + 'Tüm Modüllere İzin Ver'
       + '</label>'
     + '</div>'
 
-    // Kategorili kart grid
+    // Kategorili kart grid — responsive, büyük kartlar, buton gruplu
     + Object.entries(_PERM_CATEGORIES).map(function(catEntry) {
         var catKey = catEntry[0];
         var cat    = catEntry[1];
         var catMods = cat.mods.filter(function(mid) { return modMap[mid]; });
         if (!catMods.length) return '';
 
-        return '<div class="perm-cat-group" data-cat="' + catKey + '" style="margin-bottom:14px">'
-          + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span>' + cat.icon + '</span> ' + cat.label + '</div>'
-          + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
+        return '<div class="perm-cat-group" data-cat="' + catKey + '" style="margin-bottom:18px">'
+          + '<div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--b)"><span style="font-size:18px">' + cat.icon + '</span> ' + cat.label + '</div>'
+          + '<div class="perm-grid">'
             + catMods.map(function(mid) {
                 var m = modMap[mid];
                 var curLevel = perms[mid] || 'view';
                 var isChecked = isUserAdmin || !allowed || (allowed && allowed.includes(mid));
                 var icon = MOD_ICONS[mid] || '📋';
+                var activeLvl = _PERM_LEVELS.find(function(l) { return l.value === curLevel; }) || _PERM_LEVELS[1];
 
-                return '<div class="perm-card" data-modid="' + mid + '" style="background:var(--sf);border:1.5px solid ' + (isChecked ? 'rgba(99,102,241,.3)' : 'var(--b)') + ';border-radius:10px;padding:10px 12px;transition:all .15s;' + (isChecked ? 'background:rgba(99,102,241,.04)' : '') + '">'
-                  + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
-                    + '<input type="checkbox" class="perm-cb" value="' + mid + '" ' + (isChecked ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' onchange="window._permCardToggle?.(this)" style="accent-color:var(--ac);flex-shrink:0">'
-                    + '<span style="font-size:16px">' + icon + '</span>'
-                    + '<span style="font-size:12px;font-weight:600;color:var(--t)">' + escapeHtml(m.label) + '</span>'
+                return '<div class="perm-card" data-modid="' + mid + '" style="background:var(--sf);border:1.5px solid ' + (isChecked ? activeLvl.color + '44' : 'var(--b)') + ';border-radius:12px;padding:14px;transition:all .15s;min-width:180px">'
+                  // Üst: checkbox + ikon + ad
+                  + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+                    + '<input type="checkbox" class="perm-cb" value="' + mid + '" ' + (isChecked ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' onchange="window._permCardToggle?.(this)" style="accent-color:var(--ac);width:16px;height:16px;flex-shrink:0">'
+                    + '<span style="font-size:32px;line-height:1">' + icon + '</span>'
+                    + '<span style="font-size:13px;font-weight:700;color:var(--t)">' + escapeHtml(m.label) + '</span>'
                   + '</div>'
-                  + '<select class="perm-level" data-mod="' + mid + '" style="width:100%;font-size:11px;padding:5px 8px;border:1px solid var(--b);border-radius:6px;background:var(--s);color:var(--t);font-family:inherit" ' + (isUserAdmin ? 'disabled' : '') + '>'
-                    + _PERM_LEVELS.map(function(l) { return '<option value="' + l.value + '"' + (curLevel === l.value ? ' selected' : '') + '>' + l.label + '</option>'; }).join('')
+                  // Alt: 4 buton grubu (dropdown yerine)
+                  + '<div style="display:flex;gap:4px" data-mod="' + mid + '">'
+                    + _PERM_LEVELS.map(function(l) {
+                        var isActive = l.value === curLevel;
+                        return '<button class="perm-lvl-btn' + (isActive ? ' active' : '') + '" data-level="' + l.value + '" onclick="window._permSetLevel?.(this,\'' + mid + '\',\'' + l.value + '\')" style="' + (isActive ? 'background:' + l.bg + ';color:' + l.color + ';border-color:' + l.color : '') + '"' + (isUserAdmin ? ' disabled' : '') + ' title="' + l.desc + '">' + l.full + '</button>';
+                      }).join('')
+                  + '</div>'
+                  // Gizli select (savePermissions uyumluluğu)
+                  + '<select class="perm-level" data-mod="' + mid + '" style="display:none" ' + (isUserAdmin ? 'disabled' : '') + '>'
+                    + _PERM_LEVELS.map(function(l) { return '<option value="' + l.value + '"' + (curLevel === l.value ? ' selected' : '') + '>' + l.full + '</option>'; }).join('')
                   + '</select>'
                 + '</div>';
               }).join('')
@@ -664,19 +691,60 @@ function openPermModal(id) {
 }
 
 /**
- * Hızlı paket uygula: tüm modülleri belirli yetki seviyesine ayarla.
+ * Buton grubuyla seviye seçimi.
+ */
+window._permSetLevel = function(btn, modId, level) {
+  // Aynı mod'un tüm butonlarını sıfırla
+  var group = btn.parentElement;
+  group.querySelectorAll('.perm-lvl-btn').forEach(function(b) {
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.color = '';
+    b.style.borderColor = '';
+  });
+  // Seçileni aktif yap
+  var lvl = _PERM_LEVELS.find(function(l) { return l.value === level; });
+  btn.classList.add('active');
+  if (lvl) {
+    btn.style.background  = lvl.bg;
+    btn.style.color       = lvl.color;
+    btn.style.borderColor = lvl.color;
+  }
+  // Gizli select'i güncelle (savePermissions uyumluluğu)
+  var sel = btn.closest('.perm-card')?.querySelector('select.perm-level');
+  if (sel) sel.value = level;
+  // Checkbox'u güncelle
+  var cb = btn.closest('.perm-card')?.querySelector('.perm-cb');
+  if (cb && !cb.disabled) {
+    cb.checked = level !== 'none';
+    window._permCardToggle?.(cb);
+  }
+  // Kart border rengini güncelle
+  var card = btn.closest('.perm-card');
+  if (card && lvl && cb?.checked) {
+    card.style.borderColor = lvl.color + '44';
+  }
+};
+
+/**
+ * Hızlı paket uygula.
  */
 window._permApplyPreset = function(presetKey) {
   var preset = _PERM_PRESETS[presetKey];
   if (!preset) return;
-  document.querySelectorAll('.perm-cb:not(:disabled)').forEach(function(cb) {
-    cb.checked = preset.level !== 'none';
-    window._permCardToggle?.(cb);
+  document.querySelectorAll('.perm-card').forEach(function(card) {
+    var cb = card.querySelector('.perm-cb');
+    if (cb && !cb.disabled) {
+      cb.checked = preset.level !== 'none';
+      window._permCardToggle?.(cb);
+    }
+    // Buton grubunu güncelle
+    var targetBtn = card.querySelector('.perm-lvl-btn[data-level="' + preset.level + '"]');
+    if (targetBtn && !targetBtn.disabled) {
+      window._permSetLevel?.(targetBtn, card.dataset.modid, preset.level);
+    }
   });
-  document.querySelectorAll('.perm-level:not(:disabled)').forEach(function(sel) {
-    sel.value = preset.level;
-  });
-  window.toast?.('Paket uygulandı: ' + preset.label, 'ok');
+  window.toast?.('Şablon uygulandı: ' + preset.label, 'ok');
 };
 
 /**
@@ -686,11 +754,15 @@ window._permCardToggle = function(cb) {
   var card = cb.closest('.perm-card');
   if (!card) return;
   if (cb.checked) {
-    card.style.borderColor = 'rgba(99,102,241,.3)';
-    card.style.background  = 'rgba(99,102,241,.04)';
+    var activeLvl = card.querySelector('.perm-lvl-btn.active');
+    var level = activeLvl?.dataset?.level || 'view';
+    var lvl = _PERM_LEVELS.find(function(l) { return l.value === level; });
+    card.style.borderColor = lvl ? lvl.color + '44' : 'rgba(99,102,241,.3)';
   } else {
     card.style.borderColor = 'var(--b)';
-    card.style.background  = 'var(--sf)';
+    // none butonunu aktif yap
+    var noneBtn = card.querySelector('.perm-lvl-btn[data-level="none"]');
+    if (noneBtn) window._permSetLevel?.(noneBtn, card.dataset.modid, 'none');
   }
 };
 
@@ -700,15 +772,17 @@ window._permCardToggle = function(cb) {
 window._permFilterModules = function() {
   var q = (document.getElementById('perm-search')?.value || '').toLowerCase().trim();
   document.querySelectorAll('.perm-card').forEach(function(card) {
-    var label = (card.querySelector('span:nth-child(3)')?.textContent || '').toLowerCase();
+    var labelEl = card.querySelectorAll('span');
+    var label = '';
+    labelEl.forEach(function(s) { label += ' ' + (s.textContent || ''); });
+    label = label.toLowerCase();
     var modId = card.dataset.modid || '';
     card.style.display = (!q || label.includes(q) || modId.includes(q)) ? '' : 'none';
   });
-  // Boş kategori gizle
   document.querySelectorAll('.perm-cat-group').forEach(function(grp) {
-    var visible = grp.querySelectorAll('.perm-card[style*="display: none"]').length;
-    var total   = grp.querySelectorAll('.perm-card').length;
-    grp.style.display = (visible === total && q) ? 'none' : '';
+    var hidden = grp.querySelectorAll('.perm-card[style*="display: none"]').length;
+    var total  = grp.querySelectorAll('.perm-card').length;
+    grp.style.display = (hidden === total && q) ? 'none' : '';
   });
 };
 

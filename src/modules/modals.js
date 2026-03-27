@@ -915,23 +915,19 @@ function injectAllModals() {
      Elementler: perm-uid, perm-uname, perm-modules-cont
      ════════════════════════════════════════════════════════ -->
 <div class="mo" id="mo-perm" role="dialog" aria-modal="true">
-  <div class="moc" style="max-width:520px">
-    <div class="moh">
-      <span class="mot">🔑 Modül İzinleri — <span id="perm-uname">Kullanıcı</span></span>
-      <button class="mcl" onclick="closeMo('mo-perm')">✕</button>
+  <div class="moc" style="min-width:min(90vw,1200px);max-width:1200px;height:85vh;padding:0;border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:14px 24px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--sf)">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--t)">🔑 Modül İzinleri</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:2px"><span id="perm-uname">Kullanıcı</span></div>
+      </div>
+      <button onclick="closeMo('mo-perm')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>
     </div>
-    <div class="mob">
+    <div style="flex:1;overflow-y:auto;padding:20px 24px">
       <input type="hidden" id="perm-uid">
-      <div style="background:var(--s2);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--t2)">
-        💡 İşaretli modüller kullanıcı tarafından erişilebilir. Admin rolündeki kullanıcılar tüm modüllere otomatik erişir.
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <button class="btn btns" style="font-size:11px" onclick="Admin._toggleAllPerms?.(true)">✅ Tümünü Seç</button>
-        <button class="btn btns" style="font-size:11px" onclick="Admin._toggleAllPerms?.(false)">⬜ Tümünü Kaldır</button>
-      </div>
-      <div id="perm-modules-cont" class="ckg"></div>
+      <div id="perm-modules-cont"></div>
     </div>
-    <div class="mof">
+    <div style="padding:12px 24px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0">
       <button class="btn" onclick="closeMo('mo-perm')">İptal</button>
       <button class="btn btnp" onclick="Admin.savePermissions?.()">Kaydet</button>
     </div>
