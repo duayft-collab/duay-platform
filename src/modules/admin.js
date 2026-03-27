@@ -2034,6 +2034,208 @@ window._doBulkRole = function() {
 };
 
 // ════════════════════════════════════════════════════════════════
+// FİREBASE KULLANICI SENKRONİZASYONU
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Firebase Auth ile localStorage/Firestore kullanıcılarını karşılaştırır.
+ * Fazla kullanıcıları tespit eder, admin onayıyla siler.
+ * @returns {void}
+ */
+async function firebaseSync() {
+  if (!isAdmin()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+
+  const fbAuth = window.Auth?.getFBAuth?.();
+  if (!fbAuth) {
+    window.toast?.('Firebase Auth bağlantısı yok', 'err');
+    return;
+  }
+
+  // Modal oluştur — yükleniyor durumu
+  let mo = document.getElementById('mo-fb-sync');
+  if (mo) mo.remove();
+  mo = document.createElement('div');
+  mo.id = 'mo-fb-sync';
+  mo.className = 'mo';
+  mo.style.display = 'flex';
+  mo.innerHTML = `
+    <div class="moc" style="max-width:560px;padding:0;border-radius:16px;overflow:hidden;background:var(--sf);max-height:90vh;display:flex;flex-direction:column">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--t)">🔄 Firebase Kullanıcı Senkronizasyonu</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">Firebase Auth ↔ Platform karşılaştırması</div>
+        </div>
+        <button onclick="document.getElementById('mo-fb-sync')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+      </div>
+      <div id="fb-sync-body" style="flex:1;overflow-y:auto;padding:20px;display:flex;align-items:center;justify-content:center;min-height:200px">
+        <div style="text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">⏳</div>
+          <div style="font-size:13px;color:var(--t2)">Kullanıcılar kontrol ediliyor…</div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(mo);
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+
+  const localUsers = loadUsers();
+  const onlyInLocal = [];     // Platformda var, Firebase'de yok
+  const inBoth      = [];     // İkisinde de var
+  const checkErrors = [];     // Kontrol edilemeyen
+
+  // Her lokal kullanıcıyı Firebase Auth'ta ara
+  for (const u of localUsers) {
+    if (!u.email) {
+      onlyInLocal.push({ ...u, reason: 'E-posta adresi yok' });
+      continue;
+    }
+    try {
+      const methods = await fbAuth.fetchSignInMethodsForEmail(u.email);
+      if (methods && methods.length > 0) {
+        inBoth.push(u);
+      } else {
+        onlyInLocal.push({ ...u, reason: 'Firebase Auth\'ta kayıtlı değil' });
+      }
+    } catch (err) {
+      if (err.code === 'auth/invalid-email') {
+        onlyInLocal.push({ ...u, reason: 'Geçersiz e-posta' });
+      } else if (err.code === 'auth/user-not-found') {
+        onlyInLocal.push({ ...u, reason: 'Firebase Auth\'ta bulunamadı' });
+      } else {
+        checkErrors.push({ ...u, error: err.message || err.code });
+      }
+    }
+  }
+
+  // Sonuçları göster
+  const body = document.getElementById('fb-sync-body');
+  if (!body) return;
+
+  const escH = typeof escapeHtml === 'function' ? escapeHtml : (s => s);
+
+  body.innerHTML = `
+    <div style="width:100%">
+      <!-- Özet -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#16A34A">${inBoth.length}</div>
+          <div style="font-size:10px;color:var(--t3)">Eşleşen ✓</div>
+        </div>
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#DC2626">${onlyInLocal.length}</div>
+          <div style="font-size:10px;color:var(--t3)">Sadece Platform</div>
+        </div>
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#D97706">${checkErrors.length}</div>
+          <div style="font-size:10px;color:var(--t3)">Kontrol Hatası</div>
+        </div>
+      </div>
+
+      <!-- Eşleşen Kullanıcılar -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#16A34A;margin-bottom:6px">✅ Eşleşen Kullanıcılar (${inBoth.length})</div>
+        ${inBoth.length ? inBoth.map(u => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s2);border-radius:8px;margin-bottom:4px;font-size:12px">
+            <span style="font-weight:600;color:var(--t)">${escH(u.name)}</span>
+            <span style="color:var(--t3)">${escH(u.email)}</span>
+            <span style="margin-left:auto;font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(34,197,94,.1);color:#16A34A">${u.role}</span>
+          </div>
+        `).join('') : '<div style="font-size:12px;color:var(--t3);padding:6px">—</div>'}
+      </div>
+
+      <!-- Sadece Platformda (Fazla) -->
+      ${onlyInLocal.length ? `
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:6px">⚠️ Sadece Platformda — Firebase'de Yok (${onlyInLocal.length})</div>
+          ${onlyInLocal.map(u => `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;margin-bottom:4px;font-size:12px" id="fb-sync-row-${u.id}">
+              <input type="checkbox" class="fb-sync-cb" value="${u.id}" checked style="accent-color:#DC2626;flex-shrink:0">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;color:var(--t)">${escH(u.name)}</div>
+                <div style="font-size:10px;color:var(--t3)">${escH(u.email || '—')} · ${u.reason || ''}</div>
+              </div>
+              <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,.1);color:#DC2626">${u.role}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div style="padding:10px 12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;margin-bottom:14px">
+          <div style="font-size:11px;color:#DC2626;font-weight:600;margin-bottom:4px">⚠️ Seçili kullanıcıları platformdan silmek istiyor musunuz?</div>
+          <div style="font-size:10px;color:var(--t3)">Bu kullanıcılar Firebase Auth'ta kayıtlı değil. Çöp kutusuna gönderilecek.</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btns" onclick="document.getElementById('mo-fb-sync')?.remove()" style="font-size:12px">İptal</button>
+          <button class="btn btnp" id="fb-sync-delete-btn" onclick="window._fbSyncDeleteSelected?.()" style="font-size:12px;background:#DC2626;border-color:#DC2626">🗑 Seçilenleri Sil</button>
+        </div>
+      ` : `
+        <div style="text-align:center;padding:16px;background:rgba(34,197,94,.06);border-radius:10px">
+          <div style="font-size:18px;margin-bottom:4px">✅</div>
+          <div style="font-size:13px;font-weight:600;color:#16A34A">Tüm kullanıcılar senkronize</div>
+          <div style="font-size:11px;color:var(--t3)">Fazla kullanıcı bulunamadı</div>
+        </div>
+      `}
+
+      <!-- Kontrol Hataları -->
+      ${checkErrors.length ? `
+        <div style="margin-top:10px">
+          <div style="font-size:12px;font-weight:700;color:#D97706;margin-bottom:6px">⚠️ Kontrol Edilemeyenler (${checkErrors.length})</div>
+          ${checkErrors.map(u => `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(245,158,11,.06);border-radius:8px;margin-bottom:4px;font-size:12px">
+              <span style="font-weight:600;color:var(--t)">${escH(u.name)}</span>
+              <span style="color:var(--t3)">${escH(u.email || '—')}</span>
+              <span style="margin-left:auto;font-size:10px;color:#D97706">${escH(u.error)}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>`;
+}
+
+/**
+ * @description Firebase Sync modalında seçili fazla kullanıcıları siler (soft-delete).
+ */
+window._fbSyncDeleteSelected = function() {
+  const checkboxes = document.querySelectorAll('.fb-sync-cb:checked');
+  if (!checkboxes.length) {
+    window.toast?.('Silinecek kullanıcı seçilmedi', 'err');
+    return;
+  }
+
+  const idsToDelete = [...checkboxes].map(cb => parseInt(cb.value));
+  const cuId = _getCU()?.id;
+
+  // Kendini silme kontrolü
+  if (idsToDelete.includes(cuId)) {
+    window.toast?.('Kendinizi silemezsiniz', 'err');
+    return;
+  }
+
+  const users = loadUsers();
+  const trash = JSON.parse(localStorage.getItem('ak_trash') || '[]');
+  const deletedNames = [];
+
+  idsToDelete.forEach(id => {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    // Soft-delete → çöp kutusuna
+    trash.unshift({
+      ...u,
+      _trashType: 'user',
+      _deletedAt: nowTs(),
+      _deletedBy: cuId,
+      _deletedReason: 'Firebase Sync — Firebase Auth\'ta kayıtlı değil'
+    });
+    deletedNames.push(u.name);
+  });
+
+  localStorage.setItem('ak_trash', JSON.stringify(trash));
+  saveUsers(users.filter(u => !idsToDelete.includes(u.id)));
+  logActivity('user', 'Firebase Sync: ' + deletedNames.length + ' fazla kullanıcı silindi: ' + deletedNames.join(', '));
+
+  document.getElementById('mo-fb-sync')?.remove();
+  window.toast?.('🔄 ' + deletedNames.length + ' kullanıcı silindi: ' + deletedNames.join(', '), 'ok');
+  renderAdmin();
+};
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Admin = {
@@ -2075,6 +2277,7 @@ const Admin = {
   setPermExpiry,
   checkPermExpiry,
   openBulkRoleChange,
+  firebaseSync,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
