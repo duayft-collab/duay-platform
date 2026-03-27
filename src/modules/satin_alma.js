@@ -13,11 +13,12 @@
 const SA_KEY = 'ak_satinalma1';
 const SA_CURRENCIES = { USD: '$', EUR: '€', TRY: '₺' };
 const SA_STATUS = {
-  draft:    { l: 'Taslak',        c: '#6B7280', bg: 'rgba(107,114,128,.08)' },
-  pending:  { l: 'Onay Bekliyor', c: '#D97706', bg: 'rgba(245,158,11,.08)' },
-  approved: { l: 'Onaylandı',     c: '#16A34A', bg: 'rgba(34,197,94,.08)'  },
-  rejected: { l: 'Reddedildi',    c: '#DC2626', bg: 'rgba(239,68,68,.08)'  },
-  paid:     { l: 'Ödendi',        c: '#6366F1', bg: 'rgba(99,102,241,.08)' },
+  draft:           { l: 'Taslak',           c: '#6B7280', bg: 'rgba(107,114,128,.08)' },
+  pending:         { l: 'Onay Bekliyor',    c: '#D97706', bg: 'rgba(245,158,11,.08)' },
+  approved:        { l: 'Onaylandı',        c: '#16A34A', bg: 'rgba(34,197,94,.08)'  },
+  rejected:        { l: 'Reddedildi',       c: '#DC2626', bg: 'rgba(239,68,68,.08)'  },
+  revize_gerekli:  { l: 'Revize Gerekli',   c: '#EA580C', bg: 'rgba(234,88,12,.08)' },
+  paid:            { l: 'Ödendi',           c: '#6366F1', bg: 'rgba(99,102,241,.08)' },
 };
 
 // ── Yardımcılar ─────────────────────────────────────────────────
@@ -528,7 +529,7 @@ function _openSAModal(id) {
     + '</div>'
     // Satır 2
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-      + '<div><div class="fl">PI NO <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-pi-no" placeholder="PI-2026-001" value="' + (s?.piNo || '') + '"></div>'
+      + '<div><div class="fl">SATICI <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-pi-no" placeholder="Satıcı firma adı" value="' + (s?.supplier || s?.piNo || '') + '"></div>'
       + '<div><div class="fl">PI TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '"></div>'
       + '<div><div class="fl">SİPARİŞ ONAY TARİHİ</div><input type="date" class="fi" id="sa-order-date" value="' + (s?.orderDate || '') + '"></div>'
     + '</div>'
@@ -577,10 +578,34 @@ function _openSAModal(id) {
     + '</div>'
     // Açıklama / Not
     + '<div><div class="fl">AÇIKLAMA / NOT</div><textarea class="fi" id="sa-notes" rows="2" style="resize:none" placeholder="Ek bilgi, özel şartlar...">' + (s?.notes || '') + '</textarea></div>'
+    // Ödeme Dilimleri
+    + '<div style="border:1px solid var(--b);border-radius:10px;padding:14px;margin-top:4px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">💳 Ödeme Dilimleri</div>'
+        + '<button type="button" onclick="window._saAddInstallment?.()" class="btn btns" style="font-size:10px;padding:3px 10px">+ Ödeme Ekle</button>'
+      + '</div>'
+      + '<div id="sa-installments">'
+        + (function() {
+            var insts = s?.installments || [{ name:'Avans', amount:'', rate:'', due:'' }, { name:'1. Ödeme', amount:'', rate:'', due:'' }];
+            return insts.map(function(inst, idx) {
+              return '<div class="sa-installment-row" style="display:grid;grid-template-columns:1fr 1fr 80px 1fr 30px;gap:6px;margin-bottom:6px;align-items:center">'
+                + '<input class="fi sa-inst-name" placeholder="Ödeme adı" value="' + (inst.name || '') + '" style="font-size:11px;padding:5px 8px">'
+                + '<input type="number" class="fi sa-inst-amount" placeholder="Tutar" value="' + (inst.amount || '') + '" style="font-size:11px;padding:5px 8px" oninput="window._saInstCalc?.()">'
+                + '<input type="number" class="fi sa-inst-rate" placeholder="%" value="' + (inst.rate || '') + '" style="font-size:11px;padding:5px 8px" min="0" max="100" oninput="window._saInstRateCalc?.(this)">'
+                + '<input type="date" class="fi sa-inst-due" value="' + (inst.due || '') + '" style="font-size:11px;padding:5px 8px">'
+                + (idx >= 2 ? '<button onclick="this.closest(\'.sa-installment-row\').remove();window._saInstCalc?.()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3)">✕</button>' : '<div></div>')
+              + '</div>';
+            }).join('');
+          })()
+      + '</div>'
+      + '<div id="sa-inst-total" style="font-size:11px;color:var(--t3);margin-top:6px"></div>'
+    + '</div>'
     // Dosyalar
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
       + '<div><div class="fl">PI DOSYASI <span style="color:var(--rd)">*</span></div><input type="file" id="sa-pi-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="font-size:11px">'
         + (s?.piFileName ? '<div style="font-size:10px;color:var(--ac);margin-top:3px">📎 ' + esc(s.piFileName) + '</div>' : '') + '</div>'
+      + '<div><div class="fl">DUAY SÖZLEŞMESİ <span style="color:var(--rd)">*</span></div><input type="file" id="sa-soz-file" accept=".pdf,.jpg,.jpeg,.png,.docx" style="font-size:11px">'
+        + (s?.sozFileName ? '<div style="font-size:10px;color:var(--ac);margin-top:3px">📎 ' + esc(s.sozFileName) + '</div>' : '') + '</div>'
       + '<div><div class="fl">DİĞER DOKÜMANLAR</div><input type="file" id="sa-doc-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" multiple style="font-size:11px"></div>'
       + '<div><div class="fl">ÜRÜN GÖRSELLERİ</div><input type="file" id="sa-img-file" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size:11px"></div>'
     + '</div>'
@@ -727,13 +752,66 @@ window._saCalcAuto = function() {
   }
 };
 
+// ── Ödeme Dilimleri Yardımcıları ──────────────────────────────────
+
+/**
+ * Yeni ödeme dilimi satırı ekler (max 4).
+ */
+window._saAddInstallment = function() {
+  var cont = document.getElementById('sa-installments');
+  if (!cont) return;
+  var count = cont.querySelectorAll('.sa-installment-row').length;
+  if (count >= 4) { window.toast?.('Maksimum 4 ödeme dilimi', 'err'); return; }
+  var names = ['Avans', '1. Ödeme', '2. Ödeme', '3. Ödeme'];
+  var row = document.createElement('div');
+  row.className = 'sa-installment-row';
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 80px 1fr 30px;gap:6px;margin-bottom:6px;align-items:center';
+  row.innerHTML = '<input class="fi sa-inst-name" placeholder="Ödeme adı" value="' + (names[count] || '') + '" style="font-size:11px;padding:5px 8px">'
+    + '<input type="number" class="fi sa-inst-amount" placeholder="Tutar" style="font-size:11px;padding:5px 8px" oninput="window._saInstCalc?.()">'
+    + '<input type="number" class="fi sa-inst-rate" placeholder="%" style="font-size:11px;padding:5px 8px" min="0" max="100" oninput="window._saInstRateCalc?.(this)">'
+    + '<input type="date" class="fi sa-inst-due" style="font-size:11px;padding:5px 8px">'
+    + '<button onclick="this.closest(\'.sa-installment-row\').remove();window._saInstCalc?.()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3)">✕</button>';
+  cont.appendChild(row);
+};
+
+/**
+ * Dilim toplamını kontrol eder.
+ */
+window._saInstCalc = function() {
+  var total = parseFloat(document.getElementById('sa-total')?.value || '0') || 0;
+  var sum = 0;
+  document.querySelectorAll('.sa-inst-amount').forEach(function(inp) { sum += parseFloat(inp.value || '0') || 0; });
+  var el = document.getElementById('sa-inst-total');
+  if (!el) return;
+  var diff = Math.abs(sum - total);
+  if (total > 0 && sum > 0) {
+    el.innerHTML = 'Dilim toplamı: <b style="color:' + (diff < 1 ? '#16A34A' : '#EF4444') + '">' + sum.toLocaleString('tr-TR') + '</b>'
+      + (diff >= 1 ? ' <span style="color:#EF4444">(fark: ' + diff.toLocaleString('tr-TR') + ')</span>' : ' ✓');
+  } else {
+    el.innerHTML = '';
+  }
+};
+
+/**
+ * Oran girilince tutarı otomatik hesaplar.
+ */
+window._saInstRateCalc = function(inp) {
+  var total = parseFloat(document.getElementById('sa-total')?.value || '0') || 0;
+  var rate  = parseFloat(inp.value || '0') || 0;
+  var row   = inp.closest('.sa-installment-row');
+  if (!row) return;
+  var amtInp = row.querySelector('.sa-inst-amount');
+  if (amtInp && total > 0) amtInp.value = Math.round(total * rate / 100 * 100) / 100;
+  window._saInstCalc?.();
+};
+
 // ════════════════════════════════════════════════════════════════
 // KAYDET
 // ════════════════════════════════════════════════════════════════
 
 window._saveSA = function() {
   var jobId    = (document.getElementById('sa-job-id')?.value || '').trim();
-  var piNo     = (document.getElementById('sa-pi-no')?.value || '').trim();
+  var supplier = (document.getElementById('sa-pi-no')?.value || '').trim();
   var piDate   = document.getElementById('sa-pi-date')?.value || '';
   var kdv      = parseFloat(document.getElementById('sa-kdv')?.value || '0') || 0;
   var total    = parseFloat(document.getElementById('sa-total')?.value || '0') || 0;
@@ -746,7 +824,7 @@ window._saveSA = function() {
   // Doğrulama
   var errs = [];
   if (!jobId)    errs.push('İş ID');
-  if (!piNo)     errs.push('PI No');
+  if (!supplier) errs.push('Satıcı');
   if (!piDate)   errs.push('PI Tarihi');
   if (!kdv)      errs.push('KDV Tutarı');
   if (!total)    errs.push('Toplam Tutar');
@@ -762,10 +840,36 @@ window._saveSA = function() {
   if (!eid && (!piFile || !piFile.files || !piFile.files.length)) {
     errs.push('PI Dosyası');
   }
+  // Duay Sözleşmesi kontrolü (yeni kayıtta zorunlu)
+  var sozFile = document.getElementById('sa-soz-file');
+  if (!eid && (!sozFile || !sozFile.files || !sozFile.files.length)) {
+    errs.push('Duay Sözleşmesi');
+  }
 
   if (errs.length) {
     window.toast?.('Zorunlu alanlar eksik: ' + errs.join(', '), 'err');
     return;
+  }
+
+  // Ödeme dilimleri topla
+  var installments = [];
+  document.querySelectorAll('.sa-installment-row').forEach(function(row, idx) {
+    var iName   = row.querySelector('.sa-inst-name')?.value || ('Ödeme ' + (idx + 1));
+    var iAmount = parseFloat(row.querySelector('.sa-inst-amount')?.value || '0') || 0;
+    var iRate   = parseFloat(row.querySelector('.sa-inst-rate')?.value || '0') || 0;
+    var iDue    = row.querySelector('.sa-inst-due')?.value || '';
+    if (iAmount > 0 || iRate > 0) {
+      installments.push({ name: iName, amount: iAmount, rate: iRate, due: iDue });
+    }
+  });
+
+  // Dilim toplamı kontrol
+  if (installments.length > 0) {
+    var instTotal = installments.reduce(function(a, i) { return a + i.amount; }, 0);
+    if (Math.abs(instTotal - total) > 1) {
+      window.toast?.('Ödeme dilimleri toplamı (' + instTotal.toLocaleString('tr-TR') + ') toplam tutarla (' + total.toLocaleString('tr-TR') + ') eşleşmiyor!', 'err');
+      return;
+    }
   }
 
   var advAmt    = Math.round(total * advRate / 100 * 100) / 100;
@@ -776,7 +880,8 @@ window._saveSA = function() {
     exportId:        (document.getElementById('sa-export-id')?.value || '').trim(),
     jobId:           jobId,
     jobDate:         jobDate,
-    piNo:            piNo,
+    supplier:        supplier,
+    piNo:            supplier, // geriye uyumluluk
     piDate:          piDate,
     kdv:             kdv,
     totalAmount:     total,
@@ -786,6 +891,7 @@ window._saveSA = function() {
     advanceAmount:   advAmt,
     remainingAmount: remaining,
     vadeDate:        vade,
+    installments:    installments.length > 0 ? installments : null,
     customerOrderNo: (document.getElementById('sa-customer-order')?.value || '').trim(),
     orderDate:       document.getElementById('sa-order-date')?.value || '',
     responsibleId:   parseInt(document.getElementById('sa-responsible')?.value || '0') || null,
@@ -831,7 +937,7 @@ window._saveSA = function() {
     _storeSA(d);
     document.getElementById('mo-satinalma')?.remove();
     renderSatinAlma();
-    window.logActivity?.('view', 'Satınalma ' + (isNew ? 'eklendi' : 'güncellendi') + ': ' + piNo);
+    window.logActivity?.('view', 'Satınalma ' + (isNew ? 'eklendi' : 'güncellendi') + ': ' + supplier);
     window.toast?.((isNew ? 'Sipariş eklendi' : 'Güncellendi') + ' ✓', 'ok');
 
     // Yeni kayıt — Ödemeler listesine otomatik düşür
@@ -846,19 +952,28 @@ window._saveSA = function() {
           return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
         });
         managers.forEach(function(m) {
-          window.addNotif?.('🛒', 'Yeni satınalma onay bekliyor: ' + piNo + ' — ' + _fmtSA(total, currency) + ' (' + cuName + ')', 'warn', 'satinalma', m.id);
+          window.addNotif?.('🛒', 'Yeni satınalma onay bekliyor: ' + supplier + ' — ' + _fmtSA(total, currency) + ' (' + cuName + ')', 'warn', 'satinalma', m.id);
         });
       }
     }
   };
 
-  // PI dosyası varsa oku
+  // Sözleşme dosyası varsa oku
+  var _readSoz = function(cb) {
+    if (sozFile?.files?.[0]) {
+      var r2 = new FileReader();
+      r2.onload = function(e2) { entry.sozFileData = e2.target.result; entry.sozFileName = sozFile.files[0].name; cb(); };
+      r2.readAsDataURL(sozFile.files[0]);
+    } else { cb(); }
+  };
+
+  // PI dosyası varsa oku, sonra sözleşme
   if (piFile?.files?.[0]) {
     var reader = new FileReader();
-    reader.onload = function(e) { _afterFiles(e.target.result, piFile.files[0].name); };
+    reader.onload = function(e) { _readSoz(function() { _afterFiles(e.target.result, piFile.files[0].name); }); };
     reader.readAsDataURL(piFile.files[0]);
   } else {
-    _afterFiles(null, null);
+    _readSoz(function() { _afterFiles(null, null); });
   }
 };
 
@@ -866,10 +981,45 @@ window._saveSA = function() {
  * Satınalma kaydından ödemelere avans + kalan ödeme oluşturur.
  */
 function _saCreatePayments(sa) {
-  if (!sa || !window.createOdmFromPurchase) return;
+  if (!sa) return;
+  var label = 'Satınalma: ' + (sa.supplier || sa.piNo || sa.jobId);
+
+  // Dilimler varsa her dilim ayrı ödeme olarak düşsün
+  if (sa.installments && sa.installments.length > 0) {
+    var d = window.loadOdm ? loadOdm() : [];
+    var now = typeof nowTs === 'function' ? nowTs() : new Date().toISOString();
+    var rates = typeof _odmGetRates === 'function' ? _odmGetRates() : {};
+    var cur = sa.currency || 'USD';
+    var kurRate = rates[cur] || 1;
+
+    sa.installments.forEach(function(inst) {
+      var tlAmt = cur === 'TRY' ? inst.amount : Math.round(inst.amount * kurRate * 100) / 100;
+      d.unshift({
+        id: generateNumericId(),
+        name: label + ' — ' + inst.name,
+        source: 'satinalma', cat: 'diger', freq: 'teksefer',
+        amount: inst.amount, currency: cur,
+        originalAmount: inst.amount, originalCurrency: cur,
+        tlAmount: tlAmt, kurRate: kurRate,
+        due: inst.due || sa.vadeDate || '',
+        note: 'Satınalma #' + sa.id + ' — ' + inst.name,
+        paid: false, alarmDays: 3,
+        assignedTo: sa.createdBy, purchaseId: sa.id,
+        ts: now, createdBy: _cuSA()?.id,
+        approvalStatus: _isAdmSA() ? 'approved' : 'pending',
+      });
+    });
+    if (typeof storeOdm === 'function') storeOdm(d);
+    window.toast?.('Ödeme planı oluşturuldu ✓ (' + sa.installments.length + ' dilim)', 'ok');
+    if (typeof renderOdemeler === 'function') renderOdemeler();
+    return;
+  }
+
+  // Dilim yoksa eski yöntem: avans + bakiye
+  if (!window.createOdmFromPurchase) return;
   window.createOdmFromPurchase({
     id:            sa.id,
-    name:          'Satınalma PI: ' + (sa.piNo || sa.jobId),
+    name:          label,
     totalAmount:   sa.totalAmount,
     advanceAmount: sa.advanceAmount,
     advanceDate:   sa.piDate,
@@ -902,17 +1052,44 @@ window._approveSA = function(id) {
 
 window._rejectSA = function(id) {
   if (!_isAdmSA()) { window.toast?.('Yetki yok', 'err'); return; }
+
+  // Red açıklaması zorunlu — mini modal
+  var old = document.getElementById('mo-sa-reject'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-sa-reject'; mo.style.display = 'flex'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:14px;font-weight:700;color:#DC2626">❌ Sipariş Red / Revize</div>'
+    + '</div>'
+    + '<div style="padding:16px 20px">'
+      + '<div class="fl">RED / REVİZE GEREKÇESİ <span style="color:var(--rd)">*</span></div>'
+      + '<textarea class="fi" id="sa-reject-reason" rows="3" style="resize:none" placeholder="Neden reddedildi veya neyin düzeltilmesi gerekiyor..."></textarea>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-sa-reject\').remove()">İptal</button>'
+      + '<button class="btn btnp" style="background:#DC2626;border-color:#DC2626" onclick="window._execRejectSA?.(' + id + ')">Reddet & Revize İste</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(mo);
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+};
+
+window._execRejectSA = function(id) {
+  var reason = (document.getElementById('sa-reject-reason')?.value || '').trim();
+  if (!reason) { window.toast?.('Gerekçe zorunludur', 'err'); return; }
   var d = _loadSA();
   var s = d.find(function(x) { return x.id === id; });
   if (!s) return;
-  s.status     = 'rejected';
-  s.rejectedBy = _cuSA()?.id;
-  s.rejectedAt = _nowSA();
+  s.status       = 'revize_gerekli';
+  s.rejectedBy   = _cuSA()?.id;
+  s.rejectedAt   = _nowSA();
+  s.rejectReason = reason;
   _storeSA(d);
+  document.getElementById('mo-sa-reject')?.remove();
   renderSatinAlma();
-  window.toast?.('Sipariş reddedildi', 'ok');
-  window.logActivity?.('view', 'Satınalma reddedildi: ' + (s.piNo || s.jobId));
-  window.addNotif?.('❌', 'Satınalma reddedildi: ' + (s.piNo || ''), 'err', 'satinalma', s.createdBy);
+  window.toast?.('Revize talebi gönderildi', 'ok');
+  window.logActivity?.('view', 'Satınalma revize istendi: ' + (s.supplier || s.piNo || s.jobId) + ' — ' + reason);
+  window.addNotif?.('🔄', 'Satınalma revize gerekli: ' + (s.supplier || s.piNo || '') + ' — ' + reason, 'warn', 'satinalma', s.createdBy);
 };
 
 // ════════════════════════════════════════════════════════════════

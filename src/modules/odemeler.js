@@ -2112,6 +2112,8 @@ window.viewTahDoc   = viewTahDoc;
 function saveTahsilat() {
   const name = (document.getElementById('tah-f-name')?.value || '').trim();
   if (!name) { window.toast?.('Kaynak adı zorunlu', 'err'); return; }
+  var _tahDue = document.getElementById('tah-f-due')?.value || '';
+  if (!_tahDue) { window.toast?.('Vade tarihi zorunludur', 'err'); return; }
   const eid = parseInt(document.getElementById('tah-f-eid')?.value || '0');
   const d = loadTahsilat();
   let docs = [];
