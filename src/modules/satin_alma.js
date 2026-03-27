@@ -473,7 +473,7 @@ window._saInlineSave = function() {
     deliveryPlace: (document.getElementById('sai-delPlace')?.value || '').trim(),
     deliveryOwner: 'alici',
     notes: (document.getElementById('sai-notes')?.value || '').trim(),
-    status: _isAdmSA() ? 'approved' : 'pending',
+    status: 'pending',
     createdAt: _nowSA(), createdBy: _cuSA()?.id,
     vendor: { name: '', country: '', contact: '', phone: '', email: '', address: '', tax: '' },
   };
@@ -483,9 +483,9 @@ window._saInlineSave = function() {
   renderSatinAlma();
   window.toast?.('Satır eklendi ✓ — Dosya eklemek için 📎 butonunu kullanın', 'ok');
   window.logActivity?.('view', 'Satınalma inline eklendi: ' + supplier);
-  _saCreatePayments(entry);
+  // Ödeme onay sonrası yansır — burada çağırılmaz
 
-  if (!_isAdmSA()) {
+  if (true) { // Her kayıt pending — bildirim gönder
     var cuName = _cuSA()?.name || '';
     var managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
       return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
@@ -748,12 +748,17 @@ function _openSAModal(id) {
     // Satır 1
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
       + '<div><div class="fl">İHRACAT ID</div><input class="fi" id="sa-export-id" placeholder="EXP-2026-..." value="' + (s?.exportId || '') + '"></div>'
-      + '<div><div class="fl">İŞ ID <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-job-id" placeholder="JOB-001" value="' + (s?.jobId || '') + '"></div>'
+      + '<div><div class="fl">İŞ ID (Görev) <span style="color:var(--rd)">*</span></div><select class="fi" id="sa-job-id" onchange="window._saTaskSelected?.()"><option value="">— Görev seçin —</option>'
+        + (function() { var tasks = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : []; var esc2 = typeof escapeHtml === 'function' ? escapeHtml : function(v){return v;}; return tasks.map(function(t) { return '<option value="' + esc2(String(t.id)) + '"' + (String(s?.jobId) === String(t.id) ? ' selected' : '') + '>' + esc2(t.title.slice(0,40)) + '</option>'; }).join(''); })()
+        + '<option value="_manual">✏️ Manuel giriş...</option></select></div>'
       + '<div><div class="fl">İŞ BAŞLAMA <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-job-date" value="' + (s?.jobDate || '') + '"></div>'
     + '</div>'
     // Satır 2
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-      + '<div><div class="fl">SATICI <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-pi-no" placeholder="Satıcı firma adı" value="' + (s?.supplier || s?.piNo || '') + '"></div>'
+      + '<div><div class="fl">SATICI (Cari) <span style="color:var(--rd)">*</span></div><div style="display:flex;gap:4px"><select class="fi" id="sa-pi-no" style="flex:1">'
+        + '<option value="">— Cari seçin —</option>'
+        + (function() { var cari = typeof loadCari === 'function' ? loadCari() : []; var esc2 = typeof escapeHtml === 'function' ? escapeHtml : function(v){return v;}; return cari.map(function(c) { return '<option value="' + esc2(c.name) + '"' + ((s?.supplier || s?.piNo || '') === c.name ? ' selected' : '') + '>' + esc2(c.name) + ' (' + (c.type || '') + ')</option>'; }).join(''); })()
+        + '</select><button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button></div></div>'
       + '<div><div class="fl">PI TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '"></div>'
       + '<div><div class="fl">SİPARİŞ ONAY TARİHİ</div><input type="date" class="fi" id="sa-order-date" value="' + (s?.orderDate || '') + '"></div>'
     + '</div>'
@@ -818,11 +823,12 @@ function _openSAModal(id) {
         + (function() {
             var insts = s?.installments || [{ name:'Avans', amount:'', rate:'', due:'' }, { name:'1. Ödeme', amount:'', rate:'', due:'' }];
             return insts.map(function(inst, idx) {
-              return '<div class="sa-installment-row" style="display:grid;grid-template-columns:1fr 1fr 80px 1fr 30px;gap:6px;margin-bottom:6px;align-items:center">'
+              return '<div class="sa-installment-row" style="display:grid;grid-template-columns:1fr 1fr 80px 1fr auto 30px;gap:6px;margin-bottom:6px;align-items:center">'
                 + '<input class="fi sa-inst-name" placeholder="Ödeme adı" value="' + (inst.name || '') + '" style="font-size:11px;padding:5px 8px">'
                 + '<input type="number" class="fi sa-inst-amount" placeholder="Tutar" value="' + (inst.amount || '') + '" style="font-size:11px;padding:5px 8px" oninput="window._saInstCalc?.()">'
                 + '<input type="number" class="fi sa-inst-rate" placeholder="%" value="' + (inst.rate || '') + '" style="font-size:11px;padding:5px 8px" min="0" max="100" oninput="window._saInstRateCalc?.(this)">'
                 + '<input type="date" class="fi sa-inst-due" value="' + (inst.due || '') + '" style="font-size:11px;padding:5px 8px">'
+                + (idx >= 1 ? '<label style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--t3);white-space:nowrap;cursor:pointer" title="Teslimat yapılmadan ödeme yapılamaz"><input type="checkbox" class="sa-inst-delivery-req" ' + (inst.deliveryRequired ? 'checked' : '') + ' style="accent-color:var(--ac)">Teslimat şartı</label>' : '<div></div>')
                 + (idx >= 2 ? '<button onclick="this.closest(\'.sa-installment-row\').remove();window._saInstCalc?.()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3)">✕</button>' : '<div></div>')
               + '</div>';
             }).join('');
@@ -1088,8 +1094,9 @@ window._saveSA = function() {
     var iAmount = parseFloat(row.querySelector('.sa-inst-amount')?.value || '0') || 0;
     var iRate   = parseFloat(row.querySelector('.sa-inst-rate')?.value || '0') || 0;
     var iDue    = row.querySelector('.sa-inst-due')?.value || '';
+    var iDelReq = row.querySelector('.sa-inst-delivery-req')?.checked || false;
     if (iAmount > 0 || iRate > 0) {
-      installments.push({ name: iName, amount: iAmount, rate: iRate, due: iDue });
+      installments.push({ name: iName, amount: iAmount, rate: iRate, due: iDue, deliveryRequired: iDelReq });
     }
   });
 
@@ -1160,7 +1167,7 @@ window._saveSA = function() {
       }
     } else {
       entry.id        = generateNumericId();
-      entry.status    = _isAdmSA() ? 'approved' : 'pending';
+      entry.status    = 'pending'; // Onay olmadan asla approved olmamalı
       entry.createdAt = _nowSA();
       entry.createdBy = _cuSA()?.id;
       d.unshift(entry);
@@ -1172,13 +1179,10 @@ window._saveSA = function() {
     window.logActivity?.('view', 'Satınalma ' + (isNew ? 'eklendi' : 'güncellendi') + ': ' + supplier);
     window.toast?.((isNew ? 'Sipariş eklendi' : 'Güncellendi') + ' ✓', 'ok');
 
-    // Yeni kayıt — Ödemeler listesine otomatik düşür
+    // Yeni kayıt — pending olarak oluşturulur, onay sonrası nakit akışına yansır
     if (isNew) {
-      var saEntry = eid ? d.find(function(x) { return x.id === eid; }) : d[0];
-      _saCreatePayments(saEntry);
-
-      // Admin değilse tüm admin/manager'lara bildirim gönder
-      if (!_isAdmSA()) {
+      // Yöneticilere bildirim gönder
+      if (true) { // her zaman bildirim — artık her kayıt pending
         var cuName = _cuSA()?.name || '';
         var managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
           return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
@@ -1214,6 +1218,11 @@ window._saveSA = function() {
  */
 function _saCreatePayments(sa) {
   if (!sa) return;
+  // KURAL: Onaysız kayıt nakit akışına ASLA düşmez
+  if (sa.status !== 'approved' && sa.status !== 'paid' && sa.approvalStatus !== 'kesinlesti') {
+    console.info('[SA] Onaysız kayıt — nakit akışına yansımıyor:', sa.id);
+    return;
+  }
   var label = 'Satınalma: ' + (sa.supplier || sa.piNo || sa.jobId);
 
   // Dilimler varsa her dilim ayrı ödeme olarak düşsün
@@ -1238,7 +1247,8 @@ function _saCreatePayments(sa) {
         paid: false, alarmDays: 3,
         assignedTo: sa.createdBy, purchaseId: sa.id,
         ts: now, createdBy: _cuSA()?.id,
-        approvalStatus: _isAdmSA() ? 'approved' : 'pending',
+        approvalStatus: inst.deliveryRequired ? 'delivery_pending' : 'pending',
+        deliveryRequired: inst.deliveryRequired || false,
       });
     });
     if (typeof storeOdm === 'function') storeOdm(d);
@@ -1703,7 +1713,7 @@ window._saImportConfirm = function() {
       exportId: r.exportId, customerOrderNo: r.customerOrderNo,
       deliveryPlace: r.deliveryPlace, deliveryOwner: 'alici',
       jobDate: r.piDate || new Date().toISOString().slice(0, 10),
-      status: _isAdmSA() ? 'approved' : 'pending',
+      status: 'pending',
       source: 'import', createdAt: _nowSA(), createdBy: cu?.id,
     });
     added++;
@@ -1806,6 +1816,33 @@ function _initSmartDateInputs() {
 setTimeout(_initSmartDateInputs, 1000);
 
 // ════════════════════════════════════════════════════════════════
+// GÖREV SEÇİMİ — İş ID dropdown'ından görev seçilince otomatik doldur
+
+window._saTaskSelected = function() {
+  var sel = document.getElementById('sa-job-id');
+  if (!sel) return;
+  var taskId = sel.value;
+  if (taskId === '_manual') {
+    // Manuel giriş — select'i input'a çevir
+    var parent = sel.parentElement;
+    var inp = document.createElement('input');
+    inp.className = 'fi'; inp.id = 'sa-job-id'; inp.placeholder = 'İş ID girin...';
+    inp.style.cssText = sel.style.cssText;
+    parent.replaceChild(inp, sel);
+    inp.focus();
+    return;
+  }
+  if (!taskId) return;
+  var tasks = typeof loadTasks === 'function' ? loadTasks() : [];
+  var task = tasks.find(function(t) { return String(t.id) === String(taskId); });
+  if (!task) return;
+  // Otomatik doldur
+  var dateEl = document.getElementById('sa-job-date');
+  if (dateEl && !dateEl.value) dateEl.value = task.start || task.due || '';
+  var deptEl = document.getElementById('sa-vendor-country'); // departman alanı olarak kullan
+  if (deptEl && !deptEl.value && task.department) deptEl.value = task.department;
+};
+
 // SIRALAMA
 // ════════════════════════════════════════════════════════════════
 

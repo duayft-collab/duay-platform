@@ -2430,6 +2430,11 @@ function _odmSourceBadge(o) {
 
 function createOdmFromPurchase(purchase) {
   if (!purchase || !purchase.totalAmount) return;
+  // Güvenlik: onaysız kayıt nakit akışına düşmez
+  if (purchase.status === 'pending' || purchase.status === 'revize_gerekli') {
+    console.warn('[Ödemeler] Onaysız satınalma — nakit akışına yansımıyor');
+    return;
+  }
   var d = window.loadOdm ? loadOdm() : [];
   var now = _nowTso();
   var cur = purchase.currency || 'TRY';
