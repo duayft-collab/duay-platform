@@ -1162,7 +1162,7 @@ function startRealtimeSync() {
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
     // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
-    ['users',         KEYS.users,         (data) => { _refreshCU(data); window.renderUsers?.(); }],
+    ['users',         KEYS.users,         (data) => { _refreshCU(data); if (!window._adminSaving) window.renderUsers?.(); }],
     // Kritik — her kullanıcı için
     ['tasks',         KEYS.tasks,         (data) => { _checkNewAssignments(data); window.Pusula?.render?.(); }],
     ['calendar',      KEYS.calendar,      () => window.renderCal?.()],

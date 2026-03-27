@@ -301,6 +301,7 @@ function openAdminModal(id) {
 
 function saveAdminUser() {
   if (!isAdmin()) { window.toast?.(t('err.permission'), 'err'); return; }
+  window._adminSaving = true;
 
   const name  = (g('f-name')?.value    || '').trim();
   const email = (g('f-email')?.value   || '').trim().toLowerCase();
@@ -366,6 +367,7 @@ function saveAdminUser() {
   saveUsers(users);
   window.closeMo?.('mo-admin-user');
   renderUsers();
+  setTimeout(function() { window._adminSaving = false; }, 2000);
 }
 
 /** Role göre modül checkboxlarını otomatik seç */
@@ -2287,6 +2289,7 @@ if (typeof module !== 'undefined' && module.exports) {
   // V18 eklenen fonksiyonlar
   window._adminRenderUsers = renderUsers; // panel_stubs.js tarafından çağrılır
   window.renderUsers = function(...args) {
+  if (window._adminSaving) return; // Kayıt sırasında form ezilmesin
   try {
     return renderUsers(...args);
   } catch(err) {
