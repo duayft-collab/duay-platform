@@ -717,6 +717,24 @@ function _nvsSatisCalc(alisFiyat) {
   if (kar) kar.textContent = 'Kar: ' + karTL.toFixed(2) + ' (' + (karTL/alisFiyat*100).toFixed(1) + '%)';
 }
 
+/**
+ * Otomatik teklif ID üretir: TKF-2026-001 formatı.
+ * Yıl + sıra numarası.
+ * @returns {string}
+ */
+function _generateTeklifId() {
+  const year = new Date().getFullYear();
+  const prefix = 'TKF-' + year + '-';
+  const existing = _loadSatis();
+  const yearItems = existing.filter(function(s) { return (s.teklifId || '').startsWith(prefix); });
+  var maxNum = 0;
+  yearItems.forEach(function(s) {
+    var num = parseInt((s.teklifId || '').replace(prefix, '')) || 0;
+    if (num > maxNum) maxNum = num;
+  });
+  return prefix + String(maxNum + 1).padStart(3, '0');
+}
+
 function _nvsSatisSave(alisId) {
   const musteri = (document.getElementById('nvs-musteri')?.value||'').trim();
   if (!musteri) { window.toast?.('Müşteri adı zorunludur','err'); return; }
@@ -724,11 +742,13 @@ function _nvsSatisSave(alisId) {
   const marj = parseFloat(document.getElementById('nvs-marj')?.value||'0');
   const tip  = document.getElementById('nvs-marj-tip')?.value||'pct';
   const satis = tip==='pct' ? alis.birimFiyat*(1+marj/100) : alis.birimFiyat+marj;
+  const teklifId = _generateTeklifId();
   const d = _loadSatis();
   d.unshift({
-    id: generateNumericId(), alisId, musteri, satisFiyat: Math.round(satis*100)/100,
+    id: generateNumericId(), teklifId, alisId, musteri, satisFiyat: Math.round(satis*100)/100,
     alisFiyat: alis.birimFiyat, para: alis.para, marj, marjTip: tip,
     from: alis.from, to: alis.to, tasiyan: alis.tasiyan, tasimaTipi: alis.tasimaTipi,
+    aracTipi: alis.aracTipi,
     gecBaslangic: document.getElementById('nvs-bas')?.value||'',
     gecBitis: document.getElementById('nvs-bit')?.value||'',
     not: (document.getElementById('nvs-not')?.value||'').trim(),
@@ -736,8 +756,8 @@ function _nvsSatisSave(alisId) {
   });
   _storeSatis(d);
   document.getElementById('mo-nvl-satis')?.remove();
-  window.toast?.('Satış teklifi kaydedildi ✓','ok');
-  window.logActivity?.('view','Navlun satış teklifi: '+musteri+' '+alis.from+'→'+alis.to);
+  window.toast?.('Satış teklifi kaydedildi: ' + teklifId,'ok');
+  window.logActivity?.('view','Navlun satış teklifi: '+teklifId+' '+musteri+' '+alis.from+'→'+alis.to);
 }
 
 function _nvsSatisPreview(alisId) {
@@ -747,28 +767,39 @@ function _nvsSatisPreview(alisId) {
   const bas = document.getElementById('nvs-bas')?.value||'';
   const bit = document.getElementById('nvs-bit')?.value||'';
   const not = (document.getElementById('nvs-not')?.value||'').trim();
+  const teklifId = _generateTeklifId();
   const w = window.open('','_blank','width=700,height=800');
-  w.document.write(`<!DOCTYPE html><html><head><title>Navlun Teklifi</title>
+  w.document.write(`<!DOCTYPE html><html><head><title>Navlun Teklifi — ${teklifId}</title>
     <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#1a1a2e;max-width:650px;margin:0 auto}
     .hdr{border-bottom:3px solid #6366F1;padding-bottom:16px;margin-bottom:24px}
     .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
     .lbl{color:#6b7280;font-size:13px}.val{font-weight:600;font-size:13px}
     .price{font-size:28px;font-weight:800;color:#6366F1;text-align:center;padding:20px;background:#f5f3ff;border-radius:12px;margin:20px 0}
-    .ft{margin-top:40px;border-top:2px solid #eee;padding-top:16px;font-size:11px;color:#9ca3af}</style></head>
+    .ft{margin-top:40px;border-top:2px solid #eee;padding-top:16px;font-size:11px;color:#9ca3af}
+    @media print{button{display:none!important}}</style></head>
     <body>
-    <div class="hdr"><div style="font-size:20px;font-weight:700">Duay Global LLC</div>
-    <div style="font-size:12px;color:#6b7280">Navlun Fiyat Teklifi</div></div>
+    <div class="hdr">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-size:20px;font-weight:700">Duay Global LLC</div>
+        <div style="font-size:12px;color:#6b7280">Navlun Fiyat Teklifi</div></div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#6366F1;font-family:monospace">${teklifId}</div>
+        <div style="font-size:11px;color:#9ca3af">${new Date().toLocaleDateString('tr-TR')}</div></div>
+      </div>
+    </div>
     <div class="row"><span class="lbl">Müşteri</span><span class="val">${escapeHtml(musteri)}</span></div>
     <div class="row"><span class="lbl">Güzergah</span><span class="val">${escapeHtml(alis.from)} → ${escapeHtml(alis.to)}</span></div>
     <div class="row"><span class="lbl">Taşıma Tipi</span><span class="val">${(TASIMA_TIPLERI[alis.tasimaTipi]||{}).l||alis.tasimaTipi}</span></div>
-    <div class="row"><span class="lbl">Taşıyıcı</span><span class="val">${escapeHtml(alis.tasiyan||'—')}</span></div>
-    <div class="row"><span class="lbl">Araç Tipi</span><span class="val">${escapeHtml(alis.aracTipi||'—')}</span></div>
+    <div class="row"><span class="lbl">Konteyner / Araç</span><span class="val">${escapeHtml(alis.aracTipi||'—')}</span></div>
+    <div class="row"><span class="lbl">Taşıyıcı / Armatör</span><span class="val">${escapeHtml(alis.tasiyan||'—')}</span></div>
     <div class="row"><span class="lbl">Transit Süre</span><span class="val">${alis.transitSure||'—'} gün</span></div>
     <div class="price">${satisFiyat} ${alis.para}</div>
     ${bas||bit ? `<div class="row"><span class="lbl">Geçerlilik</span><span class="val">${bas||'—'} — ${bit||'—'}</span></div>` : ''}
-    ${not ? `<div class="row"><span class="lbl">Not</span><span class="val">${escapeHtml(not)}</span></div>` : ''}
-    <div class="ft">Bu teklif bilgilendirme amaçlıdır. Duay Global LLC · ${new Date().toLocaleDateString('tr-TR')}</div>
-    <div style="margin-top:20px"><button onclick="window.print()" style="padding:8px 20px;background:#6366F1;color:#fff;border:none;border-radius:8px;cursor:pointer">Yazdır / PDF</button></div>
+    ${not ? `<div class="row"><span class="lbl">Şartlar / Notlar</span><span class="val">${escapeHtml(not)}</span></div>` : ''}
+    <div class="ft">
+      <div>Teklif No: <b>${teklifId}</b> · Bu teklif bilgilendirme amaçlıdır.</div>
+      <div style="margin-top:4px">Duay Global LLC · ${new Date().toLocaleDateString('tr-TR')}</div>
+    </div>
+    <div style="margin-top:20px"><button onclick="window.print()" style="padding:8px 20px;background:#6366F1;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit">🖨 Yazdır / PDF</button></div>
     </body></html>`);
   w.document.close();
 }
@@ -811,19 +842,21 @@ function openNavlunCompare() {
           <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Para</th>
           <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Transit</th>
           <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Araç</th>
+          <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">Geçerlilik</th>
           <th style="padding:6px 10px;text-align:center;border:1px solid var(--b)">İşlem</th>
         </tr>
         ${teklifler.map(t => {
           const isCheapest = t.birimFiyat === minFiyat;
           const isFastest  = t.transitSure === minTransit;
-          const bg = isCheapest ? 'rgba(34,197,94,.08)' : '';
+          const bg = isCheapest ? 'rgba(34,197,94,.08)' : (isFastest ? 'rgba(59,130,246,.06)' : '');
           return `<tr style="background:${bg}">
-            <td style="padding:6px 10px;border:1px solid var(--b);font-weight:500">${escapeHtml(t.tasiyan||'—')}${isCheapest?' <span style="color:#22C55E;font-size:9px">★ En ucuz</span>':''}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);font-weight:500">${escapeHtml(t.tasiyan||'—')}${isCheapest?' <span style="color:#22C55E;font-size:9px">★ En ucuz</span>':''}${isFastest&&!isCheapest?' <span style="color:#3B82F6;font-size:9px">⚡ En hızlı</span>':''}</td>
             <td style="padding:6px 10px;border:1px solid var(--b)">${escapeHtml(t.teklifVeren||t.satici||'—')}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:right;font-weight:700;font-family:'DM Mono',monospace;color:${isCheapest?'#22C55E':'var(--t)'}">${(t.birimFiyat||0).toLocaleString('tr-TR')}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:center">${t.para||'USD'}</td>
-            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;color:${isFastest?'#22C55E':'var(--t)'}">${t.transitSure||'—'} gün${isFastest?' ⚡':''}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;color:${isFastest?'#3B82F6':'var(--t)'};font-weight:${isFastest?'700':'400'}">${t.transitSure||'—'} gün${isFastest?' ⚡':''}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;font-size:10px">${t.aracTipi||'—'}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;font-size:10px;color:var(--t3)">${t.gecerlilikBitis||'—'}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:center">
               <button onclick="openSatisTeklif(${t.id})" class="btn btns" style="font-size:10px;padding:2px 6px">📤 Satış</button>
             </td>
@@ -863,50 +896,132 @@ function nvlConvertCurrency(amount, fromCur, toCur) {
 }
 window.nvlConvertCurrency = nvlConvertCurrency;
 
-// 3b. Navlun Trend Grafiği (son 6 ay)
+// 3b. Navlun Trend Grafiği — konteyner tipine göre filtreli çizgi grafik
 function openNavlunTrend() {
   const items = loadNavlun();
-  const now   = new Date();
-  const months = [];
-  for (let i=5; i>=0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-    const label = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()] + ' ' + d.getFullYear();
-    const monthItems = items.filter(n => (n.createdAt||'').startsWith(key));
-    const avg = monthItems.length ? Math.round(monthItems.reduce((a,n)=>a+(n.birimFiyat||0),0)/monthItems.length) : 0;
-    months.push({ key, label, count: monthItems.length, avg });
-  }
-  const maxAvg = Math.max(...months.map(m=>m.avg), 1);
+  // Konteyner/araç tiplerini topla
+  const aracTipleri = [];
+  items.forEach(function(n) { if (n.aracTipi && aracTipleri.indexOf(n.aracTipi) === -1) aracTipleri.push(n.aracTipi); });
 
   const old = document.getElementById('mo-nvl-trend'); if (old) old.remove();
   const mo = document.createElement('div');
   mo.className='mo'; mo.id='mo-nvl-trend'; mo.style.zIndex='2100';
-  mo.innerHTML = `<div class="moc" style="max-width:500px;padding:0;border-radius:12px;overflow:hidden">
-    <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
-      <div style="font-size:15px;font-weight:700;color:var(--t)">📈 Navlun Fiyat Trendi (6 Ay)</div>
+  mo.innerHTML = `<div class="moc" style="max-width:600px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:15px;font-weight:700;color:var(--t)">📈 Navlun Fiyat Trendi</div>
+      <button onclick="document.getElementById('mo-nvl-trend').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
     </div>
-    <div style="padding:16px 20px">
-      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;margin-bottom:12px">
-        ${months.map(m => {
-          const h = m.avg ? Math.max(8, Math.round(m.avg/maxAvg*120)) : 4;
-          const color = m.avg > months[0].avg*1.1 ? '#EF4444' : m.avg < months[0].avg*0.9 ? '#22C55E' : 'var(--ac)';
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-            <div style="font-size:9px;font-weight:700;color:var(--t)">${m.avg ? '$'+m.avg : '—'}</div>
-            <div style="width:100%;height:${h}px;background:${color};border-radius:4px 4px 0 0"></div>
-            <div style="font-size:9px;color:var(--t3)">${m.label.split(' ')[0]}</div>
-            <div style="font-size:8px;color:var(--t3)">${m.count} teklif</div>
-          </div>`;
-        }).join('')}
-      </div>
+    <div style="padding:12px 20px;border-bottom:1px solid var(--b);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--t3)">Konteyner/Araç:</span>
+      <select id="nvl-trend-arac" onchange="window._nvlRenderTrend?.()" class="fi" style="font-size:11px;padding:4px 8px;min-width:160px">
+        <option value="">Tümü</option>
+        ${aracTipleri.map(function(t) { return '<option value="' + t + '">' + t + '</option>'; }).join('')}
+      </select>
     </div>
+    <div id="nvl-trend-chart" style="padding:20px"></div>
     <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
       <button class="btn" onclick="document.getElementById('mo-nvl-trend').remove()">Kapat</button>
     </div>
   </div>`;
   document.body.appendChild(mo);
   mo.addEventListener('click', e => { if(e.target===mo) mo.remove(); });
-  setTimeout(() => mo.classList.add('open'), 10);
+  setTimeout(() => { mo.classList.add('open'); window._nvlRenderTrend?.(); }, 10);
 }
+
+/**
+ * Trend çizgi grafiğini render eder (CSS ile).
+ */
+window._nvlRenderTrend = function() {
+  const cont = document.getElementById('nvl-trend-chart');
+  if (!cont) return;
+  const aracF = document.getElementById('nvl-trend-arac')?.value || '';
+  const items = loadNavlun();
+  const now   = new Date();
+  const months = [];
+
+  for (var i = 5; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var label = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()];
+    var monthItems = items.filter(function(n) {
+      if (!(n.createdAt || '').startsWith(key)) return false;
+      if (aracF && n.aracTipi !== aracF) return false;
+      return true;
+    });
+    var avg = monthItems.length ? Math.round(monthItems.reduce(function(a, n) { return a + (n.birimFiyat || 0); }, 0) / monthItems.length) : 0;
+    var min = monthItems.length ? Math.min.apply(null, monthItems.map(function(n) { return n.birimFiyat || Infinity; })) : 0;
+    var max = monthItems.length ? Math.max.apply(null, monthItems.map(function(n) { return n.birimFiyat || 0; })) : 0;
+    months.push({ key: key, label: label, count: monthItems.length, avg: avg, min: min === Infinity ? 0 : min, max: max });
+  }
+
+  var maxVal = Math.max.apply(null, months.map(function(m) { return m.max || m.avg; }).concat([1]));
+  var chartH = 160;
+
+  // Çizgi grafik — SVG polyline ile
+  var points = [];
+  var dotHTML = '';
+  var w = 100; // SVG viewBox genişliği (%)
+  months.forEach(function(m, idx) {
+    if (m.avg > 0) {
+      var x = (idx / (months.length - 1)) * 100;
+      var y = chartH - (m.avg / maxVal * (chartH - 20)) - 10;
+      points.push(x + ',' + y);
+      dotHTML += '<circle cx="' + x + '" cy="' + y + '" r="4" fill="#6366F1" stroke="#fff" stroke-width="2"/>';
+      dotHTML += '<text x="' + x + '" y="' + (y - 10) + '" text-anchor="middle" font-size="9" font-weight="700" fill="var(--t)">$' + m.avg + '</text>';
+    }
+  });
+
+  var svgLine = points.length >= 2
+    ? '<polyline points="' + points.join(' ') + '" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '';
+
+  // Min-max aralık (gölgeli alan)
+  var areaUp = [];
+  var areaDn = [];
+  months.forEach(function(m, idx) {
+    var x = (idx / (months.length - 1)) * 100;
+    if (m.max > 0) {
+      areaUp.push(x + ',' + (chartH - (m.max / maxVal * (chartH - 20)) - 10));
+      areaDn.unshift(x + ',' + (chartH - ((m.min || m.avg) / maxVal * (chartH - 20)) - 10));
+    }
+  });
+  var areaSVG = areaUp.length >= 2
+    ? '<polygon points="' + areaUp.concat(areaDn).join(' ') + '" fill="rgba(99,102,241,.08)" stroke="none"/>'
+    : '';
+
+  cont.innerHTML = ''
+    + '<div style="position:relative;height:' + chartH + 'px;margin-bottom:8px">'
+      + '<svg viewBox="0 0 100 ' + chartH + '" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible">'
+        + areaSVG + svgLine + dotHTML
+      + '</svg>'
+    + '</div>'
+    // X ekseni etiketleri
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:16px">'
+      + months.map(function(m) {
+          return '<div style="text-align:center;font-size:10px">'
+            + '<div style="color:var(--t3)">' + m.label + '</div>'
+            + '<div style="font-size:9px;color:var(--t3)">' + m.count + ' teklif</div>'
+          + '</div>';
+        }).join('')
+    + '</div>'
+    // Detay tablosu
+    + '<div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:6px 10px;background:var(--s2);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;border-bottom:1px solid var(--b)">'
+        + '<div>Ay</div><div style="text-align:right">Ort.</div><div style="text-align:right">Min</div><div style="text-align:right">Maks</div><div style="text-align:right">Adet</div>'
+      + '</div>'
+      + months.map(function(m, idx) {
+          var bg = idx % 2 === 0 ? 'var(--sf)' : 'var(--s2)';
+          return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:5px 10px;font-size:11px;background:' + bg + ';border-bottom:1px solid var(--b)">'
+            + '<div style="color:var(--t)">' + m.label + '</div>'
+            + '<div style="text-align:right;font-weight:600;color:var(--t);font-family:monospace">' + (m.avg ? '$' + m.avg : '—') + '</div>'
+            + '<div style="text-align:right;color:#22C55E;font-family:monospace">' + (m.min ? '$' + m.min : '—') + '</div>'
+            + '<div style="text-align:right;color:#EF4444;font-family:monospace">' + (m.max ? '$' + m.max : '—') + '</div>'
+            + '<div style="text-align:right;color:var(--t3)">' + m.count + '</div>'
+          + '</div>';
+        }).join('')
+    + '</div>';
+};
+
 window.openNavlunTrend = openNavlunTrend;
 
 // 3c. Tedarikçi Performans Skoru
