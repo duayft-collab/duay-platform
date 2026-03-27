@@ -855,6 +855,345 @@ function _delLokItem(id){
   });
 }
 
+// ════════════════════════════════════════════════════════════════
+// KONTEYNER GELİŞMELERİ — Alarm + Evrak + Müşteri Bildirimi + Kullanıcı İzni
+// ════════════════════════════════════════════════════════════════
+
+// ── 1. KONTEYNER ALARM SİSTEMİ ──────────────────────────────────
+var _ktnAlarmInterval = null;
+
+/**
+ * Tüm konteynerlerin ETA tarihine göre alarm kontrolü yapar.
+ * 10g, 7g, 3g kala bildirim. Çıkış/varış bildirimi.
+ * @returns {void}
+ */
+function checkKargoAlarms() {
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var today = new Date();
+  var todayS = today.toISOString().slice(0, 10);
+  var alarmKey = 'ak_ktn_alarm_sent';
+  var sent = {};
+  try { sent = JSON.parse(localStorage.getItem(alarmKey) || '{}'); } catch (e) { sent = {}; }
+  var changed = false;
+
+  konts.forEach(function(k) {
+    if (k.closed || !k.eta) return;
+    var etaD = new Date(k.eta);
+    var dl = Math.ceil((etaD - today) / 86400000);
+    var label = (k.no || '?') + ' (' + (k['from-port'] || '?') + ' → ' + (k['to-port'] || '?') + ')';
+
+    // 10 gün kala
+    if (dl <= 10 && dl > 7 && !sent[k.id + '_10']) {
+      window.addNotif?.('📦', 'Konteyner ' + label + ' — varışa ' + dl + ' gün kaldı', 'info', 'kargo');
+      sent[k.id + '_10'] = todayS; changed = true;
+    }
+    // 7 gün kala
+    if (dl <= 7 && dl > 3 && !sent[k.id + '_7']) {
+      window.addNotif?.('⚠️', 'Konteyner ' + label + ' — varışa ' + dl + ' gün kaldı', 'warn', 'kargo');
+      sent[k.id + '_7'] = todayS; changed = true;
+    }
+    // 3 gün kala — kırmızı uyarı
+    if (dl <= 3 && dl > 0 && !sent[k.id + '_3']) {
+      window.addNotif?.('🚨', 'Konteyner ' + label + ' — varışa ' + dl + ' gün! Hazırlıkları tamamlayın', 'err', 'kargo');
+      sent[k.id + '_3'] = todayS; changed = true;
+    }
+    // Varış günü
+    if (dl <= 0 && !sent[k.id + '_arrived']) {
+      window.addNotif?.('🏁', 'Konteyner ' + label + ' — tahmini varış tarihi geldi!', 'ok', 'kargo');
+      sent[k.id + '_arrived'] = todayS; changed = true;
+    }
+    // Çıkış limanından ayrılma (ETD bugün veya geçmişte ve henüz bildirilmemişse)
+    if (k.etd && k.etd <= todayS && !sent[k.id + '_departed']) {
+      window.addNotif?.('🚢', 'Konteyner ' + label + ' — çıkış limanından ayrıldı (ETD: ' + k.etd + ')', 'info', 'kargo');
+      sent[k.id + '_departed'] = todayS; changed = true;
+    }
+  });
+
+  if (changed) {
+    localStorage.setItem(alarmKey, JSON.stringify(sent));
+  }
+}
+
+/**
+ * Konteyner alarm interval'ını başlatır (her saat).
+ */
+function _startKtnAlarms() {
+  if (_ktnAlarmInterval) return;
+  checkKargoAlarms();
+  _ktnAlarmInterval = setInterval(checkKargoAlarms, 3600000); // 1 saat
+}
+
+
+// ── 2. EVRAK TAKİBİ ──────────────────────────────────────────────
+
+var KTN_EVRAK_KEY = 'ak_ktn_evrak1';
+var KTN_ZORUNLU_EVRAK = [
+  { key: 'commercial_invoice', l: 'Commercial Invoice' },
+  { key: 'packing_list',       l: 'Packing List' },
+  { key: 'certificate_origin', l: 'Certificate of Origin' },
+  { key: 'bill_of_lading',     l: 'Bill of Lading' },
+  { key: 'diger',              l: 'Diğer' },
+];
+
+/**
+ * Konteyner evrak verilerini yükler.
+ * @returns {Object} { konteynerId: { evrakKey: { done, date, note } } }
+ */
+function _loadKtnEvrak() {
+  try { return JSON.parse(localStorage.getItem(KTN_EVRAK_KEY) || '{}'); } catch (e) { return {}; }
+}
+function _saveKtnEvrak(d) { localStorage.setItem(KTN_EVRAK_KEY, JSON.stringify(d)); }
+
+/**
+ * Konteyner detay modalında evrak bölümünü render eder.
+ * @param {number} ktnId
+ * @returns {string} HTML
+ */
+function _renderKtnEvrakHTML(ktnId) {
+  var evrakData = _loadKtnEvrak();
+  var ktnEvrak  = evrakData[ktnId] || {};
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var k = konts.find(function(x) { return x.id === ktnId; });
+  var todayS = new Date().toISOString().slice(0, 10);
+
+  // ETD + 7 gün sonrası
+  var warnDate = '';
+  if (k && k.etd) {
+    var etdD = new Date(k.etd);
+    etdD.setDate(etdD.getDate() + 7);
+    warnDate = etdD.toISOString().slice(0, 10);
+  }
+
+  var done = 0;
+  var total = KTN_ZORUNLU_EVRAK.length;
+  KTN_ZORUNLU_EVRAK.forEach(function(e) { if (ktnEvrak[e.key]?.done) done++; });
+
+  var html = '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Evraklar (' + done + '/' + total + ')</div>';
+  html += '<div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden;margin-bottom:10px"><div style="height:100%;width:' + Math.round(done / total * 100) + '%;background:' + (done === total ? '#22C55E' : 'var(--ac)') + ';border-radius:2px"></div></div>';
+
+  KTN_ZORUNLU_EVRAK.forEach(function(e) {
+    var ev = ktnEvrak[e.key] || { done: false, date: '', note: '' };
+    var isLate = !ev.done && warnDate && todayS > warnDate;
+    var bg = isLate ? 'rgba(239,68,68,.06)' : 'var(--sf)';
+    var border = isLate ? 'border:1px solid rgba(239,68,68,.2)' : 'border:1px solid var(--b)';
+
+    html += '<div style="' + border + ';border-radius:8px;padding:8px 12px;margin-bottom:6px;background:' + bg + '">'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<input type="checkbox" ' + (ev.done ? 'checked' : '') + ' onchange="window._toggleKtnEvrak(' + ktnId + ',\'' + e.key + '\',this.checked)" style="accent-color:var(--ac);flex-shrink:0">'
+        + '<span style="flex:1;font-size:12px;font-weight:500;color:' + (ev.done ? '#22C55E' : isLate ? '#EF4444' : 'var(--t)') + '">' + e.l + '</span>'
+        + (isLate ? '<span style="font-size:9px;color:#EF4444;font-weight:700">⚠ GECİKMİŞ</span>' : '')
+        + (ev.date ? '<span style="font-size:10px;color:var(--t3)">' + ev.date + '</span>' : '')
+      + '</div>'
+      + (ev.note ? '<div style="font-size:10px;color:var(--t3);margin:4px 0 0 26px">' + ev.note + '</div>' : '')
+    + '</div>';
+  });
+
+  // Not ekleme
+  html += '<div style="margin-top:6px"><input class="fi" id="ktn-evrak-note-' + ktnId + '" placeholder="Evrak notu ekle…" style="font-size:11px;padding:6px 10px">'
+    + '<div style="display:flex;gap:6px;margin-top:4px">'
+      + '<select class="fi" id="ktn-evrak-sel-' + ktnId + '" style="font-size:11px;flex:1">'
+        + KTN_ZORUNLU_EVRAK.map(function(e) { return '<option value="' + e.key + '">' + e.l + '</option>'; }).join('')
+      + '</select>'
+      + '<button class="btn btns" onclick="window._addKtnEvrakNote(' + ktnId + ')" style="font-size:11px;padding:4px 10px">Not Ekle</button>'
+    + '</div></div>';
+
+  return html;
+}
+
+/**
+ * Evrak checkbox toggle.
+ */
+window._toggleKtnEvrak = function(ktnId, evrakKey, checked) {
+  var data = _loadKtnEvrak();
+  if (!data[ktnId]) data[ktnId] = {};
+  if (!data[ktnId][evrakKey]) data[ktnId][evrakKey] = { done: false, date: '', note: '' };
+  data[ktnId][evrakKey].done = checked;
+  if (checked) data[ktnId][evrakKey].date = new Date().toISOString().slice(0, 10);
+  _saveKtnEvrak(data);
+  // Detay modalı açıksa yenile
+  var detailMo = document.getElementById('mo-ktn-detail');
+  if (detailMo) { var evCont = document.getElementById('ktn-evrak-cont-' + ktnId); if (evCont) evCont.innerHTML = _renderKtnEvrakHTML(ktnId); }
+  _toastK(checked ? 'Evrak tamamlandı ✓' : 'Evrak kaldırıldı', 'ok');
+};
+
+/**
+ * Evrak notu ekle.
+ */
+window._addKtnEvrakNote = function(ktnId) {
+  var note = (document.getElementById('ktn-evrak-note-' + ktnId)?.value || '').trim();
+  var evrakKey = document.getElementById('ktn-evrak-sel-' + ktnId)?.value || 'diger';
+  if (!note) { _toastK('Not boş', 'err'); return; }
+  var data = _loadKtnEvrak();
+  if (!data[ktnId]) data[ktnId] = {};
+  if (!data[ktnId][evrakKey]) data[ktnId][evrakKey] = { done: false, date: '', note: '' };
+  data[ktnId][evrakKey].note = note;
+  _saveKtnEvrak(data);
+  var inp = document.getElementById('ktn-evrak-note-' + ktnId); if (inp) inp.value = '';
+  var evCont = document.getElementById('ktn-evrak-cont-' + ktnId); if (evCont) evCont.innerHTML = _renderKtnEvrakHTML(ktnId);
+  _toastK('Not eklendi ✓', 'ok');
+};
+
+
+// ── 3. MÜŞTERİ BİLDİRİMİ — Hazır mesaj şablonları ──────────────
+
+/**
+ * Müşteri bildirim şablonlarını gösterir (EN + FR).
+ * @param {number} ktnId
+ */
+function openKtnMusteriBildirim(ktnId) {
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var k = konts.find(function(x) { return x.id === ktnId; });
+  if (!k) { _toastK('Konteyner bulunamadı', 'err'); return; }
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
+  var musteri = k.musteri || 'Customer';
+  var no = k.no || 'N/A';
+  var eta = k.eta || 'TBD';
+  var from = k['from-port'] || '';
+  var to = k['to-port'] || '';
+  var hat = k.hat || '';
+
+  var msgEN = 'Dear ' + musteri + ',\n\n'
+    + 'We would like to inform you that your shipment is scheduled to arrive within the next 7 days.\n\n'
+    + 'Container No: ' + no + '\n'
+    + 'Route: ' + from + ' → ' + to + '\n'
+    + 'Carrier: ' + hat + '\n'
+    + 'ETA: ' + eta + '\n\n'
+    + 'Please ensure all necessary arrangements are in place for customs clearance and delivery.\n\n'
+    + 'Best regards,\nDuay Global LLC';
+
+  var msgFR = 'Cher(e) ' + musteri + ',\n\n'
+    + 'Nous avons le plaisir de vous informer que votre expédition est prévue dans les 7 prochains jours.\n\n'
+    + 'N° Conteneur: ' + no + '\n'
+    + 'Itinéraire: ' + from + ' → ' + to + '\n'
+    + 'Transporteur: ' + hat + '\n'
+    + 'ETA: ' + eta + '\n\n'
+    + 'Veuillez vous assurer que toutes les dispositions nécessaires sont prises pour le dédouanement et la livraison.\n\n'
+    + 'Cordialement,\nDuay Global LLC';
+
+  var old = document.getElementById('mo-ktn-msg'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-ktn-msg'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:12px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:15px;font-weight:700;color:var(--t)">📧 Müşteri Bildirimi — ' + esc(no) + '</div>'
+      + '<button onclick="document.getElementById(\'mo-ktn-msg\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="flex:1;overflow-y:auto;padding:16px 20px">'
+      // English
+      + '<div style="margin-bottom:16px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+          + '<span style="font-size:12px;font-weight:700;color:var(--t)">🇬🇧 English</span>'
+          + '<button class="btn btns" onclick="navigator.clipboard.writeText(document.getElementById(\'ktn-msg-en\').value);window.toast?.(\'Kopyalandı ✓\',\'ok\')" style="font-size:11px;padding:3px 10px">📋 Kopyala</button>'
+        + '</div>'
+        + '<textarea id="ktn-msg-en" class="fi" rows="10" style="font-size:12px;line-height:1.5;resize:vertical">' + esc(msgEN) + '</textarea>'
+      + '</div>'
+      // French
+      + '<div>'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+          + '<span style="font-size:12px;font-weight:700;color:var(--t)">🇫🇷 Français</span>'
+          + '<button class="btn btns" onclick="navigator.clipboard.writeText(document.getElementById(\'ktn-msg-fr\').value);window.toast?.(\'Kopyalandı ✓\',\'ok\')" style="font-size:11px;padding:3px 10px">📋 Kopyala</button>'
+        + '</div>'
+        + '<textarea id="ktn-msg-fr" class="fi" rows="10" style="font-size:12px;line-height:1.5;resize:vertical">' + esc(msgFR) + '</textarea>'
+      + '</div>'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-ktn-msg\').remove()">Kapat</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+
+// ── 4. KULLANICI TAKİP İZNİ ──────────────────────────────────────
+
+/**
+ * Konteyner detay modalında kullanıcı takip izni ekleme.
+ * @param {number} ktnId
+ */
+window._addKtnViewer = window._addKtnViewer || function(ktnId) {
+  var sel = document.getElementById('ktn-add-viewer-' + ktnId);
+  var uid = parseInt(sel?.value || '0');
+  if (!uid) { _toastK('Kullanıcı seçin', 'err'); return; }
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var k = konts.find(function(x) { return x.id === ktnId; });
+  if (!k) return;
+  if (!Array.isArray(k.viewers)) k.viewers = [];
+  if (k.viewers.includes(uid)) { _toastK('Bu kullanıcı zaten izinli', 'err'); return; }
+  k.viewers.push(uid);
+  if (typeof storeKonteyn === 'function') storeKonteyn(konts);
+  _toastK('Takip izni verildi ✓', 'ok');
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+  var u = users.find(function(x) { return x.id === uid; });
+  window.addNotif?.('👁', 'Konteyner ' + (k.no || '?') + ' takip izni verildi', 'info', 'kargo', uid);
+  _logK('Konteyner ' + (k.no || '?') + ' takip izni: ' + (u?.name || uid));
+  // Detay modalı yenile
+  if (window.openKonteynDetail) window.openKonteynDetail(ktnId);
+};
+
+/**
+ * Konteyner takip iznini kaldırır.
+ * @param {number} ktnId
+ * @param {number} uid
+ */
+window._removeKtnViewer = window._removeKtnViewer || function(ktnId, uid) {
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var k = konts.find(function(x) { return x.id === ktnId; });
+  if (!k || !Array.isArray(k.viewers)) return;
+  k.viewers = k.viewers.filter(function(v) { return v !== uid; });
+  if (typeof storeKonteyn === 'function') storeKonteyn(konts);
+  _toastK('Takip izni kaldırıldı', 'ok');
+  if (window.openKonteynDetail) window.openKonteynDetail(ktnId);
+};
+
+
+// ── Detay modalına evrak + müşteri bildirimi inject ──────────────
+
+var _origOpenKtnDetail = window.openKonteynDetail;
+window.openKonteynDetail = function(id) {
+  _origOpenKtnDetail?.(id);
+  // Evrak ve müşteri bildirimi bölümlerini inject et
+  setTimeout(function() {
+    var mo = document.getElementById('mo-ktn-detail');
+    if (!mo) return;
+    var scrollArea = mo.querySelector('[style*="overflow-y:auto"]');
+    if (!scrollArea) return;
+
+    // Evrak bölümü — zaten varsa ekleme
+    if (!document.getElementById('ktn-evrak-cont-' + id)) {
+      var evrakAcc = document.createElement('div');
+      evrakAcc.className = 'ktn-acc';
+      evrakAcc.style.cssText = 'border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px';
+      evrakAcc.innerHTML = '<div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'\':\'none\';this.querySelector(\'._arr\').classList.toggle(\'_open\')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--s2)">'
+        + '<span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase">📎 Evrak Takibi</span>'
+        + '<span class="_arr" style="font-size:10px;color:var(--t3);transition:transform .2s">▼</span>'
+      + '</div>'
+      + '<div id="ktn-evrak-cont-' + id + '" style="padding:10px 14px">' + _renderKtnEvrakHTML(id) + '</div>';
+      scrollArea.appendChild(evrakAcc);
+    }
+
+    // Müşteri bildirimi butonu
+    if (!document.getElementById('ktn-msg-btn-' + id)) {
+      var msgBtn = document.createElement('div');
+      msgBtn.id = 'ktn-msg-btn-' + id;
+      msgBtn.style.cssText = 'margin-bottom:10px';
+      msgBtn.innerHTML = '<button class="btn btns" onclick="openKtnMusteriBildirim(' + id + ')" style="width:100%;font-size:12px;padding:8px;border-radius:8px">📧 Müşteri Bildirimi (EN / FR)</button>';
+      scrollArea.appendChild(msgBtn);
+    }
+  }, 150);
+};
+
+// Alarm sistemini başlat
+_startKtnAlarms();
+
+// Export
+window.checkKargoAlarms       = checkKargoAlarms;
+window.openKtnMusteriBildirim = openKtnMusteriBildirim;
+window._renderKtnEvrakHTML    = _renderKtnEvrakHTML;
+
+
 // ── ANA RENDER & EXPORT ────────────────────────────────────────────
 function renderKargo(){
   _injectKargoPanel();
