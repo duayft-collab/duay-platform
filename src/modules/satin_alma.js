@@ -796,21 +796,14 @@ function _openSAModal(id) {
       + '<div><div class="fl">TESLİMAT YERİ</div><input class="fi" id="sa-delivery-place" placeholder="Mersin Limanı, Depo..." value="' + (s?.deliveryPlace || '') + '"></div>'
       + '<div><div class="fl">TESLİMAT KİME AİT</div><select class="fi" id="sa-delivery-owner"><option value="alici"' + (s?.deliveryOwner === 'alici' ? ' selected' : '') + '>Alıcı</option><option value="satici"' + (s?.deliveryOwner === 'satici' ? ' selected' : '') + '>Satıcı</option><option value="paylasimli"' + (s?.deliveryOwner === 'paylasimli' ? ' selected' : '') + '>Paylaşımlı</option></select></div>'
     + '</div>'
-    // Satıcı Firma Bilgileri
-    + '<div style="border:1px solid var(--b);border-radius:10px;padding:14px;margin-top:4px">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">🏢 Satıcı Firma Bilgileri</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">'
-        + '<div><div class="fl">FİRMA ADI <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-vendor-name" placeholder="Tedarikçi firma" value="' + (s?.vendor?.name || '') + '"></div>'
-        + '<div><div class="fl">ÜLKE</div><input class="fi" id="sa-vendor-country" placeholder="Çin, Almanya..." value="' + (s?.vendor?.country || '') + '"></div>'
-        + '<div><div class="fl">VERGİ / KAYIT NO</div><input class="fi" id="sa-vendor-tax" placeholder="Tax ID" value="' + (s?.vendor?.tax || '') + '"></div>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">'
-        + '<div><div class="fl">İLETİŞİM KİŞİSİ</div><input class="fi" id="sa-vendor-contact" placeholder="Ad Soyad" value="' + (s?.vendor?.contact || '') + '"></div>'
-        + '<div><div class="fl">TELEFON</div><input class="fi" id="sa-vendor-phone" placeholder="+86 ..." value="' + (s?.vendor?.phone || '') + '"></div>'
-        + '<div><div class="fl">E-POSTA</div><input class="fi" type="email" id="sa-vendor-email" placeholder="info@firma.com" value="' + (s?.vendor?.email || '') + '"></div>'
-      + '</div>'
-      + '<div><div class="fl">ADRES</div><textarea class="fi" id="sa-vendor-address" rows="2" style="resize:none" placeholder="Firma adresi...">' + (s?.vendor?.address || '') + '</textarea></div>'
-    + '</div>'
+    // Satıcı bilgileri — cari dropdown'dan gelir, gizli input'lar uyumluluk için
+    + '<input type="hidden" id="sa-vendor-name" value="' + (s?.vendor?.name || s?.supplier || '') + '">'
+    + '<input type="hidden" id="sa-vendor-country" value="' + (s?.vendor?.country || '') + '">'
+    + '<input type="hidden" id="sa-vendor-contact" value="' + (s?.vendor?.contact || '') + '">'
+    + '<input type="hidden" id="sa-vendor-phone" value="' + (s?.vendor?.phone || '') + '">'
+    + '<input type="hidden" id="sa-vendor-email" value="' + (s?.vendor?.email || '') + '">'
+    + '<input type="hidden" id="sa-vendor-address" value="' + (s?.vendor?.address || '') + '">'
+    + '<input type="hidden" id="sa-vendor-tax" value="' + (s?.vendor?.tax || '') + '">'
     // Açıklama / Not
     + '<div><div class="fl">AÇIKLAMA / NOT</div><textarea class="fi" id="sa-notes" rows="2" style="resize:none" placeholder="Ek bilgi, özel şartlar...">' + (s?.notes || '') + '</textarea></div>'
     // Ödeme Dilimleri
@@ -1187,6 +1180,7 @@ window._saveSA = function() {
         var managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
           return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
         });
+        console.log('[SA] bildirim gönderildi:', managers.length, 'yönetici');
         managers.forEach(function(m) {
           window.addNotif?.('🛒', 'Yeni satınalma onay bekliyor: ' + supplier + ' — ' + _fmtSA(total, currency) + ' (' + cuName + ')', 'warn', 'satinalma', m.id);
         });

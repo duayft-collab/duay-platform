@@ -82,19 +82,32 @@ function _injectKargoPanel(){
   var lokOpts=loks.map(function(l){return '<option value="'+l.id+'">'+(l.tip==='ofis'?'🏢':'🏭')+' '+l.ad+'</option>';}).join('');
   var kurFs=['MNG Kargo','Yurtiçi Kargo','PTT Kargo','Aras Kargo','DHL','FedEx','UPS','Diğer'];
 
+  var KRG_CATS = [
+    { id:'navlun',   icon:'🚢', label:'Navlun & Konteyner' },
+    { id:'lokasyon', icon:'🏭', label:'Lokasyon Kargo' },
+    { id:'kurye',    icon:'📬', label:'Kurye / Yurt İçi' },
+  ];
+
   panel.innerHTML=[
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--b)">',
-      '<div><div style="font-size:18px;font-weight:700">📦 Kargo Merkezi</div>',
-      '<div style="font-size:12px;color:var(--t3);margin-top:2px">Navlun, lokasyon ve kurye</div></div>',
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:#fff;position:sticky;top:0;z-index:10">',
+      '<div><div style="font-size:16px;font-weight:700;color:#1C1C1E">📦 Kargo Merkezi</div>',
+      '<div style="font-size:11px;color:#8E8E93;margin-top:2px">Navlun, konteyner, lokasyon ve kurye</div></div>',
     '</div>',
-    '<div style="display:flex;border-bottom:2px solid var(--b);padding:0 20px" id="krg-tab-bar">',
-      '<button onclick="KargoV10.setTab(\'navlun\')" id="krg-tab-navlun" style="padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px">🚢 Navlun & Konteyner</button>',
-      '<button onclick="KargoV10.setTab(\'lokasyon\')" id="krg-tab-lokasyon" style="padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px">🏭 Lokasyon Kargo</button>',
-      '<button onclick="KargoV10.setTab(\'kurye\')" id="krg-tab-kurye" style="padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px">📬 Kurye / Yurt İçi</button>',
+    '<div style="display:flex;min-height:calc(100vh - 120px)">',
+      // Sol panel — kategori ikonları
+      '<div style="width:200px;border-right:1px solid #F0F0F0;padding:12px;flex-shrink:0;background:#FAFAFA">',
+        KRG_CATS.map(function(c){
+          return '<button class="krg-cat-btn" data-kc="'+c.id+'" onclick="KargoV10.setTab(\''+c.id+'\')" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:1.5px solid #F0F0F0;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:#1C1C1E;margin-bottom:6px;transition:all .12s" onmouseover="this.style.borderColor=\'#007AFF\'" onmouseout="if(!this.classList.contains(\'krg-cat-active\'))this.style.borderColor=\'#F0F0F0\'">'
+            + '<span style="font-size:20px">'+c.icon+'</span><span>'+c.label+'</span></button>';
+        }).join(''),
+      '</div>',
+      // Sağ panel — içerik
+      '<div style="flex:1;overflow-y:auto;background:#fff">',
+        '<div id="krg-content-navlun" style="display:none"></div>',
+        '<div id="krg-content-lokasyon" style="display:none"></div>',
+        '<div id="krg-content-kurye" style="display:none"></div>',
+      '</div>',
     '</div>',
-    '<div id="krg-content-navlun" style="display:none"></div>',
-    '<div id="krg-content-lokasyon" style="display:none"></div>',
-    '<div id="krg-content-kurye" style="display:none"></div>',
     _modalNavlun(),
     _modalLokKrg(lokOpts),
     _modalKurye(kurFs),
@@ -108,10 +121,16 @@ function _setTab(tab){
   _kTab=tab;
   localStorage.setItem(KRG_TAB_KEY,tab);
   ['navlun','lokasyon','kurye'].forEach(function(t){
-    var btn=document.getElementById('krg-tab-'+t);
     var el=document.getElementById('krg-content-'+t);
-    if(btn){btn.style.color=t===tab?'var(--ac)':'var(--t3)';btn.style.borderBottomColor=t===tab?'var(--ac)':'transparent';btn.style.fontWeight=t===tab?'600':'500';}
     if(el)el.style.display=t===tab?'block':'none';
+  });
+  // Kategori butonları highlight
+  document.querySelectorAll('.krg-cat-btn').forEach(function(b) {
+    var active = b.dataset.kc === tab;
+    b.classList.toggle('krg-cat-active', active);
+    b.style.borderColor = active ? '#007AFF' : '#F0F0F0';
+    b.style.background = active ? 'rgba(0,122,255,.06)' : '#fff';
+    b.style.fontWeight = active ? '600' : '500';
   });
   if(tab==='navlun')   _renderNavlunTab();
   if(tab==='lokasyon') _renderLokTab();

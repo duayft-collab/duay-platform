@@ -4329,6 +4329,7 @@ function storeCari(d) { localStorage.setItem(CARI_KEY, JSON.stringify(d)); }
  */
 function saveCari(entry) {
   var d = loadCari();
+  var isNew = !entry.id;
   if (entry.id) {
     var existing = d.find(function(c) { return c.id === entry.id; });
     if (existing) Object.assign(existing, entry);
@@ -4337,11 +4338,111 @@ function saveCari(entry) {
     entry.id = generateNumericId();
     entry.createdAt = _nowTso();
     entry.createdBy = _CUo()?.id;
+    entry.status = 'pending_approval'; // Yeni cari onay bekler
+    if (!entry.contacts) entry.contacts = [];
+    if (!entry.documents) entry.documents = [];
     d.unshift(entry);
   }
   storeCari(d);
+  // Yeni cari bildirimi
+  if (isNew) {
+    var cu = _CUo();
+    var mgrs = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
+      return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
+    });
+    mgrs.forEach(function(m) {
+      window.addNotif?.('🏢', 'Yeni cari onay bekliyor: ' + (entry.name || '—') + ' (' + (cu?.name || '') + ')', 'warn', 'cari', m.id);
+    });
+  }
   return entry;
 }
+
+/**
+ * Cari onaylama.
+ */
+function _approveCari(id) {
+  if (!_isManagerO()) { window.toast?.('Yetki yok', 'err'); return; }
+  var d = loadCari();
+  var c = d.find(function(x) { return x.id === id; });
+  if (!c) return;
+  c.status = 'active';
+  c.approvedBy = _CUo()?.id;
+  c.approvedAt = _nowTso();
+  storeCari(d);
+  window.toast?.('Cari onaylandı ✓', 'ok');
+  window.addNotif?.('✅', 'Cari onaylandı: ' + c.name, 'ok', 'cari', c.createdBy);
+  if (typeof renderCari === 'function') renderCari();
+}
+
+/**
+ * Cari reddetme.
+ */
+function _rejectCari(id) {
+  if (!_isManagerO()) { window.toast?.('Yetki yok', 'err'); return; }
+  var d = loadCari();
+  var c = d.find(function(x) { return x.id === id; });
+  if (!c) return;
+  c.status = 'rejected';
+  c.rejectedBy = _CUo()?.id;
+  storeCari(d);
+  window.toast?.('Cari reddedildi', 'ok');
+  if (typeof renderCari === 'function') renderCari();
+}
+
+/**
+ * Cari risk skoru hesaplama (0-100).
+ */
+function _cariRiskScore(cariId, cariName) {
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var cOdm = odm.filter(function(o) { return o.cariId === cariId || (o.note || '').toLowerCase().includes((cariName || '').toLowerCase()); });
+  if (cOdm.length < 3) return 50; // yetersiz veri
+  var paid = cOdm.filter(function(o) { return o.paid; }).length;
+  var late = cOdm.filter(function(o) { return !o.paid && o.due && o.due < new Date().toISOString().slice(0,10); }).length;
+  var total = cOdm.length || 1;
+  return Math.max(0, Math.min(100, Math.round((paid / total * 60) + (Math.max(0, 40 - late * 10)))));
+}
+
+/**
+ * Yaşlandırma raporu: 30/60/90+ gün vadesi geçen.
+ */
+function _cariAgingReport(cariId, cariName) {
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var today = new Date().toISOString().slice(0, 10);
+  var cOdm = odm.filter(function(o) { return !o.paid && o.due && o.due < today && (o.cariId === cariId || (o.note || '').toLowerCase().includes((cariName || '').toLowerCase())); });
+  var aging = { d30: 0, d60: 0, d90: 0 };
+  cOdm.forEach(function(o) {
+    var days = Math.ceil((new Date(today) - new Date(o.due)) / 86400000);
+    if (days >= 90) aging.d90 += parseFloat(o.amount) || 0;
+    else if (days >= 60) aging.d60 += parseFloat(o.amount) || 0;
+    else if (days >= 30) aging.d30 += parseFloat(o.amount) || 0;
+  });
+  return aging;
+}
+
+/**
+ * İki cariyi birleştirir: hareketleri id1'e taşır, id2'yi siler.
+ */
+function _mergeCari(id1, id2) {
+  if (!_isManagerO()) { window.toast?.('Yetki yok', 'err'); return; }
+  // Ödemelerde cariId güncelle
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  odm.forEach(function(o) { if (o.cariId === id2) o.cariId = id1; });
+  if (typeof storeOdm === 'function') storeOdm(odm);
+  // Tahsilatlarda
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  tah.forEach(function(t) { if (t.cariId === id2) t.cariId = id1; });
+  if (typeof storeTahsilat === 'function') storeTahsilat(tah);
+  // Cariyi sil
+  deleteCari(id2);
+  window.toast?.('Cariler birleştirildi ✓', 'ok');
+  if (typeof renderCari === 'function') renderCari();
+}
+
+window._approveCari  = _approveCari;
+window._rejectCari   = _rejectCari;
+window._cariRiskScore = _cariRiskScore;
+window._cariAgingReport = _cariAgingReport;
+window._mergeCari    = _mergeCari;
 
 /**
  * Cari sil.
