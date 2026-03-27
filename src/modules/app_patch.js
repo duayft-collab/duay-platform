@@ -19,6 +19,7 @@
     ceo:     () => { window.renderCeo?.(); },
     stok:    () => { window.Stok?.render?.(); window.renderDemirbaslar?.(); },
     satinalma: () => { window.renderSatinAlma?.(); },
+    cari: () => { window.renderCari?.(); },
     lojistik:() => { window.Lojistik?.render?.(); },
     'ik-hub':() => { const p=document.getElementById('panel-ik-hub'); if(p && window.IkHub) { IkHub.inject(p); IkHub.render?.(); } },
     hesap:   () => { window.renderHesapHistory?.(); },

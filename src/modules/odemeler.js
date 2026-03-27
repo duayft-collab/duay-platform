@@ -313,64 +313,33 @@ function _injectOdmPanel() {
 
     // SEKMELER
     '<div id="odm-tabs-row" style="display:flex;border-bottom:1px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none">',
-      '<div id="odm-stab-all" style="padding:9px 16px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac)">Tümü <span id="odm-stat-total">0</span></div>',
-      '<div id="odm-stab-gecikti" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--rd)">Gecikmiş <span id="odm-stat-late2">0</span></div>',
-      '<div id="odm-stab-bekliyor" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Bu Hafta <span id="odm-stat-soon2">0</span></div>',
-      '<div id="odm-stab-ay" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Bu Ay <span id="odm-stat-paid2">0</span></div>',
-      '<div id="odm-stab-abonelik" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Abonelikler</div>',
-      '<div id="odm-stab-kredi_k" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Kredi Kartları</div>',
-      '<div id="odm-stab-tahsilat" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:#0F6E56">💰 Tahsilat</div>',
-      '<div id="odm-stab-projeksiyon" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">📊 Projeksiyon</div>',
+      '<div id="odm-stab-all" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac)">Tümü <span id="odm-stat-total">0</span></div>',
+      '<div id="odm-stab-gecikti" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--rd)">💸 Ödemeler <span id="odm-stat-late2">0</span></div>',
+      '<div id="odm-stab-tahsilat" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:#0F6E56">💰 Tahsilatlar</div>',
+      '<div id="odm-stab-bekliyor" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--amt)">⏳ Bekleyen <span id="odm-stat-soon2">0</span></div>',
+      '<div id="odm-stab-projeksiyon" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">📊 Projeksiyon</div>',
     '</div>',
 
-    // ARAMA + FİLTRELER — OPTİMİZE
-    '<div style="border-bottom:1px solid var(--b);background:var(--sf)">',
-      // Satır 1: Arama
-      '<div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:0.5px solid var(--b)">',
-        '<div style="position:relative;flex:1">',
-          '<svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%)" width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
-          '<input class="fi" type="search" id="odm-search" placeholder="Ödeme, kategori veya sorumlu ara…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:8px;background:var(--s2)">',
-        '</div>',
-        '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:150px;max-width:180px">',
-          '<option value="">👤 Tüm Sorumlular</option>',
-        '</select>',
-        '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="border-radius:8px;min-width:130px;max-width:160px">',
-          '<option value="">🔁 Tüm Sıklıklar</option>',
-          Object.entries(ODM_FREQ).map(([k,v]) => `<option value="${k}">${v}</option>`).join(''),
-        '</select>',
-        '<button class="btn btns" onclick="bulkMarkOdmPaid()" style="border-radius:8px;font-size:11px;white-space:nowrap">☑ Toplu Ödendi</button>',
-        '<button class="btn btns" onclick="_odmClearFilters()" style="border-radius:8px;font-size:11px;white-space:nowrap">✕ Temizle</button>',
+    // ARAMA + FİLTRELER — SADELEŞTİRİLMİŞ
+    '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--sf)">',
+      '<div style="position:relative;flex:1;min-width:180px">',
+        '<svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%)" width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
+        '<input class="fi" type="search" id="odm-search" placeholder="Ödeme, kategori veya cari ara…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:8px;background:var(--s2)">',
       '</div>',
-      // Satır 2: Hızlı chip filtreler
-      '<div style="padding:6px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">',
-        '<span style="font-size:10px;color:var(--t3);font-weight:500;margin-right:2px">Filtrele:</span>',
-        // Kaynak chip'leri
-        '<div id="odm-src-chips" style="display:flex;gap:4px;flex-wrap:wrap">',
-          '<div class="odm-chip odm-chip-active" data-filter="src" data-val="" onclick="_odmChipClick(this)">Tümü</div>',
-          '<div class="odm-chip" data-filter="src" data-val="manual" onclick="_odmChipClick(this)">✍ Manuel</div>',
-          '<div class="odm-chip" data-filter="src" data-val="satinalma" onclick="_odmChipClick(this)">🛒 Satınalma</div>',
-          '<div class="odm-chip" data-filter="src" data-val="fatura" onclick="_odmChipClick(this)">📄 Fatura</div>',
-          '<div class="odm-chip" data-filter="src" data-val="otomatik" onclick="_odmChipClick(this)">🏦 Otomatik</div>',
-        '</div>',
-        '<div style="width:1px;height:16px;background:var(--b);margin:0 4px"></div>',
-        // Kategori chip'leri
-        '<div id="odm-cat-chips" style="display:flex;gap:4px;flex-wrap:wrap">',
-          '<div class="odm-chip" data-filter="cat" data-val="fatura" onclick="_odmChipClick(this)">💡 Fatura</div>',
-          '<div class="odm-chip" data-filter="cat" data-val="abonelik" onclick="_odmChipClick(this)">🔄 Abonelik</div>',
-          '<div class="odm-chip" data-filter="cat" data-val="kredi_k" onclick="_odmChipClick(this)">💳 Kredi Kartı</div>',
-          '<div class="odm-chip" data-filter="cat" data-val="kira" onclick="_odmChipClick(this)">🏢 Kira</div>',
-          '<div class="odm-chip" data-filter="cat" data-val="vergi" onclick="_odmChipClick(this)">📋 Vergi</div>',
-          '<div class="odm-chip" data-filter="cat" data-val="sigorta" onclick="_odmChipClick(this)">🛡 Sigorta</div>',
-        '</div>',
-        // Durum chip'leri
-        '<div style="width:1px;height:16px;background:var(--b);margin:0 4px"></div>',
-        '<div class="odm-chip" data-filter="status" data-val="gecikti" onclick="_odmChipClick(this)">🚨 Gecikmiş</div>',
-        '<div class="odm-chip" data-filter="status" data-val="no-receipt" onclick="_odmChipClick(this)">📎 Dekont Eksik</div>',
-        '<div class="odm-chip" data-filter="status" data-val="pending-approval" onclick="_odmChipClick(this)">⏳ Onay Bekleyen</div>',
-        // hidden select (eski uyumluluk için)
-        '<select id="odm-cat-f" onchange="renderOdemeler()" style="display:none"><option value=""></option>' + Object.entries(ODM_CATS).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('') + '</select>',
-        '<select id="odm-status-f" onchange="renderOdemeler()" style="display:none"><option value=""></option><option value="bekliyor">Bekliyor</option><option value="gecikti">Gecikmiş</option><option value="odendi">Ödendi</option><option value="no-receipt">Dekont Eksik</option></select>',
-      '</div>',
+      '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px">',
+        '<option value="">Tüm Kategoriler</option>',
+        Object.entries(ODM_CATS).map(([k,v]) => `<option value="${k}">${v.ic} ${v.l}</option>`).join(''),
+      '</select>',
+      '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px">',
+        '<option value="">Tüm Durumlar</option>',
+        '<option value="bekliyor">Bekliyor</option><option value="gecikti">Gecikmiş</option><option value="odendi">Ödendi</option>',
+      '</select>',
+      '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px" title="Başlangıç tarihi">',
+      '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px" title="Bitiş tarihi">',
+      '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+      '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+      '(' + (_isManagerO() ? '<button class="btn btns" onclick="window._odmBulkApprove?.()" style="border-radius:8px;font-size:11px;color:var(--grt)">✅ Toplu Onayla</button>' : '') + ')',
+      '<button class="btn btns" onclick="_odmClearFilters()" style="border-radius:8px;font-size:11px">✕</button>',
     '</div>',
 
     // Chip CSS — dinamik enjekte
@@ -421,6 +390,7 @@ let _odmCurrentTab = 'all';
 function setOdmTab(tab) {
   _odmCurrentTab = tab;
   const tabIds = ['all','gecikti','bekliyor','ay','abonelik','kredi_k','tahsilat','projeksiyon'];
+  // Eski tab ID'leri de destekle
   tabIds.forEach(t => {
     const el = _go('odm-stab-' + t);
     if (!el) return;
@@ -805,6 +775,7 @@ function renderOdemeler() {
             + '<button onclick="openOdmModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📝 Detay Düzenle</button>'
             + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--amt);font-family:inherit;border-bottom:1px solid var(--b)" title="Fatura belgesi yuklenmemis">📎 Dekont Yukle (eksik)</button>' : '')
             + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🏦 Odeme Talimati</button>' : '')
+            + '<button onclick="window._odmSaveAsTemplate?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🔁 Şablon Kaydet</button>'
             + (_isManagerO() ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
           + '</div>'
         + '</div>'
@@ -4324,6 +4295,274 @@ window._odmInlineRowSave = function(id) {
 };
 
 
+// ════════════════════════════════════════════════════════════════
+// CARİ MODÜLÜ
+// ════════════════════════════════════════════════════════════════
+
+var CARI_KEY = 'ak_cari1';
+
+/** @returns {Array} */
+function loadCari() { try { return JSON.parse(localStorage.getItem(CARI_KEY) || '[]'); } catch(e) { return []; } }
+function storeCari(d) { localStorage.setItem(CARI_KEY, JSON.stringify(d)); }
+
+/**
+ * Cari kaydet (yeni veya güncelle).
+ */
+function saveCari(entry) {
+  var d = loadCari();
+  if (entry.id) {
+    var existing = d.find(function(c) { return c.id === entry.id; });
+    if (existing) Object.assign(existing, entry);
+    else d.unshift(entry);
+  } else {
+    entry.id = generateNumericId();
+    entry.createdAt = _nowTso();
+    entry.createdBy = _CUo()?.id;
+    d.unshift(entry);
+  }
+  storeCari(d);
+  return entry;
+}
+
+/**
+ * Cari sil.
+ */
+function deleteCari(id) {
+  storeCari(loadCari().filter(function(c) { return c.id !== id; }));
+}
+
+/**
+ * Cari dropdown HTML oluşturur.
+ * @param {string} selectedId
+ * @param {string} inputId
+ * @returns {string}
+ */
+function _cariDropdownHTML(selectedId, inputId) {
+  var cariList = loadCari();
+  return '<div style="display:flex;gap:4px;align-items:center">'
+    + '<select class="fi" id="' + inputId + '" style="flex:1;font-size:11px">'
+      + '<option value="">— Cari seçin —</option>'
+      + cariList.map(function(c) { return '<option value="' + c.id + '"' + (String(c.id) === String(selectedId) ? ' selected' : '') + '>' + (c.name || '?') + ' (' + (c.type || 'diğer') + ')</option>'; }).join('')
+    + '</select>'
+    + '<button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button>'
+  + '</div>';
+}
+
+/**
+ * Hızlı cari ekleme mini modalı.
+ */
+window._openQuickCari = function() {
+  var old = document.getElementById('mo-quick-cari'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-quick-cari'; mo.style.display = 'flex'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:380px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:12px 16px;border-bottom:1px solid var(--b)"><div style="font-size:14px;font-weight:700;color:var(--t)">+ Hızlı Cari Ekle</div></div>'
+    + '<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">'
+      + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı"></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + '<div><div class="fl">TİP</div><select class="fi" id="qc-type"><option value="tedarikci">Tedarikçi</option><option value="musteri">Müşteri</option><option value="diger">Diğer</option></select></div>'
+        + '<div><div class="fl">TELEFON</div><input class="fi" id="qc-phone" placeholder="Tel"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + '<div><div class="fl">E-POSTA</div><input class="fi" id="qc-email" type="email" placeholder="E-posta"></div>'
+        + '<div><div class="fl">IBAN</div><input class="fi" id="qc-iban" placeholder="IBAN"></div>'
+      + '</div>'
+      + '<div><div class="fl">ADRES</div><input class="fi" id="qc-address" placeholder="Adres"></div>'
+    + '</div>'
+    + '<div style="padding:10px 16px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-quick-cari\').remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="window._saveQuickCari?.()">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  setTimeout(function() { document.getElementById('qc-name')?.focus(); }, 50);
+};
+
+window._saveQuickCari = function() {
+  var name = (document.getElementById('qc-name')?.value || '').trim();
+  if (!name) { window.toast?.('Firma adı zorunlu', 'err'); return; }
+  saveCari({
+    name: name,
+    type: document.getElementById('qc-type')?.value || 'diger',
+    phone: (document.getElementById('qc-phone')?.value || '').trim(),
+    email: (document.getElementById('qc-email')?.value || '').trim(),
+    iban: (document.getElementById('qc-iban')?.value || '').trim(),
+    address: (document.getElementById('qc-address')?.value || '').trim(),
+    notes: '',
+  });
+  document.getElementById('mo-quick-cari')?.remove();
+  window.toast?.('Cari eklendi ✓', 'ok');
+  // Açık dropdownları güncelle
+  renderOdemeler();
+};
+
+/**
+ * Cari panelini render eder.
+ */
+function renderCari() {
+  var panel = document.getElementById('panel-cari');
+  if (!panel) return;
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+      + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">🏢 Cari Yönetimi</div><div style="font-size:10px;color:var(--t3)">Müşteri & Tedarikçi</div></div>'
+      + '<button class="btn btnp" onclick="window._openQuickCari?.()" style="font-size:12px">+ Cari Ekle</button>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--b);background:var(--s2)">'
+      + '<input class="fi" id="cari-search" placeholder="🔍 Ara..." oninput="renderCari()" style="font-size:11px;flex:1">'
+      + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:120px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
+    + '</div>'
+    + '<div id="cari-list"></div>';
+  }
+
+  var all = loadCari();
+  var search = (document.getElementById('cari-search')?.value || '').toLowerCase();
+  var typeF = document.getElementById('cari-type-f')?.value || '';
+  var fl = all.filter(function(c) {
+    if (typeF && c.type !== typeF) return false;
+    if (search && !(c.name || '').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var cont = document.getElementById('cari-list');
+  if (!cont) return;
+
+  if (!fl.length) {
+    cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px;margin-bottom:8px">🏢</div><div>Cari bulunamadı</div></div>';
+    return;
+  }
+
+  // Ödeme/tahsilat geçmişi
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+
+  cont.innerHTML = fl.map(function(c) {
+    var typeBadge = c.type === 'musteri' ? '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(16,185,129,.08);color:#059669">Müşteri</span>' :
+                    c.type === 'tedarikci' ? '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(99,102,241,.08);color:#6366F1">Tedarikçi</span>' :
+                    '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:var(--s2);color:var(--t3)">Diğer</span>';
+    var odmCount = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').includes(c.name); }).length;
+    var tahCount = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').includes(c.name); }).length;
+
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--b);cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+      + '<div style="width:36px;height:36px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏢</div>'
+      + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + esc(c.name) + ' ' + typeBadge + '</div>'
+        + '<div style="font-size:10px;color:var(--t3)">' + (c.phone || '') + (c.email ? ' · ' + c.email : '') + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;font-size:10px;color:var(--t3)">'
+        + (odmCount ? '<span>💸' + odmCount + '</span>' : '')
+        + (tahCount ? '<span>💰' + tahCount + '</span>' : '')
+      + '</div>'
+      + '<button onclick="event.stopPropagation();deleteCari(' + c.id + ');renderCari()" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button>'
+    + '</div>';
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// TEKRARLAYAN ŞABLON
+// ════════════════════════════════════════════════════════════════
+
+var ODM_TPL_KEY = 'ak_odm_templates1';
+
+function _loadOdmTemplates() { try { return JSON.parse(localStorage.getItem(ODM_TPL_KEY) || '[]'); } catch(e) { return []; } }
+function _storeOdmTemplates(d) { localStorage.setItem(ODM_TPL_KEY, JSON.stringify(d)); }
+
+/**
+ * Mevcut ödemeyi şablon olarak kaydeder.
+ */
+window._odmSaveAsTemplate = function(id) {
+  var d = typeof loadOdm === 'function' ? loadOdm() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+  var tpls = _loadOdmTemplates();
+  tpls.unshift({
+    id: generateNumericId(), name: o.name, cat: o.cat, freq: o.freq || 'aylik',
+    amount: o.amount, currency: o.currency || 'TRY', note: o.note || '',
+    alarmDays: o.alarmDays || 3, createdAt: _nowTso(),
+  });
+  _storeOdmTemplates(tpls);
+  window.toast?.('Şablon kaydedildi: ' + o.name, 'ok');
+};
+
+/**
+ * Ay başında şablonlardan otomatik pending ödeme oluşturur.
+ */
+function checkRecurringTemplates() {
+  var lastCheck = localStorage.getItem('ak_odm_tpl_check') || '';
+  var thisMonth = new Date().toISOString().slice(0, 7);
+  if (lastCheck === thisMonth) return;
+  localStorage.setItem('ak_odm_tpl_check', thisMonth);
+
+  var tpls = _loadOdmTemplates();
+  if (!tpls.length) return;
+  var d = typeof loadOdm === 'function' ? loadOdm() : [];
+  var added = 0;
+
+  tpls.forEach(function(t) {
+    // Bu ay zaten oluşturulmuş mı?
+    var exists = d.find(function(o) { return o.templateId === t.id && (o.due || '').startsWith(thisMonth); });
+    if (exists) return;
+    var dueDay = 15; // ay ortası varsayılan
+    var due = thisMonth + '-' + String(dueDay).padStart(2, '0');
+    d.unshift({
+      id: generateNumericId(), name: t.name, cat: t.cat, freq: t.freq,
+      amount: t.amount, currency: t.currency || 'TRY', due: due,
+      note: 'Şablondan otomatik: ' + t.name, paid: false, alarmDays: t.alarmDays || 3,
+      ts: _nowTso(), createdBy: null, source: 'template', templateId: t.id,
+      approvalStatus: 'pending',
+    });
+    added++;
+  });
+
+  if (added) {
+    window.storeOdm ? storeOdm(d) : null;
+    window.addNotif?.('🔁', added + ' tekrarlayan ödeme oluşturuldu', 'info', 'odemeler');
+  }
+}
+// Sayfa açılışında çalıştır
+setTimeout(checkRecurringTemplates, 3000);
+
+// ════════════════════════════════════════════════════════════════
+// TOPLU ONAY
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Seçili pending ödemeleri toplu onaylar.
+ */
+window._odmBulkApprove = function() {
+  if (!_isAdminO()) { window.toast?.('Yetki yok', 'err'); return; }
+  var checked = document.querySelectorAll('.odm-bulk-chk:checked');
+  if (!checked.length) { window.toast?.('Onaylanacak kayıt seçin', 'err'); return; }
+  var ids = [];
+  checked.forEach(function(cb) { ids.push(parseInt(cb.dataset.oid)); });
+  var d = typeof loadOdm === 'function' ? loadOdm() : [];
+  var count = 0;
+  ids.forEach(function(id) {
+    var o = d.find(function(x) { return x.id === id; });
+    if (o && o.approvalStatus === 'pending') {
+      o.approvalStatus = 'approved';
+      o.approved = true;
+      o.approvedBy = _CUo()?.id;
+      o.approvedAt = _nowTso();
+      count++;
+    }
+  });
+  if (count) {
+    window.storeOdm ? storeOdm(d) : null;
+    renderOdemeler();
+    window.toast?.('✅ ' + count + ' kayıt onaylandı', 'ok');
+    window.logActivity?.('view', 'Toplu onay: ' + count + ' ödeme');
+  }
+};
+
+// Exports
+window.loadCari                = loadCari;
+window.storeCari               = storeCari;
+window.saveCari                = saveCari;
+window.deleteCari              = deleteCari;
+window.renderCari              = renderCari;
+window.checkRecurringTemplates = checkRecurringTemplates;
+
 // Export listesine ekle
 if (typeof Odemeler !== 'undefined') {
   Odemeler.openBudgetManager    = openBudgetManager;
@@ -4334,4 +4573,6 @@ if (typeof Odemeler !== 'undefined') {
   Odemeler.notifyApprovalNeeded = notifyApprovalNeeded;
   Odemeler.checkRecurringTah    = checkRecurringTahsilat;
   Odemeler.exportEFatura        = exportEFatura;
+  Odemeler.loadCari             = loadCari;
+  Odemeler.renderCari           = renderCari;
 }
