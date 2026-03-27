@@ -59,6 +59,8 @@ function _injectSAPanel() {
         + '<div style="font-size:10px;color:var(--t3)" id="sa-sub">PI & Sipariş Takip</div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;align-items:center">'
+        + (_isAdmSA() ? '<button class="btn btns" onclick="window._saBulkApprove?.()" style="font-size:11px;color:#16A34A">✅ Toplu Onayla</button>' : '')
+        + '<button class="btn btns" onclick="window._openSABudget?.()" style="font-size:11px">📊 Bütçe</button>'
         + '<button class="btn btns" onclick="window._openSAImport?.()" style="font-size:11px">📥 İçe Aktar</button>'
         + '<button class="btn btns" onclick="window._exportSAXlsx?.()" style="font-size:11px">⬇ Excel</button>'
         + '<button class="btn btns" onclick="window._saAddInlineRow?.()" style="font-size:11px">📊 Tabloya Ekle</button>'
@@ -66,41 +68,56 @@ function _injectSAPanel() {
       + '</div>'
     + '</div>'
 
+    // BÜTÇE PROGRESS BAR
+    + '<div id="sa-budget-bar" style="display:none;padding:6px 20px;border-bottom:1px solid var(--b);background:var(--s2)"></div>'
+
     // BENTO METRİKLER
-    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--b)">'
-      + '<div style="padding:14px 18px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Sipariş</div>'
-        + '<div style="font-size:22px;font-weight:600;color:var(--t)" id="sa-stat-total">0</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--b)">'
+      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
+        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">Toplam</div>'
+        + '<div style="font-size:20px;font-weight:600;color:var(--t)" id="sa-stat-total">0</div>'
       + '</div>'
-      + '<div style="padding:14px 18px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">⏳ Onay Bekliyor</div>'
-        + '<div style="font-size:22px;font-weight:600;color:#D97706" id="sa-stat-pending">0</div>'
+      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
+        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">⏳ Bekliyor</div>'
+        + '<div style="font-size:20px;font-weight:600;color:#D97706" id="sa-stat-pending">0</div>'
       + '</div>'
-      + '<div style="padding:14px 18px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">✅ Onaylanan</div>'
-        + '<div style="font-size:22px;font-weight:600;color:#16A34A" id="sa-stat-approved">0</div>'
+      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
+        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">✅ Onaylı</div>'
+        + '<div style="font-size:20px;font-weight:600;color:#16A34A" id="sa-stat-approved">0</div>'
       + '</div>'
-      + '<div style="padding:14px 18px">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Tutar</div>'
-        + '<div style="font-size:22px;font-weight:600;color:var(--ac)" id="sa-stat-amount">$0</div>'
+      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
+        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">🔄 Revize</div>'
+        + '<div style="font-size:20px;font-weight:600;color:#EA580C" id="sa-stat-revize">0</div>'
       + '</div>'
+      + '<div style="padding:12px 16px">'
+        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">Toplam Tutar</div>'
+        + '<div style="font-size:20px;font-weight:600;color:var(--ac)" id="sa-stat-amount">$0</div>'
+      + '</div>'
+    + '</div>'
+
+    // SEKMELER
+    + '<div id="sa-tabs-row" style="display:flex;border-bottom:1px solid var(--b);background:var(--sf);overflow-x:auto">'
+      + '<div id="sa-tab-all" class="sa-tab active" onclick="window._saSetTab(\'all\')" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac)">Tümü</div>'
+      + '<div id="sa-tab-pending" class="sa-tab" onclick="window._saSetTab(\'pending\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">⏳ Bekleyen</div>'
+      + '<div id="sa-tab-approved" class="sa-tab" onclick="window._saSetTab(\'approved\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">✅ Onaylanan</div>'
+      + '<div id="sa-tab-revize_gerekli" class="sa-tab" onclick="window._saSetTab(\'revize_gerekli\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">🔄 Revize</div>'
+      + '<div id="sa-tab-paid" class="sa-tab" onclick="window._saSetTab(\'paid\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">📦 Tamamlanan</div>'
     + '</div>'
 
     // FİLTRE SATIRI
     + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--s2)">'
-      + '<input class="fi" id="sa-search" placeholder="🔍 PI No, İş ID ara..." oninput="window.renderSatinAlma?.()" style="font-size:11px;flex:1;min-width:140px">'
+      + '<input class="fi" id="sa-search" placeholder="🔍 İş ID, satıcı, tedarikçi ara..." oninput="window.renderSatinAlma?.()" style="font-size:11px;flex:1;min-width:140px">'
       + '<select class="fi" id="sa-cur-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:90px">'
         + '<option value="">Tüm Döviz</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="TRY">₺ TRY</option>'
       + '</select>'
-      + '<select class="fi" id="sa-status-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:120px">'
-        + '<option value="">Tüm Durum</option>'
-        + '<option value="pending">⏳ Bekliyor</option><option value="approved">✅ Onaylı</option><option value="rejected">❌ Red</option><option value="paid">💸 Ödendi</option>'
-      + '</select>'
+      + '<input type="date" class="fi" id="sa-from-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:130px" title="Başlangıç">'
+      + '<input type="date" class="fi" id="sa-to-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:130px" title="Bitiş">'
+      + '<select class="fi" id="sa-status-f" style="display:none"><option value=""></option></select>'
     + '</div>'
 
     // TABLO BAŞLIK
-    + '<div style="display:grid;grid-template-columns:80px 90px 90px 90px 100px 80px 90px 80px 80px 100px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);overflow-x:auto">'
-      + ['İş ID','PI No','PI Tarihi','Toplam','Avans','Avans %','Kalan','Döviz','Durum','İşlem'].map(function(h) {
+    + '<div style="display:grid;grid-template-columns:80px 100px 90px 90px 100px 80px 90px 80px 80px 120px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);overflow-x:auto">'
+      + ['İş ID','Satıcı','PI Tarihi','Toplam','Avans','Avans %','Kalan','Döviz','Durum','İşlem'].map(function(h) {
           return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">' + h + '</div>';
         }).join('')
     + '</div>'
@@ -113,26 +130,50 @@ function _injectSAPanel() {
 // RENDER
 // ════════════════════════════════════════════════════════════════
 
+/** @type {string} Aktif sekme */
+var _saCurrentTab = 'all';
+
+window._saSetTab = function(tab) {
+  _saCurrentTab = tab;
+  document.querySelectorAll('.sa-tab').forEach(function(t) {
+    var isActive = t.id === 'sa-tab-' + tab;
+    t.style.borderBottomColor = isActive ? 'var(--ac)' : 'transparent';
+    t.style.color = isActive ? 'var(--ac)' : 'var(--t3)';
+    t.style.fontWeight = isActive ? '600' : '400';
+  });
+  renderSatinAlma();
+};
+
 function renderSatinAlma() {
   _injectSAPanel();
-  var all   = _loadSA();
+  var all    = _loadSA();
   var search = (document.getElementById('sa-search')?.value || '').toLowerCase();
   var curF   = document.getElementById('sa-cur-f')?.value || '';
-  var statF  = document.getElementById('sa-status-f')?.value || '';
+  var fromF  = document.getElementById('sa-from-f')?.value || '';
+  var toF    = document.getElementById('sa-to-f')?.value || '';
 
   // İstatistikler
-  var el = function(id) { var e = document.getElementById(id); return e; };
+  var el = function(id) { return document.getElementById(id); };
   var totalAmt = all.filter(function(s) { return s.status === 'approved' || s.status === 'paid'; }).reduce(function(a, s) { return a + (parseFloat(s.totalAmount) || 0); }, 0);
   if (el('sa-stat-total'))    el('sa-stat-total').textContent    = all.length;
   if (el('sa-stat-pending'))  el('sa-stat-pending').textContent  = all.filter(function(s) { return s.status === 'pending'; }).length;
-  if (el('sa-stat-approved')) el('sa-stat-approved').textContent = all.filter(function(s) { return s.status === 'approved' || s.status === 'paid'; }).length;
+  if (el('sa-stat-approved')) el('sa-stat-approved').textContent = all.filter(function(s) { return s.status === 'approved'; }).length;
+  if (el('sa-stat-revize'))   el('sa-stat-revize').textContent   = all.filter(function(s) { return s.status === 'revize_gerekli'; }).length;
   if (el('sa-stat-amount'))   el('sa-stat-amount').textContent   = '$' + Math.round(totalAmt).toLocaleString('tr-TR');
 
-  // Filtrele
+  // Bütçe progress bar
+  _saRenderBudgetBar(all);
+
+  // Sekme + filtre
   var fl = all.filter(function(s) {
+    if (_saCurrentTab === 'pending' && s.status !== 'pending') return false;
+    if (_saCurrentTab === 'approved' && s.status !== 'approved') return false;
+    if (_saCurrentTab === 'revize_gerekli' && s.status !== 'revize_gerekli') return false;
+    if (_saCurrentTab === 'paid' && s.status !== 'paid') return false;
     if (curF && s.currency !== curF) return false;
-    if (statF && s.status !== statF) return false;
-    if (search && !((s.jobId || '').toLowerCase().includes(search) || (s.piNo || '').toLowerCase().includes(search) || (s.exportId || '').toLowerCase().includes(search))) return false;
+    if (fromF && (s.piDate || '') < fromF) return false;
+    if (toF && (s.piDate || '') > toF) return false;
+    if (search && !((s.jobId || '').toLowerCase().includes(search) || (s.supplier || s.piNo || '').toLowerCase().includes(search) || (s.exportId || '').toLowerCase().includes(search) || (s.vendor?.name || '').toLowerCase().includes(search))) return false;
     return true;
   }).sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
 
@@ -141,7 +182,7 @@ function renderSatinAlma() {
 
   var _inpSt = 'font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:4px;background:var(--s);color:var(--t);font-family:inherit;width:100%;box-sizing:border-box';
   var _inpEr = 'border-color:#EF4444;background:rgba(239,68,68,.04)';
-  var _GRID  = 'display:grid;grid-template-columns:80px 90px 90px 90px 100px 80px 90px 80px 80px 100px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px';
+  var _GRID  = 'display:grid;grid-template-columns:80px 100px 90px 90px 100px 80px 90px 80px 80px 120px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px';
 
   if (!fl.length && !document.getElementById('sa-inline-new')) {
     cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t3)">'
@@ -161,25 +202,48 @@ function renderSatinAlma() {
     var advAmt = (parseFloat(s.totalAmount) || 0) * (parseFloat(s.advanceRate) || 0) / 100;
     var remaining = (parseFloat(s.totalAmount) || 0) - advAmt;
     var sym = SA_CURRENCIES[s.currency] || '$';
+    var supplierName = s.supplier || s.piNo || '—';
 
-    // Her hücre tıklanınca inline edit
+    // Tedarikçi skor badge
+    var vendorBadge = '';
+    if (s.vendor?.name) {
+      var vs = _saCalcVendorScore(s.vendor.name);
+      var vColor = vs >= 70 ? '#22C55E' : vs >= 40 ? '#F59E0B' : '#EF4444';
+      var vDot = vs >= 70 ? '🟢' : vs >= 40 ? '🟡' : '🔴';
+      vendorBadge = '<span style="font-size:9px;margin-left:3px" title="Tedarikçi Skor: ' + vs + '">' + vDot + '</span>';
+    }
+
+    // Onay bekleme süresi
+    var waitBadge = '';
+    if (s.status === 'pending' && s.createdAt) {
+      var waitH = Math.round((Date.now() - new Date(s.createdAt.replace(' ', 'T')).getTime()) / 3600000);
+      if (waitH >= 48) waitBadge = '<span style="font-size:9px;padding:1px 5px;border-radius:99px;background:rgba(239,68,68,.1);color:#EF4444;margin-left:3px">' + waitH + 'h</span>';
+      else if (waitH >= 24) waitBadge = '<span style="font-size:9px;padding:1px 5px;border-radius:99px;background:rgba(245,158,11,.1);color:#D97706;margin-left:3px">' + waitH + 'h</span>';
+    }
+
+    // Kilitli kur gösterimi
+    var kurInfo = '';
+    if (s.lockedRate && s.currency !== 'TRY') {
+      kurInfo = '<div style="font-size:9px;color:var(--t3)">🔒' + s.lockedRate + '</div>';
+    }
+
     html += '<div data-said="' + s.id + '" style="' + _GRID + ';cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div class="sa-cell" data-field="jobId" onclick="window._saInlineEdit?.(event,' + s.id + ',\'jobId\')" style="font-weight:600;font-family:\'DM Mono\',monospace;color:var(--ac)">' + esc(s.jobId || '—') + '</div>'
-      + '<div class="sa-cell" data-field="piNo" onclick="window._saInlineEdit?.(event,' + s.id + ',\'piNo\')" style="font-family:monospace">' + esc(s.piNo || '—') + '</div>'
+      + '<div class="sa-cell" data-field="supplier" onclick="window._saInlineEdit?.(event,' + s.id + ',\'supplier\')" style="font-weight:500">' + esc(supplierName) + vendorBadge + '</div>'
       + '<div class="sa-cell" data-field="piDate" onclick="window._saInlineEdit?.(event,' + s.id + ',\'piDate\')" style="color:var(--t3)">' + (s.piDate || '—') + '</div>'
-      + '<div class="sa-cell" data-field="totalAmount" onclick="window._saInlineEdit?.(event,' + s.id + ',\'totalAmount\')" style="font-weight:700;color:var(--t)">' + sym + Number(s.totalAmount || 0).toLocaleString('tr-TR') + '</div>'
+      + '<div class="sa-cell" data-field="totalAmount" onclick="window._saInlineEdit?.(event,' + s.id + ',\'totalAmount\')" style="font-weight:700;color:var(--t)">' + sym + Number(s.totalAmount || 0).toLocaleString('tr-TR') + kurInfo + '</div>'
       + '<div style="color:#D97706;font-weight:600">' + sym + Math.round(advAmt).toLocaleString('tr-TR') + '</div>'
       + '<div class="sa-cell" data-field="advanceRate" onclick="window._saInlineEdit?.(event,' + s.id + ',\'advanceRate\')" style="color:var(--t3)">%' + (s.advanceRate || 0) + '</div>'
       + '<div style="color:#6366F1;font-weight:600">' + sym + Math.round(remaining).toLocaleString('tr-TR') + '</div>'
       + '<div>' + (s.currency || 'USD') + '</div>'
-      + '<div><span style="font-size:10px;padding:2px 8px;border-radius:5px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span></div>'
+      + '<div><span style="font-size:10px;padding:2px 8px;border-radius:5px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span>' + waitBadge + '</div>'
       + '<div style="display:flex;gap:3px" onclick="event.stopPropagation()">'
+        + '<input type="checkbox" class="sa-bulk-chk" data-said="' + s.id + '" style="display:' + (_isAdmSA() && s.status === 'pending' ? 'block' : 'none') + ';width:14px;height:14px;accent-color:var(--ac)">'
         + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._approveSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#16A34A">✓</button>' : '')
-        + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._rejectSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">✗</button>' : '')
+        + (_isAdmSA() && (s.status === 'pending' || s.status === 'revize_gerekli') ? '<button onclick="window._rejectSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">✗</button>' : '')
         + '<button onclick="window._openSADetail?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">👁</button>'
-        + '<button onclick="window._saInlineEditRow?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Inline düzenle">✏️</button>'
-        + '<button onclick="window._saInlineFiles?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">📎</button>'
-        + '<button onclick="window._deleteSA?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626" title="Sil">🗑</button>'
+        + '<button onclick="window._openSAModal?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Düzenle">✏️</button>'
+        + '<button onclick="window._deleteSA?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button>'
       + '</div>'
     + '</div>';
   });
@@ -576,9 +640,15 @@ function _openSAModal(id) {
       + '<div><div class="fl">PI TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '"></div>'
       + '<div><div class="fl">SİPARİŞ ONAY TARİHİ</div><input type="date" class="fi" id="sa-order-date" value="' + (s?.orderDate || '') + '"></div>'
     + '</div>'
-    // Satır 3
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-      + '<div><div class="fl">KDV TUTARI <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-kdv" placeholder="0" min="0" step="0.01" value="' + (s?.kdv || '') + '"></div>'
+    // Satır 3: Fatura Tipi + KDV + Toplam + Para Birimi
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">FATURA TİPİ</div><select class="fi" id="sa-fatura-type" onchange="window._saFaturaTypeChanged?.()">'
+        + (function() {
+            var types = _saGetFaturaTypes();
+            return types.map(function(t) { return '<option value="' + t.value + '"' + (s?.faturaType === t.value ? ' selected' : '') + '>' + t.label + '</option>'; }).join('');
+          })()
+      + '</select></div>'
+      + '<div><div class="fl">KDV TUTARI</div><input class="fi" type="number" id="sa-kdv" placeholder="0" min="0" step="0.01" value="' + (s?.kdv || '') + '"></div>'
       + '<div><div class="fl">TOPLAM TUTAR <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-total" placeholder="0" min="0" step="0.01" value="' + (s?.totalAmount || '') + '" oninput="window._saCalcAuto?.()"></div>'
       + '<div><div class="fl">PARA BİRİMİ <span style="color:var(--rd)">*</span></div><select class="fi" id="sa-currency" onchange="window._saCalcAuto?.()"><option value="USD"' + (s?.currency === 'USD' || !s ? ' selected' : '') + '>$ USD</option><option value="EUR"' + (s?.currency === 'EUR' ? ' selected' : '') + '>€ EUR</option><option value="TRY"' + (s?.currency === 'TRY' ? ' selected' : '') + '>₺ TRY</option></select></div>'
     + '</div>'
@@ -941,6 +1011,8 @@ window._saveSA = function() {
     deliveryPlace:   (document.getElementById('sa-delivery-place')?.value || '').trim(),
     deliveryOwner:   document.getElementById('sa-delivery-owner')?.value || 'alici',
     containerNo:     (document.getElementById('sa-container')?.value || '').trim(),
+    faturaType:      document.getElementById('sa-fatura-type')?.value || 'kdvli',
+    lockedRate:      (currency !== 'TRY') ? (_saLiveRates[currency] || 1) : null,
     notes:           (document.getElementById('sa-notes')?.value || '').trim(),
     vendor: {
       name:    vendorName,
@@ -1528,6 +1600,169 @@ window._saImportConfirm = function() {
   _saImportRows = null;
 };
 
+
+// ════════════════════════════════════════════════════════════════
+// FATURA TİPLERİ CRUD
+// ════════════════════════════════════════════════════════════════
+
+var SA_FATURA_KEY = 'ak_sa_fatura_tipleri';
+var SA_DEFAULT_FATURA_TYPES = [
+  { value: 'kdvli',         label: 'KDV\'li',                kdv: true  },
+  { value: 'ihrac_kayitli', label: 'İhraç Kayıtlı (KDV\'siz)', kdv: false },
+  { value: 'transit',       label: 'Transit Ticaret (KDV\'siz)', kdv: false },
+  { value: 'muhasebe',      label: 'Muhasebe (KDV\'li)',      kdv: true  },
+  { value: 'serbest_bolge', label: 'Serbest Bölge',           kdv: false },
+  { value: 'dahilde',       label: 'Dahilde İşleme',          kdv: false },
+];
+
+function _saGetFaturaTypes() {
+  try { var d = JSON.parse(localStorage.getItem(SA_FATURA_KEY)); if (Array.isArray(d) && d.length) return d; } catch(e) {}
+  return SA_DEFAULT_FATURA_TYPES;
+}
+function _saStoreFaturaTypes(d) { localStorage.setItem(SA_FATURA_KEY, JSON.stringify(d)); }
+
+/**
+ * Fatura tipi değişince KDV alanını otomatik kontrol eder.
+ */
+window._saFaturaTypeChanged = function() {
+  var sel = document.getElementById('sa-fatura-type');
+  var kdvEl = document.getElementById('sa-kdv');
+  if (!sel || !kdvEl) return;
+  var types = _saGetFaturaTypes();
+  var ft = types.find(function(t) { return t.value === sel.value; });
+  if (ft && !ft.kdv) {
+    kdvEl.value = '0'; kdvEl.disabled = true; kdvEl.style.background = 'var(--s2)';
+  } else {
+    kdvEl.disabled = false; kdvEl.style.background = '';
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// TEDARİKÇİ PERFORMANS SKORU
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Tedarikçi adına göre basit skor hesaplar (0-100).
+ * Onaylanan sipariş oranı temel kriter.
+ */
+function _saCalcVendorScore(vendorName) {
+  if (!vendorName) return 50;
+  var all = _loadSA();
+  var vendorOrders = all.filter(function(s) {
+    return (s.vendor?.name || '').toLowerCase() === vendorName.toLowerCase() || (s.supplier || '').toLowerCase() === vendorName.toLowerCase();
+  });
+  if (vendorOrders.length < 2) return 50; // yetersiz veri
+  var approved = vendorOrders.filter(function(s) { return s.status === 'approved' || s.status === 'paid'; }).length;
+  var rejected = vendorOrders.filter(function(s) { return s.status === 'rejected' || s.status === 'revize_gerekli'; }).length;
+  var total = vendorOrders.length;
+  var score = Math.round((approved / total * 70) + (Math.max(0, 30 - rejected * 10)));
+  return Math.max(0, Math.min(100, score));
+}
+
+// ════════════════════════════════════════════════════════════════
+// TOPLU ONAY
+// ════════════════════════════════════════════════════════════════
+
+window._saBulkApprove = function() {
+  if (!_isAdmSA()) { window.toast?.('Yetki yok', 'err'); return; }
+  var checked = document.querySelectorAll('.sa-bulk-chk:checked');
+  if (!checked.length) { window.toast?.('Onaylanacak kayıt seçin', 'err'); return; }
+  var ids = [];
+  checked.forEach(function(cb) { ids.push(parseInt(cb.dataset.said)); });
+  var d = _loadSA();
+  var count = 0;
+  ids.forEach(function(id) {
+    var s = d.find(function(x) { return x.id === id; });
+    if (s && s.status === 'pending') {
+      s.status = 'approved'; s.approvedBy = _cuSA()?.id; s.approvedAt = _nowSA();
+      count++;
+      _saCreatePayments(s);
+    }
+  });
+  if (count) {
+    _storeSA(d); renderSatinAlma();
+    window.toast?.('✅ ' + count + ' sipariş onaylandı', 'ok');
+    window.logActivity?.('view', 'Toplu onay: ' + count + ' satınalma');
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// SATIN ALMA BÜTÇESİ
+// ════════════════════════════════════════════════════════════════
+
+var SA_BUDGET_KEY = 'ak_sa_budget';
+
+window._openSABudget = function() {
+  if (!_isAdmSA()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var budget = 0;
+  try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) {}
+  var old = document.getElementById('mo-sa-budget'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-sa-budget'; mo.style.display = 'flex'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:360px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 18px;border-bottom:1px solid var(--b)"><div style="font-size:14px;font-weight:700;color:var(--t)">📊 Aylık Satın Alma Bütçesi</div></div>'
+    + '<div style="padding:16px 18px">'
+      + '<div class="fl">AYLIK LİMİT ($)</div>'
+      + '<input type="number" class="fi" id="sa-budget-inp" value="' + budget + '" placeholder="0" style="font-size:16px;padding:10px">'
+    + '</div>'
+    + '<div style="padding:10px 18px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-sa-budget\').remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="localStorage.setItem(\'' + SA_BUDGET_KEY + '\',document.getElementById(\'sa-budget-inp\').value||\'0\');document.getElementById(\'mo-sa-budget\').remove();renderSatinAlma();window.toast?.(\'Bütçe kaydedildi ✓\',\'ok\')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+};
+
+/**
+ * Bütçe progress bar render.
+ */
+function _saRenderBudgetBar(all) {
+  var bar = document.getElementById('sa-budget-bar');
+  if (!bar) return;
+  var budget = 0;
+  try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) {}
+  if (!budget) { bar.style.display = 'none'; return; }
+
+  var thisMonth = new Date().toISOString().slice(0, 7);
+  var spent = all.filter(function(s) {
+    return (s.status === 'approved' || s.status === 'paid') && (s.piDate || '').startsWith(thisMonth);
+  }).reduce(function(a, s) { return a + (parseFloat(s.totalAmount) || 0); }, 0);
+
+  var pct = Math.min(100, Math.round(spent / budget * 100));
+  var color = pct >= 90 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#16A34A';
+
+  bar.style.display = 'block';
+  bar.innerHTML = '<div style="display:flex;align-items:center;gap:10px">'
+    + '<span style="font-size:10px;color:var(--t3);white-space:nowrap">Bütçe: $' + Math.round(spent).toLocaleString('tr-TR') + ' / $' + Math.round(budget).toLocaleString('tr-TR') + '</span>'
+    + '<div style="flex:1;height:6px;background:var(--b);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px"></div></div>'
+    + '<span style="font-size:10px;font-weight:700;color:' + color + '">' + pct + '%</span>'
+  + '</div>';
+
+  if (pct >= 90) {
+    window.addNotif?.('🚨', 'Satınalma bütçesi %' + pct + ' kullanıldı!', 'err', 'satinalma');
+  }
+}
+
+// Onay SLA — 48h+ bekleyen kayıtlar için admin'e bildirim
+function _saCheckApprovalSLA() {
+  var all = _loadSA();
+  var sentKey = 'ak_sa_sla_sent';
+  var sent = {};
+  try { sent = JSON.parse(localStorage.getItem(sentKey) || '{}'); } catch(e) { sent = {}; }
+  var changed = false;
+  var todayS = new Date().toISOString().slice(0, 10);
+
+  all.forEach(function(s) {
+    if (s.status !== 'pending' || !s.createdAt) return;
+    var waitH = Math.round((Date.now() - new Date(s.createdAt.replace(' ', 'T')).getTime()) / 3600000);
+    if (waitH >= 48 && !sent[s.id + '_48']) {
+      window.addNotif?.('⏰', 'Satınalma 48+ saat onay bekliyor: ' + (s.supplier || s.jobId), 'warn', 'satinalma');
+      sent[s.id + '_48'] = todayS; changed = true;
+    }
+  });
+  if (changed) localStorage.setItem(sentKey, JSON.stringify(sent));
+}
+setTimeout(_saCheckApprovalSLA, 4000);
 
 // ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
