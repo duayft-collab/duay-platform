@@ -180,8 +180,7 @@ function _renderDetail(uid) {
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-          <button class="btn btnp" onclick="Admin.openModal(${u.id})" style="font-size:12px">Duzenle</button>
-          <button class="btn btns" onclick="Admin.openPermModal(${u.id})" style="font-size:12px">Yetkiler</button>
+          <button class="btn btnp" onclick="window._openUserManageModal?.(${u.id})" style="font-size:12px">⚙️ Yönet</button>
         </div>
       </div>
 
@@ -2677,6 +2676,148 @@ window._execClonePerms = function(targetUid) {
 };
 
 // ════════════════════════════════════════════════════════════════
+// BİRLEŞİK KULLANICI YÖNETİM MODALI
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Full-screen kullanıcı yönetim modalı — Profil + İzinler + Aktivite
+ */
+window._openUserManageModal = function(uid) {
+  if (!isAdmin()) return;
+  var users = loadUsers();
+  var u = users.find(function(x) { return x.id === uid; });
+  if (!u) return;
+  var rm = ROLE_META[u.role] || ROLE_META.staff;
+  var av = initials(u.name);
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
+  var old = document.getElementById('mo-user-manage'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-user-manage'; mo.style.zIndex = '2200';
+
+  // Departman listesi
+  var depts = [];
+  try { depts = JSON.parse(localStorage.getItem('ak_departments') || '[]'); } catch(e) {}
+  if (!depts.length) depts = ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe'];
+  var deptOpts = '<option value="">—</option>' + depts.map(function(d) { return '<option value="' + esc(d) + '"' + (u.dept === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('');
+  var roleOpts = ['admin','manager','lead','staff'].map(function(r) { var m = ROLE_META[r]||{}; return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + (m.icon||'') + ' ' + (m.label||r) + '</option>'; }).join('');
+
+  // Aktivite log
+  var acts = typeof loadAct === 'function' ? loadAct() : [];
+  var userActs = acts.filter(function(a) { return a.uid === uid; }).slice(0, 20);
+
+  mo.innerHTML = '<div class="moc" style="min-width:min(92vw,1000px);max-width:1000px;height:88vh;padding:0;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;background:#fff">'
+    // Header — kullanıcı bilgisi
+    + '<div style="padding:18px 24px;border-bottom:1px solid #F0F0F0;display:flex;align-items:center;gap:16px;flex-shrink:0">'
+      + '<div style="width:52px;height:52px;border-radius:14px;background:' + rm.bg + ';border:2px solid ' + rm.border + ';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:' + rm.color + '">' + esc(av) + '</div>'
+      + '<div style="flex:1">'
+        + '<div style="font-size:17px;font-weight:700;color:#1C1C1E">' + esc(u.name) + '</div>'
+        + '<div style="font-size:12px;color:#8E8E93;margin-top:2px">' + esc(u.email || '') + '</div>'
+      + '</div>'
+      + '<span style="font-size:11px;padding:4px 12px;border-radius:8px;background:' + rm.bg + ';color:' + rm.color + ';font-weight:600">' + rm.icon + ' ' + rm.label + '</span>'
+      + '<button onclick="document.getElementById(\'mo-user-manage\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#8E8E93">×</button>'
+    + '</div>'
+
+    // Sekmeler
+    + '<div style="display:flex;border-bottom:1px solid #F0F0F0;flex-shrink:0">'
+      + '<button class="um-tab active" data-tab="profile" onclick="window._umSwitchTab(\'profile\')" style="padding:12px 24px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#007AFF;border-bottom:2px solid #007AFF;font-family:inherit">👤 Profil</button>'
+      + '<button class="um-tab" data-tab="perms" onclick="window._umSwitchTab(\'perms\')" style="padding:12px 24px;border:none;background:none;cursor:pointer;font-size:13px;color:#8E8E93;border-bottom:2px solid transparent;font-family:inherit">🔑 İzinler</button>'
+      + '<button class="um-tab" data-tab="activity" onclick="window._umSwitchTab(\'activity\')" style="padding:12px 24px;border:none;background:none;cursor:pointer;font-size:13px;color:#8E8E93;border-bottom:2px solid transparent;font-family:inherit">📊 Aktivite</button>'
+    + '</div>'
+
+    // İçerik
+    + '<div style="flex:1;overflow-y:auto;padding:20px 24px">'
+      // Profil sekmesi
+      + '<div id="um-panel-profile" class="um-panel">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+          + '<div><div class="fl">İSİM</div><input class="fi" id="um-name" value="' + esc(u.name) + '" style="font-size:14px;padding:10px 12px"></div>'
+          + '<div><div class="fl">E-POSTA</div><input class="fi" id="um-email" value="' + esc(u.email || '') + '" style="font-size:14px;padding:10px 12px"></div>'
+          + '<div><div class="fl">ROL</div><select class="fi" id="um-role" style="font-size:14px;padding:10px 12px">' + roleOpts + '</select></div>'
+          + '<div><div class="fl">DEPARTMAN</div><select class="fi" id="um-dept" style="font-size:14px;padding:10px 12px">' + deptOpts + '</select></div>'
+          + '<div><div class="fl">DURUM</div><select class="fi" id="um-status" style="font-size:14px;padding:10px 12px"><option value="active"' + (u.status === 'active' ? ' selected' : '') + '>Aktif</option><option value="suspended"' + (u.status !== 'active' ? ' selected' : '') + '>Pasif</option></select></div>'
+          + '<div><div class="fl">EŞ ZAMANLI OTURUM</div><select class="fi" id="um-sessions" style="font-size:14px;padding:10px 12px"><option value="0"' + ((u.maxSessions || 0) === 0 ? ' selected' : '') + '>Sınırsız</option><option value="1"' + (u.maxSessions === 1 ? ' selected' : '') + '>1</option><option value="2"' + (u.maxSessions === 2 ? ' selected' : '') + '>2</option><option value="3"' + (u.maxSessions === 3 ? ' selected' : '') + '>3</option></select></div>'
+        + '</div>'
+      + '</div>'
+      // İzinler sekmesi
+      + '<div id="um-panel-perms" class="um-panel" style="display:none">'
+        + '<div style="text-align:center;padding:20px;color:#8E8E93">Modül izinleri için <button onclick="document.getElementById(\'mo-user-manage\').remove();Admin.openPermModal(' + uid + ')" class="btn btnp" style="font-size:12px">🔑 İzin Modalını Aç</button></div>'
+      + '</div>'
+      // Aktivite sekmesi
+      + '<div id="um-panel-activity" class="um-panel" style="display:none">'
+        + '<div style="margin-bottom:14px"><span style="font-size:12px;color:#8E8E93">Son giriş:</span> <b style="color:#1C1C1E">' + (u.lastLogin || 'Hiç') + '</b></div>'
+        + '<div style="font-size:12px;font-weight:600;color:#1C1C1E;margin-bottom:8px">Son 20 İşlem</div>'
+        + (userActs.length ? userActs.map(function(a) {
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F5F5F5;font-size:11px">'
+              + '<span style="color:#8E8E93;min-width:110px">' + (a.ts || '—') + '</span>'
+              + '<span style="color:#1C1C1E">' + esc(a.detail || a.type || '—') + '</span>'
+            + '</div>';
+          }).join('') : '<div style="color:#8E8E93;font-size:12px">Aktivite kaydı yok</div>')
+      + '</div>'
+    + '</div>'
+
+    // Footer
+    + '<div style="padding:14px 24px;border-top:1px solid #F0F0F0;background:#F9FAFB;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-user-manage\').remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="window._umSaveAll?.(' + uid + ')">Kaydet</button>'
+    + '</div>'
+  + '</div>';
+
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/**
+ * Sekme geçişi.
+ */
+window._umSwitchTab = function(tab) {
+  document.querySelectorAll('.um-tab').forEach(function(t) {
+    var active = t.dataset.tab === tab;
+    t.style.color = active ? '#007AFF' : '#8E8E93';
+    t.style.borderBottomColor = active ? '#007AFF' : 'transparent';
+    t.style.fontWeight = active ? '600' : '400';
+  });
+  document.querySelectorAll('.um-panel').forEach(function(p) { p.style.display = 'none'; });
+  var panel = document.getElementById('um-panel-' + tab);
+  if (panel) panel.style.display = '';
+};
+
+/**
+ * Tüm profil değişikliklerini tek seferde kaydeder.
+ */
+window._umSaveAll = function(uid) {
+  var users = loadUsers();
+  var u = users.find(function(x) { return x.id === uid; });
+  if (!u) return;
+
+  var name = (document.getElementById('um-name')?.value || '').trim();
+  var email = (document.getElementById('um-email')?.value || '').trim().toLowerCase();
+  if (!name || !email) { window.toast?.('İsim ve e-posta zorunlu', 'err'); return; }
+
+  var oldRole = u.role;
+  var newRole = document.getElementById('um-role')?.value || u.role;
+
+  u.name = name;
+  u.email = email;
+  u.role = newRole;
+  u.dept = document.getElementById('um-dept')?.value || '';
+  u.status = document.getElementById('um-status')?.value || 'active';
+  u.maxSessions = parseInt(document.getElementById('um-sessions')?.value || '0');
+
+  // Rol değiştiyse roleHistory ekle
+  if (oldRole !== newRole) {
+    if (!Array.isArray(u.roleHistory)) u.roleHistory = [];
+    u.roleHistory.push({ previousRole: oldRole, role: newRole, changedBy: _getCU()?.id, changedAt: nowTs() });
+    window.addNotif?.('🔑', 'Rol değiştirildi: ' + (ROLE_META[newRole]?.label || newRole), 'warn', 'admin', uid);
+  }
+
+  saveUsers(users);
+  document.getElementById('mo-user-manage')?.remove();
+  renderAdmin();
+  logActivity('user', 'Kullanıcı güncellendi: ' + name);
+  window.toast?.('Kaydedildi ✓', 'ok');
+};
+
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Admin = {

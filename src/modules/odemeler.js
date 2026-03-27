@@ -4413,20 +4413,34 @@ window._saveQuickCari = function() {
 /**
  * Cari panelini render eder.
  */
+var _cariSelectedId = null;
+
 function renderCari() {
   var panel = document.getElementById('panel-cari');
   if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
-      + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">🏢 Cari Yönetimi</div><div style="font-size:10px;color:var(--t3)">Müşteri & Tedarikçi</div></div>'
-      + '<button class="btn btnp" onclick="window._openQuickCari?.()" style="font-size:12px">+ Cari Ekle</button>'
-    + '</div>'
-    + '<div style="display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--b);background:var(--s2)">'
-      + '<input class="fi" id="cari-search" placeholder="🔍 Ara..." oninput="renderCari()" style="font-size:11px;flex:1">'
-      + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:120px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
-    + '</div>'
-    + '<div id="cari-list"></div>';
+    panel.innerHTML = ''
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+        + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">🏢 Cari Yönetimi</div><div style="font-size:10px;color:var(--t3)">Müşteri & Tedarikçi</div></div>'
+        + '<div style="display:flex;gap:6px">'
+          + '<button class="btn btns" onclick="window._exportCariXlsx?.()" style="font-size:11px">⬇ Excel</button>'
+          + '<button class="btn btns" onclick="window._exportCariPDF?.()" style="font-size:11px">📄 PDF</button>'
+          + '<button class="btn btnp" onclick="window._openQuickCari?.()" style="font-size:12px">+ Cari Ekle</button>'
+        + '</div>'
+      + '</div>'
+      + '<div style="display:flex;min-height:calc(100vh - 120px)">'
+        // Sol panel — liste
+        + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
+          + '<div style="padding:8px 12px;border-bottom:1px solid var(--b);display:flex;gap:6px">'
+            + '<input class="fi" id="cari-search" placeholder="🔍 Ara..." oninput="renderCari()" style="font-size:11px;flex:1">'
+            + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:90px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
+          + '</div>'
+          + '<div id="cari-list" style="flex:1;overflow-y:auto"></div>'
+        + '</div>'
+        // Sağ panel — detay
+        + '<div id="cari-detail" style="flex:1;overflow-y:auto;background:var(--s2)"></div>'
+      + '</div>';
   }
 
   var all = loadCari();
@@ -4443,34 +4457,142 @@ function renderCari() {
 
   if (!fl.length) {
     cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px;margin-bottom:8px">🏢</div><div>Cari bulunamadı</div></div>';
+    document.getElementById('cari-detail').innerHTML = '';
     return;
   }
 
-  // Ödeme/tahsilat geçmişi
-  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
-  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
-
   cont.innerHTML = fl.map(function(c) {
-    var typeBadge = c.type === 'musteri' ? '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(16,185,129,.08);color:#059669">Müşteri</span>' :
-                    c.type === 'tedarikci' ? '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(99,102,241,.08);color:#6366F1">Tedarikçi</span>' :
-                    '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:var(--s2);color:var(--t3)">Diğer</span>';
-    var odmCount = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').includes(c.name); }).length;
-    var tahCount = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').includes(c.name); }).length;
-
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--b);cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
-      + '<div style="width:36px;height:36px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏢</div>'
-      + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + esc(c.name) + ' ' + typeBadge + '</div>'
-        + '<div style="font-size:10px;color:var(--t3)">' + (c.phone || '') + (c.email ? ' · ' + c.email : '') + '</div>'
-      + '</div>'
-      + '<div style="display:flex;gap:8px;font-size:10px;color:var(--t3)">'
-        + (odmCount ? '<span>💸' + odmCount + '</span>' : '')
-        + (tahCount ? '<span>💰' + tahCount + '</span>' : '')
-      + '</div>'
-      + '<button onclick="event.stopPropagation();deleteCari(' + c.id + ');renderCari()" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button>'
+    var isSel = c.id === _cariSelectedId;
+    var typeBadge = c.type === 'musteri' ? '🟢' : c.type === 'tedarikci' ? '🔵' : '⚪';
+    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
+      + '<span style="font-size:14px">' + typeBadge + '</span>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + '</div>'
+        + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + '</div></div>'
     + '</div>';
   }).join('');
+
+  // İlk cariyi seç
+  if (!_cariSelectedId && fl.length) _cariSelectedId = fl[0].id;
+  if (_cariSelectedId) _renderCariDetail(_cariSelectedId);
 }
+
+window._selectCari = function(id) { _cariSelectedId = id; renderCari(); };
+
+function _renderCariDetail(id) {
+  var cont = document.getElementById('cari-detail');
+  if (!cont) return;
+  var c = loadCari().find(function(x) { return x.id === id; });
+  if (!c) { cont.innerHTML = ''; return; }
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
+  var cTah = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').toLowerCase().includes(c.name.toLowerCase()); });
+  var totalBorc = cOdm.reduce(function(a, o) { return a + (parseFloat(o.amount) || 0); }, 0);
+  var totalAlacak = cTah.reduce(function(a, t) { return a + (parseFloat(t.amount) || 0); }, 0);
+  var netBakiye = totalAlacak - totalBorc;
+
+  // Tüm hareketler kronolojik
+  var hareketler = [];
+  cOdm.forEach(function(o) { hareketler.push({ type: 'odeme', name: o.name, amount: o.amount, date: o.due || o.ts, status: o.paid ? 'Ödendi' : 'Bekliyor' }); });
+  cTah.forEach(function(t) { hareketler.push({ type: 'tahsilat', name: t.name, amount: t.amount, date: t.due || t.ts, status: t.collected ? 'Tahsil' : 'Bekliyor' }); });
+  hareketler.sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+
+  cont.innerHTML = '<div style="padding:20px">'
+    // Başlık
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div>'
+        + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + esc(c.name) + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + esc(c.phone) : '') + (c.email ? ' · ' + esc(c.email) : '') + '</div>'
+        + (c.iban ? '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">IBAN: ' + esc(c.iban) + '</div>' : '')
+        + (c.address ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + esc(c.address) + '</div>' : '')
+      + '</div>'
+      + '<div style="display:flex;gap:6px">'
+        + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
+        + '<button class="btn btns" onclick="window.confirmModal(\'Bu cariyi silmek istediğinizden emin misiniz?\',{title:\'Cari Sil\',danger:true,confirmText:\'Evet\',onConfirm:function(){deleteCari(' + c.id + ');_cariSelectedId=null;renderCari()}})" style="font-size:11px;color:#DC2626">🗑</button>'
+      + '</div>'
+    + '</div>'
+    // Bento
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Toplam Alacak</div><div style="font-size:18px;font-weight:700;color:#16A34A">₺' + Math.round(totalAlacak).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Toplam Borç</div><div style="font-size:18px;font-weight:700;color:#DC2626">₺' + Math.round(totalBorc).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Net Bakiye</div><div style="font-size:18px;font-weight:700;color:' + (netBakiye >= 0 ? '#16A34A' : '#DC2626') + '">' + (netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(netBakiye)).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">İşlem Sayısı</div><div style="font-size:18px;font-weight:700;color:var(--t)">' + hareketler.length + '</div></div>'
+    + '</div>'
+    // Hareket tablosu
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:16px">'
+      + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Hareket Geçmişi</div>'
+      + '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:6px 14px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase"><div>Tarih</div><div>Açıklama</div><div style="text-align:right">Tutar</div><div style="text-align:right">Durum</div></div>'
+      + (hareketler.length ? hareketler.slice(0, 30).map(function(h, i) {
+          var color = h.type === 'tahsilat' ? '#16A34A' : '#DC2626';
+          var sign = h.type === 'tahsilat' ? '+' : '-';
+          return '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:6px 14px;border-bottom:1px solid var(--b);font-size:11px;background:' + (i % 2 ? 'var(--s2)' : 'var(--sf)') + '">'
+            + '<div style="color:var(--t3)">' + (h.date || '—').slice(0, 10) + '</div>'
+            + '<div style="color:var(--t)">' + esc(h.name || '—') + '</div>'
+            + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + '₺' + Number(h.amount || 0).toLocaleString('tr-TR') + '</div>'
+            + '<div style="text-align:right;font-size:10px;color:var(--t3)">' + h.status + '</div>'
+          + '</div>';
+        }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Hareket yok</div>')
+    + '</div>'
+  + '</div>';
+}
+
+/**
+ * Cari Excel export.
+ */
+window._exportCariXlsx = function() {
+  if (!_cariSelectedId) { window.toast?.('Cari seçin', 'err'); return; }
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
+  var c = loadCari().find(function(x) { return x.id === _cariSelectedId; });
+  if (!c) return;
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
+  var cTah = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').toLowerCase().includes(c.name.toLowerCase()); });
+  var rows = [['Tarih', 'Tip', 'Açıklama', 'Tutar', 'Durum']];
+  cOdm.forEach(function(o) { rows.push([o.due || '', 'Ödeme', o.name, -(o.amount || 0), o.paid ? 'Ödendi' : 'Bekliyor']); });
+  cTah.forEach(function(t) { rows.push([t.due || '', 'Tahsilat', t.name, t.amount || 0, t.collected ? 'Tahsil' : 'Bekliyor']); });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:10},{wch:30},{wch:14},{wch:10}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Cari Ekstre');
+  XLSX.writeFile(wb, 'Cari_' + c.name.replace(/[^a-zA-Z0-9]/g, '_') + '.xlsx');
+  window.toast?.('Excel indirildi ✓', 'ok');
+};
+
+/**
+ * Cari PDF rapor (print-friendly).
+ */
+window._exportCariPDF = function() {
+  if (!_cariSelectedId) { window.toast?.('Cari seçin', 'err'); return; }
+  var c = loadCari().find(function(x) { return x.id === _cariSelectedId; });
+  if (!c) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
+  var cTah = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').toLowerCase().includes(c.name.toLowerCase()); });
+  var totalB = cOdm.reduce(function(a, o) { return a + (parseFloat(o.amount) || 0); }, 0);
+  var totalA = cTah.reduce(function(a, t) { return a + (parseFloat(t.amount) || 0); }, 0);
+
+  var w = window.open('', '_blank', 'width=700,height=900');
+  w.document.write('<!DOCTYPE html><html><head><title>Cari Ekstre — ' + esc(c.name) + '</title>'
+    + '<style>body{font-family:Segoe UI,sans-serif;padding:40px;color:#1a1a2e;max-width:650px;margin:0 auto}'
+    + '.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px}'
+    + '@media print{button{display:none!important}}</style></head><body>'
+    + '<div style="border-bottom:3px solid #6366F1;padding-bottom:16px;margin-bottom:20px">'
+      + '<div style="font-size:20px;font-weight:700">Duay Global LLC</div>'
+      + '<div style="font-size:12px;color:#6b7280">Cari Hesap Ekstresi · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
+    + '</div>'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:12px">' + esc(c.name) + '</div>'
+    + '<div class="row"><span style="color:#6b7280">Toplam Alacak</span><span style="color:#16A34A;font-weight:700">₺' + Math.round(totalA).toLocaleString('tr-TR') + '</span></div>'
+    + '<div class="row"><span style="color:#6b7280">Toplam Borç</span><span style="color:#DC2626;font-weight:700">₺' + Math.round(totalB).toLocaleString('tr-TR') + '</span></div>'
+    + '<div class="row"><span style="color:#6b7280">Net Bakiye</span><span style="font-weight:700">₺' + Math.round(totalA - totalB).toLocaleString('tr-TR') + '</span></div>'
+    + '<div style="margin-top:20px"><button onclick="window.print()" style="padding:8px 20px;background:#6366F1;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Yazdır</button></div>'
+    + '</body></html>');
+  w.document.close();
+};
 
 // ════════════════════════════════════════════════════════════════
 // TEKRARLAYAN ŞABLON
