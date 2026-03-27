@@ -346,11 +346,129 @@ async function login() {
  * Başarılı giriş sonrası UI geçişini tamamlar.
  * @param {Object} user  Platform kullanıcı nesnesi
  */
+// ── Kullanıcı Tercihleri & Oturum Yönetimi ─────────────────────
+
+/**
+ * Kullanıcı tercihlerini yükler ve uygular.
+ * @param {Object} user
+ */
+function _loadAndApplyUserPrefs(user) {
+  try {
+    var prefs = JSON.parse(localStorage.getItem('ak_user_prefs_' + user.id) || '{}');
+    // Son aktif panele dön
+    if (prefs.lastPanel && prefs.lastPanel !== 'dashboard') {
+      setTimeout(function() {
+        var btn = document.querySelector('.nb[onclick*="' + prefs.lastPanel + '"]') || null;
+        try { nav(prefs.lastPanel, btn); } catch(e) {}
+      }, 600);
+    }
+    // Sidebar durumu
+    if (prefs.sidebarCollapsed) {
+      var sb = document.querySelector('.sidebar');
+      if (sb) sb.classList.add('collapsed');
+    }
+    // Tema
+    if (prefs.theme) {
+      localStorage.setItem('ak_theme', prefs.theme);
+    }
+    // Dil
+    if (prefs.lang) {
+      localStorage.setItem('ak_lang', prefs.lang);
+    }
+  } catch(e) {}
+}
+
+/**
+ * Kullanıcı tercihini kaydeder.
+ * @param {string} key
+ * @param {*} value
+ */
+function _saveUserPref(key, value) {
+  try {
+    var uid = window.Auth?.getCU?.()?.id;
+    if (!uid) return;
+    var prefs = JSON.parse(localStorage.getItem('ak_user_prefs_' + uid) || '{}');
+    prefs[key] = value;
+    localStorage.setItem('ak_user_prefs_' + uid, JSON.stringify(prefs));
+  } catch(e) {}
+}
+
+// Tema/dil değişiminde tercihi kaydet
+var _origToggleTheme = typeof toggleTheme === 'function' ? toggleTheme : null;
+
+/**
+ * Oturum kayıtlarını yükler.
+ * @returns {Array}
+ */
+function _loadSessions() {
+  try { return JSON.parse(localStorage.getItem('ak_sessions') || '[]'); } catch(e) { return []; }
+}
+
+/**
+ * Yeni oturum kaydeder.
+ * @param {number} uid
+ */
+function _registerSession(uid) {
+  var sessions = _loadSessions();
+  var sessionId = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  sessions.push({ uid: uid, sessionId: sessionId, ts: Date.now(), device: navigator.userAgent.slice(0, 80) });
+  // 24 saatten eski oturumları temizle
+  sessions = sessions.filter(function(s) { return Date.now() - s.ts < 86400000; });
+  localStorage.setItem('ak_sessions', JSON.stringify(sessions));
+  localStorage.setItem('ak_current_session', sessionId);
+  // Firestore'a da yaz
+  try {
+    var FB_DB = window.Auth?.getFBDB?.();
+    if (FB_DB) {
+      var tid = (window.Auth?.getTenantId?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g, '_');
+      FB_DB.collection('duay_' + tid).doc('sessions').set({ data: sessions, syncedAt: new Date().toISOString() }, { merge: true }).catch(function() {});
+    }
+  } catch(e) {}
+}
+
+/**
+ * Oturumu sonlandırır.
+ * @param {string} sessionId
+ */
+function _endSession(sessionId) {
+  var sessions = _loadSessions().filter(function(s) { return s.sessionId !== sessionId; });
+  localStorage.setItem('ak_sessions', JSON.stringify(sessions));
+}
+
+/**
+ * Kullanıcının aktif oturumlarını döndürür.
+ * @param {number} uid
+ * @returns {Array}
+ */
+function _getUserSessions(uid) {
+  return _loadSessions().filter(function(s) { return s.uid === uid && (Date.now() - s.ts < 86400000); });
+}
+
+// Export
+window._saveUserPref   = _saveUserPref;
+window._loadSessions   = _loadSessions;
+window._getUserSessions = _getUserSessions;
+window._endSession     = _endSession;
+
 function _finishLogin(user) {
   const users = loadUsers();
   const u     = users.find(x => x.id === user.id) || user;
   u.lastLogin = nowTs();
   saveUsers(users);
+
+  // Eş zamanlı oturum kontrolü
+  var maxSessions = u.maxSessions || 0; // 0 = sınırsız
+  if (maxSessions > 0) {
+    var sessions = _loadSessions();
+    var userSessions = sessions.filter(function(s) { return s.uid === u.id && (Date.now() - s.ts < 86400000); });
+    if (userSessions.length >= maxSessions) {
+      window.toast?.('Maksimum oturum sayısına ulaşıldı (' + maxSessions + '). Diğer cihazlardan çıkış yapın.', 'err');
+      if (_g('lbtn')) { _g('lbtn').disabled = false; _g('lbtn').textContent = 'Giriş Yap'; }
+      return;
+    }
+  }
+  // Oturumu kaydet
+  _registerSession(u.id);
 
   const errEl = _g('l-err');
   if (errEl) errEl.classList.remove('show');
@@ -366,6 +484,10 @@ function _finishLogin(user) {
   console.log('[LOGIN] _finishLogin çağrıldı. user:', user?.name, '| FB_AUTH:', !!window.Auth?.getFBAuth?.(), '| FB_AUTH.currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
   // P0: Tüm giriş yollarında realtime sync başlat
   setTimeout(() => window.DB?.startRealtimeSync?.(), 500);
+
+  // Kullanıcı tercihlerini yükle ve uygula
+  _loadAndApplyUserPrefs(u);
+
   _initApp(u);
 }
 
@@ -647,6 +769,9 @@ function nav(id, el) {
   if (!target) { console.warn('[App.nav] Panel bulunamadı:', 'panel-' + id); return; }
   target.classList.add('on');
   if (el) el.classList.add('on');
+
+  // Son aktif paneli hatırla
+  try { var _uid = window.Auth?.getCU?.()?.id; if (_uid) { var _p = JSON.parse(localStorage.getItem('ak_user_prefs_' + _uid) || '{}'); _p.lastPanel = id; localStorage.setItem('ak_user_prefs_' + _uid, JSON.stringify(_p)); } } catch(e) {}
 
   // Mobil: sidebar kapat
   if (window.innerWidth <= 860) {

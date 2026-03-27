@@ -242,6 +242,39 @@ function _renderDetail(uid) {
       '</div>';
     })()}
 
+    <!-- Oturum Politikası -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:600;color:var(--t)">🔐 Oturum Politikası</span>
+        ${!isSelf ? '<button class="btn btns" onclick="window._saveMaxSessions(' + u.id + ')" style="font-size:11px;padding:3px 10px">Kaydet</button>' : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--t2)">Eş zamanlı oturum limiti:</span>
+        <select id="adm-max-sessions-${u.id}" style="font-size:12px;padding:4px 8px;border:1px solid var(--b);border-radius:6px;background:var(--s);color:var(--t)" ${isSelf ? 'disabled' : ''}>
+          <option value="0" ${(u.maxSessions||0)===0?'selected':''}>Sınırsız</option>
+          <option value="1" ${u.maxSessions===1?'selected':''}>1 Oturum</option>
+          <option value="2" ${u.maxSessions===2?'selected':''}>2 Oturum</option>
+          <option value="3" ${u.maxSessions===3?'selected':''}>3 Oturum</option>
+        </select>
+      </div>
+      ${(() => {
+        var sessions = typeof window._getUserSessions === 'function' ? window._getUserSessions(u.id) : [];
+        var currentSession = localStorage.getItem('ak_current_session') || '';
+        return '<div style="font-size:11px;color:var(--t3);margin-bottom:6px">Aktif oturumlar: <b style="color:var(--t)">' + sessions.length + '</b></div>'
+          + (sessions.length ? sessions.map(function(s) {
+              var isCurrent = s.sessionId === currentSession;
+              var ago = Math.round((Date.now() - s.ts) / 60000);
+              var agoTxt = ago < 60 ? ago + ' dk önce' : Math.round(ago / 60) + ' saat önce';
+              return '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--s2);border-radius:6px;margin-bottom:3px;font-size:10px">'
+                + '<span style="color:' + (isCurrent ? '#16A34A' : 'var(--t3)') + '">' + (isCurrent ? '🟢' : '⚪') + '</span>'
+                + '<span style="flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (s.device || '?').slice(0,40) + '</span>'
+                + '<span style="color:var(--t3)">' + agoTxt + '</span>'
+                + (!isCurrent ? '<button onclick="window._endSession?.(\'' + s.sessionId + '\');Admin.render()" style="background:none;border:none;cursor:pointer;font-size:10px;color:#DC2626;padding:1px 4px">✕</button>' : '<span style="font-size:9px;color:#16A34A">Bu cihaz</span>')
+              + '</div>';
+            }).join('') : '<div style="font-size:10px;color:var(--t3);padding:4px">Aktif oturum yok</div>');
+      })()}
+    </div>
+
     <!-- Rol Geçmişi Timeline -->
     ${(() => {
       const rh = u.roleHistory || [];
@@ -2552,6 +2585,23 @@ function _calcTrustScore(u) {
  * Bir kullanıcının tüm yetki/modül/rol ayarlarını başka kullanıcıdan kopyalar.
  * @param {number} targetUid - Hedef kullanıcı ID
  */
+/**
+ * Oturum limiti kaydeder.
+ */
+window._saveMaxSessions = function(uid) {
+  if (!isAdmin()) return;
+  var sel = document.getElementById('adm-max-sessions-' + uid);
+  if (!sel) return;
+  var val = parseInt(sel.value || '0');
+  var users = loadUsers();
+  var u = users.find(function(x) { return x.id === uid; });
+  if (!u) return;
+  u.maxSessions = val;
+  saveUsers(users);
+  window.toast?.('Oturum limiti güncellendi: ' + (val === 0 ? 'Sınırsız' : val + ' oturum'), 'ok');
+  logActivity('user', 'Oturum limiti: ' + u.name + ' → ' + (val === 0 ? 'Sınırsız' : val));
+};
+
 window._cloneUserPerms = function(targetUid) {
   if (!isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
   var users = loadUsers();
