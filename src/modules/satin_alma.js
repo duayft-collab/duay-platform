@@ -179,6 +179,7 @@ function renderSatinAlma() {
         + '<button onclick="window._openSADetail?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">👁</button>'
         + '<button onclick="window._saInlineEditRow?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Inline düzenle">✏️</button>'
         + '<button onclick="window._saInlineFiles?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">📎</button>'
+        + '<button onclick="window._deleteSA?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626" title="Sil">🗑</button>'
       + '</div>'
     + '</div>';
   });
@@ -429,6 +430,7 @@ window._saInlineEditRow = function(id) {
     + '<div style="display:flex;gap:3px">'
       + '<button onclick="window._saRowSave?.(' + id + ')" class="btn btnp" style="font-size:10px;padding:2px 8px">✓</button>'
       + '<button onclick="renderSatinAlma()" class="btn btns" style="font-size:10px;padding:2px 6px">✗</button>'
+      + '<button onclick="window._deleteSA?.(' + id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button>'
     + '</div>';
 
   // Enter/Escape yakalamak için
@@ -1241,6 +1243,60 @@ window._exportSAXlsx = function() {
   XLSX.utils.book_append_sheet(wb, ws, 'Satin Alma');
   XLSX.writeFile(wb, 'SatinAlma_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
+};
+
+// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// SİLME
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Satın alma kaydını siler. Yetki kontrolü + cascade ödeme silme.
+ * pending/revize_gerekli → giren kişi silebilir
+ * approved/kesinlesti → sadece admin silebilir
+ */
+window._deleteSA = function(id) {
+  var d = _loadSA();
+  var s = d.find(function(x) { return x.id === id; });
+  if (!s) return;
+  var cu = _cuSA();
+
+  // Yetki kontrolü
+  var canDelete = false;
+  if (_isAdmSA()) {
+    canDelete = true;
+  } else if ((s.status === 'pending' || s.status === 'revize_gerekli' || s.status === 'draft') && s.createdBy === cu?.id) {
+    canDelete = true;
+  }
+
+  if (!canDelete) {
+    window.toast?.('Onaylanmış kayıtlar yönetici izni olmadan silinemez', 'err');
+    return;
+  }
+
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  window.confirmModal('Bu kayıt silinsin mi?\n\n"' + esc(s.supplier || s.piNo || s.jobId || '') + '"\n\nOnaylanmış kayıtlar yönetici izni olmadan silinemez.', {
+    title: 'Satın Alma Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      // Nakit akışından ilgili ödemeleri de kaldır
+      if (typeof loadOdm === 'function' && typeof storeOdm === 'function') {
+        var odm = loadOdm();
+        var before = odm.length;
+        odm = odm.filter(function(o) { return !(o.source === 'satinalma' && o.purchaseId === id); });
+        if (odm.length < before) {
+          storeOdm(odm);
+          window.toast?.((before - odm.length) + ' ilgili ödeme de kaldırıldı', 'ok');
+        }
+      }
+
+      _storeSA(d.filter(function(x) { return x.id !== id; }));
+      renderSatinAlma();
+      window.toast?.('Kayıt silindi ✓', 'ok');
+      window.logActivity?.('view', 'Satınalma silindi: ' + (s.supplier || s.piNo || s.jobId));
+    }
+  });
 };
 
 // ════════════════════════════════════════════════════════════════

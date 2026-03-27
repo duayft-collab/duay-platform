@@ -1230,14 +1230,31 @@ function toggleOdmPaid(id) {
 }
 
 function delOdm(id) {
-  if (!_isAdminO()) return;
-  window.confirmModal('Bu ödemeyi silmek istediğinizden emin misiniz?', {
+  var d = window.loadOdm ? loadOdm() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+  var cu = _CUo();
+
+  // Yetki kontrolü
+  var canDel = false;
+  if (_isAdminO()) {
+    canDel = true;
+  } else if ((o.approvalStatus === 'pending' || !o.approvalStatus) && o.createdBy === cu?.id) {
+    canDel = true;
+  }
+  if (!canDel) {
+    window.toast?.('Onaylanmış kayıtlar yönetici izni olmadan silinemez', 'err');
+    return;
+  }
+
+  window.confirmModal('Bu ödemeyi silmek istediğinizden emin misiniz?\n\n"' + (o.name || '') + '"', {
     title: 'Ödeme Sil',
     danger: true,
     confirmText: 'Evet, Sil',
-    onConfirm: () => {
-      window.storeOdm ? storeOdm(loadOdm().filter(x => x.id !== id)) : null;
+    onConfirm: function() {
+      window.storeOdm ? storeOdm(d.filter(function(x) { return x.id !== id; })) : null;
       renderOdemeler();
+      window.logActivity?.('view', 'Ödeme silindi: ' + (o.name || ''));
       window.toast?.('Silindi', 'ok');
     }
   });
@@ -4273,6 +4290,7 @@ window._odmInlineEditRow = function(id) {
     + '<div style="width:90px;padding:6px 4px;display:flex;gap:3px;flex-shrink:0">'
       + '<button onclick="window._odmInlineRowSave?.(' + id + ')" class="btn btnp" style="font-size:10px;padding:3px 10px">✓</button>'
       + '<button onclick="renderOdemeler()" class="btn btns" style="font-size:10px;padding:3px 6px">✗</button>'
+      + '<button onclick="delOdm(' + id + ')" class="btn btns" style="font-size:10px;padding:3px 6px;color:#DC2626">🗑</button>'
     + '</div>'
   + '</div>';
 
