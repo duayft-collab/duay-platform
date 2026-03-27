@@ -321,6 +321,7 @@ function _injectOdmPanel() {
       '<div id="odm-stab-abonelik" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Abonelikler</div>',
       '<div id="odm-stab-kredi_k" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">Kredi Kartları</div>',
       '<div id="odm-stab-tahsilat" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:#0F6E56">💰 Tahsilat</div>',
+      '<div id="odm-stab-projeksiyon" style="padding:9px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">📊 Projeksiyon</div>',
     '</div>',
 
     // ARAMA + FİLTRELER — OPTİMİZE
@@ -420,7 +421,7 @@ let _odmCurrentTab = 'all';
 
 function setOdmTab(tab) {
   _odmCurrentTab = tab;
-  const tabIds = ['all','gecikti','bekliyor','ay','abonelik','kredi_k','tahsilat'];
+  const tabIds = ['all','gecikti','bekliyor','ay','abonelik','kredi_k','tahsilat','projeksiyon'];
   tabIds.forEach(t => {
     const el = _go('odm-stab-' + t);
     if (!el) return;
@@ -438,7 +439,7 @@ function setOdmTab(tab) {
   if (tab === 'bekliyor' && _go('odm-bento-hafta'))   _go('odm-bento-hafta').style.background   = 'rgba(255,251,235,.6)';
   if (tab === 'ay'       && _go('odm-bento-ay'))       _go('odm-bento-ay').style.background       = 'rgba(236,253,245,.6)';
   const thead = _go('odm-thead');
-  if (thead) thead.style.display = (tab==='kredi_k'||tab==='abonelik'||tab==='tahsilat') ? 'none' : 'grid';
+  if (thead) thead.style.display = (tab==='kredi_k'||tab==='abonelik'||tab==='tahsilat'||tab==='projeksiyon') ? 'none' : 'grid';
   renderOdemeler();
 }
 
@@ -686,6 +687,12 @@ function renderOdemeler() {
   }
 
   const cont = _go('odm-list'); if (!cont) return;
+
+  // Projeksiyon sekmesi — özel render
+  if (_odmCurrentTab === 'projeksiyon') {
+    _renderProjeksiyonTab(cont);
+    return;
+  }
 
   if (!items.length) {
     cont.innerHTML = '<div style="text-align:center;padding:56px;color:var(--t2)">'
@@ -2809,29 +2816,190 @@ function _startKurTicker() {
 
 window._odmFetchKur = fetchKurRates;
 
-// Nakit projeksiyon (15 gün)
-function renderNakitProjeksiyon() {
-  var cont = document.getElementById('odm-projeksiyon');
-  if (!cont) return;
+// ════════════════════════════════════════════════════════════════
+// NAKİT PROJEKSİYON — 15 Günlük Grafik (Sekme + Widget)
+// Sadece approved/kesinlesti statüsündeki kayıtlar dahil
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 15 günlük nakit projeksiyonu verisini hesaplar.
+ * Sadece onaylanmış (approved/kesinlesti) kayıtları dahil eder.
+ * @returns {{ days: Array, totalOdeme: number, totalTahsilat: number, cumNet: number }}
+ */
+function _calcProjeksiyon() {
   var odm = window.loadOdm?.() || [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
   var today = new Date();
   var days = [];
-  for (var i = 0; i < 15; i++) {
-    var d = new Date(today); d.setDate(d.getDate() + i);
-    var ds = d.toISOString().slice(0, 10);
-    var odmDay = odm.filter(function(o) { return o.due === ds && !o.paid; }).reduce(function(s, o) { return s + (parseFloat(o.amount) || 0); }, 0);
-    var tahDay = tah.filter(function(t) { return t.due === ds && !t.collected; }).reduce(function(s, t) { return s + (parseFloat(t.amount) || 0); }, 0);
-    days.push({ date: ds, label: ds.slice(5), odeme: odmDay, tahsilat: tahDay, net: tahDay - odmDay });
-  }
-  var maxVal = Math.max.apply(null, days.map(function(d) { return Math.max(d.odeme, d.tahsilat, 1); }));
+  var totalOdeme = 0;
+  var totalTahsilat = 0;
   var cumNet = 0;
-  cont.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">15 Gunluk Nakit Projeksiyon</div>'
+
+  // Sadece onaylanmış/kesinleşmiş ödemeleri filtrele
+  var confirmedOdm = odm.filter(function(o) {
+    if (o.paid) return false; // zaten ödenmişleri hariç tut
+    return o.approved || o.approvalStatus === 'kesinlesti' || o.approvalStatus === 'approved' || !o.approvalStatus;
+  });
+
+  // Sadece onaylanmış/kesinleşmiş tahsilatları filtrele
+  var confirmedTah = tah.filter(function(t) {
+    if (t.collected) return false;
+    return t.approved || t.approvalStatus === 'kesinlesti' || t.approvalStatus === 'approved' || !t.approvalStatus;
+  });
+
+  for (var i = 0; i < 15; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() + i);
+    var ds = d.toISOString().slice(0, 10);
+    var dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
+
+    var odmDay = confirmedOdm
+      .filter(function(o) { return o.due === ds; })
+      .reduce(function(s, o) { return s + (parseFloat(o.amount) || 0); }, 0);
+
+    var tahDay = confirmedTah
+      .filter(function(t) { return t.due === ds; })
+      .reduce(function(s, t) { return s + (parseFloat(t.amount) || 0); }, 0);
+
+    var net = tahDay - odmDay;
+    cumNet += net;
+    totalOdeme += odmDay;
+    totalTahsilat += tahDay;
+
+    days.push({
+      date: ds,
+      label: ds.slice(5),
+      dayName: dayName,
+      odeme: odmDay,
+      tahsilat: tahDay,
+      net: net,
+      cumNet: cumNet,
+      odmCount: confirmedOdm.filter(function(o) { return o.due === ds; }).length,
+      tahCount: confirmedTah.filter(function(t) { return t.due === ds; }).length,
+    });
+  }
+
+  return { days: days, totalOdeme: totalOdeme, totalTahsilat: totalTahsilat, cumNet: cumNet };
+}
+
+/**
+ * Projeksiyon sekmesi — tam ekran 15 günlük nakit akışı grafiği.
+ * @param {HTMLElement} cont — odm-list container
+ */
+function _renderProjeksiyonTab(cont) {
+  var proj = _calcProjeksiyon();
+  var days = proj.days;
+  var maxVal = Math.max.apply(null, days.map(function(d) { return Math.max(d.odeme, d.tahsilat, 1); }));
+
+  var netColor = proj.cumNet >= 0 ? '#10B981' : '#EF4444';
+  var netSign  = proj.cumNet >= 0 ? '+' : '';
+
+  cont.innerHTML = ''
+    // Başlık + özet kartlar
+    + '<div style="padding:20px 20px 0">'
+      + '<div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:14px">📊 15 Günlük Nakit Projeksiyon</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">'
+        + '<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:12px;padding:14px 16px">'
+          + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Ödeme</div>'
+          + '<div style="font-size:20px;font-weight:700;color:#EF4444">₺' + Math.round(proj.totalOdeme).toLocaleString('tr-TR') + '</div>'
+        + '</div>'
+        + '<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:12px;padding:14px 16px">'
+          + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Tahsilat</div>'
+          + '<div style="font-size:20px;font-weight:700;color:#10B981">₺' + Math.round(proj.totalTahsilat).toLocaleString('tr-TR') + '</div>'
+        + '</div>'
+        + '<div style="background:' + (proj.cumNet >= 0 ? 'rgba(16,185,129,.06)' : 'rgba(239,68,68,.06)') + ';border:1px solid ' + (proj.cumNet >= 0 ? 'rgba(16,185,129,.15)' : 'rgba(239,68,68,.15)') + ';border-radius:12px;padding:14px 16px">'
+          + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Net Nakit Dengesi</div>'
+          + '<div style="font-size:20px;font-weight:700;color:' + netColor + '">' + netSign + '₺' + Math.abs(Math.round(proj.cumNet)).toLocaleString('tr-TR') + '</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>'
+
+    // Bar chart
+    + '<div style="padding:0 20px 8px">'
+      + '<div style="display:flex;gap:3px;align-items:flex-end;height:160px;margin-bottom:0;padding-bottom:4px;border-bottom:1px solid var(--b)">'
+      + days.map(function(d, idx) {
+          var hT = d.tahsilat > 0 ? Math.max(4, Math.round(d.tahsilat / maxVal * 140)) : 0;
+          var hO = d.odeme > 0 ? Math.max(4, Math.round(d.odeme / maxVal * 140)) : 0;
+          var isToday = idx === 0;
+          var borderStyle = isToday ? 'border:2px solid var(--ac);border-radius:8px;' : '';
+          var bgStyle = isToday ? 'background:var(--al);' : '';
+
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:2px 0;' + borderStyle + bgStyle + '" title="' + d.date + ' — Ödeme: ₺' + Math.round(d.odeme).toLocaleString('tr-TR') + ' / Tahsilat: ₺' + Math.round(d.tahsilat).toLocaleString('tr-TR') + '">'
+            + (hT > 0 ? '<div style="width:70%;height:' + hT + 'px;background:#10B981;border-radius:3px 3px 0 0;transition:height .3s"></div>' : '')
+            + (hO > 0 ? '<div style="width:70%;height:' + hO + 'px;background:#EF4444;border-radius:0 0 3px 3px;transition:height .3s"></div>' : '')
+            + (hT === 0 && hO === 0 ? '<div style="width:70%;height:2px;background:var(--b);border-radius:1px;margin-top:auto"></div>' : '')
+            + '</div>';
+        }).join('')
+      + '</div>'
+
+      // Tarih etiketleri
+      + '<div style="display:flex;gap:3px;margin-top:2px">'
+      + days.map(function(d, idx) {
+          var isToday = idx === 0;
+          var fw = isToday ? 'font-weight:700;color:var(--ac)' : 'color:var(--t3)';
+          return '<div style="flex:1;text-align:center;font-size:8px;' + fw + ';min-width:0;overflow:hidden">'
+            + '<div>' + d.dayName + '</div>'
+            + '<div>' + d.label + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+    + '</div>'
+
+    // Lejant
+    + '<div style="padding:10px 20px;display:flex;gap:16px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--b)">'
+      + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#10B981;margin-right:4px;vertical-align:middle"></span>Tahsilat</span>'
+      + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#EF4444;margin-right:4px;vertical-align:middle"></span>Ödeme</span>'
+      + '<span style="margin-left:auto;font-size:10px;color:var(--t3)">Sadece onaylanmış/kesinleşmiş kayıtlar dahil</span>'
+    + '</div>'
+
+    // Günlük detay tablosu
+    + '<div style="padding:12px 20px">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Günlük Detay</div>'
+      + '<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden">'
+        // Tablo başlık
+        + '<div style="display:grid;grid-template-columns:90px 70px 1fr 1fr 1fr 1fr;gap:0;padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--b);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase">'
+          + '<div>Tarih</div><div>Gün</div><div style="text-align:right">Ödeme</div><div style="text-align:right">Tahsilat</div><div style="text-align:right">Net</div><div style="text-align:right">Kümülatif</div>'
+        + '</div>'
+        // Satırlar
+        + days.map(function(d, idx) {
+            var isToday = idx === 0;
+            var rowBg = isToday ? 'background:var(--al)' : (idx % 2 === 0 ? 'background:var(--sf)' : 'background:var(--s2)');
+            var netC = d.net >= 0 ? '#10B981' : '#EF4444';
+            var cumC = d.cumNet >= 0 ? '#10B981' : '#EF4444';
+            var netS = d.net >= 0 ? '+' : '';
+            var cumS = d.cumNet >= 0 ? '+' : '';
+
+            return '<div style="display:grid;grid-template-columns:90px 70px 1fr 1fr 1fr 1fr;gap:0;padding:7px 12px;border-bottom:1px solid var(--b);font-size:11px;' + rowBg + '">'
+              + '<div style="font-weight:' + (isToday ? '700' : '500') + ';color:' + (isToday ? 'var(--ac)' : 'var(--t)') + '">' + d.date + '</div>'
+              + '<div style="color:var(--t3)">' + d.dayName + (isToday ? ' ★' : '') + '</div>'
+              + '<div style="text-align:right;color:#EF4444;font-weight:600">' + (d.odeme > 0 ? '₺' + Math.round(d.odeme).toLocaleString('tr-TR') + ' <span style="font-size:9px;color:var(--t3)">(' + d.odmCount + ')</span>' : '<span style="color:var(--t3)">—</span>') + '</div>'
+              + '<div style="text-align:right;color:#10B981;font-weight:600">' + (d.tahsilat > 0 ? '₺' + Math.round(d.tahsilat).toLocaleString('tr-TR') + ' <span style="font-size:9px;color:var(--t3)">(' + d.tahCount + ')</span>' : '<span style="color:var(--t3)">—</span>') + '</div>'
+              + '<div style="text-align:right;color:' + netC + ';font-weight:600">' + (d.net !== 0 ? netS + '₺' + Math.abs(Math.round(d.net)).toLocaleString('tr-TR') : '<span style="color:var(--t3)">—</span>') + '</div>'
+              + '<div style="text-align:right;color:' + cumC + ';font-weight:700">' + cumS + '₺' + Math.abs(Math.round(d.cumNet)).toLocaleString('tr-TR') + '</div>'
+            + '</div>';
+          }).join('')
+      + '</div>'
+    + '</div>';
+}
+
+/**
+ * Nakit projeksiyon widget — dashboard veya panel alt bölümü.
+ * Eski renderNakitProjeksiyon yerine kullanılır.
+ * @returns {void}
+ */
+function renderNakitProjeksiyon() {
+  var cont = document.getElementById('odm-projeksiyon');
+  if (!cont) return;
+
+  var proj = _calcProjeksiyon();
+  var days = proj.days;
+  var maxVal = Math.max.apply(null, days.map(function(d) { return Math.max(d.odeme, d.tahsilat, 1); }));
+
+  cont.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">15 Günlük Nakit Projeksiyon</div>'
     + '<div style="display:flex;gap:4px;align-items:flex-end;height:120px;margin-bottom:8px">'
     + days.map(function(d) {
-        cumNet += d.net;
-        var hO = Math.max(2, Math.round(d.odeme / maxVal * 100));
-        var hT = Math.max(2, Math.round(d.tahsilat / maxVal * 100));
+        var hO = d.odeme > 0 ? Math.max(2, Math.round(d.odeme / maxVal * 100)) : 2;
+        var hT = d.tahsilat > 0 ? Math.max(2, Math.round(d.tahsilat / maxVal * 100)) : 2;
         return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0">'
           + '<div style="width:100%;height:' + hT + 'px;background:#10B981;border-radius:3px 3px 0 0"></div>'
           + '<div style="width:100%;height:' + hO + 'px;background:#EF4444;border-radius:0 0 3px 3px"></div>'
@@ -2841,8 +3009,8 @@ function renderNakitProjeksiyon() {
     + '</div>'
     + '<div style="display:flex;gap:12px;font-size:10px;color:var(--t3)">'
       + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10B981;margin-right:3px"></span>Tahsilat</span>'
-      + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#EF4444;margin-right:3px"></span>Odeme</span>'
-      + '<span style="font-weight:600;color:' + (cumNet >= 0 ? '#10B981' : '#EF4444') + '">Net: ' + (cumNet >= 0 ? '+' : '') + Math.round(cumNet).toLocaleString('tr-TR') + ' TL</span>'
+      + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#EF4444;margin-right:3px"></span>Ödeme</span>'
+      + '<span style="font-weight:600;color:' + (proj.cumNet >= 0 ? '#10B981' : '#EF4444') + '">Net: ' + (proj.cumNet >= 0 ? '+' : '') + Math.round(proj.cumNet).toLocaleString('tr-TR') + ' ₺</span>'
     + '</div>';
 }
 window.renderNakitProjeksiyon = renderNakitProjeksiyon;
