@@ -1091,15 +1091,18 @@ window._closeAssignModal = function() {
 window._goToTask = function(tid) {
   var mo = document.getElementById('mo-task-assigned');
   if (mo) mo.remove();
+
   if (typeof window.nav === 'function') window.nav('pusula');
-  setTimeout(function() {
-    if (typeof window.renderPusula === 'function') window.renderPusula();
-    setTimeout(function() {
-      if (typeof window.openPusDetail === 'function') {
-        window.openPusDetail(tid);
-      }
-    }, 600);
-  }, 400);
+
+  var attempts = 0;
+  var interval = setInterval(function() {
+    attempts++;
+    if (typeof window.openPusDetail === 'function' && document.getElementById('pusula-panel')) {
+      clearInterval(interval);
+      window.openPusDetail(tid);
+    }
+    if (attempts > 20) clearInterval(interval);
+  }, 200);
 };
 
 function _showAssignmentModal(task) {
