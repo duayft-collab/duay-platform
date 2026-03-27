@@ -4400,19 +4400,25 @@ window._openQuickCari = function() {
 window._saveQuickCari = function() {
   var name = (document.getElementById('qc-name')?.value || '').trim();
   if (!name) { window.toast?.('Firma adı zorunlu', 'err'); return; }
-  saveCari({
+  var editId = document.getElementById('qc-edit-id')?.value || '';
+  var entry = {
     name: name,
     type: document.getElementById('qc-type')?.value || 'diger',
     phone: (document.getElementById('qc-phone')?.value || '').trim(),
     email: (document.getElementById('qc-email')?.value || '').trim(),
     iban: (document.getElementById('qc-iban')?.value || '').trim(),
     address: (document.getElementById('qc-address')?.value || '').trim(),
-    notes: '',
-  });
+    limitAmount: parseFloat(document.getElementById('qc-limit')?.value || '0') || 0,
+    taxNo: (document.getElementById('qc-tax')?.value || '').trim(),
+    taxOffice: (document.getElementById('qc-taxoffice')?.value || '').trim(),
+    notes: (document.getElementById('qc-notes')?.value || '').trim(),
+  };
+  if (editId) entry.id = parseInt(editId);
+  saveCari(entry);
   document.getElementById('mo-quick-cari')?.remove();
-  window.toast?.('Cari eklendi ✓', 'ok');
-  // Açık dropdownları güncelle
+  window.toast?.(editId ? 'Cari güncellendi ✓' : 'Cari eklendi ✓', 'ok');
   renderOdemeler();
+  if (typeof renderCari === 'function') renderCari();
 };
 
 /**
@@ -4525,20 +4531,63 @@ function _renderCariDetail(id) {
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Net Bakiye</div><div style="font-size:18px;font-weight:700;color:' + (netBakiye >= 0 ? '#16A34A' : '#DC2626') + '">' + (netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(netBakiye)).toLocaleString('tr-TR') + '</div></div>'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">İşlem Sayısı</div><div style="font-size:18px;font-weight:700;color:var(--t)">' + hareketler.length + '</div></div>'
     + '</div>'
-    // Hareket tablosu
+    // Cari Limit uyarısı
+    + (function() {
+        if (!c.limitAmount || !c.limitAmount > 0) return '';
+        var pct = Math.round(totalBorc / c.limitAmount * 100);
+        var barColor = pct >= 90 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#16A34A';
+        return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 14px;margin-bottom:12px">'
+          + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:4px"><span>Kredi Limiti</span><span style="font-weight:600;color:' + barColor + '">₺' + Math.round(totalBorc).toLocaleString('tr-TR') + ' / ₺' + Math.round(c.limitAmount).toLocaleString('tr-TR') + ' (' + pct + '%)</span></div>'
+          + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:' + barColor + ';border-radius:3px"></div></div>'
+          + (pct >= 90 ? '<div style="font-size:10px;color:#EF4444;margin-top:4px;font-weight:600">⚠️ Kredi limiti aşılmak üzere!</div>' : '')
+        + '</div>';
+      })()
+    // Format toggle + Hareket tablosu
     + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:16px">'
-      + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Hareket Geçmişi</div>'
-      + '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:6px 14px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase"><div>Tarih</div><div>Açıklama</div><div style="text-align:right">Tutar</div><div style="text-align:right">Durum</div></div>'
-      + (hareketler.length ? hareketler.slice(0, 30).map(function(h, i) {
-          var color = h.type === 'tahsilat' ? '#16A34A' : '#DC2626';
-          var sign = h.type === 'tahsilat' ? '+' : '-';
-          return '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:6px 14px;border-bottom:1px solid var(--b);font-size:11px;background:' + (i % 2 ? 'var(--s2)' : 'var(--sf)') + '">'
-            + '<div style="color:var(--t3)">' + (h.date || '—').slice(0, 10) + '</div>'
-            + '<div style="color:var(--t)">' + esc(h.name || '—') + '</div>'
-            + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + '₺' + Number(h.amount || 0).toLocaleString('tr-TR') + '</div>'
-            + '<div style="text-align:right;font-size:10px;color:var(--t3)">' + h.status + '</div>'
-          + '</div>';
-        }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Hareket yok</div>')
+      + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+        + '<span style="font-size:12px;font-weight:600;color:var(--t)">Hareket Geçmişi</span>'
+        + '<div style="display:flex;gap:4px">'
+          + '<button onclick="window._cariFormat=1;_renderCariDetail(' + id + ')" class="btn btns" style="font-size:9px;padding:2px 6px;' + ((!window._cariFormat || window._cariFormat === 1) ? 'background:var(--ac);color:#fff' : '') + '">Detay</button>'
+          + '<button onclick="window._cariFormat=2;_renderCariDetail(' + id + ')" class="btn btns" style="font-size:9px;padding:2px 6px;' + (window._cariFormat === 2 ? 'background:var(--ac);color:#fff' : '') + '">Kompakt</button>'
+        + '</div>'
+      + '</div>'
+      + (function() {
+          var fmt = window._cariFormat || 1;
+          var rates = _odmGetRates();
+          if (fmt === 1) {
+            // Format 1: Tutar | Para Birimi | Kur | TL Tutar
+            return '<div style="display:grid;grid-template-columns:80px 1fr 80px 60px 70px 80px 70px;padding:6px 14px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase"><div>Tarih</div><div>Açıklama</div><div style="text-align:right">Tutar</div><div>Döviz</div><div style="text-align:right">Kur</div><div style="text-align:right">TL Tutar</div><div style="text-align:right">Durum</div></div>'
+              + (hareketler.length ? hareketler.slice(0, 30).map(function(h, i) {
+                  var color = h.type === 'tahsilat' ? '#16A34A' : '#DC2626';
+                  var sign = h.type === 'tahsilat' ? '+' : '-';
+                  var cur = h.currency || 'TRY';
+                  var kur = h.kurRate || rates[cur] || 1;
+                  var tlAmt = cur === 'TRY' ? h.amount : Math.round((h.amount || 0) * kur);
+                  return '<div style="display:grid;grid-template-columns:80px 1fr 80px 60px 70px 80px 70px;padding:5px 14px;border-bottom:1px solid var(--b);font-size:11px;background:' + (i % 2 ? 'var(--s2)' : 'var(--sf)') + '">'
+                    + '<div style="color:var(--t3)">' + (h.date || '—').slice(0, 10) + '</div>'
+                    + '<div style="color:var(--t)">' + esc(h.name || '—') + '</div>'
+                    + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + Number(h.amount || 0).toLocaleString('tr-TR') + '</div>'
+                    + '<div style="color:var(--t3)">' + cur + '</div>'
+                    + '<div style="text-align:right;color:var(--t3)">' + (cur !== 'TRY' ? kur : '—') + '</div>'
+                    + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + '₺' + tlAmt.toLocaleString('tr-TR') + '</div>'
+                    + '<div style="text-align:right;font-size:10px;color:var(--t3)">' + h.status + '</div>'
+                  + '</div>';
+                }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Hareket yok</div>');
+          } else {
+            // Format 2: Kompakt — Tutar Para Birimi
+            return '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:6px 14px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase"><div>Tarih</div><div>Açıklama</div><div style="text-align:right">Tutar</div><div style="text-align:right">Durum</div></div>'
+              + (hareketler.length ? hareketler.slice(0, 30).map(function(h, i) {
+                  var color = h.type === 'tahsilat' ? '#16A34A' : '#DC2626';
+                  var sign = h.type === 'tahsilat' ? '+' : '-';
+                  return '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:5px 14px;border-bottom:1px solid var(--b);font-size:11px;background:' + (i % 2 ? 'var(--s2)' : 'var(--sf)') + '">'
+                    + '<div style="color:var(--t3)">' + (h.date || '—').slice(0, 10) + '</div>'
+                    + '<div style="color:var(--t)">' + esc(h.name || '—') + '</div>'
+                    + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + '₺' + Number(h.amount || 0).toLocaleString('tr-TR') + '</div>'
+                    + '<div style="text-align:right;font-size:10px;color:var(--t3)">' + h.status + '</div>'
+                  + '</div>';
+                }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Hareket yok</div>');
+          }
+        })()
     + '</div>'
   + '</div>';
 }

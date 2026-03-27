@@ -2729,13 +2729,38 @@ window._openUserManageModal = function(uid) {
     + '<div style="flex:1;overflow-y:auto;padding:20px 24px">'
       // Profil sekmesi
       + '<div id="um-panel-profile" class="um-panel">'
+        // Oturum Politikası — üstte
+        + '<div style="background:#F2F2F7;border-radius:12px;padding:14px;margin-bottom:16px">'
+          + '<div style="font-size:12px;font-weight:700;color:#1C1C1E;margin-bottom:8px">🔐 Oturum Politikası</div>'
+          + '<div style="display:flex;gap:12px;align-items:center">'
+            + '<div style="flex:1"><div class="fl">EŞ ZAMANLI OTURUM</div><select class="fi" id="um-sessions" style="font-size:13px;padding:8px 10px"><option value="0"' + ((u.maxSessions || 0) === 0 ? ' selected' : '') + '>Sınırsız</option><option value="1"' + (u.maxSessions === 1 ? ' selected' : '') + '>1</option><option value="2"' + (u.maxSessions === 2 ? ' selected' : '') + '>2</option><option value="3"' + (u.maxSessions === 3 ? ' selected' : '') + '>3</option></select></div>'
+            + '<div style="flex:2">'
+              + '<div class="fl">AKTİF OTURUMLAR</div>'
+              + (function() {
+                  var sessions = typeof window._getUserSessions === 'function' ? window._getUserSessions(u.id) : [];
+                  var curSid = localStorage.getItem('ak_current_session') || '';
+                  if (!sessions.length) return '<div style="font-size:11px;color:#8E8E93">Oturum yok</div>';
+                  return sessions.map(function(s2) {
+                    var isCur = s2.sessionId === curSid;
+                    var ago = Math.round((Date.now() - s2.ts) / 60000);
+                    return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px">'
+                      + '<span>' + (isCur ? '🟢' : '⚪') + '</span>'
+                      + '<span style="flex:1;color:#1C1C1E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (s2.device || '?').slice(0, 30) + '</span>'
+                      + '<span style="color:#8E8E93">' + (ago < 60 ? ago + 'dk' : Math.round(ago / 60) + 'sa') + '</span>'
+                      + (!isCur ? '<button onclick="window._endSession?.(\'' + s2.sessionId + '\');window._openUserManageModal?.(' + u.id + ')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#DC2626">✕</button>' : '')
+                    + '</div>';
+                  }).join('');
+                })()
+            + '</div>'
+          + '</div>'
+        + '</div>'
+        // Profil alanları
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
           + '<div><div class="fl">İSİM</div><input class="fi" id="um-name" value="' + esc(u.name) + '" style="font-size:14px;padding:10px 12px"></div>'
           + '<div><div class="fl">E-POSTA</div><input class="fi" id="um-email" value="' + esc(u.email || '') + '" style="font-size:14px;padding:10px 12px"></div>'
           + '<div><div class="fl">ROL</div><select class="fi" id="um-role" style="font-size:14px;padding:10px 12px">' + roleOpts + '</select></div>'
           + '<div><div class="fl">DEPARTMAN</div><select class="fi" id="um-dept" style="font-size:14px;padding:10px 12px">' + deptOpts + '</select></div>'
           + '<div><div class="fl">DURUM</div><select class="fi" id="um-status" style="font-size:14px;padding:10px 12px"><option value="active"' + (u.status === 'active' ? ' selected' : '') + '>Aktif</option><option value="suspended"' + (u.status !== 'active' ? ' selected' : '') + '>Pasif</option></select></div>'
-          + '<div><div class="fl">EŞ ZAMANLI OTURUM</div><select class="fi" id="um-sessions" style="font-size:14px;padding:10px 12px"><option value="0"' + ((u.maxSessions || 0) === 0 ? ' selected' : '') + '>Sınırsız</option><option value="1"' + (u.maxSessions === 1 ? ' selected' : '') + '>1</option><option value="2"' + (u.maxSessions === 2 ? ' selected' : '') + '>2</option><option value="3"' + (u.maxSessions === 3 ? ' selected' : '') + '>3</option></select></div>'
         + '</div>'
       + '</div>'
       // İzinler sekmesi

@@ -927,6 +927,49 @@ function _renderDashboard() {
   </div>`;
 
   _renderDashboardPusulaWidget(cu, tasks, today);
+
+  // Geciken İşlemler bölümü
+  _renderOverdueWidget(tasks, kargo, today);
+}
+
+function _renderOverdueWidget(tasks, kargo, today) {
+  var el = _g('db-overdue');
+  if (!el) {
+    var content = _g('db-content');
+    if (!content) return;
+    el = document.createElement('div');
+    el.id = 'db-overdue';
+    content.insertBefore(el, content.firstChild);
+  }
+
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var sa  = typeof window._loadSA === 'function' ? window._loadSA() : [];
+
+  var overdueOdm   = odm.filter(function(o) { return !o.paid && o.due && o.due < today; }).length;
+  var overdueTasks  = tasks.filter(function(t) { return !t.done && t.due && t.due < today; }).length;
+  var overdueKargo  = kargo.filter(function(k) { return k.status !== 'teslim' && k.eta && k.eta < today; }).length;
+  var overdueSA     = sa.filter(function(s) { return s.status === 'pending' && s.createdAt; }).length;
+  var total = overdueOdm + overdueTasks + overdueKargo + overdueSA;
+
+  if (!total) { el.innerHTML = ''; return; }
+
+  var items = [];
+  if (overdueOdm)   items.push({ icon:'💸', label:'Ödemeler', count:overdueOdm, panel:'odemeler' });
+  if (overdueTasks)  items.push({ icon:'📋', label:'Görevler', count:overdueTasks, panel:'pusula' });
+  if (overdueKargo)  items.push({ icon:'📦', label:'Kargo', count:overdueKargo, panel:'kargo' });
+  if (overdueSA)     items.push({ icon:'🛒', label:'Satın Alma (bekleyen)', count:overdueSA, panel:'satinalma' });
+
+  el.innerHTML = '<div class="card" style="border-left:4px solid #EF4444">'
+    + '<div class="ch"><span class="ct" style="color:#EF4444">🚨 Geciken İşlemler (' + total + ')</span></div>'
+    + '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">'
+    + items.map(function(i) {
+        return '<button onclick="App.nav(\'' + i.panel + '\')" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;cursor:pointer;border:1px solid rgba(239,68,68,.15);font-family:inherit">'
+          + '<span style="font-size:16px">' + i.icon + '</span>'
+          + '<span style="font-size:12px;color:var(--t)">' + i.label + '</span>'
+          + '<span style="font-size:14px;font-weight:700;color:#EF4444">' + i.count + '</span>'
+        + '</button>';
+      }).join('')
+    + '</div></div>';
 }
 
 // ── Pusula Dashboard Widget ────────────────────────────────────────

@@ -1266,6 +1266,65 @@ function stopRealtimeSync() {
 }
 
 
+// ════════════════════════════════════════════════════════════════
+// FORM DRAFT (Oto-Kayıt)
+// ════════════════════════════════════════════════════════════════
+
+var _draftTimers = {};
+
+/**
+ * Form değişikliklerini draft olarak kaydeder (2sn debounce).
+ * @param {string} formId
+ * @param {Object} data
+ */
+function _saveDraft(formId, data) {
+  try { localStorage.setItem('ak_draft_' + formId, JSON.stringify({ data: data, ts: Date.now() })); } catch(e) {}
+}
+
+/**
+ * Draft varsa yükler.
+ * @param {string} formId
+ * @returns {Object|null}
+ */
+function _loadDraft(formId) {
+  try {
+    var raw = JSON.parse(localStorage.getItem('ak_draft_' + formId) || 'null');
+    if (raw && raw.data && (Date.now() - raw.ts < 86400000)) return raw.data; // 24 saat geçerli
+  } catch(e) {}
+  return null;
+}
+
+/**
+ * Draft temizler.
+ * @param {string} formId
+ */
+function _clearDraft(formId) {
+  try { localStorage.removeItem('ak_draft_' + formId); } catch(e) {}
+}
+
+/**
+ * Form elementlerine debounced draft kayıt ekler.
+ * @param {string} formId
+ * @param {Function} collectFn — form verilerini toplayan fonksiyon
+ */
+function _initFormDraft(formId, collectFn) {
+  if (_draftTimers[formId]) clearTimeout(_draftTimers[formId]);
+  document.addEventListener('input', function(e) {
+    var target = e.target;
+    if (!target?.closest || !target.closest('[data-draft="' + formId + '"]')) return;
+    if (_draftTimers[formId]) clearTimeout(_draftTimers[formId]);
+    _draftTimers[formId] = setTimeout(function() {
+      try { _saveDraft(formId, collectFn()); } catch(err) {}
+    }, 2000);
+  });
+}
+
+window._saveDraft    = _saveDraft;
+window._loadDraft    = _loadDraft;
+window._clearDraft   = _clearDraft;
+window._initFormDraft = _initFormDraft;
+
+
 const DB = {
   VERSION: DB_VERSION,
   KEYS,
