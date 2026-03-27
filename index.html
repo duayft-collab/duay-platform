@@ -395,6 +395,11 @@ function _doLogin() {
 
   <!-- ═══ SATINALMA ═══ -->
   <div class="nsec-header nsec" id="nsec-satinalma" onclick="toggleNsec('nsec-satinalma')">SATINALMA <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('satinalma',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M1 3h2l1.5 8h8l1.5-6H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="13" r="1" stroke="currentColor" stroke-width="1.3"/><circle cx="11.5" cy="13" r="1" stroke="currentColor" stroke-width="1.3"/></svg>
+        <span>Satın Alma Takip</span>
+        <span class="nbdg" id="nb-satinalma-b" style="display:none">0</span>
+      </button>
       <button class="nb" onclick="App.nav('lojistik',this)" id="nb-lojistik">
         <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 8h2l2 3v2h-4V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="4" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/><circle cx="12" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/></svg>
         <span>Satın Alma Merkezi</span>
@@ -1153,6 +1158,7 @@ function _doLogin() {
       <div id="panel-izin"      class="panel"></div>
       <div id="panel-kpi"       class="panel"></div>
       <div id="panel-crm"       class="panel"></div>
+      <div id="panel-satinalma" class="panel"></div>
       <div id="panel-stok"      class="panel"></div>
       <div id="panel-odemeler" class="panel">
         <div id="odm-kur-ticker" style="padding:0;border-bottom:1px solid var(--b);background:var(--s2);overflow:hidden;white-space:nowrap;font-size:11px;position:relative;height:28px">
@@ -1308,6 +1314,7 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/ik.js"></script>
 <script src="src/modules/crm.js"></script>
 <script src="src/modules/stok.js"></script>
+<script src="src/modules/satin_alma.js"></script>
 <script src="src/modules/finans.js"></script>
 <script src="src/modules/helpers.js"></script>
 
