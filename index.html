@@ -1155,7 +1155,14 @@ function _doLogin() {
       <div id="panel-crm"       class="panel"></div>
       <div id="panel-stok"      class="panel"></div>
       <div id="panel-odemeler" class="panel">
-        <div id="odm-kur-ticker" style="padding:6px 16px;border-bottom:1px solid var(--b);background:var(--s2);overflow:hidden;white-space:nowrap;font-size:11px"></div>
+        <div id="odm-kur-ticker" style="padding:0;border-bottom:1px solid var(--b);background:var(--s2);overflow:hidden;white-space:nowrap;font-size:11px;position:relative;height:28px">
+          <style>
+            @keyframes odm-ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+            #odm-kur-ticker-inner{display:inline-flex;align-items:center;gap:0;animation:odm-ticker-scroll 30s linear infinite;padding:5px 0;position:absolute;top:0;left:0}
+            #odm-kur-ticker:hover #odm-kur-ticker-inner{animation-play-state:paused}
+          </style>
+          <div id="odm-kur-ticker-inner"></div>
+        </div>
       </div>
       <div id="panel-hedefler"  class="panel"></div>
       <div id="panel-takvim"    class="panel"></div>

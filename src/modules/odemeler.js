@@ -550,8 +550,7 @@ function _renderAbonelikKart(o, users, today, todayD) {
 function renderOdemeler() {
   _injectOdmPanel();
   checkOdmSLA();
-  renderKurTicker();
-  if (!window._odmKurInterval) { window._odmKurInterval = setInterval(fetchKurRates, 180000); fetchKurRates(); }
+  if (!_tickerInterval) _startKurTicker(); else renderKurTicker();
   const today   = _todayStr();
   const todayD  = new Date(today);
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
@@ -2640,27 +2639,174 @@ window._odmTaskSearch = function(val) {
   window.delOdm = delOdm;
 })();
 
-// Canlı kur bandı
-var _tickerRates = { USD: 32.5, EUR: 35.2, GBP: 41.1, ALTIN: 2450 };
+// ════════════════════════════════════════════════════════════════
+// CANLI KUR BANDI — USD/EUR/GBP + Altın + BTC
+// 3 dakikada bir güncelleme, %2 değişim alarmı, kaydırmalı ticker
+// ════════════════════════════════════════════════════════════════
+
+/** @type {Object} Güncel kur verileri */
+var _tickerRates = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN: 3850, BTC: 67000 };
+
+/** @type {Object} Önceki kur verileri — değişim hesabı için */
+var _tickerRatesPrev = {};
+
+/** @type {number|null} Otomatik güncelleme interval ID */
+var _tickerInterval = null;
+
+/** @type {string} Son güncelleme zamanı */
+var _tickerLastUpdate = '';
+
+/**
+ * Kur bandını render eder — sağdan sola kayan animasyonlu ticker.
+ * İçerik iki kere tekrarlanır (sonsuz kaydırma efekti için).
+ * @returns {void}
+ */
 function renderKurTicker() {
-  var el = document.getElementById('odm-kur-ticker');
-  if (!el) return;
-  el.innerHTML = Object.entries(_tickerRates).map(function(e) {
-    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--t);white-space:nowrap">'
-      + '<span style="color:var(--ac)">' + e[0] + '</span> ' + e[1].toLocaleString('tr-TR') + ' TL</span>';
-  }).join('<span style="color:var(--b);padding:0 4px">|</span>');
+  var inner = document.getElementById('odm-kur-ticker-inner');
+  if (!inner) return;
+
+  var items = [
+    { key: 'USD', flag: '🇺🇸', sym: '$' },
+    { key: 'EUR', flag: '🇪🇺', sym: '€' },
+    { key: 'GBP', flag: '🇬🇧', sym: '£' },
+    { key: 'ALTIN', flag: '🥇', sym: 'gr' },
+    { key: 'BTC', flag: '₿', sym: '' },
+  ];
+
+  var html = items.map(function(item) {
+    var val  = _tickerRates[item.key] || 0;
+    var prev = _tickerRatesPrev[item.key] || 0;
+    var pct  = prev > 0 ? ((val - prev) / prev * 100) : 0;
+    var arrow = pct > 0.01 ? '▲' : (pct < -0.01 ? '▼' : '');
+    var arrowColor = pct > 0.01 ? '#10B981' : (pct < -0.01 ? '#EF4444' : 'var(--t3)');
+    var valStr = item.key === 'BTC'
+      ? '$' + Math.round(val).toLocaleString('en-US')
+      : val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 14px;font-size:11px;font-weight:600;color:var(--t);white-space:nowrap">'
+      + '<span style="font-size:13px">' + item.flag + '</span>'
+      + '<span style="color:var(--ac);font-weight:700">' + item.key + '</span> '
+      + valStr
+      + (arrow ? ' <span style="color:' + arrowColor + ';font-size:9px;font-weight:700">' + arrow + ' ' + Math.abs(pct).toFixed(1) + '%</span>' : '')
+      + '</span>'
+      + '<span style="color:var(--b);padding:0 2px">│</span>';
+  }).join('');
+
+  // Son güncelleme zamanı
+  var tsLabel = _tickerLastUpdate
+    ? '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 14px;font-size:10px;color:var(--t3);white-space:nowrap">🕐 ' + _tickerLastUpdate + '</span>'
+    : '';
+
+  // İçeriği 2x tekrarla — sonsuz kaydırma efekti
+  inner.innerHTML = html + tsLabel + html + tsLabel;
 }
+
+/**
+ * Tüm kur verilerini API'lerden çeker.
+ * USD/EUR/GBP → exchangerate-api.com
+ * Altın → metals.live (fallback: sabit mock)
+ * BTC → CoinGecko
+ * @returns {void}
+ */
 function fetchKurRates() {
-  fetch('https://open.er-api.com/v6/latest/USD').then(function(r) { return r.json(); }).then(function(d) {
-    if (d.rates) {
-      _tickerRates.USD = Math.round((1 / (d.rates.TRY || 1)) * (d.rates.TRY || 32.5) * 100) / 100;
-      _tickerRates.EUR = Math.round((d.rates.TRY || 35) / (d.rates.EUR || 1) * 100) / 100;
-      _tickerRates.GBP = Math.round((d.rates.TRY || 41) / (d.rates.GBP || 1) * 100) / 100;
-      if (d.rates.TRY) _tickerRates.USD = Math.round(d.rates.TRY * 100) / 100;
+  // Önceki değerleri sakla (değişim alarmı için)
+  _tickerRatesPrev = Object.assign({}, _tickerRates);
+  var updated = false;
+
+  // 1) USD/EUR/GBP — exchangerate-api.com
+  fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d && d.rates && d.rates.TRY) {
+        _tickerRates.USD = Math.round(d.rates.TRY * 100) / 100;
+        _tickerRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100;
+        _tickerRates.GBP = Math.round(d.rates.TRY / (d.rates.GBP || 1) * 100) / 100;
+        updated = true;
+      }
+    })
+    .catch(function(e) { console.warn('[Kur] Döviz API hatası:', e.message); })
+    .finally(function() {
+      _tickerLastUpdate = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
       renderKurTicker();
-    }
-  }).catch(function() { renderKurTicker(); });
+      if (updated) _checkKurAlarm();
+    });
+
+  // 2) Altın — metals.live (mock fallback)
+  fetch('https://api.metals.live/v1/spot')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      // API [{gold: X, silver: Y, ...}] formatında döner
+      if (Array.isArray(d) && d.length > 0 && d[0].gold) {
+        // oz → gram: 1 troy oz = 31.1035 gram
+        var ozToGram = 31.1035;
+        var goldUsdPerGram = d[0].gold / ozToGram;
+        // TL'ye çevir
+        var tryRate = _tickerRates.USD || 38.50;
+        _tickerRates.ALTIN = Math.round(goldUsdPerGram * tryRate * 100) / 100;
+        renderKurTicker();
+        _checkKurAlarm();
+      }
+    })
+    .catch(function(e) {
+      console.warn('[Kur] Altın API hatası (mock kullanılıyor):', e.message);
+      // Mock fallback — gerçekçi statik veri
+      _tickerRates.ALTIN = 3850;
+      renderKurTicker();
+    });
+
+  // 3) BTC — CoinGecko
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d && d.bitcoin && d.bitcoin.usd) {
+        _tickerRates.BTC = Math.round(d.bitcoin.usd * 100) / 100;
+        renderKurTicker();
+        _checkKurAlarm();
+      }
+    })
+    .catch(function(e) {
+      console.warn('[Kur] BTC API hatası:', e.message);
+    });
 }
+
+/**
+ * %2 üzerinde kur değişimi varsa yöneticiye bildirim gönderir.
+ * @returns {void}
+ */
+function _checkKurAlarm() {
+  if (!_isManagerO()) return;
+  var THRESHOLD = 2; // %2
+
+  var labels = { USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', ALTIN: 'Altın', BTC: 'Bitcoin' };
+
+  Object.keys(_tickerRates).forEach(function(key) {
+    var cur  = _tickerRates[key] || 0;
+    var prev = _tickerRatesPrev[key] || 0;
+    if (prev <= 0 || cur <= 0) return;
+
+    var pct = Math.abs((cur - prev) / prev * 100);
+    if (pct >= THRESHOLD) {
+      var direction = cur > prev ? '📈 yükseldi' : '📉 düştü';
+      var msg = (labels[key] || key) + ' ' + direction + ': '
+        + prev.toLocaleString('tr-TR') + ' → ' + cur.toLocaleString('tr-TR')
+        + ' (%' + pct.toFixed(1) + ')';
+      window.addNotif?.('🚨', msg, 'warn', 'odemeler');
+      window.logActivity?.('finans', 'Kur alarmı: ' + msg);
+    }
+  });
+}
+
+/**
+ * 3 dakikada bir kur güncelleme interval'ını başlatır.
+ * Çift çağrı koruması vardır.
+ * @returns {void}
+ */
+function _startKurTicker() {
+  if (_tickerInterval) clearInterval(_tickerInterval);
+  fetchKurRates();
+  _tickerInterval = setInterval(fetchKurRates, 180000); // 3 dakika
+}
+
 window._odmFetchKur = fetchKurRates;
 
 // Nakit projeksiyon (15 gün)
@@ -2721,8 +2867,9 @@ const Odemeler = {
   importFile:  processOdmImport,
   CATS:        ODM_CATS,
   FREQ:        ODM_FREQ,
-  renderTicker: renderKurTicker,
-  fetchKur:     fetchKurRates,
+  renderTicker:   renderKurTicker,
+  fetchKur:       fetchKurRates,
+  startKurTicker: _startKurTicker,
   renderProjeksiyon: renderNakitProjeksiyon,
   BANKS:       ODM_BANKS,
   openApprovalFlow,
