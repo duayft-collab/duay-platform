@@ -875,6 +875,7 @@ function _saCreatePayments(sa) {
     advanceDate:   sa.piDate,
     balanceDate:   sa.vadeDate,
     assignedTo:    sa.createdBy,
+    currency:      sa.currency || 'USD',
   });
 }
 

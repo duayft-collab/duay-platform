@@ -767,6 +767,11 @@ function renderOdemeler() {
       + '</div>'
       + '<div>'
         + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + curSym + (parseFloat(o.amount)||0).toLocaleString('tr-TR',{maximumFractionDigits:0}) + '</div>'
+        + (o.currency && o.currency !== 'TRY' ? (function() {
+            var _kr = o.kurRate || _odmGetRates()[o.currency] || 1;
+            var _tl = Math.round((parseFloat(o.amount)||0) * _kr);
+            return '<div style="font-size:9px;color:var(--t3)">₺' + _tl.toLocaleString('tr-TR') + ' <span style="opacity:.6">kur: ' + _kr.toLocaleString('tr-TR') + '</span></div>';
+          })() : '')
         + (o.recurringRule ? '<div style="font-size:9px;color:var(--ac)">🔁 Tekrarlayan</div>' : '')
       + '</div>'
       + '<div>'
@@ -2422,17 +2427,26 @@ function _odmSourceBadge(o) {
 
 function createOdmFromPurchase(purchase) {
   if (!purchase || !purchase.totalAmount) return;
-  const d = window.loadOdm ? loadOdm() : [];
-  const now = _nowTso();
+  var d = window.loadOdm ? loadOdm() : [];
+  var now = _nowTso();
+  var cur = purchase.currency || 'TRY';
+  var rates = _odmGetRates();
+  var kurRate = rates[cur] || 1;
 
-  // Avans ödemesi
+  // Avans ödemesi — orijinal döviz + TL karşılığı
   if (purchase.advanceAmount && purchase.advanceDate) {
+    var advTL = cur === 'TRY' ? purchase.advanceAmount : Math.round(purchase.advanceAmount * kurRate * 100) / 100;
     d.unshift({
       id: generateNumericId(),
       name: purchase.name + ' — Avans',
       source: 'satinalma',
       cat: 'diger', freq: 'teksefer',
       amount: purchase.advanceAmount,
+      currency: cur,
+      originalAmount: purchase.advanceAmount,
+      originalCurrency: cur,
+      tlAmount: advTL,
+      kurRate: kurRate,
       due: purchase.advanceDate,
       note: 'Satınalma #' + purchase.id + ' avans ödemesi',
       paid: false, alarmDays: 3,
@@ -2442,15 +2456,21 @@ function createOdmFromPurchase(purchase) {
     });
   }
 
-  // Bakiye ödemesi
-  const balance = purchase.totalAmount - (purchase.advanceAmount || 0);
+  // Bakiye ödemesi — orijinal döviz + TL karşılığı
+  var balance = purchase.totalAmount - (purchase.advanceAmount || 0);
   if (balance > 0 && purchase.balanceDate) {
+    var balTL = cur === 'TRY' ? balance : Math.round(balance * kurRate * 100) / 100;
     d.unshift({
       id: generateNumericId(),
       name: purchase.name + ' — Bakiye',
       source: 'satinalma',
       cat: 'diger', freq: 'teksefer',
       amount: balance,
+      currency: cur,
+      originalAmount: balance,
+      originalCurrency: cur,
+      tlAmount: balTL,
+      kurRate: kurRate,
       due: purchase.balanceDate,
       note: 'Satınalma #' + purchase.id + ' bakiye ödemesi',
       paid: false, alarmDays: 3,
