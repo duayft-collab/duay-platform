@@ -24,6 +24,26 @@ const WORLD_PORTS = [
   {n:'Santos',c:'BR',r:'G. Amerika',code:'SSZ'},{n:'Durban',c:'ZA',r:'Afrika',code:'DUR'},
   {n:'Jeddah',c:'SA',r:'Kızıldeniz',code:'JED'},{n:'Port Said',c:'EG',r:'Akdeniz',code:'PSD'},
   {n:'Nhava Sheva',c:'IN',r:'Güney Asya',code:'NHV'},{n:'Colombo',c:'LK',r:'Güney Asya',code:'CMB'},
+  // Afrika & Ek Limanlar
+  {n:'Abidjan',c:'CI',r:'Batı Afrika',code:'ABJ'},{n:'Dakar',c:'SN',r:'Batı Afrika',code:'DKR'},
+  {n:'Lagos (Apapa)',c:'NG',r:'Batı Afrika',code:'LOS'},{n:'Tema',c:'GH',r:'Batı Afrika',code:'TEM'},
+  {n:'Mombasa',c:'KE',r:'Doğu Afrika',code:'MBA'},{n:'Dar es Salaam',c:'TZ',r:'Doğu Afrika',code:'DAR'},
+  {n:'Alexandria',c:'EG',r:'Kuzey Afrika',code:'ALY'},{n:'Casablanca',c:'MA',r:'Kuzey Afrika',code:'CAS'},
+  {n:'Tanger Med',c:'MA',r:'Kuzey Afrika',code:'TNG'},{n:'Djibouti',c:'DJ',r:'Doğu Afrika',code:'DJI'},
+  {n:'Maputo',c:'MZ',r:'Güney Afrika',code:'MPM'},{n:'Luanda',c:'AO',r:'Batı Afrika',code:'LAD'},
+  // Ek Asya & Ortadoğu
+  {n:'Chittagong',c:'BD',r:'Güney Asya',code:'CGP'},{n:'Karachi',c:'PK',r:'Güney Asya',code:'KHI'},
+  {n:'Mundra',c:'IN',r:'Güney Asya',code:'MUN'},{n:'Laem Chabang',c:'TH',r:'G.D. Asya',code:'LCB'},
+  {n:'Ho Chi Minh',c:'VN',r:'G.D. Asya',code:'SGN'},{n:'Haiphong',c:'VN',r:'G.D. Asya',code:'HPH'},
+  {n:'Jakarta (Tanjung Priok)',c:'ID',r:'G.D. Asya',code:'JKT'},{n:'Manila',c:'PH',r:'G.D. Asya',code:'MNL'},
+  {n:'Muscat',c:'OM',r:'Körfez',code:'MCT'},{n:'Kuwait',c:'KW',r:'Körfez',code:'KWI'},
+  {n:'Bandar Abbas',c:'IR',r:'Körfez',code:'BND'},{n:'Aqaba',c:'JO',r:'Kızıldeniz',code:'AQJ'},
+  // Ek Avrupa & Amerika
+  {n:'Genova',c:'IT',r:'Akdeniz',code:'GOA'},{n:'Marsilya',c:'FR',r:'Akdeniz',code:'MRS2'},
+  {n:'Gdansk',c:'PL',r:'Baltık',code:'GDN'},{n:'Gothenburg',c:'SE',r:'Kuzey Avrupa',code:'GOT'},
+  {n:'Savannah',c:'US',r:'K. Amerika',code:'SAV'},{n:'Houston',c:'US',r:'K. Amerika',code:'HOU'},
+  {n:'Vancouver',c:'CA',r:'K. Amerika',code:'VAN'},{n:'Callao',c:'PE',r:'G. Amerika',code:'CLL'},
+  {n:'Cartagena',c:'CO',r:'G. Amerika',code:'CTG'},{n:'Buenos Aires',c:'AR',r:'G. Amerika',code:'BUE'},
   // Havalimanları
   {n:'İstanbul Havalimanı (IST)',c:'TR',r:'Hava',code:'IST'},
   {n:'İstanbul SAW',c:'TR',r:'Hava',code:'SAW'},

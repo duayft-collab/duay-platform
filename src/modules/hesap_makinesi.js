@@ -123,46 +123,139 @@ function _hmResult(id, label) {
     + '<span style="font-size:12px;color:#8E8E93">' + label + '</span><span id="' + id + '" style="font-size:18px;font-weight:700;color:#1C1C1E">—</span></div>';
 }
 
+// ── Export Buttons Helper ─────────────────────────────────────────
+function _hmExportButtons(modId) {
+  return '<div style="display:flex;gap:6px;margin-top:12px;justify-content:flex-end">'
+    + '<button onclick="window._hmExport?.(\'' + modId + '\',\'xlsx\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px">⬇ Excel</button>'
+    + '<button onclick="window._hmExport?.(\'' + modId + '\',\'pdf\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px">📄 PDF</button>'
+    + '<button onclick="window._hmExport?.(\'' + modId + '\',\'json\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px">{ } JSON</button>'
+  + '</div>';
+}
+
+window._hmExport = function(modId, format) {
+  var keyMap = { borc: HM_BORC_KEY, portfoy: HM_PORT_KEY, karsilastir: HM_TEKLIF_KEY, eldeki: HM_ELDEKI_KEY };
+  var key = keyMap[modId]; if (!key) { window.toast?.('Export desteklenmiyor', 'err'); return; }
+  var data = _hmLoad(key);
+  if (!data.length) { window.toast?.('Veri yok', 'err'); return; }
+
+  if (format === 'json') {
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = modId + '_' + new Date().toISOString().slice(0,10) + '.json'; a.click();
+    window.toast?.('JSON indirildi ✓', 'ok');
+  } else if (format === 'xlsx' && typeof XLSX !== 'undefined') {
+    var ws = XLSX.utils.json_to_sheet(data);
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, modId);
+    XLSX.writeFile(wb, modId + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    window.toast?.('Excel indirildi ✓', 'ok');
+  } else if (format === 'pdf') {
+    var w = window.open('', '_blank', 'width=600,height=700');
+    w.document.write('<!DOCTYPE html><html><head><title>' + modId + '</title><style>body{font-family:sans-serif;padding:30px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left;font-size:12px}th{background:#f5f5f5}@media print{button{display:none!important}}</style></head><body>'
+      + '<h2>' + modId.toUpperCase() + ' Raporu</h2><p style="color:#888">' + new Date().toLocaleDateString('tr-TR') + '</p>'
+      + '<table><tr>' + Object.keys(data[0]||{}).map(function(k){return '<th>'+k+'</th>';}).join('') + '</tr>'
+      + data.map(function(r){return '<tr>'+Object.values(r).map(function(v){return '<td>'+(v===null?'—':v)+'</td>';}).join('')+'</tr>';}).join('')
+      + '</table><button onclick="window.print()" style="margin-top:20px;padding:8px 16px;background:#007AFF;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Yazdır</button></body></html>');
+    w.document.close();
+  } else {
+    window.toast?.('Export formatı desteklenmiyor', 'err');
+  }
+};
+
 // ── 19 MODÜL RENDERERLERİ ────────────────────────────────────────
 var _hmRenderers = {};
 
-// 1) Döviz Çevirici
+// Mock kur kaynaklari
+var HM_KUR_SOURCES = {
+  tcmb:   { label:'TCMB', usd: HM_RATES.USD, eur: HM_RATES.EUR, gbp: HM_RATES.GBP },
+  harem:  { label:'Harem Altın', usd: HM_RATES.USD * 1.012, eur: HM_RATES.EUR * 1.015, gbp: HM_RATES.GBP * 1.01 },
+  mt:     { label:'MT Döviz', usd: HM_RATES.USD * 0.995, eur: HM_RATES.EUR * 0.998, gbp: HM_RATES.GBP * 0.997 },
+  kaynak: { label:'Altın Kaynak', usd: HM_RATES.USD * 1.005, eur: HM_RATES.EUR * 1.008, gbp: HM_RATES.GBP * 1.003 },
+};
+
+var HM_ELDEKI_KEY = 'ak_eldeki1';
+
+// 1) Döviz Çevirici — Gelişmiş
 _hmRenderers.doviz = function(el) {
+  var srcOpts = Object.entries(HM_KUR_SOURCES).map(function(e) { return '<option value="' + e[0] + '">' + e[1].label + '</option>'; }).join('');
   el.innerHTML = _hmCard('💱 Döviz Çevirici',
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
       + _hmInput('hm-dv-amt','Tutar','number','1000','oninput="window._hmCalcDoviz?.()"')
-      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KAYNAK</div><select id="hm-dv-from" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcDoviz?.()"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="TRY">TRY</option></select></div>'
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KAYNAK DÖVİZ</div><select id="hm-dv-from" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcDoviz?.()"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="TRY">TRY</option></select></div>'
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KUR KAYNAĞI</div><select id="hm-dv-src" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcDoviz?.()">' + srcOpts + '</select></div>'
     + '</div>'
-    + _hmResult('hm-dv-try','TL Karşılığı') + _hmResult('hm-dv-usd','USD') + _hmResult('hm-dv-eur','EUR')
-    + '<div style="margin-top:10px;font-size:10px;color:#8E8E93">Kaynak: TCMB · USD: ₺' + _hmFmt(HM_RATES.USD) + ' · EUR: ₺' + _hmFmt(HM_RATES.EUR) + '</div>'
+    + _hmResult('hm-dv-try','TL Karşılığı') + _hmResult('hm-dv-usd','USD') + _hmResult('hm-dv-eur','EUR') + _hmResult('hm-dv-gbp','GBP')
+    + '<div style="margin-top:12px;border:1px solid #F0F0F0;border-radius:10px;overflow:hidden">'
+      + '<div style="padding:8px 12px;background:#F9FAFB;font-size:10px;font-weight:700;color:#8E8E93;border-bottom:1px solid #F0F0F0">Alış / Satış Spread</div>'
+      + '<div id="hm-dv-spread" style="padding:8px 12px;font-size:11px"></div>'
+    + '</div>'
   );
+  window._hmCalcDoviz?.();
 };
 window._hmCalcDoviz = function() {
   var amt = parseFloat(document.getElementById('hm-dv-amt')?.value||'0')||0;
   var from = document.getElementById('hm-dv-from')?.value||'USD';
-  var tlVal = from === 'TRY' ? amt : amt * (HM_RATES[from]||1);
+  var srcKey = document.getElementById('hm-dv-src')?.value||'tcmb';
+  var src = HM_KUR_SOURCES[srcKey] || HM_KUR_SOURCES.tcmb;
+  var rates = { USD: src.usd, EUR: src.eur, GBP: src.gbp, TRY: 1 };
+  var tlVal = amt * (rates[from]||1);
   var _s = function(id,v) { var e = document.getElementById(id); if(e) e.textContent = v; };
   _s('hm-dv-try', '₺' + _hmFmt(tlVal));
-  _s('hm-dv-usd', '$' + _hmFmt(tlVal / (HM_RATES.USD||1)));
-  _s('hm-dv-eur', '€' + _hmFmt(tlVal / (HM_RATES.EUR||1)));
+  _s('hm-dv-usd', '$' + _hmFmt(tlVal / (rates.USD||1)));
+  _s('hm-dv-eur', '€' + _hmFmt(tlVal / (rates.EUR||1)));
+  _s('hm-dv-gbp', '£' + _hmFmt(tlVal / (rates.GBP||1)));
+  // Spread
+  var sp = document.getElementById('hm-dv-spread');
+  if (sp) {
+    var spread = 0.015; // %1.5 tipik spread
+    sp.innerHTML = '<div style="display:flex;gap:20px">'
+      + '<span>USD Alış: ₺' + _hmFmt(src.usd*(1-spread)) + ' · Satış: ₺' + _hmFmt(src.usd*(1+spread)) + '</span>'
+      + '<span>EUR Alış: ₺' + _hmFmt(src.eur*(1-spread)) + ' · Satış: ₺' + _hmFmt(src.eur*(1+spread)) + '</span>'
+    + '</div>';
+  }
 };
 
-// 2) Altın
+// 2) Altın — Gelişmiş
+var HM_ALTIN_UNITS = {
+  gram:   { label:'Gram',   gr: 1 },
+  ons:    { label:'Ons',    gr: 31.1035 },
+  ceyrek: { label:'Çeyrek', gr: 1.75 },
+  yarim:  { label:'Yarım',  gr: 3.5 },
+  tam:    { label:'Tam',    gr: 7 },
+  ata:    { label:'Ata',    gr: 7.22 },
+};
+
 _hmRenderers.altin = function(el) {
-  el.innerHTML = _hmCard('🥇 Altın Hesaplayıcı',
-    _hmInput('hm-au-gr','Gram','number','10','oninput="window._hmCalcAltin?.()"')
-    + _hmResult('hm-au-tl','TL Değeri') + _hmResult('hm-au-ceyrek','≈ Çeyrek Altın') + _hmResult('hm-au-yarim','≈ Yarım Altın') + _hmResult('hm-au-tam','≈ Tam Altın')
-    + '<div style="margin-top:10px;font-size:10px;color:#8E8E93">Gram altın: ₺' + _hmFmt(HM_RATES.ALTIN_GR) + '</div>'
+  var unitOpts = Object.entries(HM_ALTIN_UNITS).map(function(e) { return '<option value="' + e[0] + '">' + e[1].label + '</option>'; }).join('');
+  el.innerHTML = _hmCard('🥇 Altın Hesaplayıcı — Gelişmiş',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + _hmInput('hm-au-miktar','Miktar','number','10','oninput="window._hmCalcAltin?.()"')
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">BİRİM</div><select id="hm-au-unit" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcAltin?.()">' + unitOpts + '</select></div>'
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">PARA BİRİMİ</div><select id="hm-au-cur" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcAltin?.()"><option value="TRY">₺ TRY</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option></select></div>'
+    + '</div>'
+    + '<label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;cursor:pointer"><input type="checkbox" id="hm-au-iscilik" onchange="window._hmCalcAltin?.()" style="accent-color:#007AFF"> İşçilik payı dahil (%8)</label>'
+    + _hmResult('hm-au-tl','Değer') + _hmResult('hm-au-gram','Gram Karşılığı')
+    + '<div style="margin-top:12px;border:1px solid #F0F0F0;border-radius:10px;overflow:hidden"><div style="padding:8px 12px;background:#F9FAFB;font-size:10px;font-weight:700;color:#8E8E93;border-bottom:1px solid #F0F0F0">Birim Dönüşüm</div><div id="hm-au-matrix" style="padding:8px 12px;font-size:11px"></div></div>'
+    + '<div style="margin-top:8px;font-size:10px;color:#8E8E93">Gram altın: ₺' + _hmFmt(HM_RATES.ALTIN_GR) + ' · Ons: $' + _hmFmt(HM_RATES.ALTIN_ONS) + '</div>'
   );
+  window._hmCalcAltin?.();
 };
 window._hmCalcAltin = function() {
-  var gr = parseFloat(document.getElementById('hm-au-gr')?.value||'0')||0;
-  var tl = gr * HM_RATES.ALTIN_GR;
+  var miktar = parseFloat(document.getElementById('hm-au-miktar')?.value||'0')||0;
+  var unit = document.getElementById('hm-au-unit')?.value||'gram';
+  var cur = document.getElementById('hm-au-cur')?.value||'TRY';
+  var iscilik = document.getElementById('hm-au-iscilik')?.checked;
+  var grPerUnit = (HM_ALTIN_UNITS[unit]||{gr:1}).gr;
+  var totalGr = miktar * grPerUnit;
+  var tlVal = totalGr * HM_RATES.ALTIN_GR;
+  if (iscilik) tlVal *= 1.08;
+  var val = cur === 'TRY' ? tlVal : cur === 'USD' ? tlVal / HM_RATES.USD : tlVal / HM_RATES.EUR;
+  var sym = cur === 'TRY' ? '₺' : cur === 'USD' ? '$' : '€';
   var _s = function(id,v) { var e = document.getElementById(id); if(e) e.textContent = v; };
-  _s('hm-au-tl', '₺' + _hmFmt(tl));
-  _s('hm-au-ceyrek', (tl / (HM_RATES.ALTIN_GR * 1.75)).toFixed(1) + ' adet');
-  _s('hm-au-yarim', (tl / (HM_RATES.ALTIN_GR * 3.5)).toFixed(1) + ' adet');
-  _s('hm-au-tam', (tl / (HM_RATES.ALTIN_GR * 7)).toFixed(1) + ' adet');
+  _s('hm-au-tl', sym + _hmFmt(val));
+  _s('hm-au-gram', _hmFmt(totalGr) + ' gram');
+  // Dönüşüm matrisi
+  var mx = document.getElementById('hm-au-matrix');
+  if (mx) mx.innerHTML = Object.entries(HM_ALTIN_UNITS).map(function(e) { return '<span style="display:inline-block;margin-right:12px">' + e[1].label + ': <b>' + (totalGr / e[1].gr).toFixed(2) + '</b></span>'; }).join('');
 };
 
 // 3) Kâr/Zarar
@@ -247,20 +340,48 @@ window._hmCalcKF = function() {
   document.getElementById('hm-kf-total').style.color = total>=0?'#16A34A':'#DC2626';
 };
 
-// 10) Eldeki Para
+// 10) Eldeki Para — CRUD
 _hmRenderers.eldeki = function(el) {
-  el.innerHTML = _hmCard('💵 Eldeki Para Kontrolü',
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-      + _hmInput('hm-el-gerek','Gereken Tutar','number','50000','oninput="window._hmCalcEldeki?.()"')
-      + _hmInput('hm-el-var','Eldeki Tutar','number','45000','oninput="window._hmCalcEldeki?.()"')
-    + '</div>' + _hmResult('hm-el-diff','Fark')
+  var data = _hmLoad(HM_ELDEKI_KEY);
+  var totalTL = data.reduce(function(a,b) { var r = b.currency==='USD'?HM_RATES.USD:b.currency==='EUR'?HM_RATES.EUR:1; return a+(b.amount||0)*r; }, 0);
+  el.innerHTML = _hmCard('💵 Eldeki Para Takibi',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px">'
+      + '<input class="fi" id="hm-el-kisi" placeholder="Kaynak (Kasa, Banka...)" style="font-size:12px;padding:8px">'
+      + '<input type="number" class="fi" id="hm-el-tutar" placeholder="Tutar" style="font-size:12px;padding:8px">'
+      + '<select class="fi" id="hm-el-cur" style="font-size:12px;padding:8px"><option value="TRY">₺ TRY</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option></select>'
+      + '<button onclick="window._hmAddEldeki?.()" class="btn btnp" style="font-size:12px">+ Ekle</button>'
+    + '</div>'
+    + _hmResult('hm-el-total','Toplam TL Değeri')
+    + _hmInput('hm-el-ihtiyac','İhtiyaç Tutarı (₺)','number','','oninput="window._hmCalcEldekiNeed?.()"')
+    + _hmResult('hm-el-diff','Fark')
+    + '<div id="hm-el-list" style="margin-top:10px">' + data.map(function(b,i) {
+        var r = b.currency==='USD'?HM_RATES.USD:b.currency==='EUR'?HM_RATES.EUR:1;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0F0F0;font-size:12px">'
+          + '<span style="flex:1">'+(b.name||'—')+'</span>'
+          + '<span style="font-weight:600">' + _hmFmt(b.amount) + ' ' + (b.currency||'TRY') + '</span>'
+          + '<span style="color:#8E8E93;font-size:10px">≈₺' + _hmFmt(b.amount*r) + '</span>'
+          + '<button onclick="window._hmDelEldeki?.(' + i + ')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px">✕</button>'
+        + '</div>';
+      }).join('') + '</div>'
+    + _hmExportButtons('eldeki')
   );
+  var tel = document.getElementById('hm-el-total'); if(tel) tel.textContent = '₺' + _hmFmt(totalTL);
 };
-window._hmCalcEldeki = function() {
-  var g=parseFloat(document.getElementById('hm-el-gerek')?.value||'0')||0;
-  var v=parseFloat(document.getElementById('hm-el-var')?.value||'0')||0;
-  var d=v-g; var el2=document.getElementById('hm-el-diff');
-  if(el2){el2.textContent=(d>=0?'✅ Fazla: +':'❌ Eksik: ')+_hmFmt(Math.abs(d))+' ₺';el2.style.color=d>=0?'#16A34A':'#DC2626';}
+window._hmAddEldeki = function() {
+  var name=(document.getElementById('hm-el-kisi')?.value||'').trim();
+  var amt=parseFloat(document.getElementById('hm-el-tutar')?.value||'0')||0;
+  var cur=document.getElementById('hm-el-cur')?.value||'TRY';
+  if(!name||!amt){window.toast?.('Kaynak ve tutar zorunlu','err');return;}
+  var d=_hmLoad(HM_ELDEKI_KEY); d.push({name:name,amount:amt,currency:cur});
+  _hmStore(HM_ELDEKI_KEY,d); _hmRenderers.eldeki(document.getElementById('hm-calc-area'));
+};
+window._hmDelEldeki = function(idx) { var d=_hmLoad(HM_ELDEKI_KEY); d.splice(idx,1); _hmStore(HM_ELDEKI_KEY,d); _hmRenderers.eldeki(document.getElementById('hm-calc-area')); };
+window._hmCalcEldekiNeed = function() {
+  var need=parseFloat(document.getElementById('hm-el-ihtiyac')?.value||'0')||0;
+  var data=_hmLoad(HM_ELDEKI_KEY);
+  var total=data.reduce(function(a,b){var r=b.currency==='USD'?HM_RATES.USD:b.currency==='EUR'?HM_RATES.EUR:1;return a+(b.amount||0)*r;},0);
+  var diff=total-need; var el2=document.getElementById('hm-el-diff');
+  if(el2){el2.textContent=(diff>=0?'✅ Yeterli: +':'❌ Eksik: ')+_hmFmt(Math.abs(diff))+' ₺';el2.style.color=diff>=0?'#16A34A':'#DC2626';}
 };
 
 // 11) Faiz
@@ -461,6 +582,7 @@ _hmRenderers.borc = function(el) {
           + '<button onclick="window._hmDelBorc?.('+i+')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px">✕</button>'
         + '</div>';
       }).join('') + '</div>'
+    + _hmExportButtons('borc')
   );
   var nel = document.getElementById('hm-ba-net');
   if(nel){nel.textContent=(total>=0?'+':'')+_hmFmt(total)+' ₺';nel.style.color=total>=0?'#16A34A':'#DC2626';}
@@ -498,6 +620,7 @@ _hmRenderers.portfoy = function(el) {
           + '<button onclick="window._hmDelPortfoy?.('+i+')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px">✕</button>'
         + '</div>';
       }).join('') + '</div>'
+    + _hmExportButtons('portfoy')
   );
   var tel = document.getElementById('hm-pf-total');
   if(tel) tel.textContent = '₺'+_hmFmt(totalTL);
@@ -532,6 +655,7 @@ _hmRenderers.karsilastir = function(el) {
           + '</div>';
         }).join('');
       })() + '</div>'
+    + _hmExportButtons('karsilastir')
   );
 };
 window._hmAddTeklif = function() {
