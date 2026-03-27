@@ -796,7 +796,8 @@ function renderOdemeler() {
           + '<button onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'flex\':\'none\'" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px">···</button>'
           + '<div style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--b);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:50;flex-direction:column;min-width:140px;overflow:hidden">'
             + '<button onclick="showOdmApprovalTimeline('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📋 Onay Gecmisi</button>'
-            + '<button onclick="openOdmModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">✏️ Duzenle</button>'
+            + '<button onclick="window._odmInlineEditRow?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">✏️ Inline Düzenle</button>'
+            + '<button onclick="openOdmModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📝 Detay Düzenle</button>'
             + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--amt);font-family:inherit;border-bottom:1px solid var(--b)" title="Fatura belgesi yuklenmemis">📎 Dekont Yukle (eksik)</button>' : '')
             + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🏦 Odeme Talimati</button>' : '')
             + (_isManagerO() ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
@@ -806,6 +807,13 @@ function renderOdemeler() {
 
     frag.appendChild(card);
   });
+
+  // "+ Satır Ekle" butonları — liste altına
+  var addRowDiv = document.createElement('div');
+  addRowDiv.style.cssText = 'padding:8px 16px;display:flex;gap:8px;border-bottom:1px solid var(--b)';
+  addRowDiv.innerHTML = '<button onclick="window._odmAddInlineRow?.()" class="btn btns" style="font-size:11px;padding:4px 12px">+ Satır Ekle</button>'
+    + (_odmCurrentTab === 'tahsilat' ? '<button onclick="window._tahAddInlineRow?.()" class="btn btns" style="font-size:11px;padding:4px 12px;color:#10B981">+ Tahsilat Satırı</button>' : '');
+  frag.appendChild(addRowDiv);
 
   cont.replaceChildren(frag);
 }
@@ -4061,6 +4069,175 @@ window.renderOdemeler = function() {
     });
   }, 100);
 };
+
+// ════════════════════════════════════════════════════════════════
+// INLINE SATIR DÜZENLEME — Ödeme + Tahsilat
+// ════════════════════════════════════════════════════════════════
+
+var _ODM_INL_ST = 'font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:4px;background:var(--s);color:var(--t);font-family:inherit;width:100%;box-sizing:border-box';
+
+/**
+ * Ödeme listesinin altına inline yeni satır ekler.
+ */
+window._odmAddInlineRow = function() {
+  if (document.getElementById('odm-inline-new')) {
+    document.getElementById('odm-inline-new')?.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  var cont = document.getElementById('odm-list');
+  if (!cont) return;
+
+  var catOpts = '<option value="diger">Diğer</option>' + Object.entries(ODM_CATS).map(function(e) { return '<option value="' + e[0] + '">' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('');
+
+  var row = document.createElement('div');
+  row.id = 'odm-inline-new';
+  row.style.cssText = 'display:grid;grid-template-columns:28px 1fr 110px 100px 90px 130px;gap:0;padding:8px 16px;border:2px solid rgba(99,102,241,.2);background:rgba(99,102,241,.04);align-items:center';
+  row.innerHTML = '<div></div>'
+    + '<div><input id="odi-name" placeholder="Ödeme adı *" style="' + _ODM_INL_ST + '" tabindex="1"></div>'
+    + '<div><input type="number" id="odi-amount" placeholder="Tutar *" style="' + _ODM_INL_ST + '" tabindex="2"></div>'
+    + '<div><input type="date" id="odi-due" style="' + _ODM_INL_ST + '" tabindex="3"></div>'
+    + '<div><select id="odi-cat" style="' + _ODM_INL_ST + '" tabindex="4">' + catOpts + '</select></div>'
+    + '<div style="display:flex;gap:3px">'
+      + '<button onclick="window._odmInlineSave?.()" class="btn btnp" style="font-size:10px;padding:2px 8px">✓</button>'
+      + '<button onclick="document.getElementById(\'odm-inline-new\')?.remove()" class="btn btns" style="font-size:10px;padding:2px 6px">✗</button>'
+    + '</div>';
+
+  row.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); window._odmInlineSave?.(); }
+    if (e.key === 'Escape') { row.remove(); }
+  });
+
+  cont.appendChild(row);
+  row.scrollIntoView({ behavior: 'smooth' });
+  setTimeout(function() { document.getElementById('odi-name')?.focus(); }, 50);
+};
+
+/**
+ * Inline ödeme satırını kaydeder.
+ */
+window._odmInlineSave = function() {
+  var name   = (document.getElementById('odi-name')?.value || '').trim();
+  var amount = parseFloat(document.getElementById('odi-amount')?.value || '0') || 0;
+  var due    = document.getElementById('odi-due')?.value || '';
+  var cat    = document.getElementById('odi-cat')?.value || 'diger';
+
+  if (!name) { window.toast?.('Ödeme adı zorunlu', 'err'); document.getElementById('odi-name').style.borderColor = '#EF4444'; return; }
+  if (!amount) { window.toast?.('Tutar zorunlu', 'err'); document.getElementById('odi-amount').style.borderColor = '#EF4444'; return; }
+
+  var d = window.loadOdm ? loadOdm() : [];
+  var cu = _CUo();
+  var newEntry = {
+    id: generateNumericId(), name: name, cat: cat, freq: 'teksefer',
+    amount: amount, currency: 'TRY', due: due, note: '', paid: false,
+    alarmDays: 3, ts: _nowTso(), createdBy: cu?.id, source: 'inline',
+  };
+  if (_isAdminO()) { newEntry.approved = true; newEntry.approvalStatus = 'approved'; }
+  else { newEntry.approvalStatus = 'pending'; }
+  d.unshift(newEntry);
+  window.storeOdm ? storeOdm(d) : null;
+  document.getElementById('odm-inline-new')?.remove();
+  renderOdemeler();
+  window.toast?.('Ödeme eklendi ✓', 'ok');
+};
+
+/**
+ * Mevcut ödeme satırını inline düzenlemeye çevirir.
+ */
+window._odmInlineEditRow = function(id) {
+  var row = document.querySelector('[data-oid="' + id + '"]');
+  if (!row || row.dataset.editing) return;
+  row.dataset.editing = '1';
+  var d = window.loadOdm ? loadOdm() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+
+  var catOpts = Object.entries(ODM_CATS).map(function(e) { return '<option value="' + e[0] + '"' + (o.cat === e[0] ? ' selected' : '') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('');
+
+  row.style.background = 'rgba(99,102,241,.04)';
+  row.innerHTML = '<div></div>'
+    + '<div><input id="ode-name-' + id + '" value="' + (o.name || '') + '" style="' + _ODM_INL_ST + '" tabindex="1"></div>'
+    + '<div><input type="number" id="ode-amount-' + id + '" value="' + (o.amount || '') + '" style="' + _ODM_INL_ST + '" tabindex="2"></div>'
+    + '<div><input type="date" id="ode-due-' + id + '" value="' + (o.due || '') + '" style="' + _ODM_INL_ST + '" tabindex="3"></div>'
+    + '<div><select id="ode-cat-' + id + '" style="' + _ODM_INL_ST + '" tabindex="4">' + catOpts + '</select></div>'
+    + '<div style="display:flex;gap:3px">'
+      + '<button onclick="window._odmInlineRowSave?.(' + id + ')" class="btn btnp" style="font-size:10px;padding:2px 8px">✓</button>'
+      + '<button onclick="renderOdemeler()" class="btn btns" style="font-size:10px;padding:2px 6px">✗</button>'
+    + '</div>';
+
+  row.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); window._odmInlineRowSave?.(id); }
+    if (e.key === 'Escape') { renderOdemeler(); }
+  });
+  setTimeout(function() { document.getElementById('ode-name-' + id)?.focus(); }, 50);
+};
+
+/**
+ * Inline mevcut ödeme kaydeder.
+ */
+window._odmInlineRowSave = function(id) {
+  var d = window.loadOdm ? loadOdm() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+  var name = (document.getElementById('ode-name-' + id)?.value || '').trim();
+  if (!name) { window.toast?.('Ad zorunlu', 'err'); return; }
+  o.name   = name;
+  o.amount = parseFloat(document.getElementById('ode-amount-' + id)?.value || '0') || o.amount;
+  o.due    = document.getElementById('ode-due-' + id)?.value || o.due;
+  o.cat    = document.getElementById('ode-cat-' + id)?.value || o.cat;
+  o.ts     = _nowTso();
+  window.storeOdm ? storeOdm(d) : null;
+  renderOdemeler();
+  window.toast?.('Güncellendi ✓', 'ok');
+};
+
+/**
+ * Tahsilat listesine inline yeni satır ekler.
+ */
+window._tahAddInlineRow = function() {
+  if (document.getElementById('tah-inline-new')) return;
+  var cont = document.getElementById('odm-list');
+  if (!cont) return;
+  var row = document.createElement('div');
+  row.id = 'tah-inline-new';
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 120px 90px 100px;padding:9px 16px;border:2px solid rgba(16,185,129,.2);background:rgba(16,185,129,.04);align-items:center;gap:0';
+  row.innerHTML = ''
+    + '<div><input id="thi-name" placeholder="Tahsilat adı *" style="' + _ODM_INL_ST + '" tabindex="1"></div>'
+    + '<div><input type="number" id="thi-amount" placeholder="Tutar *" style="' + _ODM_INL_ST + '" tabindex="2"></div>'
+    + '<div><input type="date" id="thi-due" style="' + _ODM_INL_ST + '" tabindex="3"></div>'
+    + '<div style="display:flex;gap:3px">'
+      + '<button onclick="window._tahInlineSave?.()" class="btn btnp" style="font-size:10px;padding:2px 8px;background:#10B981;border-color:#10B981">✓</button>'
+      + '<button onclick="document.getElementById(\'tah-inline-new\')?.remove()" class="btn btns" style="font-size:10px;padding:2px 6px">✗</button>'
+    + '</div>';
+  row.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); window._tahInlineSave?.(); }
+    if (e.key === 'Escape') { row.remove(); }
+  });
+  cont.appendChild(row);
+  row.scrollIntoView({ behavior: 'smooth' });
+  setTimeout(function() { document.getElementById('thi-name')?.focus(); }, 50);
+};
+
+/**
+ * Inline tahsilat kaydeder.
+ */
+window._tahInlineSave = function() {
+  var name   = (document.getElementById('thi-name')?.value || '').trim();
+  var amount = parseFloat(document.getElementById('thi-amount')?.value || '0') || 0;
+  var due    = document.getElementById('thi-due')?.value || '';
+  if (!name) { window.toast?.('Ad zorunlu', 'err'); return; }
+  if (!amount) { window.toast?.('Tutar zorunlu', 'err'); return; }
+  var d = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  d.unshift({
+    id: generateNumericId(), name: name, amount: amount, due: due,
+    from: '', collected: false, ts: _nowTso(), createdBy: _CUo()?.id,
+    approvalStatus: _isAdminO() ? 'approved' : 'pending',
+  });
+  if (typeof storeTahsilat === 'function') storeTahsilat(d);
+  document.getElementById('tah-inline-new')?.remove();
+  renderOdemeler();
+  window.toast?.('Tahsilat eklendi ✓', 'ok');
+};
+
 
 // Export listesine ekle
 if (typeof Odemeler !== 'undefined') {

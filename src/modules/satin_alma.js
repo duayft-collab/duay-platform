@@ -176,7 +176,7 @@ function renderSatinAlma() {
         + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._approveSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#16A34A">✓</button>' : '')
         + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._rejectSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">✗</button>' : '')
         + '<button onclick="window._openSADetail?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">👁</button>'
-        + '<button onclick="window._openSAModal?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">✏️</button>'
+        + '<button onclick="window._saInlineEditRow?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Inline düzenle">✏️</button>'
         + '<button onclick="window._saInlineFiles?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">📎</button>'
       + '</div>'
     + '</div>';
@@ -357,6 +357,80 @@ window._saInlineEdit = function(event, id, field) {
   function _cancelEdit() {
     if (cell.contains(inp)) { cell.textContent = origText; }
   }
+};
+
+/**
+ * Satırın tamamını inline düzenlemeye çevirir (kalem ikonu).
+ */
+window._saInlineEditRow = function(id) {
+  var row = document.querySelector('[data-said="' + id + '"]');
+  if (!row || row.dataset.editing) return;
+  row.dataset.editing = '1';
+  var d = _loadSA();
+  var s = d.find(function(x) { return x.id === id; });
+  if (!s) return;
+  var IS = _SA_INLINE_STYLE;
+  var sym = SA_CURRENCIES[s.currency] || '$';
+
+  row.style.background = 'rgba(99,102,241,.04)';
+  row.style.borderColor = 'rgba(99,102,241,.2)';
+  row.innerHTML = ''
+    + '<div><input id="sae-jobId-' + id + '" value="' + (s.jobId || '') + '" style="' + IS + '" tabindex="1"></div>'
+    + '<div><input id="sae-piNo-' + id + '" value="' + (s.piNo || '') + '" style="' + IS + '" tabindex="2"></div>'
+    + '<div><input type="date" id="sae-piDate-' + id + '" value="' + (s.piDate || '') + '" style="' + IS + '" tabindex="3"></div>'
+    + '<div><input type="number" id="sae-total-' + id + '" value="' + (s.totalAmount || '') + '" style="' + IS + '" tabindex="4" oninput="window._saRowCalc?.(' + id + ')"></div>'
+    + '<div id="sae-adv-' + id + '" style="font-size:11px;color:#D97706;font-weight:600;padding:0 4px">' + sym + Math.round(s.advanceAmount || 0).toLocaleString('tr-TR') + '</div>'
+    + '<div><input type="number" id="sae-advRate-' + id + '" value="' + (s.advanceRate || '') + '" style="' + IS + '" tabindex="5" oninput="window._saRowCalc?.(' + id + ')"></div>'
+    + '<div id="sae-rem-' + id + '" style="font-size:11px;color:#6366F1;font-weight:600;padding:0 4px">' + sym + Math.round(s.remainingAmount || 0).toLocaleString('tr-TR') + '</div>'
+    + '<div><select id="sae-cur-' + id + '" style="' + IS + '" tabindex="6"><option value="USD"' + (s.currency === 'USD' ? ' selected' : '') + '>USD</option><option value="EUR"' + (s.currency === 'EUR' ? ' selected' : '') + '>EUR</option><option value="TRY"' + (s.currency === 'TRY' ? ' selected' : '') + '>TRY</option></select></div>'
+    + '<div style="font-size:10px;color:var(--t3)">Düzenleniyor</div>'
+    + '<div style="display:flex;gap:3px">'
+      + '<button onclick="window._saRowSave?.(' + id + ')" class="btn btnp" style="font-size:10px;padding:2px 8px">✓</button>'
+      + '<button onclick="renderSatinAlma()" class="btn btns" style="font-size:10px;padding:2px 6px">✗</button>'
+    + '</div>';
+
+  // Enter/Escape yakalamak için
+  row.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); window._saRowSave?.(id); }
+    if (e.key === 'Escape') { renderSatinAlma(); }
+  });
+  setTimeout(function() { document.getElementById('sae-jobId-' + id)?.focus(); }, 50);
+};
+
+/** Inline düzenleme satır hesaplama. */
+window._saRowCalc = function(id) {
+  var total = parseFloat(document.getElementById('sae-total-' + id)?.value || '0') || 0;
+  var rate  = parseFloat(document.getElementById('sae-advRate-' + id)?.value || '0') || 0;
+  var adv   = Math.round(total * rate / 100 * 100) / 100;
+  var rem   = Math.round((total - adv) * 100) / 100;
+  var cur   = document.getElementById('sae-cur-' + id)?.value || 'USD';
+  var sym   = SA_CURRENCIES[cur] || '$';
+  var advEl = document.getElementById('sae-adv-' + id);
+  var remEl = document.getElementById('sae-rem-' + id);
+  if (advEl) advEl.textContent = sym + adv.toLocaleString('tr-TR');
+  if (remEl) remEl.textContent = sym + rem.toLocaleString('tr-TR');
+};
+
+/** Inline düzenleme satır kaydet. */
+window._saRowSave = function(id) {
+  var d = _loadSA();
+  var s = d.find(function(x) { return x.id === id; });
+  if (!s) return;
+  var jobId = (document.getElementById('sae-jobId-' + id)?.value || '').trim();
+  var piNo  = (document.getElementById('sae-piNo-' + id)?.value || '').trim();
+  if (!jobId || !piNo) { window.toast?.('İş ID ve PI No zorunlu', 'err'); return; }
+  s.jobId       = jobId;
+  s.piNo        = piNo;
+  s.piDate      = document.getElementById('sae-piDate-' + id)?.value || '';
+  s.totalAmount = parseFloat(document.getElementById('sae-total-' + id)?.value || '0') || 0;
+  s.advanceRate = parseFloat(document.getElementById('sae-advRate-' + id)?.value || '0') || 0;
+  s.currency    = document.getElementById('sae-cur-' + id)?.value || 'USD';
+  s.advanceAmount   = Math.round(s.totalAmount * s.advanceRate / 100 * 100) / 100;
+  s.remainingAmount = Math.round((s.totalAmount - s.advanceAmount) * 100) / 100;
+  s.updatedAt = _nowSA(); s.updatedBy = _cuSA()?.id;
+  _storeSA(d);
+  renderSatinAlma();
+  window.toast?.('Güncellendi ✓', 'ok');
 };
 
 /**
