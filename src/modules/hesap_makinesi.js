@@ -63,6 +63,14 @@ var HM_MODULES = [
   { id:'gecikme',  icon:'⏰', label:'Gecikme Faizi' },
   { id:'butce',    icon:'🎯', label:'Bütçe Kalan' },
   { id:'karsilastir', icon:'⚖️', label:'Karşılaştırmalı' },
+  // PRO modüller — admin/manager only
+  { id:'carry',      icon:'🔐', label:'Carry Trade',      pro: true },
+  { id:'enflasyon',  icon:'🔐', label:'Enflasyon Arbitraj', pro: true },
+  { id:'opsiyon',    icon:'🔐', label:'Döviz Opsiyon',    pro: true },
+  { id:'tedfin',     icon:'🔐', label:'Tedarikçi Finans', pro: true },
+  { id:'elastik',    icon:'🔐', label:'Fiyat Elastikiyet', pro: true },
+  { id:'subvansiyon',icon:'🔐', label:'Çapraz Sübvansiyon', pro: true },
+  { id:'kurkoruma',  icon:'🔐', label:'Kur Korumalı',     pro: true },
 ];
 
 // ── Panel Inject ─────────────────────────────────────────────────
@@ -71,20 +79,26 @@ function _hmInjectPanel() {
   if (!p || p.dataset.hmInjected) return;
   p.dataset.hmInjected = '1';
 
-  // Mevcut hesap.js panelini temizle ve yenisini inject et
+  var cu = window.Auth?.getCU?.();
+  var isProUser = cu && (cu.role === 'admin' || cu.role === 'manager');
+  var visibleMods = HM_MODULES.filter(function(m) { return !m.pro || isProUser; });
+  var modCount = visibleMods.length;
+
   p.innerHTML = ''
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:#fff;position:sticky;top:0;z-index:10">'
-      + '<div><div style="font-size:16px;font-weight:700;color:#1C1C1E">🧮 Hesap Makinesi</div><div style="font-size:11px;color:#8E8E93;margin-top:2px">19 modüllü finansal araç seti</div></div>'
+      + '<div><div style="font-size:16px;font-weight:700;color:#1C1C1E">🧮 Hesap Makinesi</div><div style="font-size:11px;color:#8E8E93;margin-top:2px">' + modCount + ' modüllü finansal araç seti</div></div>'
       + '<div style="font-size:10px;color:#8E8E93">USD: ₺' + _hmFmt(HM_RATES.USD) + ' · EUR: ₺' + _hmFmt(HM_RATES.EUR) + ' · Altın: ₺' + _hmFmt(HM_RATES.ALTIN_GR) + '/gr</div>'
     + '</div>'
     + '<div style="display:flex;min-height:calc(100vh - 120px)">'
       // Sol: modül grid
       + '<div style="width:280px;border-right:1px solid #F0F0F0;padding:16px;overflow-y:auto;flex-shrink:0">'
         + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
-        + HM_MODULES.map(function(m) {
-            return '<button class="hm-mod-btn" data-hm="' + m.id + '" onclick="window._hmSelectModule(\'' + m.id + '\')" style="background:#fff;border:1.5px solid #F0F0F0;border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'#007AFF\'" onmouseout="if(!this.classList.contains(\'hm-active\'))this.style.borderColor=\'#F0F0F0\'">'
+        + visibleMods.map(function(m) {
+            var proBadge = m.pro ? '<div style="font-size:7px;background:#007AFF;color:#fff;border-radius:3px;padding:1px 4px;display:inline-block;margin-top:2px">PRO</div>' : '';
+            return '<button class="hm-mod-btn" data-hm="' + m.id + '" onclick="window._hmSelectModule(\'' + m.id + '\')" style="background:#fff;border:1.5px solid ' + (m.pro ? 'rgba(0,122,255,.2)' : '#F0F0F0') + ';border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'#007AFF\'" onmouseout="if(!this.classList.contains(\'hm-active\'))this.style.borderColor=\'' + (m.pro ? 'rgba(0,122,255,.2)' : '#F0F0F0') + '\'">'
               + '<div style="font-size:22px;margin-bottom:4px">' + m.icon + '</div>'
               + '<div style="font-size:9px;color:#1C1C1E;font-weight:500;line-height:1.2">' + m.label + '</div>'
+              + proBadge
             + '</button>';
           }).join('')
         + '</div>'
@@ -667,6 +681,230 @@ window._hmAddTeklif = function() {
   _hmRenderers.karsilastir(document.getElementById('hm-calc-area'));
 };
 window._hmDelTeklif = function(idx) { var d=_hmLoad(HM_TEKLIF_KEY); d.splice(idx,1); _hmStore(HM_TEKLIF_KEY,d); _hmRenderers.karsilastir(document.getElementById('hm-calc-area')); };
+
+// ════════════════════════════════════════════════════════════════
+// PRO MODÜLLER — Admin/Manager Only
+// ════════════════════════════════════════════════════════════════
+
+function _hmProCard(title, content) {
+  return '<div style="background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:20px;margin-bottom:16px;border-left:3px solid #007AFF">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><span style="font-size:14px;font-weight:600;color:#1C1C1E">' + title + '</span><span style="font-size:8px;background:#007AFF;color:#fff;border-radius:4px;padding:2px 6px;font-weight:700">PRO</span></div>'
+    + content + '</div>';
+}
+
+// 1) Carry Trade
+_hmRenderers.carry = function(el) {
+  el.innerHTML = _hmProCard('🔐 Carry Trade Hesaplama',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + _hmInput('hm-ct-tl-rate','TL Faiz Oranı (yıllık %)','number','50','oninput="window._hmCalcCarry?.()"')
+      + _hmInput('hm-ct-usd-rate','USD Faiz Oranı (yıllık %)','number','5','oninput="window._hmCalcCarry?.()"')
+      + _hmInput('hm-ct-amount','Başlangıç Tutarı ($)','number','100000','oninput="window._hmCalcCarry?.()"')
+      + _hmInput('hm-ct-months','Süre (ay)','number','6','oninput="window._hmCalcCarry?.()"')
+    + '</div>'
+    + _hmResult('hm-ct-profit','Net Carry Kârı') + _hmResult('hm-ct-break','Break-Even Kur')
+    + '<div id="hm-ct-scenarios" style="margin-top:12px"></div>'
+  );
+};
+window._hmCalcCarry = function() {
+  var tlR=parseFloat(document.getElementById('hm-ct-tl-rate')?.value||'0')/100;
+  var usdR=parseFloat(document.getElementById('hm-ct-usd-rate')?.value||'0')/100;
+  var amt=parseFloat(document.getElementById('hm-ct-amount')?.value||'0')||0;
+  var months=parseFloat(document.getElementById('hm-ct-months')?.value||'0')||0;
+  var kur=HM_RATES.USD;
+  var tlAmt=amt*kur; var tlReturn=tlAmt*(1+tlR*months/12); var usdReturn=amt*(1+usdR*months/12);
+  var breakKur=tlReturn/usdReturn; var profit=tlReturn-usdReturn*kur;
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-ct-profit',(profit>=0?'+':'')+_hmFmt(profit)+' ₺'); _s('hm-ct-break','₺'+_hmFmt(breakKur)+' (mevcut: ₺'+_hmFmt(kur)+')');
+  document.getElementById('hm-ct-profit').style.color=profit>=0?'#16A34A':'#DC2626';
+  // Senaryo tablosu
+  var sc=document.getElementById('hm-ct-scenarios');
+  if(sc){var html='<div style="font-size:11px;font-weight:600;color:#1C1C1E;margin-bottom:6px">Kur Senaryoları</div><div style="border:1px solid #F0F0F0;border-radius:8px;overflow:hidden">';
+    [kur*0.9,kur*0.95,kur,kur*1.05,kur*1.1].forEach(function(k,i){
+      var p=tlReturn-usdReturn*k;
+      html+='<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid #F0F0F0;font-size:11px;background:'+(i===2?'#F2F2F7':'#fff')+'"><span>₺'+_hmFmt(k)+'</span><span style="font-weight:600;color:'+(p>=0?'#16A34A':'#DC2626')+'">'+(p>=0?'+':'')+_hmFmt(p)+' ₺</span></div>';
+    });
+    sc.innerHTML=html+'</div>';}
+};
+
+// 2) Enflasyon Arbitrajı
+_hmRenderers.enflasyon = function(el) {
+  el.innerHTML = _hmProCard('🔐 Enflasyon Arbitrajı',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + _hmInput('hm-ea-cost','Birim Maliyet (₺)','number','1000','oninput="window._hmCalcEnflasyon?.()"')
+      + _hmInput('hm-ea-qty','Miktar','number','100','oninput="window._hmCalcEnflasyon?.()"')
+      + _hmInput('hm-ea-storage','Depolama Maliyet/ay (₺)','number','500','oninput="window._hmCalcEnflasyon?.()"')
+      + _hmInput('hm-ea-inflation','Tahmini Enflasyon (%/yıl)','number','45','oninput="window._hmCalcEnflasyon?.()"')
+      + _hmInput('hm-ea-finance','Finansman Maliyeti (%/yıl)','number','40','oninput="window._hmCalcEnflasyon?.()"')
+      + _hmInput('hm-ea-months','Süre (ay)','number','6','oninput="window._hmCalcEnflasyon?.()"')
+    + '</div>'
+    + _hmResult('hm-ea-profit','Net Arbitraj Kârı') + _hmResult('hm-ea-break','Break-Even Süre')
+  );
+};
+window._hmCalcEnflasyon = function() {
+  var cost=parseFloat(document.getElementById('hm-ea-cost')?.value||'0')||0;
+  var qty=parseFloat(document.getElementById('hm-ea-qty')?.value||'0')||0;
+  var storage=parseFloat(document.getElementById('hm-ea-storage')?.value||'0')||0;
+  var inf=parseFloat(document.getElementById('hm-ea-inflation')?.value||'0')/100;
+  var fin=parseFloat(document.getElementById('hm-ea-finance')?.value||'0')/100;
+  var months=parseFloat(document.getElementById('hm-ea-months')?.value||'0')||0;
+  var totalCost=cost*qty; var valueGain=totalCost*inf*months/12;
+  var storageCost=storage*months; var financeCost=totalCost*fin*months/12;
+  var net=valueGain-storageCost-financeCost;
+  var monthlyNet=valueGain/Math.max(months,1)-(storage+totalCost*fin/12);
+  var breakMonths=monthlyNet>0?0:999;
+  if(monthlyNet>0){for(var m=1;m<=36;m++){var g=totalCost*inf*m/12-storage*m-totalCost*fin*m/12;if(g>0){breakMonths=m;break;}}}
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-ea-profit',(net>=0?'+':'')+_hmFmt(net)+' ₺'); _s('hm-ea-break',breakMonths<999?breakMonths+' ay':'Kârsız');
+  document.getElementById('hm-ea-profit').style.color=net>=0?'#16A34A':'#DC2626';
+};
+
+// 3) Döviz Opsiyon Simülatörü
+_hmRenderers.opsiyon = function(el) {
+  el.innerHTML = _hmProCard('🔐 Döviz Opsiyon Simülatörü',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + _hmInput('hm-op-spot','Mevcut Kur','number',String(HM_RATES.USD),'oninput="window._hmCalcOpsiyon?.()"')
+      + _hmInput('hm-op-strike','Hedef Kur (Strike)','number',String(Math.round(HM_RATES.USD*1.05*100)/100),'oninput="window._hmCalcOpsiyon?.()"')
+      + _hmInput('hm-op-amount','Tutar ($)','number','100000','oninput="window._hmCalcOpsiyon?.()"')
+      + _hmInput('hm-op-months','Süre (ay)','number','3','oninput="window._hmCalcOpsiyon?.()"')
+    + '</div>'
+    + _hmResult('hm-op-premium','Tahmini Opsiyon Primi') + _hmResult('hm-op-hedge','Korumalı Maliyet') + _hmResult('hm-op-nohEdge','Korunmasız Risk')
+  );
+};
+window._hmCalcOpsiyon = function() {
+  var spot=parseFloat(document.getElementById('hm-op-spot')?.value||'0')||0;
+  var strike=parseFloat(document.getElementById('hm-op-strike')?.value||'0')||0;
+  var amt=parseFloat(document.getElementById('hm-op-amount')?.value||'0')||0;
+  var months=parseFloat(document.getElementById('hm-op-months')?.value||'0')||0;
+  var premium=amt*0.025*months/3; // ~%2.5 per quarter approx
+  var hedgedCost=amt*strike+premium; var noHedgeRisk=amt*(strike-spot);
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-op-premium','$'+_hmFmt(premium)+' (₺'+_hmFmt(premium*spot)+')');
+  _s('hm-op-hedge','₺'+_hmFmt(hedgedCost));
+  _s('hm-op-nohEdge',(noHedgeRisk>=0?'Zarar: ':'Kazanç: ')+'₺'+_hmFmt(Math.abs(noHedgeRisk*spot)));
+};
+
+// 4) Tedarikçi Finansmanı
+_hmRenderers.tedfin = function(el) {
+  el.innerHTML = _hmProCard('🔐 Tedarikçi Finansmanı',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + _hmInput('hm-tf-fatura','Fatura Tutarı','number','100000','oninput="window._hmCalcTedFin?.()"')
+      + _hmInput('hm-tf-vade','Vade (gün)','number','60','oninput="window._hmCalcTedFin?.()"')
+      + _hmInput('hm-tf-banka','Banka İskonto (yıllık %)','number','45','oninput="window._hmCalcTedFin?.()"')
+      + _hmInput('hm-tf-ted','Tedarikçi İskontosu (%)','number','3','oninput="window._hmCalcTedFin?.()"')
+    + '</div>'
+    + _hmResult('hm-tf-erken','Erken Ödeme Maliyeti') + _hmResult('hm-tf-bekle','Bekleme + İskonto') + _hmResult('hm-tf-tavsiye','Tavsiye')
+  );
+};
+window._hmCalcTedFin = function() {
+  var fatura=parseFloat(document.getElementById('hm-tf-fatura')?.value||'0')||0;
+  var vade=parseFloat(document.getElementById('hm-tf-vade')?.value||'0')||0;
+  var banka=parseFloat(document.getElementById('hm-tf-banka')?.value||'0')/100;
+  var ted=parseFloat(document.getElementById('hm-tf-ted')?.value||'0')/100;
+  var erkenMaliyet=fatura*banka*vade/365; var iskontoKar=fatura*ted;
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-tf-erken','Finansman: ₺'+_hmFmt(erkenMaliyet)+' → Net: ₺'+_hmFmt(fatura-erkenMaliyet));
+  _s('hm-tf-bekle','İskonto: ₺'+_hmFmt(iskontoKar)+' → Net: ₺'+_hmFmt(fatura-iskontoKar));
+  var tavsiye=iskontoKar>erkenMaliyet?'✅ Bekle, iskonto al (₺'+_hmFmt(iskontoKar-erkenMaliyet)+' tasarruf)':'✅ Erken öde (₺'+_hmFmt(erkenMaliyet-iskontoKar)+' daha ucuz)';
+  _s('hm-tf-tavsiye',tavsiye);
+};
+
+// 5) Fiyat Elastikiyeti
+_hmRenderers.elastik = function(el) {
+  el.innerHTML = _hmProCard('🔐 Fiyat Elastikiyeti',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + _hmInput('hm-fe-p1','Mevcut Fiyat','number','100','oninput="window._hmCalcElastik?.()"')
+      + _hmInput('hm-fe-p2','Yeni Fiyat','number','90','oninput="window._hmCalcElastik?.()"')
+      + _hmInput('hm-fe-q1','Mevcut Satış Adedi','number','1000','oninput="window._hmCalcElastik?.()"')
+      + _hmInput('hm-fe-elastik','Talep Değişimi (%)','number','15','oninput="window._hmCalcElastik?.()"')
+    + '</div>'
+    + _hmResult('hm-fe-revenue','Gelir Değişimi') + _hmResult('hm-fe-coeff','Elastikiyet Katsayısı') + _hmResult('hm-fe-optimal','Optimal Fiyat')
+  );
+};
+window._hmCalcElastik = function() {
+  var p1=parseFloat(document.getElementById('hm-fe-p1')?.value||'0')||0;
+  var p2=parseFloat(document.getElementById('hm-fe-p2')?.value||'0')||0;
+  var q1=parseFloat(document.getElementById('hm-fe-q1')?.value||'0')||0;
+  var qChg=parseFloat(document.getElementById('hm-fe-elastik')?.value||'0')/100;
+  var q2=q1*(1+qChg); var rev1=p1*q1; var rev2=p2*q2; var diff=rev2-rev1;
+  var pChg=(p2-p1)/Math.max(p1,0.01); var coeff=pChg!==0?(qChg/pChg):0;
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-fe-revenue',(diff>=0?'+':'')+_hmFmt(diff)+' ₺ ('+_hmFmt(rev1)+'→'+_hmFmt(rev2)+')');
+  _s('hm-fe-coeff',coeff.toFixed(2)+' '+(Math.abs(coeff)>1?'(Esnek)':'(Esnek değil)'));
+  _s('hm-fe-optimal','~₺'+_hmFmt(p1*(1-1/Math.max(Math.abs(coeff),0.01)))+' (marjinal gelir=0)');
+  document.getElementById('hm-fe-revenue').style.color=diff>=0?'#16A34A':'#DC2626';
+};
+
+// 6) Çapraz Sübvansiyon
+_hmRenderers.subvansiyon = function(el) {
+  el.innerHTML = _hmProCard('🔐 Çapraz Sübvansiyon',
+    '<div style="font-size:11px;font-weight:600;color:#8E8E93;margin-bottom:8px">A Ürünü</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">'
+      + _hmInput('hm-cs-ap','A Fiyat','number','100','oninput="window._hmCalcSubv?.()"')
+      + _hmInput('hm-cs-ac','A Maliyet','number','70','oninput="window._hmCalcSubv?.()"')
+      + _hmInput('hm-cs-aq','A Satış Adedi','number','500','oninput="window._hmCalcSubv?.()"')
+    + '</div>'
+    + '<div style="font-size:11px;font-weight:600;color:#8E8E93;margin-bottom:8px">B Ürünü</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">'
+      + _hmInput('hm-cs-bp','B Fiyat','number','200','oninput="window._hmCalcSubv?.()"')
+      + _hmInput('hm-cs-bc','B Maliyet','number','120','oninput="window._hmCalcSubv?.()"')
+      + _hmInput('hm-cs-bq','B Satış Adedi','number','300','oninput="window._hmCalcSubv?.()"')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + _hmInput('hm-cs-disc','A İndirim (%)','number','10','oninput="window._hmCalcSubv?.()"')
+      + _hmInput('hm-cs-boost','B Satış Artışı (%)','number','20','oninput="window._hmCalcSubv?.()"')
+    + '</div>'
+    + _hmResult('hm-cs-before','Mevcut Toplam Kâr') + _hmResult('hm-cs-after','Sübvansiyon Sonrası') + _hmResult('hm-cs-diff','Fark')
+  );
+};
+window._hmCalcSubv = function() {
+  var ap=parseFloat(document.getElementById('hm-cs-ap')?.value||'0')||0;
+  var ac=parseFloat(document.getElementById('hm-cs-ac')?.value||'0')||0;
+  var aq=parseFloat(document.getElementById('hm-cs-aq')?.value||'0')||0;
+  var bp=parseFloat(document.getElementById('hm-cs-bp')?.value||'0')||0;
+  var bc=parseFloat(document.getElementById('hm-cs-bc')?.value||'0')||0;
+  var bq=parseFloat(document.getElementById('hm-cs-bq')?.value||'0')||0;
+  var disc=parseFloat(document.getElementById('hm-cs-disc')?.value||'0')/100;
+  var boost=parseFloat(document.getElementById('hm-cs-boost')?.value||'0')/100;
+  var before=(ap-ac)*aq+(bp-bc)*bq;
+  var newAp=ap*(1-disc); var newBq=bq*(1+boost);
+  var after=(newAp-ac)*aq+(bp-bc)*newBq;
+  var diff=after-before;
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-cs-before','₺'+_hmFmt(before)); _s('hm-cs-after','₺'+_hmFmt(after));
+  _s('hm-cs-diff',(diff>=0?'+':'')+_hmFmt(diff)+' ₺');
+  document.getElementById('hm-cs-diff').style.color=diff>=0?'#16A34A':'#DC2626';
+};
+
+// 7) Kur Korumalı Fiyatlama
+_hmRenderers.kurkoruma = function(el) {
+  el.innerHTML = _hmProCard('🔐 Kur Korumalı Fiyatlama',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + _hmInput('hm-kk-cost','Maliyet ($)','number','10000','oninput="window._hmCalcKurKoruma?.()"')
+      + _hmInput('hm-kk-margin','Hedef Kâr Marjı (%)','number','20','oninput="window._hmCalcKurKoruma?.()"')
+      + _hmInput('hm-kk-hedge','Hedge Maliyeti (%)','number','2','oninput="window._hmCalcKurKoruma?.()"')
+      + _hmInput('hm-kk-months','Ödeme Süresi (ay)','number','3','oninput="window._hmCalcKurKoruma?.()"')
+    + '</div>'
+    + _hmResult('hm-kk-price','TL Satış Fiyatı') + _hmResult('hm-kk-net','Net Kâr')
+    + '<div id="hm-kk-scenarios" style="margin-top:12px"></div>'
+  );
+};
+window._hmCalcKurKoruma = function() {
+  var cost=parseFloat(document.getElementById('hm-kk-cost')?.value||'0')||0;
+  var margin=parseFloat(document.getElementById('hm-kk-margin')?.value||'0')/100;
+  var hedge=parseFloat(document.getElementById('hm-kk-hedge')?.value||'0')/100;
+  var kur=HM_RATES.USD;
+  var tlCost=cost*kur; var hedgeCost=tlCost*hedge;
+  var salePrice=(tlCost+hedgeCost)*(1+margin); var net=salePrice-tlCost-hedgeCost;
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-kk-price','₺'+_hmFmt(salePrice)); _s('hm-kk-net','+₺'+_hmFmt(net));
+  var sc=document.getElementById('hm-kk-scenarios');
+  if(sc){
+    var scenarios=[{l:'İyimser',k:kur*0.95},{l:'Baz',k:kur},{l:'Kötümser',k:kur*1.1}];
+    sc.innerHTML='<div style="font-size:11px;font-weight:600;color:#1C1C1E;margin-bottom:6px">Kur Senaryoları</div><div style="border:1px solid #F0F0F0;border-radius:8px;overflow:hidden">'
+      +scenarios.map(function(s,i){var actualCost=cost*s.k;var p=salePrice-actualCost-hedgeCost;return '<div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;background:'+(i===1?'#F2F2F7':'#fff')+'"><span>'+s.l+' (₺'+_hmFmt(s.k)+')</span><span style="font-weight:600;color:'+(p>=0?'#16A34A':'#DC2626')+'">'+(p>=0?'+':'')+_hmFmt(p)+' ₺</span></div>';}).join('')
+      +'</div>';
+  }
+};
 
 // ── Render Hook ──────────────────────────────────────────────────
 var _origRenderHesap = window.renderHesapHistory;
