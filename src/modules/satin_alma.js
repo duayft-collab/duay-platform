@@ -208,25 +208,57 @@ window._saAddInlineRow = function() {
   if (!cont) { renderSatinAlma(); cont = document.getElementById('sa-list'); }
   if (!cont) return;
 
+  var IS = _SA_INLINE_STYLE;
   var row = document.createElement('div');
   row.id = 'sa-inline-new';
-  row.style.cssText = _SA_GRID_COLS + ';background:rgba(99,102,241,.04);border:2px solid rgba(99,102,241,.2);border-radius:0 0 8px 8px';
+  row.style.cssText = 'overflow-x:auto;border:2px solid rgba(99,102,241,.2);background:rgba(99,102,241,.04);border-radius:0 0 8px 8px';
 
   row.innerHTML = ''
-    + '<div><input id="sai-jobId" style="' + _SA_INLINE_STYLE + '" placeholder="JOB-001" tabindex="1"></div>'
-    + '<div><input id="sai-piNo" style="' + _SA_INLINE_STYLE + '" placeholder="PI-001" tabindex="2"></div>'
-    + '<div><input type="date" id="sai-piDate" style="' + _SA_INLINE_STYLE + '" tabindex="3"></div>'
-    + '<div><input type="number" id="sai-total" style="' + _SA_INLINE_STYLE + '" placeholder="0" oninput="window._saInlineCalc?.()" tabindex="4"></div>'
-    + '<div id="sai-advAmt" style="font-size:11px;color:#D97706;font-weight:600;padding:0 4px">—</div>'
-    + '<div><input type="number" id="sai-advRate" style="' + _SA_INLINE_STYLE + '" placeholder="30" min="0" max="100" oninput="window._saInlineCalc?.()" tabindex="5"></div>'
-    + '<div id="sai-remaining" style="font-size:11px;color:#6366F1;font-weight:600;padding:0 4px">—</div>'
-    + '<div><select id="sai-currency" style="' + _SA_INLINE_STYLE + '" tabindex="6"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select></div>'
-    + '<div style="font-size:10px;color:var(--t3)">Yeni</div>'
-    + '<div style="display:flex;gap:3px">'
-      + '<button onclick="window._saInlineSave?.()" class="btn btnp" style="font-size:10px;padding:2px 8px" title="Kaydet">✓</button>'
-      + '<button onclick="document.getElementById(\'sa-inline-new\')?.remove()" class="btn btns" style="font-size:10px;padding:2px 6px" title="İptal">✗</button>'
-      + '<button onclick="window._saInlineFiles?.(0)" class="btn btns" style="font-size:10px;padding:2px 6px" title="Dosya">📎</button>'
+    + '<div style="display:flex;gap:0;min-width:1700px;align-items:center">'
+      // İş ID
+      + '<div style="width:90px;padding:6px 4px"><input id="sai-jobId" style="' + IS + '" placeholder="JOB-001" tabindex="1"></div>'
+      // Satıcı
+      + '<div style="width:110px;padding:6px 4px"><input id="sai-supplier" style="' + IS + '" placeholder="Satıcı" tabindex="2"></div>'
+      // İş Başlama
+      + '<div style="width:110px;padding:6px 4px"><input type="date" id="sai-jobDate" style="' + IS + '" tabindex="3"></div>'
+      // PI Tarihi
+      + '<div style="width:110px;padding:6px 4px"><input type="date" id="sai-piDate" style="' + IS + '" tabindex="4"></div>'
+      // KDV
+      + '<div style="width:80px;padding:6px 4px"><input type="number" id="sai-kdv" style="' + IS + '" placeholder="KDV" tabindex="5"></div>'
+      // Toplam
+      + '<div style="width:100px;padding:6px 4px"><input type="number" id="sai-total" style="' + IS + '" placeholder="Toplam" oninput="window._saInlineCalc?.()" tabindex="6"></div>'
+      // Döviz
+      + '<div style="width:70px;padding:6px 4px"><select id="sai-currency" style="' + IS + '" tabindex="7"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select></div>'
+      // Teslimat
+      + '<div style="width:110px;padding:6px 4px"><input type="date" id="sai-delivery" style="' + IS + '" tabindex="8"></div>'
+      // Avans %
+      + '<div style="width:70px;padding:6px 4px"><input type="number" id="sai-advRate" style="' + IS + '" placeholder="%" min="0" max="100" oninput="window._saInlineCalc?.()" tabindex="9"></div>'
+      // Avans Tutarı (hesaplanan)
+      + '<div id="sai-advAmt" style="width:90px;padding:6px 4px;font-size:10px;color:#D97706;font-weight:600">—</div>'
+      // Kalan (hesaplanan)
+      + '<div id="sai-remaining" style="width:90px;padding:6px 4px;font-size:10px;color:#6366F1;font-weight:600">—</div>'
+      // Vade
+      + '<div style="width:110px;padding:6px 4px"><input type="date" id="sai-vade" style="' + IS + '" tabindex="10"></div>'
+      // Müşteri Sipariş No
+      + '<div style="width:100px;padding:6px 4px"><input id="sai-custOrder" style="' + IS + '" placeholder="CST-001" tabindex="11"></div>'
+      // Sipariş Onay Tarihi
+      + '<div style="width:110px;padding:6px 4px"><input type="date" id="sai-orderDate" style="' + IS + '" tabindex="12"></div>'
+      // Teslimat Yeri
+      + '<div style="width:110px;padding:6px 4px"><input id="sai-delPlace" style="' + IS + '" placeholder="Liman..." tabindex="13"></div>'
+      // Açıklama
+      + '<div style="width:120px;padding:6px 4px"><input id="sai-notes" style="' + IS + '" placeholder="Not..." tabindex="14"></div>'
+      // Butonlar
+      + '<div style="width:90px;padding:6px 4px;display:flex;gap:3px;flex-shrink:0">'
+        + '<button onclick="window._saInlineSave?.()" class="btn btnp" style="font-size:10px;padding:3px 8px" title="Kaydet">✓</button>'
+        + '<button onclick="document.getElementById(\'sa-inline-new\')?.remove()" class="btn btns" style="font-size:10px;padding:3px 6px" title="İptal">✗</button>'
+      + '</div>'
     + '</div>';
+
+  // Enter/Escape
+  row.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); window._saInlineSave?.(); }
+    if (e.key === 'Escape') { row.remove(); }
+  });
 
   cont.appendChild(row);
   row.scrollIntoView({ behavior: 'smooth' });
@@ -234,7 +266,7 @@ window._saAddInlineRow = function() {
 };
 
 /**
- * Inline satır hesaplama.
+ * Inline satır hesaplama — avans tutarı + kalan.
  */
 window._saInlineCalc = function() {
   var total = parseFloat(document.getElementById('sai-total')?.value || '0') || 0;
@@ -250,15 +282,19 @@ window._saInlineCalc = function() {
 };
 
 /**
- * Inline satırdan kaydet.
+ * Inline satırdan kaydet — tüm form alanları.
  */
 window._saInlineSave = function() {
-  var jobId   = (document.getElementById('sai-jobId')?.value || '').trim();
-  var piNo    = (document.getElementById('sai-piNo')?.value || '').trim();
-  var piDate  = document.getElementById('sai-piDate')?.value || '';
-  var total   = parseFloat(document.getElementById('sai-total')?.value || '0') || 0;
-  var advRate = parseFloat(document.getElementById('sai-advRate')?.value || '0') || 0;
-  var currency = document.getElementById('sai-currency')?.value || 'USD';
+  var jobId     = (document.getElementById('sai-jobId')?.value || '').trim();
+  var supplier  = (document.getElementById('sai-supplier')?.value || '').trim();
+  var piDate    = document.getElementById('sai-piDate')?.value || '';
+  var total     = parseFloat(document.getElementById('sai-total')?.value || '0') || 0;
+  var advRate   = parseFloat(document.getElementById('sai-advRate')?.value || '0') || 0;
+  var currency  = document.getElementById('sai-currency')?.value || 'USD';
+  var kdv       = parseFloat(document.getElementById('sai-kdv')?.value || '0') || 0;
+  var delivery  = document.getElementById('sai-delivery')?.value || '';
+  var vade      = document.getElementById('sai-vade')?.value || '';
+  var jobDate   = document.getElementById('sai-jobDate')?.value || '';
 
   // Doğrulama — hatalı hücreleri kırmızı yap
   var errs = [];
@@ -266,10 +302,10 @@ window._saInlineSave = function() {
     var el = document.getElementById(id);
     if (el) el.style.cssText = _SA_INLINE_STYLE + (bad ? ';border-color:#EF4444;background:rgba(239,68,68,.04)' : '');
   };
-  _markErr('sai-jobId', !jobId);   if (!jobId) errs.push('İş ID');
-  _markErr('sai-piNo',  !piNo);    if (!piNo)  errs.push('PI No');
-  _markErr('sai-piDate', !piDate); if (!piDate) errs.push('PI Tarihi');
-  _markErr('sai-total', !total);   if (!total)  errs.push('Toplam');
+  _markErr('sai-jobId',    !jobId);    if (!jobId)    errs.push('İş ID');
+  _markErr('sai-supplier', !supplier); if (!supplier) errs.push('Satıcı');
+  _markErr('sai-piDate',   !piDate);   if (!piDate)   errs.push('PI Tarihi');
+  _markErr('sai-total',    !total);    if (!total)     errs.push('Toplam');
 
   if (errs.length) { window.toast?.('Zorunlu: ' + errs.join(', '), 'err'); return; }
 
@@ -277,23 +313,28 @@ window._saInlineSave = function() {
   var d = _loadSA();
   var entry = {
     id: generateNumericId(),
-    jobId: jobId, piNo: piNo, piDate: piDate,
-    jobDate: piDate, totalAmount: total, kdv: 0,
+    jobId: jobId, supplier: supplier, piNo: supplier,
+    jobDate: jobDate || piDate, piDate: piDate,
+    kdv: kdv, totalAmount: total,
     currency: currency, advanceRate: advRate,
     advanceAmount: advAmt,
     remainingAmount: Math.round((total - advAmt) * 100) / 100,
-    vadeDate: '', deliveryDate: '',
+    deliveryDate: delivery, vadeDate: vade,
+    customerOrderNo: (document.getElementById('sai-custOrder')?.value || '').trim(),
+    orderDate: document.getElementById('sai-orderDate')?.value || '',
+    deliveryPlace: (document.getElementById('sai-delPlace')?.value || '').trim(),
+    deliveryOwner: 'alici',
+    notes: (document.getElementById('sai-notes')?.value || '').trim(),
     status: _isAdmSA() ? 'approved' : 'pending',
     createdAt: _nowSA(), createdBy: _cuSA()?.id,
     vendor: { name: '', country: '', contact: '', phone: '', email: '', address: '', tax: '' },
-    notes: '',
   };
   d.unshift(entry);
   _storeSA(d);
   document.getElementById('sa-inline-new')?.remove();
   renderSatinAlma();
-  window.toast?.('Satır eklendi ✓', 'ok');
-  window.logActivity?.('view', 'Satınalma inline eklendi: ' + piNo);
+  window.toast?.('Satır eklendi ✓ — Dosya eklemek için 📎 butonunu kullanın', 'ok');
+  window.logActivity?.('view', 'Satınalma inline eklendi: ' + supplier);
   _saCreatePayments(entry);
 
   if (!_isAdmSA()) {
