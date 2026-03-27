@@ -115,11 +115,13 @@ function _injectSAPanel() {
       + '<select class="fi" id="sa-status-f" style="display:none"><option value=""></option></select>'
     + '</div>'
 
-    // TABLO BAŞLIK
-    + '<div style="display:grid;grid-template-columns:80px 100px 90px 90px 100px 80px 90px 80px 80px 120px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);overflow-x:auto">'
-      + ['İş ID','Satıcı','PI Tarihi','Toplam','Avans','Avans %','Kalan','Döviz','Durum','İşlem'].map(function(h) {
-          return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">' + h + '</div>';
-        }).join('')
+    // TABLO BAŞLIK — yatay scroll
+    + '<div style="overflow-x:auto">'
+      + '<div id="sa-thead" style="display:grid;grid-template-columns:75px 100px 85px 90px 85px 70px 85px 65px 85px 80px 80px 70px 100px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);min-width:1200px">'
+        + [['jobId','İş ID'],['supplier','Satıcı'],['piDate','PI Tarihi'],['totalAmount','Toplam'],['advanceAmount','Avans'],['advanceRate','Avans%'],['remaining','Kalan'],['currency','Döviz'],['deliveryDate','Teslimat'],['faturaType','Fatura'],['lockedRate','Kur'],['status','Durum'],['_actions','İşlem']].map(function(h) {
+            return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;cursor:pointer" onclick="window._saSortBy?.(\'' + h[0] + '\')">' + h[1] + ' <span style="opacity:.3">⇅</span></div>';
+          }).join('')
+      + '</div>'
     + '</div>'
 
     // LİSTE
@@ -175,14 +177,24 @@ function renderSatinAlma() {
     if (toF && (s.piDate || '') > toF) return false;
     if (search && !((s.jobId || '').toLowerCase().includes(search) || (s.supplier || s.piNo || '').toLowerCase().includes(search) || (s.exportId || '').toLowerCase().includes(search) || (s.vendor?.name || '').toLowerCase().includes(search))) return false;
     return true;
-  }).sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
+  }).sort(function(a, b) {
+    if (_saSortField) {
+      var va = a[_saSortField] || '', vb = b[_saSortField] || '';
+      if (typeof va === 'number' || _saSortField === 'totalAmount' || _saSortField === 'advanceRate') {
+        va = parseFloat(va) || 0; vb = parseFloat(vb) || 0;
+      }
+      var cmp = va > vb ? 1 : va < vb ? -1 : 0;
+      return _saSortAsc ? cmp : -cmp;
+    }
+    return (b.id || 0) - (a.id || 0);
+  });
 
   var cont = document.getElementById('sa-list');
   if (!cont) return;
 
   var _inpSt = 'font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:4px;background:var(--s);color:var(--t);font-family:inherit;width:100%;box-sizing:border-box';
   var _inpEr = 'border-color:#EF4444;background:rgba(239,68,68,.04)';
-  var _GRID  = 'display:grid;grid-template-columns:80px 100px 90px 90px 100px 80px 90px 80px 80px 120px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px';
+  var _GRID  = 'display:grid;grid-template-columns:75px 100px 85px 90px 85px 70px 85px 65px 85px 80px 80px 70px 100px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:1200px';
 
   if (!fl.length && !document.getElementById('sa-inline-new')) {
     cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t3)">'
@@ -227,16 +239,24 @@ function renderSatinAlma() {
       kurInfo = '<div style="font-size:9px;color:var(--t3)">🔒' + s.lockedRate + '</div>';
     }
 
+    // Fatura tipi kısa adı
+    var ftypes = _saGetFaturaTypes();
+    var ft = ftypes.find(function(t) { return t.value === s.faturaType; });
+    var ftLabel = ft ? ft.label.split('(')[0].trim().slice(0, 10) : '—';
+
     html += '<div data-said="' + s.id + '" style="' + _GRID + ';cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div class="sa-cell" data-field="jobId" onclick="window._saInlineEdit?.(event,' + s.id + ',\'jobId\')" style="font-weight:600;font-family:\'DM Mono\',monospace;color:var(--ac)">' + esc(s.jobId || '—') + '</div>'
       + '<div class="sa-cell" data-field="supplier" onclick="window._saInlineEdit?.(event,' + s.id + ',\'supplier\')" style="font-weight:500">' + esc(supplierName) + vendorBadge + '</div>'
       + '<div class="sa-cell" data-field="piDate" onclick="window._saInlineEdit?.(event,' + s.id + ',\'piDate\')" style="color:var(--t3)">' + (s.piDate || '—') + '</div>'
-      + '<div class="sa-cell" data-field="totalAmount" onclick="window._saInlineEdit?.(event,' + s.id + ',\'totalAmount\')" style="font-weight:700;color:var(--t)">' + sym + Number(s.totalAmount || 0).toLocaleString('tr-TR') + kurInfo + '</div>'
+      + '<div class="sa-cell" data-field="totalAmount" onclick="window._saInlineEdit?.(event,' + s.id + ',\'totalAmount\')" style="font-weight:700;color:var(--t)">' + sym + Number(s.totalAmount || 0).toLocaleString('tr-TR') + '</div>'
       + '<div style="color:#D97706;font-weight:600">' + sym + Math.round(advAmt).toLocaleString('tr-TR') + '</div>'
       + '<div class="sa-cell" data-field="advanceRate" onclick="window._saInlineEdit?.(event,' + s.id + ',\'advanceRate\')" style="color:var(--t3)">%' + (s.advanceRate || 0) + '</div>'
       + '<div style="color:#6366F1;font-weight:600">' + sym + Math.round(remaining).toLocaleString('tr-TR') + '</div>'
       + '<div>' + (s.currency || 'USD') + '</div>'
-      + '<div><span style="font-size:10px;padding:2px 8px;border-radius:5px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span>' + waitBadge + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">' + (s.deliveryDate || '—') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">' + ftLabel + '</div>'
+      + '<div style="font-size:9px;color:var(--t3)">' + (s.lockedRate && s.currency !== 'TRY' ? '🔒' + s.lockedRate : '—') + '</div>'
+      + '<div><span style="font-size:10px;padding:2px 6px;border-radius:5px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span>' + waitBadge + '</div>'
       + '<div style="display:flex;gap:3px" onclick="event.stopPropagation()">'
         + '<input type="checkbox" class="sa-bulk-chk" data-said="' + s.id + '" style="display:' + (_isAdmSA() && s.status === 'pending' ? 'block' : 'none') + ';width:14px;height:14px;accent-color:var(--ac)">'
         + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._approveSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#16A34A">✓</button>' : '')
@@ -1600,6 +1620,107 @@ window._saImportConfirm = function() {
   _saImportRows = null;
 };
 
+
+// ════════════════════════════════════════════════════════════════
+// AKILLI TARİH GİRİŞİ — tüm date input'larda çalışır
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Türkçe doğal dil tarih ifadesini YYYY-MM-DD'ye çevirir.
+ * Desteklenen: "yarın", "bugün", "dün", "5 gün sonra", "2 hafta sonra",
+ * "1 ay sonra", "3 gün önce", "2 hafta önce", "1 yıl sonra"
+ * @param {string} str
+ * @returns {string|null} YYYY-MM-DD veya null
+ */
+function _parseSmartDate(str) {
+  if (!str) return null;
+  str = str.trim().toLowerCase();
+
+  // Sabit kelimeler
+  if (str === 'bugün' || str === 'bugun') return new Date().toISOString().slice(0, 10);
+  if (str === 'yarın' || str === 'yarin') { var d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); }
+  if (str === 'dün' || str === 'dun') { var d2 = new Date(); d2.setDate(d2.getDate() - 1); return d2.toISOString().slice(0, 10); }
+
+  // "X gün/hafta/ay/yıl sonra/önce" pattern
+  var match = str.match(/^(\d+)\s*(gün|gun|hafta|ay|yıl|yil)\s*(sonra|önce|once)$/i);
+  if (match) {
+    var n    = parseInt(match[1]);
+    var unit = match[2].replace('ü', 'u').replace('ı', 'i');
+    var dir  = match[3].replace('ö', 'o');
+    var mult = dir === 'once' ? -1 : 1;
+    var now  = new Date();
+
+    if (unit === 'gun') now.setDate(now.getDate() + n * mult);
+    else if (unit === 'hafta') now.setDate(now.getDate() + n * 7 * mult);
+    else if (unit === 'ay') now.setMonth(now.getMonth() + n * mult);
+    else if (unit === 'yil') now.setFullYear(now.getFullYear() + n * mult);
+
+    return now.toISOString().slice(0, 10);
+  }
+
+  return null;
+}
+window._parseSmartDate = _parseSmartDate;
+
+/**
+ * Tüm date input'lara akıllı tarih parse ekler.
+ * blur event'inde metin girişini tarihe çevirir.
+ */
+function _initSmartDateInputs() {
+  document.addEventListener('blur', function(e) {
+    if (e.target?.type !== 'date') return;
+    // Date input'ta metin girişi olduğunda browser bazen boş bırakır
+    // Biz input'un title/placeholder'ına yazılmış metni kontrol ediyoruz
+  }, true);
+
+  // Alternatif: date input'ların yanına text input overlay
+  document.addEventListener('focusin', function(e) {
+    var inp = e.target;
+    if (!inp || inp.type !== 'date' || inp.dataset.smartDate) return;
+    inp.dataset.smartDate = '1';
+
+    // date input'un üstüne text input ekle
+    var wrap = inp.parentElement;
+    if (!wrap) return;
+    if (wrap.style.position !== 'relative' && wrap.style.position !== 'absolute') {
+      wrap.style.position = 'relative';
+    }
+
+    var hint = document.createElement('input');
+    hint.type = 'text';
+    hint.placeholder = 'ör: yarın, 5 gün sonra...';
+    hint.style.cssText = 'position:absolute;right:2px;top:2px;width:130px;font-size:9px;padding:2px 6px;border:1px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t3);z-index:1;display:none';
+    hint.onfocus = function() { hint.style.display = 'block'; };
+    hint.onblur = function() {
+      var parsed = _parseSmartDate(hint.value);
+      if (parsed) { inp.value = parsed; hint.value = ''; }
+      hint.style.display = 'none';
+    };
+    hint.onkeydown = function(ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); hint.blur(); }
+      if (ev.key === 'Escape') { hint.value = ''; hint.style.display = 'none'; }
+    };
+    wrap.appendChild(hint);
+
+    // Date input'a çift tıklayınca hint göster
+    inp.addEventListener('dblclick', function() { hint.style.display = 'block'; hint.focus(); });
+  }, true);
+}
+setTimeout(_initSmartDateInputs, 1000);
+
+// ════════════════════════════════════════════════════════════════
+// SIRALAMA
+// ════════════════════════════════════════════════════════════════
+
+var _saSortField = '';
+var _saSortAsc = true;
+
+window._saSortBy = function(field) {
+  if (field === '_actions') return;
+  if (_saSortField === field) { _saSortAsc = !_saSortAsc; }
+  else { _saSortField = field; _saSortAsc = true; }
+  renderSatinAlma();
+};
 
 // ════════════════════════════════════════════════════════════════
 // FATURA TİPLERİ CRUD
