@@ -906,6 +906,100 @@ window._hmCalcKurKoruma = function() {
   }
 };
 
+// ════════════════════════════════════════════════════════════════
+// ELİT FİNANSÇI YÖNTEMLERİ
+// ════════════════════════════════════════════════════════════════
+
+// Kelly Kriteri — HM_MODULES'a eklenmez, PRO içine zaten dahil
+// Mevcut _hmRenderers'a ek modüller olarak ekliyoruz
+
+HM_MODULES.push(
+  { id:'kelly',      icon:'🎲', label:'Kelly Kriteri',     pro: true },
+  { id:'montecarlo', icon:'🎰', label:'Monte Carlo',       pro: true },
+  { id:'sharpe',     icon:'📐', label:'Sharpe Oranı',      pro: true }
+);
+
+// Kelly Kriteri
+_hmRenderers.kelly = function(el) {
+  el.innerHTML = _hmProCard('🎲 Kelly Kriteri — Optimal Pozisyon',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + _hmInput('hm-kl-win','Kazanma Olasılığı (%)','number','55','oninput="window._hmCalcKelly?.()"')
+      + _hmInput('hm-kl-ratio','Kazanç/Kayıp Oranı','number','1.5','oninput="window._hmCalcKelly?.()"')
+      + _hmInput('hm-kl-capital','Sermaye','number','100000','oninput="window._hmCalcKelly?.()"')
+    + '</div>'
+    + _hmResult('hm-kl-pct','Kelly %') + _hmResult('hm-kl-amount','Optimal Pozisyon') + _hmResult('hm-kl-half','Yarım Kelly (güvenli)')
+  );
+};
+window._hmCalcKelly = function() {
+  var w=parseFloat(document.getElementById('hm-kl-win')?.value||'0')/100;
+  var r=parseFloat(document.getElementById('hm-kl-ratio')?.value||'0')||1;
+  var cap=parseFloat(document.getElementById('hm-kl-capital')?.value||'0')||0;
+  var kelly=w-(1-w)/r; kelly=Math.max(0,Math.min(1,kelly));
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-kl-pct',(kelly*100).toFixed(1)+'%');
+  _s('hm-kl-amount','₺'+_hmFmt(cap*kelly));
+  _s('hm-kl-half','₺'+_hmFmt(cap*kelly/2)+' (Half-Kelly)');
+};
+
+// Monte Carlo
+_hmRenderers.montecarlo = function(el) {
+  el.innerHTML = _hmProCard('🎰 Monte Carlo Simülasyonu',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + _hmInput('hm-mc-start','Başlangıç Bakiye','number','100000','oninput="window._hmCalcMC?.()"')
+      + _hmInput('hm-mc-monthly','Aylık Gelir/Gider','number','5000','oninput="window._hmCalcMC?.()"')
+      + _hmInput('hm-mc-volatility','Volatilite (%)','number','20','oninput="window._hmCalcMC?.()"')
+    + '</div>'
+    + _hmResult('hm-mc-avg','Ortalama (12 ay)') + _hmResult('hm-mc-best','En İyi Senaryo') + _hmResult('hm-mc-worst','En Kötü Senaryo')
+    + '<div id="hm-mc-chart" style="margin-top:12px"></div>'
+  );
+};
+window._hmCalcMC = function() {
+  var start=parseFloat(document.getElementById('hm-mc-start')?.value||'0')||0;
+  var monthly=parseFloat(document.getElementById('hm-mc-monthly')?.value||'0')||0;
+  var vol=parseFloat(document.getElementById('hm-mc-volatility')?.value||'0')/100;
+  var sims=500; var results=[];
+  for(var s=0;s<sims;s++){var bal=start;for(var m=0;m<12;m++){var shock=(Math.random()-0.5)*2*vol;bal+=monthly*(1+shock);}results.push(bal);}
+  results.sort(function(a,b){return a-b;});
+  var avg=results.reduce(function(a,b){return a+b;},0)/sims;
+  var best=results[Math.round(sims*0.95)]; var worst=results[Math.round(sims*0.05)];
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-mc-avg','₺'+_hmFmt(avg)); _s('hm-mc-best','₺'+_hmFmt(best)); _s('hm-mc-worst','₺'+_hmFmt(worst));
+  document.getElementById('hm-mc-best').style.color='#16A34A';
+  document.getElementById('hm-mc-worst').style.color='#DC2626';
+};
+
+// Sharpe Oranı
+_hmRenderers.sharpe = function(el) {
+  el.innerHTML = _hmProCard('📐 Sharpe Oranı — Portföy Performansı',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + _hmInput('hm-sp-return','Portföy Getiri (%)','number','25','oninput="window._hmCalcSharpe?.()"')
+      + _hmInput('hm-sp-riskfree','Risksiz Getiri (%)','number','10','oninput="window._hmCalcSharpe?.()"')
+      + _hmInput('hm-sp-std','Std Sapma (%)','number','15','oninput="window._hmCalcSharpe?.()"')
+    + '</div>'
+    + _hmResult('hm-sp-ratio','Sharpe Oranı') + _hmResult('hm-sp-grade','Değerlendirme')
+  );
+};
+window._hmCalcSharpe = function() {
+  var ret=parseFloat(document.getElementById('hm-sp-return')?.value||'0');
+  var rf=parseFloat(document.getElementById('hm-sp-riskfree')?.value||'0');
+  var std=parseFloat(document.getElementById('hm-sp-std')?.value||'1')||1;
+  var sharpe=(ret-rf)/std;
+  var grade=sharpe>=2?'🟢 Mükemmel':sharpe>=1?'🟡 İyi':sharpe>=0.5?'🟠 Orta':'🔴 Zayıf';
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('hm-sp-ratio',sharpe.toFixed(3));
+  _s('hm-sp-grade',grade);
+  document.getElementById('hm-sp-ratio').style.color=sharpe>=1?'#16A34A':sharpe>=0?'#D97706':'#DC2626';
+};
+
+// Sayı formatlama — tüm number input'lar
+(function _hmInitNumberFormat() {
+  document.addEventListener('blur', function(e) {
+    if (e.target?.type !== 'number' || !e.target.closest('#hm-calc-area')) return;
+    // Number input'larda format uygulanmaz (browser zorlar)
+    // Bunun yerine yanına TL gösterimi eklenebilir
+  }, true);
+})();
+
 // ── Render Hook ──────────────────────────────────────────────────
 var _origRenderHesap = window.renderHesapHistory;
 window.renderHesapHistory = function() {
