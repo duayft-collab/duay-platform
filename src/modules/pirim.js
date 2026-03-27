@@ -290,10 +290,18 @@ function _ensurePirimModals() {
             <div id="prm-type-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
             <input type="hidden" id="prm-type">
           </div>
-          <!-- Personel (admin için) -->
+          <!-- Personel (admin/yönetici: tüm personel, user: sadece kendisi) -->
           <div class="fr" id="prm-uid-row">
             <div class="fl">PERSONEL *</div>
             <select class="fi" id="prm-uid"><option value="">— Seçin —</option></select>
+          </div>
+          <!-- Görev ID Seçici -->
+          <div class="fr">
+            <div class="fl">GÖREV ID <span style="font-size:10px;color:var(--t3);font-weight:400">(opsiyonel)</span></div>
+            <select class="fi" id="prm-taskid" onchange="window._pirimTaskSelected?.()">
+              <option value="">— Görev seçin —</option>
+            </select>
+            <div id="prm-task-info" style="display:none;font-size:10px;color:var(--t3);margin-top:4px;background:var(--s2);border-radius:6px;padding:6px 10px"></div>
           </div>
           <!-- Baz tutar -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -818,8 +826,41 @@ function openPirimModal(id) {
   _ensurePirimModals();
   _injectPirimPanel();
   const users = window.loadUsers?.() || [];
+  const cu    = window.CU();
+  const admin = window.isAdmin?.();
   const usel  = window.g('prm-user');
-  if (usel) usel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+
+  // Personel kısıtı: admin/yönetici tüm personeli görür, user sadece kendisini
+  if (usel) {
+    if (admin) {
+      usel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+      usel.disabled = false;
+    } else {
+      usel.innerHTML = `<option value="${cu?.id}">${escapeHtml(cu?.name || 'Ben')}</option>`;
+      usel.disabled = true;
+    }
+  }
+  // Personel satırını gizle/göster
+  const uidRow = window.g('prm-uid-row');
+  if (uidRow) {
+    if (admin) {
+      uidRow.style.display = '';
+    } else {
+      uidRow.style.display = 'none'; // kullanıcı kendi adına otomatik kaydeder
+    }
+  }
+
+  // Görev ID seçicisini doldur
+  const taskSel = window.g('prm-taskid');
+  if (taskSel) {
+    const tasks = typeof loadTasks === 'function' ? loadTasks() : [];
+    const myTasks = admin ? tasks : tasks.filter(t => t.uid === cu?.id);
+    const activeTasks = myTasks.filter(t => !t.done && t.status !== 'done').slice(0, 50);
+    taskSel.innerHTML = '<option value="">— Görev seçin —</option>'
+      + activeTasks.map(t => `<option value="${t.id}">${escapeHtml(t.title)} ${t.due ? '(📅 ' + t.due + ')' : ''}</option>`).join('');
+  }
+  const taskInfo = window.g('prm-task-info');
+  if (taskInfo) { taskInfo.style.display = 'none'; taskInfo.innerHTML = ''; }
 
   // Tip kartlarını sıfırla
   document.querySelectorAll('.prm-type-card').forEach(c => {
@@ -853,6 +894,8 @@ function openPirimModal(id) {
     _inp('inp-gecikme-gun',        bc.gecikmeGun);
     _inp('inp-yonetici-indirim',   bc.yoneticiIndirimOran ? (bc.yoneticiIndirimOran * 100).toFixed(1) : '');
     _inp('inp-fiyat-avantaji',     bc.fiyatAvantajiTL);
+    if (window.g('prm-taskid')) window.g('prm-taskid').value = p.taskId || '';
+    if (p.taskId) window._pirimTaskSelected?.();
     if (p.type) selectPirimType(p.type);
   } else {
     ['prm-title','prm-code','prm-note','prm-oran','prm-base-amount','prm-total'].forEach(x => {
@@ -1016,9 +1059,16 @@ function savePirim() {
   if (!amount) { window.toast?.('Tutar sıfır olamaz', 'err'); return; }
   if (!date)   { window.toast?.('Tarih zorunludur', 'err');    return; }
 
+  // Personel kısıtı: user kendi uid'sini kullanır
+  if (!window.isAdmin?.()) {
+    const myId = window.CU()?.id;
+    if (uid !== myId) { window.toast?.('Sadece kendi priminizi hesaplayabilirsiniz', 'err'); return; }
+  }
+
   const d     = window.loadPirim?.() || [];
   const entry = {
     type, title, amount, date, uid,
+    taskId:     parseInt(window.g('prm-taskid')?.value || '0') || null,
     code:       (window.g('prm-code')?.value || '').trim(),
     note:       (window.g('prm-note')?.value || '').trim(),
     rate:       parseFloat(window.g('prm-oran')?.value || '0') || 0,
@@ -1059,6 +1109,46 @@ function savePirim() {
   window.addNotif?.('⭐', '"' + title + '" prim onaylanırsa ödeme planına alınacak', 'info', 'odemeler');
   _pirimDuyur('⭐ Yeni Prim Onay Bekliyor', '"' + title + '" — ' + _fmt(amount) + ' tutarındaki prim yönetici onayı bekliyor.', 'warn');
 }
+
+// ── Görev ID seçilince tarih otomatik doldur ──────────────────────
+/**
+ * @description Görev seçildiğinde başlangıç/bitiş tarihi ve bilgi gösterir.
+ */
+window._pirimTaskSelected = function() {
+  var taskSel = window.g('prm-taskid');
+  var info    = window.g('prm-task-info');
+  var dateEl  = window.g('prm-date');
+  if (!taskSel) return;
+
+  var taskId = parseInt(taskSel.value || '0');
+  if (!taskId) {
+    if (info) { info.style.display = 'none'; info.innerHTML = ''; }
+    return;
+  }
+
+  var tasks = typeof loadTasks === 'function' ? loadTasks() : [];
+  var task  = tasks.find(function(t) { return t.id === taskId; });
+  if (!task) {
+    if (info) { info.style.display = 'none'; }
+    return;
+  }
+
+  // Tarih otomatik doldur (mevcut boşsa)
+  if (dateEl && !dateEl.value) {
+    dateEl.value = task.due || task.start || new Date().toISOString().slice(0, 10);
+  }
+
+  // Bilgi göster
+  if (info) {
+    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var statusTxt = task.done ? '✅ Tamamlandı' : (task.status === 'inprogress' ? '🔄 Devam' : '📋 Bekliyor');
+    info.innerHTML = '📌 <b>' + esc(task.title) + '</b>'
+      + (task.start ? ' · Başlangıç: ' + task.start : '')
+      + (task.due ? ' · Bitiş: ' + task.due : '')
+      + ' · ' + statusTxt;
+    info.style.display = 'block';
+  }
+};
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 5 — ONAY AKIŞI
