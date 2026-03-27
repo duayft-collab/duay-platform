@@ -275,8 +275,7 @@ function _injectOdmPanel() {
       '<div style="display:flex;gap:6px;align-items:center">',
         '<button class="btn btns" onclick="openOdmChart()" style="border-radius:8px;font-size:11px">Grafik</button>',
         '<button class="btn btns" onclick="exportOdmXlsx()" style="border-radius:8px;font-size:11px">Excel</button>',
-        '<button class="btn btns" onclick="_go(\'odm-import-file\').click()" style="border-radius:8px;font-size:11px">Yükle</button>',
-        '<input type="file" id="odm-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="processOdmImport(this)">',
+        '<button class="btn btns" onclick="window._openOdmImportModal?.()" style="border-radius:8px;font-size:11px">📥 İçe Aktar</button>',
         '<button class="btn btnp" onclick="openTahsilatModal(null)" style="border-radius:8px;font-size:11px">+ Tahsilat</button>',
         '<button class="btn btnp" onclick="openOdmModal(null)" style="border-radius:8px;font-size:12px;font-weight:600">+ Ödeme Ekle</button>',
       '</div>',
@@ -1311,103 +1310,402 @@ function exportOdmXlsx() {
   window.logActivity?.('view', 'Rutin ödemeler Excel olarak indirildi');
 }
 
-function processOdmImport(inp) {
-  const file = inp?.files?.[0]; if (!file) return;
+// ════════════════════════════════════════════════════════════════
+// EXCEL / CSV İÇE AKTARMA — Modal + Önizleme + Doğrulama
+// ════════════════════════════════════════════════════════════════
+
+/** @type {Array|null} İçe aktarma için hazırlanan satırlar */
+var _odmImportRows = null;
+
+/** @type {Array|null} İçe aktarma hata indeksleri */
+var _odmImportErrors = null;
+
+/**
+ * İçe aktarma şablon dosyasını XLSX olarak indirir.
+ * Sütunlar: Ad, Tutar, Para Birimi, Tarih, Kategori, Cari, Doküman No
+ */
+function _odmDownloadImportTemplate() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var header = ['Ad', 'Tutar', 'Para Birimi', 'Tarih', 'Kategori', 'Cari', 'Doküman No'];
+  var sample = [
+    ['Ofis kirası', 25000, 'TRY', '2026-04-01', 'Kira', 'ABC Gayrimenkul', 'KR-001'],
+    ['Internet faturası', 850, 'TRY', '2026-04-05', 'Abonelik', 'Turkcell', 'FAT-2026-04'],
+    ['Yazılım lisansı', 199, 'USD', '2026-04-10', 'Abonelik', 'GitHub Inc.', 'INV-4521'],
+  ];
+  var ws = XLSX.utils.aoa_to_sheet([header].concat(sample));
+  ws['!cols'] = [{wch:22},{wch:12},{wch:12},{wch:12},{wch:14},{wch:20},{wch:14}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
+  XLSX.writeFile(wb, 'odeme-import-sablon.xlsx');
+  window.toast?.('Şablon indirildi ✓', 'ok');
+}
+
+/**
+ * İçe aktarma modalını açar.
+ */
+function _openOdmImportModal() {
+  var mo = document.getElementById('mo-odm-import');
+  if (mo) mo.remove();
+
+  _odmImportRows = null;
+  _odmImportErrors = null;
+
+  mo = document.createElement('div');
+  mo.id = 'mo-odm-import';
+  mo.className = 'mo';
+  mo.style.display = 'flex';
+  mo.innerHTML = ''
+    + '<div class="moc" style="max-width:700px;padding:0;border-radius:16px;overflow:hidden;background:var(--sf);max-height:90vh;display:flex;flex-direction:column">'
+      // Header
+      + '<div style="padding:16px 20px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+        + '<div>'
+          + '<div style="font-size:15px;font-weight:700;color:var(--t)">📥 Ödeme İçe Aktar</div>'
+          + '<div style="font-size:11px;color:var(--t3);margin-top:2px">Excel (.xlsx) veya CSV dosyasından ödeme yükleyin</div>'
+        + '</div>'
+        + '<button onclick="document.getElementById(\'mo-odm-import\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+      + '</div>'
+      // Body
+      + '<div id="odm-import-body" style="flex:1;overflow-y:auto;padding:20px">'
+        // Dosya seçimi
+        + '<div style="border:2px dashed var(--b);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:border-color .15s" id="odm-import-dropzone" onclick="document.getElementById(\'odm-import-finp\').click()" ondragover="event.preventDefault();this.style.borderColor=\'var(--ac)\'" ondragleave="this.style.borderColor=\'var(--b)\'" ondrop="event.preventDefault();this.style.borderColor=\'var(--b)\';window._odmImportHandleDrop?.(event)">'
+          + '<div style="font-size:32px;margin-bottom:8px">📂</div>'
+          + '<div style="font-size:13px;font-weight:600;color:var(--t)">Dosya sürükleyin veya tıklayın</div>'
+          + '<div style="font-size:11px;color:var(--t3);margin-top:4px">.xlsx, .xls veya .csv — maksimum 10MB</div>'
+          + '<input type="file" id="odm-import-finp" accept=".xlsx,.xls,.csv" style="display:none" onchange="window._odmImportFileSelected?.(this)">'
+        + '</div>'
+        // Şablon indir
+        + '<div style="margin-top:12px;text-align:center">'
+          + '<button onclick="window._odmDownloadImportTemplate?.()" style="background:none;border:none;cursor:pointer;color:var(--ac);font-size:12px;font-family:inherit;text-decoration:underline">📋 Boş şablon indir (Ad, Tutar, Para Birimi, Tarih, Kategori, Cari, Doküman No)</button>'
+        + '</div>'
+        // Önizleme alanı
+        + '<div id="odm-import-preview" style="display:none;margin-top:16px"></div>'
+      + '</div>'
+      // Footer
+      + '<div id="odm-import-footer" style="display:none;padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+        + '<button class="btn btns" onclick="document.getElementById(\'mo-odm-import\')?.remove()" style="font-size:12px">İptal</button>'
+        + '<button class="btn btnp" id="odm-import-confirm" onclick="window._odmImportConfirm?.()" style="font-size:12px">📥 İçe Aktar</button>'
+      + '</div>'
+    + '</div>';
+
+  document.body.appendChild(mo);
+  mo.onclick = function(ev) { if (ev.target === mo) mo.remove(); };
+}
+
+/**
+ * Drag & drop ile dosya bırakma.
+ * @param {DragEvent} ev
+ */
+window._odmImportHandleDrop = function(ev) {
+  var file = ev.dataTransfer?.files?.[0];
+  if (file) _odmImportParseFile(file);
+};
+
+/**
+ * Dosya seçimi (input change).
+ * @param {HTMLInputElement} inp
+ */
+window._odmImportFileSelected = function(inp) {
+  var file = inp?.files?.[0];
+  if (file) _odmImportParseFile(file);
+};
+
+/**
+ * Seçilen dosyayı parse eder ve önizleme gösterir.
+ * @param {File} file
+ */
+function _odmImportParseFile(file) {
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { window.toast?.('Dosya 10MB\'den küçük olmalı', 'err'); return; }
   if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
 
-  const r = new FileReader();
+  var r = new FileReader();
   r.onload = function(e) {
     try {
-      const wb   = XLSX.read(e.target.result, { type: 'binary' });
-      const ws   = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      var wb   = XLSX.read(e.target.result, { type: 'binary' });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
       if (rows.length < 2) { window.toast?.('Dosyada veri bulunamadı', 'err'); return; }
 
-      // Başlık satırını bul
-      const header = rows[0].map(h => String(h||'').toLowerCase().trim());
-      const col    = key => header.findIndex(h => h.includes(key));
+      var header = rows[0].map(function(h) { return String(h || '').toLowerCase().trim(); });
+      var col = function(key) { return header.findIndex(function(h) { return h.includes(key); }); };
 
-      const nameCol   = col('ad') > -1 ? col('ad') : col('name');
-      const catCol    = col('kategori') > -1 ? col('kategori') : col('cat');
-      const amountCol = col('tutar') > -1 ? col('tutar') : col('amount');
-      const dueCol    = col('tarih') > -1 ? col('tarih') : col('due');
-      const freqCol   = col('sıklık') > -1 ? col('sıklık') : col('freq');
-      const noteCol   = col('not') > -1 ? col('not') : col('note');
+      var nameCol = col('ad') > -1 ? col('ad') : col('name');
+      var amtCol  = col('tutar') > -1 ? col('tutar') : col('amount');
+      var curCol  = col('para') > -1 ? col('para') : (col('currency') > -1 ? col('currency') : col('birim'));
+      var dueCol  = col('tarih') > -1 ? col('tarih') : col('due');
+      var catCol  = col('kategori') > -1 ? col('kategori') : col('cat');
+      var cariCol = col('cari') > -1 ? col('cari') : col('firma');
+      var docCol  = col('doküman') > -1 ? col('doküman') : (col('dokuman') > -1 ? col('dokuman') : col('doc'));
 
-      if (nameCol < 0) { window.toast?.('Başlık satırında "Ödeme Adı" kolonu bulunamadı', 'err'); return; }
+      if (nameCol < 0) { window.toast?.('Başlık satırında "Ad" kolonu bulunamadı', 'err'); return; }
 
-      const catKeys = Object.keys(ODM_CATS);
-      const freqKeys = Object.keys(ODM_FREQ);
+      var catKeys = Object.keys(ODM_CATS);
+      var parsed = [];
+      var errors = [];
 
-      const existing = window.loadOdm ? loadOdm() : [];
-      let added = 0;
+      rows.slice(1).forEach(function(row, idx) {
+        if (!row || row.every(function(c) { return !c && c !== 0; })) return;
 
-      rows.slice(1).forEach(row => {
-        if (!row || !row[nameCol]) return;
-        const name = String(row[nameCol]||'').trim();
-        if (!name) return;
+        var name = String(row[nameCol] || '').trim();
+        var amount = amtCol > -1 ? (parseFloat(row[amtCol]) || 0) : 0;
 
-        // Kategori eşleştir
-        let cat = 'diger';
-        if (catCol > -1) {
-          const catVal = String(row[catCol]||'').toLowerCase();
-          const found  = catKeys.find(k => catVal.includes(k) || catVal.includes(ODM_CATS[k].l.toLowerCase()));
-          if (found) cat = found;
+        // Para birimi
+        var currency = 'TRY';
+        if (curCol > -1 && row[curCol]) {
+          var cv = String(row[curCol]).toUpperCase().trim();
+          if (ODM_CURRENCY[cv]) currency = cv;
         }
 
-        // Sıklık eşleştir
-        let freq = 'aylik';
-        if (freqCol > -1) {
-          const freqVal = String(row[freqCol]||'').toLowerCase();
-          const found   = freqKeys.find(k => freqVal.includes(k) || freqVal.includes(ODM_FREQ[k].toLowerCase()));
-          if (found) freq = found;
-        }
-
-        // Tarih format
-        let due = '';
+        // Tarih
+        var due = '';
         if (dueCol > -1 && row[dueCol]) {
-          const dv = row[dueCol];
+          var dv = row[dueCol];
           if (typeof dv === 'number') {
-            // Excel serial date
-            const d = new Date(Math.round((dv - 25569) * 86400 * 1000));
-            due = d.toISOString().slice(0,10);
+            var dd = new Date(Math.round((dv - 25569) * 86400 * 1000));
+            due = dd.toISOString().slice(0, 10);
           } else {
-            const parsed = new Date(String(dv));
-            if (!isNaN(parsed)) due = parsed.toISOString().slice(0,10);
+            var pp = new Date(String(dv));
+            if (!isNaN(pp.getTime())) due = pp.toISOString().slice(0, 10);
           }
         }
 
-        existing.unshift({
-          id:        generateNumericId(),
-          name,
-          cat,
-          freq,
-          amount:    amountCol > -1 ? (parseFloat(row[amountCol])||0) : 0,
-          due,
-          note:      noteCol > -1 ? (row[noteCol]||'') : '',
-          paid:      false,
-          alarmDays: 3,
-          ts:        _nowTso(),
-          createdBy: _CUo()?.id,
+        // Kategori
+        var cat = 'diger';
+        if (catCol > -1 && row[catCol]) {
+          var catVal = String(row[catCol]).toLowerCase();
+          var found = catKeys.find(function(k) { return catVal.includes(k) || catVal.includes(ODM_CATS[k].l.toLowerCase()); });
+          if (found) cat = found;
+        }
+
+        var cari = cariCol > -1 ? String(row[cariCol] || '').trim() : '';
+        var docNo = docCol > -1 ? String(row[docCol] || '').trim() : '';
+
+        // Doğrulama
+        var rowErrors = [];
+        if (!name) rowErrors.push('Ad zorunlu');
+        if (!amount || amount <= 0) rowErrors.push('Tutar zorunlu');
+        if (!due) rowErrors.push('Tarih zorunlu');
+
+        if (rowErrors.length) errors.push({ idx: parsed.length, msgs: rowErrors });
+
+        parsed.push({
+          name: name,
+          amount: amount,
+          currency: currency,
+          due: due,
+          cat: cat,
+          cari: cari,
+          docNo: docNo,
+          _rowIdx: idx + 1,
+          _errors: rowErrors,
         });
-        added++;
       });
 
-      window.storeOdm ? storeOdm(existing) : null;
-      renderOdemeler();
-      window.toast?.(`${added} ödeme içe aktarıldı ✓`, 'ok');
-      window.logActivity?.('view', `Excel'den ${added} ödeme aktarıldı`);
+      _odmImportRows = parsed;
+      _odmImportErrors = errors;
+      _odmImportRenderPreview(file.name, parsed, errors);
+
     } catch (err) {
-      window.toast?.('Import hatası: ' + err.message, 'err');
+      window.toast?.('Dosya okunamadı: ' + err.message, 'err');
     }
-    inp.value = '';
   };
   r.readAsBinaryString(file);
 }
 
-// Eski API uyumluluğu
-function importOdmFile() { _go('odm-import-file')?.click(); }
+/**
+ * Önizleme tablosunu render eder.
+ * @param {string} fileName
+ * @param {Array} parsed
+ * @param {Array} errors
+ */
+function _odmImportRenderPreview(fileName, parsed, errors) {
+  var preview = document.getElementById('odm-import-preview');
+  var footer  = document.getElementById('odm-import-footer');
+  if (!preview) return;
+
+  var errorCount = errors.length;
+  var validCount = parsed.length - errorCount;
+
+  // Dropzone'u dosya bilgisi ile değiştir
+  var dropzone = document.getElementById('odm-import-dropzone');
+  if (dropzone) {
+    dropzone.innerHTML = '<div style="display:flex;align-items:center;gap:10px;justify-content:center">'
+      + '<span style="font-size:20px">📄</span>'
+      + '<div style="text-align:left">'
+        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + (typeof escapeHtml === 'function' ? escapeHtml(fileName) : fileName) + '</div>'
+        + '<div style="font-size:11px;color:var(--t3)">' + parsed.length + ' satır bulundu</div>'
+      + '</div>'
+      + '<button onclick="event.stopPropagation();document.getElementById(\'odm-import-finp\').value=\'\';document.getElementById(\'odm-import-finp\').click()" style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit">Değiştir</button>'
+    + '</div>';
+  }
+
+  // Özet
+  var html = '<div style="display:flex;gap:10px;margin-bottom:14px">'
+    + '<div style="flex:1;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:10px 14px;text-align:center">'
+      + '<div style="font-size:18px;font-weight:700;color:#10B981">' + validCount + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">Geçerli</div>'
+    + '</div>'
+    + (errorCount > 0 ? '<div style="flex:1;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:10px 14px;text-align:center">'
+      + '<div style="font-size:18px;font-weight:700;color:#EF4444">' + errorCount + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">Hatalı</div>'
+    + '</div>' : '')
+    + '<div style="flex:1;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:10px 14px;text-align:center">'
+      + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + parsed.length + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">Toplam</div>'
+    + '</div>'
+  + '</div>';
+
+  // Hata uyarısı
+  if (errorCount > 0) {
+    html += '<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#DC2626">'
+      + '⚠️ <b>' + errorCount + ' satırda</b> zorunlu alan eksik. Hatalı satırlar kırmızı gösterilmiştir ve içe aktarılmayacaktır.'
+    + '</div>';
+  }
+
+  // Admin değilse bilgi
+  if (!_isAdminO()) {
+    html += '<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#D97706">'
+      + 'ℹ️ Admin değilsiniz — tüm kayıtlar <b>yönetici onayı bekleyen</b> (pending) olarak kaydedilecektir.'
+    + '</div>';
+  }
+
+  // Önizleme tablosu (ilk 5 satır)
+  var previewRows = parsed.slice(0, 5);
+  html += '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:6px">Önizleme' + (parsed.length > 5 ? ' (ilk 5 / ' + parsed.length + ')' : '') + '</div>';
+  html += '<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden">';
+  html += '<div style="display:grid;grid-template-columns:30px 1fr 90px 60px 80px 90px 1fr 90px;gap:0;padding:6px 10px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">'
+    + '<div>#</div><div>Ad</div><div>Tutar</div><div>Döviz</div><div>Tarih</div><div>Kategori</div><div>Cari</div><div>Dok. No</div>'
+  + '</div>';
+
+  previewRows.forEach(function(r, i) {
+    var hasError = r._errors && r._errors.length > 0;
+    var bg = hasError ? 'background:rgba(239,68,68,.08)' : (i % 2 === 0 ? 'background:var(--sf)' : 'background:var(--s2)');
+    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var catInfo = ODM_CATS[r.cat] || ODM_CATS.diger;
+    var curSym = (ODM_CURRENCY[r.currency] || {}).sym || r.currency;
+
+    html += '<div style="display:grid;grid-template-columns:30px 1fr 90px 60px 80px 90px 1fr 90px;gap:0;padding:6px 10px;border-bottom:1px solid var(--b);font-size:11px;' + bg + '">'
+      + '<div style="color:var(--t3)">' + r._rowIdx + '</div>'
+      + '<div style="font-weight:600;color:' + (hasError && !r.name ? '#EF4444' : 'var(--t)') + '">' + (r.name ? esc(r.name) : '<i style="color:#EF4444">eksik</i>') + '</div>'
+      + '<div style="color:' + (hasError && (!r.amount || r.amount <= 0) ? '#EF4444' : 'var(--t)') + ';font-weight:600">' + (r.amount > 0 ? r.amount.toLocaleString('tr-TR') : '<i style="color:#EF4444">eksik</i>') + '</div>'
+      + '<div style="color:var(--t3)">' + r.currency + '</div>'
+      + '<div style="color:' + (hasError && !r.due ? '#EF4444' : 'var(--t3)') + '">' + (r.due || '<i style="color:#EF4444">eksik</i>') + '</div>'
+      + '<div style="font-size:10px">' + catInfo.ic + ' ' + catInfo.l + '</div>'
+      + '<div style="color:var(--t3);font-size:10px">' + (r.cari ? esc(r.cari) : '—') + '</div>'
+      + '<div style="color:var(--t3);font-size:10px;font-family:monospace">' + (r.docNo ? esc(r.docNo) : '—') + '</div>'
+    + '</div>';
+
+    // Hata detayı
+    if (hasError) {
+      html += '<div style="grid-column:1/-1;padding:3px 10px 6px 40px;font-size:10px;color:#EF4444;background:rgba(239,68,68,.04)">'
+        + '⚠ ' + r._errors.join(', ')
+      + '</div>';
+    }
+  });
+
+  if (parsed.length > 5) {
+    html += '<div style="padding:8px 10px;text-align:center;font-size:11px;color:var(--t3);background:var(--s2)">… ve ' + (parsed.length - 5) + ' satır daha</div>';
+  }
+  html += '</div>';
+
+  preview.innerHTML = html;
+  preview.style.display = 'block';
+
+  // Footer'ı göster
+  if (footer) {
+    footer.style.display = 'flex';
+    var confirmBtn = document.getElementById('odm-import-confirm');
+    if (confirmBtn) {
+      confirmBtn.textContent = '📥 ' + validCount + ' Satır İçe Aktar';
+      confirmBtn.disabled = validCount === 0;
+      if (validCount === 0) confirmBtn.style.opacity = '0.5';
+    }
+  }
+}
+
+/**
+ * Onaylanan satırları kayıt olarak ekler.
+ */
+window._odmImportConfirm = function() {
+  if (!_odmImportRows || !_odmImportRows.length) { window.toast?.('Veri yok', 'err'); return; }
+
+  var cu = window.Auth?.getCU?.();
+  var isAdmin = cu?.role === 'admin';
+  var existing = window.loadOdm ? loadOdm() : [];
+  var added = 0;
+
+  _odmImportRows.forEach(function(r) {
+    // Hatalı satırları atla
+    if (r._errors && r._errors.length > 0) return;
+
+    var entry = {
+      id:          generateNumericId(),
+      name:        r.name,
+      cat:         r.cat || 'diger',
+      freq:        'teksefer',
+      amount:      r.amount || 0,
+      currency:    r.currency || 'TRY',
+      amountTRY:   _odmToTRY(r.amount || 0, r.currency || 'TRY'),
+      kurMode:     _odmRatesMode,
+      kurRate:     _odmGetRates()[r.currency || 'TRY'] || 1,
+      due:         r.due || '',
+      note:        r.cari ? ('Cari: ' + r.cari) : '',
+      docNo:       r.docNo || '',
+      alarmDays:   3,
+      paid:        false,
+      ts:          _nowTso(),
+      createdBy:   cu?.id,
+      source:      'import',
+    };
+
+    // Admin ise otomatik onaylı, değilse pending
+    if (isAdmin) {
+      entry.approved = true;
+      entry.approvedBy = cu?.id;
+      entry.approvedAt = _nowTso();
+      entry.approvalStatus = 'approved';
+    } else {
+      entry.approvalStatus = 'pending';
+      entry.approvalRequestedBy = cu?.id;
+      entry.approvalRequestedAt = _nowTso();
+    }
+
+    existing.unshift(entry);
+    added++;
+  });
+
+  if (added === 0) { window.toast?.('İçe aktarılacak geçerli satır yok', 'err'); return; }
+
+  window.storeOdm ? storeOdm(existing) : null;
+  document.getElementById('mo-odm-import')?.remove();
+  renderOdemeler();
+  window.toast?.('📥 ' + added + ' ödeme içe aktarıldı ✓', 'ok');
+  window.logActivity?.('finans', 'Excel/CSV import: ' + added + ' ödeme aktarıldı');
+
+  // Admin değilse yöneticilere bildirim
+  if (!isAdmin) {
+    var yoneticiler = (window.loadUsers?.() || []).filter(function(u) {
+      return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
+    });
+    yoneticiler.forEach(function(m) {
+      window.addNotif?.('📥', added + ' ödeme import edildi — onay bekliyor (' + (cu?.name || '') + ')', 'warn', 'odemeler', m.id);
+    });
+  }
+
+  _odmImportRows = null;
+  _odmImportErrors = null;
+};
+
+// Geriye uyumluluk — eski API
+function processOdmImport(inp) {
+  var file = inp?.files?.[0];
+  if (file) _odmImportParseFile(file);
+}
+function importOdmFile() { _openOdmImportModal(); }
+
+window._openOdmImportModal    = _openOdmImportModal;
+window._odmDownloadImportTemplate = _odmDownloadImportTemplate;
 
 // ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
