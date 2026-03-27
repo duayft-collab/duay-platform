@@ -58,6 +58,7 @@ function _injectSAPanel() {
         + '<div style="font-size:10px;color:var(--t3)" id="sa-sub">PI & Sipariş Takip</div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;align-items:center">'
+        + '<button class="btn btns" onclick="window._openSAImport?.()" style="font-size:11px">📥 İçe Aktar</button>'
         + '<button class="btn btns" onclick="window._exportSAXlsx?.()" style="font-size:11px">⬇ Excel</button>'
         + '<button class="btn btnp" onclick="window._openSAModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Sipariş</button>'
       + '</div>'
@@ -178,69 +179,151 @@ function renderSatinAlma() {
 // FORM MODAL
 // ════════════════════════════════════════════════════════════════
 
+/** @type {string} Mevcut form layout: 'vertical' | 'horizontal' */
+var _saFormLayout = 'vertical';
+
+/** @type {{ USD: number, EUR: number }} Canlı kurlar */
+var _saLiveRates = { USD: 38.50, EUR: 41.20 };
+
+// Kur çek (sayfa açılışında)
+(function _saFetchRates() {
+  fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d && d.rates && d.rates.TRY) {
+        _saLiveRates.USD = Math.round(d.rates.TRY * 100) / 100;
+        _saLiveRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100;
+      }
+    }).catch(function() {});
+})();
+
 function _openSAModal(id) {
   var old = document.getElementById('mo-satinalma'); if (old) old.remove();
   var s = id ? _loadSA().find(function(x) { return x.id === id; }) : null;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+
+  // Kullanıcı listesi
+  var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
+  var userOpts = '<option value="">— Seçin —</option>' + users.map(function(u) { return '<option value="' + u.id + '"' + (s?.responsibleId === u.id ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('');
+
+  // Konteyner listesi
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn().filter(function(k) { return !k.closed; }) : [];
+  var ktnOpts = '<option value="">— Seçin —</option>' + konts.map(function(k) { return '<option value="' + esc(k.no || '') + '" data-export="' + esc(k.ihracatId || '') + '"' + (s?.containerNo === k.no ? ' selected' : '') + '>' + esc(k.no || '?') + ' — ' + esc(k.hat || '') + '</option>'; }).join('');
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-satinalma'; mo.style.zIndex = '2100';
-  mo.innerHTML = '<div class="moc" style="max-width:720px;padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
+
+  // Dikey form HTML
+  var verticalHTML = ''
+    // Satır 1
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">İHRACAT ID</div><input class="fi" id="sa-export-id" placeholder="EXP-2026-..." value="' + (s?.exportId || '') + '"></div>'
+      + '<div><div class="fl">İŞ ID <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-job-id" placeholder="JOB-001" value="' + (s?.jobId || '') + '"></div>'
+      + '<div><div class="fl">İŞ BAŞLAMA <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-job-date" value="' + (s?.jobDate || '') + '"></div>'
+    + '</div>'
+    // Satır 2
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">PI NO <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-pi-no" placeholder="PI-2026-001" value="' + (s?.piNo || '') + '"></div>'
+      + '<div><div class="fl">PI TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '"></div>'
+      + '<div><div class="fl">SİPARİŞ ONAY TARİHİ</div><input type="date" class="fi" id="sa-order-date" value="' + (s?.orderDate || '') + '"></div>'
+    + '</div>'
+    // Satır 3
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">KDV TUTARI <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-kdv" placeholder="0" min="0" step="0.01" value="' + (s?.kdv || '') + '"></div>'
+      + '<div><div class="fl">TOPLAM TUTAR <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-total" placeholder="0" min="0" step="0.01" value="' + (s?.totalAmount || '') + '" oninput="window._saCalcAuto?.()"></div>'
+      + '<div><div class="fl">PARA BİRİMİ <span style="color:var(--rd)">*</span></div><select class="fi" id="sa-currency" onchange="window._saCalcAuto?.()"><option value="USD"' + (s?.currency === 'USD' || !s ? ' selected' : '') + '>$ USD</option><option value="EUR"' + (s?.currency === 'EUR' ? ' selected' : '') + '>€ EUR</option><option value="TRY"' + (s?.currency === 'TRY' ? ' selected' : '') + '>₺ TRY</option></select></div>'
+    + '</div>'
+    // Satır 4
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">TESLİMAT ZAMANI <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-delivery" value="' + (s?.deliveryDate || '') + '"></div>'
+      + '<div><div class="fl">AVANS % <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-advance" placeholder="30" min="0" max="100" value="' + (s?.advanceRate || '') + '" oninput="window._saCalcAuto?.()"></div>'
+      + '<div><div class="fl">VADE TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-vade" value="' + (s?.vadeDate || '') + '"></div>'
+    + '</div>'
+    // Hesaplama + Kur
+    + '<div style="background:linear-gradient(135deg,rgba(99,102,241,.05),rgba(99,102,241,.02));border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">AVANS TUTARI</div><div style="font-size:18px;font-weight:700;color:#D97706" id="sa-calc-advance">—</div></div>'
+      + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">KALAN ÖDEME</div><div style="font-size:18px;font-weight:700;color:#6366F1" id="sa-calc-remaining">—</div></div>'
+      + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">TL KARŞILIĞI</div><div style="font-size:14px;font-weight:700;color:var(--t)" id="sa-calc-tl">—</div><div style="font-size:9px;color:var(--t3)" id="sa-calc-rate"></div></div>'
+    + '</div>'
+    // Yeni alanlar
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">MÜŞTERİ SİPARİŞ NO</div><input class="fi" id="sa-customer-order" placeholder="CST-001" value="' + (s?.customerOrderNo || '') + '"></div>'
+      + '<div><div class="fl">SİPARİŞ SORUMLUSU</div><select class="fi" id="sa-responsible">' + userOpts + '</select></div>'
+      + '<div><div class="fl">KONTEYNER NO</div><select class="fi" id="sa-container" onchange="window._saContainerChanged?.()">' + ktnOpts + '</select></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + '<div><div class="fl">TESLİMAT YERİ</div><input class="fi" id="sa-delivery-place" placeholder="Mersin Limanı, Depo..." value="' + (s?.deliveryPlace || '') + '"></div>'
+      + '<div><div class="fl">TESLİMAT KİME AİT</div><select class="fi" id="sa-delivery-owner"><option value="alici"' + (s?.deliveryOwner === 'alici' ? ' selected' : '') + '>Alıcı</option><option value="satici"' + (s?.deliveryOwner === 'satici' ? ' selected' : '') + '>Satıcı</option><option value="paylasimli"' + (s?.deliveryOwner === 'paylasimli' ? ' selected' : '') + '>Paylaşımlı</option></select></div>'
+    + '</div>'
+    // Dosyalar
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+      + '<div><div class="fl">PI DOSYASI <span style="color:var(--rd)">*</span></div><input type="file" id="sa-pi-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="font-size:11px">'
+        + (s?.piFileName ? '<div style="font-size:10px;color:var(--ac);margin-top:3px">📎 ' + esc(s.piFileName) + '</div>' : '') + '</div>'
+      + '<div><div class="fl">DİĞER DOKÜMANLAR</div><input type="file" id="sa-doc-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" multiple style="font-size:11px"></div>'
+      + '<div><div class="fl">ÜRÜN GÖRSELLERİ</div><input type="file" id="sa-img-file" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size:11px"></div>'
+    + '</div>'
+    + '<input type="hidden" id="sa-eid" value="' + (s?.id || '') + '">';
+
+  // Yatay form HTML (Excel tarzı)
+  var hLabels = ['İş ID*','PI No*','PI Tarihi*','Toplam*','KDV*','Döviz*','Avans%*','Vade*','Teslimat*','Müşt.Sip.No','Sorumlu','Konteyner','Tesl.Yeri'];
+  var horizontalHTML = ''
+    + '<div style="overflow-x:auto">'
+      + '<div style="display:flex;gap:0;min-width:1400px">'
+        + hLabels.map(function(l) { return '<div style="flex:1;min-width:100px;padding:4px 6px;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;border-right:1px solid var(--b);background:var(--s2)">' + l + '</div>'; }).join('')
+      + '</div>'
+      + '<div style="display:flex;gap:0;min-width:1400px;border-bottom:1px solid var(--b)">'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input class="fi" id="sa-job-id" placeholder="JOB-001" value="' + (s?.jobId || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="1"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input class="fi" id="sa-pi-no" placeholder="PI-001" value="' + (s?.piNo || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="2"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="3"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input type="number" class="fi" id="sa-total" placeholder="0" value="' + (s?.totalAmount || '') + '" oninput="window._saCalcAuto?.()" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="4"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input type="number" class="fi" id="sa-kdv" placeholder="0" value="' + (s?.kdv || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="5"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><select class="fi" id="sa-currency" onchange="window._saCalcAuto?.()" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="6"><option value="USD"' + (s?.currency === 'USD' || !s ? ' selected' : '') + '>USD</option><option value="EUR"' + (s?.currency === 'EUR' ? ' selected' : '') + '>EUR</option><option value="TRY"' + (s?.currency === 'TRY' ? ' selected' : '') + '>TRY</option></select></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input type="number" class="fi" id="sa-advance" placeholder="30" value="' + (s?.advanceRate || '') + '" oninput="window._saCalcAuto?.()" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="7"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input type="date" class="fi" id="sa-vade" value="' + (s?.vadeDate || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="8"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input type="date" class="fi" id="sa-delivery" value="' + (s?.deliveryDate || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="9"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input class="fi" id="sa-customer-order" placeholder="CST-001" value="' + (s?.customerOrderNo || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="10"></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><select class="fi" id="sa-responsible" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="11">' + userOpts + '</select></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><select class="fi" id="sa-container" onchange="window._saContainerChanged?.()" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="12">' + ktnOpts + '</select></div>'
+        + '<div style="flex:1;min-width:100px;padding:2px"><input class="fi" id="sa-delivery-place" placeholder="Liman..." value="' + (s?.deliveryPlace || '') + '" style="font-size:11px;padding:4px 6px;border-radius:0;border:none;border-bottom:1px solid var(--b)" tabindex="13"></div>'
+      + '</div>'
+    + '</div>'
+    // Hesaplama
+    + '<div style="display:flex;gap:12px;padding:10px 0;font-size:12px;color:var(--t3)">'
+      + '<span>Avans: <b id="sa-calc-advance" style="color:#D97706">—</b></span>'
+      + '<span>Kalan: <b id="sa-calc-remaining" style="color:#6366F1">—</b></span>'
+      + '<span>TL: <b id="sa-calc-tl" style="color:var(--t)">—</b></span>'
+      + '<span id="sa-calc-rate" style="font-size:10px"></span>'
+    + '</div>'
+    // Gizli alanlar (yatay formda eksik olanlar)
+    + '<input type="hidden" id="sa-export-id" value="' + (s?.exportId || '') + '">'
+    + '<input type="hidden" id="sa-job-date" value="' + (s?.jobDate || new Date().toISOString().slice(0, 10)) + '">'
+    + '<input type="hidden" id="sa-order-date" value="' + (s?.orderDate || '') + '">'
+    + '<input type="hidden" id="sa-delivery-owner" value="' + (s?.deliveryOwner || 'alici') + '">'
+    + '<input type="hidden" id="sa-eid" value="' + (s?.id || '') + '">'
+    // Dosya alanları
+    + '<div style="display:flex;gap:10px;margin-top:4px">'
+      + '<div style="flex:1"><div class="fl" style="font-size:9px">PI DOSYASI *</div><input type="file" id="sa-pi-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="font-size:10px">' + (s?.piFileName ? '<span style="font-size:9px;color:var(--ac)">📎 ' + esc(s.piFileName) + '</span>' : '') + '</div>'
+      + '<div style="flex:1"><div class="fl" style="font-size:9px">DİĞER DOK.</div><input type="file" id="sa-doc-file" multiple style="font-size:10px"></div>'
+      + '<div style="flex:1"><div class="fl" style="font-size:9px">GÖRSELLER</div><input type="file" id="sa-img-file" multiple style="font-size:10px"></div>'
+    + '</div>';
+
+  var activeLayout = _saFormLayout;
+  mo.innerHTML = '<div class="moc" style="max-width:' + (activeLayout === 'horizontal' ? '95vw' : '720px') + ';padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
+    // Header + layout toggle
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">' + (s ? '✏️ Sipariş Düzenle' : '+ Yeni Sipariş') + '</div>'
-      + '<button onclick="document.getElementById(\'mo-satinalma\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
-    + '</div>'
-    + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
-
-      // Satır 1: İhracat ID + İş ID + İş Başlama
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl">İHRACAT ID</div><input class="fi" id="sa-export-id" placeholder="EXP-2026-..." value="' + (s?.exportId || '') + '"></div>'
-        + '<div><div class="fl">İŞ ID <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-job-id" placeholder="JOB-001" value="' + (s?.jobId || '') + '"></div>'
-        + '<div><div class="fl">İŞ BAŞLAMA TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-job-date" value="' + (s?.jobDate || '') + '"></div>'
-      + '</div>'
-
-      // Satır 2: PI No + PI Tarihi
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-        + '<div><div class="fl">PI NO <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-pi-no" placeholder="PI-2026-001" value="' + (s?.piNo || '') + '"></div>'
-        + '<div><div class="fl">PI TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '"></div>'
-      + '</div>'
-
-      // Satır 3: KDV + Toplam + Para Birimi
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl">KDV TUTARI <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-kdv" placeholder="0" min="0" step="0.01" value="' + (s?.kdv || '') + '"></div>'
-        + '<div><div class="fl">TOPLAM TUTAR <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-total" placeholder="0" min="0" step="0.01" value="' + (s?.totalAmount || '') + '" oninput="window._saCalcAuto?.()"></div>'
-        + '<div><div class="fl">PARA BİRİMİ <span style="color:var(--rd)">*</span></div><select class="fi" id="sa-currency"><option value="USD"' + (s?.currency === 'USD' ? ' selected' : '') + '>$ USD</option><option value="EUR"' + (s?.currency === 'EUR' ? ' selected' : '') + '>€ EUR</option><option value="TRY"' + (s?.currency === 'TRY' ? ' selected' : '') + '>₺ TRY</option></select></div>'
-      + '</div>'
-
-      // Satır 4: Teslimat + Avans % + Vade
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl">TESLİMAT ZAMANI <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-delivery" value="' + (s?.deliveryDate || '') + '"></div>'
-        + '<div><div class="fl">AVANS ORANI % <span style="color:var(--rd)">*</span></div><input class="fi" type="number" id="sa-advance" placeholder="30" min="0" max="100" value="' + (s?.advanceRate || '') + '" oninput="window._saCalcAuto?.()"></div>'
-        + '<div><div class="fl">VADE TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-vade" value="' + (s?.vadeDate || '') + '"></div>'
-      + '</div>'
-
-      // OTOMATİK HESAPLAMA KUTUSU
-      + '<div style="background:linear-gradient(135deg,rgba(99,102,241,.05),rgba(99,102,241,.02));border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-        + '<div>'
-          + '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">AVANS TUTARI</div>'
-          + '<div style="font-size:18px;font-weight:700;color:#D97706" id="sa-calc-advance">—</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<div style="display:flex;background:var(--s2);border-radius:6px;padding:2px;gap:1px">'
+          + '<button onclick="window._saToggleLayout(\'vertical\')" id="sa-layout-v" style="background:' + (activeLayout === 'vertical' ? 'var(--ac)' : 'none') + ';color:' + (activeLayout === 'vertical' ? '#fff' : 'var(--t2)') + ';border:none;cursor:pointer;font-size:10px;padding:3px 8px;border-radius:4px;font-family:inherit">📋 Dikey</button>'
+          + '<button onclick="window._saToggleLayout(\'horizontal\')" id="sa-layout-h" style="background:' + (activeLayout === 'horizontal' ? 'var(--ac)' : 'none') + ';color:' + (activeLayout === 'horizontal' ? '#fff' : 'var(--t2)') + ';border:none;cursor:pointer;font-size:10px;padding:3px 8px;border-radius:4px;font-family:inherit">📊 Yatay</button>'
         + '</div>'
-        + '<div>'
-          + '<div style="font-size:10px;color:var(--t3);margin-bottom:2px">KALAN ÖDEME</div>'
-          + '<div style="font-size:18px;font-weight:700;color:#6366F1" id="sa-calc-remaining">—</div>'
-        + '</div>'
+        + '<button onclick="document.getElementById(\'mo-satinalma\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
       + '</div>'
-
-      // Dosyalar
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl">PI DOSYASI <span style="color:var(--rd)">*</span></div><input type="file" id="sa-pi-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="font-size:11px">'
-          + (s?.piFileName ? '<div style="font-size:10px;color:var(--ac);margin-top:3px">📎 ' + (typeof escapeHtml === 'function' ? escapeHtml(s.piFileName) : s.piFileName) + '</div>' : '') + '</div>'
-        + '<div><div class="fl">DİĞER DOKÜMANLAR</div><input type="file" id="sa-doc-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" multiple style="font-size:11px"></div>'
-        + '<div><div class="fl">ÜRÜN GÖRSELLERİ</div><input type="file" id="sa-img-file" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size:11px"></div>'
-      + '</div>'
-
-      + '<input type="hidden" id="sa-eid" value="' + (s?.id || '') + '">'
     + '</div>'
-
+    // Form body
+    + '<div id="sa-form-body" style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
+      + (activeLayout === 'horizontal' ? horizontalHTML : verticalHTML)
+    + '</div>'
     // Footer
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
       + '<button class="btn" onclick="document.getElementById(\'mo-satinalma\').remove()">İptal</button>'
@@ -252,6 +335,28 @@ function _openSAModal(id) {
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
   setTimeout(function() { mo.classList.add('open'); window._saCalcAuto?.(); }, 10);
 }
+
+/**
+ * Dikey/yatay form toggle — mevcut formu kapatıp yeniden açar.
+ */
+window._saToggleLayout = function(layout) {
+  _saFormLayout = layout;
+  var eid = document.getElementById('sa-eid')?.value || '';
+  document.getElementById('mo-satinalma')?.remove();
+  _openSAModal(eid ? parseInt(eid) : null);
+};
+
+/**
+ * Konteyner seçilince ihracat ID otomatik doldur.
+ */
+window._saContainerChanged = function() {
+  var sel = document.getElementById('sa-container');
+  if (!sel) return;
+  var opt = sel.options[sel.selectedIndex];
+  var exportId = opt?.dataset?.export || '';
+  var expEl = document.getElementById('sa-export-id');
+  if (expEl && exportId && !expEl.value) expEl.value = exportId;
+};
 
 /**
  * Avans ve kalan tutarı otomatik hesapla.
@@ -268,6 +373,21 @@ window._saCalcAuto = function() {
   var remEl = document.getElementById('sa-calc-remaining');
   if (advEl) advEl.textContent = sym + advAmt.toLocaleString('tr-TR');
   if (remEl) remEl.textContent = sym + remaining.toLocaleString('tr-TR');
+
+  // Canlı TL karşılığı
+  var tlEl   = document.getElementById('sa-calc-tl');
+  var rateEl = document.getElementById('sa-calc-rate');
+  if (tlEl) {
+    if (cur === 'TRY') {
+      tlEl.textContent = '₺' + total.toLocaleString('tr-TR');
+      if (rateEl) rateEl.textContent = '';
+    } else {
+      var rate = _saLiveRates[cur] || 1;
+      var tlVal = Math.round(total * rate * 100) / 100;
+      tlEl.textContent = '₺' + tlVal.toLocaleString('tr-TR');
+      if (rateEl) rateEl.textContent = '1 ' + cur + ' = ₺' + rate.toLocaleString('tr-TR');
+    }
+  }
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -314,21 +434,27 @@ window._saveSA = function() {
   var currency  = document.getElementById('sa-currency')?.value || 'USD';
 
   var entry = {
-    exportId:     (document.getElementById('sa-export-id')?.value || '').trim(),
-    jobId:        jobId,
-    jobDate:      jobDate,
-    piNo:         piNo,
-    piDate:       piDate,
-    kdv:          kdv,
-    totalAmount:  total,
-    currency:     currency,
-    deliveryDate: delivery,
-    advanceRate:  advRate,
-    advanceAmount: advAmt,
+    exportId:        (document.getElementById('sa-export-id')?.value || '').trim(),
+    jobId:           jobId,
+    jobDate:         jobDate,
+    piNo:            piNo,
+    piDate:          piDate,
+    kdv:             kdv,
+    totalAmount:     total,
+    currency:        currency,
+    deliveryDate:    delivery,
+    advanceRate:     advRate,
+    advanceAmount:   advAmt,
     remainingAmount: remaining,
-    vadeDate:     vade,
-    updatedAt:    _nowSA(),
-    updatedBy:    _cuSA()?.id,
+    vadeDate:        vade,
+    customerOrderNo: (document.getElementById('sa-customer-order')?.value || '').trim(),
+    orderDate:       document.getElementById('sa-order-date')?.value || '',
+    responsibleId:   parseInt(document.getElementById('sa-responsible')?.value || '0') || null,
+    deliveryPlace:   (document.getElementById('sa-delivery-place')?.value || '').trim(),
+    deliveryOwner:   document.getElementById('sa-delivery-owner')?.value || 'alici',
+    containerNo:     (document.getElementById('sa-container')?.value || '').trim(),
+    updatedAt:       _nowSA(),
+    updatedBy:       _cuSA()?.id,
   };
 
   // Dosya okuma (base64)
@@ -528,6 +654,236 @@ window._exportSAXlsx = function() {
   XLSX.writeFile(wb, 'SatinAlma_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
 };
+
+// ════════════════════════════════════════════════════════════════
+// EXCEL / CSV İÇE AKTARMA
+// ════════════════════════════════════════════════════════════════
+
+/** @type {Array|null} */
+var _saImportRows = null;
+
+/**
+ * İçe aktarma şablonu indirir.
+ */
+window._saDownloadTemplate = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
+  var header = ['İş ID', 'PI No', 'PI Tarihi', 'Toplam Tutar', 'KDV', 'Para Birimi', 'Avans %', 'Vade Tarihi', 'Teslimat Tarihi', 'İhracat ID', 'Müşteri Sipariş No', 'Teslimat Yeri'];
+  var sample = [
+    ['JOB-001', 'PI-2026-001', '2026-04-01', 50000, 9000, 'USD', 30, '2026-06-01', '2026-05-15', 'EXP-001', 'CST-100', 'Mersin Limanı'],
+  ];
+  var ws = XLSX.utils.aoa_to_sheet([header].concat(sample));
+  ws['!cols'] = header.map(function() { return { wch: 18 }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
+  XLSX.writeFile(wb, 'satinalma-import-sablon.xlsx');
+  window.toast?.('Şablon indirildi ✓', 'ok');
+};
+
+/**
+ * İçe aktarma modalını açar.
+ */
+window._openSAImport = function() {
+  var old = document.getElementById('mo-sa-import'); if (old) old.remove();
+  _saImportRows = null;
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-sa-import'; mo.style.zIndex = '2200';
+  mo.style.display = 'flex';
+  mo.innerHTML = '<div class="moc" style="max-width:700px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">📥 Satın Alma İçe Aktar</div>'
+        + '<div style="font-size:11px;color:var(--t3)">Excel / CSV dosyasından sipariş yükleyin</div></div>'
+      + '<button onclick="document.getElementById(\'mo-sa-import\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div id="sa-import-body" style="flex:1;overflow-y:auto;padding:20px">'
+      + '<div style="border:2px dashed var(--b);border-radius:12px;padding:32px;text-align:center;cursor:pointer" onclick="document.getElementById(\'sa-import-finp\').click()">'
+        + '<div style="font-size:28px;margin-bottom:8px">📂</div>'
+        + '<div style="font-size:13px;font-weight:600;color:var(--t)">Dosya seçin veya sürükleyin</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:4px">.xlsx, .xls veya .csv</div>'
+        + '<input type="file" id="sa-import-finp" accept=".xlsx,.xls,.csv" style="display:none" onchange="window._saImportParse?.(this)">'
+      + '</div>'
+      + '<div style="margin-top:10px;text-align:center"><button onclick="window._saDownloadTemplate?.()" style="background:none;border:none;cursor:pointer;color:var(--ac);font-size:12px;font-family:inherit;text-decoration:underline">📋 Boş şablon indir</button></div>'
+      + '<div id="sa-import-preview" style="display:none;margin-top:16px"></div>'
+    + '</div>'
+    + '<div id="sa-import-footer" style="display:none;padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-sa-import\').remove()">İptal</button>'
+      + '<button class="btn btnp" id="sa-import-confirm" onclick="window._saImportConfirm?.()">📥 İçe Aktar</button>'
+    + '</div>'
+  + '</div>';
+
+  document.body.appendChild(mo);
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+};
+
+/**
+ * Dosya parse et ve önizleme göster.
+ */
+window._saImportParse = function(inp) {
+  var file = inp?.files?.[0]; if (!file) return;
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb   = XLSX.read(e.target.result, { type: 'binary' });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      if (rows.length < 2) { window.toast?.('Veri yok', 'err'); return; }
+
+      var header = rows[0].map(function(h) { return String(h || '').toLowerCase().trim(); });
+      var col = function(key) { return header.findIndex(function(h) { return h.includes(key); }); };
+
+      var cJobId = col('iş') > -1 ? col('iş') : col('job');
+      var cPiNo  = col('pi n') > -1 ? col('pi n') : col('pi_no');
+      var cPiDt  = col('pi t') > -1 ? col('pi t') : col('pi_tar');
+      var cTotal = col('toplam') > -1 ? col('toplam') : col('total');
+      var cKdv   = col('kdv');
+      var cCur   = col('para') > -1 ? col('para') : col('döviz');
+      var cAdv   = col('avans');
+      var cVade  = col('vade');
+      var cDel   = col('teslimat') > -1 ? col('teslimat') : col('delivery');
+      var cExp   = col('ihracat') > -1 ? col('ihracat') : col('export');
+      var cCust  = col('müşteri') > -1 ? col('müşteri') : col('customer');
+      var cPlace = col('yer') > -1 ? col('yer') : col('place');
+
+      var parsed = [];
+      var errors = [];
+      var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
+      rows.slice(1).forEach(function(row, idx) {
+        if (!row || row.every(function(c) { return !c && c !== 0; })) return;
+        var jobId = cJobId > -1 ? String(row[cJobId] || '').trim() : '';
+        var piNo  = cPiNo > -1 ? String(row[cPiNo] || '').trim() : '';
+        var total = cTotal > -1 ? (parseFloat(row[cTotal]) || 0) : 0;
+        var piDate = '';
+        if (cPiDt > -1 && row[cPiDt]) {
+          var dv = row[cPiDt];
+          if (typeof dv === 'number') { var dd = new Date(Math.round((dv - 25569) * 86400000)); piDate = dd.toISOString().slice(0, 10); }
+          else { var pp = new Date(String(dv)); if (!isNaN(pp.getTime())) piDate = pp.toISOString().slice(0, 10); }
+        }
+        var vade = '';
+        if (cVade > -1 && row[cVade]) {
+          var vv = row[cVade];
+          if (typeof vv === 'number') { var dd2 = new Date(Math.round((vv - 25569) * 86400000)); vade = dd2.toISOString().slice(0, 10); }
+          else { var pp2 = new Date(String(vv)); if (!isNaN(pp2.getTime())) vade = pp2.toISOString().slice(0, 10); }
+        }
+        var delivery = '';
+        if (cDel > -1 && row[cDel]) {
+          var dv3 = row[cDel];
+          if (typeof dv3 === 'number') { var dd3 = new Date(Math.round((dv3 - 25569) * 86400000)); delivery = dd3.toISOString().slice(0, 10); }
+          else { var pp3 = new Date(String(dv3)); if (!isNaN(pp3.getTime())) delivery = pp3.toISOString().slice(0, 10); }
+        }
+
+        var rowErrs = [];
+        if (!jobId) rowErrs.push('İş ID');
+        if (!piNo) rowErrs.push('PI No');
+        if (!total) rowErrs.push('Toplam');
+        if (rowErrs.length) errors.push({ idx: parsed.length, msgs: rowErrs });
+
+        parsed.push({
+          jobId: jobId, piNo: piNo, piDate: piDate, totalAmount: total,
+          kdv: cKdv > -1 ? (parseFloat(row[cKdv]) || 0) : 0,
+          currency: cCur > -1 ? (String(row[cCur] || 'USD').toUpperCase().trim()) : 'USD',
+          advanceRate: cAdv > -1 ? (parseFloat(row[cAdv]) || 0) : 0,
+          vadeDate: vade, deliveryDate: delivery,
+          exportId: cExp > -1 ? String(row[cExp] || '').trim() : '',
+          customerOrderNo: cCust > -1 ? String(row[cCust] || '').trim() : '',
+          deliveryPlace: cPlace > -1 ? String(row[cPlace] || '').trim() : '',
+          _rowIdx: idx + 1, _errors: rowErrs,
+        });
+      });
+
+      _saImportRows = parsed;
+      var validCount = parsed.length - errors.length;
+
+      // Önizleme
+      var preview = document.getElementById('sa-import-preview');
+      if (!preview) return;
+
+      var html = '<div style="display:flex;gap:10px;margin-bottom:12px">'
+        + '<div style="flex:1;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:#16A34A">' + validCount + '</div><div style="font-size:10px;color:var(--t3)">Geçerli</div></div>'
+        + (errors.length ? '<div style="flex:1;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:#EF4444">' + errors.length + '</div><div style="font-size:10px;color:var(--t3)">Hatalı</div></div>' : '')
+      + '</div>';
+
+      if (errors.length) {
+        html += '<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#DC2626">⚠️ ' + errors.length + ' satırda zorunlu alan eksik — hatalılar aktarılmayacak</div>';
+      }
+
+      // İlk 5 satır tablo
+      html += '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:6px">Önizleme' + (parsed.length > 5 ? ' (ilk 5/' + parsed.length + ')' : '') + '</div>';
+      html += '<div style="border:1px solid var(--b);border-radius:8px;overflow:hidden;overflow-x:auto">';
+      html += '<div style="display:grid;grid-template-columns:30px 80px 80px 80px 80px 60px 60px;padding:4px 8px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);min-width:480px">';
+      html += '<div>#</div><div>İş ID</div><div>PI No</div><div>PI Tarihi</div><div>Toplam</div><div>Döviz</div><div>Avans%</div></div>';
+
+      parsed.slice(0, 5).forEach(function(r) {
+        var hasErr = r._errors && r._errors.length > 0;
+        var bg = hasErr ? 'background:rgba(239,68,68,.06)' : '';
+        html += '<div style="display:grid;grid-template-columns:30px 80px 80px 80px 80px 60px 60px;padding:4px 8px;border-bottom:1px solid var(--b);font-size:11px;' + bg + ';min-width:480px">'
+          + '<div style="color:var(--t3)">' + r._rowIdx + '</div>'
+          + '<div style="font-weight:600;color:' + (hasErr && !r.jobId ? '#EF4444' : 'var(--t)') + '">' + esc(r.jobId || '—') + '</div>'
+          + '<div>' + esc(r.piNo || '—') + '</div>'
+          + '<div style="color:var(--t3)">' + (r.piDate || '—') + '</div>'
+          + '<div style="font-weight:600">' + (r.totalAmount || '—') + '</div>'
+          + '<div>' + (r.currency || '—') + '</div>'
+          + '<div>' + (r.advanceRate || '—') + '</div>'
+        + '</div>';
+        if (hasErr) html += '<div style="padding:2px 8px 4px 38px;font-size:10px;color:#EF4444;min-width:480px">⚠ ' + r._errors.join(', ') + '</div>';
+      });
+      if (parsed.length > 5) html += '<div style="padding:6px 8px;text-align:center;font-size:11px;color:var(--t3)">… +' + (parsed.length - 5) + ' satır</div>';
+      html += '</div>';
+
+      preview.innerHTML = html;
+      preview.style.display = 'block';
+      var footer = document.getElementById('sa-import-footer');
+      if (footer) {
+        footer.style.display = 'flex';
+        var btn = document.getElementById('sa-import-confirm');
+        if (btn) { btn.textContent = '📥 ' + validCount + ' Satır İçe Aktar'; btn.disabled = validCount === 0; }
+      }
+    } catch (err) {
+      window.toast?.('Parse hatası: ' + err.message, 'err');
+    }
+  };
+  reader.readAsBinaryString(file);
+};
+
+/**
+ * Onaylanmış satırları kaydet.
+ */
+window._saImportConfirm = function() {
+  if (!_saImportRows || !_saImportRows.length) return;
+  var d = _loadSA();
+  var added = 0;
+  var cu = _cuSA();
+
+  _saImportRows.forEach(function(r) {
+    if (r._errors && r._errors.length) return;
+    var advAmt = Math.round((r.totalAmount || 0) * (r.advanceRate || 0) / 100 * 100) / 100;
+    d.unshift({
+      id: generateNumericId(),
+      jobId: r.jobId, piNo: r.piNo, piDate: r.piDate,
+      totalAmount: r.totalAmount, kdv: r.kdv,
+      currency: SA_CURRENCIES[r.currency] ? r.currency : 'USD',
+      advanceRate: r.advanceRate, advanceAmount: advAmt,
+      remainingAmount: Math.round(((r.totalAmount || 0) - advAmt) * 100) / 100,
+      vadeDate: r.vadeDate, deliveryDate: r.deliveryDate,
+      exportId: r.exportId, customerOrderNo: r.customerOrderNo,
+      deliveryPlace: r.deliveryPlace, deliveryOwner: 'alici',
+      jobDate: r.piDate || new Date().toISOString().slice(0, 10),
+      status: _isAdmSA() ? 'approved' : 'pending',
+      source: 'import', createdAt: _nowSA(), createdBy: cu?.id,
+    });
+    added++;
+  });
+
+  _storeSA(d);
+  document.getElementById('mo-sa-import')?.remove();
+  renderSatinAlma();
+  window.toast?.('📥 ' + added + ' sipariş içe aktarıldı ✓', 'ok');
+  window.logActivity?.('view', 'Satınalma import: ' + added + ' kayıt');
+  _saImportRows = null;
+};
+
 
 // ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
