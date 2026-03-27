@@ -539,77 +539,183 @@ function deleteUser(id) {
 }
 
 // ── RBAC: Modül Yetki Modalı ──────────────────────────────────────
+// Modül kategorileri
+var _PERM_CATEGORIES = {
+  genel:     { label: 'Genel',              icon: '📋', mods: ['dashboard','announce','pusula','takvim','notes','links','rehber'] },
+  finans:    { label: 'Finans & Muhasebe',  icon: '💰', mods: ['odemeler','pirim','hedefler'] },
+  operasyon: { label: 'Operasyon',          icon: '📦', mods: ['kargo','stok','numune','temizlik'] },
+  ik:        { label: 'İnsan Kaynakları',   icon: '👥', mods: ['ik','izin','puantaj','evrak'] },
+  satis:     { label: 'Satış & Müşteri',    icon: '📈', mods: ['crm','etkinlik'] },
+  dokuman:   { label: 'Döküman & Bilgi',    icon: '📂', mods: ['arsiv','tebligat','resmi','kpi'] },
+  yonetim:   { label: 'Yönetim',            icon: '⚙️', mods: ['settings','admin'] },
+};
+
+var _PERM_LEVELS = [
+  { value: 'none',   label: '🚫 Erişim Yok',   desc: 'Bu modülü göremez' },
+  { value: 'view',   label: '👁 Görebilir',     desc: 'Sadece okuyabilir' },
+  { value: 'edit',   label: '✏️ Düzenleyebilir', desc: 'Ekleyip güncelleyebilir' },
+  { value: 'manage', label: '⚙️ Yönetir',       desc: 'Tüm işlemler, silme dahil' },
+];
+
+var _PERM_PRESETS = {
+  viewOnly: { label: '👁 Sadece Görüntüle', level: 'view' },
+  standard: { label: '✏️ Standart Kullanıcı', level: 'edit' },
+  full:     { label: '⚙️ Tam Yetki', level: 'manage' },
+};
+
 function openPermModal(id) {
   if (!isAdmin()) return;
-  const u = loadUsers().find(x => x.id === id);
+  var u = loadUsers().find(function(x) { return x.id === id; });
   if (!u) return;
 
-  const cont = g('perm-modules-cont');
+  var cont = g('perm-modules-cont');
   if (!cont) return;
 
   if (g('perm-uid'))    g('perm-uid').value    = id;
   if (g('perm-uname'))  g('perm-uname').textContent = u.name;
 
-  // Admin için tüm modüller kilitli (her şeye erişim)
-  const isUserAdmin = u.role === 'admin';
-  const allowed     = u.modules; // null = tümü, array = seçili modüller
+  var isUserAdmin = u.role === 'admin';
+  var allowed     = u.modules;
+  var perms       = u.permissions || {};
+  var modMap      = {};
+  ALL_MODULES.forEach(function(m) { modMap[m.id] = m; });
 
-  const perms = u.permissions || {};
+  // Modül ikonu haritası
+  var MOD_ICONS = {
+    dashboard:'📊', announce:'📢', pusula:'🎯', takvim:'📅', notes:'📝', links:'🔗', rehber:'🆘',
+    odemeler:'💳', pirim:'⭐', hedefler:'🏆', kargo:'📦', stok:'📋', numune:'🧪', temizlik:'🧹',
+    ik:'👥', izin:'🏖', puantaj:'⏱', evrak:'📄', crm:'📈', etkinlik:'🎪',
+    arsiv:'🗄', tebligat:'📮', resmi:'📑', kpi:'📊', settings:'⚙️', admin:'🔐'
+  };
 
-  cont.innerHTML = `
-    ${isUserAdmin
-      ? `<div style="background:var(--al);border-radius:8px;padding:12px;font-size:13px;color:var(--ac);margin-bottom:12px">
-           👑 Admin kullanıcılar tüm modüllere erişebilir.
-         </div>`
-      : ''
-    }
-    <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:12px;color:var(--t2)">Erişim verilecek modülleri seçin:</span>
-      <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
-        <input type="checkbox" id="perm-all"
-          ${!allowed ? 'checked' : ''}
-          onchange="Admin._toggleAllPerms(this.checked)"
-          style="accent-color:var(--ac)">
-        Tümüne İzin Ver
-      </label>
-    </div>
-    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:14px">
-      <div style="display:grid;grid-template-columns:1fr 130px;gap:0;padding:8px 12px;background:var(--s2);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;border-bottom:1px solid var(--b)">
-        <span>Modül</span><span>Yetki Seviyesi</span>
-      </div>
-      ${ALL_MODULES.map(m => {
-        const curLevel = perms[m.id] || (window.ROLE_PERM_DEFAULTS || {})[u.role] || 'view';
-        return `<div style="display:grid;grid-template-columns:1fr 130px;gap:0;padding:6px 12px;border-bottom:1px solid var(--b);align-items:center">
-          <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer${isUserAdmin ? ';opacity:.5' : ''}">
-            <input type="checkbox" class="perm-cb" value="${m.id}"
-              ${isUserAdmin || !allowed || allowed.includes(m.id) ? 'checked' : ''}
-              ${isUserAdmin ? 'disabled' : ''}
-              style="accent-color:var(--ac)">
-            ${m.label}
-          </label>
-          <select class="perm-level" data-mod="${m.id}" style="font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:5px;background:var(--s);color:var(--t)" ${isUserAdmin ? 'disabled' : ''}>
-            <option value="full"${curLevel==='full'?' selected':''}>Tam Yetki</option>
-            <option value="manage"${curLevel==='manage'?' selected':''}>Yönetir</option>
-            <option value="view"${curLevel==='view'?' selected':''}>Görebilir</option>
-            <option value="count"${curLevel==='count'?' selected':''}>Rakamla</option>
-          </select>
-        </div>`;
-      }).join('')}
-    </div>
-    <div style="border:1px solid var(--b);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--t)">12 Saat Kuralı</div>
-        <div style="font-size:10px;color:var(--t3)">Kayıt oluşturulduktan 12 saat sonra güncelleme yönetici onayı gerektirir</div>
-      </div>
-      <input type="checkbox" id="perm-rule12h" ${u.rule12h ? 'checked' : ''} ${isUserAdmin ? 'disabled' : ''} style="accent-color:var(--ac);width:18px;height:18px">
-    </div>`;
+  cont.innerHTML = ''
+    // 12 Saat Kuralı — üstte belirgin
+    + '<div style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(99,102,241,.02));border:1.5px solid rgba(99,102,241,.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">'
+      + '<div>'
+        + '<div style="font-size:13px;font-weight:700;color:var(--ac)">⏰ 12 Saat Kuralı</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Kayıt oluşturulduktan 12 saat sonra güncelleme yönetici onayı gerektirir</div>'
+      + '</div>'
+      + '<label style="position:relative;width:44px;height:24px;flex-shrink:0">'
+        + '<input type="checkbox" id="perm-rule12h" ' + (u.rule12h ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' style="opacity:0;width:0;height:0" onchange="this.nextElementSibling.style.background=this.checked?\'var(--ac)\':\'var(--s2)\'">'
+        + '<span style="position:absolute;inset:0;background:' + (u.rule12h ? 'var(--ac)' : 'var(--s2)') + ';border-radius:12px;cursor:pointer;transition:background .2s;border:1px solid var(--b)"></span>'
+        + '<span style="position:absolute;left:' + (u.rule12h ? '22px' : '3px') + ';top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)"></span>'
+      + '</label>'
+    + '</div>'
+
+    // Admin badge
+    + (isUserAdmin ? '<div style="background:var(--al);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--ac);margin-bottom:14px;font-weight:500">👑 Admin kullanıcılar tüm modüllere otomatik erişir.</div>' : '')
+
+    // Yetki açıklama bandı
+    + '<div style="display:flex;gap:0;border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:14px">'
+      + _PERM_LEVELS.map(function(l) {
+          return '<div style="flex:1;padding:8px;text-align:center;border-right:1px solid var(--b);font-size:10px">'
+            + '<div style="font-weight:700;color:var(--t);margin-bottom:2px">' + l.label.split(' ')[0] + '</div>'
+            + '<div style="color:var(--t3);font-size:9px">' + l.desc + '</div>'
+          + '</div>';
+        }).join('')
+    + '</div>'
+
+    // Hızlı seçim + arama satırı
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">'
+      + Object.entries(_PERM_PRESETS).map(function(e) {
+          return '<button class="btn btns" onclick="window._permApplyPreset(\'' + e[0] + '\')" style="font-size:10px;padding:4px 10px;border-radius:6px">' + e[1].label + '</button>';
+        }).join('')
+      + '<div style="margin-left:auto;position:relative;flex-shrink:0">'
+        + '<input class="fi" id="perm-search" placeholder="🔍 Modül ara..." oninput="window._permFilterModules?.()" style="font-size:11px;padding:5px 10px;width:160px">'
+      + '</div>'
+      + '<label style="font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;flex-shrink:0">'
+        + '<input type="checkbox" id="perm-all" ' + (!allowed ? 'checked' : '') + ' onchange="Admin._toggleAllPerms(this.checked)" style="accent-color:var(--ac)">'
+        + 'Tümü'
+      + '</label>'
+    + '</div>'
+
+    // Kategorili kart grid
+    + Object.entries(_PERM_CATEGORIES).map(function(catEntry) {
+        var catKey = catEntry[0];
+        var cat    = catEntry[1];
+        var catMods = cat.mods.filter(function(mid) { return modMap[mid]; });
+        if (!catMods.length) return '';
+
+        return '<div class="perm-cat-group" data-cat="' + catKey + '" style="margin-bottom:14px">'
+          + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span>' + cat.icon + '</span> ' + cat.label + '</div>'
+          + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
+            + catMods.map(function(mid) {
+                var m = modMap[mid];
+                var curLevel = perms[mid] || 'view';
+                var isChecked = isUserAdmin || !allowed || (allowed && allowed.includes(mid));
+                var icon = MOD_ICONS[mid] || '📋';
+
+                return '<div class="perm-card" data-modid="' + mid + '" style="background:var(--sf);border:1.5px solid ' + (isChecked ? 'rgba(99,102,241,.3)' : 'var(--b)') + ';border-radius:10px;padding:10px 12px;transition:all .15s;' + (isChecked ? 'background:rgba(99,102,241,.04)' : '') + '">'
+                  + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+                    + '<input type="checkbox" class="perm-cb" value="' + mid + '" ' + (isChecked ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' onchange="window._permCardToggle?.(this)" style="accent-color:var(--ac);flex-shrink:0">'
+                    + '<span style="font-size:16px">' + icon + '</span>'
+                    + '<span style="font-size:12px;font-weight:600;color:var(--t)">' + escapeHtml(m.label) + '</span>'
+                  + '</div>'
+                  + '<select class="perm-level" data-mod="' + mid + '" style="width:100%;font-size:11px;padding:5px 8px;border:1px solid var(--b);border-radius:6px;background:var(--s);color:var(--t);font-family:inherit" ' + (isUserAdmin ? 'disabled' : '') + '>'
+                    + _PERM_LEVELS.map(function(l) { return '<option value="' + l.value + '"' + (curLevel === l.value ? ' selected' : '') + '>' + l.label + '</option>'; }).join('')
+                  + '</select>'
+                + '</div>';
+              }).join('')
+          + '</div>'
+        + '</div>';
+      }).join('');
 
   window.openMo?.('mo-perm');
 }
 
+/**
+ * Hızlı paket uygula: tüm modülleri belirli yetki seviyesine ayarla.
+ */
+window._permApplyPreset = function(presetKey) {
+  var preset = _PERM_PRESETS[presetKey];
+  if (!preset) return;
+  document.querySelectorAll('.perm-cb:not(:disabled)').forEach(function(cb) {
+    cb.checked = preset.level !== 'none';
+    window._permCardToggle?.(cb);
+  });
+  document.querySelectorAll('.perm-level:not(:disabled)').forEach(function(sel) {
+    sel.value = preset.level;
+  });
+  window.toast?.('Paket uygulandı: ' + preset.label, 'ok');
+};
+
+/**
+ * Kart checkbox toggle — görsel güncelle.
+ */
+window._permCardToggle = function(cb) {
+  var card = cb.closest('.perm-card');
+  if (!card) return;
+  if (cb.checked) {
+    card.style.borderColor = 'rgba(99,102,241,.3)';
+    card.style.background  = 'rgba(99,102,241,.04)';
+  } else {
+    card.style.borderColor = 'var(--b)';
+    card.style.background  = 'var(--sf)';
+  }
+};
+
+/**
+ * Modül arama filtresi.
+ */
+window._permFilterModules = function() {
+  var q = (document.getElementById('perm-search')?.value || '').toLowerCase().trim();
+  document.querySelectorAll('.perm-card').forEach(function(card) {
+    var label = (card.querySelector('span:nth-child(3)')?.textContent || '').toLowerCase();
+    var modId = card.dataset.modid || '';
+    card.style.display = (!q || label.includes(q) || modId.includes(q)) ? '' : 'none';
+  });
+  // Boş kategori gizle
+  document.querySelectorAll('.perm-cat-group').forEach(function(grp) {
+    var visible = grp.querySelectorAll('.perm-card[style*="display: none"]').length;
+    var total   = grp.querySelectorAll('.perm-card').length;
+    grp.style.display = (visible === total && q) ? 'none' : '';
+  });
+};
+
 function _toggleAllPerms(checked) {
-  document.querySelectorAll('.perm-cb:not(:disabled)').forEach(cb => {
+  document.querySelectorAll('.perm-cb:not(:disabled)').forEach(function(cb) {
     cb.checked = checked;
+    window._permCardToggle?.(cb);
   });
 }
 
