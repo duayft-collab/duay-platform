@@ -255,6 +255,23 @@ function _openSAModal(id) {
       + '<div><div class="fl">TESLİMAT YERİ</div><input class="fi" id="sa-delivery-place" placeholder="Mersin Limanı, Depo..." value="' + (s?.deliveryPlace || '') + '"></div>'
       + '<div><div class="fl">TESLİMAT KİME AİT</div><select class="fi" id="sa-delivery-owner"><option value="alici"' + (s?.deliveryOwner === 'alici' ? ' selected' : '') + '>Alıcı</option><option value="satici"' + (s?.deliveryOwner === 'satici' ? ' selected' : '') + '>Satıcı</option><option value="paylasimli"' + (s?.deliveryOwner === 'paylasimli' ? ' selected' : '') + '>Paylaşımlı</option></select></div>'
     + '</div>'
+    // Satıcı Firma Bilgileri
+    + '<div style="border:1px solid var(--b);border-radius:10px;padding:14px;margin-top:4px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">🏢 Satıcı Firma Bilgileri</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">'
+        + '<div><div class="fl">FİRMA ADI <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-vendor-name" placeholder="Tedarikçi firma" value="' + (s?.vendor?.name || '') + '"></div>'
+        + '<div><div class="fl">ÜLKE</div><input class="fi" id="sa-vendor-country" placeholder="Çin, Almanya..." value="' + (s?.vendor?.country || '') + '"></div>'
+        + '<div><div class="fl">VERGİ / KAYIT NO</div><input class="fi" id="sa-vendor-tax" placeholder="Tax ID" value="' + (s?.vendor?.tax || '') + '"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">'
+        + '<div><div class="fl">İLETİŞİM KİŞİSİ</div><input class="fi" id="sa-vendor-contact" placeholder="Ad Soyad" value="' + (s?.vendor?.contact || '') + '"></div>'
+        + '<div><div class="fl">TELEFON</div><input class="fi" id="sa-vendor-phone" placeholder="+86 ..." value="' + (s?.vendor?.phone || '') + '"></div>'
+        + '<div><div class="fl">E-POSTA</div><input class="fi" type="email" id="sa-vendor-email" placeholder="info@firma.com" value="' + (s?.vendor?.email || '') + '"></div>'
+      + '</div>'
+      + '<div><div class="fl">ADRES</div><textarea class="fi" id="sa-vendor-address" rows="2" style="resize:none" placeholder="Firma adresi...">' + (s?.vendor?.address || '') + '</textarea></div>'
+    + '</div>'
+    // Açıklama / Not
+    + '<div><div class="fl">AÇIKLAMA / NOT</div><textarea class="fi" id="sa-notes" rows="2" style="resize:none" placeholder="Ek bilgi, özel şartlar...">' + (s?.notes || '') + '</textarea></div>'
     // Dosyalar
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
       + '<div><div class="fl">PI DOSYASI <span style="color:var(--rd)">*</span></div><input type="file" id="sa-pi-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="font-size:11px">'
@@ -294,6 +311,21 @@ function _openSAModal(id) {
       + '<span>TL: <b id="sa-calc-tl" style="color:var(--t)">—</b></span>'
       + '<span id="sa-calc-rate" style="font-size:10px"></span>'
     + '</div>'
+    // Satıcı firma (yatay formda kompakt)
+    + '<div style="border:1px solid var(--b);border-radius:8px;padding:10px;margin-top:6px">'
+      + '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">🏢 Satıcı Firma</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+        + '<input class="fi" id="sa-vendor-name" placeholder="Firma adı *" value="' + (s?.vendor?.name || '') + '" style="font-size:11px;padding:4px 6px;flex:2;min-width:120px">'
+        + '<input class="fi" id="sa-vendor-country" placeholder="Ülke" value="' + (s?.vendor?.country || '') + '" style="font-size:11px;padding:4px 6px;flex:1;min-width:80px">'
+        + '<input class="fi" id="sa-vendor-contact" placeholder="Kişi" value="' + (s?.vendor?.contact || '') + '" style="font-size:11px;padding:4px 6px;flex:1;min-width:80px">'
+        + '<input class="fi" id="sa-vendor-phone" placeholder="Tel" value="' + (s?.vendor?.phone || '') + '" style="font-size:11px;padding:4px 6px;flex:1;min-width:80px">'
+        + '<input class="fi" type="email" id="sa-vendor-email" placeholder="E-posta" value="' + (s?.vendor?.email || '') + '" style="font-size:11px;padding:4px 6px;flex:1;min-width:100px">'
+        + '<input class="fi" id="sa-vendor-tax" placeholder="Vergi No" value="' + (s?.vendor?.tax || '') + '" style="font-size:11px;padding:4px 6px;flex:1;min-width:80px">'
+      + '</div>'
+      + '<textarea class="fi" id="sa-vendor-address" rows="1" placeholder="Adres..." style="font-size:11px;padding:4px 6px;margin-top:4px;resize:none">' + (s?.vendor?.address || '') + '</textarea>'
+    + '</div>'
+    // Açıklama
+    + '<div style="margin-top:4px"><textarea class="fi" id="sa-notes" rows="1" placeholder="Açıklama / not..." style="font-size:11px;padding:4px 6px;resize:none">' + (s?.notes || '') + '</textarea></div>'
     // Gizli alanlar (yatay formda eksik olanlar)
     + '<input type="hidden" id="sa-export-id" value="' + (s?.exportId || '') + '">'
     + '<input type="hidden" id="sa-job-date" value="' + (s?.jobDate || new Date().toISOString().slice(0, 10)) + '">'
@@ -417,6 +449,8 @@ window._saveSA = function() {
   if (!advRate)  errs.push('Avans Oranı');
   if (!vade)     errs.push('Vade Tarihi');
   if (!jobDate)  errs.push('İş Başlama Tarihi');
+  var vendorName = (document.getElementById('sa-vendor-name')?.value || '').trim();
+  if (!vendorName) errs.push('Firma Adı');
 
   // PI Dosyası kontrolü (yeni kayıtta zorunlu)
   var piFile = document.getElementById('sa-pi-file');
@@ -453,6 +487,16 @@ window._saveSA = function() {
     deliveryPlace:   (document.getElementById('sa-delivery-place')?.value || '').trim(),
     deliveryOwner:   document.getElementById('sa-delivery-owner')?.value || 'alici',
     containerNo:     (document.getElementById('sa-container')?.value || '').trim(),
+    notes:           (document.getElementById('sa-notes')?.value || '').trim(),
+    vendor: {
+      name:    vendorName,
+      country: (document.getElementById('sa-vendor-country')?.value || '').trim(),
+      contact: (document.getElementById('sa-vendor-contact')?.value || '').trim(),
+      phone:   (document.getElementById('sa-vendor-phone')?.value || '').trim(),
+      email:   (document.getElementById('sa-vendor-email')?.value || '').trim(),
+      address: (document.getElementById('sa-vendor-address')?.value || '').trim(),
+      tax:     (document.getElementById('sa-vendor-tax')?.value || '').trim(),
+    },
     updatedAt:       _nowSA(),
     updatedBy:       _cuSA()?.id,
   };
@@ -490,9 +534,15 @@ window._saveSA = function() {
       var saEntry = eid ? d.find(function(x) { return x.id === eid; }) : d[0];
       _saCreatePayments(saEntry);
 
-      // Admin değilse yöneticilere bildirim
+      // Admin değilse tüm admin/manager'lara bildirim gönder
       if (!_isAdmSA()) {
-        window.addNotif?.('🛒', 'Yeni satınalma onay bekliyor: ' + piNo + ' — ' + _fmtSA(total, currency), 'warn', 'satinalma');
+        var cuName = _cuSA()?.name || '';
+        var managers = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
+          return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
+        });
+        managers.forEach(function(m) {
+          window.addNotif?.('🛒', 'Yeni satınalma onay bekliyor: ' + piNo + ' — ' + _fmtSA(total, currency) + ' (' + cuName + ')', 'warn', 'satinalma', m.id);
+        });
       }
     }
   };
@@ -614,6 +664,20 @@ window._openSADetail = function(id) {
             + '</div>';
           }).join('')
       + '</div>'
+      // Satıcı Firma Kartı
+      + (s.vendor && s.vendor.name ? '<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:12px">'
+        + '<div style="padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--b);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase">🏢 Satıcı Firma</div>'
+        + '<div style="padding:10px 14px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+          + '<div><span style="color:var(--t3)">Firma:</span> <b style="color:var(--t)">' + esc(s.vendor.name) + '</b></div>'
+          + (s.vendor.country ? '<div><span style="color:var(--t3)">Ülke:</span> ' + esc(s.vendor.country) + '</div>' : '')
+          + (s.vendor.contact ? '<div><span style="color:var(--t3)">Kişi:</span> ' + esc(s.vendor.contact) + '</div>' : '')
+          + (s.vendor.phone ? '<div><span style="color:var(--t3)">Tel:</span> ' + esc(s.vendor.phone) + '</div>' : '')
+          + (s.vendor.email ? '<div><span style="color:var(--t3)">E-posta:</span> ' + esc(s.vendor.email) + '</div>' : '')
+          + (s.vendor.tax ? '<div><span style="color:var(--t3)">Vergi No:</span> ' + esc(s.vendor.tax) + '</div>' : '')
+          + (s.vendor.address ? '<div style="grid-column:1/-1"><span style="color:var(--t3)">Adres:</span> ' + esc(s.vendor.address) + '</div>' : '')
+        + '</div></div>' : '')
+      // Açıklama
+      + (s.notes ? '<div style="padding:8px 14px;background:var(--s2);border-radius:8px;margin-bottom:12px;font-size:11px"><span style="color:var(--t3)">📝 Not:</span> ' + esc(s.notes) + '</div>' : '')
       // PI Dosyası
       + (s.piFileName ? '<div style="padding:8px 14px;background:var(--s2);border-radius:8px;margin-bottom:12px;font-size:11px"><span style="color:var(--t3)">📎 PI Dosyası:</span> <span style="color:var(--ac);font-weight:600">' + esc(s.piFileName) + '</span></div>' : '')
     + '</div>'
