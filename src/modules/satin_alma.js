@@ -117,8 +117,8 @@ function _injectSAPanel() {
 
     // TABLO BAŞLIK — yatay scroll
     + '<div style="overflow-x:auto">'
-      + '<div id="sa-thead" style="display:grid;grid-template-columns:75px 100px 85px 90px 85px 70px 85px 65px 85px 80px 80px 70px 100px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);min-width:1200px">'
-        + [['jobId','İş ID'],['supplier','Satıcı'],['piDate','PI Tarihi'],['totalAmount','Toplam'],['advanceAmount','Avans'],['advanceRate','Avans%'],['remaining','Kalan'],['currency','Döviz'],['deliveryDate','Teslimat'],['faturaType','Fatura'],['lockedRate','Kur'],['status','Durum'],['_actions','İşlem']].map(function(h) {
+      + '<div id="sa-thead" style="display:grid;grid-template-columns:120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);min-width:1400px">'
+        + [['jobId','İş ID'],['supplier','Satıcı'],['faturaType','Fatura Tipi'],['piDate','PI Tarihi'],['totalAmount','Toplam'],['advanceAmount','Avans'],['advanceRate','Avans%'],['remaining','Kalan'],['currency','Döviz'],['deliveryDate','Teslimat'],['lockedRate','Kur'],['status','Durum'],['_actions','İşlem']].map(function(h) {
             return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;cursor:pointer" onclick="window._saSortBy?.(\'' + h[0] + '\')">' + h[1] + ' <span style="opacity:.3">⇅</span></div>';
           }).join('')
       + '</div>'
@@ -194,7 +194,7 @@ function renderSatinAlma() {
 
   var _inpSt = 'font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:4px;background:var(--s);color:var(--t);font-family:inherit;width:100%;box-sizing:border-box';
   var _inpEr = 'border-color:#EF4444;background:rgba(239,68,68,.04)';
-  var _GRID  = 'display:grid;grid-template-columns:75px 100px 85px 90px 85px 70px 85px 65px 85px 80px 80px 70px 100px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:1200px';
+  var _GRID  = 'display:grid;grid-template-columns:120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:1400px';
 
   if (!fl.length && !document.getElementById('sa-inline-new')) {
     cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t3)">'
@@ -247,6 +247,7 @@ function renderSatinAlma() {
     html += '<div data-said="' + s.id + '" style="' + _GRID + ';cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div class="sa-cell" data-field="jobId" onclick="window._saInlineEdit?.(event,' + s.id + ',\'jobId\')" style="font-weight:600;font-family:\'DM Mono\',monospace;color:var(--ac)">' + esc(s.jobId || '—') + '</div>'
       + '<div class="sa-cell" data-field="supplier" onclick="window._saInlineEdit?.(event,' + s.id + ',\'supplier\')" style="font-weight:500">' + esc(supplierName) + vendorBadge + '</div>'
+      + '<div style="font-size:10px;color:var(--t2)">' + ftLabel + '</div>'
       + '<div class="sa-cell" data-field="piDate" onclick="window._saInlineEdit?.(event,' + s.id + ',\'piDate\')" style="color:var(--t3)">' + (s.piDate || '—') + '</div>'
       + '<div class="sa-cell" data-field="totalAmount" onclick="window._saInlineEdit?.(event,' + s.id + ',\'totalAmount\')" style="font-weight:700;color:var(--t)">' + sym + Number(s.totalAmount || 0).toLocaleString('tr-TR') + '</div>'
       + '<div style="color:#D97706;font-weight:600">' + sym + Math.round(advAmt).toLocaleString('tr-TR') + '</div>'
@@ -254,7 +255,6 @@ function renderSatinAlma() {
       + '<div style="color:#6366F1;font-weight:600">' + sym + Math.round(remaining).toLocaleString('tr-TR') + '</div>'
       + '<div>' + (s.currency || 'USD') + '</div>'
       + '<div style="font-size:10px;color:var(--t3)">' + (s.deliveryDate || '—') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3)">' + ftLabel + '</div>'
       + '<div style="font-size:9px;color:var(--t3)">' + (s.lockedRate && s.currency !== 'TRY' ? '🔒' + s.lockedRate : '—') + '</div>'
       + '<div><span style="font-size:10px;padding:2px 6px;border-radius:5px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span>' + waitBadge + '</div>'
       + '<div style="display:flex;gap:3px" onclick="event.stopPropagation()">'
