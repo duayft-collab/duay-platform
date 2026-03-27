@@ -138,11 +138,23 @@ function _sidebarItem(u) {
 }
 
 function _renderDetail(uid) {
+  if (window._adminSaving) return;
   const cont = g('adm-detail');
   if (!cont) return;
   const users = loadUsers();
   const u = users.find(x => x.id === uid);
   if (!u) { cont.innerHTML = ''; return; }
+
+  // Çakışma uyarısı — başka admin aynı kullanıcıyı düzenliyorsa
+  var conflictHTML = '';
+  if (window._editingUser && window._editingUser.uid === uid && window._editingUser.editorId !== _getCU()?.id) {
+    var elapsed = Math.round((Date.now() - window._editingUser.ts) / 60000);
+    if (elapsed < 5) {
+      conflictHTML = '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#D97706;font-weight:500">⚠️ Bu kullanıcı şu an <b>' + escapeHtml(window._editingUser.editorName) + '</b> tarafından düzenleniyor (' + elapsed + ' dk önce açıldı)</div>';
+    }
+  }
+  // Bu admin bu kullanıcıyı görüntülüyor olarak işaretle
+  window._editingUser = { uid: uid, editorId: _getCU()?.id, editorName: _getCU()?.name || '?', ts: Date.now() };
 
   const rm = ROLE_META[u.role] || ROLE_META.staff;
   const av = initials(u.name);
@@ -151,7 +163,7 @@ function _renderDetail(uid) {
   const daysSince = u.lastLogin ? Math.floor((Date.now() - new Date(u.lastLogin.replace(' ','T')).getTime()) / 86400000) : null;
   const permLevel = u.permissions ? Object.values(u.permissions).filter(Boolean).length + ' ozel' : 'Varsayilan';
 
-  cont.innerHTML = `
+  cont.innerHTML = conflictHTML + `
     <!-- Profil Basligi -->
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:16px">
       <div style="padding:24px;display:flex;align-items:center;gap:20px">
@@ -207,7 +219,52 @@ function _renderDetail(uid) {
       <button class="btn btns" onclick="Admin.openBulkRoleChange()" style="font-size:12px">Toplu Rol</button>
       ${!isSelf?'<button class="btn btns" onclick="Admin.startImpersonation('+u.id+')" style="font-size:12px">Goruntulenme</button>':''}
       <button class="btn btns" onclick="window.Auth?.openIpWhitelist?.()" style="font-size:12px">IP Kisitlama</button>
+      ${!isSelf?`<button class="btn btns" onclick="window._cloneUserPerms(${u.id})" style="font-size:12px">📋 Yetki Klonla</button>`:''}
     </div>
+
+    <!-- Yetki Skor Kartı -->
+    ${(() => {
+      const ts = _calcTrustScore(u);
+      const tsColor = ts.score >= 70 ? '#22C55E' : ts.score >= 40 ? '#F59E0B' : '#EF4444';
+      const tsLabel = ts.score >= 70 ? 'Güvenilir' : ts.score >= 40 ? 'Normal' : 'Dikkat';
+      return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:14px 16px;margin-bottom:16px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+          '<span style="font-size:13px;font-weight:600;color:var(--t)">🛡 Yetki Güven Skoru</span>' +
+          '<span style="font-size:11px;padding:3px 10px;border-radius:6px;font-weight:700;background:' + tsColor + '22;color:' + tsColor + '">' + ts.score + '/100 · ' + tsLabel + '</span>' +
+        '</div>' +
+        '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:' + ts.score + '%;background:' + tsColor + ';border-radius:3px;transition:width .3s"></div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px;color:var(--t3)">' +
+          '<div>Onaylı işlem: <b style="color:var(--t)">' + ts.approvedOps + '</b></div>' +
+          '<div>Giriş sıklığı: <b style="color:var(--t)">' + ts.loginFreq + '</b></div>' +
+          '<div>Aşım denemesi: <b style="color:' + (ts.violations > 0 ? '#EF4444' : 'var(--t)') + '">' + ts.violations + '</b></div>' +
+        '</div>' +
+        (ts.score >= 80 && u.role === 'staff' ? '<div style="margin-top:8px;padding:6px 10px;background:rgba(34,197,94,.08);border-radius:6px;font-size:10px;color:#16A34A;font-weight:600">💡 Öneri: Bu kullanıcı yüksek güven skoruna sahip — rol yükseltme düşünülebilir</div>' : '') +
+      '</div>';
+    })()}
+
+    <!-- Rol Geçmişi Timeline -->
+    ${(() => {
+      const rh = u.roleHistory || [];
+      if (!rh.length) return '';
+      const usersAll = loadUsers();
+      return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:14px 16px;margin-bottom:16px">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">🔄 Rol Geçmişi</div>' +
+        '<div style="position:relative;padding-left:20px;border-left:2px solid var(--b)">' +
+        rh.slice().reverse().map(function(r) {
+          var changer = usersAll.find(function(x) { return x.id === r.changedBy; });
+          var prevMeta = ROLE_META[r.previousRole] || ROLE_META.staff;
+          var newMeta  = ROLE_META[r.role] || ROLE_META.staff;
+          return '<div style="position:relative;margin-bottom:12px">' +
+            '<div style="position:absolute;left:-25px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--ac);border:2px solid var(--sf)"></div>' +
+            '<div style="font-size:11px;font-weight:600;color:var(--t)">' +
+              '<span style="padding:1px 6px;border-radius:4px;background:' + prevMeta.bg + ';color:' + prevMeta.color + '">' + prevMeta.label + '</span>' +
+              ' → <span style="padding:1px 6px;border-radius:4px;background:' + newMeta.bg + ';color:' + newMeta.color + '">' + newMeta.label + '</span>' +
+            '</div>' +
+            '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + (r.changedAt || '—') + (changer ? ' · ' + escapeHtml(changer.name) : '') + '</div>' +
+          '</div>';
+        }).join('') +
+        '</div></div>';
+    })()}
 
     <!-- Performans Skoru -->
     ${(() => {
@@ -335,9 +392,11 @@ function saveAdminUser() {
     if (pwd) u.pw = pwd;
     logActivity('user', `Kullanıcı güncellendi: "${name}" (${email})`);
     _auditLog('user_update', eid, 'Guncellendi: ' + name + (oldRole !== role ? ' (rol: ' + oldRole + ' → ' + role + ')' : ''));
-    // Rol değiştiyse kullanıcıya bildirim
+    // Rol değiştiyse: bildirim + roleHistory kaydet
     if (oldRole !== role) {
       window.addNotif?.('🔑', 'Rolunuz degistirildi: ' + (ROLE_META[role]?.label || role), 'warn', 'admin', eid);
+      if (!Array.isArray(u.roleHistory)) u.roleHistory = [];
+      u.roleHistory.push({ previousRole: oldRole, role: role, changedBy: _getCU()?.id, changedAt: nowTs() });
     }
     window.toast?.(`${name} güncellendi ✓`, 'ok');
   } else {
@@ -1601,25 +1660,34 @@ window._saveNotifPrefs = _saveNotifPrefs;
 
 function checkInactiveUsers() {
   if (!isAdmin()) return;
-  const users = loadUsers();
-  const now = Date.now();
-  let changed = false;
-  users.forEach(u => {
+  var sentKey = 'ak_inactive_sent';
+  var sent = {};
+  try { sent = JSON.parse(localStorage.getItem(sentKey) || '{}'); } catch(e) { sent = {}; }
+  var todayS = new Date().toISOString().slice(0, 10);
+  var users = loadUsers();
+  var now = Date.now();
+  var changed = false;
+
+  users.forEach(function(u) {
     if (u.role === 'admin' || u.status !== 'active') return;
     if (!u.lastLogin) return;
-    const lastMs = new Date(u.lastLogin.replace(' ','T')).getTime();
+    var lastMs = new Date(u.lastLogin.replace(' ','T')).getTime();
     if (isNaN(lastMs)) return;
-    const daysSince = Math.floor((now - lastMs) / 86400000);
-    if (daysSince >= 30) {
-      u.status = 'suspended';
-      u.suspendedBy = 'system';
-      u.suspendedAt = nowTs();
-      u.autoLocked = true;
-      changed = true;
-      window.addNotif?.('🔒', escapeHtml(u.name) + ' 30+ gün giriş yapmadı — otomatik pasif', 'warn', 'admin');
+    var daysSince = Math.floor((now - lastMs) / 86400000);
+
+    // 60+ gün: otomatik pasif uyarısı (pasife almaz, admin onayı gerekli)
+    if (daysSince >= 60 && !sent[u.id + '_60']) {
+      window.addNotif?.('🚨', escapeHtml(u.name) + ' 60+ gündür giriş yapmadı — pasife alınması öneriliyor', 'err', 'admin');
+      sent[u.id + '_60'] = todayS; changed = true;
+    }
+    // 30+ gün: bildirim
+    else if (daysSince >= 30 && !sent[u.id + '_30']) {
+      window.addNotif?.('⚠️', escapeHtml(u.name) + ' 30+ gündür giriş yapmadı', 'warn', 'admin');
+      sent[u.id + '_30'] = todayS; changed = true;
     }
   });
-  if (changed) { saveUsers(users); renderAdmin(); }
+
+  if (changed) localStorage.setItem(sentKey, JSON.stringify(sent));
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2238,6 +2306,139 @@ window._fbSyncDeleteSelected = function() {
 };
 
 // ════════════════════════════════════════════════════════════════
+// YETKİ GÜVEN SKORU (Trust Score)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Kullanıcının güven skorunu hesaplar (0-100).
+ * Onaylanan işlem sayısı, giriş sıklığı, yetki aşımı denemeleri.
+ * @param {Object} u - Kullanıcı nesnesi
+ * @returns {{ score, approvedOps, loginFreq, violations }}
+ */
+function _calcTrustScore(u) {
+  var tasks = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
+  var pirim = typeof window.loadPirim === 'function' ? window.loadPirim() : [];
+  var acts  = typeof window.loadAct  === 'function' ? window.loadAct()  : [];
+
+  // Onaylanan işlemler
+  var myTasks = tasks.filter(function(t) { return t.uid === u.id && (t.done || t.status === 'done'); });
+  var myPrims = pirim.filter(function(p) { return p.uid === u.id && (p.status === 'approved' || p.status === 'paid'); });
+  var approvedOps = myTasks.length + myPrims.length;
+  var opsScore = Math.min(40, Math.round(approvedOps * 2)); // max 40 puan
+
+  // Giriş sıklığı (son 30 gün)
+  var loginFreq = 0;
+  if (u.lastLogin) {
+    var lastMs = new Date(u.lastLogin.replace(' ', 'T')).getTime();
+    var daysSince = Math.floor((Date.now() - lastMs) / 86400000);
+    if (daysSince <= 1) loginFreq = 30;
+    else if (daysSince <= 7) loginFreq = 25;
+    else if (daysSince <= 14) loginFreq = 15;
+    else if (daysSince <= 30) loginFreq = 5;
+  }
+
+  // Yetki aşımı denemeleri (aktivite logunda "yetki" veya "err" içerenler)
+  var violations = 0;
+  acts.forEach(function(a) {
+    if (a.uid === u.id && ((a.detail || '').toLowerCase().includes('yetki') && (a.detail || '').toLowerCase().includes('yok'))) {
+      violations++;
+    }
+  });
+  var violationPenalty = Math.min(30, violations * 5); // her aşım -5 puan
+
+  var score = Math.max(0, Math.min(100, opsScore + loginFreq + 30 - violationPenalty));
+
+  return {
+    score: score,
+    approvedOps: approvedOps,
+    loginFreq: loginFreq <= 1 ? 'Yok' : (loginFreq >= 25 ? 'Yüksek' : loginFreq >= 15 ? 'Orta' : 'Düşük'),
+    violations: violations,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// YETKİ ŞABLONU KLONLAMA
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Bir kullanıcının tüm yetki/modül/rol ayarlarını başka kullanıcıdan kopyalar.
+ * @param {number} targetUid - Hedef kullanıcı ID
+ */
+window._cloneUserPerms = function(targetUid) {
+  if (!isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
+  var users = loadUsers();
+  var target = users.find(function(x) { return x.id === targetUid; });
+  if (!target) return;
+
+  var old = document.getElementById('mo-clone-perms'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-clone-perms'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--t)">📋 Yetki Klonla</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-top:2px">Hedef: <b>' + escapeHtml(target.name) + '</b></div>'
+    + '</div>'
+    + '<div style="padding:16px 20px">'
+      + '<div class="fl" style="margin-bottom:6px">KAYNAK KULLANICI</div>'
+      + '<select class="fi" id="clone-source" style="font-size:13px">'
+        + '<option value="">— Kopyalanacak kullanıcı seçin —</option>'
+        + users.filter(function(u) { return u.id !== targetUid; }).map(function(u) {
+            var rm = ROLE_META[u.role] || ROLE_META.staff;
+            return '<option value="' + u.id + '">' + escapeHtml(u.name) + ' (' + rm.label + ')</option>';
+          }).join('')
+      + '</select>'
+      + '<div style="margin-top:10px;padding:8px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t3)">Kopyalanacaklar: Rol, modül izinleri, döküman erişimi, özel yetkiler</div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-clone-perms\').remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="window._execClonePerms(' + targetUid + ')">Klonla</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/**
+ * Klonlama işlemini gerçekleştirir.
+ */
+window._execClonePerms = function(targetUid) {
+  var sourceId = parseInt(document.getElementById('clone-source')?.value || '0');
+  if (!sourceId) { window.toast?.('Kaynak kullanıcı seçin', 'err'); return; }
+
+  var users  = loadUsers();
+  var source = users.find(function(x) { return x.id === sourceId; });
+  var target = users.find(function(x) { return x.id === targetUid; });
+  if (!source || !target) return;
+
+  var msg = '"' + escapeHtml(source.name) + '" kullanıcısının tüm yetkileri "' + escapeHtml(target.name) + '" kullanıcısına kopyalanacak. Emin misiniz?';
+
+  window.confirmModal(msg, {
+    title: 'Yetki Klonla',
+    confirmText: 'Evet, Klonla',
+    onConfirm: function() {
+      var oldRole = target.role;
+      target.role        = source.role;
+      target.modules     = source.modules ? source.modules.slice() : null;
+      target.access      = source.access  ? source.access.slice()  : [];
+      target.permissions = source.permissions ? JSON.parse(JSON.stringify(source.permissions)) : null;
+
+      // Rol değiştiyse roleHistory'ye ekle
+      if (oldRole !== target.role) {
+        if (!Array.isArray(target.roleHistory)) target.roleHistory = [];
+        target.roleHistory.push({ previousRole: oldRole, role: target.role, changedBy: _getCU()?.id, changedAt: nowTs() });
+      }
+
+      saveUsers(users);
+      document.getElementById('mo-clone-perms')?.remove();
+      renderAdmin();
+      window.toast?.('Yetkiler klonlandı: ' + source.name + ' → ' + target.name, 'ok');
+      logActivity('user', 'Yetki klonlama: ' + source.name + ' → ' + target.name);
+    }
+  });
+};
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 const Admin = {
@@ -2280,6 +2481,7 @@ const Admin = {
   checkPermExpiry,
   openBulkRoleChange,
   firebaseSync,
+  calcTrustScore: _calcTrustScore,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
