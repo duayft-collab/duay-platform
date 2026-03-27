@@ -694,8 +694,10 @@ function _doLogin() {
                 <button class="ptm-item" onclick="window._openGamifDashboard?.();window._closeToolsMenu?.()"><span class="ptm-icon">🏆</span><div><div class="ptm-title">Rozetlerim</div><div class="ptm-desc">XP, seviye ve rozet vitrinleri</div></div></button>
                 <button class="ptm-item admin-only" id="ptm-analiz" onclick="window._toggleWorkloadPanel?.(null);window._closeToolsMenu?.()"><span class="ptm-icon">👥</span><div><div class="ptm-title">Personel Analizi</div><div class="ptm-desc">İş yükü & performans tablosu</div></div></button>
                     <button class="ptm-item" onclick="openDeptManager();window._closeToolsMenu?.()"><span class="ptm-icon">🏷</span><div><div class="ptm-title">Departmanlar</div><div class="ptm-desc">Ekle, sil, renk değiştir</div></div></button>
+                <button class="ptm-item admin-only" onclick="window._openStatusManager?.();window._closeToolsMenu?.()"><span class="ptm-icon">📊</span><div><div class="ptm-title">Durum Yönetimi</div><div class="ptm-desc">Görev durumlarını özelleştir</div></div></button>
               </div>
             </div>
+            <button class="pus-add-btn" onclick="window._openQuickTaskModal?.()" style="background:var(--al);color:var(--ac);border:1px solid var(--ac);margin-right:4px" title="Hızlı görev ekle (mini modal)">⚡ Hızlı</button>
             <button class="pus-add-btn" onclick="openAddTask()">
               <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               Görev Ekle

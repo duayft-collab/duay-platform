@@ -7048,6 +7048,560 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
 
 
 
+// ────────────────────────────────────────────────────────────────
+// PUSULA v2.4.0 — Hızlı Görev Modal + Alt Görev Toggle + Durum Yönetimi + Matrix DnD
+// ────────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════
+// 1. ⚡ HIZLI GÖREV MODAL — Mini modal ile hızlı görev oluşturma
+// ══════════════════════════════════════════════════════════════════
+(function _initQuickTaskModal() {
+
+  /**
+   * @description Topbar'a ⚡ hızlı görev butonu ekler.
+   * Tıklayınca mini modal açılır: başlık + öncelik + atanan kişi.
+   */
+  function _injectQuickTaskBtn() {
+    const topbarRight = document.querySelector('.pus-topbar-right');
+    if (!topbarRight || topbarRight.querySelector('#pus-quick-modal-btn')) return;
+    const addBtn = topbarRight.querySelector('.pus-add-btn');
+    if (!addBtn) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'pus-quick-modal-btn';
+    btn.className = 'pus-add-btn';
+    btn.style.cssText = 'background:var(--al);color:var(--ac);border:1px solid var(--ac);margin-right:6px';
+    btn.innerHTML = '⚡ Hızlı';
+    btn.title = 'Hızlı görev ekle (mini modal)';
+    btn.onclick = _openQuickTaskModal;
+    topbarRight.insertBefore(btn, addBtn);
+  }
+
+  /**
+   * @description Hızlı görev mini modalını açar.
+   */
+  function _openQuickTaskModal() {
+    let mo = document.getElementById('mo-quick-task');
+    if (!mo) {
+      mo = document.createElement('div');
+      mo.id = 'mo-quick-task';
+      mo.className = 'mo';
+      mo.innerHTML = `
+        <div class="moc" style="max-width:380px;padding:0;border-radius:16px;overflow:hidden;background:var(--sf)">
+          <div style="padding:16px 20px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:14px;font-weight:700;color:var(--t)">⚡ Hızlı Görev</div>
+            <button onclick="closeMo('mo-quick-task')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+          </div>
+          <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+            <div>
+              <div class="fl" style="margin-bottom:4px">BAŞLIK</div>
+              <input class="fi" id="qt-title" placeholder="Görev başlığı…" style="font-size:14px;padding:10px 12px" onkeydown="if(event.key==='Enter')window._saveQuickTask?.()">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <div class="fl" style="margin-bottom:4px">ÖNCELİK</div>
+                <select class="fi" id="qt-pri" style="padding:8px 10px">
+                  <option value="1">🔴 Kritik</option>
+                  <option value="2">🟠 Önemli</option>
+                  <option value="3" selected>🔵 Normal</option>
+                  <option value="4">⚪ Düşük</option>
+                </select>
+              </div>
+              <div>
+                <div class="fl" style="margin-bottom:4px">PERSONEL</div>
+                <select class="fi" id="qt-user" style="padding:8px 10px"></select>
+              </div>
+            </div>
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">
+            <button class="btn btns" onclick="closeMo('mo-quick-task')">İptal</button>
+            <button class="btn btnp" onclick="window._saveQuickTask?.()">Kaydet</button>
+          </div>
+        </div>`;
+      document.body.appendChild(mo);
+    }
+
+    // Personel dropdown doldur
+    const users = loadUsers();
+    const cu = _getCU();
+    const sel = document.getElementById('qt-user');
+    if (sel) {
+      if (window.isAdmin?.()) {
+        sel.innerHTML = users.map(u =>
+          `<option value="${u.id}"${u.id === cu?.id ? ' selected' : ''}>${escapeHtml(u.name)}</option>`
+        ).join('');
+      } else {
+        sel.innerHTML = `<option value="${cu?.id}">${escapeHtml(cu?.name || 'Ben')}</option>`;
+      }
+    }
+
+    // Formu sıfırla
+    const titleInp = document.getElementById('qt-title');
+    if (titleInp) titleInp.value = '';
+    const priSel = document.getElementById('qt-pri');
+    if (priSel) priSel.value = '3';
+
+    window.openMo?.('mo-quick-task');
+    setTimeout(() => titleInp?.focus(), 100);
+  }
+
+  /**
+   * @description Hızlı görev modalından görev kaydeder.
+   */
+  window._saveQuickTask = function() {
+    const title = (document.getElementById('qt-title')?.value || '').trim();
+    if (!title) { window.toast?.('Başlık zorunludur', 'err'); return; }
+
+    const cu = _getCU();
+    if (!cu) { window.toast?.('Giriş yapmanız gerekiyor', 'err'); return; }
+
+    const pri = parseInt(document.getElementById('qt-pri')?.value || '3');
+    const uid = parseInt(document.getElementById('qt-user')?.value || cu.id);
+
+    if (!window.isAdmin?.() && uid !== parseInt(cu.id)) {
+      window.toast?.('Yetki yok', 'err');
+      return;
+    }
+
+    const tasks = loadTasks();
+    const newTask = {
+      id:            generateNumericId(),
+      title:         title,
+      desc:          '',
+      pri:           pri,
+      due:           null,
+      due_time:      '',
+      deadline_full: null,
+      start:         null,
+      status:        'todo',
+      department:    '',
+      cost:          null,
+      tags:          [],
+      link:          '',
+      duration:      null,
+      uid:           uid,
+      done:          false,
+      subTasks:      [],
+      participants:  [],
+      viewers:       [],
+      created_at:    nowTs(),
+    };
+    tasks.push(newTask);
+    saveTasks(tasks);
+
+    window.closeMo?.('mo-quick-task');
+    window.toast?.('⚡ Görev eklendi: ' + title, 'ok');
+    window.logActivity?.({ action: 'task_quick_add', details: { taskId: newTask.id, title } });
+    renderPusula();
+  };
+
+  // renderPusula hook — butonu inject et
+  const _qtOrigRender = window.renderPusula;
+  window.renderPusula = function() {
+    _qtOrigRender?.();
+    setTimeout(_injectQuickTaskBtn, 200);
+  };
+
+  window._openQuickTaskModal = _openQuickTaskModal;
+  console.info('[Pusula] Hızlı görev modal aktif ✓');
+})();
+
+
+// ══════════════════════════════════════════════════════════════════
+// 2. ▶/▼ ALT GÖREV TOPLU GİZLE/GÖSTER
+// ══════════════════════════════════════════════════════════════════
+(function _initSubtaskGlobalToggle() {
+
+  const _GLOBAL_KEY = 'pus_sub_all_collapsed';
+
+  /**
+   * @description Topbar'a "Alt Görevler" toggle butonu ekler.
+   */
+  function _injectSubToggleBtn() {
+    const topbarRight = document.querySelector('.pus-topbar-right');
+    if (!topbarRight || topbarRight.querySelector('#pus-sub-toggle-all')) return;
+    const sep = topbarRight.querySelector('.pus-topbar-sep');
+
+    const btn = document.createElement('button');
+    btn.id = 'pus-sub-toggle-all';
+    btn.className = 'pvt-btn';
+    btn.style.cssText = 'font-size:11px;padding:4px 8px;margin-right:4px;cursor:pointer';
+    const collapsed = localStorage.getItem(_GLOBAL_KEY) === '1';
+    btn.innerHTML = collapsed ? '▶ Alt Görevler' : '▼ Alt Görevler';
+    btn.title = 'Tüm alt görevleri gizle/göster';
+    btn.onclick = function() {
+      const isCollapsed = localStorage.getItem(_GLOBAL_KEY) === '1';
+      const newState = isCollapsed ? '0' : '1';
+      localStorage.setItem(_GLOBAL_KEY, newState);
+
+      // Tüm görevlerin alt görev durumunu güncelle
+      const tasks = loadTasks();
+      tasks.forEach(t => {
+        localStorage.setItem('pus_sub_collapsed_' + t.id, newState);
+      });
+
+      // Mevcut DOM'daki alt görev body'lerini gizle/göster
+      document.querySelectorAll('._sub_body').forEach(el => {
+        el.style.display = newState === '1' ? 'none' : '';
+      });
+      document.querySelectorAll('._sub_collapse_btn').forEach(el => {
+        const hintSpan = el.querySelector('span:last-child');
+        if (hintSpan) hintSpan.textContent = newState === '1' ? 'göster' : 'gizle';
+      });
+
+      btn.innerHTML = newState === '1' ? '▶ Alt Görevler' : '▼ Alt Görevler';
+      window.toast?.(newState === '1' ? 'Alt görevler gizlendi' : 'Alt görevler gösterildi', 'ok');
+    };
+
+    if (sep) {
+      topbarRight.insertBefore(btn, sep);
+    } else {
+      topbarRight.insertBefore(btn, topbarRight.firstChild);
+    }
+  }
+
+  // renderPusula hook
+  const _stOrigRender = window.renderPusula;
+  window.renderPusula = function() {
+    _stOrigRender?.();
+    setTimeout(_injectSubToggleBtn, 250);
+  };
+
+  console.info('[Pusula] Alt görev global toggle aktif ✓');
+})();
+
+
+// ══════════════════════════════════════════════════════════════════
+// 3. 📊 DURUM ALANI YÖNETİMİ — Özel durum ekleme/silme/sıralama
+// ══════════════════════════════════════════════════════════════════
+(function _initStatusManager() {
+
+  const _STATUS_KEY = 'ak_pus_statuses';
+
+  /** Varsayılan durumlar */
+  const _DEFAULT_STATUSES = [
+    { value: 'todo',       label: '📋 Yapılacak',   emoji: '📋', color: 'var(--s2)',  textColor: 'var(--t2)' },
+    { value: 'inprogress', label: '🔄 Devam',       emoji: '🔄', color: 'var(--blb)', textColor: 'var(--blt)' },
+    { value: 'review',     label: '👀 İnceleme',    emoji: '👀', color: 'var(--amb)', textColor: 'var(--amt)' },
+    { value: 'done',       label: '✅ Tamam',       emoji: '✅', color: 'var(--grb)', textColor: 'var(--grt)' },
+  ];
+
+  /**
+   * @description Kaydedilmiş durum listesini döndürür (varsayılanlar + özel).
+   * @returns {Array} Durum nesneleri dizisi
+   */
+  function _getStatuses() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(_STATUS_KEY) || 'null');
+      if (Array.isArray(saved) && saved.length >= 4) return saved;
+    } catch (e) { /* ignore */ }
+    return [..._DEFAULT_STATUSES];
+  }
+
+  /**
+   * @description Durum listesini localStorage'a kaydeder.
+   * @param {Array} statuses
+   */
+  function _saveStatuses(statuses) {
+    localStorage.setItem(_STATUS_KEY, JSON.stringify(statuses));
+  }
+
+  /**
+   * @description tk-status dropdown'ını güncel durum listesiyle doldurur.
+   */
+  function _populateStatusDropdown() {
+    const sel = document.getElementById('tk-status');
+    if (!sel) return;
+    const current = sel.value;
+    const statuses = _getStatuses();
+    sel.innerHTML = statuses.map(s =>
+      `<option value="${escapeHtml(s.value)}">${s.label}</option>`
+    ).join('');
+    if (current) sel.value = current;
+  }
+
+  /**
+   * @description Durum yönetimi modalını açar (admin/manager).
+   */
+  function _openStatusManager() {
+    if (!window.isAdmin?.() && !(_getCU()?.role === 'manager')) {
+      window.toast?.('Bu özellik yalnızca admin/manager için', 'err');
+      return;
+    }
+
+    let mo = document.getElementById('mo-status-mgr');
+    if (mo) mo.remove();
+
+    mo = document.createElement('div');
+    mo.id = 'mo-status-mgr';
+    mo.className = 'mo';
+    mo.style.display = 'flex';
+    mo.innerHTML = `
+      <div class="moc" style="max-width:440px;padding:0;border-radius:16px;overflow:hidden;background:var(--sf);max-height:85vh;display:flex;flex-direction:column">
+        <div style="padding:16px 20px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--t)">📊 Durum Yönetimi</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px">Görev durumlarını özelleştirin</div>
+          </div>
+          <button onclick="this.closest('.mo').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
+        </div>
+        <div id="sm-list" style="flex:1;overflow-y:auto;padding:16px 20px"></div>
+        <div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2)">
+          <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">YENİ DURUM EKLE</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="fi" id="sm-new-emoji" placeholder="😊" style="width:50px;text-align:center;font-size:16px;padding:6px" maxlength="4">
+            <input class="fi" id="sm-new-label" placeholder="Durum adı…" style="flex:1;padding:6px 10px" onkeydown="if(event.key==='Enter')window._addCustomStatus?.()">
+            <button class="btn btnp" onclick="window._addCustomStatus?.()" style="padding:6px 14px;font-size:12px">Ekle</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(mo);
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    _renderStatusList();
+  }
+
+  /**
+   * @description Durum listesini modal içine render eder.
+   */
+  function _renderStatusList() {
+    const cont = document.getElementById('sm-list');
+    if (!cont) return;
+    const statuses = _getStatuses();
+    const isDefault = v => ['todo','inprogress','review','done'].includes(v);
+
+    cont.innerHTML = statuses.map((s, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--s2);margin-bottom:6px" data-idx="${i}">
+        <span style="font-size:16px;cursor:grab" draggable="true"
+          ondragstart="event.dataTransfer.setData('smIdx','${i}')"
+          ondragover="event.preventDefault();this.parentElement.style.borderTop='2px solid var(--ac)'"
+          ondragleave="this.parentElement.style.borderTop=''"
+          ondrop="event.preventDefault();this.parentElement.style.borderTop='';window._reorderStatus?.(${i},event)">☰</span>
+        <span style="font-size:14px">${s.emoji || '•'}</span>
+        <span style="flex:1;font-size:13px;font-weight:500;color:var(--t)">${escapeHtml(s.label.replace(/^[^\s]+\s/, ''))}</span>
+        <span style="font-size:10px;color:var(--t3);font-family:monospace;background:var(--sf);padding:2px 6px;border-radius:4px">${s.value}</span>
+        ${isDefault(s.value)
+          ? '<span style="font-size:10px;color:var(--t3);padding:2px 6px">🔒</span>'
+          : `<button onclick="window._delCustomStatus?.('${escapeHtml(s.value)}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#EF4444;padding:2px 6px" title="Sil">✕</button>`
+        }
+      </div>
+    `).join('');
+  }
+
+  /**
+   * @description Yeni özel durum ekler.
+   */
+  window._addCustomStatus = function() {
+    const emojiInp = document.getElementById('sm-new-emoji');
+    const labelInp = document.getElementById('sm-new-label');
+    const emoji = (emojiInp?.value || '').trim() || '•';
+    const label = (labelInp?.value || '').trim();
+    if (!label) { window.toast?.('Durum adı zorunlu', 'err'); return; }
+
+    const value = label.toLowerCase()
+      .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+      .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+
+    const statuses = _getStatuses();
+    if (statuses.find(s => s.value === value)) {
+      window.toast?.('Bu durum zaten var: ' + value, 'err');
+      return;
+    }
+
+    statuses.push({
+      value,
+      label: emoji + ' ' + label,
+      emoji,
+      color: 'var(--s2)',
+      textColor: 'var(--t2)',
+      custom: true,
+    });
+    _saveStatuses(statuses);
+    if (emojiInp) emojiInp.value = '';
+    if (labelInp) labelInp.value = '';
+    _renderStatusList();
+    window.toast?.('Durum eklendi: ' + label, 'ok');
+  };
+
+  /**
+   * @description Özel durumu siler.
+   * @param {string} value
+   */
+  window._delCustomStatus = function(value) {
+    if (['todo','inprogress','review','done'].includes(value)) {
+      window.toast?.('Varsayılan durumlar silinemez', 'err');
+      return;
+    }
+    const statuses = _getStatuses().filter(s => s.value !== value);
+    _saveStatuses(statuses);
+    _renderStatusList();
+    window.toast?.('Durum silindi ✓', 'ok');
+  };
+
+  /**
+   * @description Durum sırasını drag & drop ile değiştirir.
+   * @param {number} targetIdx
+   * @param {DragEvent} event
+   */
+  window._reorderStatus = function(targetIdx, event) {
+    const srcIdx = parseInt(event.dataTransfer.getData('smIdx'));
+    if (isNaN(srcIdx) || srcIdx === targetIdx) return;
+    const statuses = _getStatuses();
+    const moved = statuses.splice(srcIdx, 1)[0];
+    statuses.splice(targetIdx, 0, moved);
+    _saveStatuses(statuses);
+    _renderStatusList();
+  };
+
+  // getStatusPill'i custom durumları destekleyecek şekilde genişlet
+  const _origGetStatusPill = window.getStatusPill;
+  window.getStatusPill = function(t) {
+    const orig = _origGetStatusPill?.(t);
+    if (orig) return orig;
+    // Özel durum kontrolü
+    if (!t.status || t.status === 'todo') return '';
+    const statuses = _getStatuses();
+    const custom = statuses.find(s => s.value === t.status && s.custom);
+    if (custom) {
+      return `<span class="tk-status-pill" style="background:${custom.color};color:${custom.textColor}">${custom.emoji || '•'} ${custom.label.replace(/^[^\s]+\s/, '')}</span>`;
+    }
+    return '';
+  };
+
+  // openMo hook — tk-status dropdown'ını doldur
+  const _smOrigOpenMo = window.openMo;
+  window.openMo = function(id) {
+    _smOrigOpenMo?.(...arguments);
+    if (id === 'mo-task') {
+      setTimeout(_populateStatusDropdown, 30);
+    }
+  };
+
+  // Araçlar menüsüne durum yönetimi ekle
+  function _injectStatusMgrBtn() {
+    const menu = document.getElementById('pus-tools-menu');
+    if (!menu || menu.querySelector('#ptm-status-mgr')) return;
+    const divider = menu.querySelector('.ptm-divider');
+    const btn = document.createElement('button');
+    btn.id = 'ptm-status-mgr';
+    btn.className = 'ptm-item admin-only';
+    btn.innerHTML = '<span class="ptm-icon">📊</span><div><div class="ptm-title">Durum Yönetimi</div><div class="ptm-desc">Görev durumlarını özelleştir</div></div>';
+    btn.onclick = function() { _openStatusManager(); window._closeToolsMenu?.(); };
+    if (divider) {
+      menu.insertBefore(btn, divider);
+    } else {
+      menu.appendChild(btn);
+    }
+  }
+
+  // renderPusula hook
+  const _smOrigRender = window.renderPusula;
+  window.renderPusula = function() {
+    _smOrigRender?.();
+    setTimeout(_injectStatusMgrBtn, 250);
+  };
+
+  window._openStatusManager = _openStatusManager;
+  window._getCustomStatuses = _getStatuses;
+  console.info('[Pusula] Durum yönetimi aktif ✓');
+})();
+
+
+// ══════════════════════════════════════════════════════════════════
+// 4. 📐 MATRİX SÜRÜKLE BIRAK — Gelişmiş drag & drop
+// ══════════════════════════════════════════════════════════════════
+(function _initMatrixDragEnhance() {
+
+  // Mevcut _eisDrop'u genişlet — kadrana göre urgent+important güncelle
+  const _origEisDrop = window._eisDrop;
+  window._eisDrop = function(event, quadId) {
+    event.preventDefault();
+    const taskId = parseInt(event.dataTransfer.getData('taskId'));
+    if (!taskId || !quadId) return;
+
+    const tasks = loadTasks();
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+
+    // Kadrana göre urgent + important + pri + status haritası
+    const Q_MAP = {
+      q1: { pri: 1, status: 'inprogress', urgent: true,  important: true,  label: 'Hemen Yap'  },
+      q2: { pri: 2, status: 'todo',       urgent: false, important: true,  label: 'Planla'      },
+      q3: { pri: 3, status: 'inprogress', urgent: true,  important: false, label: 'Devret'      },
+      q4: { pri: 4, status: 'todo',       urgent: false, important: false, label: 'Ele'         },
+    };
+    const map = Q_MAP[quadId];
+    if (!map) return;
+
+    t.pri       = map.pri;
+    t.status    = map.status;
+    t.quadrant  = quadId;
+    t.urgent    = map.urgent;
+    t.important = map.important;
+    saveTasks(tasks);
+
+    window.toast?.('📐 Kadran: ' + map.label + ' ✓', 'ok');
+    window.logActivity?.({ action: 'task_matrix_move', details: { taskId, quadrant: quadId, label: map.label } });
+
+    // Bırakma animasyonu
+    const dropTarget = event.currentTarget || event.target.closest('[ondrop]');
+    if (dropTarget) {
+      dropTarget.style.transition = 'box-shadow .3s, transform .2s';
+      dropTarget.style.boxShadow = '0 0 0 3px var(--ac)';
+      dropTarget.style.transform = 'scale(1.01)';
+      setTimeout(() => {
+        dropTarget.style.boxShadow = '';
+        dropTarget.style.transform = '';
+      }, 400);
+    }
+
+    const re = window._renderEisenhower;
+    if (re) setTimeout(re, 80);
+  };
+
+  // Sürükleme sırasında kadran vurgulama (dragover/dragleave görsel feedback)
+  const _origRenderEis = window._renderEisenhower;
+  window._renderEisenhower = function() {
+    _origRenderEis?.();
+
+    // Kadran dropzone'larına gelişmiş görsel feedback ekle
+    setTimeout(() => {
+      document.querySelectorAll('[ondrop*="_eisDrop"]').forEach(zone => {
+        zone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          this.style.boxShadow = 'inset 0 0 0 2px var(--ac)';
+          this.style.transition = 'box-shadow .15s';
+        });
+        zone.addEventListener('dragleave', function() {
+          this.style.boxShadow = '';
+        });
+        zone.addEventListener('drop', function() {
+          this.style.boxShadow = '';
+        });
+      });
+
+      // Kart sürükleme başladığında görsel feedback
+      document.querySelectorAll('[draggable="true"][ondragstart*="taskId"]').forEach(card => {
+        card.addEventListener('dragstart', function(e) {
+          this.style.opacity = '0.5';
+          this.style.transform = 'rotate(2deg)';
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', function() {
+          this.style.opacity = '';
+          this.style.transform = '';
+        });
+      });
+    }, 100);
+  };
+
+  console.info('[Pusula] Matrix drag & drop gelişmiş ✓');
+})();
+
+
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Pusula;
