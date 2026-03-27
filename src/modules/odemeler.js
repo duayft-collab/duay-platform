@@ -294,6 +294,25 @@ function _injectOdmPanel() {
       '</div>',
     '</div>',
 
+    // SOL PANEL + İÇERİK WRAPPER
+    '<div style="display:flex;min-height:600px">',
+      '<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">',
+        (function() {
+          var cats = [
+            { id:'odeme',       label:'💸 Ödemeler' },
+            { id:'tahsilat',    label:'💰 Tahsilatlar' },
+            { id:'bekleyen',    label:'⏳ Bekleyen' },
+            { id:'projeksiyon', label:'📊 Projeksiyon' },
+            { id:'cari',        label:'👥 Cari' },
+            { id:'butce',       label:'📈 Bütçe' },
+          ];
+          return cats.map(function(c) {
+            return '<button onclick="window._odmNavClick?.(\'' + c.id + '\')" class="odm-nav-btn" data-nav="' + c.id + '" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px;transition:background .1s">' + c.label + '</button>';
+          }).join('');
+        })(),
+      '</div>',
+      '<div style="flex:1;overflow-y:auto">',
+
     // BENTO ÜST ÖZET — 4 metrik kutusu
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-bottom:1px solid var(--b)">',
       '<div style="padding:14px 18px;border-right:1px solid var(--b)">',
@@ -369,6 +388,8 @@ function _injectOdmPanel() {
     '</div>',
 
     '<div id="odm-list"></div>',
+    '</div>', // flex:1 content close
+    '</div>', // display:flex wrapper close
   ].join('');
 
   // Sekme click
@@ -384,7 +405,36 @@ function _injectOdmPanel() {
   _fillOdmUserFilter();
   checkOdmRecurring();
   checkOdmDocExpiry();
+
+  // Sol panel highlight
+  setTimeout(function() {
+    document.querySelectorAll('.odm-nav-btn').forEach(function(b) {
+      var active = b.dataset.nav === (window._odmActiveCat || 'odeme');
+      b.style.background = active ? '#EBF2FF' : 'transparent';
+      b.style.color = active ? '#007AFF' : '#333';
+      b.style.fontWeight = active ? '600' : '400';
+    });
+  }, 50);
 }
+
+/**
+ * Sol panel navigasyon tıklama.
+ */
+window._odmNavClick = function(cat) {
+  window._odmActiveCat = cat;
+  // Sekme eşleştir
+  var tabMap = { odeme:'all', tahsilat:'tahsilat', bekleyen:'bekliyor', projeksiyon:'projeksiyon' };
+  if (tabMap[cat]) { setOdmTab(tabMap[cat]); }
+  else if (cat === 'cari') { window.nav?.('cari'); return; }
+  else if (cat === 'butce') { window.openBudgetManager?.(); return; }
+  // Highlight güncelle
+  document.querySelectorAll('.odm-nav-btn').forEach(function(b) {
+    var active = b.dataset.nav === cat;
+    b.style.background = active ? '#EBF2FF' : 'transparent';
+    b.style.color = active ? '#007AFF' : '#333';
+    b.style.fontWeight = active ? '600' : '400';
+  });
+};
 
 function _fillOdmUserFilter() {
   const sel = _go('odm-user-f'); if (!sel) return;
