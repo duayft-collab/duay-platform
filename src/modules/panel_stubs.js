@@ -766,6 +766,13 @@ function _injectFinans() {
   </div>
 </div>
 
+<!-- SOL PANEL -->
+<div style="display:flex;min-height:600px">
+<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">
+${[['ozet','📊 Özet'],['gelir_gider','💰 Gelir/Gider'],['nakit','🏦 Nakit'],['trend','📈 Trend'],['kpi','🎯 KPI'],['risk','⚠️ Risk'],['projeksiyon','🔮 Projeksiyon']].map(function(c){return '<button onclick="window._finNavClick?.(\''+c[0]+'\')" class="fin-nav-btn" data-nav="'+c[0]+'" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px">'+c[1]+'</button>';}).join('')}
+</div>
+<div style="flex:1;overflow-y:auto">
+
 <!-- ── YASAL EKONOMİK GÖSTERGELER ── -->
 <div class="card" style="margin-bottom:18px;border:2px solid rgba(79,70,229,.15)">
   <div class="ch">
@@ -908,7 +915,18 @@ function _injectFinans() {
 <div style="display:flex;gap:8px;margin-top:8px">
   <button class="btn btns" onclick="exportFinansXlsx()">⬇ Excel Çıktı Al</button>
 </div>
+</div></div>
   `;
+
+window._finNavClick = function(cat) {
+  window._finActiveCat = cat;
+  document.querySelectorAll('.fin-nav-btn').forEach(function(b) {
+    var active = b.dataset.nav === cat;
+    b.style.background = active ? '#EBF2FF' : 'transparent';
+    b.style.color = active ? '#007AFF' : '#333';
+    b.style.fontWeight = active ? '600' : '400';
+  });
+};
 }
 
 function _injectUsers() {

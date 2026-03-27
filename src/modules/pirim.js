@@ -400,6 +400,13 @@ function _injectPirimPanel() {
   </div>
 </div>
 
+<!-- SOL PANEL WRAPPER -->
+<div style="display:flex;min-height:600px">
+<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">
+${[['primlerim','🏆 Primlerim'],['hesapla','📊 Hesapla'],['yonetmelik','📜 Yönetmelik'],['sozluk','📖 Sözlük'],['hedefler','🎯 Hedefler'],['liderlik','👑 Liderlik']].map(function(c){return '<button onclick="window._primNavClick?.(\''+c[0]+'\')" class="prm-nav-btn" data-nav="'+c[0]+'" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px">'+c[1]+'</button>';}).join('')}
+</div>
+<div style="flex:1;overflow-y:auto">
+
 <!-- BENTO METRİKLER -->
 <div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--b)">
   <div style="padding:14px 18px;border-right:1px solid var(--b)">
@@ -539,7 +546,23 @@ function _injectPirimPanel() {
     </div>
 
   </div>
-</div>`;
+</div>
+</div></div>`;
+
+window._primNavClick = function(cat) {
+  window._primActiveCat = cat;
+  if (cat === 'yonetmelik') { Pirim.showPdf?.(); }
+  else if (cat === 'sozluk') { Pirim.openGlossary?.(); }
+  else if (cat === 'hedefler') { Pirim.openGoal?.(); }
+  else if (cat === 'liderlik') { Pirim.renderLeaderboard?.(); }
+  else if (cat === 'hesapla') { Pirim.openModal?.(null); }
+  document.querySelectorAll('.prm-nav-btn').forEach(function(b) {
+    var active = b.dataset.nav === cat;
+    b.style.background = active ? '#EBF2FF' : 'transparent';
+    b.style.color = active ? '#007AFF' : '#333';
+    b.style.fontWeight = active ? '600' : '400';
+  });
+};
 }
 
 // ════════════════════════════════════════════════════════════════

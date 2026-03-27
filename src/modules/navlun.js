@@ -606,6 +606,13 @@ function _injectNavlunSection() {
       +'</div>'
     +'</div>'
 
+    // SOL PANEL WRAPPER
+    +'<div style="display:flex;min-height:500px">'
+      +'<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">'
+        +[['alis','📥 Alış Teklifleri'],['satis','📤 Satış Teklifleri'],['karsilastir','⚖️ Karşılaştır'],['trend','📈 Trend'],['limanlar','🗺️ Limanlar']].map(function(c){return '<button onclick="window._navNavClick?.(\''+c[0]+'\')" class="nvl-nav-btn" data-nav="'+c[0]+'" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px">'+c[1]+'</button>';}).join('')
+      +'</div>'
+      +'<div style="flex:1;overflow-y:auto">'
+
     // Stat şeridi
     +'<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--b)">'
       +'<div style="padding:12px 16px;border-right:1px solid var(--b)"><div style="font-size:18px;font-weight:600" id="nvl-stat-total">0</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Toplam</div></div>'
@@ -634,6 +641,7 @@ function _injectNavlunSection() {
     +'</div>'
 
     +'<div id="navlun-list" style="padding:4px 0"></div>'
+    +'</div></div>' // flex wrapper close
   +'</div>';
 
   panel.appendChild(sec);
@@ -1121,5 +1129,16 @@ if (typeof module!=='undefined'&&module.exports) {
   window.openNavlunPerformans    = openNavlunPerformans;
   window.nvlConvertCurrency      = nvlConvertCurrency;
   // Navlun hazır — bekleyen modülleri bilgilendir
+  window._navNavClick = function(cat) {
+    window._navActiveCat = cat;
+    if (cat === 'karsilastir') openNavlunCompare();
+    else if (cat === 'trend') openNavlunTrend();
+    document.querySelectorAll('.nvl-nav-btn').forEach(function(b) {
+      var active = b.dataset.nav === cat;
+      b.style.background = active ? '#EBF2FF' : 'transparent';
+      b.style.color = active ? '#007AFF' : '#333';
+      b.style.fontWeight = active ? '600' : '400';
+    });
+  };
   try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) {}
 }

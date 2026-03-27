@@ -68,6 +68,25 @@ function _injectSAPanel() {
       + '</div>'
     + '</div>'
 
+    // SOL PANEL + İÇERİK WRAPPER
+    + '<div style="display:flex;min-height:600px">'
+      + '<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">'
+        + (function() {
+            var cats = [
+              { id:'siparisler',   label:'📋 Siparişler' },
+              { id:'bekleyen',     label:'⏳ Bekleyen' },
+              { id:'onaylanan',    label:'✅ Onaylanan' },
+              { id:'odeme_plani',  label:'💳 Ödeme Planı' },
+              { id:'butce',        label:'📊 Bütçe' },
+              { id:'tedarikciler', label:'🏭 Tedarikçiler' },
+            ];
+            return cats.map(function(c) {
+              return '<button onclick="window._saNavClick?.(\'' + c.id + '\')" class="sa-nav-btn" data-nav="' + c.id + '" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px;transition:background .1s">' + c.label + '</button>';
+            }).join('');
+          })()
+      + '</div>'
+      + '<div style="flex:1;overflow-y:auto">'
+
     // BÜTÇE PROGRESS BAR
     + '<div id="sa-budget-bar" style="display:none;padding:6px 20px;border-bottom:1px solid var(--b);background:var(--s2)"></div>'
 
@@ -125,7 +144,8 @@ function _injectSAPanel() {
     + '</div>'
 
     // LİSTE
-    + '<div id="sa-list" style="overflow-x:auto"></div>';
+    + '<div id="sa-list" style="overflow-x:auto"></div>'
+    + '</div></div>'; // flex wrapper close
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -144,6 +164,20 @@ window._saSetTab = function(tab) {
     t.style.fontWeight = isActive ? '600' : '400';
   });
   renderSatinAlma();
+};
+
+window._saNavClick = function(cat) {
+  window._saActiveCat = cat;
+  var tabMap = { siparisler:'all', bekleyen:'pending', onaylanan:'approved', odeme_plani:'all' };
+  if (tabMap[cat]) { window._saSetTab(tabMap[cat]); }
+  else if (cat === 'butce') { window._openSABudget?.(); }
+  else if (cat === 'tedarikciler') { window.nav?.('cari'); return; }
+  document.querySelectorAll('.sa-nav-btn').forEach(function(b) {
+    var active = b.dataset.nav === cat;
+    b.style.background = active ? '#EBF2FF' : 'transparent';
+    b.style.color = active ? '#007AFF' : '#333';
+    b.style.fontWeight = active ? '600' : '400';
+  });
 };
 
 function renderSatinAlma() {
