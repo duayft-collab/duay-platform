@@ -178,6 +178,15 @@ window._hmExport = function(modId, format) {
 // ── 19 MODÜL RENDERERLERİ ────────────────────────────────────────
 var _hmRenderers = {};
 
+// 50+ para birimi ISO 4217
+var HM_ALL_CURRENCIES = [
+  'TRY','USD','EUR','GBP','JPY','CNY','AED','SAR','CHF','CAD','AUD','NZD',
+  'NOK','SEK','DKK','PLN','CZK','HUF','RON','BGN','HRK','RSD','UAH','GEL',
+  'AMD','AZN','KZT','UZS','PKR','INR','BDT','LKR','MYR','IDR','THB','VND',
+  'PHP','KRW','TWD','HKD','SGD','BRL','MXN','ARS','CLP','COP','PEN','ZAR',
+  'NGN','GHS','EGP','XAU','XAU-ONS','BTC','ETH'
+];
+
 // Mock kur kaynaklari
 var HM_KUR_SOURCES = {
   tcmb:   { label:'TCMB', usd: HM_RATES.USD, eur: HM_RATES.EUR, gbp: HM_RATES.GBP },
@@ -188,16 +197,18 @@ var HM_KUR_SOURCES = {
 
 var HM_ELDEKI_KEY = 'ak_eldeki1';
 
-// 1) Döviz Çevirici — Gelişmiş
+// 1) Döviz Çevirici — 50+ Para Birimi
 _hmRenderers.doviz = function(el) {
   var srcOpts = Object.entries(HM_KUR_SOURCES).map(function(e) { return '<option value="' + e[0] + '">' + e[1].label + '</option>'; }).join('');
-  el.innerHTML = _hmCard('💱 Döviz Çevirici',
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+  var curOpts = HM_ALL_CURRENCIES.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
+  el.innerHTML = _hmCard('💱 Döviz Çevirici — 50+ Para Birimi',
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
       + _hmInput('hm-dv-amt','Tutar','number','1000','oninput="window._hmCalcDoviz?.()"')
-      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KAYNAK DÖVİZ</div><select id="hm-dv-from" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcDoviz?.()"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="TRY">TRY</option></select></div>'
-      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KUR KAYNAĞI</div><select id="hm-dv-src" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;font-family:inherit" onchange="window._hmCalcDoviz?.()">' + srcOpts + '</select></div>'
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KAYNAK</div><select id="hm-dv-from" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:13px;font-family:inherit" onchange="window._hmCalcDoviz?.()">' + curOpts + '</select></div>'
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">HEDEF</div><select id="hm-dv-to" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:13px;font-family:inherit" onchange="window._hmCalcDoviz?.()"><option value="TRY" selected>TRY</option>' + curOpts + '</select></div>'
+      + '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:600;color:#8E8E93;text-transform:uppercase;margin-bottom:4px">KAYNAK</div><select id="hm-dv-src" style="width:100%;padding:10px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:13px;font-family:inherit" onchange="window._hmCalcDoviz?.()">' + srcOpts + '</select></div>'
     + '</div>'
-    + _hmResult('hm-dv-try','TL Karşılığı') + _hmResult('hm-dv-usd','USD') + _hmResult('hm-dv-eur','EUR') + _hmResult('hm-dv-gbp','GBP')
+    + _hmResult('hm-dv-result','Sonuç') + _hmResult('hm-dv-try','TL Karşılığı') + _hmResult('hm-dv-usd','USD') + _hmResult('hm-dv-eur','EUR')
     + '<div style="margin-top:12px;border:1px solid #F0F0F0;border-radius:10px;overflow:hidden">'
       + '<div style="padding:8px 12px;background:#F9FAFB;font-size:10px;font-weight:700;color:#8E8E93;border-bottom:1px solid #F0F0F0">Alış / Satış Spread</div>'
       + '<div id="hm-dv-spread" style="padding:8px 12px;font-size:11px"></div>'
@@ -208,11 +219,15 @@ _hmRenderers.doviz = function(el) {
 window._hmCalcDoviz = function() {
   var amt = parseFloat(document.getElementById('hm-dv-amt')?.value||'0')||0;
   var from = document.getElementById('hm-dv-from')?.value||'USD';
+  var to = document.getElementById('hm-dv-to')?.value||'TRY';
   var srcKey = document.getElementById('hm-dv-src')?.value||'tcmb';
   var src = HM_KUR_SOURCES[srcKey] || HM_KUR_SOURCES.tcmb;
-  var rates = { USD: src.usd, EUR: src.eur, GBP: src.gbp, TRY: 1 };
+  var rates = { USD: src.usd, EUR: src.eur, GBP: src.gbp, TRY: 1, XAU: HM_RATES.ALTIN_GR, 'XAU-ONS': HM_RATES.ALTIN_ONS * HM_RATES.USD, BTC: 67000 * HM_RATES.USD, ETH: 3500 * HM_RATES.USD };
   var tlVal = amt * (rates[from]||1);
+  var toRate = rates[to] || 1;
+  var result = tlVal / toRate;
   var _s = function(id,v) { var e = document.getElementById(id); if(e) e.textContent = v; };
+  _s('hm-dv-result', _hmFmt(result) + ' ' + to);
   _s('hm-dv-try', '₺' + _hmFmt(tlVal));
   _s('hm-dv-usd', '$' + _hmFmt(tlVal / (rates.USD||1)));
   _s('hm-dv-eur', '€' + _hmFmt(tlVal / (rates.EUR||1)));

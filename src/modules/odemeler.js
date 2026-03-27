@@ -4521,23 +4521,81 @@ function _cariDropdownHTML(selectedId, inputId) {
 /**
  * Hızlı cari ekleme mini modalı.
  */
-window._openQuickCari = function() {
+window._openQuickCari = function(editId) {
   var old = document.getElementById('mo-quick-cari'); if (old) old.remove();
+  var c = editId ? loadCari().find(function(x) { return x.id === editId; }) : null;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-quick-cari'; mo.style.display = 'flex'; mo.style.zIndex = '2300';
-  mo.innerHTML = '<div class="moc" style="max-width:380px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:12px 16px;border-bottom:1px solid var(--b)"><div style="font-size:14px;font-weight:700;color:var(--t)">+ Hızlı Cari Ekle</div></div>'
-    + '<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">'
-      + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı"></div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-        + '<div><div class="fl">TİP</div><select class="fi" id="qc-type"><option value="tedarikci">Tedarikçi</option><option value="musteri">Müşteri</option><option value="diger">Diğer</option></select></div>'
-        + '<div><div class="fl">TELEFON</div><input class="fi" id="qc-phone" placeholder="Tel"></div>'
+  mo.innerHTML = '<div class="moc" style="max-width:650px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--t)">' + (c ? '✏️ Cari Düzenle' : '+ Cari Ekle') + '</div>'
+      + '<button onclick="document.getElementById(\'mo-quick-cari\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    // 4 Sekme
+    + '<div style="display:flex;border-bottom:1px solid var(--b);flex-shrink:0">'
+      + '<button class="qc-tab active" data-tab="genel" onclick="window._qcSwitchTab(\'genel\')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--ac);border-bottom:2px solid var(--ac);font-family:inherit">Genel</button>'
+      + '<button class="qc-tab" data-tab="finans" onclick="window._qcSwitchTab(\'finans\')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:12px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Finansal</button>'
+      + '<button class="qc-tab" data-tab="kisiler" onclick="window._qcSwitchTab(\'kisiler\')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:12px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Kişiler</button>'
+      + '<button class="qc-tab" data-tab="belgeler" onclick="window._qcSwitchTab(\'belgeler\')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:12px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Belgeler</button>'
+    + '</div>'
+    + '<div style="flex:1;overflow-y:auto;padding:14px 16px">'
+      // Genel sekmesi
+      + '<div id="qc-panel-genel" class="qc-panel">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+          + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı" value="' + esc(c?.name || '') + '"></div>'
+          + '<div><div class="fl">TİP *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarikçi</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>Müşteri</option><option value="potential"' + (c?.type === 'potential' ? ' selected' : '') + '>Potansiyel</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Diğer</option></select></div>'
+          + '<div><div class="fl">VERGİ NO *</div><input class="fi" id="qc-tax" value="' + esc(c?.taxNo || '') + '" placeholder="Vergi numarası"></div>'
+          + '<div><div class="fl">VERGİ DAİRESİ *</div><input class="fi" id="qc-taxoffice" value="' + esc(c?.taxOffice || '') + '" placeholder="Vergi dairesi"></div>'
+          + '<div><div class="fl">ÜLKE *</div><input class="fi" id="qc-country" value="' + esc(c?.country || '') + '" placeholder="Türkiye"></div>'
+          + '<div><div class="fl">ŞEHİR</div><input class="fi" id="qc-city" value="' + esc(c?.city || '') + '"></div>'
+          + '<div><div class="fl">TELEFON</div><input class="fi" id="qc-phone" value="' + esc(c?.phone || '') + '"></div>'
+          + '<div><div class="fl">E-POSTA</div><input class="fi" type="email" id="qc-email" value="' + esc(c?.email || '') + '"></div>'
+          + '<div><div class="fl">WEB</div><input class="fi" id="qc-web" value="' + esc(c?.web || '') + '" placeholder="www.firma.com"></div>'
+          + '<div><div class="fl">POSTA KODU</div><input class="fi" id="qc-zip" value="' + esc(c?.zip || '') + '"></div>'
+        + '</div>'
+        + '<div style="margin-top:10px"><div class="fl">ADRES</div><textarea class="fi" id="qc-address" rows="2" style="resize:none">' + esc(c?.address || '') + '</textarea></div>'
       + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-        + '<div><div class="fl">E-POSTA</div><input class="fi" id="qc-email" type="email" placeholder="E-posta"></div>'
-        + '<div><div class="fl">IBAN</div><input class="fi" id="qc-iban" placeholder="IBAN"></div>'
+      // Finansal sekmesi
+      + '<div id="qc-panel-finans" class="qc-panel" style="display:none">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+          + '<div><div class="fl">PARA BİRİMİ *</div><select class="fi" id="qc-currency"><option value="USD"' + (c?.currency === 'USD' ? ' selected' : '') + '>USD</option><option value="EUR"' + (c?.currency === 'EUR' ? ' selected' : '') + '>EUR</option><option value="TRY"' + (c?.currency === 'TRY' ? ' selected' : '') + '>TRY</option><option value="GBP"' + (c?.currency === 'GBP' ? ' selected' : '') + '>GBP</option></select></div>'
+          + '<div><div class="fl">KREDİ LİMİTİ</div><input class="fi" type="number" id="qc-limit" value="' + (c?.limitAmount || '') + '"></div>'
+          + '<div><div class="fl">ÖDEME VADESİ (gün)</div><input class="fi" type="number" id="qc-payterm" value="' + (c?.paymentTerm || '') + '" placeholder="30"></div>'
+          + '<div><div class="fl">BANKA ADI</div><input class="fi" id="qc-bank" value="' + esc(c?.bankName || '') + '"></div>'
+          + '<div><div class="fl">IBAN</div><input class="fi" id="qc-iban" value="' + esc(c?.iban || '') + '"></div>'
+          + '<div><div class="fl">SWIFT</div><input class="fi" id="qc-swift" value="' + esc(c?.swift || '') + '"></div>'
+        + '</div>'
       + '</div>'
-      + '<div><div class="fl">ADRES</div><input class="fi" id="qc-address" placeholder="Adres"></div>'
+      // Kişiler sekmesi
+      + '<div id="qc-panel-kisiler" class="qc-panel" style="display:none">'
+        + '<div id="qc-contacts">' + (function() {
+            var contacts = c?.contacts || [];
+            return contacts.map(function(ct, i) {
+              return '<div class="qc-contact-row" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px;margin-bottom:6px">'
+                + '<input class="fi qc-ct-name" placeholder="Ad Soyad" value="' + esc(ct.name || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-pos" placeholder="Pozisyon" value="' + esc(ct.position || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-phone" placeholder="Telefon" value="' + esc(ct.phone || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-email" placeholder="E-posta" value="' + esc(ct.email || '') + '" style="font-size:11px;padding:5px">'
+                + '<button onclick="this.closest(\'.qc-contact-row\').remove()" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px">✕</button>'
+              + '</div>';
+            }).join('');
+          })()
+        + '</div>'
+        + '<button onclick="window._qcAddContact?.()" class="btn btns" style="font-size:11px;margin-top:6px">+ Kişi Ekle</button>'
+      + '</div>'
+      // Belgeler sekmesi
+      + '<div id="qc-panel-belgeler" class="qc-panel" style="display:none">'
+        + '<div><div class="fl">BELGE YÜKLE</div><input type="file" id="qc-doc-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="font-size:11px"></div>'
+        + '<div id="qc-docs-list" style="margin-top:10px">' + (function() {
+            var docs = c?.documents || [];
+            return docs.map(function(d) { return '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--b)">📎 ' + esc(d.name || '?') + ' (' + (d.type || '—') + ')</div>'; }).join('') || '<div style="font-size:11px;color:var(--t3)">Belge yok</div>';
+          })()
+        + '</div>'
+        + '<div style="margin-top:10px"><div class="fl">NOTLAR</div><textarea class="fi" id="qc-notes" rows="2" style="resize:none">' + esc(c?.notes || '') + '</textarea></div>'
+      + '</div>'
+      + '<input type="hidden" id="qc-edit-id" value="' + (c?.id || '') + '">'
     + '</div>'
     + '<div style="padding:10px 16px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
       + '<button class="btn" onclick="document.getElementById(\'mo-quick-cari\').remove()">İptal</button>'
@@ -4548,20 +4606,60 @@ window._openQuickCari = function() {
   setTimeout(function() { document.getElementById('qc-name')?.focus(); }, 50);
 };
 
+window._qcSwitchTab = function(tab) {
+  document.querySelectorAll('.qc-tab').forEach(function(t) {
+    var active = t.dataset.tab === tab;
+    t.style.color = active ? 'var(--ac)' : 'var(--t3)';
+    t.style.borderBottomColor = active ? 'var(--ac)' : 'transparent';
+    t.style.fontWeight = active ? '600' : '400';
+  });
+  document.querySelectorAll('.qc-panel').forEach(function(p) { p.style.display = 'none'; });
+  var panel = document.getElementById('qc-panel-' + tab);
+  if (panel) panel.style.display = '';
+};
+
+window._qcAddContact = function() {
+  var cont = document.getElementById('qc-contacts'); if (!cont) return;
+  cont.insertAdjacentHTML('beforeend', '<div class="qc-contact-row" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px;margin-bottom:6px">'
+    + '<input class="fi qc-ct-name" placeholder="Ad Soyad" style="font-size:11px;padding:5px">'
+    + '<input class="fi qc-ct-pos" placeholder="Pozisyon" style="font-size:11px;padding:5px">'
+    + '<input class="fi qc-ct-phone" placeholder="Telefon" style="font-size:11px;padding:5px">'
+    + '<input class="fi qc-ct-email" placeholder="E-posta" style="font-size:11px;padding:5px">'
+    + '<button onclick="this.closest(\'.qc-contact-row\').remove()" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px">✕</button>'
+  + '</div>');
+};
+
 window._saveQuickCari = function() {
   var name = (document.getElementById('qc-name')?.value || '').trim();
   if (!name) { window.toast?.('Firma adı zorunlu', 'err'); return; }
   var editId = document.getElementById('qc-edit-id')?.value || '';
+
+  // Kişileri topla
+  var contacts = [];
+  document.querySelectorAll('.qc-contact-row').forEach(function(row) {
+    var ct = { name: row.querySelector('.qc-ct-name')?.value || '', position: row.querySelector('.qc-ct-pos')?.value || '', phone: row.querySelector('.qc-ct-phone')?.value || '', email: row.querySelector('.qc-ct-email')?.value || '' };
+    if (ct.name) contacts.push(ct);
+  });
+
   var entry = {
     name: name,
     type: document.getElementById('qc-type')?.value || 'diger',
-    phone: (document.getElementById('qc-phone')?.value || '').trim(),
-    email: (document.getElementById('qc-email')?.value || '').trim(),
-    iban: (document.getElementById('qc-iban')?.value || '').trim(),
-    address: (document.getElementById('qc-address')?.value || '').trim(),
-    limitAmount: parseFloat(document.getElementById('qc-limit')?.value || '0') || 0,
     taxNo: (document.getElementById('qc-tax')?.value || '').trim(),
     taxOffice: (document.getElementById('qc-taxoffice')?.value || '').trim(),
+    country: (document.getElementById('qc-country')?.value || '').trim(),
+    city: (document.getElementById('qc-city')?.value || '').trim(),
+    phone: (document.getElementById('qc-phone')?.value || '').trim(),
+    email: (document.getElementById('qc-email')?.value || '').trim(),
+    web: (document.getElementById('qc-web')?.value || '').trim(),
+    zip: (document.getElementById('qc-zip')?.value || '').trim(),
+    address: (document.getElementById('qc-address')?.value || '').trim(),
+    currency: document.getElementById('qc-currency')?.value || 'USD',
+    limitAmount: parseFloat(document.getElementById('qc-limit')?.value || '0') || 0,
+    paymentTerm: parseInt(document.getElementById('qc-payterm')?.value || '0') || 0,
+    bankName: (document.getElementById('qc-bank')?.value || '').trim(),
+    iban: (document.getElementById('qc-iban')?.value || '').trim(),
+    swift: (document.getElementById('qc-swift')?.value || '').trim(),
+    contacts: contacts,
     notes: (document.getElementById('qc-notes')?.value || '').trim(),
   };
   if (editId) entry.id = parseInt(editId);
