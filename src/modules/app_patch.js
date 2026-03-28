@@ -1183,7 +1183,11 @@ window.renderSatisTeklifleri = function() {
       + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(t.teklifNo||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün</div></div>'
       + '<div style="font-size:12px;font-weight:600">' + (t.genelToplam||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</div>'
       + '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + bc + '22;color:' + bc + ';font-weight:600">' + (STAT[t.durum]||'Taslak') + '</span>'
-      + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:none;cursor:pointer;font-size:9px;color:var(--t3);font-family:inherit">📄 PDF</button>'
+      + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--b);border-radius:4px;background:none;cursor:pointer;font-size:9px;color:var(--t3);font-family:inherit">PDF</button>'
+      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriOnayladi?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid #16A34A;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#16A34A;font-family:inherit">Kabul</button>' : '')
+      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriReddetti?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid #DC2626;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#DC2626;font-family:inherit">Red</button>' : '')
+      + (t.durum!=='taslak' ? '<button onclick="window._reviseSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--ac);border-radius:4px;background:none;cursor:pointer;font-size:9px;color:var(--ac);font-family:inherit">Rev</button>' : '')
+      + (t.durum==='kabul' ? '<button onclick="window._createPR?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid #D97706;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#D97706;font-family:inherit">PR</button>' : '')
     + '</div>';
   }).join('');
 };
@@ -1351,7 +1355,7 @@ window._printSatisTeklif = function(id) {
   var totalAmt = (t.genelToplam||0).toFixed(2);
   // Banka bilgileri
   var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
-  var banka = bankalar.length ? bankalar[0] : { name:'Albaraka Türk', iban:'TR00 0000 0000 0000 0000 0000 00', swift:'TKLFTRIS' };
+  var banka = bankalar.length ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PI ' + esc(t.teklifNo) + '</title>'
     + '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:11px;line-height:1.4;max-width:210mm;margin:0 auto;padding:15mm}'
@@ -1403,14 +1407,16 @@ window._printSatisTeklif = function(id) {
     + '<div>• This offer is valid for ' + (t.gecerlilikTarihi ? 'until '+t.gecerlilikTarihi : '5 working days') + '</div></div>'
     // Bank
     + '<div class="bank"><h4>BANKING DETAILS</h4>'
-    + '<div><b>' + esc(banka.name||'Albaraka Türk Katılım Bankası') + '</b></div>'
-    + '<div>USD IBAN: ' + esc(banka.iban||'TR00 0000 0000 0000 0000 0000 00') + '</div>'
-    + (banka.ibanEur ? '<div>EUR IBAN: ' + esc(banka.ibanEur) + '</div>' : '')
+    + '<div style="font-size:10px;margin-bottom:4px"><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
+    + '<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
+    + (cur==='USD'||!cur||cur==='USD' ? '<div>USD IBAN: ' + esc(banka.iban||'') + '</div>' : '')
+    + (cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
+    + (cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' + (banka.ibanEur?'<div>EUR IBAN: '+esc(banka.ibanEur)+'</div>':'') : '')
     + '<div>SWIFT: ' + esc(banka.swift||'') + '</div></div>'
     // Signature
     + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL TRADE</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
     // Footer
-    + '<div class="footer">DUAY GLOBAL TRADE COMPANY · Istanbul, Turkey · info@duaycor.com</div>'
+    + '<div class="footer">Duay Int. Trade Company · www.duaycor.com · brn.simsek@gmail.com<br>Karadolap Mh. Neşeli Sk. 1-5 Eyüp İstanbul TÜRKİYE · +90 532 270 5 113 · +90 212 625 5 444</div>'
     + '<button onclick="window.print()" style="margin-top:15px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:4px;background:#fff;color:#1a365d;font-weight:600">🖨 Print / PDF</button>'
     + '</body></html>');
   w.document.close();
@@ -1907,7 +1913,118 @@ function _checkEvrakZamanlayici() {
 }
 setTimeout(_checkEvrakZamanlayici, 10000);
 
-console.log('[app_patch] İhracat ekosistemi + G8 patch tamamlandı');
+// ════════════════════════════════════════════════════════════════
+// SATIŞ TEKLİFİ — KAPSAMLI YENİLEME
+// ════════════════════════════════════════════════════════════════
+
+// FIX 3: Demo banka bilgileri
+(function _ensureDemoBanka() {
+  var bankalar = typeof loadBankalar==='function'?loadBankalar():[];
+  if (bankalar.some(function(b){return b.name==='Albaraka Türk';})) return;
+  bankalar.unshift({
+    id: typeof generateNumericId==='function'?generateNumericId():Date.now(),
+    name: 'Albaraka Türk', sube: 'Alibeyköy Şubesi - 117',
+    hesapTur: 'USD', iban: 'TR650020300008895310000001', swift: 'BTFHTRIS',
+    ibanEur: 'TR380020300008895310000002', ibanTry: 'TR120020300008895310000003',
+    hesapSahibi: 'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.',
+    createdAt: new Date().toISOString()
+  });
+  if (typeof storeBankalar==='function') storeBankalar(bankalar);
+})();
+
+// FIX 1: Revizyon sistemi
+window._reviseSatisTeklif = function(id) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var orig = d.find(function(t){return t.id===id;});
+  if (!orig) return;
+  // Orijinali arşivle
+  orig.durum = 'arsivedildi';
+  orig.arsivedildiAt = new Date().toISOString();
+  // Yeni rev oluştur
+  var revNo = (orig.revizyon || 0) + 1;
+  var yeniId = typeof generateNumericId==='function'?generateNumericId():Date.now();
+  var yeni = JSON.parse(JSON.stringify(orig));
+  yeni.id = yeniId;
+  yeni.teklifNo = orig.teklifNo + '/Rev' + revNo;
+  yeni.revizyon = revNo;
+  yeni.orijinalId = orig.orijinalId || orig.id;
+  yeni.durum = 'taslak';
+  yeni.ts = new Date().toISOString();
+  d.unshift(yeni);
+  if (typeof storeSatisTeklifleri==='function') storeSatisTeklifleri(d);
+  window.toast?.('Rev'+revNo+' oluşturuldu ✓','ok');
+  window.renderSatisTeklifleri?.();
+};
+
+// FIX 5: Purchase Requisition (PR) — iç belge
+window._createPR = function(teklifId) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var t = d.find(function(x){return x.id===teklifId;});
+  if (!t) return;
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var yr = new Date().getFullYear();
+  var prNo = 'PR-'+yr+'-'+String(Math.floor(Math.random()*9000)+1000);
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>PR '+prNo+'</title><style>body{font-family:system-ui;padding:30px;max-width:700px;margin:0 auto;font-size:12px}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:6px 8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}@media print{button{display:none!important}}</style></head><body>'
+    +'<h1>PURCHASE REQUISITION</h1><div style="text-align:center;color:#666;font-size:11px;margin-bottom:16px">DUAY GLOBAL TRADE — İÇ BELGE</div>'
+    +'<table><tr><td><b>PR No:</b> '+prNo+'</td><td><b>Tarih:</b> '+new Date().toISOString().slice(0,10)+'</td></tr>'
+    +'<tr><td><b>Satış Teklif Ref:</b> '+esc(t.teklifNo)+'</td><td><b>Müşteri:</b> '+esc(t.musteri||'')+'</td></tr>'
+    +'<tr><td colspan="2"><b>Job ID:</b> '+(t.jobId||'—')+'</td></tr></table>'
+    +'<table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim</th><th>Hedef Alış Fiyatı</th><th>Satış Fiyatı</th><th>Marj%</th></tr></thead><tbody>'
+    +(t.urunler||[]).map(function(u){return '<tr><td>'+esc(u.urunAdi||'')+'</td><td>'+(u.miktar||0)+'</td><td>—</td><td style="color:#DC2626;font-weight:600">'+(u.alisFiyat||0).toFixed(2)+' '+(t.paraBirimi||'USD')+'</td><td>'+(u.satisFiyat||0).toFixed(2)+'</td><td>'+Math.round(u.karMarji||0)+'%</td></tr>';}).join('')
+    +'</tbody></table>'
+    +'<div style="margin-top:20px;padding:10px;background:#FEF3C7;border-radius:4px;font-size:10px;color:#92400E"><b>NOT:</b> Bu belge iç kullanım içindir. Müşteriye gönderilemez. Alış fiyatları ve kar marjları gizlidir.</div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:40px"><div style="width:40%;text-align:center;border-top:1px solid #333;padding-top:4px;margin-top:40px;font-size:10px">Talep Eden</div><div style="width:40%;text-align:center;border-top:1px solid #333;padding-top:4px;margin-top:40px;font-size:10px">Yönetici Onayı</div></div>'
+    +'<button onclick="window.print()" style="margin-top:16px;padding:6px 16px;cursor:pointer">Yazdır</button></body></html>');
+  w.document.close();
+};
+
+// FIX 6: Müşteri onay akışı
+window._musteriOnayladi = function(id) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var t = d.find(function(x){return x.id===id;});
+  if (!t) return;
+  t.durum = 'kabul';
+  t.kabulTarihi = new Date().toISOString();
+  if (typeof storeSatisTeklifleri==='function') storeSatisTeklifleri(d);
+  window.toast?.('Müşteri onayı kaydedildi — PR oluşturuluyor...','ok');
+  // Otomatik PR
+  window._createPR(id);
+  // Yöneticiye bildirim
+  var mgrs = (typeof loadUsers==='function'?loadUsers():[]).filter(function(u){return (u.role==='admin'||u.role==='manager')&&u.status==='active';});
+  mgrs.forEach(function(m){window.addNotif?.('✅','Müşteri onayladı: '+t.teklifNo+' — '+t.musteri,'ok','satis-teklifleri',m.id);});
+  window.renderSatisTeklifleri?.();
+};
+
+window._musteriReddetti = function(id) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var t = d.find(function(x){return x.id===id;});
+  if (!t) return;
+  t.durum = 'red';
+  t.redTarihi = new Date().toISOString();
+  if (typeof storeSatisTeklifleri==='function') storeSatisTeklifleri(d);
+  window.toast?.('Müşteri reddi kaydedildi — revizyon önerilir','warn');
+  window.renderSatisTeklifleri?.();
+};
+
+// FIX 10: Navlun dağıtımı
+window._stNavlunDagit = function() {
+  var navlun = parseFloat(prompt('Navlun tutarı girin:')||'0');
+  if (!navlun) return;
+  var rows = document.querySelectorAll('.st-row');
+  if (!rows.length) return;
+  var paylasim = navlun / rows.length;
+  rows.forEach(function(tr) {
+    var fiyatEl = tr.querySelector('.st-alis');
+    if (fiyatEl && !fiyatEl.readOnly) {
+      fiyatEl.value = (parseFloat(fiyatEl.value||'0') + paylasim).toFixed(2);
+    }
+  });
+  window._stCalcAll?.();
+  window.toast?.('Navlun ₺'+navlun+' → '+rows.length+' satıra dağıtıldı','ok');
+};
+
+console.log('[app_patch] İhracat ekosistemi + satış teklifi kapsamlı patch tamamlandı');
 
 // ════════════════════════════════════════════════════════════════
 // ARŞİV & BELGELER HUB — birleşik panel
