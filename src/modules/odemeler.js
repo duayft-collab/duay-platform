@@ -2336,7 +2336,8 @@ function openTahsilatModal(id) {
   mo.className = 'mo'; mo.id = 'mo-tahsilat'; mo.style.zIndex = '2200';
 
   const curVal = o?.currency || 'TRY';
-  const kurHTML = curVal !== 'TRY' ? _odmKurModeHTML(curVal) : '';
+  // Kur HTML her zaman oluştur — TRY'de gizle, döviz seçilince göster
+  const kurHTML = _odmKurModeHTML(curVal !== 'TRY' ? curVal : 'USD');
 
   let html = '<div class="moc" style="max-width:580px;padding:0;overflow:hidden;border-radius:16px">';
   html += '<div style="background:#0F6E56;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">';
@@ -2452,7 +2453,13 @@ function openTahsilatModal(id) {
 
 function _tahCurChange(cur) {
   const wrap = document.getElementById('tah-kur-wrap');
-  if (wrap) { wrap.style.display = (!cur||cur==='TRY') ? 'none' : 'block'; }
+  if (wrap) {
+    wrap.style.display = (!cur||cur==='TRY') ? 'none' : 'block';
+    // Kur HTML'i güncelle — seçilen para birimine göre
+    if (cur && cur !== 'TRY') {
+      wrap.innerHTML = _odmKurModeHTML(cur);
+    }
+  }
   _odmUpdateKurDisplay();
   _odmUpdateTLPreview();
 }
