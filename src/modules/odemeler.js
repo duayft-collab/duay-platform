@@ -476,6 +476,8 @@ function _injectOdmPanel() {
       '</select>',
       '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:125px;border:0.5px solid var(--b)" title="Başlangıç">',
       '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:125px;border:0.5px solid var(--b)" title="Bitiş">',
+      '<select class="fi" id="odm-cari-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px;border:0.5px solid var(--b)"><option value="">Tüm Cariler</option></select>',
+      '<select class="fi" id="odm-cur-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:80px;border:0.5px solid var(--b)"><option value="">Döviz</option><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select>',
       '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
       '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
       (_isManagerO() ? '<button onclick="window._odmBulkApprove?.()" style="padding:5px 10px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : ''),
@@ -715,6 +717,11 @@ function renderOdemeler() {
   let _allRaw;
   if (_odmCurrentTab === 'tahsilat') {
     _allRaw = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  } else if (_odmCurrentTab === 'bekliyor') {
+    // Bekleyen: hem ödeme hem tahsilat pending kayıtlarını birleştir
+    var _odmPending = (window.loadOdm ? loadOdm() : []).map(function(o) { o._src = 'odeme'; return o; });
+    var _tahPending = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).map(function(t) { t._src = 'tahsilat'; return t; });
+    _allRaw = _odmPending.concat(_tahPending);
   } else {
     _allRaw = window.loadOdm ? loadOdm() : [];
   }
@@ -722,12 +729,22 @@ function renderOdemeler() {
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
   const all = _isManagerO() ? _activeRaw : _activeRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
 
+  // Cari dropdown doldur (ilk çağrıda)
+  var _cariSel = _go('odm-cari-f');
+  if (_cariSel && _cariSel.options.length <= 1) {
+    var _cariNames = [];
+    all.forEach(function(o) { if (o.cariName && _cariNames.indexOf(o.cariName) === -1) _cariNames.push(o.cariName); });
+    _cariNames.sort().forEach(function(n) { _cariSel.insertAdjacentHTML('beforeend', '<option value="' + n + '">' + n + '</option>'); });
+  }
+
   // Filtreler
   const q      = (_go('odm-search')?.value || '').toLowerCase();
   const catF   = _go('odm-cat-f')?.value   || '';
   const freqF  = _go('odm-freq-f')?.value  || '';
   const statF  = _go('odm-status-f')?.value || '';
   const userF  = _go('odm-user-f')?.value  || '';
+  var cariF    = _go('odm-cari-f')?.value   || '';
+  var curF     = _go('odm-cur-f')?.value    || '';
 
   function _getStatus(o) {
     if (o.paid) return 'odendi';
@@ -785,6 +802,10 @@ function renderOdemeler() {
       if (statF === 'no-receipt' && !(o.paid && !o.receipt)) return false;
       else if (statF !== 'no-receipt' && st !== statF) return false;
     }
+    // Cari filtresi
+    if (cariF && (o.cariName || '') !== cariF) return false;
+    // Para birimi filtresi
+    if (curF && (o.currency || 'TRY') !== curF) return false;
     return true;
   });
 
@@ -3516,13 +3537,43 @@ window._odmTaskSearch = function(val) {
 };
 
 // Yüksek tutar uyarısı — saveOdm'u wrap et
+// Eşik admin ayarlarından okunur (localStorage)
+var ODM_HIGH_AMOUNT_KEY = 'odm_high_amount_settings';
+function _getHighAmountThreshold() {
+  try { var s = JSON.parse(localStorage.getItem(ODM_HIGH_AMOUNT_KEY) || '{}'); return { tl: s.tl || 50000, usd: s.usd || 10000 }; } catch(e) { return { tl: 50000, usd: 10000 }; }
+}
+/** Admin yüksek tutar eşiği ayarla */
+window.openHighAmountSettings = function() {
+  if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var t = _getHighAmountThreshold();
+  var ex = document.getElementById('mo-high-amt'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-high-amt'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:360px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">⚠️ Yüksek Tutar Eşiği</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<div><div class="fl">TL Eşiği</div><input type="number" class="fi" id="ha-tl" value="' + t.tl + '" style="border-radius:7px"></div>'
+    + '<div><div class="fl">USD Eşiği</div><input type="number" class="fi" id="ha-usd" value="' + t.usd + '" style="border-radius:7px"></div>'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-high-amt\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="localStorage.setItem(\'' + ODM_HIGH_AMOUNT_KEY + '\',JSON.stringify({tl:parseFloat(document.getElementById(\'ha-tl\').value)||50000,usd:parseFloat(document.getElementById(\'ha-usd\').value)||10000}));document.getElementById(\'mo-high-amt\')?.remove();window.toast?.(\'Eşik kaydedildi\',\'ok\')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
 (function() {
   var _origSaveOdm = saveOdm;
   saveOdm = function() {
     var amt = parseFloat(document.getElementById('odm-f-amount')?.value || '0') || 0;
-    if (amt >= 50000) {
-      window.confirmModal('Yuksek Tutar Uyarisi: ' + amt.toLocaleString('tr-TR') + ' TL. Devam etmek istiyor musunuz?', {
-        title: 'Yuksek Tutar', danger: false, confirmText: 'Evet, Kaydet',
+    var cur = document.getElementById('odm-f-currency')?.value || 'TRY';
+    var thresholds = _getHighAmountThreshold();
+    var threshold = cur === 'TRY' ? thresholds.tl : thresholds.usd;
+    if (amt >= threshold) {
+      window.confirmModal('Yüksek Tutar Uyarısı: ' + amt.toLocaleString('tr-TR') + ' ' + cur + ' (eşik: ' + threshold.toLocaleString('tr-TR') + '). Devam etmek istiyor musunuz?', {
+        title: 'Yüksek Tutar', danger: false, confirmText: 'Evet, Kaydet',
         onConfirm: function() { _origSaveOdm(); }
       });
     } else {
@@ -6238,17 +6289,30 @@ window._odmToggleQuickView = function(id) {
     + '<div>'
       + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Finansal</div>'
       + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Tutar:</span> <b style="font-size:14px;color:var(--t)">' + curSym + Number(o.amount || 0).toLocaleString('tr-TR') + '</b></div>'
-      + (tlAmt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">TL Karşılığı:</span> <b>₺' + tlAmt.toLocaleString('tr-TR') + '</b> <span style="font-size:9px;color:var(--t3)">(kur: ' + kurRate + ')</span></div>' : '')
+      + (tlAmt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">TL Karşılığı:</span> <b>₺' + tlAmt.toLocaleString('tr-TR') + '</b> <span style="font-size:9px;color:var(--t3)">(fatura kur: ' + kurRate + ')</span></div>' : '')
+      + (function() {
+          // Kur farkı hesaplama — fatura kuru vs güncel kur
+          if (!o.currency || o.currency === 'TRY') return '';
+          var currentRate = rates[o.currency] || 1;
+          var faturRate = o.kurRate || currentRate;
+          var diff = currentRate - faturRate;
+          var diffTL = Math.round(diff * (parseFloat(o.amount) || 0));
+          if (Math.abs(diff) < 0.01) return '';
+          var diffColor = diffTL >= 0 ? '#DC2626' : '#16A34A'; // artış = zarar (ödeme), azalış = kazanç
+          return '<div style="margin-bottom:4px"><span style="color:var(--t3)">Kur Farkı:</span> <span style="color:' + diffColor + ';font-weight:600">' + (diffTL >= 0 ? '+' : '') + '₺' + diffTL.toLocaleString('tr-TR') + '</span> <span style="font-size:9px;color:var(--t3)">(güncel: ' + currentRate.toFixed(2) + ')</span></div>';
+        })()
       + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Kategori:</span> ' + cat.ic + ' ' + cat.l + '</div>'
       + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sıklık:</span> ' + (ODM_FREQ[o.freq] || o.freq || '—') + '</div>'
     + '</div>'
     // Orta: Cari + Vade
     + '<div>'
       + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Detay</div>'
+      + (o.cariName ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari:</span> <b>' + esc(o.cariName) + '</b></div>' : '')
       + (assigned ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sorumlu:</span> ' + esc(assigned.name) + '</div>' : '')
       + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Vade:</span> ' + (o.due || '—') + '</div>'
-      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari/Not:</span> ' + esc(o.note) + '</div>' : '')
       + (o.docNo ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Doküman No:</span> ' + esc(o.docNo) + '</div>' : '')
+      + (o.yontem ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Yöntem:</span> ' + esc(o.yontem) + '</div>' : '')
+      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Not:</span> ' + esc(o.note) + '</div>' : '')
     + '</div>'
     // Sağ: Onay
     + '<div>'
