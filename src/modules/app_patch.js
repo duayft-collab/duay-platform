@@ -1380,9 +1380,9 @@ window._printSatisTeklif = function(id) {
     + '.sig-line{border-top:1px solid #333;margin-top:40px;padding-top:4px;font-size:10px}'
     + '@media print{button{display:none!important}body{padding:10mm}}</style></head><body>'
     // Header
-    + '<div class="header"><h1>DUAY GLOBAL</h1><h2>TRADE COMPANY · ISTANBUL</h2><h3>PROFORMA INVOICE</h3></div>'
+    + '<div class="header"><h1>DUAY GLOBAL</h1><h2>TRADE COMPANY &bull; ISTANBUL</h2><h3>PROFORMA INVOICE</h3></div>'
     // Meta
-    + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(t.teklifNo) + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + (t.gecerlilikTarihi || '30 days') + '</div></div>'
+    + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(t.teklifNo) + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + (t.gecerlilikTarihi ? t.gecerlilikTarihi : '5 working days') + '</div></div>'
     + '<div class="meta-box" style="margin-bottom:12px"><b>CUSTOMER:</b> ' + esc(t.musteri||'—') + '</div>'
     // IMO uyarısı
     + (function(){var hasIMO=(t.urunler||[]).some(function(u){return u.imoMu;});return hasIMO?'<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:6px;padding:10px 14px;margin-bottom:12px;color:#991B1B;font-weight:700;font-size:12px">⚠ ATTENTION: THIS SHIPMENT CONTAINS HAZARDOUS MATERIALS (IMO/DG CARGO)<br><span style="font-weight:400;font-size:10px">MSDS documents available upon request</span></div>':'';})()
