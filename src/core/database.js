@@ -40,6 +40,7 @@ const KEYS = {
   odemeler      : 'ak_odm1',
   tahsilat      : 'ak_tahsilat1',
   satinalma     : 'ak_satinalma1',
+  cari          : 'ak_cari1',
   kargo         : 'ak_krg1',
   greetings     : 'ak_grt1',
   stok          : 'ak_stk1',
@@ -724,6 +725,10 @@ function storeTahsilat(d) {
 /** @param {Array<Object>} d */ function storeSatinalma(d) { _write(KEYS.satinalma, d);
   var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
 }
+/** @returns {Array<Object>} */ function loadCari() { const d = _read(KEYS.cari); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */ function storeCari(d) { _write(KEYS.cari, d);
+  var _fp = _fsPath('cari'); if (_fp) _syncFirestore(_fp, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
@@ -1218,6 +1223,7 @@ function startRealtimeSync() {
     ['odemeler',      KEYS.odemeler,      () => window.renderOdemeler?.()],
     ['tahsilat',      KEYS.tahsilat,      () => window.renderOdemeler?.()],
     ['satinalma',     KEYS.satinalma,     () => window.renderSatinAlma?.()],
+    ['cari',          KEYS.cari,          () => window.renderCari?.()],
     // Ek kritik koleksiyonlar
     ['konteyner',     KEYS.konteyner,     () => window.renderKargo?.()],
     ['evrak',         KEYS.evrak,         () => window.renderEvrak?.()],
@@ -1424,7 +1430,7 @@ const DB = {
   // Çöp
   loadTrash, storeTrash,
   // Ödemeler
-  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma,
+  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari,
   // İzin & Tebligat & Temizlik
   loadIzin, storeIzin,
   loadTebligat, storeTebligat,
@@ -1478,7 +1484,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma',
+    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

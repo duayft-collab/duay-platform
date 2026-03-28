@@ -4413,9 +4413,29 @@ window._odmInlineRowSave = function(id) {
 
 var CARI_KEY = 'ak_cari1';
 
-/** @returns {Array} */
-function loadCari() { try { return JSON.parse(localStorage.getItem(CARI_KEY) || '[]'); } catch(e) { return []; } }
-function storeCari(d) { localStorage.setItem(CARI_KEY, JSON.stringify(d)); }
+// loadCari / storeCari artık database.js'te tanımlı (KEYS.cari + Firestore sync)
+// İlk yükleme: Firestore boşsa localStorage verisini yaz
+(function _cariInitialSync() {
+  setTimeout(function() {
+    if (window._cariInitialSyncDone) return;
+    window._cariInitialSyncDone = true;
+    try {
+      var FB_DB = window.Auth?.getFBDB?.();
+      if (!FB_DB || !window.Auth?.getFBAuth?.()?.currentUser) return;
+      var tid = (window.Auth?.getTenantId?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g, '_');
+      FB_DB.collection('duay_' + tid).doc('cari').get().then(function(snap) {
+        var fsData = snap.exists ? snap.data()?.data : null;
+        if (!fsData || !Array.isArray(fsData) || fsData.length === 0) {
+          var cariData = typeof loadCari === 'function' ? loadCari() : [];
+          if (cariData.length && typeof storeCari === 'function') {
+            storeCari(cariData);
+            console.info('[Cari] İlk yükleme — Firestore\'a yazıldı:', cariData.length, 'kayıt');
+          }
+        }
+      }).catch(function() {});
+    } catch(e) {}
+  }, 7000);
+})();
 
 /**
  * Cari kaydet (yeni veya güncelle).
@@ -5099,8 +5119,7 @@ window._odmToggleQuickView = function(id) {
 };
 
 // Exports
-window.loadCari                = loadCari;
-window.storeCari               = storeCari;
+// loadCari / storeCari artık database.js'te — window export orada yapılıyor
 window.saveCari                = saveCari;
 window.deleteCari              = deleteCari;
 window.renderCari              = renderCari;
