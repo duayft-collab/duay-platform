@@ -2046,6 +2046,13 @@ function addSubTask(parentId) {
       </datalist>
     </div>
     <div class="fr" style="margin-top:2px">
+      <div class="fl">🚢 KONTEYNER</div>
+      <select class="fi" id="subadd-konteyn">
+        <option value="">— Konteyner seçin —</option>
+        ${(typeof loadKonteyn === 'function' ? loadKonteyn().filter(k => !k.closed) : []).map(k => `<option value="${k.id}">${k.no || '?'} — ${k.hat || ''}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fr" style="margin-top:2px">
       <div class="fl">📎 DOKÜMAN</div>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="file" id="subadd-file" style="flex:1;font-size:12px" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip">
@@ -2090,9 +2097,15 @@ function _saveSubTask(parentId) {
       alarm:      g('subadd-alarm')?.value || null,
       doc:        fileData || null,
       docLink:    link || null,
+      konteynId:  parseInt(g('subadd-konteyn')?.value || '0') || null,
       done:       false,
       createdAt:  nowTs(),
     };
+
+    // Atanan kişi farklıysa bildirim gönder (delege)
+    if (sub.uid && sub.uid !== _getCU()?.id) {
+      window.addNotif?.('📋', '"' + parent.title + '" alt görev atandı: ' + title, 'info', 'pusula', sub.uid);
+    }
 
     parent.subTasks.push(sub);
     saveTasks(d);
@@ -7702,6 +7715,31 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
   console.info('[Pusula] Matrix drag & drop gelişmiş ✓');
 })();
 
+
+// ════════════════════════════════════════════════════════════════
+// AYLIK OTOMATİK EXCEL EXPORT
+// ════════════════════════════════════════════════════════════════
+(function _initMonthlyExport() {
+  // Her gün kontrol — ayın son günü saat 00:00 civarında export
+  var _monthlyCheckKey = '_pus_monthly_export';
+  function _checkMonthlyExport() {
+    var now = new Date();
+    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var today = now.getDate();
+    var month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var lastExport = localStorage.getItem(_monthlyCheckKey) || '';
+    if (today === lastDay && lastExport !== month) {
+      localStorage.setItem(_monthlyCheckKey, month);
+      console.info('[Pusula] Aylık otomatik Excel export — ' + month);
+      if (typeof exportTasksXlsx === 'function') {
+        try { exportTasksXlsx(); } catch(e) { console.warn('[Pusula] Export hatası:', e); }
+      }
+    }
+  }
+  // İlk kontrol 5s sonra, sonra her saat
+  setTimeout(_checkMonthlyExport, 5000);
+  setInterval(_checkMonthlyExport, 3600000);
+})();
 
 // Node.js (test ortamı)
 if (typeof module !== 'undefined' && module.exports) {
