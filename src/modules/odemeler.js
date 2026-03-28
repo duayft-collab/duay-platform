@@ -5912,7 +5912,6 @@ function _renderCariDetail(id) {
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
         + (_isManagerO() ? '<button class="btn btns" onclick="window._assignCariReview(' + c.id + ')" style="font-size:11px;color:#6366F1">👁 İncelet</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
-        + '<button class="btn btns" onclick="window.confirmModal(\'Bu cariyi silmek istediğinizden emin misiniz?\',{title:\'Cari Sil\',danger:true,confirmText:\'Evet\',onConfirm:function(){deleteCari(' + c.id + ');_cariSelectedId=null;renderCari()}})" style="font-size:11px;color:#DC2626">🗑</button>'
       + '</div>'
     + '</div>'
     // Onay durumu banner
