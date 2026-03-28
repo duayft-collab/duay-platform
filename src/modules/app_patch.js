@@ -1008,52 +1008,144 @@ window.renderAlisTeklifleri = function() {
 };
 
 window._openAlisModal = function() {
-  var ex = document.getElementById('mo-alis'); if (ex) ex.remove();
+  // Inline form — modal yerine liste altına ekle
+  var existingForm = document.getElementById('alis-inline-form');
+  if (existingForm) { existingForm.remove(); return; }
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && c.type==='tedarikci';}) : [];
   var urunList = typeof loadUrunler === 'function' ? loadUrunler() : [];
-  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-alis';
-  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">+ Alış Teklifi</div>'
-    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div class="fl">Tedarikçi *</div><select class="fi" id="at-tedarikci"><option value="">— Seçin —</option>' + cariList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('') + '</select></div>'
-    + '<div><div class="fl">Ürün * (tanımlı)</div><select class="fi" id="at-urun" onchange="window._atUrunSelected?.()"><option value="">— Ürün seçin —</option>' + urunList.map(function(u){return '<option value="'+u.id+'" data-kod="'+esc(u.duayKodu||u.urunKodu||'')+'" data-birim="'+(u.birim||'')+'" data-mensei="'+(u.mensei||'')+'" data-marka="'+(u.marka||'')+'">'+esc(u.duayKodu||'')+' — '+esc(u.orijinalAdi||u.urunAdi||'')+'</option>';}).join('') + '</select></div></div>'
-    + '<div id="at-urun-info" style="display:none;padding:6px 10px;background:var(--s2);border-radius:6px;font-size:10px;color:var(--t3)"></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + '<div><div class="fl">Birim Fiyat *</div><input class="fi" type="number" id="at-fiyat" oninput="window._atCalc?.()"></div>'
-    + '<div><div class="fl">Miktar *</div><input class="fi" type="number" id="at-miktar" oninput="window._atCalc?.()"></div>'
-    + '<div><div class="fl">Para Birimi</div><select class="fi" id="at-cur"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select></div></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div class="fl">Geçerlilik Tarihi</div><input type="date" class="fi" id="at-gecerlilik"></div>'
-    + '<div><div class="fl">Toplam</div><div style="font-size:18px;font-weight:700;color:var(--ac)" id="at-toplam">—</div></div></div>'
-    + '<div><div class="fl">Not</div><textarea class="fi" id="at-not" rows="2" style="resize:none"></textarea></div>'
+  var taskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t){return !t.done;}).slice(0,50) : [];
+  var cont = document.getElementById('alis-list');
+  if (!cont) return;
+  var form = document.createElement('div');
+  form.id = 'alis-inline-form';
+  form.style.cssText = 'border:2px solid var(--ac);border-radius:10px;margin:8px 0;background:var(--sf);overflow:hidden';
+  // Başlık satırı
+  var uOpts = urunList.map(function(u){return '<option value="'+u.id+'" data-kod="'+esc(u.duayKodu||u.urunKodu||'')+'" data-std="'+esc(u.standartAdi||'')+'" data-birim="'+(u.birim||'')+'" data-mensei="'+(u.mensei||'')+'" data-imo="'+(u.imolu||'H')+'">'+esc(u.duayKodu||'')+' — '+esc(u.orijinalAdi||u.urunAdi||'')+'</option>';}).join('');
+  var tOpts = taskList.map(function(t){return '<option value="'+t.jobId+'">'+esc((t.jobId||'')+' — '+(t.title||'').slice(0,30))+'</option>';}).join('');
+  form.innerHTML = ''
+    // Başlık
+    + '<div style="padding:10px 14px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between"><span>+ Yeni Alış Teklifi</span><button onclick="document.getElementById(\'alis-inline-form\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
+    // Üst alanlar
+    + '<div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+    + '<select class="fi" id="at-job" style="width:140px;font-size:11px"><option value="">Job ID</option>'+tOpts+'</select>'
+    + '<select class="fi" id="at-tedarikci" style="width:140px;font-size:11px"><option value="">Tedarikçi *</option>'+cariList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('')+'</select>'
+    + '<input class="fi" id="at-pino" placeholder="PI No *" style="width:100px;font-size:11px">'
+    + '<input type="date" class="fi" id="at-pitarih" style="width:120px;font-size:11px">'
+    + '<input type="date" class="fi" id="at-gecerlilik" placeholder="Geçerlilik" style="width:120px;font-size:11px">'
+    + '<select class="fi" id="at-cur" style="width:70px;font-size:11px"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select>'
     + '</div>'
-    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
-    + '<button class="btn" onclick="document.getElementById(\'mo-alis\')?.remove()">İptal</button>'
-    + '<button class="btn btnp" onclick="window._saveAlisTeklif()">Kaydet</button></div></div>';
-  document.body.appendChild(mo);
-  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
-  setTimeout(function(){mo.classList.add('open');},10);
+    // Ürün satırları tablosu
+    + '<div style="overflow-x:auto">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:900px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)">'
+    + '<th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">No</th>'
+    + '<th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;width:200px">Ürün</th>'
+    + '<th style="padding:5px 8px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">Standart Ad</th>'
+    + '<th style="padding:5px 8px;text-align:center;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">Miktar</th>'
+    + '<th style="padding:5px 8px;text-align:center;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">Birim</th>'
+    + '<th style="padding:5px 8px;text-align:right;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">B.Fiyat</th>'
+    + '<th style="padding:5px 8px;text-align:right;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">Toplam</th>'
+    + '<th style="padding:5px 8px;text-align:center;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">Menşei</th>'
+    + '<th style="padding:5px 8px;text-align:center;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700">IMO</th>'
+    + '<th style="padding:5px 8px;width:30px"></th>'
+    + '</tr></thead><tbody id="at-rows"></tbody></table></div>'
+    // Alt: + Satır Ekle + Toplam + Kaydet
+    + '<div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid var(--b);background:var(--s2)">'
+    + '<button onclick="window._atAddRow()" style="padding:4px 12px;border:0.5px solid var(--ac);border-radius:5px;background:none;color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit">+ Satır Ekle</button>'
+    + '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:11px;color:var(--t3)">Toplam:</span><span style="font-size:16px;font-weight:700;color:var(--ac)" id="at-toplam">0</span>'
+    + '<button onclick="window._saveAlisTeklif()" style="padding:5px 14px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Kaydet</button></div>'
+    + '</div>';
+  cont.insertBefore(form, cont.firstChild);
+  window._atAddRow(); // İlk satırı ekle
+  form.scrollIntoView({behavior:'smooth'});
 };
-window._atCalc = function() { var f=parseFloat(document.getElementById('at-fiyat')?.value||'0'); var m=parseFloat(document.getElementById('at-miktar')?.value||'0'); var el=document.getElementById('at-toplam'); if(el) el.textContent=(f*m).toLocaleString('tr-TR')+' '+(document.getElementById('at-cur')?.value||'USD'); };
-window._atUrunSelected = function() {
-  var sel = document.getElementById('at-urun'); if (!sel) return;
+
+window._atRowCounter = 0;
+window._atAddRow = function() {
+  var tbody = document.getElementById('at-rows'); if (!tbody) return;
+  var urunList = typeof loadUrunler==='function'?loadUrunler():[];
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var uOpts = urunList.map(function(u){return '<option value="'+u.id+'" data-kod="'+esc(u.duayKodu||u.urunKodu||'')+'" data-std="'+esc(u.standartAdi||'')+'" data-birim="'+(u.birim||'')+'" data-mensei="'+(u.mensei||'')+'" data-imo="'+(u.imolu||'H')+'">'+esc(u.duayKodu||'')+' — '+esc(u.orijinalAdi||u.urunAdi||'')+'</option>';}).join('');
+  window._atRowCounter++;
+  var n = window._atRowCounter;
+  var tr = document.createElement('tr');
+  tr.className = 'at-row';
+  tr.style.borderBottom = '0.5px solid var(--b)';
+  tr.innerHTML = '<td style="padding:4px 8px;color:var(--t3)">'+n+'</td>'
+    + '<td style="padding:4px 8px"><select class="fi at-urun-sel" style="font-size:10px;padding:3px 6px" onchange="window._atRowUrunChange(this)"><option value="">— Seç —</option>'+uOpts+'</select></td>'
+    + '<td style="padding:4px 8px" class="at-std">—</td>'
+    + '<td style="padding:4px 8px"><input type="number" class="fi at-miktar" style="width:60px;font-size:11px;padding:3px 6px;text-align:center" value="1" oninput="window._atCalcAll()"></td>'
+    + '<td style="padding:4px 8px;text-align:center" class="at-birim">—</td>'
+    + '<td style="padding:4px 8px"><input type="number" class="fi at-fiyat" style="width:80px;font-size:11px;padding:3px 6px;text-align:right" oninput="window._atCalcAll()"></td>'
+    + '<td style="padding:4px 8px;text-align:right;font-weight:600" class="at-row-toplam">0</td>'
+    + '<td style="padding:4px 8px;text-align:center;font-size:10px;color:var(--t3)" class="at-mensei">—</td>'
+    + '<td style="padding:4px 8px;text-align:center" class="at-imo">—</td>'
+    + '<td style="padding:4px 8px"><button onclick="this.closest(\'tr\').remove();window._atCalcAll()" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px">×</button></td>';
+  tbody.appendChild(tr);
+};
+
+window._atRowUrunChange = function(sel) {
+  var tr = sel.closest('tr'); if (!tr) return;
   var opt = sel.options[sel.selectedIndex];
-  var info = document.getElementById('at-urun-info');
-  if (!opt || !opt.value) { if (info) info.style.display='none'; return; }
-  if (info) { info.style.display='block'; info.innerHTML='📦 Kod: '+opt.dataset.kod+' · Birim: '+opt.dataset.birim+' · Menşei: '+opt.dataset.mensei+' · Marka: '+opt.dataset.marka; }
+  if (!opt || !opt.value) return;
+  tr.querySelector('.at-std').textContent = opt.dataset.std || '—';
+  tr.querySelector('.at-birim').textContent = opt.dataset.birim || '—';
+  tr.querySelector('.at-mensei').textContent = opt.dataset.mensei || '—';
+  tr.querySelector('.at-imo').innerHTML = opt.dataset.imo==='E' ? '<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>' : '—';
 };
+
+window._atCalcAll = function() {
+  var total = 0;
+  document.querySelectorAll('.at-row').forEach(function(tr) {
+    var m = parseFloat(tr.querySelector('.at-miktar')?.value||'0');
+    var f = parseFloat(tr.querySelector('.at-fiyat')?.value||'0');
+    var t = m * f;
+    tr.querySelector('.at-row-toplam').textContent = t.toLocaleString('tr-TR');
+    total += t;
+  });
+  var el = document.getElementById('at-toplam');
+  if (el) el.textContent = total.toLocaleString('tr-TR') + ' ' + (document.getElementById('at-cur')?.value||'USD');
+};
+
 window._saveAlisTeklif = function() {
-  var ted = document.getElementById('at-tedarikci')?.value||''; var urun = document.getElementById('at-urun')?.value||'';
-  if (!ted||!urun) { window.toast?.('Tedarikçi ve ürün zorunlu','err'); return; }
-  var fiyat = parseFloat(document.getElementById('at-fiyat')?.value||'0'); var miktar = parseFloat(document.getElementById('at-miktar')?.value||'0');
-  if (!fiyat||!miktar) { window.toast?.('Fiyat ve miktar zorunlu','err'); return; }
-  var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var ted = document.getElementById('at-tedarikci')?.value||'';
+  var piNo = (document.getElementById('at-pino')?.value||'').trim();
+  if (!ted) { window.toast?.('Tedarikçi zorunlu','err'); return; }
+  // Satırları topla
+  var satirlar = [];
+  document.querySelectorAll('.at-row').forEach(function(tr) {
+    var sel = tr.querySelector('.at-urun-sel');
+    var opt = sel?.options[sel.selectedIndex];
+    if (!sel?.value) return;
+    satirlar.push({
+      urunId: parseInt(sel.value), urunKodu: opt?.dataset.kod||'', standartAdi: opt?.dataset.std||'',
+      miktar: parseFloat(tr.querySelector('.at-miktar')?.value||'0'),
+      birim: tr.querySelector('.at-birim')?.textContent||'',
+      birimFiyat: parseFloat(tr.querySelector('.at-fiyat')?.value||'0'),
+      toplamFiyat: parseFloat(tr.querySelector('.at-miktar')?.value||'0') * parseFloat(tr.querySelector('.at-fiyat')?.value||'0'),
+      mensei: tr.querySelector('.at-mensei')?.textContent||'',
+      imoMu: tr.querySelector('.at-imo')?.textContent!=='—',
+    });
+  });
+  if (!satirlar.length) { window.toast?.('En az bir ürün satırı gerekli','err'); return; }
+  var toplamTutar = satirlar.reduce(function(s,r){return s+r.toplamFiyat;},0);
+  var d = typeof loadAlisTeklifleri==='function'?loadAlisTeklifleri():[];
   var yr = new Date().getFullYear(); var seq = String(d.length+1).padStart(4,'0');
-  d.unshift({ id:typeof generateNumericId==='function'?generateNumericId():Date.now(), teklifNo:'TKL-'+yr+'-'+seq, tedarikci:ted, urunAdi:urun, birimFiyat:fiyat, miktar:miktar, paraBirimi:document.getElementById('at-cur')?.value||'USD', toplamTutar:fiyat*miktar, gecerlilikTarihi:document.getElementById('at-gecerlilik')?.value||'', not:(document.getElementById('at-not')?.value||'').trim(), ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id });
-  if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(d);
-  document.getElementById('mo-alis')?.remove();
+  d.unshift({
+    id: typeof generateNumericId==='function'?generateNumericId():Date.now(),
+    teklifNo: 'TKL-'+yr+'-'+seq, tedarikci: ted,
+    jobId: document.getElementById('at-job')?.value||'',
+    piNo: piNo, piTarihi: document.getElementById('at-pitarih')?.value||'',
+    paraBirimi: document.getElementById('at-cur')?.value||'USD',
+    gecerlilikTarihi: document.getElementById('at-gecerlilik')?.value||'',
+    satirlar: satirlar, toplamTutar: toplamTutar,
+    urunAdi: satirlar[0]?.standartAdi||ted, // geriye uyumluluk
+    birimFiyat: satirlar[0]?.birimFiyat||0, miktar: satirlar[0]?.miktar||0,
+    ts: new Date().toISOString(), createdBy: window.Auth?.getCU?.()?.id
+  });
+  if (typeof storeAlisTeklifleri==='function') storeAlisTeklifleri(d);
+  document.getElementById('alis-inline-form')?.remove();
+  window._atRowCounter = 0;
   window.toast?.('Alış teklifi eklendi ✓','ok');
   window.renderAlisTeklifleri?.();
 };
@@ -1103,38 +1195,103 @@ window._convertToSatisTeklif = function(alisId) {
 };
 
 window._openSatisModal = function(fromAlis) {
-  var ex = document.getElementById('mo-satis2'); if (ex) ex.remove();
+  var existingForm = document.getElementById('satis-inline-form');
+  if (existingForm) { existingForm.remove(); return; }
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var musteriList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.cariType==='onayli');}) : [];
-  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-satis2';
-  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">+ Satış Teklifi</div>'
-    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div class="fl">Müşteri *</div><select class="fi" id="st-musteri"><option value="">— Seçin —</option>' + musteriList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('') + '</select></div>'
-    + '<div><div class="fl">Para Birimi</div><select class="fi" id="st-cur"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select></div></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + '<div><div class="fl">Ürün Adı</div><input class="fi" id="st-urun" value="' + esc(fromAlis?.urunAdi||'') + '"></div>'
-    + '<div><div class="fl">Alış Fiyatı</div><input class="fi" type="number" id="st-alis" value="' + (fromAlis?.birimFiyat||'') + '" oninput="window._stCalc?.()"></div>'
-    + '<div><div class="fl">Kâr Marjı %</div><input class="fi" type="number" id="st-marj" value="15" oninput="window._stCalc?.()"></div></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div class="fl">Miktar</div><input class="fi" type="number" id="st-miktar" value="' + (fromAlis?.miktar||'1') + '" oninput="window._stCalc?.()"></div>'
-    + '<div><div class="fl">Teslimat</div><select class="fi" id="st-teslim"><option>FOB</option><option>CFR</option><option>CIF</option><option>EXW</option><option>DDP</option></select></div></div>'
-    + '<div style="background:var(--s2);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">'
-    + '<div><div style="font-size:10px;color:var(--t3)">Satış Fiyatı</div><div style="font-size:18px;font-weight:700;color:var(--ac)" id="st-satis-fiyat">—</div></div>'
-    + '<div><div style="font-size:10px;color:var(--t3)">Toplam</div><div style="font-size:18px;font-weight:700;color:var(--t)" id="st-toplam">—</div></div>'
-    + '<div><div style="font-size:10px;color:var(--t3)">Tahmini Kâr</div><div style="font-size:18px;font-weight:700;color:#16A34A" id="st-kar">—</div></div></div>'
-    + '<div><div class="fl">Geçerlilik</div><input type="date" class="fi" id="st-gecerlilik"></div>'
+  var cont = document.getElementById('satis-list'); if (!cont) return;
+  var form = document.createElement('div');
+  form.id = 'satis-inline-form';
+  form.style.cssText = 'border:2px solid #0F6E56;border-radius:10px;margin:8px 0;background:var(--sf);overflow:hidden';
+  var urunList = typeof loadUrunler==='function'?loadUrunler():[];
+  form.innerHTML = ''
+    + '<div style="padding:10px 14px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between"><span>+ Yeni Satış Teklifi</span><button onclick="document.getElementById(\'satis-inline-form\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
+    + '<div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+    + '<select class="fi" id="st-musteri" style="width:160px;font-size:11px"><option value="">Müşteri *</option>'+musteriList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('')+'</select>'
+    + '<select class="fi" id="st-cur" style="width:70px;font-size:11px"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select>'
+    + '<input type="date" class="fi" id="st-gecerlilik" style="width:120px;font-size:11px" title="Geçerlilik">'
+    + '<select class="fi" id="st-teslim" style="width:80px;font-size:11px"><option>FOB</option><option>CFR</option><option>CIF</option><option>EXW</option><option>DDP</option></select>'
+    + '<input class="fi" id="st-odeme" placeholder="Ödeme koşulu" style="width:160px;font-size:11px" value="35% deposit, 65% before dispatch">'
     + '<input type="hidden" id="st-alis-id" value="' + (fromAlis?.id||'') + '">'
     + '</div>'
-    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
-    + '<button class="btn" onclick="document.getElementById(\'mo-satis2\')?.remove()">İptal</button>'
-    + '<button class="btn btnp" onclick="window._saveSatisTeklif()">Kaydet</button></div></div>';
-  document.body.appendChild(mo);
-  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
-  setTimeout(function(){mo.classList.add('open'); window._stCalc?.();},10);
+    // Ürün satırları
+    + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:950px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)">'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:left">No</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:left;width:180px">Ürün</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:center">Miktar</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:center">Birim</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:right">Alış (RO)</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:center">Marj%</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:right">Satış</th>'
+    + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:right">Toplam</th>'
+    + '<th style="padding:5px 6px;width:30px"></th>'
+    + '</tr></thead><tbody id="st-rows"></tbody></table></div>'
+    // Özet + kaydet
+    + '<div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid var(--b);background:var(--s2)">'
+    + '<button onclick="window._stAddRow()" style="padding:4px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:none;color:#0F6E56;font-size:11px;cursor:pointer;font-family:inherit">+ Ürün Ekle</button>'
+    + '<div style="display:flex;align-items:center;gap:16px">'
+    + '<span style="font-size:10px;color:var(--t3)">Toplam: <b style="font-size:14px;color:var(--t)" id="st-toplam">0</b></span>'
+    + '<span style="font-size:10px;color:var(--t3)">Kâr: <b style="font-size:14px;color:#16A34A" id="st-kar">0</b></span>'
+    + '<button onclick="window._saveSatisTeklif()" style="padding:5px 14px;border:none;border-radius:6px;background:#0F6E56;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Kaydet</button></div>'
+    + '</div>';
+  cont.insertBefore(form, cont.firstChild);
+  // İlk satır ekle (alış teklifinden geliyorsa doldur)
+  window._stAddRow(fromAlis);
+  form.scrollIntoView({behavior:'smooth'});
 };
 
+window._stRowCounter = 0;
+window._stAddRow = function(fromAlis) {
+  var tbody = document.getElementById('st-rows'); if (!tbody) return;
+  var urunList = typeof loadUrunler==='function'?loadUrunler():[];
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  window._stRowCounter++;
+  var n = window._stRowCounter;
+  var alisFiyat = fromAlis?.birimFiyat||'';
+  var alisMiktar = fromAlis?.miktar||'1';
+  var alisUrun = fromAlis?.urunAdi||'';
+  var tr = document.createElement('tr');
+  tr.className = 'st-row';
+  tr.style.borderBottom = '0.5px solid var(--b)';
+  tr.innerHTML = '<td style="padding:4px 6px;color:var(--t3)">'+n+'</td>'
+    + '<td style="padding:4px 6px"><select class="fi st-urun-sel" style="font-size:10px;padding:3px 4px" onchange="window._stRowUrunChange(this)"><option value="">— Seç —</option>'+urunList.map(function(u){return '<option value="'+u.id+'" data-birim="'+(u.birim||'')+'"'+(alisUrun&&(u.orijinalAdi===alisUrun||u.urunAdi===alisUrun)?' selected':'')+'>'+esc(u.duayKodu||'')+' — '+esc(u.orijinalAdi||u.urunAdi||'')+'</option>';}).join('')+'</select></td>'
+    + '<td style="padding:4px 6px"><input type="number" class="fi st-miktar" style="width:55px;font-size:11px;padding:3px 4px;text-align:center" value="'+alisMiktar+'" oninput="window._stCalcAll()"></td>'
+    + '<td style="padding:4px 6px;text-align:center;font-size:10px;color:var(--t3)" class="st-birim">—</td>'
+    + '<td style="padding:4px 6px"><input type="number" class="fi st-alis" style="width:70px;font-size:11px;padding:3px 4px;text-align:right;background:#f5f5f5;color:var(--t3)" value="'+alisFiyat+'" readonly title="Alış fiyatı — değiştirilemez"></td>'
+    + '<td style="padding:4px 6px"><input type="number" class="fi st-marj" style="width:50px;font-size:11px;padding:3px 4px;text-align:center" value="15" oninput="window._stCalcAll()"></td>'
+    + '<td style="padding:4px 6px;text-align:right;font-weight:600;color:var(--ac)" class="st-satis">—</td>'
+    + '<td style="padding:4px 6px;text-align:right;font-weight:600" class="st-row-toplam">—</td>'
+    + '<td style="padding:4px 6px"><button onclick="this.closest(\'tr\').remove();window._stCalcAll()" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px">×</button></td>';
+  tbody.appendChild(tr);
+  window._stCalcAll();
+};
+
+window._stRowUrunChange = function(sel) {
+  var tr = sel.closest('tr'); if (!tr) return;
+  var opt = sel.options[sel.selectedIndex];
+  if (opt) tr.querySelector('.st-birim').textContent = opt.dataset.birim || '—';
+};
+
+window._stCalcAll = function() {
+  var toplamAll=0, karAll=0;
+  document.querySelectorAll('.st-row').forEach(function(tr) {
+    var alis = parseFloat(tr.querySelector('.st-alis')?.value||'0');
+    var marj = parseFloat(tr.querySelector('.st-marj')?.value||'0');
+    var miktar = parseFloat(tr.querySelector('.st-miktar')?.value||'0');
+    var satis = alis * (1 + marj/100);
+    var toplam = satis * miktar;
+    var kar = (satis - alis) * miktar;
+    tr.querySelector('.st-satis').textContent = satis.toFixed(2);
+    tr.querySelector('.st-row-toplam').textContent = toplam.toFixed(2);
+    toplamAll += toplam;
+    karAll += kar;
+  });
+  var cur = document.getElementById('st-cur')?.value||'USD';
+  var tEl = document.getElementById('st-toplam'); if (tEl) tEl.textContent = toplamAll.toFixed(2)+' '+cur;
+  var kEl = document.getElementById('st-kar'); if (kEl) kEl.textContent = '+'+karAll.toFixed(2)+' '+cur;
+};
+
+// Eski tek satır _stCalc uyumluluk
 window._stCalc = function() {
   var alis = parseFloat(document.getElementById('st-alis')?.value||'0');
   var marj = parseFloat(document.getElementById('st-marj')?.value||'0');
@@ -1151,15 +1308,36 @@ window._stCalc = function() {
 window._saveSatisTeklif = function() {
   var musteri = document.getElementById('st-musteri')?.value||'';
   if (!musteri) { window.toast?.('Müşteri zorunlu','err'); return; }
-  var alis = parseFloat(document.getElementById('st-alis')?.value||'0');
-  var marj = parseFloat(document.getElementById('st-marj')?.value||'0');
-  var miktar = parseFloat(document.getElementById('st-miktar')?.value||'0');
-  var satis = alis * (1 + marj/100);
+  var urunler = [];
+  var genelToplam=0, tahminKar=0;
+  document.querySelectorAll('.st-row').forEach(function(tr) {
+    var sel = tr.querySelector('.st-urun-sel');
+    if (!sel?.value) return;
+    var alis = parseFloat(tr.querySelector('.st-alis')?.value||'0');
+    var marj = parseFloat(tr.querySelector('.st-marj')?.value||'0');
+    var miktar = parseFloat(tr.querySelector('.st-miktar')?.value||'0');
+    var satis = alis * (1 + marj/100);
+    urunler.push({urunId:parseInt(sel.value), urunAdi:sel.options[sel.selectedIndex]?.text||'', miktar:miktar, alisFiyat:alis, karMarji:marj, satisFiyat:satis});
+    genelToplam += satis * miktar;
+    tahminKar += (satis - alis) * miktar;
+  });
+  if (!urunler.length) { window.toast?.('En az bir ürün gerekli','err'); return; }
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
   var yr = new Date().getFullYear(); var seq = String(d.length+1).padStart(4,'0');
-  d.unshift({ id:typeof generateNumericId==='function'?generateNumericId():Date.now(), teklifNo:'STK-'+yr+'-'+seq, musteri:musteri, alisTeklifiId:parseInt(document.getElementById('st-alis-id')?.value||'0')||null, urunler:[{urunAdi:document.getElementById('st-urun')?.value||'', miktar:miktar, alisFiyat:alis, karMarji:marj, satisFiyat:satis}], paraBirimi:document.getElementById('st-cur')?.value||'USD', genelToplam:satis*miktar, tahminKar:(satis-alis)*miktar, teslimSekli:document.getElementById('st-teslim')?.value||'FOB', gecerlilikTarihi:document.getElementById('st-gecerlilik')?.value||'', durum:'taslak', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id });
+  d.unshift({
+    id:typeof generateNumericId==='function'?generateNumericId():Date.now(),
+    teklifNo:'STK-'+yr+'-'+seq, musteri:musteri,
+    alisTeklifiId:parseInt(document.getElementById('st-alis-id')?.value||'0')||null,
+    urunler:urunler, paraBirimi:document.getElementById('st-cur')?.value||'USD',
+    genelToplam:genelToplam, tahminKar:tahminKar,
+    teslimSekli:document.getElementById('st-teslim')?.value||'FOB',
+    odemeKosulu:(document.getElementById('st-odeme')?.value||'').trim(),
+    gecerlilikTarihi:document.getElementById('st-gecerlilik')?.value||'',
+    durum:'taslak', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id
+  });
   if (typeof storeSatisTeklifleri === 'function') storeSatisTeklifleri(d);
-  document.getElementById('mo-satis2')?.remove();
+  document.getElementById('satis-inline-form')?.remove();
+  window._stRowCounter = 0;
   window.toast?.('Satış teklifi oluşturuldu ✓','ok');
   window.renderSatisTeklifleri?.();
 };
