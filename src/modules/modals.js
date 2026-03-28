@@ -459,6 +459,19 @@ function injectAllModals() {
       </div>
     </div>
 
+    <!-- Demirbaş ek alanları -->
+    <div id="stk-demirbas-extra" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px">
+        <div class="fg"><div class="fl">Marka</div><input class="fi" id="stk-marka" placeholder="Apple, Lenovo..."></div>
+        <div class="fg"><div class="fl">Model</div><input class="fi" id="stk-model" placeholder="MacBook Pro 14"></div>
+        <div class="fg"><div class="fl">Seri No</div><input class="fi" id="stk-serino" placeholder="SN-XXXXX"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="fg"><div class="fl">Satın Alma Fiyatı (₺)</div><input class="fi" type="number" id="stk-fiyat" placeholder="0" min="0"></div>
+        <div class="fg"><div class="fl">Garanti Bitiş</div><input class="fi" type="date" id="stk-garanti"></div>
+      </div>
+    </div>
+
     <!-- Zimmet alanları -->
     <div id="stk-zimmet-row" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">

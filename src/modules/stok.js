@@ -46,7 +46,8 @@ function updateStokForm(){
   const tür=g('stk-tür')?.value||'stok';
   const isZimmet=tür==='zimmet'||tür==='demirbaş';
   const imeiRow=g('stk-imei-row');if(imeiRow)imeiRow.style.display=isZimmet?'block':'none';
-  const zimmetRow=g('stk-zimmet-row');if(zimmetRow)zimmetRow.style.display=tür==='zimmet'?'block':'none';
+  const zimmetRow=g('stk-zimmet-row');if(zimmetRow)zimmetRow.style.display=isZimmet?'block':'none';
+  const dbExtra=g('stk-demirbas-extra');if(dbExtra)dbExtra.style.display=tür==='demirbaş'?'block':'none';
   const reqEl=g('stk-foto-required');if(reqEl)reqEl.style.display=isZimmet?'inline':'none';
   const optEl=g('stk-foto-opt');if(optEl)optEl.style.display=isZimmet?'none':'inline';
   const tutBtn=g('btn-stk-tutanak');if(tutBtn)tutBtn.style.display='none';
@@ -77,6 +78,11 @@ function openStokModal(dir,editId){
     if(g('stk-imei'))      g('stk-imei').value      =e.imei||'';
     if(g('stk-kod'))       g('stk-kod').value       =e.kod||'';
     if(g('stk-bilgi-notu'))g('stk-bilgi-notu').value=e.bilgiNotu||'';
+    if(g('stk-marka'))     g('stk-marka').value    =e.marka||'';
+    if(g('stk-model'))     g('stk-model').value    =e.model||'';
+    if(g('stk-serino'))    g('stk-serino').value   =e.seriNo||'';
+    if(g('stk-fiyat'))     g('stk-fiyat').value    =e.fiyat||'';
+    if(g('stk-garanti'))   g('stk-garanti').value  =e.garanti||'';
     if(su)su.value=e.uid;
     if(zu&&e.zimmetUid)zu.value=e.zimmetUid;
     if(g('stk-zimmet-date'))g('stk-zimmet-date').value=e.zimmetDate||'';
@@ -124,6 +130,11 @@ function saveStok(){
     note:     g('stk-note')?.value||'',
     imei:     g('stk-imei')?.value||'',
     kod:      g('stk-kod')?.value||'',
+    marka:    (g('stk-marka')?.value||'').trim(),
+    model:    (g('stk-model')?.value||'').trim(),
+    seriNo:   (g('stk-serino')?.value||'').trim(),
+    fiyat:    parseFloat(g('stk-fiyat')?.value||'0')||0,
+    garanti:  g('stk-garanti')?.value||'',
     zimmetUid:parseInt(g('stk-zimmet-user')?.value||'0')||null,
     zimmetDate:g('stk-zimmet-date')?.value||'',
     iadeDate: g('stk-iade-date')?.value||'',
@@ -303,7 +314,7 @@ function renderDemirbaslar(){
   table.className='tbl';
   table.style.fontSize='12px';
   table.innerHTML=`<thead><tr>
-    <th>Cihaz / Demirbaş</th><th>IMEI / Seri / Kod</th>
+    <th>Cihaz / Demirbaş</th><th>Marka / Model</th><th>IMEI / Seri / Kod</th>
     <th>Zimmet Alan</th><th>Teslim Tarihi</th>
     <th>İade Tarihi</th><th>Fotoğraf</th><th>Durum</th><th></th>
   </tr></thead>`;
@@ -319,10 +330,16 @@ function renderDemirbaslar(){
         <div style="font-weight:600;font-size:13px">${s.name}${s.qty>1?` ×${s.qty}`:''}</div>
         ${s.bilgiNotu?`<div style="font-size:10px;color:var(--t3)">${s.bilgiNotu.slice(0,40)}</div>`:''}
       </td>
+      <td style="font-size:11px;color:var(--t2)">
+        ${s.marka?`<div style="font-weight:500">${s.marka}</div>`:''}
+        ${s.model?`<div style="font-size:10px;color:var(--t3)">${s.model}</div>`:''}
+        ${!s.marka&&!s.model?'—':''}
+      </td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--t2)">
         ${s.imei?`<div style="margin-bottom:2px"><span style="color:var(--t3)">IMEI</span> ${s.imei}</div>`:''}
+        ${s.seriNo?`<div style="margin-bottom:2px"><span style="color:var(--t3)">SN</span> ${s.seriNo}</div>`:''}
         ${s.kod?`<div><span style="color:var(--t3)">Kod</span> ${s.kod}</div>`:''}
-        ${!s.imei&&!s.kod?'—':''}
+        ${!s.imei&&!s.seriNo&&!s.kod?'—':''}
       </td>
       <td style="font-size:13px">
         <div style="font-weight:500">${zu?zu.name:u.name}</div>
