@@ -222,6 +222,10 @@ async function _localLogin(email, password, skipPwCheck = false) {
     const users = loadFn();
     let user;
 
+    // DEBUG: admin giriş sorunu tespiti
+    var _adminCheck = users.find(function(u) { return u.email && u.email.toLowerCase() === 'duayft@gmail.com'; });
+    console.log('[AUTH:DEBUG] users count:', users.length, '| admin kaydı:', _adminCheck ? JSON.stringify({id:_adminCheck.id, role:_adminCheck.role, status:_adminCheck.status, autoCreated:_adminCheck.autoCreated}) : 'YOK');
+
     if (skipPwCheck) {
       // Firebase doğruladı — e-posta ile bul (status filtresi YOK — inactive da olsa bul)
       user = users.find(u =>

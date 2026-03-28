@@ -386,24 +386,64 @@ const DEFAULT_USERS = [
  * @returns {Array<Object>} Kullanıcı dizisi
  */
 function loadUsers() {
-  const d = _read(KEYS.users);
+  var d = _read(KEYS.users);
   if (Array.isArray(d) && d.length > 0) {
-    // Güvenlik ağı: DEFAULT_USERS'taki admin her zaman active olmalı
-    var _adminFixed = false;
+    var _fixed = false;
+
+    // 1) Mükerrer e-posta temizliği — autoCreated duplikatları kaldır
+    var _emailSeen = {};
+    var _cleanList = [];
+    d.forEach(function(u) {
+      var key = (u.email || '').toLowerCase();
+      if (!key) { _cleanList.push(u); return; }
+      if (_emailSeen[key]) {
+        // Duplikat: autoCreated olanı at, orijinali koru
+        if (u.autoCreated) {
+          console.warn('[DB] Mükerrer kullanıcı kaldırıldı:', u.email, '(autoCreated, id:' + u.id + ')');
+          _fixed = true;
+          return; // atla
+        }
+        // Orijinal zaten eklendiyse, autoCreated olanı at
+        var prev = _cleanList.find(function(x) { return (x.email || '').toLowerCase() === key; });
+        if (prev && prev.autoCreated) {
+          // Önceki autoCreated idi, bunu koru, öncekini çıkar
+          _cleanList = _cleanList.filter(function(x) { return x !== prev; });
+          _cleanList.push(u);
+          _fixed = true;
+          return;
+        }
+        // İkisi de orijinal — her ikisini de tut (farklı kayıtlar olabilir)
+        _cleanList.push(u);
+        return;
+      }
+      _emailSeen[key] = true;
+      _cleanList.push(u);
+    });
+    d = _cleanList;
+
+    // 2) DEFAULT_USERS'taki admin her zaman status:'active', role:'admin'
     DEFAULT_USERS.forEach(function(def) {
       if (def.role !== 'admin') return;
       var match = d.find(function(u) { return u.id === def.id || (u.email && u.email.toLowerCase() === def.email.toLowerCase()); });
-      if (match && match.status !== 'active') {
-        match.status = 'active';
-        if (match.role !== 'admin') match.role = def.role;
-        delete match.isDeleted;
-        delete match._fbSyncNote;
-        _adminFixed = true;
+      if (match) {
+        if (match.status !== 'active' || match.role !== 'admin') {
+          match.status = 'active';
+          match.role = 'admin';
+          match.access = def.access;
+          delete match.isDeleted;
+          delete match._fbSyncNote;
+          _fixed = true;
+        }
+      } else {
+        // Admin hiç yoksa DEFAULT'tan ekle
+        d.unshift({ ...def });
+        _fixed = true;
       }
     });
-    if (_adminFixed) {
+
+    if (_fixed) {
       try { localStorage.setItem(KEYS.users, JSON.stringify(d)); } catch(e) {}
-      console.warn('[DB] Admin kullanıcı kurtarıldı — status:active zorlandı');
+      console.warn('[DB] Kullanıcı listesi düzeltildi — admin korundu, duplikatlar temizlendi');
     }
     return d;
   }
