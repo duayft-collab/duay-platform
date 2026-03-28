@@ -805,7 +805,10 @@ window.renderUrunler = function() {
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Ürün Kataloğu</div><div style="font-size:10px;color:var(--t3);margin-top:2px" id="urun-sub">Tedarikçi ürünleri</div></div>'
-      + '<div style="display:flex;gap:6px"><button onclick="window._openUrunModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Ürün Ekle</button></div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button onclick="window._exportUrunlerXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button>'
+      + (window.isAdmin?.() ? '<button onclick="window._insertDemoUrunler?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🎲 Demo</button>' : '')
+      + '<button onclick="window._openUrunModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Ürün Ekle</button></div>'
       + '</div>'
       + '<div id="urun-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
       + '</div>'
@@ -949,7 +952,7 @@ window.renderAlisTeklifleri = function() {
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Alış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Tedarikçi teklifleri</div></div>'
-      + '<div style="display:flex;gap:6px"><button onclick="window._openAlisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Alış Teklifi</button></div>'
+      + '<div style="display:flex;gap:6px"><button onclick="window._exportAlisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button onclick="window._openAlisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Alış Teklifi</button></div>'
       + '</div>'
       + '<div id="alis-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
       + '</div>'
@@ -964,16 +967,26 @@ window.renderAlisTeklifleri = function() {
     + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(d.reduce(function(s,t){return s+(parseFloat(t.toplamTutar)||0);},0)).toLocaleString('tr-TR') + '</div></div>';
   var cont = document.getElementById('alis-list'); if (!cont) return;
   if (!d.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Henüz teklif yok</div>'; return; }
-  cont.innerHTML = d.map(function(t) {
-    var expired = t.gecerlilikTarihi && t.gecerlilikTarihi < today;
-    var badge = expired ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#DC262622;color:#DC2626">Süresi Dolmuş</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#16A34A22;color:#16A34A">Geçerli</span>';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
-      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(t.teklifNo||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(t.tedarikci||'') + ' · ' + esc(t.urunAdi||'') + '</div></div>'
-      + '<div style="font-size:12px;font-weight:600">' + (t.toplamTutar||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</div>'
-      + badge
-      + '<button onclick="window._convertToSatisTeklif?.(' + t.id + ')" style="padding:3px 8px;border:0.5px solid var(--ac);border-radius:5px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Satış Yap</button>'
-    + '</div>';
-  }).join('');
+  // Excel tarzı tablo başlık
+  var thS = 'font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:6px 10px;white-space:nowrap';
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:100px 140px 150px 70px 90px 60px 90px 90px 80px 80px;gap:0;padding:0;background:var(--s2);border-bottom:0.5px solid var(--b);min-width:1000px">'
+    + '<div style="'+thS+'">Teklif No</div><div style="'+thS+'">Tedarikçi</div><div style="'+thS+'">Ürün</div><div style="'+thS+'">Miktar</div><div style="'+thS+'">B.Fiyat</div><div style="'+thS+'">Döviz</div><div style="'+thS+'">Toplam</div><div style="'+thS+'">Geçerlilik</div><div style="'+thS+'">Durum</div><div style="'+thS+'">İşlem</div></div>'
+    + '<div style="overflow-x:auto">' + d.map(function(t) {
+      var expired = t.gecerlilikTarihi && t.gecerlilikTarihi < today;
+      var badge = expired ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#DC262622;color:#DC2626">Dolmuş</span>' : '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#16A34A22;color:#16A34A">Geçerli</span>';
+      return '<div style="display:grid;grid-template-columns:100px 140px 150px 70px 90px 60px 90px 90px 80px 80px;gap:0;padding:0;border-bottom:0.5px solid var(--b);min-width:1000px;align-items:center;transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+        + '<div style="padding:6px 10px;font-size:11px;font-weight:600;color:var(--t);font-family:monospace">' + esc(t.teklifNo||'') + '</div>'
+        + '<div style="padding:6px 10px;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.tedarikci||'') + '</div>'
+        + '<div style="padding:6px 10px;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.urunAdi||'') + '</div>'
+        + '<div style="padding:6px 10px;font-size:11px;text-align:right">' + (t.miktar||0) + '</div>'
+        + '<div style="padding:6px 10px;font-size:11px;text-align:right;font-weight:600">' + (t.birimFiyat||0).toLocaleString('tr-TR') + '</div>'
+        + '<div style="padding:6px 10px;font-size:10px;color:var(--t3)">' + (t.paraBirimi||'USD') + '</div>'
+        + '<div style="padding:6px 10px;font-size:11px;text-align:right;font-weight:600;color:var(--ac)">' + (t.toplamTutar||0).toLocaleString('tr-TR') + '</div>'
+        + '<div style="padding:6px 10px;font-size:10px;color:var(--t3)">' + (t.gecerlilikTarihi||'—').slice(0,10) + '</div>'
+        + '<div style="padding:6px 10px">' + badge + '</div>'
+        + '<div style="padding:6px 10px"><button onclick="window._convertToSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--ac);border-radius:4px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Satış</button></div>'
+      + '</div>';
+    }).join('') + '</div>';
 };
 
 window._openAlisModal = function() {
@@ -1039,7 +1052,7 @@ window.renderSatisTeklifleri = function() {
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Satış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri teklifleri</div></div>'
-      + '<div style="display:flex;gap:6px"><button onclick="window._openSatisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button></div>'
+      + '<div style="display:flex;gap:6px"><button onclick="window._exportSatisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button onclick="window._openSatisRapor?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📊 Rapor</button><button onclick="window._openSatisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button></div>'
       + '</div>'
       + '<div id="satis-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
       + '</div>'
@@ -1196,6 +1209,142 @@ window._printSatisTeklif = function(id) {
     + '<button onclick="window.print()" style="margin-top:15px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:4px;background:#fff;color:#1a365d;font-weight:600">🖨 Print / PDF</button>'
     + '</body></html>');
   w.document.close();
+};
+
+// ════════════════════════════════════════════════════════════════
+// DEMO VERİ — 20 ürün + 5 müşteri
+// ════════════════════════════════════════════════════════════════
+window._insertDemoUrunler = function() {
+  if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
+  var urunler = typeof loadUrunler === 'function' ? loadUrunler() : [];
+  if (urunler.some(function(u){return u.duayKodu && u.duayKodu.indexOf('DUAY-')===0;})) { window.toast?.('Demo ürünler zaten var','warn'); return; }
+  var now = new Date().toISOString();
+  var cuId = window.Auth?.getCU?.()?.id;
+  var demoUrunler = [
+    {orijinalAdi:'Paslanmaz Turnike SS304',standartAdi:'Stainless Steel Turnstile SS304',kategori:'Güvenlik',birim:'Adet',mensei:'Türkiye',gtip:'7326.90',marka:'DuayTech',tedarikci:'Doğsan Branda San. A.Ş.',saticiSinifi:'uretici',renk:'Gri',netAgirlik:45,gorsel:'https://picsum.photos/seed/turnike/200'},
+    {orijinalAdi:'Elektronik Kontrol Kartı v3',standartAdi:'Electronic Control Board v3',kategori:'Elektronik',birim:'Adet',mensei:'Çin',gtip:'8542.31',marka:'ShenTech',tedarikci:'INNOCAP Trading Ltd',saticiSinifi:'satici',netAgirlik:0.2,gorsel:'https://picsum.photos/seed/pcb/200'},
+    {orijinalAdi:'PVC Branda Kumaş 650g',standartAdi:'PVC Tarpaulin Fabric 650gsm',kategori:'Tekstil',birim:'Metre',mensei:'Türkiye',gtip:'3926.90',marka:'Doğsan',tedarikci:'Doğsan Branda San. A.Ş.',saticiSinifi:'uretici',renk:'Beyaz',gorsel:'https://picsum.photos/seed/tarpaulin/200'},
+    {orijinalAdi:'HDPE Plastik Şişe 1L',standartAdi:'HDPE Plastic Bottle 1L',kategori:'Ambalaj',birim:'Adet',mensei:'Türkiye',gtip:'3923.30',tedarikci:'Elips End. Malz. San. A.Ş.',saticiSinifi:'uretici',gorsel:'https://picsum.photos/seed/bottle/200'},
+    {orijinalAdi:'Sodyum Hidroksit %50',standartAdi:'Sodium Hydroxide 50%',kategori:'Kimya',birim:'Kg',mensei:'Türkiye',gtip:'2815.11',imolu:'E',tedarikci:'Elips End. Malz. San. A.Ş.',gorsel:'https://picsum.photos/seed/chemical/200'},
+    {orijinalAdi:'Pamuklu Dokuma Kumaş',standartAdi:'Cotton Woven Fabric',kategori:'Tekstil',birim:'Metre',mensei:'Türkiye',gtip:'5208.12',tedarikci:'Doğsan Branda San. A.Ş.',renk:'Ham',gorsel:'https://picsum.photos/seed/cotton/200'},
+    {orijinalAdi:'Galvaniz Çelik Profil 40x40',standartAdi:'Galvanized Steel Profile 40x40mm',kategori:'Metal',birim:'Metre',mensei:'Türkiye',gtip:'7216.61',tedarikci:'Elips End. Malz. San. A.Ş.',gorsel:'https://picsum.photos/seed/steel/200'},
+    {orijinalAdi:'Kuru Kayısı 1.Sınıf',standartAdi:'Dried Apricot Grade A',kategori:'Gıda',birim:'Kg',mensei:'Türkiye',gtip:'0813.10',tedarikci:'Merden Lojistik',gorsel:'https://picsum.photos/seed/apricot/200'},
+    {orijinalAdi:'LED Panel Aydınlatma 60x60',standartAdi:'LED Panel Light 60x60cm 48W',kategori:'Aydınlatma',birim:'Adet',mensei:'Çin',gtip:'9405.42',tedarikci:'INNOCAP Trading Ltd',gorsel:'https://picsum.photos/seed/ledpanel/200'},
+    {orijinalAdi:'Endüstriyel Boya RAL7035',standartAdi:'Industrial Paint RAL7035',kategori:'Kimya',birim:'Lt',mensei:'Türkiye',gtip:'3208.10',tedarikci:'Elips End. Malz. San. A.Ş.',renk:'RAL7035',gorsel:'https://picsum.photos/seed/paint/200'},
+    {orijinalAdi:'Karton Kutu 40x30x20',standartAdi:'Corrugated Box 40x30x20cm',kategori:'Ambalaj',birim:'Adet',mensei:'Türkiye',gtip:'4819.10',tedarikci:'Hava Kargo Batı Loj.',gorsel:'https://picsum.photos/seed/box/200'},
+    {orijinalAdi:'Polipropilen Granül',standartAdi:'Polypropylene Granule',kategori:'Plastik',birim:'Kg',mensei:'Güney Kore',gtip:'3902.10',tedarikci:'INNOCAP Trading Ltd',gorsel:'https://picsum.photos/seed/granule/200'},
+    {orijinalAdi:'Paslanmaz Cıvata M10',standartAdi:'Stainless Steel Bolt M10',kategori:'Bağlantı',birim:'Adet',mensei:'Türkiye',gtip:'7318.15',tedarikci:'Elips End. Malz. San. A.Ş.',gorsel:'https://picsum.photos/seed/bolt/200'},
+    {orijinalAdi:'Suni Deri PU Kumaş',standartAdi:'PU Leather Fabric',kategori:'Tekstil',birim:'Metre',mensei:'Çin',gtip:'3921.13',tedarikci:'INNOCAP Trading Ltd',renk:'Siyah',gorsel:'https://picsum.photos/seed/leather/200'},
+    {orijinalAdi:'Çimento CEM I 42.5R',standartAdi:'Cement CEM I 42.5R',kategori:'İnşaat',birim:'Ton',mensei:'Türkiye',gtip:'2523.29',tedarikci:'Merden Lojistik',gorsel:'https://picsum.photos/seed/cement/200'},
+    {orijinalAdi:'Zeytinyağı Sızma 5L',standartAdi:'Extra Virgin Olive Oil 5L',kategori:'Gıda',birim:'Lt',mensei:'Türkiye',gtip:'1509.10',tedarikci:'Merden Lojistik',gorsel:'https://picsum.photos/seed/oliveoil/200'},
+    {orijinalAdi:'Alüminyum Folyo 30mic',standartAdi:'Aluminium Foil 30 micron',kategori:'Ambalaj',birim:'Kg',mensei:'Türkiye',gtip:'7607.11',tedarikci:'Elips End. Malz. San. A.Ş.',gorsel:'https://picsum.photos/seed/foil/200'},
+    {orijinalAdi:'Güneş Paneli 550W Mono',standartAdi:'Solar Panel 550W Monocrystalline',kategori:'Enerji',birim:'Adet',mensei:'Çin',gtip:'8541.40',tedarikci:'INNOCAP Trading Ltd',gorsel:'https://picsum.photos/seed/solar/200'},
+    {orijinalAdi:'Mermer Traverten 2cm',standartAdi:'Travertine Marble Tile 2cm',kategori:'İnşaat',birim:'M²',mensei:'Türkiye',gtip:'6802.91',tedarikci:'Doğsan Branda San. A.Ş.',renk:'Bej',gorsel:'https://picsum.photos/seed/marble/200'},
+    {orijinalAdi:'Endüstriyel Filtre Torbası',standartAdi:'Industrial Filter Bag',kategori:'Endüstriyel',birim:'Adet',mensei:'Türkiye',gtip:'5911.40',tedarikci:'Hava Kargo Batı Loj.',gorsel:'https://picsum.photos/seed/filter/200'},
+  ];
+  demoUrunler.forEach(function(u,i) {
+    var sat = (u.tedarikci||'X').replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase();
+    u.id = typeof generateNumericId==='function'?generateNumericId():Date.now()+i;
+    u.duayKodu = 'DUAY-'+sat+'-'+String(i+1).padStart(3,'0');
+    u.urunKodu = u.duayKodu;
+    u.kdvOrani = 20; u.status = 'aktif'; u.ts = now; u.createdBy = cuId; u.createdAt = now;
+    u.changeLog = [{ts:now,by:cuId,action:'demo oluşturma'}];
+  });
+  if (typeof storeUrunler === 'function') storeUrunler(urunler.concat(demoUrunler));
+  // 5 Demo müşteri
+  var cariList = typeof loadCari === 'function' ? loadCari() : [];
+  var demoMusteriler = [
+    {name:'Abidjan Trading Co.',type:'musteri',cariType:'onayli',status:'active',country:'Fildişi Sahili',currency:'XOF',email:'info@abidjantrading.ci',phone:'+225 27 20 00 00'},
+    {name:'West Africa Imports',type:'musteri',cariType:'onayli',status:'active',country:'Gana',currency:'USD',email:'buy@westafricaimports.gh',phone:'+233 30 200 0000'},
+    {name:'Dakar Group Ltd',type:'musteri',cariType:'onayli',status:'active',country:'Senegal',currency:'XOF',email:'orders@dakargroup.sn',phone:'+221 33 800 0000'},
+    {name:'Ivory Coast Traders',type:'musteri',cariType:'onayli',status:'active',country:'Fildişi Sahili',currency:'EUR',email:'trade@ivorycoasttraders.ci'},
+    {name:'Lomé Distribution SA',type:'musteri',cariType:'onayli',status:'active',country:'Togo',currency:'XOF',email:'info@lomedist.tg'},
+  ];
+  var existingNames = cariList.map(function(c){return c.name;});
+  demoMusteriler.forEach(function(m) {
+    if (existingNames.indexOf(m.name) !== -1) return;
+    m.id = typeof generateNumericId==='function'?generateNumericId():Date.now();
+    m.createdAt = now; m.createdBy = cuId; m.approvedBy = cuId; m.approvedAt = now;
+    m.contacts = []; m.documents = []; m.changeHistory = [{ts:now,by:cuId,changes:['Demo oluşturma']}];
+    cariList.push(m);
+  });
+  if (typeof storeCari === 'function') storeCari(cariList);
+  window.toast?.('Demo: 20 ürün + 5 müşteri yüklendi ✓','ok');
+  window.renderUrunler?.();
+  if (typeof renderCari === 'function') renderCari();
+};
+
+// ════════════════════════════════════════════════════════════════
+// EXCEL EXPORT/IMPORT — Ürün + Alış + Satış
+// ════════════════════════════════════════════════════════════════
+
+/** Ürün Excel export */
+window._exportUrunlerXlsx = function() {
+  if (typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
+  var d = typeof loadUrunler==='function'?loadUrunler():[];
+  var rows=[['Duay Kodu','Orijinal Adı','Standart Adı (EN)','Kategori','Birim','Menşei','GTİP','Marka','Tedarikçi','Renk','KDV%','Net Ağ.','Brüt Ağ.','IMO','DİB','İhr.Kısıtı']];
+  d.forEach(function(u){rows.push([u.duayKodu||'',u.orijinalAdi||u.urunAdi||'',u.standartAdi||'',u.kategori||'',u.birim||'',u.mensei||'',u.gtip||'',u.marka||'',u.tedarikci||'',u.renk||'',u.kdvOrani||20,u.netAgirlik||'',u.brutAgirlik||'',u.imolu||'H',u.dibli||'H',u.ihracatKisiti||'H']);});
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Ürünler');
+  XLSX.writeFile(wb,'urun-katalog-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  window.toast?.('Excel indirildi ✓','ok');
+};
+
+/** Alış teklif Excel export */
+window._exportAlisTeklifXlsx = function() {
+  if (typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
+  var d = typeof loadAlisTeklifleri==='function'?loadAlisTeklifleri():[];
+  var rows=[['Teklif No','Tedarikçi','Ürün','Miktar','Birim Fiyat','Döviz','Toplam','Geçerlilik','Tarih']];
+  d.forEach(function(t){rows.push([t.teklifNo||'',t.tedarikci||'',t.urunAdi||'',t.miktar||0,t.birimFiyat||0,t.paraBirimi||'USD',t.toplamTutar||0,t.gecerlilikTarihi||'',t.ts?.slice(0,10)||'']);});
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Alış Teklifleri');
+  XLSX.writeFile(wb,'alis-teklifleri-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  window.toast?.('Excel indirildi ✓','ok');
+};
+
+/** Satış teklif Excel export + kar analizi */
+window._exportSatisTeklifXlsx = function() {
+  if (typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var rows=[['Teklif No','Müşteri','Ürün Sayısı','Genel Toplam','Döviz','Tahmini Kâr','Durum','Tarih','Geçerlilik','Teslimat']];
+  d.forEach(function(t){rows.push([t.teklifNo||'',t.musteri||'',(t.urunler||[]).length,t.genelToplam||0,t.paraBirimi||'USD',t.tahminKar||0,t.durum||'taslak',t.ts?.slice(0,10)||'',t.gecerlilikTarihi||'',t.teslimSekli||'FOB']);});
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Satış Teklifleri');
+  XLSX.writeFile(wb,'satis-teklifleri-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  window.toast?.('Excel indirildi ✓','ok');
+};
+
+/** Satış raporu */
+window._openSatisRapor = function() {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var toplamSatis=0,toplamAlis=0,toplamKar=0;
+  var urunSatis={};
+  d.forEach(function(t){
+    toplamSatis+=(t.genelToplam||0);toplamKar+=(t.tahminKar||0);
+    (t.urunler||[]).forEach(function(u){
+      var key=u.urunAdi||'?';
+      if(!urunSatis[key])urunSatis[key]={ad:key,adet:0,satis:0,alis:0};
+      urunSatis[key].adet+=u.miktar||0;
+      urunSatis[key].satis+=(u.satisFiyat||0)*(u.miktar||0);
+      urunSatis[key].alis+=(u.alisFiyat||0)*(u.miktar||0);
+      toplamAlis+=(u.alisFiyat||0)*(u.miktar||0);
+    });
+  });
+  var sorted=Object.values(urunSatis).sort(function(a,b){return b.satis-a.satis;});
+  var ex=document.getElementById('mo-satis-rapor');if(ex)ex.remove();
+  var mo=document.createElement('div');mo.className='mo';mo.id='mo-satis-rapor';
+  mo.innerHTML='<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden">'
+    +'<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:700">📊 Satış Raporu</div><button onclick="document.getElementById(\'mo-satis-rapor\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)">'
+    +'<div style="padding:12px 14px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Toplam Satış</div><div style="font-size:18px;font-weight:700;color:var(--ac)">$'+Math.round(toplamSatis).toLocaleString('tr-TR')+'</div></div>'
+    +'<div style="padding:12px 14px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Toplam Alış</div><div style="font-size:18px;font-weight:700;color:#DC2626">$'+Math.round(toplamAlis).toLocaleString('tr-TR')+'</div></div>'
+    +'<div style="padding:12px 14px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Toplam Kâr</div><div style="font-size:18px;font-weight:700;color:#16A34A">$'+Math.round(toplamKar).toLocaleString('tr-TR')+'</div></div>'
+    +'<div style="padding:12px 14px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Ort. Marj</div><div style="font-size:18px;font-weight:700">'+(toplamSatis>0?Math.round(toplamKar/toplamSatis*100):0)+'%</div></div></div>'
+    +'<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">En Çok Satan 5 Ürün</div>'
+    +sorted.slice(0,5).map(function(u){var kar=u.satis-u.alis;return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span>'+esc(u.ad)+' <span style="color:var(--t3)">('+u.adet+' adet)</span></span><span style="font-weight:600;color:#16A34A">+$'+Math.round(kar).toLocaleString('tr-TR')+'</span></div>';}).join('')
+    +'</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
 };
 
 console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');
