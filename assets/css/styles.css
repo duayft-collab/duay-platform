@@ -2044,18 +2044,71 @@ th[onclick*="_sortUsers"]:hover {
 .tb-icon:hover { background: var(--s2); color: var(--t); }
 
 /* ══ PWA MOBİL OPTİMİZASYON ══ */
+
+/* Safe area — notch/dinamik ada */
+@supports (padding: env(safe-area-inset-top)) {
+  .topnav { padding-top: env(safe-area-inset-top); }
+  .sidebar { padding-bottom: env(safe-area-inset-bottom); }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+
 @media (max-width: 768px) {
   /* Tablo sütunlarını daralt */
   [style*="grid-template-columns"] { font-size: 11px !important; }
-  /* Touch target minimum 44px */
+
+  /* Touch target minimum 44px — WCAG 2.5.8 */
   .nb { min-height: 44px; padding: 10px 12px; }
-  .btn, button { min-height: 36px; }
+  .btn, button { min-height: 44px; padding: 8px 14px; }
+  .ibtn { width: 44px; height: 44px; }
+  .lpill { min-height: 44px; display: inline-flex; align-items: center; }
+
   /* Metrik kartlar 2 sütun */
   [style*="grid-template-columns:1fr 1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
   [style*="grid-template-columns:repeat(5"] { grid-template-columns: repeat(2, 1fr) !important; }
   [style*="grid-template-columns:repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+  [style*="grid-template-columns:repeat(3"] { grid-template-columns: repeat(2, 1fr) !important; }
+
   /* Dashboard kartlar tek sütun */
   #db-quick-actions > div { grid-template-columns: 1fr !important; }
+
   /* Modal genişlik */
-  .moc, .modal { max-width: 95vw !important; }
+  .moc, .modal { max-width: 95vw !important; width: 95vw !important; }
+
+  /* Topbar: brand adı gizle, saat küçült */
+  .brand-name { font-size: 13px; }
+  .ucn { display: none; }
+  .ucr { display: none; }
+  .lout { font-size: 10px; padding: 4px 8px; }
+  .tnr { gap: 4px; }
+
+  /* Pinbar mobilde küçült */
+  #pinbar { height: 32px; padding: 0 10px; }
+  .plink { font-size: 11px; padding: 2px 8px; }
+  .padd-btn { display: none; }
+
+  /* Font boyutları mobilde okunaklı */
+  body { font-size: 15px; }
+  .fl { font-size: 11px; }
+  .fi { font-size: 16px; } /* iOS zoom engellemek için min 16px */
+
+  /* Tablolar yatay scroll */
+  [style*="min-width:1000px"],
+  [style*="min-width:900px"],
+  [style*="min-width:800px"] {
+    min-width: 0 !important;
+  }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Tablo 4+ sütun: az önemli sütunları gizle */
+  .mob-hide { display: none !important; }
+
+  /* Sidebar overlay daha koyu */
+  #mob-overlay.show { background: rgba(0,0,0,.55); }
+
+  /* Hamburger daha büyük */
+  .ham-btn { padding: 10px; }
+  .ham-btn span { width: 20px; height: 2.5px; }
+
+  /* Fikir FAB konumu — safe area */
+  #fikir-fab { bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important; }
 }

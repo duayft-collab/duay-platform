@@ -2266,10 +2266,20 @@ window.openReportPanel = function() {
     + '<div style="font-size:13px;font-weight:600;color:var(--t)">Kargo Raporu</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Konteyner bazlı</div></div>'
     // Günlük Checklist
-    + '<div onclick="window.downloadDailyChecklist?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center;grid-column:span 2" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div onclick="window.downloadDailyChecklist?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
     + '<div style="font-size:28px;margin-bottom:6px">📋</div>'
     + '<div style="font-size:13px;font-weight:600;color:var(--t)">Günlük Checklist</div>'
-    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Gecikmiş görevler + ödemeler + bekleyen onaylar</div></div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Gecikmiş görevler + ödemeler</div></div>'
+    // Aylık Rapor
+    + '<div onclick="window.downloadMonthlyReport?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">📊</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Aylık Rapor</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Tahsilat, ödeme, kâr, top 5</div></div>'
+    // Rapor Geçmişi
+    + '<div onclick="window._openMonthlyReportHistory?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center;grid-column:span 2" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">📁</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Rapor Geçmişi</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Son 3 aylık rapor özeti</div></div>'
     + '</div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
@@ -2423,6 +2433,217 @@ window.downloadDailyChecklist = function() {
   }
   setTimeout(_check, 5000);
   setInterval(_check, 3600000); // her saat kontrol
+})();
+
+// ════════════════════════════════════════════════════════════════
+// AYLIK OTOMATİK RAPOR
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Aylık rapor verisi oluştur.
+ * @returns {object} Tüm metrikleri içeren rapor nesnesi
+ */
+function _buildMonthlyReport() {
+  var now = new Date();
+  var yil = now.getFullYear();
+  var ay = now.getMonth(); // 0-indexed
+  var ayBaslangic = new Date(yil, ay, 1).toISOString().slice(0, 10);
+  var aySon = new Date(yil, ay + 1, 0).toISOString().slice(0, 10);
+  var ayAdi = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][ay];
+
+  var odm = typeof loadOdm === 'function' ? loadOdm().filter(function(o) { return !o.isDeleted; }) : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat().filter(function(t) { return !t.isDeleted; }) : [];
+  var tasks = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.isDeleted; }) : [];
+  var kargo = typeof loadKargo === 'function' ? loadKargo() : [];
+  var satisTek = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) { return !c.isDeleted; }) : [];
+
+  // Bu ay filtreleme
+  var buAyOdm = odm.filter(function(o) { return o.due >= ayBaslangic && o.due <= aySon; });
+  var buAyTah = tah.filter(function(t) { return t.due >= ayBaslangic && t.due <= aySon; });
+  var buAyTasks = tasks.filter(function(t) { return t.createdAt && t.createdAt.slice(0, 10) >= ayBaslangic && t.createdAt.slice(0, 10) <= aySon; });
+
+  // Tahsilat toplamı
+  var tahsilatToplam = buAyTah.reduce(function(s, t) { return s + (parseFloat(t.amount) || 0); }, 0);
+  // Ödeme toplamı
+  var odemeToplam = buAyOdm.reduce(function(s, o) { return s + (parseFloat(o.amount) || 0); }, 0);
+  // Net
+  var netKarZarar = tahsilatToplam - odemeToplam;
+
+  // En çok satan ürün top 5
+  var urunSatisMap = {};
+  satisTek.forEach(function(st) {
+    if (!st.ts || st.ts.slice(0, 10) < ayBaslangic || st.ts.slice(0, 10) > aySon) return;
+    (st.urunler || []).forEach(function(u) {
+      var key = u.urunAdi || u.urunKodu || 'Bilinmeyen';
+      if (!urunSatisMap[key]) urunSatisMap[key] = { ad: key, toplam: 0, miktar: 0 };
+      urunSatisMap[key].toplam += (parseFloat(u.satisFiyat) || 0) * (parseFloat(u.miktar) || 0);
+      urunSatisMap[key].miktar += (parseFloat(u.miktar) || 0);
+    });
+  });
+  var top5Urun = Object.values(urunSatisMap).sort(function(a, b) { return b.toplam - a.toplam; }).slice(0, 5);
+
+  // En kârlı müşteri top 5
+  var musteriKarMap = {};
+  satisTek.forEach(function(st) {
+    if (!st.ts || st.ts.slice(0, 10) < ayBaslangic || st.ts.slice(0, 10) > aySon) return;
+    var key = st.musteri || 'Bilinmeyen';
+    if (!musteriKarMap[key]) musteriKarMap[key] = { ad: key, toplam: 0 };
+    musteriKarMap[key].toplam += (parseFloat(st.genelToplam) || 0);
+  });
+  var top5Musteri = Object.values(musteriKarMap).sort(function(a, b) { return b.toplam - a.toplam; }).slice(0, 5);
+
+  // Gecikmiş ödeme sayısı
+  var today = now.toISOString().slice(0, 10);
+  var gecikmisSayisi = odm.filter(function(o) { return !o.paid && o.due && o.due < today; }).length;
+
+  // Görev sayıları
+  var tamamlananGorev = buAyTasks.filter(function(t) { return t.done; }).length;
+  var acikGorev = tasks.filter(function(t) { return !t.done; }).length;
+
+  // Aktif kargo
+  var aktifKargo = kargo.filter(function(k) { return !k.closed && !k.isDeleted; }).length;
+
+  return {
+    yil: yil, ay: ay, ayAdi: ayAdi,
+    donem: ayAdi + ' ' + yil,
+    ayBaslangic: ayBaslangic, aySon: aySon,
+    tahsilatToplam: tahsilatToplam,
+    odemeToplam: odemeToplam,
+    netKarZarar: netKarZarar,
+    top5Urun: top5Urun,
+    top5Musteri: top5Musteri,
+    gecikmisSayisi: gecikmisSayisi,
+    tamamlananGorev: tamamlananGorev,
+    acikGorev: acikGorev,
+    aktifKargo: aktifKargo,
+    olusturma: now.toISOString()
+  };
+}
+
+/**
+ * Aylık rapor Excel olarak indirir.
+ * @param {object} [rapor] Hazır rapor verisi (opsiyonel, yoksa yeniden oluşturur)
+ */
+window.downloadMonthlyReport = function(rapor) {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var r = rapor || _buildMonthlyReport();
+  var wb = XLSX.utils.book_new();
+
+  // Sayfa 1: Özet
+  var ozet = [
+    ['DUAY GLOBAL TRADE — AYLIK RAPOR'],
+    ['Dönem', r.donem],
+    ['Oluşturma Tarihi', r.olusturma.slice(0, 10)],
+    [],
+    ['METRİK', 'DEĞER'],
+    ['Tahsilat Toplamı', r.tahsilatToplam],
+    ['Ödeme Toplamı', r.odemeToplam],
+    ['Net Kâr/Zarar', r.netKarZarar],
+    ['Gecikmiş Ödeme Sayısı', r.gecikmisSayisi],
+    ['Tamamlanan Görev', r.tamamlananGorev],
+    ['Açık Görev', r.acikGorev],
+    ['Aktif Kargo', r.aktifKargo],
+    [],
+    ['EN ÇOK SATAN ÜRÜN TOP 5'],
+    ['Ürün', 'Miktar', 'Toplam Tutar'],
+  ];
+  r.top5Urun.forEach(function(u) { ozet.push([u.ad, u.miktar, u.toplam]); });
+  ozet.push([]);
+  ozet.push(['EN KÂRLI MÜŞTERİ TOP 5']);
+  ozet.push(['Müşteri', 'Toplam Satış']);
+  r.top5Musteri.forEach(function(m) { ozet.push([m.ad, m.toplam]); });
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ozet), 'Özet');
+  var dosyaAdi = 'aylik-rapor-' + r.yil + '-' + String(r.ay + 1).padStart(2, '0') + '.xlsx';
+  XLSX.writeFile(wb, dosyaAdi);
+  window.toast?.('Aylık rapor indirildi: ' + r.donem + ' ✓', 'ok');
+
+  // Rapor geçmişini sakla (son 3 ay)
+  try {
+    var hist = JSON.parse(localStorage.getItem('ak_monthly_report_history') || '[]');
+    // Aynı dönem varsa güncelle
+    hist = hist.filter(function(h) { return h.donem !== r.donem; });
+    hist.unshift({
+      donem: r.donem,
+      yil: r.yil, ay: r.ay,
+      tahsilat: r.tahsilatToplam,
+      odeme: r.odemeToplam,
+      net: r.netKarZarar,
+      gecikmisSayisi: r.gecikmisSayisi,
+      tamamlananGorev: r.tamamlananGorev,
+      acikGorev: r.acikGorev,
+      aktifKargo: r.aktifKargo,
+      olusturma: r.olusturma
+    });
+    if (hist.length > 3) hist = hist.slice(0, 3);
+    localStorage.setItem('ak_monthly_report_history', JSON.stringify(hist));
+  } catch (e) {}
+
+  return r;
+};
+
+/** Aylık rapor geçmişi modalı */
+window._openMonthlyReportHistory = function() {
+  document.getElementById('mo-reports')?.remove();
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('ak_monthly_report_history') || '[]'); } catch (e) {}
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var ex = document.getElementById('mo-monthly-hist'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-monthly-hist'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:700;color:var(--t)">Aylık Rapor Geçmişi</div><button onclick="document.getElementById(\'mo-monthly-hist\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+    + (hist.length ? hist.map(function(h) {
+        var netColor = h.net >= 0 ? '#16A34A' : '#DC2626';
+        return '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;margin-bottom:8px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700;color:var(--t)">' + esc(h.donem) + '</span><span style="font-size:9px;color:var(--t3)">' + (h.olusturma || '').slice(0, 10) + '</span></div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:10px">'
+          + '<div><span style="color:var(--t3)">Tahsilat</span><div style="font-weight:600;color:#16A34A">' + (h.tahsilat || 0).toLocaleString('tr-TR') + '</div></div>'
+          + '<div><span style="color:var(--t3)">Ödeme</span><div style="font-weight:600;color:#DC2626">' + (h.odeme || 0).toLocaleString('tr-TR') + '</div></div>'
+          + '<div><span style="color:var(--t3)">Net</span><div style="font-weight:600;color:' + netColor + '">' + (h.net >= 0 ? '+' : '') + (h.net || 0).toLocaleString('tr-TR') + '</div></div>'
+          + '</div>'
+          + '<div style="display:flex;gap:10px;margin-top:6px;font-size:9px;color:var(--t3)">'
+          + '<span>Gecikmiş: ' + (h.gecikmisSayisi || 0) + '</span>'
+          + '<span>Tamamlanan: ' + (h.tamamlananGorev || 0) + '</span>'
+          + '<span>Açık: ' + (h.acikGorev || 0) + '</span>'
+          + '<span>Kargo: ' + (h.aktifKargo || 0) + '</span>'
+          + '</div>'
+          + '<button onclick="window.downloadMonthlyReport?.()" style="margin-top:6px;padding:3px 8px;border:0.5px solid var(--ac);border-radius:4px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Yeniden İndir</button>'
+          + '</div>';
+      }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Henüz rapor geçmişi yok.<br><span style="font-size:10px">İlk aylık raporu oluşturmak için Raporlar panelinden "Aylık Rapor" butonuna tıklayın.</span></div>')
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right"><button class="btn" onclick="document.getElementById(\'mo-monthly-hist\')?.remove()">Kapat</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/** Her ayın son günü saat 17:00'de otomatik tetikle */
+(function _initMonthlyReport() {
+  function _checkMonthly() {
+    var now = new Date();
+    // Ayın son günü mü?
+    var yarin = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    var ayinSonGunu = yarin.getMonth() !== now.getMonth();
+    if (!ayinSonGunu) return;
+    // Saat 17 mi?
+    if (now.getHours() !== 17) return;
+    // Bugün zaten oluşturuldu mu?
+    var donem = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var lastRun = localStorage.getItem('ak_monthly_report_last') || '';
+    if (lastRun === donem) return;
+    localStorage.setItem('ak_monthly_report_last', donem);
+    // Admin kontrolü
+    if (!window.isAdmin?.()) return;
+    // Rapor oluştur ve indir
+    var r = window.downloadMonthlyReport();
+    // Bildirim gönder
+    window.addNotif?.('📊', 'Aylık rapor hazır: ' + (r ? r.donem : donem) + ' — Excel indirildi', 'ok', 'dashboard');
+  }
+  setTimeout(_checkMonthly, 8000);
+  setInterval(_checkMonthly, 3600000); // her saat kontrol
 })();
 
 window._renderActivePanel = function() {

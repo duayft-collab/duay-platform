@@ -7,16 +7,18 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'duay-platform-v8';
-const CACHE_VERSION = '8.1.0';
+const CACHE_NAME    = 'duay-platform-v9';
+const CACHE_VERSION = '9.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/assets/css/styles.css',
   '/src/core/utils.js',
   '/src/core/database.js',
+  '/src/core/cache.js',
   '/src/core/auth.js',
   '/src/core/app.js',
   '/src/i18n/translations.js',
@@ -48,7 +50,16 @@ const PRECACHE_URLS = [
   '/src/modules/ceo.js',
   '/src/modules/hesap.js',
   '/src/modules/modals.js',
+  '/src/modules/satin_alma.js',
+  '/src/modules/satis_teklif.js',
+  '/src/modules/urun_db.js',
+  '/src/modules/navlun.js',
+  '/src/modules/hesap_makinesi.js',
+  '/src/modules/loj_features.js',
   '/src/modules/app_patch.js',
+  '/src/modules/lojistik.js',
+  '/src/modules/ik_hub.js',
+  '/src/modules/crm_hub.js',
 ];
 
 // ── Install: tüm statik dosyaları cache'e al ──────────────────────
@@ -129,8 +140,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Diğer istekler → normal network
-  event.respondWith(fetch(request).catch(() => caches.match('/index.html')));
+  // Diğer istekler → normal network, offline'da index.html fallback
+  event.respondWith(
+    fetch(request).catch(() => {
+      if (request.mode === 'navigate') return caches.match('/index.html');
+      return caches.match(request);
+    })
+  );
 });
 
 // ── Push bildirimleri (opsiyonel) ────────────────────────────────

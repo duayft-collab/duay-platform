@@ -960,22 +960,48 @@ window._saveUrun = function() {
 // ════════════════════════════════════════════════════════════════
 // ALIŞ TEKLİFLERİ — B tasarımı
 // ════════════════════════════════════════════════════════════════
+/** @description Alış Teklifleri paneli — 3 format: Liste/Kart/Detay */
+window._alisViewFormat = window._alisViewFormat || 'liste';
+window._setAlisFormat = function(fmt) {
+  window._alisViewFormat = fmt;
+  // Buton stillerini güncelle
+  ['liste','kart','detay'].forEach(function(f) {
+    var btn = document.getElementById('alis-fmt-'+f);
+    if (btn) {
+      btn.style.background = f===fmt ? 'var(--ac)' : 'var(--sf)';
+      btn.style.color = f===fmt ? '#fff' : 'var(--t2)';
+    }
+  });
+  // Sadece listeyi yeniden render et
+  window._renderAlisContent();
+};
+
 window.renderAlisTeklifleri = function() {
   var panel = document.getElementById('panel-alis-teklifleri'); if (!panel) return;
   var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var today = new Date().toISOString().slice(0,10);
+  var fmt = window._alisViewFormat || 'liste';
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
+    var fmtBtnS = 'padding:4px 10px;border:0.5px solid var(--b);font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s';
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Alış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Tedarikçi teklifleri</div></div>'
-      + '<div style="display:flex;gap:6px"><button onclick="window._exportAlisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button onclick="window._openAlisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Alış Teklifi</button></div>'
+      + '<div style="display:flex;gap:6px;align-items:center">'
+      // Format butonları
+      + '<div style="display:flex;border:0.5px solid var(--b);border-radius:7px;overflow:hidden">'
+      + '<button id="alis-fmt-liste" onclick="window._setAlisFormat(\'liste\')" style="'+fmtBtnS+';border-radius:7px 0 0 7px;background:'+(fmt==='liste'?'var(--ac)':'var(--sf)')+';color:'+(fmt==='liste'?'#fff':'var(--t2)')+'">Liste</button>'
+      + '<button id="alis-fmt-kart" onclick="window._setAlisFormat(\'kart\')" style="'+fmtBtnS+';border-left:none;background:'+(fmt==='kart'?'var(--ac)':'var(--sf)')+';color:'+(fmt==='kart'?'#fff':'var(--t2)')+'">Kart</button>'
+      + '<button id="alis-fmt-detay" onclick="window._setAlisFormat(\'detay\')" style="'+fmtBtnS+';border-left:none;border-radius:0 7px 7px 0;background:'+(fmt==='detay'?'var(--ac)':'var(--sf)')+';color:'+(fmt==='detay'?'#fff':'var(--t2)')+'">Detay</button>'
       + '</div>'
+      + '<button onclick="window._exportAlisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button>'
+      + '<button onclick="window._openAlisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Alış Teklifi</button>'
+      + '</div></div>'
       + '<div id="alis-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
       + '</div>'
       + '<div style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div id="alis-list"></div></div>';
   }
+  // İstatistikler
   var gecerli = d.filter(function(t){return !t.gecerlilikTarihi||t.gecerlilikTarihi>=today;}).length;
   var sureDolmus = d.filter(function(t){return t.gecerlilikTarihi&&t.gecerlilikTarihi<today;}).length;
   var statsEl = document.getElementById('alis-stats');
@@ -983,9 +1009,29 @@ window.renderAlisTeklifleri = function() {
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Geçerli</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + gecerli + '</div></div>'
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Süresi Dolmuş</div><div style="font-size:22px;font-weight:600;color:#DC2626">' + sureDolmus + '</div></div>'
     + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(d.reduce(function(s,t){return s+(parseFloat(t.toplamTutar)||0);},0)).toLocaleString('tr-TR') + '</div></div>';
+  window._renderAlisContent();
+};
+
+/** @description Alış teklif listesini aktif formata göre render eder */
+window._renderAlisContent = function() {
   var cont = document.getElementById('alis-list'); if (!cont) return;
+  var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var today = new Date().toISOString().slice(0,10);
+  var fmt = window._alisViewFormat || 'liste';
   if (!d.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Henüz teklif yok</div>'; return; }
-  // Excel tarzı tablo başlık
+
+  if (fmt === 'liste') {
+    window._renderAlisListe(cont, d, esc, today);
+  } else if (fmt === 'kart') {
+    window._renderAlisKart(cont, d, esc, today);
+  } else {
+    window._renderAlisDetay(cont, d, esc, today);
+  }
+};
+
+/** FORMAT A — Liste (yatay tablo) */
+window._renderAlisListe = function(cont, d, esc, today) {
   var thS = 'font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:6px 10px;white-space:nowrap';
   cont.innerHTML = '<div style="display:grid;grid-template-columns:100px 140px 150px 70px 90px 60px 90px 90px 80px 80px;gap:0;padding:0;background:var(--s2);border-bottom:0.5px solid var(--b);min-width:1000px">'
     + '<div style="'+thS+'">Teklif No</div><div style="'+thS+'">Tedarikçi</div><div style="'+thS+'">Ürün</div><div style="'+thS+'">Miktar</div><div style="'+thS+'">B.Fiyat</div><div style="'+thS+'">Döviz</div><div style="'+thS+'">Toplam</div><div style="'+thS+'">Geçerlilik</div><div style="'+thS+'">Durum</div><div style="'+thS+'">İşlem</div></div>'
@@ -1005,6 +1051,139 @@ window.renderAlisTeklifleri = function() {
         + '<div style="padding:6px 10px"><button onclick="window._convertToSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--ac);border-radius:4px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Satış</button></div>'
       + '</div>';
     }).join('') + '</div>';
+};
+
+/** FORMAT B — Kart görünümü */
+window._renderAlisKart = function(cont, d, esc, today) {
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:16px">'
+    + d.map(function(t) {
+      var expired = t.gecerlilikTarihi && t.gecerlilikTarihi < today;
+      var badgeColor = expired ? '#DC2626' : '#16A34A';
+      var badgeBg = expired ? '#DC262611' : '#16A34A11';
+      var badgeText = expired ? 'Süresi Dolmuş' : 'Geçerli';
+      var satirSayisi = (t.satirlar||[]).length;
+      var imoVar = (t.satirlar||[]).some(function(s){return s.imoMu;});
+      return '<div style="border:0.5px solid var(--b);border-radius:10px;background:var(--sf);overflow:hidden;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'\'">'
+        // Kart başlık
+        + '<div style="padding:12px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+        + '<div><div style="font-size:12px;font-weight:700;color:var(--t);font-family:monospace">' + esc(t.teklifNo||'') + '</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + esc(t.tedarikci||'') + '</div></div>'
+        + '<span style="font-size:8px;padding:2px 6px;border-radius:4px;background:'+badgeBg+';color:'+badgeColor+';font-weight:600">' + badgeText + '</span></div>'
+        // Kart içerik
+        + '<div style="padding:12px 14px">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">'
+        + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Ürün</div><div style="font-size:11px;color:var(--t);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.urunAdi||'—') + '</div></div>'
+        + '<div style="text-align:right"><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Tutar</div><div style="font-size:14px;font-weight:700;color:var(--ac)">' + (t.toplamTutar||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</div></div>'
+        + '</div>'
+        + '<div style="display:flex;gap:12px;font-size:10px;color:var(--t3);margin-bottom:8px">'
+        + '<span>Miktar: <b style="color:var(--t)">' + (t.miktar||0) + '</b></span>'
+        + '<span>B.Fiyat: <b style="color:var(--t)">' + (t.birimFiyat||0).toLocaleString('tr-TR') + '</b></span>'
+        + (satirSayisi > 1 ? '<span>' + satirSayisi + ' kalem</span>' : '')
+        + (imoVar ? '<span style="color:#D97706;font-weight:700">IMO</span>' : '')
+        + '</div>'
+        + '<div style="display:flex;gap:6px;font-size:10px;color:var(--t3)">'
+        + (t.piNo ? '<span>PI: ' + esc(t.piNo) + '</span>' : '')
+        + (t.jobId ? '<span style="cursor:pointer;color:var(--ac)" onclick="window.openJobIdHub?.(\''+esc(t.jobId)+'\')">Job: ' + esc(t.jobId) + '</span>' : '')
+        + '<span>Son: ' + (t.gecerlilikTarihi||'—').slice(0,10) + '</span>'
+        + '</div></div>'
+        // Kart alt
+        + '<div style="padding:8px 14px;border-top:0.5px solid var(--b);background:var(--s2);display:flex;gap:6px;justify-content:flex-end">'
+        + '<button onclick="window._convertToSatisTeklif?.(' + t.id + ')" style="padding:3px 8px;border:0.5px solid var(--ac);border-radius:4px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Satışa Dönüştür</button>'
+        + '<button onclick="window._openAlisDetayModal?.(' + t.id + ')" style="padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;background:none;color:var(--t2);font-size:9px;cursor:pointer;font-family:inherit">Detay</button>'
+        + '</div></div>';
+    }).join('') + '</div>';
+};
+
+/** FORMAT C — Detaylı Excel tarzı (tüm satirlar açık) */
+window._renderAlisDetay = function(cont, d, esc, today) {
+  var thS = 'font-size:8px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:5px 8px;white-space:nowrap;background:var(--s2)';
+  var html = '';
+  d.forEach(function(t) {
+    var expired = t.gecerlilikTarihi && t.gecerlilikTarihi < today;
+    var badge = expired ? '<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#DC262622;color:#DC2626">Dolmuş</span>' : '<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#16A34A22;color:#16A34A">Geçerli</span>';
+    var satirlar = t.satirlar || [];
+    // Ana satır — teklif bilgisi
+    html += '<div style="border-bottom:1.5px solid var(--b)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--s2)">'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<span style="font-size:12px;font-weight:700;font-family:monospace;color:var(--t)">' + esc(t.teklifNo||'') + '</span>'
+      + '<span style="font-size:10px;color:var(--t2)">' + esc(t.tedarikci||'') + '</span>'
+      + badge
+      + (t.piNo ? '<span style="font-size:9px;color:var(--t3)">PI: ' + esc(t.piNo) + '</span>' : '')
+      + (t.jobId ? '<span style="font-size:9px;color:var(--ac);cursor:pointer" onclick="window.openJobIdHub?.(\''+esc(t.jobId)+'\')">Job: ' + esc(t.jobId) + '</span>' : '')
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<span style="font-size:10px;color:var(--t3)">Son: ' + (t.gecerlilikTarihi||'—').slice(0,10) + '</span>'
+      + '<span style="font-size:13px;font-weight:700;color:var(--ac)">' + (t.toplamTutar||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</span>'
+      + '<button onclick="window._convertToSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--ac);border-radius:4px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Satış</button>'
+      + '</div></div>';
+    // Ürün detay satırları
+    if (satirlar.length > 0) {
+      html += '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr>'
+        + '<th style="'+thS+';width:30px">#</th>'
+        + '<th style="'+thS+';text-align:left">Ürün Kodu</th>'
+        + '<th style="'+thS+';text-align:left">Standart Ad</th>'
+        + '<th style="'+thS+';text-align:center">Miktar</th>'
+        + '<th style="'+thS+';text-align:center">Birim</th>'
+        + '<th style="'+thS+';text-align:right">B.Fiyat</th>'
+        + '<th style="'+thS+';text-align:right">Toplam</th>'
+        + '<th style="'+thS+';text-align:center">Menşei</th>'
+        + '<th style="'+thS+';text-align:center">IMO</th>'
+        + '</tr></thead><tbody>';
+      satirlar.forEach(function(s, idx) {
+        html += '<tr style="border-bottom:0.5px solid var(--b)">'
+          + '<td style="padding:4px 8px;color:var(--t3)">' + (idx+1) + '</td>'
+          + '<td style="padding:4px 8px;font-family:monospace;font-weight:500">' + esc(s.urunKodu||'—') + '</td>'
+          + '<td style="padding:4px 8px;color:var(--t)">' + esc(s.standartAdi||'—') + '</td>'
+          + '<td style="padding:4px 8px;text-align:center">' + (s.miktar||0) + '</td>'
+          + '<td style="padding:4px 8px;text-align:center;color:var(--t3)">' + esc(s.birim||'—') + '</td>'
+          + '<td style="padding:4px 8px;text-align:right;font-weight:600">' + (s.birimFiyat||0).toLocaleString('tr-TR') + '</td>'
+          + '<td style="padding:4px 8px;text-align:right;font-weight:600;color:var(--ac)">' + (s.toplamFiyat||0).toLocaleString('tr-TR') + '</td>'
+          + '<td style="padding:4px 8px;text-align:center;font-size:9px;color:var(--t3)">' + esc(s.mensei||'—') + '</td>'
+          + '<td style="padding:4px 8px;text-align:center">' + (s.imoMu ? '<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>' : '—') + '</td>'
+          + '</tr>';
+      });
+      html += '</tbody></table>';
+    } else {
+      // Geriye uyumlu — satirlar dizisi yoksa tek satır göster
+      html += '<div style="padding:6px 14px;font-size:10px;color:var(--t3)">' + esc(t.urunAdi||'—') + ' · Miktar: ' + (t.miktar||0) + ' · B.Fiyat: ' + (t.birimFiyat||0).toLocaleString('tr-TR') + '</div>';
+    }
+    html += '</div>';
+  });
+  cont.innerHTML = html;
+};
+
+/** @description Alış teklifi detay modalı (kart görünümden erişim) */
+window._openAlisDetayModal = function(id) {
+  var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var t = d.find(function(x){return x.id===id;});
+  if (!t) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var satirlar = t.satirlar || [];
+  var ex = document.getElementById('mo-alis-detay'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-alis-detay';
+  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:14px;font-weight:700;color:var(--t)">' + esc(t.teklifNo||'') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(t.tedarikci||'') + '</div></div><button onclick="document.getElementById(\'mo-alis-detay\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    + '<div style="font-size:10px"><span style="color:var(--t3)">PI No:</span> <b>' + esc(t.piNo||'—') + '</b></div>'
+    + '<div style="font-size:10px"><span style="color:var(--t3)">PI Tarihi:</span> <b>' + (t.piTarihi||'—') + '</b></div>'
+    + '<div style="font-size:10px"><span style="color:var(--t3)">Geçerlilik:</span> <b>' + (t.gecerlilikTarihi||'—') + '</b></div>'
+    + '<div style="font-size:10px"><span style="color:var(--t3)">Döviz:</span> <b>' + (t.paraBirimi||'USD') + '</b></div>'
+    + '<div style="font-size:10px"><span style="color:var(--t3)">Job ID:</span> <b style="color:var(--ac);cursor:pointer" onclick="window.openJobIdHub?.(\''+esc(t.jobId||'')+'\')">' + esc(t.jobId||'—') + '</b></div>'
+    + '<div style="font-size:10px"><span style="color:var(--t3)">Toplam:</span> <b style="color:var(--ac);font-size:14px">' + (t.toplamTutar||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</b></div>'
+    + '</div>'
+    + (satirlar.length ? '<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:10px"><thead><tr style="background:var(--s2)"><th style="padding:4px 6px;text-align:left;font-size:8px;color:var(--t3);text-transform:uppercase">#</th><th style="padding:4px 6px;text-align:left;font-size:8px;color:var(--t3);text-transform:uppercase">Ürün</th><th style="padding:4px 6px;text-align:center;font-size:8px;color:var(--t3);text-transform:uppercase">Miktar</th><th style="padding:4px 6px;text-align:right;font-size:8px;color:var(--t3);text-transform:uppercase">B.Fiyat</th><th style="padding:4px 6px;text-align:right;font-size:8px;color:var(--t3);text-transform:uppercase">Toplam</th></tr></thead><tbody>'
+    + satirlar.map(function(s, i){return '<tr style="border-bottom:0.5px solid var(--b)"><td style="padding:3px 6px">'+(i+1)+'</td><td style="padding:3px 6px">'+esc(s.urunKodu||s.standartAdi||'—')+'</td><td style="padding:3px 6px;text-align:center">'+(s.miktar||0)+'</td><td style="padding:3px 6px;text-align:right;font-weight:600">'+(s.birimFiyat||0).toLocaleString('tr-TR')+'</td><td style="padding:3px 6px;text-align:right;font-weight:600;color:var(--ac)">'+(s.toplamFiyat||0).toLocaleString('tr-TR')+'</td></tr>';}).join('')
+    + '</tbody></table>' : '<div style="font-size:11px;color:var(--t3)">'+esc(t.urunAdi||'—')+' · Miktar: '+(t.miktar||0)+' · Fiyat: '+(t.birimFiyat||0)+'</div>')
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;gap:6px;justify-content:flex-end">'
+    + '<button onclick="window._convertToSatisTeklif?.('+t.id+');document.getElementById(\'mo-alis-detay\')?.remove()" style="padding:5px 12px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Satışa Dönüştür</button>'
+    + '<button class="btn" onclick="document.getElementById(\'mo-alis-detay\')?.remove()">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
 };
 
 window._openAlisModal = function() {
@@ -1856,8 +2035,9 @@ window.openJobIdHub = function(jobId) {
   var tasks = typeof loadTasks==='function'?loadTasks():[];
   var task = tasks.find(function(t){return t.jobId===jobId||String(t.id)===String(jobId);});
   var sa = typeof loadSatinalma==='function'?loadSatinalma().filter(function(s){return s.jobId===jobId||s.jobId===String(jobId);}):[];
-  var odm = typeof loadOdm==='function'?loadOdm().filter(function(o){return o.jobId===jobId||o.purchaseId;}):[];
-  var odmFiltered = odm.filter(function(o){var sIds=sa.map(function(s){return s.id;});return o.purchaseId&&sIds.indexOf(o.purchaseId)!==-1;});
+  var sIds = sa.map(function(s){return s.id;});
+  var odmAll = typeof loadOdm==='function'?loadOdm():[];
+  var odmFiltered = odmAll.filter(function(o){return (o.jobId&&o.jobId===jobId)||(o.purchaseId&&sIds.indexOf(o.purchaseId)!==-1);});
   var kargo = typeof loadKargo==='function'?loadKargo().filter(function(k){return k.purchaseId&&sa.some(function(s){return s.id===k.purchaseId;});}):[];
   var alis = typeof loadAlisTeklifleri==='function'?loadAlisTeklifleri().filter(function(t){return t.jobId===jobId;}):[];
   var satis = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri().filter(function(t){return t.jobId===jobId;}):[];
@@ -1963,7 +2143,8 @@ window._createPR = function(teklifId) {
   if (!t) return;
   var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
   var yr = new Date().getFullYear();
-  var prNo = 'PR-'+yr+'-'+String(Math.floor(Math.random()*9000)+1000);
+  var prSeq = typeof generateNumericId==='function'?String(generateNumericId()).slice(-4):String(Math.floor(Math.random()*9000)+1000);
+  var prNo = 'PR-'+yr+'-'+prSeq;
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PR '+prNo+'</title><style>body{font-family:system-ui;padding:30px;max-width:700px;margin:0 auto;font-size:12px}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:6px 8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}@media print{button{display:none!important}}</style></head><body>'
     +'<h1>PURCHASE REQUISITION</h1><div style="text-align:center;color:#666;font-size:11px;margin-bottom:16px">DUAY GLOBAL TRADE — İÇ BELGE</div>'
