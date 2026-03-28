@@ -228,16 +228,20 @@ async function _localLogin(email, password, skipPwCheck = false) {
         u.email && u.email.toLowerCase() === email.toLowerCase()
       );
 
-      // Bulunan kullanıcı inactive ise otomatik kurtarma
-      if (user && user.status === 'inactive') {
-        console.info('[auth] Inactive kullanıcı kurtarılıyor:', user.email, '(eski status:', user.status, ')');
+      // Bulunan kullanıcı inactive/suspended ise otomatik kurtarma
+      // Firebase Auth başarılı = kullanıcı gerçek ve yetkili
+      if (user && user.status !== 'active') {
+        console.info('[auth] Kullanıcı kurtarılıyor:', user.email, 'status:', user.status, '→ active');
         user.status = 'active';
         delete user._fbSyncNote;
         delete user._fbSyncAt;
+        delete user.isDeleted;
+        // Tüm kullanıcı listesini güncelle ve FIRESTORE'A DA YAZ
         try {
           if (typeof window.saveUsers === 'function') window.saveUsers(users);
           else if (typeof saveUsers === 'function') saveUsers(users);
         } catch(e) {}
+        console.info('[auth] Kurtarma tamamlandı — Firestore\'a da yazıldı');
       }
 
       // Kullanıcı localStorage'da yoksa — yeni cihaz veya temiz tarayıcı
@@ -258,11 +262,20 @@ async function _localLogin(email, password, skipPwCheck = false) {
                 user = remoteUsers.find(u =>
                   u.email && u.email.toLowerCase() === email.toLowerCase()
                 );
-                // Inactive ise kurtarma
-                if (user && user.status === 'inactive') {
+                // Inactive/bozuk status ise kurtarma — Firestore'a da yaz
+                if (user && user.status !== 'active') {
+                  console.info('[auth] Firestore kullanıcı kurtarılıyor:', user.email, 'status:', user.status);
                   user.status = 'active';
                   delete user._fbSyncNote;
+                  delete user._fbSyncAt;
+                  delete user.isDeleted;
                   try { localStorage.setItem('ak_u3', JSON.stringify(remoteUsers)); } catch(e) {}
+                  // Firestore'a geri yaz — bozuk veriyi düzelt
+                  try {
+                    var _syncPayload = { data: remoteUsers, syncedAt: new Date().toISOString() };
+                    fbDB.collection(docPath).doc('users').set(_syncPayload, { merge: true });
+                    console.info('[auth] Firestore users düzeltildi');
+                  } catch(e2) {}
                 }
                 console.info('[auth] Kullanıcılar Firestore\'tan yüklendi (' + remoteUsers.length + ')');
               }

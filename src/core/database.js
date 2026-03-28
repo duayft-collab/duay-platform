@@ -387,7 +387,26 @@ const DEFAULT_USERS = [
  */
 function loadUsers() {
   const d = _read(KEYS.users);
-  if (Array.isArray(d) && d.length > 0) return d;
+  if (Array.isArray(d) && d.length > 0) {
+    // Güvenlik ağı: DEFAULT_USERS'taki admin her zaman active olmalı
+    var _adminFixed = false;
+    DEFAULT_USERS.forEach(function(def) {
+      if (def.role !== 'admin') return;
+      var match = d.find(function(u) { return u.id === def.id || (u.email && u.email.toLowerCase() === def.email.toLowerCase()); });
+      if (match && match.status !== 'active') {
+        match.status = 'active';
+        if (match.role !== 'admin') match.role = def.role;
+        delete match.isDeleted;
+        delete match._fbSyncNote;
+        _adminFixed = true;
+      }
+    });
+    if (_adminFixed) {
+      try { localStorage.setItem(KEYS.users, JSON.stringify(d)); } catch(e) {}
+      console.warn('[DB] Admin kullanıcı kurtarıldı — status:active zorlandı');
+    }
+    return d;
+  }
   return DEFAULT_USERS;
 }
 
