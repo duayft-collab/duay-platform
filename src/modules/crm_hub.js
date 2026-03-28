@@ -987,6 +987,27 @@ if (typeof module !== 'undefined' && module.exports) {
   window.renderCrmHub = renderCrmHub;
   // panel-crm routing'i CrmHub'a yönlendir
   window.renderCrm  = renderCrmHub;
+
+  // CRM ilk yükleme — localStorage verisini Firestore'a yaz (bir kez)
+  setTimeout(function() {
+    if (window._crmInitialSyncDone) return;
+    window._crmInitialSyncDone = true;
+    try {
+      var FB_DB = window.Auth?.getFBDB?.();
+      if (!FB_DB || !window.Auth?.getFBAuth?.()?.currentUser) return;
+      var tid = (window.Auth?.getTenantId?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g, '_');
+      FB_DB.collection('duay_' + tid).doc('crm').get().then(function(snap) {
+        var fsData = snap.exists ? snap.data()?.data : null;
+        if (!fsData || !Array.isArray(fsData) || fsData.length === 0) {
+          var crmData = typeof loadCrmData === 'function' ? loadCrmData() : [];
+          if (crmData.length && typeof storeCrmData === 'function') {
+            storeCrmData(crmData);
+            console.info('[CRM] İlk yükleme — Firestore\'a yazıldı:', crmData.length, 'kayıt');
+          }
+        }
+      }).catch(function() {});
+    } catch(e) {}
+  }, 6000);
 }
 
 })();

@@ -2968,20 +2968,21 @@ window.processOdmApproval = processOdmApproval;
 
 // SLA takibi — 24 saat geçen onay bekleyen ödemeler için hatırlatıcı
 function checkOdmSLA() {
-  const d = window.loadOdm ? loadOdm() : [];
-  const now = Date.now();
-  d.forEach(o => {
+  var d = window.loadOdm ? loadOdm() : [];
+  var now = Date.now();
+  d.forEach(function(o) {
     if (!o.approvalRequestedAt) return;
     if (o.approvalStatus === 'kesinlesti' || o.approvalStatus === 'approved' || o.approved) return;
-    const reqMs = new Date(o.approvalRequestedAt.replace(' ','T')).getTime();
+    var reqMs = new Date(o.approvalRequestedAt.replace(' ','T')).getTime();
     if (isNaN(reqMs)) return;
-    const hoursSince = (now - reqMs) / 3600000;
-    if (hoursSince >= 24 && !o._slaNotified) {
-      o._slaNotified = true;
+    var hoursSince = (now - reqMs) / 3600000;
+    var slaKey = 'odm_sla_' + o.id;
+    if (hoursSince >= 24 && !localStorage.getItem(slaKey)) {
+      localStorage.setItem(slaKey, '1');
       window.addNotif?.('⏰', '"' + (o.name||'Odeme') + '" 24+ saattir onay bekliyor!', 'err', 'odemeler');
     }
   });
-  window.storeOdm ? storeOdm(d) : null;
+  // storeOdm ÇAĞIRILMIYOR — render sırasında Firestore write yasak (sonsuz döngü)
 }
 
 // Approval timeline gösterimi
