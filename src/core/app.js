@@ -989,25 +989,61 @@ function _renderOverdueWidget(tasks, kargo, today) {
   var overdueSA     = sa.filter(function(s) { return s.status === 'pending' && s.createdAt; }).length;
   var total = overdueOdm + overdueTasks + overdueKargo + overdueSA;
 
-  if (!total) { el.innerHTML = ''; return; }
+  // Vadesi yaklaşan (7 gün içinde)
+  var weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7); var weekStr = weekEnd.toISOString().slice(0,10);
+  var nearOdm = odm.filter(function(o) { return !o.paid && !o.isDeleted && o.due && o.due >= today && o.due <= weekStr; });
+  var nearTasks = tasks.filter(function(t) { return !t.done && !t.isDeleted && t.due && t.due >= today && t.due <= weekStr; });
+  var nearTotal = nearOdm.length + nearTasks.length;
 
-  var items = [];
-  if (overdueOdm)   items.push({ icon:'💸', label:'Ödemeler', count:overdueOdm, panel:'odemeler' });
-  if (overdueTasks)  items.push({ icon:'📋', label:'Görevler', count:overdueTasks, panel:'pusula' });
-  if (overdueKargo)  items.push({ icon:'📦', label:'Kargo', count:overdueKargo, panel:'kargo' });
-  if (overdueSA)     items.push({ icon:'🛒', label:'Satın Alma (bekleyen)', count:overdueSA, panel:'satinalma' });
+  // Onay bekleyen (admin için)
+  var cu = window.Auth?.getCU?.();
+  var pendingApproval = 0;
+  if (cu?.role === 'admin' || cu?.role === 'manager') {
+    pendingApproval = odm.filter(function(o) { return o.approvalStatus === 'pending' && !o.isDeleted; }).length
+      + sa.filter(function(s) { return s.status === 'pending'; }).length;
+  }
 
-  el.innerHTML = '<div class="card" style="border-left:4px solid #EF4444">'
-    + '<div class="ch"><span class="ct" style="color:#EF4444">🚨 Geciken İşlemler (' + total + ')</span></div>'
-    + '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">'
-    + items.map(function(i) {
-        return '<button onclick="App.nav(\'' + i.panel + '\')" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;cursor:pointer;border:1px solid rgba(239,68,68,.15);font-family:inherit">'
-          + '<span style="font-size:16px">' + i.icon + '</span>'
-          + '<span style="font-size:12px;color:var(--t)">' + i.label + '</span>'
-          + '<span style="font-size:14px;font-weight:700;color:#EF4444">' + i.count + '</span>'
-        + '</button>';
-      }).join('')
-    + '</div></div>';
+  if (!total && !nearTotal && !pendingApproval) { el.innerHTML = ''; return; }
+
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var html = '';
+
+  // Kırmızı: gecikmiş
+  if (total) {
+    var overdueDetails = [];
+    odm.filter(function(o) { return !o.paid && !o.isDeleted && o.due && o.due < today; }).slice(0, 5).forEach(function(o) {
+      overdueDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>💸</span><span style="flex:1;color:var(--t)">' + esc(o.name || '—') + ' <span style="color:var(--t3)">(' + esc(o.cariName || '') + ')</span></span><span style="font-weight:700;color:#DC2626">₺' + Number(o.amountTRY || o.amount || 0).toLocaleString('tr-TR') + '</span></div>');
+    });
+    tasks.filter(function(t) { return !t.done && !t.isDeleted && t.due && t.due < today; }).slice(0, 5).forEach(function(t) {
+      var assignee = (typeof loadUsers === 'function' ? loadUsers() : []).find(function(u) { return u.id === t.uid; });
+      overdueDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>📋</span><span style="flex:1;color:var(--t)">' + esc(t.title) + '</span><span style="color:var(--t3)">' + esc(assignee?.name || '—') + '</span></div>');
+    });
+    html += '<div class="card" style="border-left:4px solid #EF4444;margin-bottom:8px">'
+      + '<div class="ch"><span class="ct" style="color:#EF4444">🚨 Geciken İşlemler (' + total + ')</span><button class="btn btns" onclick="App.nav(\'odemeler\')" style="font-size:10px">Görüntüle →</button></div>'
+      + '<div style="padding:0 16px 12px">' + overdueDetails.join('') + '</div></div>';
+  }
+
+  // Sarı: yaklaşan
+  if (nearTotal) {
+    var nearDetails = [];
+    nearOdm.slice(0, 3).forEach(function(o) {
+      nearDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>💸</span><span style="flex:1;color:var(--t)">' + esc(o.name || '—') + '</span><span style="color:#92400E">' + (o.due || '') + '</span></div>');
+    });
+    nearTasks.slice(0, 3).forEach(function(t) {
+      nearDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>📋</span><span style="flex:1;color:var(--t)">' + esc(t.title) + '</span><span style="color:#92400E">' + (t.due || '') + '</span></div>');
+    });
+    html += '<div class="card" style="border-left:4px solid #F59E0B;margin-bottom:8px">'
+      + '<div class="ch"><span class="ct" style="color:#92400E">⚠️ Yaklaşan (' + nearTotal + ')</span></div>'
+      + '<div style="padding:0 16px 12px">' + nearDetails.join('') + '</div></div>';
+  }
+
+  // Onay bekleyen (admin)
+  if (pendingApproval) {
+    html += '<div class="card" style="border-left:4px solid #6366F1;margin-bottom:8px">'
+      + '<div class="ch"><span class="ct" style="color:#4F46E5">📝 Onay Bekleyen (' + pendingApproval + ')</span><button class="btn btns" onclick="App.nav(\'odemeler\')" style="font-size:10px">İncele →</button></div></div>';
+  }
+
+  el.innerHTML = html;
 }
 
 // ── Pusula Dashboard Widget ────────────────────────────────────────

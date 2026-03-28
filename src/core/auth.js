@@ -151,7 +151,15 @@ function initFirebase() {
     FB_APP  = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(cfg);
     FB_AUTH = firebase.auth();
     FB_DB   = firebase.firestore();
-    FB_DB.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+    // Safari multi-tab persistence desteklemiyor → synchronizeTabs:false
+    // Bu sayede Safari'de 30-40sn gecikme önlenir
+    FB_DB.enablePersistence({ synchronizeTabs: false }).catch(function(e) {
+      if (e.code === 'failed-precondition') {
+        console.warn('[auth] Persistence: birden fazla sekme açık — offline cache devre dışı');
+      } else if (e.code === 'unimplemented') {
+        console.warn('[auth] Persistence: bu tarayıcı desteklemiyor');
+      }
+    });
     console.info('[auth] Firebase başlatıldı. Tenant:', TENANT_ID);
     // Offline-First: Persistence aktif et
     const FB_DB_TEMP = window.firebase?.firestore?.();
