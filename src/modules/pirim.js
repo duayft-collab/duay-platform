@@ -2448,7 +2448,7 @@ function openPirimPolicy() {
     + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>📅 Ödeme Tarihi:</b> Onaylanan primler otomatik olarak ödeme planına eklenir.</div>'
     + '<div style="padding:10px;background:var(--s2);border-radius:8px"><b>🔥 Seri Bonus:</b> Üst üste prim kazanan personele ek katsayı uygulanır.</div>'
     + '</div>'
-    + '<div class="mf"><button class="btn" onclick="this.closest(".mo").remove()">Kapat</button>'
+    + '<div class="mf"><button class="btn" onclick="this.closest(\'.mo\').remove()">Kapat</button>'
     + '<button class="btn btns" onclick="Pirim.showPdf()">📄 Tam Yönetmelik</button></div></div>';
   document.body.appendChild(mo);
   setTimeout(() => mo.classList.add('open'), 10);

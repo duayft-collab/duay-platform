@@ -2330,6 +2330,7 @@ window.closeMo          = closeMo;
 window.toggleTheme      = toggleTheme;
 window.setLang          = setLang;
 window.toggleSidebar    = toggleSidebar;
+window._finishLogin     = _finishLogin;
 
 /** Sidebar collapse/expand toggle — durum localStorage'a kaydedilir */
 window._toggleSidebarCollapse = function() {

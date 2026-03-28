@@ -1175,6 +1175,16 @@ window._saveSA = function() {
     if (eid) {
       var item = d.find(function(x) { return x.id === eid; });
       if (item) {
+        // Onaylanan kayıt düzenlenemez (admin hariç)
+        if (item.status === 'approved' && !_isAdmSA()) {
+          window.toast?.('Onaylanmış kayıt düzenlenemez', 'err'); return;
+        }
+        // Revize durumundaysa tekrar pending yap
+        if (item.status === 'revize_gerekli') {
+          entry.status = 'pending';
+          delete entry.rejectedBy;
+          delete entry.rejectReason;
+        }
         // Mevcut dosyaları koru
         if (!entry.piFileData && item.piFileData) { entry.piFileData = item.piFileData; entry.piFileName = item.piFileName; }
         Object.assign(item, entry);

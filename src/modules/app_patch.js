@@ -35,6 +35,8 @@
     'numune': () => { window.renderNumune?.(); },
     'evrak': () => { window.renderEvrak?.(); },
     'arsiv': () => { window.renderArsiv?.(); },
+    'docs': () => { window.renderDocs?.(); },
+    'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
     'etkinlik': () => { window.renderEtkinlik?.(); },
     'tebligat': () => { window.renderTebligat?.(); },
