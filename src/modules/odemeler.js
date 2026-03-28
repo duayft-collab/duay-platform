@@ -1344,6 +1344,12 @@ function saveOdm() {
     window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
     return;
   }
+  // Potansiyel cari ile ödeme oluşturulamaz — önce aktif cariye yükselt
+  if (_selCari && (_selCari.cariType === 'potansiyel' || (!_selCari.cariType && _selCari.status !== 'active'))) {
+    _odmHighlightMissing(['odm-f-cari'], 'Potansiyel cari ile ödeme oluşturulamaz');
+    window.toast?.('Önce aktif cariye yükseltin — Cari panelinden evrak yükleyip onay isteyin', 'err');
+    return;
+  }
 
   // Cari limit kontrolü — limit aşıldıysa blokla (specialApproval hariç)
   var _cariCreditLimit = _selCari ? (_selCari.creditLimit || _selCari.limitAmount || 0) : 0;
@@ -2607,6 +2613,12 @@ function saveTahsilat() {
     if (_tahSelCari && _tahSelCari.status === 'pending_approval') {
       _odmHighlightMissing(['tah-f-cari'], 'Bu cari henüz onaylanmadı');
       window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
+      return;
+    }
+    // Potansiyel cari ile tahsilat oluşturulamaz
+    if (_tahSelCari && (_tahSelCari.cariType === 'potansiyel' || (!_tahSelCari.cariType && _tahSelCari.status !== 'active'))) {
+      _odmHighlightMissing(['tah-f-cari'], 'Potansiyel cari ile tahsilat oluşturulamaz');
+      window.toast?.('Önce aktif cariye yükseltin — Cari panelinden evrak yükleyip onay isteyin', 'err');
       return;
     }
   }
@@ -5276,23 +5288,113 @@ var CARI_KEY = 'ak_cari1';
   }, 7000);
 })();
 
+// Cari ayarları (50K eşiği admin tarafından değiştirilebilir)
+var CARI_SETTINGS_KEY = 'odm_cari_settings';
+function _loadCariSettings() { try { return JSON.parse(localStorage.getItem(CARI_SETTINGS_KEY) || '{}'); } catch { return {}; } }
+function _getCariDocThreshold() { return _loadCariSettings().docThreshold || 50000; }
+
+/** Levenshtein mesafesi — firma adı benzerlik kontrolü */
+function _levenshtein(a, b) {
+  a = (a || '').toLowerCase(); b = (b || '').toLowerCase();
+  if (a === b) return 0;
+  var m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  var d = [];
+  for (var i = 0; i <= m; i++) { d[i] = [i]; }
+  for (var j = 0; j <= n; j++) { d[0][j] = j; }
+  for (i = 1; i <= m; i++) {
+    for (j = 1; j <= n; j++) {
+      d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    }
+  }
+  return d[m][n];
+}
+
 /**
  * Cari kaydet (yeni veya güncelle).
+ * 3 aşamalı: potansiyel → aktif → onaylı
+ * VKN mükerrer kontrolü dahil.
+ * @returns {Object|null} Kaydedilen entry veya null (hata)
  */
 function saveCari(entry) {
   var d = loadCari();
   var isNew = !entry.id;
+  var editId = entry.id || 0;
+
+  // VKN format kontrolü (10 hane sayı)
+  if (entry.vkn) {
+    var vknClean = entry.vkn.replace(/\s/g, '');
+    if (!/^\d{10}$/.test(vknClean)) {
+      window.toast?.('VKN 10 haneli sayı olmalıdır', 'err');
+      return null;
+    }
+    entry.vkn = vknClean;
+  }
+  // TCKN format kontrolü (11 hane sayı)
+  if (entry.tckn) {
+    var tcknClean = entry.tckn.replace(/\s/g, '');
+    if (!/^\d{11}$/.test(tcknClean)) {
+      window.toast?.('TCKN 11 haneli sayı olmalıdır', 'err');
+      return null;
+    }
+    entry.tckn = tcknClean;
+  }
+
+  // VKN mükerrer kontrolü
+  if (entry.vkn) {
+    var vknDup = d.find(function(c) { return c.vkn === entry.vkn && c.id !== editId && !c.isDeleted; });
+    if (vknDup) {
+      window.toast?.('Bu VKN zaten kayıtlı: ' + (vknDup.name || '—'), 'err');
+      return null;
+    }
+  }
+  // TCKN mükerrer kontrolü
+  if (entry.tckn) {
+    var tcknDup = d.find(function(c) { return c.tckn === entry.tckn && c.id !== editId && !c.isDeleted; });
+    if (tcknDup) {
+      window.toast?.('Bu TCKN zaten kayıtlı: ' + (tcknDup.name || '—'), 'err');
+      return null;
+    }
+  }
+
+  // Firma adı benzerlik uyarısı (Levenshtein, engelleme değil)
+  if (isNew && entry.name) {
+    var similar = d.find(function(c) {
+      if (c.isDeleted) return false;
+      var dist = _levenshtein(c.name, entry.name);
+      var maxLen = Math.max((c.name || '').length, (entry.name || '').length) || 1;
+      return (1 - dist / maxLen) >= 0.8;
+    });
+    if (similar && !window._cariSimilarityWarned) {
+      window._cariSimilarityWarned = true;
+      window.toast?.('⚠️ Benzer firma var: ' + similar.name + ' — tekrar kaydet ile devam edin', 'warn');
+      setTimeout(function() { window._cariSimilarityWarned = false; }, 15000);
+      return null;
+    }
+    window._cariSimilarityWarned = false;
+  }
+
   if (entry.id) {
     var existing = d.find(function(c) { return c.id === entry.id; });
-    if (existing) Object.assign(existing, entry);
+    if (existing) {
+      // Aşama değişikliği logla
+      if (existing.cariType !== entry.cariType && entry.cariType) {
+        if (!existing.changeHistory) existing.changeHistory = [];
+        existing.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: ['Aşama: ' + (existing.cariType || 'potansiyel') + ' → ' + entry.cariType] });
+      }
+      Object.assign(existing, entry);
+    }
     else d.unshift(entry);
   } else {
     entry.id = generateNumericId();
     entry.createdAt = _nowTso();
     entry.createdBy = _CUo()?.id;
-    entry.status = 'pending_approval'; // Yeni cari onay bekler
+    entry.cariType = entry.cariType || 'potansiyel';
+    entry.status = 'pending_approval';
     if (!entry.contacts) entry.contacts = [];
     if (!entry.documents) entry.documents = [];
+    if (!entry.changeHistory) entry.changeHistory = [];
+    entry.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: ['Cari oluşturuldu (aşama: ' + entry.cariType + ')'] });
     d.unshift(entry);
   }
   storeCari(d);
@@ -5449,8 +5551,10 @@ window._openQuickCari = function(editId) {
       + '<div id="qc-panel-genel" class="qc-panel">'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
           + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı" value="' + esc(c?.name || '') + '"></div>'
-          + '<div><div class="fl">TİP *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarikçi</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>Müşteri</option><option value="potential"' + (c?.type === 'potential' ? ' selected' : '') + '>Potansiyel</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Diğer</option></select></div>'
-          + '<div><div class="fl">VERGİ NO *</div><input class="fi" id="qc-tax" value="' + esc(c?.taxNo || '') + '" placeholder="Vergi numarası"></div>'
+          + '<div><div class="fl">TİP *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarikçi</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>Müşteri</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Diğer</option></select></div>'
+          + '<div><div class="fl">CARİ AŞAMA</div><select class="fi" id="qc-caritype"><option value="potansiyel"' + ((c?.cariType || 'potansiyel') === 'potansiyel' ? ' selected' : '') + '>🔵 Potansiyel</option><option value="aktif"' + (c?.cariType === 'aktif' ? ' selected' : '') + '>🟡 Aktif</option><option value="onayli"' + (c?.cariType === 'onayli' ? ' selected' : '') + ' disabled>🟢 Onaylı (yönetici atar)</option></select></div>'
+          + '<div><div class="fl">VKN (10 HANE) *</div><input class="fi" id="qc-tax" value="' + esc(c?.vkn || c?.taxNo || '') + '" placeholder="0000000000" maxlength="10" pattern="[0-9]{10}"></div>'
+          + '<div><div class="fl">TCKN (11 HANE)</div><input class="fi" id="qc-tckn" value="' + esc(c?.tckn || '') + '" placeholder="Bireysel için" maxlength="11"></div>'
           + '<div><div class="fl">VERGİ DAİRESİ *</div><input class="fi" id="qc-taxoffice" value="' + esc(c?.taxOffice || '') + '" placeholder="Vergi dairesi"></div>'
           + '<div><div class="fl">ÜLKE *</div><input class="fi" id="qc-country" value="' + esc(c?.country || '') + '" placeholder="Türkiye"></div>'
           + '<div><div class="fl">ŞEHİR</div><input class="fi" id="qc-city" value="' + esc(c?.city || '') + '"></div>'
@@ -5491,7 +5595,25 @@ window._openQuickCari = function(editId) {
       + '</div>'
       // Belgeler sekmesi
       + '<div id="qc-panel-belgeler" class="qc-panel" style="display:none">'
-        + '<div><div class="fl">BELGE YÜKLE</div><input type="file" id="qc-doc-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="font-size:11px"></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">'
+          + '<div style="padding:10px;border:1px solid var(--b);border-radius:8px;text-align:center">'
+            + '<div class="fl">VERGİ LEVHASİ</div>'
+            + '<div style="font-size:20px;margin:4px 0">' + (c?.vergiLevhasi ? '✅' : '❌') + '</div>'
+            + '<button onclick="window._qcUploadDoc(\'vergiLevhasi\')" class="btn btns" style="font-size:10px;width:100%">📎 Yükle</button>'
+          + '</div>'
+          + '<div style="padding:10px;border:1px solid var(--b);border-radius:8px;text-align:center">'
+            + '<div class="fl">İMZA SİRKÜLERİ</div>'
+            + '<div style="font-size:20px;margin:4px 0">' + (c?.imzaSirkuleri ? '✅' : '❌') + '</div>'
+            + '<button onclick="window._qcUploadDoc(\'imzaSirkuleri\')" class="btn btns" style="font-size:10px;width:100%">📎 Yükle</button>'
+          + '</div>'
+          + '<div style="padding:10px;border:1px solid var(--b);border-radius:8px;text-align:center">'
+            + '<div class="fl">TİCARET SİCİL</div>'
+            + '<div style="font-size:20px;margin:4px 0">' + (c?.ticaretSicil ? '✅' : '❌') + '</div>'
+            + '<button onclick="window._qcUploadDoc(\'ticaretSicil\')" class="btn btns" style="font-size:10px;width:100%">📎 Yükle</button>'
+          + '</div>'
+        + '</div>'
+        + '<div><div class="fl">DİĞER BELGE</div><input type="file" id="qc-doc-file" accept=".pdf,.jpg,.jpeg,.png" style="font-size:11px"></div>'
+        + '<div style="font-size:9px;color:var(--t3);margin-top:2px">PDF/JPG/PNG, maks 5MB</div>'
         + '<div id="qc-docs-list" style="margin-top:10px">' + (function() {
             var docs = c?.documents || [];
             return docs.map(function(d) { return '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--b)">📎 ' + esc(d.name || '?') + ' (' + (d.type || '—') + ')</div>'; }).join('') || '<div style="font-size:11px;color:var(--t3)">Belge yok</div>';
@@ -5545,10 +5667,14 @@ window._saveQuickCari = function() {
     if (ct.name) contacts.push(ct);
   });
 
+  var vknVal = (document.getElementById('qc-tax')?.value || '').trim();
   var entry = {
     name: name,
     type: document.getElementById('qc-type')?.value || 'diger',
-    taxNo: (document.getElementById('qc-tax')?.value || '').trim(),
+    cariType: document.getElementById('qc-caritype')?.value || 'potansiyel',
+    vkn: vknVal,
+    tckn: (document.getElementById('qc-tckn')?.value || '').trim(),
+    taxNo: vknVal,
     taxOffice: (document.getElementById('qc-taxoffice')?.value || '').trim(),
     country: (document.getElementById('qc-country')?.value || '').trim(),
     city: (document.getElementById('qc-city')?.value || '').trim(),
@@ -5600,6 +5726,7 @@ function renderCari() {
           + '<div style="padding:8px 12px;border-bottom:1px solid var(--b);display:flex;gap:6px">'
             + '<input class="fi" id="cari-search" placeholder="🔍 Ara..." oninput="renderCari()" style="font-size:11px;flex:1">'
             + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:90px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
+            + '<select class="fi" id="cari-stage-f" onchange="renderCari()" style="font-size:11px;width:95px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
           + '</div>'
           + '<div id="cari-list" style="flex:1;overflow-y:auto"></div>'
         + '</div>'
@@ -5611,8 +5738,13 @@ function renderCari() {
   var all = loadCari();
   var search = (document.getElementById('cari-search')?.value || '').toLowerCase();
   var typeF = document.getElementById('cari-type-f')?.value || '';
+  var stageF = document.getElementById('cari-stage-f')?.value || '';
   var fl = all.filter(function(c) {
     if (typeF && c.type !== typeF) return false;
+    if (stageF) {
+      if (stageF === 'rejected' && c.status !== 'rejected') return false;
+      if (stageF !== 'rejected' && (c.cariType || 'potansiyel') !== stageF) return false;
+    }
     if (search && !(c.name || '').toLowerCase().includes(search)) return false;
     return true;
   });
@@ -5663,12 +5795,14 @@ function renderCari() {
   }
   html += activeCari.map(function(c) {
     var isSel = c.id === _cariSelectedId;
-    var typeBadge = c.type === 'musteri' ? '🟢' : c.type === 'tedarikci' ? '🔵' : '⚪';
+    var stage = c.cariType || 'potansiyel';
+    var stageBadge = stage === 'onayli' ? '🟢' : stage === 'aktif' ? '🟡' : '🔵';
     var statusBadge = c.status === 'rejected' ? ' <span style="font-size:9px;color:#DC2626;font-weight:600">Reddedildi</span>' : '';
+    var stageLabel = stage === 'onayli' ? 'Onaylı' : stage === 'aktif' ? 'Aktif' : 'Potansiyel';
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
-      + '<span style="font-size:14px">' + typeBadge + '</span>'
+      + '<span style="font-size:14px">' + stageBadge + '</span>'
       + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + statusBadge + '</div>'
-        + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + '</div></div>'
+        + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
     + '</div>';
   }).join('');
 
@@ -5715,6 +5849,8 @@ function _renderCariDetail(id) {
       + '</div>'
       + '<div style="display:flex;gap:6px">'
         + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
+        + ((c.cariType === 'potansiyel' || !c.cariType) ? '<button class="btn btns" onclick="window._upgradeCariToActive(' + c.id + ')" style="font-size:11px;color:#F59E0B">⬆ Aktif Yap</button>' : '')
+        + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
         + '<button class="btn btns" onclick="window.confirmModal(\'Bu cariyi silmek istediğinizden emin misiniz?\',{title:\'Cari Sil\',danger:true,confirmText:\'Evet\',onConfirm:function(){deleteCari(' + c.id + ');_cariSelectedId=null;renderCari()}})" style="font-size:11px;color:#DC2626">🗑</button>'
       + '</div>'
@@ -6607,6 +6743,87 @@ function _insertCariDemoData() {
 }
 
 window._insertCariDemoData = _insertCariDemoData;
+
+/** Cari belge yükleme (PDF/JPG/PNG, max 5MB) */
+window._qcUploadDoc = function(docType) {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png';
+  inp.onchange = function() {
+    var file = this.files[0]; if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { window.toast?.('Dosya 5MB\'den küçük olmalı', 'err'); return; }
+    if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) { window.toast?.('Sadece PDF/JPG/PNG yükleyebilirsiniz', 'err'); return; }
+    var r = new FileReader();
+    r.onload = function(e) {
+      // Kaydet: qc-edit-id varsa mevcut cariye, yoksa geçici sakla
+      var editId = parseInt(document.getElementById('qc-edit-id')?.value || '0') || 0;
+      if (editId) {
+        var d = loadCari();
+        var c = d.find(function(x) { return x.id === editId; });
+        if (c) {
+          c[docType] = { name: file.name, data: e.target.result, ts: _nowTso() };
+          c.evrakTamamlandi = !!(c.vergiLevhasi && c.imzaSirkuleri);
+          storeCari(d);
+          window.toast?.(docType + ' yüklendi ✓', 'ok');
+          window._openQuickCari(editId); // Formu yenile
+        }
+      } else {
+        // Geçici: hidden input'a kaydet
+        window['_qcTempDoc_' + docType] = { name: file.name, data: e.target.result, ts: _nowTso() };
+        window.toast?.(docType + ' hazır — kaydetmeyi unutmayın', 'ok');
+      }
+    };
+    r.readAsDataURL(file);
+  };
+  inp.click();
+};
+
+/** Potansiyel → Aktif Cari'ye yükselt */
+window._upgradeCariToActive = function(cariId) {
+  var d = loadCari();
+  var c = d.find(function(x) { return x.id === cariId; });
+  if (!c) return;
+  // Evrak kontrolü
+  if (!c.vergiLevhasi) { window.toast?.('Vergi Levhası yüklenmeli', 'err'); return; }
+  if (!c.imzaSirkuleri) { window.toast?.('İmza Sirküleri yüklenmeli', 'err'); return; }
+  // 50K TL üzeri işlem varsa ticaret sicil zorunlu
+  var threshold = _getCariDocThreshold();
+  var odmTotal = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return o.cariName === c.name && !o.isDeleted; })
+    .reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+  if (odmTotal > threshold && !c.ticaretSicil) {
+    window.toast?.('₺' + threshold.toLocaleString('tr-TR') + ' üzeri işlem var — Ticaret Sicil belgesi zorunlu', 'err');
+    return;
+  }
+  c.cariType = 'aktif';
+  c.evrakTamamlandi = true;
+  c.upgradeRequestedAt = _nowTso();
+  c.upgradeRequestedBy = _CUo()?.id;
+  if (!c.changeHistory) c.changeHistory = [];
+  c.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: ['Aşama: potansiyel → aktif (onay bekliyor)'] });
+  storeCari(d);
+  // Yöneticilere bildirim
+  var mgrs = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
+  mgrs.forEach(function(m) { window.addNotif?.('🔄', 'Cari yükseltme onayı: ' + c.name, 'warn', 'cari:' + c.id, m.id); });
+  window.toast?.('Aktif cariye yükseltme talebi gönderildi', 'ok');
+  if (typeof renderCari === 'function') renderCari();
+};
+
+/** Yönetici: Aktif → Onaylı Cari */
+window._approveCariUpgrade = function(cariId) {
+  if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
+  var d = loadCari();
+  var c = d.find(function(x) { return x.id === cariId; });
+  if (!c) return;
+  c.cariType = 'onayli';
+  c.status = 'active';
+  c.approvedBy = _CUo()?.id;
+  c.approvedAt = _nowTso();
+  if (!c.changeHistory) c.changeHistory = [];
+  c.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: ['Aşama: aktif → onaylı (yönetici onayı)'] });
+  storeCari(d);
+  window.addNotif?.('✅', 'Cari onaylandı: ' + c.name, 'ok', 'cari:' + c.id, c.createdBy);
+  window.toast?.('Cari onaylı statüye yükseltildi ✓', 'ok');
+  if (typeof renderCari === 'function') renderCari();
+};
 
 // Exports
 // loadCari / storeCari artık database.js'te — window export orada yapılıyor
