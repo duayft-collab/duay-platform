@@ -2330,6 +2330,42 @@ window.closeMo          = closeMo;
 window.toggleTheme      = toggleTheme;
 window.setLang          = setLang;
 window.toggleSidebar    = toggleSidebar;
+
+/** Sidebar collapse/expand toggle — durum localStorage'a kaydedilir */
+window._toggleSidebarCollapse = function() {
+  var sb = document.querySelector('.sidebar');
+  if (!sb) return;
+  var isCollapsed = sb.classList.toggle('collapsed');
+  localStorage.setItem('ak_sidebar_collapsed', isCollapsed ? '1' : '0');
+  var btn = document.getElementById('sidebar-collapse-btn');
+  if (btn) btn.querySelector('span').textContent = isCollapsed ? '▸' : '◂';
+};
+
+/** Sidebar menü renk teması */
+window._setSidebarTheme = function(theme) {
+  var sb = document.querySelector('.sidebar');
+  if (!sb) return;
+  // Mevcut tema sınıflarını kaldır
+  ['sidebar-dark','sidebar-navy','sidebar-green','sidebar-purple'].forEach(function(c) { sb.classList.remove(c); });
+  if (theme && theme !== 'default') sb.classList.add('sidebar-' + theme);
+  localStorage.setItem('ak_sidebar_theme', theme || 'default');
+};
+
+/** Sayfa yüklenince sidebar durumunu uygula */
+(function _initSidebarState() {
+  setTimeout(function() {
+    // Collapse
+    if (localStorage.getItem('ak_sidebar_collapsed') === '1') {
+      var sb = document.querySelector('.sidebar');
+      if (sb) sb.classList.add('collapsed');
+      var btn = document.getElementById('sidebar-collapse-btn');
+      if (btn) btn.querySelector('span').textContent = '▸';
+    }
+    // Tema
+    var theme = localStorage.getItem('ak_sidebar_theme') || 'default';
+    if (theme !== 'default') window._setSidebarTheme(theme);
+  }, 100);
+})();
 window.toggleNsec       = toggleNsec;
 window.openGSearch      = openGSearch;
 window.closeGSearch     = closeGSearch;
