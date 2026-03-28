@@ -405,8 +405,10 @@ function _injectOdmPanel() {
   panel.dataset.injected = '1';
 
   panel.innerHTML = [
+    // STICKY WRAPPER — toolbar + metrik kartları birlikte sabit
+    '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">',
     // TOPBAR — modern flat
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:100">',
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">',
       '<div>',
         '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Nakit Akışı</div>',
         '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="odm-sub-title">Yükleniyor...</div>',
@@ -450,6 +452,7 @@ function _injectOdmPanel() {
         '<div style="font-size:10px;color:var(--t3);margin-top:6px" id="odm-bento-paid-amt">₺0</div>',
       '</div>',
     '</div>',
+    '</div>', // sticky wrapper close
 
     // TAB NAVİGASYON — üstte, sidebar yerine
     '<div id="odm-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">',
