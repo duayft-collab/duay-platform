@@ -38,6 +38,7 @@ const KEYS = {
   hedefler      : 'ak_hdf2',
   trash         : 'ak_trash1',
   odemeler      : 'ak_odm1',
+  tahsilat      : 'ak_tahsilat1',
   kargo         : 'ak_krg1',
   greetings     : 'ak_grt1',
   stok          : 'ak_stk1',
@@ -690,8 +691,12 @@ const DEFAULT_HDF = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadOdm()     { const d = _read(KEYS.odemeler); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d); 
+/** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
+}
+/** @returns {Array<Object>} */ function loadTahsilat() { const d = _read(KEYS.tahsilat); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */ function storeTahsilat(d) { _write(KEYS.tahsilat, d);
+  const _fp_tahsilat = _fsPath('tahsilat'); if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1178,6 +1183,7 @@ function startRealtimeSync() {
     // Diğer
     ['hedefler',      KEYS.hedefler,      () => window.renderHedefler?.()],
     ['odemeler',      KEYS.odemeler,      () => window.renderOdemeler?.()],
+    ['tahsilat',      KEYS.tahsilat,      () => window.renderOdemeler?.()],
     ['kpi',           KEYS.kpi,           () => window.renderKpi?.()],
     ['notes',         KEYS.notes,         () => window.renderNotes?.()],
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
@@ -1374,7 +1380,7 @@ const DB = {
   // Çöp
   loadTrash, storeTrash,
   // Ödemeler
-  loadOdm, storeOdm,
+  loadOdm, storeOdm, loadTahsilat, storeTahsilat,
   // İzin & Tebligat & Temizlik
   loadIzin, storeIzin,
   loadTebligat, storeTebligat,
@@ -1428,7 +1434,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm',
+    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

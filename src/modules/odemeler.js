@@ -2022,12 +2022,18 @@ window.checkOdmRecurring = checkOdmRecurring;
 // ════════════════════════════════════════════════════════════════
 // 3. TAHSİLAT MODÜLÜ — Alacak takibi
 // ════════════════════════════════════════════════════════════════
-function loadTahsilat() {
-  try { return JSON.parse(localStorage.getItem('duay_tahsilat') || '[]'); } catch { return []; }
-}
-function storeTahsilat(d) {
-  localStorage.setItem('duay_tahsilat', JSON.stringify(d));
-}
+// loadTahsilat / storeTahsilat artık database.js'te tanımlı (KEYS.tahsilat + Firestore sync)
+// Eski 'duay_tahsilat' verisini yeni key'e migrate et
+(function _migrateTahsilat() {
+  try {
+    var oldData = localStorage.getItem('duay_tahsilat');
+    var newData = localStorage.getItem('ak_tahsilat1');
+    if (oldData && (!newData || newData === '[]')) {
+      localStorage.setItem('ak_tahsilat1', oldData);
+      console.info('[Ödemeler] Tahsilat verisi duay_tahsilat → ak_tahsilat1 migrate edildi');
+    }
+  } catch(e) {}
+})();
 
 function openTahsilatModal(id) {
   const existing = document.getElementById('mo-tahsilat');
@@ -2236,7 +2242,7 @@ function markTahsilatCollected(id) {
 window.openTahsilatModal     = openTahsilatModal;
 window.saveTahsilat          = saveTahsilat;
 window.markTahsilatCollected = markTahsilatCollected;
-window.loadTahsilat          = loadTahsilat;
+// loadTahsilat / storeTahsilat artık database.js'te — window export orada yapılıyor
 
 // ════════════════════════════════════════════════════════════════
 // 4. ÖDEME ONAY AKIŞI
