@@ -219,6 +219,45 @@ function _syncFirestoreMerged(path, data) {
 }
 
 /**
+ * Offline / Auth-bekleyen yazma kuyruğu.
+ * Safari ITP veya yavaş auth init nedeniyle currentUser null iken
+ * oluşan yazma isteklerini saklar ve auth hazır olunca gönderir.
+ */
+var _offlineWriteQueue = [];
+var _offlineQueueProcessing = false;
+
+function _queueOfflineWrite(path, data, mode) {
+  // Aynı path için eski kuyruğu güncelle (en güncel veri kazanır)
+  var existing = _offlineWriteQueue.findIndex(function(q) { return q.path === path; });
+  if (existing !== -1) {
+    _offlineWriteQueue[existing].data = data;
+    _offlineWriteQueue[existing].ts = Date.now();
+  } else {
+    _offlineWriteQueue.push({ path: path, data: data, mode: mode || 'set', ts: Date.now() });
+  }
+  console.info('[DB:queue] Kuyruğa eklendi:', path, '| Kuyruk:', _offlineWriteQueue.length);
+  // Auth hazır olunca kuyruğu işle
+  if (!_offlineQueueProcessing) {
+    _offlineQueueProcessing = true;
+    var _checkInterval = setInterval(function() {
+      var fbAuth = window.Auth?.getFBAuth?.();
+      var fbDB = window.Auth?.getFBDB?.();
+      if (fbDB && fbAuth?.currentUser) {
+        clearInterval(_checkInterval);
+        _offlineQueueProcessing = false;
+        console.info('[DB:queue] Auth hazır — kuyruk işleniyor:', _offlineWriteQueue.length, 'kayıt');
+        var queue = _offlineWriteQueue.splice(0);
+        queue.forEach(function(q) {
+          _syncFirestore(q.path, q.data, q.mode);
+        });
+      }
+    }, 1000);
+    // 30 saniye sonra timeout — sonsuz döngü engeli
+    setTimeout(function() { clearInterval(_checkInterval); _offlineQueueProcessing = false; }, 30000);
+  }
+}
+
+/**
  * Firestore\'a arka planda yazar — bağlı değilse sessizce atlar.
  * @param {string}   path    Firestore koleksiyon yolu (FS_PATHS fonksiyonu ile)
  * @param {*}        data    Yazılacak veri
@@ -229,6 +268,15 @@ function _syncFirestore(path, data, mode = 'set') {
     const FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) {
       console.warn('[DB:sync] Firebase DB yok — offline mod. Auth durum:', !!window.Auth?.getFBAuth?.()?.currentUser);
+      // Offline queue: currentUser hazır olunca tekrar dene
+      _queueOfflineWrite(path, data, mode);
+      return;
+    }
+    // Auth hazır değilse queue'ya ekle — Safari ITP gecikmesi için
+    var _fbAuth = window.Auth?.getFBAuth?.();
+    if (_fbAuth && !_fbAuth.currentUser) {
+      console.warn('[DB:sync] currentUser null — yazma kuyruğa alındı:', path);
+      _queueOfflineWrite(path, data, mode);
       return;
     }
     const collection = path.split('/').pop();
@@ -238,7 +286,7 @@ function _syncFirestore(path, data, mode = 'set') {
     _writingNow[collection] = Date.now() + 2000;
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
-    console.log('[FIRESTORE WRITE]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : typeof data, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
+    console.log('[FIRESTORE WRITE]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : typeof data, '| Auth:', !!_fbAuth?.currentUser);
     if (mode === 'set') {
       // Önce mevcut Firestore verisini oku, merge et, sonra yaz (veri kaybı önleme)
       if (Array.isArray(data)) {
@@ -1161,7 +1209,7 @@ function _listenCollection(collection, localKey, onUpdate) {
         }, 300);
       }
 
-      console.info('[DB:realtime]', collection, '→', Array.isArray(data) ? data.length : '?', 'kayıt');
+      console.info('[DB:realtime]', collection, '→', Array.isArray(merged) ? merged.length : '?', 'kayıt (merge)');
     }, err => {
       if (err.code === 'permission-denied') {
         console.warn('[DB:realtime]', collection, '→ Firestore izni yok, offline mod');
