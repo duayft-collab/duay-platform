@@ -2551,3 +2551,398 @@ window._setArsivTab = function(tab) {
   };
   if (renderMap[tab]) renderMap[tab]();
 };
+
+// ════════════════════════════════════════════════════════════════
+// TEDARİKÇİ PERFORMANS RAPORU
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Tedarikçi performans verisi oluşturur.
+ * @param {string} [from] Başlangıç tarihi
+ * @param {string} [to]   Bitiş tarihi
+ * @returns {Array<Object>} Tedarikçi performans dizisi
+ */
+window._buildTedarikciPerformans = function(from, to) {
+  var alis = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var sa = typeof loadSatinalma === 'function' ? loadSatinalma() : [];
+  var kargo = typeof loadKargo === 'function' ? loadKargo() : [];
+  // Tarih filtresi
+  if (from) { alis = alis.filter(function(a) { return (a.ts || '').slice(0, 10) >= from; }); sa = sa.filter(function(s) { return (s.piDate || s.ts || '').slice(0, 10) >= from; }); }
+  if (to) { alis = alis.filter(function(a) { return (a.ts || '').slice(0, 10) <= to; }); sa = sa.filter(function(s) { return (s.piDate || s.ts || '').slice(0, 10) <= to; }); }
+  // Tedarikçi bazlı gruplama
+  var tedMap = {};
+  alis.forEach(function(a) {
+    var key = a.tedarikci || '—';
+    if (!tedMap[key]) tedMap[key] = { ad: key, alisToplam: 0, alisSayisi: 0, urunMap: {}, sonTeklifler: [], fiyatlar: [], teslimatGunleri: [], zamaninda: 0, gecikmi: 0, iptal: 0 };
+    var t = tedMap[key];
+    t.alisToplam += parseFloat(a.toplamTutar) || 0;
+    t.alisSayisi++;
+    t.sonTeklifler.push({ no: a.teklifNo, tarih: (a.ts || '').slice(0, 10), tutar: a.toplamTutar || 0, doviz: a.paraBirimi || 'USD' });
+    // Ürün top 5
+    (a.satirlar || []).forEach(function(s) {
+      var uKey = s.urunKodu || s.standartAdi || 'Bilinmeyen';
+      if (!t.urunMap[uKey]) t.urunMap[uKey] = { ad: uKey, miktar: 0, tutar: 0 };
+      t.urunMap[uKey].miktar += parseFloat(s.miktar) || 0;
+      t.urunMap[uKey].tutar += parseFloat(s.toplamFiyat) || 0;
+    });
+    // Fiyat tutarlılığı
+    if (a.birimFiyat) t.fiyatlar.push(parseFloat(a.birimFiyat) || 0);
+  });
+  // Satınalma verileri ile zenginleştir
+  sa.forEach(function(s) {
+    var key = s.supplier || '—';
+    if (!tedMap[key]) tedMap[key] = { ad: key, alisToplam: 0, alisSayisi: 0, urunMap: {}, sonTeklifler: [], fiyatlar: [], teslimatGunleri: [], zamaninda: 0, gecikmi: 0, iptal: 0 };
+    var t = tedMap[key];
+    t.alisToplam += parseFloat(s.totalAmount) || 0;
+    // Teslimat süresi hesapla
+    if (s.piDate && s.deliveryDate) {
+      var gun = Math.ceil((new Date(s.deliveryDate) - new Date(s.piDate)) / 86400000);
+      if (gun > 0) t.teslimatGunleri.push(gun);
+    }
+    // Teslim durumu
+    if (s.status === 'paid' || s.status === 'approved') {
+      // Kargo teslimat kontrolü
+      var kargoKayit = kargo.find(function(k) { return k.purchaseId === s.id; });
+      if (kargoKayit && kargoKayit.eta && s.deliveryDate) {
+        var fark = Math.ceil((new Date(kargoKayit.eta) - new Date(s.deliveryDate)) / 86400000);
+        if (fark <= 3) t.zamaninda++; else t.gecikmi++;
+      } else {
+        t.zamaninda++; // Varsayılan: zamanında
+      }
+    }
+    if (s.status === 'cancelled' || s.status === 'rejected') t.iptal++;
+  });
+  // Skorlama ve top5
+  var result = Object.values(tedMap).map(function(t) {
+    // Ort teslimat süresi
+    var ortTeslimat = t.teslimatGunleri.length ? Math.round(t.teslimatGunleri.reduce(function(a, b) { return a + b; }, 0) / t.teslimatGunleri.length) : 0;
+    // Zamanında oran
+    var toplamTeslimat = t.zamaninda + t.gecikmi;
+    var zamanindaOran = toplamTeslimat > 0 ? Math.round(t.zamaninda / toplamTeslimat * 100) : 100;
+    // Fiyat tutarlılığı (standart sapma / ortalama * 100)
+    var fiyatDegisim = 0;
+    if (t.fiyatlar.length >= 2) {
+      var ort = t.fiyatlar.reduce(function(a, b) { return a + b; }, 0) / t.fiyatlar.length;
+      var stdDev = Math.sqrt(t.fiyatlar.reduce(function(a, v) { return a + Math.pow(v - ort, 2); }, 0) / t.fiyatlar.length);
+      fiyatDegisim = ort > 0 ? Math.round(stdDev / ort * 100) : 0;
+    }
+    // Top 5 ürün
+    var top5Urun = Object.values(t.urunMap).sort(function(a, b) { return b.tutar - a.tutar; }).slice(0, 5);
+    // Son 3 teklif
+    var son3 = t.sonTeklifler.sort(function(a, b) { return (b.tarih || '').localeCompare(a.tarih || ''); }).slice(0, 3);
+    // Risk skoru: 0-100 (düşük = iyi)
+    var riskSkor = 0;
+    riskSkor += Math.max(0, 100 - zamanindaOran); // Gecikme
+    riskSkor += Math.min(30, fiyatDegisim); // Fiyat artışı
+    riskSkor += t.iptal * 15; // İptal
+    riskSkor = Math.min(100, Math.round(riskSkor));
+
+    return {
+      ad: t.ad, alisToplam: t.alisToplam, alisSayisi: t.alisSayisi,
+      ortTeslimat: ortTeslimat, zamanindaOran: zamanindaOran,
+      fiyatDegisim: fiyatDegisim, top5Urun: top5Urun, son3: son3,
+      riskSkor: riskSkor, iptal: t.iptal, gecikmi: t.gecikmi
+    };
+  });
+  result.sort(function(a, b) { return a.riskSkor - b.riskSkor; }); // En düşük risk en üstte
+  return result;
+};
+
+/** @description Tedarikçi performans raporu modalı */
+window._openTedarikciPerformans = function() {
+  document.getElementById('mo-reports')?.remove();
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var ex = document.getElementById('mo-ted-perf'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ted-perf'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:720px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:700;color:var(--t)">Tedarikçi Performans Raporu</div><button onclick="document.getElementById(\'mo-ted-perf\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    // Filtre
+    + '<div style="padding:10px 20px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    + '<input type="date" class="fi" id="ted-from" style="font-size:11px;width:130px">'
+    + '<span style="font-size:10px;color:var(--t3)">—</span>'
+    + '<input type="date" class="fi" id="ted-to" style="font-size:11px;width:130px">'
+    + '<button onclick="window._renderTedPerf()" style="padding:5px 12px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Filtrele</button>'
+    + '<button onclick="window._exportTedPerfXlsx()" style="padding:5px 12px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button>'
+    + '<button onclick="window._printTedPerf()" style="padding:5px 12px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">PDF</button>'
+    + '</div>'
+    + '<div id="ted-perf-content" style="padding:16px 20px;max-height:55vh;overflow-y:auto"></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); window._renderTedPerf(); }, 10);
+};
+
+/** @description Tedarikçi performans listesini render et */
+window._renderTedPerf = function() {
+  var cont = document.getElementById('ted-perf-content'); if (!cont) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var from = document.getElementById('ted-from')?.value || '';
+  var to = document.getElementById('ted-to')?.value || '';
+  var data = window._buildTedarikciPerformans(from, to);
+  if (!data.length) { cont.innerHTML = '<div style="padding:30px;text-align:center;color:var(--t3)">Tedarikçi verisi bulunamadı</div>'; return; }
+  // En iyi / en kötü vurgusu
+  var enIyi = data[0]; var enKotu = data[data.length - 1];
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+    + '<div style="padding:10px;background:#16A34A11;border:0.5px solid #16A34A44;border-radius:8px"><div style="font-size:9px;color:#16A34A;text-transform:uppercase;font-weight:700">En iyi tedarikçi</div><div style="font-size:13px;font-weight:700;color:#16A34A;margin-top:2px">' + esc(enIyi.ad) + '</div><div style="font-size:10px;color:var(--t3)">Risk: ' + enIyi.riskSkor + '/100 · Zamanında: %' + enIyi.zamanindaOran + '</div></div>'
+    + '<div style="padding:10px;background:#DC262611;border:0.5px solid #DC262644;border-radius:8px"><div style="font-size:9px;color:#DC2626;text-transform:uppercase;font-weight:700">En riskli tedarikçi</div><div style="font-size:13px;font-weight:700;color:#DC2626;margin-top:2px">' + esc(enKotu.ad) + '</div><div style="font-size:10px;color:var(--t3)">Risk: ' + enKotu.riskSkor + '/100 · Gecikme: ' + enKotu.gecikmi + '</div></div></div>';
+  // Tedarikçi kartları
+  data.forEach(function(t) {
+    var riskColor = t.riskSkor <= 20 ? '#16A34A' : t.riskSkor <= 50 ? '#D97706' : '#DC2626';
+    var riskBg = t.riskSkor <= 20 ? '#16A34A11' : t.riskSkor <= 50 ? '#D9770611' : '#DC262611';
+    html += '<div style="border:0.5px solid var(--b);border-radius:8px;margin-bottom:8px;overflow:hidden">'
+      + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:var(--s2)">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--t)">' + esc(t.ad) + '</div>'
+      + '<span style="font-size:9px;padding:2px 8px;border-radius:4px;background:' + riskBg + ';color:' + riskColor + ';font-weight:700">Risk: ' + t.riskSkor + '/100</span></div>'
+      + '<div style="padding:10px 14px">'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Toplam Alış</div><div style="font-size:13px;font-weight:700;color:var(--ac)">$' + Math.round(t.alisToplam).toLocaleString('tr-TR') + '</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Ort. Teslimat</div><div style="font-size:13px;font-weight:700">' + (t.ortTeslimat || '—') + ' gün</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Zamanında</div><div style="font-size:13px;font-weight:700;color:' + (t.zamanindaOran >= 80 ? '#16A34A' : '#DC2626') + '">%' + t.zamanindaOran + '</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Fiyat Sapma</div><div style="font-size:13px;font-weight:700;color:' + (t.fiyatDegisim <= 10 ? '#16A34A' : '#D97706') + '">%' + t.fiyatDegisim + '</div></div></div>';
+    // Top 5 ürün
+    if (t.top5Urun.length) {
+      html += '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:3px">En çok alınan</div>'
+        + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">';
+      t.top5Urun.forEach(function(u) {
+        html += '<span style="font-size:9px;padding:2px 6px;background:var(--al);color:var(--ac);border-radius:3px">' + esc(u.ad) + ' (' + u.miktar + ')</span>';
+      });
+      html += '</div>';
+    }
+    // Son 3 teklif
+    if (t.son3.length) {
+      html += '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:3px">Son teklifler</div>';
+      t.son3.forEach(function(s) {
+        html += '<div style="font-size:10px;color:var(--t2);padding:1px 0">' + esc(s.no || '') + ' · ' + s.tarih + ' · $' + Math.round(s.tutar).toLocaleString('tr-TR') + '</div>';
+      });
+    }
+    html += '</div></div>';
+  });
+  cont.innerHTML = html;
+};
+
+/** @description Tedarikçi performans Excel export */
+window._exportTedPerfXlsx = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var from = document.getElementById('ted-from')?.value || '';
+  var to = document.getElementById('ted-to')?.value || '';
+  var data = window._buildTedarikciPerformans(from, to);
+  var rows = [['Tedarikçi', 'Toplam Alış ($)', 'Alış Sayısı', 'Ort. Teslimat (gün)', 'Zamanında %', 'Fiyat Sapma %', 'İptal', 'Gecikme', 'Risk Skoru', 'Top 5 Ürün']];
+  data.forEach(function(t) {
+    rows.push([t.ad, Math.round(t.alisToplam), t.alisSayisi, t.ortTeslimat, t.zamanindaOran, t.fiyatDegisim, t.iptal, t.gecikmi, t.riskSkor, t.top5Urun.map(function(u) { return u.ad; }).join(', ')]);
+  });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Tedarikçi Performans');
+  XLSX.writeFile(wb, 'tedarikci-performans-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  window.toast?.('Tedarikçi performans raporu indirildi ✓', 'ok');
+};
+
+/** @description Tedarikçi performans PDF (yazdır) */
+window._printTedPerf = function() {
+  var from = document.getElementById('ted-from')?.value || '';
+  var to = document.getElementById('ted-to')?.value || '';
+  var data = window._buildTedarikciPerformans(from, to);
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>Tedarikçi Performans</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
+    + '<h1>TEDARİKÇİ PERFORMANS RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL TRADE' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
+    + '<table><thead><tr><th>Tedarikçi</th><th>Toplam ($)</th><th>Sayı</th><th>Ort. Teslimat</th><th>Zamanında %</th><th>Fiyat Sapma %</th><th>Risk</th></tr></thead><tbody>'
+    + data.map(function(t) {
+        var cls = t.riskSkor <= 20 ? 'good' : t.riskSkor > 50 ? 'bad' : '';
+        return '<tr><td><b>' + esc(t.ad) + '</b></td><td style="text-align:right">$' + Math.round(t.alisToplam).toLocaleString('tr-TR') + '</td><td style="text-align:center">' + t.alisSayisi + '</td><td style="text-align:center">' + (t.ortTeslimat || '—') + ' gün</td><td style="text-align:center" class="' + (t.zamanindaOran >= 80 ? 'good' : 'bad') + '">%' + t.zamanindaOran + '</td><td style="text-align:center">%' + t.fiyatDegisim + '</td><td style="text-align:center" class="' + cls + '">' + t.riskSkor + '</td></tr>';
+      }).join('')
+    + '</tbody></table>'
+    + '<button onclick="window.print()" style="margin-top:12px;padding:6px 16px;cursor:pointer">Yazdır</button></body></html>');
+  w.document.close();
+};
+
+// ════════════════════════════════════════════════════════════════
+// MÜŞTERİ ANALİZİ RAPORU
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Müşteri analiz verisi oluşturur.
+ * @param {string} [from] Başlangıç tarihi
+ * @param {string} [to]   Bitiş tarihi
+ * @returns {Array<Object>} Müşteri analiz dizisi
+ */
+window._buildMusteriAnalizi = function(from, to) {
+  var satisTek = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+  var odm = typeof loadOdm === 'function' ? loadOdm().filter(function(o) { return !o.isDeleted; }) : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat().filter(function(t) { return !t.isDeleted; }) : [];
+  // Tarih filtresi
+  if (from) { satisTek = satisTek.filter(function(s) { return (s.ts || '').slice(0, 10) >= from; }); }
+  if (to) { satisTek = satisTek.filter(function(s) { return (s.ts || '').slice(0, 10) <= to; }); }
+  // Müşteri bazlı gruplama
+  var mustMap = {};
+  satisTek.forEach(function(st) {
+    var key = st.musteri || '—';
+    if (!mustMap[key]) mustMap[key] = { ad: key, satisToplam: 0, karToplam: 0, teklifSayisi: 0, kabul: 0, red: 0, urunMap: {}, sonTeklifler: [], marjlar: [] };
+    var m = mustMap[key];
+    m.satisToplam += parseFloat(st.genelToplam) || 0;
+    m.karToplam += parseFloat(st.tahminKar) || 0;
+    m.teklifSayisi++;
+    if (st.durum === 'kabul') m.kabul++;
+    if (st.durum === 'red') m.red++;
+    m.sonTeklifler.push({ no: st.teklifNo, tarih: (st.ts || '').slice(0, 10), tutar: st.genelToplam || 0, doviz: st.paraBirimi || 'USD', durum: st.durum || 'taslak' });
+    // Ürünler
+    (st.urunler || []).forEach(function(u) {
+      var uKey = u.urunAdi || 'Bilinmeyen';
+      if (!m.urunMap[uKey]) m.urunMap[uKey] = { ad: uKey, miktar: 0, tutar: 0 };
+      m.urunMap[uKey].miktar += parseFloat(u.miktar) || 0;
+      m.urunMap[uKey].tutar += (parseFloat(u.satisFiyat) || 0) * (parseFloat(u.miktar) || 0);
+    });
+    // Marj hesapla
+    if (st.genelToplam && st.tahminKar) {
+      m.marjlar.push(Math.round((st.tahminKar / st.genelToplam) * 100));
+    }
+  });
+  // Ödeme/tahsilat verileri ile zenginleştir
+  Object.keys(mustMap).forEach(function(key) {
+    var m = mustMap[key];
+    // Müşteriye ait tahsilatlar
+    var mustTah = tah.filter(function(t) { return t.cariName === key; });
+    var mustOdm = odm.filter(function(o) { return o.cariName === key; });
+    // Ortalama ödeme süresi
+    var odemeSureleri = [];
+    mustTah.forEach(function(t) {
+      if (t.collected && t.collectedAt && t.due) {
+        var gun = Math.ceil((new Date(t.collectedAt) - new Date(t.due)) / 86400000);
+        odemeSureleri.push(gun);
+      }
+    });
+    m.ortOdemeSuresi = odemeSureleri.length ? Math.round(odemeSureleri.reduce(function(a, b) { return a + b; }, 0) / odemeSureleri.length) : 0;
+    // Gecikmiş ödeme geçmişi
+    var today = new Date().toISOString().slice(0, 10);
+    m.gecikmisSayisi = mustOdm.filter(function(o) { return !o.paid && o.due && o.due < today; }).length
+      + mustTah.filter(function(t) { return !t.collected && t.due && t.due < today; }).length;
+  });
+  // Skorlama
+  var result = Object.values(mustMap).map(function(m) {
+    var ortMarj = m.marjlar.length ? Math.round(m.marjlar.reduce(function(a, b) { return a + b; }, 0) / m.marjlar.length) : 0;
+    var kabulOran = m.teklifSayisi > 0 ? Math.round(m.kabul / m.teklifSayisi * 100) : 0;
+    var top5Urun = Object.values(m.urunMap).sort(function(a, b) { return b.tutar - a.tutar; }).slice(0, 5);
+    var son3 = m.sonTeklifler.sort(function(a, b) { return (b.tarih || '').localeCompare(a.tarih || ''); }).slice(0, 3);
+    // Müşteri değer skoru (CLV benzeri): 0-100
+    var degerSkor = 0;
+    degerSkor += Math.min(30, Math.round(m.satisToplam / 10000)); // Ciro
+    degerSkor += Math.min(25, ortMarj); // Marj
+    degerSkor += Math.min(20, kabulOran / 5); // Kabul oranı
+    degerSkor += Math.min(15, Math.max(0, 15 - m.gecikmisSayisi * 5)); // Ödeme disiplini
+    degerSkor += Math.min(10, m.teklifSayisi * 2); // İşlem sıklığı
+    degerSkor = Math.min(100, Math.round(degerSkor));
+
+    return {
+      ad: m.ad, satisToplam: m.satisToplam, karToplam: m.karToplam,
+      teklifSayisi: m.teklifSayisi, kabul: m.kabul, red: m.red,
+      ortMarj: ortMarj, kabulOran: kabulOran,
+      ortOdemeSuresi: m.ortOdemeSuresi, gecikmisSayisi: m.gecikmisSayisi,
+      top5Urun: top5Urun, son3: son3, degerSkor: degerSkor
+    };
+  });
+  result.sort(function(a, b) { return b.degerSkor - a.degerSkor; }); // En değerli en üstte
+  return result;
+};
+
+/** @description Müşteri analiz raporu modalı */
+window._openMusteriAnalizi = function() {
+  document.getElementById('mo-reports')?.remove();
+  var ex = document.getElementById('mo-must-analiz'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-must-analiz'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:720px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:700;color:var(--t)">Müşteri Analiz Raporu</div><button onclick="document.getElementById(\'mo-must-analiz\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="padding:10px 20px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    + '<input type="date" class="fi" id="must-from" style="font-size:11px;width:130px">'
+    + '<span style="font-size:10px;color:var(--t3)">—</span>'
+    + '<input type="date" class="fi" id="must-to" style="font-size:11px;width:130px">'
+    + '<button onclick="window._renderMustAnaliz()" style="padding:5px 12px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Filtrele</button>'
+    + '<button onclick="window._exportMustAnalizXlsx()" style="padding:5px 12px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button>'
+    + '<button onclick="window._printMustAnaliz()" style="padding:5px 12px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">PDF</button>'
+    + '</div>'
+    + '<div id="must-analiz-content" style="padding:16px 20px;max-height:55vh;overflow-y:auto"></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); window._renderMustAnaliz(); }, 10);
+};
+
+/** @description Müşteri analiz listesini render et */
+window._renderMustAnaliz = function() {
+  var cont = document.getElementById('must-analiz-content'); if (!cont) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var from = document.getElementById('must-from')?.value || '';
+  var to = document.getElementById('must-to')?.value || '';
+  var data = window._buildMusteriAnalizi(from, to);
+  if (!data.length) { cont.innerHTML = '<div style="padding:30px;text-align:center;color:var(--t3)">Müşteri verisi bulunamadı</div>'; return; }
+  var enDegerli = data[0]; var enRiskli = data[data.length - 1];
+  var DURUM_MAP = { taslak: 'Taslak', gonderildi: 'Gönderildi', kabul: 'Kabul', red: 'Red', onay: 'Onay' };
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+    + '<div style="padding:10px;background:#16A34A11;border:0.5px solid #16A34A44;border-radius:8px"><div style="font-size:9px;color:#16A34A;text-transform:uppercase;font-weight:700">En değerli müşteri</div><div style="font-size:13px;font-weight:700;color:#16A34A;margin-top:2px">' + esc(enDegerli.ad) + '</div><div style="font-size:10px;color:var(--t3)">Skor: ' + enDegerli.degerSkor + '/100 · Satış: $' + Math.round(enDegerli.satisToplam).toLocaleString('tr-TR') + '</div></div>'
+    + '<div style="padding:10px;background:#DC262611;border:0.5px solid #DC262644;border-radius:8px"><div style="font-size:9px;color:#DC2626;text-transform:uppercase;font-weight:700">En riskli müşteri</div><div style="font-size:13px;font-weight:700;color:#DC2626;margin-top:2px">' + esc(enRiskli.ad) + '</div><div style="font-size:10px;color:var(--t3)">Skor: ' + enRiskli.degerSkor + '/100 · Gecikmiş: ' + enRiskli.gecikmisSayisi + '</div></div></div>';
+  // Müşteri kartları
+  data.forEach(function(m) {
+    var skorColor = m.degerSkor >= 60 ? '#16A34A' : m.degerSkor >= 30 ? '#D97706' : '#DC2626';
+    var skorBg = m.degerSkor >= 60 ? '#16A34A11' : m.degerSkor >= 30 ? '#D9770611' : '#DC262611';
+    html += '<div style="border:0.5px solid var(--b);border-radius:8px;margin-bottom:8px;overflow:hidden">'
+      + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:var(--s2)">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--t)">' + esc(m.ad) + '</div>'
+      + '<span style="font-size:9px;padding:2px 8px;border-radius:4px;background:' + skorBg + ';color:' + skorColor + ';font-weight:700">CLV: ' + m.degerSkor + '/100</span></div>'
+      + '<div style="padding:10px 14px">'
+      + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px">'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Toplam Satış</div><div style="font-size:12px;font-weight:700;color:var(--ac)">$' + Math.round(m.satisToplam).toLocaleString('tr-TR') + '</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Ort. Marj</div><div style="font-size:12px;font-weight:700;color:' + (m.ortMarj >= 15 ? '#16A34A' : '#D97706') + '">%' + m.ortMarj + '</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Kabul Oranı</div><div style="font-size:12px;font-weight:700">%' + m.kabulOran + '</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Ödeme Süresi</div><div style="font-size:12px;font-weight:700;color:' + (m.ortOdemeSuresi <= 0 ? '#16A34A' : m.ortOdemeSuresi <= 7 ? '#D97706' : '#DC2626') + '">' + (m.ortOdemeSuresi > 0 ? '+' + m.ortOdemeSuresi : m.ortOdemeSuresi) + ' gün</div></div>'
+      + '<div><div style="font-size:8px;color:var(--t3);text-transform:uppercase">Gecikmiş</div><div style="font-size:12px;font-weight:700;color:' + (m.gecikmisSayisi === 0 ? '#16A34A' : '#DC2626') + '">' + m.gecikmisSayisi + '</div></div></div>';
+    // Top 5 ürün
+    if (m.top5Urun.length) {
+      html += '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:3px">En çok aldığı</div>'
+        + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">';
+      m.top5Urun.forEach(function(u) {
+        html += '<span style="font-size:9px;padding:2px 6px;background:var(--al);color:var(--ac);border-radius:3px">' + esc(u.ad) + ' (' + u.miktar + ')</span>';
+      });
+      html += '</div>';
+    }
+    // Son 3 teklif
+    if (m.son3.length) {
+      html += '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:3px">Son teklifler</div>';
+      m.son3.forEach(function(s) {
+        html += '<div style="font-size:10px;color:var(--t2);padding:1px 0">' + esc(s.no || '') + ' · ' + s.tarih + ' · $' + Math.round(s.tutar).toLocaleString('tr-TR') + ' · ' + (DURUM_MAP[s.durum] || s.durum) + '</div>';
+      });
+    }
+    html += '</div></div>';
+  });
+  cont.innerHTML = html;
+};
+
+/** @description Müşteri analiz Excel export */
+window._exportMustAnalizXlsx = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var from = document.getElementById('must-from')?.value || '';
+  var to = document.getElementById('must-to')?.value || '';
+  var data = window._buildMusteriAnalizi(from, to);
+  var rows = [['Müşteri', 'Toplam Satış ($)', 'Kâr ($)', 'Teklif Sayısı', 'Kabul', 'Red', 'Kabul Oranı %', 'Ort. Marj %', 'Ort. Ödeme Süresi (gün)', 'Gecikmiş', 'CLV Skoru', 'Top 5 Ürün']];
+  data.forEach(function(m) {
+    rows.push([m.ad, Math.round(m.satisToplam), Math.round(m.karToplam), m.teklifSayisi, m.kabul, m.red, m.kabulOran, m.ortMarj, m.ortOdemeSuresi, m.gecikmisSayisi, m.degerSkor, m.top5Urun.map(function(u) { return u.ad; }).join(', ')]);
+  });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Müşteri Analizi');
+  XLSX.writeFile(wb, 'musteri-analizi-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  window.toast?.('Müşteri analiz raporu indirildi ✓', 'ok');
+};
+
+/** @description Müşteri analiz PDF (yazdır) */
+window._printMustAnaliz = function() {
+  var from = document.getElementById('must-from')?.value || '';
+  var to = document.getElementById('must-to')?.value || '';
+  var data = window._buildMusteriAnalizi(from, to);
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>Müşteri Analizi</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
+    + '<h1>MÜŞTERİ ANALİZ RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL TRADE' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
+    + '<table><thead><tr><th>Müşteri</th><th>Satış ($)</th><th>Kâr ($)</th><th>Marj %</th><th>Kabul %</th><th>Ödeme</th><th>Gecikmiş</th><th>CLV</th></tr></thead><tbody>'
+    + data.map(function(m) {
+        var cls = m.degerSkor >= 60 ? 'good' : m.degerSkor < 30 ? 'bad' : '';
+        return '<tr><td><b>' + esc(m.ad) + '</b></td><td style="text-align:right">$' + Math.round(m.satisToplam).toLocaleString('tr-TR') + '</td><td style="text-align:right">$' + Math.round(m.karToplam).toLocaleString('tr-TR') + '</td><td style="text-align:center" class="' + (m.ortMarj >= 15 ? 'good' : '') + '">%' + m.ortMarj + '</td><td style="text-align:center">%' + m.kabulOran + '</td><td style="text-align:center">' + (m.ortOdemeSuresi > 0 ? '+' + m.ortOdemeSuresi + 'g' : 'zamanında') + '</td><td style="text-align:center" class="' + (m.gecikmisSayisi > 0 ? 'bad' : 'good') + '">' + m.gecikmisSayisi + '</td><td style="text-align:center" class="' + cls + '">' + m.degerSkor + '</td></tr>';
+      }).join('')
+    + '</tbody></table>'
+    + '<button onclick="window.print()" style="margin-top:12px;padding:6px 16px;cursor:pointer">Yazdır</button></body></html>');
+  w.document.close();
+};

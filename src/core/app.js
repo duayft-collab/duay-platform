@@ -2275,6 +2275,16 @@ window.openReportPanel = function() {
     + '<div style="font-size:28px;margin-bottom:6px">📊</div>'
     + '<div style="font-size:13px;font-weight:600;color:var(--t)">Aylık Rapor</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Tahsilat, ödeme, kâr, top 5</div></div>'
+    // Tedarikçi Performansı
+    + '<div onclick="window._openTedarikciPerformans?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">🏭</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Tedarikçi Performansı</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Risk skoru, teslimat, fiyat</div></div>'
+    // Müşteri Analizi
+    + '<div onclick="window._openMusteriAnalizi?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">👥</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Müşteri Analizi</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">CLV, kar marjı, ödeme süresi</div></div>'
     // Rapor Geçmişi
     + '<div onclick="window._openMonthlyReportHistory?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center;grid-column:span 2" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
     + '<div style="font-size:28px;margin-bottom:6px">📁</div>'
