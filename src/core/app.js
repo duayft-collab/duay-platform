@@ -971,6 +971,9 @@ function _renderDashboard() {
     + '</div>';
 
   // B2: Kritik Uyarılar
+  if (!gecikOdm.length && !gecikTask.length) {
+    h += '<div style="padding:8px 20px;background:#F0FDF4;border-bottom:0.5px solid #BBF7D0;font-size:11px;color:#16A34A;font-weight:500">Kritik uyarı yok ✅</div>';
+  }
   if (gecikOdm.length || gecikTask.length) {
     h += '<div style="padding:12px 20px;background:#FEF2F2;border-bottom:0.5px solid #FECACA">'
       + '<div style="font-size:11px;font-weight:700;color:#991B1B;margin-bottom:6px">Kritik Uyarılar</div>';
@@ -1027,6 +1030,7 @@ function _renderDashboard() {
         + '<div style="font-size:12px;font-weight:600;color:var(--t)">'+esc(k.no||'')+'</div>'
         + '<div style="font-size:10px;color:var(--t3)">'+esc(k.hat||'')+'</div>'
         + (daysToEta!==null ? '<div style="font-size:10px;color:'+dtColor+';font-weight:600;margin-top:2px">ETA: '+daysToEta+' gün</div>' : '')
+        + (k.hasIMO ? '<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700;margin-top:2px;display:inline-block">IMO</span>' : '')
         + '</div>';
     });
     h += '</div></div>';
@@ -1046,19 +1050,27 @@ function _renderDashboard() {
     h += '</div>';
   }
 
-  // B8: Son 7 Gün Grafik (basit bar)
-  h += '<div style="padding:12px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">Son 7 Gün</div>';
-  h += '<div style="display:flex;gap:3px;align-items:flex-end;height:60px">';
+  // B8: Son 7 Gün Grafik — global normalize
+  var chartData = [];
+  var globalMax = 1;
   for (var di=6;di>=0;di--) {
     var d2 = new Date(); d2.setDate(d2.getDate()-di); var ds = d2.toISOString().slice(0,10);
     var dayO = odm.filter(function(o){return o.paid && (o.paidTs||o.due||'').slice(0,10)===ds;}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
     var dayT = tah.filter(function(t){return t.collected && (t.collectedTs||t.due||'').slice(0,10)===ds;}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0);
-    var maxH = Math.max(dayO,dayT,1); var hO = Math.max(2,Math.round(dayO/maxH*50)); var hT = Math.max(2,Math.round(dayT/maxH*50));
-    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px" title="'+ds+'">'
+    chartData.push({ds:ds,o:dayO,t:dayT});
+    if (dayO > globalMax) globalMax = dayO;
+    if (dayT > globalMax) globalMax = dayT;
+  }
+  h += '<div style="padding:12px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">Son 7 Gün</div>';
+  h += '<div style="display:flex;gap:3px;align-items:flex-end;height:60px">';
+  chartData.forEach(function(cd) {
+    var hT = cd.t > 0 ? Math.max(3, Math.round(cd.t / globalMax * 50)) : 2;
+    var hO = cd.o > 0 ? Math.max(3, Math.round(cd.o / globalMax * 50)) : 2;
+    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px" title="'+cd.ds+' — T:₺'+Math.round(cd.t).toLocaleString('tr-TR')+' Ö:₺'+Math.round(cd.o).toLocaleString('tr-TR')+'">'
       + '<div style="width:100%;height:'+hT+'px;background:#16A34A;border-radius:2px 2px 0 0"></div>'
       + '<div style="width:100%;height:'+hO+'px;background:#DC2626;border-radius:0 0 2px 2px"></div>'
-      + '<div style="font-size:8px;color:var(--t3);margin-top:2px">'+ds.slice(8)+'</div></div>';
-  }
+      + '<div style="font-size:8px;color:var(--t3);margin-top:2px">'+cd.ds.slice(8)+'</div></div>';
+  });
   h += '</div><div style="font-size:9px;color:var(--t3);margin-top:4px"><span style="color:#16A34A">■</span> Tahsilat · <span style="color:#DC2626">■</span> Ödeme</div></div>';
 
   // B9: Hızlı Eylemler
