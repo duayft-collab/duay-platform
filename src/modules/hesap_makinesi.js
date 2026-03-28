@@ -14,10 +14,10 @@ var HM_TEKLIF_KEY = 'ak_cmp_teklif1';
 
 var HM_RATES = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN_GR: 3850, ALTIN_ONS: 2650 };
 
-// TCMB'den kur çek
+// TCMB'den kur çek — CORS proxy ile
 (function _hmFetchRates() {
-  fetch('https://www.tcmb.gov.tr/kurlar/today.xml')
-    .then(function(r) { return r.text(); })
+  fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://www.tcmb.gov.tr/kurlar/today.xml'))
+    .then(function(r) { if (!r.ok) throw new Error('proxy'); return r.text(); })
     .then(function(xml) {
       var doc = new DOMParser().parseFromString(xml, 'text/xml');
       doc.querySelectorAll('Currency').forEach(function(c) {
@@ -32,7 +32,7 @@ var HM_RATES = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN_GR: 3850, ALTIN_ONS: 
       });
     }).catch(function() {
       fetch('https://api.exchangerate-api.com/v4/latest/USD').then(function(r){return r.json();}).then(function(d) {
-        if (d?.rates?.TRY) { HM_RATES.USD = Math.round(d.rates.TRY*100)/100; HM_RATES.EUR = Math.round(d.rates.TRY/(d.rates.EUR||1)*100)/100; HM_RATES.GBP = Math.round(d.rates.TRY/(d.rates.GBP||1)*100)/100; }
+        if (d && d.rates && d.rates.TRY) { HM_RATES.USD = Math.round(d.rates.TRY*100)/100; HM_RATES.EUR = Math.round(d.rates.TRY/(d.rates.EUR||1)*100)/100; HM_RATES.GBP = Math.round(d.rates.TRY/(d.rates.GBP||1)*100)/100; }
       }).catch(function(){});
     });
 })();

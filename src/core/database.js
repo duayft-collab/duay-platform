@@ -218,7 +218,7 @@ function _syncFirestoreMerged(path, data) {
     var FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) return;
     var collection = path.split('/').pop();
-    _writingNow[collection] = Date.now() + 3000;
+    _writingNow[collection] = Date.now() + 5000;
     var syncedAt = new Date().toISOString();
     FB_DB.doc(path).set({ data: data, syncedAt: syncedAt, mergedAt: syncedAt }, { merge: true })
       .then(function() { console.info('[DB:merge-write]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : 'ok'); })
@@ -290,8 +290,8 @@ function _syncFirestore(path, data, mode = 'set') {
     const collection = path.split('/').pop();
     const syncedAt = new Date().toISOString();
     const payload = { data, syncedAt };
-    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle (2s pencere)
-    _writingNow[collection] = Date.now() + 2000;
+    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle (5s pencere — get+merge+set async chain)
+    _writingNow[collection] = Date.now() + 5000;
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     console.log('[FIRESTORE WRITE]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : typeof data, '| Auth:', !!_fbAuth?.currentUser);
@@ -756,10 +756,16 @@ function logActivity(type, detail) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadNotifs()    { const d = _read(KEYS.notifications); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 100 kayıt */ function storeNotifs(d) { _write(KEYS.notifications, d.slice(0, 100));
-  if (window.Auth?.getFBAuth?.()?.currentUser) {
-    const _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, d.slice(0, 100));
-  }
+/** @param {Array<Object>} d Son 100 kayıt */ function storeNotifs(d) {
+  var sliced = d.slice(0, 100);
+  _write(KEYS.notifications, sliced);
+  // Notifications sync — debounced (500ms) to prevent rapid-fire writes
+  clearTimeout(storeNotifs._timer);
+  storeNotifs._timer = setTimeout(function() {
+    if (window.Auth?.getFBAuth?.()?.currentUser) {
+      var _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, sliced);
+    }
+  }, 500);
 }
 
 /**
@@ -1222,6 +1228,19 @@ const _listeners = {};
  */
 const _writingNow = {};
 
+/**
+ * onSnapshot throttle — koleksiyon başına son işlem zamanı.
+ * Aynı koleksiyon için saniyede max 1 işlem yapılır.
+ * @type {Object.<string, number>}
+ */
+const _lastSnapshotProcess = {};
+
+/**
+ * Veri hash cache — aynı veri tekrar gelirse skip et.
+ * @type {Object.<string, string>}
+ */
+const _lastDataHash = {};
+
 /** Double-call guard — startRealtimeSync birden fazla çağrılmasını engeller */
 let _syncStarted = false;
 
@@ -1275,7 +1294,6 @@ function _listenCollection(collection, localKey, onUpdate) {
 
     const unsubscribe = docRef.onSnapshot(snap => {
       if (!snap.exists) {
-        console.info('[DB:realtime]', collection, '→ Firestore boş, localStorage kullanılıyor');
         return;
       }
       // P1: Kendi yazmamızdan gelen echo'yu atla
@@ -1284,8 +1302,29 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
       delete _writingNow[collection];
 
+      // Throttle: saniyede max 1 işlem (sync döngü engelleyici)
+      var now = Date.now();
+      if (_lastSnapshotProcess[collection] && (now - _lastSnapshotProcess[collection]) < 1000) {
+        return;
+      }
+      _lastSnapshotProcess[collection] = now;
+
       const fsData = snap.data()?.data;
       if (fsData === null || fsData === undefined) return;
+
+      // Hash check — aynı veri gelirse skip et (döngü engelleyici)
+      var dataHash = '';
+      try {
+        if (Array.isArray(fsData)) {
+          dataHash = fsData.length + ':' + (fsData[0]?.ts || '') + ':' + (fsData[fsData.length-1]?.ts || '');
+        } else {
+          dataHash = JSON.stringify(fsData).length.toString();
+        }
+      } catch(e) {}
+      if (dataHash && _lastDataHash[collection] === dataHash) {
+        return;
+      }
+      _lastDataHash[collection] = dataHash;
 
       // Merge: Firestore + localStorage birleştir (veri kaybı önleme)
       var merged = _mergeDataSets(localKey, fsData, collection);
@@ -1293,8 +1332,8 @@ function _listenCollection(collection, localKey, onUpdate) {
         localStorage.setItem(localKey, JSON.stringify(merged));
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
-      // Merge sonucu Firestore'dan farklıysa geri yaz
-      if (Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
+      // Merge sonucu Firestore'dan farklıysa geri yaz (notifications hariç — döngü önleme)
+      if (collection !== 'notifications' && Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
         _syncFirestoreMerged(_base2 + '/' + collection, merged);
       }
 
@@ -1306,8 +1345,6 @@ function _listenCollection(collection, localKey, onUpdate) {
           catch (e) { GlobalErrorHandler('realtime:render', e, 'warn'); }
         }, 300);
       }
-
-      console.info('[DB:realtime]', collection, '→', Array.isArray(merged) ? merged.length : '?', 'kayıt (merge)');
     }, err => {
       if (err.code === 'permission-denied') {
         console.warn('[DB:realtime]', collection, '→ Firestore izni yok, offline mod');

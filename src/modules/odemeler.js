@@ -119,8 +119,8 @@ async function _odmFetchTCMB() {
   var preferExchange = kurCfg.source === 'exchange';
   try {
     if (preferExchange) throw new Error('skip_tcmb');
-    // TCMB XML kur
-    const res = await fetch('https://www.tcmb.gov.tr/kurlar/today.xml');
+    // TCMB XML kur — CORS proxy ile
+    const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://www.tcmb.gov.tr/kurlar/today.xml'));
     const xml = await res.text();
     const doc = new DOMParser().parseFromString(xml, 'text/xml');
     _odmRatesCache = {};
@@ -3694,9 +3694,9 @@ function fetchKurRates() {
       if (updated) _checkKurAlarm();
     });
 
-  // 2) Altın — metals.live (mock fallback)
-  fetch('https://api.metals.live/v1/spot')
-    .then(function(r) { return r.json(); })
+  // 2) Altın — metals.live (CORS proxy + localStorage fallback)
+  fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.metals.live/v1/spot'))
+    .then(function(r) { if (!r.ok) throw new Error('proxy'); return r.json(); })
     .then(function(d) {
       // API [{gold: X, silver: Y, ...}] formatında döner
       if (Array.isArray(d) && d.length > 0 && d[0].gold) {
@@ -3706,14 +3706,14 @@ function fetchKurRates() {
         // TL'ye çevir
         var tryRate = _tickerRates.USD || 38.50;
         _tickerRates.ALTIN = Math.round(goldUsdPerGram * tryRate * 100) / 100;
+        localStorage.setItem('ak_altin_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.ALTIN }));
         renderKurTicker();
         _checkKurAlarm();
       }
     })
-    .catch(function(e) {
-      console.warn('[Kur] Altın API hatası (mock kullanılıyor):', e.message);
-      // Mock fallback — gerçekçi statik veri
-      _tickerRates.ALTIN = 3850;
+    .catch(function() {
+      // localStorage fallback — son bilinen fiyat
+      try { var c = JSON.parse(localStorage.getItem('ak_altin_cache') || '{}'); if (c.rate) { _tickerRates.ALTIN = c.rate; } } catch(e) {}
       renderKurTicker();
     });
 

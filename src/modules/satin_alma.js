@@ -675,11 +675,12 @@ var _saLiveRates = { USD: 38.50, EUR: 41.20, GBP: 48.90 };
 var _saKurSource = 'fallback'; // 'tcmb' | 'fallback'
 
 /**
- * TCMB XML kurlarını çeker. CORS sorunu varsa exchangerate-api fallback.
+ * TCMB XML kurlarını çeker. CORS proxy ile, fallback exchangerate-api.
+ * @returns {void}
  */
 function _fetchTCMBRates() {
-  fetch('https://www.tcmb.gov.tr/kurlar/today.xml')
-    .then(function(r) { return r.text(); })
+  fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://www.tcmb.gov.tr/kurlar/today.xml'))
+    .then(function(r) { if (!r.ok) throw new Error('proxy-fail'); return r.text(); })
     .then(function(xml) {
       var parser = new DOMParser();
       var doc = parser.parseFromString(xml, 'text/xml');
@@ -700,19 +701,20 @@ function _fetchTCMBRates() {
       localStorage.setItem('ak_tcmb_cache', JSON.stringify({ ts: Date.now(), rates: _saLiveRates }));
     })
     .catch(function() {
-      // CORS fallback: exchangerate-api
+      // Fallback: exchangerate-api
       fetch('https://api.exchangerate-api.com/v4/latest/USD')
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          if (d?.rates?.TRY) {
+          if (d && d.rates && d.rates.TRY) {
             _saLiveRates.USD = Math.round(d.rates.TRY * 100) / 100;
             _saLiveRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100;
             _saLiveRates.GBP = Math.round(d.rates.TRY / (d.rates.GBP || 1) * 100) / 100;
             _saKurSource = 'fallback';
+            localStorage.setItem('ak_tcmb_cache', JSON.stringify({ ts: Date.now(), rates: _saLiveRates }));
           }
         }).catch(function() {
-          // LocalStorage cache
-          try { var c = JSON.parse(localStorage.getItem('ak_tcmb_cache') || '{}'); if (c.rates) Object.assign(_saLiveRates, c.rates); } catch(e) {}
+          // Son bilinen kur — localStorage cache
+          try { var c = JSON.parse(localStorage.getItem('ak_tcmb_cache') || '{}'); if (c.rates) { Object.assign(_saLiveRates, c.rates); _saKurSource = 'cache'; } } catch(e) {}
         });
     });
 }
