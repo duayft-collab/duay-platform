@@ -382,9 +382,9 @@ function _injectOdmPanel() {
     // SEKMELER
     '<div id="odm-tabs-row" style="display:flex;border-bottom:1px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none">',
       '<div id="odm-stab-all" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac)">Tümü <span id="odm-stat-total">0</span></div>',
-      '<div id="odm-stab-gecikti" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--rd)">💸 Ödemeler <span id="odm-stat-late2">0</span></div>',
+      '<div id="odm-stab-gecikti" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--rd)">💸 Ödemeler</div>',
       '<div id="odm-stab-tahsilat" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:#0F6E56">💰 Tahsilatlar</div>',
-      '<div id="odm-stab-bekliyor" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--amt)">⏳ Bekleyen <span id="odm-stat-soon2">0</span></div>',
+      '<div id="odm-stab-bekliyor" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--amt)">⏳ Bekleyen</div>',
       '<div id="odm-stab-projeksiyon" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">📊 Projeksiyon</div>',
     '</div>',
 
@@ -910,12 +910,27 @@ function openOdmModal(id) {
   const mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-odm-v9'; mo.style.zIndex = '2100';
 
-  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;overflow:hidden;border-radius:16px">'
+  // Cari listesi
+  var cariList = typeof loadCari === 'function' ? loadCari() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var cariOpts = '<option value="">— Cari Seçin * —</option>' + cariList.map(function(c) { return '<option value="' + esc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + '>' + esc(c.name) + ' (' + (c.type || '') + ')</option>'; }).join('');
+
+  // Görev listesi
+  var taskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : [];
+  var taskOpts = '<option value="">— Görev Seçin —</option>' + taskList.map(function(t) { return '<option value="' + t.id + '"' + (o?.taskId == t.id ? ' selected' : '') + '>' + esc(t.title.slice(0, 40)) + '</option>'; }).join('');
+
+  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;overflow:hidden;border-radius:16px">'
     + '<div style="padding:16px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
     + '<div class="mt" style="margin-bottom:0">' + (o ? '✏️ Ödeme Düzenle' : '+ Yeni Ödeme') + '</div>'
-    + '<button onclick="document.getElementById(\'mo-odm-v9\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+    + '<button onclick="document.getElementById(\'mo-odm-v9\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
     + '</div>'
     + '<div style="padding:18px 22px;max-height:74vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">'
+
+    // İş ID (görev) + Cari Firma
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fr"><div class="fl">İŞ ID (Görev)</div><select class="fi" id="odm-f-taskid" style="border-radius:8px">' + taskOpts + '</select></div>'
+    + '<div class="fr"><div class="fl">CARİ FİRMA *</div><div style="display:flex;gap:4px"><select class="fi" id="odm-f-cari" style="flex:1;border-radius:8px">' + cariOpts + '</select><button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button></div></div>'
+    + '</div>'
 
     // İsim
     + '<div class="fr"><div class="fl">ÖDEME ADI *</div>'
@@ -924,10 +939,10 @@ function openOdmModal(id) {
     // Kategori + Sıklık
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="fr"><div class="fl">KATEGORİ</div><select class="fi" id="odm-f-cat" style="border-radius:8px">'
-    + Object.entries(ODM_CATS).map(([k,v]) => `<option value="${k}"${o&&o.cat===k?' selected':''}>${v.ic} ${v.l}</option>`).join('')
+    + Object.entries(ODM_CATS).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.cat===e[0]?' selected':'') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('')
     + '</select></div>'
     + '<div class="fr"><div class="fl">SIKLIK</div><select class="fi" id="odm-f-freq" style="border-radius:8px">'
-    + Object.entries(ODM_FREQ).map(([k,v]) => `<option value="${k}"${o&&o.freq===k?' selected':''}>${v}</option>`).join('')
+    + Object.entries(ODM_FREQ).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.freq===e[0]?' selected':'') + '>' + e[1] + '</option>'; }).join('')
     + '</select></div>'
     + '</div>'
 
@@ -939,32 +954,40 @@ function openOdmModal(id) {
     + '<span id="odm-tl-preview" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--ac);pointer-events:none;white-space:nowrap">' + (o&&o.currency&&o.currency!=='TRY'?_odmTLKarsiligi(o.amount,o.currency):'') + '</span>'
     + '</div>'
     + '<select class="fi" id="odm-f-currency" onchange="_odmCurChange(this.value)" style="border-radius:8px">'
-    + Object.entries(ODM_CURRENCY).map(([k,v]) => `<option value="${k}"${(o?.currency||'TRY')===k?' selected':''}>${v.flag} ${k}</option>`).join('')
+    + Object.entries(ODM_CURRENCY).map(function(e) { return '<option value="' + e[0] + '"' + ((o?.currency||'TRY')===e[0]?' selected':'') + '>' + e[1].flag + ' ' + e[0] + '</option>'; }).join('')
     + '</select></div>'
     + '<div id="odm-kur-wrap" style="' + ((!o?.currency||o?.currency==='TRY')?'display:none':'') + '">'
     + _odmKurModeHTML(o?.currency||'USD')
     + '</div>'
     + '</div>'
 
+    // Döküman No + Ödeme Yöntemi
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fr"><div class="fl">DÖKÜMAN NO *</div><input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" value="' + (o?o.docNo||'':'') + '" style="border-radius:8px"></div>'
+    + '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="odm-f-yontem" style="border-radius:8px">'
+    + '<option value="">— Seçin —</option>'
+    + ['Havale/EFT','Kredi Kartı','Nakit','Çek','Senet','Kripto','Diğer'].map(function(y) { return '<option value="' + y + '"' + (o?.yontem===y?' selected':'') + '>' + y + '</option>'; }).join('')
+    + '</select></div>'
+    + '</div>'
+
     // Tarihler
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div class="fr"><div class="fl">PLANLANAN / SON TARİH</div>'
+    + '<div class="fr"><div class="fl">SON TARİH *</div>'
     + '<input type="date" class="fi" id="odm-f-due" style="border-radius:8px" value="' + (o?o.due||'':'') + '"></div>'
-    + '<div class="fr" id="odm-actual-wrap"><div class="fl">ÖDENDİĞİ TARİH</div>'
+    + '<div class="fr"><div class="fl">ÖDENDİĞİ TARİH</div>'
     + '<input type="date" class="fi" id="odm-f-actual" value="' + (o?o.actualDate||'':'') + '"></div>'
     + '</div>'
 
-    // Sorumlu + Alarm
+    // Sorumlu + Hatırlatıcı (tarih+saat)
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="fr"><div class="fl">SORUMLU KİŞİ</div><select class="fi" id="odm-f-assigned" style="border-radius:8px">'
     + '<option value="">— Seç —</option>'
-    + users.map(u => `<option value="${u.id}"${o&&o.assignedTo===u.id?' selected':''}>${u.name}</option>`).join('')
+    + users.map(function(u) { return '<option value="' + u.id + '"' + (o&&o.assignedTo===u.id?' selected':'') + '>' + u.name + '</option>'; }).join('')
     + '</select></div>'
-    + '<div class="fr"><div class="fl">ALARM (GÜN ÖNCE)</div>'
-    + '<div style="display:flex;align-items:center;gap:8px">'
-    + '<input type="range" id="odm-f-alarm" min="1" max="30" value="' + (o?o.alarmDays||3:3) + '" style="flex:1" oninput="document.getElementById(\'odm-f-alarm-val\').textContent=this.value">'
-    + '<span id="odm-f-alarm-val" style="font-size:13px;font-weight:700;color:var(--ac);min-width:24px;text-align:center">' + (o?o.alarmDays||3:3) + '</span>'
-    + '<span style="font-size:12px;color:var(--t3)">gün</span>'
+    + '<div class="fr"><div class="fl">HATIRLATICI TARİH+SAAT</div>'
+    + '<div style="display:flex;gap:6px">'
+    + '<input type="date" class="fi" id="odm-f-alarm-date" value="' + (o?.alarmDate || '') + '" style="flex:1;border-radius:8px">'
+    + '<input type="time" class="fi" id="odm-f-alarm-time" value="' + (o?.alarmTime || '09:00') + '" style="width:90px;border-radius:8px">'
     + '</div></div>'
     + '</div>'
 
@@ -972,29 +995,22 @@ function openOdmModal(id) {
     + '<div class="fr"><div class="fl">NOT</div>'
     + '<textarea class="fi" id="odm-f-note" rows="2" style="resize:none;border-radius:8px" placeholder="Açıklama…">' + (o?o.note||'':'') + '</textarea></div>'
 
-    // Döküman
+    // Döküman yükleme
     + '<div class="fr"><div class="fl">DÖKÜMAN EKLE</div>'
     + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
-    + (o&&o.docs&&o.docs.length ? o.docs.map((d,i) => '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5;cursor:pointer" onclick="viewOdmDoc('+o.id+','+i+')" >📎 '+d.name+'</span>').join('') : '')
+    + (o&&o.docs&&o.docs.length ? o.docs.map(function(d,i) { return '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5;cursor:pointer" onclick="viewOdmDoc('+o.id+','+i+')">📎 '+d.name+'</span>'; }).join('') : '')
     + '<button type="button" onclick="uploadOdmDoc()" class="btn btns" style="font-size:11px;border-radius:7px;padding:4px 10px">📎 Dosya Yükle</button>'
     + '<span id="odm-doc-count" style="font-size:10px;color:var(--t3)">' + (o&&o.docs?o.docs.length+' dosya':'') + '</span>'
     + '</div>'
     + '<input type="hidden" id="odm-f-docs" value="' + (o&&o.docs?JSON.stringify(o.docs).replace(/"/g,'&quot;'):'[]') + '">'
     + '</div>'
 
-    // Tekrar + Onay + Ödendi
-    + '<div style="display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:var(--s2);border-radius:9px">'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-      + '<div class="fr"><div class="fl">DOKUMAN NO</div><input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" value="' + (o?o.docNo||'':'') + '" style="border-radius:8px"></div>'
-      + '<div class="fr"><div class="fl">GOREV ID</div><input class="fi" id="odm-f-taskid" placeholder="Gorev ara..." value="' + (o?o.taskId||'':'') + '" oninput="window._odmTaskSearch(this.value)" style="border-radius:8px"><div id="odm-task-badge" style="font-size:11px;margin-top:4px"></div></div>'
-    + '</div>'
-    + '</div>'
-
     + '<input type="hidden" id="odm-f-eid" value="' + (o?o.id:'') + '">'
+    + '<input type="hidden" id="odm-f-alarm" value="' + (o?o.alarmDays||3:3) + '">'
     + '</div>'
 
     + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">'
-    + '<button class="btn" onclick="document.getElementById(\'mo-odm-v9\').remove()">İptal</button>'
+    + '<button class="btn" onclick="document.getElementById(\'mo-odm-v9\')?.remove()">İptal</button>'
     + '<button class="btn btnp" onclick="saveOdm()" style="padding:9px 22px;border-radius:9px">💾 Kaydet</button>'
     + '</div>'
     + '</div>';
@@ -1101,17 +1117,23 @@ function saveOdm() {
   var cu = window.Auth?.getCU?.();
   var isAdmin = cu?.role === 'admin';
   var name = (document.getElementById('odm-f-name')?.value || '').trim();
-  if (!name) { window.toast?.('Odeme adi zorunludur', 'err'); return; }
+  if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
   var _fAmt = parseFloat(document.getElementById('odm-f-amount')?.value || '0');
   if (!_fAmt) { window.toast?.('Tutar zorunludur', 'err'); return; }
   var _fDue = document.getElementById('odm-f-due')?.value || '';
-  if (!_fDue) { window.toast?.('Tarih zorunludur', 'err'); return; }
+  if (!_fDue) { window.toast?.('Son tarih zorunludur', 'err'); return; }
+  var _fCari = document.getElementById('odm-f-cari')?.value || '';
+  if (!_fCari) { window.toast?.('Cari firma zorunludur — önce cari kaydı oluşturun', 'err'); return; }
+  var _fDocNo = (document.getElementById('odm-f-docno')?.value || '').trim();
+  if (!_fDocNo) { window.toast?.('Döküman No zorunludur', 'err'); return; }
+  var _fYontem = document.getElementById('odm-f-yontem')?.value || '';
+  if (!_fYontem) { window.toast?.('Ödeme yöntemi zorunludur', 'err'); return; }
   var eidVal = document.getElementById('odm-f-eid')?.value || '';
   var eid = eidVal ? parseInt(eidVal) : 0;
   var isNew = !eid;
-  const d    = window.loadOdm ? loadOdm() : [];
-  const cat = _go('odm-f-cat')?.value || 'diger';
-  const currency = _go('odm-f-currency')?.value || 'TRY';
+  var d    = window.loadOdm ? loadOdm() : [];
+  var cat = _go('odm-f-cat')?.value || 'diger';
+  var currency = _go('odm-f-currency')?.value || 'TRY';
   const amount   = parseFloat(_go('odm-f-amount')?.value || '0') || 0;
   let docs = [];
   try { docs = JSON.parse(_go('odm-f-docs')?.value || '[]'); } catch {}
@@ -1128,8 +1150,12 @@ function saveOdm() {
     actualDate:     _go('odm-f-actual')?.value   || '',
     note:           _go('odm-f-note')?.value     || '',
     alarmDays:      parseInt(_go('odm-f-alarm')?.value || '3'),
+    alarmDate:      document.getElementById('odm-f-alarm-date')?.value || '',
+    alarmTime:      document.getElementById('odm-f-alarm-time')?.value || '09:00',
     assignedTo:     parseInt(_go('odm-f-assigned')?.value || '0') || null,
-    docNo:          (_go('odm-f-docno')?.value || '').trim(),
+    cariName:       _fCari,
+    docNo:          _fDocNo,
+    yontem:         _fYontem,
     taskId:         parseInt(_go('odm-f-taskid')?.value || '0') || null,
     docs,
     ts:         _nowTso(),
