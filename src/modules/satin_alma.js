@@ -44,7 +44,8 @@ function _injectSAPanel() {
 
   panel.innerHTML = ''
     // TOPBAR — flat modern
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:100">'
+    + '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div>'
         + '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Satın Alma</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="sa-sub">PI & Sipariş Takip</div>'
@@ -86,6 +87,7 @@ function _injectSAPanel() {
       + '<input type="date" class="fi" id="sa-to-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:125px;border:0.5px solid var(--b);border-radius:7px">'
       + '<select class="fi" id="sa-status-f" style="display:none"><option value=""></option></select>'
     + '</div>'
+    + '</div>' // sticky wrapper close
 
     // TABLO — beyaz kart
     + '<div style="margin:12px 20px 0;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'

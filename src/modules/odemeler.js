@@ -452,9 +452,8 @@ function _injectOdmPanel() {
         '<div style="font-size:10px;color:var(--t3);margin-top:6px" id="odm-bento-paid-amt">₺0</div>',
       '</div>',
     '</div>',
-    '</div>', // sticky wrapper close
 
-    // TAB NAVİGASYON — üstte, sidebar yerine
+    // TAB NAVİGASYON — sticky wrapper içinde
     '<div id="odm-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">',
       '<div id="odm-stab-all" onclick="setOdmTab(\'all\')" style="padding:11px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac);transition:all .12s">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
       '<div id="odm-stab-gecikti" onclick="setOdmTab(\'gecikti\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Ödemeler</div>',
@@ -486,6 +485,7 @@ function _injectOdmPanel() {
       (_isManagerO() ? '<button onclick="window._odmBulkApprove?.()" style="padding:5px 10px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : ''),
       '<button onclick="_odmClearFilters()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit" title="Filtreleri temizle">✕</button>',
     '</div>',
+    '</div>', // sticky wrapper close (toolbar+metrik+tab+filtre)
 
     // Tablo CSS — modern flat
     '<style>',
@@ -1005,7 +1005,7 @@ function renderOdemeler() {
             + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--amt);font-family:inherit;border-bottom:1px solid var(--b)" title="Fatura belgesi yuklenmemis">📎 Dekont Yukle (eksik)</button>' : '')
             + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🏦 Odeme Talimati</button>' : '')
             + '<button onclick="window._odmSaveAsTemplate?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🔁 Şablon Kaydet</button>'
-            + (_isManagerO() ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
+            + (_isManagerO() || (o.approvalStatus === 'pending' && o.createdBy === _CUo()?.id) ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
           + '</div>'
         + '</div>'
       + '</div>';

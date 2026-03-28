@@ -89,18 +89,19 @@ function _injectKargoPanel(){
   ];
 
   panel.innerHTML=[
-    // TOPBAR — flat modern
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:100">',
+    // STICKY WRAPPER — toolbar + tab
+    '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">',
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">',
       '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Kargo Merkezi</div>',
       '<div style="font-size:10px;color:var(--t3);margin-top:2px">Navlun, konteyner, lokasyon ve kurye</div></div>',
     '</div>',
-    // TAB NAVİGASYON — sidebar yerine üstte
-    '<div style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);padding:0 16px">',
+    '<div style="display:flex;border-bottom:0.5px solid var(--b);padding:0 16px">',
       KRG_CATS.map(function(c){
         return '<div class="krg-cat-btn" data-kc="'+c.id+'" onclick="KargoV10.setTab(\''+c.id+'\')" style="padding:11px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s;white-space:nowrap">'
           +c.icon+' '+c.label+'</div>';
       }).join(''),
     '</div>',
+    '</div>', // sticky wrapper close
     // İçerik
     '<div style="overflow-y:auto">',
       '<div id="krg-content-navlun" style="display:none"></div>',
