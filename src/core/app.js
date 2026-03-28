@@ -453,6 +453,22 @@ window._endSession     = _endSession;
 
 function _finishLogin(user) {
   const users = loadUsers();
+
+  // ACİL KURTARMA: _autoFirebaseUserSync tarafından yanlışlıkla
+  // inactive yapılan kullanıcıları geri active yap
+  var _recovered = false;
+  users.forEach(function(u2) {
+    if (u2.status === 'inactive' && u2._fbSyncNote) {
+      u2.status = 'active';
+      delete u2._fbSyncNote;
+      delete u2._fbSyncAt;
+      _recovered = true;
+    }
+  });
+  if (_recovered) {
+    console.info('[LOGIN] _fbSyncNote ile pasifleştirilmiş kullanıcılar kurtarıldı');
+  }
+
   const u     = users.find(x => x.id === user.id) || user;
   u.lastLogin = nowTs();
   saveUsers(users);
@@ -2018,39 +2034,21 @@ window.goTo             = goTo;
  * Firebase Auth'ta olmayan platformdaki kullanıcıları pasif olarak işaretler.
  * Sadece admin login'inde çalışır.
  */
+/**
+ * Otomatik Firebase kullanıcı senkronizasyonu — DEVRİ DIŞI.
+ *
+ * NEDEN: Google, fetchSignInMethodsForEmail() API'sini Email Enumeration
+ * Protection kapsamında kısıtladı. Kayıtlı e-postalar için bile boş
+ * dizi [] döndürüyor. Bu da TÜM kullanıcıların yanlışlıkla inactive
+ * olarak işaretlenmesine yol açıyordu.
+ *
+ * ALTERNATİF: Admin panelindeki firebaseSync() butonu (admin.js)
+ * manuel olarak kullanılabilir — orada fetchSignInMethods yerine
+ * kullanıcı listesi karşılaştırması yapılmalı.
+ */
 async function _autoFirebaseUserSync() {
-  var cu = window.Auth?.getCU?.();
-  if (!cu || cu.role !== 'admin') return;
-  var fbAuth = window.Auth?.getFBAuth?.();
-  if (!fbAuth) return;
-  var users = loadUsers();
-  var changed = false;
-  for (var i = 0; i < users.length; i++) {
-    var u = users[i];
-    if (!u.email || u.status === 'inactive' || u.isDeleted) continue;
-    try {
-      var methods = await fbAuth.fetchSignInMethodsForEmail(u.email);
-      if (!methods || methods.length === 0) {
-        console.warn('[UserSync] Firebase Auth\'ta yok — pasifleştiriliyor:', u.email);
-        u.status = 'inactive';
-        u._fbSyncNote = 'Firebase Auth\'ta kayıtlı değil — otomatik pasifleştirildi';
-        u._fbSyncAt = nowTs();
-        changed = true;
-      }
-    } catch(e) {
-      if (e.code === 'auth/user-not-found') {
-        u.status = 'inactive';
-        u._fbSyncNote = 'Firebase Auth\'ta bulunamadı';
-        u._fbSyncAt = nowTs();
-        changed = true;
-      }
-    }
-  }
-  if (changed) {
-    saveUsers(users);
-    console.info('[UserSync] Kullanıcı listesi güncellendi — Firebase ile senkronize');
-    if (typeof window.renderAdmin === 'function') window.renderAdmin();
-  }
+  // fetchSignInMethodsForEmail güvenilmez — otomatik sync devre dışı
+  console.info('[UserSync] Otomatik sync devre dışı (fetchSignInMethods kısıtlaması)');
 }
 
 window._renderActivePanel = function() {
