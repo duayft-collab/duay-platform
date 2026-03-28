@@ -871,10 +871,33 @@ function savePermissions() {
     const val = sel.value;
     if (mod && val) permissions[mod] = val;
   });
+  // Yetki değişikliği log — eski vs yeni karşılaştır
+  var oldPerms = JSON.stringify(u.permissions || {});
+  var oldModules = JSON.stringify(u.modules);
   u.permissions = permissions;
 
   // 12 saat kuralı
   u.rule12h = !!g('perm-rule12h')?.checked;
+
+  // Değişiklik logunu kaydet
+  var newPerms = JSON.stringify(permissions);
+  var newModules = JSON.stringify(u.modules);
+  if (oldPerms !== newPerms || oldModules !== newModules) {
+    if (!Array.isArray(u.permissionLog)) u.permissionLog = [];
+    u.permissionLog.push({
+      ts: nowTs(),
+      changedBy: _getCU()?.id,
+      changedByName: _getCU()?.name || '',
+      oldModules: JSON.parse(oldModules),
+      newModules: u.modules,
+      oldPermissions: JSON.parse(oldPerms),
+      newPermissions: permissions,
+    });
+    // Admin'e bildirim (kendi değişikliği değilse)
+    if (_getCU()?.id !== u.id) {
+      window.addNotif?.('🔐', 'Yetki güncellendi: ' + u.name, 'info', 'admin', u.id);
+    }
+  }
 
   saveUsers(users);
   window.closeMo?.('mo-perm');
@@ -2966,6 +2989,43 @@ if (typeof module !== 'undefined' && module.exports) {
   window.submitSuggestion   = submitSuggestion;
   window.showPanelUpdateBanner = showPanelUpdateBanner;
   window.showAllUpdateBanners  = showAllUpdateBanners;
+
+  /** User kendi yetkilerini görür (salt okunur) */
+  window.viewMyPermissions = function() {
+    var cu = _getCU(); if (!cu) return;
+    var users = loadUsers();
+    var u = users.find(function(x) { return x.id === cu.id; });
+    if (!u) return;
+    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var mods = u.modules === null ? 'Tüm modüller' : (Array.isArray(u.modules) ? u.modules.join(', ') : '—');
+    var perms = u.permissions || {};
+    var permLog = u.permissionLog || [];
+    var ex = document.getElementById('mo-my-perms'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-my-perms'; mo.style.zIndex = '2200';
+    mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+      + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--t)">🔐 Yetkilerim</div></div>'
+      + '<div style="padding:16px 20px;max-height:60vh;overflow-y:auto">'
+      + '<div style="margin-bottom:12px"><span style="font-size:11px;color:var(--t3)">Rol:</span> <b>' + esc(u.role) + '</b></div>'
+      + '<div style="margin-bottom:12px"><span style="font-size:11px;color:var(--t3)">Modüller:</span> <div style="font-size:12px;color:var(--t);margin-top:4px">' + esc(mods) + '</div></div>'
+      + '<div style="margin-bottom:12px"><span style="font-size:11px;color:var(--t3)">Yetki Seviyeleri:</span>'
+      + '<div style="margin-top:4px">' + (Object.keys(perms).length ? Object.entries(perms).map(function(e) {
+          var lvlColor = e[1] === 'full' ? '#16A34A' : e[1] === 'edit' ? '#3B82F6' : e[1] === 'view' ? '#F59E0B' : '#9CA3AF';
+          return '<span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;margin:2px;background:' + lvlColor + '22;color:' + lvlColor + ';font-weight:600">' + esc(e[0]) + ': ' + e[1] + '</span>';
+        }).join('') : '<span style="font-size:11px;color:var(--t3)">Varsayılan</span>') + '</div></div>'
+      + (permLog.length ? '<div><span style="font-size:11px;color:var(--t3)">Son Değişiklikler:</span>'
+        + permLog.slice(-5).reverse().map(function(l) {
+            return '<div style="font-size:10px;color:var(--t3);padding:3px 0;border-bottom:1px solid var(--b)">' + (l.ts || '').slice(0,16) + ' — ' + esc(l.changedByName || '—') + '</div>';
+          }).join('') + '</div>' : '')
+      + '</div>'
+      + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-my-perms\')?.remove()">Kapat</button>'
+      + '</div></div>';
+    document.body.appendChild(mo);
+    mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+    setTimeout(function() { mo.classList.add('open'); }, 10);
+  };
 }
 
 })();

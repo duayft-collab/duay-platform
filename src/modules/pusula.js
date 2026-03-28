@@ -2421,15 +2421,15 @@ function sendTaskChatMsg() {
     if (fileEl)               fileEl.value = '';
     if (g('chat-fp'))         g('chat-fp').textContent   = '';
     renderTaskChatMsgs(taskId);
-    // S3: Görev sahibi + katılımcılara bildirim gönder
+    // S3: Görev sahibi + katılımcılara KİŞİYE ÖZEL bildirim gönder
     const task = loadTasks().find(t => t.id === taskId);
     const _cuChat = _getCU();
     if (task && _cuChat) {
       const _targets = new Set([task.uid, ...(task.participants || []), ...(task.viewers || [])]);
       _targets.delete(_cuChat.id);
-      if (_targets.size > 0) {
-        window.addNotif?.('💬', `"${escapeHtml(task.title)}" görevinde yeni mesaj — ${escapeHtml(_cuChat.name || '')}`, 'info', 'pusula');
-      }
+      _targets.forEach(function(targetUid) {
+        window.addNotif?.('💬', '"' + escapeHtml(task.title) + '" görevinde yeni mesaj — ' + escapeHtml(_cuChat.name || ''), 'info', 'pusula', targetUid);
+      });
     }
   };
 

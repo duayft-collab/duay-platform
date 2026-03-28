@@ -312,4 +312,62 @@ else {
   window.delAnn              = delAnn;
   window.updateAnnBadge      = updateAnnBadge;
   window.setAnnFilter        = setAnnFilter;
+
+  /**
+   * Güncelleme duyurusu ekler — versiyon + değişiklik özeti.
+   * @param {string} version  Versiyon numarası (ör: 'v9.2.0')
+   * @param {string} summary  Değişiklik özeti
+   * @param {string} [module] Hangi modül
+   */
+  window.addUpdateAnnouncement = function(version, summary, module) {
+    if (!_isAdminA()) return;
+    var anns = loadAnn();
+    anns.unshift({
+      id: generateNumericId(),
+      title: '🔄 Güncelleme ' + version + (module ? ' — ' + module : ''),
+      body: summary,
+      type: 'info',
+      ts: _nowTsa(),
+      author: _CUa()?.name || 'Sistem',
+      sticky: true,
+      stickyUntil: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      isUpdate: true,
+      version: version,
+      module: module || '',
+      viewCount: 0,
+      maxViews: 5, // 5 görüntülemeden sonra kapanır
+    });
+    storeAnn(anns);
+    renderAnnouncements();
+  };
+
+  /**
+   * Güncelleme geçmişi paneli açar.
+   */
+  window.openUpdateHistory = function() {
+    var anns = loadAnn().filter(function(a) { return a.isUpdate; });
+    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var ex = document.getElementById('mo-update-history'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-update-history'; mo.style.zIndex = '2200';
+    mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">'
+      + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--t)">📋 Güncelleme Geçmişi</div>'
+      + '<button onclick="document.getElementById(\'mo-update-history\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+      + '</div>'
+      + '<div style="max-height:60vh;overflow-y:auto;padding:16px 20px">'
+      + (anns.length ? anns.map(function(a) {
+          return '<div style="border-left:3px solid var(--ac);padding:8px 14px;margin-bottom:10px;background:var(--s2);border-radius:0 8px 8px 0">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+            + '<span style="font-size:12px;font-weight:700;color:var(--ac)">' + esc(a.version || '') + (a.module ? ' — ' + esc(a.module) : '') + '</span>'
+            + '<span style="font-size:10px;color:var(--t3)">' + (a.ts || '').slice(0, 10) + '</span>'
+            + '</div>'
+            + '<div style="font-size:11px;color:var(--t)">' + esc(a.body || a.title || '') + '</div>'
+          + '</div>';
+        }).join('') : '<div style="text-align:center;padding:24px;color:var(--t3)">Güncelleme kaydı yok</div>')
+      + '</div></div>';
+    document.body.appendChild(mo);
+    mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+    setTimeout(function() { mo.classList.add('open'); }, 10);
+  };
 }
