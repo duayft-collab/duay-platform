@@ -5389,8 +5389,16 @@ function saveCari(entry) {
     entry.id = generateNumericId();
     entry.createdAt = _nowTso();
     entry.createdBy = _CUo()?.id;
-    entry.cariType = entry.cariType || 'potansiyel';
-    entry.status = 'pending_approval';
+    // Admin/yönetici: evrak zorunluluğu atla, doğrudan onaylı
+    if (_isManagerO()) {
+      entry.cariType = entry.cariType || 'onayli';
+      entry.status = 'active';
+      entry.approvedBy = _CUo()?.id;
+      entry.approvedAt = _nowTso();
+    } else {
+      entry.cariType = entry.cariType || 'potansiyel';
+      entry.status = 'pending_approval';
+    }
     if (!entry.contacts) entry.contacts = [];
     if (!entry.documents) entry.documents = [];
     if (!entry.changeHistory) entry.changeHistory = [];
@@ -5735,7 +5743,7 @@ function renderCari() {
       + '</div>';
   }
 
-  var all = loadCari();
+  var all = loadCari().filter(function(c) { return !c.isDeleted; });
   var search = (document.getElementById('cari-search')?.value || '').toLowerCase();
   var typeF = document.getElementById('cari-type-f')?.value || '';
   var stageF = document.getElementById('cari-stage-f')?.value || '';
@@ -5751,6 +5759,66 @@ function renderCari() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var cont = document.getElementById('cari-list');
   if (!cont) return;
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var today = _todayStr();
+
+  // ── İstatistik paneli ──────────────────────────────────────────
+  var statsEl = document.getElementById('cari-stats');
+  if (!statsEl) {
+    statsEl = document.createElement('div');
+    statsEl.id = 'cari-stats';
+    var listParent = cont.parentElement;
+    if (listParent) listParent.insertBefore(statsEl, cont);
+  }
+  var potCount = all.filter(function(c) { return (c.cariType || 'potansiyel') === 'potansiyel' && c.status !== 'rejected'; }).length;
+  var aktCount = all.filter(function(c) { return c.cariType === 'aktif'; }).length;
+  var onayCount = all.filter(function(c) { return c.cariType === 'onayli'; }).length;
+  var redCount = all.filter(function(c) { return c.status === 'rejected'; }).length;
+  var toplamBorc = odm.filter(function(o) { return !o.paid && !o.isDeleted; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+  var toplamAlacak = tah.filter(function(t) { return !t.collected && !t.isDeleted; }).reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+  statsEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:8px 12px;border-bottom:1px solid var(--b);background:var(--sf)">'
+    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:var(--t)">' + all.length + '</div><div style="font-size:9px;color:var(--t3)">Toplam</div></div>'
+    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#3B82F6">' + potCount + '</div><div style="font-size:9px;color:var(--t3)">🔵 Potansiyel</div></div>'
+    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#F59E0B">' + aktCount + '</div><div style="font-size:9px;color:var(--t3)">🟡 Aktif</div></div>'
+    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#16A34A">' + onayCount + '</div><div style="font-size:9px;color:var(--t3)">🟢 Onaylı</div></div>'
+    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#DC2626">₺' + Math.round(toplamBorc).toLocaleString('tr-TR') + '</div><div style="font-size:9px;color:var(--t3)">Toplam Borç</div></div>'
+    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#16A34A">₺' + Math.round(toplamAlacak).toLocaleString('tr-TR') + '</div><div style="font-size:9px;color:var(--t3)">Toplam Alacak</div></div>'
+  + '</div>';
+
+  // ── Cari durum rengi hesaplama ─────────────────────────────────
+  function _getCariStatusColor(c) {
+    var cOdm = odm.filter(function(o) { return !o.isDeleted && (o.cariName === c.name); });
+    var gecik = cOdm.filter(function(o) { return !o.paid && o.due && o.due < today; });
+    var yakin = cOdm.filter(function(o) { return !o.paid && o.due && o.due >= today && o.due <= new Date(new Date().getTime() + 7*86400000).toISOString().slice(0,10); });
+    var cLimit = c.creditLimit || c.limitAmount || 0;
+    var unpaid = cOdm.filter(function(o) { return !o.paid; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    // Kırmızı: gecikmiş veya limit aşımı
+    if (gecik.length > 0 || (cLimit > 0 && unpaid > cLimit)) return { icon: '🔴', color: '#DC2626', label: 'Riskli' };
+    // Sarı: 7 gün içinde vade
+    if (yakin.length > 0) return { icon: '🟡', color: '#F59E0B', label: 'Dikkat' };
+    // Kupa: son 6 ayda tüm ödemeler zamanında
+    var sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    var sixMonStr = sixMonthsAgo.toISOString().slice(0, 10);
+    var recentOdm = cOdm.filter(function(o) { return o.due && o.due >= sixMonStr; });
+    var allOnTime = recentOdm.length >= 3 && recentOdm.every(function(o) { return o.paid; });
+    if (allOnTime) return { icon: '🏆', color: '#D4A017', label: 'Mükemmel' };
+    // Yeşil: normal
+    return { icon: '🟢', color: '#16A34A', label: 'İyi' };
+  }
+
+  // ── Toplu işlem toolbar (admin) ────────────────────────────────
+  var bulkBar = document.getElementById('cari-bulk-bar');
+  if (!bulkBar && _isManagerO()) {
+    bulkBar = document.createElement('div');
+    bulkBar.id = 'cari-bulk-bar';
+    bulkBar.style.cssText = 'display:none;padding:6px 12px;background:#FEF2F2;border-bottom:1px solid #FECACA;align-items:center;gap:8px';
+    bulkBar.innerHTML = '<span style="font-size:11px;color:#991B1B;font-weight:600" id="cari-bulk-count">0 seçili</span>'
+      + '<button onclick="window._cariBulkDelete()" class="btn btns" style="font-size:10px;color:#DC2626">🗑 Seçilenleri Sil</button>'
+      + '<button onclick="window._cariBulkClear()" class="btn btns" style="font-size:10px">İptal</button>';
+    var listParent2 = cont.parentElement;
+    if (listParent2) listParent2.insertBefore(bulkBar, cont);
+  }
 
   if (!fl.length) {
     cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px;margin-bottom:8px">🏢</div><div>Cari bulunamadı</div></div>';
@@ -5799,8 +5867,10 @@ function renderCari() {
     var stageBadge = stage === 'onayli' ? '🟢' : stage === 'aktif' ? '🟡' : '🔵';
     var statusBadge = c.status === 'rejected' ? ' <span style="font-size:9px;color:#DC2626;font-weight:600">Reddedildi</span>' : '';
     var stageLabel = stage === 'onayli' ? 'Onaylı' : stage === 'aktif' ? 'Aktif' : 'Potansiyel';
-    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
-      + '<span style="font-size:14px">' + stageBadge + '</span>'
+    var sc = _getCariStatusColor(c);
+    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
+      + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
+      + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
       + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + statusBadge + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
     + '</div>';
@@ -5851,6 +5921,7 @@ function _renderCariDetail(id) {
         + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
         + ((c.cariType === 'potansiyel' || !c.cariType) ? '<button class="btn btns" onclick="window._upgradeCariToActive(' + c.id + ')" style="font-size:11px;color:#F59E0B">⬆ Aktif Yap</button>' : '')
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
+        + (_isManagerO() ? '<button class="btn btns" onclick="window._assignCariReview(' + c.id + ')" style="font-size:11px;color:#6366F1">👁 İncelet</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
         + '<button class="btn btns" onclick="window.confirmModal(\'Bu cariyi silmek istediğinizden emin misiniz?\',{title:\'Cari Sil\',danger:true,confirmText:\'Evet\',onConfirm:function(){deleteCari(' + c.id + ');_cariSelectedId=null;renderCari()}})" style="font-size:11px;color:#DC2626">🗑</button>'
       + '</div>'
@@ -6743,6 +6814,92 @@ function _insertCariDemoData() {
 }
 
 window._insertCariDemoData = _insertCariDemoData;
+
+/** Toplu seçim sayacı güncelle */
+window._cariUpdateBulkCount = function() {
+  var checked = document.querySelectorAll('.cari-bulk-cb:checked');
+  var bar = document.getElementById('cari-bulk-bar');
+  var cnt = document.getElementById('cari-bulk-count');
+  if (bar) bar.style.display = checked.length ? 'flex' : 'none';
+  if (cnt) cnt.textContent = checked.length + ' seçili';
+};
+
+/** Toplu seçimi temizle */
+window._cariBulkClear = function() {
+  document.querySelectorAll('.cari-bulk-cb:checked').forEach(function(cb) { cb.checked = false; });
+  window._cariUpdateBulkCount();
+};
+
+/** Toplu cari silme (soft delete) */
+window._cariBulkDelete = function() {
+  if (!_isManagerO()) return;
+  var ids = [];
+  document.querySelectorAll('.cari-bulk-cb:checked').forEach(function(cb) { ids.push(parseInt(cb.value)); });
+  if (!ids.length) return;
+  window.confirmModal(ids.length + ' cari silinecek. Emin misiniz?', {
+    title: 'Toplu Cari Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var d = loadCari();
+      ids.forEach(function(id) {
+        var c = d.find(function(x) { return x.id === id; });
+        if (c) { c.isDeleted = true; c.deletedAt = _nowTso(); c.deletedBy = _CUo()?.id; }
+      });
+      storeCari(d);
+      window.toast?.(ids.length + ' cari silindi', 'ok');
+      window.logActivity?.('cari', 'Toplu silme: ' + ids.length + ' cari');
+      renderCari();
+    }
+  });
+};
+
+/** Admin: cariyi başka personele incelet */
+window._assignCariReview = function(cariId) {
+  if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
+  var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var c = loadCari().find(function(x) { return x.id === cariId; });
+  if (!c) return;
+
+  var ex = document.getElementById('mo-cari-review'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-cari-review'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">👁 Cari İncelet — ' + esc(c.name) + '</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
+    + '<div><div class="fl">İNCELEYECEK KİŞİ *</div><select class="fi" id="cr-user">'
+    + users.map(function(u) { return '<option value="' + u.id + '">' + esc(u.name) + ' (' + u.role + ')</option>'; }).join('')
+    + '</select></div>'
+    + '<div><div class="fl">NOT</div><textarea class="fi" id="cr-note" rows="2" style="resize:none" placeholder="İnceleme talimatı..."></textarea></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-cari-review\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._sendCariReview(' + cariId + ')">📤 Gönder</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._sendCariReview = function(cariId) {
+  var uid = parseInt(document.getElementById('cr-user')?.value || '0');
+  var note = (document.getElementById('cr-note')?.value || '').trim();
+  if (!uid) { window.toast?.('Kişi seçin', 'err'); return; }
+  var d = loadCari();
+  var c = d.find(function(x) { return x.id === cariId; });
+  if (!c) return;
+  c.reviewAssignedTo = uid;
+  c.reviewAssignedAt = _nowTso();
+  c.reviewAssignedBy = _CUo()?.id;
+  c.reviewNote = note;
+  c.reviewStatus = 'pending';
+  if (!c.changeHistory) c.changeHistory = [];
+  c.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: ['İnceleme talimatı verildi'] });
+  storeCari(d);
+  window.addNotif?.('👁', 'Cari inceleme talimatı: ' + c.name + ' — ' + note, 'warn', 'cari:' + cariId, uid);
+  window.toast?.('İnceleme talimatı gönderildi ✓', 'ok');
+  document.getElementById('mo-cari-review')?.remove();
+  renderCari();
+};
 
 /** Cari belge yükleme (PDF/JPG/PNG, max 5MB) */
 window._qcUploadDoc = function(docType) {
