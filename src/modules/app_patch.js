@@ -2024,7 +2024,186 @@ window._stNavlunDagit = function() {
   window.toast?.('Navlun ₺'+navlun+' → '+rows.length+' satıra dağıtıldı','ok');
 };
 
-console.log('[app_patch] İhracat ekosistemi + satış teklifi kapsamlı patch tamamlandı');
+// ════════════════════════════════════════════════════════════════
+// FIX 1 — ŞARTLAR YÖNETİMİ
+// ════════════════════════════════════════════════════════════════
+
+// Varsayılan sabit şartlar
+(function _ensureDefaultSartlar() {
+  var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
+  if (d.length) return;
+  var defaults = [
+    'Payment: 35% deposit, 65% before dispatch/shipment',
+    'Tax Note: 20% VAT applicable for domestic shipments only',
+    'Bank Charges: All transfer fees outside Türkiye belong to buyer',
+    'Disputes: İstanbul Courts shall have jurisdiction',
+    'Insurance: Buyer\'s responsibility unless CIF terms',
+    'Attention: Goods must be inspected within 14 days from delivery',
+  ];
+  defaults.forEach(function(s,i){d.push({id:Date.now()+i,text:s,sabit:true,ts:new Date().toISOString()});});
+  if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
+})();
+
+window.openTeklifSartlarPanel = function() {
+  if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
+  var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var ex = document.getElementById('mo-sartlar'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-sartlar';
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">Teklif Şartları Yönetimi</div>'
+    + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+    + d.map(function(s){return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b)">'
+      + '<span style="flex:1;font-size:11px;color:var(--t)">'+esc(s.text)+'</span>'
+      + '<span style="font-size:9px;color:var(--t3)">'+(s.sabit?'Sabit':'Değişken')+'</span>'
+      + '<button onclick="window._delSart('+s.id+')" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px">×</button></div>';}).join('')
+    + '<div style="display:flex;gap:6px;margin-top:10px">'
+    + '<input class="fi" id="sart-yeni" placeholder="Yeni şart ekle..." style="flex:1;font-size:11px">'
+    + '<button onclick="window._addSart()" style="padding:4px 12px;border:none;border-radius:5px;background:var(--ac);color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Ekle</button></div>'
+    + '</div><div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right"><button class="btn" onclick="document.getElementById(\'mo-sartlar\')?.remove()">Kapat</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+window._addSart = function() {
+  var text = (document.getElementById('sart-yeni')?.value||'').trim();
+  if (!text) return;
+  var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
+  d.push({id:Date.now(),text:text,sabit:true,ts:new Date().toISOString()});
+  if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
+  window.openTeklifSartlarPanel();
+};
+window._delSart = function(id) {
+  var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
+  d = d.filter(function(s){return s.id!==id;});
+  if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
+  window.openTeklifSartlarPanel();
+};
+
+// ════════════════════════════════════════════════════════════════
+// FIX 2 — GEÇMİŞ SATIŞ FİYATI
+// ════════════════════════════════════════════════════════════════
+window._showPriceHistory = function(urunId) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var matches = [];
+  d.forEach(function(t){
+    (t.urunler||[]).forEach(function(u){
+      if (u.urunId===urunId||u.urunAdi===String(urunId)) {
+        matches.push({tarih:(t.ts||'').slice(0,10),teklifNo:t.teklifNo,musteri:t.musteri,fiyat:u.satisFiyat,doviz:t.paraBirimi||'USD'});
+      }
+    });
+  });
+  matches.sort(function(a,b){return (b.tarih||'').localeCompare(a.tarih||'');});
+  if (!matches.length) { window.toast?.('Bu ürün için geçmiş satış yok','info'); return; }
+  var ex = document.getElementById('mo-price-hist'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-price-hist';
+  mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:12px 20px;border-bottom:1px solid var(--b);font-size:13px;font-weight:700">Geçmiş Satış Fiyatları</div>'
+    + '<div style="padding:12px 20px">'
+    + matches.slice(0,5).map(function(m){return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span>'+esc(m.tarih)+' · '+esc(m.teklifNo||'')+'</span><span style="color:var(--t3)">'+esc(m.musteri||'')+'</span><span style="font-weight:600">'+m.fiyat?.toFixed(2)+' '+m.doviz+'</span></div>';}).join('')
+    + '</div><div style="padding:8px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right"><button class="btn" onclick="document.getElementById(\'mo-price-hist\')?.remove()">Kapat</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+
+// ════════════════════════════════════════════════════════════════
+// FIX 3 — TESLİM ŞEKLİ → OTOMATİK ALT GÖREV
+// ════════════════════════════════════════════════════════════════
+window._checkIncotermsGorev = function(teklifId) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var t = d.find(function(x){return x.id===teklifId;});
+  if (!t) return;
+  var tasks = typeof loadTasks==='function'?loadTasks():[];
+  var teslim = t.teslimSekli||'';
+  var jobId = t.jobId||t.teklifNo;
+  // Mükerrer kontrol
+  var exists = tasks.some(function(tk){return tk.title && tk.title.indexOf(t.teklifNo)!==-1 && !tk.done;});
+  if (exists) return;
+  var now = new Date().toISOString();
+  var deadline = t.gecerlilikTarihi || new Date(Date.now()+14*86400000).toISOString().slice(0,10);
+  var cu = window.Auth?.getCU?.();
+  if (teslim==='CFR'||teslim==='CIF'||teslim==='CIP') {
+    tasks.push({id:typeof generateNumericId==='function'?generateNumericId():Date.now(),title:'Forwarder\'dan navlun fiyatı iste — '+t.teklifNo,jobId:jobId,pri:2,due:deadline,uid:cu?.id,status:'todo',done:false,createdAt:now,createdBy:cu?.id,source:'incoterms'});
+    window.addNotif?.('📋','Yeni görev: Navlun fiyatı iste — '+t.teklifNo,'info','pusula',cu?.id);
+  }
+  if (teslim==='CIF'||teslim==='CIP') {
+    tasks.push({id:(typeof generateNumericId==='function'?generateNumericId():Date.now())+1,title:'Sigortacıdan fiyat iste — '+t.teklifNo,jobId:jobId,pri:2,due:deadline,uid:cu?.id,status:'todo',done:false,createdAt:now,createdBy:cu?.id,source:'incoterms'});
+    window.addNotif?.('📋','Yeni görev: Sigorta fiyatı iste — '+t.teklifNo,'info','pusula',cu?.id);
+  }
+  if (typeof saveTasks==='function') saveTasks(tasks);
+};
+
+// ════════════════════════════════════════════════════════════════
+// FIX 4 — SİSTEM AYARLARI PANELİ
+// ════════════════════════════════════════════════════════════════
+window.openSistemBilgileri = function() {
+  if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  // Depolama hesapla
+  var totalLS = 0;
+  try { for (var k in localStorage) { if (localStorage.hasOwnProperty(k)) totalLS += (localStorage[k]||'').length; } } catch(e){}
+  var lsMB = (totalLS / 1024 / 1024).toFixed(2);
+  // Koleksiyon sayıları
+  var kolSayilari = [
+    {ad:'users',sayi:(typeof loadUsers==='function'?loadUsers():[]).length},
+    {ad:'tasks',sayi:(typeof loadTasks==='function'?loadTasks():[]).length},
+    {ad:'odemeler',sayi:(typeof loadOdm==='function'?loadOdm():[]).length},
+    {ad:'tahsilat',sayi:(typeof loadTahsilat==='function'?loadTahsilat():[]).length},
+    {ad:'satinalma',sayi:(typeof loadSatinalma==='function'?loadSatinalma():[]).length},
+    {ad:'cari',sayi:(typeof loadCari==='function'?loadCari():[]).length},
+    {ad:'urunler',sayi:(typeof loadUrunler==='function'?loadUrunler():[]).length},
+    {ad:'kargo',sayi:(typeof loadKargo==='function'?loadKargo():[]).length},
+    {ad:'konteyner',sayi:(typeof loadKonteyn==='function'?loadKonteyn():[]).length},
+  ];
+  var toplamKayit = kolSayilari.reduce(function(s,k){return s+k.sayi;},0);
+  var ex = document.getElementById('mo-sistem'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-sistem';
+  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">Sistem Bilgileri</div>'
+    + '<div style="padding:16px 20px;max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">'
+    // A: Veri Tabanı
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Veri Tabanı</div>'
+    + '<div style="font-size:12px;color:var(--t)">Firebase: '+(window.Auth?.getFBDB?.()?'<span style="color:#16A34A">Bağlı</span>':'<span style="color:#DC2626">Bağlı değil</span>')+'</div>'
+    + '<div style="font-size:12px;color:var(--t)">Toplam Kayıt: <b>'+toplamKayit+'</b></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+kolSayilari.map(function(k){return '<span style="font-size:10px;padding:2px 6px;background:var(--s2);border-radius:4px">'+k.ad+': '+k.sayi+'</span>';}).join('')+'</div></div>'
+    // B: Depolama
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Depolama Durumu</div>'
+    + '<div style="font-size:12px">localStorage: <b>'+lsMB+' MB</b> / ~5 MB</div>'
+    + '<div style="height:4px;background:var(--s2);border-radius:2px;margin:4px 0;overflow:hidden"><div style="height:100%;width:'+Math.min(100,parseFloat(lsMB)/5*100)+'%;background:'+(parseFloat(lsMB)>4?'#DC2626':parseFloat(lsMB)>2.5?'#D97706':'#16A34A')+'"></div></div>'
+    + '<div style="display:flex;gap:8px;margin-top:6px;font-size:11px">'
+    + '<div style="padding:4px 8px;background:#16A34A11;border-radius:4px;color:#16A34A">Firestore: ✅ İyi</div>'
+    + '<div style="padding:4px 8px;background:#D9770611;border-radius:4px;color:#D97706">Görseller: ⚠️ Vasat</div>'
+    + '<div style="padding:4px 8px;background:#DC262611;border-radius:4px;color:#DC2626">Yedekleme: ❌ Zayıf</div></div></div>'
+    // C: Yedekleme
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Yedekleme</div>'
+    + '<div style="display:flex;gap:6px"><button onclick="window._exportAllData()" style="padding:5px 12px;border:0.5px solid var(--ac);border-radius:6px;background:none;color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit">Tüm Veriyi İndir (JSON)</button></div>'
+    + '<div style="margin-top:6px;font-size:10px;color:var(--t3);padding:6px;background:var(--s2);border-radius:4px">Öneri: Firebase Blaze planına geçerek otomatik yedek aktif edin.</div></div>'
+    // D: Güncelleme Geçmişi
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Son Güncellemeler</div>'
+    + '<div style="font-size:10px;color:var(--t2);max-height:120px;overflow-y:auto">'
+    + ['Dashboard kontrol merkezi — 9 bölüm','İhracat ekosistemi — IMO+7gün+JobID','Inline Excel form — satış+alış','3 format PDF — A/B/C','Satış teklifi — PI+PR+revizyon','Demo veri — 20 ürün+5 müşteri','Topbar profesyonel SVG ikonlar','Nakit akışı B tasarımı','Cari 3 aşamalı sistem+VKN','Firestore merge stratejisi'].map(function(g,i){return '<div style="padding:3px 0;border-bottom:0.5px solid var(--b)">'+g+'</div>';}).join('')
+    + '</div></div>'
+    + '</div><div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right"><button class="btn" onclick="document.getElementById(\'mo-sistem\')?.remove()">Kapat</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+
+/** Tüm veriyi JSON export */
+window._exportAllData = function() {
+  var data = {};
+  var keys = ['ak_u3','ak_tk2','ak_odm1','ak_tahsilat1','ak_satinalma1','ak_cari1','ak_urunler1','ak_alis_teklif1','ak_satis_teklif1','ak_krg1','ak_konteyn1','ak_bankalar1','ak_navlun1','ak_notif1','ak_act1'];
+  keys.forEach(function(k) { try { data[k] = JSON.parse(localStorage.getItem(k)||'[]'); } catch(e) { data[k] = []; } });
+  var blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'duay-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  window.toast?.('Yedek indirildi ✓','ok');
+};
+
+console.log('[app_patch] Tüm sistemler aktif');
 
 // ════════════════════════════════════════════════════════════════
 // ARŞİV & BELGELER HUB — birleşik panel
