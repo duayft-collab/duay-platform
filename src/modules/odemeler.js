@@ -606,6 +606,7 @@ function setOdmTab(tab) {
   if (thead) thead.style.display = (tab==='kredi_k'||tab==='abonelik'||tab==='tahsilat'||tab==='projeksiyon') ? 'none' : 'grid';
   renderOdemeler();
 }
+window.setOdmTab = setOdmTab;
 
 // ════════════════════════════════════════════════════════════════
 // KREDİ KARTI ÖZEL KART  [v2.0]
@@ -4726,6 +4727,31 @@ function openCurrencyReport() {
   setTimeout(() => mo.classList.add('open'), 10);
 }
 window.openCurrencyReport = openCurrencyReport;
+
+/** Döviz raporu Excel export */
+function exportCurrencyReportXlsx() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var items = window.loadOdm ? loadOdm() : [];
+  var rates = _odmGetRates();
+  var byCur = {};
+  items.filter(function(o) { return !o.isDeleted && !o.paid; }).forEach(function(o) {
+    var cur = o.currency || 'TRY';
+    if (!byCur[cur]) byCur[cur] = { total: 0, count: 0 };
+    byCur[cur].total += parseFloat(o.amount) || 0;
+    byCur[cur].count++;
+  });
+  var rows = [['Para Birimi', 'Toplam', 'Kur', 'TL Karşılığı', 'Kayıt Sayısı']];
+  Object.entries(byCur).forEach(function(e) {
+    var kur = rates[e[0]] || 1;
+    rows.push([e[0], e[1].total, kur, Math.round(e[1].total * kur), e[1].count]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Döviz Raporu');
+  XLSX.writeFile(wb, 'doviz-raporu-' + _todayStr() + '.xlsx');
+  window.toast?.('Döviz raporu indirildi ✓', 'ok');
+}
+window.exportCurrencyReportXlsx = exportCurrencyReportXlsx;
 
 // ─────────────────────────────────────────────────────────────────
 // 8. ÖDEME TAKVİMİ GÖRÜNÜMİ
