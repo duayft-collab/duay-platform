@@ -639,6 +639,11 @@ function _initApp(user) {
     try { const q = await _fetchDailyQuote(); if (q && window.setPusQuote) window.setPusQuote(q); } catch(e) {}
   }, 3000);
 
+  // Firebase kullanıcı sync — login'de otomatik kontrol
+  setTimeout(function() {
+    try { _autoFirebaseUserSync(); } catch(e) {}
+  }, 3000);
+
   // Kargo & Konteyner polling
   setTimeout(() => {
     try { window.startKargoPolling?.();   } catch (e) {}
@@ -2008,6 +2013,46 @@ window.goTo             = goTo;
  * Aktif paneli tespit edip render fonksiyonunu çağırır.
  * İlk veri yüklemesi sonrası çağrılır.
  */
+/**
+ * Otomatik Firebase kullanıcı senkronizasyonu.
+ * Firebase Auth'ta olmayan platformdaki kullanıcıları pasif olarak işaretler.
+ * Sadece admin login'inde çalışır.
+ */
+async function _autoFirebaseUserSync() {
+  var cu = window.Auth?.getCU?.();
+  if (!cu || cu.role !== 'admin') return;
+  var fbAuth = window.Auth?.getFBAuth?.();
+  if (!fbAuth) return;
+  var users = loadUsers();
+  var changed = false;
+  for (var i = 0; i < users.length; i++) {
+    var u = users[i];
+    if (!u.email || u.status === 'inactive' || u.isDeleted) continue;
+    try {
+      var methods = await fbAuth.fetchSignInMethodsForEmail(u.email);
+      if (!methods || methods.length === 0) {
+        console.warn('[UserSync] Firebase Auth\'ta yok — pasifleştiriliyor:', u.email);
+        u.status = 'inactive';
+        u._fbSyncNote = 'Firebase Auth\'ta kayıtlı değil — otomatik pasifleştirildi';
+        u._fbSyncAt = nowTs();
+        changed = true;
+      }
+    } catch(e) {
+      if (e.code === 'auth/user-not-found') {
+        u.status = 'inactive';
+        u._fbSyncNote = 'Firebase Auth\'ta bulunamadı';
+        u._fbSyncAt = nowTs();
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    saveUsers(users);
+    console.info('[UserSync] Kullanıcı listesi güncellendi — Firebase ile senkronize');
+    if (typeof window.renderAdmin === 'function') window.renderAdmin();
+  }
+}
+
 window._renderActivePanel = function() {
   var activePanel = document.querySelector('.panel.on');
   if (!activePanel) return;

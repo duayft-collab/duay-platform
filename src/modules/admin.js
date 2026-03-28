@@ -562,10 +562,27 @@ function deleteUser(id) {
       trash.unshift({ ...u, _trashType: 'user', _deletedAt: nowTs(), _deletedBy: _getCU()?.id });
       localStorage.setItem('ak_trash', JSON.stringify(trash));
 
-      saveUsers(users.filter(x => x.id !== id));
+      // Soft-delete: status inactive olarak işaretle
+      u.status = 'inactive';
+      u.deletedAt = nowTs();
+      u.deletedBy = _getCU()?.id;
+      u.isDeleted = true;
+      saveUsers(users);
+
+      // Firebase Auth'tan da sil (client-side: sadece mevcut kullanıcı kendini silebilir,
+      // başkasını silmek Admin SDK gerektirir — burada status:inactive ile pasifleştiriyoruz)
+      try {
+        var fbAuth = window.Auth?.getFBAuth?.();
+        if (fbAuth && u.email) {
+          // Firebase client SDK'da başka kullanıcıyı silme imkanı yok
+          // Ama sign-in methods'u kontrol edip log bırakabiliriz
+          console.info('[Admin] Kullanıcı pasifleştirildi:', u.email, '— Firebase Auth silme Admin SDK gerektirir');
+        }
+      } catch(e) {}
+
       renderAdmin();
       logActivity('user', `Kullanıcı silindi: "${u.name}" (${u.email})`);
-      window.toast?.(`${u.name} silindi (çöp kutusundan geri alınabilir)`, 'ok');
+      window.toast?.(`${u.name} pasifleştirildi (çöp kutusundan geri alınabilir)`, 'ok');
     }
   });
 }
