@@ -785,7 +785,7 @@ function renderPusulaList(fl, users, todayS, cont) {
       </div>
       <div class="tk-body">
         <div class="tk-name" style="${isDone ? '' : 'font-weight:600'}">
-          ${t.title}
+          ${t.jobId ? `<span style="font-size:9px;font-family:monospace;color:var(--t3);background:var(--s2);padding:1px 5px;border-radius:3px;margin-right:4px">${t.jobId}</span>` : ''}${t.title}
           ${!isDone && (t.participants || []).includes(cu?.id) ? ` <span style="font-size:9px;background:var(--al);color:var(--ac);padding:1px 6px;border-radius:4px;font-weight:600">✅ Katılımcı</span>` : ''}
           ${!isDone && (t.viewers || []).includes(cu?.id) ? ` <span style="font-size:9px;background:rgba(139,92,246,.1);color:#8B5CF6;padding:1px 6px;border-radius:4px;font-weight:600">👁 İzleyici</span>` : ''}
         </div>
@@ -1654,6 +1654,9 @@ function openAddTask() {
       if (uid > 0) s.value = String(uid);
     }
   }
+  // Job ID alanı temizle
+  var jobIdEl = g('tk-jobid-display');
+  if (jobIdEl) jobIdEl.textContent = 'Otomatik atanacak';
   st('mo-tk-t', '➕ Görev Ekle');
   window.openMo?.('mo-task');
   setTimeout(() => populateTaskParticipants(null), 50);
@@ -1687,6 +1690,9 @@ function editTask(id) {
   if (g('tk-fp') && t.file) g('tk-fp').textContent = '📎 ' + t.file.name + ' (kayıtlı)';
   const sel = g('tk-user');
   if (sel) sel.value = t.uid;
+  // Job ID göster
+  var jobIdEl2 = g('tk-jobid-display');
+  if (jobIdEl2) jobIdEl2.textContent = t.jobId || '—';
   st('mo-tk-t', '✏️ Görevi Düzenle');
   window.openMo?.('mo-task');
   setTimeout(() => populateTaskParticipants(t), 50);
@@ -1786,6 +1792,10 @@ function saveTask() {
         ? window._pendingSubTasks.map((s, i) => ({ ...s, id: _nid + i + 1 }))
         : [];
       window._pendingSubTasks = null; // temizle
+      // Otomatik Job ID üretimi
+      var _yr = new Date().getFullYear();
+      var _jobSeq = String(d.filter(function(t) { return t.jobId && t.jobId.indexOf('JOB-' + _yr) === 0; }).length + 1).padStart(4, '0');
+      fields.jobId = 'JOB-' + _yr + '-' + _jobSeq;
       d.push({ id: _nid, subTasks: _initSubs, ...fields });
       logActivity('task', `"${title}" ekledi`);
       window.toast?.('Görev eklendi ✓', 'ok');
@@ -3035,6 +3045,12 @@ function saveEtkinlik(){
   renderEtkinlik();
   window.logActivity?.('view','"'+name+'" etkinliği kaydedildi');
   window.toast?.(name+' kaydedildi ✓','ok');
+  // Yöneticilere bildirim
+  if (!eid) {
+    var cu = _getCU();
+    var mgrs = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active' && u.id !== cu?.id; });
+    mgrs.forEach(function(m) { window.addNotif?.('🎪', 'Yeni etkinlik: ' + name + ' (' + (cu?.name || '') + ')', 'info', 'etkinlik', m.id); });
+  }
 }
 
 function delEtkinlik(id){if(!window.isAdmin?.())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}

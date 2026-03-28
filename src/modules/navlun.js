@@ -161,8 +161,10 @@ const NAVLUN_STATUS = {
 };
 const PARA_BIRIMLERI = ['USD','EUR','TRY','GBP','CNY'];
 
-function loadNavlun()   { try { const d=JSON.parse(localStorage.getItem('ak_navlun1')||'[]'); return Array.isArray(d)?d:[]; } catch(e){ return []; } }
-function storeNavlun(d) { localStorage.setItem('ak_navlun1',JSON.stringify(d.slice(0,500))); }
+// loadNavlun / storeNavlun → database.js'te tanımlı (Firestore sync dahil)
+// Fallback: database.js yüklenmemişse
+var loadNavlun = window.loadNavlun || function() { try { var d=JSON.parse(localStorage.getItem('ak_navlun1')||'[]'); return Array.isArray(d)?d:[]; } catch(e){ return []; } };
+var storeNavlun = window.storeNavlun || function(d) { localStorage.setItem('ak_navlun1',JSON.stringify(d.slice(0,500))); };
 
 // ═══════════════════════════════════════════════════════════════
 // RENDER
