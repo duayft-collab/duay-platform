@@ -44,7 +44,7 @@ function _injectSAPanel() {
 
   panel.innerHTML = ''
     // TOPBAR — flat modern
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:100">'
       + '<div>'
         + '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Satın Alma</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="sa-sub">PI & Sipariş Takip</div>'
