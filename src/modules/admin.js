@@ -458,7 +458,8 @@ function saveAdminUser() {
   saveUsers(users);
   window.closeMo?.('mo-admin-user');
   renderUsers();
-  setTimeout(function() { window._adminSaving = false; }, 2000);
+  // 5s pencere — Firestore yavaşsa onSnapshot 3s sonra gelebilir
+  setTimeout(function() { window._adminSaving = false; }, 5000);
 }
 
 /** Role göre modül checkboxlarını otomatik seç */

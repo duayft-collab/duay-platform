@@ -259,8 +259,11 @@ function _injectIkHub() {
         <div class="ik-frow">
           <div class="ik-field"><label class="ik-label">Adayın Adı Soyadı</label><input id="ikh-mf-aday" class="ik-input" placeholder="Ad Soyad"/></div>
           <div class="ik-field"><label class="ik-label">Pozisyon</label><input id="ikh-mf-pozisyon" class="ik-input" placeholder="ör. Yazılım Geliştirici"/></div>
-          <div class="ik-field"><label class="ik-label">Görüşme Tarihi & Saati</label><input id="ikh-mf-tarih" type="datetime-local" class="ik-input"/></div>
+          <div class="ik-field"><label class="ik-label">Görüşme Tarihi</label><input id="ikh-mf-tarih" type="date" class="ik-input"/></div>
+          <div class="ik-field"><label class="ik-label">Saat</label><input id="ikh-mf-saat" type="time" class="ik-input" value="10:00"/></div>
           <div class="ik-field"><label class="ik-label">Görüşen Kişi</label><input id="ikh-mf-gorusen" class="ik-input" placeholder="İsim"/></div>
+          <div class="ik-field"><label class="ik-label">Görüşme Türü</label><select id="ikh-mf-tur" class="ik-input"><option value="yuzyuze">Yüz Yüze</option><option value="online">Online</option></select></div>
+          <div class="ik-field"><label class="ik-label">Online Link</label><input id="ikh-mf-link" class="ik-input" placeholder="https://meet.google.com/..."/></div>
         </div>
       </div>
       <div class="ik-card" style="margin-bottom:12px">
@@ -3336,6 +3339,13 @@ function _ikSaveInterview() {
   });
   const iqList = document.getElementById('ikh-iq-list');
   if (iqList) iqList.id = 'iq-list';
+  // Randevu tarihi ve saati topla
+  var _interviewDate = document.getElementById('mf-tarih')?.value || document.getElementById('ikh-mf-tarih')?.value || '';
+  var _interviewTime = document.getElementById('ikh-mf-saat')?.value || '10:00';
+  var _interviewType = document.getElementById('ikh-mf-tur')?.value || 'yuzyuze';
+  var _interviewLink = document.getElementById('ikh-mf-link')?.value || '';
+  var _candidateName = document.getElementById('mf-aday')?.value || document.getElementById('ikh-mf-aday')?.value || '';
+
   try { if(typeof saveInterview === 'function') saveInterview(); } catch(e) { console.warn(e); }
   finally {
     ['mf-aday','mf-pozisyon','mf-tarih','mf-gorusen','mf-not'].forEach(id => {
@@ -3344,6 +3354,27 @@ function _ikSaveInterview() {
     });
     const iq = document.getElementById('iq-list');
     if (iq) iq.id = 'ikh-iq-list';
+  }
+  // Yöneticiye bildirim + takvime ekle
+  if (_candidateName && _interviewDate) {
+    var mgrs = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
+    var cuName = (typeof window.CU === 'function' ? window.CU()?.name : '') || '';
+    mgrs.forEach(function(m) {
+      window.addNotif?.('📝', 'Mülakat randevusu: ' + _candidateName + ' — ' + _interviewDate + ' ' + _interviewTime + ' (' + cuName + ')', 'info', 'ik-hub', m.id);
+    });
+    if (typeof loadCal === 'function' && typeof saveCal === 'function') {
+      var cal = loadCal();
+      cal.push({
+        id: (typeof generateNumericId === 'function' ? generateNumericId() : Date.now()),
+        title: 'Mülakat: ' + _candidateName,
+        date: _interviewDate, time: _interviewTime, type: 'toplanti',
+        desc: (_interviewType === 'online' ? 'Online — ' + _interviewLink : 'Yüz yüze'),
+        own: 0, status: 'approved',
+        createdBy: (typeof window.CU === 'function' ? window.CU()?.id : null),
+      });
+      saveCal(cal);
+    }
+    window.toast?.('Mülakat randevusu + takvime eklendi ✓', 'ok');
   }
 }
 

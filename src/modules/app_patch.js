@@ -189,6 +189,49 @@ window.saveKonteyn = window.saveKonteyn || function() {
   if (typeof window.Lojistik?.render === 'function') window.Lojistik.render();
 };
 
+/** Konteynır izleme izni yönetimi (admin only) */
+window.manageKonteynViewers = function(id) {
+  if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var k = konts.find(function(x) { return x.id === id; });
+  if (!k) return;
+  var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var viewers = k.viewers || [];
+  var ex = document.getElementById('mo-ktn-viewers'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-ktn-viewers'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">👁 Konteyner İzleme İzni — ' + esc(k.no) + '</div>'
+    + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+    + users.map(function(u) {
+        var isViewer = viewers.includes(u.id);
+        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px">'
+          + '<input type="checkbox" class="ktn-viewer-cb" value="' + u.id + '"' + (isViewer ? ' checked' : '') + ' style="accent-color:var(--ac)">'
+          + esc(u.name) + ' <span style="color:var(--t3);font-size:10px">(' + u.role + ')</span></label>';
+      }).join('')
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-ktn-viewers\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._saveKtnViewers(' + id + ')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._saveKtnViewers = function(id) {
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
+  var k = konts.find(function(x) { return x.id === id; });
+  if (!k) return;
+  var newViewers = [];
+  document.querySelectorAll('.ktn-viewer-cb:checked').forEach(function(cb) { newViewers.push(parseInt(cb.value)); });
+  k.viewers = newViewers;
+  if (typeof storeKonteyn === 'function') storeKonteyn(konts);
+  document.getElementById('mo-ktn-viewers')?.remove();
+  window.toast?.('İzleme izinleri güncellendi ✓', 'ok');
+};
+
 // openKonteynDetail — Konteyner detay modalı (accordion yapıda)
 window.openKonteynDetail = window.openKonteynDetail || function(id) {
   const konts = typeof loadKonteyn === 'function' ? loadKonteyn() : [];
