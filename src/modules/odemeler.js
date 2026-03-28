@@ -4969,7 +4969,7 @@ function saveCari(entry) {
       return (u.role === 'admin' || u.role === 'manager') && u.status === 'active';
     });
     mgrs.forEach(function(m) {
-      window.addNotif?.('🏢', 'Yeni cari onay bekliyor: ' + (entry.name || '—') + ' (' + (cu?.name || '') + ')', 'warn', 'cari', m.id);
+      window.addNotif?.('🏢', 'Yeni cari onay bekliyor: ' + (entry.name || '—') + ' (' + (cu?.name || '') + ')', 'warn', 'cari:' + entry.id, m.id);
     });
   }
   return entry;
@@ -5002,8 +5002,10 @@ function _rejectCari(id) {
   if (!c) return;
   c.status = 'rejected';
   c.rejectedBy = _CUo()?.id;
+  c.rejectedAt = _nowTso();
   storeCari(d);
   window.toast?.('Cari reddedildi', 'ok');
+  window.addNotif?.('❌', 'Cari reddedildi: ' + c.name, 'err', 'cari', c.createdBy);
   if (typeof renderCari === 'function') renderCari();
 }
 
@@ -5289,18 +5291,58 @@ function renderCari() {
     return;
   }
 
-  cont.innerHTML = fl.map(function(c) {
+  // Onay bekleyen cariler — yönetici için ayrı bölüm
+  var pendingCari = fl.filter(function(c) { return c.status === 'pending_approval'; });
+  var activeCari = fl.filter(function(c) { return c.status !== 'pending_approval'; });
+  var isManager = _isManagerO();
+  var html = '';
+
+  // Onay Bekleyenler bölümü
+  if (pendingCari.length > 0) {
+    html += '<div style="padding:8px 12px;background:#FEF3C7;border-bottom:1px solid #FDE68A">'
+      + '<div style="font-size:11px;font-weight:700;color:#92400E">⏳ Onay Bekleyenler (' + pendingCari.length + ')</div></div>';
+    html += pendingCari.map(function(c) {
+      var isSel = c.id === _cariSelectedId;
+      var createdByUser = (typeof loadUsers === 'function' ? loadUsers() : []).find(function(u) { return u.id === c.createdBy; });
+      return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #FDE68A;cursor:pointer;background:' + (isSel ? '#FEF3C7' : '#FFFBEB') + '">'
+        + '<span style="font-size:14px">⏳</span>'
+        + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:12px;font-weight:600;color:#92400E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + '</div>'
+          + '<div style="font-size:10px;color:#B45309">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer')
+            + (createdByUser ? ' · ' + esc(createdByUser.name) : '') + ' · ' + (c.createdAt || '').slice(0, 10) + '</div>'
+        + '</div>'
+        + (isManager
+          ? '<div style="display:flex;gap:4px;flex-shrink:0">'
+            + '<button onclick="event.stopPropagation();window._approveCari(' + c.id + ')" style="background:#16A34A;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:600" title="Onayla">✓</button>'
+            + '<button onclick="event.stopPropagation();window._rejectCari(' + c.id + ')" style="background:#DC2626;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:600" title="Reddet">✗</button>'
+          + '</div>'
+          : '<span style="font-size:9px;color:#B45309;flex-shrink:0">Onay bekliyor</span>')
+      + '</div>';
+    }).join('');
+  }
+
+  // Aktif cariler bölümü
+  if (activeCari.length > 0 && pendingCari.length > 0) {
+    html += '<div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--b)">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t3)">✅ Aktif Cariler (' + activeCari.length + ')</div></div>';
+  }
+  html += activeCari.map(function(c) {
     var isSel = c.id === _cariSelectedId;
     var typeBadge = c.type === 'musteri' ? '🟢' : c.type === 'tedarikci' ? '🔵' : '⚪';
+    var statusBadge = c.status === 'rejected' ? ' <span style="font-size:9px;color:#DC2626;font-weight:600">Reddedildi</span>' : '';
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + '<span style="font-size:14px">' + typeBadge + '</span>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + statusBadge + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + '</div></div>'
     + '</div>';
   }).join('');
 
-  // İlk cariyi seç
-  if (!_cariSelectedId && fl.length) _cariSelectedId = fl[0].id;
+  cont.innerHTML = html;
+
+  // İlk cariyi seç — pending varsa ilk pending'i, yoksa ilk aktifi
+  if (!_cariSelectedId && fl.length) {
+    _cariSelectedId = pendingCari.length ? pendingCari[0].id : fl[0].id;
+  }
   if (_cariSelectedId) _renderCariDetail(_cariSelectedId);
 }
 
@@ -5341,6 +5383,38 @@ function _renderCariDetail(id) {
         + '<button class="btn btns" onclick="window.confirmModal(\'Bu cariyi silmek istediğinizden emin misiniz?\',{title:\'Cari Sil\',danger:true,confirmText:\'Evet\',onConfirm:function(){deleteCari(' + c.id + ');_cariSelectedId=null;renderCari()}})" style="font-size:11px;color:#DC2626">🗑</button>'
       + '</div>'
     + '</div>'
+    // Onay durumu banner
+    + (function() {
+        if (c.status === 'pending_approval') {
+          var createdByUser = (typeof loadUsers === 'function' ? loadUsers() : []).find(function(u) { return u.id === c.createdBy; });
+          return '<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">'
+            + '<div>'
+              + '<div style="font-size:13px;font-weight:700;color:#92400E">⏳ Onay Bekliyor</div>'
+              + '<div style="font-size:11px;color:#B45309;margin-top:2px">Oluşturan: ' + (createdByUser ? esc(createdByUser.name) : '—') + ' · ' + (c.createdAt || '').slice(0, 16) + '</div>'
+            + '</div>'
+            + (_isManagerO()
+              ? '<div style="display:flex;gap:8px">'
+                + '<button onclick="window._approveCari(' + c.id + ')" class="btn btnp" style="background:#16A34A;border-color:#16A34A;font-size:12px;padding:6px 16px;border-radius:8px">✓ Onayla</button>'
+                + '<button onclick="window._rejectCari(' + c.id + ')" class="btn" style="color:#DC2626;border-color:#DC2626;font-size:12px;padding:6px 16px;border-radius:8px">✗ Reddet</button>'
+              + '</div>'
+              : '')
+          + '</div>';
+        }
+        if (c.status === 'rejected') {
+          return '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 16px;margin-bottom:16px">'
+            + '<div style="font-size:13px;font-weight:700;color:#991B1B">❌ Reddedildi</div>'
+            + '<div style="font-size:11px;color:#B91C1C;margin-top:2px">Reddeden: ' + (c.rejectedBy || '—') + '</div>'
+          + '</div>';
+        }
+        if (c.status === 'active' && c.approvedBy) {
+          var approverUser = (typeof loadUsers === 'function' ? loadUsers() : []).find(function(u) { return u.id === c.approvedBy; });
+          return '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:8px 16px;margin-bottom:16px;display:flex;align-items:center;gap:8px">'
+            + '<span style="font-size:12px;color:#16A34A;font-weight:600">✅ Onaylandı</span>'
+            + '<span style="font-size:10px;color:#15803D">' + (approverUser ? esc(approverUser.name) : '') + ' · ' + (c.approvedAt || '').slice(0, 16) + '</span>'
+          + '</div>';
+        }
+        return '';
+      })()
     // Bento
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Toplam Alacak</div><div style="font-size:18px;font-weight:700;color:#16A34A">₺' + Math.round(totalAlacak).toLocaleString('tr-TR') + '</div></div>'

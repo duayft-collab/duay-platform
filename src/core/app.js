@@ -1254,7 +1254,21 @@ function _renderNotifPanel() {
     storeNotifs(data);
     updateNotifBadge();
     _renderNotifPanel();
-    if (link) { goTo(link); _closeNotifPanel(); }
+    if (link) {
+      // Derin link desteği: "cari:123" → cari panelini aç + ilgili cariyi seç
+      if (link.indexOf(':') !== -1) {
+        var parts = link.split(':');
+        goTo(parts[0]);
+        // Hedef ID ile seçim yap (modül bazlı)
+        var targetId = parseInt(parts[1]);
+        if (parts[0] === 'cari' && targetId && typeof window._selectCari === 'function') {
+          setTimeout(function() { window._selectCari(targetId); }, 100);
+        }
+      } else {
+        goTo(link);
+      }
+      _closeNotifPanel();
+    }
   };
 }
 
