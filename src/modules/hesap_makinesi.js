@@ -84,10 +84,29 @@ function _hmInjectPanel() {
   var visibleMods = HM_MODULES.filter(function(m) { return !m.pro || isProUser; });
   var modCount = visibleMods.length;
 
+  // Hızlı erişim tercihleri
+  var HM_QUICK_KEY = 'ak_hm_quick_icons';
+  var defaultQuick = ['doviz','marj','kurfark','navlun','faiz'];
+  var quickIds = [];
+  try { quickIds = JSON.parse(localStorage.getItem(HM_QUICK_KEY) || 'null') || defaultQuick; } catch(e) { quickIds = defaultQuick; }
+
   p.innerHTML = ''
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:#fff;position:sticky;top:0;z-index:10">'
-      + '<div><div style="font-size:16px;font-weight:700;color:#1C1C1E">🧮 Hesap Makinesi</div><div style="font-size:11px;color:#8E8E93;margin-top:2px">' + modCount + ' modüllü finansal araç seti</div></div>'
-      + '<div style="font-size:10px;color:#8E8E93">USD: ₺' + _hmFmt(HM_RATES.USD) + ' · EUR: ₺' + _hmFmt(HM_RATES.EUR) + ' · Altın: ₺' + _hmFmt(HM_RATES.ALTIN_GR) + '/gr</div>'
+    + '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    // TOPBAR
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b)">'
+      + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">🧮 Hesap Makinesi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + modCount + ' modül</div></div>'
+      + '<div style="font-size:10px;color:var(--t3)">USD: ₺' + _hmFmt(HM_RATES.USD) + ' · EUR: ₺' + _hmFmt(HM_RATES.EUR) + ' · Altın: ₺' + _hmFmt(HM_RATES.ALTIN_GR) + '/gr</div>'
+    + '</div>'
+    // HIZLI ERİŞİM İKON ÇUBUĞU
+    + '<div style="display:flex;align-items:center;gap:4px;padding:6px 20px;border-bottom:0.5px solid var(--b);overflow-x:auto;scrollbar-width:none" id="hm-quick-bar">'
+      + '<style>#hm-quick-bar::-webkit-scrollbar{display:none}</style>'
+      + quickIds.map(function(qid) {
+          var mod = HM_MODULES.find(function(m) { return m.id === qid; });
+          if (!mod) return '';
+          return '<button onclick="window._hmSelectModule(\'' + qid + '\')" title="' + mod.label + '" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--s2);cursor:pointer;font-size:14px;flex-shrink:0;transition:all .12s;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background=\'var(--al)\'" onmouseout="this.style.background=\'var(--s2)\'">' + mod.icon + '</button>';
+        }).join('')
+      + '<button onclick="window._openHmQuickSettings?.()" title="Düzenle" style="width:28px;height:28px;border-radius:50%;border:0.5px dashed var(--b);background:none;cursor:pointer;font-size:11px;flex-shrink:0;color:var(--t3);display:flex;align-items:center;justify-content:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.color=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.color=\'var(--t3)\'">⚙</button>'
+    + '</div>'
     + '</div>'
     + '<div style="display:flex;min-height:calc(100vh - 120px)">'
       // Sol: modül grid
@@ -120,6 +139,51 @@ window._hmSelectModule = function(id) {
   if (!area) return;
   var fn = _hmRenderers[id];
   if (fn) fn(area); else area.innerHTML = '<div style="padding:40px;text-align:center;color:#8E8E93">Modül yükleniyor...</div>';
+};
+
+/** Hızlı erişim ikon ayarları */
+window._openHmQuickSettings = function() {
+  var HM_QUICK_KEY = 'ak_hm_quick_icons';
+  var defaultQuick = ['doviz','marj','kurfark','navlun','faiz'];
+  var current = [];
+  try { current = JSON.parse(localStorage.getItem(HM_QUICK_KEY) || 'null') || defaultQuick; } catch(e) { current = defaultQuick; }
+  var cu = window.Auth?.getCU?.();
+  var isProUser = cu && (cu.role === 'admin' || cu.role === 'manager');
+  var avail = HM_MODULES.filter(function(m) { return !m.pro || isProUser; });
+
+  var ex = document.getElementById('mo-hm-quick'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-hm-quick';
+  mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">⚙ Hızlı Erişim Ayarları</div>'
+    + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:10px">Çubukta görmek istediğiniz modülleri seçin (maks 8)</div>'
+    + avail.map(function(m) {
+        var checked = current.indexOf(m.id) !== -1;
+        return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--b);cursor:pointer;font-size:12px">'
+          + '<input type="checkbox" class="hm-qk-cb" value="' + m.id + '"' + (checked ? ' checked' : '') + ' style="accent-color:var(--ac)">'
+          + '<span style="font-size:16px">' + m.icon + '</span> ' + m.label + '</label>';
+      }).join('')
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-hm-quick\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._saveHmQuick()">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._saveHmQuick = function() {
+  var selected = [];
+  document.querySelectorAll('.hm-qk-cb:checked').forEach(function(cb) { selected.push(cb.value); });
+  if (selected.length > 8) { window.toast?.('Maksimum 8 ikon seçebilirsiniz', 'err'); return; }
+  localStorage.setItem('ak_hm_quick_icons', JSON.stringify(selected));
+  document.getElementById('mo-hm-quick')?.remove();
+  // Panel'i yeniden inject et
+  var p = document.getElementById('panel-hesap');
+  if (p) { p.dataset.hmInjected = ''; _hmInjectPanel(); }
+  window.toast?.('Hızlı erişim güncellendi ✓', 'ok');
 };
 
 // ── Kart Wrapper ─────────────────────────────────────────────────
