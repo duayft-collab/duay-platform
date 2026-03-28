@@ -1360,6 +1360,19 @@ function saveOdm() {
     }
   }
 
+  // Mükerrer kayıt kontrolü — aynı cari + aynı döküman no engelle
+  var _odmEditId = parseInt(document.getElementById('odm-f-eid')?.value || '0') || 0;
+  if (_fDocNo && _fCari) {
+    var _odmExisting = (window.loadOdm ? loadOdm() : []).find(function(o) {
+      return o.cariName === _fCari && o.docNo === _fDocNo && o.id !== _odmEditId && !o.isDeleted;
+    });
+    if (_odmExisting) {
+      _odmHighlightMissing(['odm-f-docno', 'odm-f-cari'], 'Mükerrer kayıt!');
+      window.toast?.('Bu cari için "' + _fDocNo + '" numaralı döküman zaten kayıtlı', 'err');
+      return;
+    }
+  }
+
   var eidVal = document.getElementById('odm-f-eid')?.value || '';
   var eid = eidVal ? parseInt(eidVal) : 0;
   var isNew = !eid;
@@ -2561,6 +2574,19 @@ function saveTahsilat() {
       window._tahGecikUyariGosterildi = true;
       window.toast?.('⚠️ Bu carinin ' + _tahGecik.length + ' adet gecikmiş ödemesi var!', 'warn');
       setTimeout(function() { window._tahGecikUyariGosterildi = false; }, 30000);
+    }
+  }
+
+  // Mükerrer kayıt kontrolü — aynı cari + aynı referans no engelle
+  var _tahEditId = parseInt(document.getElementById('tah-f-eid')?.value || '0') || 0;
+  if (_tahRef && _tahCariVal) {
+    var _tahExisting = loadTahsilat().find(function(t) {
+      return t.cariName === _tahCariVal && t.ref === _tahRef && t.id !== _tahEditId && !t.isDeleted;
+    });
+    if (_tahExisting) {
+      _odmHighlightMissing(['tah-f-ref', 'tah-f-cari'], 'Mükerrer kayıt!');
+      window.toast?.('Bu cari için "' + _tahRef + '" numaralı referans zaten kayıtlı', 'err');
+      return;
     }
   }
 
