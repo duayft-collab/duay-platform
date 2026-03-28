@@ -1265,7 +1265,7 @@ function _odmHighlightMissing(fieldIds, bannerMsg) {
 
   // Banner göster
   if (bannerMsg) {
-    var modal = document.querySelector('#mo-odm-v9 .moc > div:nth-child(2)');
+    var modal = document.querySelector('#mo-odm-v9 .moc > div:nth-child(2)') || document.querySelector('#mo-tahsilat .moc > div:nth-child(2)');
     if (modal) {
       var banner = document.createElement('div');
       banner.id = 'odm-error-banner';
@@ -2345,25 +2345,32 @@ function openTahsilatModal(id) {
   html += '<button onclick="_go(\'mo-tahsilat\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button></div>';
   html += '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px;max-height:74vh;overflow-y:auto">';
 
-  // Cari Firma
+  // İş ID (görev) + Cari Firma
   var tahCariList = typeof loadCari === 'function' ? loadCari() : [];
   var tahEsc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
-  html += '<div class="fr"><div class="fl">CARİ FİRMA</div><select class="fi" id="tah-f-cari" style="border-radius:8px">';
-  html += '<option value="">— Cari Seçin —</option>';
+  var tahTaskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : [];
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  html += '<div class="fr"><div class="fl">İŞ ID (Görev)</div><select class="fi" id="tah-f-taskid" style="border-radius:8px">';
+  html += '<option value="">— Görev Seçin —</option>';
+  tahTaskList.forEach(function(t) { html += '<option value="' + t.id + '"' + (o?.taskId == t.id ? ' selected' : '') + '>' + tahEsc((t.title || '').slice(0, 40)) + '</option>'; });
+  html += '</select></div>';
+  html += '<div class="fr"><div class="fl">CARİ FİRMA *</div><div style="display:flex;gap:4px"><select class="fi" id="tah-f-cari" style="flex:1;border-radius:8px">';
+  html += '<option value="">— Cari Seçin * —</option>';
   tahCariList.forEach(function(c) {
     var isPend = c.status === 'pending_approval';
     var lbl = tahEsc(c.name) + ' (' + (c.type || '') + ')' + (isPend ? ' ⏳ Onay Bekliyor' : '');
     html += '<option value="' + tahEsc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPend ? ' disabled style="color:#999"' : '') + '>' + lbl + '</option>';
   });
-  html += '</select></div>';
+  html += '</select><button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button></div></div>';
+  html += '</div>';
 
   // Müşteri + Tür
   html += '<div class="fr"><div class="fl">MÜŞTERİ / KAYNAK *</div><input class="fi" id="tah-f-name" placeholder="Müşteri adı veya kaynak..." value="' + (o?o.name||'':'') + '"></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html += '<div class="fr"><div class="fl">TAHSİLAT TÜRÜ</div><select class="fi" id="tah-f-type">';
+  html += '<div class="fr"><div class="fl">TAHSİLAT TÜRÜ *</div><select class="fi" id="tah-f-type">';
   Object.entries(TAH_TYPES).forEach(([k,v]) => { html += '<option value="' + k + '"' + (o&&o.type===k?' selected':'') + '>' + v + '</option>'; });
   html += '</select></div>';
-  html += '<div class="fr"><div class="fl">FATURA / REFERANS NO</div><input class="fi" id="tah-f-ref" placeholder="INV-2026-001..." value="' + (o?o.ref||'':'') + '"></div></div>';
+  html += '<div class="fr"><div class="fl">FATURA / REFERANS NO *</div><input class="fi" id="tah-f-ref" placeholder="INV-2026-001..." value="' + (o?o.ref||'':'') + '"></div></div>';
 
   // Tutar + Para Birimi
   html += '<div class="fr"><div class="fl">TUTAR *</div>';
@@ -2484,20 +2491,49 @@ window.uploadTahDoc = uploadTahDoc;
 window.viewTahDoc   = viewTahDoc;
 
 function saveTahsilat() {
-  const name = (document.getElementById('tah-f-name')?.value || '').trim();
-  if (!name) { window.toast?.('Kaynak adı zorunlu', 'err'); return; }
+  var name = (document.getElementById('tah-f-name')?.value || '').trim();
+  var _tahAmt = parseFloat(document.getElementById('tah-f-amount')?.value || '0');
   var _tahDue = document.getElementById('tah-f-due')?.value || '';
-  if (!_tahDue) { window.toast?.('Vade tarihi zorunludur', 'err'); return; }
-  // Pending cari kontrolü
   var _tahCariVal = document.getElementById('tah-f-cari')?.value || '';
+  var _tahRef = (document.getElementById('tah-f-ref')?.value || '').trim();
+
+  // Toplu validasyon — tüm eksik alanları bir kerede göster
+  var _missingFields = [];
+  var _missingLabels = [];
+  if (!_tahCariVal) { _missingFields.push('tah-f-cari');   _missingLabels.push('Cari Firma'); }
+  if (!name)        { _missingFields.push('tah-f-name');   _missingLabels.push('Müşteri/Kaynak'); }
+  if (!_tahAmt)     { _missingFields.push('tah-f-amount'); _missingLabels.push('Tutar'); }
+  if (!_tahDue)     { _missingFields.push('tah-f-due');    _missingLabels.push('Vade Tarihi'); }
+  if (!_tahRef)     { _missingFields.push('tah-f-ref');    _missingLabels.push('Fatura/Referans No'); }
+  if (_missingFields.length) {
+    _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
+    window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
+    return;
+  }
+
+  // Pending cari kontrolü
   if (_tahCariVal) {
     var _tahSelCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _tahCariVal; });
     if (_tahSelCari && _tahSelCari.status === 'pending_approval') {
+      _odmHighlightMissing(['tah-f-cari'], 'Bu cari henüz onaylanmadı');
       window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
       return;
     }
   }
-  const eid = parseInt(document.getElementById('tah-f-eid')?.value || '0');
+
+  // Gecikmiş ödeme uyarısı — bu carinin gecikmiş ödemeleri varsa uyar
+  if (_tahCariVal) {
+    var _tahGecik = (window.loadOdm ? loadOdm() : []).filter(function(o) {
+      return o.cariName === _tahCariVal && !o.paid && o.due && o.due < _todayStr();
+    });
+    if (_tahGecik.length > 0 && !window._tahGecikUyariGosterildi) {
+      window._tahGecikUyariGosterildi = true;
+      window.toast?.('⚠️ Bu carinin ' + _tahGecik.length + ' adet gecikmiş ödemesi var!', 'warn');
+      setTimeout(function() { window._tahGecikUyariGosterildi = false; }, 30000);
+    }
+  }
+
+  var eid = parseInt(document.getElementById('tah-f-eid')?.value || '0');
   const d = loadTahsilat();
   let docs = [];
   try { docs = JSON.parse(document.getElementById('tah-f-docs')?.value || '[]'); } catch {}
@@ -2517,6 +2553,7 @@ function saveTahsilat() {
     banka:      document.getElementById('tah-f-banka')?.value    || '',
     yontem:     document.getElementById('tah-f-yontem')?.value   || '',
     cariName:   document.getElementById('tah-f-cari')?.value     || '',
+    taskId:     parseInt(document.getElementById('tah-f-taskid')?.value || '0') || null,
     // planned alanı kaldırıldı
     collected:  !!document.getElementById('tah-f-collected')?.checked,
     assignedTo: parseInt(document.getElementById('tah-f-user')?.value || '0') || null,
