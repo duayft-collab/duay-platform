@@ -119,9 +119,24 @@ async function _odmFetchTCMB() {
   }
 }
 
-// Sayfa yüklenince çek
+// Sayfa yüklenince çek + Firestore'a zorla yaz
 if (typeof window !== 'undefined') {
   setTimeout(() => _odmFetchTCMB().catch(() => {}), 2000);
+  // İlk yüklemede localStorage verisini Firestore'a zorla yaz (tek kaynak)
+  setTimeout(function() {
+    try {
+      var odmData = typeof loadOdm === 'function' ? loadOdm() : [];
+      if (odmData.length && typeof storeOdm === 'function') {
+        storeOdm(odmData);
+        console.info('[Ödemeler] İlk yükleme — odemeler Firestore\'a yazıldı:', odmData.length, 'kayıt');
+      }
+      var tahData = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+      if (tahData.length && typeof storeTahsilat === 'function') {
+        storeTahsilat(tahData);
+        console.info('[Ödemeler] İlk yükleme — tahsilat Firestore\'a yazıldı:', tahData.length, 'kayıt');
+      }
+    } catch(e) { console.warn('[Ödemeler] İlk Firestore yazma hatası:', e); }
+  }, 4000);
 }
 
 function _odmToTRY(amount, currency) {

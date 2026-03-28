@@ -978,24 +978,21 @@ function _listenCollection(collection, localKey, onUpdate) {
     const _base2 = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
     const docRef = FB_DB.collection(_base2).doc(collection);
     console.log('[LISTEN]', collection, '→', _base2 + '/' + collection, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
-    // Anlık ilk çekme — yeni cihazlarda localStorage boş olabilir
+    // Anlık ilk çekme — Firestore'dan zorla get() yap, localStorage'ı ezle
     docRef.get().then(snap => {
       if (!snap.exists) return;
       const data = snap.data()?.data;
       if (data === null || data === undefined) return;
-      const local = JSON.parse(localStorage.getItem(localKey) || 'null');
-      // Firestore daha güncel veya local boşsa — Firestore verisini kullan
-      const fsTime  = snap.data()?.syncedAt || '';
-      const locTime = localStorage.getItem(localKey + '_ts') || '';
-      const localEmpty = !local || (Array.isArray(local) ? !local.length : !Object.keys(local).length);
-      if (localEmpty || fsTime > locTime) {
-        try { localStorage.setItem(localKey, JSON.stringify(data)); } catch(e) {}
-        if (typeof onUpdate === 'function') {
-          try { onUpdate(data); } catch(e) {}
-        }
-        const count = Array.isArray(data) ? data.length : Object.keys(data).length;
-        console.info('[DB:init]', collection, '→', count, 'kayıt Firestore yüklendi');
+      // Firestore HER ZAMAN kazanır — localStorage'ı ezle
+      try {
+        localStorage.setItem(localKey, JSON.stringify(data));
+        localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
+      } catch(e) {}
+      if (typeof onUpdate === 'function') {
+        try { onUpdate(data); } catch(e) {}
       }
+      const count = Array.isArray(data) ? data.length : Object.keys(data).length;
+      console.info('[DB:init]', collection, '→', count, 'kayıt Firestore\'dan ezlendi');
     }).catch(e => {
       if (e.code !== 'permission-denied') console.warn('[DB:init]', collection, e.message);
     });
