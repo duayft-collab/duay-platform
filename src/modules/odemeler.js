@@ -943,7 +943,7 @@ function renderOdemeler() {
     const rowBg = status==='gecikti' ? 'rgba(254,242,242,.5)' : status==='yaklasan' ? 'rgba(255,251,235,.5)' : 'var(--sf)';
     const card = document.createElement('div');
     card.dataset.oid = String(o.id);
-    card.style.cssText = 'display:grid;grid-template-columns:28px 1fr 110px 100px 90px 130px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;background:'+rowBg+';transition:background .12s';
+    card.style.cssText = 'display:grid;grid-template-columns:28px 1fr 110px 100px 80px 140px;gap:0;padding:6px 16px;border-bottom:0.5px solid var(--b);align-items:center;background:'+rowBg+';transition:background .12s;max-height:56px';
     card.onmouseenter = () => card.style.background = 'var(--s2)';
     card.onmouseleave = () => { const cb = card.querySelector('.odm-bulk-chk'); card.style.background = (cb&&cb.checked)?'var(--al)':rowBg; };
 
@@ -955,14 +955,14 @@ function renderOdemeler() {
         + '<input type="checkbox" class="odm-bulk-chk" data-oid="'+o.id+'" onclick="event.stopPropagation();_onBulkCheck(this)" style="width:14px;height:14px;cursor:pointer;display:'+(_odmBulkMode?'block':'none')+'">'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer" onclick="openOdmModal('+o.id+')">'
-        + '<div style="width:32px;height:32px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">' + cat.ic + '</div>'
+        + '<div style="width:26px;height:26px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">' + cat.ic + '</div>'
         + '<div style="min-width:0">'
           + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + o.name + _odmSourceBadge(o) + (o.talimat?.durum==='aktif'?'<span style="font-size:9px;margin-left:3px" title="Otomatik ödeme talimatı aktif">🏦</span>':'') + '</div>'
           + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + '</div>'
         + '</div>'
       + '</div>'
       + '<div>'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + curSym + (parseFloat(o.amount)||0).toLocaleString('tr-TR',{maximumFractionDigits:0}) + '</div>'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + curSym + new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(parseFloat(o.amount)||0) + '</div>'
         + (o.currency && o.currency !== 'TRY' ? (function() {
             var _kr = o.kurRate || _odmGetRates()[o.currency] || 1;
             var _tl = Math.round((parseFloat(o.amount)||0) * _kr);
@@ -980,16 +980,15 @@ function renderOdemeler() {
         + (status==='gecikti' || (diff!==null && diff>=0 && diff<=2) ? '<div style="font-size:9px;font-weight:700;color:#EF4444;margin-top:2px">🔴 Kritik</div>' : '')
         + (o.approvalStatus==='pending_postpone' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Erteleme onayı</div>' : '')
       + '</div>'
-      + '<div style="display:flex;gap:3px;flex-shrink:0;align-items:center">'
-        // Ana butonlar (her zaman görünür)
+      + '<div style="display:flex;gap:2px;flex-shrink:0;align-items:center;flex-wrap:nowrap">'
+        // Ana butonlar
         + (!o.paid
           ? (_odmNeedsApproval(o) && o.approvalStatus !== 'approved' && o.approvalStatus !== 'kesinlesti'
             ? (o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor'
-              ? '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(245,158,11,.08);color:#D97706;font-weight:500">⏳ Onay Bekleniyor</span>'
-              : '<button onclick="openApprovalFlow('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Onay Iste</button>')
-            : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" class="btn btnp" style="font-size:10px;border-radius:6px;padding:3px 9px;white-space:nowrap">Odendi</button>')
-          : '<button onclick="toggleOdmPaid('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 7px">↩</button>')
-        + (!o.paid && o.approvalStatus !== 'pending_postpone' ? '<button onclick="postponeOdm('+o.id+');event.stopPropagation()" class="btn btns" style="font-size:10px;border-radius:6px;padding:3px 8px;color:var(--amt)">Ertele</button>' : '')
+              ? '<span style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(245,158,11,.08);color:#D97706;font-weight:500;white-space:nowrap">⏳ Onay</span>'
+              : '<button onclick="openApprovalFlow('+o.id+');event.stopPropagation()" style="font-size:9px;padding:2px 6px;border:0.5px solid #D97706;border-radius:5px;background:none;color:#D97706;cursor:pointer;font-family:inherit;white-space:nowrap">Onay İste</button>')
+            : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" style="font-size:9px;padding:2px 8px;border:none;border-radius:5px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">Ödendi</button>')
+          : '<button onclick="toggleOdmPaid('+o.id+');event.stopPropagation()" style="font-size:9px;padding:2px 6px;border:0.5px solid var(--b);border-radius:5px;background:none;color:var(--t3);cursor:pointer;font-family:inherit">↩</button>')
         + ((o.approvalStatus==='pending' || o.approvalStatus==='ara_onay_bekleniyor' || o.approvalStatus==='final_onay_bekleniyor' || o.approvalStatus==='pending_postpone') && _isManagerO()
           ? '<button onclick="processOdmApproval('+o.id+',\''+(o.approvalStatus==='final_onay_bekleniyor'?'final_onayla':'ara_onayla')+'\');event.stopPropagation()" class="btn btns" style="font-size:10px;padding:3px 7px;border-radius:6px;color:var(--grt)">✓ Onayla</button>' : '')
         // ··· dropdown (ikincil butonlar)
