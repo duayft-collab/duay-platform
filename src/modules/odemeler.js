@@ -2211,9 +2211,9 @@ function saveTahsilat() {
   storeTahsilat(d);
   document.getElementById('mo-tahsilat')?.remove();
   if (!eid && !_isAdminO()) {
-    const _admins = (window.loadUsers?.() || []).filter(u => u.role === 'admin' && u.status === 'active');
-    _admins.forEach(a => {
-      window.addNotif?.('💰', 'Yeni tahsilat onay bekliyor: ' + escapeHtml(name) + ' - ' + amount + ' ' + currency, 'warn', 'odemeler', a.id);
+    var _yoneticiler = (window.loadUsers?.() || []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
+    _yoneticiler.forEach(function(m) {
+      window.addNotif?.('💰', 'Yeni tahsilat onay bekliyor: ' + escapeHtml(name) + ' - ' + amount + ' ' + currency + ' (' + (_CUo()?.name || '') + ')', 'warn', 'odemeler', m.id);
     });
     window.toast?.('Tahsilat eklendi — yönetici onayı bekleniyor', 'ok');
   } else {
