@@ -724,7 +724,9 @@ function renderOdemeler() {
   } else {
     _allRaw = window.loadOdm ? loadOdm() : [];
   }
-  const all = _isManagerO() ? _allRaw : _allRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
+  // Soft-deleted kayıtları gizle (admin dahil — ayrı çöp kutusu panelinden görülür)
+  var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
+  const all = _isManagerO() ? _activeRaw : _activeRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
 
   // Filtreler
   const q      = (_go('odm-search')?.value || '').toLowerCase();
@@ -1298,7 +1300,7 @@ function saveOdm() {
   var _missingLabels = [];
   if (!_fCari)   { _missingFields.push('odm-f-cari');   _missingLabels.push('Cari Firma'); }
   if (!name)     { _missingFields.push('odm-f-name');   _missingLabels.push('Ödeme Adı'); }
-  if (!_fAmt)    { _missingFields.push('odm-f-amount'); _missingLabels.push('Tutar'); }
+  if (!_fAmt || _fAmt <= 0) { _missingFields.push('odm-f-amount'); _missingLabels.push('Tutar (0 veya negatif olamaz)'); }
   if (!_fDue)    { _missingFields.push('odm-f-due');    _missingLabels.push('Son Tarih'); }
   if (!_fDocNo)  { _missingFields.push('odm-f-docno');  _missingLabels.push('Döküman No'); }
   if (!_fYontem) { _missingFields.push('odm-f-yontem'); _missingLabels.push('Ödeme Yöntemi'); }
@@ -1307,6 +1309,16 @@ function saveOdm() {
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
     return;
   }
+
+  // Geçmiş vade tarihi uyarısı (engelleme yok, bilgilendirme)
+  if (_fDue && _fDue < _todayStr() && !window._odmPastDateWarned) {
+    window._odmPastDateWarned = true;
+    window.toast?.('⚠️ Vade tarihi geçmişte — emin miseniz? Tekrar kaydet butonuna basın.', 'warn');
+    _odmHighlightMissing(['odm-f-due'], 'Vade tarihi geçmişte');
+    setTimeout(function() { window._odmPastDateWarned = false; }, 15000);
+    return;
+  }
+  window._odmPastDateWarned = false;
 
   // Havale/EFT seçiliyse banka zorunlu
   if (_fYontem === 'Havale/EFT') {
@@ -1597,10 +1609,15 @@ function delOdm(id) {
     danger: true,
     confirmText: 'Evet, Sil',
     onConfirm: function() {
-      window.storeOdm ? storeOdm(d.filter(function(x) { return x.id !== id; })) : null;
+      // Soft delete — K06 Anayasa kuralı
+      o.isDeleted = true;
+      o.deletedAt = _nowTso();
+      o.deletedBy = _CUo()?.id;
+      o.deletedReason = 'user_delete';
+      window.storeOdm ? storeOdm(d) : null;
       renderOdemeler();
-      window.logActivity?.('view', 'Ödeme silindi: ' + (o.name || ''));
-      window.toast?.('Silindi', 'ok');
+      window.logActivity?.('view', 'Ödeme silindi (soft): ' + (o.name || ''));
+      window.toast?.('Silindi — 30 gün içinde geri alınabilir', 'ok');
     }
   });
 }
@@ -2535,7 +2552,7 @@ function saveTahsilat() {
   var _missingLabels = [];
   if (!_tahCariVal) { _missingFields.push('tah-f-cari');   _missingLabels.push('Cari Firma'); }
   if (!name)        { _missingFields.push('tah-f-name');   _missingLabels.push('Müşteri/Kaynak'); }
-  if (!_tahAmt)     { _missingFields.push('tah-f-amount'); _missingLabels.push('Tutar'); }
+  if (!_tahAmt || _tahAmt <= 0) { _missingFields.push('tah-f-amount'); _missingLabels.push('Tutar (0 veya negatif olamaz)'); }
   if (!_tahDue)     { _missingFields.push('tah-f-due');    _missingLabels.push('Vade Tarihi'); }
   if (!_tahRef)     { _missingFields.push('tah-f-ref');    _missingLabels.push('Fatura/Referans No'); }
   if (_missingFields.length) {
@@ -2543,6 +2560,16 @@ function saveTahsilat() {
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
     return;
   }
+
+  // Geçmiş vade tarihi uyarısı
+  if (_tahDue && _tahDue < _todayStr() && !window._tahPastDateWarned) {
+    window._tahPastDateWarned = true;
+    window.toast?.('⚠️ Vade tarihi geçmişte — emin misiniz? Tekrar kaydet butonuna basın.', 'warn');
+    _odmHighlightMissing(['tah-f-due'], 'Vade tarihi geçmişte');
+    setTimeout(function() { window._tahPastDateWarned = false; }, 15000);
+    return;
+  }
+  window._tahPastDateWarned = false;
 
   // Havale/EFT seçiliyse banka zorunlu
   var _tahYontem = document.getElementById('tah-f-yontem')?.value || '';
