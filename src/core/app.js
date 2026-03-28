@@ -482,8 +482,24 @@ function _finishLogin(user) {
 
   logActivity('login', 'sisteme giriş yaptı');
   console.log('[LOGIN] _finishLogin çağrıldı. user:', user?.name, '| FB_AUTH:', !!window.Auth?.getFBAuth?.(), '| FB_AUTH.currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
-  // P0: Tüm giriş yollarında realtime sync başlat
-  setTimeout(() => window.DB?.startRealtimeSync?.(), 500);
+  // P0: Realtime sync — sadece Firebase Auth currentUser hazır olduğunda başlat
+  var _fbAuth = window.Auth?.getFBAuth?.();
+  if (_fbAuth && _fbAuth.currentUser) {
+    // currentUser zaten var — hemen başlat
+    setTimeout(() => window.DB?.startRealtimeSync?.(), 300);
+  } else if (_fbAuth) {
+    // currentUser henüz yok — onAuthStateChanged bekle
+    var _syncUnsub = _fbAuth.onAuthStateChanged(function(fbUser) {
+      if (fbUser) {
+        console.info('[LOGIN] onAuthStateChanged tetiklendi — sync başlatılıyor');
+        window.DB?.startRealtimeSync?.();
+      }
+      if (_syncUnsub) { _syncUnsub(); _syncUnsub = null; } // bir kez çalış
+    });
+  } else {
+    // Firebase yok — offline mod, sync başlatma
+    console.warn('[LOGIN] Firebase Auth yok — realtime sync atlanıyor');
+  }
 
   // Kullanıcı tercihlerini yükle ve uygula
   _loadAndApplyUserPrefs(u);

@@ -119,24 +119,45 @@ async function _odmFetchTCMB() {
   }
 }
 
-// Sayfa yüklenince çek + Firestore'a zorla yaz
+// Sayfa yüklenince kur çek
 if (typeof window !== 'undefined') {
   setTimeout(() => _odmFetchTCMB().catch(() => {}), 2000);
-  // İlk yüklemede localStorage verisini Firestore'a zorla yaz (tek kaynak)
+  // İlk yüklemede localStorage verisini Firestore'a BİR KEZ yaz (sonsuz döngü koruması)
   setTimeout(function() {
+    if (window._odmInitialSyncDone) return;
+    window._odmInitialSyncDone = true;
     try {
-      var odmData = typeof loadOdm === 'function' ? loadOdm() : [];
-      if (odmData.length && typeof storeOdm === 'function') {
-        storeOdm(odmData);
-        console.info('[Ödemeler] İlk yükleme — odemeler Firestore\'a yazıldı:', odmData.length, 'kayıt');
+      var FB_DB = window.Auth?.getFBDB?.();
+      if (!FB_DB || !window.Auth?.getFBAuth?.()?.currentUser) {
+        console.info('[Ödemeler] İlk yükleme — Firebase hazır değil, yazma atlandı');
+        return;
       }
+      var tid = (window.Auth?.getTenantId?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g, '_');
+      var base = 'duay_' + tid;
+      // Ödemeler — sadece Firestore boşsa yaz
+      var odmData = typeof loadOdm === 'function' ? loadOdm() : [];
+      if (odmData.length) {
+        FB_DB.collection(base).doc('odemeler').get().then(function(snap) {
+          var fsData = snap.exists ? snap.data()?.data : null;
+          if (!fsData || !Array.isArray(fsData) || fsData.length === 0) {
+            if (typeof storeOdm === 'function') storeOdm(odmData);
+            console.info('[Ödemeler] İlk yükleme — odemeler Firestore\'a yazıldı:', odmData.length);
+          }
+        }).catch(function() {});
+      }
+      // Tahsilat — sadece Firestore boşsa yaz
       var tahData = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
-      if (tahData.length && typeof storeTahsilat === 'function') {
-        storeTahsilat(tahData);
-        console.info('[Ödemeler] İlk yükleme — tahsilat Firestore\'a yazıldı:', tahData.length, 'kayıt');
+      if (tahData.length) {
+        FB_DB.collection(base).doc('tahsilat').get().then(function(snap) {
+          var fsData = snap.exists ? snap.data()?.data : null;
+          if (!fsData || !Array.isArray(fsData) || fsData.length === 0) {
+            if (typeof storeTahsilat === 'function') storeTahsilat(tahData);
+            console.info('[Ödemeler] İlk yükleme — tahsilat Firestore\'a yazıldı:', tahData.length);
+          }
+        }).catch(function() {});
       }
     } catch(e) { console.warn('[Ödemeler] İlk Firestore yazma hatası:', e); }
-  }, 4000);
+  }, 5000);
 }
 
 function _odmToTRY(amount, currency) {
