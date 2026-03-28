@@ -694,9 +694,26 @@ const DEFAULT_HDF = [
 /** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
-/** @returns {Array<Object>} */ function loadTahsilat() { const d = _read(KEYS.tahsilat); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeTahsilat(d) { _write(KEYS.tahsilat, d);
-  const _fp_tahsilat = _fsPath('tahsilat'); if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
+/** @returns {Array<Object>} */
+function loadTahsilat() {
+  var d = _read(KEYS.tahsilat);
+  if (Array.isArray(d) && d.length > 0) return d;
+  // Migrasyon: eski 'duay_tahsilat' key'inden oku
+  try {
+    var oldData = JSON.parse(localStorage.getItem('duay_tahsilat') || '[]');
+    if (Array.isArray(oldData) && oldData.length > 0) {
+      _write(KEYS.tahsilat, oldData);
+      console.info('[DB] Tahsilat migrasyon: duay_tahsilat → ' + KEYS.tahsilat + ' (' + oldData.length + ' kayıt)');
+      return oldData;
+    }
+  } catch(e) {}
+  return [];
+}
+/** @param {Array<Object>} d */
+function storeTahsilat(d) {
+  _write(KEYS.tahsilat, d);
+  var _fp_tahsilat = _fsPath('tahsilat');
+  if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
 
 // ════════════════════════════════════════════════════════════════
