@@ -901,184 +901,176 @@ function goTo(id) {
 // ════════════════════════════════════════════════════════════════
 
 function _renderDashboard() {
-  const cu = window.Auth?.getCU?.();
-  if (!cu) return;
-
-  const n    = new Date();
-  const lang = _LANG;
-  _st('db-date', n.toLocaleDateString(
-    lang === 'en' ? 'en-GB' : lang === 'fr' ? 'fr-FR' : 'tr-TR',
-    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-  ));
-  _st('db-welcome', (lang === 'en' ? 'Welcome' : lang === 'fr' ? 'Bienvenue' : 'Hoş geldiniz') + ', ' + cu.name + '!');
-
-  // Modüle özel istatistik sayaçları
-  const sg = _g('db-sg');
-  if (!sg) return;
-
-  const users  = loadUsers();
-  const tasks  = loadTasks();
-  const kargo  = loadKargo();
-  const pirim  = loadPirim();
-  const izin   = loadIzin();
-  const today  = new Date().toISOString().slice(0, 10);
-
-  const stats = [
-    { icon: '👥', label: 'Aktif Kullanıcı',  val: cu.role === 'admin' ? users.filter(u => u.status === 'active').length : '—' },
-    { icon: '📋', label: 'Açık Görev',        val: tasks.filter(t => !t.done && t.status !== 'done').length },
-    { icon: '📦', label: 'Bekleyen Kargo',    val: kargo.filter(k => k.status === 'bekle').length },
-    { icon: '⭐', label: 'Onay Bekleyen Prim',val: pirim.filter(p => p.status === 'pending').length },
-    { icon: '🏖️', label: 'Bekleyen İzin',     val: izin.filter(i => i.status === 'pending').length },
-    { icon: '🎯', label: 'Kritik Görev',      val: tasks.filter(t => !t.done && t.pri === 1).length },
-    { icon: '⚠️', label: 'Gecikmiş Görev',   val: tasks.filter(t => !t.done && t.due && t.due < today).length },
-    { icon: '🔔', label: 'Okunmamış Bildirim',val: loadNotifs().filter(n => !n.read).length },
-  ];
-
-  sg.innerHTML = stats.map(s => `
-    <div class="sc">
-      <div class="sci">${s.icon}</div>
-      <div class="scv">${s.val}</div>
-      <div class="scl">${s.label}</div>
-    </div>`).join('');
-
-  // Günün görevleri — hızlı bakış
-  const content = _g('db-content');
-  if (!content) return;
-  const myTasks = tasks.filter(t =>
-    (t.uid === cu.id || (t.participants || []).includes(cu.id)) && !t.done
-  ).sort((a, b) => a.pri - b.pri).slice(0, 5);
-
-  if (!myTasks.length) {
-    content.innerHTML = `<div class="card" style="padding:32px;text-align:center;color:var(--t2)"><div style="font-size:32px;margin-bottom:10px">🎉</div><div style="font-weight:500">Bugün tüm görevler tamamlandı!</div></div>`;
-    return;
-  }
-  const priColors = { 1:'#ef4444', 2:'#f97316', 3:'#3b82f6', 4:'#9ca3af' };
-  content.innerHTML = `<div class="card">
-    <div class="ch"><span class="ct">Günün Görevleri</span><button class="btn btns" onclick="App.nav('pusula',document.querySelector('.nb[onclick*=\\'pusula\\']'))">Tümünü Gör →</button></div>
-    <div style="padding:0 16px 12px">
-      ${myTasks.map(t => `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
-          <div style="width:4px;height:36px;border-radius:2px;flex-shrink:0;background:${priColors[t.pri]||priColors[4]}"></div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
-            ${t.due ? `<div style="font-size:10px;color:${t.due < today ? 'var(--rd)' : 'var(--t3)'};margin-top:2px">${t.due < today ? '⚠ ' : ''}${t.due}</div>` : ''}
-          </div>
-          <input type="checkbox" onchange="Pusula?.toggle(${t.id},this.checked)" style="accent-color:var(--ac);width:16px;height:16px;flex-shrink:0">
-        </div>`).join('')}
-    </div>
-  </div>`;
-
-  _renderDashboardPusulaWidget(cu, tasks, today);
-
-  // Geciken İşlemler bölümü
-  _renderOverdueWidget(tasks, kargo, today);
-
-  // Hızlı erişim butonları + mini özet
-  var quickEl = document.getElementById('db-quick-actions');
-  if (!quickEl) {
-    quickEl = document.createElement('div');
-    quickEl.id = 'db-quick-actions';
-    content.appendChild(quickEl);
-  }
-  var konts = typeof loadKonteyn === 'function' ? loadKonteyn().filter(function(k) { return !k.closed; }) : [];
-  var puan2 = typeof loadPuan === 'function' ? loadPuan().filter(function(p) { return p.date === today; }) : [];
-  quickEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">'
-    // Hızlı erişim
-    + '<div class="card">'
-    + '<div class="ch"><span class="ct">Hızlı Erişim</span></div>'
-    + '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">'
-    + '<button onclick="openOdmModal(null)" style="padding:8px 14px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Ödeme</button>'
-    + '<button onclick="openTahsilatModal(null)" style="padding:8px 14px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>'
-    + '<button onclick="Pusula?.openAdd()" style="padding:8px 14px;border:none;border-radius:7px;background:#3B82F6;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Görev</button>'
-    + '<button onclick="window._openQuickCari?.()" style="padding:8px 14px;border:none;border-radius:7px;background:#D97706;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Cari</button>'
-    + '<button onclick="window.openReportPanel?.()" style="padding:8px 14px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📊 Raporlar</button>'
-    + '</div></div>'
-    // Mini durum
-    + '<div class="card">'
-    + '<div class="ch"><span class="ct">Anlık Durum</span></div>'
-    + '<div style="padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'
-    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Aktif Konteyner:</span> <b>' + konts.length + '</b></div>'
-    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Bugün Giriş:</span> <b>' + puan2.length + '</b></div>'
-    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Geç Giriş:</span> <b style="color:' + (puan2.filter(function(p){ return p.isLate; }).length ? '#DC2626' : '#16A34A') + '">' + puan2.filter(function(p){ return p.isLate; }).length + '</b></div>'
-    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Uzaktan:</span> <b>' + puan2.filter(function(p){ return p.workType === 'uzaktan'; }).length + '</b></div>'
-    + '</div></div>'
-    + '</div>';
-}
-
-function _renderOverdueWidget(tasks, kargo, today) {
-  var el = _g('db-overdue');
-  if (!el) {
-    var content = _g('db-content');
-    if (!content) return;
-    el = document.createElement('div');
-    el.id = 'db-overdue';
-    content.insertBefore(el, content.firstChild);
-  }
-
-  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
-  var sa  = typeof window._loadSA === 'function' ? window._loadSA() : [];
-
-  var overdueOdm   = odm.filter(function(o) { return !o.paid && o.due && o.due < today; }).length;
-  var overdueTasks  = tasks.filter(function(t) { return !t.done && t.due && t.due < today; }).length;
-  var overdueKargo  = kargo.filter(function(k) { return k.status !== 'teslim' && k.eta && k.eta < today; }).length;
-  var overdueSA     = sa.filter(function(s) { return s.status === 'pending' && s.createdAt; }).length;
-  var total = overdueOdm + overdueTasks + overdueKargo + overdueSA;
-
-  // Vadesi yaklaşan (7 gün içinde)
-  var weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7); var weekStr = weekEnd.toISOString().slice(0,10);
-  var nearOdm = odm.filter(function(o) { return !o.paid && !o.isDeleted && o.due && o.due >= today && o.due <= weekStr; });
-  var nearTasks = tasks.filter(function(t) { return !t.done && !t.isDeleted && t.due && t.due >= today && t.due <= weekStr; });
-  var nearTotal = nearOdm.length + nearTasks.length;
-
-  // Onay bekleyen (admin için)
   var cu = window.Auth?.getCU?.();
-  var pendingApproval = 0;
-  if (cu?.role === 'admin' || cu?.role === 'manager') {
-    pendingApproval = odm.filter(function(o) { return o.approvalStatus === 'pending' && !o.isDeleted; }).length
-      + sa.filter(function(s) { return s.status === 'pending'; }).length;
-  }
+  if (!cu) return;
+  var isAdm = cu.role === 'admin' || cu.role === 'manager';
+  var n = new Date();
+  var lang = _LANG;
+  _st('db-date', n.toLocaleDateString(lang==='en'?'en-GB':'tr-TR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}));
+  _st('db-welcome', 'Hoş geldiniz, ' + cu.name + '!');
 
-  if (!total && !nearTotal && !pendingApproval) { el.innerHTML = ''; return; }
-
+  // ═══ VERİ TOPLAMA ═══
+  var sg = _g('db-sg'); if (!sg) return;
+  var content = _g('db-content'); if (!content) return;
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
-  var html = '';
+  var today = new Date().toISOString().slice(0,10);
+  var thisMonth = today.slice(0,7);
+  var weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7); var weekStr = weekEnd.toISOString().slice(0,10);
+  var users = loadUsers(); var tasks = loadTasks().filter(function(t){return !t.isDeleted;});
+  var odm = typeof loadOdm==='function'?loadOdm().filter(function(o){return !o.isDeleted;}):[];
+  var tah = typeof loadTahsilat==='function'?loadTahsilat().filter(function(t){return !t.isDeleted;}):[];
+  var kargo = loadKargo(); var sa = typeof loadSatinalma==='function'?loadSatinalma():[];
+  var konts = typeof loadKonteyn==='function'?loadKonteyn().filter(function(k){return !k.closed;}):[];
+  var cari = typeof loadCari==='function'?loadCari().filter(function(c){return !c.isDeleted;}):[];
 
-  // Kırmızı: gecikmiş
-  if (total) {
-    var overdueDetails = [];
-    odm.filter(function(o) { return !o.paid && !o.isDeleted && o.due && o.due < today; }).slice(0, 5).forEach(function(o) {
-      overdueDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>💸</span><span style="flex:1;color:var(--t)">' + esc(o.name || '—') + ' <span style="color:var(--t3)">(' + esc(o.cariName || '') + ')</span></span><span style="font-weight:700;color:#DC2626">₺' + Number(o.amountTRY || o.amount || 0).toLocaleString('tr-TR') + '</span></div>');
+  // ═══ B1: SAĞLIK SKORU ═══
+  var score = 100;
+  var gecikOdm = odm.filter(function(o){return !o.paid && o.due && o.due < today;});
+  var gecikTask = tasks.filter(function(t){return !t.done && t.due && t.due < today;});
+  var pendingOdm = odm.filter(function(o){return o.approvalStatus==='pending';});
+  var pendingSA = sa.filter(function(s){return s.status==='pending';});
+  score -= gecikOdm.length * 10;
+  score -= gecikTask.length * 5;
+  score -= pendingOdm.length * 2;
+  score -= pendingSA.length * 2;
+  score = Math.max(0, Math.min(100, score));
+  var scoreColor = score >= 80 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626';
+  var scoreIcon = score >= 80 ? '●' : score >= 50 ? '●' : '●';
+  var scoreLabel = score >= 80 ? 'Sağlıklı' : score >= 50 ? 'Dikkat' : 'Kritik';
+  var kritikSayi = gecikOdm.length + gecikTask.length;
+
+  // ═══ B3: FİNANSAL NABIZ ═══
+  var ayTahsilat = tah.filter(function(t){return t.collected && (t.due||t.ts||'').startsWith(thisMonth);}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0);
+  var ayOdeme = odm.filter(function(o){return o.paid && (o.due||o.ts||'').startsWith(thisMonth);}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+  var netPoz = ayTahsilat - ayOdeme;
+  var proj30 = tah.filter(function(t){return !t.collected && t.due && t.due>=today && t.due<=weekStr;}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0) - odm.filter(function(o){return !o.paid && o.due && o.due>=today && o.due<=weekStr;}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+
+  // ═══ B4: BUGÜN & BU HAFTA ═══
+  var bugunOdm = odm.filter(function(o){return !o.paid && o.due===today;});
+  var bugunTah = tah.filter(function(t){return !t.collected && t.due===today;});
+  var bugunTask = tasks.filter(function(t){return !t.done && t.due===today;});
+  var haftaOdm = odm.filter(function(o){return !o.paid && o.due && o.due>=today && o.due<=weekStr;}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+  var haftaTah = tah.filter(function(t){return !t.collected && t.due && t.due>=today && t.due<=weekStr;}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0);
+
+  // ═══ B5: OPERASYONEL ═══
+  var acikGorev = tasks.filter(function(t){return !t.done;}).length;
+  var bekleyenSA = pendingSA.length;
+  var aktifKargo = kargo.filter(function(k){return k.status!=='teslim';}).length;
+  var aktifCari = cari.filter(function(c){return c.status==='active';}).length;
+  var puan2 = typeof loadPuan==='function'?loadPuan().filter(function(p){return p.date===today;}):[];
+
+  // ═══ RENDER ═══
+  sg.style.display = 'none'; // eski stat grid gizle
+  var h = '';
+
+  // B1: Sağlık Skoru
+  h += '<div style="padding:10px 20px;background:'+scoreColor+'0a;border-bottom:0.5px solid '+scoreColor+'33;display:flex;align-items:center;gap:10px">'
+    + '<span style="font-size:16px;color:'+scoreColor+'">'+scoreIcon+'</span>'
+    + '<span style="font-size:13px;font-weight:700;color:'+scoreColor+'">'+scoreLabel+' ('+score+'/100)</span>'
+    + (kritikSayi ? '<span style="font-size:11px;color:'+scoreColor+'">— '+kritikSayi+' kritik madde</span>' : '')
+    + '</div>';
+
+  // B2: Kritik Uyarılar
+  if (gecikOdm.length || gecikTask.length) {
+    h += '<div style="padding:12px 20px;background:#FEF2F2;border-bottom:0.5px solid #FECACA">'
+      + '<div style="font-size:11px;font-weight:700;color:#991B1B;margin-bottom:6px">Kritik Uyarılar</div>';
+    gecikOdm.slice(0,3).forEach(function(o){
+      var gun = Math.ceil((new Date(today)-new Date(o.due))/86400000);
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="color:#DC2626;font-weight:600">₺'+Number(o.amountTRY||o.amount||0).toLocaleString('tr-TR')+'</span><span style="flex:1;color:#991B1B">'+esc(o.name||'')+'</span><span style="color:#DC2626">'+gun+'g gecikti</span><button onclick="markOdmPaid('+o.id+')" style="padding:1px 6px;border:0.5px solid #DC2626;border-radius:4px;background:none;color:#DC2626;font-size:9px;cursor:pointer;font-family:inherit">Öde</button></div>';
     });
-    tasks.filter(function(t) { return !t.done && !t.isDeleted && t.due && t.due < today; }).slice(0, 5).forEach(function(t) {
-      var assignee = (typeof loadUsers === 'function' ? loadUsers() : []).find(function(u) { return u.id === t.uid; });
-      overdueDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>📋</span><span style="flex:1;color:var(--t)">' + esc(t.title) + '</span><span style="color:var(--t3)">' + esc(assignee?.name || '—') + '</span></div>');
+    gecikTask.slice(0,3).forEach(function(t){
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="color:#DC2626;font-weight:600">Görev</span><span style="flex:1;color:#991B1B">'+esc(t.title)+'</span><button onclick="openPusDetail('+t.id+')" style="padding:1px 6px;border:0.5px solid #DC2626;border-radius:4px;background:none;color:#DC2626;font-size:9px;cursor:pointer;font-family:inherit">Git</button></div>';
     });
-    html += '<div class="card" style="border-left:4px solid #EF4444;margin-bottom:8px">'
-      + '<div class="ch"><span class="ct" style="color:#EF4444">🚨 Geciken İşlemler (' + total + ')</span><button class="btn btns" onclick="App.nav(\'odemeler\')" style="font-size:10px">Görüntüle →</button></div>'
-      + '<div style="padding:0 16px 12px">' + overdueDetails.join('') + '</div></div>';
+    h += '</div>';
   }
 
-  // Sarı: yaklaşan
-  if (nearTotal) {
-    var nearDetails = [];
-    nearOdm.slice(0, 3).forEach(function(o) {
-      nearDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>💸</span><span style="flex:1;color:var(--t)">' + esc(o.name || '—') + '</span><span style="color:#92400E">' + (o.due || '') + '</span></div>');
+  // B3: Finansal Nabız
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:0.5px solid var(--b)">';
+  [{l:'Bu Ay Tahsilat',v:'₺'+Math.round(ayTahsilat).toLocaleString('tr-TR'),c:'#16A34A'},{l:'Bu Ay Ödeme',v:'₺'+Math.round(ayOdeme).toLocaleString('tr-TR'),c:'#DC2626'},{l:'Net Pozisyon',v:(netPoz>=0?'+':'')+'₺'+Math.round(Math.abs(netPoz)).toLocaleString('tr-TR'),c:netPoz>=0?'#16A34A':'#DC2626'},{l:'7 Gün Projeksiyon',v:(proj30>=0?'+':'')+'₺'+Math.round(Math.abs(proj30)).toLocaleString('tr-TR'),c:proj30>=0?'#16A34A':'#DC2626'}].forEach(function(k,i){
+    h += '<div onclick="App.nav(\'odemeler\')" style="padding:14px 16px;cursor:pointer;border-right:'+(i<3?'0.5px solid var(--b)':'none')+'"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">'+k.l+'</div><div style="font-size:20px;font-weight:600;color:'+k.c+'">'+k.v+'</div></div>';
+  });
+  h += '</div>';
+
+  // B4: Bugün & Bu Hafta
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="padding:12px 20px;border-right:0.5px solid var(--b)"><div style="font-size:11px;font-weight:700;color:#DC2626;margin-bottom:6px">Bugün</div>';
+  h += '<div style="font-size:11px;color:var(--t)">Ödeme: <b onclick="App.nav(\'odemeler\')" style="cursor:pointer;color:#DC2626">'+bugunOdm.length+'</b> · Tahsilat: <b onclick="App.nav(\'odemeler\')" style="cursor:pointer;color:#16A34A">'+bugunTah.length+'</b> · Görev: <b onclick="App.nav(\'pusula\')" style="cursor:pointer">'+bugunTask.length+'</b></div></div>';
+  h += '<div style="padding:12px 20px"><div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:6px">Bu Hafta</div>';
+  h += '<div style="font-size:11px;color:var(--t)">Ödeme: <b style="color:#DC2626">₺'+Math.round(haftaOdm).toLocaleString('tr-TR')+'</b> · Tahsilat: <b style="color:#16A34A">₺'+Math.round(haftaTah).toLocaleString('tr-TR')+'</b> · Onay: <b>'+(pendingOdm.length+bekleyenSA)+'</b></div></div>';
+  h += '</div>';
+
+  // B5: Operasyonel Durum (6 kart)
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b)">';
+  var ops = [
+    {l:'Görevler',v:acikGorev+' açık',sub:gecikTask.length+' gecikmiş',c:gecikTask.length?'#DC2626':'#16A34A',nav:'pusula'},
+    {l:'Satın Alma',v:sa.length+' kayıt',sub:bekleyenSA+' onay bekliyor',c:bekleyenSA?'#D97706':'#16A34A',nav:'satinalma'},
+    {l:'Kargo',v:aktifKargo+' aktif',sub:konts.length+' konteyner',c:'var(--t)',nav:'kargo'},
+    {l:'Nakit Akışı',v:gecikOdm.length+' gecikmiş',sub:'₺'+Math.round(haftaOdm).toLocaleString('tr-TR')+' haftalık',c:gecikOdm.length?'#DC2626':'#16A34A',nav:'odemeler'},
+    {l:'Cari',v:aktifCari+' aktif',sub:cari.filter(function(c2){return c2.status==='pending_approval';}).length+' onay bekliyor',c:'var(--t)',nav:'cari'},
+    {l:'Personel',v:puan2.length+' giriş',sub:puan2.filter(function(p){return p.isLate;}).length+' geç',c:puan2.filter(function(p){return p.isLate;}).length?'#D97706':'#16A34A',nav:'admin'},
+  ];
+  ops.forEach(function(o,i){
+    h += '<div onclick="App.nav(\''+o.nav+'\')" style="padding:12px 16px;cursor:pointer;border-right:'+((i%3<2)?'0.5px solid var(--b)':'none')+';border-bottom:'+((i<3)?'0.5px solid var(--b)':'none')+'">'
+      + '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:3px">'+o.l+'</div>'
+      + '<div style="font-size:16px;font-weight:600;color:'+o.c+'">'+o.v+'</div>'
+      + '<div style="font-size:10px;color:var(--t3)">'+o.sub+'</div></div>';
+  });
+  h += '</div>';
+
+  // B6: Aktif Sevkiyatlar
+  if (konts.length) {
+    h += '<div style="padding:12px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:6px">Aktif Sevkiyatlar</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+    konts.slice(0,4).forEach(function(k){
+      var daysToEta = k.eta ? Math.ceil((new Date(k.eta)-new Date())/86400000) : null;
+      var dtColor = daysToEta!==null && daysToEta<=3 ? '#DC2626' : daysToEta!==null && daysToEta<=7 ? '#D97706' : '#16A34A';
+      h += '<div onclick="window.openKonteynDetail?.('+k.id+')" style="padding:8px 12px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px;cursor:pointer;min-width:140px">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t)">'+esc(k.no||'')+'</div>'
+        + '<div style="font-size:10px;color:var(--t3)">'+esc(k.hat||'')+'</div>'
+        + (daysToEta!==null ? '<div style="font-size:10px;color:'+dtColor+';font-weight:600;margin-top:2px">ETA: '+daysToEta+' gün</div>' : '')
+        + '</div>';
     });
-    nearTasks.slice(0, 3).forEach(function(t) {
-      nearDetails.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px"><span>📋</span><span style="flex:1;color:var(--t)">' + esc(t.title) + '</span><span style="color:#92400E">' + (t.due || '') + '</span></div>');
-    });
-    html += '<div class="card" style="border-left:4px solid #F59E0B;margin-bottom:8px">'
-      + '<div class="ch"><span class="ct" style="color:#92400E">⚠️ Yaklaşan (' + nearTotal + ')</span></div>'
-      + '<div style="padding:0 16px 12px">' + nearDetails.join('') + '</div></div>';
+    h += '</div></div>';
   }
 
-  // Onay bekleyen (admin)
-  if (pendingApproval) {
-    html += '<div class="card" style="border-left:4px solid #6366F1;margin-bottom:8px">'
-      + '<div class="ch"><span class="ct" style="color:#4F46E5">📝 Onay Bekleyen (' + pendingApproval + ')</span><button class="btn btns" onclick="App.nav(\'odemeler\')" style="font-size:10px">İncele →</button></div></div>';
+  // B7: Onay Kuyruğu (admin)
+  if (isAdm && (pendingOdm.length || bekleyenSA)) {
+    h += '<div style="padding:12px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:6px">Onay Kuyruğu ('+(pendingOdm.length+bekleyenSA)+')</div>';
+    pendingOdm.slice(0,3).forEach(function(o){
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="flex:1">'+esc(o.name||'')+'</span><span style="color:var(--t3)">₺'+Number(o.amount||0).toLocaleString('tr-TR')+'</span>'
+        + '<button onclick="processOdmApproval('+o.id+',\'ara_onayla\')" style="padding:1px 6px;border:0.5px solid #16A34A;border-radius:4px;background:none;color:#16A34A;font-size:9px;cursor:pointer;font-family:inherit">✓</button></div>';
+    });
+    pendingSA.slice(0,3).forEach(function(s){
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="flex:1">SA: '+esc(s.supplier||s.piNo||'')+'</span>'
+        + '<button onclick="window._approveSA?.('+s.id+')" style="padding:1px 6px;border:0.5px solid #16A34A;border-radius:4px;background:none;color:#16A34A;font-size:9px;cursor:pointer;font-family:inherit">✓</button></div>';
+    });
+    h += '</div>';
   }
 
-  el.innerHTML = html;
+  // B8: Son 7 Gün Grafik (basit bar)
+  h += '<div style="padding:12px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">Son 7 Gün</div>';
+  h += '<div style="display:flex;gap:3px;align-items:flex-end;height:60px">';
+  for (var di=6;di>=0;di--) {
+    var d2 = new Date(); d2.setDate(d2.getDate()-di); var ds = d2.toISOString().slice(0,10);
+    var dayO = odm.filter(function(o){return o.paid && (o.paidTs||o.due||'').slice(0,10)===ds;}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+    var dayT = tah.filter(function(t){return t.collected && (t.collectedTs||t.due||'').slice(0,10)===ds;}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0);
+    var maxH = Math.max(dayO,dayT,1); var hO = Math.max(2,Math.round(dayO/maxH*50)); var hT = Math.max(2,Math.round(dayT/maxH*50));
+    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px" title="'+ds+'">'
+      + '<div style="width:100%;height:'+hT+'px;background:#16A34A;border-radius:2px 2px 0 0"></div>'
+      + '<div style="width:100%;height:'+hO+'px;background:#DC2626;border-radius:0 0 2px 2px"></div>'
+      + '<div style="font-size:8px;color:var(--t3);margin-top:2px">'+ds.slice(8)+'</div></div>';
+  }
+  h += '</div><div style="font-size:9px;color:var(--t3);margin-top:4px"><span style="color:#16A34A">■</span> Tahsilat · <span style="color:#DC2626">■</span> Ödeme</div></div>';
+
+  // B9: Hızlı Eylemler
+  h += '<div style="padding:12px 20px;display:flex;gap:6px;flex-wrap:wrap">'
+    + '<button onclick="openOdmModal?.(null)" style="padding:7px 14px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Ödeme</button>'
+    + '<button onclick="openTahsilatModal?.(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>'
+    + '<button onclick="Pusula?.openAdd?.()" style="padding:7px 14px;border:none;border-radius:7px;background:#3B82F6;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Görev</button>'
+    + '<button onclick="window._openSatisModal?.()" style="padding:7px 14px;border:none;border-radius:7px;background:#D97706;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button>'
+    + '<button onclick="window.openReportPanel?.()" style="padding:7px 14px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Raporlar</button>'
+    + '</div>';
+
+  content.innerHTML = h;
 }
 
 // ── Pusula Dashboard Widget ────────────────────────────────────────
