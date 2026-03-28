@@ -2883,12 +2883,15 @@ function _calcPirimExpiry(p) {
  * renderPirim() her çağrıldığında çalışır.
  */
 function checkPirimExpiry() {
-  const d = window.loadPirim?.() || [];
-  let changed = false;
-  d.forEach(p => {
+  var d = window.loadPirim?.() || [];
+  var changed = false;
+  d.forEach(function(p) {
     if (p.status !== 'approved') return;
-    const { expired } = _calcPirimExpiry(p);
-    if (expired) {
+    var result = _calcPirimExpiry(p);
+    if (result.expired) {
+      var exKey = 'pirim_expired_' + p.id;
+      if (localStorage.getItem(exKey)) return; // zaten işlendi
+      localStorage.setItem(exKey, '1');
       p.status = 'expired';
       p.expiredAt = _now();
       changed = true;

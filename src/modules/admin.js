@@ -2262,16 +2262,19 @@ window._saveTempPerm = function(uid) {
 };
 
 function checkPermExpiry() {
-  const users = loadUsers();
-  const today = new Date().toISOString().slice(0, 10);
-  let changed = false;
-  users.forEach(u => {
+  var users = loadUsers();
+  var today = new Date().toISOString().slice(0, 10);
+  var changed = false;
+  users.forEach(function(u) {
     if (!u.permExpiry) return;
-    Object.entries(u.permExpiry).forEach(([mod, expiry]) => {
+    Object.entries(u.permExpiry).forEach(function(entry) {
+      var mod = entry[0]; var expiry = entry[1];
       if (expiry && expiry < today) {
-        // Modülü kaldır
+        var peKey = 'perm_exp_' + u.id + '_' + mod;
+        if (localStorage.getItem(peKey)) return; // zaten işlendi
+        localStorage.setItem(peKey, '1');
         if (Array.isArray(u.modules)) {
-          u.modules = u.modules.filter(m => m !== mod);
+          u.modules = u.modules.filter(function(m) { return m !== mod; });
         }
         delete u.permExpiry[mod];
         changed = true;
