@@ -39,6 +39,7 @@ const KEYS = {
   trash         : 'ak_trash1',
   odemeler      : 'ak_odm1',
   tahsilat      : 'ak_tahsilat1',
+  satinalma     : 'ak_satinalma1',
   kargo         : 'ak_krg1',
   greetings     : 'ak_grt1',
   stok          : 'ak_stk1',
@@ -715,6 +716,10 @@ function storeTahsilat(d) {
   var _fp_tahsilat = _fsPath('tahsilat');
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
+/** @returns {Array<Object>} */ function loadSatinalma() { const d = _read(KEYS.satinalma); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */ function storeSatinalma(d) { _write(KEYS.satinalma, d);
+  var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
@@ -1198,6 +1203,7 @@ function startRealtimeSync() {
     ['hedefler',      KEYS.hedefler,      () => window.renderHedefler?.()],
     ['odemeler',      KEYS.odemeler,      () => window.renderOdemeler?.()],
     ['tahsilat',      KEYS.tahsilat,      () => window.renderOdemeler?.()],
+    ['satinalma',     KEYS.satinalma,     () => window.renderSatinAlma?.()],
     ['kpi',           KEYS.kpi,           () => window.renderKpi?.()],
     ['notes',         KEYS.notes,         () => window.renderNotes?.()],
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
@@ -1394,7 +1400,7 @@ const DB = {
   // Çöp
   loadTrash, storeTrash,
   // Ödemeler
-  loadOdm, storeOdm, loadTahsilat, storeTahsilat,
+  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma,
   // İzin & Tebligat & Temizlik
   loadIzin, storeIzin,
   loadTebligat, storeTebligat,
@@ -1448,7 +1454,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat',
+    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

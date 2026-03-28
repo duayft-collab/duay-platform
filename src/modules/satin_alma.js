@@ -29,18 +29,9 @@ const _nowSA   = () => typeof nowTs === 'function' ? nowTs() : new Date().toISOS
 const _fmtSA   = (n, cur) => (SA_CURRENCIES[cur] || '') + Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ── Veri ─────────────────────────────────────────────────────────
-function _loadSA() { try { return JSON.parse(localStorage.getItem(SA_KEY) || '[]'); } catch (e) { return []; } }
-function _storeSA(d) {
-  localStorage.setItem(SA_KEY, JSON.stringify(d));
-  // Firestore sync
-  try {
-    var FB_DB = window.Auth?.getFBDB?.();
-    if (FB_DB) {
-      var tid = (window.Auth?.getTenantId?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g, '_');
-      FB_DB.collection('duay_' + tid).doc('satinalma').set({ data: d, syncedAt: new Date().toISOString() }, { merge: true }).catch(function() {});
-    }
-  } catch (e) {}
-}
+// _loadSA / _storeSA — database.js loadSatinalma/storeSatinalma kullan (KEYS + Firestore sync + realtime)
+function _loadSA() { return typeof loadSatinalma === 'function' ? loadSatinalma() : (function() { try { return JSON.parse(localStorage.getItem(SA_KEY) || '[]'); } catch(e) { return []; } })(); }
+function _storeSA(d) { if (typeof storeSatinalma === 'function') { storeSatinalma(d); } else { localStorage.setItem(SA_KEY, JSON.stringify(d)); } }
 
 // ════════════════════════════════════════════════════════════════
 // PANEL HTML
