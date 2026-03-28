@@ -2230,6 +2230,11 @@ window.openReportPanel = function() {
     + '<div style="font-size:28px;margin-bottom:6px">📦</div>'
     + '<div style="font-size:13px;font-weight:600;color:var(--t)">Kargo Raporu</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Konteyner bazlı</div></div>'
+    // Günlük Checklist
+    + '<div onclick="window.downloadDailyChecklist?.()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center;grid-column:span 2" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">📋</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Günlük Checklist</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Gecikmiş görevler + ödemeler + bekleyen onaylar</div></div>'
     + '</div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
@@ -2314,6 +2319,76 @@ window._openKargoReport = function() {
   if (typeof exportKargoXlsx === 'function') exportKargoXlsx();
   else window.toast?.('Kargo export fonksiyonu bulunamadı', 'err');
 };
+
+// ════════════════════════════════════════════════════════════════
+// GÜNLÜK EXCEL CHECKLIST
+// ════════════════════════════════════════════════════════════════
+
+/** Günlük checklist verisi oluştur */
+function _buildDailyChecklist() {
+  var today = new Date().toISOString().slice(0, 10);
+  var tasks = typeof loadTasks === 'function' ? loadTasks() : [];
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var sa = typeof loadSatinalma === 'function' ? loadSatinalma() : [];
+
+  var todayTasks = tasks.filter(function(t) { return !t.isDeleted && !t.done && t.due && t.due <= today; });
+  var todayOdm = odm.filter(function(o) { return !o.isDeleted && !o.paid && o.due && o.due <= today; });
+  var pendingSA = sa.filter(function(s) { return s.status === 'pending'; });
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+
+  var items = [];
+  todayTasks.forEach(function(t) {
+    var u = users.find(function(x) { return x.id === t.uid; });
+    items.push({ tur: 'Görev', ad: t.title, sorumlu: u?.name || '—', vade: t.due, durum: 'Gecikmiş' });
+  });
+  todayOdm.forEach(function(o) {
+    items.push({ tur: 'Ödeme', ad: o.name || '—', sorumlu: o.cariName || '—', vade: o.due, durum: o.paid ? 'Ödendi' : 'Bekliyor' });
+  });
+  pendingSA.forEach(function(s) {
+    items.push({ tur: 'Satınalma', ad: s.supplier || s.piNo || '—', sorumlu: '—', vade: s.piDate || '—', durum: 'Onay Bekliyor' });
+  });
+  return { date: today, items: items, taskCount: todayTasks.length, odmCount: todayOdm.length, saCount: pendingSA.length };
+}
+
+/** Checklist Excel indir */
+window.downloadDailyChecklist = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var cl = _buildDailyChecklist();
+  var rows = [['Tür', 'Açıklama', 'Sorumlu / Cari', 'Vade', 'Durum']];
+  cl.items.forEach(function(i) { rows.push([i.tur, i.ad, i.sorumlu, i.vade, i.durum]); });
+  rows.push([]);
+  rows.push(['Özet', 'Gecikmiş Görev: ' + cl.taskCount, 'Gecikmiş Ödeme: ' + cl.odmCount, 'Bekleyen SA: ' + cl.saCount, 'Tarih: ' + cl.date]);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Günlük Checklist');
+  XLSX.writeFile(wb, 'checklist-' + cl.date + '.xlsx');
+  window.toast?.('Günlük checklist indirildi ✓', 'ok');
+
+  // Son 30 gün kaydet
+  try {
+    var history = JSON.parse(localStorage.getItem('ak_checklist_history') || '[]');
+    history.unshift({ date: cl.date, tasks: cl.taskCount, odm: cl.odmCount, sa: cl.saCount, total: cl.items.length });
+    if (history.length > 30) history = history.slice(0, 30);
+    localStorage.setItem('ak_checklist_history', JSON.stringify(history));
+  } catch(e) {}
+};
+
+/** Her gün 18:00'de otomatik checklist kontrolü */
+(function _initDailyChecklist() {
+  function _check() {
+    var now = new Date();
+    if (now.getHours() !== 18) return;
+    var today = now.toISOString().slice(0, 10);
+    var lastCheck = localStorage.getItem('ak_checklist_last') || '';
+    if (lastCheck === today) return;
+    localStorage.setItem('ak_checklist_last', today);
+    // Admin'e bildirim
+    if (window.isAdmin?.()) {
+      window.toast?.('📋 Günlük checklist hazır — indirmek için Raporlar panelini açın', 'info');
+    }
+  }
+  setTimeout(_check, 5000);
+  setInterval(_check, 3600000); // her saat kontrol
+})();
 
 window._renderActivePanel = function() {
   var activePanel = document.querySelector('.panel.on');

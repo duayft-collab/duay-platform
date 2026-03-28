@@ -151,8 +151,11 @@ function initFirebase() {
     FB_APP  = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(cfg);
     FB_AUTH = firebase.auth();
     FB_DB   = firebase.firestore();
+    // Safari performans: cache boyutu sınırla + forceLongPolling
+    try {
+      FB_DB.settings({ cacheSizeBytes: 5 * 1024 * 1024, merge: true }); // 5MB cache limit
+    } catch(e) {}
     // Safari multi-tab persistence desteklemiyor → synchronizeTabs:false
-    // Bu sayede Safari'de 30-40sn gecikme önlenir
     FB_DB.enablePersistence({ synchronizeTabs: false }).catch(function(e) {
       if (e.code === 'failed-precondition') {
         console.warn('[auth] Persistence: birden fazla sekme açık — offline cache devre dışı');
