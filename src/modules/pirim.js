@@ -1171,6 +1171,21 @@ window._pirimTaskSelected = function() {
       + ' · ' + statusTxt;
     info.style.display = 'block';
   }
+
+  // Satınalma baz tutarı otomatik doldur (KDV hariç tutar)
+  var baseEl = window.g('prm-base-amount');
+  if (baseEl && !baseEl.value) {
+    var saData = typeof loadSatinalma === 'function' ? loadSatinalma() : [];
+    var matchSA = saData.find(function(sa) {
+      return String(sa.jobId) === String(taskId) && sa.status === 'approved';
+    });
+    if (matchSA) {
+      var kdvHaric = (parseFloat(matchSA.totalAmount) || 0) - (parseFloat(matchSA.kdv) || 0);
+      baseEl.value = Math.round(kdvHaric * 100) / 100;
+      if (info) info.innerHTML += '<br>💰 Satınalma KDV hariç: <b>₺' + kdvHaric.toLocaleString('tr-TR') + '</b>';
+      if (typeof window.Pirim?.calcAuto === 'function') window.Pirim.calcAuto();
+    }
+  }
 };
 
 // ════════════════════════════════════════════════════════════════

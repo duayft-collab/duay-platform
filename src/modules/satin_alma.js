@@ -764,8 +764,8 @@ function _openSAModal(id) {
         + '<option value="">— Cari seçin —</option>'
         + (function() { var cari = typeof loadCari === 'function' ? loadCari() : []; var esc2 = typeof escapeHtml === 'function' ? escapeHtml : function(v){return v;}; return cari.map(function(c) { return '<option value="' + esc2(c.name) + '"' + ((s?.supplier || s?.piNo || '') === c.name ? ' selected' : '') + '>' + esc2(c.name) + ' (' + (c.type || '') + ')</option>'; }).join(''); })()
         + '</select><button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button></div></div>'
+      + '<div><div class="fl">PI NO <span style="color:var(--rd)">*</span></div><input class="fi" id="sa-pi-number" placeholder="PI-2026-001" value="' + (s?.piNumber || s?.piNo || '') + '"></div>'
       + '<div><div class="fl">PI TARİHİ <span style="color:var(--rd)">*</span></div><input type="date" class="fi" id="sa-pi-date" value="' + (s?.piDate || '') + '"></div>'
-      + '<div><div class="fl">SİPARİŞ ONAY TARİHİ</div><input type="date" class="fi" id="sa-order-date" value="' + (s?.orderDate || '') + '"></div>'
     + '</div>'
     // Satır 3: Fatura Tipi + KDV + Toplam + Para Birimi
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
@@ -811,6 +811,15 @@ function _openSAModal(id) {
     + '<input type="hidden" id="sa-vendor-tax" value="' + (s?.vendor?.tax || '') + '">'
     // Açıklama / Not
     + '<div><div class="fl">AÇIKLAMA / NOT</div><textarea class="fi" id="sa-notes" rows="2" style="resize:none" placeholder="Ek bilgi, özel şartlar...">' + (s?.notes || '') + '</textarea></div>'
+    // Döküman ekleme
+    + '<div><div class="fl">DÖKÜMAN EKLE</div>'
+    + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+    + (s?.docs && s.docs.length ? s.docs.map(function(doc, i) { return '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5">📎 ' + esc(doc.name) + '</span>'; }).join('') : '')
+    + '<button type="button" onclick="window._saUploadDoc?.()" class="btn btns" style="font-size:11px;border-radius:7px;padding:4px 10px">📎 Dosya Yükle</button>'
+    + '<span id="sa-doc-count" style="font-size:10px;color:var(--t3)">' + (s?.docs ? s.docs.length + ' dosya' : '') + '</span>'
+    + '</div>'
+    + '<input type="hidden" id="sa-f-docs" value="' + (s?.docs ? JSON.stringify(s.docs).replace(/"/g, '&quot;') : '[]') + '">'
+    + '</div>'
     // Ödeme Dilimleri
     + '<div style="border:1px solid var(--b);border-radius:10px;padding:14px;margin-top:4px">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
@@ -1008,6 +1017,27 @@ window._saAddInstallment = function() {
   cont.appendChild(row);
 };
 
+/** Satınalma döküman yükleme */
+window._saUploadDoc = function() {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png,.xlsx,.docx'; inp.multiple = true;
+  inp.onchange = function() {
+    var ex = []; try { ex = JSON.parse(document.getElementById('sa-f-docs')?.value || '[]'); } catch(e) {}
+    Array.from(this.files).forEach(function(file) {
+      if (file.size > 8*1024*1024) { window.toast?.('Dosya çok büyük (max 8MB)', 'warn'); return; }
+      var r = new FileReader();
+      r.onload = function(e) {
+        ex.push({ name: file.name, data: e.target.result, ts: new Date().toISOString() });
+        var el = document.getElementById('sa-f-docs'); if (el) el.value = JSON.stringify(ex);
+        var cnt = document.getElementById('sa-doc-count'); if (cnt) cnt.textContent = ex.length + ' dosya';
+      };
+      r.readAsDataURL(file);
+    });
+    window.toast?.('Dosyalar eklendi ✓', 'ok');
+  };
+  inp.click();
+};
+
 /**
  * Dilim toplamını kontrol eder.
  */
@@ -1135,7 +1165,9 @@ window._saveSA = function() {
     containerNo:     (document.getElementById('sa-container')?.value || '').trim(),
     faturaType:      document.getElementById('sa-fatura-type')?.value || 'kdvli',
     lockedRate:      (currency !== 'TRY') ? (_saLiveRates[currency] || 1) : null,
+    piNumber:        (document.getElementById('sa-pi-number')?.value || '').trim(),
     notes:           (document.getElementById('sa-notes')?.value || '').trim(),
+    docs:            (function() { try { return JSON.parse(document.getElementById('sa-f-docs')?.value || '[]'); } catch(e) { return []; } })(),
     vendor: {
       name:    vendorName,
       country: (document.getElementById('sa-vendor-country')?.value || '').trim(),
