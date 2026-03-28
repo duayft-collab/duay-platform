@@ -6474,11 +6474,11 @@ function openCariStatement(cariId, format) {
     + '<div style="padding:16px 24px;max-height:55vh;overflow-y:auto">'
       + limitHTML
       // Format seçici (user/admin modunda)
-      + (format !== 'musteri' ? '<div style="display:flex;gap:4px;margin-bottom:12px">'
+      + '<div style="display:flex;gap:4px;margin-bottom:12px">'
         + '<button onclick="openCariStatement(' + cariId + ',\'musteri\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px;' + (format === 'musteri' ? 'background:var(--ac);color:#fff' : '') + '">Müşteri</button>'
         + '<button onclick="openCariStatement(' + cariId + ',\'user\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px;' + (format === 'user' ? 'background:var(--ac);color:#fff' : '') + '">Operasyonel</button>'
         + (_isManagerO() ? '<button onclick="openCariStatement(' + cariId + ',\'admin\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px;' + (format === 'admin' ? 'background:var(--ac);color:#fff' : '') + '">Yönetici</button>' : '')
-        + '</div>' : '')
+        + '</div>'
       // Tablo
       + '<div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">'
         + '<table style="width:100%;border-collapse:collapse">'
