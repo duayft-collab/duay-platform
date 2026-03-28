@@ -806,7 +806,9 @@ window.renderUrunler = function() {
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Ürün Kataloğu</div><div style="font-size:10px;color:var(--t3);margin-top:2px" id="urun-sub">Tedarikçi ürünleri</div></div>'
       + '<div style="display:flex;gap:6px">'
-      + '<button onclick="window._exportUrunlerXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button>'
+      + '<button onclick="window._exportUrunlerXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">⬇ Excel</button>'
+      + '<button onclick="window._importUrunlerExcel?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📥 İçe Aktar</button>'
+      + '<button onclick="window._downloadUrunTemplate?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📋 Şablon</button>'
       + (window.isAdmin?.() ? '<button onclick="window._insertDemoUrunler?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🎲 Demo</button>' : '')
       + '<button onclick="window._openUrunModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Ürün Ekle</button></div>'
       + '</div>'
@@ -1341,6 +1343,7 @@ window._openSatisRapor = function() {
     +'<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
     +'<div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">En Çok Satan 5 Ürün</div>'
     +sorted.slice(0,5).map(function(u){var kar=u.satis-u.alis;return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span>'+esc(u.ad)+' <span style="color:var(--t3)">('+u.adet+' adet)</span></span><span style="font-weight:600;color:#16A34A">+$'+Math.round(kar).toLocaleString('tr-TR')+'</span></div>';}).join('')
+    +'<div style="display:flex;gap:6px;margin-top:12px"><button onclick="window._printSatisRapor?.()" style="padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🖨 PDF</button><button onclick="window._exportSatisTeklifXlsx?.()" style="padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">⬇ Excel</button></div>'
     +'</div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
@@ -1475,6 +1478,106 @@ window._openSAContract = function(id) {
     +'<h2>5. Özel Şartlar</h2><p>'+(sa.notes||'—')+'</p>'
     +'<div class="sig"><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">ALICI<br>DUAY GLOBAL TRADE LLC</div></div><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">SATICI<br>'+esc(sa.vendor?.name||sa.supplier||'')+'</div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">🖨 Yazdır / PDF</button></body></html>');
+  w.document.close();
+};
+
+// ════════════════════════════════════════════════════════════════
+// EXCEL İMPORT VALİDASYON — Ürün + Alış Teklifi
+// ════════════════════════════════════════════════════════════════
+
+/** Ürün Excel import — validasyonlu */
+window._importUrunlerExcel = function() {
+  var inp = document.createElement('input'); inp.type='file'; inp.accept='.xlsx,.csv';
+  inp.onchange = function() {
+    if (!this.files?.[0]) return;
+    if (typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var wb = XLSX.read(e.target.result, {type:'binary'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws);
+      if (!rows.length) {window.toast?.('Excel boş','err');return;}
+      var d = typeof loadUrunler==='function'?loadUrunler():[];
+      var cariList = typeof loadCari==='function'?loadCari():[];
+      var cariNames = cariList.map(function(c){return c.name;});
+      var added=0, errors=[];
+      rows.forEach(function(r,i) {
+        var ad = r['Orijinal Adı']||r['orijinalAdi']||r['Ad']||'';
+        var ted = r['Tedarikçi']||r['tedarikci']||'';
+        if (!ad) {errors.push('Satır '+(i+2)+': Ürün adı boş');return;}
+        if (ted && cariNames.indexOf(ted)===-1) {errors.push('Satır '+(i+2)+': Tedarikçi "'+ted+'" tanımsız');return;}
+        var sat=(ted||'X').replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase();
+        d.unshift({
+          id:typeof generateNumericId==='function'?generateNumericId():Date.now()+i,
+          duayKodu:'DUAY-'+sat+'-'+String(d.length+1).padStart(3,'0'),
+          urunKodu:'DUAY-'+sat+'-'+String(d.length+1).padStart(3,'0'),
+          orijinalAdi:ad, urunAdi:ad,
+          standartAdi:r['Standart Adı']||r['standartAdi']||'',
+          kategori:r['Kategori']||r['kategori']||'',
+          birim:r['Birim']||r['birim']||'Adet',
+          mensei:r['Menşei']||r['mensei']||'',
+          gtip:r['GTİP']||r['gtip']||'',
+          marka:r['Marka']||r['marka']||'',
+          tedarikci:ted, saticiId:ted,
+          kdvOrani:parseInt(r['KDV%']||r['kdvOrani']||'20'),
+          status:'aktif', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id,
+          changeLog:[{ts:new Date().toISOString(),by:window.Auth?.getCU?.()?.id,action:'Excel import'}]
+        });
+        added++;
+      });
+      if (typeof storeUrunler==='function') storeUrunler(d);
+      window.renderUrunler?.();
+      var msg = added+' ürün eklendi';
+      if (errors.length) msg += ', '+errors.length+' hata:\n'+errors.slice(0,5).join('\n');
+      window.toast?.(errors.length?msg:'✓ '+msg, errors.length?'warn':'ok');
+      if (errors.length) console.warn('[Import]', errors);
+    };
+    reader.readAsBinaryString(this.files[0]);
+  };
+  inp.click();
+};
+
+/** Ürün Excel şablon indir */
+window._downloadUrunTemplate = function() {
+  if (typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
+  var rows=[['Orijinal Adı','Standart Adı','Kategori','Birim','Menşei','GTİP','Marka','Tedarikçi','KDV%'],['Örnek Ürün','Sample Product','Hammadde','Kg','Türkiye','1234.56','Marka','Tedarikçi Adı','20']];
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Şablon');
+  XLSX.writeFile(wb,'urun-sablon.xlsx');
+};
+
+// ════════════════════════════════════════════════════════════════
+// SATIŞ RAPORU PDF + EXCEL
+// ════════════════════════════════════════════════════════════════
+
+/** Satış raporu PDF çıktı */
+window._printSatisRapor = function() {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var toplamSatis=0,toplamAlis=0,toplamKar=0;
+  var urunSatis={};
+  d.forEach(function(t){
+    toplamSatis+=(t.genelToplam||0);toplamKar+=(t.tahminKar||0);
+    (t.urunler||[]).forEach(function(u){
+      var key=u.urunAdi||'?';
+      if(!urunSatis[key])urunSatis[key]={ad:key,adet:0,satis:0,alis:0};
+      urunSatis[key].adet+=u.miktar||0;
+      urunSatis[key].satis+=(u.satisFiyat||0)*(u.miktar||0);
+      urunSatis[key].alis+=(u.alisFiyat||0)*(u.miktar||0);
+      toplamAlis+=(u.alisFiyat||0)*(u.miktar||0);
+    });
+  });
+  var sorted=Object.values(urunSatis).sort(function(a,b){return b.satis-a.satis;});
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>Satış Raporu</title><style>body{font-family:system-ui;padding:30px;max-width:700px;margin:0 auto;font-size:12px}h1{text-align:center;color:#1a365d}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#1a365d;color:#fff;padding:8px;font-size:10px}td{padding:6px 8px;border-bottom:1px solid #eee}.summary{display:flex;gap:16px;margin:16px 0}.summary div{flex:1;padding:12px;border-radius:8px;text-align:center}@media print{button{display:none!important}}</style></head><body>'
+    +'<h1>DUAY GLOBAL — Satış Raporu</h1><div style="text-align:center;color:#666;margin-bottom:16px">'+new Date().toLocaleDateString('tr-TR')+'</div>'
+    +'<div class="summary"><div style="background:#6366F122"><div style="font-size:9px;color:#666">Toplam Satış</div><div style="font-size:20px;font-weight:700;color:#6366F1">$'+Math.round(toplamSatis).toLocaleString('tr-TR')+'</div></div>'
+    +'<div style="background:#DC262622"><div style="font-size:9px;color:#666">Toplam Maliyet</div><div style="font-size:20px;font-weight:700;color:#DC2626">$'+Math.round(toplamAlis).toLocaleString('tr-TR')+'</div></div>'
+    +'<div style="background:#16A34A22"><div style="font-size:9px;color:#666">Toplam Kâr</div><div style="font-size:20px;font-weight:700;color:#16A34A">$'+Math.round(toplamKar).toLocaleString('tr-TR')+'</div></div>'
+    +'<div style="background:#F59E0B22"><div style="font-size:9px;color:#666">Ort. Marj</div><div style="font-size:20px;font-weight:700;color:#D97706">'+(toplamSatis>0?Math.round(toplamKar/toplamSatis*100):0)+'%</div></div></div>'
+    +'<table><thead><tr><th>Ürün</th><th>Adet</th><th>Satış</th><th>Maliyet</th><th>Kâr</th><th>Marj%</th></tr></thead><tbody>'
+    +sorted.map(function(u){var kar=u.satis-u.alis;var marj=u.satis>0?Math.round(kar/u.satis*100):0;return '<tr><td>'+esc(u.ad)+'</td><td style="text-align:center">'+u.adet+'</td><td style="text-align:right">$'+Math.round(u.satis).toLocaleString('tr-TR')+'</td><td style="text-align:right">$'+Math.round(u.alis).toLocaleString('tr-TR')+'</td><td style="text-align:right;color:#16A34A;font-weight:600">$'+Math.round(kar).toLocaleString('tr-TR')+'</td><td style="text-align:center">'+marj+'%</td></tr>';}).join('')
+    +'</tbody></table>'
+    +'<button onclick="window.print()" style="margin-top:16px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:6px;background:#fff;color:#1a365d;font-weight:600">🖨 Yazdır</button></body></html>');
   w.document.close();
 };
 
