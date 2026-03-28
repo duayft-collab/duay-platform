@@ -413,7 +413,8 @@ function _injectOdmPanel() {
       '</div>',
       '<div style="display:flex;gap:6px;align-items:center">',
         '<button class="btn btns" onclick="openOdmChart()" style="border-radius:8px;font-size:11px">Grafik</button>',
-        '<button class="btn btns" onclick="exportOdmXlsx()" style="border-radius:8px;font-size:11px">Excel</button>',
+        '<button class="btn btns" onclick="exportOdmXlsx()" style="border-radius:8px;font-size:11px" id="odm-excel-btn">Excel</button>',
+        '<button class="btn btns" onclick="openOdmTrashPanel()" style="border-radius:8px;font-size:11px">🗑 Çöp</button>',
         '<button class="btn btns" onclick="window._openOdmImportModal?.()" style="border-radius:8px;font-size:11px">📥 İçe Aktar</button>',
         '<button class="btn btnp" onclick="openTahsilatModal(null)" style="border-radius:8px;font-size:11px">+ Tahsilat</button>',
         '<button class="btn btnp" onclick="openOdmModal(null)" style="border-radius:8px;font-size:12px;font-weight:600">+ Ödeme Ekle</button>',
@@ -553,6 +554,11 @@ window._odmNavClick = function(cat) {
   if (tabMap[cat]) { setOdmTab(tabMap[cat]); }
   else if (cat === 'cari') { window.nav?.('cari'); return; }
   else if (cat === 'butce') { window.openBudgetManager?.(); return; }
+  // Excel butonunu güncelle — tahsilat sekmesinde tahsilat export
+  var _xlBtn = document.getElementById('odm-excel-btn');
+  if (_xlBtn) {
+    _xlBtn.onclick = cat === 'tahsilat' ? exportTahsilatXlsx : exportOdmXlsx;
+  }
   // Highlight güncelle
   document.querySelectorAll('.odm-nav-btn').forEach(function(b) {
     var active = b.dataset.nav === cat;
@@ -1445,14 +1451,26 @@ function saveOdm() {
     const o = d.find(x => x.id === eid);
     if (o) {
       if (!o.paid && entry.paid) { entry.paidTs = _nowTso(); entry.paidBy = _CUo()?.id; }
-      // Audit diff — değişen alanları kaydet
+      // Audit diff — tüm değişen alanları kaydet
       var _diffs = [];
       if (o.amount !== entry.amount) _diffs.push('Tutar: ' + (o.amount||0) + ' → ' + entry.amount);
       if (o.due !== entry.due) _diffs.push('Tarih: ' + (o.due||'-') + ' → ' + (entry.due||'-'));
       if (o.name !== entry.name) _diffs.push('Ad: ' + (o.name||'-') + ' → ' + entry.name);
-      if (_diffs.length && !_isAdminO()) {
-        var _admins = (window.loadUsers?.() || []).filter(function(u) { return u.role === 'admin' && u.status === 'active'; });
-        _admins.forEach(function(a) { window.addNotif?.('📝', 'Odeme duzenlendi: ' + _diffs.join(', '), 'info', 'odemeler', a.id); });
+      if (o.cariName !== entry.cariName) _diffs.push('Cari: ' + (o.cariName||'-') + ' → ' + (entry.cariName||'-'));
+      if (o.yontem !== entry.yontem) _diffs.push('Yöntem: ' + (o.yontem||'-') + ' → ' + (entry.yontem||'-'));
+      if (o.docNo !== entry.docNo) _diffs.push('Döküman: ' + (o.docNo||'-') + ' → ' + (entry.docNo||'-'));
+      if (o.currency !== entry.currency) _diffs.push('Döviz: ' + (o.currency||'-') + ' → ' + (entry.currency||'-'));
+      if (o.cat !== entry.cat) _diffs.push('Kategori: ' + (o.cat||'-') + ' → ' + (entry.cat||'-'));
+      if (o.freq !== entry.freq) _diffs.push('Sıklık: ' + (o.freq||'-') + ' → ' + (entry.freq||'-'));
+      if (o.alarmDate !== entry.alarmDate) _diffs.push('Alarm: ' + (o.alarmDate||'-') + ' → ' + (entry.alarmDate||'-'));
+      if (_diffs.length) {
+        // Değişiklik geçmişini kayıt üzerinde sakla
+        if (!o.changeHistory) o.changeHistory = [];
+        o.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: _diffs });
+        if (!_isAdminO()) {
+          var _admins = (window.loadUsers?.() || []).filter(function(u) { return u.role === 'admin' && u.status === 'active'; });
+          _admins.forEach(function(a) { window.addNotif?.('📝', 'Odeme duzenlendi: ' + _diffs.join(', '), 'info', 'odemeler', a.id); });
+        }
       }
       Object.assign(o, entry);
     }
@@ -2652,10 +2670,31 @@ function saveTahsilat() {
     ts: _nowTso(), updatedBy: _CUo()?.id,
   };
   if (eid) {
-    const o = d.find(x => x.id === eid);
-    if (o) Object.assign(o, entry);
+    var o = d.find(function(x) { return x.id === eid; });
+    if (o) {
+      // Audit diff — tüm değişen alanları kaydet
+      var _tahDiffs = [];
+      if (o.amount !== entry.amount) _tahDiffs.push('Tutar: ' + (o.amount||0) + ' → ' + entry.amount);
+      if (o.due !== entry.due) _tahDiffs.push('Tarih: ' + (o.due||'-') + ' → ' + (entry.due||'-'));
+      if (o.name !== entry.name) _tahDiffs.push('Ad: ' + (o.name||'-') + ' → ' + entry.name);
+      if (o.cariName !== entry.cariName) _tahDiffs.push('Cari: ' + (o.cariName||'-') + ' → ' + (entry.cariName||'-'));
+      if (o.yontem !== entry.yontem) _tahDiffs.push('Yöntem: ' + (o.yontem||'-') + ' → ' + (entry.yontem||'-'));
+      if (o.ref !== entry.ref) _tahDiffs.push('Referans: ' + (o.ref||'-') + ' → ' + (entry.ref||'-'));
+      if (o.currency !== entry.currency) _tahDiffs.push('Döviz: ' + (o.currency||'-') + ' → ' + (entry.currency||'-'));
+      if (o.type !== entry.type) _tahDiffs.push('Tür: ' + (o.type||'-') + ' → ' + (entry.type||'-'));
+      if (o.alarmDate !== entry.alarmDate) _tahDiffs.push('Alarm: ' + (o.alarmDate||'-') + ' → ' + (entry.alarmDate||'-'));
+      if (_tahDiffs.length) {
+        if (!o.changeHistory) o.changeHistory = [];
+        o.changeHistory.push({ ts: _nowTso(), by: _CUo()?.id, changes: _tahDiffs });
+        if (!_isAdminO()) {
+          var _admins2 = (window.loadUsers?.() || []).filter(function(u) { return u.role === 'admin' && u.status === 'active'; });
+          _admins2.forEach(function(a) { window.addNotif?.('📝', 'Tahsilat duzenlendi: ' + _tahDiffs.join(', '), 'info', 'odemeler', a.id); });
+        }
+      }
+      Object.assign(o, entry);
+    }
   } else {
-    const newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
+    var newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
     if (_isAdminO()) {
       newEntry.approved = true;
       newEntry.approvedBy = _CUo()?.id;
@@ -5970,6 +6009,227 @@ window._odmToggleQuickView = function(id) {
   if (row && row.nextSibling) row.parentNode.insertBefore(qv, row.nextSibling);
   else if (row) row.parentNode.appendChild(qv);
 };
+
+// ════════════════════════════════════════════════════════════════
+// TAHSİLAT SİLME — Soft Delete (K06)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Tahsilat soft delete — yetki kontrolü + confirmModal.
+ */
+function delTahsilat(id) {
+  var d = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+  var cu = _CUo();
+  var canDel = false;
+  if (_isAdminO()) {
+    canDel = true;
+  } else if ((o.approvalStatus === 'pending' || !o.approvalStatus) && o.createdBy === cu?.id) {
+    canDel = true;
+  }
+  if (!canDel) {
+    window.toast?.('Onaylanmış kayıtlar yönetici izni olmadan silinemez', 'err');
+    return;
+  }
+  window.confirmModal('Bu tahsilatı silmek istediğinizden emin misiniz?\n\n"' + (o.name || '') + '"', {
+    title: 'Tahsilat Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      o.isDeleted = true;
+      o.deletedAt = _nowTso();
+      o.deletedBy = cu?.id;
+      o.deletedReason = 'user_delete';
+      if (typeof storeTahsilat === 'function') storeTahsilat(d);
+      renderOdemeler();
+      window.logActivity?.('view', 'Tahsilat silindi (soft): ' + (o.name || ''));
+      window.toast?.('Silindi — 30 gün içinde geri alınabilir', 'ok');
+    }
+  });
+}
+window.delTahsilat = delTahsilat;
+
+// ════════════════════════════════════════════════════════════════
+// TAHSİLAT HIZLI BAKIŞ (Quick View Accordion)
+// ════════════════════════════════════════════════════════════════
+
+window._tahToggleQuickView = function(id) {
+  var existing = document.getElementById('tah-qv-' + id);
+  if (existing) { existing.remove(); return; }
+  document.querySelectorAll('[id^="tah-qv-"]').forEach(function(el) { el.remove(); });
+
+  var d = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var o = d.find(function(x) { return x.id === id; });
+  if (!o) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var rates = _odmGetRates();
+  var kurRate = o.kurRate || rates[o.currency] || 1;
+  var curSym = o.currency === 'USD' ? '$' : o.currency === 'EUR' ? '€' : '₺';
+  var tlAmt = o.currency && o.currency !== 'TRY' ? Math.round((parseFloat(o.amount) || 0) * kurRate) : null;
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+  var assigned = users.find(function(u) { return u.id === o.assignedTo; });
+
+  var qv = document.createElement('div');
+  qv.id = 'tah-qv-' + id;
+  qv.style.cssText = 'padding:12px 20px;background:var(--s2);border-bottom:2px solid #0F6E56;animation:pus-row-in .15s ease';
+
+  qv.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:11px">'
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Finansal</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Tutar:</span> <b style="font-size:14px;color:#0F6E56">' + curSym + Number(o.amount || 0).toLocaleString('tr-TR') + '</b></div>'
+      + (tlAmt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">TL Karşılığı:</span> <b>₺' + tlAmt.toLocaleString('tr-TR') + '</b> <span style="font-size:9px;color:var(--t3)">(kur: ' + kurRate + ')</span></div>' : '')
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Tür:</span> ' + (o.type || '—') + '</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Yöntem:</span> ' + (o.yontem || '—') + '</div>'
+    + '</div>'
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Detay</div>'
+      + (assigned ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sorumlu:</span> ' + esc(assigned.name) + '</div>' : '')
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Vade:</span> ' + (o.due || '—') + '</div>'
+      + (o.cariName ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari:</span> ' + esc(o.cariName) + '</div>' : '')
+      + (o.ref ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Referans No:</span> ' + esc(o.ref) + '</div>' : '')
+      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Not:</span> ' + esc(o.note) + '</div>' : '')
+    + '</div>'
+    + '<div>'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Durum</div>'
+      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Onay:</span> ' + (o.approvalStatus || 'bekliyor') + '</div>'
+      + (o.collected ? '<div style="margin-bottom:4px;color:#16A34A">✅ Tahsil edildi' + (o.collectedTs ? ' — ' + o.collectedTs : '') + '</div>' : '')
+      + (o.docs && o.docs.length ? '<div style="margin-bottom:4px">📎 ' + o.docs.length + ' dosya</div>' : '')
+      + '<div style="margin-top:6px;display:flex;gap:4px">'
+        + '<button onclick="openTahsilatModal(' + id + ')" class="btn btns" style="font-size:10px;padding:3px 8px;border-radius:6px">✏️ Düzenle</button>'
+        + '<button onclick="delTahsilat(' + id + ')" class="btn btns" style="font-size:10px;padding:3px 8px;border-radius:6px;color:#DC2626">🗑 Sil</button>'
+      + '</div>'
+    + '</div>'
+  + '</div>';
+
+  var row = document.querySelector('[data-tid="' + id + '"]');
+  if (row && row.nextSibling) row.parentNode.insertBefore(qv, row.nextSibling);
+  else if (row) row.parentNode.appendChild(qv);
+};
+
+// ════════════════════════════════════════════════════════════════
+// TAHSİLAT EXCEL EXPORT
+// ════════════════════════════════════════════════════════════════
+
+function exportTahsilatXlsx() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var items = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+  var today = _todayStr();
+
+  var rows = [['ID','Müşteri/Kaynak','Tür','Referans No','Tutar','Para Birimi','TL Karşılığı','Kur','Vade Tarihi','Durum','Yöntem','Banka','Cari','Sorumlu','Not','Oluşturan','Tarih']];
+  items.filter(function(t) { return !t.isDeleted; }).forEach(function(t) {
+    var user = users.find(function(u) { return u.id === t.assignedTo; });
+    var creator = users.find(function(u) { return u.id === t.createdBy; });
+    var status = t.collected ? 'Tahsil Edildi' : (t.due && t.due < today ? 'Gecikti' : 'Bekliyor');
+    rows.push([
+      t.id, t.name || '', t.type || '', t.ref || '',
+      parseFloat(t.amount) || 0, t.currency || 'TRY',
+      parseFloat(t.amountTRY) || parseFloat(t.amount) || 0,
+      t.kurRate || 1, t.due || '',
+      status, t.yontem || '', t.banka || '', t.cariName || '',
+      user?.name || '—', t.note || '',
+      creator?.name || '—', t.ts || ''
+    ]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:10},{wch:25},{wch:15},{wch:15},{wch:12},{wch:8},{wch:12},{wch:8},{wch:12},{wch:12},{wch:12},{wch:15},{wch:20},{wch:15},{wch:25},{wch:15},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Tahsilatlar');
+  XLSX.writeFile(wb, 'tahsilatlar-' + _todayStr() + '.xlsx');
+  window.toast?.('Tahsilat Excel indirildi ✓', 'ok');
+}
+window.exportTahsilatXlsx = exportTahsilatXlsx;
+
+// ════════════════════════════════════════════════════════════════
+// ÇÖP KUTUSU PANELİ — Admin/Manager
+// ════════════════════════════════════════════════════════════════
+
+function openOdmTrashPanel() {
+  if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
+  var ex = document.getElementById('mo-odm-trash');
+  if (ex) { ex.remove(); return; }
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
+  var odmTrash = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return o.isDeleted; });
+  var tahTrash = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return t.isDeleted; });
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+
+  function _trashRow(item, type) {
+    var delBy = users.find(function(u) { return u.id === item.deletedBy; });
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--b)">'
+      + '<span style="font-size:14px">' + (type === 'odeme' ? '💸' : '💰') + '</span>'
+      + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(item.name || '—') + '</div>'
+        + '<div style="font-size:10px;color:var(--t3)">' + (type === 'odeme' ? 'Ödeme' : 'Tahsilat') + ' · Silen: ' + (delBy?.name || '—') + ' · ' + (item.deletedAt || '').slice(0, 16) + '</div>'
+      + '</div>'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t)">₺' + Number(item.amount || 0).toLocaleString('tr-TR') + '</div>'
+      + '<button onclick="_restoreTrashItem(' + item.id + ',\'' + type + '\')" class="btn btns" style="font-size:10px;padding:3px 8px;border-radius:6px;color:#16A34A">↩ Geri Yükle</button>'
+      + (_isAdminO() ? '<button onclick="_permanentDeleteItem(' + item.id + ',\'' + type + '\')" class="btn btns" style="font-size:10px;padding:3px 8px;border-radius:6px;color:#DC2626">✕ Kalıcı Sil</button>' : '')
+    + '</div>';
+  }
+
+  var allTrash = odmTrash.map(function(o) { return _trashRow(o, 'odeme'); }).concat(tahTrash.map(function(t) { return _trashRow(t, 'tahsilat'); }));
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-trash'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div class="mt" style="margin-bottom:0">🗑 Çöp Kutusu (' + allTrash.length + ')</div>'
+    + '<button onclick="document.getElementById(\'mo-odm-trash\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="max-height:60vh;overflow-y:auto">'
+    + (allTrash.length ? allTrash.join('') : '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px;margin-bottom:8px">🗑</div><div>Çöp kutusu boş</div></div>')
+    + '</div>'
+    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;background:var(--s2)">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-odm-trash\')?.remove()">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+function _restoreTrashItem(id, type) {
+  if (type === 'odeme') {
+    var d = typeof loadOdm === 'function' ? loadOdm() : [];
+    var o = d.find(function(x) { return x.id === id; });
+    if (o) { o.isDeleted = false; delete o.deletedAt; delete o.deletedBy; delete o.deletedReason; o.restoredAt = _nowTso(); o.restoredBy = _CUo()?.id; }
+    if (typeof storeOdm === 'function') storeOdm(d);
+  } else {
+    var d2 = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+    var t = d2.find(function(x) { return x.id === id; });
+    if (t) { t.isDeleted = false; delete t.deletedAt; delete t.deletedBy; delete t.deletedReason; t.restoredAt = _nowTso(); t.restoredBy = _CUo()?.id; }
+    if (typeof storeTahsilat === 'function') storeTahsilat(d2);
+  }
+  window.toast?.('Kayıt geri yüklendi ✓', 'ok');
+  window.logActivity?.('view', (type === 'odeme' ? 'Ödeme' : 'Tahsilat') + ' geri yüklendi: ' + id);
+  renderOdemeler();
+  openOdmTrashPanel();
+}
+
+function _permanentDeleteItem(id, type) {
+  if (!_isAdminO()) { window.toast?.('Kalıcı silme sadece admin yetkisiyle yapılabilir', 'err'); return; }
+  window.confirmModal('Bu kayıt kalıcı olarak silinecek ve geri alınamaz!', {
+    title: 'Kalıcı Sil',
+    danger: true,
+    confirmText: 'Kalıcı Sil',
+    onConfirm: function() {
+      if (type === 'odeme') {
+        var d = typeof loadOdm === 'function' ? loadOdm() : [];
+        if (typeof storeOdm === 'function') storeOdm(d.filter(function(x) { return x.id !== id; }));
+      } else {
+        var d2 = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+        if (typeof storeTahsilat === 'function') storeTahsilat(d2.filter(function(x) { return x.id !== id; }));
+      }
+      window.toast?.('Kalıcı olarak silindi', 'ok');
+      window.logActivity?.('view', 'Kalıcı silme: ' + type + ' #' + id);
+      openOdmTrashPanel();
+    }
+  });
+}
+
+window.openOdmTrashPanel = openOdmTrashPanel;
+window._restoreTrashItem = _restoreTrashItem;
+window._permanentDeleteItem = _permanentDeleteItem;
 
 // Exports
 // loadCari / storeCari artık database.js'te — window export orada yapılıyor
