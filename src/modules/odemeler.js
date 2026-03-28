@@ -405,107 +405,95 @@ function _injectOdmPanel() {
   panel.dataset.injected = '1';
 
   panel.innerHTML = [
-    // TOPBAR
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">',
+    // TOPBAR — modern flat
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">',
       '<div>',
-        '<div style="font-size:14px;font-weight:600;color:var(--t)">Nakit Akisi</div>',
-        '<div style="font-size:10px;color:var(--t3);margin-top:1px" id="odm-sub-title">Yükleniyor...</div>',
+        '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Nakit Akışı</div>',
+        '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="odm-sub-title">Yükleniyor...</div>',
       '</div>',
       '<div style="display:flex;gap:6px;align-items:center">',
-        '<button class="btn btns" onclick="openOdmChart()" style="border-radius:8px;font-size:11px">Grafik</button>',
-        '<button class="btn btns" onclick="exportOdmXlsx()" style="border-radius:8px;font-size:11px" id="odm-excel-btn">Excel</button>',
-        '<button class="btn btns" onclick="openOdmTrashPanel()" style="border-radius:8px;font-size:11px">🗑 Çöp</button>',
-        '<button class="btn btns" onclick="window._openOdmImportModal?.()" style="border-radius:8px;font-size:11px">📥 İçe Aktar</button>',
-        '<button class="btn btnp" onclick="openTahsilatModal(null)" style="border-radius:8px;font-size:11px">+ Tahsilat</button>',
-        '<button class="btn btnp" onclick="openOdmModal(null)" style="border-radius:8px;font-size:12px;font-weight:600">+ Ödeme Ekle</button>',
+        '<button onclick="openOdmChart()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.color=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.color=\'var(--t2)\'">Grafik</button>',
+        '<button onclick="exportOdmXlsx()" id="odm-excel-btn" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>',
+        '<button onclick="openOdmTrashPanel()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">🗑</button>',
+        '<button onclick="window._openOdmImportModal?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">📥 İçe Aktar</button>',
+        '<button onclick="openTahsilatModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Tahsilat</button>',
+        '<button onclick="openOdmModal(null)" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Ödeme Ekle</button>',
       '</div>',
     '</div>',
 
-    // SOL PANEL + İÇERİK WRAPPER
-    '<div style="display:flex;min-height:600px">',
-      '<div style="width:180px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e5;padding:12px 8px">',
-        (function() {
-          var cats = [
-            { id:'odeme',       label:'💸 Ödemeler' },
-            { id:'tahsilat',    label:'💰 Tahsilatlar' },
-            { id:'bekleyen',    label:'⏳ Bekleyen' },
-            { id:'projeksiyon', label:'📊 Projeksiyon' },
-            { id:'cari',        label:'👥 Cari' },
-            { id:'butce',       label:'📈 Bütçe' },
-          ];
-          return cats.map(function(c) {
-            return '<button onclick="window._odmNavClick?.(\'' + c.id + '\')" class="odm-nav-btn" data-nav="' + c.id + '" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:#333;font-weight:400;cursor:pointer;margin-bottom:4px;font-family:inherit;font-size:12px;transition:background .1s">' + c.label + '</button>';
-          }).join('');
-        })(),
-      '</div>',
-      '<div style="flex:1;overflow-y:auto">',
-
-    // BENTO ÜST ÖZET — 4 metrik kutusu
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-bottom:1px solid var(--b)">',
-      '<div style="padding:14px 18px;border-right:1px solid var(--b)">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam yükümlülük</div>',
-        '<div style="font-size:22px;font-weight:500;color:var(--t)" id="odm-bento-total-amt">₺0</div>',
-        '<div style="height:4px;background:var(--s2);border-radius:99px;margin-top:8px;overflow:hidden">',
+    // METRİK KARTLARI — 4 kart, sidebar yok
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:0.5px solid var(--b)">',
+      '<div style="padding:16px 20px;border-right:0.5px solid var(--b)">',
+        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Toplam Yükümlülük</div>',
+        '<div style="font-size:24px;font-weight:600;color:var(--t);letter-spacing:-.02em" id="odm-bento-total-amt">₺0</div>',
+        '<div style="height:3px;background:var(--s2);border-radius:99px;margin-top:10px;overflow:hidden">',
           '<div id="odm-prog-bar" style="height:100%;width:0%;background:var(--ac);border-radius:99px;transition:width .5s"></div>',
         '</div>',
-        '<div style="display:flex;justify-content:space-between;margin-top:3px">',
+        '<div style="display:flex;justify-content:space-between;margin-top:4px">',
           '<span style="font-size:9px;color:var(--ac)" id="odm-prog-pct">0% ödendi</span>',
           '<span style="font-size:9px;color:var(--t3)" id="odm-bento-ratio">0/0</span>',
         '</div>',
       '</div>',
-      '<div id="odm-bento-gecikti" data-bentotab="gecikti" style="padding:14px 18px;border-right:1px solid var(--b);cursor:pointer;transition:background .1s">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Gecikmiş</div>',
-        '<div style="font-size:22px;font-weight:500;color:#EF4444" id="odm-stat-late">0</div>',
-        '<div style="font-size:10px;color:#EF4444;margin-top:4px" id="odm-bento-late-hint">Hemen öde</div>',
+      '<div id="odm-bento-gecikti" data-bentotab="gecikti" style="padding:16px 20px;border-right:0.5px solid var(--b);cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'rgba(239,68,68,.04)\'" onmouseout="this.style.background=\'\'">',
+        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Gecikmiş</div>',
+        '<div style="font-size:24px;font-weight:600;color:#EF4444" id="odm-stat-late">0</div>',
+        '<div style="font-size:10px;color:#EF4444;margin-top:6px" id="odm-bento-late-hint">Hemen öde</div>',
       '</div>',
-      '<div id="odm-bento-hafta" data-bentotab="bekliyor" style="padding:14px 18px;border-right:1px solid var(--b);cursor:pointer;transition:background .1s">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Bu hafta</div>',
-        '<div style="font-size:22px;font-weight:500;color:#D97706" id="odm-stat-soon">0</div>',
-        '<div style="font-size:10px;color:var(--t3);margin-top:4px" id="odm-bento-week-amt">₺0</div>',
+      '<div id="odm-bento-hafta" data-bentotab="bekliyor" style="padding:16px 20px;border-right:0.5px solid var(--b);cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'rgba(217,119,6,.04)\'" onmouseout="this.style.background=\'\'">',
+        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bu Hafta Vadeli</div>',
+        '<div style="font-size:24px;font-weight:600;color:#D97706" id="odm-stat-soon">0</div>',
+        '<div style="font-size:10px;color:var(--t3);margin-top:6px" id="odm-bento-week-amt">₺0</div>',
       '</div>',
-      '<div id="odm-bento-ay" data-bentotab="ay" style="padding:14px 18px;cursor:pointer;transition:background .1s">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Bu ay ödendi</div>',
-        '<div style="font-size:22px;font-weight:500;color:#10B981" id="odm-stat-paid">0</div>',
-        '<div style="font-size:10px;color:var(--t3);margin-top:4px" id="odm-bento-paid-amt">₺0</div>',
+      '<div id="odm-bento-ay" data-bentotab="ay" style="padding:16px 20px;cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'rgba(16,185,129,.04)\'" onmouseout="this.style.background=\'\'">',
+        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödendi</div>',
+        '<div style="font-size:24px;font-weight:600;color:#10B981" id="odm-stat-paid">0</div>',
+        '<div style="font-size:10px;color:var(--t3);margin-top:6px" id="odm-bento-paid-amt">₺0</div>',
       '</div>',
     '</div>',
 
-    // SEKMELER
-    '<div id="odm-tabs-row" style="display:flex;border-bottom:1px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none">',
-      '<div id="odm-stab-all" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac)">Tümü <span id="odm-stat-total">0</span></div>',
-      '<div id="odm-stab-gecikti" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--rd)">💸 Ödemeler</div>',
-      '<div id="odm-stab-tahsilat" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:#0F6E56">💰 Tahsilatlar</div>',
-      '<div id="odm-stab-bekliyor" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--amt)">⏳ Bekleyen</div>',
-      '<div id="odm-stab-projeksiyon" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t3)">📊 Projeksiyon</div>',
+    // TAB NAVİGASYON — üstte, sidebar yerine
+    '<div id="odm-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">',
+      '<div id="odm-stab-all" onclick="setOdmTab(\'all\')" style="padding:11px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac);transition:all .12s">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
+      '<div id="odm-stab-gecikti" onclick="setOdmTab(\'gecikti\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Ödemeler</div>',
+      '<div id="odm-stab-tahsilat" onclick="setOdmTab(\'tahsilat\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Tahsilatlar</div>',
+      '<div id="odm-stab-bekliyor" onclick="setOdmTab(\'bekliyor\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Bekleyen</div>',
+      '<div id="odm-stab-projeksiyon" onclick="setOdmTab(\'projeksiyon\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Projeksiyon</div>',
     '</div>',
 
-    // ARAMA + FİLTRELER — SADELEŞTİRİLMİŞ
-    '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--sf)">',
-      '<div style="position:relative;flex:1;min-width:180px">',
+    // ARAMA + FİLTRELER — tek satır flat
+    '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
+      '<div style="position:relative;flex:1;min-width:200px">',
         '<svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%)" width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
-        '<input class="fi" type="search" id="odm-search" placeholder="Ödeme, kategori veya cari ara…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:8px;background:var(--s2)">',
+        '<input class="fi" type="search" id="odm-search" placeholder="Ödeme, kategori veya cari ara…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf)">',
       '</div>',
-      '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px">',
+      '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px;border:0.5px solid var(--b)">',
         '<option value="">Tüm Kategoriler</option>',
         Object.entries(ODM_CATS).map(([k,v]) => `<option value="${k}">${v.ic} ${v.l}</option>`).join(''),
       '</select>',
-      '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px">',
+      '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;border:0.5px solid var(--b)">',
         '<option value="">Tüm Durumlar</option>',
         '<option value="bekliyor">Bekliyor</option><option value="gecikti">Gecikmiş</option><option value="odendi">Ödendi</option>',
       '</select>',
-      '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px" title="Başlangıç tarihi">',
-      '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:8px;font-size:11px;width:130px" title="Bitiş tarihi">',
+      '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:125px;border:0.5px solid var(--b)" title="Başlangıç">',
+      '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:125px;border:0.5px solid var(--b)" title="Bitiş">',
       '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
       '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
-      '(' + (_isManagerO() ? '<button class="btn btns" onclick="window._odmBulkApprove?.()" style="border-radius:8px;font-size:11px;color:var(--grt)">✅ Toplu Onayla</button>' : '') + ')',
-      '<button class="btn btns" onclick="_odmClearFilters()" style="border-radius:8px;font-size:11px">✕</button>',
+      (_isManagerO() ? '<button onclick="window._odmBulkApprove?.()" style="padding:5px 10px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : ''),
+      '<button onclick="_odmClearFilters()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit" title="Filtreleri temizle">✕</button>',
     '</div>',
 
-    // Chip CSS — dinamik enjekte
-    '<style>.odm-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s}.odm-chip:hover{border-color:var(--ac);color:var(--ac)}.odm-chip-active{background:var(--ac)!important;color:#fff!important;border-color:var(--ac)!important}</style>',
+    // Tablo CSS — modern flat
+    '<style>',
+    '.odm-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s}',
+    '.odm-chip:hover{border-color:var(--ac);color:var(--ac)}',
+    '.odm-chip-active{background:var(--ac)!important;color:#fff!important;border-color:var(--ac)!important}',
+    '#odm-list>div{transition:background .1s}',
+    '#odm-list>div:hover{background:var(--s2)!important}',
+    '</style>',
 
-    // TABLO BAŞLIK
-    '<div id="odm-thead" style="display:grid;grid-template-columns:32px 1fr 110px 100px 90px 130px;gap:0;padding:6px 16px;border-bottom:1px solid var(--b);background:var(--s2)">',
+    // TABLO BAŞLIK — beyaz kart içinde
+    '<div style="margin:12px 20px 0;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">',
+    '<div id="odm-thead" style="display:grid;grid-template-columns:32px 1fr 110px 100px 90px 130px;gap:0;padding:8px 16px;border-bottom:0.5px solid var(--b);background:var(--s2)">',
       '<div></div>',
       '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Ödeme</div>',
       '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Tutar</div>',
@@ -515,8 +503,7 @@ function _injectOdmPanel() {
     '</div>',
 
     '<div id="odm-list"></div>',
-    '</div>', // flex:1 content close
-    '</div>', // display:flex wrapper close
+    '</div>', // beyaz kart close
   ].join('');
 
   // Sekme click
