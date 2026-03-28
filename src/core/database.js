@@ -390,60 +390,55 @@ function loadUsers() {
   if (Array.isArray(d) && d.length > 0) {
     var _fixed = false;
 
-    // 1) Mükerrer e-posta temizliği — autoCreated duplikatları kaldır
-    var _emailSeen = {};
-    var _cleanList = [];
-    d.forEach(function(u) {
-      var key = (u.email || '').toLowerCase();
-      if (!key) { _cleanList.push(u); return; }
-      if (_emailSeen[key]) {
-        // Duplikat: autoCreated olanı at, orijinali koru
-        if (u.autoCreated) {
-          console.warn('[DB] Mükerrer kullanıcı kaldırıldı:', u.email, '(autoCreated, id:' + u.id + ')');
-          _fixed = true;
-          return; // atla
-        }
-        // Orijinal zaten eklendiyse, autoCreated olanı at
-        var prev = _cleanList.find(function(x) { return (x.email || '').toLowerCase() === key; });
-        if (prev && prev.autoCreated) {
-          // Önceki autoCreated idi, bunu koru, öncekini çıkar
-          _cleanList = _cleanList.filter(function(x) { return x !== prev; });
-          _cleanList.push(u);
-          _fixed = true;
-          return;
-        }
-        // İkisi de orijinal — her ikisini de tut (farklı kayıtlar olabilir)
-        _cleanList.push(u);
-        return;
+    // 1) autoCreated kullanıcıları ANINDA sil — bunlar hatalı oluşturulmuş duplikatlardır
+    var _beforeLen = d.length;
+    d = d.filter(function(u) {
+      if (u.autoCreated) {
+        console.warn('[DB] autoCreated kullanıcı silindi:', u.email, 'id:', u.id, 'role:', u.role);
+        return false;
       }
-      _emailSeen[key] = true;
-      _cleanList.push(u);
+      return true;
     });
-    d = _cleanList;
+    if (d.length !== _beforeLen) _fixed = true;
 
-    // 2) DEFAULT_USERS'taki admin her zaman status:'active', role:'admin'
+    // 2) DEFAULT_USERS'taki admin HER ZAMAN status:'active', role:'admin'
     DEFAULT_USERS.forEach(function(def) {
       if (def.role !== 'admin') return;
-      var match = d.find(function(u) { return u.id === def.id || (u.email && u.email.toLowerCase() === def.email.toLowerCase()); });
+      var match = d.find(function(u) {
+        return u.id === def.id || (u.email && u.email.toLowerCase() === def.email.toLowerCase());
+      });
       if (match) {
         if (match.status !== 'active' || match.role !== 'admin') {
+          console.warn('[DB] Admin kurtarıldı:', match.email, 'status:', match.status, '→ active, role:', match.role, '→ admin');
           match.status = 'active';
           match.role = 'admin';
           match.access = def.access;
           delete match.isDeleted;
           delete match._fbSyncNote;
+          delete match._fbSyncAt;
           _fixed = true;
         }
       } else {
         // Admin hiç yoksa DEFAULT'tan ekle
-        d.unshift({ ...def });
+        console.warn('[DB] Admin kaydı yoktu — DEFAULT\'tan ekleniyor:', def.email);
+        d.unshift(JSON.parse(JSON.stringify(def)));
         _fixed = true;
       }
     });
 
+    // Düzeltme yapıldıysa localStorage + Firestore'a yaz
     if (_fixed) {
       try { localStorage.setItem(KEYS.users, JSON.stringify(d)); } catch(e) {}
-      console.warn('[DB] Kullanıcı listesi düzeltildi — admin korundu, duplikatlar temizlendi');
+      // Firestore'a da zorla yaz — onSnapshot'ın bozuk veriyi geri getirmesini engelle
+      try {
+        var _fb = window.Auth?.getFBDB?.();
+        if (_fb) {
+          var _tid = (window.Auth?.getTenantId?.() || 'tenant_default').replace(/[^a-zA-Z0-9_]/g, '_');
+          _fb.collection('duay_' + _tid).doc('users').set({ data: d, syncedAt: new Date().toISOString() }, { merge: true });
+          console.warn('[DB] Düzeltilmiş kullanıcı listesi Firestore\'a yazıldı');
+        }
+      } catch(e2) {}
+      console.warn('[DB] Kullanıcı listesi düzeltildi:', d.length, 'kullanıcı');
     }
     return d;
   }
