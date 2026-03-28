@@ -442,30 +442,12 @@ function _doLogin() {
     <span class="nbdg" id="nb-tmz-b" style="background:var(--bl);display:none">0</span>
   </button>
 
-  <!-- ═══ DÖKÜMAN & BİLGİ ═══ -->
+  <!-- ═══ ARŞİV & BELGELER (birleşik) ═══ -->
   <div class="nsec-header nsec" id="nsec-dokuman" onclick="toggleNsec('nsec-dokuman')">ARŞİV <span class="nsec-arrow">▾</span></div>
-      <button class="nb" onclick="nav('docs',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 8h5M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span id="nb-doc">Dökümanlar</span>
-  </button>
-      <button class="nb" onclick="nav('formlar',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span>Kurumsal Formlar</span>
-  </button>
-      <button class="nb" onclick="nav('arsiv',this)">
+      <button class="nb" onclick="nav('arsiv-hub',this)">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M1 3h14M1 1h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span>Şirket Arşivi</span>
+    <span>Arşiv & Belgeler</span>
     <span class="nbdg" id="nb-arsiv-b" style="background:var(--am);display:none">0</span>
-  </button>
-      <button class="nb" onclick="nav('tebligat',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-    <span>Tebligat Takibi</span>
-    <span class="nbdg" id="nb-teb-b" style="background:var(--rd);display:none">!</span>
-  </button>
-      <button class="nb" onclick="nav('resmi',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span>Resmi Evrak</span>
-    <span class="nbdg" id="nb-rm-b" style="background:var(--rd);display:none">!</span>
   </button>
 
   <!-- ═══ YÖNETİM ═══ -->
@@ -1155,6 +1137,7 @@ function _doLogin() {
       <div id="panel-activity" class="panel"></div>
       <div id="panel-suggestions" class="panel"></div>
       <div id="panel-arsiv" class="panel"></div>
+      <div id="panel-arsiv-hub" class="panel"></div>
       <div id="panel-etkinlik" class="panel"></div>
       <div id="panel-evrak" class="panel"></div>
       <div id="panel-finans" class="panel"></div>

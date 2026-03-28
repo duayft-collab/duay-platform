@@ -35,6 +35,7 @@
     'numune': () => { window.renderNumune?.(); },
     'evrak': () => { window.renderEvrak?.(); },
     'arsiv': () => { window.renderArsiv?.(); },
+    'arsiv-hub': () => { window._renderArsivHub?.(); },
     'etkinlik': () => { window.renderEtkinlik?.(); },
     'tebligat': () => { window.renderTebligat?.(); },
     'resmi': () => { window.renderResmi?.(); },
@@ -500,6 +501,7 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'users',     label:'Kullanıcılar'         },
     { id:'kpi-panel', label:'KPI Özet'             },
     { id:'arsiv',     label:'Şirket Arşivi'        },
+    { id:'arsiv-hub', label:'Arşiv & Belgeler'     },
     { id:'tebligat',  label:'Tebligat'             },
     { id:'evrak',     label:'Personel Evrak'       },
     { id:'resmi',     label:'Resmi Evrak'          },
@@ -781,3 +783,63 @@ console.log('[app_patch] Yetki sistemi yüklendi');
 })();
 
 console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');
+
+// ════════════════════════════════════════════════════════════════
+// ARŞİV & BELGELER HUB — birleşik panel
+// ════════════════════════════════════════════════════════════════
+var _arsivHubTab = 'docs';
+window._renderArsivHub = function() {
+  var panel = document.getElementById('panel-arsiv-hub');
+  if (!panel) return;
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = ''
+      + '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
+        + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Arşiv & Belgeler</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Tüm dökümanlar tek panelde</div></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b)">'
+        + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Toplam Belge</div><div style="font-size:22px;font-weight:600;color:var(--t)" id="arsiv-hub-total">—</div></div>'
+        + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Tebligat Bekleyen</div><div style="font-size:22px;font-weight:600;color:#DC2626" id="arsiv-hub-teb">—</div></div>'
+        + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Arşiv Dolap</div><div style="font-size:22px;font-weight:600;color:var(--ac)" id="arsiv-hub-dolap">—</div></div>'
+      + '</div>'
+      + '<div style="display:flex;border-bottom:0.5px solid var(--b);padding:0 16px">'
+        + '<div class="arsiv-tab" data-at="docs" onclick="window._setArsivTab(\'docs\')" style="padding:11px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);transition:all .12s">Dökümanlar</div>'
+        + '<div class="arsiv-tab" data-at="arsiv" onclick="window._setArsivTab(\'arsiv\')" style="padding:11px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Şirket Arşivi</div>'
+        + '<div class="arsiv-tab" data-at="tebligat" onclick="window._setArsivTab(\'tebligat\')" style="padding:11px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Tebligat</div>'
+        + '<div class="arsiv-tab" data-at="resmi" onclick="window._setArsivTab(\'resmi\')" style="padding:11px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Resmi Evrak</div>'
+        + '<div class="arsiv-tab" data-at="formlar" onclick="window._setArsivTab(\'formlar\')" style="padding:11px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Kurumsal Formlar</div>'
+      + '</div>'
+      + '</div>'
+      + '<div id="arsiv-hub-content" style="padding:12px 20px"></div>';
+  }
+  // İstatistikleri güncelle
+  var docs = typeof window.loadLocalDocs === 'function' ? window.loadLocalDocs() : [];
+  var teb = typeof window.loadTebligat === 'function' ? window.loadTebligat() : [];
+  var dolap = typeof window.loadDolaplar === 'function' ? window.loadDolaplar() : [];
+  var totalEl = document.getElementById('arsiv-hub-total'); if (totalEl) totalEl.textContent = docs.length;
+  var tebEl = document.getElementById('arsiv-hub-teb'); if (tebEl) tebEl.textContent = teb.filter(function(t) { return !t.read; }).length;
+  var dolapEl = document.getElementById('arsiv-hub-dolap'); if (dolapEl) dolapEl.textContent = dolap.length;
+  window._setArsivTab(_arsivHubTab);
+};
+
+window._setArsivTab = function(tab) {
+  _arsivHubTab = tab;
+  document.querySelectorAll('.arsiv-tab').forEach(function(t) {
+    var active = t.dataset.at === tab;
+    t.style.borderBottomColor = active ? 'var(--ac)' : 'transparent';
+    t.style.color = active ? 'var(--ac)' : 'var(--t2)';
+    t.style.fontWeight = active ? '600' : '400';
+  });
+  var cont = document.getElementById('arsiv-hub-content');
+  if (!cont) return;
+  // Alt modül render
+  var renderMap = {
+    docs: function() { if (typeof window.renderNotes === 'function') { cont.innerHTML = '<div id="panel-docs-inner"></div>'; } else { cont.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t3)">Döküman modülü yükleniyor...</div>'; } },
+    arsiv: function() { if (typeof window.renderArsiv === 'function') window.renderArsiv(); },
+    tebligat: function() { if (typeof window.renderTebligat === 'function') window.renderTebligat(); },
+    resmi: function() { if (typeof window.renderResmi === 'function') window.renderResmi(); },
+    formlar: function() { cont.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t3)">Kurumsal formlar yükleniyor...</div>'; },
+  };
+  if (renderMap[tab]) renderMap[tab]();
+};
