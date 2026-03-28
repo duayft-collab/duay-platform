@@ -223,19 +223,28 @@ async function _localLogin(email, password, skipPwCheck = false) {
     let user;
 
     if (skipPwCheck) {
-      // Firebase doğruladı — sadece e-posta eşleşmesi yeterli
+      // Firebase doğruladı — e-posta ile bul (status filtresi YOK — inactive da olsa bul)
       user = users.find(u =>
-        u.email && u.email.toLowerCase() === email.toLowerCase() &&
-        u.status === 'active'
+        u.email && u.email.toLowerCase() === email.toLowerCase()
       );
+
+      // Bulunan kullanıcı inactive ise otomatik kurtarma
+      if (user && user.status === 'inactive') {
+        console.info('[auth] Inactive kullanıcı kurtarılıyor:', user.email, '(eski status:', user.status, ')');
+        user.status = 'active';
+        delete user._fbSyncNote;
+        delete user._fbSyncAt;
+        try {
+          if (typeof window.saveUsers === 'function') window.saveUsers(users);
+          else if (typeof saveUsers === 'function') saveUsers(users);
+        } catch(e) {}
+      }
 
       // Kullanıcı localStorage'da yoksa — yeni cihaz veya temiz tarayıcı
       if (!user) {
         try {
-          // FB_DB direkt kullan — window.Auth henüz set edilmemiş olabilir
           const fbDB = FB_DB;
           if (fbDB) {
-            // Firestore path: duay_tenant_default/users → { data: [...users] }
             const tid = TENANT_ID.replace(/[^a-zA-Z0-9_]/g,'_');
             const docPath = 'duay_' + tid;
             console.info('[auth] Firestore verisinden users cekiliyor:', docPath + '/users');
@@ -243,13 +252,18 @@ async function _localLogin(email, password, skipPwCheck = false) {
             if (snap.exists) {
               const remoteUsers = snap.data()?.data;
               if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-                // localStorage'a DOĞRU key ile kaydet (database.js KEYS.users = 'ak_u3')
                 try { localStorage.setItem('ak_u3', JSON.stringify(remoteUsers)); } catch(e) {}
                 if (window._cache) window._cache['users'] = remoteUsers;
+                // Status filtresi olmadan bul
                 user = remoteUsers.find(u =>
-                  u.email && u.email.toLowerCase() === email.toLowerCase() &&
-                  u.status === 'active'
+                  u.email && u.email.toLowerCase() === email.toLowerCase()
                 );
+                // Inactive ise kurtarma
+                if (user && user.status === 'inactive') {
+                  user.status = 'active';
+                  delete user._fbSyncNote;
+                  try { localStorage.setItem('ak_u3', JSON.stringify(remoteUsers)); } catch(e) {}
+                }
                 console.info('[auth] Kullanıcılar Firestore\'tan yüklendi (' + remoteUsers.length + ')');
               }
             }
