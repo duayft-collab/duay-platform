@@ -2521,6 +2521,8 @@ function saveTahsilat() {
     collected:  !!document.getElementById('tah-f-collected')?.checked,
     assignedTo: parseInt(document.getElementById('tah-f-user')?.value || '0') || null,
     alarmDays:  parseInt(document.getElementById('tah-f-alarm')?.value || '3'),
+    alarmDate:  document.getElementById('tah-f-alarm-date')?.value || '',
+    alarmTime:  document.getElementById('tah-f-alarm-time')?.value || '09:00',
     reminderValue: parseInt(document.getElementById('tah-f-reminder-val')?.value || '3') || 3,
     reminderUnit:  document.getElementById('tah-f-reminder-unit')?.value || 'gun',
     note:       document.getElementById('tah-f-note')?.value     || '',
@@ -2715,12 +2717,12 @@ function openOdmChart() {
   mo.innerHTML = '<div class="moc" style="max-width:540px">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     + '<div class="mt" style="margin-bottom:0">Son 6 Ay Harcama Grafiği</div>'
-    + '<button onclick="_go("mo-odm-chart")?.remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">×</button>'
+    + '<button onclick="document.getElementById(\'mo-odm-chart\')?.remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">×</button>'
     + '</div>'
     + '<div style="display:flex;align-items:flex-end;gap:6px;height:160px;padding:0 8px;border-left:1px solid var(--b);border-bottom:1px solid var(--b)">'
     + barsHTML
     + '</div>'
-    + '<div class="mf"><button class="btn" onclick="_go("mo-odm-chart")?.remove()">Kapat</button></div>'
+    + '<div class="mf"><button class="btn" onclick="document.getElementById(\'mo-odm-chart\')?.remove()">Kapat</button></div>'
     + '</div>';
 
   document.body.appendChild(mo);
@@ -2966,7 +2968,7 @@ function openOdmTalimatModal(id) {
     + '<div style="font-size:14px;font-weight:600">🏦 Otomatik Ödeme Talimatı</div>'
     + '<div style="font-size:11px;opacity:.7;margin-top:2px">' + o.name + '</div>'
     + '</div>'
-    + '<button onclick="_go("mo-odm-talimat")?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:18px">×</button>'
+    + '<button onclick="document.getElementById(\'mo-odm-talimat\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:18px">×</button>'
     + '</div>'
     + '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">'
 
@@ -3018,7 +3020,7 @@ function openOdmTalimatModal(id) {
     + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">'
     + (t.banka ? '<button class="btn btns" onclick="removeOdmTalimat(' + o.id + ')" style="color:var(--rdt)">Talimatı Kaldır</button>' : '<div></div>')
     + '<div style="display:flex;gap:8px">'
-    + '<button class="btn" onclick="_go("mo-odm-talimat")?.remove()">İptal</button>'
+    + '<button class="btn" onclick="document.getElementById(\'mo-odm-talimat\')?.remove()">İptal</button>'
     + '<button class="btn btnp" onclick="saveOdmTalimat()" style="padding:8px 20px;border-radius:9px">💾 Kaydet</button>'
     + '</div>'
     + '</div>'
