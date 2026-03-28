@@ -76,6 +76,9 @@ const KEYS = {
   taskChats     : 'ak_task_chat1',
   bankalar      : 'ak_bankalar1',
   navlun        : 'ak_navlun1',
+  urunler       : 'ak_urunler1',
+  alisTeklifleri: 'ak_alis_teklif1',
+  satisTeklifleri:'ak_satis_teklif1',
   theme         : 'ak_theme',
   lang          : 'ak_lang',
   pusView       : 'ak_pus_view',
@@ -955,6 +958,16 @@ function storeTahsilat(d) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// BÖLÜM 16D — ÜRÜNLER / ALIŞ TEKLİF / SATIŞ TEKLİF
+// ════════════════════════════════════════════════════════════════
+/** @returns {Array} */ function loadUrunler() { var d = _read(KEYS.urunler); return Array.isArray(d) ? d : []; }
+/** @param {Array} d */ function storeUrunler(d) { _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
+/** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); return Array.isArray(d) ? d : []; }
+/** @param {Array} d */ function storeAlisTeklifleri(d) { _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); return Array.isArray(d) ? d : []; }
+/** @param {Array} d */ function storeSatisTeklifleri(d) { _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+
+// ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
 // ════════════════════════════════════════════════════════════════
 
@@ -1472,6 +1485,9 @@ function startRealtimeSync() {
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
     ['bankalar',      KEYS.bankalar,      () => {}],
     ['navlun',        KEYS.navlun,        () => window.renderNavlun?.()],
+    ['urunler',       KEYS.urunler,       () => window.renderUrunler?.()],
+    ['alisTeklifleri', KEYS.alisTeklifleri, () => window.renderAlisTeklifleri?.()],
+    ['satisTeklifleri',KEYS.satisTeklifleri,() => window.renderSatisTeklifleri?.()],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
     ['taskChats',     KEYS.taskChats,     () => {
       // Açık chat varsa yenile
@@ -1672,7 +1688,7 @@ const DB = {
   // Çöp
   loadTrash, storeTrash,
   // Ödemeler
-  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar, loadNavlun, storeNavlun,
+  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar, loadNavlun, storeNavlun, loadUrunler, storeUrunler, loadAlisTeklifleri, storeAlisTeklifleri, loadSatisTeklifleri, storeSatisTeklifleri,
   // İzin & Tebligat & Temizlik
   loadIzin, storeIzin,
   loadTebligat, storeTebligat,
@@ -1726,7 +1742,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun',
+    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

@@ -36,6 +36,9 @@
     'evrak': () => { window.renderEvrak?.(); },
     'arsiv': () => { window.renderArsiv?.(); },
     'docs': () => { window.renderDocs?.(); },
+    'urunler': () => { window.renderUrunler?.(); },
+    'alis-teklifleri': () => { window.renderAlisTeklifleri?.(); },
+    'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
     'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
     'etkinlik': () => { window.renderEtkinlik?.(); },
@@ -513,6 +516,9 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'etkinlik',  label:'Etkinlik / Fuar'      },
     { id:'links',     label:'Hızlı Linkler'        },
     { id:'satinalma', label:'Satın Alma'           },
+    { id:'urunler',   label:'Ürün Kataloğu'        },
+    { id:'alis-teklifleri', label:'Alış Teklifleri' },
+    { id:'satis-teklifleri',label:'Satış Teklifleri'},
     { id:'cari',      label:'Cari Yönetimi'        },
   ];
 
@@ -783,6 +789,298 @@ console.log('[app_patch] Yetki sistemi yüklendi');
     return result;
   };
 })();
+
+// ════════════════════════════════════════════════════════════════
+// ÜRÜN KATALOĞU — B tasarımı
+// ════════════════════════════════════════════════════════════════
+window.renderUrunler = function() {
+  var panel = document.getElementById('panel-urunler'); if (!panel) return;
+  var d = typeof loadUrunler === 'function' ? loadUrunler() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
+      + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Ürün Kataloğu</div><div style="font-size:10px;color:var(--t3);margin-top:2px" id="urun-sub">Tedarikçi ürünleri</div></div>'
+      + '<div style="display:flex;gap:6px"><button onclick="window._openUrunModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Ürün Ekle</button></div>'
+      + '</div>'
+      + '<div id="urun-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
+      + '</div>'
+      + '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b)"><input class="fi" id="urun-search" placeholder="Ürün ara..." oninput="window.renderUrunler?.()" style="border:0.5px solid var(--b);border-radius:7px"></div>'
+      + '<div style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div id="urun-list"></div></div>';
+  }
+  // Stats
+  var statsEl = document.getElementById('urun-stats');
+  if (statsEl) statsEl.innerHTML = '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam</div><div style="font-size:22px;font-weight:600">' + d.length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Aktif</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + d.filter(function(u){return u.status!=='pasif';}).length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Tedarikçi</div><div style="font-size:22px;font-weight:600;color:var(--ac)">' + new Set(d.map(function(u){return u.tedarikci||'';})).size + '</div></div>'
+    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kategori</div><div style="font-size:22px;font-weight:600">' + new Set(d.map(function(u){return u.kategori||'';})).size + '</div></div>';
+  // List
+  var q = (document.getElementById('urun-search')?.value || '').toLowerCase();
+  var fl = q ? d.filter(function(u) { return (u.urunAdi||'').toLowerCase().includes(q) || (u.urunKodu||'').toLowerCase().includes(q); }) : d;
+  var cont = document.getElementById('urun-list'); if (!cont) return;
+  if (!fl.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Ürün yok — yukarıdan ekleyin</div>'; return; }
+  cont.innerHTML = fl.map(function(u) {
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      + '<div style="width:40px;height:40px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '📦') + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + '</div></div>'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + (u.sonFiyat ? u.sonFiyat.toLocaleString('tr-TR') + ' ' + (u.paraBirimi||'USD') : '—') + '</div>'
+      + '<button onclick="window._openUrunModal?.(' + u.id + ')" style="padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:none;cursor:pointer;font-size:10px;color:var(--t3);font-family:inherit">✏️</button>'
+    + '</div>';
+  }).join('');
+};
+
+window._openUrunModal = function(editId) {
+  var ex = document.getElementById('mo-urun'); if (ex) ex.remove();
+  var u = editId ? (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(x){return x.id===editId;}) : null;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted;}) : [];
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-urun';
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">' + (u ? '✏️ Ürün Düzenle' : '+ Ürün Ekle') + '</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Ürün Adı *</div><input class="fi" id="ur-ad" value="' + esc(u?.urunAdi||'') + '"></div>'
+    + '<div><div class="fl">Kategori</div><input class="fi" id="ur-kat" value="' + esc(u?.kategori||'') + '" placeholder="Hammadde, Mamul..."></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Birim</div><select class="fi" id="ur-birim"><option value="adet"' + (u?.birim==='adet'?' selected':'') + '>Adet</option><option value="kg"' + (u?.birim==='kg'?' selected':'') + '>Kg</option><option value="m"' + (u?.birim==='m'?' selected':'') + '>Metre</option><option value="lt"' + (u?.birim==='lt'?' selected':'') + '>Litre</option></select></div>'
+    + '<div><div class="fl">KDV Oranı %</div><input class="fi" type="number" id="ur-kdv" value="' + (u?.kdvOrani||20) + '"></div>'
+    + '<div><div class="fl">Menşei</div><input class="fi" id="ur-mensei" value="' + esc(u?.mensei||'') + '" placeholder="Türkiye"></div></div>'
+    + '<div><div class="fl">Tedarikçi</div><select class="fi" id="ur-tedarikci"><option value="">— Seçin —</option>' + cariList.map(function(c){return '<option value="'+esc(c.name)+'"'+(u?.tedarikci===c.name?' selected':'')+'>'+esc(c.name)+'</option>';}).join('') + '</select></div>'
+    + '<div><div class="fl">Açıklama</div><textarea class="fi" id="ur-aciklama" rows="2" style="resize:none">' + esc(u?.aciklama||'') + '</textarea></div>'
+    + '<input type="hidden" id="ur-eid" value="' + (u?.id||'') + '">'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-urun\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._saveUrun()">Kaydet</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+
+window._saveUrun = function() {
+  var ad = (document.getElementById('ur-ad')?.value||'').trim();
+  if (!ad) { window.toast?.('Ürün adı zorunlu','err'); return; }
+  var eid = parseInt(document.getElementById('ur-eid')?.value||'0');
+  var d = typeof loadUrunler === 'function' ? loadUrunler() : [];
+  var tedarikci = document.getElementById('ur-tedarikci')?.value||'';
+  var entry = { urunAdi:ad, kategori:(document.getElementById('ur-kat')?.value||'').trim(), birim:document.getElementById('ur-birim')?.value||'adet', kdvOrani:parseInt(document.getElementById('ur-kdv')?.value||'20'), mensei:(document.getElementById('ur-mensei')?.value||'').trim(), tedarikci:tedarikci, aciklama:(document.getElementById('ur-aciklama')?.value||'').trim(), status:'aktif', ts:new Date().toISOString() };
+  if (eid) { var it=d.find(function(x){return x.id===eid;}); if(it)Object.assign(it,entry); }
+  else { entry.id=typeof generateNumericId==='function'?generateNumericId():Date.now(); entry.urunKodu='DUAY-'+(tedarikci||'X').slice(0,4).toUpperCase()+'-'+String(d.length+1).padStart(3,'0'); d.unshift(entry); }
+  if (typeof storeUrunler === 'function') storeUrunler(d);
+  document.getElementById('mo-urun')?.remove();
+  window.toast?.(eid?'Güncellendi ✓':'Ürün eklendi ✓','ok');
+  window.renderUrunler?.();
+};
+
+// ════════════════════════════════════════════════════════════════
+// ALIŞ TEKLİFLERİ — B tasarımı
+// ════════════════════════════════════════════════════════════════
+window.renderAlisTeklifleri = function() {
+  var panel = document.getElementById('panel-alis-teklifleri'); if (!panel) return;
+  var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var today = new Date().toISOString().slice(0,10);
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
+      + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Alış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Tedarikçi teklifleri</div></div>'
+      + '<div style="display:flex;gap:6px"><button onclick="window._openAlisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Alış Teklifi</button></div>'
+      + '</div>'
+      + '<div id="alis-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
+      + '</div>'
+      + '<div style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div id="alis-list"></div></div>';
+  }
+  var gecerli = d.filter(function(t){return !t.gecerlilikTarihi||t.gecerlilikTarihi>=today;}).length;
+  var sureDolmus = d.filter(function(t){return t.gecerlilikTarihi&&t.gecerlilikTarihi<today;}).length;
+  var statsEl = document.getElementById('alis-stats');
+  if (statsEl) statsEl.innerHTML = '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam</div><div style="font-size:22px;font-weight:600">' + d.length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Geçerli</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + gecerli + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Süresi Dolmuş</div><div style="font-size:22px;font-weight:600;color:#DC2626">' + sureDolmus + '</div></div>'
+    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(d.reduce(function(s,t){return s+(parseFloat(t.toplamTutar)||0);},0)).toLocaleString('tr-TR') + '</div></div>';
+  var cont = document.getElementById('alis-list'); if (!cont) return;
+  if (!d.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Henüz teklif yok</div>'; return; }
+  cont.innerHTML = d.map(function(t) {
+    var expired = t.gecerlilikTarihi && t.gecerlilikTarihi < today;
+    var badge = expired ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#DC262622;color:#DC2626">Süresi Dolmuş</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#16A34A22;color:#16A34A">Geçerli</span>';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(t.teklifNo||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(t.tedarikci||'') + ' · ' + esc(t.urunAdi||'') + '</div></div>'
+      + '<div style="font-size:12px;font-weight:600">' + (t.toplamTutar||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</div>'
+      + badge
+      + '<button onclick="window._convertToSatisTeklif?.(' + t.id + ')" style="padding:3px 8px;border:0.5px solid var(--ac);border-radius:5px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">Satış Yap</button>'
+    + '</div>';
+  }).join('');
+};
+
+window._openAlisModal = function() {
+  var ex = document.getElementById('mo-alis'); if (ex) ex.remove();
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && c.type==='tedarikci';}) : [];
+  var urunList = typeof loadUrunler === 'function' ? loadUrunler() : [];
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-alis';
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">+ Alış Teklifi</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Tedarikçi *</div><select class="fi" id="at-tedarikci"><option value="">— Seçin —</option>' + cariList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('') + '</select></div>'
+    + '<div><div class="fl">Ürün *</div><select class="fi" id="at-urun"><option value="">— Seçin —</option>' + urunList.map(function(u){return '<option value="'+esc(u.urunAdi)+'" data-kod="'+esc(u.urunKodu||'')+'">'+esc(u.urunAdi)+' ('+esc(u.urunKodu||'')+')</option>';}).join('') + '</select></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Birim Fiyat *</div><input class="fi" type="number" id="at-fiyat" oninput="window._atCalc?.()"></div>'
+    + '<div><div class="fl">Miktar *</div><input class="fi" type="number" id="at-miktar" oninput="window._atCalc?.()"></div>'
+    + '<div><div class="fl">Para Birimi</div><select class="fi" id="at-cur"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Geçerlilik Tarihi</div><input type="date" class="fi" id="at-gecerlilik"></div>'
+    + '<div><div class="fl">Toplam</div><div style="font-size:18px;font-weight:700;color:var(--ac)" id="at-toplam">—</div></div></div>'
+    + '<div><div class="fl">Not</div><textarea class="fi" id="at-not" rows="2" style="resize:none"></textarea></div>'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-alis\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._saveAlisTeklif()">Kaydet</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+window._atCalc = function() { var f=parseFloat(document.getElementById('at-fiyat')?.value||'0'); var m=parseFloat(document.getElementById('at-miktar')?.value||'0'); var el=document.getElementById('at-toplam'); if(el) el.textContent=(f*m).toLocaleString('tr-TR')+' '+(document.getElementById('at-cur')?.value||'USD'); };
+window._saveAlisTeklif = function() {
+  var ted = document.getElementById('at-tedarikci')?.value||''; var urun = document.getElementById('at-urun')?.value||'';
+  if (!ted||!urun) { window.toast?.('Tedarikçi ve ürün zorunlu','err'); return; }
+  var fiyat = parseFloat(document.getElementById('at-fiyat')?.value||'0'); var miktar = parseFloat(document.getElementById('at-miktar')?.value||'0');
+  if (!fiyat||!miktar) { window.toast?.('Fiyat ve miktar zorunlu','err'); return; }
+  var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var yr = new Date().getFullYear(); var seq = String(d.length+1).padStart(4,'0');
+  d.unshift({ id:typeof generateNumericId==='function'?generateNumericId():Date.now(), teklifNo:'TKL-'+yr+'-'+seq, tedarikci:ted, urunAdi:urun, birimFiyat:fiyat, miktar:miktar, paraBirimi:document.getElementById('at-cur')?.value||'USD', toplamTutar:fiyat*miktar, gecerlilikTarihi:document.getElementById('at-gecerlilik')?.value||'', not:(document.getElementById('at-not')?.value||'').trim(), ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id });
+  if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(d);
+  document.getElementById('mo-alis')?.remove();
+  window.toast?.('Alış teklifi eklendi ✓','ok');
+  window.renderAlisTeklifleri?.();
+};
+
+// ════════════════════════════════════════════════════════════════
+// SATIŞ TEKLİFLERİ — B tasarımı
+// ════════════════════════════════════════════════════════════════
+window.renderSatisTeklifleri = function() {
+  var panel = document.getElementById('panel-satis-teklifleri'); if (!panel) return;
+  var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
+      + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Satış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri teklifleri</div></div>'
+      + '<div style="display:flex;gap:6px"><button onclick="window._openSatisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button></div>'
+      + '</div>'
+      + '<div id="satis-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
+      + '</div>'
+      + '<div style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div id="satis-list"></div></div>';
+  }
+  var STAT = {taslak:'Taslak',gonderildi:'Gönderildi',onay:'Onay Bekliyor',kabul:'Kabul Edildi',red:'Reddedildi'};
+  var statsEl = document.getElementById('satis-stats');
+  if (statsEl) statsEl.innerHTML = '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam</div><div style="font-size:22px;font-weight:600">' + d.length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Onay Bekleyen</div><div style="font-size:22px;font-weight:600;color:#D97706">' + d.filter(function(t){return t.durum==='onay';}).length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kabul Edilen</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + d.filter(function(t){return t.durum==='kabul';}).length + '</div></div>'
+    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(d.reduce(function(s,t){return s+(parseFloat(t.genelToplam)||0);},0)).toLocaleString('tr-TR') + '</div></div>';
+  var cont = document.getElementById('satis-list'); if (!cont) return;
+  if (!d.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Henüz teklif yok</div>'; return; }
+  var badgeColors = {taslak:'#9CA3AF',gonderildi:'#3B82F6',onay:'#D97706',kabul:'#16A34A',red:'#DC2626'};
+  cont.innerHTML = d.map(function(t) {
+    var bc = badgeColors[t.durum]||'#9CA3AF';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(t.teklifNo||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün</div></div>'
+      + '<div style="font-size:12px;font-weight:600">' + (t.genelToplam||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</div>'
+      + '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + bc + '22;color:' + bc + ';font-weight:600">' + (STAT[t.durum]||'Taslak') + '</span>'
+      + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:none;cursor:pointer;font-size:9px;color:var(--t3);font-family:inherit">📄 PDF</button>'
+    + '</div>';
+  }).join('');
+};
+
+window._convertToSatisTeklif = function(alisId) {
+  var alis = (typeof loadAlisTeklifleri==='function'?loadAlisTeklifleri():[]).find(function(t){return t.id===alisId;});
+  if (!alis) return;
+  window._openSatisModal(alis);
+};
+
+window._openSatisModal = function(fromAlis) {
+  var ex = document.getElementById('mo-satis2'); if (ex) ex.remove();
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var musteriList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.cariType==='onayli');}) : [];
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-satis2';
+  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">+ Satış Teklifi</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Müşteri *</div><select class="fi" id="st-musteri"><option value="">— Seçin —</option>' + musteriList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('') + '</select></div>'
+    + '<div><div class="fl">Para Birimi</div><select class="fi" id="st-cur"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Ürün Adı</div><input class="fi" id="st-urun" value="' + esc(fromAlis?.urunAdi||'') + '"></div>'
+    + '<div><div class="fl">Alış Fiyatı</div><input class="fi" type="number" id="st-alis" value="' + (fromAlis?.birimFiyat||'') + '" oninput="window._stCalc?.()"></div>'
+    + '<div><div class="fl">Kâr Marjı %</div><input class="fi" type="number" id="st-marj" value="15" oninput="window._stCalc?.()"></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">Miktar</div><input class="fi" type="number" id="st-miktar" value="' + (fromAlis?.miktar||'1') + '" oninput="window._stCalc?.()"></div>'
+    + '<div><div class="fl">Teslimat</div><select class="fi" id="st-teslim"><option>FOB</option><option>CFR</option><option>CIF</option><option>EXW</option><option>DDP</option></select></div></div>'
+    + '<div style="background:var(--s2);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">'
+    + '<div><div style="font-size:10px;color:var(--t3)">Satış Fiyatı</div><div style="font-size:18px;font-weight:700;color:var(--ac)" id="st-satis-fiyat">—</div></div>'
+    + '<div><div style="font-size:10px;color:var(--t3)">Toplam</div><div style="font-size:18px;font-weight:700;color:var(--t)" id="st-toplam">—</div></div>'
+    + '<div><div style="font-size:10px;color:var(--t3)">Tahmini Kâr</div><div style="font-size:18px;font-weight:700;color:#16A34A" id="st-kar">—</div></div></div>'
+    + '<div><div class="fl">Geçerlilik</div><input type="date" class="fi" id="st-gecerlilik"></div>'
+    + '<input type="hidden" id="st-alis-id" value="' + (fromAlis?.id||'') + '">'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-satis2\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._saveSatisTeklif()">Kaydet</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open'); window._stCalc?.();},10);
+};
+
+window._stCalc = function() {
+  var alis = parseFloat(document.getElementById('st-alis')?.value||'0');
+  var marj = parseFloat(document.getElementById('st-marj')?.value||'0');
+  var miktar = parseFloat(document.getElementById('st-miktar')?.value||'0');
+  var satis = alis * (1 + marj/100);
+  var toplam = satis * miktar;
+  var kar = (satis - alis) * miktar;
+  var cur = document.getElementById('st-cur')?.value||'USD';
+  var sfEl = document.getElementById('st-satis-fiyat'); if(sfEl) sfEl.textContent = satis.toFixed(2) + ' ' + cur;
+  var tEl = document.getElementById('st-toplam'); if(tEl) tEl.textContent = toplam.toLocaleString('tr-TR') + ' ' + cur;
+  var kEl = document.getElementById('st-kar'); if(kEl) kEl.textContent = '+' + kar.toLocaleString('tr-TR') + ' ' + cur;
+};
+
+window._saveSatisTeklif = function() {
+  var musteri = document.getElementById('st-musteri')?.value||'';
+  if (!musteri) { window.toast?.('Müşteri zorunlu','err'); return; }
+  var alis = parseFloat(document.getElementById('st-alis')?.value||'0');
+  var marj = parseFloat(document.getElementById('st-marj')?.value||'0');
+  var miktar = parseFloat(document.getElementById('st-miktar')?.value||'0');
+  var satis = alis * (1 + marj/100);
+  var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+  var yr = new Date().getFullYear(); var seq = String(d.length+1).padStart(4,'0');
+  d.unshift({ id:typeof generateNumericId==='function'?generateNumericId():Date.now(), teklifNo:'STK-'+yr+'-'+seq, musteri:musteri, alisTeklifiId:parseInt(document.getElementById('st-alis-id')?.value||'0')||null, urunler:[{urunAdi:document.getElementById('st-urun')?.value||'', miktar:miktar, alisFiyat:alis, karMarji:marj, satisFiyat:satis}], paraBirimi:document.getElementById('st-cur')?.value||'USD', genelToplam:satis*miktar, tahminKar:(satis-alis)*miktar, teslimSekli:document.getElementById('st-teslim')?.value||'FOB', gecerlilikTarihi:document.getElementById('st-gecerlilik')?.value||'', durum:'taslak', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id });
+  if (typeof storeSatisTeklifleri === 'function') storeSatisTeklifleri(d);
+  document.getElementById('mo-satis2')?.remove();
+  window.toast?.('Satış teklifi oluşturuldu ✓','ok');
+  window.renderSatisTeklifleri?.();
+};
+
+window._printSatisTeklif = function(id) {
+  var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+  var t = d.find(function(x){return x.id===id;}); if (!t) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var w = window.open('','_blank');
+  w.document.write('<html><head><title>Teklif ' + esc(t.teklifNo) + '</title><style>body{font-family:system-ui;margin:40px;max-width:700px;margin:40px auto}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{padding:8px 12px;border:1px solid #ddd;font-size:12px}th{background:#f5f5f5;text-align:left}.header{text-align:center;margin-bottom:24px}@media print{button{display:none!important}}</style></head><body>'
+    + '<div class="header"><h2>DUAY GLOBAL TRADE LLC</h2><div style="color:#666">Proforma Invoice / Teklif</div></div>'
+    + '<table><tr><td><b>Teklif No:</b> ' + esc(t.teklifNo) + '</td><td><b>Tarih:</b> ' + (t.ts||'').slice(0,10) + '</td></tr>'
+    + '<tr><td><b>Müşteri:</b> ' + esc(t.musteri) + '</td><td><b>Geçerlilik:</b> ' + (t.gecerlilikTarihi||'—') + '</td></tr>'
+    + '<tr><td><b>Teslimat:</b> ' + (t.teslimSekli||'FOB') + '</td><td><b>Para Birimi:</b> ' + (t.paraBirimi||'USD') + '</td></tr></table>'
+    + '<table><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam</th></tr></thead><tbody>'
+    + (t.urunler||[]).map(function(u){return '<tr><td>'+esc(u.urunAdi||'')+'</td><td>'+u.miktar+'</td><td>'+u.satisFiyat?.toFixed(2)+'</td><td>'+(u.satisFiyat*u.miktar).toFixed(2)+'</td></tr>';}).join('')
+    + '</tbody><tfoot><tr><td colspan="3" style="text-align:right;font-weight:700">Genel Toplam</td><td style="font-weight:700">' + (t.genelToplam||0).toFixed(2) + ' ' + (t.paraBirimi||'USD') + '</td></tr></tfoot></table>'
+    + '<div style="margin-top:40px;display:flex;justify-content:space-between"><div><div style="margin-bottom:30px">Düzenleyen:</div><div style="border-top:1px solid #333;padding-top:4px">DUAY GLOBAL TRADE LLC</div></div><div><div style="margin-bottom:30px">Onaylayan:</div><div style="border-top:1px solid #333;padding-top:4px">' + esc(t.musteri) + '</div></div></div>'
+    + '<div style="text-align:center;margin-top:20px;font-size:10px;color:#999">Bu teklif ' + (t.gecerlilikTarihi||'belirtilen süre') + ' tarihine kadar geçerlidir.</div>'
+    + '<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">🖨 Yazdır</button>'
+    + '</body></html>');
+  w.document.close();
+};
 
 console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');
 

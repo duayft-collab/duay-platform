@@ -374,22 +374,25 @@ function _doLogin() {
     <span class="nbdg" id="nb-grt-b" style="background:var(--ac);display:none">0</span>
   </button>
 
-  <!-- ═══ SATINALMA ═══ -->
+  <!-- ═══ TEDARİK ═══ -->
   <div class="nsec-header nsec" id="nsec-satinalma" onclick="toggleNsec('nsec-satinalma')">TEDARİK <span class="nsec-arrow">▾</span></div>
       <button class="nb" onclick="nav('satinalma',this)">
         <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M1 3h2l1.5 8h8l1.5-6H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="13" r="1" stroke="currentColor" stroke-width="1.3"/><circle cx="11.5" cy="13" r="1" stroke="currentColor" stroke-width="1.3"/></svg>
-        <span>Satın Alma Takip</span>
+        <span>Satın Alma</span>
         <span class="nbdg" id="nb-satinalma-b" style="display:none">0</span>
       </button>
-      <button class="nb" onclick="App.nav('lojistik',this)" id="nb-lojistik">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 8h2l2 3v2h-4V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="4" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/><circle cx="12" cy="14" r="1.3" stroke="currentColor" stroke-width="1"/></svg>
-        <span>Satın Alma Merkezi</span>
-        <span class="nbdg" id="nb-lojistik-b" style="display:none">0</span>
+      <button class="nb" onclick="nav('urunler',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Ürün Kataloğu</span>
       </button>
-      <button class="nb" onclick="nav('stok',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <span>Ürünler</span>
-  </button>
+      <button class="nb" onclick="nav('alis-teklifleri',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Alış Teklifleri</span>
+      </button>
+      <button class="nb" onclick="nav('satis-teklifleri',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 11l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Satış Teklifleri</span>
+      </button>
 
   <!-- ═══ LOJİSTİK ═══ -->
   <div class="nsec-header nsec" id="nsec-lojistik" onclick="toggleNsec('nsec-lojistik')">LOJİSTİK <span class="nsec-arrow">▾</span></div>
@@ -1112,6 +1115,9 @@ function _doLogin() {
       <div id="panel-stok"      class="panel"></div>
       <div id="panel-urun-db"   class="panel"></div>
       <div id="panel-satis-teklif" class="panel"></div>
+      <div id="panel-urunler" class="panel"></div>
+      <div id="panel-alis-teklifleri" class="panel"></div>
+      <div id="panel-satis-teklifleri" class="panel"></div>
       <div id="panel-odemeler" class="panel">
         <div id="odm-kur-ticker" style="padding:0;border-bottom:1px solid var(--b);background:var(--s2);overflow:hidden;white-space:nowrap;font-size:11px;position:relative;height:28px">
           <style>
