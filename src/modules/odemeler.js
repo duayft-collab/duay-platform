@@ -835,6 +835,26 @@ function renderOdemeler() {
   const barEl = _go('odm-prog-bar'); if (barEl) barEl.style.width = pct + '%';
   const pctEl = _go('odm-prog-pct'); if (pctEl) pctEl.textContent = pct + '% ödendi';
 
+  // Vade uyumsuzluğu uyarısı (admin only)
+  var _mismatchEl = document.getElementById('odm-mismatch-warn');
+  if (!_mismatchEl && _isManagerO()) {
+    _mismatchEl = document.createElement('div');
+    _mismatchEl.id = 'odm-mismatch-warn';
+    var _bentoParent = _go('odm-bento-gecikti')?.parentElement;
+    if (_bentoParent) _bentoParent.parentElement.insertBefore(_mismatchEl, _bentoParent.nextSibling);
+  }
+  if (_mismatchEl && _isManagerO()) {
+    var mm = _checkDurationMismatch();
+    if (mm) {
+      _mismatchEl.innerHTML = '<div style="padding:8px 20px;background:#FEF2F2;border-bottom:0.5px solid #FECACA;font-size:12px;color:#991B1B;display:flex;align-items:center;gap:8px">'
+        + '<span style="font-size:16px">🚨</span>'
+        + '<span><b>' + mm.days + ' gün içinde</b> ₺' + mm.gap.toLocaleString('tr-TR') + ' nakit açığı oluşacak (Ödeme: ₺' + mm.odm30.toLocaleString('tr-TR') + ' / Tahsilat: ₺' + mm.tah30.toLocaleString('tr-TR') + ')</span>'
+        + '</div>';
+    } else {
+      _mismatchEl.innerHTML = '';
+    }
+  }
+
   // Tab "ay" filtresi
   if (_odmCurrentTab === 'ay') {
     items = items.filter(o => (o.due||'').startsWith(thisMonth) || (o.paidTs||'').startsWith(thisMonth));
@@ -3730,7 +3750,8 @@ function _calcProjeksiyon() {
     return t.approved || t.approvalStatus === 'kesinlesti' || t.approvalStatus === 'approved' || !t.approvalStatus;
   });
 
-  for (var i = 0; i < 15; i++) {
+  var projDays = _isManagerO() ? 90 : 15;
+  for (var i = 0; i < projDays; i++) {
     var d = new Date(today);
     d.setDate(d.getDate() + i);
     var ds = d.toISOString().slice(0, 10);
@@ -3780,7 +3801,15 @@ function _renderProjeksiyonTab(cont) {
   cont.innerHTML = ''
     // Başlık + özet kartlar
     + '<div style="padding:20px 20px 0">'
-      + '<div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:14px">📊 15 Günlük Nakit Projeksiyon</div>'
+      + '<div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:14px">📊 ' + (days.length > 15 ? '90' : '15') + ' Günlük Nakit Projeksiyon</div>'
+      + (function() {
+          // Negatife düşen günleri bul — admin uyarı
+          var negDays = days.filter(function(d) { return d.cumNet < 0; });
+          if (!negDays.length || !_isManagerO()) return '';
+          var firstNeg = negDays[0];
+          return '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#991B1B;font-weight:500">🚨 '
+            + firstNeg.date + ' tarihinde nakit negatife düşecek: <b>' + firstNeg.cumNet.toLocaleString('tr-TR') + '</b> — Toplam ' + negDays.length + ' gün negatif</div>';
+        })()
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">'
         + '<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:12px;padding:14px 16px">'
           + '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Ödeme</div>'
@@ -5952,6 +5981,10 @@ function _renderCariDetail(id) {
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Toplam Borç</div><div style="font-size:18px;font-weight:700;color:#DC2626">₺' + Math.round(totalBorc).toLocaleString('tr-TR') + '</div></div>'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Net Bakiye</div><div style="font-size:18px;font-weight:700;color:' + (netBakiye >= 0 ? '#16A34A' : '#DC2626') + '">' + (netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(netBakiye)).toLocaleString('tr-TR') + '</div></div>'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">İşlem Sayısı</div><div style="font-size:18px;font-weight:700;color:var(--t)">' + hareketler.length + '</div></div>'
+      + (_isManagerO() ? (function() {
+          var rs = _calcAdvancedRiskScore(c.name);
+          return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Risk Skoru</div><div style="font-size:18px;font-weight:700;color:' + rs.color + '">' + rs.score + '</div><div style="font-size:9px;color:' + rs.color + '">' + rs.label + '</div></div>';
+        })() : '')
     + '</div>'
     // Cari Limit uyarısı — creditLimit (saveOdm ile aynı alan adı)
     + (function() {
@@ -6802,6 +6835,191 @@ function _insertCariDemoData() {
 }
 
 window._insertCariDemoData = _insertCariDemoData;
+
+// ════════════════════════════════════════════════════════════════
+// GİZLİ FİNANSAL ÖZELLİKLER — SADECE ADMİN/YÖNETİCİ
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * FIX 2 — Gelişmiş Cari Risk Skoru (0-100).
+ * Gecikme süresi, limit kullanımı, ortalama gecikme dahil.
+ */
+function _calcAdvancedRiskScore(cariName) {
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && o.cariName === cariName; });
+  if (odm.length < 2) return { score: 50, label: 'Yetersiz Veri', color: '#9CA3AF', details: [] };
+  var today = _todayStr();
+  var total = odm.length;
+  var paid = odm.filter(function(o) { return o.paid; }).length;
+  var late = odm.filter(function(o) { return !o.paid && o.due && o.due < today; });
+  var lateCount = late.length;
+  // Ortalama gecikme süresi (gün)
+  var totalLateDays = late.reduce(function(s, o) { return s + Math.ceil((new Date(today) - new Date(o.due)) / 86400000); }, 0);
+  var avgLateDays = lateCount > 0 ? Math.round(totalLateDays / lateCount) : 0;
+  // Limit kullanımı
+  var cari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === cariName; });
+  var cLimit = cari ? (cari.creditLimit || cari.limitAmount || 0) : 0;
+  var unpaid = odm.filter(function(o) { return !o.paid; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+  var limitUsage = cLimit > 0 ? Math.round(unpaid / cLimit * 100) : 0;
+  // Skor hesapla
+  var payRate = Math.round(paid / total * 40); // max 40
+  var latePenalty = Math.min(30, lateCount * 6); // max 30
+  var delayPenalty = Math.min(15, Math.round(avgLateDays / 5) * 3); // max 15
+  var limitPenalty = limitUsage > 100 ? 15 : limitUsage > 80 ? 10 : limitUsage > 50 ? 5 : 0; // max 15
+  var score = Math.max(0, Math.min(100, 100 - latePenalty - delayPenalty - limitPenalty + (payRate - 40)));
+  var label = score >= 80 ? 'Düşük Risk' : score >= 60 ? 'Orta Risk' : score >= 40 ? 'Yüksek Risk' : 'Kritik Risk';
+  var color = score >= 80 ? '#16A34A' : score >= 60 ? '#F59E0B' : score >= 40 ? '#EF4444' : '#7C2D12';
+  return {
+    score: score, label: label, color: color,
+    details: [
+      'Ödeme oranı: %' + Math.round(paid / total * 100),
+      'Gecikmiş: ' + lateCount + ' kayıt',
+      'Ort. gecikme: ' + avgLateDays + ' gün',
+      'Limit kullanım: %' + limitUsage,
+    ]
+  };
+}
+window._calcAdvancedRiskScore = _calcAdvancedRiskScore;
+
+/**
+ * FIX 3 — Kâr Marjı Analizi paneli (admin only).
+ */
+window.openProfitAnalysis = function() {
+  if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var cariList = (typeof loadCari === 'function' ? loadCari() : []).filter(function(c) { return !c.isDeleted; });
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted; });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted; });
+
+  // Cari bazlı net pozisyon
+  var positions = cariList.map(function(c) {
+    var cOdm = odm.filter(function(o) { return o.cariName === c.name; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    var cTah = tah.filter(function(t) { return t.cariName === c.name; }).reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+    return { name: c.name, borc: cOdm, alacak: cTah, net: cTah - cOdm };
+  }).filter(function(p) { return p.borc > 0 || p.alacak > 0; });
+
+  positions.sort(function(a, b) { return b.net - a.net; });
+  var topProfit = positions.slice(0, 5);
+  var topLoss = positions.slice(-5).reverse();
+
+  // Döviz bazlı
+  var byCur = {};
+  odm.forEach(function(o) { var c = o.currency || 'TRY'; if (!byCur[c]) byCur[c] = { borc: 0, alacak: 0 }; byCur[c].borc += parseFloat(o.amount) || 0; });
+  tah.forEach(function(t) { var c = t.currency || 'TRY'; if (!byCur[c]) byCur[c] = { borc: 0, alacak: 0 }; byCur[c].alacak += parseFloat(t.amount) || 0; });
+
+  var ex = document.getElementById('mo-profit'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-profit'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:640px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="font-size:14px;font-weight:700;color:var(--t)">📈 Kâr Marjı Analizi</div>'
+    + '<button onclick="document.getElementById(\'mo-profit\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="padding:16px 20px;max-height:65vh;overflow-y:auto">'
+    // Döviz pozisyon
+    + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Para Birimi Bazlı Net Pozisyon</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+    + Object.entries(byCur).map(function(e) {
+        var net = e[1].alacak - e[1].borc;
+        var color = net >= 0 ? '#16A34A' : '#DC2626';
+        return '<div style="padding:8px 14px;border-radius:8px;background:' + color + '0a;border:1px solid ' + color + '22"><span style="font-size:10px;color:var(--t3)">' + e[0] + '</span> <span style="font-size:14px;font-weight:700;color:' + color + '">' + (net >= 0 ? '+' : '') + Math.round(net).toLocaleString('tr-TR') + '</span></div>';
+      }).join('')
+    + '</div>'
+    // En kârlı 5
+    + '<div style="font-size:11px;font-weight:700;color:#16A34A;text-transform:uppercase;margin-bottom:6px">En Kârlı 5 Cari</div>'
+    + topProfit.map(function(p) {
+        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b)"><span>' + esc(p.name) + '</span><span style="color:#16A34A;font-weight:600">+₺' + Math.round(p.net).toLocaleString('tr-TR') + '</span></div>';
+      }).join('')
+    + '<div style="margin-top:16px;font-size:11px;font-weight:700;color:#DC2626;text-transform:uppercase;margin-bottom:6px">En Zararlı 5 Cari</div>'
+    + topLoss.map(function(p) {
+        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b)"><span>' + esc(p.name) + '</span><span style="color:#DC2626;font-weight:600">₺' + Math.round(p.net).toLocaleString('tr-TR') + '</span></div>';
+      }).join('')
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/**
+ * FIX 4 — Vade Uyumsuzluğu Uyarısı (Duration Mismatch).
+ * 30 günde tahsilat < ödeme ise nakit açığı uyarısı.
+ */
+function _checkDurationMismatch() {
+  if (!_isManagerO()) return null;
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && !o.paid; });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && !t.collected; });
+  var today = new Date();
+  var d30 = new Date(today.getTime() + 30 * 86400000).toISOString().slice(0, 10);
+  var todayStr = today.toISOString().slice(0, 10);
+
+  var odm30 = odm.filter(function(o) { return o.due && o.due >= todayStr && o.due <= d30; })
+    .reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+  var tah30 = tah.filter(function(t) { return t.due && t.due >= todayStr && t.due <= d30; })
+    .reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+
+  var gap = tah30 - odm30;
+  if (gap >= 0) return null;
+  // Kaç gün içinde açık oluşacağını bul
+  var cumNet = 0;
+  var gapDay = 30;
+  for (var i = 0; i < 30; i++) {
+    var ds = new Date(today.getTime() + i * 86400000).toISOString().slice(0, 10);
+    var dayOdm = odm.filter(function(o) { return o.due === ds; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    var dayTah = tah.filter(function(t) { return t.due === ds; }).reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+    cumNet += dayTah - dayOdm;
+    if (cumNet < 0 && gapDay === 30) gapDay = i;
+  }
+  return { gap: Math.abs(Math.round(gap)), days: gapDay, odm30: Math.round(odm30), tah30: Math.round(tah30) };
+}
+window._checkDurationMismatch = _checkDurationMismatch;
+
+/**
+ * FIX 5 — Çapraz Döviz Pozisyon Takibi paneli (admin only).
+ */
+window.openFxPosition = function() {
+  if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && !o.paid; });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && !t.collected; });
+  var rates = _odmGetRates();
+
+  var byCur = {};
+  odm.forEach(function(o) { var c = o.currency || 'TRY'; if (!byCur[c]) byCur[c] = { borc: 0, alacak: 0 }; byCur[c].borc += parseFloat(o.amount) || 0; });
+  tah.forEach(function(t) { var c = t.currency || 'TRY'; if (!byCur[c]) byCur[c] = { borc: 0, alacak: 0 }; byCur[c].alacak += parseFloat(t.amount) || 0; });
+
+  var ex = document.getElementById('mo-fx-pos'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-fx-pos'; mo.style.zIndex = '2200';
+  var tableRows = Object.entries(byCur).map(function(e) {
+    var cur = e[0], pos = e[1];
+    var net = pos.alacak - pos.borc;
+    var kur = rates[cur] || 1;
+    var tlNet = Math.round(net * kur);
+    // Kur riski: %5 değişimde etki
+    var kurRisk5 = Math.round(Math.abs(net) * kur * 0.05);
+    var netColor = net >= 0 ? '#16A34A' : '#DC2626';
+    return '<tr style="border-bottom:1px solid var(--b)">'
+      + '<td style="padding:8px;font-weight:600">' + cur + '</td>'
+      + '<td style="padding:8px;color:#DC2626;text-align:right">' + Math.round(pos.borc).toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px;color:#16A34A;text-align:right">' + Math.round(pos.alacak).toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px;color:' + netColor + ';font-weight:700;text-align:right">' + (net >= 0 ? '+' : '') + Math.round(net).toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px;text-align:right;color:var(--t3)">₺' + kur.toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px;color:' + netColor + ';font-weight:700;text-align:right">₺' + tlNet.toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px;text-align:right;color:#F59E0B;font-size:10px">±₺' + kurRisk5.toLocaleString('tr-TR') + '</td>'
+    + '</tr>';
+  }).join('');
+
+  mo.innerHTML = '<div class="moc" style="max-width:700px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="font-size:14px;font-weight:700;color:var(--t)">💱 Çapraz Döviz Pozisyon</div>'
+    + '<button onclick="document.getElementById(\'mo-fx-pos\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="padding:16px 20px;overflow-x:auto">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    + '<thead><tr style="border-bottom:2px solid var(--b);font-size:9px;text-transform:uppercase;color:var(--t3)">'
+    + '<th style="padding:6px 8px;text-align:left">Döviz</th><th style="padding:6px 8px;text-align:right">Borç</th><th style="padding:6px 8px;text-align:right">Alacak</th><th style="padding:6px 8px;text-align:right">Net</th><th style="padding:6px 8px;text-align:right">Kur</th><th style="padding:6px 8px;text-align:right">TL Net</th><th style="padding:6px 8px;text-align:right">%5 Risk</th>'
+    + '</tr></thead><tbody>' + tableRows + '</tbody></table>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
 
 /** Toplu seçim sayacı güncelle */
 window._cariUpdateBulkCount = function() {
