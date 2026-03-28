@@ -974,11 +974,11 @@ function renderOdemeler() {
         + '<div style="font-size:11px;font-weight:500;color:'+dueColor+'">' + (o.due||'—') + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + diffTxt + '</div>'
       + '</div>'
-      + '<div>'
-        + '<span class="badge ' + sta.cls + '" style="font-size:10px">' + sta.ic + ' ' + sta.l + '</span>'
-        + (o.approvalStatus==='pending' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Onay bekliyor</div>' : '')
-        + (status==='gecikti' || (diff!==null && diff>=0 && diff<=2) ? '<div style="font-size:9px;font-weight:700;color:#EF4444;margin-top:2px">🔴 Kritik</div>' : '')
-        + (o.approvalStatus==='pending_postpone' ? '<div style="font-size:9px;color:var(--amt);margin-top:2px">⏳ Erteleme onayı</div>' : '')
+      + '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
+        + '<span class="badge ' + sta.cls + '" style="font-size:10px;white-space:nowrap">' + sta.ic + ' ' + sta.l + '</span>'
+        + (o.approvalStatus==='pending' ? '<span style="font-size:9px;color:var(--amt);white-space:nowrap">⏳ Onay</span>' : '')
+        + (status==='gecikti' || (diff!==null && diff>=0 && diff<=2) ? '<span style="font-size:9px;font-weight:700;color:#EF4444;white-space:nowrap">🔴</span>' : '')
+        + (o.approvalStatus==='pending_postpone' ? '<span style="font-size:9px;color:var(--amt);white-space:nowrap">⏳ Ertele</span>' : '')
       + '</div>'
       + '<div style="display:flex;gap:2px;flex-shrink:0;align-items:center;flex-wrap:nowrap">'
         // Ana butonlar

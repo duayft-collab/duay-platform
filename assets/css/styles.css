@@ -352,7 +352,11 @@ body {
 .tbl tr:hover td { background: var(--s2); }
 
 /* â”€â”€ BADGES â”€â”€ */
-.badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; white-space: nowrap; vertical-align: middle; }
+/* Tablo hizalama kuralları */
+td { vertical-align: middle; }
+[style*="display:grid"] > div { display: flex; align-items: center; }
+.chip, .pill { white-space: nowrap; }
 .bg  { background: var(--grb); color: var(--grt); }
 .bb  { background: var(--blb); color: var(--blt); }
 .ba  { background: var(--amb); color: var(--amt); }
