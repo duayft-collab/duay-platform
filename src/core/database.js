@@ -1429,8 +1429,15 @@ function startRealtimeSync() {
 
   console.info('[DB] Realtime sync başlatıldı:', SYNC_MAP.length, 'koleksiyon');
 
+  // İlk veri çekme sonrası aktif paneli yeniden render et
+  // get() çağrıları ~500-2000ms sürebilir — sonrası için zorla render
+  setTimeout(function() {
+    console.info('[DB] İlk sync tamamlandı — aktif panel yeniden render');
+    if (typeof window._renderActivePanel === 'function') window._renderActivePanel();
+  }, 2500);
+
   // Otomatik veri aktarımı — Firestore boşsa localStorage'ı yükle
-  setTimeout(_autoUploadIfEmpty, 2000);
+  setTimeout(_autoUploadIfEmpty, 3500);
 }
 
 /**

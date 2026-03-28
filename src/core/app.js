@@ -357,10 +357,11 @@ function _loadAndApplyUserPrefs(user) {
     var prefs = JSON.parse(localStorage.getItem('ak_user_prefs_' + user.id) || '{}');
     // Son aktif panele dön
     if (prefs.lastPanel && prefs.lastPanel !== 'dashboard') {
+      // 1500ms bekle — Firestore ilk veri çekme tamamlansın
       setTimeout(function() {
         var btn = document.querySelector('.nb[onclick*="' + prefs.lastPanel + '"]') || null;
         try { nav(prefs.lastPanel, btn); } catch(e) {}
-      }, 600);
+      }, 1500);
     }
     // Sidebar durumu
     if (prefs.sidebarCollapsed) {
@@ -2002,6 +2003,20 @@ window.App = App;
 // ── Geriye uyumluluk — eski HTML inline onclick='nav(...)' çağrıları ──
 window.nav              = nav;
 window.goTo             = goTo;
+
+/**
+ * Aktif paneli tespit edip render fonksiyonunu çağırır.
+ * İlk veri yüklemesi sonrası çağrılır.
+ */
+window._renderActivePanel = function() {
+  var activePanel = document.querySelector('.panel.on');
+  if (!activePanel) return;
+  var id = (activePanel.id || '').replace('panel-', '');
+  if (id) {
+    console.info('[App] Aktif panel yeniden render:', id);
+    _renderPanel(id);
+  }
+};
 window.toast            = toast;
 window.openMo           = openMo;
 window.closeMo          = closeMo;
