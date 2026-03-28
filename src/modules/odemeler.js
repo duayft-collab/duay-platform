@@ -5321,23 +5321,27 @@ function saveCari(entry) {
   var isNew = !entry.id;
   var editId = entry.id || 0;
 
-  // VKN format kontrolü (10 hane sayı)
-  if (entry.vkn) {
+  // VKN format kontrolü (boş kabul edilir, doluysa 10 hane sayı zorunlu)
+  if (entry.vkn && entry.vkn.trim()) {
     var vknClean = entry.vkn.replace(/\s/g, '');
     if (!/^\d{10}$/.test(vknClean)) {
-      window.toast?.('VKN 10 haneli sayı olmalıdır', 'err');
+      window.toast?.('VKN 10 haneli sayı olmalıdır (veya boş bırakın)', 'err');
       return null;
     }
     entry.vkn = vknClean;
+  } else {
+    entry.vkn = ''; // boş bırakıldı — kabul
   }
-  // TCKN format kontrolü (11 hane sayı)
-  if (entry.tckn) {
+  // TCKN format kontrolü (boş kabul edilir, doluysa 11 hane sayı zorunlu)
+  if (entry.tckn && entry.tckn.trim()) {
     var tcknClean = entry.tckn.replace(/\s/g, '');
     if (!/^\d{11}$/.test(tcknClean)) {
-      window.toast?.('TCKN 11 haneli sayı olmalıdır', 'err');
+      window.toast?.('TCKN 11 haneli sayı olmalıdır (veya boş bırakın)', 'err');
       return null;
     }
     entry.tckn = tcknClean;
+  } else {
+    entry.tckn = '';
   }
 
   // VKN mükerrer kontrolü
@@ -5357,7 +5361,7 @@ function saveCari(entry) {
     }
   }
 
-  // Firma adı benzerlik uyarısı (Levenshtein, engelleme değil)
+  // Firma adı benzerlik uyarısı (sadece uyarı, engelleme YOK)
   if (isNew && entry.name) {
     var similar = d.find(function(c) {
       if (c.isDeleted) return false;
@@ -5365,13 +5369,10 @@ function saveCari(entry) {
       var maxLen = Math.max((c.name || '').length, (entry.name || '').length) || 1;
       return (1 - dist / maxLen) >= 0.8;
     });
-    if (similar && !window._cariSimilarityWarned) {
-      window._cariSimilarityWarned = true;
-      window.toast?.('⚠️ Benzer firma var: ' + similar.name + ' — tekrar kaydet ile devam edin', 'warn');
-      setTimeout(function() { window._cariSimilarityWarned = false; }, 15000);
-      return null;
+    if (similar) {
+      window.toast?.('⚠️ Benzer firma var: ' + similar.name + ' — kontrol edin', 'warn');
+      // Engelleme yok — kayıt devam eder
     }
-    window._cariSimilarityWarned = false;
   }
 
   if (entry.id) {
@@ -5701,7 +5702,8 @@ window._saveQuickCari = function() {
     notes: (document.getElementById('qc-notes')?.value || '').trim(),
   };
   if (editId) entry.id = parseInt(editId);
-  saveCari(entry);
+  var result = saveCari(entry);
+  if (result === null) return; // Hata varsa modal kapanmasın
   document.getElementById('mo-quick-cari')?.remove();
   window.toast?.(editId ? 'Cari güncellendi ✓' : 'Cari eklendi ✓', 'ok');
   renderOdemeler();
