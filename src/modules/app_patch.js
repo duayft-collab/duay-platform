@@ -2203,6 +2203,112 @@ window._exportAllData = function() {
   window.toast?.('Yedek indirildi ✓','ok');
 };
 
+// ════════════════════════════════════════════════════════════════
+// ANLIK FİKİR PAYLAŞIMI
+// ════════════════════════════════════════════════════════════════
+
+window._openFikirForm = function() {
+  var ex = document.getElementById('fikir-popup'); if (ex) { ex.remove(); return; }
+  var div = document.createElement('div');
+  div.id = 'fikir-popup';
+  div.style.cssText = 'position:fixed;bottom:80px;right:24px;width:300px;background:var(--sf);border:0.5px solid var(--b);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:9001;overflow:hidden';
+  div.innerHTML = '<div style="padding:12px 16px;background:#1a365d;color:#fff;display:flex;align-items:center;justify-content:space-between">'
+    + '<span style="font-size:13px;font-weight:600">Fikir Paylaş</span>'
+    + '<button onclick="document.getElementById(\'fikir-popup\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
+    + '<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">'
+    + '<input class="fi" id="fikir-baslik" placeholder="Başlık (opsiyonel)" style="font-size:12px;border-radius:7px">'
+    + '<textarea class="fi" id="fikir-mesaj" rows="3" maxlength="280" placeholder="Fikrinizi paylaşın... (max 280 karakter)" style="font-size:12px;resize:none;border-radius:7px"></textarea>'
+    + '<div style="display:flex;gap:4px">'
+    + '<button class="fikir-kat" onclick="window._setFikirKat(this,\'fikir\')" data-kat="fikir" style="padding:3px 8px;border:0.5px solid var(--ac);border-radius:5px;background:var(--ac);color:#fff;font-size:10px;cursor:pointer;font-family:inherit">Fikir</button>'
+    + '<button class="fikir-kat" onclick="window._setFikirKat(this,\'sorun\')" data-kat="sorun" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:5px;background:none;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Sorun</button>'
+    + '<button class="fikir-kat" onclick="window._setFikirKat(this,\'oneri\')" data-kat="oneri" style="padding:3px 8px;border:0.5px solid #D97706;border-radius:5px;background:none;color:#D97706;font-size:10px;cursor:pointer;font-family:inherit">Öneri</button>'
+    + '<button class="fikir-kat" onclick="window._setFikirKat(this,\'motivasyon\')" data-kat="motivasyon" style="padding:3px 8px;border:0.5px solid #16A34A;border-radius:5px;background:none;color:#16A34A;font-size:10px;cursor:pointer;font-family:inherit">Motivasyon</button>'
+    + '</div>'
+    + '<input type="hidden" id="fikir-kat-val" value="fikir">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center">'
+    + '<span id="fikir-char" style="font-size:10px;color:var(--t3)">0/280</span>'
+    + '<button onclick="window._paylasFikir()" style="padding:6px 16px;border:none;border-radius:7px;background:#1a365d;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Paylaş</button>'
+    + '</div></div>';
+  document.body.appendChild(div);
+  document.getElementById('fikir-mesaj')?.addEventListener('input', function() {
+    var el = document.getElementById('fikir-char');
+    if (el) el.textContent = this.value.length + '/280';
+  });
+  document.getElementById('fikir-mesaj')?.focus();
+};
+
+window._fikirKat = 'fikir';
+window._setFikirKat = function(btn, kat) {
+  window._fikirKat = kat;
+  document.getElementById('fikir-kat-val').value = kat;
+  document.querySelectorAll('.fikir-kat').forEach(function(b) {
+    var k = b.dataset.kat;
+    var colors = {fikir:'var(--ac)',sorun:'#DC2626',oneri:'#D97706',motivasyon:'#16A34A'};
+    b.style.background = k === kat ? colors[k] : 'none';
+    b.style.color = k === kat ? '#fff' : colors[k];
+  });
+};
+
+window._paylasFikir = function() {
+  var mesaj = (document.getElementById('fikir-mesaj')?.value || '').trim();
+  if (!mesaj) { window.toast?.('Mesaj zorunlu', 'err'); return; }
+  var cu = window.Auth?.getCU?.();
+  var d = typeof loadFikirler === 'function' ? loadFikirler() : [];
+  var kat = document.getElementById('fikir-kat-val')?.value || 'fikir';
+  var entry = {
+    id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(),
+    baslik: (document.getElementById('fikir-baslik')?.value || '').trim(),
+    mesaj: mesaj, kategori: kat,
+    uid: cu?.id, uname: cu?.name || '',
+    ts: new Date().toISOString(), yorumlar: []
+  };
+  d.unshift(entry);
+  if (d.length > 50) d = d.slice(0, 50);
+  if (typeof storeFikirler === 'function') storeFikirler(d);
+  document.getElementById('fikir-popup')?.remove();
+  // Tüm kullanıcılara bildirim
+  var katIcons = {fikir:'💡',sorun:'⚠️',oneri:'📝',motivasyon:'🌟'};
+  var katLabels = {fikir:'Fikir',sorun:'Sorun',oneri:'Öneri',motivasyon:'Motivasyon'};
+  window.addNotif?.(katIcons[kat]||'💡', (cu?.name||'') + ': ' + mesaj.slice(0, 60) + (mesaj.length>60?'...':''), 'info', 'fikirler');
+  window.toast?.('Fikir paylaşıldı ✓', 'ok');
+};
+
+/** Fikirler realtime güncelleme callback */
+window._onFikirUpdate = function() {
+  // Yeni fikir gelince toast göster
+  var d = typeof loadFikirler === 'function' ? loadFikirler() : [];
+  if (d.length && d[0].uid !== window.Auth?.getCU?.()?.id) {
+    var son = d[0];
+    var katIcons = {fikir:'💡',sorun:'⚠️',oneri:'📝',motivasyon:'🌟'};
+    window.toast?.((katIcons[son.kategori]||'💡') + ' ' + (son.uname||'') + ': ' + (son.mesaj||'').slice(0,40), 'info');
+  }
+};
+
+/** Fikirler paneli */
+window.openFikirlerPanel = function() {
+  var d = typeof loadFikirler === 'function' ? loadFikirler() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var katColors = {fikir:'var(--ac)',sorun:'#DC2626',oneri:'#D97706',motivasyon:'#16A34A'};
+  var katIcons = {fikir:'💡',sorun:'⚠️',oneri:'📝',motivasyon:'🌟'};
+  var ex = document.getElementById('mo-fikirler'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-fikirler';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:700">Fikir & Öneriler</div><button onclick="document.getElementById(\'mo-fikirler\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="max-height:60vh;overflow-y:auto;padding:12px 20px">'
+    + (d.length ? d.slice(0, 20).map(function(f) {
+        var c = katColors[f.kategori] || 'var(--t3)';
+        return '<div style="padding:10px;border-left:3px solid '+c+';background:var(--s2);border-radius:0 8px 8px 0;margin-bottom:8px">'
+          + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;font-weight:600;color:var(--t)">'+(katIcons[f.kategori]||'')+' '+esc(f.uname||'')+'</span><span style="font-size:9px;color:var(--t3)">'+(f.ts||'').slice(0,16)+'</span></div>'
+          + (f.baslik ? '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:2px">'+esc(f.baslik)+'</div>' : '')
+          + '<div style="font-size:11px;color:var(--t2)">'+esc(f.mesaj||'')+'</div>'
+          + '</div>';
+      }).join('') : '<div style="padding:24px;text-align:center;color:var(--t3)">Henüz fikir yok — ilk siz paylaşın!</div>')
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
 console.log('[app_patch] Tüm sistemler aktif');
 
 // ════════════════════════════════════════════════════════════════

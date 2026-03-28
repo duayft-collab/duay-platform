@@ -78,6 +78,7 @@ const KEYS = {
   navlun        : 'ak_navlun1',
   urunler       : 'ak_urunler1',
   teklifSartlar : 'ak_teklif_sartlar1',
+  fikirler      : 'ak_fikirler1',
   updateLog     : 'ak_update_log1',
   alisTeklifleri: 'ak_alis_teklif1',
   satisTeklifleri:'ak_satis_teklif1',
@@ -969,6 +970,9 @@ function storeTahsilat(d) {
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeSatisTeklifleri(d) { _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 
+/** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); return Array.isArray(d) ? d : []; }
+/** @param {Array} d */ function storeFikirler(d) { _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
+
 /** @returns {Array} */ function loadTeklifSartlar() { var d = _read(KEYS.teklifSartlar); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeTeklifSartlar(d) { _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
@@ -1493,6 +1497,7 @@ function startRealtimeSync() {
     ['bankalar',      KEYS.bankalar,      () => {}],
     ['navlun',        KEYS.navlun,        () => window.renderNavlun?.()],
     ['urunler',       KEYS.urunler,       () => window.renderUrunler?.()],
+    ['fikirler',      KEYS.fikirler,      () => window._onFikirUpdate?.()],
     ['alisTeklifleri', KEYS.alisTeklifleri, () => window.renderAlisTeklifleri?.()],
     ['satisTeklifleri',KEYS.satisTeklifleri,() => window.renderSatisTeklifleri?.()],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
@@ -1695,7 +1700,7 @@ const DB = {
   // Çöp
   loadTrash, storeTrash,
   // Ödemeler
-  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar, loadNavlun, storeNavlun, loadUrunler, storeUrunler, loadAlisTeklifleri, storeAlisTeklifleri, loadSatisTeklifleri, storeSatisTeklifleri, loadTeklifSartlar, storeTeklifSartlar, loadUpdateLog, storeUpdateLog,
+  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar, loadNavlun, storeNavlun, loadUrunler, storeUrunler, loadAlisTeklifleri, storeAlisTeklifleri, loadSatisTeklifleri, storeSatisTeklifleri, loadTeklifSartlar, storeTeklifSartlar, loadUpdateLog, storeUpdateLog, loadFikirler, storeFikirler,
   // İzin & Tebligat & Temizlik
   loadIzin, storeIzin,
   loadTebligat, storeTebligat,
@@ -1749,7 +1754,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog',
+    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

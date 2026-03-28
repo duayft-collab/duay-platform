@@ -300,29 +300,10 @@ async function _localLogin(email, password, skipPwCheck = false) {
           console.warn('[auth] Firestore kullanıcı çekme hatası:', e);
         }
 
-        // Hâlâ bulunamadıysa — Firebase hesabından otomatik staff kullanıcı oluştur
+        // Hâlâ bulunamadıysa — tanımsız kullanıcı, otomatik oluşturma DEVRE DIŞI
         if (!user) {
-          const fbUser = FB_AUTH?.currentUser;
-          if (fbUser) {
-            user = {
-              id: generateNumericId(),
-              name: fbUser.displayName || email.split('@')[0],
-              email: email.toLowerCase(),
-              role: 'staff',
-              status: 'active',
-              modules: null,
-              access: [],
-              pw: '',
-              createdAt: new Date().toISOString().slice(0,10),
-              autoCreated: true
-            };
-            try {
-              const allUsers = (typeof window.loadUsers === 'function' ? window.loadUsers() : []);
-              allUsers.push(user);
-              if (typeof window.saveUsers === 'function') window.saveUsers(allUsers);
-              console.info('[auth] Yeni kullanıcı otomatik oluşturuldu:', email);
-            } catch(e) { console.warn('[auth] Kullanıcı oluşturma hatası:', e); }
-          }
+          console.warn('[auth] Tanımsız kullanıcı — sisteme kayıtlı değil:', email);
+          return { ok: false, error: 'Bu e-posta sisteme kayıtlı değil. Yöneticiniz ile iletişime geçin.' };
         }
       }
     } else {
