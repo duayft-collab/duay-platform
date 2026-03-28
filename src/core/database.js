@@ -74,6 +74,7 @@ const KEYS = {
   tatilAyarlar  : 'ak_tatil1',
   kpiLog        : 'ak_kpi_log1',
   taskChats     : 'ak_task_chat1',
+  bankalar      : 'ak_bankalar1',
   theme         : 'ak_theme',
   lang          : 'ak_lang',
   pusView       : 'ak_pus_view',
@@ -881,6 +882,15 @@ function storeTahsilat(d) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// BÖLÜM 16B — BANKA/IBAN YÖNETİMİ
+// ════════════════════════════════════════════════════════════════
+
+/** @returns {Array<Object>} */ function loadBankalar() { var d = _read(KEYS.bankalar); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */ function storeBankalar(d) { _write(KEYS.bankalar, d);
+  var _fp = _fsPath('bankalar'); if (_fp) _syncFirestore(_fp, d);
+}
+
+// ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
 // ════════════════════════════════════════════════════════════════
 
@@ -1396,6 +1406,7 @@ function startRealtimeSync() {
     ['kpi',           KEYS.kpi,           () => window.renderKpi?.()],
     ['notes',         KEYS.notes,         () => window.renderNotes?.()],
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
+    ['bankalar',      KEYS.bankalar,      () => {}],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
     ['taskChats',     KEYS.taskChats,     () => {
       // Açık chat varsa yenile
@@ -1589,7 +1600,7 @@ const DB = {
   // Çöp
   loadTrash, storeTrash,
   // Ödemeler
-  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari,
+  loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar,
   // İzin & Tebligat & Temizlik
   loadIzin, storeIzin,
   loadTebligat, storeTebligat,
@@ -1643,7 +1654,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari',
+    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

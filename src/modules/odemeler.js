@@ -1058,11 +1058,12 @@ function openOdmModal(id) {
     // Döküman No + Ödeme Yöntemi
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="fr"><div class="fl">DÖKÜMAN NO *</div><input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" value="' + (o?o.docNo||'':'') + '" style="border-radius:8px"></div>'
-    + '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="odm-f-yontem" style="border-radius:8px">'
+    + '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="odm-f-yontem" style="border-radius:8px" onchange="_onYontemChange(\'odm\')">'
     + '<option value="">— Seçin —</option>'
     + _odmLoadMethods().map(function(y) { return '<option value="' + y + '"' + (o?.yontem===y?' selected':'') + '>' + y + '</option>'; }).join('')
     + '</select></div>'
     + '</div>'
+    + _bankaDropdownHTML('odm', o)
 
     // Tarihler
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
@@ -1307,6 +1308,16 @@ function saveOdm() {
     return;
   }
 
+  // Havale/EFT seçiliyse banka zorunlu
+  if (_fYontem === 'Havale/EFT') {
+    var _fBankaId = document.getElementById('odm-f-banka-sel')?.value || '';
+    if (!_fBankaId) {
+      _odmHighlightMissing(['odm-f-banka-sel'], 'Havale/EFT için banka seçimi zorunludur');
+      window.toast?.('Banka/IBAN seçimi zorunludur', 'err');
+      return;
+    }
+  }
+
   // Pending cari kontrolü — onaylanmamış cariyle ödeme oluşturulamaz
   var _selCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _fCari; });
   if (_selCari && _selCari.status === 'pending_approval') {
@@ -1379,6 +1390,7 @@ function saveOdm() {
     cariName:       _fCari,
     docNo:          _fDocNo,
     yontem:         _fYontem,
+    bankaId:        parseInt(document.getElementById('odm-f-banka-sel')?.value || '0') || null,
     taskId:         parseInt(_go('odm-f-taskid')?.value || '0') || null,
     docs,
     ts:         _nowTso(),
@@ -2388,12 +2400,13 @@ function openTahsilatModal(id) {
   html += '<div class="fr"><div class="fl">BEKLENEN / PLANLANAN TARİH</div><input type="date" class="fi" id="tah-f-due" value="' + (o?o.due||'':'') + '"></div>';
   html += '<div class="fr" id="tah-gercek-wrap"><div class="fl">GERÇEKLEŞEN TARİH</div><input type="date" class="fi" id="tah-f-actual" value="' + (o?o.actualDate||'':'') + '"></div></div>';
 
-  // Banka + Yöntem
+  // Yöntem + Banka
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   html += '<div class="fr"><div class="fl">ALINAN HESAP / BANKA</div><input class="fi" id="tah-f-banka" placeholder="Garanti, İş Bankası..." value="' + (o?o.banka||'':'') + '"></div>';
-  html += '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ</div><select class="fi" id="tah-f-yontem">';
+  html += '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="tah-f-yontem" onchange="_onYontemChange(\'tah\')">';
   _odmLoadMethods().forEach(function(y) { html += '<option value="' + y + '"' + (o&&o.yontem===y?' selected':'') + '>' + y + '</option>'; });
   html += '</select></div></div>';
+  html += _bankaDropdownHTML('tah', o);
 
   // Sorumlu
   html += '<div class="fr"><div class="fl">SORUMLU</div><select class="fi" id="tah-f-user"><option value="">— Seç —</option>';
@@ -2518,6 +2531,17 @@ function saveTahsilat() {
     return;
   }
 
+  // Havale/EFT seçiliyse banka zorunlu
+  var _tahYontem = document.getElementById('tah-f-yontem')?.value || '';
+  if (_tahYontem === 'Havale/EFT') {
+    var _tahBankaId = document.getElementById('tah-f-banka-sel')?.value || '';
+    if (!_tahBankaId) {
+      _odmHighlightMissing(['tah-f-banka-sel'], 'Havale/EFT için banka seçimi zorunludur');
+      window.toast?.('Banka/IBAN seçimi zorunludur', 'err');
+      return;
+    }
+  }
+
   // Pending cari kontrolü
   if (_tahCariVal) {
     var _tahSelCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _tahCariVal; });
@@ -2559,6 +2583,7 @@ function saveTahsilat() {
     actualDate: document.getElementById('tah-f-actual')?.value   || '',
     banka:      document.getElementById('tah-f-banka')?.value    || '',
     yontem:     document.getElementById('tah-f-yontem')?.value   || '',
+    bankaId:    parseInt(document.getElementById('tah-f-banka-sel')?.value || '0') || null,
     cariName:   document.getElementById('tah-f-cari')?.value     || '',
     taskId:     parseInt(document.getElementById('tah-f-taskid')?.value || '0') || null,
     // planned alanı kaldırıldı
@@ -4059,6 +4084,153 @@ window._odmAddCustomCat = _odmAddCustomCat;
 window._odmRemoveCustomCat = _odmRemoveCustomCat;
 window._odmAddCustomMethod = _odmAddCustomMethod;
 window._odmRemoveCustomMethod = _odmRemoveCustomMethod;
+
+// ════════════════════════════════════════════════════════════════
+// BANKA/IBAN YÖNETİMİ — Admin CRUD
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Admin banka/IBAN yönetim paneli.
+ */
+function openBankaManager() {
+  if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
+  var ex = document.getElementById('mo-banka-mgr');
+  if (ex) { ex.remove(); return; }
+  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-banka-mgr'; mo.style.zIndex = '2200';
+  var listHTML = bankalar.length ? bankalar.map(function(b) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b)">'
+      + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(b.name) + ' <span style="font-size:10px;color:var(--t3)">(' + (b.hesapTur || 'TRY') + ')</span></div>'
+        + '<div style="font-size:10px;color:var(--t3);font-family:monospace">' + esc(b.iban || '—') + (b.swift ? ' · SWIFT: ' + esc(b.swift) : '') + '</div>'
+      + '</div>'
+      + '<button onclick="_removeBanka(' + b.id + ')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:14px" title="Sil">×</button>'
+    + '</div>';
+  }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3);font-size:12px">Henüz banka eklenmemiş</div>';
+
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div class="mt" style="margin-bottom:0">🏦 Banka/IBAN Yönetimi</div>'
+    + '<button onclick="document.getElementById(\'mo-banka-mgr\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="padding:18px 22px;max-height:60vh;overflow-y:auto">'
+    // Mevcut bankalar
+    + '<div style="margin-bottom:14px">'
+    + '<div class="fl" style="margin-bottom:6px">KAYITLI BANKALAR (' + bankalar.length + ')</div>'
+    + '<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden">' + listHTML + '</div>'
+    + '</div>'
+    // Yeni banka ekle
+    + '<div style="background:var(--s2);border-radius:10px;padding:14px">'
+    + '<div class="fl" style="margin-bottom:8px">YENİ BANKA EKLE</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<input class="fi" id="bm-name" placeholder="Banka adı *" style="font-size:11px;border-radius:8px">'
+    + '<select class="fi" id="bm-tur" style="font-size:11px;border-radius:8px">'
+    + '<option value="TRY">🇹🇷 TRY</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option><option value="GBP">🇬🇧 GBP</option>'
+    + '</select>'
+    + '</div>'
+    + '<input class="fi" id="bm-iban" placeholder="IBAN (TR00 0000 0000 0000 0000 0000 00)" style="font-size:11px;border-radius:8px;margin-top:8px;font-family:monospace">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'
+    + '<input class="fi" id="bm-swift" placeholder="SWIFT/BIC kodu" style="font-size:11px;border-radius:8px">'
+    + '<input class="fi" id="bm-sube" placeholder="Şube adı" style="font-size:11px;border-radius:8px">'
+    + '</div>'
+    + '<button class="btn btnp" onclick="_addBanka()" style="margin-top:10px;width:100%;border-radius:8px;font-size:12px">+ Banka Ekle</button>'
+    + '</div>'
+    + '</div>'
+    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;background:var(--s2)">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-banka-mgr\')?.remove()">Kapat</button>'
+    + '</div></div>';
+
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+function _addBanka() {
+  var name = (document.getElementById('bm-name')?.value || '').trim();
+  if (!name) { window.toast?.('Banka adı zorunludur', 'err'); return; }
+  var iban = (document.getElementById('bm-iban')?.value || '').trim().replace(/\s+/g, ' ');
+  var entry = {
+    id: generateNumericId(),
+    name: name,
+    iban: iban,
+    hesapTur: document.getElementById('bm-tur')?.value || 'TRY',
+    swift: (document.getElementById('bm-swift')?.value || '').trim(),
+    sube: (document.getElementById('bm-sube')?.value || '').trim(),
+    createdAt: _nowTso(),
+    createdBy: _CUo()?.id,
+  };
+  var d = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  d.unshift(entry);
+  if (typeof storeBankalar === 'function') storeBankalar(d);
+  window.toast?.('Banka eklendi: ' + name, 'ok');
+  window.logActivity?.('settings', 'Banka eklendi: ' + name + ' (' + entry.hesapTur + ')');
+  openBankaManager(); // Yeniden aç
+}
+
+function _removeBanka(id) {
+  if (!_isManagerO()) return;
+  var d = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  var b = d.find(function(x) { return x.id === id; });
+  var label = b ? b.name : '';
+  d = d.filter(function(x) { return x.id !== id; });
+  if (typeof storeBankalar === 'function') storeBankalar(d);
+  window.toast?.('Banka silindi: ' + label, 'ok');
+  openBankaManager();
+}
+
+/**
+ * Ödeme yöntemi değiştiğinde banka dropdown göster/gizle.
+ * @param {string} prefix  'odm' veya 'tah'
+ */
+function _onYontemChange(prefix) {
+  var yontem = document.getElementById(prefix + '-f-yontem')?.value || '';
+  var wrap = document.getElementById(prefix + '-banka-wrap');
+  if (!wrap) return;
+  var isBanka = yontem === 'Havale/EFT';
+  wrap.style.display = isBanka ? 'block' : 'none';
+  // İlk açılışta bankalar listesini doldur
+  if (isBanka && !wrap.dataset.loaded) {
+    wrap.dataset.loaded = '1';
+    var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
+    var sel = document.getElementById(prefix + '-f-banka-sel');
+    if (sel && bankalar.length) {
+      sel.innerHTML = '<option value="">— Banka Seçin * —</option>' + bankalar.map(function(b) {
+        var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+        return '<option value="' + b.id + '">' + esc(b.name) + ' (' + (b.hesapTur || 'TRY') + ') — ' + esc((b.iban || '').slice(0, 16)) + '...</option>';
+      }).join('');
+    }
+  }
+}
+window._onYontemChange = _onYontemChange;
+
+/**
+ * Banka dropdown HTML bloğu oluşturur.
+ * @param {string} prefix  'odm' veya 'tah'
+ * @param {Object} [o]     Mevcut kayıt (düzenleme)
+ * @returns {string}
+ */
+function _bankaDropdownHTML(prefix, o) {
+  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var yontem = o?.yontem || '';
+  var isBanka = yontem === 'Havale/EFT';
+  return '<div id="' + prefix + '-banka-wrap" style="display:' + (isBanka ? 'block' : 'none') + ';margin-top:8px" data-loaded="' + (isBanka ? '1' : '') + '">'
+    + '<div class="fr"><div class="fl">BANKA/HESAP *</div>'
+    + '<select class="fi" id="' + prefix + '-f-banka-sel" style="border-radius:8px">'
+    + '<option value="">— Banka Seçin * —</option>'
+    + bankalar.map(function(b) {
+        return '<option value="' + b.id + '"' + (o?.bankaId == b.id ? ' selected' : '') + '>' + esc(b.name) + ' (' + (b.hesapTur || 'TRY') + ') — ' + esc((b.iban || '').slice(0, 16)) + '...</option>';
+      }).join('')
+    + '</select></div>'
+    + '</div>';
+}
+
+window.openBankaManager = openBankaManager;
+window._addBanka = _addBanka;
+window._removeBanka = _removeBanka;
 
 function openBudgetManager() {
   const ex = document.getElementById('mo-odm-budget');
