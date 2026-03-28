@@ -509,7 +509,9 @@ const DEFAULT_NOTES = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadAct()     { const d = _read(KEYS.activity); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 500 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 500)); }
+/** @param {Array<Object>} d Son 500 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 500));
+  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 500));
+}
 
 /**
  * Kullanıcı hareketini loglar. Hem localStorage'a hem Firestore\'a yazar.
@@ -591,7 +593,9 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @param {Array<string>} d */ function storeKargoFirmalar(d) { _write(KEYS.kargoFirms, d); }
 
 /** @returns {Array<Object>} */ function loadKonteyn()       { const d = _read(KEYS.konteyner);  return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d); }
+/** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d);
+  var _fp = _fsPath('konteyner'); if (_fp) _syncFirestore(_fp, d);
+}
 
 /** @returns {Object}        */ function loadKargoHistory()  { const d = _read(KEYS.kargoHistory);  return (d && typeof d==='object') ? d : {}; }
 /** @param  {Object} d       */ function storeKargoHistory(d) { _write(KEYS.kargoHistory, d); }
@@ -791,23 +795,31 @@ const DEFAULT_ARSIV_BELGELER = [
 ];
 
 /** @returns {Array<Object>} */ function loadEvrak()           { const d = _read(KEYS.evrak);        return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeEvrak(d)         { _write(KEYS.evrak, d); }
+/** @param {Array<Object>} d */ function storeEvrak(d)         { _write(KEYS.evrak, d);
+  var _fp = _fsPath('evrak'); if (_fp) _syncFirestore(_fp, d);
+}
 
 /** @returns {Array<Object>} */ function loadDolaplar()        { const d = _read(KEYS.arsivDolaplar); return Array.isArray(d) ? d : DEFAULT_DOLAPLAR; }
 /** @param {Array<Object>} d */ function storeDolaplar(d)      { _write(KEYS.arsivDolaplar, d); }
 
 /** @returns {Array<Object>} */ function loadArsivBelgeler()   { const d = _read(KEYS.arsivBelgeler); return Array.isArray(d) ? d : DEFAULT_ARSIV_BELGELER; }
-/** @param {Array<Object>} d */ function storeArsivBelgeler(d) { _write(KEYS.arsivBelgeler, d); }
+/** @param {Array<Object>} d */ function storeArsivBelgeler(d) { _write(KEYS.arsivBelgeler, d);
+  var _fp = _fsPath('arsivBelgeler'); if (_fp) _syncFirestore(_fp, d);
+}
 
 /** @returns {Array<Object>} */ function loadResmi()           { const d = _read(KEYS.resmiEvrak);   return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeResmi(d)         { _write(KEYS.resmiEvrak, d); }
+/** @param {Array<Object>} d */ function storeResmi(d)         { _write(KEYS.resmiEvrak, d);
+  var _fp = _fsPath('resmiEvrak'); if (_fp) _syncFirestore(_fp, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 22 — ETKİNLİK / FUAR
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadEtkinlik()       { const d = _read(KEYS.etkinlik);   return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeEtkinlik(d)     { _write(KEYS.etkinlik, d); }
+/** @param {Array<Object>} d */ function storeEtkinlik(d)     { _write(KEYS.etkinlik, d);
+  var _fp = _fsPath('etkinlik'); if (_fp) _syncFirestore(_fp, d);
+}
 
 /** @returns {Object|null}   */ function loadFuarKriterleri()  { return _read(KEYS.fuarKriter, null); }
 /** @param {Object} d        */ function saveFuarKriterleri(d) { _write(KEYS.fuarKriter, d); }
@@ -827,7 +839,9 @@ function loadTaskChats()    { const d = _read(KEYS.taskChats); return (d && type
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadGrt()     { const d = _read(KEYS.greetings); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeGrt(d)   { _write(KEYS.greetings, d); }
+/** @param {Array<Object>} d */ function storeGrt(d)   { _write(KEYS.greetings, d);
+  var _fp = _fsPath('greetings'); if (_fp) _syncFirestore(_fp, d);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 25 — HESAP GEÇMİŞİ & DÖVİZ
@@ -1204,6 +1218,16 @@ function startRealtimeSync() {
     ['odemeler',      KEYS.odemeler,      () => window.renderOdemeler?.()],
     ['tahsilat',      KEYS.tahsilat,      () => window.renderOdemeler?.()],
     ['satinalma',     KEYS.satinalma,     () => window.renderSatinAlma?.()],
+    // Ek kritik koleksiyonlar
+    ['konteyner',     KEYS.konteyner,     () => window.renderKargo?.()],
+    ['evrak',         KEYS.evrak,         () => window.renderEvrak?.()],
+    ['etkinlik',      KEYS.etkinlik,      () => window.renderEtkinlik?.()],
+    ['numune',        KEYS.numune,        () => window.renderNumune?.()],
+    ['resmiEvrak',    KEYS.resmiEvrak,    () => window.renderResmi?.()],
+    ['arsivBelgeler', KEYS.arsivBelgeler, () => window.renderArsiv?.()],
+    ['greetings',     KEYS.greetings,     () => window.renderGorusme?.()],
+    ['puan',          KEYS.puan,          () => window.renderPuantaj?.()],
+    ['activity',      KEYS.activity,      () => window.renderActivity?.()],
     ['kpi',           KEYS.kpi,           () => window.renderKpi?.()],
     ['notes',         KEYS.notes,         () => window.renderNotes?.()],
     ['tebligat',      KEYS.tebligat,      () => window.renderTebligat?.()],
