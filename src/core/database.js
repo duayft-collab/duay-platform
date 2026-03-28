@@ -143,6 +143,82 @@ function _write(key, value) {
 }
 
 /**
+ * İki veri setini ID bazında birleştirir — hiçbir kayıt silinmez.
+ * Aynı ID'li kayıtlar arasında en güncel olan (ts alanı) kazanır.
+ * Array olmayan veriler için Firestore kazanır.
+ *
+ * @param {string} localKey  localStorage key
+ * @param {*}      fsData    Firestore'dan gelen veri
+ * @param {string} collection  Koleksiyon adı (log için)
+ * @returns {*}    Birleştirilmiş veri
+ */
+function _mergeDataSets(localKey, fsData, collection) {
+  // Array olmayan veri — basit overwrite (merge anlamsız)
+  if (!Array.isArray(fsData)) return fsData;
+
+  var localData;
+  try { localData = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch(e) { localData = []; }
+  if (!Array.isArray(localData) || localData.length === 0) return fsData;
+  if (fsData.length === 0) return localData;
+
+  // ID bazında index oluştur
+  var mergedMap = {};
+  // Önce localStorage verilerini ekle
+  localData.forEach(function(item) {
+    var key = item.id || item._id;
+    if (key) mergedMap[key] = item;
+  });
+  // Sonra Firestore verilerini ekle — aynı ID varsa ts karşılaştır
+  fsData.forEach(function(item) {
+    var key = item.id || item._id;
+    if (!key) { // ID'siz kayıt — Firestore kazanır
+      var dupCheck = localData.find(function(l) { return l.name === item.name && l.ts === item.ts; });
+      if (!dupCheck) mergedMap['_noId_' + Math.random()] = item;
+      return;
+    }
+    var existing = mergedMap[key];
+    if (!existing) {
+      mergedMap[key] = item;
+    } else {
+      // Daha güncel olanı seç (ts veya syncedAt karşılaştır)
+      var fsTs = item.ts || item.syncedAt || item.updatedAt || '';
+      var localTs = existing.ts || existing.syncedAt || existing.updatedAt || '';
+      if (fsTs >= localTs) {
+        mergedMap[key] = item;
+      }
+      // else localStorage'daki daha yeni → koru
+    }
+  });
+
+  var result = Object.values(mergedMap);
+  // Orijinal sıralama: en yeni en üstte
+  result.sort(function(a, b) { return (b.ts || b.createdAt || '').localeCompare(a.ts || a.createdAt || ''); });
+
+  if (result.length !== fsData.length || result.length !== localData.length) {
+    console.info('[DB:merge]', collection, '→ FS:', fsData.length, '+ Local:', localData.length, '= Merged:', result.length);
+  }
+  return result;
+}
+
+/**
+ * Merge sonucunu Firestore'a yazar — kendi echo'sunu engeller.
+ * @param {string} path  Firestore doc path
+ * @param {*}      data  Birleştirilmiş veri
+ */
+function _syncFirestoreMerged(path, data) {
+  try {
+    var FB_DB = window.Auth?.getFBDB?.();
+    if (!FB_DB) return;
+    var collection = path.split('/').pop();
+    _writingNow[collection] = Date.now() + 3000;
+    var syncedAt = new Date().toISOString();
+    FB_DB.doc(path).set({ data: data, syncedAt: syncedAt, mergedAt: syncedAt }, { merge: true })
+      .then(function() { console.info('[DB:merge-write]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : 'ok'); })
+      .catch(function(e) { console.warn('[DB:merge-write error]', path, e.message); });
+  } catch(e) {}
+}
+
+/**
  * Firestore\'a arka planda yazar — bağlı değilse sessizce atlar.
  * @param {string}   path    Firestore koleksiyon yolu (FS_PATHS fonksiyonu ile)
  * @param {*}        data    Yazılacak veri
@@ -164,9 +240,35 @@ function _syncFirestore(path, data, mode = 'set') {
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     console.log('[FIRESTORE WRITE]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : typeof data, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
     if (mode === 'set') {
-      FB_DB.doc(path).set(payload, { merge: true })
-        .then(() => console.log('[FIRESTORE OK]', path))
-        .catch(e => { console.error('[FIRESTORE ERROR]', path, e.code, e.message); GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'); });
+      // Önce mevcut Firestore verisini oku, merge et, sonra yaz (veri kaybı önleme)
+      if (Array.isArray(data)) {
+        FB_DB.doc(path).get().then(function(snap) {
+          var fsExisting = snap.exists ? snap.data()?.data : null;
+          var finalData = data;
+          if (Array.isArray(fsExisting) && fsExisting.length > 0) {
+            // Mevcut FS verisi ile local veriyi birleştir
+            var idSet = {};
+            data.forEach(function(item) { if (item.id || item._id) idSet[item.id || item._id] = true; });
+            // FS'de olup local'de olmayan kayıtları ekle (silinmiş olarak işaretlenmemişse)
+            fsExisting.forEach(function(item) {
+              var key = item.id || item._id;
+              if (key && !idSet[key] && !item.isDeleted) {
+                finalData.push(item);
+                console.info('[DB:sync-merge] FS kayıt korundu:', collection, key);
+              }
+            });
+          }
+          var finalPayload = { data: finalData, syncedAt: syncedAt };
+          return FB_DB.doc(path).set(finalPayload, { merge: true });
+        })
+          .then(function() { console.log('[FIRESTORE OK+MERGE]', path); })
+          .catch(function(e) { console.error('[FIRESTORE ERROR]', path, e.code, e.message); GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'); });
+      } else {
+        // Array olmayan veri — doğrudan set
+        FB_DB.doc(path).set(payload, { merge: true })
+          .then(() => console.log('[FIRESTORE OK]', path))
+          .catch(e => { console.error('[FIRESTORE ERROR]', path, e.code, e.message); GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'); });
+      }
     } else {
       FB_DB.collection(path).add({ ...payload })
         .then(() => console.log('[FIRESTORE OK]', path))
@@ -1002,21 +1104,25 @@ function _listenCollection(collection, localKey, onUpdate) {
     const _base2 = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
     const docRef = FB_DB.collection(_base2).doc(collection);
     console.log('[LISTEN]', collection, '→', _base2 + '/' + collection, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
-    // Anlık ilk çekme — Firestore'dan zorla get() yap, localStorage'ı ezle
+    // Anlık ilk çekme — Firestore + localStorage merge (veri kaybı önleme)
     docRef.get().then(snap => {
       if (!snap.exists) return;
-      const data = snap.data()?.data;
-      if (data === null || data === undefined) return;
-      // Firestore HER ZAMAN kazanır — localStorage'ı ezle
+      const fsData = snap.data()?.data;
+      if (fsData === null || fsData === undefined) return;
+      var merged = _mergeDataSets(localKey, fsData, collection);
       try {
-        localStorage.setItem(localKey, JSON.stringify(data));
+        localStorage.setItem(localKey, JSON.stringify(merged));
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch(e) {}
-      if (typeof onUpdate === 'function') {
-        try { onUpdate(data); } catch(e) {}
+      // Merge sonucu Firestore'dan farklıysa geri yaz
+      if (Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
+        _syncFirestoreMerged(_base2 + '/' + collection, merged);
       }
-      const count = Array.isArray(data) ? data.length : Object.keys(data).length;
-      console.info('[DB:init]', collection, '→', count, 'kayıt Firestore\'dan ezlendi');
+      if (typeof onUpdate === 'function') {
+        try { onUpdate(merged); } catch(e) {}
+      }
+      var count = Array.isArray(merged) ? merged.length : Object.keys(merged).length;
+      console.info('[DB:init]', collection, '→', count, 'kayıt (merge)');
     }).catch(e => {
       if (e.code !== 'permission-denied') console.warn('[DB:init]', collection, e.message);
     });
@@ -1032,20 +1138,25 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
       delete _writingNow[collection];
 
-      const data = snap.data()?.data;
-      if (data === null || data === undefined) return;
+      const fsData = snap.data()?.data;
+      if (fsData === null || fsData === undefined) return;
 
-      // localStorage güncelle + zaman damgası kaydet
+      // Merge: Firestore + localStorage birleştir (veri kaybı önleme)
+      var merged = _mergeDataSets(localKey, fsData, collection);
       try {
-        localStorage.setItem(localKey, JSON.stringify(data));
+        localStorage.setItem(localKey, JSON.stringify(merged));
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
+      // Merge sonucu Firestore'dan farklıysa geri yaz
+      if (Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
+        _syncFirestoreMerged(_base2 + '/' + collection, merged);
+      }
 
       // UI'ı yenile (throttled)
       if (typeof onUpdate === 'function') {
         clearTimeout(_listeners[collection + '_timer']);
         _listeners[collection + '_timer'] = setTimeout(() => {
-          try { onUpdate(data); }
+          try { onUpdate(merged); }
           catch (e) { GlobalErrorHandler('realtime:render', e, 'warn'); }
         }, 300);
       }
