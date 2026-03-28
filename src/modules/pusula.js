@@ -375,7 +375,7 @@ function _populateDeptFilter() {
 }
 
 function visTasks() {
-  const d = loadTasks();
+  const d = loadTasks().filter(function(t) { return !t.isDeleted; });
   if (window.isAdmin?.()) {
     const uid = parseInt(g('pus-usel')?.value || '0');
     return uid ? d.filter(t => t.uid === uid) : d;
@@ -1855,17 +1855,22 @@ function delTask(id) {
   const cu = _getCU();
   const cuId = cu?.id;
   const isOwner = t.createdBy ? t.createdBy === cuId : t.uid === cuId;
-  if (!isOwner) {
-    window.toast?.('Bu görevi silme yetkiniz yok — sadece oluşturan silebilir', 'err');
+  // Admin her şeyi silebilir, user sadece kendi oluşturduğunu
+  if (!isOwner && !window.isAdmin?.()) {
+    window.toast?.('Bu görevi silme yetkiniz yok — sadece oluşturan veya admin silebilir', 'err');
     return;
   }
   window.confirmModal('"' + (t.title||'Görev') + '" silinsin mi?', {
     title: 'Görev Sil', danger: true, confirmText: 'Evet, Sil',
     onConfirm: () => {
-      saveTasks(d.filter(x => x.id !== id));
+      // Soft delete — K06 Anayasa kuralı
+      t.isDeleted = true;
+      t.deletedAt = nowTs();
+      t.deletedBy = cuId;
+      saveTasks(d);
       renderPusula();
-      window.logActivity?.('task', '"' + t.title + '" görevini sildi');
-      window.toast?.('Silindi', 'ok');
+      window.logActivity?.('task', '"' + t.title + '" görevini sildi (soft)');
+      window.toast?.('Silindi — geri alınabilir', 'ok');
     }
   });
 }
@@ -3729,6 +3734,7 @@ function _pfInjectToolbarBtns() {
   vRow.dataset.pfBtns='1';
   const btns=[
     {id:'pus-v-gantt', cls:'pvt-btn cvb', text:'📅 Gantt', onclick:()=>{ document.querySelectorAll('.pvt-btn,.cvb').forEach(b=>b.classList.remove('on','active')); const b=g('pus-v-gantt'); b?.classList.add('on','active'); setPusView('gantt',b); } },
+    {cls:'pvt-btn', text:'⬜', title:'Alt görevleri gizle/aç', onclick:()=>{ window._pusToggleAllSubTasks?.(); } },
     {cls:'pvt-btn', text:'🏆', title:'Skor Tablosu', onclick:()=>window.openScoreBoard?.() },
     {cls:'pvt-btn', text:'📋', title:'Görev Şablonları', onclick:()=>window.openTaskTemplates?.() },
   ];
@@ -4057,6 +4063,19 @@ window.renderFocusPanel = renderFocusPanel;
   window.openSubTaskEdit       = openSubTaskEdit;
   window._updateSubTask        = _updateSubTask;
   window.renderSubTasks        = renderSubTasks;
+
+  /** Tüm alt görevleri toplu gizle/aç */
+  window._pusToggleAllSubTasks = function() {
+    var tasks = loadTasks().filter(function(t) { return !t.isDeleted && (t.subTasks || []).length > 0; });
+    // Çoğunluk açıksa kapat, kapalıysa aç
+    var closedCount = tasks.filter(function(t) { return localStorage.getItem('pus_sub_collapsed_' + t.id) === '1'; }).length;
+    var shouldCollapse = closedCount < tasks.length / 2;
+    tasks.forEach(function(t) {
+      localStorage.setItem('pus_sub_collapsed_' + t.id, shouldCollapse ? '1' : '0');
+    });
+    renderPusula();
+    window.toast?.(shouldCollapse ? 'Alt görevler gizlendi' : 'Alt görevler açıldı', 'ok');
+  };
   window.openTaskChat          = openTaskChat;
   window.renderTaskChatMsgs    = renderTaskChatMsgs;
   window.sendTaskChatMsg       = sendTaskChatMsg;
