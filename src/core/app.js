@@ -498,6 +498,10 @@ function _finishLogin(user) {
   if (ap) ap.classList.add('on');
 
   logActivity('login', 'sisteme giriş yaptı');
+
+  // Devam takibi — IP bazlı
+  _trackAttendance(u);
+
   console.log('[LOGIN] _finishLogin çağrıldı. user:', user?.name, '| FB_AUTH:', !!window.Auth?.getFBAuth?.(), '| FB_AUTH.currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
   // P0: Realtime sync — sadece Firebase Auth currentUser hazır olduğunda başlat
   var _fbAuth = window.Auth?.getFBAuth?.();
@@ -2086,6 +2090,230 @@ async function _autoFirebaseUserSync() {
   // fetchSignInMethodsForEmail güvenilmez — otomatik sync devre dışı
   console.info('[UserSync] Otomatik sync devre dışı (fetchSignInMethods kısıtlaması)');
 }
+
+// ════════════════════════════════════════════════════════════════
+// PERSONEL DEVAM TAKİBİ — IP bazlı
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Giriş sırasında IP çeker, mesai saati + kayıtlı IP kontrolü yapar.
+ * Puantaj'a otomatik işler.
+ */
+async function _trackAttendance(user) {
+  if (!user) return;
+  try {
+    // Mesai ayarları (admin tanımlar)
+    var settings = {};
+    try { settings = JSON.parse(localStorage.getItem('ak_mesai_settings') || '{}'); } catch(e) {}
+    var mesaiStart = settings.start || '09:00';
+    var mesaiEnd = settings.end || '18:00';
+
+    // IP çek
+    var userIp = '—';
+    try {
+      var res = await fetch('https://api.ipify.org?format=json');
+      var data = await res.json();
+      userIp = data.ip || '—';
+    } catch(e) { userIp = 'bilinmiyor'; }
+
+    var now = new Date();
+    var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    var today = now.toISOString().slice(0, 10);
+
+    // Kayıtlı IP kontrolü
+    var registeredIp = user.workIp || '';
+    var isRemote = registeredIp && userIp !== registeredIp && userIp !== 'bilinmiyor';
+    var isLate = timeStr > mesaiStart;
+    var workType = isRemote ? 'uzaktan' : 'ofis';
+
+    // Puantaj'a kaydet
+    var puan = typeof loadPuan === 'function' ? loadPuan() : [];
+    var existingToday = puan.find(function(p) { return p.uid === user.id && p.date === today; });
+    if (!existingToday) {
+      puan.unshift({
+        id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(),
+        uid: user.id,
+        uname: user.name,
+        date: today,
+        loginTime: timeStr,
+        loginIp: userIp,
+        workType: workType,
+        isLate: isLate,
+        mesaiStart: mesaiStart,
+        status: isLate ? 'gec' : 'normal',
+      });
+      if (typeof savePuan === 'function') savePuan(puan);
+      console.info('[Devam] Puantaj kaydedildi:', user.name, workType, isLate ? '(geç)' : '');
+    }
+
+    // Uzaktan çalışma bildirimi
+    if (isRemote) {
+      var mgrs = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
+        return (u.role === 'admin' || u.role === 'manager') && u.status === 'active' && u.id !== user.id;
+      });
+      mgrs.forEach(function(m) {
+        window.addNotif?.('🏠', user.name + ' uzaktan giriş yaptı (IP: ' + userIp + ')', 'info', 'admin', m.id);
+      });
+    }
+    // Geç giriş bildirimi
+    if (isLate && !isRemote) {
+      var mgrs2 = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u) {
+        return (u.role === 'admin' || u.role === 'manager') && u.status === 'active' && u.id !== user.id;
+      });
+      mgrs2.forEach(function(m) {
+        window.addNotif?.('⏰', user.name + ' geç giriş: ' + timeStr + ' (mesai: ' + mesaiStart + ')', 'warn', 'admin', m.id);
+      });
+    }
+
+    // Aktivite loguna IP ekle
+    logActivity('attendance', workType + ' giriş — IP: ' + userIp + (isLate ? ' (GEÇ ' + timeStr + ')' : ''));
+  } catch(e) {
+    console.warn('[Devam] Hata:', e.message);
+  }
+}
+
+/** Admin mesai saati ayarları */
+window.openMesaiSettings = function() {
+  if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var settings = {};
+  try { settings = JSON.parse(localStorage.getItem('ak_mesai_settings') || '{}'); } catch(e) {}
+  var ex = document.getElementById('mo-mesai'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-mesai'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:380px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">⏰ Mesai Ayarları</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">BAŞLANGIÇ</div><input type="time" class="fi" id="mesai-start" value="' + (settings.start || '09:00') + '"></div>'
+    + '<div><div class="fl">BİTİŞ</div><input type="time" class="fi" id="mesai-end" value="' + (settings.end || '18:00') + '"></div>'
+    + '</div></div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-mesai\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="localStorage.setItem(\'ak_mesai_settings\',JSON.stringify({start:document.getElementById(\'mesai-start\').value,end:document.getElementById(\'mesai-end\').value}));document.getElementById(\'mo-mesai\')?.remove();window.toast?.(\'Mesai ayarları kaydedildi\',\'ok\')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+// ════════════════════════════════════════════════════════════════
+// RAPORLAMA SİSTEMİ — 4 temel rapor
+// ════════════════════════════════════════════════════════════════
+
+window.openReportPanel = function() {
+  var ex = document.getElementById('mo-reports'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-reports'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="padding:16px 22px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">📊 Raporlama Merkezi</div><div style="font-size:10px;color:var(--t3)">PDF ve Excel çıktı alın</div></div>'
+    + '<button onclick="document.getElementById(\'mo-reports\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    // Ödeme/Tahsilat Raporu
+    + '<div onclick="window._openOdmReport()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">💸</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Ödeme/Tahsilat</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Tarih, cari, döviz filtreli</div></div>'
+    // Görev Raporu
+    + '<div onclick="window._openTaskReport()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">📋</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Görev Raporu</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Departman, durum, kullanıcı</div></div>'
+    // Cari Hesap Özeti
+    + '<div onclick="window._openCariReport()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">🏢</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Cari Hesap Özeti</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">3 format: müşteri/user/admin</div></div>'
+    // Kargo Raporu
+    + '<div onclick="window._openKargoReport()" style="padding:16px;border:1px solid var(--b);border-radius:12px;cursor:pointer;transition:all .15s;text-align:center" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.background=\'var(--al)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.background=\'\'">'
+    + '<div style="font-size:28px;margin-bottom:6px">📦</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">Kargo Raporu</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">Konteyner bazlı</div></div>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/** Ödeme/Tahsilat raporu — filtre + Excel */
+window._openOdmReport = function() {
+  document.getElementById('mo-reports')?.remove();
+  var ex = document.getElementById('mo-odm-report'); if (ex) ex.remove();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-report'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">💸 Ödeme/Tahsilat Raporu</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">BAŞLANGIÇ</div><input type="date" class="fi" id="rpt-odm-from"></div>'
+    + '<div><div class="fl">BİTİŞ</div><input type="date" class="fi" id="rpt-odm-to"></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div class="fl">CARİ</div><select class="fi" id="rpt-odm-cari"><option value="">Tümü</option>'
+    + (typeof loadCari === 'function' ? loadCari().map(function(c) { return '<option value="' + (c.name || '') + '">' + (c.name || '') + '</option>'; }).join('') : '')
+    + '</select></div>'
+    + '<div><div class="fl">PARA BİRİMİ</div><select class="fi" id="rpt-odm-cur"><option value="">Tümü</option><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div></div>'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-odm-report\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._generateOdmReport()">📊 Rapor Oluştur</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._generateOdmReport = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var from = document.getElementById('rpt-odm-from')?.value || '';
+  var to = document.getElementById('rpt-odm-to')?.value || '';
+  var cari = document.getElementById('rpt-odm-cari')?.value || '';
+  var cur = document.getElementById('rpt-odm-cur')?.value || '';
+
+  var odm = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  odm = odm.filter(function(o) { return !o.isDeleted; });
+  tah = tah.filter(function(t) { return !t.isDeleted; });
+  if (from) { odm = odm.filter(function(o) { return o.due >= from; }); tah = tah.filter(function(t) { return t.due >= from; }); }
+  if (to) { odm = odm.filter(function(o) { return o.due <= to; }); tah = tah.filter(function(t) { return t.due <= to; }); }
+  if (cari) { odm = odm.filter(function(o) { return o.cariName === cari; }); tah = tah.filter(function(t) { return t.cariName === cari; }); }
+  if (cur) { odm = odm.filter(function(o) { return o.currency === cur; }); tah = tah.filter(function(t) { return t.currency === cur; }); }
+
+  var rows = [['Tür','Ad','Cari','Tutar','Döviz','TL Karşılığı','Vade','Durum','Yöntem','Doküman No']];
+  odm.forEach(function(o) { rows.push(['Ödeme', o.name||'', o.cariName||'', o.amount||0, o.currency||'TRY', o.amountTRY||o.amount||0, o.due||'', o.paid?'Ödendi':'Bekliyor', o.yontem||'', o.docNo||'']); });
+  tah.forEach(function(t) { rows.push(['Tahsilat', t.name||'', t.cariName||'', t.amount||0, t.currency||'TRY', t.amountTRY||t.amount||0, t.due||'', t.collected?'Tahsil':'Bekliyor', t.yontem||'', t.ref||'']); });
+
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Rapor');
+  XLSX.writeFile(wb, 'odeme-tahsilat-rapor-' + new Date().toISOString().slice(0,10) + '.xlsx');
+  window.toast?.('Rapor indirildi ✓', 'ok');
+  document.getElementById('mo-odm-report')?.remove();
+};
+
+/** Görev raporu */
+window._openTaskReport = function() {
+  document.getElementById('mo-reports')?.remove();
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  if (typeof exportTasksXlsx === 'function') exportTasksXlsx();
+  else window.toast?.('Görev export fonksiyonu bulunamadı', 'err');
+};
+
+/** Cari raporu */
+window._openCariReport = function() {
+  document.getElementById('mo-reports')?.remove();
+  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) { return !c.isDeleted; }) : [];
+  if (!cariList.length) { window.toast?.('Cari kaydı yok', 'err'); return; }
+  if (typeof openCariStatement === 'function') openCariStatement(cariList[0].id, 'user');
+  else window.toast?.('Cari özet fonksiyonu bulunamadı', 'err');
+};
+
+/** Kargo raporu */
+window._openKargoReport = function() {
+  document.getElementById('mo-reports')?.remove();
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  if (typeof exportKargoXlsx === 'function') exportKargoXlsx();
+  else window.toast?.('Kargo export fonksiyonu bulunamadı', 'err');
+};
 
 window._renderActivePanel = function() {
   var activePanel = document.querySelector('.panel.on');
