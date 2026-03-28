@@ -89,24 +89,23 @@ function _injectKargoPanel(){
   ];
 
   panel.innerHTML=[
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:#fff;position:sticky;top:0;z-index:10">',
-      '<div><div style="font-size:16px;font-weight:700;color:#1C1C1E">📦 Kargo Merkezi</div>',
-      '<div style="font-size:11px;color:#8E8E93;margin-top:2px">Navlun, konteyner, lokasyon ve kurye</div></div>',
+    // TOPBAR — flat modern
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">',
+      '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Kargo Merkezi</div>',
+      '<div style="font-size:10px;color:var(--t3);margin-top:2px">Navlun, konteyner, lokasyon ve kurye</div></div>',
     '</div>',
-    '<div style="display:flex;min-height:calc(100vh - 120px)">',
-      // Sol panel — kategori ikonları
-      '<div style="width:200px;border-right:1px solid #F0F0F0;padding:12px;flex-shrink:0;background:#FAFAFA">',
-        KRG_CATS.map(function(c){
-          return '<button class="krg-cat-btn" data-kc="'+c.id+'" onclick="KargoV10.setTab(\''+c.id+'\')" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:1.5px solid #F0F0F0;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:#1C1C1E;margin-bottom:6px;transition:all .12s" onmouseover="this.style.borderColor=\'#007AFF\'" onmouseout="if(!this.classList.contains(\'krg-cat-active\'))this.style.borderColor=\'#F0F0F0\'">'
-            + '<span style="font-size:20px">'+c.icon+'</span><span>'+c.label+'</span></button>';
-        }).join(''),
-      '</div>',
-      // Sağ panel — içerik
-      '<div style="flex:1;overflow-y:auto;background:#fff">',
-        '<div id="krg-content-navlun" style="display:none"></div>',
-        '<div id="krg-content-lokasyon" style="display:none"></div>',
-        '<div id="krg-content-kurye" style="display:none"></div>',
-      '</div>',
+    // TAB NAVİGASYON — sidebar yerine üstte
+    '<div style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);padding:0 16px">',
+      KRG_CATS.map(function(c){
+        return '<div class="krg-cat-btn" data-kc="'+c.id+'" onclick="KargoV10.setTab(\''+c.id+'\')" style="padding:11px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s;white-space:nowrap">'
+          +c.icon+' '+c.label+'</div>';
+      }).join(''),
+    '</div>',
+    // İçerik
+    '<div style="overflow-y:auto">',
+      '<div id="krg-content-navlun" style="display:none"></div>',
+      '<div id="krg-content-lokasyon" style="display:none"></div>',
+      '<div id="krg-content-kurye" style="display:none"></div>',
     '</div>',
     _modalNavlun(),
     _modalLokKrg(lokOpts),
@@ -128,9 +127,9 @@ function _setTab(tab){
   document.querySelectorAll('.krg-cat-btn').forEach(function(b) {
     var active = b.dataset.kc === tab;
     b.classList.toggle('krg-cat-active', active);
-    b.style.borderColor = active ? '#007AFF' : '#F0F0F0';
-    b.style.background = active ? 'rgba(0,122,255,.06)' : '#fff';
-    b.style.fontWeight = active ? '600' : '500';
+    b.style.borderBottomColor = active ? 'var(--ac)' : 'transparent';
+    b.style.color = active ? 'var(--ac)' : 'var(--t2)';
+    b.style.fontWeight = active ? '600' : '400';
   });
   if(tab==='navlun')   _renderNavlunTab();
   if(tab==='lokasyon') _renderLokTab();

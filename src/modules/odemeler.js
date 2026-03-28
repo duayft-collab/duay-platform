@@ -5737,22 +5737,21 @@ function renderCari() {
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     panel.innerHTML = ''
-      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
-        + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">🏢 Cari Yönetimi</div><div style="font-size:10px;color:var(--t3)">Müşteri & Tedarikçi</div></div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+        + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Cari Yönetimi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri & Tedarikçi</div></div>'
         + '<div style="display:flex;gap:6px">'
-          + '<button class="btn btns" onclick="window._exportCariXlsx?.()" style="font-size:11px">⬇ Excel</button>'
-          + '<button class="btn btns" onclick="window._exportCariPDF?.()" style="font-size:11px">📄 PDF</button>'
-          + (_isAdminO() ? '<button class="btn btns" onclick="_insertCariDemoData()" style="font-size:11px">🎲 Demo</button>' : '')
-          + '<button class="btn btnp" onclick="window._openQuickCari?.()" style="font-size:12px">+ Cari Ekle</button>'
+          + '<button onclick="window._exportCariXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
+          + (_isAdminO() ? '<button onclick="_insertCariDemoData()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🎲 Demo</button>' : '')
+          + '<button onclick="window._openQuickCari?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Cari Ekle</button>'
         + '</div>'
       + '</div>'
       + '<div style="display:flex;min-height:calc(100vh - 120px)">'
         // Sol panel — liste
         + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
-          + '<div style="padding:8px 12px;border-bottom:1px solid var(--b);display:flex;gap:6px">'
-            + '<input class="fi" id="cari-search" placeholder="🔍 Ara..." oninput="renderCari()" style="font-size:11px;flex:1">'
-            + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:90px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
-            + '<select class="fi" id="cari-stage-f" onchange="renderCari()" style="font-size:11px;width:95px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
+          + '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);display:flex;gap:6px">'
+            + '<input class="fi" id="cari-search" placeholder="Ara..." oninput="renderCari()" style="font-size:11px;flex:1;border:0.5px solid var(--b);border-radius:7px">'
+            + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
+            + '<select class="fi" id="cari-stage-f" onchange="renderCari()" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
           + '</div>'
           + '<div id="cari-list" style="flex:1;overflow-y:auto"></div>'
         + '</div>'

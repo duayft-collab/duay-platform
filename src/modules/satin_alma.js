@@ -43,72 +43,55 @@ function _injectSAPanel() {
   panel.dataset.injected = '1';
 
   panel.innerHTML = ''
-    // TOPBAR
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+    // TOPBAR — flat modern
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
       + '<div>'
-        + '<div style="font-size:14px;font-weight:700;color:var(--t)">🛒 Satın Alma Merkezi</div>'
-        + '<div style="font-size:10px;color:var(--t3)" id="sa-sub">PI & Sipariş Takip</div>'
+        + '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Satın Alma</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="sa-sub">PI & Sipariş Takip</div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;align-items:center">'
-        + (_isAdmSA() ? '<button class="btn btns" onclick="window._saBulkApprove?.()" style="font-size:11px;color:#16A34A">✅ Toplu Onayla</button>' : '')
-        + '<button class="btn btns" onclick="window._openSABudget?.()" style="font-size:11px">📊 Bütçe</button>'
-        + '<button class="btn btns" onclick="window._openSAImport?.()" style="font-size:11px">📥 İçe Aktar</button>'
-        + '<button class="btn btns" onclick="window._exportSAXlsx?.()" style="font-size:11px">⬇ Excel</button>'
-        + '<button class="btn btns" onclick="window._saAddInlineRow?.()" style="font-size:11px">📊 Tabloya Ekle</button>'
-        + '<button class="btn btnp" onclick="window._openSAModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Sipariş</button>'
+        + (_isAdmSA() ? '<button onclick="window._saBulkApprove?.()" style="padding:6px 12px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : '')
+        + '<button onclick="window._exportSAXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
+        + '<button onclick="window._openSAImport?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">📥 İçe Aktar</button>'
+        + '<button onclick="window._openSAModal?.(null)" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Yeni Sipariş</button>'
       + '</div>'
     + '</div>'
 
     // BÜTÇE PROGRESS BAR
-    + '<div id="sa-budget-bar" style="display:none;padding:6px 20px;border-bottom:1px solid var(--b);background:var(--s2)"></div>'
+    + '<div id="sa-budget-bar" style="display:none;padding:6px 20px;border-bottom:0.5px solid var(--b);background:var(--s2)"></div>'
 
-    // BENTO METRİKLER
-    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--b)">'
-      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">Toplam</div>'
-        + '<div style="font-size:20px;font-weight:600;color:var(--t)" id="sa-stat-total">0</div>'
-      + '</div>'
-      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">⏳ Bekliyor</div>'
-        + '<div style="font-size:20px;font-weight:600;color:#D97706" id="sa-stat-pending">0</div>'
-      + '</div>'
-      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">✅ Onaylı</div>'
-        + '<div style="font-size:20px;font-weight:600;color:#16A34A" id="sa-stat-approved">0</div>'
-      + '</div>'
-      + '<div style="padding:12px 16px;border-right:1px solid var(--b)">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">🔄 Revize</div>'
-        + '<div style="font-size:20px;font-weight:600;color:#EA580C" id="sa-stat-revize">0</div>'
-      + '</div>'
-      + '<div style="padding:12px 16px">'
-        + '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">Toplam Tutar</div>'
-        + '<div style="font-size:20px;font-weight:600;color:var(--ac)" id="sa-stat-amount">$0</div>'
-      + '</div>'
+    // METRİK KARTLARI
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:0.5px solid var(--b)">'
+      + '<div style="padding:16px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Toplam Sipariş</div><div style="font-size:24px;font-weight:600;color:var(--t)" id="sa-stat-total">0</div></div>'
+      + '<div style="padding:16px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bekleyen Onay</div><div style="font-size:24px;font-weight:600;color:#D97706" id="sa-stat-pending">0</div></div>'
+      + '<div style="padding:16px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bu Ay Harcama</div><div style="font-size:24px;font-weight:600;color:var(--ac)" id="sa-stat-amount">$0</div></div>'
+      + '<div style="padding:16px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tamamlanan</div><div style="font-size:24px;font-weight:600;color:#16A34A" id="sa-stat-approved">0</div></div>'
+      + '<div style="padding:16px 20px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Revize</div><div style="font-size:24px;font-weight:600;color:#EA580C" id="sa-stat-revize">0</div></div>'
     + '</div>'
 
-    // SEKMELER
-    + '<div id="sa-tabs-row" style="display:flex;border-bottom:1px solid var(--b);background:var(--sf);overflow-x:auto">'
-      + '<div id="sa-tab-all" class="sa-tab active" onclick="window._saSetTab(\'all\')" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac)">Tümü</div>'
-      + '<div id="sa-tab-pending" class="sa-tab" onclick="window._saSetTab(\'pending\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">⏳ Bekleyen</div>'
-      + '<div id="sa-tab-approved" class="sa-tab" onclick="window._saSetTab(\'approved\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">✅ Onaylanan</div>'
-      + '<div id="sa-tab-revize_gerekli" class="sa-tab" onclick="window._saSetTab(\'revize_gerekli\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">🔄 Revize</div>'
-      + '<div id="sa-tab-paid" class="sa-tab" onclick="window._saSetTab(\'paid\')" style="padding:10px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">📦 Tamamlanan</div>'
+    // TAB NAVİGASYON
+    + '<div id="sa-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;padding:0 16px">'
+      + '<div id="sa-tab-all" class="sa-tab active" onclick="window._saSetTab(\'all\')" style="padding:11px 18px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);transition:all .12s">Tümü</div>'
+      + '<div id="sa-tab-pending" class="sa-tab" onclick="window._saSetTab(\'pending\')" style="padding:11px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Bekleyen</div>'
+      + '<div id="sa-tab-approved" class="sa-tab" onclick="window._saSetTab(\'approved\')" style="padding:11px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Onaylanan</div>'
+      + '<div id="sa-tab-paid" class="sa-tab" onclick="window._saSetTab(\'paid\')" style="padding:11px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Tamamlanan</div>'
+      + '<div id="sa-tab-revize_gerekli" class="sa-tab" onclick="window._saSetTab(\'revize_gerekli\')" style="padding:11px 18px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Revize</div>'
     + '</div>'
 
-    // FİLTRE SATIRI
-    + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--s2)">'
-      + '<input class="fi" id="sa-search" placeholder="🔍 İş ID, satıcı, tedarikçi ara..." oninput="window.renderSatinAlma?.()" style="font-size:11px;flex:1;min-width:140px">'
-      + '<select class="fi" id="sa-cur-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:90px">'
-        + '<option value="">Tüm Döviz</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="TRY">₺ TRY</option>'
-      + '</select>'
-      + '<input type="date" class="fi" id="sa-from-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:130px" title="Başlangıç">'
-      + '<input type="date" class="fi" id="sa-to-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:130px" title="Bitiş">'
+    // FİLTRE — flat
+    + '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      + '<input class="fi" id="sa-search" placeholder="İş ID, satıcı, tedarikçi ara..." oninput="window.renderSatinAlma?.()" style="font-size:11px;flex:1;min-width:160px;border:0.5px solid var(--b);border-radius:7px">'
+      + '<select class="fi" id="sa-cur-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Döviz</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select>'
+      + '<input type="date" class="fi" id="sa-from-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:125px;border:0.5px solid var(--b);border-radius:7px">'
+      + '<input type="date" class="fi" id="sa-to-f" onchange="window.renderSatinAlma?.()" style="font-size:11px;width:125px;border:0.5px solid var(--b);border-radius:7px">'
       + '<select class="fi" id="sa-status-f" style="display:none"><option value=""></option></select>'
     + '</div>'
 
-    // TABLO BAŞLIK — yatay scroll
+    // TABLO — beyaz kart
+    + '<div style="margin:12px 20px 0;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'
+    + '<style>#sa-list>div{transition:background .1s}#sa-list>div:hover{background:var(--s2)!important}</style>'
     + '<div style="overflow-x:auto">'
-      + '<div id="sa-thead" style="display:grid;grid-template-columns:120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);min-width:1400px">'
+      + '<div id="sa-thead" style="display:grid;grid-template-columns:120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;background:var(--s2);border-bottom:0.5px solid var(--b);min-width:1400px">'
         + [['jobId','İş ID'],['supplier','Satıcı'],['faturaType','Fatura Tipi'],['piDate','PI Tarihi'],['totalAmount','Toplam'],['advanceAmount','Avans'],['advanceRate','Avans%'],['remaining','Kalan'],['currency','Döviz'],['deliveryDate','Teslimat'],['lockedRate','Kur'],['status','Durum'],['_actions','İşlem']].map(function(h) {
             return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;cursor:pointer" onclick="window._saSortBy?.(\'' + h[0] + '\')">' + h[1] + ' <span style="opacity:.3">⇅</span></div>';
           }).join('')
@@ -116,7 +99,8 @@ function _injectSAPanel() {
     + '</div>'
 
     // LİSTE
-    + '<div id="sa-list" style="overflow-x:auto"></div>';
+    + '<div id="sa-list" style="overflow-x:auto"></div>'
+    + '</div>';
 }
 
 // ════════════════════════════════════════════════════════════════
