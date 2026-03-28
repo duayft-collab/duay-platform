@@ -366,11 +366,13 @@ body {
   background: var(--t); color: var(--bg); padding: 11px 18px;
   border-radius: var(--rs); font-size: 13px; font-weight: 500;
   box-shadow: var(--shm); transform: translateY(80px); opacity: 0;
-  transition: all .25s; z-index: 9999;
+  transition: all .25s; z-index: 99999;
 }
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.ok  { background: var(--gr); color: #fff; }
 .toast.err { background: var(--rd); color: #fff; }
+.toast.warn { background: #F59E0B; color: #fff; }
+#mo-confirm-global { z-index: 90000; }
 
 /* â”€â”€ MISC COMPONENTS â”€â”€ */
 .ur { display: flex; align-items: center; gap: 10px; }

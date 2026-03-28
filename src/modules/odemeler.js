@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════
- * src/modules/odemeler.js  —  v9.0.0
+ * src/modules/odemeler.js  —  v9.1.0
  * Nakit Akisi — Kullanıcı Atama, Alarm, Dekont, Excel Import/Export
  * ════════════════════════════════════════════════════════════════
  */
@@ -41,11 +41,23 @@ const ODM_ABONE_TYPES = {
   diger:     { l:'Diğer',     ic:'🔄' },
 };
 const ODM_FREQ = {
+  gunluk:   'Günlük',
   haftalik: 'Haftalık',
+  iki_haftada: '2 Haftalık',
   aylik:    'Aylık',
   uc_aylik: '3 Aylık',
+  alti_aylik: '6 Aylık',
   yillik:   'Yıllık',
   teksefer: 'Tek Sefer',
+};
+
+// Hatırlatıcı zamanlaması seçenekleri
+const ODM_REMINDER_UNITS = {
+  dakika: 'Dakika',
+  saat:   'Saat',
+  gun:    'Gün',
+  hafta:  'Hafta',
+  ay:     'Ay',
 };
 
 const ODM_CURRENCY = {
@@ -67,6 +79,22 @@ let _odmRatesDate  = '';
 let _odmRatesMode  = 'alis'; // 'alis' | 'satis' | 'manuel'
 let _odmManualRates = {};
 
+// Admin kur ayarları — localStorage'da saklanır
+const ODM_KUR_CONFIG_KEY = 'odm_kur_config';
+const ODM_KUR_SOURCES = {
+  tcmb:      { l: 'TCMB (Merkez Bankası)', ic: '🏦' },
+  exchange:  { l: 'ExchangeRate API',       ic: '🌐' },
+  manuel:    { l: 'Manuel Giriş',           ic: '✏️' },
+};
+
+function _odmLoadKurConfig() {
+  try { return JSON.parse(localStorage.getItem(ODM_KUR_CONFIG_KEY) || '{}'); } catch { return {}; }
+}
+
+function _odmSaveKurConfig(cfg) {
+  localStorage.setItem(ODM_KUR_CONFIG_KEY, JSON.stringify(cfg));
+}
+
 const ODM_RATES_DEFAULT = {
   TRY: 1, USD: 38.50, EUR: 41.20, GBP: 48.90,
   CHF: 43.10, JPY: 0.26, AED: 10.48, SAR: 10.27,
@@ -83,7 +111,14 @@ function _odmGetRates() {
 async function _odmFetchTCMB() {
   const today = new Date().toISOString().slice(0, 10);
   if (_odmRatesDate === today && _odmRatesCache) return;
+  // Admin kur config — kaynak kontrolü
+  var kurCfg = _odmLoadKurConfig();
+  if (kurCfg.source === 'manuel') { return; } // Manuel modda otomatik çekme
+  if (kurCfg.defaultMode) _odmRatesMode = kurCfg.defaultMode;
+  // Kaynak tercihi: exchange öncelikli ise ters sırada dene
+  var preferExchange = kurCfg.source === 'exchange';
   try {
+    if (preferExchange) throw new Error('skip_tcmb');
     // TCMB XML kur
     const res = await fetch('https://www.tcmb.gov.tr/kurlar/today.xml');
     const xml = await res.text();
@@ -183,19 +218,22 @@ function _odmTLKarsiligi(amount, currency) {
 
 // Kur modu HTML seçici — modal içinde kullanılır
 function _odmKurModeHTML(cur) {
-  const rates = _odmGetRates();
-  const rate = rates[cur] || 1;
+  var rates = _odmGetRates();
+  var rate = rates[cur] || 1;
+  var kurCfg = _odmLoadKurConfig();
+  var allowManuel = kurCfg.allowOverride !== false;
+  var sourceLabel = ODM_KUR_SOURCES[kurCfg.source || 'tcmb']?.l || 'TCMB';
   return '<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-top:4px">'
     + '<span style="font-size:10px;color:var(--t3)">Kur:</span>'
     + '<select id="odm-kur-mode" onchange="_odmKurModeChange(this.value)" style="font-size:10px;border:none;background:none;color:var(--t2);cursor:pointer">'
     + '<option value="alis"' + (_odmRatesMode==='alis'?' selected':'') + '>MB Alış</option>'
     + '<option value="satis"' + (_odmRatesMode==='satis'?' selected':'') + '>MB Satış</option>'
-    + '<option value="manuel"' + (_odmRatesMode==='manuel'?' selected':'') + '>Manuel</option>'
+    + (allowManuel ? '<option value="manuel"' + (_odmRatesMode==='manuel'?' selected':'') + '>Manuel</option>' : '')
     + '</select>'
     + '<span id="odm-kur-val" style="font-size:11px;font-weight:500;color:var(--t)">₺' + rate.toLocaleString('tr-TR', {minimumFractionDigits:4,maximumFractionDigits:4}) + '</span>'
-    + '<input type="number" id="odm-kur-manuel" style="font-size:11px;width:80px;border:0.5px solid var(--b);border-radius:6px;padding:2px 6px;display:' + (_odmRatesMode==='manuel'?'block':'none') + '"'
-    + ' placeholder="Kur girin" oninput="_odmManualRateInput(this)">'
-    + '<span id="odm-kur-date" style="font-size:9px;color:var(--t3);margin-left:auto">' + (_odmRatesDate||'Statik') + '</span>'
+    + (allowManuel ? '<input type="number" id="odm-kur-manuel" style="font-size:11px;width:80px;border:0.5px solid var(--b);border-radius:6px;padding:2px 6px;display:' + (_odmRatesMode==='manuel'?'block':'none') + '"'
+    + ' placeholder="Kur girin" oninput="_odmManualRateInput(this)">' : '')
+    + '<span id="odm-kur-date" style="font-size:9px;color:var(--t3);margin-left:auto">' + sourceLabel + ' · ' + (_odmRatesDate||'Statik') + '</span>'
     + '</div>';
 }
 
@@ -239,6 +277,58 @@ window._odmManualRateInput = _odmManualRateInput;
 window._odmUpdateTLPreview = _odmUpdateTLPreview;
 window._odmUpdateKurDisplay = _odmUpdateKurDisplay;
 window._odmFetchTCMB       = _odmFetchTCMB;
+
+/**
+ * Hatırlatıcı hızlı butonları — değer ve birim ayarlar.
+ */
+function _odmSetReminder(val, unit) {
+  var valEl = document.getElementById('odm-f-reminder-val');
+  var unitEl = document.getElementById('odm-f-reminder-unit');
+  if (valEl) valEl.value = val;
+  if (unitEl) unitEl.value = unit;
+  // Tarih+saat otomatik hesapla
+  _odmCalcReminderDate();
+}
+
+/**
+ * Vadeye göre hatırlatıcı tarihini otomatik hesaplar.
+ */
+function _odmAutoReminder() {
+  var dueEl = document.getElementById('odm-f-due');
+  if (!dueEl?.value) { window.toast?.('Önce son tarih girin', 'warn'); return; }
+  var due = new Date(dueEl.value);
+  var diff = Math.ceil((due - new Date()) / 86400000);
+  // Akıllı seçim: <3 gün→1gün, <14 gün→3gün, <60 gün→1hafta, else→1ay
+  if (diff <= 3) _odmSetReminder(1, 'gun');
+  else if (diff <= 14) _odmSetReminder(3, 'gun');
+  else if (diff <= 60) _odmSetReminder(1, 'hafta');
+  else _odmSetReminder(1, 'ay');
+  window.toast?.('Hatırlatıcı otomatik ayarlandı', 'ok');
+}
+
+/**
+ * Reminder değer/biriminden alarm tarihini hesaplar ve date inputa yazar.
+ */
+function _odmCalcReminderDate() {
+  var dueEl = document.getElementById('odm-f-due');
+  var dateEl = document.getElementById('odm-f-alarm-date');
+  if (!dueEl?.value || !dateEl) return;
+  var due = new Date(dueEl.value);
+  var val = parseInt(document.getElementById('odm-f-reminder-val')?.value || '3') || 3;
+  var unit = document.getElementById('odm-f-reminder-unit')?.value || 'gun';
+  switch(unit) {
+    case 'dakika': due.setMinutes(due.getMinutes() - val); break;
+    case 'saat':   due.setHours(due.getHours() - val); break;
+    case 'gun':    due.setDate(due.getDate() - val); break;
+    case 'hafta':  due.setDate(due.getDate() - val * 7); break;
+    case 'ay':     due.setMonth(due.getMonth() - val); break;
+  }
+  dateEl.value = due.toISOString().slice(0, 10);
+}
+
+window._odmSetReminder    = _odmSetReminder;
+window._odmAutoReminder   = _odmAutoReminder;
+window._odmCalcReminderDate = _odmCalcReminderDate;
 const ODM_STATUS = {
   bekliyor: { l:'Bekliyor',  ic:'📅', cls:'bb' },
   odendi:   { l:'Ödendi',    ic:'✅', cls:'bg' },
@@ -910,10 +1000,14 @@ function openOdmModal(id) {
   const mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-odm-v9'; mo.style.zIndex = '2100';
 
-  // Cari listesi
+  // Cari listesi — sadece onaylı cariler seçilebilir
   var cariList = typeof loadCari === 'function' ? loadCari() : [];
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
-  var cariOpts = '<option value="">— Cari Seçin * —</option>' + cariList.map(function(c) { return '<option value="' + esc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + '>' + esc(c.name) + ' (' + (c.type || '') + ')</option>'; }).join('');
+  var cariOpts = '<option value="">— Cari Seçin * —</option>' + cariList.map(function(c) {
+    var isPending = c.status === 'pending_approval';
+    var label = esc(c.name) + ' (' + (c.type || '') + ')' + (isPending ? ' ⏳ Onay Bekliyor' : '');
+    return '<option value="' + esc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPending ? ' disabled style="color:#999"' : '') + '>' + label + '</option>';
+  }).join('');
 
   // Görev listesi
   var taskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : [];
@@ -939,7 +1033,7 @@ function openOdmModal(id) {
     // Kategori + Sıklık
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="fr"><div class="fl">KATEGORİ</div><select class="fi" id="odm-f-cat" style="border-radius:8px">'
-    + Object.entries(ODM_CATS).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.cat===e[0]?' selected':'') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('')
+    + Object.entries(_odmGetAllCats()).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.cat===e[0]?' selected':'') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('')
     + '</select></div>'
     + '<div class="fr"><div class="fl">SIKLIK</div><select class="fi" id="odm-f-freq" style="border-radius:8px">'
     + Object.entries(ODM_FREQ).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.freq===e[0]?' selected':'') + '>' + e[1] + '</option>'; }).join('')
@@ -966,7 +1060,7 @@ function openOdmModal(id) {
     + '<div class="fr"><div class="fl">DÖKÜMAN NO *</div><input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" value="' + (o?o.docNo||'':'') + '" style="border-radius:8px"></div>'
     + '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="odm-f-yontem" style="border-radius:8px">'
     + '<option value="">— Seçin —</option>'
-    + ['Havale/EFT','Kredi Kartı','Nakit','Çek','Senet','Kripto','Diğer'].map(function(y) { return '<option value="' + y + '"' + (o?.yontem===y?' selected':'') + '>' + y + '</option>'; }).join('')
+    + _odmLoadMethods().map(function(y) { return '<option value="' + y + '"' + (o?.yontem===y?' selected':'') + '>' + y + '</option>'; }).join('')
     + '</select></div>'
     + '</div>'
 
@@ -978,17 +1072,34 @@ function openOdmModal(id) {
     + '<input type="date" class="fi" id="odm-f-actual" value="' + (o?o.actualDate||'':'') + '"></div>'
     + '</div>'
 
-    // Sorumlu + Hatırlatıcı (tarih+saat)
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    // Sorumlu
     + '<div class="fr"><div class="fl">SORUMLU KİŞİ</div><select class="fi" id="odm-f-assigned" style="border-radius:8px">'
     + '<option value="">— Seç —</option>'
     + users.map(function(u) { return '<option value="' + u.id + '"' + (o&&o.assignedTo===u.id?' selected':'') + '>' + u.name + '</option>'; }).join('')
     + '</select></div>'
-    + '<div class="fr"><div class="fl">HATIRLATICI TARİH+SAAT</div>'
-    + '<div style="display:flex;gap:6px">'
-    + '<input type="date" class="fi" id="odm-f-alarm-date" value="' + (o?.alarmDate || '') + '" style="flex:1;border-radius:8px">'
-    + '<input type="time" class="fi" id="odm-f-alarm-time" value="' + (o?.alarmTime || '09:00') + '" style="width:90px;border-radius:8px">'
-    + '</div></div>'
+
+    // Hatırlatıcı — zengin seçenekler
+    + '<div style="background:var(--s2);border-radius:10px;padding:12px 14px">'
+    + '<div class="fl" style="margin-bottom:8px">🔔 HATIRLATICI</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<input type="date" class="fi" id="odm-f-alarm-date" value="' + (o?.alarmDate || '') + '" style="flex:1;border-radius:8px;font-size:11px">'
+    + '<input type="time" class="fi" id="odm-f-alarm-time" value="' + (o?.alarmTime || '09:00') + '" style="width:80px;border-radius:8px;font-size:11px">'
+    + '</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<input type="number" class="fi" id="odm-f-reminder-val" min="1" max="365" value="' + (o?.reminderValue || 3) + '" style="width:55px;border-radius:8px;font-size:11px" placeholder="3">'
+    + '<select class="fi" id="odm-f-reminder-unit" style="flex:1;border-radius:8px;font-size:11px">'
+    + Object.entries(ODM_REMINDER_UNITS).map(function(e) { return '<option value="' + e[0] + '"' + ((o?.reminderUnit || 'gun') === e[0] ? ' selected' : '') + '>' + e[1] + ' önce</option>'; }).join('')
+    + '</select>'
+    + '</div>'
+    + '</div>'
+    + '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'
+    + '<button type="button" onclick="_odmSetReminder(1,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 gün</button>'
+    + '<button type="button" onclick="_odmSetReminder(3,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">3 gün</button>'
+    + '<button type="button" onclick="_odmSetReminder(1,\'hafta\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 hafta</button>'
+    + '<button type="button" onclick="_odmSetReminder(1,\'ay\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 ay</button>'
+    + '<button type="button" onclick="_odmAutoReminder()" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px;background:var(--ac);color:#fff">⚡ Otomatik</button>'
+    + '</div>'
     + '</div>'
 
     // Not
@@ -1113,21 +1224,130 @@ function viewOdmDoc(odmId, docIdx) {
 window.uploadOdmDoc = uploadOdmDoc;
 window.viewOdmDoc   = viewOdmDoc;
 
+/**
+ * Eksik alanları görsel olarak vurgular: kırmızı border + shake + banner + scroll.
+ * @param {string[]} fieldIds  Eksik alan ID listesi
+ * @param {string} [bannerMsg]  Üstte gösterilecek banner mesajı
+ */
+function _odmHighlightMissing(fieldIds, bannerMsg) {
+  // Mevcut hata stillerini temizle
+  document.querySelectorAll('.odm-field-error').forEach(function(el) {
+    el.classList.remove('odm-field-error', 'odm-shake');
+  });
+  var existingBanner = document.getElementById('odm-error-banner');
+  if (existingBanner) existingBanner.remove();
+
+  if (!fieldIds || !fieldIds.length) return;
+
+  // Shake keyframes inject (bir kez)
+  if (!document.getElementById('odm-shake-style')) {
+    var styleEl = document.createElement('style');
+    styleEl.id = 'odm-shake-style';
+    styleEl.textContent = '@keyframes odmShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}'
+      + '.odm-field-error{border-color:#DC2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.15)!important}'
+      + '.odm-shake{animation:odmShake .4s ease}';
+    document.head.appendChild(styleEl);
+  }
+
+  // Alanları vurgula
+  var firstEl = null;
+  fieldIds.forEach(function(fid) {
+    var el = document.getElementById(fid);
+    if (!el) return;
+    el.classList.add('odm-field-error', 'odm-shake');
+    if (!firstEl) firstEl = el;
+    // Focus'ta temizle
+    el.addEventListener('focus', function handler() {
+      el.classList.remove('odm-field-error', 'odm-shake');
+      el.removeEventListener('focus', handler);
+    }, { once: true });
+  });
+
+  // Banner göster
+  if (bannerMsg) {
+    var modal = document.querySelector('#mo-odm-v9 .moc > div:nth-child(2)');
+    if (modal) {
+      var banner = document.createElement('div');
+      banner.id = 'odm-error-banner';
+      banner.style.cssText = 'background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px';
+      banner.innerHTML = '⚠️ ' + bannerMsg;
+      modal.insertBefore(banner, modal.firstChild);
+    }
+  }
+
+  // İlk eksik alana scroll
+  if (firstEl) {
+    firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    firstEl.focus();
+  }
+}
+
 function saveOdm() {
   var cu = window.Auth?.getCU?.();
   var isAdmin = cu?.role === 'admin';
   var name = (document.getElementById('odm-f-name')?.value || '').trim();
-  if (!name) { window.toast?.('Ödeme adı zorunludur', 'err'); return; }
   var _fAmt = parseFloat(document.getElementById('odm-f-amount')?.value || '0');
-  if (!_fAmt) { window.toast?.('Tutar zorunludur', 'err'); return; }
   var _fDue = document.getElementById('odm-f-due')?.value || '';
-  if (!_fDue) { window.toast?.('Son tarih zorunludur', 'err'); return; }
   var _fCari = document.getElementById('odm-f-cari')?.value || '';
-  if (!_fCari) { window.toast?.('Cari firma zorunludur — önce cari kaydı oluşturun', 'err'); return; }
   var _fDocNo = (document.getElementById('odm-f-docno')?.value || '').trim();
-  if (!_fDocNo) { window.toast?.('Döküman No zorunludur', 'err'); return; }
   var _fYontem = document.getElementById('odm-f-yontem')?.value || '';
-  if (!_fYontem) { window.toast?.('Ödeme yöntemi zorunludur', 'err'); return; }
+
+  // Toplu validasyon — tüm eksik alanları bir kerede göster
+  var _missingFields = [];
+  var _missingLabels = [];
+  if (!_fCari)   { _missingFields.push('odm-f-cari');   _missingLabels.push('Cari Firma'); }
+  if (!name)     { _missingFields.push('odm-f-name');   _missingLabels.push('Ödeme Adı'); }
+  if (!_fAmt)    { _missingFields.push('odm-f-amount'); _missingLabels.push('Tutar'); }
+  if (!_fDue)    { _missingFields.push('odm-f-due');    _missingLabels.push('Son Tarih'); }
+  if (!_fDocNo)  { _missingFields.push('odm-f-docno');  _missingLabels.push('Döküman No'); }
+  if (!_fYontem) { _missingFields.push('odm-f-yontem'); _missingLabels.push('Ödeme Yöntemi'); }
+  if (_missingFields.length) {
+    _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
+    window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
+    return;
+  }
+
+  // Pending cari kontrolü — onaylanmamış cariyle ödeme oluşturulamaz
+  var _selCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _fCari; });
+  if (_selCari && _selCari.status === 'pending_approval') {
+    _odmHighlightMissing(['odm-f-cari'], 'Bu cari henüz onaylanmadı');
+    window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
+    return;
+  }
+
+  // Cari limit kontrolü — limit aşıldıysa blokla (specialApproval hariç)
+  if (_selCari && _selCari.creditLimit > 0) {
+    var cariOdm = (window.loadOdm ? loadOdm() : []).filter(function(o) {
+      return o.cariName === _fCari && !o.paid && !o.isDeleted;
+    });
+    var cariToplamBorc = cariOdm.reduce(function(sum, o) { return sum + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    var yeniTutar = _odmToTRY(_fAmt, document.getElementById('odm-f-currency')?.value || 'TRY');
+    if ((cariToplamBorc + yeniTutar) > _selCari.creditLimit && !_selCari.specialApproval) {
+      _odmHighlightMissing(['odm-f-cari', 'odm-f-amount'], 'Cari limit aşıldı!');
+      window.toast?.('Cari kredi limiti aşıldı — Toplam: ₺' + Math.round(cariToplamBorc + yeniTutar).toLocaleString('tr-TR') + ' / Limit: ₺' + _selCari.creditLimit.toLocaleString('tr-TR'), 'err');
+      // Admin/manager özel onay verebilir
+      if (_isManagerO()) {
+        window.toast?.('Yönetici olarak limit aşımını onaylayabilirsiniz — tekrar kaydet butonuna basın', 'warn');
+        _selCari.specialApproval = true;
+        storeCari(loadCari().map(function(c) { return c.id === _selCari.id ? _selCari : c; }));
+      }
+      return;
+    }
+  }
+
+  // Gecikmiş ödeme uyarısı — bu carinin gecikmiş ödemeleri varsa uyar
+  if (_selCari) {
+    var gecikOdm = (window.loadOdm ? loadOdm() : []).filter(function(o) {
+      return o.cariName === _fCari && !o.paid && o.due && o.due < _todayStr();
+    });
+    if (gecikOdm.length > 0 && !window._odmGecikUyariGosterildi) {
+      window._odmGecikUyariGosterildi = true;
+      window.toast?.('⚠️ Bu carinin ' + gecikOdm.length + ' adet gecikmiş ödemesi var!', 'warn');
+      // Uyarı göster ama engelleme — bir sonraki kaydetmede geçsin
+      setTimeout(function() { window._odmGecikUyariGosterildi = false; }, 30000);
+    }
+  }
+
   var eidVal = document.getElementById('odm-f-eid')?.value || '';
   var eid = eidVal ? parseInt(eidVal) : 0;
   var isNew = !eid;
@@ -1152,6 +1372,8 @@ function saveOdm() {
     alarmDays:      parseInt(_go('odm-f-alarm')?.value || '3'),
     alarmDate:      document.getElementById('odm-f-alarm-date')?.value || '',
     alarmTime:      document.getElementById('odm-f-alarm-time')?.value || '09:00',
+    reminderValue:  parseInt(document.getElementById('odm-f-reminder-val')?.value || '3') || 3,
+    reminderUnit:   document.getElementById('odm-f-reminder-unit')?.value || 'gun',
     assignedTo:     parseInt(_go('odm-f-assigned')?.value || '0') || null,
     cariName:       _fCari,
     docNo:          _fDocNo,
@@ -3537,6 +3759,216 @@ function loadOdmBudgets() {
 }
 function saveOdmBudgets(d) { localStorage.setItem('duay_odm_budgets', JSON.stringify(d)); }
 
+/**
+ * Admin kur kaynağı ayarları paneli.
+ * Kaynak seçimi (TCMB/ExchangeRate/Manuel) + varsayılan kur modu (alış/satış).
+ */
+function openKurSettings() {
+  if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var ex = document.getElementById('mo-odm-kur-settings');
+  if (ex) { ex.remove(); return; }
+  var cfg = _odmLoadKurConfig();
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-kur-settings'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:440px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div class="mt" style="margin-bottom:0">💱 Kur Ayarları</div>'
+    + '<button onclick="document.getElementById(\'mo-odm-kur-settings\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">'
+    + '<div class="fr"><div class="fl">KUR KAYNAĞI</div><select class="fi" id="kur-cfg-source" style="border-radius:8px">'
+    + Object.entries(ODM_KUR_SOURCES).map(function(e) { return '<option value="' + e[0] + '"' + ((cfg.source || 'tcmb') === e[0] ? ' selected' : '') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('')
+    + '</select></div>'
+    + '<div class="fr"><div class="fl">VARSAYILAN KUR MODU</div><select class="fi" id="kur-cfg-mode" style="border-radius:8px">'
+    + '<option value="alis"' + ((cfg.defaultMode || 'alis') === 'alis' ? ' selected' : '') + '>MB Alış</option>'
+    + '<option value="satis"' + ((cfg.defaultMode || 'alis') === 'satis' ? ' selected' : '') + '>MB Satış</option>'
+    + '</select></div>'
+    + '<div class="fr"><div class="fl">FORM BAZINDA MANUEL OVERRIDE</div>'
+    + '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2);cursor:pointer">'
+    + '<input type="checkbox" id="kur-cfg-allow-override"' + (cfg.allowOverride !== false ? ' checked' : '') + '> Kullanıcıların formda manuel kur girmesine izin ver'
+    + '</label></div>'
+    + '<div style="padding:8px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t3)">'
+    + '📊 Son kur güncellemesi: ' + (_odmRatesDate || 'Henüz çekilmedi') + '<br>'
+    + '💵 USD: ₺' + (_odmGetRates().USD || '—') + ' | EUR: ₺' + (_odmGetRates().EUR || '—')
+    + '</div>'
+    + '</div>'
+    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--s2)">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-odm-kur-settings\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="_odmSaveKurSettings()" style="border-radius:9px">💾 Kaydet</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+function _odmSaveKurSettings() {
+  var cfg = {
+    source: document.getElementById('kur-cfg-source')?.value || 'tcmb',
+    defaultMode: document.getElementById('kur-cfg-mode')?.value || 'alis',
+    allowOverride: document.getElementById('kur-cfg-allow-override')?.checked !== false,
+    updatedBy: _CUo()?.id,
+    updatedAt: _nowTso()
+  };
+  _odmSaveKurConfig(cfg);
+  _odmRatesMode = cfg.defaultMode;
+  // Kaynağa göre yeniden çek
+  if (cfg.source === 'tcmb') {
+    _odmRatesDate = '';
+    _odmFetchTCMB().catch(function() {});
+  }
+  window.toast?.('Kur ayarları kaydedildi ✓', 'ok');
+  window.logActivity?.('settings', 'Kur kaynağı güncellendi: ' + cfg.source);
+  document.getElementById('mo-odm-kur-settings')?.remove();
+}
+window.openKurSettings = openKurSettings;
+window._odmSaveKurSettings = _odmSaveKurSettings;
+
+// ════════════════════════════════════════════════════════════════
+// KATEGORİ VE ÖDEME YÖNTEMİ YÖNETİMİ — Admin CRUD
+// ════════════════════════════════════════════════════════════════
+const ODM_CUSTOM_CATS_KEY = 'odm_custom_cats';
+const ODM_CUSTOM_METHODS_KEY = 'odm_custom_methods';
+const ODM_DEFAULT_METHODS = ['Havale/EFT','Kredi Kartı','Nakit','Çek','Senet','Kripto','Diğer'];
+
+/** @returns {Object} Özel kategoriler */
+function _odmLoadCustomCats() {
+  try { return JSON.parse(localStorage.getItem(ODM_CUSTOM_CATS_KEY) || '{}'); } catch { return {}; }
+}
+
+/** @returns {string[]} Ödeme yöntemleri (varsayılan + özel) */
+function _odmLoadMethods() {
+  try {
+    var custom = JSON.parse(localStorage.getItem(ODM_CUSTOM_METHODS_KEY) || '[]');
+    return ODM_DEFAULT_METHODS.concat(custom.filter(function(m) { return ODM_DEFAULT_METHODS.indexOf(m) === -1; }));
+  } catch { return ODM_DEFAULT_METHODS; }
+}
+
+/** Tüm kategorileri döndürür (yerleşik + özel) */
+function _odmGetAllCats() {
+  var all = Object.assign({}, ODM_CATS, _odmLoadCustomCats());
+  return all;
+}
+
+/**
+ * Admin: Kategori ve Ödeme Yöntemi Yönetimi paneli.
+ */
+function openOdmCatMethodManager() {
+  if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var ex = document.getElementById('mo-odm-catmethod');
+  if (ex) { ex.remove(); return; }
+  var customCats = _odmLoadCustomCats();
+  var customMethods = [];
+  try { customMethods = JSON.parse(localStorage.getItem(ODM_CUSTOM_METHODS_KEY) || '[]'); } catch {}
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-odm-catmethod'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:16px;overflow:hidden">'
+    + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div class="mt" style="margin-bottom:0">⚙️ Kategori & Yöntem Yönetimi</div>'
+    + '<button onclick="document.getElementById(\'mo-odm-catmethod\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="padding:18px 22px;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:16px">'
+
+    // Kategoriler
+    + '<div>'
+    + '<div class="fl" style="margin-bottom:8px">KATEGORİLER</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+    + Object.entries(ODM_CATS).map(function(e) {
+        return '<span style="font-size:11px;padding:4px 10px;border-radius:8px;background:var(--s2);color:var(--t2)">' + e[1].ic + ' ' + e[1].l + ' <span style="font-size:9px;color:var(--t3)">(sistem)</span></span>';
+      }).join('')
+    + Object.entries(customCats).map(function(e) {
+        return '<span style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(99,102,241,.1);color:#4F46E5;cursor:pointer" onclick="_odmRemoveCustomCat(\'' + e[0] + '\')">' + (e[1].ic||'📁') + ' ' + e[1].l + ' ×</span>';
+      }).join('')
+    + '</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<input class="fi" id="odm-new-cat-key" placeholder="anahtar (orn: pazarlama)" style="flex:1;font-size:11px;border-radius:8px">'
+    + '<input class="fi" id="odm-new-cat-label" placeholder="Etiket (orn: Pazarlama)" style="flex:1;font-size:11px;border-radius:8px">'
+    + '<input class="fi" id="odm-new-cat-icon" placeholder="İkon" style="width:45px;font-size:11px;border-radius:8px" value="📁">'
+    + '<button class="btn btns" onclick="_odmAddCustomCat()" style="font-size:11px;white-space:nowrap">+ Ekle</button>'
+    + '</div>'
+    + '</div>'
+
+    // Ödeme Yöntemleri
+    + '<div>'
+    + '<div class="fl" style="margin-bottom:8px">ÖDEME YÖNTEMLERİ</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+    + ODM_DEFAULT_METHODS.map(function(m) {
+        return '<span style="font-size:11px;padding:4px 10px;border-radius:8px;background:var(--s2);color:var(--t2)">' + m + ' <span style="font-size:9px;color:var(--t3)">(sistem)</span></span>';
+      }).join('')
+    + customMethods.map(function(m) {
+        return '<span style="font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(16,185,129,.1);color:#059669;cursor:pointer" onclick="_odmRemoveCustomMethod(\'' + m + '\')">' + m + ' ×</span>';
+      }).join('')
+    + '</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<input class="fi" id="odm-new-method" placeholder="Yeni yöntem (orn: Mobil Ödeme)" style="flex:1;font-size:11px;border-radius:8px">'
+    + '<button class="btn btns" onclick="_odmAddCustomMethod()" style="font-size:11px;white-space:nowrap">+ Ekle</button>'
+    + '</div>'
+    + '</div>'
+
+    + '</div>'
+    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;background:var(--s2)">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-odm-catmethod\')?.remove()">Kapat</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+function _odmAddCustomCat() {
+  var key = (document.getElementById('odm-new-cat-key')?.value || '').trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  var label = (document.getElementById('odm-new-cat-label')?.value || '').trim();
+  var icon = (document.getElementById('odm-new-cat-icon')?.value || '📁').trim();
+  if (!key || !label) { window.toast?.('Anahtar ve etiket zorunludur', 'err'); return; }
+  if (ODM_CATS[key]) { window.toast?.('Bu anahtar zaten sistem kategorisinde var', 'err'); return; }
+  var custom = _odmLoadCustomCats();
+  custom[key] = { l: label, ic: icon, c: 'bg' };
+  localStorage.setItem(ODM_CUSTOM_CATS_KEY, JSON.stringify(custom));
+  window.toast?.('Kategori eklendi: ' + label, 'ok');
+  window.logActivity?.('settings', 'Özel kategori eklendi: ' + label);
+  openOdmCatMethodManager();
+}
+
+function _odmRemoveCustomCat(key) {
+  var custom = _odmLoadCustomCats();
+  var label = custom[key]?.l || key;
+  delete custom[key];
+  localStorage.setItem(ODM_CUSTOM_CATS_KEY, JSON.stringify(custom));
+  window.toast?.('Kategori silindi: ' + label, 'ok');
+  openOdmCatMethodManager();
+}
+
+function _odmAddCustomMethod() {
+  var method = (document.getElementById('odm-new-method')?.value || '').trim();
+  if (!method) { window.toast?.('Yöntem adı zorunludur', 'err'); return; }
+  var custom = [];
+  try { custom = JSON.parse(localStorage.getItem(ODM_CUSTOM_METHODS_KEY) || '[]'); } catch {}
+  if (custom.indexOf(method) !== -1 || ODM_DEFAULT_METHODS.indexOf(method) !== -1) {
+    window.toast?.('Bu yöntem zaten var', 'err'); return;
+  }
+  custom.push(method);
+  localStorage.setItem(ODM_CUSTOM_METHODS_KEY, JSON.stringify(custom));
+  window.toast?.('Yöntem eklendi: ' + method, 'ok');
+  window.logActivity?.('settings', 'Özel ödeme yöntemi eklendi: ' + method);
+  openOdmCatMethodManager();
+}
+
+function _odmRemoveCustomMethod(method) {
+  var custom = [];
+  try { custom = JSON.parse(localStorage.getItem(ODM_CUSTOM_METHODS_KEY) || '[]'); } catch {}
+  custom = custom.filter(function(m) { return m !== method; });
+  localStorage.setItem(ODM_CUSTOM_METHODS_KEY, JSON.stringify(custom));
+  window.toast?.('Yöntem silindi: ' + method, 'ok');
+  openOdmCatMethodManager();
+}
+
+window.openOdmCatMethodManager = openOdmCatMethodManager;
+window._odmAddCustomCat = _odmAddCustomCat;
+window._odmRemoveCustomCat = _odmRemoveCustomCat;
+window._odmAddCustomMethod = _odmAddCustomMethod;
+window._odmRemoveCustomMethod = _odmRemoveCustomMethod;
+
 function openBudgetManager() {
   const ex = document.getElementById('mo-odm-budget');
   if (ex) { ex.remove(); return; }
@@ -5163,4 +5595,6 @@ if (typeof Odemeler !== 'undefined') {
   Odemeler.exportEFatura        = exportEFatura;
   Odemeler.loadCari             = loadCari;
   Odemeler.renderCari           = renderCari;
+  Odemeler.openKurSettings      = openKurSettings;
+  Odemeler.openOdmCatMethodManager = openOdmCatMethodManager;
 }
