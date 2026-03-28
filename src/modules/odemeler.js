@@ -5564,6 +5564,7 @@ function renderCari() {
         + '<div style="display:flex;gap:6px">'
           + '<button class="btn btns" onclick="window._exportCariXlsx?.()" style="font-size:11px">⬇ Excel</button>'
           + '<button class="btn btns" onclick="window._exportCariPDF?.()" style="font-size:11px">📄 PDF</button>'
+          + (_isAdminO() ? '<button class="btn btns" onclick="_insertCariDemoData()" style="font-size:11px">🎲 Demo</button>' : '')
           + '<button class="btn btnp" onclick="window._openQuickCari?.()" style="font-size:12px">+ Cari Ekle</button>'
         + '</div>'
       + '</div>'
@@ -5687,6 +5688,7 @@ function _renderCariDetail(id) {
         + (c.address ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + esc(c.address) + '</div>' : '')
       + '</div>'
       + '<div style="display:flex;gap:6px">'
+        + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
         + '<button class="btn btns" onclick="window.confirmModal(\'Bu cariyi silmek istediğinizden emin misiniz?\',{title:\'Cari Sil\',danger:true,confirmText:\'Evet\',onConfirm:function(){deleteCari(' + c.id + ');_cariSelectedId=null;renderCari()}})" style="font-size:11px;color:#DC2626">🗑</button>'
       + '</div>'
@@ -6230,6 +6232,355 @@ function _permanentDeleteItem(id, type) {
 window.openOdmTrashPanel = openOdmTrashPanel;
 window._restoreTrashItem = _restoreTrashItem;
 window._permanentDeleteItem = _permanentDeleteItem;
+
+// ════════════════════════════════════════════════════════════════
+// CARİ HESAP ÖZETİ — 3 FORMAT (Bankacılık Standardı)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Bir carinin tüm hareketlerini toplar ve kümülatif bakiye hesaplar.
+ * @param {number} cariId
+ * @param {Object} [opts]  { from, to, currency }
+ * @returns {Object} { cari, hareketler[], toplamBorc, toplamAlacak, netBakiye, bakiyeByCur }
+ */
+function _buildCariStatement(cariId, opts) {
+  opts = opts || {};
+  var cariAll = typeof loadCari === 'function' ? loadCari() : [];
+  var c = cariAll.find(function(x) { return x.id === cariId; });
+  if (!c) return null;
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && (o.cariName === c.name || o.cariId === cariId); });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && (t.cariName === c.name || t.cariId === cariId); });
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+
+  // Hareketleri birleştir
+  var hareketler = [];
+  odm.forEach(function(o) {
+    hareketler.push({
+      id: o.id, type: 'odeme', date: o.due || o.ts || '', name: o.name || '', amount: parseFloat(o.amount) || 0,
+      currency: o.currency || 'TRY', amountTRY: parseFloat(o.amountTRY || o.amount) || 0, kurRate: o.kurRate || 1,
+      status: o.paid ? 'Ödendi' : 'Bekliyor', docNo: o.docNo || '', yontem: o.yontem || '',
+      approvalStatus: o.approvalStatus || '', approvedBy: o.approvedBy, approvedAt: o.approvedAt,
+      createdBy: o.createdBy, updatedBy: o.updatedBy, ts: o.ts, changeHistory: o.changeHistory || [],
+      assignedTo: o.assignedTo, paid: !!o.paid, collected: false
+    });
+  });
+  tah.forEach(function(t) {
+    hareketler.push({
+      id: t.id, type: 'tahsilat', date: t.due || t.ts || '', name: t.name || '', amount: parseFloat(t.amount) || 0,
+      currency: t.currency || 'TRY', amountTRY: parseFloat(t.amountTRY || t.amount) || 0, kurRate: t.kurRate || 1,
+      status: t.collected ? 'Tahsil Edildi' : 'Bekliyor', docNo: t.ref || '', yontem: t.yontem || '',
+      approvalStatus: t.approvalStatus || '', approvedBy: t.approvedBy, approvedAt: t.approvedAt,
+      createdBy: t.createdBy, updatedBy: t.updatedBy, ts: t.ts, changeHistory: t.changeHistory || [],
+      assignedTo: t.assignedTo, paid: false, collected: !!t.collected
+    });
+  });
+
+  // Filtreler
+  if (opts.from) hareketler = hareketler.filter(function(h) { return h.date >= opts.from; });
+  if (opts.to)   hareketler = hareketler.filter(function(h) { return h.date <= opts.to; });
+  if (opts.currency) hareketler = hareketler.filter(function(h) { return h.currency === opts.currency; });
+
+  // Tarihe göre sırala (eski → yeni)
+  hareketler.sort(function(a, b) { return (a.date || '').localeCompare(b.date || ''); });
+
+  // Kümülatif bakiye hesapla (para birimine göre ayrı)
+  var bakiyeByCur = {};
+  var toplamBorc = 0, toplamAlacak = 0;
+  hareketler.forEach(function(h) {
+    if (!bakiyeByCur[h.currency]) bakiyeByCur[h.currency] = 0;
+    if (h.type === 'tahsilat') {
+      bakiyeByCur[h.currency] += h.amount;
+      toplamAlacak += h.amountTRY;
+    } else {
+      bakiyeByCur[h.currency] -= h.amount;
+      toplamBorc += h.amountTRY;
+    }
+    h.bakiye = bakiyeByCur[h.currency];
+    h.bakiyeLabel = (h.bakiye >= 0 ? '+' : '') + h.bakiye.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  });
+
+  return {
+    cari: c, hareketler: hareketler,
+    toplamBorc: toplamBorc, toplamAlacak: toplamAlacak, netBakiye: toplamAlacak - toplamBorc,
+    bakiyeByCur: bakiyeByCur, users: users
+  };
+}
+
+/**
+ * Cari hesap özeti modal — 3 format: musteri, user, admin.
+ * @param {number} cariId
+ * @param {string} [format='user']  'musteri' | 'user' | 'admin'
+ */
+function openCariStatement(cariId, format) {
+  format = format || 'user';
+  var st = _buildCariStatement(cariId);
+  if (!st) { window.toast?.('Cari bulunamadı', 'err'); return; }
+  var c = st.cari;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var today = _todayStr();
+
+  var ex = document.getElementById('mo-cari-stmt');
+  if (ex) ex.remove();
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-cari-stmt'; mo.style.zIndex = '2200';
+
+  // Başlık
+  var formatLabel = format === 'musteri' ? 'Müşteri Özeti' : format === 'admin' ? 'Yönetici Raporu' : 'Operasyonel Özet';
+  var headerColor = format === 'musteri' ? '#1e40af' : format === 'admin' ? '#7c2d12' : '#0F6E56';
+
+  // Tablo satırları
+  var rowsHTML = '';
+  st.hareketler.forEach(function(h, i) {
+    var isLate = !h.paid && !h.collected && h.date && h.date < today;
+    var isNear = !h.paid && !h.collected && h.date && h.date >= today && h.date <= new Date(new Date().getTime() + 7*86400000).toISOString().slice(0,10);
+    var rowBg = isLate ? '#FEF2F2' : isNear ? '#FFFBEB' : (i % 2 ? 'var(--s2)' : 'var(--sf)');
+    var borc = h.type === 'odeme' ? h.amount.toLocaleString('tr-TR', {minimumFractionDigits:2}) : '';
+    var alacak = h.type === 'tahsilat' ? h.amount.toLocaleString('tr-TR', {minimumFractionDigits:2}) : '';
+    var bakiyeColor = h.bakiye >= 0 ? '#16A34A' : '#DC2626';
+
+    rowsHTML += '<tr style="background:' + rowBg + ';border-bottom:1px solid var(--b)">';
+    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:' + (isLate ? '#DC2626' : 'var(--t3)') + '">' + (h.date || '—').slice(0, 10) + '</td>';
+    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:var(--t)">' + esc(h.name) + '</td>';
+    // Format user/admin ekstra sütunlar
+    if (format !== 'musteri') {
+      rowsHTML += '<td style="padding:5px 8px;font-size:10px;color:var(--t3)">' + esc(h.docNo) + '</td>';
+    }
+    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:#DC2626;text-align:right;font-weight:600">' + (borc ? borc + ' ' + h.currency : '') + '</td>';
+    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:#16A34A;text-align:right;font-weight:600">' + (alacak ? alacak + ' ' + h.currency : '') + '</td>';
+    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:' + bakiyeColor + ';text-align:right;font-weight:700">' + h.bakiyeLabel + ' ' + h.currency + '</td>';
+    if (format !== 'musteri') {
+      var statusColor = h.paid || h.collected ? '#16A34A' : isLate ? '#DC2626' : '#F59E0B';
+      rowsHTML += '<td style="padding:5px 8px"><span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + statusColor + '22;color:' + statusColor + ';font-weight:600">' + h.status + '</span></td>';
+    }
+    // Admin ekstra sütunlar
+    if (format === 'admin') {
+      var creator = st.users.find(function(u) { return u.id === h.createdBy; });
+      var approver = st.users.find(function(u) { return u.id === h.approvedBy; });
+      rowsHTML += '<td style="padding:5px 8px;font-size:10px;color:var(--t3)">' + (creator?.name || '—') + '</td>';
+      rowsHTML += '<td style="padding:5px 8px;font-size:10px;color:var(--t3)">' + (approver?.name ? approver.name + ' (' + (h.approvedAt || '').slice(0,10) + ')' : '—') + '</td>';
+      rowsHTML += '<td style="padding:5px 8px;font-size:10px;color:var(--t3)">' + (h.changeHistory.length || 0) + '</td>';
+    }
+    rowsHTML += '</tr>';
+  });
+
+  // Tablo başlıkları
+  var thStyle = 'padding:6px 8px;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;text-align:left;border-bottom:2px solid var(--b)';
+  var thHTML = '<tr><th style="' + thStyle + '">Tarih</th><th style="' + thStyle + '">Açıklama</th>';
+  if (format !== 'musteri') thHTML += '<th style="' + thStyle + '">Döküman</th>';
+  thHTML += '<th style="' + thStyle + ';text-align:right">Borç</th><th style="' + thStyle + ';text-align:right">Alacak</th><th style="' + thStyle + ';text-align:right">Bakiye</th>';
+  if (format !== 'musteri') thHTML += '<th style="' + thStyle + '">Durum</th>';
+  if (format === 'admin') thHTML += '<th style="' + thStyle + '">Oluşturan</th><th style="' + thStyle + '">Onaylayan</th><th style="' + thStyle + '">Değişiklik</th>';
+  thHTML += '</tr>';
+
+  // Limit bar (user+admin)
+  var limitHTML = '';
+  if (format !== 'musteri') {
+    var cLimit = c.creditLimit || c.limitAmount || 0;
+    if (cLimit > 0) {
+      var pct = Math.round(st.toplamBorc / cLimit * 100);
+      var barColor = pct >= 100 ? '#EF4444' : pct >= 80 ? '#F59E0B' : '#16A34A';
+      limitHTML = '<div style="margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:8px">'
+        + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:4px"><span>Kredi Limiti</span><span style="font-weight:600;color:' + barColor + '">₺' + Math.round(st.toplamBorc).toLocaleString('tr-TR') + ' / ₺' + cLimit.toLocaleString('tr-TR') + ' (' + pct + '%)</span></div>'
+        + '<div style="height:5px;background:var(--b);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:' + barColor + '"></div></div>'
+        + '</div>';
+    }
+  }
+
+  // Admin: para birimi pozisyon tablosu
+  var posHTML = '';
+  if (format === 'admin' && Object.keys(st.bakiyeByCur).length) {
+    posHTML = '<div style="margin-top:12px;padding:10px 14px;background:var(--s2);border-radius:8px">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Net Pozisyon (Para Birimi Bazlı)</div>'
+      + '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+    Object.entries(st.bakiyeByCur).forEach(function(e) {
+      var color = e[1] >= 0 ? '#16A34A' : '#DC2626';
+      posHTML += '<div style="padding:6px 12px;border-radius:6px;background:' + color + '11;border:1px solid ' + color + '33"><span style="font-size:10px;color:var(--t3)">' + e[0] + '</span> <span style="font-size:14px;font-weight:700;color:' + color + '">' + (e[1] >= 0 ? '+' : '') + e[1].toLocaleString('tr-TR', {minimumFractionDigits:2}) + '</span></div>';
+    });
+    posHTML += '</div></div>';
+  }
+
+  // Admin: değişiklik geçmişi
+  var auditHTML = '';
+  if (format === 'admin') {
+    var allChanges = [];
+    st.hareketler.forEach(function(h) {
+      if (h.changeHistory && h.changeHistory.length) {
+        h.changeHistory.forEach(function(ch) {
+          allChanges.push({ ts: ch.ts, by: ch.by, changes: ch.changes, itemName: h.name });
+        });
+      }
+    });
+    if (allChanges.length) {
+      allChanges.sort(function(a, b) { return (b.ts || '').localeCompare(a.ts || ''); });
+      auditHTML = '<div style="margin-top:12px;padding:10px 14px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px">'
+        + '<div style="font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;margin-bottom:6px">Değişiklik Geçmişi (' + allChanges.length + ')</div>';
+      allChanges.slice(0, 10).forEach(function(ch) {
+        var byUser = st.users.find(function(u) { return u.id === ch.by; });
+        auditHTML += '<div style="font-size:10px;padding:3px 0;border-bottom:1px solid #FED7AA;color:#78350F">'
+          + '<b>' + (ch.ts || '').slice(0, 16) + '</b> · ' + (byUser?.name || '—') + ' · <i>' + esc(ch.itemName || '') + '</i> → ' + ch.changes.join(', ')
+          + '</div>';
+      });
+      auditHTML += '</div>';
+    }
+  }
+
+  mo.innerHTML = '<div class="moc" style="max-width:900px;padding:0;border-radius:16px;overflow:hidden">'
+    // Başlık
+    + '<div style="background:' + headerColor + ';padding:18px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between" id="cari-stmt-header">'
+    + '<div>'
+      + '<div style="font-size:16px;font-weight:700">DUAY GLOBAL TRADE LLC</div>'
+      + '<div style="font-size:11px;opacity:.7;margin-top:2px">' + formatLabel + ' — ' + esc(c.name) + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+      + '<button onclick="_exportCariStmtXlsx(' + cariId + ',\'' + format + '\')" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px">⬇ Excel</button>'
+      + '<button onclick="_printCariStmt()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px">🖨 Yazdır</button>'
+      + '<button onclick="document.getElementById(\'mo-cari-stmt\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button>'
+    + '</div></div>'
+    // Bilgi kartları
+    + '<div style="padding:16px 24px;display:flex;gap:12px;border-bottom:1px solid var(--b);flex-wrap:wrap">'
+      + '<div style="flex:1;min-width:120px;padding:10px;background:var(--sf);border:1px solid var(--b);border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">Toplam Borç</div><div style="font-size:18px;font-weight:700;color:#DC2626">₺' + Math.round(st.toplamBorc).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="flex:1;min-width:120px;padding:10px;background:var(--sf);border:1px solid var(--b);border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">Toplam Alacak</div><div style="font-size:18px;font-weight:700;color:#16A34A">₺' + Math.round(st.toplamAlacak).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="flex:1;min-width:120px;padding:10px;background:var(--sf);border:1px solid var(--b);border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">Net Bakiye</div><div style="font-size:18px;font-weight:700;color:' + (st.netBakiye >= 0 ? '#16A34A' : '#DC2626') + '">' + (st.netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(st.netBakiye)).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="flex:1;min-width:120px;padding:10px;background:var(--sf);border:1px solid var(--b);border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">İşlem Sayısı</div><div style="font-size:18px;font-weight:700;color:var(--t)">' + st.hareketler.length + '</div></div>'
+    + '</div>'
+    // İçerik
+    + '<div style="padding:16px 24px;max-height:55vh;overflow-y:auto">'
+      + limitHTML
+      // Format seçici (user/admin modunda)
+      + (format !== 'musteri' ? '<div style="display:flex;gap:4px;margin-bottom:12px">'
+        + '<button onclick="openCariStatement(' + cariId + ',\'musteri\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px;' + (format === 'musteri' ? 'background:var(--ac);color:#fff' : '') + '">Müşteri</button>'
+        + '<button onclick="openCariStatement(' + cariId + ',\'user\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px;' + (format === 'user' ? 'background:var(--ac);color:#fff' : '') + '">Operasyonel</button>'
+        + (_isManagerO() ? '<button onclick="openCariStatement(' + cariId + ',\'admin\')" class="btn btns" style="font-size:10px;padding:3px 10px;border-radius:6px;' + (format === 'admin' ? 'background:var(--ac);color:#fff' : '') + '">Yönetici</button>' : '')
+        + '</div>' : '')
+      // Tablo
+      + '<div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">'
+        + '<table style="width:100%;border-collapse:collapse">'
+        + '<thead>' + thHTML + '</thead>'
+        + '<tbody>' + (rowsHTML || '<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--t3)">Hareket bulunamadı</td></tr>') + '</tbody>'
+        + '<tfoot><tr style="background:var(--s2);border-top:2px solid var(--b)">'
+          + '<td style="padding:8px;font-size:11px;font-weight:700" colspan="' + (format === 'musteri' ? 2 : 3) + '">TOPLAM</td>'
+          + '<td style="padding:8px;font-size:12px;font-weight:700;color:#DC2626;text-align:right">₺' + Math.round(st.toplamBorc).toLocaleString('tr-TR') + '</td>'
+          + '<td style="padding:8px;font-size:12px;font-weight:700;color:#16A34A;text-align:right">₺' + Math.round(st.toplamAlacak).toLocaleString('tr-TR') + '</td>'
+          + '<td style="padding:8px;font-size:12px;font-weight:700;color:' + (st.netBakiye >= 0 ? '#16A34A' : '#DC2626') + ';text-align:right">' + (st.netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(st.netBakiye)).toLocaleString('tr-TR') + '</td>'
+          + '<td colspan="5"></td>'
+        + '</tr></tfoot>'
+        + '</table></div>'
+      + posHTML
+      + auditHTML
+    + '</div>'
+    // Müşteri formatında imza alanı
+    + (format === 'musteri' ? '<div style="padding:16px 24px;border-top:1px solid var(--b);display:grid;grid-template-columns:1fr 1fr;gap:40px;font-size:10px;color:var(--t3)">'
+      + '<div><div style="margin-bottom:30px">Düzenleyen:</div><div style="border-top:1px solid var(--t3);padding-top:4px">DUAY GLOBAL TRADE LLC</div></div>'
+      + '<div><div style="margin-bottom:30px">Onaylayan:</div><div style="border-top:1px solid var(--t3);padding-top:4px">' + esc(c.name) + '</div></div>'
+    + '</div>' : '')
+    + '<div style="padding:10px 24px;border-top:1px solid var(--b);text-align:right;background:var(--s2)">'
+    + '<span style="font-size:9px;color:var(--t3)">Oluşturulma: ' + today + ' · DUAY Platform v9.1</span>'
+    + '</div></div>';
+
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+/** Cari hesap özeti yazdırma */
+function _printCariStmt() {
+  var header = document.getElementById('cari-stmt-header');
+  var modal = document.querySelector('#mo-cari-stmt .moc');
+  if (!modal) return;
+  var w = window.open('', '_blank');
+  w.document.write('<html><head><title>Cari Hesap Özeti</title><style>body{font-family:system-ui;margin:20px}table{width:100%;border-collapse:collapse}th,td{padding:6px 8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}@media print{button{display:none!important}}</style></head><body>');
+  w.document.write(modal.innerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+}
+
+/** Cari hesap özeti Excel export */
+function _exportCariStmtXlsx(cariId, format) {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
+  var st = _buildCariStatement(cariId);
+  if (!st) return;
+  var rows = [['Tarih', 'Açıklama', 'Döküman No', 'Borç', 'Alacak', 'Para Birimi', 'Bakiye', 'Durum', 'Oluşturan']];
+  var users = st.users;
+  st.hareketler.forEach(function(h) {
+    var creator = users.find(function(u) { return u.id === h.createdBy; });
+    rows.push([
+      (h.date || '').slice(0, 10), h.name, h.docNo,
+      h.type === 'odeme' ? h.amount : '', h.type === 'tahsilat' ? h.amount : '',
+      h.currency, h.bakiye, h.status, creator?.name || '—'
+    ]);
+  });
+  rows.push(['', 'TOPLAM', '', st.toplamBorc, st.toplamAlacak, 'TRY', st.netBakiye, '', '']);
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:25},{wch:15},{wch:12},{wch:12},{wch:8},{wch:12},{wch:12},{wch:15}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Hesap Ozeti');
+  XLSX.writeFile(wb, 'cari-ozet-' + st.cari.name.replace(/\s+/g, '_') + '-' + _todayStr() + '.xlsx');
+  window.toast?.('Excel indirildi ✓', 'ok');
+}
+
+window.openCariStatement = openCariStatement;
+window._printCariStmt = _printCariStmt;
+window._exportCariStmtXlsx = _exportCariStmtXlsx;
+
+// ════════════════════════════════════════════════════════════════
+// DEMO VERİ YÜKLEME
+// ════════════════════════════════════════════════════════════════
+
+function _insertCariDemoData() {
+  if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var existing = typeof loadCari === 'function' ? loadCari() : [];
+  if (existing.some(function(c) { return c.name === 'INNOCAP Trading Ltd'; })) {
+    window.toast?.('Demo veriler zaten yüklenmiş', 'warn'); return;
+  }
+  var now = _nowTso();
+  var cu = _CUo();
+
+  // 5 Cari
+  var cariler = [
+    { id: generateNumericId(), name: 'INNOCAP Trading Ltd', type: 'musteri', currency: 'USD', creditLimit: 500000, status: 'active', phone: '+1 212 555 0100', email: 'info@innocap.com', country: 'US', createdAt: now, createdBy: cu?.id, approvedBy: cu?.id },
+    { id: generateNumericId(), name: 'Doğsan Branda San. A.Ş.', type: 'tedarikci', currency: 'TRY', creditLimit: 2000000, status: 'active', phone: '0212 555 0200', email: 'satis@dogsan.com.tr', country: 'TR', createdAt: now, createdBy: cu?.id, approvedBy: cu?.id },
+    { id: generateNumericId(), name: 'Merden Lojistik', type: 'tedarikci', currency: 'USD', creditLimit: 300000, status: 'active', phone: '+90 532 555 0300', email: 'ops@merden.com', country: 'TR', createdAt: now, createdBy: cu?.id, approvedBy: cu?.id },
+    { id: generateNumericId(), name: 'Elips End. Malz. San. A.Ş.', type: 'musteri', currency: 'EUR', creditLimit: 250000, status: 'active', phone: '0216 555 0400', email: 'bilgi@elips.com.tr', country: 'TR', createdAt: now, createdBy: cu?.id, approvedBy: cu?.id },
+    { id: generateNumericId(), name: 'Hava Kargo Batı Loj.', type: 'tedarikci', currency: 'TRY', creditLimit: 800000, status: 'active', phone: '0232 555 0500', email: 'info@havakargobati.com', country: 'TR', createdAt: now, createdBy: cu?.id, approvedBy: cu?.id },
+  ];
+  var allCari = existing.concat(cariler);
+  if (typeof storeCari === 'function') storeCari(allCari);
+
+  // 13 Hareket (8 ödeme + 5 tahsilat)
+  var odmData = typeof loadOdm === 'function' ? loadOdm() : [];
+  var tahData = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+
+  var demoOdm = [
+    { id: generateNumericId(), name: 'INNOCAP Hammadde Alımı', cat: 'diger', freq: 'teksefer', amount: 45000, currency: 'USD', amountTRY: 1732500, kurRate: 38.50, due: '2026-03-15', cariName: 'INNOCAP Trading Ltd', docNo: 'INV-2026-001', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: true, paidTs: '2026-03-14 10:30:00', createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'INNOCAP Nakliye Bedeli', cat: 'diger', freq: 'teksefer', amount: 8500, currency: 'USD', amountTRY: 327250, kurRate: 38.50, due: '2026-04-01', cariName: 'INNOCAP Trading Ltd', docNo: 'INV-2026-015', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Doğsan Branda Siparişi', cat: 'diger', freq: 'teksefer', amount: 875000, currency: 'TRY', amountTRY: 875000, kurRate: 1, due: '2026-03-10', cariName: 'Doğsan Branda San. A.Ş.', docNo: 'FTR-2026-044', yontem: 'Çek', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Doğsan Montaj Hizmeti', cat: 'diger', freq: 'teksefer', amount: 320000, currency: 'TRY', amountTRY: 320000, kurRate: 1, due: '2026-04-15', cariName: 'Doğsan Branda San. A.Ş.', docNo: 'FTR-2026-055', yontem: 'Havale/EFT', approvalStatus: 'pending', paid: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Merden Konteyner Taşıma', cat: 'diger', freq: 'aylik', amount: 12000, currency: 'USD', amountTRY: 462000, kurRate: 38.50, due: '2026-03-20', cariName: 'Merden Lojistik', docNo: 'MRD-2026-009', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: true, paidTs: '2026-03-19 14:00:00', createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Elips Sanayi Malzeme', cat: 'diger', freq: 'teksefer', amount: 67500, currency: 'EUR', amountTRY: 2781000, kurRate: 41.20, due: '2026-03-25', cariName: 'Elips End. Malz. San. A.Ş.', docNo: 'ELP-2026-003', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Elips Yedek Parça', cat: 'diger', freq: 'teksefer', amount: 15200, currency: 'EUR', amountTRY: 626240, kurRate: 41.20, due: '2026-02-28', cariName: 'Elips End. Malz. San. A.Ş.', docNo: 'ELP-2026-001', yontem: 'Nakit', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Hava Kargo Batı Navlun', cat: 'diger', freq: 'aylik', amount: 245000, currency: 'TRY', amountTRY: 245000, kurRate: 1, due: '2026-04-05', cariName: 'Hava Kargo Batı Loj.', docNo: 'HKB-2026-007', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, approvedAt: now, paid: false, createdBy: cu?.id, ts: now },
+  ];
+
+  var demoTah = [
+    { id: generateNumericId(), name: 'INNOCAP Ürün Satışı', type: 'satis', amount: 62000, currency: 'USD', amountTRY: 2387000, kurRate: 38.50, due: '2026-03-18', cariName: 'INNOCAP Trading Ltd', ref: 'THS-2026-001', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, collected: true, collectedTs: '2026-03-17 11:00:00', createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Doğsan İade Alacağı', type: 'iade', amount: 150000, currency: 'TRY', amountTRY: 150000, kurRate: 1, due: '2026-04-10', cariName: 'Doğsan Branda San. A.Ş.', ref: 'THS-2026-008', yontem: 'Havale/EFT', approvalStatus: 'pending', collected: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Merden Hasar Tazminat', type: 'diger', amount: 5000, currency: 'USD', amountTRY: 192500, kurRate: 38.50, due: '2026-03-22', cariName: 'Merden Lojistik', ref: 'THS-2026-012', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, collected: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Elips Proje Ödemesi', type: 'musteri', amount: 95000, currency: 'EUR', amountTRY: 3914000, kurRate: 41.20, due: '2026-04-20', cariName: 'Elips End. Malz. San. A.Ş.', ref: 'THS-2026-015', yontem: 'Havale/EFT', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, collected: false, createdBy: cu?.id, ts: now },
+    { id: generateNumericId(), name: 'Hava Kargo Komisyon', type: 'komisyon', amount: 45000, currency: 'TRY', amountTRY: 45000, kurRate: 1, due: '2026-03-30', cariName: 'Hava Kargo Batı Loj.', ref: 'THS-2026-018', yontem: 'Nakit', approvalStatus: 'approved', approved: true, approvedBy: cu?.id, collected: true, collectedTs: '2026-03-29 16:00:00', createdBy: cu?.id, ts: now },
+  ];
+
+  if (typeof storeOdm === 'function') storeOdm(odmData.concat(demoOdm));
+  if (typeof storeTahsilat === 'function') storeTahsilat(tahData.concat(demoTah));
+
+  window.toast?.('Demo veriler yüklendi: 5 cari + 13 hareket ✓', 'ok');
+  window.logActivity?.('settings', 'Demo veriler yüklendi: 5 cari, 8 ödeme, 5 tahsilat');
+  renderOdemeler();
+  if (typeof renderCari === 'function') renderCari();
+}
+
+window._insertCariDemoData = _insertCariDemoData;
 
 // Exports
 // loadCari / storeCari artık database.js'te — window export orada yapılıyor
