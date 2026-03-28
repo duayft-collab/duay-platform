@@ -831,7 +831,7 @@ window.renderUrunler = function() {
   cont.innerHTML = fl.map(function(u) {
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       + '<div style="width:40px;height:40px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '📦') + '</div>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + '</div></div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + (u.imolu==='E'?' <span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>':'') + (_calcIhracatTam(u)?' <span style="color:#16A34A;font-size:10px">✓</span>':' <span style="color:#DC2626;font-size:10px" title="İhracat bilgisi eksik">⚠</span>') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + ' · %' + _calcIhracatPct(u) + '</div></div>'
       + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + (u.sonFiyat ? u.sonFiyat.toLocaleString('tr-TR') + ' ' + (u.paraBirimi||'USD') : '—') + '</div>'
       + '<button onclick="window._openUrunModal?.(' + u.id + ')" style="padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:none;cursor:pointer;font-size:10px;color:var(--t3);font-family:inherit">✏️</button>'
     + '</div>';
@@ -872,9 +872,18 @@ window._openUrunModal = function(editId) {
     + '<div><div class="fl">Yük.(cm)</div><input class="fi" type="number" id="ur-yuk" value="' + (u?.paketYukseklik||'') + '"></div></div>'
     // Tehlikeli madde + ihracat kısıtı
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + '<div><div class="fl" style="color:#F59E0B" title="IMO sınıflandırması">IMO\'lu mu?</div><select class="fi" id="ur-imo"><option value="H"' + (u?.imolu!=='E'?' selected':'') + '>Hayır</option><option value="E"' + (u?.imolu==='E'?' selected':'') + '>Evet</option></select></div>'
+    + '<div><div class="fl" style="color:#F59E0B" title="IMO sınıflandırması">IMO\'lu mu?</div><select class="fi" id="ur-imo" onchange="var d=document.getElementById(\'ur-imo-detail\');if(d)d.style.display=this.value===\'E\'?\'grid\':\'none\'"><option value="H"' + (u?.imolu!=='E'?' selected':'') + '>Hayır</option><option value="E"' + (u?.imolu==='E'?' selected':'') + '>Evet</option></select></div>'
     + '<div><div class="fl" style="color:#F59E0B">DİB\'li mi?</div><select class="fi" id="ur-dib"><option value="H"' + (u?.dibli!=='E'?' selected':'') + '>Hayır</option><option value="E"' + (u?.dibli==='E'?' selected':'') + '>Evet</option></select></div>'
     + '<div><div class="fl" style="color:#F59E0B">İhracat Kısıtı</div><select class="fi" id="ur-kisit"><option value="H"' + (u?.ihracatKisiti!=='E'?' selected':'') + '>Hayır</option><option value="E"' + (u?.ihracatKisiti==='E'?' selected':'') + '>Evet</option></select></div></div>'
+    // IMO detay (IMO=E ise görünür)
+    + '<div id="ur-imo-detail" style="display:' + (u?.imolu==='E'?'grid':'none') + ';grid-template-columns:1fr 1fr 1fr;gap:10px;padding:10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px">'
+    + '<div style="grid-column:span 3;font-size:11px;font-weight:700;color:#991B1B">⚠ IMO/Tehlikeli Madde Bilgileri</div>'
+    + '<div><div class="fl" style="color:#DC2626">IMO Sınıfı *</div><select class="fi" id="ur-imo-sinif"><option value="">— Seçin —</option>' + ['1-Patlayıcılar','2-Gazlar','3-Yanıcı Sıvılar','4-Yanıcı Katılar','5-Oksitleyiciler','6-Zehirli','7-Radyoaktif','8-Aşındırıcılar','9-Diğer Tehlikeli'].map(function(s){return '<option value="'+s+'"'+(u?.imoSinifi===s?' selected':'')+'>Class '+s+'</option>';}).join('') + '</select></div>'
+    + '<div><div class="fl" style="color:#DC2626">UN Numarası *</div><input class="fi" id="ur-imo-un" value="' + esc(u?.imoTehlikeNo||'') + '" placeholder="UN1234"></div>'
+    + '<div><div class="fl" style="color:#DC2626">MSDS</div><button onclick="window.toast?.(\'MSDS PDF yükleme — belgeler sekmesinden\',\'info\')" class="btn btns" style="font-size:10px">📎 MSDS Yükle</button></div></div>'
+    // HSC/GTİP kodu
+    + '<div><div class="fl" style="color:#DC2626">HSC/GTİP Kodu (12 hane)</div><input class="fi" id="ur-hsc" value="' + esc(u?.hscKodu||u?.gtip||'') + '" placeholder="8542.31.00.00.00" maxlength="17"></div>'
+    + '<div><div class="fl">İhracat Kısıtı Detay</div><input class="fi" id="ur-kisit-detay" value="' + esc(u?.ihracatKisitiDetay||'') + '" placeholder="Lisans gerektiren..."></div>'
     // Açıklamalar
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div><div class="fl">Teknik Açıklama</div><textarea class="fi" id="ur-teknik" rows="2" style="resize:none">' + esc(u?.teknikAciklama||'') + '</textarea></div>'
@@ -917,8 +926,12 @@ window._saveUrun = function() {
     paketBoy: parseFloat(document.getElementById('ur-boy')?.value||'0')||null,
     paketYukseklik: parseFloat(document.getElementById('ur-yuk')?.value||'0')||null,
     imolu: document.getElementById('ur-imo')?.value||'H',
+    imoSinifi: (document.getElementById('ur-imo-sinif')?.value||'').trim(),
+    imoTehlikeNo: (document.getElementById('ur-imo-un')?.value||'').trim(),
     dibli: document.getElementById('ur-dib')?.value||'H',
     ihracatKisiti: document.getElementById('ur-kisit')?.value||'H',
+    ihracatKisitiDetay: (document.getElementById('ur-kisit-detay')?.value||'').trim(),
+    hscKodu: (document.getElementById('ur-hsc')?.value||'').trim(),
     teknikAciklama: (document.getElementById('ur-teknik')?.value||'').trim(),
     gumrukAciklama: (document.getElementById('ur-gumruk')?.value||'').trim(),
     status: 'aktif', ts: new Date().toISOString(),
@@ -935,6 +948,9 @@ window._saveUrun = function() {
     entry.changeLog = [{ts:entry.ts,by:entry.createdBy,action:'oluşturma'}];
     d.unshift(entry);
   }
+  // İhracat bilgileri tamamlanma hesabı
+  var target = eid ? d.find(function(x){return x.id===eid;}) : entry;
+  if (target) target.ihracatBilgileriTam = _calcIhracatTam(target);
   if (typeof storeUrunler === 'function') storeUrunler(d);
   document.getElementById('mo-urun')?.remove();
   window.toast?.(eid?'Güncellendi ✓':'Ürün eklendi: '+entry.duayKodu,'ok');
@@ -1581,7 +1597,126 @@ window._printSatisRapor = function() {
   w.document.close();
 };
 
-console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');
+// ════════════════════════════════════════════════════════════════
+// İHRACAT EKOSİSTEMİ — ihracatBilgileriTam + 7 Gün Kuralı + IMO Zinciri + Job ID Hub
+// ════════════════════════════════════════════════════════════════
+
+/** İhracat bilgileri tamamlanma hesabı */
+function _calcIhracatTam(u) {
+  if (!u) return false;
+  var base = !!(u.hscKodu||u.gtip) && !!u.mensei && !!(u.netAgirlik||u.brutAgirlik) && !!(u.paketEn||u.paketBoy);
+  if (u.imolu === 'E') return base && !!u.imoSinifi && !!u.imoTehlikeNo;
+  return base;
+}
+
+/** İhracat tamamlanma yüzdesi */
+function _calcIhracatPct(u) {
+  if (!u) return 0;
+  var fields = [u.hscKodu||u.gtip, u.mensei, u.netAgirlik, u.brutAgirlik, u.paketEn, u.paketBoy, u.paketYukseklik, u.gorsel];
+  if (u.imolu==='E') fields.push(u.imoSinifi, u.imoTehlikeNo);
+  var filled = fields.filter(Boolean).length;
+  return Math.round(filled / fields.length * 100);
+}
+
+/** 7 Gün Kuralı — günlük kontrol */
+function _check7GunKurali() {
+  var konts = typeof loadKonteyn==='function'?loadKonteyn().filter(function(k){return !k.closed;}):[];
+  var urunler = typeof loadUrunler==='function'?loadUrunler():[];
+  var today = new Date();
+  var alerts = [];
+  konts.forEach(function(k) {
+    if (!k.etd) return;
+    var etd = new Date(k.etd);
+    var diff = Math.ceil((etd - today) / 86400000);
+    if (diff > 7 || diff < 0) return;
+    // Konteynırdaki ürünleri kontrol (purchaseId üzerinden satınalmadan)
+    var sa = typeof loadSatinalma==='function'?loadSatinalma().filter(function(s){return s.containerNo===k.no;}):[];
+    sa.forEach(function(s) {
+      // Satınalmadaki ürünleri kontrol
+      var urun = urunler.find(function(u){return u.tedarikci===s.supplier||u.urunAdi===s.supplier;});
+      if (urun && !_calcIhracatTam(urun)) {
+        alerts.push({konteyner:k.no, urun:urun.orijinalAdi||urun.urunAdi, gun:diff, urunId:urun.id});
+      }
+    });
+  });
+  if (!alerts.length) return;
+  // Uyarıları gönder
+  alerts.forEach(function(a) {
+    var severity = a.gun <= 3 ? 'err' : 'warn';
+    var icon = a.gun <= 3 ? '🚨' : '⚠️';
+    window.addNotif?.(icon, 'İhracat bilgisi eksik: ' + a.urun + ' — ' + a.konteyner + ' (' + a.gun + ' gün kaldı)', severity, 'urunler');
+  });
+  console.info('[7GünKuralı]', alerts.length, 'uyarı');
+}
+// Sayfa açılışında kontrol
+setTimeout(_check7GunKurali, 8000);
+setInterval(_check7GunKurali, 30 * 60 * 1000);
+
+/** Job ID Hub — merkezi görünüm */
+window.openJobIdHub = function(jobId) {
+  if (!jobId) return;
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var tasks = typeof loadTasks==='function'?loadTasks():[];
+  var task = tasks.find(function(t){return t.jobId===jobId||String(t.id)===String(jobId);});
+  var sa = typeof loadSatinalma==='function'?loadSatinalma().filter(function(s){return s.jobId===jobId||s.jobId===String(jobId);}):[];
+  var odm = typeof loadOdm==='function'?loadOdm().filter(function(o){return o.jobId===jobId||o.purchaseId;}):[];
+  var odmFiltered = odm.filter(function(o){var sIds=sa.map(function(s){return s.id;});return o.purchaseId&&sIds.indexOf(o.purchaseId)!==-1;});
+  var kargo = typeof loadKargo==='function'?loadKargo().filter(function(k){return k.purchaseId&&sa.some(function(s){return s.id===k.purchaseId;});}):[];
+  var alis = typeof loadAlisTeklifleri==='function'?loadAlisTeklifleri().filter(function(t){return t.jobId===jobId;}):[];
+  var satis = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri().filter(function(t){return t.jobId===jobId;}):[];
+  var toplamMaliyet = sa.reduce(function(s,x){return s+(parseFloat(x.totalAmount)||0);},0);
+  var toplamSatis = satis.reduce(function(s,x){return s+(parseFloat(x.genelToplam)||0);},0);
+  var kar = toplamSatis - toplamMaliyet;
+
+  var ex = document.getElementById('mo-jobhub'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-jobhub';
+  mo.innerHTML = '<div class="moc" style="max-width:640px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:15px;font-weight:700;color:var(--t)">' + esc(jobId) + '</div><div style="font-size:10px;color:var(--t3)">' + esc(task?.title||'—') + '</div></div><button onclick="document.getElementById(\'mo-jobhub\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div>'
+    + '<div style="padding:16px 20px;max-height:60vh;overflow-y:auto">'
+    // Özet kartlar
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">Maliyet</div><div style="font-size:16px;font-weight:700;color:#DC2626">$'+Math.round(toplamMaliyet).toLocaleString('tr-TR')+'</div></div>'
+    + '<div style="padding:10px;background:var(--s2);border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">Satış</div><div style="font-size:16px;font-weight:700;color:#16A34A">$'+Math.round(toplamSatis).toLocaleString('tr-TR')+'</div></div>'
+    + '<div style="padding:10px;background:'+(kar>=0?'#16A34A11':'#DC262611')+';border-radius:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">Kâr</div><div style="font-size:16px;font-weight:700;color:'+(kar>=0?'#16A34A':'#DC2626')+'">'+(kar>=0?'+':'')+'$'+Math.round(Math.abs(kar)).toLocaleString('tr-TR')+'</div></div></div>'
+    // Bölümler
+    + (task ? '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Görev</div><div style="padding:8px 12px;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;font-size:12px">'+esc(task.title)+' · '+(task.done?'✅ Tamamlandı':'⏳ '+task.status)+' · '+(task.due||'—')+'</div></div>' : '')
+    + (alis.length ? '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Alış Teklifleri ('+alis.length+')</div>'+alis.map(function(a){return '<div style="padding:6px 12px;border-bottom:0.5px solid var(--b);font-size:11px">'+esc(a.teklifNo||'')+' · '+esc(a.tedarikci||'')+' · '+(a.toplamTutar||0)+' '+(a.paraBirimi||'USD')+'</div>';}).join('')+'</div>' : '')
+    + (sa.length ? '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Satınalma ('+sa.length+')</div>'+sa.map(function(s){return '<div style="padding:6px 12px;border-bottom:0.5px solid var(--b);font-size:11px">'+esc(s.supplier||s.piNo||'')+' · '+(s.totalAmount||0)+' '+(s.currency||'USD')+' · '+s.status+'</div>';}).join('')+'</div>' : '')
+    + (odmFiltered.length ? '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ödemeler ('+odmFiltered.length+')</div>'+odmFiltered.map(function(o){return '<div style="padding:6px 12px;border-bottom:0.5px solid var(--b);font-size:11px">'+esc(o.name||'')+' · '+(o.amount||0)+' '+(o.currency||'TRY')+' · '+(o.paid?'✅':'⏳')+'</div>';}).join('')+'</div>' : '')
+    + (kargo.length ? '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kargo ('+kargo.length+')</div>'+kargo.map(function(k){return '<div style="padding:6px 12px;border-bottom:0.5px solid var(--b);font-size:11px">'+esc(k.name||'')+' · '+k.status+'</div>';}).join('')+'</div>' : '')
+    + (satis.length ? '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Satış Teklifleri ('+satis.length+')</div>'+satis.map(function(s){return '<div style="padding:6px 12px;border-bottom:0.5px solid var(--b);font-size:11px">'+esc(s.teklifNo||'')+' · '+esc(s.musteri||'')+' · '+(s.genelToplam||0)+' '+(s.paraBirimi||'USD')+'</div>';}).join('')+'</div>' : '')
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+
+/** Sevkiyat sonrası evrak zamanlayıcı */
+function _checkEvrakZamanlayici() {
+  var konts = typeof loadKonteyn==='function'?loadKonteyn().filter(function(k){return !k.closed && k.etd;}):[];
+  var today = new Date();
+  konts.forEach(function(k) {
+    var etd = new Date(k.etd);
+    if (etd > today) return; // henüz hareket etmedi
+    var daysSince = Math.ceil((today - etd) / 86400000);
+    if (daysSince > 7) return; // 7 gün geçti
+    if (k.evrakGonderildi) return;
+    var icon = daysSince >= 5 ? '🚨' : '⚠️';
+    window.addNotif?.(icon, 'Evrak gönderilmedi: ' + (k.no||'?') + ' — ' + daysSince + '. gün', daysSince>=5?'err':'warn', 'kargo');
+  });
+  // ETA uyarıları
+  konts.forEach(function(k) {
+    if (!k.eta || k.closed) return;
+    var eta = new Date(k.eta);
+    var daysToEta = Math.ceil((eta - today) / 86400000);
+    if (daysToEta === 10) window.addNotif?.('📦', 'Varışa 10 gün: ' + (k.no||''), 'info', 'kargo');
+    else if (daysToEta === 6) window.addNotif?.('📦', 'Varışa 6 gün: ' + (k.no||'') + ' — müşteri hazırlıklı olsun', 'warn', 'kargo');
+    else if (daysToEta === 0) window.addNotif?.('✅', 'Konteynır limana ulaştı: ' + (k.no||''), 'ok', 'kargo');
+  });
+}
+setTimeout(_checkEvrakZamanlayici, 10000);
+
+console.log('[app_patch] İhracat ekosistemi + G8 patch tamamlandı');
 
 // ════════════════════════════════════════════════════════════════
 // ARŞİV & BELGELER HUB — birleşik panel
