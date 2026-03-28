@@ -972,6 +972,37 @@ function _renderDashboard() {
 
   // Geciken İşlemler bölümü
   _renderOverdueWidget(tasks, kargo, today);
+
+  // Hızlı erişim butonları + mini özet
+  var quickEl = document.getElementById('db-quick-actions');
+  if (!quickEl) {
+    quickEl = document.createElement('div');
+    quickEl.id = 'db-quick-actions';
+    content.appendChild(quickEl);
+  }
+  var konts = typeof loadKonteyn === 'function' ? loadKonteyn().filter(function(k) { return !k.closed; }) : [];
+  var puan2 = typeof loadPuan === 'function' ? loadPuan().filter(function(p) { return p.date === today; }) : [];
+  quickEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">'
+    // Hızlı erişim
+    + '<div class="card">'
+    + '<div class="ch"><span class="ct">Hızlı Erişim</span></div>'
+    + '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button onclick="openOdmModal(null)" style="padding:8px 14px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Ödeme</button>'
+    + '<button onclick="openTahsilatModal(null)" style="padding:8px 14px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>'
+    + '<button onclick="Pusula?.openAdd()" style="padding:8px 14px;border:none;border-radius:7px;background:#3B82F6;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Görev</button>'
+    + '<button onclick="window._openQuickCari?.()" style="padding:8px 14px;border:none;border-radius:7px;background:#D97706;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Cari</button>'
+    + '<button onclick="window.openReportPanel?.()" style="padding:8px 14px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📊 Raporlar</button>'
+    + '</div></div>'
+    // Mini durum
+    + '<div class="card">'
+    + '<div class="ch"><span class="ct">Anlık Durum</span></div>'
+    + '<div style="padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'
+    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Aktif Konteyner:</span> <b>' + konts.length + '</b></div>'
+    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Bugün Giriş:</span> <b>' + puan2.length + '</b></div>'
+    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Geç Giriş:</span> <b style="color:' + (puan2.filter(function(p){ return p.isLate; }).length ? '#DC2626' : '#16A34A') + '">' + puan2.filter(function(p){ return p.isLate; }).length + '</b></div>'
+    + '<div style="padding:8px;background:var(--s2);border-radius:6px"><span style="color:var(--t3)">Uzaktan:</span> <b>' + puan2.filter(function(p){ return p.workType === 'uzaktan'; }).length + '</b></div>'
+    + '</div></div>'
+    + '</div>';
 }
 
 function _renderOverdueWidget(tasks, kargo, today) {
