@@ -251,6 +251,7 @@ function renderSatinAlma() {
       + '<div style="display:flex;gap:3px" onclick="event.stopPropagation()">'
         + '<input type="checkbox" class="sa-bulk-chk" data-said="' + s.id + '" style="display:' + (_isAdmSA() && s.status === 'pending' ? 'block' : 'none') + ';width:14px;height:14px;accent-color:var(--ac)">'
         + (_isAdmSA() && s.status === 'pending' ? '<button onclick="window._approveSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#16A34A">✓</button>' : '')
+        + '<button onclick="window._openSAContract?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:var(--t3)">📄</button>'
         + (_isAdmSA() && (s.status === 'pending' || s.status === 'revize_gerekli') ? '<button onclick="window._rejectSA(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">✗</button>' : '')
         + '<button onclick="window._saToggleQuickView?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Hızlı Bakış">👁</button>'
         + '<button onclick="window._openSAModal?.(' + s.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Düzenle">✏️</button>'

@@ -1347,6 +1347,137 @@ window._openSatisRapor = function() {
   setTimeout(function(){mo.classList.add('open');},10);
 };
 
+// ════════════════════════════════════════════════════════════════
+// SATIŞ TEKLİFİ 3 FORMAT SEÇİCİ
+// ════════════════════════════════════════════════════════════════
+
+/** Format B — Modern minimalist PDF */
+window._printSatisTeklifB = function(id) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var t = d.find(function(x){return x.id===id;}); if (!t) return;
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var cur = t.paraBirimi||'USD';
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
+    +'table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#6366F1;color:#fff;padding:8px;font-size:10px;text-transform:uppercase}td{padding:8px;border-bottom:1px solid #eee}'
+    +'.total{background:#f8fafc;font-weight:700;font-size:14px}@media print{button{display:none!important}}</style></head><body>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:20px;font-weight:800;color:#6366F1">DUAY GLOBAL</div><div style="font-size:10px;color:#999">Istanbul, Turkey</div></div>'
+    +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(t.teklifNo)+'</div><div style="font-size:11px;color:#666">'+(t.ts||'').slice(0,10)+'</div></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL TRADE</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
+    +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(t.musteri||'')+'</div></div></div>'
+    +'<table><thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'
+    +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+(u.satisFiyat||0).toFixed(2)+' '+cur+'</td><td style="text-align:right">'+((u.satisFiyat||0)*(u.miktar||0)).toFixed(2)+' '+cur+'</td></tr>';}).join('')
+    +'<tr class="total"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;font-size:16px">'+(t.genelToplam||0).toFixed(2)+' '+cur+'</td></tr></tbody></table>'
+    +'<div style="font-size:10px;color:#666;margin-top:16px">Terms: '+(t.teslimSekli||'FOB')+' · Payment: '+(t.odemeKosulu||'Advance')+' · Valid: '+(t.gecerlilikTarihi||'30 days')+'</div>'
+    +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer;border:1px solid #6366F1;border-radius:6px;background:#fff;color:#6366F1;font-weight:600">Print</button></body></html>');
+  w.document.close();
+};
+
+/** Format C — Detaylı teknik (multi-page) */
+window._printSatisTeklifC = function(id) {
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var t = d.find(function(x){return x.id===id;}); if (!t) return;
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var cur = t.paraBirimi||'USD';
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
+    +'h1{font-size:24px;color:#1a365d;text-align:center;margin-bottom:4px}h2{font-size:14px;color:#666;text-align:center;margin-bottom:24px}'
+    +'.page-break{page-break-before:always;margin-top:40px}'
+    +'table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f0f0f0;padding:8px;font-size:10px;border:1px solid #ddd}td{padding:8px;border:1px solid #ddd}'
+    +'@media print{button{display:none!important}}</style></head><body>'
+    // Kapak
+    +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL TRADE</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(t.teklifNo)+'</div>'
+    +'<div style="font-size:14px">Prepared for: <b>'+esc(t.musteri||'')+'</b></div><div style="font-size:12px;color:#666;margin-top:8px">Date: '+(t.ts||'').slice(0,10)+'</div></div>'
+    // Sayfa 2: Ürünler
+    +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Product Details</h2>'
+    +'<table><thead><tr><th>No</th><th>Product</th><th>Technical Specs</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>'
+    +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.urunAdi||'')+'</b></td><td style="font-size:10px;color:#666">'+esc(u.teknikDetay||'—')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+(u.satisFiyat||0).toFixed(2)+' '+cur+'</td><td style="text-align:right;font-weight:600">'+((u.satisFiyat||0)*(u.miktar||0)).toFixed(2)+' '+cur+'</td></tr>';}).join('')
+    +'<tr style="background:#1a365d;color:#fff;font-weight:700"><td colspan="5" style="text-align:right;border:none">GRAND TOTAL</td><td style="text-align:right;border:none;font-size:14px">'+(t.genelToplam||0).toFixed(2)+' '+cur+'</td></tr></tbody></table></div>'
+    // Sayfa 3: Koşullar + İmza
+    +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Terms & Conditions</h2>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Delivery:</b> '+(t.teslimSekli||'FOB')+'</div>'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Payment:</b> '+(t.odemeKosulu||'Advance')+'</div>'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Validity:</b> '+(t.gecerlilikTarihi||'30 days')+'</div>'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Origin:</b> Turkey</div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL TRADE</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(t.musteri||'Customer')+'</div></div></div></div>'
+    +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
+  w.document.close();
+};
+
+/** Format seçici butonlarını satış listesine ekle */
+var _origPrintSatis = window._printSatisTeklif;
+window._printSatisTeklif = function(id) {
+  // Format seçici mini popup
+  var ex = document.getElementById('mo-pdf-format'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-pdf-format';
+  mo.innerHTML = '<div class="moc" style="max-width:320px;padding:20px;border-radius:14px;text-align:center">'
+    + '<div style="font-size:14px;font-weight:700;margin-bottom:12px">PDF Format Seçin</div>'
+    + '<div style="display:flex;gap:8px;justify-content:center">'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifA?.('+id+')" style="padding:12px 20px;border:1px solid #1a365d;border-radius:8px;background:#1a365d;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">A<div style="font-size:9px;font-weight:400;margin-top:2px">Klasik</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifB?.('+id+')" style="padding:12px 20px;border:1px solid #6366F1;border-radius:8px;background:#6366F1;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">B<div style="font-size:9px;font-weight:400;margin-top:2px">Modern</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifC?.('+id+')" style="padding:12px 20px;border:1px solid #059669;border-radius:8px;background:#059669;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">C<div style="font-size:9px;font-weight:400;margin-top:2px">Detaylı</div></button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
+  setTimeout(function(){mo.classList.add('open');},10);
+};
+window._printSatisTeklifA = _origPrintSatis;
+
+// ════════════════════════════════════════════════════════════════
+// SATINALMA → LOJİSTİK OTOMATİK ENTEGRASYON
+// ════════════════════════════════════════════════════════════════
+(function _patchSAtoKargo() {
+  var _origApproveSA = window._approveSA;
+  if (!_origApproveSA) return;
+  window._approveSA = function(id) {
+    _origApproveSA(id);
+    // Onay sonrası: Kargo takibine "Bekleyen Sevkiyat" ekle
+    setTimeout(function() {
+      var sa = (typeof loadSatinalma==='function'?loadSatinalma():[]).find(function(s){return s.id===id;});
+      if (!sa || sa.status !== 'approved') return;
+      var kargo = typeof loadKargo==='function'?loadKargo():[];
+      // Zaten eklenmişse atla
+      if (kargo.some(function(k){return k.purchaseId===id;})) return;
+      kargo.unshift({
+        id: typeof generateNumericId==='function'?generateNumericId():Date.now(),
+        purchaseId: id,
+        name: 'SA: ' + (sa.supplier||sa.piNo||sa.jobId),
+        hat: sa.vendor?.name || sa.supplier || '',
+        status: 'bekle',
+        eta: sa.deliveryDate || '',
+        note: 'Satınalmadan otomatik — #' + id,
+        source: 'satinalma',
+        createdAt: new Date().toISOString(),
+      });
+      if (typeof storeKargo==='function') storeKargo(kargo);
+      console.info('[SA→Kargo] Bekleyen sevkiyat eklendi:', id);
+    }, 500);
+  };
+})();
+
+// ════════════════════════════════════════════════════════════════
+// SATINALMA SÖZLEŞME ŞablonU
+// ════════════════════════════════════════════════════════════════
+window._openSAContract = function(id) {
+  var sa = (typeof loadSatinalma==='function'?loadSatinalma():[]).find(function(s){return s.id===id;});
+  if (!sa) return;
+  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var cur = sa.currency||'USD';
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>Sözleşme #'+id+'</title><style>body{font-family:system-ui;padding:40px;max-width:700px;margin:0 auto;font-size:12px;line-height:1.6}h1{text-align:center;color:#1a365d;font-size:18px}h2{font-size:14px;color:#1a365d;margin-top:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}.sig{display:flex;justify-content:space-between;margin-top:40px}.sig div{width:40%;text-align:center}@media print{button{display:none!important}}</style></head><body>'
+    +'<h1>SATIN ALMA SÖZLEŞMESİ</h1><div style="text-align:center;color:#666;margin-bottom:20px">DUAY GLOBAL TRADE LLC — '+esc(sa.supplier||sa.piNo||'')+'</div>'
+    +'<h2>1. Taraflar</h2><p><b>Alıcı:</b> DUAY GLOBAL TRADE LLC<br><b>Satıcı:</b> '+esc(sa.vendor?.name||sa.supplier||'')+'</p>'
+    +'<h2>2. Ürün Bilgileri</h2><table><tr><th>Açıklama</th><th>Toplam</th><th>KDV</th><th>Döviz</th></tr>'
+    +'<tr><td>'+esc(sa.supplier||sa.piNo||'Ürün')+'</td><td>'+(sa.totalAmount||0)+' '+cur+'</td><td>'+(sa.kdv||0)+' '+cur+'</td><td>'+cur+'</td></tr></table>'
+    +'<h2>3. Ödeme Koşulları</h2><p>Avans: %'+(sa.advanceRate||0)+' ('+(sa.advanceAmount||0)+' '+cur+')<br>Kalan: '+(sa.remainingAmount||0)+' '+cur+' — Vade: '+(sa.vadeDate||'—')+'</p>'
+    +'<h2>4. Teslimat</h2><p>Teslimat Tarihi: '+(sa.deliveryDate||'—')+'<br>Teslimat Yeri: '+(sa.deliveryPlace||'—')+'</p>'
+    +'<h2>5. Özel Şartlar</h2><p>'+(sa.notes||'—')+'</p>'
+    +'<div class="sig"><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">ALICI<br>DUAY GLOBAL TRADE LLC</div></div><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">SATICI<br>'+esc(sa.vendor?.name||sa.supplier||'')+'</div></div></div>'
+    +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">🖨 Yazdır / PDF</button></body></html>');
+  w.document.close();
+};
+
 console.log('[app_patch] G8 şifre güç göstergesi + patch tamamlandı');
 
 // ════════════════════════════════════════════════════════════════
