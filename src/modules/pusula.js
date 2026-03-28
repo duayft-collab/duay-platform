@@ -2953,17 +2953,83 @@ function renderEtkinlik(){
 }
 
 function openEtkinlikModal(id){
-  if(id){const e=loadEtkinlik().find(x=>x.id===id);if(!e)return;g('etk-name').value=e.name;g('etk-type-inp').value=e.type;g('etk-sektor-inp').value=e.sektor;g('etk-city').value=e.city;g('etk-date').value=e.date;g('etk-end').value=e.end||'';g('etk-venue').value=e.venue||'';g('etk-url').value=e.url||'';g('etk-desc').value=e.desc||'';g('etk-status').value=e.status;g('etk-eid').value=id;st('mo-etk-t','✏️ Etkinlik Düzenle');}
-  else{['etk-name','etk-city','etk-venue','etk-url','etk-desc'].forEach(i=>g(i).value='');g('etk-status').value='ilgi';g('etk-eid').value='';st('mo-etk-t','+ Etkinlik Ekle');}
-  openMo('mo-etkinlik');
+  var old = document.getElementById('mo-etkinlik'); if (old) old.remove();
+  var e = id ? loadEtkinlik().find(function(x){ return x.id === id; }) : null;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){ return s; };
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-etkinlik'; mo.style.zIndex = '2100';
+  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:15px;font-weight:700;color:var(--t)" id="mo-etk-t">' + (e ? '✏️ Etkinlik Düzenle' : '+ Etkinlik Ekle') + '</div>'
+      + '<button onclick="document.getElementById(\'mo-etkinlik\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
+      + '<div><div class="fl">ETKİNLİK ADI *</div><input class="fi" id="etk-name" placeholder="Etkinlik / Fuar adı" value="' + esc(e?.name || '') + '"></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div><div class="fl">TÜR</div><select class="fi" id="etk-type-inp">'
+          + '<option value="fuar"' + (e?.type === 'fuar' ? ' selected' : '') + '>🎪 Fuar</option>'
+          + '<option value="seminer"' + (e?.type === 'seminer' ? ' selected' : '') + '>🎤 Seminer</option>'
+          + '<option value="toplanti"' + (e?.type === 'toplanti' ? ' selected' : '') + '>🤝 Toplantı</option>'
+          + '<option value="diger"' + (e?.type === 'diger' ? ' selected' : '') + '>📌 Diğer</option>'
+        + '</select></div>'
+        + '<div><div class="fl">SEKTÖR</div><input class="fi" id="etk-sektor-inp" placeholder="Tekstil, Gıda..." value="' + esc(e?.sektor || '') + '"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div><div class="fl">BAŞLANGIÇ TARİHİ</div><input type="date" class="fi" id="etk-date" value="' + (e?.date || '') + '"></div>'
+        + '<div><div class="fl">BİTİŞ TARİHİ</div><input type="date" class="fi" id="etk-end" value="' + (e?.end || '') + '"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div><div class="fl">LOKASYON / ŞEHİR</div><input class="fi" id="etk-city" placeholder="İstanbul, Mersin..." value="' + esc(e?.city || '') + '"></div>'
+        + '<div><div class="fl">MEKAN</div><input class="fi" id="etk-venue" placeholder="Fuar merkezi, otel..." value="' + esc(e?.venue || '') + '"></div>'
+      + '</div>'
+      + '<div><div class="fl">WEB LİNK</div><input class="fi" id="etk-url" placeholder="https://..." value="' + esc(e?.url || '') + '"></div>'
+      + '<div><div class="fl">DURUM</div><select class="fi" id="etk-status">'
+        + '<option value="ilgi"' + (e?.status === 'ilgi' ? ' selected' : '') + '>🔍 İlgileniliyor</option>'
+        + '<option value="basvuru"' + (e?.status === 'basvuru' ? ' selected' : '') + '>📝 Başvuruldu</option>'
+        + '<option value="onay"' + (e?.status === 'onay' ? ' selected' : '') + '>✅ Onaylandı</option>'
+        + '<option value="tamamlandi"' + (e?.status === 'tamamlandi' ? ' selected' : '') + '>🏁 Tamamlandı</option>'
+        + '<option value="iptal"' + (e?.status === 'iptal' ? ' selected' : '') + '>❌ İptal</option>'
+      + '</select></div>'
+      + '<div><div class="fl">AÇIKLAMA / NOTLAR</div><textarea class="fi" id="etk-desc" rows="3" style="resize:none" placeholder="Katılımcılar, bütçe, notlar...">' + esc(e?.desc || '') + '</textarea></div>'
+      + '<input type="hidden" id="etk-eid" value="' + (e?.id || '') + '">'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-etkinlik\').remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="saveEtkinlik()">Kaydet</button>'
+    + '</div>'
+  + '</div>';
+
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(ev) { if (ev.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); document.getElementById('etk-name')?.focus(); }, 10);
 }
 
 function saveEtkinlik(){
-  const name=g('etk-name').value.trim();if(!name){toast('Etkinlik adı zorunludur','err');return;}
-  const d=loadEtkinlik();const eid=parseInt(g('etk-eid').value||'0');
-  const entry={name,type:g('etk-type-inp').value,sektor:g('etk-sektor-inp').value,city:g('etk-city').value,date:g('etk-date').value,end:g('etk-end').value,venue:g('etk-venue').value,url:g('etk-url').value,desc:g('etk-desc').value,status:g('etk-status').value};
-  if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}else d.push({id:generateNumericId(),...entry});
-  storeEtkinlik(d);closeMo('mo-etkinlik');renderEtkinlik();logActivity('view',`"${name}" etkinliği kaydedildi`);toast(name+' kaydedildi ✓','ok');
+  var nameEl = document.getElementById('etk-name');
+  var name = nameEl ? nameEl.value.trim() : '';
+  if(!name){window.toast?.('Etkinlik adı zorunludur','err');return;}
+  var d=loadEtkinlik();
+  var eid=parseInt((document.getElementById('etk-eid')?.value)||'0');
+  var entry={
+    name: name,
+    type: document.getElementById('etk-type-inp')?.value || 'diger',
+    sektor: document.getElementById('etk-sektor-inp')?.value || '',
+    city: document.getElementById('etk-city')?.value || '',
+    date: document.getElementById('etk-date')?.value || '',
+    end: document.getElementById('etk-end')?.value || '',
+    venue: document.getElementById('etk-venue')?.value || '',
+    url: document.getElementById('etk-url')?.value || '',
+    desc: document.getElementById('etk-desc')?.value || '',
+    status: document.getElementById('etk-status')?.value || 'ilgi',
+  };
+  if(eid){var e=d.find(function(x){return x.id===eid;});if(e)Object.assign(e,entry);}
+  else d.push({id:generateNumericId(),...entry});
+  storeEtkinlik(d);
+  document.getElementById('mo-etkinlik')?.remove();
+  renderEtkinlik();
+  window.logActivity?.('view','"'+name+'" etkinliği kaydedildi');
+  window.toast?.(name+' kaydedildi ✓','ok');
 }
 
 function delEtkinlik(id){if(!window.isAdmin?.())return;storeEtkinlik(loadEtkinlik().filter(x=>x.id!==id));renderEtkinlik();}
