@@ -200,7 +200,7 @@ window.manageKonteynViewers = function(id) {
   var viewers = k.viewers || [];
   var ex = document.getElementById('mo-ktn-viewers'); if (ex) ex.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-ktn-viewers'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; mo.id = 'mo-ktn-viewers'; 
   mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">👁 Konteyner İzleme İzni — ' + esc(k.no) + '</div>'
     + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
@@ -257,7 +257,7 @@ window.openKonteynDetail = window.openKonteynDetail || function(id) {
   const old = document.getElementById('mo-ktn-detail');
   if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-ktn-detail'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-ktn-detail'; 
   mo.innerHTML = `<div class="moc" style="max-width:520px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:15px;font-weight:700;color:var(--t)">🚢 ${escapeHtml(k.no || '—')}</span>

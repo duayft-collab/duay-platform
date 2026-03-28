@@ -1091,7 +1091,7 @@ function openKtnMusteriBildirim(ktnId) {
 
   var old = document.getElementById('mo-ktn-msg'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-ktn-msg'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-ktn-msg'; 
   mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:12px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">📧 Müşteri Bildirimi — ' + esc(no) + '</div>'

@@ -1997,7 +1997,7 @@ function addSubTask(parentId) {
   const mo        = document.createElement('div');
   mo.className    = 'mo';
   mo.id           = 'mo-subadd';
-  mo.style.zIndex = '2100';
+  
 
   const userOpts = users.map(u =>
     `<option value="${u.id}"${u.id === _getCU()?.id ? ' selected' : ''}>${u.name}</option>`
@@ -2212,7 +2212,7 @@ function openSubTaskEdit(parentId, subId) {
 
   const mo = document.createElement('div');
   mo.className    = 'mo';
-  mo.style.zIndex = '2100';
+  
   mo.innerHTML = `<div class="modal" style="max-width:400px">
     <div class="mt">✏️ Alt Görev Düzenle</div>
     <div class="fr"><div class="fl">BAŞLIK</div><input class="fi" id="sub-title-inp" value="${sub.title}"></div>
@@ -2854,7 +2854,7 @@ function openBulkAssign() {
 
   const old = document.getElementById('mo-bulk-assign'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className='mo'; mo.id='mo-bulk-assign'; mo.style.zIndex='2100';
+  mo.className='mo'; mo.id='mo-bulk-assign'; 
   mo.innerHTML = `<div class="moc" style="max-width:500px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">Toplu Gorev Atama</div>
@@ -2986,7 +2986,7 @@ function openEtkinlikModal(id){
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){ return s; };
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-etkinlik'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-etkinlik'; 
   mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)" id="mo-etk-t">' + (e ? '✏️ Etkinlik Düzenle' : '+ Etkinlik Ekle') + '</div>'
@@ -3895,7 +3895,7 @@ function openDeptManager() {
   const mo = document.createElement('div');
   mo.className = 'mo';
   mo.id = 'mo-dept-mgr';
-  mo.style.zIndex = '2200';
+  
 
   const listHTML = depts.length
     ? depts.map(d => {

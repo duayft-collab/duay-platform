@@ -1035,7 +1035,7 @@ function openOdmModal(id) {
   const o       = id ? (loadOdm().find(x => x.id === id) || null) : null;
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-v9'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-odm-v9'; ;
 
   // Cari listesi — sadece onaylı cariler seçilebilir
   var cariList = typeof loadCari === 'function' ? loadCari() : [];
@@ -1573,7 +1573,7 @@ function postponeOdm(id) {
   if (old) old.remove();
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-postpone'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-odm-postpone'; ;
   mo.innerHTML = `<div class="moc" style="max-width:400px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">Ödeme Erteleme</div>
@@ -2189,7 +2189,7 @@ function _checkRecurringOdm() {
 // ÖNERI 2: Tahsilat modal
 function openOdmTahsilat() {
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-tahsilat'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-tahsilat'; ;
   const tah = window.loadTahsilat ? loadTahsilat() : [];
   const today = _todayStr(); const todayD = new Date(today);
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7); const weekEndStr = weekEnd.toISOString().slice(0,10);
@@ -2428,7 +2428,7 @@ function openTahsilatModal(id) {
   };
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-tahsilat'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-tahsilat'; ;
 
   const curVal = o?.currency || 'TRY';
   // Kur HTML her zaman oluştur — TRY'de gizle, döviz seçilince göster
@@ -2894,7 +2894,7 @@ function openOdmChart() {
   const catColors = { fatura: '#F97316', abonelik: '#6366F1', kredi_k: '#8B5CF6', kira: '#10B981', diger: '#6B7280' };
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-chart'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-odm-chart'; ;
 
   const chartRows = months.map(m => {
     const mItems = all.filter(o => (o.due || '').startsWith(m) || (o.paidTs || '').startsWith(m));
@@ -2977,7 +2977,7 @@ function viewOdmHistory(id) {
   if (!o) return;
   const hist = o.history || [];
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; ;
   mo.innerHTML = '<div class="moc" style="max-width:420px">'
     + '<div class="mt">' + o.name + ' — Geçmiş</div>'
     + (hist.length === 0
@@ -3162,7 +3162,7 @@ function openOdmTalimatModal(id) {
   const BANKALAR = ['Garanti', 'İş Bankası', 'Yapı Kredi', 'Ziraat', 'Halkbank', 'Vakıfbank', 'Akbank', 'QNB Finansbank', 'Denizbank', 'ING', 'HSBC', 'Diğer'];
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-talimat'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; mo.id = 'mo-odm-talimat'; ;
 
   mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:16px;overflow:hidden">'
     + '<div style="background:#1e1b4b;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">'
@@ -3370,7 +3370,7 @@ function openApprovalFlow(odmId) {
 
   const old = document.getElementById('mo-odm-approval'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className='mo'; mo.id='mo-odm-approval'; mo.style.zIndex='2100';
+  mo.className='mo'; mo.id='mo-odm-approval'; ;
   const amount = parseFloat(o.amount||0);
   const needsDualApproval = amount >= 5000;
 
@@ -3491,7 +3491,7 @@ function showOdmApprovalTimeline(odmId) {
 
   const old = document.getElementById('mo-odm-timeline'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className='mo'; mo.id='mo-odm-timeline'; mo.style.zIndex='2100';
+  mo.className='mo'; mo.id='mo-odm-timeline'; ;
   mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">Onay Gecmisi</div>'
@@ -3548,7 +3548,7 @@ window.openHighAmountSettings = function() {
   var t = _getHighAmountThreshold();
   var ex = document.getElementById('mo-high-amt'); if (ex) ex.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-high-amt'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-high-amt'; ;
   mo.innerHTML = '<div class="moc" style="max-width:360px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">⚠️ Yüksek Tutar Eşiği</div>'
     + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
@@ -4057,7 +4057,7 @@ function openKurSettings() {
   if (ex) { ex.remove(); return; }
   var cfg = _odmLoadKurConfig();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-kur-settings'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-odm-kur-settings'; ;
   mo.innerHTML = '<div class="moc" style="max-width:440px;padding:0;border-radius:16px;overflow:hidden">'
     + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
     + '<div class="mt" style="margin-bottom:0">💱 Kur Ayarları</div>'
@@ -4150,7 +4150,7 @@ function openOdmCatMethodManager() {
   try { customMethods = JSON.parse(localStorage.getItem(ODM_CUSTOM_METHODS_KEY) || '[]'); } catch {}
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-catmethod'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-odm-catmethod'; ;
   mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:16px;overflow:hidden">'
     + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
     + '<div class="mt" style="margin-bottom:0">⚙️ Kategori & Yöntem Yönetimi</div>'
@@ -4272,7 +4272,7 @@ function openBankaManager() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-banka-mgr'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-banka-mgr'; ;
   var listHTML = bankalar.length ? bankalar.map(function(b) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b)">'
       + '<div style="flex:1;min-width:0">'
@@ -4412,7 +4412,7 @@ function openBudgetManager() {
   const thisMonth = _todayStr().slice(0,7);
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-budget'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; mo.id = 'mo-odm-budget'; ;
 
   let html = '<div class="moc" style="max-width:520px;padding:0;overflow:hidden;border-radius:16px">';
   html += '<div style="background:#1e1b4b;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">';
@@ -4517,18 +4517,18 @@ function openBankaMutabakat() {
   const ex = document.getElementById('mo-mutabakat');
   if (ex) { ex.remove(); return; }
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-mutabakat'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; mo.id = 'mo-mutabakat'; ;
   mo.innerHTML = '<div class="moc" style="max-width:560px">'
     + '<div class="mt">🏦 Banka Mutabakatı</div>'
     + '<p style="font-size:12px;color:var(--t3);margin-bottom:12px">Banka ekstrenizi yükleyin. Sistem ödeme kayıtlarıyla otomatik eşleştirir.</p>'
-    + '<div class="fr"><div class="fl">BANKA</div>'
+    + '<div class="fr"><div class="fl">Banka</div>'
     + '<select class="fi" id="mut-banka"><option value="">— Seçin —</option>'
     + ['Garanti','İş Bankası','Yapı Kredi','Ziraat','Halkbank','Vakıfbank','Akbank','Diğer'].map(b=>'<option>'+b+'</option>').join('')
     + '</select></div>'
-    + '<div class="fr"><div class="fl">DÖNEM</div>'
+    + '<div class="fr"><div class="fl">Dönem</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
     + '<input type="date" class="fi" id="mut-from"><input type="date" class="fi" id="mut-to"></div></div>'
-    + '<div class="fr"><div class="fl">EKSTRE DOSYASI (CSV / XLSX)</div>'
+    + '<div class="fr"><div class="fl">Ekstre dosyası (CSV / XLSX)</div>'
     + '<div style="border:2px dashed var(--b);border-radius:9px;padding:20px;text-align:center;cursor:pointer" onclick="_go(\"mut-file\").click()">'
     + '<div style="font-size:24px;margin-bottom:6px">📂</div>'
     + '<div style="font-size:12px;color:var(--t3)">Tıklayın veya dosyayı buraya sürükleyin</div>'
@@ -4607,7 +4607,7 @@ function openOdmReminderModal(id) {
   const msg = `Sayın ${u?.name||'İlgili'},\n\n"${o.name}" ödemesi için son tarih: ${o.due||'—'}\nTutar: ${_odmFmtAmt(o.amount,o.currency||'TRY')} ${_odmTLKarsiligi(o.amount,o.currency||'TRY')}\n\nLütfen zamanında işlem yapınız.\n\nDuay Global Trade`;
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; ;
   mo.innerHTML = '<div class="moc" style="max-width:480px">'
     + '<div class="mt">📱 Hatırlatıcı Gönder</div>'
     + '<div class="fr"><div class="fl">ALICI</div>'
@@ -4663,7 +4663,7 @@ function openFaizHesap(id) {
   const anapar = _odmToTRY(o.amount, o.currency||'TRY');
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; ;
   mo.innerHTML = '<div class="moc" style="max-width:420px">'
     + '<div class="mt">📐 Gecikme Faizi Hesaplayıcı</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
@@ -4710,7 +4710,7 @@ function openTedarikciKart(name) {
   const late   = items.filter(o => !o.paid && o.due && o.due < _todayStr()).length;
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; ;
   mo.innerHTML = '<div class="moc" style="max-width:480px">'
     + '<div class="mt">🏢 ' + name + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
@@ -4765,7 +4765,7 @@ function openCurrencyReport() {
   });
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; ;
   let html = '<div class="moc" style="max-width:540px">';
   html += '<div class="mt">💱 Çoklu Para Raporu</div>';
 
@@ -4944,7 +4944,7 @@ function openOdmKPIDashboard() {
   const netCash = tahAmt - paidAmt;
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; ;
   mo.innerHTML = '<div class="moc" style="max-width:580px;padding:0;border-radius:16px;overflow:hidden">'
     + '<div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:16px 22px;color:#fff">'
     + '<div style="font-size:15px;font-weight:600;margin-bottom:2px">📊 KPI Dashboard</div>'
@@ -5013,7 +5013,7 @@ Lütfen Duay Platform üzerinden onaylayın.
 Duay Global Trade`;
 
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; ;
   mo.innerHTML = '<div class="moc" style="max-width:480px">'
     + '<div class="mt">📧 Onay Bildirimi Gönderildi</div>'
     + '<p style="font-size:12px;color:var(--grt);margin-bottom:10px">✅ Sistem bildirimi tüm yöneticilere iletildi.</p>'
@@ -5609,7 +5609,7 @@ window._openQuickCari = function(editId) {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-quick-cari'; mo.style.display = 'flex'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; mo.id = 'mo-quick-cari'; mo.style.display = 'flex'; ;
   mo.innerHTML = '<div class="moc" style="max-width:650px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
     + '<div style="padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t)">' + (c ? '✏️ Cari Düzenle' : '+ Cari Ekle') + '</div>'
@@ -6490,7 +6490,7 @@ function openOdmTrashPanel() {
 
   var allTrash = odmTrash.map(function(o) { return _trashRow(o, 'odeme'); }).concat(tahTrash.map(function(t) { return _trashRow(t, 'tahsilat'); }));
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-odm-trash'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-odm-trash'; ;
   mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:16px;overflow:hidden">'
     + '<div style="padding:16px 22px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
     + '<div class="mt" style="margin-bottom:0">🗑 Çöp Kutusu (' + allTrash.length + ')</div>'
@@ -6640,7 +6640,7 @@ function openCariStatement(cariId, format) {
   if (ex) ex.remove();
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-cari-stmt'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-cari-stmt'; ;
 
   // Başlık
   var formatLabel = format === 'musteri' ? 'Müşteri Özeti' : format === 'admin' ? 'Yönetici Raporu' : 'Operasyonel Özet';
@@ -6971,7 +6971,7 @@ window.openProfitAnalysis = function() {
 
   var ex = document.getElementById('mo-profit'); if (ex) ex.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-profit'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-profit'; ;
   mo.innerHTML = '<div class="moc" style="max-width:640px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
     + '<div style="font-size:14px;font-weight:700;color:var(--t)">📈 Kâr Marjı Analizi</div>'
@@ -7049,7 +7049,7 @@ window.openFxPosition = function() {
 
   var ex = document.getElementById('mo-fx-pos'); if (ex) ex.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-fx-pos'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-fx-pos'; ;
   var tableRows = Object.entries(byCur).map(function(e) {
     var cur = e[0], pos = e[1];
     var net = pos.alacak - pos.borc;
@@ -7131,7 +7131,7 @@ window._assignCariReview = function(cariId) {
 
   var ex = document.getElementById('mo-cari-review'); if (ex) ex.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-cari-review'; mo.style.zIndex = '2300';
+  mo.className = 'mo'; mo.id = 'mo-cari-review'; ;
   mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">👁 Cari İncelet — ' + esc(c.name) + '</div>'
     + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'

@@ -1773,7 +1773,7 @@ function showUserActivity(uid) {
 
   const old = document.getElementById('mo-user-activity'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-user-activity'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-user-activity'; 
   mo.innerHTML = `<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
       <div style="width:10px;height:10px;border-radius:50%;background:${isOnline?'#22C55E':'#9CA3AF'};flex-shrink:0"></div>
@@ -1820,7 +1820,7 @@ function openSessionManager() {
 
   const old = document.getElementById('mo-sessions'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-sessions'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-sessions'; 
   mo.innerHTML = `<div class="moc" style="max-width:520px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">🖥 Aktif Oturumlar (${entries.length})</div>
@@ -1883,7 +1883,7 @@ function openNotifPrefs() {
 
   const old = document.getElementById('mo-notif-prefs'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-notif-prefs'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-notif-prefs'; 
   mo.innerHTML = `<div class="moc" style="max-width:440px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">🔔 Bildirim Tercihleri</div>
@@ -1964,7 +1964,7 @@ function openInviteModal() {
   const old = document.getElementById('mo-invite'); if (old) old.remove();
   const invites = _loadInvites();
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-invite'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-invite'; 
   mo.innerHTML = `<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">✉️ Kullanıcı Davet Et</div>
@@ -2107,7 +2107,7 @@ function openDeptModal() {
   if (!depts.length) depts = ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe'];
   const old = document.getElementById('mo-dept'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className='mo'; mo.id='mo-dept'; mo.style.zIndex='2100';
+  mo.className='mo'; mo.id='mo-dept'; 
   const users = loadUsers();
   mo.innerHTML = `<div class="moc" style="max-width:460px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
@@ -2174,7 +2174,7 @@ function openAuditLog() {
   const logs = _loadAudit().slice(0, 50);
   const old = document.getElementById('mo-audit'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className='mo'; mo.id='mo-audit'; mo.style.zIndex='2100';
+  mo.className='mo'; mo.id='mo-audit'; 
   mo.innerHTML = `<div class="moc" style="max-width:560px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">Audit Log (${logs.length})</div>
@@ -2272,7 +2272,7 @@ window._openTempPerm = function(uid) {
   const old = document.getElementById('mo-temp-perm'); if (old) old.remove();
   const mods = ALL_MODULES.filter(m => m.id !== 'dashboard' && m.id !== 'settings' && m.id !== 'admin');
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-temp-perm'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-temp-perm'; 
   mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Gecici Yetki Ver</div></div>'
     + '<div style="padding:16px 20px">'
@@ -2336,7 +2336,7 @@ function openBulkRoleChange() {
   const users = loadUsers().filter(u => u.role !== 'admin');
   const old = document.getElementById('mo-bulk-role'); if (old) old.remove();
   const mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-bulk-role'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-bulk-role'; 
   mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Toplu Rol Degistir</div></div>'
     + '<div style="padding:16px 20px">'
@@ -2653,7 +2653,7 @@ window._cloneUserPerms = function(targetUid) {
 
   var old = document.getElementById('mo-clone-perms'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-clone-perms'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-clone-perms'; 
   mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t)">📋 Yetki Klonla</div>'
@@ -2737,7 +2737,7 @@ window._openUserManageModal = function(uid) {
 
   var old = document.getElementById('mo-user-manage'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-user-manage'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-user-manage'; 
 
   // Departman listesi
   var depts = [];
@@ -3003,7 +3003,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var permLog = u.permissionLog || [];
     var ex = document.getElementById('mo-my-perms'); if (ex) ex.remove();
     var mo = document.createElement('div');
-    mo.className = 'mo'; mo.id = 'mo-my-perms'; mo.style.zIndex = '2200';
+    mo.className = 'mo'; mo.id = 'mo-my-perms'; 
     mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
       + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t)">🔐 Yetkilerim</div></div>'

@@ -619,7 +619,7 @@ window._saRowSave = function(id) {
 window._saInlineFiles = function(id) {
   var old = document.getElementById('mo-sa-files'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-sa-files'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-sa-files'; 
   mo.style.display = 'flex';
   mo.innerHTML = '<div class="moc" style="max-width:360px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
@@ -730,7 +730,7 @@ function _openSAModal(id) {
   var ktnOpts = '<option value="">— Seçin —</option>' + konts.map(function(k) { return '<option value="' + esc(k.no || '') + '" data-export="' + esc(k.ihracatId || '') + '"' + (s?.containerNo === k.no ? ' selected' : '') + '>' + esc(k.no || '?') + ' — ' + esc(k.hat || '') + '</option>'; }).join('');
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-satinalma'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-satinalma'; 
 
   // Dikey form HTML
   var verticalHTML = ''
@@ -1313,7 +1313,7 @@ window._rejectSA = function(id) {
   // Red açıklaması zorunlu — mini modal
   var old = document.getElementById('mo-sa-reject'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-sa-reject'; mo.style.display = 'flex'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-sa-reject'; mo.style.display = 'flex'; 
   mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:14px;font-weight:700;color:#DC2626">❌ Sipariş Red / Revize</div>'
@@ -1366,7 +1366,7 @@ window._openSADetail = function(id) {
 
   var old = document.getElementById('mo-sa-detail'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-sa-detail'; mo.style.zIndex = '2100';
+  mo.className = 'mo'; mo.id = 'mo-sa-detail'; 
   mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div>'
@@ -1545,7 +1545,7 @@ window._openSAImport = function() {
   _saImportRows = null;
 
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-sa-import'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-sa-import'; 
   mo.style.display = 'flex';
   mo.innerHTML = '<div class="moc" style="max-width:700px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
@@ -1968,7 +1968,7 @@ window._openSABudget = function() {
   try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) {}
   var old = document.getElementById('mo-sa-budget'); if (old) old.remove();
   var mo = document.createElement('div');
-  mo.className = 'mo'; mo.id = 'mo-sa-budget'; mo.style.display = 'flex'; mo.style.zIndex = '2200';
+  mo.className = 'mo'; mo.id = 'mo-sa-budget'; mo.style.display = 'flex'; 
   mo.innerHTML = '<div class="moc" style="max-width:360px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 18px;border-bottom:1px solid var(--b)"><div style="font-size:14px;font-weight:700;color:var(--t)">📊 Aylık Satın Alma Bütçesi</div></div>'
     + '<div style="padding:16px 18px">'

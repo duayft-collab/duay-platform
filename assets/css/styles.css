@@ -314,9 +314,9 @@ body {
 
 /* â”€â”€ MODAL â”€â”€ */
 .mo {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
   display: none; align-items: center; justify-content: center;
-  z-index: 2000; backdrop-filter: blur(3px);
+  z-index: 99998; backdrop-filter: blur(3px);
 }
 .mo.open { display: flex; }
 .modal {
@@ -329,7 +329,7 @@ body {
 .fr { margin-bottom: 14px; }
 .fl {
   font-size: 11px; font-weight: 600; color: var(--t2);
-  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px;
+  letter-spacing: .02em; margin-bottom: 6px;
 }
 .fi {
   width: 100%; padding: 9px 12px; border-radius: var(--rs);
