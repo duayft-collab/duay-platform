@@ -2035,6 +2035,14 @@ th[onclick*="_sortUsers"]:hover {
 }
 
 
+/* ══ TOPBAR İKONLAR ══ */
+.tb-icon {
+  background: none; border: none; cursor: pointer; padding: 6px;
+  border-radius: 6px; color: var(--t3); display: inline-flex;
+  align-items: center; justify-content: center; transition: all .12s;
+}
+.tb-icon:hover { background: var(--s2); color: var(--t); }
+
 /* ══ PWA MOBİL OPTİMİZASYON ══ */
 @media (max-width: 768px) {
   /* Tablo sütunlarını daralt */
