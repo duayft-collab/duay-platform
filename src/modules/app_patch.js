@@ -1326,7 +1326,7 @@ window._saveSatisTeklif = function() {
   var yr = new Date().getFullYear(); var seq = String(d.length+1).padStart(4,'0');
   d.unshift({
     id:typeof generateNumericId==='function'?generateNumericId():Date.now(),
-    teklifNo:'STK-'+yr+'-'+seq, musteri:musteri,
+    teklifNo:(function(){var n2=new Date();return '1018-'+String(n2.getFullYear()).slice(2)+String(n2.getMonth()+1).padStart(2,'0')+String(n2.getDate()).padStart(2,'0')+String(n2.getHours()).padStart(2,'0')+String(n2.getMinutes()).padStart(2,'0');})(), musteri:musteri,
     alisTeklifiId:parseInt(document.getElementById('st-alis-id')?.value||'0')||null,
     urunler:urunler, paraBirimi:document.getElementById('st-cur')?.value||'USD',
     genelToplam:genelToplam, tahminKar:tahminKar,
@@ -1380,23 +1380,32 @@ window._printSatisTeklif = function(id) {
     // Meta
     + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(t.teklifNo) + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + (t.gecerlilikTarihi || '30 days') + '</div></div>'
     + '<div class="meta-box" style="margin-bottom:12px"><b>CUSTOMER:</b> ' + esc(t.musteri||'—') + '</div>'
-    // Tablo
-    + '<table><thead><tr><th>NO</th><th>DESCRIPTION OF GOODS</th><th>QTY</th><th>UNIT PRICE (' + cur + ')</th><th>TOTAL PRICE (' + cur + ')</th></tr></thead><tbody>'
+    // IMO uyarısı
+    + (function(){var hasIMO=(t.urunler||[]).some(function(u){return u.imoMu;});return hasIMO?'<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:6px;padding:10px 14px;margin-bottom:12px;color:#991B1B;font-weight:700;font-size:12px">⚠ ATTENTION: THIS SHIPMENT CONTAINS HAZARDOUS MATERIALS (IMO/DG CARGO)<br><span style="font-weight:400;font-size:10px">MSDS documents available upon request</span></div>':'';})()
+    // Tablo — fotoğraflı
+    + '<table><thead><tr><th>NO</th><th style="width:50px">PHOTO</th><th>DESCRIPTION OF GOODS</th><th>QTY</th><th>UNIT PRICE (' + cur + ')</th><th>TOTAL PRICE (' + cur + ')</th></tr></thead><tbody>'
     + (t.urunler||[]).map(function(u,i){
-        return '<tr><td>' + (i+1) + '</td><td><b>' + esc(u.urunAdi||'') + '</b></td><td style="text-align:center">' + (u.miktar||0) + '</td><td style="text-align:right">' + curSym + (u.satisFiyat||0).toFixed(2) + '</td><td style="text-align:right">' + curSym + ((u.satisFiyat||0)*(u.miktar||0)).toFixed(2) + '</td></tr>';
+        var urunData = (typeof loadUrunler==='function'?loadUrunler():[]).find(function(x){return x.id===u.urunId;});
+        var foto = urunData?.gorsel ? '<img src="'+urunData.gorsel+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px">' : '<div style="width:40px;height:40px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">📦</div>';
+        var imoTag = (u.imoMu||urunData?.imolu==='E') ? '<span style="color:#DC2626;font-weight:700;font-size:9px"> [IMO Class '+(urunData?.imoSinifi||'?')+']</span>' : '';
+        return '<tr><td>' + (i+1) + '</td><td>'+foto+'</td><td><b>' + esc(u.urunAdi||'') + '</b>'+imoTag+'<br><span style="font-size:9px;color:#666">'+ esc(urunData?.teknikAciklama||urunData?.standartAdi||'') +'</span></td><td style="text-align:center">' + (u.miktar||0) + '</td><td style="text-align:right">' + curSym + (u.satisFiyat||0).toFixed(2) + '</td><td style="text-align:right">' + curSym + ((u.satisFiyat||0)*(u.miktar||0)).toFixed(2) + '</td></tr>';
       }).join('')
-    + '<tr class="total-row"><td colspan="4" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;font-size:15px">' + curSym + totalAmt + '</td></tr>'
+    + '<tr class="total-row"><td colspan="5" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;font-size:15px">' + curSym + totalAmt + '</td></tr>'
     + '</tbody></table>'
-    // Terms
+    // Terms — genişletilmiş
     + '<div class="terms"><h4>TERMS & CONDITIONS</h4>'
-    + '<div>• Payment: ' + (t.odemeKosulu || '35% advance, 65% before dispatch') + '</div>'
-    + '<div>• Delivery: ' + (t.teslimSekli || 'FOB') + ' · ETA: ' + (t.teslimatSuresi || '30 days') + '</div>'
+    + '<div>• Payment: ' + (t.odemeKosulu || '35% advance payment, 65% before dispatch') + '</div>'
+    + '<div>• Delivery: ' + (t.teslimSekli || 'FOB') + ' Istanbul · Lead time: ' + (t.teslimatSuresi || '30 working days') + '</div>'
     + '<div>• All banking charges outside Turkey are on buyer\'s account</div>'
-    + '<div>• Any dispute shall be settled in Istanbul courts</div></div>'
+    + '<div>• Prices are exclusive of local taxes and duties at destination</div>'
+    + '<div>• Insurance: To be covered by buyer unless otherwise agreed</div>'
+    + '<div>• Any dispute shall be settled under Istanbul Chamber of Commerce arbitration</div>'
+    + '<div>• This offer is valid for ' + (t.gecerlilikTarihi ? 'until '+t.gecerlilikTarihi : '5 working days') + '</div></div>'
     // Bank
     + '<div class="bank"><h4>BANKING DETAILS</h4>'
-    + '<div><b>' + esc(banka.name||'') + '</b></div>'
-    + '<div>IBAN: ' + esc(banka.iban||'') + '</div>'
+    + '<div><b>' + esc(banka.name||'Albaraka Türk Katılım Bankası') + '</b></div>'
+    + '<div>USD IBAN: ' + esc(banka.iban||'TR00 0000 0000 0000 0000 0000 00') + '</div>'
+    + (banka.ibanEur ? '<div>EUR IBAN: ' + esc(banka.ibanEur) + '</div>' : '')
     + '<div>SWIFT: ' + esc(banka.swift||'') + '</div></div>'
     // Signature
     + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL TRADE</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
@@ -1814,6 +1823,10 @@ function _check7GunKurali() {
       var urun = urunler.find(function(u){return u.tedarikci===s.supplier||u.urunAdi===s.supplier;});
       if (urun && !_calcIhracatTam(urun)) {
         alerts.push({konteyner:k.no, urun:urun.orijinalAdi||urun.urunAdi, gun:diff, urunId:urun.id});
+      }
+      // IMO ürün MSDS eksik kontrolü
+      if (urun && urun.imolu === 'E' && (!urun.imoSinifi || !urun.imoTehlikeNo)) {
+        alerts.push({konteyner:k.no, urun:'IMO EVRAK EKSİK: '+(urun.orijinalAdi||urun.urunAdi), gun:diff, urunId:urun.id});
       }
     });
   });
