@@ -372,7 +372,7 @@ body {
 .toast.ok  { background: var(--gr); color: #fff; }
 .toast.err { background: var(--rd); color: #fff; }
 .toast.warn { background: #F59E0B; color: #fff; }
-#mo-confirm-global { z-index: 90000; }
+#mo-confirm-global { z-index: 99999; }
 
 /* â”€â”€ MISC COMPONENTS â”€â”€ */
 .ur { display: flex; align-items: center; gap: 10px; }

@@ -1316,15 +1316,16 @@ function saveOdm() {
   }
 
   // Cari limit kontrolü — limit aşıldıysa blokla (specialApproval hariç)
-  if (_selCari && _selCari.creditLimit > 0) {
+  var _cariCreditLimit = _selCari ? (_selCari.creditLimit || _selCari.limitAmount || 0) : 0;
+  if (_selCari && _cariCreditLimit > 0) {
     var cariOdm = (window.loadOdm ? loadOdm() : []).filter(function(o) {
       return o.cariName === _fCari && !o.paid && !o.isDeleted;
     });
     var cariToplamBorc = cariOdm.reduce(function(sum, o) { return sum + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
     var yeniTutar = _odmToTRY(_fAmt, document.getElementById('odm-f-currency')?.value || 'TRY');
-    if ((cariToplamBorc + yeniTutar) > _selCari.creditLimit && !_selCari.specialApproval) {
+    if ((cariToplamBorc + yeniTutar) > _cariCreditLimit && !_selCari.specialApproval) {
       _odmHighlightMissing(['odm-f-cari', 'odm-f-amount'], 'Cari limit aşıldı!');
-      window.toast?.('Cari kredi limiti aşıldı — Toplam: ₺' + Math.round(cariToplamBorc + yeniTutar).toLocaleString('tr-TR') + ' / Limit: ₺' + _selCari.creditLimit.toLocaleString('tr-TR'), 'err');
+      window.toast?.('Cari kredi limiti aşıldı — Toplam: ₺' + Math.round(cariToplamBorc + yeniTutar).toLocaleString('tr-TR') + ' / Limit: ₺' + _cariCreditLimit.toLocaleString('tr-TR'), 'err');
       // Admin/manager özel onay verebilir
       if (_isManagerO()) {
         window.toast?.('Yönetici olarak limit aşımını onaylayabilirsiniz — tekrar kaydet butonuna basın', 'warn');
@@ -2344,6 +2345,18 @@ function openTahsilatModal(id) {
   html += '<button onclick="_go(\'mo-tahsilat\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button></div>';
   html += '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px;max-height:74vh;overflow-y:auto">';
 
+  // Cari Firma
+  var tahCariList = typeof loadCari === 'function' ? loadCari() : [];
+  var tahEsc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  html += '<div class="fr"><div class="fl">CARİ FİRMA</div><select class="fi" id="tah-f-cari" style="border-radius:8px">';
+  html += '<option value="">— Cari Seçin —</option>';
+  tahCariList.forEach(function(c) {
+    var isPend = c.status === 'pending_approval';
+    var lbl = tahEsc(c.name) + ' (' + (c.type || '') + ')' + (isPend ? ' ⏳ Onay Bekliyor' : '');
+    html += '<option value="' + tahEsc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPend ? ' disabled style="color:#999"' : '') + '>' + lbl + '</option>';
+  });
+  html += '</select></div>';
+
   // Müşteri + Tür
   html += '<div class="fr"><div class="fl">MÜŞTERİ / KAYNAK *</div><input class="fi" id="tah-f-name" placeholder="Müşteri adı veya kaynak..." value="' + (o?o.name||'':'') + '"></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
@@ -2371,15 +2384,34 @@ function openTahsilatModal(id) {
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   html += '<div class="fr"><div class="fl">ALINAN HESAP / BANKA</div><input class="fi" id="tah-f-banka" placeholder="Garanti, İş Bankası..." value="' + (o?o.banka||'':'') + '"></div>';
   html += '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ</div><select class="fi" id="tah-f-yontem">';
-  ['Havale/EFT','Kredi Kartı','Nakit','Çek','Senet','Kripto','Diğer'].forEach(y => { html += '<option value="' + y + '"' + (o&&o.yontem===y?' selected':'') + '>' + y + '</option>'; });
+  _odmLoadMethods().forEach(function(y) { html += '<option value="' + y + '"' + (o&&o.yontem===y?' selected':'') + '>' + y + '</option>'; });
   html += '</select></div></div>';
 
-  // Sorumlu + Alarm
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  // Sorumlu
   html += '<div class="fr"><div class="fl">SORUMLU</div><select class="fi" id="tah-f-user"><option value="">— Seç —</option>';
   users.forEach(u => { html += '<option value="' + u.id + '"' + (o&&o.assignedTo===u.id?' selected':'') + '>' + u.name + '</option>'; });
   html += '</select></div>';
-  html += '<div class="fr"><div class="fl">HATIRLATICI (GÜN ÖNCE)</div><input class="fi" type="number" id="tah-f-alarm" min="1" max="30" value="' + (o?o.alarmDays||3:3) + '"></div></div>';
+
+  // Hatırlatıcı — zengin seçenekler (ödeme formuyla aynı)
+  html += '<input type="hidden" id="tah-f-alarm" value="' + (o?o.alarmDays||3:3) + '">';
+  html += '<div style="background:var(--s2);border-radius:10px;padding:12px 14px">';
+  html += '<div class="fl" style="margin-bottom:8px">🔔 HATIRLATICI</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  html += '<div style="display:flex;gap:6px;align-items:center">';
+  html += '<input type="date" class="fi" id="tah-f-alarm-date" value="' + (o?.alarmDate || '') + '" style="flex:1;border-radius:8px;font-size:11px">';
+  html += '<input type="time" class="fi" id="tah-f-alarm-time" value="' + (o?.alarmTime || '09:00') + '" style="width:80px;border-radius:8px;font-size:11px">';
+  html += '</div>';
+  html += '<div style="display:flex;gap:6px;align-items:center">';
+  html += '<input type="number" class="fi" id="tah-f-reminder-val" min="1" max="365" value="' + (o?.reminderValue || 3) + '" style="width:55px;border-radius:8px;font-size:11px">';
+  html += '<select class="fi" id="tah-f-reminder-unit" style="flex:1;border-radius:8px;font-size:11px">';
+  Object.entries(ODM_REMINDER_UNITS).forEach(function(e) { html += '<option value="' + e[0] + '"' + ((o?.reminderUnit || 'gun') === e[0] ? ' selected' : '') + '>' + e[1] + ' önce</option>'; });
+  html += '</select></div></div>';
+  html += '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">';
+  html += '<button type="button" onclick="_odmSetReminder(1,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 gün</button>';
+  html += '<button type="button" onclick="_odmSetReminder(3,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">3 gün</button>';
+  html += '<button type="button" onclick="_odmSetReminder(1,\'hafta\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 hafta</button>';
+  html += '<button type="button" onclick="_odmSetReminder(1,\'ay\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 ay</button>';
+  html += '</div></div>';
 
   // Not
   html += '<div class="fr"><div class="fl">NOT / AÇIKLAMA</div><textarea class="fi" id="tah-f-note" rows="2" style="resize:none" placeholder="Ek bilgiler...">' + (o?o.note||'':'') + '</textarea></div>';
@@ -2400,11 +2432,12 @@ function openTahsilatModal(id) {
   html += '<input type="hidden" id="tah-f-eid" value="' + (o?o.id:'') + '">';
   html += '</div>';
   html += '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">';
-  html += '<button class="btn" onclick="_go("mo-tahsilat")?.remove()">İptal</button>';
+  html += '<button class="btn" onclick="document.getElementById(\'mo-tahsilat\')?.remove()">İptal</button>';
   html += '<button class="btn btnp" onclick="saveTahsilat()" style="padding:9px 22px;border-radius:9px">💾 Kaydet</button></div></div>';
 
   mo.innerHTML = html;
   document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
   setTimeout(() => mo.classList.add('open'), 10);
 }
 
@@ -2455,6 +2488,15 @@ function saveTahsilat() {
   if (!name) { window.toast?.('Kaynak adı zorunlu', 'err'); return; }
   var _tahDue = document.getElementById('tah-f-due')?.value || '';
   if (!_tahDue) { window.toast?.('Vade tarihi zorunludur', 'err'); return; }
+  // Pending cari kontrolü
+  var _tahCariVal = document.getElementById('tah-f-cari')?.value || '';
+  if (_tahCariVal) {
+    var _tahSelCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _tahCariVal; });
+    if (_tahSelCari && _tahSelCari.status === 'pending_approval') {
+      window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
+      return;
+    }
+  }
   const eid = parseInt(document.getElementById('tah-f-eid')?.value || '0');
   const d = loadTahsilat();
   let docs = [];
@@ -2474,10 +2516,13 @@ function saveTahsilat() {
     actualDate: document.getElementById('tah-f-actual')?.value   || '',
     banka:      document.getElementById('tah-f-banka')?.value    || '',
     yontem:     document.getElementById('tah-f-yontem')?.value   || '',
+    cariName:   document.getElementById('tah-f-cari')?.value     || '',
     // planned alanı kaldırıldı
     collected:  !!document.getElementById('tah-f-collected')?.checked,
     assignedTo: parseInt(document.getElementById('tah-f-user')?.value || '0') || null,
     alarmDays:  parseInt(document.getElementById('tah-f-alarm')?.value || '3'),
+    reminderValue: parseInt(document.getElementById('tah-f-reminder-val')?.value || '3') || 3,
+    reminderUnit:  document.getElementById('tah-f-reminder-unit')?.value || 'gun',
     note:       document.getElementById('tah-f-note')?.value     || '',
     docs,
     ts: _nowTso(), updatedBy: _CUo()?.id,
@@ -5301,15 +5346,20 @@ function _renderCariDetail(id) {
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Net Bakiye</div><div style="font-size:18px;font-weight:700;color:' + (netBakiye >= 0 ? '#16A34A' : '#DC2626') + '">' + (netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(netBakiye)).toLocaleString('tr-TR') + '</div></div>'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">İşlem Sayısı</div><div style="font-size:18px;font-weight:700;color:var(--t)">' + hareketler.length + '</div></div>'
     + '</div>'
-    // Cari Limit uyarısı
+    // Cari Limit uyarısı — creditLimit (saveOdm ile aynı alan adı)
     + (function() {
-        if (!c.limitAmount || !c.limitAmount > 0) return '';
-        var pct = Math.round(totalBorc / c.limitAmount * 100);
-        var barColor = pct >= 90 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#16A34A';
-        return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 14px;margin-bottom:12px">'
-          + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:4px"><span>Kredi Limiti</span><span style="font-weight:600;color:' + barColor + '">₺' + Math.round(totalBorc).toLocaleString('tr-TR') + ' / ₺' + Math.round(c.limitAmount).toLocaleString('tr-TR') + ' (' + pct + '%)</span></div>'
+        var cLimit = c.creditLimit || c.limitAmount || 0;
+        if (!cLimit || cLimit <= 0) return '';
+        var unpaidBorc = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) {
+          return o.cariName === c.name && !o.paid && !o.isDeleted;
+        }).reduce(function(sum, o) { return sum + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+        var pct = Math.round(unpaidBorc / cLimit * 100);
+        var barColor = pct >= 100 ? '#EF4444' : pct >= 80 ? '#F59E0B' : '#16A34A';
+        var isExceeded = pct >= 100;
+        return '<div style="background:' + (isExceeded ? '#FEF2F2' : 'var(--sf)') + ';border:1px solid ' + (isExceeded ? '#FECACA' : 'var(--b)') + ';border-radius:10px;padding:10px 14px;margin-bottom:12px">'
+          + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:4px"><span>' + (isExceeded ? '🚨' : '📊') + ' Kredi Limiti</span><span style="font-weight:600;color:' + barColor + '">₺' + Math.round(unpaidBorc).toLocaleString('tr-TR') + ' / ₺' + Math.round(cLimit).toLocaleString('tr-TR') + ' (' + pct + '%)</span></div>'
           + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:' + barColor + ';border-radius:3px"></div></div>'
-          + (pct >= 90 ? '<div style="font-size:10px;color:#EF4444;margin-top:4px;font-weight:600">⚠️ Kredi limiti aşılmak üzere!</div>' : '')
+          + (isExceeded ? '<div style="font-size:10px;color:#EF4444;margin-top:4px;font-weight:600">🚨 Kredi limiti aşıldı! Yeni ödeme oluşturulamaz.</div>' : pct >= 80 ? '<div style="font-size:10px;color:#F59E0B;margin-top:4px;font-weight:600">⚠️ Kredi limiti aşılmak üzere!</div>' : '')
         + '</div>';
       })()
     // Format toggle + Hareket tablosu
