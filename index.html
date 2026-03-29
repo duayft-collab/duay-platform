@@ -474,106 +474,15 @@ function _doLogin() {
 
       <!-- Panel: Dashboard -->
             <div class="panel on" id="panel-dashboard">
+        <!-- Başlık -->
         <div class="ph">
-          <div><div class="pht" id="ph-db">Dashboard</div><div class="phs" id="db-welcome"></div></div>
+          <div><div class="pht" id="ph-db">Kontrol Merkezi</div><div class="phs" id="db-welcome"></div></div>
           <span id="db-date" style="font-size:12px;color:var(--t2)"></span>
         </div>
-        <!-- Ana istatistikler -->
-        <div class="sg" id="db-stats">
-          <div class="sc" style="cursor:pointer" onclick="goTo('users')" id="sc-u"><div class="sci" style="background:var(--al)">👥</div><div class="scv" id="sv-u">—</div><div class="scl" id="sl-u">Kullanıcılar</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('docs')"><div class="sci" style="background:var(--blb)">📄</div><div class="scv" id="sv-d">—</div><div class="scl">Dökümanlar</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('pusula')"><div class="sci" style="background:var(--rdb)">🎯</div><div class="scv" id="sv-c">0</div><div class="scl">Kritik Görev</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('puantaj')"><div class="sci" style="background:var(--amb)">⏳</div><div class="scv" id="sv-p">0</div><div class="scl">Bekleyen Onay</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('izin')"><div class="sci" style="background:rgba(16,185,129,.12)">🏖️</div><div class="scv" id="sv-izin">0</div><div class="scl">İzin Talebi</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('kargo')"><div class="sci" style="background:rgba(59,130,246,.12)">📦</div><div class="scv" id="sv-kargo">0</div><div class="scl">Aktif Kargo</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('pirim')"><div class="sci" style="background:rgba(245,158,11,.12)">⭐</div><div class="scv" id="sv-pirim">0</div><div class="scl">Bekleyen Pirim</div></div>
-          <div class="sc" style="cursor:pointer" onclick="goTo('crm')"><div class="sci" style="background:rgba(99,102,241,.12)">🤝</div><div class="scv" id="sv-crm">0</div><div class="scl">Aktif Lead</div></div>
-        </div>
-
-        <!-- Duyurular (okunmamış) -->
-        <div id="db-ann-preview"></div>
-
-        <!-- Ana grid -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
-          <!-- Sol: Kritik Görevler (Top 3) -->
-          <div class="card">
-            <div class="ch">
-              <span class="ct">🔥 Acil 3 İş</span>
-              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Tümü →</button>
-            </div>
-            <div id="db-top3"></div>
-          </div>
-          <!-- Sağ: Çeyrek Hedefler -->
-          <div class="card">
-            <div class="ch">
-              <span class="ct">🎯 Çeyrek Hedefler</span>
-              <button class="btn btns" onclick="goTo('hedefler')" style="font-size:11px">Tümü →</button>
-            </div>
-            <div id="db-hedefler"></div>
-          </div>
-        </div>
-
-        <!-- Pusula Özet Widget -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px" id="db-pusula-row">
-          <!-- Odak Görevleri -->
-          <div class="card">
-            <div class="ch">
-              <span class="ct">🔥 Bugünün Odak Listesi</span>
-              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Pusula →</button>
-            </div>
-            <div id="db-day-focus"></div>
-          </div>
-          <!-- Pusula özet istatistik -->
-          <div class="card">
-            <div class="ch">
-              <span class="ct">📊 Görev Durumu</span>
-              <button class="btn btns" onclick="goTo('pusula')" style="font-size:11px">Tümü →</button>
-            </div>
-            <div id="db-pusula-stats"></div>
-          </div>
-        </div>
-
-        <!-- İkinci satır -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
-          <!-- Kargo Takibi -->
-          <div class="card">
-            <div class="ch">
-              <span class="ct">📦 Takipteki Kargolar</span>
-              <button class="btn btns" onclick="goTo('kargo')" style="font-size:11px">Tümü →</button>
-            </div>
-            <div id="db-kargo"></div>
-          </div>
-          <!-- Son Aktiviteler -->
-          <div class="card">
-            <div class="ch"><span class="ct" id="ct-rec">Son Aktiviteler</span></div>
-            <div id="db-acts"></div>
-          </div>
-        </div>
-
-        <!-- Üçüncü satır: Hızlı Erişim + Ödemeler -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-          <div class="card">
-            <div class="ch"><span class="ct">⚡ Hızlı Erişim</span></div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px">
-              <div class="qi" onclick="goTo('pusula')"><span class="qi-i">🧭</span><span>Pusula</span></div>
-              <div class="qi" onclick="goTo('puantaj')"><span class="qi-i">🗓</span><span>Puantaj</span></div>
-              <div class="qi" onclick="goTo('takvim')"><span class="qi-i">📅</span><span>Takvim</span></div>
-              <div class="qi" onclick="goTo('notes')"><span class="qi-i">📝</span><span>Notlar</span></div>
-              <div class="qi" onclick="goTo('kargo')"><span class="qi-i">📦</span><span>Kargo</span></div>
-              <div class="qi" onclick="goTo('rehber')"><span class="qi-i">📒</span><span>Rehber</span></div>
-              <div class="qi" onclick="goTo('odemeler')"><span class="qi-i">💳</span><span>Ödemeler</span></div>
-              <div class="qi" onclick="goTo('finans')"><span class="qi-i">💰</span><span>Finans</span></div>
-            </div>
-          </div>
-          <!-- Yaklaşan ödemeler -->
-          <div class="card">
-            <div class="ch">
-              <span class="ct">💳 Yaklaşan Ödemeler</span>
-              <button class="btn btns" onclick="goTo('odemeler')" style="font-size:11px">Tümü →</button>
-            </div>
-            <div id="db-odemeler"></div>
-          </div>
-        </div>
+        <!-- Eski stat grid — _renderDashboard gizler -->
+        <div class="sg" id="db-sg" style="display:none"></div>
+        <!-- Yeni 9 bölüm buraya render edilir -->
+        <div id="db-content"></div>
       </div>
 
       <!-- Panel: Pusula (Görev Yönetimi) -->
