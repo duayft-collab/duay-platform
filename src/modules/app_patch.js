@@ -3444,54 +3444,217 @@ window._renderOzluSozBanner = function(modul) {
 };
 
 // ════════════════════════════════════════════════════════════════
-// FIX 9 — ÜRÜN KATALOĞU INLINE FORM (modal yerine)
+// ÜRÜN KATALOĞU — 28 ALAN + KONTEYNER + KPI + GÜMRÜK
 // ════════════════════════════════════════════════════════════════
+
+var URUN_MENSEI_LIST = ['Türkiye','Çin','Almanya','İtalya','Fransa','İspanya','Polonya','Hindistan','Japonya','Güney Kore','ABD','İngiltere','Hollanda','Belçika','Diğer'];
+var URUN_PAKET_TIPI = ['Koli','Palet','BigBag','Varil','Çuval','Ambalajsız','Diğer'];
+var URUN_YAPI = ['Katı','Sıvı','Akışkan','Gaz','Toz'];
+var URUN_ISTIFLEME = ['Kırılır','Üste konulamaz','Dik tutulmalı','Nemden korunmalı','Soğuk zincir'];
+var URUN_LIMAN = ['İstanbul','Mersin','İzmir','Diğer'];
+var URUN_INCOTERMS = ['EXW','FOB','CFR','CIF','DDP','CPT','CIP'];
+var URUN_ODEME = ['L/C','CAD','T/T','Cash','D/P','D/A'];
+
+/** Konteyner kapasite hesabı */
+window._urunCalcKonteyner = function() {
+  var en = parseFloat(document.getElementById('ui-pkt-en')?.value||'0');
+  var boy = parseFloat(document.getElementById('ui-pkt-boy')?.value||'0');
+  var yuk = parseFloat(document.getElementById('ui-pkt-yuk')?.value||'0');
+  var el = document.getElementById('ui-konteyner-info'); if (!el) return;
+  if (!en || !boy || !yuk) { el.innerHTML = ''; return; }
+  var hacim = (en * boy * yuk) / 1000000; // m³
+  var adet20 = Math.floor(33.2 / hacim);
+  var adet40 = Math.floor(76.4 / hacim);
+  el.innerHTML = '<div style="padding:8px;background:#16A34A11;border:0.5px solid #16A34A44;border-radius:6px;font-size:10px;color:#16A34A">'
+    + '<b>20DC:</b> ' + adet20 + ' adet · <b>40HC:</b> ' + adet40 + ' adet'
+    + '<div style="margin-top:2px;color:#065F46">Birim hacim: ' + hacim.toFixed(4) + ' m³</div></div>';
+};
+
+/** KPI skoru hesapla */
+window._urunCalcKPI = function() {
+  var fields = ['ui-ad','ui-ted','ui-kat','ui-std','ui-gtip','ui-mensei','ui-marka','ui-net','ui-brut','ui-teknik','ui-materyal','ui-pkt-tip','ui-pkt-en','ui-pkt-boy','ui-pkt-yuk','ui-pkt-adet','ui-yapisi','ui-pol','ui-inco','ui-alis-fiyat','ui-lead','ui-odeme-kosul'];
+  var filled = 0;
+  fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && (el.value||'').trim()) filled++;
+  });
+  var pct = Math.round(filled / fields.length * 100);
+  var el = document.getElementById('ui-kpi-bar');
+  if (el) { el.style.width = pct + '%'; el.style.background = pct >= 80 ? '#16A34A' : pct >= 50 ? '#D97706' : '#DC2626'; }
+  var lbl = document.getElementById('ui-kpi-lbl');
+  if (lbl) lbl.textContent = filled + '/' + fields.length + ' alan — %' + pct;
+};
+
+/** Accordion toggle */
+window._urunToggleSection = function(idx) {
+  var el = document.getElementById('ui-sec-' + idx);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+/** Inline ürün formu — 28 alan, 5 aşama accordion */
 window._openUrunInline = function(editId) {
   var ex = document.getElementById('urun-inline-form'); if (ex) { ex.remove(); return; }
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var u = editId ? (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(x){return x.id===editId;}) : null;
-  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted;}) : [];
+  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && c.type==='tedarikci';}) : [];
   var cont = document.getElementById('urun-list'); if (!cont) return;
   var form = document.createElement('div'); form.id = 'urun-inline-form';
   form.style.cssText = 'border:2px solid var(--ac);border-radius:10px;margin:8px 0;background:var(--sf);overflow:hidden';
-  form.innerHTML = '<div style="padding:8px 14px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between"><span>'+(u?'✏️ '+esc(u.duayKodu||''):'+ Yeni Ürün')+'</span><button onclick="document.getElementById(\'urun-inline-form\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
-    +'<div style="padding:10px 14px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;border-bottom:0.5px solid var(--b)">'
-    +'<div><div class="fl" style="font-size:8px">Kod</div><input class="fi" id="ui-kod" style="width:80px;font-size:11px;background:var(--s2)" value="'+esc(u?.duayKodu||'Otomatik')+'" readonly></div>'
-    +'<div><div class="fl" style="font-size:8px">Ürün Adı *</div><input class="fi" id="ui-ad" style="width:150px;font-size:11px" value="'+esc(u?.orijinalAdi||u?.urunAdi||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px">Tedarikçi *</div><select class="fi" id="ui-ted" style="width:120px;font-size:11px"><option value="">—</option>'+cariList.map(function(c){return '<option value="'+esc(c.name)+'"'+(u?.tedarikci===c.name?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'
-    +'<div><div class="fl" style="font-size:8px">Kategori *</div><input class="fi" id="ui-kat" style="width:85px;font-size:11px" value="'+esc(u?.kategori||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px">Birim</div><select class="fi" id="ui-birim" style="width:60px;font-size:11px">'+(typeof URUN_BIRIMLER!=='undefined'?URUN_BIRIMLER:['Adet','Kg','Lt','Mt','Ton','Paket']).map(function(b){return '<option value="'+b+'"'+(u?.birim===b?' selected':'')+'>'+b+'</option>';}).join('')+'</select></div>'
-    +'<div><div class="fl" style="font-size:8px">KDV%</div><input class="fi" type="number" id="ui-kdv" style="width:42px;font-size:11px" value="'+(u?.kdvOrani||20)+'"></div>'
-    +'<button onclick="window._saveUrunInline()" style="padding:5px 12px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;height:30px">Kaydet</button>'
-    +'<button onclick="var el=document.getElementById(\'ui-expand\');el.style.display=el.style.display===\'none\'?\'block\':\'none\'" style="padding:5px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t2);font-size:10px;cursor:pointer;font-family:inherit;height:30px">Genişlet ▾</button></div>'
-    +'<div id="ui-expand" style="display:none;padding:10px 14px;border-top:0.5px solid var(--b);background:var(--s2)">'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">'
-    +'<div><div class="fl" style="font-size:8px;color:#DC2626">Standart Ad (EN)</div><input class="fi" id="ui-std" style="font-size:11px" value="'+esc(u?.standartAdi||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px;color:#DC2626">GTİP</div><input class="fi" id="ui-gtip" style="font-size:11px" value="'+esc(u?.gtip||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px;color:#DC2626">Menşei</div><input class="fi" id="ui-mensei" style="font-size:11px" value="'+esc(u?.mensei||'')+'"></div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">'
-    +'<div><div class="fl" style="font-size:8px">Marka</div><input class="fi" id="ui-marka" style="font-size:11px" value="'+esc(u?.marka||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px">Net Ağ.(kg)</div><input class="fi" type="number" id="ui-net" style="font-size:11px" value="'+(u?.netAgirlik||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px">Brüt Ağ.</div><input class="fi" type="number" id="ui-brut" style="font-size:11px" value="'+(u?.brutAgirlik||'')+'"></div>'
-    +'<div><div class="fl" style="font-size:8px;color:#F59E0B">IMO</div><select class="fi" id="ui-imo" style="font-size:11px"><option value="H"'+(u?.imolu!=='E'?' selected':'')+'>Hayır</option><option value="E"'+(u?.imolu==='E'?' selected':'')+'>Evet</option></select></div></div>'
-    +'<input type="hidden" id="ui-eid" value="'+(u?.id||'')+'"></div>';
+  var L = 'font-size:8px;color:var(--t3);margin-bottom:1px'; var LR = L + ';color:#DC2626';
+  var I = 'font-size:11px;padding:4px 6px'; var chg = 'oninput="window._urunCalcKPI?.()"';
+  var menseiOpts = URUN_MENSEI_LIST.map(function(m){return '<option value="'+m+'"'+(u?.mensei===m?' selected':'')+'>'+m+'</option>';}).join('');
+  var birimOpts = (typeof URUN_BIRIMLER !== 'undefined' ? URUN_BIRIMLER : ['Adet','Kg','Lt','Mt','Ton','Paket']).map(function(b){return '<option value="'+b+'"'+(u?.birim===b?' selected':'')+'>'+b+'</option>';}).join('');
+  var secS = 'cursor:pointer;padding:8px 14px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:11px;font-weight:700;color:var(--t);display:flex;align-items:center;justify-content:space-between';
+  form.innerHTML = ''
+    // Başlık + KPI bar
+    + '<div style="padding:8px 14px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between"><span>'+(u?'✏️ '+esc(u.duayKodu||''):'+ Yeni Ürün (28 alan)')+'</span><button onclick="document.getElementById(\'urun-inline-form\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
+    + '<div style="padding:6px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;background:var(--s2);border-radius:2px;overflow:hidden"><div id="ui-kpi-bar" style="height:100%;width:0%;background:var(--ac);border-radius:2px;transition:width .2s"></div></div><span id="ui-kpi-lbl" style="font-size:9px;color:var(--t3);white-space:nowrap">0/22</span></div>'
+    // AŞAMA 0: Tedarikçi
+    + '<div style="padding:8px 14px;border-bottom:0.5px solid var(--b);display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">'
+    + '<div><div class="fl" style="'+LR+'">Tedarikçi *</div><select class="fi" id="ui-ted" style="width:140px;'+I+'" '+chg+'><option value="">— Seçin —</option>'+cariList.map(function(c){return '<option value="'+esc(c.name)+'"'+(u?.tedarikci===c.name?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'
+    + '<div><div class="fl" style="'+L+'">Sistem Kodu</div><input class="fi" id="ui-kod" style="width:120px;'+I+';background:var(--s2)" value="'+esc(u?.duayKodu||'Otomatik')+'" readonly></div>'
+    + '<input type="hidden" id="ui-eid" value="'+(u?.id||'')+'">'
+    + '</div>'
+    // AŞAMA 1: Kimlik + Stratejik
+    + '<div style="'+secS+'" onclick="window._urunToggleSection(1)">Aşama 1 — Kimlik ve Stratejik Lojistik <span style="font-size:12px">▾</span></div>'
+    + '<div id="ui-sec-1" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div class="fl" style="'+LR+'">Fatura Ürün Adı *</div><input class="fi" id="ui-ad" style="'+I+'" value="'+esc(u?.orijinalAdi||u?.urunAdi||'')+'" '+chg+'></div>'
+    + '<div><div class="fl" style="'+LR+'">Kategori *</div><input class="fi" id="ui-kat" style="'+I+'" value="'+esc(u?.kategori||'')+'" '+chg+'></div>'
+    + '<div><div class="fl" style="'+LR+'">Marka *</div><input class="fi" id="ui-marka" style="'+I+'" value="'+esc(u?.marka||'')+'" '+chg+'></div>'
+    + '<div><div class="fl" style="'+LR+'">Menşei *</div><select class="fi" id="ui-mensei" style="'+I+'" '+chg+'><option value="">—</option>'+menseiOpts+'</select></div>'
+    + '<div><div class="fl" style="'+LR+'">Net Ağ. (kg) *</div><input class="fi" type="number" id="ui-net" style="'+I+'" value="'+(u?.netAgirlik||'')+'" step="0.01" '+chg+'></div>'
+    + '<div><div class="fl" style="'+L+'">Birim</div><select class="fi" id="ui-birim" style="'+I+'">'+birimOpts+'</select></div>'
+    + '<div><div class="fl" style="'+L+'">Ürün Ölçü En(cm)</div><input class="fi" type="number" id="ui-en" style="'+I+'" value="'+(u?.paketEn||'')+'" oninput="window._urunCalcKonteyner?.();window._urunCalcKPI?.()"></div>'
+    + '<div><div class="fl" style="'+L+'">Boy(cm)</div><input class="fi" type="number" id="ui-boy" style="'+I+'" value="'+(u?.paketBoy||'')+'" oninput="window._urunCalcKonteyner?.();window._urunCalcKPI?.()"></div>'
+    + '</div>'
+    // AŞAMA 2: Dökümantasyon
+    + '<div style="'+secS+'" onclick="window._urunToggleSection(2)">Aşama 2 — Dökümantasyon <span style="font-size:12px">▾</span></div>'
+    + '<div id="ui-sec-2" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div class="fl" style="'+LR+'">Standart Ad (EN) *</div><input class="fi" id="ui-std" style="'+I+'" value="'+esc(u?.standartAdi||'')+'" placeholder="Only English" '+chg+'></div>'
+    + '<div><div class="fl" style="'+LR+'">GTİP (12 hane) *</div><input class="fi" id="ui-gtip" style="'+I+'" value="'+esc(u?.gtip||'')+'" placeholder="XXXX.XX.XX.XX.XX" maxlength="17" '+chg+'></div>'
+    + '<div style="grid-column:span 2"><div class="fl" style="'+LR+'">Teknik Açıklama * (min 20 kar)</div><textarea class="fi" id="ui-teknik" rows="2" style="'+I+';resize:none" '+chg+'>'+esc(u?.teknikAciklama||'')+'</textarea></div>'
+    + '</div>'
+    // AŞAMA 3: Gümrük + Teknik
+    + '<div style="'+secS+'" onclick="window._urunToggleSection(3)">Aşama 3 — Gümrük ve Teknik <span style="font-size:12px">▾</span></div>'
+    + '<div id="ui-sec-3" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div class="fl" style="'+LR+'">Materyal *</div><input class="fi" id="ui-materyal" style="'+I+'" value="'+esc(u?.materyal||'')+'" placeholder="SS304, Rubber..." '+chg+'></div>'
+    + '<div><div class="fl" style="'+LR+'">Brüt Ağ. (kg) *</div><input class="fi" type="number" id="ui-brut" style="'+I+'" value="'+(u?.brutAgirlik||'')+'" step="0.01" '+chg+'></div>'
+    + '<div><div class="fl" style="'+L+'">KDV %</div><input class="fi" type="number" id="ui-kdv" style="'+I+'" value="'+(u?.kdvOrani||20)+'"></div>'
+    + '<div><div class="fl" style="'+L+';color:#F59E0B">IMO</div><select class="fi" id="ui-imo" style="'+I+'"><option value="H"'+(u?.imolu!=='E'?' selected':'')+'>Hayır</option><option value="E"'+(u?.imolu==='E'?' selected':'')+'>Evet</option></select></div>'
+    + '<div><div class="fl" style="'+L+'">DİB</div><select class="fi" id="ui-dib" style="'+I+'"><option value="H"'+(u?.dibli!=='E'?' selected':'')+'>Hayır</option><option value="E"'+(u?.dibli==='E'?' selected':'')+'>Evet</option></select></div>'
+    + '<div><div class="fl" style="'+L+'">İhracat Kısıtı</div><select class="fi" id="ui-kisit" style="'+I+'"><option value="H"'+(u?.ihracatKisiti!=='E'?' selected':'')+'>Hayır</option><option value="E"'+(u?.ihracatKisiti==='E'?' selected':'')+'>Evet</option></select></div>'
+    + '<div style="grid-column:span 2"><div class="fl" style="'+L+'">Yükseklik(cm)</div><input class="fi" type="number" id="ui-yuk" style="'+I+'" value="'+(u?.paketYukseklik||'')+'" oninput="window._urunCalcKonteyner?.();window._urunCalcKPI?.()"></div>'
+    + '</div>'
+    // AŞAMA 4: Paketleme + Operasyon
+    + '<div style="'+secS+'" onclick="window._urunToggleSection(4)">Aşama 4 — Paketleme ve Operasyon <span style="font-size:12px">▾</span></div>'
+    + '<div id="ui-sec-4" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div class="fl" style="'+LR+'">Paket Tipi *</div><select class="fi" id="ui-pkt-tip" style="'+I+'" '+chg+'>'+URUN_PAKET_TIPI.map(function(p){return '<option value="'+p+'"'+(u?.paketTipi===p?' selected':'')+'>'+p+'</option>';}).join('')+'</select></div>'
+    + '<div><div class="fl" style="'+LR+'">Paket En(cm) *</div><input class="fi" type="number" id="ui-pkt-en" style="'+I+'" value="'+(u?.paketEn||'')+'" oninput="window._urunCalcKonteyner?.();window._urunCalcKPI?.()"></div>'
+    + '<div><div class="fl" style="'+LR+'">Paket Boy *</div><input class="fi" type="number" id="ui-pkt-boy" style="'+I+'" value="'+(u?.paketBoy||'')+'" oninput="window._urunCalcKonteyner?.();window._urunCalcKPI?.()"></div>'
+    + '<div><div class="fl" style="'+LR+'">Paket Yük *</div><input class="fi" type="number" id="ui-pkt-yuk" style="'+I+'" value="'+(u?.paketYukseklik||'')+'" oninput="window._urunCalcKonteyner?.();window._urunCalcKPI?.()"></div>'
+    + '<div><div class="fl" style="'+LR+'">Paket İçi Adet *</div><input class="fi" type="number" id="ui-pkt-adet" style="'+I+'" value="'+(u?.paketAdet||'')+'" '+chg+'></div>'
+    + '<div><div class="fl" style="'+LR+'">Ürün Yapısı *</div><select class="fi" id="ui-yapisi" style="'+I+'" '+chg+'>'+URUN_YAPI.map(function(y){return '<option value="'+y+'"'+(u?.urunYapisi===y?' selected':'')+'>'+y+'</option>';}).join('')+'</select></div>'
+    + '<div style="grid-column:span 2" id="ui-konteyner-info"></div>'
+    + '</div>'
+    // AŞAMA 5: Lojistik + Finansal
+    + '<div style="'+secS+'" onclick="window._urunToggleSection(5)">Aşama 5 — Lojistik ve Finansal <span style="font-size:12px">▾</span></div>'
+    + '<div id="ui-sec-5" style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div class="fl" style="'+LR+'">POL Liman *</div><select class="fi" id="ui-pol" style="'+I+'" '+chg+'>'+URUN_LIMAN.map(function(l){return '<option value="'+l+'"'+(u?.polDefault===l?' selected':'')+'>'+l+'</option>';}).join('')+'</select></div>'
+    + '<div><div class="fl" style="'+L+'">POD Varış</div><input class="fi" id="ui-pod" style="'+I+'" value="'+esc(u?.podDefault||'')+'"></div>'
+    + '<div><div class="fl" style="'+LR+'">Incoterms *</div><select class="fi" id="ui-inco" style="'+I+'" '+chg+'>'+URUN_INCOTERMS.map(function(i2){return '<option value="'+i2+'"'+(u?.incotermsDefault===i2?' selected':'')+'>'+i2+'</option>';}).join('')+'</select></div>'
+    + '<div><div class="fl" style="'+LR+'">Ödeme Koşulu *</div><select class="fi" id="ui-odeme-kosul" style="'+I+'" '+chg+'>'+URUN_ODEME.map(function(o){return '<option value="'+o+'"'+(u?.odemeKosulu===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
+    + '<div><div class="fl" style="'+LR+'">Alış Fiyatı *</div><input class="fi" type="number" id="ui-alis-fiyat" style="'+I+'" value="'+(u?.alisFiyat||'')+'" step="0.01" '+chg+'></div>'
+    + '<div><div class="fl" style="'+L+'">Döviz</div><select class="fi" id="ui-alis-doviz" style="'+I+'"><option value="USD"'+(u?.alisDoviz==='USD'?' selected':'')+'>USD</option><option value="EUR"'+(u?.alisDoviz==='EUR'?' selected':'')+'>EUR</option><option value="TRY"'+(u?.alisDoviz==='TRY'?' selected':'')+'>TRY</option></select></div>'
+    + '<div><div class="fl" style="'+L+'">Hedef Satış</div><input class="fi" type="number" id="ui-hedef-satis" style="'+I+'" value="'+(u?.hedefSatisFiyat||'')+'"></div>'
+    + '<div><div class="fl" style="'+LR+'">Lead Time (gün) *</div><input class="fi" type="number" id="ui-lead" style="'+I+'" value="'+(u?.leadTime||'')+'" '+chg+'></div>'
+    + '</div>'
+    // Kaydet
+    + '<div style="padding:10px 14px;background:var(--s2);display:flex;align-items:center;justify-content:flex-end;gap:8px">'
+    + '<button onclick="document.getElementById(\'urun-inline-form\')?.remove()" class="btn">İptal</button>'
+    + '<button onclick="window._saveUrunInline()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Kaydet</button></div>';
   cont.insertBefore(form, cont.firstChild);
   form.scrollIntoView({behavior:'smooth'});
+  window._urunCalcKPI?.();
+  window._urunCalcKonteyner?.();
 };
+
+/** Ürün kaydet — 28 alan, validasyon, changeLog */
 window._saveUrunInline = function() {
-  var ad = (document.getElementById('ui-ad')?.value||'').trim();
-  var ted = document.getElementById('ui-ted')?.value||'';
-  var kat = (document.getElementById('ui-kat')?.value||'').trim();
-  if (!ad) { window.toast?.('Ürün adı zorunlu','err'); return; }
-  if (!ted) { window.toast?.('Tedarikçi zorunlu','err'); return; }
-  if (!kat) { window.toast?.('Kategori zorunlu','err'); return; }
-  var eid = parseInt(document.getElementById('ui-eid')?.value||'0');
+  var g = function(id) { return document.getElementById(id); };
+  var v = function(id) { return (g(id)?.value||'').trim(); };
+  // Zorunlu alan kontrolü
+  var errors = [];
+  if (!v('ui-ted')) errors.push('Tedarikçi');
+  if (!v('ui-ad')) errors.push('Fatura Ürün Adı');
+  if (!v('ui-kat')) errors.push('Kategori');
+  if (!v('ui-marka')) errors.push('Marka');
+  if (!v('ui-mensei')) errors.push('Menşei');
+  if (!v('ui-std')) errors.push('Standart Ad (EN)');
+  if (!v('ui-gtip')) errors.push('GTİP');
+  if (!v('ui-net')) errors.push('Net Ağırlık');
+  if (!v('ui-brut')) errors.push('Brüt Ağırlık');
+  if (!v('ui-teknik') || v('ui-teknik').length < 20) errors.push('Teknik Açıklama (min 20 karakter)');
+  if (!v('ui-materyal')) errors.push('Materyal');
+  if (errors.length) { window.toast?.(errors.length + ' zorunlu alan eksik: ' + errors.slice(0,3).join(', ') + (errors.length>3?' ...':''), 'err'); return; }
+  // Validasyonlar
+  var stdAd = v('ui-std');
+  if (stdAd && !/^[a-zA-Z0-9\s\-\/\(\)\.,%]+$/.test(stdAd)) { window.toast?.('Standart Ad: Sadece İngilizce karakter kullanın', 'err'); return; }
+  var net = parseFloat(v('ui-net')) || 0;
+  var brut = parseFloat(v('ui-brut')) || 0;
+  if (brut > 0 && net > brut) { window.toast?.('Gümrük Uyarı: Net ağırlık brütten büyük olamaz!', 'err'); return; }
+
+  var ted = v('ui-ted');
+  var eid = parseInt(v('ui-eid') || '0');
   var d = typeof loadUrunler === 'function' ? loadUrunler() : [];
-  var entry = { orijinalAdi:ad, urunAdi:ad, tedarikci:ted, saticiId:ted, kategori:kat, birim:document.getElementById('ui-birim')?.value||'Adet', kdvOrani:parseInt(document.getElementById('ui-kdv')?.value||'20'), standartAdi:(document.getElementById('ui-std')?.value||'').trim(), gtip:(document.getElementById('ui-gtip')?.value||'').trim(), mensei:(document.getElementById('ui-mensei')?.value||'').trim(), marka:(document.getElementById('ui-marka')?.value||'').trim(), netAgirlik:parseFloat(document.getElementById('ui-net')?.value||'0')||null, brutAgirlik:parseFloat(document.getElementById('ui-brut')?.value||'0')||null, imolu:document.getElementById('ui-imo')?.value||'H', status:'aktif', ts:new Date().toISOString() };
-  if (eid) { var it=d.find(function(x){return x.id===eid;}); if(it){if(!it.changeLog)it.changeLog=[];it.changeLog.push({ts:entry.ts,by:window.Auth?.getCU?.()?.id,action:'güncelleme'});Object.assign(it,entry);} }
-  else { entry.id=typeof generateNumericId==='function'?generateNumericId():Date.now(); entry.duayKodu='DUAY-'+(ted||'X').replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase()+'-'+String(d.length+1).padStart(3,'0'); entry.urunKodu=entry.duayKodu; entry.createdBy=window.Auth?.getCU?.()?.id; entry.createdAt=entry.ts; entry.changeLog=[{ts:entry.ts,by:entry.createdBy,action:'oluşturma'}]; d.unshift(entry); }
-  if (typeof storeUrunler==='function') storeUrunler(d);
+  var now = new Date().toISOString();
+  var cu = window.Auth?.getCU?.();
+  var entry = {
+    orijinalAdi: v('ui-ad'), urunAdi: v('ui-ad'), tedarikci: ted, saticiId: ted,
+    kategori: v('ui-kat'), marka: v('ui-marka'), mensei: v('ui-mensei'),
+    birim: g('ui-birim')?.value||'Adet', kdvOrani: parseInt(v('ui-kdv')||'20'),
+    standartAdi: stdAd, gtip: v('ui-gtip'), teknikAciklama: v('ui-teknik'),
+    materyal: v('ui-materyal'),
+    netAgirlik: net || null, brutAgirlik: brut || null,
+    paketEn: parseFloat(v('ui-en'))||null, paketBoy: parseFloat(v('ui-boy'))||null,
+    paketYukseklik: parseFloat(v('ui-yuk'))||null,
+    imolu: g('ui-imo')?.value||'H', dibli: g('ui-dib')?.value||'H',
+    ihracatKisiti: g('ui-kisit')?.value||'H',
+    paketTipi: v('ui-pkt-tip'), paketAdet: parseInt(v('ui-pkt-adet'))||null,
+    urunYapisi: v('ui-yapisi'),
+    polDefault: v('ui-pol'), podDefault: v('ui-pod'),
+    incotermsDefault: v('ui-inco'), odemeKosulu: v('ui-odeme-kosul'),
+    alisFiyat: parseFloat(v('ui-alis-fiyat'))||null, alisDoviz: g('ui-alis-doviz')?.value||'USD',
+    hedefSatisFiyat: parseFloat(v('ui-hedef-satis'))||null,
+    leadTime: parseInt(v('ui-lead'))||null,
+    status: 'aktif', ts: now, updatedAt: now,
+  };
+  // Hedef marj hesapla
+  if (entry.alisFiyat && entry.hedefSatisFiyat) {
+    entry.hedefMarj = Math.round((entry.hedefSatisFiyat - entry.alisFiyat) / entry.alisFiyat * 100);
+  }
+  // İhracat bilgileri tamamlanma
+  entry.ihracatBilgileriTam = typeof _calcIhracatTam === 'function' ? _calcIhracatTam(entry) : false;
+  entry.tamamlanmaPct = typeof _calcIhracatPct === 'function' ? _calcIhracatPct(entry) : 0;
+
+  if (eid) {
+    var it = d.find(function(x){return x.id === eid;});
+    if (it) {
+      if (!it.changeLog) it.changeLog = [];
+      it.changeLog.push({ts: now, by: cu?.id, name: cu?.name, action: 'güncelleme'});
+      Object.assign(it, entry);
+    }
+  } else {
+    entry.id = typeof generateNumericId === 'function' ? generateNumericId() : Date.now();
+    var tedKod = (ted||'X').replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase();
+    var sira = String(d.length + 1).padStart(5,'0');
+    entry.duayKodu = 'DU' + sira + '.' + tedKod;
+    entry.urunKodu = entry.duayKodu;
+    entry.createdBy = cu?.id; entry.createdAt = now;
+    entry.changeLog = [{ts: now, by: cu?.id, name: cu?.name, action: 'oluşturma'}];
+    d.unshift(entry);
+  }
+  if (typeof storeUrunler === 'function') storeUrunler(d);
   document.getElementById('urun-inline-form')?.remove();
-  window.toast?.(eid?'Güncellendi ✓':'Ürün eklendi: '+entry.duayKodu,'ok');
+  window.toast?.(eid ? 'Güncellendi ✓' : 'Ürün eklendi: ' + entry.duayKodu, 'ok');
   window.renderUrunler?.();
 };
