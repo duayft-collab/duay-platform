@@ -60,6 +60,24 @@
     if (fn) {
       try { fn(); } catch (e) { console.warn('[app_patch] render hatası:', id, e); }
     }
+    // FIX 5: Özlü söz banner — her panel geçişinde inject et
+    var ozluModulMap = {odemeler:'nakit-akisi',satinalma:'satinalma',kargo:'kargo',pusula:'pusula',admin:'dashboard'};
+    var ozluKey = ozluModulMap[id];
+    if (ozluKey && typeof window._renderOzluSozBanner === 'function') {
+      setTimeout(function() {
+        var panel = document.getElementById('panel-' + id);
+        if (!panel) return;
+        var existing = panel.querySelector('.ozlu-soz-injected');
+        if (existing) return; // zaten var
+        var sticky = panel.querySelector('[style*="position:sticky"]');
+        if (sticky) {
+          var div = document.createElement('div');
+          div.className = 'ozlu-soz-injected';
+          div.innerHTML = window._renderOzluSozBanner(ozluKey);
+          sticky.parentNode.insertBefore(div, sticky.nextSibling);
+        }
+      }, 200);
+    }
   }
 
   // App nesnesini patch et

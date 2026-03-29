@@ -4068,10 +4068,35 @@ window._openGorevPerformans = function() {
           + '<div style="font-size:10px;text-align:right;color:' + (p.gecikmi ? '#DC2626' : '#16A34A') + '">' + p.gecikmi + ' gecikmiş</div>'
           + '<div style="font-size:10px;text-align:right;color:var(--t3)">Ort: ' + p.ortGecikme + 'g</div></div>';
       }).join('')
-    + '</div><div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right"><button class="btn" onclick="document.getElementById(\'mo-gorev-perf\')?.remove()">Kapat</button></div></div>';
+    + '</div><div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px"><button onclick="window._exportGorevPerfXlsx?.()" style="padding:5px 12px;border:0.5px solid var(--ac);border-radius:6px;background:none;color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button class="btn" onclick="document.getElementById(\'mo-gorev-perf\')?.remove()">Kapat</button></div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
   setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/** FIX 3: Görev performans Excel export */
+window._exportGorevPerfXlsx = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenmedi', 'err'); return; }
+  var users = loadUsers().filter(function(u) { return u.status === 'active'; });
+  var tasks = loadTasks().filter(function(t) { return !t.isDeleted; });
+  var todayS = new Date().toISOString().slice(0, 10);
+  var rows = [['Personel', 'Departman', 'Toplam Görev', 'Tamamlanan', 'Tamamlanma %', 'Gecikmiş', 'Ort. Gecikme (gün)', 'Performans Skoru']];
+  users.forEach(function(u) {
+    var my = tasks.filter(function(t) { return t.uid === u.id; });
+    var tamamlanan = my.filter(function(t) { return t.done; }).length;
+    var toplam = my.length;
+    var gecikmi = my.filter(function(t) { return !t.done && t.due && t.due < todayS; }).length;
+    var gecikGun = 0, gecikSayisi = 0;
+    my.forEach(function(t) { if (t.done && t.completedAt && t.due) { var fark = Math.ceil((new Date(t.completedAt) - new Date(t.due)) / 86400000); if (fark > 0) { gecikGun += fark; gecikSayisi++; } } });
+    var ortGecikme = gecikSayisi ? Math.round(gecikGun / gecikSayisi * 10) / 10 : 0;
+    var oran = toplam ? Math.round(tamamlanan / toplam * 100) : 0;
+    var skor = Math.max(0, Math.min(100, Math.round(oran - gecikmi * 5 - ortGecikme * 2)));
+    rows.push([u.name, u.dept || '—', toplam, tamamlanan, oran, gecikmi, ortGecikme, skor]);
+  });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Görev Performans');
+  XLSX.writeFile(wb, 'gorev-performans-' + todayS + '.xlsx');
+  window.toast?.('Görev performans raporu indirildi ✓', 'ok');
 };
 
 const Pusula = {
