@@ -84,7 +84,8 @@ function injectAllModals() {
         </div>
         <div>
           <div class="fl" style="margin-bottom:5px">PERSONEL</div>
-          <select class="fi" id="tk-user" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.()"></select>
+          <select class="fi" id="tk-user" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.();window.populatePusUsers?.()"></select>
+          <div id="tk-atama-oneri" style="min-height:14px"></div>
         </div>
         <div>
           <div class="fl" style="margin-bottom:5px">DURUM</div>
@@ -92,6 +93,7 @@ function injectAllModals() {
             <option value="todo">📋 Yapılacak</option>
             <option value="inprogress">🔄 Devam</option>
             <option value="review">👀 İnceleme</option>
+            <option value="waiting">⏳ Beklemede</option>
             <option value="done">✅ Tamam</option>
           </select>
         </div>

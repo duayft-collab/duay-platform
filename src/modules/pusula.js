@@ -408,6 +408,8 @@ function getStatusPill(t) {
   if (t.done || t.status === 'done')        return `<span class="tk-status-pill done">✅ Tamam</span>`;
   if (t.status === 'inprogress')            return `<span class="tk-status-pill inprogress">🔄 Devam</span>`;
   if (t.status === 'review')               return `<span class="tk-status-pill review">👀 İnceleme</span>`;
+  if (t.status === 'waiting')              return `<span class="tk-status-pill" style="background:#D9770618;color:#D97706;font-weight:600;font-size:10px;padding:2px 8px;border-radius:99px">⏳ Beklemede</span>`;
+  if (isTaskBlocked(t))                    return `<span class="tk-status-pill" style="background:#DC262618;color:#DC2626;font-weight:600;font-size:10px;padding:2px 8px;border-radius:99px">🚫 Engellendi</span>`;
   return '';
 }
 
@@ -430,7 +432,27 @@ function _pusInitials(name = '') {
 // BÖLÜM 3 — ANA RENDER
 // ════════════════════════════════════════════════════════════════
 
-/** Kullanıcı seçici dropdown'larını doldurur */
+/** İş yükü hesapla — FIX 9 akıllı atama asistanı */
+function _calcWorkload(userId) {
+  var tasks = loadTasks().filter(function(t) { return !t.isDeleted; });
+  var todayS = new Date().toISOString().slice(0, 10);
+  var acik = tasks.filter(function(t) { return t.uid === userId && !t.done && t.status !== 'done'; }).length;
+  var gecikmi = tasks.filter(function(t) { return t.uid === userId && !t.done && t.status !== 'done' && t.due && t.due < todayS; }).length;
+  // Ortalama tamamlama süresi (gün)
+  var tamamlanan = tasks.filter(function(t) { return t.uid === userId && t.done && t.created_at && t.completedAt; });
+  var ortSure = 0;
+  if (tamamlanan.length) {
+    var topSure = tamamlanan.reduce(function(s, t) { return s + Math.ceil((new Date(t.completedAt) - new Date(t.created_at)) / 86400000); }, 0);
+    ortSure = Math.round(topSure / tamamlanan.length * 10) / 10;
+  }
+  // Skor: acik*1 + gecikmi*3 + ortSure*0.5
+  var skor = acik + gecikmi * 3 + ortSure * 0.5;
+  var seviye = skor <= 5 ? 'low' : skor <= 12 ? 'mid' : 'high';
+  return { acik: acik, gecikmi: gecikmi, ortSure: ortSure, skor: Math.round(skor * 10) / 10, seviye: seviye };
+}
+window._calcWorkload = _calcWorkload;
+
+/** Kullanıcı seçici dropdown'larını doldurur — akıllı atama ile */
 function populatePusUsers() {
   const users = loadUsers();
   const sel   = g('pus-usel');
@@ -442,9 +464,29 @@ function populatePusUsers() {
   }
   if (tsel) {
     if (window.isAdmin?.()) {
-      tsel.innerHTML = users.map(u =>
-        `<option value="${u.id}">${u.name} (${u.role})</option>`
-      ).join('');
+      // FIX 9: İş yükü bilgisi ile
+      var wlColors = { low: '🟢', mid: '🟡', high: '🔴' };
+      var wlLabels = { low: 'Uygun', mid: 'Orta', high: 'Yüksek' };
+      var uOpts = users.map(function(u) {
+        var wl = _calcWorkload(u.id);
+        return '<option value="' + u.id + '">' + u.name + ' · ' + wlColors[wl.seviye] + ' ' + wl.acik + ' açık' + (wl.gecikmi ? ' · ' + wl.gecikmi + ' gecikmiş' : '') + '</option>';
+      });
+      tsel.innerHTML = uOpts.join('');
+      // Öneri paneli
+      var recEl = g('tk-atama-oneri');
+      if (recEl) {
+        var sorted = users.map(function(u) { return { id: u.id, name: u.name, wl: _calcWorkload(u.id) }; }).sort(function(a, b) { return a.wl.skor - b.wl.skor; });
+        var best = sorted[0];
+        var worst = sorted.length > 1 ? sorted[sorted.length - 1] : null;
+        var html = '';
+        if (best && best.wl.seviye === 'low') {
+          html += '<div style="font-size:10px;color:#16A34A;margin-top:4px">⭐ Önerilen: <b>' + best.name + '</b> — en düşük iş yükü' + (best.wl.gecikmi === 0 ? ', 0 gecikmiş' : '') + '</div>';
+        }
+        if (worst && worst.wl.gecikmi > 0) {
+          html += '<div style="font-size:10px;color:#D97706;margin-top:2px">⚠ Dikkat: <b>' + worst.name + '</b> — ' + worst.wl.gecikmi + ' gecikmiş görevi var</div>';
+        }
+        recEl.innerHTML = html;
+      }
     } else {
       const uid = _getCU()?.id || 0;
       tsel.innerHTML = `<option value="${uid}">${escapeHtml(_getCU()?.name || 'Ben')}</option>`;
@@ -670,6 +712,7 @@ function renderPusula() {
   else if (PUS_QUICK_FILTER === 'inprogress') fl = fl.filter(t => t.status === 'inprogress');
   else if (PUS_QUICK_FILTER === 'review')     fl = fl.filter(t => t.status === 'review');
   else if (PUS_QUICK_FILTER === 'done')       fl = fl.filter(t => t.done || t.status === 'done');
+  else if (PUS_QUICK_FILTER === 'waiting')     fl = fl.filter(t => t.status === 'waiting');
   else if (PUS_QUICK_FILTER === 'overdue')    fl = fl.filter(t => !t.done && t.status !== 'done' && t.due && t.due < todayS);
 
   // "Yalnızca benimkiler" görünümü
@@ -1612,8 +1655,19 @@ function quickUpdateTask(id, field, val) {
   const t = d.find(x => x.id === id);
   if (!t) return;
   if (!_canEditTask(t)) { window.toast?.('Bu görevi güncelleme yetkiniz yok', 'err'); return; }
+  // FIX 7D: Gecikmiş görev durum değişikliğinde sebep zorunlu
+  var todayS = new Date().toISOString().slice(0, 10);
+  if (field === 'status' && t.due && t.due < todayS && !t.done && val !== 'done' && !t.gecikmeSebebi) {
+    var sebep = prompt('Bu görev gecikmiş. Lütfen gecikme sebebini girin:');
+    if (!sebep || !sebep.trim()) { window.toast?.('Gecikme sebebi zorunlu', 'err'); return; }
+    t.gecikmeSebebi = sebep.trim();
+    t.gecikmeTs = new Date().toISOString();
+  }
   t[field] = val;
-  if (field === 'status') t.done = val === 'done';
+  if (field === 'status') {
+    t.done = val === 'done';
+    if (val === 'done') t.completedAt = new Date().toISOString();
+  }
   saveTasks(d);
   renderPusula();
   window.toast?.(field === 'status' ? 'Durum güncellendi' : 'Öncelik güncellendi', 'ok');
@@ -1842,7 +1896,24 @@ function toggleTask(id, done) {
   if (!t) return;
   if (!_canEditTask(t)) { window.toast?.('Bu görevin durumunu değiştirme yetkiniz yok', 'err'); return; }
   t.done   = done;
-  if (done) t.status = 'done';
+  if (done) {
+    t.status = 'done';
+    t.completedAt = new Date().toISOString();
+    // FIX 7B: Tekrarlayan görev — tamamlanınca yeni oluştur
+    if (t.repeat && t.repeat !== 'none') {
+      var newDue = null;
+      if (t.due) {
+        var base = new Date(t.due);
+        if (t.repeat === 'daily') base.setDate(base.getDate() + 1);
+        else if (t.repeat === 'weekly') base.setDate(base.getDate() + 7);
+        else if (t.repeat === 'monthly') base.setMonth(base.getMonth() + 1);
+        newDue = base.toISOString().slice(0, 10);
+      }
+      var newId = typeof generateNumericId === 'function' ? generateNumericId() : Date.now();
+      d.push({ id: newId, title: t.title, desc: t.desc, pri: t.pri, due: newDue, uid: t.uid, status: 'todo', done: false, department: t.department, repeat: t.repeat, jobId: t.jobId, created_at: new Date().toISOString(), createdBy: t.createdBy, subTasks: [], source: 'repeat' });
+      window.toast?.('Tekrarlayan görev oluşturuldu: ' + (newDue || '') + ' ✓', 'info');
+    }
+  }
   else if (t.status === 'done') t.status = 'todo';
   saveTasks(d);
   renderPusula();
@@ -3953,6 +4024,53 @@ function openDeptManager() {
   setTimeout(() => mo.classList.add('open'), 10);
 }
 window.openDeptManager = openDeptManager;
+
+/** FIX 7E: Görev performans skoru — kişi bazlı rapor */
+window._openGorevPerformans = function() {
+  if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var users = loadUsers().filter(function(u) { return u.status === 'active'; });
+  var tasks = loadTasks().filter(function(t) { return !t.isDeleted; });
+  var todayS = new Date().toISOString().slice(0, 10);
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var data = users.map(function(u) {
+    var my = tasks.filter(function(t) { return t.uid === u.id; });
+    var tamamlanan = my.filter(function(t) { return t.done; }).length;
+    var toplam = my.length;
+    var gecikmi = my.filter(function(t) { return !t.done && t.due && t.due < todayS; }).length;
+    // Ortalama gecikme
+    var gecikGun = 0;
+    var gecikSayisi = 0;
+    my.forEach(function(t) {
+      if (t.done && t.completedAt && t.due) {
+        var fark = Math.ceil((new Date(t.completedAt) - new Date(t.due)) / 86400000);
+        if (fark > 0) { gecikGun += fark; gecikSayisi++; }
+      }
+    });
+    var ortGecikme = gecikSayisi ? Math.round(gecikGun / gecikSayisi * 10) / 10 : 0;
+    var oran = toplam ? Math.round(tamamlanan / toplam * 100) : 0;
+    var skor = Math.min(100, Math.round(oran - gecikmi * 5 - ortGecikme * 2));
+    skor = Math.max(0, skor);
+    return { id: u.id, ad: u.name, dept: u.dept || u.access?.[0] || '—', toplam: toplam, tamamlanan: tamamlanan, gecikmi: gecikmi, oran: oran, ortGecikme: ortGecikme, skor: skor };
+  }).sort(function(a, b) { return b.skor - a.skor; });
+  var ex = document.getElementById('mo-gorev-perf'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-gorev-perf'; mo.style.zIndex = '2200';
+  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:15px;font-weight:700">Görev Performans Skoru</div>'
+    + '<div style="padding:16px 20px;max-height:55vh;overflow-y:auto">'
+    + data.map(function(p) {
+        var sc = p.skor >= 70 ? '#16A34A' : p.skor >= 40 ? '#D97706' : '#DC2626';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--b)">'
+          + '<div style="width:32px;height:32px;border-radius:50%;background:' + sc + '18;color:' + sc + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">' + p.skor + '</div>'
+          + '<div style="flex:1"><div style="font-size:12px;font-weight:600">' + esc(p.ad) + '</div><div style="font-size:9px;color:var(--t3)">' + esc(p.dept) + '</div></div>'
+          + '<div style="font-size:10px;text-align:right;color:var(--t3)">' + p.tamamlanan + '/' + p.toplam + ' (%' + p.oran + ')</div>'
+          + '<div style="font-size:10px;text-align:right;color:' + (p.gecikmi ? '#DC2626' : '#16A34A') + '">' + p.gecikmi + ' gecikmiş</div>'
+          + '<div style="font-size:10px;text-align:right;color:var(--t3)">Ort: ' + p.ortGecikme + 'g</div></div>';
+      }).join('')
+    + '</div><div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right"><button class="btn" onclick="document.getElementById(\'mo-gorev-perf\')?.remove()">Kapat</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
 
 const Pusula = {
   init: _pusInit,
