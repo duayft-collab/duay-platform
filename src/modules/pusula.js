@@ -1944,6 +1944,8 @@ function delTask(id) {
   window.confirmModal('"' + (t.title||'Görev') + '" silinsin mi?', {
     title: 'Görev Sil', danger: true, confirmText: 'Evet, Sil',
     onConfirm: () => {
+      // Çöp kutusuna ekle
+      if (typeof addToTrash === 'function') addToTrash(t, 'Görev', 'tasks');
       // Soft delete — K06 Anayasa kuralı
       t.isDeleted = true;
       t.deletedAt = nowTs();

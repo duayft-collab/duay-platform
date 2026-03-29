@@ -602,36 +602,55 @@ function delEtkinlikItem(id){
 function renderTrashPanel() {
   const p = _gst('panel-trash');
   if (!p) return;
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){return s;};
   if (!p.dataset.injected) {
     p.dataset.injected = '1';
-    p.innerHTML = `
-      <div class="ph">
-        <div><div class="pht">🗑 Çöp Kutusu</div><div class="phs">Son 30 gün içinde silinen kayıtlar</div></div>
-        <div class="ur">
-          ${_isAdminSt() ? `<button class="btn btns btnd" onclick="emptyTrash()">🗑 Tümünü Temizle</button>` : ''}
-        </div>
-      </div>
-      <div id="trash-list"></div>`;
+    p.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
+      + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Çöp Kutusu</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Son 30 gün içinde silinen kayıtlar</div></div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button onclick="window._trashRestoreSelected?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Seçilenleri Geri Al</button>'
+      + (_isAdminSt() ? '<button onclick="emptyTrash()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:none;color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit">Tümünü Temizle</button>' : '')
+      + '</div></div>'
+      + '<div id="trash-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
+      + '<div style="padding:8px 24px;border-bottom:0.5px solid var(--b);display:flex;gap:8px;flex-wrap:wrap">'
+      + '<input class="fi" id="trash-search" placeholder="Ara..." oninput="renderTrashPanel()" style="width:140px;font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:7px">'
+      + '<select class="fi" id="trash-modul" onchange="renderTrashPanel()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Modüller</option><option value="Ödeme">Ödeme</option><option value="Görev">Görev</option><option value="Cari">Cari</option><option value="Ürün">Ürün</option><option value="Satınalma">Satınalma</option></select>'
+      + '</div></div>'
+      + '<div style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div id="trash-list"></div></div>';
   }
-  const items = (typeof loadTrash === 'function') ? loadTrash() : [];
-  const cont  = _gst('trash-list'); if (!cont) return;
-  if (!items.length) {
-    cont.innerHTML = `<div style="text-align:center;padding:48px;color:var(--t2)"><div style="font-size:40px;margin-bottom:12px">🗑</div><div>Çöp kutusu boş</div></div>`;
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  items.slice(0,50).forEach(item => {
-    const card = document.createElement('div');
-    card.style.cssText = 'background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px';
-    card.innerHTML = `
-      <div style="font-size:20px">🗑</div>
-      <div style="flex:1">
-        <div style="font-weight:500;font-size:13px">${item.name || item.title || JSON.stringify(item).slice(0,50)}</div>
-        <div style="font-size:11px;color:var(--t3)">${item.type || 'Kayıt'} · ${item.ts || ''}</div>
-      </div>`;
-    frag.appendChild(card);
-  });
-  cont.replaceChildren(frag);
+  var items = (typeof loadTrash === 'function') ? loadTrash() : [];
+  var today = new Date();
+  var thisMonth = today.toISOString().slice(0,7);
+  // Stats
+  var buAy = items.filter(function(i){return (i.deletedAt||'').startsWith(thisMonth);}).length;
+  var yakinda = items.filter(function(i){if (!i.expiresAt) return false; var kalan=Math.ceil((new Date(i.expiresAt)-today)/86400000); return kalan<=7 && kalan>0;}).length;
+  var statsEl = _gst('trash-stats');
+  if (statsEl) statsEl.innerHTML = '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam</div><div style="font-size:22px;font-weight:600">'+items.length+'</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Bu Ay Silinen</div><div style="font-size:22px;font-weight:600;color:#D97706">'+buAy+'</div></div>'
+    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">7 Günde Silinecek</div><div style="font-size:22px;font-weight:600;color:#DC2626">'+yakinda+'</div></div>';
+  // Filtre
+  var q = (_gst('trash-search')?.value||'').toLowerCase();
+  var mf = _gst('trash-modul')?.value||'';
+  var fl = items;
+  if (q) fl = fl.filter(function(i){return (i.name||'').toLowerCase().includes(q)||(i.moduleName||'').toLowerCase().includes(q);});
+  if (mf) fl = fl.filter(function(i){return i.moduleName===mf;});
+  // Badge güncelle
+  var badge = _gst('nb-trash-b');
+  if (badge) { badge.textContent = items.length; badge.style.display = items.length ? '' : 'none'; }
+  var cont = _gst('trash-list'); if (!cont) return;
+  if (!fl.length) { cont.innerHTML = '<div style="text-align:center;padding:48px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">🗑</div><div>Çöp kutusu boş</div></div>'; return; }
+  cont.innerHTML = fl.slice(0,50).map(function(item) {
+    var kalan = item.expiresAt ? Math.ceil((new Date(item.expiresAt) - today) / 86400000) : 30;
+    var kalanColor = kalan <= 7 ? '#DC2626' : kalan <= 14 ? '#D97706' : '#16A34A';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      + '<input type="checkbox" class="trash-cb" value="'+item.id+'" style="cursor:pointer;flex-shrink:0">'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">'+esc(item.name||'—')+'</div><div style="font-size:10px;color:var(--t3)">'+esc(item.moduleName||'')+ ' · '+esc(item.deletedByName||'')+ ' · '+(item.deletedAt||'').slice(0,10)+'</div></div>'
+      + '<span style="font-size:8px;padding:2px 6px;border-radius:99px;background:'+kalanColor+'18;color:'+kalanColor+';font-weight:600;white-space:nowrap">'+kalan+' gün</span>'
+      + '<button onclick="window._trashRestore?.('+item.id+')" style="padding:2px 8px;border:none;border-radius:99px;background:#16A34A18;color:#16A34A;font-size:9px;font-weight:600;cursor:pointer;font-family:inherit">Geri Al</button>'
+      + (_isAdminSt() ? '<button onclick="window._trashPermanentDel?.('+item.id+')" style="padding:2px 8px;border:none;border-radius:99px;background:#DC262618;color:#DC2626;font-size:9px;font-weight:600;cursor:pointer;font-family:inherit">Kalıcı Sil</button>' : '')
+      + '</div>';
+  }).join('');
 }
 
 function emptyTrash() {
@@ -648,6 +667,56 @@ function emptyTrash() {
     }
   });
 }
+
+/** Tek kaydı geri yükle */
+window._trashRestore = function(trashId) {
+  var trash = typeof loadTrash === 'function' ? loadTrash() : [];
+  var item = trash.find(function(t){return t.id === trashId;});
+  if (!item || !item.originalData) { window.toast?.('Kayıt bulunamadı','err'); return; }
+  var orig = item.originalData;
+  delete orig.isDeleted; delete orig.deletedAt; delete orig.deletedBy; delete orig.deletedReason;
+  // Orijinal koleksiyona geri ekle
+  var col = item.originalCollection;
+  var restoreMap = {
+    odemeler: {load:'loadOdm',store:'storeOdm'}, tahsilat: {load:'loadTahsilat',store:'storeTahsilat'},
+    tasks: {load:'loadTasks',store:'saveTasks'}, cari: {load:'loadCari',store:'storeCari'},
+    satinalma: {load:'loadSatinalma',store:'storeSatinalma'}, urunler: {load:'loadUrunler',store:'storeUrunler'},
+    alisTeklifleri: {load:'loadAlisTeklifleri',store:'storeAlisTeklifleri'},
+    satisTeklifleri: {load:'loadSatisTeklifleri',store:'storeSatisTeklifleri'},
+    stok: {load:'loadStok',store:'storeStok'},
+  };
+  var map = restoreMap[col];
+  if (map && typeof window[map.load] === 'function' && typeof window[map.store] === 'function') {
+    var d = window[map.load]();
+    // Mükerrer kontrol
+    if (!d.some(function(x){return x.id === orig.id;})) d.unshift(orig);
+    else { var ex = d.find(function(x){return x.id === orig.id;}); if (ex) { delete ex.isDeleted; delete ex.deletedAt; } }
+    window[map.store](d);
+  }
+  // Trash'ten kaldır
+  trash = trash.filter(function(t){return t.id !== trashId;});
+  if (typeof storeTrash === 'function') storeTrash(trash);
+  renderTrashPanel();
+  window.toast?.('Geri yüklendi: ' + (item.name||'—') + ' ✓', 'ok');
+  window.logActivity?.('system', 'Çöp kutusundan geri yüklendi: ' + (item.name||''));
+};
+
+/** Toplu geri yükle */
+window._trashRestoreSelected = function() {
+  var checked = document.querySelectorAll('.trash-cb:checked');
+  if (!checked.length) { window.toast?.('Kayıt seçin','warn'); return; }
+  Array.from(checked).forEach(function(cb) { window._trashRestore(parseInt(cb.value)); });
+};
+
+/** Kalıcı sil (admin only) */
+window._trashPermanentDel = function(trashId) {
+  if (!_isAdminSt()) return;
+  var trash = typeof loadTrash === 'function' ? loadTrash() : [];
+  trash = trash.filter(function(t){return t.id !== trashId;});
+  if (typeof storeTrash === 'function') storeTrash(trash);
+  renderTrashPanel();
+  window.toast?.('Kalıcı silindi ✓', 'ok');
+};
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 7 — HESAP GEÇMİŞİ PANELİ inject

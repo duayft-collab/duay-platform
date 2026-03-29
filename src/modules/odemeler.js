@@ -1664,6 +1664,8 @@ function delOdm(id) {
     danger: true,
     confirmText: 'Evet, Sil',
     onConfirm: function() {
+      // Çöp kutusuna ekle
+      if (typeof addToTrash === 'function') addToTrash(o, 'Ödeme', 'odemeler');
       // Soft delete — K06 Anayasa kuralı
       o.isDeleted = true;
       o.deletedAt = _nowTso();

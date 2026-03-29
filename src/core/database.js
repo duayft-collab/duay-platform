@@ -220,6 +220,31 @@ function _mergeDataSets(localKey, fsData, collection) {
   return result;
 }
 
+/** FIX 4: Otomatik çöp kutusu temizliği — 30 günü dolan kayıtlar */
+(function _autoCleanTrash() {
+  setTimeout(function() {
+    try {
+      var trash = _read(KEYS.trash);
+      if (!Array.isArray(trash) || !trash.length) return;
+      var now = new Date();
+      var before = trash.length;
+      trash = trash.filter(function(item) {
+        if (!item.expiresAt) return true;
+        return new Date(item.expiresAt) > now;
+      });
+      if (trash.length < before) {
+        var silinen = before - trash.length;
+        _write(KEYS.trash, trash);
+        var _fp = _fsPath('trash'); if (_fp) _syncFirestore(_fp, trash);
+        console.info('[DB] Çöp kutusu otomatik temizlik:', silinen, 'kayıt silindi');
+        if (window.isAdmin?.()) {
+          window.addNotif?.('🗑', silinen + ' kayıt çöp kutusundan otomatik silindi (30 gün doldu)', 'info', 'system');
+        }
+      }
+    } catch(e) {}
+  }, 6000);
+})();
+
 /**
  * Merge sonucunu Firestore'a yazar — kendi echo'sunu engeller.
  * @param {string} path  Firestore doc path
@@ -922,6 +947,32 @@ const DEFAULT_HDF = [
 
 /** @returns {Array<Object>} */ function loadTrash()   { const d = _read(KEYS.trash); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 500 kayıt */ function storeTrash(d) { _write(KEYS.trash, d.slice(0, 500)); var _fp = _fsPath('trash'); if (_fp) _syncFirestore(_fp, d.slice(0, 500)); }
+/**
+ * Silinen kaydı çöp kutusuna ekler.
+ * @param {Object} item Orijinal kayıt
+ * @param {string} moduleName Modül adı (Ödeme, Görev, Cari, Ürün vb.)
+ * @param {string} collection Orijinal koleksiyon adı
+ */
+function addToTrash(item, moduleName, collection) {
+  if (!item) return;
+  var cu = window.Auth?.getCU?.();
+  var now = new Date();
+  var expires = new Date(now.getTime() + 30 * 86400000);
+  var trash = loadTrash();
+  trash.unshift({
+    id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(),
+    originalId: item.id || item._id,
+    originalCollection: collection || '',
+    originalData: JSON.parse(JSON.stringify(item)),
+    name: item.name || item.title || item.teklifNo || item.urunAdi || item.piNo || '—',
+    moduleName: moduleName || 'Bilinmeyen',
+    deletedBy: cu?.id,
+    deletedByName: cu?.name || '—',
+    deletedAt: now.toISOString(),
+    expiresAt: expires.toISOString(),
+  });
+  storeTrash(trash);
+}
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16 — RUTİN ÖDEMELER
@@ -1754,7 +1805,7 @@ const DB = {
   // Hedefler
   loadHdf, storeHdf,
   // Çöp
-  loadTrash, storeTrash,
+  loadTrash, storeTrash, addToTrash,
   // Ödemeler
   loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar, loadNavlun, storeNavlun, loadUrunler, storeUrunler, loadAlisTeklifleri, storeAlisTeklifleri, loadSatisTeklifleri, storeSatisTeklifleri, loadTeklifSartlar, storeTeklifSartlar, loadUpdateLog, storeUpdateLog, loadFikirler, storeFikirler,
   // İzin & Tebligat & Temizlik
@@ -1810,7 +1861,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler',
+    'loadTrash','storeTrash','addToTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',
