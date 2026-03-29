@@ -134,8 +134,17 @@ function renderCrm(){
   _stcLegacy('crm-active',  _crmStats.filter(c=>c.status==='aktif').length);
   _stcLegacy('crm-lead',    _crmStats.filter(c=>c.status==='lead').length);
   _stcLegacy('crm-pipeline',_crmStats.filter(c=>['teklif','muzakere'].includes(c.status)).length);
-  const totalVal=_crmStats.reduce((a,c)=>a+(c.value||0),0);
+  var totalVal=_crmStats.reduce((a,c)=>a+(c.value||0),0);
   _stcLegacy('crm-value',totalVal.toLocaleString('tr-TR'));
+  // Dönüşüm oranı: aktif / (lead + teklif + muzakere + aktif)
+  var donusumBase = _crmStats.filter(c=>['lead','teklif','muzakere','aktif'].includes(c.status)).length;
+  var donusumOk = _crmStats.filter(c=>c.status==='aktif').length;
+  var donusumOran = donusumBase > 0 ? Math.round(donusumOk / donusumBase * 100) : 0;
+  _stcLegacy('crm-donusum', '%' + donusumOran);
+  // Bu ay görüşme
+  var thisMonth = new Date().toISOString().slice(0,7);
+  var gorusmeSayisi = (typeof loadGrt === 'function' ? loadGrt() : []).filter(function(g2) { return (g2.ts||'').startsWith(thisMonth); }).length;
+  _stcLegacy('crm-gorusme', gorusmeSayisi);
   const nb=_gc('nb-crm-b');
   if(nb){const n=_crmStats.filter(c=>c.status==='lead').length;nb.textContent=n;nb.style.display=n>0?'inline':'none';}
   const cont=_gc('crm-view-cont');if(!cont)return;

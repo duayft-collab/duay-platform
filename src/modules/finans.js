@@ -88,6 +88,21 @@ async function fetchLiveRates(){
 // ════════════════════════════════════════════════════════════════
 
 function renderFinans(){
+  // Gerçek veri metrikleri
+  var odm = typeof loadOdm === 'function' ? loadOdm().filter(function(o){return !o.isDeleted;}) : [];
+  var tah2 = typeof loadTahsilat === 'function' ? loadTahsilat().filter(function(t){return !t.isDeleted;}) : [];
+  var thisMonth = new Date().toISOString().slice(0,7);
+  var toplamVarlik = tah2.filter(function(t){return t.collected;}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0);
+  var toplamBorc = odm.filter(function(o){return !o.paid;}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+  var netPoz2 = toplamVarlik - toplamBorc;
+  var aylikAkis = tah2.filter(function(t){return t.collected && (t.due||t.ts||'').startsWith(thisMonth);}).reduce(function(s,t){return s+(parseFloat(t.amountTRY||t.amount)||0);},0)
+    - odm.filter(function(o){return o.paid && (o.due||o.ts||'').startsWith(thisMonth);}).reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+  var fEl = function(id) { var el = document.getElementById(id); if (el) return el; return null; };
+  var fSet = function(id, v) { var el = fEl(id); if (el) el.textContent = v; };
+  fSet('fin-varlik', '₺' + Math.round(toplamVarlik).toLocaleString('tr-TR'));
+  fSet('fin-borc', '₺' + Math.round(toplamBorc).toLocaleString('tr-TR'));
+  fSet('fin-net', (netPoz2>=0?'+':'') + '₺' + Math.round(Math.abs(netPoz2)).toLocaleString('tr-TR'));
+  fSet('fin-akis', (aylikAkis>=0?'+':'') + '₺' + Math.round(Math.abs(aylikAkis)).toLocaleString('tr-TR'));
   const curs=loadCurrencies();
   // Para birimi toggle butonları
   const toggleCont=_gf('currency-toggles');
