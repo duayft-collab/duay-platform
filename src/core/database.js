@@ -139,7 +139,8 @@ function _write(key, value) {
   var now = new Date().toISOString();
   // Son güncelleme zamanını kaydet
   try { localStorage.setItem('ak_db_last_write', now); } catch(e) {}
-  // Array verilerinde updatedAt timestamp ekle (çakışma çözümü için)
+  // Array verilerinde updatedAt — henüz yoksa ilk kez ata
+  // Değiştirilen kayıtlar kendi updatedAt'lerini store fonksiyonunda güncellemeli
   if (Array.isArray(value)) {
     value.forEach(function(item) {
       if (item && typeof item === 'object' && (item.id || item._id)) {
