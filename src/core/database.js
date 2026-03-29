@@ -136,8 +136,17 @@ function _read(key, fallback = null) {
  * @returns {boolean} Başarılı mı?
  */
 function _write(key, value) {
+  var now = new Date().toISOString();
   // Son güncelleme zamanını kaydet
-  try { localStorage.setItem('ak_db_last_write', new Date().toISOString()); } catch(e) {}
+  try { localStorage.setItem('ak_db_last_write', now); } catch(e) {}
+  // Array verilerinde updatedAt timestamp ekle (çakışma çözümü için)
+  if (Array.isArray(value)) {
+    value.forEach(function(item) {
+      if (item && typeof item === 'object' && (item.id || item._id)) {
+        if (!item.updatedAt) item.updatedAt = now;
+      }
+    });
+  }
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
@@ -188,13 +197,15 @@ function _mergeDataSets(localKey, fsData, collection) {
     if (!existing) {
       mergedMap[key] = item;
     } else {
-      // Daha güncel olanı seç (ts veya syncedAt karşılaştır)
-      var fsTs = item.ts || item.syncedAt || item.updatedAt || '';
-      var localTs = existing.ts || existing.syncedAt || existing.updatedAt || '';
+      // Daha güncel olanı seç (updatedAt > ts > syncedAt karşılaştır)
+      var fsTs = item.updatedAt || item.ts || item.syncedAt || '';
+      var localTs = existing.updatedAt || existing.ts || existing.syncedAt || '';
       if (fsTs >= localTs) {
         mergedMap[key] = item;
       }
-      // else localStorage'daki daha yeni → koru
+      // isDeleted propagation: silinen taraf daha yeniyse silinmiş ver kazanır
+      if (item.isDeleted && fsTs >= localTs) mergedMap[key] = item;
+      if (existing.isDeleted && localTs >= fsTs) mergedMap[key] = existing;
     }
   });
 
@@ -294,7 +305,8 @@ function _syncFirestore(path, data, mode = 'set') {
     _writingNow[collection] = Date.now() + 5000;
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
-    console.log('[FIRESTORE WRITE]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : typeof data, '| Auth:', !!_fbAuth?.currentUser);
+    // Verbose log yalnızca debug modda
+    if (localStorage.getItem('ak_debug')) console.log('[FS:W]', path, Array.isArray(data) ? data.length : typeof data);
     if (mode === 'set') {
       // Önce mevcut Firestore verisini oku, merge et, sonra yaz (veri kaybı önleme)
       if (Array.isArray(data)) {
@@ -809,7 +821,7 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 }
 
 /** @returns {Array<string>} */ function loadKargoFirmalar() { const d = _read(KEYS.kargoFirms); return (Array.isArray(d) && d.length) ? d : DEFAULT_KARGO_FIRMALAR; }
-/** @param {Array<string>} d */ function storeKargoFirmalar(d) { _write(KEYS.kargoFirms, d); }
+/** @param {Array<string>} d */ function storeKargoFirmalar(d) { _write(KEYS.kargoFirms, d); var _fp = _fsPath('kargoFirms'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array<Object>} */ function loadKonteyn()       { const d = _read(KEYS.konteyner);  return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d);
@@ -817,16 +829,16 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 }
 
 /** @returns {Object}        */ function loadKargoHistory()  { const d = _read(KEYS.kargoHistory);  return (d && typeof d==='object') ? d : {}; }
-/** @param  {Object} d       */ function storeKargoHistory(d) { _write(KEYS.kargoHistory, d); }
+/** @param  {Object} d       */ function storeKargoHistory(d) { _write(KEYS.kargoHistory, d); var _fp = _fsPath('kargoHistory'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoMasraf()   { const d = _read(KEYS.kargoMasraf);   return (d && typeof d==='object') ? d : {}; }
-/** @param  {Object} d       */ function storeKargoMasraf(d) { _write(KEYS.kargoMasraf, d); }
+/** @param  {Object} d       */ function storeKargoMasraf(d) { _write(KEYS.kargoMasraf, d); var _fp = _fsPath('kargoMasraf'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoBelge()    { const d = _read(KEYS.kargoBelge);    return (d && typeof d==='object') ? d : {}; }
-/** @param  {Object} d       */ function storeKargoBelge(d)  { _write(KEYS.kargoBelge, d); }
+/** @param  {Object} d       */ function storeKargoBelge(d)  { _write(KEYS.kargoBelge, d); var _fp = _fsPath('kargoBelge'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoChecks()   { const d = _read(KEYS.kargoChecks); return (d && typeof d === 'object') ? d : {}; }
-/** @param {Object} d        */ function storeKargoChecks(d) { _write(KEYS.kargoChecks, d); }
+/** @param {Object} d        */ function storeKargoChecks(d) { _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 10 — PİRİM
@@ -848,7 +860,7 @@ const DEFAULT_PIRIM_PARAMS = [
 }
 
 /** @returns {Array<Object>} */ function loadPirimParams()    { const d = _read(KEYS.pirimParams); return (Array.isArray(d) && d.length) ? d : DEFAULT_PIRIM_PARAMS; }
-/** @param {Array<Object>} d */ function storePirimParams(d)  { _write(KEYS.pirimParams, d); }
+/** @param {Array<Object>} d */ function storePirimParams(d)  { _write(KEYS.pirimParams, d); var _fp = _fsPath('pirimParams'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 11 — STOK & NUMUNE
@@ -908,7 +920,7 @@ const DEFAULT_HDF = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadTrash()   { const d = _read(KEYS.trash); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 500 kayıt */ function storeTrash(d) { _write(KEYS.trash, d.slice(0, 500)); }
+/** @param {Array<Object>} d Son 500 kayıt */ function storeTrash(d) { _write(KEYS.trash, d.slice(0, 500)); var _fp = _fsPath('trash'); if (_fp) _syncFirestore(_fp, d.slice(0, 500)); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16 — RUTİN ÖDEMELER
@@ -1019,7 +1031,7 @@ function storeIzin(d)  {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadTemizlik()   { const d = _read(KEYS.temizlik); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeTemizlik(d) { _write(KEYS.temizlik, d); }
+/** @param {Array<Object>} d */ function storeTemizlik(d) { _write(KEYS.temizlik, d); var _fp = _fsPath('temizlik'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 20 — KPI & PERFORMANS
@@ -1035,10 +1047,10 @@ const DEFAULT_KPI = [
 }
 
 /** @returns {Array<Object>} */ function loadKpiLog()      { const d = _read(KEYS.kpiLog); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 2000 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 2000)); }
+/** @param {Array<Object>} d Son 2000 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 2000)); var _fp = _fsPath('kpiLog'); if (_fp) _syncFirestore(_fp, d.slice(0, 2000)); }
 
 /** @returns {Array<Object>} */ function loadKarar()       { const d = _read(KEYS.kararlar); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeKarar(d)     { _write(KEYS.kararlar, d); }
+/** @param {Array<Object>} d */ function storeKarar(d)     { _write(KEYS.kararlar, d); var _fp = _fsPath('kararlar'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 21 — EVRAK & ARŞİV
@@ -1059,7 +1071,7 @@ const DEFAULT_ARSIV_BELGELER = [
 }
 
 /** @returns {Array<Object>} */ function loadDolaplar()        { const d = _read(KEYS.arsivDolaplar); return Array.isArray(d) ? d : DEFAULT_DOLAPLAR; }
-/** @param {Array<Object>} d */ function storeDolaplar(d)      { _write(KEYS.arsivDolaplar, d); }
+/** @param {Array<Object>} d */ function storeDolaplar(d)      { _write(KEYS.arsivDolaplar, d); var _fp = _fsPath('arsivDolaplar'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array<Object>} */ function loadArsivBelgeler()   { const d = _read(KEYS.arsivBelgeler); return Array.isArray(d) ? d : DEFAULT_ARSIV_BELGELER; }
 /** @param {Array<Object>} d */ function storeArsivBelgeler(d) { _write(KEYS.arsivBelgeler, d);
@@ -1268,7 +1280,7 @@ function _listenCollection(collection, localKey, onUpdate) {
 
     const _base2 = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
     const docRef = FB_DB.collection(_base2).doc(collection);
-    console.log('[LISTEN]', collection, '→', _base2 + '/' + collection, '| Auth:', !!window.Auth?.getFBAuth?.()?.currentUser);
+    if (localStorage.getItem('ak_debug')) console.log('[LISTEN]', collection, '→', _base2 + '/' + collection);
     // Anlık ilk çekme — Firestore + localStorage merge (veri kaybı önleme)
     docRef.get().then(snap => {
       if (!snap.exists) return;
@@ -1537,6 +1549,12 @@ function startRealtimeSync() {
     ['fikirler',      KEYS.fikirler,      () => window._onFikirUpdate?.()],
     ['alisTeklifleri', KEYS.alisTeklifleri, () => window.renderAlisTeklifleri?.()],
     ['satisTeklifleri',KEYS.satisTeklifleri,() => window.renderSatisTeklifleri?.()],
+    ['teklifSartlar', KEYS.teklifSartlar, () => {}],
+    ['updateLog',     KEYS.updateLog,     () => {}],
+    ['trash',         KEYS.trash,         () => {}],
+    ['kararlar',      KEYS.kararlar,      () => {}],
+    ['suggestions',   KEYS.suggestions,   () => {}],
+    ['links',         KEYS.links,         () => {}],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
     ['taskChats',     KEYS.taskChats,     () => {
       // Açık chat varsa yenile
