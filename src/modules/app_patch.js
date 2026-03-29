@@ -1564,12 +1564,14 @@ window._openSatisModal = function(fromAlis) {
     + '<div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--b);background:var(--s2)">'
     + '<select class="fi" id="st-musteri" style="width:150px;font-size:11px"><option value="" data-cid="">Müşteri *</option>'+musteriList.map(function(c){return '<option value="'+esc(c.name)+'" data-cid="'+c.id+'">'+esc(c.name)+'</option>';}).join('')+'</select>'
     + '<select class="fi" id="st-job" style="width:140px;font-size:11px"><option value="">Job ID (opsiyonel)</option>'+(function(){var tl=typeof loadTasks==='function'?loadTasks().filter(function(t){return !t.done&&!t.isDeleted&&t.jobId;}):[];return tl.length?tl.slice(0,50).map(function(t){return '<option value="'+esc(t.jobId)+'">'+esc((t.jobId||'')+' — '+(t.title||'').slice(0,25))+'</option>';}).join(''):'<option disabled>Açık görev yok</option>';}())+'</select>'
-    + '<select class="fi" id="st-cur" style="width:70px;font-size:11px"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select>'
+    + '<select class="fi" id="st-cur" style="width:70px;font-size:11px" onchange="window._stBankaPreview?.()"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select>'
     + '<input type="date" class="fi" id="st-gecerlilik" style="width:120px;font-size:11px" title="Geçerlilik">'
     + '<select class="fi" id="st-teslim" style="width:80px;font-size:11px"><option>FOB</option><option>CFR</option><option>CIF</option><option>EXW</option><option>DDP</option></select>'
     + '<input class="fi" id="st-odeme" placeholder="Ödeme koşulu" style="width:160px;font-size:11px" value="35% deposit, 65% before dispatch">'
     + '<input type="hidden" id="st-alis-id" value="' + (fromAlis?.id||'') + '">'
     + '</div>'
+    // Banka önizleme
+    + '<div id="st-banka-preview" style="padding:6px 14px;font-size:9px;color:var(--t3);border-bottom:0.5px solid var(--b);display:none"></div>'
     // Ürün satırları
     + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:950px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)">'
     + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:left">No</th>'
@@ -1592,7 +1594,8 @@ window._openSatisModal = function(fromAlis) {
     + '</div>'
     // Özet + kaydet
     + '<div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid var(--b);background:var(--s2)">'
-    + '<button onclick="window._stAddRow()" style="padding:4px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:none;color:#0F6E56;font-size:11px;cursor:pointer;font-family:inherit">+ Ürün Ekle</button>'
+    + '<div style="display:flex;gap:6px"><button onclick="window._stAddRow()" style="padding:4px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:none;color:#0F6E56;font-size:11px;cursor:pointer;font-family:inherit">+ Ürün Ekle</button>'
+    + '<button onclick="window._stNavlunDagit?.()" style="padding:4px 12px;border:0.5px solid var(--b);border-radius:5px;background:none;color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit">Navlun Dağıt</button></div>'
     + '<div style="display:flex;align-items:center;gap:16px">'
     + '<span style="font-size:10px;color:var(--t3)">Toplam: <b style="font-size:14px;color:var(--t)" id="st-toplam">0</b></span>'
     + '<span style="font-size:10px;color:var(--t3)">Kâr: <b style="font-size:14px;color:#16A34A" id="st-kar">0</b></span>'
@@ -1601,6 +1604,7 @@ window._openSatisModal = function(fromAlis) {
   cont.insertBefore(form, cont.firstChild);
   // İlk satır ekle (alış teklifinden geliyorsa doldur)
   window._stAddRow(fromAlis);
+  window._stBankaPreview?.();
   form.scrollIntoView({behavior:'smooth'});
 };
 
@@ -1625,7 +1629,9 @@ window._stAddRow = function(fromAlis) {
     + '<td style="padding:4px 6px"><input type="number" class="fi st-marj" style="width:50px;font-size:11px;padding:3px 4px;text-align:center" value="15" oninput="window._stCalcAll()"></td>'
     + '<td style="padding:4px 6px;text-align:right;font-weight:600;color:var(--ac)" class="st-satis">—</td>'
     + '<td style="padding:4px 6px;text-align:right;font-weight:600" class="st-row-toplam">—</td>'
-    + '<td style="padding:4px 6px"><button onclick="this.closest(\'tr\').remove();window._stCalcAll()" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px">×</button></td>';
+    + '<td style="padding:4px 6px;display:flex;gap:2px">'
+    + '<button onclick="var s=this.closest(\'tr\').querySelector(\'.st-urun-sel\');if(s&&s.value)window._showPriceHistory?.(parseInt(s.value))" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:10px" title="Geçmiş fiyat">📋</button>'
+    + '<button onclick="this.closest(\'tr\').remove();window._stCalcAll()" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px">×</button></td>';
   tbody.appendChild(tr);
   window._stCalcAll();
 };
@@ -1636,6 +1642,12 @@ window._stRowUrunChange = function(sel) {
   if (!opt || !opt.value) return;
   // Birim otomatik
   tr.querySelector('.st-birim').textContent = opt.dataset.birim || '—';
+  // FIX 5: Tedarikçi adı göster
+  var urunData = (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(u) { return u.id === parseInt(opt.value); });
+  var selTd = sel.closest('td');
+  var tedSpan = selTd?.querySelector('.st-tedarikci-label');
+  if (!tedSpan && selTd) { tedSpan = document.createElement('div'); tedSpan.className = 'st-tedarikci-label'; tedSpan.style.cssText = 'font-size:9px;color:var(--t3);margin-top:1px'; selTd.appendChild(tedSpan); }
+  if (tedSpan) tedSpan.textContent = urunData?.tedarikci ? 'Tedarikçi: ' + urunData.tedarikci : '';
   // FIX 2: Alış fiyatı otomatik — son geçerli alış teklifinden
   var urunId = parseInt(opt.value);
   var alisTeklifler = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
@@ -1682,6 +1694,18 @@ window._stCalcAll = function() {
   var cur = document.getElementById('st-cur')?.value||'USD';
   var tEl = document.getElementById('st-toplam'); if (tEl) tEl.textContent = toplamAll.toFixed(2)+' '+cur;
   var kEl = document.getElementById('st-kar'); if (kEl) kEl.textContent = '+'+karAll.toFixed(2)+' '+cur;
+};
+
+/** FIX 4: Banka önizleme — döviz seçimine göre */
+window._stBankaPreview = function() {
+  var el = document.getElementById('st-banka-preview'); if (!el) return;
+  var cur = document.getElementById('st-cur')?.value || 'USD';
+  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  if (!bankalar.length) { el.style.display = 'none'; return; }
+  var banka = bankalar[0];
+  var iban = cur === 'EUR' ? (banka.ibanEur || banka.iban) : cur === 'TRY' ? (banka.ibanTry || banka.iban) : banka.iban;
+  el.style.display = 'block';
+  el.innerHTML = '<span style="font-weight:600">' + (banka.name || '') + '</span> · IBAN: ' + (iban || '—') + ' · SWIFT: ' + (banka.swift || '—') + ' · ' + (banka.hesapSahibi || '');
 };
 
 // Eski tek satır _stCalc uyumluluk
@@ -1737,11 +1761,16 @@ window._saveSatisTeklif = function() {
     sartlar:typeof loadTeklifSartlar==='function'?loadTeklifSartlar().map(function(s){return s.text;}):[],
     durum:'taslak', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id
   });
+  var yeniId = d[0].id;
   if (typeof storeSatisTeklifleri === 'function') storeSatisTeklifleri(d);
   document.getElementById('satis-inline-form')?.remove();
   window._stRowCounter = 0;
   window.toast?.('Satış teklifi oluşturuldu ✓','ok');
   window.renderSatisTeklifleri?.();
+  // FIX 1: Teslim şekli → alt görev otomatik
+  if (d[0].teslimSekli && typeof window._checkIncotermsGorev === 'function') {
+    window._checkIncotermsGorev(yeniId);
+  }
 };
 
 window._printSatisTeklif = function(id) {
@@ -2453,10 +2482,11 @@ window.openTeklifSartlarPanel = function() {
   mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">Teklif Şartları Yönetimi</div>'
     + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
-    + d.map(function(s){return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b)">'
-      + '<span style="flex:1;font-size:11px;color:var(--t)">'+esc(s.text)+'</span>'
-      + '<span style="font-size:9px;color:var(--t3)">'+(s.sabit?'Sabit':'Değişken')+'</span>'
-      + '<button onclick="window._delSart('+s.id+')" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px">×</button></div>';}).join('')
+    + d.map(function(s){return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b)">'
+      + '<span style="flex:1;font-size:11px;color:var(--t)" id="sart-text-'+s.id+'">'+esc(s.text)+'</span>'
+      + '<span style="font-size:8px;padding:1px 4px;border-radius:99px;background:'+(s.sabit?'var(--s2)':'#D9770618')+';color:'+(s.sabit?'var(--t3)':'#D97706')+'">'+(s.sabit?'Sabit':'Dğşkn')+'</span>'
+      + '<button onclick="window._editSart('+s.id+')" style="background:none;border:none;color:var(--ac);cursor:pointer;font-size:10px" title="Düzenle">✏</button>'
+      + '<button onclick="window._delSart('+s.id+')" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:12px" title="Sil">×</button></div>';}).join('')
     + '<div style="display:flex;gap:6px;margin-top:10px">'
     + '<input class="fi" id="sart-yeni" placeholder="Yeni şart ekle..." style="flex:1;font-size:11px">'
     + '<button onclick="window._addSart()" style="padding:4px 12px;border:none;border-radius:5px;background:var(--ac);color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Ekle</button></div>'
@@ -2477,6 +2507,23 @@ window._delSart = function(id) {
   var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
   d = d.filter(function(s){return s.id!==id;});
   if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
+  window.openTeklifSartlarPanel();
+};
+/** FIX 7: Şart inline düzenleme */
+window._editSart = function(id) {
+  var el = document.getElementById('sart-text-' + id); if (!el) return;
+  var current = el.textContent;
+  el.innerHTML = '<div style="display:flex;gap:4px"><input class="fi" id="sart-edit-'+id+'" value="'+current.replace(/"/g,'&quot;')+'" style="flex:1;font-size:11px;padding:3px 6px"><button onclick="window._saveSartEdit('+id+')" style="padding:2px 8px;border:none;border-radius:4px;background:var(--ac);color:#fff;font-size:9px;cursor:pointer">OK</button></div>';
+  document.getElementById('sart-edit-' + id)?.focus();
+};
+window._saveSartEdit = function(id) {
+  var input = document.getElementById('sart-edit-' + id);
+  var text = (input?.value || '').trim();
+  if (!text) return;
+  var d = typeof loadTeklifSartlar === 'function' ? loadTeklifSartlar() : [];
+  var s = d.find(function(x) { return x.id === id; });
+  if (s) { s.text = text; s.ts = new Date().toISOString(); }
+  if (typeof storeTeklifSartlar === 'function') storeTeklifSartlar(d);
   window.openTeklifSartlarPanel();
 };
 
