@@ -1563,7 +1563,7 @@ window._openSatisModal = function(fromAlis) {
     + '<div style="padding:10px 14px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between"><span>+ Yeni Satış Teklifi</span><button onclick="document.getElementById(\'satis-inline-form\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
     + '<div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--b);background:var(--s2)">'
     + '<select class="fi" id="st-musteri" style="width:150px;font-size:11px"><option value="" data-cid="">Müşteri *</option>'+musteriList.map(function(c){return '<option value="'+esc(c.name)+'" data-cid="'+c.id+'">'+esc(c.name)+'</option>';}).join('')+'</select>'
-    + '<select class="fi" id="st-job" style="width:140px;font-size:11px"><option value="">Job ID (opsiyonel)</option>'+(typeof loadTasks==='function'?loadTasks().filter(function(t){return !t.done && t.jobId;}).slice(0,50).map(function(t){return '<option value="'+esc(t.jobId)+'">'+esc((t.jobId||'')+' — '+(t.title||'').slice(0,25))+'</option>';}).join(''):'')+'</select>'
+    + '<select class="fi" id="st-job" style="width:140px;font-size:11px"><option value="">Job ID (opsiyonel)</option>'+(function(){var tl=typeof loadTasks==='function'?loadTasks().filter(function(t){return !t.done&&!t.isDeleted&&t.jobId;}):[];return tl.length?tl.slice(0,50).map(function(t){return '<option value="'+esc(t.jobId)+'">'+esc((t.jobId||'')+' — '+(t.title||'').slice(0,25))+'</option>';}).join(''):'<option disabled>Açık görev yok</option>';}())+'</select>'
     + '<select class="fi" id="st-cur" style="width:70px;font-size:11px"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select>'
     + '<input type="date" class="fi" id="st-gecerlilik" style="width:120px;font-size:11px" title="Geçerlilik">'
     + '<select class="fi" id="st-teslim" style="width:80px;font-size:11px"><option>FOB</option><option>CFR</option><option>CIF</option><option>EXW</option><option>DDP</option></select>'
@@ -1582,6 +1582,14 @@ window._openSatisModal = function(fromAlis) {
     + '<th style="padding:5px 6px;font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;text-align:right">Toplam</th>'
     + '<th style="padding:5px 6px;width:30px"></th>'
     + '</tr></thead><tbody id="st-rows"></tbody></table></div>'
+    // Şartlar bölümü
+    + '<div style="padding:8px 14px;border-top:0.5px solid var(--b)">'
+    + '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Teklif Şartları</div>'
+    + '<div id="st-sartlar-list" style="font-size:10px;color:var(--t2);margin-bottom:4px">'
+    + (function(){var s=typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];return s.length?s.map(function(x,i){return '<div style="padding:1px 0">'+(i+1)+'. '+x.text+'</div>';}).join(''):'<div style="color:var(--t3)">Sabit şart tanımlı değil</div>';}())
+    + '</div>'
+    + '<input class="fi" id="st-ek-sart" placeholder="Ek şart ekle (opsiyonel)..." style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px">'
+    + '</div>'
     // Özet + kaydet
     + '<div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid var(--b);background:var(--s2)">'
     + '<button onclick="window._stAddRow()" style="padding:4px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:none;color:#0F6E56;font-size:11px;cursor:pointer;font-family:inherit">+ Ürün Ekle</button>'
@@ -1625,7 +1633,36 @@ window._stAddRow = function(fromAlis) {
 window._stRowUrunChange = function(sel) {
   var tr = sel.closest('tr'); if (!tr) return;
   var opt = sel.options[sel.selectedIndex];
-  if (opt) tr.querySelector('.st-birim').textContent = opt.dataset.birim || '—';
+  if (!opt || !opt.value) return;
+  // Birim otomatik
+  tr.querySelector('.st-birim').textContent = opt.dataset.birim || '—';
+  // FIX 2: Alış fiyatı otomatik — son geçerli alış teklifinden
+  var urunId = parseInt(opt.value);
+  var alisTeklifler = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var sonFiyat = 0;
+  // En son alış teklifini tara (ts'ye göre sıralı — unshift ile eklenir, ilk bulunan en yeni)
+  for (var i = 0; i < alisTeklifler.length; i++) {
+    var satirlar = alisTeklifler[i].satirlar || [];
+    for (var j = 0; j < satirlar.length; j++) {
+      if (satirlar[j].urunId === urunId && satirlar[j].birimFiyat > 0) {
+        sonFiyat = satirlar[j].birimFiyat;
+        break;
+      }
+    }
+    if (sonFiyat > 0) break;
+  }
+  // Ürün kataloğundaki sonFiyat'a da bak (fallback)
+  if (!sonFiyat) {
+    var urunList = typeof loadUrunler === 'function' ? loadUrunler() : [];
+    var urun = urunList.find(function(u) { return u.id === urunId; });
+    if (urun && urun.sonFiyat) sonFiyat = urun.sonFiyat;
+  }
+  var alisEl = tr.querySelector('.st-alis');
+  if (alisEl && sonFiyat > 0) {
+    alisEl.value = sonFiyat;
+    alisEl.title = 'Son alış fiyatı: ' + sonFiyat;
+  }
+  window._stCalcAll();
 };
 
 window._stCalcAll = function() {
@@ -1696,6 +1733,8 @@ window._saveSatisTeklif = function() {
     teslimSekli:document.getElementById('st-teslim')?.value||'FOB',
     odemeKosulu:(document.getElementById('st-odeme')?.value||'').trim(),
     gecerlilikTarihi:document.getElementById('st-gecerlilik')?.value||'',
+    ekSart:(document.getElementById('st-ek-sart')?.value||'').trim(),
+    sartlar:typeof loadTeklifSartlar==='function'?loadTeklifSartlar().map(function(s){return s.text;}):[],
     durum:'taslak', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id
   });
   if (typeof storeSatisTeklifleri === 'function') storeSatisTeklifleri(d);
