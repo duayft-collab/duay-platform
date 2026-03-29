@@ -1320,6 +1320,12 @@ window._approveSA = function(id) {
   window.addNotif?.('✅', 'Satınalma onaylandı: ' + (s.piNo || '') + ' — ' + _fmtSA(s.totalAmount, s.currency), 'ok', 'satinalma', s.createdBy);
   // Onay sonrası ödeme oluştur
   _saCreatePayments(s);
+  // FIX 6: İş Takip Belgesi oluştur
+  window._createIsTakipBelgesi?.(s);
+  // Sorumlu satınalmacıya bildirim
+  if (s.responsibleId) {
+    window.addNotif?.('📄', 'İş Takip Belgesi hazır: ' + (s.piNo || s.jobId) + ' — takip sorumluluğunuz', 'info', 'satinalma', s.responsibleId);
+  }
 };
 
 window._rejectSA = function(id) {
