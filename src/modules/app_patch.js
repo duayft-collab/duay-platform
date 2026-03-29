@@ -1520,18 +1520,26 @@ window.renderSatisTeklifleri = function() {
   var cont = document.getElementById('satis-list'); if (!cont) return;
   if (!d.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Henüz teklif yok</div>'; return; }
   var badgeColors = {taslak:'#9CA3AF',gonderildi:'#3B82F6',onay:'#D97706',kabul:'#16A34A',red:'#DC2626'};
+  var pillS = 'font-size:8px;padding:1px 5px;border-radius:99px;cursor:pointer;font-family:inherit;border:none;font-weight:600;';
   cont.innerHTML = d.map(function(t) {
     var bc = badgeColors[t.durum]||'#9CA3AF';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
-      + '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(t.teklifNo||'—') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün</div></div>'
-      + '<div style="font-size:12px;font-weight:600">' + (t.genelToplam||0).toLocaleString('tr-TR') + ' ' + (t.paraBirimi||'USD') + '</div>'
-      + '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + bc + '22;color:' + bc + ';font-weight:600">' + (STAT[t.durum]||'Taslak') + '</span>'
-      + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--b);border-radius:4px;background:none;cursor:pointer;font-size:9px;color:var(--t3);font-family:inherit">PDF</button>'
-      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriOnayladi?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid #16A34A;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#16A34A;font-family:inherit">Kabul</button>' : '')
-      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriReddetti?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid #DC2626;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#DC2626;font-family:inherit">Red</button>' : '')
-      + (t.durum!=='taslak' ? '<button onclick="window._reviseSatisTeklif?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid var(--ac);border-radius:4px;background:none;cursor:pointer;font-size:9px;color:var(--ac);font-family:inherit">Rev</button>' : '')
-      + (t.durum==='kabul' ? '<button onclick="window._createPR?.(' + t.id + ')" style="padding:2px 6px;border:0.5px solid #D97706;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#D97706;font-family:inherit">PR</button>' : '')
-    + '</div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      // Sol: Teklif No (bold, büyük) + müşteri + ürün sayısı
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:monospace;letter-spacing:-.3px">' + esc(t.teklifNo||'—') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div></div>'
+      // Orta: Tutar (bold, sağa yasla)
+      + '<div style="font-size:13px;font-weight:700;color:var(--t);white-space:nowrap">' + (t.genelToplam||0).toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + (t.paraBirimi||'USD') + '</span></div>'
+      // Durum badge
+      + '<span style="font-size:8px;padding:2px 8px;border-radius:99px;background:' + bc + '18;color:' + bc + ';font-weight:700;white-space:nowrap">' + (STAT[t.durum]||'Taslak') + '</span>'
+      // İşlem butonları (pill boyutunda)
+      + '<div style="display:flex;gap:3px;flex-shrink:0">'
+      + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--s2);color:var(--t3)">PDF</button>'
+      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriOnayladi?.(' + t.id + ')" style="'+pillS+'background:#16A34A18;color:#16A34A">✓</button>' : '')
+      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriReddetti?.(' + t.id + ')" style="'+pillS+'background:#DC262618;color:#DC2626">✗</button>' : '')
+      + (t.durum!=='taslak' ? '<button onclick="window._reviseSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--al);color:var(--ac)">Rev</button>' : '')
+      + (t.durum==='kabul' ? '<button onclick="window._createPR?.(' + t.id + ')" style="'+pillS+'background:#D9770618;color:#D97706">PR</button>' : '')
+      + '</div></div>';
   }).join('');
 };
 
@@ -1554,7 +1562,8 @@ window._openSatisModal = function(fromAlis) {
   form.innerHTML = ''
     + '<div style="padding:10px 14px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between"><span>+ Yeni Satış Teklifi</span><button onclick="document.getElementById(\'satis-inline-form\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
     + '<div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--b);background:var(--s2)">'
-    + '<select class="fi" id="st-musteri" style="width:160px;font-size:11px"><option value="">Müşteri *</option>'+musteriList.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>';}).join('')+'</select>'
+    + '<select class="fi" id="st-musteri" style="width:150px;font-size:11px"><option value="" data-cid="">Müşteri *</option>'+musteriList.map(function(c){return '<option value="'+esc(c.name)+'" data-cid="'+c.id+'">'+esc(c.name)+'</option>';}).join('')+'</select>'
+    + '<select class="fi" id="st-job" style="width:140px;font-size:11px"><option value="">Job ID (opsiyonel)</option>'+(typeof loadTasks==='function'?loadTasks().filter(function(t){return !t.done && t.jobId;}).slice(0,50).map(function(t){return '<option value="'+esc(t.jobId)+'">'+esc((t.jobId||'')+' — '+(t.title||'').slice(0,25))+'</option>';}).join(''):'')+'</select>'
     + '<select class="fi" id="st-cur" style="width:70px;font-size:11px"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select>'
     + '<input type="date" class="fi" id="st-gecerlilik" style="width:120px;font-size:11px" title="Geçerlilik">'
     + '<select class="fi" id="st-teslim" style="width:80px;font-size:11px"><option>FOB</option><option>CFR</option><option>CIF</option><option>EXW</option><option>DDP</option></select>'
@@ -1670,10 +1679,17 @@ window._saveSatisTeklif = function() {
   });
   if (!urunler.length) { window.toast?.('En az bir ürün gerekli','err'); return; }
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
-  var yr = new Date().getFullYear(); var seq = String(d.length+1).padStart(4,'0');
+  // Teklif No: [MüşteriID]-[YYMMDDHHMMM]
+  var musteriSel = document.getElementById('st-musteri');
+  var musteriCid = musteriSel?.options[musteriSel.selectedIndex]?.getAttribute('data-cid') || '';
+  var cariKod = musteriCid ? String(musteriCid).slice(-4) : '1018';
+  var n2 = new Date();
+  var teklifNo = cariKod + '-' + String(n2.getFullYear()).slice(2) + String(n2.getMonth()+1).padStart(2,'0') + String(n2.getDate()).padStart(2,'0') + String(n2.getHours()).padStart(2,'0') + String(n2.getMinutes()).padStart(2,'0');
+  var jobId = document.getElementById('st-job')?.value || '';
   d.unshift({
     id:typeof generateNumericId==='function'?generateNumericId():Date.now(),
-    teklifNo:(function(){var n2=new Date();return '1018-'+String(n2.getFullYear()).slice(2)+String(n2.getMonth()+1).padStart(2,'0')+String(n2.getDate()).padStart(2,'0')+String(n2.getHours()).padStart(2,'0')+String(n2.getMinutes()).padStart(2,'0');})(), musteri:musteri,
+    teklifNo:teklifNo, musteri:musteri, musteriId:musteriCid,
+    jobId:jobId,
     alisTeklifiId:parseInt(document.getElementById('st-alis-id')?.value||'0')||null,
     urunler:urunler, paraBirimi:document.getElementById('st-cur')?.value||'USD',
     genelToplam:genelToplam, tahminKar:tahminKar,
