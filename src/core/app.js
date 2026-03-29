@@ -968,9 +968,56 @@ function _renderDashboard() {
   var aktifCari = cari.filter(function(c){return c.status==='active';}).length;
   var puan2 = typeof loadPuan==='function'?loadPuan().filter(function(p){return p.date===today;}):[];
 
-  // ═══ RENDER — KOMPAKT TASARIM ═══
+  // ═══ RENDER ═══
   sg.style.display = 'none';
   var C = 'background:var(--sf);border:0.5px solid var(--b);border-radius:8px;overflow:visible';
+
+  // ── USER DASHBOARD ──────────────────────────────────────────
+  if (!isAdm) {
+    var myTasks = tasks.filter(function(t){return t.uid===cu.id && !t.done;});
+    var myGecik = myTasks.filter(function(t){return t.due && t.due < today;});
+    var myBugun = myTasks.filter(function(t){return t.due === today;});
+    var myHafta = myTasks.filter(function(t){return t.due && t.due >= today && t.due <= weekStr;});
+    var myOdm = odm.filter(function(o){return o.createdBy === cu.id;});
+    var myPending = myOdm.filter(function(o){return o.approvalStatus==='pending';});
+    var notifs = typeof loadNotifs === 'function' ? loadNotifs().filter(function(n2){return !n2.read && (!n2.targetUid || n2.targetUid === cu.id);}).slice(0,5) : [];
+    var uh = '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">';
+    uh += '<div style="font-size:16px;font-weight:700;color:var(--t)">Merhaba ' + esc(cu.name.split(' ')[0]) + '!</div>';
+    uh += '<div style="font-size:11px;color:var(--t3);margin-top:-6px">Bugün ne yapmalısın?</div>';
+    // 4 kart
+    uh += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">';
+    uh += '<div style="'+C+';padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:'+(myGecik.length?'#DC2626':'var(--t)')+'">'+myTasks.length+'</div><div style="font-size:9px;color:var(--t3)">Açık Görev</div>'+(myGecik.length?'<div style="font-size:8px;color:#DC2626;font-weight:600">'+myGecik.length+' gecikmiş</div>':'')+'</div>';
+    uh += '<div style="'+C+';padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:#DC2626">'+myBugun.length+'</div><div style="font-size:9px;color:var(--t3)">Bugün Deadline</div></div>';
+    uh += '<div style="'+C+';padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:#D97706">'+myPending.length+'</div><div style="font-size:9px;color:var(--t3)">Onay Bekleyen</div></div>';
+    uh += '<div style="'+C+';padding:12px;text-align:center"><div style="font-size:20px;font-weight:700">'+myHafta.length+'</div><div style="font-size:9px;color:var(--t3)">Bu Hafta</div></div>';
+    uh += '</div>';
+    // Görevlerim
+    uh += '<div style="'+C+'"><div style="padding:8px 14px;font-size:12px;font-weight:700;color:var(--t);border-bottom:0.5px solid var(--b)">Görevlerim</div>';
+    if (!myTasks.length) uh += '<div style="padding:16px;text-align:center;font-size:11px;color:var(--t3)">Açık görev yok</div>';
+    myTasks.sort(function(a,b){return (a.pri||3)-(b.pri||3);}).slice(0,8).forEach(function(t) {
+      var priC = t.pri===1?'#DC2626':t.pri===2?'#D97706':'#3B82F6';
+      var late = t.due && t.due < today;
+      uh += '<div onclick="openPusDetail('+t.id+')" style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;font-size:11px;transition:background .1s'+(late?';background:#FEF2F2':'')+'" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\''+(late?'#FEF2F2':'')+'\'">'
+        + '<span style="width:3px;height:20px;border-radius:1px;background:'+priC+';flex-shrink:0"></span>'
+        + '<span style="flex:1;color:var(--t)">'+esc(t.title)+'</span>'
+        + (t.due ? '<span style="font-size:9px;color:'+(late?'#DC2626':'var(--t3)')+'">'+t.due.slice(5)+'</span>' : '')
+        + '<span style="font-size:9px;padding:1px 5px;border-radius:99px;background:var(--s2);color:var(--t3)">Aç →</span></div>';
+    });
+    uh += '</div>';
+    // Bildirimler
+    if (notifs.length) {
+      uh += '<div style="'+C+'"><div style="padding:8px 14px;font-size:12px;font-weight:700;color:var(--t);border-bottom:0.5px solid var(--b)">Bildirimler</div>';
+      notifs.forEach(function(n2) {
+        uh += '<div style="padding:6px 14px;border-bottom:0.5px solid var(--b);font-size:10px;color:var(--t)">' + esc(n2.icon||'📌') + ' ' + esc(n2.msg||'') + '</div>';
+      });
+      uh += '</div>';
+    }
+    uh += '</div>';
+    content.innerHTML = uh;
+    return;
+  }
+
+  // ── ADMIN DASHBOARD — KOMPAKT TASARIM ──────────────────────
   var h = '<div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">';
 
   // Özlü söz — sağ üst
