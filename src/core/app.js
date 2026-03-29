@@ -963,6 +963,9 @@ function _renderDashboard() {
   sg.style.display = 'none'; // eski stat grid gizle
   var h = '';
 
+  // Özlü söz
+  if (typeof window._renderOzluSozBanner === 'function') h += window._renderOzluSozBanner('dashboard');
+
   // B1: Sağlık Skoru
   h += '<div style="padding:10px 20px;background:'+scoreColor+'0a;border-bottom:0.5px solid '+scoreColor+'33;display:flex;align-items:center;gap:10px">'
     + '<span style="font-size:16px;color:'+scoreColor+'">'+scoreIcon+'</span>'
