@@ -80,6 +80,7 @@ const KEYS = {
   teklifSartlar : 'ak_teklif_sartlar1',
   fikirler      : 'ak_fikirler1',
   updateLog     : 'ak_update_log1',
+  smartGoals    : 'ak_smart_goals1',
   alisTeklifleri: 'ak_alis_teklif1',
   satisTeklifleri:'ak_satis_teklif1',
   theme         : 'ak_theme',
@@ -1047,6 +1048,8 @@ function storeTahsilat(d) {
 /** @param {Array} d */ function storeTeklifSartlar(d) { _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeUpdateLog(d) { _write(KEYS.updateLog, d); var _fp = _fsPath('updateLog'); if (_fp) _syncFirestore(_fp, d); }
+/** @returns {Array<Object>} */ function loadSmartGoals() { var d = _read(KEYS.smartGoals); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */ function storeSmartGoals(d) { _write(KEYS.smartGoals, d); var _fp = _fsPath('smartGoals'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
@@ -1607,6 +1610,7 @@ function startRealtimeSync() {
     ['kararlar',      KEYS.kararlar,      () => {}],
     ['suggestions',   KEYS.suggestions,   () => {}],
     ['links',         KEYS.links,         () => {}],
+    ['smartGoals',    KEYS.smartGoals,    () => {}],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
     ['taskChats',     KEYS.taskChats,     () => {
       // Açık chat varsa yenile
@@ -1805,7 +1809,7 @@ const DB = {
   // Hedefler
   loadHdf, storeHdf,
   // Çöp
-  loadTrash, storeTrash, addToTrash,
+  loadTrash, storeTrash, addToTrash, loadSmartGoals, storeSmartGoals,
   // Ödemeler
   loadOdm, storeOdm, loadTahsilat, storeTahsilat, loadSatinalma, storeSatinalma, loadCari, storeCari, loadBankalar, storeBankalar, loadNavlun, storeNavlun, loadUrunler, storeUrunler, loadAlisTeklifleri, storeAlisTeklifleri, loadSatisTeklifleri, storeSatisTeklifleri, loadTeklifSartlar, storeTeklifSartlar, loadUpdateLog, storeUpdateLog, loadFikirler, storeFikirler,
   // İzin & Tebligat & Temizlik
