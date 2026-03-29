@@ -961,8 +961,8 @@ function _renderDashboard() {
 
   // ═══ RENDER — B TASARIMI ═══
   sg.style.display = 'none';
-  var C = 'background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden'; // kart stili
-  var h = '<div style="padding:20px;display:flex;flex-direction:column;gap:12px">';
+  var C = 'background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:visible'; // kart stili — overflow visible
+  var h = '<div style="padding:20px;display:flex;flex-direction:column;gap:16px">';
 
   // Özlü söz — sağ üst italic
   var ozlu = typeof window._getOzluSoz === 'function' ? window._getOzluSoz('dashboard') : '';
@@ -1004,7 +1004,7 @@ function _renderDashboard() {
   h += '</div>';
 
   // ── B3: Finansal Nabız ───────────────────────────────────────
-  h += '<div style="'+C+';display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0">';
+  h += '<div style="'+C+';display:grid;grid-template-columns:repeat(4,1fr);gap:0">';
   var fins = [
     {l:'Bu Ay Tahsilat',v:'₺'+Math.round(ayTahsilat).toLocaleString('tr-TR'),c:'#16A34A',ic:''},
     {l:'Bu Ay Ödeme',v:'₺'+Math.round(ayOdeme).toLocaleString('tr-TR'),c:'#DC2626',ic:''},
@@ -1012,29 +1012,29 @@ function _renderDashboard() {
     {l:'7 Gün Projeksiyon',v:(proj30>=0?'+':'')+'₺'+Math.round(Math.abs(proj30)).toLocaleString('tr-TR'),c:proj30>=0?'#16A34A':'#DC2626',ic:proj30<0?' ⚠':''},
   ];
   fins.forEach(function(k,i){
-    h += '<div onclick="App.nav(\'odemeler\')" style="padding:16px 18px;cursor:pointer;transition:background .1s;border-right:'+(i<3?'0.5px solid var(--b)':'none')+'" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+    h += '<div onclick="App.nav(\'odemeler\')" style="padding:16px;cursor:pointer;transition:background .1s;border-right:'+(i<3?'0.5px solid var(--b)':'none')+';min-width:0;overflow:hidden" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       + '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">'+k.l+'</div>'
-      + '<div style="font-size:22px;font-weight:700;color:'+k.c+';letter-spacing:-.5px">'+k.v+k.ic+'</div></div>';
+      + '<div style="font-size:clamp(16px,2vw,22px);font-weight:700;color:'+k.c+';letter-spacing:-.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+k.v+k.ic+'</div></div>';
   });
   h += '</div>';
 
   // ── B4: Bugün & Bu Hafta ─────────────────────────────────────
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-  // Bugün
-  h += '<div style="'+C+';padding:14px 18px">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">Bugün</div>'
-    + '<div style="display:flex;flex-direction:column;gap:4px">'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Ödeme</span><b onclick="App.nav(\'odemeler\')" style="cursor:pointer;color:#DC2626">'+bugunOdm.length+' adet</b></div>'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Tahsilat</span><b onclick="App.nav(\'odemeler\')" style="cursor:pointer;color:#16A34A">'+bugunTah.length+' adet</b></div>'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Görev</span><b onclick="App.nav(\'pusula\')" style="cursor:pointer;color:var(--t)">'+bugunTask.length+' adet</b></div>'
+  // Bugün — kırmızı başlık
+  h += '<div style="'+C+';padding:16px 18px">'
+    + '<div style="font-size:13px;font-weight:700;color:#DC2626;margin-bottom:10px;display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:#DC2626"></span> Bugün</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Ödeme</span><b onclick="App.nav(\'odemeler\')" style="cursor:pointer;color:#DC2626">'+bugunOdm.length+' adet</b></div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Tahsilat</span><b onclick="App.nav(\'odemeler\')" style="cursor:pointer;color:#16A34A">'+bugunTah.length+' adet</b></div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Görev</span><b onclick="App.nav(\'pusula\')" style="cursor:pointer;color:var(--t)">'+bugunTask.length+' adet</b></div>'
     + '</div></div>';
-  // Bu hafta
-  h += '<div style="'+C+';padding:14px 18px">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">Bu Hafta</div>'
-    + '<div style="display:flex;flex-direction:column;gap:4px">'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Ödeme</span><b style="color:#DC2626">₺'+Math.round(haftaOdm).toLocaleString('tr-TR')+'</b></div>'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Tahsilat</span><b style="color:#16A34A">₺'+Math.round(haftaTah).toLocaleString('tr-TR')+'</b></div>'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Onay Bekleyen</span><span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#D9770618;color:#D97706;font-weight:600">'+(pendingOdm.length+bekleyenSA)+'</span></div>'
+  // Bu hafta — sarı başlık
+  h += '<div style="'+C+';padding:16px 18px">'
+    + '<div style="font-size:13px;font-weight:700;color:#D97706;margin-bottom:10px;display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:#D97706"></span> Bu Hafta</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Ödeme</span><b style="color:#DC2626">₺'+Math.round(haftaOdm).toLocaleString('tr-TR')+'</b></div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Tahsilat</span><b style="color:#16A34A">₺'+Math.round(haftaTah).toLocaleString('tr-TR')+'</b></div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Onay Bekleyen</span><span style="font-size:9px;padding:2px 8px;border-radius:99px;background:#D9770618;color:#D97706;font-weight:600">'+(pendingOdm.length+bekleyenSA)+'</span></div>'
     + '</div></div>';
   h += '</div>';
 
@@ -1049,10 +1049,14 @@ function _renderDashboard() {
     {l:'Personel',v:puan2.length,u:'giriş',sub:puan2.filter(function(p){return p.isLate;}).length+' geç',c:puan2.filter(function(p){return p.isLate;}).length?'#D97706':'#16A34A',nav:'admin'},
   ];
   ops.forEach(function(o){
-    h += '<div onclick="App.nav(\''+o.nav+'\')" style="'+C+';padding:14px 16px;cursor:pointer;transition:all .12s" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.06)\';this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.boxShadow=\'none\';this.style.transform=\'none\'">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">'+o.l+'</div>'
-      + '<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:22px;font-weight:700;color:'+o.c+'">'+o.v+'</span><span style="font-size:10px;color:var(--t3)">'+o.u+'</span></div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:3px">'+o.sub+'</div></div>';
+    var subParts = o.sub.split(' ');
+    var subNum = subParts[0] || '0';
+    var subText = subParts.slice(1).join(' ');
+    var isAlert = parseInt(subNum) > 0 && (o.sub.indexOf('gecikmiş') !== -1 || o.sub.indexOf('geç') !== -1);
+    h += '<div onclick="App.nav(\''+o.nav+'\')" style="'+C+';padding:16px;cursor:pointer;transition:all .12s;min-height:88px" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.06)\';this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.boxShadow=\'none\';this.style.transform=\'none\'">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:8px">'+o.l+'</div>'
+      + '<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px"><span style="font-size:24px;font-weight:700;color:'+o.c+'">'+o.v+'</span><span style="font-size:11px;color:var(--t3)">'+o.u+'</span></div>'
+      + '<div style="font-size:11px;color:'+(isAlert?'#DC2626':'var(--t3)')+'">'+o.sub+'</div></div>';
   });
   h += '</div>';
 
@@ -1105,18 +1109,24 @@ function _renderDashboard() {
     if (dayO > globalMax) globalMax = dayO;
     if (dayT > globalMax) globalMax = dayT;
   }
-  h += '<div style="'+C+';padding:14px 20px">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:10px">Son 7 Gün</div>'
-    + '<div style="display:flex;gap:4px;align-items:flex-end;height:64px">';
+  // globalMax cap: çok yüksek tek gün tüm grafiği ezmemesin
+  var cappedMax = globalMax;
+  var avgDay = chartData.reduce(function(s,c){return s+c.t+c.o;},0) / 14;
+  if (cappedMax > avgDay * 5 && avgDay > 0) cappedMax = avgDay * 5;
+  h += '<div style="'+C+';padding:16px 20px">'
+    + '<div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:12px">Son 7 Gün</div>'
+    + '<div style="display:flex;gap:6px;align-items:flex-end;height:72px">';
   chartData.forEach(function(cd) {
-    var hT = cd.t > 0 ? Math.max(4, Math.round(cd.t / globalMax * 52)) : 2;
-    var hO = cd.o > 0 ? Math.max(4, Math.round(cd.o / globalMax * 52)) : 2;
-    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px" title="'+cd.ds+' — T:₺'+Math.round(cd.t).toLocaleString('tr-TR')+' Ö:₺'+Math.round(cd.o).toLocaleString('tr-TR')+'">'
-      + '<div style="width:100%;height:'+hT+'px;background:#16A34A;border-radius:3px 3px 0 0"></div>'
-      + '<div style="width:100%;height:'+hO+'px;background:#DC2626;border-radius:0 0 3px 3px"></div>'
-      + '<div style="font-size:8px;color:var(--t3);margin-top:3px">'+cd.ds.slice(8)+'</div></div>';
+    var hT = cd.t > 0 ? Math.max(3, Math.round(Math.min(cd.t, cappedMax) / cappedMax * 60)) : 2;
+    var hO = cd.o > 0 ? Math.max(3, Math.round(Math.min(cd.o, cappedMax) / cappedMax * 60)) : 2;
+    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px" title="'+cd.ds+' — T:₺'+Math.round(cd.t).toLocaleString('tr-TR')+' Ö:₺'+Math.round(cd.o).toLocaleString('tr-TR')+'">'
+      + '<div style="display:flex;gap:2px;align-items:flex-end;width:100%;height:60px">'
+      + '<div style="flex:1;height:'+hT+'px;background:#16A34A;border-radius:3px 3px 0 0"></div>'
+      + '<div style="flex:1;height:'+hO+'px;background:#DC2626;border-radius:3px 3px 0 0"></div>'
+      + '</div>'
+      + '<div style="font-size:8px;color:var(--t3);margin-top:2px">'+cd.ds.slice(8)+'</div></div>';
   });
-  h += '</div><div style="font-size:9px;color:var(--t3);margin-top:6px;display:flex;gap:12px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#16A34A;vertical-align:middle;margin-right:3px"></span>Tahsilat</span><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#DC2626;vertical-align:middle;margin-right:3px"></span>Ödeme</span></div></div>';
+  h += '</div><div style="font-size:10px;color:var(--t3);margin-top:8px;display:flex;gap:16px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#16A34A;vertical-align:middle;margin-right:4px"></span>Tahsilat</span><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#DC2626;vertical-align:middle;margin-right:4px"></span>Ödeme</span></div></div>';
 
   // ── B9: Hızlı Eylemler ─────────────────────────────────────
   var btnS = 'padding:8px 16px;border:none;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#fff;transition:opacity .12s';
@@ -1134,10 +1144,10 @@ function _renderDashboard() {
     var manuelIslem = pendingOdm.length + bekleyenSA;
     var otoOran = (otoIslem + manuelIslem) > 0 ? Math.round(otoIslem / (otoIslem + manuelIslem) * 100) : 100;
     var otoColor = otoOran >= 80 ? '#16A34A' : otoOran >= 50 ? '#D97706' : '#DC2626';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">';
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
     // B10
-    h += '<div style="'+C+';padding:14px 18px">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Sistem Sağlığı <span style="font-size:8px;color:var(--t3);font-weight:400">E-Myth</span></div>'
+    h += '<div style="'+C+';padding:16px">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">⚙ Sistem Sağlığı <span style="font-size:8px;color:var(--t3);font-weight:400">E-Myth</span></div>'
       + '<div style="display:flex;flex-direction:column;gap:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Otomatik</span><b style="color:#16A34A">' + otoIslem + ' işlem</b></div>'
       + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Manuel</span><b style="color:#D97706">' + manuelIslem + ' işlem</b></div>'
@@ -1153,8 +1163,8 @@ function _renderDashboard() {
     var teklifKabul = teklifSayisi.filter(function(t2){return t2.durum==='kabul';}).length;
     var donusumOran = teklifSayisi.length > 0 ? Math.round(teklifKabul / teklifSayisi.length * 100) : 0;
     var ortGecikme = gecikOdm.length > 0 ? Math.round(gecikOdm.reduce(function(s2,o2){return s2+Math.ceil((new Date(today)-new Date(o2.due))/86400000);},0) / gecikOdm.length * 10) / 10 : 0;
-    h += '<div style="'+C+';padding:14px 18px">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Büyüme <span style="font-size:8px;color:var(--t3);font-weight:400">Action Coach</span></div>'
+    h += '<div style="'+C+';padding:16px">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">📈 Büyüme <span style="font-size:8px;color:var(--t3);font-weight:400">Action Coach</span></div>'
       + '<div style="display:flex;flex-direction:column;gap:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Tahsilat</span><b style="color:'+(tahBuyume>=0?'#16A34A':'#DC2626')+'">'+(tahBuyume>=0?'↑':'↓')+'%'+Math.abs(tahBuyume)+'</b></div>'
       + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Dönüşüm</span><b style="color:var(--t)">%'+donusumOran+'</b></div>'
@@ -1165,8 +1175,8 @@ function _renderDashboard() {
     var otoTamam = tasks.filter(function(t2){return t2.done && t2.completedAt && t2.completedAt.startsWith(today) && t2.uid !== cu.id;}).length;
     var sahipOnay = pendingOdm.length + bekleyenSA;
     var gecenHaftaOnay = 0; // basitleştirilmiş
-    h += '<div style="'+C+';padding:14px 18px">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Bağımsızlık <span style="font-size:8px;color:var(--t3);font-weight:400">Vanish</span></div>'
+    h += '<div style="'+C+';padding:16px">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">🏃 Bağımsızlık <span style="font-size:8px;color:var(--t3);font-weight:400">Vanish</span></div>'
       + '<div style="display:flex;flex-direction:column;gap:4px">'
       + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Sizsiz tamamlanan</span><b style="color:#16A34A">' + otoTamam + ' iş</b></div>'
       + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Onayınızı bekleyen</span><b style="color:'+(sahipOnay>0?'#D97706':'#16A34A')+'">' + sahipOnay + '</b></div>'
