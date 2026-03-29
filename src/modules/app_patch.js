@@ -1685,6 +1685,12 @@ window._openSatisModal = function(fromAlis) {
     + '</div>'
     + '<input class="fi" id="st-ek-sart" placeholder="Ek şart ekle (opsiyonel)..." style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px">'
     + '</div>'
+    // Satıcı Dikkat Formu
+    + '<div style="padding:8px 14px;border-top:0.5px solid var(--b)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">Satıcı Notları</span><label style="font-size:9px;color:var(--t3);display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="st-not-pdf" checked style="accent-color:var(--ac)"> PDF\'e ekle</label></div>'
+    + '<input class="fi" id="st-urun-karsilastir" placeholder="Ürün karşılaştırması: Bizim ürün vs rakip..." style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;margin-bottom:4px">'
+    + '<textarea class="fi" id="st-ozel-husus" rows="2" placeholder="Özel hususlar / müşteri dikkat noktaları..." style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;resize:none"></textarea>'
+    + '</div>'
     // Özet + kaydet
     + '<div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid var(--b);background:var(--s2)">'
     + '<div style="display:flex;gap:6px"><button onclick="window._stAddRow()" style="padding:4px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:none;color:#0F6E56;font-size:11px;cursor:pointer;font-family:inherit">+ Ürün Ekle</button>'
@@ -1852,6 +1858,11 @@ window._saveSatisTeklif = function() {
     gecerlilikTarihi:document.getElementById('st-gecerlilik')?.value||'',
     ekSart:(document.getElementById('st-ek-sart')?.value||'').trim(),
     sartlar:typeof loadTeklifSartlar==='function'?loadTeklifSartlar().map(function(s){return s.text;}):[],
+    saticiNotu:{
+      urunKarsilastir:(document.getElementById('st-urun-karsilastir')?.value||'').trim(),
+      ozelHusus:(document.getElementById('st-ozel-husus')?.value||'').trim(),
+      pdfEkle:document.getElementById('st-not-pdf')?.checked||false,
+    },
     durum:'taslak', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id
   });
   var yeniId = d[0].id;

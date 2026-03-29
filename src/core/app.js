@@ -1128,6 +1128,53 @@ function _renderDashboard() {
     + '<button onclick="window.openReportPanel?.()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--t2);background:var(--sf);transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.color=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.color=\'var(--t2)\'">Raporlar</button>'
     + '</div>';
 
+  // ── B10: Sistem Sağlığı (E-Myth) ──────────────────────────
+  if (isAdm) {
+    var otoIslem = odm.filter(function(o){return o.source==='satinalma';}).length + kargo.filter(function(k){return k.source==='satinalma';}).length;
+    var manuelIslem = pendingOdm.length + bekleyenSA;
+    var otoOran = (otoIslem + manuelIslem) > 0 ? Math.round(otoIslem / (otoIslem + manuelIslem) * 100) : 100;
+    var otoColor = otoOran >= 80 ? '#16A34A' : otoOran >= 50 ? '#D97706' : '#DC2626';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">';
+    // B10
+    h += '<div style="'+C+';padding:14px 18px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Sistem Sağlığı <span style="font-size:8px;color:var(--t3);font-weight:400">E-Myth</span></div>'
+      + '<div style="display:flex;flex-direction:column;gap:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Otomatik</span><b style="color:#16A34A">' + otoIslem + ' işlem</b></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Manuel</span><b style="color:#D97706">' + manuelIslem + ' işlem</b></div>'
+      + '<div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden;margin-top:2px"><div style="height:100%;width:'+otoOran+'%;background:'+otoColor+';border-radius:2px"></div></div>'
+      + '<div style="font-size:9px;color:var(--t3);text-align:right">%' + otoOran + ' otomatik · Hedef: %95</div>'
+      + '</div></div>';
+
+    // B11: Büyüme Göstergeleri (Action Coach)
+    var gecenAyStr = new Date(n.getFullYear(), n.getMonth() - 1, 1).toISOString().slice(0,7);
+    var gecenAyTah = tah.filter(function(t2){return t2.collected && (t2.due||t2.ts||'').startsWith(gecenAyStr);}).reduce(function(s2,t2){return s2+(parseFloat(t2.amountTRY||t2.amount)||0);},0);
+    var tahBuyume = gecenAyTah > 0 ? Math.round((ayTahsilat - gecenAyTah) / gecenAyTah * 100) : 0;
+    var teklifSayisi = (typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : []);
+    var teklifKabul = teklifSayisi.filter(function(t2){return t2.durum==='kabul';}).length;
+    var donusumOran = teklifSayisi.length > 0 ? Math.round(teklifKabul / teklifSayisi.length * 100) : 0;
+    var ortGecikme = gecikOdm.length > 0 ? Math.round(gecikOdm.reduce(function(s2,o2){return s2+Math.ceil((new Date(today)-new Date(o2.due))/86400000);},0) / gecikOdm.length * 10) / 10 : 0;
+    h += '<div style="'+C+';padding:14px 18px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Büyüme <span style="font-size:8px;color:var(--t3);font-weight:400">Action Coach</span></div>'
+      + '<div style="display:flex;flex-direction:column;gap:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Tahsilat</span><b style="color:'+(tahBuyume>=0?'#16A34A':'#DC2626')+'">'+(tahBuyume>=0?'↑':'↓')+'%'+Math.abs(tahBuyume)+'</b></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Dönüşüm</span><b style="color:var(--t)">%'+donusumOran+'</b></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Ort. gecikme</span><b style="color:'+(ortGecikme>3?'#DC2626':'#16A34A')+'">'+ortGecikme+' gün</b></div>'
+      + '</div></div>';
+
+    // B12: Sahip Bağımsızlık Skoru (Vanish)
+    var otoTamam = tasks.filter(function(t2){return t2.done && t2.completedAt && t2.completedAt.startsWith(today) && t2.uid !== cu.id;}).length;
+    var sahipOnay = pendingOdm.length + bekleyenSA;
+    var gecenHaftaOnay = 0; // basitleştirilmiş
+    h += '<div style="'+C+';padding:14px 18px">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Bağımsızlık <span style="font-size:8px;color:var(--t3);font-weight:400">Vanish</span></div>'
+      + '<div style="display:flex;flex-direction:column;gap:4px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Sizsiz tamamlanan</span><b style="color:#16A34A">' + otoTamam + ' iş</b></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Onayınızı bekleyen</span><b style="color:'+(sahipOnay>0?'#D97706':'#16A34A')+'">' + sahipOnay + '</b></div>'
+      + '<div style="font-size:9px;color:var(--t3);margin-top:2px">Hedef: onay kuyruğu 0\'a inmeli</div>'
+      + '</div></div>';
+    h += '</div>';
+  }
+
   h += '</div>'; // padding wrapper kapanış
   content.innerHTML = h;
 }
