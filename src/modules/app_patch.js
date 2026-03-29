@@ -2731,7 +2731,17 @@ window.openSistemBilgileri = function() {
     + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Yedekleme</div>'
     + '<div style="display:flex;gap:6px"><button onclick="window._exportAllData()" style="padding:5px 12px;border:0.5px solid var(--ac);border-radius:6px;background:none;color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit">Tüm Veriyi İndir (JSON)</button></div>'
     + '<div style="margin-top:6px;font-size:10px;color:var(--t3);padding:6px;background:var(--s2);border-radius:4px">Öneri: Firebase Blaze planına geçerek otomatik yedek aktif edin.</div></div>'
-    // D: Güncelleme Geçmişi
+    // D: Google Drive
+    + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Google Drive</div>'
+    + (function(){var st=typeof window.GDrive==='object'?window.GDrive.status():{enabled:false,ready:false};
+      return '<div style="font-size:12px;color:var(--t)">Durum: '+(st.ready?'<span style="color:#16A34A">Bağlı</span>':st.enabled?'<span style="color:#D97706">Yapılandırılmış (bağlantı bekliyor)</span>':'<span style="color:var(--t3)">Devre dışı</span>')+'</div>'
+        +'<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">'
+        +'<button onclick="window._openGDriveSettings?.()" style="padding:5px 12px;border:0.5px solid var(--ac);border-radius:6px;background:none;color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit">'+(st.enabled?'Ayarları Düzenle':'Drive\'a Bağlan')+'</button>'
+        +(st.ready?'<button onclick="window.GDrive?.migrateBase64?.()" style="padding:5px 12px;border:0.5px solid #D97706;border-radius:6px;background:none;color:#D97706;font-size:11px;cursor:pointer;font-family:inherit">Base64 → Drive Taşı</button>':'')
+        +'</div>';
+    }())
+    + '</div>'
+    // E: Güncelleme Geçmişi
     + '<div><div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Son Güncellemeler</div>'
     + '<div style="font-size:10px;color:var(--t2);max-height:120px;overflow-y:auto">'
     + ['Dashboard kontrol merkezi — 9 bölüm','İhracat ekosistemi — IMO+7gün+JobID','Inline Excel form — satış+alış','3 format PDF — A/B/C','Satış teklifi — PI+PR+revizyon','Demo veri — 20 ürün+5 müşteri','Topbar profesyonel SVG ikonlar','Nakit akışı B tasarımı','Cari 3 aşamalı sistem+VKN','Firestore merge stratejisi'].map(function(g,i){return '<div style="padding:3px 0;border-bottom:0.5px solid var(--b)">'+g+'</div>';}).join('')
@@ -2740,6 +2750,39 @@ window.openSistemBilgileri = function() {
   document.body.appendChild(mo);
   mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
   setTimeout(function(){mo.classList.add('open');},10);
+};
+
+/** Google Drive ayarları modalı */
+window._openGDriveSettings = function() {
+  var ex = document.getElementById('mo-gdrive'); if (ex) ex.remove();
+  var cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('ak_gdrive_config') || '{}'); } catch(e) {}
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-gdrive'; mo.style.zIndex = '2300';
+  mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">Google Drive Ayarları</div>'
+    + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer"><input type="checkbox" id="gd-enabled" ' + (cfg.enabled ? 'checked' : '') + ' style="accent-color:var(--ac)"> Drive entegrasyonunu etkinleştir</label>'
+    + '<div><div class="fl" style="font-size:10px">Google API Key</div><input class="fi" id="gd-apikey" value="' + (cfg.apiKey || '') + '" placeholder="AIzaSy..." style="font-size:11px"></div>'
+    + '<div><div class="fl" style="font-size:10px">OAuth Client ID</div><input class="fi" id="gd-clientid" value="' + (cfg.clientId || '') + '" placeholder="xxx.apps.googleusercontent.com" style="font-size:11px"></div>'
+    + '<div style="font-size:10px;color:var(--t3);padding:8px;background:var(--s2);border-radius:6px">Google Cloud Console\'dan Drive API etkinleştirin ve OAuth 2.0 Client ID oluşturun.</div>'
+    + '</div>'
+    + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
+    + '<button class="btn" onclick="document.getElementById(\'mo-gdrive\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" onclick="window._saveGDriveSettings()">Kaydet</button></div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+window._saveGDriveSettings = function() {
+  var cfg = {
+    enabled: document.getElementById('gd-enabled')?.checked || false,
+    apiKey: (document.getElementById('gd-apikey')?.value || '').trim(),
+    clientId: (document.getElementById('gd-clientid')?.value || '').trim(),
+  };
+  if (typeof window.GDrive?.updateSettings === 'function') window.GDrive.updateSettings(cfg);
+  else localStorage.setItem('ak_gdrive_config', JSON.stringify(cfg));
+  document.getElementById('mo-gdrive')?.remove();
+  window.toast?.('Drive ayarları kaydedildi' + (cfg.enabled ? ' — bağlanıyor...' : ''), 'ok');
 };
 
 /** Tüm veriyi JSON export */

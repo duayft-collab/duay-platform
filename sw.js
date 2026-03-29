@@ -20,6 +20,7 @@ const PRECACHE_URLS = [
   '/src/core/database.js',
   '/src/core/cache.js',
   '/src/core/auth.js',
+  '/src/core/gdrive.js',
   '/src/core/app.js',
   '/src/i18n/translations.js',
   '/config/firebase.js',
