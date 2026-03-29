@@ -933,6 +933,15 @@ function _renderDashboard() {
   score -= gecikTask.length * 5;
   score -= pendingOdm.length * 2;
   score -= pendingSA.length * 2;
+  // 7 gün kuralı — ihracat bilgi eksik konteynerler
+  var ihracatUyari = [];
+  konts.forEach(function(k) {
+    if (!k.etd) return;
+    var diff = Math.ceil((new Date(k.etd) - new Date()) / 86400000);
+    if (diff > 7 || diff < 0) return;
+    ihracatUyari.push({no: k.no, gun: diff, hasIMO: k.hasIMO});
+  });
+  score -= ihracatUyari.length * 8;
   score = Math.max(0, Math.min(100, score));
   var scoreColor = score >= 80 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626';
   var scoreIcon = score >= 80 ? '●' : score >= 50 ? '●' : '●';
@@ -1001,6 +1010,15 @@ function _renderDashboard() {
         + '<button onclick="openPusDetail('+t.id+')" style="padding:2px 8px;border:none;border-radius:99px;background:#3B82F618;color:#3B82F6;font-size:9px;font-weight:600;cursor:pointer;font-family:inherit">Git</button></div>';
     });
   }
+  // 7 gün kuralı uyarıları
+  ihracatUyari.forEach(function(u) {
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-top:0.5px solid var(--b);font-size:11px">'
+      + '<span style="width:4px;height:24px;border-radius:2px;background:#D97706;flex-shrink:0"></span>'
+      + '<span style="font-weight:700;color:#D97706;min-width:80px">İhracat</span>'
+      + '<span style="flex:1;color:var(--t)">' + esc(u.no) + (u.hasIMO ? ' <span style="color:#DC2626;font-weight:700">IMO</span>' : '') + '</span>'
+      + '<span style="font-size:10px;color:' + (u.gun <= 3 ? '#DC2626' : '#D97706') + ';white-space:nowrap">' + u.gun + ' gün kaldı</span>'
+      + '<button onclick="App.nav(\'kargo\')" style="padding:2px 8px;border:none;border-radius:99px;background:#D9770618;color:#D97706;font-size:9px;font-weight:600;cursor:pointer;font-family:inherit">Git</button></div>';
+  });
   h += '</div>';
 
   // ── B3: Finansal Nabız ───────────────────────────────────────

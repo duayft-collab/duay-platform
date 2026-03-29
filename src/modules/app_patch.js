@@ -185,6 +185,30 @@ window.saveKonteyn = window.saveKonteyn || function() {
   } else {
     d.push({ id: generateNumericId(), closed: false, viewers: [], ...entry, createdAt: window.nowTs?.() || new Date().toISOString() });
   }
+  // İhracat bilgi kontrolü — bağlı satınalmadaki ürünler tam mı?
+  var ihracatId = entry.ihracatId || '';
+  if (ihracatId) {
+    var saList = typeof loadSatinalma === 'function' ? loadSatinalma().filter(function(s){return s.containerNo === no || s.exportId === ihracatId;}) : [];
+    var urunlerAll = typeof loadUrunler === 'function' ? loadUrunler() : [];
+    var eksikler = [];
+    var hasIMO = false;
+    saList.forEach(function(s) {
+      var urun = urunlerAll.find(function(u){return u.tedarikci===s.supplier || u.urunAdi===s.supplier;});
+      if (urun) {
+        if (!_calcIhracatTam(urun)) eksikler.push(urun.orijinalAdi || urun.urunAdi);
+        if (urun.imolu === 'E') hasIMO = true;
+      }
+    });
+    if (eksikler.length) {
+      window.toast?.('İhracat bilgisi eksik ürünler var: ' + eksikler.join(', '), 'warn');
+    }
+    if (hasIMO) {
+      window.toast?.('DG Cargo uyarısı: Bu sevkiyatta IMO sınıflı ürün var — MSDS belgesi zorunlu', 'warn');
+    }
+    // Konteynıra IMO flag ekle
+    if (!eid) d[d.length - 1].hasIMO = hasIMO;
+    else { var kk = d.find(function(x){return x.id===eid;}); if (kk) kk.hasIMO = hasIMO; }
+  }
   if (typeof storeKonteyn === 'function') storeKonteyn(d);
   window.closeMo?.('mo-konteyn');
   window.toast?.(eid ? 'Konteyner güncellendi ✓' : 'Konteyner eklendi ✓', 'ok');
@@ -1944,6 +1968,8 @@ window._printSatisTeklif = function(id) {
     + (cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
     + (cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' + (banka.ibanEur?'<div>EUR IBAN: '+esc(banka.ibanEur)+'</div>':'') : '')
     + '<div>SWIFT: ' + esc(banka.swift||'') + '</div></div>'
+    // Satıcı notu (opsiyonel)
+    + (function(){var sn=t.saticiNotu;if(!sn||!sn.pdfEkle)return '';var html='<div style="margin-top:15px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;font-size:9px;color:#0c4a6e"><h4 style="color:#0c4a6e;font-size:10px;margin-bottom:6px">SELLER\'S NOTES</h4>';if(sn.urunKarsilastir)html+='<div style="margin-bottom:4px">'+esc(sn.urunKarsilastir)+'</div>';if(sn.ozelHusus)html+='<div>'+esc(sn.ozelHusus)+'</div>';return html+'</div>';})()
     // Signature
     + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL TRADE</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
     // Footer
