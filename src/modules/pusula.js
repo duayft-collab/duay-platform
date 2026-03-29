@@ -892,10 +892,11 @@ function renderPusulaBoard(fl, users, todayS, cont) {
     4: { color: '#64748B', glow: 'rgba(100,116,139,.15)' },
   };
   const cols = [
-    { key: 'todo',       label: 'Yapılacak',      cls: 'pus-col-todo',       titleColor: '#475569', filter: t => !t.done && (!t.status || t.status === 'todo') },
-    { key: 'inprogress', label: '🔄 Devam',        cls: 'pus-col-inprogress', titleColor: '#1D4ED8', filter: t => t.status === 'inprogress' },
-    { key: 'review',     label: '👀 İnceleme',     cls: 'pus-col-review',     titleColor: '#B45309', filter: t => t.status === 'review' },
-    { key: 'done',       label: '✅ Tamamlandı',   cls: 'pus-col-done',       titleColor: '#15803D', filter: t => t.done || t.status === 'done' },
+    { key: 'todo',       label: 'Yapılacak',       cls: 'pus-col-todo',       titleColor: '#475569', filter: t => !t.done && (!t.status || t.status === 'todo') },
+    { key: 'inprogress', label: '🔄 Devam',         cls: 'pus-col-inprogress', titleColor: '#1D4ED8', filter: t => t.status === 'inprogress' },
+    { key: 'waiting',    label: '⏳ Beklemede',     cls: 'pus-col-waiting',    titleColor: '#D97706', filter: t => t.status === 'waiting' },
+    { key: 'review',     label: '👀 İnceleme',      cls: 'pus-col-review',     titleColor: '#B45309', filter: t => t.status === 'review' },
+    { key: 'done',       label: '✅ Tamamlandı',    cls: 'pus-col-done',       titleColor: '#15803D', filter: t => t.done || t.status === 'done' },
   ];
 
   const board = document.createElement('div');
@@ -935,7 +936,7 @@ function renderPusulaBoard(fl, users, todayS, cont) {
         <style>.tk-card:hover .tk-card-edit{opacity:1!important}</style>
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px">
           <div style="width:4px;min-height:36px;border-radius:3px;flex-shrink:0;margin-top:1px;background:${p.color}"></div>
-          <div class="tk-card-title" style="flex:1">${t.title}</div>
+          <div class="tk-card-title" style="flex:1">${t.jobId ? `<span style="font-size:8px;font-family:monospace;color:var(--t3);background:var(--s2);padding:1px 4px;border-radius:3px;margin-right:3px;cursor:pointer" onclick="event.stopPropagation();window.openJobIdHub?.('${t.jobId}')">${t.jobId}</span>` : ''}${t.title}</div>
           ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();Pusula.edit(${t.id})"
             style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;padding:0;min-width:28px;min-height:28px;flex-shrink:0;opacity:0;transition:.14s;display:inline-flex;align-items:center;justify-content:center" class="tk-card-edit">✏️</button>` : ''}
         </div>
