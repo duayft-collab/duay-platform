@@ -742,6 +742,12 @@ function renderPusula() {
 
   if (PUS_VIEW === 'board') {
     renderPusulaBoard(fl, users, todayS, main);
+  } else if (PUS_VIEW === 'kadran') {
+    _renderKadranView(fl, users, todayS, main);
+  } else if (PUS_VIEW === 'kanban') {
+    _renderKanbanView(fl, users, todayS, main);
+  } else if (PUS_VIEW === 'odak') {
+    _renderOdakView(fl, users, todayS, main);
   } else {
     renderPusulaList(fl, users, todayS, main);
   }
@@ -4083,6 +4089,179 @@ window._exportGorevPerfXlsx = function() {
   XLSX.writeFile(wb, 'gorev-performans-' + todayS + '.xlsx');
   window.toast?.('Görev performans raporu indirildi ✓', 'ok');
 };
+
+// ════════════════════════════════════════════════════════════════
+// KADRAN GÖRÜNÜMÜ (Covey 4 Kadran)
+// ════════════════════════════════════════════════════════════════
+function _renderKadranView(fl, users, todayS, cont) {
+  var important = function(t) { return t.pri === 1 || t.pri === 2; };
+  var urgent = function(t) { return t.due && t.due <= todayS; };
+  var q1 = fl.filter(function(t) { return !t.done && important(t) && urgent(t); });
+  var q2 = fl.filter(function(t) { return !t.done && important(t) && !urgent(t); });
+  var q3 = fl.filter(function(t) { return !t.done && !important(t) && urgent(t); });
+  var q4 = fl.filter(function(t) { return !t.done && !important(t) && !urgent(t); });
+
+  var _kCard = function(t) {
+    var u = users.find(function(x) { return x.id === t.uid; });
+    var ini = u ? (u.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2) : '?';
+    var late = t.due && t.due < todayS;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:0.5px solid var(--b);cursor:pointer" onclick="openPusDetail(' + t.id + ')">'
+      + '<span style="width:22px;height:22px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0">' + ini + '</span>'
+      + '<span style="flex:1;font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.title||'') + '</span>'
+      + (t.due ? '<span style="font-size:10px;color:' + (late?'#dc2626':'var(--t3)') + '">' + t.due.slice(5) + '</span>' : '')
+      + '</div>';
+  };
+
+  var _kQuad = function(title, color, bg, items) {
+    return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden">'
+      + '<div style="padding:10px 14px;background:' + bg + ';border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+        + '<span style="font-size:12px;font-weight:700;color:' + color + '">' + title + '</span>'
+        + '<span style="font-size:10px;color:var(--t3)">' + items.length + '</span>'
+      + '</div>'
+      + '<div style="max-height:300px;overflow-y:auto">'
+        + (items.length ? items.map(_kCard).join('') : '<div style="padding:16px;text-align:center;font-size:11px;color:var(--t3)">Görev yok</div>')
+      + '</div></div>';
+  };
+
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">'
+    + _kQuad('Hemen Yap', '#dc2626', 'rgba(220,38,38,.06)', q1)
+    + _kQuad('Planla', '#0C447C', 'rgba(12,68,124,.06)', q2)
+    + _kQuad('Devret', '#D97706', 'rgba(217,119,6,.06)', q3)
+    + _kQuad('Elemine Et', '#6B7280', 'rgba(107,114,128,.06)', q4)
+    + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════════
+// KANBAN GÖRÜNÜMÜ (Ohno Akış)
+// ════════════════════════════════════════════════════════════════
+function _renderKanbanView(fl, users, todayS, cont) {
+  var WIP_LIMIT = 5;
+  var cols = [
+    { key:'todo',       label:'Yapılacak',    color:'#475569', filter:function(t){return !t.done&&(!t.status||t.status==='todo');} },
+    { key:'inprogress', label:'Devam',        color:'#1D4ED8', filter:function(t){return t.status==='inprogress';} },
+    { key:'waiting',    label:'Beklemede',    color:'#D97706', filter:function(t){return t.status==='waiting';} },
+    { key:'review',     label:'İnceleme',     color:'#B45309', filter:function(t){return t.status==='review';} },
+    { key:'done',       label:'Tamamlandı',   color:'#15803D', filter:function(t){return t.done||t.status==='done';} },
+  ];
+
+  var priColors = {1:'#dc2626',2:'#D97706',3:'#3B82F6',4:'#9CA3AF'};
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;align-items:start">';
+  cols.forEach(function(col) {
+    var items = fl.filter(col.filter);
+    var wipWarn = col.key === 'inprogress' && items.length > WIP_LIMIT;
+    html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;min-height:200px">'
+      + '<div style="padding:10px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:' + (wipWarn?'rgba(220,38,38,.08)':'var(--s2)') + '">'
+        + '<span style="font-size:11px;font-weight:700;color:' + col.color + '">' + col.label + '</span>'
+        + '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--s2);color:var(--t3)">' + items.length + '</span>'
+        + (wipWarn ? '<span style="font-size:9px;color:#dc2626;font-weight:600">WIP!</span>' : '')
+      + '</div>'
+      + '<div style="padding:6px" ondragover="event.preventDefault()" ondrop="window._kanbanDrop?.(event,\'' + col.key + '\')">';
+    items.forEach(function(t) {
+      var u = users.find(function(x){return x.id===t.uid;});
+      var ini = u ? (u.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2) : '?';
+      var late = !t.done && t.due && t.due < todayS;
+      html += '<div draggable="true" ondragstart="event.dataTransfer.setData(\'taskId\',' + t.id + ')" style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;border-left:2px solid ' + (late?'#dc2626':'transparent') + '" onclick="openPusDetail(' + t.id + ')">'
+        + '<div style="font-size:11px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">' + (t.title||'') + '</div>'
+        + '<div style="display:flex;align-items:center;gap:4px;margin-top:6px">'
+          + '<span style="width:6px;height:6px;border-radius:50%;background:' + (priColors[t.pri]||'#9CA3AF') + ';flex-shrink:0"></span>'
+          + '<span style="width:18px;height:18px;border-radius:5px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0">' + ini + '</span>'
+          + (t.due ? '<span style="font-size:9px;color:' + (late?'#dc2626':'var(--t3)') + ';margin-left:auto">' + t.due.slice(5) + '</span>' : '')
+        + '</div>'
+      + '</div>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+// Kanban drag & drop handler
+window._kanbanDrop = function(e, newStatus) {
+  e.preventDefault();
+  var taskId = parseInt(e.dataTransfer.getData('taskId'));
+  if (!taskId) return;
+  var d = loadTasks();
+  var t = d.find(function(x) { return x.id === taskId; });
+  if (!t) return;
+  if (newStatus === 'done') { t.done = true; t.status = 'done'; }
+  else { t.done = false; t.status = newStatus; }
+  t.updated_at = typeof nowTs === 'function' ? nowTs() : new Date().toISOString();
+  saveTasks(d);
+  renderPusula();
+  window.toast?.('Durum güncellendi ✓', 'ok');
+};
+
+// ════════════════════════════════════════════════════════════════
+// ODAK GÖRÜNÜMÜ (ONE Thing)
+// ════════════════════════════════════════════════════════════════
+function _renderOdakView(fl, users, todayS, cont) {
+  var active = fl.filter(function(t) { return !t.done && t.status !== 'done'; });
+  var done = fl.filter(function(t) { return t.done || t.status === 'done'; });
+
+  // En kritik: öncelik + gecikme sırası
+  active.sort(function(a, b) {
+    if (a.pri !== b.pri) return (a.pri||4) - (b.pri||4);
+    var aLate = a.due && a.due < todayS ? 1 : 0;
+    var bLate = b.due && b.due < todayS ? 1 : 0;
+    if (aLate !== bLate) return bLate - aLate;
+    return (a.due||'9999').localeCompare(b.due||'9999');
+  });
+
+  var focus = active[0];
+  var next5 = active.slice(1, 6);
+  var priLabels = {1:'Kritik',2:'Önemli',3:'Normal',4:'Düşük'};
+  var priColors2 = {1:'#dc2626',2:'#D97706',3:'#3B82F6',4:'#9CA3AF'};
+
+  var html = '<div style="padding:16px;display:flex;flex-direction:column;gap:16px">';
+
+  // Üst: tek odak
+  if (focus) {
+    var fu = users.find(function(x){return x.id===focus.uid;});
+    var fLate = focus.due && focus.due < todayS;
+    var fDays = focus.due ? Math.ceil((new Date(todayS) - new Date(focus.due)) / 86400000) : 0;
+    html += '<div style="background:var(--sf);border:2px solid ' + (priColors2[focus.pri]||'var(--b)') + ';border-radius:14px;padding:24px;text-align:center;cursor:pointer" onclick="openPusDetail(' + focus.id + ')">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Bu Haftanın Tek Odağı</div>'
+      + '<div style="font-size:20px;font-weight:700;color:var(--t);margin-bottom:8px">' + (focus.title||'') + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--t2)">'
+        + '<span style="padding:3px 10px;border-radius:6px;background:' + (priColors2[focus.pri]||'var(--s2)') + '22;color:' + (priColors2[focus.pri]||'var(--t3)') + ';font-weight:600">' + (priLabels[focus.pri]||'Normal') + '</span>'
+        + (fu ? '<span>' + fu.name + '</span>' : '')
+        + (fLate ? '<span style="color:#dc2626;font-weight:600">' + fDays + ' gün gecikmiş</span>' : (focus.due ? '<span>' + focus.due + '</span>' : ''))
+      + '</div>'
+    + '</div>';
+  } else {
+    html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:32px;text-align:center;color:var(--t3)">Aktif görev yok</div>';
+  }
+
+  // Orta: sıradaki 5
+  html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden">'
+    + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2)">Sıradaki ' + next5.length + ' Görev</div>';
+  if (next5.length) {
+    next5.forEach(function(t, i) {
+      var late = t.due && t.due < todayS;
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b);cursor:pointer" onclick="openPusDetail(' + t.id + ')">'
+        + '<span style="width:20px;height:20px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--t3);flex-shrink:0">' + (i+2) + '</span>'
+        + '<span style="flex:1;font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.title||'') + '</span>'
+        + (t.due ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + (late?'#FEE2E2':'var(--s2)') + ';color:' + (late?'#dc2626':'var(--t3)') + '">' + t.due.slice(5) + '</span>' : '')
+      + '</div>';
+    });
+  } else {
+    html += '<div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Sırada görev yok</div>';
+  }
+  html += '</div>';
+
+  // Alt: ilerleme
+  var total = fl.length;
+  var doneN = done.length;
+  var pct = total > 0 ? Math.round(doneN / total * 100) : 0;
+  html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px 14px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:6px"><span>Bu hafta tamamlanan: ' + doneN + ' görev</span><span>' + pct + '%</span></div>'
+    + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:#16A34A;border-radius:3px;transition:width .3s"></div></div>'
+  + '</div>';
+
+  html += '</div>';
+  cont.innerHTML = html;
+}
 
 const Pusula = {
   init: _pusInit,
