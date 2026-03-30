@@ -488,7 +488,8 @@ function _doLogin() {
       <!-- Panel: Pusula (Görev Yönetimi) -->
             <div class="panel" id="panel-pusula">
 
-        <!-- ── YENİ PUSULA TOPBAR ── -->
+        <!-- ── PUSULA STICKY WRAPPER ── -->
+        <div style="position:sticky;top:0;z-index:200;background:var(--sf)">
         <div class="pus-topbar">
           <div class="pus-topbar-left">
             <div class="pus-brand">
@@ -571,6 +572,7 @@ function _doLogin() {
           </div>
         </div>
 
+        </div><!-- /sticky wrapper -->
         <!-- ── ANA LAYOUT: Sol Sidebar + Sağ İçerik ── -->
         <div class="pus-layout">
 
