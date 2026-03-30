@@ -247,6 +247,22 @@ function _mergeDataSets(localKey, fsData, collection) {
 })();
 
 /**
+ * Tüm senkronize edilen koleksiyon adları.
+ * _syncFirestore ve _startBgSyncCheck bu listeyi kullanır.
+ */
+var _ALL_SYNC_COLS = [
+  'users','tasks','calendar','announcements',
+  'kargo','stok','crm','ik','izin','pirim',
+  'hedefler','odemeler','tahsilat','satinalma','cari',
+  'konteyner','evrak','etkinlik','numune','resmiEvrak','arsivBelgeler',
+  'greetings','puan','activity','kpi','notes','tebligat',
+  'bankalar','navlun','urunler','fikirler',
+  'alisTeklifleri','satisTeklifleri','teklifSartlar',
+  'updateLog','trash','kararlar','suggestions','links','smartGoals',
+  'taskChats','notifications'
+];
+
+/**
  * Merge sonucunu Firestore'a yazar — kendi echo'sunu engeller.
  * @param {string} path  Firestore doc path
  * @param {*}      data  Birleştirilmiş veri
@@ -335,8 +351,8 @@ function _syncFirestore(path, data, mode = 'set') {
     // Verbose log yalnızca debug modda
     if (localStorage.getItem('ak_debug')) console.log('[FS:W]', path, Array.isArray(data) ? data.length : typeof data);
     // Kritik koleksiyonlar Safari doğrulamalı yazma kullanır
-    var _criticalCols = ['tasks','users','odemeler','tahsilat','satinalma','cari','kargo','pirim'];
-    var _useCritical = _criticalCols.indexOf(collection) !== -1;
+    // Tüm SYNC_MAP koleksiyonları doğrulamalı yazma kapsamında
+    var _useCritical = !!KEYS[collection] || _ALL_SYNC_COLS.indexOf(collection) !== -1;
 
     if (mode === 'set') {
       // Önce mevcut Firestore verisini oku, merge et, sonra yaz (veri kaybı önleme)
@@ -1883,14 +1899,9 @@ function _startBgSyncCheck() {
     if (!FB_DB) return;
     var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
     var base = 'duay_' + tid;
-    // Kritik koleksiyonları kontrol et
-    var criticalCols = [
-      ['tasks', KEYS.tasks],
-      ['users', KEYS.users],
-      ['odemeler', KEYS.odemeler],
-      ['tahsilat', KEYS.tahsilat],
-    ];
-    criticalCols.forEach(function(pair) {
+    // Tüm SYNC_MAP koleksiyonlarını kontrol et
+    var allCols = _ALL_SYNC_COLS.map(function(col) { return [col, KEYS[col] || 'ak_' + col]; });
+    allCols.forEach(function(pair) {
       var col = pair[0]; var key = pair[1];
       try {
         FB_DB.collection(base).doc(col).get().then(function(snap) {
@@ -1922,11 +1933,7 @@ window._manualSync = function() {
   if (!FB_DB) { _setSyncStatus('error', 'Firebase bağlantısı yok'); window.toast?.('Firebase bağlantısı yok', 'err'); return; }
   var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
   var base = 'duay_' + tid;
-  var cols = [
-    ['tasks', KEYS.tasks], ['users', KEYS.users], ['odemeler', KEYS.odemeler],
-    ['tahsilat', KEYS.tahsilat], ['kargo', KEYS.kargo], ['ik', KEYS.ik],
-    ['pirim', KEYS.pirim], ['satinalma', KEYS.satinalma], ['cari', KEYS.cari],
-  ];
+  var cols = _ALL_SYNC_COLS.map(function(col) { return [col, KEYS[col] || 'ak_' + col]; });
   var done = 0;
   cols.forEach(function(pair) {
     FB_DB.collection(base).doc(pair[0]).get().then(function(snap) {
