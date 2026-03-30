@@ -1864,16 +1864,15 @@ input:checked+.psl::before{transform:translateX(17px)}
 .eis-quad { transition: all .15s; }
 .eis-quad[ondragover]:hover { box-shadow: inset 0 0 0 2px var(--ac); }
 
-/* 4. Focus panel — 5 sabit grid, kaymaz */
+/* 4. Focus panel — 3 sütun grid, alta doğru büyür */
 #pus-focus-panel > div {
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  grid-auto-rows: auto !important;
   gap: 8px !important;
-  overflow: hidden !important;
 }
 #pus-focus-panel > div > div {
   min-width: 0 !important;
-  flex-shrink: 0 !important;
 }
 
 /* 5. Departman yönetimi modal */
