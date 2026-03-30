@@ -740,14 +740,11 @@ function renderPusula() {
   const main = g('pus-main-view');
   if (!main) return;
 
+  // Tam ekran görünümlerde (kadran/kanban/odak) burası çağrılmaz — setPusView yönetir
+  if (_PUS_FULL_VIEWS.indexOf(PUS_VIEW) !== -1) return;
+
   if (PUS_VIEW === 'board') {
     renderPusulaBoard(fl, users, todayS, main);
-  } else if (PUS_VIEW === 'kadran') {
-    _renderKadranView(fl, users, todayS, main);
-  } else if (PUS_VIEW === 'kanban') {
-    _renderKanbanView(fl, users, todayS, main);
-  } else if (PUS_VIEW === 'odak') {
-    _renderOdakView(fl, users, todayS, main);
   } else {
     renderPusulaList(fl, users, todayS, main);
   }
@@ -2027,16 +2024,53 @@ function clearPusFilters() {
 // BÖLÜM 8 — GÖRÜNÜM KONTROL
 // ════════════════════════════════════════════════════════════════
 
+var _PUS_FULL_VIEWS = ['kadran','kanban','odak']; // tam ekran görünümler
+
 function setPusView(v, btn) {
   PUS_VIEW = v;
   localStorage.setItem('ak_pus_view', v);
   document.querySelectorAll('.pvt-btn,.cvb').forEach(b => b.classList.remove('on', 'active'));
   if (btn) { btn.classList.add('on', 'active'); }
   else { const b = g('pus-v-' + v); if (b) b.classList.add('on', 'active'); }
-  // Board görünümünde Matrix butonunu gizle, diğerlerinde göster
+  // Board görünümünde Matrix butonunu gizle
   const _matrixBtn = g('ptm-matrix');
   if (_matrixBtn) _matrixBtn.style.display = (v === 'board') ? 'none' : '';
-  renderPusula();
+
+  // Tam ekran görünümler: klasik UI gizle, container temizle, render et
+  var isFullView = _PUS_FULL_VIEWS.indexOf(v) !== -1;
+  var _motivation = g('pus-motivation');
+  var _tabsRow = document.querySelector('.pus-tabs-row');
+  var _layout = document.querySelector('.pus-layout');
+  var _focusPanel = g('pus-focus-panel');
+  if (_motivation) _motivation.style.display = isFullView ? 'none' : '';
+  if (_tabsRow) _tabsRow.style.display = isFullView ? 'none' : '';
+  if (_layout) _layout.style.display = isFullView ? 'none' : '';
+  if (_focusPanel) _focusPanel.style.display = isFullView ? 'none' : '';
+
+  if (isFullView) {
+    // Tam ekran görünüm: panel-pusula altına doğrudan render
+    var _fullCont = g('pus-fullview-cont');
+    if (!_fullCont) {
+      _fullCont = document.createElement('div');
+      _fullCont.id = 'pus-fullview-cont';
+      // sticky wrapper'dan sonra, layout'dan önce ekle
+      var _panel = g('panel-pusula');
+      if (_panel) _panel.appendChild(_fullCont);
+    }
+    _fullCont.style.display = '';
+    _fullCont.innerHTML = '';
+    var _tasks = visTasks();
+    var _users = loadUsers();
+    var _today = new Date().toISOString().slice(0,10);
+    if (v === 'kadran') _renderKadranView(_tasks, _users, _today, _fullCont);
+    else if (v === 'kanban') _renderKanbanView(_tasks, _users, _today, _fullCont);
+    else if (v === 'odak') _renderOdakView(_tasks, _users, _today, _fullCont);
+  } else {
+    // Klasik görünüm: fullview container gizle
+    var _fc = g('pus-fullview-cont');
+    if (_fc) { _fc.style.display = 'none'; _fc.innerHTML = ''; }
+    renderPusula();
+  }
 }
 
 function setPusQuickFilter(f, btn) {
