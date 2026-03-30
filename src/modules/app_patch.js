@@ -688,10 +688,23 @@ function _applyRoleUI(user) {
   const isAdmin = role === 'admin';
   const modules = user.modules || window.ROLE_DEFAULT_MODULES?.[role] || [];
 
-  // Admin — her şey görünür
+  // Admin — her şey görünür, ama accordion durumunu koru
   if (isAdmin) {
-    document.querySelectorAll('.nb').forEach(b => b.style.display = '');
     document.querySelectorAll('.nsec-header, .nsec').forEach(h => h.style.display = '');
+    // Collapsed section'daki butonları gizli tut, sadece açık section butonlarını göster
+    var _nsecState = typeof loadNsecState === 'function' ? loadNsecState() : {};
+    document.querySelectorAll('.nb').forEach(function(b) {
+      // Bu butonun section'ını bul
+      var prev = b.previousElementSibling;
+      while (prev && !prev.classList.contains('nsec')) prev = prev.previousElementSibling;
+      var sectionId = prev ? prev.id : '';
+      // Section collapsed ise butonu gizli tut
+      if (sectionId && _nsecState[sectionId] === true) {
+        b.style.display = 'none';
+      } else {
+        b.style.display = '';
+      }
+    });
     return;
   }
 
@@ -709,13 +722,25 @@ function _applyRoleUI(user) {
   }
 
   // 1. TÜM sidebar butonlarını tara — id'si olan da olmayan da
+  // Accordion durumunu koru — collapsed section butonları gizli kalmalı
+  var _nsecState2 = typeof loadNsecState === 'function' ? loadNsecState() : {};
   document.querySelectorAll('.nb').forEach(btn => {
     const panelId = _getPanelId(btn);
     if (!panelId) return;
-    if (['dashboard', 'settings'].includes(panelId)) { btn.style.display = ''; return; }
-    // ik-hub → ik modülü
-    const checkId = panelId === 'ik-hub' ? 'ik' : panelId;
-    btn.style.display = (allowed.has(checkId) || allowed.has(panelId)) ? '' : 'none';
+    // Yetkisi yok → gizle
+    if (!['dashboard', 'settings'].includes(panelId)) {
+      const checkId = panelId === 'ik-hub' ? 'ik' : panelId;
+      if (!allowed.has(checkId) && !allowed.has(panelId)) { btn.style.display = 'none'; return; }
+    }
+    // Yetkisi var ama section collapsed → gizli tut
+    var prev = btn.previousElementSibling;
+    while (prev && !prev.classList.contains('nsec')) prev = prev.previousElementSibling;
+    var sId = prev ? prev.id : '';
+    if (sId && _nsecState2[sId] === true) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+    }
   });
 
   // 2. Bölüm başlıklarını — altında görünür buton yoksa gizle
