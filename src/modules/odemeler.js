@@ -748,6 +748,13 @@ function renderOdemeler() {
   _injectOdmPanel();
   checkOdmSLA();
   if (!_tickerInterval) _startKurTicker(); else renderKurTicker();
+  // Auth hazır değilse 500ms sonra yeniden dene
+  var _cuCheck = _CUo();
+  if (!_cuCheck?.id && !window._odmAuthRetried) {
+    window._odmAuthRetried = true;
+    setTimeout(function() { window._odmAuthRetried = false; renderOdemeler(); }, 500);
+    return;
+  }
   const today   = _todayStr();
   const todayD  = new Date(today);
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
@@ -778,7 +785,8 @@ function renderOdemeler() {
       if (_odmActiveChip === 'gecikti') return !o.paid && !o.collected && o.due && o.due < today;
       if (_odmActiveChip === 'pending') return o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor';
       if (_odmActiveChip === 'approved') return o.approvalStatus === 'approved' || o.approved;
-      if (_odmActiveChip === 'USD' || _odmActiveChip === 'EUR' || _odmActiveChip === 'TRY') return o.currency === _odmActiveChip;
+      if (_odmActiveChip === 'USD' || _odmActiveChip === 'EUR') return o.currency === _odmActiveChip;
+      if (_odmActiveChip === 'TRY') return !o.currency || o.currency === 'TRY';
       return true;
     });
   }
@@ -1015,7 +1023,7 @@ function renderOdemeler() {
       var isTah = o._src === 'tahsilat' || o.tip === 'tahsilat';
       var isLate = !o.paid && !o.collected && o.due && o.due < today;
       var isPaid = o.paid || o.collected;
-      var isPend = o.approvalStatus === 'pending';
+      var isPend = o.approvalStatus === 'pending' || !o.approvalStatus;
       var curSym = (o.currency||'TRY') === 'USD' ? '$' : (o.currency||'TRY') === 'EUR' ? '€' : '₺';
       var amt = parseFloat(o.amount) || 0;
       var cat = ODM_CATS[o.cat] || ODM_CATS.diger || { l:'', ic:'' };
@@ -2771,14 +2779,8 @@ function saveTahsilat() {
   var _missingFields = [];
   var _missingLabels = [];
   if (!_tahCariVal) { _missingFields.push('tah-f-cari');   _missingLabels.push('Cari Firma'); }
-  if (!name)        { _missingFields.push('tah-f-name');   _missingLabels.push('Müşteri/Kaynak'); }
+  if (!name)        { _missingFields.push('tah-f-name');   _missingLabels.push('Tahsilat Adı'); }
   if (!_tahAmt || _tahAmt <= 0) { _missingFields.push('tah-f-amount'); _missingLabels.push('Tutar (0 veya negatif olamaz)'); }
-  if (!_tahDue)     { _missingFields.push('tah-f-due');    _missingLabels.push('Vade Tarihi'); }
-  if (!_tahRef)     { _missingFields.push('tah-f-ref');    _missingLabels.push('Fatura/Referans No'); }
-  // Belge zorunluluğu — düzenlemede mevcut belgeler korunur
-  var _tahDocsVal = []; try { _tahDocsVal = JSON.parse(document.getElementById('tah-f-docs')?.value || '[]'); } catch(e2) {}
-  var _tahEditId2 = parseInt(document.getElementById('tah-f-eid')?.value || '0') || 0;
-  if (!_tahDocsVal.length && !_tahEditId2) { _missingFields.push('tah-f-docs'); _missingLabels.push('Belge/Dekont'); }
   if (_missingFields.length) {
     _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
