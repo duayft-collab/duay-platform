@@ -503,6 +503,32 @@ function _finishLogin(user) {
   _trackAttendance(u);
 
   console.log('[LOGIN] _finishLogin çağrıldı. user:', user?.name, '| FB_AUTH:', !!window.Auth?.getFBAuth?.(), '| FB_AUTH.currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
+
+  // P-1: Login anında Firestore'dan güncel kullanıcı verisini çek (yetki güncelliği)
+  try {
+    var _fbDB = window.Auth?.getFBDB?.();
+    var _tid  = window.DB?._getTid?.() || window._getTid?.() || '';
+    if (_fbDB && _tid && user) {
+      var _base = 'duay_' + _tid.replace(/[^a-zA-Z0-9_]/g, '_');
+      _fbDB.collection(_base).doc('users').get().then(function(snap) {
+        if (!snap.exists) return;
+        var fsUsers = snap.data()?.data;
+        if (!Array.isArray(fsUsers)) return;
+        var fresh = fsUsers.find(function(u) { return u.id === user.id || (u.email && user.email && u.email.toLowerCase() === u.email.toLowerCase()); });
+        if (!fresh) return;
+        // CU'yu güncel Firestore verisiyle güncelle
+        var cu = window.Auth?.getCU?.();
+        if (cu && (JSON.stringify(cu.modules) !== JSON.stringify(fresh.modules) || JSON.stringify(cu.permissions) !== JSON.stringify(fresh.permissions) || cu.role !== fresh.role)) {
+          Object.assign(cu, { role: fresh.role, modules: fresh.modules, permissions: fresh.permissions, access: fresh.access, dept: fresh.dept, rule12h: fresh.rule12h, status: fresh.status });
+          console.info('[LOGIN] CU yetkileri Firestore\'dan güncellendi');
+          try { window.dispatchEvent(new CustomEvent('auth-changed', { detail: cu })); } catch(e) {}
+        }
+        // localStorage'ı da güncelle
+        try { localStorage.setItem(window.DB?.KEYS?.users || 'ak_u3', JSON.stringify(fsUsers)); } catch(e) {}
+      }).catch(function(e) { console.warn('[LOGIN] Firestore kullanıcı çekme hatası:', e.message); });
+    }
+  } catch(e) {}
+
   // P0: Realtime sync — sadece Firebase Auth currentUser hazır olduğunda başlat
   var _fbAuth = window.Auth?.getFBAuth?.();
   if (_fbAuth && _fbAuth.currentUser) {

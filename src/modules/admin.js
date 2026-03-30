@@ -939,9 +939,11 @@ function savePermissions() {
       oldPermissions: JSON.parse(oldPerms),
       newPermissions: _newPermissions,
     });
-    // Admin'e bildirim (kendi değişikliği değilse)
+    // Kullanıcıya bildirim + oturum yenileme sinyali
     if (_getCU()?.id !== u.id) {
-      window.addNotif?.('🔐', 'Yetki güncellendi: ' + u.name, 'info', 'admin', u.id);
+      window.addNotif?.('🔐', 'Yetkiniz güncellendi — sayfa yenilenecek', 'warn', 'admin', u.id);
+      // forceRefresh: user'ın tarayıcısında CU güncellemesini zorla
+      u.permUpdatedAt = nowTs();
     }
   }
 
