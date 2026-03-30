@@ -1689,7 +1689,7 @@ function _populateDeptSelect() {
 function openAddTask() {
   populatePusUsers();
   _populateDeptSelect();
-  ['tk-title','tk-tags','tk-link'].forEach(id => { const el = g(id); if (el) el.value = ''; });
+  ['tk-title','tk-tags','tk-link','tk-jobid'].forEach(id => { const el = g(id); if (el) el.value = ''; });
   const _descRich = g('tk-desc-rich'); if (_descRich) _descRich.innerHTML = '';
   if (g('tk-desc')) g('tk-desc').value = '';
   if (g('tk-pri'))    g('tk-pri').value    = '2';
@@ -1709,10 +1709,7 @@ function openAddTask() {
       if (uid > 0) s.value = String(uid);
     }
   }
-  // Job ID alanı temizle
-  var jobIdEl = g('tk-jobid-display');
-  if (jobIdEl) jobIdEl.textContent = 'Otomatik atanacak';
-  st('mo-tk-t', '➕ Görev Ekle');
+  st('mo-tk-t', 'Görev Ekle');
   window.openMo?.('mo-task');
   setTimeout(() => populateTaskParticipants(null), 50);
 }
@@ -1746,9 +1743,9 @@ function editTask(id) {
   const sel = g('tk-user');
   if (sel) sel.value = t.uid;
   // Job ID göster
-  var jobIdEl2 = g('tk-jobid-display');
-  if (jobIdEl2) jobIdEl2.textContent = t.jobId || '—';
-  st('mo-tk-t', '✏️ Görevi Düzenle');
+  var jobIdEl2 = g('tk-jobid');
+  if (jobIdEl2) jobIdEl2.value = t.jobId || '';
+  st('mo-tk-t', 'Görevi Düzenle');
   window.openMo?.('mo-task');
   setTimeout(() => populateTaskParticipants(t), 50);
 }
@@ -1806,6 +1803,7 @@ function saveTask() {
     tags:       (g('tk-tags')?.value  || '').split(',').map(t => t.trim()).filter(Boolean),
     link:       g('tk-link')?.value     || '',
     duration:   parseInt(g('tk-duration')?.value || '0') || null,
+    jobId:      (g('tk-jobid')?.value || '').trim() || null,
     uid,
     done:       g('tk-status')?.value === 'done',
     participants,
@@ -1850,10 +1848,12 @@ function saveTask() {
         ? window._pendingSubTasks.map((s, i) => ({ ...s, id: _nid + i + 1 }))
         : [];
       window._pendingSubTasks = null; // temizle
-      // Otomatik Job ID üretimi
-      var _yr = new Date().getFullYear();
-      var _jobSeq = String(d.filter(function(t) { return t.jobId && t.jobId.indexOf('JOB-' + _yr) === 0; }).length + 1).padStart(4, '0');
-      fields.jobId = 'JOB-' + _yr + '-' + _jobSeq;
+      // Job ID: kullanıcı yazdıysa fields.jobId zaten dolu, yoksa otomatik üret
+      if (!fields.jobId) {
+        var _yr = new Date().getFullYear();
+        var _jobSeq = String(d.filter(function(t) { return t.jobId && t.jobId.indexOf('JOB-' + _yr) === 0; }).length + 1).padStart(4, '0');
+        fields.jobId = 'JOB-' + _yr + '-' + _jobSeq;
+      }
       d.push({ id: _nid, subTasks: _initSubs, ...fields });
       logActivity('task', `"${title}" ekledi`);
       window.toast?.('Görev eklendi ✓', 'ok');
@@ -3754,11 +3754,7 @@ function _pfPatchTaskModal() {
   const footer=document.querySelector('#mo-task .moc > div:last-of-type');
   if (!footer||footer.dataset.pfPatched) return;
   footer.dataset.pfPatched='1';
-  // Şablon butonu — footer başına ekle
-  const tplBtn=document.createElement('button');
-  tplBtn.className='btn btns'; tplBtn.style.fontSize='12px'; tplBtn.textContent='📋 Şablon';
-  tplBtn.onclick=()=>window.openTaskTemplates?.();
-  const firstBtn=footer.querySelector('button'); if(firstBtn) footer.insertBefore(tplBtn,firstBtn);
+  // Şablon butonu footer HTML'de zaten mevcut — tekrar ekleme
   // Alt görev önizleme konteyneri
   const body=document.querySelector('#mo-task .moc > div:not(:first-child):not(:last-child)');
   if (body&&!g('tk-subtask-preview')) {
