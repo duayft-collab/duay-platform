@@ -474,14 +474,41 @@ function _doLogin() {
 
       <!-- Panel: Dashboard -->
             <div class="panel on" id="panel-dashboard">
-        <!-- Başlık -->
-        <div class="ph">
-          <div><div class="pht" id="ph-db">Dashboard</div><div class="phs" id="db-welcome"></div></div>
-          <span id="db-date" style="font-size:12px;color:var(--t2)"></span>
+        <!-- Bölüm 1: Üst Bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:200">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--t)">Duay Global LLC</div>
+            <div style="font-size:11px;color:var(--t3)" id="db-datetime"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;color:var(--t3)">Sistem:</span>
+            <div id="db-health-bar" style="display:flex;gap:2px;align-items:center"></div>
+            <span id="db-health-score" style="font-size:11px;font-weight:700"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div id="db-sync-status" style="font-size:10px;display:flex;align-items:center;gap:4px"></div>
+            <span id="db-version" style="font-size:9px;color:var(--t3);font-family:monospace"></span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div id="db-user-av" style="width:28px;height:28px;border-radius:8px;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700"></div>
+              <span id="db-user-name" style="font-size:11px;font-weight:500;color:var(--t)"></span>
+            </div>
+          </div>
         </div>
-        <!-- Eski stat grid — _renderDashboard gizler -->
+        <!-- Bölüm 2: Sub Nav -->
+        <div style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">
+          <div class="db-snav on" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid #0f3460;color:#0f3460">Genel Bakış</div>
+          <div class="db-snav" onclick="App.nav('odemeler')" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2)">Finans Kokpiti</div>
+          <div class="db-snav" onclick="App.nav('pusula')" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2)">Operasyon Kokpiti</div>
+          <div class="db-snav" onclick="App.nav('settings')" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2)">Güvenlik Kokpiti</div>
+          <div id="db-alert-nav" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;color:#D97706;font-weight:600;display:none"></div>
+        </div>
+        <!-- Bölüm 3: Alert Bar -->
+        <div id="db-alert-bar" style="display:none;padding:8px 20px;background:#FAEEDA;border-bottom:1px solid #EF9F2733;font-size:11px;color:#633806"></div>
+        <!-- Eski stat grid gizli -->
         <div class="sg" id="db-sg" style="display:none"></div>
-        <!-- Yeni 9 bölüm buraya render edilir -->
+        <div id="db-welcome" style="display:none"></div>
+        <div id="db-date" style="display:none"></div>
+        <!-- Dashboard içerik -->
         <div id="db-content"></div>
       </div>
 

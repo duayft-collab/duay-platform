@@ -931,16 +931,26 @@ function _renderDashboard() {
   if (!cu) return;
   var isAdm = cu.role === 'admin' || cu.role === 'manager';
   var n = new Date();
-  var lang = _LANG;
-  _st('db-date', n.toLocaleDateString(lang==='en'?'en-GB':'tr-TR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}));
-  _st('db-welcome', 'Hoş geldiniz, ' + cu.name + '!');
-
-  // ═══ VERİ TOPLAMA ═══
-  var sg = _g('db-sg'); if (!sg) return;
-  var content = _g('db-content'); if (!content) return;
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var today = new Date().toISOString().slice(0,10);
   var thisMonth = today.slice(0,7);
+  var TR_DAYS = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  var TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+  // Üst bar güncelle
+  var dtEl = _g('db-datetime');
+  if (dtEl) dtEl.textContent = TR_DAYS[n.getDay()] + ', ' + n.getDate() + ' ' + TR_MONTHS[n.getMonth()] + ' ' + n.getFullYear() + ' · ' + String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  var avEl = _g('db-user-av');
+  if (avEl) avEl.textContent = (cu.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  var unEl = _g('db-user-name');
+  if (unEl) unEl.textContent = cu.name || '';
+  var verEl = _g('db-version');
+  if (verEl) verEl.textContent = 'v' + (window.APP_VER || document.querySelector('[data-ver]')?.dataset.ver || '');
+  var syncEl = _g('db-sync-status');
+  if (syncEl) syncEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#16a34a"></span> Sync aktif';
+
+  var content = _g('db-content'); if (!content) return;
+  var sg = _g('db-sg'); // uyumluluk
   var weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7); var weekStr = weekEnd.toISOString().slice(0,10);
   var users = loadUsers(); var tasks = loadTasks().filter(function(t){return !t.isDeleted;});
   var odm = typeof loadOdm==='function'?loadOdm().filter(function(o){return !o.isDeleted;}):[];
@@ -995,8 +1005,54 @@ function _renderDashboard() {
   var puan2 = typeof loadPuan==='function'?loadPuan().filter(function(p){return p.date===today;}):[];
 
   // ═══ RENDER ═══
-  sg.style.display = 'none';
-  var C = 'background:var(--sf);border:0.5px solid var(--b);border-radius:8px;overflow:visible';
+  if (sg) sg.style.display = 'none';
+  var C = 'background:var(--sf);border:0.5px solid var(--b);border-radius:12px;overflow:hidden';
+  var _fmt = function(v) { return Math.round(Math.abs(v)).toLocaleString('tr-TR'); };
+
+  // Sağlık barı güncelle
+  var hbEl = _g('db-health-bar');
+  if (hbEl) {
+    var segs = '';
+    for (var si = 0; si < 10; si++) {
+      var segC = (si < Math.round(score/10)) ? (score>=71?'#16a34a':score>=31?'#D97706':'#dc2626') : 'var(--s2)';
+      segs += '<div style="width:8px;height:14px;border-radius:2px;background:'+segC+'"></div>';
+    }
+    hbEl.innerHTML = segs;
+  }
+  var hsEl = _g('db-health-score');
+  if (hsEl) { hsEl.textContent = score + '/100'; hsEl.style.color = scoreColor; }
+
+  // Alert bar + nav
+  var kritikSayi = gecikOdm.length + gecikTask.length + (proj30 < 0 ? 1 : 0);
+  var wipCount = tasks.filter(function(t){return t.status==='inprogress';}).length;
+  var _alertBar = _g('db-alert-bar');
+  var _alertNav = _g('db-alert-nav');
+  if (_alertBar && kritikSayi > 0) {
+    var _als = [];
+    if (proj30 < 0) _als.push('<span style="color:#A32D2D">● 7g projeksiyon kritik: -₺' + _fmt(proj30) + '</span>');
+    if (wipCount > 5) _als.push('<span style="color:#633806">● Kanban WIP aşıldı: Devam ' + wipCount + '/5</span>');
+    if (gecikTask.length) _als.push('<span style="color:#633806">● ' + gecikTask.length + ' gecikmiş görev · ' + gecikTask.filter(function(t){return t.pri===1;}).length + ' kritik</span>');
+    _alertBar.innerHTML = '<b>Aktif Uyarılar:</b> ' + _als.join(' | ');
+    _alertBar.style.display = '';
+    if (_alertNav) { _alertNav.textContent = '⚠ ' + kritikSayi + ' Uyarı'; _alertNav.style.display = ''; }
+  } else {
+    if (_alertBar) _alertBar.style.display = 'none';
+    if (_alertNav) _alertNav.style.display = 'none';
+  }
+
+  // Döviz pozisyonları
+  var _fxNet = {};
+  ['USD','EUR','TRY'].forEach(function(cur) {
+    var odmC = odm.filter(function(o){return (o.currency||'TRY')===cur && !o.paid;}).reduce(function(s,o){return s+(parseFloat(o.amount)||0);},0);
+    var tahC = tah.filter(function(t2){return (t2.currency||'TRY')===cur && !t2.collected;}).reduce(function(s,t2){return s+(parseFloat(t2.amount)||0);},0);
+    _fxNet[cur] = tahC - odmC;
+  });
+  var fxSym = {USD:'$',EUR:'€',TRY:'₺'};
+
+  // Gecikmiş alacak tutarı
+  var gecikAlacak = gecikOdm.reduce(function(s,o){return s+(parseFloat(o.amountTRY||o.amount)||0);},0);
+  // Online kullanıcılar
+  var onlineUsers = users.filter(function(u2){ return u2.lastLogin && (Date.now() - new Date(u2.lastLogin.replace(' ','T')).getTime()) < 1800000; });
 
   // ── USER DASHBOARD ──────────────────────────────────────────
   if (!isAdm) {
@@ -1043,10 +1099,193 @@ function _renderDashboard() {
     return;
   }
 
-  // ── ADMIN DASHBOARD — KOMPAKT TASARIM ──────────────────────
-  var h = '<div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">';
+  // ── ADMIN DASHBOARD ──────────────────────────────────────────
+  var h = '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">';
 
-  // Özlü söz — sağ üst
+  // ═══ BÖLÜM 4: 6 METRİK KART ═══
+  h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;'+C+'">';
+  var mCards = [
+    {l:'Net Pozisyon',v:(netPoz>=0?'+':'-')+'₺'+_fmt(netPoz),c:netPoz>=0?'#27500A':'#A32D2D',s:netPoz>=0?'↑ Pozitif':'↓ Negatif',sc:netPoz>=0?'#27500A':'#A32D2D'},
+    {l:'Gecikmiş Alacak',v:'₺'+_fmt(gecikAlacak),c:gecikAlacak>0?'#A32D2D':'#27500A',s:gecikOdm.length+' işlem',sc:'var(--t3)'},
+    {l:'Bu Hafta Vadeli',v:'₺'+_fmt(haftaOdm),c:'#633806',s:bugunOdm.length+' bugün',sc:'var(--t3)'},
+    {l:'Gecikmiş Görev',v:String(gecikTask.length),c:gecikTask.length?'#A32D2D':'#27500A',s:gecikTask.filter(function(t2){return t2.pri===1;}).length+' kritik',sc:gecikTask.length?'#A32D2D':'var(--t3)'},
+    {l:'Aktif Kullanıcı',v:String(users.filter(function(u2){return u2.status==='active';}).length),c:'var(--t)',s:onlineUsers.length+' çevrimiçi',sc:'var(--t3)'},
+    {l:'Sistem Skoru',v:String(score),c:scoreColor,s:'/100 · '+scoreLabel,sc:scoreColor},
+  ];
+  mCards.forEach(function(m,i){
+    h+='<div style="padding:14px 16px;border-right:'+(i<5?'0.5px solid var(--b)':'none')+'">'
+      +'<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">'+m.l+'</div>'
+      +'<div style="font-size:20px;font-weight:700;color:'+m.c+'">'+m.v+'</div>'
+      +'<div style="font-size:9px;color:'+m.sc+';margin-top:3px">'+m.s+'</div></div>';
+  });
+  h += '</div>';
+
+  // ═══ BÖLÜM 5: 3'LÜ ANA GRID ═══
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">';
+
+  // — FİNANS PANELİ —
+  h += '<div style="'+C+'">'
+    + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<span style="font-size:10px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Finans</span>'
+      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'odemeler\')">Finans Kokpiti →</span></div>'
+    + '<div style="padding:16px;text-align:center"><div style="font-size:28px;font-weight:700;color:'+(netPoz>=0?'#27500A':'#A32D2D')+'">'+(netPoz>=0?'+':'-')+'₺'+_fmt(netPoz)+'</div><div style="font-size:10px;color:var(--t3)">bu ay net</div></div>'
+    + '<div style="padding:0 16px 12px;display:flex;flex-direction:column;gap:6px;font-size:11px">'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#27500A"></span><span style="flex:1;color:var(--t2)">Bu ay tahsilat</span><span style="font-weight:600;color:#27500A">+₺'+_fmt(ayTahsilat)+'</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#A32D2D"></span><span style="flex:1;color:var(--t2)">Bu ay ödeme</span><span style="font-weight:600;color:#A32D2D">-₺'+_fmt(ayOdeme)+'</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#A32D2D"></span><span style="flex:1;color:var(--t2)">Gecikmiş</span><span style="font-weight:600;color:#A32D2D">₺'+_fmt(gecikAlacak)+' · '+gecikOdm.length+' işlem</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#633806"></span><span style="flex:1;color:var(--t2)">Bu hafta vadeli</span><span style="font-weight:600;color:#633806">₺'+_fmt(haftaOdm)+'</span></div>'
+    + '</div>'
+    // Döviz barı
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:0.5px solid var(--b)">'
+      + ['USD','EUR','TRY'].map(function(cur){var nv=_fxNet[cur]||0;return '<div style="padding:8px 10px;text-align:center;border-right:0.5px solid var(--b);font-size:10px"><div>'+{USD:'🇺🇸',EUR:'🇪🇺',TRY:'🇹🇷'}[cur]+'</div><div style="font-weight:600;color:'+(nv>=0?'#27500A':'#A32D2D')+'">'+(nv>=0?'+':'-')+fxSym[cur]+_fmt(nv)+'</div><div style="font-size:8px;color:var(--t3)">'+cur+'</div></div>';}).join('')
+    + '</div>'
+    // Projeksiyon uyarısı
+    + (proj30 < 0 ? '<div style="padding:8px 12px;background:#FCEBEB;font-size:10px;color:#A32D2D;font-weight:500">⚠ 7 günlük projeksiyon kritik: -₺'+_fmt(proj30)+'</div>' : '')
+  + '</div>';
+
+  // — OPERASYON PANELİ —
+  var topGecik = gecikTask.sort(function(a,b){return (a.pri||4)-(b.pri||4);}).slice(0,4);
+  var wipPct = Math.min(100, Math.round(wipCount / 5 * 100));
+  var wipColor = wipPct <= 60 ? '#639922' : wipPct <= 90 ? '#BA7517' : '#E24B4A';
+  h += '<div style="'+C+'">'
+    + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<span style="font-size:10px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Operasyon</span>'
+      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'pusula\')">Pusula →</span></div>'
+    // WIP bar
+    + '<div style="padding:10px 16px;background:var(--s2)">'
+      + '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span style="color:var(--t2)">Kanban WIP — Devam Sütunu</span><span style="color:'+wipColor+';font-weight:600">'+wipCount+'/5'+(wipCount>5?' ⚠ Aşıldı':'')+'</span></div>'
+      + '<div style="height:4px;background:var(--b);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+wipPct+'%;background:'+wipColor+';border-radius:2px"></div></div>'
+    + '</div>'
+    // Görev listesi
+    + '<div style="padding:8px 0">';
+  topGecik.forEach(function(t2){
+    var days = Math.ceil((new Date(today)-new Date(t2.due))/86400000);
+    var isLate = t2.due && t2.due < today;
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 16px;border-bottom:0.5px solid var(--b);cursor:pointer" onclick="openPusDetail('+t2.id+')">'
+      + '<span style="width:5px;height:5px;border-radius:50%;background:'+(isLate?'#A32D2D':'#633806')+';flex-shrink:0"></span>'
+      + '<span style="flex:1;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t2.title)+'</span>'
+      + '<span style="font-size:9px;padding:2px 8px;border-radius:4px;background:'+(isLate?'#FCEBEB':'#FAEEDA')+';color:'+(isLate?'#A32D2D':'#633806')+';font-weight:600;white-space:nowrap">'+(isLate?days+'g gecikmiş':'1g kaldı')+'</span></div>';
+  });
+  if (!topGecik.length) h += '<div style="padding:16px;text-align:center;font-size:11px;color:var(--t3)">Gecikmiş görev yok</div>';
+  h += '</div>'
+    // Alt özet
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:0.5px solid var(--b);font-size:10px;color:var(--t3)">'
+      + '<div style="padding:8px;text-align:center;border-right:0.5px solid var(--b)">Toplam: <b style="color:var(--t)">'+acikGorev+'</b> açık</div>'
+      + '<div style="padding:8px;text-align:center;border-right:0.5px solid var(--b)">Tamamlanan: <b style="color:#27500A">'+tasks.filter(function(t2){return t2.done&&(t2.completedAt||'').slice(0,10)===today;}).length+'</b></div>'
+      + '<div style="padding:8px;text-align:center">İnceleme: <b>'+tasks.filter(function(t2){return t2.status==='review';}).length+'</b></div>'
+    + '</div>'
+  + '</div>';
+
+  // — GÜVENLİK & SİSTEM PANELİ —
+  var actLog = typeof loadAct === 'function' ? loadAct().slice(0,3) : [];
+  h += '<div style="'+C+'">'
+    + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<span style="font-size:10px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Güvenlik & Sistem</span>'
+      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'settings\')">Sistem Ayarları →</span></div>'
+    // Skor dairesi
+    + '<div style="padding:16px;display:flex;align-items:center;gap:14px">'
+      + '<div style="width:56px;height:56px;border-radius:50%;border:3px solid '+scoreColor+';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:'+scoreColor+';flex-shrink:0">'+score+'</div>'
+      + '<div><div style="font-size:12px;font-weight:600;color:var(--t)">Genel Sistem Skoru</div><div style="font-size:10px;color:var(--t3)">'+(score<70?'Operasyon skoru düşürüyor':'Sistem sağlıklı')+'</div></div></div>'
+    // Durum listesi
+    + '<div style="padding:0 16px 12px;display:flex;flex-direction:column;gap:4px;font-size:11px">'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#27500A"></span><span style="flex:1;color:var(--t2)">Auth servisi</span><span style="color:#27500A;font-weight:500">Online</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#27500A"></span><span style="flex:1;color:var(--t2)">DB Latency</span><span style="color:#27500A;font-weight:500">&lt;10ms</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#27500A"></span><span style="flex:1;color:var(--t2)">Audit log</span><span style="color:#27500A;font-weight:500">Senkron</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#27500A"></span><span style="flex:1;color:var(--t2)">Aktif oturum</span><span style="color:var(--t);font-weight:500">'+users.filter(function(u2){return u2.status==='active';}).length+'</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#27500A"></span><span style="flex:1;color:var(--t2)">Son 24 saat</span><span style="color:var(--t);font-weight:500">'+actLog.length+' olay</span></div>'
+    + '</div>'
+    // Son olaylar
+    + '<div style="padding:8px 16px;border-top:0.5px solid var(--b);font-size:10px;font-weight:600;color:var(--t);margin-bottom:4px">Son Olaylar</div>';
+  actLog.forEach(function(ev){
+    var evC = (ev.type==='user'||ev.message?.indexOf('yetki')!==-1)?'#633806':(ev.type==='login'?'#27500A':'#A32D2D');
+    var evTime = ev.ts ? ev.ts.slice(11,16) : '';
+    h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 16px;font-size:10px">'
+      + '<span style="width:4px;height:4px;border-radius:50%;background:'+evC+';flex-shrink:0"></span>'
+      + '<span style="flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.message||ev.detail||'')+'</span>'
+      + '<span style="color:var(--t3);white-space:nowrap">'+evTime+'</span></div>';
+  });
+  h += '</div>';
+
+  h += '</div>'; // 3'lü grid kapanış
+
+  // ═══ BÖLÜM 6: 2'Lİ ALT GRID ═══
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+
+  // — KULLANICILAR —
+  h += '<div style="'+C+'">'
+    + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<span style="font-size:10px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Kullanıcılar · '+onlineUsers.length+' Çevrimiçi</span>'
+      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'admin\')">Kullanıcı Yönetimi →</span></div>';
+  var AVC_DB = [['#E0E7FF','#1E1B4B'],['#DCFCE7','#14532D'],['#F3E8FF','#3B0764'],['#FEF3C7','#78350F']];
+  users.filter(function(u2){return u2.status==='active';}).sort(function(a,b){return (b.lastLogin||'').localeCompare(a.lastLogin||'');}).slice(0,6).forEach(function(u2,i){
+    var isOn = onlineUsers.find(function(ou){return ou.id===u2.id;});
+    var ini = (u2.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    var ac = AVC_DB[i % AVC_DB.length];
+    var ago = u2.lastLogin ? (function(){ var d = Date.now() - new Date(u2.lastLogin.replace(' ','T')).getTime(); if(d<3600000) return 'Şu an aktif'; if(d<86400000) return Math.floor(d/3600000)+' saat önce'; return Math.floor(d/86400000)+' gün önce'; })() : 'Hiç';
+    var rolL = u2.role==='admin'?'Yönetici':u2.role==='manager'?'Takım Lideri':'Personel';
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:0.5px solid var(--b)">'
+      + '<div style="position:relative;flex-shrink:0"><div style="width:32px;height:32px;border-radius:8px;background:'+ac[0]+';color:'+ac[1]+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+ini+'</div>'
+      + '<div style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--sf);background:'+(isOn?'#16a34a':'#9CA3AF')+'"></div></div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--t)">'+esc(u2.name)+'</div><div style="font-size:9px;color:var(--t3)">'+u2.role+' · '+rolL+'</div></div>'
+      + '<span style="font-size:9px;color:var(--t3)">'+ago+'</span></div>';
+  });
+  h += '</div>';
+
+  // — NAKİT AKIŞ GRAFİĞİ —
+  var chartData = []; var allVals = [];
+  for (var di = 6; di >= 0; di--) {
+    var d2 = new Date(); d2.setDate(d2.getDate()-di); var ds = d2.toISOString().slice(0,10);
+    var dayO = odm.filter(function(o2){return o2.paid && (o2.paidTs||o2.due||'').slice(0,10)===ds;}).reduce(function(s,o2){return s+(parseFloat(o2.amountTRY||o2.amount)||0);},0);
+    var dayT = tah.filter(function(t2){return t2.collected && (t2.collectedTs||t2.due||'').slice(0,10)===ds;}).reduce(function(s,t2){return s+(parseFloat(t2.amountTRY||t2.amount)||0);},0);
+    chartData.push({ds:ds,o:dayO,t:dayT,label:di===0?'Bugün':(d2.getDate()+' '+TR_MONTHS[d2.getMonth()].slice(0,3))});
+    allVals.push(dayO); allVals.push(dayT);
+  }
+  allVals.sort(function(a,b){return a-b;});
+  var cMax = allVals[Math.floor(allVals.length*0.85)] || 1;
+  if (cMax < 1) cMax = 1;
+  var chartTahTotal = chartData.reduce(function(s,c2){return s+c2.t;},0);
+  var chartOdmTotal = chartData.reduce(function(s,c2){return s+c2.o;},0);
+
+  h += '<div style="'+C+'">'
+    + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<span style="font-size:10px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Nakit Akışı — Son 7 Gün</span>'
+      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'odemeler\')">Nakit Akışı →</span></div>'
+    // Üst özet
+    + '<div style="display:flex;gap:16px;padding:10px 16px;font-size:11px">'
+      + '<span>Tahsilat <b style="color:#27500A">+₺'+_fmt(chartTahTotal)+'</b></span>'
+      + '<span>Ödeme <b style="color:#A32D2D">-₺'+_fmt(chartOdmTotal)+'</b></span>'
+      + '<span>Net <b style="color:'+(chartTahTotal-chartOdmTotal>=0?'#27500A':'#A32D2D')+'">'+(chartTahTotal-chartOdmTotal>=0?'+':'-')+'₺'+_fmt(chartTahTotal-chartOdmTotal)+'</b></span>'
+    + '</div>'
+    // Bar chart
+    + '<div style="display:flex;gap:6px;align-items:flex-end;height:80px;padding:0 16px">';
+  chartData.forEach(function(cd,ci){
+    var hT = cd.t > 0 ? Math.max(4,Math.round(Math.min(cd.t,cMax)/cMax*70)) : 2;
+    var hO = cd.o > 0 ? Math.max(4,Math.round(Math.min(cd.o,cMax)/cMax*70)) : 2;
+    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">'
+      + '<div style="display:flex;gap:2px;align-items:flex-end;width:100%;height:70px">'
+      + '<div style="flex:1;height:'+hT+'px;background:#27500A;border-radius:2px 2px 0 0" title="Tahsilat: ₺'+_fmt(cd.t)+'"></div>'
+      + '<div style="flex:1;height:'+hO+'px;background:#A32D2D;border-radius:2px 2px 0 0" title="Ödeme: ₺'+_fmt(cd.o)+'"></div></div>'
+      + '<div style="font-size:8px;color:var(--t3);margin-top:2px;'+(ci===6?'font-weight:700':'')+'">'+(cd.label)+'</div></div>';
+  });
+  h += '</div>'
+    + '<div style="padding:8px 16px;font-size:9px;color:var(--t3);display:flex;gap:12px">'
+      + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:#27500A;vertical-align:middle;margin-right:3px"></span>Tahsilat</span>'
+      + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:#A32D2D;vertical-align:middle;margin-right:3px"></span>Ödeme</span>'
+    + '</div>'
+  + '</div>';
+
+  h += '</div>'; // 2'li grid kapanış
+
+  // ═══ ESKİ BÖLÜMLER KALDIRILDI — yukarıdaki yeni tasarım kullanılıyor ═══
+  // Hızlı eylemler
+  var btnS = 'padding:6px 12px;border:none;border-radius:99px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;color:#fff';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    + '<button onclick="openOdmModal?.(null)" style="'+btnS+';background:#1E293B">+ Ödeme</button>'
+    + '<button onclick="openTahsilatModal?.(null)" style="'+btnS+';background:#0F6E56">+ Tahsilat</button>'
+    + '<button onclick="Pusula?.openAdd?.()" style="'+btnS+';background:#3B82F6">+ Görev</button>'
+    + '</div>';
+
+  // ESKİ KOD BAŞLANGIÇI — atla
   var ozlu = typeof window._getOzluSoz === 'function' ? window._getOzluSoz('dashboard') : '';
   if (ozlu) h += '<div style="text-align:right;font-size:9px;font-style:italic;color:var(--t3);margin-bottom:-2px">\u201C'+ozlu+'\u201D</div>';
 
