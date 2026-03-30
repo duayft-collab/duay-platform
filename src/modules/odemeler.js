@@ -631,6 +631,36 @@ window._odmTogglePeek = function(id) {
   }
 };
 
+/** Kayıt geri alma — pending + kendi kaydı veya admin */
+window._odmRevertRecord = function(id, type) {
+  window.confirmModal?.('Bu kaydı geri almak istediğinizden emin misiniz?', {
+    title: 'Kayıt Geri Al',
+    danger: true,
+    confirmText: 'Evet, Geri Al',
+    onConfirm: function() {
+      if (type === 'tah') {
+        var d = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+        var o = d.find(function(x) { return x.id === id; });
+        if (o) {
+          if (typeof addToTrash === 'function') addToTrash(o, 'Tahsilat', 'tahsilat');
+          o.isDeleted = true; o.deletedAt = _nowTso(); o.deletedBy = _CUo()?.id; o.deletedReason = 'user_revert';
+          storeTahsilat(d);
+        }
+      } else {
+        var d2 = window.loadOdm ? loadOdm() : [];
+        var o2 = d2.find(function(x) { return x.id === id; });
+        if (o2) {
+          if (typeof addToTrash === 'function') addToTrash(o2, 'Ödeme', 'odemeler');
+          o2.isDeleted = true; o2.deletedAt = _nowTso(); o2.deletedBy = _CUo()?.id; o2.deletedReason = 'user_revert';
+          window.storeOdm ? storeOdm(d2) : null;
+        }
+      }
+      window.toast?.('Kayıt geri alındı', 'ok');
+      renderOdemeler();
+    }
+  });
+};
+
 var _odmActiveChip = 'all';
 window._odmChipFilter = function(chip, el) {
   _odmActiveChip = chip;
@@ -1042,9 +1072,9 @@ function renderOdemeler() {
       var wrapper = document.createElement('div');
       wrapper.dataset.oid = String(o.id);
 
-      // Ana satır
+      // Ana satır — tıklanınca peek toggle
       var rowHtml =
-        '<div class="odm-row" id="' + _rowId + '" style="' + _pendBorder + _pendBg + '">'
+        '<div class="odm-row" id="' + _rowId + '" style="' + _pendBorder + _pendBg + '" onclick="window._odmTogglePeek(' + o.id + ')">'
         // Sol panel — tip göstergesi
         + '<div style="width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (isTah ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)') + ';flex-shrink:0;border-right:0.5px solid var(--b)">'
           + '<div style="font-size:14px;color:' + (isTah ? '#16a34a' : '#dc2626') + '">' + (isTah ? '↓' : '↑') + '</div>'
@@ -1095,7 +1125,8 @@ function renderOdemeler() {
               + (o.docs && o.docs.length && _canViewDoc ? '<button onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : (o.docs && o.docs.length ? '<span style="font-size:9px;color:var(--t3)">📎 Belge mevcut</span>' : '<span style="font-size:9px;color:var(--t3)">Belge yok</span>'))
               + (_canApprove && isPend ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
               + (_canPay ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
-              + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '');
+              + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '')
+              + (_canDel ? '<button onclick="event.stopPropagation();window._odmRevertRecord?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(107,114,128,.08);color:#6B7280;cursor:pointer;font-family:inherit">Geri Al</button>' : '');
           })()
         + '</div>'
         + '</div>';
@@ -1711,6 +1742,8 @@ function saveOdm() {
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
   renderOdemeler();
+  // Auth gecikmesi durumunda 500ms sonra yeniden render
+  setTimeout(renderOdemeler, 500);
   window.logActivity?.('view', '"' + name + '" odeme ' + (isNew ? 'eklendi' : 'guncellendi'));
   // Yeni kayıt + admin değilse yöneticilere bildirim gönder
   if (isNew && !isAdmin) {
@@ -2939,6 +2972,7 @@ function saveTahsilat() {
   }
   if (window._renderTahsilatPanel) window._renderTahsilatPanel();
   renderOdemeler();
+  setTimeout(renderOdemeler, 500);
 }
 
 function markTahsilatCollected(id) {
