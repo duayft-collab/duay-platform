@@ -786,7 +786,7 @@ function renderOdemeler() {
       if (_odmActiveChip === 'pending') return o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor';
       if (_odmActiveChip === 'approved') return o.approvalStatus === 'approved' || o.approved;
       if (_odmActiveChip === 'USD' || _odmActiveChip === 'EUR') return o.currency === _odmActiveChip;
-      if (_odmActiveChip === 'TRY') return !o.currency || o.currency === 'TRY';
+      if (_odmActiveChip === 'TRY') return !o.currency || o.currency === 'TRY' || (o.currency !== 'USD' && o.currency !== 'EUR');
       return true;
     });
   }
