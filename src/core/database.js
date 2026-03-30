@@ -359,11 +359,12 @@ function _syncFirestore(path, data, mode = 'set') {
       if (Array.isArray(data)) {
         FB_DB.doc(path).get().then(function(snap) {
           var fsExisting = snap.exists ? snap.data()?.data : null;
-          var finalData = data;
+          // Kopyasını al — orijinal data dizisini mutate etme
+          var finalData = data.slice();
           if (Array.isArray(fsExisting) && fsExisting.length > 0) {
-            // Mevcut FS verisi ile local veriyi birleştir
+            // Mevcut FS verisi ile local veriyi ID bazlı birleştir
             var idSet = {};
-            data.forEach(function(item) { if (item.id || item._id) idSet[item.id || item._id] = true; });
+            finalData.forEach(function(item) { var k = item.id || item._id; if (k) idSet[k] = true; });
             // FS'de olup local'de olmayan kayıtları ekle (silinmiş olarak işaretlenmemişse)
             fsExisting.forEach(function(item) {
               var key = item.id || item._id;
@@ -372,6 +373,8 @@ function _syncFirestore(path, data, mode = 'set') {
                 console.info('[DB:sync-merge] FS kayıt korundu:', collection, key);
               }
             });
+            // Merge sonucunu localStorage'a da yaz — cihazlar arası tutarlılık
+            try { localStorage.setItem(KEYS[collection] || ('ak_' + collection), JSON.stringify(finalData)); } catch(e2) {}
           }
           // Kritik koleksiyon + Safari → doğrulamalı yazma
           if (_useCritical && _isSafari) {
@@ -1912,10 +1915,16 @@ function _startBgSyncCheck() {
           var localData = null;
           try { localData = JSON.parse(localRaw); } catch(e) {}
           if (!Array.isArray(fsData) || !Array.isArray(localData)) return;
-          // Firestore'da daha fazla kayıt varsa → local güncelle
-          if (fsData.length > localData.length) {
-            console.info('[SYNC:BG]', col, '→ Firestore daha güncel, local güncelleniyor', fsData.length, '>', localData.length);
-            try { localStorage.setItem(key, JSON.stringify(fsData)); } catch(e) {}
+          // ID bazlı merge — her iki taraftaki eksik kayıtları birleştir
+          var merged = _mergeDataSets(key, fsData, col);
+          if (merged.length !== localData.length || merged.length !== fsData.length) {
+            console.info('[SYNC:BG]', col, '→ merge: FS:', fsData.length, '+ Local:', localData.length, '= Merged:', merged.length);
+            try { localStorage.setItem(key, JSON.stringify(merged)); } catch(e) {}
+            // Firestore'a da geri yaz (local'de olup FS'de olmayan kayıtlar varsa)
+            if (merged.length > fsData.length) {
+              var _bgBase = 'duay_' + tid;
+              _syncFirestoreMerged(_bgBase + '/' + col, merged);
+            }
           }
         }).catch(function() {});
       } catch(e) {}
