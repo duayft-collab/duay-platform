@@ -787,9 +787,10 @@ function renderOdemeler() {
   // Admin/manager/muhasebe departmanı: tüm kayıtlar; user: sadece kendi kayıtları
   var _isFinanceUser = _isManagerO() || (_cuOdm?.dept || '').toLowerCase().includes('muhasebe');
   var _myId = _cuOdm?.id;
-  const all = (_isFinanceUser || !_myId) ? _activeRaw : _activeRaw.filter(function(o) {
+  var _myIdStr = _myId ? String(_myId) : '';
+  const all = (_isFinanceUser || !_myIdStr) ? _activeRaw : _activeRaw.filter(function(o) {
     if (!o.createdBy) return true; // eski kayıtlar herkese görünür
-    return o.createdBy == _myId || o.uid == _myId || o.assignedTo == _myId;
+    return String(o.createdBy) === _myIdStr || String(o.uid || '') === _myIdStr || String(o.assignedTo || '') === _myIdStr;
   });
 
   // Cari dropdown doldur (ilk çağrıda)
@@ -1044,7 +1045,7 @@ function renderOdemeler() {
         // İçerik
         + '<div style="flex:1;display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:8px 12px;min-width:0">'
           + '<div style="min-width:0">'
-            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(o.cariName || o.name || '—') + '</div>'
+            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(o.cariName || o.name || '—') + (o.docs && o.docs.length ? ' <span style="font-size:10px;cursor:pointer" title="' + o.docs.length + ' belge" onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)">📎</span>' : '') + '</div>'
             + '<div style="font-size:10px;color:var(--t3);margin-top:2px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
               + (o.cat && !isTah ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + (cat.ic||'') + ' ' + (cat.l||'') + '</span>' : '')
               + (o.yontem ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + o.yontem + '</span>' : '')
@@ -1077,12 +1078,13 @@ function renderOdemeler() {
         + '</div>'
         + '<div style="padding:6px 16px 8px 60px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:6px;align-items:center">'
           + (function() {
-            var _canEdit = _isManagerO() || o.createdBy == _CUo()?.id;
-            var _canDel = _isManagerO() || (isPend && o.createdBy == _CUo()?.id);
+            var _canEdit = _isManagerO() || String(o.createdBy || '') === String(_CUo()?.id || '');
+            var _canDel = _isManagerO() || (isPend && String(o.createdBy || '') === String(_CUo()?.id || ''));
             var _canApprove = _isManagerO();
             var _canPay = _canEdit && !isPaid && !isPend;
+            var _canViewDoc = _isManagerO() || _canEdit;
             return (_canEdit ? '<button onclick="event.stopPropagation();' + (isTah ? 'openTahsilatModal(' + o.id + ')' : 'openOdmModal(' + o.id + ')') + '" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Düzenle</button>' : '')
-              + (o.docs && o.docs.length ? '<button onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : '<span style="font-size:9px;color:var(--t3)">Belge yok</span>')
+              + (o.docs && o.docs.length && _canViewDoc ? '<button onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : (o.docs && o.docs.length ? '<span style="font-size:9px;color:var(--t3)">📎 Belge mevcut</span>' : '<span style="font-size:9px;color:var(--t3)">Belge yok</span>'))
               + (_canApprove && isPend ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
               + (_canPay ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
               + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '');
