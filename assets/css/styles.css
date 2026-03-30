@@ -793,7 +793,7 @@ td { vertical-align: middle; }
 .pus-hero {
   background: var(--sf);
   border-bottom: 1px solid var(--b);
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: 0; z-index: 200;
 }
 .pus-hero-inner { padding: 18px 22px 0; }
 .pus-hero-top {

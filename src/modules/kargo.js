@@ -102,8 +102,8 @@ function _injectKargoPanel(){
       }).join(''),
     '</div>',
     '</div>', // sticky wrapper close
-    // İçerik
-    '<div style="overflow-y:auto">',
+    // İçerik — overflow parent (.main) tarafından yönetilir, nested scroll yok
+    '<div>',
       '<div id="krg-content-navlun" style="display:none"></div>',
       '<div id="krg-content-lokasyon" style="display:none"></div>',
       '<div id="krg-content-kurye" style="display:none"></div>',
