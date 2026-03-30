@@ -404,111 +404,143 @@ function _injectOdmPanel() {
   if (!panel || panel.dataset.injected) return;
   panel.dataset.injected = '1';
 
+  var _odmCatOpts = Object.entries(ODM_CATS).map(function(e) { return '<option value="' + e[0] + '">' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('');
+
   panel.innerHTML = [
-    // STICKY WRAPPER — toolbar + metrik kartları birlikte sabit
-    '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">',
-    // TOPBAR — modern flat
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">',
+    // ═══ STICKY WRAPPER ═══
+    '<div style="position:sticky;top:0;z-index:200;background:var(--sf);border-bottom:0.5px solid var(--b)">',
+
+    // ── Satır 1: Başlık + Butonlar ──
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:0.5px solid var(--b)">',
       '<div>',
-        '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Nakit Akışı</div>',
+        '<div style="font-size:15px;font-weight:700;color:var(--t)">Nakit Akışı</div>',
         '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="odm-sub-title">Yükleniyor...</div>',
       '</div>',
-      '<div style="display:flex;gap:6px;align-items:center">',
-        '<button onclick="openOdmChart()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.color=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.color=\'var(--t2)\'">Grafik</button>',
-        '<button onclick="exportOdmXlsx()" id="odm-excel-btn" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>',
-        '<button onclick="openOdmTrashPanel()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">🗑</button>',
-        '<button onclick="window._openOdmImportModal?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">📥 İçe Aktar</button>',
-        '<button onclick="openTahsilatModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Tahsilat</button>',
-        '<button onclick="openOdmModal(null)" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Ödeme Ekle</button>',
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">',
+        '<button onclick="openOdmChart()" class="odm-hdr-btn">Grafik</button>',
+        '<button onclick="exportOdmXlsx()" id="odm-excel-btn" class="odm-hdr-btn">Excel</button>',
+        '<button onclick="window._openOdmImportModal?.()" class="odm-hdr-btn">İçe Aktar</button>',
+        '<button onclick="openTahsilatModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#16a34a;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>',
+        '<button onclick="openOdmModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#dc2626;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Ödeme</button>',
       '</div>',
     '</div>',
 
-    // METRİK KARTLARI — 4 kart, sidebar yok
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:0.5px solid var(--b)">',
-      '<div style="padding:16px 20px;border-right:0.5px solid var(--b)">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Toplam Yükümlülük</div>',
-        '<div style="font-size:24px;font-weight:600;color:var(--t);letter-spacing:-.02em" id="odm-bento-total-amt">₺0</div>',
-        '<div style="height:3px;background:var(--s2);border-radius:99px;margin-top:10px;overflow:hidden">',
-          '<div id="odm-prog-bar" style="height:100%;width:0%;background:var(--ac);border-radius:99px;transition:width .5s"></div>',
-        '</div>',
-        '<div style="display:flex;justify-content:space-between;margin-top:4px">',
-          '<span style="font-size:9px;color:var(--ac)" id="odm-prog-pct">0% ödendi</span>',
-          '<span style="font-size:9px;color:var(--t3)" id="odm-bento-ratio">0/0</span>',
-        '</div>',
+    // ── Satır 2: 6 Metrik Kart ──
+    '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:0.5px solid var(--b)">',
+      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Tahsilat</div>',
+        '<div style="font-size:18px;font-weight:700;color:#16a34a;margin-top:4px" id="odm-m-tah-amt">₺0</div>',
+        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-tah-chg"></div>',
       '</div>',
-      '<div id="odm-bento-gecikti" data-bentotab="gecikti" style="padding:16px 20px;border-right:0.5px solid var(--b);cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'rgba(239,68,68,.04)\'" onmouseout="this.style.background=\'\'">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Gecikmiş</div>',
-        '<div style="font-size:24px;font-weight:600;color:#EF4444" id="odm-stat-late">0</div>',
-        '<div style="font-size:10px;color:#EF4444;margin-top:6px" id="odm-bento-late-hint">Hemen öde</div>',
+      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödeme</div>',
+        '<div style="font-size:18px;font-weight:700;color:#dc2626;margin-top:4px" id="odm-m-odm-amt">₺0</div>',
+        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-odm-chg"></div>',
       '</div>',
-      '<div id="odm-bento-hafta" data-bentotab="bekliyor" style="padding:16px 20px;border-right:0.5px solid var(--b);cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'rgba(217,119,6,.04)\'" onmouseout="this.style.background=\'\'">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bu Hafta Vadeli</div>',
-        '<div style="font-size:24px;font-weight:600;color:#D97706" id="odm-stat-soon">0</div>',
-        '<div style="font-size:10px;color:var(--t3);margin-top:6px" id="odm-bento-week-amt">₺0</div>',
+      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Net Pozisyon</div>',
+        '<div style="font-size:18px;font-weight:700;margin-top:4px" id="odm-m-net">₺0</div>',
       '</div>',
-      '<div id="odm-bento-ay" data-bentotab="ay" style="padding:16px 20px;cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'rgba(16,185,129,.04)\'" onmouseout="this.style.background=\'\'">',
-        '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödendi</div>',
-        '<div style="font-size:24px;font-weight:600;color:#10B981" id="odm-stat-paid">0</div>',
-        '<div style="font-size:10px;color:var(--t3);margin-top:6px" id="odm-bento-paid-amt">₺0</div>',
+      '<div style="padding:12px 16px;border-right:0.5px solid var(--b);cursor:pointer" onclick="setOdmTab(\'gecikti\')">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Gecikmiş</div>',
+        '<div style="font-size:18px;font-weight:700;color:#dc2626;margin-top:4px" id="odm-stat-late">0</div>',
+        '<div style="font-size:9px;color:#dc2626;margin-top:2px" id="odm-bento-late-hint"></div>',
+      '</div>',
+      '<div style="padding:12px 16px;border-right:0.5px solid var(--b);cursor:pointer" onclick="setOdmTab(\'bekliyor\')">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Hafta Vadeli</div>',
+        '<div style="font-size:18px;font-weight:700;color:#d97706;margin-top:4px" id="odm-stat-soon">0</div>',
+        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-bento-week-amt">₺0</div>',
+      '</div>',
+      '<div style="padding:12px 16px">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödendi</div>',
+        '<div style="font-size:18px;font-weight:700;color:#10b981;margin-top:4px" id="odm-stat-paid">0</div>',
+        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-bento-paid-amt">₺0</div>',
       '</div>',
     '</div>',
 
-    // TAB NAVİGASYON — sticky wrapper içinde
+    // ── Satır 3: Döviz Pozisyon ──
+    '<div id="odm-fx-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b);font-size:11px">',
+      '<div style="padding:8px 16px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>🇺🇸</span><span style="color:var(--t2)">USD</span><b id="odm-fx-usd" style="margin-left:auto;color:var(--t)">$0</b></div>',
+      '<div style="padding:8px 16px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>🇪🇺</span><span style="color:var(--t2)">EUR</span><b id="odm-fx-eur" style="margin-left:auto;color:var(--t)">€0</b></div>',
+      '<div style="padding:8px 16px;display:flex;align-items:center;gap:6px"><span>🇹🇷</span><span style="color:var(--t2)">TRY</span><b id="odm-fx-try" style="margin-left:auto;color:var(--t)">₺0</b></div>',
+    '</div>',
+
+    // ── Satır 4: Sekmeler ──
     '<div id="odm-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">',
-      '<div id="odm-stab-all" onclick="setOdmTab(\'all\')" style="padding:11px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac);transition:all .12s">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
-      '<div id="odm-stab-gecikti" onclick="setOdmTab(\'gecikti\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Ödemeler</div>',
-      '<div id="odm-stab-tahsilat" onclick="setOdmTab(\'tahsilat\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Tahsilatlar</div>',
-      '<div id="odm-stab-bekliyor" onclick="setOdmTab(\'bekliyor\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Bekleyen</div>',
-      '<div id="odm-stab-projeksiyon" onclick="setOdmTab(\'projeksiyon\')" style="padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s">Projeksiyon</div>',
+      '<div id="odm-stab-all" class="odm-tab on" onclick="setOdmTab(\'all\')">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
+      '<div id="odm-stab-odeme" class="odm-tab" onclick="setOdmTab(\'odeme\')">Ödemeler <span id="odm-stat-odm-n" style="font-size:10px;opacity:.7"></span></div>',
+      '<div id="odm-stab-tahsilat" class="odm-tab" onclick="setOdmTab(\'tahsilat\')">Tahsilatlar</div>',
+      '<div id="odm-stab-bekliyor" class="odm-tab" onclick="setOdmTab(\'bekliyor\')">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;opacity:.7"></span></div>',
+      '<div id="odm-stab-projeksiyon" class="odm-tab" onclick="setOdmTab(\'projeksiyon\')">Projeksiyon</div>',
     '</div>',
 
-    // ARAMA + FİLTRELER — tek satır flat
-    '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b);display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
-      '<div style="position:relative;flex:1;min-width:200px">',
-        '<svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%)" width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
-        '<input class="fi" type="search" id="odm-search" placeholder="Ödeme, kategori veya cari ara…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf)">',
+    // ── Satır 5: Filtreler ──
+    '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b);display:flex;flex-direction:column;gap:6px">',
+      // A: Arama + tarih
+      '<div style="display:flex;gap:8px;align-items:center">',
+        '<div style="position:relative;flex:1;min-width:180px">',
+          '<svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%)" width="13" height="13" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
+          '<input class="fi" type="search" id="odm-search" placeholder="Cari, tutar, fatura no…" oninput="renderOdemeler()" style="padding-left:32px;border-radius:7px;font-size:12px">',
+        '</div>',
+        '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px" title="Başlangıç">',
+        '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px" title="Bitiş">',
       '</div>',
-      '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px;border:0.5px solid var(--b)">',
-        '<option value="">Tüm Kategoriler</option>',
-        Object.entries(ODM_CATS).map(([k,v]) => `<option value="${k}">${v.ic} ${v.l}</option>`).join(''),
-      '</select>',
-      '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;border:0.5px solid var(--b)">',
-        '<option value="">Tüm Durumlar</option>',
-        '<option value="bekliyor">Bekliyor</option><option value="gecikti">Gecikmiş</option><option value="odendi">Ödendi</option>',
-      '</select>',
-      '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:125px;border:0.5px solid var(--b)" title="Başlangıç">',
-      '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:125px;border:0.5px solid var(--b)" title="Bitiş">',
-      '<select class="fi" id="odm-cari-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px;border:0.5px solid var(--b)"><option value="">Tüm Cariler</option></select>',
-      '<select class="fi" id="odm-cur-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:80px;border:0.5px solid var(--b)"><option value="">Döviz</option><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select>',
-      '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
-      '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
-      (_isManagerO() ? '<button onclick="window._odmBulkApprove?.()" style="padding:5px 10px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : ''),
-      '<button onclick="_odmClearFilters()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit" title="Filtreleri temizle">✕</button>',
+      // B: Chip'ler
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">',
+        '<span class="odm-chip odm-chip-active" onclick="window._odmChipFilter(\'all\',this)">Tümü</span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'odeme\',this)">↑ Ödemeler</span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'tahsilat\',this)">↓ Tahsilatlar</span>',
+        '<span style="width:1px;height:16px;background:var(--b);margin:0 2px"></span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'gecikti\',this)">⚠ Gecikmiş</span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'pending\',this)">⏳ Bekleyen</span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'approved\',this)">✓ Onaylı</span>',
+        '<span style="width:1px;height:16px;background:var(--b);margin:0 2px"></span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'USD\',this)">🇺🇸 USD</span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'EUR\',this)">🇪🇺 EUR</span>',
+        '<span class="odm-chip" onclick="window._odmChipFilter(\'TRY\',this)">🇹🇷 TRY</span>',
+        '<span style="margin-left:auto;cursor:pointer;font-size:10px;color:var(--t3)" onclick="_odmClearFilters()">✕ Temizle</span>',
+      '</div>',
+      // C: Sonuç sayısı
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3)">',
+        '<span id="odm-filter-summary">Gösterilen: 0 kayıt</span>',
+        '<span>Tarihe göre ↕</span>',
+      '</div>',
     '</div>',
-    '</div>', // sticky wrapper close (toolbar+metrik+tab+filtre)
 
-    // Tablo CSS — modern flat
+    // Hidden filtre select'leri (uyumluluk)
+    '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="display:none"><option value="">Tüm Kategoriler</option>' + _odmCatOpts + '</select>',
+    '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+    '<select class="fi" id="odm-cari-f" onchange="renderOdemeler()" style="display:none"><option value="">Tüm Cariler</option></select>',
+    '<select class="fi" id="odm-cur-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+    '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+    '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+
+    '</div>', // ═══ STICKY WRAPPER CLOSE ═══
+
+    // CSS
     '<style>',
-    '.odm-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s}',
+    '.odm-hdr-btn{padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}',
+    '.odm-hdr-btn:hover{border-color:var(--ac);color:var(--ac)}',
+    '.odm-tab{padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s}',
+    '.odm-tab.on{border-bottom-color:var(--ac);color:var(--ac);font-weight:600}',
+    '.odm-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s;user-select:none}',
     '.odm-chip:hover{border-color:var(--ac);color:var(--ac)}',
     '.odm-chip-active{background:var(--ac)!important;color:#fff!important;border-color:var(--ac)!important}',
-    '#odm-list>div{transition:background .1s}',
-    '#odm-list>div:hover{background:var(--s2)!important}',
+    '.odm-row{display:flex;align-items:stretch;border-bottom:0.5px solid var(--b);transition:background .1s;cursor:pointer}',
+    '.odm-row:hover{background:var(--s2)!important}',
+    '.odm-row-peek{overflow:hidden;transition:max-height .25s ease;max-height:0}',
+    '.odm-row-peek.open{max-height:200px}',
+    '.odm-day-hdr{padding:8px 20px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px dashed var(--b);display:flex;justify-content:space-between}',
     '</style>',
 
-    // TABLO BAŞLIK — beyaz kart içinde
-    '<div style="margin:12px 20px 0;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">',
-    '<div id="odm-thead" style="display:grid;grid-template-columns:32px 1fr 110px 100px 90px 130px;gap:0;padding:8px 16px;border-bottom:0.5px solid var(--b);background:var(--s2)">',
-      '<div></div>',
-      '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Ödeme</div>',
-      '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Tutar</div>',
-      '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Son Tarih</div>',
-      '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Durum</div>',
-      '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">İşlem</div>',
-    '</div>',
+    // Liste container
+    '<div id="odm-list" style="margin:0 20px"></div>',
 
-    '<div id="odm-list"></div>',
-    '</div>', // beyaz kart close
+    // Progress bar (hidden — uyumluluk)
+    '<div id="odm-prog-bar" style="display:none"></div>',
+    '<div id="odm-prog-pct" style="display:none"></div>',
+    '<div id="odm-bento-total-amt" style="display:none"></div>',
+    '<div id="odm-bento-ratio" style="display:none"></div>',
   ].join('');
 
   // Sekme click
@@ -576,29 +608,21 @@ let _odmCurrentTab = 'all';
 
 function setOdmTab(tab) {
   _odmCurrentTab = tab;
-  const tabIds = ['all','gecikti','bekliyor','ay','abonelik','kredi_k','tahsilat','projeksiyon'];
-  // Eski tab ID'leri de destekle
-  tabIds.forEach(t => {
-    const el = _go('odm-stab-' + t);
-    if (!el) return;
-    const active = t === tab;
-    const acColor = t==='gecikti'?'var(--rdt)':t==='tahsilat'?'var(--grt)':'var(--ac)';
-    el.style.borderBottomColor = active ? acColor : 'transparent';
-    el.style.color = active ? acColor : (t==='gecikti'?'var(--rdt)':t==='tahsilat'?'var(--grt)':'var(--t3)');
-    el.style.fontWeight = active ? '600' : '400';
-  });
-  // Bento kutu vurgusu
-  ['odm-bento-gecikti','odm-bento-hafta','odm-bento-ay'].forEach(id => {
-    const el = _go(id); if (el) el.style.background = '';
-  });
-  if (tab === 'gecikti'  && _go('odm-bento-gecikti')) _go('odm-bento-gecikti').style.background = 'rgba(254,242,242,.6)';
-  if (tab === 'bekliyor' && _go('odm-bento-hafta'))   _go('odm-bento-hafta').style.background   = 'rgba(255,251,235,.6)';
-  if (tab === 'ay'       && _go('odm-bento-ay'))       _go('odm-bento-ay').style.background       = 'rgba(236,253,245,.6)';
-  const thead = _go('odm-thead');
-  if (thead) thead.style.display = (tab==='kredi_k'||tab==='abonelik'||tab==='tahsilat'||tab==='projeksiyon') ? 'none' : 'grid';
+  // Tab class güncelle
+  document.querySelectorAll('.odm-tab').forEach(function(el) { el.classList.remove('on'); });
+  var activeTab = _go('odm-stab-' + tab);
+  if (activeTab) activeTab.classList.add('on');
   renderOdemeler();
 }
 window.setOdmTab = setOdmTab;
+
+var _odmActiveChip = 'all';
+window._odmChipFilter = function(chip, el) {
+  _odmActiveChip = chip;
+  document.querySelectorAll('.odm-chip').forEach(function(c) { c.classList.remove('odm-chip-active'); });
+  if (el) el.classList.add('odm-chip-active');
+  renderOdemeler();
+};
 
 // ════════════════════════════════════════════════════════════════
 // KREDİ KARTI ÖZEL KART  [v2.0]
@@ -715,18 +739,33 @@ function renderOdemeler() {
   const weekEndStr = weekEnd.toISOString().slice(0,10);
   const thisMonth  = today.slice(0,7);
 
-  // Tahsilat tab'ı seçiliyse loadTahsilat, diğer tab'larda loadOdm
+  // Veri yükleme — tab'a göre
   const _cuOdm  = _CUo();
+  var _odmAll = (window.loadOdm ? loadOdm() : []).map(function(o) { if (!o._src) o._src = 'odeme'; return o; });
+  var _tahAll = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).map(function(t) { if (!t._src) t._src = 'tahsilat'; return t; });
   let _allRaw;
   if (_odmCurrentTab === 'tahsilat') {
-    _allRaw = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+    _allRaw = _tahAll;
+  } else if (_odmCurrentTab === 'odeme') {
+    _allRaw = _odmAll;
   } else if (_odmCurrentTab === 'bekliyor') {
-    // Bekleyen: hem ödeme hem tahsilat pending kayıtlarını birleştir
-    var _odmPending = (window.loadOdm ? loadOdm() : []).map(function(o) { o._src = 'odeme'; return o; });
-    var _tahPending = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).map(function(t) { t._src = 'tahsilat'; return t; });
-    _allRaw = _odmPending.concat(_tahPending);
+    _allRaw = _odmAll.concat(_tahAll);
   } else {
-    _allRaw = window.loadOdm ? loadOdm() : [];
+    // Tümü — hem ödeme hem tahsilat
+    _allRaw = _odmAll.concat(_tahAll);
+  }
+
+  // Chip filtresi uygula
+  if (_odmActiveChip && _odmActiveChip !== 'all') {
+    _allRaw = _allRaw.filter(function(o) {
+      if (_odmActiveChip === 'odeme') return o._src === 'odeme' || o.tip === 'odeme';
+      if (_odmActiveChip === 'tahsilat') return o._src === 'tahsilat' || o.tip === 'tahsilat';
+      if (_odmActiveChip === 'gecikti') return !o.paid && !o.collected && o.due && o.due < today;
+      if (_odmActiveChip === 'pending') return o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor';
+      if (_odmActiveChip === 'approved') return o.approvalStatus === 'approved' || o.approved;
+      if (_odmActiveChip === 'USD' || _odmActiveChip === 'EUR' || _odmActiveChip === 'TRY') return o.currency === _odmActiveChip;
+      return true;
+    });
   }
   // Soft-deleted kayıtları gizle (admin dahil — ayrı çöp kutusu panelinden görülür)
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
@@ -817,47 +856,61 @@ function renderOdemeler() {
     items = items.filter(o => (o.due||'').startsWith(thisMonth) || (o.paidTs||'').startsWith(thisMonth));
   }
 
-  // Stats hesapla
-  const lateN  = all.filter(o => !o.paid && o.due && o.due < today).length;
-  const weekN  = all.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
-  const paidN  = all.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
+  // Stats hesapla — tüm veriden (filtre öncesi)
+  var _allOdm = _odmAll.filter(function(o) { return !o.isDeleted; });
+  var _allTah = _tahAll.filter(function(o) { return !o.isDeleted; });
+  var _odmThisMonth = _allOdm.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
+  var _tahThisMonth = _allTah.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
+  var _odmMonthAmt = _odmThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); }, 0);
+  var _tahMonthAmt = _tahThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); }, 0);
+  var _netPos = _tahMonthAmt - _odmMonthAmt;
+
+  const lateN  = _allOdm.filter(o => !o.paid && o.due && o.due < today).length;
+  const weekN  = _allOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
+  const paidN  = _allOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
   const totalN = all.length;
-  const weekAmt = all.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
-                     .reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
-  const paidAmt = all.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth))
-                     .reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
-  // Onaylanmamış ödemeler finansal toplamdan hariç
-  const confirmedAll = all.filter(o => o.approved || o.approvalStatus === 'kesinlesti' || o.approvalStatus === 'approved' || !_odmNeedsApproval(o));
-  const totalAmt = confirmedAll.reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
+  const weekAmt = _allOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
+                     .reduce((s,o) => s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'), 0);
+  const pendN  = _allOdm.concat(_allTah).filter(function(o) { return o.approvalStatus === 'pending'; }).length;
 
-  // Sekme badge güncelle
-  _sto('odm-stat-total', totalN);
-  _sto('odm-stat-late',  lateN);
-  _sto('odm-stat-late2', lateN);
-  _sto('odm-stat-soon',  weekN);
-  _sto('odm-stat-soon2', weekN);
-  _sto('odm-stat-paid',  paidN);
-  _sto('odm-stat-paid2', paidN);
-
-  // Bento kutular güncelle
-  const bentoAmt = _go('odm-bento-total-amt');
-  if (bentoAmt) bentoAmt.textContent = '₺' + Math.round(totalAmt).toLocaleString('tr-TR');
-  _sto('odm-bento-ratio', paidN + '/' + totalN);
+  // 6 metrik güncelle
+  _sto('odm-m-tah-amt', '₺' + Math.round(_tahMonthAmt).toLocaleString('tr-TR'));
+  _sto('odm-m-odm-amt', '₺' + Math.round(_odmMonthAmt).toLocaleString('tr-TR'));
+  var _netEl = _go('odm-m-net');
+  if (_netEl) { _netEl.textContent = (_netPos >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_netPos)).toLocaleString('tr-TR'); _netEl.style.color = _netPos >= 0 ? '#16a34a' : '#dc2626'; }
+  _sto('odm-stat-late', lateN);
+  _sto('odm-bento-late-hint', lateN > 0 ? lateN + ' işlem' : 'Temiz');
+  _sto('odm-stat-soon', weekN);
   _sto('odm-bento-week-amt', '₺' + Math.round(weekAmt).toLocaleString('tr-TR'));
-  _sto('odm-bento-paid-amt', '₺' + Math.round(paidAmt).toLocaleString('tr-TR'));
-  _sto('odm-bento-late-hint', lateN > 0 ? lateN + ' ödeme gecikmiş' : 'Temiz');
+  _sto('odm-stat-paid', paidN);
+  _sto('odm-bento-paid-amt', '₺' + Math.round(_odmMonthAmt - weekAmt).toLocaleString('tr-TR'));
+  _sto('odm-stat-total', totalN);
+  _sto('odm-stat-odm-n', _allOdm.length);
+  _sto('odm-stat-pend-n', pendN > 0 ? pendN : '');
+
+  // Döviz pozisyon
+  ['USD','EUR','TRY'].forEach(function(cur) {
+    var sym = cur === 'USD' ? '$' : cur === 'EUR' ? '€' : '₺';
+    var odmC = _allOdm.filter(function(o) { return (o.currency||'TRY') === cur && !o.paid; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
+    var tahC = _allTah.filter(function(o) { return (o.currency||'TRY') === cur && !o.collected; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
+    var net = tahC - odmC;
+    var el = _go('odm-fx-' + cur.toLowerCase());
+    if (el) { el.textContent = (net >= 0 ? '+' : '') + sym + Math.round(Math.abs(net)).toLocaleString('tr-TR'); el.style.color = net >= 0 ? '#16a34a' : '#dc2626'; }
+  });
 
   // Alt başlık
-  const subTitle = _go('odm-sub-title');
+  var subTitle = _go('odm-sub-title');
   if (subTitle) {
-    const d = new Date();
-    subTitle.textContent = d.toLocaleString('tr-TR', {month:'long', year:'numeric'}) + ' · ' + paidN + '/' + totalN + ' ödendi';
+    var d = new Date();
+    subTitle.textContent = d.toLocaleString('tr-TR', {month:'long', year:'numeric'}) + ' · ' + paidN + '/' + _allOdm.length + ' ödendi';
   }
 
-  // Progress bar
-  const pct = totalN > 0 ? Math.round(paidN / totalN * 100) : 0;
-  const barEl = _go('odm-prog-bar'); if (barEl) barEl.style.width = pct + '%';
-  const pctEl = _go('odm-prog-pct'); if (pctEl) pctEl.textContent = pct + '% ödendi';
+  // Filtre sonuç sayısı
+  var _summaryEl = _go('odm-filter-summary');
+  if (_summaryEl) {
+    var _filteredNet = items.reduce(function(s,o) { var amt = _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); return o._src === 'tahsilat' ? s + amt : s - amt; }, 0);
+    _summaryEl.textContent = 'Gösterilen: ' + items.length + ' kayıt · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
+  }
 
   // Vade uyumsuzluğu uyarısı (admin only)
   var _mismatchEl = document.getElementById('odm-mismatch-warn');
@@ -903,17 +956,88 @@ function renderOdemeler() {
 
   const users = window.loadUsers ? loadUsers() : [];
   items = items.sort((a,b) => {
-    if (!a.due && !b.due) return 0;
-    if (!a.due) return 1; if (!b.due) return -1;
-    return a.due.localeCompare(b.due);
+    var da = a.due || a.ts || ''; var db = b.due || b.ts || '';
+    return db.localeCompare(da); // en yeni en üstte
   });
+
+  // Günlük gruplama
+  var _dayGroups = {};
+  var _TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  items.forEach(function(o) {
+    var d = (o.due || o.ts || '').slice(0, 10) || 'Tarihsiz';
+    if (!_dayGroups[d]) _dayGroups[d] = [];
+    _dayGroups[d].push(o);
+  });
+
+  var _fmtTs = function(ts) { try { var d = new Date(ts); return d.getDate() + ' ' + ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()] + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); } catch(e) { return ''; } };
 
   const frag = document.createDocumentFragment();
 
-  items.forEach(o => {
-    // Kredi kartı özel render
+  Object.keys(_dayGroups).sort(function(a, b) { return b.localeCompare(a); }).forEach(function(dayKey) {
+    var dayItems = _dayGroups[dayKey];
+    var dayNet = dayItems.reduce(function(s, o) { var amt = _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); return (o._src === 'tahsilat' || o.tip === 'tahsilat') ? s + amt : s - amt; }, 0);
+
+    // Gün başlığı
+    var dayLabel = dayKey;
+    if (dayKey === today) dayLabel = 'Bugün — ' + new Date().getDate() + ' ' + _TR_MONTHS[new Date().getMonth()];
+    else if (dayKey !== 'Tarihsiz') { var _dd = new Date(dayKey); dayLabel = _dd.getDate() + ' ' + _TR_MONTHS[_dd.getMonth()]; }
+    var hdr = document.createElement('div');
+    hdr.className = 'odm-day-hdr';
+    hdr.innerHTML = '<span>' + dayLabel + '</span><span style="color:' + (dayNet >= 0 ? '#16a34a' : '#dc2626') + '">' + (dayNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(dayNet)).toLocaleString('tr-TR') + '</span>';
+    frag.appendChild(hdr);
+
+    dayItems.forEach(function(o) {
+      var isTah = o._src === 'tahsilat' || o.tip === 'tahsilat';
+      var isLate = !o.paid && !o.collected && o.due && o.due < today;
+      var isPaid = o.paid || o.collected;
+      var isPend = o.approvalStatus === 'pending';
+      var curSym = (o.currency||'TRY') === 'USD' ? '$' : (o.currency||'TRY') === 'EUR' ? '€' : '₺';
+      var amt = parseFloat(o.amount) || 0;
+      var cat = ODM_CATS[o.cat] || ODM_CATS.diger || { l:'', ic:'' };
+      var status = isLate ? 'gecikti' : isPaid ? 'odendi' : isPend ? 'bekliyor' : 'aktif';
+      var staBadge = isLate ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEE2E2;color:#dc2626">Gecikti</span>'
+        : isPaid ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#DCFCE7;color:#16a34a">Ödendi</span>'
+        : isPend ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEF3C7;color:#d97706">Onay</span>'
+        : '';
+
+      var row = document.createElement('div');
+      row.className = 'odm-row';
+      row.dataset.oid = String(o.id);
+      row.onclick = function() { isTah ? openTahsilatModal(o.id) : openOdmModal(o.id); };
+
+      row.innerHTML =
+        // Sol panel — tip göstergesi
+        '<div style="width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (isTah ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)') + ';flex-shrink:0;border-right:0.5px solid var(--b)">'
+          + '<div style="font-size:14px;color:' + (isTah ? '#16a34a' : '#dc2626') + '">' + (isTah ? '↓' : '↑') + '</div>'
+          + '<div style="font-size:7px;font-weight:700;color:' + (isTah ? '#16a34a' : '#dc2626') + ';letter-spacing:.04em">' + (isTah ? 'TAH' : 'ÖDM') + '</div>'
+        + '</div>'
+        // İçerik
+        + '<div style="flex:1;display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:8px 12px;min-width:0">'
+          // Sol
+          + '<div style="min-width:0">'
+            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (o.cariName || o.name || '—') + '</div>'
+            + '<div style="font-size:10px;color:var(--t3);margin-top:2px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
+              + (o.cat && !isTah ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + (cat.ic||'') + ' ' + (cat.l||'') + '</span>' : '')
+              + (o.yontem ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + o.yontem + '</span>' : '')
+              + (o.currency && o.currency !== 'TRY' ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + o.currency + '</span>' : '')
+              + '<span style="font-family:monospace;font-size:9px">' + _fmtTs(o.ts) + '</span>'
+            + '</div>'
+          + '</div>'
+          // Sağ
+          + '<div style="text-align:right;flex-shrink:0">'
+            + '<div style="font-size:14px;font-weight:600;color:' + (isTah ? '#16a34a' : '#dc2626') + '">' + (isTah ? '+' : '-') + curSym + new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(amt) + '</div>'
+            + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + (o.due || '—') + '</div>'
+            + staBadge
+          + '</div>'
+        + '</div>';
+      frag.appendChild(row);
+    });
+  });
+
+  // Eski render döngüsü devre dışı — gruplama yukarıda yapıldı
+  // (uyumluluk: eski render fonksiyonlarını korumak için skip)
+  [].forEach(o => {
     if (o.cat === 'kredi_k') {
-      frag.appendChild(_renderKrediKarti(o, users));
       return;
     }
     // Abonelik özel render
