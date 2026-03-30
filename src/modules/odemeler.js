@@ -1052,118 +1052,92 @@ function openOdmModal(id) {
   var taskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : [];
   var taskOpts = '<option value="">— Görev Seçin —</option>' + taskList.map(function(t) { return '<option value="' + t.id + '"' + (o?.taskId == t.id ? ' selected' : '') + '>' + esc(t.title.slice(0, 40)) + '</option>'; }).join('');
 
-  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;overflow:hidden;border-radius:16px">'
-    + '<div style="padding:16px 22px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-    + '<div class="mt" style="margin-bottom:0">' + (o ? '✏️ Ödeme Düzenle' : '+ Yeni Ödeme') + '</div>'
-    + '<button onclick="document.getElementById(\'mo-odm-v9\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+  // Ödeme türleri — admin düzenleyebilir
+  var odmTurleri = _odmLoadMethods();
+  var odmKatList = Object.entries(_odmGetAllCats());
+
+  mo.innerHTML = '<div class="moc" style="width:560px;max-width:96vw;padding:0;overflow:hidden;border-radius:16px;max-height:92vh;display:flex;flex-direction:column">'
+    + '<div style="padding:16px 24px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="font-size:16px;font-weight:700;color:var(--t)">' + (o ? 'Ödeme Düzenle' : 'Yeni Ödeme') + '</div>'
+    + '<button onclick="document.getElementById(\'mo-odm-v9\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">✕</button>'
     + '</div>'
-    + '<div style="padding:18px 22px;max-height:74vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px">'
+    + '<div style="flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px">'
 
-    // İş ID (görev) + Cari Firma
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div class="fr"><div class="fl">İŞ ID (Görev)</div><select class="fi" id="odm-f-taskid" style="border-radius:8px">' + taskOpts + '</select></div>'
-    + '<div class="fr"><div class="fl">CARİ FİRMA *</div><div style="display:flex;gap:4px"><select class="fi" id="odm-f-cari" style="flex:1;border-radius:8px">' + cariOpts + '</select><button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button></div></div>'
-    + '</div>'
+    // 1. JOB ID
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Job ID <span style="color:var(--t3);font-weight:400">(opsiyonel)</span></label>'
+    + '<input class="fi" id="odm-f-taskid" placeholder="JOB-2026-XXXX" style="font-size:13px;padding:10px 12px;border-radius:8px;font-family:monospace" value="' + (o?.taskId||'') + '"></div>'
 
-    // İsim
-    + '<div class="fr"><div class="fl">ÖDEME ADI *</div>'
-    + '<input class="fi" id="odm-f-name" placeholder="Örn: Ofis Kirası" style="border-radius:8px" value="' + (o?o.name||'':'') + '"></div>'
+    // 2. Ödeme Kısa Adı
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Ödeme Kısa Adı <span style="color:#dc2626">*</span></label>'
+    + '<input class="fi" id="odm-f-name" placeholder="Örn: Ofis Kirası" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + esc(o?.name||'') + '"></div>'
 
-    // Kategori + Sıklık
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div class="fr"><div class="fl">KATEGORİ</div><select class="fi" id="odm-f-cat" style="border-radius:8px">'
-    + Object.entries(_odmGetAllCats()).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.cat===e[0]?' selected':'') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('')
+    // 3. Cari / Tedarikçi
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Cari / Tedarikçi <span style="color:#dc2626">*</span></label>'
+    + '<div style="display:flex;gap:4px"><select class="fi" id="odm-f-cari" style="flex:1;font-size:13px;padding:10px 12px;border-radius:8px">' + cariOpts + '</select>'
+    + '<button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:6px 10px;flex-shrink:0;border-radius:8px">+</button></div></div>'
+
+    // 4. Ödeme Türü (Kategori)
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Ödeme Türü <span style="color:#dc2626">*</span></label>'
+    + '<select class="fi" id="odm-f-cat" style="font-size:13px;padding:10px 12px;border-radius:8px">'
+    + odmKatList.map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.cat===e[0]?' selected':'') + '>' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('')
     + '</select></div>'
-    + '<div class="fr"><div class="fl">SIKLIK</div><select class="fi" id="odm-f-freq" style="border-radius:8px">'
-    + Object.entries(ODM_FREQ).map(function(e) { return '<option value="' + e[0] + '"' + (o&&o.freq===e[0]?' selected':'') + '>' + e[1] + '</option>'; }).join('')
-    + '</select></div>'
-    + '</div>'
 
-    // Tutar + Para Birimi
-    + '<div class="fr"><div class="fl">TUTAR *</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 140px;gap:8px">'
-    + '<div style="position:relative">'
-    + '<input class="fi" type="number" id="odm-f-amount" placeholder="0.00" min="0" step="0.01" value="' + (o?o.amount||'':'') + '" oninput="_odmUpdateTLPreview()" style="padding-right:80px">'
-    + '<span id="odm-tl-preview" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--ac);pointer-events:none;white-space:nowrap">' + (o&&o.currency&&o.currency!=='TRY'?_odmTLKarsiligi(o.amount,o.currency):'') + '</span>'
-    + '</div>'
-    + '<select class="fi" id="odm-f-currency" onchange="_odmCurChange(this.value)" style="border-radius:8px">'
-    + Object.entries(ODM_CURRENCY).map(function(e) { return '<option value="' + e[0] + '"' + ((o?.currency||'TRY')===e[0]?' selected':'') + '>' + e[1].flag + ' ' + e[0] + '</option>'; }).join('')
+    // 5. Tutar + Döviz
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tutar <span style="color:#dc2626">*</span></label>'
+    + '<div style="display:grid;grid-template-columns:1fr 120px;gap:8px">'
+    + '<input class="fi" type="number" id="odm-f-amount" placeholder="0.00" min="0" step="0.01" value="' + (o?o.amount||'':'') + '" oninput="_odmUpdateTLPreview()" style="font-size:13px;padding:10px 12px;border-radius:8px">'
+    + '<select class="fi" id="odm-f-currency" onchange="_odmCurChange(this.value)" style="font-size:13px;padding:10px 12px;border-radius:8px">'
+    + ['TRY','USD','EUR'].map(function(k) { var v = ODM_CURRENCY[k]; return '<option value="' + k + '"' + ((o?.currency||'TRY')===k?' selected':'') + '>' + v.flag + ' ' + k + '</option>'; }).join('')
     + '</select></div>'
-    + '<div id="odm-kur-wrap" style="' + ((!o?.currency||o?.currency==='TRY')?'display:none':'') + '">'
-    + _odmKurModeHTML(o?.currency||'USD')
-    + '</div>'
-    + '</div>'
+    + '<div id="odm-kur-wrap" style="margin-top:6px;' + ((!o?.currency||o?.currency==='TRY')?'display:none':'') + '">' + _odmKurModeHTML(o?.currency||'USD') + '</div>'
+    + '<span id="odm-tl-preview" style="font-size:10px;color:var(--ac);margin-top:4px;display:block">' + (o&&o.currency&&o.currency!=='TRY'?_odmTLKarsiligi(o.amount,o.currency):'') + '</span></div>'
 
-    // Döküman No + Ödeme Yöntemi
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div class="fr"><div class="fl">DÖKÜMAN NO *</div><input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" value="' + (o?o.docNo||'':'') + '" style="border-radius:8px"></div>'
-    + '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="odm-f-yontem" style="border-radius:8px" onchange="_onYontemChange(\'odm\')">'
+    // 6. Vade Tarihi
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Vade Tarihi <span style="color:#dc2626">*</span></label>'
+    + '<input type="date" class="fi" id="odm-f-due" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + (o?o.due||'':'') + '"></div>'
+
+    // 7. Ödeme Yöntemi
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Ödeme Yöntemi <span style="color:#dc2626">*</span></label>'
+    + '<select class="fi" id="odm-f-yontem" style="font-size:13px;padding:10px 12px;border-radius:8px" onchange="_onYontemChange(\'odm\')">'
     + '<option value="">— Seçin —</option>'
-    + _odmLoadMethods().map(function(y) { return '<option value="' + y + '"' + (o?.yontem===y?' selected':'') + '>' + y + '</option>'; }).join('')
+    + odmTurleri.map(function(y) { return '<option value="' + y + '"' + (o?.yontem===y?' selected':'') + '>' + y + '</option>'; }).join('')
     + '</select></div>'
-    + '</div>'
     + _bankaDropdownHTML('odm', o)
 
-    // Tarihler
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div class="fr"><div class="fl">SON TARİH *</div>'
-    + '<input type="date" class="fi" id="odm-f-due" style="border-radius:8px" value="' + (o?o.due||'':'') + '"></div>'
-    + '<div class="fr"><div class="fl">ÖDENDİĞİ TARİH</div>'
-    + '<input type="date" class="fi" id="odm-f-actual" value="' + (o?o.actualDate||'':'') + '"></div>'
-    + '</div>'
-
-    // Sorumlu
-    + '<div class="fr"><div class="fl">SORUMLU KİŞİ</div><select class="fi" id="odm-f-assigned" style="border-radius:8px">'
-    + '<option value="">— Seç —</option>'
-    + users.map(function(u) { return '<option value="' + u.id + '"' + (o&&o.assignedTo===u.id?' selected':'') + '>' + u.name + '</option>'; }).join('')
-    + '</select></div>'
-
-    // Hatırlatıcı — zengin seçenekler
-    + '<div style="background:var(--s2);border-radius:10px;padding:12px 14px">'
-    + '<div class="fl" style="margin-bottom:8px">🔔 HATIRLATICI</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    + '<div style="display:flex;gap:6px;align-items:center">'
-    + '<input type="date" class="fi" id="odm-f-alarm-date" value="' + (o?.alarmDate || '') + '" style="flex:1;border-radius:8px;font-size:11px">'
-    + '<input type="time" class="fi" id="odm-f-alarm-time" value="' + (o?.alarmTime || '09:00') + '" style="width:80px;border-radius:8px;font-size:11px">'
-    + '</div>'
-    + '<div style="display:flex;gap:6px;align-items:center">'
-    + '<input type="number" class="fi" id="odm-f-reminder-val" min="1" max="365" value="' + (o?.reminderValue || 3) + '" style="width:55px;border-radius:8px;font-size:11px" placeholder="3">'
-    + '<select class="fi" id="odm-f-reminder-unit" style="flex:1;border-radius:8px;font-size:11px">'
-    + Object.entries(ODM_REMINDER_UNITS).map(function(e) { return '<option value="' + e[0] + '"' + ((o?.reminderUnit || 'gun') === e[0] ? ' selected' : '') + '>' + e[1] + ' önce</option>'; }).join('')
-    + '</select>'
-    + '</div>'
-    + '</div>'
-    + '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'
-    + '<button type="button" onclick="_odmSetReminder(1,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 gün</button>'
-    + '<button type="button" onclick="_odmSetReminder(3,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">3 gün</button>'
-    + '<button type="button" onclick="_odmSetReminder(1,\'hafta\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 hafta</button>'
-    + '<button type="button" onclick="_odmSetReminder(1,\'ay\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 ay</button>'
-    + '<button type="button" onclick="_odmAutoReminder()" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px;background:var(--ac);color:#fff">⚡ Otomatik</button>'
-    + '</div>'
-    + '</div>'
-
-    // Not
-    + '<div class="fr"><div class="fl">NOT</div>'
-    + '<textarea class="fi" id="odm-f-note" rows="2" style="resize:none;border-radius:8px" placeholder="Açıklama…">' + (o?o.note||'':'') + '</textarea></div>'
-
-    // Döküman yükleme
-    + '<div class="fr"><div class="fl">DÖKÜMAN EKLE</div>'
+    // 8. Belge yükleme
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Belge / Fatura <span style="color:#dc2626">*</span></label>'
     + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
-    + (o&&o.docs&&o.docs.length ? o.docs.map(function(d,i) { return '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5;cursor:pointer" onclick="viewOdmDoc('+o.id+','+i+')">📎 '+d.name+'</span>'; }).join('') : '')
-    + '<button type="button" onclick="uploadOdmDoc()" class="btn btns" style="font-size:11px;border-radius:7px;padding:4px 10px">📎 Dosya Yükle</button>'
+    + (o&&o.docs&&o.docs.length ? o.docs.map(function(d,i) { return '<span style="font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5;cursor:pointer" onclick="viewOdmDoc('+o.id+','+i+')">📎 '+d.name+'</span>'; }).join('') : '')
+    + '<button type="button" onclick="uploadOdmDoc()" class="btn btns" style="font-size:12px;border-radius:8px;padding:6px 12px">📎 Dosya Yükle</button>'
     + '<span id="odm-doc-count" style="font-size:10px;color:var(--t3)">' + (o&&o.docs?o.docs.length+' dosya':'') + '</span>'
     + '</div>'
     + '<input type="hidden" id="odm-f-docs" value="' + (o&&o.docs?JSON.stringify(o.docs).replace(/"/g,'&quot;'):'[]') + '">'
     + '</div>'
 
+    // 9. Not
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Not</label>'
+    + '<textarea class="fi" id="odm-f-note" rows="2" style="resize:none;font-size:13px;padding:10px 12px;border-radius:8px" placeholder="Açıklama…">' + (o?o.note||'':'') + '</textarea></div>'
+
+    // Hidden alanlar
     + '<input type="hidden" id="odm-f-eid" value="' + (o?o.id:'') + '">'
     + '<input type="hidden" id="odm-f-alarm" value="' + (o?o.alarmDays||3:3) + '">'
+    + '<input type="hidden" id="odm-f-freq" value="' + (o?o.freq||'teksefer':'teksefer') + '">'
+    + '<input type="hidden" id="odm-f-docno" value="' + esc(o?.docNo||'') + '">'
+    + '<input type="hidden" id="odm-f-actual" value="' + (o?.actualDate||'') + '">'
+    + '<input type="hidden" id="odm-f-assigned" value="' + (o?.assignedTo||'') + '">'
+    + '<input type="hidden" id="odm-f-alarm-date" value="' + (o?.alarmDate||'') + '">'
+    + '<input type="hidden" id="odm-f-alarm-time" value="' + (o?.alarmTime||'09:00') + '">'
+    + '<input type="hidden" id="odm-f-reminder-val" value="' + (o?.reminderValue||3) + '">'
+    + '<input type="hidden" id="odm-f-reminder-unit" value="' + (o?.reminderUnit||'gun') + '">'
     + '</div>'
 
-    + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">'
-    + '<button class="btn" onclick="document.getElementById(\'mo-odm-v9\')?.remove()">İptal</button>'
-    + '<button class="btn btnp" onclick="saveOdm()" style="padding:9px 22px;border-radius:9px">💾 Kaydet</button>'
-    + '</div>'
+    // Footer
+    + '<div style="padding:14px 24px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;background:var(--s2)">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-odm-v9\')?.remove()" style="font-size:13px;padding:10px 20px;border-radius:8px">İptal</button>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button class="btn btns" onclick="window._saveDraftOnClose?.(\'odm\');document.getElementById(\'mo-odm-v9\')?.remove();window.toast?.(\'Taslak kaydedildi\',\'ok\')" style="font-size:13px;padding:10px 16px;border-radius:8px">Taslak</button>'
+    + '<button class="btn btnp" onclick="saveOdm()" style="padding:10px 24px;border-radius:8px;font-size:14px;font-weight:700">Ödemeyi Kaydet</button>'
+    + '</div></div>'
     + '</div>';
 
   document.body.appendChild(mo);
@@ -2439,110 +2413,95 @@ function openTahsilatModal(id) {
   // Kur HTML her zaman oluştur — TRY'de gizle, döviz seçilince göster
   const kurHTML = _odmKurModeHTML(curVal !== 'TRY' ? curVal : 'USD');
 
-  let html = '<div class="moc" style="max-width:580px;padding:0;overflow:hidden;border-radius:16px">';
-  html += '<div style="background:#0F6E56;padding:16px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">';
-  html += '<div><div style="font-size:15px;font-weight:600">💰 ' + (o ? 'Tahsilat Düzenle' : 'Yeni Tahsilat') + '</div>';
-  html += '<div style="font-size:10px;opacity:.7;margin-top:2px">Tahsilat kaydini olusturun</div></div>';
-  html += '<button onclick="_go(\'mo-tahsilat\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:18px">×</button></div>';
-  html += '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px;max-height:74vh;overflow-y:auto">';
-
-  // İş ID (görev) + Cari Firma
   var tahCariList = typeof loadCari === 'function' ? loadCari() : [];
   var tahEsc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
-  var tahTaskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : [];
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html += '<div class="fr"><div class="fl">İŞ ID (Görev)</div><select class="fi" id="tah-f-taskid" style="border-radius:8px">';
-  html += '<option value="">— Görev Seçin —</option>';
-  tahTaskList.forEach(function(t) { html += '<option value="' + t.id + '"' + (o?.taskId == t.id ? ' selected' : '') + '>' + tahEsc((t.title || '').slice(0, 40)) + '</option>'; });
-  html += '</select></div>';
-  html += '<div class="fr"><div class="fl">CARİ FİRMA *</div><div style="display:flex;gap:4px"><select class="fi" id="tah-f-cari" style="flex:1;border-radius:8px">';
-  html += '<option value="">— Cari Seçin * —</option>';
-  tahCariList.forEach(function(c) {
+  var tahCariOpts = '<option value="">— Cari Seçin * —</option>' + tahCariList.map(function(c) {
     var isPend = c.status === 'pending_approval';
-    var lbl = tahEsc(c.name) + ' (' + (c.type || '') + ')' + (isPend ? ' ⏳ Onay Bekliyor' : '');
-    html += '<option value="' + tahEsc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPend ? ' disabled style="color:#999"' : '') + '>' + lbl + '</option>';
-  });
-  html += '</select><button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:3px 8px;flex-shrink:0">+</button></div></div>';
-  html += '</div>';
+    var lbl = tahEsc(c.name) + ' (' + (c.type || '') + ')' + (isPend ? ' ⏳' : '');
+    return '<option value="' + tahEsc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPend ? ' disabled style="color:#999"' : '') + '>' + lbl + '</option>';
+  }).join('');
+  var tahMethods = _odmLoadMethods();
 
-  // Müşteri + Tür
-  html += '<div class="fr"><div class="fl">MÜŞTERİ / KAYNAK *</div><input class="fi" id="tah-f-name" placeholder="Müşteri adı veya kaynak..." value="' + (o?o.name||'':'') + '"></div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html += '<div class="fr"><div class="fl">TAHSİLAT TÜRÜ *</div><select class="fi" id="tah-f-type">';
-  Object.entries(TAH_TYPES).forEach(([k,v]) => { html += '<option value="' + k + '"' + (o&&o.type===k?' selected':'') + '>' + v + '</option>'; });
+  var html = '<div class="moc" style="width:560px;max-width:96vw;padding:0;overflow:hidden;border-radius:16px;max-height:92vh;display:flex;flex-direction:column">';
+  html += '<div style="padding:16px 24px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--t)">' + (o ? 'Tahsilat Düzenle' : 'Yeni Tahsilat') + '</div>';
+  html += '<button onclick="document.getElementById(\'mo-tahsilat\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">✕</button></div>';
+  html += '<div style="flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px">';
+
+  // 1. JOB ID
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Job ID <span style="color:var(--t3);font-weight:400">(opsiyonel)</span></label>';
+  html += '<input class="fi" id="tah-f-taskid" placeholder="JOB-2026-XXXX" style="font-size:13px;padding:10px 12px;border-radius:8px;font-family:monospace" value="' + (o?.taskId||'') + '"></div>';
+
+  // 2. Tahsilat Kısa Adı
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Kısa Adı <span style="color:#dc2626">*</span></label>';
+  html += '<input class="fi" id="tah-f-name" placeholder="Örn: Mart ayı satış tahsilatı" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + tahEsc(o?.name||'') + '"></div>';
+
+  // 3. Cari / Müşteri
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Cari / Müşteri <span style="color:#dc2626">*</span></label>';
+  html += '<div style="display:flex;gap:4px"><select class="fi" id="tah-f-cari" style="flex:1;font-size:13px;padding:10px 12px;border-radius:8px">' + tahCariOpts + '</select>';
+  html += '<button type="button" onclick="window._openQuickCari?.()" class="btn btns" style="font-size:12px;padding:6px 10px;flex-shrink:0;border-radius:8px">+</button></div></div>';
+
+  // 4. Tahsilat Türü
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Türü <span style="color:#dc2626">*</span></label>';
+  html += '<select class="fi" id="tah-f-type" style="font-size:13px;padding:10px 12px;border-radius:8px">';
+  Object.entries(TAH_TYPES).forEach(function(e) { html += '<option value="' + e[0] + '"' + (o&&o.type===e[0]?' selected':'') + '>' + e[1] + '</option>'; });
   html += '</select></div>';
-  html += '<div class="fr"><div class="fl">FATURA / REFERANS NO *</div><input class="fi" id="tah-f-ref" placeholder="INV-2026-001..." value="' + (o?o.ref||'':'') + '"></div></div>';
 
-  // Tutar + Para Birimi
-  html += '<div class="fr"><div class="fl">TUTAR *</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 140px;gap:8px">';
-  html += '<div style="position:relative"><input class="fi" type="number" id="tah-f-amount" placeholder="0.00" step="0.01" value="' + (o?o.amount||'':'') + '" oninput="_odmUpdateTLPreview()" style="padding-right:80px">';
-  html += '<span id="odm-tl-preview" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:#0F6E56;pointer-events:none;white-space:nowrap">' + (o&&o.currency&&o.currency!=='TRY'?_odmTLKarsiligi(o.amount,o.currency):'') + '</span></div>';
-  html += '<select class="fi" id="tah-f-currency" onchange="_tahCurChange(this.value)">';
-  Object.entries(ODM_CURRENCY).forEach(([k,v]) => { html += '<option value="' + k + '"' + (curVal===k?' selected':'') + '>' + v.flag + ' ' + k + '</option>'; });
+  // 5. Tutar + Döviz
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tutar <span style="color:#dc2626">*</span></label>';
+  html += '<div style="display:grid;grid-template-columns:1fr 120px;gap:8px">';
+  html += '<input class="fi" type="number" id="tah-f-amount" placeholder="0.00" step="0.01" value="' + (o?o.amount||'':'') + '" style="font-size:13px;padding:10px 12px;border-radius:8px">';
+  html += '<select class="fi" id="tah-f-currency" onchange="_tahCurChange(this.value)" style="font-size:13px;padding:10px 12px;border-radius:8px">';
+  ['TRY','USD','EUR'].forEach(function(k) { var v = ODM_CURRENCY[k]; html += '<option value="' + k + '"' + (curVal===k?' selected':'') + '>' + v.flag + ' ' + k + '</option>'; });
   html += '</select></div>';
-  html += '<div id="tah-kur-wrap" style="' + (curVal==='TRY'?'display:none':'') + '">' + kurHTML + '</div></div>';
+  html += '<div id="tah-kur-wrap" style="margin-top:6px;' + (curVal==='TRY'?'display:none':'') + '">' + kurHTML + '</div></div>';
 
-  // Tarihler
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html += '<div class="fr"><div class="fl">BEKLENEN / PLANLANAN TARİH</div><input type="date" class="fi" id="tah-f-due" value="' + (o?o.due||'':'') + '"></div>';
-  html += '<div class="fr" id="tah-gercek-wrap"><div class="fl">GERÇEKLEŞEN TARİH</div><input type="date" class="fi" id="tah-f-actual" value="' + (o?o.actualDate||'':'') + '"></div></div>';
+  // 6. Tahsilat Tarihi
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Tarihi</label>';
+  html += '<input type="date" class="fi" id="tah-f-due" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + (o?o.due||'':'') + '"></div>';
 
-  // Yöntem + Banka
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html += '<div class="fr"><div class="fl">ALINAN HESAP / BANKA</div><input class="fi" id="tah-f-banka" placeholder="Garanti, İş Bankası..." value="' + (o?o.banka||'':'') + '"></div>';
-  html += '<div class="fr"><div class="fl">ÖDEME YÖNTEMİ *</div><select class="fi" id="tah-f-yontem" onchange="_onYontemChange(\'tah\')">';
-  _odmLoadMethods().forEach(function(y) { html += '<option value="' + y + '"' + (o&&o.yontem===y?' selected':'') + '>' + y + '</option>'; });
-  html += '</select></div></div>';
+  // 7. Tahsilat Yöntemi
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Yöntemi <span style="color:#dc2626">*</span></label>';
+  html += '<select class="fi" id="tah-f-yontem" style="font-size:13px;padding:10px 12px;border-radius:8px" onchange="_onYontemChange(\'tah\')">';
+  html += '<option value="">— Seçin —</option>';
+  tahMethods.forEach(function(y) { html += '<option value="' + y + '"' + (o&&o.yontem===y?' selected':'') + '>' + y + '</option>'; });
+  html += '</select></div>';
   html += _bankaDropdownHTML('tah', o);
 
-  // Sorumlu
-  html += '<div class="fr"><div class="fl">SORUMLU</div><select class="fi" id="tah-f-user"><option value="">— Seç —</option>';
-  users.forEach(u => { html += '<option value="' + u.id + '"' + (o&&o.assignedTo===u.id?' selected':'') + '>' + u.name + '</option>'; });
-  html += '</select></div>';
-
-  // Hatırlatıcı — zengin seçenekler (ödeme formuyla aynı)
-  html += '<input type="hidden" id="tah-f-alarm" value="' + (o?o.alarmDays||3:3) + '">';
-  html += '<div style="background:var(--s2);border-radius:10px;padding:12px 14px">';
-  html += '<div class="fl" style="margin-bottom:8px">🔔 HATIRLATICI</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  html += '<div style="display:flex;gap:6px;align-items:center">';
-  html += '<input type="date" class="fi" id="tah-f-alarm-date" value="' + (o?.alarmDate || '') + '" style="flex:1;border-radius:8px;font-size:11px">';
-  html += '<input type="time" class="fi" id="tah-f-alarm-time" value="' + (o?.alarmTime || '09:00') + '" style="width:80px;border-radius:8px;font-size:11px">';
-  html += '</div>';
-  html += '<div style="display:flex;gap:6px;align-items:center">';
-  html += '<input type="number" class="fi" id="tah-f-reminder-val" min="1" max="365" value="' + (o?.reminderValue || 3) + '" style="width:55px;border-radius:8px;font-size:11px">';
-  html += '<select class="fi" id="tah-f-reminder-unit" style="flex:1;border-radius:8px;font-size:11px">';
-  Object.entries(ODM_REMINDER_UNITS).forEach(function(e) { html += '<option value="' + e[0] + '"' + ((o?.reminderUnit || 'gun') === e[0] ? ' selected' : '') + '>' + e[1] + ' önce</option>'; });
-  html += '</select></div></div>';
-  html += '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">';
-  html += '<button type="button" onclick="_odmSetReminder(1,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 gün</button>';
-  html += '<button type="button" onclick="_odmSetReminder(3,\'gun\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">3 gün</button>';
-  html += '<button type="button" onclick="_odmSetReminder(1,\'hafta\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 hafta</button>';
-  html += '<button type="button" onclick="_odmSetReminder(1,\'ay\')" class="btn btns" style="font-size:10px;padding:2px 8px;border-radius:6px">1 ay</button>';
-  html += '</div></div>';
-
-  // Not
-  html += '<div class="fr"><div class="fl">NOT / AÇIKLAMA</div><textarea class="fi" id="tah-f-note" rows="2" style="resize:none" placeholder="Ek bilgiler...">' + (o?o.note||'':'') + '</textarea></div>';
-
-  // Dökümanlar
-  const docs = o?.docs || [];
-  html += '<div class="fr"><div class="fl">DÖKÜMAN EKLE</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
-  docs.forEach((d,i) => { html += '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(15,110,86,.1);color:#0F6E56;cursor:pointer" onclick="viewTahDoc(' + (o?o.id:0) + ',' + i + ')">📎 ' + d.name + '</span>'; });
-  html += '<button type="button" onclick="uploadTahDoc()" class="btn btns" style="font-size:11px;border-radius:7px;padding:4px 10px">📎 Dosya Yükle</button>';
+  // 8. Belge/Dekont yükleme
+  var docs = o?.docs || [];
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Belge / Dekont <span style="color:#dc2626">*</span></label>';
+  html += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+  docs.forEach(function(d,i) { html += '<span style="font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(15,110,86,.1);color:#0F6E56;cursor:pointer" onclick="viewTahDoc(' + (o?o.id:0) + ',' + i + ')">📎 ' + d.name + '</span>'; });
+  html += '<button type="button" onclick="uploadTahDoc()" class="btn btns" style="font-size:12px;border-radius:8px;padding:6px 12px">📎 Dosya Yükle</button>';
   html += '<span id="tah-doc-count" style="font-size:10px;color:var(--t3)">' + (docs.length?docs.length+' dosya':'') + '</span>';
   html += '</div><input type="hidden" id="tah-f-docs" value="' + JSON.stringify(docs).replace(/"/g,'&quot;') + '"></div>';
 
-  // Tahsil toggle
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--s2);border-radius:9px">';
-  html += '<span style="font-size:13px;font-weight:500">Tahsil edildi</span>';
-  html += '<label class="psw"><input type="checkbox" id="tah-f-collected"' + (o&&o.collected?' checked':'') + '><span class="psl"></span></label></div>';
+  // 9. Not
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Not</label>';
+  html += '<textarea class="fi" id="tah-f-note" rows="2" style="resize:none;font-size:13px;padding:10px 12px;border-radius:8px" placeholder="Ek bilgiler...">' + (o?o.note||'':'') + '</textarea></div>';
 
+  // Hidden alanlar
   html += '<input type="hidden" id="tah-f-eid" value="' + (o?o.id:'') + '">';
+  html += '<input type="hidden" id="tah-f-ref" value="' + tahEsc(o?.ref||'') + '">';
+  html += '<input type="hidden" id="tah-f-actual" value="' + (o?.actualDate||'') + '">';
+  html += '<input type="hidden" id="tah-f-banka" value="' + tahEsc(o?.banka||'') + '">';
+  html += '<input type="hidden" id="tah-f-user" value="' + (o?.assignedTo||'') + '">';
+  html += '<input type="hidden" id="tah-f-collected" value="' + (o&&o.collected?'1':'') + '">';
+  html += '<input type="hidden" id="tah-f-alarm" value="' + (o?o.alarmDays||3:3) + '">';
+  html += '<input type="hidden" id="tah-f-alarm-date" value="' + (o?.alarmDate||'') + '">';
+  html += '<input type="hidden" id="tah-f-alarm-time" value="' + (o?.alarmTime||'09:00') + '">';
+  html += '<input type="hidden" id="tah-f-reminder-val" value="' + (o?.reminderValue||3) + '">';
+  html += '<input type="hidden" id="tah-f-reminder-unit" value="' + (o?.reminderUnit||'gun') + '">';
   html += '</div>';
-  html += '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:space-between;background:var(--s2)">';
-  html += '<button class="btn" onclick="document.getElementById(\'mo-tahsilat\')?.remove()">İptal</button>';
-  html += '<button class="btn btnp" onclick="saveTahsilat()" style="padding:9px 22px;border-radius:9px">💾 Kaydet</button></div></div>';
+
+  // Footer
+  html += '<div style="padding:14px 24px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;background:var(--s2)">';
+  html += '<button class="btn btns" onclick="document.getElementById(\'mo-tahsilat\')?.remove()" style="font-size:13px;padding:10px 20px;border-radius:8px">İptal</button>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<button class="btn btns" onclick="window._saveDraftOnClose?.(\'tah\');document.getElementById(\'mo-tahsilat\')?.remove();window.toast?.(\'Taslak kaydedildi\',\'ok\')" style="font-size:13px;padding:10px 16px;border-radius:8px">Taslak</button>';
+  html += '<button class="btn btnp" onclick="saveTahsilat()" style="padding:10px 24px;border-radius:8px;font-size:14px;font-weight:700">Tahsilatı Kaydet</button>';
+  html += '</div></div></div>';
 
   mo.innerHTML = html;
   document.body.appendChild(mo);
