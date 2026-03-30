@@ -273,7 +273,7 @@ function renderFocusPanel() {
     { type:'year',    label:"Yılın En Önemlileri",      icon:'🏆', color:'#DC2626', bg:'rgba(220,38,38,.1)',  ids:_yIds,  cards:yearCards,    total:yearTotal,    hint:'listeden 🏆 basın' },
   ];
 
-  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:100%">'
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;gap:8px;width:100%">'
     + FOCUS_WIDGETS.map(w =>
       '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:10px 12px;min-width:0;overflow:hidden">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
