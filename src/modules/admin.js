@@ -205,20 +205,31 @@ function _renderDetail(uid) {
       </div>
     </div>
 
-    <!-- Hizli Aksiyonlar -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <button class="btn btns" onclick="Admin.showUserActivity(${u.id})" style="font-size:12px">Aktivite Gecmisi</button>
-      <button class="btn btns" onclick="Admin.resetPassword(${u.id})" style="font-size:12px">Sifre Sifirla</button>
-      <button class="btn btns" onclick="Admin.openNotifPrefs()" style="font-size:12px">Bildirim Tercihleri</button>
-      ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${u.id})" style="font-size:12px;color:#DC2626">Askiya Al</button>`:''}
-      ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${u.id})" style="font-size:12px;color:#16A34A">Aktif Et</button>`:''}
-      ${!isSelf?`<button class="btn btns" onclick="Admin.deleteUser(${u.id})" style="font-size:12px;color:#DC2626">Sil</button>`:''}
-      <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:12px">Audit Log</button>
-      <button class="btn btns" onclick="Admin.openDeptModal()" style="font-size:12px">Departmanlar</button>
-      <button class="btn btns" onclick="Admin.openBulkRoleChange()" style="font-size:12px">Toplu Rol</button>
-      ${!isSelf?'<button class="btn btns" onclick="Admin.startImpersonation('+u.id+')" style="font-size:12px">Goruntulenme</button>':''}
-      <button class="btn btns" onclick="window.Auth?.openIpWhitelist?.()" style="font-size:12px">IP Kisitlama</button>
-      ${!isSelf?`<button class="btn btns" onclick="window._cloneUserPerms(${u.id})" style="font-size:12px">📋 Yetki Klonla</button>`:''}
+    <!-- Üst Butonlar -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btns" onclick="Admin.resetPassword(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px">Sifre Sifirla</button>
+      <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:11px;padding:6px 12px;border-radius:8px">Audit Log</button>
+      ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#DC2626;border-color:#DC2626">Askiya Al</button>`:''}
+      ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#16A34A;border-color:#16A34A">Aktif Et</button>`:''}
+      <button class="btn btnp" onclick="window._openUserManageModal?.(${u.id})" style="font-size:11px;padding:6px 14px;border-radius:8px;margin-left:auto">Yonet</button>
+    </div>
+
+    <!-- Sekmeler -->
+    <div style="display:flex;border-bottom:1px solid var(--b);margin-bottom:16px">
+      <div class="adm-tab on" onclick="window._admSwitchTab('yetkiler',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:600">Yetkiler</div>
+      <div class="adm-tab" onclick="window._admSwitchTab('oturumlar',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Oturumlar</div>
+      <div class="adm-tab" onclick="window._admSwitchTab('aktivite',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Aktivite</div>
+      <div class="adm-tab" onclick="window._admSwitchTab('performans',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Performans</div>
+      <div class="adm-tab" onclick="window._admSwitchTab('ayarlar',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Ayarlar</div>
+    </div>
+    <div id="adm-tab-content">
+    <!-- Yetkiler sekmesi: Modüller butonu -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btnp" onclick="Admin.openPermModal(${u.id})" style="font-size:12px;padding:8px 16px;border-radius:8px">Modul Yetkileri</button>
+      ${!isSelf?`<button class="btn btns" onclick="window._cloneUserPerms(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px">Yetki Klonla</button>`:''}
+      <button class="btn btns" onclick="Admin.openDeptModal()" style="font-size:11px;padding:6px 12px;border-radius:8px">Departmanlar</button>
+      <button class="btn btns" onclick="Admin.openBulkRoleChange()" style="font-size:11px;padding:6px 12px;border-radius:8px">Toplu Rol</button>
+    </div>
     </div>
 
     <!-- Yetki Skor Kartı -->
@@ -591,8 +602,8 @@ function deleteUser(id) {
 // ── RBAC: Modül Yetki Modalı ──────────────────────────────────────
 // Modül kategorileri
 var _PERM_CATEGORIES = {
-  finans:     { label: 'Finans & Ticaret',      icon: '💰', mods: ['odemeler','pirim','hedefler'] },
-  operasyon:  { label: 'Operasyon & Lojistik',  icon: '📦', mods: ['pusula','kargo','satinalma','stok','numune'] },
+  finans:     { label: 'Finans & Ticaret',      icon: '💰', mods: ['odemeler','satis-teklifleri','alis-teklifleri','pirim','hedefler'] },
+  operasyon:  { label: 'Operasyon & Lojistik',  icon: '📦', mods: ['pusula','kargo','satinalma','stok','numune','lojistik'] },
   musteri:    { label: 'Müşteri & Satış',       icon: '📈', mods: ['crm','etkinlik','rehber'] },
   ik:         { label: 'İnsan Kaynakları',      icon: '👥', mods: ['ik','izin','puantaj','evrak','kpi','temizlik'] },
   yonetim:    { label: 'Sistem & Yönetim',      icon: '⚙️', mods: ['admin','settings','arsiv','tebligat','resmi'] },
@@ -620,7 +631,8 @@ var MOD_ICONS = {
   dashboard:'📊', announce:'📢', pusula:'🎯', takvim:'📅', notes:'📝', links:'🔗', rehber:'🆘',
   satinalma:'🛒', odemeler:'💳', pirim:'⭐', hedefler:'🏆', kargo:'📦', stok:'📋', numune:'🧪', temizlik:'🧹',
   ik:'👥', izin:'🏖', puantaj:'⏱', evrak:'📄', crm:'📈', etkinlik:'🎪',
-  arsiv:'🗄', tebligat:'📮', resmi:'📑', kpi:'📊', settings:'⚙️', admin:'🔐'
+  arsiv:'🗄', tebligat:'📮', resmi:'📑', kpi:'📊', settings:'⚙️', admin:'🔐',
+  'satis-teklifleri':'📊', 'alis-teklifleri':'🛒', lojistik:'🚛'
 };
 
 // Apple-style CSS inject (bir kez)
@@ -673,6 +685,8 @@ function openPermModal(id) {
   ALL_MODULES.forEach(function(m) { modMap[m.id] = m; });
   if (!modMap['satinalma']) modMap['satinalma'] = { id: 'satinalma', label: 'Satın Alma' };
   if (!modMap['lojistik']) modMap['lojistik'] = { id: 'lojistik', label: 'Lojistik Merkezi' };
+  if (!modMap['satis-teklifleri']) modMap['satis-teklifleri'] = { id: 'satis-teklifleri', label: 'Satış Teklifleri' };
+  if (!modMap['alis-teklifleri']) modMap['alis-teklifleri'] = { id: 'alis-teklifleri', label: 'Alış Teklifleri' };
 
   // Orijinal yetkileri kaydet (değişiklik takibi için)
   _permOriginal = {};
@@ -2922,6 +2936,60 @@ window._execClonePerms = function(targetUid) {
 /**
  * Full-screen kullanıcı yönetim modalı — Profil + İzinler + Aktivite
  */
+/** Kullanıcı detay sekmesi değiştirme */
+window._admSwitchTab = function(tab, el) {
+  // Tab styling
+  document.querySelectorAll('.adm-tab').forEach(function(t) {
+    t.style.borderBottomColor = 'transparent';
+    t.style.color = 'var(--t3)';
+    t.style.fontWeight = '400';
+    t.classList.remove('on');
+  });
+  if (el) {
+    el.style.borderBottomColor = 'var(--ac)';
+    el.style.color = 'var(--ac)';
+    el.style.fontWeight = '600';
+    el.classList.add('on');
+  }
+  // İçerik
+  var cont = document.getElementById('adm-tab-content');
+  if (!cont) return;
+  var uid = _selectedUserId;
+  var u = loadUsers().find(function(x) { return x.id === uid; });
+  if (!u) return;
+  var isSelf = u.id === _getCU()?.id;
+
+  if (tab === 'yetkiler') {
+    cont.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      + '<button class="btn btnp" onclick="Admin.openPermModal(' + u.id + ')" style="font-size:12px;padding:8px 16px;border-radius:8px">Modul Yetkileri</button>'
+      + (!isSelf ? '<button class="btn btns" onclick="window._cloneUserPerms(' + u.id + ')" style="font-size:11px;padding:6px 12px;border-radius:8px">Yetki Klonla</button>' : '')
+      + '<button class="btn btns" onclick="Admin.openDeptModal()" style="font-size:11px;padding:6px 12px;border-radius:8px">Departmanlar</button>'
+      + '</div>';
+  } else if (tab === 'oturumlar') {
+    cont.innerHTML = '<div style="text-align:center;padding:16px"><button class="btn btns" onclick="Admin.openSessionManager()" style="font-size:12px">Oturum Yoneticisi</button></div>';
+  } else if (tab === 'aktivite') {
+    cont.innerHTML = '<div style="text-align:center;padding:16px"><button class="btn btns" onclick="Admin.showUserActivity(' + u.id + ')" style="font-size:12px">Aktivite Gecmisi</button></div>';
+  } else if (tab === 'performans') {
+    var ts = typeof _calcTrustScore === 'function' ? _calcTrustScore(u) : { score: 0, approvedOps: 0, loginFreq: '—', violations: 0 };
+    var tsColor = ts.score >= 70 ? '#22C55E' : ts.score >= 40 ? '#F59E0B' : '#EF4444';
+    cont.innerHTML = '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px 16px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:600">Guven Skoru</span><span style="font-size:12px;font-weight:700;color:' + tsColor + '">' + ts.score + '/100</span></div>'
+      + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + ts.score + '%;background:' + tsColor + ';border-radius:3px"></div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;font-size:11px;color:var(--t3)">'
+        + '<div>Onayli islem: <b>' + ts.approvedOps + '</b></div>'
+        + '<div>Giris sikligi: <b>' + ts.loginFreq + '</b></div>'
+        + '<div>Asim: <b style="color:' + (ts.violations > 0 ? '#EF4444' : 'var(--t)') + '">' + ts.violations + '</b></div>'
+      + '</div></div>';
+  } else if (tab === 'ayarlar') {
+    cont.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">'
+      + '<button class="btn btns" onclick="Admin.openNotifPrefs()" style="font-size:11px;padding:6px 12px;border-radius:8px">Bildirim Tercihleri</button>'
+      + '<button class="btn btns" onclick="window.Auth?.openIpWhitelist?.()" style="font-size:11px;padding:6px 12px;border-radius:8px">IP Kisitlama</button>'
+      + (!isSelf ? '<button class="btn btns" onclick="Admin.startImpersonation(' + u.id + ')" style="font-size:11px;padding:6px 12px;border-radius:8px">Goruntulenme</button>' : '')
+      + (!isSelf ? '<button class="btn btns" onclick="Admin.deleteUser(' + u.id + ')" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#DC2626;border-color:#DC2626">Kullaniciyi Sil</button>' : '')
+      + '</div>';
+  }
+};
+
 window._openUserManageModal = function(uid) {
   if (!isAdmin()) return;
   var users = loadUsers();
