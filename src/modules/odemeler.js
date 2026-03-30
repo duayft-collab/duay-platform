@@ -1833,7 +1833,7 @@ function delOdm(id) {
   var canDel = false;
   if (_isAdminO()) {
     canDel = true;
-  } else if ((o.approvalStatus === 'pending' || !o.approvalStatus) && o.createdBy === cu?.id) {
+  } else if ((o.approvalStatus === 'pending' || !o.approvalStatus) && String(o.createdBy || '') === String(cu?.id || '')) {
     canDel = true;
   }
   if (!canDel) {
@@ -6523,7 +6523,7 @@ function delTahsilat(id) {
   var canDel = false;
   if (_isAdminO()) {
     canDel = true;
-  } else if ((o.approvalStatus === 'pending' || !o.approvalStatus) && o.createdBy === cu?.id) {
+  } else if ((o.approvalStatus === 'pending' || !o.approvalStatus) && String(o.createdBy || '') === String(cu?.id || '')) {
     canDel = true;
   }
   if (!canDel) {
