@@ -512,20 +512,6 @@ function _doLogin() {
             </div>
           </div>
           <div class="pus-topbar-right">
-            <!-- Quick Add -->
-            <div class="pus-quick-add-wrap" id="pus-quick-add-wrap" style="margin:0">
-              <div class="pus-qa-inner" style="border-radius:7px;padding:4px 10px">
-                <span class="pus-qa-icon" style="font-size:18px">⚡</span>
-                <input class="pus-qa-inp" id="pus-qa-inp" type="text"
-                  placeholder="Hızlı görev…"
-                  onkeydown="if(event.key==='Enter')window._qaSubmit?.()"
-                  oninput="window._qaHint?.(this.value)"
-                  style="width:140px">
-                <button class="pus-qa-btn" onclick="window._qaSubmit?.()">+</button>
-              </div>
-              <div class="pus-qa-hint" id="pus-qa-hint"></div>
-            </div>
-            <div class="pus-topbar-sep"></div>
             <!-- Araçlar -->
             <div class="pus-tools-group" id="pus-tools-group" style="position:relative">
               <button class="pus-tools-trigger" onclick="window._toggleToolsMenu?.(this)" title="Araçlar">
@@ -557,7 +543,6 @@ function _doLogin() {
               <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               Görev Ekle
             </button>
-            <button id="btn-pus-sticky" style="display:none"></button>
           </div>
         </div>
 
