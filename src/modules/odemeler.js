@@ -961,7 +961,7 @@ function renderOdemeler() {
         + '<div style="width:26px;height:26px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">' + cat.ic + '</div>'
         + '<div style="min-width:0">'
           + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + o.name + _odmSourceBadge(o) + (o.talimat?.durum==='aktif'?'<span style="font-size:9px;margin-left:3px" title="Otomatik ödeme talimatı aktif">🏦</span>':'') + '</div>'
-          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + '</div>'
+          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + (o.ts?' · <span style="color:var(--t3);font-family:monospace;font-size:9px" title="Kayıt tarihi">' + (o.ts||'').slice(0,10) + '</span>':'') + '</div>'
         + '</div>'
       + '</div>'
       + '<div>'
@@ -1438,6 +1438,7 @@ function saveOdm() {
   let docs = [];
   try { docs = JSON.parse(_go('odm-f-docs')?.value || '[]'); } catch {}
   const entry = {
+    tip:            'odeme',
     name,
     cat,
     freq:           _go('odm-f-freq')?.value     || 'aylik',
@@ -2687,6 +2688,7 @@ function saveTahsilat() {
   const currency = document.getElementById('tah-f-currency')?.value || 'TRY';
   const amount   = parseFloat(document.getElementById('tah-f-amount')?.value || '0') || 0;
   const entry = {
+    tip:        'tahsilat',
     name,
     type:       document.getElementById('tah-f-type')?.value     || 'musteri',
     ref:        document.getElementById('tah-f-ref')?.value      || '',
@@ -7253,6 +7255,119 @@ window._approveCariUpgrade = function(cariId) {
   window.addNotif?.('✅', 'Cari onaylandı: ' + c.name, 'ok', 'cari:' + c.id, c.createdBy);
   window.toast?.('Cari onaylı statüye yükseltildi ✓', 'ok');
   if (typeof renderCari === 'function') renderCari();
+};
+
+// ════════════════════════════════════════════════════════════════
+// FORM TASLAK OTO-KAYIT (FIX 6)
+// ════════════════════════════════════════════════════════════════
+var _ODM_DRAFT_KEY = 'ak_odm_draft';
+var _TAH_DRAFT_KEY = 'ak_tah_draft';
+
+/**
+ * Form kapanırken dolu alan varsa taslak kaydeder.
+ * @param {'odm'|'tah'} type
+ */
+function _saveDraftOnClose(type) {
+  var fields = type === 'odm'
+    ? { name: _go('odm-f-name')?.value, amount: _go('odm-f-amount')?.value, due: _go('odm-f-due')?.value, cari: _go('odm-f-cari')?.value, note: _go('odm-f-note')?.value }
+    : { name: document.getElementById('tah-f-name')?.value, amount: document.getElementById('tah-f-amount')?.value, due: document.getElementById('tah-f-due')?.value, cari: document.getElementById('tah-f-cari')?.value, note: document.getElementById('tah-f-note')?.value };
+  // En az 1 alan doluysa taslak kaydet
+  var hasDraft = Object.values(fields).some(function(v) { return v && v.trim && v.trim(); });
+  if (hasDraft) {
+    try { localStorage.setItem(type === 'odm' ? _ODM_DRAFT_KEY : _TAH_DRAFT_KEY, JSON.stringify({ ...fields, ts: new Date().toISOString() })); } catch(e) {}
+  }
+}
+
+/**
+ * Form açılırken taslak varsa banner gösterir.
+ * @param {'odm'|'tah'} type
+ */
+function _checkDraftOnOpen(type) {
+  var key = type === 'odm' ? _ODM_DRAFT_KEY : _TAH_DRAFT_KEY;
+  try {
+    var raw = localStorage.getItem(key);
+    if (!raw) return;
+    var draft = JSON.parse(raw);
+    if (!draft || !draft.name) return;
+    // Banner oluştur
+    var bannerId = 'odm-draft-banner-' + type;
+    var existing = document.getElementById(bannerId);
+    if (existing) existing.remove();
+    var banner = document.createElement('div');
+    banner.id = bannerId;
+    banner.style.cssText = 'padding:8px 16px;background:#FFFBEB;border-bottom:1px solid #FDE68A;font-size:12px;color:#92400E;display:flex;align-items:center;justify-content:space-between;gap:8px';
+    banner.innerHTML = '<span>📝 Kaydedilmemiş taslak var — <b>"' + (draft.name || '').slice(0, 30) + '"</b></span>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button onclick="window._odmRestoreDraft(\'' + type + '\')" style="font-size:11px;padding:3px 10px;border:1px solid #D97706;border-radius:6px;background:none;color:#D97706;cursor:pointer;font-family:inherit">Devam Et</button>'
+      + '<button onclick="localStorage.removeItem(\'' + key + '\');document.getElementById(\'' + bannerId + '\')?.remove()" style="font-size:11px;padding:3px 10px;border:1px solid var(--b);border-radius:6px;background:none;color:var(--t3);cursor:pointer;font-family:inherit">Sil</button>'
+      + '</div>';
+    var modal = type === 'odm' ? document.getElementById('mo-odm-v9') : document.getElementById('mo-tahsilat');
+    if (modal) {
+      var body = modal.querySelector('[style*="overflow-y"]') || modal.querySelector('.moc > div:nth-child(2)');
+      if (body) body.insertBefore(banner, body.firstChild);
+    }
+  } catch(e) {}
+}
+
+/**
+ * Taslağı forma yükler.
+ */
+window._odmRestoreDraft = function(type) {
+  var key = type === 'odm' ? _ODM_DRAFT_KEY : _TAH_DRAFT_KEY;
+  try {
+    var draft = JSON.parse(localStorage.getItem(key) || '{}');
+    if (type === 'odm') {
+      if (draft.name && _go('odm-f-name')) _go('odm-f-name').value = draft.name;
+      if (draft.amount && _go('odm-f-amount')) _go('odm-f-amount').value = draft.amount;
+      if (draft.due && _go('odm-f-due')) _go('odm-f-due').value = draft.due;
+      if (draft.cari && _go('odm-f-cari')) _go('odm-f-cari').value = draft.cari;
+      if (draft.note && _go('odm-f-note')) _go('odm-f-note').value = draft.note;
+    } else {
+      if (draft.name) { var el = document.getElementById('tah-f-name'); if (el) el.value = draft.name; }
+      if (draft.amount) { var el2 = document.getElementById('tah-f-amount'); if (el2) el2.value = draft.amount; }
+      if (draft.due) { var el3 = document.getElementById('tah-f-due'); if (el3) el3.value = draft.due; }
+      if (draft.cari) { var el4 = document.getElementById('tah-f-cari'); if (el4) el4.value = draft.cari; }
+      if (draft.note) { var el5 = document.getElementById('tah-f-note'); if (el5) el5.value = draft.note; }
+    }
+    localStorage.removeItem(key);
+    document.getElementById('odm-draft-banner-' + type)?.remove();
+    window.toast?.('Taslak yüklendi ✓', 'ok');
+  } catch(e) {}
+};
+
+// Ödeme kaydedilince taslağı temizle
+var _origSaveOdm = window.saveOdm;
+window.saveOdm = function() {
+  _origSaveOdm?.();
+  try { localStorage.removeItem(_ODM_DRAFT_KEY); } catch(e) {}
+};
+var _origSaveTah = window.saveTahsilat;
+window.saveTahsilat = function() {
+  _origSaveTah?.();
+  try { localStorage.removeItem(_TAH_DRAFT_KEY); } catch(e) {}
+};
+
+// Modal kapanma tespiti — MutationObserver ile
+var _draftObserver = new MutationObserver(function(muts) {
+  muts.forEach(function(m) {
+    m.removedNodes.forEach(function(n) {
+      if (n.id === 'mo-odm-v9') _saveDraftOnClose('odm');
+      if (n.id === 'mo-tahsilat') _saveDraftOnClose('tah');
+    });
+  });
+});
+_draftObserver.observe(document.body, { childList: true, subtree: true });
+
+// Modal açılışında taslak kontrolü
+var _origOpenOdmModal = window.openOdmModal;
+window.openOdmModal = function(id) {
+  _origOpenOdmModal?.(id);
+  if (!id) setTimeout(function() { _checkDraftOnOpen('odm'); }, 200);
+};
+var _origOpenTahModal = window.openTahsilatModal;
+window.openTahsilatModal = function(id) {
+  _origOpenTahModal?.(id);
+  if (!id) setTimeout(function() { _checkDraftOnOpen('tah'); }, 200);
 };
 
 // Exports
