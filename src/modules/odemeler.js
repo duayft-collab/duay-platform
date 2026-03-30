@@ -928,7 +928,8 @@ function renderOdemeler() {
   var _summaryEl = _go('odm-filter-summary');
   if (_summaryEl) {
     var _filteredNet = items.reduce(function(s,o) { var amt = _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); return o._src === 'tahsilat' ? s + amt : s - amt; }, 0);
-    _summaryEl.textContent = 'Gösterilen: ' + items.length + ' kayıt · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
+    var _roleNote = _isFinanceUser ? 'Tüm kayıtlar' : 'Sadece kendi kayıtlarınız';
+    _summaryEl.textContent = _roleNote + ' · ' + items.length + ' kayıt · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
   }
 
   // Vade uyumsuzluğu uyarısı (admin only)

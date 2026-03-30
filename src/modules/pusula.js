@@ -362,8 +362,12 @@ function visTasks() {
     return uid ? d.filter(t => t.uid === uid) : d;
   }
   const myId = _getCU()?.id;
+  var myRole = _getCU()?.role;
+  // Manager/lead: tüm görevleri görür
+  if (myRole === 'manager' || myRole === 'lead') return d;
   return d.filter(t =>
     t.uid === myId ||
+    t.createdBy === myId ||
     (t.participants || []).includes(myId) ||
     (t.viewers     || []).includes(myId)
   );

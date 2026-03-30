@@ -139,7 +139,10 @@ window._saNavClick = function(cat) {
 
 function renderSatinAlma() {
   _injectSAPanel();
-  var all    = _loadSA();
+  var _allRawSA = _loadSA();
+  var _cuSA = window.Auth?.getCU?.();
+  var _saIsManager = _cuSA?.role === 'admin' || _cuSA?.role === 'manager' || (_cuSA?.dept || '').toLowerCase() === 'satinalma';
+  var all = _saIsManager ? _allRawSA : _allRawSA.filter(function(s) { return !s.createdBy || s.createdBy === _cuSA?.id || s.responsibleId === _cuSA?.id; });
   var search = (document.getElementById('sa-search')?.value || '').toLowerCase();
   var curF   = document.getElementById('sa-cur-f')?.value || '';
   var fromF  = document.getElementById('sa-from-f')?.value || '';

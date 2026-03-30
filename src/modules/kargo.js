@@ -220,10 +220,15 @@ function _renderNavlunTab(){
 function _renderNavlunList(){
   var cont=document.getElementById('navlun-kargo-list');
   if(!cont)return;
-  var kargo=typeof loadKargo==='function'?loadKargo():[];
+  var _allKrg=typeof loadKargo==='function'?loadKargo():[];
   var users=typeof loadUsers==='function'?loadUsers():[];
   var today=new Date().toISOString().slice(0,10);
   var search=(document.getElementById('navlun-search')?.value||'').toLowerCase();
+
+  // Rol bazlı filtreleme — admin/manager/lojistik tümünü görür, user kendi kayıtları
+  var _cuKrg=window.Auth?.getCU?.();
+  var _krgIsManager=_cuKrg?.role==='admin'||_cuKrg?.role==='manager'||(_cuKrg?.dept||'').toLowerCase()==='lojistik';
+  var kargo=_krgIsManager?_allKrg:_allKrg.filter(function(k){return !k.createdBy||k.createdBy===_cuKrg?.id;});
 
   var fl=kargo.filter(function(k){
     if(_navF!=='all'&&k.tasimaTipi!==_navF)return false;
