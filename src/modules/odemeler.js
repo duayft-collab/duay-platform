@@ -784,7 +784,7 @@ function renderOdemeler() {
   }
   // Soft-deleted kayıtları gizle (admin dahil — ayrı çöp kutusu panelinden görülür)
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
-  const all = _isManagerO() ? _activeRaw : _activeRaw.filter(o => o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id);
+  const all = _isManagerO() ? _activeRaw : _activeRaw.filter(o => !o.createdBy || o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id || o.assignedTo === _cuOdm?.id);
 
   // Cari dropdown doldur (ilk çağrıda)
   var _cariSel = _go('odm-cari-f');
