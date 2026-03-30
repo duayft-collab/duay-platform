@@ -198,7 +198,7 @@ body {
 .psep { width: 1px; height: 16px; background: var(--b); margin: 0 4px; flex-shrink: 0; }
 
 /* â”€â”€ LAYOUT â”€â”€ */
-.layout { display: flex; flex: 1; min-height: calc(100vh - 88px); }
+.layout { display: flex; height: calc(100vh - 88px); overflow: hidden; }
 .sidebar {
   width: 218px; background: var(--sf); border-right: 1px solid var(--b);
   display: flex; flex-direction: column; padding: 8px 6px; flex-shrink: 0;
@@ -764,7 +764,7 @@ td { vertical-align: middle; }
   .sidebar { position: fixed; left: -230px; top: 0; height: 100vh; z-index: 150; transition: left .25s; box-shadow: none; }
   .sidebar.open { left: 0; box-shadow: var(--shm); }
   #mob-overlay.show { display: block; }
-  .layout { min-height: calc(100vh - 52px); }
+  .layout { height: calc(100vh - 52px); }
 }
 @media (max-width: 860px) {
   .sidebar { display: none; }
