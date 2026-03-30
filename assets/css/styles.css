@@ -793,7 +793,6 @@ td { vertical-align: middle; }
 .pus-hero {
   background: var(--sf);
   border-bottom: 1px solid var(--b);
-  position: sticky; top: 0; z-index: 200;
 }
 .pus-hero-inner { padding: 18px 22px 0; }
 .pus-hero-top {
@@ -1285,7 +1284,7 @@ td { vertical-align: middle; }
 .currency-rate { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; }
 
 /* â”€â”€ PANEL HEADER YARDIMCILARI â”€â”€ */
-.panel { padding: 0; }
+.panel { padding: 0; overflow: visible; position: relative; }
 .panel > .ph:first-child { margin-bottom: 16px; }
 
 /* Eksik sc5 (5 sÃ¼tunlu stat grid) */
