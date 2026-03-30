@@ -591,14 +591,11 @@ function deleteUser(id) {
 // ── RBAC: Modül Yetki Modalı ──────────────────────────────────────
 // Modül kategorileri
 var _PERM_CATEGORIES = {
-  genel:      { label: 'Genel',              icon: '📋', mods: ['dashboard','announce','pusula','takvim','notes','links','rehber'] },
-  satinalma:  { label: 'Satın Alma',         icon: '🛒', mods: ['satinalma'] },
-  finans:     { label: 'Finans & Muhasebe',  icon: '💰', mods: ['odemeler','pirim','hedefler'] },
-  operasyon:  { label: 'Operasyon',          icon: '📦', mods: ['kargo','stok','numune','temizlik'] },
-  ik:         { label: 'İnsan Kaynakları',   icon: '👥', mods: ['ik','izin','puantaj','evrak'] },
-  satis:      { label: 'Satış & Müşteri',    icon: '📈', mods: ['crm','etkinlik'] },
-  dokuman:    { label: 'Döküman & Bilgi',    icon: '📂', mods: ['arsiv','tebligat','resmi','kpi'] },
-  yonetim:    { label: 'Yönetim',            icon: '⚙️', mods: ['settings','admin'] },
+  finans:     { label: 'Finans & Ticaret',      icon: '💰', mods: ['odemeler','pirim','hedefler'] },
+  operasyon:  { label: 'Operasyon & Lojistik',  icon: '📦', mods: ['pusula','kargo','satinalma','stok','numune'] },
+  musteri:    { label: 'Müşteri & Satış',       icon: '📈', mods: ['crm','etkinlik','rehber'] },
+  ik:         { label: 'İnsan Kaynakları',      icon: '👥', mods: ['ik','izin','puantaj','evrak','kpi','temizlik'] },
+  yonetim:    { label: 'Sistem & Yönetim',      icon: '⚙️', mods: ['admin','settings','arsiv','tebligat','resmi'] },
 };
 
 var _PERM_LEVELS = [
@@ -609,10 +606,14 @@ var _PERM_LEVELS = [
 ];
 
 var _PERM_PRESETS = {
-  intern:   { label: '🎓 Stajyer',   level: 'view',   desc: 'Sadece görüntüleme' },
-  staff:    { label: '👤 Personel',   level: 'view',   desc: 'Temel erişim' },
-  expert:   { label: '⭐ Uzman',      level: 'edit',   desc: 'Düzenleme yetkisi' },
-  manager:  { label: '👔 Yönetici',   level: 'manage', desc: 'Tam yetki' },
+  intern:     { label: '🎓 Stajyer',     level: 'view',   desc: 'Sadece görüntüleme' },
+  staff:      { label: '👤 Personel',     level: 'view',   desc: 'Temel erişim' },
+  expert:     { label: '⭐ Uzman',        level: 'edit',   desc: 'Düzenleme yetkisi' },
+  manager:    { label: '👔 Yönetici',     level: 'manage', desc: 'Tam yetki' },
+  muhasebe:   { label: '🧮 Muhasebe',     level: 'edit',   desc: 'Finans odaklı', mods: { odemeler:'manage', pirim:'manage', hedefler:'edit', kargo:'view' } },
+  satis:      { label: '📊 Satış',        level: 'view',   desc: 'CRM + teklif odaklı', mods: { crm:'manage', etkinlik:'edit', rehber:'edit', odemeler:'view' } },
+  lojistik:   { label: '🚛 Lojistik',     level: 'view',   desc: 'Kargo + stok odaklı', mods: { kargo:'manage', stok:'manage', satinalma:'edit', numune:'edit' } },
+  ik_preset:  { label: '👥 İK',           level: 'view',   desc: 'İK + izin odaklı', mods: { ik:'manage', izin:'manage', puantaj:'manage', evrak:'edit', kpi:'edit' } },
 };
 
 var MOD_ICONS = {
@@ -628,17 +629,31 @@ var MOD_ICONS = {
   var style = document.createElement('style');
   style.id = 'perm-responsive-css';
   style.textContent = ''
-    + '.perm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}'
-    + '@media(max-width:600px){.perm-grid{grid-template-columns:1fr}}'
-    + '.perm-card{background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #F0F0F0;border-radius:14px;padding:16px;transition:all .15s;min-width:180px}'
-    + '.perm-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}'
-    + '.perm-lvl-btn{border:1.5px solid #E5E5EA;border-radius:20px;padding:0;height:28px;font-size:10px;cursor:pointer;background:transparent;color:#8E8E93;font-family:inherit;transition:all .15s;flex:1;text-align:center;line-height:28px}'
-    + '.perm-lvl-btn:hover{border-color:#C7C7CC;color:#636366}'
-    + '.perm-lvl-btn.active{font-weight:600;border-color:transparent}'
-    + '.perm-preset-btn{border:1.5px solid #E5E5EA;border-radius:12px;padding:12px;background:transparent;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}'
-    + '.perm-preset-btn:hover{border-color:#007AFF;background:rgba(0,122,255,.04);color:#007AFF}';
+    + '.perm-grid{display:flex;flex-direction:column;gap:0}'
+    + '.perm-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:0.5px solid var(--b);transition:background .1s}'
+    + '.perm-row:hover{background:var(--s2)}'
+    + '.perm-row.changed{outline:2px solid #D97706;outline-offset:-2px;border-radius:6px}'
+    + '.perm-lvl-btn{border:1.5px solid var(--b);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;background:var(--sf);color:var(--t3);font-family:inherit;transition:all .12s;white-space:nowrap}'
+    + '.perm-lvl-btn:hover{border-color:var(--ac);color:var(--ac)}'
+    + '.perm-lvl-btn.active{font-weight:600;color:#fff;border-color:transparent}'
+    + '.perm-lvl-btn.active[data-level="none"]{background:#dc2626}'
+    + '.perm-lvl-btn.active[data-level="view"]{background:#3B82F6}'
+    + '.perm-lvl-btn.active[data-level="edit"]{background:#D97706}'
+    + '.perm-lvl-btn.active[data-level="manage"]{background:#16A34A}'
+    + '.perm-preset-chip{padding:4px 12px;border-radius:99px;border:1px solid var(--b);font-size:11px;cursor:pointer;background:var(--sf);color:var(--t2);font-family:inherit;transition:all .12s;white-space:nowrap}'
+    + '.perm-preset-chip:hover{border-color:var(--ac);color:var(--ac)}'
+    + '.perm-preset-chip.active{background:var(--ac);color:#fff;border-color:var(--ac)}'
+    + '.perm-cat-header{padding:10px 14px;background:var(--s2);font-size:11px;font-weight:700;color:var(--t2);display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--b);cursor:pointer}'
+    + '.perm-cat-bulk{display:flex;gap:3px}'
+    + '.perm-cat-bulk button{font-size:9px;padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t3);cursor:pointer;font-family:inherit}'
+    + '.perm-cat-bulk button:hover{border-color:var(--ac);color:var(--ac)}'
+    + '.perm-change-card{padding:8px 10px;border-left:3px solid #D97706;background:rgba(217,119,6,.04);border-radius:0 6px 6px 0;margin-bottom:6px;font-size:11px}';
   document.head.appendChild(style);
 })();
+
+// Yetki değişiklik takibi — orijinal ve güncel ayrı saklanır
+var _permOriginal = {};  // { modId: level }
+var _permCurrent  = {};  // { modId: level }
 
 function openPermModal(id) {
   if (!isAdmin()) return;
@@ -656,94 +671,206 @@ function openPermModal(id) {
   var perms       = u.permissions || {};
   var modMap      = {};
   ALL_MODULES.forEach(function(m) { modMap[m.id] = m; });
-
-  // satinalma modülünü modMap'e ekle (ALL_MODULES'da yoksa)
   if (!modMap['satinalma']) modMap['satinalma'] = { id: 'satinalma', label: 'Satın Alma' };
+  if (!modMap['lojistik']) modMap['lojistik'] = { id: 'lojistik', label: 'Lojistik Merkezi' };
+
+  // Orijinal yetkileri kaydet (değişiklik takibi için)
+  _permOriginal = {};
+  _permCurrent = {};
+  Object.keys(modMap).forEach(function(mid) {
+    var lvl = perms[mid] || (isUserAdmin ? 'manage' : (!allowed || (allowed && allowed.includes(mid)) ? 'view' : 'none'));
+    _permOriginal[mid] = lvl;
+    _permCurrent[mid] = lvl;
+  });
+
+  var _permChanges = function() {
+    var changes = [];
+    Object.keys(_permCurrent).forEach(function(mid) {
+      if (_permCurrent[mid] !== _permOriginal[mid]) {
+        var m = modMap[mid] || { label: mid };
+        var oldL = _PERM_LEVELS.find(function(l) { return l.value === _permOriginal[mid]; }) || _PERM_LEVELS[0];
+        var newL = _PERM_LEVELS.find(function(l) { return l.value === _permCurrent[mid]; }) || _PERM_LEVELS[0];
+        changes.push({ mid: mid, label: m.label, oldLevel: oldL, newLevel: newL });
+      }
+    });
+    return changes;
+  };
+
+  var _updateSidebar = function() {
+    var ch = _permChanges();
+    var el = document.getElementById('perm-changes-list');
+    if (!el) return;
+    if (!ch.length) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Henüz değişiklik yok</div>';
+    } else {
+      el.innerHTML = ch.map(function(c) {
+        return '<div class="perm-change-card"><b>' + escapeHtml(c.label) + '</b><br>'
+          + '<span style="color:' + c.oldLevel.color + '">' + c.oldLevel.full + '</span> → '
+          + '<span style="color:' + c.newLevel.color + '">' + c.newLevel.full + '</span></div>';
+      }).join('');
+    }
+    var badge = document.getElementById('perm-change-count');
+    if (badge) badge.textContent = ch.length > 0 ? ch.length + ' değişiklik' : '';
+    // Satır outline
+    document.querySelectorAll('.perm-row').forEach(function(r) {
+      var mid = r.dataset.modid;
+      r.classList.toggle('changed', _permCurrent[mid] !== _permOriginal[mid]);
+    });
+  };
+
+  // Seviye değiştirme — global hook
+  window._permSetLevel2 = function(mid, level) {
+    _permCurrent[mid] = level;
+    // Buton active güncelle
+    var row = document.querySelector('.perm-row[data-modid="' + mid + '"]');
+    if (row) {
+      row.querySelectorAll('.perm-lvl-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.level === level);
+      });
+    }
+    // Hidden select güncelle (savePermissions uyumluluğu)
+    var sel = document.querySelector('select.perm-level[data-mod="' + mid + '"]');
+    if (sel) sel.value = level;
+    // Checkbox güncelle
+    var cb = row?.querySelector('.perm-cb');
+    if (cb) cb.checked = (level !== 'none');
+    _updateSidebar();
+  };
+
+  // Toplu kategori güncelleme
+  window._permBulkCat = function(catKey, level) {
+    var cat = _PERM_CATEGORIES[catKey];
+    if (!cat) return;
+    cat.mods.forEach(function(mid) { if (modMap[mid]) window._permSetLevel2(mid, level); });
+  };
+
+  // Şablon uygulama
+  window._permApplyPreset2 = function(presetKey) {
+    var preset = _PERM_PRESETS[presetKey];
+    if (!preset) return;
+    document.querySelectorAll('.perm-preset-chip').forEach(function(c) { c.classList.remove('active'); });
+    var active = document.querySelector('.perm-preset-chip[data-preset="' + presetKey + '"]');
+    if (active) active.classList.add('active');
+    if (preset.mods) {
+      // Özel şablon — önce tümünü varsayılan seviyeye çek
+      Object.keys(modMap).forEach(function(mid) { window._permSetLevel2(mid, preset.level || 'view'); });
+      Object.entries(preset.mods).forEach(function(e) { window._permSetLevel2(e[0], e[1]); });
+    } else {
+      Object.keys(modMap).forEach(function(mid) { window._permSetLevel2(mid, preset.level); });
+    }
+  };
+
+  // Geri al
+  window._permRevertAll = function() {
+    Object.keys(_permOriginal).forEach(function(mid) { window._permSetLevel2(mid, _permOriginal[mid]); });
+  };
+
+  // Arama
+  window._permSearch2 = function(q) {
+    q = (q || '').toLowerCase();
+    document.querySelectorAll('.perm-row').forEach(function(r) {
+      var label = (r.dataset.label || '').toLowerCase();
+      r.style.opacity = (!q || label.includes(q)) ? '1' : '.3';
+    });
+  };
+
+  var rm = ROLE_META[u.role] || ROLE_META.staff;
 
   cont.innerHTML = ''
-    // 12 Saat Kuralı — Apple minimal
-    + '<div style="background:#F2F2F7;border-radius:14px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">'
-      + '<div><div style="font-size:14px;font-weight:600;color:#1C1C1E">⏰ 12 Saat Kuralı</div>'
-        + '<div style="font-size:12px;color:#8E8E93;margin-top:3px">Kayıt oluşturulduktan 12 saat sonra güncelleme yönetici onayı gerektirir</div></div>'
-      + '<label style="position:relative;width:51px;height:31px;flex-shrink:0">'
-        + '<input type="checkbox" id="perm-rule12h" ' + (u.rule12h ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' style="opacity:0;width:0;height:0" onchange="var s=this.parentElement;s.querySelector(\'._track\').style.background=this.checked?\'#34C759\':\'#E5E5EA\';s.querySelector(\'._thumb\').style.left=this.checked?\'22px\':\'2px\'">'
-        + '<span class="_track" style="position:absolute;inset:0;background:' + (u.rule12h ? '#34C759' : '#E5E5EA') + ';border-radius:16px;cursor:pointer;transition:background .25s"></span>'
-        + '<span class="_thumb" style="position:absolute;left:' + (u.rule12h ? '22px' : '2px') + ';top:2px;width:27px;height:27px;background:#fff;border-radius:50%;transition:left .25s;box-shadow:0 2px 4px rgba(0,0,0,.15)"></span>'
-      + '</label>'
+    // Header
+    + '<div style="display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--b);margin-bottom:16px">'
+      + '<div style="width:40px;height:40px;border-radius:10px;background:' + rm.bg + ';color:' + rm.color + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">' + initials(u.name) + '</div>'
+      + '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t)">' + escapeHtml(u.name) + '</div><div style="font-size:11px;color:var(--t3)">' + escapeHtml(u.email || '') + '</div></div>'
+      + '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:' + rm.bg + ';color:' + rm.color + ';font-weight:600">' + rm.label + '</span>'
+      + '<span id="perm-change-count" style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(217,119,6,.1);color:#D97706;font-weight:600"></span>'
     + '</div>'
 
-    + (isUserAdmin ? '<div style="background:#F2F2F7;border-radius:14px;padding:14px 18px;font-size:13px;color:#8E8E93;margin-bottom:24px">👑 Admin kullanıcılar tüm modüllere otomatik erişir.</div>' : '')
-
-    // Legend — minimal, sadece ikon + kısa metin, border yok
-    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px">'
-      + _PERM_LEVELS.map(function(l) {
-          return '<div style="background:' + l.bg + ';border-radius:12px;padding:14px;text-align:center">'
-            + '<div style="font-size:24px;margin-bottom:6px">' + l.label + '</div>'
-            + '<div style="font-size:13px;font-weight:600;color:' + l.color + '">' + l.full.split(' ').slice(1).join(' ') + '</div>'
-          + '</div>';
-        }).join('')
-    + '</div>'
-
-    // Hızlı şablon butonları — outline, hover dolgu
-    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">'
+    // Şablon barı
+    + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
+      + '<span style="font-size:11px;color:var(--t3);font-weight:500">Şablon:</span>'
       + Object.entries(_PERM_PRESETS).map(function(e) {
-          return '<button class="perm-preset-btn" onclick="window._permApplyPreset(\'' + e[0] + '\')">'
-            + '<span style="font-size:14px;font-weight:600;color:#1C1C1E">' + e[1].label + '</span>'
-            + '<span style="font-size:11px;color:#8E8E93">' + e[1].desc + '</span>'
-          + '</button>';
+          return '<span class="perm-preset-chip" data-preset="' + e[0] + '" onclick="window._permApplyPreset2(\'' + e[0] + '\')">' + e[1].label + '</span>';
         }).join('')
     + '</div>'
 
-    // Arama + Tümü toggle
-    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">'
-      + '<input class="fi" id="perm-search" placeholder="Modül ara..." oninput="window._permFilterModules?.()" style="font-size:13px;padding:10px 14px;flex:1;max-width:320px;border-radius:10px;border:1px solid #E5E5EA;background:#F2F2F7">'
-      + '<label style="font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-left:auto;color:#1C1C1E">'
-        + '<input type="checkbox" id="perm-all" ' + (!allowed ? 'checked' : '') + ' onchange="Admin._toggleAllPerms(this.checked)" style="accent-color:#007AFF;width:18px;height:18px">'
-        + 'Tüm Modüller'
+    // Toolbar: arama + özet
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+      + '<input class="fi" id="perm-search" placeholder="Modül ara..." oninput="window._permSearch2?.(this.value)" style="font-size:12px;padding:8px 12px;flex:1;max-width:260px;border-radius:8px">'
+      + '<span style="font-size:10px;color:var(--t3);margin-left:auto">' + Object.keys(modMap).length + ' modül</span>'
+      + '<label style="font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--t2)">'
+        + '<input type="checkbox" id="perm-all" ' + (!allowed ? 'checked' : '') + ' onchange="Admin._toggleAllPerms(this.checked)" style="accent-color:var(--ac);width:15px;height:15px">'
+        + 'Tüm'
       + '</label>'
     + '</div>'
 
-    // Kategorili kart grid — Apple nefes alan tasarım
+    // Ana layout: sol modüller + sağ sidebar
+    + '<div style="display:grid;grid-template-columns:1fr 240px;gap:16px;min-height:300px">'
+
+    // Sol: modül listesi
+    + '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'
     + Object.entries(_PERM_CATEGORIES).map(function(catEntry) {
-        var catKey = catEntry[0];
-        var cat    = catEntry[1];
+        var catKey = catEntry[0]; var cat = catEntry[1];
         var catMods = cat.mods.filter(function(mid) { return modMap[mid]; });
         if (!catMods.length) return '';
 
-        return '<div class="perm-cat-group" data-cat="' + catKey + '" style="margin-bottom:28px">'
-          + '<div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;padding-left:4px">' + cat.icon + '  ' + cat.label + '</div>'
-          + '<div class="perm-grid">'
-            + catMods.map(function(mid) {
-                var m = modMap[mid];
-                var curLevel = perms[mid] || 'view';
-                var isChecked = isUserAdmin || !allowed || (allowed && allowed.includes(mid));
-                var icon = MOD_ICONS[mid] || '📋';
-                var activeLvl = _PERM_LEVELS.find(function(l) { return l.value === curLevel; }) || _PERM_LEVELS[1];
-
-                return '<div class="perm-card" data-modid="' + mid + '" style="' + (isChecked ? 'border-color:' + activeLvl.color + '33' : '') + '">'
-                  // Üst: checkbox + ikon + ad
-                  + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'
-                    + '<input type="checkbox" class="perm-cb" value="' + mid + '" ' + (isChecked ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' onchange="window._permCardToggle?.(this)" style="accent-color:#007AFF;width:18px;height:18px;flex-shrink:0">'
-                    + '<span style="font-size:32px;line-height:1">' + icon + '</span>'
-                    + '<span style="font-size:14px;font-weight:600;color:#1C1C1E">' + escapeHtml(m.label) + '</span>'
-                  + '</div>'
-                  // Alt: 4 pill buton
-                  + '<div style="display:flex;gap:4px" data-mod="' + mid + '">'
-                    + _PERM_LEVELS.map(function(l) {
-                        var isActive = l.value === curLevel;
-                        var activeStyle = isActive ? 'background:' + l.color + ';color:#fff;border-color:' + l.color : '';
-                        return '<button class="perm-lvl-btn' + (isActive ? ' active' : '') + '" data-level="' + l.value + '" onclick="window._permSetLevel?.(this,\'' + mid + '\',\'' + l.value + '\')" style="' + activeStyle + '"' + (isUserAdmin ? ' disabled' : '') + ' title="' + l.desc + '">' + l.label + '</button>';
-                      }).join('')
-                  + '</div>'
-                  // Gizli select
-                  + '<select class="perm-level" data-mod="' + mid + '" style="display:none" ' + (isUserAdmin ? 'disabled' : '') + '>'
-                    + _PERM_LEVELS.map(function(l) { return '<option value="' + l.value + '"' + (curLevel === l.value ? ' selected' : '') + '>' + l.full + '</option>'; }).join('')
-                  + '</select>'
-                + '</div>';
-              }).join('')
+        return '<div class="perm-cat-header" onclick="var b=this.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'._arr\').textContent=b.style.display===\'none\'?\'▸\':\'▾\'">'
+          + '<span>' + cat.icon + ' ' + cat.label + ' <span style="font-weight:400;color:var(--t3)">(' + catMods.length + ')</span></span>'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + '<div class="perm-cat-bulk" onclick="event.stopPropagation()">'
+              + '<button onclick="window._permBulkCat(\'' + catKey + '\',\'none\')">Yok</button>'
+              + '<button onclick="window._permBulkCat(\'' + catKey + '\',\'view\')">Görür</button>'
+              + '<button onclick="window._permBulkCat(\'' + catKey + '\',\'edit\')">Yönetir</button>'
+              + '<button onclick="window._permBulkCat(\'' + catKey + '\',\'manage\')">Tam</button>'
+            + '</div>'
+            + '<span class="_arr" style="font-size:10px;color:var(--t3)">▾</span>'
           + '</div>'
+        + '</div>'
+        + '<div>'
+          + catMods.map(function(mid) {
+              var m = modMap[mid];
+              var curLevel = _permCurrent[mid] || 'view';
+              var icon = MOD_ICONS[mid] || '📋';
+
+              return '<div class="perm-row" data-modid="' + mid + '" data-label="' + escapeHtml(m.label) + '">'
+                + '<input type="checkbox" class="perm-cb" value="' + mid + '" ' + (curLevel !== 'none' ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' onchange="window._permSetLevel2(\'' + mid + '\',this.checked?\'view\':\'none\')" style="accent-color:var(--ac);width:14px;height:14px;flex-shrink:0">'
+                + '<span style="font-size:16px;flex-shrink:0">' + icon + '</span>'
+                + '<span style="font-size:12px;font-weight:500;color:var(--t);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.label) + '</span>'
+                + '<div style="display:flex;gap:3px;flex-shrink:0">'
+                  + _PERM_LEVELS.map(function(l) {
+                      return '<button class="perm-lvl-btn' + (l.value === curLevel ? ' active' : '') + '" data-level="' + l.value + '" onclick="window._permSetLevel2(\'' + mid + '\',\'' + l.value + '\')"' + (isUserAdmin ? ' disabled' : '') + '>' + l.full.split(' ').slice(1).join(' ') + '</button>';
+                    }).join('')
+                + '</div>'
+                + '<select class="perm-level" data-mod="' + mid + '" style="display:none"><option value="' + curLevel + '" selected></option></select>'
+              + '</div>';
+            }).join('')
         + '</div>';
-      }).join('');
+      }).join('')
+    + '</div>'
+
+    // Sağ: sidebar
+    + '<div style="display:flex;flex-direction:column;gap:12px">'
+      // Bekleyen değişiklikler
+      + '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'
+        + '<div style="padding:10px 12px;background:var(--s2);font-size:11px;font-weight:600;color:var(--t2);border-bottom:0.5px solid var(--b)">Bekleyen Değişiklikler</div>'
+        + '<div id="perm-changes-list" style="padding:8px"><div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Henüz değişiklik yok</div></div>'
+      + '</div>'
+      // Legend
+      + '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'
+        + '<div style="padding:10px 12px;background:var(--s2);font-size:11px;font-weight:600;color:var(--t2);border-bottom:0.5px solid var(--b)">Yetki Seviyeleri</div>'
+        + '<div style="padding:8px">'
+          + _PERM_LEVELS.map(function(l) {
+              return '<div style="display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:11px"><span style="width:8px;height:8px;border-radius:2px;background:' + l.color + ';flex-shrink:0"></span><span style="color:var(--t)">' + l.full + '</span></div>';
+            }).join('')
+        + '</div>'
+      + '</div>'
+      // 12 saat kuralı
+      + '<div style="border:0.5px solid var(--b);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">'
+        + '<span style="font-size:11px;color:var(--t2)">12 Saat Kuralı</span>'
+        + '<input type="checkbox" id="perm-rule12h" ' + (u.rule12h ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' style="accent-color:var(--ac)">'
+      + '</div>'
+    + '</div>'
+
+    + '</div>'; // grid close
 
   window.openMo?.('mo-perm');
 }
