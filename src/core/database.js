@@ -1498,16 +1498,19 @@ window._goToTask = function(tid) {
   var mo = document.getElementById('mo-task-assigned');
   if (mo) mo.remove();
 
-  if (typeof window.nav === 'function') window.nav('pusula');
+  // goTo → hem nav butonu seçimi hem panel açılışı
+  if (typeof window.goTo === 'function') window.goTo('pusula');
+  else if (typeof window.nav === 'function') window.nav('pusula');
 
   var attempts = 0;
   var interval = setInterval(function() {
     attempts++;
-    if (typeof window.openPusDetail === 'function' && document.getElementById('pusula-panel')) {
+    // pus-main-view: pusula panelinin ana container'ı (index.html)
+    if (typeof window.openPusDetail === 'function' && document.getElementById('pus-main-view')) {
       clearInterval(interval);
       window.openPusDetail(tid);
     }
-    if (attempts > 20) clearInterval(interval);
+    if (attempts > 30) clearInterval(interval);
   }, 200);
 };
 
