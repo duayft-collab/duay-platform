@@ -394,7 +394,7 @@ function visTasks() {
 
 /** Due tarihine göre renk-chip HTML döndürür */
 function getDueChip(due, done, todayS) {
-  if (!due) return '';
+  if (!due || typeof due !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(due)) return '';
   const dl = Math.ceil((new Date(due) - new Date(todayS)) / 86400000);
   if (done || (due > todayS && dl > 7)) return `<span class="tk-due-chip ok">${due.slice(5)}</span>`;
   if (dl < 0)  return `<span class="tk-due-chip overdue">⚠ ${Math.abs(dl)}g gecikmiş</span>`;
@@ -1735,8 +1735,8 @@ function editTask(id) {
   if (_editRich) _editRich.innerHTML = t.desc || '';
   if (g('tk-desc')) g('tk-desc').value = t.desc || '';
   if (g('tk-pri'))    g('tk-pri').value    = t.pri || 2;
-  if (g('tk-due'))    g('tk-due').value    = t.due || '';
-  if (g('tk-start'))  g('tk-start').value  = t.start || '';
+  if (g('tk-due'))    g('tk-due').value    = (t.due && /^\d{4}-\d{2}-\d{2}$/.test(t.due)) ? t.due : '';
+  if (g('tk-start'))  g('tk-start').value  = (t.start && /^\d{4}-\d{2}-\d{2}$/.test(t.start)) ? t.start : '';
   if (g('tk-status')) g('tk-status').value = t.status || (t.done ? 'done' : 'todo');
   if (g('tk-eid'))    g('tk-eid').value    = t.id;
   if (g('tk-tags'))     g('tk-tags').value     = (t.tags || []).join(', ');

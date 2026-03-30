@@ -74,8 +74,8 @@ function injectAllModals() {
       <!-- 3lü grid: Öncelik + Personel + Durum -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
-          <div class="fl" style="margin-bottom:5px">ÖNCELİK</div>
-          <select class="fi" id="tk-pri" style="padding:8px 10px" onchange="updateTkPriBar()">
+          <div class="fl" style="margin-bottom:5px;font-size:12px">ÖNCELİK</div>
+          <select class="fi" id="tk-pri" style="padding:9px 12px;min-height:36px" onchange="updateTkPriBar()">
             <option value="1">🔴 Kritik</option>
             <option value="2" selected>🟠 Önemli</option>
             <option value="3">🔵 Normal</option>
@@ -83,13 +83,13 @@ function injectAllModals() {
           </select>
         </div>
         <div>
-          <div class="fl" style="margin-bottom:5px">PERSONEL</div>
-          <select class="fi" id="tk-user" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.();window.populatePusUsers?.()"></select>
+          <div class="fl" style="margin-bottom:5px;font-size:12px">PERSONEL</div>
+          <select class="fi" id="tk-user" style="padding:9px 12px;min-height:36px" onchange="window._tkUpdateDeptWorkload?.();window.populatePusUsers?.()"></select>
           <div id="tk-atama-oneri" style="min-height:14px"></div>
         </div>
         <div>
-          <div class="fl" style="margin-bottom:5px">DURUM</div>
-          <select class="fi" id="tk-status" style="padding:8px 10px">
+          <div class="fl" style="margin-bottom:5px;font-size:12px">DURUM</div>
+          <select class="fi" id="tk-status" style="padding:9px 12px;min-height:36px">
             <option value="todo">📋 Yapılacak</option>
             <option value="inprogress">🔄 Devam</option>
             <option value="review">👀 İnceleme</option>
@@ -101,8 +101,8 @@ function injectAllModals() {
 
       <!-- Departman + İş Yükü Barı -->
       <div style="margin-bottom:14px">
-        <div class="fl" style="margin-bottom:5px">DEPARTMAN</div>
-        <select class="fi" id="tk-dept" style="padding:8px 10px" onchange="window._tkUpdateDeptWorkload?.()">
+        <div class="fl" style="margin-bottom:5px;font-size:12px">DEPARTMAN</div>
+        <select class="fi" id="tk-dept" style="padding:9px 12px;min-height:36px" onchange="window._tkUpdateDeptWorkload?.()">
           <option value="">— Seciniz —</option>
         </select>
         <!-- Departman iş yükü barı -->
@@ -117,33 +117,39 @@ function injectAllModals() {
         </div>
       </div>
 
+      <!-- Job ID -->
+      <div style="margin-bottom:14px">
+        <div class="fl" style="margin-bottom:5px;font-size:12px">JOB ID</div>
+        <div id="tk-jobid-display" style="font-size:13px;font-family:'DM Mono',monospace;color:var(--ac);padding:9px 12px;background:var(--s2);border:1px solid var(--bm);border-radius:var(--rs);min-height:36px;display:flex;align-items:center">Otomatik atanacak</div>
+      </div>
+
       <!-- Tarih + Saat -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
-          <div class="fl" style="margin-bottom:5px">BAŞLANGIÇ</div>
-          <input type="date" class="fi" id="tk-start" style="padding:8px 10px">
+          <div class="fl" style="margin-bottom:5px;font-size:12px">BAŞLANGIÇ</div>
+          <input type="date" class="fi" id="tk-start" style="padding:9px 12px;min-height:36px">
         </div>
         <div>
-          <div class="fl" style="margin-bottom:5px">BİTİŞ TARİHİ & SAATİ</div>
+          <div class="fl" style="margin-bottom:5px;font-size:12px">BİTİŞ TARİHİ & SAATİ</div>
           <div style="display:grid;grid-template-columns:1fr auto;gap:6px">
-            <input type="date" class="fi" id="tk-due" style="padding:8px 10px">
-            <input type="time" class="fi" id="tk-due-time" style="padding:8px 10px;width:100px" placeholder="--:--">
+            <input type="date" class="fi" id="tk-due" style="padding:9px 12px;min-height:36px">
+            <input type="time" class="fi" id="tk-due-time" style="padding:9px 12px;width:100px;min-height:36px" placeholder="--:--">
           </div>
         </div>
       </div>
 
       <!-- Maliyet Etiketi -->
       <div style="margin-bottom:14px">
-        <div class="fl" style="margin-bottom:5px">💰 İŞLEM TUTARI <span style="font-weight:400;color:var(--t3)">(opsiyonel)</span></div>
+        <div class="fl" style="margin-bottom:5px;font-size:12px">İŞLEM TUTARI <span style="font-weight:400;color:var(--t3)">(opsiyonel)</span></div>
         <div style="position:relative">
-          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--t3)">₺</span>
-          <input class="fi" type="number" id="tk-cost" placeholder="0.00" style="padding:8px 10px 8px 28px">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--t3)">₺</span>
+          <input class="fi" type="number" id="tk-cost" placeholder="0.00" style="padding:9px 12px 9px 28px;min-height:36px">
         </div>
       </div>
 
       <!-- Açıklama -->
       <div style="margin-bottom:14px">
-        <div class="fl" style="margin-bottom:5px">ACIKLAMA</div>
+        <div class="fl" style="margin-bottom:5px;font-size:12px">AÇIKLAMA</div>
         <div style="border:1.5px solid var(--b);border-radius:10px;overflow:hidden">
           <div style="display:flex;gap:2px;padding:4px 8px;border-bottom:1px solid var(--b);background:var(--s2)">
             <button type="button" onclick="document.execCommand('bold')" style="background:none;border:none;cursor:pointer;font-weight:700;font-size:13px;padding:3px 8px;border-radius:4px;color:var(--t);font-family:inherit" title="Kalin">B</button>
@@ -226,8 +232,8 @@ function injectAllModals() {
 
     <!-- Footer -->
     <div style="padding:14px 24px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;background:var(--s2)">
-      <button class="btn btns" onclick="closeMo('mo-task')" style="font-size:12px">İptal</button>
-      <button class="btn btnp" onclick="saveTask()" style="padding:10px 28px;border-radius:10px;font-size:13px;font-weight:700">💾 Kaydet</button>
+      <button class="btn btns" onclick="closeMo('mo-task')" style="font-size:13px;padding:10px 20px">İptal</button>
+      <button class="btn btnp" onclick="saveTask()" style="padding:12px 32px;border-radius:10px;font-size:14px;font-weight:700">Kaydet</button>
     </div>
     <input type="hidden" id="tk-eid">
   </div>
