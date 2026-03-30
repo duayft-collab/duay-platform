@@ -785,8 +785,12 @@ function renderOdemeler() {
   // Soft-deleted kayıtları gizle (admin dahil — ayrı çöp kutusu panelinden görülür)
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
   // Admin/manager/muhasebe departmanı: tüm kayıtlar; user: sadece kendi kayıtları
-  var _isFinanceUser = _isManagerO() || (_cuOdm?.dept || '').toLowerCase() === 'muhasebe';
-  const all = _isFinanceUser ? _activeRaw : _activeRaw.filter(o => !o.createdBy || o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id || o.assignedTo === _cuOdm?.id);
+  var _isFinanceUser = _isManagerO() || (_cuOdm?.dept || '').toLowerCase().includes('muhasebe');
+  var _myId = _cuOdm?.id;
+  const all = (_isFinanceUser || !_myId) ? _activeRaw : _activeRaw.filter(function(o) {
+    if (!o.createdBy) return true; // eski kayıtlar herkese görünür
+    return o.createdBy == _myId || o.uid == _myId || o.assignedTo == _myId;
+  });
 
   // Cari dropdown doldur (ilk çağrıda)
   var _cariSel = _go('odm-cari-f');
