@@ -1076,11 +1076,17 @@ function renderOdemeler() {
           + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Kaydeden</div><div style="font-weight:500;color:var(--t)">' + _esc(_creator?.name || '—') + ' · ' + _fmtTs(o.ts) + '</div></div>'
         + '</div>'
         + '<div style="padding:6px 16px 8px 60px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:6px;align-items:center">'
-          + '<button onclick="event.stopPropagation();' + (isTah ? 'openTahsilatModal(' + o.id + ')' : 'openOdmModal(' + o.id + ')') + '" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Detay Aç</button>'
-          + (o.docs && o.docs.length ? '<button onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : '<span style="font-size:9px;color:var(--t3)">Belge yok</span>')
-          + (isPend && _isManagerO() ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
-          + (!isPaid && !isPend ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
-          + (_isManagerO() || (isPend && o.createdBy === _CUo()?.id) ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '')
+          + (function() {
+            var _canEdit = _isManagerO() || o.createdBy == _CUo()?.id;
+            var _canDel = _isManagerO() || (isPend && o.createdBy == _CUo()?.id);
+            var _canApprove = _isManagerO();
+            var _canPay = _canEdit && !isPaid && !isPend;
+            return (_canEdit ? '<button onclick="event.stopPropagation();' + (isTah ? 'openTahsilatModal(' + o.id + ')' : 'openOdmModal(' + o.id + ')') + '" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Düzenle</button>' : '')
+              + (o.docs && o.docs.length ? '<button onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : '<span style="font-size:9px;color:var(--t3)">Belge yok</span>')
+              + (_canApprove && isPend ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
+              + (_canPay ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
+              + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '');
+          })()
         + '</div>'
         + '</div>';
 
@@ -1648,6 +1654,11 @@ function saveOdm() {
   if (eid) {
     const o = d.find(x => x.id === eid);
     if (o) {
+      // Yetki kontrolü — kendi kaydı veya admin/manager
+      if (!isAdmin && !_isManagerO() && o.createdBy && o.createdBy != cu?.id) {
+        window.toast?.('Bu kaydı düzenleme yetkiniz yok', 'err');
+        return;
+      }
       if (!o.paid && entry.paid) { entry.paidTs = _nowTso(); entry.paidBy = _CUo()?.id; }
       // Audit diff — tüm değişen alanları kaydet
       var _diffs = [];
@@ -2872,6 +2883,11 @@ function saveTahsilat() {
   if (eid) {
     var o = d.find(function(x) { return x.id === eid; });
     if (o) {
+      // Yetki kontrolü — kendi kaydı veya admin/manager
+      if (!_isAdminO() && !_isManagerO() && o.createdBy && o.createdBy != _CUo()?.id) {
+        window.toast?.('Bu kaydı düzenleme yetkiniz yok', 'err');
+        return;
+      }
       // Audit diff — tüm değişen alanları kaydet
       var _tahDiffs = [];
       if (o.amount !== entry.amount) _tahDiffs.push('Tutar: ' + (o.amount||0) + ' → ' + entry.amount);
