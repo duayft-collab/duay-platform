@@ -961,7 +961,7 @@ function renderOdemeler() {
         + '<div style="width:26px;height:26px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">' + cat.ic + '</div>'
         + '<div style="min-width:0">'
           + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + o.name + _odmSourceBadge(o) + (o.talimat?.durum==='aktif'?'<span style="font-size:9px;margin-left:3px" title="Otomatik ödeme talimatı aktif">🏦</span>':'') + '</div>'
-          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + (o.ts?' · <span style="color:var(--t3);font-family:monospace;font-size:9px" title="Kayıt tarihi">' + (o.ts||'').slice(0,10) + '</span>':'') + '</div>'
+          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + (o.ts?' · <span style="color:var(--t3);font-family:monospace;font-size:9px" title="Kayıt tarihi">' + (function(ts){try{var d=new Date(ts);return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return (ts||'').slice(0,10);}})(o.ts) + '</span>':'') + '</div>'
         + '</div>'
       + '</div>'
       + '<div>'
@@ -1318,6 +1318,10 @@ function saveOdm() {
   if (!_fDue)    { _missingFields.push('odm-f-due');    _missingLabels.push('Son Tarih'); }
   if (!_fDocNo)  { _missingFields.push('odm-f-docno');  _missingLabels.push('Döküman No'); }
   if (!_fYontem) { _missingFields.push('odm-f-yontem'); _missingLabels.push('Ödeme Yöntemi'); }
+  // Belge zorunluluğu — düzenlemede mevcut belgeler korunur
+  var _odmDocsVal = []; try { _odmDocsVal = JSON.parse(document.getElementById('odm-f-docs')?.value || '[]'); } catch(e2) {}
+  var _odmEditId2 = parseInt(document.getElementById('odm-f-eid')?.value || '0') || 0;
+  if (!_odmDocsVal.length && !_odmEditId2) { _missingFields.push('odm-f-docs'); _missingLabels.push('Belge/Fatura'); }
   if (_missingFields.length) {
     _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
@@ -2224,10 +2228,11 @@ function _renderTahsilatList(tah, cont) {
   const renderGroup = (label, color, items) => {
     if (!items.length) return '';
     return `<div style="font-size:9px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.08em;padding:10px 16px 4px">${label}</div>`
-      + items.map(t => `<div style="display:grid;grid-template-columns:1fr 120px 90px 100px;padding:9px 16px;border-bottom:1px solid var(--b);align-items:center;gap:0">
-        <div><div style="font-size:12px;font-weight:500;color:var(--t)">${t.name||'—'}</div><div style="font-size:10px;color:var(--t3)">${t.from||'Müşteri'}</div></div>
+      + items.map(t => `<div style="display:grid;grid-template-columns:1fr 120px 90px 80px 100px;padding:9px 16px;border-bottom:1px solid var(--b);align-items:center;gap:0">
+        <div><div style="font-size:12px;font-weight:500;color:var(--t)">${t.name||'—'}</div><div style="font-size:10px;color:var(--t3)">${t.cariName||t.from||'Müşteri'}</div></div>
         <div style="font-size:13px;font-weight:600;color:var(--t)">₺${(parseFloat(t.amount)||0).toLocaleString('tr-TR')}</div>
         <div style="font-size:11px;color:${t.due<today?'var(--rdt)':'var(--t2)'}">${t.due||'—'}</div>
+        <div style="font-size:9px;color:var(--t3);font-family:monospace">${(function(ts){try{var d=new Date(ts);return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.ts)}</div>
         <div><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${t.due<today?'var(--rdb)':'var(--grb)'};color:${t.due<today?'var(--rdt)':'var(--grt)'}">${t.due<today?'Gecikti':'Bekliyor'}</span></div>
       </div>`).join('');
   };
@@ -2578,6 +2583,10 @@ function saveTahsilat() {
   if (!_tahAmt || _tahAmt <= 0) { _missingFields.push('tah-f-amount'); _missingLabels.push('Tutar (0 veya negatif olamaz)'); }
   if (!_tahDue)     { _missingFields.push('tah-f-due');    _missingLabels.push('Vade Tarihi'); }
   if (!_tahRef)     { _missingFields.push('tah-f-ref');    _missingLabels.push('Fatura/Referans No'); }
+  // Belge zorunluluğu — düzenlemede mevcut belgeler korunur
+  var _tahDocsVal = []; try { _tahDocsVal = JSON.parse(document.getElementById('tah-f-docs')?.value || '[]'); } catch(e2) {}
+  var _tahEditId2 = parseInt(document.getElementById('tah-f-eid')?.value || '0') || 0;
+  if (!_tahDocsVal.length && !_tahEditId2) { _missingFields.push('tah-f-docs'); _missingLabels.push('Belge/Dekont'); }
   if (_missingFields.length) {
     _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
