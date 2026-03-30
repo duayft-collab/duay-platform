@@ -197,7 +197,7 @@ function renderUrunDB() {
   if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">🗃️ Ürün Veritabanı</div><div style="font-size:10px;color:var(--t3)">Ürün tanımları, kodlar, teknik bilgiler</div></div>'
       + '<div style="display:flex;gap:6px"><button class="btn btns" onclick="window._exportUrunXlsx?.()" style="font-size:11px">⬇ Excel</button><button class="btn btns" onclick="window._importUrunXlsx?.()" style="font-size:11px">📥 İçe Aktar</button><button class="btn btnp" onclick="openUrunModal(null)" style="font-size:12px">+ Ürün Ekle</button></div>'
     + '</div>'

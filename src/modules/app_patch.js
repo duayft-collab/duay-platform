@@ -844,7 +844,7 @@ window.renderUrunler = function() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Ürün Kataloğu</div><div style="font-size:10px;color:var(--t3);margin-top:2px" id="urun-sub">Tedarikçi ürünleri</div></div>'
       + '<div style="display:flex;gap:6px">'
@@ -1026,7 +1026,7 @@ window.renderAlisTeklifleri = function() {
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     var fmtBtnS = 'padding:4px 10px;border:0.5px solid var(--b);font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s';
-    panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Alış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Tedarikçi teklifleri</div></div>'
       + '<div style="display:flex;gap:6px;align-items:center">'
@@ -1636,7 +1636,7 @@ window.renderSatisTeklifleri = function() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Satış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri teklifleri</div></div>'
       + '<div style="display:flex;gap:6px"><button onclick="window._exportSatisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button onclick="window._openSatisRapor?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📊 Rapor</button><button onclick="window._openSatisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button></div>'
@@ -2959,7 +2959,7 @@ window._renderArsivHub = function() {
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     panel.innerHTML = ''
-      + '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+      + '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
         + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Arşiv & Belgeler</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Tüm dökümanlar tek panelde</div></div>'
       + '</div>'

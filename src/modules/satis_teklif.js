@@ -31,7 +31,7 @@ function renderSatisTeklif() {
   if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">'
+    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">📤 Satış Teklifleri</div><div style="font-size:10px;color:var(--t3)">Proforma Invoice yönetimi</div></div>'
       + '<div style="display:flex;gap:6px"><button class="btn btns" onclick="window._exportSTXlsx?.()" style="font-size:11px">⬇ Excel</button><button class="btn btnp" onclick="window._openSTModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Teklif</button></div>'
     + '</div>'

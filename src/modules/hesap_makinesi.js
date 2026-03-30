@@ -91,7 +91,7 @@ function _hmInjectPanel() {
   try { quickIds = JSON.parse(localStorage.getItem(HM_QUICK_KEY) || 'null') || defaultQuick; } catch(e) { quickIds = defaultQuick; }
 
   p.innerHTML = ''
-    + '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    + '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
     // TOPBAR
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">🧮 Hesap Makinesi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + modCount + ' modül</div></div>'

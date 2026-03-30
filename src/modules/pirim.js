@@ -383,7 +383,7 @@ function _injectPirimPanel() {
   panel.innerHTML = `
 
 <!-- TOPBAR -->
-<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:10">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">
   <div>
     <div style="font-size:14px;font-weight:700;color:var(--t)">⭐ Prim & Teşvik Sistemi</div>
     <div style="font-size:10px;color:var(--t3)" id="prm-sub">Yükleniyor...</div>

@@ -90,7 +90,7 @@ function _injectKargoPanel(){
 
   panel.innerHTML=[
     // STICKY WRAPPER — toolbar + tab
-    '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">',
+    '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">',
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">',
       '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Kargo Merkezi</div>',
       '<div style="font-size:10px;color:var(--t3);margin-top:2px">Navlun, konteyner, lokasyon ve kurye</div></div>',

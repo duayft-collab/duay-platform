@@ -605,7 +605,7 @@ function renderTrashPanel() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){return s;};
   if (!p.dataset.injected) {
     p.dataset.injected = '1';
-    p.innerHTML = '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    p.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Çöp Kutusu</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Son 30 gün içinde silinen kayıtlar</div></div>'
       + '<div style="display:flex;gap:6px">'

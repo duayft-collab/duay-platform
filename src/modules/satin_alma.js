@@ -44,7 +44,7 @@ function _injectSAPanel() {
 
   panel.innerHTML = ''
     // TOPBAR — flat modern
-    + '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">'
+    + '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div>'
         + '<div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Satın Alma</div>'

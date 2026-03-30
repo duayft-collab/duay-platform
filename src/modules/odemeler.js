@@ -406,7 +406,7 @@ function _injectOdmPanel() {
 
   panel.innerHTML = [
     // STICKY WRAPPER — toolbar + metrik kartları birlikte sabit
-    '<div style="position:sticky;top:0;z-index:100;background:var(--sf)">',
+    '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">',
     // TOPBAR — modern flat
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">',
       '<div>',
@@ -5792,7 +5792,7 @@ function renderCari() {
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     panel.innerHTML = ''
-      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:100">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
         + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Cari Yönetimi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri & Tedarikçi</div></div>'
         + '<div style="display:flex;gap:6px">'
           + '<button onclick="window._exportCariXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
