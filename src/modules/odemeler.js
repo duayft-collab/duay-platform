@@ -616,6 +616,21 @@ function setOdmTab(tab) {
 }
 window.setOdmTab = setOdmTab;
 
+/** Hızlı gözat paneli toggle */
+window._odmTogglePeek = function(id) {
+  var peek = document.getElementById('odm-peek-' + id);
+  var arrow = document.getElementById('odm-peek-arrow-' + id);
+  if (!peek) return;
+  var isOpen = peek.classList.contains('open');
+  // Önce tümünü kapat
+  document.querySelectorAll('.odm-row-peek.open').forEach(function(p) { p.classList.remove('open'); });
+  document.querySelectorAll('[id^="odm-peek-arrow-"]').forEach(function(a) { a.textContent = '▸'; });
+  if (!isOpen) {
+    peek.classList.add('open');
+    if (arrow) arrow.textContent = '▾';
+  }
+};
+
 var _odmActiveChip = 'all';
 window._odmChipFilter = function(chip, el) {
   _odmActiveChip = chip;
@@ -1000,22 +1015,27 @@ function renderOdemeler() {
         : isPend ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEF3C7;color:#d97706">Onay</span>'
         : '';
 
-      var row = document.createElement('div');
-      row.className = 'odm-row';
-      row.dataset.oid = String(o.id);
-      row.onclick = function() { isTah ? openTahsilatModal(o.id) : openOdmModal(o.id); };
+      var _esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+      var _pendBorder = isPend ? 'border-left:3px solid #d97706;' : '';
+      var _pendBg = isPend ? 'background:rgba(234,179,8,.04);' : '';
+      var _rowId = 'odm-row-' + o.id;
+      var _peekId = 'odm-peek-' + o.id;
 
-      row.innerHTML =
+      var wrapper = document.createElement('div');
+      wrapper.dataset.oid = String(o.id);
+
+      // Ana satır
+      var rowHtml =
+        '<div class="odm-row" id="' + _rowId + '" style="' + _pendBorder + _pendBg + '">'
         // Sol panel — tip göstergesi
-        '<div style="width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (isTah ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)') + ';flex-shrink:0;border-right:0.5px solid var(--b)">'
+        + '<div style="width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (isTah ? 'rgba(22,163,74,.08)' : 'rgba(220,38,38,.08)') + ';flex-shrink:0;border-right:0.5px solid var(--b)">'
           + '<div style="font-size:14px;color:' + (isTah ? '#16a34a' : '#dc2626') + '">' + (isTah ? '↓' : '↑') + '</div>'
           + '<div style="font-size:7px;font-weight:700;color:' + (isTah ? '#16a34a' : '#dc2626') + ';letter-spacing:.04em">' + (isTah ? 'TAH' : 'ÖDM') + '</div>'
         + '</div>'
         // İçerik
         + '<div style="flex:1;display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:8px 12px;min-width:0">'
-          // Sol
           + '<div style="min-width:0">'
-            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (o.cariName || o.name || '—') + '</div>'
+            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(o.cariName || o.name || '—') + '</div>'
             + '<div style="font-size:10px;color:var(--t3);margin-top:2px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
               + (o.cat && !isTah ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + (cat.ic||'') + ' ' + (cat.l||'') + '</span>' : '')
               + (o.yontem ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + o.yontem + '</span>' : '')
@@ -1023,14 +1043,39 @@ function renderOdemeler() {
               + '<span style="font-family:monospace;font-size:9px">' + _fmtTs(o.ts) + '</span>'
             + '</div>'
           + '</div>'
-          // Sağ
           + '<div style="text-align:right;flex-shrink:0">'
             + '<div style="font-size:14px;font-weight:600;color:' + (isTah ? '#16a34a' : '#dc2626') + '">' + (isTah ? '+' : '-') + curSym + new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(amt) + '</div>'
             + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + (o.due || '—') + '</div>'
             + staBadge
+            + (isPend ? ' <span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEF3C7;color:#92400E;font-weight:600">Onay Bekliyor</span>' : '')
           + '</div>'
+        + '</div>'
+        // Hızlı gözat butonu
+        + '<div onclick="event.stopPropagation();window._odmTogglePeek(' + o.id + ')" style="width:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border-left:0.5px solid var(--b);color:var(--t3);font-size:12px;transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+          + '<span id="odm-peek-arrow-' + o.id + '">▸</span>'
+        + '</div>'
         + '</div>';
-      frag.appendChild(row);
+
+      // Hızlı gözat paneli (gizli)
+      var _creator = users.find(function(u) { return u.id === o.createdBy; });
+      var peekHtml =
+        '<div class="odm-row-peek" id="' + _peekId + '">'
+        + '<div style="padding:10px 16px 10px 60px;background:var(--s2);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px">'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Cari</div><div style="font-weight:500;color:var(--t)">' + _esc(o.cariName || '—') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Fatura No</div><div style="font-weight:500;color:var(--t)">' + _esc(o.docNo || o.ref || '—') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Job ID</div><div style="font-weight:500;color:var(--t)">' + _esc(o.taskId || '—') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Kaydeden</div><div style="font-weight:500;color:var(--t)">' + _esc(_creator?.name || '—') + ' · ' + _fmtTs(o.ts) + '</div></div>'
+        + '</div>'
+        + '<div style="padding:6px 16px 8px 60px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:6px;align-items:center">'
+          + '<button onclick="event.stopPropagation();' + (isTah ? 'openTahsilatModal(' + o.id + ')' : 'openOdmModal(' + o.id + ')') + '" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Detay Aç</button>'
+          + (o.docs && o.docs.length ? '<button onclick="event.stopPropagation();viewOdmDoc(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : '')
+          + (isPend && _isManagerO() ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
+          + (!isPaid && !isPend ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
+        + '</div>'
+        + '</div>';
+
+      wrapper.innerHTML = rowHtml + peekHtml;
+      frag.appendChild(wrapper);
     });
   });
 
