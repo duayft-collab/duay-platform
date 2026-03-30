@@ -2042,6 +2042,9 @@ function setPusView(v, btn) {
   document.querySelectorAll('.pvt-btn,.cvb').forEach(b => b.classList.remove('on', 'active'));
   if (btn) { btn.classList.add('on', 'active'); }
   else { const b = g('pus-v-' + v); if (b) b.classList.add('on', 'active'); }
+  // Board görünümünde Matrix butonunu gizle, diğerlerinde göster
+  const _matrixBtn = g('ptm-matrix');
+  if (_matrixBtn) _matrixBtn.style.display = (v === 'board') ? 'none' : '';
   renderPusula();
 }
 
