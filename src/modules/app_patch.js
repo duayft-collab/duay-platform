@@ -771,20 +771,34 @@ function _applyRoleUI(user) {
       if (cu.role === 'admin') return _baseNav(panelId, btn);
       // dashboard ve settings her zaman erişilebilir
       if (['dashboard','settings'].includes(panelId)) return _baseNav(panelId, btn);
-      // Modül kontrolü — manager dahil herkes
-      const reqMod = panelId === 'ik-hub' ? 'ik' : (window.PANEL_MODULE_MAP[panelId] || panelId);
-      const mods   = cu.modules || window.ROLE_DEFAULT_MODULES?.[cu.role] || [];
-      if (!mods.includes(reqMod)) {
-        window.toast?.('Bu bölüme erişim yetkiniz yok', 'err');
-        return;
-      }
-      return _baseNav(panelId, btn);
+      // modules null = tüm erişim (admin gibi)
+      if (cu.modules === null || cu.modules === undefined) return _baseNav(panelId, btn);
+      // Modül kontrolü — canModule ile tutarlı
+      const reqMod = panelId === 'ik-hub' ? 'ik' : (window.PANEL_MODULE_MAP?.[panelId] || panelId);
+      if (typeof window.canModule === 'function' && window.canModule(reqMod)) return _baseNav(panelId, btn);
+      // canModule yoksa doğrudan kontrol
+      var mods = cu.modules || window.ROLE_DEFAULT_MODULES?.[cu.role] || [];
+      if (mods.includes(reqMod)) return _baseNav(panelId, btn);
+      window.toast?.('Bu bölüme erişim yetkiniz yok', 'err');
     };
     window.App.nav = _wrapped;
     window.nav     = _wrapped;
   }
 
   console.log('[UI] Role applied:', role, '| modüller:', modules.join(', ') || '—');
+
+  // Accordion durumunu restore et — _applyRoleUI butonları gizleyip gösterdikten sonra
+  setTimeout(function() {
+    if (typeof window._initNsecState === 'function') window._initNsecState();
+    else if (typeof loadNsecState === 'function') {
+      // Fallback: _initNsecState yoksa manuel restore
+      var st = loadNsecState();
+      document.querySelectorAll('.nsec').forEach(function(nsEl) {
+        if (!nsEl.id || st[nsEl.id] !== true) return;
+        nsEl.classList.add('collapsed');
+      });
+    }
+  }, 100);
 }
 
 window._applyRoleUI = _applyRoleUI;

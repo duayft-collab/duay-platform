@@ -2927,6 +2927,7 @@ window._setSidebarTheme = function(theme) {
   }, 100);
 })();
 window.toggleNsec       = toggleNsec;
+window._initNsecState   = _initNsecState;
 window.openGSearch      = openGSearch;
 window.closeGSearch     = closeGSearch;
 window.doGSearch        = doGSearch;
