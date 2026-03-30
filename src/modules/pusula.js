@@ -262,8 +262,8 @@ function renderFocusPanel() {
 
   cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;gap:8px;width:100%">'
     + FOCUS_WIDGETS.map(w =>
-      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden">'
-        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0">'
+      '<div style="display:flex;flex-direction:column;background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden">'
+        + '<div style="display:flex;flex-direction:row;align-items:center;gap:6px;margin-bottom:6px;min-width:0">'
           + '<span style="font-size:14px;flex-shrink:0">' + w.icon + '</span>'
           + '<span style="font-size:11px;font-weight:700;color:var(--t);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
           + '<span style="font-size:10px;color:var(--t3);font-family:monospace;flex-shrink:0">' + _doneCount(w.ids) + '/' + w.ids.length + '</span>'

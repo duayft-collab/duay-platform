@@ -1872,7 +1872,10 @@ input:checked+.psl::before{transform:translateX(17px)}
   gap: 8px !important;
 }
 #pus-focus-panel > div > div {
+  display: flex !important;
+  flex-direction: column !important;
   min-width: 0 !important;
+  overflow: hidden !important;
 }
 
 /* 5. Departman yönetimi modal */
