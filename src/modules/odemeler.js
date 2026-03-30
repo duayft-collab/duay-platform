@@ -1096,6 +1096,10 @@ function openOdmModal(id) {
     + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Vade Tarihi <span style="color:#dc2626">*</span></label>'
     + '<input type="date" class="fi" id="odm-f-due" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + (o?o.due||'':'') + '"></div>'
 
+    // 6b. Fatura / Referans No
+    + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Fatura / Referans No <span style="color:#dc2626">*</span></label>'
+    + '<input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + esc(o?.docNo||'') + '"></div>'
+
     // 7. Ödeme Yöntemi
     + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Ödeme Yöntemi <span style="color:#dc2626">*</span></label>'
     + '<select class="fi" id="odm-f-yontem" style="font-size:13px;padding:10px 12px;border-radius:8px" onchange="_onYontemChange(\'odm\')">'
@@ -1122,7 +1126,6 @@ function openOdmModal(id) {
     + '<input type="hidden" id="odm-f-eid" value="' + (o?o.id:'') + '">'
     + '<input type="hidden" id="odm-f-alarm" value="' + (o?o.alarmDays||3:3) + '">'
     + '<input type="hidden" id="odm-f-freq" value="' + (o?o.freq||'teksefer':'teksefer') + '">'
-    + '<input type="hidden" id="odm-f-docno" value="' + esc(o?.docNo||'') + '">'
     + '<input type="hidden" id="odm-f-actual" value="' + (o?.actualDate||'') + '">'
     + '<input type="hidden" id="odm-f-assigned" value="' + (o?.assignedTo||'') + '">'
     + '<input type="hidden" id="odm-f-alarm-date" value="' + (o?.alarmDate||'') + '">'
@@ -2460,6 +2463,10 @@ function openTahsilatModal(id) {
   html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Tarihi</label>';
   html += '<input type="date" class="fi" id="tah-f-due" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + (o?o.due||'':'') + '"></div>';
 
+  // 6b. Fatura / Referans No
+  html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Fatura / Referans No <span style="color:#dc2626">*</span></label>';
+  html += '<input class="fi" id="tah-f-ref" placeholder="INV-2026-001" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + tahEsc(o?.ref||'') + '"></div>';
+
   // 7. Tahsilat Yöntemi
   html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Yöntemi <span style="color:#dc2626">*</span></label>';
   html += '<select class="fi" id="tah-f-yontem" style="font-size:13px;padding:10px 12px;border-radius:8px" onchange="_onYontemChange(\'tah\')">';
@@ -2483,7 +2490,6 @@ function openTahsilatModal(id) {
 
   // Hidden alanlar
   html += '<input type="hidden" id="tah-f-eid" value="' + (o?o.id:'') + '">';
-  html += '<input type="hidden" id="tah-f-ref" value="' + tahEsc(o?.ref||'') + '">';
   html += '<input type="hidden" id="tah-f-actual" value="' + (o?.actualDate||'') + '">';
   html += '<input type="hidden" id="tah-f-banka" value="' + tahEsc(o?.banka||'') + '">';
   html += '<input type="hidden" id="tah-f-user" value="' + (o?.assignedTo||'') + '">';
