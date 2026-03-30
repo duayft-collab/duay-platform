@@ -214,25 +214,10 @@ function renderFocusPanel() {
   function _focusCard(taskId, type) {
     const t = tasks.find(x => x.id === taskId);
     if (!t) return '';
-    const u   = users.find(x => x.id === t.uid);
-    const avc = _getAVC();
-    const idx = users.indexOf(u);
-    const c   = avc[Math.max(idx,0) % avc.length];
-    const ini = (u?.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const isLate = !t.done && t.due && t.due < today;
-    const priColors = ['','#EF4444','#F97316','#EAB308','#22C55E'];
-    const priC = priColors[t.pri||2]||'#EAB308';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf);border:1px solid var(--b);border-radius:6px;margin-bottom:5px;cursor:pointer" onclick="openPusDetail(' + taskId + ')">'
-      + '<div style="width:4px;height:36px;border-radius:2px;background:' + priC + ';flex-shrink:0"></div>'
-      + (u ? '<div style="width:26px;height:26px;border-radius:7px;background:' + c[0] + ';color:' + c[1] + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0">' + ini + '</div>' : '')
-      + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:12px;font-weight:600;color:' + (t.done?'var(--t3)':'var(--t)') + ';text-decoration:' + (t.done?'line-through':'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>'
-        + '<div style="font-size:10px;color:var(--t3);display:flex;gap:8px">'
-        + (t.due ? '<span style="color:' + (isLate?'var(--rdt)':'var(--t3)') + '">' + (isLate?'⚠️ ':'') + t.due + '</span>' : '')
-        + (t.duration ? '<span style="color:var(--ac)">⏱ ' + (t.duration >= 60 ? Math.floor(t.duration/60) + 's ' + (t.duration%60||'') + (t.duration%60?'dk':'') : t.duration + 'dk') + '</span>' : '')
-        + '</div>'
-      + '</div>'
-      + '<button data-tid="' + taskId + '" data-type="' + type + '" class="pus-focus-rm" style="background:none;border:none;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;color:var(--t2);border-radius:4px">×</button>'
+    return '<div style="padding:6px 0;cursor:pointer;min-width:0;overflow:hidden" onclick="openPusDetail(' + taskId + ')">'
+      + '<div style="font-size:12px;font-weight:600;color:' + (t.done ? 'var(--t3)' : 'var(--t)') + ';text-decoration:' + (t.done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>'
+      + (t.due ? '<div style="font-size:10px;color:' + (isLate ? 'var(--rdt)' : 'var(--t3)') + ';margin-top:2px">' + (isLate ? '⚠ ' : '') + t.due + '</div>' : '')
     + '</div>';
   }
 
@@ -273,31 +258,20 @@ function renderFocusPanel() {
     { type:'year',    label:"Yılın En Önemlileri",      icon:'🏆', color:'#DC2626', bg:'rgba(220,38,38,.1)',  ids:_yIds,  cards:yearCards,    total:yearTotal,    hint:'listeden 🏆 basın' },
   ];
 
+  var _doneCount = function(ids) { return ids.filter(function(id) { var t2 = tasks.find(function(x) { return x.id === id; }); return t2 && t2.done; }).length; };
+
   cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;gap:8px;width:100%">'
     + FOCUS_WIDGETS.map(w =>
-      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:10px 12px;min-width:0;overflow:hidden">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-          + '<div style="display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden">'
-            + '<span style="font-size:14px;flex-shrink:0">' + w.icon + '</span>'
-            + '<span style="font-size:10px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
-          + '</div>'
-          + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
-            + (w.total ? '<span style="font-size:9px;background:' + w.bg + ';color:' + w.color + ';padding:1px 5px;border-radius:4px;font-weight:600">' + w.total + '</span>' : '')
-            + '<span style="font-size:10px;color:var(--t3);font-family:monospace">' + w.ids.length + '/3</span>'
-          + '</div>'
+      '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0">'
+          + '<span style="font-size:14px;flex-shrink:0">' + w.icon + '</span>'
+          + '<span style="font-size:11px;font-weight:700;color:var(--t);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
+          + '<span style="font-size:10px;color:var(--t3);font-family:monospace;flex-shrink:0">' + _doneCount(w.ids) + '/' + w.ids.length + '</span>'
         + '</div>'
-        + (w.cards || '<div style="font-size:11px;color:var(--t2);text-align:center;padding:12px 0;opacity:.7">' + w.hint + '</div>')
+        + (w.cards || '<div style="font-size:11px;color:var(--t3);padding:8px 0;text-align:center">' + w.hint + '</div>')
       + '</div>'
     ).join('')
   + '</div>';
-
-  // Event delegation — remove button
-  cont.querySelectorAll('.pus-focus-rm').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      toggleFocus(parseInt(this.dataset.tid), this.dataset.type);
-    });
-  });
 }
 let PUS_QUICK_FILTER = 'all';
 let PUS_DETAIL_ID    = null;
