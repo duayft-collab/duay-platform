@@ -1511,6 +1511,119 @@ function _renderDashboard() {
   content.innerHTML = h;
 }
 
+// ── Dashboard Kullanım Kılavuzu ────────────────────────────────────
+window._openDashboardGuide = function() {
+  var old = document.getElementById('mo-db-guide'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-db-guide';
+  var today = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  var S = 'font-size:12px;line-height:1.7;color:var(--t2)';
+  var H = 'font-size:14px;font-weight:700;color:var(--t);margin:16px 0 8px';
+  var C = 'margin-left:16px;'+S;
+  mo.innerHTML = '<div class="moc" style="max-width:640px;max-height:90vh;padding:0;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">'
+    + '<div style="padding:16px 24px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+      + '<div style="font-size:16px;font-weight:700;color:var(--t)">Dashboard Kullanim Kilavuzu</div>'
+      + '<button onclick="document.getElementById(\'mo-db-guide\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
+    + '<div style="flex:1;overflow-y:auto;padding:20px 24px">'
+
+    + '<div style="'+H+'">1. Dashboard Ne Ise Yarar?</div>'
+    + '<div style="'+S+'">Sirketin anlik nabzini tek ekranda gosterir. Finans, operasyon ve guvenlik durumunu saniyeler icinde degerlendirmenizi saglar. Karar vermeden once bakmaniz gereken ilk ekrandir.</div>'
+
+    + '<div style="'+H+'">2. Yuzde Yuz Olmasi Gereken Veriler</div>'
+    + '<div style="'+C+'">'
+      + '<div>✓ Net pozisyon (pozitif olmali)</div>'
+      + '<div>✓ Gecikmis alacak (0 olmali)</div>'
+      + '<div>✓ Gecikmis gorev (0 olmali)</div>'
+      + '<div>✓ Auth servisi (Online olmali)</div>'
+      + '<div>✓ DB Latency (&lt;10ms olmali)</div>'
+      + '<div>✓ Audit log (Senkron olmali)</div>'
+      + '<div>✓ WIP durumu (5 altinda olmali)</div>'
+      + '<div>✓ Sistem skoru (80+ olmali)</div></div>'
+
+    + '<div style="'+H+'">3. Olsa Iyi Olur</div>'
+    + '<div style="'+C+'">'
+      + '<div>~ Doviz pozisyonu (USD/EUR/TRY)</div>'
+      + '<div>~ 7 gunluk projeksiyon</div>'
+      + '<div>~ Kullanici aktivitesi</div>'
+      + '<div>~ Nakit akis grafigi</div>'
+      + '<div>~ Bu hafta vadeli odemeler</div>'
+      + '<div>~ Kargo bekleyen sayisi</div></div>'
+
+    + '<div style="'+H+'">4. Olsa da Olur Olmasa da Olur</div>'
+    + '<div style="'+C+'">'
+      + '<div>- Sistem versiyonu</div>'
+      + '<div>- Sync durumu</div>'
+      + '<div>- Son guncelleme zamani</div>'
+      + '<div>- Demo kullanici aktivitesi</div></div>'
+
+    + '<div style="'+H+'">5. 3 Dashboard Ornegi</div>'
+    + '<div style="margin:8px 0;padding:10px 14px;background:#EAF3DE;border-radius:8px;font-size:11px"><b>Ornek A — Saglikli Sirket:</b><br>Net: +₺2.5M | Gecikmis: 0 | Gorev: 2 | Skor: 94<br>Sistem yesil, operasyon akiyor</div>'
+    + '<div style="margin:8px 0;padding:10px 14px;background:#FAEEDA;border-radius:8px;font-size:11px"><b>Ornek B — Dikkat Gerektiren:</b><br>Net: -₺200K | Gecikmis: ₺800K | Gorev: 8 | Skor: 71<br>Finans turuncu, operasyon kirmizi</div>'
+    + '<div style="margin:8px 0;padding:10px 14px;background:#FCEBEB;border-radius:8px;font-size:11px"><b>Ornek C — Kritik (Mevcut):</b><br>Net: -₺655K | Gecikmis: ₺3.2M | Gorev: 11 | Skor: 78<br>Alert bar aktif, acil mudahale gerekli</div>'
+
+    + '<div style="'+H+'">6. Faydalari</div>'
+    + '<div style="'+C+'">'
+      + '<div>1. Sabah ilk 30 saniyede sirket durumunu gormek</div>'
+      + '<div>2. Kritik sorunlari erkenden tespit etmek</div>'
+      + '<div>3. Ekip performansini takip etmek</div>'
+      + '<div>4. Nakit akisini gunluk izlemek</div>'
+      + '<div>5. Guvenlik aciklarini aninda gormek</div>'
+      + '<div>6. Karar almayi hizlandirmak</div></div>'
+
+    + '</div>'
+    + '<div style="padding:12px 24px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:space-between;flex-shrink:0">'
+      + '<button onclick="window._downloadDashGuide?.()" class="btn btnp" style="font-size:12px;padding:8px 16px;border-radius:8px">PDF Indir</button>'
+      + '<button onclick="document.getElementById(\'mo-db-guide\')?.remove()" class="btn btns" style="font-size:12px;padding:8px 16px;border-radius:8px">Kapat</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._downloadDashGuide = function() {
+  // jsPDF lazy load
+  if (!window.jspdf) {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = function() { window._downloadDashGuide(); };
+    document.head.appendChild(s);
+    window.toast?.('PDF hazirlaniyor...', 'ok');
+    return;
+  }
+  var doc = new window.jspdf.jsPDF();
+  var y = 20;
+  var add = function(text, size, bold) {
+    doc.setFontSize(size || 11);
+    if (bold) doc.setFont(undefined, 'bold'); else doc.setFont(undefined, 'normal');
+    var lines = doc.splitTextToSize(text, 170);
+    lines.forEach(function(line) { if (y > 270) { doc.addPage(); y = 20; } doc.text(line, 20, y); y += size ? size * 0.5 : 5; });
+    y += 2;
+  };
+  add('DUAY GLOBAL LLC', 18, true);
+  add('Dashboard Kullanim Kilavuzu', 14, true);
+  y += 5;
+  add('1. Dashboard Ne Ise Yarar?', 12, true);
+  add('Sirketin anlik nabzini tek ekranda gosterir. Finans, operasyon ve guvenlik durumunu saniyeler icinde degerlendirmenizi saglar.');
+  y += 3;
+  add('2. Yuzde Yuz Olmasi Gereken Veriler', 12, true);
+  ['Net pozisyon (pozitif)','Gecikmis alacak (0)','Gecikmis gorev (0)','Auth servisi (Online)','DB Latency (<10ms)','Audit log (Senkron)','WIP durumu (5 alti)','Sistem skoru (80+)'].forEach(function(t) { add('  * ' + t); });
+  y += 3;
+  add('3. Olsa Iyi Olur', 12, true);
+  ['Doviz pozisyonu','7 gunluk projeksiyon','Kullanici aktivitesi','Nakit akis grafigi'].forEach(function(t) { add('  ~ ' + t); });
+  y += 3;
+  add('4. Olsa da Olur Olmasa da Olur', 12, true);
+  ['Sistem versiyonu','Sync durumu','Son guncelleme','Demo kullanici'].forEach(function(t) { add('  - ' + t); });
+  y += 3;
+  add('6. Faydalari', 12, true);
+  ['Sabah ilk 30s sirket durumu','Kritik sorun tespiti','Ekip performansi','Nakit akisi izleme','Guvenlik aciklari','Karar hizlandirma'].forEach(function(t,i) { add('  ' + (i+1) + '. ' + t); });
+  y += 10;
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  var today2 = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  doc.text(today2 + ' · Gizli & Sirkete Ozel', 20, 285);
+  doc.save('Duay-Dashboard-Kilavuzu.pdf');
+  window.toast?.('PDF indirildi', 'ok');
+};
+
 // ── Pusula Dashboard Widget ────────────────────────────────────────
 function _renderDashboardPusulaWidget(cu, tasks, today) {
   const dayFocusEl = document.getElementById('db-day-focus');
