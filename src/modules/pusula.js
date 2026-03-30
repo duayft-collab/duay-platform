@@ -828,7 +828,7 @@ function renderPusulaList(fl, users, todayS, cont) {
       </div>
       <div class="tk-body">
         <div class="tk-name" style="${isDone ? '' : 'font-weight:600'}">
-          ${t.jobId ? `<span style="font-size:9px;font-family:monospace;color:var(--t3);background:var(--s2);padding:1px 5px;border-radius:3px;margin-right:4px">${t.jobId}</span>` : ''}${t.title}
+          ${t.jobId ? `<span style="font-size:9px;font-family:monospace;color:var(--t3);background:var(--s2);padding:1px 5px;border-radius:3px;margin-right:4px;cursor:pointer" onclick="event.stopPropagation();window.openJobIdHub?.('${t.jobId}')">${t.jobId}</span>` : ''}${t.title}
           ${!isDone && (t.participants || []).includes(cu?.id) ? ` <span style="font-size:9px;background:var(--al);color:var(--ac);padding:1px 6px;border-radius:4px;font-weight:600">✅ Katılımcı</span>` : ''}
           ${!isDone && (t.viewers || []).includes(cu?.id) ? ` <span style="font-size:9px;background:rgba(139,92,246,.1);color:#8B5CF6;padding:1px 6px;border-radius:4px;font-weight:600">👁 İzleyici</span>` : ''}
         </div>
@@ -1820,6 +1820,9 @@ function saveTask() {
       const t = d.find(x => x.id === eid);
       if (t) {
         const _oldUid = t.uid;
+        // Orijinal oluşturma tarihini koru, güncelleme damgası ekle
+        fields.created_at = t.created_at || t.createdAt || fields.created_at;
+        fields.updated_at = nowTs();
         Object.assign(t, fields);
         if (_oldUid !== fields.uid) {
           try {

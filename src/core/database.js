@@ -1382,10 +1382,14 @@ function _listenCollection(collection, localKey, onUpdate) {
       if (fsData === null || fsData === undefined) return;
 
       // Hash check — aynı veri gelirse skip et (döngü engelleyici)
+      // syncedAt Firestore'da her yazımda güncellenir — en güvenilir değişiklik sinyali
       var dataHash = '';
       try {
-        if (Array.isArray(fsData)) {
-          dataHash = fsData.length + ':' + (fsData[0]?.ts || '') + ':' + (fsData[fsData.length-1]?.ts || '');
+        var _syncedAt = snap.data()?.syncedAt || '';
+        if (_syncedAt) {
+          dataHash = collection + ':' + _syncedAt;
+        } else if (Array.isArray(fsData)) {
+          dataHash = fsData.length + ':' + JSON.stringify(fsData).length;
         } else {
           dataHash = JSON.stringify(fsData).length.toString();
         }
