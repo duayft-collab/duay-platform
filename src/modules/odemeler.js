@@ -820,9 +820,11 @@ function renderOdemeler() {
     const st = _getStatus(o);
 
     // Sekme filtresi
+    if (_odmCurrentTab === 'odeme'    && o._src !== 'odeme' && o.tip !== 'odeme') return false;
+    if (_odmCurrentTab === 'tahsilat' && o._src !== 'tahsilat' && o.tip !== 'tahsilat') return false;
+    if (_odmCurrentTab === 'bekliyor' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor'].includes(o.approvalStatus)) return false;
     if (_odmCurrentTab === 'abonelik' && o.cat !== 'abonelik') return false;
     if (_odmCurrentTab === 'kredi_k'  && o.cat !== 'kredi_k')  return false;
-    if (_odmCurrentTab === 'bekliyor' && st !== 'bekliyor' && st !== 'yaklasan' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor'].includes(o.approvalStatus)) return false;
     if (_odmCurrentTab === 'gecikti'  && st !== 'gecikti')  return false;
     if (_odmCurrentTab === 'ay') {
       if (!(o.due||'').startsWith(thisMonth) && !(o.paidTs||'').startsWith(thisMonth)) return false;
