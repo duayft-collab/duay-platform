@@ -784,7 +784,9 @@ function renderOdemeler() {
   }
   // Soft-deleted kayıtları gizle (admin dahil — ayrı çöp kutusu panelinden görülür)
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
-  const all = _isManagerO() ? _activeRaw : _activeRaw.filter(o => !o.createdBy || o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id || o.assignedTo === _cuOdm?.id);
+  // Admin/manager/muhasebe departmanı: tüm kayıtlar; user: sadece kendi kayıtları
+  var _isFinanceUser = _isManagerO() || (_cuOdm?.dept || '').toLowerCase() === 'muhasebe';
+  const all = _isFinanceUser ? _activeRaw : _activeRaw.filter(o => !o.createdBy || o.createdBy === _cuOdm?.id || o.uid === _cuOdm?.id || o.assignedTo === _cuOdm?.id);
 
   // Cari dropdown doldur (ilk çağrıda)
   var _cariSel = _go('odm-cari-f');
@@ -1073,6 +1075,7 @@ function renderOdemeler() {
           + (o.docs && o.docs.length ? '<button onclick="event.stopPropagation();viewOdmDoc(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : '')
           + (isPend && _isManagerO() ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
           + (!isPaid && !isPend ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
+          + (_isManagerO() || (isPend && o.createdBy === _CUo()?.id) ? '<button onclick="event.stopPropagation();delOdm(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '')
         + '</div>'
         + '</div>';
 
