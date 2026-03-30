@@ -293,7 +293,7 @@ body {
 }
 
 /* â”€â”€ MAIN CONTENT â”€â”€ */
-.main { flex: 1; padding: 26px 30px; overflow-y: auto; }
+.main { flex: 1; padding: 0 0 20px; overflow-y: auto; }
 .ph {
   display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 0; flex-wrap: wrap; gap: 10px;
@@ -1285,7 +1285,7 @@ td { vertical-align: middle; }
 .currency-rate { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; }
 
 /* â”€â”€ PANEL HEADER YARDIMCILARI â”€â”€ */
-.panel { padding: 20px; }
+.panel { padding: 0; }
 .panel > .ph:first-child { margin-bottom: 16px; }
 
 /* Eksik sc5 (5 sÃ¼tunlu stat grid) */
@@ -1317,7 +1317,7 @@ td { vertical-align: middle; }
 
 /* â”€â”€ RESPONSIVE PANEL â”€â”€ */
 @media (max-width: 860px) {
-  .panel { padding: 14px; }
+  .panel { padding: 0; }
   .pdp-meta-grid { grid-template-columns: 1fr; }
 }
 
