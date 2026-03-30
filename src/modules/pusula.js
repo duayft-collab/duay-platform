@@ -2771,8 +2771,11 @@ function downloadTaskTemplate() {
 // ════════════════════════════════════════════════════════════════
 
 function _pusInit() {
-  // Kaydedilmiş görünüm modunu uygula
-  PUS_VIEW = localStorage.getItem('ak_pus_view') || 'list';
+  // Görünüm modu: 1) localStorage 2) user defaultPusView 3) 'list'
+  var _savedView = localStorage.getItem('ak_pus_view');
+  var _cu = typeof _getCU === 'function' ? _getCU() : (window.Auth?.getCU?.());
+  var _defaultView = _cu?.defaultPusView || null;
+  PUS_VIEW = _savedView || _defaultView || 'list';
   const vBtn = g('pus-v-' + PUS_VIEW);
   if (vBtn) vBtn.classList.add('on', 'active');
   // Alt görev alarmlarını tara ve zamanlayıcıları kur
@@ -4091,77 +4094,108 @@ window._exportGorevPerfXlsx = function() {
 };
 
 // ════════════════════════════════════════════════════════════════
-// KADRAN GÖRÜNÜMÜ (Covey 4 Kadran)
+// KADRAN GÖRÜNÜMÜ — Stephen Covey (7 Habits)
 // ════════════════════════════════════════════════════════════════
 function _renderKadranView(fl, users, todayS, cont) {
   var important = function(t) { return t.pri === 1 || t.pri === 2; };
   var urgent = function(t) { return t.due && t.due <= todayS; };
-  var q1 = fl.filter(function(t) { return !t.done && important(t) && urgent(t); });
-  var q2 = fl.filter(function(t) { return !t.done && important(t) && !urgent(t); });
-  var q3 = fl.filter(function(t) { return !t.done && !important(t) && urgent(t); });
-  var q4 = fl.filter(function(t) { return !t.done && !important(t) && !urgent(t); });
+  var allActive = fl.filter(function(t) { return !t.done; });
+  var q1 = allActive.filter(function(t) { return important(t) && urgent(t); });
+  var q2 = allActive.filter(function(t) { return important(t) && !urgent(t); });
+  var q3 = allActive.filter(function(t) { return !important(t) && urgent(t); });
+  var q4 = allActive.filter(function(t) { return !important(t) && !urgent(t); });
+  var priDot = {1:'#dc2626',2:'#D97706',3:'#3B82F6',4:'#9CA3AF'};
+  var SHOW_MAX = 8;
 
   var _kCard = function(t) {
     var u = users.find(function(x) { return x.id === t.uid; });
     var ini = u ? (u.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2) : '?';
     var late = t.due && t.due < todayS;
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:0.5px solid var(--b);cursor:pointer" onclick="openPusDetail(' + t.id + ')">'
-      + '<span style="width:22px;height:22px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0">' + ini + '</span>'
-      + '<span style="flex:1;font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.title||'') + '</span>'
-      + (t.due ? '<span style="font-size:10px;color:' + (late?'#dc2626':'var(--t3)') + '">' + t.due.slice(5) + '</span>' : '')
-      + '</div>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:0.5px solid var(--b);cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'" onclick="openPusDetail(' + t.id + ')">'
+      + '<span style="width:5px;height:5px;border-radius:50%;background:' + (priDot[t.pri]||'#9CA3AF') + ';flex-shrink:0"></span>'
+      + '<span style="flex:1;font-size:11px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.title||'') + '</span>'
+      + '<span style="width:20px;height:20px;border-radius:5px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0">' + ini + '</span>'
+      + (t.due ? '<span style="font-size:9px;color:' + (late?'#dc2626':'var(--t3)') + '">' + t.due.slice(5) + '</span>' : '')
+    + '</div>';
   };
 
-  var _kQuad = function(title, color, bg, items) {
-    return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden">'
-      + '<div style="padding:10px 14px;background:' + bg + ';border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-        + '<span style="font-size:12px;font-weight:700;color:' + color + '">' + title + '</span>'
-        + '<span style="font-size:10px;color:var(--t3)">' + items.length + '</span>'
+  var _kQuad = function(title, borderC, titleC, bgC, opacity, items) {
+    var total = allActive.length || 1;
+    var pct = Math.round(items.length / total * 100);
+    var doneInQ = items.filter(function(t) { return t.done; }).length;
+    var shown = items.slice(0, SHOW_MAX);
+    var more = items.length - SHOW_MAX;
+    return '<div style="background:var(--sf);border:1px solid ' + borderC + ';border-radius:10px;overflow:hidden;opacity:' + opacity + '">'
+      + '<div style="padding:10px 14px;background:' + bgC + ';border-bottom:1px solid ' + borderC + ';display:flex;align-items:center;justify-content:space-between">'
+        + '<div><span style="font-size:12px;font-weight:700;color:' + titleC + '">' + title + '</span></div>'
+        + '<span style="font-size:10px;color:var(--t3)">' + items.length + ' (' + pct + '%)</span>'
       + '</div>'
       + '<div style="max-height:300px;overflow-y:auto">'
-        + (items.length ? items.map(_kCard).join('') : '<div style="padding:16px;text-align:center;font-size:11px;color:var(--t3)">Görev yok</div>')
-      + '</div></div>';
+        + (shown.length ? shown.map(_kCard).join('') : '<div style="padding:16px;text-align:center;font-size:11px;color:var(--t3)">Gorev yok</div>')
+        + (more > 0 ? '<div style="padding:6px 14px;font-size:10px;color:var(--ac);cursor:pointer;text-align:center" onclick="this.parentElement.style.maxHeight=\'none\';this.remove()">+ ' + more + ' gorev daha</div>' : '')
+      + '</div>'
+      + '<div style="height:3px;background:var(--s2)"><div style="height:100%;width:' + (items.length ? Math.round(doneInQ / (items.length||1) * 100) : 0) + '%;background:' + titleC + ';border-radius:0 2px 2px 0"></div></div>'
+    + '</div>';
   };
 
   cont.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">'
-    + _kQuad('Hemen Yap', '#dc2626', 'rgba(220,38,38,.06)', q1)
-    + _kQuad('Planla', '#0C447C', 'rgba(12,68,124,.06)', q2)
-    + _kQuad('Devret', '#D97706', 'rgba(217,119,6,.06)', q3)
-    + _kQuad('Elemine Et', '#6B7280', 'rgba(107,114,128,.06)', q4)
-    + '</div>';
+    + _kQuad('Hemen Yap', '#F09595', '#A32D2D', '#FCEBEB15', '1', q1)
+    + _kQuad('Planla', '#85B7EB', '#0C447C', '#E6F1FB15', '1', q2)
+    + _kQuad('Devret', 'var(--b)', '#633806', '#FAEEDA15', '1', q3)
+    + _kQuad('Elemine Et', 'var(--b)', '#6B7280', 'var(--s2)', '0.65', q4)
+  + '</div>';
 }
 
 // ════════════════════════════════════════════════════════════════
-// KANBAN GÖRÜNÜMÜ (Ohno Akış)
+// KANBAN GÖRÜNÜMÜ — Taiichi Ohno (Toyota Production System)
 // ════════════════════════════════════════════════════════════════
 function _renderKanbanView(fl, users, todayS, cont) {
   var WIP_LIMIT = 5;
   var cols = [
-    { key:'todo',       label:'Yapılacak',    color:'#475569', filter:function(t){return !t.done&&(!t.status||t.status==='todo');} },
-    { key:'inprogress', label:'Devam',        color:'#1D4ED8', filter:function(t){return t.status==='inprogress';} },
-    { key:'waiting',    label:'Beklemede',    color:'#D97706', filter:function(t){return t.status==='waiting';} },
-    { key:'review',     label:'İnceleme',     color:'#B45309', filter:function(t){return t.status==='review';} },
-    { key:'done',       label:'Tamamlandı',   color:'#15803D', filter:function(t){return t.done||t.status==='done';} },
+    { key:'todo',       label:'Yapilacak',   color:'#475569', filter:function(t){return !t.done&&(!t.status||t.status==='todo');} },
+    { key:'inprogress', label:'Devam',       color:'#1D4ED8', filter:function(t){return t.status==='inprogress';} },
+    { key:'waiting',    label:'Beklemede',   color:'#D97706', filter:function(t){return t.status==='waiting';} },
+    { key:'review',     label:'Inceleme',    color:'#B45309', filter:function(t){return t.status==='review';} },
+    { key:'done',       label:'Tamamlandi',  color:'#15803D', filter:function(t){return t.done||t.status==='done';} },
   ];
-
   var priColors = {1:'#dc2626',2:'#D97706',3:'#3B82F6',4:'#9CA3AF'};
+  var colCounts = {};
+  cols.forEach(function(c) { colCounts[c.key] = fl.filter(c.filter).length; });
+  var totalActive = fl.filter(function(t){return !t.done;}).length;
+  var doneThisWeek = fl.filter(function(t) { return t.done && t.due && t.due >= todayS; }).length;
+  // Darboğaz: en fazla active görev olan sütun (done hariç)
+  var bottleneck = cols.filter(function(c){return c.key!=='done';}).sort(function(a,b){return colCounts[b.key]-colCounts[a.key];})[0];
+  var efficiency = totalActive > 0 ? Math.round((colCounts.inprogress||0) / totalActive * 100) : 0;
 
-  var html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;align-items:start">';
+  var html = '';
+  // Üst throughput barı
+  html += '<div style="display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:0.5px solid var(--b);font-size:11px;color:var(--t3);background:var(--sf)">'
+    + '<span>Darbogaz: <b style="color:' + bottleneck.color + '">' + bottleneck.label + '</b> (' + colCounts[bottleneck.key] + ')</span>'
+    + '<span>Bu hafta: <b style="color:#15803D">' + doneThisWeek + '</b> tamamlandi</span>'
+    + '<span>Akis verimliligi: <b>' + efficiency + '%</b></span>'
+  + '</div>';
+  // Sütunlar
+  html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;align-items:start">';
   cols.forEach(function(col) {
     var items = fl.filter(col.filter);
     var wipWarn = col.key === 'inprogress' && items.length > WIP_LIMIT;
+    var wipPct = col.key === 'inprogress' ? Math.min(100, Math.round(items.length / WIP_LIMIT * 100)) : 0;
+    var wipColor = wipPct <= 60 ? '#639922' : wipPct <= 90 ? '#BA7517' : '#E24B4A';
     html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;min-height:200px">'
-      + '<div style="padding:10px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:' + (wipWarn?'rgba(220,38,38,.08)':'var(--s2)') + '">'
-        + '<span style="font-size:11px;font-weight:700;color:' + col.color + '">' + col.label + '</span>'
-        + '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--s2);color:var(--t3)">' + items.length + '</span>'
-        + (wipWarn ? '<span style="font-size:9px;color:#dc2626;font-weight:600">WIP!</span>' : '')
+      + '<div style="padding:8px 12px;border-bottom:1px solid var(--b);background:' + (wipWarn?'rgba(226,75,74,.08)':'var(--s2)') + '">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:' + (col.key==='inprogress'?'6':'0') + 'px">'
+          + '<span style="font-size:11px;font-weight:700;color:' + col.color + '">' + col.label + '</span>'
+          + '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--s2);color:var(--t3)">' + items.length + '</span>'
+          + (wipWarn ? '<span style="font-size:9px;color:#E24B4A;font-weight:600">' + items.length + '/' + WIP_LIMIT + '</span>' : '')
+        + '</div>'
+        + (col.key === 'inprogress' ? '<div style="height:3px;background:var(--b);border-radius:2px;overflow:hidden"><div style="height:100%;width:' + wipPct + '%;background:' + wipColor + ';border-radius:2px"></div></div>' : '')
       + '</div>'
       + '<div style="padding:6px" ondragover="event.preventDefault()" ondrop="window._kanbanDrop?.(event,\'' + col.key + '\')">';
     items.forEach(function(t) {
       var u = users.find(function(x){return x.id===t.uid;});
       var ini = u ? (u.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2) : '?';
       var late = !t.done && t.due && t.due < todayS;
-      html += '<div draggable="true" ondragstart="event.dataTransfer.setData(\'taskId\',' + t.id + ')" style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;border-left:2px solid ' + (late?'#dc2626':'transparent') + '" onclick="openPusDetail(' + t.id + ')">'
+      html += '<div draggable="true" ondragstart="event.dataTransfer.setData(\'taskId\',' + t.id + ')" style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:grab;border-left:2px solid ' + (late?'#dc2626':'transparent') + '" onclick="openPusDetail(' + t.id + ')">'
         + '<div style="font-size:11px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">' + (t.title||'') + '</div>'
         + '<div style="display:flex;align-items:center;gap:4px;margin-top:6px">'
           + '<span style="width:6px;height:6px;border-radius:50%;background:' + (priColors[t.pri]||'#9CA3AF') + ';flex-shrink:0"></span>'
@@ -4189,17 +4223,19 @@ window._kanbanDrop = function(e, newStatus) {
   t.updated_at = typeof nowTs === 'function' ? nowTs() : new Date().toISOString();
   saveTasks(d);
   renderPusula();
-  window.toast?.('Durum güncellendi ✓', 'ok');
+  window.toast?.('Durum guncellendi', 'ok');
 };
 
 // ════════════════════════════════════════════════════════════════
-// ODAK GÖRÜNÜMÜ (ONE Thing)
+// ODAK GÖRÜNÜMÜ — Gary Keller (The ONE Thing)
 // ════════════════════════════════════════════════════════════════
 function _renderOdakView(fl, users, todayS, cont) {
   var active = fl.filter(function(t) { return !t.done && t.status !== 'done'; });
   var done = fl.filter(function(t) { return t.done || t.status === 'done'; });
+  var priLabels = {1:'Kritik',2:'Onemli',3:'Normal',4:'Dusuk'};
+  var priColors2 = {1:'#dc2626',2:'#D97706',3:'#3B82F6',4:'#9CA3AF'};
 
-  // En kritik: öncelik + gecikme sırası
+  // En kritik: oncelik + gecikme sirasi
   active.sort(function(a, b) {
     if (a.pri !== b.pri) return (a.pri||4) - (b.pri||4);
     var aLate = a.due && a.due < todayS ? 1 : 0;
@@ -4210,52 +4246,90 @@ function _renderOdakView(fl, users, todayS, cont) {
 
   var focus = active[0];
   var next5 = active.slice(1, 6);
-  var priLabels = {1:'Kritik',2:'Önemli',3:'Normal',4:'Düşük'};
-  var priColors2 = {1:'#dc2626',2:'#D97706',3:'#3B82F6',4:'#9CA3AF'};
+  var lateN = active.filter(function(t){return t.due && t.due < todayS;}).length;
+  var total = fl.length; var doneN = done.length;
+  var pct = total > 0 ? Math.round(doneN / total * 100) : 0;
 
-  var html = '<div style="padding:16px;display:flex;flex-direction:column;gap:16px">';
+  var html = '<div style="padding:16px;display:flex;flex-direction:column;gap:14px">';
 
-  // Üst: tek odak
+  // Haftalik takvim bari (Pzt-Cum)
+  var now = new Date(todayS);
+  var dayOfWeek = now.getDay() || 7; // 1=Pzt...7=Paz
+  var monday = new Date(now); monday.setDate(now.getDate() - dayOfWeek + 1);
+  var TR_DAYS = ['Pzt','Sal','Car','Per','Cum'];
+  html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">';
+  for (var di = 0; di < 5; di++) {
+    var dayDate = new Date(monday); dayDate.setDate(monday.getDate() + di);
+    var dayStr = dayDate.toISOString().slice(0,10);
+    var isToday = dayStr === todayS;
+    var isPast = dayStr < todayS;
+    var dayTasks = active.filter(function(t){ return t.due === dayStr; }).length;
+    var lateTasks = isPast ? active.filter(function(t){ return t.due === dayStr; }).length : 0;
+    html += '<div style="padding:8px;border-radius:8px;text-align:center;background:' + (isToday?'var(--ac)':'var(--sf)') + ';border:1px solid ' + (isToday?'var(--ac)':'var(--b)') + '">'
+      + '<div style="font-size:10px;font-weight:600;color:' + (isToday?'#fff':'var(--t3)') + '">' + TR_DAYS[di] + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:' + (isToday?'#fff':(lateTasks>0?'#dc2626':'var(--t)')) + ';margin-top:2px">' + dayDate.getDate() + '</div>'
+      + (dayTasks > 0 ? '<div style="font-size:9px;color:' + (isToday?'rgba(255,255,255,.8)':'var(--t3)') + ';margin-top:2px">' + dayTasks + ' gorev</div>' : '')
+    + '</div>';
+  }
+  html += '</div>';
+
+  // Ana odak
   if (focus) {
     var fu = users.find(function(x){return x.id===focus.uid;});
     var fLate = focus.due && focus.due < todayS;
     var fDays = focus.due ? Math.ceil((new Date(todayS) - new Date(focus.due)) / 86400000) : 0;
+    var subCount = Array.isArray(focus.subtasks) ? focus.subtasks.length : 0;
+    var subDone = Array.isArray(focus.subtasks) ? focus.subtasks.filter(function(s){return s.done;}).length : 0;
+    var focusPct = subCount > 0 ? Math.round(subDone / subCount * 100) : 0;
     html += '<div style="background:var(--sf);border:2px solid ' + (priColors2[focus.pri]||'var(--b)') + ';border-radius:14px;padding:24px;text-align:center;cursor:pointer" onclick="openPusDetail(' + focus.id + ')">'
-      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Bu Haftanın Tek Odağı</div>'
-      + '<div style="font-size:20px;font-weight:700;color:var(--t);margin-bottom:8px">' + (focus.title||'') + '</div>'
-      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--t2)">'
+      + '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:50%;background:#dc2626"></span><span style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Bu haftanin tek odagi</span></div>'
+      + '<div style="font-size:20px;font-weight:700;color:var(--t);margin-bottom:10px">' + (focus.title||'') + '</div>'
+      + (focusPct > 0 ? '<div style="height:4px;background:var(--s2);border-radius:2px;margin-bottom:10px;max-width:300px;margin-left:auto;margin-right:auto"><div style="height:100%;width:' + focusPct + '%;background:' + (priColors2[focus.pri]||'var(--ac)') + ';border-radius:2px"></div></div>' : '')
+      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--t2);flex-wrap:wrap">'
         + '<span style="padding:3px 10px;border-radius:6px;background:' + (priColors2[focus.pri]||'var(--s2)') + '22;color:' + (priColors2[focus.pri]||'var(--t3)') + ';font-weight:600">' + (priLabels[focus.pri]||'Normal') + '</span>'
         + (fu ? '<span>' + fu.name + '</span>' : '')
-        + (fLate ? '<span style="color:#dc2626;font-weight:600">' + fDays + ' gün gecikmiş</span>' : (focus.due ? '<span>' + focus.due + '</span>' : ''))
+        + (focus.status ? '<span style="padding:2px 8px;border-radius:4px;background:var(--s2);font-size:10px">' + focus.status + '</span>' : '')
+        + (subCount > 0 ? '<span style="font-size:10px;color:var(--t3)">' + subDone + '/' + subCount + ' alt gorev</span>' : '')
+        + (fLate ? '<span style="color:#dc2626;font-weight:600">' + fDays + ' gun gecikmis</span>' : (focus.due ? '<span>' + focus.due + '</span>' : ''))
       + '</div>'
     + '</div>';
   } else {
-    html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:32px;text-align:center;color:var(--t3)">Aktif görev yok</div>';
+    html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:32px;text-align:center;color:var(--t3)">Aktif gorev yok</div>';
   }
 
-  // Orta: sıradaki 5
+  // Siradaki 5
   html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden">'
-    + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2)">Sıradaki ' + next5.length + ' Görev</div>';
+    + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);background:var(--s2);font-size:11px;font-weight:700;color:var(--t2)">Siradaki ' + next5.length + ' Gorev</div>';
   if (next5.length) {
     next5.forEach(function(t, i) {
       var late = t.due && t.due < todayS;
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b);cursor:pointer" onclick="openPusDetail(' + t.id + ')">'
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;transition:padding-left .15s" onmouseover="this.style.paddingLeft=\'20px\'" onmouseout="this.style.paddingLeft=\'14px\'" onclick="openPusDetail(' + t.id + ')">'
         + '<span style="width:20px;height:20px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--t3);flex-shrink:0">' + (i+2) + '</span>'
         + '<span style="flex:1;font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.title||'') + '</span>'
         + (t.due ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + (late?'#FEE2E2':'var(--s2)') + ';color:' + (late?'#dc2626':'var(--t3)') + '">' + t.due.slice(5) + '</span>' : '')
       + '</div>';
     });
   } else {
-    html += '<div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Sırada görev yok</div>';
+    html += '<div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Sirada gorev yok</div>';
   }
   html += '</div>';
 
-  // Alt: ilerleme
-  var total = fl.length;
-  var doneN = done.length;
-  var pct = total > 0 ? Math.round(doneN / total * 100) : 0;
-  html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px 14px">'
-    + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:6px"><span>Bu hafta tamamlanan: ' + doneN + ' görev</span><span>' + pct + '%</span></div>'
+  // Alt istatistik bari
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:10px;text-align:center">'
+      + '<div style="font-size:16px;font-weight:700;color:#dc2626">' + lateN + '</div>'
+      + '<div style="font-size:9px;color:var(--t3)">Gecikmis</div></div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:10px;text-align:center">'
+      + '<div style="font-size:16px;font-weight:700;color:#15803D">' + doneN + '</div>'
+      + '<div style="font-size:9px;color:var(--t3)">Tamamlanan</div></div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:10px;text-align:center">'
+      + '<div style="font-size:16px;font-weight:700;color:var(--t)">' + active.length + '</div>'
+      + '<div style="font-size:9px;color:var(--t3)">Acik gorev</div></div>'
+  + '</div>';
+
+  // Progress bar
+  html += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:10px 14px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:4px"><span>Ilerleme</span><span>' + pct + '%</span></div>'
     + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:#16A34A;border-radius:3px;transition:width .3s"></div></div>'
   + '</div>';
 
