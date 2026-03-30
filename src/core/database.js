@@ -334,6 +334,10 @@ function _syncFirestore(path, data, mode = 'set') {
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     // Verbose log yalnızca debug modda
     if (localStorage.getItem('ak_debug')) console.log('[FS:W]', path, Array.isArray(data) ? data.length : typeof data);
+    // Kritik koleksiyonlar Safari doğrulamalı yazma kullanır
+    var _criticalCols = ['tasks','users','odemeler','tahsilat','satinalma','cari','kargo','pirim'];
+    var _useCritical = _criticalCols.indexOf(collection) !== -1;
+
     if (mode === 'set') {
       // Önce mevcut Firestore verisini oku, merge et, sonra yaz (veri kaybı önleme)
       if (Array.isArray(data)) {
@@ -353,8 +357,20 @@ function _syncFirestore(path, data, mode = 'set') {
               }
             });
           }
-          var finalPayload = { data: finalData, syncedAt: syncedAt };
-          return FB_DB.doc(path).set(finalPayload, { merge: true });
+          // Kritik koleksiyon + Safari → doğrulamalı yazma
+          if (_useCritical && _isSafari) {
+            _verifiedWrite(path, finalData);
+          } else {
+            var finalPayload = { data: finalData, syncedAt: syncedAt };
+            FB_DB.doc(path).set(finalPayload, { merge: true })
+              .then(function() {
+                if (_useCritical) _setSyncStatus('ok');
+              })
+              .catch(function(e) {
+                if (_useCritical) _setSyncStatus('error', collection + ': ' + e.message);
+                GlobalErrorHandler('_syncFirestore:' + path, e, 'warn');
+              });
+          }
         })
           .then(function() { console.log('[FIRESTORE OK+MERGE]', path); })
           .catch(function(e) { console.error('[FIRESTORE ERROR]', path, e.code, e.message); GlobalErrorHandler('_syncFirestore:' + path, e, 'warn'); });
@@ -1642,6 +1658,11 @@ function startRealtimeSync() {
 
   console.info('[DB] Realtime sync başlatıldı:', SYNC_MAP.length, 'koleksiyon');
 
+  // Sync göstergesini başlat
+  _setSyncStatus('ok');
+  // Arka plan denetim başlat (5dk aralıklı)
+  _startBgSyncCheck();
+
   // İlk veri çekme sonrası aktif paneli yeniden render et
   // get() çağrıları ~500-2000ms sürebilir — sonrası için zorla render
   setTimeout(function() {
@@ -1710,6 +1731,220 @@ function stopRealtimeSync() {
   _syncStarted = false;
   console.info('[DB] Realtime sync durduruldu.');
 }
+
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 31 — SYNC GÜVENİLİRLİK (SYNC-001)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Sync durum yönetimi — tüm cihazlarda görünür gösterge.
+ * @type {{status:'ok'|'syncing'|'error', lastSync:string, errors:number, lastError:string}}
+ */
+var _syncState = { status: 'ok', lastSync: '', errors: 0, lastError: '' };
+
+/** Safari tespiti */
+var _isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+/**
+ * Sync durumunu günceller ve UI göstergesini yeniler.
+ * @param {'ok'|'syncing'|'error'} status
+ * @param {string} [errMsg]
+ */
+function _setSyncStatus(status, errMsg) {
+  _syncState.status = status;
+  if (status === 'ok') _syncState.lastSync = new Date().toISOString();
+  if (status === 'error') {
+    _syncState.errors++;
+    _syncState.lastError = errMsg || '';
+    // 24 saat sonra hata sayacını sıfırla
+    try {
+      var _errKey = 'ak_sync_err_ts';
+      var _errTs = parseInt(localStorage.getItem(_errKey) || '0');
+      if (!_errTs || Date.now() - _errTs > 86400000) {
+        _syncState.errors = 1;
+        localStorage.setItem(_errKey, String(Date.now()));
+      }
+    } catch(e) {}
+  }
+  _renderSyncIndicator();
+}
+
+/**
+ * Dashboard/header sync göstergesi render.
+ * 🟢 Senkronize | 🟡 Senkronize ediliyor | 🔴 Hata
+ */
+function _renderSyncIndicator() {
+  var el = document.getElementById('sync-indicator');
+  if (!el) {
+    // Header'daki notif-dot yanına ekle
+    var header = document.querySelector('.ubar-right');
+    if (!header) return;
+    el = document.createElement('div');
+    el.id = 'sync-indicator';
+    el.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:12px;cursor:pointer;transition:all .2s';
+    el.title = 'Senkronizasyon durumu';
+    el.onclick = function() { window._showSyncDetails?.(); };
+    header.insertBefore(el, header.firstChild);
+  }
+  var s = _syncState;
+  if (s.status === 'ok') {
+    el.style.background = 'rgba(34,197,94,.1)';
+    el.style.color = '#16a34a';
+    el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#16a34a;flex-shrink:0"></span> Sync';
+  } else if (s.status === 'syncing') {
+    el.style.background = 'rgba(234,179,8,.1)';
+    el.style.color = '#ca8a04';
+    el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#ca8a04;flex-shrink:0;animation:pulse 1s infinite"></span> Sync…';
+  } else {
+    el.style.background = 'rgba(220,38,38,.1)';
+    el.style.color = '#dc2626';
+    el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#dc2626;flex-shrink:0"></span> Hata';
+  }
+}
+
+/**
+ * Sync detay panelini gösterir (tıklanınca).
+ */
+window._showSyncDetails = function() {
+  var s = _syncState;
+  var lastSync = s.lastSync ? new Date(s.lastSync).toLocaleString('tr-TR') : '—';
+  var msg = 'Durum: ' + (s.status === 'ok' ? 'Senkronize' : s.status === 'syncing' ? 'Senkronize ediliyor…' : 'Hata') + '\n'
+    + 'Son sync: ' + lastSync + '\n'
+    + 'Hata sayısı (24s): ' + s.errors + '\n'
+    + (s.lastError ? 'Son hata: ' + s.lastError + '\n' : '')
+    + (s.status === 'error' ? '\n"Tekrar Dene" için sayfayı yenileyin veya Manuel Sync yapın.' : '');
+  window.toast?.(msg, s.status === 'error' ? 'err' : 'ok');
+};
+
+/**
+ * FIX 1+2: Yazma doğrulama — Firestore'a yaz, sonra oku, doğrula.
+ * Safari'de ek 1s bekleme. 3 deneme hakkı.
+ *
+ * @param {string} path   Firestore doc path
+ * @param {*}      data   Yazılacak veri
+ * @param {number} [retry=0] Deneme sayısı
+ */
+function _verifiedWrite(path, data, retry) {
+  retry = retry || 0;
+  var collection = path.split('/').pop();
+  var FB_DB = window.Auth?.getFBDB?.();
+  if (!FB_DB) { _queueOfflineWrite(path, data, 'set'); return; }
+
+  _setSyncStatus('syncing');
+  var syncedAt = new Date().toISOString();
+  _writingNow[collection] = Date.now() + 5000;
+
+  // Yazma
+  FB_DB.doc(path).set({ data: data, syncedAt: syncedAt }, { merge: true })
+    .then(function() {
+      // Doğrulama: Safari'de 1s, diğerlerinde 300ms bekle
+      var delay = _isSafari ? 1000 : 300;
+      setTimeout(function() {
+        FB_DB.doc(path).get().then(function(snap) {
+          if (snap.exists && snap.data()?.syncedAt === syncedAt) {
+            _setSyncStatus('ok');
+            console.info('[SYNC:OK]', collection, retry > 0 ? '(retry ' + retry + ')' : '');
+          } else if (retry < 2) {
+            console.warn('[SYNC:RETRY]', collection, 'doğrulama başarısız, tekrar deneniyor…', retry + 1);
+            _verifiedWrite(path, data, retry + 1);
+          } else {
+            _setSyncStatus('error', collection + ' yazma doğrulanamadı');
+            window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
+            window.addNotif?.('🔴', 'Sync hatası: ' + collection + ' doğrulanamadı', 'err', 'admin');
+          }
+        }).catch(function(e) {
+          if (retry < 2) _verifiedWrite(path, data, retry + 1);
+          else { _setSyncStatus('error', e.message); window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err'); }
+        });
+      }, delay);
+    })
+    .catch(function(e) {
+      console.error('[SYNC:ERR]', collection, e.message);
+      if (retry < 2) {
+        setTimeout(function() { _verifiedWrite(path, data, retry + 1); }, 1000);
+      } else {
+        _setSyncStatus('error', e.message);
+        _queueOfflineWrite(path, data, 'set');
+        window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
+      }
+    });
+}
+
+/**
+ * FIX 3: Arka plan denetim — 5 dakikada bir localStorage vs Firestore karşılaştır.
+ * Fark varsa Firestore'u baz al.
+ */
+var _bgCheckTimer = null;
+function _startBgSyncCheck() {
+  if (_bgCheckTimer) return;
+  _bgCheckTimer = setInterval(function() {
+    var FB_DB = window.Auth?.getFBDB?.();
+    if (!FB_DB) return;
+    var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
+    var base = 'duay_' + tid;
+    // Kritik koleksiyonları kontrol et
+    var criticalCols = [
+      ['tasks', KEYS.tasks],
+      ['users', KEYS.users],
+      ['odemeler', KEYS.odemeler],
+      ['tahsilat', KEYS.tahsilat],
+    ];
+    criticalCols.forEach(function(pair) {
+      var col = pair[0]; var key = pair[1];
+      try {
+        FB_DB.collection(base).doc(col).get().then(function(snap) {
+          if (!snap.exists) return;
+          var fsData = snap.data()?.data;
+          if (!fsData) return;
+          var localRaw = localStorage.getItem(key);
+          var localData = null;
+          try { localData = JSON.parse(localRaw); } catch(e) {}
+          if (!Array.isArray(fsData) || !Array.isArray(localData)) return;
+          // Firestore'da daha fazla kayıt varsa → local güncelle
+          if (fsData.length > localData.length) {
+            console.info('[SYNC:BG]', col, '→ Firestore daha güncel, local güncelleniyor', fsData.length, '>', localData.length);
+            try { localStorage.setItem(key, JSON.stringify(fsData)); } catch(e) {}
+          }
+        }).catch(function() {});
+      } catch(e) {}
+    });
+  }, 5 * 60 * 1000);
+}
+
+/**
+ * FIX 5: Manuel sync — tüm kritik koleksiyonları zorla Firestore'dan çek.
+ */
+window._manualSync = function() {
+  window.toast?.('Senkronizasyon başlatılıyor…', 'ok');
+  _setSyncStatus('syncing');
+  var FB_DB = window.Auth?.getFBDB?.();
+  if (!FB_DB) { _setSyncStatus('error', 'Firebase bağlantısı yok'); window.toast?.('Firebase bağlantısı yok', 'err'); return; }
+  var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
+  var base = 'duay_' + tid;
+  var cols = [
+    ['tasks', KEYS.tasks], ['users', KEYS.users], ['odemeler', KEYS.odemeler],
+    ['tahsilat', KEYS.tahsilat], ['kargo', KEYS.kargo], ['ik', KEYS.ik],
+    ['pirim', KEYS.pirim], ['satinalma', KEYS.satinalma], ['cari', KEYS.cari],
+  ];
+  var done = 0;
+  cols.forEach(function(pair) {
+    FB_DB.collection(base).doc(pair[0]).get().then(function(snap) {
+      if (snap.exists && snap.data()?.data) {
+        try { localStorage.setItem(pair[1], JSON.stringify(snap.data().data)); } catch(e) {}
+      }
+      done++;
+      if (done >= cols.length) {
+        _setSyncStatus('ok');
+        window.toast?.('Senkronizasyon tamamlandı ✓', 'ok');
+        if (typeof window._renderActivePanel === 'function') window._renderActivePanel();
+      }
+    }).catch(function(e) {
+      done++;
+      console.warn('[SYNC:MANUAL]', pair[0], e.message);
+    });
+  });
+};
 
 
 // ════════════════════════════════════════════════════════════════
@@ -1854,6 +2089,9 @@ const DB = {
   startRealtimeSync,
   stopRealtimeSync,
   listenCollection: _listenCollection,
+  // Sync güvenilirlik
+  getSyncState: function() { return _syncState; },
+  manualSync: window._manualSync,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
