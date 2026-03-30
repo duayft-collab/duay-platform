@@ -903,7 +903,7 @@ function savePermissions() {
       + '</div>'
       + '<div style="padding:12px 24px 20px;display:flex;gap:8px;justify-content:center">'
         + '<button class="btn btns" onclick="document.getElementById(\'perm-confirm-modal\')?.remove()" style="padding:10px 24px;border-radius:10px;font-size:13px">İptal</button>'
-        + '<button class="btn btnp" onclick="window._permConfirmed=true;savePermissions();document.getElementById(\'perm-confirm-modal\')?.remove()" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
+        + '<button class="btn btnp" onclick="window._permConfirmed=true;window.Admin?.savePermissions?.();document.getElementById(\'perm-confirm-modal\')?.remove()" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
       + '</div>'
     + '</div>';
     document.body.appendChild(_confirmEl);
