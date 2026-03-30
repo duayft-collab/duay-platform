@@ -479,19 +479,9 @@ function _doLogin() {
           <div><div class="pht" id="ph-db">Dashboard</div><div class="phs" id="db-welcome"></div></div>
           <span id="db-date" style="font-size:12px;color:var(--t2)"></span>
         </div>
-        <!-- Sub Nav -->
-        <div id="db-subnav" style="display:flex;gap:0;border-bottom:1px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none">
-          <div class="db-snav on" onclick="window._dbSubNav?.('genel',this)" style="padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid var(--ac);color:var(--ac)">Genel Bakış</div>
-          <div class="db-snav" onclick="App.nav('odemeler')" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2)">Finans Kokpiti</div>
-          <div class="db-snav" onclick="App.nav('pusula')" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2)">Operasyon Kokpiti</div>
-          <div class="db-snav" onclick="App.nav('settings')" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2)">Güvenlik Kokpiti</div>
-          <div id="db-alert-btn" style="padding:10px 18px;font-size:12px;cursor:pointer;white-space:nowrap;color:#D97706;font-weight:600;display:none"></div>
-        </div>
-        <!-- Alert Bar -->
-        <div id="db-alert-bar" style="display:none;padding:8px 20px;background:#FFFBEB;border-bottom:1px solid #FDE68A;font-size:11px;color:#92400E"></div>
         <!-- Eski stat grid — _renderDashboard gizler -->
         <div class="sg" id="db-sg" style="display:none"></div>
-        <!-- Yeni bölümler buraya render edilir -->
+        <!-- Yeni 9 bölüm buraya render edilir -->
         <div id="db-content"></div>
       </div>
 

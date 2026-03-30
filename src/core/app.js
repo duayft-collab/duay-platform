@@ -1043,40 +1043,22 @@ function _renderDashboard() {
     return;
   }
 
-  // ── ADMIN DASHBOARD ──────────────────────────────────────────
-
-  // Alert bar güncelle
-  var _alertBar = _g('db-alert-bar');
-  var _alertBtn = _g('db-alert-btn');
-  if (_alertBar && kritikSayi > 0) {
-    var _alerts = [];
-    if (proj30 < 0) _alerts.push('7g nakit açığı: ₺' + Math.abs(Math.round(proj30)).toLocaleString('tr-TR'));
-    if (gecikTask.length) _alerts.push(gecikTask.length + ' gecikmiş görev');
-    if (gecikOdm.length) _alerts.push(gecikOdm.length + ' gecikmiş ödeme');
-    _alertBar.innerHTML = _alerts.map(function(a) { return '<span style="margin-right:16px">⚠ ' + a + '</span>'; }).join('');
-    _alertBar.style.display = '';
-    if (_alertBtn) { _alertBtn.textContent = '⚠ ' + kritikSayi + ' Uyarı'; _alertBtn.style.display = ''; }
-  } else if (_alertBar) { _alertBar.style.display = 'none'; if (_alertBtn) _alertBtn.style.display = 'none'; }
-
+  // ── ADMIN DASHBOARD — KOMPAKT TASARIM ──────────────────────
   var h = '<div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">';
 
-  // ── 6 METRİK KART ──
-  h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;'+C+'">';
-  var metrics = [
-    { l:'Net Pozisyon', v:(netPoz>=0?'+':'-')+'₺'+Math.round(Math.abs(netPoz)).toLocaleString('tr-TR'), c:netPoz>=0?'#16A34A':'#DC2626', s:'bu ay' },
-    { l:'Gecikmiş Alacak', v:gecikOdm.length, c:gecikOdm.length?'#DC2626':'#16A34A', s:gecikOdm.length?'acil':'temiz' },
-    { l:'Bu Hafta Vadeli', v:'₺'+Math.round(haftaOdm).toLocaleString('tr-TR'), c:'#D97706', s:bugunOdm.length+' bugün' },
-    { l:'Gecikmiş Görev', v:gecikTask.length, c:gecikTask.length?'#DC2626':'#16A34A', s:gecikTask.length?'dikkat':'iyi' },
-    { l:'Aktif Kullanıcı', v:users.filter(function(u2){return u2.status==='active';}).length, c:'var(--t)', s:users.length+' toplam' },
-    { l:'Sistem Skoru', v:score+'/100', c:scoreColor, s:scoreLabel },
-  ];
-  metrics.forEach(function(m, i) {
-    h += '<div style="padding:12px 14px;border-right:'+(i<5?'0.5px solid var(--b)':'none')+';cursor:pointer" onclick="App.nav(\''+(i<3?'odemeler':i===3?'pusula':'admin')+'\')">'
-      + '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">' + m.l + '</div>'
-      + '<div style="font-size:18px;font-weight:700;color:' + m.c + '">' + m.v + '</div>'
-      + '<div style="font-size:9px;color:var(--t3);margin-top:2px">' + m.s + '</div></div>';
-  });
-  h += '</div>';
+  // Özlü söz — sağ üst
+  var ozlu = typeof window._getOzluSoz === 'function' ? window._getOzluSoz('dashboard') : '';
+  if (ozlu) h += '<div style="text-align:right;font-size:9px;font-style:italic;color:var(--t3);margin-bottom:-2px">\u201C'+ozlu+'\u201D</div>';
+
+  // ── B1: Sağlık Skoru (kompakt)
+  var scoreBg = score >= 71 ? '#F0FDF4' : score >= 31 ? '#FFFBEB' : '#FEF2F2';
+  var scoreBorder = score >= 71 ? '#BBF7D0' : score >= 31 ? '#FDE68A' : '#FECACA';
+  h += '<div style="'+C+';background:'+scoreBg+';border-color:'+scoreBorder+';padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<div style="width:32px;height:32px;border-radius:50%;background:'+scoreColor+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800">'+score+'</div>'
+    + '<div><div style="font-size:12px;font-weight:700;color:'+scoreColor+'">'+scoreLabel+'</div><div style="font-size:9px;color:var(--t3)">Sağlık skoru</div></div></div>'
+    + (kritikSayi ? '<div style="font-size:10px;color:'+scoreColor+';cursor:pointer" onclick="document.getElementById(\'db-b2\')?.scrollIntoView({behavior:\'smooth\'})">'+kritikSayi+' kritik →</div>' : '')
+    + '</div>';
 
   // ── B2: Kritik Uyarılar (kompakt, max 5)
   var allAlerts = [];
