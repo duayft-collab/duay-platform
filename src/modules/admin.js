@@ -628,9 +628,8 @@ var MOD_ICONS = {
   var style = document.createElement('style');
   style.id = 'perm-responsive-css';
   style.textContent = ''
-    + '.perm-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}'
-    + '@media(max-width:1200px){.perm-grid{grid-template-columns:repeat(3,1fr)}}'
-    + '@media(max-width:900px){.perm-grid{grid-template-columns:repeat(2,1fr)}}'
+    + '.perm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}'
+    + '@media(max-width:600px){.perm-grid{grid-template-columns:1fr}}'
     + '.perm-card{background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #F0F0F0;border-radius:14px;padding:16px;transition:all .15s;min-width:180px}'
     + '.perm-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}'
     + '.perm-lvl-btn{border:1.5px solid #E5E5EA;border-radius:20px;padding:0;height:28px;font-size:10px;cursor:pointer;background:transparent;color:#8E8E93;font-family:inherit;transition:all .15s;flex:1;text-align:center;line-height:28px}'
@@ -858,32 +857,69 @@ function savePermissions() {
   const u       = users.find(x => x.id === uid);
   if (!u) return;
 
+  // Yeni yetki değerlerini topla
+  var _newModules;
   const allChecked = g('perm-all')?.checked;
   if (allChecked) {
-    u.modules = null; // tümü
+    _newModules = null; // tümü
   } else {
-    u.modules = [...document.querySelectorAll('.perm-cb:checked')].map(cb => cb.value);
+    _newModules = [...document.querySelectorAll('.perm-cb:checked')].map(cb => cb.value);
   }
-
-  // Yetki seviyeleri kaydet
-  const permissions = {};
+  const _newPermissions = {};
   document.querySelectorAll('.perm-level').forEach(sel => {
     const mod = sel.dataset.mod;
     const val = sel.value;
-    if (mod && val) permissions[mod] = val;
+    if (mod && val) _newPermissions[mod] = val;
   });
-  // Yetki değişikliği log — eski vs yeni karşılaştır
+  var _newRule12h = !!g('perm-rule12h')?.checked;
+
+  // Değişiklik var mı kontrol et
   var oldPerms = JSON.stringify(u.permissions || {});
   var oldModules = JSON.stringify(u.modules);
-  u.permissions = permissions;
+  var newPerms = JSON.stringify(_newPermissions);
+  var newModulesStr = JSON.stringify(_newModules);
+  var hasChange = oldPerms !== newPerms || oldModules !== newModulesStr || u.rule12h !== _newRule12h;
 
-  // 12 saat kuralı
-  u.rule12h = !!g('perm-rule12h')?.checked;
+  // Onay modalı — değişiklik varsa sor
+  if (hasChange && !window._permConfirmed) {
+    var _changeDesc = [];
+    if (oldModules !== newModulesStr) _changeDesc.push('modül erişimi');
+    if (oldPerms !== newPerms) _changeDesc.push('yetki seviyeleri');
+    if (u.rule12h !== _newRule12h) _changeDesc.push('12 saat kuralı');
+
+    var _confirmEl = document.getElementById('perm-confirm-modal');
+    if (_confirmEl) _confirmEl.remove();
+    _confirmEl = document.createElement('div');
+    _confirmEl.id = 'perm-confirm-modal';
+    _confirmEl.className = 'mo';
+    _confirmEl.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+      + '<div style="padding:20px 24px;text-align:center">'
+        + '<div style="font-size:40px;margin-bottom:12px">🔐</div>'
+        + '<div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:8px">Yetki Değişikliği Onayı</div>'
+        + '<div style="font-size:13px;color:var(--t2);line-height:1.5">'
+          + '<b>' + escapeHtml(u.name) + '</b> kullanıcısının '
+          + '<b>' + _changeDesc.join(', ') + '</b> değiştiriliyor.'
+        + '</div>'
+      + '</div>'
+      + '<div style="padding:12px 24px 20px;display:flex;gap:8px;justify-content:center">'
+        + '<button class="btn btns" onclick="document.getElementById(\'perm-confirm-modal\')?.remove()" style="padding:10px 24px;border-radius:10px;font-size:13px">İptal</button>'
+        + '<button class="btn btnp" onclick="window._permConfirmed=true;savePermissions();document.getElementById(\'perm-confirm-modal\')?.remove()" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
+      + '</div>'
+    + '</div>';
+    document.body.appendChild(_confirmEl);
+    setTimeout(function() { _confirmEl.classList.add('open'); }, 10);
+    _confirmEl.addEventListener('click', function(e) { if (e.target === _confirmEl) _confirmEl.remove(); });
+    return;
+  }
+  window._permConfirmed = false;
+
+  // Yetkileri uygula
+  u.modules = _newModules;
+  u.permissions = _newPermissions;
+  u.rule12h = _newRule12h;
 
   // Değişiklik logunu kaydet
-  var newPerms = JSON.stringify(permissions);
-  var newModules = JSON.stringify(u.modules);
-  if (oldPerms !== newPerms || oldModules !== newModules) {
+  if (hasChange) {
     if (!Array.isArray(u.permissionLog)) u.permissionLog = [];
     u.permissionLog.push({
       ts: nowTs(),
@@ -892,7 +928,7 @@ function savePermissions() {
       oldModules: JSON.parse(oldModules),
       newModules: u.modules,
       oldPermissions: JSON.parse(oldPerms),
-      newPermissions: permissions,
+      newPermissions: _newPermissions,
     });
     // Admin'e bildirim (kendi değişikliği değilse)
     if (_getCU()?.id !== u.id) {
@@ -903,8 +939,8 @@ function savePermissions() {
   saveUsers(users);
   window.closeMo?.('mo-perm');
   renderAdmin();
-  logActivity('user', `Yetki seviyeleri güncellendi: "${u.name}" (12h kuralı: ${u.rule12h ? 'aktif' : 'kapalı'})`);
-  window.toast?.(`${u.name} yetkileri güncellendi ✓`, 'ok');
+  logActivity('user', 'Yetki seviyeleri güncellendi: "' + u.name + '" (12h kuralı: ' + (u.rule12h ? 'aktif' : 'kapalı') + ')');
+  window.toast?.(u.name + ' yetkileri güncellendi ✓', 'ok');
 }
 
 // ── Aktivite Log Render ───────────────────────────────────────────
@@ -1809,6 +1845,14 @@ function registerSession() {
   const cu = _getCU(); if (!cu) return;
   const sessions = _loadSessions();
   sessions[cu.id] = { uid: cu.id, name: cu.name, email: cu.email, ts: Date.now(), device: navigator.userAgent.slice(0,60) };
+  // Oturum limiti kontrolü — varsayılan 5
+  var maxSessions = cu.maxSessions || 5;
+  var allEntries = Object.values(sessions).sort(function(a, b) { return b.ts - a.ts; });
+  if (maxSessions > 0 && allEntries.length > maxSessions) {
+    var toRemove = allEntries.slice(maxSessions);
+    toRemove.forEach(function(s) { delete sessions[s.uid]; });
+    console.info('[Admin] Oturum limiti aşıldı — ' + toRemove.length + ' eski oturum sonlandırıldı');
+  }
   _storeSessions(sessions);
 }
 
@@ -1840,7 +1884,8 @@ function openSessionManager() {
         </div>`;
       }).join('') : '<div style="padding:20px;text-align:center;color:var(--t3)">Aktif oturum yok</div>'}
     </div>
-    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
+    <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:space-between;align-items:center">
+      <button class="btn btns" onclick="window._terminateAllSessions?.()" style="font-size:11px;color:#dc2626;border-color:#dc2626">Tümünü Sonlandır</button>
       <button class="btn" onclick="document.getElementById('mo-sessions').remove()">Kapat</button>
     </div>
   </div>`;
@@ -1862,6 +1907,19 @@ function _terminateSession(uid) {
   openSessionManager();
 }
 window._terminateSession = _terminateSession;
+
+window._terminateAllSessions = function() {
+  var cu = _getCU();
+  var sessions = _loadSessions();
+  var count = Object.keys(sessions).length;
+  // Kendi oturumunu koru
+  var kept = {};
+  if (cu && sessions[cu.id]) kept[cu.id] = sessions[cu.id];
+  _storeSessions(kept);
+  window.toast?.((count - Object.keys(kept).length) + ' oturum sonlandırıldı', 'ok');
+  document.getElementById('mo-sessions')?.remove();
+  openSessionManager();
+};
 
 // ════════════════════════════════════════════════════════════════
 // ÖZELLİK 5: BİLDİRİM TERCİHLERİ
