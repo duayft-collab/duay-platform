@@ -743,15 +743,21 @@ function _applyRoleUI(user) {
     }
   });
 
-  // 2. Bölüm başlıklarını — altında görünür buton yoksa gizle
+  // 2. Bölüm başlıklarını — altında yetkili buton yoksa gizle
+  // Collapsed section'ları gizleme — sadece hiç yetkili buton olmayanları gizle
   document.querySelectorAll('.nsec-header, .nsec').forEach(header => {
+    var hId = header.id || '';
+    var isCollapsed = _nsecState2[hId] === true;
+    // Collapsed section: başlık görünür kalmalı (tekrar açılabilmesi için)
+    if (isCollapsed) { header.style.display = ''; return; }
+    // Açık section: altında yetkili buton var mı kontrol et
     let sib = header.nextElementSibling;
-    let visible = false;
+    let hasAllowed = false;
     while (sib && !sib.classList.contains('nsec-header') && !sib.classList.contains('nsec')) {
-      if (sib.classList.contains('nb') && sib.style.display !== 'none') { visible = true; break; }
+      if (sib.classList.contains('nb') && sib.style.display !== 'none') { hasAllowed = true; break; }
       sib = sib.nextElementSibling;
     }
-    header.style.display = visible ? '' : 'none';
+    header.style.display = hasAllowed ? '' : 'none';
   });
 
   // 3. App.nav wrap — sadece bir kez wrap et
