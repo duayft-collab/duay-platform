@@ -211,13 +211,20 @@ function renderFocusPanel() {
     ? users.flatMap(u => { try { return JSON.parse(localStorage.getItem('ak_pus_' + type + '_focus_' + u.id) || '[]'); } catch(e) { return []; } }).filter((v,i,a)=>a.indexOf(v)===i)
     : _loadFocus(type);
 
-  function _focusCard(taskId, type) {
+  function _focusCard(taskId, type, isLast) {
     const t = tasks.find(x => x.id === taskId);
     if (!t) return '';
     const isLate = !t.done && t.due && t.due < today;
-    return '<div style="padding:6px 0;cursor:pointer;min-width:0;overflow:hidden" onclick="openPusDetail(' + taskId + ')">'
-      + '<div style="font-size:12px;font-weight:600;color:' + (t.done ? 'var(--t3)' : 'var(--t)') + ';text-decoration:' + (t.done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>'
-      + (t.due ? '<div style="font-size:10px;color:' + (isLate ? 'var(--rdt)' : 'var(--t3)') + ';margin-top:2px">' + (isLate ? '⚠ ' : '') + t.due + '</div>' : '')
+    var dlDays = t.due ? Math.ceil((new Date(t.due) - new Date(today)) / 86400000) : null;
+    var dotColor = isLate ? '#dc2626' : (dlDays !== null && dlDays <= 3) ? '#f59e0b' : '#16a34a';
+    return '<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;cursor:pointer;min-width:0'
+      + (isLast ? '' : ';border-bottom:0.5px solid var(--b)')
+      + '" onclick="openPusDetail(' + taskId + ')">'
+      + '<div style="width:5px;height:5px;border-radius:50%;background:' + dotColor + ';flex-shrink:0;margin-top:5px"></div>'
+      + '<div style="flex:1;min-width:0;overflow:hidden">'
+        + '<div style="font-size:11px;font-weight:500;color:' + (t.done ? 'var(--t3)' : 'var(--t)') + ';text-decoration:' + (t.done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>'
+        + (t.due ? '<div style="font-size:10px;color:' + (isLate ? '#dc2626' : 'var(--t3)') + '">' + t.due.slice(5) + '</div>' : '')
+      + '</div>'
     + '</div>';
   }
 
@@ -236,16 +243,17 @@ function renderFocusPanel() {
   const _dIds    = _getIds('day');
   const weekTotal = _calcTotal(_wIds);
   const dayTotal  = _calcTotal(_dIds);
-  const weekCards = _wIds.map(id => _focusCard(id, 'week')).join('');
-  const dayCards  = _dIds.map(id => _focusCard(id, 'day')).join('');
+  var _buildCards = function(ids, type) { return ids.slice(0,3).map(function(id, i, a) { return _focusCard(id, type, i === a.length - 1); }).join(''); };
+  const weekCards = _buildCards(_wIds, 'week');
+  const dayCards  = _buildCards(_dIds, 'day');
 
   // Yeni focus listeleri
   const _mIds = _getIds('month');
   const _qIds = _getIds('quarter');
   const _yIds = _getIds('year');
-  const monthCards   = _mIds.map(id => _focusCard(id, 'month')).join('');
-  const quarterCards = _qIds.map(id => _focusCard(id, 'quarter')).join('');
-  const yearCards    = _yIds.map(id => _focusCard(id, 'year')).join('');
+  const monthCards   = _buildCards(_mIds, 'month');
+  const quarterCards = _buildCards(_qIds, 'quarter');
+  const yearCards    = _buildCards(_yIds, 'year');
   const monthTotal   = _calcTotal(_mIds);
   const quarterTotal = _calcTotal(_qIds);
   const yearTotal    = _calcTotal(_yIds);
@@ -258,19 +266,18 @@ function renderFocusPanel() {
     { type:'year',    label:"Yılın En Önemlileri",      icon:'🏆', color:'#DC2626', bg:'rgba(220,38,38,.1)',  ids:_yIds,  cards:yearCards,    total:yearTotal,    hint:'listeden 🏆 basın' },
   ];
 
-  var _doneCount = function(ids) { return ids.filter(function(id) { var t2 = tasks.find(function(x) { return x.id === id; }); return t2 && t2.done; }).length; };
-
-  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;gap:8px;width:100%">'
-    + FOCUS_WIDGETS.map(w =>
-      '<div style="display:flex;flex-direction:column;background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden">'
-        + '<div style="display:flex;flex-direction:row;align-items:center;gap:6px;margin-bottom:6px;min-width:0">'
-          + '<span style="font-size:14px;flex-shrink:0">' + w.icon + '</span>'
-          + '<span style="font-size:11px;font-weight:700;color:var(--t);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
-          + '<span style="font-size:10px;color:var(--t3);font-family:monospace;flex-shrink:0">' + _doneCount(w.ids) + '/' + w.ids.length + '</span>'
+  cont.innerHTML = '<div class="pus-focus-grid">'
+    + FOCUS_WIDGETS.map(function(w) {
+      var cnt = w.ids.slice(0,3).length;
+      return '<div class="pus-focus-card">'
+        + '<div style="display:flex;align-items:center;gap:5px;padding-bottom:6px;border-bottom:0.5px solid var(--b);margin-bottom:8px;min-width:0">'
+          + '<span style="font-size:13px;flex-shrink:0">' + w.icon + '</span>'
+          + '<span style="font-size:10px;font-weight:500;color:var(--t);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + w.label + '</span>'
+          + '<span style="font-size:10px;color:var(--t3);background:var(--s2);padding:1px 6px;border-radius:8px;flex-shrink:0">' + cnt + '/3</span>'
         + '</div>'
-        + (w.cards || '<div style="font-size:11px;color:var(--t3);padding:8px 0;text-align:center">' + w.hint + '</div>')
-      + '</div>'
-    ).join('')
+        + (w.cards || '<div style="font-size:10px;color:var(--t3);padding:6px 0;text-align:center">' + w.hint + '</div>')
+      + '</div>';
+    }).join('')
   + '</div>';
 }
 let PUS_QUICK_FILTER = 'all';
