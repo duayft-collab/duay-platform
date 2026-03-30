@@ -944,9 +944,13 @@ function injectAllModals() {
       <input type="hidden" id="perm-uid">
       <div id="perm-modules-cont"></div>
     </div>
-    <div style="padding:12px 24px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0">
-      <button class="btn" onclick="closeMo('mo-perm')">İptal</button>
-      <button class="btn btnp" onclick="Admin.savePermissions?.()">Kaydet</button>
+    <div style="padding:12px 24px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <span id="perm-footer-info" style="font-size:10px;color:var(--t3)">changeLog tutulur</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btns" onclick="window._permRevertAll?.()" style="font-size:12px;padding:8px 14px;border-radius:8px">Geri Al</button>
+        <button class="btn btns" onclick="closeMo('mo-perm')" style="font-size:12px;padding:8px 14px;border-radius:8px">İptal</button>
+        <button class="btn btnp" onclick="Admin.savePermissions?.()" style="font-size:12px;padding:8px 18px;border-radius:8px;background:#0f3460">Onayla & Kaydet</button>
+      </div>
     </div>
   </div>
 </div>

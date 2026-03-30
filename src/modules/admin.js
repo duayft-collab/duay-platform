@@ -119,7 +119,7 @@ function _sidebarItem(u) {
   const online = daysSince !== null && daysSince < 1;
 
   const el = document.createElement('div');
-  el.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:3px solid ${isSelected?'var(--ac)':'transparent'};background:${isSelected?'var(--al)':'transparent'};transition:all .1s`;
+  el.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-left:2px solid ${isSelected?'#0f3460':'transparent'};background:${isSelected?'rgba(15,52,96,.06)':'transparent'};transition:all .1s`;
   el.onmouseenter = () => { if(!isSelected) el.style.background='var(--s2)'; };
   el.onmouseleave = () => { if(!isSelected) el.style.background=''; };
   el.onclick = () => { _selectedUserId = u.id; renderAdmin(); };
@@ -610,10 +610,10 @@ var _PERM_CATEGORIES = {
 };
 
 var _PERM_LEVELS = [
-  { value: 'none',   label: '⛔', full: '⛔ Yok',     desc: 'Bu modülü göremez',             color: '#6B7280', bg: 'rgba(107,114,128,.08)' },
-  { value: 'view',   label: '👁', full: '👁 Görür',    desc: 'Sadece okuyabilir',             color: '#3B82F6', bg: 'rgba(59,130,246,.08)' },
-  { value: 'edit',   label: '✏️', full: '✏️ Yönetir',  desc: 'Ekleyip güncelleyebilir',       color: '#D97706', bg: 'rgba(245,158,11,.08)' },
-  { value: 'manage', label: '👑', full: '👑 Tam',      desc: 'Tüm işlemler, silme dahil',     color: '#16A34A', bg: 'rgba(34,197,94,.08)' },
+  { value: 'none',   label: '⛔', full: '⛔ Yok',     desc: 'Bu modülü göremez',             color: '#A32D2D', bg: '#FCEBEB' },
+  { value: 'view',   label: '👁', full: '👁 Görür',    desc: 'Sadece okuyabilir',             color: '#0C447C', bg: '#E6F1FB' },
+  { value: 'edit',   label: '✏️', full: '✏️ Yönetir',  desc: 'Ekleyip güncelleyebilir',       color: '#633806', bg: '#FAEEDA' },
+  { value: 'manage', label: '👑', full: '👑 Tam',      desc: 'Tüm işlemler, silme dahil',     color: '#27500A', bg: '#EAF3DE' },
 ];
 
 var _PERM_PRESETS = {
@@ -644,14 +644,14 @@ var MOD_ICONS = {
     + '.perm-grid{display:flex;flex-direction:column;gap:0}'
     + '.perm-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:0.5px solid var(--b);transition:background .1s}'
     + '.perm-row:hover{background:var(--s2)}'
-    + '.perm-row.changed{outline:2px solid #D97706;outline-offset:-2px;border-radius:6px}'
+    + '.perm-row.changed{outline:2px solid #EF9F27;outline-offset:-2px;border-radius:6px}'
     + '.perm-lvl-btn{border:1.5px solid var(--b);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;background:var(--sf);color:var(--t3);font-family:inherit;transition:all .12s;white-space:nowrap}'
     + '.perm-lvl-btn:hover{border-color:var(--ac);color:var(--ac)}'
     + '.perm-lvl-btn.active{font-weight:600;color:#fff;border-color:transparent}'
-    + '.perm-lvl-btn.active[data-level="none"]{background:#dc2626}'
-    + '.perm-lvl-btn.active[data-level="view"]{background:#3B82F6}'
-    + '.perm-lvl-btn.active[data-level="edit"]{background:#D97706}'
-    + '.perm-lvl-btn.active[data-level="manage"]{background:#16A34A}'
+    + '.perm-lvl-btn.active[data-level="none"]{background:#FCEBEB;color:#A32D2D;border-color:#A32D2D33}'
+    + '.perm-lvl-btn.active[data-level="view"]{background:#E6F1FB;color:#0C447C;border-color:#0C447C33}'
+    + '.perm-lvl-btn.active[data-level="edit"]{background:#FAEEDA;color:#633806;border-color:#63380633}'
+    + '.perm-lvl-btn.active[data-level="manage"]{background:#EAF3DE;color:#27500A;border-color:#27500A33}'
     + '.perm-preset-chip{padding:4px 12px;border-radius:99px;border:1px solid var(--b);font-size:11px;cursor:pointer;background:var(--sf);color:var(--t2);font-family:inherit;transition:all .12s;white-space:nowrap}'
     + '.perm-preset-chip:hover{border-color:var(--ac);color:var(--ac)}'
     + '.perm-preset-chip.active{background:var(--ac);color:#fff;border-color:var(--ac)}'
@@ -659,7 +659,7 @@ var MOD_ICONS = {
     + '.perm-cat-bulk{display:flex;gap:3px}'
     + '.perm-cat-bulk button{font-size:9px;padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t3);cursor:pointer;font-family:inherit}'
     + '.perm-cat-bulk button:hover{border-color:var(--ac);color:var(--ac)}'
-    + '.perm-change-card{padding:8px 10px;border-left:3px solid #D97706;background:rgba(217,119,6,.04);border-radius:0 6px 6px 0;margin-bottom:6px;font-size:11px}';
+    + '.perm-change-card{padding:8px 10px;border-left:2px solid #EF9F27;background:rgba(239,159,39,.04);border-radius:0 6px 6px 0;margin-bottom:6px;font-size:11px}';
   document.head.appendChild(style);
 })();
 
@@ -818,7 +818,7 @@ function openPermModal(id) {
     + '</div>'
 
     // Ana layout: sol modüller + sağ sidebar
-    + '<div style="display:grid;grid-template-columns:1fr 240px;gap:16px;min-height:300px">'
+    + '<div style="display:grid;grid-template-columns:1fr 220px;gap:16px;min-height:300px">'
 
     // Sol: modül listesi
     + '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'
