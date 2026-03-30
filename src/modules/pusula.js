@@ -518,7 +518,7 @@ function checkOverdueTasks() {
   window.toast?.(msg, 'warn');
   // Bildirim paneline ekle
   overdue.slice(0, 3).forEach(t => {
-    window.addNotif?.('⚠️', `"${t.title}" görevi gecikmiş (${t.due})`, 'warn', 'pusula');
+    window.addNotif?.('⚠️', `"${t.title}" görevi gecikmiş (${t.due})`, 'warn', 'pusula', null, t.id);
   });
 }
 window.checkOverdueTasks = checkOverdueTasks;
@@ -1383,7 +1383,7 @@ function pdpSendChat() {
       var _targets = new Set([task.uid].concat(task.participants || []).concat(task.viewers || []));
       _targets.delete(cu2.id);
       if (_targets.size > 0) {
-        window.addNotif?.('💬', '"' + escapeHtml(task.title) + '" görevinde yeni mesaj — ' + escapeHtml(cu2.name || ''), 'info', 'pusula');
+        window.addNotif?.('💬', '"' + escapeHtml(task.title) + '" görevinde yeni mesaj — ' + escapeHtml(cu2.name || ''), 'info', 'pusula', null, task.id);
       }
     }
   }
@@ -1784,7 +1784,7 @@ function saveTask() {
         (oldTask.participants || []).forEach(p => participants.push(p));
         (oldTask.viewers || []).forEach(v => viewers.push(v));
         saveTasks(d);
-        window.addNotif?.('👥', `"${oldTask.title}" görevine katılımcı ekleme onay bekliyor`, 'warn', 'pusula');
+        window.addNotif?.('👥', `"${oldTask.title}" görevine katılımcı ekleme onay bekliyor`, 'warn', 'pusula', null, oldTask.id);
         window.toast?.('Katılımcı ekleme talebi yöneticiye gönderildi', 'ok');
       }
     }
@@ -1926,7 +1926,7 @@ function toggleTask(id, done) {
   if (t.uid && _cuToggle && t.uid !== _cuToggle.id) {
     window.addNotif?.( done ? '✅' : '🔄',
       `"${t.title}" görevi ${done ? 'tamamlandı' : 'yeniden açıldı'} — ${_cuToggle.name || ''}`,
-      'info', 'pusula');
+      'info', 'pusula', null, t.id);
   }
 }
 
@@ -2178,7 +2178,7 @@ function _saveSubTask(parentId) {
 
     // Atanan kişi farklıysa bildirim gönder (delege)
     if (sub.uid && sub.uid !== _getCU()?.id) {
-      window.addNotif?.('📋', '"' + parent.title + '" alt görev atandı: ' + title, 'info', 'pusula', sub.uid);
+      window.addNotif?.('📋', '"' + parent.title + '" alt görev atandı: ' + title, 'info', 'pusula', sub.uid, parent.id);
     }
 
     parent.subTasks.push(sub);
@@ -2515,7 +2515,7 @@ function sendTaskChatMsg() {
       const _targets = new Set([task.uid, ...(task.participants || []), ...(task.viewers || [])]);
       _targets.delete(_cuChat.id);
       _targets.forEach(function(targetUid) {
-        window.addNotif?.('💬', '"' + escapeHtml(task.title) + '" görevinde yeni mesaj — ' + escapeHtml(_cuChat.name || ''), 'info', 'pusula', targetUid);
+        window.addNotif?.('💬', '"' + escapeHtml(task.title) + '" görevinde yeni mesaj — ' + escapeHtml(_cuChat.name || ''), 'info', 'pusula', targetUid, task.id);
       });
     }
   };
@@ -5927,7 +5927,7 @@ console.info('[Pusula v9] 5 yeni özellik + Personel Analizi aktif ✓');
             `"${t.title}" — 24 saat içinde bitmesi gerekiyor`,
           );
           _markSent(key);
-          window.addNotif?.('⏰', `"${t.title}" — 24 saat kaldı`, 'warn', 'pusula');
+          window.addNotif?.('⏰', `"${t.title}" — 24 saat kaldı`, 'warn', 'pusula', null, t.id);
         }
       }
 
@@ -5940,7 +5940,7 @@ console.info('[Pusula v9] 5 yeni özellik + Personel Analizi aktif ✓');
             `"${t.title}" — 1 saat içinde bitirilmeli!`,
           );
           _markSent(key);
-          window.addNotif?.('🚨', `"${t.title}" — 1 saat kaldı!`, 'err', 'pusula');
+          window.addNotif?.('🚨', `"${t.title}" — 1 saat kaldı!`, 'err', 'pusula', null, t.id);
         }
       }
 
@@ -5953,7 +5953,7 @@ console.info('[Pusula v9] 5 yeni özellik + Personel Analizi aktif ✓');
             `"${t.title}" tamamlanmadı!`,
           );
           _markSent(key);
-          window.addNotif?.('❗', `"${t.title}" süresi doldu!`, 'err', 'pusula');
+          window.addNotif?.('❗', `"${t.title}" süresi doldu!`, 'err', 'pusula', null, t.id);
         }
       }
     });

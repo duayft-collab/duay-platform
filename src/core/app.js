@@ -1489,7 +1489,7 @@ function _renderNotifPanel() {
     return;
   }
   list.innerHTML = d.slice(0, 30).map(n => `
-    <div class="notif-item${n.read ? '' : ' unread'}" data-id="${n.id}" data-link="${n.link || ''}">
+    <div class="notif-item${n.read ? '' : ' unread'}" data-id="${n.id}" data-link="${n.link || ''}" data-task-id="${n.taskId || ''}">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <span style="font-size:16px;flex-shrink:0">${n.icon || '🔔'}</span>
         <div style="flex:1">
@@ -1506,12 +1506,19 @@ function _renderNotifPanel() {
     if (!item) return;
     const id   = parseInt(item.dataset.id);
     const link = item.dataset.link || '';
+    const taskId = parseInt(item.dataset.taskId) || 0;
     const data = loadNotifs();
     const n    = data.find(x => x.id === id);
     if (n) n.read = true;
     storeNotifs(data);
     updateNotifBadge();
     _renderNotifPanel();
+    _closeNotifPanel();
+    // GOV-002: taskId varsa direkt görev aç
+    if (taskId && typeof window._goToTask === 'function') {
+      window._goToTask(taskId);
+      return;
+    }
     if (link) {
       // Derin link desteği: "cari:123" → cari panelini aç + ilgili cariyi seç
       if (link.indexOf(':') !== -1) {
@@ -1525,7 +1532,6 @@ function _renderNotifPanel() {
       } else {
         goTo(link);
       }
-      _closeNotifPanel();
     }
   };
 }

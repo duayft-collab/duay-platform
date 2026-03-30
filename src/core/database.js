@@ -813,10 +813,12 @@ function logActivity(type, detail) {
  * @param {string} msg    Bildirim metni
  * @param {string} [type='info'] 'info' | 'warn' | 'ok' | 'err'
  * @param {string} [link='']    Tıklandığında gidilecek panel
+ * @param {number|string|null} [targetUid=null] Hedef kullanıcı ID
+ * @param {number|null} [taskId=null] İlişkili görev ID — tıklanınca direkt görev açılır
  */
-function addNotif(icon, msg, type = 'info', link = '', targetUid = null) {
+function addNotif(icon, msg, type = 'info', link = '', targetUid = null, taskId = null) {
   const d = loadNotifs();
-  d.unshift({ id: generateNumericId(), icon, msg, type, link, ts: nowTs(), read: false, targetUid: targetUid || null });
+  d.unshift({ id: generateNumericId(), icon, msg, type, link, ts: nowTs(), read: false, targetUid: targetUid || null, taskId: taskId || null });
   storeNotifs(d);
   if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
 }
