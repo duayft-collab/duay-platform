@@ -858,7 +858,7 @@ function renderOdemeler() {
   // Soft-deleted kayıtları gizle (admin dahil — ayrı çöp kutusu panelinden görülür)
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
   // Admin/manager/muhasebe departmanı: tüm kayıtlar; user: sadece kendi kayıtları
-  var _isFinanceUser = _isManagerO() || (_cuOdm?.dept || '').toLowerCase().includes('muhasebe');
+  var _isFinanceUser = _isAdminO() || _isManagerO() || (_cuOdm?.dept || '').toLowerCase().includes('muhasebe');
   var _myId = _cuOdm?.id;
   var _myIdStr = _myId ? String(_myId) : '';
   const all = (_isFinanceUser || !_myIdStr) ? _activeRaw : _activeRaw.filter(function(o) {
@@ -2879,6 +2879,10 @@ function saveTahsilat() {
   if (!_tahCariVal) { _missingFields.push('tah-f-cari');   _missingLabels.push('Cari Firma'); }
   if (!name)        { _missingFields.push('tah-f-name');   _missingLabels.push('Tahsilat Adı'); }
   if (!_tahAmt || _tahAmt <= 0) { _missingFields.push('tah-f-amount'); _missingLabels.push('Tutar (0 veya negatif olamaz)'); }
+  var _tahType = document.getElementById('tah-f-type')?.value || '';
+  if (!_tahType) { _missingFields.push('tah-f-type'); _missingLabels.push('Tahsilat Türü'); }
+  var _tahDue2 = document.getElementById('tah-f-due')?.value || '';
+  if (!_tahDue2) { _missingFields.push('tah-f-due'); _missingLabels.push('Vade Tarihi'); }
   if (_missingFields.length) {
     _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
@@ -3697,8 +3701,16 @@ window._submitApprovalFlow = function(odmId) {
 // Ara onay + final onay
 function processOdmApproval(odmId, action) {
   if (!_isAdminO()) { window.toast?.('Yetki gerekli', 'err'); return; }
-  const d = window.loadOdm ? loadOdm() : [];
-  const o = d.find(x => x.id === odmId); if (!o) return;
+  // Hem ödeme hem tahsilat'ta ara
+  var d = window.loadOdm ? loadOdm() : [];
+  var o = d.find(x => x.id === odmId);
+  var _isTahApproval = false;
+  if (!o) {
+    d = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+    o = d.find(x => x.id === odmId);
+    _isTahApproval = true;
+  }
+  if (!o) return;
   const cu = _CUo();
 
   if (!o.approvalLog) o.approvalLog = [];
@@ -3749,7 +3761,7 @@ function processOdmApproval(odmId, action) {
       o.rejectedBy = cu?.id;
       o.rejectedAt = _nowTso();
       o.approvalLog.push({ ts: _nowTso(), action: 'reddedildi', actorId: cu?.id, actorName: cu?.name||'', note: reason });
-      window.storeOdm ? storeOdm(d) : null;
+      if (_isTahApproval) storeTahsilat(d); else if (window.storeOdm) storeOdm(d);
       // User'a bildirim
       if (o.createdBy) window.addNotif?.('❌', 'Kaydınız reddedildi: ' + reason, 'err', 'odemeler', o.createdBy);
       document.getElementById('mo-reject-reason')?.remove();
@@ -3759,7 +3771,7 @@ function processOdmApproval(odmId, action) {
     return; // modal açıldı, fonksiyon burada durur
   }
 
-  window.storeOdm ? storeOdm(d) : null;
+  if (_isTahApproval) storeTahsilat(d); else if (window.storeOdm) storeOdm(d);
   renderOdemeler();
 }
 window.openApprovalFlow = openApprovalFlow;
