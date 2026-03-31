@@ -1579,6 +1579,13 @@ function _odmHighlightMissing(fieldIds, bannerMsg) {
 
 function saveOdm() {
   var cu = window.Auth?.getCU?.();
+  // Safari: auth geç hazırlanırsa 500ms bekle tekrar dene
+  if (!cu?.id && !window._odmSaveRetried) {
+    window._odmSaveRetried = true;
+    setTimeout(function() { window._odmSaveRetried = false; saveOdm(); }, 500);
+    return;
+  }
+  window._odmSaveRetried = false;
   var isAdmin = cu?.role === 'admin';
   var name = (document.getElementById('odm-f-name')?.value || '').trim();
   var _fAmt = parseFloat(document.getElementById('odm-f-amount')?.value || '0');
@@ -1626,18 +1633,19 @@ function saveOdm() {
     }
   }
 
-  // Pending cari kontrolü — onaylanmamış cariyle ödeme oluşturulamaz
+  // Pending cari kontrolü — admin/manager atlar
   var _selCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _fCari; });
-  if (_selCari && _selCari.status === 'pending_approval') {
-    _odmHighlightMissing(['odm-f-cari'], 'Bu cari henüz onaylanmadı');
-    window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
+  if (!isAdmin && !_isManagerO()) {
+    if (_selCari && _selCari.status === 'pending_approval') {
+      _odmHighlightMissing(['odm-f-cari'], 'Bu cari henüz onaylanmadı');
+      window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
+      return;
+    }
+    if (_selCari && (_selCari.cariType === 'potansiyel' || (!_selCari.cariType && _selCari.status !== 'active'))) {
+      _odmHighlightMissing(['odm-f-cari'], 'Potansiyel cari ile ödeme oluşturulamaz');
+      window.toast?.('Önce aktif cariye yükseltin — Cari panelinden evrak yükleyip onay isteyin', 'err');
     return;
-  }
-  // Potansiyel cari ile ödeme oluşturulamaz — önce aktif cariye yükselt
-  if (_selCari && (_selCari.cariType === 'potansiyel' || (!_selCari.cariType && _selCari.status !== 'active'))) {
-    _odmHighlightMissing(['odm-f-cari'], 'Potansiyel cari ile ödeme oluşturulamaz');
-    window.toast?.('Önce aktif cariye yükseltin — Cari panelinden evrak yükleyip onay isteyin', 'err');
-    return;
+    }
   }
 
   // Cari limit kontrolü — limit aşıldıysa blokla (specialApproval hariç)
