@@ -160,6 +160,37 @@ function _doLogin() {
 <div id="app">
 
   <!-- ── Üst Navigasyon ─────────────────────────────────────── -->
+  <!-- ══ TOP NAV v2 — 3 katman ══ -->
+  <div class="tn2-bar1">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:6px;background:#0C447C;border:0.5px solid #185FA5;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#B5D4F4">D</div>
+      <div><div style="font-size:13px;font-weight:600;color:#E6F1FB">Duay Global</div><div style="font-size:10px;color:#85B7EB">Uluslararasi Ticaret</div></div>
+    </div>
+    <div style="position:relative;max-width:280px;flex:1;margin:0 24px">
+      <input type="text" placeholder="Ara — cari, urun, kayit..." onclick="window.App?.openGSearch?.()" readonly style="width:100%;background:#0C447C;border:0.5px solid #185FA5;border-radius:20px;padding:6px 14px 6px 32px;color:#E6F1FB;font-size:11px;font-family:inherit;outline:none;cursor:pointer">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#85B7EB;font-size:12px">⌕</span>
+      <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:9px;color:#85B7EB;background:#185FA5;padding:1px 5px;border-radius:3px">⌘K</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div onclick="window.App?.toggleNotifPanel?.()" style="width:30px;height:30px;background:#0C447C;border:0.5px solid #185FA5;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:14px;color:#85B7EB">🔔<div id="tn2-notif-dot" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#E24B4A;border:1.5px solid #042C53"></div></div>
+      <div onclick="window.App?.toggleProfilePanel?.()" style="display:flex;align-items:center;gap:6px;background:#0C447C;border:0.5px solid #185FA5;border-radius:20px;padding:3px 10px 3px 3px;cursor:pointer">
+        <div id="tn2-av" style="width:24px;height:24px;border-radius:50%;background:#185FA5;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#E6F1FB">?</div>
+        <div><div id="tn2-name" style="font-size:11px;color:#E6F1FB;font-weight:500">—</div><div id="tn2-role" style="font-size:9px;color:#85B7EB">—</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="tn2-bar2" id="tn2-groups">
+    <div class="tn2-grp on" data-grp="dashboard" onclick="window._tn2SelectGrp('dashboard',this)">Dashboard</div>
+    <div class="tn2-sep"></div>
+    <div class="tn2-grp" data-grp="finans" onclick="window._tn2SelectGrp('finans',this)">Finans ▾</div>
+    <div class="tn2-grp" data-grp="operasyon" onclick="window._tn2SelectGrp('operasyon',this)">Operasyon ▾</div>
+    <div class="tn2-grp" data-grp="katalog" onclick="window._tn2SelectGrp('katalog',this)">Katalog ▾</div>
+    <div class="tn2-grp" data-grp="ekip" onclick="window._tn2SelectGrp('ekip',this)">Ekip ▾</div>
+    <div class="tn2-sep"></div>
+    <div class="tn2-grp" data-grp="sistem" onclick="window._tn2SelectGrp('sistem',this)">Sistem ▾</div>
+  </div>
+  <div class="tn2-bar3" id="tn2-modules"></div>
+
   <header class="topnav" role="banner">
     <div style="display:flex;align-items:center;gap:12px">
       <button class="ham-btn" onclick="App.toggleSidebar()" aria-label="Menü">

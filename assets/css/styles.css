@@ -123,12 +123,19 @@ body {
 #app.on { display: flex; }
 
 /* â”€â”€ TOP NAV â”€â”€ */
-.topnav {
-  background: var(--sf); border-bottom: 1px solid var(--b);
-  padding: 0 20px; height: 52px; display: flex;
-  align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 200; box-shadow: var(--sh);
-}
+.topnav { display: none; }
+/* ── TOP NAV v2 ── */
+.tn2-bar1{background:#042C53;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:300}
+.tn2-bar2{background:#0C447C;height:38px;display:flex;align-items:center;padding:0 16px;border-bottom:0.5px solid #185FA5;position:sticky;top:46px;z-index:299;gap:0}
+.tn2-bar3{background:var(--s2);height:34px;display:flex;align-items:center;padding:0 16px;border-bottom:0.5px solid var(--b);position:sticky;top:84px;z-index:298;gap:0}
+.tn2-grp{padding:8px 14px;font-size:12px;color:#85B7EB;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .12s;display:flex;align-items:center;gap:4px}
+.tn2-grp:hover{background:#185FA5;color:#E6F1FB;border-radius:4px 4px 0 0}
+.tn2-grp.on{background:#185FA5;color:#E6F1FB;font-weight:500;border-bottom-color:#B5D4F4;border-radius:2px 2px 0 0}
+.tn2-sep{width:0.5px;height:20px;background:#185FA5;margin:0 4px;flex-shrink:0}
+.tn2-mod{padding:7px 14px;font-size:11px;color:var(--t2);cursor:pointer;white-space:nowrap;border-radius:4px;transition:all .1s}
+.tn2-mod:hover{background:#fff;color:#185FA5}
+.tn2-mod.on{background:#fff;color:#185FA5;font-weight:500}
+.tn2-msep{width:0.5px;height:16px;background:var(--b);margin:0 4px;flex-shrink:0}
 .brand { display: flex; align-items: center; gap: 10px; cursor: default; }
 .brand-icon { width: 30px; height: 30px; flex-shrink: 0; }
 .brand-name { font-size: 15px; font-weight: 600; letter-spacing: -.3px; }
@@ -161,9 +168,7 @@ body {
 
 /* â”€â”€ PIN BAR â”€â”€ */
 #pinbar {
-  background: var(--sf); border-bottom: 1px solid var(--b);
-  padding: 0 20px; height: 36px; display: flex; align-items: center;
-  gap: 4px; overflow-x: auto; position: sticky; top: 52px; z-index: 99;
+  display: none; height: 0; overflow: hidden;
 }
 #pinbar::-webkit-scrollbar { height: 3px; }
 #pinbar::-webkit-scrollbar-thumb { background: var(--bm); border-radius: 99px; }
@@ -200,10 +205,9 @@ body {
 /* â”€â”€ LAYOUT â”€â”€ */
 .layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .sidebar {
-  width: 218px; background: var(--sf); border-right: 1px solid var(--b);
-  display: flex; flex-direction: column; padding: 8px 6px; flex-shrink: 0;
-  position: sticky; top: 88px; height: calc(100vh - 88px); overflow-y: auto;
-  transition: width .2s ease, padding .2s ease;
+  width: 0; background: var(--sf); border-right: none;
+  display: none; flex-direction: column; padding: 0; flex-shrink: 0;
+  overflow: hidden;
 }
 /* Collapse modu */
 .sidebar.collapsed { width: 48px; padding: 8px 4px; overflow: hidden; }
@@ -531,8 +535,8 @@ td { vertical-align: middle; }
 
 /* â”€â”€ VERSION STRIP â”€â”€ */
 .vstrip {
-  background: var(--s2); border-top: 1px solid var(--b); padding: 4px 20px;
-  font-size: 10px; color: var(--t3); font-family: 'DM Mono', monospace;
+  background: #042C53; border-top: 1px solid #185FA5; padding: 4px 20px;
+  font-size: 10px; color: #85B7EB; font-family: 'DM Mono', monospace;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;
 }
 

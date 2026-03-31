@@ -758,6 +758,8 @@ function _initApp(user) {
   renderPinbar();
   updateAllBadges();
   _initNsecState();
+  // Top Nav v2 restore
+  setTimeout(function() { window._tn2Restore?.(); }, 200);
   _resetIdleTimer();
 
   // Modüllerin ilk yüklemesi
@@ -3382,6 +3384,92 @@ window._setSidebarTheme = function(theme) {
   }, 100);
 })();
 window.toggleNsec       = toggleNsec;
+
+// ── TOP NAV v2 — Grup/Modül routing ─────────────────────────
+var _TN2_GROUPS = {
+  dashboard:  { label:'Dashboard', mods: [{ id:'dashboard', label:'Dashboard' }] },
+  finans:     { label:'Finans', mods: [
+    { id:'odemeler', label:'Nakit Akisi' },
+    { id:'alis-teklifleri', label:'Alis Teklifleri' },
+    { id:'satis-teklifleri', label:'Satis Teklifleri' },
+  ]},
+  operasyon:  { label:'Operasyon', mods: [
+    { id:'pusula', label:'Gorevler' },
+    { id:'kargo', label:'Kargo' },
+    { id:'satinalma', label:'Is Takibi' },
+  ]},
+  katalog:    { label:'Katalog', mods: [
+    { id:'urunler', label:'Urun Katalogu' },
+    { id:'cari', label:'Cariler' },
+  ]},
+  ekip:       { label:'Ekip', mods: [
+    { id:'admin', label:'Kullanicilar' },
+    { id:'iddia', label:'Iddia & Challenge' },
+  ]},
+  sistem:     { label:'Sistem', mods: [
+    { id:'settings', label:'Ayarlar' },
+  ]},
+};
+var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
+var _tn2ActiveMod = localStorage.getItem('ak_nav_modul') || 'dashboard';
+
+window._tn2SelectGrp = function(grp, el) {
+  _tn2ActiveGrp = grp;
+  localStorage.setItem('ak_nav_grup', grp);
+  // Grup styling
+  document.querySelectorAll('.tn2-grp').forEach(function(g2) { g2.classList.remove('on'); });
+  if (el) el.classList.add('on');
+  // Modül barını doldur
+  var bar3 = document.getElementById('tn2-modules');
+  if (!bar3) return;
+  var g = _TN2_GROUPS[grp];
+  if (!g || grp === 'dashboard') {
+    bar3.innerHTML = '';
+    bar3.style.display = 'none';
+    window.App?.nav?.('dashboard');
+    _tn2ActiveMod = 'dashboard';
+    localStorage.setItem('ak_nav_modul', 'dashboard');
+    return;
+  }
+  bar3.style.display = 'flex';
+  bar3.innerHTML = g.mods.map(function(m) {
+    return '<div class="tn2-mod' + (_tn2ActiveMod === m.id ? ' on' : '') + '" data-mod="' + m.id + '" onclick="window._tn2SelectMod(\'' + m.id + '\',this)">' + m.label + '</div>';
+  }).join('');
+  // İlk modülü seç
+  if (!g.mods.find(function(m) { return m.id === _tn2ActiveMod; })) {
+    window._tn2SelectMod(g.mods[0].id, bar3.querySelector('.tn2-mod'));
+  }
+};
+
+window._tn2SelectMod = function(modId, el) {
+  _tn2ActiveMod = modId;
+  localStorage.setItem('ak_nav_modul', modId);
+  document.querySelectorAll('.tn2-mod').forEach(function(m) { m.classList.remove('on'); });
+  if (el) el.classList.add('on');
+  // Modülü aç — mevcut nav sistemi
+  window.App?.nav?.(modId);
+};
+
+// Sayfa yüklenince son konuma dön
+window._tn2Restore = function() {
+  var cu = window.Auth?.getCU?.();
+  if (!cu) return;
+  // User bilgilerini güncelle
+  var avEl = document.getElementById('tn2-av');
+  var nmEl = document.getElementById('tn2-name');
+  var rlEl = document.getElementById('tn2-role');
+  if (avEl) avEl.textContent = (cu.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  if (nmEl) nmEl.textContent = cu.name || '';
+  if (rlEl) rlEl.textContent = cu.role === 'admin' ? 'Admin' : cu.role === 'manager' ? 'Yonetici' : 'Personel';
+  // Bildirim dot
+  var notifs = typeof loadNotifs === 'function' ? loadNotifs().filter(function(n) { return !n.read && (!n.targetUid || n.targetUid === cu.id); }) : [];
+  var dot = document.getElementById('tn2-notif-dot');
+  if (dot) dot.style.display = notifs.length > 0 ? '' : 'none';
+  // Nav restore
+  var grpEl = document.querySelector('.tn2-grp[data-grp="' + _tn2ActiveGrp + '"]');
+  if (grpEl) window._tn2SelectGrp(_tn2ActiveGrp, grpEl);
+  else window._tn2SelectGrp('dashboard', document.querySelector('.tn2-grp[data-grp="dashboard"]'));
+};
 window._initNsecState   = _initNsecState;
 window.openGSearch      = openGSearch;
 window.closeGSearch     = closeGSearch;
