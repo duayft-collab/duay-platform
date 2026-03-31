@@ -172,16 +172,35 @@ function tickClock() {
   var clockStrip = _g('clock-strip');
   if (clockStrip) clockStrip.textContent = _trDays[n.getDay()] + ' ' + n.getDate() + ' ' + _trMonths[n.getMonth()] + ' · ' + hms;
 
-  // Kullanıcı adı + proje ID (ilk yüklemede bir kez)
-  var _ftUser = _g('ft-user-name');
-  if (_ftUser && _ftUser.textContent === '—') {
+  // Kullanıcı bilgileri (ilk yüklemede + her 3s)
+  if (n.getSeconds() % 3 === 0) {
     var _cu2 = window.Auth?.getCU?.();
-    if (_cu2?.name) _ftUser.textContent = _cu2.name;
-  }
-  var _ftProj = _g('ft-project-id');
-  if (_ftProj && _ftProj.textContent === '—') {
-    var _pid = window.__ENV__?.projectId || window.FirebaseConfig?.projectId || 'duayft-collab';
-    _ftProj.textContent = _pid;
+    var _ftUser = _g('ft-user-name');
+    if (_ftUser && _cu2?.name) _ftUser.textContent = _cu2.name;
+    var _ftRole = _g('ft-user-role');
+    if (_ftRole && _cu2?.role) _ftRole.textContent = _cu2.role === 'admin' ? 'Admin' : _cu2.role === 'manager' ? 'Yonetici' : 'Personel';
+    // Bağlantı + Auth durumu
+    var _ftConn = _g('ft-conn');
+    if (_ftConn) _ftConn.textContent = navigator.onLine ? 'Online' : 'Offline';
+    var _ftAuth = _g('ft-auth');
+    if (_ftAuth) _ftAuth.textContent = window.Auth?.getFBAuth?.()?.currentUser ? 'Aktif' : 'Pasif';
+    // Sayfa yüklenme süresi
+    var _ftLoad = _g('ft-load-time');
+    if (_ftLoad && _ftLoad.textContent === '—') {
+      try { var _pt = performance.timing; _ftLoad.textContent = (_pt.loadEventEnd - _pt.navigationStart) + 'ms'; } catch(e) {}
+    }
+    // Son sorgu süresi
+    var _ftQuery = _g('ft-query-time');
+    if (_ftQuery) _ftQuery.textContent = window._lastQueryTime ? window._lastQueryTime + 'ms' : '—';
+    // Oturum başlangıç
+    var _ftSess = _g('ft-session-start');
+    if (_ftSess) {
+      if (!window._sessionStart) window._sessionStart = Date.now();
+      _ftSess.textContent = new Date(window._sessionStart).toLocaleTimeString('tr-TR');
+    }
+    // Son aktivite
+    var _ftAct = _g('ft-last-activity');
+    if (_ftAct) _ftAct.textContent = window._lastActivity ? new Date(window._lastActivity).toLocaleTimeString('tr-TR') : '—';
   }
 
   // DB durum (her 3 saniyede)
@@ -2580,6 +2599,9 @@ function _resetIdleTimer() {
 
 document.addEventListener('mousemove', _resetIdleTimer);
 document.addEventListener('keydown',   _resetIdleTimer);
+// Son aktivite takibi
+document.addEventListener('click', function() { window._lastActivity = Date.now(); });
+document.addEventListener('keydown', function() { window._lastActivity = Date.now(); });
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 22 — PDF MODÜL RAPORU

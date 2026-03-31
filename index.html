@@ -1079,20 +1079,29 @@ function _doLogin() {
   <!-- ── Toast ─────────────────────────────────────────────────── -->
   <div class="toast" id="toast-el" role="status" aria-live="polite"></div>
 
-  <!-- ── Footer B -->
-  <footer class="vstrip" role="contentinfo" style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:10px;font-family:'DM Mono',monospace" onclick="window._manualSync?.()">
-    <div style="display:flex;align-items:center;gap:0;color:var(--t3);cursor:pointer" title="Tıkla: Manuel Sync">
-      <span id="db-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#16a34a;margin-right:4px"></span>
-      <span>Firestore: ↑<span id="db-last-sync">—</span> · <span id="db-size">—</span></span>
-      <span style="margin:0 8px;opacity:.3">|</span>
-      <span id="st-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#9CA3AF;margin-right:4px"></span>
-      <span>Storage: ↑<span id="st-last-sync">—</span> · <span id="st-doc-count">0</span> belge</span>
+  <!-- ── Footer v4 -->
+  <footer class="vstrip" role="contentinfo" style="display:flex;align-items:flex-start;justify-content:space-between;padding:4px 16px;font-size:9px;font-family:'DM Mono',monospace;line-height:1.5;min-height:auto" onclick="window._manualSync?.()">
+    <div style="color:var(--t3);cursor:pointer" title="Tıkla: Manuel Sync">
+      <div style="display:flex;align-items:center;gap:0">
+        <span id="db-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#16a34a;margin-right:4px;flex-shrink:0"></span>
+        <span>Firestore: ↑<span id="db-last-sync">—</span> · <span id="db-size">—</span></span>
+        <span style="margin:0 6px;opacity:.3">|</span>
+        <span id="st-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#9CA3AF;margin-right:4px;flex-shrink:0"></span>
+        <span>Storage: ↑<span id="st-last-sync">—</span> · <span id="st-doc-count">0</span> belge</span>
+      </div>
+      <div style="display:flex;gap:0;opacity:.7">
+        <span>v__BUILD_HASH__ · __BUILD_DATE__</span>
+        <span style="margin:0 6px;opacity:.3">|</span>
+        <span>Bag: <span id="ft-conn">—</span> · Auth: <span id="ft-auth">—</span></span>
+        <span style="margin:0 6px;opacity:.3">|</span>
+        <span>Sayfa: <span id="ft-load-time">—</span> · Sorgu: <span id="ft-query-time">—</span></span>
+      </div>
     </div>
-    <span style="color:var(--t3)">🔒 Gizli &amp; Şirkete Ozel</span>
-    <div style="color:var(--t2)">
-      <span id="ft-user-name">—</span>
-      <span style="margin:0 4px;opacity:.3">·</span>
-      <span id="clock-strip" aria-live="off">—</span>
+    <span style="color:var(--t3);align-self:center">🔒 Gizli &amp; Sirkete Ozel</span>
+    <div style="color:var(--t2);text-align:right">
+      <div><span id="ft-user-name">—</span> · <span id="ft-user-role">—</span></div>
+      <div style="opacity:.7">Oturum: <span id="ft-session-start">—</span> · Son: <span id="ft-last-activity">—</span></div>
+      <div><span id="clock-strip" aria-live="off">—</span></div>
     </div>
   </footer>
 
