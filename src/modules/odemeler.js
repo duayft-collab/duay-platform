@@ -512,7 +512,7 @@ function _injectOdmPanel() {
     '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
     '<select class="fi" id="odm-cari-f" onchange="renderOdemeler()" style="display:none"><option value="">Tüm Cariler</option></select>',
     '<select class="fi" id="odm-cur-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
-    '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
+    (_isManagerO() ? '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px"><option value="">Kaydeden</option></select>' : '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>'),
     '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
 
     '</div>', // ═══ STICKY WRAPPER CLOSE ═══
@@ -660,6 +660,41 @@ window._odmRevertRecord = function(id, type) {
     }
   });
 };
+
+/** Reddedilen kaydı düzenleyip tekrar gönder */
+window._odmResubmit = function(id, type) {
+  if (type === 'tah') {
+    openTahsilatModal(id);
+  } else {
+    openOdmModal(id);
+  }
+  // Modal açıldıktan sonra approvalStatus'u pending yap (kaydetme sırasında)
+  window._odmResubmitId = id;
+  window._odmResubmitType = type;
+};
+
+// saveOdm/saveTahsilat çağrıldığında resubmit kontrolü
+var _origSaveOdm2 = null;
+setTimeout(function() {
+  _origSaveOdm2 = window.saveOdm;
+  var _wrapSave = function(origFn, type) {
+    return function() {
+      origFn?.();
+      if (window._odmResubmitId) {
+        var d2 = type === 'tah' ? (typeof loadTahsilat === 'function' ? loadTahsilat() : []) : (window.loadOdm ? loadOdm() : []);
+        var o2 = d2.find(function(x) { return x.id === window._odmResubmitId; });
+        if (o2 && o2.approvalStatus === 'rejected') {
+          o2.approvalStatus = 'pending';
+          o2.rejectionNote = null;
+          if (type === 'tah') storeTahsilat(d2); else window.storeOdm?.(d2);
+          window.toast?.('Kayıt tekrar onaya gönderildi', 'ok');
+        }
+        window._odmResubmitId = null;
+        window._odmResubmitType = null;
+      }
+    };
+  };
+}, 100);
 
 var _odmActiveChip = 'all';
 window._odmChipFilter = function(chip, el) {
@@ -901,7 +936,7 @@ function renderOdemeler() {
     // Eski select filtreleri (geriye dönük uyumluluk)
     if (catF  && o.cat  !== catF)  return false;
     if (freqF && o.freq !== freqF) return false;
-    if (userF && String(o.assignedTo) !== userF) return false;
+    if (userF && String(o.createdBy||'') !== userF && String(o.assignedTo||'') !== userF) return false;
     if (statF) {
       if (statF === 'no-receipt' && !(o.paid && !o.receipt)) return false;
       else if (statF !== 'no-receipt' && st !== statF) return false;
@@ -1071,7 +1106,9 @@ function renderOdemeler() {
       var amt = parseFloat(o.amount) || 0;
       var cat = ODM_CATS[o.cat] || ODM_CATS.diger || { l:'', ic:'' };
       var status = isLate ? 'gecikti' : isPaid ? 'odendi' : isPend ? 'bekliyor' : 'aktif';
-      var staBadge = isLate ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEE2E2;color:#dc2626">Gecikti</span>'
+      var isRejected = o.approvalStatus === 'rejected';
+      var staBadge = isRejected ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEE2E2;color:#dc2626;font-weight:600">Reddedildi</span>'
+        : isLate ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEE2E2;color:#dc2626">Gecikti</span>'
         : isPaid ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#DCFCE7;color:#16a34a">Ödendi</span>'
         : isPend ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEF3C7;color:#d97706">Onay</span>'
         : '';
@@ -1139,7 +1176,9 @@ function renderOdemeler() {
               + (_canApprove && isPend ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
               + (_canPay ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
               + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '')
-              + (_canDel ? '<button onclick="event.stopPropagation();window._odmRevertRecord?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(107,114,128,.08);color:#6B7280;cursor:pointer;font-family:inherit">Geri Al</button>' : '');
+              + (_canDel ? '<button onclick="event.stopPropagation();window._odmRevertRecord?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(107,114,128,.08);color:#6B7280;cursor:pointer;font-family:inherit">Geri Al</button>' : '')
+              + (isRejected && _canEdit ? '<button onclick="event.stopPropagation();window._odmResubmit?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(59,130,246,.08);color:#3B82F6;cursor:pointer;font-family:inherit">Düzenle & Tekrar Gönder</button>' : '')
+              + (isRejected && o.rejectionNote ? '<div style="font-size:9px;color:#dc2626;padding:2px 0">Ret sebebi: ' + _esc(o.rejectionNote) + '</div>' : '');
           })()
         + '</div>'
         + '</div>';
@@ -1735,7 +1774,12 @@ function saveOdm() {
           _admins.forEach(function(a) { window.addNotif?.('📝', 'Odeme duzenlendi: ' + _diffs.join(', '), 'info', 'odemeler', a.id); });
         }
       }
-      Object.assign(o, entry);
+      // Mevcut alanları koru: boş gelen form değerleri mevcut veriyi silmesin
+      Object.keys(entry).forEach(function(k) { if (entry[k] !== '' && entry[k] !== null && entry[k] !== undefined) o[k] = entry[k]; });
+      // Explicit boş yapılabilecek alanlar
+      if (entry.note !== undefined) o.note = entry.note;
+      if (entry.due !== undefined) o.due = entry.due;
+      o.updated_at = _nowTso();
     }
   } else {
     const newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
@@ -3677,9 +3721,34 @@ function processOdmApproval(odmId, action) {
     o.approvalLog.push({ ts: _nowTso(), action: 'final_onaylandi', actorId: cu?.id, actorName: cu?.name||'', note: '' });
     window.toast?.('Final onay verildi — odeme kesinlesti', 'ok');
   } else if (action === 'reddet') {
-    o.approvalStatus = 'rejected';
-    o.approvalLog.push({ ts: _nowTso(), action: 'reddedildi', actorId: cu?.id, actorName: cu?.name||'', note: '' });
-    window.toast?.('Odeme reddedildi', 'ok');
+    // Reddetme sebebi modalı
+    var _rejOld = document.getElementById('mo-reject-reason'); if (_rejOld) _rejOld.remove();
+    var _rejMo = document.createElement('div'); _rejMo.className = 'mo'; _rejMo.id = 'mo-reject-reason';
+    _rejMo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+      + '<div style="padding:16px 20px;border-bottom:1px solid var(--b)"><div style="font-size:14px;font-weight:700;color:var(--t)">Reddetme Sebebi</div></div>'
+      + '<div style="padding:16px 20px"><textarea id="reject-reason-input" class="fi" rows="3" placeholder="Reddetme sebebini yazın..." style="font-size:13px;border-radius:8px"></textarea></div>'
+      + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--s2)">'
+        + '<button class="btn btns" onclick="document.getElementById(\'mo-reject-reason\')?.remove()" style="font-size:12px;padding:8px 14px;border-radius:8px">İptal</button>'
+        + '<button id="reject-confirm-btn" class="btn btnp" style="font-size:12px;padding:8px 14px;border-radius:8px;background:#dc2626">Reddet</button>'
+      + '</div></div>';
+    document.body.appendChild(_rejMo);
+    setTimeout(function() { _rejMo.classList.add('open'); }, 10);
+    _rejMo.addEventListener('click', function(e) { if (e.target === _rejMo) _rejMo.remove(); });
+    document.getElementById('reject-confirm-btn').addEventListener('click', function() {
+      var reason = (document.getElementById('reject-reason-input')?.value || '').trim() || 'Sebep belirtilmedi';
+      o.approvalStatus = 'rejected';
+      o.rejectionNote = reason;
+      o.rejectedBy = cu?.id;
+      o.rejectedAt = _nowTso();
+      o.approvalLog.push({ ts: _nowTso(), action: 'reddedildi', actorId: cu?.id, actorName: cu?.name||'', note: reason });
+      window.storeOdm ? storeOdm(d) : null;
+      // User'a bildirim
+      if (o.createdBy) window.addNotif?.('❌', 'Kaydınız reddedildi: ' + reason, 'err', 'odemeler', o.createdBy);
+      document.getElementById('mo-reject-reason')?.remove();
+      renderOdemeler();
+      window.toast?.('Kayıt reddedildi', 'ok');
+    });
+    return; // modal açıldı, fonksiyon burada durur
   }
 
   window.storeOdm ? storeOdm(d) : null;
