@@ -1457,7 +1457,13 @@ function _listenCollection(collection, localKey, onUpdate) {
       if (err.code === 'permission-denied') {
         console.warn('[DB:realtime]', collection, '→ Firestore izni yok, offline mod');
       } else {
+        console.warn('[DB:realtime]', collection, '→ onSnapshot koptu:', err.message);
         GlobalErrorHandler('realtime:' + collection, err, 'warn');
+        // Safari: onSnapshot kopunca 2sn sonra yeniden bağlan
+        setTimeout(function() {
+          console.info('[DB:realtime]', collection, '→ yeniden bağlanıyor...');
+          _listenCollection(collection, localKey, onUpdate);
+        }, 2000);
       }
     });
 

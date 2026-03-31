@@ -539,7 +539,12 @@ function _finishLogin(user) {
     var _syncUnsub = _fbAuth.onAuthStateChanged(function(fbUser) {
       if (fbUser) {
         console.info('[LOGIN] onAuthStateChanged tetiklendi — sync başlatılıyor');
-        window.DB?.startRealtimeSync?.();
+        // Safari: token zorla yenile (1 saatlik kesinti önleme)
+        fbUser.getIdToken(true).then(function() {
+          window.DB?.startRealtimeSync?.();
+        }).catch(function() {
+          window.DB?.startRealtimeSync?.();
+        });
       }
       if (_syncUnsub) { _syncUnsub(); _syncUnsub = null; } // bir kez çalış
     });
