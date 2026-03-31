@@ -87,6 +87,7 @@ const KEYS = {
   lang          : 'ak_lang',
   pusView       : 'ak_pus_view',
   noteView      : 'ak_nview',
+  iddialar      : 'ak_iddialar1',
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -267,7 +268,7 @@ var _ALL_SYNC_COLS = [
   'bankalar','navlun','urunler','fikirler',
   'alisTeklifleri','satisTeklifleri','teklifSartlar',
   'updateLog','trash','kararlar','suggestions','links','smartGoals',
-  'taskChats','notifications'
+  'taskChats','notifications','iddialar'
 ];
 
 /**
@@ -1089,6 +1090,9 @@ function storeTahsilat(d) {
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeFikirler(d) { _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
 
+/** @returns {Array} */ function loadIddialar() { var d = _read(KEYS.iddialar); return Array.isArray(d) ? d : []; }
+/** @param {Array} d */ function storeIddialar(d) { _write(KEYS.iddialar, d); var _fp = _fsPath('iddialar'); if (_fp) _syncFirestore(_fp, d); }
+
 /** @returns {Array} */ function loadTeklifSartlar() { var d = _read(KEYS.teklifSartlar); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeTeklifSartlar(d) { _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
@@ -1663,6 +1667,7 @@ function startRealtimeSync() {
     ['navlun',        KEYS.navlun,        () => window.renderNavlun?.()],
     ['urunler',       KEYS.urunler,       () => window.renderUrunler?.()],
     ['fikirler',      KEYS.fikirler,      () => window._onFikirUpdate?.()],
+    ['iddialar',      KEYS.iddialar,      () => window.renderIddia?.()],
     ['alisTeklifleri', KEYS.alisTeklifleri, () => window.renderAlisTeklifleri?.()],
     ['satisTeklifleri',KEYS.satisTeklifleri,() => window.renderSatisTeklifleri?.()],
     ['teklifSartlar', KEYS.teklifSartlar, () => {}],
@@ -2131,6 +2136,8 @@ const DB = {
   loadFuarKriterleri, saveFuarKriterleri,
   // Task Chat
   loadTaskChats, storeTaskChats,
+  // İddia
+  loadIddialar, storeIddialar,
   // Diğer
   loadGrt, storeGrt,
   loadHesapHistory, storeHesapHistory,
@@ -2169,7 +2176,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
-    'loadTrash','storeTrash','addToTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler',
+    'loadTrash','storeTrash','addToTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler','loadIddialar','storeIddialar',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

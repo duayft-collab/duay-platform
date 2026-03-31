@@ -988,6 +988,7 @@ function _renderPanel(id) {
     temizlik:   () => safe(() => window.renderTemizlik?.()),
     resmi:      () => safe(() => window.renderResmi?.()),
     etkinlik:   () => safe(() => { window.renderEtkinlik?.(); setTimeout(() => window.applyFuarKriterleriToForm?.(), 50); }),
+    iddia:      () => safe(() => window.renderIddia?.()),
     rehber:     () => safe(() => window.renderRehber?.()),
     settings:   () => safe(() => { updateVersionUI(); window.Auth?.checkFirebaseStatus?.(); window.renderSettingsAdmin?.(); }),
     activity:   () => safe(() => window.renderActivity?.()),
