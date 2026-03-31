@@ -13,17 +13,19 @@
   --bg: #F7F6F3; --sf: #FFF; --s2: #F2F1ED; --s3: #E8E7E3;
   --b: rgba(0,0,0,.08); --bm: rgba(0,0,0,.15);
   --t: #1A1A18; --t2: #6B6B67; --t3: #A5A49F;
-  --ac: #3C3489; --al: #EEEDFE; --at: #26215C;
+  --ac: #185FA5; --al: #E6F1FB; --at: #0C447C;
   --gr: #1D9E75; --grb: #E1F5EE; --grt: #085041;
   --bl: #185FA5; --blb: #E6F1FB; --blt: #0C447C;
-  --am: #BA7517; --amb: #FAEEDA; --amt: #854F0B;
+  --am: #0C447C; --amb: #E6F1FB; --amt: #185FA5;
   --rd: #A32D2D; --rdb: #FCEBEB; --rdt: #711F1F;
   --r: 10px; --rs: 6px;
   --sh: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shm: 0 4px 16px rgba(0,0,0,.10);
-  /* Semantic aliases — sticky header'lar için */
+  /* Semantic aliases */
   --color-background-primary: #FFF;
   --color-border-tertiary: rgba(0,0,0,.06);
+  --color-accent: #185FA5;
+  --color-primary: #185FA5;
 }
 
 [data-theme=dark] {
@@ -131,6 +133,7 @@ body {
 .tn2-grp{padding:8px 14px;font-size:12px;color:#85B7EB;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .12s;display:flex;align-items:center;gap:4px}
 .tn2-grp:hover{background:#185FA5;color:#E6F1FB;border-radius:4px 4px 0 0}
 .tn2-grp.on{background:#185FA5;color:#E6F1FB;font-weight:500;border-bottom-color:#B5D4F4;border-radius:2px 2px 0 0}
+.tn2-grp.on span{opacity:1!important}
 .tn2-sep{width:0.5px;height:20px;background:#185FA5;margin:0 4px;flex-shrink:0}
 .tn2-mod{padding:7px 14px;font-size:11px;color:var(--t2);cursor:pointer;white-space:nowrap;border-radius:4px;transition:all .1s}
 .tn2-mod:hover{background:#fff;color:#185FA5}
@@ -297,7 +300,7 @@ body {
 }
 
 /* â”€â”€ MAIN CONTENT â”€â”€ */
-.main { flex: 1; padding: 0 0 20px; overflow-y: auto; }
+.main { flex: 1; padding: 0 24px 20px; overflow-y: auto; }
 .ph {
   display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 0; flex-wrap: wrap; gap: 10px;
@@ -321,6 +324,9 @@ body {
 .btnp:hover { opacity: .85; }
 .btns { padding: 5px 10px; font-size: 12px; }
 .btnd { background: var(--rdb); color: var(--rdt); border-color: transparent; }
+/* Monokromatik lacivert — focus + link */
+:focus-visible { outline: none; box-shadow: 0 0 0 2px #378ADD; }
+a, .link { color: #185FA5; }
 .btnd:hover { background: #f5c4c4; }
 .btng { background: var(--grb); color: var(--grt); border-color: transparent; }
 
