@@ -139,6 +139,8 @@ body {
 .tn2-mod:hover{background:#fff;color:#185FA5}
 .tn2-mod.on{background:#fff;color:#185FA5;font-weight:500}
 .tn2-msep{width:0.5px;height:16px;background:var(--b);margin:0 4px;flex-shrink:0}
+.tn2-tool{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;filter:grayscale(1) brightness(10);opacity:.55;transition:all .12s;position:relative;background:none;border:none}
+.tn2-tool:hover{opacity:.95;background:rgba(255,255,255,.12)}
 .brand { display: flex; align-items: center; gap: 10px; cursor: default; }
 .brand-icon { width: 30px; height: 30px; flex-shrink: 0; }
 .brand-name { font-size: 15px; font-weight: 600; letter-spacing: -.3px; }
