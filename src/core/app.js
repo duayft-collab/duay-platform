@@ -201,6 +201,22 @@ function tickClock() {
     // Son aktivite
     var _ftAct = _g('ft-last-activity');
     if (_ftAct) _ftAct.textContent = window._lastActivity ? new Date(window._lastActivity).toLocaleTimeString('tr-TR') : '—';
+    // Aktif kullanıcı + oturum sayısı
+    var _ftAU = _g('ft-active-users');
+    var _ftSS = _g('ft-sessions');
+    if (_ftAU) {
+      try {
+        var _users3 = typeof loadUsers === 'function' ? loadUsers() : [];
+        var _now3 = Date.now();
+        _ftAU.textContent = _users3.filter(function(u) { return u.lastLogin && (_now3 - new Date(u.lastLogin.replace(' ','T')).getTime()) < 1800000; }).length;
+      } catch(e) { _ftAU.textContent = '0'; }
+    }
+    if (_ftSS) {
+      try {
+        var _sess = JSON.parse(localStorage.getItem('ak_active_sessions') || '{}');
+        _ftSS.textContent = Object.keys(_sess).length;
+      } catch(e) { _ftSS.textContent = '0'; }
+    }
   }
 
   // DB durum (her 3 saniyede)
