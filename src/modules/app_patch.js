@@ -2896,8 +2896,13 @@ window._openFikirForm = function() {
   div.id = 'fikir-popup';
   div.style.cssText = 'position:fixed;bottom:80px;right:24px;width:300px;background:var(--sf);border:0.5px solid var(--b);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:9001;overflow:hidden';
   div.innerHTML = '<div style="padding:12px 16px;background:#1a365d;color:#fff;display:flex;align-items:center;justify-content:space-between">'
-    + '<span style="font-size:13px;font-weight:600">Fikir Paylaş</span>'
+    + '<span style="font-size:13px;font-weight:600">Fikir & Iddia</span>'
     + '<button onclick="document.getElementById(\'fikir-popup\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
+    + '<div style="display:flex;border-bottom:0.5px solid var(--b)">'
+      + '<div class="fikir-sec-tab on" onclick="window._fikirSecTab(\'fikir\',this)" style="flex:1;padding:8px;text-align:center;font-size:11px;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:600">Fikirler</div>'
+      + '<div class="fikir-sec-tab" onclick="window._fikirSecTab(\'iddia\',this)" style="flex:1;padding:8px;text-align:center;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Iddia & Challenge</div>'
+    + '</div>'
+    + '<div id="fikir-tab-content">'
     + '<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">'
     + '<input class="fi" id="fikir-baslik" placeholder="Başlık (opsiyonel)" style="font-size:12px;border-radius:7px">'
     + '<textarea class="fi" id="fikir-mesaj" rows="3" maxlength="280" placeholder="Fikrinizi paylaşın... (max 280 karakter)" style="font-size:12px;resize:none;border-radius:7px"></textarea>'
@@ -2911,13 +2916,50 @@ window._openFikirForm = function() {
     + '<div style="display:flex;justify-content:space-between;align-items:center">'
     + '<span id="fikir-char" style="font-size:10px;color:var(--t3)">0/280</span>'
     + '<button onclick="window._paylasFikir()" style="padding:6px 16px;border:none;border-radius:7px;background:#1a365d;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Paylaş</button>'
-    + '</div></div>';
+    + '</div></div></div>'; // fikir-tab-content close
   document.body.appendChild(div);
   document.getElementById('fikir-mesaj')?.addEventListener('input', function() {
     var el = document.getElementById('fikir-char');
     if (el) el.textContent = this.value.length + '/280';
   });
   document.getElementById('fikir-mesaj')?.focus();
+};
+
+/** Fikir/İddia sekme geçişi */
+window._fikirSecTab = function(tab, el) {
+  document.querySelectorAll('.fikir-sec-tab').forEach(function(t) { t.style.borderBottomColor = 'transparent'; t.style.color = 'var(--t3)'; t.style.fontWeight = '400'; t.classList.remove('on'); });
+  if (el) { el.style.borderBottomColor = 'var(--ac)'; el.style.color = 'var(--ac)'; el.style.fontWeight = '600'; el.classList.add('on'); }
+  var cont = document.getElementById('fikir-tab-content');
+  if (!cont) return;
+  if (tab === 'iddia') {
+    cont.innerHTML = '<div style="padding:14px 16px">'
+      + '<div style="display:flex;gap:6px;margin-bottom:10px">'
+        + '<button onclick="window._openIddiaModal?.(\'oz\')" style="flex:1;padding:8px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Oz Iddia</button>'
+        + '<button onclick="window._openIddiaModal?.(\'challenge\')" style="flex:1;padding:8px;border:none;border-radius:7px;background:#D97706;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Challenge</button>'
+      + '</div>'
+      + '<div id="fikir-iddia-mini"></div>'
+    + '</div>';
+    // Mini iddia listesi render
+    setTimeout(function() {
+      var miniCont = document.getElementById('fikir-iddia-mini');
+      if (!miniCont) return;
+      var all = typeof loadIddialar === 'function' ? loadIddialar() : [];
+      var aktif = all.filter(function(i) { return !i.isDeleted && (i.status === 'aktif' || i.status === 'accepted' || i.status === 'pending' || i.status === 'challenge_pending'); }).slice(0, 5);
+      if (!aktif.length) { miniCont.innerHTML = '<div style="text-align:center;padding:12px;color:var(--t3);font-size:11px">Aktif iddia yok</div>'; return; }
+      miniCont.innerHTML = aktif.map(function(i) {
+        var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+        return '<div style="padding:6px 0;border-bottom:0.5px solid var(--b);font-size:11px">'
+          + '<div style="font-weight:500;color:var(--t)">' + (i.tip === 'challenge' ? '⚔️ ' : '🎯 ') + esc(i.baslik) + '</div>'
+          + '<div style="font-size:9px;color:var(--t3);margin-top:2px">' + i.status + ' · ' + (i.deadline || '—') + '</div>'
+        + '</div>';
+      }).join('');
+      miniCont.innerHTML += '<div style="margin-top:8px;text-align:center"><button onclick="App.nav(\'iddia\')" style="font-size:10px;color:var(--ac);background:none;border:none;cursor:pointer;font-family:inherit">Tumunu Gor →</button></div>';
+    }, 50);
+  } else {
+    // Fikir formunu geri yükle
+    document.getElementById('fikir-popup')?.remove();
+    window._openFikirForm?.();
+  }
 };
 
 window._fikirKat = 'fikir';

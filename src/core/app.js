@@ -3404,7 +3404,6 @@ var _TN2_GROUPS = {
   ]},
   ekip:       { label:'Ekip', mods: [
     { id:'admin', label:'Kullanicilar' },
-    { id:'iddia', label:'Iddia & Challenge' },
   ]},
   sistem:     { label:'Sistem', mods: [
     { id:'settings', label:'Ayarlar' },
