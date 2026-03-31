@@ -1082,14 +1082,11 @@ function _doLogin() {
   <!-- ── Footer B -->
   <footer class="vstrip" role="contentinfo" style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:10px;font-family:'DM Mono',monospace" onclick="window._manualSync?.()">
     <div style="display:flex;align-items:center;gap:0;color:var(--t3);cursor:pointer" title="Tıkla: Manuel Sync">
-      <span id="db-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#16a34a;margin-right:5px"></span>
-      <span>Firebase · <span id="ft-project-id">—</span></span>
-      <span style="margin:0 6px;opacity:.3">|</span>
-      <span>Son sync: <span id="db-last-sync">—</span></span>
-      <span style="margin:0 6px;opacity:.3">|</span>
-      <span>Depo: <span id="db-size">—</span> / 1 GB</span>
-      <span style="margin:0 6px;opacity:.3">|</span>
-      <span>v__BUILD_HASH__</span>
+      <span id="db-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#16a34a;margin-right:4px"></span>
+      <span>Firestore: ↑<span id="db-last-sync">—</span> · <span id="db-size">—</span></span>
+      <span style="margin:0 8px;opacity:.3">|</span>
+      <span id="st-sync-dot" style="width:5px;height:5px;border-radius:50%;background:#9CA3AF;margin-right:4px"></span>
+      <span>Storage: ↑<span id="st-last-sync">—</span> · <span id="st-doc-count">0</span> belge</span>
     </div>
     <span style="color:var(--t3)">🔒 Gizli &amp; Şirkete Ozel</span>
     <div style="color:var(--t2)">

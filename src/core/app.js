@@ -204,6 +204,29 @@ function tickClock() {
       var _syncAge = Date.now() - (window._lastSyncTime || 0);
       _dbDotEl.style.background = _syncAge < 60000 ? '#16a34a' : _syncAge < 300000 ? '#d97706' : '#dc2626';
     }
+    // Storage durumu
+    var _stSyncEl = _g('st-last-sync');
+    var _stCountEl = _g('st-doc-count');
+    var _stDotEl = _g('st-sync-dot');
+    if (_stSyncEl) {
+      var _slt = window._lastStorageSyncTime || 0;
+      _stSyncEl.textContent = _slt ? new Date(_slt).toLocaleTimeString('tr-TR') : '—';
+    }
+    if (_stCountEl) {
+      try {
+        var _docN = 0;
+        Object.keys(localStorage).forEach(function(k) {
+          if (!k.startsWith('ak_')) return;
+          var v = localStorage[k] || '';
+          if (v.indexOf('data:') !== -1 || v.indexOf('belgeUrl') !== -1 || v.indexOf('docUrl') !== -1 || v.indexOf('fileUrl') !== -1) _docN++;
+        });
+        _stCountEl.textContent = String(_docN);
+      } catch(e) {}
+    }
+    if (_stDotEl) {
+      var _stAge = Date.now() - (window._lastStorageSyncTime || 0);
+      _stDotEl.style.background = window._lastStorageSyncTime ? (_stAge < 60000 ? '#16a34a' : _stAge < 300000 ? '#d97706' : '#9CA3AF') : '#9CA3AF';
+    }
   }
 
   // ── Topnav brand alt yazı ────────────────────────────────────
