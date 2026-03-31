@@ -859,7 +859,6 @@ function renderOdemeler() {
   var _activeRaw = _allRaw.filter(function(o) { return !o.isDeleted; });
   // Admin/manager/muhasebe departmanı: tüm kayıtlar; user: sadece kendi kayıtları
   var _isFinanceUser = _isAdminO() || _isManagerO() || (_cuOdm?.dept || '').toLowerCase().includes('muhasebe');
-  console.log('[DEBUG render] _isFinanceUser:', _isFinanceUser, '| _isAdminO:', _isAdminO(), '| _isManagerO:', _isManagerO(), '| cu.id:', _cuOdm?.id, '| cu.role:', _cuOdm?.role);
   var _myId = _cuOdm?.id;
   var _myIdStr = _myId ? String(_myId) : '';
   const all = (_isFinanceUser || !_myIdStr) ? _activeRaw : _activeRaw.filter(function(o) {
@@ -1753,7 +1752,6 @@ function saveOdm() {
   // sozlesme undefined ise sil
   if (entry.sozlesme === undefined) delete entry.sozlesme;
   if (entry.sozlesmeName === undefined) delete entry.sozlesmeName;
-  console.log('[DEBUG saveOdm] entry.jobId before:', entry.jobId, '| entry.taskId:', entry.taskId, '| cu:', _CUo()?.id, '| isAdmin:', _isAdminO());
   if (!entry.jobId) entry.jobId = 'Yok';
   if (eid) {
     const o = d.find(x => x.id === eid);
@@ -1807,7 +1805,6 @@ function saveOdm() {
     }
     d.unshift(newEntry);
   }
-  console.log('[DEBUG saveOdm] storeOdm çağrılıyor, d.length:', d.length, '| son kayıt:', JSON.stringify(d[0]).slice(0, 200));
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
   renderOdemeler();
@@ -2871,6 +2868,13 @@ window.uploadTahDoc = uploadTahDoc;
 window.viewTahDoc   = viewTahDoc;
 
 function saveTahsilat() {
+  // Safari: auth geç hazırlanırsa 500ms bekle
+  if (!_CUo()?.id && !window._tahSaveRetried) {
+    window._tahSaveRetried = true;
+    setTimeout(function() { window._tahSaveRetried = false; saveTahsilat(); }, 500);
+    return;
+  }
+  window._tahSaveRetried = false;
   var name = (document.getElementById('tah-f-name')?.value || '').trim();
   var _tahAmt = parseFloat(document.getElementById('tah-f-amount')?.value || '0');
   var _tahDue = document.getElementById('tah-f-due')?.value || '';
