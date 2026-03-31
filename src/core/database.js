@@ -1446,6 +1446,9 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
 
       // UI'ı yenile (throttled)
+      // DB durum göstergesi güncelle
+      window._lastSyncTime = Date.now();
+
       if (typeof onUpdate === 'function') {
         clearTimeout(_listeners[collection + '_timer']);
         _listeners[collection + '_timer'] = setTimeout(() => {

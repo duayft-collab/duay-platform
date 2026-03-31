@@ -170,6 +170,28 @@ function tickClock() {
   const clockStrip = _g('clock-strip');
   if (clockStrip) clockStrip.textContent = `${ymd} ${hms}`;
 
+  // ── DB durum göstergesi (her 3 saniyede bir) ─────────────────
+  if (n.getSeconds() % 3 === 0) {
+    var _dbSyncEl = _g('db-last-sync');
+    var _dbSizeEl = _g('db-size');
+    var _dbDotEl  = _g('db-sync-dot');
+    if (_dbSyncEl) {
+      var _lst = window._lastSyncTime || 0;
+      _dbSyncEl.textContent = _lst ? '↑ ' + new Date(_lst).toLocaleTimeString('tr-TR') : '—';
+    }
+    if (_dbSizeEl) {
+      try {
+        var _bytes = 0;
+        Object.keys(localStorage).forEach(function(k) { if (k.startsWith('ak_')) _bytes += (localStorage[k] || '').length * 2; });
+        _dbSizeEl.textContent = _bytes > 1048576 ? (_bytes / 1048576).toFixed(1) + ' MB' : Math.round(_bytes / 1024) + ' KB';
+      } catch(e) { _dbSizeEl.textContent = '—'; }
+    }
+    if (_dbDotEl) {
+      var _syncAge = Date.now() - (window._lastSyncTime || 0);
+      _dbDotEl.style.background = _syncAge < 60000 ? '#16a34a' : _syncAge < 300000 ? '#d97706' : '#dc2626';
+    }
+  }
+
   // ── Topnav brand alt yazı ────────────────────────────────────
   const clockEl = _g('clock-el');
   if (clockEl) clockEl.textContent = hms;
