@@ -2900,7 +2900,8 @@ window._openFikirForm = function() {
     + '<button onclick="document.getElementById(\'fikir-popup\')?.remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">×</button></div>'
     + '<div style="display:flex;border-bottom:0.5px solid var(--b)">'
       + '<div class="fikir-sec-tab on" onclick="window._fikirSecTab(\'fikir\',this)" style="flex:1;padding:8px;text-align:center;font-size:11px;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:600">Fikirler</div>'
-      + '<div class="fikir-sec-tab" onclick="window._fikirSecTab(\'iddia\',this)" style="flex:1;padding:8px;text-align:center;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Iddia & Challenge</div>'
+      + '<div class="fikir-sec-tab" onclick="window._fikirSecTab(\'iddia\',this)" style="flex:1;padding:8px;text-align:center;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Iddia</div>'
+      + '<div class="fikir-sec-tab" onclick="window._fikirSecTab(\'sozler\',this)" style="flex:1;padding:8px;text-align:center;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Sozler</div>'
     + '</div>'
     + '<div id="fikir-tab-content">'
     + '<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">'
@@ -2955,6 +2956,8 @@ window._fikirSecTab = function(tab, el) {
       }).join('');
       miniCont.innerHTML += '<div style="margin-top:8px;text-align:center"><button onclick="App.nav(\'iddia\')" style="font-size:10px;color:var(--ac);background:none;border:none;cursor:pointer;font-family:inherit">Tumunu Gor →</button></div>';
     }, 50);
+  } else if (tab === 'sozler') {
+    window._fikirSozTab?.();
   } else {
     // Fikir formunu geri yükle
     document.getElementById('fikir-popup')?.remove();

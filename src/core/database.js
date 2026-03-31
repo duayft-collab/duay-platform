@@ -88,6 +88,7 @@ const KEYS = {
   pusView       : 'ak_pus_view',
   noteView      : 'ak_nview',
   iddialar      : 'ak_iddialar1',
+  sozler        : 'ak_sozler1',
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -268,7 +269,7 @@ var _ALL_SYNC_COLS = [
   'bankalar','navlun','urunler','fikirler',
   'alisTeklifleri','satisTeklifleri','teklifSartlar',
   'updateLog','trash','kararlar','suggestions','links','smartGoals',
-  'taskChats','notifications','iddialar'
+  'taskChats','notifications','iddialar','sozler'
 ];
 
 /**
