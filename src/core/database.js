@@ -122,7 +122,15 @@ function GlobalErrorHandler(context, err, level = 'warn') {
 function _read(key, fallback = null) {
   try {
     const raw = localStorage.getItem(key);
-    if (raw === null || raw === undefined) return fallback;
+    if (raw === null || raw === undefined) {
+      // Safari: localStorage boşsa Firestore'dan zorla çek
+      var _isSaf = typeof _isSafari !== 'undefined' ? _isSafari : /safari/i.test(navigator.userAgent);
+      if (_isSaf && key.startsWith('ak_') && !window['_fsync_' + key]) {
+        window['_fsync_' + key] = true;
+        setTimeout(function() { window._forceSync?.(key); }, 100);
+      }
+      return fallback;
+    }
     return JSON.parse(raw);
   } catch (e) {
     GlobalErrorHandler('_read:' + key, e, 'warn');
@@ -1346,7 +1354,7 @@ const _lastSnapshotProcess = {};
 const _lastDataHash = {};
 
 /** Double-call guard — startRealtimeSync birden fazla çağrılmasını engeller */
-let _syncStarted = false;
+var _syncStarted = {};
 
 /**
  * Firestore koleksiyonuna realtime listener kurar.
@@ -1613,9 +1621,9 @@ function _showAssignmentModal(task) {
 }
 
 function startRealtimeSync() {
-  console.log('[SYNC] startRealtimeSync çağrıldı. _syncStarted:', _syncStarted, '| FB_DB:', !!window.Auth?.getFBDB?.(), '| FB_AUTH currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
-  if (_syncStarted) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
-  _syncStarted = true;
+  console.log('[SYNC] startRealtimeSync çağrıldı. _syncStarted:', Object.keys(_syncStarted).length, '| FB_DB:', !!window.Auth?.getFBDB?.(), '| FB_AUTH currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
+  if (_syncStarted._all) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
+  _syncStarted._all = true;
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
     // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
@@ -1681,7 +1689,10 @@ function startRealtimeSync() {
   ];
 
   SYNC_MAP.forEach(([col, key, render]) => {
-    _listenCollection(col, key, render);
+    if (!_syncStarted[col]) {
+      _syncStarted[col] = true;
+      _listenCollection(col, key, render);
+    }
   });
 
   console.info('[DB] Realtime sync başlatıldı:', SYNC_MAP.length, 'koleksiyon');
@@ -1756,7 +1767,7 @@ function stopRealtimeSync() {
     }
     delete _listeners[key];
   });
-  _syncStarted = false;
+  _syncStarted = {};
   console.info('[DB] Realtime sync durduruldu.');
 }
 
@@ -1773,6 +1784,27 @@ var _syncState = { status: 'ok', lastSync: '', errors: 0, lastError: '' };
 
 /** Safari tespiti */
 var _isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+/** Safari fallback: localStorage boşsa Firestore'dan zorla çek */
+window._forceSync = function(localKey) {
+  var FB_DB = window.Auth?.getFBDB?.();
+  if (!FB_DB) return;
+  // localKey → collection name bul (KEYS reverse lookup)
+  var col = null;
+  Object.entries(KEYS).forEach(function(e) { if (e[1] === localKey) col = e[0]; });
+  if (!col) return;
+  var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
+  var base = 'duay_' + tid;
+  FB_DB.collection(base).doc(col).get().then(function(snap) {
+    if (!snap.exists) return;
+    var fsData = snap.data()?.data;
+    if (!fsData) return;
+    try { localStorage.setItem(localKey, JSON.stringify(fsData)); } catch(e) {}
+    // İlgili modülü yeniden render et
+    if (typeof window._renderActivePanel === 'function') window._renderActivePanel();
+    console.info('[SYNC:forceSync]', col, '→', Array.isArray(fsData) ? fsData.length : 'obj');
+  }).catch(function() {});
+};
 
 /**
  * Sync durumunu günceller ve UI göstergesini yeniler.
