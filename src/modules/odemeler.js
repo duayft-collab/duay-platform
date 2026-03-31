@@ -843,6 +843,8 @@ function renderOdemeler() {
   const q      = (_go('odm-search')?.value || '').toLowerCase();
   const catF   = _go('odm-cat-f')?.value   || '';
   const freqF  = _go('odm-freq-f')?.value  || '';
+  var fromF    = _go('odm-from-f')?.value  || '';
+  var toF      = _go('odm-to-f')?.value    || '';
   const statF  = _go('odm-status-f')?.value || '';
   const userF  = _go('odm-user-f')?.value  || '';
   var cariF    = _go('odm-cari-f')?.value   || '';
@@ -910,6 +912,12 @@ function renderOdemeler() {
     if (cariF && (o.cariName || '') !== cariF) return false;
     // Para birimi filtresi
     if (curF && (o.currency || 'TRY') !== curF) return false;
+    // Tarih aralığı filtresi (createdAt veya vade)
+    if (fromF || toF) {
+      var _recDate = (o.ts || o.due || '').slice(0, 10);
+      if (fromF && _recDate < fromF) return false;
+      if (toF && _recDate > toF) return false;
+    }
     return true;
   });
 
@@ -918,22 +926,22 @@ function renderOdemeler() {
     items = items.filter(o => (o.due||'').startsWith(thisMonth) || (o.paidTs||'').startsWith(thisMonth));
   }
 
-  // Stats hesapla — tüm veriden (filtre öncesi)
-  var _allOdm = _odmAll.filter(function(o) { return !o.isDeleted; });
-  var _allTah = _tahAll.filter(function(o) { return !o.isDeleted; });
-  var _odmThisMonth = _allOdm.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
-  var _tahThisMonth = _allTah.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
+  // Stats hesapla — rol filtrelenmiş data (all) üzerinden
+  var _visOdm = all.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme' || (!o._src && !o.tip); });
+  var _visTah = all.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat'; });
+  var _odmThisMonth = _visOdm.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
+  var _tahThisMonth = _visTah.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
   var _odmMonthAmt = _odmThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); }, 0);
   var _tahMonthAmt = _tahThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); }, 0);
   var _netPos = _tahMonthAmt - _odmMonthAmt;
 
-  const lateN  = _allOdm.filter(o => !o.paid && o.due && o.due < today).length;
-  const weekN  = _allOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
-  const paidN  = _allOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
+  const lateN  = _visOdm.filter(o => !o.paid && o.due && o.due < today).length;
+  const weekN  = _visOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
+  const paidN  = _visOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
   const totalN = all.length;
-  const weekAmt = _allOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
+  const weekAmt = _visOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
                      .reduce((s,o) => s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'), 0);
-  const pendN  = _allOdm.concat(_allTah).filter(function(o) { return o.approvalStatus === 'pending'; }).length;
+  const pendN  = all.filter(function(o) { return o.approvalStatus === 'pending'; }).length;
 
   // 6 metrik güncelle
   _sto('odm-m-tah-amt', '₺' + Math.round(_tahMonthAmt).toLocaleString('tr-TR'));
@@ -953,8 +961,8 @@ function renderOdemeler() {
   // Döviz pozisyon
   ['USD','EUR','TRY'].forEach(function(cur) {
     var sym = cur === 'USD' ? '$' : cur === 'EUR' ? '€' : '₺';
-    var odmC = _allOdm.filter(function(o) { return (o.currency||'TRY') === cur && !o.paid; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
-    var tahC = _allTah.filter(function(o) { return (o.currency||'TRY') === cur && !o.collected; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
+    var odmC = _visOdm.filter(function(o) { return (o.currency||'TRY') === cur && !o.paid; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
+    var tahC = _visTah.filter(function(o) { return (o.currency||'TRY') === cur && !o.collected; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
     var net = tahC - odmC;
     var el = _go('odm-fx-' + cur.toLowerCase());
     if (el) { el.textContent = (net >= 0 ? '+' : '') + sym + Math.round(Math.abs(net)).toLocaleString('tr-TR'); el.style.color = net >= 0 ? '#16a34a' : '#dc2626'; }
@@ -972,7 +980,8 @@ function renderOdemeler() {
   if (_summaryEl) {
     var _filteredNet = items.reduce(function(s,o) { var amt = _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); return o._src === 'tahsilat' ? s + amt : s - amt; }, 0);
     var _roleNote = _isFinanceUser ? 'Tüm kayıtlar' : 'Sadece kendi kayıtlarınız';
-    _summaryEl.textContent = _roleNote + ' · ' + items.length + ' kayıt · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
+    var _dateNote = (fromF || toF) ? ' · Tarih: ' + (fromF || '...') + ' — ' + (toF || '...') : '';
+    _summaryEl.textContent = _roleNote + ' · ' + items.length + ' kayıt' + _dateNote + ' · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
   }
 
   // Vade uyumsuzluğu uyarısı (admin only)
