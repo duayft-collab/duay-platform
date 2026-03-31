@@ -910,6 +910,14 @@ function renderOdemeler() {
     if (cariF && (o.cariName || '') !== cariF) return false;
     // Para birimi filtresi
     if (curF && (o.currency || 'TRY') !== curF) return false;
+    // Tarih aralığı filtresi
+    var _fromF = _go('odm-from-f')?.value || '';
+    var _toF   = _go('odm-to-f')?.value   || '';
+    if (_fromF || _toF) {
+      var _rd = (o.ts || o.due || '').slice(0, 10);
+      if (_fromF && _rd < _fromF) return false;
+      if (_toF && _rd > _toF) return false;
+    }
     return true;
   });
 
@@ -927,13 +935,16 @@ function renderOdemeler() {
   var _tahMonthAmt = _tahThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); }, 0);
   var _netPos = _tahMonthAmt - _odmMonthAmt;
 
-  const lateN  = _allOdm.filter(o => !o.paid && o.due && o.due < today).length;
-  const weekN  = _allOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
-  const paidN  = _allOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
+  // Sayaçlar: rol filtrelenmiş "all" üzerinden (user sadece kendi kayıtlarını görür)
+  var _myOdm = all.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme' || (!o._src && !o.tip); });
+  var _myTah = all.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat'; });
+  const lateN  = _myOdm.filter(o => !o.paid && o.due && o.due < today).length;
+  const weekN  = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
+  const paidN  = _myOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
   const totalN = all.length;
-  const weekAmt = _allOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
+  const weekAmt = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
                      .reduce((s,o) => s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'), 0);
-  const pendN  = _allOdm.concat(_allTah).filter(function(o) { return o.approvalStatus === 'pending'; }).length;
+  const pendN  = all.filter(function(o) { return o.approvalStatus === 'pending'; }).length;
 
   // 6 metrik güncelle
   _sto('odm-m-tah-amt', '₺' + Math.round(_tahMonthAmt).toLocaleString('tr-TR'));
@@ -953,8 +964,8 @@ function renderOdemeler() {
   // Döviz pozisyon
   ['USD','EUR','TRY'].forEach(function(cur) {
     var sym = cur === 'USD' ? '$' : cur === 'EUR' ? '€' : '₺';
-    var odmC = _allOdm.filter(function(o) { return (o.currency||'TRY') === cur && !o.paid; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
-    var tahC = _allTah.filter(function(o) { return (o.currency||'TRY') === cur && !o.collected; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
+    var odmC = _myOdm.filter(function(o) { return (o.currency||'TRY') === cur && !o.paid; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
+    var tahC = _myTah.filter(function(o) { return (o.currency||'TRY') === cur && !o.collected; }).reduce(function(s,o) { return s + (parseFloat(o.amount)||0); }, 0);
     var net = tahC - odmC;
     var el = _go('odm-fx-' + cur.toLowerCase());
     if (el) { el.textContent = (net >= 0 ? '+' : '') + sym + Math.round(Math.abs(net)).toLocaleString('tr-TR'); el.style.color = net >= 0 ? '#16a34a' : '#dc2626'; }
@@ -972,7 +983,9 @@ function renderOdemeler() {
   if (_summaryEl) {
     var _filteredNet = items.reduce(function(s,o) { var amt = _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); return o._src === 'tahsilat' ? s + amt : s - amt; }, 0);
     var _roleNote = _isFinanceUser ? 'Tüm kayıtlar' : 'Sadece kendi kayıtlarınız';
-    _summaryEl.textContent = _roleNote + ' · ' + items.length + ' kayıt · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
+    var _df = _go('odm-from-f')?.value || ''; var _dt = _go('odm-to-f')?.value || '';
+    var _dNote = (_df || _dt) ? ' · Tarih: ' + (_df || '...') + ' — ' + (_dt || '...') : '';
+    _summaryEl.textContent = _roleNote + ' · ' + items.length + ' kayıt' + _dNote + ' · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
   }
 
   // Vade uyumsuzluğu uyarısı (admin only)
