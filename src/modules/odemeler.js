@@ -2854,15 +2854,14 @@ function saveTahsilat() {
     }
   }
 
-  // Pending cari kontrolü
-  if (_tahCariVal) {
+  // Pending cari kontrolü — admin/manager atlar
+  if (_tahCariVal && !_isAdminO() && !_isManagerO()) {
     var _tahSelCari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === _tahCariVal; });
     if (_tahSelCari && _tahSelCari.status === 'pending_approval') {
       _odmHighlightMissing(['tah-f-cari'], 'Bu cari henüz onaylanmadı');
       window.toast?.('Bu cari henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
       return;
     }
-    // Potansiyel cari ile tahsilat oluşturulamaz
     if (_tahSelCari && (_tahSelCari.cariType === 'potansiyel' || (!_tahSelCari.cariType && _tahSelCari.status !== 'active'))) {
       _odmHighlightMissing(['tah-f-cari'], 'Potansiyel cari ile tahsilat oluşturulamaz');
       window.toast?.('Önce aktif cariye yükseltin — Cari panelinden evrak yükleyip onay isteyin', 'err');
