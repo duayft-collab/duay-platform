@@ -1225,13 +1225,13 @@ function renderOdemeler() {
           + '<button onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'flex\':\'none\'" class="btn btns" style="font-size:10px;padding:3px 6px;border-radius:6px">···</button>'
           + '<div style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--b);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:50;flex-direction:column;min-width:140px;overflow:hidden">'
             + '<button onclick="showOdmApprovalTimeline('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📋 Onay Gecmisi</button>'
-            + '<button onclick="window._odmToggleQuickView?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">👁 Hızlı Bakış</button>'
+            + '<button onclick="window._odmTogglePeek?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">👁 Hızlı Bakış</button>'
             + '<button onclick="window._odmInlineEditRow?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">✏️ Inline Düzenle</button>'
             + '<button onclick="openOdmModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">📝 Detay Düzenle</button>'
             + (o.paid && !o.receipt ? '<button onclick="uploadOdmReceipt('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--amt);font-family:inherit;border-bottom:1px solid var(--b)" title="Fatura belgesi yuklenmemis">📎 Dekont Yukle (eksik)</button>' : '')
             + ((o.cat==='abonelik'||o.cat==='fatura') ? '<button onclick="openOdmTalimatModal('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🏦 Odeme Talimati</button>' : '')
             + '<button onclick="window._odmSaveAsTemplate?.('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit;border-bottom:1px solid var(--b)">🔁 Şablon Kaydet</button>'
-            + (_isManagerO() || (o.approvalStatus === 'pending' && o.createdBy === _CUo()?.id) ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
+            + (_isManagerO() || (o.approvalStatus === 'pending' && String(o.createdBy||'') === String(_CUo()?.id||'')) ? '<button onclick="delOdm('+o.id+')" style="background:none;border:none;padding:8px 12px;text-align:left;font-size:11px;cursor:pointer;color:var(--rdt);font-family:inherit">🗑 Sil</button>' : '')
           + '</div>'
         + '</div>'
       + '</div>';
@@ -1696,7 +1696,7 @@ function saveOdm() {
     const o = d.find(x => x.id === eid);
     if (o) {
       // Yetki kontrolü — kendi kaydı veya admin/manager
-      if (!isAdmin && !_isManagerO() && o.createdBy && o.createdBy != cu?.id) {
+      if (!isAdmin && !_isManagerO() && o.createdBy && String(o.createdBy||'') !== String(cu?.id||'')) {
         window.toast?.('Bu kaydı düzenleme yetkiniz yok', 'err');
         return;
       }
@@ -2921,7 +2921,7 @@ function saveTahsilat() {
     var o = d.find(function(x) { return x.id === eid; });
     if (o) {
       // Yetki kontrolü — kendi kaydı veya admin/manager
-      if (!_isAdminO() && !_isManagerO() && o.createdBy && o.createdBy != _CUo()?.id) {
+      if (!_isAdminO() && !_isManagerO() && o.createdBy && String(o.createdBy||'') !== String(_CUo()?.id||'')) {
         window.toast?.('Bu kaydı düzenleme yetkiniz yok', 'err');
         return;
       }
@@ -6475,73 +6475,6 @@ window._odmBulkApprove = function() {
 /**
  * Ödeme satırının altında accordion hızlı bakış aç/kapat.
  */
-window._odmToggleQuickView = function(id) {
-  var existing = document.getElementById('odm-qv-' + id);
-  if (existing) { existing.remove(); return; }
-  document.querySelectorAll('[id^="odm-qv-"]').forEach(function(el) { el.remove(); });
-
-  var d = window.loadOdm ? loadOdm() : [];
-  var o = d.find(function(x) { return x.id === id; });
-  if (!o) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
-  var cat = ODM_CATS[o.cat] || ODM_CATS.diger;
-  var curSym = o.currency === 'USD' ? '$' : o.currency === 'EUR' ? '€' : '₺';
-  var rates = _odmGetRates();
-  var kurRate = o.kurRate || rates[o.currency] || 1;
-  var tlAmt = o.currency && o.currency !== 'TRY' ? Math.round((parseFloat(o.amount) || 0) * kurRate) : null;
-
-  var users = typeof loadUsers === 'function' ? loadUsers() : [];
-  var assigned = users.find(function(u) { return u.id === o.assignedTo; });
-
-  var qv = document.createElement('div');
-  qv.id = 'odm-qv-' + id;
-  qv.style.cssText = 'padding:12px 20px;background:var(--s2);border-bottom:2px solid var(--ac);animation:pus-row-in .15s ease';
-
-  qv.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:11px">'
-    // Sol: Tutar + TL
-    + '<div>'
-      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Finansal</div>'
-      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Tutar:</span> <b style="font-size:14px;color:var(--t)">' + curSym + Number(o.amount || 0).toLocaleString('tr-TR') + '</b></div>'
-      + (tlAmt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">TL Karşılığı:</span> <b>₺' + tlAmt.toLocaleString('tr-TR') + '</b> <span style="font-size:9px;color:var(--t3)">(fatura kur: ' + kurRate + ')</span></div>' : '')
-      + (function() {
-          // Kur farkı hesaplama — fatura kuru vs güncel kur
-          if (!o.currency || o.currency === 'TRY') return '';
-          var currentRate = rates[o.currency] || 1;
-          var faturRate = o.kurRate || currentRate;
-          var diff = currentRate - faturRate;
-          var diffTL = Math.round(diff * (parseFloat(o.amount) || 0));
-          if (Math.abs(diff) < 0.01) return '';
-          var diffColor = diffTL >= 0 ? '#DC2626' : '#16A34A'; // artış = zarar (ödeme), azalış = kazanç
-          return '<div style="margin-bottom:4px"><span style="color:var(--t3)">Kur Farkı:</span> <span style="color:' + diffColor + ';font-weight:600">' + (diffTL >= 0 ? '+' : '') + '₺' + diffTL.toLocaleString('tr-TR') + '</span> <span style="font-size:9px;color:var(--t3)">(güncel: ' + currentRate.toFixed(2) + ')</span></div>';
-        })()
-      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Kategori:</span> ' + cat.ic + ' ' + cat.l + '</div>'
-      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sıklık:</span> ' + (ODM_FREQ[o.freq] || o.freq || '—') + '</div>'
-    + '</div>'
-    // Orta: Cari + Vade
-    + '<div>'
-      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Detay</div>'
-      + (o.cariName ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari:</span> <b>' + esc(o.cariName) + '</b></div>' : '')
-      + (assigned ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sorumlu:</span> ' + esc(assigned.name) + '</div>' : '')
-      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Vade:</span> ' + (o.due || '—') + '</div>'
-      + (o.docNo ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Doküman No:</span> ' + esc(o.docNo) + '</div>' : '')
-      + (o.yontem ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Yöntem:</span> ' + esc(o.yontem) + '</div>' : '')
-      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Not:</span> ' + esc(o.note) + '</div>' : '')
-    + '</div>'
-    // Sağ: Onay
-    + '<div>'
-      + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Onay Durumu</div>'
-      + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Durum:</span> ' + (o.approvalStatus || 'bekliyor') + '</div>'
-      + (o.approvedAt ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Onay:</span> ' + o.approvedAt + '</div>' : '')
-      + (o.paid ? '<div style="margin-bottom:4px;color:#16A34A">✅ Ödendi' + (o.paidTs ? ' — ' + o.paidTs : '') + '</div>' : '')
-      + (o.receipt ? '<div style="margin-bottom:4px">📎 Dekont mevcut</div>' : '')
-    + '</div>'
-  + '</div>';
-
-  var row = document.querySelector('[data-oid="' + id + '"]');
-  if (row && row.nextSibling) row.parentNode.insertBefore(qv, row.nextSibling);
-  else if (row) row.parentNode.appendChild(qv);
-};
-
 // ════════════════════════════════════════════════════════════════
 // TAHSİLAT SİLME — Soft Delete (K06)
 // ════════════════════════════════════════════════════════════════
