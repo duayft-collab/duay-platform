@@ -166,18 +166,32 @@ function tickClock() {
   const hms = `${_p2(n.getHours())}:${_p2(n.getMinutes())}:${_p2(n.getSeconds())}`;
   const ymd = `${n.getFullYear()}-${_p2(n.getMonth()+1)}-${_p2(n.getDate())}`;
 
-  // ── Footer şeridindeki dinamik saat ─────────────────────────
-  const clockStrip = _g('clock-strip');
-  if (clockStrip) clockStrip.textContent = `${ymd} ${hms}`;
+  // ── Footer B: saat + kullanıcı + DB durumu ─────────────────
+  var _trDays = ['Pazar','Pazartesi','Sali','Carsamba','Persembe','Cuma','Cumartesi'];
+  var _trMonths = ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'];
+  var clockStrip = _g('clock-strip');
+  if (clockStrip) clockStrip.textContent = _trDays[n.getDay()] + ' ' + n.getDate() + ' ' + _trMonths[n.getMonth()] + ' · ' + hms;
 
-  // ── DB durum göstergesi (her 3 saniyede bir) ─────────────────
+  // Kullanıcı adı + proje ID (ilk yüklemede bir kez)
+  var _ftUser = _g('ft-user-name');
+  if (_ftUser && _ftUser.textContent === '—') {
+    var _cu2 = window.Auth?.getCU?.();
+    if (_cu2?.name) _ftUser.textContent = _cu2.name;
+  }
+  var _ftProj = _g('ft-project-id');
+  if (_ftProj && _ftProj.textContent === '—') {
+    var _pid = window.__ENV__?.projectId || window.FirebaseConfig?.projectId || 'duayft-collab';
+    _ftProj.textContent = _pid;
+  }
+
+  // DB durum (her 3 saniyede)
   if (n.getSeconds() % 3 === 0) {
     var _dbSyncEl = _g('db-last-sync');
     var _dbSizeEl = _g('db-size');
     var _dbDotEl  = _g('db-sync-dot');
     if (_dbSyncEl) {
       var _lst = window._lastSyncTime || 0;
-      _dbSyncEl.textContent = _lst ? '↑ ' + new Date(_lst).toLocaleTimeString('tr-TR') : '—';
+      _dbSyncEl.textContent = _lst ? new Date(_lst).toLocaleTimeString('tr-TR') : '—';
     }
     if (_dbSizeEl) {
       try {
