@@ -818,7 +818,6 @@ function renderOdemeler() {
   if (!_cuCheck?.id && !window._odmAuthRetried) {
     window._odmAuthRetried = true;
     setTimeout(function() { window._odmAuthRetried = false; renderOdemeler(); }, 500);
-    setTimeout(function() { renderOdemeler(); }, 1500); // Safari 2. retry
     return;
   }
   const today   = _todayStr();
@@ -1175,7 +1174,7 @@ function renderOdemeler() {
             return (_canEdit ? '<button onclick="event.stopPropagation();' + (isTah ? 'openTahsilatModal(' + o.id + ')' : 'openOdmModal(' + o.id + ')') + '" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Düzenle</button>' : '')
               + (o.docs && o.docs.length && _canViewDoc ? '<button onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)" class="odm-hdr-btn" style="font-size:10px;padding:4px 10px">Belge Gör</button>' : (o.docs && o.docs.length ? '<span style="font-size:9px;color:var(--t3)">📎 Belge mevcut</span>' : '<span style="font-size:9px;color:var(--t3)">Belge yok</span>'))
               + (_canApprove && isPend ? '<button onclick="event.stopPropagation();processOdmApproval(' + o.id + ',\'ara_onayla\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-family:inherit">Onayla</button>' : '')
-              + (_canPay ? '<button onclick="event.stopPropagation();' + (isTah ? 'markTahsilatCollected(' + o.id + ')' : 'markOdmPaid(' + o.id + ')') + '" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
+              + (_canPay ? '<button onclick="event.stopPropagation();markOdmPaid(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit">' + (isTah ? 'Tahsil Et' : 'Öde') + '</button>' : '')
               + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '')
               + (_canDel ? '<button onclick="event.stopPropagation();window._odmRevertRecord?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(107,114,128,.08);color:#6B7280;cursor:pointer;font-family:inherit">Geri Al</button>' : '')
               + (isRejected && _canEdit ? '<button onclick="event.stopPropagation();window._odmResubmit?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(59,130,246,.08);color:#3B82F6;cursor:pointer;font-family:inherit">Düzenle & Tekrar Gönder</button>' : '')
@@ -1587,7 +1586,7 @@ function saveOdm() {
     return;
   }
   window._odmSaveRetried = false;
-  var isAdmin = cu?.role === 'admin' || _isAdminO();
+  var isAdmin = cu?.role === 'admin';
   var name = (document.getElementById('odm-f-name')?.value || '').trim();
   var _fAmt = parseFloat(document.getElementById('odm-f-amount')?.value || '0');
   var _fDue = document.getElementById('odm-f-due')?.value || '';
@@ -1753,7 +1752,6 @@ function saveOdm() {
   // sozlesme undefined ise sil
   if (entry.sozlesme === undefined) delete entry.sozlesme;
   if (entry.sozlesmeName === undefined) delete entry.sozlesmeName;
-  if (!entry.taskId && !entry.jobId) entry.jobId = 'Yok';
   if (eid) {
     const o = d.find(x => x.id === eid);
     if (o) {
@@ -2987,7 +2985,6 @@ function saveTahsilat() {
     docs,
     ts: _nowTso(), updatedBy: _CUo()?.id,
   };
-  if (!entry.taskId && !entry.jobId) entry.jobId = 'Yok';
   if (eid) {
     var o = d.find(function(x) { return x.id === eid; });
     if (o) {
