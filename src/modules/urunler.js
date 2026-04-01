@@ -373,7 +373,12 @@ function _renderEtap4(u) {
 function openUrunForm(editId) {
   try {
     const panel = _g('panel-urunler');
-    if (!panel) { console.warn('[urunler] panel-urunler bulunamadı'); return; }
+    if (!panel) {
+      console.warn('[urunler] panel-urunler bulunamadı, renderUrunler ile yükleniyor');
+      window.renderUrunler?.();
+      setTimeout(() => openUrunForm(editId), 150);
+      return;
+    }
     let sekmeler = _getSekmeler();
 
     if (editId) {
