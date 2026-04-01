@@ -72,12 +72,15 @@
         if (!panel) return;
         var existing = panel.querySelector('.ozlu-soz-injected');
         if (existing) return; // zaten var
-        var sticky = panel.querySelector('[style*="position:sticky"]');
-        if (sticky) {
-          var div = document.createElement('div');
-          div.className = 'ozlu-soz-injected';
-          div.innerHTML = window._renderOzluSozBanner(ozluKey);
-          sticky.parentNode.insertBefore(div, sticky.nextSibling);
+        var div = document.createElement('div');
+        div.className = 'ozlu-soz-injected';
+        div.innerHTML = window._renderOzluSozBanner(ozluKey);
+        var odmList = panel.querySelector('#odm-list');
+        if (odmList && odmList.parentNode) {
+          odmList.parentNode.insertBefore(div, odmList.nextSibling);
+        } else {
+          var sticky = panel.querySelector('[style*="position:sticky"]');
+          if (sticky) sticky.parentNode.insertBefore(div, sticky.nextSibling);
         }
       }, 200);
     }
@@ -3560,7 +3563,7 @@ window._getOzluSoz = function(modul) {
 };
 window._renderOzluSozBanner = function(modul) {
   var soz = window._getOzluSoz(modul);
-  return '<div style="padding:8px 16px;font-size:11px;font-style:italic;color:var(--t3);display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--b)"><span style="flex:1">\u201C'+soz+'\u201D</span><button onclick="navigator.clipboard?.writeText(\''+soz.replace(/'/g,'\\&#39;')+'\');window.toast?.(\'Kopyalandı!\',\'ok\')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3)" title="Kopyala">📋</button></div>';
+  return '<div style="background:var(--sf);padding:6px 20px;font-size:11px;font-style:italic;color:var(--t3);display:flex;align-items:center;gap:6px"><span style="flex:1">\u201C'+soz+'\u201D</span><button onclick="navigator.clipboard?.writeText(\''+soz.replace(/'/g,'\\&#39;')+'\');window.toast?.(\'Kopyalandı!\',\'ok\')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3)" title="Kopyala">📋</button></div>';
 };
 
 // ════════════════════════════════════════════════════════════════
