@@ -41,6 +41,7 @@ const _br = t => _badge(t, '#FCEBEB', RED);
 const _bb = t => _badge(t, '#E6F1FB', NAVY);
 
 /* ── Veri ────────────────────────────────────────────────────── */
+function _loadIhracat(){ return typeof window.loadIhracatOps === 'function' ? window.loadIhracatOps() : []; }
 function _loadOdm()    { return (typeof window.loadOdm === 'function' ? window.loadOdm() : []).filter(o => !o.isDeleted); }
 function _loadTah()    { return (typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []).filter(t => !t.isDeleted); }
 function _loadIddia()  { return typeof window.loadIddialar === 'function' ? window.loadIddialar() : []; }
@@ -133,6 +134,7 @@ function _renderBanner(grup) {
     operasyon: { title: 'Operasyon Detayı', sub: 'Görevler · Kargo', chips: () => { const tk = _loadTasks(); return _chip('Aktif', String(tk.filter(t=>!t.done).length)) + _chip('Gecikmiş', String(tk.filter(t=>!t.done&&t.due&&t.due<_today()).length)); }},
     katalog:   { title: 'Katalog Detayı', sub: 'Ürünler · Cariler', chips: () => _chip('Ürün', String(_loadUrunler().length)) + _chip('Cari', String(_loadCari().length)) },
     ekip:      { title: 'Ekip Detayı', sub: 'Kullanıcılar · İddia', chips: () => _chip('Aktif', String(_loadUsers().filter(u=>u.status==='active').length)) + _chip('İddia', String(_loadIddia().filter(x=>x.durum==='aktif').length)) },
+    ihracat:   { title: 'İhracat Detayı', sub: 'Sevkiyatlar · GÇB · B/L', chips: () => { const ops=_loadIhracat(); return _chip('Yolda', String(ops.filter(o=>o.status==='yolda').length)) + _chip('Teslim', String(ops.filter(o=>o.status==='teslim'&&o.gercekYukleme&&_thisMonth(new Date(o.gercekYukleme))).length)); }},
   };
   const c = cfg[grup] || cfg.finans;
   return '<div style="background:#042C53;border-radius:9px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
@@ -182,6 +184,17 @@ function _renderMetrikler(grup) {
       { l:'Aktif Ürün', v:String(aktifUr), c:GREEN, s:'Listelenebilir' },
       { l:'Toplam Cari', v:String(ca.length), c:BLUE, s:'Kayıt' },
       { l:'Bu Ay Yeni', v:String(yeniCa), c:NAVY, s:'Cari' },
+    ];
+  } else if (grup === 'ihracat') {
+    const ops = _loadIhracat();
+    const yolda = ops.filter(o => o.status==='yolda').length;
+    const teslim = ops.filter(o => o.status==='teslim' && o.gercekYukleme && _thisMonth(new Date(o.gercekYukleme))).length;
+    const ciroUSD = ops.filter(o => o.doviz==='USD').reduce((s,o) => s+((parseFloat(o.birimFiyat)||0)*(parseFloat(o.miktar)||0)), 0);
+    cards = [
+      { l:'Toplam İşlem', v:String(ops.length), c:T1, s:'Kayıt' },
+      { l:'Yolda', v:String(yolda), c:BLUE, s:'Transit' },
+      { l:'Bu Ay Teslim', v:String(teslim), c:GREEN, s:'Tamamlandı' },
+      { l:'Ciro USD', v:'$'+_fmt(ciroUSD), c:T1, s:'Toplam' },
     ];
   } else {
     const us = _loadUsers(), tk = _loadTasks(), id = _loadIddia();
@@ -237,6 +250,12 @@ function _renderGrafik(grup) {
     const wk = _weeklyCount(ur, 'createdAt', 6);
     h += _svgBars(wk.map(w=>w.count), 400, 55, BLUE);
     h += '<div style="font-size:9px;color:'+T3+';margin-top:4px">Son 6 hafta · Yeni ürünler</div>';
+  } else if (grup === 'ihracat') {
+    h += '<span style="font-size:10px;font-weight:500;color:' + T1 + '">Haftalık Teslim Trendi</span></div>';
+    const teslimOps = _loadIhracat().filter(o => o.status==='teslim' && o.gercekYukleme);
+    const wk = _weeklyCount(teslimOps, 'gercekYukleme', 6);
+    h += _svgBars(wk.map(w=>w.count), 400, 55, BLUE);
+    h += '<div style="font-size:9px;color:'+T3+';margin-top:4px">Haftalık teslim sayısı</div>';
   } else {
     h += '<span style="font-size:10px;font-weight:500;color:' + T1 + '">Performans Trendi</span></div>';
     const tk = _loadTasks().filter(t => t.done && t.completedAt);
@@ -312,6 +331,27 @@ function _renderIkili(grup) {
     const turler = {}; ca.forEach(c => { const k = c.tur || c.type || 'Diğer'; turler[k] = (turler[k]||0)+1; });
     Object.entries(turler).slice(0,5).forEach(([k,v]) => { const p = Math.round(v/ca.length*100); h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+_esc(k)+'</span><span>'+v+'</span></div>'+_bar(p,NAVY)+'</div>'; });
     if (!Object.keys(turler).length) h += '<div style="font-size:9px;color:'+T3+';padding:6px 0">Tür verisi yok</div>';
+    h += '</div>';
+
+  } else if (grup === 'ihracat') {
+    const ops = _loadIhracat();
+    // Sol: Son işlemler
+    h += '<div style="' + S_WK + '"><div style="font-size:13px;font-weight:500;color:'+T1+';margin-bottom:6px">Son İşlemler</div>';
+    ops.slice(0,5).forEach(o => {
+      const stR = {yolda:'#E6F1FB',teslim:'#EAF3DE',hazirlaniyor:'#FAEEDA',iptal:'#FCEBEB'};
+      const stT = {yolda:'#0C447C',teslim:'#27500A',hazirlaniyor:'#633806',iptal:'#A32D2D'};
+      const st = o.status||'taslak';
+      h += '<div style="display:flex;justify-content:space-between;font-size:10px;color:'+T2+';margin-bottom:4px"><span>'+_esc(o.expNo||'—')+'</span><span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+(stR[st]||BG2)+';color:'+(stT[st]||T3)+'">'+_esc(st)+'</span></div>';
+    });
+    if (!ops.length) h += '<div style="font-size:10px;color:'+T3+';text-align:center;padding:8px">Kayıt yok</div>';
+    h += '</div>';
+    // Sağ: Alıcı dağılımı
+    h += '<div style="' + S_WK + '"><div style="font-size:13px;font-weight:500;color:'+T1+';margin-bottom:6px">Alıcı Dağılımı</div>';
+    const aliciSay = {}; ops.forEach(o => { const a = o.aliciAdi||'—'; aliciSay[a]=(aliciSay[a]||0)+1; });
+    const alicilar = Object.entries(aliciSay).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxA = alicilar[0]?.[1]||1;
+    alicilar.forEach(([a,s]) => { const p=Math.round(s/maxA*100); h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:10px;color:'+T2+';margin-bottom:2px"><span>'+_esc(a)+'</span><span>'+s+'</span></div>'+_bar(p,BLUE)+'</div>'; });
+    if (!alicilar.length) h += '<div style="font-size:10px;color:'+T3+'">Veri yok</div>';
     h += '</div>';
 
   } else {
@@ -475,6 +515,15 @@ function _renderSidebar() {
       + '<div style="font-size:8px;color:#85B7EB">'+_esc(soz.yazar||soz.author||'')+'</div>';
   } else { h += '<div style="font-size:9px;color:#85B7EB;font-style:italic">Henüz söz eklenmemiş</div>'; }
   h += '</div>';
+
+  // İhracat yolda olanlar
+  const ops2 = _loadIhracat();
+  const yolda2 = ops2.filter(o => o.status === 'yolda').slice(0, 3);
+  if (yolda2.length) {
+    h += '<div style="' + S_WK + ';margin-top:7px"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:5px">Yolda Olanlar</div>';
+    yolda2.forEach(o => { h += '<div style="font-size:10px;color:'+T2+';margin-bottom:3px">'+_esc(o.expNo||'—')+' · '+_esc(o.varisLimani||'—')+'</div>'; });
+    h += '</div>';
+  }
 
   return h;
 }

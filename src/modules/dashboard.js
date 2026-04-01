@@ -162,6 +162,25 @@ function _renderBanner() {
 /* ════════════════════════════════════════════════════════════════
    BÖLÜM 2 — FİNANS
    ════════════════════════════════════════════════════════════════ */
+function _renderIhracatOzet() {
+  const ops = typeof window.loadIhracatOps === 'function' ? window.loadIhracatOps() : [];
+  let h = '<div style="' + S_SEC + '">İHRACAT ' + _bb('Özet') + '</div>';
+  if (!ops.length) {
+    h += '<div style="' + S_WK + ';font-size:11px;color:' + T3 + ';text-align:center;padding:12px">Henüz ihracat kaydı yok<br><span onclick="window.App?.nav?.(\'ihracat-ops\')" style="color:' + BLUE + ';cursor:pointer;font-size:10px">Ekle →</span></div>';
+    return h;
+  }
+  const yolda = ops.filter(o => o.status === 'yolda').length;
+  const teslim = ops.filter(o => o.status === 'teslim' && o.gercekYukleme && _thisMonth(new Date(o.gercekYukleme))).length;
+  const ciroUSD = ops.filter(o => o.doviz === 'USD').reduce((s, o) => s + ((parseFloat(o.birimFiyat) || 0) * (parseFloat(o.miktar) || 0)), 0);
+  h += '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px">';
+  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Yolda</div><div style="' + S_VAL + ';color:' + BLUE + '">' + yolda + '</div><div style="' + S_SUB + '">Sevkiyat</div></div>';
+  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Bu Ay Teslim</div><div style="' + S_VAL + ';color:' + GREEN + '">' + teslim + '</div><div style="' + S_SUB + '">Tamamlandı</div></div>';
+  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Ciro USD</div><div style="font-size:18px;font-weight:500;color:' + T1 + '">$' + _fmt(ciroUSD) + '</div><div style="' + S_SUB + '">Toplam</div></div>';
+  h += '</div>';
+  h += '<div style="text-align:right;margin-top:4px"><span onclick="localStorage.setItem(\'ak_nav_grup\',\'ihracat\');window.App?.nav?.(\'dashboardDetay\')" style="font-size:10px;color:' + BLUE + ';cursor:pointer">Detay →</span></div>';
+  return h;
+}
+
 function _renderFinans() {
   const odm = _loadOdm();
   const tah = _loadTah();
@@ -316,6 +335,40 @@ function _renderKPI() {
 /* ════════════════════════════════════════════════════════════════
    BÖLÜM 4 — E-MYTH + VANISH
    ════════════════════════════════════════════════════════════════ */
+function _calcEmythVanish() {
+  try {
+    // SOP hesaplama
+    if (typeof window.loadLocalDocs === 'function') {
+      const docs = window.loadLocalDocs();
+      const sopDocs = docs.filter(d => d.cat === 'Sistem' || d.cat === 'Operasyon' || (d.name && d.name.toUpperCase().includes('SOP')));
+      const tam = sopDocs.length;
+      const top = docs.length || 1;
+      if (tam > 0) {
+        localStorage.setItem('ak_sop_tamamlanan', tam);
+        localStorage.setItem('ak_sop_toplam', top);
+        const sopPct = Math.round((tam / top) * 100);
+        const sistemsiz = Math.max(0, 100 - sopPct);
+        localStorage.setItem('ak_sistemsiz_oran', sistemsiz);
+      }
+    }
+    // Görev tamamlanma → delegasyon proxy
+    if (typeof window.loadTasks === 'function') {
+      const tasks = window.loadTasks().filter(t => !t.isDeleted);
+      const total = tasks.length || 1;
+      const done = tasks.filter(t => t.done === true || t.status === 'done').length;
+      const delPct = Math.round((done / total) * 100);
+      if (delPct > 0) localStorage.setItem('ak_delegasyon_skor', delPct);
+      // Sahipsiz karar — uid boş/null olan bu haftaki görevler
+      const weekAgo = Date.now() - 7 * 86400000;
+      const sahipsiz = tasks.filter(t => {
+        const ts = t.createdAt ? new Date(t.createdAt).getTime() : 0;
+        return (!t.uid || t.uid === 0 || t.uid === '') && ts > weekAgo;
+      }).length;
+      localStorage.setItem('ak_sahipsiz_karar', sahipsiz);
+    }
+  } catch (e) { console.warn('[DASH] calcEmythVanish:', e.message); }
+}
+
 function _renderEmythVanish() {
   let h = '<div style="display:grid;grid-template-columns:3fr 2fr;gap:9px">';
 
@@ -553,15 +606,12 @@ function _openAdminModal() {
   const fields = [
     { key: 'ak_sistem_skoru', label: 'Sistem Skoru (%)', type: 'number' },
     { key: 'ak_otomasyon_oran', label: 'Otomasyon Oranı (%)', type: 'number' },
-    { key: 'ak_sahipsiz_karar', label: 'Sahipsiz Karar/hafta', type: 'number' },
-    { key: 'ak_delegasyon_skor', label: 'Delegasyon Skoru (%)', type: 'number' },
     { key: 'ak_sahip_mudahale', label: 'Sahip Müdahale (%)', type: 'number' },
-    { key: 'ak_sistemsiz_oran', label: 'Sistemsiz İş Oranı (%)', type: 'number' },
-    { key: 'ak_sop_tamamlanan', label: 'SOP Tamamlanan', type: 'number' },
-    { key: 'ak_sop_toplam', label: 'SOP Toplam', type: 'number' },
     { key: 'ak_hedef_konversiyon', label: 'Hedef Konversiyon (%)', type: 'number' },
     { key: 'ak_hedef_ciro', label: 'Hedef Ciro (TL)', type: 'number' },
     { key: 'ak_hedef_musteri', label: 'Hedef Yeni Müşteri', type: 'number' },
+    { key: 'ak_hedef_ihracat_adet', label: 'Aylık Hedef Sevkiyat (adet)', type: 'number' },
+    { key: 'ak_hedef_ihracat_ciro', label: 'Aylık Hedef Ciro (USD)', type: 'number' },
   ];
 
   const modulFields = ['nakit', 'gorev', 'katalog', 'musteri'];
@@ -639,6 +689,7 @@ function renderDashboard() {
   if (!panel) return;
   const cu = _cu();
   if (!cu) return;
+  _calcEmythVanish();
 
   let h = '<div style="padding:16px 32px;background:' + BG3 + ';display:flex;flex-direction:column;gap:16px;min-height:100%">';
 
@@ -652,6 +703,7 @@ function renderDashboard() {
 
   h += _renderBanner();
   h += _renderFinans();
+  h += _renderIhracatOzet();
   h += _renderKPI();
   h += _renderEmythVanish();
   h += _renderNakit();
