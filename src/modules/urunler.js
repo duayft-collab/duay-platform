@@ -29,7 +29,7 @@ const _loadCari = () => typeof window.loadCari === 'function' ? window.loadCari(
 const BG1='var(--sf)',BG2='var(--s2)',BD='var(--b)',T1='var(--t)',T2='var(--t2)',T3='var(--t3)';
 const NAVY='#042C53',BLUE='#185FA5',GREEN='#27500A',RED='#A32D2D',AMBER='#EF9F27';
 const S_WK = 'background:'+BG1+';border:0.5px solid '+BD+';border-radius:8px;padding:12px 14px';
-const S_LBL = 'font-size:8px;margin-bottom:2px';
+const S_LBL = 'font-size:10px;margin-bottom:4px';
 const SK = 'ak_urun_sekmeler';
 
 /* ── Sekme State ────────────────────────────────────────────── */
@@ -61,13 +61,13 @@ function _inp(id, label, opts) {
     + '<input class="fi" id="uf2-'+id+'" type="'+(o.type||'text')+'" value="'+_esc(o.val||'')+'"'
     + (o.readonly?' readonly':'')+' placeholder="'+_esc(o.ph||'')+'"'
     + (o.req?' data-req="1"':'')
-    + ' style="font-size:11px;padding:8px 10px;height:38px;'+bg+'" oninput="window._uf2Recalc?.()">'
+    + ' style="font-size:11px;padding:8px 10px;height:38px;border-radius:8px;border:0.5px solid '+BDM+';'+bg+'" oninput="window._uf2Recalc?.()">'
     + '</div>';
 }
 function _sel(id, label, options, opts) {
   const o = opts||{};
   let h = '<div>'+_lbl(label, o.req, o.hint)+'<select class="fi" id="uf2-'+id+'"'
-    + (o.req?' data-req="1"':'')+' style="font-size:11px;padding:8px 10px;height:38px" onchange="window._uf2Recalc?.()">'
+    + (o.req?' data-req="1"':'')+' style="font-size:11px;padding:8px 10px;height:38px;border-radius:8px;border:0.5px solid '+BDM+'" onchange="window._uf2Recalc?.()">'
     + '<option value="">— Seçin —</option>';
   options.forEach(v => {
     const val = typeof v==='object'?v.v:v, lbl = typeof v==='object'?v.l:v;
@@ -82,13 +82,13 @@ function _ta(id, label, opts) {
     + (o.badge?'<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:'+(o.badgeBg||'#E6F1FB')+';color:'+(o.badgeFg||BLUE)+'">'+_esc(o.badge)+'</span>':'')
     + '<textarea class="fi" id="uf2-'+id+'" rows="'+(o.rows||2)+'"'
     + (o.req?' data-req="1"':'')+' placeholder="'+_esc(o.ph||'')+'"'
-    + ' style="font-size:11px;padding:8px 10px;resize:none;min-height:'+(o.minH||'56px')+'">'+_esc(o.val||'')+'</textarea></div>';
+    + ' style="font-size:11px;padding:8px 10px;resize:none;min-height:'+(o.minH||'56px')+';border-radius:8px;border:0.5px solid '+BDM+'">'+_esc(o.val||'')+'</textarea></div>';
 }
 function _upload(id, label, opts) {
   const o = opts||{};
   const border = o.req ? 'border-color:#DC2626' : '';
   return '<div>'+_lbl(label, o.req, o.hint)
-    + '<div style="border:1.5px dashed '+BD+';border-radius:8px;padding:10px;text-align:center;cursor:pointer;font-size:9px;color:'+T3+';min-height:40px;'+border+'"'
+    + '<div style="border:1.5px dashed '+BD+';border-radius:10px;padding:12px;text-align:center;cursor:pointer;font-size:9px;color:'+T3+';min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;'+border+'"'
     + ' onclick="document.getElementById(\'uf2-'+id+'-file\').click()">'
     + '<div id="uf2-'+id+'-preview">Dosya sürükleyin veya tıklayın</div></div>'
     + '<input type="file" id="uf2-'+id+'-file" style="display:none" onchange="window._uf2FileChange?.(\''+id+'\',this)">'
@@ -96,10 +96,10 @@ function _upload(id, label, opts) {
     + '</div>';
 }
 function _section(title, badge, content) {
-  return '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;color:'+T3+';margin-bottom:5px;display:flex;align-items:center;gap:6px">'
+  return '<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:'+T3+';margin-bottom:10px;display:flex;align-items:center;gap:6px">'
     + _esc(title)+(badge||'')+'</div>'+content+'</div>';
 }
-function _grid(cols, gap, inner) { return '<div style="display:grid;grid-template-columns:repeat('+cols+',minmax(0,1fr));gap:'+(gap||'7px')+'">'+inner+'</div>'; }
+function _grid(cols, gap, inner) { return '<div style="display:grid;grid-template-columns:repeat('+cols+',minmax(0,1fr));gap:'+(gap||'12px')+'">'+inner+'</div>'; }
 function _badge(t,bg,fg) { return ' <span style="font-size:8px;padding:1px 6px;border-radius:4px;background:'+bg+';color:'+fg+'">'+_esc(t)+'</span>'; }
 function _info(color, text) {
   const bg = color==='blue'?'#E6F1FB':color==='amber'?'#FAEEDA':'#FCEBEB';
@@ -177,47 +177,39 @@ function _renderEtap1(u) {
 
   let h = '';
   // B1 — Temel Bilgiler
-  h += _section('Temel Bilgiler', '', _grid(4,'7px',
+  const tedSel = _sel('tedarikci','Tedarikçi / Satıcı',cariOpts,{req:true,sel:u.tedarikci||u.saticiId});
+  const tedRow = '<div style="display:flex;gap:6px;align-items:flex-end">'
+    + '<div style="flex:1">'+tedSel+'</div>'
+    + '<button onclick="window._uf2YeniTedarikci()" style="width:28px;height:28px;border-radius:8px;background:#E6F1FB;border:none;color:'+BLUE+';font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center" title="Yeni Tedarikçi Ekle">+</button></div>';
+  h += _section('Temel Bilgiler', '', _grid(4,'12px',
     _inp('sira','Sıra No',{val:siraNo,readonly:true})
     + _inp('duay-kod','Duay Ürün Kodu',{val:duayKod,readonly:true,hint:'11·XXXX·YYY formatı'})
-    + _sel('tedarikci','Tedarikçi / Satıcı',cariOpts,{req:true,sel:u.tedarikci||u.saticiId})
+    + tedRow
     + _inp('satici-kod','Satıcı Ürün Kodu',{val:u.saticiKodu||u.urunKodu})
-  ) + _grid(4,'7px',
+  ) + _grid(2,'12px',
     _inp('satici-kat','Satıcı Kategorisi',{val:u.saticiSinifi||'',readonly:true,hint:'Cariden otomatik'})
-    + _sel('eski-satici','Eski Satıcı',cariOpts,{hint:'Karşılaştırma için'})
     + _sel('kdv','KDV Oranı',KDV.map(k=>({v:k,l:'%'+k})),{req:true,sel:u.kdvOrani})
-    + _sel('imo','IMO Durumu',[{v:'H',l:'IMO yok — boş bırak'},{v:'E',l:'IMO var — tehlikeli madde'}],{sel:u.imo||'H'})
   ));
 
   // B2 — Ürün Adlandırma
-  h += _section('Ürün Adlandırma (CI/PL/BL)', '', _grid(2,'7px',
+  h += _section('Ürün Adlandırma (CI/PL/BL)', '', _grid(2,'12px',
     _inp('std-adi','Standart İngilizce Ürün Adı (CI/PL/BL)',{req:true,val:u.standartAdi,hint:'CI, PI, PL, BL belgelerinde geçen standart isim'})
-    + _inp('fatura-adi','Satıcının Faturasındaki Ürün Adı',{val:u.faturaAdi||u.invoiceName})
-  ) + _grid(2,'7px',
-    _inp('duay-adi','Duay Ürün Adı (Türkçe)',{req:true,val:u.duayAdi||u.urunAdi})
-    + _inp('marka','Marka',{val:u.marka||u.brand})
+    + _inp('duay-adi','Satıcının Türkçe Ürün Adı',{req:true,val:u.duayAdi||u.urunAdi})
+  ) + _grid(2,'12px',
+    _inp('marka','Marka',{val:u.marka||u.brand})
+    + _sel('birim','Birim',BIRIMLER,{sel:u.birim})
   ));
 
   // B3 — Teknik Açıklama
   h += _section('Teknik Açıklama', _badge('Description of Goods — Müşteri teklifine İngilizce geçer','#E6F1FB',BLUE),
-    _ta('teknik','Teknik Açıklama',{req:true,val:u.teknikAciklama,minH:'46px',ph:'Ürün teknik açıklaması...'})
+    _ta('teknik','Teknik Açıklama',{req:true,val:u.teknikAciklama,minH:'56px',ph:'Ürün teknik açıklaması...'})
     + _ta('satici-detay','Satıcı Teknik Detayları',{val:u.saticiDetay,minH:'72px',
       ph:'max 5 satır · satış teklifine nasıl görünecekse o şekilde girin',
       hint:'Müşteri teklifine İngilizce olarak geçecektir'})
   );
 
-  // B4 — Teklif & Fiyat
-  h += _section('Teklif & Fiyat Bilgileri', '', _grid(4,'7px',
-    _inp('miktar','Miktar',{type:'number',req:true,val:u.miktar})
-    + _sel('birim','Birim',BIRIMLER,{sel:u.birim})
-    + _inp('birim-fiyat','Birim Fiyat (Unit Price)',{type:'number',val:u.birimFiyat,hint:'Teklifteki birim fiyat'})
-    + _sel('para','Para Birimi (CRR)',PARA.map(p=>({v:p,l:p})),{sel:u.paraBirimi||'USD'})
-  ) + _grid(4,'7px',
-    _inp('toplam','Toplam (Total)',{readonly:true,hint:'Otomatik hesaplanır'})
-    + _inp('teklif-tarih','Teklif Tarihi',{type:'date',val:u.teklifTarihi})
-    + _inp('teslimat-sure','Teslimat Süresi',{val:u.teslimatSuresi,ph:'10 Gün, 30 Days...'})
-    + _inp('teslim-sekli','Teslim Şekli / Yeri',{val:u.teslimSekli,ph:'FOB, CIF, EXW...'})
-  ) + _grid(3,'7px',
+  // B4 — Menşei & Paket
+  h += _section('Menşei & Paket Bilgileri', '', _grid(3,'12px',
     _sel('mensei','Menşei',MENSEI.map(m=>{const p=m.split('-');return{v:p[0],l:p[1]};}),{req:true,sel:u.mensei})
     + _inp('paket-boyut','Paket Boyutu',{val:u.paketBoyut,ph:'En × Boy × Yükseklik cm'})
     + _inp('son-tuketim','Son Tüketim / Garanti Tarihi',{type:'date',val:u.sonTuketim})
@@ -225,35 +217,35 @@ function _renderEtap1(u) {
 
   // B5 — Ürün Geliştirme
   h += _section('Ürün Geliştirme Sorusu', '',
-    _ta('gelistirme','Üründe yeni bir geliştirme yapıldı mı?',{minH:'36px',val:u.gelistirme,
+    _ta('gelistirme','Üründe yeni bir geliştirme yapıldı mı?',{minH:'56px',val:u.gelistirme,
       hint:'Satıcıya mutlaka sorun: "1 yılda ürününüzde nasıl bir iyileştirme yaptınız?"'})
   );
 
   // B6 — Belgeler
-  h += _section('Belgeler', '', _grid(3,'7px',
+  h += _section('Belgeler', '', _grid(3,'12px',
     _upload('katalog','Katalog/Broşür',{})
     + _upload('tds','TDS/Data Sheet',{})
     + _upload('teknik-cizim','Teknik Çizim',{req:true})
-  ) + _grid(3,'7px',
+  ) + _grid(3,'12px',
     _upload('3d','3D/Render',{})
     + _upload('sertifika','Sertifika',{})
     + _upload('foto','Ürün Fotoğrafı',{})
   ));
 
   // B7 — İç Notlar
-  h += _section('İç Notlar', _badge('Gizli · İç Kullanım','#FCEBEB',RED), _grid(2,'7px',
+  h += _section('İç Notlar', _badge('Gizli · İç Kullanım','#FCEBEB',RED), _grid(2,'12px',
     _ta('rakip-ustun','Rakiplere Üstünlüğü / Hedef Müşteri Profili',{val:u.rakipUstun})
     + _ta('referans','Referans Kullanım / Kritik Notlar',{val:u.referansNot})
-  ) + (_isA() ? '<div style="margin-top:7px;padding:8px;border-radius:6px;background:#FAEEDA">'
+  ) + (_isA() ? '<div style="margin-top:8px;padding:10px;border-radius:8px;background:#FAEEDA">'
     + _ta('satici-ozel','Satıcı Özel Notu',{val:u.saticiOzelNotu,hint:'Sadece admin görür'})+'</div>' : ''));
 
   // B8 — Gizli Hile Uyarısı
-  h += '<div style="padding:10px;border-radius:8px;background:#FCEBEB;border:0.5px solid #E24B4A33;margin-top:7px">'
+  h += '<div style="padding:12px 14px;border-radius:10px;background:#FCEBEB;border:0.5px solid #E24B4A33;margin-top:8px">'
     + '<div style="font-size:10px;font-weight:600;color:'+RED+'">Gizli Hile & Kalite Araştırması — SAHB-0200-380</div>'
-    + '<div style="font-size:9px;color:'+RED+';margin:3px 0">Etap 2\'ye geçmek için zorunlu · Ses kaydı + yazıya çevirme · Sözleşme maddeleri</div>'
-    + '<div style="display:flex;gap:6px;margin-top:6px">'
-    + '<button onclick="window._uf2AcSAHB()" style="padding:4px 10px;border:none;border-radius:5px;background:'+RED+';color:#fff;font-size:10px;cursor:pointer;font-family:inherit">Şimdi Başlat</button>'
-    + '<button onclick="window._uf2Etap(2)" style="padding:4px 10px;border:0.5px solid '+BD+';border-radius:5px;background:'+BG1+';font-size:10px;cursor:pointer;font-family:inherit;color:'+T3+'">Sonra</button>'
+    + '<div style="font-size:9px;color:'+RED+';margin:4px 0">Etap 2\'ye geçmek için zorunlu · Ses kaydı + yazıya çevirme · Sözleşme maddeleri</div>'
+    + '<div style="display:flex;gap:6px;margin-top:8px">'
+    + '<button onclick="window._uf2AcSAHB()" style="padding:5px 12px;border:none;border-radius:6px;background:'+RED+';color:#fff;font-size:10px;cursor:pointer;font-family:inherit">Şimdi Başlat</button>'
+    + '<button onclick="window._uf2Etap(2)" style="padding:5px 12px;border:0.5px solid '+BD+';border-radius:6px;background:'+BG1+';font-size:10px;cursor:pointer;font-family:inherit;color:'+T3+'">Sonra</button>'
     + '</div></div>';
 
   return h;
@@ -325,18 +317,19 @@ function _renderEtap2(u) {
   if (u.imo === 'E') h += _info('red','IMO ürün — Forwarder\'a IMO\'lu konteyner teklifi isteyin. Tüm MSDS belgeleri forwarder\'a iletilmeden sağlıklı fiyat alınamaz. Müşteri teklifinde "IMO konteyner" açıkça belirtilmelidir.');
   if (u.dib === 'E') h += _info('amber','DIB (Dahilde İşleme Belgesi) var — Gümrük işlemlerinde DIB kapsamı kontrol edilmelidir.');
 
-  h += _section('Onay Bilgileri', '', _grid(4,'7px',
+  h += _section('Onay Bilgileri', '', _grid(4,'12px',
     _sel('kategori','Kategori',['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer'],{req:true,sel:u.kategori})
     + _inp('marka2','Marka',{val:u.marka,req:true})
     + _inp('uretici','Gerçek Üretici',{val:u.gercekUretici,req:true})
     + _sel('mensei2','Menşei',MENSEI.map(m=>{const p=m.split('-');return{v:p[0],l:p[1]};}),{req:true,sel:u.mensei})
-  ) + _grid(4,'7px',
-    _sel('imo2','IMO',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.imo||'H'})
+  ) + _grid(4,'12px',
+    _sel('imo2','IMO Durumu',[{v:'H',l:'IMO yok'},{v:'E',l:'IMO var — tehlikeli madde'}],{req:true,sel:u.imo||'H'})
     + _sel('dib','DİB',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.dib||'H'})
     + _sel('ihracat-kisit','İhracat Kısıtı',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.ihracatKisiti||'H'})
     + _sel('ihracat-yasak','İhracat Yasağı',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.ihracatYasak||'H'})
-  ) + _grid(2,'7px',
-    _inp('net-ag','Net Ağırlık (kg)',{type:'number',val:u.netAgirlik,req:true})
+  ) + _grid(3,'12px',
+    _inp('fatura-adi','Satıcının Faturasındaki Ürün Adı',{val:u.faturaAdi||u.invoiceName})
+    + _inp('net-ag','Net Ağırlık (kg)',{type:'number',val:u.netAgirlik,req:true})
     + _inp('brut-ag','Brüt Ağırlık (kg)',{type:'number',val:u.brutAgirlik,req:true})
   ));
   h += _section('Muadil & Notlar', '', _ta('muadil','Muadil Ürün Bilgisi',{val:u.muadilUrun}) + _ta('onay-not','Onay Notu',{val:u.onayNotu}));
@@ -347,12 +340,12 @@ function _renderEtap2(u) {
    ETAP 3 — YÜKLEME HAZIRLIK
    ════════════════════════════════════════════════════════════════ */
 function _renderEtap3(u) {
-  return _section('Paket & Yükleme Bilgileri', '', _grid(4,'7px',
+  return _section('Paket & Yükleme Bilgileri', '', _grid(4,'12px',
     _inp('pkt-en','Paket En (cm)',{type:'number',val:u.paketEn,req:true})
     + _inp('pkt-boy','Paket Boy (cm)',{type:'number',val:u.paketBoy,req:true})
     + _inp('pkt-yuk','Paket Yükseklik (cm)',{type:'number',val:u.paketYukseklik,req:true})
     + _inp('pkt-adet','Paket Adedi',{type:'number',val:u.paketAdet,req:true})
-  ) + _grid(3,'7px',
+  ) + _grid(3,'12px',
     _sel('pkt-tipi','Paket Tipi',['Koli','Palet','BigBag','Varil','Çuval','Ambalajsız','Diğer'],{sel:u.paketTipi})
     + _sel('yapi','Yapı',['Katı','Sıvı','Akışkan','Gaz','Toz'],{sel:u.yapi})
     + _sel('istifleme','İstifleme Uyarısı',['Kırılır','Üste konulamaz','Dik tutulmalı','Nemden korunmalı','Soğuk zincir'],{sel:u.istiflemeUyarisi})
@@ -363,11 +356,11 @@ function _renderEtap3(u) {
    ETAP 4 — İHRACAT ÖN HAZIRLIK
    ════════════════════════════════════════════════════════════════ */
 function _renderEtap4(u) {
-  return _section('İhracat & Gümrük Bilgileri', '', _grid(3,'7px',
+  return _section('İhracat & Gümrük Bilgileri', '', _grid(3,'12px',
     _inp('turkce-ad','Türkçe Ürün Adı (Gümrük)',{val:u.turkceAdi,req:true})
     + _inp('gtip','GTİP Kodu',{val:u.gtip||u.hscKodu,req:true,hint:'Harmonize Sistem Kodu'})
     + _sel('dib-asama','DİB Aşaması',['Yok','Başvuru','Onay','Aktif','Kapatılmış'],{req:true,sel:u.dibAsama||'Yok'})
-  ) + _grid(2,'7px',
+  ) + _grid(2,'12px',
     _inp('vergi-kod','Vergi Kodu',{val:u.vergiKodu})
     + _inp('origin-cert','Menşei Belgesi No',{val:u.origincertificate})
   ) + _ta('ihracat-not','İhracat Notları',{val:u.ihracatNotu}));
@@ -411,7 +404,7 @@ function _renderForm() {
 
   let h = _renderSekmeBar();
   h += _renderHeader(u);
-  h += '<div style="max-width:860px;margin:0 auto;padding:20px 32px;display:flex;flex-direction:column;gap:10px;overflow-y:auto">';
+  h += '<div style="max-width:860px;margin:0 auto;padding:20px 32px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">';
   // Geri butonu
   h += '<div><span onclick="window.renderUrunler?.()" style="font-size:10px;color:'+BLUE+';cursor:pointer">← Ürün Listesi</span></div>';
 
@@ -460,6 +453,13 @@ window._uf2Etap = function(n) { _aktifEtap = n; _sahbAcik = false;
 window._uf2AcSAHB = function() { _sahbAcik = true; _renderForm(); };
 window._uf2SAHBTamamla = function() { _sahbAcik = false; _aktifEtap = 2;
   const s = _getSekmeler(); const sk = s.find(x=>x.id===_aktifSekme); if(sk){sk.etap=2;sk.durum='devam';_setSekmeler(s);} _renderForm(); };
+
+window._uf2YeniTedarikci = function() {
+  if (typeof window._openCariForm === 'function') { window._openCariForm(null, 'Potansiyel Tedarikçi'); }
+  else if (typeof window.openCariModal === 'function') { window.openCariModal(null, 'Potansiyel Tedarikçi'); }
+  else if (typeof window.addCariModal === 'function') { window.addCariModal(); }
+  else if (typeof window.toast === 'function') { window.toast('Cari modülü yüklenmedi', 'error'); }
+};
 
 window._uf2Recalc = function() {
   const m = _g('uf2-miktar'), f = _g('uf2-birim-fiyat'), t = _g('uf2-toplam');
