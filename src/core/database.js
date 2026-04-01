@@ -1876,17 +1876,178 @@ function _renderSyncIndicator() {
 
 /**
  * Sync detay panelini gösterir (tıklanınca).
+ * Ayarlar → Veritabanı Sağlığı paneline yönlendirir.
  */
 window._showSyncDetails = function() {
-  var s = _syncState;
-  var lastSync = s.lastSync ? new Date(s.lastSync).toLocaleString('tr-TR') : '—';
-  var msg = 'Durum: ' + (s.status === 'ok' ? 'Senkronize' : s.status === 'syncing' ? 'Senkronize ediliyor…' : 'Hata') + '\n'
-    + 'Son sync: ' + lastSync + '\n'
-    + 'Hata sayısı (24s): ' + s.errors + '\n'
-    + (s.lastError ? 'Son hata: ' + s.lastError + '\n' : '')
-    + (s.status === 'error' ? '\n"Tekrar Dene" için sayfayı yenileyin veya Manuel Sync yapın.' : '');
-  window.toast?.(msg, s.status === 'error' ? 'err' : 'ok');
+  window.App?.nav?.('settings');
+  setTimeout(function() {
+    var el = document.getElementById('db-health-panel');
+    if (el) el.scrollIntoView({ behavior:'smooth' });
+    window._renderDbHealthPanel?.();
+  }, 300);
 };
+
+/**
+ * Offline kuyruk uzunluğu — _offlineWriteQueue erişimi
+ * @returns {number}
+ */
+window._getOfflineQueueLen = function() {
+  return typeof _offlineWriteQueue !== 'undefined' ? _offlineWriteQueue.length : 0;
+};
+
+/** Listener listesini dışa aç */
+window._dbListeners = _listeners;
+
+/**
+ * Veritabanı sağlık verilerini toplar.
+ * @returns {Object} health metrics
+ */
+window._getDbHealth = function() {
+  var lsTotal = 0;
+  var lsKeys = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    var v = localStorage.getItem(k) || '';
+    var bytes = (k.length + v.length) * 2;
+    lsTotal += bytes;
+    if (k.startsWith('ak_')) lsKeys.push({ key: k, bytes: bytes });
+  }
+  lsKeys.sort(function(a, b) { return b.bytes - a.bytes; });
+  var lsMB = (lsTotal / 1024 / 1024).toFixed(2);
+  var lsLimit = 5;
+  var lsPct = Math.round(lsTotal / (lsLimit * 1024 * 1024) * 100);
+
+  var tasks = [], notifs = [], trash = [];
+  try { tasks = JSON.parse(localStorage.getItem('ak_tk2') || '[]'); } catch (e) { /* */ }
+  try { notifs = JSON.parse(localStorage.getItem('ak_notif1') || '[]'); } catch (e) { /* */ }
+  try { trash = JSON.parse(localStorage.getItem('ak_trash1') || '[]'); } catch (e) { /* */ }
+
+  var noUpdatedAt = tasks.filter(function(t) { return !t.isDeleted && !t.updatedAt; }).length;
+  var noUpdatedAtPct = tasks.length > 0 ? Math.round(noUpdatedAt / tasks.length * 100) : 0;
+
+  var oldestTrash = trash.length > 0
+    ? trash.reduce(function(min, t) { return (!min || (t.deletedAt && t.deletedAt < min)) ? t.deletedAt : min; }, null)
+    : null;
+
+  var queueLen = typeof window._getOfflineQueueLen === 'function' ? window._getOfflineQueueLen() : 0;
+  var listenerCount = Object.keys(window._dbListeners || {}).length;
+
+  var alerts = [];
+  if (lsPct >= 80) alerts.push({ level: 'red', msg: 'localStorage %' + lsPct + ' dolu — kritik!' });
+  else if (lsPct >= 60) alerts.push({ level: 'amber', msg: 'localStorage %' + lsPct + ' dolu' });
+  if (notifs.length > 500) alerts.push({ level: 'red', msg: 'Bildirimler ' + notifs.length + ' kayıt — temizlenmeli!' });
+  else if (notifs.length > 200) alerts.push({ level: 'amber', msg: 'Bildirimler ' + notifs.length + ' kayıt' });
+  if (_syncState.errors > 3) alerts.push({ level: 'red', msg: '24 saatte ' + _syncState.errors + ' sync hatası' });
+  if (queueLen > 10) alerts.push({ level: 'red', msg: 'Offline kuyrukta ' + queueLen + ' işlem bekliyor' });
+  if (noUpdatedAtPct > 20) alerts.push({ level: 'amber', msg: 'Görevlerin %' + noUpdatedAtPct + '\'ünde updatedAt eksik' });
+  if (trash.length > 100) alerts.push({ level: 'amber', msg: 'Çöp kutusunda ' + trash.length + ' kayıt' });
+
+  return {
+    sync: { status: _syncState.status, lastSync: _syncState.lastSync, errors: _syncState.errors, lastError: _syncState.lastError, queueLen: queueLen, listeners: listenerCount },
+    storage: { usedMB: lsMB, limitMB: lsLimit, pct: lsPct, topKeys: lsKeys.slice(0, 5), total: lsTotal },
+    data: { taskCount: tasks.length, deletedTasks: tasks.filter(function(t) { return t.isDeleted; }).length, noUpdatedAt: noUpdatedAt, noUpdatedAtPct: noUpdatedAtPct, notifCount: notifs.length, trashCount: trash.length, oldestTrash: oldestTrash },
+    alerts: alerts,
+    hasRed: alerts.some(function(a) { return a.level === 'red'; }),
+    hasAmber: alerts.some(function(a) { return a.level === 'amber'; }),
+  };
+};
+
+/** @private Yardımcı: metrik kart */
+function _dbStatCard(label, value) {
+  return '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;text-align:center">'
+    + '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">' + label + '</div>'
+    + '<div style="font-size:18px;font-weight:500">' + value + '</div></div>';
+}
+
+/**
+ * Veritabanı Sağlığı panelini render eder.
+ */
+window._renderDbHealthPanel = function() {
+  var panel = document.getElementById('db-health-panel');
+  var badge = document.getElementById('db-health-badge');
+  if (!panel) return;
+
+  var h = window._getDbHealth();
+  var s = h.sync;
+  var st = h.storage;
+  var d = h.data;
+
+  if (badge) {
+    if (h.hasRed) { badge.className = 'badge br'; badge.textContent = '⚠ Anormallik'; }
+    else if (h.hasAmber) { badge.className = 'badge ba'; badge.textContent = '⚡ Uyarı'; }
+    else { badge.className = 'badge bg'; badge.textContent = '✓ Sağlıklı'; }
+  }
+
+  var alertHtml = '';
+  if (h.alerts.length) {
+    alertHtml = '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">';
+    h.alerts.forEach(function(a) {
+      var bg = a.level === 'red' ? '#FCEBEB' : '#FAEEDA';
+      var c = a.level === 'red' ? '#A32D2D' : '#633806';
+      alertHtml += '<div style="padding:7px 12px;background:' + bg + ';border-radius:6px;font-size:11px;color:' + c + ';font-weight:500">' + (a.level === 'red' ? '🔴 ' : '🟡 ') + a.msg + '</div>';
+    });
+    alertHtml += '</div>';
+  }
+
+  var stColor = st.pct >= 80 ? '#A32D2D' : st.pct >= 60 ? '#854F0B' : '#27500A';
+  var lastSyncStr = s.lastSync ? new Date(s.lastSync).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+
+  var keyRows = st.topKeys.map(function(k) {
+    var kb = (k.bytes / 1024).toFixed(1);
+    var nm = k.key.replace('ak_', '');
+    return '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:3px 0;border-bottom:0.5px solid var(--b)"><span>' + nm + '</span><span style="font-family:monospace">' + kb + ' KB</span></div>';
+  }).join('');
+
+  var syncColor = s.status === 'ok' ? '#27500A' : s.status === 'syncing' ? '#633806' : '#A32D2D';
+  var syncLabel = s.status === 'ok' ? '✅ Senkronize' : s.status === 'syncing' ? '🔄 Senkronize ediliyor…' : '🔴 Hata';
+
+  panel.innerHTML = alertHtml
+    + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Senkronizasyon</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'
+    + _dbStatCard('Durum', '<span style="color:' + syncColor + ';font-weight:600">' + syncLabel + '</span>')
+    + _dbStatCard('Son Sync', lastSyncStr)
+    + _dbStatCard('24s Hata', '<span style="color:' + (s.errors > 3 ? '#A32D2D' : 'var(--t)') + ';font-size:20px;font-weight:500">' + s.errors + '</span>')
+    + '</div>'
+    + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Depolama</div>'
+    + '<div style="margin-bottom:6px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>localStorage kullanımı</span><span style="font-weight:500;color:' + stColor + '">' + st.usedMB + ' MB / ' + st.limitMB + ' MB (%' + st.pct + ')</span></div>'
+    + '<div style="height:6px;background:var(--b);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + st.pct + '%;background:' + stColor + ';border-radius:3px;transition:width .3s"></div></div></div>'
+    + '<div style="margin-bottom:14px"><div style="font-size:10px;color:var(--t3);margin-bottom:5px">En büyük 5 koleksiyon</div>' + keyRows + '</div>'
+    + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Veri Bütünlüğü</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'
+    + _dbStatCard('Görev', d.taskCount)
+    + _dbStatCard('Bildirim', '<span style="color:' + (d.notifCount > 500 ? '#A32D2D' : d.notifCount > 200 ? '#854F0B' : 'var(--t)') + ';font-size:20px;font-weight:500">' + d.notifCount + '</span>')
+    + _dbStatCard('Çöp Kutusu', d.trashCount)
+    + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button class="btn btns" style="font-size:11px" onclick="window._manualSync?.()">☁️ Manuel Sync</button>'
+    + '<button class="btn btns" style="font-size:11px" onclick="window._cleanNotifications?.()">🗑 Bildirimleri Temizle</button>'
+    + '</div>';
+};
+
+/**
+ * Bildirim temizleme — son 50'yi tutar.
+ */
+window._cleanNotifications = function() {
+  try {
+    var notifs = JSON.parse(localStorage.getItem('ak_notif1') || '[]');
+    var cleaned = notifs.slice(0, 50);
+    localStorage.setItem('ak_notif1', JSON.stringify(cleaned));
+    var path = typeof _fsPath === 'function' ? _fsPath('notifications') : null;
+    if (path) _syncFirestore(path, cleaned);
+    window.toast?.((notifs.length - cleaned.length) + ' bildirim temizlendi', 'ok');
+    window._renderDbHealthPanel?.();
+  } catch (e) {
+    window.toast?.('Temizleme hatası: ' + e.message, 'err');
+  }
+};
+
+/** Settings paneli açılınca DB sağlık panelini otomatik render et */
+document.addEventListener('click', function(e) {
+  if (e.target && (e.target.id === 'nb-settings' || e.target.closest?.('#nb-settings'))) {
+    setTimeout(function() { window._renderDbHealthPanel?.(); }, 400);
+  }
+});
 
 /**
  * FIX 1+2: Yazma doğrulama — Firestore'a yaz, sonra oku, doğrula.

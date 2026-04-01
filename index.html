@@ -946,6 +946,20 @@ function _doLogin() {
           </div>
         </div>
 
+        <!-- Veritabanı Sağlığı -->
+        <div class="card" id="db-health-card" style="margin-bottom:16px">
+          <div class="ch">
+            <span class="ct">🩺 Veritabanı Sağlığı</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span id="db-health-badge" class="badge ba">Yükleniyor…</span>
+              <button class="btn btns" style="font-size:11px;padding:3px 10px" onclick="window._renderDbHealthPanel()">↻ Yenile</button>
+            </div>
+          </div>
+          <div id="db-health-panel" style="padding:16px 18px">
+            <div style="font-size:12px;color:var(--t3);text-align:center;padding:20px">Ayarlar sayfası açılınca otomatik yüklenir.</div>
+          </div>
+        </div>
+
         <!-- 2-kolon grid -->
         <div class="settings-grid">
 
