@@ -32,7 +32,7 @@
     'activity': () => { window.renderActivity?.(); },
     'trash': () => { window.renderTrashPanel?.(); },
     'links': () => { window.renderLinks?.(); },
-    'numune': () => { window.renderNumune?.(); },
+    'numune': () => { window.renderNumuneler?.(); },
     'evrak': () => { window.renderEvrak?.(); },
     'arsiv': () => { window.renderArsiv?.(); },
     'docs': () => { window.renderDocs?.(); },
