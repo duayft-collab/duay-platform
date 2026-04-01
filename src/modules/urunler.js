@@ -395,6 +395,8 @@ function openUrunForm(editId) {
 function _renderForm() {
   const panel = _g('panel-urunler');
   if (!panel) return;
+  // Form yazınca liste HTML'i silinir — geri dönüşte yeniden inject edilsin
+  delete panel.dataset.injected;
   const sekmeler = _getSekmeler();
   const sekme = sekmeler.find(s => s.id === _aktifSekme);
   if (!sekme) { window.renderUrunler?.(); return; }
