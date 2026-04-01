@@ -642,11 +642,13 @@ function renderDashboard() {
 
   let h = '<div style="padding:16px 32px;background:' + BG3 + ';display:flex;flex-direction:column;gap:12px;min-height:100%">';
 
-  // Admin buton (sağ üst)
+  // Üst butonlar (sağ üst)
+  h += '<div style="display:flex;justify-content:flex-end;gap:6px">';
+  h += '<button onclick="window.App?.nav?.(\'dashboardDetay\')" style="font-size:10px;padding:3px 10px;border-radius:12px;background:' + BG2 + ';border:0.5px solid ' + BDM + ';color:' + T2 + ';cursor:pointer;font-family:inherit">Detay Görünüm →</button>';
   if (_isA()) {
-    h += '<div style="display:flex;justify-content:flex-end">'
-      + '<button onclick="window._openDashAdminModal()" style="font-size:10px;padding:3px 10px;border-radius:12px;background:' + BG2 + ';border:0.5px solid ' + BDM + ';color:' + T2 + ';cursor:pointer;font-family:inherit">⚙ Hedefleri Düzenle</button></div>';
+    h += '<button onclick="window._openDashAdminModal()" style="font-size:10px;padding:3px 10px;border-radius:12px;background:' + BG2 + ';border:0.5px solid ' + BDM + ';color:' + T2 + ';cursor:pointer;font-family:inherit">⚙ Hedefleri Düzenle</button>';
   }
+  h += '</div>';
 
   h += _renderBanner();
   h += _renderFinans();
