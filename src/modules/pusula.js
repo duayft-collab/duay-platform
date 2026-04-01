@@ -2676,6 +2676,73 @@ function exportTasksXlsx() {
   window.toast?.(`✅ ${tasks.length} görev Excel'e aktarıldı`, 'ok');
 }
 
+// ── JSON Yedek Al ────────────────────────────────────────────────
+function exportPusulaJSON() {
+  try {
+    const backup = {
+      version: '1.0', exportedAt: nowTs(), exportedBy: window.Auth?.getCU?.()?.name || '?',
+      data: {
+        tasks: loadTasks(),
+        taskChats: typeof loadTaskChats === 'function' ? loadTaskChats() : {},
+        templates: _pfLoadTemplates?.() || [],
+        deps: _pfLoadDeps?.() || {},
+        timeLog: _pfLoadTimeLog?.() || {},
+        scores: _pfLoadScores?.() || {},
+        taskLog: _pfLoadTaskLog?.() || {},
+      }
+    };
+    const taskCount = backup.data.tasks.length;
+    const subCount = backup.data.tasks.reduce((s, t) => s + (t.subTasks?.length || 0), 0);
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'Pusula_Yedek_' + nowTs().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    logActivity('task', 'Pusula yedeği alındı — ' + taskCount + ' görev, ' + subCount + ' alt görev');
+    window.toast?.('✅ Yedek alındı — ' + taskCount + ' görev, ' + subCount + ' alt görev', 'ok');
+  } catch (e) { console.error('[PUS-EXP] JSON export hatası:', e); window.toast?.('Yedek alınamadı: ' + e.message, 'err'); }
+}
+
+// ── JSON Yedek Yükle ─────────────────────────────────────────────
+function importPusulaJSON() {
+  var inp = document.getElementById('_pus-json-import');
+  if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json'; inp.id = '_pus-json-import'; inp.style.display = 'none'; document.body.appendChild(inp); }
+  inp.onchange = function () {
+    var file = inp.files?.[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var backup = JSON.parse(e.target.result);
+        if (!backup.data || !backup.data.tasks) { window.toast?.('Geçersiz yedek dosyası', 'err'); return; }
+        if (typeof window.confirmModal === 'function') {
+          window.confirmModal(backup.data.tasks.length + ' görev yüklenecek. Mevcut verinin üzerine yazılacak. Devam edilsin mi?', function () { _doImportPusulaJSON(backup); });
+        } else { _doImportPusulaJSON(backup); }
+      } catch (err) { window.toast?.('JSON okunamadı: ' + err.message, 'err'); }
+    };
+    reader.readAsText(file); inp.value = '';
+  };
+  inp.click();
+}
+
+function _doImportPusulaJSON(backup) {
+  try {
+    var d = backup.data;
+    if (Array.isArray(d.tasks)) saveTasks(d.tasks);
+    if (d.taskChats && typeof storeTaskChats === 'function') storeTaskChats(d.taskChats);
+    if (d.templates) _pfSaveTemplates?.(d.templates);
+    if (d.deps) _pfSaveDeps?.(d.deps);
+    if (d.timeLog) _pfSaveTimeLog?.(d.timeLog);
+    if (d.scores) _pfSaveScores?.(d.scores);
+    if (d.taskLog) _pfSaveTaskLog?.(d.taskLog);
+    var taskCount = d.tasks?.length || 0;
+    logActivity('task', 'Pusula yedeği yüklendi — ' + taskCount + ' görev');
+    window.toast?.('✅ ' + taskCount + ' görev yüklendi', 'ok');
+    renderPusula(); updatePusBadge();
+  } catch (err) { console.error('[PUS-IMP] Import hatası:', err); window.toast?.('Yükleme hatası: ' + err.message, 'err'); }
+}
+
 // ── Excel Import ─────────────────────────────────────────────────
 function importTasksXlsx() {
   // Gizli input oluştur
@@ -4507,6 +4574,8 @@ window.renderFocusPanel = renderFocusPanel;
   window.updatePusBadge        = updatePusBadge;
   window.updateTkPriBar        = updateTkPriBar;
   window.exportTasksXlsx       = exportTasksXlsx;
+  window.exportPusulaJSON      = exportPusulaJSON;
+  window.importPusulaJSON      = importPusulaJSON;
   window.importTasksXlsx       = importTasksXlsx;
   window.downloadTaskTemplate  = downloadTaskTemplate;
   window.visTasks              = visTasks;

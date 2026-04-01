@@ -574,6 +574,8 @@ function _doLogin() {
               <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
                 <div class="ptm-section-label">📊 Veri</div>
                 <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬇️</span><div><div class="ptm-title">Excel İndir</div><div class="ptm-desc">Görev listesini xlsx olarak indir</div></div></button>
+                <button class="ptm-item" onclick="exportPusulaJSON();window._closeToolsMenu?.()"><span class="ptm-icon">💾</span><div><div class="ptm-title">JSON Yedek Al</div><div class="ptm-desc">Tüm görevleri yedekle — geri yüklenebilir</div></div></button>
+                <button class="ptm-item" onclick="importPusulaJSON();window._closeToolsMenu?.()"><span class="ptm-icon">📂</span><div><div class="ptm-title">JSON Yedek Yükle</div><div class="ptm-desc">Önceki yedeği geri yükle</div></div></button>
                 <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬆️</span><div><div class="ptm-title">Excel Yükle</div><div class="ptm-desc">xlsx dosyasından görev içe aktar</div></div></button>
                 <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()"><span class="ptm-icon">📋</span><div><div class="ptm-title">Şablon İndir</div><div class="ptm-desc">Boş import şablonu indir</div></div></button>
                 <div class="ptm-divider"></div>
