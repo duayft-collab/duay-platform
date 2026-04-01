@@ -181,57 +181,84 @@ function _renderIhracatOzet() {
   return h;
 }
 
-function _renderFinans() {
-  const odm = _loadOdm();
-  const tah = _loadTah();
-  const n = _now();
-  const topTah = tah.reduce((s, t) => s + (parseFloat(t.amountTRY || t.amount) || 0), 0);
-  const topOdm = odm.reduce((s, o) => s + (parseFloat(o.amountTRY || o.amount) || 0), 0);
-  const net = topTah - topOdm;
+function _toTRY(amount, currency) {
+  if (!currency || currency === 'TRY') return parseFloat(amount) || 0;
+  var rates = {};
+  try { rates = JSON.parse(localStorage.getItem('ak_kur_rates') || '{}'); } catch (e) { /* */ }
+  var r = rates[currency] || 1;
+  return (parseFloat(amount) || 0) * r;
+}
 
-  // Bu ay tahsilat
-  const ayTah = tah.filter(t => t.createdAt && _thisMonth(new Date(t.createdAt)))
-    .reduce((s, t) => s + (parseFloat(t.amountTRY || t.amount) || 0), 0);
-  // Geçen ay tahsilat
-  const gecenAy = new Date(n.getFullYear(), n.getMonth() - 1, 1);
-  const gecenAyTah = tah.filter(t => {
-    if (!t.createdAt) return false;
-    const d = new Date(t.createdAt);
-    return d.getMonth() === gecenAy.getMonth() && d.getFullYear() === gecenAy.getFullYear();
-  }).reduce((s, t) => s + (parseFloat(t.amountTRY || t.amount) || 0), 0);
-  const degisim = gecenAyTah > 0 ? Math.round(((ayTah - gecenAyTah) / gecenAyTah) * 100) : 0;
+function _renderNakitBlok() {
+  var tah = _loadTah();
+  var odm = _loadOdm();
+  var n = _now();
+  var today = _today();
+  var topTah = tah.reduce(function(s, t) { return s + _toTRY(t.amountTRY || t.amount, t.currency); }, 0);
+  var topOdm = odm.reduce(function(s, o) { return s + _toTRY(o.amountTRY || o.amount, o.currency); }, 0);
+  var net = topTah - topOdm;
 
-  // Gecikmiş alacak
-  const today = _today();
-  const gecik = tah.filter(t => t.approvalStatus !== 'approved' || (t.due && t.due < today && !t.collected));
-  const gecikTutar = gecik.reduce((s, t) => s + (parseFloat(t.amountTRY || t.amount) || 0), 0);
+  var ayTah = tah.filter(function(t) { var d = t.createdAt || t.updatedAt || t.ts; return d && _thisMonth(new Date(d)); }).reduce(function(s, t) { return s + _toTRY(t.amountTRY || t.amount, t.currency); }, 0);
+  var gecenAy = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+  var gecenAyTah = tah.filter(function(t) { var d = t.createdAt || t.updatedAt || t.ts; if (!d) return false; var dd = new Date(d); return dd.getMonth() === gecenAy.getMonth() && dd.getFullYear() === gecenAy.getFullYear(); }).reduce(function(s, t) { return s + _toTRY(t.amountTRY || t.amount, t.currency); }, 0);
+  var degisim = gecenAyTah > 0 ? Math.round(((ayTah - gecenAyTah) / gecenAyTah) * 100) : 0;
 
-  // Ort müşteri değeri
-  const cariSet = new Set(tah.map(t => t.cariId || t.cari).filter(Boolean));
-  const ortMusteri = cariSet.size > 0 ? Math.round(topTah / cariSet.size) : 0;
+  var gecik = tah.filter(function(t) { return t.approvalStatus !== 'approved' || (t.due && t.due < today && !t.collected); });
+  var gecikTutar = gecik.reduce(function(s, t) { return s + _toTRY(t.amountTRY || t.amount, t.currency); }, 0);
 
-  let h = '<div style="' + S_SEC + '">' + _esc('FİNANS') + ' ' + _bb('Nakit Akışı') + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px">';
+  var tahHiz = (function() {
+    var col = tah.filter(function(t) { return t.collected && t.due && t.ts; });
+    if (!col.length) return null;
+    var tot = col.reduce(function(s, t) { return s + Math.abs(Math.ceil((new Date(t.ts) - new Date(t.due)) / 86400000)); }, 0);
+    return Math.round(tot / col.length);
+  })();
 
-  // Kart 1
-  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Net Pozisyon</div>'
-    + '<div style="' + S_VAL + ';color:' + (net >= 0 ? GREEN : RED) + '">₺' + _fmt(net) + '</div>'
-    + '<div style="' + S_SUB + '">Açık: ₺' + _fmt(topOdm) + '</div></div>';
-  // Kart 2
-  const dColor = degisim >= 0 ? GREEN : RED;
-  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Bu Ay Tahsilat</div>'
-    + '<div style="' + S_VAL + ';color:' + T1 + '">₺' + _fmt(ayTah) + '</div>'
-    + '<div style="' + S_SUB + ';color:' + dColor + '">' + (degisim >= 0 ? '↑' : '↓') + ' ' + _pct(Math.abs(degisim)) + '</div></div>';
-  // Kart 3
-  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Gecikmiş Alacak</div>'
-    + '<div style="' + S_VAL + ';color:' + RED + '">₺' + _fmt(gecikTutar) + '</div>'
-    + '<div style="' + S_SUB + '">' + gecik.length + ' kayıt</div></div>';
-  // Kart 4
-  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Ort. Müşteri Değeri</div>'
-    + '<div style="' + S_VAL + ';color:' + BLUE + '">₺' + _fmt(ortMusteri) + '</div>'
-    + '<div style="' + S_SUB + '">Action Coach KPI</div></div>';
+  var weekCount = _nakitAy === 1 ? 4 : _nakitAy === 3 ? 13 : 26;
+  var tahWeeks = _weeklyGroup(tah, 'createdAt', weekCount);
+  var odmWeeks = _weeklyGroup(odm, 'createdAt', weekCount);
+  var allVals = tahWeeks.map(function(w) { return w.sum; }).concat(odmWeeks.map(function(w) { return w.sum; }));
+  var maxV = Math.max.apply(null, allVals.concat([1]));
+  var svgW = 400, svgH = 80;
+  var pts = tahWeeks.length;
+  var step = pts > 1 ? svgW / (pts - 1) : svgW;
 
+  var tahPath = '', odmPath = '';
+  tahWeeks.forEach(function(w, i) { var x = (i * step).toFixed(1); var y = (svgH - (w.sum / maxV) * (svgH - 10) - 5).toFixed(1); tahPath += (i === 0 ? 'M' : 'L') + x + ',' + y; });
+  odmWeeks.forEach(function(w, i) { var x = (i * step).toFixed(1); var y = (svgH - (w.sum / maxV) * (svgH - 10) - 5).toFixed(1); odmPath += (i === 0 ? 'M' : 'L') + x + ',' + y; });
+
+  var tabBtn = function(label, val) {
+    var active = _nakitAy === val;
+    return '<span onclick="window._dashNakitTab(' + val + ')" style="cursor:pointer;padding:2px 8px;border-radius:4px;font-size:9px;' + (active ? 'background:#E6F1FB;color:' + NAVY + ';font-weight:600' : 'color:' + T3) + '">' + label + '</span>';
+  };
+
+  var dColor = degisim >= 0 ? GREEN : RED;
+  var hizColor = tahHiz === null ? BLUE : tahHiz <= 15 ? GREEN : tahHiz <= 30 ? AMBER : RED;
+
+  var h = '';
+  // Koyu topbar
+  h += '<div style="background:#042C53;border-radius:9px 9px 0 0;padding:10px 16px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:500;color:#E6F1FB">Nakit Akışı</span><div style="display:flex;gap:2px;background:rgba(255,255,255,.08);border-radius:5px;padding:2px">' + tabBtn('1A', 1) + tabBtn('3A', 3) + tabBtn('6A', 6) + '</div></div>';
+
+  // 4 KPI
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);border:0.5px solid ' + BD + ';border-top:none;border-bottom:none">';
+  h += '<div style="' + S_MK + ';border-right:0.5px solid ' + BD + '"><div style="' + S_LBL + '">Net Pozisyon</div><div style="font-size:16px;font-weight:500;color:' + (net >= 0 ? GREEN : RED) + '">' + (net >= 0 ? '+' : '-') + '₺' + _fmt(Math.abs(net)) + '</div><div style="' + S_SUB + ';color:' + (net >= 0 ? GREEN : RED) + '">' + (net >= 0 ? 'Pozitif' : 'Negatif') + '</div></div>';
+  h += '<div style="' + S_MK + ';border-right:0.5px solid ' + BD + '"><div style="' + S_LBL + '">Bu Ay Tahsilat</div><div style="font-size:16px;font-weight:500;color:' + T1 + '">₺' + _fmt(ayTah) + '</div><div style="' + S_SUB + ';color:' + dColor + '">' + (degisim >= 0 ? '↑' : '↓') + ' ' + _pct(Math.abs(degisim)) + '</div></div>';
+  h += '<div style="' + S_MK + ';border-right:0.5px solid ' + BD + '"><div style="' + S_LBL + '">Gecikmiş Alacak</div><div style="font-size:16px;font-weight:500;color:' + RED + '">₺' + _fmt(gecikTutar) + '</div><div style="' + S_SUB + '">' + gecik.length + ' kayıt</div></div>';
+  h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Tahsil Hızı</div><div style="font-size:16px;font-weight:500;color:' + hizColor + '">' + (tahHiz !== null ? tahHiz + ' gün' : '— gün') + '</div><div style="' + S_SUB + ';color:' + (tahHiz && tahHiz > 15 ? AMBER : T3) + '">Hedef: 15 gün</div></div>';
   h += '</div>';
+
+  // Grafik
+  h += '<div style="background:' + BG1 + ';border:0.5px solid ' + BD + ';border-top:none;padding:10px 14px 5px">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:10px;font-weight:500;color:' + T1 + '">Haftalık trend</span></div>';
+  h += '<svg width="100%" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '" preserveAspectRatio="none">';
+  if (tahPath) h += '<path d="' + tahPath + ' L' + ((pts - 1) * step).toFixed(1) + ',' + (svgH - 5) + ' L0,' + (svgH - 5) + ' Z" fill="' + BLUE + '" opacity=".06"/>';
+  if (tahPath) h += '<path d="' + tahPath + '" fill="none" stroke="' + BLUE + '" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>';
+  if (odmPath) h += '<path d="' + odmPath + '" fill="none" stroke="#F09595" stroke-width="1.3" stroke-dasharray="3 2" stroke-linecap="round"/>';
+  h += '</svg>';
+  h += '<div style="display:flex;gap:10px;font-size:8px;color:' + T3 + ';margin-top:4px"><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.8px;background:' + BLUE + ';display:inline-block"></span>Tahsilat</span><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.3px;background:#F09595;border-top:1px dashed #F09595;display:inline-block"></span>Ödeme</span></div></div>';
+
+  // Link
+  h += '<div style="background:' + BG1 + ';border:0.5px solid ' + BD + ';border-top:none;border-radius:0 0 9px 9px;padding:6px 14px;text-align:right"><span onclick="window.App?.nav?.(\'odemeler\')" style="font-size:9px;color:' + BLUE + ';cursor:pointer;padding:3px 8px;border-radius:4px;background:#E6F1FB">Nakit Akışı tam liste →</span></div>';
+
   return h;
 }
 
@@ -443,55 +470,6 @@ function _renderEmythVanish() {
    BÖLÜM 5 — NAKİT GRAFİK
    ════════════════════════════════════════════════════════════════ */
 let _nakitAy = 1; // 1=1A, 3=3A, 6=6A
-function _renderNakit() {
-  const tah = _loadTah();
-  const odm = _loadOdm();
-  const weekCount = _nakitAy === 1 ? 4 : _nakitAy === 3 ? 13 : 26;
-  const tahWeeks = _weeklyGroup(tah, 'createdAt', weekCount);
-  const odmWeeks = _weeklyGroup(odm, 'createdAt', weekCount);
-  const allVals = [...tahWeeks.map(w => w.sum), ...odmWeeks.map(w => w.sum)];
-  const maxV = Math.max(...allVals, 1);
-
-  // SVG line chart
-  const svgW = 400, svgH = 72;
-  const pts = tahWeeks.length;
-  const step = pts > 1 ? svgW / (pts - 1) : svgW;
-
-  let tahPath = '', odmPath = '';
-  tahWeeks.forEach((w, i) => {
-    const x = i * step;
-    const y = svgH - (w.sum / maxV) * (svgH - 5) - 2;
-    tahPath += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
-  });
-  odmWeeks.forEach((w, i) => {
-    const x = i * step;
-    const y = svgH - (w.sum / maxV) * (svgH - 5) - 2;
-    odmPath += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
-  });
-
-  const tabBtn = (label, val) => {
-    const active = _nakitAy === val;
-    return '<span onclick="window._dashNakitTab(' + val + ')" style="cursor:pointer;padding:3px 10px;border-radius:4px;font-size:9px;'
-      + (active ? 'background:#E6F1FB;color:' + NAVY + ';font-weight:600' : 'color:' + T3)
-      + '">' + label + '</span>';
-  };
-
-  let h = '<div style="' + S_WK + '">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-    + '<span style="font-size:12px;font-weight:500;color:' + T1 + '">Nakit Akışı Trendi</span>'
-    + '<div style="display:flex;gap:2px">' + tabBtn('1A', 1) + tabBtn('3A', 3) + tabBtn('6A', 6) + '</div></div>';
-
-  h += '<svg width="100%" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '" preserveAspectRatio="none">';
-  if (tahPath) h += '<path d="' + tahPath + '" fill="none" stroke="' + BLUE + '" stroke-width="1.5"/>';
-  if (odmPath) h += '<path d="' + odmPath + '" fill="none" stroke="#F09595" stroke-width="1.5" stroke-dasharray="3 2"/>';
-  h += '</svg>';
-
-  h += '<div style="display:flex;gap:12px;font-size:10px;color:' + T3 + ';margin-top:5px">'
-    + '<span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.5px;background:' + BLUE + ';display:inline-block"></span>Tahsilat</span>'
-    + '<span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.5px;background:#F09595;border-top:1px dashed #F09595;display:inline-block"></span>Ödeme</span>'
-    + '</div></div>';
-  return h;
-}
 
 /* ════════════════════════════════════════════════════════════════
    BÖLÜM 6 — ALT 4'LÜ
@@ -712,11 +690,10 @@ function renderDashboard() {
     }
   }
   h += _renderBanner();
-  h += _renderFinans();
+  h += _renderNakitBlok();
   h += _renderIhracatOzet();
   h += _renderKPI();
   h += _renderEmythVanish();
-  h += _renderNakit();
   h += _renderAlt();
   h += '</div>';
 
