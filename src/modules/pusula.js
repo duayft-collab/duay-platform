@@ -2024,12 +2024,12 @@ function clearPusFilters() {
 // BÖLÜM 8 — GÖRÜNÜM KONTROL
 // ════════════════════════════════════════════════════════════════
 
-var _PUS_FULL_VIEWS = ['kadran','kanban','odak']; // tam ekran görünümler
+var _PUS_FULL_VIEWS = ['kadran','odak']; // tam ekran görünümler (kanban tab bar ile çalışır)
 
 function setPusView(v, btn) {
   PUS_VIEW = v;
   localStorage.setItem('ak_pus_view', v);
-  document.querySelectorAll('.pvt-btn,.cvb').forEach(b => b.classList.remove('on', 'active'));
+  document.querySelectorAll('.pvt-btn,.pus-seg-btn,.cvb').forEach(b => b.classList.remove('on', 'active'));
   if (btn) { btn.classList.add('on', 'active'); }
   else { const b = g('pus-v-' + v); if (b) b.classList.add('on', 'active'); }
   // Board görünümünde Matrix butonunu gizle
@@ -2072,6 +2072,16 @@ function setPusView(v, btn) {
     renderPusula();
   }
 }
+
+window._toggleMeFilter = function(checked) {
+  if (checked) {
+    PUS_VIEW = 'me';
+  } else {
+    var prev = localStorage.getItem('ak_pus_view') || 'list';
+    PUS_VIEW = prev === 'me' ? 'list' : prev;
+  }
+  renderPusula();
+};
 
 function setPusQuickFilter(f, btn) {
   PUS_QUICK_FILTER = f;

@@ -862,6 +862,28 @@ td { vertical-align: middle; }
   box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
 
+/* ── Segment Control ── */
+.pus-seg-ctrl {
+  display: flex; background: var(--s2); border-radius: 8px; padding: 2px; gap: 2px;
+}
+.pus-seg-btn {
+  height: 28px; padding: 0 12px; border-radius: 6px; border: none; background: none;
+  font-size: 11px; font-weight: 500; color: var(--t3); cursor: pointer;
+  display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  transition: all .12s; font-family: inherit;
+}
+.pus-seg-btn:hover { background: var(--sf); color: var(--t2); }
+.pus-seg-btn.on { background: var(--sf); color: var(--t); box-shadow: 0 0 0 0.5px var(--bm); }
+.pus-seg-btn.on[id="pus-v-odak"],
+.pus-seg-btn.on[id="pus-v-kadran"] { background: var(--al); color: var(--ac); }
+.pus-me-toggle {
+  display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--t3);
+  cursor: pointer; padding: 0 8px; height: 28px; border-radius: 6px;
+  border: 0.5px solid var(--b); background: none; transition: all .12s; user-select: none;
+}
+.pus-me-toggle:has(input:checked) { background: var(--al); color: var(--ac); border-color: var(--ac); }
+.pus-me-toggle input { display: none; }
+
 /* â•â• ADD BUTTON â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .pus-add-btn {
   display: inline-flex; align-items: center; gap: 6px;
