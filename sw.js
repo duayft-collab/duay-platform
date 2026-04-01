@@ -7,8 +7,8 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'duay-platform-v10';
-const CACHE_VERSION = '10.0.0';
+const CACHE_NAME    = 'duay-platform-v11';
+const CACHE_VERSION = '11.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
@@ -27,7 +27,14 @@ const PRECACHE_URLS = [
   '/src/modules/admin.js',
   '/src/modules/kargo.js',
   '/src/modules/pirim.js',
-  '/src/modules/pusula.js',
+  '/src/modules/pusula_core.js',
+  '/src/modules/pusula_export.js',
+  '/src/modules/pusula_subtask.js',
+  '/src/modules/pusula_task.js',
+  '/src/modules/pusula_detail.js',
+  '/src/modules/pusula_render.js',
+  '/src/modules/pusula_views.js',
+  '/src/modules/pusula_features.js',
   '/src/modules/ik.js',
   '/src/modules/crm.js',
   '/src/modules/stok.js',
