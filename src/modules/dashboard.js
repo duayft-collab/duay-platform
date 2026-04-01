@@ -393,6 +393,37 @@ function _calcEmythVanish() {
       }).length;
       localStorage.setItem('ak_sahipsiz_karar', sahipsiz);
     }
+    // Otomatik sistem skoru hesapla (100 üzerinden)
+    var _autoSkor = 0;
+    // +30: DB health sağlıklıysa
+    if (typeof window._getDbHealth === 'function') {
+      var _dbH2 = window._getDbHealth();
+      if (!_dbH2.hasRed && !_dbH2.hasAmber) _autoSkor += 30;
+      else if (!_dbH2.hasRed) _autoSkor += 15;
+      // +15: localStorage <%60 doluysa
+      if (_dbH2.storage.pct < 60) _autoSkor += 15;
+      else if (_dbH2.storage.pct < 80) _autoSkor += 8;
+      // +10: updatedAt eksik <%5
+      if (_dbH2.data.noUpdatedAtPct < 5) _autoSkor += 10;
+      else if (_dbH2.data.noUpdatedAtPct < 20) _autoSkor += 5;
+    } else { _autoSkor += 55; }
+    // +20: gecikmiş alacak yoksa
+    if (typeof window.loadTahsilat === 'function') {
+      var _today2 = _today();
+      var _gecik2 = window.loadTahsilat().filter(function(t) { return !t.isDeleted && t.due && t.due < _today2 && !t.collected; });
+      if (_gecik2.length === 0) _autoSkor += 20;
+      else if (_gecik2.length < 5) _autoSkor += 10;
+    } else { _autoSkor += 20; }
+    // +25: görev tamamlama >%70
+    if (typeof window.loadTasks === 'function') {
+      var _t2 = window.loadTasks().filter(function(t) { return !t.isDeleted; });
+      var _d2 = _t2.filter(function(t) { return t.done || t.status === 'done'; }).length;
+      var _pct2 = _t2.length > 0 ? Math.round((_d2 / _t2.length) * 100) : 100;
+      if (_pct2 >= 70) _autoSkor += 25;
+      else if (_pct2 >= 50) _autoSkor += 15;
+      else _autoSkor += 5;
+    } else { _autoSkor += 25; }
+    localStorage.setItem('ak_sistem_skoru', '%' + Math.min(100, _autoSkor));
   } catch (e) { console.warn('[DASH] calcEmythVanish:', e.message); }
 }
 

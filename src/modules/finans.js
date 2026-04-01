@@ -259,19 +259,19 @@ function loadCalcRecord(id){
 // ════════════════════════════════════════════════════════════════
 
 const YASAL_GOSTERGELER = {
-  minUcret:       { label:'Asgari Ücret (brüt)',        value:'26.005,50 ₺',  aciklama:'2025 yılı için geçerli' },
-  minUcretNet:    { label:'Asgari Ücret (net)',          value:'22.104,77 ₺',  aciklama:'SGK+damga vergisi sonrası' },
+  minUcret:       { label:'Asgari Ücret (brüt)',        value:'30.186,96 ₺',  aciklama:'2026 yılı için geçerli (Ocak)' },
+  minUcretNet:    { label:'Asgari Ücret (net)',          value:'25.657,82 ₺',  aciklama:'SGK+damga vergisi sonrası' },
   sgkIsci:        { label:'SGK İşçi Primi',              value:'%14',          aciklama:'Sigortalı payı (14%)' },
   sgkIsveren:     { label:'SGK İşveren Primi',           value:'%20,5',        aciklama:'İşveren payı (15.5%+5%)' },
   isSizlik:       { label:'İşsizlik Sig. İşçi',          value:'%1',           aciklama:'İşçi işsizlik payı' },
   isSizlikIsv:    { label:'İşsizlik Sig. İşveren',       value:'%2',           aciklama:'İşveren işsizlik payı' },
-  gelirVergisi:   { label:'Gelir Vergisi (min dilim)',    value:'%15',          aciklama:'0 – 70.000 ₺ arası' },
+  gelirVergisi:   { label:'Gelir Vergisi (min dilim)',    value:'%15',          aciklama:'0 – 110.000 ₺ arası (2026)' },
   kdv:            { label:'KDV (genel)',                  value:'%20',          aciklama:'Standart KDV oranı' },
   kdvIndirimli1:  { label:'KDV (indirimli-1)',            value:'%10',          aciklama:'Temel gıda bazı ürünler' },
   kdvIndirimli2:  { label:'KDV (indirimli-2)',            value:'%1',           aciklama:'Bazı tarımsal ürünler' },
   kurumlarVergisi:{ label:'Kurumlar Vergisi',             value:'%25',          aciklama:'2024+ için geçerli' },
   damgaVergisi:   { label:'Damga Vergisi (ücret)',        value:'%0,759',       aciklama:'Maaş ödemelerinde' },
-  kvkk:           { label:'KVKK Veri İhlal Cezası',      value:'1.509.648 ₺',  aciklama:'2025 yılı üst sınır' },
+  kvkk:           { label:'KVKK Veri İhlal Cezası',      value:'1.844.783 ₺',  aciklama:'2026 yılı üst sınır' },
 };
 
 function renderYasalGostergeler(){
