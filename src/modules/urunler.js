@@ -61,13 +61,13 @@ function _inp(id, label, opts) {
     + '<input class="fi" id="uf2-'+id+'" type="'+(o.type||'text')+'" value="'+_esc(o.val||'')+'"'
     + (o.readonly?' readonly':'')+' placeholder="'+_esc(o.ph||'')+'"'
     + (o.req?' data-req="1"':'')
-    + ' style="font-size:11px;padding:4px 6px;'+bg+'" oninput="window._uf2Recalc?.()">'
+    + ' style="font-size:11px;padding:8px 10px;height:38px;'+bg+'" oninput="window._uf2Recalc?.()">'
     + '</div>';
 }
 function _sel(id, label, options, opts) {
   const o = opts||{};
   let h = '<div>'+_lbl(label, o.req, o.hint)+'<select class="fi" id="uf2-'+id+'"'
-    + (o.req?' data-req="1"':'')+' style="font-size:11px;padding:4px 6px" onchange="window._uf2Recalc?.()">'
+    + (o.req?' data-req="1"':'')+' style="font-size:11px;padding:8px 10px;height:38px" onchange="window._uf2Recalc?.()">'
     + '<option value="">— Seçin —</option>';
   options.forEach(v => {
     const val = typeof v==='object'?v.v:v, lbl = typeof v==='object'?v.l:v;
@@ -82,7 +82,7 @@ function _ta(id, label, opts) {
     + (o.badge?'<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:'+(o.badgeBg||'#E6F1FB')+';color:'+(o.badgeFg||BLUE)+'">'+_esc(o.badge)+'</span>':'')
     + '<textarea class="fi" id="uf2-'+id+'" rows="'+(o.rows||2)+'"'
     + (o.req?' data-req="1"':'')+' placeholder="'+_esc(o.ph||'')+'"'
-    + ' style="font-size:11px;padding:4px 6px;resize:none;min-height:'+(o.minH||'36px')+'">'+_esc(o.val||'')+'</textarea></div>';
+    + ' style="font-size:11px;padding:8px 10px;resize:none;min-height:'+(o.minH||'56px')+'">'+_esc(o.val||'')+'</textarea></div>';
 }
 function _upload(id, label, opts) {
   const o = opts||{};
@@ -149,13 +149,17 @@ function _renderHeader(u) {
   // Progress bar
   h += '<div style="height:3px;background:'+BG2+'"><div style="height:100%;width:'+pct+'%;background:#378ADD;border-radius:0 2px 2px 0;transition:width .3s"></div></div>';
   // Step nav
+  const sahbDone = u.sahbTamamlandi || _sahbAcik === false;
   h += '<div style="display:flex;border-bottom:0.5px solid '+BD+'">';
   for (let i=1;i<=4;i++) {
     const active = i===_aktifEtap;
     const done = i<_aktifEtap;
-    h += '<div onclick="window._uf2Etap('+i+')" style="flex:1;padding:8px;text-align:center;font-size:10px;cursor:pointer;'
-      + (active?'border-bottom:2px solid '+BLUE+';color:'+BLUE+';font-weight:500':done?'color:'+GREEN:'color:'+T3)
-      + '">'+etapNames[i]+'</div>';
+    const locked = i===2 && !sahbDone && _aktifEtap < 2;
+    const dot = done ? DOT('#97C459') : active ? DOT(BLUE) : DOT('#ccc');
+    h += '<div onclick="'+(locked?'':'window._uf2Etap('+i+')')+'" style="flex:1;padding:8px;text-align:center;font-size:10px;display:flex;align-items:center;justify-content:center;gap:4px;'
+      + (locked ? 'color:#ccc;cursor:not-allowed;opacity:0.5' : 'cursor:pointer;')
+      + (active ? 'border-bottom:2px solid '+BLUE+';color:'+BLUE+';font-weight:500;' : done ? 'color:'+GREEN+';' : 'color:'+T3+';')
+      + '">'+dot+etapNames[i]+'</div>';
   }
   h += '</div>';
   return h;
@@ -407,7 +411,7 @@ function _renderForm() {
 
   let h = _renderSekmeBar();
   h += _renderHeader(u);
-  h += '<div style="padding:14px 20px;display:flex;flex-direction:column;gap:8px;overflow-y:auto">';
+  h += '<div style="max-width:860px;margin:0 auto;padding:20px 32px;display:flex;flex-direction:column;gap:10px;overflow-y:auto">';
   // Geri butonu
   h += '<div><span onclick="window.renderUrunler?.()" style="font-size:10px;color:'+BLUE+';cursor:pointer">← Ürün Listesi</span></div>';
 
@@ -420,6 +424,17 @@ function _renderForm() {
       case 3: h += _renderEtap3(u); break;
       case 4: h += _renderEtap4(u); break;
     }
+    // Etap navigasyon butonları
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:0.5px solid '+BD+'">';
+    if (_aktifEtap > 1) {
+      h += '<button onclick="window._uf2Etap('+(_aktifEtap-1)+')" style="padding:6px 14px;border:0.5px solid '+BD+';border-radius:6px;background:'+BG1+';font-size:11px;cursor:pointer;font-family:inherit;color:'+T2+'">← Geri</button>';
+    } else { h += '<div></div>'; }
+    if (_aktifEtap < 4) {
+      h += '<button onclick="window._uf2Etap('+(_aktifEtap+1)+')" style="padding:6px 14px;border:none;border-radius:6px;background:'+BLUE+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Bu Aşamayı Tamamla →</button>';
+    } else {
+      h += '<button onclick="window._uf2TaslakKaydet()" style="padding:6px 14px;border:none;border-radius:6px;background:'+GREEN+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Ürünü Kaydet</button>';
+    }
+    h += '</div>';
   }
   h += '</div>';
   panel.innerHTML = h;
