@@ -27,11 +27,11 @@ const _lsj = (k, d) => { try { return JSON.parse(_ls(k)) || d; } catch { return 
 const BG3 = 'var(--bg)', BG2 = 'var(--s2)', BG1 = 'var(--sf)', BD = 'var(--b)', BDM = 'var(--bm)';
 const T1 = 'var(--t)', T2 = 'var(--t2)', T3 = 'var(--t3)';
 const GREEN = '#27500A', RED = '#A32D2D', BLUE = '#185FA5', NAVY = '#0C447C', AMBER = '#EF9F27', PURPLE = '#3C3489';
-const S_MK  = 'border-radius:7px;padding:8px 11px;background:' + BG2;
-const S_WK  = 'background:' + BG1 + ';border:0.5px solid ' + BD + ';border-radius:8px;padding:9px 11px';
-const S_LBL = 'font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;color:' + T3;
-const S_VAL = 'font-size:15px;font-weight:500';
-const S_SUB = 'font-size:9px;color:' + T3;
+const S_MK  = 'border-radius:7px;padding:10px 14px;background:' + BG2;
+const S_WK  = 'background:' + BG1 + ';border:0.5px solid ' + BD + ';border-radius:8px;padding:12px 14px';
+const S_LBL = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;color:' + T3;
+const S_VAL = 'font-size:19px;font-weight:500';
+const S_SUB = 'font-size:10px;color:' + T3;
 
 /* ── Badge ──────────────────────────────────────────────────── */
 function _badge(text, bg, fg) { return '<span style="font-size:8px;padding:1px 6px;border-radius:4px;background:' + bg + ';color:' + fg + '">' + _esc(text) + '</span>'; }
@@ -92,10 +92,10 @@ function _ring(pct, size, strokeW, color) {
 }
 function _bar(pct, color) {
   const p = Math.min(100, Math.max(0, Math.round(pct)));
-  return '<div style="height:4px;border-radius:2px;background:' + BG2 + ';overflow:hidden"><div style="height:100%;width:' + p + '%;background:' + color + ';border-radius:2px"></div></div>';
+  return '<div style="height:5px;border-radius:2px;background:' + BG2 + ';overflow:hidden"><div style="height:100%;width:' + p + '%;background:' + color + ';border-radius:2px"></div></div>';
 }
 function _pctColor(pct) { return pct >= 90 ? GREEN : pct >= 70 ? AMBER : '#E24B4A'; }
-function _chip(label, val) { return '<span style="padding:5px 10px;background:rgba(255,255,255,0.08);border-radius:6px;font-size:9px;color:#E6F1FB">' + label + ' <b>' + val + '</b></span>'; }
+function _chip(label, val) { return '<span style="padding:6px 12px;background:rgba(255,255,255,0.08);border-radius:6px;font-size:10px;color:#E6F1FB">' + label + ' <b>' + val + '</b></span>'; }
 
 /* ── SVG Çizgi/Bar Chart ────────────────────────────────────── */
 function _svgLine(data1, data2, w, h) {
@@ -136,8 +136,8 @@ function _renderBanner(grup) {
   };
   const c = cfg[grup] || cfg.finans;
   return '<div style="background:#042C53;border-radius:9px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
-    + '<div><div style="font-size:13px;color:#E6F1FB;font-weight:500">' + _esc(c.title) + '</div>'
-    + '<div style="font-size:10px;color:#85B7EB">' + _esc(c.sub) + '</div></div>'
+    + '<div><div style="font-size:15px;color:#E6F1FB;font-weight:500">' + _esc(c.title) + '</div>'
+    + '<div style="font-size:11px;color:#85B7EB">' + _esc(c.sub) + '</div></div>'
     + '<div style="display:flex;gap:6px">' + c.chips() + '</div></div>';
 }
 
@@ -194,7 +194,7 @@ function _renderMetrikler(grup) {
       { l:'Bu Hafta Kazanılan', v:String(kazanilan), c:GREEN, s:'İddia' },
     ];
   }
-  let h = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px">';
+  let h = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
   cards.forEach(c => {
     h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">' + _esc(c.l) + '</div>'
       + '<div style="' + S_VAL + ';color:' + c.c + '">' + c.v + '</div>'
@@ -251,7 +251,7 @@ function _renderGrafik(grup) {
    İKİLİ KARTLAR — grup bazlı
    ════════════════════════════════════════════════════════════════ */
 function _renderIkili(grup) {
-  let h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">';
+  let h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">';
 
   if (grup === 'finans') {
     // Sol: Satış Konversiyon + Hedef vs Gerçek
@@ -262,76 +262,76 @@ function _renderIkili(grup) {
     const hedefK = _lsn('ak_hedef_konversiyon') || 40;
     h += '<div style="' + S_WK + '">';
     h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-    h += _ring(konvPct, 34, 2.5, konvColor);
-    h += '<div><div style="font-size:10px;font-weight:500;color:'+T1+'">Satış Konversiyon</div>'
-      + '<div style="font-size:8px;color:'+T3+'">Hedef: '+_pct(hedefK)+' · Fark: '+(konvPct-hedefK>=0?'+':'')+_pct(konvPct-hedefK)+'</div></div></div>';
+    h += _ring(konvPct, 44, 3, konvColor);
+    h += '<div><div style="font-size:12px;font-weight:500;color:'+T1+'">Satış Konversiyon</div>'
+      + '<div style="font-size:9px;color:'+T3+'">Hedef: '+_pct(hedefK)+' · Fark: '+(konvPct-hedefK>=0?'+':'')+_pct(konvPct-hedefK)+'</div></div></div>';
     // Hedef vs Gerçek
     const tah = _loadTah();
     const ayT = tah.filter(t=>t.createdAt&&_thisMonth(new Date(t.createdAt))).reduce((s,t)=>s+(parseFloat(t.amountTRY||t.amount)||0),0);
     const hCiro = _lsn('ak_hedef_ciro') || 1, hMust = _lsn('ak_hedef_musteri') || 1;
     const yeniM = _loadCari().filter(c=>c.createdAt&&_thisMonth(new Date(c.createdAt))).length;
     const items = [{ l:'Aylık Ciro', p:Math.round(ayT/hCiro*100) }, { l:'Yeni Müşteri', p:Math.round(yeniM/hMust*100) }];
-    items.forEach(it => { const c = _pctColor(it.p); h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+it.l+'</span><span style="color:'+c+'">'+_pct(it.p)+'</span></div>'+_bar(it.p,c)+'</div>'; });
+    items.forEach(it => { const c = _pctColor(it.p); h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+it.l+'</span><span style="color:'+c+'">'+_pct(it.p)+'</span></div>'+_bar(it.p,c)+'</div>'; });
     h += '</div>';
     // Sağ: E-Myth SOP + Vanish
     const sopT = _lsn('ak_sop_tamamlanan'), sopTp = _lsn('ak_sop_toplam') || 1;
     const sopPct = Math.round(sopT/sopTp*100), sopC = sopPct>=80?GREEN:sopPct>=60?AMBER:'#E24B4A';
     h += '<div style="' + S_WK + '">';
     h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-    h += _ring(sopPct, 34, 2.5, sopC);
-    h += '<div><div style="font-size:10px;font-weight:500;color:'+T1+'">SOP Tamamlanma</div>'
-      + '<div style="font-size:8px;color:'+T3+'">'+sopT+'/'+Math.round(sopTp)+'</div></div></div>';
+    h += _ring(sopPct, 44, 3, sopC);
+    h += '<div><div style="font-size:12px;font-weight:500;color:'+T1+'">SOP Tamamlanma</div>'
+      + '<div style="font-size:9px;color:'+T3+'">'+sopT+'/'+Math.round(sopTp)+'</div></div></div>';
     const del = _lsn('ak_delegasyon_skor'), mud = _lsn('ak_sahip_mudahale');
-    h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>Delegasyon</span><span>'+_pct(del)+'</span></div>'+_bar(del,GREEN)+'</div>';
-    h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>Sahip Müdahale</span><span>'+_pct(mud)+'</span></div>'+_bar(mud,'#E24B4A')+'</div>';
+    h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>Delegasyon</span><span>'+_pct(del)+'</span></div>'+_bar(del,GREEN)+'</div>';
+    h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>Sahip Müdahale</span><span>'+_pct(mud)+'</span></div>'+_bar(mud,'#E24B4A')+'</div>';
     h += '</div>';
 
   } else if (grup === 'operasyon') {
     const tk = _loadTasks(), today = _today();
     const done = tk.filter(t=>t.done).length, devam = tk.filter(t=>!t.done&&t.status==='inprogress').length;
     const gecik = tk.filter(t=>!t.done&&t.due&&t.due<today).length, total = tk.length||1;
-    h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Görev Dağılımı</div>';
+    h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Görev Dağılımı</div>';
     [{ l:'Tamamlandı', p:Math.round(done/total*100), c:GREEN },{ l:'Devam', p:Math.round(devam/total*100), c:BLUE },{ l:'Gecikmiş', p:Math.round(gecik/total*100), c:RED }]
-      .forEach(it => { h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+it.l+'</span><span>'+_pct(it.p)+'</span></div>'+_bar(it.p,it.c)+'</div>'; });
+      .forEach(it => { h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+it.l+'</span><span>'+_pct(it.p)+'</span></div>'+_bar(it.p,it.c)+'</div>'; });
     h += '</div>';
     const kr = _loadKargo();
     const aktifK = kr.filter(k=>k.status!=='teslim'&&!k.isDeleted).length, teslim = kr.filter(k=>k.status==='teslim').length;
-    h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Kargo Durumu</div>';
+    h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Kargo Durumu</div>';
     [{ l:'Aktif', v:aktifK, c:BLUE },{ l:'Teslim', v:teslim, c:GREEN },{ l:'Toplam', v:kr.length, c:T1 }]
       .forEach(it => { h += '<div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:3px"><span>'+it.l+'</span><span style="font-weight:500;color:'+it.c+'">'+it.v+'</span></div>'; });
     h += '</div>';
 
   } else if (grup === 'katalog') {
     const ur = _loadUrunler(), ca = _loadCari();
-    h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Ürün Kategorileri</div>';
+    h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Ürün Kategorileri</div>';
     const cats = {}; ur.forEach(u => { const k = u.kategori || u.category || 'Diğer'; cats[k] = (cats[k]||0)+1; });
-    Object.entries(cats).slice(0,5).forEach(([k,v]) => { const p = Math.round(v/ur.length*100); h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+_esc(k)+'</span><span>'+v+'</span></div>'+_bar(p,BLUE)+'</div>'; });
+    Object.entries(cats).slice(0,5).forEach(([k,v]) => { const p = Math.round(v/ur.length*100); h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+_esc(k)+'</span><span>'+v+'</span></div>'+_bar(p,BLUE)+'</div>'; });
     if (!Object.keys(cats).length) h += '<div style="font-size:9px;color:'+T3+';padding:6px 0">Kategori verisi yok</div>';
     h += '</div>';
-    h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Cari Türleri</div>';
+    h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Cari Türleri</div>';
     const turler = {}; ca.forEach(c => { const k = c.tur || c.type || 'Diğer'; turler[k] = (turler[k]||0)+1; });
-    Object.entries(turler).slice(0,5).forEach(([k,v]) => { const p = Math.round(v/ca.length*100); h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+_esc(k)+'</span><span>'+v+'</span></div>'+_bar(p,NAVY)+'</div>'; });
+    Object.entries(turler).slice(0,5).forEach(([k,v]) => { const p = Math.round(v/ca.length*100); h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+_esc(k)+'</span><span>'+v+'</span></div>'+_bar(p,NAVY)+'</div>'; });
     if (!Object.keys(turler).length) h += '<div style="font-size:9px;color:'+T3+';padding:6px 0">Tür verisi yok</div>';
     h += '</div>';
 
   } else {
     // Ekip
     const us = _loadUsers().filter(u=>u.status==='active'), tk = _loadTasks();
-    h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Kullanıcı Performans</div>';
+    h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Kullanıcı Performans</div>';
     us.slice(0,5).forEach(u => {
       const uT = tk.filter(t=>t.uid===u.id), done = uT.filter(t=>t.done).length, total = uT.length||1;
       const pct = Math.round(done/total*100);
-      h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+_esc((u.name||'').split(' ')[0])+'</span><span>'+_pct(pct)+'</span></div>'+_bar(pct,BLUE)+'</div>';
+      h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+_esc((u.name||'').split(' ')[0])+'</span><span>'+_pct(pct)+'</span></div>'+_bar(pct,BLUE)+'</div>';
     });
     h += '</div>';
     const id = _loadIddia();
     const aktif = id.filter(x=>x.durum==='aktif').length, kazanan = id.filter(x=>x.durum==='kazanildi').length;
     const oran = (aktif+kazanan) > 0 ? Math.round(kazanan/(aktif+kazanan)*100) : 0;
-    h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">İddia Kazanma</div>';
-    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">' + _ring(oran, 34, 2.5, oran>=60?GREEN:oran>=40?AMBER:'#E24B4A');
+    h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">İddia Kazanma</div>';
+    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">' + _ring(oran, 44, 3, oran>=60?GREEN:oran>=40?AMBER:'#E24B4A');
     h += '<div><div style="font-size:9px;color:'+T2+'">Kazanılan: '+kazanan+'</div><div style="font-size:9px;color:'+T2+'">Aktif: '+aktif+'</div></div></div>';
     const seri = id.filter(x=>x.durum==='kazanildi').sort((a,b)=>(b.bitisTarih||'').localeCompare(a.bitisTarih||'')).length;
-    h += '<div style="font-size:8px;color:'+T3+'">Toplam kazanılan seri: '+seri+'</div>';
+    h += '<div style="font-size:9px;color:'+T3+'">Toplam kazanılan seri: '+seri+'</div>';
     h += '</div>';
   }
 
@@ -345,7 +345,7 @@ function _renderEmythQ2(grup) {
   let h = '';
   // E-Myth + Vanish — sadece Finans'ta tam, diğerlerinde kompakt
   if (grup === 'finans') {
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">';
     // Sol: SOP + Sistemsiz + Modül
     const sopT = _lsn('ak_sop_tamamlanan'), sopTp = _lsn('ak_sop_toplam')||1;
     const sopPct = Math.round(sopT/sopTp*100), sopC = sopPct>=80?GREEN:sopPct>=60?AMBER:'#E24B4A';
@@ -355,17 +355,17 @@ function _renderEmythQ2(grup) {
     h += '<div style="display:flex;gap:10px;margin-bottom:6px">';
     h += '<div style="text-align:center">'+_ring(sopPct,30,2,sopC)+'<div style="font-size:7px;color:'+T3+'">SOP</div></div>';
     h += '<div style="text-align:center">'+_ring(sisO,30,2,sisC)+'<div style="font-size:7px;color:'+T3+'">Sistemsiz</div></div></div>';
-    Object.entries(skorlar).forEach(([k,v]) => { const b = v>=80?_bg(_pct(v)):v>=60?_ba(_pct(v)):_br(_pct(v)); h += '<div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:2px"><span>'+_esc(k)+'</span>'+b+'</div>'; });
+    Object.entries(skorlar).forEach(([k,v]) => { const b = v>=80?_bg(_pct(v)):v>=60?_ba(_pct(v)):_br(_pct(v)); h += '<div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:2px"><span>'+_esc(k)+'</span>'+b+'</div>'; });
     h += '</div>';
     // Sağ: Vanish
     const oto = _lsn('ak_otomasyon_oran'), sah = _lsn('ak_sahipsiz_karar');
     const del = _lsn('ak_delegasyon_skor'), mud = _lsn('ak_sahip_mudahale');
     h += '<div style="' + S_WK + '">';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">';
-    h += '<div style="background:'+BG2+';border-radius:6px;padding:6px;text-align:center"><div style="font-size:16px;font-weight:600;color:'+GREEN+'">'+_pct(oto)+'</div><div style="font-size:7px;color:'+T3+'">Otomasyon</div></div>';
-    h += '<div style="background:'+BG2+';border-radius:6px;padding:6px;text-align:center"><div style="font-size:16px;font-weight:600;color:'+BLUE+'">'+Math.round(sah)+'</div><div style="font-size:7px;color:'+T3+'">Sahipsiz/hf</div></div></div>';
-    h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>Delegasyon</span><span>'+_pct(del)+'</span></div>'+_bar(del,GREEN)+'</div>';
-    h += '<div><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>Müdahale</span><span>'+_pct(mud)+'</span></div>'+_bar(mud,'#E24B4A')+'</div>';
+    h += '<div style="background:'+BG2+';border-radius:6px;padding:6px;text-align:center"><div style="font-size:20px;font-weight:600;color:'+GREEN+'">'+_pct(oto)+'</div><div style="font-size:7px;color:'+T3+'">Otomasyon</div></div>';
+    h += '<div style="background:'+BG2+';border-radius:6px;padding:6px;text-align:center"><div style="font-size:20px;font-weight:600;color:'+BLUE+'">'+Math.round(sah)+'</div><div style="font-size:7px;color:'+T3+'">Sahipsiz/hf</div></div></div>';
+    h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>Delegasyon</span><span>'+_pct(del)+'</span></div>'+_bar(del,GREEN)+'</div>';
+    h += '<div><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>Müdahale</span><span>'+_pct(mud)+'</span></div>'+_bar(mud,'#E24B4A')+'</div>';
     h += '</div></div>';
   }
   // Q2 Hedefleri — tüm gruplar
@@ -381,9 +381,9 @@ function _renderEmythQ2(grup) {
     { l:'Vanish '+_pct(otoO), p:Math.round(otoO/90*100) },
     { l:'Yeni Müşteri '+yeniM, p:Math.round(yeniM/(q2.musteri||1)*100) },
   ];
-  h += '<div style="' + S_WK + '"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Q2 Hedefleri</div>';
+  h += '<div style="' + S_WK + '"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Q2 Hedefleri</div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px">';
-  q2Items.forEach(it => { const c = it.p>=80?BLUE:it.p>=60?AMBER:'#E24B4A'; h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+it.l+'</span><span style="color:'+c+'">'+_pct(it.p)+'</span></div>'+_bar(it.p,c)+'</div>'; });
+  q2Items.forEach(it => { const c = it.p>=80?BLUE:it.p>=60?AMBER:'#E24B4A'; h += '<div style="margin-bottom:3px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+it.l+'</span><span style="color:'+c+'">'+_pct(it.p)+'</span></div>'+_bar(it.p,c)+'</div>'; });
   h += '</div></div>';
   return h;
 }
@@ -399,7 +399,7 @@ function _renderSidebar() {
   const pendT = tah.filter(t=>t.approvalStatus==='pending').slice(0,3);
   const pend = [...pendO,...pendT].slice(0,3);
   h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-    + '<span style="font-size:10px;font-weight:500;color:'+T1+'">Onay Bekleyen</span>'+_br(String(pendO.length+pendT.length-pend.length+pend.length))+'</div>';
+    + '<span style="font-size:12px;font-weight:500;color:'+T1+'">Onay Bekleyen</span>'+_br(String(pendO.length+pendT.length-pend.length+pend.length))+'</div>';
   pend.forEach(p => {
     const ad = _esc(p.cari || p.cariAd || p.supplier || '—');
     const tutar = '₺' + _fmt(parseFloat(p.amountTRY||p.amount)||0);
@@ -410,7 +410,7 @@ function _renderSidebar() {
 
   // 2. Döviz Pozisyon
   const fxSym = {USD:'$',EUR:'€',TRY:'₺'};
-  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Döviz Pozisyon</div>';
+  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Döviz Pozisyon</div>';
   ['USD','EUR','TRY'].forEach(cur => {
     const odmC = odm.filter(o=>(o.currency||'TRY')===cur&&!o.paid).reduce((s,o)=>s+(parseFloat(o.amount)||0),0);
     const tahC = tah.filter(t=>(t.currency||'TRY')===cur&&!t.collected).reduce((s,t)=>s+(parseFloat(t.amount)||0),0);
@@ -422,17 +422,17 @@ function _renderSidebar() {
   // 3. Ekip Performans
   const users = _loadUsers().filter(u=>u.status==='active');
   const tasks = _loadTasks();
-  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Ekip Performans</div>';
+  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Ekip Performans</div>';
   users.slice(0,4).forEach(u => {
     const uT = tasks.filter(t=>t.uid===u.id), done = uT.filter(t=>t.done).length, total = uT.length||1;
     const pct = Math.round(done/total*100);
-    h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:8px;color:'+T2+';margin-bottom:1px"><span>'+_esc((u.name||'').split(' ')[0])+'</span><span>'+_pct(pct)+'</span></div>'+_bar(pct,BLUE)+'</div>';
+    h += '<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;color:'+T2+';margin-bottom:1px"><span>'+_esc((u.name||'').split(' ')[0])+'</span><span>'+_pct(pct)+'</span></div>'+_bar(pct,BLUE)+'</div>';
   });
   h += '</div>';
 
   // 4. Aktif İddialar
   const iddialar = _loadIddia().filter(x=>x.durum==='aktif').slice(0,2);
-  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Aktif İddialar</div>';
+  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Aktif İddialar</div>';
   iddialar.forEach(id => {
     const harf = (id.sahibi||id.owner||'?')[0].toUpperCase();
     const hash = (id.sahibi||id.owner||'x').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
@@ -441,7 +441,7 @@ function _renderSidebar() {
     h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
       + '<div style="width:18px;height:18px;border-radius:50%;background:'+avColors[hash%avColors.length]+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0">'+harf+'</div>'
       + '<div style="flex:1;min-width:0"><div style="font-size:9px;color:'+T1+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(id.baslik||id.title||'')+'</div>'
-      + '<div style="font-size:8px;color:'+T3+'">'+kalanGun+'g kaldı</div></div></div>';
+      + '<div style="font-size:9px;color:'+T3+'">'+kalanGun+'g kaldı</div></div></div>';
   });
   if (!iddialar.length) h += '<div style="font-size:9px;color:'+T3+'">Aktif iddia yok</div>';
   h += '</div>';
@@ -449,13 +449,13 @@ function _renderSidebar() {
   // 5. Son Aktivite
   const notifs = _loadNotifs().slice(0,3);
   const ikonMap = { odeme:['#E6F1FB',NAVY], tahsilat:['#E6F1FB',NAVY], gorev:['#EAF3DE',GREEN], uyari:['#FCEBEB',RED], iddia:['#EEEDFE',PURPLE] };
-  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:10px;font-weight:500;color:'+T1+';margin-bottom:6px">Son Aktivite</div>';
+  h += '<div style="' + S_WK + ';margin-bottom:7px"><div style="font-size:12px;font-weight:500;color:'+T1+';margin-bottom:6px">Son Aktivite</div>';
   notifs.forEach(n => {
     const typ = (n.type||'gorev').toLowerCase(), ic = ikonMap[typ]||ikonMap.gorev;
     const saat = n.ts ? new Date(n.ts).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) : '';
     h += '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'
       + '<div style="width:14px;height:14px;border-radius:50%;background:'+ic[0]+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:6px;color:'+ic[1]+'">●</span></div>'
-      + '<span style="flex:1;font-size:8px;color:'+T2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(n.msg||n.message||'')+'</span>'
+      + '<span style="flex:1;font-size:9px;color:'+T2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(n.msg||n.message||'')+'</span>'
       + '<span style="font-size:7px;color:'+T3+'">'+saat+'</span></div>';
   });
   if (!notifs.length) h += '<div style="font-size:9px;color:'+T3+'">Bildirim yok</div>';
@@ -470,7 +470,7 @@ function _renderSidebar() {
   h += '<div style="background:#042C53;border-radius:8px;padding:10px">';
   h += '<div style="font-size:12px;color:#A32D2D;margin-bottom:5px">ℹ</div>';
   if (soz) {
-    h += '<div style="font-size:9px;color:#E6F1FB;font-style:italic;line-height:1.5">'+_esc(soz.soz||soz.text||'')+'</div>'
+    h += '<div style="font-size:10px;color:#E6F1FB;font-style:italic;line-height:1.5">'+_esc(soz.soz||soz.text||'')+'</div>'
       + '<div style="width:20px;height:1.5px;background:#378ADD;margin:5px 0"></div>'
       + '<div style="font-size:8px;color:#85B7EB">'+_esc(soz.yazar||soz.author||'')+'</div>';
   } else { h += '<div style="font-size:9px;color:#85B7EB;font-style:italic">Henüz söz eklenmemiş</div>'; }
