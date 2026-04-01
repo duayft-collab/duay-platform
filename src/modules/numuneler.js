@@ -175,6 +175,7 @@ function renderNumuneler() {
   filtered.forEach(n => {
     const sureDoldu = n.saklamaBitis && n.saklamaBitis < today && n.durum==='arsivde';
     h += '<div onclick="window._nmsPeek(\''+n.id+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid '+BD+';cursor:pointer;transition:background .1s'+(sureDoldu?';background:#FEF2F2':'')+'" onmouseover="this.style.background=\''+BG2+'\'" onmouseout="this.style.background=\''+(sureDoldu?'#FEF2F2':'')+'\'"><div style="display:flex;align-items:center;gap:10px">'
+      +(window.isAdmin?.() ? '<input type="checkbox" class="nms-bulk-chk" data-id="'+n.id+'" onclick="event.stopPropagation();_nmsBulkCheck()" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;accent-color:var(--ac)">' : '')
       +_tipBadge(n.tip)
       +'<div><div style="font-size:12px;font-weight:500;color:'+T1+'">'+_esc(n.nmsId||'—')+' · '+_esc(n.urunAdi||'')+'</div>'
       +'<div style="font-size:9px;color:'+T3+'">'+_esc(n.urnKodu||'')+' · Lot: '+_esc(n.lotNo||'—')+' · '+_esc(n.tedarikciAdi||'')+' · '+_esc(n.depoKodu||'')+'</div></div></div>'
@@ -600,3 +601,17 @@ window.deleteNumune = deleteNumune;
 if (typeof module !== 'undefined' && module.exports) module.exports = { renderNumuneler, openNumuneForm, openIslemForm, saveNumune };
 
 })();
+
+// ── Numune Toplu silme ──────────────────────────
+window._nmsBulkCheck = function() { var n = document.querySelectorAll('.nms-bulk-chk:checked').length; var bar = document.getElementById('nms-bulk-bar'); var cnt = document.getElementById('nms-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };
+window._nmsBulkClear = function() { document.querySelectorAll('.nms-bulk-chk').forEach(function(cb) { cb.checked = false; }); var bar = document.getElementById('nms-bulk-bar'); if (bar) bar.style.display = 'none'; };
+window._nmsBulkDelete = function() {
+  var ids = Array.from(document.querySelectorAll('.nms-bulk-chk:checked')).map(function(cb) { return cb.dataset.id; });
+  if (!ids.length) return;
+  window.confirmModal(ids.length + ' numune kaydı çöp kutusuna taşınacak.', { title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: function() {
+    var data = typeof window.loadNumune === 'function' ? window.loadNumune() : []; var trash = typeof loadTrash === 'function' ? loadTrash() : []; var now = new Date().toISOString(); var exp = new Date(Date.now() + 30 * 86400000).toISOString();
+    data.forEach(function(n) { if (ids.indexOf(String(n.id)) === -1) return; trash.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: n.nmsId || n.urunAdi || '—', moduleName: 'Numune', originalCollection: 'numune', originalData: Object.assign({}, n, { isDeleted: true, deletedAt: now }), deletedAt: now, deletedByName: window.CU?.()?.name || 'Admin', expiresAt: exp }); n.isDeleted = true; n.deletedAt = now; });
+    if (typeof window.storeNumune === 'function') window.storeNumune(data); if (typeof storeTrash === 'function') storeTrash(trash);
+    window._nmsBulkClear(); window.renderNumuneler?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
+  }});
+};

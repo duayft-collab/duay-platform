@@ -705,7 +705,10 @@ window._trashRestore = function(trashId) {
 window._trashRestoreSelected = function() {
   var checked = document.querySelectorAll('.trash-cb:checked');
   if (!checked.length) { window.toast?.('Kayıt seçin','warn'); return; }
+  var n = checked.length;
   Array.from(checked).forEach(function(cb) { window._trashRestore(parseInt(cb.value)); });
+  renderTrashPanel();
+  window.toast?.(n + ' kayıt geri alındı ✓', 'ok');
 };
 
 /** Kalıcı sil (admin only) */

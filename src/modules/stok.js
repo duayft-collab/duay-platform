@@ -141,6 +141,7 @@ function saveStok(){
     bilgiNotu:g('stk-bilgi-notu')?.value||'',
     status:   newStatus,
     approved: window.isAdmin(),
+    updatedAt: new Date().toISOString(),
   };
   const readFile=(input,cb)=>{
     if(input?.files?.[0]){const r=new FileReader();r.onload=e=>cb({name:input.files[0].name,data:e.target.result});r.readAsDataURL(input.files[0]);}
@@ -245,6 +246,7 @@ function renderStok(){
     const turIcon=TUR_ICONS[s.tür||'stok'];
     const tr=document.createElement('tr');
     tr.innerHTML=`
+      <td style="width:30px;text-align:center">${window.isAdmin?.() ? '<input type="checkbox" class="stk-bulk-chk" data-id="' + s.id + '" onclick="event.stopPropagation();_stkBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)">' : ''}</td>
       <td><span style="font-size:16px">${turIcon}</span></td>
       <td>
         <div style="font-weight:500;font-size:13px">${s.name}${s.qty>1?` <span style="color:var(--t2);font-weight:400">×${s.qty}</span>`:''}</div>
@@ -490,3 +492,17 @@ else{
   fns.forEach(n=>{if(Stok[n])window[n]=Stok[n];});
   window.STK_ST=STK_ST;
 }
+
+// ── Stok Toplu silme ──────────────────────────
+window._stkBulkCheck = function() { var n = document.querySelectorAll('.stk-bulk-chk:checked').length; var bar = document.getElementById('stk-bulk-bar'); var cnt = document.getElementById('stk-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };
+window._stkBulkClear = function() { document.querySelectorAll('.stk-bulk-chk').forEach(function(cb) { cb.checked = false; }); var bar = document.getElementById('stk-bulk-bar'); if (bar) bar.style.display = 'none'; };
+window._stkBulkDelete = function() {
+  var ids = Array.from(document.querySelectorAll('.stk-bulk-chk:checked')).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal(ids.length + ' stok kaydı çöp kutusuna taşınacak.', { title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: function() {
+    var data = typeof loadStok === 'function' ? loadStok() : []; var trash = typeof loadTrash === 'function' ? loadTrash() : []; var now = new Date().toISOString(); var exp = new Date(Date.now() + 30 * 86400000).toISOString();
+    data.forEach(function(s) { if (ids.indexOf(s.id) === -1) return; trash.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: s.name || '—', moduleName: 'Stok', originalCollection: 'stok', originalData: Object.assign({}, s, { isDeleted: true, deletedAt: now }), deletedAt: now, deletedByName: window.CU?.()?.name || 'Admin', expiresAt: exp }); s.isDeleted = true; s.deletedAt = now; });
+    if (typeof storeStok === 'function') storeStok(data); if (typeof storeTrash === 'function') storeTrash(trash);
+    window._stkBulkClear(); window.renderStok?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
+  }});
+};

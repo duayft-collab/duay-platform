@@ -377,3 +377,44 @@ function _showInstantTaskNotif(targetUid, taskId, title, pri, due, assigner) {
   setTimeout(() => n.remove?.(), 6000);
 }
 window._showInstantTaskNotif = _showInstantTaskNotif;
+
+// ── Toplu silme (admin only) ──────────────────────────────────
+window._pusBulkCheck = function() {
+  var checked = document.querySelectorAll('.pus-bulk-chk:checked');
+  var bar = document.getElementById('pus-bulk-bar');
+  var cnt = document.getElementById('pus-bulk-cnt');
+  if (bar) bar.style.display = checked.length ? 'flex' : 'none';
+  if (cnt) cnt.textContent = checked.length;
+};
+
+window._pusBulkClear = function() {
+  document.querySelectorAll('.pus-bulk-chk').forEach(function(cb) { cb.checked = false; });
+  var bar = document.getElementById('pus-bulk-bar');
+  if (bar) bar.style.display = 'none';
+};
+
+window._pusBulkDelete = function() {
+  var checked = document.querySelectorAll('.pus-bulk-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal(ids.length + ' görev çöp kutusuna taşınacak. Emin misiniz?', {
+    title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var tasks = window.loadTasks ? loadTasks() : [];
+      var trash = typeof loadTrash === 'function' ? loadTrash() : [];
+      var now = new Date().toISOString();
+      var exp = new Date(Date.now() + 30 * 86400000).toISOString();
+      tasks.forEach(function(t) {
+        if (ids.indexOf(t.id) === -1) return;
+        trash.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: t.title || '—', moduleName: 'Görev', originalCollection: 'tasks', originalData: Object.assign({}, t, { isDeleted: true, deletedAt: now }), deletedAt: now, deletedByName: window.CU?.()?.name || 'Admin', expiresAt: exp });
+        t.isDeleted = true; t.deletedAt = now;
+      });
+      if (typeof window.saveTasks === 'function') saveTasks(tasks);
+      if (typeof storeTrash === 'function') storeTrash(trash);
+      window._pusBulkClear();
+      window.renderPusula?.();
+      window.toast?.(ids.length + ' görev silindi', 'ok');
+      window.logActivity?.('task', 'Toplu silme: ' + ids.length + ' görev');
+    }
+  });
+};

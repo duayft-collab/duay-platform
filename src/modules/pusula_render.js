@@ -136,6 +136,15 @@ function renderPusulaList(fl, users, todayS, cont) {
     return;
   }
 
+  // Toplu işlem bar
+  if (window.isAdmin?.() && !document.getElementById('pus-bulk-bar')) {
+    var _bb = document.createElement('div');
+    _bb.id = 'pus-bulk-bar';
+    _bb.style.cssText = 'display:none;padding:6px 16px;background:#E6F1FB;border-bottom:0.5px solid #85B7EB;align-items:center;gap:8px;font-size:11px;color:#0C447C';
+    _bb.innerHTML = '<span id="pus-bulk-cnt">0</span> görev seçili <button onclick="_pusBulkDelete()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;font-size:10px;cursor:pointer;font-family:inherit">Seçilenleri Sil</button><button onclick="_pusBulkClear()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;color:var(--t3);font-size:10px;cursor:pointer;font-family:inherit">İptal</button>';
+    cont.parentNode?.insertBefore(_bb, cont);
+  }
+
   const chatCounts = loadTaskChats();
   const frag       = document.createDocumentFragment();
   const wrapper    = document.createElement('div');
@@ -164,6 +173,7 @@ function renderPusulaList(fl, users, todayS, cont) {
     row.addEventListener('click', () => openPusDetail(t.id));
 
     row.innerHTML = `
+      ${window.isAdmin?.() ? '<input type="checkbox" class="pus-bulk-chk" data-id="' + t.id + '" onclick="event.stopPropagation();_pusBulkCheck()" style="position:absolute;top:8px;left:8px;width:14px;height:14px;cursor:pointer;accent-color:var(--ac);z-index:10">' : ''}
       <div class="tk-pri-bar" style="background:${isDone ? 'var(--b)' : p.color}"></div>
       <div class="tk-check" onclick="event.stopPropagation()">
         <input type="checkbox" ${isDone ? 'checked' : ''}

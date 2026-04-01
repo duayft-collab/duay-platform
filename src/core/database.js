@@ -614,7 +614,7 @@ const DEFAULT_TASKS = [
 /** @returns {Array<Object>} */
 function loadTasks()       { const d = _read(KEYS.tasks); return Array.isArray(d) ? d : DEFAULT_TASKS; }
 /** @param {Array<Object>} d */
-function saveTasks(d)      { _write(KEYS.tasks, d); 
+function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); _write(KEYS.tasks, d);
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
 }
 
@@ -946,7 +946,7 @@ const DEFAULT_PIRIM_PARAMS = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadStok()    { const d = _read(KEYS.stok);   return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeStok(d)  { _write(KEYS.stok, d); 
+/** @param {Array<Object>} d */ function storeStok(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.stok, d); 
   const _fp_stok = _fsPath('stok'); if (_fp_stok) _syncFirestore(_fp_stok, d);
 }
 
@@ -955,7 +955,7 @@ const DEFAULT_NUMUNE = [
   { id: 2, dir: 'cikis', name: 'Renk Kartı Seti',         code: 'NM-002', qty: 1, date: '2026-03-15', uid: 3, iadeDate: '2026-03-30', returned: false, note: 'Fuar için çıkartıldı',  img: null },
 ];
 /** @returns {Array<Object>} */ function loadNumune()  { const d = _read(KEYS.numune);  return Array.isArray(d) ? d : DEFAULT_NUMUNE; }
-/** @param {Array<Object>} d */ function storeNumune(d){ _write(KEYS.numune, d); 
+/** @param {Array<Object>} d */ function storeNumune(d){ var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.numune, d); 
   const _fp_numune = _fsPath('numune'); if (_fp_numune) _syncFirestore(_fp_numune, d);
 }
 
@@ -969,7 +969,7 @@ const DEFAULT_CRM = [
   { id: 3, name: 'Mavi Lojistik',  contact: 'Emre Bey',    phone: '0312 333 30 30', email: 'emre@example.com',  city: 'Ankara',   status: 'lead',   value: 80000,  owner: 2, note: 'İlk görüşme yapıldı',        ts: '2026-03-10' },
 ];
 /** @returns {Array<Object>} */ function loadCrmData()    { const d = _read(KEYS.crm);  return Array.isArray(d) ? d : DEFAULT_CRM; }
-/** @param {Array<Object>} d */ function storeCrmData(d)  { _write(KEYS.crm, d); 
+/** @param {Array<Object>} d */ function storeCrmData(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.crm, d); 
   const _fp_crm = _fsPath('crm'); if (_fp_crm) _syncFirestore(_fp_crm, d);
 }
 
@@ -1032,7 +1032,7 @@ function addToTrash(item, moduleName, collection) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadOdm()     { const d = _read(KEYS.odemeler); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeOdm(d)   { _write(KEYS.odemeler, d);
+/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
 /** @returns {Array<Object>} */
@@ -1052,7 +1052,7 @@ function loadTahsilat() {
 }
 /** @param {Array<Object>} d */
 function storeTahsilat(d) {
-  _write(KEYS.tahsilat, d);
+  var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.tahsilat, d);
   var _fp_tahsilat = _fsPath('tahsilat');
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
@@ -1061,7 +1061,7 @@ function storeTahsilat(d) {
   var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
 }
 /** @returns {Array<Object>} */ function loadCari() { const d = _read(KEYS.cari); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeCari(d) { _write(KEYS.cari, d);
+/** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.cari, d);
   var _fp = _fsPath('cari'); if (_fp) _syncFirestore(_fp, d);
 }
 
@@ -1079,7 +1079,7 @@ function storeTahsilat(d) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadNavlun() { var d = _read(KEYS.navlun); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeNavlun(d) { _write(KEYS.navlun, d);
+/** @param {Array<Object>} d */ function storeNavlun(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.navlun, d);
   var _fp = _fsPath('navlun'); if (_fp) _syncFirestore(_fp, d);
 }
 

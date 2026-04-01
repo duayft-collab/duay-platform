@@ -1802,6 +1802,7 @@ function saveOdm() {
     taskId:         parseInt(_go('odm-f-taskid')?.value || '0') || null,
     docs,
     ts:         _nowTso(),
+    updatedAt:  new Date().toISOString(),
     updatedBy:  _CUo()?.id,
     // Kredi kartı alanları
     ...(cat === 'kredi_k' ? {
@@ -3063,7 +3064,7 @@ function saveTahsilat() {
     reminderUnit:  document.getElementById('tah-f-reminder-unit')?.value || 'gun',
     note:       document.getElementById('tah-f-note')?.value     || '',
     docs,
-    ts: _nowTso(), updatedBy: _CUo()?.id,
+    ts: _nowTso(), updatedAt: new Date().toISOString(), updatedBy: _CUo()?.id,
   };
   if (!entry.jobId) entry.jobId = 'Yok';
   if (eid) {

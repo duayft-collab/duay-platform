@@ -74,6 +74,7 @@ function saveCrm(){
     note:   _gc('crm-note')?.value||'',
     owner:  parseInt(_gc('crm-owner')?.value||_CUcLegacy()?.id),
     ts:     _nowTsc(),
+    updatedAt: new Date().toISOString(),
   };
   if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}
   else d.push({id:generateNumericId(),...entry});
@@ -227,6 +228,7 @@ function _renderCrmList(fl,users,cont){
     const st2=CRM_ST[c.status]||CRM_ST.lead;
     const tr=document.createElement('tr');
     tr.innerHTML=`
+      <td style="width:30px;text-align:center">${window.isAdmin?.() ? '<input type="checkbox" class="crm-bulk-chk" data-id="' + c.id + '" onclick="event.stopPropagation();_crmBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)">' : ''}</td>
       <td>
         <div style="font-weight:500;font-size:13px">${c.name}</div>
         <div style="font-size:10px;color:var(--t2)">${c.phone||c.email||''}</div>
@@ -455,3 +457,17 @@ else{
   fns.forEach(n=>{if(Crm[n])window[n]=Crm[n];});
   window.CRM_ST=CRM_ST;
 }
+
+// ── CRM Toplu silme ──────────────────────────
+window._crmBulkCheck = function() { var n = document.querySelectorAll('.crm-bulk-chk:checked').length; var bar = document.getElementById('crm-bulk-bar'); var cnt = document.getElementById('crm-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };
+window._crmBulkClear = function() { document.querySelectorAll('.crm-bulk-chk').forEach(function(cb) { cb.checked = false; }); var bar = document.getElementById('crm-bulk-bar'); if (bar) bar.style.display = 'none'; };
+window._crmBulkDelete = function() {
+  var ids = Array.from(document.querySelectorAll('.crm-bulk-chk:checked')).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal(ids.length + ' müşteri kaydı çöp kutusuna taşınacak.', { title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: function() {
+    var data = typeof loadCrmData === 'function' ? loadCrmData() : []; var trash = typeof loadTrash === 'function' ? loadTrash() : []; var now = new Date().toISOString(); var exp = new Date(Date.now() + 30 * 86400000).toISOString();
+    data.forEach(function(c) { if (ids.indexOf(c.id) === -1) return; trash.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: c.name || '—', moduleName: 'CRM', originalCollection: 'crm', originalData: Object.assign({}, c, { isDeleted: true, deletedAt: now }), deletedAt: now, deletedByName: window.CU?.()?.name || 'Admin', expiresAt: exp }); c.isDeleted = true; c.deletedAt = now; });
+    if (typeof storeCrmData === 'function') storeCrmData(data); if (typeof storeTrash === 'function') storeTrash(trash);
+    window._crmBulkClear(); window.renderCrm?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
+  }});
+};

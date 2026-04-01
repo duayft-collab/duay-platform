@@ -649,7 +649,7 @@ function _saveNav(){
     var k=kargo.find(function(x){return x.id===eid;});
     if(k)Object.assign(k,{firm,from,to,teslimEden:teden,teslimAlan:talan,tasimaTipi:tip,dir,status:isAdmin?k.status:'onay_bekle',date,note,imgdata});
   } else {
-    var yeni={id:generateNumericId(),firm,from,to,teslimEden:teden,teslimAlan:talan,tasimaTipi:tip,dir,status:status,date,note,imgdata,uid:cu?.id,createdAt:_nowK()};
+    var yeni={id:generateNumericId(),firm,from,to,teslimEden:teden,teslimAlan:talan,tasimaTipi:tip,dir,status:status,date,note,imgdata,uid:cu?.id,createdAt:_nowK(),updatedAt:new Date().toISOString()};
     kargo.push(yeni);
     // Bildirim: admin değilse yöneticiye bildir
     if(!isAdmin){
@@ -757,7 +757,7 @@ function _saveLok(){
   var cu=window.Auth?.getCU?.();
   if(eid){var k=kayit.find(function(x){return x.id===eid;});if(k)Object.assign(k,{dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama});}
   else{
-    var yeni={id:generateNumericId(),dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama,durum,uid:cu?.id,createdAt:_nowK()};
+    var yeni={id:generateNumericId(),dir,lokasyon:lok,urun,miktar,birim,tarih,aciklama,durum,uid:cu?.id,createdAt:_nowK(),updatedAt:new Date().toISOString()};
     kayit.push(yeni);
     if(stokBagla&&typeof window.storeStok==='function'){
       try{
@@ -826,7 +826,7 @@ function _saveKur(){
   if(!kurye){_toastK('Kurye firması seçiniz','err');return;}
   var kayit=_loadKurye();
   if(eid){var k=kayit.find(function(x){return x.id===eid;});if(k)Object.assign(k,{kurye,takipNo,gonderen,alici,durum,tarih,not});}
-  else{kayit.push({id:generateNumericId(),kurye,takipNo,gonderen,alici,durum,tarih,not,uid:window.Auth?.getCU?.()?.id,createdAt:_nowK()});}
+  else{kayit.push({id:generateNumericId(),kurye,takipNo,gonderen,alici,durum,tarih,not,uid:window.Auth?.getCU?.()?.id,createdAt:_nowK(),updatedAt:new Date().toISOString()});}
   _saveKurye2(kayit);
   window.closeMo?.('mo-kv10-kur');
   _logK('Kurye '+(eid?'güncellendi':'eklendi')+': '+kurye+' '+takipNo);

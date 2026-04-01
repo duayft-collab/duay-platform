@@ -248,6 +248,7 @@ function renderNavlun() {
       const isEnSure  = minSure  && +n.transitSure === minSure;
 
       html += '<div style="background:var(--sf);border:1.5px solid '+(isEn?'#3B6D11':'var(--b)')+';border-radius:10px;overflow:hidden;position:relative">'
+        + (window.isAdmin?.() ? '<input type="checkbox" class="nvl-bulk-chk" data-id="' + n.id + '" onclick="event.stopPropagation();_nvlBulkCheck()" style="position:absolute;top:8px;left:8px;width:14px;height:14px;cursor:pointer;accent-color:var(--ac);z-index:10">' : '')
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--b)">'
           + '<div>'
             + '<div style="font-size:13px;font-weight:600">'+(n.tasiyan||'—')+'</div>'
@@ -1147,3 +1148,17 @@ if (typeof module!=='undefined'&&module.exports) {
   };
   try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) {}
 }
+
+// ── Navlun Toplu silme ──────────────────────────
+window._nvlBulkCheck = function() { var n = document.querySelectorAll('.nvl-bulk-chk:checked').length; var bar = document.getElementById('nvl-bulk-bar'); var cnt = document.getElementById('nvl-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };
+window._nvlBulkClear = function() { document.querySelectorAll('.nvl-bulk-chk').forEach(function(cb) { cb.checked = false; }); var bar = document.getElementById('nvl-bulk-bar'); if (bar) bar.style.display = 'none'; };
+window._nvlBulkDelete = function() {
+  var ids = Array.from(document.querySelectorAll('.nvl-bulk-chk:checked')).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal(ids.length + ' navlun kaydı çöp kutusuna taşınacak.', { title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: function() {
+    var data = typeof loadNavlun === 'function' ? loadNavlun() : []; var trash = typeof loadTrash === 'function' ? loadTrash() : []; var now = new Date().toISOString(); var exp = new Date(Date.now() + 30 * 86400000).toISOString();
+    data.forEach(function(n) { if (ids.indexOf(n.id) === -1) return; trash.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: (n.from || '') + '→' + (n.to || ''), moduleName: 'Navlun', originalCollection: 'navlun', originalData: Object.assign({}, n, { isDeleted: true, deletedAt: now }), deletedAt: now, deletedByName: window.CU?.()?.name || 'Admin', expiresAt: exp }); n.isDeleted = true; n.deletedAt = now; });
+    if (typeof storeNavlun === 'function') storeNavlun(data); if (typeof storeTrash === 'function') storeTrash(trash);
+    window._nvlBulkClear(); window.renderNavlun?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
+  }});
+};
