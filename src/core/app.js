@@ -57,13 +57,21 @@ const APP_BUILD = '2026-03-19 14:50';
 
 /** CHANGELOG — Sürüm Geçmişi */
 const CHANGELOG = [
-  { v:'8.0.0', ts:'2026-03-19 14:50', note:'Tam modüler mimari: database.js, auth.js, pusula.js, kargo.js, pirim.js, admin.js ayrıştırıldı. DocumentFragment performans iyileştirmesi.' },
+  { v:'9.2.0', ts:'2026-04-01 19:00', note:'Nakit Akışı: 8 KPI, kayıt sayıları, personel filtre, sıralama, 13 araç, Firebase Storage entegrasyonu.' },
+  { v:'9.1.0', ts:'2026-04-01 18:00', note:'DB Monitör: Ayarlar sidebar nav yeniden tasarım, Sağlık Monitörü Dashboard (Tasarım C), 14 parametre izleme.' },
+  { v:'9.0.0', ts:'2026-04-01 17:00', note:'Toplu silme (6 modül), _trashRestoreSelected fix, updatedAt zorunlu, form geliştirme başlangıcı.' },
+  { v:'8.9.0', ts:'2026-04-01 16:00', note:'Nakit akışı sayfa düzeni: max-width, filtre tek satır, emoji temizleme, personel filtresi.' },
+  { v:'8.8.0', ts:'2026-04-01 15:00', note:'Araçlar menüsü: 13 araç (Hesap Özeti PDF, Yaş Dağılımı, SLA Takibi, Cari Analizi, Eksik Dekont, Hatırlatma Taslağı, Tekrarlayan Takvim).' },
+  { v:'8.7.0', ts:'2026-04-01 14:00', note:'Dashboard: Nakit Akışı trendi bloğu, projeksiyon, gecikme yaş dağılımı, uyarı banner.' },
+  { v:'8.6.0', ts:'2026-04-01 13:00', note:'Ayarlar paneli sidebar nav, Veritabanı Sağlık Monitörü — KPI grid, olay akışı, uzman yorumu.' },
+  { v:'8.5.0', ts:'2026-04-01 12:00', note:'Pusula 8243 satır → 8 modüle bölündü. SW cache v11, 8 modül precache.' },
+  { v:'8.4.0', ts:'2026-04-01 11:00', note:'İhracat Ops modülü, JobIdHub genişletme, Dashboard İhracat özet kartı ve Detay grubu.' },
+  { v:'8.3.0', ts:'2026-03-28 10:00', note:'Pusula: Segment control 5 görünüm, Benimkiler checkbox, JSON yedek al/yükle.' },
+  { v:'8.2.0', ts:'2026-03-25 09:00', note:'Dashboard: E-Myth/Vanish otomatik hesaplama, kart layout düzeltme.' },
+  { v:'8.0.0', ts:'2026-03-19 14:50', note:'Tam modüler mimari: database.js, auth.js, pusula.js, kargo.js, pirim.js, admin.js ayrıştırıldı.' },
   { v:'7.6.0', ts:'2026-03-19 12:00', note:'app.js modülerleştirildi, GlobalErrorHandler entegrasyonu, multi-tenant Firebase hazırlığı.' },
   { v:'4.1.0', ts:'2026-03-18 14:30', note:'Takvim performans, 15 form, Fuar kriter motoru, Temizlik rutinleri, Yetkilendirme yenileme.' },
   { v:'3.0.0', ts:'2026-03-16 22:00', note:'KPI & Personel Performans Paneli — haftalık/aylık/yıllık skor, liderlik tablosu, Excel+PDF.' },
-  { v:'2.9.1', ts:'2026-03-16 21:00', note:'Güvenlik: demo şifreler silindi, sadece Firebase Auth.' },
-  { v:'2.9.0', ts:'2026-03-16 20:00', note:'Sidebar tamamen yeniden gruplandı, toggle düzeltildi.' },
-  { v:'2.5.0', ts:'2026-03-15 11:00', note:'İzin, Tebligat, Pirim SOP 2025, Konteyner, Firebase entegrasyonu.' },
   { v:'1.0.0', ts:'2026-03-14 09:00', note:'İlk sürüm: Dashboard, Kullanıcılar, Dökümanlar.' },
 ];
 
@@ -3418,27 +3426,48 @@ window.toggleNsec       = toggleNsec;
 
 // ── TOP NAV v2 — Grup/Modül routing ─────────────────────────
 var _TN2_GROUPS = {
-  dashboard:  { label:'Dashboard', mods: [{ id:'dashboard', label:'Dashboard' }] },
-  finans:     { label:'Finans', mods: [
-    { id:'odemeler', label:'Nakit Akisi' },
-    { id:'alis-teklifleri', label:'Alis Teklifleri' },
-    { id:'satis-teklifleri', label:'Satis Teklifleri' },
+  dashboard: { label:'Dashboard', mods: [
+    { id:'dashboard', label:'Dashboard' },
+    { id:'pusula',    label:'Görevler'  },
+    { id:'takvim',    label:'Takvim'    },
+    { id:'announce',  label:'Duyurular' },
   ]},
-  operasyon:  { label:'Operasyon', mods: [
-    { id:'pusula', label:'Gorevler' },
-    { id:'kargo', label:'Kargo' },
-    { id:'satinalma', label:'Is Takibi' },
-    { id:'ihracat-ops', label:'Ihracat Ops' },
+  finans: { label:'Finans', mods: [
+    { id:'odemeler',        label:'Nakit Akışı'      },
+    { id:'finans',          label:'Finans Paneli'    },
+    { id:'cari',            label:'Cari Yönetimi'    },
+    { id:'alis-teklifleri', label:'Alış Teklifleri'  },
+    { id:'satis-teklifleri',label:'Satış Teklifleri' },
+    { id:'pirim',           label:'Prim'             },
+    { id:'hesap',           label:'Hesap Makinesi'   },
   ]},
-  katalog:    { label:'Katalog', mods: [
-    { id:'urunler', label:'Urun Katalogu' },
-    { id:'numune', label:'Numune Arsivi' },
-    { id:'cari', label:'Cariler' },
+  operasyon: { label:'Operasyon', mods: [
+    { id:'kargo',       label:'Kargo Takibi'    },
+    { id:'satinalma',   label:'Satın Alma'      },
+    { id:'ihracat-ops', label:'İhracat Ops'     },
+    { id:'stok',        label:'Stok / Zimmet'   },
+    { id:'numune',      label:'Numune Arşivi'   },
+    { id:'navlun',      label:'Navlun'          },
   ]},
-  sistem:     { label:'Sistem & Ekip', mods: [
-    { id:'admin', label:'Kullanicilar' },
-    { id:'settings', label:'Ayarlar' },
-    { id:'activity', label:'Loglar' },
+  katalog: { label:'Katalog', mods: [
+    { id:'urunler',          label:'Ürün Kataloğu'   },
+    { id:'crm',              label:'CRM / Müşteriler' },
+    { id:'alis-teklifleri',  label:'Alış Teklifleri'  },
+    { id:'satis-teklifleri', label:'Satış Teklifleri' },
+  ]},
+  ik: { label:'İK', mods: [
+    { id:'ik-hub',    label:'İK Merkezi'        },
+    { id:'evrak',     label:'Personel Evrak'    },
+    { id:'izin',      label:'İzin Yönetimi'     },
+    { id:'temizlik',  label:'Temizlik Kontrol'  },
+  ]},
+  sistem: { label:'Sistem', mods: [
+    { id:'kpi-panel', label:'KPI & Performans'   },
+    { id:'arsiv-hub', label:'Arşiv & Belgeler'   },
+    { id:'admin',     label:'Kullanıcı Yönetimi' },
+    { id:'settings',  label:'Ayarlar'            },
+    { id:'activity',  label:'Aktivite Logları'   },
+    { id:'trash',     label:'Çöp Kutusu'         },
   ]},
 };
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
