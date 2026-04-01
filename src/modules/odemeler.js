@@ -408,7 +408,7 @@ function _injectOdmPanel() {
 
   panel.innerHTML = [
     // ═══ STICKY WRAPPER ═══
-    '<div style="position:sticky;top:0;z-index:200;background:var(--sf);border-bottom:0.5px solid var(--b)">',
+    '<div style="position:sticky;top:0;z-index:200;background:var(--sf);border-bottom:0.5px solid var(--b)"><div style="max-width:1280px;margin:0 auto">',
 
     // ── Satır 1: Başlık + Butonlar ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:0.5px solid var(--b)">',
@@ -536,7 +536,7 @@ function _injectOdmPanel() {
     (_isManagerO() ? '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:130px"><option value="">Kaydeden</option></select>' : '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>'),
     '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
 
-    '</div>', // ═══ STICKY WRAPPER CLOSE ═══
+    '</div></div>', // ═══ STICKY WRAPPER CLOSE ═══
 
     // CSS
     '<style>',
@@ -555,7 +555,7 @@ function _injectOdmPanel() {
     '</style>',
 
     // Liste container
-    '<div id="odm-list" style="margin:0 20px"></div>',
+    '<div style="max-width:1280px;margin:0 auto"><div id="odm-list" style="margin:0 20px"></div></div>',
 
     // Progress bar (hidden — uyumluluk)
     '<div id="odm-prog-bar" style="display:none"></div>',
