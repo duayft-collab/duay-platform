@@ -1879,12 +1879,13 @@ function _renderSyncIndicator() {
  * Ayarlar → Veritabanı Sağlığı paneline yönlendirir.
  */
 window._showSyncDetails = function() {
-  window.App?.nav?.('settings');
+  if (typeof window.App !== 'undefined' && typeof window.App.nav === 'function') {
+    window.App.nav('settings');
+  }
   setTimeout(function() {
-    var el = document.getElementById('db-health-panel');
-    if (el) el.scrollIntoView({ behavior:'smooth' });
-    window._renderDbHealthPanel?.();
-  }, 300);
+    window.setNav?.('monitor', document.getElementById('sni-monitor'));
+    window._renderMonitorPage?.();
+  }, 400);
 };
 
 /**
@@ -2044,11 +2045,147 @@ window._cleanNotifications = function() {
   }
 };
 
-/** Settings paneli açılınca DB sağlık panelini otomatik render et */
-document.addEventListener('click', function(e) {
-  if (e.target && (e.target.id === 'nb-settings' || e.target.closest?.('#nb-settings'))) {
-    setTimeout(function() { window._renderDbHealthPanel?.(); }, 400);
+/**
+ * Settings sidebar navigasyonu.
+ * @param {string} page - Sayfa adı (gorunum, guvenlik, pwa, firebase, veri, monitor, surum)
+ * @param {HTMLElement} [el] - Tıklanan nav öğesi
+ */
+window.setNav = function(page, el) {
+  document.querySelectorAll('.set-nav-item').forEach(function(i) { i.classList.remove('active'); });
+  document.querySelectorAll('.set-page').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
+  if (el) el.classList.add('active');
+  var pg = document.getElementById('set-page-' + page);
+  if (pg) { pg.classList.add('active'); pg.style.display = 'block'; }
+  if (page === 'monitor') window._renderMonitorPage?.();
+};
+
+/**
+ * Sağlık Monitörü tam sayfa render.
+ */
+window._renderMonitorPage = function() {
+  var h = window._getDbHealth?.();
+  if (!h) return;
+
+  var now = new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+  // Son kontrol zamanı
+  var lastCheckEl = document.getElementById('set-monitor-lastcheck');
+  if (lastCheckEl) lastCheckEl.textContent = 'Son kontrol: ' + now;
+
+  // Durum badge (topbar)
+  var statusEl = document.getElementById('set-monitor-status');
+  if (statusEl) {
+    if (h.hasRed) {
+      statusEl.style.background = 'rgba(239,68,68,.1)'; statusEl.style.color = '#791F1F';
+      statusEl.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;flex-shrink:0"></div> Anormallik';
+    } else if (h.hasAmber) {
+      statusEl.style.background = 'rgba(186,117,23,.1)'; statusEl.style.color = '#633806';
+      statusEl.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#BA7517;flex-shrink:0"></div> Uyarı';
+    } else {
+      statusEl.style.background = 'rgba(29,158,117,.15)'; statusEl.style.color = '#085041';
+      statusEl.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#1D9E75;flex-shrink:0"></div> Sistem sağlıklı';
+    }
   }
+
+  // Sidebar badge
+  var badgeEl = document.getElementById('set-monitor-badge');
+  if (badgeEl) badgeEl.style.display = (h.hasRed || h.hasAmber) ? '' : 'none';
+
+  // KPI kartları
+  var kpiEl = document.getElementById('set-monitor-kpi');
+  if (kpiEl) {
+    var stColor = h.storage.pct >= 80 ? '#791F1F' : h.storage.pct >= 60 ? '#633806' : '#27500A';
+    var nColor = h.data.notifCount > 100 ? '#791F1F' : h.data.notifCount > 50 ? '#633806' : 'var(--t)';
+    var vals = [
+      { v: '%' + h.storage.pct, l: 'Depolama', c: stColor },
+      { v: h.data.notifCount, l: 'Bildirim', c: nColor },
+      { v: h.sync.errors, l: 'Sync hata', c: h.sync.errors > 3 ? '#791F1F' : 'var(--t)' },
+      { v: h.sync.queueLen, l: 'Offline kuyruk', c: h.sync.queueLen > 5 ? '#791F1F' : 'var(--t)' },
+      { v: h.sync.listeners, l: 'FS Listener', c: 'var(--t)' },
+      { v: h.data.taskCount, l: 'Görev sayısı', c: 'var(--t)' },
+    ];
+    kpiEl.innerHTML = vals.map(function(m) {
+      return '<div class="ms"><div class="msv" style="color:' + m.c + '">' + m.v + '</div><div class="msl">' + m.l + '</div></div>';
+    }).join('');
+  }
+
+  // Uyarılar
+  var alertEl = document.getElementById('set-monitor-alerts');
+  if (alertEl) {
+    if (h.alerts.length) {
+      alertEl.innerHTML = h.alerts.map(function(a) {
+        var bg = a.level === 'red' ? '#FCEBEB' : '#FAEEDA';
+        var c = a.level === 'red' ? '#791F1F' : '#633806';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;margin-bottom:6px;font-size:12px;background:' + bg + ';color:' + c + '">' + (a.level === 'red' ? '🔴' : '🟡') + ' ' + a.msg + '</div>';
+      }).join('');
+    } else {
+      alertEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;margin-bottom:6px;font-size:12px;background:#EAF3DE;color:#27500A">✅ Tüm parametreler normal aralıkta</div>';
+    }
+  }
+
+  // Olay akışı (timeline)
+  var tlEl = document.getElementById('set-monitor-timeline');
+  if (tlEl) {
+    var lastSync = h.sync.lastSync ? new Date(h.sync.lastSync).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+    var events = [
+      { t: now, ok: true, m: 'Monitör kontrolü çalıştı' },
+      { t: lastSync, ok: true, m: 'Son başarılı Firestore sync' },
+      { t: '—', ok: h.data.notifCount <= 50, m: 'Bildirim koleksiyonu: ' + h.data.notifCount + ' kayıt' },
+      { t: '—', ok: h.storage.pct < 60, m: 'localStorage: %' + h.storage.pct + ' dolu (' + h.storage.usedMB + ' MB)' },
+    ];
+    tlEl.innerHTML = events.map(function(e) {
+      return '<div style="display:flex;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--b)">'
+        + '<div style="font-size:10px;color:var(--t3);font-family:monospace;min-width:40px;padding-top:1px">' + e.t + '</div>'
+        + '<div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px;background:' + (e.ok ? '#639922' : '#E24B4A') + '"></div>'
+        + '<div style="font-size:12px;color:var(--t2)">' + e.m + '</div></div>';
+    }).join('');
+  }
+
+  // Uzman yorumu
+  var expertEl = document.getElementById('set-monitor-expert');
+  if (expertEl) {
+    var insights = [];
+    if (h.data.notifCount > 50)
+      insights.push('Bildirim koleksiyonu (' + h.data.notifCount + ' kayıt) Firestore merge döngüsünde büyüyor. Bu klasik "silent accumulator" senaryosu — günlük kullanımda fark edilmez, 3-6 ayda localStorage limitine dayanır. Ayda bir temizleme alışkanlığı edinilmeli.');
+    if (h.data.noUpdatedAtPct > 10)
+      insights.push('updatedAt eksikliği (%' + h.data.noUpdatedAtPct + ') merge stratejisinin zayıf noktası: iki cihaz aynı kaydı değiştirince hangisi kazanacağı belirsizleşir, eski veri yeniyi ezebilir. saveTasks her çağrıda updatedAt güncellemeli.');
+    if (h.storage.pct > 40)
+      insights.push('localStorage %' + h.storage.pct + ' dolu. Büyüme doğrusal değil — veri hacmi hızlanınca %80\'e beklenenden çabuk ulaşılabilir.');
+    if (!insights.length)
+      insights.push('Sistem şu an stabil. Tüm parametreler referans aralığında. localStorage doluluk ve bildirim sayısını haftalık takip etmek yeterli.');
+    expertEl.innerHTML = insights.join('<br><br>');
+  }
+
+  // Parametreler tablosu
+  var paramEl = document.getElementById('set-monitor-params');
+  if (paramEl) {
+    var params = [
+      { n: 'localStorage doluluk', v: '%' + h.storage.pct, ok: h.storage.pct < 60 },
+      { n: 'localStorage kullanım', v: h.storage.usedMB + ' MB / 5 MB', ok: true },
+      { n: 'Bildirim koleksiyonu', v: h.data.notifCount + ' kayıt', ok: h.data.notifCount <= 50 },
+      { n: 'Sync durumu', v: h.sync.status === 'ok' ? 'Senkronize' : h.sync.status, ok: h.sync.status === 'ok' },
+      { n: '24s sync hatası', v: h.sync.errors, ok: h.sync.errors === 0 },
+      { n: 'Offline kuyruk', v: h.sync.queueLen, ok: h.sync.queueLen === 0 },
+      { n: 'FS listener sayısı', v: h.sync.listeners, ok: h.sync.listeners < 45 },
+      { n: 'Görev sayısı', v: h.data.taskCount, ok: h.data.taskCount < 2000 },
+      { n: 'updatedAt eksik oran', v: '%' + h.data.noUpdatedAtPct, ok: h.data.noUpdatedAtPct < 10 },
+      { n: 'Çöp kutusu', v: h.data.trashCount + ' kayıt', ok: h.data.trashCount < 100 },
+    ];
+    paramEl.innerHTML = params.map(function(p) {
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--b)">'
+        + '<div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + (p.ok ? '#639922' : '#E24B4A') + '"></div>'
+        + '<div style="flex:1;font-size:12px;color:var(--t2)">' + p.n + '</div>'
+        + '<div style="font-size:12px;font-weight:500;font-family:monospace;color:' + (p.ok ? 'var(--t)' : '#791F1F') + '">' + p.v + '</div></div>';
+    }).join('');
+  }
+};
+
+/** Settings paneli açılınca monitör sayfasını otomatik render et */
+document.addEventListener('click', function(e) {
+  if (!e.target) return;
+  var nb = e.target.closest ? e.target.closest('#nb-settings') : null;
+  if (!nb && e.target.id !== 'nb-settings') return;
+  setTimeout(function() { window._renderMonitorPage?.(); }, 500);
 });
 
 /**

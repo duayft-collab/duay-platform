@@ -919,141 +919,156 @@ function _doLogin() {
 
       <!-- Panel: Ayarlar -->
             <div class="panel" id="panel-settings">
-        <div class="ph">
-          <div>
-            <div class="pht">⚙️ Sistem Ayarları</div>
-            <div class="phs">Yalnızca yöneticiler bu bölüme erişebilir.</div>
-          </div>
-          <span class="badge bp" style="align-self:flex-start">Admin Only</span>
+<!-- ── SETTINGS v2 — Sidebar + Content ── -->
+<div style="display:flex;min-height:100%;background:var(--sf)">
+
+  <!-- Sol Sidebar Nav -->
+  <div id="set-nav" style="width:180px;flex-shrink:0;background:var(--s2);border-right:0.5px solid var(--b);padding:16px 0;display:flex;flex-direction:column;gap:0">
+    <div style="font-size:9px;font-weight:500;letter-spacing:.06em;color:var(--t3);padding:0 16px;margin-bottom:6px;text-transform:uppercase">Genel</div>
+    <div class="set-nav-item" id="sni-gorunum" onclick="setNav('gorunum',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Görünüm & Dil</div>
+    <div class="set-nav-item" id="sni-guvenlik" onclick="setNav('guvenlik',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Güvenlik</div>
+    <div class="set-nav-item" id="sni-pwa" onclick="setNav('pwa',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>PWA / Mobil</div>
+    <div style="font-size:9px;font-weight:500;letter-spacing:.06em;color:var(--t3);padding:0 16px;margin:14px 0 6px;text-transform:uppercase">Sistem</div>
+    <div class="set-nav-item" id="sni-firebase" onclick="setNav('firebase',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Firebase</div>
+    <div class="set-nav-item" id="sni-veri" onclick="setNav('veri',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Veri Yönetimi</div>
+    <div class="set-nav-item active" id="sni-monitor" onclick="setNav('monitor',this)"><div class="set-nav-dot" style="background:#185FA5"></div>Sağlık Monitörü<span id="set-monitor-badge" style="display:none;font-size:9px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#791F1F;margin-left:auto">!</span></div>
+    <div style="font-size:9px;font-weight:500;letter-spacing:.06em;color:var(--t3);padding:0 16px;margin:14px 0 6px;text-transform:uppercase">Diğer</div>
+    <div class="set-nav-item" id="sni-surum" onclick="setNav('surum',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Sürüm Geçmişi</div>
+  </div>
+
+  <!-- Sağ İçerik Alanı -->
+  <div id="set-content" style="flex:1;padding:24px;overflow-y:auto;min-width:0">
+
+    <!-- SAYFA: Görünüm & Dil -->
+    <div id="set-page-gorunum" class="set-page">
+      <div class="set-page-title">Görünüm & Dil</div>
+      <div class="card" style="max-width:480px">
+        <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
+          <div class="dr"><span style="font-size:13px">Tema</span><button class="btn btns" onclick="toggleTheme()" id="a-theme-settings">🌙 Değiştir</button></div>
+          <div class="dr"><span style="font-size:13px">Dil</span><div style="display:flex;gap:5px"><button class="lpill on" onclick="setLang('tr',this)" style="font-size:11px;padding:3px 10px">TR</button><button class="lpill" onclick="setLang('en',this)" style="font-size:11px;padding:3px 10px">EN</button><button class="lpill" onclick="setLang('fr',this)" style="font-size:11px;padding:3px 10px">FR</button></div></div>
         </div>
+      </div>
+    </div>
 
-        <!-- Firebase Durum -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="ch">
-            <span class="ct">🔥 Firebase Bağlantısı</span>
-            <span id="fb-status-badge" class="badge ba">Kontrol ediliyor…</span>
-          </div>
-          <div style="padding:16px 18px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-              <div class="ms"><div class="msv" id="fb-user-count" style="font-size:16px">—</div><div class="msl">Firestore koleksiyon</div></div>
-              <div class="ms"><div class="msv" id="fb-sync-time" style="font-size:12px;font-family:'DM Mono',monospace">—</div><div class="msl">Son kontrol</div></div>
+    <!-- SAYFA: Güvenlik -->
+    <div id="set-page-guvenlik" class="set-page">
+      <div class="set-page-title">Güvenlik</div>
+      <div class="card" style="max-width:480px">
+        <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+          <div class="dr"><span>Firebase Auth</span><span class="badge bg">Aktif</span></div>
+          <div class="dr"><span>Şifre lokal saklanmıyor</span><span class="badge bg">✓</span></div>
+          <div class="dr"><span>Oturum timeout</span><span class="badge bgr">30 dk</span></div>
+          <div class="dr"><span>Soft delete</span><span class="badge bg">Aktif</span></div>
+          <div style="border-top:1px solid var(--b);padding-top:12px;margin-top:4px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔐 Şifremi Değiştir</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input type="password" id="set-old-pwd" class="fi" placeholder="Mevcut şifre">
+              <input type="password" id="set-new-pwd" class="fi" placeholder="Yeni şifre (min 6)">
+              <input type="password" id="set-new-pwd2" class="fi" placeholder="Yeni şifre tekrar">
+              <button class="btn btnp" onclick="_changePwdFromSettings()">Şifreyi Güncelle</button>
             </div>
-            <div style="font-size:12px;color:var(--t2);margin-bottom:14px;padding:10px;background:var(--s2);border-radius:var(--rs)" id="fb-auth-info">Firebase durumu kontrol ediliyor…</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btnp" onclick="migrateLocalToFirestore()" id="btn-migrate">☁️ Yerel Veriyi Buluta Aktar</button>
-              <button class="btn btns" onclick="checkFirebaseStatus()">↻ Durumu Kontrol Et</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Veritabanı Sağlığı -->
-        <div class="card" id="db-health-card" style="margin-bottom:16px">
-          <div class="ch">
-            <span class="ct">🩺 Veritabanı Sağlığı</span>
-            <div style="display:flex;gap:6px;align-items:center">
-              <span id="db-health-badge" class="badge ba">Yükleniyor…</span>
-              <button class="btn btns" style="font-size:11px;padding:3px 10px" onclick="window._renderDbHealthPanel()">↻ Yenile</button>
-            </div>
-          </div>
-          <div id="db-health-panel" style="padding:16px 18px">
-            <div style="font-size:12px;color:var(--t3);text-align:center;padding:20px">Ayarlar sayfası açılınca otomatik yüklenir.</div>
-          </div>
-        </div>
-
-        <!-- 2-kolon grid -->
-        <div class="settings-grid">
-
-          <!-- Sol kolon -->
-          <div style="display:flex;flex-direction:column;gap:16px">
-
-            <!-- Görünüm & Dil -->
-            <div class="card">
-              <div class="ch"><span class="ct">🎨 Görünüm & Dil</span></div>
-              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
-                <div class="dr">
-                  <span style="font-size:13px">Tema</span>
-                  <button class="btn btns" onclick="toggleTheme()" id="a-theme-settings">🌙 Değiştir</button>
-                </div>
-                <div class="dr">
-                  <span style="font-size:13px">Dil</span>
-                  <div style="display:flex;gap:5px">
-                    <button class="lpill on" onclick="setLang('tr',this)" style="font-size:11px;padding:3px 10px">TR</button>
-                    <button class="lpill" onclick="setLang('en',this)" style="font-size:11px;padding:3px 10px">EN</button>
-                    <button class="lpill" onclick="setLang('fr',this)" style="font-size:11px;padding:3px 10px">FR</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Güvenlik -->
-            <div class="card">
-              <div class="ch"><span class="ct">🔒 Güvenlik</span></div>
-              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-                <div class="dr"><span>Firebase Auth</span><span class="badge bg">Aktif</span></div>
-                <div class="dr"><span>Şifre lokal saklanmıyor</span><span class="badge bg">✓</span></div>
-                <div class="dr"><span>Oturum timeout</span><span class="badge bgr">30 dk</span></div>
-                <div class="dr"><span>Soft delete (çöp kutusu)</span><span class="badge bg">Aktif</span></div>
-
-                <!-- Şifre Değiştir -->
-                <div style="border-top:1px solid var(--b);padding-top:12px;margin-top:4px">
-                  <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔐 Şifremi Değiştir</div>
-                  <div style="display:flex;flex-direction:column;gap:8px">
-                    <input type="password" id="set-old-pwd" class="fi" placeholder="Mevcut şifre" style="border-radius:8px">
-                    <input type="password" id="set-new-pwd" class="fi" placeholder="Yeni şifre (min 6 karakter)" style="border-radius:8px">
-                    <input type="password" id="set-new-pwd2" class="fi" placeholder="Yeni şifre tekrar" style="border-radius:8px">
-                    <div style="font-size:11px;color:var(--t3);line-height:1.6;background:var(--s2);border-radius:8px;padding:8px 10px">
-                      💡 Şifren hem platformda hem Firebase'de güncellenir. Firebase Console'dan da sıfırlayabilirsin.
-                    </div>
-                    <button class="btn btnp" onclick="_changePwdFromSettings()" style="border-radius:9px">Şifreyi Güncelle</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- PWA -->
-            <div class="card">
-              <div class="ch"><span class="ct">📱 PWA / Mobil</span></div>
-              <div style="padding:16px 18px">
-                <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--t2)">
-                  <div style="background:var(--s2);border-radius:var(--rs);padding:10px"><strong style="color:var(--t)">iOS (Safari):</strong> Paylaş → Ana Ekrana Ekle</div>
-                  <div style="background:var(--s2);border-radius:var(--rs);padding:10px"><strong style="color:var(--t)">Android:</strong> ⋮ Menü → Uygulamayı Yükle</div>
-                </div>
-                <div id="pwa-install-btn" style="margin-top:12px;display:none">
-                  <button class="btn btnp btns" onclick="installPWA()">📲 Uygulamayı Yükle</button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Sağ kolon -->
-          <div style="display:flex;flex-direction:column;gap:16px">
-
-            <!-- Veri Yönetimi -->
-            <div class="card">
-              <div class="ch"><span class="ct">🗄️ Veri Yönetimi</span></div>
-              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
-                <button class="btn btnp btns" onclick="exportAllXlsx()" style="justify-content:flex-start">📊 Tüm Veriyi Excel'e Aktar</button>
-                <button class="btn btns" onclick="migrateLocalToFirestore()" style="justify-content:flex-start">☁️ Firestore'a Aktar</button>
-                <div style="border-top:1px solid var(--b);padding-top:10px;margin-top:2px">
-                  <button class="btn btnd btns" onclick="resetAll()" style="justify-content:flex-start;width:100%">⚠️ Tüm Veriyi Sıfırla</button>
-                  <div style="font-size:10px;color:var(--t3);margin-top:6px">Bu işlem geri alınamaz. Önce buluta aktar.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sürüm Geçmişi -->
-            <div class="card">
-              <div class="ch">
-                <span class="ct">📋 Sürüm Geçmişi</span>
-                <span id="v-ts" style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace"></span>
-              </div>
-              <div style="padding:14px 18px" id="ver-hist"></div>
-            </div>
-
           </div>
         </div>
-        <!-- Puantaj yetki kartı dinamik olarak eklenir -->
+      </div>
+    </div>
+
+    <!-- SAYFA: PWA -->
+    <div id="set-page-pwa" class="set-page">
+      <div class="set-page-title">PWA / Mobil</div>
+      <div class="card" style="max-width:480px">
+        <div style="padding:16px 18px">
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--t2)">
+            <div style="background:var(--s2);border-radius:var(--rs);padding:10px"><strong style="color:var(--t)">iOS (Safari):</strong> Paylaş → Ana Ekrana Ekle</div>
+            <div style="background:var(--s2);border-radius:var(--rs);padding:10px"><strong style="color:var(--t)">Android:</strong> ⋮ Menü → Uygulamayı Yükle</div>
+          </div>
+          <div id="pwa-install-btn" style="margin-top:12px;display:none"><button class="btn btnp btns" onclick="installPWA()">📲 Uygulamayı Yükle</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAYFA: Firebase -->
+    <div id="set-page-firebase" class="set-page">
+      <div class="set-page-title">Firebase Bağlantısı</div>
+      <div class="card" style="max-width:560px">
+        <div class="ch"><span class="ct">🔥 Firebase Bağlantısı</span><span id="fb-status-badge" class="badge ba">Kontrol ediliyor…</span></div>
+        <div style="padding:16px 18px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div class="ms"><div class="msv" id="fb-user-count" style="font-size:16px">—</div><div class="msl">Firestore koleksiyon</div></div>
+            <div class="ms"><div class="msv" id="fb-sync-time" style="font-size:12px;font-family:'DM Mono',monospace">—</div><div class="msl">Son kontrol</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:14px;padding:10px;background:var(--s2);border-radius:var(--rs)" id="fb-auth-info">Firebase durumu kontrol ediliyor…</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btnp" onclick="migrateLocalToFirestore()" id="btn-migrate">☁️ Yerel Veriyi Buluta Aktar</button>
+            <button class="btn btns" onclick="checkFirebaseStatus()">↻ Durumu Kontrol Et</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAYFA: Veri Yönetimi -->
+    <div id="set-page-veri" class="set-page">
+      <div class="set-page-title">Veri Yönetimi</div>
+      <div class="card" style="max-width:480px">
+        <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btnp btns" onclick="exportAllXlsx()" style="justify-content:flex-start">📊 Tüm Veriyi Excel'e Aktar</button>
+          <button class="btn btns" onclick="migrateLocalToFirestore()" style="justify-content:flex-start">☁️ Firestore'a Aktar</button>
+          <div style="border-top:1px solid var(--b);padding-top:10px;margin-top:2px">
+            <button class="btn btnd btns" onclick="resetAll()" style="justify-content:flex-start;width:100%">⚠️ Tüm Veriyi Sıfırla</button>
+            <div style="font-size:10px;color:var(--t3);margin-top:6px">Bu işlem geri alınamaz. Önce buluta aktar.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAYFA: Sağlık Monitörü (Tasarım C) -->
+    <div id="set-page-monitor" class="set-page active">
+      <div style="background:#042C53;border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div><div style="font-size:13px;font-weight:500;color:#E6F1FB">Veritabanı Sağlık Monitörü</div><div style="font-size:10px;color:#85B7EB;margin-top:2px" id="set-monitor-lastcheck">Son kontrol: —</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="set-monitor-status" style="display:flex;align-items:center;gap:5px;font-size:11px;color:#9FE1CB;background:rgba(29,158,117,.15);padding:4px 10px;border-radius:12px"><div style="width:6px;height:6px;border-radius:50%;background:#1D9E75"></div>Kontrol ediliyor…</div>
+          <button class="btn btns" style="font-size:11px;padding:4px 10px;color:var(--t2)" onclick="window._renderMonitorPage()">↻ Yenile</button>
+        </div>
+      </div>
+      <div id="set-monitor-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+        <div class="ms"><div class="msv">—</div><div class="msl">Depolama</div></div>
+        <div class="ms"><div class="msv">—</div><div class="msl">Bildirim</div></div>
+        <div class="ms"><div class="msv">—</div><div class="msl">Sync hata</div></div>
+        <div class="ms"><div class="msv">—</div><div class="msl">Offline kuyruk</div></div>
+        <div class="ms"><div class="msv">—</div><div class="msl">FS Listener</div></div>
+        <div class="ms"><div class="msv">—</div><div class="msl">Görev sayısı</div></div>
+      </div>
+      <div id="set-monitor-alerts" style="margin-bottom:16px"></div>
+      <div style="font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Olay Akışı</div>
+      <div id="set-monitor-timeline" style="margin-bottom:20px"><div style="font-size:12px;color:var(--t3);padding:12px 0">Yükleniyor…</div></div>
+      <div style="font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Uzman Değerlendirmesi</div>
+      <div id="set-monitor-expert" style="padding:14px 16px;border-radius:8px;background:var(--s2);border-left:3px solid #185FA5;margin-bottom:16px;font-size:12px;color:var(--t2);line-height:1.8">Yükleniyor…</div>
+      <div style="font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Tüm Parametreler</div>
+      <div id="set-monitor-params" style="margin-bottom:16px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btns" style="font-size:12px" onclick="window._cleanNotifications?.()">🗑 Bildirimleri Temizle</button>
+        <button class="btn btns" style="font-size:12px" onclick="window._manualSync?.()">☁️ Manuel Sync</button>
+      </div>
+    </div>
+
+    <!-- SAYFA: Sürüm -->
+    <div id="set-page-surum" class="set-page">
+      <div class="set-page-title">Sürüm Geçmişi</div>
+      <div class="card"><div class="ch"><span class="ct">📋 Sürüm Geçmişi</span><span id="v-ts" style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace"></span></div><div style="padding:14px 18px" id="ver-hist"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CSS — settings nav -->
+<style>
+.set-nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;font-size:12px;color:var(--t2);border-left:2px solid transparent;transition:background .1s}
+.set-nav-item:hover{background:var(--sf);color:var(--t)}
+.set-nav-item.active{color:#0C447C;border-left-color:#185FA5;background:#E6F1FB}
+.set-nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.set-page-title{font-size:15px;font-weight:500;color:var(--t);margin-bottom:16px}
+.set-page{display:none}
+.set-page.active{display:block}
+</style>
       </div>
 
       <!-- Boş panel containerları — ilgili modüller tarafından doldurulur -->
