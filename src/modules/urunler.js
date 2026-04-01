@@ -371,71 +371,74 @@ function _renderEtap4(u) {
    ════════════════════════════════════════════════════════════════ */
 /** @public */
 function openUrunForm(editId) {
-  const panel = _g('panel-urunler');
-  if (!panel) return;
-  let sekmeler = _getSekmeler();
+  try {
+    const panel = _g('panel-urunler');
+    if (!panel) { console.warn('[urunler] panel-urunler bulunamadı'); return; }
+    let sekmeler = _getSekmeler();
 
-  if (editId) {
-    _aktifSekme = String(editId);
-    if (!sekmeler.find(s => s.id === _aktifSekme)) {
-      const u = _loadU().find(x => x.id == editId) || {};
-      sekmeler.push({ id: _aktifSekme, duayKodu: u.duayKodu || '', baslik: u.duayAdi || u.urunAdi || 'Ürün', etap: 1, durum: 'devam' });
+    if (editId) {
+      _aktifSekme = String(editId);
+      if (!sekmeler.find(s => s.id === _aktifSekme)) {
+        const u = _loadU().find(x => x.id == editId) || {};
+        sekmeler.push({ id: _aktifSekme, duayKodu: u.duayKodu || '', baslik: u.duayAdi || u.urunAdi || 'Ürün', etap: 1, durum: 'devam' });
+        _setSekmeler(sekmeler);
+      }
+    } else if (!_aktifSekme || !sekmeler.find(s => s.id === _aktifSekme)) {
+      const newId = _genId();
+      _aktifSekme = String(newId);
+      sekmeler.push({ id: _aktifSekme, duayKodu: '', baslik: 'Yeni Ürün', etap: 1, durum: 'yeni' });
       _setSekmeler(sekmeler);
     }
-  } else if (!_aktifSekme || !sekmeler.find(s => s.id === _aktifSekme)) {
-    const newId = _genId();
-    _aktifSekme = String(newId);
-    sekmeler.push({ id: _aktifSekme, duayKodu: '', baslik: 'Yeni Ürün', etap: 1, durum: 'yeni' });
-    _setSekmeler(sekmeler);
-  }
 
-  _renderForm();
+    _renderForm();
+  } catch (e) { console.error('[urunler] openUrunForm hata:', e); }
 }
 
 function _renderForm() {
-  const panel = _g('panel-urunler');
-  if (!panel) return;
-  // Form yazınca liste HTML'i silinir — geri dönüşte yeniden inject edilsin
-  delete panel.dataset.injected;
-  const sekmeler = _getSekmeler();
-  const sekme = sekmeler.find(s => s.id === _aktifSekme);
-  if (!sekme) { window.renderUrunler?.(); return; }
+  try {
+    const panel = _g('panel-urunler');
+    if (!panel) return;
+    // Form yazınca liste HTML'i silinir — geri dönüşte yeniden inject edilsin
+    delete panel.dataset.injected;
+    const sekmeler = _getSekmeler();
+    const sekme = sekmeler.find(s => s.id === _aktifSekme);
+    if (!sekme) { window.renderUrunler?.(); return; }
 
-  const u = _loadU().find(x => String(x.id) === _aktifSekme) || {};
-  _aktifEtap = sekme.etap || 1;
+    const u = _loadU().find(x => String(x.id) === _aktifSekme) || {};
+    _aktifEtap = sekme.etap || 1;
 
-  let h = _renderSekmeBar();
-  h += _renderHeader(u);
-  h += '<div style="max-width:860px;margin:0 auto;padding:20px 32px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">';
-  // Geri butonu
-  h += '<div><span onclick="window.renderUrunler?.()" style="font-size:10px;color:'+BLUE+';cursor:pointer">← Ürün Listesi</span></div>';
+    let h = _renderSekmeBar();
+    h += _renderHeader(u);
+    h += '<div style="max-width:860px;margin:0 auto;padding:20px 32px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">';
+    // Geri butonu
+    h += '<div><span onclick="window.renderUrunler?.()" style="font-size:10px;color:'+BLUE+';cursor:pointer">← Ürün Listesi</span></div>';
 
-  if (_sahbAcik) {
-    h += _renderSAHB(u);
-  } else {
-    switch (_aktifEtap) {
-      case 1: h += _renderEtap1(u); break;
-      case 2: h += _renderEtap2(u); break;
-      case 3: h += _renderEtap3(u); break;
-      case 4: h += _renderEtap4(u); break;
-    }
-    // Etap navigasyon butonları
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:0.5px solid '+BD+'">';
-    if (_aktifEtap > 1) {
-      h += '<button onclick="window._uf2Etap('+(_aktifEtap-1)+')" style="padding:6px 14px;border:0.5px solid '+BD+';border-radius:6px;background:'+BG1+';font-size:11px;cursor:pointer;font-family:inherit;color:'+T2+'">← Geri</button>';
-    } else { h += '<div></div>'; }
-    if (_aktifEtap < 4) {
-      h += '<button onclick="window._uf2Etap('+(_aktifEtap+1)+')" style="padding:6px 14px;border:none;border-radius:6px;background:'+BLUE+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Bu Aşamayı Tamamla →</button>';
+    if (_sahbAcik) {
+      h += _renderSAHB(u);
     } else {
-      h += '<button onclick="window._uf2TaslakKaydet()" style="padding:6px 14px;border:none;border-radius:6px;background:'+GREEN+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Ürünü Kaydet</button>';
+      switch (_aktifEtap) {
+        case 1: h += _renderEtap1(u); break;
+        case 2: h += _renderEtap2(u); break;
+        case 3: h += _renderEtap3(u); break;
+        case 4: h += _renderEtap4(u); break;
+      }
+      // Etap navigasyon butonları
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:0.5px solid '+BD+'">';
+      if (_aktifEtap > 1) {
+        h += '<button onclick="window._uf2Etap('+(_aktifEtap-1)+')" style="padding:6px 14px;border:0.5px solid '+BD+';border-radius:6px;background:'+BG1+';font-size:11px;cursor:pointer;font-family:inherit;color:'+T2+'">← Geri</button>';
+      } else { h += '<div></div>'; }
+      if (_aktifEtap < 4) {
+        h += '<button onclick="window._uf2Etap('+(_aktifEtap+1)+')" style="padding:6px 14px;border:none;border-radius:6px;background:'+BLUE+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Bu Aşamayı Tamamla →</button>';
+      } else {
+        h += '<button onclick="window._uf2TaslakKaydet()" style="padding:6px 14px;border:none;border-radius:6px;background:'+GREEN+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Ürünü Kaydet</button>';
+      }
+      h += '</div>';
     }
     h += '</div>';
-  }
-  h += '</div>';
-  panel.innerHTML = h;
-
-  // Toplam hesapla (Etap 1)
-  window._uf2Recalc?.();
+    panel.innerHTML = h;
+    // Toplam hesapla (Etap 1)
+    window._uf2Recalc?.();
+  } catch (e) { console.error('[urunler] _renderForm hata:', e); }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -514,7 +517,11 @@ window._uf2TaslakKaydet = function() {
    ════════════════════════════════════════════════════════════════ */
 const Urunler = { openForm: openUrunForm };
 
+// Her zaman window'a export et — browser'da çalışması için
+window.Urunler = Urunler;
+window.openUrunForm = openUrunForm;
+
+
 if (typeof module !== 'undefined' && module.exports) { module.exports = Urunler; }
-else { window.Urunler = Urunler; window.openUrunForm = openUrunForm; }
 
 })();
