@@ -46,11 +46,11 @@ const AMBER = '#EF9F27';
 const PURPLE = '#3C3489';
 
 /* ── Stil Sabitleri ─────────────────────────────────────────── */
-const S_MK  = 'border-radius:7px;padding:10px 14px;background:' + BG2;
-const S_WK  = 'background:' + BG1 + ';border:0.5px solid ' + BD + ';border-radius:8px;padding:12px 14px';
-const S_LBL = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:' + T3;
-const S_VAL = 'font-size:22px;font-weight:500';
-const S_SUB = 'font-size:10px;color:' + T3;
+const S_MK  = 'border-radius:8px;padding:12px 14px;background:' + BG2 + ';min-width:0;overflow:hidden';
+const S_WK  = 'background:' + BG1 + ';border:0.5px solid ' + BD + ';border-radius:8px;padding:12px 14px;min-width:0;overflow:hidden';
+const S_LBL = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;color:' + T3 + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+const S_VAL = 'font-size:18px;font-weight:500;line-height:1.2;margin:3px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+const S_SUB = 'font-size:10px;color:' + T3 + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
 const S_SEC = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:' + T3 + ';margin-bottom:6px;display:flex;align-items:center;gap:6px';
 
 /* ── Badge yardımcısı ───────────────────────────────────────── */
@@ -211,7 +211,7 @@ function _renderFinans() {
   const ortMusteri = cariSet.size > 0 ? Math.round(topTah / cariSet.size) : 0;
 
   let h = '<div style="' + S_SEC + '">' + _esc('FİNANS') + ' ' + _bb('Nakit Akışı') + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px">';
 
   // Kart 1
   h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Net Pozisyon</div>'
@@ -266,7 +266,7 @@ function _renderKPI() {
   const yeniMusteri = _loadCari().filter(c => c.createdAt && _thisMonth(new Date(c.createdAt))).length;
 
   let h = '<div style="' + S_SEC + '">' + _esc('ACTION COACH KPI') + ' ' + _ba('Büyüme & Satış') + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px">';
 
   // Kart 1 — Satış Konversiyon
   h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:10px">'
@@ -498,7 +498,7 @@ function _renderNakit() {
    ════════════════════════════════════════════════════════════════ */
 function _renderAlt() {
   const cu = _cu();
-  let h = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
+  let h = '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">';
 
   // ── Kart 1: Son Aktivite ──
   const notifs = _loadNotifs().slice(0, 4);
@@ -691,7 +691,7 @@ function renderDashboard() {
   if (!cu) return;
   _calcEmythVanish();
 
-  let h = '<div style="padding:16px 32px;background:' + BG3 + ';display:flex;flex-direction:column;gap:16px;min-height:100%">';
+  let h = '<div style="padding:12px 20px;background:' + BG3 + ';display:flex;flex-direction:column;gap:16px;min-height:100%">';
 
   // Üst butonlar (sağ üst)
   h += '<div style="display:flex;justify-content:flex-end;gap:6px">';
