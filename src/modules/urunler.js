@@ -26,7 +26,7 @@ const _storeU = d => { if (typeof window.storeUrunler === 'function') window.sto
 const _loadCari = () => typeof window.loadCari === 'function' ? window.loadCari().filter(c => !c.isDeleted) : [];
 
 /* ── Renkler & Stiller ──────────────────────────────────────── */
-const BG1='var(--sf)',BG2='var(--s2)',BD='var(--b)',T1='var(--t)',T2='var(--t2)',T3='var(--t3)';
+const BG1='var(--sf)',BG2='var(--s2)',BD='var(--b)',BDM='var(--bm)',T1='var(--t)',T2='var(--t2)',T3='var(--t3)';
 const NAVY='#042C53',BLUE='#185FA5',GREEN='#27500A',RED='#A32D2D',AMBER='#EF9F27';
 const S_WK = 'background:'+BG1+';border:0.5px solid '+BD+';border-radius:8px;padding:12px 14px';
 const S_LBL = 'font-size:10px;margin-bottom:4px';
