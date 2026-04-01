@@ -1,0 +1,503 @@
+/**
+ * ════════════════════════════════════════════════════════════════
+ * src/modules/urunler.js  —  v8.2.0
+ * URN-007-v2 — Ürün formu tam yeniden yazım (sekme + 4 etap)
+ *
+ * Mevcut liste (app_patch renderUrunler) korunur.
+ * Bu modül yeni ürün ekleme/düzenleme formunu yönetir.
+ *
+ * Anayasa: K01 ≤800, K08 strict, D3 IIFE, D10 generateId
+ * ════════════════════════════════════════════════════════════════
+ */
+(function UrunlerModule() {
+'use strict';
+
+/* ── Kısayollar ─────────────────────────────────────────────── */
+const _g   = id => document.getElementById(id);
+const _esc = s => typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _cu  = () => window.CU?.() || window.Auth?.getCU?.();
+const _isA = () => { const r = _cu()?.role; return r === 'admin' || r === 'manager'; };
+const _genId = () => typeof window.generateId === 'function' ? window.generateId() : Date.now() + Math.random().toString(36).slice(2,8);
+const _ls = k => localStorage.getItem(k);
+const _lsj = (k, d) => { try { return JSON.parse(_ls(k)) || d; } catch { return d; } };
+const _lss = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+const _loadU = () => typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+const _storeU = d => { if (typeof window.storeUrunler === 'function') window.storeUrunler(d); };
+const _loadCari = () => typeof window.loadCari === 'function' ? window.loadCari().filter(c => !c.isDeleted) : [];
+
+/* ── Renkler & Stiller ──────────────────────────────────────── */
+const BG1='var(--sf)',BG2='var(--s2)',BD='var(--b)',T1='var(--t)',T2='var(--t2)',T3='var(--t3)';
+const NAVY='#042C53',BLUE='#185FA5',GREEN='#27500A',RED='#A32D2D',AMBER='#EF9F27';
+const S_WK = 'background:'+BG1+';border:0.5px solid '+BD+';border-radius:8px;padding:12px 14px';
+const S_LBL = 'font-size:8px;margin-bottom:2px';
+const SK = 'ak_urun_sekmeler';
+
+/* ── Sekme State ────────────────────────────────────────────── */
+let _aktifSekme = null;
+let _aktifEtap = 1;
+let _sahbAcik = false;
+
+function _getSekmeler() { return _lsj(SK, []); }
+function _setSekmeler(s) { _lss(SK, s); }
+
+/* ── Sabitler ───────────────────────────────────────────────── */
+const BIRIMLER = [{v:'PCS',l:'Adet-PCS'},{v:'KGS',l:'Kg-KGS'},{v:'MTR',l:'Metre-MTR'},{v:'LTR',l:'Litre-LTR'},{v:'SET',l:'Set-SET'}];
+const PARA = ['USD','EUR','CNY','TRY'];
+const KDV = [20,10,0];
+const MENSEI = ['TR-Türkiye','CN-Çin','DE-Almanya','IT-İtalya','FR-Fransa','ES-İspanya','PL-Polonya','IN-Hindistan','JP-Japonya','KR-Güney Kore','US-ABD','GB-İngiltere','NL-Hollanda','BE-Belçika','TW-Tayvan','TH-Tayland','VN-Vietnam','ID-Endonezya','MY-Malezya','BR-Brezilya','MX-Meksika','ZA-Güney Afrika','EG-Mısır','SA-Suudi Arabistan','AE-BAE','XX-Diğer'];
+const DOT = c => '<span style="width:6px;height:6px;border-radius:50%;background:'+c+';display:inline-block;margin-right:4px"></span>';
+
+/* ── Form Yardımcıları ──────────────────────────────────────── */
+function _lbl(text, req, hint) {
+  return '<div style="'+S_LBL+';color:'+(req?'#DC2626':T3)+'">'+_esc(text)+(req?' *':'')+
+    (hint?' <span title="'+_esc(hint)+'" style="cursor:help;opacity:.5;font-size:9px">ℹ</span>':'')+
+    '</div>';
+}
+function _inp(id, label, opts) {
+  const o = opts||{};
+  const bg = o.readonly ? 'background:#E6F1FB;' : '';
+  return '<div'+(o.span?' style="grid-column:span '+o.span+'"':'')+'>'
+    + _lbl(label, o.req, o.hint)
+    + '<input class="fi" id="uf2-'+id+'" type="'+(o.type||'text')+'" value="'+_esc(o.val||'')+'"'
+    + (o.readonly?' readonly':'')+' placeholder="'+_esc(o.ph||'')+'"'
+    + (o.req?' data-req="1"':'')
+    + ' style="font-size:11px;padding:4px 6px;'+bg+'" oninput="window._uf2Recalc?.()">'
+    + '</div>';
+}
+function _sel(id, label, options, opts) {
+  const o = opts||{};
+  let h = '<div>'+_lbl(label, o.req, o.hint)+'<select class="fi" id="uf2-'+id+'"'
+    + (o.req?' data-req="1"':'')+' style="font-size:11px;padding:4px 6px" onchange="window._uf2Recalc?.()">'
+    + '<option value="">— Seçin —</option>';
+  options.forEach(v => {
+    const val = typeof v==='object'?v.v:v, lbl = typeof v==='object'?v.l:v;
+    h += '<option value="'+_esc(val)+'"'+(String(o.sel)===String(val)?' selected':'')+'>'+_esc(lbl)+'</option>';
+  });
+  return h + '</select></div>';
+}
+function _ta(id, label, opts) {
+  const o = opts||{};
+  return '<div'+(o.span?' style="grid-column:span '+o.span+'"':'')+'>'
+    + _lbl(label, o.req, o.hint)
+    + (o.badge?'<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:'+(o.badgeBg||'#E6F1FB')+';color:'+(o.badgeFg||BLUE)+'">'+_esc(o.badge)+'</span>':'')
+    + '<textarea class="fi" id="uf2-'+id+'" rows="'+(o.rows||2)+'"'
+    + (o.req?' data-req="1"':'')+' placeholder="'+_esc(o.ph||'')+'"'
+    + ' style="font-size:11px;padding:4px 6px;resize:none;min-height:'+(o.minH||'36px')+'">'+_esc(o.val||'')+'</textarea></div>';
+}
+function _upload(id, label, opts) {
+  const o = opts||{};
+  const border = o.req ? 'border-color:#DC2626' : '';
+  return '<div>'+_lbl(label, o.req, o.hint)
+    + '<div style="border:1.5px dashed '+BD+';border-radius:8px;padding:10px;text-align:center;cursor:pointer;font-size:9px;color:'+T3+';min-height:40px;'+border+'"'
+    + ' onclick="document.getElementById(\'uf2-'+id+'-file\').click()">'
+    + '<div id="uf2-'+id+'-preview">Dosya sürükleyin veya tıklayın</div></div>'
+    + '<input type="file" id="uf2-'+id+'-file" style="display:none" onchange="window._uf2FileChange?.(\''+id+'\',this)">'
+    + '<input type="hidden" id="uf2-'+id+'-val">'
+    + '</div>';
+}
+function _section(title, badge, content) {
+  return '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;color:'+T3+';margin-bottom:5px;display:flex;align-items:center;gap:6px">'
+    + _esc(title)+(badge||'')+'</div>'+content+'</div>';
+}
+function _grid(cols, gap, inner) { return '<div style="display:grid;grid-template-columns:repeat('+cols+',minmax(0,1fr));gap:'+(gap||'7px')+'">'+inner+'</div>'; }
+function _badge(t,bg,fg) { return ' <span style="font-size:8px;padding:1px 6px;border-radius:4px;background:'+bg+';color:'+fg+'">'+_esc(t)+'</span>'; }
+function _info(color, text) {
+  const bg = color==='blue'?'#E6F1FB':color==='amber'?'#FAEEDA':'#FCEBEB';
+  const fg = color==='blue'?BLUE:color==='amber'?'#633806':RED;
+  return '<div style="padding:6px 10px;border-radius:6px;background:'+bg+';font-size:9px;color:'+fg+';margin-bottom:7px">'+text+'</div>';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SEKME BAR
+   ════════════════════════════════════════════════════════════════ */
+function _renderSekmeBar() {
+  const sekmeler = _getSekmeler();
+  const dotC = { devam:AMBER, tamam:'#97C459', sorun:'#E24B4A', yeni:'#85B7EB' };
+  let h = '<div style="background:'+NAVY+';padding:8px 16px 0;display:flex;gap:2px;align-items:flex-end">';
+  sekmeler.forEach(s => {
+    const active = s.id === _aktifSekme;
+    const dc = dotC[s.durum] || dotC.yeni;
+    h += '<div onclick="window._uf2Sekme(\''+s.id+'\')" style="padding:6px 12px;border-radius:6px 6px 0 0;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;'
+      + (active ? 'background:'+BG1+';font-weight:500;color:'+T1 : 'background:#0C447C;color:#85B7EB')
+      + '">'+DOT(dc)+_esc(s.baslik||'Yeni Ürün')
+      + '<span onclick="event.stopPropagation();window._uf2KapatSekme(\''+s.id+'\')" style="font-size:9px;opacity:0.6;cursor:pointer;margin-left:4px">✕</span></div>';
+  });
+  h += '<div onclick="window._uf2YeniSekme()" style="padding:6px 10px;border-radius:6px 6px 0 0;font-size:13px;cursor:pointer;color:#85B7EB;background:rgba(255,255,255,0.05)">+</div>';
+  h += '</div>';
+  return h;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HEADER + PROGRESS
+   ════════════════════════════════════════════════════════════════ */
+function _renderHeader(u) {
+  const kod = u.duayKodu || '—';
+  const baslik = u.duayAdi || u.urunAdi || 'Yeni Ürün';
+  const ted = u.tedarikci || '—';
+  const mensei = u.mensei || '—';
+  const pct = _aktifEtap * 25;
+  const etapNames = ['','Teklif Alma','Teklif Onay','Yükleme Hazırlık','İhracat Ön Hazırlık'];
+  const son = u.updatedAt ? new Date(u.updatedAt).toLocaleDateString('tr-TR') : '—';
+
+  let h = '<div style="background:'+BG2+';padding:10px 16px;display:flex;justify-content:space-between;align-items:center">';
+  h += '<div><div style="font-size:14px;font-weight:500;color:'+T1+'"><span style="font-family:monospace;color:'+T3+';font-size:11px">'+_esc(kod)+'</span> '+_esc(baslik)+'</div>';
+  h += '<div style="font-size:10px;color:'+T3+'">'+_esc(ted)+' · '+_esc(mensei)+' · Etap '+_aktifEtap+' devam ediyor · Son kayıt: '+son+'</div></div>';
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<button onclick="window._uf2TaslakKaydet()" style="padding:4px 10px;border:0.5px solid '+BD+';border-radius:6px;background:'+BG1+';font-size:10px;cursor:pointer;font-family:inherit;color:'+T2+'">Taslak Kaydet</button>';
+  h += '<span style="font-size:9px;padding:2px 8px;border-radius:4px;background:#E6F1FB;color:'+BLUE+'">Etap '+_aktifEtap+'</span>';
+  h += '</div></div>';
+  // Progress bar
+  h += '<div style="height:3px;background:'+BG2+'"><div style="height:100%;width:'+pct+'%;background:#378ADD;border-radius:0 2px 2px 0;transition:width .3s"></div></div>';
+  // Step nav
+  h += '<div style="display:flex;border-bottom:0.5px solid '+BD+'">';
+  for (let i=1;i<=4;i++) {
+    const active = i===_aktifEtap;
+    const done = i<_aktifEtap;
+    h += '<div onclick="window._uf2Etap('+i+')" style="flex:1;padding:8px;text-align:center;font-size:10px;cursor:pointer;'
+      + (active?'border-bottom:2px solid '+BLUE+';color:'+BLUE+';font-weight:500':done?'color:'+GREEN:'color:'+T3)
+      + '">'+etapNames[i]+'</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ETAP 1 — TEKLİF ALMA
+   ════════════════════════════════════════════════════════════════ */
+function _renderEtap1(u) {
+  const cariList = _loadCari();
+  const cariOpts = cariList.map(c => ({v:c.id||c.ad,l:c.ad||c.firma||''}));
+  const siraNo = (_loadU().length + 1).toString().padStart(4,'0');
+  const tedId = (u.saticiId || '001').toString().padStart(3,'0');
+  const duayKod = u.duayKodu || '11·'+siraNo+'·'+tedId;
+
+  let h = '';
+  // B1 — Temel Bilgiler
+  h += _section('Temel Bilgiler', '', _grid(4,'7px',
+    _inp('sira','Sıra No',{val:siraNo,readonly:true})
+    + _inp('duay-kod','Duay Ürün Kodu',{val:duayKod,readonly:true,hint:'11·XXXX·YYY formatı'})
+    + _sel('tedarikci','Tedarikçi / Satıcı',cariOpts,{req:true,sel:u.tedarikci||u.saticiId})
+    + _inp('satici-kod','Satıcı Ürün Kodu',{val:u.saticiKodu||u.urunKodu})
+  ) + _grid(4,'7px',
+    _inp('satici-kat','Satıcı Kategorisi',{val:u.saticiSinifi||'',readonly:true,hint:'Cariden otomatik'})
+    + _sel('eski-satici','Eski Satıcı',cariOpts,{hint:'Karşılaştırma için'})
+    + _sel('kdv','KDV Oranı',KDV.map(k=>({v:k,l:'%'+k})),{req:true,sel:u.kdvOrani})
+    + _sel('imo','IMO Durumu',[{v:'H',l:'IMO yok — boş bırak'},{v:'E',l:'IMO var — tehlikeli madde'}],{sel:u.imo||'H'})
+  ));
+
+  // B2 — Ürün Adlandırma
+  h += _section('Ürün Adlandırma (CI/PL/BL)', '', _grid(2,'7px',
+    _inp('std-adi','Standart İngilizce Ürün Adı (CI/PL/BL)',{req:true,val:u.standartAdi,hint:'CI, PI, PL, BL belgelerinde geçen standart isim'})
+    + _inp('fatura-adi','Satıcının Faturasındaki Ürün Adı',{val:u.faturaAdi||u.invoiceName})
+  ) + _grid(2,'7px',
+    _inp('duay-adi','Duay Ürün Adı (Türkçe)',{req:true,val:u.duayAdi||u.urunAdi})
+    + _inp('marka','Marka',{val:u.marka||u.brand})
+  ));
+
+  // B3 — Teknik Açıklama
+  h += _section('Teknik Açıklama', _badge('Description of Goods — Müşteri teklifine İngilizce geçer','#E6F1FB',BLUE),
+    _ta('teknik','Teknik Açıklama',{req:true,val:u.teknikAciklama,minH:'46px',ph:'Ürün teknik açıklaması...'})
+    + _ta('satici-detay','Satıcı Teknik Detayları',{val:u.saticiDetay,minH:'72px',
+      ph:'max 5 satır · satış teklifine nasıl görünecekse o şekilde girin',
+      hint:'Müşteri teklifine İngilizce olarak geçecektir'})
+  );
+
+  // B4 — Teklif & Fiyat
+  h += _section('Teklif & Fiyat Bilgileri', '', _grid(4,'7px',
+    _inp('miktar','Miktar',{type:'number',req:true,val:u.miktar})
+    + _sel('birim','Birim',BIRIMLER,{sel:u.birim})
+    + _inp('birim-fiyat','Birim Fiyat (Unit Price)',{type:'number',val:u.birimFiyat,hint:'Teklifteki birim fiyat'})
+    + _sel('para','Para Birimi (CRR)',PARA.map(p=>({v:p,l:p})),{sel:u.paraBirimi||'USD'})
+  ) + _grid(4,'7px',
+    _inp('toplam','Toplam (Total)',{readonly:true,hint:'Otomatik hesaplanır'})
+    + _inp('teklif-tarih','Teklif Tarihi',{type:'date',val:u.teklifTarihi})
+    + _inp('teslimat-sure','Teslimat Süresi',{val:u.teslimatSuresi,ph:'10 Gün, 30 Days...'})
+    + _inp('teslim-sekli','Teslim Şekli / Yeri',{val:u.teslimSekli,ph:'FOB, CIF, EXW...'})
+  ) + _grid(3,'7px',
+    _sel('mensei','Menşei',MENSEI.map(m=>{const p=m.split('-');return{v:p[0],l:p[1]};}),{req:true,sel:u.mensei})
+    + _inp('paket-boyut','Paket Boyutu',{val:u.paketBoyut,ph:'En × Boy × Yükseklik cm'})
+    + _inp('son-tuketim','Son Tüketim / Garanti Tarihi',{type:'date',val:u.sonTuketim})
+  ));
+
+  // B5 — Ürün Geliştirme
+  h += _section('Ürün Geliştirme Sorusu', '',
+    _ta('gelistirme','Üründe yeni bir geliştirme yapıldı mı?',{minH:'36px',val:u.gelistirme,
+      hint:'Satıcıya mutlaka sorun: "1 yılda ürününüzde nasıl bir iyileştirme yaptınız?"'})
+  );
+
+  // B6 — Belgeler
+  h += _section('Belgeler', '', _grid(3,'7px',
+    _upload('katalog','Katalog/Broşür',{})
+    + _upload('tds','TDS/Data Sheet',{})
+    + _upload('teknik-cizim','Teknik Çizim',{req:true})
+  ) + _grid(3,'7px',
+    _upload('3d','3D/Render',{})
+    + _upload('sertifika','Sertifika',{})
+    + _upload('foto','Ürün Fotoğrafı',{})
+  ));
+
+  // B7 — İç Notlar
+  h += _section('İç Notlar', _badge('Gizli · İç Kullanım','#FCEBEB',RED), _grid(2,'7px',
+    _ta('rakip-ustun','Rakiplere Üstünlüğü / Hedef Müşteri Profili',{val:u.rakipUstun})
+    + _ta('referans','Referans Kullanım / Kritik Notlar',{val:u.referansNot})
+  ) + (_isA() ? '<div style="margin-top:7px;padding:8px;border-radius:6px;background:#FAEEDA">'
+    + _ta('satici-ozel','Satıcı Özel Notu',{val:u.saticiOzelNotu,hint:'Sadece admin görür'})+'</div>' : ''));
+
+  // B8 — Gizli Hile Uyarısı
+  h += '<div style="padding:10px;border-radius:8px;background:#FCEBEB;border:0.5px solid #E24B4A33;margin-top:7px">'
+    + '<div style="font-size:10px;font-weight:600;color:'+RED+'">Gizli Hile & Kalite Araştırması — SAHB-0200-380</div>'
+    + '<div style="font-size:9px;color:'+RED+';margin:3px 0">Etap 2\'ye geçmek için zorunlu · Ses kaydı + yazıya çevirme · Sözleşme maddeleri</div>'
+    + '<div style="display:flex;gap:6px;margin-top:6px">'
+    + '<button onclick="window._uf2AcSAHB()" style="padding:4px 10px;border:none;border-radius:5px;background:'+RED+';color:#fff;font-size:10px;cursor:pointer;font-family:inherit">Şimdi Başlat</button>'
+    + '<button onclick="window._uf2Etap(2)" style="padding:4px 10px;border:0.5px solid '+BD+';border-radius:5px;background:'+BG1+';font-size:10px;cursor:pointer;font-family:inherit;color:'+T3+'">Sonra</button>'
+    + '</div></div>';
+
+  return h;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SAHB-0200-380 FORMU
+   ════════════════════════════════════════════════════════════════ */
+function _renderSAHB(u) {
+  const kod = u.duayKodu || '—';
+  let h = '<div style="'+S_WK+';margin-bottom:10px">';
+  h += '<div style="font-size:13px;font-weight:600;color:'+T1+';margin-bottom:3px">Ürün / Hizmet Hilesi Bulma — SAHB-0200-380</div>';
+  h += '<div style="font-size:9px;color:'+T3+'">'+_esc(kod)+' · '+_esc(u.tedarikci||'—')+'</div>';
+
+  // B1 — Kapsam
+  h += _section('Kapsam', '', _inp('sahb-kodlar','Duay Ürün Kodları',{ph:'Virgülle ayırarak birden fazla ürün',hint:'Bağlı tüm ürünlerin sözleşme, teslimat ve yükleme listeleri otomatik güncellenir'}));
+
+  // B2 — Görüşme Hazırlığı
+  h += _section('Görüşme Hazırlığı', '',
+    _info('blue','Ses kaydı iznini sorun — kabul etmezse not alın. En az 2-3 yüksek fiyatlı firma ile görüşün.')
+    + _grid(3,'7px',
+      _inp('sahb-tarih','Görüşme Tarihi',{type:'date',req:true})
+      + _sel('sahb-yontem','Görüşme Yöntemi',['Telefon','Video','Yüz yüze'],{req:true})
+      + _inp('sahb-muhatap','Muhatap',{ph:'Firma Adı / Personel Adı / Cep No'})
+    ) + _grid(2,'7px',
+      _upload('sahb-ses','Ses Kaydı',{req:true,hint:'Asla silinmez'})
+      + _upload('sahb-transkript','Görüşme Transkripti',{req:true,hint:'Tüm metin yazıya çevrilir'})
+    )
+  );
+
+  // B3 — SAHB Aşama Soruları
+  h += _section('SAHB Aşama Soruları', '', '<div style="font-size:9px;color:'+T2+';display:flex;flex-direction:column;gap:4px">'
+    + '<label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="uf2-sahb-a1"> Aşama 1: Giriş sorusu + teşvik cümleleri</label>'
+    + '<label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="uf2-sahb-a2"> Aşama 2: Hammadde/garanti/teknoloji/parça</label>'
+    + '<label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="uf2-sahb-bss"> Çapraz Yöntem BSS-10: İkinci teklif → fark açıklama</label>'
+    + '<label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="uf2-sahb-a3"> Aşama 3: Negatif test → kötü hammadde sonuçları</label>'
+    + '<label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="uf2-sahb-a4"> Aşama 4: Geliştirme → 1 yıldaki iyileştirme</label>'
+    + '</div>');
+
+  // B4 — Yanıtlar
+  h += _section('Yanıtları Maddeleştir', '',
+    _info('amber','Her notun yanında kaynak zorunlu: Firma Adı / Personel Adı / Cep No')
+    + _ta('sahb-yanit12','Aşama 1-2 Yanıtları',{rows:3,ph:'Farklı firmaların yanıtları alt alta...'})
+    + _ta('sahb-yanit-capraz','Çapraz Yöntem Yanıtları',{rows:2})
+  );
+
+  // B5 — Sözleşme Maddeleri
+  h += _section('Sözleşme Maddeleri', '',
+    _info('blue','Etkilenen belgeler: PI, Sözleşme, PL, BL, Yükleme Listesi')
+    + '<div id="uf2-sahb-maddeler"></div>'
+    + '<button onclick="window._uf2MaddeEkle()" style="padding:3px 8px;border:0.5px solid '+BD+';border-radius:4px;background:'+BG1+';font-size:9px;cursor:pointer;font-family:inherit;color:'+BLUE+';margin-top:4px">+ Madde Ekle</button>'
+  );
+
+  // B6 — Dosya & Rapor
+  h += _section('Dosya Adı & Rapor', '',
+    _inp('sahb-dosya','Dosya Adı',{ph:'YYAAGG-NN Ürün Adı - Sözleşme Eki'})
+    + _info('amber','Tamamlandığında 3 sayfa rapor PI Onay Bekleyenlere PDF eklenir')
+    + '<button onclick="window._uf2SAHBTamamla()" style="padding:6px 14px;border:none;border-radius:6px;background:'+BLUE+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:6px">Formu Tamamla & Etap 2\'ye Geç</button>'
+  );
+  h += '</div>';
+  return h;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ETAP 2 — TEKLİF ONAY
+   ════════════════════════════════════════════════════════════════ */
+function _renderEtap2(u) {
+  let h = '';
+  if (u.imo === 'E') h += _info('red','IMO ürün — Forwarder\'a IMO\'lu konteyner teklifi isteyin. Tüm MSDS belgeleri forwarder\'a iletilmeden sağlıklı fiyat alınamaz. Müşteri teklifinde "IMO konteyner" açıkça belirtilmelidir.');
+  if (u.dib === 'E') h += _info('amber','DIB (Dahilde İşleme Belgesi) var — Gümrük işlemlerinde DIB kapsamı kontrol edilmelidir.');
+
+  h += _section('Onay Bilgileri', '', _grid(4,'7px',
+    _sel('kategori','Kategori',['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer'],{req:true,sel:u.kategori})
+    + _inp('marka2','Marka',{val:u.marka,req:true})
+    + _inp('uretici','Gerçek Üretici',{val:u.gercekUretici,req:true})
+    + _sel('mensei2','Menşei',MENSEI.map(m=>{const p=m.split('-');return{v:p[0],l:p[1]};}),{req:true,sel:u.mensei})
+  ) + _grid(4,'7px',
+    _sel('imo2','IMO',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.imo||'H'})
+    + _sel('dib','DİB',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.dib||'H'})
+    + _sel('ihracat-kisit','İhracat Kısıtı',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.ihracatKisiti||'H'})
+    + _sel('ihracat-yasak','İhracat Yasağı',['Hayır','Evet'].map((l,i)=>({v:i?'E':'H',l})),{req:true,sel:u.ihracatYasak||'H'})
+  ) + _grid(2,'7px',
+    _inp('net-ag','Net Ağırlık (kg)',{type:'number',val:u.netAgirlik,req:true})
+    + _inp('brut-ag','Brüt Ağırlık (kg)',{type:'number',val:u.brutAgirlik,req:true})
+  ));
+  h += _section('Muadil & Notlar', '', _ta('muadil','Muadil Ürün Bilgisi',{val:u.muadilUrun}) + _ta('onay-not','Onay Notu',{val:u.onayNotu}));
+  return h;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ETAP 3 — YÜKLEME HAZIRLIK
+   ════════════════════════════════════════════════════════════════ */
+function _renderEtap3(u) {
+  return _section('Paket & Yükleme Bilgileri', '', _grid(4,'7px',
+    _inp('pkt-en','Paket En (cm)',{type:'number',val:u.paketEn,req:true})
+    + _inp('pkt-boy','Paket Boy (cm)',{type:'number',val:u.paketBoy,req:true})
+    + _inp('pkt-yuk','Paket Yükseklik (cm)',{type:'number',val:u.paketYukseklik,req:true})
+    + _inp('pkt-adet','Paket Adedi',{type:'number',val:u.paketAdet,req:true})
+  ) + _grid(3,'7px',
+    _sel('pkt-tipi','Paket Tipi',['Koli','Palet','BigBag','Varil','Çuval','Ambalajsız','Diğer'],{sel:u.paketTipi})
+    + _sel('yapi','Yapı',['Katı','Sıvı','Akışkan','Gaz','Toz'],{sel:u.yapi})
+    + _sel('istifleme','İstifleme Uyarısı',['Kırılır','Üste konulamaz','Dik tutulmalı','Nemden korunmalı','Soğuk zincir'],{sel:u.istiflemeUyarisi})
+  ) + _upload('palet-gorsel','Palet Görseli',{req:true}));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ETAP 4 — İHRACAT ÖN HAZIRLIK
+   ════════════════════════════════════════════════════════════════ */
+function _renderEtap4(u) {
+  return _section('İhracat & Gümrük Bilgileri', '', _grid(3,'7px',
+    _inp('turkce-ad','Türkçe Ürün Adı (Gümrük)',{val:u.turkceAdi,req:true})
+    + _inp('gtip','GTİP Kodu',{val:u.gtip||u.hscKodu,req:true,hint:'Harmonize Sistem Kodu'})
+    + _sel('dib-asama','DİB Aşaması',['Yok','Başvuru','Onay','Aktif','Kapatılmış'],{req:true,sel:u.dibAsama||'Yok'})
+  ) + _grid(2,'7px',
+    _inp('vergi-kod','Vergi Kodu',{val:u.vergiKodu})
+    + _inp('origin-cert','Menşei Belgesi No',{val:u.origincertificate})
+  ) + _ta('ihracat-not','İhracat Notları',{val:u.ihracatNotu}));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANA RENDER
+   ════════════════════════════════════════════════════════════════ */
+/** @public */
+function openUrunForm(editId) {
+  const panel = _g('panel-urunler');
+  if (!panel) return;
+  let sekmeler = _getSekmeler();
+
+  if (editId) {
+    _aktifSekme = String(editId);
+    if (!sekmeler.find(s => s.id === _aktifSekme)) {
+      const u = _loadU().find(x => x.id == editId) || {};
+      sekmeler.push({ id: _aktifSekme, duayKodu: u.duayKodu || '', baslik: u.duayAdi || u.urunAdi || 'Ürün', etap: 1, durum: 'devam' });
+      _setSekmeler(sekmeler);
+    }
+  } else if (!_aktifSekme || !sekmeler.find(s => s.id === _aktifSekme)) {
+    const newId = _genId();
+    _aktifSekme = String(newId);
+    sekmeler.push({ id: _aktifSekme, duayKodu: '', baslik: 'Yeni Ürün', etap: 1, durum: 'yeni' });
+    _setSekmeler(sekmeler);
+  }
+
+  _renderForm();
+}
+
+function _renderForm() {
+  const panel = _g('panel-urunler');
+  if (!panel) return;
+  const sekmeler = _getSekmeler();
+  const sekme = sekmeler.find(s => s.id === _aktifSekme);
+  if (!sekme) { window.renderUrunler?.(); return; }
+
+  const u = _loadU().find(x => String(x.id) === _aktifSekme) || {};
+  _aktifEtap = sekme.etap || 1;
+
+  let h = _renderSekmeBar();
+  h += _renderHeader(u);
+  h += '<div style="padding:14px 20px;display:flex;flex-direction:column;gap:8px;overflow-y:auto">';
+  // Geri butonu
+  h += '<div><span onclick="window.renderUrunler?.()" style="font-size:10px;color:'+BLUE+';cursor:pointer">← Ürün Listesi</span></div>';
+
+  if (_sahbAcik) {
+    h += _renderSAHB(u);
+  } else {
+    switch (_aktifEtap) {
+      case 1: h += _renderEtap1(u); break;
+      case 2: h += _renderEtap2(u); break;
+      case 3: h += _renderEtap3(u); break;
+      case 4: h += _renderEtap4(u); break;
+    }
+  }
+  h += '</div>';
+  panel.innerHTML = h;
+
+  // Toplam hesapla (Etap 1)
+  window._uf2Recalc?.();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EVENT HANDLERS
+   ════════════════════════════════════════════════════════════════ */
+window._uf2Sekme = function(id) { _aktifSekme = id; _sahbAcik = false; _renderForm(); };
+window._uf2YeniSekme = function() { _aktifSekme = null; openUrunForm(); };
+window._uf2KapatSekme = function(id) {
+  let s = _getSekmeler().filter(x => x.id !== id);
+  _setSekmeler(s);
+  if (_aktifSekme === id) { _aktifSekme = s.length ? s[s.length-1].id : null; }
+  if (!_aktifSekme) { window.renderUrunler?.(); return; }
+  _renderForm();
+};
+window._uf2Etap = function(n) { _aktifEtap = n; _sahbAcik = false;
+  const s = _getSekmeler(); const sk = s.find(x=>x.id===_aktifSekme); if(sk){sk.etap=n;_setSekmeler(s);} _renderForm(); };
+window._uf2AcSAHB = function() { _sahbAcik = true; _renderForm(); };
+window._uf2SAHBTamamla = function() { _sahbAcik = false; _aktifEtap = 2;
+  const s = _getSekmeler(); const sk = s.find(x=>x.id===_aktifSekme); if(sk){sk.etap=2;sk.durum='devam';_setSekmeler(s);} _renderForm(); };
+
+window._uf2Recalc = function() {
+  const m = _g('uf2-miktar'), f = _g('uf2-birim-fiyat'), t = _g('uf2-toplam');
+  if (m && f && t) { t.value = ((parseFloat(m.value)||0) * (parseFloat(f.value)||0)).toLocaleString('tr-TR'); }
+};
+
+window._uf2FileChange = function(id, inp) {
+  if (!inp.files?.[0]) return;
+  const prev = _g('uf2-'+id+'-preview');
+  if (prev) prev.textContent = _esc(inp.files[0].name);
+};
+
+let _sahbMaddeSayisi = 5;
+window._uf2MaddeEkle = function() {
+  _sahbMaddeSayisi++;
+  const cont = _g('uf2-sahb-maddeler');
+  if (!cont) return;
+  const idx = cont.children.length + 1;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px';
+  div.innerHTML = '<input class="fi" placeholder="Madde '+idx+' metni" style="font-size:10px;padding:3px 6px">'
+    + '<input class="fi" placeholder="Neden Gerekli + Kaynak" style="font-size:10px;padding:3px 6px">';
+  cont.appendChild(div);
+};
+
+/* ── Taslak Kaydet ──────────────────────────────────────────── */
+window._uf2TaslakKaydet = function() {
+  const data = _loadU();
+  const vals = {};
+  document.querySelectorAll('[id^="uf2-"]').forEach(el => {
+    if (el.type === 'hidden' || el.type === 'file' || el.tagName === 'DIV') return;
+    const key = el.id.replace('uf2-','').replace(/-([a-z])/g, (_,c) => c.toUpperCase());
+    vals[key] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  let existing = data.find(x => String(x.id) === _aktifSekme);
+  if (existing) { Object.assign(existing, vals, { updatedAt: new Date().toISOString() });
+  } else {
+    existing = { id: _aktifSekme, createdAt: new Date().toISOString(), createdBy: _cu()?.id, ...vals };
+    data.push(existing);
+  }
+  _storeU(data);
+  const s = _getSekmeler(); const sk = s.find(x=>x.id===_aktifSekme);
+  if (sk) { sk.baslik = vals.duayAdi || vals.stdAdi || 'Ürün'; sk.durum = 'devam'; sk.duayKodu = vals.duayKod || ''; _setSekmeler(s); }
+  if (typeof window.toast === 'function') window.toast('Taslak kaydedildi', 'success');
+  _renderForm();
+};
+
+/* ════════════════════════════════════════════════════════════════
+   EXPORT
+   ════════════════════════════════════════════════════════════════ */
+const Urunler = { openForm: openUrunForm };
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = Urunler; }
+else { window.Urunler = Urunler; window.openUrunForm = openUrunForm; }
+
+})();
