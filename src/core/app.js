@@ -3428,6 +3428,7 @@ var _TN2_GROUPS = {
     { id:'pusula', label:'Gorevler' },
     { id:'kargo', label:'Kargo' },
     { id:'satinalma', label:'Is Takibi' },
+    { id:'ihracat-ops', label:'Ihracat Ops' },
   ]},
   katalog:    { label:'Katalog', mods: [
     { id:'urunler', label:'Urun Katalogu' },

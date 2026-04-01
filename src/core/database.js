@@ -88,6 +88,7 @@ const KEYS = {
   pusView       : 'ak_pus_view',
   noteView      : 'ak_nview',
   iddialar      : 'ak_iddialar1',
+  ihracatOps    : 'ak_ihracat_ops1',
   sozler        : 'ak_sozler1',
 };
 
@@ -267,7 +268,7 @@ var _ALL_SYNC_COLS = [
   'konteyner','evrak','etkinlik','numune','resmiEvrak','arsivBelgeler',
   'greetings','puan','activity','kpi','notes','tebligat',
   'bankalar','navlun','urunler','fikirler',
-  'alisTeklifleri','satisTeklifleri','teklifSartlar',
+  'alisTeklifleri','satisTeklifleri','teklifSartlar','ihracatOps',
   'updateLog','trash','kararlar','suggestions','links','smartGoals',
   'taskChats','notifications','iddialar','sozler'
 ];
@@ -913,6 +914,10 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 
 /** @returns {Object}        */ function loadKargoChecks()   { const d = _read(KEYS.kargoChecks); return (d && typeof d === 'object') ? d : {}; }
 /** @param {Object} d        */ function storeKargoChecks(d) { _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
+
+// İhracat Operasyon
+/** @returns {Array<Object>} */ function loadIhracatOps()   { const d = _read(KEYS.ihracatOps); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */ function storeIhracatOps(d) { _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 10 — PİRİM
@@ -2139,6 +2144,8 @@ const DB = {
   loadTaskChats, storeTaskChats,
   // İddia
   loadIddialar, storeIddialar,
+  // İhracat
+  loadIhracatOps, storeIhracatOps,
   // Diğer
   loadGrt, storeGrt,
   loadHesapHistory, storeHesapHistory,
@@ -2178,6 +2185,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
     'loadTrash','storeTrash','addToTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler','loadIddialar','storeIddialar',
+    'loadIhracatOps','storeIhracatOps',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',

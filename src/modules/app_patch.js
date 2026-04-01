@@ -47,6 +47,7 @@
     'temizlik': () => { window.renderTemizlik?.(); },
     'rehber': () => { window.renderRehber?.(); },
     'dashboard': () => { window.Dashboard?.render?.(); },
+    'ihracat-ops': () => { window.renderIhracatOps?.(); },
     'dashboardDetay': () => { window.DashboardDetay?.render?.(); },
   };
 
