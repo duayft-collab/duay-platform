@@ -194,8 +194,9 @@ function openIhracatForm(id) {
 
     // Ürün & Taraflar
     h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:' + T3 + ';margin-bottom:4px">Ürün & Taraflar</div>';
-    h += _grid(3,
-      _sel('urun', 'Ürün', urunOpts, { req: true, sel: r.urunId })
+    h += _grid(4,
+      _inp('jobid', 'JOB ID', { val: r.jobId, ph: 'JOB-26-0001' })
+      + _sel('urun', 'Ürün', urunOpts, { req: true, sel: r.urunId })
       + _sel('alici', 'Alıcı (Müşteri)', cariOpts, { req: true, sel: r.aliciId })
       + _sel('tedarikci', 'Tedarikçi', cariOpts, { sel: r.tedarikciId })
     );
@@ -280,6 +281,7 @@ function saveIhracatOps() {
     const tedarikciAdi = tedarikciId ? (_loadC().find(c => String(c.id || c.ad) === tedarikciId)?.ad || '') : '';
 
     const vals = {
+      jobId: _g('exp-jobid')?.value?.trim() || '',
       urunId, urunAdi, aliciId, aliciAdi, tedarikciId, tedarikciAdi,
       miktar: parseFloat(miktar) || 0,
       birim: _g('exp-birim')?.value || 'PCS',

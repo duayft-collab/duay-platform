@@ -254,6 +254,8 @@ function openNumuneForm(tip, id) {
     _inp('nmsid','NMS ID',{val:nmsId,ro:true})+_sel('urn','URN Ürün Kodu',urunOpts,{req:true,sel:n.urnKodu})+_inp('lot','Lot/Parti No',{req:true,val:n.lotNo,ro})+_inp('tarih','Tarih',{type:'date',req:true,val:n.gelisTarihi||_today(),ro})
   )+_grid(4,
     _sel('tedarikci','Tedarikçi',cariOpts,{sel:n.tedarikciId})+_inp('depo','Depo Kodu (Dolap-Raf-Kutu)',{val:n.depoKodu,ro})+_sel('sorumlu','Sorumlu',userOpts,{sel:n.sorumluId})+_sel('saklama','Saklama Süresi',SAKLAMA,{sel:n.saklamaSuresi})
+  )+_grid(4,
+    _inp('job-id','Job ID',{val:n.jobId,ph:'JOB-26-0001'})+'<div></div><div></div><div></div>'
   ));
 
   // Tip'e özel alanlar

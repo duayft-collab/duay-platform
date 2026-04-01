@@ -405,6 +405,8 @@ function _renderNavlunForm(tip, existing) {
     // Notlar
     '<div><div class="fl">NOTLAR</div>',
       '<textarea class="fi" id="nvl-notlar" rows="2" style="resize:none" placeholder="Özel şartlar, ek ücretler…">'+(n?.notlar||'')+'</textarea></div>',
+    '<div><div class="fl">JOB ID</div>',
+      '<input class="fi" id="nvl-jobid" placeholder="JOB-26-0001…" value="'+(n?.jobId||'')+'"></div>',
     '<input type="hidden" id="nvl-tip-val" value="'+tip+'">',
     '<input type="hidden" id="nvl-eid" value="'+(n?.id||'')+'">',
   ].join('');
@@ -451,6 +453,7 @@ function saveNavlun() {
     gecerlilikBaslangic: document.getElementById('nvl-bas')?.value||'',
     gecerlilikBitis:     document.getElementById('nvl-bit')?.value||'',
     notlar: document.getElementById('nvl-notlar')?.value?.trim()||'',
+    jobId: document.getElementById('nvl-jobid')?.value?.trim()||'',
     durum: 'bekliyor', createdBy: cu?.id, updatedAt: ts,
   };
 
