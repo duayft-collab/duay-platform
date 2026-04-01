@@ -566,7 +566,7 @@ td { vertical-align: middle; }
 .notif-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: var(--rd); border-radius: 50%; border: 2px solid var(--sf); display: none; }
 .notif-dot.show { display: block; }
 .notif-panel {
-  position: fixed; top: 56px; right: 14px; width: 340px; max-height: 420px;
+  position: fixed; top: 84px; right: 14px; width: 340px; max-height: 420px;
   background: var(--sf); border: 1px solid var(--bm); border-radius: var(--r);
   box-shadow: var(--shm); z-index: 500; overflow-y: auto; display: none;
 }
@@ -602,7 +602,7 @@ td { vertical-align: middle; }
 
 /* â”€â”€ PROFILE PANEL â”€â”€ */
 .profile-panel {
-  position: fixed; top: 56px; right: 14px; width: 300px;
+  position: fixed; top: 84px; right: 14px; width: 300px;
   background: var(--sf); border: 1px solid var(--bm); border-radius: var(--r);
   box-shadow: var(--shm); z-index: 500; display: none;
 }

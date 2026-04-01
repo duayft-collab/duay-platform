@@ -1869,11 +1869,42 @@ function _renderProfilePanel() {
       return def ? `<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--al);color:var(--at)">${def.label}</span>` : '';
     }).join('');
   }
+  // Hızlı kullanıcı değiştir (admin/super_admin)
+  let qsEl = _g('pp-quick-switch');
+  if (!qsEl) {
+    const pp = _g('profile-panel');
+    if (pp) { qsEl = document.createElement('div'); qsEl.id = 'pp-quick-switch'; pp.appendChild(qsEl); }
+  }
+  if (qsEl) {
+    if (cu.role === 'admin' || cu.role === 'super_admin') {
+      const others = loadUsers().filter(u => u.id !== cu.id && u.status === 'active').slice(0, 8);
+      let qh = '<div style="border-top:0.5px solid var(--b);margin-top:10px;padding-top:10px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Kullanıcı Değiştir</div>';
+      others.forEach(u => {
+        const ini = initials(u.name);
+        qh += `<div onclick="window._ppSwitchUser('${u.id}')" style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:11px;color:var(--t)" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"><div style="width:22px;height:22px;border-radius:50%;background:var(--al);color:var(--at);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600">${ini}</div><span>${escapeHtml(u.name)}</span><span style="font-size:9px;color:var(--t3)">${u.role}</span></div>`;
+      });
+      qh += '</div>';
+      qsEl.innerHTML = qh;
+    } else { qsEl.innerHTML = ''; }
+  }
 }
 
 /**
  * Profil düzenleme modalını açar.
  */
+window._ppSwitchUser = function(uid) {
+  try {
+    const users = loadUsers();
+    const target = users.find(u => String(u.id) === String(uid));
+    if (!target) return;
+    localStorage.setItem('ak_session', JSON.stringify({ uid: target.id, email: target.email, tenantId: window.DEFAULT_TENANT_ID || 'tenant_default', ts: Date.now(), switchedBy: window.Auth?.getCU?.()?.id }));
+    logActivity('admin', 'Kullanıcı değiştirdi → ' + target.name);
+    _closeProfilePanel();
+    window._tn2Restore?.();
+    toast('Kullanıcı değiştirildi: ' + target.name, 'ok');
+  } catch(e) { console.error('[app] switchUser hata:', e); }
+};
+
 function openProfileEdit() {
   const cu = window.Auth?.getCU?.();
   if (!cu) return;
