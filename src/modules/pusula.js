@@ -3876,7 +3876,7 @@ function _pfInjectToolbarBtns() {
   if (!vRow||vRow.dataset.pfBtns) return;
   vRow.dataset.pfBtns='1';
   const btns=[
-    {id:'pus-v-gantt', cls:'pvt-btn cvb', text:'📅 Gantt', onclick:()=>{ document.querySelectorAll('.pvt-btn,.cvb').forEach(b=>b.classList.remove('on','active')); const b=g('pus-v-gantt'); b?.classList.add('on','active'); setPusView('gantt',b); } },
+    {id:'pus-v-gantt', cls:'pus-seg-btn', text:'📅 Gantt', onclick:()=>{ document.querySelectorAll('.pus-seg-btn,.pvt-btn,.cvb').forEach(b=>b.classList.remove('on','active')); const b=g('pus-v-gantt'); b?.classList.add('on','active'); setPusView('gantt',b); } },
   ];
   btns.forEach(cfg=>{ const b=document.createElement('button'); b.className=cfg.cls; if(cfg.id)b.id=cfg.id; if(cfg.title)b.title=cfg.title; b.style.fontSize='12px'; b.innerHTML=cfg.text; b.onclick=cfg.onclick; vRow.appendChild(b); });
 }
