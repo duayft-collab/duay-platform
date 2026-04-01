@@ -3400,16 +3400,17 @@ var _TN2_GROUPS = {
   ]},
   katalog:    { label:'Katalog', mods: [
     { id:'urunler', label:'Urun Katalogu' },
+    { id:'numune', label:'Numune Arsivi' },
     { id:'cari', label:'Cariler' },
   ]},
-  ekip:       { label:'Ekip', mods: [
+  sistem:     { label:'Sistem & Ekip', mods: [
     { id:'admin', label:'Kullanicilar' },
-  ]},
-  sistem:     { label:'Sistem', mods: [
     { id:'settings', label:'Ayarlar' },
+    { id:'activity', label:'Loglar' },
   ]},
 };
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
+if (_tn2ActiveGrp === 'ekip') _tn2ActiveGrp = 'sistem';
 var _tn2ActiveMod = localStorage.getItem('ak_nav_modul') || 'dashboard';
 
 window._tn2SelectGrp = function(grp, el) {
