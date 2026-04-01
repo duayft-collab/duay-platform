@@ -1935,10 +1935,12 @@ window._getDbHealth = function() {
   var alerts = [];
   if (lsPct >= 80) alerts.push({ level: 'red', msg: 'localStorage %' + lsPct + ' dolu — kritik!' });
   else if (lsPct >= 60) alerts.push({ level: 'amber', msg: 'localStorage %' + lsPct + ' dolu' });
-  if (notifs.length > 500) alerts.push({ level: 'red', msg: 'Bildirimler ' + notifs.length + ' kayıt — temizlenmeli!' });
-  else if (notifs.length > 200) alerts.push({ level: 'amber', msg: 'Bildirimler ' + notifs.length + ' kayıt' });
+  if (notifs.length > 100) alerts.push({ level: 'red', msg: 'Bildirimler ' + notifs.length + ' kayıt — temizlenmeli!' });
+  else if (notifs.length > 50) alerts.push({ level: 'amber', msg: 'Bildirimler ' + notifs.length + ' kayıt' });
   if (_syncState.errors > 3) alerts.push({ level: 'red', msg: '24 saatte ' + _syncState.errors + ' sync hatası' });
+  else if (_syncState.errors > 0) alerts.push({ level: 'amber', msg: _syncState.errors + ' sync hatası' });
   if (queueLen > 10) alerts.push({ level: 'red', msg: 'Offline kuyrukta ' + queueLen + ' işlem bekliyor' });
+  else if (queueLen > 0) alerts.push({ level: 'amber', msg: 'Offline kuyrukta ' + queueLen + ' işlem var' });
   if (noUpdatedAtPct > 20) alerts.push({ level: 'amber', msg: 'Görevlerin %' + noUpdatedAtPct + '\'ünde updatedAt eksik' });
   if (trash.length > 100) alerts.push({ level: 'amber', msg: 'Çöp kutusunda ' + trash.length + ' kayıt' });
 
@@ -1983,13 +1985,13 @@ window._renderDbHealthPanel = function() {
     alertHtml = '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">';
     h.alerts.forEach(function(a) {
       var bg = a.level === 'red' ? '#FCEBEB' : '#FAEEDA';
-      var c = a.level === 'red' ? '#A32D2D' : '#633806';
+      var c = a.level === 'red' ? '#791F1F' : '#633806';
       alertHtml += '<div style="padding:7px 12px;background:' + bg + ';border-radius:6px;font-size:11px;color:' + c + ';font-weight:500">' + (a.level === 'red' ? '🔴 ' : '🟡 ') + a.msg + '</div>';
     });
     alertHtml += '</div>';
   }
 
-  var stColor = st.pct >= 80 ? '#A32D2D' : st.pct >= 60 ? '#854F0B' : '#27500A';
+  var stColor = st.pct >= 80 ? '#791F1F' : st.pct >= 60 ? '#633806' : '#27500A';
   var lastSyncStr = s.lastSync ? new Date(s.lastSync).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
 
   var keyRows = st.topKeys.map(function(k) {
@@ -1998,15 +2000,15 @@ window._renderDbHealthPanel = function() {
     return '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:3px 0;border-bottom:0.5px solid var(--b)"><span>' + nm + '</span><span style="font-family:monospace">' + kb + ' KB</span></div>';
   }).join('');
 
-  var syncColor = s.status === 'ok' ? '#27500A' : s.status === 'syncing' ? '#633806' : '#A32D2D';
+  var syncColor = s.status === 'ok' ? '#27500A' : s.status === 'syncing' ? '#633806' : '#791F1F';
   var syncLabel = s.status === 'ok' ? '✅ Senkronize' : s.status === 'syncing' ? '🔄 Senkronize ediliyor…' : '🔴 Hata';
 
   panel.innerHTML = alertHtml
     + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Senkronizasyon</div>'
     + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'
-    + _dbStatCard('Durum', '<span style="color:' + syncColor + ';font-weight:600">' + syncLabel + '</span>')
+    + _dbStatCard('Durum', '<span style="font-size:12px;color:' + syncColor + ';font-weight:600">' + syncLabel + '</span>')
     + _dbStatCard('Son Sync', lastSyncStr)
-    + _dbStatCard('24s Hata', '<span style="color:' + (s.errors > 3 ? '#A32D2D' : 'var(--t)') + ';font-size:20px;font-weight:500">' + s.errors + '</span>')
+    + _dbStatCard('24s Hata', '<span style="color:' + (s.errors > 3 ? '#791F1F' : 'var(--t)') + ';font-size:20px;font-weight:500">' + s.errors + '</span>')
     + '</div>'
     + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Depolama</div>'
     + '<div style="margin-bottom:6px">'
@@ -2016,7 +2018,7 @@ window._renderDbHealthPanel = function() {
     + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Veri Bütünlüğü</div>'
     + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'
     + _dbStatCard('Görev', d.taskCount)
-    + _dbStatCard('Bildirim', '<span style="color:' + (d.notifCount > 500 ? '#A32D2D' : d.notifCount > 200 ? '#854F0B' : 'var(--t)') + ';font-size:20px;font-weight:500">' + d.notifCount + '</span>')
+    + _dbStatCard('Bildirim', '<span style="color:' + (d.notifCount > 100 ? '#791F1F' : d.notifCount > 50 ? '#633806' : 'var(--t)') + ';font-size:20px;font-weight:500">' + d.notifCount + '</span>')
     + _dbStatCard('Çöp Kutusu', d.trashCount)
     + '</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'

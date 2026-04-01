@@ -705,10 +705,10 @@ function renderDashboard() {
   if (typeof window._getDbHealth === 'function') {
     var _dbH = window._getDbHealth();
     if (_dbH.hasRed || _dbH.hasAmber) {
-      var _dbAlertColor = _dbH.hasRed ? '#A32D2D' : '#633806';
+      var _dbAlertColor = _dbH.hasRed ? '#791F1F' : '#633806';
       var _dbAlertBg = _dbH.hasRed ? '#FCEBEB' : '#FAEEDA';
       var _dbAlertMsg = _dbH.alerts[0]?.msg || 'Anormallik';
-      h += '<div onclick="window._showSyncDetails?.()" style="cursor:pointer;padding:8px 16px;background:' + _dbAlertBg + ';border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border:1px solid ' + _dbAlertColor + '22"><span style="font-size:14px">' + (_dbH.hasRed ? '🔴' : '🟡') + '</span><span style="font-size:12px;font-weight:500;color:' + _dbAlertColor + ';flex:1">' + _dbAlertMsg + '</span><span style="font-size:10px;color:' + _dbAlertColor + '">Detay →</span></div>';
+      h += '<div onclick="window._showSyncDetails?.()" style="cursor:pointer;padding:8px 16px;background:' + _dbAlertBg + ';border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border:1px solid ' + _dbAlertColor + '22"><span style="font-size:14px">' + (_dbH.hasRed ? '🔴' : '🟡') + '</span><span style="font-size:12px;font-weight:500;color:' + _dbAlertColor + ';flex:1">' + _dbAlertMsg + '</span><span style="font-size:10px;color:' + _dbAlertColor + '">Ayarlar →</span></div>';
     }
   }
   h += _renderBanner();
