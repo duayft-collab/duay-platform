@@ -20,6 +20,30 @@
 // ── Versiyon ─────────────────────────────────────────────────────
 const DB_VERSION = '8.0.0';
 
+// ── Firebase Storage ─────────────────────────────────────────────
+var FB_STORAGE = null;
+try { if (typeof firebase !== 'undefined' && firebase.storage) FB_STORAGE = firebase.storage(); } catch (e) { /* Storage opsiyonel */ }
+
+/** @param {File} file @param {string} path @returns {Promise<string>} download URL */
+window._uploadToStorage = async function(file, path) {
+  if (!FB_STORAGE) throw new Error('Storage başlatılamadı');
+  var ref = FB_STORAGE.ref(path);
+  await ref.put(file);
+  return await ref.getDownloadURL();
+};
+
+/** @param {string} base64DataUrl @param {string} filename @param {string} folder @returns {Promise<string>} */
+window._uploadBase64ToStorage = async function(base64DataUrl, filename, folder) {
+  if (!FB_STORAGE) throw new Error('Storage başlatılamadı');
+  var res = await fetch(base64DataUrl);
+  var blob = await res.blob();
+  var tid = typeof _getTid === 'function' ? _getTid() : 'default';
+  var path = 'tenants/' + tid + '/' + folder + '/' + Date.now() + '_' + filename;
+  var ref = FB_STORAGE.ref(path);
+  await ref.put(blob);
+  return await ref.getDownloadURL();
+};
+
 // ── localStorage Anahtar Sabitleri ───────────────────────────────
 /** @type {Object.<string,string>} Tüm localStorage key'leri tek yerden */
 const KEYS = {
@@ -158,6 +182,31 @@ function _write(key, value) {
       if (item && typeof item === 'object' && (item.id || item._id)) {
         if (!item.updatedAt) item.updatedAt = now;
       }
+    });
+  }
+  // base64 veriyi localStorage'a yazmadan temizle
+  if (Array.isArray(value)) {
+    value = value.map(function(item) {
+      if (!item || typeof item !== 'object') return item;
+      var clean = Object.assign({}, item);
+      ['file','receipt','img','image'].forEach(function(f) {
+        if (clean[f] && typeof clean[f] === 'string' && clean[f].startsWith('data:')) {
+          clean[f] = { _placeholder: true, name: 'Dosya (Storage)', size: clean[f].length };
+        }
+        if (clean[f] && clean[f].data && typeof clean[f].data === 'string' && clean[f].data.startsWith('data:')) {
+          clean[f] = { name: clean[f].name || 'dosya', size: clean[f].data.length, _placeholder: true };
+        }
+      });
+      // docs array içindeki base64'leri temizle
+      if (Array.isArray(clean.docs)) {
+        clean.docs = clean.docs.map(function(d) {
+          if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:') && d.url) {
+            return { name: d.name, url: d.url, ts: d.ts };
+          }
+          return d;
+        });
+      }
+      return clean;
     });
   }
   try {

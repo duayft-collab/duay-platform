@@ -144,12 +144,25 @@ function saveStok(){
     updatedAt: new Date().toISOString(),
   };
   const readFile=(input,cb)=>{
-    if(input?.files?.[0]){const r=new FileReader();r.onload=e=>cb({name:input.files[0].name,data:e.target.result});r.readAsDataURL(input.files[0]);}
+    if(input?.files?.[0]){
+      const r=new FileReader();
+      r.onload=async function(e){
+        try {
+          if(typeof window._uploadBase64ToStorage==='function'){
+            var url=await window._uploadBase64ToStorage(e.target.result,input.files[0].name,'stok');
+            cb({name:input.files[0].name,url:url,data:null});
+          } else {
+            cb({name:input.files[0].name,data:e.target.result});
+          }
+        } catch(err){cb({name:input.files[0].name,data:e.target.result});}
+      };
+      r.readAsDataURL(input.files[0]);
+    }
     else cb(null);
   };
   const doSave=(imgData,docData)=>{
-    if(imgData)entry.img=imgData;
-    if(docData)entry.doc=docData;
+    if(imgData){entry.img=imgData;if(imgData.url)entry.imgUrl=imgData.url;}
+    if(docData){entry.doc=docData;if(docData.url)entry.docUrl=docData.url;}
     if(eid){
       const e=d.find(x=>x.id===eid);
       if(e){Object.assign(e,entry);if(!imgData&&existingEntry?.img)e.img=existingEntry.img;}

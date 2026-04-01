@@ -2044,18 +2044,29 @@ function uploadOdmReceipt(id) {
     const file = this.files[0]; if (!file) return;
     if (file.size > 5 * 1024 * 1024) { window.toast?.('Dosya 5MB\'dan küçük olmalı', 'err'); return; }
     const r = new FileReader();
-    r.onload = function(e) {
-      const d = window.loadOdm ? loadOdm() : [];
-      const o = d.find(x => x.id === id); if (!o) return;
-      o.receipt     = e.target.result;
-      o.receiptName = file.name;
-      o.receiptTs   = _nowTso();
-      window.storeOdm ? storeOdm(d) : null;
-      // Alarm key temizle
-      localStorage.removeItem('odm_alarm_receipt_' + id);
-      renderOdemeler();
-      window.toast?.('📎 Dekont yüklendi ✓', 'ok');
-      window.logActivity?.('view', `"${o.name}" için dekont yüklendi`);
+    r.onload = async function(e) {
+      try {
+        window.toast?.('Yükleniyor…', 'ok');
+        var url;
+        if (typeof window._uploadBase64ToStorage === 'function') {
+          url = await window._uploadBase64ToStorage(e.target.result, file.name, 'receipts');
+        } else {
+          url = e.target.result; // fallback: base64
+        }
+        const d = window.loadOdm ? loadOdm() : [];
+        const o = d.find(x => x.id === id); if (!o) return;
+        o.receipt = url;
+        o.receiptName = file.name;
+        o.receiptTs = _nowTso();
+        window.storeOdm ? storeOdm(d) : null;
+        localStorage.removeItem('odm_alarm_receipt_' + id);
+        renderOdemeler();
+        window.toast?.('📎 Dekont yüklendi ✓', 'ok');
+        window.logActivity?.('view', `"${o.name}" için dekont yüklendi`);
+      } catch (err) {
+        console.error('[odm] dekont yükleme hatası:', err);
+        window.toast?.('Yükleme hatası: ' + err.message, 'err');
+      }
     };
     r.readAsDataURL(file);
   };
@@ -2916,8 +2927,16 @@ function uploadTahDoc() {
     Array.from(this.files).forEach(file => {
       if (file.size > 8*1024*1024) { window.toast?.("Dosya cok buyuk", 'warn'); return; }
       const r = new FileReader();
-      r.onload = e => {
-        existing.push({ name: file.name, data: e.target.result, ts: _nowTso() });
+      r.onload = async function(e) {
+        try {
+          var url = null;
+          if (typeof window._uploadBase64ToStorage === 'function') {
+            url = await window._uploadBase64ToStorage(e.target.result, file.name, 'tahsilat-docs');
+          }
+          existing.push({ name: file.name, data: url || e.target.result, url: url, ts: _nowTso() });
+        } catch (err) {
+          existing.push({ name: file.name, data: e.target.result, ts: _nowTso() });
+        }
         const el = document.getElementById('tah-f-docs');
         if (el) el.value = JSON.stringify(existing);
         const cnt = document.getElementById('tah-doc-count');
