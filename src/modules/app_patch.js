@@ -46,6 +46,7 @@
     'resmi': () => { window.renderResmi?.(); },
     'temizlik': () => { window.renderTemizlik?.(); },
     'rehber': () => { window.renderRehber?.(); },
+    'dashboard': () => { window.Dashboard?.render?.(); },
   };
 
   // App.nav wrap — yeni paneller için ekstra render çağrısı

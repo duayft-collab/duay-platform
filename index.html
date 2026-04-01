@@ -515,36 +515,7 @@ function _doLogin() {
 
       <!-- Panel: Dashboard -->
             <div class="panel on" id="panel-dashboard">
-        <!-- Bölüm 1: Üst Bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:200">
-          <div>
-            <div style="font-size:16px;font-weight:700;color:var(--t)">Duay Global LLC</div>
-            <div style="font-size:11px;color:var(--t3)" id="db-datetime"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:10px;color:var(--t3)">Sistem:</span>
-            <div id="db-health-bar" style="display:flex;gap:2px;align-items:center"></div>
-            <span id="db-health-score" style="font-size:11px;font-weight:700"></span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div id="db-sync-status" style="font-size:10px;display:flex;align-items:center;gap:4px"></div>
-            <span id="db-version" style="font-size:9px;color:var(--t3);font-family:monospace"></span>
-            <div style="display:flex;align-items:center;gap:6px">
-              <div id="db-user-av" style="width:28px;height:28px;border-radius:8px;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700"></div>
-              <span id="db-user-name" style="font-size:11px;font-weight:500;color:var(--t)"></span>
-            </div>
-            <button onclick="window._openDashboardGuide?.()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--b);background:var(--sf);color:var(--t3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:serif;font-weight:700" title="Dashboard Kılavuzu">i</button>
-          </div>
-        </div>
-        <div id="db-alert-nav" style="display:none"></div>
-        <!-- Bölüm 3: Alert Bar -->
-        <div id="db-alert-bar" style="display:none;padding:8px 20px;background:#FAEEDA;border-bottom:1px solid #EF9F2733;font-size:11px;color:#633806"></div>
-        <!-- Eski stat grid gizli -->
-        <div class="sg" id="db-sg" style="display:none"></div>
-        <div id="db-welcome" style="display:none"></div>
-        <div id="db-date" style="display:none"></div>
-        <!-- Dashboard içerik -->
-        <div id="db-content"></div>
+        <!-- DASH-002: İçerik dashboard.js tarafından inject edilir -->
       </div>
 
       <!-- Panel: Pusula (Görev Yönetimi) -->
@@ -1272,6 +1243,7 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/hesap_makinesi.js"></script>
 <script src="src/core/confirm_modal.js"></script>
 <script src="src/modules/modals.js"></script>
+<script src="src/modules/dashboard.js"></script>
 
 <!-- 4. APP INIT — her zaman en son -->
 <script src="src/core/app.js"></script>
