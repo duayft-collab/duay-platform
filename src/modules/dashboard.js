@@ -46,16 +46,16 @@ const AMBER = '#EF9F27';
 const PURPLE = '#3C3489';
 
 /* ── Stil Sabitleri ─────────────────────────────────────────── */
-const S_MK  = 'border-radius:7px;padding:10px 14px;background:' + BG2;
-const S_WK  = 'background:' + BG1 + ';border:0.5px solid ' + BD + ';border-radius:8px;padding:12px 14px';
-const S_LBL = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:' + T3;
-const S_VAL = 'font-size:22px;font-weight:500';
-const S_SUB = 'font-size:10px;color:' + T3;
-const S_SEC = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:' + T3 + ';margin-bottom:6px;display:flex;align-items:center;gap:6px';
+const S_MK  = 'border-radius:7px;padding:11px 15px;background:' + BG2;
+const S_WK  = 'background:' + BG1 + ';border:0.5px solid ' + BD + ';border-radius:8px;padding:13px 15px';
+const S_LBL = 'font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:' + T3;
+const S_VAL = 'font-size:24px;font-weight:500';
+const S_SUB = 'font-size:11px;color:' + T3;
+const S_SEC = 'font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:' + T3 + ';margin-bottom:7px;display:flex;align-items:center;gap:7px';
 
 /* ── Badge yardımcısı ───────────────────────────────────────── */
 function _badge(text, bg, fg) {
-  return '<span style="font-size:8px;padding:1px 6px;border-radius:4px;background:' + bg + ';color:' + fg + '">' + _esc(text) + '</span>';
+  return '<span style="font-size:9px;padding:2px 7px;border-radius:4px;background:' + bg + ';color:' + fg + '">' + _esc(text) + '</span>';
 }
 const _bg = (t) => _badge(t, '#EAF3DE', GREEN);
 const _ba = (t) => _badge(t, '#FAEEDA', '#633806');
@@ -116,7 +116,7 @@ function _ring(pct, size, strokeW, color) {
 /* ── Progress Bar ───────────────────────────────────────────── */
 function _bar(pct, color) {
   const p = Math.min(100, Math.max(0, Math.round(pct)));
-  return '<div style="height:5px;border-radius:2px;background:' + BG2 + ';overflow:hidden"><div style="height:100%;width:' + p + '%;background:' + color + ';border-radius:2px"></div></div>';
+  return '<div style="height:6px;border-radius:2px;background:' + BG2 + ';overflow:hidden"><div style="height:100%;width:' + p + '%;background:' + color + ';border-radius:2px"></div></div>';
 }
 
 function _pctColor(pct, gT, aT) {
@@ -145,12 +145,12 @@ function _renderBanner() {
   const otoVal = _ls('ak_otomasyon_oran') || '%0';
   const aktifIddia = _loadIddia().filter(x => x.durum === 'aktif').length;
 
-  const chip = (label, val) => '<span style="padding:6px 12px;background:rgba(255,255,255,0.08);border-radius:6px;font-size:10px;color:#E6F1FB">' + label + ' <b>' + val + '</b></span>';
+  const chip = (label, val) => '<span style="padding:7px 13px;background:rgba(255,255,255,0.08);border-radius:6px;font-size:11px;color:#E6F1FB">' + label + ' <b>' + val + '</b></span>';
 
-  return '<div style="background:#042C53;border-radius:9px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between">'
+  return '<div style="background:#042C53;border-radius:9px;padding:15px 22px;display:flex;align-items:center;justify-content:space-between">'
     + '<div>'
-    + '<div style="font-size:15px;color:#E6F1FB;font-weight:500">Günaydın, ' + name + '</div>'
-    + '<div style="font-size:11px;color:#85B7EB">' + dayStr + ' · ' + pendingCount + ' onay bekliyor · Sistem skoru ' + _esc(skorVal) + '</div>'
+    + '<div style="font-size:16px;color:#E6F1FB;font-weight:500">Günaydın, ' + name + '</div>'
+    + '<div style="font-size:12px;color:#85B7EB">' + dayStr + ' · ' + pendingCount + ' onay bekliyor · Sistem skoru ' + _esc(skorVal) + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:6px">'
     + chip('Tahsilat', '₺' + _fmt(ayTah))
@@ -192,7 +192,7 @@ function _renderFinans() {
   const ortMusteri = cariSet.size > 0 ? Math.round(topTah / cariSet.size) : 0;
 
   let h = '<div style="' + S_SEC + '">' + _esc('FİNANS') + ' ' + _bb('Nakit Akışı') + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">';
 
   // Kart 1
   h += '<div style="' + S_MK + '"><div style="' + S_LBL + '">Net Pozisyon</div>'
@@ -247,18 +247,18 @@ function _renderKPI() {
   const yeniMusteri = _loadCari().filter(c => c.createdAt && _thisMonth(new Date(c.createdAt))).length;
 
   let h = '<div style="' + S_SEC + '">' + _esc('ACTION COACH KPI') + ' ' + _ba('Büyüme & Satış') + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">';
 
   // Kart 1 — Satış Konversiyon
-  h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:10px">'
-    + _ring(konvPct, 47, 3.5, konvColor)
-    + '<div><div style="font-size:12px;font-weight:500;color:' + T1 + '">Satış Konversiyon</div>'
-    + '<div style="font-size:9px;color:' + T3 + '">Hedef: ' + _pct(hedefKonv) + ' · Teklif→Sipariş</div>'
-    + '<div style="font-size:9px;color:' + T3 + '">Fark: ' + (konvPct - hedefKonv >= 0 ? '+' : '') + _pct(konvPct - hedefKonv) + '</div>'
+  h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:11px">'
+    + _ring(konvPct, 52, 4, konvColor)
+    + '<div><div style="font-size:13px;font-weight:500;color:' + T1 + '">Satış Konversiyon</div>'
+    + '<div style="font-size:10px;color:' + T3 + '">Hedef: ' + _pct(hedefKonv) + ' · Teklif→Sipariş</div>'
+    + '<div style="font-size:10px;color:' + T3 + '">Fark: ' + (konvPct - hedefKonv >= 0 ? '+' : '') + _pct(konvPct - hedefKonv) + '</div>'
     + _bg('Hedef') + '</div></div>';
 
   // Kart 2 — Haftalık Büyüme
-  const barH = 52;
+  const barH = 57;
   let barSvg = '<svg width="100%" height="' + barH + '" viewBox="0 0 120 ' + barH + '" preserveAspectRatio="none">';
   const bw = 120 / 6;
   weeks.forEach((w, i) => {
@@ -267,22 +267,22 @@ function _renderKPI() {
   });
   barSvg += '</svg>';
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:5px">Haftalık Büyüme</div>'
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:6px">Haftalık Büyüme</div>'
     + barSvg
-    + '<div style="font-size:9px;color:' + T3 + ';margin-top:4px;display:flex;justify-content:space-between">'
+    + '<div style="font-size:10px;color:' + T3 + ';margin-top:4px;display:flex;justify-content:space-between">'
     + '<span>Son 6 hafta</span>'
     + (buyumePct >= 0 ? _bg('+' + _pct(buyumePct)) : _br(_pct(buyumePct)))
     + '</div></div>';
 
   // Kart 3 — Ekip Performans
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:7px">Ekip Performans</div>';
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:8px">Ekip Performans</div>';
   users.slice(0, 4).forEach(u => {
     const uTasks = tasks.filter(t => t.uid === u.id);
     const done = uTasks.filter(t => t.done).length;
     const total = uTasks.length || 1;
     const pct = Math.round((done / total) * 100);
-    h += '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:9px;color:' + T2 + ';margin-bottom:2px">'
+    h += '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:' + T2 + ';margin-bottom:2px">'
       + '<span>' + _esc((u.name || '').split(' ')[0]) + '</span><span>' + _pct(pct) + '</span></div>'
       + _bar(pct, BLUE) + '</div>';
   });
@@ -295,7 +295,7 @@ function _renderKPI() {
   const sopTop = _lsn('ak_sop_toplam') || 1;
   const tahHiz = Math.min(100, Math.round(ayTah / (hedefCiro || 1) * 100));
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:7px">Hedef vs Gerçek</div>';
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:8px">Hedef vs Gerçek</div>';
   const hvg = [
     { label: 'Aylık Ciro', pct: ciroPct },
     { label: 'Yeni Müşteri', pct: mustPct },
@@ -303,7 +303,7 @@ function _renderKPI() {
   ];
   hvg.forEach(item => {
     const c = _pctColor(item.pct);
-    h += '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:9px;color:' + T2 + ';margin-bottom:2px">'
+    h += '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:' + T2 + ';margin-bottom:2px">'
       + '<span>' + item.label + '</span><span style="color:' + c + '">' + _pct(item.pct) + '</span></div>'
       + _bar(item.pct, c) + '</div>';
   });
@@ -317,38 +317,38 @@ function _renderKPI() {
    BÖLÜM 4 — E-MYTH + VANISH
    ════════════════════════════════════════════════════════════════ */
 function _renderEmythVanish() {
-  let h = '<div style="display:grid;grid-template-columns:3fr 2fr;gap:9px">';
+  let h = '<div style="display:grid;grid-template-columns:3fr 2fr;gap:10px">';
 
   // ── E-MYTH ──
   h += '<div>';
   h += '<div style="' + S_SEC + '">' + _esc('E-MYTH — SİSTEM KURUMU') + ' ' + _bp('SOP & Sistem') + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">';
 
   // SOP Tamamlanma
   const sopTam = _lsn('ak_sop_tamamlanan');
   const sopTop = _lsn('ak_sop_toplam') || 1;
   const sopPct = Math.round((sopTam / sopTop) * 100);
   const sopColor = sopPct >= 80 ? GREEN : sopPct >= 60 ? AMBER : '#E24B4A';
-  h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:10px">'
-    + _ring(sopPct, 44, 3, sopColor)
-    + '<div><div style="font-size:15px;font-weight:600;color:' + T1 + '">' + sopTam + '/' + Math.round(sopTop) + '</div>'
-    + '<div style="font-size:9px;color:#E24B4A">' + (Math.round(sopTop) - sopTam) + ' eksik</div></div></div>';
+  h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:11px">'
+    + _ring(sopPct, 48, 3, sopColor)
+    + '<div><div style="font-size:16px;font-weight:600;color:' + T1 + '">' + sopTam + '/' + Math.round(sopTop) + '</div>'
+    + '<div style="font-size:10px;color:#E24B4A">' + (Math.round(sopTop) - sopTam) + ' eksik</div></div></div>';
 
   // Sistemsiz İş Oranı
   const sistemsiz = _lsn('ak_sistemsiz_oran');
   const sisColor = sistemsiz < 10 ? GREEN : AMBER;
-  h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:10px">'
-    + _ring(sistemsiz, 44, 3, sisColor)
-    + '<div><div style="font-size:15px;font-weight:600;color:' + T1 + '">' + _pct(sistemsiz) + '</div>'
-    + '<div style="font-size:9px;color:#E24B4A">Hedef: %10 altı</div></div></div>';
+  h += '<div style="' + S_WK + ';display:flex;align-items:center;gap:11px">'
+    + _ring(sistemsiz, 48, 3, sisColor)
+    + '<div><div style="font-size:16px;font-weight:600;color:' + T1 + '">' + _pct(sistemsiz) + '</div>'
+    + '<div style="font-size:10px;color:#E24B4A">Hedef: %10 altı</div></div></div>';
 
   // Modül Skorları
   const skorlar = _lsj('ak_modul_skorlar', { nakit: 0, gorev: 0, katalog: 0, musteri: 0 });
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:5px">Modül Skorları</div>';
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:6px">Modül Skorları</div>';
   Object.entries(skorlar).forEach(([k, v]) => {
     const b = v >= 80 ? _bg(_pct(v)) : v >= 60 ? _ba(_pct(v)) : _br(_pct(v));
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:' + T2 + ';margin-bottom:3px">'
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:' + T2 + ';margin-bottom:3px">'
       + '<span>' + _esc(k) + '</span>' + b + '</div>';
   });
   h += '</div>';
@@ -366,20 +366,20 @@ function _renderEmythVanish() {
   h += '<div style="' + S_WK + '">';
   // Üst 2 metrik
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">';
-  h += '<div style="background:' + BG2 + ';border-radius:6px;padding:10px;text-align:center">'
-    + '<div style="font-size:25px;font-weight:600;color:' + GREEN + '">' + _pct(otoOran) + '</div>'
-    + '<div style="font-size:9px;color:' + T3 + '">Otomasyon</div></div>';
-  h += '<div style="background:' + BG2 + ';border-radius:6px;padding:10px;text-align:center">'
-    + '<div style="font-size:25px;font-weight:600;color:' + BLUE + '">' + Math.round(sahipsiz) + '</div>'
-    + '<div style="font-size:9px;color:' + T3 + '">Sahipsiz Karar/hafta</div></div>';
+  h += '<div style="background:' + BG2 + ';border-radius:6px;padding:11px;text-align:center">'
+    + '<div style="font-size:28px;font-weight:600;color:' + GREEN + '">' + _pct(otoOran) + '</div>'
+    + '<div style="font-size:10px;color:' + T3 + '">Otomasyon</div></div>';
+  h += '<div style="background:' + BG2 + ';border-radius:6px;padding:11px;text-align:center">'
+    + '<div style="font-size:28px;font-weight:600;color:' + BLUE + '">' + Math.round(sahipsiz) + '</div>'
+    + '<div style="font-size:10px;color:' + T3 + '">Sahipsiz Karar/hafta</div></div>';
   h += '</div>';
 
   // Alt progress barlar
-  h += '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:9px;color:' + T2 + ';margin-bottom:2px">'
+  h += '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:' + T2 + ';margin-bottom:2px">'
     + '<span>Delegasyon Skoru</span><span>' + _pct(delegasyon) + '</span></div>' + _bar(delegasyon, GREEN) + '</div>';
-  h += '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:9px;color:' + T2 + ';margin-bottom:2px">'
+  h += '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:' + T2 + ';margin-bottom:2px">'
     + '<span>Sahip Müdahale</span><span>' + _pct(sahipMud) + '</span></div>' + _bar(sahipMud, '#E24B4A') + '</div>';
-  h += '<div style="font-size:11px;color:' + T3 + ';margin-top:9px">Sahip müdahalesi düşükse sistem çalışıyor.</div>';
+  h += '<div style="font-size:12px;color:' + T3 + ';margin-top:10px">Sahip müdahalesi düşükse sistem çalışıyor.</div>';
   h += '</div></div>';
 
   h += '</div>';
@@ -400,7 +400,7 @@ function _renderNakit() {
   const maxV = Math.max(...allVals, 1);
 
   // SVG line chart
-  const svgW = 400, svgH = 72;
+  const svgW = 400, svgH = 79;
   const pts = tahWeeks.length;
   const step = pts > 1 ? svgW / (pts - 1) : svgW;
 
@@ -418,14 +418,14 @@ function _renderNakit() {
 
   const tabBtn = (label, val) => {
     const active = _nakitAy === val;
-    return '<span onclick="window._dashNakitTab(' + val + ')" style="cursor:pointer;padding:3px 10px;border-radius:4px;font-size:9px;'
+    return '<span onclick="window._dashNakitTab(' + val + ')" style="cursor:pointer;padding:3px 11px;border-radius:4px;font-size:10px;'
       + (active ? 'background:#E6F1FB;color:' + NAVY + ';font-weight:600' : 'color:' + T3)
       + '">' + label + '</span>';
   };
 
   let h = '<div style="' + S_WK + '">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-    + '<span style="font-size:12px;font-weight:500;color:' + T1 + '">Nakit Akışı Trendi</span>'
+    + '<span style="font-size:13px;font-weight:500;color:' + T1 + '">Nakit Akışı Trendi</span>'
     + '<div style="display:flex;gap:2px">' + tabBtn('1A', 1) + tabBtn('3A', 3) + tabBtn('6A', 6) + '</div></div>';
 
   h += '<svg width="100%" height="' + svgH + '" viewBox="0 0 ' + svgW + ' ' + svgH + '" preserveAspectRatio="none">';
@@ -433,7 +433,7 @@ function _renderNakit() {
   if (odmPath) h += '<path d="' + odmPath + '" fill="none" stroke="#F09595" stroke-width="1.5" stroke-dasharray="3 2"/>';
   h += '</svg>';
 
-  h += '<div style="display:flex;gap:12px;font-size:10px;color:' + T3 + ';margin-top:5px">'
+  h += '<div style="display:flex;gap:13px;font-size:11px;color:' + T3 + ';margin-top:6px">'
     + '<span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.5px;background:' + BLUE + ';display:inline-block"></span>Tahsilat</span>'
     + '<span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.5px;background:#F09595;border-top:1px dashed #F09595;display:inline-block"></span>Ödeme</span>'
     + '</div></div>';
@@ -445,12 +445,12 @@ function _renderNakit() {
    ════════════════════════════════════════════════════════════════ */
 function _renderAlt() {
   const cu = _cu();
-  let h = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px">';
+  let h = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">';
 
   // ── Kart 1: Son Aktivite ──
   const notifs = _loadNotifs().slice(0, 4);
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:7px">Son Aktivite</div>';
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:8px">Son Aktivite</div>';
   const ikonMap = {
     odeme: ['#E6F1FB', NAVY], tahsilat: ['#E6F1FB', NAVY],
     gorev: ['#EAF3DE', GREEN], uyari: ['#FCEBEB', RED], iddia: ['#EEEDFE', PURPLE]
@@ -462,18 +462,18 @@ function _renderAlt() {
     const typ = (n.type || 'gorev').toLowerCase();
     const ic = ikonMap[typ] || ikonMap.gorev;
     const saat = n.ts ? new Date(n.ts).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
-    h += '<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">'
-      + '<div style="width:23px;height:23px;border-radius:50%;background:' + ic[0] + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-      + '<span style="font-size:9px;color:' + ic[1] + '">●</span></div>'
-      + '<span style="flex:1;font-size:10px;color:' + T2 + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(n.msg || n.message || '') + '</span>'
-      + '<span style="font-size:9px;color:' + T3 + ';white-space:nowrap">' + saat + '</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      + '<div style="width:25px;height:25px;border-radius:50%;background:' + ic[0] + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+      + '<span style="font-size:10px;color:' + ic[1] + '">●</span></div>'
+      + '<span style="flex:1;font-size:11px;color:' + T2 + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(n.msg || n.message || '') + '</span>'
+      + '<span style="font-size:10px;color:' + T3 + ';white-space:nowrap">' + saat + '</span></div>';
   });
   h += '</div>';
 
   // ── Kart 2: Aktif İddialar ──
   const iddialar = _loadIddia().filter(x => x.durum === 'aktif').slice(0, 3);
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:7px">Aktif İddialar</div>';
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:8px">Aktif İddialar</div>';
   if (iddialar.length === 0) {
     h += '<div style="font-size:9px;color:' + T3 + ';text-align:center;padding:8px">Aktif iddia yok</div>';
   }
@@ -485,10 +485,10 @@ function _renderAlt() {
     const avBg = avColors[hash % avColors.length];
     const kalanGun = id.bitis ? Math.max(0, Math.ceil((new Date(id.bitis) - _now()) / 86400000)) : '—';
     const turBadge = id.tur === 'verimlilik' ? _ba('Verimlilik') : id.tur === 'kalite' ? _bp('Kalite') : id.tur === 'satis' ? _bg('Satış') : _bb('Süre');
-    h += '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
-      + '<div style="width:23px;height:23px;border-radius:50%;background:' + avBg + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0">' + harf + '</div>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:10px;color:' + T1 + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + baslık + '</div>'
-      + '<div style="display:flex;gap:4px;align-items:center;font-size:9px;color:' + T3 + '">' + kalanGun + 'g kaldı · ' + turBadge + '</div></div></div>';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
+      + '<div style="width:25px;height:25px;border-radius:50%;background:' + avBg + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">' + harf + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:11px;color:' + T1 + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + baslık + '</div>'
+      + '<div style="display:flex;gap:4px;align-items:center;font-size:10px;color:' + T3 + '">' + kalanGun + 'g kaldı · ' + turBadge + '</div></div></div>';
   });
   h += '</div>';
 
@@ -508,10 +508,10 @@ function _renderAlt() {
     { label: 'Yeni Müşteri ' + yeniM, pct: Math.round((yeniM / (q2.musteri || 1)) * 100) },
   ];
   h += '<div style="' + S_WK + '">'
-    + '<div style="font-size:12px;font-weight:500;color:' + T1 + ';margin-bottom:7px">Q2 Hedefleri</div>';
+    + '<div style="font-size:13px;font-weight:500;color:' + T1 + ';margin-bottom:8px">Q2 Hedefleri</div>';
   q2Items.forEach(item => {
     const c = item.pct >= 80 ? BLUE : item.pct >= 60 ? AMBER : '#E24B4A';
-    h += '<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:9px;color:' + T2 + ';margin-bottom:2px">'
+    h += '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:' + T2 + ';margin-bottom:2px">'
       + '<span>' + item.label + '</span><span style="color:' + c + '">' + _pct(item.pct) + '</span></div>'
       + _bar(item.pct, c) + '</div>';
   });
@@ -528,14 +528,14 @@ function _renderAlt() {
     const dayIdx = Math.floor(_now().getTime() / 86400000) % sozler.length;
     soz = sozler[dayIdx];
   }
-  h += '<div style="background:#042C53;border-radius:8px;padding:13px">';
-  h += '<div style="font-size:13px;color:#A32D2D;margin-bottom:7px">ℹ</div>';
+  h += '<div style="background:#042C53;border-radius:8px;padding:14px">';
+  h += '<div style="font-size:14px;color:#A32D2D;margin-bottom:8px">ℹ</div>';
   if (soz) {
-    h += '<div style="font-size:11px;color:#E6F1FB;font-style:italic;line-height:1.5">' + _esc(soz.soz || soz.text || '') + '</div>'
-      + '<div style="width:20px;height:1.5px;background:#378ADD;margin:7px 0"></div>'
-      + '<div style="font-size:10px;color:#85B7EB">' + _esc(soz.yazar || soz.author || '') + '</div>';
+    h += '<div style="font-size:12px;color:#E6F1FB;font-style:italic;line-height:1.5">' + _esc(soz.soz || soz.text || '') + '</div>'
+      + '<div style="width:22px;height:1.5px;background:#378ADD;margin:8px 0"></div>'
+      + '<div style="font-size:11px;color:#85B7EB">' + _esc(soz.yazar || soz.author || '') + '</div>';
   } else {
-    h += '<div style="font-size:11px;color:#85B7EB;font-style:italic">Henüz söz eklenmemiş</div>';
+    h += '<div style="font-size:12px;color:#85B7EB;font-style:italic">Henüz söz eklenmemiş</div>';
   }
   h += '</div>';
 
@@ -640,7 +640,7 @@ function renderDashboard() {
   const cu = _cu();
   if (!cu) return;
 
-  let h = '<div style="padding:16px 32px;background:' + BG3 + ';display:flex;flex-direction:column;gap:16px;min-height:100%">';
+  let h = '<div style="padding:18px 32px;background:' + BG3 + ';display:flex;flex-direction:column;gap:18px;min-height:100%">';
 
   // Üst butonlar (sağ üst)
   h += '<div style="display:flex;justify-content:flex-end;gap:6px">';
