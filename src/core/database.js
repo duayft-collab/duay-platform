@@ -1,4 +1,30 @@
 /**
+ * ════════════════════════════════════════
+ * LOCALSTORAGE POLİTİKASI — v2.0
+ * ════════════════════════════════════════
+ * Hedef: Daima <%60 dolu tut.
+ * Firestore gerçek veritabanı, localStorage sadece önbellek.
+ *
+ * YAZIM KURALLARI:
+ * 1. Her store fonksiyonu limit zorunlu: d.slice(0, MAX)
+ * 2. Base64 yasak — dosya = Firebase Storage URL
+ * 3. Koleksiyon limitleri:
+ *    trash:50  notifications:50  activity:100  kpiLog:500
+ *    tasks:500 (aktif+son100done) taskChats:20msg/task
+ *    odemeler:1000  tahsilat:1000  (diğerleri):200
+ * 4. Yeni koleksiyon: KEYS + limit + _ALL_SYNC_COLS + store slice
+ *
+ * OTOMATİK KORUMA:
+ * _write() → hata olunca emergency cleanup + retry
+ * bgCheck 5dk → %80:notif+trash  %90:activity  %95:taskChats
+ * _oneTimeStorageClean() → sayfa açılışında base64+limit temizlik
+ *
+ * FIRESTORE KURAL:
+ * trash, notifications, activity → merge yok, FS master
+ * ════════════════════════════════════════
+ */
+
+/**
  * ═══════════════════════════════════════════════════════════════
  * src/core/database.js  —  v8.1.0
  * Merkezi Veri Katmanı — Tüm load* / store* / save* fonksiyonları
