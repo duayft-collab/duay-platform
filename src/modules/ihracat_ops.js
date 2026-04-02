@@ -144,29 +144,22 @@ function _ihrAcDosya(id) { id = String(id); _aktifDosyaId = id; _aktifTab = 'emi
 function _ihrRenderDosyaDetay(id) {
   var el = _g('ihr-content'); if (!el) return;
   var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) { _aktifDosyaId = null; _ihrRenderContent(); return; }
-  var evraklar = _loadE().filter(function(e) { return e.dosya_id === d.id; });
-  var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
-
-  var h = '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:12px;background:var(--s2);flex-wrap:wrap">'
-    + '<button onclick="window._ihrGeriDon()" class="btn btns" style="font-size:11px">← Geri</button>'
-    + '<span style="font-size:13px;font-weight:500">' + _esc(d.dosyaNo) + '</span>'
-    + '<span style="font-size:12px;color:var(--t2)">' + _esc(d.musteriAd || '') + '</span>'
-    + _dosyaBadge(d.durum)
-    + '<div style="margin-left:auto;display:flex;gap:6px">'
-    + '<button class="btn btns" onclick="window._ihrDosyaDuzenle(\'' + d.id + '\')" style="font-size:11px">✏️ Düzenle</button>'
-    + (_isManager() ? '<button class="btn btns" onclick="window._ihrDurumDegistir(\'' + d.id + '\')" style="font-size:11px;color:#16A34A">Durum</button>' : '')
-    + '</div></div>';
-
-  // Alt sekmeler
-  var detayTabs = [['ozet','Özet'],['urunler','Ürünler'],['evraklar','Evraklar'],['gcb','GÇB'],['bl','BL']];
+  var today = _today(); var gecikmiMi = d.bitis_tarihi && d.bitis_tarihi < today && !['kapandi', 'iptal'].includes(d.durum);
+  var DURUM_STEPS = [{ v: 'taslak', l: 'Taslak' }, { v: 'hazirlaniyor', l: 'Hazırlanıyor' }, { v: 'yukleniyor', l: 'Yükleniyor' }, { v: 'yolda', l: 'Yolda' }, { v: 'teslim', l: 'Teslim' }];
+  var aktifIdx = -1; DURUM_STEPS.forEach(function(s, i) { if (s.v === d.durum) aktifIdx = i; });
+  // Timeline
+  var tlH = '<div style="display:flex;align-items:flex-start;gap:0;padding:14px 20px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  DURUM_STEPS.forEach(function(s, i) { var ok = i < aktifIdx; var on = i === aktifIdx; tlH += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="width:24px;height:24px;border-radius:50%;background:' + (ok ? '#EAF3DE' : on ? '#185FA5' : 'var(--sf)') + ';color:' + (ok ? '#27500A' : on ? '#fff' : 'var(--t3)') + ';border:' + (ok || on ? 'none' : '1px solid var(--bm)') + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500">' + (ok ? '✓' : (i + 1)) + '</div><div style="font-size:10px;color:' + (on ? '#185FA5' : ok ? '#27500A' : 'var(--t3)') + ';font-weight:' + (on ? '500' : '400') + '">' + _esc(s.l) + '</div></div>'; if (i < DURUM_STEPS.length - 1) tlH += '<div style="flex:1;height:1px;background:' + (i < aktifIdx ? '#185FA5' : 'var(--b)') + ';margin-top:12px"></div>'; });
+  tlH += '</div>';
+  // Üst bar
+  var h = '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--s2)"><button onclick="window._ihrGeriDon()" class="btn btns" style="font-size:11px;padding:4px 10px">← Geri</button><span style="font-size:13px;font-weight:500;color:var(--ac)">' + _esc(d.dosyaNo) + '</span><span style="font-size:12px;color:var(--t2)">' + _esc(d.musteriAd || '') + '</span>' + _dosyaBadge(d.durum) + (gecikmiMi ? '<span style="font-size:11px;color:#DC2626;font-weight:500">Gecikti</span>' : '') + '<div style="margin-left:auto;display:flex;gap:6px"><button class="btn btns" onclick="window._ihrDosyaDuzenle(\'' + id + '\')" style="font-size:11px">Düzenle</button>' + (_isManager() ? '<button class="btn" style="font-size:11px;background:#16A34A;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit" onclick="window._ihrDurumDegistir(\'' + id + '\')">Durum</button>' : '') + '</div></div>';
+  h += tlH;
+  // Sekmeler
+  var SEKMELER = [['ozet', 'Özet'], ['urunler', 'Ürünler'], ['evraklar', 'Evraklar'], ['gcb', 'GÇB'], ['bl', 'BL']];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px" id="ihr-detay-tabs">';
-  detayTabs.forEach(function(t, i) { h += '<div onclick="window._ihrDetayTab(\'' + t[0] + '\',\'' + d.id + '\')" id="ihr-dt-' + t[0] + '" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + t[1] + '</div>'; });
-  h += '</div>';
-  h += '<div id="ihr-detay-content"></div>';
-  el.innerHTML = h;
-
-  // Özet render
-  _ihrDetayRenderOzet(d, evraklar, tamam);
+  SEKMELER.forEach(function(t, i) { h += '<div onclick="window._ihrDetayTab(\'' + t[0] + '\',\'' + id + '\')" id="ihr-dt-' + t[0] + '" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + t[1] + '</div>'; });
+  h += '</div><div id="ihr-detay-content" style="padding:16px 20px"></div>';
+  el.innerHTML = h; _ihrDetayRenderOzet(d);
 }
 
 /* ── GÇB LİSTESİ ────────────────────────────────────────── */
@@ -268,24 +261,110 @@ function _ihrDetayRenderOzet(d) {
   var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
   var toplam = Object.keys(EVRAK_TUR).length;
+  var gumrukcu = d.gumrukcu_id ? _loadGM().find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
+  var forwarder = d.forwarder_id ? _loadFW().find(function(f) { return String(f.id) === String(d.forwarder_id); }) : null;
+  var today = _today();
+  var kalanGun = d.bitis_tarihi ? Math.ceil((new Date(d.bitis_tarihi) - new Date()) / 86400000) : null;
+  var gecenGun = d.baslangic_tarihi ? Math.ceil((new Date() - new Date(d.baslangic_tarihi)) / 86400000) : 0;
+  var toplamGun = d.sure_gun || 7;
+  var ilerlemePct = Math.min(100, Math.max(0, Math.round((gecenGun / toplamGun) * 100)));
 
-  var h = '<div style="padding:16px 20px">';
-  h += '<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Dosya Bilgileri</div>';
-  [['Dosya No',d.dosyaNo],['Müşteri',d.musteriAd],['Teslim Şekli',d.teslim_sekli],['Varış Limanı',d.varis_limani],['Yükleme Limanı',d.yukleme_limani||'İstanbul'],['Başlangıç',d.baslangic_tarihi],['Bitiş',d.bitis_tarihi],['Süre',(d.sure_gun||7)+' gün'],['Ödeme Şartı',d.odeme_sarti]].forEach(function(s) {
-    h += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t2)">' + _esc(s[0]) + '</span><span style="color:var(--t);font-weight:500">' + _esc(s[1] || '—') + '</span></div>';
+  /* ── EVRAK AKIŞ BİLGİSİ ── */
+  var EVRAK_AKIS = {
+    PI:    { ureten: 'İhracatçı', alici: 'Müşteri' },
+    CI:    { ureten: 'İhracatçı', alici: 'Müşteri / Gümrük' },
+    PL:    { ureten: 'İhracatçı', alici: 'Müşteri / Gümrük' },
+    SEVK:  { ureten: 'İhracatçı', alici: 'Forwarder' },
+    YUK:   { ureten: 'İhracatçı', alici: 'Forwarder' },
+    GCB:   { ureten: 'Gümrükçü', alici: 'Gümrük İdaresi' },
+    BL:    { ureten: 'Forwarder', alici: 'Müşteri / Banka' },
+    MENSEI:{ ureten: 'Ticaret Odası', alici: 'Müşteri / Gümrük' },
+    EUR1:  { ureten: 'Ticaret Odası', alici: 'Müşteri / Gümrük' },
+    INSP:  { ureten: 'İnspection Firma', alici: 'Müşteri' },
+    SIG:   { ureten: 'Sigorta Şirketi', alici: 'Banka / Müşteri' }
+  };
+
+  /* ── SOL PANEL ── */
+  var sol = '<div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:12px">';
+
+  /* Dosya Bilgileri Kartı */
+  sol += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">';
+  sol += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:600;color:var(--t);text-transform:uppercase;letter-spacing:.05em">Dosya Bilgileri</div>';
+  sol += '<div style="padding:10px 14px">';
+  [['Dosya No', d.dosyaNo], ['Müşteri', d.musteriAd], ['Teslim Şekli', d.teslim_sekli], ['Varış Limanı', d.varis_limani], ['Yükleme Limanı', d.yukleme_limani || 'İstanbul'], ['Ödeme Şartı', d.odeme_sarti], ['BL Türü', { seaway: 'SeaWay', hardcopy: 'Hard Copy', telex: 'Telex' }[d.bl_turu] || '—']].forEach(function(s) {
+    sol += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span style="color:var(--t2)">' + _esc(s[0]) + '</span><span style="color:var(--t);font-weight:500">' + _esc(s[1] || '—') + '</span></div>';
   });
+  if (d.whatsapp_grup) sol += '<div style="margin-top:8px"><a href="' + _esc(d.whatsapp_grup) + '" target="_blank" style="color:var(--ac);font-size:11px">WhatsApp Grubu →</a></div>';
+  if (d.not) sol += '<div style="margin-top:8px;background:var(--s2);padding:8px 10px;border-radius:6px;font-size:11px;color:var(--t2)">' + _esc(d.not) + '</div>';
+  sol += '</div></div>';
 
-  h += '<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Evrak Durumu (' + tamam + '/' + toplam + ')</div>';
+  /* Zaman Kartı */
+  sol += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">';
+  sol += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:600;color:var(--t);text-transform:uppercase;letter-spacing:.05em">Zaman</div>';
+  sol += '<div style="padding:10px 14px">';
+  sol += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px"><span style="color:var(--t2)">Başlangıç</span><span style="color:var(--t);font-weight:500">' + _esc(d.baslangic_tarihi || '—') + '</span></div>';
+  sol += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px"><span style="color:var(--t2)">Bitiş</span><span style="color:var(--t);font-weight:500">' + _esc(d.bitis_tarihi || '—') + '</span></div>';
+  /* Progress bar */
+  var barColor = kalanGun !== null && kalanGun < 0 ? '#DC2626' : kalanGun !== null && kalanGun <= 3 ? '#D97706' : '#185FA5';
+  sol += '<div style="background:var(--s2);border-radius:4px;height:6px;overflow:hidden;margin-bottom:6px"><div style="height:100%;border-radius:4px;background:' + barColor + ';width:' + ilerlemePct + '%"></div></div>';
+  sol += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3)"><span>' + gecenGun + '/' + toplamGun + ' gün</span>';
+  if (kalanGun !== null) {
+    sol += kalanGun < 0 ? '<span style="color:#DC2626;font-weight:500">' + Math.abs(kalanGun) + ' gün gecikti</span>' : '<span>' + kalanGun + ' gün kaldı</span>';
+  }
+  sol += '</div></div></div>';
+
+  /* Roller Kartı */
+  sol += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">';
+  sol += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:600;color:var(--t);text-transform:uppercase;letter-spacing:.05em">Roller</div>';
+  sol += '<div style="padding:10px 14px">';
+  /* Gümrükçü */
+  sol += '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Gümrükçü</div>';
+  if (gumrukcu) {
+    var vGun = gumrukcu.vekalet_bitis ? Math.ceil((new Date(gumrukcu.vekalet_bitis) - new Date()) / 86400000) : null;
+    sol += '<div style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(gumrukcu.firma_adi) + '</div>';
+    if (gumrukcu.yetkili_adi) sol += '<div style="font-size:10px;color:var(--t2)">' + _esc(gumrukcu.yetkili_adi) + '</div>';
+    if (vGun !== null && vGun <= 30) sol += '<div style="font-size:10px;color:' + (vGun <= 7 ? '#DC2626' : '#D97706') + ';font-weight:500;margin-top:2px">⚠ Vekalet: ' + vGun + ' gün kaldı</div>';
+  } else {
+    sol += '<div style="font-size:11px;color:var(--t3)">Atanmadı — <a href="javascript:void(0)" onclick="window._ihrGumrukcuAta(\'' + d.id + '\')" style="color:var(--ac)">Ata</a></div>';
+  }
+  sol += '<div style="margin:10px 0;border-top:0.5px solid var(--b)"></div>';
+  /* Forwarder */
+  sol += '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Forwarder</div>';
+  if (forwarder) {
+    sol += '<div style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(forwarder.firma_adi) + '</div>';
+    if ((forwarder.tercih_armator || []).length) sol += '<div style="font-size:10px;color:#16A34A;margin-top:2px">Tercih: ' + _esc(forwarder.tercih_armator.join(', ')) + '</div>';
+  } else {
+    sol += '<div style="font-size:11px;color:var(--t3)">Atanmadı — <a href="javascript:void(0)" onclick="window._ihrForwarderAta(\'' + d.id + '\')" style="color:var(--ac)">Ata</a></div>';
+  }
+  sol += '</div></div>';
+  sol += '</div>';
+
+  /* ── SAĞ PANEL — EVRAK DURUMU ── */
+  var sag = '<div style="flex:1.2;min-width:320px">';
+  sag += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">';
+  sag += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;font-weight:600;color:var(--t);text-transform:uppercase;letter-spacing:.05em">Evrak Durumu</div><div style="font-size:11px;color:var(--t2)">' + tamam + ' / ' + toplam + ' tamamlandı</div></div>';
+  sag += '<div style="padding:8px 14px">';
   Object.keys(EVRAK_TUR).forEach(function(k) {
     var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; });
     var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t)">' + _esc(v.l) + '</span><span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + durum.bg + ';color:' + durum.c + ';font-weight:500">' + durum.l + '</span></div>';
+    var akis = EVRAK_AKIS[k] || { ureten: '—', alici: '—' };
+    var btnHtml = '';
+    if (!ev) {
+      btnHtml = '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + k + '\')" style="font-size:9px;padding:1px 6px">Oluştur</button>';
+    } else if (ev.durum === 'taslak') {
+      btnHtml = '<button class="btn btns" onclick="window._ihrEvrakOnayla(\'' + ev.id + '\')" style="font-size:9px;padding:1px 6px">Onaya Gönder</button>';
+    } else if (ev.durum === 'onaylandi') {
+      btnHtml = '<button class="btn btns" onclick="window._ihrEvrakGonder(\'' + ev.id + '\')" style="font-size:9px;padding:1px 6px">Gönder</button>';
+    }
+    sag += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--b)">';
+    sag += '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;color:var(--t)">' + _esc(v.l) + '</div><div style="font-size:9px;color:var(--t3)">' + _esc(akis.ureten) + ' → ' + _esc(akis.alici) + '</div></div>';
+    sag += '<div style="flex-shrink:0">' + _badge(durum.l, durum.c, durum.bg) + '</div>';
+    if (btnHtml) sag += '<div style="flex-shrink:0">' + btnHtml + '</div>';
+    sag += '</div>';
   });
+  sag += '</div></div></div>';
 
-  if (d.whatsapp_grup) h += '<div style="margin-top:12px"><a href="' + _esc(d.whatsapp_grup) + '" target="_blank" style="color:var(--ac);font-size:12px">WhatsApp Grubu →</a></div>';
-  if (d.not) h += '<div style="margin-top:10px;background:var(--s2);padding:10px 12px;border-radius:8px;font-size:12px;color:var(--t2)">' + _esc(d.not) + '</div>';
-  h += '</div>';
-  c.innerHTML = h;
+  c.innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap">' + sol + sag + '</div>';
 }
 
 window._ihrDetayTab = function(tab, id) {
