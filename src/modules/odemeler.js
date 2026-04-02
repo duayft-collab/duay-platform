@@ -1003,7 +1003,7 @@ function renderOdemeler() {
   const lateN  = _myOdm.filter(o => !o.paid && o.due && o.due < today).length;
   const weekN  = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
   const paidN  = _myOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
-  const totalN = all.length;
+  const totalN = _allOdm.length + _allTah.length;
   const weekAmt = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
                      .reduce((s,o) => s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'), 0);
   const pendN  = _myOdm.filter(function(o) { return o.approvalStatus === 'pending' || o.approvalStatus === 'pending_dual_approval'; }).length;
