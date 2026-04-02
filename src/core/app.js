@@ -1859,7 +1859,7 @@ function _closeProfilePanel() {
 }
 
 function _closeProfileOnBlur(e) {
-  if (!e.target.closest('#profile-panel') && !e.target.closest('.uchip')) {
+  if (!e.target.closest('#profile-panel') && !e.target.closest('.uchip') && !e.target.closest('#tn2-profile-chip')) {
     _closeProfilePanel();
   }
 }
