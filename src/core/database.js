@@ -215,6 +215,14 @@ function _emergencyClean() {
  */
 function _write(key, value) {
   var now = new Date().toISOString();
+  // taskChats base64 engeli — Firestore sync dahil tüm yazmalardan önce
+  if ((key === KEYS.taskChats || key === 'ak_task_chat1') && value && typeof value === 'object' && !Array.isArray(value)) {
+    try { Object.keys(value).forEach(function(k) { (value[k] || []).forEach(function(m) { if (m.file && m.file.data && typeof m.file.data === 'string' && m.file.data.startsWith('data:')) { m.file = { name: m.file.name || 'dosya', _stripped: true }; } Object.keys(m).forEach(function(f) { if (m[f] && typeof m[f] === 'string' && m[f].startsWith('data:') && m[f].length > 1000) { m[f] = '[stripped]'; } }); }); }); } catch (e) {}
+  }
+  // tasks base64 engeli
+  if ((key === KEYS.tasks || key === 'ak_tk2') && Array.isArray(value)) {
+    try { value.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; } return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (t[f] && typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; } }); }); } catch (e) {}
+  }
   // Son güncelleme zamanını kaydet
   try { localStorage.setItem('ak_db_last_write', now); } catch(e) {}
   // Array verilerinde updatedAt — henüz yoksa ilk kez ata
