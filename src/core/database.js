@@ -213,12 +213,14 @@ function _write(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch (e) {
-    // Otomatik temizlik dene — notifications ve trash'i küçült
+    // Emergency: en büyük koleksiyonları küçült
     try {
-      var _notifs = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
-      if (_notifs.length > 25) localStorage.setItem(KEYS.notifications, JSON.stringify(_notifs.slice(0, 25)));
-      var _trash = JSON.parse(localStorage.getItem(KEYS.trash) || '[]');
-      if (_trash.length > 25) localStorage.setItem(KEYS.trash, JSON.stringify(_trash.slice(0, 25)));
+      var _en = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
+      if (_en.length > 25) localStorage.setItem(KEYS.notifications, JSON.stringify(_en.slice(0, 25)));
+      var _et = JSON.parse(localStorage.getItem(KEYS.trash) || '[]');
+      if (_et.length > 25) localStorage.setItem(KEYS.trash, JSON.stringify(_et.slice(0, 25)));
+      var _ea = JSON.parse(localStorage.getItem(KEYS.activity) || '[]');
+      if (_ea.length > 25) localStorage.setItem(KEYS.activity, JSON.stringify(_ea.slice(0, 25)));
     } catch (e2) { /* */ }
     // Retry
     try {
@@ -226,11 +228,8 @@ function _write(key, value) {
       return true;
     } catch (e3) {
       GlobalErrorHandler('_write:' + key, e3, 'err');
-      if (typeof window.toast === 'function') {
-        window.toast('Depolama %100 dolu — Ayarlar → Sağlık Monitörü\'nü açın', 'err');
-      }
+      window.toast?.('Depolama dolu — Ayarlar → Sağlık Monitörü', 'err');
       try { localStorage.setItem('ak_storage_critical', '1'); } catch (e4) { /* */ }
-      window._showStorageCriticalBanner?.();
       return false;
     }
   }
@@ -879,8 +878,8 @@ const DEFAULT_NOTES = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadAct()     { const d = _read(KEYS.activity); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 500 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 500));
-  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 500));
+/** @param {Array<Object>} d Son 100 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 100));
+  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 100));
 }
 
 /**
@@ -913,8 +912,8 @@ function logActivity(type, detail) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadNotifs()    { const d = _read(KEYS.notifications); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 100 kayıt */ function storeNotifs(d) {
-  var sliced = d.slice(0, 100);
+/** @param {Array<Object>} d Son 50 kayıt */ function storeNotifs(d) {
+  var sliced = d.slice(0, 50);
   _write(KEYS.notifications, sliced);
   // Notifications sync — debounced (500ms) to prevent rapid-fire writes
   clearTimeout(storeNotifs._timer);
@@ -1229,7 +1228,7 @@ const DEFAULT_KPI = [
 }
 
 /** @returns {Array<Object>} */ function loadKpiLog()      { const d = _read(KEYS.kpiLog); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 2000 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 2000)); var _fp = _fsPath('kpiLog'); if (_fp) _syncFirestore(_fp, d.slice(0, 2000)); }
+/** @param {Array<Object>} d Son 500 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 500)); var _fp = _fsPath('kpiLog'); if (_fp) _syncFirestore(_fp, d.slice(0, 500)); }
 
 /** @returns {Array<Object>} */ function loadKarar()       { const d = _read(KEYS.kararlar); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeKarar(d)     { _write(KEYS.kararlar, d); var _fp = _fsPath('kararlar'); if (_fp) _syncFirestore(_fp, d); }
@@ -2361,7 +2360,16 @@ function _startBgSyncCheck() {
     var _bgNoMerge = ['trash', 'notifications', 'activity'];
     allCols.forEach(function(pair) {
       var col = pair[0]; var key = pair[1];
-      if (_bgNoMerge.indexOf(col) !== -1) return; // merge yok, local master
+      if (_bgNoMerge.indexOf(col) !== -1) {
+        // Merge yapma, FS küçükse local'i küçült
+        FB_DB.collection(base).doc(col).get().then(function(snap) {
+          if (!snap.exists) return; var fs2 = snap.data()?.data;
+          if (!Array.isArray(fs2)) return;
+          var loc2 = []; try { loc2 = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+          if (Array.isArray(loc2) && fs2.length < loc2.length) { try { localStorage.setItem(key, JSON.stringify(fs2)); } catch(e) {} }
+        }).catch(function() {});
+        return;
+      }
       try {
         FB_DB.collection(base).doc(col).get().then(function(snap) {
           if (!snap.exists) return;
