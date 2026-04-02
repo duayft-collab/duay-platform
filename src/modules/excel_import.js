@@ -185,8 +185,14 @@ function _renderAdim2(tplBilgi) {
     h += '<div style="background:#FAEEDA;border-left:3px solid #D97706;padding:8px 14px;margin:8px 16px;border-radius:0 6px 6px 0;font-size:11px;color:#633806">Miktar sütunu eşleştirilmedi — aşağıdan manuel seçin</div>';
   }
   _kolonlar.forEach(function(k) {
+    /* Boş başlıklı sütunları (Sutun_N) gizle — ilk 5 satırda veri yoksa */
+    if (k.indexOf('Sutun_') === 0) {
+      var sutunDolu = false;
+      for (var si = 0; si < Math.min(5, _excelData.length); si++) { if (_excelData[si][k]) { sutunDolu = true; break; } }
+      if (!sutunDolu) return;
+    }
     var secili = _eslestirme[k] || 'atla'; var ornek = (_excelData[0] || {})[k] || '—';
-    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:0.5px solid var(--b);font-size:11px"><span style="flex:1;font-family:monospace;font-size:10px;color:var(--t2)">' + _esc(k) + '</span><span style="color:var(--t3)">→</span><select class="fi" style="font-size:10px;flex:1;padding:4px 6px" onchange="window._eslGuncelle(\'' + _esc(k).replace(/'/g, "\\'") + '\',this.value)">' + DUAY_ALANLARI.map(function(a) { return '<option value="' + a.v + '"' + (secili === a.v ? ' selected' : '') + '>' + _esc(a.l) + '</option>'; }).join('') + '</select><span style="flex:1;font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(String(ornek).slice(0, 30)) + '</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:0.5px solid var(--b);font-size:11px"><span style="flex:0 0 180px;font-family:monospace;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(k) + '</span><span style="color:var(--t3)">→</span><select class="fi" style="font-size:11px;min-width:200px;padding:6px 8px" onchange="window._eslGuncelle(\'' + _esc(k).replace(/'/g, "\\'") + '\',this.value)">' + DUAY_ALANLARI.map(function(a) { return '<option value="' + a.v + '"' + (secili === a.v ? ' selected' : '') + '>' + _esc(a.l) + '</option>'; }).join('') + '</select><span style="flex:1;font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(String(ornek).slice(0, 30)) + '</span></div>';
   });
   body.innerHTML = h;
   footer.innerHTML = '<button class="btn btns" onclick="window._excelImportGeri()">← Geri</button><button class="btn btnp" onclick="window._adim2Devam()">Devam →</button>';
