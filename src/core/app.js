@@ -3509,6 +3509,7 @@ var _TN2_GROUPS = {
   sistem: { label:'Sistem', mods: [
     { id:'admin',          label:'Kullanıcılar'       },
     { id:'settings',       label:'Ayarlar'            },
+    { id:'alarm',          label:'Alarmlar'           },
     { id:'sistem-testler', label:'Sistem Testleri'    },
     { id:'platform-rules', label:'Platform Kuralları' },
   ]},

@@ -140,6 +140,8 @@ const KEYS = {
   iddialar      : 'ak_iddialar1',
   ihracatOps    : 'ak_ihracat_ops1',
   gcb           : 'ak_gcb1',
+  alarms        : 'ak_alarms1',
+  alarmLog      : 'ak_alarm_log1',
   sozler        : 'ak_sozler1',
 };
 
