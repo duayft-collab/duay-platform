@@ -430,6 +430,14 @@ function _syncFirestore(path, data, mode = 'set') {
     var _useCritical = !!KEYS[collection] || _ALL_SYNC_COLS.indexOf(collection) !== -1;
 
     if (mode === 'set') {
+      // trash, notifications, activity → merge yok, direkt üzerine yaz
+      var _noMergeCols = ['trash', 'notifications', 'activity'];
+      if (Array.isArray(data) && _noMergeCols.indexOf(collection) !== -1) {
+        var _nmPayload = { data: data, syncedAt: syncedAt };
+        if (_useCritical && _isSafari) { _verifiedWrite(path, data); }
+        else { FB_DB.doc(path).set(_nmPayload).then(function() { if (_useCritical) _setSyncStatus('ok'); }).catch(function(e) { if (_useCritical) _setSyncStatus('error', collection + ': ' + e.message); }); }
+        return;
+      }
       // Önce mevcut Firestore verisini oku, merge et, sonra yaz (veri kaybı önleme)
       if (Array.isArray(data)) {
         FB_DB.doc(path).get().then(function(snap) {
@@ -1516,14 +1524,21 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
       _lastDataHash[collection] = dataHash;
 
-      // Merge: Firestore + localStorage birleştir (veri kaybı önleme)
-      var merged = _mergeDataSets(localKey, fsData, collection);
+      // trash, notifications, activity → merge yok, Firestore master
+      var _rtNoMerge = ['trash', 'notifications', 'activity'];
+      var merged;
+      if (_rtNoMerge.indexOf(collection) !== -1) {
+        // Merge yapmadan direkt Firestore verisini al
+        merged = Array.isArray(fsData) ? fsData : fsData;
+      } else {
+        merged = _mergeDataSets(localKey, fsData, collection);
+      }
       try {
         localStorage.setItem(localKey, JSON.stringify(merged));
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
-      // Merge sonucu Firestore'dan farklıysa geri yaz (notifications hariç — döngü önleme)
-      if (collection !== 'notifications' && Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
+      // Merge sonucu Firestore'dan farklıysa geri yaz (trash/notifications/activity hariç)
+      if (_rtNoMerge.indexOf(collection) === -1 && Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
         _syncFirestoreMerged(_base2 + '/' + collection, merged);
       }
 
@@ -2343,8 +2358,10 @@ function _startBgSyncCheck() {
     var base = 'duay_' + tid;
     // Tüm SYNC_MAP koleksiyonlarını kontrol et
     var allCols = _ALL_SYNC_COLS.map(function(col) { return [col, KEYS[col] || 'ak_' + col]; });
+    var _bgNoMerge = ['trash', 'notifications', 'activity'];
     allCols.forEach(function(pair) {
       var col = pair[0]; var key = pair[1];
+      if (_bgNoMerge.indexOf(col) !== -1) return; // merge yok, local master
       try {
         FB_DB.collection(base).doc(col).get().then(function(snap) {
           if (!snap.exists) return;
