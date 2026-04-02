@@ -559,25 +559,7 @@ window._ihrDetayTab = function(tab, id) {
   var c = _g('ihr-detay-content'); if (!c) return;
   if (tab === 'ozet') { _ihrDetayRenderOzet(d); return; }
   if (tab === 'urunler') { _ihrDetayRenderUrunler(d, c); return; }
-  if (tab === 'evraklar') {
-    var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
-    var evH = '<div style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:500">Evraklar</div><button class="btn btnp" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'CI\')" style="font-size:11px">+ CI Oluştur</button></div>';
-    evH += '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">';
-    Object.keys(EVRAK_TUR).forEach(function(k) {
-      var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; });
-      var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
-      evH += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:10px">';
-      evH += '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;font-weight:500">' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>';
-      evH += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
-      evH += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + k + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
-      if (ev && ev.dosya_url) evH += '<a href="' + _esc(ev.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
-      if (!ev) evH += '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + k + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>';
-      if (ev) evH += '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + ev.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>';
-      evH += '</div></div>';
-    });
-    evH += '</div></div>';
-    c.innerHTML = evH; return;
-  }
+  if (tab === 'evraklar') { window._ihrDetayRenderEvraklar(d, c); return; }
   if (tab === 'gumrukcu') {
     var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
     var gm = d.gumrukcu_id ? gumrukculer.find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
@@ -665,7 +647,10 @@ function _ihrDetayRenderUrunler(d, el) {
   if (eksikHs > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806;cursor:pointer" onclick="event.stopPropagation();window._ihrFiltrele(\'hs_kodu\',\'\')">HS Eksik: ' + eksikHs + '</span>';
   if (eksikFiyat > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FCEBEB;color:#791F1F">Fiyat Eksik: ' + eksikFiyat + '</span>';
   if (tutarsizSayi > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806">Tutarsız: ' + tutarsizSayi + '</span>';
-  h += '<span style="font-size:10px;color:var(--t3);margin-left:auto">Son: ' + _now().slice(11, 16) + '</span>';
+  var faturaTuruGrup = {};
+  tumurunler.forEach(function(u) { var ft = u.fatura_turu || 'Tanımsız'; if (!faturaTuruGrup[ft]) faturaTuruGrup[ft] = 0; faturaTuruGrup[ft] += (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); });
+  for (var ftk in faturaTuruGrup) { if (faturaTuruGrup[ftk] > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#EEEDFE;color:#26215C;white-space:nowrap">' + _esc(ftk.slice(0, 15)) + ': $' + Math.round(faturaTuruGrup[ftk]).toLocaleString('tr-TR') + '</span>'; }
+  h += '<span style="font-size:10px;color:var(--t3);margin-left:auto;flex-shrink:0">Son: ' + _now().slice(11, 16) + '</span>';
   h += '</div>';
 
   /* SATIR 2: Araçlar */
@@ -759,7 +744,7 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '</div></th>';
   });
   h += '<th style="width:50px"></th></tr></thead>';
-  h += '<tbody id="ihr-urun-tbody">';
+  h += '<tbody id="ihr-urun-tbody" onclick="event.stopPropagation()">';
 
   urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); }).forEach(function(u) {
     var kdvOrani = parseFloat(u.kdv_orani || 0);
@@ -774,7 +759,7 @@ function _ihrDetayRenderUrunler(d, el) {
     var eksikHsSatir = !u.hs_kodu;
     var rowBg = tutarsiz ? '#FAEEDA22' : eksikHsSatir ? '#FCEBEB11' : 'inherit';
 
-    h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '">';
+    h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '" onclick="event.stopPropagation()">';
     h += '<td><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="window._ihrUrunChkDegis()"></td>';
     h += '<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '—') + '</td>';
     h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'proforma_id\')" style="cursor:text;font-size:10px;color:var(--ac);font-family:monospace">' + _esc(u.proforma_id || '—') + '</td>';
@@ -1020,6 +1005,60 @@ window._ihrUrunTedarikciGrupla = function() {
     }
   });
   window.toast?.('Tedarikçi bazlı gruplandı', 'ok');
+};
+
+/* ── EVRAKLAR DETAY PANEL ─────────────────────────────────── */
+window._ihrDetayRenderEvraklar = function(d, c) {
+  if (!c) c = _g('ihr-detay-content'); if (!c) return;
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
+  var EVRAK_LIST = [
+    { tur: 'PI',    l: 'Proforma Invoice',        uretici: 'Duay',      aciklama: 'Satış teklifi / ön fatura',         duay: true },
+    { tur: 'CI',    l: 'Commercial Invoice',       uretici: 'Duay',      aciklama: 'Ticari fatura — CI tam + sansürlü', duay: true },
+    { tur: 'PL',    l: 'Packing List',             uretici: 'Duay',      aciklama: 'Ambalaj ve yükleme listesi',        duay: true },
+    { tur: 'SEVK',  l: 'Konteyner Sevk Emri',      uretici: 'Duay',      aciklama: 'Shipping instruction → Forwarder',  duay: true },
+    { tur: 'YUK',   l: 'Yükleme Talimatı',         uretici: 'Duay',      aciklama: 'Tedarikçi + Forwarder yükleme',     duay: true },
+    { tur: 'GCB',   l: 'Gümrük Çıkış Beyannamesi', uretici: 'Gümrükçü',  aciklama: 'GÇB → Duay → Forwarder',           duay: false },
+    { tur: 'BL',    l: 'Bill of Lading',            uretici: 'Forwarder', aciklama: 'Konşimento → Duay → Müşteri',       duay: false },
+    { tur: 'MENSEI',l: 'Menşei Şahadetnamesi',      uretici: 'Gümrükçü',  aciklama: 'Müşteri için menşei belgesi',       duay: false },
+    { tur: 'EUR1',  l: 'EUR.1 / A.TR',              uretici: 'Gümrükçü',  aciklama: 'Kara nakliyeli sevkiyatlarda',      duay: false },
+    { tur: 'INSP',  l: 'Inspection Raporu',          uretici: 'Gözetim',   aciklama: 'Gözetim şirketi → Duay → Müşteri', duay: false },
+    { tur: 'SIG',   l: 'Sigorta Poliçesi',           uretici: 'Sigorta',   aciklama: 'Teslim şekline göre belirlenir',   duay: false }
+  ];
+  var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
+  var h = '';
+  /* Özet bar */
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h += '<div><div style="font-size:13px;font-weight:500">Evrak Durumu</div><div style="font-size:11px;color:var(--t2);margin-top:2px">' + tamam + ' / ' + EVRAK_LIST.length + ' tamamlandı</div></div>';
+  h += '<div style="width:160px;height:6px;background:var(--b);border-radius:3px;overflow:hidden"><div style="width:' + Math.round((tamam / EVRAK_LIST.length) * 100) + '%;height:100%;background:#185FA5;border-radius:3px"></div></div>';
+  h += '</div>';
+  /* Evrak kartları */
+  EVRAK_LIST.forEach(function(ev) {
+    var kayit = null; evraklar.forEach(function(e) { if (e.tur === ev.tur) kayit = e; });
+    var durum = kayit ? (EVRAK_DURUM[kayit.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
+    var zamanTxt = kayit ? (kayit.gonderim_tarihi || kayit.updatedAt || '').slice(0, 16).replace('T', ' ') : '';
+    h += '<div style="border:0.5px solid var(--b);border-radius:10px;margin-bottom:8px;overflow:hidden">';
+    h += '<div style="display:flex;align-items:center;padding:10px 14px;background:var(--s2);gap:10px">';
+    h += '<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</span>' + _badge(durum.l, durum.c, durum.bg);
+    if (zamanTxt) h += '<span style="font-size:10px;color:var(--t3)">' + _esc(zamanTxt) + '</span>';
+    h += '</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + _esc(ev.uretici) + ' — ' + _esc(ev.aciklama) + '</div></div>';
+    /* Butonlar */
+    h += '<div style="display:flex;gap:5px">';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:3px 10px">Görüntüle</button>';
+    if (kayit && kayit.dosya_url) h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:3px 10px;text-decoration:none">İndir</a>';
+    if (ev.duay) {
+      if (!kayit) h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakOlustur(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Oluştur</button>';
+      else if (kayit.durum === 'taslak') h += '<button class="btn" onclick="event.stopPropagation();window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:3px 10px;background:#EAF3DE;color:#27500A;border-color:#97C459">Onayla</button>';
+      else if (kayit.durum === 'onaylandi') h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakGonderModal(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Gönder</button>';
+      else if (kayit.durum === 'gonderildi') h += '<span style="font-size:10px;color:#16A34A;padding:3px 6px">\u2713 Gönderildi</span>';
+    } else {
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Yükle</button>';
+    }
+    if (kayit) h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDuzenle(\'' + kayit.id + '\')" style="font-size:10px;padding:3px 10px">\u270f\ufe0f</button>';
+    h += '</div></div>';
+    if (kayit && kayit.not) h += '<div style="padding:6px 14px;font-size:11px;color:var(--t2);border-top:0.5px solid var(--b)">' + _esc(kayit.not) + '</div>';
+    h += '</div>';
+  });
+  c.innerHTML = h;
 };
 
 /* ── STUB'LAR ────────────────────────────────────────────── */
@@ -1328,26 +1367,55 @@ window._ihrUrunKaydet = function() {
 window._ihrTopluDuzenle = function(dosyaId) {
   var seciliIdler = []; document.querySelectorAll('.ihr-urun-chk:checked').forEach(function(c) { seciliIdler.push(c.dataset.id); });
   if (!seciliIdler.length) { window.toast?.('Ürün seçiniz', 'warn'); return; }
+  var seciliUrunler = _loadU().filter(function(u) { return seciliIdler.indexOf(String(u.id)) !== -1; });
   var old = _g('mo-toplu-edit'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-toplu-edit';
-  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">' + seciliIdler.length + ' Ürün — Toplu Düzenle</div>'
-    + '<div style="padding:18px 20px"><div style="font-size:11px;color:var(--t2);margin-bottom:12px">Doldurulan alanlar seçili tüm ürünlere uygulanacak. Boş bırakılan alanlar değiştirilmez.</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px">'
+  var urunListeHtml = ''; seciliUrunler.forEach(function(u) { urunListeHtml += '\u2022 ' + _esc(u.aciklama || u.urun_kodu || 'Ürün') + '<br>'; });
+  mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">' + seciliIdler.length + ' Ürün Seçildi — Toplu Düzenle</div>'
+    + '<div style="padding:18px 20px">'
+    + '<div style="background:#E6F1FB;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#0C447C">Doldurulan alanlar <strong>' + seciliIdler.length + ' ürüne</strong> uygulanır. Boş bırakılanlar değiştirilmez.</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
     + '<div class="fg"><div class="fl">Etiket Rengi</div><select class="fi" id="te-etiket"><option value="">— Değiştirme —</option><option>Mavi</option><option>Pembe</option><option>Sarı</option><option>Yeşil</option><option>Mor</option><option>Turuncu</option></select></div>'
     + '<div class="fg"><div class="fl">Yükleme Sırası</div><select class="fi" id="te-yukle"><option value="">— Değiştirme —</option><option>Önce Yükle</option><option>Sonra Yükle</option><option>Yer Olursa Yükle</option></select></div>'
     + '<div class="fg"><div class="fl">Teslim Tarihi</div><input class="fi" type="date" id="te-teslim-tarih"></div>'
-    + '<div class="fg"><div class="fl">Teslim Yeri</div><input class="fi" id="te-teslim-yer"></div>'
-    + '<div class="fg"><div class="fl">Fatura Türü</div><select class="fi" id="te-fatura"><option value="">— Değiştirme —</option><option>İhraç Kayıtlı KDV\'li</option><option>İhraç Kayıtlı KDV\'siz</option><option>KDV Muaf</option></select></div>'
-    + '<div class="fg"><div class="fl">Menşe Ülke</div><input class="fi" id="te-mense"></div>'
-    + '</div></div>'
-    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end"><button class="btn btns" onclick="document.getElementById(\'mo-toplu-edit\')?.remove()">İptal</button><button class="btn btnp" onclick="window._ihrTopluDuzenleKaydet(' + JSON.stringify(seciliIdler) + ')">Uygula</button></div></div>';
+    + '<div class="fg"><div class="fl">Teslim Yeri</div><input class="fi" id="te-teslim-yer" placeholder="Fabrika / İstanbul"></div>'
+    + '<div class="fg"><div class="fl">Fatura Türü</div><select class="fi" id="te-fatura"><option value="">— Değiştirme —</option><option>İhraç Kayıtlı KDV\'li</option><option>İhraç Kayıtlı KDV\'siz</option><option>Özel Matrah</option><option>KDV Muaf</option></select></div>'
+    + '<div class="fg"><div class="fl">Menşe Ülke</div><input class="fi" id="te-mense" placeholder="Türkiye"></div>'
+    + '<div class="fg"><div class="fl">Konteyner Sırası (başlangıç)</div><input class="fi" type="number" id="te-sira-bas" placeholder="1"><div style="font-size:10px;color:var(--t3);margin-top:3px">Her ürün için 1 artar</div></div>'
+    + '<div class="fg"><div class="fl">KDV Oranı</div><select class="fi" id="te-kdv"><option value="">— Değiştirme —</option><option value="0">%0</option><option value="10">%10</option><option value="18">%18</option><option value="20">%20</option></select></div>'
+    + '<div class="fg"><div class="fl">Alış Fatura No</div><input class="fi" id="te-alis-fatura" placeholder="FAT-2026-XXXX"></div>'
+    + '<div class="fg"><div class="fl">Proforma ID</div><input class="fi" id="te-proforma" placeholder="PI-2026-XXXX"></div>'
+    + '<div class="fg" style="grid-column:1/-1"><div class="fl">Duay Not</div><textarea class="fi" id="te-not" rows="2" style="resize:vertical"></textarea></div>'
+    + '</div>'
+    + '<div style="margin-top:12px;padding:10px 12px;background:var(--s2);border-radius:8px"><div style="font-size:10px;font-weight:500;color:var(--t2);margin-bottom:6px">Seçili Ürünler:</div><div style="font-size:11px;color:var(--t);max-height:80px;overflow-y:auto">' + urunListeHtml + '</div></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-toplu-edit\')?.remove()">İptal</button>'
+    + '<button class="btn btns btnd" onclick="window._ihrUrunTopluSil(\'' + dosyaId + '\')">Seçilenleri Sil</button>'
+    + '<button class="btn btnp" onclick="window._ihrTopluDuzenleKaydet(' + JSON.stringify(seciliIdler) + ')">Uygula</button>'
+    + '</div></div>';
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
 window._ihrTopluDuzenleKaydet = function(idler) {
   var urunler = _loadU();
-  var degerler = { etiket_rengi: (_g('te-etiket') || {}).value, once_yukle: (_g('te-yukle') || {}).value, teslim_tarihi: (_g('te-teslim-tarih') || {}).value, teslim_yeri: ((_g('te-teslim-yer') || {}).value || '').trim(), fatura_turu: (_g('te-fatura') || {}).value, mense_ulke: ((_g('te-mense') || {}).value || '').trim() };
-  idler.forEach(function(id) { var u = urunler.find(function(x) { return String(x.id) === String(id); }); if (!u) return; for (var k in degerler) { if (degerler[k]) u[k] = degerler[k]; } u.updatedAt = _now(); });
+  var etiket = (_g('te-etiket') || {}).value; var yukle = (_g('te-yukle') || {}).value;
+  var teslimTarih = (_g('te-teslim-tarih') || {}).value; var teslimYer = ((_g('te-teslim-yer') || {}).value || '').trim();
+  var fatura = (_g('te-fatura') || {}).value; var mense = ((_g('te-mense') || {}).value || '').trim();
+  var siraBase = parseInt((_g('te-sira-bas') || {}).value || 0); var kdv = (_g('te-kdv') || {}).value;
+  var alisFatura = ((_g('te-alis-fatura') || {}).value || '').trim(); var proforma = ((_g('te-proforma') || {}).value || '').trim();
+  var not = ((_g('te-not') || {}).value || '').trim();
+  var siraIdx = siraBase;
+  idler.forEach(function(id) {
+    var u = urunler.find(function(x) { return String(x.id) === String(id); }); if (!u) return;
+    if (etiket) u.etiket_rengi = etiket; if (yukle) u.once_yukle = yukle;
+    if (teslimTarih) u.teslim_tarihi = teslimTarih; if (teslimYer) u.teslim_yeri = teslimYer;
+    if (fatura) u.fatura_turu = fatura; if (mense) u.mense_ulke = mense;
+    if (siraBase) { u.konteyner_sira = siraIdx; siraIdx++; }
+    if (kdv) u.kdv_orani = parseFloat(kdv); if (alisFatura) u.alis_fatura_no = alisFatura;
+    if (proforma) u.proforma_id = proforma; if (not) u.duay_not = not;
+    u.updatedAt = _now();
+  });
   _storeU(urunler); _g('mo-toplu-edit')?.remove(); window.toast?.(idler.length + ' ürün güncellendi', 'ok'); window.renderIhracatOps?.();
 };
 
