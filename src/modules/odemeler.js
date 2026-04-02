@@ -152,6 +152,10 @@ async function _odmFetchTCMB() {
       try { var c = JSON.parse(localStorage.getItem('odm_rates_cache') || '{}'); if (c.r) { _odmRatesCache = c.r; _odmRatesDate = c.d; } } catch(e3) {}
     }
   }
+  // Hiçbir kaynak yoksa ticker'dan al
+  if (!_odmRatesCache || !Object.keys(_odmRatesCache).length) {
+    _odmRatesCache = { USD: _tickerRates.USD || 38.00, EUR: _tickerRates.EUR || 41.50, GBP: _tickerRates.GBP || 49.00 };
+  }
 }
 
 // Sayfa yüklenince kur çek
@@ -4061,7 +4065,7 @@ window.openHighAmountSettings = function() {
 // ════════════════════════════════════════════════════════════════
 
 /** @type {Object} Güncel kur verileri */
-var _tickerRates = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN: 3850, GUMUS: 38, BTC: 67000 };
+var _tickerRates = { USD: 38.00, EUR: 41.50, GBP: 49.00, ALTIN: 4100, BTC: 83000, GUMUS: 48.00 };
 
 function _calcAlisSatis() {
   _tickerRates.USD_ALIS = Math.round(_tickerRates.USD * 0.997 * 100) / 100;
@@ -4155,55 +4159,61 @@ function fetchKurRates() {
   _tickerRatesPrev = Object.assign({}, _tickerRates);
   var updated = false;
 
-  // 1) USD/EUR/GBP — exchangerate-api.com
-  fetch('https://api.exchangerate-api.com/v4/latest/USD')
+  // 1) USD/EUR/GBP — 3 API zinciri (frankfurter → exchangerate → er-api)
+  fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,EUR,GBP')
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d && d.rates && d.rates.TRY) {
         _tickerRates.USD = Math.round(d.rates.TRY * 100) / 100;
         _tickerRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100;
         _tickerRates.GBP = Math.round(d.rates.TRY / (d.rates.GBP || 1) * 100) / 100;
-        updated = true;
+        _calcAlisSatis(); updated = true;
       }
     })
-    .catch(function(e) { console.warn('[Kur] Döviz API hatası:', e.message); })
+    .catch(function() {
+      return fetch('https://api.exchangerate-api.com/v4/latest/USD').then(function(r) { return r.json(); }).then(function(d) {
+        if (d && d.rates && d.rates.TRY) { _tickerRates.USD = Math.round(d.rates.TRY * 100) / 100; _tickerRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100; _tickerRates.GBP = Math.round(d.rates.TRY / (d.rates.GBP || 1) * 100) / 100; _calcAlisSatis(); updated = true; }
+      });
+    })
+    .catch(function() {
+      return fetch('https://open.er-api.com/v6/latest/USD').then(function(r) { return r.json(); }).then(function(d) {
+        if (d && d.rates && d.rates.TRY) { _tickerRates.USD = Math.round(d.rates.TRY * 100) / 100; _tickerRates.EUR = Math.round(d.rates.TRY / (d.rates.EUR || 1) * 100) / 100; _tickerRates.GBP = Math.round(d.rates.TRY / (d.rates.GBP || 1) * 100) / 100; _calcAlisSatis(); updated = true; }
+      });
+    })
     .finally(function() {
       _tickerLastUpdate = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-      _calcAlisSatis();
       renderKurTicker();
       if (updated) _checkKurAlarm();
     });
 
-  // 2) Altın — metals.live (CORS proxy + localStorage fallback)
-  fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.metals.live/v1/spot'))
-    .then(function(r) { if (!r.ok) throw new Error('proxy'); return r.json(); })
+  // 2) Altın — goldapi → metals.live fallback → cache
+  fetch('https://www.goldapi.io/api/XAU/USD', { headers: { 'x-access-token': 'goldapi-demo' } })
+    .then(function(r) { if (!r.ok) throw new Error('goldapi'); return r.json(); })
     .then(function(d) {
-      // API [{gold: X, silver: Y, ...}] formatında döner
-      if (Array.isArray(d) && d.length > 0 && d[0].gold) {
-        // oz → gram: 1 troy oz = 31.1035 gram
-        var ozToGram = 31.1035;
-        var goldUsdPerGram = d[0].gold / ozToGram;
-        // TL'ye çevir
-        var tryRate = _tickerRates.USD || 38.50;
-        _tickerRates.ALTIN = Math.round(goldUsdPerGram * tryRate * 100) / 100;
-        localStorage.setItem('ak_altin_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.ALTIN }));
-        // Gümüş
-        if (d[0].silver) {
-          var silverPerGram = d[0].silver / ozToGram;
-          _tickerRates.GUMUS = Math.round(silverPerGram * tryRate * 100) / 100;
-          localStorage.setItem('ak_gumus_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.GUMUS }));
-        }
+      if (d && d.price) {
+        var gramUsd = d.price / 31.1035;
+        _tickerRates.ALTIN = Math.round(gramUsd * (_tickerRates.USD || 38) * 100) / 100;
         _calcAlisSatis();
+        localStorage.setItem('ak_altin_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.ALTIN }));
         renderKurTicker();
-        _checkKurAlarm();
       }
     })
     .catch(function() {
-      // localStorage fallback — son bilinen fiyat
-      try { var c = JSON.parse(localStorage.getItem('ak_altin_cache') || '{}'); if (c.rate) { _tickerRates.ALTIN = c.rate; } } catch(e) {}
-      try { var c2 = JSON.parse(localStorage.getItem('ak_gumus_cache') || '{}'); if (c2.rate) { _tickerRates.GUMUS = c2.rate; } } catch(e) {}
-      _calcAlisSatis();
-      renderKurTicker();
+      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.metals.live/v1/spot'))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (Array.isArray(d) && d[0] && d[0].gold) {
+            var gramUsd = d[0].gold / 31.1035; var tryRate = _tickerRates.USD || 38;
+            _tickerRates.ALTIN = Math.round(gramUsd * tryRate * 100) / 100;
+            if (d[0].silver) { _tickerRates.GUMUS = Math.round((d[0].silver / 31.1035) * tryRate * 100) / 100; }
+            _calcAlisSatis();
+            localStorage.setItem('ak_altin_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.ALTIN }));
+            renderKurTicker();
+          }
+        })
+        .catch(function() {
+          try { var c = JSON.parse(localStorage.getItem('ak_altin_cache') || '{}'); if (c.rate) { _tickerRates.ALTIN = c.rate; _calcAlisSatis(); renderKurTicker(); } } catch(e) {}
+        });
     });
 
   // 3) BTC — CoinGecko
@@ -4257,7 +4267,7 @@ function _checkKurAlarm() {
 function _startKurTicker() {
   if (_tickerInterval) clearInterval(_tickerInterval);
   fetchKurRates();
-  _tickerInterval = setInterval(fetchKurRates, 180000); // 3 dakika
+  _tickerInterval = setInterval(fetchKurRates, 60000); // 1 dakika
 }
 
 window._odmFetchKur = fetchKurRates;
