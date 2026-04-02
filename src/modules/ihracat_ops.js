@@ -767,6 +767,118 @@ window._ihrEvrakDuzenle = function(id) { var e = _loadE().find(function(x) { ret
 window._evKaydet = function() { var id = _g('ev-id')?.value; if (!id) return; var evraklar = _loadE(); var e = evraklar.find(function(x) { return String(x.id) === String(id); }); if (!e) return; e.durum = _g('ev-durum')?.value || e.durum; e.not = (_g('ev-not')?.value || '').trim(); e.updatedAt = _now(); _storeE(evraklar); _g('mo-ev-edit')?.remove(); window.toast?.('Güncellendi', 'ok'); window.renderIhracatOps?.(); };
 window._ihrEvrakEkle = function(dosyaId) { window._ihrEvrakOlustur(dosyaId || '', 'CI'); };
 
+// ── GÜMRÜKÇÜ / FORWARDER ATAMA ──────────────────────────
+window._ihrGumrukcuAta = function(dosyaId) {
+  var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
+  var cariList = typeof window.loadCari === 'function' ? window.loadCari().filter(function(c) { return !c.isDeleted; }) : [];
+
+  var secenekler = [];
+  gumrukculer.forEach(function(g) { secenekler.push({ id: 'gm_' + g.id, l: g.firma_adi + (g.yetkili_adi ? ' — ' + g.yetkili_adi : '') }); });
+  cariList.forEach(function(c) { secenekler.push({ id: 'cr_' + c.id, l: c.name + ' (Cari)' }); });
+
+  _moAc('mo-gm-ata', 'Gümrükçü Ata',
+    '<input type="hidden" id="gm-ata-dosya" value="' + dosyaId + '">'
+    + '<div class="fg"><div class="fl">Gümrükçü Seç</div>'
+    + '<select class="fi" id="gm-ata-sel" style="width:100%"><option value="">— Seçin —</option>'
+    + secenekler.map(function(s) { return '<option value="' + _esc(s.id) + '">' + _esc(s.l) + '</option>'; }).join('') + '</select></div>'
+    + '<div style="margin-top:8px;font-size:11px;color:var(--t2)">Listede yoksa önce <strong>Roller</strong> sekmesinden ekleyin.</div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-gm-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._gumrukcuAtaKaydet()">Ata</button>');
+};
+
+window._gumrukcuAtaKaydet = function() {
+  var dosyaId = (_g('gm-ata-dosya') || {}).value;
+  var secilen = (_g('gm-ata-sel') || {}).value;
+  if (!secilen) { window.toast?.('Gümrükçü seçiniz', 'err'); return; }
+
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+
+  if (secilen.indexOf('gm_') === 0) {
+    d.gumrukcu_id = secilen.replace('gm_', '');
+    var gm = _loadGM().find(function(g) { return String(g.id) === String(d.gumrukcu_id); });
+    d.gumrukcuAd = gm ? gm.firma_adi : '';
+  } else {
+    var cariId = secilen.replace('cr_', '');
+    var cariList = typeof window.loadCari === 'function' ? window.loadCari() : [];
+    var cari = null; cariList.forEach(function(c) { if (String(c.id) === String(cariId)) cari = c; });
+    if (cari) {
+      var gmList = _loadGM();
+      var existing = null; gmList.forEach(function(g) { if (g.cari_id === cariId) existing = g; });
+      if (existing) {
+        d.gumrukcu_id = existing.id;
+        d.gumrukcuAd = existing.firma_adi;
+      } else {
+        var yeni = { id: _genId(), firma_adi: cari.name, yetkili_adi: cari.contact || '', email: cari.email || '', telefon: cari.phone || '', aktif: true, cari_id: cariId, createdAt: _now(), createdBy: _cu()?.id };
+        gmList.unshift(yeni);
+        _storeGM(gmList);
+        d.gumrukcu_id = yeni.id;
+        d.gumrukcuAd = yeni.firma_adi;
+      }
+    }
+  }
+  d.updatedAt = _now();
+  _storeD(dosyalar);
+  _g('mo-gm-ata')?.remove();
+  window.toast?.('Gümrükçü atandı', 'ok');
+  window.logActivity?.('ihracat', 'Gümrükçü atandı: ' + (d.gumrukcuAd || '') + ' → ' + (d.dosyaNo || ''));
+  window.renderIhracatOps?.();
+};
+
+window._ihrForwarderAta = function(dosyaId) {
+  var forwarderlar = _loadFW().filter(function(f) { return !f.isDeleted; });
+  var cariList = typeof window.loadCari === 'function' ? window.loadCari().filter(function(c) { return !c.isDeleted; }) : [];
+
+  var secenekler = [];
+  forwarderlar.forEach(function(f) { secenekler.push({ id: 'fw_' + f.id, l: f.firma_adi }); });
+  cariList.forEach(function(c) { secenekler.push({ id: 'cr_' + c.id, l: c.name + ' (Cari)' }); });
+
+  _moAc('mo-fw-ata', 'Forwarder Ata',
+    '<input type="hidden" id="fw-ata-dosya" value="' + dosyaId + '">'
+    + '<div class="fg"><div class="fl">Forwarder Seç</div>'
+    + '<select class="fi" id="fw-ata-sel" style="width:100%"><option value="">— Seçin —</option>'
+    + secenekler.map(function(s) { return '<option value="' + _esc(s.id) + '">' + _esc(s.l) + '</option>'; }).join('') + '</select></div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-fw-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._forwarderAtaKaydet()">Ata</button>');
+};
+
+window._forwarderAtaKaydet = function() {
+  var dosyaId = (_g('fw-ata-dosya') || {}).value;
+  var secilen = (_g('fw-ata-sel') || {}).value;
+  if (!secilen) { window.toast?.('Forwarder seçiniz', 'err'); return; }
+
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+
+  if (secilen.indexOf('fw_') === 0) {
+    d.forwarder_id = secilen.replace('fw_', '');
+    var fw = _loadFW().find(function(f) { return String(f.id) === String(d.forwarder_id); });
+    d.forwarderAd = fw ? fw.firma_adi : '';
+  } else {
+    var cariId = secilen.replace('cr_', '');
+    var cariList = typeof window.loadCari === 'function' ? window.loadCari() : [];
+    var cari = null; cariList.forEach(function(c) { if (String(c.id) === String(cariId)) cari = c; });
+    if (cari) {
+      var fwList = _loadFW();
+      var existing = null; fwList.forEach(function(f) { if (f.cari_id === cariId) existing = f; });
+      if (existing) {
+        d.forwarder_id = existing.id;
+        d.forwarderAd = existing.firma_adi;
+      } else {
+        var yeni = { id: _genId(), firma_adi: cari.name, email: cari.email || '', telefon: cari.phone || '', tercih_armator: [], aktif: true, cari_id: cariId, createdAt: _now(), createdBy: _cu()?.id };
+        fwList.unshift(yeni);
+        _storeFW(fwList);
+        d.forwarder_id = yeni.id;
+        d.forwarderAd = yeni.firma_adi;
+      }
+    }
+  }
+  d.updatedAt = _now();
+  _storeD(dosyalar);
+  _g('mo-fw-ata')?.remove();
+  window.toast?.('Forwarder atandı', 'ok');
+  window.logActivity?.('ihracat', 'Forwarder atandı: ' + (d.forwarderAd || '') + ' → ' + (d.dosyaNo || ''));
+  window.renderIhracatOps?.();
+};
+
 // ── MAİL TASLAKLARI ──────────────────────────────────────
 window._ihrGumrukcuMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var gm = _loadGM().find(function(g) { return g.id === d.gumrukcu_id; }); var mail = 'Sayın ' + (gm?.yetkili_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nMüşteri: ' + d.musteriAd + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\n' + (d.gumrukcu_notu || '') + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret'; _moAc('mo-mail-gm', 'Gümrükçü Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-gm-to" value="' + _esc(gm?.email || '') + '"></div><textarea class="fi" id="m-gm-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-gm\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-gm-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-gm-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-gm-body\')?.value))">Mail Aç</button>'); };
 window._ihrForwarderMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var fw = _loadFW().find(function(f) { return f.id === d.forwarder_id; }); var mail = 'Sayın ' + (fw?.firma_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\nNavlun fiyatı ve uygun sefer önerisi beklenmektedir.\n\nSaygılarımızla,\nDuay Uluslararası Ticaret'; _moAc('mo-mail-fw', 'Forwarder Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-fw-to" value="' + _esc(fw?.email || '') + '"></div><textarea class="fi" id="m-fw-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-fw\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-fw-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-fw-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-fw-body\')?.value))">Mail Aç</button>'); };
