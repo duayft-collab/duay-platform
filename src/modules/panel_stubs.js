@@ -661,6 +661,7 @@ function emptyTrash() {
     confirmText: 'Evet, Temizle',
     onConfirm: () => {
       if (typeof storeTrash === 'function') storeTrash([]);
+      try { var fp2 = typeof window._fsPath === 'function' ? window._fsPath('trash') : null; var FB2 = window.Auth?.getFBDB?.(); if (fp2 && FB2) { FB2.doc(fp2).set({ data: [], updatedAt: new Date().toISOString() }).catch(function(e) { console.warn('[Trash] FS empty:', e); }); } } catch(e) {}
       renderTrashPanel();
       window.toast?.('Çöp kutusu temizlendi ✓', 'ok');
       window.logActivity?.('system', 'Çöp kutusu temizlendi');
@@ -717,8 +718,10 @@ window._trashPermanentDel = function(trashId) {
   var trash = typeof loadTrash === 'function' ? loadTrash() : [];
   trash = trash.filter(function(t){return t.id !== trashId;});
   if (typeof storeTrash === 'function') storeTrash(trash);
+  try { var fp = typeof window._fsPath === 'function' ? window._fsPath('trash') : null; var FB = window.Auth?.getFBDB?.(); if (fp && FB) { FB.doc(fp).set({ data: trash, updatedAt: new Date().toISOString() }).catch(function(e) { console.warn('[Trash] FS sil:', e); }); } } catch(e) {}
   renderTrashPanel();
   window.toast?.('Kalıcı silindi ✓', 'ok');
+  window.logActivity?.('system', 'Çöp kutusu: kalıcı silme #' + trashId);
 };
 
 // ════════════════════════════════════════════════════════════════
