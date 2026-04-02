@@ -102,6 +102,7 @@ function _injectKargoPanel(){
       }).join(''),
     '</div>',
     '</div>', // sticky wrapper close
+    '<div id="krg-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #F09595;align-items:center;gap:8px;font-size:11px;color:#791F1F"><span id="krg-bulk-cnt">0</span> kayıt seçili <button onclick="_krgBulkDelete()" style="padding:3px 10px;border-radius:5px;border:none;background:#791F1F;color:#fff;font-size:10px;cursor:pointer;font-family:inherit">Seçilenleri Sil</button><button onclick="_krgBulkClear()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;color:var(--t3);font-size:10px;cursor:pointer;font-family:inherit">İptal</button></div>',
     // İçerik — overflow parent (.main) tarafından yönetilir, nested scroll yok
     '<div>',
       '<div id="krg-content-navlun" style="display:none"></div>',
@@ -277,7 +278,8 @@ function _renderNavlunList(){
       var isOnayBekle=k.status==='onay_bekle';
       var rowBg=isOnayBekle?';background:rgba(133,79,11,.03)':isL?';background:rgba(163,45,45,.02)':'';
       var onayBadge=isOnayBekle?'<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(133,79,11,.1);color:#854F0B;margin-left:4px">Onay bekliyor</span>':'';
-      html+='<div style="display:grid;grid-template-columns:70px 200px 1fr 80px 140px;align-items:center;gap:10px;padding:11px 20px;border-bottom:1px solid var(--b)'+rowBg+'">'+
+      html+='<div style="display:grid;grid-template-columns:30px 70px 200px 1fr 80px 140px;align-items:center;gap:10px;padding:11px 20px;border-bottom:1px solid var(--b)'+rowBg+'">'+
+        '<input type="checkbox" class="krg-bulk-chk" data-id="'+k.id+'" onclick="event.stopPropagation();_krgBulkCheck()" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;accent-color:var(--ac)">'+
         '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:'+dc+';color:'+dcc+'">'+(k.dir==='gelen'?'Gelen':'Giden')+'</span>'+
         '<div>'+
           '<div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(k.firm||'-')+onayBadge+'</div>'+
@@ -1267,4 +1269,18 @@ else{
   window.printKargoRapor  = function(){window.toast?.('PDF rapor hazırlanıyor...','ok');};
   window.exportKargoXlsx  = function(){window.toast?.('Excel hazırlanıyor...','ok');};
   window.showNavlunKarsilastir = function(){window.toast?.('Navlun Teklifleri sekmesinde karşılaştırın','ok');};
+
+  // ── Kargo Toplu silme ──────────────────────────
+  window._krgBulkCheck = function() { var n = document.querySelectorAll('.krg-bulk-chk:checked').length; var bar = document.getElementById('krg-bulk-bar'); var cnt = document.getElementById('krg-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };
+  window._krgBulkClear = function() { document.querySelectorAll('.krg-bulk-chk').forEach(function(cb) { cb.checked = false; }); var bar = document.getElementById('krg-bulk-bar'); if (bar) bar.style.display = 'none'; };
+  window._krgBulkDelete = function() {
+    var ids = Array.from(document.querySelectorAll('.krg-bulk-chk:checked')).map(function(cb) { return parseInt(cb.dataset.id); });
+    if (!ids.length) return;
+    window.confirmModal(ids.length + ' kargo kaydı çöp kutusuna taşınacak. Geri alınabilir.', { title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: function() {
+      var data = typeof loadKargo === 'function' ? loadKargo() : []; var trash = typeof loadTrash === 'function' ? loadTrash() : []; var now = new Date().toISOString(); var exp = new Date(Date.now() + 30 * 86400000).toISOString();
+      data.forEach(function(k) { if (ids.indexOf(k.id) === -1) return; trash.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: k.firm || '—', moduleName: 'Kargo', originalCollection: 'kargo', originalData: Object.assign({}, k, { isDeleted: true, deletedAt: now }), deletedAt: now, deletedByName: window.CU?.()?.name || 'Kullanıcı', expiresAt: exp }); k.isDeleted = true; k.deletedAt = now; });
+      if (typeof saveKargo === 'function') saveKargo(data); if (typeof storeTrash === 'function') storeTrash(trash);
+      window._krgBulkClear(); KargoV10.render?.(); window.toast?.(ids.length + ' kayıt silindi ✓', 'ok'); window.logActivity?.('kargo', 'Toplu silme: ' + ids.length + ' kayıt');
+    }});
+  };
 }
