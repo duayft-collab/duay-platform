@@ -3472,7 +3472,6 @@ var _TN2_GROUPS = {
     { id:'numune',          label:'Numune Arşivi'   },
   ]},
   operasyon: { label:'Operasyon', mods: [
-    { id:'pusula',    label:'Görevler'         },
     { id:'evrak',     label:'Evrak'            },
     { id:'temizlik',  label:'Temizlik Kontrol' },
     { id:'arsiv-hub', label:'Arşiv'            },
