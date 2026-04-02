@@ -2398,6 +2398,11 @@ function _startBgSyncCheck() {
         var _kl1 = JSON.parse(localStorage.getItem(KEYS.kpiLog) || '[]');
         if (_kl1.length > 200) { localStorage.setItem(KEYS.kpiLog, JSON.stringify(_kl1.slice(-200))); }
       }
+      if (_lsPct >= 60) {
+        // taskChats+tasks base64 temizle
+        try { var _tcbg = JSON.parse(localStorage.getItem('ak_task_chat1') || '{}'); var _tcbgc = false; Object.keys(_tcbg).forEach(function(k) { (_tcbg[k] || []).forEach(function(m) { Object.keys(m).forEach(function(f) { if (m[f] && typeof m[f] === 'string' && m[f].startsWith('data:') && m[f].length > 1000) { m[f] = '[stripped]'; _tcbgc = true; } }); }); }); if (_tcbgc) localStorage.setItem('ak_task_chat1', JSON.stringify(_tcbg)); } catch (e) {}
+        try { var _tkbg = JSON.parse(localStorage.getItem('ak_tk2') || '[]'); var _tkbgc = false; _tkbg.forEach(function(t) { ['docs','attachments','files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { _tkbgc = true; return { name: d.name || 'dosya', _stripped: true }; } return d; }); } }); }); if (_tkbgc) localStorage.setItem('ak_tk2', JSON.stringify(_tkbg)); } catch (e) {}
+      }
       if (_lsPct < 60) { try { localStorage.removeItem('ak_storage_critical'); } catch (e) { /* */ } }
     } catch (e) { /* */ }
 
@@ -2720,6 +2725,10 @@ if (typeof module !== 'undefined' && module.exports) {
       } catch (e) { /* JSON parse hatası — atla */ }
     });
     if (_b64cleaned) console.log('[DB] Base64 temizlendi:', _b64cleaned, 'alan');
+    // taskChats base64 temizle
+    try { var _tcb = JSON.parse(localStorage.getItem('ak_task_chat1') || '{}'); var _tcbc = false; Object.keys(_tcb).forEach(function(k) { (_tcb[k] || []).forEach(function(m) { Object.keys(m).forEach(function(f) { if (m[f] && typeof m[f] === 'string' && m[f].startsWith('data:') && m[f].length > 1000) { m[f] = '[dosya-stripped]'; _tcbc = true; } if (m[f] && m[f].data && typeof m[f].data === 'string' && m[f].data.startsWith('data:')) { m[f] = { name: m[f].name || 'dosya', _stripped: true }; _tcbc = true; } }); }); }); if (_tcbc) { localStorage.setItem('ak_task_chat1', JSON.stringify(_tcb)); console.log('[DB] taskChats base64 temizlendi'); } } catch (e) {}
+    // tasks base64 temizle
+    try { var _tkb = JSON.parse(localStorage.getItem('ak_tk2') || '[]'); var _tkbc = false; _tkb.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { _tkbc = true; return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; } return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (t[f] && typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; _tkbc = true; } }); }); if (_tkbc) { localStorage.setItem('ak_tk2', JSON.stringify(_tkb)); console.log('[DB] tasks base64 temizlendi'); } } catch (e) {}
     // Koleksiyon limitleri
     var _trim = function(key, max) { try { var d = JSON.parse(localStorage.getItem(key) || '[]'); if (d.length > max) { localStorage.setItem(key, JSON.stringify(d.slice(-max))); console.log('[DB]', key, d.length, '→', max); } } catch(e) {} };
     _trim(KEYS.notifications, 30); _trim(KEYS.activity, 50); _trim(KEYS.trash, 30);
