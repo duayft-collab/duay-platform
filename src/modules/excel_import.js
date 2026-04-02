@@ -97,11 +97,14 @@ function _processRawData(rows) {
     window.toast?.('Baslik satiri bulunamadi — ilk 10 satirda en az 2 dolu sutun olmali', 'err'); return;
   }
 
-  _kolonlar = rows[headerRowIdx].map(function(k) { return String(k).trim(); }).filter(Boolean);
+  _kolonlar = rows[headerRowIdx].map(function(k, i) {
+    var temiz = String(k || '').trim();
+    return temiz || ('Sutun_' + (i + 1));
+  });
 
   /* Veri satirlari: baslik sonrasindaki bos olmayan satirlar */
   _excelData = rows.slice(headerRowIdx + 1)
-    .filter(function(r) { return r.some(function(c) { return String(c).trim(); }); })
+    .filter(function(r) { return r.some(function(c) { return String(c || '').trim(); }); })
     .map(function(r) {
       var obj = {};
       _kolonlar.forEach(function(k, i) { obj[k] = String(r[i] || '').trim(); });
@@ -167,7 +170,12 @@ function _processRawData(rows) {
 }
 
 function _renderAdim2(tplBilgi) {
-  var body = _g('excel-import-body'); var footer = _g('excel-import-footer'); if (!body) return;
+  var body = _g('excel-import-body'); var footer = _g('excel-import-footer');
+  if (!body) { console.error('excel-import-body bulunamadi'); return; }
+  if (!_kolonlar.length) {
+    body.innerHTML = '<div style="padding:20px;color:#DC2626">Sütun başlığı bulunamadı. Kolon sayısı: ' + _kolonlar.length + '</div>';
+    return;
+  }
   var h = _stepBar(2);
   h += '<div style="padding:8px 20px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;color:var(--t3);display:flex;justify-content:space-between"><span>Excel sütunu → Duay alanı</span><span>' + _excelData.length + ' satır</span></div>';
   _kolonlar.forEach(function(k) {
