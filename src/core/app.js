@@ -639,6 +639,17 @@ function _finishLogin(user) {
 
   logActivity('login', 'sisteme giriş yaptı');
 
+  // Login sonrası storage temizlik
+  setTimeout(function() {
+    try {
+      if (typeof window._stripBase64BeforeWrite === 'function') {
+        var tc = localStorage.getItem('ak_task_chat1'); if (tc) { try { var tco = JSON.parse(tc); window._stripBase64BeforeWrite('ak_task_chat1', tco); localStorage.setItem('ak_task_chat1', JSON.stringify(tco)); } catch (e) {} }
+        var tk = localStorage.getItem('ak_tk2'); if (tk) { try { var tka = JSON.parse(tk); window._stripBase64BeforeWrite('ak_tk2', tka); localStorage.setItem('ak_tk2', JSON.stringify(tka)); } catch (e) {} }
+      }
+      console.log('[Login] Storage temizlik tamamlandı');
+    } catch (e) {}
+  }, 3000);
+
   // Devam takibi — IP bazlı
   _trackAttendance(u);
 

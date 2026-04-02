@@ -2042,6 +2042,7 @@ window._getOfflineQueueLen = function() {
 
 /** Listener listesini dışa aç */
 window._dbListeners = _listeners;
+window._stripBase64BeforeWrite = _stripBase64BeforeWrite;
 
 /**
  * Veritabanı sağlık verilerini toplar.
