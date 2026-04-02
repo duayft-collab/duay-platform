@@ -489,6 +489,16 @@ function _ihrDetayRenderOzet(d) {
   }
   h += '</div>';
   h += '</div>';
+
+  /* Teklif Talepleri */
+  h += '<div style="margin-top:14px;padding-top:10px;border-top:0.5px solid var(--b)">';
+  h += '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Teklif Talepleri</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:6px">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">Sigorta Teklif Talebi</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">Navlun Teklif Talebi</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrIcNakliyeTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">İç Nakliye Teklif Talebi</button>';
+  h += '</div></div>';
+
   h += '</div>'; /* sol blok bitti */
 
   /* ── SAĞ BLOK: Evraklar ── */
@@ -944,6 +954,158 @@ window._ihrMsdsYukle = function(urunId) {
   if (!url) return;
   var urunler = _loadU(); var u = urunler.find(function(x) { return String(x.id) === String(urunId); });
   if (u) { u.imo_msds = url; u.updatedAt = _now(); window.storeIhracatUrunler?.(urunler); window.toast?.('MSDS yüklendi', 'ok'); window.renderIhracatOps?.(); }
+};
+
+/* ── SİGORTA TEKLİF FORMU ──────────────────────────────── */
+window._ihrSigortaTeklif = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var toplamUSD = urunler.reduce(function(s, u) { return s + (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); }, 0);
+  var toplamBrut = urunler.reduce(function(s, u) { return s + (parseFloat(u.brut_kg) || 0); }, 0);
+  var toplamM3 = urunler.reduce(function(s, u) { return s + (parseFloat(u.hacim_m3) || 0); }, 0);
+  var cif = (toplamUSD * 1.1).toFixed(2);
+  var urunTanim = urunler.slice(0, 3).map(function(u) { return u.aciklama || u.urun_kodu || ''; }).join(', ') + (urunler.length > 3 ? ' vb.' : '');
+  var old = _g('mo-sigorta-teklif'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sigorta-teklif';
+  mo.innerHTML = '<div class="moc" style="max-width:620px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Sigorta Teklif Talebi — ' + _esc(d.dosyaNo) + '</div>'
+    + '<div style="padding:18px 20px">'
+    + '<div style="background:rgba(24,95,165,.06);border:0.5px solid #B5D4F4;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:#185FA5">Bilgiler dosyadan otomatik dolduruldu. Kontrol edip mail gönderin.</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fg"><div class="fl">Yükleme Limanı</div><input class="fi" id="sig-yukl" value="' + _esc(d.yukleme_limani || 'Istanbul, Türkiye') + '"></div>'
+    + '<div class="fg"><div class="fl">Varış Limanı</div><input class="fi" id="sig-varis" value="' + _esc(d.varis_limani || '') + '"></div>'
+    + '<div class="fg"><div class="fl">Sigorta Değeri (CIF+%10)</div><input class="fi" id="sig-deger" value="USD ' + cif + '"></div>'
+    + '<div class="fg"><div class="fl">Sigorta Türü</div><select class="fi" id="sig-tur"><option>Tam Ziya (All Risk / ICC-A)</option><option>Dar Kapsamlı (ICC-C)</option><option>ICC-B</option></select></div>'
+    + '<div class="fg"><div class="fl">Konteyner Tipi</div><select class="fi" id="sig-kont"><option>40 HC</option><option>40 DC</option><option>20 DC</option></select></div>'
+    + '<div class="fg"><div class="fl">Brüt Ağırlık (kg)</div><input class="fi" id="sig-kg" value="' + toplamBrut.toFixed(0) + '"></div>'
+    + '<div class="fg"><div class="fl">Hacim (m³)</div><input class="fi" id="sig-m3" value="' + toplamM3.toFixed(2) + '"></div>'
+    + '<div class="fg"><div class="fl">Tahmini Yükleme</div><input class="fi" type="date" id="sig-tarih" value="' + (d.bitis_tarihi || '') + '"></div>'
+    + '<div class="fg" style="grid-column:1/-1"><div class="fl">Ürün Tanımı (EN)</div><input class="fi" id="sig-urun" value="' + _esc(urunTanim) + '"></div>'
+    + '<div class="fg"><div class="fl">Sigortacı E-posta</div><input class="fi" id="sig-email" placeholder="sigorta@firma.com"></div>'
+    + '</div></div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-sigorta-teklif\')?.remove()">Kapat</button>'
+    + '<button class="btn btnp" onclick="window._sigMailGonder()">Mail Aç</button></div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+window._sigMailGonder = function() {
+  var email = (_g('sig-email') || {}).value || '';
+  var varis = (_g('sig-varis') || {}).value || '';
+  var deger = (_g('sig-deger') || {}).value || '';
+  var tur = (_g('sig-tur') || {}).value || '';
+  var kont = (_g('sig-kont') || {}).value || '';
+  var kg = (_g('sig-kg') || {}).value || '';
+  var m3 = (_g('sig-m3') || {}).value || '';
+  var urun = (_g('sig-urun') || {}).value || '';
+  var tarih = (_g('sig-tarih') || {}).value || '';
+  var yukl = (_g('sig-yukl') || {}).value || '';
+  var konu = 'Sigorta Teklif Talebi — ' + varis + ' / ' + deger;
+  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için kargo sigortası teklifi talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme  : ' + yukl + '\nVarış    : ' + varis + '\nÜrün     : ' + urun + '\nBrüt KG  : ' + kg + ' kg | Hacim: ' + m3 + ' m³\nKonteyner: ' + kont + '\n\nSİGORTA TALEBİ\nSigorta Değeri : ' + deger + '\nSigorta Türü   : ' + tur + '\nYükleme Tarihi : ' + tarih + '\n\nTeklifinizi bekliyoruz.\nSaygılarımızla, Duay Uluslararası Ticaret';
+  window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
+  window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-sigorta-teklif')?.remove();
+};
+
+/* ── FORWARDER NAVLUN TEKLİF FORMU ────────────────────── */
+window._ihrForwarderTeklif = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var toplamBrut = urunler.reduce(function(s, u) { return s + (parseFloat(u.brut_kg) || 0); }, 0);
+  var toplamM3 = urunler.reduce(function(s, u) { return s + (parseFloat(u.hacim_m3) || 0); }, 0);
+  var toplamKoli = urunler.reduce(function(s, u) { return s + (parseInt(u.koli_adet) || 0); }, 0);
+  var imoVar = urunler.some(function(u) { return u.imo_urun === 'E'; });
+  var cariList = typeof window.loadCari === 'function' ? window.loadCari().filter(function(c) { return !c.isDeleted; }) : [];
+  var fwlar = cariList.filter(function(c) { return c.type === 'forwarder' || (c.name && c.name.toLowerCase().indexOf('forwarder') !== -1); });
+  var fwOpts = '<option value="">— Seç —</option>';
+  fwlar.forEach(function(f) { fwOpts += '<option value="' + _esc(f.email || '') + '">' + _esc(f.name) + '</option>'; });
+  fwOpts += '<option value="manuel">Manuel gir...</option>';
+  var old = _g('mo-forwarder-teklif'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-forwarder-teklif';
+  mo.innerHTML = '<div class="moc" style="max-width:640px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Navlun Teklif Talebi — ' + _esc(d.dosyaNo) + '</div>'
+    + '<div style="padding:18px 20px">'
+    + '<div style="background:#FAEEDA;border:0.5px solid #EF9F27;border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:11px;color:#633806">Navlun teklifinde fiyat bilgisi paylaşılmaz — sadece kg/m³/ürün türü gönderilir.</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fg"><div class="fl">Yükleme Limanı (POL)</div><input class="fi" id="fw-pol" value="' + _esc(d.yukleme_limani || 'Istanbul (TRIST)') + '"></div>'
+    + '<div class="fg"><div class="fl">Varış Limanı (POD)</div><input class="fi" id="fw-pod" value="' + _esc(d.varis_limani || '') + '"></div>'
+    + '<div class="fg"><div class="fl">Konteyner Tipi</div><select class="fi" id="fw-kont"><option>40 HC</option><option>40 DC</option><option>20 DC</option><option>Reefer</option></select></div>'
+    + '<div class="fg"><div class="fl">Adet</div><input class="fi" type="number" id="fw-adet" value="1"></div>'
+    + '<div class="fg"><div class="fl">Brüt KG</div><input class="fi" id="fw-kg" value="' + toplamBrut.toFixed(0) + '"></div>'
+    + '<div class="fg"><div class="fl">Hacim m³</div><input class="fi" id="fw-m3" value="' + toplamM3.toFixed(2) + '"></div>'
+    + '<div class="fg"><div class="fl">Koli Adedi</div><input class="fi" id="fw-koli" value="' + toplamKoli + '"></div>'
+    + '<div class="fg"><div class="fl">Ürün Türü</div><input class="fi" id="fw-urun" value="Non-Hazardous General Cargo' + (imoVar ? ' (IMO maddesi içerir)' : '') + '"></div>'
+    + '<div class="fg"><div class="fl">B/L Türü</div><select class="fi" id="fw-bl"><option>SeaWay BL</option><option>Hard Copy BL</option><option>Telex Release</option></select></div>'
+    + '<div class="fg"><div class="fl">Navlun Ödemesi</div><select class="fi" id="fw-odeme"><option>Prepaid</option><option>Collect</option></select></div>'
+    + '<div class="fg"><div class="fl">Yükleme Tarihi</div><input class="fi" type="date" id="fw-tarih" value="' + (d.bitis_tarihi || '') + '"></div>'
+    + '<div class="fg"><div class="fl">Son Teklif Tarihi</div><input class="fi" type="date" id="fw-son-tarih"></div>'
+    + '<div class="fg"><div class="fl">Tercih Armatör</div><input class="fi" id="fw-armator" placeholder="Maersk, CMA CGM..."></div>'
+    + '<div class="fg"><div class="fl">Forwarder</div><select class="fi" id="fw-email-sel" onchange="var e=document.getElementById(\'fw-email\');if(e&&this.value!==\'manuel\')e.value=this.value">' + fwOpts + '</select></div>'
+    + '<div class="fg" style="grid-column:1/-1"><div class="fl">E-posta</div><input class="fi" id="fw-email" placeholder="forwarder@firma.com"></div>'
+    + '</div></div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-forwarder-teklif\')?.remove()">Kapat</button>'
+    + '<button class="btn btnp" onclick="window._fwMailGonder()">Mail Aç</button></div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+window._fwMailGonder = function() {
+  var pol = (_g('fw-pol') || {}).value || ''; var pod = (_g('fw-pod') || {}).value || '';
+  var kont = (_g('fw-kont') || {}).value || ''; var adet = (_g('fw-adet') || {}).value || '1';
+  var kg = (_g('fw-kg') || {}).value || ''; var m3 = (_g('fw-m3') || {}).value || '';
+  var urun = (_g('fw-urun') || {}).value || ''; var bl = (_g('fw-bl') || {}).value || '';
+  var odeme = (_g('fw-odeme') || {}).value || ''; var tarih = (_g('fw-tarih') || {}).value || '';
+  var son = (_g('fw-son-tarih') || {}).value || ''; var armator = (_g('fw-armator') || {}).value || '';
+  var email = (_g('fw-email') || {}).value || '';
+  var konu = 'Navlun Fiyat Talebi — ' + pol + ' / ' + pod;
+  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için navlun fiyatı talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme : ' + pol + '\nVarış   : ' + pod + '\nKonteyner: ' + adet + 'x ' + kont + '\nBrüt KG : ' + kg + ' kg\nHacim   : ' + m3 + ' m³\nÜrün    : ' + urun + '\nB/L     : ' + bl + '\nNavlun  : ' + odeme + '\nYükleme : ' + tarih + (armator ? '\nTercih  : ' + armator : '') + '\nSon Teklif: ' + son + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret';
+  window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
+  window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-forwarder-teklif')?.remove();
+};
+
+/* ── İÇ NAKLİYE TEKLİF FORMU ─────────────────────────── */
+window._ihrIcNakliyeTeklif = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var toplamBrut = urunler.reduce(function(s, u) { return s + (parseFloat(u.brut_kg) || 0); }, 0);
+  var toplamM3 = urunler.reduce(function(s, u) { return s + (parseFloat(u.hacim_m3) || 0); }, 0);
+  var toplamKoli = urunler.reduce(function(s, u) { return s + (parseInt(u.koli_adet) || 0); }, 0);
+  /* Tedarikçi bazlı duraklar */
+  var tedMap = {};
+  urunler.forEach(function(u) { var k = u.tedarikciAd || 'Bilinmeyen'; if (!tedMap[k]) tedMap[k] = { ad: k, koli: 0, kg: 0 }; tedMap[k].koli += parseInt(u.koli_adet) || 0; tedMap[k].kg += parseFloat(u.brut_kg) || 0; });
+  var duraklar = Object.keys(tedMap).map(function(k) { return tedMap[k]; });
+  var durakHtml = '';
+  duraklar.forEach(function(t, i) {
+    durakHtml += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--sf)"><div style="font-size:11px;font-weight:500;margin-bottom:6px">' + (i + 1) + '. Durak — ' + _esc(t.ad) + '</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="fg"><div class="fl">Adres</div><input class="fi" id="nak-adr-' + i + '" placeholder="Fabrika adresi..."></div><div class="fg"><div class="fl">Koli</div><input class="fi" type="number" id="nak-koli-' + i + '" value="' + t.koli + '"></div><div class="fg"><div class="fl">KG</div><input class="fi" type="number" id="nak-kg-' + i + '" value="' + t.kg.toFixed(0) + '"></div></div></div>';
+  });
+  var old = _g('mo-ic-nakliye'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ic-nakliye';
+  mo.innerHTML = '<div class="moc" style="max-width:620px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">İç Nakliye Teklif Talebi — ' + _esc(d.dosyaNo) + '</div>'
+    + '<div style="padding:18px 20px">'
+    + '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Yükleme Durakları (Tedarikçi Bazlı)</div>' + durakHtml + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="fg" style="grid-column:1/-1"><div class="fl">Teslim Noktası (Liman/Depo)</div><input class="fi" id="nak-teslim" value="' + _esc(d.yukleme_limani || '') + '"></div>'
+    + '<div class="fg"><div class="fl">Teslim Tarihi</div><input class="fi" type="date" id="nak-tarih" value="' + (d.bitis_tarihi || '') + '"></div>'
+    + '<div class="fg"><div class="fl">Konteyner Tipi</div><select class="fi" id="nak-kont"><option>40 HC</option><option>40 DC</option><option>20 DC</option></select></div>'
+    + '<div class="fg"><div class="fl">Toplam KG</div><input class="fi" id="nak-toplam-kg" value="' + toplamBrut.toFixed(0) + '" readonly></div>'
+    + '<div class="fg"><div class="fl">Toplam m³</div><input class="fi" id="nak-toplam-m3" value="' + toplamM3.toFixed(2) + '" readonly></div>'
+    + '<div class="fg"><div class="fl">Nakliyeci E-posta</div><input class="fi" id="nak-email" placeholder="nakliye@firma.com"></div>'
+    + '<div class="fg"><div class="fl">Özel Talimat</div><input class="fi" id="nak-not" placeholder="Kırılır, dikkat vb..."></div>'
+    + '</div></div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-ic-nakliye\')?.remove()">Kapat</button>'
+    + '<button class="btn btnp" onclick="window._nakMailGonder(' + duraklar.length + ')">Mail Aç</button></div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+window._nakMailGonder = function(durakSayisi) {
+  var teslim = (_g('nak-teslim') || {}).value || ''; var tarih = (_g('nak-tarih') || {}).value || '';
+  var kont = (_g('nak-kont') || {}).value || ''; var email = (_g('nak-email') || {}).value || '';
+  var not = (_g('nak-not') || {}).value || '';
+  var kgTop = (_g('nak-toplam-kg') || {}).value || ''; var m3Top = (_g('nak-toplam-m3') || {}).value || '';
+  var durakMet = '';
+  for (var i = 0; i < durakSayisi; i++) { var adr = (_g('nak-adr-' + i) || {}).value || '—'; var koli = (_g('nak-koli-' + i) || {}).value || '0'; var kg = (_g('nak-kg-' + i) || {}).value || '0'; durakMet += '\n  ' + (i + 1) + '. Durak: ' + adr + ' — ' + koli + ' koli / ' + kg + ' kg'; }
+  var konu = 'İç Nakliye Teklif Talebi — ' + teslim;
+  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için iç nakliye teklifi talep etmekteyiz.\n\nYÜKLEME DURAKLARI:' + durakMet + '\n\nTESLİM BİLGİLERİ\nTeslim Yeri  : ' + teslim + '\nTeslim Tarihi: ' + tarih + '\nKonteyner    : ' + kont + '\nToplam KG    : ' + kgTop + ' kg\nToplam m³    : ' + m3Top + (not ? '\nÖzel Talimat : ' + not : '') + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret';
+  window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
+  window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-ic-nakliye')?.remove();
 };
 
 window._ihrFiltrele = function(kolon, deger) {
