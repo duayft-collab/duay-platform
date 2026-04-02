@@ -361,6 +361,13 @@ function _renderDetail(uid) {
         }).join('')}
       </div>
     </div>`;
+
+  // Puantaj yetki kartını kullanıcı profiline ekle
+  setTimeout(function() {
+    var oldKart = document.getElementById('puantaj-yetki-kart');
+    if (oldKart) oldKart.remove();
+    if (typeof window.renderPuantajYetkiKart === 'function') window.renderPuantajYetkiKart(uid);
+  }, 50);
 }
 
 // ── Modal: Kullanıcı Ekleme / Düzenleme ──────────────────────────
@@ -1941,9 +1948,7 @@ function renderSettingsAdmin(){
   if(vh){
     vh.innerHTML=CHANGELOG.slice(0,8).map(c=>`<div class="dr"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${c.v}</span><span style="font-size:11px;color:var(--t2)">${escapeHtml(c.note)}</span><span style="font-size:10px;color:var(--t3)">${c.ts.slice(0,10)}</span></div>`).join('');
   }
-  // Puantaj Yetki Kartı — dinamik render (G1: undefined guard)
-  if (typeof renderPuantajYetkiKart === 'function') renderPuantajYetkiKart();
-  else if (typeof window.renderPuantajYetkiKart === 'function') window.renderPuantajYetkiKart();
+  // Puantaj yetki kartı artık kullanıcı profilinde (adm-detail)
 }
 
 

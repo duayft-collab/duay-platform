@@ -826,17 +826,19 @@ function savePuanRecord(){
 // V18 EKSİK FONKSİYONLAR — IK/PUANTAJ/İZİN
 // ════════════════════════════════════════════════════════════════
 
-function renderPuantajYetkiKart(){
-  const panel=g('panel-settings');if(!panel)return;
+function renderPuantajYetkiKart(targetUid){
+  var panel=g('adm-detail')||g('panel-settings');if(!panel)return;
   let kart=g('puantaj-yetki-kart');
   if(!kart){
     kart=document.createElement('div');
     kart.id='puantaj-yetki-kart';
     kart.className='card';
     kart.style.maxWidth='560px';
+    kart.style.marginTop='16px';
     panel.appendChild(kart);
   }
-  const users=loadUsers().filter(u=>u.status==='active');
+  var allUsers=loadUsers().filter(u=>u.status==='active');
+  const users=targetUid?allUsers.filter(u=>u.id===targetUid):allUsers;
   kart.innerHTML=`
     <div class="ch">
       <span class="ct">🗓 Puantaj Giriş Yetkileri</span>
