@@ -154,13 +154,14 @@ async function _odmFetchTCMB() {
   }
   // Hiçbir kaynak yoksa ticker'dan al
   if (!_odmRatesCache || !Object.keys(_odmRatesCache).length) {
-    _odmRatesCache = { USD: _tickerRates.USD || 38.00, EUR: _tickerRates.EUR || 41.50, GBP: _tickerRates.GBP || 49.00 };
+    _odmRatesCache = { USD: _tickerRates.USD || 44.55, EUR: _tickerRates.EUR || 51.70, GBP: _tickerRates.GBP || 59.30 };
   }
 }
 
-// Sayfa yüklenince kur çek
+// Sayfa yüklenince kur çek + ticker başlat
 if (typeof window !== 'undefined') {
   setTimeout(() => _odmFetchTCMB().catch(() => {}), 2000);
+  setTimeout(function() { if (!_tickerInterval) _startKurTicker(); }, 3000);
   // İlk yüklemede localStorage verisini Firestore'a BİR KEZ yaz (sonsuz döngü koruması)
   setTimeout(function() {
     if (window._odmInitialSyncDone) return;
@@ -4065,7 +4066,7 @@ window.openHighAmountSettings = function() {
 // ════════════════════════════════════════════════════════════════
 
 /** @type {Object} Güncel kur verileri */
-var _tickerRates = { USD: 38.00, EUR: 41.50, GBP: 49.00, ALTIN: 4100, BTC: 83000, GUMUS: 48.00 };
+var _tickerRates = { USD: 44.55, EUR: 51.70, GBP: 59.30, ALTIN: 4100, BTC: 83000, GUMUS: 48.00 };
 
 function _calcAlisSatis() {
   _tickerRates.USD_ALIS = Math.round(_tickerRates.USD * 0.997 * 100) / 100;
