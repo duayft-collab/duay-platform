@@ -3440,49 +3440,49 @@ window.toggleNsec       = toggleNsec;
 var _TN2_GROUPS = {
   dashboard: { label:'Dashboard', mods: [
     { id:'dashboard', label:'Dashboard' },
-    { id:'pusula',    label:'Görevler'  },
-    { id:'takvim',    label:'Takvim'    },
-    { id:'announce',  label:'Duyurular' },
   ]},
-  finans: { label:'Finans', mods: [
-    { id:'odemeler',        label:'Nakit Akışı'      },
-    { id:'finans',          label:'Finans Paneli'    },
-    { id:'cari',            label:'Cari Yönetimi'    },
-    { id:'alis-teklifleri', label:'Alış Teklifleri'  },
-    { id:'satis-teklifleri',label:'Satış Teklifleri' },
-    { id:'pirim',           label:'Prim'             },
+  satis: { label:'Satış', mods: [
+    { id:'crm',              label:'CRM'              },
+    { id:'satis-teklifleri', label:'Satış Teklifleri' },
+    { id:'cari',             label:'Cariler'          },
+  ]},
+  satinalma: { label:'Satınalma', mods: [
+    { id:'satinalma',       label:'İş Takibi'       },
+    { id:'alis-teklifleri', label:'Alış Teklifleri' },
+    { id:'kargo',           label:'Kargo'           },
+    { id:'ihracat-ops',     label:'İhracat Ops'     },
+    { id:'urunler',         label:'Ürün Kataloğu'   },
+    { id:'numune',          label:'Numune Arşivi'   },
   ]},
   operasyon: { label:'Operasyon', mods: [
-    { id:'kargo',       label:'Kargo Takibi'  },
-    { id:'satinalma',   label:'Satın Alma'    },
-    { id:'ihracat-ops', label:'İhracat Ops'   },
-    { id:'stok',        label:'Stok / Zimmet' },
-    { id:'numune',      label:'Numune Arşivi' },
+    { id:'pusula',    label:'Görevler'         },
+    { id:'evrak',     label:'Evrak'            },
+    { id:'temizlik',  label:'Temizlik Kontrol' },
+    { id:'arsiv-hub', label:'Arşiv'            },
   ]},
-  katalog: { label:'Katalog', mods: [
-    { id:'urunler',          label:'Ürün Kataloğu'   },
-    { id:'crm',              label:'CRM / Müşteriler' },
-    { id:'alis-teklifleri',  label:'Alış Teklifleri'  },
-    { id:'satis-teklifleri', label:'Satış Teklifleri' },
-    { id:'urun-db',          label:'Ürün Veritabanı'  },
+  muhasebe: { label:'Muhasebe', mods: [
+    { id:'odemeler',  label:'Nakit Akışı' },
+    { id:'finans',    label:'Hesap Özeti' },
+    { id:'pirim',     label:'Prim'        },
+    { id:'kpi-panel', label:'KPI'         },
   ]},
   ik: { label:'İK', mods: [
-    { id:'ik-hub',   label:'İK Merkezi'       },
-    { id:'evrak',    label:'Personel Evrak'   },
-    { id:'temizlik', label:'Temizlik Kontrol' },
-    { id:'formlar',  label:'Form Şablonları'  },
+    { id:'ik-hub',  label:'İK Merkezi'      },
+    { id:'izin',    label:'İzin Takibi'     },
+    { id:'puantaj', label:'Puantaj'         },
+    { id:'formlar', label:'Form Şablonları' },
   ]},
   sistem: { label:'Sistem', mods: [
-    { id:'kpi-panel',       label:'KPI & Performans'   },
-    { id:'arsiv-hub',       label:'Arşiv & Belgeler'   },
-    { id:'admin',           label:'Kullanıcı Yönetimi' },
-    { id:'settings',        label:'Ayarlar'            },
-    { id:'sistem-testler',  label:'Sistem Testleri'    },
-    { id:'platform-rules',  label:'Platform Kuralları' },
+    { id:'admin',          label:'Kullanıcılar'       },
+    { id:'settings',       label:'Ayarlar'            },
+    { id:'sistem-testler', label:'Sistem Testleri'    },
+    { id:'platform-rules', label:'Platform Kuralları' },
   ]},
 };
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
 if (_tn2ActiveGrp === 'ekip') _tn2ActiveGrp = 'sistem';
+if (_tn2ActiveGrp === 'finans') _tn2ActiveGrp = 'muhasebe';
+if (_tn2ActiveGrp === 'katalog') _tn2ActiveGrp = 'satinalma';
 var _tn2ActiveMod = localStorage.getItem('ak_nav_modul') || 'dashboard';
 
 window._tn2SelectGrp = function(grp, el) {
