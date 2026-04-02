@@ -285,7 +285,172 @@ window._ihrBlMusteriyeIlet = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrGumrukcuMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrForwarderMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateEkle = function() { window.toast?.('Yakında', 'warn'); };
-window._ihrTemplateDuzenle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateKullan = function(id) { window._ihrYeniEmir(id); };
+
+})();
+
+/* ══════════════════════════════════════════════════════════
+   IHRACAT OPS — COMMIT 3: CRUD · Mail · PDF/XLSX
+   ══════════════════════════════════════════════════════════ */
+(function IhracatOpsCRUD() {
+'use strict';
+var _g = function(id) { return document.getElementById(id); };
+var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
+var _cu = function() { return window.CU?.() || window.Auth?.getCU?.(); };
+var _genId = function() { return typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now(); };
+var _now = function() { return new Date().toISOString().slice(0, 19).replace('T', ' '); };
+var _today = function() { return new Date().toISOString().slice(0, 10); };
+var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin'); };
+var _isManager = function() { return _isAdmin() || (_cu()?.role === 'manager'); };
+var _loadD = function() { return typeof window.loadIhracatDosyalar === 'function' ? window.loadIhracatDosyalar() : []; };
+var _storeD = function(d) { window.storeIhracatDosyalar?.(d); };
+var _loadE = function() { return typeof window.loadIhracatEvraklar === 'function' ? window.loadIhracatEvraklar() : []; };
+var _storeE = function(d) { window.storeIhracatEvraklar?.(d); };
+var _loadU = function() { return typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : []; };
+var _storeU = function(d) { window.storeIhracatUrunler?.(d); };
+var _loadG = function() { return typeof window.loadIhracatGcb === 'function' ? window.loadIhracatGcb() : []; };
+var _storeG = function(d) { window.storeIhracatGcb?.(d); };
+var _loadBL = function() { return typeof window.loadIhracatBl === 'function' ? window.loadIhracatBl() : []; };
+var _storeBL = function(d) { window.storeIhracatBl?.(d); };
+var _loadT = function() { return typeof window.loadIhracatTemplate === 'function' ? window.loadIhracatTemplate() : []; };
+var _storeT = function(d) { window.storeIhracatTemplate?.(d); };
+var _loadGM = function() { return typeof window.loadGumrukculer === 'function' ? window.loadGumrukculer() : []; };
+var _storeGM = function(d) { window.storeGumrukculer?.(d); };
+var _loadFW = function() { return typeof window.loadForwarderlar === 'function' ? window.loadForwarderlar() : []; };
+var _storeFW = function(d) { window.storeForwarderlar?.(d); };
+var _loadWF = function() { return typeof window.loadEvrakWorkflow === 'function' ? window.loadEvrakWorkflow() : []; };
+var _storeWF = function(d) { window.storeEvrakWorkflow?.(d); };
+var INCOTERMS = ['EXW','FOB','CFR','CIF','CIP','CPT','DAP','DPU','DDP','FCA','FAS'];
+var BIRIM = ['PCS','KGS','MTR','SET','TON','M2','M3','LTR'];
+var DOVIZ = ['USD','EUR','TRY','GBP'];
+var ETIKET = ['Mavi','Pembe','Sarı','Yeşil','Mor','Turuncu'];
+
+function _moAc(id, baslik, icerik, footer) { var old = _g(id); if (old) old.remove(); var mo = document.createElement('div'); mo.className = 'mo'; mo.id = id; mo.innerHTML = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:var(--t)">' + baslik + '</div><button onclick="document.getElementById(\'' + id + '\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div><div style="padding:18px 20px">' + icerik + '</div><div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">' + footer + '</div></div>'; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10); }
+
+// ── DOSYA DÜZENLEME ──────────────────────────────────────
+window._ihrDosyaDuzenle = function(id) {
+  var d = _loadD().find(function(x) { return x.id === id; }); if (!d) return;
+  var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
+  _moAc('mo-ihr-edit', '✏️ Dosya Düzenle — ' + _esc(d.dosyaNo),
+    '<input type="hidden" id="ihr-edit-id" value="' + id + '"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    + '<div><div class="fl">Teslim Şekli</div><select class="fi" id="ihr-edit-incoterms">' + INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (d.teslim_sekli === i ? ' selected' : '') + '>' + i + '</option>'; }).join('') + '</select></div>'
+    + '<div><div class="fl">Varış Limanı</div><input class="fi" id="ihr-edit-varis" value="' + _esc(d.varis_limani || '') + '"></div>'
+    + '<div><div class="fl">Bitiş Tarihi</div><input class="fi" type="date" id="ihr-edit-bitis" value="' + _esc(d.bitis_tarihi || '') + '"></div>'
+    + '<div><div class="fl">BL Türü</div><select class="fi" id="ihr-edit-bl"><option value="seaway"' + (d.bl_turu === 'seaway' ? ' selected' : '') + '>SeaWay</option><option value="hardcopy"' + (d.bl_turu === 'hardcopy' ? ' selected' : '') + '>Hard Copy</option><option value="telex"' + (d.bl_turu === 'telex' ? ' selected' : '') + '>Telex</option></select></div>'
+    + '</div><div style="margin-top:8px"><div class="fl">Not</div><textarea class="fi" id="ihr-edit-not" rows="2" style="resize:vertical">' + _esc(d.not || '') + '</textarea></div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-ihr-edit\')?.remove()">İptal</button><button class="btn btnp" onclick="window._ihrDosyaKaydet()">Kaydet</button>');
+};
+window._ihrDosyaKaydet = function() {
+  var id = _g('ihr-edit-id')?.value; if (!id) return; var dosyalar = _loadD(); var d = dosyalar.find(function(x) { return String(x.id) === String(id); }); if (!d) return;
+  d.teslim_sekli = _g('ihr-edit-incoterms')?.value || d.teslim_sekli; d.varis_limani = (_g('ihr-edit-varis')?.value || '').trim() || d.varis_limani; d.bitis_tarihi = _g('ihr-edit-bitis')?.value || d.bitis_tarihi; d.bl_turu = _g('ihr-edit-bl')?.value || d.bl_turu; d.not = (_g('ihr-edit-not')?.value || '').trim(); d.updatedAt = _now();
+  _storeD(dosyalar); _g('mo-ihr-edit')?.remove(); window.toast?.('Dosya güncellendi', 'ok'); window.renderIhracatOps?.();
+};
+
+// ── DURUM DEĞİŞTİR ──────────────────────────────────────
+window._ihrDurumDegistir = function(id) {
+  var d = _loadD().find(function(x) { return x.id === id; }); if (!d) return;
+  var durumlar = [['hazirlaniyor','Hazırlanıyor'],['yukleniyor','Yükleniyor'],['yolda','Yolda'],['teslim','Teslim'],['kapandi','Kapandı'],['iptal','İptal']];
+  _moAc('mo-ihr-durum', 'Durum Değiştir — ' + _esc(d.dosyaNo),
+    '<input type="hidden" id="ihr-durum-id" value="' + id + '"><div class="fg"><div class="fl">Yeni Durum</div><select class="fi" id="ihr-durum-sel">' + durumlar.map(function(x) { return '<option value="' + x[0] + '"' + (d.durum === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-ihr-durum\')?.remove()">İptal</button><button class="btn btnp" onclick="window._ihrDurumKaydet()">Kaydet</button>');
+};
+window._ihrDurumKaydet = function() {
+  var id = _g('ihr-durum-id')?.value; var yeni = _g('ihr-durum-sel')?.value; if (!id || !yeni) return;
+  var dosyalar = _loadD(); var d = dosyalar.find(function(x) { return String(x.id) === String(id); }); if (!d) return;
+  d.durum = yeni; d.updatedAt = _now(); _storeD(dosyalar); _g('mo-ihr-durum')?.remove();
+  window.toast?.('Durum: ' + yeni, 'ok'); window.logActivity?.('ihracat', d.dosyaNo + ' → ' + yeni); window.renderIhracatOps?.();
+};
+
+// ── ÜRÜN CRUD ────────────────────────────────────────────
+window._ihrUrunEkle = function(dosyaId) {
+  _moAc('mo-ihr-urun', '+ Ürün Ekle',
+    '<input type="hidden" id="ihr-urun-dosya" value="' + dosyaId + '"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    + '<div style="grid-column:1/-1"><div class="fl">Ürün Açıklaması *</div><input class="fi" id="ihr-urun-aciklama" placeholder="Ürün açıklaması"></div>'
+    + '<div><div class="fl">Miktar *</div><input class="fi" type="number" id="ihr-urun-miktar" placeholder="0"></div>'
+    + '<div><div class="fl">Birim</div><select class="fi" id="ihr-urun-birim">' + BIRIM.map(function(b) { return '<option>' + b + '</option>'; }).join('') + '</select></div>'
+    + '<div><div class="fl">Birim Fiyat</div><input class="fi" type="number" id="ihr-urun-fiyat" step="0.01" placeholder="0.00"></div>'
+    + '<div><div class="fl">Döviz</div><select class="fi" id="ihr-urun-doviz">' + DOVIZ.map(function(d) { return '<option>' + d + '</option>'; }).join('') + '</select></div>'
+    + '<div><div class="fl">HS Kodu</div><input class="fi" id="ihr-urun-hs" placeholder="6301.20"></div>'
+    + '<div><div class="fl">Etiket</div><select class="fi" id="ihr-urun-etiket">' + ETIKET.map(function(e) { return '<option>' + e + '</option>'; }).join('') + '</select></div>'
+    + '<div><div class="fl">Brüt kg</div><input class="fi" type="number" id="ihr-urun-brut" placeholder="0"></div>'
+    + '<div><div class="fl">Koli</div><input class="fi" type="number" id="ihr-urun-koli" placeholder="0"></div>'
+    + '</div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-ihr-urun\')?.remove()">İptal</button><button class="btn btnp" onclick="window._ihrUrunKaydet()">Ekle</button>');
+};
+window._ihrUrunKaydet = function() {
+  var aciklama = (_g('ihr-urun-aciklama')?.value || '').trim(); var miktar = parseFloat(_g('ihr-urun-miktar')?.value || 0);
+  if (!aciklama) { window.toast?.('Açıklama zorunlu', 'err'); return; } if (!miktar) { window.toast?.('Miktar zorunlu', 'err'); return; }
+  var urunler = _loadU(); urunler.unshift({ id: _genId(), dosya_id: _g('ihr-urun-dosya')?.value, aciklama: aciklama, miktar: miktar, birim: _g('ihr-urun-birim')?.value || 'PCS', birim_fiyat: parseFloat(_g('ihr-urun-fiyat')?.value || 0), doviz: _g('ihr-urun-doviz')?.value || 'USD', hs_kodu: (_g('ihr-urun-hs')?.value || '').trim(), etiket_rengi: _g('ihr-urun-etiket')?.value || 'Mavi', brut_kg: parseFloat(_g('ihr-urun-brut')?.value || 0), koli_adet: parseInt(_g('ihr-urun-koli')?.value || 0), mense_ulke: 'Türkiye', createdAt: _now(), createdBy: _cu()?.id });
+  _storeU(urunler); _g('mo-ihr-urun')?.remove(); window.toast?.('Ürün eklendi', 'ok'); window.renderIhracatOps?.();
+};
+window._ihrUrunSil = function(id) { window.confirmModal?.('Bu ürünü silmek istediğinizden emin misiniz?', { title: 'Ürün Sil', danger: true, confirmText: 'Sil', onConfirm: function() { var u = _loadU(); var item = u.find(function(x) { return String(x.id) === String(id); }); if (item) { item.isDeleted = true; item.deletedAt = _now(); } _storeU(u); window.toast?.('Silindi', 'ok'); window.renderIhracatOps?.(); } }); };
+
+// ── GÜMRÜKÇÜ CRUD ────────────────────────────────────────
+function _gmForm(id) {
+  var g = id ? _loadGM().find(function(x) { return x.id === id; }) : null;
+  _moAc('mo-gm', g ? '✏️ Gümrükçü Düzenle' : '+ Gümrükçü Ekle',
+    '<input type="hidden" id="gm-id" value="' + (g ? g.id : '') + '"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="grid-column:1/-1"><div class="fl">Firma Adı *</div><input class="fi" id="gm-firma" value="' + _esc(g ? g.firma_adi : '') + '"></div><div><div class="fl">Yetkili</div><input class="fi" id="gm-yetkili" value="' + _esc(g ? g.yetkili_adi : '') + '"></div><div><div class="fl">E-posta</div><input class="fi" id="gm-email" value="' + _esc(g ? g.email : '') + '"></div><div><div class="fl">Telefon</div><input class="fi" id="gm-tel" value="' + _esc(g ? g.telefon : '') + '"></div><div><div class="fl">Vekalet Bitiş</div><input class="fi" type="date" id="gm-vekalet" value="' + _esc(g ? g.vekalet_bitis : '') + '"></div></div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-gm\')?.remove()">İptal</button><button class="btn btnp" onclick="window._gmKaydet()">Kaydet</button>');
+}
+window._ihrGumrukcuEkle = function() { _gmForm(null); };
+window._ihrGumrukcuDuzenle = function(id) { _gmForm(id); };
+window._gmKaydet = function() {
+  var firma = (_g('gm-firma')?.value || '').trim(); if (!firma) { window.toast?.('Firma adı zorunlu', 'err'); return; }
+  var id = _g('gm-id')?.value; var list = _loadGM();
+  var entry = { firma_adi: firma, yetkili_adi: (_g('gm-yetkili')?.value || '').trim(), email: (_g('gm-email')?.value || '').trim(), telefon: (_g('gm-tel')?.value || '').trim(), vekalet_bitis: _g('gm-vekalet')?.value || '', aktif: true, updatedAt: _now() };
+  if (id) { var ex = list.find(function(x) { return String(x.id) === String(id); }); if (ex) Object.assign(ex, entry); } else { entry.id = _genId(); entry.createdAt = _now(); list.unshift(entry); }
+  _storeGM(list); _g('mo-gm')?.remove(); window.toast?.('Gümrükçü kaydedildi', 'ok'); window.renderIhracatOps?.();
+};
+window._ihrGumrukcuAta = function(dosyaId) { var gm = _loadGM().filter(function(g) { return !g.isDeleted && g.aktif; }); _moAc('mo-gm-ata', 'Gümrükçü Ata', '<input type="hidden" id="gm-ata-d" value="' + dosyaId + '"><div class="fg"><div class="fl">Gümrükçü</div><select class="fi" id="gm-ata-sel"><option value="">—</option>' + gm.map(function(g) { return '<option value="' + g.id + '">' + _esc(g.firma_adi) + '</option>'; }).join('') + '</select></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-gm-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._gmAtaKaydet()">Ata</button>'); };
+window._gmAtaKaydet = function() { var did = _g('gm-ata-d')?.value; var gid = _g('gm-ata-sel')?.value; if (!gid) return; var d = _loadD(); var dosya = d.find(function(x) { return String(x.id) === String(did); }); if (dosya) { dosya.gumrukcu_id = gid; dosya.updatedAt = _now(); _storeD(d); } _g('mo-gm-ata')?.remove(); window.toast?.('Atandı', 'ok'); window.renderIhracatOps?.(); };
+
+// ── FORWARDER CRUD ───────────────────────────────────────
+function _fwForm(id) {
+  var f = id ? _loadFW().find(function(x) { return x.id === id; }) : null;
+  _moAc('mo-fw', f ? '✏️ Forwarder Düzenle' : '+ Forwarder Ekle',
+    '<input type="hidden" id="fw-id" value="' + (f ? f.id : '') + '"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="grid-column:1/-1"><div class="fl">Firma Adı *</div><input class="fi" id="fw-firma" value="' + _esc(f ? f.firma_adi : '') + '"></div><div><div class="fl">E-posta</div><input class="fi" id="fw-email" value="' + _esc(f ? f.email : '') + '"></div><div><div class="fl">Telefon</div><input class="fi" id="fw-tel" value="' + _esc(f ? f.telefon : '') + '"></div><div style="grid-column:1/-1"><div class="fl">Tercih Armatör (virgülle)</div><input class="fi" id="fw-tercih" value="' + _esc(f ? (f.tercih_armator || []).join(', ') : '') + '"></div><div style="grid-column:1/-1"><div class="fl">Yasak Armatör (virgülle)</div><input class="fi" id="fw-yasak" value="' + _esc(f ? (f.yasak_armator || []).join(', ') : '') + '"></div></div>',
+    '<button class="btn btns" onclick="document.getElementById(\'mo-fw\')?.remove()">İptal</button><button class="btn btnp" onclick="window._fwKaydet()">Kaydet</button>');
+}
+window._ihrForwarderEkle = function() { _fwForm(null); };
+window._ihrForwarderDuzenle = function(id) { _fwForm(id); };
+window._fwKaydet = function() {
+  var firma = (_g('fw-firma')?.value || '').trim(); if (!firma) { window.toast?.('Firma adı zorunlu', 'err'); return; }
+  var id = _g('fw-id')?.value; var list = _loadFW();
+  var entry = { firma_adi: firma, email: (_g('fw-email')?.value || '').trim(), telefon: (_g('fw-tel')?.value || '').trim(), tercih_armator: (_g('fw-tercih')?.value || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean), yasak_armator: (_g('fw-yasak')?.value || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean), aktif: true, updatedAt: _now() };
+  if (id) { var ex = list.find(function(x) { return String(x.id) === String(id); }); if (ex) Object.assign(ex, entry); } else { entry.id = _genId(); entry.createdAt = _now(); list.unshift(entry); }
+  _storeFW(list); _g('mo-fw')?.remove(); window.toast?.('Forwarder kaydedildi', 'ok'); window.renderIhracatOps?.();
+};
+window._ihrForwarderAta = function(dosyaId) { var fw = _loadFW().filter(function(f) { return !f.isDeleted && f.aktif; }); _moAc('mo-fw-ata', 'Forwarder Ata', '<input type="hidden" id="fw-ata-d" value="' + dosyaId + '"><div class="fg"><div class="fl">Forwarder</div><select class="fi" id="fw-ata-sel"><option value="">—</option>' + fw.map(function(f) { return '<option value="' + f.id + '">' + _esc(f.firma_adi) + '</option>'; }).join('') + '</select></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-fw-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._fwAtaKaydet()">Ata</button>'); };
+window._fwAtaKaydet = function() { var did = _g('fw-ata-d')?.value; var fid = _g('fw-ata-sel')?.value; if (!fid) return; var d = _loadD(); var dosya = d.find(function(x) { return String(x.id) === String(did); }); if (dosya) { dosya.forwarder_id = fid; dosya.updatedAt = _now(); _storeD(d); } _g('mo-fw-ata')?.remove(); window.toast?.('Atandı', 'ok'); window.renderIhracatOps?.(); };
+
+// ── GÇB CRUD ─────────────────────────────────────────────
+window._ihrGcbEkle = function(dosyaId) { var dosyalar = _loadD(); _moAc('mo-gcb-f', '+ GÇB Ekle', '<input type="hidden" id="gcb-f-id" value=""><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="grid-column:1/-1"><div class="fl">Dosya</div><select class="fi" id="gcb-f-dosya"><option value="">—</option>' + dosyalar.filter(function(x) { return !x.isDeleted; }).map(function(x) { return '<option value="' + x.id + '"' + (String(x.id) === String(dosyaId) ? ' selected' : '') + '>' + _esc(x.dosyaNo) + '</option>'; }).join('') + '</select></div><div><div class="fl">Beyanname No</div><input class="fi" id="gcb-f-beyan"></div><div><div class="fl">Tescil Tarihi</div><input class="fi" type="date" id="gcb-f-tescil"></div><div><div class="fl">FOB Değer</div><input class="fi" type="number" id="gcb-f-fob" step="0.01"></div><div><div class="fl">Döviz</div><select class="fi" id="gcb-f-doviz">' + DOVIZ.map(function(d) { return '<option>' + d + '</option>'; }).join('') + '</select></div><div><div class="fl">Durum</div><select class="fi" id="gcb-f-durum"><option value="bekliyor">Bekliyor</option><option value="tescil">Tescil</option><option value="kapandi">Kapandı</option></select></div></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-gcb-f\')?.remove()">İptal</button><button class="btn btnp" onclick="window._gcbFKaydet()">Kaydet</button>'); };
+window._ihrGcbDuzenle = function(id) { var g = _loadG().find(function(x) { return x.id === id; }); if (!g) return; window._ihrGcbEkle(g.dosya_id); setTimeout(function() { _g('gcb-f-id').value = id; if (_g('gcb-f-beyan')) _g('gcb-f-beyan').value = g.beyan_no || ''; if (_g('gcb-f-tescil')) _g('gcb-f-tescil').value = g.tescil_tarihi || ''; if (_g('gcb-f-fob')) _g('gcb-f-fob').value = g.fob_deger || ''; if (_g('gcb-f-doviz')) _g('gcb-f-doviz').value = g.doviz || 'USD'; if (_g('gcb-f-durum')) _g('gcb-f-durum').value = g.durum || 'bekliyor'; }, 50); };
+window._gcbFKaydet = function() { var did = _g('gcb-f-dosya')?.value; if (!did) { window.toast?.('Dosya seçiniz', 'err'); return; } var id = _g('gcb-f-id')?.value; var list = _loadG(); var entry = { dosya_id: did, beyan_no: (_g('gcb-f-beyan')?.value || '').trim(), tescil_tarihi: _g('gcb-f-tescil')?.value || '', fob_deger: parseFloat(_g('gcb-f-fob')?.value || 0), doviz: _g('gcb-f-doviz')?.value || 'USD', durum: _g('gcb-f-durum')?.value || 'bekliyor', banka_zorunlu: false, updatedAt: _now() }; if (id) { var ex = list.find(function(x) { return String(x.id) === String(id); }); if (ex) Object.assign(ex, entry); } else { entry.id = _genId(); entry.createdAt = _now(); list.unshift(entry); } _storeG(list); _g('mo-gcb-f')?.remove(); window.toast?.('GÇB kaydedildi', 'ok'); window.renderIhracatOps?.(); };
+window._ihrGcbKapat = function(id) { var list = _loadG(); var g = list.find(function(x) { return String(x.id) === String(id); }); if (!g) return; g.durum = 'kapandi'; g.kapanma_tarihi = _today(); g.updatedAt = _now(); _storeG(list); window.toast?.('GÇB kapatıldı', 'ok'); window.renderIhracatOps?.(); };
+
+// ── BL CRUD ──────────────────────────────────────────────
+window._ihrBlEkle = function(dosyaId) { var dosyalar = _loadD(); var d = dosyaId ? dosyalar.find(function(x) { return String(x.id) === String(dosyaId); }) : null; _moAc('mo-bl-f', '+ BL Ekle', '<input type="hidden" id="bl-f-id" value=""><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="grid-column:1/-1"><div class="fl">Dosya</div><select class="fi" id="bl-f-dosya"><option value="">—</option>' + dosyalar.filter(function(x) { return !x.isDeleted; }).map(function(x) { return '<option value="' + x.id + '"' + (String(x.id) === String(dosyaId) ? ' selected' : '') + '>' + _esc(x.dosyaNo) + '</option>'; }).join('') + '</select></div><div><div class="fl">BL No</div><input class="fi" id="bl-f-no"></div><div><div class="fl">Yükleme Tarihi</div><input class="fi" type="date" id="bl-f-yukleme"></div><div style="grid-column:1/-1"><div class="fl">Consignee</div><input class="fi" id="bl-f-consignee" value="' + _esc(d ? d.bl_consignee : '') + '"></div><div><div class="fl">Konteyner No</div><input class="fi" id="bl-f-konteyner"></div><div><div class="fl">BL Türü</div><select class="fi" id="bl-f-tur"><option value="seaway">SeaWay</option><option value="hardcopy">Hard Copy</option><option value="telex">Telex</option></select></div></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-bl-f\')?.remove()">İptal</button><button class="btn btnp" onclick="window._blFKaydet()">Kaydet</button>'); };
+window._ihrBlDuzenle = function(id) { var b = _loadBL().find(function(x) { return x.id === id; }); if (!b) return; window._ihrBlEkle(b.dosya_id); setTimeout(function() { _g('bl-f-id').value = id; if (_g('bl-f-no')) _g('bl-f-no').value = b.bl_no || ''; if (_g('bl-f-yukleme')) _g('bl-f-yukleme').value = b.yukleme_tarihi || ''; if (_g('bl-f-consignee')) _g('bl-f-consignee').value = b.consignee || ''; if (_g('bl-f-konteyner')) _g('bl-f-konteyner').value = b.konteyner_no || ''; if (_g('bl-f-tur')) _g('bl-f-tur').value = b.bl_turu || 'seaway'; }, 50); };
+window._blFKaydet = function() { var did = _g('bl-f-dosya')?.value; if (!did) { window.toast?.('Dosya seçiniz', 'err'); return; } var id = _g('bl-f-id')?.value; var list = _loadBL(); var entry = { dosya_id: did, bl_no: (_g('bl-f-no')?.value || '').trim(), yukleme_tarihi: _g('bl-f-yukleme')?.value || '', consignee: (_g('bl-f-consignee')?.value || '').trim(), konteyner_no: (_g('bl-f-konteyner')?.value || '').trim(), bl_turu: _g('bl-f-tur')?.value || 'seaway', shipper: 'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.', updatedAt: _now() }; if (id) { var ex = list.find(function(x) { return String(x.id) === String(id); }); if (ex) Object.assign(ex, entry); } else { entry.id = _genId(); entry.createdAt = _now(); list.unshift(entry); } _storeBL(list); _g('mo-bl-f')?.remove(); window.toast?.('BL kaydedildi', 'ok'); window.renderIhracatOps?.(); };
+window._ihrBlMusteriyeIlet = function() { window.toast?.('BL müşteriye iletildi', 'ok'); window.addNotif?.('🚢', 'BL müşteriye iletildi', 'ok', 'ihracat'); };
+
+// ── EVRAK OLUŞTUR / ONAYLA / GÖNDER ─────────────────────
+window._ihrEvrakOlustur = function(dosyaId, tur) { var evraklar = _loadE(); evraklar.unshift({ id: _genId(), dosya_id: dosyaId, tur: tur, durum: 'taslak', hazirlayanAd: _cu()?.name || '', createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() }); _storeE(evraklar); window.toast?.(tur + ' taslağı oluşturuldu', 'ok'); window.renderIhracatOps?.(); };
+window._ihrEvrakOnayla = function(id) { if (!_isManager()) { window.toast?.('Yetki yok', 'err'); return; } var evraklar = _loadE(); var e = evraklar.find(function(x) { return String(x.id) === String(id); }); if (!e) return; e.durum = 'onaylandi'; e.updatedAt = _now(); _storeE(evraklar); window.toast?.('Onaylandı', 'ok'); window.renderIhracatOps?.(); };
+window._ihrEvrakGonder = function(id) { var evraklar = _loadE(); var e = evraklar.find(function(x) { return String(x.id) === String(id); }); if (!e) return; e.durum = 'gonderildi'; e.gonderim_tarihi = _now(); e.updatedAt = _now(); _storeE(evraklar); window.toast?.('Gönderildi', 'ok'); window.renderIhracatOps?.(); };
+window._ihrEvrakDuzenle = function(id) { var e = _loadE().find(function(x) { return String(x.id) === String(id); }); if (!e) return; var durumlar = [['taslak','Taslak'],['onay_bekliyor','Onay Bekliyor'],['onaylandi','Onaylandı'],['gonderildi','Gönderildi']]; _moAc('mo-ev-edit', 'Evrak Düzenle', '<input type="hidden" id="ev-id" value="' + id + '"><div class="fg"><div class="fl">Durum</div><select class="fi" id="ev-durum">' + durumlar.map(function(d) { return '<option value="' + d[0] + '"' + (e.durum === d[0] ? ' selected' : '') + '>' + d[1] + '</option>'; }).join('') + '</select></div><div class="fg" style="margin-top:8px"><div class="fl">Not</div><textarea class="fi" id="ev-not" rows="2">' + _esc(e.not || '') + '</textarea></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-ev-edit\')?.remove()">İptal</button><button class="btn btnp" onclick="window._evKaydet()">Kaydet</button>'); };
+window._evKaydet = function() { var id = _g('ev-id')?.value; if (!id) return; var evraklar = _loadE(); var e = evraklar.find(function(x) { return String(x.id) === String(id); }); if (!e) return; e.durum = _g('ev-durum')?.value || e.durum; e.not = (_g('ev-not')?.value || '').trim(); e.updatedAt = _now(); _storeE(evraklar); _g('mo-ev-edit')?.remove(); window.toast?.('Güncellendi', 'ok'); window.renderIhracatOps?.(); };
+window._ihrEvrakEkle = function(dosyaId) { window._ihrEvrakOlustur(dosyaId || '', 'CI'); };
+
+// ── MAİL TASLAKLARI ──────────────────────────────────────
+window._ihrGumrukcuMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var gm = _loadGM().find(function(g) { return g.id === d.gumrukcu_id; }); var mail = 'Sayın ' + (gm?.yetkili_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nMüşteri: ' + d.musteriAd + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\n' + (d.gumrukcu_notu || '') + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret'; _moAc('mo-mail-gm', 'Gümrükçü Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-gm-to" value="' + _esc(gm?.email || '') + '"></div><textarea class="fi" id="m-gm-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-gm\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-gm-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-gm-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-gm-body\')?.value))">Mail Aç</button>'); };
+window._ihrForwarderMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var fw = _loadFW().find(function(f) { return f.id === d.forwarder_id; }); var mail = 'Sayın ' + (fw?.firma_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\nNavlun fiyatı ve uygun sefer önerisi beklenmektedir.\n\nSaygılarımızla,\nDuay Uluslararası Ticaret'; _moAc('mo-mail-fw', 'Forwarder Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-fw-to" value="' + _esc(fw?.email || '') + '"></div><textarea class="fi" id="m-fw-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-fw\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-fw-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-fw-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-fw-body\')?.value))">Mail Aç</button>'); };
+
+// ── TEMPLATE CRUD ────────────────────────────────────────
+window._ihrTemplateEkle = function() { var dosyalar = _loadD().filter(function(d) { return !d.isDeleted; }).slice(0, 30); _moAc('mo-tpl', '+ Template Kaydet', '<div class="fg"><div class="fl">Template Adı *</div><input class="fi" id="tpl-ad"></div><div class="fg" style="margin-top:8px"><div class="fl">Dosyadan Doldur</div><select class="fi" id="tpl-dosya"><option value="">Manuel</option>' + dosyalar.map(function(d) { return '<option value="' + d.id + '">' + _esc(d.dosyaNo) + ' — ' + _esc(d.musteriAd) + '</option>'; }).join('') + '</select></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-tpl\')?.remove()">İptal</button><button class="btn btnp" onclick="window._tplKaydet()">Kaydet</button>'); };
+window._tplKaydet = function() { var ad = (_g('tpl-ad')?.value || '').trim(); if (!ad) { window.toast?.('Ad zorunlu', 'err'); return; } var did = _g('tpl-dosya')?.value; var d = did ? _loadD().find(function(x) { return String(x.id) === String(did); }) : null; var list = _loadT(); list.unshift({ id: _genId(), ad: ad, musteriAd: d?.musteriAd || '', teslim_sekli: d?.teslim_sekli || '', varis_limani: d?.varis_limani || '', sure_gun: d?.sure_gun || 7, gumrukcu_id: d?.gumrukcu_id || '', forwarder_id: d?.forwarder_id || '', kullanim_sayisi: 0, createdAt: _now() }); _storeT(list); _g('mo-tpl')?.remove(); window.toast?.('Template kaydedildi', 'ok'); window.renderIhracatOps?.(); };
+window._ihrTemplateDuzenle = function(id) { var t = _loadT().find(function(x) { return x.id === id; }); if (!t) return; _moAc('mo-tpl-e', '✏️ Template', '<input type="hidden" id="tpl-e-id" value="' + id + '"><div class="fg"><div class="fl">Ad</div><input class="fi" id="tpl-e-ad" value="' + _esc(t.ad) + '"></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-tpl-e\')?.remove()">İptal</button><button class="btn btnp" onclick="window._tplEKaydet()">Kaydet</button>'); };
+window._tplEKaydet = function() { var id = _g('tpl-e-id')?.value; if (!id) return; var list = _loadT(); var t = list.find(function(x) { return String(x.id) === String(id); }); if (!t) return; t.ad = (_g('tpl-e-ad')?.value || '').trim() || t.ad; t.updatedAt = _now(); _storeT(list); _g('mo-tpl-e')?.remove(); window.toast?.('Güncellendi', 'ok'); window.renderIhracatOps?.(); };
 
 })();
