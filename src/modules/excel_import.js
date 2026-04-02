@@ -267,7 +267,15 @@ window._renderAdim4 = function() {
   var body = _g('excel-import-body'); var footer = _g('excel-import-footer'); if (!body) return;
   var dosyalar = typeof window.loadIhracatDosyalar === 'function' ? window.loadIhracatDosyalar().filter(function(d) { return !d.isDeleted; }) : [];
   var h = _stepBar(4);
+  var cariList = typeof window.loadCari === 'function' ? window.loadCari().filter(function(c) { return !c.isDeleted; }) : [];
   h += '<div style="padding:16px 20px"><div style="font-size:12px;color:var(--t2);margin-bottom:14px">' + _gecerliSatirlar.length + ' satır — nereye aktarılacak?</div>';
+  /* Tedarikçi seçimi */
+  h += '<div style="background:#FAEEDA;border:0.5px solid #D97706;border-radius:8px;padding:12px 16px;margin-bottom:16px">';
+  h += '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Tedarikçi Seçimi (Zorunlu)</div>';
+  h += '<div style="font-size:11px;color:#633806;margin-bottom:8px">Excel\'deki ürünlerin hangi tedarikçiden alındığı belirtilmelidir.</div>';
+  h += '<select class="fi" id="dag-tedarikci" style="width:100%"><option value="">— Tedarikçi Seçin (Zorunlu) —</option>';
+  cariList.forEach(function(c) { h += '<option value="' + c.id + '">' + _esc(c.name) + '</option>'; });
+  h += '</select></div>';
   h += '<div style="display:flex;flex-direction:column;gap:12px">';
   h += '<label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:0.5px solid var(--b);border-radius:10px;cursor:pointer"><input type="checkbox" id="dag-katalog" checked> <div><div style="font-size:12px;font-weight:500">Ürün Kataloğu</div><div style="font-size:10px;color:var(--t3)">Ürün adı, HS kodu, birim</div></div></label>';
   h += '<label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:0.5px solid var(--b);border-radius:10px;cursor:pointer"><input type="checkbox" id="dag-satinalma" checked> <div><div style="font-size:12px;font-weight:500">Alış Teklifleri</div><div style="font-size:10px;color:var(--t3)">Fiyat, miktar, tedarikçi</div></div></label>';
@@ -279,13 +287,19 @@ window._renderAdim4 = function() {
 };
 
 window._excelImport = function() {
+  var tedarikciId = (_g('dag-tedarikci') || {}).value;
+  if (!tedarikciId) { window.toast?.('Tedarikçi seçmeden import yapılamaz', 'err'); return; }
+  var tedCariList = typeof window.loadCari === 'function' ? window.loadCari() : [];
+  var tedarikci = null; tedCariList.forEach(function(c) { if (String(c.id) === String(tedarikciId)) tedarikci = c; });
+
   var dagK = _g('dag-katalog')?.checked; var dagS = _g('dag-satinalma')?.checked; var dagI = _g('dag-ihracat')?.checked;
   var ihrDosyaId = _g('dag-ihracat-dosya')?.value; var cu = _cu(); var kN = 0, sN = 0, iN = 0;
   _gecerliSatirlar.forEach(function(s) {
     var m = s.mapped;
-    if (dagK && typeof window.loadUrunler === 'function') { var u = window.loadUrunler(); u.unshift({ id: _genId(), ad: m.aciklama || '', kod: m.urun_kodu || '', hsKodu: m.hs_kodu || '', birim: m.birim || 'PCS', menseUlke: m.mense_ulke || 'Türkiye', createdAt: _now(), createdBy: cu?.id }); window.storeUrunler?.(u); kN++; }
-    if (dagS && typeof window.loadSatinalma === 'function') { var sa = window.loadSatinalma(); sa.unshift({ id: _genId(), urun: m.aciklama || '', miktar: parseFloat(m.miktar || 0), birimFiyat: parseFloat(m.birim_fiyat || 0), doviz: m.doviz || 'USD', tedarikci: m.tedarikci || '', kaynak: 'excel_import', createdAt: _now(), createdBy: cu?.id }); window.storeSatinalma?.(sa); sN++; }
-    if (dagI && ihrDosyaId && typeof window.loadIhracatUrunler === 'function') { var ihr = window.loadIhracatUrunler(); ihr.unshift({ id: _genId(), dosya_id: ihrDosyaId, aciklama: m.aciklama || '', urun_kodu: m.urun_kodu || '', hs_kodu: m.hs_kodu || '', miktar: parseFloat(m.miktar || 0), birim: m.birim || 'PCS', birim_fiyat: parseFloat(m.birim_fiyat || 0), doviz: m.doviz || 'USD', brut_kg: parseFloat(m.brut_kg || 0), koli_adet: parseInt(m.koli_adet || 0), mense_ulke: m.mense_ulke || 'Türkiye', kaynak: 'excel_import', createdAt: _now(), createdBy: cu?.id }); window.storeIhracatUrunler?.(ihr); iN++; }
+    if (!m.tedarikci && tedarikci) m.tedarikci = tedarikci.name;
+    if (dagK && typeof window.loadUrunler === 'function') { var u = window.loadUrunler(); u.unshift({ id: _genId(), ad: m.aciklama || '', kod: m.urun_kodu || '', hsKodu: m.hs_kodu || '', birim: m.birim || 'PCS', menseUlke: m.mense_ulke || 'Türkiye', tedarikci_id: tedarikciId, tedarikci: m.tedarikci || '', createdAt: _now(), createdBy: cu?.id }); window.storeUrunler?.(u); kN++; }
+    if (dagS && typeof window.loadSatinalma === 'function') { var sa = window.loadSatinalma(); sa.unshift({ id: _genId(), urun: m.aciklama || '', miktar: parseFloat(m.miktar || 0), birimFiyat: parseFloat(m.birim_fiyat || 0), doviz: m.doviz || 'USD', tedarikci: m.tedarikci || '', tedarikci_id: tedarikciId, kaynak: 'excel_import', createdAt: _now(), createdBy: cu?.id }); window.storeSatinalma?.(sa); sN++; }
+    if (dagI && ihrDosyaId && typeof window.loadIhracatUrunler === 'function') { var ihr = window.loadIhracatUrunler(); ihr.unshift({ id: _genId(), dosya_id: ihrDosyaId, aciklama: m.aciklama || '', urun_kodu: m.urun_kodu || '', hs_kodu: m.hs_kodu || '', miktar: parseFloat(m.miktar || 0), birim: m.birim || 'PCS', birim_fiyat: parseFloat(m.birim_fiyat || 0), doviz: m.doviz || 'USD', brut_kg: parseFloat(m.brut_kg || 0), koli_adet: parseInt(m.koli_adet || 0), mense_ulke: m.mense_ulke || 'Türkiye', tedarikci_id: tedarikciId, tedarikci: m.tedarikci || '', kaynak: 'excel_import', createdAt: _now(), createdBy: cu?.id }); window.storeIhracatUrunler?.(ihr); iN++; }
   });
   var body = _g('excel-import-body'); var footer = _g('excel-import-footer');
   if (body) body.innerHTML = _stepBar(5) + '<div style="padding:24px 20px;text-align:center"><div style="font-size:32px;margin-bottom:8px">✅</div><div style="font-size:15px;font-weight:500;margin-bottom:16px">Import tamamlandı</div><div style="display:flex;gap:12px;justify-content:center"><div style="background:var(--s2);border-radius:10px;padding:14px 20px;text-align:center"><div style="font-size:24px;font-weight:500;color:#185FA5">' + kN + '</div><div style="font-size:10px;color:var(--t3)">Ürün</div></div><div style="background:var(--s2);border-radius:10px;padding:14px 20px;text-align:center"><div style="font-size:24px;font-weight:500;color:#7C3AED">' + sN + '</div><div style="font-size:10px;color:var(--t3)">Alış Teklifi</div></div><div style="background:var(--s2);border-radius:10px;padding:14px 20px;text-align:center"><div style="font-size:24px;font-weight:500;color:#16A34A">' + iN + '</div><div style="font-size:10px;color:var(--t3)">İhracat</div></div></div></div>';

@@ -76,8 +76,10 @@ function _nextDosyaNo() {
 }
 
 var IHR_TABS = [
-  { id: 'emirler', l: 'İhracat Emirleri' }, { id: 'gcb', l: 'GÇB Takip' }, { id: 'konsimento', l: 'Konşimento' },
-  { id: 'belgeler', l: 'Belgeler' }, { id: 'roller', l: 'Roller' }, { id: 'templateler', l: 'Templateler' },
+  { id: 'emirler', l: 'İhracat Emirleri' },
+  { id: 'belgeler', l: 'Belgeler' },
+  { id: 'roller', l: 'Roller' },
+  { id: 'templateler', l: 'Templateler' },
 ];
 
 /* ══════════════════════════════════════════════════════════ */
@@ -198,8 +200,11 @@ function _ihrRenderDosyaDetay(id) {
 
   /* Alt sekmeler */
   var SEKMELER = [
-    { id: 'ozet', l: 'Özet' }, { id: 'urunler', l: 'Ürünler' }, { id: 'evraklar', l: 'Evraklar' },
-    { id: 'gumrukcu', l: 'Gümrükçü' }, { id: 'forwarder', l: 'Forwarder' }, { id: 'gcb', l: 'GÇB' }, { id: 'bl', l: 'Konşimento' }
+    { id: 'ozet', l: 'Özet' },
+    { id: 'urunler', l: 'Ürünler' },
+    { id: 'evraklar', l: 'Evraklar' },
+    { id: 'gumrukcu', l: 'Gümrükçü' },
+    { id: 'forwarder', l: 'Forwarder' }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
@@ -592,7 +597,8 @@ window._ihrForwarderMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateEkle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateKullan = function(id) { window._ihrYeniEmir(id); };
 window._ihrPdfOnizle = function(dosyaId, tur, urunler) {
-  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) { window.toast?.('Dosya bulunamadı', 'err'); return; }
   var evraklar = _loadE();
   var kayit = null; evraklar.forEach(function(e) { if (String(e.dosya_id) === String(dosyaId) && e.tur === tur) kayit = e; });
   /* Dış evrak ise ve URL varsa yeni sekmede aç */
@@ -600,6 +606,7 @@ window._ihrPdfOnizle = function(dosyaId, tur, urunler) {
   /* Kayıt yoksa önce oluştur uyarısı */
   if (!kayit) { window.toast?.('Önce "Oluştur" butonuna basın', 'warn'); return; }
   if (!urunler) urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  if (!urunler.length) { window.toast?.('Ürün eklenmemiş — önce Ürünler sekmesinden ürün ekleyin', 'warn'); return; }
   window.toast?.(_esc(tur) + ' önizleme — PDF render yakında', 'warn');
 };
 
@@ -721,7 +728,7 @@ function _moAc(id, baslik, icerik, footer) { var old = _g(id); if (old) old.remo
 
 // ── DOSYA DÜZENLEME ──────────────────────────────────────
 window._ihrDosyaDuzenle = function(id) {
-  var d = _loadD().find(function(x) { return x.id === id; }); if (!d) return;
+  var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) return;
   var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
   _moAc('mo-ihr-edit', '✏️ Dosya Düzenle — ' + _esc(d.dosyaNo),
     '<input type="hidden" id="ihr-edit-id" value="' + id + '"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
@@ -740,7 +747,7 @@ window._ihrDosyaKaydet = function() {
 
 // ── DURUM DEĞİŞTİR ──────────────────────────────────────
 window._ihrDurumDegistir = function(id) {
-  var d = _loadD().find(function(x) { return x.id === id; }); if (!d) return;
+  var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) return;
   var durumlar = [['hazirlaniyor','Hazırlanıyor'],['yukleniyor','Yükleniyor'],['yolda','Yolda'],['teslim','Teslim'],['kapandi','Kapandı'],['iptal','İptal']];
   _moAc('mo-ihr-durum', 'Durum Değiştir — ' + _esc(d.dosyaNo),
     '<input type="hidden" id="ihr-durum-id" value="' + id + '"><div class="fg"><div class="fl">Yeni Durum</div><select class="fi" id="ihr-durum-sel">' + durumlar.map(function(x) { return '<option value="' + x[0] + '"' + (d.durum === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>',
