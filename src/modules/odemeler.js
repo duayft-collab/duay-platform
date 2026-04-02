@@ -497,6 +497,7 @@ function _injectOdmPanel() {
       '<div id="odm-stab-tahsilat" class="odm-tab" onclick="setOdmTab(\'tahsilat\')">Tahsilatlar</div>',
       '<div id="odm-stab-bekliyor" class="odm-tab" onclick="setOdmTab(\'bekliyor\')">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;opacity:.7"></span></div>',
       '<div id="odm-stab-projeksiyon" class="odm-tab" onclick="setOdmTab(\'projeksiyon\')">Projeksiyon</div>',
+      '<div id="odm-stab-analiz" class="odm-tab" onclick="setOdmTab(\'analiz\')">Analiz</div>',
     '</div>',
 
     // ── Satır 5: Filtreler (tek satır) ──
@@ -1131,6 +1132,11 @@ function renderOdemeler() {
   // Projeksiyon sekmesi — özel render
   if (_odmCurrentTab === 'projeksiyon') {
     _renderProjeksiyonTab(cont);
+    return;
+  }
+  // Analiz sekmesi
+  if (_odmCurrentTab === 'analiz') {
+    window._renderOdmAnaliz?.();
     return;
   }
 
@@ -6010,6 +6016,39 @@ window._odmBankaTalimatSecim = function() {
 var CARI_SETTINGS_KEY = 'odm_cari_settings';
 function _loadCariSettings() { try { return JSON.parse(localStorage.getItem(CARI_SETTINGS_KEY) || '{}'); } catch { return {}; } }
 function _getCariDocThreshold() { return _loadCariSettings().docThreshold || 50000; }
+
+// ════════════════════════════════════════════════════════════════
+// ANALİZ & ALARM PANELİ
+// ════════════════════════════════════════════════════════════════
+window._renderOdmAnaliz = function() {
+  var cont = document.getElementById('odm-list'); if (!cont) return;
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted; });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted; });
+  var today = _todayStr(); var fmt = function(n) { return Math.round(n).toLocaleString('tr-TR'); };
+  var gecik = odm.filter(function(o) { return !o.paid && o.due && o.due < today; });
+  var gecikTL = gecik.reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount || 0), o.currency || 'TRY'); }, 0);
+  var bu30 = new Date(); bu30.setDate(bu30.getDate() + 30); var bu30Str = bu30.toISOString().slice(0, 10);
+  var yaklasan = odm.filter(function(o) { return !o.paid && o.due && o.due >= today && o.due <= bu30Str; });
+  var yaklasanTL = yaklasan.reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount || 0), o.currency || 'TRY'); }, 0);
+  var bekTah = tah.filter(function(t) { return !t.collected; });
+  var bekTahTL = bekTah.reduce(function(s, t) { return s + _odmToTRY(parseFloat(t.amount || 0), t.currency || 'TRY'); }, 0);
+  var catMap = {}; odm.forEach(function(o) { if (o.paid) return; var c = o.cat || 'diger'; if (!catMap[c]) catMap[c] = 0; catMap[c] += _odmToTRY(parseFloat(o.amount || 0), o.currency || 'TRY'); });
+  var cats = Object.keys(catMap).sort(function(a, b) { return catMap[b] - catMap[a]; }).slice(0, 5);
+  var catColors = ['#185FA5', '#16a34a', '#D97706', '#7C3AED', '#dc2626'];
+
+  var alarmlar = [];
+  if (gecik.length > 0) alarmlar.push({ tip: 'KRİTİK', renk: '#dc2626', bg: '#FCEBEB', mesaj: gecik.length + ' ödeme vadesi geçmiş — toplam ₺' + fmt(gecikTL), oneri: 'Hemen iletişime geç: ' + gecik.slice(0, 2).map(function(o) { return o.cariName || o.name; }).join(', ') });
+  var oran = gecikTL / Math.max(bekTahTL, 1) * 100;
+  if (oran > 50) alarmlar.push({ tip: 'RİSK', renk: '#D97706', bg: '#FAEEDA', mesaj: 'Gecikmiş borçlar tahsilatın %' + Math.round(oran) + '\'i', oneri: 'Öncelikli tahsilat başlat' });
+  if (yaklasan.length > 3) alarmlar.push({ tip: 'UYARI', renk: '#D97706', bg: '#FAEEDA', mesaj: '30 gün içinde ' + yaklasan.length + ' ödeme — ₺' + fmt(yaklasanTL), oneri: 'Nakit akışını kontrol et' });
+  if (bekTahTL > gecikTL * 2) alarmlar.push({ tip: 'FIRSAT', renk: '#16a34a', bg: '#EAF3DE', mesaj: 'Bekleyen tahsilat ₺' + fmt(bekTahTL) + ' — borçtan fazla', oneri: 'Tahsilat baskısı yap' });
+
+  cont.innerHTML = '<div style="max-width:900px;padding:4px 0">'
+    + '<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">Akıllı Alarmlar & Öneriler</div>' + (alarmlar.length ? alarmlar.map(function(a) { return '<div style="display:flex;gap:10px;padding:12px 14px;background:' + a.bg + ';border:0.5px solid ' + a.renk + '33;border-left:3px solid ' + a.renk + ';border-radius:8px;margin-bottom:8px"><div><span style="font-size:8px;font-weight:700;color:' + a.renk + ';background:' + a.renk + '22;padding:2px 7px;border-radius:3px">' + a.tip + '</span><div style="font-size:12px;font-weight:500;color:var(--t);margin-top:5px">' + a.mesaj + '</div><div style="font-size:11px;color:var(--t2);margin-top:3px">→ ' + a.oneri + '</div></div></div>'; }).join('') : '<div style="padding:16px;text-align:center;color:#16a34a;font-size:12px">✓ Kritik alarm yok</div>') + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">' + [{lbl:'Gecikmiş Ödeme',val:'₺'+fmt(gecikTL),sub:gecik.length+' kayıt',c:'#dc2626'},{lbl:'30 Gün İçinde',val:'₺'+fmt(yaklasanTL),sub:yaklasan.length+' ödeme',c:'#D97706'},{lbl:'Bekleyen Tahsilat',val:'₺'+fmt(bekTahTL),sub:bekTah.length+' kayıt',c:'#7C3AED'},{lbl:'Net Pozisyon',val:(bekTahTL-gecikTL>=0?'+':'-')+'₺'+fmt(Math.abs(bekTahTL-gecikTL)),sub:'Tahsilat - Gecikmiş',c:bekTahTL>=gecikTL?'#16a34a':'#dc2626'}].map(function(k) { return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px 14px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:500;letter-spacing:.05em;margin-bottom:6px">' + k.lbl + '</div><div style="font-size:18px;font-weight:600;color:' + k.c + '">' + k.val + '</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + k.sub + '</div></div>'; }).join('') + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden"><div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Gider Kategorileri</div><div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">' + cats.map(function(cat, i) { var lbl = (window.ODM_CATS || {})[cat]?.l || cat; var amt = catMap[cat]; var maxAmt = catMap[cats[0]] || 1; var pct = Math.round(amt / maxAmt * 100); return '<div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--t);flex:1">' + lbl + '</div><div style="width:100px;height:6px;border-radius:3px;background:var(--b)"><div style="height:100%;border-radius:3px;width:' + pct + '%;background:' + catColors[i] + '"></div></div><div style="font-size:11px;font-weight:500;color:var(--t);min-width:60px;text-align:right">₺' + fmt(amt) + '</div></div>'; }).join('') + '</div></div>'
+    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden"><div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Gecikmiş Ödemeler (' + gecik.length + ')</div><div style="display:flex;flex-direction:column;gap:4px;padding:8px 14px;max-height:220px;overflow-y:auto">' + gecik.sort(function(a, b) { return a.due < b.due ? -1 : 1; }).map(function(o) { var diff = Math.floor((new Date(today) - new Date(o.due)) / 86400000); var bc = diff > 30 ? '#FCEBEB' : diff > 7 ? '#FAEEDA' : '#E6F1FB'; var tc = diff > 30 ? '#791F1F' : diff > 7 ? '#633806' : '#0C447C'; return '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:var(--s2)"><span style="font-size:8px;padding:1px 6px;border-radius:3px;background:' + bc + ';color:' + tc + ';font-weight:600;white-space:nowrap">' + diff + ' GÜN</span><div style="flex:1;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (o.cariName || o.name || '—') + '</div><div style="font-size:11px;font-weight:500;color:#dc2626;white-space:nowrap">₺' + fmt(_odmToTRY(parseFloat(o.amount || 0), o.currency || 'TRY')) + '</div></div>'; }).join('') + '</div></div></div></div>';
+};
 
 /** Levenshtein mesafesi — firma adı benzerlik kontrolü */
 function _levenshtein(a, b) {
