@@ -635,6 +635,30 @@ function _ihrDetayRenderUrunler(d, el) {
   /* Toplam hesapla */
   var toplamUSD = 0, toplamEUR = 0;
   urunler.forEach(function(u) { var t = (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); if (u.doviz === 'USD') toplamUSD += t; if (u.doviz === 'EUR') toplamEUR += t; });
+  var toplamKoli = 0, toplamBrut = 0, toplamM3 = 0, eksikHs = 0, eksikFiyat = 0;
+  urunler.forEach(function(u) {
+    toplamKoli += parseInt(u.koli_adet) || 0; toplamBrut += parseFloat(u.brut_kg) || 0; toplamM3 += parseFloat(u.hacim_m3) || 0;
+    if (!u.hs_kodu) eksikHs++; if (!u.birim_fiyat) eksikFiyat++;
+  });
+
+  /* Özet bar */
+  h += '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:10px 0;margin-bottom:10px;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="background:var(--s2);border-radius:8px;padding:8px 14px;text-align:center;min-width:80px"><div style="font-size:10px;color:var(--t3)">Kalem</div><div style="font-size:16px;font-weight:500;color:var(--t)">' + urunler.length + '</div></div>';
+  h += '<div style="background:var(--s2);border-radius:8px;padding:8px 14px;text-align:center;min-width:80px"><div style="font-size:10px;color:var(--t3)">Toplam Koli</div><div style="font-size:16px;font-weight:500;color:var(--t)">' + toplamKoli.toLocaleString('tr-TR') + '</div></div>';
+  h += '<div style="background:var(--s2);border-radius:8px;padding:8px 14px;text-align:center;min-width:80px"><div style="font-size:10px;color:var(--t3)">Brüt KG</div><div style="font-size:16px;font-weight:500;color:var(--t)">' + toplamBrut.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + '</div></div>';
+  h += '<div style="background:var(--s2);border-radius:8px;padding:8px 14px;text-align:center;min-width:80px"><div style="font-size:10px;color:var(--t3)">Hacim m\u00b3</div><div style="font-size:16px;font-weight:500;color:var(--t)">' + toplamM3.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</div></div>';
+  if (toplamUSD > 0) h += '<div style="background:#E6F1FB;border-radius:8px;padding:8px 14px;text-align:center;min-width:100px"><div style="font-size:10px;color:#0C447C">USD (KDV Hariç)</div><div style="font-size:16px;font-weight:500;color:#0C447C">$' + toplamUSD.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</div></div>';
+  if (toplamEUR > 0) h += '<div style="background:#EAF3DE;border-radius:8px;padding:8px 14px;text-align:center;min-width:100px"><div style="font-size:10px;color:#27500A">EUR (KDV Hariç)</div><div style="font-size:16px;font-weight:500;color:#27500A">\u20ac' + toplamEUR.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</div></div>';
+  if (eksikHs > 0) h += '<div style="background:#FAEEDA;border-radius:8px;padding:8px 14px;text-align:center;min-width:80px"><div style="font-size:10px;color:#633806">HS Eksik</div><div style="font-size:16px;font-weight:500;color:#D97706">' + eksikHs + '</div></div>';
+  if (eksikFiyat > 0) h += '<div style="background:#FCEBEB;border-radius:8px;padding:8px 14px;text-align:center;min-width:80px"><div style="font-size:10px;color:#791F1F">Fiyat Eksik</div><div style="font-size:16px;font-weight:500;color:#DC2626">' + eksikFiyat + '</div></div>';
+  h += '</div>';
+
+  /* Arama + Excel Export */
+  h += '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">';
+  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ürün kodu, açıklama, tedarikçi..." oninput="window._ihrUrunAra(this.value)" style="flex:1;font-size:12px">';
+  h += '<button class="btn btns" onclick="window._ihrUrunExcel(\'' + d.id + '\')" style="font-size:11px">XLSX İndir</button>';
+  h += '<button class="btn btns" onclick="window._ihrUrunTedarikciGrupla()" style="font-size:11px">Tedarikçi Grupla</button>';
+  h += '</div>';
 
   h += '<div style="overflow-x:auto"><table class="tbl" style="font-size:11px">';
   h += '<thead><tr>';
@@ -642,7 +666,7 @@ function _ihrDetayRenderUrunler(d, el) {
   h += '<th>Tedarikçi</th><th>Proforma ID</th><th>Ürün Kodu</th><th>Ürün Açıklaması</th>';
   h += '<th>Miktar</th><th>Birim Fiyat</th><th>Kur</th><th>KDV %</th><th>KDV Tutarı</th><th>KDV Dahil</th>';
   h += '<th>Teslim Tarihi</th><th>Teslim Yeri</th><th>Etiket</th><th>Yükle</th><th>Sıra</th><th></th>';
-  h += '</tr></thead><tbody>';
+  h += '</tr></thead><tbody id="ihr-urun-tbody">';
 
   urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); }).forEach(function(u) {
     var kdvOrani = parseFloat(u.kdv_orani || 0);
@@ -713,6 +737,58 @@ window._ihrUrunTopluSil = function(dosyaId) {
       window.renderIhracatOps?.();
     }
   });
+};
+
+/* ── ÜRÜN ARAMA + EXCEL EXPORT + GRUPLAMA ─────────────────── */
+window._ihrUrunAra = function(q) {
+  var qq = q.toLowerCase();
+  document.querySelectorAll('#ihr-urun-tbody tr').forEach(function(tr) {
+    var txt = tr.textContent.toLowerCase();
+    tr.style.display = txt.indexOf(qq) !== -1 ? '' : 'none';
+  });
+};
+
+window._ihrUrunExcel = function(dosyaId) {
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  var basliklar = ['Tedarikci', 'Proforma ID', 'Urun Kodu', 'Urun Aciklamasi', 'Miktar', 'Birim', 'Birim Fiyat', 'Kur', 'KDV%', 'KDV Tutari', 'KDV Dahil', 'Teslim Tarihi', 'Teslim Yeri', 'Etiket', 'Yukle', 'Koli', 'Brut KG', 'Net KG', 'Hacim m3', 'HS Kodu', 'Sira'];
+  var satirlar = urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); }).map(function(u) {
+    var toplamKdvHaric = (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0);
+    var kdvTutar = toplamKdvHaric * ((parseFloat(u.kdv_orani) || 0) / 100);
+    return [
+      u.tedarikciAd || u.tedarikci || '', u.proforma_id || '', u.urun_kodu || '', u.aciklama || '',
+      u.miktar || 0, u.birim || 'PCS', u.birim_fiyat || 0, u.doviz || 'USD',
+      u.kdv_orani || 0, kdvTutar.toFixed(2), (toplamKdvHaric + kdvTutar).toFixed(2),
+      u.teslim_tarihi || '', u.teslim_yeri || '', u.etiket_rengi || '', u.once_yukle || '',
+      u.koli_adet || 0, u.brut_kg || 0, u.net_kg || 0, u.hacim_m3 || 0, u.hs_kodu || '', u.konteyner_sira || ''
+    ].join('\t');
+  });
+  var icerik = (d ? d.dosyaNo : 'Ihracat') + ' — Ürün Listesi\n\n' + basliklar.join('\t') + '\n' + satirlar.join('\n');
+  var blob = new Blob(['\ufeff' + icerik], { type: 'text/tab-separated-values;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = (d ? d.dosyaNo : 'ihracat') + '_urunler.xls'; a.click();
+  URL.revokeObjectURL(url);
+  window.toast?.('Excel indirildi', 'ok');
+};
+
+window._ihrUrunTedarikciGrupla = function() {
+  var tbody = document.getElementById('ihr-urun-tbody'); if (!tbody) return;
+  /* Mevcut grup satirlarini temizle */
+  tbody.querySelectorAll('.ihr-grup-satir').forEach(function(r) { r.remove(); });
+  var satirlar = tbody.querySelectorAll('tr');
+  var mevcut = null;
+  satirlar.forEach(function(tr) {
+    var tedarikci = (tr.querySelector('td:nth-child(2)') || {}).textContent || '';
+    tedarikci = tedarikci.trim();
+    if (tedarikci !== mevcut) {
+      mevcut = tedarikci;
+      var ara = document.createElement('tr');
+      ara.className = 'ihr-grup-satir';
+      ara.innerHTML = '<td colspan="17" style="background:var(--s2);font-size:10px;font-weight:500;color:var(--t2);padding:4px 10px;text-transform:uppercase;letter-spacing:.06em">' + (tedarikci || 'Tedarikçi Belirtilmemiş') + '</td>';
+      tr.parentNode.insertBefore(ara, tr);
+    }
+  });
+  window.toast?.('Tedarikçi bazlı gruplandı', 'ok');
 };
 
 /* ── STUB'LAR ────────────────────────────────────────────── */
