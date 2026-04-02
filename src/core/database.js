@@ -2665,6 +2665,15 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Uygulama açılışında şişmiş veriyi bir kez temizle
 (function _oneTimeStorageClean() {
+  // ACİL TEMİZLİK
+  try {
+    var _ec2 = function(k, max, fromEnd) { var raw = localStorage.getItem(k); if (!raw) return; try { var d = JSON.parse(raw); if (d.length > max) { localStorage.setItem(k, JSON.stringify(fromEnd ? d.slice(-max) : d.slice(0, max))); console.log('[EMERGENCY]', k, d.length, '→', max); } } catch(e) {} };
+    _ec2('ak_kpi_log1', 100, true); _ec2('ak_act1', 30, true); _ec2('ak_notif1', 20, false); _ec2('ak_odm1', 300, false); _ec2('ak_tahsilat1', 300, false);
+    try { var tcR = localStorage.getItem('ak_task_chat1'); if (tcR) { var tc2 = JSON.parse(tcR); var tc2c = false; Object.keys(tc2).forEach(function(tid) { if (Array.isArray(tc2[tid]) && tc2[tid].length > 5) { tc2[tid] = tc2[tid].slice(-5); tc2c = true; } }); if (tc2c) localStorage.setItem('ak_task_chat1', JSON.stringify(tc2)); } } catch(e) {}
+    Object.keys(localStorage).forEach(function(k) { if (!k.startsWith('ak_')) return; var raw = localStorage.getItem(k); if (!raw || raw.length < 20000) return; try { var parsed = JSON.parse(raw); if (!Array.isArray(parsed)) return; var changed = false; parsed.forEach(function(item) { if (!item || typeof item !== 'object') return; ['receipt','img','image','file','imgdata','data'].forEach(function(f) { if (item[f] && typeof item[f] === 'string' && item[f].length > 500 && item[f].startsWith('data:')) { item[f] = null; changed = true; } if (item[f] && item[f].data && typeof item[f].data === 'string' && item[f].data.startsWith('data:')) { item[f] = { name: item[f].name || 'dosya', _stripped: true }; changed = true; } }); }); if (changed) localStorage.setItem(k, JSON.stringify(parsed)); } catch(e) {} });
+    var _et = 0; Object.keys(localStorage).forEach(function(k) { _et += (localStorage.getItem(k) || '').length * 2; }); console.log('[EMERGENCY] Sonuç: %' + Math.round(_et / (5 * 1024 * 1024) * 100) + ' dolu');
+  } catch(e) { console.warn('[EMERGENCY] Hata:', e); }
+
   try {
     var trash = loadTrash();
     if (trash.length > 50) { storeTrash(trash.slice(0, 50)); console.log('[DB] Trash temizlendi:', trash.length, '→ 50'); }
