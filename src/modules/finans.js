@@ -29,7 +29,7 @@ const CUR_FLAGS = {
   CNY:'🇨🇳', SAR:'🇸🇦', AED:'🇦🇪', ALTIN:'🥇', PETROL:'🛢️',
 };
 
-const FALLBACK_RATES = {USD:32.45,EUR:35.12,GBP:41.08,ALTIN:2140,PETROL:78.3,CHF:36.5,JPY:0.215,CNY:4.48,SAR:8.65,AED:8.84};
+const FALLBACK_RATES = {USD:44.55,EUR:51.70,GBP:59.30,ALTIN:4350,PETROL:85.0,CHF:51.20,JPY:0.298,CNY:6.14,SAR:11.88,AED:12.13};
 const CHANGE_MAP     = {USD:+0.23,EUR:-0.15,GBP:+0.08,ALTIN:+12.5,PETROL:-0.9,CHF:+0.05,JPY:-0.001,CNY:+0.02};
 
 const BANK_DATA = [
@@ -55,24 +55,35 @@ async function fetchLiveRates(){
   const btn=_gf('btn-refresh-rates');
   if(btn){btn.disabled=true;btn.textContent='⏳ Güncelleniyor…';}
   try{
-    // Ücretsiz kur API'si — CORS destekli
-    const res=await fetch('https://api.exchangerate-api.com/v4/latest/TRY',{signal:AbortSignal.timeout(5000)});
-    if(res.ok){
-      const json=await res.json();
-      // API TRY bazlıdır → TRY/Döviz = 1/oran
-      const rates=json.rates||{};
-      if(rates.USD)LIVE_RATES.USD=+(1/rates.USD).toFixed(4);
-      if(rates.EUR)LIVE_RATES.EUR=+(1/rates.EUR).toFixed(4);
-      if(rates.GBP)LIVE_RATES.GBP=+(1/rates.GBP).toFixed(4);
-      if(rates.CHF)LIVE_RATES.CHF=+(1/rates.CHF).toFixed(4);
-      if(rates.JPY)LIVE_RATES.JPY=+(1/rates.JPY).toFixed(6);
-      if(rates.CNY)LIVE_RATES.CNY=+(1/rates.CNY).toFixed(4);
-      if(rates.SAR)LIVE_RATES.SAR=+(1/rates.SAR).toFixed(4);
-      if(rates.AED)LIVE_RATES.AED=+(1/rates.AED).toFixed(4);
+    // API 1: frankfurter.app (ECB, CORS yok)
+    const res=await fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,EUR,GBP,CHF,JPY,CNY',{signal:AbortSignal.timeout(5000)});
+    const d=await res.json();
+    if(d&&d.rates&&d.rates.TRY){
+      var usdTry=d.rates.TRY;
+      LIVE_RATES.USD=Math.round(usdTry*100)/100;
+      LIVE_RATES.EUR=Math.round(usdTry/d.rates.EUR*100)/100;
+      LIVE_RATES.GBP=Math.round(usdTry/d.rates.GBP*100)/100;
+      if(d.rates.CHF)LIVE_RATES.CHF=Math.round(usdTry/d.rates.CHF*100)/100;
+      if(d.rates.JPY)LIVE_RATES.JPY=Math.round(usdTry/d.rates.JPY*10000)/10000;
+      if(d.rates.CNY)LIVE_RATES.CNY=Math.round(usdTry/d.rates.CNY*100)/100;
     }
-  }catch(e){
-    // Sessizce fallback'e düş
-    console.warn('[finans] Kur çekimi başarısız, fallback kullanılıyor.');
+  }catch(e1){
+    try{
+      // API 2: exchangerate-api USD bazlı
+      const res2=await fetch('https://api.exchangerate-api.com/v4/latest/USD',{signal:AbortSignal.timeout(5000)});
+      const d2=await res2.json();
+      if(d2&&d2.rates&&d2.rates.TRY){
+        LIVE_RATES.USD=Math.round(d2.rates.TRY*100)/100;
+        LIVE_RATES.EUR=Math.round(d2.rates.TRY/d2.rates.EUR*100)/100;
+        LIVE_RATES.GBP=Math.round(d2.rates.TRY/d2.rates.GBP*100)/100;
+        if(d2.rates.CHF)LIVE_RATES.CHF=Math.round(d2.rates.TRY/d2.rates.CHF*100)/100;
+        if(d2.rates.SAR)LIVE_RATES.SAR=Math.round(d2.rates.TRY/d2.rates.SAR*100)/100;
+        if(d2.rates.AED)LIVE_RATES.AED=Math.round(d2.rates.TRY/d2.rates.AED*100)/100;
+      }
+    }catch(e2){
+      console.warn('[finans] Tüm API\'ler başarısız, fallback kullanılıyor.');
+      Object.assign(LIVE_RATES,FALLBACK_RATES);
+    }
   }
   // Altın & Petrol için fallback
   if(!LIVE_RATES.ALTIN) LIVE_RATES.ALTIN = FALLBACK_RATES.ALTIN;
