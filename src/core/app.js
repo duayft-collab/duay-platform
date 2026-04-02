@@ -72,6 +72,24 @@ window._dcaRefreshLogoPreview = function() {
 };
 setTimeout(function() { window._dcaRefreshLogoPreview?.(); }, 800);
 
+// ── Oturum Özeti Otomasyonu ──────────────────────────────────
+window._sessionMsgCount = 0;
+window._sessionStartTime = new Date().toISOString();
+window._generateSessionSummary = function() {
+  var now = new Date();
+  var tarih = now.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  var saat = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  var lsTotal = 0; Object.keys(localStorage).forEach(function(k) { lsTotal += (localStorage.getItem(k) || '').length * 2; }); var lsPct = Math.round(lsTotal / (5 * 1024 * 1024) * 100);
+  var md = '# DUAY PLATFORM — YENİ OTURUM BAŞLANGIÇ DÖKÜMANÜ\n**Tarih:** ' + tarih + ' ' + saat + '\n\n---\n\n## PROJE BİLGİLERİ\n- **Şirket:** Duay Global LLC\n- **Stack:** Vanilla JS SPA, Firebase Firestore, GitHub Pages\n- **Repo:** https://github.com/duayft-collab/duay-platform\n- **Çalışma kuralı:** Claude talimat yazar → Claude Code uygular → Baran test eder\n\n---\n\n## BU OTURUMDA TAMAMLANANLAR\n*(git log --oneline -20 ile doğrula)*\n\n---\n\n## AÇIK TASK\'LAR\n- EXP-003 — Konişimento / B/L modülü\n- ALR-001 — Akıllı alarm sistemi\n- GK-19-ALL — Dropdown hover tüm modüller\n\n---\n\n## SİSTEM DURUMU\n- **localStorage:** %' + lsPct + ' dolu\n- **Son kontrol:** ' + tarih + ' ' + saat + '\n\n---\n\n## YENİ OTURUMDA İLK YAPILACAK\n1. git log --oneline -20 paylaş\n2. Açık task\'ları doğrula\n3. Sıradaki task\'a başla\n\n---\n\n## AI ÇALIŞMA KURALLARI\n- Her talimatın ID, başlık, dosya, değişiklik, kısıt, commit formatı olmalı\n- Tek Fix Prensibi — onay olmadan sonraki adıma geçilmez\n- Her oturumda git log ile doğrula\n- Kodu önce oku, sonra talimat yaz\n';
+  var blob = new Blob([md], { type: 'text/markdown;charset=utf-8' }); var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'duay-oturum-' + now.toISOString().slice(0, 10) + '.md'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  window.toast?.('Oturum özeti indirildi', 'ok'); window.logActivity?.('system', 'Oturum özeti oluşturuldu');
+  var banner = document.createElement('div'); banner.style.cssText = 'position:fixed;bottom:80px;right:20px;background:#0C447C;color:#fff;padding:14px 20px;border-radius:12px;font-size:12px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:300px';
+  banner.innerHTML = '<strong>Oturum özeti indirildi</strong><br><span style="font-size:11px;opacity:.8">Sonraki oturumda bu dosyayı yükle</span><br><button onclick="window._generateSessionSummary()" style="margin-top:8px;background:#185FA5;border:none;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">Tekrar İndir</button><button onclick="this.parentElement.remove()" style="margin-top:8px;margin-left:6px;background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">Kapat</button>';
+  document.body.appendChild(banner); setTimeout(function() { if (banner.parentElement) banner.remove(); }, 30000);
+};
+window._manualSessionSummary = window._generateSessionSummary;
+
 window.PLATFORM_RULES = {
   quickPeek: true,       // Her liste satırında peek/detay görünümü olmalı
   bulkDelete: 'admin',   // Toplu silme admin-only
