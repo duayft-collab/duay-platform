@@ -778,33 +778,17 @@ function _ihrDetayRenderUrunler(d, el) {
   var tdS = 'padding:5px 8px;border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
   var thS = 'padding:4px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;vertical-align:top;text-align:left';
 
-  h += '<div style="display:flex;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
-
-  /* ── SOL SABİT ── */
-  h += '<div style="flex:0 0 auto;border-right:2px solid var(--b);overflow:hidden">';
+  /* ── TEK TABLO + STICKY KOLONLAR ── */
+  var stickyBg = 'var(--sf)';
+  var stickyBgH = 'var(--s2)';
+  h += '<div style="overflow-x:auto;border:0.5px solid var(--b);border-radius:8px">';
   h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
+  /* THEAD */
   h += '<thead><tr>';
-  h += '<th style="width:28px;min-width:28px;' + thS + '"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
-  h += '<th style="width:110px;min-width:110px;' + thS + '">Tedarikçi</th>';
-  h += '<th style="width:85px;min-width:85px;' + thS + '">Ürün Kodu</th>';
-  h += '<th style="width:180px;min-width:180px;' + thS + '">Ürün Açıklaması</th>';
-  h += '</tr></thead><tbody>';
-  sortedUrunler.forEach(function(u) {
-    var tutarsiz = !!tutarsizKodlar[u.urun_kodu];
-    var rowBg = tutarsiz ? '#FAEEDA11' : 'inherit';
-    h += '<tr style="background:' + rowBg + '" onclick="event.stopPropagation()">';
-    h += '<td style="' + tdS + ';text-align:center;max-width:28px"><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="event.stopPropagation();window._ihrUrunChkDegis()"></td>';
-    h += '<td style="' + tdS + ';max-width:110px" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
-    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace;max-width:85px">' + _esc(u.urun_kodu || '') + '</td>';
-    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-weight:500;max-width:180px" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
-    h += '</tr>';
-  });
-  h += '</tbody></table></div>';
-
-  /* ── SAĞ KAYDIRILABİLİR ── */
-  h += '<div style="overflow-x:auto;flex:1;min-width:0">';
-  h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
-  h += '<thead><tr>';
+  h += '<th style="position:sticky;left:0;z-index:3;background:' + stickyBgH + ';width:28px;min-width:28px;' + thS + ';border-right:2px solid var(--b)"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
+  h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:110px;min-width:110px;' + thS + '">Tedarikçi</th>';
+  h += '<th style="position:sticky;left:138px;z-index:3;background:' + stickyBgH + ';width:85px;min-width:85px;' + thS + '">Ürün Kodu</th>';
+  h += '<th style="position:sticky;left:223px;z-index:3;background:' + stickyBgH + ';width:180px;min-width:180px;' + thS + ';border-right:2px solid var(--b)">Ürün Açıklaması</th>';
   KOLONLAR.forEach(function(kol) {
     if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
     var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === ''; }).length : 0;
@@ -822,8 +806,9 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '</th>';
   });
   h += '<th style="width:50px;min-width:50px;' + thS + '"></th>';
-  h += '</tr></thead><tbody id="ihr-urun-tbody" onclick="event.stopPropagation()">';
-
+  h += '</tr></thead>';
+  /* TBODY */
+  h += '<tbody id="ihr-urun-tbody">';
   sortedUrunler.forEach(function(u) {
     var kdvOrani = parseFloat(u.kdv_orani || 0);
     var birimFiyat = parseFloat(u.birim_fiyat || 0);
@@ -833,8 +818,15 @@ function _ihrDetayRenderUrunler(d, el) {
     var kdvDahil = topKdvHaric + kdvTutar;
     var tutarsiz = !!tutarsizKodlar[u.urun_kodu];
     var rowBg = tutarsiz ? '#FAEEDA11' : 'inherit';
+    var cellBg = rowBg === 'inherit' ? stickyBg : rowBg;
 
     h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '" onclick="event.stopPropagation()">';
+    /* Sticky kolonlar */
+    h += '<td onclick="event.stopPropagation()" style="position:sticky;left:0;z-index:2;background:' + cellBg + ';' + tdS + ';text-align:center;max-width:28px;border-right:2px solid var(--b)"><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="event.stopPropagation();window._ihrUrunChkDegis()"></td>';
+    h += '<td onclick="event.stopPropagation()" style="position:sticky;left:28px;z-index:2;background:' + cellBg + ';' + tdS + ';max-width:110px" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
+    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" onclick="event.stopPropagation()" style="position:sticky;left:138px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-family:monospace;max-width:85px">' + _esc(u.urun_kodu || '') + '</td>';
+    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" onclick="event.stopPropagation()" style="position:sticky;left:223px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:180px;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
+    /* Kalan kolonlar */
     KOLONLAR.forEach(function(kol) {
       var k = kol.k; if (k === 'tedarikciAd' || k === 'urun_kodu' || k === 'aciklama') return;
       var v = u[k]; var vs = _esc(v || '');
@@ -846,7 +838,7 @@ function _ihrDetayRenderUrunler(d, el) {
       if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td style="' + tdS + ';text-align:center"><div style="display:flex;align-items:center;gap:3px;justify-content:center">'; if (er) h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + er + '"></span>'; h += '<span>' + vs + '</span></div></td>'; return; }
       if (k === 'doviz') { h += '<td style="' + tdS + ';text-align:center">' + vs + '</td>'; return; }
       if (k === 'imo_msds') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--ac);font-size:10px">PDF</a>' : '<button class="btn btns" onclick="event.stopPropagation();window._ihrMsdsYukle(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Yükle</button>') + '</td>'; return; }
-      if (k === 'yukleme_durumu') { var vgmVar = parseFloat(u.vgm_kg || 0) > 0; var durumVal = vgmVar ? 'Yüklendi' : (v || ''); var durumBg = durumVal === 'Yüklendi' ? '#EAF3DE' : 'var(--s2)'; var durumClr = durumVal === 'Yüklendi' ? '#27500A' : 'var(--t2)'; h += '<td style="' + tdS + '">' + (durumVal ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + durumBg + ';color:' + durumClr + '">' + _esc(durumVal) + '</span>' : '') + '</td>'; return; }
+      if (k === 'yukleme_durumu') { var vgmVar = parseFloat(u.vgm_kg || 0) > 0; var durumVal = vgmVar ? 'Yüklendi' : (v || ''); var durumBg2 = durumVal === 'Yüklendi' ? '#EAF3DE' : 'var(--s2)'; var durumClr = durumVal === 'Yüklendi' ? '#27500A' : 'var(--t2)'; h += '<td style="' + tdS + '">' + (durumVal ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + durumBg2 + ';color:' + durumClr + '">' + _esc(durumVal) + '</span>' : '') + '</td>'; return; }
       if (SELECT_KOLONLAR[k]) { h += '<td onclick="event.stopPropagation()" style="' + tdS + '"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">'; SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; }); h += '</select></td>'; return; }
       if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace">' + vs + '</td>'; return; }
       if (k === 'kdv_orani') { h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'kdv_orani\',parseFloat(this.value))" style="font-size:10px;border:none;background:transparent;cursor:pointer;text-align:center">'; [0, 1, 5, 10, 18, 20].forEach(function(kv) { h += '<option value="' + kv + '"' + (kdvOrani === kv ? ' selected' : '') + '>%' + kv + '</option>'; }); h += '</select></td>'; return; }
@@ -855,7 +847,7 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrUrunSil(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Sil</button></td>';
     h += '</tr>';
   });
-  h += '</tbody></table></div></div>';
+  h += '</tbody></table></div>';
 
   /* Alt satır */
   h += '<div style="display:flex;gap:16px;justify-content:flex-end;padding:8px 4px;font-size:12px;border-top:0.5px solid var(--b);margin-top:6px">';
