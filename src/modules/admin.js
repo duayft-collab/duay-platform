@@ -1830,6 +1830,7 @@ function renderUsers(filter=''){
       <span id="u-bulk-count" style="font-size:12px;font-weight:600;color:var(--t)">0 seçili</span>
       <button class="btn btns" style="font-size:11px;color:#D97706" onclick="_bulkToggle('suspended')">⏸ Askıya Al</button>
       <button class="btn btns" style="font-size:11px;color:#16A34A" onclick="_bulkToggle('active')">▶ Aktifleştir</button>
+      <button class="btn btns" style="font-size:11px" onclick="_bulkRoleChange()">Toplu Rol</button>
       <button class="btn btns" style="font-size:11px;color:#EF4444" onclick="_bulkDelete()">🗑 Sil</button>
       <button class="btn btns" style="font-size:11px;margin-left:auto" onclick="_clearBulk()">✕ İptal</button>
     </div>
@@ -1843,8 +1844,9 @@ function renderUsers(filter=''){
             ${_th('Kullanıcı','name')}
             ${_th('Rol','role')}
             ${_th('Durum','status')}
-            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Erişim</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">2FA</th>
             ${_th('Son Giriş','lastLogin')}
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Hatalı Giriş</th>
             <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">İşlemler</th>
           </tr>
         </thead>
@@ -1881,17 +1883,17 @@ function renderUsers(filter=''){
                   ${isActive?'Aktif':'Pasif'}
                 </span>
               </td>
-              <td style="padding:12px 16px">
-                <div style="display:flex;flex-wrap:wrap;gap:3px">
-                  ${(u.access||[]).map(a=>`<span style="padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600;background:var(--al);color:var(--ac)">${a}</span>`).join('')||`<span style="font-size:11px;color:var(--t3)">—</span>`}
-                </div>
+              <td style="padding:12px 16px;text-align:center">
+                <span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;background:${u.twoFactor?'rgba(22,163,74,.08)':'rgba(220,38,38,.08)'};color:${u.twoFactor?'#16A34A':'#DC2626'}">${u.twoFactor?'Aktif':'Pasif'}</span>
               </td>
               <td style="padding:12px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--t3);white-space:nowrap">${u.lastLogin?.slice(0,16)||'—'}</td>
+              <td style="padding:12px 16px;text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${(u.failedLogins||0)>=3?'#DC2626':'var(--t3)'}">${(u.failedLogins||0)||'—'}</td>
               <td style="padding:12px 16px">
                 <div style="display:flex;gap:4px;justify-content:flex-end">
-                  <button onclick="editUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px">✏️ Düzenle</button>
+                  <button onclick="editUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px">✏️</button>
                   <button onclick="toggleUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px;${isActive?'color:#D97706':'color:#16A34A'}" title="${isActive?'Pasife al':'Aktif et'}">${isActive?'⏸':'▶'}</button>
-                  ${!isSelf?`<button onclick="deleteUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px;color:#EF4444" title="Sil">🗑</button>`:''}
+                  ${!isSelf?`<button onclick="deleteUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px;color:#EF4444">🗑</button>`:''}
+                  <button onclick="_toggleUserDetail.call(this,${u.id})" class="btn btns" style="font-size:11px;padding:5px 8px;color:var(--t3)">▾</button>
                 </div>
               </td>
             </tr>`;
@@ -3297,5 +3299,52 @@ if (typeof module !== 'undefined' && module.exports) {
     setTimeout(function() { mo.classList.add('open'); }, 10);
   };
 }
+
+// ── Satır genişleme — kullanıcı detay ────────────────────
+window._toggleUserDetail = function(uid) {
+  var detailId = 'u-detail-' + uid;
+  var existing = document.getElementById(detailId);
+  if (existing) { existing.remove(); return; }
+  document.querySelectorAll('[id^="u-detail-"]').forEach(function(el) { el.remove(); });
+  var users = loadUsers(); var u = users.find(function(x) { return x.id === uid; }); if (!u) return;
+  var tr2 = document.createElement('tr'); tr2.id = detailId; tr2.style.cssText = 'background:#E6F1FB18';
+  tr2.innerHTML = '<td colspan="8" style="padding:0 16px 12px 52px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-top:10px">'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px"><div style="font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:6px;border-bottom:0.5px solid var(--b);padding-bottom:4px">Modüller</div><div style="display:flex;flex-wrap:wrap;gap:3px">' + (u.modules || []).slice(0, 8).map(function(m) { return '<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C">' + m + '</span>'; }).join('') + ((u.modules || []).length > 8 ? '<span style="font-size:9px;color:var(--t3)">+' + ((u.modules || []).length - 8) + '</span>' : '') + '</div></div>'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px"><div style="font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:6px;border-bottom:0.5px solid var(--b);padding-bottom:4px">Güvenlik</div><div style="font-size:11px;display:flex;flex-direction:column;gap:4px"><div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">2FA</span><span style="color:' + (u.twoFactor ? '#16a34a' : '#dc2626') + ';font-weight:500">' + (u.twoFactor ? 'Aktif' : 'Pasif') + '</span></div><div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Hatalı giriş</span><span style="color:' + ((u.failedLogins || 0) >= 3 ? '#dc2626' : 'var(--t)') + ';font-weight:500">' + (u.failedLogins || 0) + '</span></div><div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Kilitli</span><span style="color:' + (u.autoLocked ? '#dc2626' : '#16a34a') + '">' + (u.autoLocked ? 'Evet' : 'Hayır') + '</span></div></div></div>'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px"><div style="font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:6px;border-bottom:0.5px solid var(--b);padding-bottom:4px">Puantaj</div><div style="font-size:11px;color:var(--t2)">' + (u.puantajYetki && u.puantajYetki.length ? u.puantajYetki.length + ' kişi yetkili' : 'Yalnızca kendisi') + '</div></div>'
+    + '<div style="background:var(--s2);border-radius:8px;padding:10px"><div style="font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:6px;border-bottom:0.5px solid var(--b);padding-bottom:4px">Hızlı İşlem</div><div style="display:flex;flex-direction:column;gap:4px"><button onclick="Admin.resetPassword(' + u.id + ')" style="padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:var(--t2);text-align:left">Şifre Sıfırla</button><button onclick="_forceLogout(' + u.id + ')" style="padding:4px 8px;border:0.5px solid #F09595;border-radius:5px;background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:#791F1F;text-align:left">Oturumu Kapat</button>' + (u.autoLocked ? '<button onclick="_unlockUser(' + u.id + ')" style="padding:4px 8px;border:0.5px solid #C0DD97;border-radius:5px;background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:#27500A;text-align:left">Kilidi Kaldır</button>' : '') + '</div></div>'
+    + '</div></td>';
+  var row = this.closest('tr'); if (row && row.parentNode) row.parentNode.insertBefore(tr2, row.nextSibling);
+};
+
+window._forceLogout = function(uid) {
+  window.confirmModal('Bu kullanıcının aktif oturumu kapatılacak.', { title: 'Oturumu Kapat', danger: true, confirmText: 'Kapat', onConfirm: function() {
+    var users = loadUsers(); var u = users.find(function(x) { return x.id === uid; }); if (!u) return;
+    u.lastLogout = new Date().toISOString(); u.forcedLogout = true; saveUsers(users);
+    window.toast?.('Oturum kapatıldı ✓', 'ok'); window.logActivity?.('user', u.name + ' oturumu zorla kapatıldı');
+  }});
+};
+
+window._unlockUser = function(uid) {
+  var users = loadUsers(); var u = users.find(function(x) { return x.id === uid; }); if (!u) return;
+  u.autoLocked = false; u.failedLogins = 0; saveUsers(users); renderUsers();
+  window.toast?.('Hesap kilidi kaldırıldı ✓', 'ok'); window.logActivity?.('user', u.name + ' hesap kilidi kaldırıldı');
+};
+
+window._bulkRoleChange = function() {
+  var ids = _getSelectedIds(); if (!ids.length) return;
+  var opts = ['admin', 'manager', 'lead', 'staff'].map(function(r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+  var mo = document.createElement('div'); mo.className = 'mo';
+  mo.innerHTML = '<div class="moc" style="max-width:360px;padding:20px"><div style="font-size:14px;font-weight:500;margin-bottom:14px">' + ids.length + ' kullanıcı için rol seç</div><select id="bulk-role-sel" class="fi">' + opts + '</select><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn btns" onclick="this.closest(\'.mo\').remove()">İptal</button><button class="btn btnp" onclick="_doBulkRole()">Uygula</button></div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._doBulkRole = function() {
+  var sel = document.getElementById('bulk-role-sel'); if (!sel) return;
+  var role = sel.value; var ids = _getSelectedIds();
+  var users = loadUsers(); users.forEach(function(u) { if (ids.includes(u.id)) u.role = role; }); saveUsers(users);
+  document.querySelector('.mo')?.remove(); _clearBulk(); renderUsers();
+  window.toast?.(ids.length + ' kullanıcı rolü güncellendi ✓', 'ok'); window.logActivity?.('user', 'Toplu rol: ' + ids.length + ' → ' + role);
+};
 
 })();

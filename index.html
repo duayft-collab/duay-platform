@@ -921,7 +921,9 @@ function _doLogin() {
   <div id="set-nav" style="width:180px;flex-shrink:0;background:var(--s2);border-right:0.5px solid var(--b);padding:16px 0;display:flex;flex-direction:column;gap:0">
     <div style="font-size:9px;font-weight:500;letter-spacing:.06em;color:var(--t3);padding:0 16px;margin-bottom:6px;text-transform:uppercase">Genel</div>
     <div class="set-nav-item" id="sni-gorunum" onclick="setNav('gorunum',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Görünüm & Dil</div>
+    <div class="set-nav-item" id="sni-bildirim" onclick="setNav('bildirim',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Bildirimler</div>
     <div class="set-nav-item" id="sni-guvenlik" onclick="setNav('guvenlik',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Güvenlik</div>
+    <div class="set-nav-item" id="sni-sirket" onclick="setNav('sirket',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Şirket Bilgileri</div>
     <div class="set-nav-item" id="sni-pwa" onclick="setNav('pwa',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>PWA / Mobil</div>
     <div style="font-size:9px;font-weight:500;letter-spacing:.06em;color:var(--t3);padding:0 16px;margin:14px 0 6px;text-transform:uppercase">Sistem</div>
     <div class="set-nav-item" id="sni-firebase" onclick="setNav('firebase',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Firebase</div>
@@ -941,6 +943,30 @@ function _doLogin() {
         <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
           <div class="dr"><span style="font-size:13px">Tema</span><button class="btn btns" onclick="toggleTheme()" id="a-theme-settings">🌙 Değiştir</button></div>
           <div class="dr"><span style="font-size:13px">Dil</span><div style="display:flex;gap:5px"><button class="lpill on" onclick="setLang('tr',this)" style="font-size:11px;padding:3px 10px">TR</button><button class="lpill" onclick="setLang('en',this)" style="font-size:11px;padding:3px 10px">EN</button><button class="lpill" onclick="setLang('fr',this)" style="font-size:11px;padding:3px 10px">FR</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAYFA: Bildirim -->
+    <div id="set-page-bildirim" class="set-page">
+      <div class="set-page-title">Bildirim Ayarları</div>
+      <div class="card" style="max-width:480px">
+        <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+          <div class="dr"><span>Masaüstü push bildirimleri</span><button class="btn btns" id="notif-perm-btn" onclick="_requestNotifPerm()" style="font-size:11px">İzin Ver</button></div>
+          <div class="dr"><span>Gecikme alarmları</span><select class="fi" id="set-alarm-thresh" style="font-size:11px;width:120px" onchange="_saveNotifPref()"><option value="1">1 gün önce</option><option value="3" selected>3 gün önce</option><option value="7">7 gün önce</option></select></div>
+          <div class="dr"><span>Oturum timeout</span><select class="fi" id="set-session-timeout" style="font-size:11px;width:120px" onchange="_saveSessionPref()"><option value="15">15 dakika</option><option value="30" selected>30 dakika</option><option value="60">1 saat</option><option value="240">4 saat</option><option value="0">Sınırsız</option></select></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAYFA: Şirket -->
+    <div id="set-page-sirket" class="set-page">
+      <div class="set-page-title">Şirket Bilgileri</div>
+      <div class="card" style="max-width:480px">
+        <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+          <div class="dr"><span>Şirket adı</span><input class="fi" id="set-co-name" value="Duay Global LLC" style="font-size:11px;width:180px;text-align:right" onchange="_saveCoInfo()"></div>
+          <div class="dr"><span>Vergi numarası</span><input class="fi" id="set-co-tax" placeholder="1234567890" style="font-size:11px;width:180px;text-align:right" onchange="_saveCoInfo()"></div>
+          <div class="dr"><span>İletişim e-postası</span><input class="fi" id="set-co-email" placeholder="info@duaycor.com" style="font-size:11px;width:180px;text-align:right" onchange="_saveCoInfo()"></div>
         </div>
       </div>
     </div>
@@ -1064,6 +1090,14 @@ function _doLogin() {
 .set-page{display:none}
 .set-page.active{display:block}
 </style>
+<script>
+function _requestNotifPerm(){if(!('Notification' in window)){window.toast?.('Tarayıcı desteklemiyor','err');return;}Notification.requestPermission().then(function(p){window.toast?.(p==='granted'?'Bildirim izni verildi ✓':'İzin reddedildi',p==='granted'?'ok':'warn');var btn=document.getElementById('notif-perm-btn');if(btn&&p==='granted')btn.textContent='Aktif';});}
+function _saveNotifPref(){localStorage.setItem('ak_alarm_threshold_days',document.getElementById('set-alarm-thresh')?.value||'3');window.toast?.('Kaydedildi ✓','ok');}
+function _saveSessionPref(){localStorage.setItem('ak_session_timeout_min',document.getElementById('set-session-timeout')?.value||'30');window.toast?.('Kaydedildi ✓','ok');}
+function _saveCoInfo(){var info={name:document.getElementById('set-co-name')?.value||'',tax:document.getElementById('set-co-tax')?.value||'',email:document.getElementById('set-co-email')?.value||''};localStorage.setItem('ak_co_info',JSON.stringify(info));window.toast?.('Şirket bilgileri kaydedildi ✓','ok');}
+function _exportFullBackup(){var data={};Object.keys(localStorage).forEach(function(k){try{data[k]=JSON.parse(localStorage.getItem(k));}catch(e){data[k]=localStorage.getItem(k);}});var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='duay-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();window.toast?.('Yedek indirildi ✓','ok');window.logActivity?.('system','Tam veri yedeği alındı');}
+function _importFullBackup(){var inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=function(){var file=inp.files[0];if(!file)return;var r=new FileReader();r.onload=function(e){window.confirmModal('Mevcut veriler üzerine yazılacak. Devam?',{title:'Yedekten Geri Yükle',danger:true,confirmText:'Evet, Yükle',onConfirm:function(){try{var data=JSON.parse(e.target.result);Object.keys(data).forEach(function(k){localStorage.setItem(k,typeof data[k]==='string'?data[k]:JSON.stringify(data[k]));});window.toast?.('Yedek yüklendi — yenileniyor','ok');setTimeout(function(){location.reload();},1500);}catch(err){window.toast?.('Geçersiz dosya','err');}}});};r.readAsText(file);};inp.click();}
+</script>
       </div>
 
       <!-- Boş panel containerları — ilgili modüller tarafından doldurulur -->
