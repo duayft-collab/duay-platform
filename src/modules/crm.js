@@ -242,9 +242,15 @@ function _renderCrmList(fl,users,cont){
         <div style="display:flex;gap:4px">
           <button class="btn btns" onclick="openCrmModal(${c.id})">✏️</button>
           ${_isAdminCLegacy()?`<button class="btn btns btnd" onclick="delCrm(${c.id})">🗑</button>`:''}
+          <div onclick="event.stopPropagation();_crmTogglePeek(${c.id})" style="cursor:pointer;color:var(--t3);font-size:12px;padding:2px 4px" id="peek-arr-crm-${c.id}">▸</div>
         </div>
       </td>`;
     tbody.appendChild(tr);
+    var peekTr=document.createElement('tr');
+    peekTr.id='peek-crm-'+c.id;
+    peekTr.style.display='none';
+    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
+    tbody.appendChild(peekTr);
   });
   table.appendChild(tbody);
   tblWrap.appendChild(table);
@@ -457,6 +463,17 @@ else{
   fns.forEach(n=>{if(Crm[n])window[n]=Crm[n];});
   window.CRM_ST=CRM_ST;
 }
+
+// ── CRM Peek toggle ──────────────────────────
+window._crmTogglePeek = function(id) {
+  var peek = document.getElementById('peek-crm-' + id);
+  var arr = document.getElementById('peek-arr-crm-' + id);
+  if (!peek) return;
+  var open = peek.style.display !== 'none';
+  document.querySelectorAll('[id^="peek-crm-"]').forEach(function(el) { el.style.display = 'none'; });
+  document.querySelectorAll('[id^="peek-arr-crm-"]').forEach(function(el) { el.textContent = '▸'; });
+  if (!open) { peek.style.display = 'table-row'; if (arr) arr.textContent = '▾'; }
+};
 
 // ── CRM Toplu silme ──────────────────────────
 window._crmBulkCheck = function() { var n = document.querySelectorAll('.crm-bulk-chk:checked').length; var bar = document.getElementById('crm-bulk-bar'); var cnt = document.getElementById('crm-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };

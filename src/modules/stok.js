@@ -287,9 +287,15 @@ function renderStok(){
           ${s.doc?`<a href="${s.doc.data}" download="${s.doc.name}" class="btn btns" style="text-decoration:none" title="Belge">📄</a>`:''}
           <button class="btn btns" onclick="openStokModal('${s.dir||'giris'}',${s.id})">✏️</button>
           ${window.isAdmin()?`<button class="btn btns btnd" onclick="delStok(${s.id})">🗑</button>`:''}
+          <div onclick="event.stopPropagation();_stkTogglePeek(${s.id})" style="cursor:pointer;color:var(--t3);font-size:12px;padding:2px 4px" id="peek-arr-stk-${s.id}">▸</div>
         </div>
       </td>`;
     tbody.appendChild(tr);
+    var peekTr=document.createElement('tr');
+    peekTr.id='peek-stk-'+s.id;
+    peekTr.style.display='none';
+    peekTr.innerHTML='<td colspan="9" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Ürün</div><div style="font-weight:500">'+(s.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Tür</div><div style="font-weight:500">'+(s.tür||'stok')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Kaydeden</div><div style="font-weight:500">'+(u.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Tarih</div><div style="font-weight:500">'+(s.date||'—')+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openStokModal(\''+(s.dir||'giris')+'\','+s.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();delStok('+s.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
+    tbody.appendChild(peekTr);
   });
   table.appendChild(tbody);
   frag.appendChild(table);
@@ -505,6 +511,17 @@ else{
   fns.forEach(n=>{if(Stok[n])window[n]=Stok[n];});
   window.STK_ST=STK_ST;
 }
+
+// ── Stok Peek toggle ──────────────────────────
+window._stkTogglePeek = function(id) {
+  var peek = document.getElementById('peek-stk-' + id);
+  var arr = document.getElementById('peek-arr-stk-' + id);
+  if (!peek) return;
+  var open = peek.style.display !== 'none';
+  document.querySelectorAll('[id^="peek-stk-"]').forEach(function(el) { el.style.display = 'none'; });
+  document.querySelectorAll('[id^="peek-arr-stk-"]').forEach(function(el) { el.textContent = '▸'; });
+  if (!open) { peek.style.display = 'table-row'; if (arr) arr.textContent = '▾'; }
+};
 
 // ── Stok Toplu silme ──────────────────────────
 window._stkBulkCheck = function() { var n = document.querySelectorAll('.stk-bulk-chk:checked').length; var bar = document.getElementById('stk-bulk-bar'); var cnt = document.getElementById('stk-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };

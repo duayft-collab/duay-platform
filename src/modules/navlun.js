@@ -282,7 +282,17 @@ function renderNavlun() {
             + (n.durum==='bekliyor'?'<button onclick="navlunReddet('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px;color:var(--rdt)">Reddet</button>':'')
             + '<button onclick="openSatisTeklif('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px;color:var(--ac)">📤 Satış</button>'
             + '<button onclick="openNavlunModal('+n.id+')" class="btn btns" style="font-size:11px;padding:2px 9px">Düzenle</button>'
+            + '<div onclick="event.stopPropagation();_nvlTogglePeek('+n.id+')" style="cursor:pointer;color:var(--t3);font-size:12px;padding:2px 6px" id="peek-arr-'+n.id+'">▸</div>'
           + '</div>'
+        + '</div>'
+        + '<div id="peek-'+n.id+'" style="display:none;padding:10px 14px;background:var(--s2);border-top:1px solid var(--b);font-size:11px">'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">'
+            + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Taşıyan</div><div style="font-weight:500">'+(n.tasiyan||'—')+'</div></div>'
+            + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Güzergah</div><div style="font-weight:500">'+(n.from||'—')+' → '+(n.to||'—')+'</div></div>'
+            + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Fiyat</div><div style="font-weight:500">'+(n.para||'USD')+' '+Number(n.birimFiyat||0).toLocaleString('tr-TR')+'</div></div>'
+            + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Geçerlilik</div><div style="font-weight:500">'+(n.gecerlilikBitis||'—')+'</div></div>'
+          + '</div>'
+          + '<div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openNavlunModal('+n.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();delNavlun('+n.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div>'
         + '</div>'
       + '</div>';
     });
@@ -1148,6 +1158,17 @@ if (typeof module!=='undefined'&&module.exports) {
   };
   try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) {}
 }
+
+// ── Navlun Peek toggle ──────────────────────────
+window._nvlTogglePeek = function(id) {
+  var peek = document.getElementById('peek-' + id);
+  var arr = document.getElementById('peek-arr-' + id);
+  if (!peek) return;
+  var open = peek.style.display !== 'none';
+  document.querySelectorAll('[id^="peek-"]').forEach(function(el) { if (!el.id.startsWith('peek-arr')) el.style.display = 'none'; });
+  document.querySelectorAll('[id^="peek-arr-"]').forEach(function(el) { el.textContent = '▸'; });
+  if (!open) { peek.style.display = 'block'; if (arr) arr.textContent = '▾'; }
+};
 
 // ── Navlun Toplu silme ──────────────────────────
 window._nvlBulkCheck = function() { var n = document.querySelectorAll('.nvl-bulk-chk:checked').length; var bar = document.getElementById('nvl-bulk-bar'); var cnt = document.getElementById('nvl-bulk-cnt'); if (bar) bar.style.display = n ? 'flex' : 'none'; if (cnt) cnt.textContent = n; };
