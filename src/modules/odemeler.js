@@ -496,7 +496,7 @@ function _injectOdmPanel() {
       '<div id="odm-stab-all" class="odm-tab on" onclick="setOdmTab(\'all\')">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
       '<div id="odm-stab-odeme" class="odm-tab" onclick="setOdmTab(\'odeme\')">Ödemeler <span id="odm-stat-odm-n" style="font-size:10px;opacity:.7"></span></div>',
       '<div id="odm-stab-tahsilat" class="odm-tab" onclick="setOdmTab(\'tahsilat\')">Tahsilatlar</div>',
-      '<div id="odm-stab-bekliyor" class="odm-tab" onclick="setOdmTab(\'bekliyor\')">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;opacity:.7"></span></div>',
+      '<div id="odm-stab-bekliyor" class="odm-tab" onclick="setOdmTab(\'bekliyor\')" style="position:relative">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;padding:1px 6px;border-radius:10px;background:#dc2626;color:#fff;font-weight:600;display:none"></span></div>',
       '<div id="odm-stab-projeksiyon" class="odm-tab" onclick="setOdmTab(\'projeksiyon\')">Projeksiyon</div>',
       '<div id="odm-stab-analiz" class="odm-tab" onclick="setOdmTab(\'analiz\')">Analiz</div>',
     '</div>',
@@ -1007,7 +1007,8 @@ function renderOdemeler() {
   const totalN = all.length;
   const weekAmt = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
                      .reduce((s,o) => s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'), 0);
-  const pendN  = all.filter(function(o) { return o.approvalStatus === 'pending'; }).length;
+  const pendN  = all.filter(function(o) { return o.approvalStatus === 'pending' || o.approvalStatus === 'pending_dual_approval'; }).length;
+  const dualN  = all.filter(function(o) { return o.approvalStatus === 'pending_dual_approval'; }).length;
 
   // 6 metrik güncelle
   _sto('odm-m-tah-amt', '₺' + Math.round(_tahMonthAmt).toLocaleString('tr-TR'));
@@ -1066,7 +1067,9 @@ function renderOdemeler() {
 
   _sto('odm-stat-total', totalN);
   _sto('odm-stat-odm-n', _allOdm.length);
-  _sto('odm-stat-pend-n', pendN > 0 ? pendN : '');
+  var _pendEl = _go('odm-stat-pend-n');
+  if (_pendEl) { if (pendN > 0) { _pendEl.textContent = pendN; _pendEl.style.display = 'inline'; _pendEl.style.background = dualN > 0 ? '#dc2626' : '#D97706'; } else { _pendEl.style.display = 'none'; } }
+  _sto('odm-stat-dual', dualN > 0 ? dualN : pendN);
 
   // Döviz pozisyon
   ['USD','EUR','TRY'].forEach(function(cur) {
@@ -5662,6 +5665,10 @@ window.renderOdemeler = function() {
         row.setAttribute('oncontextmenu', '_odmRowContextMenu(event,' + idMatch[1] + ')');
       }
     });
+    // Yöneticiye onay bekleyen uyarısı
+    var _dN = document.querySelectorAll ? (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && o.approvalStatus === 'pending_dual_approval'; }).length : 0;
+    if (_isManagerO() && _dN > 0 && !window._odmDualToastShown) { window._odmDualToastShown = true; window.toast?.(_dN + ' ödeme yüksek tutar onayı bekliyor', 'warn'); }
+    if (_dN === 0) window._odmDualToastShown = false;
   }, 100);
 };
 
