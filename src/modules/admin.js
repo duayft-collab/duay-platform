@@ -39,7 +39,7 @@ const ROLE_META={
   lead:{label:'Takım Lideri',icon:'⭐',color:'#D97706',bg:'rgba(217,119,6,.1)',border:'rgba(217,119,6,.2)'},
   staff:{label:'Personel',icon:'👤',color:'#475569',bg:'rgba(71,85,105,.08)',border:'rgba(71,85,105,.15)'},
 };
-let USERS_VIEW='card'; // 'card' | 'table' | 'org'
+let USERS_VIEW='table'; // 'card' | 'table' | 'org'
 let USERS_SORT = { col: '', dir: 1 }; // G7: sıralama state
 let _usersSearchTimer = null; // G6: debounce timer
 const initials = window.initials;
