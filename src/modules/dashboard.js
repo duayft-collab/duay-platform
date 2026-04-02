@@ -256,6 +256,44 @@ function _renderNakitBlok() {
   h += '</svg>';
   h += '<div style="display:flex;gap:10px;font-size:8px;color:' + T3 + ';margin-top:4px"><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.8px;background:' + BLUE + ';display:inline-block"></span>Tahsilat</span><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:1.3px;background:#F09595;border-top:1px dashed #F09595;display:inline-block"></span>Ödeme</span></div></div>';
 
+  // Döviz bazlı gecikmiş alacak kur fark analizi
+  var _kurRates = {};
+  try { _kurRates = JSON.parse(localStorage.getItem('ak_kur_rates') || '{}'); } catch (e) { /* */ }
+  var _gecikDoviz = gecik.filter(function(t) { return t.currency && t.currency !== 'TRY' && (parseFloat(t.amount) || 0) > 0; });
+  if (_gecikDoviz.length > 0) {
+    var _dovizGrp = {};
+    _gecikDoviz.forEach(function(t) {
+      var cur = t.currency;
+      if (!_dovizGrp[cur]) _dovizGrp[cur] = { cur: cur, totalAmt: 0, totalFark: 0, items: [] };
+      var amt = parseFloat(t.amount) || 0;
+      var girisKur = parseFloat(t.kurRate) || 0;
+      var bugunKur = parseFloat(_kurRates[cur]) || 0;
+      var fark = (girisKur > 0 && bugunKur > 0) ? (bugunKur - girisKur) * amt : 0;
+      _dovizGrp[cur].totalAmt += amt;
+      _dovizGrp[cur].totalFark += fark;
+      _dovizGrp[cur].items.push({ amt: amt, girisKur: girisKur, bugunKur: bugunKur, fark: fark });
+    });
+    var _toplamFark = Object.values(_dovizGrp).reduce(function(s, g) { return s + g.totalFark; }, 0);
+    var _farkColor = _toplamFark >= 0 ? GREEN : RED;
+
+    h += '<div style="background:' + BG1 + ';border:0.5px solid ' + BD + ';border-top:none;padding:9px 14px">';
+    h += '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:' + T3 + ';margin-bottom:7px">Döviz Bazlı Gecikmiş Alacak — Kur Farkı</div>';
+    Object.values(_dovizGrp).forEach(function(g) {
+      var sym = g.cur === 'USD' ? '$' : g.cur === 'EUR' ? '€' : g.cur;
+      var avgGiris = g.items.filter(function(i) { return i.girisKur > 0; });
+      var girisAvg = avgGiris.length > 0 ? Math.round(avgGiris.reduce(function(s, i) { return s + i.girisKur; }, 0) / avgGiris.length * 100) / 100 : 0;
+      var bugun = g.items[0]?.bugunKur || 0;
+      var fc = g.totalFark >= 0 ? GREEN : RED;
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid ' + BD + ';font-size:11px">';
+      h += '<div><span style="font-weight:600;color:' + T1 + '">' + g.cur + '</span> · <span style="color:' + T2 + '">' + sym + Math.round(g.totalAmt).toLocaleString('tr-TR') + '</span>';
+      if (girisAvg > 0 && bugun > 0) h += ' <span style="font-size:9px;color:' + T3 + '">Giriş: ₺' + girisAvg.toFixed(2) + ' → Bugün: ₺' + bugun.toFixed(2) + '</span>';
+      h += '</div>';
+      h += '<div style="font-weight:600;color:' + fc + '">' + (g.totalFark >= 0 ? '+' : '') + '₺' + Math.round(Math.abs(g.totalFark)).toLocaleString('tr-TR') + '</div></div>';
+    });
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:11px;font-weight:600"><span style="color:' + T1 + '">Toplam Kur Farkı</span><span style="color:' + _farkColor + '">' + (_toplamFark >= 0 ? '+' : '') + '₺' + Math.round(Math.abs(_toplamFark)).toLocaleString('tr-TR') + ' ' + (_toplamFark >= 0 ? '(avantaj)' : '(kayıp)') + '</span></div>';
+    h += '</div>';
+  }
+
   // Link
   h += '<div style="background:' + BG1 + ';border:0.5px solid ' + BD + ';border-top:none;border-radius:0 0 9px 9px;padding:6px 14px;text-align:right"><span onclick="window.App?.nav?.(\'odemeler\')" style="font-size:9px;color:' + BLUE + ';cursor:pointer;padding:3px 8px;border-radius:4px;background:#E6F1FB">Nakit Akışı tam liste →</span></div>';
 
