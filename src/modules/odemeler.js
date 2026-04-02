@@ -4079,6 +4079,21 @@ function _calcAlisSatis() {
 /** @type {Object} Önceki kur verileri — değişim hesabı için */
 var _tickerRatesPrev = {};
 
+var TICKER_MASTER_LIST = [
+  {key:'USD_ALIS',   label:'USD Alış'   },
+  {key:'USD_SATIS',  label:'USD Satış'  },
+  {key:'EUR_ALIS',   label:'EUR Alış'   },
+  {key:'EUR_SATIS',  label:'EUR Satış'  },
+  {key:'GBP_ALIS',   label:'GBP Alış'   },
+  {key:'GBP_SATIS',  label:'GBP Satış'  },
+  {key:'ALTIN_ALIS', label:'Altın Alış'  },
+  {key:'ALTIN_SATIS',label:'Altın Satış' },
+  {key:'GUMUS_ALIS', label:'Gümüş Alış'  },
+  {key:'GUMUS_SATIS',label:'Gümüş Satış' },
+  {key:'BTC',        label:'BTC'          },
+];
+var _tickerDefaultKeys = ['USD_ALIS','USD_SATIS','EUR_ALIS','EUR_SATIS','GBP_ALIS','ALTIN_ALIS','ALTIN_SATIS','GUMUS_ALIS'];
+
 /** @type {number|null} Otomatik güncelleme interval ID */
 var _tickerInterval = null;
 
@@ -4094,18 +4109,17 @@ function renderKurTicker() {
   var inner = document.getElementById('odm-kur-ticker-inner');
   if (!inner) return;
 
-  var items = [
-    { key: 'USD', flag: '🇺🇸', sym: '$' },
-    { key: 'EUR', flag: '🇪🇺', sym: '€' },
-    { key: 'GBP', flag: '🇬🇧', sym: '£' },
-    { key: 'ALTIN', flag: '🥇', sym: 'gr' },
-    { key: 'BTC', flag: '₿', sym: '' },
-  ];
+  var savedKeys = null;
+  try { savedKeys = JSON.parse(localStorage.getItem('ak_ticker_items') || 'null'); } catch (e) { /* */ }
+  var activeKeys = savedKeys || _tickerDefaultKeys;
+  var items = TICKER_MASTER_LIST.filter(function(m) { return activeKeys.indexOf(m.key) !== -1; });
 
   var html = items.map(function(item) {
     var val  = _tickerRates[item.key] || 0;
-    var prev = _tickerRatesPrev[item.key] || 0;
-    var pct  = prev > 0 ? ((val - prev) / prev * 100) : 0;
+    var baseKey = item.key.replace('_ALIS', '').replace('_SATIS', '');
+    var prev = _tickerRatesPrev[baseKey] || 0;
+    var curBase = _tickerRates[baseKey] || 0;
+    var pct  = prev > 0 ? ((curBase - prev) / prev * 100) : 0;
     var arrow = pct > 0.01 ? '▲' : (pct < -0.01 ? '▼' : '');
     var arrowColor = pct > 0.01 ? '#10B981' : (pct < -0.01 ? '#EF4444' : 'var(--t3)');
     var valStr = item.key === 'BTC'
@@ -4113,8 +4127,7 @@ function renderKurTicker() {
       : val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
 
     return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 14px;font-size:11px;font-weight:600;color:var(--t);white-space:nowrap">'
-      + '<span style="font-size:13px">' + item.flag + '</span>'
-      + '<span style="color:var(--ac);font-weight:700">' + item.key + '</span> '
+      + '<span style="color:var(--ac);font-weight:700;font-size:10px">' + item.label + '</span> '
       + valStr
       + (arrow ? ' <span style="color:' + arrowColor + ';font-size:9px;font-weight:700">' + arrow + ' ' + Math.abs(pct).toFixed(1) + '%</span>' : '')
       + '</span>'
@@ -4558,6 +4571,10 @@ function openKurSettings() {
     + '📊 Son kur güncellemesi: ' + (_odmRatesDate || 'Henüz çekilmedi') + '<br>'
     + '💵 USD: ₺' + (_odmGetRates().USD || '—') + ' | EUR: ₺' + (_odmGetRates().EUR || '—')
     + '</div>'
+    + '<div style="border-top:0.5px solid var(--b);padding-top:14px;margin-top:4px">'
+    + '<div style="font-size:11px;font-weight:500;margin-bottom:10px">Ticker Kurlar</div>'
+    + (function() { var _sKeys = null; try { _sKeys = JSON.parse(localStorage.getItem('ak_ticker_items') || 'null'); } catch(e) {} var _aKeys = _sKeys || _tickerDefaultKeys; return TICKER_MASTER_LIST.map(function(m) { return '<label style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;cursor:pointer"><input type="checkbox" id="tk-chk-' + m.key + '"' + (_aKeys.indexOf(m.key) !== -1 ? ' checked' : '') + ' style="accent-color:var(--ac)">' + m.label + '</label>'; }).join(''); })()
+    + '</div>'
     + '</div>'
     + '<div style="padding:12px 22px 16px;border-top:1px solid var(--b);display:flex;justify-content:flex-end;gap:8px;background:var(--s2)">'
     + '<button class="btn btns" onclick="document.getElementById(\'mo-odm-kur-settings\')?.remove()">İptal</button>'
@@ -4579,6 +4596,10 @@ function _odmSaveKurSettings() {
   };
   _odmSaveKurConfig(cfg);
   _odmRatesMode = cfg.defaultMode;
+  // Ticker seçimini kaydet
+  var tickerKeys = TICKER_MASTER_LIST.filter(function(m) { return document.getElementById('tk-chk-' + m.key)?.checked; }).map(function(m) { return m.key; });
+  localStorage.setItem('ak_ticker_items', JSON.stringify(tickerKeys));
+  renderKurTicker();
   // Kaynağa göre yeniden çek
   if (cfg.source === 'tcmb') {
     _odmRatesDate = '';
