@@ -3464,11 +3464,13 @@ var _TN2_GROUPS = {
     { id:'crm',              label:'CRM / Müşteriler' },
     { id:'alis-teklifleri',  label:'Alış Teklifleri'  },
     { id:'satis-teklifleri', label:'Satış Teklifleri' },
+    { id:'urun-db',          label:'Ürün Veritabanı'  },
   ]},
   ik: { label:'İK', mods: [
     { id:'ik-hub',   label:'İK Merkezi'       },
     { id:'evrak',    label:'Personel Evrak'   },
     { id:'temizlik', label:'Temizlik Kontrol' },
+    { id:'formlar',  label:'Form Şablonları'  },
   ]},
   sistem: { label:'Sistem', mods: [
     { id:'kpi-panel', label:'KPI & Performans'   },
