@@ -873,27 +873,32 @@ window._renderPlatformRules = function() {
     { id: 'GK-16', kural: 'Kritik işlem logActivity yazılır', durum: 'ok' },
     { id: 'GK-17', kural: 'Safari iOS uyumlu', durum: 'ok' },
     { id: 'GK-18', kural: 'Yeni modül: KEYS+limit+SYNC_COLS', durum: 'ok' },
+    { id: 'GK-19', kural: 'Dropdown menüler hover ile açılır, dışarı çıkınca kapanır', durum: 'pending' },
   ];
   var anayas = [
-    'Kural 01 — Sıfır Hardcode: API key ve şifreler asla kaynak kodda olmaz.',
-    'Kural 02 — Safari First: Tüm UI Safari iOS\'ta test edilir.',
-    'Kural 03 — Firestore Master: localStorage önbellek, Firestore gerçek veri.',
-    'Kural 04 — Tek Fix Prensibi: Claude Code bir fix uygular, Baran test eder.',
-    'Kural 05 — Soft Delete: Hiçbir veri kalıcı silinmez — çöp kutusuna gider.',
-    'Kural 06 — Storage <%60: localStorage doluluk her zaman %60 altında.',
-    'Kural 07 — Audit Trail: Her kritik işlem logActivity ile kaydedilir.',
-    'Kural 08 — Modül Erişimi: Yetkisiz menü gösterilmez.',
+    { tarih: '2026-04-02', kural: 'Kural 01 — Sıfır Hardcode: API key ve şifreler asla kaynak kodda olmaz.' },
+    { tarih: '2026-04-02', kural: 'Kural 02 — Safari First: Tüm UI Safari iOS\'ta test edilir.' },
+    { tarih: '2026-04-02', kural: 'Kural 03 — Firestore Master: localStorage önbellek, Firestore gerçek veri.' },
+    { tarih: '2026-04-02', kural: 'Kural 04 — Tek Fix Prensibi: Claude Code bir fix uygular, Baran test eder.' },
+    { tarih: '2026-04-02', kural: 'Kural 05 — Soft Delete: Hiçbir veri kalıcı silinmez — çöp kutusuna gider.' },
+    { tarih: '2026-04-02', kural: 'Kural 06 — Storage <%60: localStorage doluluk her zaman %60 altında.' },
+    { tarih: '2026-04-02', kural: 'Kural 07 — Audit Trail: Her kritik işlem logActivity ile kaydedilir.' },
+    { tarih: '2026-04-02', kural: 'Kural 08 — Modül Erişimi: Yetkisiz menü gösterilmez.' },
+    { tarih: '2026-04-02', kural: 'Kural 09 — Anayasa Güncelleme: İlk 1 ay her gün, sonrasında her önemli değişiklikte güncellenir.' },
   ];
 
   var yapilacaklar = [
-    { id:'NAV-FIX', baslik:'Menü erişim kontrolü (GK-08)', oncelik:'yüksek', aciklama:'Yetkisiz kullanıcılara menü gösterilmemeli' },
+    { id:'FINANS-KUR-001', baslik:'Finans paneli kur düzeltme', oncelik:'yüksek', aciklama:'Finans paneli eski fallback kurları gösteriyor' },
+    { id:'MOD-001', baslik:'GK-08 menü erişim kontrolü', oncelik:'yüksek', aciklama:'Yetkisiz kullanıcılara menü gösterilmemeli' },
+    { id:'GK-19', baslik:'Dropdown hover kapanma — tüm modüller', oncelik:'orta', aciklama:'' },
     { id:'EXP-002', baslik:'GÇB Takip modülü', oncelik:'orta', aciklama:'Gümrük çıkış beyannamesi takip modülü' },
     { id:'EXP-003', baslik:'Konişimento / B/L modülü', oncelik:'orta', aciklama:'Deniz taşımacılığı konişimento takibi' },
     { id:'ALR-001', baslik:'Akıllı alarm sistemi', oncelik:'orta', aciklama:'Vade, stok, kur alarm sistemi' },
   ];
   var sorunlar = [
-    { id:'S-001', baslik:'localStorage doluluk takibi', oncelik:'kritik', aciklama:'taskChats ve tasks şişiyor — STORAGE-CLEAN-002 uygulandı, takip gerekli' },
-    { id:'S-002', baslik:'Offline kuyruk', oncelik:'orta', aciklama:'Firestore\'a yazılamayan kayıtlar — Manuel Sync dene' },
+    { id:'S-001', baslik:'localStorage %70+ dolu', oncelik:'kritik', aciklama:'taskChats şişiyor — STORAGE-CLEAN-002 uygulandı, takip gerekli' },
+    { id:'S-002', baslik:'Offline kuyruk 1 işlem', oncelik:'orta', aciklama:'Manuel Sync dene' },
+    { id:'S-003', baslik:'Kullanıcı Yönetimi tablo görünümü', oncelik:'yüksek', aciklama:'Tarayıcı cache — Cmd+Shift+R dene' },
   ];
   var gelistirmeler = [
     { id:'G-001', baslik:'Pusula liste görünümü yeniden tasarım', oncelik:'düşük', aciklama:'' },
@@ -916,16 +921,17 @@ window._renderPlatformRules = function() {
   panel.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px">'
     + '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Platform Kuralları</div>'
     + '<div style="font-size:11px;color:var(--t3);margin-bottom:24px">Sistem geliştirme anayasası ve genel kurallar</div>'
-    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px;overflow-x:auto">' + _tabBtn('gk', 'Genel Kurallar', true) + _tabBtn('anayasa', 'Anayasa', false) + _tabBtn('yapilacak', 'Yapılacaklar', false) + _tabBtn('sorunlar', 'Sorunlar', false) + _tabBtn('gelistirmeler', 'Geliştirmeler', false) + '</div>'
+    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px;overflow-x:auto">' + _tabBtn('gk', 'Genel Kurallar', true) + _tabBtn('anayasa', 'Anayasa', false) + _tabBtn('ozel', 'Özel Kurallar', false) + _tabBtn('yapilacak', 'Yapılacaklar', false) + _tabBtn('sorunlar', 'Sorunlar', false) + _tabBtn('gelistirmeler', 'Geliştirmeler', false) + '</div>'
     + '<div id="pr-content-gk"><div style="display:flex;flex-direction:column;gap:4px">' + gkList.map(function(g) { var ok = g.durum === 'ok'; return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--sf);border:0.5px solid var(--b);border-radius:7px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace;flex-shrink:0">' + g.id + '</span><span style="flex:1;font-size:11px;color:var(--t)">' + g.kural + '</span><span style="font-size:10px;font-weight:500;color:' + (ok ? '#16a34a' : '#D97706') + '">' + (ok ? '✓ Uygulandı' : '⏳ Bekliyor') + '</span></div>'; }).join('') + '</div></div>'
-    + '<div id="pr-content-anayasa" style="display:none"><div style="display:flex;flex-direction:column;gap:6px">' + anayas.map(function(a) { return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid #185FA5;border-radius:7px;font-size:12px;color:var(--t);line-height:1.6">' + a + '</div>'; }).join('') + '</div></div>'
+    + '<div id="pr-content-anayasa" style="display:none"><div style="display:flex;flex-direction:column;gap:6px">' + anayas.map(function(a) { return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid #185FA5;border-radius:7px;display:flex;align-items:flex-start;gap:10px"><span style="font-size:9px;color:var(--t3);white-space:nowrap;margin-top:2px;font-family:monospace">' + a.tarih + '</span><span style="font-size:12px;color:var(--t);line-height:1.6">' + a.kural + '</span></div>'; }).join('') + '</div></div>'
+    + '<div id="pr-content-ozel" style="display:none"><div style="padding:32px;text-align:center;color:var(--t3);font-size:12px">Projeye özel teknik kararlar buraya yazılır.</div></div>'
     + '<div id="pr-content-yapilacak" style="display:none">' + _renderItems(yapilacaklar) + '</div>'
     + '<div id="pr-content-sorunlar" style="display:none">' + _renderItems(sorunlar) + '</div>'
     + '<div id="pr-content-gelistirmeler" style="display:none">' + _renderItems(gelistirmeler) + '</div>'
     + '</div>';
 
   window._prTab = function(tab) {
-    ['gk', 'anayasa', 'yapilacak', 'sorunlar', 'gelistirmeler'].forEach(function(t) {
+    ['gk', 'anayasa', 'ozel', 'yapilacak', 'sorunlar', 'gelistirmeler'].forEach(function(t) {
       var c = document.getElementById('pr-content-' + t); var tb = document.getElementById('pr-tab-' + t);
       if (c) c.style.display = t === tab ? '' : 'none';
       if (tb) { tb.style.borderBottomColor = t === tab ? 'var(--ac)' : 'transparent'; tb.style.color = t === tab ? 'var(--ac)' : 'var(--t3)'; tb.style.fontWeight = t === tab ? '500' : '400'; }
