@@ -509,15 +509,6 @@ function _injectOdmPanel() {
       '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;height:30px" title="Başlangıç">',
       '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;height:30px" title="Bitiş">',
       '<select id="odm-personel-f" onchange="renderOdemeler()" style="height:30px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;padding:0 8px;min-width:120px;color:var(--t2)"><option value="">Tüm Sorumlular</option></select>',
-      '<div style="display:flex;gap:4px;flex-shrink:0">',
-        '<span class="odm-chip odm-chip-active" onclick="window._odmChipFilter(\'all\',this)">Tümü</span>',
-        '<span class="odm-chip" onclick="window._odmChipFilter(\'gecikti\',this)">Gecikmiş</span>',
-        '<span class="odm-chip" onclick="window._odmChipFilter(\'pending\',this)">Bekleyen</span>',
-        '<span class="odm-chip" onclick="window._odmChipFilter(\'approved\',this)">Onaylı</span>',
-        '<span class="odm-chip" onclick="window._odmChipFilter(\'USD\',this)">USD</span>',
-        '<span class="odm-chip" onclick="window._odmChipFilter(\'EUR\',this)">EUR</span>',
-        '<span class="odm-chip" onclick="window._odmChipFilter(\'TRY\',this)">TRY</span>',
-      '</div>',
       '<select id="odm-sort-f" onchange="renderOdemeler()" style="height:30px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;padding:0 6px;color:var(--t2);flex-shrink:0"><option value="date-desc">Tarih ↓</option><option value="date-asc">Tarih ↑</option><option value="amt-desc">Tutar ↓</option><option value="amt-asc">Tutar ↑</option><option value="status">Durum</option></select>',
       '<span onclick="_odmClearFilters()" style="font-size:10px;color:var(--t3);cursor:pointer;flex-shrink:0;white-space:nowrap">✕ Temizle</span>',
       '<span id="odm-filter-summary" style="display:none"></span>',
@@ -1058,10 +1049,12 @@ function renderOdemeler() {
   _sto('odm-stat-odm-n', _allOdm.length);
   _sto('odm-stat-tah-n', _allTah.length);
   // KPI badge
-  _sto('odm-badge-tah', _tahThisMonth.length || '');
-  _sto('odm-badge-odm', _odmThisMonth.length || '');
+  _sto('odm-badge-tah', _tahThisMonth.length > 0 ? _tahThisMonth.length : '');
+  _sto('odm-badge-odm', _odmThisMonth.length > 0 ? _odmThisMonth.length : '');
+  // Bekleyen — ödeme + tahsilat
+  var _bekleyenN = pendN + _allTah.filter(function(t) { return t.approvalStatus === 'pending'; }).length;
   var _pendEl = _go('odm-stat-pend-n');
-  if (_pendEl) { if (pendN > 0) { _pendEl.textContent = pendN; _pendEl.style.display = 'inline'; _pendEl.style.background = dualN > 0 ? '#dc2626' : '#D97706'; } else { _pendEl.style.display = 'none'; } }
+  if (_pendEl) { if (_bekleyenN > 0) { _pendEl.textContent = _bekleyenN; _pendEl.style.display = 'inline'; _pendEl.style.background = dualN > 0 ? '#dc2626' : '#D97706'; } else { _pendEl.style.display = 'none'; } }
   _sto('odm-stat-dual', dualN > 0 ? dualN : pendN);
 
   // Döviz pozisyon
