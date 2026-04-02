@@ -4061,7 +4061,20 @@ window.openHighAmountSettings = function() {
 // ════════════════════════════════════════════════════════════════
 
 /** @type {Object} Güncel kur verileri */
-var _tickerRates = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN: 3850, BTC: 67000 };
+var _tickerRates = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN: 3850, GUMUS: 38, BTC: 67000 };
+
+function _calcAlisSatis() {
+  _tickerRates.USD_ALIS = Math.round(_tickerRates.USD * 0.997 * 100) / 100;
+  _tickerRates.USD_SATIS = Math.round(_tickerRates.USD * 1.003 * 100) / 100;
+  _tickerRates.EUR_ALIS = Math.round(_tickerRates.EUR * 0.997 * 100) / 100;
+  _tickerRates.EUR_SATIS = Math.round(_tickerRates.EUR * 1.003 * 100) / 100;
+  _tickerRates.GBP_ALIS = Math.round(_tickerRates.GBP * 0.997 * 100) / 100;
+  _tickerRates.GBP_SATIS = Math.round(_tickerRates.GBP * 1.003 * 100) / 100;
+  _tickerRates.ALTIN_ALIS = Math.round(_tickerRates.ALTIN * 0.995 * 100) / 100;
+  _tickerRates.ALTIN_SATIS = Math.round(_tickerRates.ALTIN * 1.005 * 100) / 100;
+  _tickerRates.GUMUS_ALIS = Math.round(_tickerRates.GUMUS * 0.995 * 100) / 100;
+  _tickerRates.GUMUS_SATIS = Math.round(_tickerRates.GUMUS * 1.005 * 100) / 100;
+}
 
 /** @type {Object} Önceki kur verileri — değişim hesabı için */
 var _tickerRatesPrev = {};
@@ -4143,6 +4156,7 @@ function fetchKurRates() {
     .catch(function(e) { console.warn('[Kur] Döviz API hatası:', e.message); })
     .finally(function() {
       _tickerLastUpdate = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+      _calcAlisSatis();
       renderKurTicker();
       if (updated) _checkKurAlarm();
     });
@@ -4160,6 +4174,13 @@ function fetchKurRates() {
         var tryRate = _tickerRates.USD || 38.50;
         _tickerRates.ALTIN = Math.round(goldUsdPerGram * tryRate * 100) / 100;
         localStorage.setItem('ak_altin_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.ALTIN }));
+        // Gümüş
+        if (d[0].silver) {
+          var silverPerGram = d[0].silver / ozToGram;
+          _tickerRates.GUMUS = Math.round(silverPerGram * tryRate * 100) / 100;
+          localStorage.setItem('ak_gumus_cache', JSON.stringify({ ts: Date.now(), rate: _tickerRates.GUMUS }));
+        }
+        _calcAlisSatis();
         renderKurTicker();
         _checkKurAlarm();
       }
@@ -4167,6 +4188,8 @@ function fetchKurRates() {
     .catch(function() {
       // localStorage fallback — son bilinen fiyat
       try { var c = JSON.parse(localStorage.getItem('ak_altin_cache') || '{}'); if (c.rate) { _tickerRates.ALTIN = c.rate; } } catch(e) {}
+      try { var c2 = JSON.parse(localStorage.getItem('ak_gumus_cache') || '{}'); if (c2.rate) { _tickerRates.GUMUS = c2.rate; } } catch(e) {}
+      _calcAlisSatis();
       renderKurTicker();
     });
 
@@ -4176,6 +4199,7 @@ function fetchKurRates() {
     .then(function(d) {
       if (d && d.bitcoin && d.bitcoin.usd) {
         _tickerRates.BTC = Math.round(d.bitcoin.usd * 100) / 100;
+        _calcAlisSatis();
         renderKurTicker();
         _checkKurAlarm();
       }
@@ -4193,7 +4217,7 @@ function _checkKurAlarm() {
   if (!_isManagerO()) return;
   var THRESHOLD = 2; // %2
 
-  var labels = { USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', ALTIN: 'Altın', BTC: 'Bitcoin' };
+  var labels = { USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', ALTIN: 'Altın', GUMUS: 'Gümüş', BTC: 'Bitcoin' };
 
   Object.keys(_tickerRates).forEach(function(key) {
     var cur  = _tickerRates[key] || 0;
