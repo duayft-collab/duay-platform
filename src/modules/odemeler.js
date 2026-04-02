@@ -226,7 +226,7 @@ function _odmKurModeHTML(cur) {
   var rates = _odmGetRates();
   var rate = rates[cur] || 1;
   var kurCfg = _odmLoadKurConfig();
-  var allowManuel = kurCfg.allowOverride !== false;
+  var allowManuel = kurCfg.allowOverride !== false && _isAdminO();
   var sourceLabel = ODM_KUR_SOURCES[kurCfg.source || 'tcmb']?.l || 'TCMB';
   return '<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-top:4px">'
     + '<span style="font-size:10px;color:var(--t3)">Kur:</span>'
@@ -243,6 +243,7 @@ function _odmKurModeHTML(cur) {
 }
 
 function _odmKurModeChange(mode) {
+  if (mode === 'manuel' && !_isAdminO()) { window.toast?.('Manuel kur yalnızca admin tarafından ayarlanabilir', 'err'); return; }
   _odmRatesMode = mode;
   const el = document.getElementById('odm-kur-manuel');
   if (el) el.style.display = mode === 'manuel' ? 'block' : 'none';
@@ -873,7 +874,7 @@ function renderOdemeler() {
       if (_odmActiveChip === 'odeme') return o._src === 'odeme' || o.tip === 'odeme';
       if (_odmActiveChip === 'tahsilat') return o._src === 'tahsilat' || o.tip === 'tahsilat';
       if (_odmActiveChip === 'gecikti') return !o.paid && !o.collected && o.due && o.due < today;
-      if (_odmActiveChip === 'pending') return o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor';
+      if (_odmActiveChip === 'pending') return o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor' || o.approvalStatus === 'pending_dual_approval';
       if (_odmActiveChip === 'approved') return o.approvalStatus === 'approved' || o.approved;
       if (_odmActiveChip === 'USD' || _odmActiveChip === 'EUR') return o.currency === _odmActiveChip;
       if (_odmActiveChip === 'TRY') return !o.currency || o.currency === 'TRY' || (o.currency !== 'USD' && o.currency !== 'EUR');
@@ -928,7 +929,7 @@ function renderOdemeler() {
     // Sekme filtresi
     if (_odmCurrentTab === 'odeme'    && o._src !== 'odeme' && o.tip !== 'odeme') return false;
     if (_odmCurrentTab === 'tahsilat' && o._src !== 'tahsilat' && o.tip !== 'tahsilat') return false;
-    if (_odmCurrentTab === 'bekliyor' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor'].includes(o.approvalStatus)) return false;
+    if (_odmCurrentTab === 'bekliyor' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor','pending_dual_approval'].includes(o.approvalStatus)) return false;
     if (_odmCurrentTab === 'abonelik' && o.cat !== 'abonelik') return false;
     if (_odmCurrentTab === 'kredi_k'  && o.cat !== 'kredi_k')  return false;
     if (_odmCurrentTab === 'gecikti'  && st !== 'gecikti')  return false;
@@ -949,7 +950,7 @@ function renderOdemeler() {
     // Chip: Durum filtresi
     if (chipStatus === 'gecikti'         && st !== 'gecikti') return false;
     if (chipStatus === 'no-receipt'      && !(o.paid && !o.receipt)) return false;
-    if (chipStatus === 'pending-approval' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor'].includes(o.approvalStatus)) return false;
+    if (chipStatus === 'pending-approval' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor','pending_dual_approval'].includes(o.approvalStatus)) return false;
 
     // Metin arama
     if (q) {
@@ -1351,7 +1352,7 @@ function renderOdemeler() {
         // Ana butonlar
         + (!o.paid
           ? (_odmNeedsApproval(o) && o.approvalStatus !== 'approved' && o.approvalStatus !== 'kesinlesti'
-            ? (o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor'
+            ? (o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor' || o.approvalStatus === 'pending_dual_approval'
               ? '<span style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(245,158,11,.08);color:#D97706;font-weight:500;white-space:nowrap">⏳ Onay</span>'
               : '<button onclick="openApprovalFlow('+o.id+');event.stopPropagation()" style="font-size:9px;padding:2px 6px;border:0.5px solid #D97706;border-radius:5px;background:none;color:#D97706;cursor:pointer;font-family:inherit;white-space:nowrap">Onay İste</button>')
             : '<button onclick="markOdmPaid('+o.id+');event.stopPropagation()" style="font-size:9px;padding:2px 8px;border:none;border-radius:5px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">Ödendi</button>')
@@ -1689,7 +1690,9 @@ function saveOdm() {
   if (!_fDue)    { _missingFields.push('odm-f-due');    _missingLabels.push('Son Tarih'); }
   if (!_fDocNo)  { _missingFields.push('odm-f-docno');  _missingLabels.push('Döküman No'); }
   if (!_fYontem) { _missingFields.push('odm-f-yontem'); _missingLabels.push('Ödeme Yöntemi'); }
-  // Belge zorunluluğu kaldırıldı (ODM-FIX-001)
+  // Belge zorunluluğu — yeni ve düzenleme her ikisinde de
+  var _odmDocsVal2 = []; try { _odmDocsVal2 = JSON.parse(document.getElementById('odm-f-docs')?.value || '[]'); } catch(e2) {}
+  if (!_odmDocsVal2.length) { _missingFields.push('odm-f-docs'); _missingLabels.push('Belge/Fatura'); }
   if (_missingFields.length) {
     _odmHighlightMissing(_missingFields, 'Eksik alanlar: ' + _missingLabels.join(', '));
     window.toast?.('Lütfen zorunlu alanları doldurun (' + _missingLabels.length + ' alan eksik)', 'err');
@@ -1888,6 +1891,18 @@ function saveOdm() {
       newEntry.approvalRequestedAt = _nowTso();
     }
     d.unshift(newEntry);
+  }
+  // S-05: Yüksek tutar çift onay
+  var _hoThreshold = _getHighAmountThreshold();
+  var _entryRef = isNew ? d[0] : d.find(function(x) { return x.id === _odmEditId; });
+  if (_entryRef) {
+    var _entryTL = _odmToTRY(_entryRef.amount, _entryRef.currency);
+    if (_entryTL >= (_hoThreshold.tl || 50000) && !_isAdminO() && !_entryRef._dualApproved) {
+      _entryRef.approvalStatus = 'pending_dual_approval';
+      _entryRef._dualApprovalRequired = true;
+      window.logActivity?.('finans', 'Yüksek tutar onay bekleniyor: ' + _entryRef.name + ' ₺' + Math.round(_entryTL).toLocaleString('tr-TR'));
+      window.toast?.('⚠️ ₺' + Math.round(_entryTL).toLocaleString('tr-TR') + ' üzeri — yönetici onayı bekleniyor', 'warn');
+    }
   }
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
@@ -3867,6 +3882,15 @@ function processOdmApproval(odmId, action) {
   const cu = _CUo();
 
   if (!o.approvalLog) o.approvalLog = [];
+
+  // S-05: Yüksek tutar çift onay
+  if (o.approvalStatus === 'pending_dual_approval') {
+    if (!_isManagerO()) { window.toast?.('Bu kayıt yönetici onayı gerektiriyor', 'err'); return; }
+    o.approvalStatus = 'approved'; o.approved = true; o.approvedBy = cu?.id; o.approvedAt = _nowTso(); o._dualApproved = true;
+    o.approvalLog.push({ ts: _nowTso(), action: 'dual_approved', actorId: cu?.id, actorName: cu?.name || '', note: 'Yüksek tutar onayı' });
+    if (_isTahApproval) { if (typeof storeTahsilat === 'function') storeTahsilat(d); } else { window.storeOdm ? storeOdm(d) : null; }
+    renderOdemeler(); window.toast?.('Yüksek tutar onaylandı ✓', 'ok'); window.logActivity?.('finans', 'Yüksek tutar onaylandı: ' + o.name); return;
+  }
 
   if (action === 'ara_onayla') {
     const amount = parseFloat(o.amount||0);
