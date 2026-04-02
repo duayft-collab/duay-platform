@@ -1938,7 +1938,7 @@ function renderSettingsAdmin(){
   updateVersionUI();
   // Sürüm geçmişi
   const vh=g('ver-hist');
-  if(vh&&!vh.innerHTML.trim()){
+  if(vh){
     vh.innerHTML=CHANGELOG.slice(0,8).map(c=>`<div class="dr"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${c.v}</span><span style="font-size:11px;color:var(--t2)">${escapeHtml(c.note)}</span><span style="font-size:10px;color:var(--t3)">${c.ts.slice(0,10)}</span></div>`).join('');
   }
   // Puantaj Yetki Kartı — dinamik render (G1: undefined guard)
