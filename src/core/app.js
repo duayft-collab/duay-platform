@@ -2475,6 +2475,51 @@ function doGSearch(q) {
     }
   } catch (e) {}
 
+  // İhracat Dosyaları
+  try {
+    if (typeof window.loadIhracatDosyalar === 'function') {
+      window.loadIhracatDosyalar().filter(d => !d.isDeleted).forEach(d => {
+        const txt = ((d.dosyaNo||'')+' '+(d.musteriAd||'')+' '+(d.teslim_sekli||'')+' '+(d.varis_limani||'')).toLowerCase();
+        if (txt.includes(q)) results.push({
+          icon: '🚢', title: d.dosyaNo + ' — ' + (d.musteriAd||''),
+          sub: 'İhracat · ' + (d.teslim_sekli||'') + ' · ' + (d.durum||''),
+          module: 'ihracat-ops',
+          action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('ihracat-ops'); setTimeout(() => window._ihrAcDosya?.(d.id), 300); }
+        });
+      });
+    }
+  } catch (e) {}
+
+  // İhracat Ürünleri
+  try {
+    if (typeof window.loadIhracatUrunler === 'function') {
+      window.loadIhracatUrunler().filter(u => !u.isDeleted).slice(0, 5).forEach(u => {
+        const txt = ((u.aciklama||'')+' '+(u.urun_kodu||'')+' '+(u.tedarikciAd||'')+' '+(u.hs_kodu||'')+' '+(u.standart_urun_adi||'')).toLowerCase();
+        if (txt.includes(q)) results.push({
+          icon: '🏷️', title: (u.aciklama||u.urun_kodu||'Ürün'),
+          sub: 'İhracat Ürünü · ' + (u.tedarikciAd||'') + ' · ' + (u.urun_kodu||''),
+          module: 'ihracat-ops',
+          action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('ihracat-ops'); setTimeout(() => window._ihrAcDosya?.(u.dosya_id), 300); }
+        });
+      });
+    }
+  } catch (e) {}
+
+  // Satınalma
+  try {
+    if (typeof window.loadSatinalma === 'function') {
+      window.loadSatinalma().filter(s => !s.isDeleted).forEach(s => {
+        const txt = ((s.urun||'')+' '+(s.tedarikci||'')+' '+(s.no||'')+' '+(s.aciklama||'')).toLowerCase();
+        if (txt.includes(q)) results.push({
+          icon: '🛒', title: (s.urun||s.aciklama||'Satınalma'),
+          sub: 'Satınalma · ' + (s.tedarikci||'') + ' · ' + (s.tarih||'').slice(0,10),
+          module: 'satinalma',
+          action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('satinalma'); }
+        });
+      });
+    }
+  } catch (e) {}
+
   if (!results.length) {
     res.innerHTML = `<div class="gsr-empty">❌ "<strong>${q}</strong>" için sonuç bulunamadı.</div>`;
     return;
