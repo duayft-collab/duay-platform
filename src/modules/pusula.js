@@ -6956,6 +6956,21 @@ console.info('[Pusula] Bildirim + Dashboard + Takvim + AI aktif ✓');
     }
   };
 
+  // GK-19: hover ile aç/kapat
+  (function _initToolsHover() {
+    function _setup() {
+      var grp = document.getElementById('pus-tools-group');
+      var menu = document.getElementById('pus-tools-menu');
+      var btn = document.querySelector('.pus-tools-trigger');
+      if (!grp || !menu) return;
+      grp.addEventListener('mouseenter', function() { menu.style.display = 'block'; if (btn) btn.classList.add('open'); });
+      grp.addEventListener('mouseleave', function() { menu.style.display = 'none'; if (btn) btn.classList.remove('open'); });
+      if (btn) btn.onclick = null;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _setup);
+    else setTimeout(_setup, 500);
+  })();
+
   window._closeToolsMenu = function() {
     const menu = document.getElementById('pus-tools-menu');
     const btn  = document.querySelector('.pus-tools-trigger');
