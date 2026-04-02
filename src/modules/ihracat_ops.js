@@ -131,11 +131,15 @@ function _ihrRenderEmirler(el) {
 
   if (!items.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)"><div style="font-size:36px;margin-bottom:12px">📦</div><div>İhracat emri bulunamadı</div><div style="margin-top:12px"><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div>'; el.innerHTML = h; return; }
 
-  h += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Dosya No</th><th>Müşteri</th><th>Teslim</th><th>Bitiş</th><th>Durum</th><th>Kalan</th><th></th></tr></thead><tbody>';
+  h += '<div style="display:flex;gap:6px;padding:0 20px 8px;align-items:center">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();var c=document.getElementById(\'ihr-emir-chk-all\');if(c){c.checked=!c.checked;document.querySelectorAll(\'.ihr-emir-chk\').forEach(function(x){x.checked=c.checked});window._ihrEmirChkDegis()}" style="font-size:10px">Seç</button>';
+  h += '<button class="btn btns btnd" id="ihr-emir-toplu-sil" onclick="event.stopPropagation();window._ihrEmirTopluSil()" style="font-size:10px;display:none">Sil</button>';
+  h += '</div>';
+  h += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th style="width:28px"><input type="checkbox" id="ihr-emir-chk-all" onchange="event.stopPropagation();document.querySelectorAll(\'.ihr-emir-chk\').forEach(function(c){c.checked=this.checked}.bind(this));window._ihrEmirChkDegis()"></th><th>Dosya No</th><th>Müşteri</th><th>Teslim</th><th>Bitiş</th><th>Durum</th><th>Kalan</th><th></th></tr></thead><tbody>';
   items.forEach(function(d) {
     var kalan = d.bitis_tarihi ? Math.ceil((new Date(d.bitis_tarihi) - new Date()) / 86400000) : null;
     var kalanTxt = kalan === null ? '—' : kalan < 0 ? '<span style="color:#DC2626">' + Math.abs(kalan) + 'g gecikti</span>' : kalan + 'g';
-    h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(d.dosyaNo || '—') + '</td><td style="font-size:12px;font-weight:500">' + _esc(d.musteriAd || '—') + '</td><td style="font-size:10px;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C">' + _esc(d.teslim_sekli || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(d.bitis_tarihi || '—') + '</td><td>' + _dosyaBadge(d.durum) + '</td><td style="font-size:11px">' + kalanTxt + '</td><td><button class="btn btns" onclick="window._ihrAcDosya(\'' + d.id + '\')" style="font-size:11px;padding:3px 8px">Aç</button></td></tr>';
+    h += '<tr><td><input type="checkbox" class="ihr-emir-chk" data-id="' + d.id + '" onchange="window._ihrEmirChkDegis()"></td><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(d.dosyaNo || '—') + '</td><td style="font-size:12px;font-weight:500">' + _esc(d.musteriAd || '—') + '</td><td style="font-size:10px;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C">' + _esc(d.teslim_sekli || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(d.bitis_tarihi || '—') + '</td><td>' + _dosyaBadge(d.durum) + '</td><td style="font-size:11px">' + kalanTxt + '</td><td><button class="btn btns" onclick="window._ihrAcDosya(\'' + d.id + '\')" style="font-size:11px;padding:3px 8px">Aç</button></td></tr>';
   });
   h += '</tbody></table></div>'; el.innerHTML = h;
 }
@@ -588,6 +592,25 @@ window._ihrDetayTab = function(tab, id) {
   if (tab === 'bl') { var bl = _loadBL().filter(function(b) { return String(b.dosya_id) === String(d.id); })[0]; c.innerHTML = '<div style="padding:16px 20px">' + (bl ? _detayRow('BL No', bl.bl_no) + _detayRow('Consignee', bl.consignee) + _detayRow('Yükleme', bl.yukleme_tarihi) + _detayRow('Tür', bl.bl_turu) + '<div style="margin-top:12px"><button class="btn btns" onclick="window._ihrBlDuzenle(\'' + bl.id + '\')" style="font-size:11px">✏️</button></div>' : '<div style="text-align:center;padding:24px;color:var(--t3)">BL yok<br><button class="btn btnp" onclick="window._ihrBlEkle(\'' + d.id + '\')" style="margin-top:8px;font-size:11px">+ BL Ekle</button></div>') + '</div>'; return; }
 };
 window._ihrSearch = function(v) { _search = v; _ihrRenderContent(); };
+window._ihrEmirChkDegis = function() {
+  var n = document.querySelectorAll('.ihr-emir-chk:checked').length;
+  var btn = _g('ihr-emir-toplu-sil');
+  if (btn) { btn.style.display = n > 0 ? '' : 'none'; btn.textContent = n + ' Dosyayı Sil'; }
+};
+window._ihrEmirTopluSil = function() {
+  var ids = []; document.querySelectorAll('.ihr-emir-chk:checked').forEach(function(c) { ids.push(c.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal?.(ids.length + ' ihracat dosyası silinecek. Emin misiniz?', {
+    title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var dosyalar = _loadD();
+      ids.forEach(function(id) { var d = dosyalar.find(function(x) { return String(x.id) === String(id); }); if (d) { d.isDeleted = true; d.deletedAt = _now(); d.deletedBy = _cu()?.id; } });
+      _storeD(dosyalar);
+      window.toast?.(ids.length + ' dosya silindi', 'ok');
+      window.renderIhracatOps?.();
+    }
+  });
+};
 window._ihrDurumFilter = function(v) { _durumFilter = v; _ihrRenderContent(); };
 window._ihrAcDosya = _ihrAcDosya;
 window._ihrRunChecks = function() {
@@ -600,6 +623,9 @@ window._ihrRunChecks = function() {
 /* ── ÜRÜNLER DETAY RENDER ─────────────────────────────────── */
 function _ihrDetayRenderUrunler(d, el) {
   var tumurunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
+  /* İhracat ID otomatik yaz */
+  var dosyaNo = d.dosyaNo || d.id;
+  tumurunler.forEach(function(u) { if (!u.ihracat_id) u.ihracat_id = dosyaNo; });
   var _filtreler = window._ihrUrunFiltreler || {};
   var _aramaQ = window._ihrUrunAramaQ || '';
 
@@ -655,17 +681,17 @@ function _ihrDetayRenderUrunler(d, el) {
 
   /* SATIR 2: Araçlar */
   h += '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:0.5px solid var(--b);overflow-x:auto;min-height:36px">';
-  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ara..." oninput="event.stopPropagation();window._ihrUrunAramaQ=this.value;window.renderIhracatOps()" value="' + _esc(_aramaQ) + '" style="width:160px;font-size:11px;flex-shrink:0" onclick="event.stopPropagation()">';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'tedarikciAd\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()"><option value="">Tedarikçi</option>';
+  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ara..." oninput="event.stopPropagation();window._ihrUrunAramaQ=this.value;window.renderIhracatOps()" value="' + _esc(_aramaQ) + '" style="width:160px;font-size:11px;flex-shrink:0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onkeyup="event.stopPropagation()">';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'tedarikciAd\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Tedarikçi</option>';
   uniq('tedarikciAd').sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.tedarikciAd === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'etiket_rengi\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()"><option value="">Etiket</option>';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'etiket_rengi\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Etiket</option>';
   ['Mavi', 'Pembe', 'Sarı', 'Yeşil', 'Mor', 'Turuncu'].forEach(function(v) { h += '<option value="' + v + '"' + (_filtreler.etiket_rengi === v ? ' selected' : '') + '>' + v + '</option>'; });
   h += '</select>';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'once_yukle\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()"><option value="">Yükle</option>';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'once_yukle\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Yükle</option>';
   uniq('once_yukle').forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.once_yukle === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'fatura_turu\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()"><option value="">Fatura Türü</option>';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'fatura_turu\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Fatura Türü</option>';
   uniq('fatura_turu').forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.fatura_turu === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
   if (Object.keys(_filtreler).some(function(k) { return _filtreler[k]; }) || _aramaQ) h += '<button class="btn" onclick="event.stopPropagation();window._ihrFiltreTemizle()" style="font-size:10px;color:#DC2626">Temizle</button>';
@@ -765,6 +791,7 @@ function _ihrDetayRenderUrunler(d, el) {
     { k: 'satici_adi', l: 'Satıcı Adı', w: 100, filtre: false, bos: true },
     { k: 'gumrukcu_adi', l: 'Gümrükçü Adı', w: 100, filtre: false, bos: true },
     { k: 'muhasebeci_adi', l: 'Resmi Muhasebeci', w: 100, filtre: false, bos: true },
+    { k: 'ihracat_id', l: 'İhracat ID', w: 100, filtre: false, bos: false },
     /* Son */
     { k: 'kdv_iadesi', l: 'KDV İadesi Tutarı', w: 90, filtre: false, bos: true },
     { k: 'yukleme_durumu', l: 'Yükleme Durumu', w: 90, filtre: true, bos: true }
@@ -837,7 +864,7 @@ function _ihrDetayRenderUrunler(d, el) {
       if (k === 'birim_fiyat') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace;cursor:text;color:' + (v ? 'var(--t)' : 'var(--t3)') + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (v ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(u.doviz || '') : '') + '</td>'; return; }
       if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td style="' + tdS + ';text-align:center"><div style="display:flex;align-items:center;gap:3px;justify-content:center">'; if (er) h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + er + '"></span>'; h += '<span>' + vs + '</span></div></td>'; return; }
       if (k === 'doviz') { h += '<td style="' + tdS + ';text-align:center">' + vs + '</td>'; return; }
-      if (k === 'imo_msds') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--ac);font-size:10px">PDF</a>' : '<button class="btn btns" onclick="event.stopPropagation();window._ihrMsdsYukle(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Yükle</button>') + '</td>'; return; }
+      if (k === 'imo_msds') { if (u.imo_urun === 'E') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--ac);font-size:10px">PDF</a>' : '<button class="btn btns" onclick="event.stopPropagation();window._ihrMsdsYukle(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Yükle</button>') + '</td>'; } else { h += '<td style="' + tdS + '"><span style="font-size:9px;color:var(--t3)">—</span></td>'; } return; }
       if (k === 'yukleme_durumu') { var vgmVar = parseFloat(u.vgm_kg || 0) > 0; var durumVal = vgmVar ? 'Yüklendi' : (v || ''); var durumBg2 = durumVal === 'Yüklendi' ? '#EAF3DE' : 'var(--s2)'; var durumClr = durumVal === 'Yüklendi' ? '#27500A' : 'var(--t2)'; h += '<td style="' + tdS + '">' + (durumVal ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + durumBg2 + ';color:' + durumClr + '">' + _esc(durumVal) + '</span>' : '') + '</td>'; return; }
       if (SELECT_KOLONLAR[k]) { h += '<td onclick="event.stopPropagation()" style="' + tdS + '"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">'; SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; }); h += '</select></td>'; return; }
       if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace">' + vs + '</td>'; return; }
