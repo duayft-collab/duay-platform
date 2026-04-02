@@ -740,14 +740,46 @@ function _ihrDetayRenderUrunler(d, el) {
     { k: 'mensei_tarih', l: 'Menşei Tarihi', w: 80, filtre: true, bos: true }
   ];
 
-  h += '<div style="overflow-x:auto"><table class="tbl" style="font-size:11px;table-layout:fixed">';
-  /* HEADER — filtre + boş sayaç */
+  /* ── FREEZE LAYOUT: Sol sabit 3 kolon + Sağ kaydırılabilir ── */
+  var ETIKET_RENK = { Mavi: '#185FA5', Pembe: '#D4537E', 'Sarı': '#BA7517', 'Yeşil': '#16A34A', Mor: '#7C3AED', Turuncu: '#D85A30' };
+  var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], dilli_urun: ['H', 'E'], gcb_kapandi: ['', 'E', 'H'] };
+  var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'mensei_tarih'];
+  var sortedUrunler = urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); });
+  var tdS = 'padding:5px 8px;border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  var thS = 'padding:4px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;vertical-align:top;text-align:left';
+
+  h += '<div style="display:flex;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+
+  /* ── SOL SABİT ── */
+  h += '<div style="flex:0 0 auto;border-right:2px solid var(--b);overflow:hidden">';
+  h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
   h += '<thead><tr>';
-  h += '<th style="width:28px;min-width:28px"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
+  h += '<th style="width:28px;min-width:28px;' + thS + '"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
+  h += '<th style="width:110px;min-width:110px;' + thS + '">Tedarikçi</th>';
+  h += '<th style="width:85px;min-width:85px;' + thS + '">Ürün Kodu</th>';
+  h += '<th style="width:180px;min-width:180px;' + thS + '">Ürün Açıklaması</th>';
+  h += '</tr></thead><tbody>';
+  sortedUrunler.forEach(function(u) {
+    var tutarsiz = !!tutarsizKodlar[u.urun_kodu];
+    var rowBg = tutarsiz ? '#FAEEDA11' : 'inherit';
+    h += '<tr style="background:' + rowBg + '" onclick="event.stopPropagation()">';
+    h += '<td style="' + tdS + ';text-align:center;max-width:28px"><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="event.stopPropagation();window._ihrUrunChkDegis()"></td>';
+    h += '<td style="' + tdS + ';max-width:110px" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
+    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace;max-width:85px">' + _esc(u.urun_kodu || '') + '</td>';
+    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-weight:500;max-width:180px" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+
+  /* ── SAĞ KAYDIRILABİLİR ── */
+  h += '<div style="overflow-x:auto;flex:1;min-width:0">';
+  h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
+  h += '<thead><tr>';
   KOLONLAR.forEach(function(kol) {
-    var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === '' || u[kol.k] === '—'; }).length : 0;
-    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;vertical-align:top;padding:4px 8px">';
-    h += '<div style="display:flex;align-items:center;gap:2px;font-size:10px"><span>' + kol.l + '</span>';
+    if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
+    var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === ''; }).length : 0;
+    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;' + thS + '">';
+    h += '<div style="display:flex;align-items:center;gap:2px"><span>' + kol.l + '</span>';
     if (kol.filtre) {
       var aktif = _filtreler[kol.k];
       h += '<select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + '">';
@@ -759,15 +791,10 @@ function _ihrDetayRenderUrunler(d, el) {
     if (kol.bos && bosCount > 0) h += '<div style="font-size:9px;color:#D97706;margin-top:2px">' + bosCount + ' boş</div>';
     h += '</th>';
   });
-  h += '<th style="width:50px;min-width:50px"></th></tr></thead>';
-  h += '<tbody id="ihr-urun-tbody" onclick="event.stopPropagation()">';
+  h += '<th style="width:50px;min-width:50px;' + thS + '"></th>';
+  h += '</tr></thead><tbody id="ihr-urun-tbody" onclick="event.stopPropagation()">';
 
-  var ETIKET_RENK = { Mavi: '#185FA5', Pembe: '#D4537E', 'Sarı': '#BA7517', 'Yeşil': '#16A34A', Mor: '#7C3AED', Turuncu: '#D85A30' };
-  var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], dilli_urun: ['H', 'E'], gcb_kapandi: ['', 'E', 'H'] };
-  var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'mensei_tarih'];
-  var NUM_KOLONLAR = ['miktar', 'birim_fiyat', 'konteyner_sira', 'kdv_orani', 'brut_kg', 'net_kg', 'hacim_m3', 'koli_adet', 'gcb_kur'];
-
-  urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); }).forEach(function(u) {
+  sortedUrunler.forEach(function(u) {
     var kdvOrani = parseFloat(u.kdv_orani || 0);
     var birimFiyat = parseFloat(u.birim_fiyat || 0);
     var miktar = parseFloat(u.miktar || 0);
@@ -775,43 +802,28 @@ function _ihrDetayRenderUrunler(d, el) {
     var kdvTutar = topKdvHaric * (kdvOrani / 100);
     var kdvDahil = topKdvHaric + kdvTutar;
     var tutarsiz = !!tutarsizKodlar[u.urun_kodu];
-    var rowBg = tutarsiz ? '#FAEEDA22' : 'inherit';
+    var rowBg = tutarsiz ? '#FAEEDA11' : 'inherit';
 
     h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '" onclick="event.stopPropagation()">';
-    h += '<td><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="window._ihrUrunChkDegis()"></td>';
-
     KOLONLAR.forEach(function(kol) {
-      var k = kol.k; var v = u[k]; var vs = _esc(v || '');
-      /* Özel render */
-      if (k === 'pi_link') { h += '<td style="font-size:10px">' + (v ? '<a href="' + _esc(v) + '" target="_blank" style="color:var(--ac)">Aç</a>' : '') + '</td>'; return; }
-      if (k === 'kdv_tutar') { h += '<td style="text-align:right;font-size:10px;font-family:monospace">' + kdvTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td>'; return; }
-      if (k === 'kdv_dahil') { h += '<td style="text-align:right;font-size:10px;font-family:monospace;font-weight:500">' + kdvDahil.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td>'; return; }
-      if (k === 'miktar') { h += '<td style="text-align:right;cursor:text" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'miktar\')">' + (miktar || 0).toLocaleString('tr-TR') + ' ' + _esc(u.birim || '') + '</td>'; return; }
-      if (k === 'birim_fiyat') { h += '<td style="text-align:right;font-family:monospace;cursor:text;color:' + (v ? 'var(--t)' : 'var(--t3)') + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (v ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(u.doviz || '') : '') + '</td>'; return; }
-      if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td style="text-align:center"><div style="display:flex;align-items:center;gap:3px;justify-content:center">'; if (er) h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + er + '"></span>'; h += '<span style="font-size:10px">' + vs + '</span></div></td>'; return; }
-      if (k === 'doviz') { h += '<td style="font-size:10px;text-align:center">' + vs + '</td>'; return; }
-      /* Inline select */
-      if (SELECT_KOLONLAR[k]) {
-        h += '<td onclick="event.stopPropagation()" style="font-size:10px"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">';
-        SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; });
-        h += '</select></td>'; return;
-      }
-      /* Inline date */
-      if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="cursor:text;font-size:10px;font-family:monospace">' + vs + '</td>'; return; }
-      /* KDV oranı select */
-      if (k === 'kdv_orani') {
-        h += '<td onclick="event.stopPropagation()" style="text-align:center"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'kdv_orani\',parseFloat(this.value))" style="font-size:10px;border:none;background:transparent;cursor:pointer;text-align:center">';
-        [0, 1, 5, 10, 18, 20].forEach(function(kv) { h += '<option value="' + kv + '"' + (kdvOrani === kv ? ' selected' : '') + '>%' + kv + '</option>'; });
-        h += '</select></td>'; return;
-      }
-      /* Varsayılan: inline text edit */
-      h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="cursor:text;font-size:10px;max-width:' + kol.w + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + vs + '">' + vs + '</td>';
+      var k = kol.k; if (k === 'tedarikciAd' || k === 'urun_kodu' || k === 'aciklama') return;
+      var v = u[k]; var vs = _esc(v || '');
+      if (k === 'pi_link') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" style="color:var(--ac)">Aç</a>' : '') + '</td>'; return; }
+      if (k === 'kdv_tutar') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace">' + kdvTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td>'; return; }
+      if (k === 'kdv_dahil') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace;font-weight:500">' + kdvDahil.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td>'; return; }
+      if (k === 'miktar') { h += '<td style="' + tdS + ';text-align:right;cursor:text" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'miktar\')">' + (miktar || 0).toLocaleString('tr-TR') + ' ' + _esc(u.birim || '') + '</td>'; return; }
+      if (k === 'birim_fiyat') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace;cursor:text;color:' + (v ? 'var(--t)' : 'var(--t3)') + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (v ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(u.doviz || '') : '') + '</td>'; return; }
+      if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td style="' + tdS + ';text-align:center"><div style="display:flex;align-items:center;gap:3px;justify-content:center">'; if (er) h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + er + '"></span>'; h += '<span>' + vs + '</span></div></td>'; return; }
+      if (k === 'doviz') { h += '<td style="' + tdS + ';text-align:center">' + vs + '</td>'; return; }
+      if (SELECT_KOLONLAR[k]) { h += '<td onclick="event.stopPropagation()" style="' + tdS + '"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">'; SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; }); h += '</select></td>'; return; }
+      if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace">' + vs + '</td>'; return; }
+      if (k === 'kdv_orani') { h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'kdv_orani\',parseFloat(this.value))" style="font-size:10px;border:none;background:transparent;cursor:pointer;text-align:center">'; [0, 1, 5, 10, 18, 20].forEach(function(kv) { h += '<option value="' + kv + '"' + (kdvOrani === kv ? ' selected' : '') + '>%' + kv + '</option>'; }); h += '</select></td>'; return; }
+      h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;max-width:' + kol.w + 'px" title="' + vs + '">' + vs + '</td>';
     });
-
-    h += '<td><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrUrunSil(\'' + u.id + '\')" style="font-size:10px;padding:2px 6px">Sil</button></td>';
+    h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrUrunSil(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Sil</button></td>';
     h += '</tr>';
   });
-  h += '</tbody></table></div>';
+  h += '</tbody></table></div></div>';
 
   /* Alt satır */
   h += '<div style="display:flex;gap:16px;justify-content:flex-end;padding:8px 4px;font-size:12px;border-top:0.5px solid var(--b);margin-top:6px">';
