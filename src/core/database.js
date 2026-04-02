@@ -1520,6 +1520,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       const fsData = snap.data()?.data;
       if (fsData === null || fsData === undefined) return;
       var merged = _mergeDataSets(localKey, fsData, collection);
+      _stripBase64BeforeWrite(localKey, merged);
       try {
         localStorage.setItem(localKey, JSON.stringify(merged));
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
@@ -1584,6 +1585,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       } else {
         merged = _mergeDataSets(localKey, fsData, collection);
       }
+      _stripBase64BeforeWrite(localKey, merged);
       try {
         localStorage.setItem(localKey, JSON.stringify(merged));
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
@@ -1758,6 +1760,18 @@ function _showAssignmentModal(task) {
   document.body.appendChild(mo);
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
   setTimeout(function() { mo.classList.add('open'); }, 10);
+}
+
+/** onSnapshot/bgCheck localStorage yazımından önce base64 temizle */
+function _stripBase64BeforeWrite(key, data) {
+  try {
+    if ((key === KEYS.taskChats || key === 'ak_task_chat1') && data && typeof data === 'object' && !Array.isArray(data)) {
+      Object.keys(data).forEach(function(k) { (data[k] || []).forEach(function(m) { if (m.file && m.file.data && typeof m.file.data === 'string' && m.file.data.startsWith('data:')) { m.file = { name: m.file.name || 'dosya', _stripped: true }; } Object.keys(m).forEach(function(f) { if (m[f] && typeof m[f] === 'string' && m[f].startsWith('data:') && m[f].length > 1000) m[f] = '[stripped]'; }); }); });
+    }
+    if ((key === KEYS.tasks || key === 'ak_tk2') && Array.isArray(data)) {
+      data.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (t[f] && typeof t[f] === 'string' && t[f].startsWith('data:')) t[f] = null; }); });
+    }
+  } catch (e) {}
 }
 
 function startRealtimeSync() {
