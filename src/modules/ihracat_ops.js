@@ -243,16 +243,74 @@ function _ihrRenderBelgeler(el) {
 
 /* ── ROLLER ───────────────────────────────────────────────── */
 function _ihrRenderRoller(el) {
-  var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
-  var forwarderlar = _loadFW().filter(function(f) { return !f.isDeleted; });
-  var h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 20px">';
-  h += '<div><div style="display:flex;justify-content:space-between;margin-bottom:10px"><div style="font-size:12px;font-weight:500">Gümrükçüler</div><button class="btn btnp" onclick="window._ihrGumrukcuEkle()" style="font-size:11px">+ Ekle</button></div>';
-  if (!gumrukculer.length) h += '<div style="padding:20px;text-align:center;color:var(--t2);background:var(--s2);border-radius:8px">Kayıt yok</div>';
-  gumrukculer.forEach(function(g) { var gun = g.vekalet_bitis ? Math.ceil((new Date(g.vekalet_bitis) - new Date()) / 86400000) : null; h += '<div style="border:0.5px solid ' + (gun !== null && gun <= 30 ? '#D97706' : 'var(--b)') + ';border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-size:12px;font-weight:500">' + _esc(g.firma_adi) + '</div><div style="font-size:11px;color:var(--t2)">' + _esc(g.yetkili_adi || '') + '</div>' + (gun !== null ? '<div style="font-size:10px;color:' + (gun <= 7 ? '#DC2626' : '#D97706') + ';margin-top:4px">Vekalet: ' + gun + ' gün</div>' : '') + '</div>'; });
-  h += '</div><div><div style="display:flex;justify-content:space-between;margin-bottom:10px"><div style="font-size:12px;font-weight:500">Forwarderlar</div><button class="btn btnp" onclick="window._ihrForwarderEkle()" style="font-size:11px">+ Ekle</button></div>';
-  if (!forwarderlar.length) h += '<div style="padding:20px;text-align:center;color:var(--t2);background:var(--s2);border-radius:8px">Kayıt yok</div>';
-  forwarderlar.forEach(function(f) { h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-size:12px;font-weight:500">' + _esc(f.firma_adi) + '</div>' + ((f.tercih_armator || []).length ? '<div style="font-size:10px;color:#16A34A">Tercih: ' + _esc(f.tercih_armator.join(', ')) + '</div>' : '') + '</div>'; });
-  h += '</div></div>'; el.innerHTML = h;
+  var cariList = _loadCari();
+
+  var gumrukculer = cariList.filter(function(c) {
+    return c.type === 'gumrukcu' || (c.tags && c.tags.indexOf('gumrukcu') !== -1) ||
+      (c.name && (c.name.toLowerCase().indexOf('gumruk') !== -1 || c.name.toLowerCase().indexOf('gümrük') !== -1));
+  });
+  var forwarderlar = cariList.filter(function(c) {
+    return c.type === 'forwarder' || (c.tags && c.tags.indexOf('forwarder') !== -1) ||
+      (c.name && (c.name.toLowerCase().indexOf('forwarder') !== -1 || c.name.toLowerCase().indexOf('nakliye') !== -1));
+  });
+
+  var h = '<div style="padding:16px 20px">';
+  h += '<div style="background:rgba(24,95,165,.06);border:0.5px solid #B5D4F4;border-radius:10px;padding:12px 16px;font-size:11px;color:#185FA5;margin-bottom:16px">';
+  h += 'Gümrükçü ve Forwarder kayıtları <strong>Cari Yönetimi</strong> üzerinden yönetilir. Buradan atama yapabilirsiniz.';
+  h += '</div>';
+
+  h += '<div style="display:flex;gap:20px;align-items:flex-start">';
+
+  /* Gümrükçüler */
+  h += '<div style="flex:1;min-width:0">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+  h += '<div style="font-size:12px;font-weight:500">Gümrükçüler</div>';
+  h += '<a href="#" onclick="window.navigateTo?.(\'cari\');return false;" style="font-size:11px;color:var(--ac);text-decoration:none">Cari\'de Yönet →</a>';
+  h += '</div>';
+
+  var gmListe = gumrukculer.length ? gumrukculer : cariList.slice(0, 10);
+  if (!gmListe.length) {
+    h += '<div style="padding:20px;text-align:center;color:var(--t2);background:var(--s2);border-radius:8px;font-size:12px">Cari kaydı bulunamadı</div>';
+  } else {
+    gmListe.forEach(function(c) {
+      h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:var(--sf)">';
+      h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:4px">' + _esc(c.name) + '</div>';
+      if (c.email) h += '<div style="font-size:11px;color:var(--t2)">' + _esc(c.email) + '</div>';
+      if (c.phone) h += '<div style="font-size:11px;color:var(--t3)">' + _esc(c.phone) + '</div>';
+      h += '</div>';
+    });
+    if (!gumrukculer.length) {
+      h += '<div style="font-size:11px;color:var(--t3);padding:4px 0">Not: Cari\'de type=\'gumrukcu\' olarak işaretleyin</div>';
+    }
+  }
+  h += '</div>';
+
+  /* Forwarderlar */
+  h += '<div style="flex:1;min-width:0">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+  h += '<div style="font-size:12px;font-weight:500">Forwarderlar</div>';
+  h += '<a href="#" onclick="window.navigateTo?.(\'cari\');return false;" style="font-size:11px;color:var(--ac);text-decoration:none">Cari\'de Yönet →</a>';
+  h += '</div>';
+
+  var fwListe = forwarderlar.length ? forwarderlar : cariList.slice(0, 10);
+  if (!fwListe.length) {
+    h += '<div style="padding:20px;text-align:center;color:var(--t2);background:var(--s2);border-radius:8px;font-size:12px">Cari kaydı bulunamadı</div>';
+  } else {
+    fwListe.forEach(function(c) {
+      h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:var(--sf)">';
+      h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:4px">' + _esc(c.name) + '</div>';
+      if (c.email) h += '<div style="font-size:11px;color:var(--t2)">' + _esc(c.email) + '</div>';
+      if (c.phone) h += '<div style="font-size:11px;color:var(--t3)">' + _esc(c.phone) + '</div>';
+      h += '</div>';
+    });
+    if (!forwarderlar.length) {
+      h += '<div style="font-size:11px;color:var(--t3);padding:4px 0">Not: Cari\'de type=\'forwarder\' olarak işaretleyin</div>';
+    }
+  }
+  h += '</div>';
+
+  h += '</div></div>';
+  el.innerHTML = h;
 }
 
 /* ── TEMPLATELER ─────────────────────────────────────────── */
