@@ -1309,7 +1309,7 @@ function renderOdemeler() {
 
     card.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:center">'
-        + '<input type="checkbox" class="odm-bulk-chk" data-oid="'+o.id+'" onclick="event.stopPropagation();_onBulkCheck(this)" style="width:14px;height:14px;cursor:pointer;display:'+(_odmBulkMode?'block':'none')+'">'
+        + '<input type="checkbox" class="odm-bulk-chk" data-oid="'+o.id+'" onclick="event.stopPropagation();toggleOdmSelect(parseInt(this.dataset.oid))" style="width:14px;height:14px;cursor:pointer">'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer" onclick="openOdmModal('+o.id+')">'
         + '<div style="width:26px;height:26px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">' + cat.ic + '</div>'
