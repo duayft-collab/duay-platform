@@ -59,6 +59,8 @@ function _debouncedSearch(val) {
 let _selectedUserId = null;
 
 function renderAdmin() {
+  var _up = document.getElementById('panel-admin');
+  if (_up) delete _up.dataset.injected;
   if (!isAdmin()) {
     const cont = g('admin-list');
     if (cont) cont.innerHTML = `<div style="padding:32px;text-align:center;color:var(--t2)">Bu panele erisim yetkiniz yok.</div>`;
@@ -1633,6 +1635,7 @@ function _injectUsersPanel() {
 }
 
 function renderUsers(filter=''){
+  if (!window._usersViewInitialized) { USERS_VIEW = 'table'; window._usersViewInitialized = true; }
   _injectUsersPanel();
   if(!window.isAdmin?.())return;
   const users=loadUsers();
