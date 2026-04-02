@@ -147,15 +147,26 @@ function _ihrRenderDosyaDetay(id) {
   var evraklar = _loadE().filter(function(e) { return e.dosya_id === d.id; });
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
 
-  var h = '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:12px;background:var(--s2)"><button onclick="window._ihrGeriDon()" class="btn btns" style="font-size:11px">← Geri</button><span style="font-size:13px;font-weight:500">' + _esc(d.dosyaNo) + '</span><span style="font-size:12px;color:var(--t2)">' + _esc(d.musteriAd || '') + '</span>' + _dosyaBadge(d.durum) + '</div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 20px">';
-  h += '<div><div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;margin-bottom:10px">Dosya Bilgileri</div>';
-  h += _detayRow('Dosya No', d.dosyaNo) + _detayRow('Müşteri', d.musteriAd) + _detayRow('Teslim', d.teslim_sekli) + _detayRow('Varış', d.varis_limani) + _detayRow('Ödeme', d.odeme_sarti) + _detayRow('Başlangıç', d.baslangic_tarihi) + _detayRow('Bitiş', d.bitis_tarihi) + _detayRow('Süre', (d.sure_gun || 7) + ' gün');
-  h += '</div><div><div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;margin-bottom:10px">Evrak Durumu (' + tamam + '/' + Object.keys(EVRAK_TUR).length + ')</div>';
-  Object.keys(EVRAK_TUR).forEach(function(k) { var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; }); var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' }; h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span>' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>'; });
-  h += '</div></div>';
-  if (d.not) h += '<div style="padding:0 20px 16px"><div style="font-size:11px;color:var(--t2);background:var(--s2);padding:10px 12px;border-radius:8px">' + _esc(d.not) + '</div></div>';
+  var h = '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:12px;background:var(--s2);flex-wrap:wrap">'
+    + '<button onclick="window._ihrGeriDon()" class="btn btns" style="font-size:11px">← Geri</button>'
+    + '<span style="font-size:13px;font-weight:500">' + _esc(d.dosyaNo) + '</span>'
+    + '<span style="font-size:12px;color:var(--t2)">' + _esc(d.musteriAd || '') + '</span>'
+    + _dosyaBadge(d.durum)
+    + '<div style="margin-left:auto;display:flex;gap:6px">'
+    + '<button class="btn btns" onclick="window._ihrDosyaDuzenle(\'' + d.id + '\')" style="font-size:11px">✏️ Düzenle</button>'
+    + (_isManager() ? '<button class="btn btns" onclick="window._ihrDurumDegistir(\'' + d.id + '\')" style="font-size:11px;color:#16A34A">Durum</button>' : '')
+    + '</div></div>';
+
+  // Alt sekmeler
+  var detayTabs = [['ozet','Özet'],['urunler','Ürünler'],['evraklar','Evraklar'],['gcb','GÇB'],['bl','BL']];
+  h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px" id="ihr-detay-tabs">';
+  detayTabs.forEach(function(t, i) { h += '<div onclick="window._ihrDetayTab(\'' + t[0] + '\',\'' + d.id + '\')" id="ihr-dt-' + t[0] + '" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + t[1] + '</div>'; });
+  h += '</div>';
+  h += '<div id="ihr-detay-content"></div>';
   el.innerHTML = h;
+
+  // Özet render
+  _ihrDetayRenderOzet(d, evraklar, tamam);
 }
 
 /* ── GÇB LİSTESİ ────────────────────────────────────────── */
@@ -251,6 +262,32 @@ window._ihrEmirKaydet = function() {
 
 /* ── YARDIMCILAR ─────────────────────────────────────────── */
 window._ihrGeriDon = function() { _aktifDosyaId = null; _ihrRenderContent(); };
+
+function _ihrDetayRenderOzet(d, evraklar, tamam) {
+  var c = _g('ihr-detay-content'); if (!c) return;
+  if (!evraklar) evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
+  if (tamam === undefined) tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
+  var h = '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:16px 20px">';
+  h += '<div><div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;margin-bottom:10px">Dosya Bilgileri</div>';
+  h += _detayRow('Dosya No', d.dosyaNo) + _detayRow('Müşteri', d.musteriAd) + _detayRow('Teslim', d.teslim_sekli) + _detayRow('Varış', d.varis_limani) + _detayRow('Ödeme', d.odeme_sarti) + _detayRow('Başlangıç', d.baslangic_tarihi) + _detayRow('Bitiş', d.bitis_tarihi) + _detayRow('Süre', (d.sure_gun || 7) + ' gün');
+  h += '</div><div><div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;margin-bottom:10px">Evrak Durumu (' + tamam + '/' + Object.keys(EVRAK_TUR).length + ')</div>';
+  Object.keys(EVRAK_TUR).forEach(function(k) { var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; }); var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' }; h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span>' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>'; });
+  h += '</div></div>';
+  if (d.not) h += '<div style="padding:0 20px 16px"><div style="font-size:11px;color:var(--t2);background:var(--s2);padding:10px 12px;border-radius:8px">' + _esc(d.not) + '</div></div>';
+  c.innerHTML = h;
+}
+
+window._ihrDetayTab = function(tab, id) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) return;
+  document.querySelectorAll('#ihr-detay-tabs > div').forEach(function(b) { b.style.borderBottomColor = 'transparent'; b.style.color = 'var(--t2)'; b.style.fontWeight = '400'; });
+  var active = _g('ihr-dt-' + tab); if (active) { active.style.borderBottomColor = 'var(--ac)'; active.style.color = 'var(--ac)'; active.style.fontWeight = '500'; }
+  var c = _g('ihr-detay-content'); if (!c) return;
+  if (tab === 'ozet') { _ihrDetayRenderOzet(d); return; }
+  if (tab === 'urunler') { var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; }); c.innerHTML = '<div style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:500">' + urunler.length + ' ürün</div><button class="btn btnp" onclick="window._ihrUrunEkle(\'' + d.id + '\')" style="font-size:11px">+ Ürün Ekle</button></div>' + (urunler.length ? '<table class="tbl"><thead><tr><th>Ürün</th><th>Miktar</th><th>Fiyat</th><th>Toplam</th><th></th></tr></thead><tbody>' + urunler.map(function(u) { var toplam = (u.miktar || 0) * (u.birim_fiyat || 0); return '<tr><td style="font-size:11px">' + _esc(u.aciklama || '—') + '</td><td style="font-size:11px">' + (u.miktar || 0) + ' ' + _esc(u.birim || '') + '</td><td style="font-size:11px">' + (u.birim_fiyat || 0).toFixed(2) + ' ' + _esc(u.doviz || '') + '</td><td style="font-size:11px;font-weight:500">' + toplam.toFixed(2) + ' ' + _esc(u.doviz || '') + '</td><td><button class="btn btns btnd" onclick="window._ihrUrunSil(\'' + u.id + '\')" style="font-size:10px;padding:2px 6px">🗑</button></td></tr>'; }).join('') + '</tbody></table>' : '<div style="text-align:center;padding:24px;color:var(--t3)">Ürün yok</div>') + '</div>'; return; }
+  if (tab === 'evraklar') { var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); }); c.innerHTML = '<div style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:500">Evraklar</div><button class="btn btnp" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'CI\')" style="font-size:11px">+ CI Oluştur</button></div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">' + Object.keys(EVRAK_TUR).map(function(k) { var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; }); var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' }; return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;font-weight:500">' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>' + (ev ? '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + ev.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>' : '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + k + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>') + '</div>'; }).join('') + '</div></div>'; return; }
+  if (tab === 'gcb') { var gcb = _loadG().filter(function(g) { return String(g.dosya_id) === String(d.id); })[0]; c.innerHTML = '<div style="padding:16px 20px">' + (gcb ? _detayRow('Beyanname No', gcb.beyan_no) + _detayRow('Tescil', gcb.tescil_tarihi) + _detayRow('FOB', gcb.fob_deger ? gcb.fob_deger.toLocaleString('tr-TR') + ' ' + (gcb.doviz || '') : '—') + _detayRow('Durum', gcb.durum) + '<div style="margin-top:12px;display:flex;gap:6px"><button class="btn btns" onclick="window._ihrGcbDuzenle(\'' + gcb.id + '\')" style="font-size:11px">✏️</button>' + (gcb.durum !== 'kapandi' ? '<button class="btn btns" onclick="window._ihrGcbKapat(\'' + gcb.id + '\')" style="font-size:11px;color:#16A34A">Kapat</button>' : '') + '</div>' : '<div style="text-align:center;padding:24px;color:var(--t3)">GÇB yok<br><button class="btn btnp" onclick="window._ihrGcbEkle(\'' + d.id + '\')" style="margin-top:8px;font-size:11px">+ GÇB Ekle</button></div>') + '</div>'; return; }
+  if (tab === 'bl') { var bl = _loadBL().filter(function(b) { return String(b.dosya_id) === String(d.id); })[0]; c.innerHTML = '<div style="padding:16px 20px">' + (bl ? _detayRow('BL No', bl.bl_no) + _detayRow('Consignee', bl.consignee) + _detayRow('Yükleme', bl.yukleme_tarihi) + _detayRow('Tür', bl.bl_turu) + '<div style="margin-top:12px"><button class="btn btns" onclick="window._ihrBlDuzenle(\'' + bl.id + '\')" style="font-size:11px">✏️</button></div>' : '<div style="text-align:center;padding:24px;color:var(--t3)">BL yok<br><button class="btn btnp" onclick="window._ihrBlEkle(\'' + d.id + '\')" style="margin-top:8px;font-size:11px">+ BL Ekle</button></div>') + '</div>'; return; }
+};
 window._ihrSearch = function(v) { _search = v; _ihrRenderContent(); };
 window._ihrDurumFilter = function(v) { _durumFilter = v; _ihrRenderContent(); };
 window._ihrAcDosya = _ihrAcDosya;
