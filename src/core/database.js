@@ -1308,7 +1308,7 @@ const DEFAULT_ARSIV_BELGELER = [
 
 /** @returns {Object.<number,Array>} taskId → mesaj dizisi */
 function loadTaskChats()    { const d = _read(KEYS.taskChats); return (d && typeof d === 'object') ? d : {}; }
-/** @param {Object} d       */ function storeTaskChats(d) { _write(KEYS.taskChats, d);
+/** @param {Object} d       */ function storeTaskChats(d) { if(d&&typeof d==='object'){Object.keys(d).forEach(function(k){if(Array.isArray(d[k])&&d[k].length>20)d[k]=d[k].slice(-20);});} _write(KEYS.taskChats, d);
   const _fp_chats = _fsPath('taskChats'); if (_fp_chats) _syncFirestore(_fp_chats, d);
 }
 
@@ -2383,7 +2383,7 @@ function _startBgSyncCheck() {
     var base = 'duay_' + tid;
     // Tüm SYNC_MAP koleksiyonlarını kontrol et
     var allCols = _ALL_SYNC_COLS.map(function(col) { return [col, KEYS[col] || 'ak_' + col]; });
-    var _bgNoMerge = ['trash', 'notifications', 'activity'];
+    var _bgNoMerge = ['trash', 'notifications', 'activity', 'taskChats'];
     allCols.forEach(function(pair) {
       var col = pair[0]; var key = pair[1];
       if (_bgNoMerge.indexOf(col) !== -1) {
@@ -2645,11 +2645,11 @@ if (typeof module !== 'undefined' && module.exports) {
     var trash = loadTrash();
     if (trash.length > 50) { storeTrash(trash.slice(0, 50)); console.log('[DB] Trash temizlendi:', trash.length, '→ 50'); }
     var tasks = loadTasks();
-    if (tasks.length > 500) {
+    if (tasks.length > 300) {
       var active = tasks.filter(function(t) { return !t.isDeleted && t.status !== 'done'; });
-      var done = tasks.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100);
+      var done = tasks.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-50);
       saveTasks(active.concat(done));
-      console.log('[DB] Tasks temizlendi:', tasks.length, '→', active.length + done.length);
+      console.log('[DB] Tasks kırpıldı:', tasks.length, '→', active.length + done.length);
     }
     // Tüm ak_ key'lerinde base64 veri temizle
     var _b64cleaned = 0;
