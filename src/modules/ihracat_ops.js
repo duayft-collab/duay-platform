@@ -778,25 +778,25 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '">';
     h += '<td><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="window._ihrUrunChkDegis()"></td>';
     h += '<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'proforma_id\')" style="cursor:text;font-size:10px;color:var(--ac);font-family:monospace">' + _esc(u.proforma_id || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'proforma_id\')" style="cursor:text;font-size:10px;color:var(--ac);font-family:monospace">' + _esc(u.proforma_id || '—') + '</td>';
     h += '<td style="font-size:10px">' + (u.pi_link ? '<a href="' + _esc(u.pi_link) + '" target="_blank" style="color:var(--ac)">Aç</a>' : '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'satis_siparis_id\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.satis_siparis_id || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'alis_fatura_no\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.alis_fatura_no || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'satis_siparis_id\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.satis_siparis_id || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'alis_fatura_no\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.alis_fatura_no || '—') + '</td>';
     h += '<td style="font-size:10px;font-family:monospace">' + _esc(u.alis_fatura_tarihi || '—') + '</td>';
     h += '<td><span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t2)">' + _esc(u.fatura_turu || '—') + '</span></td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" style="cursor:text;font-family:monospace;font-size:10px;color:' + (u.urun_kodu ? (tutarsiz ? '#D97706' : 'var(--t)') : '#DC2626') + '">' + _esc(u.urun_kodu || 'EKSİK') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'satici_urun_kodu\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.satici_urun_kodu || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'benzer_urun_kodu\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.benzer_urun_kodu || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'satici_urun_adi\')" style="cursor:text;font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.satici_urun_adi || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" style="cursor:text;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'standart_urun_adi\')" style="cursor:text;font-size:10px;font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.standart_urun_adi || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'teknik_aciklama\')" style="cursor:text;font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.teknik_aciklama || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'fatura_urun_adi\')" style="cursor:text;font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.fatura_urun_adi || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'gumrukcu_tanim\')" style="cursor:text;font-size:10px">' + _esc(u.gumrukcu_tanim || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" style="cursor:text;font-family:monospace;font-size:10px;color:' + (u.urun_kodu ? (tutarsiz ? '#D97706' : 'var(--t)') : '#DC2626') + '">' + _esc(u.urun_kodu || 'EKSİK') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'satici_urun_kodu\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.satici_urun_kodu || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'benzer_urun_kodu\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.benzer_urun_kodu || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'satici_urun_adi\')" style="cursor:text;font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.satici_urun_adi || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" style="cursor:text;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'standart_urun_adi\')" style="cursor:text;font-size:10px;font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.standart_urun_adi || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'teknik_aciklama\')" style="cursor:text;font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.teknik_aciklama || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'fatura_urun_adi\')" style="cursor:text;font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.fatura_urun_adi || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'gumrukcu_tanim\')" style="cursor:text;font-size:10px">' + _esc(u.gumrukcu_tanim || '—') + '</td>';
     h += '<td style="font-size:10px">' + _esc(u.mense_ulke || 'Türkiye') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'hs_kodu\')" style="cursor:text;font-size:10px;font-family:monospace;color:' + (u.hs_kodu ? 'var(--t)' : '#DC2626') + '">' + _esc(u.hs_kodu || 'EKSİK') + '</td>';
-    h += '<td style="text-align:right" ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'miktar\')">' + (miktar || 0).toLocaleString('tr-TR') + ' ' + _esc(u.birim || '') + '</td>';
-    h += '<td style="text-align:right;font-family:monospace;color:' + (u.birim_fiyat ? 'var(--t)' : '#DC2626') + '" ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (u.birim_fiyat ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + (u.doviz || '') : 'EKSİK') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'hs_kodu\')" style="cursor:text;font-size:10px;font-family:monospace;color:' + (u.hs_kodu ? 'var(--t)' : '#DC2626') + '">' + _esc(u.hs_kodu || 'EKSİK') + '</td>';
+    h += '<td style="text-align:right" onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'miktar\')">' + (miktar || 0).toLocaleString('tr-TR') + ' ' + _esc(u.birim || '') + '</td>';
+    h += '<td style="text-align:right;font-family:monospace;color:' + (u.birim_fiyat ? 'var(--t)' : '#DC2626') + '" onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (u.birim_fiyat ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + (u.doviz || '') : 'EKSİK') + '</td>';
     h += '<td style="text-align:center;font-size:10px">' + _esc(u.doviz || '—') + '</td>';
     h += '<td style="text-align:center">%' + (kdvOrani || '0') + '</td>';
     h += '<td style="text-align:right;font-size:10px;font-family:monospace">' + kdvTutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td>';
@@ -805,14 +805,14 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '<td style="font-size:10px">' + _esc(u.teslim_yeri || '—') + '</td>';
     h += '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + etiketRenk + '" title="' + _esc(u.etiket_rengi || '') + '"></span></td>';
     h += '<td style="font-size:9px;color:var(--t3)">' + _esc(u.once_yukle || '—') + '</td>';
-    h += '<td style="text-align:center;font-size:10px" ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'konteyner_sira\')">' + _esc(String(u.konteyner_sira || '—')) + '</td>';
+    h += '<td style="text-align:center;font-size:10px" onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'konteyner_sira\')">' + _esc(String(u.konteyner_sira || '—')) + '</td>';
     h += '<td style="text-align:center"><span style="font-size:10px;padding:1px 5px;border-radius:3px;background:' + (u.dilli_urun === 'E' ? '#EAF3DE' : 'var(--s2)') + ';color:' + (u.dilli_urun === 'E' ? '#27500A' : 'var(--t3)') + '">' + _esc(u.dilli_urun || 'H') + '</span></td>';
     h += '<td style="text-align:center"><span style="font-size:10px;padding:1px 5px;border-radius:3px;background:' + (u.imo_urun === 'E' ? '#FCEBEB' : 'var(--s2)') + ';color:' + (u.imo_urun === 'E' ? '#791F1F' : 'var(--t3)') + '">' + _esc(u.imo_urun || 'H') + '</span></td>';
     h += '<td style="font-size:10px">' + _esc(u.kategori || '—') + '</td>';
     h += '<td style="font-size:10px">' + _esc(u.marka || '—') + '</td>';
     h += '<td style="font-size:10px">' + _esc(u.renk || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'duay_not\')" style="cursor:text;font-size:10px">' + _esc(u.duay_not || '—') + '</td>';
-    h += '<td ondblclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'muadil_urun\')" style="cursor:text;font-size:10px">' + _esc(u.muadil_urun || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'duay_not\')" style="cursor:text;font-size:10px">' + _esc(u.duay_not || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'muadil_urun\')" style="cursor:text;font-size:10px">' + _esc(u.muadil_urun || '—') + '</td>';
     h += '<td><button class="btn btns btnd" onclick="window._ihrUrunSil(\'' + u.id + '\')" style="font-size:10px;padding:2px 6px">Sil</button></td>';
     h += '</tr>';
   });
@@ -873,28 +873,63 @@ window._ihrFiltreTemizle = function() {
 
 /* ── INLINE EDIT ─────────────────────────────────────────── */
 window._ihrInlineEdit = function(td, urunId, alan) {
-  var eskiDeger = td.textContent.trim();
-  if (td.querySelector('input')) return;
-  var inp = document.createElement('input');
-  inp.value = eskiDeger === '—' ? '' : eskiDeger;
-  inp.style.cssText = 'width:100%;font-size:11px;padding:2px 4px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t)';
-  td.innerHTML = '';
-  td.appendChild(inp);
-  inp.focus(); inp.select();
+  if (td.querySelector('input') || td.querySelector('select')) return;
+  var eskiDeger = td.textContent.trim().replace('—', '');
+  var allTds = document.querySelectorAll('#ihr-urun-tbody td[data-alan]');
+  var allArr = []; allTds.forEach(function(t) { allArr.push(t); });
+  var idx = allArr.indexOf(td);
+
+  var SELECT_ALANLAR = {
+    doviz: ['USD', 'EUR', 'TRY', 'GBP'],
+    birim: ['PCS', 'KGS', 'MTR', 'SET', 'TON', 'M2', 'M3', 'LTR'],
+    etiket_rengi: ['Mavi', 'Pembe', 'Sarı', 'Yeşil', 'Mor', 'Turuncu'],
+    once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'],
+    dilli_urun: ['H', 'E'],
+    imo_urun: ['H', 'E'],
+    fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'],
+    mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Diğer']
+  };
+  var SAYISALLAR = ['miktar', 'birim_fiyat', 'konteyner_sira', 'kdv_orani', 'brut_kg', 'net_kg', 'hacim_m3', 'koli_adet'];
+
+  var inp;
+  if (SELECT_ALANLAR[alan]) {
+    inp = document.createElement('select');
+    inp.style.cssText = 'width:100%;font-size:10px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t);padding:1px 2px';
+    SELECT_ALANLAR[alan].forEach(function(v) { var o = document.createElement('option'); o.value = v; o.textContent = v; if (v === eskiDeger) o.selected = true; inp.appendChild(o); });
+  } else {
+    inp = document.createElement('input');
+    inp.type = SAYISALLAR.indexOf(alan) !== -1 ? 'number' : 'text';
+    if (['birim_fiyat', 'brut_kg', 'net_kg', 'hacim_m3'].indexOf(alan) !== -1) inp.step = '0.01';
+    inp.value = eskiDeger === '—' || eskiDeger === 'EKSİK' ? '' : eskiDeger;
+    inp.style.cssText = 'width:100%;font-size:10px;padding:2px 4px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t)';
+  }
+
   var kaydet = function() {
     var yeniDeger = inp.value.trim();
+    if (yeniDeger === eskiDeger) { window.renderIhracatOps?.(); return; }
     var urunler = _loadU();
     var u = urunler.find(function(x) { return String(x.id) === String(urunId); });
-    if (u && yeniDeger !== eskiDeger) {
-      u[alan] = (alan === 'miktar' || alan === 'birim_fiyat' || alan === 'konteyner_sira') ? (parseFloat(yeniDeger) || 0) : yeniDeger;
+    if (u) {
+      u[alan] = SAYISALLAR.indexOf(alan) !== -1 ? (parseFloat(yeniDeger) || 0) : yeniDeger;
       u.updatedAt = _now();
       window.storeIhracatUrunler?.(urunler);
-      window.toast?.(alan + ' güncellendi', 'ok');
     }
     window.renderIhracatOps?.();
   };
   inp.addEventListener('blur', kaydet);
-  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') window.renderIhracatOps?.(); });
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); kaydet(); }
+    if (e.key === 'Escape') { window.renderIhracatOps?.(); }
+    if (e.key === 'Tab') {
+      e.preventDefault(); kaydet();
+      var nextIdx = e.shiftKey ? idx - 1 : idx + 1;
+      if (allArr[nextIdx]) { var next = allArr[nextIdx]; var na = next.dataset.alan; var ni = next.dataset.uid; if (na && ni) setTimeout(function() { window._ihrInlineEdit(next, ni, na); }, 50); }
+    }
+  });
+  td.innerHTML = '';
+  td.appendChild(inp);
+  inp.focus();
+  if (inp.tagName === 'INPUT') inp.select();
 };
 
 /* ── SATINALMA'DAN ÇEK ──────────────────────────────────── */
