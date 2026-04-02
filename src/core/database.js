@@ -197,11 +197,11 @@ function _write(key, value) {
           clean[f] = { name: clean[f].name || 'dosya', size: clean[f].data.length, _placeholder: true };
         }
       });
-      // docs array içindeki base64'leri temizle
+      // docs array içindeki base64'leri temizle (url olsun olmasın)
       if (Array.isArray(clean.docs)) {
         clean.docs = clean.docs.map(function(d) {
-          if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:') && d.url) {
-            return { name: d.name, url: d.url, ts: d.ts };
+          if (d && d.data && typeof d.data === 'string' && d.data.length > 1000) {
+            return { name: d.name || 'dosya', ts: d.ts, url: d.url || null, _stripped: true };
           }
           return d;
         });
@@ -2617,6 +2617,55 @@ if (typeof module !== 'undefined' && module.exports) {
       saveTasks(active.concat(done));
       console.log('[DB] Tasks temizlendi:', tasks.length, '→', active.length + done.length);
     }
+    // Tüm ak_ key'lerinde base64 veri temizle
+    var _b64cleaned = 0;
+    Object.keys(localStorage).forEach(function(k) {
+      if (!k.startsWith('ak_')) return;
+      var raw = localStorage.getItem(k);
+      if (!raw || raw.length < 50000) return; // 50KB altı atla
+      try {
+        var parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+        var changed = false;
+        parsed.forEach(function(item) {
+          if (!item || typeof item !== 'object') return;
+          // docs array
+          if (Array.isArray(item.docs)) {
+            item.docs = item.docs.map(function(d) {
+              if (d && d.data && typeof d.data === 'string' && d.data.length > 1000) {
+                changed = true; _b64cleaned++;
+                return { name: d.name || 'dosya', ts: d.ts, url: d.url || null, _stripped: true };
+              }
+              return d;
+            });
+          }
+          // Tekil alanlar
+          ['receipt', 'img', 'image', 'file', 'imgdata'].forEach(function(f) {
+            if (item[f] && typeof item[f] === 'string' && item[f].length > 1000 && item[f].startsWith('data:')) {
+              item[f] = null; changed = true; _b64cleaned++;
+            }
+            if (item[f] && item[f].data && typeof item[f].data === 'string' && item[f].data.length > 1000) {
+              item[f] = { name: item[f].name || 'dosya', _stripped: true }; changed = true; _b64cleaned++;
+            }
+          });
+        });
+        if (changed) { localStorage.setItem(k, JSON.stringify(parsed)); }
+      } catch (e) { /* JSON parse hatası — atla */ }
+    });
+    if (_b64cleaned) console.log('[DB] Base64 temizlendi:', _b64cleaned, 'alan');
+    // Notifications limitle
+    var notifs = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
+    if (notifs.length > 30) { localStorage.setItem(KEYS.notifications, JSON.stringify(notifs.slice(0, 30))); console.log('[DB] Notifications:', notifs.length, '→ 30'); }
+    // Activity limitle
+    var act = JSON.parse(localStorage.getItem(KEYS.activity) || '[]');
+    if (act.length > 50) { localStorage.setItem(KEYS.activity, JSON.stringify(act.slice(0, 50))); console.log('[DB] Activity:', act.length, '→ 50'); }
+    // TaskChats limitle
+    try {
+      var tc = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}');
+      var tcChanged = false;
+      Object.keys(tc).forEach(function(tid) { if (Array.isArray(tc[tid]) && tc[tid].length > 20) { tc[tid] = tc[tid].slice(-20); tcChanged = true; } });
+      if (tcChanged) { localStorage.setItem(KEYS.taskChats, JSON.stringify(tc)); console.log('[DB] TaskChats kırpıldı'); }
+    } catch (e) { /* */ }
   } catch (e) { console.warn('[DB] Storage clean:', e); }
 })();
 
