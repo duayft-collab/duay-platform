@@ -3504,13 +3504,15 @@ window._tn2SelectGrp = function(grp, el) {
     localStorage.setItem('ak_nav_modul', 'dashboard');
     return;
   }
+  var visMods = g.mods.filter(function(m) { return canModule(m.id); });
+  if (!visMods.length) { bar3.innerHTML = ''; bar3.style.display = 'none'; window.App?.nav?.('dashboard'); return; }
   bar3.style.display = 'flex';
-  bar3.innerHTML = g.mods.map(function(m) {
+  bar3.innerHTML = visMods.map(function(m) {
     return '<div class="tn2-mod' + (_tn2ActiveMod === m.id ? ' on' : '') + '" data-mod="' + m.id + '" onclick="window._tn2SelectMod(\'' + m.id + '\',this)">' + m.label + '</div>';
   }).join('');
-  // İlk modülü seç
-  if (!g.mods.find(function(m) { return m.id === _tn2ActiveMod; })) {
-    window._tn2SelectMod(g.mods[0].id, bar3.querySelector('.tn2-mod'));
+  // İlk görünür modülü seç
+  if (!visMods.find(function(m) { return m.id === _tn2ActiveMod; })) {
+    window._tn2SelectMod(visMods[0].id, bar3.querySelector('.tn2-mod'));
   }
 };
 
@@ -3538,9 +3540,17 @@ window._tn2Restore = function() {
   var notifs = typeof loadNotifs === 'function' ? loadNotifs().filter(function(n) { return !n.read && (!n.targetUid || n.targetUid === cu.id); }) : [];
   var dot = document.getElementById('tn2-notif-dot');
   if (dot) dot.style.display = notifs.length > 0 ? '' : 'none';
+  // GK-08: Yetkisiz grupları gizle
+  document.querySelectorAll('.tn2-grp').forEach(function(gEl) {
+    var gid = gEl.dataset.grp; if (!gid || gid === 'dashboard') return;
+    var grp = _TN2_GROUPS[gid];
+    if (!grp) { gEl.style.display = 'none'; return; }
+    var hasVisible = grp.mods.some(function(m) { return canModule(m.id); });
+    gEl.style.display = hasVisible ? '' : 'none';
+  });
   // Nav restore
   var grpEl = document.querySelector('.tn2-grp[data-grp="' + _tn2ActiveGrp + '"]');
-  if (grpEl) window._tn2SelectGrp(_tn2ActiveGrp, grpEl);
+  if (grpEl && grpEl.style.display !== 'none') window._tn2SelectGrp(_tn2ActiveGrp, grpEl);
   else window._tn2SelectGrp('dashboard', document.querySelector('.tn2-grp[data-grp="dashboard"]'));
 };
 window._initNsecState   = _initNsecState;
