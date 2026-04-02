@@ -352,6 +352,7 @@ window._ihrYeniEmir = function(templateId) {
   var ex = _g('mo-ihr-emir'); if (ex) ex.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ihr-emir';
   mo.innerHTML = '<div class="moc" style="max-width:700px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600">+ Yeni İhracat Emri</div><button onclick="document.getElementById(\'mo-ihr-emir\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div><div style="padding:18px 20px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    + '<div style="grid-column:1/-1"><div class="fl">Dosya Adı / Referans No *</div><input class="fi" id="ihr-dosya-adi" placeholder="Örnek: Kumaş-Q2-2026, ABC-Tekstil-Nisan..." style="font-size:13px;font-weight:500"><div style="font-size:10px;color:var(--t3);margin-top:3px">Serbest format — sipariş no, müşteri kısaltma, tarih vb. kullanabilirsiniz</div></div>'
     + '<div><div class="fl">Müşteri *</div><select class="fi" id="ihr-musteri"><option value="">— Seçin —</option>' + cariList.map(function(c) { return '<option value="' + c.id + '">' + _esc(c.name) + '</option>'; }).join('') + '</select></div>'
     + '<div><div class="fl">Teslim Şekli *</div><select class="fi" id="ihr-incoterms"><option value="">— Seçin —</option>' + INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (tpl && tpl.teslim_sekli === i ? ' selected' : '') + '>' + i + '</option>'; }).join('') + '</select></div>'
     + '<div><div class="fl">Varış Limanı *</div><input class="fi" id="ihr-varis" value="' + _esc(tpl ? tpl.varis_limani : '') + '" placeholder="Abidjan Port"></div>'
@@ -366,7 +367,9 @@ window._ihrYeniEmir = function(templateId) {
 };
 
 window._ihrEmirKaydet = function() {
+  var dosyaAdi = (_g('ihr-dosya-adi')?.value || '').trim();
   var musteriId = _g('ihr-musteri')?.value; var incoterms = _g('ihr-incoterms')?.value; var varis = (_g('ihr-varis')?.value || '').trim();
+  if (!dosyaAdi) { window.toast?.('Dosya adı zorunludur', 'err'); return; }
   if (!musteriId) { window.toast?.('Müşteri seçiniz', 'err'); return; }
   if (!incoterms) { window.toast?.('Teslim şekli seçiniz', 'err'); return; }
   if (!varis) { window.toast?.('Varış limanı giriniz', 'err'); return; }
@@ -374,7 +377,7 @@ window._ihrEmirKaydet = function() {
   var baslangic = _g('ihr-baslangic')?.value || _today(); var sure = parseInt(_g('ihr-sure')?.value || 7);
   var bitis = new Date(baslangic); bitis.setDate(bitis.getDate() + sure);
   var d = _loadD();
-  var dosya = { id: _genId(), dosyaNo: _nextDosyaNo(), musteri_id: musteriId, musteriAd: musteri?.name || '', teslim_sekli: incoterms, varis_limani: varis, odeme_sarti: _g('ihr-odeme')?.value || '', gumrukcu_id: _g('ihr-gumrukcu')?.value || '', forwarder_id: _g('ihr-forwarder')?.value || '', not: (_g('ihr-not')?.value || '').trim(), sure_gun: sure, baslangic_tarihi: baslangic, bitis_tarihi: bitis.toISOString().slice(0, 10), durum: 'hazirlaniyor', createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() };
+  var dosya = { id: _genId(), dosyaNo: dosyaAdi, musteri_id: musteriId, musteriAd: musteri?.name || '', teslim_sekli: incoterms, varis_limani: varis, odeme_sarti: _g('ihr-odeme')?.value || '', gumrukcu_id: _g('ihr-gumrukcu')?.value || '', forwarder_id: _g('ihr-forwarder')?.value || '', not: (_g('ihr-not')?.value || '').trim(), sure_gun: sure, baslangic_tarihi: baslangic, bitis_tarihi: bitis.toISOString().slice(0, 10), durum: 'hazirlaniyor', createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() };
   d.unshift(dosya); _storeD(d);
   _g('mo-ihr-emir')?.remove();
   window.toast?.('Dosya açıldı: ' + dosya.dosyaNo, 'ok');
@@ -773,6 +776,7 @@ window._ihrDosyaDuzenle = function(id) {
   var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
   _moAc('mo-ihr-edit', '✏️ Dosya Düzenle — ' + _esc(d.dosyaNo),
     '<input type="hidden" id="ihr-edit-id" value="' + id + '"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    + '<div style="grid-column:1/-1"><div class="fl">Dosya Adı / Referans No</div><input class="fi" id="ihr-edit-dosya-adi" value="' + _esc(d.dosyaNo || '') + '"></div>'
     + '<div><div class="fl">Teslim Şekli</div><select class="fi" id="ihr-edit-incoterms">' + INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (d.teslim_sekli === i ? ' selected' : '') + '>' + i + '</option>'; }).join('') + '</select></div>'
     + '<div><div class="fl">Varış Limanı</div><input class="fi" id="ihr-edit-varis" value="' + _esc(d.varis_limani || '') + '"></div>'
     + '<div><div class="fl">Bitiş Tarihi</div><input class="fi" type="date" id="ihr-edit-bitis" value="' + _esc(d.bitis_tarihi || '') + '"></div>'
@@ -782,6 +786,7 @@ window._ihrDosyaDuzenle = function(id) {
 };
 window._ihrDosyaKaydet = function() {
   var id = _g('ihr-edit-id')?.value; if (!id) return; var dosyalar = _loadD(); var d = dosyalar.find(function(x) { return String(x.id) === String(id); }); if (!d) return;
+  var yeniDosyaAdi = (_g('ihr-edit-dosya-adi')?.value || '').trim(); if (yeniDosyaAdi) d.dosyaNo = yeniDosyaAdi;
   d.teslim_sekli = _g('ihr-edit-incoterms')?.value || d.teslim_sekli; d.varis_limani = (_g('ihr-edit-varis')?.value || '').trim() || d.varis_limani; d.bitis_tarihi = _g('ihr-edit-bitis')?.value || d.bitis_tarihi; d.bl_turu = _g('ihr-edit-bl')?.value || d.bl_turu; d.not = (_g('ihr-edit-not')?.value || '').trim(); d.updatedAt = _now();
   _storeD(dosyalar); _g('mo-ihr-edit')?.remove(); window.toast?.('Dosya güncellendi', 'ok'); window.renderIhracatOps?.();
 };
