@@ -338,10 +338,10 @@ function _ihrDetayRenderOzet(d) {
     { tur: 'SIG',   l: 'Sigorta Poliçesi',       uretici: 'Sigorta',   alici: 'Duay',                   kim: 'dis' }
   ];
 
-  var h = '<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:16px">';
+  var h = '<div style="display:flex;gap:16px;align-items:flex-start">';
 
   /* ── SOL BLOK ── */
-  h += '<div style="display:flex;flex-direction:column;gap:12px">';
+  h += '<div style="flex:0 0 280px;width:280px;display:flex;flex-direction:column;gap:12px">';
 
   /* Dosya bilgileri */
   h += '<div style="background:var(--s2);border-radius:10px;padding:14px">';
@@ -405,7 +405,7 @@ function _ihrDetayRenderOzet(d) {
   h += '</div>'; /* sol blok bitti */
 
   /* ── SAĞ BLOK: Evraklar ── */
-  h += '<div>';
+  h += '<div style="flex:1;min-width:0">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
   h += '<div style="font-size:12px;font-weight:500">Evrak Durumu (' + tamam + '/' + EVRAK_LISTESI.length + ')</div>';
   h += '<div style="width:120px;height:5px;background:var(--b);border-radius:3px;overflow:hidden"><div style="width:' + Math.round((tamam / EVRAK_LISTESI.length) * 100) + '%;height:100%;background:#185FA5;border-radius:3px"></div></div>';
