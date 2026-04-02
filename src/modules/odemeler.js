@@ -1007,17 +1007,17 @@ function renderOdemeler() {
   var _tahMonthAmt = _tahThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'); }, 0);
   var _netPos = _tahMonthAmt - _odmMonthAmt;
 
-  // Sayaçlar: rol filtrelenmiş "all" üzerinden (user sadece kendi kayıtlarını görür)
-  var _myOdm = all.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme' || (!o._src && !o.tip); });
-  var _myTah = all.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat'; });
+  // Sayaçlar: filtresiz tüm kayıtlar üzerinden
+  var _myOdm = _allOdm;
+  var _myTah = _allTah;
   const lateN  = _myOdm.filter(o => !o.paid && o.due && o.due < today).length;
   const weekN  = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr).length;
   const paidN  = _myOdm.filter(o => o.paid && (o.paidTs||'').startsWith(thisMonth)).length;
   const totalN = all.length;
   const weekAmt = _myOdm.filter(o => !o.paid && o.due && o.due >= today && o.due <= weekEndStr)
                      .reduce((s,o) => s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY'), 0);
-  const pendN  = all.filter(function(o) { return o.approvalStatus === 'pending' || o.approvalStatus === 'pending_dual_approval'; }).length;
-  const dualN  = all.filter(function(o) { return o.approvalStatus === 'pending_dual_approval'; }).length;
+  const pendN  = _myOdm.filter(function(o) { return o.approvalStatus === 'pending' || o.approvalStatus === 'pending_dual_approval'; }).length;
+  const dualN  = _myOdm.filter(function(o) { return o.approvalStatus === 'pending_dual_approval'; }).length;
 
   // 6 metrik güncelle
   _sto('odm-m-tah-amt', '₺' + Math.round(_tahMonthAmt).toLocaleString('tr-TR'));
