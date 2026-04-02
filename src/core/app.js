@@ -3473,10 +3473,12 @@ var _TN2_GROUPS = {
     { id:'formlar',  label:'Form Şablonları'  },
   ]},
   sistem: { label:'Sistem', mods: [
-    { id:'kpi-panel', label:'KPI & Performans'   },
-    { id:'arsiv-hub', label:'Arşiv & Belgeler'   },
-    { id:'admin',     label:'Kullanıcı Yönetimi' },
-    { id:'settings',  label:'Ayarlar'            },
+    { id:'kpi-panel',       label:'KPI & Performans'   },
+    { id:'arsiv-hub',       label:'Arşiv & Belgeler'   },
+    { id:'admin',           label:'Kullanıcı Yönetimi' },
+    { id:'settings',        label:'Ayarlar'            },
+    { id:'sistem-testler',  label:'Sistem Testleri'    },
+    { id:'platform-rules',  label:'Platform Kuralları' },
   ]},
 };
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';

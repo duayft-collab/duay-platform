@@ -822,6 +822,86 @@ if (typeof module !== 'undefined' && module.exports) {
   window.emptyTrash         = emptyTrash;
 }
 
+// ════════════════════════════════════════════════════════════════
+// SİSTEM TESTLERİ PANELİ
+// ════════════════════════════════════════════════════════════════
+window._renderSistemTestler = function() {
+  var panel = document.getElementById('panel-sistem-testler'); if (!panel) return;
+  var tests = [
+    { label: 'localStorage doluluk', run: function() { var total = 0; Object.keys(localStorage).forEach(function(k) { total += (localStorage.getItem(k) || '').length * 2; }); var pct = Math.round(total / (5 * 1024 * 1024) * 100); return { ok: pct < 60, val: '%' + pct + ' dolu', warn: pct >= 60 && pct < 80 }; } },
+    { label: 'Firestore bağlantısı', run: function() { var ok = !!window.Auth?.getFBDB?.(); return { ok: ok, val: ok ? 'Bağlı' : 'Bağlantı yok' }; } },
+    { label: 'Firebase Auth', run: function() { var ok = !!window.Auth?.getFBAuth?.(); return { ok: ok, val: ok ? 'Aktif' : 'Pasif' }; } },
+    { label: 'Oturum aktif', run: function() { var cu = window.Auth?.getCU?.(); return { ok: !!cu, val: cu ? cu.name + ' (' + cu.role + ')' : 'Oturum yok' }; } },
+    { label: 'İnternet bağlantısı', run: function() { return { ok: navigator.onLine, val: navigator.onLine ? 'Online' : 'Offline' }; } },
+    { label: 'Kur API (ticker)', run: function() { var usd = window._tickerRates?.USD || 0; return { ok: usd > 30, val: usd > 30 ? 'USD: ₺' + usd : 'Kur yok' }; } },
+    { label: 'Service Worker', run: function() { var ok = 'serviceWorker' in navigator; return { ok: ok, val: ok ? 'Destekleniyor' : 'Yok' }; } },
+    { label: 'Bildirim izni', run: function() { var p = window.Notification?.permission; return { ok: p === 'granted', warn: p === 'default', val: p === 'granted' ? 'Verildi' : p === 'denied' ? 'Reddedildi' : 'Bekliyor' }; } },
+    { label: 'Çöp kutusu', run: function() { var t = typeof loadTrash === 'function' ? loadTrash() : []; return { ok: t.length <= 50, val: t.length + ' / 50' }; } },
+    { label: 'Kullanıcı sayısı', run: function() { var u = typeof loadUsers === 'function' ? loadUsers() : []; var a = u.filter(function(x) { return x.status === 'active'; }).length; return { ok: a > 0, val: a + ' aktif / ' + u.length + ' toplam' }; } },
+  ];
+  var results = tests.map(function(t) { try { return { label: t.label, result: t.run() }; } catch (e) { return { label: t.label, result: { ok: false, val: 'Hata: ' + e.message } }; } });
+  var passed = results.filter(function(r) { return r.result.ok; }).length;
+  var failed = results.filter(function(r) { return !r.result.ok && !r.result.warn; }).length;
+  var scoreColor = failed === 0 ? '#16a34a' : failed <= 2 ? '#D97706' : '#dc2626';
+
+  panel.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:18px;font-weight:500;color:var(--t)">Sistem Testleri</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Son: ' + new Date().toLocaleTimeString('tr-TR') + '</div></div><div style="display:flex;align-items:center;gap:12px"><div style="text-align:center"><div style="font-size:28px;font-weight:500;color:' + scoreColor + '">' + passed + '/' + results.length + '</div><div style="font-size:10px;color:var(--t3)">Test geçti</div></div><button onclick="window._renderSistemTestler?.()" style="padding:8px 16px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t)">Yeniden Çalıştır</button></div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">' + results.map(function(r) { var c = r.result.ok ? '#16a34a' : r.result.warn ? '#D97706' : '#dc2626'; var ic = r.result.ok ? '✓' : r.result.warn ? '⚠' : '✗'; var bg = r.result.ok ? '#EAF3DE' : r.result.warn ? '#FAEEDA' : '#FCEBEB'; return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px"><div style="width:22px;height:22px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:' + c + ';flex-shrink:0">' + ic + '</div><div style="flex:1;font-size:12px;font-weight:500;color:var(--t)">' + r.label + '</div><div style="font-size:11px;color:' + c + ';font-weight:500">' + r.result.val + '</div></div>'; }).join('') + '</div></div>';
+};
+
+// ════════════════════════════════════════════════════════════════
+// PLATFORM KURALLARI PANELİ
+// ════════════════════════════════════════════════════════════════
+window._renderPlatformRules = function() {
+  var panel = document.getElementById('panel-platform-rules'); if (!panel) return;
+  var gkList = [
+    { id: 'GK-01', kural: 'Her liste satırında ▸ hızlı göz at butonu', durum: 'ok' },
+    { id: 'GK-02', kural: 'Her silme işlemi confirmModal ile onay ister', durum: 'ok' },
+    { id: 'GK-03', kural: 'Admin + user toplu silebilir', durum: 'ok' },
+    { id: 'GK-04', kural: 'Soft delete — çöp kutusuna gider', durum: 'ok' },
+    { id: 'GK-05', kural: 'Dosyalar Firebase Storage URL', durum: 'ok' },
+    { id: 'GK-06', kural: 'localStorage daima <%60 dolu', durum: 'ok' },
+    { id: 'GK-07', kural: 'Her kayıtta updatedAt zorunlu', durum: 'ok' },
+    { id: 'GK-08', kural: 'Yetkisiz menü görünmez', durum: 'pending' },
+    { id: 'GK-09', kural: 'Form zorunlu alan validasyonu', durum: 'ok' },
+    { id: 'GK-10', kural: 'createdBy + createdAt her kayıtta', durum: 'ok' },
+    { id: 'GK-11', kural: 'Para formatı ₺1.234,56 (tr-TR)', durum: 'ok' },
+    { id: 'GK-12', kural: 'Tarih formatı YYYY-MM-DD', durum: 'ok' },
+    { id: 'GK-13', kural: 'Hata mesajları Türkçe', durum: 'ok' },
+    { id: 'GK-14', kural: 'Her modülde arama/filtreleme', durum: 'ok' },
+    { id: 'GK-15', kural: 'Offline bildirim + online sync', durum: 'ok' },
+    { id: 'GK-16', kural: 'Kritik işlem logActivity yazılır', durum: 'ok' },
+    { id: 'GK-17', kural: 'Safari iOS uyumlu', durum: 'ok' },
+    { id: 'GK-18', kural: 'Yeni modül: KEYS+limit+SYNC_COLS', durum: 'ok' },
+  ];
+  var anayas = [
+    'Kural 01 — Sıfır Hardcode: API key ve şifreler asla kaynak kodda olmaz.',
+    'Kural 02 — Safari First: Tüm UI Safari iOS\'ta test edilir.',
+    'Kural 03 — Firestore Master: localStorage önbellek, Firestore gerçek veri.',
+    'Kural 04 — Tek Fix Prensibi: Claude Code bir fix uygular, Baran test eder.',
+    'Kural 05 — Soft Delete: Hiçbir veri kalıcı silinmez — çöp kutusuna gider.',
+    'Kural 06 — Storage <%60: localStorage doluluk her zaman %60 altında.',
+    'Kural 07 — Audit Trail: Her kritik işlem logActivity ile kaydedilir.',
+    'Kural 08 — Modül Erişimi: Yetkisiz menü gösterilmez.',
+  ];
+
+  panel.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px">'
+    + '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Platform Kuralları</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:24px">Sistem geliştirme anayasası ve genel kurallar</div>'
+    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px"><div onclick="_prTab(\'gk\',this)" id="pr-tab-gk" style="padding:8px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:500">Genel Kurallar</div><div onclick="_prTab(\'anayasa\',this)" id="pr-tab-anayasa" style="padding:8px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Anayasa</div></div>'
+    + '<div id="pr-content-gk"><div style="display:flex;flex-direction:column;gap:4px">' + gkList.map(function(g) { var ok = g.durum === 'ok'; return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--sf);border:0.5px solid var(--b);border-radius:7px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace;flex-shrink:0">' + g.id + '</span><span style="flex:1;font-size:11px;color:var(--t)">' + g.kural + '</span><span style="font-size:10px;font-weight:500;color:' + (ok ? '#16a34a' : '#D97706') + '">' + (ok ? '✓ Uygulandı' : '⏳ Bekliyor') + '</span></div>'; }).join('') + '</div></div>'
+    + '<div id="pr-content-anayasa" style="display:none"><div style="display:flex;flex-direction:column;gap:6px">' + anayas.map(function(a) { return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid #185FA5;border-radius:7px;font-size:12px;color:var(--t);line-height:1.6">' + a + '</div>'; }).join('') + '</div></div>'
+    + '</div>';
+
+  window._prTab = function(tab, el) {
+    ['gk', 'anayasa'].forEach(function(t) {
+      var c = document.getElementById('pr-content-' + t); var tb = document.getElementById('pr-tab-' + t);
+      if (c) c.style.display = t === tab ? '' : 'none';
+      if (tb) { tb.style.borderBottomColor = t === tab ? 'var(--ac)' : 'transparent'; tb.style.color = t === tab ? 'var(--ac)' : 'var(--t3)'; tb.style.fontWeight = t === tab ? '500' : '400'; }
+    });
+  };
+};
+
 
 // ════════════════════════════════════════════════════════════════
 // V18 EK PANELLER: finans, kpi-panel, users

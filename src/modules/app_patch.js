@@ -41,6 +41,8 @@
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
     'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
+    'sistem-testler': () => { window._renderSistemTestler?.(); },
+    'platform-rules': () => { window._renderPlatformRules?.(); },
     'etkinlik': () => { window.renderEtkinlik?.(); },
     'tebligat': () => { window.renderTebligat?.(); },
     'resmi': () => { window.renderResmi?.(); },
@@ -687,6 +689,7 @@ window.PANEL_MODULE_MAP = {
   'pusula':'pusula','hedefler':'hedefler',
   'ceo':'ceo','kpi-panel':'kpi-panel','admin':'users',
   'activity':'activity','settings':'settings','trash':'trash',
+  'sistem-testler':'sistem-testler','platform-rules':'platform-rules',
 };
 
 function _applyRoleUI(user) {
