@@ -241,8 +241,25 @@ function _ihrRenderBelgeler(el) {
   var evraklar = _loadE().filter(function(e) { return !e.isDeleted; });
   var h = '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:500">Tüm Evraklar (' + evraklar.length + ')</div></div>';
   if (!evraklar.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)">Henüz evrak yok</div>'; el.innerHTML = h; return; }
-  h += '<table class="tbl"><thead><tr><th>Tür</th><th>Dosya</th><th>Durum</th><th>Tarih</th><th></th></tr></thead><tbody>';
-  evraklar.forEach(function(e) { var dosya = _loadD().find(function(d) { return d.id === e.dosya_id; }); var tur = EVRAK_TUR[e.tur] || { l: e.tur }; var durum = EVRAK_DURUM[e.durum] || EVRAK_DURUM.taslak; h += '<tr><td style="font-size:11px;font-weight:500">' + _esc(tur.l) + '</td><td style="font-size:11px;color:var(--ac)">' + _esc(dosya?.dosyaNo || '—') + '</td><td>' + _badge(durum.l, durum.c, durum.bg) + '</td><td style="font-size:11px;font-family:monospace">' + _esc(e.createdAt || '—') + '</td><td><button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px">✏️</button></td></tr>'; });
+  h += '<table class="tbl"><thead><tr><th>Tür</th><th>Dosya</th><th>Durum</th><th>Hazırlayan</th><th>Tarih</th><th></th></tr></thead><tbody>';
+  evraklar.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); }).forEach(function(e) {
+    var dosya = _loadD().find(function(d) { return String(d.id) === String(e.dosya_id); });
+    var tur = EVRAK_TUR[e.tur] || { l: e.tur };
+    var durum = EVRAK_DURUM[e.durum] || EVRAK_DURUM.taslak;
+    var zaman = (e.gonderim_tarihi || e.updatedAt || e.createdAt || '').slice(0, 16).replace('T', ' ');
+    h += '<tr>';
+    h += '<td style="font-size:11px;font-weight:500">' + _esc(tur.l) + '</td>';
+    h += '<td style="font-size:11px;color:var(--ac)">' + _esc(dosya ? dosya.dosyaNo : '—') + '</td>';
+    h += '<td>' + _badge(durum.l, durum.c, durum.bg) + '</td>';
+    h += '<td style="font-size:11px">' + _esc(e.hazirlayanAd || '—') + '</td>';
+    h += '<td style="font-size:11px;font-family:monospace">' + _esc(zaman) + '</td>';
+    h += '<td><div style="display:flex;gap:4px">';
+    h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + _esc(e.dosya_id) + '\',\'' + _esc(e.tur) + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
+    if (e.dosya_url) h += '<a href="' + _esc(e.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
+    h += '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + e.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>';
+    h += '</div></td>';
+    h += '</tr>';
+  });
   h += '</tbody></table>'; el.innerHTML = h;
 }
 
@@ -497,10 +514,17 @@ function _ihrDetayRenderOzet(d) {
     h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
     h += _badge(durum.l, durum.c, durum.bg);
 
+    /* Görüntüle — her zaman */
+    h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
+    /* İndir — URL varsa */
+    if (kayit && kayit.dosya_url) {
+      h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
+    }
+    /* Düzenle — kayıt varsa */
+    if (kayit) {
+      h += '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>';
+    }
     if (isDuay) {
-      if (kayit) {
-        h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
-      }
       if (!kayit) {
         h += '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>';
       } else if (kayit.durum === 'taslak') {
@@ -511,10 +535,9 @@ function _ihrDetayRenderOzet(d) {
         h += '<span style="font-size:10px;color:#16A34A;padding:2px 4px">✓</span>';
       }
     } else {
-      if (kayit && kayit.dosya_url) {
-        h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">Görüntüle</a>';
+      if (!kayit) {
+        h += '<button class="btn btns" onclick="window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Yükle</button>';
       }
-      h += '<button class="btn btns" onclick="window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Yükle</button>';
     }
     h += '</div></div>';
   });
@@ -533,7 +556,25 @@ window._ihrDetayTab = function(tab, id) {
   var c = _g('ihr-detay-content'); if (!c) return;
   if (tab === 'ozet') { _ihrDetayRenderOzet(d); return; }
   if (tab === 'urunler') { var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; }); c.innerHTML = '<div style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:500">' + urunler.length + ' ürün</div><button class="btn btnp" onclick="window._ihrUrunEkle(\'' + d.id + '\')" style="font-size:11px">+ Ürün Ekle</button></div>' + (urunler.length ? '<table class="tbl"><thead><tr><th>Ürün</th><th>Miktar</th><th>Fiyat</th><th>Toplam</th><th></th></tr></thead><tbody>' + urunler.map(function(u) { var toplam = (u.miktar || 0) * (u.birim_fiyat || 0); return '<tr><td style="font-size:11px">' + _esc(u.aciklama || '—') + '</td><td style="font-size:11px">' + (u.miktar || 0) + ' ' + _esc(u.birim || '') + '</td><td style="font-size:11px">' + (u.birim_fiyat || 0).toFixed(2) + ' ' + _esc(u.doviz || '') + '</td><td style="font-size:11px;font-weight:500">' + toplam.toFixed(2) + ' ' + _esc(u.doviz || '') + '</td><td><button class="btn btns btnd" onclick="window._ihrUrunSil(\'' + u.id + '\')" style="font-size:10px;padding:2px 6px">🗑</button></td></tr>'; }).join('') + '</tbody></table>' : '<div style="text-align:center;padding:24px;color:var(--t3)">Ürün yok</div>') + '</div>'; return; }
-  if (tab === 'evraklar') { var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); }); c.innerHTML = '<div style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:500">Evraklar</div><button class="btn btnp" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'CI\')" style="font-size:11px">+ CI Oluştur</button></div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">' + Object.keys(EVRAK_TUR).map(function(k) { var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; }); var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' }; return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;font-weight:500">' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>' + (ev ? '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + ev.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>' : '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + k + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>') + '</div>'; }).join('') + '</div></div>'; return; }
+  if (tab === 'evraklar') {
+    var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
+    var evH = '<div style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:500">Evraklar</div><button class="btn btnp" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'CI\')" style="font-size:11px">+ CI Oluştur</button></div>';
+    evH += '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">';
+    Object.keys(EVRAK_TUR).forEach(function(k) {
+      var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; });
+      var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
+      evH += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:10px">';
+      evH += '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;font-weight:500">' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>';
+      evH += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+      evH += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + k + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
+      if (ev && ev.dosya_url) evH += '<a href="' + _esc(ev.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
+      if (!ev) evH += '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + k + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>';
+      if (ev) evH += '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + ev.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>';
+      evH += '</div></div>';
+    });
+    evH += '</div></div>';
+    c.innerHTML = evH; return;
+  }
   if (tab === 'gumrukcu') {
     var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
     var gm = d.gumrukcu_id ? gumrukculer.find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
