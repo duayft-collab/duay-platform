@@ -139,6 +139,7 @@ const KEYS = {
   noteView      : 'ak_nview',
   iddialar      : 'ak_iddialar1',
   ihracatOps    : 'ak_ihracat_ops1',
+  gcb           : 'ak_gcb1',
   sozler        : 'ak_sozler1',
 };
 
@@ -374,7 +375,7 @@ var _ALL_SYNC_COLS = [
   'bankalar','navlun','urunler','fikirler',
   'alisTeklifleri','satisTeklifleri','teklifSartlar','ihracatOps',
   'updateLog','trash','kararlar','suggestions','links','smartGoals',
-  'taskChats','notifications','iddialar','sozler'
+  'taskChats','notifications','iddialar','sozler','gcb'
 ];
 
 /**
