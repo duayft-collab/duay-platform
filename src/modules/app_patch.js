@@ -670,6 +670,7 @@ window.MODULE_NAV_MAP = {
   'ceo':        ['nb-ceo'],
   'kpi-panel':  ['nb-kpi-panel'],
   'admin':      ['nb-admin'],
+  'users':      ['nb-admin'],
   'activity':   ['nb-activity'],
   'settings':   ['nb-settings'],
   'trash':      ['nb-trash'],
@@ -684,7 +685,7 @@ window.PANEL_MODULE_MAP = {
   'ik-hub':'ik','ik':'ik','evrak':'evrak','temizlik':'temizlik','puantaj':'puantaj',
   'docs':'docs','formlar':'formlar','arsiv':'arsiv','tebligat':'tebligat','resmi':'resmi',
   'pusula':'pusula','hedefler':'hedefler',
-  'ceo':'ceo','kpi-panel':'kpi-panel','admin':'admin',
+  'ceo':'ceo','kpi-panel':'kpi-panel','admin':'users',
   'activity':'activity','settings':'settings','trash':'trash',
 };
 
