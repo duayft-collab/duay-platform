@@ -968,7 +968,7 @@ function renderOdemeler() {
       else if (statF !== 'no-receipt' && st !== statF) return false;
     }
     // Cari filtresi
-    if (cariF && (o.cariName || '') !== cariF) return false;
+    if (cariF && (o.cariName || '').trim().toLowerCase() !== cariF.trim().toLowerCase()) return false;
     // Para birimi filtresi
     if (curF && (o.currency || 'TRY') !== curF) return false;
     // Tarih aralığı filtresi
@@ -1763,7 +1763,7 @@ function saveOdm() {
   var _odmEditId = parseInt(document.getElementById('odm-f-eid')?.value || '0') || 0;
   if (_fDocNo && _fCari) {
     var _odmExisting = (window.loadOdm ? loadOdm() : []).find(function(o) {
-      return o.cariName === _fCari && o.docNo === _fDocNo && o.id !== _odmEditId && !o.isDeleted;
+      return o.cariName === _fCari && o.docNo === _fDocNo && o.id !== _odmEditId;
     });
     if (_odmExisting) {
       _odmHighlightMissing(['odm-f-docno', 'odm-f-cari'], 'Mükerrer kayıt!');
@@ -1800,7 +1800,7 @@ function saveOdm() {
     reminderValue:  parseInt(document.getElementById('odm-f-reminder-val')?.value || '3') || 3,
     reminderUnit:   document.getElementById('odm-f-reminder-unit')?.value || 'gun',
     assignedTo:     parseInt(_go('odm-f-assigned')?.value || '0') || null,
-    cariName:       _fCari,
+    cariName:       (_fCari || '').trim().replace(/\s+/g, ' '),
     docNo:          _fDocNo,
     yontem:         _fYontem,
     bankaId:        parseInt(document.getElementById('odm-f-banka-sel')?.value || '0') || null,
@@ -1888,7 +1888,7 @@ function saveOdm() {
   renderOdemeler();
   // Auth gecikmesi durumunda 500ms sonra yeniden render
   setTimeout(renderOdemeler, 500);
-  window.logActivity?.('view', '"' + name + '" odeme ' + (isNew ? 'eklendi' : 'guncellendi'));
+  window.logActivity?.('finans', '"' + name + '" odeme ' + (isNew ? 'eklendi' : 'guncellendi'));
   // Yeni kayıt + admin değilse yöneticilere bildirim gönder
   if (isNew && !isAdmin) {
     var yoneticiler = (window.loadUsers?.() || []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
@@ -2032,7 +2032,7 @@ function delOdm(id) {
       o.deletedReason = 'user_delete';
       window.storeOdm ? storeOdm(d) : null;
       renderOdemeler();
-      window.logActivity?.('view', 'Ödeme silindi (soft): ' + (o.name || ''));
+      window.logActivity?.('finans', 'Ödeme silindi (soft): ' + (o.name || ''));
       window.toast?.('Silindi — 30 gün içinde geri alınabilir', 'ok');
     }
   });
@@ -2067,7 +2067,7 @@ function uploadOdmReceipt(id) {
         localStorage.removeItem('odm_alarm_receipt_' + id);
         renderOdemeler();
         window.toast?.('📎 Dekont yüklendi ✓', 'ok');
-        window.logActivity?.('view', `"${o.name}" için dekont yüklendi`);
+        window.logActivity?.('finans', `"${o.name}" için dekont yüklendi`);
       } catch (err) {
         console.error('[odm] dekont yükleme hatası:', err);
         window.toast?.('Yükleme hatası: ' + err.message, 'err');
@@ -2125,7 +2125,7 @@ function exportOdmXlsx() {
   XLSX.utils.book_append_sheet(wb, ws, 'Nakit Akisi');
   XLSX.writeFile(wb, 'rutin-odemeler-' + _todayStr() + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
-  window.logActivity?.('view', 'Rutin ödemeler Excel olarak indirildi');
+  window.logActivity?.('finans', 'Rutin ödemeler Excel olarak indirildi');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3047,7 +3047,7 @@ function saveTahsilat() {
   var _tahEditId = parseInt(document.getElementById('tah-f-eid')?.value || '0') || 0;
   if (_tahRef && _tahCariVal) {
     var _tahExisting = loadTahsilat().find(function(t) {
-      return t.cariName === _tahCariVal && t.ref === _tahRef && t.id !== _tahEditId && !t.isDeleted;
+      return t.cariName === _tahCariVal && t.ref === _tahRef && t.id !== _tahEditId;
     });
     if (_tahExisting) {
       _odmHighlightMissing(['tah-f-ref', 'tah-f-cari'], 'Mükerrer kayıt!');
@@ -3077,7 +3077,7 @@ function saveTahsilat() {
     banka:      document.getElementById('tah-f-banka')?.value    || '',
     yontem:     document.getElementById('tah-f-yontem')?.value   || '',
     bankaId:    parseInt(document.getElementById('tah-f-banka-sel')?.value || '0') || null,
-    cariName:   document.getElementById('tah-f-cari')?.value     || '',
+    cariName:   (document.getElementById('tah-f-cari')?.value || '').trim().replace(/\s+/g, ' '),
     taskId:     parseInt(document.getElementById('tah-f-taskid')?.value || '0') || null,
     // planned alanı kaldırıldı
     collected:  !!document.getElementById('tah-f-collected')?.checked,
@@ -5155,7 +5155,7 @@ function _sendOdmReminder(id) {
     window.toast?.('Mesaj panoya kopyalandı — ' + ch + ' ile gönderin', 'ok');
   }
 
-  window.logActivity?.('view', '"' + (u?.name||'?') + '" için ödeme hatırlatıcısı gönderildi');
+  window.logActivity?.('finans', '"' + (u?.name||'?') + '" için ödeme hatırlatıcısı gönderildi');
   document.querySelector('.mo.open')?.remove();
 }
 window.openOdmReminderModal = openOdmReminderModal;
@@ -6902,7 +6902,7 @@ window._odmBulkApprove = function() {
     window.storeOdm ? storeOdm(d) : null;
     renderOdemeler();
     window.toast?.('✅ ' + count + ' kayıt onaylandı', 'ok');
-    window.logActivity?.('view', 'Toplu onay: ' + count + ' ödeme');
+    window.logActivity?.('finans', 'Toplu onay: ' + count + ' ödeme');
   }
 };
 
@@ -6946,7 +6946,7 @@ function delTahsilat(id) {
       o.deletedReason = 'user_delete';
       if (typeof storeTahsilat === 'function') storeTahsilat(d);
       renderOdemeler();
-      window.logActivity?.('view', 'Tahsilat silindi (soft): ' + (o.name || ''));
+      window.logActivity?.('finans', 'Tahsilat silindi (soft): ' + (o.name || ''));
       window.toast?.('Silindi — 30 gün içinde geri alınabilir', 'ok');
     }
   });
@@ -7104,7 +7104,7 @@ function _restoreTrashItem(id, type) {
     if (typeof storeTahsilat === 'function') storeTahsilat(d2);
   }
   window.toast?.('Kayıt geri yüklendi ✓', 'ok');
-  window.logActivity?.('view', (type === 'odeme' ? 'Ödeme' : 'Tahsilat') + ' geri yüklendi: ' + id);
+  window.logActivity?.('finans', (type === 'odeme' ? 'Ödeme' : 'Tahsilat') + ' geri yüklendi: ' + id);
   renderOdemeler();
   openOdmTrashPanel();
 }
@@ -7124,7 +7124,7 @@ function _permanentDeleteItem(id, type) {
         if (typeof storeTahsilat === 'function') storeTahsilat(d2.filter(function(x) { return x.id !== id; }));
       }
       window.toast?.('Kalıcı olarak silindi', 'ok');
-      window.logActivity?.('view', 'Kalıcı silme: ' + type + ' #' + id);
+      window.logActivity?.('finans', 'Kalıcı silme: ' + type + ' #' + id);
       openOdmTrashPanel();
     }
   });
