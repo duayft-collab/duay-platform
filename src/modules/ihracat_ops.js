@@ -263,17 +263,28 @@ window._ihrEmirKaydet = function() {
 /* ── YARDIMCILAR ─────────────────────────────────────────── */
 window._ihrGeriDon = function() { _aktifDosyaId = null; _ihrRenderContent(); };
 
-function _ihrDetayRenderOzet(d, evraklar, tamam) {
+function _ihrDetayRenderOzet(d) {
   var c = _g('ihr-detay-content'); if (!c) return;
-  if (!evraklar) evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
-  if (tamam === undefined) tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
-  var h = '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:16px 20px">';
-  h += '<div><div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;margin-bottom:10px">Dosya Bilgileri</div>';
-  h += _detayRow('Dosya No', d.dosyaNo) + _detayRow('Müşteri', d.musteriAd) + _detayRow('Teslim', d.teslim_sekli) + _detayRow('Varış', d.varis_limani) + _detayRow('Ödeme', d.odeme_sarti) + _detayRow('Başlangıç', d.baslangic_tarihi) + _detayRow('Bitiş', d.bitis_tarihi) + _detayRow('Süre', (d.sure_gun || 7) + ' gün');
-  h += '</div><div><div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;margin-bottom:10px">Evrak Durumu (' + tamam + '/' + Object.keys(EVRAK_TUR).length + ')</div>';
-  Object.keys(EVRAK_TUR).forEach(function(k) { var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; }); var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' }; h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span>' + _esc(v.l) + '</span><span style="font-size:9px;padding:1px 7px;border-radius:3px;background:' + durum.bg + ';color:' + durum.c + '">' + durum.l + '</span></div>'; });
-  h += '</div></div>';
-  if (d.not) h += '<div style="padding:0 20px 16px"><div style="font-size:11px;color:var(--t2);background:var(--s2);padding:10px 12px;border-radius:8px">' + _esc(d.not) + '</div></div>';
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
+  var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
+  var toplam = Object.keys(EVRAK_TUR).length;
+
+  var h = '<div style="padding:16px 20px">';
+  h += '<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Dosya Bilgileri</div>';
+  [['Dosya No',d.dosyaNo],['Müşteri',d.musteriAd],['Teslim Şekli',d.teslim_sekli],['Varış Limanı',d.varis_limani],['Yükleme Limanı',d.yukleme_limani||'İstanbul'],['Başlangıç',d.baslangic_tarihi],['Bitiş',d.bitis_tarihi],['Süre',(d.sure_gun||7)+' gün'],['Ödeme Şartı',d.odeme_sarti]].forEach(function(s) {
+    h += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t2)">' + _esc(s[0]) + '</span><span style="color:var(--t);font-weight:500">' + _esc(s[1] || '—') + '</span></div>';
+  });
+
+  h += '<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Evrak Durumu (' + tamam + '/' + toplam + ')</div>';
+  Object.keys(EVRAK_TUR).forEach(function(k) {
+    var v = EVRAK_TUR[k]; var ev = evraklar.find(function(e) { return e.tur === k; });
+    var durum = ev ? (EVRAK_DURUM[ev.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t)">' + _esc(v.l) + '</span><span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + durum.bg + ';color:' + durum.c + ';font-weight:500">' + durum.l + '</span></div>';
+  });
+
+  if (d.whatsapp_grup) h += '<div style="margin-top:12px"><a href="' + _esc(d.whatsapp_grup) + '" target="_blank" style="color:var(--ac);font-size:12px">WhatsApp Grubu →</a></div>';
+  if (d.not) h += '<div style="margin-top:10px;background:var(--s2);padding:10px 12px;border-radius:8px;font-size:12px;color:var(--t2)">' + _esc(d.not) + '</div>';
+  h += '</div>';
   c.innerHTML = h;
 }
 
