@@ -3476,7 +3476,6 @@ var _TN2_GROUPS = {
     { id:'arsiv-hub', label:'Arşiv & Belgeler'   },
     { id:'admin',     label:'Kullanıcı Yönetimi' },
     { id:'settings',  label:'Ayarlar'            },
-    { id:'activity',  label:'Aktivite Logları'   },
   ]},
 };
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
