@@ -386,6 +386,15 @@ function checkOdmAlarms() {
     }
   });
 
+  // Tahsilat hatırlatma — vadesi 3 gün içindeki toplanmamış tahsilatlar
+  var allTah2 = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  allTah2.filter(function(t) { if (t.isDeleted || t.collected || !t.date) return false; var diffD = Math.round((new Date(t.date) - todayD) / 86400000); return diffD >= 0 && diffD <= 3; }).forEach(function(t) {
+    var key = 'tah_remind_' + t.id + '_' + today; if (localStorage.getItem(key)) return; localStorage.setItem(key, '1');
+    var diff2 = Math.round((new Date(t.date) - todayD) / 86400000);
+    var msg = diff2 === 0 ? '"' + (t.cariName || t.name || '?') + '" tahsilatı bugün vadeli' : '"' + (t.cariName || t.name || '?') + '" tahsilatına ' + diff2 + ' gün kaldı';
+    window.addNotif?.('💰', msg, 'warn', 'odemeler'); window.logActivity?.('finans', 'Tahsilat hatırlatma: ' + msg);
+  });
+
   return alarmed;
 }
 
@@ -6079,7 +6088,39 @@ window._renderOdmAnaliz = function() {
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">' + [{lbl:'Gecikmiş Ödeme',val:'₺'+fmt(gecikTL),sub:gecik.length+' kayıt',c:'#dc2626'},{lbl:'30 Gün İçinde',val:'₺'+fmt(yaklasanTL),sub:yaklasan.length+' ödeme',c:'#D97706'},{lbl:'Bekleyen Tahsilat',val:'₺'+fmt(bekTahTL),sub:bekTah.length+' kayıt',c:'#7C3AED'},{lbl:'Net Pozisyon',val:(bekTahTL-gecikTL>=0?'+':'-')+'₺'+fmt(Math.abs(bekTahTL-gecikTL)),sub:'Tahsilat - Gecikmiş',c:bekTahTL>=gecikTL?'#16a34a':'#dc2626'}].map(function(k) { return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px 14px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:500;letter-spacing:.05em;margin-bottom:6px">' + k.lbl + '</div><div style="font-size:18px;font-weight:600;color:' + k.c + '">' + k.val + '</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + k.sub + '</div></div>'; }).join('') + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden"><div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Gider Kategorileri</div><div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">' + cats.map(function(cat, i) { var lbl = (window.ODM_CATS || {})[cat]?.l || cat; var amt = catMap[cat]; var maxAmt = catMap[cats[0]] || 1; var pct = Math.round(amt / maxAmt * 100); return '<div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--t);flex:1">' + lbl + '</div><div style="width:100px;height:6px;border-radius:3px;background:var(--b)"><div style="height:100%;border-radius:3px;width:' + pct + '%;background:' + catColors[i] + '"></div></div><div style="font-size:11px;font-weight:500;color:var(--t);min-width:60px;text-align:right">₺' + fmt(amt) + '</div></div>'; }).join('') + '</div></div>'
     + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden"><div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Gecikmiş Ödemeler (' + gecik.length + ')</div><div style="display:flex;flex-direction:column;gap:4px;padding:8px 14px;max-height:220px;overflow-y:auto">' + gecik.sort(function(a, b) { return a.due < b.due ? -1 : 1; }).map(function(o) { var diff = Math.floor((new Date(today) - new Date(o.due)) / 86400000); var bc = diff > 30 ? '#FCEBEB' : diff > 7 ? '#FAEEDA' : '#E6F1FB'; var tc = diff > 30 ? '#791F1F' : diff > 7 ? '#633806' : '#0C447C'; return '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:var(--s2)"><span style="font-size:8px;padding:1px 6px;border-radius:3px;background:' + bc + ';color:' + tc + ';font-weight:600;white-space:nowrap">' + diff + ' GÜN</span><div style="flex:1;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (o.cariName || o.name || '—') + '</div><div style="font-size:11px;font-weight:500;color:#dc2626;white-space:nowrap">₺' + fmt(_odmToTRY(parseFloat(o.amount || 0), o.currency || 'TRY')) + '</div></div>'; }).join('') + '</div></div></div></div>';
+  // Kur riski bölümü
+  var dovizBorc = {}; odm.filter(function(o) { return !o.paid && o.currency && o.currency !== 'TRY'; }).forEach(function(o) { var cur = o.currency; if (!dovizBorc[cur]) dovizBorc[cur] = 0; dovizBorc[cur] += parseFloat(o.amount) || 0; });
+  if (Object.keys(dovizBorc).length) {
+    cont.innerHTML += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-top:12px"><div style="padding:10px 14px;border-bottom:1px solid var(--b);font-size:12px;font-weight:600;color:var(--t)">Döviz Kur Riski</div><div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">' + Object.keys(dovizBorc).map(function(cur) { var amt = dovizBorc[cur]; var rate = (window._tickerRates || {})[cur] || 1; var tl = amt * rate; var risk5 = amt * (rate * 1.05); var risk10 = amt * (rate * 1.10); return '<div style="padding:10px;background:var(--s2);border-radius:8px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:500;color:var(--t)">' + cur + ' ' + amt.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span><span style="font-size:11px;color:var(--t3)">Kur: ₺' + rate.toFixed(2) + '</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:10px"><div style="padding:6px 8px;border-radius:6px;background:#E6F1FB"><div style="color:#0C447C;font-weight:500">Şu an</div><div style="color:#0C447C;font-size:12px;font-weight:600">₺' + fmt(tl) + '</div></div><div style="padding:6px 8px;border-radius:6px;background:#FAEEDA"><div style="color:#633806;font-weight:500">+%5 artış</div><div style="color:#633806;font-size:12px;font-weight:600">₺' + fmt(risk5) + '</div></div><div style="padding:6px 8px;border-radius:6px;background:#FCEBEB"><div style="color:#791F1F;font-weight:500">+%10 artış</div><div style="color:#791F1F;font-size:12px;font-weight:600">₺' + fmt(risk10) + '</div></div></div></div>'; }).join('') + '</div></div>';
+  }
 };
+
+// ════════════════════════════════════════════════════════════════
+// ÖDEME ŞABLON SİSTEMİ
+// ════════════════════════════════════════════════════════════════
+var ODM_TPL_KEY = 'ak_odm_templates';
+function _loadTpls() { try { return JSON.parse(localStorage.getItem(ODM_TPL_KEY) || '[]'); } catch(e) { return []; } }
+function _saveTpls(d) { localStorage.setItem(ODM_TPL_KEY, JSON.stringify(d.slice(0, 50))); }
+
+window._odmSaveAsTemplate = function(id) {
+  var odm2 = loadOdm(); var o = odm2.find(function(x) { return x.id === id; }); if (!o) return;
+  var name = prompt('Şablon adı:', o.name || ''); if (!name) return;
+  var tpls = _loadTpls(); tpls.unshift({ id: Date.now(), name: name, data: { name: o.name, cat: o.cat, currency: o.currency, amount: o.amount, cariName: o.cariName, yontem: o.yontem, note: o.note }, createdAt: new Date().toISOString() }); _saveTpls(tpls); window.toast?.('Şablon kaydedildi ✓', 'ok');
+};
+
+window._odmOpenTemplateModal = function() {
+  var tpls = _loadTpls(); var ex = document.getElementById('mo-odm-tpl'); if (ex) ex.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-odm-tpl';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:var(--t)">Ödeme Şablonları</div><button onclick="document.getElementById(\'mo-odm-tpl\')?.remove()" style="border:none;background:transparent;font-size:18px;cursor:pointer;color:var(--t3)">×</button></div><div style="padding:14px 20px;max-height:60vh;overflow-y:auto">' + (tpls.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--t3);font-size:12px">Henüz şablon yok.</div>' : tpls.map(function(t) { return '<div style="display:flex;align-items:center;gap:10px;padding:10px;border:0.5px solid var(--b);border-radius:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">' + t.name + '</div><div style="font-size:10px;color:var(--t3)">' + (t.data.cariName || '') + (t.data.amount ? ' · ₺' + parseFloat(t.data.amount).toLocaleString('tr-TR') : '') + '</div></div><button onclick="window._odmUseTemplate(' + t.id + ')" style="padding:4px 12px;border-radius:6px;border:0.5px solid var(--ac);background:transparent;color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit">Kullan</button><button onclick="window._odmDeleteTemplate(' + t.id + ')" style="padding:4px 8px;border:none;background:transparent;color:var(--t3);font-size:11px;cursor:pointer">×</button></div>'; }).join('')) + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._odmUseTemplate = function(id) {
+  var tpls = _loadTpls(); var t = tpls.find(function(x) { return x.id === id; }); if (!t) return;
+  document.getElementById('mo-odm-tpl')?.remove(); openOdmModal(0);
+  setTimeout(function() { var d = t.data; var set = function(eid, val) { var el = document.getElementById(eid); if (el) el.value = val || ''; }; set('odm-f-name', d.name); set('odm-f-amount', d.amount); set('odm-f-cari', d.cariName); set('odm-f-note', d.note); window._odmUpdateTLPreview?.(); window.toast?.('Şablon yüklendi ✓', 'ok'); }, 300);
+};
+window._odmDeleteTemplate = function(id) { _saveTpls(_loadTpls().filter(function(t) { return t.id !== id; })); window._odmOpenTemplateModal(); };
 
 /** Levenshtein mesafesi — firma adı benzerlik kontrolü */
 function _levenshtein(a, b) {
