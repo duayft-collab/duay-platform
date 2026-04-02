@@ -52,15 +52,24 @@ function renderSatisTeklif() {
   if (!cont) return;
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
+  /* Sayfalama */
+  if (!window._stekSayfa) window._stekSayfa = 1;
+  if (search) window._stekSayfa = 1;
+  var STEK_SAYFA_BOYUT = 50;
+  var stToplamSayfa = Math.max(1, Math.ceil(fl.length / STEK_SAYFA_BOYUT));
+  if (window._stekSayfa > stToplamSayfa) window._stekSayfa = stToplamSayfa;
+  var stBaslangic = (window._stekSayfa - 1) * STEK_SAYFA_BOYUT;
+  var sayfaListe = fl.slice(stBaslangic, stBaslangic + STEK_SAYFA_BOYUT);
+
   if (!fl.length) {
     cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px">📤</div><div style="margin-top:8px">Teklif bulunamadı</div><button class="btn btnp" onclick="window._openSTModal?.(null)" style="margin-top:12px;font-size:12px">+ İlk Teklifi Oluştur</button></div>';
     return;
   }
 
-  var html = '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">'
+  var html = '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;z-index:2">'
     + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>Müşteri</div><div>Toplam</div><div>Döviz</div><div>Tarih</div><div>İşlem</div></div>';
 
-  fl.forEach(function(t) {
+  sayfaListe.forEach(function(t) {
     var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
     html += '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div onclick="event.stopPropagation()"><input type="checkbox" class="stek-row-chk" data-id="' + t.id + '" onchange="event.stopPropagation();window._stekChkGuncelle()"></div>'
@@ -77,6 +86,18 @@ function renderSatisTeklif() {
       + '</div>'
     + '</div>';
   });
+  /* Sayfalama footer */
+  if (fl.length > STEK_SAYFA_BOYUT) {
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:11px;border-top:1px solid var(--b);background:var(--s2)">';
+    html += '<span style="color:var(--t2)">' + (stBaslangic + 1) + '–' + Math.min(stBaslangic + STEK_SAYFA_BOYUT, fl.length) + ' / ' + fl.length + ' teklif</span>';
+    html += '<div style="margin-left:auto;display:flex;gap:4px">';
+    html += '<button class="btn btns" onclick="event.stopPropagation();window._stekSayfa=Math.max(1,window._stekSayfa-1);renderSatisTeklif()" style="font-size:10px;padding:3px 8px"' + (window._stekSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    for (var spi = 1; spi <= Math.min(stToplamSayfa, 7); spi++) { html += '<button class="btn ' + (spi === window._stekSayfa ? 'btnp' : 'btns') + '" onclick="event.stopPropagation();window._stekSayfa=' + spi + ';renderSatisTeklif()" style="font-size:10px;padding:3px 8px">' + spi + '</button>'; }
+    if (stToplamSayfa > 7) html += '<span style="color:var(--t3)">... ' + stToplamSayfa + '</span>';
+    html += '<button class="btn btns" onclick="event.stopPropagation();window._stekSayfa=Math.min(' + stToplamSayfa + ',window._stekSayfa+1);renderSatisTeklif()" style="font-size:10px;padding:3px 8px"' + (window._stekSayfa >= stToplamSayfa ? ' disabled' : '') + '>\u2192</button>';
+    html += '</div></div>';
+  }
+
   cont.innerHTML = html;
 }
 

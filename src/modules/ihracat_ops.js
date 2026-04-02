@@ -129,6 +129,15 @@ function _ihrRenderEmirler(el) {
   else if (_durumFilter !== 'all') items = items.filter(function(d) { return d.durum === _durumFilter; });
   items.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
 
+  /* Sayfalama */
+  if (!window._ihrSayfa) window._ihrSayfa = 1;
+  if (_search || _durumFilter !== 'all') window._ihrSayfa = 1;
+  var IHR_SAYFA_BOYUT = 50;
+  var ihrToplamSayfa = Math.max(1, Math.ceil(items.length / IHR_SAYFA_BOYUT));
+  if (window._ihrSayfa > ihrToplamSayfa) window._ihrSayfa = ihrToplamSayfa;
+  var ihrBaslangic = (window._ihrSayfa - 1) * IHR_SAYFA_BOYUT;
+  var sayfaItems = items.slice(ihrBaslangic, ihrBaslangic + IHR_SAYFA_BOYUT);
+
   if (!items.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)"><div style="font-size:36px;margin-bottom:12px">📦</div><div>İhracat emri bulunamadı</div><div style="margin-top:12px"><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div>'; el.innerHTML = h; return; }
 
   h += '<div style="display:flex;gap:6px;padding:0 20px 8px;align-items:center">';
@@ -136,12 +145,24 @@ function _ihrRenderEmirler(el) {
   h += '<button class="btn btns btnd" id="ihr-emir-toplu-sil" onclick="event.stopPropagation();window._ihrEmirTopluSil()" style="font-size:10px;display:none">Sil</button>';
   h += '</div>';
   h += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th style="width:28px"><input type="checkbox" id="ihr-emir-chk-all" onchange="event.stopPropagation();document.querySelectorAll(\'.ihr-emir-chk\').forEach(function(c){c.checked=this.checked}.bind(this));window._ihrEmirChkDegis()"></th><th>Dosya No</th><th>Müşteri</th><th>Teslim</th><th>Bitiş</th><th>Durum</th><th>Kalan</th><th></th></tr></thead><tbody>';
-  items.forEach(function(d) {
+  sayfaItems.forEach(function(d) {
     var kalan = d.bitis_tarihi ? Math.ceil((new Date(d.bitis_tarihi) - new Date()) / 86400000) : null;
     var kalanTxt = kalan === null ? '—' : kalan < 0 ? '<span style="color:#DC2626">' + Math.abs(kalan) + 'g gecikti</span>' : kalan + 'g';
     h += '<tr><td><input type="checkbox" class="ihr-emir-chk" data-id="' + d.id + '" onchange="window._ihrEmirChkDegis()"></td><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(d.dosyaNo || '—') + '</td><td style="font-size:12px;font-weight:500">' + _esc(d.musteriAd || '—') + '</td><td style="font-size:10px;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C">' + _esc(d.teslim_sekli || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(d.bitis_tarihi || '—') + '</td><td>' + _dosyaBadge(d.durum) + '</td><td style="font-size:11px">' + kalanTxt + '</td><td><button class="btn btns" onclick="window._ihrAcDosya(\'' + d.id + '\')" style="font-size:11px;padding:3px 8px">Aç</button></td></tr>';
   });
-  h += '</tbody></table></div>'; el.innerHTML = h;
+  h += '</tbody></table></div>';
+  /* Sayfalama footer */
+  if (items.length > IHR_SAYFA_BOYUT) {
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:11px;border-top:0.5px solid var(--b)">';
+    h += '<span style="color:var(--t2)">' + (ihrBaslangic + 1) + '–' + Math.min(ihrBaslangic + IHR_SAYFA_BOYUT, items.length) + ' / ' + items.length + ' dosya</span>';
+    h += '<div style="margin-left:auto;display:flex;gap:4px">';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSayfa=Math.max(1,window._ihrSayfa-1);window.renderIhracatOps()" style="font-size:10px;padding:3px 8px"' + (window._ihrSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    for (var ipi = 1; ipi <= Math.min(ihrToplamSayfa, 7); ipi++) { h += '<button class="btn ' + (ipi === window._ihrSayfa ? 'btnp' : 'btns') + '" onclick="event.stopPropagation();window._ihrSayfa=' + ipi + ';window.renderIhracatOps()" style="font-size:10px;padding:3px 8px">' + ipi + '</button>'; }
+    if (ihrToplamSayfa > 7) h += '<span style="color:var(--t3)">... ' + ihrToplamSayfa + '</span>';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSayfa=Math.min(' + ihrToplamSayfa + ',window._ihrSayfa+1);window.renderIhracatOps()" style="font-size:10px;padding:3px 8px"' + (window._ihrSayfa >= ihrToplamSayfa ? ' disabled' : '') + '>\u2192</button>';
+    h += '</div></div>';
+  }
+  el.innerHTML = h;
 }
 
 /* ── DOSYA DETAY ─────────────────────────────────────────── */

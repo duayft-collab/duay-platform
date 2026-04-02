@@ -146,6 +146,7 @@ function renderSatinAlma() {
   var _saIsManager = _cuSA?.role === 'admin' || _cuSA?.role === 'manager' || (_cuSA?.dept || '').toLowerCase() === 'satinalma';
   var all = _saIsManager ? _allRawSA : _allRawSA.filter(function(s) { return !s.createdBy || s.createdBy === _cuSA?.id || s.responsibleId === _cuSA?.id; });
   var search = (document.getElementById('sa-search')?.value || '').toLowerCase();
+  if (search || document.getElementById('sa-cur-f')?.value) window._satSayfa = 1;
   var curF   = document.getElementById('sa-cur-f')?.value || '';
   var fromF  = document.getElementById('sa-from-f')?.value || '';
   var toF    = document.getElementById('sa-to-f')?.value || '';
@@ -192,6 +193,14 @@ function renderSatinAlma() {
   var _inpEr = 'border-color:#EF4444;background:rgba(239,68,68,.04)';
   var _GRID  = 'display:grid;grid-template-columns:28px 120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:1428px';
 
+  /* Sayfalama */
+  if (!window._satSayfa) window._satSayfa = 1;
+  var SAT_SAYFA_BOYUT = 50;
+  var toplamSayfa = Math.max(1, Math.ceil(fl.length / SAT_SAYFA_BOYUT));
+  if (window._satSayfa > toplamSayfa) window._satSayfa = toplamSayfa;
+  var sayfaBaslangic = (window._satSayfa - 1) * SAT_SAYFA_BOYUT;
+  var sayfaListe = fl.slice(sayfaBaslangic, sayfaBaslangic + SAT_SAYFA_BOYUT);
+
   if (!fl.length && !document.getElementById('sa-inline-new')) {
     cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t3)">'
       + '<div style="font-size:32px;margin-bottom:8px">🛒</div>'
@@ -205,7 +214,7 @@ function renderSatinAlma() {
   var html = '';
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
-  fl.forEach(function(s) {
+  sayfaListe.forEach(function(s) {
     var st = SA_STATUS[s.status] || SA_STATUS.draft;
     var advAmt = (parseFloat(s.totalAmount) || 0) * (parseFloat(s.advanceRate) || 0) / 100;
     var remaining = (parseFloat(s.totalAmount) || 0) - advAmt;
@@ -265,6 +274,18 @@ function renderSatinAlma() {
       + '</div>'
     + '</div>';
   });
+
+  /* Sayfalama footer */
+  if (fl.length > SAT_SAYFA_BOYUT) {
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:11px;border-top:1px solid var(--b);background:var(--s2)">';
+    html += '<span style="color:var(--t2)">' + (sayfaBaslangic + 1) + '–' + Math.min(sayfaBaslangic + SAT_SAYFA_BOYUT, fl.length) + ' / ' + fl.length + ' kayıt</span>';
+    html += '<div style="margin-left:auto;display:flex;gap:4px">';
+    html += '<button class="btn btns" onclick="event.stopPropagation();window._satSayfa=Math.max(1,window._satSayfa-1);window.renderSatinAlma()" style="font-size:10px;padding:3px 8px"' + (window._satSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    for (var pi = 1; pi <= Math.min(toplamSayfa, 7); pi++) { html += '<button class="btn ' + (pi === window._satSayfa ? 'btnp' : 'btns') + '" onclick="event.stopPropagation();window._satSayfa=' + pi + ';window.renderSatinAlma()" style="font-size:10px;padding:3px 8px">' + pi + '</button>'; }
+    if (toplamSayfa > 7) html += '<span style="color:var(--t3)">... ' + toplamSayfa + '</span>';
+    html += '<button class="btn btns" onclick="event.stopPropagation();window._satSayfa=Math.min(' + toplamSayfa + ',window._satSayfa+1);window.renderSatinAlma()" style="font-size:10px;padding:3px 8px"' + (window._satSayfa >= toplamSayfa ? ' disabled' : '') + '>\u2192</button>';
+    html += '</div></div>';
+  }
 
   // Inline yeni satır varsa koru
   var inlineEl = document.getElementById('sa-inline-new');
