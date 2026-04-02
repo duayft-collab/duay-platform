@@ -1202,4 +1202,4 @@ function _injectUsers() {
 
 window.renderFinans    = function() { _injectFinans();    window.Finans?.render?.(); };
 window.renderKpiPanel  = function() { _injectKpiPanel();  window.KPI?.render?.(); };
-window.renderUsers     = function() { _injectUsers();     window.Admin?.render?.(); };
+window.renderUsers     = function(filter) { _injectUsers(); window._adminRenderUsers?.(filter||''); };
