@@ -885,16 +885,47 @@ window._renderPlatformRules = function() {
     'Kural 08 — Modül Erişimi: Yetkisiz menü gösterilmez.',
   ];
 
+  var yapilacaklar = [
+    { id:'NAV-FIX', baslik:'Menü erişim kontrolü (GK-08)', oncelik:'yüksek', aciklama:'Yetkisiz kullanıcılara menü gösterilmemeli' },
+    { id:'EXP-002', baslik:'GÇB Takip modülü', oncelik:'orta', aciklama:'Gümrük çıkış beyannamesi takip modülü' },
+    { id:'EXP-003', baslik:'Konişimento / B/L modülü', oncelik:'orta', aciklama:'Deniz taşımacılığı konişimento takibi' },
+    { id:'ALR-001', baslik:'Akıllı alarm sistemi', oncelik:'orta', aciklama:'Vade, stok, kur alarm sistemi' },
+  ];
+  var sorunlar = [
+    { id:'S-001', baslik:'localStorage doluluk takibi', oncelik:'kritik', aciklama:'taskChats ve tasks şişiyor — STORAGE-CLEAN-002 uygulandı, takip gerekli' },
+    { id:'S-002', baslik:'Offline kuyruk', oncelik:'orta', aciklama:'Firestore\'a yazılamayan kayıtlar — Manuel Sync dene' },
+  ];
+  var gelistirmeler = [
+    { id:'G-001', baslik:'Pusula liste görünümü yeniden tasarım', oncelik:'düşük', aciklama:'' },
+    { id:'G-002', baslik:'Dashboard nakit trendi bloğu geliştirme', oncelik:'orta', aciklama:'Grafik Y/X ekseni ve projeksiyon kodu' },
+    { id:'G-003', baslik:'Kayıt formları geliştirme (6 modül)', oncelik:'orta', aciklama:'CRM, Stok, Navlun, Numune, Kargo, Ödeme form tasarımları' },
+    { id:'G-004', baslik:'Sistem Testleri + Sağlık Monitörü birleştirme', oncelik:'düşük', aciklama:'Ayarlar\'daki Sağlık Monitörü Sistem Testleri\'ne entegre edilecek' },
+    { id:'G-005', baslik:'Google Login tam test', oncelik:'orta', aciklama:'Firebase Console\'da aktif, uçtan uca test edilmedi' },
+  ];
+
+  var _renderItems = function(items) {
+    return '<div style="display:flex;flex-direction:column;gap:6px">' + items.map(function(item) {
+      var oc = item.oncelik === 'kritik' ? '#dc2626' : item.oncelik === 'yüksek' ? '#D97706' : item.oncelik === 'orta' ? '#185FA5' : '#888780';
+      var ob = item.oncelik === 'kritik' ? '#FCEBEB' : item.oncelik === 'yüksek' ? '#FAEEDA' : item.oncelik === 'orta' ? '#E6F1FB' : '#F1EFE8';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px"><span style="font-size:8px;font-weight:600;padding:2px 7px;border-radius:3px;background:' + ob + ';color:' + oc + ';white-space:nowrap;margin-top:1px">' + item.oncelik.toUpperCase() + '</span><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">' + item.baslik + '</div>' + (item.aciklama ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + item.aciklama + '</div>' : '') + '</div><span style="font-size:9px;font-family:monospace;color:var(--t3);white-space:nowrap">' + item.id + '</span></div>';
+    }).join('') + '</div>';
+  };
+
+  var _tabBtn = function(id, label, active) { return '<div onclick="_prTab(\'' + id + '\',this)" id="pr-tab-' + id + '" style="padding:8px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid ' + (active ? 'var(--ac)' : 'transparent') + ';color:' + (active ? 'var(--ac)' : 'var(--t3)') + ';font-weight:' + (active ? '500' : '400') + ';white-space:nowrap">' + label + '</div>'; };
+
   panel.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px">'
     + '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Platform Kuralları</div>'
     + '<div style="font-size:11px;color:var(--t3);margin-bottom:24px">Sistem geliştirme anayasası ve genel kurallar</div>'
-    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px"><div onclick="_prTab(\'gk\',this)" id="pr-tab-gk" style="padding:8px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:500">Genel Kurallar</div><div onclick="_prTab(\'anayasa\',this)" id="pr-tab-anayasa" style="padding:8px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3)">Anayasa</div></div>'
+    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px;overflow-x:auto">' + _tabBtn('gk', 'Genel Kurallar', true) + _tabBtn('anayasa', 'Anayasa', false) + _tabBtn('yapilacak', 'Yapılacaklar', false) + _tabBtn('sorunlar', 'Sorunlar', false) + _tabBtn('gelistirmeler', 'Geliştirmeler', false) + '</div>'
     + '<div id="pr-content-gk"><div style="display:flex;flex-direction:column;gap:4px">' + gkList.map(function(g) { var ok = g.durum === 'ok'; return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--sf);border:0.5px solid var(--b);border-radius:7px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace;flex-shrink:0">' + g.id + '</span><span style="flex:1;font-size:11px;color:var(--t)">' + g.kural + '</span><span style="font-size:10px;font-weight:500;color:' + (ok ? '#16a34a' : '#D97706') + '">' + (ok ? '✓ Uygulandı' : '⏳ Bekliyor') + '</span></div>'; }).join('') + '</div></div>'
     + '<div id="pr-content-anayasa" style="display:none"><div style="display:flex;flex-direction:column;gap:6px">' + anayas.map(function(a) { return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid #185FA5;border-radius:7px;font-size:12px;color:var(--t);line-height:1.6">' + a + '</div>'; }).join('') + '</div></div>'
+    + '<div id="pr-content-yapilacak" style="display:none">' + _renderItems(yapilacaklar) + '</div>'
+    + '<div id="pr-content-sorunlar" style="display:none">' + _renderItems(sorunlar) + '</div>'
+    + '<div id="pr-content-gelistirmeler" style="display:none">' + _renderItems(gelistirmeler) + '</div>'
     + '</div>';
 
-  window._prTab = function(tab, el) {
-    ['gk', 'anayasa'].forEach(function(t) {
+  window._prTab = function(tab) {
+    ['gk', 'anayasa', 'yapilacak', 'sorunlar', 'gelistirmeler'].forEach(function(t) {
       var c = document.getElementById('pr-content-' + t); var tb = document.getElementById('pr-tab-' + t);
       if (c) c.style.display = t === tab ? '' : 'none';
       if (tb) { tb.style.borderBottomColor = t === tab ? 'var(--ac)' : 'transparent'; tb.style.color = t === tab ? 'var(--ac)' : 'var(--t3)'; tb.style.fontWeight = t === tab ? '500' : '400'; }
