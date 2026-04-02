@@ -16,7 +16,7 @@ var _storeTpl = function(d) { try { localStorage.setItem('ak_excel_tpl1', JSON.s
 
 var DUAY_ALANLARI = [
   { v: 'aciklama', l: 'Ürün Açıklaması', zorunlu: true }, { v: 'urun_kodu', l: 'Ürün Kodu', zorunlu: false },
-  { v: 'hs_kodu', l: 'HS Kodu', zorunlu: false }, { v: 'miktar', l: 'Miktar', zorunlu: true },
+  { v: 'hs_kodu', l: 'HS Kodu', zorunlu: false }, { v: 'miktar', l: 'Miktar', zorunlu: false },
   { v: 'birim', l: 'Birim', zorunlu: false }, { v: 'birim_fiyat', l: 'Birim Fiyat', zorunlu: false },
   { v: 'doviz', l: 'Döviz', zorunlu: false }, { v: 'tedarikci', l: 'Tedarikçi', zorunlu: false },
   { v: 'brut_kg', l: 'Brüt kg', zorunlu: false }, { v: 'net_kg', l: 'Net kg', zorunlu: false },
@@ -178,6 +178,12 @@ function _renderAdim2(tplBilgi) {
   }
   var h = _stepBar(2);
   h += '<div style="padding:8px 20px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;color:var(--t3);display:flex;justify-content:space-between"><span>Excel sütunu → Duay alanı</span><span>' + _excelData.length + ' satır</span></div>';
+  /* Miktar eşleştirme uyarısı */
+  var miktarEslesti = false;
+  for (var mk in _eslestirme) { if (_eslestirme[mk] === 'miktar') { miktarEslesti = true; break; } }
+  if (!miktarEslesti) {
+    h += '<div style="background:#FAEEDA;border-left:3px solid #D97706;padding:8px 14px;margin:8px 16px;border-radius:0 6px 6px 0;font-size:11px;color:#633806">Miktar sütunu eşleştirilmedi — aşağıdan manuel seçin</div>';
+  }
   _kolonlar.forEach(function(k) {
     var secili = _eslestirme[k] || 'atla'; var ornek = (_excelData[0] || {})[k] || '—';
     h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:0.5px solid var(--b);font-size:11px"><span style="flex:1;font-family:monospace;font-size:10px;color:var(--t2)">' + _esc(k) + '</span><span style="color:var(--t3)">→</span><select class="fi" style="font-size:10px;flex:1;padding:4px 6px" onchange="window._eslGuncelle(\'' + _esc(k).replace(/'/g, "\\'") + '\',this.value)">' + DUAY_ALANLARI.map(function(a) { return '<option value="' + a.v + '"' + (secili === a.v ? ' selected' : '') + '>' + _esc(a.l) + '</option>'; }).join('') + '</select><span style="flex:1;font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(String(ornek).slice(0, 30)) + '</span></div>';
@@ -194,7 +200,7 @@ window._adim2Devam = function() {
     var mapped = {}; var hata = null;
     _kolonlar.forEach(function(k) { var alan = _eslestirme[k]; if (alan && alan !== 'atla') mapped[alan] = satir[k]; });
     DUAY_ALANLARI.filter(function(a) { return a.zorunlu; }).forEach(function(a) { if (!mapped[a.v] || !String(mapped[a.v]).trim()) hata = a.l + ' boş'; });
-    if (mapped.miktar && isNaN(parseFloat(mapped.miktar))) hata = 'Miktar sayısal değil';
+    if (mapped.miktar && isNaN(parseFloat(mapped.miktar))) hata = 'Miktar sayısal değil: "' + mapped.miktar + '"';
     if (hata) _hataliSatirlar.push({ satir: i + 2, mapped: mapped, ham: satir, hata: hata });
     else _gecerliSatirlar.push({ satir: i + 2, mapped: mapped, ham: satir });
   });
