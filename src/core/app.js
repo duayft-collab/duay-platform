@@ -3485,7 +3485,6 @@ var _TN2_GROUPS = {
     { id:'alis-teklifleri', label:'Alış Teklifleri' },
     { id:'kargo',           label:'Kargo'           },
     { id:'ihracat-ops',     label:'İhracat Ops'     },
-    { id:'gcb',              label:'GCB Takip'       },
     { id:'urunler',         label:'Ürün Kataloğu'   },
     { id:'numune',          label:'Numune Arşivi'   },
   ]},

@@ -121,6 +121,13 @@ function renderIhracatOps() {
       + '<div style="font-size:10px;color:' + T3 + '">EXP — GÇB, B/L, akreditif bu tabloya bağlanır</div></div>'
       + '<button onclick="window.openIhracatForm()" style="padding:7px 16px;border:none;border-radius:7px;background:#185FA5;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Yeni İhracat</button></div>';
 
+    // Sekmeler
+    h += '<div style="display:flex;gap:0;border-bottom:1px solid ' + BD + ';margin-bottom:12px">'
+      + '<div class="odm-tab on" id="iop-tab-ops" onclick="window._iopTab(\'ops\',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid ' + BLUE + ';color:' + BLUE + ';font-weight:600">İhracat Ops</div>'
+      + '<div class="odm-tab" id="iop-tab-gcb" onclick="window._iopTab(\'gcb\',this)" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:' + T3 + '">GÇB Takip</div>'
+      + '</div>'
+      + '<div id="iop-content-gcb" style="display:none"></div>';
+
     // Metrik kartlar
     h += _grid(4, mk('Toplam İşlem', total, T1) + mk('Yolda', yolda, PURPLE) + mk('Bu Ay Teslim', ayTeslim, GREEN) + mk('Toplam Ciro', '$' + _fmt(toplamCiro), BLUE));
 
@@ -322,6 +329,19 @@ function saveIhracatOps() {
 /* ── Filtre & Arama ─────────────────────────────────────────── */
 window._expFilter = f => { _filter = f; renderIhracatOps(); };
 window._expSearch = q => { _search = q; renderIhracatOps(); };
+
+/* ── Sekme yönetimi ──────────────────────────────────────────── */
+window._iopTab = function(tab, el) {
+  document.querySelectorAll('#panel-ihracat-ops .odm-tab').forEach(function(b) { b.classList.remove('on'); b.style.borderBottomColor = 'transparent'; b.style.color = T3; });
+  if (el) { el.classList.add('on'); el.style.borderBottomColor = BLUE; el.style.color = BLUE; }
+  var gcbDiv = _g('iop-content-gcb');
+  if (tab === 'gcb') {
+    // Mevcut ops içeriği gizle — gcb göster
+    if (gcbDiv) { gcbDiv.style.display = ''; gcbDiv.innerHTML = '<div id="panel-gcb"></div>'; window.renderGcb?.(); }
+  } else {
+    if (gcbDiv) gcbDiv.style.display = 'none';
+  }
+};
 
 /* ════════════════════════════════════════════════════════════════
    EXPORT
