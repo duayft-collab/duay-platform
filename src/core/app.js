@@ -56,6 +56,22 @@ const APP_VER   = '9.2.0';
 const APP_BUILD = '2026-04-02';
 
 /** Platform genelinde geçerli UI kuralları */
+// ── Şirket logosu yönetimi ────────────────────────────────────
+window._setCompanyLogo = function(type) {
+  fetch('assets/logo_' + type + '.png').then(function(r) { return r.blob(); }).then(function(blob) {
+    var reader = new FileReader(); reader.onload = function(ev) { localStorage.setItem('ak_company_logo', ev.target.result); window._dcaRefreshLogoPreview?.(); window.toast?.('Logo kaydedildi', 'ok'); }; reader.readAsDataURL(blob);
+  }).catch(function() { window.toast?.('Logo dosyası bulunamadı — Özel Yükle kullanın', 'err'); });
+};
+window._setCompanyLogoCustom = function(inp) {
+  if (!inp.files?.[0]) return; var reader = new FileReader(); reader.onload = function(ev) { localStorage.setItem('ak_company_logo', ev.target.result); window._dcaRefreshLogoPreview?.(); window.toast?.('Logo kaydedildi', 'ok'); }; reader.readAsDataURL(inp.files[0]);
+};
+window._dcaRefreshLogoPreview = function() {
+  var saved = localStorage.getItem('ak_company_logo'); var area = document.getElementById('logo-preview-area'); if (!area) return;
+  if (saved) { area.innerHTML = '<img src="' + saved + '" style="max-height:60px;max-width:200px;object-fit:contain;mix-blend-mode:multiply;background:#fff;border-radius:6px;padding:4px"> <button class="btn btns" onclick="localStorage.removeItem(\'ak_company_logo\');window._dcaRefreshLogoPreview?.()" style="font-size:11px">Kaldır</button>'; }
+  else { area.innerHTML = '<span style="font-size:12px;color:var(--t3)">Logo seçilmedi</span>'; }
+};
+setTimeout(function() { window._dcaRefreshLogoPreview?.(); }, 800);
+
 window.PLATFORM_RULES = {
   quickPeek: true,       // Her liste satırında peek/detay görünümü olmalı
   bulkDelete: 'admin',   // Toplu silme admin-only

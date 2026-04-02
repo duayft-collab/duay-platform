@@ -961,6 +961,15 @@ function _doLogin() {
           <div class="dr"><span>Şirket adı</span><input class="fi" id="set-co-name" value="Duay Global LLC" style="font-size:11px;width:180px;text-align:right" onchange="_saveCoInfo()"></div>
           <div class="dr"><span>Vergi numarası</span><input class="fi" id="set-co-tax" placeholder="1234567890" style="font-size:11px;width:180px;text-align:right" onchange="_saveCoInfo()"></div>
           <div class="dr"><span>İletişim e-postası</span><input class="fi" id="set-co-email" placeholder="info@duaycor.com" style="font-size:11px;width:180px;text-align:right" onchange="_saveCoInfo()"></div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--b)">
+            <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Şirket Logosu</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="btn btns" onclick="window._setCompanyLogo('tr')" style="font-size:12px">TR Logo</button>
+              <button class="btn btns" onclick="window._setCompanyLogo('eng')" style="font-size:12px">EN Logo</button>
+              <label class="btn btns" style="font-size:12px;cursor:pointer">Özel Yükle<input type="file" accept="image/*" style="display:none" onchange="window._setCompanyLogoCustom(this)"></label>
+            </div>
+            <div id="logo-preview-area"><span style="font-size:12px;color:var(--t3)">Logo seçilmedi</span></div>
+          </div>
         </div>
       </div>
     </div>

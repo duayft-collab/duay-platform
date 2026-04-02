@@ -495,8 +495,10 @@ window._dcaSelectDraft = function(i) {
   var draft = (window._dcaDrafts || [])[i]; if (!draft) return;
   var p = window._dcaParams || {};
   var preview = document.getElementById('dca-preview-doc'); if (!preview) return;
+  var _savedLogo = localStorage.getItem('ak_company_logo');
+  var _logoHtml = _savedLogo ? '<img src="' + _savedLogo + '" style="max-width:120px;max-height:70px;object-fit:contain;mix-blend-mode:multiply">' : '';
   var antetHtml = p.antet === 'antetli'
-    ? '<div style="border-bottom:2px solid #0C447C;padding-bottom:16px;margin-bottom:24px"><div style="font-size:18px;font-weight:700;color:#0C447C">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#555">Tarih: ' + (p.tarih || '') + '</div><div style="font-size:11px;color:#555">Konu: ' + (p.konu || '') + '</div>' + (p.alici ? '<div style="font-size:11px;color:#555">Sayın: ' + p.alici + '</div>' : '') + '</div>'
+    ? '<div style="border-bottom:2px solid #0C447C;padding-bottom:16px;margin-bottom:24px;display:flex;align-items:center;gap:20px">' + (_logoHtml ? '<div>' + _logoHtml + '</div>' : '') + '<div><div style="font-size:18px;font-weight:700;color:#0C447C">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#555">Tarih: ' + (p.tarih || '') + '</div><div style="font-size:11px;color:#555">Konu: ' + (p.konu || '') + '</div>' + (p.alici ? '<div style="font-size:11px;color:#555">Sayın: ' + p.alici + '</div>' : '') + '</div></div>'
     : '<div style="text-align:right;margin-bottom:20px;font-size:11px;color:#555"><div>Tarih: ' + (p.tarih || '') + '</div>' + (p.konu ? '<div>Konu: ' + p.konu + '</div>' : '') + '</div>';
   preview.innerHTML = antetHtml + '<div style="white-space:pre-wrap">' + draft.text + '</div><div style="margin-top:40px"><div style="font-size:12px">Saygılarımla,</div><div style="margin-top:24px;font-size:12px">[Ad Soyad]</div><div style="font-size:11px;color:#777">[Unvan]</div></div>';
   [1,2,3].forEach(function(n) { var el = document.getElementById('dca-step' + n); if (el) el.style.display = n === 3 ? '' : 'none'; });
