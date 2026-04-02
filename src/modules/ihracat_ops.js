@@ -430,18 +430,21 @@ function _ihrDetayRenderOzet(d) {
     if (isDuay) {
       if (!kayit) {
         h += '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>';
-      } else if (kayit.durum === 'taslak') {
-        h += '<button class="btn btns" onclick="window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px;color:#16A34A">Onayla</button>';
-      } else if (kayit.durum === 'onaylandi') {
-        h += '<button class="btn btns" onclick="window._ihrEvrakGonder(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px">Gönder</button>';
-      } else if (kayit && kayit.dosya_url) {
-        h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
+      } else {
+        h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
+        if (kayit.durum === 'taslak') {
+          h += '<button class="btn btns" onclick="window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px;color:#16A34A">Onayla</button>';
+        } else if (kayit.durum === 'onaylandi') {
+          h += '<button class="btn btns" onclick="window._ihrEvrakGonderModal(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Gönder</button>';
+        } else if (kayit.durum === 'gonderildi') {
+          h += '<span style="font-size:10px;color:#16A34A;padding:2px 4px">✓</span>';
+        }
       }
     } else {
       if (!kayit) {
         h += '<button class="btn btns" onclick="window._ihrEvrakEkle(\'' + d.id + '\')" style="font-size:10px;padding:2px 8px">Yükle</button>';
-      } else if (kayit && kayit.dosya_url) {
-        h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
+      } else {
+        h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
       }
     }
     h += '</div></div>';
@@ -524,6 +527,89 @@ window._ihrGumrukcuMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrForwarderMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateEkle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateKullan = function(id) { window._ihrYeniEmir(id); };
+window._ihrPdfOnizle = function(dosyaId, tur) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(dosyaId); });
+  var ev = null; evraklar.forEach(function(e) { if (e.tur === tur) ev = e; });
+  if (ev && ev.dosya_url) { window.open(ev.dosya_url, '_blank'); return; }
+  window.toast?.(_esc(tur) + ' önizleme — PDF henüz oluşturulmadı', 'warn');
+};
+
+/* ── EVRAK GÖNDER MODAL ───────────────────────────────────── */
+window._ihrEvrakGonderModal = function(evrakId, dosyaId, tur) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var gm = null; _loadGM().forEach(function(g) { if (String(g.id) === String(d.gumrukcu_id)) gm = g; });
+  var fw = null; _loadFW().forEach(function(f) { if (String(f.id) === String(d.forwarder_id)) fw = f; });
+
+  /* Evrak türüne göre alıcı belirle */
+  var ALICILAR = {
+    PI:   [{ l: 'Müşteri', email: d.musteriEmail || '' }],
+    CI:   [{ l: 'Gümrükçü', email: (gm && gm.eposta) || '' }, { l: 'Müşteri', email: d.musteriEmail || '' }],
+    PL:   [{ l: 'Gümrükçü', email: (gm && gm.eposta) || '' }, { l: 'Müşteri', email: d.musteriEmail || '' }],
+    SEVK: [{ l: 'Forwarder', email: (fw && fw.eposta) || '' }],
+    YUK:  [{ l: 'Forwarder', email: (fw && fw.eposta) || '' }]
+  };
+  var alicilar = ALICILAR[tur] || [{ l: 'Alıcı', email: '' }];
+  var ilkEmail = (alicilar[0] && alicilar[0].email) || '';
+  var konu = (d.dosyaNo || '') + ' — ' + tur + ' — ' + (d.musteriAd || '');
+
+  var aliciOpts = '';
+  alicilar.forEach(function(a) {
+    aliciOpts += '<option value="' + _esc(a.email) + '">' + _esc(a.l) + (a.email ? ' — ' + _esc(a.email) : ' (email tanımlı değil)') + '</option>';
+  });
+  aliciOpts += '<option value="diger">Diğer...</option>';
+
+  var old = _g('mo-evrak-gonder'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-evrak-gonder';
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600">Evrak Gönder — ' + _esc(tur) + '</div><button onclick="document.getElementById(\'mo-evrak-gonder\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
+    + '<div style="padding:18px 20px">'
+    + '<input type="hidden" id="eg-evrak-id" value="' + evrakId + '">'
+    + '<div class="fg"><div class="fl">Kime Gönderilecek</div><select class="fi" id="eg-alici" onchange="var el=document.getElementById(\'eg-email\');if(el&&this.value!==\'diger\')el.value=this.value">' + aliciOpts + '</select></div>'
+    + '<div class="fg" style="margin-top:8px"><div class="fl">E-posta Adresi</div><input class="fi" id="eg-email" value="' + _esc(ilkEmail) + '"></div>'
+    + '<div class="fg" style="margin-top:8px"><div class="fl">Konu</div><input class="fi" id="eg-konu" value="' + _esc(konu) + '"></div>'
+    + '<div class="fg" style="margin-top:8px"><div class="fl">Not (opsiyonel)</div><textarea class="fi" id="eg-not" rows="3" style="resize:vertical" placeholder="Evrak ile ilgili notlar..."></textarea></div>'
+    + '<div style="margin-top:10px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2)">Gönder butonuna basınca mail uygulamanız açılacak.</div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-evrak-gonder\')?.remove()">İptal</button>'
+    + '<button class="btn btns" onclick="window._evrakGonderKopyala(\'' + evrakId + '\',\'' + dosyaId + '\',\'' + tur + '\')">Konuyu Kopyala</button>'
+    + '<button class="btn btnp" onclick="window._evrakGonderMail(\'' + evrakId + '\',\'' + dosyaId + '\',\'' + tur + '\')">Mail Aç</button>'
+    + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._evrakGonderMail = function(evrakId, dosyaId, tur) {
+  var email = (_g('eg-email') || {}).value || '';
+  var konu  = (_g('eg-konu') || {}).value || '';
+  var notTxt = (_g('eg-not') || {}).value || '';
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+
+  var body = notTxt
+    ? notTxt + '\n\n---\nDuay Uluslararası Ticaret\nDosya: ' + (d ? d.dosyaNo : '')
+    : 'Sayın ilgili,\n\nEkte ' + tur + ' belgesi gönderilmiştir.\n\nSaygılarımızla,\nDuay Uluslararası Ticaret\nDosya: ' + (d ? d.dosyaNo : '');
+
+  var mailtoUrl = 'mailto:' + encodeURIComponent(email)
+    + '?subject=' + encodeURIComponent(konu)
+    + '&body=' + encodeURIComponent(body);
+  window.open(mailtoUrl);
+
+  /* Durumu gönderildi yap */
+  var evraklar = _loadE();
+  var ev = null; evraklar.forEach(function(e) { if (String(e.id) === String(evrakId)) ev = e; });
+  if (ev) { ev.durum = 'gonderildi'; ev.gonderim_tarihi = _now(); ev.updatedAt = _now(); _storeE(evraklar); }
+
+  _g('mo-evrak-gonder')?.remove();
+  window.toast?.('Mail uygulaması açıldı — evrak gönderildi olarak işaretlendi', 'ok');
+  window.logActivity?.('ihracat', tur + ' gönderildi: ' + email);
+  window.renderIhracatOps?.();
+};
+
+window._evrakGonderKopyala = function() {
+  var konu = (_g('eg-konu') || {}).value || '';
+  if (navigator.clipboard) { navigator.clipboard.writeText(konu); }
+  window.toast?.('Konu kopyalandı', 'ok');
+};
 
 })();
 
