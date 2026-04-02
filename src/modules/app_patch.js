@@ -508,6 +508,26 @@ window.migrateLocalToFirestore = function() {
     window.toast?.('Firebase bağlantısı kurulamadı', 'err');
   }
 };
+window._firestoreAktarBaslat = async function() {
+  var statusId = document.getElementById('firestore-aktar-status') ? 'firestore-aktar-status' : 'firestore-aktar-status2';
+  var statusEl = document.getElementById(statusId);
+  var btn = document.getElementById('btn-migrate');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Aktarılıyor...'; }
+  if (statusEl) statusEl.innerHTML = '<div style="color:var(--t2)">Başlatılıyor...</div>';
+  try {
+    if (window.DB && typeof window.DB.manualUploadToFirestore === 'function') {
+      await window.DB.manualUploadToFirestore(statusId);
+    } else {
+      if (statusEl) statusEl.innerHTML = '<div style="color:var(--t2)">⏳ Eski yöntemle aktarılıyor...</div>';
+      await window.migrateLocalToFirestore();
+      if (statusEl) statusEl.innerHTML = '<div style="color:#16A34A">✓ Aktarım tamamlandı</div>';
+    }
+  } catch (e) {
+    if (statusEl) statusEl.innerHTML = '<div style="color:#DC2626">✗ Hata: ' + e.message + '</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '☁️ Yerel Veriyi Buluta Aktar'; }
+  }
+};
 window.resetAll = window.resetAll || function() {
   window.confirmModal('Tüm veriyi sıfırlamak istediğinizden emin misiniz? Bu işlem GERİ ALINAMAZ.', {
     title: 'Tüm Veriyi Sıfırla',

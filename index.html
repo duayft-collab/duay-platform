@@ -1022,9 +1022,10 @@ function _doLogin() {
           </div>
           <div style="font-size:12px;color:var(--t2);margin-bottom:14px;padding:10px;background:var(--s2);border-radius:var(--rs)" id="fb-auth-info">Firebase durumu kontrol ediliyor…</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btnp" onclick="migrateLocalToFirestore()" id="btn-migrate">☁️ Yerel Veriyi Buluta Aktar</button>
+            <button class="btn btnp" onclick="window._firestoreAktarBaslat()" id="btn-migrate">☁️ Yerel Veriyi Buluta Aktar</button>
             <button class="btn btns" onclick="checkFirebaseStatus()">↻ Durumu Kontrol Et</button>
           </div>
+          <div id="firestore-aktar-status" style="margin-top:10px;font-size:11px"></div>
         </div>
       </div>
     </div>
@@ -1035,7 +1036,8 @@ function _doLogin() {
       <div class="card" style="max-width:480px">
         <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
           <button class="btn btnp btns" onclick="exportAllXlsx()" style="justify-content:flex-start">📊 Tüm Veriyi Excel'e Aktar</button>
-          <button class="btn btns" onclick="migrateLocalToFirestore()" style="justify-content:flex-start">☁️ Firestore'a Aktar</button>
+          <button class="btn btns" onclick="window._firestoreAktarBaslat()" style="justify-content:flex-start">☁️ Firestore'a Aktar</button>
+          <div id="firestore-aktar-status2" style="margin-top:6px;font-size:11px"></div>
           <div style="border-top:1px solid var(--b);padding-top:10px;margin-top:2px">
             <button class="btn btnd btns" onclick="resetAll()" style="justify-content:flex-start;width:100%">⚠️ Tüm Veriyi Sıfırla</button>
             <div style="font-size:10px;color:var(--t3);margin-top:6px">Bu işlem geri alınamaz. Önce buluta aktar.</div>
