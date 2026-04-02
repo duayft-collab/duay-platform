@@ -655,7 +655,7 @@ function _ihrDetayRenderUrunler(d, el) {
   var h = '';
 
   /* SATIR 1: KPI şeridi */
-  h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--b);flex-wrap:wrap">';
+  h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--b);overflow-x:auto;min-height:30px">';
   h += '<span style="font-size:11px;font-weight:500;color:var(--t)">' + urunler.length + '/' + tumurunler.length + ' kalem</span>';
   if (toplamKoli > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--s2);color:var(--t2)">' + toplamKoli.toLocaleString('tr-TR') + ' koli</span>';
   if (toplamBrut > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--s2);color:var(--t2)">' + toplamBrut.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' kg</span>';
@@ -669,22 +669,22 @@ function _ihrDetayRenderUrunler(d, el) {
   h += '</div>';
 
   /* SATIR 2: Araçlar */
-  h += '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b);flex-wrap:wrap">';
-  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ara..." oninput="event.stopPropagation();window._ihrUrunAramaQ=this.value;window.renderIhracatOps()" value="' + _esc(_aramaQ) + '" style="width:180px;font-size:11px" onclick="event.stopPropagation()">';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'tedarikciAd\',this.value)" style="font-size:10px;padding:3px 6px" onclick="event.stopPropagation()"><option value="">Tedarikçi</option>';
+  h += '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:0.5px solid var(--b);overflow-x:auto;min-height:36px">';
+  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ara..." oninput="event.stopPropagation();window._ihrUrunAramaQ=this.value;window.renderIhracatOps()" value="' + _esc(_aramaQ) + '" style="width:160px;font-size:11px;flex-shrink:0" onclick="event.stopPropagation()">';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'tedarikciAd\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()"><option value="">Tedarikçi</option>';
   uniq('tedarikciAd').sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.tedarikciAd === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'etiket_rengi\',this.value)" style="font-size:10px;padding:3px 6px" onclick="event.stopPropagation()"><option value="">Etiket</option>';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'etiket_rengi\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()"><option value="">Etiket</option>';
   ['Mavi', 'Pembe', 'Sarı', 'Yeşil', 'Mor', 'Turuncu'].forEach(function(v) { h += '<option value="' + v + '"' + (_filtreler.etiket_rengi === v ? ' selected' : '') + '>' + v + '</option>'; });
   h += '</select>';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'once_yukle\',this.value)" style="font-size:10px;padding:3px 6px" onclick="event.stopPropagation()"><option value="">Yükle</option>';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'once_yukle\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()"><option value="">Yükle</option>';
   uniq('once_yukle').forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.once_yukle === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
-  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'fatura_turu\',this.value)" style="font-size:10px;padding:3px 6px" onclick="event.stopPropagation()"><option value="">Fatura Türü</option>';
+  h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'fatura_turu\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()"><option value="">Fatura Türü</option>';
   uniq('fatura_turu').forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.fatura_turu === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
   if (Object.keys(_filtreler).some(function(k) { return _filtreler[k]; }) || _aramaQ) h += '<button class="btn" onclick="event.stopPropagation();window._ihrFiltreTemizle()" style="font-size:10px;color:#DC2626">Temizle</button>';
-  h += '<div style="margin-left:auto;display:flex;gap:4px">';
+  h += '<div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">';
   h += '<button class="btn btns" id="ihr-urun-hepsini-sec" onclick="event.stopPropagation();window._ihrUrunHepsiniSec()" style="font-size:10px">Seç</button>';
   h += '<button class="btn btns btnd" id="ihr-urun-toplu-sil" onclick="event.stopPropagation();window._ihrUrunTopluSil(\'' + d.id + '\')" style="font-size:10px;display:none">Sil</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTopluDuzenle(\'' + d.id + '\')" style="font-size:10px">Toplu Düzenle</button>';
