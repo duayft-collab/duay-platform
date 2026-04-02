@@ -139,11 +139,11 @@ function _ihrRenderEmirler(el) {
 }
 
 /* ── DOSYA DETAY ─────────────────────────────────────────── */
-function _ihrAcDosya(id) { _aktifDosyaId = id; _aktifTab = 'emirler'; _ihrRenderTabs(); _ihrRenderDosyaDetay(id); }
+function _ihrAcDosya(id) { id = String(id); _aktifDosyaId = id; _aktifTab = 'emirler'; _ihrRenderTabs(); _ihrRenderDosyaDetay(id); }
 
 function _ihrRenderDosyaDetay(id) {
   var el = _g('ihr-content'); if (!el) return;
-  var d = _loadD().find(function(x) { return x.id === id; }); if (!d) { _aktifDosyaId = null; _ihrRenderContent(); return; }
+  var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) { _aktifDosyaId = null; _ihrRenderContent(); return; }
   var evraklar = _loadE().filter(function(e) { return e.dosya_id === d.id; });
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
 
