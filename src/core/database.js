@@ -1916,6 +1916,13 @@ async function _autoUploadIfEmpty() {
     ['users',  KEYS.users,  loadUsers],
     ['kargo',  KEYS.kargo,  () => { try { return JSON.parse(localStorage.getItem(KEYS.kargo)||'[]'); } catch(e){return [];} }],
     ['ik',     KEYS.ik,     () => { try { return JSON.parse(localStorage.getItem(KEYS.ik)||'[]'); } catch(e){return [];} }],
+    ['ihracatDosyalar', KEYS.ihracatDosyalar, loadIhracatDosyalar],
+    ['ihracatUrunler',  KEYS.ihracatUrunler,  loadIhracatUrunler],
+    ['ihracatEvraklar', KEYS.ihracatEvraklar, loadIhracatEvraklar],
+    ['ihracatGcb',      KEYS.ihracatGcb,      loadIhracatGcb],
+    ['ihracatBl',       KEYS.ihracatBl,       loadIhracatBl],
+    ['gumrukculer',     KEYS.gumrukculer,     loadGumrukculer],
+    ['forwarderlar',    KEYS.forwarderlar,     loadForwarderlar],
   ];
 
   let uploaded = 0;
@@ -1943,6 +1950,56 @@ async function _autoUploadIfEmpty() {
     console.info('[DB:auto-upload] Toplam', uploaded, 'koleksiyon Firestore\'a yüklendi');
     window.toast?.('☁️ Veriler buluta aktarıldı (' + uploaded + ' koleksiyon)', 'ok');
   }
+}
+
+/**
+ * Manuel veri aktarımı — ilerleme göstergesi ile.
+ * @param {string} statusElId — ilerleme gösterge div'inin id'si
+ */
+async function manualUploadToFirestore(statusElId) {
+  var FB_DB = window.Auth?.getFBDB?.();
+  if (!FB_DB) { window.toast?.('Firebase bağlantısı yok', 'err'); return; }
+  var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');
+  var base = 'duay_' + tid;
+  var statusEl = statusElId ? document.getElementById(statusElId) : null;
+
+  var COLS = [
+    { key: KEYS.tasks,            col: 'tasks',            ad: 'Görevler',           loader: loadTasks },
+    { key: KEYS.users,            col: 'users',            ad: 'Kullanıcılar',       loader: loadUsers },
+    { key: KEYS.ihracatDosyalar,  col: 'ihracatDosyalar',  ad: 'İhracat Dosyaları',  loader: loadIhracatDosyalar },
+    { key: KEYS.ihracatUrunler,   col: 'ihracatUrunler',   ad: 'İhracat Ürünleri',   loader: loadIhracatUrunler },
+    { key: KEYS.ihracatEvraklar,  col: 'ihracatEvraklar',  ad: 'İhracat Evraklar',   loader: loadIhracatEvraklar },
+    { key: KEYS.gumrukculer,      col: 'gumrukculer',      ad: 'Gümrükçüler',        loader: loadGumrukculer },
+    { key: KEYS.forwarderlar,     col: 'forwarderlar',     ad: 'Forwarderlar',        loader: loadForwarderlar },
+  ];
+
+  var toplamKayit = 0, hatalar = 0;
+  if (statusEl) statusEl.innerHTML = '';
+
+  for (var ci = 0; ci < COLS.length; ci++) {
+    var k = COLS[ci];
+    try {
+      var liste = k.loader();
+      if (!Array.isArray(liste) || !liste.length) {
+        if (statusEl) statusEl.innerHTML += '<div style="font-size:11px;color:var(--t3);padding:3px 0">\u23ed ' + k.ad + ' — boş</div>';
+        continue;
+      }
+      if (statusEl) statusEl.innerHTML += '<div style="font-size:11px;color:var(--t2);padding:3px 0" id="fs-m-' + k.col + '">\u23f3 ' + k.ad + ' — ' + liste.length + ' kayıt yükleniyor...</div>';
+
+      var docRef = FB_DB.collection(base).doc(k.col);
+      await docRef.set({ data: liste, syncedAt: new Date().toISOString(), manualUpload: true }, { merge: true });
+      toplamKayit += liste.length;
+
+      var el = document.getElementById('fs-m-' + k.col);
+      if (el) el.innerHTML = '<span style="color:#16A34A">\u2713 ' + k.ad + ' — ' + liste.length + ' kayıt aktarıldı</span>';
+    } catch (e) {
+      hatalar++;
+      if (statusEl) statusEl.innerHTML += '<div style="font-size:11px;color:#DC2626;padding:3px 0">\u2717 ' + k.ad + ' — HATA: ' + e.message + '</div>';
+    }
+  }
+
+  if (statusEl) statusEl.innerHTML += '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:' + (hatalar ? '#FAEEDA' : '#EAF3DE') + ';font-size:12px;color:' + (hatalar ? '#633806' : '#27500A') + '">' + (hatalar ? hatalar + ' modülde hata. ' : '\u2713 ') + toplamKayit + ' kayıt Firestore\'a aktarıldı.</div>';
+  window.toast?.(toplamKayit + ' kayıt buluta aktarıldı', 'ok');
 }
 
 /**
@@ -2690,6 +2747,7 @@ const DB = {
   // Realtime sync
   startRealtimeSync,
   stopRealtimeSync,
+  manualUploadToFirestore,
   listenCollection: _listenCollection,
   // Sync güvenilirlik
   getSyncState: function() { return _syncState; },
@@ -2705,7 +2763,7 @@ if (typeof module !== 'undefined' && module.exports) {
   const fns = [
     'loadUsers','saveUsers','loadPuan','savePuan','loadTasks','saveTasks',
     'loadCal','saveCal','mergeCompanyCalendar','loadSugg','storeSugg','loadAnn','storeAnn',
-    '_fsPath','_getPaths','_getTid','startRealtimeSync','stopRealtimeSync',
+    '_fsPath','_getPaths','_getTid','startRealtimeSync','stopRealtimeSync','manualUploadToFirestore',
     'loadLinks','saveLinks','loadNotes','saveNotes','loadAct','saveAct',
     'logActivity','addNotif','loadNotifs','storeNotifs',
     'loadIk','storeIk','loadKargo','storeKargo',
