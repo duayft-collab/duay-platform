@@ -30,7 +30,7 @@ const CUR_FLAGS = {
 };
 
 const FALLBACK_RATES = {USD:44.55,EUR:51.70,GBP:59.30,ALTIN:4350,PETROL:85.0,CHF:51.20,JPY:0.298,CNY:6.14,SAR:11.88,AED:12.13};
-const CHANGE_MAP     = {USD:+0.23,EUR:-0.15,GBP:+0.08,ALTIN:+12.5,PETROL:-0.9,CHF:+0.05,JPY:-0.001,CNY:+0.02};
+const CHANGE_MAP     = {};
 
 const BANK_DATA = [
   {key:'ziraat', name:'Ziraat Bankası',  logo:'🏛️', url:'https://www.ziraatbank.com.tr/tr/bireysel/doviz-kurlari'},
