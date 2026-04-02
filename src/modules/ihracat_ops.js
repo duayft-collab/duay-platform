@@ -774,7 +774,7 @@ function _ihrDetayRenderUrunler(d, el) {
   var ETIKET_RENK = { Mavi: '#185FA5', Pembe: '#D4537E', 'Sarı': '#BA7517', 'Yeşil': '#16A34A', Mor: '#7C3AED', Turuncu: '#D85A30' };
   var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'İspanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], gcb_kapandi: ['', 'Kapandı', 'Açık'], vgm_kaynak: ['', 'Liman', 'Forwarder', 'İnternet'], konteyner_para: ['', 'USD', 'EUR', 'TRY'], once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'] };
   var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'gcb_kapama_tarihi', 'mensei_tarih', 'vgm_tarih', 'police_tarihi'];
-  var sortedUrunler = urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); });
+  var sortedUrunler = urunler.slice().sort(function(a, b) { return (parseInt(a.konteyner_sira) || 99) - (parseInt(b.konteyner_sira) || 99); });
   var tdS = 'padding:5px 8px;border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
   var thS = 'padding:4px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;vertical-align:top;text-align:left';
 
