@@ -443,12 +443,12 @@ function _injectOdmPanel() {
     // ── Satır 2: 6 Metrik Kart ──
     '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:0;border-bottom:0.5px solid var(--b)">',
       '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Tahsilat</div>',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Tahsilat <span id="odm-badge-tah" style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 7px;margin-left:4px"></span></div>',
         '<div style="font-size:18px;font-weight:700;color:#16a34a;margin-top:4px" id="odm-m-tah-amt">₺0</div>',
         '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-tah-chg"></div>',
       '</div>',
       '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödeme</div>',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödeme <span id="odm-badge-odm" style="font-size:11px;background:#fce4ec;color:#c62828;border-radius:10px;padding:1px 7px;margin-left:4px"></span></div>',
         '<div style="font-size:18px;font-weight:700;color:#dc2626;margin-top:4px" id="odm-m-odm-amt">₺0</div>',
         '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-odm-chg"></div>',
       '</div>',
@@ -483,17 +483,7 @@ function _injectOdmPanel() {
       '</div>',
     '</div>',
 
-    // ── Satır 2b: Kayıt Sayıları ──
-    '<div id="odm-count-bar" style="display:flex;align-items:center;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;background:var(--s2);overflow-x:auto;font-size:10px">',
-      '<div style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-right:0.5px solid var(--b);white-space:nowrap"><span style="font-size:13px;font-weight:600;color:var(--t)" id="odm-cnt-total">0</span><span style="font-size:9px;color:var(--t3)">Toplam</span></div>',
-      '<div style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-right:0.5px solid var(--b);white-space:nowrap"><span style="font-size:13px;font-weight:600;color:#dc2626" id="odm-cnt-odm">0</span><span style="font-size:9px;color:var(--t3)">Ödeme</span></div>',
-      '<div style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-right:0.5px solid var(--b);white-space:nowrap"><span style="font-size:13px;font-weight:600;color:#16a34a" id="odm-cnt-tah">0</span><span style="font-size:9px;color:var(--t3)">Tahsilat</span></div>',
-      '<div style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-right:0.5px solid var(--b);white-space:nowrap;cursor:pointer" onclick="setOdmTab(\'bekliyor\')"><span style="font-size:13px;font-weight:600;color:#d97706" id="odm-cnt-pend">0</span><span style="font-size:9px;color:var(--t3)">Onay Bekleyen</span></div>',
-      '<div style="display:flex;align-items:center;gap:5px;padding:6px 14px;border-right:0.5px solid var(--b);white-space:nowrap;cursor:pointer" onclick="setOdmTab(\'gecikti\')"><span style="font-size:13px;font-weight:600;color:#dc2626" id="odm-cnt-late">0</span><span style="font-size:9px;color:var(--t3)">Gecikmiş</span></div>',
-      '<div style="display:flex;align-items:center;gap:5px;padding:6px 14px;white-space:nowrap"><span style="font-size:13px;font-weight:600;color:#10b981" id="odm-cnt-done">0</span><span style="font-size:9px;color:var(--t3)">Tamamlandı</span></div>',
-    '</div>',
-
-    // ── Satır 3: Döviz Pozisyon ──
+    // ── Satır 2b: Döviz Pozisyon ──
     '<div id="odm-fx-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b);font-size:11px">',
       '<div style="padding:8px 16px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>🇺🇸</span><span style="color:var(--t2)">USD</span><b id="odm-fx-usd" style="margin-left:auto;color:var(--t)">$0</b></div>',
       '<div style="padding:8px 16px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>🇪🇺</span><span style="color:var(--t2)">EUR</span><b id="odm-fx-eur" style="margin-left:auto;color:var(--t)">€0</b></div>',
@@ -503,8 +493,8 @@ function _injectOdmPanel() {
     // ── Satır 4: Sekmeler ──
     '<div id="odm-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">',
       '<div id="odm-stab-all" class="odm-tab on" onclick="setOdmTab(\'all\')">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
-      '<div id="odm-stab-odeme" class="odm-tab" onclick="setOdmTab(\'odeme\')">Ödemeler <span id="odm-stat-odm-n" style="font-size:10px;opacity:.7"></span></div>',
-      '<div id="odm-stab-tahsilat" class="odm-tab" onclick="setOdmTab(\'tahsilat\')">Tahsilatlar</div>',
+      '<div id="odm-stab-odeme" class="odm-tab" onclick="setOdmTab(\'odeme\')">Ödemeler <span id="odm-stat-odm-n" style="font-size:10px;opacity:.7">0</span></div>',
+      '<div id="odm-stab-tahsilat" class="odm-tab" onclick="setOdmTab(\'tahsilat\')">Tahsilatlar <span id="odm-stat-tah-n" style="font-size:10px;opacity:.7">0</span></div>',
       '<div id="odm-stab-bekliyor" class="odm-tab" onclick="setOdmTab(\'bekliyor\')" style="position:relative">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;padding:1px 6px;border-radius:10px;background:#dc2626;color:#fff;font-weight:600;display:none"></span></div>',
       '<div id="odm-stab-projeksiyon" class="odm-tab" onclick="setOdmTab(\'projeksiyon\')">Projeksiyon</div>',
       '<div id="odm-stab-analiz" class="odm-tab" onclick="setOdmTab(\'analiz\')">Analiz</div>',
@@ -1063,19 +1053,13 @@ function renderOdemeler() {
   var _l60sub = _go('odm-m-late60-sub');
   if (_l60sub && _late60.length > 0) _l60sub.style.color = '#dc2626';
 
-  // Count bar güncelle
-  var _cntOdm = all.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme' || (!o._src && !o.tip); }).length;
-  var _cntTah = all.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat'; }).length;
-  var _cntDone = _myOdm.filter(function(o) { return o.paid && (o.paidTs || '').startsWith(thisMonth); }).length + _myTah.filter(function(t) { return t.collected && (t.ts || '').startsWith(thisMonth); }).length;
-  _sto('odm-cnt-total', all.length);
-  _sto('odm-cnt-odm', _cntOdm);
-  _sto('odm-cnt-tah', _cntTah);
-  _sto('odm-cnt-pend', pendN);
-  _sto('odm-cnt-late', lateN);
-  _sto('odm-cnt-done', _cntDone);
-
+  // Sekme sayıları güncelle
   _sto('odm-stat-total', totalN);
   _sto('odm-stat-odm-n', _allOdm.length);
+  _sto('odm-stat-tah-n', _allTah.length);
+  // KPI badge
+  _sto('odm-badge-tah', _tahThisMonth.length || '');
+  _sto('odm-badge-odm', _odmThisMonth.length || '');
   var _pendEl = _go('odm-stat-pend-n');
   if (_pendEl) { if (pendN > 0) { _pendEl.textContent = pendN; _pendEl.style.display = 'inline'; _pendEl.style.background = dualN > 0 ? '#dc2626' : '#D97706'; } else { _pendEl.style.display = 'none'; } }
   _sto('odm-stat-dual', dualN > 0 ? dualN : pendN);
