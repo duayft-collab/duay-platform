@@ -1731,7 +1731,7 @@ function saveOdm() {
     var cariOdm = (window.loadOdm ? loadOdm() : []).filter(function(o) {
       return o.cariName === _fCari && !o.paid && !o.isDeleted;
     });
-    var cariToplamBorc = cariOdm.reduce(function(sum, o) { return sum + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    var cariToplamBorc = cariOdm.reduce(function(sum, o) { return sum + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
     var yeniTutar = _odmToTRY(_fAmt, document.getElementById('odm-f-currency')?.value || 'TRY');
     if ((cariToplamBorc + yeniTutar) > _cariCreditLimit && !_selCari.specialApproval) {
       _odmHighlightMissing(['odm-f-cari', 'odm-f-amount'], 'Cari limit aşıldı!');
@@ -2311,6 +2311,7 @@ function _odmImportParseFile(file) {
           name: name,
           amount: amount,
           currency: currency,
+          amountTRY: _odmToTRY(amount, currency || 'TRY'),
           due: due,
           cat: cat,
           cari: cari,
@@ -6493,8 +6494,8 @@ function renderCari() {
   var aktCount = all.filter(function(c) { return c.cariType === 'aktif'; }).length;
   var onayCount = all.filter(function(c) { return c.cariType === 'onayli'; }).length;
   var redCount = all.filter(function(c) { return c.status === 'rejected'; }).length;
-  var toplamBorc = odm.filter(function(o) { return !o.paid && !o.isDeleted; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
-  var toplamAlacak = tah.filter(function(t) { return !t.collected && !t.isDeleted; }).reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+  var toplamBorc = odm.filter(function(o) { return !o.paid && !o.isDeleted; }).reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
+  var toplamAlacak = tah.filter(function(t) { return !t.collected && !t.isDeleted; }).reduce(function(s, t) { return s + _odmToTRY(parseFloat(t.amount||0),t.currency||'TRY'); }, 0);
   statsEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:8px 12px;border-bottom:1px solid var(--b);background:var(--sf)">'
     + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:var(--t)">' + all.length + '</div><div style="font-size:9px;color:var(--t3)">Toplam</div></div>'
     + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#3B82F6">' + potCount + '</div><div style="font-size:9px;color:var(--t3)">🔵 Potansiyel</div></div>'
@@ -6510,7 +6511,7 @@ function renderCari() {
     var gecik = cOdm.filter(function(o) { return !o.paid && o.due && o.due < today; });
     var yakin = cOdm.filter(function(o) { return !o.paid && o.due && o.due >= today && o.due <= new Date(new Date().getTime() + 7*86400000).toISOString().slice(0,10); });
     var cLimit = c.creditLimit || c.limitAmount || 0;
-    var unpaid = cOdm.filter(function(o) { return !o.paid; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    var unpaid = cOdm.filter(function(o) { return !o.paid; }).reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
     // Kırmızı: gecikmiş veya limit aşımı
     if (gecik.length > 0 || (cLimit > 0 && unpaid > cLimit)) return { icon: '🔴', color: '#DC2626', label: 'Riskli' };
     // Sarı: 7 gün içinde vade
@@ -6692,7 +6693,7 @@ function _renderCariDetail(id) {
         if (!cLimit || cLimit <= 0) return '';
         var unpaidBorc = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) {
           return o.cariName === c.name && !o.paid && !o.isDeleted;
-        }).reduce(function(sum, o) { return sum + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+        }).reduce(function(sum, o) { return sum + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
         var pct = Math.round(unpaidBorc / cLimit * 100);
         var barColor = pct >= 100 ? '#EF4444' : pct >= 80 ? '#F59E0B' : '#16A34A';
         var isExceeded = pct >= 100;
@@ -7157,7 +7158,7 @@ function _buildCariStatement(cariId, opts) {
   odm.forEach(function(o) {
     hareketler.push({
       id: o.id, type: 'odeme', date: o.due || o.ts || '', name: o.name || '', amount: parseFloat(o.amount) || 0,
-      currency: o.currency || 'TRY', amountTRY: parseFloat(o.amountTRY || o.amount) || 0, kurRate: o.kurRate || 1,
+      currency: o.currency || 'TRY', amountTRY: _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'), kurRate: o.kurRate || 1,
       status: o.paid ? 'Ödendi' : 'Bekliyor', docNo: o.docNo || '', yontem: o.yontem || '',
       approvalStatus: o.approvalStatus || '', approvedBy: o.approvedBy, approvedAt: o.approvedAt,
       createdBy: o.createdBy, updatedBy: o.updatedBy, ts: o.ts, changeHistory: o.changeHistory || [],
@@ -7167,7 +7168,7 @@ function _buildCariStatement(cariId, opts) {
   tah.forEach(function(t) {
     hareketler.push({
       id: t.id, type: 'tahsilat', date: t.due || t.ts || '', name: t.name || '', amount: parseFloat(t.amount) || 0,
-      currency: t.currency || 'TRY', amountTRY: parseFloat(t.amountTRY || t.amount) || 0, kurRate: t.kurRate || 1,
+      currency: t.currency || 'TRY', amountTRY: _odmToTRY(parseFloat(t.amount||0),t.currency||'TRY'), kurRate: t.kurRate || 1,
       status: t.collected ? 'Tahsil Edildi' : 'Bekliyor', docNo: t.ref || '', yontem: t.yontem || '',
       approvalStatus: t.approvalStatus || '', approvedBy: t.approvedBy, approvedAt: t.approvedAt,
       createdBy: t.createdBy, updatedBy: t.updatedBy, ts: t.ts, changeHistory: t.changeHistory || [],
@@ -7504,7 +7505,7 @@ function _calcAdvancedRiskScore(cariName) {
   // Limit kullanımı
   var cari = (typeof loadCari === 'function' ? loadCari() : []).find(function(c) { return c.name === cariName; });
   var cLimit = cari ? (cari.creditLimit || cari.limitAmount || 0) : 0;
-  var unpaid = odm.filter(function(o) { return !o.paid; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+  var unpaid = odm.filter(function(o) { return !o.paid; }).reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
   var limitUsage = cLimit > 0 ? Math.round(unpaid / cLimit * 100) : 0;
   // Skor hesapla
   var payRate = Math.round(paid / total * 40); // max 40
@@ -7538,8 +7539,8 @@ window.openProfitAnalysis = function() {
 
   // Cari bazlı net pozisyon
   var positions = cariList.map(function(c) {
-    var cOdm = odm.filter(function(o) { return o.cariName === c.name; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
-    var cTah = tah.filter(function(t) { return t.cariName === c.name; }).reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+    var cOdm = odm.filter(function(o) { return o.cariName === c.name; }).reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
+    var cTah = tah.filter(function(t) { return t.cariName === c.name; }).reduce(function(s, t) { return s + _odmToTRY(parseFloat(t.amount||0),t.currency||'TRY'); }, 0);
     return { name: c.name, borc: cOdm, alacak: cTah, net: cTah - cOdm };
   }).filter(function(p) { return p.borc > 0 || p.alacak > 0; });
 
@@ -7597,9 +7598,9 @@ function _checkDurationMismatch() {
   var todayStr = today.toISOString().slice(0, 10);
 
   var odm30 = odm.filter(function(o) { return o.due && o.due >= todayStr && o.due <= d30; })
-    .reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    .reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
   var tah30 = tah.filter(function(t) { return t.due && t.due >= todayStr && t.due <= d30; })
-    .reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+    .reduce(function(s, t) { return s + _odmToTRY(parseFloat(t.amount||0),t.currency||'TRY'); }, 0);
 
   var gap = tah30 - odm30;
   if (gap >= 0) return null;
@@ -7608,8 +7609,8 @@ function _checkDurationMismatch() {
   var gapDay = 30;
   for (var i = 0; i < 30; i++) {
     var ds = new Date(today.getTime() + i * 86400000).toISOString().slice(0, 10);
-    var dayOdm = odm.filter(function(o) { return o.due === ds; }).reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
-    var dayTah = tah.filter(function(t) { return t.due === ds; }).reduce(function(s, t) { return s + (parseFloat(t.amountTRY || t.amount) || 0); }, 0);
+    var dayOdm = odm.filter(function(o) { return o.due === ds; }).reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
+    var dayTah = tah.filter(function(t) { return t.due === ds; }).reduce(function(s, t) { return s + _odmToTRY(parseFloat(t.amount||0),t.currency||'TRY'); }, 0);
     cumNet += dayTah - dayOdm;
     if (cumNet < 0 && gapDay === 30) gapDay = i;
   }
@@ -7797,7 +7798,7 @@ window._upgradeCariToActive = function(cariId) {
   // 50K TL üzeri işlem varsa ticaret sicil zorunlu
   var threshold = _getCariDocThreshold();
   var odmTotal = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return o.cariName === c.name && !o.isDeleted; })
-    .reduce(function(s, o) { return s + (parseFloat(o.amountTRY || o.amount) || 0); }, 0);
+    .reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0),o.currency||'TRY'); }, 0);
   if (odmTotal > threshold && !c.ticaretSicil) {
     window.toast?.('₺' + threshold.toLocaleString('tr-TR') + ' üzeri işlem var — Ticaret Sicil belgesi zorunlu', 'err');
     return;
