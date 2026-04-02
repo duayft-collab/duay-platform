@@ -27,6 +27,7 @@
     hesap:   () => { window.renderHesapHistory?.(); },
     notes:   () => { window.renderNotes?.(); },
     'finans': () => { window.renderFinans?.() || window.Finans?.render?.(); },
+    'hesap-ozeti': () => { window.renderHesapOzeti?.(); },
     'kpi-panel': () => { window.renderKpiPanel?.() || window.KPI?.render?.(); },
     'users': () => { window.renderUsers?.() || window.Admin?.renderUsers?.(); },
     'activity': () => { window.renderActivity?.(); },
@@ -689,6 +690,7 @@ window.PANEL_MODULE_MAP = {
   'pusula':'pusula','hedefler':'hedefler',
   'ceo':'ceo','kpi-panel':'kpi-panel','admin':'users',
   'activity':'activity','settings':'settings','trash':'trash',
+  'hesap-ozeti':'hesap-ozeti',
   'sistem-testler':'sistem-testler','platform-rules':'platform-rules',
 };
 

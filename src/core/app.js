@@ -3461,10 +3461,11 @@ var _TN2_GROUPS = {
     { id:'arsiv-hub', label:'Arşiv'            },
   ]},
   muhasebe: { label:'Muhasebe', mods: [
-    { id:'odemeler',  label:'Nakit Akışı' },
-    { id:'finans',    label:'Hesap Özeti' },
-    { id:'pirim',     label:'Prim'        },
-    { id:'kpi-panel', label:'KPI'         },
+    { id:'odemeler',     label:'Nakit Akışı'  },
+    { id:'hesap-ozeti',  label:'Hesap Özeti'  },
+    { id:'finans',       label:'Finans Paneli' },
+    { id:'pirim',        label:'Prim'          },
+    { id:'kpi-panel',    label:'KPI'           },
   ]},
   ik: { label:'İK', mods: [
     { id:'ik-hub',  label:'İK Merkezi'      },
