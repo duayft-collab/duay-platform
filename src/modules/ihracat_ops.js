@@ -740,7 +740,7 @@ function _ihrDetayRenderUrunler(d, el) {
     { k: 'marka',           l: 'Marka',              w: 65,  filtre: true },
     { k: 'renk',            l: 'Renk',               w: 55,  filtre: true },
     { k: 'duay_not',        l: 'Not',                w: 90,  filtre: false },
-    { k: 'muadil_urun',     l: 'Muadil',             w: 80,  filtre: false }
+    { k: 'siparis_id',      l: 'Sipariş ID',          w: 90,  filtre: false }
   ];
 
   h += '<div style="overflow-x:auto"><table class="tbl" style="font-size:11px;table-layout:fixed">';
@@ -812,7 +812,7 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '<td style="font-size:10px">' + _esc(u.marka || '—') + '</td>';
     h += '<td style="font-size:10px">' + _esc(u.renk || '—') + '</td>';
     h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'duay_not\')" style="cursor:text;font-size:10px">' + _esc(u.duay_not || '—') + '</td>';
-    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'muadil_urun\')" style="cursor:text;font-size:10px">' + _esc(u.muadil_urun || '—') + '</td>';
+    h += '<td onclick="window._ihrInlineEdit(this,\'' + u.id + '\',\'siparis_id\')" style="cursor:text;font-size:10px;font-family:monospace">' + _esc(u.siparis_id || '—') + '</td>';
     h += '<td><button class="btn btns btnd" onclick="window._ihrUrunSil(\'' + u.id + '\')" style="font-size:10px;padding:2px 6px">Sil</button></td>';
     h += '</tr>';
   });
@@ -981,7 +981,7 @@ window._ihrSatinalmaKaydet = function() {
 window._ihrUrunExcel = function(dosyaId) {
   var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
-  var basliklar = ['Tedarikci', 'Proforma ID', 'PI Link', 'Satis Siparis ID', 'Alis Fatura No', 'Alis Fatura Tarihi', 'Fatura Turu', 'Urun Kodu', 'Satici Urun Kodu', 'Benzer Kod', 'Satici Orijinal Adi', 'Urun Aciklamasi', 'Standart Ad', 'Teknik Aciklama', 'Faturada Gecen', 'Gumrukcu Tanim', 'Mense', 'GTIP/HS', 'Miktar', 'Birim', 'Birim Fiyat', 'Kur', 'KDV%', 'KDV Tutari', 'KDV Dahil', 'Teslim Tarihi', 'Teslim Yeri', 'Etiket', 'Yukle', 'Koli', 'Brut KG', 'Net KG', 'Hacim m3', 'Sira', 'Dilli', 'IMO', 'Kategori', 'Marka', 'Renk', 'Duay Not', 'Muadil'];
+  var basliklar = ['Tedarikci', 'Proforma ID', 'PI Link', 'Satis Siparis ID', 'Alis Fatura No', 'Alis Fatura Tarihi', 'Fatura Turu', 'Urun Kodu', 'Satici Urun Kodu', 'Benzer Kod', 'Satici Orijinal Adi', 'Urun Aciklamasi', 'Standart Ad', 'Teknik Aciklama', 'Faturada Gecen', 'Gumrukcu Tanim', 'Mense', 'GTIP/HS', 'Miktar', 'Birim', 'Birim Fiyat', 'Kur', 'KDV%', 'KDV Tutari', 'KDV Dahil', 'Teslim Tarihi', 'Teslim Yeri', 'Etiket', 'Yukle', 'Koli', 'Brut KG', 'Net KG', 'Hacim m3', 'Sira', 'Dilli', 'IMO', 'Kategori', 'Marka', 'Renk', 'Duay Not', 'Siparis ID'];
   var satirlar = urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); }).map(function(u) {
     var toplamKdvHaric = (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0);
     var kdvTutar = toplamKdvHaric * ((parseFloat(u.kdv_orani) || 0) / 100);
@@ -992,7 +992,7 @@ window._ihrUrunExcel = function(dosyaId) {
       u.kdv_orani || 0, kdvTutar.toFixed(2), (toplamKdvHaric + kdvTutar).toFixed(2),
       u.teslim_tarihi || '', u.teslim_yeri || '', u.etiket_rengi || '', u.once_yukle || '',
       u.koli_adet || 0, u.brut_kg || 0, u.net_kg || 0, u.hacim_m3 || 0, u.konteyner_sira || '',
-      u.dilli_urun || 'H', u.imo_urun || 'H', u.kategori || '', u.marka || '', u.renk || '', u.duay_not || '', u.muadil_urun || ''
+      u.dilli_urun || 'H', u.imo_urun || 'H', u.kategori || '', u.marka || '', u.renk || '', u.duay_not || '', u.siparis_id || ''
     ].join('\t');
   });
   var icerik = (d ? d.dosyaNo : 'Ihracat') + ' — Ürün Listesi\n\n' + basliklar.join('\t') + '\n' + satirlar.join('\n');
@@ -1252,7 +1252,7 @@ window._ihrUrunEkle = function(dosyaId) {
     + '<div><div class="fl">Kategori</div><input class="fi" id="ihr-urun-kategori" placeholder="Cam, Tekstil, Metal..."></div>'
     + '<div><div class="fl">Renk</div><input class="fi" id="ihr-urun-renk"></div>'
     + '<div><div class="fl">Marka</div><input class="fi" id="ihr-urun-marka"></div>'
-    + '<div style="grid-column:1/-1"><div class="fl">Muadil / Equivalent Ürün</div><input class="fi" id="ihr-urun-muadil"></div>'
+    + '<div><div class="fl">Sipariş ID</div><input class="fi" id="ihr-urun-siparis-id" placeholder="SIP-2026-XXXX"></div>'
     + '<div style="grid-column:1/-1"><div class="fl">Duay Özel Not</div><textarea class="fi" id="ihr-urun-duay-not" rows="2" style="resize:vertical"></textarea></div>'
     + '</div>',
     '<button class="btn btns" onclick="document.getElementById(\'mo-ihr-urun\')?.remove()">İptal</button><button class="btn btnp" onclick="window._ihrUrunKaydet()">Ekle</button>');
@@ -1290,7 +1290,7 @@ window._ihrUrunKaydet = function() {
     kategori: (_g('ihr-urun-kategori')?.value || '').trim(),
     renk: (_g('ihr-urun-renk')?.value || '').trim(),
     marka: (_g('ihr-urun-marka')?.value || '').trim(),
-    muadil_urun: (_g('ihr-urun-muadil')?.value || '').trim(),
+    siparis_id: (_g('ihr-urun-siparis-id')?.value || '').trim(),
     duay_not: (_g('ihr-urun-duay-not')?.value || '').trim(),
     mense_ulke: _g('ihr-urun-mense')?.value || 'Türkiye', createdAt: _now(), createdBy: _cu()?.id
   });
