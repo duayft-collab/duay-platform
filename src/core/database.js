@@ -138,7 +138,17 @@ const KEYS = {
   pusView       : 'ak_pus_view',
   noteView      : 'ak_nview',
   iddialar      : 'ak_iddialar1',
-  ihracatOps    : 'ak_ihracat_ops1',
+  ihracatOps       : 'ak_ihracat_ops1',
+  ihracatDosyalar  : 'ak_ihr_dosya1',
+  ihracatEvraklar  : 'ak_ihr_evrak1',
+  ihracatUrunler   : 'ak_ihr_urun1',
+  ihracatGcb       : 'ak_ihr_gcb1',
+  ihracatBl        : 'ak_ihr_bl1',
+  ihracatTemplate  : 'ak_ihr_tpl1',
+  gumrukculer      : 'ak_gumrukcu1',
+  forwarderlar     : 'ak_forwarder1',
+  inspectionFirma  : 'ak_inspection1',
+  evrakWorkflow    : 'ak_evrak_wf1',
   gcb           : 'ak_gcb1',
   alarms        : 'ak_alarms1',
   alarmLog      : 'ak_alarm_log1',
@@ -385,7 +395,10 @@ var _ALL_SYNC_COLS = [
   'bankalar','navlun','urunler','fikirler',
   'alisTeklifleri','satisTeklifleri','teklifSartlar','ihracatOps',
   'updateLog','trash','kararlar','suggestions','links','smartGoals',
-  'taskChats','notifications','iddialar','sozler','gcb'
+  'taskChats','notifications','iddialar','sozler','gcb',
+  'ihracatDosyalar','ihracatEvraklar','ihracatUrunler',
+  'ihracatGcb','ihracatBl','ihracatTemplate',
+  'gumrukculer','forwarderlar','evrakWorkflow'
 ];
 
 /**
@@ -1041,6 +1054,26 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 // İhracat Operasyon
 /** @returns {Array<Object>} */ function loadIhracatOps()   { const d = _read(KEYS.ihracatOps); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeIhracatOps(d) { _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
+
+// İhracat V2 koleksiyonları
+function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); return Array.isArray(d) ? d : []; }
+function storeIhracatDosyalar(d){ _write(KEYS.ihracatDosyalar, d.slice(0,200)); var fp = _fsPath('ihracatDosyalar'); if (fp) _syncFirestore(fp, d); }
+function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); return Array.isArray(d) ? d : []; }
+function storeIhracatEvraklar(d){ _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
+function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); return Array.isArray(d) ? d : []; }
+function storeIhracatUrunler(d) { _write(KEYS.ihracatUrunler, d.slice(0,1000)); var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, d); }
+function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); return Array.isArray(d) ? d : []; }
+function storeIhracatGcb(d)     { _write(KEYS.ihracatGcb, d.slice(0,200)); var fp = _fsPath('ihracatGcb'); if (fp) _syncFirestore(fp, d); }
+function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); return Array.isArray(d) ? d : []; }
+function storeIhracatBl(d)      { _write(KEYS.ihracatBl, d.slice(0,200)); var fp = _fsPath('ihracatBl'); if (fp) _syncFirestore(fp, d); }
+function loadIhracatTemplate()  { var d = _read(KEYS.ihracatTemplate); return Array.isArray(d) ? d : []; }
+function storeIhracatTemplate(d){ _write(KEYS.ihracatTemplate, d.slice(0,100)); var fp = _fsPath('ihracatTemplate'); if (fp) _syncFirestore(fp, d); }
+function loadGumrukculer()      { var d = _read(KEYS.gumrukculer); return Array.isArray(d) ? d : []; }
+function storeGumrukculer(d)    { _write(KEYS.gumrukculer, d.slice(0,50)); var fp = _fsPath('gumrukculer'); if (fp) _syncFirestore(fp, d); }
+function loadForwarderlar()     { var d = _read(KEYS.forwarderlar); return Array.isArray(d) ? d : []; }
+function storeForwarderlar(d)   { _write(KEYS.forwarderlar, d.slice(0,50)); var fp = _fsPath('forwarderlar'); if (fp) _syncFirestore(fp, d); }
+function loadEvrakWorkflow()    { var d = _read(KEYS.evrakWorkflow); return Array.isArray(d) ? d : []; }
+function storeEvrakWorkflow(d)  { _write(KEYS.evrakWorkflow, d.slice(0,500)); var fp = _fsPath('evrakWorkflow'); if (fp) _syncFirestore(fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 10 — PİRİM
@@ -2638,6 +2671,11 @@ const DB = {
   loadIddialar, storeIddialar,
   // İhracat
   loadIhracatOps, storeIhracatOps,
+  loadIhracatDosyalar, storeIhracatDosyalar, loadIhracatEvraklar, storeIhracatEvraklar,
+  loadIhracatUrunler, storeIhracatUrunler, loadIhracatGcb, storeIhracatGcb,
+  loadIhracatBl, storeIhracatBl, loadIhracatTemplate, storeIhracatTemplate,
+  loadGumrukculer, storeGumrukculer, loadForwarderlar, storeForwarderlar,
+  loadEvrakWorkflow, storeEvrakWorkflow,
   // Diğer
   loadGrt, storeGrt,
   loadHesapHistory, storeHesapHistory,
@@ -2678,6 +2716,11 @@ if (typeof module !== 'undefined' && module.exports) {
     'loadRehber','storeRehber','loadHdf','storeHdf',
     'loadTrash','storeTrash','addToTrash','loadOdm','storeOdm','loadTahsilat','storeTahsilat','loadSatinalma','storeSatinalma','loadCari','storeCari','loadBankalar','storeBankalar','loadNavlun','storeNavlun','loadUrunler','storeUrunler','loadAlisTeklifleri','storeAlisTeklifleri','loadSatisTeklifleri','storeSatisTeklifleri','loadTeklifSartlar','storeTeklifSartlar','loadUpdateLog','storeUpdateLog','loadFikirler','storeFikirler','loadIddialar','storeIddialar',
     'loadIhracatOps','storeIhracatOps',
+    'loadIhracatDosyalar','storeIhracatDosyalar','loadIhracatEvraklar','storeIhracatEvraklar',
+    'loadIhracatUrunler','storeIhracatUrunler','loadIhracatGcb','storeIhracatGcb',
+    'loadIhracatBl','storeIhracatBl','loadIhracatTemplate','storeIhracatTemplate',
+    'loadGumrukculer','storeGumrukculer','loadForwarderlar','storeForwarderlar',
+    'loadEvrakWorkflow','storeEvrakWorkflow',
     'loadIzin','storeIzin','loadTebligat','storeTebligat',
     'loadTemizlik','storeTemizlik','loadEvrak','storeEvrak',
     'loadDolaplar','storeDolaplar','loadArsivBelgeler','storeArsivBelgeler',
