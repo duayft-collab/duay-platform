@@ -24,7 +24,21 @@ var DUAY_ALANLARI = [
   { v: 'mense_ulke', l: 'Menşe', zorunlu: false }, { v: 'atla', l: '— Atla —', zorunlu: false },
 ];
 
-var ANAHTAR = { aciklama: ['product', 'description', 'urun', 'item', 'goods'], urun_kodu: ['code', 'kod', 'sku', 'ref'], hs_kodu: ['hs', 'tariff', 'gtip'], miktar: ['qty', 'quantity', 'miktar', 'adet'], birim: ['unit', 'birim'], birim_fiyat: ['price', 'fiyat', 'cost'], doviz: ['currency', 'doviz'], tedarikci: ['supplier', 'tedarikci', 'vendor'], brut_kg: ['gross', 'brut'], net_kg: ['net'], hacim_m3: ['volume', 'hacim', 'cbm'], koli_adet: ['carton', 'koli', 'box'], mense_ulke: ['origin', 'mense', 'country'] };
+var ANAHTAR = {
+  aciklama:    ['product','description','descriptionofgoods','urun','aciklama','item','goods','tanim','desc'],
+  urun_kodu:   ['code','kod','sku','ref','part','article','item'],
+  hs_kodu:     ['hs','hscode','tariff','gtip','customs','gumruk'],
+  miktar:      ['qty','quantity','miktar','adet','pcs','pcsone','amount','pcsinone'],
+  birim:       ['unit','birim','uom'],
+  birim_fiyat: ['price','fiyat','unitprice','birimfiyat','cost','pricepcs'],
+  doviz:       ['currency','doviz','cur'],
+  tedarikci:   ['supplier','tedarikci','vendor','manufacturer'],
+  brut_kg:     ['grosskg','grossweight','brutkg','totalgrosskg'],
+  net_kg:      ['netkg','netweight','totalnetkg'],
+  hacim_m3:    ['volume','hacim','cbm','totalcbm'],
+  koli_adet:   ['carton','cartonqty','koli','box','ctn','cartqty'],
+  mense_ulke:  ['origin','mense','countryoforigin','coo']
+};
 
 var _excelData = [], _kolonlar = [], _eslestirme = {}, _gecerliSatirlar = [], _hataliSatirlar = [];
 
@@ -65,15 +79,94 @@ window._excelDosyaSecildi = function(input) {
 function _parseCSV(text) { var lines = text.split('\n').filter(function(l) { return l.trim(); }); _processRawData(lines.map(function(l) { return l.split(/[,;\t]/).map(function(c) { return c.trim().replace(/^"|"$/g, ''); }); })); }
 
 function _processRawData(rows) {
-  if (!rows || rows.length < 2) { window.toast?.('Veri yok', 'err'); return; }
-  _kolonlar = rows[0].map(function(k) { return String(k).trim(); }).filter(Boolean);
-  _excelData = rows.slice(1).filter(function(r) { return r.some(function(c) { return String(c).trim(); }); }).map(function(r) { var obj = {}; _kolonlar.forEach(function(k, i) { obj[k] = String(r[i] || '').trim(); }); return obj; });
-  _eslestirme = {}; var kullanilan = {};
-  _kolonlar.forEach(function(k) { var kl = k.toLowerCase(); for (var alan in ANAHTAR) { if (kullanilan[alan]) continue; if (ANAHTAR[alan].some(function(a) { return kl.indexOf(a) !== -1; })) { _eslestirme[k] = alan; kullanilan[alan] = true; return; } } if (!_eslestirme[k]) _eslestirme[k] = 'atla'; });
-  _renderAdim2();
+  if (!rows || rows.length < 2) {
+    window.toast?.('Dosyada veri bulunamadi', 'err'); return;
+  }
+
+  /* Akilli baslik satiri tespiti: bos satirlari atla, en fazla dolu alan iceren satiri baslik kabul et */
+  var headerRowIdx = 0;
+  var maxDolu = 0;
+  var scanLimit = Math.min(10, rows.length);
+  for (var ri = 0; ri < scanLimit; ri++) {
+    var dolu = 0;
+    for (var ci = 0; ci < rows[ri].length; ci++) { if (String(rows[ri][ci]).trim()) dolu++; }
+    if (dolu > maxDolu) { maxDolu = dolu; headerRowIdx = ri; }
+  }
+
+  if (maxDolu < 2) {
+    window.toast?.('Baslik satiri bulunamadi — ilk 10 satirda en az 2 dolu sutun olmali', 'err'); return;
+  }
+
+  _kolonlar = rows[headerRowIdx].map(function(k) { return String(k).trim(); }).filter(Boolean);
+
+  /* Veri satirlari: baslik sonrasindaki bos olmayan satirlar */
+  _excelData = rows.slice(headerRowIdx + 1)
+    .filter(function(r) { return r.some(function(c) { return String(c).trim(); }); })
+    .map(function(r) {
+      var obj = {};
+      _kolonlar.forEach(function(k, i) { obj[k] = String(r[i] || '').trim(); });
+      return obj;
+    });
+
+  if (!_excelData.length) {
+    window.toast?.('Veri satirlari bulunamadi', 'err'); return;
+  }
+
+  /* Otomatik eslestirme */
+  _eslestirme = {};
+  var kullanilan = {};
+  _kolonlar.forEach(function(k) {
+    var kl = k.toLowerCase().replace(/[\s\/\(\)]/g, '');
+    for (var alan in ANAHTAR) {
+      if (kullanilan[alan]) continue;
+      var anahtarlar = ANAHTAR[alan];
+      for (var ai = 0; ai < anahtarlar.length; ai++) {
+        if (kl.indexOf(anahtarlar[ai].replace(/\s/g, '')) !== -1) {
+          _eslestirme[k] = alan;
+          kullanilan[alan] = true;
+          break;
+        }
+      }
+      if (_eslestirme[k]) break;
+    }
+    if (!_eslestirme[k]) _eslestirme[k] = 'atla';
+  });
+
+  /* Bu excel'e ozel ek eslestirmeler */
+  _kolonlar.forEach(function(k) {
+    var kl = k.toLowerCase();
+    if (_eslestirme[k] !== 'atla') return;
+    if (kl.indexOf('description') !== -1 || kl.indexOf('goods') !== -1) { _eslestirme[k] = 'aciklama'; }
+    else if (kl.indexOf('carton qty') !== -1 || kl.indexOf('ctn') !== -1) { _eslestirme[k] = 'koli_adet'; }
+    else if (kl.indexOf('gross kg') !== -1 && kl.indexOf('total') !== -1) { _eslestirme[k] = 'brut_kg'; }
+    else if (kl.indexOf('net kg') !== -1 && kl.indexOf('total') !== -1) { _eslestirme[k] = 'net_kg'; }
+    else if (kl.indexOf('cbm') !== -1 && kl.indexOf('total') !== -1) { _eslestirme[k] = 'hacim_m3'; }
+    else if (kl.indexOf('price') !== -1 && kl.indexOf('pcs') !== -1) { _eslestirme[k] = 'birim_fiyat'; }
+    else if (kl.indexOf('item') !== -1) { _eslestirme[k] = 'urun_kodu'; }
+    else if (kl.indexOf('pcs') !== -1 && kl.indexOf('one') !== -1) { _eslestirme[k] = 'miktar'; }
+  });
+
+  /* Kayitli sablon kontrolu */
+  var templates = _loadTpl();
+  var eslTpl = null;
+  for (var ti = 0; ti < templates.length; ti++) {
+    var t = templates[ti];
+    if (t.kolonlar) {
+      var tumEslesir = true;
+      for (var ki = 0; ki < t.kolonlar.length; ki++) {
+        if (_kolonlar.indexOf(t.kolonlar[ki]) === -1) { tumEslesir = false; break; }
+      }
+      if (tumEslesir) { eslTpl = t; break; }
+    }
+  }
+  if (eslTpl) {
+    for (var ek in eslTpl.eslestirme) { _eslestirme[ek] = eslTpl.eslestirme[ek]; }
+    window.toast?.('"' + eslTpl.ad + '" sablonu otomatik uygulandi', 'ok');
+  }
+  _renderAdim2(eslTpl || null);
 }
 
-function _renderAdim2() {
+function _renderAdim2(tplBilgi) {
   var body = _g('excel-import-body'); var footer = _g('excel-import-footer'); if (!body) return;
   var h = _stepBar(2);
   h += '<div style="padding:8px 20px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;color:var(--t3);display:flex;justify-content:space-between"><span>Excel sütunu → Duay alanı</span><span>' + _excelData.length + ' satır</span></div>';
