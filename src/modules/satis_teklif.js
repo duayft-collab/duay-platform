@@ -33,7 +33,7 @@ function renderSatisTeklif() {
     panel.dataset.injected = '1';
     panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">📤 Satış Teklifleri</div><div style="font-size:10px;color:var(--t3)">Proforma Invoice yönetimi</div></div>'
-      + '<div style="display:flex;gap:6px"><button class="btn btns" onclick="window._exportSTXlsx?.()" style="font-size:11px">⬇ Excel</button><button class="btn btnp" onclick="window._openSTModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Teklif</button></div>'
+      + '<div style="display:flex;gap:6px"><button id="stek-toplu-sil-btn" onclick="event.stopPropagation();window._stekTopluSil()" class="btn btns btnd" style="font-size:11px;display:none">Seçilenleri Sil</button><button class="btn btns" onclick="window._exportSTXlsx?.()" style="font-size:11px">⬇ Excel</button><button class="btn btnp" onclick="window._openSTModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Teklif</button></div>'
     + '</div>'
     + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;background:var(--s2)">'
       + '<input class="fi" id="st-search" placeholder="🔍 Teklif no, müşteri ara..." oninput="renderSatisTeklif()" style="font-size:11px;flex:1">'
@@ -57,12 +57,13 @@ function renderSatisTeklif() {
     return;
   }
 
-  var html = '<div style="display:grid;grid-template-columns:120px 1fr 100px 80px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">'
-    + '<div>Teklif No</div><div>Müşteri</div><div>Toplam</div><div>Döviz</div><div>Tarih</div><div>İşlem</div></div>';
+  var html = '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">'
+    + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>Müşteri</div><div>Toplam</div><div>Döviz</div><div>Tarih</div><div>İşlem</div></div>';
 
   fl.forEach(function(t) {
     var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
-    html += '<div style="display:grid;grid-template-columns:120px 1fr 100px 80px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+    html += '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+      + '<div onclick="event.stopPropagation()"><input type="checkbox" class="stek-row-chk" data-id="' + t.id + '" onchange="event.stopPropagation();window._stekChkGuncelle()"></div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(t.teklifNo || '—') + '</div>'
       + '<div style="font-weight:500">' + esc(t.customerName || '—') + '</div>'
       + '<div style="font-weight:700">' + total.toLocaleString('tr-TR') + '</div>'
@@ -335,5 +336,8 @@ window._exportSTXlsx = function() {
 
 // Exports
 window.renderSatisTeklif = renderSatisTeklif;
+window._stekTopluChk = function(c) { document.querySelectorAll('.stek-row-chk').forEach(function(x) { x.checked = c; }); window._stekChkGuncelle(); };
+window._stekChkGuncelle = function() { var n = document.querySelectorAll('.stek-row-chk:checked').length; var btn = document.getElementById('stek-toplu-sil-btn'); if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = n + ' Teklif Sil'; } };
+window._stekTopluSil = function() { var ids = []; document.querySelectorAll('.stek-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return; window.confirmModal?.(ids.length + ' teklif silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: function() { var list = _loadST(); ids.forEach(function(id) { var x = list.find(function(s) { return String(s.id) === String(id); }); if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); } }); _storeST(list); window.toast?.(ids.length + ' teklif silindi', 'ok'); renderSatisTeklif(); } }); };
 window._openSTModal = window._openSTModal;
 window._stItemRow = _stItemRowHTML;

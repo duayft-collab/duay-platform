@@ -54,6 +54,7 @@ function _injectSAPanel() {
         + (_isAdmSA() ? '<button onclick="window._saBulkApprove?.()" style="padding:6px 12px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : '')
         + '<button onclick="window._exportSAXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
         + '<button onclick="window._openSAImport?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">📥 İçe Aktar</button>'
+        + '<button id="sat-toplu-sil-btn" onclick="event.stopPropagation();window._satTopluSil()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:rgba(220,38,38,.06);color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit;display:none">Seçilenleri Sil</button>'
         + '<button onclick="window._openSAModal?.(null)" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Yeni Sipariş</button>'
       + '</div>'
     + '</div>'
@@ -93,7 +94,8 @@ function _injectSAPanel() {
     + '<div style="margin:12px 20px 0;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden">'
     + '<style>#sa-list>div{transition:background .1s}#sa-list>div:hover{background:var(--s2)!important}</style>'
     + '<div style="overflow-x:auto">'
-      + '<div id="sa-thead" style="display:grid;grid-template-columns:120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;background:var(--s2);border-bottom:0.5px solid var(--b);min-width:1400px">'
+      + '<div id="sa-thead" style="display:grid;grid-template-columns:28px 120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;background:var(--s2);border-bottom:0.5px solid var(--b);min-width:1428px">'
+        + '<div style="display:flex;align-items:center"><input type="checkbox" id="sa-chk-all" onchange="event.stopPropagation();window._satTopluChk(this.checked)"></div>'
         + [['jobId','İş ID'],['supplier','Satıcı'],['faturaType','Fatura Tipi'],['piDate','PI Tarihi'],['totalAmount','Toplam'],['advanceAmount','Avans'],['advanceRate','Avans%'],['remaining','Kalan'],['currency','Döviz'],['deliveryDate','Teslimat'],['lockedRate','Kur'],['status','Durum'],['_actions','İşlem']].map(function(h) {
             return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;cursor:pointer" onclick="window._saSortBy?.(\'' + h[0] + '\')">' + h[1] + ' <span style="opacity:.3">⇅</span></div>';
           }).join('')
@@ -188,7 +190,7 @@ function renderSatinAlma() {
 
   var _inpSt = 'font-size:11px;padding:3px 6px;border:1px solid var(--b);border-radius:4px;background:var(--s);color:var(--t);font-family:inherit;width:100%;box-sizing:border-box';
   var _inpEr = 'border-color:#EF4444;background:rgba(239,68,68,.04)';
-  var _GRID  = 'display:grid;grid-template-columns:120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:1400px';
+  var _GRID  = 'display:grid;grid-template-columns:28px 120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:1428px';
 
   if (!fl.length && !document.getElementById('sa-inline-new')) {
     cont.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t3)">'
@@ -239,6 +241,7 @@ function renderSatinAlma() {
     var ftLabel = ft ? ft.label.split('(')[0].trim().slice(0, 10) : '—';
 
     html += '<div data-said="' + s.id + '" style="' + _GRID + ';cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+      + '<div onclick="event.stopPropagation()"><input type="checkbox" class="sat-row-chk" data-id="' + s.id + '" onchange="event.stopPropagation();window._satChkGuncelle()"></div>'
       + '<div class="sa-cell" data-field="jobId" onclick="window._saInlineEdit?.(event,' + s.id + ',\'jobId\')" style="font-weight:600;font-family:\'DM Mono\',monospace;color:var(--ac)">' + esc(s.jobId || '—') + '</div>'
       + '<div class="sa-cell" data-field="supplier" onclick="window._saInlineEdit?.(event,' + s.id + ',\'supplier\')" style="font-weight:500">' + esc(supplierName) + vendorBadge + '</div>'
       + '<div style="font-size:10px;color:var(--t2)">' + ftLabel + '</div>'
@@ -2074,6 +2077,9 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
   window.SatinAlma      = SatinAlma;
   window.renderSatinAlma = renderSatinAlma;
+  window._satTopluChk = function(c) { document.querySelectorAll('.sat-row-chk').forEach(function(x) { x.checked = c; }); window._satChkGuncelle(); };
+  window._satChkGuncelle = function() { var n = document.querySelectorAll('.sat-row-chk:checked').length; var btn = document.getElementById('sat-toplu-sil-btn'); if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = n + ' Kaydı Sil'; } };
+  window._satTopluSil = function() { var ids = []; document.querySelectorAll('.sat-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return; window.confirmModal?.(ids.length + ' satınalma kaydı silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: function() { var list = _loadSA(); ids.forEach(function(id) { var x = list.find(function(s) { return String(s.id) === id; }); if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); } }); _storeSA(list); window.toast?.(ids.length + ' kayıt silindi', 'ok'); renderSatinAlma(); } }); };
   window._openSAModal    = _openSAModal;
   window._loadSA         = _loadSA;
   window._storeSA        = _storeSA;
