@@ -59,6 +59,7 @@ function _injectDocsPanel() {
         <div class="phs">Erişim izniniz olan şirket dökümanları</div>
       </div>
       <div class="ur">
+        <button class="btn btns" onclick="window._openDocComposer()" style="display:flex;align-items:center;gap:6px">✍️ Belge Oluştur</button>
         <button class="btn btnp" id="btn-doc-upload" onclick="openDocUploadModal()">↑ Döküman Yükle</button>
       </div>
     </div>
@@ -403,6 +404,135 @@ function delLocalDoc(id) {
     }
   });
 }
+
+// ════════════════════════════════════════════════════════════════
+// BÖLÜM 4 — AI BELGE OLUŞTURUCU
+// ════════════════════════════════════════════════════════════════
+
+window._openDocComposer = function() {
+  _injectDocsPanel();
+  if (_gd('mo-doc-composer')) { _gd('mo-doc-composer').remove(); }
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-doc-composer';
+  var turOpts = [['resmi-yazi','Resmi Yazı'],['dilekce','Dilekçe'],['talimat','Talimat'],['sozlesme','Sözleşme Taslağı'],['rapor','Rapor'],['ihtar','İhtar / Uyarı'],['referans','Referans Mektubu'],['serbest','Serbest Metin']];
+  var tonOpts = [['resmi','Resmi'],['nazik','Nazik'],['sert','Sert'],['bilgilendirici','Bilgilendirici'],['ikna-edici','İkna Edici']];
+  mo.innerHTML = '<div class="moc" style="max-width:800px;width:95vw;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:var(--t)">✍️ AI Belge Oluşturucu</div><button onclick="document.getElementById(\'mo-doc-composer\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
+    + '<div style="padding:20px">'
+    // Step 1
+    + '<div id="dca-step1">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
+    + '<div><div class="fl">Belge Türü *</div><select class="fi" id="dca-tur">' + turOpts.map(function(o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select></div>'
+    + '<div><div class="fl">Antetli Kağıt</div><select class="fi" id="dca-antet"><option value="antetli">Antetli (Logo + Firma)</option><option value="antsiz">Antetsiz (Sade)</option></select></div>'
+    + '<div><div class="fl">Tarih</div><input class="fi" type="date" id="dca-tarih" value="' + new Date().toISOString().slice(0, 10) + '"></div>'
+    + '<div><div class="fl">Konu *</div><input class="fi" id="dca-konu" placeholder="Belge konusu..." maxlength="150"></div>'
+    + '<div style="grid-column:1/-1"><div class="fl">Alıcı / Muhatap</div><input class="fi" id="dca-alici" placeholder="Kişi, kurum veya departman adı..."></div>'
+    + '</div>'
+    + '<div style="margin-bottom:12px"><div class="fl">Talimat / İçerik Özeti *</div><textarea class="fi" id="dca-talimat" rows="4" style="resize:vertical" placeholder="AI\'ye ne yazmasını istediğinizi anlatın..."></textarea></div>'
+    + '<div style="margin-bottom:16px"><div class="fl">Ton</div><div style="display:flex;gap:8px;flex-wrap:wrap" id="dca-ton-btns">' + tonOpts.map(function(o, i) { return '<button onclick="window._dcaTon(\'' + o[0] + '\',this)" class="odm-chip' + (i === 0 ? ' odm-chip-active' : '') + '" data-ton="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div></div>'
+    + '<div style="display:flex;justify-content:flex-end"><button class="btn btnp" onclick="window._dcaGenerate()" id="dca-gen-btn" style="min-width:160px">🤖 AI ile Oluştur</button></div>'
+    + '</div>'
+    // Step 2
+    + '<div id="dca-step2" style="display:none"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:13px;font-weight:600">3 AI Taslağı</div><button class="btn btns" onclick="window._dcaBack()">← Geri</button></div><div id="dca-results"></div></div>'
+    // Step 3
+    + '<div id="dca-step3" style="display:none"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:13px;font-weight:600">Belgeyi Düzenle</div><button class="btn btns" onclick="window._dcaBackToResults()">← Taslaklar</button></div><div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:14px"><div id="dca-preview-doc" style="background:#fff;padding:40px;min-height:400px;font-family:Arial,sans-serif;font-size:13px;line-height:1.8;color:#1a1a1a" contenteditable="true"></div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btnp" onclick="window._dcaDownloadPDF()">PDF İndir</button><button class="btn btns" onclick="window._dcaDownloadWord()">Word İndir</button><button class="btn btns" onclick="window._dcaSaveToDocs()">Kaydet</button></div></div>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._dcaTon = function(val, btn) { document.querySelectorAll('#dca-ton-btns .odm-chip').forEach(function(b) { b.classList.remove('odm-chip-active'); }); if (btn) btn.classList.add('odm-chip-active'); };
+window._dcaBack = function() { [1,2,3].forEach(function(i) { var el = document.getElementById('dca-step' + i); if (el) el.style.display = i === 1 ? '' : 'none'; }); };
+window._dcaBackToResults = function() { [1,2,3].forEach(function(i) { var el = document.getElementById('dca-step' + i); if (el) el.style.display = i === 2 ? '' : 'none'; }); };
+
+window._dcaGenerate = async function() {
+  var konu = (document.getElementById('dca-konu')?.value || '').trim();
+  var talimat = (document.getElementById('dca-talimat')?.value || '').trim();
+  if (!konu || !talimat) { window.toast?.('Konu ve talimat zorunludur', 'err'); return; }
+  var tur = document.getElementById('dca-tur')?.value || 'resmi-yazi';
+  var alici = document.getElementById('dca-alici')?.value || '';
+  var tarih = document.getElementById('dca-tarih')?.value || new Date().toISOString().slice(0, 10);
+  var ton = (document.querySelector('#dca-ton-btns .odm-chip-active') || {}).dataset?.ton || 'resmi';
+  var antet = document.getElementById('dca-antet')?.value || 'antetli';
+  var btn = document.getElementById('dca-gen-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Oluşturuluyor...'; }
+  var prompt = 'Sen bir profesyonel belge yazarısın. Aşağıdaki bilgilere göre bir ' + tur + ' yaz.\n\nTarih: ' + tarih + '\nKonu: ' + konu + (alici ? '\nMuhatap: ' + alici : '') + '\nTon: ' + ton + '\nTalimat: ' + talimat + '\n\nKURALLAR:\n- Türkçe yaz\n- Düz metin, markdown kullanma\n- Sadece belge metnini yaz\n- Profesyonel ol\n- Boş alanları [...] ile bırak';
+  var results = document.getElementById('dca-results');
+  if (results) results.innerHTML = '<div style="text-align:center;padding:32px;color:var(--t2)">⏳ AI yazıyor...</div>';
+  [1,2,3].forEach(function(i) { var el = document.getElementById('dca-step' + i); if (el) el.style.display = i === 2 ? '' : 'none'; });
+  var styles = [
+    { isim: 'Kurumsal', emoji: '🔵', extra: 'Çok resmi, kurumsal ve net bir dil kullan.' },
+    { isim: 'Samimi', emoji: '🟣', extra: 'Resmi ama biraz daha samimi ve akıcı bir dil kullan.' },
+    { isim: 'Özlü', emoji: '🟢', extra: 'Kısa, öz ve doğrudan bir dil kullan.' },
+  ];
+  var drafts = [];
+  for (var si = 0; si < styles.length; si++) {
+    var s = styles[si];
+    try {
+      var res = await fetch('/api/ai-doc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: prompt, style: s.extra }) });
+      if (res.ok) { var data = await res.json(); drafts.push({ isim: s.isim, emoji: s.emoji, text: data.text || data.content || 'Yanıt alınamadı' }); }
+      else { drafts.push({ isim: s.isim, emoji: s.emoji, text: _dcaLocalGenerate(prompt, s.extra) }); }
+    } catch (e) { drafts.push({ isim: s.isim, emoji: s.emoji, text: _dcaLocalGenerate(prompt, s.extra) }); }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🤖 AI ile Oluştur'; }
+  window._dcaDrafts = drafts;
+  window._dcaParams = { tur: tur, konu: konu, alici: alici, tarih: tarih, antet: antet };
+  if (results) {
+    results.innerHTML = drafts.map(function(d, i) {
+      return '<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--b)"><div style="font-size:12px;font-weight:600">' + d.emoji + ' ' + d.isim + '</div><button class="btn btnp" onclick="window._dcaSelectDraft(' + i + ')" style="font-size:11px">Bu Taslağı Seç →</button></div><div style="padding:16px;font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:200px;overflow-y:auto;color:var(--t)">' + d.text + '</div></div>';
+    }).join('');
+  }
+};
+
+function _dcaLocalGenerate(prompt, style) {
+  var konu = (document.getElementById('dca-konu')?.value || '').trim();
+  var alici = document.getElementById('dca-alici')?.value || 'İlgili Makam';
+  var tarih = document.getElementById('dca-tarih')?.value || new Date().toISOString().slice(0, 10);
+  var talimat = (document.getElementById('dca-talimat')?.value || '').trim();
+  return 'Tarih: ' + tarih + '\n\nSayın ' + alici + ',\n\nKonu: ' + konu + '\n\n' + talimat + '\n\nBilgilerinize arz ederim.\n\nSaygılarımla,\n[Ad Soyad]\n[Unvan]\nDuay Global LLC';
+}
+
+window._dcaSelectDraft = function(i) {
+  var draft = (window._dcaDrafts || [])[i]; if (!draft) return;
+  var p = window._dcaParams || {};
+  var preview = document.getElementById('dca-preview-doc'); if (!preview) return;
+  var antetHtml = p.antet === 'antetli'
+    ? '<div style="border-bottom:2px solid #0C447C;padding-bottom:16px;margin-bottom:24px"><div style="font-size:18px;font-weight:700;color:#0C447C">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#555">Tarih: ' + (p.tarih || '') + '</div><div style="font-size:11px;color:#555">Konu: ' + (p.konu || '') + '</div>' + (p.alici ? '<div style="font-size:11px;color:#555">Sayın: ' + p.alici + '</div>' : '') + '</div>'
+    : '<div style="text-align:right;margin-bottom:20px;font-size:11px;color:#555"><div>Tarih: ' + (p.tarih || '') + '</div>' + (p.konu ? '<div>Konu: ' + p.konu + '</div>' : '') + '</div>';
+  preview.innerHTML = antetHtml + '<div style="white-space:pre-wrap">' + draft.text + '</div><div style="margin-top:40px"><div style="font-size:12px">Saygılarımla,</div><div style="margin-top:24px;font-size:12px">[Ad Soyad]</div><div style="font-size:11px;color:#777">[Unvan]</div></div>';
+  [1,2,3].forEach(function(n) { var el = document.getElementById('dca-step' + n); if (el) el.style.display = n === 3 ? '' : 'none'; });
+};
+
+window._dcaDownloadPDF = function() {
+  var preview = document.getElementById('dca-preview-doc'); if (!preview) return;
+  var win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Belge</title><style>body{font-family:Arial,sans-serif;font-size:13px;line-height:1.8;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto}@media print{body{padding:20px}}</style></head><body>' + preview.innerHTML + '</body></html>');
+  win.document.close(); setTimeout(function() { win.print(); }, 500);
+};
+
+window._dcaDownloadWord = function() {
+  var preview = document.getElementById('dca-preview-doc'); if (!preview) return;
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"><style>body{font-family:Arial;font-size:13pt;line-height:1.8}</style></head><body>' + preview.innerHTML + '</body></html>';
+  var blob = new Blob([html], { type: 'application/msword' }); var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'belge_' + new Date().toISOString().slice(0, 10) + '.doc'; a.click(); URL.revokeObjectURL(url);
+};
+
+window._dcaSaveToDocs = function() {
+  var preview = document.getElementById('dca-preview-doc');
+  var konu = document.getElementById('dca-konu')?.value || 'AI Belgesi';
+  if (!preview) return;
+  var html = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial;font-size:13px;padding:40px}</style></head><body>' + preview.innerHTML + '</body></html>';
+  var blob = new Blob([html], { type: 'text/html' });
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var d = (typeof loadLocalDocs === 'function') ? loadLocalDocs() : [];
+    d.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : Date.now(), name: konu, cat: 'Diger', acc: 'all', type: 'HTML', size: Math.round(blob.size / 1024) + ' KB', upd: new Date().toISOString().slice(0, 10), uid: _CUd()?.id, icon: '✍️', data: { name: konu + '.html', type: 'text/html', data: ev.target.result } });
+    if (typeof storeLocalDocs === 'function') storeLocalDocs(d);
+    document.getElementById('mo-doc-composer')?.remove();
+    renderDocs();
+    window.toast?.('Belge kaydedildi', 'ok');
+  };
+  reader.readAsDataURL(blob);
+};
 
 // ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
