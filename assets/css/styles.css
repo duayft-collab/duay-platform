@@ -2082,11 +2082,12 @@ th[onclick*="_sortUsers"]:hover {
 
 /* ══ TOPBAR İKONLAR ══ */
 .tb-icon {
-  background: none; border: none; cursor: pointer; padding: 6px;
-  border-radius: 6px; color: var(--t3); display: inline-flex;
-  align-items: center; justify-content: center; transition: all .12s;
+  width: 32px; height: 32px; background: transparent; border: none;
+  border-radius: 6px; color: #85B7EB; display: inline-flex;
+  align-items: center; justify-content: center; cursor: pointer;
+  transition: background .1s, color .1s; position: relative; flex-shrink: 0;
 }
-.tb-icon:hover { background: var(--s2); color: var(--t); }
+.tb-icon:hover { background: rgba(255,255,255,.1); color: #E6F1FB; }
 
 /* ══ PWA MOBİL OPTİMİZASYON ══ */
 
