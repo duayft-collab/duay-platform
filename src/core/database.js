@@ -678,7 +678,7 @@ const DEFAULT_TASKS = [
 /** @returns {Array<Object>} */
 function loadTasks()       { const d = _read(KEYS.tasks); return Array.isArray(d) ? d : DEFAULT_TASKS; }
 /** @param {Array<Object>} d */
-function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); _write(KEYS.tasks, d);
+function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); if (d.length > 500) { var _active = d.filter(function(t) { return !t.isDeleted && t.status !== 'done'; }); var _done = d.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100); var _del = d.filter(function(t) { return t.isDeleted; }).slice(-50); d = _active.concat(_done, _del); } _write(KEYS.tasks, d);
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
 }
 
@@ -1063,7 +1063,7 @@ const DEFAULT_HDF = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadTrash()   { const d = _read(KEYS.trash); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 500 kayıt */ function storeTrash(d) { _write(KEYS.trash, d.slice(0, 500)); var _fp = _fsPath('trash'); if (_fp) _syncFirestore(_fp, d.slice(0, 500)); }
+/** @param {Array<Object>} d Son 50 kayıt */ function storeTrash(d) { _write(KEYS.trash, d.slice(0, 50)); var _fp = _fsPath('trash'); if (_fp) _syncFirestore(_fp, d.slice(0, 50)); }
 /**
  * Silinen kaydı çöp kutusuna ekler.
  * @param {Object} item Orijinal kayıt
@@ -1096,7 +1096,7 @@ function addToTrash(item, moduleName, collection) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadOdm()     { const d = _read(KEYS.odemeler); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.odemeler, d);
+/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(-1000);} _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
 /** @returns {Array<Object>} */
@@ -2587,5 +2587,20 @@ if (typeof module !== 'undefined' && module.exports) {
   ];
   fns.forEach(name => { if (DB[name]) window[name] = DB[name]; });
 }
+
+// Uygulama açılışında şişmiş veriyi bir kez temizle
+(function _oneTimeStorageClean() {
+  try {
+    var trash = loadTrash();
+    if (trash.length > 50) { storeTrash(trash.slice(0, 50)); console.log('[DB] Trash temizlendi:', trash.length, '→ 50'); }
+    var tasks = loadTasks();
+    if (tasks.length > 500) {
+      var active = tasks.filter(function(t) { return !t.isDeleted && t.status !== 'done'; });
+      var done = tasks.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100);
+      saveTasks(active.concat(done));
+      console.log('[DB] Tasks temizlendi:', tasks.length, '→', active.length + done.length);
+    }
+  } catch (e) { console.warn('[DB] Storage clean:', e); }
+})();
 
 })();
