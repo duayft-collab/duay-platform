@@ -141,7 +141,7 @@ window._saNavClick = function(cat) {
 
 function renderSatinAlma() {
   _injectSAPanel();
-  var _allRawSA = _loadSA();
+  var _allRawSA = _loadSA().filter(function(s) { return !s.isDeleted; });
   var _cuSA = window.Auth?.getCU?.();
   var _saIsManager = _cuSA?.role === 'admin' || _cuSA?.role === 'manager' || (_cuSA?.dept || '').toLowerCase() === 'satinalma';
   var all = _saIsManager ? _allRawSA : _allRawSA.filter(function(s) { return !s.createdBy || s.createdBy === _cuSA?.id || s.responsibleId === _cuSA?.id; });
@@ -2100,7 +2100,12 @@ if (typeof module !== 'undefined' && module.exports) {
   window.renderSatinAlma = renderSatinAlma;
   window._satTopluChk = function(c) { document.querySelectorAll('.sat-row-chk').forEach(function(x) { x.checked = c; }); window._satChkGuncelle(); };
   window._satChkGuncelle = function() { var n = document.querySelectorAll('.sat-row-chk:checked').length; var btn = document.getElementById('sat-toplu-sil-btn'); if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = n + ' Kaydı Sil'; } };
-  window._satTopluSil = function() { var ids = []; document.querySelectorAll('.sat-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return; window.confirmModal?.(ids.length + ' satınalma kaydı silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: function() { var list = _loadSA(); ids.forEach(function(id) { var x = list.find(function(s) { return String(s.id) === id; }); if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); } }); _storeSA(list); window.toast?.(ids.length + ' kayıt silindi', 'ok'); renderSatinAlma(); } }); };
+  window._satTopluSil = function() {
+    var ids = []; document.querySelectorAll('.sat-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return;
+    var silFunc = function() { var list = _loadSA(); ids.forEach(function(id) { var x = list.find(function(s) { return String(s.id) === String(id); }); if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); x.deletedBy = (window.CU && window.CU() ? window.CU().id : ''); } }); _storeSA(list); window.toast?.(ids.length + ' kayıt silindi', 'ok'); renderSatinAlma(); };
+    if (typeof window.confirmModal === 'function') { window.confirmModal(ids.length + ' satınalma kaydı silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: silFunc }); }
+    else if (confirm(ids.length + ' satınalma kaydı silinecek. Emin misiniz?')) { silFunc(); }
+  };
   window._openSAModal    = _openSAModal;
   window._loadSA         = _loadSA;
   window._storeSA        = _storeSA;
