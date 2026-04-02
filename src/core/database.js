@@ -192,6 +192,19 @@ function _read(key, fallback = null) {
 }
 
 /**
+ * Acil temizlik — %75 üzeri dolulukta çağrılır.
+ */
+function _emergencyClean() {
+  try {
+    var _ec = function(k, max) { try { var d = JSON.parse(localStorage.getItem(k) || '[]'); if (d.length > max) localStorage.setItem(k, JSON.stringify(d.slice(-max))); } catch(e) {} };
+    _ec(KEYS.notifications, 20); _ec(KEYS.activity, 30); _ec(KEYS.trash, 20);
+    _ec(KEYS.kpiLog, 100); _ec(KEYS.odemeler, 300); _ec(KEYS.tahsilat, 300);
+    try { var tc = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}'); Object.keys(tc).forEach(function(t) { if (Array.isArray(tc[t]) && tc[t].length > 10) tc[t] = tc[t].slice(-10); }); localStorage.setItem(KEYS.taskChats, JSON.stringify(tc)); } catch(e) {}
+    try { localStorage.setItem('ak_storage_critical', '1'); } catch(e) {}
+  } catch(e) {}
+}
+
+/**
  * localStorage'a güvenli JSON yazar.
  * @param {string} key
  * @param {*}      value
@@ -235,6 +248,8 @@ function _write(key, value) {
       return clean;
     });
   }
+  // Guard: %75 üzerindeyse yazma öncesi temizle
+  try { var _wTotal = 0; for (var _wi = 0; _wi < localStorage.length; _wi++) { _wTotal += ((localStorage.key(_wi).length + (localStorage.getItem(localStorage.key(_wi)) || '').length) * 2); } if (Math.round(_wTotal / (5*1024*1024) * 100) >= 75) _emergencyClean(); } catch(e) {}
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
@@ -2354,27 +2369,35 @@ var _bgCheckTimer = null;
 function _startBgSyncCheck() {
   if (_bgCheckTimer) return;
   _bgCheckTimer = setInterval(function() {
-    // Otomatik localStorage temizlik
+    // Otomatik localStorage temizlik — hedef <%60
     try {
       var _lsTotal = 0;
       for (var _li = 0; _li < localStorage.length; _li++) { var _lk = localStorage.key(_li); _lsTotal += ((_lk.length + (localStorage.getItem(_lk) || '').length) * 2); }
       var _lsPct = Math.round(_lsTotal / (5 * 1024 * 1024) * 100);
-      if (_lsPct >= 80) {
+      if (_lsPct >= 60) {
         var _n1 = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
         if (_n1.length > 30) { localStorage.setItem(KEYS.notifications, JSON.stringify(_n1.slice(0, 30))); }
       }
-      if (_lsPct >= 90) {
+      if (_lsPct >= 70) {
         var _tr1 = JSON.parse(localStorage.getItem(KEYS.trash) || '[]');
         if (_tr1.length > 30) { localStorage.setItem(KEYS.trash, JSON.stringify(_tr1.slice(0, 30))); }
         var _act1 = JSON.parse(localStorage.getItem(KEYS.activity) || '[]');
         if (_act1.length > 50) { localStorage.setItem(KEYS.activity, JSON.stringify(_act1.slice(0, 50))); }
       }
-      if (_lsPct >= 95) {
+      if (_lsPct >= 80) {
         var _tc1 = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}');
         Object.keys(_tc1).forEach(function(tid) { if (Array.isArray(_tc1[tid]) && _tc1[tid].length > 20) _tc1[tid] = _tc1[tid].slice(-20); });
         localStorage.setItem(KEYS.taskChats, JSON.stringify(_tc1));
       }
-      if (_lsPct < 80) { try { localStorage.removeItem('ak_storage_critical'); } catch (e) { /* */ } }
+      if (_lsPct >= 85) {
+        var _od1 = JSON.parse(localStorage.getItem(KEYS.odemeler) || '[]');
+        if (_od1.length > 500) { localStorage.setItem(KEYS.odemeler, JSON.stringify(_od1.filter(function(o){return !o.isDeleted;}).slice(-500))); }
+        var _th1 = JSON.parse(localStorage.getItem(KEYS.tahsilat) || '[]');
+        if (_th1.length > 500) { localStorage.setItem(KEYS.tahsilat, JSON.stringify(_th1.filter(function(t){return !t.isDeleted;}).slice(-500))); }
+        var _kl1 = JSON.parse(localStorage.getItem(KEYS.kpiLog) || '[]');
+        if (_kl1.length > 200) { localStorage.setItem(KEYS.kpiLog, JSON.stringify(_kl1.slice(-200))); }
+      }
+      if (_lsPct < 60) { try { localStorage.removeItem('ak_storage_critical'); } catch (e) { /* */ } }
     } catch (e) { /* */ }
 
     var FB_DB = window.Auth?.getFBDB?.();
@@ -2419,7 +2442,7 @@ function _startBgSyncCheck() {
         }).catch(function() {});
       } catch(e) {}
     });
-  }, 5 * 60 * 1000);
+  }, 2 * 60 * 1000);
 }
 
 /**
@@ -2687,19 +2710,11 @@ if (typeof module !== 'undefined' && module.exports) {
       } catch (e) { /* JSON parse hatası — atla */ }
     });
     if (_b64cleaned) console.log('[DB] Base64 temizlendi:', _b64cleaned, 'alan');
-    // Notifications limitle
-    var notifs = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
-    if (notifs.length > 30) { localStorage.setItem(KEYS.notifications, JSON.stringify(notifs.slice(0, 30))); console.log('[DB] Notifications:', notifs.length, '→ 30'); }
-    // Activity limitle
-    var act = JSON.parse(localStorage.getItem(KEYS.activity) || '[]');
-    if (act.length > 50) { localStorage.setItem(KEYS.activity, JSON.stringify(act.slice(0, 50))); console.log('[DB] Activity:', act.length, '→ 50'); }
-    // TaskChats limitle
-    try {
-      var tc = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}');
-      var tcChanged = false;
-      Object.keys(tc).forEach(function(tid) { if (Array.isArray(tc[tid]) && tc[tid].length > 20) { tc[tid] = tc[tid].slice(-20); tcChanged = true; } });
-      if (tcChanged) { localStorage.setItem(KEYS.taskChats, JSON.stringify(tc)); console.log('[DB] TaskChats kırpıldı'); }
-    } catch (e) { /* */ }
+    // Koleksiyon limitleri
+    var _trim = function(key, max) { try { var d = JSON.parse(localStorage.getItem(key) || '[]'); if (d.length > max) { localStorage.setItem(key, JSON.stringify(d.slice(-max))); console.log('[DB]', key, d.length, '→', max); } } catch(e) {} };
+    _trim(KEYS.notifications, 30); _trim(KEYS.activity, 50); _trim(KEYS.trash, 30);
+    _trim(KEYS.odemeler, 500); _trim(KEYS.tahsilat, 500); _trim(KEYS.kpiLog, 200);
+    try { var tc = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}'); var tcC = false; Object.keys(tc).forEach(function(tid) { if (Array.isArray(tc[tid]) && tc[tid].length > 20) { tc[tid] = tc[tid].slice(-20); tcC = true; } }); if (tcC) { localStorage.setItem(KEYS.taskChats, JSON.stringify(tc)); } } catch(e) {}
   } catch (e) { console.warn('[DB] Storage clean:', e); }
 })();
 
