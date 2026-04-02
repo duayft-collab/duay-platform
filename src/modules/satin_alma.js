@@ -95,7 +95,7 @@ function _injectSAPanel() {
     + '<style>#sa-list>div{transition:background .1s}#sa-list>div:hover{background:var(--s2)!important}</style>'
     + '<div style="overflow-x:auto">'
       + '<div id="sa-thead" style="display:grid;grid-template-columns:28px 120px 150px 90px 100px 100px 90px 75px 90px 80px 100px 90px 100px 120px;gap:0;padding:8px 16px;background:var(--s2);border-bottom:0.5px solid var(--b);min-width:1428px">'
-        + '<div style="display:flex;align-items:center"><input type="checkbox" id="sa-chk-all" onchange="event.stopPropagation();window._satTopluChk(this.checked)"></div>'
+        + '<div style="display:flex;align-items:center"><input type="checkbox" id="sat-chk-all" onchange="event.stopPropagation();window._satTopluChk(this.checked)"></div>'
         + [['jobId','İş ID'],['supplier','Satıcı'],['faturaType','Fatura Tipi'],['piDate','PI Tarihi'],['totalAmount','Toplam'],['advanceAmount','Avans'],['advanceRate','Avans%'],['remaining','Kalan'],['currency','Döviz'],['deliveryDate','Teslimat'],['lockedRate','Kur'],['status','Durum'],['_actions','İşlem']].map(function(h) {
             return '<div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;cursor:pointer" onclick="window._saSortBy?.(\'' + h[0] + '\')">' + h[1] + ' <span style="opacity:.3">⇅</span></div>';
           }).join('')
