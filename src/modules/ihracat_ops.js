@@ -644,7 +644,7 @@ function _ihrDetayRenderUrunler(d, el) {
   if (toplamM3 > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--s2);color:var(--t2)">' + toplamM3.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' m\u00b3</span>';
   if (toplamUSD > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E6F1FB;color:#0C447C;font-weight:500">$' + toplamUSD.toLocaleString('tr-TR', { minimumFractionDigits: 0 }) + '</span>';
   if (toplamEUR > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#EAF3DE;color:#27500A;font-weight:500">\u20ac' + toplamEUR.toLocaleString('tr-TR', { minimumFractionDigits: 0 }) + '</span>';
-  if (eksikHs > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806;cursor:pointer" onclick="event.stopPropagation();window._ihrFiltrele(\'hs_kodu\',\'\')">HS Eksik: ' + eksikHs + '</span>';
+  if (eksikHs > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806;cursor:default" title="HS kodu eksik ürünler: ' + eksikHs + '">HS Eksik: ' + eksikHs + '</span>';
   if (eksikFiyat > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FCEBEB;color:#791F1F">Fiyat Eksik: ' + eksikFiyat + '</span>';
   if (tutarsizSayi > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806">Tutarsız: ' + tutarsizSayi + '</span>';
   var faturaTuruGrup = {};
@@ -691,8 +691,9 @@ function _ihrDetayRenderUrunler(d, el) {
   var KOLONLAR = [
     { k: 'tedarikciAd', l: 'Tedarikçi', w: 110, filtre: true, bos: true },
     { k: 'proforma_id', l: 'Proforma ID', w: 90, filtre: false, bos: true },
-    { k: 'pi_link', l: 'PI Link', w: 60, filtre: false, bos: false },
-    { k: 'satis_siparis_id', l: 'Satış Sipariş', w: 90, filtre: false, bos: true },
+    { k: 'pi_link', l: 'PI Link', w: 55, filtre: false, bos: false },
+    { k: 'satis_siparis_id', l: 'Satış Sipariş', w: 85, filtre: false, bos: true },
+    { k: 'siparis_id', l: 'Sipariş ID', w: 80, filtre: false, bos: true },
     { k: 'alis_fatura_no', l: 'Alış Fatura No', w: 90, filtre: false, bos: true },
     { k: 'alis_fatura_tarihi', l: 'Alış Fatura Tarihi', w: 90, filtre: true, bos: true },
     { k: 'fatura_turu', l: 'Fatura Türü', w: 90, filtre: true, bos: true },
@@ -701,49 +702,78 @@ function _ihrDetayRenderUrunler(d, el) {
     { k: 'benzer_urun_kodu', l: 'Benzer Kod', w: 80, filtre: false, bos: true },
     { k: 'satici_urun_adi', l: 'Satıcı Orijinal Adı', w: 120, filtre: false, bos: true },
     { k: 'aciklama', l: 'Ürün Açıklaması', w: 160, filtre: false, bos: true },
-    { k: 'standart_urun_adi', l: 'Standart Ad', w: 130, filtre: false, bos: true },
+    { k: 'standart_urun_adi', l: 'Standart Ad (CI/PL)', w: 130, filtre: false, bos: true },
     { k: 'teknik_aciklama', l: 'Teknik Açıklama', w: 120, filtre: false, bos: true },
     { k: 'fatura_urun_adi', l: 'Faturada Geçen Ad', w: 120, filtre: false, bos: true },
     { k: 'gumrukcu_tanim', l: 'Gümrükçü Tanım', w: 110, filtre: false, bos: true },
     { k: 'mense_ulke', l: 'Menşe Ülke', w: 90, filtre: true, bos: true },
-    { k: 'hs_kodu', l: 'GTIP / HS Code', w: 80, filtre: false, bos: true },
+    { k: 'hs_kodu', l: 'GTIP / HS Code', w: 85, filtre: false, bos: true },
     { k: 'miktar', l: 'Miktar', w: 70, filtre: false, bos: true },
     { k: 'birim_fiyat', l: 'Birim Fiyat', w: 90, filtre: false, bos: true },
-    { k: 'doviz', l: 'Tutar', w: 50, filtre: true, bos: false },
+    { k: 'doviz', l: 'Kur', w: 45, filtre: true, bos: false },
     { k: 'kdv_orani', l: 'KDV%', w: 55, filtre: true, bos: false },
     { k: 'kdv_tutar', l: 'KDV Tutarı', w: 80, filtre: false, bos: false },
     { k: 'kdv_dahil', l: 'KDV Dahil', w: 90, filtre: false, bos: false },
     { k: 'teslim_tarihi', l: 'Teslim Tarihi', w: 90, filtre: true, bos: true },
     { k: 'teslim_yeri', l: 'Teslim Yeri', w: 90, filtre: true, bos: true },
-    { k: 'etiket_rengi', l: 'Etiket Rengi', w: 80, filtre: true, bos: true },
-    { k: 'once_yukle', l: 'Yükle Önceliği', w: 80, filtre: true, bos: true },
+    { k: 'etiket_rengi', l: 'Etiket Rengi', w: 90, filtre: true, bos: true },
+    { k: 'once_yukle', l: 'Yükle Önceliği', w: 85, filtre: true, bos: true },
     { k: 'koli_adet', l: 'Koli Adedi', w: 65, filtre: false, bos: true },
     { k: 'brut_kg', l: 'Brüt KG', w: 65, filtre: false, bos: true },
     { k: 'net_kg', l: 'Net KG', w: 65, filtre: false, bos: true },
     { k: 'hacim_m3', l: 'Hacim m³', w: 65, filtre: false, bos: true },
     { k: 'konteyner_sira', l: 'Konteyner Sıra', w: 80, filtre: false, bos: true },
-    { k: 'imo_urun', l: 'IMO', w: 45, filtre: true, bos: false },
-    { k: 'dib', l: 'DİB', w: 45, filtre: true, bos: true },
-    { k: 'dilli_urun', l: 'Dilli', w: 45, filtre: true, bos: false },
+    { k: 'imo_urun', l: 'IMO', w: 55, filtre: true, bos: false },
+    { k: 'imo_no', l: 'IMO No', w: 80, filtre: false, bos: true },
+    { k: 'imo_msds', l: 'IMO MSDS', w: 70, filtre: false, bos: false },
+    { k: 'dib', l: 'DİB', w: 55, filtre: true, bos: true },
     { k: 'kategori', l: 'Kategori', w: 80, filtre: true, bos: true },
     { k: 'marka', l: 'Marka', w: 70, filtre: true, bos: true },
     { k: 'duay_not', l: 'Duay Not', w: 100, filtre: false, bos: true },
+    /* VGM */
+    { k: 'vgm_kg', l: 'VGM KG', w: 70, filtre: false, bos: true },
+    { k: 'vgm_no', l: 'VGM No', w: 80, filtre: false, bos: true },
+    { k: 'vgm_kaynak', l: 'VGM Kaynak', w: 80, filtre: true, bos: true },
+    { k: 'vgm_tarih', l: 'VGM Tarihi', w: 85, filtre: true, bos: true },
+    /* GÇB */
     { k: 'booking_no', l: 'Booking No', w: 90, filtre: false, bos: true },
     { k: 'konteyner_no', l: 'Konteyner No', w: 90, filtre: false, bos: true },
     { k: 'muhur_no', l: 'Mühür No', w: 80, filtre: false, bos: true },
     { k: 'gcb_no', l: 'GÇB No', w: 90, filtre: false, bos: true },
     { k: 'gcb_id', l: 'GÇB ID', w: 80, filtre: false, bos: true },
-    { k: 'gcb_tarih', l: 'GÇB Tarihi', w: 80, filtre: true, bos: true },
+    { k: 'gcb_tarih', l: 'GÇB Tarihi', w: 85, filtre: true, bos: true },
     { k: 'gcb_kur', l: 'GÇB Kur', w: 65, filtre: false, bos: true },
-    { k: 'gcb_kapandi', l: 'GÇB Kapandı', w: 70, filtre: true, bos: true },
+    { k: 'gcb_kapandi', l: 'GÇB Kapandı', w: 75, filtre: true, bos: true },
+    { k: 'gcb_kapama_tarihi', l: 'GÇB Kapama Tarihi', w: 95, filtre: true, bos: true },
     { k: 'mensei_no', l: 'Menşei No', w: 80, filtre: false, bos: true },
-    { k: 'mensei_tarih', l: 'Menşei Tarihi', w: 80, filtre: true, bos: true }
+    { k: 'mensei_tarih', l: 'Menşei Tarihi', w: 85, filtre: true, bos: true },
+    /* Sigorta */
+    { k: 'police_no', l: 'Poliçe No', w: 90, filtre: false, bos: true },
+    { k: 'police_tarihi', l: 'Poliçe Tarihi', w: 85, filtre: true, bos: true },
+    { k: 'police_kapsami', l: 'Poliçe Kapsamı', w: 100, filtre: false, bos: true },
+    { k: 'police_tutari', l: 'Poliçe Tutarı', w: 85, filtre: false, bos: true },
+    { k: 'sigorta_firma', l: 'Sigorta Firması', w: 100, filtre: false, bos: true },
+    /* Taşıma */
+    { k: 'kamyon_sofor', l: 'Kamyon Şoförü', w: 100, filtre: false, bos: true },
+    { k: 'sofor_tc', l: 'TC No', w: 80, filtre: false, bos: true },
+    { k: 'arac_plaka', l: 'Araç Plaka', w: 80, filtre: false, bos: true },
+    { k: 'dorse_plaka', l: 'Dorse Plaka', w: 80, filtre: false, bos: true },
+    { k: 'nakliye_firma', l: 'Nakliye Firması', w: 100, filtre: false, bos: true },
+    { k: 'gumruk_maliyeti', l: 'Gümrük Maliyeti', w: 90, filtre: false, bos: true },
+    { k: 'konteyner_satis', l: 'Konteyner Satış Fiyatı', w: 110, filtre: false, bos: true },
+    { k: 'konteyner_para', l: 'Para Birimi', w: 70, filtre: true, bos: true },
+    { k: 'satici_adi', l: 'Satıcı Adı', w: 100, filtre: false, bos: true },
+    { k: 'gumrukcu_adi', l: 'Gümrükçü Adı', w: 100, filtre: false, bos: true },
+    { k: 'muhasebeci_adi', l: 'Resmi Muhasebeci', w: 100, filtre: false, bos: true },
+    /* Son */
+    { k: 'kdv_iadesi', l: 'KDV İadesi Tutarı', w: 90, filtre: false, bos: true },
+    { k: 'yukleme_durumu', l: 'Yükleme Durumu', w: 90, filtre: true, bos: true }
   ];
 
   /* ── FREEZE LAYOUT: Sol sabit 3 kolon + Sağ kaydırılabilir ── */
   var ETIKET_RENK = { Mavi: '#185FA5', Pembe: '#D4537E', 'Sarı': '#BA7517', 'Yeşil': '#16A34A', Mor: '#7C3AED', Turuncu: '#D85A30' };
-  var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], dilli_urun: ['H', 'E'], gcb_kapandi: ['', 'E', 'H'] };
-  var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'mensei_tarih'];
+  var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'İspanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], gcb_kapandi: ['', 'Kapandı', 'Açık'], vgm_kaynak: ['', 'Liman', 'Forwarder', 'İnternet'], konteyner_para: ['', 'USD', 'EUR', 'TRY'], once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'] };
+  var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'gcb_kapama_tarihi', 'mensei_tarih', 'vgm_tarih', 'police_tarihi'];
   var sortedUrunler = urunler.sort(function(a, b) { return (a.konteyner_sira || 99) - (b.konteyner_sira || 99); });
   var tdS = 'padding:5px 8px;border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
   var thS = 'padding:4px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;vertical-align:top;text-align:left';
@@ -815,6 +845,8 @@ function _ihrDetayRenderUrunler(d, el) {
       if (k === 'birim_fiyat') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace;cursor:text;color:' + (v ? 'var(--t)' : 'var(--t3)') + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (v ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(u.doviz || '') : '') + '</td>'; return; }
       if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td style="' + tdS + ';text-align:center"><div style="display:flex;align-items:center;gap:3px;justify-content:center">'; if (er) h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + er + '"></span>'; h += '<span>' + vs + '</span></div></td>'; return; }
       if (k === 'doviz') { h += '<td style="' + tdS + ';text-align:center">' + vs + '</td>'; return; }
+      if (k === 'imo_msds') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--ac);font-size:10px">PDF</a>' : '<button class="btn btns" onclick="event.stopPropagation();window._ihrMsdsYukle(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Yükle</button>') + '</td>'; return; }
+      if (k === 'yukleme_durumu') { var vgmVar = parseFloat(u.vgm_kg || 0) > 0; var durumVal = vgmVar ? 'Yüklendi' : (v || ''); var durumBg = durumVal === 'Yüklendi' ? '#EAF3DE' : 'var(--s2)'; var durumClr = durumVal === 'Yüklendi' ? '#27500A' : 'var(--t2)'; h += '<td style="' + tdS + '">' + (durumVal ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + durumBg + ';color:' + durumClr + '">' + _esc(durumVal) + '</span>' : '') + '</td>'; return; }
       if (SELECT_KOLONLAR[k]) { h += '<td onclick="event.stopPropagation()" style="' + tdS + '"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">'; SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; }); h += '</select></td>'; return; }
       if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace">' + vs + '</td>'; return; }
       if (k === 'kdv_orani') { h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'kdv_orani\',parseFloat(this.value))" style="font-size:10px;border:none;background:transparent;cursor:pointer;text-align:center">'; [0, 1, 5, 10, 18, 20].forEach(function(kv) { h += '<option value="' + kv + '"' + (kdvOrani === kv ? ' selected' : '') + '>%' + kv + '</option>'; }); h += '</select></td>'; return; }
@@ -869,7 +901,9 @@ window._ihrUrunTopluSil = function(dosyaId) {
 
 window._ihrInlineSelectDegis = function(urunId, alan, deger) {
   var urunler = _loadU(); var u = urunler.find(function(x) { return String(x.id) === String(urunId); }); if (!u) return;
-  u[alan] = deger; u.updatedAt = _now(); window.storeIhracatUrunler?.(urunler);
+  u[alan] = deger;
+  if (alan === 'vgm_kg' && parseFloat(deger) > 0) u.yukleme_durumu = 'Yüklendi';
+  u.updatedAt = _now(); window.storeIhracatUrunler?.(urunler);
 };
 window._ihrInlineDateEdit = function(td, urunId, alan) {
   if (td.querySelector('input')) return;
@@ -884,6 +918,13 @@ window._ihrInlineDateEdit = function(td, urunId, alan) {
   });
   inp.addEventListener('click', function(e) { e.stopPropagation(); });
   inp.addEventListener('keydown', function(e) { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') window.renderIhracatOps?.(); });
+};
+
+window._ihrMsdsYukle = function(urunId) {
+  var url = prompt('IMO MSDS PDF URL girin (Firebase Storage linki):');
+  if (!url) return;
+  var urunler = _loadU(); var u = urunler.find(function(x) { return String(x.id) === String(urunId); });
+  if (u) { u.imo_msds = url; u.updatedAt = _now(); window.storeIhracatUrunler?.(urunler); window.toast?.('MSDS yüklendi', 'ok'); window.renderIhracatOps?.(); }
 };
 
 window._ihrFiltrele = function(kolon, deger) {
