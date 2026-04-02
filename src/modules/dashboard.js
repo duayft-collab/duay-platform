@@ -710,6 +710,11 @@ function renderDashboard() {
   }
   h += '</div>';
 
+  // Storage kritik uyarısı
+  if (localStorage.getItem('ak_storage_critical') === '1') {
+    h += '<div onclick="window._showSyncDetails?.()" style="cursor:pointer;padding:8px 16px;background:#FCEBEB;border-radius:8px;margin-bottom:4px;display:flex;align-items:center;gap:8px;border:1px solid #E24B4A33"><span style="font-size:14px">🔴</span><span style="font-size:12px;font-weight:500;color:#791F1F;flex:1">Depolama %100 dolu — veri kaydedilemiyor</span><span onclick="event.stopPropagation();window._emergencyCleanup?.()" style="font-size:10px;padding:3px 8px;background:#791F1F;color:#fff;border-radius:4px;cursor:pointer">Temizle</span></div>';
+  }
+
   // DB sağlık uyarısı
   if (typeof window._getDbHealth === 'function') {
     var _dbH = window._getDbHealth();
@@ -735,6 +740,26 @@ function renderDashboard() {
 window._dashNakitTab = function(val) {
   _nakitAy = val;
   renderDashboard();
+};
+
+/* ── Storage kritik banner ─────────────────────────────────── */
+window._showStorageCriticalBanner = function() {
+  // Dashboard render'da zaten kontrol ediliyor, sadece re-render tetikle
+  if (typeof renderDashboard === 'function') renderDashboard();
+};
+
+window._emergencyCleanup = function() {
+  try {
+    var n = JSON.parse(localStorage.getItem('ak_notif1') || '[]');
+    if (n.length > 25) localStorage.setItem('ak_notif1', JSON.stringify(n.slice(0, 25)));
+    var t = JSON.parse(localStorage.getItem('ak_trash1') || '[]');
+    if (t.length > 25) localStorage.setItem('ak_trash1', JSON.stringify(t.slice(0, 25)));
+    var a = JSON.parse(localStorage.getItem('ak_activity1') || '[]');
+    if (a.length > 50) localStorage.setItem('ak_activity1', JSON.stringify(a.slice(0, 50)));
+    localStorage.removeItem('ak_storage_critical');
+    window.toast?.('Acil temizlik tamamlandı', 'ok');
+    if (typeof renderDashboard === 'function') renderDashboard();
+  } catch (e) { window.toast?.('Temizlik hatası', 'err'); }
 };
 
 /* ── Admin modal handler ────────────────────────────────────── */

@@ -52,8 +52,16 @@ window.AVC = [
 // ════════════════════════════════════════════════════════════════
 
 /** Anayasa Kural 5 — bu versiyon hiçbir zaman runtime'da değişmez */
-const APP_VER   = '8.0.0';
-const APP_BUILD = '2026-03-19 14:50';
+const APP_VER   = '9.2.0';
+const APP_BUILD = '2026-04-02';
+
+/** Platform genelinde geçerli UI kuralları */
+window.PLATFORM_RULES = {
+  quickPeek: true,       // Her liste satırında peek/detay görünümü olmalı
+  bulkDelete: 'admin',   // Toplu silme admin-only
+  deleteConfirm: true,   // Her silme confirmModal ile onay ister
+  softDelete: true,      // Fiziksel silme yasak, çöp kutusuna taşı
+};
 
 /** CHANGELOG — Sürüm Geçmişi */
 const CHANGELOG = [

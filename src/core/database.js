@@ -213,11 +213,26 @@ function _write(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch (e) {
-    GlobalErrorHandler('_write:' + key, e, 'err');
-    if (typeof window.toast === 'function') {
-      window.toast('Depolama alanı dolu! Bazı veriler kaydedilemedi.', 'err');
+    // Otomatik temizlik dene — notifications ve trash'i küçült
+    try {
+      var _notifs = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
+      if (_notifs.length > 25) localStorage.setItem(KEYS.notifications, JSON.stringify(_notifs.slice(0, 25)));
+      var _trash = JSON.parse(localStorage.getItem(KEYS.trash) || '[]');
+      if (_trash.length > 25) localStorage.setItem(KEYS.trash, JSON.stringify(_trash.slice(0, 25)));
+    } catch (e2) { /* */ }
+    // Retry
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e3) {
+      GlobalErrorHandler('_write:' + key, e3, 'err');
+      if (typeof window.toast === 'function') {
+        window.toast('Depolama %100 dolu — Ayarlar → Sağlık Monitörü\'nü açın', 'err');
+      }
+      try { localStorage.setItem('ak_storage_critical', '1'); } catch (e4) { /* */ }
+      window._showStorageCriticalBanner?.();
+      return false;
     }
-    return false;
   }
 }
 
@@ -2299,6 +2314,29 @@ var _bgCheckTimer = null;
 function _startBgSyncCheck() {
   if (_bgCheckTimer) return;
   _bgCheckTimer = setInterval(function() {
+    // Otomatik localStorage temizlik
+    try {
+      var _lsTotal = 0;
+      for (var _li = 0; _li < localStorage.length; _li++) { var _lk = localStorage.key(_li); _lsTotal += ((_lk.length + (localStorage.getItem(_lk) || '').length) * 2); }
+      var _lsPct = Math.round(_lsTotal / (5 * 1024 * 1024) * 100);
+      if (_lsPct >= 80) {
+        var _n1 = JSON.parse(localStorage.getItem(KEYS.notifications) || '[]');
+        if (_n1.length > 30) { localStorage.setItem(KEYS.notifications, JSON.stringify(_n1.slice(0, 30))); }
+      }
+      if (_lsPct >= 90) {
+        var _tr1 = JSON.parse(localStorage.getItem(KEYS.trash) || '[]');
+        if (_tr1.length > 30) { localStorage.setItem(KEYS.trash, JSON.stringify(_tr1.slice(0, 30))); }
+        var _act1 = JSON.parse(localStorage.getItem(KEYS.activity) || '[]');
+        if (_act1.length > 50) { localStorage.setItem(KEYS.activity, JSON.stringify(_act1.slice(0, 50))); }
+      }
+      if (_lsPct >= 95) {
+        var _tc1 = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}');
+        Object.keys(_tc1).forEach(function(tid) { if (Array.isArray(_tc1[tid]) && _tc1[tid].length > 20) _tc1[tid] = _tc1[tid].slice(-20); });
+        localStorage.setItem(KEYS.taskChats, JSON.stringify(_tc1));
+      }
+      if (_lsPct < 80) { try { localStorage.removeItem('ak_storage_critical'); } catch (e) { /* */ } }
+    } catch (e) { /* */ }
+
     var FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) return;
     var tid = _getTid().replace(/[^a-zA-Z0-9_]/g, '_');

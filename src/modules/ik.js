@@ -833,7 +833,7 @@ function renderPuantajYetkiKart(){
     kart=document.createElement('div');
     kart.id='puantaj-yetki-kart';
     kart.className='card';
-    kart.style.maxWidth='100%';
+    kart.style.maxWidth='560px';
     panel.appendChild(kart);
   }
   const users=loadUsers().filter(u=>u.status==='active');
@@ -846,13 +846,13 @@ function renderPuantajYetkiKart(){
       <div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--blb);color:var(--blt);padding:8px 12px;border-radius:var(--rs)">
         ℹ️ Sorumlu personel atanan kullanıcılar, sadece atanan kişilerin puantajını girebilir. Kendi puantajlarını her zaman girebilirler.
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:8px">
         ${users.filter(u=>u.role!=='admin').map(u=>{
           const sorumluIds=(u.puantajYetki||[]);
           const sorumluNames=sorumluIds.map(id=>{const x=users.find(y=>y.id===id);return x?x.name:null;}).filter(Boolean);
-          return`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--s2);border-radius:var(--rs)">
+          return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--s2);border-radius:var(--rs)">
             <div style="flex:1">
-              <div style="font-weight:500;font-size:13px">${u.name}</div>
+              <div style="font-weight:500;font-size:12px">${u.name}</div>
               <div style="font-size:11px;color:var(--t2)">${u.role} · ${sorumluNames.length?'Sorumlu: '+sorumluNames.join(', '):'Yalnızca kendi puantajı'}</div>
             </div>
             <button class="btn btns" onclick="openPuantajYetkiModal(${u.id})" style="font-size:11px">⚙️ Düzenle</button>
