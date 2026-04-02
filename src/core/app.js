@@ -3451,7 +3451,6 @@ var _TN2_GROUPS = {
     { id:'alis-teklifleri', label:'Alış Teklifleri'  },
     { id:'satis-teklifleri',label:'Satış Teklifleri' },
     { id:'pirim',           label:'Prim'             },
-    { id:'hesap',           label:'Hesap Makinesi'   },
   ]},
   operasyon: { label:'Operasyon', mods: [
     { id:'kargo',       label:'Kargo Takibi'  },
