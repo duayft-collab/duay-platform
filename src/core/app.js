@@ -1403,37 +1403,39 @@ function _renderDashboard() {
   var ozlu = typeof window._getOzluSoz === 'function' ? window._getOzluSoz('dashboard') : '';
   if (ozlu) h += '<div style="text-align:right;font-size:9px;font-style:italic;color:var(--t3);margin-bottom:-2px">\u201C'+ozlu+'\u201D</div>';
 
-  // ── B1: Sağlık Skoru (kompakt)
-  var scoreBg = score >= 71 ? '#F0FDF4' : score >= 31 ? '#FFFBEB' : '#FEF2F2';
-  var scoreBorder = score >= 71 ? '#BBF7D0' : score >= 31 ? '#FDE68A' : '#FECACA';
-  h += '<div style="'+C+';background:'+scoreBg+';border-color:'+scoreBorder+';padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
-    + '<div style="display:flex;align-items:center;gap:8px">'
-    + '<div style="width:32px;height:32px;border-radius:50%;background:'+scoreColor+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800">'+score+'</div>'
-    + '<div><div style="font-size:12px;font-weight:700;color:'+scoreColor+'">'+scoreLabel+'</div><div style="font-size:9px;color:var(--t3)">Sağlık skoru</div></div></div>'
-    + (kritikSayi ? '<div style="font-size:10px;color:'+scoreColor+';cursor:pointer" onclick="document.getElementById(\'db-b2\')?.scrollIntoView({behavior:\'smooth\'})">'+kritikSayi+' kritik →</div>' : '')
-    + '</div>';
+  // ── SAĞLIK SKORU + UYARILAR (Tasarım C)
+  var lsUsed = (function() { var total = 0; Object.keys(localStorage).forEach(function(k) { total += (localStorage.getItem(k) || '').length * 2; }); return Math.round(total / 1024); })();
+  var lsPct = Math.round(lsUsed / 5120 * 100);
+  var offlineQ = 0; try { offlineQ = JSON.parse(localStorage.getItem('ak_offline_queue') || '[]').length; } catch(e) {}
+  var lastSync = localStorage.getItem('ak_db_last_write') || '';
+  var syncAgo = lastSync ? Math.round((Date.now() - new Date(lastSync).getTime()) / 60000) + ' dk' : '—';
 
-  // ── B2: Kritik Uyarılar (kompakt, max 5)
-  var allAlerts = [];
-  gecikOdm.forEach(function(o){ var gun=Math.ceil((new Date(today)-new Date(o.due))/86400000); allAlerts.push({type:'odm',color:'#DC2626',label:'₺'+Number(o.amountTRY||o.amount||0).toLocaleString('tr-TR'),name:o.name||'',extra:gun+'g',id:o.id}); });
-  gecikTask.forEach(function(t){ allAlerts.push({type:'task',color:'#3B82F6',label:'Görev',name:t.title,extra:'',id:t.id}); });
-  ihracatUyari.forEach(function(u){ allAlerts.push({type:'export',color:'#D97706',label:'İhracat',name:u.no+(u.hasIMO?' IMO':''),extra:u.gun+'g',id:0}); });
-  h += '<div id="db-b2" style="'+C+'">';
-  if (!allAlerts.length) {
-    h += '<div style="padding:8px 14px;font-size:10px;color:#16A34A;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#16A34A;display:inline-block;margin-right:4px"></span>Kritik uyarı yok</div>';
-  } else {
-    h += '<div style="padding:6px 14px;font-size:11px;font-weight:700;color:#991B1B"><span style="width:5px;height:5px;border-radius:50%;background:#DC2626;display:inline-block;margin-right:4px"></span>Kritik Uyarılar</div>';
-    allAlerts.slice(0,5).forEach(function(a){
-      h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 14px;border-top:0.5px solid var(--b);font-size:10px;min-height:28px">'
-        + '<span style="width:3px;height:18px;border-radius:1px;background:'+a.color+';flex-shrink:0"></span>'
-        + '<span style="font-weight:700;color:'+a.color+';min-width:60px;font-size:10px">'+a.label+'</span>'
-        + '<span style="flex:1;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(a.name)+'</span>'
-        + (a.extra?'<span style="font-size:9px;color:'+a.color+';white-space:nowrap">'+a.extra+'</span>':'')
-        + '<button onclick="'+(a.type==='odm'?'markOdmPaid('+a.id+')':a.type==='task'?'openPusDetail('+a.id+')':'App.nav(\'kargo\')')+'" style="padding:1px 6px;border:none;border-radius:99px;background:'+a.color+'18;color:'+a.color+';font-size:8px;font-weight:600;cursor:pointer;font-family:inherit">'+(a.type==='odm'?'Öde':'Git')+'</button></div>';
-    });
-    if (allAlerts.length > 5) h += '<div style="padding:3px 14px;font-size:9px;color:var(--t3);border-top:0.5px solid var(--b)">ve '+(allAlerts.length-5)+' daha...</div>';
-  }
-  h += '</div>';
+  var dbAlerts = [];
+  if (lsPct >= 90) { dbAlerts.push({ level: 'err', main: 'localStorage %' + lsPct + ' dolu — veri kayıt edilemiyor', sub: (function() { var tops = Object.keys(localStorage).map(function(k) { return { k: k, kb: Math.round((localStorage.getItem(k) || '').length * 2 / 1024) }; }).sort(function(a, b) { return b.kb - a.kb; }).slice(0, 3); return tops.map(function(t) { return t.k + ': ' + t.kb + 'KB'; }).join(' · '); })(), actions: [{ label: 'Temizle', fn: 'window._emergencyCleanup?.()' }, { label: 'Monitör', fn: 'App.nav(\'settings\')' }] }); }
+  else if (lsPct >= 80) { dbAlerts.push({ level: 'warn', main: 'localStorage %' + lsPct + ' dolu', sub: 'Ayarlar → Sağlık Monitörü\'nden temizleyin', actions: [{ label: 'Temizle', fn: 'window._emergencyCleanup?.()' }] }); }
+  if (offlineQ > 0) { dbAlerts.push({ level: 'warn', main: offlineQ + ' kayıt çevrimdışı kuyrukta', sub: 'İnternet bağlantısı kontrol et', actions: [{ label: 'Sync', fn: 'window._manualSync?.()' }] }); }
+  if (gecikOdm.length) { dbAlerts.push({ level: 'err', main: gecikOdm.length + ' gecikmiş ödeme · ₺' + Math.round(gecikAlacak).toLocaleString('tr-TR'), sub: gecikOdm.slice(0, 2).map(function(o) { return o.name || ''; }).join(', ') + (gecikOdm.length > 2 ? ' ve ' + (gecikOdm.length - 2) + ' daha' : ''), actions: [{ label: 'Nakit Akışı →', fn: 'App.nav(\'odemeler\')' }] }); }
+
+  h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:12px;overflow:hidden">';
+  // Üst: skor + uyarılar
+  h += '<div style="display:grid;grid-template-columns:80px 1fr;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="padding:14px 16px;border-right:0.5px solid var(--b);display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:26px;font-weight:500;color:' + scoreColor + ';line-height:1">' + score + '</div><div style="font-size:9px;color:var(--t3);margin-top:3px">Sağlık skoru</div></div>';
+  h += '<div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px;justify-content:center">';
+  if (!dbAlerts.length) { h += '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#16a34a">Sistem sağlıklı — kritik sorun yok</div>'; }
+  dbAlerts.forEach(function(a) {
+    var bg = a.level === 'err' ? '#FCEBEB' : '#FAEEDA'; var bc = a.level === 'err' ? '#E24B4A' : '#EF9F27'; var tc = a.level === 'err' ? '#791F1F' : '#633806'; var sc = a.level === 'err' ? '#A32D2D' : '#854F0B'; var btnBc = a.level === 'err' ? '#F09595' : '#FAC775';
+    h += '<div style="background:' + bg + ';border-left:3px solid ' + bc + ';padding:6px 10px;border-radius:6px"><div style="font-size:11px;font-weight:500;color:' + tc + '">' + a.main + '</div><div style="font-size:10px;color:' + sc + ';margin-top:2px">' + a.sub + '</div><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">';
+    a.actions.forEach(function(act) { h += '<span onclick="' + act.fn + '" style="font-size:10px;padding:2px 8px;border-radius:4px;cursor:pointer;border:0.5px solid ' + btnBc + ';background:#fff;color:' + tc + '">' + act.label + '</span>'; });
+    h += '</div></div>';
+  });
+  h += '</div></div>';
+  // Alt: 4 parametre
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr)">'
+    + '<div style="padding:8px 12px;border-right:0.5px solid var(--b);text-align:center"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Depolama</div><div style="font-size:14px;font-weight:500;margin-top:2px;color:' + (lsPct >= 90 ? '#DC2626' : lsPct >= 80 ? '#D97706' : '#16a34a') + '">%' + lsPct + '</div></div>'
+    + '<div style="padding:8px 12px;border-right:0.5px solid var(--b);text-align:center"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Firestore</div><div style="font-size:14px;font-weight:500;margin-top:2px;color:#16a34a">Aktif</div></div>'
+    + '<div style="padding:8px 12px;border-right:0.5px solid var(--b);text-align:center"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Offline</div><div style="font-size:14px;font-weight:500;margin-top:2px;color:' + (offlineQ > 0 ? '#D97706' : '#16a34a') + '">' + offlineQ + '</div></div>'
+    + '<div style="padding:8px 12px;text-align:center"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Son sync</div><div style="font-size:14px;font-weight:500;margin-top:2px;color:var(--t)">' + syncAgo + '</div></div>'
+    + '</div></div>';
 
   // ── B3: Finansal (kompakt)
   h += '<div style="'+C+';display:grid;grid-template-columns:repeat(4,1fr);gap:0">';
@@ -2638,6 +2640,12 @@ function updateAllBadges() {
   });
   // CRM lead
   safe(() => { window.renderCrm && window.renderCrm(); });
+  // Çöp kutusu topbar dot
+  safe(() => {
+    const trash = typeof loadTrash === 'function' ? loadTrash() : [];
+    const trashDot = _g('tn2-trash-dot');
+    if (trashDot) trashDot.style.display = trash.length > 0 ? 'block' : 'none';
+  });
 }
 
 function updateDashboardActs() {
@@ -3469,7 +3477,6 @@ var _TN2_GROUPS = {
     { id:'admin',     label:'Kullanıcı Yönetimi' },
     { id:'settings',  label:'Ayarlar'            },
     { id:'activity',  label:'Aktivite Logları'   },
-    { id:'trash',     label:'Çöp Kutusu'         },
   ]},
 };
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';

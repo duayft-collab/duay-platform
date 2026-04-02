@@ -190,6 +190,7 @@ function _doLogin() {
         <div class="tn2-tool" onclick="App.nav('hesap-makinesi')" title="Hesap Makinesi">🧮</div>
         <div class="tn2-tool" onclick="App.nav('links')" title="Linkler">🔗</div>
         <div class="tn2-tool" onclick="App.nav('announce')" title="Duyurular">📢</div>
+        <div class="tn2-tool" onclick="App.nav('trash')" title="Çöp Kutusu" id="tn2-trash-btn" style="position:relative">🗑<div id="tn2-trash-dot" style="display:none;position:absolute;top:1px;right:1px;width:6px;height:6px;border-radius:50%;background:#E24B4A;border:1px solid #042C53"></div></div>
         <div style="width:0.5px;height:14px;background:rgba(255,255,255,.15);margin:0 4px"></div>
       </div>
       <div class="notif-btn" onclick="window.App?.toggleNotifPanel?.()" style="width:30px;height:30px;background:#0C447C;border:0.5px solid #185FA5;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:14px;color:#85B7EB">🔔<div id="tn2-notif-dot" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#E24B4A;border:1.5px solid #042C53"></div></div>
@@ -511,11 +512,7 @@ function _doLogin() {
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><polyline points="1,10 4,6 7,8 10,4 13,7 15,5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span id="nb-act">Aktiviteler</span>
   </button>
-      <button class="nb" onclick="nav('trash',this)" id="nb-trash">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Çöp Kutusu</span>
-    <span class="nbdg" id="nb-trash-b" style="background:var(--t3);display:none">0</span>
-  </button>
+      <!-- Çöp kutusu topbar'a taşındı -->
       <button class="nb" onclick="nav('settings',this)" id="nb-settings">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.54 11.54l1.41 1.41M3.05 12.95l1.42-1.42M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
     <span>Ayarlar</span>
