@@ -19,16 +19,21 @@ var ALARM_KEY = 'ak_alarms1';
 var ALARM_LOG_KEY = 'ak_alarm_log1';
 
 function _loadAlarms() { try { return JSON.parse(localStorage.getItem(ALARM_KEY) || '[]'); } catch (e) { return []; } }
-function _storeAlarms(d) { try { localStorage.setItem(ALARM_KEY, JSON.stringify(d.slice(0, 100))); } catch (e) {} }
+function _storeAlarms(d) { try { localStorage.setItem(ALARM_KEY, JSON.stringify(d.slice(0, 200))); } catch (e) {} }
 function _loadLog() { try { return JSON.parse(localStorage.getItem(ALARM_LOG_KEY) || '[]'); } catch (e) { return []; } }
 function _storeLog(d) { try { localStorage.setItem(ALARM_LOG_KEY, JSON.stringify(d.slice(0, 200))); } catch (e) {} }
 
 var ALARM_TYPES = {
-  vade: { l: 'Vade', c: '#DC2626', bg: 'rgba(220,38,38,.1)' },
-  stok: { l: 'Stok', c: '#D97706', bg: 'rgba(217,119,6,.1)' },
-  kur: { l: 'Kur', c: '#7C3AED', bg: 'rgba(124,58,237,.1)' },
-  odeme: { l: 'Ödeme', c: '#185FA5', bg: 'rgba(24,95,165,.1)' },
-  genel: { l: 'Genel', c: '#16A34A', bg: 'rgba(22,163,74,.1)' },
+  vade:     { l: 'Vade',      c: '#DC2626', bg: 'rgba(220,38,38,.1)' },
+  stok:     { l: 'Stok',      c: '#D97706', bg: 'rgba(217,119,6,.1)' },
+  kur:      { l: 'Kur',       c: '#7C3AED', bg: 'rgba(124,58,237,.1)' },
+  odeme:    { l: 'Ödeme',     c: '#185FA5', bg: 'rgba(24,95,165,.1)' },
+  genel:    { l: 'Genel',     c: '#16A34A', bg: 'rgba(22,163,74,.1)' },
+  vergi:    { l: 'Vergi',     c: '#991B1B', bg: 'rgba(153,27,27,.1)' },
+  ik:       { l: 'İK',        c: '#0E7490', bg: 'rgba(14,116,144,.1)' },
+  strateji: { l: 'Strateji',  c: '#6D28D9', bg: 'rgba(109,40,217,.1)' },
+  finans:   { l: 'Finans',    c: '#B45309', bg: 'rgba(180,83,9,.1)' },
+  sistem:   { l: 'Sistem',    c: '#4B5563', bg: 'rgba(75,85,99,.1)' },
 };
 
 window.renderAlarm = function() {
@@ -37,8 +42,8 @@ window.renderAlarm = function() {
     panel.dataset.injected = '1';
     panel.innerHTML = '<div class="ph"><div><div class="pht">Akıllı Alarmlar</div><div class="phs">Vade, stok, kur ve ödeme alarmları — otomatik kontrol</div></div><div class="ur"><button class="btn btns" onclick="window._alarmRunNow()">Şimdi Kontrol Et</button><button class="btn btnp" onclick="window._alarmOpenModal(null)">+ Alarm Ekle</button></div></div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:0 20px;margin-bottom:20px" id="alr-kpi"></div>'
-      + '<div style="display:flex;gap:0;border-bottom:1px solid var(--b);margin-bottom:16px;padding:0 20px"><div class="odm-tab on" onclick="window._alrTab(\'aktif\',this)">Aktif Alarmlar</div><div class="odm-tab" onclick="window._alrTab(\'log\',this)">Alarm Geçmişi</div></div>'
-      + '<div id="alr-content-aktif" style="padding:0 20px"></div><div id="alr-content-log" style="display:none;padding:0 20px"></div>';
+      + '<div style="display:flex;gap:0;border-bottom:1px solid var(--b);margin-bottom:16px;padding:0 20px"><div class="odm-tab on" onclick="window._alrTab(\'aktif\',this)">Aktif Alarmlar</div><div class="odm-tab" onclick="window._alrTab(\'talimatlar\',this)">Talimatlar</div><div class="odm-tab" onclick="window._alrTab(\'log\',this)">Alarm Geçmişi</div></div>'
+      + '<div id="alr-content-aktif" style="padding:0 20px"></div><div id="alr-content-talimatlar" style="display:none;padding:0 20px"></div><div id="alr-content-log" style="display:none;padding:0 20px"></div>';
   }
   _alarmRenderKpi();
   _alarmRenderList();
@@ -71,9 +76,10 @@ function _alarmRenderList() {
 window._alrTab = function(tab, el) {
   document.querySelectorAll('#panel-alarm .odm-tab').forEach(function(b) { b.classList.remove('on'); });
   if (el) el.classList.add('on');
-  var aktif = _g('alr-content-aktif'); var log = _g('alr-content-log');
+  var aktif = _g('alr-content-aktif'); var log = _g('alr-content-log'); var tlt = _g('alr-content-talimatlar');
   if (aktif) aktif.style.display = tab === 'aktif' ? '' : 'none';
-  if (log) { log.style.display = tab === 'log' ? '' : 'none'; if (tab === 'log') _alarmRenderLog(); }
+  if (tlt)   { tlt.style.display = tab === 'talimatlar' ? '' : 'none'; if (tab === 'talimatlar') _renderTalimatlarSekme(); }
+  if (log)   { log.style.display = tab === 'log' ? '' : 'none'; if (tab === 'log') _alarmRenderLog(); }
 };
 
 function _alarmRenderLog() {
@@ -146,7 +152,153 @@ function _checkAlarms() {
 
 window._alarmRunNow = function() { _checkAlarms(); window.renderAlarm?.(); window.toast?.('Alarm kontrolü tamamlandı', 'ok'); };
 
+// ════════════════════════════════════════════════════════════════
+// TALİMATLAR SEKMESİ — 52 Prosedür Kaydı
+// ════════════════════════════════════════════════════════════════
+
+var _TALIMAT_SEED = [
+  // A — VERGİ & MUHASEBE
+  { sid:'t01', ad:'KDV Beyannamesi',                 tur:'vergi',    tekrar:1440, kosul:'Ayın 26\'sı — e-Beyan', seviye:'kritik', kategori:'vergi' },
+  { sid:'t02', ad:'Muhtasar Beyanname (SGK+stopaj)', tur:'vergi',    tekrar:1440, kosul:'Ayın 26\'sı', seviye:'kritik', kategori:'vergi' },
+  { sid:'t03', ad:'SGK Aylık Prim Ödeme',            tur:'vergi',    tekrar:1440, kosul:'Ay sonu — gecikme cezası var', seviye:'kritik', kategori:'vergi' },
+  { sid:'t04', ad:'Ba-Bs Formu (5000₺+ işlemler)',   tur:'vergi',    tekrar:1440, kosul:'Ay sonu', seviye:'uyari', kategori:'vergi' },
+  { sid:'t05', ad:'Geçici Vergi Beyanı Q1',          tur:'vergi',    tekrar:1440, kosul:'14 Mayıs', seviye:'kritik', kategori:'vergi' },
+  { sid:'t06', ad:'Geçici Vergi Beyanı Q2',          tur:'vergi',    tekrar:1440, kosul:'14 Ağustos', seviye:'kritik', kategori:'vergi' },
+  { sid:'t07', ad:'Geçici Vergi Beyanı Q3',          tur:'vergi',    tekrar:1440, kosul:'14 Kasım', seviye:'kritik', kategori:'vergi' },
+  { sid:'t08', ad:'Gelir Vergisi Beyanı',            tur:'vergi',    tekrar:1440, kosul:'31 Mart — yıllık', seviye:'kritik', kategori:'vergi' },
+  { sid:'t09', ad:'Kurumlar Vergisi Beyanı',         tur:'vergi',    tekrar:1440, kosul:'30 Nisan — CEO+CFO onay', seviye:'kritik', kategori:'vergi' },
+  { sid:'t10', ad:'Kurumlar Vergisi Ödemesi',        tur:'vergi',    tekrar:1440, kosul:'30 Nisan — ilk taksit', seviye:'kritik', kategori:'vergi' },
+  // B — İNSAN KAYNAKLARI
+  { sid:'t11', ad:'Puantaj takibi (giriş-çıkış)',        tur:'ik', tekrar:1440, kosul:'Günlük', seviye:'bilgi', kategori:'ik' },
+  { sid:'t12', ad:'İzin bakiye kontrolü',                 tur:'ik', tekrar:1440, kosul:'Aylık — ay başı', seviye:'uyari', kategori:'ik' },
+  { sid:'t13', ad:'Zimmet & demirbaş takibi',             tur:'ik', tekrar:1440, kosul:'İhtiyaç bazlı', seviye:'bilgi', kategori:'ik' },
+  { sid:'t14', ad:'Q1 Bireysel Performans Görüşmesi',    tur:'ik', tekrar:1440, kosul:'23 Mart — ActionCOACH GAS', seviye:'uyari', kategori:'ik' },
+  { sid:'t15', ad:'Q3 Performans + Bonus Simülasyonu',   tur:'ik', tekrar:1440, kosul:'21 Eylül', seviye:'uyari', kategori:'ik' },
+  { sid:'t16', ad:'Yıllık Performans Değerlendirmesi',   tur:'ik', tekrar:1440, kosul:'14 Aralık — EOS People Analyzer', seviye:'uyari', kategori:'ik' },
+  { sid:'t17', ad:'Yıllık KPI & Scorecard Belirleme',    tur:'ik', tekrar:1440, kosul:'12 Ocak — max 10 KPI/dept', seviye:'uyari', kategori:'ik' },
+  { sid:'t18', ad:'Organizasyon Şeması Güncelleme',      tur:'ik', tekrar:1440, kosul:'19 Ocak — EOS Accountability Chart', seviye:'bilgi', kategori:'ik' },
+  { sid:'t19', ad:'İşe Alım Planlama Q1',                tur:'ik', tekrar:1440, kosul:'19 Ocak', seviye:'bilgi', kategori:'ik' },
+  { sid:'t20', ad:'Onboarding Süreç Gözden Geçirme',     tur:'ik', tekrar:1440, kosul:'20 Nisan — 90 günlük plan', seviye:'bilgi', kategori:'ik' },
+  { sid:'t21', ad:'Çalışan Bağlılık Anketi (eNPS)',      tur:'ik', tekrar:1440, kosul:'8 Haziran', seviye:'bilgi', kategori:'ik' },
+  // C — STRATEJİ & TOPLANTI
+  { sid:'t22', ad:'Q1 Kickoff — 90 Günlük Rocks',        tur:'strateji', tekrar:1440, kosul:'5 Ocak — tüm liderler zorunlu', seviye:'kritik', kategori:'strateji' },
+  { sid:'t23', ad:'Q1 Review',                            tur:'strateji', tekrar:1440, kosul:'Mart sonu', seviye:'uyari', kategori:'strateji' },
+  { sid:'t24', ad:'Q2 Review',                            tur:'strateji', tekrar:1440, kosul:'Haziran sonu', seviye:'uyari', kategori:'strateji' },
+  { sid:'t25', ad:'Q3 Review',                            tur:'strateji', tekrar:1440, kosul:'Eylül sonu', seviye:'uyari', kategori:'strateji' },
+  { sid:'t26', ad:'Q4 Review',                            tur:'strateji', tekrar:1440, kosul:'Aralık sonu', seviye:'uyari', kategori:'strateji' },
+  { sid:'t27', ad:'Aylık Genel Şirket Toplantısı',       tur:'strateji', tekrar:1440, kosul:'Ayın 1. haftası — tüm personel', seviye:'uyari', kategori:'strateji' },
+  { sid:'t28', ad:'Yarı Yıl Strateji Revizyonu',         tur:'strateji', tekrar:1440, kosul:'6 Temmuz — Scaling Up 4 Decisions', seviye:'kritik', kategori:'strateji' },
+  { sid:'t29', ad:'Yıllık Strateji Toplantısı (2 gün)',  tur:'strateji', tekrar:1440, kosul:'7 Aralık — 1yr/3yr/10yr hedefler', seviye:'kritik', kategori:'strateji' },
+  { sid:'t30', ad:'Liderlik Gelişim Günü H1',            tur:'strateji', tekrar:1440, kosul:'27 Şubat — ActionCOACH 5 Ways', seviye:'bilgi', kategori:'strateji' },
+  { sid:'t31', ad:'Liderlik Gelişim Günü H2',            tur:'strateji', tekrar:1440, kosul:'28 Ağustos', seviye:'bilgi', kategori:'strateji' },
+  { sid:'t32', ad:'Şirket Kültür & Değerler Toplantısı', tur:'strateji', tekrar:1440, kosul:'9 Şubat — EOS Core Values', seviye:'bilgi', kategori:'strateji' },
+  // D — FİNANS & NAKİT AKIŞI
+  { sid:'t33', ad:'Nakit Akışı Değerlendirmesi Q1',      tur:'finans', tekrar:1440, kosul:'9 Mart — CFO', seviye:'uyari', kategori:'finans' },
+  { sid:'t34', ad:'Nakit Akışı Değerlendirmesi Q3',      tur:'finans', tekrar:1440, kosul:'7 Eylül — CFO', seviye:'uyari', kategori:'finans' },
+  { sid:'t35', ad:'Yıllık Bütçe Planlaması',             tur:'finans', tekrar:1440, kosul:'9 Kasım — CFO+CEO+Dept Heads', seviye:'kritik', kategori:'finans' },
+  { sid:'t36', ad:'Müşteri Memnuniyeti Analizi Q4',      tur:'finans', tekrar:1440, kosul:'16 Kasım — NPS', seviye:'bilgi', kategori:'finans' },
+  { sid:'t37', ad:'Süreç & SOP Gözden Geçirme Q1',      tur:'strateji', tekrar:1440, kosul:'16 Mart — E-Myth', seviye:'bilgi', kategori:'strateji' },
+  { sid:'t38', ad:'Süreç & SOP Gözden Geçirme Q3',      tur:'strateji', tekrar:1440, kosul:'Eylül', seviye:'bilgi', kategori:'strateji' },
+  // E — OTOMATİK SİSTEM İŞLEMLERİ
+  { sid:'t39', ad:'Gecikmiş görev kontrolü + bildirim',   tur:'sistem', tekrar:5,    kosul:'Her 5dk — pusula_core.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t40', ad:'Tekrarlayan görev oluşturma',          tur:'sistem', tekrar:1440, kosul:'Günlük 1x — pusula.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t41', ad:'TCMB döviz kuru çekme',               tur:'sistem', tekrar:1440, kosul:'Günlük 1x — odemeler.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t42', ad:'Canlı kur güncelleme (USD/EUR/GBP)',   tur:'sistem', tekrar:1,    kosul:'Her 1dk — odemeler.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t43', ad:'ETA konteyner alarm kontrolü',         tur:'sistem', tekrar:30,   kosul:'Her 30dk — loj_features.js', seviye:'uyari', kategori:'sistem' },
+  { sid:'t44', ad:'Alarm sistemi (vade/stok/kur)',        tur:'sistem', tekrar:10,   kosul:'Her 10dk — alarm.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t45', ad:'Ödeme şablonu otomatik oluşturma',    tur:'sistem', tekrar:1440, kosul:'Aylık 1x — odemeler.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t46', ad:'Pirim aylık özet duyurusu',           tur:'sistem', tekrar:1440, kosul:'Aylık 1x — pirim.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t47', ad:'Görev listesi aylık Excel export',    tur:'sistem', tekrar:1440, kosul:'Ay sonu — pusula.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t48', ad:'localStorage temizlik + trim',         tur:'sistem', tekrar:2,    kosul:'Her 2dk — database.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t49', ad:'Firestore senkronizasyon',             tur:'sistem', tekrar:0,    kosul:'Her 5sn — app.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t50', ad:'İnaktif kullanıcı kilitleme (30gün)',  tur:'sistem', tekrar:1440, kosul:'Giriş 1x — admin.js', seviye:'uyari', kategori:'sistem' },
+  // F — HENÜZ UYGULANMAMIŞ
+  { sid:'t51', ad:'Vekalet/sözleşme/lisans vade takibi',  tur:'genel', tekrar:1440, kosul:'Planlı — formlar.js alanları var', seviye:'uyari', kategori:'planlanan' },
+  { sid:'t52', ad:'Stok sayım dönemsel kontrol',          tur:'stok',  tekrar:1440, kosul:'Planlı — alarm var, döngü yok', seviye:'uyari', kategori:'planlanan' },
+];
+
+function _seedTalimatlar() {
+  var d = _loadAlarms();
+  var changed = false;
+  _TALIMAT_SEED.forEach(function(seed) {
+    var exists = d.some(function(a) { return a.sid === seed.sid; });
+    if (!exists) {
+      d.push({
+        id: _genId() + Math.floor(Math.random() * 1000),
+        sid: seed.sid,
+        ad: seed.ad,
+        tur: seed.tur,
+        seviye: seed.seviye,
+        kosul: seed.kosul,
+        tekrar: seed.tekrar,
+        esik: 0,
+        aktif: true,
+        not: '',
+        kategori: seed.kategori,
+        talimat: true,
+        createdAt: _now(),
+        createdBy: 'sistem',
+      });
+      changed = true;
+    }
+  });
+  if (changed) _storeAlarms(d);
+}
+
+function _renderTalimatlarSekme() {
+  var el = _g('alr-content-talimatlar'); if (!el) return;
+  var alarms = _loadAlarms().filter(function(a) { return !a.isDeleted && a.talimat; });
+  var kategoriler = ['vergi','ik','strateji','finans','sistem','planlanan'];
+  var katLabels = { vergi:'Vergi & Muhasebe', ik:'İnsan Kaynakları', strateji:'Strateji & Toplantı', finans:'Finans & Nakit Akışı', sistem:'Otomatik Sistem İşlemleri', planlanan:'Henüz Uygulanmamış' };
+  var katColors = { vergi:'#991B1B', ik:'#0E7490', strateji:'#6D28D9', finans:'#B45309', sistem:'#4B5563', planlanan:'#D97706' };
+
+  var h = '<div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">';
+  h += '<div style="font-size:13px;font-weight:600;color:var(--t)">' + alarms.length + ' Talimat Kayıtlı</div>';
+  h += '<div style="display:flex;gap:6px">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._talimatlarExport()" style="font-size:10px">CSV Export</button>';
+  h += '</div></div>';
+
+  kategoriler.forEach(function(kat) {
+    var items = alarms.filter(function(a) { return a.kategori === kat; });
+    if (!items.length) return;
+    var c = katColors[kat] || '#4B5563';
+    h += '<div style="margin-bottom:16px">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+    h += '<span style="width:8px;height:8px;border-radius:50%;background:' + c + '"></span>';
+    h += '<span style="font-size:12px;font-weight:600;color:' + c + '">' + (katLabels[kat] || kat) + ' (' + items.length + ')</span>';
+    h += '</div>';
+    h += '<table class="tbl" style="font-size:11px"><thead><tr><th style="width:28px"></th><th>Talimat</th><th>Koşul / Zamanlama</th><th>Seviye</th><th>Durum</th></tr></thead><tbody>';
+    items.forEach(function(a) {
+      var t = ALARM_TYPES[a.tur] || ALARM_TYPES.genel;
+      var sevC = a.seviye === 'kritik' ? '#DC2626' : a.seviye === 'uyari' ? '#D97706' : '#16A34A';
+      h += '<tr><td><span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + t.bg + ';color:' + t.c + '">' + t.l + '</span></td>';
+      h += '<td style="font-weight:500">' + _esc(a.ad) + '</td>';
+      h += '<td style="color:var(--t2)">' + _esc(a.kosul || '—') + '</td>';
+      h += '<td><span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + sevC + '18;color:' + sevC + ';font-weight:600">' + (a.seviye || 'bilgi') + '</span></td>';
+      h += '<td><label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" ' + (a.aktif ? 'checked' : '') + ' onchange="window._alarmToggle(' + a.id + ',this.checked)">' + (a.aktif ? 'Aktif' : 'Pasif') + '</label></td></tr>';
+    });
+    h += '</tbody></table></div>';
+  });
+  el.innerHTML = h;
+}
+
+window._talimatlarExport = function() {
+  var alarms = _loadAlarms().filter(function(a) { return !a.isDeleted && a.talimat; });
+  if (!alarms.length) { window.toast?.('Kayıt yok', 'warn'); return; }
+  var baslik = ['#','Talimat','Tür','Kategori','Koşul','Seviye','Aktif'];
+  var satirlar = alarms.map(function(a, i) { return [i + 1, a.ad, a.tur, a.kategori, a.kosul, a.seviye, a.aktif ? 'Evet' : 'Hayır']; });
+  var csv = [baslik].concat(satirlar).map(function(r) { return r.map(function(c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var a2 = document.createElement('a');
+  a2.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a2.download = 'talimatlar_' + _today() + '.csv';
+  a2.click();
+  window.toast?.('Talimatlar export tamamlandı', 'ok');
+};
+
 setInterval(_checkAlarms, 10 * 60 * 1000);
 setTimeout(_checkAlarms, 5000);
+
+// Talimat seed — sayfa yüklendiğinde eksik kayıtları ekle
+setTimeout(_seedTalimatlar, 2000);
 
 })();
