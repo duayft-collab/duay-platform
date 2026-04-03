@@ -834,6 +834,14 @@ function _ihrDetayRenderUrunler(d, el) {
   var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'İspanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], gcb_kapandi: ['', 'Kapandı', 'Açık'], vgm_kaynak: ['', 'Liman', 'Forwarder', 'İnternet'], konteyner_para: ['', 'USD', 'EUR', 'TRY'], once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'] };
   var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'gcb_kapama_tarihi', 'mensei_tarih', 'vgm_tarih', 'police_tarihi'];
   var sortedUrunler = urunler.slice().sort(function(a, b) { return (parseInt(a.konteyner_sira) || 99) - (parseInt(b.konteyner_sira) || 99); });
+
+  /* Ürün sayfalama (STANDART-FIX-007) */
+  if (!window._ihrUrunSayfa) window._ihrUrunSayfa = 1;
+  var _IHR_URUN_SAYFA_BOY = 50;
+  var _ihrUrunToplamSayfa = Math.max(1, Math.ceil(sortedUrunler.length / _IHR_URUN_SAYFA_BOY));
+  if (window._ihrUrunSayfa > _ihrUrunToplamSayfa) window._ihrUrunSayfa = _ihrUrunToplamSayfa;
+  var _ihrUrunBas = (window._ihrUrunSayfa - 1) * _IHR_URUN_SAYFA_BOY;
+  var sayfaUrunler = sortedUrunler.slice(_ihrUrunBas, _ihrUrunBas + _IHR_URUN_SAYFA_BOY);
   var tdS = 'padding:5px 8px;border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
   var thS = 'padding:4px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;vertical-align:top;text-align:left';
 
@@ -868,7 +876,7 @@ function _ihrDetayRenderUrunler(d, el) {
   h += '</tr></thead>';
   /* TBODY */
   h += '<tbody id="ihr-urun-tbody">';
-  sortedUrunler.forEach(function(u) {
+  sayfaUrunler.forEach(function(u) {
     var kdvOrani = parseFloat(u.kdv_orani || 0);
     var birimFiyat = parseFloat(u.birim_fiyat || 0);
     var miktar = parseFloat(u.miktar || 0);
@@ -907,6 +915,16 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '</tr>';
   });
   h += '</tbody></table></div>';
+
+  /* Ürün sayfalama footer */
+  if (sortedUrunler.length > _IHR_URUN_SAYFA_BOY) {
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:10px;color:var(--t3);border-top:0.5px solid var(--b)">';
+    h += '<span>' + (_ihrUrunBas + 1) + '–' + Math.min(_ihrUrunBas + _IHR_URUN_SAYFA_BOY, sortedUrunler.length) + ' / ' + sortedUrunler.length + ' ürün</span>';
+    h += '<div style="display:flex;gap:4px">';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunSayfa=Math.max(1,window._ihrUrunSayfa-1);window.renderIhracatOps()" style="font-size:10px;padding:2px 8px"' + (window._ihrUrunSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunSayfa=Math.min(' + _ihrUrunToplamSayfa + ',window._ihrUrunSayfa+1);window.renderIhracatOps()" style="font-size:10px;padding:2px 8px"' + (window._ihrUrunSayfa >= _ihrUrunToplamSayfa ? ' disabled' : '') + '>\u2192</button>';
+    h += '</div></div>';
+  }
 
   /* Alt satır */
   h += '<div style="display:flex;gap:16px;justify-content:flex-end;padding:8px 4px;font-size:12px;border-top:0.5px solid var(--b);margin-top:6px">';
