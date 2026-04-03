@@ -682,8 +682,8 @@ function _syncFirestore(path, data, mode = 'set') {
     const collection = path.split('/').pop();
     const syncedAt = new Date().toISOString();
     const payload = { data, syncedAt };
-    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle (5s pencere — get+merge+set async chain)
-    _writingNow[collection] = Date.now() + 5000;
+    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle (2s pencere)
+    _writingNow[collection] = Date.now() + 2000;
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     // Verbose log yalnızca debug modda
@@ -1761,7 +1761,13 @@ function _listenCollection(collection, localKey, onUpdate) {
       var merged = _mergeDataSets(localKey, fsData, collection);
       _stripBase64BeforeWrite(localKey, merged);
       try {
-        localStorage.setItem(localKey, JSON.stringify(merged));
+        var _lzInit = typeof LZString !== 'undefined' ? LZString : null;
+        var _jsonInit = JSON.stringify(merged);
+        if (_lzInit && localKey.startsWith('ak_') && _jsonInit.length > 500) {
+          localStorage.setItem(localKey, '_LZ_' + _lzInit.compressToUTF16(_jsonInit));
+        } else {
+          localStorage.setItem(localKey, _jsonInit);
+        }
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz
@@ -1787,9 +1793,9 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
       delete _writingNow[collection];
 
-      // Throttle: saniyede max 1 işlem (sync döngü engelleyici)
+      // Throttle: 300ms'de max 1 işlem (hızlı sync)
       var now = Date.now();
-      if (_lastSnapshotProcess[collection] && (now - _lastSnapshotProcess[collection]) < 1000) {
+      if (_lastSnapshotProcess[collection] && (now - _lastSnapshotProcess[collection]) < 300) {
         return;
       }
       _lastSnapshotProcess[collection] = now;
@@ -1826,7 +1832,13 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
       _stripBase64BeforeWrite(localKey, merged);
       try {
-        localStorage.setItem(localKey, JSON.stringify(merged));
+        var _lzRT = typeof LZString !== 'undefined' ? LZString : null;
+        var _jsonRT = JSON.stringify(merged);
+        if (_lzRT && localKey.startsWith('ak_') && _jsonRT.length > 500) {
+          localStorage.setItem(localKey, '_LZ_' + _lzRT.compressToUTF16(_jsonRT));
+        } else {
+          localStorage.setItem(localKey, _jsonRT);
+        }
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
       // Merge sonucu Firestore'dan farklıysa geri yaz (trash/notifications/activity hariç)
@@ -1843,7 +1855,7 @@ function _listenCollection(collection, localKey, onUpdate) {
         _listeners[collection + '_timer'] = setTimeout(() => {
           try { onUpdate(merged); }
           catch (e) { GlobalErrorHandler('realtime:render', e, 'warn'); }
-        }, 300);
+        }, 100);
       }
     }, err => {
       if (err.code === 'permission-denied') {
