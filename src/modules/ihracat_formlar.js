@@ -8,7 +8,7 @@
 'use strict';
 
 var D;
-function _ensureD() { D = window.docx || window.Docx || window.DOCX; return !!D; }
+function _ensureD() { D = window.docx || window.Docx || window.DOCX || window.Document; return !!D; }
 
 var NONE  = { style: 'none',   size: 0, color: 'FFFFFF' };
 var THIN  = { style: 'single', size: 1, color: '000000' };
