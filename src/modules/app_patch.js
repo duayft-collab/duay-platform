@@ -79,6 +79,7 @@ window._yetkiKontrol = function(islem) {
     'dashboard': () => { window.Dashboard?.render?.(); },
     'ihracat-ops': () => { window.renderIhracatOps?.(); },
     'ihracat-formlar': () => { window.renderIhracatFormlar?.(); },
+    'talimatlar': () => { window.renderTalimatlar?.(); },
     'dashboardDetay': () => { window.DashboardDetay?.render?.(); },
   };
 
@@ -4344,3 +4345,11 @@ window._saveUrunInline = function() {
   window.toast?.(eid ? 'G\u00fcncellendi \u2713 \u2014 KPI: %' + entry.kpiSkoru : '\u00dcr\u00fcn eklendi: ' + entry.duayKodu + ' \u2014 KPI: %' + entry.kpiSkoru, 'ok');
   window.renderUrunler?.();
 };
+
+// ── Sistem menusune Talimatlar ekle (app.js dokunulmazligi) ──
+(function() {
+  if (typeof _TN2_GROUPS !== 'undefined' && _TN2_GROUPS.sistem && Array.isArray(_TN2_GROUPS.sistem.mods)) {
+    var exists = _TN2_GROUPS.sistem.mods.some(function(m) { return m.id === 'talimatlar'; });
+    if (!exists) _TN2_GROUPS.sistem.mods.push({ id: 'talimatlar', label: 'Talimatlar' });
+  }
+})();
