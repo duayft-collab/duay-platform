@@ -1307,7 +1307,7 @@ const DEFAULT_KPI = [
   { id: 1, title: 'Aylık Satış Hedefi', current: 380000, target: 500000, unit: '₺', period: 'Mart 2026' },
   { id: 2, title: 'Müşteri Memnuniyeti', current: 87,   target: 95,     unit: '%', period: 'Mart 2026' },
 ];
-/** @returns {Array<Object>} */ function loadKpi()         { const d = _read(KEYS.kpi);    return Array.isArray(d) ? d : DEFAULT_KPI; }
+/** @returns {Array<Object>} */ function loadKpi()         { const d = _read(KEYS.kpi); const arr = Array.isArray(d) ? d : DEFAULT_KPI; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }); }
 /** @param {Array<Object>} d */ function storeKpi(d)       { _write(KEYS.kpi, d); 
   const _fp_kpi = _fsPath('kpi'); if (_fp_kpi) _syncFirestore(_fp_kpi, d);
 }

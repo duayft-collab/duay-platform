@@ -64,7 +64,9 @@ function _kpiAutoCalc(sid) {
 
 /** Mevcut dönem için otomatik KPI'ları ekle (yoksa) */
 function _kpiEnsureAutoSeeds() {
-  const d = loadKpi ? loadKpi() : [];
+  // Raw LS'den oku — filtrelenmemiş veri ile çalış (silinmiş kayıtları korumak için)
+  var raw = []; try { raw = JSON.parse(localStorage.getItem('ak_kpi1') || '[]'); } catch(e) {}
+  const d = Array.isArray(raw) ? raw : [];
   const curP = _kpiCurrentPeriod();
   let changed = false;
   _KPI_SEED.forEach(function(seed) {
@@ -241,8 +243,9 @@ function _injectKpiPanel() {
 function renderKpiPanel() {
   _injectKpiPanel();
   _kpiEnsureAutoSeeds();
-  // Auto KPI'ların current değerlerini güncelle
-  const _autoD = loadKpi ? loadKpi() : [];
+  // Auto KPI'ların current değerlerini güncelle (raw LS — silinmişleri koru)
+  var _autoRaw = []; try { _autoRaw = JSON.parse(localStorage.getItem('ak_kpi1') || '[]'); } catch(e) {}
+  const _autoD = Array.isArray(_autoRaw) ? _autoRaw : [];
   let _autoChanged = false;
   _autoD.forEach(function(k) {
     if (k.auto && k.sid && k.period === _kpiCurrentPeriod()) {
