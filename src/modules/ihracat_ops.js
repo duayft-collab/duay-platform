@@ -599,58 +599,70 @@ function _ihrDetayRenderOzet(d) {
   EVRAK_LISTESI.forEach(function(ev) {
     var kayit = null;
     evraklar.forEach(function(e) { if (e.tur === ev.tur) kayit = e; });
-    var durum = kayit ? (EVRAK_DURUM[kayit.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
+    var durum = kayit ? (EVRAK_DURUM[kayit.durum] || EVRAK_DURUM.taslak) : { l: 'Henuz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
     var isDuay = ev.kim === 'duay';
     var rowBg = kayit && kayit.durum !== 'taslak' ? 'var(--s2)' : 'var(--sf)';
     var zaman = kayit ? (kayit.gonderim_tarihi || kayit.updatedAt || kayit.createdAt || '') : '';
     var zamanTxt = zaman ? zaman.slice(0, 16).replace('T', ' ') : '';
+    var dosyalar = (kayit && kayit.dosyalar) ? kayit.dosyalar : [];
+    var yukleyenAd = kayit && kayit.yukleyen_ad ? kayit.yukleyen_ad : '';
+    var revNo = dosyalar.length;
 
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;border:0.5px solid var(--b);background:' + rowBg + ';margin-bottom:5px">';
+    h += '<div style="padding:8px 12px;border-radius:8px;border:0.5px solid var(--b);background:' + rowBg + ';margin-bottom:5px">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between">';
 
-    /* Sol: evrak adı + akış + zaman */
+    /* Sol: evrak adi + akis + zaman + yukleyen */
     h += '<div style="flex:1;min-width:0">';
     h += '<span style="font-size:12px;font-weight:' + (kayit ? '500' : '400') + ';color:var(--t)">' + _esc(ev.l) + '</span>';
+    if (revNo > 0) h += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">Rev.' + revNo + '</span>';
     h += '<div style="font-size:10px;color:var(--t3)">' + _esc(ev.uretici) + ' \u2192 ' + _esc(ev.alici);
-    if (zamanTxt) h += ' <span style="color:var(--t3);margin-left:6px">' + _esc(zamanTxt) + '</span>';
+    if (zamanTxt) h += ' · ' + _esc(zamanTxt);
+    if (yukleyenAd) h += ' · ' + _esc(yukleyenAd);
     h += '</div></div>';
 
-    /* Sağ: durum + butonlar */
-    h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
+    /* Sag: durum + butonlar */
+    h += '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap">';
     h += _badge(durum.l, durum.c, durum.bg);
 
-    /* DOC-FORMAT-001: DOCX + Excel + PDF butonları */
+    /* DOCX + Excel + PDF — CI ve PL icin */
     if (ev.tur === 'CI' || ev.tur === 'PL') {
       var _docxTip = ev.tur === 'CI' ? 'ci' : 'pl';
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'' + _docxTip + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">DOCX</button>';
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrExcelIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#1D6A2A">Excel</button>';
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#C62828">PDF</button>';
     }
-    /* Görüntüle — her zaman */
-    h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
-    /* İndir — URL varsa */
+    h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Goruntule</button>';
+    /* Dosya yukle — her zaman gorunur */
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
     if (kayit && kayit.dosya_url) {
-      h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">İndir</a>';
-    }
-    /* Düzenle — kayıt varsa */
-    if (kayit) {
-      h += '<button class="btn btns" onclick="window._ihrEvrakDuzenle(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px">Düzenle</button>';
+      h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">Indir</a>';
     }
     if (isDuay) {
-      if (!kayit) {
-        h += '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Oluştur</button>';
-      } else if (kayit.durum === 'taslak') {
-        h += '<button class="btn btns" onclick="window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px;color:#16A34A">Onayla</button>';
-      } else if (kayit.durum === 'onaylandi') {
-        h += '<button class="btn btns" onclick="window._ihrEvrakGonderModal(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Gönder</button>';
-      } else if (kayit.durum === 'gonderildi') {
-        h += '<span style="font-size:10px;color:#16A34A;padding:2px 4px">✓</span>';
-      }
-    } else {
-      if (!kayit) {
-        h += '<button class="btn btns" onclick="window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Yükle</button>';
-      }
+      if (!kayit) { h += '<button class="btn btns" onclick="window._ihrEvrakOlustur(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Olustur</button>'; }
+      else if (kayit.durum === 'taslak') { h += '<button class="btn btns" onclick="window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px;color:#16A34A">Onayla</button>'; }
+      else if (kayit.durum === 'onaylandi') { h += '<button class="btn btns" onclick="window._ihrEvrakGonderModal(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Gonder</button>'; }
+      else if (kayit.durum === 'gonderildi') { h += '<span style="font-size:10px;color:#16A34A;padding:2px 4px">\u2713</span>'; }
     }
     h += '</div></div>';
+
+    /* Coklu dosya listesi (varsa) */
+    if (dosyalar.length > 0) {
+      h += '<div style="padding:4px 12px 6px">';
+      dosyalar.forEach(function(df, di) {
+        h += '<div style="display:flex;align-items:center;gap:6px;font-size:10px;padding:2px 0;border-top:' + (di > 0 ? '0.5px solid var(--b)' : 'none') + '">';
+        h += '<span style="color:var(--t3)">📎</span>';
+        h += '<span style="flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(df.ad || 'Dosya ' + (di + 1)) + '</span>';
+        if (df.boyut) h += '<span style="color:var(--t3)">' + Math.round(df.boyut / 1024) + 'KB</span>';
+        if (df.yukleyen_ad) h += '<span style="color:var(--t3)">' + _esc(df.yukleyen_ad) + '</span>';
+        if (df.yukleme_tarihi) h += '<span style="color:var(--t3)">' + _esc(df.yukleme_tarihi.slice(0, 16)) + '</span>';
+        if (df.revizyon) h += '<span style="padding:1px 4px;border-radius:3px;background:var(--s2);color:var(--t3)">R' + df.revizyon + '</span>';
+        if (df.url_veya_b64) h += '<a href="' + _esc(df.url_veya_b64) + '" target="_blank" style="color:#185FA5;text-decoration:none">Ac</a>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    h += '</div>';
   });
 
   h += '</div>'; /* evrak listesi */
@@ -2136,18 +2148,24 @@ window._ihrEvrakEkle = function(dosyaId) { window._ihrEvrakDosyaYukle(dosyaId ||
 /* ── EVRAK DOSYA YÜKLE (Dış evraklar) ───────────────────── */
 window._ihrEvrakDosyaYukle = function(dosyaId, tur) {
   var old = _g('mo-evrak-yukle'); if (old) old.remove();
+  var cu = _cu();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-evrak-yukle';
-  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600">' + _esc(tur) + ' Yükle</div><button onclick="document.getElementById(\'mo-evrak-yukle\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
+  mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600">' + _esc(tur) + ' Yukle</div><button onclick="document.getElementById(\'mo-evrak-yukle\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
     + '<div style="padding:18px 20px">'
     + '<input type="hidden" id="ey-dosya" value="' + dosyaId + '">'
     + '<input type="hidden" id="ey-tur" value="' + tur + '">'
-    + '<div class="fg"><div class="fl">Dosya URL (Firebase Storage veya harici link)</div><input class="fi" id="ey-url" placeholder="https://..." style="width:100%"></div>'
-    + '<div class="fg" style="margin-top:8px"><div class="fl">Not</div><textarea class="fi" id="ey-not" rows="2" style="resize:vertical" placeholder="Evrak hakkında not..."></textarea></div>'
-    + '<div style="margin-top:10px;font-size:11px;color:var(--t2)">Dosyayı önce Firebase Storage\'a yükleyin, URL\'yi buraya yapıştırın.</div>'
+    + '<div class="fg"><div class="fl">Dosya Sec (PDF, JPG, PNG, XLSX)</div>'
+    + '<input type="file" id="ey-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" multiple style="font-size:11px;padding:8px;border:1px dashed var(--b);border-radius:8px;width:100%;cursor:pointer" onclick="event.stopPropagation()">'
+    + '<div id="ey-file-list" style="margin-top:6px;font-size:10px;color:var(--t3)"></div></div>'
+    + '<div class="fg" style="margin-top:8px"><div class="fl">veya Harici URL</div><input class="fi" id="ey-url" placeholder="https://..." style="width:100%" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'
+    + '<div class="fg"><div class="fl">Kaynak</div><select class="fi" id="ey-kaynak" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="duay">Duay</option><option value="gumrukcu">Gumrukcu</option><option value="forwarder">Forwarder</option><option value="musteri">Musteri</option></select></div>'
+    + '<div class="fg"><div class="fl">Hedef</div><select class="fi" id="ey-hedef" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="gumrukcu">Gumrukcu</option><option value="musteri">Musteri</option><option value="forwarder">Forwarder</option><option value="arsiv">Arsiv</option></select></div></div>'
+    + '<div class="fg" style="margin-top:8px"><div class="fl">Not</div><textarea class="fi" id="ey-not" rows="2" style="resize:vertical" placeholder="Evrak hakkinda not..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></textarea></div>'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
-    + '<button class="btn btns" onclick="document.getElementById(\'mo-evrak-yukle\')?.remove()">İptal</button>'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-evrak-yukle\')?.remove()">Iptal</button>'
     + '<button class="btn btnp" onclick="window._evrakYukleKaydet()">Kaydet</button>'
     + '</div></div>';
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
@@ -2157,22 +2175,61 @@ window._evrakYukleKaydet = function() {
   var dosyaId = (_g('ey-dosya') || {}).value;
   var tur = (_g('ey-tur') || {}).value;
   var url = ((_g('ey-url') || {}).value || '').trim();
-  var not = ((_g('ey-not') || {}).value || '').trim();
-  if (!url) { window.toast?.('URL zorunludur', 'err'); return; }
+  var not2 = ((_g('ey-not') || {}).value || '').trim();
+  var kaynak = (_g('ey-kaynak') || {}).value || 'duay';
+  var hedef = (_g('ey-hedef') || {}).value || 'gumrukcu';
+  var fileInput = _g('ey-file');
+  var cu = _cu();
 
   var evraklar = _loadE();
   var existing = null; evraklar.forEach(function(e) { if (String(e.dosya_id) === String(dosyaId) && e.tur === tur) existing = e; });
-  if (existing) {
-    existing.dosya_url = url; existing.durum = 'gonderildi'; existing.not = not;
-    existing.gonderim_tarihi = _now(); existing.updatedAt = _now();
+
+  var yeniDosyalar = [];
+  var revBase = existing && existing.dosyalar ? existing.dosyalar.length : 0;
+
+  var kaydetFn = function() {
+    if (existing) {
+      if (url) existing.dosya_url = url;
+      existing.durum = 'gonderildi';
+      existing.not = not2;
+      existing.yukleyen_ad = cu?.name || '';
+      existing.yukleyen_id = cu?.id;
+      existing.gonderim_tarihi = _now();
+      existing.updatedAt = _now();
+      if (!existing.dosyalar) existing.dosyalar = [];
+      yeniDosyalar.forEach(function(df) { existing.dosyalar.push(df); });
+      if (url && !yeniDosyalar.length) existing.dosyalar.push({ id: _genId(), ad: tur + '_link', url_veya_b64: url, kaynak: kaynak, hedef: hedef, revizyon: revBase + 1, yukleyen_id: cu?.id, yukleyen_ad: cu?.name || '', yukleme_tarihi: _now() });
+    } else {
+      var dosyalarArr = yeniDosyalar.slice();
+      if (url && !dosyalarArr.length) dosyalarArr.push({ id: _genId(), ad: tur + '_link', url_veya_b64: url, kaynak: kaynak, hedef: hedef, revizyon: 1, yukleyen_id: cu?.id, yukleyen_ad: cu?.name || '', yukleme_tarihi: _now() });
+      evraklar.unshift({ id: _genId(), dosya_id: dosyaId, tur: tur, durum: 'gonderildi', dosya_url: url || '', dosyalar: dosyalarArr, not: not2, kaynak: kaynak, hedef: hedef, yukleyen_ad: cu?.name || '', yukleyen_id: cu?.id, gonderim_tarihi: _now(), createdAt: _now(), createdBy: cu?.id, updatedAt: _now() });
+    }
+    _storeE(evraklar);
+    _g('mo-evrak-yukle')?.remove();
+    window.toast?.(tur + ' yuklendi (' + (yeniDosyalar.length || 1) + ' dosya)', 'ok');
+    window.logActivity?.('ihracat', tur + ' yuklendi — ' + (yeniDosyalar.length || 1) + ' dosya');
+    if (_aktifDosyaId) { var _dd2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd2) _ihrDetayRenderOzet(_dd2); }
+  };
+
+  // Dosya secildiyse oku
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    var filesArr = Array.from(fileInput.files);
+    var loaded = 0;
+    filesArr.forEach(function(f, fi) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        // Base64 saklamak yerine sadece meta kaydet (LS tasarrufu)
+        yeniDosyalar.push({ id: _genId(), ad: f.name, boyut: f.size, tip: f.type, url_veya_b64: '', kaynak: kaynak, hedef: hedef, revizyon: revBase + fi + 1, yukleyen_id: cu?.id, yukleyen_ad: cu?.name || '', yukleme_tarihi: _now() });
+        loaded++;
+        if (loaded === filesArr.length) kaydetFn();
+      };
+      reader.readAsArrayBuffer(f); // Sadece boyut almak icin
+    });
+  } else if (url) {
+    kaydetFn();
   } else {
-    evraklar.unshift({ id: _genId(), dosya_id: dosyaId, tur: tur, durum: 'gonderildi', dosya_url: url, not: not, gonderim_tarihi: _now(), createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() });
+    window.toast?.('Dosya sec veya URL gir', 'err');
   }
-  _storeE(evraklar);
-  _g('mo-evrak-yukle')?.remove();
-  window.toast?.(tur + ' yüklendi', 'ok');
-  window.logActivity?.('ihracat', tur + ' yüklendi: ' + url);
-  window.renderIhracatOps?.();
 };
 
 // ── GÜMRÜKÇÜ / FORWARDER ATAMA ──────────────────────────
