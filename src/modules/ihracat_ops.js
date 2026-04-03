@@ -645,6 +645,7 @@ window._ihrEmirTopluSil = function() {
 };
 window._ihrDurumFilter = function(v) { _durumFilter = v; _ihrRenderContent(); };
 window._ihrAcDosya = _ihrAcDosya;
+window._ihrRenderDosyaDetay = _ihrRenderDosyaDetay;
 window._ihrRunChecks = function() {
   var today = _today(); var uyari = 0;
   _loadGM().forEach(function(g) { if (!g.vekalet_bitis) return; var gun = Math.ceil((new Date(g.vekalet_bitis) - new Date()) / 86400000); if (gun <= 30) { uyari++; window.addNotif?.('⚠️', g.firma_adi + ': Vekalet ' + gun + ' günde bitiyor', 'warn', 'ihracat'); } });
@@ -713,7 +714,7 @@ function _ihrDetayRenderUrunler(d, el) {
 
   /* SATIR 2: Araçlar */
   h += '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:0.5px solid var(--b);overflow-x:auto;min-height:36px">';
-  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ara..." oninput="event.stopPropagation();window._ihrUrunAramaQ=this.value;window.renderIhracatOps()" value="' + _esc(_aramaQ) + '" style="width:160px;font-size:11px;flex-shrink:0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onkeyup="event.stopPropagation()">';
+  h += '<input class="fi" id="ihr-urun-ara" placeholder="Ara..." oninput="event.stopPropagation();window._ihrUrunAramaQ=this.value;window._ihrUrunSayfa=1;window._ihrRenderDosyaDetay?.(\'' + _esc(d.id) + '\')" value="' + _esc(_aramaQ) + '" style="width:160px;font-size:11px;flex-shrink:0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onkeyup="event.stopPropagation()">';
   h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'tedarikciAd\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:120px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Tedarikçi</option>';
   uniq('tedarikciAd').sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.tedarikciAd === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
@@ -1151,12 +1152,14 @@ window._nakMailGonder = function(durakSayisi) {
 window._ihrFiltrele = function(kolon, deger) {
   if (!window._ihrUrunFiltreler) window._ihrUrunFiltreler = {};
   window._ihrUrunFiltreler[kolon] = deger;
-  window.renderIhracatOps?.();
+  window._ihrUrunSayfa = 1;
+  _ihrRenderContent();
 };
 window._ihrFiltreTemizle = function() {
   window._ihrUrunFiltreler = {};
   window._ihrUrunAramaQ = '';
-  window.renderIhracatOps?.();
+  window._ihrUrunSayfa = 1;
+  _ihrRenderContent();
 };
 
 /* ── INLINE EDIT ─────────────────────────────────────────── */
