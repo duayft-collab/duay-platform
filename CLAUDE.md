@@ -167,3 +167,19 @@ Her teslimde kontrol: Yalnizca talep edilen degisiklik / Hardcode secret yok / T
 ### Commit Format
 `fix: MODUL-FIX-NNN — açıklama`
 `feat: MODUL-FEAT-NNN — açıklama`
+
+## İşlem Süresi Standardı (ZORUNLU)
+
+Her kod değişikliği işleminde ekrana şu bilgiyi göster:
+
+```
+⏱ İşlem: [N]/13 — [İşlem Adı]
+⏳ Bu işlem: ~X dakika
+⏰ Kalan tahmini: ~Y dakika (Z işlem kaldı)
+```
+
+Kurallar:
+- Her commit öncesi bu bilgiyi terminale yaz
+- Süre tahmini dosya satır sayısına göre: <100 satır=1dk, 100-500=3dk, 500+=5dk
+- Her işlem başında ve bitişinde göster
+- Format değiştirme — bu şablon sabit
