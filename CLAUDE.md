@@ -208,3 +208,13 @@ Admin menüsüne "Sistem Kalitesi" alt sayfası eklenecek.
 ### İlk durum (2026-04-03):
 - Mimari=Orta, Test=Zayıf(%0), Güvenlik=Orta, UX=Orta, DevOps=Orta
 - Öncelik: Düşük — 13 talimat bittikten sonra
+
+## KUYRUK-002: KPI Açılmıyor (Bug)
+- Semptom: KPI sayfası Safari'de render olmuyor
+- Kontrol: renderKpiPanel() çağrılınca hata var mı?
+- Öncelik: Yüksek — 13 talimat bittikten sonra ilk fix
+
+## KUYRUK-003: Pirim UI Güncellenmemiş (Bug)
+- Semptom: PİRİM-V2 commitleri var ama Safari'de eski görünüm
+- Kontrol: hard refresh sonrası renderPirim() çıktısı
+- Öncelik: Yüksek — 13 talimat bittikten sonra ikinci fix
