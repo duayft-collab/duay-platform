@@ -8108,6 +8108,16 @@ window.deleteCari              = deleteCari;
 window.renderCari              = renderCari;
 window.checkRecurringTemplates = checkRecurringTemplates;
 
+// Cari arama + sayfalama (BUG-FIX-003)
+window._cariAra = function(q) {
+  window._cariSayfa = 1;
+  renderCari();
+};
+window._cariSetSayfa = function(p) {
+  window._cariSayfa = p;
+  renderCari();
+};
+
 // Export listesine ekle
 if (typeof Odemeler !== 'undefined') {
   Odemeler.openBudgetManager    = openBudgetManager;
