@@ -6597,7 +6597,15 @@ function renderCari() {
       if (stageF === 'rejected' && c.status !== 'rejected') return false;
       if (stageF !== 'rejected' && (c.cariType || 'potansiyel') !== stageF) return false;
     }
-    if (search && !(c.name || '').toLowerCase().includes(search)) return false;
+    if (search && !(
+      (c.name || '').toLowerCase().includes(search) ||
+      (c.email || '').toLowerCase().includes(search) ||
+      (c.phone || '').toLowerCase().includes(search) ||
+      (c.vkn || '').toLowerCase().includes(search) ||
+      (c.city || '').toLowerCase().includes(search) ||
+      (c.type || '').toLowerCase().includes(search) ||
+      (c.cariType || '').toLowerCase().includes(search)
+    )) return false;
     return true;
   });
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
@@ -6700,12 +6708,21 @@ function renderCari() {
     }).join('');
   }
 
+  // Sayfalama (STANDART-FIX-006)
+  if (!window._cariSayfa) window._cariSayfa = 1;
+  if (search) window._cariSayfa = 1;
+  var _CARI_SAYFA_BOY = 50;
+  var _cariToplamSayfa = Math.max(1, Math.ceil(activeCari.length / _CARI_SAYFA_BOY));
+  if (window._cariSayfa > _cariToplamSayfa) window._cariSayfa = _cariToplamSayfa;
+  var _cariBas = (window._cariSayfa - 1) * _CARI_SAYFA_BOY;
+  var sayfaCari = activeCari.slice(_cariBas, _cariBas + _CARI_SAYFA_BOY);
+
   // Aktif cariler bölümü
   if (activeCari.length > 0 && pendingCari.length > 0) {
     html += '<div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--b)">'
       + '<div style="font-size:11px;font-weight:700;color:var(--t3)">✅ Aktif Cariler (' + activeCari.length + ')</div></div>';
   }
-  html += activeCari.map(function(c) {
+  html += sayfaCari.map(function(c) {
     var isSel = c.id === _cariSelectedId;
     var stage = c.cariType || 'potansiyel';
     var stageBadge = stage === 'onayli' ? '🟢' : stage === 'aktif' ? '🟡' : '🔵';
@@ -6719,6 +6736,16 @@ function renderCari() {
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
     + '</div>';
   }).join('');
+
+  // Sayfalama footer
+  if (activeCari.length > _CARI_SAYFA_BOY) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--b);background:var(--s2);font-size:10px;color:var(--t3)">';
+    html += '<span>' + (_cariBas + 1) + '–' + Math.min(_cariBas + _CARI_SAYFA_BOY, activeCari.length) + ' / ' + activeCari.length + ' cari</span>';
+    html += '<div style="display:flex;gap:4px">';
+    html += '<button class="btn btns" onclick="event.stopPropagation();window._cariSayfa=Math.max(1,window._cariSayfa-1);renderCari()" style="font-size:10px;padding:2px 8px"' + (window._cariSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    html += '<button class="btn btns" onclick="event.stopPropagation();window._cariSayfa=Math.min(' + _cariToplamSayfa + ',window._cariSayfa+1);renderCari()" style="font-size:10px;padding:2px 8px"' + (window._cariSayfa >= _cariToplamSayfa ? ' disabled' : '') + '>\u2192</button>';
+    html += '</div></div>';
+  }
 
   cont.innerHTML = html;
 
