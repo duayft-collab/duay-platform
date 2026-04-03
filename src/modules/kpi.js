@@ -35,6 +35,113 @@ function _kpiBuildPeriodOptions() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// BÖLÜM 0 — OTOMATİK KPI SEED + ALARM
+// ════════════════════════════════════════════════════════════════
+
+const _KPI_SEED = [
+  { sid:'kpi_satis',     title:'Aylık Satış',              unit:'₺',   target:500000, source:'satin_alma', auto:true },
+  { sid:'kpi_ihracat',   title:'İhracat Dosyası Adedi',    unit:'Adet', target:4,     source:'ihracat',    auto:true },
+  { sid:'kpi_tahsilat',  title:'Ortalama Tahsilat Süresi', unit:'Gün',  target:15,    source:'odemeler',   auto:true, dusukIyi:true },
+  { sid:'kpi_musteri',   title:'Yeni Müşteri',             unit:'Adet', target:2,     source:'crm',        auto:true },
+  { sid:'kpi_tedarik',   title:'Tedarik Süresi Ort.',      unit:'Gün',  target:14,    source:'satinalma',  auto:true, dusukIyi:true },
+  { sid:'kpi_gecikme',   title:'Gecikmiş Teslimat Oranı',  unit:'%',    target:5,     source:'ihracat',    auto:true, dusukIyi:true },
+];
+
+/** Otomatik KPI'ların mevcut değerlerini hesapla */
+function _kpiAutoCalc(sid) {
+  try {
+    if (sid === 'kpi_ihracat') {
+      const d = typeof loadIhracatDosyalar === 'function' ? loadIhracatDosyalar() : (window.loadIhracatDosyalar?.() || []);
+      return d.filter(function(x) { return !x.isDeleted; }).length;
+    }
+    if (sid === 'kpi_tedarik') {
+      const d = typeof loadSatinalma === 'function' ? loadSatinalma() : (window.loadSatinalma?.() || []);
+      return d.filter(function(x) { return !x.isDeleted; }).length;
+    }
+  } catch(e) { /* modül yüklenmemiş olabilir */ }
+  return 0;
+}
+
+/** Mevcut dönem için otomatik KPI'ları ekle (yoksa) */
+function _kpiEnsureAutoSeeds() {
+  const d = loadKpi ? loadKpi() : [];
+  const curP = _kpiCurrentPeriod();
+  let changed = false;
+  _KPI_SEED.forEach(function(seed) {
+    const exists = d.some(function(k) { return k.sid === seed.sid && k.period === curP; });
+    if (!exists) {
+      d.unshift({
+        id:       typeof generateNumericId === 'function' ? generateNumericId() : Date.now() + Math.random(),
+        sid:      seed.sid,
+        title:    seed.title,
+        unit:     seed.unit,
+        target:   seed.target,
+        current:  _kpiAutoCalc(seed.sid),
+        period:   curP,
+        source:   seed.source,
+        auto:     true,
+        dusukIyi: seed.dusukIyi || false,
+        alarm:    { warn: 50, critical: 30 },
+        desc:     'Otomatik KPI — ' + seed.source,
+        ts:       _nowTsk?.() || new Date().toISOString(),
+        uid:      _CUk?.()?.id,
+      });
+      changed = true;
+    }
+  });
+  if (changed) { storeKpi(d); }
+  return d;
+}
+
+/** Alarm seviyesini hesapla */
+function _kpiAlarmLevel(k) {
+  if (!k.target || k.target <= 0) return 'ok';
+  const pct = Math.round((k.current / k.target) * 100);
+  const warn = k.alarm?.warn ?? 50;
+  const crit = k.alarm?.critical ?? 30;
+  if (k.dusukIyi) {
+    // Düşük iyi: hedefin üstü kötü (örn: gecikme, süre)
+    if (k.current > k.target * 1.5)  return 'critical';
+    if (k.current > k.target)        return 'warn';
+    return 'ok';
+  }
+  if (pct < crit) return 'critical';
+  if (pct < warn) return 'warn';
+  return 'ok';
+}
+
+function _kpiAlarmBadge(level) {
+  if (level === 'critical') return '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#FCEBEB;color:#DC2626;font-weight:700">🔴 Kritik</span>';
+  if (level === 'warn')     return '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#FAEEDA;color:#D97706;font-weight:700">🟠 Uyarı</span>';
+  return '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#EAF3DE;color:#16A34A;font-weight:700">🟢 Hedefte</span>';
+}
+
+/** Önceki dönemin değerini bul */
+function _kpiPrevValue(k, allItems) {
+  if (!k.period) return null;
+  const parts = k.period.split(' ');
+  if (parts.length < 2) return null;
+  const mIdx = _KPI_AY.indexOf(parts[0]);
+  const yr   = parseInt(parts[1]);
+  if (mIdx < 0 || isNaN(yr)) return null;
+  const prev = mIdx === 0
+    ? _KPI_AY[11] + ' ' + (yr - 1)
+    : _KPI_AY[mIdx - 1] + ' ' + yr;
+  const match = allItems.find(function(x) {
+    return x.title === k.title && x.period === prev;
+  });
+  return match ? match.current : null;
+}
+
+function _kpiChangeBadge(current, prev) {
+  if (prev === null || prev === undefined || prev === 0) return '';
+  const chg = Math.round(((current - prev) / prev) * 100);
+  if (chg === 0) return '<span style="font-size:10px;color:var(--t3)">→ 0%</span>';
+  const up = chg > 0;
+  return '<span style="font-size:10px;font-weight:700;color:' + (up ? '#16A34A' : '#DC2626') + '">' + (up ? '↑' : '↓') + Math.abs(chg) + '%</span>';
+}
+
+// ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — PANEL HTML INJECT
 // ════════════════════════════════════════════════════════════════
 
@@ -131,7 +238,20 @@ function _injectKpiPanel() {
 
 function renderKpiPanel() {
   _injectKpiPanel();
+  _kpiEnsureAutoSeeds();
+  // Auto KPI'ların current değerlerini güncelle
+  const _autoD = loadKpi ? loadKpi() : [];
+  let _autoChanged = false;
+  _autoD.forEach(function(k) {
+    if (k.auto && k.sid && k.period === _kpiCurrentPeriod()) {
+      const newVal = _kpiAutoCalc(k.sid);
+      if (newVal > 0 && newVal !== k.current) { k.current = newVal; _autoChanged = true; }
+    }
+  });
+  if (_autoChanged) storeKpi(_autoD);
+
   let items = loadKpi ? loadKpi() : [];
+  const allItemsRef = items.slice(); // dönem karşılaştırma için
   const pf = _gk('kpi-period-f')?.value || '';
   if (pf) items = items.filter(k => k.period === pf);
 
@@ -188,8 +308,10 @@ function renderKpiPanel() {
   items.forEach(k => {
     const pct     = k.target > 0 ? Math.min(100, Math.round((k.current / k.target) * 100)) : 0;
     const color   = pct >= 100 ? 'var(--grc)' : pct >= 75 ? 'var(--amc)' : pct >= 50 ? 'var(--blc)' : 'var(--rdc)';
-    const barBg   = pct >= 100 ? 'var(--grb)' : pct >= 75 ? 'var(--amb)' : pct >= 50 ? 'var(--blb)' : 'var(--rdb)';
     const icon    = pct >= 100 ? '🏆' : pct >= 75 ? '📈' : pct >= 50 ? '📊' : '⚠️';
+    const alarm   = _kpiAlarmLevel(k);
+    const prevVal = _kpiPrevValue(k, allItemsRef);
+    const chgBadge= _kpiChangeBadge(k.current, prevVal);
     const card    = document.createElement('div');
     card.className = 'card';
     card.style.cssText = 'padding:18px;border-left:4px solid ' + color;
@@ -197,11 +319,17 @@ function renderKpiPanel() {
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
         <div>
           <div style="font-weight:700;font-size:14px;color:var(--t);margin-bottom:3px">${icon} ${k.title}</div>
-          ${k.period ? `<div style="font-size:11px;color:var(--t3)">📅 ${k.period}</div>` : ''}
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            ${k.period ? `<span style="font-size:11px;color:var(--t3)">📅 ${k.period}</span>` : ''}
+            ${_kpiAlarmBadge(alarm)}
+            ${k.auto ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s2);color:var(--t3)">⚡ Oto</span>' : ''}
+            ${k.source ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#EEEDFE;color:#6366F1">' + k.source + '</span>' : ''}
+          </div>
         </div>
         <div style="text-align:right">
           <div style="font-size:22px;font-weight:800;color:${color}">${pct}%</div>
           <div style="font-size:10px;color:var(--t3)">gerçekleşme</div>
+          ${chgBadge ? '<div style="margin-top:2px">' + chgBadge + '</div>' : ''}
         </div>
       </div>
       <div style="margin-bottom:10px">
@@ -212,6 +340,7 @@ function renderKpiPanel() {
         <div style="height:8px;background:var(--s2);border-radius:99px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${color};border-radius:99px;transition:width .5s"></div>
         </div>
+        ${prevVal !== null ? '<div style="font-size:10px;color:var(--t3);margin-top:3px">Önceki dönem: ' + prevVal.toLocaleString('tr-TR') + ' ' + (k.unit||'') + '</div>' : ''}
       </div>
       ${k.desc ? `<div style="font-size:11px;color:var(--t3);margin-top:6px">${k.desc}</div>` : ''}
       ${_isAdminK() ? `
@@ -226,8 +355,65 @@ function renderKpiPanel() {
   frag.appendChild(grid);
   cards.replaceChildren(frag);
 
+  // Pirim Etkisi bölümü
+  _renderKpiPirimEffect(items);
+
   // Personel performans (admin)
   _renderKpiPersonnel();
+}
+
+function _renderKpiPirimEffect(items) {
+  let cont = _gk('kpi-pirim-effect');
+  if (!cont) {
+    cont = document.createElement('div');
+    cont.id = 'kpi-pirim-effect';
+    cont.style.cssText = 'margin:16px 0';
+    const cards = _gk('kpi-cards');
+    if (cards) cards.parentNode.insertBefore(cont, cards.nextSibling);
+    else return;
+  }
+  // Satış KPI'sını bul
+  const satisKpi = items.find(function(k) { return k.sid === 'kpi_satis' || k.title.indexOf('Satış') !== -1; });
+  if (!satisKpi) { cont.innerHTML = ''; return; }
+
+  const pct = satisKpi.target > 0 ? Math.round((satisKpi.current / satisKpi.target) * 100) : 0;
+  var oneriOran, oneriLabel;
+  if (pct >= 100)     { oneriOran = 2.0; oneriLabel = '%2.0 + Bonus'; }
+  else if (pct >= 80) { oneriOran = 1.5; oneriLabel = '%1.5'; }
+  else if (pct >= 50) { oneriOran = 1.0; oneriLabel = '%1.0'; }
+  else                { oneriOran = 0.5; oneriLabel = '%0.5'; }
+
+  // Mevcut pirim oranı (loadPirimParams varsa)
+  var mevcutOran = '—';
+  try {
+    var params = typeof loadPirimParams === 'function' ? loadPirimParams() : (window.loadPirimParams?.() || {});
+    if (params.SATIS) mevcutOran = '%' + ((params.SATIS.rate || 0) * 100).toFixed(1);
+    else if (params.rates?.SATIS) mevcutOran = '%' + ((params.rates.SATIS || 0) * 100).toFixed(1);
+  } catch(e) {}
+
+  var color = pct >= 100 ? '#16A34A' : pct >= 80 ? '#D97706' : pct >= 50 ? '#3B82F6' : '#DC2626';
+  cont.innerHTML = '<div class="card" style="padding:16px;border-left:4px solid #8B5CF6">'
+    + '<div style="font-weight:700;font-size:13px;color:var(--t);margin-bottom:10px">💰 Pirim Etkisi — Satış KPI</div>'
+    + '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">'
+    + '<div style="flex:1;min-width:160px">'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:4px">KPI Gerçekleşme</div>'
+    + '<div style="font-size:20px;font-weight:800;color:' + color + '">%' + pct + '</div>'
+    + '</div>'
+    + '<div style="flex:1;min-width:160px">'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:4px">Mevcut Pirim Oranı</div>'
+    + '<div style="font-size:16px;font-weight:700;color:var(--t)">' + mevcutOran + '</div>'
+    + '</div>'
+    + '<div style="flex:1;min-width:160px">'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:4px">KPI Bazlı Öneri</div>'
+    + '<div style="font-size:16px;font-weight:700;color:#8B5CF6">' + oneriLabel + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap">'
+    + '<span style="font-size:9px;padding:3px 8px;border-radius:4px;' + (pct < 50 ? 'background:#FCEBEB;color:#791F1F' : 'background:var(--s2);color:var(--t3)') + '">%0-50: %0.5</span>'
+    + '<span style="font-size:9px;padding:3px 8px;border-radius:4px;' + (pct >= 50 && pct < 80 ? 'background:#E6F1FB;color:#0C447C' : 'background:var(--s2);color:var(--t3)') + '">%50-80: %1.0</span>'
+    + '<span style="font-size:9px;padding:3px 8px;border-radius:4px;' + (pct >= 80 && pct < 100 ? 'background:#FAEEDA;color:#633806' : 'background:var(--s2);color:var(--t3)') + '">%80-100: %1.5</span>'
+    + '<span style="font-size:9px;padding:3px 8px;border-radius:4px;' + (pct >= 100 ? 'background:#EAF3DE;color:#15803D' : 'background:var(--s2);color:var(--t3)') + '">%100+: %2.0 + Bonus</span>'
+    + '</div></div>';
 }
 
 function _renderKpiPersonnel() {
