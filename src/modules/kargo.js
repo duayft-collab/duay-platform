@@ -107,7 +107,10 @@ function _renderListe(liste) {
   h += '<input class="fi" placeholder="Takip no, alıcı, ref..." value="' + _esc(_araQ) + '" oninput="event.stopPropagation();window._kargoAra(this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:180px;flex-shrink:0">';
   h += '<select class="fi" onchange="event.stopPropagation();window._kargoFiltre(\'durum\',this.value)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="flex-shrink:0"><option value="">Tüm Durumlar</option><option value="hazirlaniyor"' + (_filtreDurum === 'hazirlaniyor' ? ' selected' : '') + '>Hazırlanıyor</option><option value="yolda"' + (_filtreDurum === 'yolda' ? ' selected' : '') + '>Yolda</option><option value="gumrukte"' + (_filtreDurum === 'gumrukte' ? ' selected' : '') + '>Gümrükte</option><option value="teslim"' + (_filtreDurum === 'teslim' ? ' selected' : '') + '>Teslim</option><option value="gecikti"' + (_filtreDurum === 'gecikti' ? ' selected' : '') + '>Gecikti</option></select>';
   h += '<select class="fi" onchange="event.stopPropagation();window._kargoFiltre(\'firma\',this.value)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="flex-shrink:0">' + firmaOpts + '</select>';
-  if (secSayi > 0) h += '<button class="btn btns btnd" onclick="event.stopPropagation();window._kargoTopluSil()" style="font-size:11px;flex-shrink:0">' + secSayi + ' Kaydı Sil</button>';
+  if (secSayi > 0) {
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._kargoTopluDurum()" style="font-size:11px;flex-shrink:0;color:var(--ac)">' + secSayi + ' Durum Güncelle</button>';
+    h += '<button class="btn btns btnd" onclick="event.stopPropagation();window._kargoTopluSil()" style="font-size:11px;flex-shrink:0">' + secSayi + ' Kaydı Sil</button>';
+  }
   h += '</div>';
 
   /* Tablo */
@@ -256,6 +259,38 @@ window._kargoXlsx = function() {
   var blob = new Blob(['\ufeff' + icerik], { type: 'text/tab-separated-values;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kargo_' + new Date().toISOString().slice(0, 10) + '.xls'; a.click();
   window.toast?.('Excel indirildi', 'ok');
+};
+
+// ═══ TOPLU DURUM GÜNCELLEME (STANDART-FIX-012) ═══
+window._kargoTopluDurum = function() {
+  if (!window._yetkiKontrol?.('toplu_guncelle')) return;
+  var ids = Object.keys(_secili); if (!ids.length) { window.toast?.('Kayıt seçilmedi', 'warn'); return; }
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-krg-durum';
+  mo.innerHTML = '<div class="moc" style="max-width:380px"><div class="moh"><span class="mot">' + ids.length + ' Kargo — Durum Güncelle</span><button class="mcl" onclick="this.closest(\'.mo\').remove()">✕</button></div>'
+    + '<div class="mob"><select class="fi" id="krg-tg-durum" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">— Durum Seç —</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="yolda">Yolda</option><option value="gumrukte">Gümrükte</option><option value="teslim">Teslim</option><option value="gecikti">Gecikti</option><option value="iade">İade</option></select></div>'
+    + '<div class="mof"><button class="btn" onclick="this.closest(\'.mo\').remove()">İptal</button><button class="btn btnp" onclick="event.stopPropagation();window._kargoTopluDurumKaydet()">Uygula</button></div></div>';
+  document.body.appendChild(mo);
+  window.openMo?.('mo-krg-durum');
+};
+
+window._kargoTopluDurumKaydet = function() {
+  var ids = Object.keys(_secili);
+  var durum = document.getElementById('krg-tg-durum')?.value;
+  if (!durum) { window.toast?.('Durum seçilmedi', 'warn'); return; }
+  var liste = _loadKAll();
+  liste.forEach(function(k) {
+    if (ids.indexOf(k.id) !== -1) {
+      k.durum = durum;
+      k.durum_tarihi = new Date().toISOString().slice(0, 10);
+      k.guncelleme = _now();
+    }
+  });
+  _storeK(liste);
+  _secili = {};
+  document.getElementById('mo-krg-durum')?.remove();
+  window.toast?.(ids.length + ' kargo güncellendi ✓', 'ok');
+  window.logActivity?.('kargo', 'Toplu durum güncelleme: ' + ids.length + ' kargo → ' + durum);
+  renderKargo();
 };
 
 // ═══ WINDOW EXPORTS ═══

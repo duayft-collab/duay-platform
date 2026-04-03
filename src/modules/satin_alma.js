@@ -54,6 +54,7 @@ function _injectSAPanel() {
         + (_isAdmSA() ? '<button onclick="window._saBulkApprove?.()" style="padding:6px 12px;border:0.5px solid #16A34A;border-radius:7px;background:rgba(22,163,74,.06);color:#16A34A;font-size:11px;cursor:pointer;font-family:inherit">✅ Toplu Onayla</button>' : '')
         + '<button onclick="window._exportSAXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
         + '<button onclick="window._openSAImport?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">📥 İçe Aktar</button>'
+        + '<button id="sat-toplu-guncelle-btn" onclick="event.stopPropagation();window._satTopluGuncelle()" style="padding:6px 12px;border:0.5px solid var(--ac);border-radius:7px;background:rgba(99,102,241,.06);color:var(--ac);font-size:11px;cursor:pointer;font-family:inherit;display:none">Toplu Güncelle</button>'
         + '<button id="sat-toplu-sil-btn" onclick="event.stopPropagation();window._satTopluSil()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:rgba(220,38,38,.06);color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit;display:none">Seçilenleri Sil</button>'
         + '<button onclick="window._openSAModal?.(null)" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Yeni Sipariş</button>'
       + '</div>'
@@ -2101,7 +2102,7 @@ if (typeof module !== 'undefined' && module.exports) {
   window.SatinAlma      = SatinAlma;
   window.renderSatinAlma = renderSatinAlma;
   window._satTopluChk = function(c) { document.querySelectorAll('.sat-row-chk').forEach(function(x) { x.checked = c; }); window._satChkGuncelle(); };
-  window._satChkGuncelle = function() { var n = document.querySelectorAll('.sat-row-chk:checked').length; var btn = document.getElementById('sat-toplu-sil-btn'); if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = n + ' Kaydı Sil'; } };
+  window._satChkGuncelle = function() { var n = document.querySelectorAll('.sat-row-chk:checked').length; var btn = document.getElementById('sat-toplu-sil-btn'); if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = n + ' Kaydı Sil'; } var btn2 = document.getElementById('sat-toplu-guncelle-btn'); if (btn2) { btn2.style.display = n ? 'inline-flex' : 'none'; btn2.textContent = n + ' Kaydı Güncelle'; } };
   window._satTopluSil = function() {
     if (!window._yetkiKontrol?.('toplu_sil')) return;
     var ids = []; document.querySelectorAll('.sat-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return;
@@ -2109,6 +2110,40 @@ if (typeof module !== 'undefined' && module.exports) {
     if (typeof window.confirmModal === 'function') { window.confirmModal(ids.length + ' satınalma kaydı silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: silFunc }); }
     else if (confirm(ids.length + ' satınalma kaydı silinecek. Emin misiniz?')) { silFunc(); }
   };
+  window._satTopluGuncelle = function() {
+    if (!window._yetkiKontrol?.('toplu_guncelle')) return;
+    var ids = []; document.querySelectorAll('.sat-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); });
+    if (!ids.length) { window.toast?.('Kayıt seçilmedi', 'warn'); return; }
+    var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sat-toplu';
+    mo.innerHTML = '<div class="moc" style="max-width:400px"><div class="moh"><span class="mot">' + ids.length + ' Kayıt — Toplu Güncelle</span><button class="mcl" onclick="this.closest(\'.mo\').remove()">✕</button></div>'
+      + '<div class="mob" style="display:flex;flex-direction:column;gap:10px">'
+      + '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">Döviz</label><select class="fi" id="sat-tg-doviz" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">— Değiştirme —</option><option>USD</option><option>EUR</option><option>TRY</option><option>GBP</option></select></div>'
+      + '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">Kaynak</label><input class="fi" id="sat-tg-kaynak" placeholder="— Değiştirme —" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+      + '</div><div class="mof"><button class="btn" onclick="this.closest(\'.mo\').remove()">İptal</button><button class="btn btnp" onclick="event.stopPropagation();window._satTopluGuncelleKaydet()">Uygula</button></div></div>';
+    document.body.appendChild(mo);
+    window.openMo?.('mo-sat-toplu');
+  };
+
+  window._satTopluGuncelleKaydet = function() {
+    var ids = []; document.querySelectorAll('.sat-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); });
+    var doviz = document.getElementById('sat-tg-doviz')?.value;
+    var kaynak = (document.getElementById('sat-tg-kaynak')?.value || '').trim();
+    if (!doviz && !kaynak) { window.toast?.('Güncellenecek alan seçilmedi', 'warn'); return; }
+    var liste = _loadSA();
+    liste.forEach(function(s) {
+      if (ids.indexOf(String(s.id)) !== -1) {
+        if (doviz) s.currency = doviz;
+        if (kaynak) s.source = kaynak;
+        s.updatedAt = new Date().toISOString();
+      }
+    });
+    _storeSA(liste);
+    document.getElementById('mo-sat-toplu')?.remove();
+    window.toast?.(ids.length + ' kayıt güncellendi ✓', 'ok');
+    window.logActivity?.('view', 'Satınalma toplu güncelleme: ' + ids.length + ' kayıt');
+    renderSatinAlma();
+  };
+
   window._openSAModal    = _openSAModal;
   window._loadSA         = _loadSA;
   window._storeSA        = _storeSA;
