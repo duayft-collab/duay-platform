@@ -1,344 +1,557 @@
 /**
- * src/modules/pusula_render.js — v3.0.0
- * Pusula — Ana render, liste görünümü, görünüm kontrolü
- * Bağımlı: pusula_core.js, database.js
- * Anayasa: K01 ≤800 satır
+ * src/modules/pusula_render.js — v4.0.0
+ * Pusula — Ana render: Sol/Sag 2 kolon layout
+ * Baglanti: pusula_core.js, pusula_task.js, database.js
+ * Anayasa: K01 ≤800 satir
  */
 
 'use strict';
 
-// ── Ana render ──────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────
+var _pusSayfa    = 1;
+var _pusAktifTab = 'tumu';
+var _pusSayfaBoyut = 50;
+var _pusEn3Donem   = 'bugun';
+var _pusKaynaklarAcik = false;
+
+// ── Kategori renk haritasi ───────────────────────────────────
+var _CAT_COLORS = {
+  'İhracat':   ['#EEEDFE','#26215C'],
+  'Satınalma': ['#E6F1FB','#0C447C'],
+  'Kargo':     ['#FAEEDA','#633806'],
+  'Finans':    ['#EAF3DE','#27500A'],
+  'Müşteri':   ['#FCE7F3','#831843'],
+  'Genel':     ['#F1EFE8','#2C2C2A']
+};
+
+// ── Kaynak verileri ──────────────────────────────────────────
+var _KAYNAKLAR = [
+  { isim:'Stephen Covey', kitap:'7 Alışkanlık', renk:['#EEEDFE','#26215C'],
+    fikir:'Önce önemliyi yap. Acil olan ile önemli olanı ayır; hayatın %80\'ini Kadran II\'de geçir.',
+    soz:'Anahtar, programa öncelikleri değil, önceliklere programa vermektir.' },
+  { isim:'David Allen', kitap:'Getting Things Done', renk:['#E6F1FB','#0C447C'],
+    fikir:'Zihnini topla, işle, organize et, gözden geçir, yap. Açık döngüleri kapat.',
+    soz:'Zihniniz fikir üretmek içindir, onları tutmak için değil.' },
+  { isim:'Greg McKeown', kitap:'Essentialism', renk:['#EAF3DE','#27500A'],
+    fikir:'Daha azı daha iyidir. Hayır demeyi öğren, sadece en yüksek katkıya odaklan.',
+    soz:'Neredeyse her şey önemsizdir.' },
+  { isim:'Mihaly Csikszentmihalyi', kitap:'Flow', renk:['#FAEEDA','#633806'],
+    fikir:'Zorluk ve beceri dengede olduğunda akış haline girersin. Kesintisiz odak performansı katlar.',
+    soz:'En iyi anlar, bir insanın vücudu veya zihni zor bir görevi başarmak için gönüllü olarak sınırlarına ulaştığında ortaya çıkar.' }
+];
+
+// ════════════════════════════════════════════════════════════════
+// ANA RENDER
+// ════════════════════════════════════════════════════════════════
+
 function renderPusula() {
   populatePusUsers();
   setTimeout(_renderDeptSidebar, 50);
 
-  // Günlük söz
-  const _q   = _getDailyQuote();
-  const _qEl = g('pus-motivation');
-  if (_qEl) _qEl.innerHTML =
-    `<span style="font-style:italic;color:var(--t2)">"${escapeHtml(_q.text)}"</span> `
-    + `<span style="color:var(--t3);font-size:10px">— ${escapeHtml(_q.author)}</span>`;
+  var todayS  = new Date().toISOString().slice(0, 10);
+  var allVis  = visTasks();
+  var users   = loadUsers();
 
-  // Gecikmiş görev kontrolü (5 dakikada bir)
-  const _ovKey = '_pus_ov_check';
+  // ── Gecikmiş görev kontrolü (5dk) ──────────────────────────
+  var _ovKey = '_pus_ov_check';
   if (!window[_ovKey] || Date.now() - window[_ovKey] > 300000) {
     window[_ovKey] = Date.now();
     setTimeout(checkOverdueTasks, 500);
   }
 
-  const todayS = new Date().toISOString().slice(0, 10);
-  const allVis = visTasks();
-  const users  = loadUsers();
+  // ── Sayaçlar ───────────────────────────────────────────────
+  var haftaSonu = new Date();
+  haftaSonu.setDate(haftaSonu.getDate() + (7 - haftaSonu.getDay()));
+  var hsS       = haftaSonu.toISOString().slice(0, 10);
 
-  // ── Sayaçlar ─────────────────────────────────────────────────
-  const ipCount   = allVis.filter(t => t.status === 'inprogress').length;
-  const rvCount   = allVis.filter(t => t.status === 'review').length;
-  const doneCount = allVis.filter(t => t.done || t.status === 'done').length;
-  const todoCount = allVis.filter(t => !t.done && (!t.status || t.status === 'todo')).length;
-  const ovCount   = allVis.filter(t => !t.done && t.status !== 'done' && t.due && t.due < todayS).length;
+  var ovCount   = allVis.filter(function(t) { return !t.done && t.status !== 'done' && t.due && t.due < todayS; }).length;
+  var todayC    = allVis.filter(function(t) { return !t.done && t.status !== 'done' && t.due === todayS; }).length;
+  var weekC     = allVis.filter(function(t) { return !t.done && t.status !== 'done' && t.due && t.due >= todayS && t.due <= hsS; }).length;
+  var doneCount = allVis.filter(function(t) { return t.done || t.status === 'done'; }).length;
+  var hiPriC    = allVis.filter(function(t) { return !t.done && t.status !== 'done' && t.pri === 1; }).length;
 
-  const el = id => g(id);
-  if (el('pv-tot'))     el('pv-tot').textContent     = allVis.length;
-  if (el('psf-todo-n')) el('psf-todo-n').textContent = todoCount;
-  if (el('psf-ip-n'))   el('psf-ip-n').textContent   = ipCount;
-  if (el('psf-rv-n'))   el('psf-rv-n').textContent   = rvCount;
-  if (el('psf-done-n')) el('psf-done-n').textContent = doneCount;
-  if (el('pv-ov')) {
-    el('pv-ov').textContent = ovCount;
-    el('pv-ov').style.cssText = ovCount > 0 ? 'background:#FCEBEB;color:#791F1F;padding:2px 8px;border-radius:6px;font-weight:700' : '';
-  }
   updatePusBadge();
 
-  // ── Progress bar ─────────────────────────────────────────────
-  const progFill = g('pus-prog-fill');
-  const progPct  = g('pus-prog-pct');
-  if (progFill && progPct && allVis.length) {
-    const pct = Math.round(doneCount / allVis.length * 100);
-    progFill.style.width = pct + '%';
-    progPct.textContent  = pct + '%';
-    progPct.style.color  = pct >= 80 ? 'var(--gr)' : pct >= 50 ? 'var(--am)' : 'var(--ac)';
-  }
-  const progStats = g('pus-prog-stats');
-  if (progStats && allVis.length) {
-    const overdue = allVis.filter(t => !t.done && t.status !== 'done' && t.due && t.due < todayS).length;
-    progStats.innerHTML =
-      `<span class="pus-prog-stat"><span class="pus-prog-stat-dot" style="background:var(--gr)"></span>${doneCount} tamam</span>`
-      + `<span class="pus-prog-stat"><span class="pus-prog-stat-dot" style="background:var(--bl)"></span>${ipCount} devam</span>`
-      + (overdue ? `<span class="pus-prog-stat" style="background:#FCEBEB;color:#791F1F;padding:2px 8px;border-radius:6px;font-weight:700"><span class="pus-prog-stat-dot" style="background:#DC2626"></span>${overdue} gecikmiş</span>` : '');
-  }
+  // ── Filtreler ──────────────────────────────────────────────
+  var fl = allVis.slice();
 
-  // ── Filtreler ─────────────────────────────────────────────────
-  let fl = [...allVis];
-  if (PUS_QUICK_FILTER === 'todo')       fl = fl.filter(t => !t.done && (!t.status || t.status === 'todo'));
-  else if (PUS_QUICK_FILTER === 'inprogress') fl = fl.filter(t => t.status === 'inprogress');
-  else if (PUS_QUICK_FILTER === 'review')     fl = fl.filter(t => t.status === 'review');
-  else if (PUS_QUICK_FILTER === 'done')       fl = fl.filter(t => t.done || t.status === 'done');
-  else if (PUS_QUICK_FILTER === 'waiting')    fl = fl.filter(t => t.status === 'waiting');
-  else if (PUS_QUICK_FILTER === 'overdue')    fl = fl.filter(t => !t.done && t.status !== 'done' && t.due && t.due < todayS);
+  // Tab filtresi
+  if (_pusAktifTab === 'gecikmis')   fl = fl.filter(function(t) { return !t.done && t.status !== 'done' && t.due && t.due < todayS; });
+  else if (_pusAktifTab === 'bugun') fl = fl.filter(function(t) { return !t.done && t.status !== 'done' && t.due === todayS; });
+  else if (_pusAktifTab === 'hafta') fl = fl.filter(function(t) { return !t.done && t.status !== 'done' && t.due && t.due >= todayS && t.due <= hsS; });
+  else if (_pusAktifTab === 'tamam') fl = fl.filter(function(t) { return t.done || t.status === 'done'; });
 
-  if (PUS_VIEW === 'me') fl = fl.filter(t => t.uid === _getCU()?.id);
+  // Toolbar filtreleri
+  var fSearch = (g('pus-ara')?.value || '').toLowerCase();
+  var fStatus = g('pus-durum')?.value || '';
+  var fPri    = parseInt(g('pus-oncelik')?.value || '0');
+  var fCat    = g('pus-kategori')?.value || '';
 
-  const fPri    = parseInt(g('pf-pri')?.value  || '0');
-  const fSearch = (g('pf-search')?.value       || '').toLowerCase();
-  const fFrom   = g('pf-dfrom')?.value         || '';
-  const fTo     = g('pf-dto')?.value           || '';
-  const fSort   = g('pf-sort')?.value          || 'pri';
-  const fDept   = g('pf-dept')?.value          || '';
-  _populateDeptFilter();
-
-  if (fPri > 0)  fl = fl.filter(t => t.pri === fPri);
-  if (fDept)     fl = fl.filter(t => t.department === fDept);
-  if (fSearch)   fl = fl.filter(t =>
-    t.title.toLowerCase().includes(fSearch) ||
-    (t.desc || '').toLowerCase().includes(fSearch) ||
-    (t.tags || []).some(tg => tg.toLowerCase().includes(fSearch)) ||
-    (t.jobId || '').toLowerCase().includes(fSearch)
-  );
-  if (fFrom) fl = fl.filter(t => t.due && t.due >= fFrom);
-  if (fTo)   fl = fl.filter(t => t.due && t.due <= fTo);
-
-  if (fSort === 'pri')    fl.sort((a, b) => (a.pri || 4) - (b.pri || 4) || (a.done ? 1 : -1));
-  else if (fSort === 'due')    fl.sort((a, b) => { if (!a.due && !b.due) return 0; if (!a.due) return 1; if (!b.due) return -1; return a.due.localeCompare(b.due); });
-  else if (fSort === 'newest') fl.sort((a, b) => b.id - a.id);
-  else if (fSort === 'oldest') fl.sort((a, b) => a.id - b.id);
-  else if (fSort === 'az')     fl.sort((a, b) => a.title.localeCompare(b.title, 'tr'));
-
-  const sum = g('pf-summary');
-  if (sum) sum.textContent = fl.length === allVis.length
-    ? `${fl.length} görev`
-    : `${fl.length} / ${allVis.length} görev gösteriliyor`;
-
-  renderFocusPanel();
-
-  const main = g('pus-main-view');
-  if (!main) return;
-
-  // ── Gecikmiş görev bannerı (ACİL-FIX-004) ─────────────────
-  let _ovBanner = g('pus-overdue-banner');
-  if (ovCount > 0) {
-    if (!_ovBanner) {
-      _ovBanner = document.createElement('div');
-      _ovBanner.id = 'pus-overdue-banner';
-      main.parentNode?.insertBefore(_ovBanner, main);
-    }
-    _ovBanner.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 16px;margin-bottom:10px;background:linear-gradient(90deg,#FEF2F2,#FFF7ED);border:1px solid #FECACA;border-radius:10px;font-size:12px;color:#991B1B;cursor:pointer';
-    _ovBanner.innerHTML =
-      '<span style="font-size:18px">⚠️</span>'
-      + '<div><strong>' + ovCount + ' gecikmiş görev</strong>'
-      + '<div style="font-size:11px;color:#B91C1C;margin-top:2px">Teslim tarihi geçmiş görevleri inceleyin</div></div>'
-      + '<span style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:6px;background:#FEE2E2;color:#991B1B;font-weight:600">Göster →</span>';
-    _ovBanner.onclick = function(event) { event.stopPropagation(); setPusQuickFilter('overdue'); };
-  } else if (_ovBanner) {
-    _ovBanner.style.display = 'none';
-  }
-
-  if (_PUS_FULL_VIEWS.indexOf(PUS_VIEW) !== -1) return;
-
-  renderPusulaList(fl, users, todayS, main);
-
-  fl.forEach(t => {
-    const stEl = g('st-' + t.id);
-    if (stEl) renderSubTasks(t.id, t.subTasks || [], stEl);
+  if (fSearch) fl = fl.filter(function(t) {
+    return t.title.toLowerCase().indexOf(fSearch) !== -1 ||
+      (t.desc || '').toLowerCase().indexOf(fSearch) !== -1 ||
+      (t.tags || []).some(function(tg) { return tg.toLowerCase().indexOf(fSearch) !== -1; }) ||
+      (t.jobId || '').toLowerCase().indexOf(fSearch) !== -1;
   });
-}
-window.renderPusula = renderPusula;
+  if (fStatus) fl = fl.filter(function(t) { return t.status === fStatus || (fStatus === 'done' && t.done); });
+  if (fPri > 0) fl = fl.filter(function(t) { return t.pri === fPri; });
+  if (fCat) fl = fl.filter(function(t) { return (t.category || t.cat || 'Genel') === fCat; });
 
-// ── Liste görünümü ───────────────────────────────────────────────
-function renderPusulaList(fl, users, todayS, cont) {
-  if (!fl.length) {
-    cont.innerHTML = `<div class="pus-empty">
-      <div class="pus-empty-icon">🎯</div>
-      <div class="pus-empty-title">Görev bulunamadı</div>
-      <div class="pus-empty-sub">Filtreleri değiştirin veya yeni bir görev ekleyin.</div>
-      <button class="pus-add-btn" onclick="openAddTask()" style="margin:0 auto">
-        <svg width="13" height="13" fill="none" viewBox="0 0 13 13"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-        Görev Ekle
-      </button>
-    </div>`;
+  // Sıralama: öncelik → due
+  fl.sort(function(a, b) {
+    if ((a.pri || 3) !== (b.pri || 3)) return (a.pri || 3) - (b.pri || 3);
+    if (!a.due && !b.due) return 0;
+    if (!a.due) return 1;
+    if (!b.due) return -1;
+    return a.due.localeCompare(b.due);
+  });
+
+  // ── Panel ──────────────────────────────────────────────────
+  var panel = g('panel-pusula');
+  if (!panel) return;
+
+  // ── Tam ekran modlar (kanban, kadran vb.) ──────────────────
+  if (_PUS_FULL_VIEWS.indexOf(PUS_VIEW) !== -1) {
+    _renderFullView(panel);
     return;
   }
 
-  // Toplu işlem bar
-  if (window.isAdmin?.() && !document.getElementById('pus-bulk-bar')) {
-    var _bb = document.createElement('div');
-    _bb.id = 'pus-bulk-bar';
-    _bb.style.cssText = 'display:none;padding:6px 16px;background:#E6F1FB;border-bottom:0.5px solid #85B7EB;align-items:center;gap:8px;font-size:11px;color:#0C447C';
-    _bb.innerHTML = '<span id="pus-bulk-cnt">0</span> görev seçili <button onclick="_pusBulkDelete()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;font-size:10px;cursor:pointer;font-family:inherit">Seçilenleri Sil</button><button onclick="_pusBulkClear()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;color:var(--t3);font-size:10px;cursor:pointer;font-family:inherit">İptal</button>';
-    cont.parentNode?.insertBefore(_bb, cont);
+  // ── Sayfalama ──────────────────────────────────────────────
+  var totalPages = Math.max(1, Math.ceil(fl.length / _pusSayfaBoyut));
+  if (_pusSayfa > totalPages) _pusSayfa = totalPages;
+  var pageStart = (_pusSayfa - 1) * _pusSayfaBoyut;
+  var pageFl    = fl.slice(pageStart, pageStart + _pusSayfaBoyut);
+
+  // ── HTML üretimi ───────────────────────────────────────────
+  var h = '';
+
+  // ── ÜST BAR ───────────────────────────────────────────────
+  var _q = _getDailyQuote();
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b)">';
+  h += '<div><div style="font-size:18px;font-weight:700;color:var(--t)">Pusula</div>';
+  h += '<div style="font-style:italic;color:var(--t2);font-size:11px;margin-top:2px">"' + (window.escapeHtml?.(_q.text) || _q.text) + '" — ' + (window.escapeHtml?.(_q.author) || _q.author) + '</div></div>';
+  h += '<div style="display:flex;gap:6px;align-items:center">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();setPusView(\'kanban\')" style="font-size:11px">Kanban</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();setPusView(\'odak\')" style="font-size:11px">Odak</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._pusXlsxExport?.()" style="font-size:11px">XLSX</button>';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();openAddTask()" style="font-size:12px">+ Görev</button>';
+  h += '</div></div>';
+
+  // ── GECİKME BANNERI ────────────────────────────────────────
+  if (ovCount > 0) {
+    h += '<div onclick="event.stopPropagation();window._pusSetTab(\'gecikmis\')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:linear-gradient(90deg,#FEF2F2,#FFF7ED);border:1px solid #FECACA;border-radius:10px;font-size:12px;color:#991B1B;cursor:pointer;margin:10px 16px 0">';
+    h += '<span style="font-size:18px">⚠️</span>';
+    h += '<div><strong>' + ovCount + ' gecikmiş görev</strong>';
+    h += '<div style="font-size:11px;color:#B91C1C;margin-top:2px">Teslim tarihi geçmiş görevleri inceleyin</div></div>';
+    h += '<span style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:6px;background:#FEE2E2;color:#991B1B;font-weight:600">Hepsini Gör</span>';
+    h += '</div>';
   }
 
-  const chatCounts = loadTaskChats();
-  const frag       = document.createDocumentFragment();
-  const wrapper    = document.createElement('div');
-  wrapper.className = 'pus-list-wrap';
-  const cu = _getCU();
+  // ── 2 KOLON LAYOUT ─────────────────────────────────────────
+  h += '<div style="display:flex;gap:0;flex:1;overflow:hidden">';
 
-  fl.forEach((t, idx) => {
-    const p          = PRI_MAP[t.pri] || PRI_MAP[4];
-    const dueChip    = getDueChip(t.due, t.done, todayS);
-    const statusPill = getStatusPill(t);
-    const av         = getAvatar(t.uid, users, 26);
-    const chatCount  = (chatCounts[t.id] || []).length;
-    const subTasks   = t.subTasks || [];
-    const subDone    = subTasks.filter(s => s.done).length;
-    const isDone     = t.done || t.status === 'done';
-    const dc         = t.department ? getDeptColor(t.department) : null;
+  // ══ SOL KOLON ══════════════════════════════════════════════
+  h += '<div style="flex:1;overflow-y:auto;padding:12px 16px">';
 
-    const tags = (t.tags || []).slice(0, 2).map(tg =>
-      `<span style="background:var(--al);color:var(--ac);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">${tg}</span>`
-    ).join('');
+  // KPI bar (6 kart)
+  h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
+  h += _kpiKart('Toplam', allVis.length, 'var(--sf)', 'var(--t)', 'var(--b)');
+  h += _kpiKart('Gecikmiş', ovCount, '#FCEBEB', '#DC2626', '#FECACA');
+  h += _kpiKart('Bugün', todayC, '#FAEEDA', '#D97706', '#F5D9A0');
+  h += _kpiKart('Bu Hafta', weekC, '#E6F1FB', '#185FA5', '#B4D5F7');
+  h += _kpiKart('Tamamlandı', doneCount, '#EAF3DE', '#16A34A', '#C6E7B0');
+  h += _kpiKart('Yüksek Öncelik', hiPriC, '#EEEDFE', '#534AB7', '#D4D0FB');
+  h += '</div>';
 
-    // Kategori badge renkleri (PUSULA-FIX-002)
-    const _catColors = {
-      'İhracat':    ['#EEEDFE','#26215C'],
-      'Satınalma':  ['#E6F1FB','#0C447C'],
-      'Kargo':      ['#FAEEDA','#633806'],
-      'Finans':     ['#EAF3DE','#27500A'],
-      'Genel':      ['#F1EFE8','#2C2C2A']
-    };
-    const _catName = t.cat || t.category || 'Genel';
-    const _catC    = _catColors[_catName] || _catColors['Genel'];
-
-    const row = document.createElement('div');
-    row.className   = `tk-row${isDone ? ' done-row' : ''}`;
-    row.dataset.taskId = t.id;
-    row.style.animation = `pus-row-in ${0.04 + idx * 0.025}s ease both`;
-    row.addEventListener('click', () => openPusDetail(t.id));
-
-    row.innerHTML = `
-      ${window.isAdmin?.() ? '<input type="checkbox" class="pus-bulk-chk" data-id="' + t.id + '" onclick="event.stopPropagation();_pusBulkCheck()" style="position:absolute;top:8px;left:8px;width:14px;height:14px;cursor:pointer;accent-color:var(--ac);z-index:10">' : ''}
-      <div class="tk-pri-bar" style="background:${isDone ? 'var(--b)' : p.color}"></div>
-      <div class="tk-check" onclick="event.stopPropagation()">
-        <input type="checkbox" ${isDone ? 'checked' : ''}
-          onchange="toggleTask(${t.id},this.checked)"
-          style="${isDone ? 'background:' + p.color + ';border-color:' + p.color : 'border-color:' + p.color}">
-      </div>
-      <div class="tk-body">
-        <div class="tk-name" style="${isDone ? '' : 'font-weight:600'}">
-          ${t.jobId ? `<span style="font-size:9px;font-family:monospace;color:var(--t3);background:var(--s2);padding:1px 5px;border-radius:3px;margin-right:4px;cursor:pointer" onclick="event.stopPropagation();window.openJobIdHub?.('${t.jobId}')">${t.jobId}</span>` : ''}${t.title}
-        </div>
-        <div class="tk-meta">
-          <span class="tk-pri-badge ${p.badge}">${p.label}</span>
-          <span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${_catC[0]};color:${_catC[1]}">${_catName}</span>
-          ${statusPill}${dueChip}
-          ${dc ? `<span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${dc}22;color:${dc}">● ${t.department}</span>` : ''}
-          ${t.cost ? `<span style="font-size:10px;background:rgba(16,185,129,.1);color:#059669;padding:2px 8px;border-radius:6px;font-weight:700">₺${Number(t.cost).toLocaleString('tr-TR')}</span>` : ''}
-          ${subTasks.length ? `<span style="font-size:11px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:6px;font-weight:700">⬜ ${subDone}/${subTasks.length}</span>` : ''}
-          ${tags}
-          ${t.link ? `<a href="${t.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#6366F1;text-decoration:none;padding:2px 7px;border-radius:5px;background:rgba(99,102,241,.1);font-weight:700">🔗</a>` : ''}
-        </div>
-      </div>
-      <div class="tk-right">
-        ${av}
-        <div class="tk-row-actions">
-          ${chatCount
-            ? `<button onclick="event.stopPropagation();openPusDetail(${t.id})" class="tk-chat-btn-active">💬 ${chatCount}</button>`
-            : `<button onclick="event.stopPropagation();openPusDetail(${t.id})" class="tk-chat-btn-empty">💬</button>`
-          }
-          <button onclick="event.stopPropagation();toggleFocus(${t.id},'day')"  class="tk-action-btn" title="Günün odağı" style="opacity:${PUS_DAY_FOCUS.includes(t.id) ? 1 : .25}">🔥</button>
-          <button onclick="event.stopPropagation();toggleFocus(${t.id},'week')" class="tk-action-btn" title="Haftanın odağı" style="opacity:${PUS_WEEK_FOCUS.includes(t.id) ? 1 : .25}">⭐</button>
-          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();editTask(${t.id})" class="tk-action-btn">✏️</button>` : ''}
-          ${t.uid === cu?.id || window.isAdmin?.() ? `<button onclick="event.stopPropagation();delTask(${t.id})" class="tk-action-btn" style="color:#EF4444">✕</button>` : ''}
-        </div>
-      </div>`;
-
-    wrapper.appendChild(row);
-
-    const stPlaceholder = document.createElement('div');
-    stPlaceholder.id = 'st-' + t.id;
-    wrapper.appendChild(stPlaceholder);
+  // Toolbar
+  h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">';
+  h += '<input class="fi" id="pus-ara" placeholder="Ara…" value="' + (fSearch || '') + '" style="flex:1;min-width:120px;padding:7px 10px;font-size:12px;border-radius:6px" oninput="event.stopPropagation();window._pusSayfa=1;renderPusula()" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">';
+  h += '<select class="fi" id="pus-durum" style="width:110px;padding:7px 10px;font-size:12px;border-radius:6px" onchange="event.stopPropagation();window._pusSayfa=1;renderPusula()" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">';
+  h += '<option value="">Tüm Durum</option><option value="todo"' + (fStatus === 'todo' ? ' selected' : '') + '>Yapılacak</option><option value="inprogress"' + (fStatus === 'inprogress' ? ' selected' : '') + '>Devam</option><option value="review"' + (fStatus === 'review' ? ' selected' : '') + '>İnceleme</option><option value="done"' + (fStatus === 'done' ? ' selected' : '') + '>Tamam</option></select>';
+  h += '<select class="fi" id="pus-oncelik" style="width:100px;padding:7px 10px;font-size:12px;border-radius:6px" onchange="event.stopPropagation();window._pusSayfa=1;renderPusula()" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">';
+  h += '<option value="0">Tüm Öncelik</option><option value="1"' + (fPri === 1 ? ' selected' : '') + '>Kritik</option><option value="2"' + (fPri === 2 ? ' selected' : '') + '>Önemli</option><option value="3"' + (fPri === 3 ? ' selected' : '') + '>Normal</option></select>';
+  h += '<select class="fi" id="pus-kategori" style="width:110px;padding:7px 10px;font-size:12px;border-radius:6px" onchange="event.stopPropagation();window._pusSayfa=1;renderPusula()" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">';
+  h += '<option value="">Tüm Kategori</option>';
+  ['İhracat','Satınalma','Kargo','Finans','Müşteri','Genel'].forEach(function(c) {
+    h += '<option value="' + c + '"' + (fCat === c ? ' selected' : '') + '>' + c + '</option>';
   });
+  h += '</select>';
 
-  frag.appendChild(wrapper);
-  cont.replaceChildren(frag);
+  // Toplu işlem butonları (hidden by default)
+  h += '<span id="pus-bulk-actions" style="display:none;gap:6px;align-items:center">';
+  h += '<span id="pus-bulk-cnt2" style="font-size:11px;color:var(--ac);font-weight:600">0</span>';
+  h += '<button onclick="event.stopPropagation();window._pusBulkDelete?.()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;font-size:10px;cursor:pointer;font-family:inherit">Sil</button>';
+  h += '<button onclick="event.stopPropagation();window._pusBulkComplete?.()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #16A34A;background:#EAF3DE;color:#15803D;font-size:10px;cursor:pointer;font-family:inherit">Tamamla</button>';
+  h += '<button onclick="event.stopPropagation();window._pusBulkClear?.()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;color:var(--t3);font-size:10px;cursor:pointer;font-family:inherit">İptal</button>';
+  h += '</span>';
+  h += '</div>';
+
+  // Sekmeler
+  var _tabs = [
+    { id:'tumu', lbl:'Tümü (' + allVis.length + ')' },
+    { id:'gecikmis', lbl:'Gecikmiş (' + ovCount + ')' },
+    { id:'bugun', lbl:'Bugün (' + todayC + ')' },
+    { id:'hafta', lbl:'Bu Hafta (' + weekC + ')' },
+    { id:'tamam', lbl:'Tamamlandı (' + doneCount + ')' }
+  ];
+  h += '<div style="display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--b);padding-bottom:0">';
+  _tabs.forEach(function(tab) {
+    var active = _pusAktifTab === tab.id;
+    h += '<button onclick="event.stopPropagation();window._pusSetTab(\'' + tab.id + '\')" style="padding:6px 14px;font-size:11px;font-weight:' + (active ? '700' : '500') + ';color:' + (active ? 'var(--ac)' : 'var(--t3)') + ';background:none;border:none;border-bottom:2px solid ' + (active ? 'var(--ac)' : 'transparent') + ';cursor:pointer;font-family:inherit;transition:all .15s">' + tab.lbl + '</button>';
+  });
+  h += '</div>';
+
+  // ── GÖREV LİSTESİ (öncelik gruplu) ─────────────────────────
+  if (!pageFl.length) {
+    h += '<div style="text-align:center;padding:48px;color:var(--t3)">';
+    h += '<div style="font-size:40px;margin-bottom:12px">🎯</div>';
+    h += '<div style="font-size:14px;font-weight:500">Görev bulunamadı</div>';
+    h += '<div style="font-size:12px;margin-top:4px">Filtreleri değiştirin veya yeni bir görev ekleyin.</div>';
+    h += '</div>';
+  } else {
+    var groups = {};
+    pageFl.forEach(function(t) {
+      var p = t.pri || 3;
+      if (!groups[p]) groups[p] = [];
+      groups[p].push(t);
+    });
+    var priLabels = { 1:'Yüksek', 2:'Orta', 3:'Düşük', 4:'Düşük' };
+    var priColors = { 1:'#DC2626', 2:'#D97706', 3:'#B4B2A9', 4:'#64748B' };
+
+    [1, 2, 3, 4].forEach(function(pri) {
+      if (!groups[pri] || !groups[pri].length) return;
+      var gc = priColors[pri];
+      h += '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px">';
+      h += '<span style="width:8px;height:8px;border-radius:50%;background:' + gc + ';flex-shrink:0"></span>';
+      h += '<span style="font-size:11px;font-weight:700;color:' + gc + '">' + priLabels[pri] + ' Öncelik — ' + groups[pri].length + ' görev</span>';
+      h += '<div style="flex:1;height:1px;background:var(--b)"></div>';
+      h += '</div>';
+
+      groups[pri].forEach(function(t) {
+        h += _renderTaskRow(t, todayS, users);
+      });
+    });
+  }
+
+  // Sayfalama
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:11px;color:var(--t3);margin-top:8px">';
+  h += '<span>' + fl.length + ' görev' + (fl.length !== allVis.length ? ' / ' + allVis.length + ' toplam' : '') + '</span>';
+  if (totalPages > 1) {
+    h += '<div style="display:flex;gap:6px;align-items:center">';
+    h += '<button onclick="event.stopPropagation();window._pusSayfa=Math.max(1,window._pusSayfa-1);renderPusula()" style="padding:4px 10px;border-radius:5px;border:1px solid var(--b);background:var(--sf);font-size:11px;cursor:pointer;font-family:inherit"' + (_pusSayfa <= 1 ? ' disabled' : '') + '>Önceki</button>';
+    h += '<span>' + _pusSayfa + ' / ' + totalPages + '</span>';
+    h += '<button onclick="event.stopPropagation();window._pusSayfa=Math.min(' + totalPages + ',window._pusSayfa+1);renderPusula()" style="padding:4px 10px;border-radius:5px;border:1px solid var(--b);background:var(--sf);font-size:11px;cursor:pointer;font-family:inherit"' + (_pusSayfa >= totalPages ? ' disabled' : '') + '>Sonraki</button>';
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '</div>'; // sol kolon sonu
+
+  // ══ SAĞ KOLON ══════════════════════════════════════════════
+  h += '<div style="flex:0 0 260px;overflow-y:auto;padding:12px;border-left:1px solid var(--b)">';
+
+  // BLOK 1 — En Önemli 3
+  h += _renderEn3Blok(todayS);
+
+  // BLOK 2 — Günün Sözü
+  h += _renderSozBlok();
+
+  // BLOK 3 — Kaynaklar
+  h += _renderKaynaklarBlok();
+
+  h += '</div>'; // sağ kolon sonu
+  h += '</div>'; // 2 kolon layout sonu
+
+  panel.innerHTML = h;
+
+  // Subtask render
+  pageFl.forEach(function(t) {
+    var stEl = g('st-' + t.id);
+    if (stEl && typeof renderSubTasks === 'function') renderSubTasks(t.id, t.subTasks || [], stEl);
+  });
 }
 
-// ── Görünüm kontrolü ────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// YARDIMCI RENDER FONKSİYONLARI
+// ════════════════════════════════════════════════════════════════
+
+function _kpiKart(label, val, bg, color, border) {
+  return '<div style="flex:1;min-width:80px;padding:10px 12px;background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;text-align:center">'
+    + '<div style="font-size:20px;font-weight:700;color:' + color + '">' + val + '</div>'
+    + '<div style="font-size:10px;color:' + color + ';opacity:.7">' + label + '</div></div>';
+}
+
+/** @description Tek görev satırı HTML'i */
+function _renderTaskRow(t, todayS, users) {
+  var p       = PRI_MAP[t.pri] || PRI_MAP[4];
+  var isDone  = t.done || t.status === 'done';
+  var dueChip = getDueChip(t.due, t.done, todayS);
+  var catName = t.category || t.cat || 'Genel';
+  var catC    = _CAT_COLORS[catName] || _CAT_COLORS['Genel'];
+  var subT    = t.subTasks || [];
+  var subD    = subT.filter(function(s) { return s.done; }).length;
+  var cu      = _getCU();
+  var canEdit = (t.uid === cu?.id || window.isAdmin?.());
+
+  var row = '<div class="tk-row' + (isDone ? ' done-row' : '') + '" data-task-id="' + t.id + '" onclick="event.stopPropagation();openPusDetail(' + t.id + ')" style="border-left:3px solid ' + (isDone ? 'var(--b)' : p.color) + ';padding:8px 12px;margin-bottom:4px;cursor:pointer;position:relative">';
+
+  // Checkbox (bulk)
+  if (window.isAdmin?.()) {
+    row += '<input type="checkbox" class="pus-row-chk" data-id="' + t.id + '" onclick="event.stopPropagation();window._pusBulkCheck2?.()" style="position:absolute;top:8px;left:6px;width:14px;height:14px;cursor:pointer;accent-color:var(--ac);z-index:10">';
+  }
+
+  // Task check
+  row += '<div style="display:flex;align-items:flex-start;gap:10px' + (window.isAdmin?.() ? ';padding-left:20px' : '') + '">';
+  row += '<input type="checkbox" ' + (isDone ? 'checked' : '') + ' onchange="event.stopPropagation();toggleTask(' + t.id + ',this.checked)" onclick="event.stopPropagation()" style="margin-top:3px;accent-color:' + p.color + ';cursor:pointer;flex-shrink:0">';
+  row += '<div style="flex:1;min-width:0">';
+
+  // Başlık
+  row += '<div style="font-weight:500;font-size:13px;color:' + (isDone ? 'var(--t3)' : 'var(--t)') + ';text-decoration:' + (isDone ? 'line-through' : 'none') + '">';
+  if (t.jobId) row += '<span style="font-size:9px;font-family:monospace;color:var(--t3);background:var(--s2);padding:1px 5px;border-radius:3px;margin-right:4px">' + t.jobId + '</span>';
+  row += (t.title || '—') + '</div>';
+
+  // Badges
+  row += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">';
+  row += dueChip;
+  row += '<span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:' + catC[0] + ';color:' + catC[1] + '">' + catName + '</span>';
+  if (t.module_ref) row += '<span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:#EEEDFE;color:#6366F1;font-family:monospace">' + t.module_ref + '</span>';
+  row += '</div>';
+
+  // Alt satır: due + desc
+  if (t.due || t.desc) {
+    row += '<div style="font-size:10px;color:var(--t3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">';
+    if (t.due) row += '📅 ' + t.due + ' ';
+    if (t.desc) {
+      var plainDesc = (t.desc || '').replace(/<[^>]*>/g, '').slice(0, 60);
+      row += plainDesc;
+    }
+    row += '</div>';
+  }
+
+  // Alt görev bar
+  if (subT.length) {
+    var subPct = Math.round(subD / subT.length * 100);
+    row += '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">';
+    row += '<div style="flex:1;height:3px;background:var(--s2);border-radius:2px;max-width:80px"><div style="height:100%;width:' + subPct + '%;background:var(--ac);border-radius:2px"></div></div>';
+    row += '<span style="font-size:10px;color:var(--t3)">' + subD + '/' + subT.length + ' alt görev</span>';
+    row += '</div>';
+  }
+
+  row += '</div>'; // flex:1
+
+  // Butonlar
+  if (canEdit) {
+    row += '<div style="display:flex;gap:4px;flex-shrink:0;align-items:flex-start">';
+    row += '<button onclick="event.stopPropagation();editTask(' + t.id + ')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px" title="Düzenle">✏️</button>';
+    row += '<button onclick="event.stopPropagation();delTask(' + t.id + ')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;color:#EF4444" title="Sil">✕</button>';
+    row += '</div>';
+  }
+
+  row += '</div>'; // flex row
+
+  // Subtask placeholder
+  row += '<div id="st-' + t.id + '"></div>';
+  row += '</div>'; // tk-row
+
+  return row;
+}
+
+// ── En Önemli 3 bloğu ────────────────────────────────────────
+function _renderEn3Blok(todayS) {
+  var h = '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;margin-bottom:12px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  h += '<span style="font-size:13px;font-weight:700;color:var(--t)">En Önemli 3</span>';
+  h += '<select onchange="event.stopPropagation();window._pusEn3Donem=this.value;renderPusula()" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="font-size:10px;padding:3px 8px;border:1px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t3);font-family:inherit;cursor:pointer">';
+  ['bugun','hafta','ay','yil'].forEach(function(d) {
+    var lbl = { bugun:'Bugün', hafta:'Bu Hafta', ay:'Bu Ay', yil:'Bu Yıl' }[d];
+    h += '<option value="' + d + '"' + (_pusEn3Donem === d ? ' selected' : '') + '>' + lbl + '</option>';
+  });
+  h += '</select></div>';
+
+  var overrideIds = window._pusEn3Load?.();
+  var en3;
+  if (overrideIds && overrideIds.length) {
+    var allTasks = window.loadTasks?.() || [];
+    en3 = overrideIds.map(function(id) { return allTasks.find(function(t) { return t.id === id; }); }).filter(Boolean).slice(0, 3);
+  } else {
+    en3 = window._pusEn3Hesapla?.(_pusEn3Donem) || [];
+  }
+
+  if (!en3.length) {
+    h += '<div style="text-align:center;padding:16px;font-size:11px;color:var(--t3)">Bu dönemde görev yok</div>';
+  } else {
+    en3.forEach(function(t, i) {
+      var catName = t.category || t.cat || 'Genel';
+      var catC = _CAT_COLORS[catName] || _CAT_COLORS['Genel'];
+      var isDone = t.done || t.status === 'done';
+      h += '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;' + (i < en3.length - 1 ? 'border-bottom:1px solid var(--b)' : '') + '">';
+      h += '<div style="width:22px;height:22px;border-radius:50%;background:#DC2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">' + (i + 1) + '</div>';
+      h += '<div style="flex:1;min-width:0">';
+      h += '<div style="font-size:12px;font-weight:600;color:' + (isDone ? 'var(--t3)' : 'var(--t)') + ';text-decoration:' + (isDone ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + t.title + '</div>';
+      h += '<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:' + catC[0] + ';color:' + catC[1] + ';font-weight:600">' + catName + '</span>';
+      h += '</div>';
+      h += '<input type="checkbox" ' + (isDone ? 'checked' : '') + ' onchange="event.stopPropagation();toggleTask(' + t.id + ',this.checked)" onclick="event.stopPropagation()" style="accent-color:#DC2626;cursor:pointer;margin-top:2px">';
+      h += '</div>';
+    });
+  }
+
+  h += '<div style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center">';
+  h += (overrideIds ? 'Manuel' : 'Otomatik') + ' · <a href="#" onclick="event.stopPropagation();event.preventDefault();window._pusEn3EditMode?.()" style="color:var(--ac);text-decoration:none">Düzenle</a>';
+  h += '</div></div>';
+  return h;
+}
+
+// ── Günün Sözü bloğu ─────────────────────────────────────────
+function _renderSozBlok() {
+  var _q = window._pusQuoteData || _getDailyQuote();
+  var h = '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;margin-bottom:12px">';
+  h += '<div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">Günün Sözü</div>';
+  h += '<div style="font-style:italic;font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:6px">"' + (window.escapeHtml?.(_q.text) || _q.text) + '"</div>';
+  h += '<div style="font-size:10px;color:var(--t3);text-align:right">— ' + (window.escapeHtml?.(_q.author) || _q.author) + '</div>';
+  h += '<div style="display:flex;gap:6px;margin-top:8px;justify-content:center">';
+  h += '<button onclick="event.stopPropagation();window._sozSonraki?.()" style="font-size:10px;padding:3px 10px;border-radius:5px;border:1px solid var(--b);background:var(--sf);cursor:pointer;font-family:inherit;color:var(--t3)">Sonraki →</button>';
+  h += '<button onclick="event.stopPropagation();window._sozPoster?.()" style="font-size:10px;padding:3px 10px;border-radius:5px;border:1px solid var(--b);background:var(--sf);cursor:pointer;font-family:inherit;color:var(--t3)">Poster Yap</button>';
+  h += '</div></div>';
+  return h;
+}
+
+// ── Kaynaklar bloğu ──────────────────────────────────────────
+function _renderKaynaklarBlok() {
+  var h = '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden">';
+  h += '<div onclick="event.stopPropagation();window._pusKaynaklarAcik=!window._pusKaynaklarAcik;renderPusula()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer">';
+  h += '<span style="font-size:12px;font-weight:700;color:var(--t)">Kaynaklar</span>';
+  h += '<span style="font-size:12px;color:var(--t3)">' + (_pusKaynaklarAcik ? '▼' : '▶') + '</span>';
+  h += '</div>';
+
+  if (_pusKaynaklarAcik) {
+    h += '<div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:10px">';
+    _KAYNAKLAR.forEach(function(k) {
+      h += '<div style="background:' + k.renk[0] + ';border-radius:8px;padding:10px;border-left:3px solid ' + k.renk[1] + '">';
+      h += '<div style="font-weight:700;font-size:12px;color:' + k.renk[1] + '">' + k.isim + '</div>';
+      h += '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">' + k.kitap + '</div>';
+      h += '<div style="font-size:11px;color:var(--t2);line-height:1.4;margin-bottom:6px">' + k.fikir + '</div>';
+      h += '<div style="font-style:italic;font-size:10px;color:' + k.renk[1] + ';border-left:2px solid ' + k.renk[1] + ';padding-left:8px">"' + k.soz + '"</div>';
+      h += '<button onclick="event.stopPropagation();window._sozEkleModal?.(\'' + k.isim.replace(/'/g, "\\'") + '\')" style="margin-top:6px;font-size:10px;padding:3px 10px;border-radius:5px;border:1px solid ' + k.renk[1] + ';background:transparent;color:' + k.renk[1] + ';cursor:pointer;font-family:inherit">Sözlere Ekle</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+// ── Tam ekran görünüm yardımcısı ─────────────────────────────
+function _renderFullView(panel) {
+  var _fc = g('pus-fullview-cont');
+  if (!_fc) {
+    _fc = document.createElement('div');
+    _fc.id = 'pus-fullview-cont';
+    panel.appendChild(_fc);
+  }
+  _fc.style.display = '';
+  _fc.innerHTML = '';
+  var _tasks = visTasks();
+  var _users = loadUsers();
+  var _today = new Date().toISOString().slice(0, 10);
+  if (PUS_VIEW === 'kadran')      _renderKadranView(_tasks, _users, _today, _fc);
+  else if (PUS_VIEW === 'kanban') _renderKanbanView(_tasks, _users, _today, _fc);
+  else if (PUS_VIEW === 'odak')   _renderOdakView(_tasks, _users, _today, _fc);
+  else if (PUS_VIEW === 'gantt')  { setTimeout(function() { window._pfRenderGantt?.(); }, 50); }
+}
+
+// ════════════════════════════════════════════════════════════════
+// GÖRÜNÜM VE FİLTRE KONTROL
+// ════════════════════════════════════════════════════════════════
+
 function setPusView(v, btn) {
   PUS_VIEW = v;
   localStorage.setItem('ak_pus_view', v);
-
-  // Segment butonları
   document.querySelectorAll('.pvt-btn,.pus-seg-btn,.cvb')
-    .forEach(b => b.classList.remove('on', 'active'));
+    .forEach(function(b) { b.classList.remove('on', 'active'); });
   if (btn) btn.classList.add('on', 'active');
-  else { const b = g('pus-v-' + v); if (b) b.classList.add('on', 'active'); }
-
-  // Tam ekran modlar: UI gizle
-  const isFullView = _PUS_FULL_VIEWS.indexOf(v) !== -1;
-  const _motivation  = g('pus-motivation');
-  const _tabsRow     = document.querySelector('.pus-tabs-row');
-  const _layout      = document.querySelector('.pus-layout');
-  const _focusPanel  = g('pus-focus-panel');
-  if (_motivation) _motivation.style.display = isFullView ? 'none' : '';
-  if (_tabsRow)    _tabsRow.style.display    = isFullView ? 'none' : '';
-  if (_layout)     _layout.style.display    = isFullView ? 'none' : '';
-  if (_focusPanel) _focusPanel.style.display = isFullView ? 'none' : '';
-
-  if (isFullView) {
-    let _fullCont = g('pus-fullview-cont');
-    if (!_fullCont) {
-      _fullCont    = document.createElement('div');
-      _fullCont.id = 'pus-fullview-cont';
-      const _panel = g('panel-pusula');
-      if (_panel) _panel.appendChild(_fullCont);
-    }
-    _fullCont.style.display = '';
-    _fullCont.innerHTML     = '';
-    const _tasks = visTasks();
-    const _users = loadUsers();
-    const _today = new Date().toISOString().slice(0, 10);
-    if (v === 'kadran')      _renderKadranView(_tasks, _users, _today, _fullCont);
-    else if (v === 'kanban') _renderKanbanView(_tasks, _users, _today, _fullCont);
-    else if (v === 'odak')   _renderOdakView(_tasks, _users, _today, _fullCont);
-    else if (v === 'gantt')  { setTimeout(() => _pfRenderGantt?.(), 50); }
-  } else {
-    const _fc = g('pus-fullview-cont');
-    if (_fc) { _fc.style.display = 'none'; _fc.innerHTML = ''; }
-    renderPusula();
-  }
+  renderPusula();
 }
+
+function _pusSetTab(tab) {
+  _pusAktifTab = tab;
+  _pusSayfa = 1;
+  renderPusula();
+}
+
+function setPusQuickFilter(f, btn) {
+  PUS_QUICK_FILTER = f;
+  document.querySelectorAll('.pus-stat-pill,.psb-tab,.pus-tab,.pus-stat-chip')
+    .forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  // Tab mapping
+  var tabMap = { overdue:'gecikmis', done:'tamam', all:'tumu' };
+  _pusAktifTab = tabMap[f] || 'tumu';
+  _pusSayfa = 1;
+  renderPusula();
+}
+
+function clearPusFilters() {
+  _pusAktifTab = 'tumu';
+  _pusSayfa = 1;
+  PUS_QUICK_FILTER = 'all';
+  renderPusula();
+}
+
+function updateTkPriBar() {
+  var pri = parseInt(g('tk-pri')?.value || '2');
+  var bar = g('tk-pri-indicator') || g('tk-pri-bar');
+  if (bar) bar.style.background = PRI_MAP[pri]?.color || '#64748B';
+}
+
+function _pusFiltre(alan, deger) {
+  _pusSayfa = 1;
+  renderPusula();
+}
+
+// ── Toplu işlem v2 ───────────────────────────────────────────
+window._pusBulkCheck2 = function() {
+  var checked = document.querySelectorAll('.pus-row-chk:checked');
+  var actions = document.getElementById('pus-bulk-actions');
+  var cnt = document.getElementById('pus-bulk-cnt2');
+  if (actions) actions.style.display = checked.length ? 'flex' : 'none';
+  if (cnt) cnt.textContent = checked.length + ' görev';
+};
+
+window._pusBulkComplete = function() {
+  var checked = document.querySelectorAll('.pus-row-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal?.(ids.length + ' görev tamamlandı olarak işaretlenecek.', {
+    title: 'Toplu Tamamla', confirmText: 'Evet, Tamamla',
+    onConfirm: function() {
+      var tasks = window.loadTasks ? loadTasks() : [];
+      tasks.forEach(function(t) {
+        if (ids.indexOf(t.id) !== -1) { t.done = true; t.status = 'done'; t.completedAt = new Date().toISOString(); }
+      });
+      if (typeof window.saveTasks === 'function') saveTasks(tasks);
+      renderPusula();
+      window.toast?.(ids.length + ' görev tamamlandı ✓', 'ok');
+      window.logActivity?.('task', 'Toplu tamamlama: ' + ids.length + ' görev');
+    }
+  });
+};
 
 window._toggleMeFilter = function(checked) {
   PUS_VIEW = checked ? 'me' : (localStorage.getItem('ak_pus_view') === 'me' ? 'list' : localStorage.getItem('ak_pus_view') || 'list');
   renderPusula();
 };
 
-function setPusQuickFilter(f, btn) {
-  PUS_QUICK_FILTER = f;
-  document.querySelectorAll('.pus-stat-pill,.psb-tab,.pus-tab,.pus-stat-chip')
-    .forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  else {
-    const idMap = { all:'psf-all', todo:'psf-todo', inprogress:'psf-ip', review:'psf-rv', done:'psf-done', overdue:'psf-ov' };
-    const el    = g(idMap[f]);
-    if (el) el.classList.add('active');
-  }
-  renderPusula();
-}
+// ════════════════════════════════════════════════════════════════
+// WINDOW EXPORTS
+// ════════════════════════════════════════════════════════════════
 
-function clearPusFilters() {
-  ['pf-search','pf-pri','pf-dept','pf-dfrom','pf-dto'].forEach(id => {
-    const el = g(id);
-    if (el) el.value = el.tagName === 'SELECT' ? (id === 'pf-pri' ? '0' : '') : '';
-  });
-  PUS_QUICK_FILTER = 'all';
-  const allBtn = g('psf-all');
-  if (allBtn) {
-    document.querySelectorAll('.pus-tab,.pus-stat-pill').forEach(b => b.classList.remove('active'));
-    allBtn.classList.add('active');
-  }
-  renderPusula();
-}
-
-function updateTkPriBar() {
-  const pri = parseInt(g('tk-pri')?.value || '2');
-  const bar = g('tk-pri-indicator');
-  if (bar) bar.style.background = PRI_MAP[pri]?.color || '#64748B';
-}
-
-// Window exports
-window.setPusView        = setPusView;
+window.renderPusula     = renderPusula;
+window.setPusView       = setPusView;
 window.setPusQuickFilter = setPusQuickFilter;
-window.clearPusFilters   = clearPusFilters;
-window.updateTkPriBar    = updateTkPriBar;
+window.clearPusFilters  = clearPusFilters;
+window.updateTkPriBar   = updateTkPriBar;
+window._pusSetTab       = _pusSetTab;
+window._pusFiltre       = _pusFiltre;
+window._pusSayfa        = _pusSayfa;
+window._pusAktifTab     = _pusAktifTab;
