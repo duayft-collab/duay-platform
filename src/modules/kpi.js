@@ -157,6 +157,8 @@ function _injectKpiPanel() {
           <option value="">Tüm Dönemler</option>
           ${_kpiBuildPeriodOptions().map(p => `<option value="${p}"${p === _kpiCurrentPeriod() ? ' selected' : ''}>${p}</option>`).join('')}
         </select>
+        <input class="fi" id="kpi-ara" placeholder="KPI adı ara..." oninput="event.stopPropagation();window._kpiAra(this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="max-width:160px;font-size:11px">
+        <button class="btn btns" onclick="event.stopPropagation();window._kpiExport()" style="font-size:11px">XLSX</button>
         ${_isAdminK() ? `<button class="btn btns" onclick="_kpiDonemGuncelle()" style="font-size:11px" title="Eski dönem KPI'larını yeni döneme kopyala">🔄 Dönem Güncelle</button>` : ''}
         ${_isAdminK() ? `<button class="btn btnp" onclick="openKpiModal()">+ KPI Ekle</button>` : ''}
       </div>
@@ -254,6 +256,10 @@ function renderKpiPanel() {
   const allItemsRef = items.slice(); // dönem karşılaştırma için
   const pf = _gk('kpi-period-f')?.value || '';
   if (pf) items = items.filter(k => k.period === pf);
+
+  // Arama filtresi (STANDART-FIX-010)
+  const _kpiAraVal = (_gk('kpi-ara')?.value || '').toLowerCase();
+  if (_kpiAraVal) items = items.filter(k => (k.title || '').toLowerCase().indexOf(_kpiAraVal) !== -1);
 
   // ── Dönem uyarısı (ACİL-FIX-005) ────────────────────────
   const _curPeriod = _kpiCurrentPeriod();
@@ -646,4 +652,24 @@ else {
   window.delKpi         = delKpi;
   window.openKpiUpdateModal = openKpiUpdateModal;
   window._kpiDonemGuncelle  = _kpiDonemGuncelle;
+
+  window._kpiAra = function(q) { renderKpiPanel(); };
+
+  window._kpiExport = function() {
+    var liste = loadKpi ? loadKpi() : [];
+    if (!liste.length) { window.toast?.('Dışa aktarılacak KPI yok', 'warn'); return; }
+    var baslik = ['ID','Başlık','Mevcut','Hedef','Birim','Dönem','Tamamlanma%'];
+    var satirlar = liste.map(function(k) {
+      return [k.id, k.title, k.current, k.target, k.unit, k.period,
+        k.target > 0 ? Math.round(k.current / k.target * 100) + '%' : '—'];
+    });
+    var csv = [baslik].concat(satirlar)
+      .map(function(r) { return r.map(function(c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(','); })
+      .join('\n');
+    var a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    a.download = 'kpi_' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    window.toast?.('KPI export tamamlandı ✓', 'ok');
+  };
 }
