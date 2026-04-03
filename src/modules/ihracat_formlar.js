@@ -9,7 +9,7 @@
 
 var D;
 function _ensureD() {
-  D = window.docx || window.Docx || window.DOCX;
+  D = window.docx || window.Document;
   if (!D || !D.Packer) { window.toast?.('DOCX kutuphanesi yuklenmedi — sayfa yenile', 'err'); return false; }
   return true;
 }
@@ -47,9 +47,8 @@ function headerTbl(title, no, sub) {
 }
 function signatureTbl() {
   return tbl([ new D.TableRow({ children:[
-    new D.TableCell({ children:[p([label('Authorized Signature & Date')],'left',200),p([muted('_______________________________',17)],'left',40),p([muted('___/___/2026',16)],'left',0)], width:{size:7000,type:'dxa'}, borders:{top:THIN,bottom:NONE,left:NONE,right:NONE}, margins:{top:80,bottom:0,left:0,right:0} }),
-    new D.TableCell({ children:[p([label('Company Stamp / Kase')],'left',200)], width:{size:7838,type:'dxa'}, borders:{top:THIN,bottom:NONE,left:NONE,right:NONE}, margins:{top:80,bottom:0,left:0,right:0} }),
-  ]})], [7000,7838]);
+    new D.TableCell({ children:[p([label('Authorized Signature — Duay Global LLC')],'left',200),p([muted('_______________________________',17)],'left',40),p([muted('___/___/2026',16)],'left',0)], width:{size:CW,type:'dxa'}, borders:{top:THIN,bottom:NONE,left:NONE,right:NONE}, margins:{top:80,bottom:0,left:0,right:0} }),
+  ]})], [CW]);
 }
 function checkLine(items) {
   var r=[]; items.forEach(function(it,i){ r.push(new D.TextRun({text:'[ ] ',size:17,font:'Arial'})); r.push(new D.TextRun({text:it+(i<items.length-1?'     ':''),size:17,font:'Arial'})); });
@@ -154,7 +153,7 @@ function makeCommercialInvoice(dosya, urunler) {
   var subRow=function(l,v){ return new D.TableRow({children:[ new D.TableCell({children:[p([muted(l,15)],'right',40)],columnSpan:5,borders:allNone,margins:cellMargS}), new D.TableCell({children:[p([muted(v,15)],'center',40)],width:{size:colW[5],type:'dxa'},borders:allNone,margins:cellMargS}) ]}); };
 
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Commercial Invoice',ciNo+'\nDate: '+tarih+'  ·  Incoterms: '+inco,'Istanbul, Turkey  ·  export@duayglobal.com'),
+    headerTbl('Commercial Invoice',ciNo+'\nDate: '+tarih,'Duay Global LLC  ·  export@duayglobal.com'),
     blank(200),
     // Sadece Seller + Buyer (Shipment ve Payment bloklari kaldirildi)
     tbl([new D.TableRow({children:[
@@ -173,10 +172,7 @@ function makeCommercialInvoice(dosya, urunler) {
     // Beyan notu
     p([muted('We hereby certify that the goods described herein are of Turkish origin and the price stated is the true commercial value.',15)],'left',200),
     blank(200),
-    // Sadece Seller imza (Alici imzasi kaldirildi)
-    tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Seller — Authorized Signature & Date')],'left',200),p([muted('_______________________________',17)],'left',40),p([muted('___/___/2026',16)],'left',0)],width:{size:CW,type:'dxa'},borders:{top:THIN,bottom:NONE,left:NONE,right:NONE},margins:{top:80,bottom:0,left:0,right:0}}),
-    ]})],[CW]),
+    signatureTbl(),
   ]}]});
 }
 
