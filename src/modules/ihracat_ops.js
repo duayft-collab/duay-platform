@@ -516,7 +516,9 @@ function _ihrDetayRenderOzet(d) {
   h += '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Teklif Talepleri</div>';
   h += '<div style="display:flex;flex-direction:column;gap:6px">';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">Sigorta Teklif Talebi</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'irq\')" style="font-size:11px;justify-content:flex-start;color:#185FA5">DOCX Sigorta Teklif</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">Navlun Teklif Talebi</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'frq\')" style="font-size:11px;justify-content:flex-start;color:#185FA5">DOCX Forwarder Teklif</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrIcNakliyeTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">İç Nakliye Teklif Talebi</button>';
   h += '</div></div>';
 
@@ -552,6 +554,11 @@ function _ihrDetayRenderOzet(d) {
     h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
     h += _badge(durum.l, durum.c, durum.bg);
 
+    /* DOCX Üret — CI ve PL için */
+    if (ev.tur === 'CI' || ev.tur === 'PL') {
+      var _docxTip = ev.tur === 'CI' ? 'ci' : 'pl';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'' + _docxTip + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">DOCX</button>';
+    }
     /* Görüntüle — her zaman */
     h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
     /* İndir — URL varsa */
@@ -648,6 +655,10 @@ window._ihrAcDosya = _ihrAcDosya;
 window._ihrRenderDosyaDetay = _ihrRenderDosyaDetay;
 window._ihrRenderContent = _ihrRenderContent;
 window._ihrDetayRenderOzet = _ihrDetayRenderOzet;
+// DOCX modülü için veri erişim yardımcıları
+window._ihrLoadDosya   = function(id) { return _loadD().find(function(x) { return String(x.id) === String(id); }); };
+window._ihrLoadUrunler = function(id) { return _loadU().filter(function(u) { return String(u.dosya_id) === String(id) && !u.isDeleted; }); };
+window._ihrLoadBL      = function(id) { return (_loadBL() || []).find(function(b) { return String(b.dosya_id) === String(id); }) || null; };
 window._ihrUrunAra = function(q) {
   window._ihrUrunAramaQ = q;
   window._ihrUrunSayfa = 1;
