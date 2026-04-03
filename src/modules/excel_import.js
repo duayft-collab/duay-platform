@@ -110,7 +110,7 @@ window.excelImportAc = function() {
 
 function _renderAdim1() {
   var body = _g('excel-import-body'); var footer = _g('excel-import-footer'); if (!body) return;
-  body.innerHTML = _stepBar(1) + '<div style="padding:32px 24px;text-align:center"><div style="width:56px;height:56px;border:1.5px dashed var(--bm);border-radius:12px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px" onclick="document.getElementById(\'excel-file-input\')?.click()">📥</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">Excel dosyasi sec</div><div style="font-size:12px;color:var(--t3);margin-bottom:16px">.xlsx veya .csv</div><input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="window._excelDosyaSecildi(this)"><button class="btn btnp" onclick="document.getElementById(\'excel-file-input\')?.click()">Dosya Sec</button></div>';
+  body.innerHTML = _stepBar(1) + '<div style="padding:32px 24px;text-align:center"><div style="width:56px;height:56px;border:1.5px dashed var(--bm);border-radius:12px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px" onclick="document.getElementById(\'excel-file-input\')?.click()">📥</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">Dosya Sec</div><div style="font-size:12px;color:var(--t3);margin-bottom:8px">.xlsx · .csv · .jpg · .png · .pdf · .tiff</div><div style="font-size:10px;color:var(--t3);margin-bottom:16px;background:var(--s2);display:inline-block;padding:4px 12px;border-radius:6px">Gorsel/PDF yuklerseniz icerik otomatik okunur (Claude Vision)</div><input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv,.jpg,.jpeg,.png,.tiff,.tif,.pdf" style="display:none" onchange="window._excelDosyaSecildi(this)"><button class="btn btnp" onclick="document.getElementById(\'excel-file-input\')?.click()">Dosya Sec</button></div>';
   footer.innerHTML = '<button class="btn btns" onclick="document.getElementById(\'mo-excel-import\')?.remove()">Iptal</button>';
 }
 
@@ -118,17 +118,112 @@ window._excelDosyaSecildi = function(input) {
   var file = input.files[0]; if (!file) return;
   _dosyaAdi = file.name;
   var body = _g('excel-import-body'); if (!body) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var imageExts = ['jpg','jpeg','png','tiff','tif','pdf'];
+  if (imageExts.indexOf(ext) !== -1) {
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t2)"><div style="font-size:32px;margin-bottom:12px">🔍</div>Gorsel okunuyor, urun verileri cikariliyor...<div style="font-size:10px;color:var(--t3);margin-top:8px">Claude Vision API kullaniliyor</div></div>';
+    _processImageFile(file);
+    return;
+  }
   body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t2)">Dosya okunuyor...</div>';
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
-      if (file.name.endsWith('.csv')) { _parseCSV(e.target.result); }
+      if (ext === 'csv') { _parseCSV(e.target.result); }
       else if (typeof XLSX !== 'undefined') { var wb = XLSX.read(e.target.result, { type:'array' }); var ws = wb.Sheets[wb.SheetNames[0]]; _processRawData(XLSX.utils.sheet_to_json(ws, { header:1, defval:'' })); }
       else { _parseCSV(new TextDecoder().decode(e.target.result)); }
     } catch (err) { body.innerHTML = '<div style="padding:40px;text-align:center;color:#DC2626">' + _esc(err.message) + '</div>'; }
   };
-  if (file.name.endsWith('.csv')) reader.readAsText(file, 'UTF-8'); else reader.readAsArrayBuffer(file);
+  if (ext === 'csv') reader.readAsText(file, 'UTF-8'); else reader.readAsArrayBuffer(file);
 };
+
+// ══ OCR — Gorsel/PDF'den urun verisi cikarma ═════════════════
+function _processImageFile(file) {
+  var body = _g('excel-import-body');
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var b64Full = ev.target.result;
+    var b64Data = b64Full.split(',')[1] || b64Full;
+    var mediaType = file.type || 'image/jpeg';
+    // API key — window.__ANTHROPIC_KEY veya localStorage
+    var apiKey = window.__ANTHROPIC_KEY || localStorage.getItem('ak_anthropic_key') || '';
+    if (!apiKey) {
+      // API key yoksa kullanicidan iste
+      if (body) body.innerHTML = '<div style="padding:24px;text-align:center">'
+        + '<div style="font-size:13px;font-weight:500;margin-bottom:12px">Anthropic API Key Gerekli</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Gorsel okuma icin Claude Vision API kullanilir. API key\'inizi girin:</div>'
+        + '<input class="fi" id="ei-api-key" placeholder="sk-ant-..." style="width:100%;max-width:400px;margin-bottom:12px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">'
+        + '<div style="display:flex;gap:8px;justify-content:center">'
+        + '<button class="btn btns" onclick="window._excelImportGeri()">Iptal</button>'
+        + '<button class="btn btnp" onclick="event.stopPropagation();var k=document.getElementById(\'ei-api-key\')?.value;if(k){localStorage.setItem(\'ak_anthropic_key\',k);window._excelDosyaSecildi(document.getElementById(\'excel-file-input\'));}">Kaydet ve Devam</button>'
+        + '</div></div>';
+      return;
+    }
+
+    var prompt = 'Bu belgeden urun listesini cikar. Her urun icin su alanlari bul: urun adi/aciklamasi, urun kodu, miktar, birim, birim fiyat, para birimi, HS kodu, brut kg, koli adedi. JSON array formatinda ver: [{"aciklama":"...","urun_kodu":"...","miktar":0,"birim":"PCS","birim_fiyat":0,"doviz":"USD","hs_kodu":"...","brut_kg":0,"koli_adet":0}]. Bulamazsan bos birak. Sadece JSON ver, baska bir sey yazma.';
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64Data } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      try {
+        var text = data.content && data.content[0] ? data.content[0].text : '';
+        // JSON parse — bazen markdown code block icinde olabilir
+        var jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        var urunler = JSON.parse(jsonStr);
+        if (!Array.isArray(urunler) || !urunler.length) { throw new Error('Urun bulunamadi'); }
+        // _excelData ve _kolonlar'i doldur
+        _kolonlar = Object.keys(urunler[0]);
+        _excelData = urunler.map(function(u) {
+          var obj = {};
+          _kolonlar.forEach(function(k) { obj[k] = String(u[k] || ''); });
+          return obj;
+        });
+        _dosyaSatir = _excelData.length;
+        _dosyaKolon = _kolonlar.length;
+        // Otomatik eslestirme — alan adlari zaten Duay formati
+        _eslestirme = {};
+        _kolonlar.forEach(function(k) {
+          var duayAlan = DUAY_ALANLARI.find(function(a) { return a.v === k; });
+          _eslestirme[k] = duayAlan ? k : 'atla';
+        });
+        window.toast?.(_excelData.length + ' urun okundu (Vision)', 'ok');
+        _renderAdim1B();
+      } catch(parseErr) {
+        if (body) body.innerHTML = '<div style="padding:24px;text-align:center;color:#DC2626">'
+          + '<div style="font-size:13px;font-weight:500;margin-bottom:8px">Gorsel okunamadi</div>'
+          + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">' + _esc(parseErr.message) + '</div>'
+          + '<div style="font-size:10px;color:var(--t3);background:var(--s2);padding:8px;border-radius:6px;text-align:left;max-height:150px;overflow-y:auto">' + _esc(text || JSON.stringify(data)) + '</div>'
+          + '<button class="btn btns" onclick="window._excelImportGeri()" style="margin-top:12px">← Geri</button></div>';
+      }
+    })
+    .catch(function(err) {
+      if (body) body.innerHTML = '<div style="padding:24px;text-align:center;color:#DC2626">'
+        + '<div style="font-size:13px;font-weight:500;margin-bottom:8px">API Hatasi</div>'
+        + '<div style="font-size:11px;margin-bottom:12px">' + _esc(err.message) + '</div>'
+        + '<button class="btn btns" onclick="window._excelImportGeri()" style="margin-top:8px">← Geri</button></div>';
+    });
+  };
+  reader.readAsDataURL(file);
+}
 
 function _parseCSV(text) { var lines = text.split('\n').filter(function(l) { return l.trim(); }); _processRawData(lines.map(function(l) { return l.split(/[,;\t]/).map(function(c) { return c.trim().replace(/^"|"$/g, ''); }); })); }
 
