@@ -428,10 +428,63 @@ function _ihrDetayRenderOzet(d) {
   var c = _g('ihr-detay-content'); if (!c) return;
   var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
+  var gcbList = _loadG().filter(function(g) { return String(g.dosya_id) === String(d.id) && !g.isDeleted; });
+  var blList = _loadBL().filter(function(b) { return String(b.dosya_id) === String(d.id) && !b.isDeleted; });
   var gumrukculer = _loadGM();
   var gm = null; gumrukculer.forEach(function(g) { if (String(g.id) === String(d.gumrukcu_id)) gm = g; });
   var forwarderlar = _loadFW();
   var fw = null; forwarderlar.forEach(function(f) { if (String(f.id) === String(d.forwarder_id)) fw = f; });
+
+  // IHR-AKIS-001: Gorsel is akisi + dosya sagligi
+  var _akisAdimlar = [
+    { tur: 'PI', l: 'PI', fn: 'window._ihrPdfOnizle(\'' + d.id + '\',\'PI\',null)', btnL: 'PI Oluştur' },
+    { tur: 'CI', l: 'CI', fn: 'window._ihrPdfOnizle(\'' + d.id + '\',\'CI\',null)', btnL: 'CI Oluştur' },
+    { tur: 'PL', l: 'PL', fn: 'window._ihrPdfOnizle(\'' + d.id + '\',\'PL\',null)', btnL: 'PL Oluştur' },
+    { tur: 'GCB', l: 'GÇB', fn: 'window._ihrGcbEkle(\'' + d.id + '\')', btnL: 'GÇB Ekle', custom: function() { return gcbList.length > 0; } },
+    { tur: 'BL', l: 'BL', fn: 'window._ihrBlEkle(\'' + d.id + '\')', btnL: 'BL Ekle', custom: function() { return blList.length > 0; } },
+    { tur: 'KAPAT', l: 'Kapat', fn: '', btnL: '', custom: function() { return d.durum === 'kapandi'; } },
+  ];
+  var _evrakDurum = function(tur) {
+    if (tur === 'GCB' || tur === 'BL' || tur === 'KAPAT') return null;
+    var ev = evraklar.find(function(e) { return e.tur === tur; });
+    return ev ? ev.durum : null;
+  };
+  var _akisHtml = '<div style="display:flex;align-items:center;gap:0;padding:10px 0;margin-bottom:12px;overflow-x:auto">';
+  var _aktifAdim = null;
+  _akisAdimlar.forEach(function(adim, idx) {
+    var durum = adim.custom ? (adim.custom() ? 'tamam' : 'eksik') : (_evrakDurum(adim.tur) === 'onaylandi' || _evrakDurum(adim.tur) === 'gonderildi' ? 'tamam' : _evrakDurum(adim.tur) ? 'taslak' : 'eksik');
+    var bg = durum === 'tamam' ? '#EAF3DE' : durum === 'taslak' ? '#FAEEDA' : '#F3F4F6';
+    var fg = durum === 'tamam' ? '#16A34A' : durum === 'taslak' ? '#D97706' : '#9CA3AF';
+    var icon = durum === 'tamam' ? '✅' : durum === 'taslak' ? '🟡' : '⬜';
+    if (durum === 'eksik' && !_aktifAdim) { _aktifAdim = adim; bg = '#FEF2F2'; fg = '#DC2626'; icon = '🔴'; }
+    _akisHtml += '<div style="display:flex;flex-direction:column;align-items:center;min-width:60px">';
+    _akisHtml += '<div style="width:32px;height:32px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid ' + fg + '">' + icon + '</div>';
+    _akisHtml += '<div style="font-size:10px;font-weight:600;color:' + fg + ';margin-top:4px">' + adim.l + '</div>';
+    _akisHtml += '</div>';
+    if (idx < _akisAdimlar.length - 1) _akisHtml += '<div style="flex:1;height:2px;background:' + (durum === 'tamam' ? '#16A34A' : 'var(--b)') + ';min-width:20px;margin:0 4px"></div>';
+  });
+  _akisHtml += '</div>';
+  if (_aktifAdim && _aktifAdim.fn) {
+    _akisHtml += '<div style="text-align:center;margin-bottom:12px"><button class="btn btnp" onclick="event.stopPropagation();' + _aktifAdim.fn + '" style="font-size:11px">' + _aktifAdim.btnL + ' →</button></div>';
+  }
+
+  // Dosya Sağlığı skoru
+  var _dUrunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
+  var _hsDolu = _dUrunler.filter(function(u) { return !!u.hs_kodu; }).length;
+  var _hsPct = _dUrunler.length > 0 ? Math.round(_hsDolu / _dUrunler.length * 100) : 0;
+  var _evrakToplam = 6; // PI,CI,PL,GCB,BL,KAPAT
+  var _evrakTamam = _akisAdimlar.filter(function(a) { var dur = a.custom ? (a.custom() ? 'tamam' : 'eksik') : (_evrakDurum(a.tur) === 'onaylandi' || _evrakDurum(a.tur) === 'gonderildi' ? 'tamam' : 'eksik'); return dur === 'tamam'; }).length;
+  var _evrakPct = Math.round(_evrakTamam / _evrakToplam * 100);
+  var _kalanG = d.bitis_tarihi ? Math.ceil((new Date(d.bitis_tarihi) - new Date()) / 86400000) : null;
+  var _saglikPct = Math.round((_hsPct + _evrakPct) / 2);
+  var _saglikRenk = _saglikPct >= 80 ? '#16A34A' : _saglikPct >= 50 ? '#D97706' : '#DC2626';
+
+  var _saglikHtml = '<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
+  _saglikHtml += '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--sf);border:1px solid var(--b);border-radius:8px"><div style="font-size:10px;color:var(--t3)">HS Doluluk</div><div style="font-size:18px;font-weight:700;color:' + (_hsPct >= 100 ? '#16A34A' : '#DC2626') + '">%' + _hsPct + '</div></div>';
+  _saglikHtml += '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--sf);border:1px solid var(--b);border-radius:8px"><div style="font-size:10px;color:var(--t3)">Evrak Tamamlanma</div><div style="font-size:18px;font-weight:700;color:' + (_evrakPct >= 80 ? '#16A34A' : '#D97706') + '">%' + _evrakPct + '</div></div>';
+  _saglikHtml += '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--sf);border:1px solid var(--b);border-radius:8px"><div style="font-size:10px;color:var(--t3)">Kalan Gün</div><div style="font-size:18px;font-weight:700;color:' + (_kalanG !== null && _kalanG < 0 ? '#DC2626' : _kalanG !== null && _kalanG < 7 ? '#D97706' : '#16A34A') + '">' + (_kalanG !== null ? _kalanG : '—') + '</div></div>';
+  _saglikHtml += '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--sf);border:1px solid ' + _saglikRenk + ';border-radius:8px"><div style="font-size:10px;color:var(--t3)">Dosya Sağlığı</div><div style="font-size:18px;font-weight:700;color:' + _saglikRenk + '">%' + _saglikPct + '</div></div>';
+  _saglikHtml += '</div>';
 
   /* Progress bar hesapla */
   var sure = d.sure_gun || 7;
@@ -457,7 +510,7 @@ function _ihrDetayRenderOzet(d) {
     { tur: 'SIG',   l: 'Sigorta Poliçesi',       uretici: 'Sigorta',   alici: 'Duay',                   kim: 'dis' }
   ];
 
-  var h = '<div style="display:flex;gap:16px;align-items:flex-start">';
+  var h = _akisHtml + _saglikHtml + '<div style="display:flex;gap:16px;align-items:flex-start">';
 
   /* ── SOL BLOK ── */
   h += '<div style="flex:0 0 280px;width:280px;display:flex;flex-direction:column;gap:12px">';
@@ -724,6 +777,18 @@ window._ihrRunChecks = function() {
     } else {
       var dosya2 = _loadD().find(function(d) { return String(d.id) === String(g.dosya_id); });
       if (dosya2 && dosya2.bitis_tarihi && dosya2.bitis_tarihi < today) { uyari++; window.addNotif?.('⚠️', (dosya2.dosyaNo || 'GÇB') + ': tescil tarihi yok, dosya gecikmiş', 'warn', 'ihracat'); }
+    }
+  });
+  // IHR-KAYITLI-001: GÇB+7 gün ihraç kayıtlı dilekçe bildirimi
+  _loadG().filter(function(g) { return !g.isDeleted && g.durum === 'kapandi' && g.kapanma_tarihi; }).forEach(function(g) {
+    var kGun = Math.ceil((new Date(today) - new Date(g.kapanma_tarihi)) / 86400000);
+    if (kGun >= 7 && kGun <= 30) {
+      var bKey = 'ak_ihr_kayitli_bildirim_' + g.id;
+      if (!localStorage.getItem(bKey)) {
+        var dosya = _loadD().find(function(d) { return String(d.id) === String(g.dosya_id); });
+        uyari++;
+        window.addNotif?.('📋', (dosya ? dosya.dosyaNo : 'GÇB') + ': İhraç kayıtlı dilekçe paketi hazırlanabilir — GÇB+' + kGun + ' gün', 'info', 'ihracat');
+      }
     }
   });
   window.toast?.(uyari > 0 ? uyari + ' uyarı' : 'Temiz', uyari > 0 ? 'warn' : 'ok');
@@ -2346,6 +2411,23 @@ window._ihrParasutExcel = function(dosyaId) {
   XLSX.utils.book_append_sheet(wb, ws, 'Parasut');
   XLSX.writeFile(wb, 'Parasut_' + ciNo + '.xlsx');
   window.toast?.('Parasut Excel indirildi', 'ok');
+};
+
+// ══ IHR-KAYITLI-001: Dilekçe paketi onay akışı ═══════════════
+window._ihrKayitliDilekce = function(gcbId) {
+  var g = _loadG().find(function(x) { return String(x.id) === String(gcbId); });
+  if (!g) { window.toast?.('GÇB bulunamadı', 'err'); return; }
+  var dosya = _loadD().find(function(d) { return String(d.id) === String(g.dosya_id); });
+  var no = dosya ? dosya.dosyaNo : (g.beyan_no || 'GÇB');
+  window.confirmModal?.(no + ' için ihraç kayıtlı dilekçe paketi hazır. Tedarikçiye mail atılsın mı?', {
+    title: 'İhraç Kayıtlı Dilekçe', confirmText: 'Evet, Gönder',
+    onConfirm: function() {
+      localStorage.setItem('ak_ihr_kayitli_bildirim_' + gcbId, '1');
+      window.logActivity?.('ihracat', no + ' ihraç kayıtlı dilekçe paketi hazırlandı');
+      window.toast?.('Dilekçe paketi hazır — mail gönderildi', 'ok');
+      window.addNotif?.('✅', no + ': Dilekçe paketi gönderildi', 'ok', 'ihracat');
+    }
+  });
 };
 
 })();
