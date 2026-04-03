@@ -110,6 +110,25 @@ function renderPusula() {
   const main = g('pus-main-view');
   if (!main) return;
 
+  // ── Gecikmiş görev bannerı (ACİL-FIX-004) ─────────────────
+  let _ovBanner = g('pus-overdue-banner');
+  if (ovCount > 0) {
+    if (!_ovBanner) {
+      _ovBanner = document.createElement('div');
+      _ovBanner.id = 'pus-overdue-banner';
+      main.parentNode?.insertBefore(_ovBanner, main);
+    }
+    _ovBanner.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 16px;margin-bottom:10px;background:linear-gradient(90deg,#FEF2F2,#FFF7ED);border:1px solid #FECACA;border-radius:10px;font-size:12px;color:#991B1B;cursor:pointer';
+    _ovBanner.innerHTML =
+      '<span style="font-size:18px">⚠️</span>'
+      + '<div><strong>' + ovCount + ' gecikmiş görev</strong>'
+      + '<div style="font-size:11px;color:#B91C1C;margin-top:2px">Teslim tarihi geçmiş görevleri inceleyin</div></div>'
+      + '<span style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:6px;background:#FEE2E2;color:#991B1B;font-weight:600">Göster →</span>';
+    _ovBanner.onclick = function(event) { event.stopPropagation(); setPusQuickFilter('overdue'); };
+  } else if (_ovBanner) {
+    _ovBanner.style.display = 'none';
+  }
+
   if (_PUS_FULL_VIEWS.indexOf(PUS_VIEW) !== -1) return;
 
   renderPusulaList(fl, users, todayS, main);
