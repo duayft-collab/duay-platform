@@ -131,3 +131,39 @@ Her gorevde sirasiyla: 1) Anla ve ozetle 2) Dosya/modulu analiz et 3) 5 gelistir
 ### BOLUM 4 — KONTROL LISTESI
 
 Her teslimde kontrol: Yalnizca talep edilen degisiklik / Hardcode secret yok / Tam kod (kisaltma yok) / Soft delete kullanildi / logActivity cagrildi / sanitize() kullanildi / PII maskelendi / IIFE + strict mode / generateId() kullanildi / JSDoc yazildi / Script sirasi dogru / TR+EN i18n eklendi / Dark/light test edildi / Min. 3 test senaryosu / 5 gelistirme onerisi sunuldu / Uzman ipucu paylasildi / Versiyon guncellendi
+
+---
+
+## Operasyonel Bağlam (Güncel)
+
+### Safari Kritik Kuralları
+- Her onclick'e: `event.stopPropagation()`
+- UUID onclick: `onclick="window.fn?.('uuid-here')"` — escaped quotes
+- Panel null fix: `renderXxx()` → `setTimeout 150ms` → `openForm()`
+- grid yerine flex; position:sticky sadece tek tablo içinde
+- window.fn = function() — IIFE içinde kalma, mutlaka export et
+
+### Store/Load Haritası
+| Modül | Load | Store | LS Key |
+|---|---|---|---|
+| Satınalma | loadSatinalma | storeSatinalma | ak_satinalma1 |
+| Satış Teklif | loadSatisTeklifleri | storeSatisTeklifleri | — |
+| Cari/Ödemeler | loadCari | storeCari | ak_cari1 |
+| İhracat Dosya | loadIhracatDosyalar | storeIhracatDosyalar | — |
+| İhracat Ürün | loadIhracatUrunler | storeIhracatUrunler | ak_ihr_urun1 |
+| Kargo | loadKargo | storeKargo | ak_kargo2 |
+| Görevler | loadTasks | — | Firebase |
+| KPI | loadKpi | storeKpi | — |
+| Pirim | loadPirim | storePirim | — |
+
+### Aktif Fix Kuyruğu
+1. ACİL-FIX-004: pusula_render.js → gecikmiş görev bannerı (28 gecikmiş)
+2. ACİL-FIX-005: kpi.js → dönem güncelleme butonu (Mart→Nisan)
+3. KARGO-V2: kargo.js tam yeniden yazım (tasarım onaylandı)
+4. Pusula: kategori + modül bağlantısı, kanban, alt görev
+5. Pirim: bonus/ceza liste, PDF slip, KPI entegrasyonu
+6. KPI: 6 yeni KPI, modül bağlantısı, alarm eşikleri
+
+### Commit Format
+`fix: MODUL-FIX-NNN — açıklama`
+`feat: MODUL-FEAT-NNN — açıklama`
