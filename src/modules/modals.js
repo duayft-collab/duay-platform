@@ -139,6 +139,25 @@ function injectAllModals() {
         </div>
       </div>
 
+      <!-- SATIR 5b — Kategori + Modül Referans -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Kategori</label>
+          <select class="fi" id="tk-cat" style="padding:10px 12px;border-radius:8px;font-size:13px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+            <option value="Genel">Genel</option>
+            <option value="İhracat">İhracat</option>
+            <option value="Satınalma">Satınalma</option>
+            <option value="Kargo">Kargo</option>
+            <option value="Finans">Finans</option>
+            <option value="Müşteri">Müşteri</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Modül Ref <span style="font-weight:400;color:var(--t3)">(opsiyonel)</span></label>
+          <input class="fi" id="tk-modref" placeholder="IHR-2026-0001" style="padding:10px 12px;border-radius:8px;font-size:13px;font-family:'DM Mono',monospace">
+        </div>
+      </div>
+
       <!-- SATIR 6 — Açıklama -->
       <div>
         <label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Açıklama</label>

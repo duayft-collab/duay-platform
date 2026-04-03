@@ -11,9 +11,10 @@
 function openAddTask() {
   populatePusUsers();
   _populateDeptSelect();
-  ['tk-title','tk-tags','tk-link','tk-jobid'].forEach(id => {
+  ['tk-title','tk-tags','tk-link','tk-jobid','tk-modref'].forEach(id => {
     const el = g(id); if (el) el.value = '';
   });
+  if (g('tk-cat')) g('tk-cat').value = 'Genel';
   const _descRich = g('tk-desc-rich'); if (_descRich) _descRich.innerHTML = '';
   if (g('tk-desc'))   g('tk-desc').value   = '';
   if (g('tk-pri'))    g('tk-pri').value    = '2';
@@ -65,6 +66,8 @@ function editTask(id) {
   if (g('tk-link'))   g('tk-link').value   = t.link   || '';
   if (g('tk-cost'))   g('tk-cost').value   = t.cost   || '';
   if (g('tk-jobid'))  g('tk-jobid').value  = t.jobId  || '';
+  if (g('tk-cat'))    g('tk-cat').value    = t.category || 'Genel';
+  if (g('tk-modref')) g('tk-modref').value = t.module_ref || '';
   const userEl = g('tk-user');
   if (userEl) userEl.value = String(t.uid || cu?.id || '');
   st('mo-tk-t', 'Görevi Düzenle');
@@ -125,6 +128,8 @@ function saveTask() {
     start:        g('tk-start')?.value  || null,
     status:       g('tk-status')?.value || 'todo',
     department:   g('tk-dept')?.value   || '',
+    category:     g('tk-cat')?.value   || 'Genel',
+    module_ref:   (g('tk-modref')?.value || '').trim() || null,
     cost:         parseFloat(g('tk-cost')?.value || '0') || null,
     tags:         (g('tk-tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean),
     link:         g('tk-link')?.value   || '',
