@@ -611,11 +611,21 @@ function _ihrDetayRenderOzet(d) {
     h += '<div style="padding:8px 12px;border-radius:8px;border:0.5px solid var(--b);background:' + rowBg + ';margin-bottom:5px">';
     h += '<div style="display:flex;align-items:center;justify-content:space-between">';
 
-    /* Sol: evrak adi + akis + zaman + yukleyen */
+    /* Sol: evrak adi + akis (inline editable) + zaman + yukleyen */
     h += '<div style="flex:1;min-width:0">';
     h += '<span style="font-size:12px;font-weight:' + (kayit ? '500' : '400') + ';color:var(--t)">' + _esc(ev.l) + '</span>';
     if (revNo > 0) h += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">Rev.' + revNo + '</span>';
-    h += '<div style="font-size:10px;color:var(--t3)">' + _esc(ev.uretici) + ' \u2192 ' + _esc(ev.alici);
+    h += '<div style="font-size:10px;color:var(--t3)">';
+    // Kaynak → Hedef (tiklaninca inline edit)
+    var _evKaynak = (kayit && kayit.kaynak) ? kayit.kaynak : ev.uretici;
+    var _evHedef = (kayit && kayit.hedef) ? kayit.hedef : ev.alici;
+    if (kayit) {
+      h += '<span onclick="event.stopPropagation();window._ihrEvrakKaynakDuzenle(\'' + kayit.id + '\')" style="cursor:pointer;text-decoration:underline dotted" title="Tikla duzenle">' + _esc(_evKaynak) + '</span>';
+      h += ' \u2192 ';
+      h += '<span onclick="event.stopPropagation();window._ihrEvrakHedefDuzenle(\'' + kayit.id + '\')" style="cursor:pointer;text-decoration:underline dotted" title="Tikla duzenle">' + _esc(_evHedef) + '</span>';
+    } else {
+      h += _esc(ev.uretici) + ' \u2192 ' + _esc(ev.alici);
+    }
     if (zamanTxt) h += ' · ' + _esc(zamanTxt);
     if (yukleyenAd) h += ' · ' + _esc(yukleyenAd);
     h += '</div></div>';
@@ -645,9 +655,11 @@ function _ihrDetayRenderOzet(d) {
     }
     h += '</div></div>';
 
-    /* Coklu dosya listesi (varsa) */
+    /* Coklu dosya listesi — toggle ile acilir */
     if (dosyalar.length > 0) {
-      h += '<div style="padding:4px 12px 6px">';
+      var _toggleId = 'evrak-files-' + ev.tur + '-' + (kayit ? kayit.id : '');
+      h += '<div style="padding:2px 12px"><button onclick="event.stopPropagation();var el=document.getElementById(\'' + _toggleId + '\');if(el)el.style.display=el.style.display===\'none\'?\'block\':\'none\'" style="background:none;border:none;cursor:pointer;font-size:10px;color:#185FA5;padding:0">Tum Versiyonlar (' + dosyalar.length + ') \u25BE</button></div>';
+      h += '<div id="' + _toggleId + '" style="display:none;padding:4px 12px 6px">';
       dosyalar.forEach(function(df, di) {
         h += '<div style="display:flex;align-items:center;gap:6px;font-size:10px;padding:2px 0;border-top:' + (di > 0 ? '0.5px solid var(--b)' : 'none') + '">';
         h += '<span style="color:var(--t3)">📎</span>';
@@ -2214,16 +2226,21 @@ window._evrakYukleKaydet = function() {
   // Dosya secildiyse oku
   if (fileInput && fileInput.files && fileInput.files.length > 0) {
     var filesArr = Array.from(fileInput.files);
+    // 5MB uyari
+    var buyukDosya = filesArr.find(function(f) { return f.size > 5 * 1024 * 1024; });
+    if (buyukDosya) { window.toast?.(buyukDosya.name + ' 5MB ustu — kucuk dosya secin veya URL kullanin', 'err'); return; }
     var loaded = 0;
     filesArr.forEach(function(f, fi) {
       var reader = new FileReader();
-      reader.onload = function(ev) {
-        // Base64 saklamak yerine sadece meta kaydet (LS tasarrufu)
-        yeniDosyalar.push({ id: _genId(), ad: f.name, boyut: f.size, tip: f.type, url_veya_b64: '', kaynak: kaynak, hedef: hedef, revizyon: revBase + fi + 1, yukleyen_id: cu?.id, yukleyen_ad: cu?.name || '', yukleme_tarihi: _now() });
+      reader.onload = function(ev2) {
+        var b64 = ev2.target.result;
+        // 500KB altindaysa base64 kaydet, ustundeyse sadece meta
+        var kayitB64 = (f.size < 500 * 1024) ? b64 : '';
+        yeniDosyalar.push({ id: _genId(), ad: f.name, boyut: f.size, tip: f.type, url_veya_b64: kayitB64, kaynak: kaynak, hedef: hedef, revizyon: revBase + fi + 1, yukleyen_id: cu?.id, yukleyen_ad: cu?.name || '', yukleme_tarihi: _now() });
         loaded++;
         if (loaded === filesArr.length) kaydetFn();
       };
-      reader.readAsArrayBuffer(f); // Sadece boyut almak icin
+      reader.readAsDataURL(f);
     });
   } else if (url) {
     kaydetFn();
@@ -2538,6 +2555,20 @@ window._ihrPdfIndir = function(dosyaId, tur) {
   h += '</tbody></table><p style="margin-top:24px;font-size:10px;color:#999">Duay Global LLC · ' + _today() + '</p></body></html>';
   w.document.write(h); w.document.close();
   setTimeout(function() { w.print(); }, 500);
+};
+
+// ══ EVRAK-V2: Kaynak/Hedef inline edit ═══════════════════════
+window._ihrEvrakKaynakDuzenle = function(evrakId) {
+  var evraklar = _loadE(); var ev = evraklar.find(function(e) { return String(e.id) === String(evrakId); }); if (!ev) return;
+  var yeni = prompt('Kaynak:', ev.kaynak || ''); if (yeni === null) return;
+  ev.kaynak = yeni.trim(); ev.updatedAt = _now(); _storeE(evraklar);
+  if (_aktifDosyaId) { var _dd3 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd3) _ihrDetayRenderOzet(_dd3); }
+};
+window._ihrEvrakHedefDuzenle = function(evrakId) {
+  var evraklar = _loadE(); var ev = evraklar.find(function(e) { return String(e.id) === String(evrakId); }); if (!ev) return;
+  var yeni = prompt('Hedef:', ev.hedef || ''); if (yeni === null) return;
+  ev.hedef = yeni.trim(); ev.updatedAt = _now(); _storeE(evraklar);
+  if (_aktifDosyaId) { var _dd4 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd4) _ihrDetayRenderOzet(_dd4); }
 };
 
 })();
