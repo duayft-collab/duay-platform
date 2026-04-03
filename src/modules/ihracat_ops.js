@@ -773,7 +773,9 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   h += '<button class="btn btns" id="ihr-urun-hepsini-sec" onclick="event.stopPropagation();window._ihrUrunHepsiniSec()" style="font-size:10px">Seç</button>';
   h += '<button class="btn btns btnd" id="ihr-urun-toplu-sil" onclick="event.stopPropagation();window._ihrUrunTopluSil(\'' + d.id + '\')" style="font-size:10px;display:none">Sil</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTopluDuzenle(\'' + d.id + '\')" style="font-size:10px">Toplu Düzenle</button>';
-  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKolonAyar?.(\'' + d.id + '\')" style="font-size:10px;color:#185FA5;font-weight:600" title="Kolon gorunumunu ayarla">\u2699 ' + GORUNEN_KOLONLAR.length + '/' + KOLONLAR.length + ' Kolon</button>';
+  var _tmpSaved; try { _tmpSaved = JSON.parse(localStorage.getItem(_IHR_KOLON_KEY) || 'null'); } catch(e2) { _tmpSaved = null; }
+  var _tmpKolSay = (Array.isArray(_tmpSaved) && _tmpSaved.length) ? _tmpSaved.length : _IHR_KOLON_DEFAULT.length;
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKolonAyar?.(\'' + d.id + '\')" style="font-size:10px;color:#185FA5;font-weight:600" title="Kolon gorunumunu ayarla">\u2699 ' + _tmpKolSay + ' Kolon</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunExcel(\'' + d.id + '\')" style="font-size:10px">XLSX</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'CI\',null)" style="font-size:10px">CI</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'PL\',null)" style="font-size:10px">PL</button>';
