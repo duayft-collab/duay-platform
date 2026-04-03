@@ -78,6 +78,7 @@ window._yetkiKontrol = function(islem) {
     'rehber': () => { window.renderRehber?.(); },
     'dashboard': () => { window.Dashboard?.render?.(); },
     'ihracat-ops': () => { window.renderIhracatOps?.(); },
+    'ihracat-formlar': () => { window.renderIhracatFormlar?.(); },
     'dashboardDetay': () => { window.DashboardDetay?.render?.(); },
   };
 
