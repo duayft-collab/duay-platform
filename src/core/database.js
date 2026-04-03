@@ -43,6 +43,75 @@
 (function(){
 'use strict';
 
+// ══ ACİL YER AÇMA — %90+ doluysa LZ-String olmadan bile çalışır ══
+(function _immediateCleanup() {
+  try {
+    var total = 0;
+    for (var i = 0; i < localStorage.length; i++) {
+      total += (localStorage.key(i).length + (localStorage.getItem(localStorage.key(i)) || '').length) * 2;
+    }
+    var pct = Math.round(total / (5 * 1024 * 1024) * 100);
+    if (pct < 85) return; // yeterli yer var
+
+    // 1) Büyük koleksiyonları agresif kes
+    var trimKeys = [
+      ['ak_trash1', 8], ['ak_act1', 15], ['ak_notif1', 10],
+      ['ak_kpi_log1', 30], ['ak_task_chat1', null],
+      ['ak_krg_history1', 20], ['ak_loj_perf1', 10],
+      ['ak_update_log1', 10], ['ak_hesap1', 20],
+    ];
+    trimKeys.forEach(function(pair) {
+      var k = pair[0], max = pair[1];
+      try {
+        var raw = localStorage.getItem(k);
+        if (!raw || raw.length < 1000) return;
+        if (max === null) { localStorage.setItem(k, '{}'); return; } // taskChats → boş obje
+        var d = JSON.parse(raw);
+        if (Array.isArray(d) && d.length > max) {
+          localStorage.setItem(k, JSON.stringify(d.slice(-max)));
+        }
+      } catch(e) {}
+    });
+
+    // 2) Silinmiş kayıtları tüm koleksiyonlardan at
+    ['ak_ihr_urun1','ak_satinalma1','ak_odm1','ak_tahsilat1','ak_urunler1','ak_tk2','ak_pirim1','ak_cari1'].forEach(function(k) {
+      try {
+        var raw = localStorage.getItem(k);
+        if (!raw || raw.length < 500) return;
+        var d = JSON.parse(raw);
+        if (!Array.isArray(d)) return;
+        var before = d.length;
+        d = d.filter(function(item) { return !item.isDeleted; });
+        if (d.length < before) localStorage.setItem(k, JSON.stringify(d));
+      } catch(e) {}
+    });
+
+    // 3) Boş alanları tüm büyük dizilerden temizle
+    ['ak_ihr_urun1','ak_satinalma1','ak_urunler1','ak_tk2'].forEach(function(k) {
+      try {
+        var raw = localStorage.getItem(k);
+        if (!raw || raw.length < 2000) return;
+        var d = JSON.parse(raw);
+        if (!Array.isArray(d)) return;
+        var cleaned = d.map(function(item) {
+          if (!item || typeof item !== 'object') return item;
+          var c = {};
+          Object.keys(item).forEach(function(f) {
+            var v = item[f];
+            if (v === null || v === undefined || v === '' || v === 0) return;
+            if (Array.isArray(v) && v.length === 0) return;
+            c[f] = v;
+          });
+          return c;
+        });
+        localStorage.setItem(k, JSON.stringify(cleaned));
+      } catch(e) {}
+    });
+
+    console.info('[DB] Acil temizlik tamamlandi — %' + pct + ' → yeniden hesaplanacak');
+  } catch(e) { console.warn('[DB] Acil temizlik hata:', e); }
+})();
+
 // ── Versiyon ─────────────────────────────────────────────────────
 const DB_VERSION = '8.0.0';
 
@@ -429,7 +498,7 @@ function _mergeDataSets(localKey, fsData, collection) {
 
 /** Mevcut LS'deki base64 siskinligini tek seferlik temizle */
 (function _oneTimeBase64Cleanup() {
-  var _DONE_KEY = 'ak_b64clean_v2';
+  var _DONE_KEY = 'ak_b64clean_v3';
   if (localStorage.getItem(_DONE_KEY)) return;
   setTimeout(function() {
     try {
