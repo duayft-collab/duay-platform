@@ -2843,6 +2843,32 @@ function _startBgSyncCheck() {
         }).catch(function() {});
       } catch(e) {}
     });
+    // ── IHR-3AY-001: 3 ay ihracat zorunluluk alarmi ──
+    try {
+      var _ihrDosyalar = typeof loadIhracatDosyalar === 'function' ? loadIhracatDosyalar() : [];
+      var _bugunku = new Date().toISOString().slice(0, 10);
+      _ihrDosyalar.filter(function(d) { return !d.isDeleted && d.createdAt && !['kapandi','iptal'].includes(d.durum); }).forEach(function(d) {
+        var gun = Math.ceil((new Date(_bugunku) - new Date(d.createdAt)) / 86400000);
+        if (gun > 90) { window.addNotif?.('🔴', (d.dosyaNo || 'Dosya') + ': 3 ay ihracat süresi doldu!', 'err', 'ihracat'); }
+        else if (gun > 60) { window.addNotif?.('⚠️', (d.dosyaNo || 'Dosya') + ': 3 ay zorunluluğuna ' + (90 - gun) + ' gün kaldı', 'warn', 'ihracat'); }
+      });
+    } catch(e) {}
+
+    // ── IHR-KAMBIYO-001: 4 ay kambiyo takibi ──
+    try {
+      var _MUAF_ULKELER = ['Almanya','Fransa','İtalya','İspanya','Hollanda','Belçika','Avusturya','Portekiz','Yunanistan','İrlanda','Finlandiya','Lüksemburg','ABD','İngiltere','Japonya','Çin','Güney Kore','Kanada','Avustralya','İsviçre','Norveç','İsveç','Danimarka'];
+      var _gcbKapali = typeof loadIhracatGcb === 'function' ? loadIhracatGcb().filter(function(g) { return !g.isDeleted && g.durum === 'kapandi' && g.kapanma_tarihi; }) : [];
+      _gcbKapali.forEach(function(g) {
+        var dosya = _ihrDosyalar.find(function(d) { return String(d.id) === String(g.dosya_id); });
+        var ulke = dosya ? (dosya.varis_ulkesi || dosya.alici_ulke || '') : '';
+        if (_MUAF_ULKELER.indexOf(ulke) !== -1) return;
+        var kGun = Math.ceil((new Date(_bugunku) - new Date(g.kapanma_tarihi)) / 86400000);
+        var no = dosya ? dosya.dosyaNo : (g.beyan_no || 'GÇB');
+        if (kGun > 120) { window.addNotif?.('🔴', no + ': Kambiyo süresi doldu!', 'err', 'ihracat'); }
+        else if (kGun > 90) { window.addNotif?.('⚠️', no + ': Kambiyo süresine ' + (120 - kGun) + ' gün kaldı', 'warn', 'ihracat'); }
+      });
+    } catch(e) {}
+
   }, 2 * 60 * 1000);
 }
 
