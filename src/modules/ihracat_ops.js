@@ -17,6 +17,16 @@ var _IHR_KOLON_PRESETS = {
   'Gumrukcu PL': ['tedarikciAd','gumrukcu_tanim','hs_kodu','miktar','birim','brut_kg','net_kg','koli_adet','hacim_m3','mense_ulke','konteyner_no','muhur_no'],
 };
 
+// SMART-OCR-001: Evrak tipi bazli OCR prompt'lari
+var _EVRAK_OCR_PROMPT = {
+  GCB: { prompt:'Bu bir Gumruk Beyannamesi (GCB). Su alanlari cikar ve JSON ver: beyan_no, tescil_tarihi (YYYY-MM-DD), fob_deger (sayi), doviz (USD/EUR/TRY), ihracatci_adi, alici_adi, mal_tanimi, hs_kodu_listesi (array). Sadece JSON ver.', alanlar:['beyan_no','tescil_tarihi','fob_deger','doviz','ihracatci_adi','alici_adi','mal_tanimi'] },
+  BL:  { prompt:'Bu bir Konsimento (Bill of Lading). Su alanlari cikar: bl_no, yukleme_tarihi (YYYY-MM-DD), consignee, notify_party, vessel_name, pol, pod, konteyner_no, seal_no, toplam_koli, toplam_kg, mal_tanimi, bl_turu (belgede DRAFT geciyorsa "draft", ORIGINAL geciyorsa "original"). Sadece JSON ver.', alanlar:['bl_no','yukleme_tarihi','consignee','notify_party','vessel_name','pol','pod','konteyner_no','seal_no','toplam_koli','toplam_kg','mal_tanimi','bl_turu'] },
+  MENSEI:{ prompt:'Bu bir Mensei Sahadetnamesi. Su alanlari cikar: belge_no, tarih (YYYY-MM-DD), ihracatci, alici, mal_cinsi, mense_ulke. Sadece JSON ver.', alanlar:['belge_no','tarih','ihracatci','alici','mal_cinsi','mense_ulke'] },
+  EUR1:{ prompt:'Bu bir EUR.1 veya A.TR dolasim belgesi. Su alanlari cikar: belge_no, tarih (YYYY-MM-DD), ihracatci, alici, mal_tanimi. Sadece JSON ver.', alanlar:['belge_no','tarih','ihracatci','alici','mal_tanimi'] },
+  INSP:{ prompt:'Bu bir Inspection raporu. Su alanlari cikar: rapor_no, tarih (YYYY-MM-DD), firma, mal_tanimi, sonuc (uygun/uygun degil). Sadece JSON ver.', alanlar:['rapor_no','tarih','firma','mal_tanimi','sonuc'] },
+  SIG: { prompt:'Bu bir sigorta policesidir. Su alanlari cikar: police_no, sigorta_sirketi, baslangic_tarihi (YYYY-MM-DD), bitis_tarihi, sigorta_degeri (sayi), doviz, kapsam_turu. Sadece JSON ver.', alanlar:['police_no','sigorta_sirketi','baslangic_tarihi','bitis_tarihi','sigorta_degeri','doviz','kapsam_turu'] },
+};
+
 var _g   = function(id) { return document.getElementById(id); };
 var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
 var _cu  = function() { return window.CU?.() || window.Auth?.getCU?.(); };
@@ -643,8 +653,13 @@ function _ihrDetayRenderOzet(d) {
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#C62828">PDF</button>';
     }
     h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Goruntule</button>';
-    /* Dosya yukle — her zaman gorunur */
-    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+    /* Dosya yukle — dis evraklar Smart OCR, ic evraklar normal */
+    var _ocrEvraklar = ['GCB','BL','MENSEI','EUR1','INSP','SIG'];
+    if (_ocrEvraklar.indexOf(ev.tur) !== -1) {
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+    } else {
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+    }
     if (kayit && kayit.dosya_url) {
       h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">Indir</a>';
     }
@@ -653,6 +668,10 @@ function _ihrDetayRenderOzet(d) {
       else if (kayit.durum === 'taslak') { h += '<button class="btn btns" onclick="window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:2px 8px;color:#16A34A">Onayla</button>'; }
       else if (kayit.durum === 'onaylandi') { h += '<button class="btn btns" onclick="window._ihrEvrakGonderModal(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px">Gonder</button>'; }
       else if (kayit.durum === 'gonderildi') { h += '<span style="font-size:10px;color:#16A34A;padding:2px 4px">\u2713</span>'; }
+    }
+    // BL Draft → Orijinal butonu
+    if (ev.tur === 'BL' && kayit && kayit.bl_turu === 'draft') {
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'BL\')" style="font-size:10px;padding:2px 8px;color:#D97706" title="Orijinal BL yukle">Orijinal BL Ekle</button>';
     }
     h += '</div></div>';
 
@@ -2625,6 +2644,159 @@ window._ihrEvrakHedefDuzenle = function(evrakId) {
   var yeni = prompt('Hedef:', ev.hedef || ''); if (yeni === null) return;
   ev.hedef = yeni.trim(); ev.updatedAt = _now(); _storeE(evraklar);
   if (_aktifDosyaId) { var _dd4 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd4) _ihrDetayRenderOzet(_dd4); }
+};
+
+// ══ SMART-OCR-001: Evrak belge okuma ══════════════════════════
+window._ihrSmartEvrakYukle = function(dosyaId, evrakTur) {
+  var ocrDef = _EVRAK_OCR_PROMPT[evrakTur];
+  if (!ocrDef) { window._ihrEvrakDosyaYukle(dosyaId, evrakTur); return; } // fallback
+  // Gizli file input
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png,.tiff,.tif'; inp.style.display = 'none';
+  inp.onchange = function() {
+    var file = inp.files[0]; if (!file) return; inp.remove();
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var b64Full = ev.target.result;
+      var b64Data = b64Full.split(',')[1] || b64Full;
+      var mediaType = file.type || 'image/jpeg';
+      _smartOcrModal(dosyaId, evrakTur, b64Full, b64Data, mediaType, file, ocrDef);
+    };
+    reader.readAsDataURL(file);
+  };
+  document.body.appendChild(inp); inp.click();
+};
+
+function _smartOcrModal(dosyaId, evrakTur, b64Full, b64Data, mediaType, file, ocrDef) {
+  var old = _g('mo-smart-evrak'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-smart-evrak';
+  // 2 sutunlu modal
+  var isPdf = mediaType.indexOf('pdf') !== -1;
+  var preview = isPdf
+    ? '<embed src="' + b64Full + '" type="application/pdf" style="width:100%;height:100%;border:none">'
+    : '<img src="' + b64Full + '" style="max-width:100%;max-height:100%;object-fit:contain">';
+  mo.innerHTML = '<div class="moc" style="max-width:1100px;width:95vw;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:12px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0"><div style="font-size:14px;font-weight:600">' + _esc(evrakTur) + ' — Belge Okuma</div><button onclick="document.getElementById(\'mo-smart-evrak\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
+    + '<div style="display:flex;flex:1;overflow:hidden">'
+    + '<div style="flex:1;background:#f5f5f5;display:flex;align-items:center;justify-content:center;overflow:auto;padding:8px">' + preview + '</div>'
+    + '<div id="smart-ocr-right" style="flex:1;overflow-y:auto;padding:16px;border-left:1px solid var(--b)">'
+    + '<div style="text-align:center;padding:40px;color:var(--t2)"><div style="font-size:24px;margin-bottom:8px">🔍</div>Okunuyor...<div style="font-size:10px;color:var(--t3);margin-top:4px">Claude Vision API</div></div>'
+    + '</div></div>'
+    + '<div id="smart-ocr-footer" style="padding:10px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-smart-evrak\')?.remove()">Iptal</button></div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+
+  // API key
+  var apiKey = window.__ANTHROPIC_KEY || localStorage.getItem('ak_anthropic_key') || '';
+  if (!apiKey) {
+    var right = _g('smart-ocr-right');
+    if (right) right.innerHTML = '<div style="padding:16px"><div style="font-size:12px;font-weight:500;margin-bottom:8px">API Key Gerekli</div><input class="fi" id="socr-key" placeholder="sk-ant-..." style="width:100%;margin-bottom:8px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"><button class="btn btnp" onclick="event.stopPropagation();var k=document.getElementById(\'socr-key\')?.value;if(k){localStorage.setItem(\'ak_anthropic_key\',k);document.getElementById(\'mo-smart-evrak\')?.remove();window._ihrSmartEvrakYukle(\'' + dosyaId + '\',\'' + evrakTur + '\');}">Kaydet</button></div>';
+    return;
+  }
+
+  // OCR API cagir
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'x-api-key':apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1500, messages:[{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:mediaType, data:b64Data } },{ type:'text', text:ocrDef.prompt }] }] })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var text = data.content && data.content[0] ? data.content[0].text : '';
+    var jsonStr = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    try {
+      var parsed = JSON.parse(jsonStr);
+      _smartOcrRenderForm(dosyaId, evrakTur, parsed, b64Data, mediaType, file, ocrDef);
+    } catch(e) {
+      var right = _g('smart-ocr-right');
+      if (right) right.innerHTML = '<div style="padding:16px;color:#DC2626"><div style="font-weight:500;margin-bottom:8px">Okunamadi</div><div style="font-size:10px;background:var(--s2);padding:8px;border-radius:6px;max-height:200px;overflow-y:auto">' + _esc(text) + '</div></div>';
+    }
+  })
+  .catch(function(err) {
+    var right = _g('smart-ocr-right');
+    if (right) right.innerHTML = '<div style="padding:16px;color:#DC2626">API Hatasi: ' + _esc(err.message) + '</div>';
+  });
+}
+
+function _smartOcrRenderForm(dosyaId, evrakTur, parsed, b64Data, mediaType, file, ocrDef) {
+  var right = _g('smart-ocr-right'); if (!right) return;
+  var footer = _g('smart-ocr-footer');
+  var okunan = Object.keys(parsed).filter(function(k) { return parsed[k]; }).length;
+  var toplam = ocrDef.alanlar.length;
+  var h = '';
+  if (okunan >= toplam * 0.7) h += '<div style="background:#EAF3DE;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:11px;color:#085041">\u2713 ' + okunan + '/' + toplam + ' alan okundu — kontrol edin</div>';
+  else h += '<div style="background:#FAEEDA;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:11px;color:#633806">\u26a0 ' + okunan + '/' + toplam + ' alan okundu — eksikleri doldurun</div>';
+  ocrDef.alanlar.forEach(function(alan) {
+    var val = parsed[alan] !== undefined ? String(parsed[alan]) : '';
+    h += '<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t3);margin-bottom:2px">' + _esc(alan) + '</div><input class="fi" id="socr-' + alan + '" value="' + _esc(val) + '" style="width:100%;font-size:11px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>';
+  });
+  // BL ozel: draft/original secimi
+  if (evrakTur === 'BL') {
+    var blTuru = (parsed.bl_turu || '').toLowerCase().indexOf('draft') !== -1 ? 'draft' : 'original';
+    h += '<div style="margin-top:10px;padding:10px;background:var(--s2);border-radius:8px"><div style="font-size:11px;font-weight:500;margin-bottom:6px">BL Turu:</div>';
+    h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:4px;cursor:pointer"><input type="radio" name="socr-bl-tur" value="draft"' + (blTuru === 'draft' ? ' checked' : '') + '> BL Draft (taslak)</label>';
+    h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="radio" name="socr-bl-tur" value="original"' + (blTuru === 'original' ? ' checked' : '') + '> Orijinal BL (final)</label>';
+    if (blTuru === 'draft') h += '<div style="margin-top:6px;padding:6px 10px;background:#E6F1FB;border-radius:6px;font-size:10px;color:#0C447C">Draft olarak kaydedilecek. Orijinal geldiginde ayni evrak uzerine guncellenecek.</div>';
+    h += '</div>';
+  }
+  right.innerHTML = h;
+  if (footer) footer.innerHTML = '<button class="btn btns" onclick="document.getElementById(\'mo-smart-evrak\')?.remove()">Iptal</button><button class="btn btnp" onclick="event.stopPropagation();window._ihrSmartEvrakKaydet(\'' + dosyaId + '\',\'' + evrakTur + '\')">Onayla ve Kaydet</button>';
+  // parsed'i window'a gecici kaydet
+  window._smartOcrParsed = parsed;
+  window._smartOcrB64 = b64Data;
+  window._smartOcrMediaType = mediaType;
+  window._smartOcrFile = file;
+}
+
+window._ihrSmartEvrakKaydet = function(dosyaId, evrakTur) {
+  var parsed = window._smartOcrParsed || {};
+  var b64Data = window._smartOcrB64 || '';
+  var file = window._smartOcrFile;
+  var cu = _cu();
+  var ocrDef = _EVRAK_OCR_PROMPT[evrakTur];
+  // Form'dan guncel degerleri oku
+  if (ocrDef) { ocrDef.alanlar.forEach(function(alan) { var inp = _g('socr-' + alan); if (inp) parsed[alan] = inp.value.trim(); }); }
+  // BL turu
+  var blTuru = 'original';
+  if (evrakTur === 'BL') {
+    var radios = document.querySelectorAll('input[name="socr-bl-tur"]');
+    radios.forEach(function(r) { if (r.checked) blTuru = r.value; });
+  }
+
+  // Evrak tipine gore kaydet
+  if (evrakTur === 'GCB') {
+    var gcbList = _loadG(); var existing = gcbList.find(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; });
+    var entry = { dosya_id:dosyaId, beyan_no:parsed.beyan_no||'', tescil_tarihi:parsed.tescil_tarihi||'', fob_deger:parseFloat(parsed.fob_deger)||0, doviz:parsed.doviz||'USD', mal_tanimi:parsed.mal_tanimi||'', durum:'tescil', updatedAt:_now(), ocr_ile_okundu:true };
+    if (existing) Object.assign(existing, entry);
+    else { entry.id = _genId(); entry.createdAt = _now(); gcbList.unshift(entry); }
+    _storeG(gcbList);
+  } else if (evrakTur === 'BL') {
+    var blList = _loadBL(); var exBl = blList.find(function(b) { return String(b.dosya_id) === String(dosyaId) && !b.isDeleted; });
+    var blEntry = { dosya_id:dosyaId, bl_no:parsed.bl_no||'', yukleme_tarihi:parsed.yukleme_tarihi||'', consignee:parsed.consignee||'', notify_party:parsed.notify_party||'', vessel_name:parsed.vessel_name||'', pol:parsed.pol||'', pod:parsed.pod||'', konteyner_no:parsed.konteyner_no||'', seal_no:parsed.seal_no||'', bl_turu:blTuru, durum:blTuru==='draft'?'taslak':'orijinal', updatedAt:_now(), ocr_ile_okundu:true };
+    if (exBl) Object.assign(exBl, blEntry);
+    else { blEntry.id = _genId(); blEntry.createdAt = _now(); blList.unshift(blEntry); }
+    _storeBL(blList);
+  }
+
+  // Evrak kaydina dosya ekle
+  var evraklar = _loadE();
+  var evKayit = evraklar.find(function(e) { return String(e.dosya_id) === String(dosyaId) && e.tur === evrakTur; });
+  var yeniDosya = { id:_genId(), ad:file?file.name:evrakTur, boyut:file?file.size:0, tip:file?file.type:'', url_veya_b64:'', revizyon:(evKayit && evKayit.dosyalar ? evKayit.dosyalar.length : 0) + 1, yukleyen_id:cu?.id, yukleyen_ad:cu?.name||'', yukleme_tarihi:_now(), ocr_ile_okundu:true };
+  if (evKayit) {
+    evKayit.durum = evrakTur === 'BL' ? (blTuru === 'draft' ? 'taslak' : 'orijinal') : 'gonderildi';
+    if (!evKayit.dosyalar) evKayit.dosyalar = [];
+    evKayit.dosyalar.push(yeniDosya);
+    evKayit.ek_veri = parsed;
+    evKayit.updatedAt = _now();
+  } else {
+    evraklar.unshift({ id:_genId(), dosya_id:dosyaId, tur:evrakTur, durum:evrakTur === 'BL' ? (blTuru === 'draft' ? 'taslak' : 'orijinal') : 'gonderildi', dosyalar:[yeniDosya], ek_veri:parsed, createdAt:_now(), createdBy:cu?.id, updatedAt:_now() });
+  }
+  _storeE(evraklar);
+  _g('mo-smart-evrak')?.remove();
+  window._smartOcrParsed = null; window._smartOcrB64 = null; window._smartOcrFile = null;
+  window.toast?.(evrakTur + ' okundu ve kaydedildi', 'ok');
+  window.logActivity?.('ihracat', evrakTur + ' Smart OCR ile kaydedildi');
+  if (_aktifDosyaId) { var _dd5 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd5) _ihrDetayRenderOzet(_dd5); }
 };
 
 })();
