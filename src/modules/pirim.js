@@ -375,6 +375,59 @@ function _ensurePirimModals() {
 }
 window._ensurePirimModals = _ensurePirimModals;
 
+// ── Bonus/Ceza badge render yardımcısı ─────────────────────────
+function _renderBcBadges(bc) {
+  if (!bc) return '';
+  var h = '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:2px">';
+  if (bc.gecikmeGun > 0)
+    h += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#791F1F">-' + (bc.gecikmeGun >= 3 ? '20' : '10') + '% gecikme</span>';
+  if (bc.yeniUrun)
+    h += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#15803D">+yeni ürün</span>';
+  if (bc.caprazSatis)
+    h += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#15803D">+çapraz satış</span>';
+  if (bc.yoneticiIndirimOran > 0)
+    h += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#FAEEDA;color:#92400E">-' + (bc.yoneticiIndirimOran * 100).toFixed(0) + '% indirim</span>';
+  h += '</div>';
+  return h;
+}
+
+// ── Toplu işlem yardımcıları ────────────────────────────────────
+window._pirimBulkCheck = function() {
+  var checked = document.querySelectorAll('.pirim-row-chk:checked');
+  var actions = document.getElementById('prm-bulk-actions');
+  var cnt = document.getElementById('prm-bulk-cnt');
+  if (actions) actions.style.display = checked.length ? 'flex' : 'none';
+  if (cnt) cnt.textContent = checked.length + ' prim';
+};
+
+window._pirimBulkClear = function() {
+  document.querySelectorAll('.pirim-row-chk').forEach(function(cb) { cb.checked = false; });
+  var actions = document.getElementById('prm-bulk-actions');
+  if (actions) actions.style.display = 'none';
+};
+
+window._pirimBulkPay = function() {
+  var checked = document.querySelectorAll('.pirim-row-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal?.(ids.length + ' prim "ödendi" olarak işaretlenecek.', {
+    title: 'Toplu Ödeme', confirmText: 'Evet, Öde',
+    onConfirm: function() {
+      var d = window.loadPirim?.() || [];
+      d.forEach(function(p) {
+        if (ids.indexOf(p.id) !== -1 && p.status === 'approved') {
+          p.status = 'paid'; p.paidAt = new Date().toISOString();
+        }
+      });
+      window.storePirim?.(d);
+      window._pirimBulkClear?.();
+      renderPirim();
+      window.toast?.(ids.length + ' prim ödendi ✓', 'ok');
+      window.logActivity?.('pirim', 'Toplu ödeme: ' + ids.length + ' prim');
+    }
+  });
+};
+
 function _injectPirimPanel() {
   _ensurePirimModals(); // Tüm modalleri DOM'a hazırla
   const panel = window.g('panel-pirim');
@@ -408,7 +461,7 @@ ${[['primlerim','🏆 Primlerim'],['hesapla','📊 Hesapla'],['yonetmelik','📜
 <div style="flex:1;overflow-y:auto">
 
 <!-- BENTO METRİKLER -->
-<div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--b)">
+<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--b)">
   <div style="padding:14px 18px;border-right:1px solid var(--b)">
     <div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Kayıt</div>
     <div style="font-size:22px;font-weight:600;color:var(--t)" id="prm-stat-total">0</div>
@@ -426,9 +479,18 @@ ${[['primlerim','🏆 Primlerim'],['hesapla','📊 Hesapla'],['yonetmelik','📜
     <div style="font-size:10px;color:var(--t3);margin-bottom:4px">💸 Ödendi</div>
     <div style="font-size:22px;font-weight:600;color:#6366F1" id="prm-stat-paid">0</div>
   </div>
-  <div style="padding:14px 18px">
+  <div style="padding:14px 18px;border-right:1px solid var(--b)">
     <div style="font-size:10px;color:var(--t3);margin-bottom:4px">Toplam Onaylı</div>
     <div style="font-size:22px;font-weight:600;color:var(--ac)" id="prm-stat-amount">0 ₺</div>
+  </div>
+  <div style="padding:14px 18px;border-right:1px solid var(--b)">
+    <div style="font-size:10px;color:var(--t3);margin-bottom:4px">🔥 Seri</div>
+    <div style="font-size:22px;font-weight:600;color:#F59E0B" id="prm-stat-streak">0</div>
+    <div id="prm-streak-mini" style="display:flex;gap:2px;margin-top:4px"></div>
+  </div>
+  <div style="padding:14px 18px">
+    <div style="font-size:10px;color:var(--t3);margin-bottom:4px">Bu Ay Tahmini</div>
+    <div style="font-size:22px;font-weight:600;color:#8B5CF6" id="prm-stat-forecast">0 ₺</div>
   </div>
 </div>
 
@@ -496,6 +558,13 @@ ${[['primlerim','🏆 Primlerim'],['hesapla','📊 Hesapla'],['yonetmelik','📜
   </select>
   <input class="fi" id="prm-search" style="flex:1;min-width:120px;font-size:11px" placeholder="🔍 Ara..." oninput="Pirim.render()">
   <button class="btn btns" onclick="Pirim.clearFilters()" style="font-size:11px">✕</button>
+  <span id="prm-bulk-actions" style="display:none;gap:6px;align-items:center">
+    <span id="prm-bulk-cnt" style="font-size:10px;font-weight:600;color:var(--ac)">0</span>
+    <button class="btn btns btng" onclick="event.stopPropagation();window.bulkApprovePirim?.()" style="font-size:10px">✓ Onayla</button>
+    <button class="btn btns" onclick="event.stopPropagation();window._pirimBulkPay?.()" style="font-size:10px;color:var(--bl)">💸 Öde</button>
+    <button class="btn btns" onclick="event.stopPropagation();window._pirimBulkClear?.()" style="font-size:10px">İptal</button>
+  </span>
+  <button class="btn btns" onclick="event.stopPropagation();window.sendMonthlyPirimSummary?.()" style="font-size:11px">📊 Aylık Özet</button>
 </div>
 
 <!-- ANA İÇERİK: sol tablo + sağ panel -->
@@ -619,6 +688,25 @@ function renderPirim() {
   const nb = window.g('nb-pirim-b');
   if (nb) { nb.textContent = pending; nb.style.display = pending > 0 ? 'inline' : 'none'; }
 
+  // Streak göstergesi
+  const cuStreak = cu ? calcPirimStreak(cu.id) : 0;
+  window.st('prm-stat-streak', cuStreak + '🔥');
+  const miniBar = window.g('prm-streak-mini');
+  if (miniBar) {
+    let miniH = '';
+    for (let si = 0; si < 7; si++) {
+      miniH += '<div style="width:8px;height:8px;border-radius:2px;background:' + (si < cuStreak ? '#F59E0B' : 'var(--s2)') + '"></div>';
+    }
+    miniBar.innerHTML = miniH;
+  }
+
+  // Forecast (bu ay tahmini)
+  const now2   = new Date();
+  const mKey2  = now2.getFullYear() + '-' + _p2(now2.getMonth() + 1);
+  const monthPirim = pirim.filter(p => (p.date || '').startsWith(mKey2));
+  const forecastAmt = monthPirim.reduce((a, p) => a + (p.amount || 0), 0);
+  window.st('prm-stat-forecast', forecastAmt.toLocaleString('tr-TR') + ' ₺');
+
   // Kişisel banner (admin değilse)
   const banner = window.g('prm-personal-banner');
   if (banner && !admin && cu) {
@@ -680,14 +768,17 @@ function renderPirim() {
     row.onmouseenter = function() { this.style.background = 'var(--s2)'; };
     row.onmouseleave = function() { this.style.background = over ? 'rgba(239,68,68,.03)' : ''; };
     row.innerHTML = `
-      <div>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${admin ? '<input type="checkbox" class="pirim-row-chk" data-id="' + p.id + '" onclick="event.stopPropagation();window._pirimBulkCheck?.()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)">' : ''}
+        <div>
         <div style="font-weight:600;font-size:12px;color:var(--t)">${u.name}</div>
         ${p.code ? `<div style="font-size:9px;color:var(--t3);font-family:'DM Mono',monospace">${p.code}</div>` : ''}
-      </div>
+      </div></div>
       <div><span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--alb);color:var(--ac)">${td?.emoji || ''} ${td?.label || p.type}</span></div>
       <div>
         <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px" title="${p.title||''}">${p.title || '—'}</div>
         ${p.note ? `<div style="font-size:10px;color:var(--t3)">${p.note.slice(0,30)}</div>` : ''}
+        ${_renderBcBadges(p.bonusCeza)}
       </div>
       <div style="font-weight:700;font-size:12px;font-family:'DM Mono',monospace;color:var(--ac)">${_fmt(p.amount)}</div>
       <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t2)">${p.date||'—'}</div>
@@ -715,6 +806,7 @@ function renderPirim() {
             admin && p.status === 'approved' ? `
             <button class="btn btns" style="font-size:11px;color:var(--bl)" onclick="Pirim.markPaid(${p.id})">💸 Ödendi</button>` : ''}
           <button class="btn btns" onclick="Pirim.showDetail(${p.id})" style="font-size:11px" title="Detay">🔍</button>
+          <button class="btn btns" onclick="event.stopPropagation();window.printPirimSlip?.(${p.id})" style="font-size:11px" title="PDF Slip">🖨</button>
           ${admin || (p.uid === cu?.id && p.status === 'pending') ? `<button class="btn btns" onclick="Pirim.openModal(${p.id})" style="font-size:11px">✏️</button>` : ''}
           ${!admin && cu && p.uid === cu.id && p.status === 'rejected' ? `<button class="btn btns" style="font-size:11px;color:var(--ac)" onclick="Pirim.resubmit(${p.id})" title="Düzenleyip tekrar gönder">↩ Tekrar Gönder</button>` : ''}
           ${admin ? `<button class="btn btns btnd" onclick="Pirim.del(${p.id})" style="font-size:11px">🗑</button>` : ''}
@@ -1454,7 +1546,17 @@ function showPirimDetail(id) {
       ${p.approvedAt ? _dRow('Onaylanma', p.approvedAt) : ''}
       ${p.paidAt ? _dRow('Ödeme T.', p.paidAt) : ''}
       ${p.rejectReason ? _dRow('Red Nedeni', `<span style="color:var(--rd)">${p.rejectReason}</span>`) : ''}
-    </div>`;
+    </div>
+    ${p.bonusCeza ? `<div style="margin-top:12px;padding:12px;background:var(--s2);border-radius:8px">
+      <div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:8px">Bonus / Ceza Dökümü</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${p.bonusCeza.gecikmeGun > 0 ? '<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#FCEBEB;color:#791F1F">⚠️ Gecikme: ' + p.bonusCeza.gecikmeGun + ' gün (-%' + (p.bonusCeza.gecikmeGun >= 3 ? '20' : '10') + ')</span>' : ''}
+        ${p.bonusCeza.yeniUrun ? '<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#EAF3DE;color:#15803D">🆕 Yeni Ürün Bonusu</span>' : ''}
+        ${p.bonusCeza.caprazSatis ? '<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#EAF3DE;color:#15803D">🔄 Çapraz Satış Bonusu</span>' : ''}
+        ${p.bonusCeza.yoneticiIndirimOran > 0 ? '<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#FAEEDA;color:#92400E">📉 Yönetici İndirimi: %' + (p.bonusCeza.yoneticiIndirimOran * 100).toFixed(0) + '</span>' : ''}
+        ${!p.bonusCeza.gecikmeGun && !p.bonusCeza.yeniUrun && !p.bonusCeza.caprazSatis && !p.bonusCeza.yoneticiIndirimOran ? '<span style="font-size:10px;color:var(--t3)">Bonus/ceza uygulanmadı</span>' : ''}
+      </div>
+    </div>` : ''}`;
   // Reddedilmişse ve kendi primseyse tekrar gönder butonu
   const footer = window.g('pirim-detail-footer');
   if (footer) {
