@@ -1242,7 +1242,7 @@ function storeTahsilat(d) {
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16D — ÜRÜNLER / ALIŞ TEKLİF / SATIŞ TEKLİF
 // ════════════════════════════════════════════════════════════════
-/** @returns {Array} */ function loadUrunler() { var d = _read(KEYS.urunler); return Array.isArray(d) ? d : []; }
+/** @returns {Array} */ function loadUrunler() { var d = _read(KEYS.urunler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeUrunler(d) { _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeAlisTeklifleri(d) { _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
