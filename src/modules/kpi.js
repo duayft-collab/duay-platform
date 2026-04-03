@@ -161,7 +161,7 @@ function _injectKpiPanel() {
         </select>
         <input class="fi" id="kpi-ara" placeholder="KPI adı ara..." oninput="event.stopPropagation();window._kpiAra(this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="max-width:160px;font-size:11px">
         <button class="btn btns" onclick="event.stopPropagation();window._kpiExport()" style="font-size:11px">XLSX</button>
-        ${_isAdminK() ? `<button class="btn btns" onclick="_kpiDonemGuncelle()" style="font-size:11px" title="Eski dönem KPI'larını yeni döneme kopyala">🔄 Dönem Güncelle</button>` : ''}
+        ${_isAdminK() ? `<button class="btn btns" onclick="event.stopPropagation();window._kpiDonemGuncelle()" style="font-size:11px" title="Eski dönem KPI'larını yeni döneme kopyala">🔄 Dönem Güncelle</button>` : ''}
         ${_isAdminK() ? `<button class="btn btnp" onclick="openKpiModal()">+ KPI Ekle</button>` : ''}
       </div>
     </div>
@@ -221,7 +221,7 @@ function _injectKpiPanel() {
           </div>
           <div class="fg">
             <label class="fl">Dönem</label>
-            <input class="fi" id="kpi-period" placeholder="Mart 2026" maxlength="40">
+            <input class="fi" id="kpi-period" placeholder="${_kpiCurrentPeriod()}" maxlength="40">
           </div>
           <div class="fg">
             <label class="fl">Açıklama</label>
@@ -593,9 +593,9 @@ function _kpiDonemGuncelle() {
   if (!_isAdminK()) return;
   const curPeriod = _kpiCurrentPeriod();
   const allItems  = loadKpi ? loadKpi() : [];
-  const hasItems  = allItems.some(k => k.period === curPeriod);
-  if (hasItems) {
-    window.toast?.(_curPeriodLabel() + ' dönemi zaten mevcut', 'err');
+  const hasManualItems = allItems.some(k => k.period === curPeriod && !k.auto);
+  if (hasManualItems) {
+    window.toast?.(_curPeriodLabel() + ' döneminde manuel KPI zaten var', 'err');
     return;
   }
 

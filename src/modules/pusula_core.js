@@ -353,6 +353,7 @@ function checkOverdueTasks() {
   if (!CU) return;
   const todayS  = new Date().toISOString().slice(0, 10);
   const overdue = loadTasks().filter(t =>
+    !t.isDeleted &&
     !t.done && t.status !== 'done' && t.due && t.due < todayS &&
     (t.uid === CU.id || (t.managers || []).includes(CU.id) || window.isAdmin?.())
   );

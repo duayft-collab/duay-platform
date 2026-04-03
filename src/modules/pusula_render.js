@@ -148,7 +148,8 @@ function renderPusula() {
   }
 
   // ── 2 KOLON LAYOUT ─────────────────────────────────────────
-  h += '<div style="display:flex;gap:0;flex:1;overflow:hidden">';
+  var _layoutTop = 153 + (ovCount > 0 ? 57 : 0);
+  h += '<div style="display:flex;gap:0;overflow:hidden;height:calc(100vh - ' + _layoutTop + 'px);min-height:400px">';
 
   // ══ SOL KOLON ══════════════════════════════════════════════
   h += '<div style="flex:1;overflow-y:auto;padding:12px 16px">';
