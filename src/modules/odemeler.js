@@ -1367,6 +1367,25 @@ function renderOdemeler() {
     frag.appendChild(card);
   });
 
+  // ── İşlem toplamları barı (listenin EN ÜSTÜNDE) ────────────
+  var _filtOdm = items.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme'; });
+  var _filtTah = items.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat'; });
+  var _filtOdmAmt = _filtOdm.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0,o.currency||'TRY'); }, 0);
+  var _filtTahAmt = _filtTah.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0,o.currency||'TRY'); }, 0);
+  var _filtNet = _filtTahAmt - _filtOdmAmt;
+  var _filtLate = _filtOdm.filter(function(o) { return !o.paid && o.due && o.due < today; }).length;
+  var topBar = document.createElement('div');
+  topBar.style.cssText = 'display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--b);background:var(--s2);flex-wrap:wrap;align-items:center';
+  topBar.innerHTML = '<span style="font-size:11px;color:var(--t3)">' + items.length + ' kayıt</span>'
+    + '<span style="font-size:11px;font-weight:600;color:#dc2626">Ödeme: ₺' + Math.round(_filtOdmAmt).toLocaleString('tr-TR') + '</span>'
+    + '<span style="font-size:11px;font-weight:600;color:#16a34a">Tahsilat: ₺' + Math.round(_filtTahAmt).toLocaleString('tr-TR') + '</span>'
+    + '<span style="font-size:11px;font-weight:700;color:' + (_filtNet >= 0 ? '#16a34a' : '#dc2626') + '">Net: ' + (_filtNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filtNet)).toLocaleString('tr-TR') + '</span>'
+    + (_filtLate > 0 ? '<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:#FCEBEB;color:#791F1F;font-weight:600">' + _filtLate + ' gecikmiş</span>' : '')
+    + '<span style="margin-left:auto;display:flex;gap:4px">'
+    + '<button onclick="event.stopPropagation();_odmSelectAll()" class="btn btns" style="font-size:10px;padding:2px 8px">Tümünü Seç</button>'
+    + '</span>';
+  frag.prepend(topBar);
+
   // "+ Ekle" butonu — liste altına
   var addRowDiv = document.createElement('div');
   addRowDiv.style.cssText = 'padding:10px 16px;display:flex;gap:8px;border-bottom:1px solid var(--b)';
@@ -3290,6 +3309,19 @@ function _doBulkDelete(ids) {
 }
 
 window.toggleOdmSelect = toggleOdmSelect;
+
+window._odmSelectAll = function() {
+  var chks = document.querySelectorAll('.odm-bulk-chk');
+  var allChecked = Array.from(chks).every(function(c) { return c.checked; });
+  chks.forEach(function(c) {
+    c.checked = !allChecked;
+    var id = parseInt(c.dataset.oid);
+    if (!allChecked) _odmSelected.add(id); else _odmSelected.delete(id);
+    var row = c.closest('[data-oid]');
+    if (row) row.style.background = c.checked ? 'var(--al)' : '';
+  });
+  _updateOdmBulkBar();
+};
 window.bulkMarkOdmPaid = bulkMarkOdmPaid;
 
 // ════════════════════════════════════════════════════════════════
