@@ -11,25 +11,23 @@
 // ── Yetki Kontrol Helper (STANDART-FIX-002) ──────────────────
 /**
  * Toplu silme/güncelleme gibi kritik işlemler için yetki kontrolü.
+ * getPermLevel() string döner: 'full' | 'manage' | 'view' | 'count'
  * @param {string} islem - 'toplu_sil' | 'toplu_guncelle' | 'sil' | 'duzenle' | 'goruntule'
- * @param {string} modul - Modül adı (log için)
  * @returns {boolean}
  */
-window._yetkiKontrol = function(islem, modul) {
-  var level = typeof window.getPermLevel === 'function' ? window.getPermLevel(modul) : 'view';
-  var PERM  = window.PERM_LEVELS || { full: 4, manage: 3, view: 2, count: 1 };
-  var seviye = PERM[level] || 0;
-  var minimumSeviyeler = {
-    'toplu_sil':      PERM.manage || 3,
-    'toplu_guncelle': PERM.manage || 3,
-    'sil':            PERM.view   || 2,
-    'duzenle':        PERM.view   || 2,
-    'goruntule':      PERM.count  || 1,
+window._yetkiKontrol = function(islem) {
+  var seviye = typeof window.getPermLevel === 'function' ? window.getPermLevel() : 'count';
+  var izinliSeviyeler = {
+    'toplu_sil':      ['full', 'manage'],
+    'toplu_guncelle': ['full', 'manage'],
+    'sil':            ['full', 'manage', 'view'],
+    'duzenle':        ['full', 'manage', 'view'],
+    'goruntule':      ['full', 'manage', 'view', 'count'],
   };
-  var gerekli = minimumSeviyeler[islem] || 3;
-  if (seviye < gerekli) {
+  var izinli = izinliSeviyeler[islem] || ['full'];
+  if (izinli.indexOf(seviye) === -1) {
     window.toast?.('Bu işlem için yetkiniz yok', 'err');
-    console.warn('[YETKİ] ' + modul + '.' + islem + ' reddedildi — seviye: ' + seviye + ', gerekli: ' + gerekli);
+    console.warn('[YETKİ] Reddedildi — seviye: ' + seviye + ', gerekli: ' + izinli.join('/'));
     return false;
   }
   return true;

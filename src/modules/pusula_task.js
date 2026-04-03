@@ -280,7 +280,7 @@ window.toggleTask = toggleTask;
 
 // ── Görev Sil (soft) ────────────────────────────────────────────
 function delTask(id) {
-  if (!window._yetkiKontrol?.('sil', 'Pusula')) return;
+  if (!window._yetkiKontrol?.('sil')) return;
   const d = loadTasks();
   const t = d.find(x => x.id === id);
   if (!t) return;
@@ -400,7 +400,7 @@ window._pusBulkClear = function() {
 };
 
 window._pusBulkDelete = function() {
-  if (!window._yetkiKontrol?.('toplu_sil', 'Pusula')) return;
+  if (!window._yetkiKontrol?.('toplu_sil')) return;
   var checked = document.querySelectorAll('.pus-bulk-chk:checked');
   var ids = Array.from(checked).map(function(cb) { return parseInt(cb.dataset.id); });
   if (!ids.length) return;

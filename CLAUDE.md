@@ -184,12 +184,27 @@ Kurallar:
 - Her işlem başında ve bitişinde göster
 - Format değiştirme — bu şablon sabit
 
-## KUYRUK — Sistem Kalite Paneli (KUYRUK-001)
-- Admin menüsüne "Sistem Kalitesi" alt sayfası ekle
-- Elite Sistem Mimarisi tablosunu göster (5 kategori × 4 seviye)
-- Her satırın yanında sistemin mevcut durumu: 🟢 İyi / 🟡 Orta / 🔴 Zayıf
-- Sadece Admin rolü görebilir (getPermLevel() kontrolü)
-- PDF export butonu (tam tablo)
-- Zamanlama: 1. ay günlük, 2. ay haftalık, 3. ay+ aylık bildirim
-- Bildirim: Admin'e platform içi + mail
-- İlk durum: Mimari=Orta, Test=Zayıf, Güvenlik=Orta, UX=Orta, DevOps=Orta
+## KUYRUK-001: Sistem Kalite Paneli (Admin Alt Menü)
+
+### Ne yapılacak:
+Admin menüsüne "Sistem Kalitesi" alt sayfası eklenecek.
+
+### Özellikler:
+1. Sayfa: src/modules/admin.js içinde yeni sekme "Sistem Kalitesi"
+2. Sadece getPermLevel() === 'full' görebilir
+3. İçerik — 3 bölüm:
+   - BÖLÜM A: Elite Sistem Mimarisi Tablosu (5 kategori × 4 seviye)
+   - BÖLÜM B: Feature Matrix Tablosu (10 modül × 9 özellik)
+   - BÖLÜM C: Genel Skor (Audit: 9/21 %43, LS: 1.89MB/5MB)
+4. PDF Export butonu
+5. "Şimdi Güncelle" butonu
+
+### Zamanlama (ak_kalite_bildirim):
+- İlk 1 ay: 2 günde bir bildirim
+- 1-2. ay: haftada bir
+- 2-6. ay: ayda bir
+- 6. ay+: 6 ayda bir
+
+### İlk durum (2026-04-03):
+- Mimari=Orta, Test=Zayıf(%0), Güvenlik=Orta, UX=Orta, DevOps=Orta
+- Öncelik: Düşük — 13 talimat bittikten sonra

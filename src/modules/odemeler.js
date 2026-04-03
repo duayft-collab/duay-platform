@@ -7777,7 +7777,7 @@ window._cariBulkClear = function() {
 
 /** Toplu cari silme (soft delete) */
 window._cariBulkDelete = function() {
-  if (!window._yetkiKontrol?.('toplu_sil', 'Cari')) return;
+  if (!window._yetkiKontrol?.('toplu_sil')) return;
   if (!_isManagerO()) return;
   var ids = [];
   document.querySelectorAll('.cari-bulk-cb:checked').forEach(function(cb) { ids.push(parseInt(cb.value)); });
