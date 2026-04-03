@@ -447,20 +447,23 @@ window.setPusQuote = function(q) { window._pusQuoteData = q; };
 window._pusEn3Hesapla = function(donem) {
   var bugun = new Date().toISOString().slice(0, 10);
   var tasks = window.loadTasks?.() || [];
-  var aktif = tasks.filter(function(t) { return !t.done && !t.isDeleted; });
+  var aktif = tasks.filter(function(t) { return !t.done && t.status !== 'done'; });
 
   if (donem === 'bugun') {
-    aktif = aktif.filter(function(t) { return t.due === bugun; });
+    // Bugün due olan + gecikmiş (due < bugün) + due'su olmayan yüksek öncelik
+    aktif = aktif.filter(function(t) {
+      return !t.due || t.due <= bugun;
+    });
   } else if (donem === 'hafta') {
     var haftaSonu = new Date();
     haftaSonu.setDate(haftaSonu.getDate() + (7 - haftaSonu.getDay()));
     var hs = haftaSonu.toISOString().slice(0, 10);
-    aktif = aktif.filter(function(t) { return t.due && t.due >= bugun && t.due <= hs; });
+    aktif = aktif.filter(function(t) { return !t.due || t.due <= hs; });
   } else if (donem === 'ay') {
     var aySonu = new Date();
     aySonu.setMonth(aySonu.getMonth() + 1, 0);
     var as = aySonu.toISOString().slice(0, 10);
-    aktif = aktif.filter(function(t) { return t.due && t.due >= bugun && t.due <= as; });
+    aktif = aktif.filter(function(t) { return !t.due || t.due <= as; });
   }
   // 'yil' veya boş → tüm aktif görevler
 
