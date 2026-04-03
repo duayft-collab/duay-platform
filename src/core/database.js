@@ -231,7 +231,27 @@ function _write(key, value) {
   }
   // tasks base64 engeli
   if ((key === KEYS.tasks || key === 'ak_tk2') && Array.isArray(value)) {
-    try { value.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; } return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (t[f] && typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; } }); }); } catch (e) {}
+    try { value.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; } return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (!t[f]) return; if (typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; } else if (typeof t[f] === 'object' && t[f].data && typeof t[f].data === 'string' && t[f].data.startsWith('data:')) { t[f] = { name: t[f].name || 'dosya', size: t[f].data.length, _stripped: true }; } }); }); } catch (e) {}
+  }
+  // trash: originalData icindeki base64'leri temizle
+  if (key === KEYS.trash && Array.isArray(value)) {
+    try { value = value.map(function(item) {
+      if (!item || !item.originalData || typeof item.originalData !== 'object') return item;
+      var od = Object.assign({}, item.originalData); var dirty = false;
+      ['file','receipt','img','image'].forEach(function(f) {
+        if (!od[f]) return;
+        if (typeof od[f] === 'string' && od[f].startsWith('data:')) { od[f] = { _stripped: true, size: od[f].length }; dirty = true; }
+        else if (typeof od[f] === 'object' && od[f].data && typeof od[f].data === 'string' && od[f].data.startsWith('data:')) { od[f] = { name: od[f].name || 'dosya', size: od[f].data.length, _stripped: true }; dirty = true; }
+      });
+      ['docs','attachments','files','belgeler'].forEach(function(arr) {
+        if (!Array.isArray(od[arr])) return;
+        od[arr] = od[arr].map(function(d) {
+          if (d && d.data && typeof d.data === 'string' && d.data.length > 1000) { dirty = true; return { name: d.name || 'dosya', ts: d.ts, url: d.url || null, size: d.data.length, _stripped: true }; }
+          return d;
+        });
+      });
+      return dirty ? Object.assign({}, item, { originalData: od }) : item;
+    }); } catch(e) {}
   }
   // Son güncelleme zamanını kaydet
   try { localStorage.setItem('ak_db_last_write', now); } catch(e) {}
@@ -380,6 +400,53 @@ function _mergeDataSets(localKey, fsData, collection) {
       }
     } catch(e) {}
   }, 6000);
+})();
+
+/** Mevcut LS'deki base64 siskinligini tek seferlik temizle */
+(function _oneTimeBase64Cleanup() {
+  var _DONE_KEY = 'ak_b64clean_v1';
+  if (localStorage.getItem(_DONE_KEY)) return;
+  setTimeout(function() {
+    try {
+      var changed = false;
+      // 1) Tasks — file field object format
+      var tasks = JSON.parse(localStorage.getItem('ak_tk2') || '[]');
+      tasks.forEach(function(t) {
+        ['receipt','img','image','file'].forEach(function(f) {
+          if (!t[f]) return;
+          if (typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; changed = true; }
+          else if (typeof t[f] === 'object' && t[f].data && typeof t[f].data === 'string' && t[f].data.startsWith('data:')) { t[f] = { name: t[f].name || 'dosya', size: t[f].data.length, _stripped: true }; changed = true; }
+        });
+      });
+      if (changed) { localStorage.setItem('ak_tk2', JSON.stringify(tasks)); changed = false; }
+      // 2) Trash — originalData nested base64
+      var trash = JSON.parse(localStorage.getItem('ak_trash1') || '[]');
+      trash = trash.map(function(item) {
+        if (!item || !item.originalData || typeof item.originalData !== 'object') return item;
+        var od = Object.assign({}, item.originalData); var dirty = false;
+        ['file','receipt','img','image'].forEach(function(f) {
+          if (!od[f]) return;
+          if (typeof od[f] === 'string' && od[f].startsWith('data:')) { od[f] = { _stripped: true, size: od[f].length }; dirty = true; }
+          else if (typeof od[f] === 'object' && od[f].data && typeof od[f].data === 'string' && od[f].data.startsWith('data:')) { od[f] = { name: od[f].name || 'dosya', size: od[f].data.length, _stripped: true }; dirty = true; }
+        });
+        ['docs','attachments','files','belgeler'].forEach(function(arr) {
+          if (!Array.isArray(od[arr])) return;
+          od[arr] = od[arr].map(function(d) {
+            if (d && d.data && typeof d.data === 'string' && d.data.length > 1000) { dirty = true; return { name: d.name || 'dosya', ts: d.ts, url: d.url || null, size: d.data.length, _stripped: true }; }
+            return d;
+          });
+        });
+        if (!dirty) return item;
+        changed = true;
+        return Object.assign({}, item, { originalData: od });
+      });
+      if (changed) { localStorage.setItem('ak_trash1', JSON.stringify(trash)); }
+      localStorage.setItem(_DONE_KEY, '1');
+      var after = (JSON.stringify(localStorage).length / 1024 / 1024);
+      console.info('[DB] base64 cleanup tamamlandi. LS: ' + after.toFixed(2) + 'MB');
+      if (window.isAdmin?.()) { window.toast?.('LS temizlendi: ' + after.toFixed(2) + 'MB', 'ok'); }
+    } catch(e) { console.warn('[DB] base64 cleanup hata:', e); }
+  }, 8000);
 })();
 
 /**
