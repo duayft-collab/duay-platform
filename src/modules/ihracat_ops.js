@@ -6,6 +6,16 @@
 (function IhracatOpsModule() {
 'use strict';
 
+// IHR-06: Kolon yonetimi sabitleri
+var _IHR_KOLON_KEY = 'ak_ihr_kolon_v1';
+var _IHR_KOLON_DEFAULT = ['tedarikciAd','aciklama','standart_urun_adi','miktar','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','mense_ulke','hs_kodu'];
+var _IHR_KOLON_PRESETS = {
+  'CI/PL':  ['tedarikciAd','standart_urun_adi','fatura_urun_adi','aciklama','miktar','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','mense_ulke','hs_kodu'],
+  'GCB':    ['tedarikciAd','urun_kodu','aciklama','miktar','birim_fiyat','doviz','mense_ulke','hs_kodu','fatura_turu','gcb_no','gcb_tarih','gcb_kur','gcb_kapandi','gcb_kapama_tarihi'],
+  'Sigorta':['tedarikciAd','standart_urun_adi','miktar','birim_fiyat','doviz','brut_kg','hacim_m3','police_no','police_tarihi','police_tutari','sigorta_firma'],
+  'VGM':    ['tedarikciAd','konteyner_sira','koli_adet','brut_kg','net_kg','hacim_m3','konteyner_no','booking_no','muhur_no','vgm_kg','vgm_no','vgm_tarih','vgm_kaynak'],
+};
+
 var _g   = function(id) { return document.getElementById(id); };
 var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
 var _cu  = function() { return window.CU?.() || window.Auth?.getCU?.(); };
@@ -760,6 +770,7 @@ function _ihrDetayRenderUrunler(d, el) {
   h += '<button class="btn btns" id="ihr-urun-hepsini-sec" onclick="event.stopPropagation();window._ihrUrunHepsiniSec()" style="font-size:10px">Seç</button>';
   h += '<button class="btn btns btnd" id="ihr-urun-toplu-sil" onclick="event.stopPropagation();window._ihrUrunTopluSil(\'' + d.id + '\')" style="font-size:10px;display:none">Sil</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTopluDuzenle(\'' + d.id + '\')" style="font-size:10px">Toplu Düzenle</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKolonAyar?.(\'' + d.id + '\')" style="font-size:10px;color:#185FA5;font-weight:600" title="Kolon gorunumunu ayarla">\u2699 ' + GORUNEN_KOLONLAR.length + '/' + KOLONLAR.length + ' Kolon</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunExcel(\'' + d.id + '\')" style="font-size:10px">XLSX</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'CI\',null)" style="font-size:10px">CI</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'PL\',null)" style="font-size:10px">PL</button>';
@@ -858,6 +869,13 @@ function _ihrDetayRenderUrunler(d, el) {
     { k: 'yukleme_durumu', l: 'Yükleme Durumu', w: 90, filtre: true, bos: true }
   ];
 
+  // IHR-06: Gorunen kolon filtresi
+  window._ihrAllKolonlar = KOLONLAR;
+  var _savedKols; try { _savedKols = JSON.parse(localStorage.getItem(_IHR_KOLON_KEY) || 'null'); } catch(e) { _savedKols = null; }
+  var GORUNEN_KOLONLAR = (Array.isArray(_savedKols) && _savedKols.length)
+    ? KOLONLAR.filter(function(col) { return _savedKols.indexOf(col.k) !== -1; })
+    : KOLONLAR.filter(function(col) { return _IHR_KOLON_DEFAULT.indexOf(col.k) !== -1; });
+
   /* ── FREEZE LAYOUT: Sol sabit 3 kolon + Sağ kaydırılabilir ── */
   var ETIKET_RENK = { Mavi: '#185FA5', Pembe: '#D4537E', 'Sarı': '#BA7517', 'Yeşil': '#16A34A', Mor: '#7C3AED', Turuncu: '#D85A30' };
   var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'İspanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], gcb_kapandi: ['', 'Kapandı', 'Açık'], vgm_kaynak: ['', 'Liman', 'Forwarder', 'İnternet'], konteyner_para: ['', 'USD', 'EUR', 'TRY'], once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'] };
@@ -885,7 +903,7 @@ function _ihrDetayRenderUrunler(d, el) {
   h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:110px;min-width:110px;' + thS + '">Tedarikçi</th>';
   h += '<th style="position:sticky;left:138px;z-index:3;background:' + stickyBgH + ';width:85px;min-width:85px;' + thS + '">Ürün Kodu</th>';
   h += '<th style="position:sticky;left:223px;z-index:3;background:' + stickyBgH + ';width:180px;min-width:180px;' + thS + ';border-right:2px solid var(--b)">Ürün Açıklaması</th>';
-  KOLONLAR.forEach(function(kol) {
+  GORUNEN_KOLONLAR.forEach(function(kol) {
     if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
     var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === ''; }).length : 0;
     h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;' + thS + '">';
@@ -923,7 +941,7 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" onclick="event.stopPropagation()" style="position:sticky;left:138px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-family:monospace;max-width:85px">' + _esc(u.urun_kodu || '') + '</td>';
     h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" onclick="event.stopPropagation()" style="position:sticky;left:223px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:180px;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
     /* Kalan kolonlar */
-    KOLONLAR.forEach(function(kol) {
+    GORUNEN_KOLONLAR.forEach(function(kol) {
       var k = kol.k; if (k === 'tedarikciAd' || k === 'urun_kodu' || k === 'aciklama') return;
       var v = u[k]; var vs = _esc(v || '');
       if (k === 'pi_link') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" style="color:var(--ac)">Aç</a>' : '') + '</td>'; return; }
@@ -2074,5 +2092,80 @@ window._ihrTemplateEkle = function() { var dosyalar = _loadD().filter(function(d
 window._tplKaydet = function() { var ad = (_g('tpl-ad')?.value || '').trim(); if (!ad) { window.toast?.('Ad zorunlu', 'err'); return; } var did = _g('tpl-dosya')?.value; var d = did ? _loadD().find(function(x) { return String(x.id) === String(did); }) : null; var list = _loadT(); list.unshift({ id: _genId(), ad: ad, musteriAd: d?.musteriAd || '', teslim_sekli: d?.teslim_sekli || '', varis_limani: d?.varis_limani || '', sure_gun: d?.sure_gun || 7, gumrukcu_id: d?.gumrukcu_id || '', forwarder_id: d?.forwarder_id || '', kullanim_sayisi: 0, createdAt: _now() }); _storeT(list); _g('mo-tpl')?.remove(); window.toast?.('Template kaydedildi', 'ok'); window.renderIhracatOps?.(); };
 window._ihrTemplateDuzenle = function(id) { var t = _loadT().find(function(x) { return x.id === id; }); if (!t) return; _moAc('mo-tpl-e', '✏️ Template', '<input type="hidden" id="tpl-e-id" value="' + id + '"><div class="fg"><div class="fl">Ad</div><input class="fi" id="tpl-e-ad" value="' + _esc(t.ad) + '"></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-tpl-e\')?.remove()">İptal</button><button class="btn btnp" onclick="window._tplEKaydet()">Kaydet</button>'); };
 window._tplEKaydet = function() { var id = _g('tpl-e-id')?.value; if (!id) return; var list = _loadT(); var t = list.find(function(x) { return String(x.id) === String(id); }); if (!t) return; t.ad = (_g('tpl-e-ad')?.value || '').trim() || t.ad; t.updatedAt = _now(); _storeT(list); _g('mo-tpl-e')?.remove(); window.toast?.('Güncellendi', 'ok'); window.renderIhracatOps?.(); };
+
+// ══ IHR-06: Kolon Yonetimi ════════════════════════════════════
+window._ihrKolonAyar = function(dosyaId) {
+  var allKols = window._ihrAllKolonlar || [];
+  var saved; try { saved = JSON.parse(localStorage.getItem(_IHR_KOLON_KEY) || 'null') || _IHR_KOLON_DEFAULT.slice(); } catch(e) { saved = _IHR_KOLON_DEFAULT.slice(); }
+  var kolMap = {}; allKols.forEach(function(k) { kolMap[k.k] = k.l; });
+  var groups = [
+    { baslik:'Kimlik & Baglanti', keys:['tedarikciAd','proforma_id','pi_link','satis_siparis_id','siparis_id','alis_fatura_no','alis_fatura_tarihi','fatura_turu'] },
+    { baslik:'Urun', keys:['urun_kodu','satici_urun_kodu','benzer_urun_kodu','satici_urun_adi','aciklama','standart_urun_adi','teknik_aciklama','fatura_urun_adi','gumrukcu_tanim','mense_ulke','hs_kodu'] },
+    { baslik:'Fiyat & KDV', keys:['miktar','birim_fiyat','doviz','kdv_orani','kdv_tutar','kdv_dahil','kdv_iadesi'] },
+    { baslik:'Ambalaj & Yukleme', keys:['koli_adet','brut_kg','net_kg','hacim_m3','konteyner_sira','etiket_rengi','once_yukle','teslim_tarihi','teslim_yeri','marka','kategori','duay_not'] },
+    { baslik:'IMO & DIB', keys:['imo_urun','imo_no','imo_msds','dib'] },
+    { baslik:'VGM', keys:['vgm_kg','vgm_no','vgm_kaynak','vgm_tarih'] },
+    { baslik:'GCB & Konteyner', keys:['booking_no','konteyner_no','muhur_no','gcb_no','gcb_id','gcb_tarih','gcb_kur','gcb_kapandi','gcb_kapama_tarihi','mensei_no','mensei_tarih'] },
+    { baslik:'Sigorta', keys:['police_no','police_tarihi','police_kapsami','police_tutari','sigorta_firma'] },
+    { baslik:'Tasima', keys:['kamyon_sofor','sofor_tc','arac_plaka','dorse_plaka','nakliye_firma','gumruk_maliyeti','konteyner_satis','konteyner_para','yukleme_durumu'] },
+    { baslik:'Diger', keys:['satici_adi','gumrukcu_adi','muhasebeci_adi','ihracat_id'] },
+  ];
+  var old = _g('mo-kolon-ayar'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-kolon-ayar';
+  var h = '<div class="moc" style="max-width:680px;padding:0;border-radius:14px;overflow:hidden;max-height:88vh;display:flex;flex-direction:column">';
+  h += '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600;flex-shrink:0">\u2699 Kolon Gorunumu <span style="font-size:11px;font-weight:400;color:var(--t3)">(' + allKols.length + ' kolondan sec)</span></div>';
+  h += '<div style="padding:8px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0">';
+  h += '<span style="font-size:11px;color:var(--t3)">Hazir Sablonlar:</span>';
+  Object.keys(_IHR_KOLON_PRESETS).forEach(function(pr) { h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKolonPreset(\'' + pr + '\')" style="font-size:10px;padding:3px 10px">' + pr + '</button>'; });
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKolonPreset(\'tumu\')" style="font-size:10px;padding:3px 10px">Tumunu Goster</button>';
+  h += '<button class="btn" onclick="event.stopPropagation();window._ihrKolonPreset(\'sifirla\')" style="font-size:10px;padding:3px 10px;color:#DC2626">Varsayilan</button>';
+  h += '</div>';
+  h += '<div style="overflow-y:auto;flex:1;padding:12px 20px">';
+  groups.forEach(function(gr) {
+    var gKols = gr.keys.filter(function(k) { return kolMap[k]; });
+    if (!gKols.length) return;
+    h += '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">' + gr.baslik + '</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    gKols.forEach(function(k) {
+      var chk = saved.indexOf(k) !== -1;
+      h += '<label style="display:flex;align-items:center;gap:4px;padding:3px 8px;border:0.5px solid var(--b);border-radius:6px;background:' + (chk ? '#E6F1FB' : 'var(--sf)') + ';cursor:pointer;font-size:11px;color:' + (chk ? '#0C447C' : 'var(--t2)') + ';user-select:none">';
+      h += '<input type="checkbox" data-kol="' + k + '" ' + (chk ? 'checked' : '') + ' onchange="event.stopPropagation();window._ihrKolonChk(this)" onclick="event.stopPropagation()" style="accent-color:#185FA5;cursor:pointer;width:12px;height:12px">';
+      h += _esc(kolMap[k]) + '</label>';
+    });
+    h += '</div></div>';
+  });
+  h += '</div>';
+  h += '<div style="padding:10px 20px;border-top:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">';
+  h += '<span id="ihr-kolon-sayac" style="font-size:11px;color:var(--t3)">' + saved.length + ' kolon secili</span>';
+  h += '<div style="display:flex;gap:8px"><button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-kolon-ayar\')?.remove()">Iptal</button>';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrKolonKaydet(\'' + dosyaId + '\')">Uygula</button></div></div></div>';
+  mo.innerHTML = h; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrKolonChk = function(cb) {
+  var cnt = document.querySelectorAll('#mo-kolon-ayar input[type=checkbox]:checked').length;
+  var sayac = _g('ihr-kolon-sayac'); if (sayac) sayac.textContent = cnt + ' kolon secili';
+  var lbl = cb.closest('label'); if (lbl) { lbl.style.background = cb.checked ? '#E6F1FB' : 'var(--sf)'; lbl.style.color = cb.checked ? '#0C447C' : 'var(--t2)'; }
+};
+
+window._ihrKolonPreset = function(preset) {
+  var keys = preset === 'tumu' ? (window._ihrAllKolonlar || []).map(function(k) { return k.k; })
+    : preset === 'sifirla' ? _IHR_KOLON_DEFAULT.slice()
+    : (_IHR_KOLON_PRESETS[preset] || _IHR_KOLON_DEFAULT.slice());
+  document.querySelectorAll('#mo-kolon-ayar input[type=checkbox]').forEach(function(cb) {
+    cb.checked = keys.indexOf(cb.dataset.kol) !== -1;
+    var lbl = cb.closest('label'); if (lbl) { lbl.style.background = cb.checked ? '#E6F1FB' : 'var(--sf)'; lbl.style.color = cb.checked ? '#0C447C' : 'var(--t2)'; }
+  });
+  var sayac = _g('ihr-kolon-sayac'); if (sayac) sayac.textContent = document.querySelectorAll('#mo-kolon-ayar input[type=checkbox]:checked').length + ' kolon secili';
+};
+
+window._ihrKolonKaydet = function(dosyaId) {
+  var keys = []; document.querySelectorAll('#mo-kolon-ayar input[type=checkbox]:checked').forEach(function(cb) { keys.push(cb.dataset.kol); });
+  if (keys.length < 1) { window.toast?.('En az 1 kolon secilmeli', 'err'); return; }
+  try { localStorage.setItem(_IHR_KOLON_KEY, JSON.stringify(keys)); } catch(e) { window.toast?.('Kayit hatasi', 'err'); return; }
+  _g('mo-kolon-ayar')?.remove();
+  window.toast?.(keys.length + ' kolon uygulandi', 'ok');
+  window.logActivity?.('ihracat', 'Kolon gorunumu: ' + keys.length + ' kolon');
+  if (_aktifDosyaId) { var _dd = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd) _ihrDetayRenderOzet(_dd); }
+};
 
 })();
