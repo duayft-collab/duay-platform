@@ -719,8 +719,17 @@ function _syncFirestore(path, data, mode = 'set') {
                 console.info('[DB:sync-merge] FS kayıt korundu:', collection, key);
               }
             });
-            // Merge sonucunu localStorage'a da yaz — cihazlar arası tutarlılık
-            try { localStorage.setItem(KEYS[collection] || ('ak_' + collection), JSON.stringify(finalData)); } catch(e2) {}
+            // Merge sonucunu localStorage'a da yaz — LZ-String uyumlu
+            try {
+              var _lzM2 = typeof LZString !== 'undefined' ? LZString : null;
+              var _lsKey2 = KEYS[collection] || ('ak_' + collection);
+              var _jsonM2 = JSON.stringify(finalData);
+              if (_lzM2 && _lsKey2.startsWith('ak_') && _jsonM2.length > 500) {
+                localStorage.setItem(_lsKey2, '_LZ_' + _lzM2.compressToUTF16(_jsonM2));
+              } else {
+                localStorage.setItem(_lsKey2, _jsonM2);
+              }
+            } catch(e2) {}
           }
           // Kritik koleksiyon + Safari → doğrulamalı yazma
           if (_useCritical && _isSafari) {
@@ -2657,13 +2666,13 @@ function _verifiedWrite(path, data, retry) {
 
   _setSyncStatus('syncing');
   var syncedAt = new Date().toISOString();
-  _writingNow[collection] = Date.now() + 5000;
+  _writingNow[collection] = Date.now() + 2000;
 
   // Yazma
   FB_DB.doc(path).set({ data: data, syncedAt: syncedAt }, { merge: true })
     .then(function() {
-      // Doğrulama: Safari'de 1s, diğerlerinde 300ms bekle
-      var delay = _isSafari ? 1000 : 300;
+      // Doğrulama: Safari'de 400ms, diğerlerinde 200ms bekle
+      var delay = _isSafari ? 400 : 200;
       setTimeout(function() {
         FB_DB.doc(path).get().then(function(snap) {
           if (snap.exists && snap.data()?.syncedAt === syncedAt) {
