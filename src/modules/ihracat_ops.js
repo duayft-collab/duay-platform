@@ -655,6 +655,14 @@ window._ihrEmirTopluSil = function() {
       var dosyalar = _loadD();
       ids.forEach(function(id) { var d = dosyalar.find(function(x) { return String(x.id) === String(id); }); if (d) { d.isDeleted = true; d.deletedAt = _now(); d.deletedBy = _cu()?.id; } });
       _storeD(dosyalar);
+      // ORPHAN-001: Bağlı ürünleri de soft-delete
+      var urunAll = _loadU(); var urunChanged = false;
+      ids.forEach(function(did) {
+        urunAll.forEach(function(u) {
+          if (String(u.dosya_id) === String(did) && !u.isDeleted) { u.isDeleted = true; u.deletedAt = _now(); urunChanged = true; }
+        });
+      });
+      if (urunChanged) _storeU(urunAll);
       window.toast?.(ids.length + ' dosya silindi', 'ok');
       window.renderIhracatOps?.();
     }
@@ -684,10 +692,34 @@ window._ihrUrunAra = function(q) {
     _ihrRenderContent();
   }
 };
+// IHR-ZINCIR-001: Evrak zincir kontrolu
+function _evrakZincirKontrol(dosyaId, tur) {
+  var ZINCIR = { CI: 'PI', PL: 'CI', GCB: 'PL', BL: 'GCB' };
+  var onceki = ZINCIR[tur];
+  if (!onceki) return true;
+  var evraklar = typeof loadIhracatEvraklar === 'function' ? loadIhracatEvraklar() : (window.loadIhracatEvraklar?.() || []);
+  var oncekiEvrak = evraklar.find(function(e) { return String(e.dosya_id) === String(dosyaId) && e.tur === onceki; });
+  if (!oncekiEvrak) return false;
+  return oncekiEvrak.durum === 'onaylandi' || oncekiEvrak.durum === 'gonderildi';
+}
+
 window._ihrRunChecks = function() {
   var today = _today(); var uyari = 0;
   _loadGM().forEach(function(g) { if (!g.vekalet_bitis) return; var gun = Math.ceil((new Date(g.vekalet_bitis) - new Date()) / 86400000); if (gun <= 30) { uyari++; window.addNotif?.('⚠️', g.firma_adi + ': Vekalet ' + gun + ' günde bitiyor', 'warn', 'ihracat'); } });
   _loadD().filter(function(d) { return !['kapandi', 'iptal'].includes(d.durum) && d.bitis_tarihi && d.bitis_tarihi < today; }).forEach(function(d) { uyari++; window.addNotif?.('🔴', d.dosyaNo + ' gecikmiş!', 'err', 'ihracat'); });
+  // IHR-10: GÇB yaş kontrolü
+  _loadG().filter(function(g) { return !g.isDeleted && g.durum !== 'kapandi'; }).forEach(function(g) {
+    if (g.tescil_tarihi) {
+      var gcbGun = Math.ceil((new Date(today) - new Date(g.tescil_tarihi)) / 86400000);
+      var dosya = _loadD().find(function(d) { return String(d.id) === String(g.dosya_id); });
+      var no = dosya ? dosya.dosyaNo : g.beyan_no || 'GÇB';
+      if (gcbGun > 30) { uyari++; window.addNotif?.('🔴', no + ': GÇB ' + gcbGun + ' gündür açık!', 'err', 'ihracat'); }
+      else if (gcbGun > 14) { uyari++; window.addNotif?.('⚠️', no + ': GÇB ' + gcbGun + ' gündür açık', 'warn', 'ihracat'); }
+    } else {
+      var dosya2 = _loadD().find(function(d) { return String(d.id) === String(g.dosya_id); });
+      if (dosya2 && dosya2.bitis_tarihi && dosya2.bitis_tarihi < today) { uyari++; window.addNotif?.('⚠️', (dosya2.dosyaNo || 'GÇB') + ': tescil tarihi yok, dosya gecikmiş', 'warn', 'ihracat'); }
+    }
+  });
   window.toast?.(uyari > 0 ? uyari + ' uyarı' : 'Temiz', uyari > 0 ? 'warn' : 'ok');
 };
 
@@ -1360,7 +1392,7 @@ window._ihrSatinalmaKaydet = function() {
   seciliIds.forEach(function(sid) {
     var s = satinalma.find(function(x) { return String(x.id) === String(sid); }); if (!s) return;
     var tedarikci = null; cariList.forEach(function(c) { if (c.name === s.tedarikci) tedarikci = c; });
-    urunler.unshift({ id: _genId(), dosya_id: dosyaId, tedarikci_id: tedarikci ? tedarikci.id : '', tedarikciAd: s.tedarikci || '', urun_kodu: s.urunKodu || s.urun_kodu || '', aciklama: s.urun || s.aciklama || '', miktar: parseFloat(s.miktar || 0), birim: s.birim || 'PCS', birim_fiyat: parseFloat(s.birimFiyat || s.birim_fiyat || 0), doviz: s.doviz || 'USD', kaynak: 'satinalma_' + sid, createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() });
+    urunler.unshift({ id: _genId(), dosya_id: dosyaId, tedarikci_id: tedarikci ? tedarikci.id : '', tedarikciAd: s.tedarikci || '', urun_kodu: s.urunKodu || s.urun_kodu || '', aciklama: s.urun || s.aciklama || '', standart_urun_adi: s.standart_urun_adi || s.urun || s.aciklama || '', hs_kodu: s.hs_kodu || '', kdv_orani: s.kdv_orani || '', miktar: parseFloat(s.miktar || 0), birim: s.birim || 'PCS', birim_fiyat: parseFloat(s.birimFiyat || s.birim_fiyat || 0), doviz: s.doviz || 'USD', kaynak: 'satinalma_' + sid, createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() });
   });
   window.storeIhracatUrunler?.(urunler);
   _g('mo-satinalma-cek')?.remove();
@@ -1501,6 +1533,11 @@ window._ihrPdfOnizle = function(dosyaId, tur, urunler) {
     var _hsU2 = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
     var _hsE2 = _hsU2.filter(function(u) { return !u.hs_kodu; }).length;
     if (_hsE2 > 0) { window.toast?.(_hsE2 + ' üründe HS/GTIP kodu eksik — ' + tur + ' üretilemez', 'err'); return; }
+  }
+  // IHR-ZINCIR-001: Evrak sırası kontrolü
+  if ((tur === 'CI' || tur === 'PL') && !_evrakZincirKontrol(dosyaId, tur)) {
+    var _oncekiAd = { CI: 'PI', PL: 'CI' }[tur];
+    window.toast?.('Önce ' + _oncekiAd + ' onaylanmalı', 'err'); return;
   }
   var evraklar = _loadE();
   var kayit = null; evraklar.forEach(function(e) { if (String(e.dosya_id) === String(dosyaId) && e.tur === tur) kayit = e; });
@@ -1910,6 +1947,8 @@ window._ihrGcbEkle = function(dosyaId) {
     var _hsUrunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
     var _hsEksik = _hsUrunler.filter(function(u) { return !u.hs_kodu; }).length;
     if (_hsEksik > 0) { window.toast?.(_hsEksik + ' üründe HS/GTIP kodu eksik — GÇB formu açılamaz', 'err'); return; }
+    // IHR-ZINCIR-001: PL onaylı mı?
+    if (!_evrakZincirKontrol(dosyaId, 'GCB')) { window.toast?.('Önce PL onaylanmalı', 'err'); return; }
   }
   var dosyalar = _loadD(); _moAc('mo-gcb-f', '+ GÇB Ekle', '<input type="hidden" id="gcb-f-id" value=""><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="grid-column:1/-1"><div class="fl">Dosya</div><select class="fi" id="gcb-f-dosya"><option value="">—</option>' + dosyalar.filter(function(x) { return !x.isDeleted; }).map(function(x) { return '<option value="' + x.id + '"' + (String(x.id) === String(dosyaId) ? ' selected' : '') + '>' + _esc(x.dosyaNo) + '</option>'; }).join('') + '</select></div><div><div class="fl">Beyanname No</div><input class="fi" id="gcb-f-beyan"></div><div><div class="fl">Tescil Tarihi</div><input class="fi" type="date" id="gcb-f-tescil"></div><div><div class="fl">FOB Değer</div><input class="fi" type="number" id="gcb-f-fob" step="0.01"></div><div><div class="fl">Döviz</div><select class="fi" id="gcb-f-doviz">' + DOVIZ.map(function(d) { return '<option>' + d + '</option>'; }).join('') + '</select></div><div><div class="fl">Durum</div><select class="fi" id="gcb-f-durum"><option value="bekliyor">Bekliyor</option><option value="tescil">Tescil</option><option value="kapandi">Kapandı</option></select></div></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-gcb-f\')?.remove()">İptal</button><button class="btn btnp" onclick="window._gcbFKaydet()">Kaydet</button>'); };
 window._ihrGcbDuzenle = function(id) { var g = _loadG().find(function(x) { return x.id === id; }); if (!g) return; window._ihrGcbEkle(g.dosya_id); setTimeout(function() { _g('gcb-f-id').value = id; if (_g('gcb-f-beyan')) _g('gcb-f-beyan').value = g.beyan_no || ''; if (_g('gcb-f-tescil')) _g('gcb-f-tescil').value = g.tescil_tarihi || ''; if (_g('gcb-f-fob')) _g('gcb-f-fob').value = g.fob_deger || ''; if (_g('gcb-f-doviz')) _g('gcb-f-doviz').value = g.doviz || 'USD'; if (_g('gcb-f-durum')) _g('gcb-f-durum').value = g.durum || 'bekliyor'; }, 50); };
@@ -1918,6 +1957,8 @@ window._ihrGcbKapat = function(id) { var list = _loadG(); var g = list.find(func
 
 // ── BL CRUD ──────────────────────────────────────────────
 window._ihrBlEkle = function(dosyaId) {
+  // IHR-ZINCIR-001: GÇB onaylı mı?
+  if (dosyaId && !_evrakZincirKontrol(dosyaId, 'BL')) { window.toast?.('GÇB henüz kapanmadı', 'warn'); }
   // IHR-EVRAK-001: GÇB kontrolü
   if (dosyaId) {
     var _gcbList = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; });
