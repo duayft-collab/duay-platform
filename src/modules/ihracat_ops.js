@@ -14,6 +14,7 @@ var _IHR_KOLON_PRESETS = {
   'GCB':    ['tedarikciAd','urun_kodu','aciklama','miktar','birim_fiyat','doviz','mense_ulke','hs_kodu','fatura_turu','gcb_no','gcb_tarih','gcb_kur','gcb_kapandi','gcb_kapama_tarihi'],
   'Sigorta':['tedarikciAd','standart_urun_adi','miktar','birim_fiyat','doviz','brut_kg','hacim_m3','police_no','police_tarihi','police_tutari','sigorta_firma'],
   'VGM':    ['tedarikciAd','konteyner_sira','koli_adet','brut_kg','net_kg','hacim_m3','konteyner_no','booking_no','muhur_no','vgm_kg','vgm_no','vgm_tarih','vgm_kaynak'],
+  'Gumrukcu PL': ['tedarikciAd','gumrukcu_tanim','hs_kodu','miktar','birim','brut_kg','net_kg','koli_adet','hacim_m3','mense_ulke','konteyner_no','muhur_no'],
 };
 
 var _g   = function(id) { return document.getElementById(id); };
@@ -97,7 +98,7 @@ window.renderIhracatOps = function() {
   var panel = _g('panel-ihracat-ops'); if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div class="ph"><div><div class="pht">İhracat Ops</div><div class="phs">İhracat emirleri ve operasyon takibi</div></div><div class="ur"><button class="btn btns" onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="font-size:11px">Formlar</button><button class="btn btns" onclick="window.excelImportAc?.()">Excel Import</button><button class="btn btns" onclick="window._ihrRunChecks()">Kontrol Et</button><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div><div id="ihr-tabs" style="display:flex;border-bottom:0.5px solid var(--b);padding:0 20px"></div><div id="ihr-content" style="padding:0"></div>';
+    panel.innerHTML = '<div class="ph"><div><div class="pht">İhracat Ops</div><div class="phs">İhracat emirleri ve operasyon takibi</div></div><div class="ur"><button class="btn btns" onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="font-size:11px">Formlar</button><button class="btn btns" onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="font-size:11px">KDV Iade</button><button class="btn btns" onclick="window.excelImportAc?.()">Excel Import</button><button class="btn btns" onclick="window._ihrRunChecks()">Kontrol Et</button><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div><div id="ihr-tabs" style="display:flex;border-bottom:0.5px solid var(--b);padding:0 20px"></div><div id="ihr-content" style="padding:0"></div>';
   }
   _ihrRenderTabs(); _ihrRenderContent();
 };
@@ -1431,6 +1432,21 @@ window._ihrUrunExcel = function(dosyaId) {
   window.toast?.('Excel indirildi', 'ok');
 };
 
+// IHR-EXCEL-001: Gumrukcu PL Excel — Ingilizce basliklar
+window._ihrGumrukcuPLExcel = function(dosyaId) {
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!urunler.length) { window.toast?.('Urun yok', 'warn'); return; }
+  var headers = ['Supplier','Description (EN)','HS Code','Qty','Unit','Gross KG','Net KG','Carton','m3','Origin','Container No','Seal No'];
+  var rows = urunler.sort(function(a,b) { return (a.konteyner_sira||99)-(b.konteyner_sira||99); }).map(function(u) {
+    return [u.tedarikciAd||'', u.gumrukcu_tanim||u.standart_urun_adi||u.aciklama||'', u.hs_kodu||'', u.miktar||0, u.birim||'PCS', u.brut_kg||0, u.net_kg||0, u.koli_adet||0, u.hacim_m3||0, u.mense_ulke||'', u.konteyner_no||'', u.muhur_no||''].join('\t');
+  });
+  var icerik = (d ? d.dosyaNo : 'PL') + ' — Customs Packing List\n\n' + headers.join('\t') + '\n' + rows.join('\n');
+  var blob = new Blob(['\ufeff' + icerik], { type: 'text/tab-separated-values;charset=utf-8' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Gumrukcu_PL_' + (d ? d.dosyaNo : 'export') + '.xls'; a.click();
+  window.toast?.('Gumrukcu PL Excel indirildi', 'ok');
+};
+
 window._ihrUrunTedarikciGrupla = function() {
   var tbody = document.getElementById('ihr-urun-tbody'); if (!tbody) return;
   /* Mevcut grup satirlarini temizle */
@@ -1895,6 +1911,25 @@ window._ihrDogrula = function(dosyaId) {
   var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
   var hatalar = [], uyarilar = [];
   urunler.forEach(function(u, i) { var sira = (i + 1) + '. ' + (u.aciklama || u.urun_kodu || 'Ürün'); if (!u.aciklama) hatalar.push(sira + ' — Ürün açıklaması eksik'); if (!u.birim_fiyat) hatalar.push(sira + ' — Birim fiyat eksik'); if (!u.hs_kodu) hatalar.push(sira + ' — HS/GTIP kodu eksik'); if (!u.brut_kg) uyarilar.push(sira + ' — Brüt KG eksik'); if (!u.koli_adet) uyarilar.push(sira + ' — Koli adedi eksik'); if (!u.tedarikciAd) uyarilar.push(sira + ' — Tedarikçi tanımlı değil'); });
+  // IHR-ALIM-001: Alım-ihraç miktar/fiyat karşılaştırması
+  try {
+    var satinalma = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : [];
+    if (satinalma.length) {
+      urunler.forEach(function(u, i) {
+        var sira = (i + 1) + '. ' + (u.aciklama || u.urun_kodu || 'Ürün');
+        var kod = u.urun_kodu || '';
+        if (!kod) return;
+        var alis = satinalma.find(function(s) { return (s.urunKodu || s.urun_kodu || '') === kod; });
+        if (!alis) return;
+        var alisMiktar = parseFloat(alis.miktar || 0);
+        var ihrMiktar = parseFloat(u.miktar || 0);
+        if (alisMiktar > 0 && ihrMiktar > alisMiktar) hatalar.push(sira + ' — ihraç miktarı (' + ihrMiktar + ') alışı (' + alisMiktar + ') aşıyor');
+        var alisFiyat = parseFloat(alis.birimFiyat || alis.birim_fiyat || 0);
+        var ihrFiyat = parseFloat(u.birim_fiyat || 0);
+        if (alisFiyat > 0 && ihrFiyat > 0 && Math.abs(ihrFiyat - alisFiyat) / alisFiyat > 0.20) uyarilar.push(sira + ' — fiyat farkı yüksek (alış: ' + alisFiyat + ' / ihraç: ' + ihrFiyat + ')');
+      });
+    }
+  } catch(e) {}
   var tamam = hatalar.length === 0 && uyarilar.length === 0;
   var old = _g('mo-dogrula'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-dogrula';
@@ -2268,6 +2303,49 @@ window._ihrKolonKaydet = function(dosyaId) {
   window.toast?.(keys.length + ' kolon uygulandi', 'ok');
   window.logActivity?.('ihracat', 'Kolon gorunumu: ' + keys.length + ' kolon');
   if (_aktifDosyaId) { var _dd = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); var _cc = _g('ihr-detay-content'); if (_dd && _cc) _ihrDetayRenderUrunler(_dd, _cc); }
+};
+
+// ══ IHR-KDV-001: KDV Iade Motoru ══════════════════════════════
+window._ihrKdvIadeHesapla = function() {
+  var now = new Date();
+  var oncekiAy = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var ayKey = oncekiAy.getFullYear() + '-' + String(oncekiAy.getMonth() + 1).padStart(2, '0');
+  var dosyalar = _loadD().filter(function(d) { return !d.isDeleted && (d.createdAt || '').startsWith(ayKey); });
+  var ihrKdv = 0;
+  dosyalar.forEach(function(d) {
+    var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
+    urunler.forEach(function(u) { ihrKdv += parseFloat(u.kdv_tutar) || ((parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0) * ((parseFloat(u.kdv_orani) || 0) / 100)); });
+  });
+  var satinalma = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : [];
+  var giderKdv = 0;
+  satinalma.filter(function(s) { return !s.isDeleted && (s.piDate || s.createdAt || '').startsWith(ayKey) && parseFloat(s.kdvOrani || s.kdv_orani || 0) > 0; })
+    .forEach(function(s) { giderKdv += (parseFloat(s.totalAmount || s.toplam || 0)) * ((parseFloat(s.kdvOrani || s.kdv_orani || 0)) / 100); });
+  var iade = ihrKdv + giderKdv;
+  var ayAdi = ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'][oncekiAy.getMonth()];
+  window.toast?.(ayAdi + ' KDV iade: ' + Math.round(iade).toLocaleString('tr-TR') + ' TL (' + dosyalar.length + ' dosya)', 'ok');
+  window.addNotif?.('💰', ayAdi + ' KDV iade listesi: ' + Math.round(iade).toLocaleString('tr-TR') + ' TL', 'info', 'ihracat');
+  window.logActivity?.('ihracat', 'KDV iade hesaplandi: ' + ayAdi + ' → ' + Math.round(iade).toLocaleString('tr-TR') + ' TL');
+};
+
+// ══ IHR-EXCEL-002: Parasut Fatura Excel ════════════════════════
+window._ihrParasutExcel = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) { window.toast?.('Dosya bulunamadi', 'err'); return; }
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  if (!urunler.length) { window.toast?.('Urun yok', 'warn'); return; }
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kutuphanesi yok', 'err'); return; }
+  var ciNo = (d.dosyaNo || '').replace('IHR-', 'CI-');
+  var tarih = d.bitis_tarihi || _today();
+  var rows = [['Musteri Adi', 'Fatura No', 'Tarih', 'Urun/Hizmet', 'Miktar', 'Birim', 'Birim Fiyat', 'Doviz', 'KDV%', 'Toplam']];
+  urunler.forEach(function(u) {
+    var amt = (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0);
+    rows.push([d.musteriAd || '', ciNo, tarih, u.standart_urun_adi || u.aciklama || '', parseFloat(u.miktar) || 0, u.birim || 'PCS', parseFloat(u.birim_fiyat) || 0, u.doviz || 'USD', 0, amt]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Parasut');
+  XLSX.writeFile(wb, 'Parasut_' + ciNo + '.xlsx');
+  window.toast?.('Parasut Excel indirildi', 'ok');
 };
 
 })();

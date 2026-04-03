@@ -113,7 +113,7 @@
 })();
 
 // ── Versiyon ─────────────────────────────────────────────────────
-const DB_VERSION = '8.0.0';
+const DB_VERSION = '8.3.0';
 
 // ── Firebase Storage ─────────────────────────────────────────────
 var FB_STORAGE = null;
