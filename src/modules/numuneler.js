@@ -169,10 +169,23 @@ function renderNumuneler() {
   }
   if (_search) { const q=_search.toLowerCase(); filtered=filtered.filter(n=>(n.nmsId||'').toLowerCase().includes(q)||(n.urunAdi||'').toLowerCase().includes(q)||(n.lotNo||'').toLowerCase().includes(q)||(n.tedarikciAdi||'').toLowerCase().includes(q)); }
 
+  // Sayfalama (STANDART-FIX-011)
+  if (!window._numuneSayfa) window._numuneSayfa = 1;
+  var _NUMUNE_SAYFA_BOY = 50;
+  var _numuneToplamS = Math.max(1, Math.ceil(filtered.length / _NUMUNE_SAYFA_BOY));
+  if (window._numuneSayfa > _numuneToplamS) window._numuneSayfa = _numuneToplamS;
+  var _numuneBas = (window._numuneSayfa - 1) * _NUMUNE_SAYFA_BOY;
+  var sayfaNumune = filtered.slice(_numuneBas, _numuneBas + _NUMUNE_SAYFA_BOY);
+
+  // Toplu güncelleme butonu
+  h += '<div style="display:flex;gap:6px;align-items:center">';
+  h += '<span id="nms-bulk-bar" style="display:none;gap:6px;align-items:center"><span id="nms-bulk-cnt" style="font-size:10px;font-weight:600;color:var(--ac)">0</span> seçili <button class="btn btns" onclick="event.stopPropagation();window._numuneTopluGuncelle()" style="font-size:10px">İade Edildi</button><button class="btn btns btnd" onclick="event.stopPropagation();window._numuneTopluSil()" style="font-size:10px">Sil</button></span>';
+  h += '</div>';
+
   // Liste
   h += '<div style="'+S_WK+';padding:0;overflow:hidden">';
-  if (!filtered.length) { h += '<div style="padding:24px;text-align:center;font-size:11px;color:'+T3+'">Numune bulunamadı</div>'; }
-  filtered.forEach(n => {
+  if (!sayfaNumune.length) { h += '<div style="padding:24px;text-align:center;font-size:11px;color:'+T3+'">Numune bulunamadı</div>'; }
+  sayfaNumune.forEach(n => {
     const sureDoldu = n.saklamaBitis && n.saklamaBitis < today && n.durum==='arsivde';
     h += '<div onclick="window._nmsPeek(\''+n.id+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid '+BD+';cursor:pointer;transition:background .1s'+(sureDoldu?';background:#FEF2F2':'')+'" onmouseover="this.style.background=\''+BG2+'\'" onmouseout="this.style.background=\''+(sureDoldu?'#FEF2F2':'')+'\'"><div style="display:flex;align-items:center;gap:10px">'
       +(window.isAdmin?.() ? '<input type="checkbox" class="nms-bulk-chk" data-id="'+n.id+'" onclick="event.stopPropagation();_nmsBulkCheck()" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;accent-color:var(--ac)">' : '')
@@ -182,6 +195,16 @@ function renderNumuneler() {
       +'<div style="display:flex;align-items:center;gap:8px">'+_durumBadge(n.durum)+(sureDoldu?_badge('Süre Doldu','#FCEBEB',RED):'')+'<span style="font-size:9px;color:'+T3+'">'+_fmt(n.saklamaBitis)+'</span></div></div>';
   });
   h += '</div>';
+
+  // Sayfalama footer
+  if (filtered.length > _NUMUNE_SAYFA_BOY) {
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:10px;color:'+T3+'">';
+    h += '<span>' + (_numuneBas + 1) + '–' + Math.min(_numuneBas + _NUMUNE_SAYFA_BOY, filtered.length) + ' / ' + filtered.length + ' numune</span>';
+    h += '<div style="display:flex;gap:4px">';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._numuneSayfa=Math.max(1,window._numuneSayfa-1);renderNumuneler()" style="font-size:10px;padding:2px 8px"' + (window._numuneSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._numuneSayfa=Math.min(' + _numuneToplamS + ',window._numuneSayfa+1);renderNumuneler()" style="font-size:10px;padding:2px 8px"' + (window._numuneSayfa >= _numuneToplamS ? ' disabled' : '') + '>\u2192</button>';
+    h += '</div></div>';
+  }
 
   // Peek panel
   if (_peekId) h += _renderPeek(_peekId);
@@ -583,6 +606,46 @@ window._nmsArsivOnay = (id,onay) => { if(onay){window._nmsDurumDegistir(id,'kull
 window._nmsImza = id => { const ts=_g('nms-'+id+'-ts'); if(ts) ts.textContent='İmzalandı: '+_now().toLocaleString('tr-TR'); };
 window._nmsFileChange = (id, inp) => { const p=_g('nms-'+id+'-p'); if(p&&inp.files?.length) p.textContent=inp.files.length+' dosya seçildi'; };
 window._nmsKarsilastirmaKaydet = () => { window.toast?.('Karşılaştırma kaydedildi','success'); renderNumuneler(); };
+
+window._numuneTopluGuncelle = function() {
+  if (!window._yetkiKontrol?.('toplu_guncelle')) return;
+  var checked = document.querySelectorAll('.nms-bulk-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return cb.dataset.id; });
+  if (!ids.length) { window.toast?.('Kayıt seçilmedi', 'warn'); return; }
+  window.confirmModal?.(ids.length + ' numune "İade Edildi" olarak işaretlenecek.', {
+    title: 'Toplu Güncelle', confirmText: 'Evet, Güncelle',
+    onConfirm: function() {
+      var liste = JSON.parse(localStorage.getItem('ak_numune1') || '[]');
+      ids.forEach(function(id) {
+        var x = liste.find(function(n) { return String(n.id) === String(id); });
+        if (x) { x.returned = true; x.iadeDate = new Date().toISOString().slice(0, 10); x.updatedAt = new Date().toISOString(); }
+      });
+      localStorage.setItem('ak_numune1', JSON.stringify(liste));
+      window.toast?.(ids.length + ' numune güncellendi ✓', 'ok');
+      renderNumuneler();
+    }
+  });
+};
+
+window._numuneTopluSil = function() {
+  if (!window._yetkiKontrol?.('toplu_sil')) return;
+  var checked = document.querySelectorAll('.nms-bulk-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return cb.dataset.id; });
+  if (!ids.length) return;
+  window.confirmModal?.(ids.length + ' numune silinecek?', {
+    title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var liste = JSON.parse(localStorage.getItem('ak_numune1') || '[]');
+      ids.forEach(function(id) {
+        var x = liste.find(function(n) { return String(n.id) === String(id); });
+        if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); }
+      });
+      localStorage.setItem('ak_numune1', JSON.stringify(liste));
+      window.toast?.(ids.length + ' numune silindi ✓', 'ok');
+      renderNumuneler();
+    }
+  });
+};
 
 /* ════════════════════════════════════════════════════════════════
    EXPORT
