@@ -219,7 +219,9 @@ function renderSatinAlma() {
     var advAmt = (parseFloat(s.totalAmount) || 0) * (parseFloat(s.advanceRate) || 0) / 100;
     var remaining = (parseFloat(s.totalAmount) || 0) - advAmt;
     var sym = SA_CURRENCIES[s.currency] || '$';
-    var supplierName = s.supplier || s.piNo || '—';
+    var supplierName = s.tedarikci_silindi
+      ? '<span style="color:#DC2626;font-size:10px" title="' + esc(s.tedarikci_eski_ad || '') + '">⚠ Silinmiş (' + esc(s.tedarikci_eski_ad || '—') + ')</span>'
+      : esc(s.supplier || s.piNo || '—');
 
     // Tedarikçi skor badge
     var vendorBadge = '';
@@ -252,7 +254,7 @@ function renderSatinAlma() {
     html += '<div data-said="' + s.id + '" style="' + _GRID + ';cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div onclick="event.stopPropagation()"><input type="checkbox" class="sat-row-chk" data-id="' + s.id + '" onchange="event.stopPropagation();window._satChkGuncelle()"></div>'
       + '<div class="sa-cell" data-field="jobId" onclick="window._saInlineEdit?.(event,' + s.id + ',\'jobId\')" style="font-weight:600;font-family:\'DM Mono\',monospace;color:var(--ac)">' + esc(s.jobId || '—') + '</div>'
-      + '<div class="sa-cell" data-field="supplier" onclick="window._saInlineEdit?.(event,' + s.id + ',\'supplier\')" style="font-weight:500">' + esc(supplierName) + vendorBadge + '</div>'
+      + '<div class="sa-cell" data-field="supplier" onclick="window._saInlineEdit?.(event,' + s.id + ',\'supplier\')" style="font-weight:500">' + (s.tedarikci_silindi ? supplierName : esc(supplierName)) + vendorBadge + '</div>'
       + '<div style="font-size:10px;color:var(--t2)">' + ftLabel + '</div>'
       + '<div class="sa-cell" data-field="piDate" onclick="window._saInlineEdit?.(event,' + s.id + ',\'piDate\')" style="color:var(--t3)">' + (s.piDate || '—') + '</div>'
       + '<div class="sa-cell" data-field="totalAmount" onclick="window._saInlineEdit?.(event,' + s.id + ',\'totalAmount\')" style="font-weight:700;color:var(--t)">' + sym + Number(s.totalAmount || 0).toLocaleString('tr-TR') + '</div>'

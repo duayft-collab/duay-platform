@@ -6321,8 +6321,41 @@ window._mergeCari    = _mergeCari;
 function deleteCari(id) {
   var raw = JSON.parse(localStorage.getItem('ak_cari1') || '[]');
   var c = raw.find(function(x) { return String(x.id) === String(id); });
-  if (c) { c.isDeleted = true; c.deletedAt = new Date().toISOString(); }
-  storeCari(raw);
+  if (!c) return;
+
+  // Bağlı satınalma kayıtlarını kontrol et (STANDART-FIX-003)
+  var cariAd = c.name || '';
+  var satAll = typeof loadSatinalma === 'function' ? loadSatinalma() : (window.loadSatinalma?.() || []);
+  var bagliKayitlar = satAll.filter(function(s) {
+    return !s.isDeleted && ((s.supplier || '') === cariAd || (s.piNo || '') === cariAd);
+  });
+
+  var silFunc = function() {
+    // Bağlı satınalma kayıtlarını işaretle
+    if (bagliKayitlar.length > 0) {
+      var satRaw = JSON.parse(localStorage.getItem('ak_satinalma1') || '[]');
+      satRaw.forEach(function(s) {
+        if ((s.supplier || '') === cariAd || (s.piNo || '') === cariAd) {
+          s.tedarikci_silindi = true;
+          s.tedarikci_silindi_at = new Date().toISOString();
+          s.tedarikci_eski_ad = cariAd;
+        }
+      });
+      localStorage.setItem('ak_satinalma1', JSON.stringify(satRaw));
+    }
+    c.isDeleted = true;
+    c.deletedAt = new Date().toISOString();
+    storeCari(raw);
+  };
+
+  if (bagliKayitlar.length > 0) {
+    var msg = 'Bu tedarikçiye bağlı ' + bagliKayitlar.length + ' satınalma kaydı var. Silindiğinde bu kayıtlar "Silinmiş Tedarikçi" olarak işaretlenecek. Devam edilsin mi?';
+    if (typeof window.confirmModal === 'function') {
+      window.confirmModal(msg, { title: 'Cari Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: silFunc });
+    } else if (confirm(msg)) { silFunc(); }
+  } else {
+    silFunc();
+  }
 }
 
 /**
