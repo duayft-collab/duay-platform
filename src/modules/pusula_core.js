@@ -12,10 +12,10 @@
 const PRI_MAP = {
   1: { color:'#DC2626', glow:'rgba(220,38,38,.3)',   badge:'tk-pri-badge-1', label:'🔴 KRİTİK' },
   2: { color:'#D97706', glow:'rgba(217,119,6,.25)',  badge:'tk-pri-badge-2', label:'🟠 ÖNEMLİ' },
-  3: { color:'#4F46E5', glow:'rgba(79,70,229,.2)',   badge:'tk-pri-badge-3', label:'🔵 NORMAL' },
-  4: { color:'#64748B', glow:'rgba(100,116,139,.15)',badge:'tk-pri-badge-4', label:'⚪ DÜŞÜK'  },
+  3: { color:'#B4B2A9', glow:'rgba(180,178,169,.2)',  badge:'tk-pri-badge-3', label:'⚪ NORMAL' },
+  4: { color:'#64748B', glow:'rgba(100,116,139,.15)',badge:'tk-pri-badge-4', label:'⚫ DÜŞÜK'  },
 };
-const PRI_COLOR = { 1:'#DC2626', 2:'#D97706', 3:'#4F46E5', 4:'#64748B' };
+const PRI_COLOR = { 1:'#DC2626', 2:'#D97706', 3:'#B4B2A9', 4:'#64748B' };
 
 const DEPT_DEFAULT_COLORS = [
   '#6366F1','#0EA5E9','#10B981','#F59E0B','#EF4444',
