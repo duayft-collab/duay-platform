@@ -677,6 +677,20 @@ function _ihrDetayRenderOzet(d) {
     h += '</div>';
   });
 
+  // Ozel evrak tipleri (kullanici tanimli)
+  evraklar.filter(function(e) { return String(e.dosya_id) === String(d.id) && e.tur && e.tur.indexOf('OZEL_') === 0; }).forEach(function(ev) {
+    var dosyalar2 = ev.dosyalar || [];
+    h += '<div style="padding:8px 12px;border-radius:8px;border:0.5px solid var(--b);background:var(--s2);margin-bottom:5px">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between">';
+    h += '<div><span style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(ev.belge_adi || ev.tur) + '</span>';
+    if (dosyalar2.length) h += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">Rev.' + dosyalar2.length + '</span>';
+    h += '<div style="font-size:10px;color:var(--t3)">' + _esc(ev.kaynak || '') + ' \u2192 ' + _esc(ev.hedef || '') + '</div></div>';
+    h += '<div style="display:flex;gap:4px">';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+    h += '</div></div></div>';
+  });
+  // + Belge Ekle butonu
+  h += '<button onclick="event.stopPropagation();window._ihrOzelEvrakEkle(\'' + d.id + '\')" style="width:100%;padding:8px;border:1px dashed var(--b);border-radius:8px;background:none;color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit;margin-top:4px" onmouseover="this.style.borderColor=\'var(--ac)\';this.style.color=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\';this.style.color=\'var(--t3)\'">+ Belge Ekle</button>';
   h += '</div>'; /* evrak listesi */
   if (d.not) h += '<div style="margin-top:12px;background:var(--s2);padding:10px 12px;border-radius:8px;font-size:12px;color:var(--t2)">' + _esc(d.not) + '</div>';
   h += '</div>'; /* sağ blok */
@@ -2564,6 +2578,47 @@ window._ihrEvrakKaynakDuzenle = function(evrakId) {
   ev.kaynak = yeni.trim(); ev.updatedAt = _now(); _storeE(evraklar);
   if (_aktifDosyaId) { var _dd3 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd3) _ihrDetayRenderOzet(_dd3); }
 };
+// EVRAK-V2: Ozel evrak tipi ekleme
+window._ihrOzelEvrakEkle = function(dosyaId) {
+  var old = _g('mo-ozel-evrak'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ozel-evrak';
+  mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">+ Belge Ekle</div>'
+    + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<input type="hidden" id="oe-dosya" value="' + dosyaId + '">'
+    + '<div><div class="fl">Belge Adi *</div><input class="fi" id="oe-ad" placeholder="Ornek: Fumigasyon Sertifikasi" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+    + '<div><div class="fl">Kaynak</div><input class="fi" id="oe-kaynak" placeholder="Gumrukcu" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+    + '<div><div class="fl">Hedef</div><input class="fi" id="oe-hedef" placeholder="Duay → Musteri" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-ozel-evrak\')?.remove()">Iptal</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrOzelEvrakKaydet()">Ekle</button>'
+    + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrOzelEvrakKaydet = function() {
+  var dosyaId = (_g('oe-dosya') || {}).value;
+  var ad = ((_g('oe-ad') || {}).value || '').trim();
+  if (!ad) { window.toast?.('Belge adi zorunlu', 'err'); return; }
+  var kaynak = ((_g('oe-kaynak') || {}).value || '').trim();
+  var hedef = ((_g('oe-hedef') || {}).value || '').trim();
+  var cu = _cu();
+  var evraklar = _loadE();
+  evraklar.unshift({
+    id: _genId(), dosya_id: dosyaId, tur: 'OZEL_' + Date.now(),
+    belge_adi: ad, durum: 'taslak', dosyalar: [],
+    kaynak: kaynak, hedef: hedef,
+    yukleyen_ad: cu?.name || '', yukleyen_id: cu?.id,
+    createdAt: _now(), createdBy: cu?.id, updatedAt: _now()
+  });
+  _storeE(evraklar);
+  _g('mo-ozel-evrak')?.remove();
+  window.toast?.(ad + ' eklendi', 'ok');
+  window.logActivity?.('ihracat', 'Ozel evrak eklendi: ' + ad);
+  if (_aktifDosyaId) { var _dd5 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd5) _ihrDetayRenderOzet(_dd5); }
+};
+
 window._ihrEvrakHedefDuzenle = function(evrakId) {
   var evraklar = _loadE(); var ev = evraklar.find(function(e) { return String(e.id) === String(evrakId); }); if (!ev) return;
   var yeni = prompt('Hedef:', ev.hedef || ''); if (yeni === null) return;
