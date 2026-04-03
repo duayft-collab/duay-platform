@@ -4348,8 +4348,35 @@ window._saveUrunInline = function() {
 
 // ── Sistem menusune Talimatlar ekle (app.js dokunulmazligi) ──
 (function() {
-  if (typeof _TN2_GROUPS !== 'undefined' && _TN2_GROUPS.sistem && Array.isArray(_TN2_GROUPS.sistem.mods)) {
-    var exists = _TN2_GROUPS.sistem.mods.some(function(m) { return m.id === 'talimatlar'; });
-    if (!exists) _TN2_GROUPS.sistem.mods.push({ id: 'talimatlar', label: 'Talimatlar' });
+  if (typeof _TN2_GROUPS === 'undefined') return;
+  // Talimatlar → Sistem
+  if (_TN2_GROUPS.sistem && Array.isArray(_TN2_GROUPS.sistem.mods)) {
+    if (!_TN2_GROUPS.sistem.mods.some(function(m) { return m.id === 'talimatlar'; }))
+      _TN2_GROUPS.sistem.mods.push({ id: 'talimatlar', label: 'Talimatlar' });
   }
+  // NAV-001: ihracat-ops → Satinalma'dan cikar, Operasyon'a tasi
+  if (_TN2_GROUPS.satinalma && Array.isArray(_TN2_GROUPS.satinalma.mods)) {
+    _TN2_GROUPS.satinalma.mods = _TN2_GROUPS.satinalma.mods.filter(function(m) { return m.id !== 'ihracat-ops'; });
+  }
+  if (_TN2_GROUPS.operasyon && Array.isArray(_TN2_GROUPS.operasyon.mods)) {
+    if (!_TN2_GROUPS.operasyon.mods.some(function(m) { return m.id === 'ihracat-ops'; }))
+      _TN2_GROUPS.operasyon.mods.unshift({ id: 'ihracat-ops', label: 'İhracat Ops' });
+  }
+  // NAV-001: Dashboard → logo tiklaninca acilir
+  if (_TN2_GROUPS.dashboard && Array.isArray(_TN2_GROUPS.dashboard.mods)) {
+    _TN2_GROUPS.dashboard.mods = _TN2_GROUPS.dashboard.mods.filter(function(m) { return m.id !== 'dashboard'; });
+    if (_TN2_GROUPS.dashboard.mods.length === 0) delete _TN2_GROUPS.dashboard;
+  }
+})();
+
+// NAV-001: Logo tiklaninca dashboard
+(function() {
+  setTimeout(function() {
+    var logo = document.querySelector('.tn2-logo,.nav-logo,[data-nav-logo]');
+    if (logo && !logo.dataset.dashLinked) {
+      logo.dataset.dashLinked = '1';
+      logo.style.cursor = 'pointer';
+      logo.addEventListener('click', function(e) { e.stopPropagation(); window.App?.nav?.('dashboard'); });
+    }
+  }, 1000);
 })();

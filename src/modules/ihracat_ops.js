@@ -618,10 +618,12 @@ function _ihrDetayRenderOzet(d) {
     h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
     h += _badge(durum.l, durum.c, durum.bg);
 
-    /* DOCX Üret — CI ve PL için */
+    /* DOC-FORMAT-001: DOCX + Excel + PDF butonları */
     if (ev.tur === 'CI' || ev.tur === 'PL') {
       var _docxTip = ev.tur === 'CI' ? 'ci' : 'pl';
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'' + _docxTip + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">DOCX</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrExcelIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#1D6A2A">Excel</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#C62828">PDF</button>';
     }
     /* Görüntüle — her zaman */
     h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Görüntüle</button>';
@@ -2428,6 +2430,57 @@ window._ihrKayitliDilekce = function(gcbId) {
       window.addNotif?.('✅', no + ': Dilekçe paketi gönderildi', 'ok', 'ihracat');
     }
   });
+};
+
+// ══ DOC-FORMAT-001: Excel + PDF indirme ═══════════════════════
+window._ihrExcelIndir = function(dosyaId, tur) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) { window.toast?.('Dosya bulunamadi', 'err'); return; }
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  if (!urunler.length) { window.toast?.('Urun yok', 'warn'); return; }
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kutuphanesi yok', 'err'); return; }
+  var no = (d.dosyaNo || '').replace('IHR-', tur + '-');
+  var headers, rows;
+  if (tur === 'CI') {
+    headers = ['#','Description','Qty','Unit','Unit Price','Currency','Amount'];
+    rows = urunler.map(function(u, i) { var amt = (parseFloat(u.miktar)||0)*(parseFloat(u.birim_fiyat)||0); return [i+1, u.standart_urun_adi||u.aciklama||'', u.miktar||0, u.birim||'PCS', u.birim_fiyat||0, u.doviz||'USD', amt.toFixed(2)]; });
+  } else {
+    headers = ['#','Description','Package','Qty','Net KG','Gross KG','m3'];
+    rows = urunler.map(function(u, i) { return [i+1, u.standart_urun_adi||u.aciklama||'', u.paket_turu||'Carton', u.koli_adet||0, u.net_kg||0, u.brut_kg||0, u.hacim_m3||0]; });
+  }
+  var ws = XLSX.utils.aoa_to_sheet([headers].concat(rows));
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, tur);
+  XLSX.writeFile(wb, no + '.xlsx');
+  window.toast?.(tur + ' Excel indirildi', 'ok');
+};
+
+window._ihrPdfIndir = function(dosyaId, tur) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) { window.toast?.('Dosya bulunamadi', 'err'); return; }
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  if (!urunler.length) { window.toast?.('Urun yok', 'warn'); return; }
+  var no = (d.dosyaNo || '').replace('IHR-', tur + '-');
+  var w = window.open('', '_blank', 'width=900,height=700');
+  if (!w) { window.toast?.('Popup engellendi', 'err'); return; }
+  var h = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + no + '</title><style>body{font-family:Arial;padding:24px;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-size:10px;text-transform:uppercase}.hdr{font-size:16px;font-weight:bold;margin-bottom:4px}.sub{font-size:11px;color:#666}@media print{body{padding:12px}}</style></head><body>';
+  h += '<div class="hdr">DUAY GLOBAL LLC — ' + tur + '</div>';
+  h += '<div class="sub">' + no + ' · ' + (d.musteriAd || '') + ' · ' + _today() + '</div>';
+  h += '<table><thead><tr>';
+  if (tur === 'CI') {
+    h += '<th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th>Unit Price</th><th>Currency</th><th>Amount</th>';
+    h += '</tr></thead><tbody>';
+    var total = 0;
+    urunler.forEach(function(u, i) { var amt = (parseFloat(u.miktar)||0)*(parseFloat(u.birim_fiyat)||0); total += amt; h += '<tr><td>' + (i+1) + '</td><td>' + (u.standart_urun_adi||u.aciklama||'') + '</td><td>' + (u.miktar||0) + '</td><td>' + (u.birim||'PCS') + '</td><td>' + (u.birim_fiyat||0) + '</td><td>' + (u.doviz||'USD') + '</td><td>' + amt.toFixed(2) + '</td></tr>'; });
+    h += '<tr style="font-weight:bold"><td colspan="6" style="text-align:right">Total</td><td>' + total.toFixed(2) + '</td></tr>';
+  } else {
+    h += '<th>#</th><th>Description</th><th>Package</th><th>Qty</th><th>Net KG</th><th>Gross KG</th><th>m3</th>';
+    h += '</tr></thead><tbody>';
+    urunler.forEach(function(u, i) { h += '<tr><td>' + (i+1) + '</td><td>' + (u.standart_urun_adi||u.aciklama||'') + '</td><td>' + (u.paket_turu||'Carton') + '</td><td>' + (u.koli_adet||0) + '</td><td>' + (u.net_kg||0) + '</td><td>' + (u.brut_kg||0) + '</td><td>' + (u.hacim_m3||0) + '</td></tr>'; });
+  }
+  h += '</tbody></table><p style="margin-top:24px;font-size:10px;color:#999">Duay Global LLC · ' + _today() + '</p></body></html>';
+  w.document.write(h); w.document.close();
+  setTimeout(function() { w.print(); }, 500);
 };
 
 })();
