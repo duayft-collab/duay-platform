@@ -45,7 +45,7 @@ function renderSatisTeklif() {
   var search = (document.getElementById('st-search')?.value || '').toLowerCase();
   var fl = data.filter(function(t) {
     if (!search) return true;
-    return (t.teklifNo || '').toLowerCase().includes(search) || (t.customerName || '').toLowerCase().includes(search);
+    return (t.teklifNo || '').toLowerCase().includes(search) || (t.customerName || '').toLowerCase().includes(search) || (t.jobId || '').toLowerCase().includes(search) || (t.currency || '').toLowerCase().includes(search) || (t.incoterm || '').toLowerCase().includes(search);
   }).sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
 
   var cont = document.getElementById('st-list');
