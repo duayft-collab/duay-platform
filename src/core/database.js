@@ -1026,7 +1026,7 @@ const DEFAULT_IK = [
 
 const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx','TNT'];
 
-/** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo);      return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo); const arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeKargo(d)       { _write(KEYS.kargo, d); 
   const _fp_kargo = _fsPath('kargo'); if (_fp_kargo) _syncFirestore(_fp_kargo, d);
 }
@@ -1056,7 +1056,7 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @param {Array<Object>} d */ function storeIhracatOps(d) { _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat V2 koleksiyonları
-function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); return Array.isArray(d) ? d : []; }
+function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatDosyalar(d){ _write(KEYS.ihracatDosyalar, d.slice(0,200)); var fp = _fsPath('ihracatDosyalar'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); return Array.isArray(d) ? d : []; }
 function storeIhracatEvraklar(d){ _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
@@ -1110,7 +1110,7 @@ const DEFAULT_NUMUNE = [
   { id: 1, dir: 'giris', name: 'Model A Kumaş Numunesi', code: 'NM-001', qty: 3, date: '2026-03-10', uid: 2, iadeDate: '2026-04-10', returned: false, note: 'Müşteriye gösterim için', img: null },
   { id: 2, dir: 'cikis', name: 'Renk Kartı Seti',         code: 'NM-002', qty: 1, date: '2026-03-15', uid: 3, iadeDate: '2026-03-30', returned: false, note: 'Fuar için çıkartıldı',  img: null },
 ];
-/** @returns {Array<Object>} */ function loadNumune()  { const d = _read(KEYS.numune);  return Array.isArray(d) ? d : DEFAULT_NUMUNE; }
+/** @returns {Array<Object>} */ function loadNumune()  { const d = _read(KEYS.numune); const arr = Array.isArray(d) ? d : DEFAULT_NUMUNE; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeNumune(d){ var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.numune, d); 
   const _fp_numune = _fsPath('numune'); if (_fp_numune) _syncFirestore(_fp_numune, d);
 }
@@ -1216,7 +1216,7 @@ function storeTahsilat(d) {
 /** @param {Array<Object>} d */ function storeSatinalma(d) { _write(KEYS.satinalma, d);
   var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
 }
-/** @returns {Array<Object>} */ function loadCari() { const d = _read(KEYS.cari); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadCari() { const d = _read(KEYS.cari); const arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.cari, d);
   var _fp = _fsPath('cari'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1246,7 +1246,7 @@ function storeTahsilat(d) {
 /** @param {Array} d */ function storeUrunler(d) { _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeAlisTeklifleri(d) { _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
-/** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); return Array.isArray(d) ? d : []; }
+/** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeSatisTeklifleri(d) { _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); return Array.isArray(d) ? d : []; }
@@ -2752,6 +2752,16 @@ const DB = {
   // Sync güvenilirlik
   getSyncState: function() { return _syncState; },
   manualSync: window._manualSync,
+};
+
+/** @description Soft delete + timestamp migration yardımcısı (STANDART-FIX-001) */
+window._migrateRecord = function(kayit) {
+  if (!kayit || typeof kayit !== 'object') return kayit;
+  if (!('isDeleted' in kayit)) kayit.isDeleted = false;
+  if (!('deletedAt' in kayit)) kayit.deletedAt = null;
+  if (!('createdAt' in kayit)) kayit.createdAt = kayit.ts || kayit.olusturma || new Date().toISOString();
+  if (!('updatedAt' in kayit)) kayit.updatedAt = kayit.guncellenme || kayit.updatedAt || new Date().toISOString();
+  return kayit;
 };
 
 if (typeof module !== 'undefined' && module.exports) {

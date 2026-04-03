@@ -6319,7 +6319,10 @@ window._mergeCari    = _mergeCari;
  * Cari sil.
  */
 function deleteCari(id) {
-  storeCari(loadCari().filter(function(c) { return c.id !== id; }));
+  var raw = JSON.parse(localStorage.getItem('ak_cari1') || '[]');
+  var c = raw.find(function(x) { return String(x.id) === String(id); });
+  if (c) { c.isDeleted = true; c.deletedAt = new Date().toISOString(); }
+  storeCari(raw);
 }
 
 /**

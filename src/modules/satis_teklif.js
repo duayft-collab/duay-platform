@@ -341,7 +341,14 @@ window._copyST = function(id) {
 window._deleteST = function(id) {
   window.confirmModal?.('Bu teklifi silmek istediğinizden emin misiniz?', {
     title: 'Teklif Sil', danger: true, confirmText: 'Evet',
-    onConfirm: function() { _storeST(_loadST().filter(function(x) { return x.id !== id; })); renderSatisTeklif(); window.toast?.('Silindi', 'ok'); }
+    onConfirm: function() {
+      var liste = _loadST();
+      var x = liste.find(function(s) { return String(s.id) === String(id); });
+      if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); }
+      _storeST(liste);
+      renderSatisTeklif();
+      window.toast?.('Silindi', 'ok');
+    }
   });
 };
 
