@@ -183,3 +183,13 @@ Kurallar:
 - Süre tahmini dosya satır sayısına göre: <100 satır=1dk, 100-500=3dk, 500+=5dk
 - Her işlem başında ve bitişinde göster
 - Format değiştirme — bu şablon sabit
+
+## KUYRUK — Sistem Kalite Paneli (KUYRUK-001)
+- Admin menüsüne "Sistem Kalitesi" alt sayfası ekle
+- Elite Sistem Mimarisi tablosunu göster (5 kategori × 4 seviye)
+- Her satırın yanında sistemin mevcut durumu: 🟢 İyi / 🟡 Orta / 🔴 Zayıf
+- Sadece Admin rolü görebilir (getPermLevel() kontrolü)
+- PDF export butonu (tam tablo)
+- Zamanlama: 1. ay günlük, 2. ay haftalık, 3. ay+ aylık bildirim
+- Bildirim: Admin'e platform içi + mail
+- İlk durum: Mimari=Orta, Test=Zayıf, Güvenlik=Orta, UX=Orta, DevOps=Orta
