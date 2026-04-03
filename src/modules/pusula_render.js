@@ -43,7 +43,10 @@ function renderPusula() {
   if (el('psf-ip-n'))   el('psf-ip-n').textContent   = ipCount;
   if (el('psf-rv-n'))   el('psf-rv-n').textContent   = rvCount;
   if (el('psf-done-n')) el('psf-done-n').textContent = doneCount;
-  if (el('pv-ov'))      el('pv-ov').textContent      = ovCount;
+  if (el('pv-ov')) {
+    el('pv-ov').textContent = ovCount;
+    el('pv-ov').style.cssText = ovCount > 0 ? 'background:#FCEBEB;color:#791F1F;padding:2px 8px;border-radius:6px;font-weight:700' : '';
+  }
   updatePusBadge();
 
   // ── Progress bar ─────────────────────────────────────────────
@@ -61,7 +64,7 @@ function renderPusula() {
     progStats.innerHTML =
       `<span class="pus-prog-stat"><span class="pus-prog-stat-dot" style="background:var(--gr)"></span>${doneCount} tamam</span>`
       + `<span class="pus-prog-stat"><span class="pus-prog-stat-dot" style="background:var(--bl)"></span>${ipCount} devam</span>`
-      + (overdue ? `<span class="pus-prog-stat"><span class="pus-prog-stat-dot" style="background:var(--rd)"></span>${overdue} gecikmiş</span>` : '');
+      + (overdue ? `<span class="pus-prog-stat" style="background:#FCEBEB;color:#791F1F;padding:2px 8px;border-radius:6px;font-weight:700"><span class="pus-prog-stat-dot" style="background:#DC2626"></span>${overdue} gecikmiş</span>` : '');
   }
 
   // ── Filtreler ─────────────────────────────────────────────────
