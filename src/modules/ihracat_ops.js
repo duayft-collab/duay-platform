@@ -693,6 +693,9 @@ window._ihrRunChecks = function() {
 
 /* ── ÜRÜNLER DETAY RENDER ─────────────────────────────────── */
 function _ihrDetayRenderUrunler(d, el) {
+  try { return _ihrDetayRenderUrunlerInner(d, el); } catch(e) { console.error('[IHR] Urunler render hata:', e); if (el) el.innerHTML = '<div style="padding:24px;color:#DC2626">Urunler yuklenemedi: ' + e.message + '</div>'; }
+}
+function _ihrDetayRenderUrunlerInner(d, el) {
   var tumurunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
   /* İhracat ID otomatik yaz */
   var dosyaNo = d.dosyaNo || d.id;
