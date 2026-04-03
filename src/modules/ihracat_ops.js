@@ -647,11 +647,21 @@ window._ihrDurumFilter = function(v) { _durumFilter = v; _ihrRenderContent(); };
 window._ihrAcDosya = _ihrAcDosya;
 window._ihrRenderDosyaDetay = _ihrRenderDosyaDetay;
 window._ihrRenderContent = _ihrRenderContent;
+window._ihrDetayRenderOzet = _ihrDetayRenderOzet;
 window._ihrUrunAra = function(q) {
   window._ihrUrunAramaQ = q;
   window._ihrUrunSayfa = 1;
-  if (_aktifDosyaId) _ihrRenderDosyaDetay(_aktifDosyaId);
-  else _ihrRenderContent();
+  if (_aktifDosyaId) {
+    var _dosya = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+    if (_dosya) { _ihrDetayRenderOzet(_dosya); }
+    // Arama input'una focus geri ver
+    setTimeout(function() {
+      var inp = _g('ihr-urun-ara');
+      if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    }, 30);
+  } else {
+    _ihrRenderContent();
+  }
 };
 window._ihrRunChecks = function() {
   var today = _today(); var uyari = 0;
@@ -929,8 +939,8 @@ function _ihrDetayRenderUrunler(d, el) {
     h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:10px;color:var(--t3);border-top:0.5px solid var(--b)">';
     h += '<span>' + (_ihrUrunBas + 1) + '–' + Math.min(_ihrUrunBas + _IHR_URUN_SAYFA_BOY, sortedUrunler.length) + ' / ' + sortedUrunler.length + ' ürün</span>';
     h += '<div style="display:flex;gap:4px">';
-    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunSayfa=Math.max(1,window._ihrUrunSayfa-1);window.renderIhracatOps()" style="font-size:10px;padding:2px 8px"' + (window._ihrUrunSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
-    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunSayfa=Math.min(' + _ihrUrunToplamSayfa + ',window._ihrUrunSayfa+1);window.renderIhracatOps()" style="font-size:10px;padding:2px 8px"' + (window._ihrUrunSayfa >= _ihrUrunToplamSayfa ? ' disabled' : '') + '>\u2192</button>';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunSayfa=Math.max(1,window._ihrUrunSayfa-1);window._ihrUrunAra?.(window._ihrUrunAramaQ||\'\')" style="font-size:10px;padding:2px 8px"' + (window._ihrUrunSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrUrunSayfa=Math.min(' + _ihrUrunToplamSayfa + ',window._ihrUrunSayfa+1);window._ihrUrunAra?.(window._ihrUrunAramaQ||\'\')" style="font-size:10px;padding:2px 8px"' + (window._ihrUrunSayfa >= _ihrUrunToplamSayfa ? ' disabled' : '') + '>\u2192</button>';
     h += '</div></div>';
   }
 
@@ -988,13 +998,17 @@ window._ihrInlineDateEdit = function(td, urunId, alan) {
   var inp = document.createElement('input'); inp.type = 'date'; inp.value = eskiDeger || '';
   inp.style.cssText = 'font-size:10px;padding:1px 3px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t)';
   td.innerHTML = ''; td.appendChild(inp); inp.focus();
+  var _reRender2 = function() {
+    if (_aktifDosyaId) { var _dd2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd2) { _ihrDetayRenderOzet(_dd2); return; } }
+    window.renderIhracatOps?.();
+  };
   inp.addEventListener('blur', function() {
     var urunler = _loadU(); var u = urunler.find(function(x) { return String(x.id) === String(urunId); });
     if (u && inp.value !== eskiDeger) { u[alan] = inp.value; u.updatedAt = _now(); window.storeIhracatUrunler?.(urunler); }
-    window.renderIhracatOps?.();
+    _reRender2();
   });
   inp.addEventListener('click', function(e) { e.stopPropagation(); });
-  inp.addEventListener('keydown', function(e) { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') window.renderIhracatOps?.(); });
+  inp.addEventListener('keydown', function(e) { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') _reRender2(); });
 };
 
 window._ihrMsdsYukle = function(urunId) {
@@ -1160,13 +1174,19 @@ window._ihrFiltrele = function(kolon, deger) {
   if (!window._ihrUrunFiltreler) window._ihrUrunFiltreler = {};
   window._ihrUrunFiltreler[kolon] = deger;
   window._ihrUrunSayfa = 1;
-  _ihrRenderContent();
+  if (_aktifDosyaId) {
+    var _d2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+    if (_d2) _ihrDetayRenderOzet(_d2);
+  } else { _ihrRenderContent(); }
 };
 window._ihrFiltreTemizle = function() {
   window._ihrUrunFiltreler = {};
   window._ihrUrunAramaQ = '';
   window._ihrUrunSayfa = 1;
-  _ihrRenderContent();
+  if (_aktifDosyaId) {
+    var _d3 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+    if (_d3) _ihrDetayRenderOzet(_d3);
+  } else { _ihrRenderContent(); }
 };
 
 /* ── INLINE EDIT ─────────────────────────────────────────── */
@@ -1202,9 +1222,16 @@ window._ihrInlineEdit = function(td, urunId, alan) {
     inp.style.cssText = 'width:100%;font-size:10px;padding:2px 4px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t)';
   }
 
+  var _reRenderOzet = function() {
+    if (_aktifDosyaId) {
+      var _dd = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+      if (_dd) { _ihrDetayRenderOzet(_dd); return; }
+    }
+    window.renderIhracatOps?.();
+  };
   var kaydet = function() {
     var yeniDeger = inp.value.trim();
-    if (yeniDeger === eskiDeger) { window.renderIhracatOps?.(); return; }
+    if (yeniDeger === eskiDeger) { _reRenderOzet(); return; }
     var urunler = _loadU();
     var u = urunler.find(function(x) { return String(x.id) === String(urunId); });
     if (u) {
@@ -1212,12 +1239,12 @@ window._ihrInlineEdit = function(td, urunId, alan) {
       u.updatedAt = _now();
       window.storeIhracatUrunler?.(urunler);
     }
-    window.renderIhracatOps?.();
+    _reRenderOzet();
   };
   inp.addEventListener('blur', kaydet);
   inp.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); kaydet(); }
-    if (e.key === 'Escape') { window.renderIhracatOps?.(); }
+    if (e.key === 'Escape') { _reRenderOzet(); }
     if (e.key === 'Tab') {
       e.preventDefault(); kaydet();
       var nextIdx = e.shiftKey ? idx - 1 : idx + 1;
