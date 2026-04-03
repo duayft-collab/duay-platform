@@ -436,3 +436,54 @@ function _getDailyQuote() {
 }
 
 window.setPusQuote = function(q) { window._pusQuoteData = q; };
+
+// ── En Önemli 3 — otomatik hesaplama + override ──────────────
+/**
+ * Dönem bazlı en önemli 3 görevi hesaplar.
+ * pri=1 önce, sonra due tarihi yakın olan.
+ * @param {string} [donem] - 'bugun','hafta','ay','yil' (varsayılan: tümü)
+ * @returns {Array} En önemli 3 görev
+ */
+window._pusEn3Hesapla = function(donem) {
+  var bugun = new Date().toISOString().slice(0, 10);
+  var tasks = window.loadTasks?.() || [];
+  var aktif = tasks.filter(function(t) { return !t.done && !t.isDeleted; });
+
+  if (donem === 'bugun') {
+    aktif = aktif.filter(function(t) { return t.due === bugun; });
+  } else if (donem === 'hafta') {
+    var haftaSonu = new Date();
+    haftaSonu.setDate(haftaSonu.getDate() + (7 - haftaSonu.getDay()));
+    var hs = haftaSonu.toISOString().slice(0, 10);
+    aktif = aktif.filter(function(t) { return t.due && t.due >= bugun && t.due <= hs; });
+  } else if (donem === 'ay') {
+    var aySonu = new Date();
+    aySonu.setMonth(aySonu.getMonth() + 1, 0);
+    var as = aySonu.toISOString().slice(0, 10);
+    aktif = aktif.filter(function(t) { return t.due && t.due >= bugun && t.due <= as; });
+  }
+  // 'yil' veya boş → tüm aktif görevler
+
+  var sirali = aktif.sort(function(a, b) {
+    if ((a.pri || 3) !== (b.pri || 3)) return (a.pri || 3) - (b.pri || 3);
+    return (a.due || '9999') < (b.due || '9999') ? -1 : 1;
+  });
+  return sirali.slice(0, 3);
+};
+
+/**
+ * Kullanıcı override: En Önemli 3 listesini elle belirler.
+ * @param {Array} gorevler - 3 görev id dizisi
+ */
+window._pusEn3Override = function(gorevler) {
+  localStorage.setItem('ak_pus_en3_override', JSON.stringify(gorevler));
+};
+
+/**
+ * Override varsa yükler, yoksa null döner.
+ * @returns {Array|null}
+ */
+window._pusEn3Load = function() {
+  try { return JSON.parse(localStorage.getItem('ak_pus_en3_override') || 'null'); }
+  catch(e) { return null; }
+};
