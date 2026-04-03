@@ -634,9 +634,10 @@ function _ihrDetayRenderOzet(d) {
     h += '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap">';
     h += _badge(durum.l, durum.c, durum.bg);
 
-    /* DOCX + Excel + PDF — CI ve PL icin */
-    if (ev.tur === 'CI' || ev.tur === 'PL') {
-      var _docxTip = ev.tur === 'CI' ? 'ci' : 'pl';
+    /* DOCX + Excel + PDF — Duay uretimli evraklar */
+    if (isDuay && ['PI','CI','PL','SEVK','YUK'].indexOf(ev.tur) !== -1) {
+      var _docxTipMap = { PI:'pi', CI:'ci', PL:'pl', SEVK:'sevk', YUK:'yuk' };
+      var _docxTip = _docxTipMap[ev.tur] || ev.tur.toLowerCase();
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'' + _docxTip + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">DOCX</button>';
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrExcelIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#1D6A2A">Excel</button>';
       h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfIndir?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#C62828">PDF</button>';

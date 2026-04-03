@@ -177,6 +177,98 @@ function makeCommercialInvoice(dosya, urunler) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// FORM 2B: PROFORMA INVOICE
+function makeProformaInvoice(dosya, urunler) {
+  dosya=dosya||{}; urunler=urunler||[];
+  var piNo=(dosya.dosyaNo||'______').replace('IHR-','PI-');
+  var tarih=_fmtDate(dosya.bitis_tarihi)||_todayFmt();
+  var alici=dosya.musteriAd||'[Alici]';
+  var pod=dosya.varis_limani||'[POD]';
+  var inco=dosya.teslim_sekli||'FOB';
+  var colW=[600,6000,1200,1000,3000,3038];
+  var toplamUSD=0,toplamEUR=0;
+  urunler.forEach(function(u){var t=(parseFloat(u.miktar)||0)*(parseFloat(u.birim_fiyat)||0);if((u.doviz||'USD')==='USD')toplamUSD+=t;else toplamEUR+=t;});
+  var anaKur=toplamUSD>=toplamEUR?'USD':'EUR';var anaTop=anaKur==='USD'?toplamUSD:toplamEUR;
+  var rows=[];
+  _sortU(urunler).forEach(function(u,i){var last=i===urunler.length-1;var desc=u.standart_urun_adi||u.aciklama||'[Urun]';var cur=u.doviz||'USD';var up=(parseFloat(u.birim_fiyat)||0).toFixed(2);var amt=((parseFloat(u.miktar)||0)*(parseFloat(u.birim_fiyat)||0)).toFixed(2);rows.push(new D.TableRow({children:[dataCellC([reg(String(i+1),17)],colW[0],!last),dataCell([reg(desc,17)],colW[1],!last),dataCellC([reg(String(parseFloat(u.miktar)||'—'),17)],colW[2],!last),dataCellC([reg(u.birim||'PCS',17)],colW[3],!last),dataCellC([reg(cur+' '+up,17)],colW[4],!last),dataCellC([reg(cur+' '+amt,17)],colW[5],!last)]}));});
+  if(!rows.length)rows.push(new D.TableRow({children:[dataCellC([muted('—',17)],colW[0],false),dataCell([muted('[Urun yok]',17)],colW[1],false),dataCellC([muted('—',17)],colW[2],false),dataCellC([muted('—',17)],colW[3],false),dataCellC([muted('—',17)],colW[4],false),dataCellC([muted('—',17)],colW[5],false)]}));
+  var subRow=function(l,v){return new D.TableRow({children:[new D.TableCell({children:[p([muted(l,15)],'right',40)],columnSpan:5,borders:allNone,margins:cellMargS}),new D.TableCell({children:[p([muted(v,15)],'center',40)],width:{size:colW[5],type:'dxa'},borders:allNone,margins:cellMargS})]});};
+  return new D.Document({sections:[{properties:pageProps,children:[
+    headerTbl('Proforma Invoice',piNo+'\nDate: '+tarih,'Duay Global LLC  ·  export@duayglobal.com'),
+    blank(200),
+    tbl([new D.TableRow({children:[
+      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Buyer')],'left',80),p([bold(alici,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS}),
+    ]})],[7000,7838]),
+    blank(200),
+    new D.Table({width:{size:CW,type:'dxa'},columnWidths:colW,borders:allNone,rows:[new D.TableRow({children:[hdrCell('#',colW[0]),hdrCell('Description',colW[1]),hdrCell('Qty',colW[2]),hdrCell('Unit',colW[3]),hdrCell('Unit Price',colW[4]),hdrCell('Total',colW[5])]})].concat(rows).concat([subRow('Teklif Toplami',_fmtMoney(anaTop,anaKur)),new D.TableRow({children:[totalCellR([bold('Grand Total ('+inco+')',18)],colW[0]+colW[1]+colW[2]+colW[3]+colW[4]),totalCell([bold(_fmtMoney(anaTop,anaKur),18)],colW[5])]})])}),
+    blank(200),
+    tbl([new D.TableRow({children:[
+      new D.TableCell({children:[p([label('Bank Details')],'left',80),p([reg('Bank: ___________________',17)],'left',40),p([reg('IBAN: ___________________',17)],'left',40),p([reg('SWIFT: __________________',17)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Terms')],'left',80),p([reg('Payment: '+inco,17)],'left',40),p([reg('Validity: 30 days',17)],'left',40),p([reg('Delivery: '+_fmtDate(dosya.bitis_tarihi),17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS}),
+    ]})],[7000,7838]),
+    blank(300),signatureTbl(),
+  ]}]});
+}
+
+// FORM 2C: SHIPPING INSTRUCTION / SEVK EMRI
+function makeShippingInstruction(dosya, urunler) {
+  dosya=dosya||{};urunler=urunler||[];
+  var no=(dosya.dosyaNo||'______').replace('IHR-','SEVK-');
+  var pol=dosya.yukleme_limani||'Istanbul, Turkey';var pod=dosya.varis_limani||'[POD]';
+  var totBrut=0,totM3=0,totKoli=0;
+  urunler.forEach(function(u){totBrut+=parseFloat(u.brut_kg)||0;totM3+=parseFloat(u.hacim_m3)||0;totKoli+=parseInt(u.koli_adet)||0;});
+  var rows=[];
+  _sortU(urunler).forEach(function(u,i){var last=i===urunler.length-1;rows.push(new D.TableRow({children:[dataCellC([reg(String(i+1),17)],400,!last),dataCell([reg(u.standart_urun_adi||u.aciklama||'[Urun]',17)],4000,!last),dataCellC([reg(String(parseInt(u.koli_adet)||'—'),17)],1500,!last),dataCellC([reg((parseFloat(u.brut_kg)||0).toFixed(2),17)],1500,!last),dataCellC([reg((parseFloat(u.hacim_m3)||0).toFixed(3),17)],1500,!last)]}));});
+  if(!rows.length)rows.push(new D.TableRow({children:[dataCellC([muted('—',17)],400,false),dataCell([muted('[Urun yok]',17)],4000,false),dataCellC([muted('—',17)],1500,false),dataCellC([muted('—',17)],1500,false),dataCellC([muted('—',17)],1500,false)]}));
+  rows.push(new D.TableRow({children:[totalCellR([bold('Toplam',17)],4400),totalCell([bold(String(totKoli),17)],1500),totalCell([bold(totBrut.toFixed(2)+' kg',17)],1500),totalCell([bold(totM3.toFixed(3)+' m3',17)],1500)]}));
+  return new D.Document({sections:[{properties:pageProps,children:[
+    headerTbl('Shipping Instruction',no+'\n'+_todayFmt(),'Sevk Emri — Duay Global LLC'),
+    blank(200),
+    tbl([new D.TableRow({children:[
+      new D.TableCell({children:[p([label('Shipper')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Forwarder')],'left',80),p([reg(dosya.forwarder_adi||'___________________',17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Route')],'left',80),p([reg('POL: '+pol,17)],'left',40),p([reg('POD: '+pod,17)],'left',40),p([reg('ETD: '+_fmtDate(dosya.bitis_tarihi),17)],'left',0)],width:{size:4838,type:'dxa'},borders:allNone,margins:cellMargS}),
+    ]})],[5000,5000,4838]),
+    blank(200),
+    new D.Table({width:{size:CW,type:'dxa'},columnWidths:[400,4000,1500,1500,1500],borders:allNone,rows:[new D.TableRow({children:[hdrCell('#',400),hdrCell('Description',4000),hdrCell('Cartons',1500),hdrCell('Gross KG',1500),hdrCell('m3',1500)]})].concat(rows)}),
+    blank(200),
+    new D.Paragraph({children:[label('BL Instructions')],spacing:{before:0,after:60},border:{bottom:THIN}}),blank(80),
+    p([reg('Consignee: '+_esc(dosya.musteriAd||'To Order'),17)],'left',40),
+    p([reg('Notify: '+_esc(dosya.musteriAd||'___________________'),17)],'left',40),
+    p([reg('Container: '+_esc(dosya.konteyner_turu||'40HC'),17)],'left',100),
+    blank(200),signatureTbl(),
+  ]}]});
+}
+
+// FORM 2D: LOADING INSTRUCTION / YUKLEME TALIMATI
+function makeLoadingInstruction(dosya, urunler) {
+  dosya=dosya||{};urunler=urunler||[];
+  var no=(dosya.dosyaNo||'______').replace('IHR-','YUK-');
+  var pol=dosya.yukleme_limani||'Istanbul, Turkey';
+  var rows=[];
+  _sortU(urunler).forEach(function(u,i){var last=i===urunler.length-1;var oncelik=u.once_yukle||'';rows.push(new D.TableRow({children:[dataCellC([reg(String(i+1),17)],400,!last),dataCell([reg(u.standart_urun_adi||u.aciklama||'[Urun]',17)],3500,!last),dataCellC([reg(oncelik,17)],1500,!last),dataCellC([reg(String(parseInt(u.koli_adet)||'—'),17)],1200,!last),dataCellC([reg((parseFloat(u.brut_kg)||0).toFixed(2),17)],1200,!last),dataCellC([reg(u.konteyner_sira?'Sira '+u.konteyner_sira:'—',17)],1200,!last)]}));});
+  if(!rows.length)rows.push(new D.TableRow({children:[dataCellC([muted('—',17)],400,false),dataCell([muted('[Urun yok]',17)],3500,false),dataCellC([muted('—',17)],1500,false),dataCellC([muted('—',17)],1200,false),dataCellC([muted('—',17)],1200,false),dataCellC([muted('—',17)],1200,false)]}));
+  return new D.Document({sections:[{properties:pageProps,children:[
+    headerTbl('Loading Instruction',no+'\n'+_todayFmt(),'Yukleme Talimati — Duay Global LLC'),
+    blank(200),
+    tbl([new D.TableRow({children:[
+      new D.TableCell({children:[p([label('Tedarikci')],'left',80),p([reg(dosya.tedarikci_adi||'___________________',17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Forwarder')],'left',80),p([reg(dosya.forwarder_adi||'___________________',17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Yukleme')],'left',80),p([reg('Tarih: '+_fmtDate(dosya.bitis_tarihi),17)],'left',40),p([reg('Terminal: '+_esc(pol),17)],'left',0)],width:{size:4838,type:'dxa'},borders:allNone,margins:cellMargS}),
+    ]})],[5000,5000,4838]),
+    blank(200),
+    new D.Table({width:{size:CW,type:'dxa'},columnWidths:[400,3500,1500,1200,1200,1200],borders:allNone,rows:[new D.TableRow({children:[hdrCell('#',400),hdrCell('Urun',3500),hdrCell('Oncelik',1500),hdrCell('Koli',1200),hdrCell('Brut KG',1200),hdrCell('Sira',1200)]})].concat(rows)}),
+    blank(200),
+    p([muted('Notlar: _______________________________________________',16)],'left',100),
+    blank(200),
+    tbl([new D.TableRow({children:[
+      new D.TableCell({children:[p([label('Duay Global LLC — Onay')],'left',200),p([muted('_______________________________',17)],'left',0)],width:{size:7000,type:'dxa'},borders:{top:THIN,bottom:NONE,left:NONE,right:NONE},margins:{top:80,bottom:0,left:0,right:0}}),
+      new D.TableCell({children:[p([label('Forwarder — Onay')],'left',200),p([muted('_______________________________',17)],'left',0)],width:{size:7838,type:'dxa'},borders:{top:THIN,bottom:NONE,left:NONE,right:NONE},margins:{top:80,bottom:0,left:0,right:0}}),
+    ]})],[7000,7838]),
+  ]}]});
+}
+
 // FORM 3: FORWARDER TEKLIF
 // ════════════════════════════════════════════════════════════════
 function makeFreightRequest(dosya, urunler) {
@@ -316,6 +408,9 @@ window._ihrDocxIndir = function(dosyaId, tip) {
     ci: {make:function(){return makeCommercialInvoice(d,u);},name:'DUAY_CI_'+(d.dosyaNo||dosyaId)+'.docx'},
     frq:{make:function(){return makeFreightRequest(d,u);},   name:'DUAY_FRQ_'+(d.dosyaNo||dosyaId)+'.docx'},
     irq:{make:function(){return makeInsuranceRequest(d,u);},  name:'DUAY_IRQ_'+(d.dosyaNo||dosyaId)+'.docx'},
+    pi: {make:function(){return makeProformaInvoice(d,u);},  name:'DUAY_PI_'+(d.dosyaNo||dosyaId)+'.docx'},
+    sevk:{make:function(){return makeShippingInstruction(d,u);},name:'DUAY_SEVK_'+(d.dosyaNo||dosyaId)+'.docx'},
+    yuk:{make:function(){return makeLoadingInstruction(d,u);}, name:'DUAY_YUK_'+(d.dosyaNo||dosyaId)+'.docx'},
   };
   var entry=map[tip]; if(!entry){window.toast?.('Bilinmeyen tip','err');return;}
   try{downloadDocx(entry.make(),entry.name);window.logActivity?.('ihracat',tip.toUpperCase()+' belgesi: '+d.dosyaNo);}
