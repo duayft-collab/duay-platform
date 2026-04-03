@@ -8,7 +8,11 @@
 'use strict';
 
 var D;
-function _ensureD() { D = window.docx || window.Docx || window.DOCX || window.Document; return !!D; }
+function _ensureD() {
+  D = window.docx || window.Docx || window.DOCX;
+  if (!D || !D.Packer) { window.toast?.('DOCX kutuphanesi yuklenmedi — sayfa yenile', 'err'); return false; }
+  return true;
+}
 
 var NONE  = { style: 'none',   size: 0, color: 'FFFFFF' };
 var THIN  = { style: 'single', size: 1, color: '000000' };
@@ -283,11 +287,17 @@ function makeInsuranceRequest(dosya, urunler) {
 
 // ── DOWNLOAD ─────────────────────────────────────────────────
 function downloadDocx(doc, filename) {
+  if (!D || !D.Packer) { window.toast?.('DOCX Packer bulunamadi','err'); return; }
   D.Packer.toBlob(doc).then(function(buf) {
-    var a=document.createElement('a'); a.href=URL.createObjectURL(buf); a.download=filename; a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
-    window.toast?.(filename+' indirildi','ok');
-  }).catch(function(e){ console.error('[ihracat_formlar]',e); window.toast?.('DOCX hata: '+e.message,'err'); });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(buf);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+    window.toast?.(filename + ' indirildi', 'ok');
+  }).catch(function(e) { console.error('[ihracat_formlar]', e); window.toast?.('DOCX hata: ' + e.message, 'err'); });
 }
 
 // ════════════════════════════════════════════════════════════════
