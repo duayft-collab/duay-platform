@@ -428,6 +428,28 @@ window._pirimBulkPay = function() {
   });
 };
 
+window._pirimTopluSil = function() {
+  if (!window._yetkiKontrol?.('toplu_sil')) return;
+  var checked = document.querySelectorAll('.pirim-row-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return parseInt(cb.dataset.id); });
+  if (!ids.length) return;
+  window.confirmModal?.(ids.length + ' prim kaydı silinecek?', {
+    title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var raw = JSON.parse(localStorage.getItem('ak_pirim1') || '[]');
+      ids.forEach(function(id) {
+        var x = raw.find(function(p) { return p.id === id; });
+        if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); }
+      });
+      window.storePirim?.(raw);
+      window._pirimBulkClear?.();
+      renderPirim();
+      window.toast?.(ids.length + ' prim silindi ✓', 'ok');
+      window.logActivity?.('pirim', 'Toplu silme: ' + ids.length + ' prim');
+    }
+  });
+};
+
 function _injectPirimPanel() {
   _ensurePirimModals(); // Tüm modalleri DOM'a hazırla
   const panel = window.g('panel-pirim');
@@ -562,6 +584,7 @@ ${[['primlerim','🏆 Primlerim'],['hesapla','📊 Hesapla'],['yonetmelik','📜
     <span id="prm-bulk-cnt" style="font-size:10px;font-weight:600;color:var(--ac)">0</span>
     <button class="btn btns btng" onclick="event.stopPropagation();window.bulkApprovePirim?.()" style="font-size:10px">✓ Onayla</button>
     <button class="btn btns" onclick="event.stopPropagation();window._pirimBulkPay?.()" style="font-size:10px;color:var(--bl)">💸 Öde</button>
+    <button class="btn btns btnd" onclick="event.stopPropagation();window._pirimTopluSil?.()" style="font-size:10px">🗑 Sil</button>
     <button class="btn btns" onclick="event.stopPropagation();window._pirimBulkClear?.()" style="font-size:10px">İptal</button>
   </span>
   <button class="btn btns" onclick="event.stopPropagation();window.sendMonthlyPirimSummary?.()" style="font-size:11px">📊 Aylık Özet</button>
@@ -757,7 +780,16 @@ function renderPirim() {
   const frag  = document.createDocumentFragment();
   const cont2 = window.g('pirim-list'); if (!cont2) return;
 
-  fl.sort((a,b) => (b.date||'').localeCompare(a.date||'')).forEach(p => {
+  /* Sayfalama (STANDART-FIX-009) */
+  fl.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  if (!window._pirimSayfa) window._pirimSayfa = 1;
+  const _PIRIM_SAYFA_BOY = 50;
+  const _pirimToplamS = Math.max(1, Math.ceil(fl.length / _PIRIM_SAYFA_BOY));
+  if (window._pirimSayfa > _pirimToplamS) window._pirimSayfa = _pirimToplamS;
+  const _pirimBas = (window._pirimSayfa - 1) * _PIRIM_SAYFA_BOY;
+  const sayfaPirim = fl.slice(_pirimBas, _pirimBas + _PIRIM_SAYFA_BOY);
+
+  sayfaPirim.forEach(p => {
     const u    = users.find(x => x.id === p.uid) || { name: '?' };
     const st2  = PIRIM_STATUS[p.status] || PIRIM_STATUS.pending;
     const td   = PIRIM_TYPES[p.type];
@@ -815,6 +847,18 @@ function renderPirim() {
     frag.appendChild(row);
   });
   cont2.replaceChildren(frag);
+
+  /* Sayfalama footer */
+  if (fl.length > _PIRIM_SAYFA_BOY) {
+    var pgEl = document.createElement('div');
+    pgEl.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:10px;color:var(--t3);border-top:1px solid var(--b)';
+    pgEl.innerHTML = '<span>' + (_pirimBas + 1) + '–' + Math.min(_pirimBas + _PIRIM_SAYFA_BOY, fl.length) + ' / ' + fl.length + ' pirim</span>'
+      + '<div style="display:flex;gap:4px">'
+      + '<button class="btn btns" onclick="event.stopPropagation();window._pirimSayfa=Math.max(1,window._pirimSayfa-1);Pirim.render()" style="font-size:10px;padding:2px 8px"' + (window._pirimSayfa <= 1 ? ' disabled' : '') + '>\u2190</button>'
+      + '<button class="btn btns" onclick="event.stopPropagation();window._pirimSayfa=Math.min(' + _pirimToplamS + ',window._pirimSayfa+1);Pirim.render()" style="font-size:10px;padding:2px 8px"' + (window._pirimSayfa >= _pirimToplamS ? ' disabled' : '') + '>\u2192</button>'
+      + '</div>';
+    cont2.parentNode?.insertBefore(pgEl, cont2.nextSibling);
+  }
 
   renderLeaderboard();
   renderUpcoming();
@@ -1507,7 +1551,10 @@ function delPirim(id) {
     danger: true,
     confirmText: 'Evet, Sil',
     onConfirm: () => {
-      window.storePirim?.((window.loadPirim?.() || []).filter(x => x.id !== id));
+      var raw = JSON.parse(localStorage.getItem('ak_pirim1') || '[]');
+      var x = raw.find(function(p) { return p.id === id; });
+      if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); }
+      window.storePirim?.(raw);
       renderPirim();
       window.toast?.('Silindi', 'ok');
     }

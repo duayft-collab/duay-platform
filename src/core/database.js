@@ -1089,7 +1089,7 @@ const DEFAULT_PIRIM_PARAMS = [
   { code: 'CE', label: 'CEO Takdir',           base: 'serbest', rate: null, locked: false },
 ];
 
-/** @returns {Array<Object>} */ function loadPirim()          { const d = _read(KEYS.pirim);       return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadPirim()          { const d = _read(KEYS.pirim); const arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storePirim(d)        { _write(KEYS.pirim, d); 
   const _fp_pirim = _fsPath('pirim'); if (_fp_pirim) _syncFirestore(_fp_pirim, d);
 }
