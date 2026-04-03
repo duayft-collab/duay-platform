@@ -15,6 +15,25 @@ const _nowTsk = window.nowTs;
 const _isAdminK = window.isAdmin;
 const _CUk      = window.CU;
 
+const _KPI_AY = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+/** Geçerli ayın dönem stringini döndürür: "Nisan 2026" */
+function _kpiCurrentPeriod() {
+  const n = new Date();
+  return _KPI_AY[n.getMonth()] + ' ' + n.getFullYear();
+}
+
+/** Dropdown için son 6 ay + gelecek 2 ay seçeneklerini üretir */
+function _kpiBuildPeriodOptions() {
+  const now = new Date();
+  const opts = [];
+  for (let i = -6; i <= 2; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    opts.push(_KPI_AY[d.getMonth()] + ' ' + d.getFullYear());
+  }
+  return opts;
+}
+
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 1 — PANEL HTML INJECT
 // ════════════════════════════════════════════════════════════════
@@ -29,11 +48,9 @@ function _injectKpiPanel() {
       <div class="ur">
         <select class="si" id="kpi-period-f" onchange="renderKpiPanel()" style="max-width:160px">
           <option value="">Tüm Dönemler</option>
-          <option value="Ocak 2026">Ocak 2026</option>
-          <option value="Şubat 2026">Şubat 2026</option>
-          <option value="Mart 2026">Mart 2026</option>
-          <option value="Nisan 2026">Nisan 2026</option>
+          ${_kpiBuildPeriodOptions().map(p => `<option value="${p}"${p === _kpiCurrentPeriod() ? ' selected' : ''}>${p}</option>`).join('')}
         </select>
+        ${_isAdminK() ? `<button class="btn btns" onclick="_kpiDonemGuncelle()" style="font-size:11px" title="Eski dönem KPI'larını yeni döneme kopyala">🔄 Dönem Güncelle</button>` : ''}
         ${_isAdminK() ? `<button class="btn btnp" onclick="openKpiModal()">+ KPI Ekle</button>` : ''}
       </div>
     </div>
@@ -117,6 +134,27 @@ function renderKpiPanel() {
   let items = loadKpi ? loadKpi() : [];
   const pf = _gk('kpi-period-f')?.value || '';
   if (pf) items = items.filter(k => k.period === pf);
+
+  // ── Dönem uyarısı (ACİL-FIX-005) ────────────────────────
+  const _curPeriod = _kpiCurrentPeriod();
+  const allItems   = loadKpi ? loadKpi() : [];
+  const hasCurrent = allItems.some(k => k.period === _curPeriod);
+  let _staleEl     = _gk('kpi-stale-warn');
+  if (!hasCurrent && allItems.length > 0 && _isAdminK()) {
+    if (!_staleEl) {
+      _staleEl = document.createElement('div');
+      _staleEl.id = 'kpi-stale-warn';
+      const cards = _gk('kpi-cards');
+      cards?.parentNode?.insertBefore(_staleEl, cards);
+    }
+    _staleEl.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 16px;margin-bottom:12px;background:linear-gradient(90deg,#FFFBEB,#FEF3C7);border:1px solid #FDE68A;border-radius:10px;font-size:12px;color:#92400E';
+    _staleEl.innerHTML =
+      '<span style="font-size:18px">📅</span>'
+      + '<div><strong>' + _curPeriod + ' için KPI bulunamadı</strong>'
+      + '<div style="font-size:11px;color:#B45309;margin-top:2px">Önceki dönem KPI\'larını yeni döneme kopyalamak için "Dönem Güncelle" butonunu kullanın.</div></div>';
+  } else if (_staleEl) {
+    _staleEl.style.display = 'none';
+  }
 
   // Özet sayaçlar
   const total = items.length;
@@ -349,10 +387,68 @@ function delKpi(id) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// BÖLÜM 4 — DÖNEM GÜNCELLEME (ACİL-FIX-005)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Önceki dönem KPI'larını sıfırlanmış mevcut değerlerle yeni döneme kopyalar.
+ * @description Admin butonu: "🔄 Dönem Güncelle"
+ */
+function _kpiDonemGuncelle() {
+  if (!_isAdminK()) return;
+  const curPeriod = _kpiCurrentPeriod();
+  const allItems  = loadKpi ? loadKpi() : [];
+  const hasItems  = allItems.some(k => k.period === curPeriod);
+  if (hasItems) {
+    window.toast?.(_curPeriodLabel() + ' dönemi zaten mevcut', 'err');
+    return;
+  }
+
+  // Bir önceki ayın dönem adını bul
+  const now   = new Date();
+  const prev  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevP = _KPI_AY[prev.getMonth()] + ' ' + prev.getFullYear();
+  const src   = allItems.filter(k => k.period === prevP);
+
+  if (!src.length) {
+    window.toast?.('Kopyalanacak önceki dönem KPI bulunamadı (' + prevP + ')', 'err');
+    return;
+  }
+
+  window.confirmModal(src.length + ' KPI kaydı "' + prevP + '" → "' + curPeriod + '" dönemine kopyalanacak. Mevcut değerler sıfırlanacak.', {
+    title: 'Dönem Güncelle',
+    confirmText: 'Kopyala ve Güncelle',
+    onConfirm: function() {
+      const d = loadKpi ? loadKpi() : [];
+      src.forEach(function(k) {
+        d.unshift({
+          id:      generateNumericId(),
+          title:   k.title,
+          target:  k.target,
+          current: 0,
+          unit:    k.unit || '',
+          period:  curPeriod,
+          desc:    k.desc || '',
+          ts:      _nowTsk(),
+          uid:     _CUk()?.id,
+          copiedFrom: k.id
+        });
+      });
+      storeKpi(d);
+      renderKpiPanel();
+      window.toast?.(src.length + ' KPI "' + curPeriod + '" dönemine kopyalandı ✓', 'ok');
+      window.logActivity?.('view', 'KPI dönem güncelleme: ' + prevP + ' → ' + curPeriod + ' (' + src.length + ' kayıt)');
+    }
+  });
+}
+
+function _curPeriodLabel() { return _kpiCurrentPeriod(); }
+
+// ════════════════════════════════════════════════════════════════
 // DIŞA AKTARIM
 // ════════════════════════════════════════════════════════════════
 
-const Kpi = { render: renderKpiPanel, openModal: openKpiModal, save: saveKpi, del: delKpi, update: openKpiUpdateModal };
+const Kpi = { render: renderKpiPanel, openModal: openKpiModal, save: saveKpi, del: delKpi, update: openKpiUpdateModal, donemGuncelle: _kpiDonemGuncelle };
 
 if (typeof module !== 'undefined' && module.exports) { module.exports = Kpi; }
 else {
@@ -363,4 +459,5 @@ else {
   window.saveKpi        = saveKpi;
   window.delKpi         = delKpi;
   window.openKpiUpdateModal = openKpiUpdateModal;
+  window._kpiDonemGuncelle  = _kpiDonemGuncelle;
 }
