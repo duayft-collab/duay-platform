@@ -185,6 +185,17 @@ function renderPusulaList(fl, users, todayS, cont) {
       `<span style="background:var(--al);color:var(--ac);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">${tg}</span>`
     ).join('');
 
+    // Kategori badge renkleri (PUSULA-FIX-002)
+    const _catColors = {
+      'İhracat':    ['#EEEDFE','#26215C'],
+      'Satınalma':  ['#E6F1FB','#0C447C'],
+      'Kargo':      ['#FAEEDA','#633806'],
+      'Finans':     ['#EAF3DE','#27500A'],
+      'Genel':      ['#F1EFE8','#2C2C2A']
+    };
+    const _catName = t.cat || t.category || 'Genel';
+    const _catC    = _catColors[_catName] || _catColors['Genel'];
+
     const row = document.createElement('div');
     row.className   = `tk-row${isDone ? ' done-row' : ''}`;
     row.dataset.taskId = t.id;
@@ -205,6 +216,7 @@ function renderPusulaList(fl, users, todayS, cont) {
         </div>
         <div class="tk-meta">
           <span class="tk-pri-badge ${p.badge}">${p.label}</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${_catC[0]};color:${_catC[1]}">${_catName}</span>
           ${statusPill}${dueChip}
           ${dc ? `<span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${dc}22;color:${dc}">● ${t.department}</span>` : ''}
           ${t.cost ? `<span style="font-size:10px;background:rgba(16,185,129,.1);color:#059669;padding:2px 8px;border-radius:6px;font-weight:700">₺${Number(t.cost).toLocaleString('tr-TR')}</span>` : ''}
