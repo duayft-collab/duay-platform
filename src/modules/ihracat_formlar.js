@@ -125,13 +125,14 @@ function makeCommercialInvoice(dosya, urunler) {
   var alici=dosya.musteriAd||'[Alici Firma]';
   var pod=dosya.varis_limani||'[POD]';
   var inco=dosya.teslim_sekli||'CIF';
-  var odeme=dosya.odeme_sarti||'T/T';
 
   var toplamUSD=0,toplamEUR=0;
   urunler.forEach(function(u){ var t=(parseFloat(u.miktar)||0)*(parseFloat(u.birim_fiyat)||0); if((u.doviz||'USD')==='USD')toplamUSD+=t; else toplamEUR+=t; });
   var anaKur=toplamUSD>=toplamEUR?'USD':'EUR';
   var anaTop=anaKur==='USD'?toplamUSD:toplamEUR;
 
+  // Kolonlar: #, Description, Qty, Unit, Unit Price, Total
+  var colW = [600, 6000, 1200, 1000, 3000, 3038];
   var rows=[];
   _sortU(urunler).forEach(function(u,i){
     var last=i===urunler.length-1;
@@ -140,38 +141,42 @@ function makeCommercialInvoice(dosya, urunler) {
     var up=(parseFloat(u.birim_fiyat)||0).toFixed(2);
     var amt=((parseFloat(u.miktar)||0)*(parseFloat(u.birim_fiyat)||0)).toFixed(2);
     rows.push(new D.TableRow({children:[
-      dataCellC([reg(String(i+1),17)],400,!last), dataCell([reg(desc,17)],5200,!last),
-      dataCellC([reg(String(parseFloat(u.miktar)||'—'),17)],1200,!last),
-      dataCellC([reg(u.birim||'PCS',17)],1000,!last),
-      dataCellC([reg(cur+' '+up,17)],2000,!last),
-      dataCellC([reg(cur+' '+amt,17)],2000,!last),
+      dataCellC([reg(String(i+1),17)],colW[0],!last),
+      dataCell([reg(desc,17)],colW[1],!last),
+      dataCellC([reg(String(parseFloat(u.miktar)||'—'),17)],colW[2],!last),
+      dataCellC([reg(u.birim||'PCS',17)],colW[3],!last),
+      dataCellC([reg(cur+' '+up,17)],colW[4],!last),
+      dataCellC([reg(cur+' '+amt,17)],colW[5],!last),
     ]}));
   });
-  if(!rows.length) rows.push(new D.TableRow({children:[ dataCellC([muted('—',17)],400,false),dataCell([muted('[Urun girilmedi]',17)],5200,false), dataCellC([muted('—',17)],1200,false),dataCellC([muted('—',17)],1000,false), dataCellC([muted('—',17)],2000,false),dataCellC([muted('—',17)],2000,false) ]}));
+  if(!rows.length) rows.push(new D.TableRow({children:[ dataCellC([muted('—',17)],colW[0],false),dataCell([muted('[Urun girilmedi]',17)],colW[1],false), dataCellC([muted('—',17)],colW[2],false),dataCellC([muted('—',17)],colW[3],false), dataCellC([muted('—',17)],colW[4],false),dataCellC([muted('—',17)],colW[5],false) ]}));
 
-  var subRow=function(l,v){ return new D.TableRow({children:[ new D.TableCell({children:[p([muted(l,15)],'right',40)],columnSpan:5,borders:allNone,margins:cellMargS}), new D.TableCell({children:[p([muted(v,15)],'center',40)],width:{size:2000,type:'dxa'},borders:allNone,margins:cellMargS}) ]}); };
+  var subRow=function(l,v){ return new D.TableRow({children:[ new D.TableCell({children:[p([muted(l,15)],'right',40)],columnSpan:5,borders:allNone,margins:cellMargS}), new D.TableCell({children:[p([muted(v,15)],'center',40)],width:{size:colW[5],type:'dxa'},borders:allNone,margins:cellMargS}) ]}); };
 
   return new D.Document({sections:[{properties:pageProps,children:[
     headerTbl('Commercial Invoice',ciNo+'\nDate: '+tarih+'  ·  Incoterms: '+inco,'Istanbul, Turkey  ·  export@duayglobal.com'),
     blank(200),
+    // Sadece Seller + Buyer (Shipment ve Payment bloklari kaldirildi)
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',0)],width:{size:3500,type:'dxa'},borders:allNone,margins:cellMargS}),
-      new D.TableCell({children:[p([label('Buyer')],'left',80),p([bold(alici,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:3500,type:'dxa'},borders:allNone,margins:cellMargS}),
-      new D.TableCell({children:[p([label('Shipment')],'left',80),p([reg('POD: '+pod,17)],'left',40),p([reg('Incoterms: '+inco,17)],'left',0)],width:{size:3500,type:'dxa'},borders:allNone,margins:cellMargS}),
-      new D.TableCell({children:[p([label('Payment')],'left',80),p([reg(odeme.indexOf('L/C')!==-1?'[X] L/C at Sight':'[ ] L/C at Sight',17)],'left',40),p([reg(odeme.indexOf('T/T')!==-1?'[X] T/T in Advance':'[ ] T/T in Advance',17)],'left',40),p([reg('[ ] D/P  [ ] D/A',17)],'left',0)],width:{size:4338,type:'dxa'},borders:allNone,margins:cellMargS}),
-    ]})],[3500,3500,3500,4338]),
+      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',40),p([muted('export@duayglobal.com',16)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Buyer & Consignee')],'left',80),p([bold(alici,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS}),
+    ]})],[7000,7838]),
     blank(200),
-    new D.Table({width:{size:CW,type:'dxa'},columnWidths:[400,5200,1200,1000,2000,2000],borders:allNone,
-      rows:[new D.TableRow({children:[hdrCell('#',400),hdrCell('Description of Goods',5200),hdrCell('Qty',1200),hdrCell('Unit',1000),hdrCell('Unit Price',2000),hdrCell('Amount',2000)]})].concat(rows).concat([
-        subRow('Sub Total',_fmtMoney(anaTop,anaKur)), subRow('Freight','—'), subRow('Insurance','—'),
-        new D.TableRow({children:[ totalCellR([bold('Total ('+inco+')',18)],11800), totalCell([bold(_fmtMoney(anaTop,anaKur),18)],2000) ]}),
+    new D.Table({width:{size:CW,type:'dxa'},columnWidths:colW,borders:allNone,
+      rows:[new D.TableRow({children:[hdrCell('#',colW[0]),hdrCell('Description of Goods',colW[1]),hdrCell('Qty',colW[2]),hdrCell('Unit',colW[3]),hdrCell('Unit Price ('+anaKur+')',colW[4]),hdrCell('Total ('+anaKur+')',colW[5])]})].concat(rows).concat([
+        subRow('Sub Total',_fmtMoney(anaTop,anaKur)),
+        subRow('Freight','—'),
+        subRow('Insurance','—'),
+        new D.TableRow({children:[ totalCellR([bold('Total ('+inco+')',18)],colW[0]+colW[1]+colW[2]+colW[3]+colW[4]), totalCell([bold(_fmtMoney(anaTop,anaKur),18)],colW[5]) ]}),
       ])}),
     blank(200),
+    // Beyan notu
+    p([muted('We hereby certify that the goods described herein are of Turkish origin and the price stated is the true commercial value.',15)],'left',200),
+    blank(200),
+    // Sadece Seller imza (Alici imzasi kaldirildi)
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Bank Details')],'left',80),p([reg('Bank: ___________________',17)],'left',40),p([reg('Account: Duay Global LLC',17)],'left',40),p([reg('IBAN: ___________________',17)],'left',40),p([reg('SWIFT: __________________',17)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
-      new D.TableCell({children:[p([label('Declaration')],'left',80),p([muted('We hereby certify that the goods described herein are of Turkish origin and that the particulars given in this invoice are true and correct.',15)],'left',0)],width:{size:8838,type:'dxa'},borders:allNone,margins:cellMargS}),
-    ]})],[6000,8838]),
-    blank(300), signatureTbl(),
+      new D.TableCell({children:[p([label('Seller — Authorized Signature & Date')],'left',200),p([muted('_______________________________',17)],'left',40),p([muted('___/___/2026',16)],'left',0)],width:{size:CW,type:'dxa'},borders:{top:THIN,bottom:NONE,left:NONE,right:NONE},margins:{top:80,bottom:0,left:0,right:0}}),
+    ]})],[CW]),
   ]}]});
 }
 
