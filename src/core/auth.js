@@ -150,6 +150,8 @@ function initFirebase() {
     }
     FB_APP  = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(cfg);
     FB_AUTH = firebase.auth();
+    // Auth persistence: LOCAL — tarayıcı kapatılsa bile oturum kalır (Safari ITP koruması)
+    try { FB_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch(e) { console.warn('[auth] setPersistence hata:', e.message); }
     FB_DB   = firebase.firestore();
     // Safari performans: cache boyutu sınırla + forceLongPolling
     try {
