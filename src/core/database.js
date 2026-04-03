@@ -404,7 +404,7 @@ function _mergeDataSets(localKey, fsData, collection) {
 
 /** Mevcut LS'deki base64 siskinligini tek seferlik temizle */
 (function _oneTimeBase64Cleanup() {
-  var _DONE_KEY = 'ak_b64clean_v1';
+  var _DONE_KEY = 'ak_b64clean_v2';
   if (localStorage.getItem(_DONE_KEY)) return;
   setTimeout(function() {
     try {
@@ -441,6 +441,16 @@ function _mergeDataSets(localKey, fsData, collection) {
         return Object.assign({}, item, { originalData: od });
       });
       if (changed) { localStorage.setItem('ak_trash1', JSON.stringify(trash)); }
+      // 3) Ihracat urunleri — silinmis olanlari skeleton'a indir
+      try {
+        var ihrUrun = JSON.parse(localStorage.getItem('ak_ihr_urun1') || '[]');
+        var ihrTemiz = ihrUrun.map(function(u) {
+          if (!u.isDeleted) return u;
+          return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null };
+        });
+        localStorage.setItem('ak_ihr_urun1', JSON.stringify(ihrTemiz));
+        changed = true;
+      } catch(e3) { console.warn('[DB] ihracat cleanup hata:', e3); }
       localStorage.setItem(_DONE_KEY, '1');
       var after = (JSON.stringify(localStorage).length / 1024 / 1024);
       console.info('[DB] base64 cleanup tamamlandi. LS: ' + after.toFixed(2) + 'MB');
@@ -1128,7 +1138,14 @@ function storeIhracatDosyalar(d){ _write(KEYS.ihracatDosyalar, d.slice(0,200)); 
 function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); return Array.isArray(d) ? d : []; }
 function storeIhracatEvraklar(d){ _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); return Array.isArray(d) ? d : []; }
-function storeIhracatUrunler(d) { _write(KEYS.ihracatUrunler, d.slice(0,1000)); var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, d); }
+function storeIhracatUrunler(d) {
+  var yazilacak = d.map(function(u) {
+    if (!u.isDeleted) return u;
+    return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null };
+  });
+  _write(KEYS.ihracatUrunler, yazilacak.slice(0, 1000));
+  var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, yazilacak);
+}
 function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); return Array.isArray(d) ? d : []; }
 function storeIhracatGcb(d)     { _write(KEYS.ihracatGcb, d.slice(0,200)); var fp = _fsPath('ihracatGcb'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); return Array.isArray(d) ? d : []; }
