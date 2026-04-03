@@ -674,8 +674,8 @@ window._ihrUrunAra = function(q) {
   window._ihrUrunSayfa = 1;
   if (_aktifDosyaId) {
     var _dosya = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
-    if (_dosya) { _ihrDetayRenderOzet(_dosya); }
-    // Arama input'una focus geri ver
+    var _cont = _g('ihr-detay-content');
+    if (_dosya && _cont) { _ihrDetayRenderUrunler(_dosya, _cont); }
     setTimeout(function() {
       var inp = _g('ihr-urun-ara');
       if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
@@ -1033,7 +1033,7 @@ window._ihrInlineDateEdit = function(td, urunId, alan) {
   inp.style.cssText = 'font-size:10px;padding:1px 3px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t)';
   td.innerHTML = ''; td.appendChild(inp); inp.focus();
   var _reRender2 = function() {
-    if (_aktifDosyaId) { var _dd2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd2) { _ihrDetayRenderOzet(_dd2); return; } }
+    if (_aktifDosyaId) { var _dd2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); var _cc2 = _g('ihr-detay-content'); if (_dd2 && _cc2) { _ihrDetayRenderUrunler(_dd2, _cc2); return; } }
     window.renderIhracatOps?.();
   };
   inp.addEventListener('blur', function() {
@@ -1210,7 +1210,8 @@ window._ihrFiltrele = function(kolon, deger) {
   window._ihrUrunSayfa = 1;
   if (_aktifDosyaId) {
     var _d2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
-    if (_d2) _ihrDetayRenderOzet(_d2);
+    var _c2 = _g('ihr-detay-content');
+    if (_d2 && _c2) _ihrDetayRenderUrunler(_d2, _c2);
   } else { _ihrRenderContent(); }
 };
 window._ihrFiltreTemizle = function() {
@@ -1219,7 +1220,8 @@ window._ihrFiltreTemizle = function() {
   window._ihrUrunSayfa = 1;
   if (_aktifDosyaId) {
     var _d3 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
-    if (_d3) _ihrDetayRenderOzet(_d3);
+    var _c3 = _g('ihr-detay-content');
+    if (_d3 && _c3) _ihrDetayRenderUrunler(_d3, _c3);
   } else { _ihrRenderContent(); }
 };
 
@@ -1259,7 +1261,8 @@ window._ihrInlineEdit = function(td, urunId, alan) {
   var _reRenderOzet = function() {
     if (_aktifDosyaId) {
       var _dd = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
-      if (_dd) { _ihrDetayRenderOzet(_dd); return; }
+      var _cc = _g('ihr-detay-content');
+      if (_dd && _cc) { _ihrDetayRenderUrunler(_dd, _cc); return; }
     }
     window.renderIhracatOps?.();
   };
@@ -2170,7 +2173,7 @@ window._ihrKolonKaydet = function(dosyaId) {
   _g('mo-kolon-ayar')?.remove();
   window.toast?.(keys.length + ' kolon uygulandi', 'ok');
   window.logActivity?.('ihracat', 'Kolon gorunumu: ' + keys.length + ' kolon');
-  if (_aktifDosyaId) { var _dd = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd) _ihrDetayRenderOzet(_dd); }
+  if (_aktifDosyaId) { var _dd = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); var _cc = _g('ihr-detay-content'); if (_dd && _cc) _ihrDetayRenderUrunler(_dd, _cc); }
 };
 
 })();
