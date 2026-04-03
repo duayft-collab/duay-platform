@@ -1868,11 +1868,29 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
     }, err => {
       if (err.code === 'permission-denied') {
-        console.warn('[DB:realtime]', collection, '→ Firestore izni yok, offline mod');
+        console.warn('[DB:realtime]', collection, '→ permission-denied — token yenileniyor...');
+        // Token yenile ve yeniden bağlan
+        try {
+          var _fbA = window.Auth?.getFBAuth?.();
+          if (_fbA && _fbA.currentUser) {
+            _fbA.currentUser.getIdToken(true).then(function() {
+              console.info('[DB:realtime]', collection, '→ token yenilendi, yeniden bağlanıyor...');
+              setTimeout(function() { _listenCollection(collection, localKey, onUpdate); }, 1000);
+            }).catch(function(e2) {
+              console.error('[DB:realtime] token yenileme basarisiz:', e2.message);
+              // 30s sonra tekrar dene
+              setTimeout(function() { _listenCollection(collection, localKey, onUpdate); }, 30000);
+            });
+          } else {
+            // Auth yok — 30s sonra tekrar dene
+            setTimeout(function() { _listenCollection(collection, localKey, onUpdate); }, 30000);
+          }
+        } catch(e3) {
+          setTimeout(function() { _listenCollection(collection, localKey, onUpdate); }, 30000);
+        }
       } else {
         console.warn('[DB:realtime]', collection, '→ onSnapshot koptu:', err.message);
         GlobalErrorHandler('realtime:' + collection, err, 'warn');
-        // Safari: onSnapshot kopunca 2sn sonra yeniden bağlan
         setTimeout(function() {
           console.info('[DB:realtime]', collection, '→ yeniden bağlanıyor...');
           _listenCollection(collection, localKey, onUpdate);
@@ -2114,6 +2132,41 @@ function startRealtimeSync() {
 
   // Sync göstergesini başlat
   _setSyncStatus('ok');
+
+  // ── Token yenileme — 45 dakikada bir (1 saatlik expiry öncesi) ──
+  if (!window._tokenRefreshTimer) {
+    window._tokenRefreshTimer = setInterval(function() {
+      try {
+        var _fbAR = window.Auth?.getFBAuth?.();
+        if (_fbAR && _fbAR.currentUser) {
+          _fbAR.currentUser.getIdToken(true).then(function() {
+            console.info('[AUTH] Token yenilendi (periyodik 45dk)');
+          }).catch(function(e) {
+            console.warn('[AUTH] Token yenileme basarisiz:', e.message);
+          });
+        }
+      } catch(e) {}
+    }, 45 * 60 * 1000); // 45 dakika
+  }
+
+  // ── Tab görünür olunca token + listener kontrol ──
+  if (!window._visibilityHandler) {
+    window._visibilityHandler = true;
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState !== 'visible') return;
+      // Tab aktif oldu — token yenile
+      try {
+        var _fbAV = window.Auth?.getFBAuth?.();
+        if (_fbAV && _fbAV.currentUser) {
+          _fbAV.currentUser.getIdToken(true).then(function() {
+            console.info('[AUTH] Token yenilendi (tab visible)');
+            window._lastSyncTime = Date.now();
+          }).catch(function() {});
+        }
+      } catch(e) {}
+    });
+  }
+
   // Arka plan denetim başlat (5dk aralıklı)
   _startBgSyncCheck();
 
