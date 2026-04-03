@@ -1500,6 +1500,7 @@ function markPirimPaid(id) {
 }
 
 function delPirim(id) {
+  if (!window._yetkiKontrol?.('sil', 'Pirim')) return;
   if (!window.isAdmin()) { window.toast?.('Yetki yok', 'err'); return; }
   window.confirmModal('Bu prim kaydını silmek istediğinizden emin misiniz?', {
     title: 'Prim Sil',
@@ -2088,6 +2089,7 @@ window.getUserBadges = getUserBadges;
 
 // ─── 5. TOPLU ONAY ───────────────────────────────────────────────
 function bulkApprovePirim() {
+  if (!window._yetkiKontrol?.('toplu_guncelle', 'Pirim')) return;
   const checkboxes = document.querySelectorAll('.prm-bulk:checked');
   if (!checkboxes.length) { window.toast?.('Önce kayıt seçin', 'warn'); return; }
   const all = window.loadPirim?.() || [];

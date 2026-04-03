@@ -8,6 +8,33 @@
 'use strict';
 // loadUsers → window.loadUsers (database.js)
 
+// ── Yetki Kontrol Helper (STANDART-FIX-002) ──────────────────
+/**
+ * Toplu silme/güncelleme gibi kritik işlemler için yetki kontrolü.
+ * @param {string} islem - 'toplu_sil' | 'toplu_guncelle' | 'sil' | 'duzenle' | 'goruntule'
+ * @param {string} modul - Modül adı (log için)
+ * @returns {boolean}
+ */
+window._yetkiKontrol = function(islem, modul) {
+  var level = typeof window.getPermLevel === 'function' ? window.getPermLevel(modul) : 'view';
+  var PERM  = window.PERM_LEVELS || { full: 4, manage: 3, view: 2, count: 1 };
+  var seviye = PERM[level] || 0;
+  var minimumSeviyeler = {
+    'toplu_sil':      PERM.manage || 3,
+    'toplu_guncelle': PERM.manage || 3,
+    'sil':            PERM.view   || 2,
+    'duzenle':        PERM.view   || 2,
+    'goruntule':      PERM.count  || 1,
+  };
+  var gerekli = minimumSeviyeler[islem] || 3;
+  if (seviye < gerekli) {
+    window.toast?.('Bu işlem için yetkiniz yok', 'err');
+    console.warn('[YETKİ] ' + modul + '.' + islem + ' reddedildi — seviye: ' + seviye + ', gerekli: ' + gerekli);
+    return false;
+  }
+  return true;
+};
+
 (function patchAppNav() {
   // App.nav çağrıldığında yeni paneller için render tetikle
   // _renderPanel App içinde private olduğu için nav'ı wrap ediyoruz

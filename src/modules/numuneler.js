@@ -565,6 +565,7 @@ function reddedNumune(id) {
   window.addNotif?.('⚠','Numune reddedildi: '+(n.nmsId||''),'warning','numune');
 }
 function deleteNumune(id) {
+  if (!window._yetkiKontrol?.('sil', 'Numune')) return;
   if (!_isA()) { window.toast?.('Yetki yok','error'); return; }
   const d = _load(); const n = d.find(x => String(x.id)===String(id)); if (!n) return;
   n.isDeleted = true; n.deletedAt = _now().toISOString(); n.deletedBy = _cu()?.id;

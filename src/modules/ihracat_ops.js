@@ -629,6 +629,7 @@ window._ihrEmirChkDegis = function() {
   if (btn) { btn.style.display = n > 0 ? '' : 'none'; btn.textContent = n + ' Dosyayı Sil'; }
 };
 window._ihrEmirTopluSil = function() {
+  if (!window._yetkiKontrol?.('toplu_sil', 'Ihracat')) return;
   var ids = []; document.querySelectorAll('.ihr-emir-chk:checked').forEach(function(c) { ids.push(c.dataset.id); });
   if (!ids.length) return;
   window.confirmModal?.(ids.length + ' ihracat dosyası silinecek. Emin misiniz?', {

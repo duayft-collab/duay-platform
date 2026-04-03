@@ -231,6 +231,7 @@ window._kargoSil = function(id) {
 };
 
 window._kargoTopluSil = function() {
+  if (!window._yetkiKontrol?.('toplu_sil', 'Kargo')) return;
   var ids = Object.keys(_secili); if (!ids.length) return;
   var silFunc = function() { var liste = _loadKAll(); ids.forEach(function(id) { var x = liste.find(function(k) { return k.id === id; }); if (x) { x.isDeleted = true; x.deletedAt = _now(); } }); _storeK(liste); _secili = {}; window.toast?.(ids.length + ' kayıt silindi', 'ok'); renderKargo(); };
   if (typeof window.confirmModal === 'function') window.confirmModal(ids.length + ' kargo kaydı silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: silFunc });
