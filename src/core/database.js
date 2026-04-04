@@ -2128,6 +2128,19 @@ function startRealtimeSync() {
     ['suggestions',   KEYS.suggestions,   () => {}],
     ['links',         KEYS.links,         () => {}],
     ['smartGoals',    KEYS.smartGoals,    () => {}],
+    // İhracat — REALTIME-SYNC-001: cihazlar arası canlı senkronizasyon
+    ['ihracatDosyalar', KEYS.ihracatDosyalar, () => window.renderIhracatOps?.()],
+    ['ihracatEvraklar', KEYS.ihracatEvraklar,  () => window.renderIhracatOps?.()],
+    ['ihracatUrunler',  KEYS.ihracatUrunler,   () => window.renderIhracatOps?.()],
+    ['ihracatGcb',      KEYS.ihracatGcb,       () => window.renderGcb?.()],
+    ['ihracatBl',       KEYS.ihracatBl,        () => window.renderIhracatOps?.()],
+    ['ihracatTemplate', KEYS.ihracatTemplate,  () => {}],
+    ['gumrukculer',     KEYS.gumrukculer,      () => window.renderIhracatFormlar?.()],
+    ['forwarderlar',    KEYS.forwarderlar,      () => window.renderIhracatFormlar?.()],
+    ['evrakWorkflow',   KEYS.evrakWorkflow,    () => window.renderIhracatOps?.()],
+    ['ihracatOps',      KEYS.ihracatOps,       () => window.renderIhracatOps?.()],
+    ['sozler',          KEYS.sozler,           () => {}],
+    ['gcb',             KEYS.gcb,              () => window.renderGcb?.()],
     // Görev yazışmaları — cihazlar arası senkronize olmalı
     ['taskChats',     KEYS.taskChats,     () => {
       // Açık chat varsa yenile
