@@ -8,7 +8,21 @@
 
 // IHR-06: Kolon yonetimi sabitleri
 var _IHR_KOLON_KEY = 'ak_ihr_kolon_v1';
-var _IHR_KOLON_DEFAULT = ['tedarikciAd','proforma_id','urun_kodu','aciklama','standart_urun_adi','fatura_urun_adi','gumrukcu_tanim','mense_ulke','hs_kodu','miktar','birim_fiyat','doviz','kdv_orani','koli_adet','brut_kg','net_kg','hacim_m3','konteyner_sira','etiket_rengi','once_yukle','fatura_turu','alis_fatura_no','alis_fatura_tarihi'];
+// Is akisi sirasina gore varsayilan kolonlar
+var _IHR_KOLON_DEFAULT = [
+  // Kimlik
+  'tedarikciAd','urun_kodu','aciklama','standart_urun_adi','gumrukcu_tanim',
+  // Siniflandirma
+  'mense_ulke','hs_kodu',
+  // Fiyat
+  'miktar','birim_fiyat','doviz','fatura_turu','kdv_orani',
+  // Ambalaj
+  'koli_adet','brut_kg','net_kg','hacim_m3',
+  // Yukleme
+  'konteyner_sira','etiket_rengi','once_yukle',
+  // Alim
+  'alis_fatura_no','alis_fatura_tarihi'
+];
 var _IHR_KOLON_PRESETS = {
   'CI/PL':  ['tedarikciAd','standart_urun_adi','fatura_urun_adi','aciklama','miktar','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','mense_ulke','hs_kodu'],
   'GCB':    ['tedarikciAd','urun_kodu','aciklama','miktar','birim_fiyat','doviz','mense_ulke','hs_kodu','fatura_turu','gcb_no','gcb_tarih','gcb_kur','gcb_kapandi','gcb_kapama_tarihi'],
@@ -1004,61 +1018,67 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   }
 
   /* Kolon tanımları */
+  // KOLONLAR — is akisi sirasina gore duzenlendi, uluslararasi basliklar
   var KOLONLAR = [
-    { k: 'tedarikciAd', l: 'Tedarikçi', w: 110, filtre: true, bos: true },
-    { k: 'proforma_id', l: 'Proforma ID', w: 90, filtre: false, bos: true },
-    { k: 'pi_link', l: 'PI Link', w: 55, filtre: false, bos: false },
-    { k: 'satis_siparis_id', l: 'Satış Sipariş', w: 85, filtre: false, bos: true },
-    { k: 'siparis_id', l: 'Sipariş ID', w: 80, filtre: false, bos: true },
-    { k: 'alis_fatura_no', l: 'Alış Fatura No', w: 90, filtre: false, bos: true },
-    { k: 'alis_fatura_tarihi', l: 'Alış Fatura Tarihi', w: 90, filtre: true, bos: true },
-    { k: 'fatura_turu', l: 'Fatura Türü', w: 90, filtre: true, bos: true },
-    { k: 'urun_kodu', l: 'Ürün Kodu', w: 90, filtre: false, bos: true },
-    { k: 'satici_urun_kodu', l: 'Satıcı Ürün Kodu', w: 90, filtre: false, bos: true },
-    { k: 'benzer_urun_kodu', l: 'Benzer Kod', w: 80, filtre: false, bos: true },
-    { k: 'satici_urun_adi', l: 'Satıcı Orijinal Adı', w: 120, filtre: false, bos: true },
-    { k: 'aciklama', l: 'Ürün Açıklaması', w: 160, filtre: false, bos: true },
-    { k: 'standart_urun_adi', l: 'Standart Ad (CI/PL)', w: 130, filtre: false, bos: true },
-    { k: 'teknik_aciklama', l: 'Teknik Açıklama', w: 120, filtre: false, bos: true },
-    { k: 'fatura_urun_adi', l: 'Faturada Geçen Ad', w: 120, filtre: false, bos: true },
-    { k: 'gumrukcu_tanim', l: 'Gümrükçü Tanım', w: 110, filtre: false, bos: true },
-    { k: 'mense_ulke', l: 'Menşe Ülke', w: 90, filtre: true, bos: true },
-    { k: 'hs_kodu', l: 'GTIP / HS Code', w: 85, filtre: false, bos: true },
-    { k: 'miktar', l: 'Miktar', w: 70, filtre: false, bos: true },
-    { k: 'birim_fiyat', l: 'Birim Fiyat', w: 90, filtre: false, bos: true },
-    { k: 'doviz', l: 'Kur', w: 45, filtre: true, bos: false },
-    { k: 'kdv_orani', l: 'KDV%', w: 55, filtre: true, bos: false },
-    { k: 'kdv_tutar', l: 'KDV Tutarı', w: 80, filtre: false, bos: false },
-    { k: 'kdv_dahil', l: 'KDV Dahil', w: 90, filtre: false, bos: false },
-    { k: 'teslim_tarihi', l: 'Teslim Tarihi', w: 90, filtre: true, bos: true },
-    { k: 'teslim_yeri', l: 'Teslim Yeri', w: 90, filtre: true, bos: true },
-    { k: 'etiket_rengi', l: 'Etiket Rengi', w: 90, filtre: true, bos: true },
-    { k: 'once_yukle', l: 'Yükle Önceliği', w: 85, filtre: true, bos: true },
-    { k: 'koli_adet', l: 'Koli Adedi', w: 65, filtre: false, bos: true },
-    { k: 'brut_kg', l: 'Brüt KG', w: 65, filtre: false, bos: true },
-    { k: 'net_kg', l: 'Net KG', w: 65, filtre: false, bos: true },
-    { k: 'hacim_m3', l: 'Hacim m³', w: 65, filtre: false, bos: true },
-    { k: 'konteyner_sira', l: 'Konteyner Sıra', w: 80, filtre: false, bos: true },
-    { k: 'imo_urun', l: 'IMO', w: 55, filtre: true, bos: false },
-    { k: 'imo_no', l: 'IMO No', w: 80, filtre: false, bos: true },
-    { k: 'imo_msds', l: 'IMO MSDS', w: 70, filtre: false, bos: false },
-    { k: 'dib', l: 'DİB', w: 55, filtre: true, bos: true },
-    { k: 'kategori', l: 'Kategori', w: 80, filtre: true, bos: true },
-    { k: 'marka', l: 'Marka', w: 70, filtre: true, bos: true },
-    { k: 'duay_not', l: 'Duay Not', w: 100, filtre: false, bos: true },
-    /* VGM */
-    { k: 'vgm_kg', l: 'VGM KG', w: 70, filtre: false, bos: true },
-    { k: 'vgm_no', l: 'VGM No', w: 80, filtre: false, bos: true },
-    { k: 'vgm_kaynak', l: 'VGM Kaynak', w: 80, filtre: true, bos: true },
-    { k: 'vgm_tarih', l: 'VGM Tarihi', w: 85, filtre: true, bos: true },
-    /* GÇB */
-    { k: 'booking_no', l: 'Booking No', w: 90, filtre: false, bos: true },
-    { k: 'konteyner_no', l: 'Konteyner No', w: 90, filtre: false, bos: true },
-    { k: 'muhur_no', l: 'Mühür No', w: 80, filtre: false, bos: true },
-    { k: 'gcb_no', l: 'GÇB No', w: 90, filtre: false, bos: true },
-    { k: 'gcb_id', l: 'GÇB ID', w: 80, filtre: false, bos: true },
-    { k: 'gcb_tarih', l: 'GÇB Tarihi', w: 85, filtre: true, bos: true },
-    { k: 'gcb_kur', l: 'GÇB Kur', w: 65, filtre: false, bos: true },
+    /* ── 1. ÜRÜN KİMLİK ─────────────────────────────── */
+    { k: 'tedarikciAd',      l: 'Supplier',        w: 120, filtre: true,  bos: true },
+    { k: 'urun_kodu',        l: 'Item Code',       w: 95,  filtre: false, bos: true },
+    { k: 'satici_urun_kodu', l: 'Vendor Code',     w: 90,  filtre: false, bos: true },
+    { k: 'benzer_urun_kodu', l: 'Alt. Code',       w: 80,  filtre: false, bos: true },
+    { k: 'aciklama',         l: 'Description',     w: 200, filtre: false, bos: true },
+    { k: 'standart_urun_adi',l: 'Std Name (EN)',   w: 160, filtre: false, bos: true },
+    { k: 'fatura_urun_adi',  l: 'Invoice Name',    w: 140, filtre: false, bos: true },
+    { k: 'gumrukcu_tanim',   l: 'Customs Desc',    w: 140, filtre: false, bos: true },
+    { k: 'satici_urun_adi',  l: 'Vendor Name',     w: 130, filtre: false, bos: true },
+    { k: 'teknik_aciklama',  l: 'Tech Spec',       w: 120, filtre: false, bos: true },
+    /* ── 2. SINIFLANDIRMA ────────────────────────────── */
+    { k: 'mense_ulke',       l: 'Origin',          w: 80,  filtre: true,  bos: true },
+    { k: 'hs_kodu',          l: 'HS Code',         w: 95,  filtre: false, bos: true },
+    { k: 'kategori',         l: 'Category',        w: 80,  filtre: true,  bos: true },
+    { k: 'marka',            l: 'Brand',           w: 70,  filtre: true,  bos: true },
+    /* ── 3. FİYAT & MİKTAR ──────────────────────────── */
+    { k: 'miktar',           l: 'Qty',             w: 75,  filtre: false, bos: true },
+    { k: 'birim_fiyat',      l: 'Unit Price',      w: 95,  filtre: false, bos: true },
+    { k: 'doviz',            l: 'Cur',             w: 50,  filtre: true,  bos: false },
+    { k: 'fatura_turu',      l: 'Inv. Type',       w: 95,  filtre: true,  bos: true },
+    { k: 'kdv_orani',        l: 'VAT%',            w: 55,  filtre: true,  bos: false },
+    { k: 'kdv_tutar',        l: 'VAT Amt',         w: 75,  filtre: false, bos: false },
+    { k: 'kdv_dahil',        l: 'Incl VAT',        w: 80,  filtre: false, bos: false },
+    /* ── 4. ALIM BİLGİLERİ ──────────────────────────── */
+    { k: 'proforma_id',      l: 'PI No',           w: 85,  filtre: false, bos: true },
+    { k: 'pi_link',          l: 'PI Link',         w: 55,  filtre: false, bos: false },
+    { k: 'satis_siparis_id', l: 'SO No',           w: 80,  filtre: false, bos: true },
+    { k: 'siparis_id',       l: 'PO No',           w: 80,  filtre: false, bos: true },
+    { k: 'alis_fatura_no',   l: 'Purch Inv',       w: 90,  filtre: false, bos: true },
+    { k: 'alis_fatura_tarihi',l:'Purch Date',      w: 85,  filtre: true,  bos: true },
+    { k: 'teslim_tarihi',    l: 'Delivery',        w: 85,  filtre: true,  bos: true },
+    { k: 'teslim_yeri',      l: 'Del. Place',      w: 85,  filtre: true,  bos: true },
+    /* ── 5. AMBALAJ & YÜKLEME ────────────────────────── */
+    { k: 'koli_adet',        l: 'Ctns',            w: 60,  filtre: false, bos: true },
+    { k: 'brut_kg',          l: 'Gross KG',        w: 70,  filtre: false, bos: true },
+    { k: 'net_kg',           l: 'Net KG',          w: 65,  filtre: false, bos: true },
+    { k: 'hacim_m3',         l: 'CBM',             w: 60,  filtre: false, bos: true },
+    { k: 'konteyner_sira',   l: 'Load #',          w: 60,  filtre: false, bos: true },
+    { k: 'etiket_rengi',     l: 'Label',           w: 80,  filtre: true,  bos: true },
+    { k: 'once_yukle',       l: 'Priority',        w: 80,  filtre: true,  bos: true },
+    /* ── 6. IMO & DİB ────────────────────────────────── */
+    { k: 'imo_urun',         l: 'IMO',             w: 50,  filtre: true,  bos: false },
+    { k: 'imo_no',           l: 'IMO No',          w: 75,  filtre: false, bos: true },
+    { k: 'imo_msds',         l: 'MSDS',            w: 60,  filtre: false, bos: false },
+    { k: 'dib',              l: 'DİB',             w: 50,  filtre: true,  bos: true },
+    /* ── 7. VGM ──────────────────────────────────────── */
+    { k: 'vgm_kg',           l: 'VGM KG',          w: 70,  filtre: false, bos: true },
+    { k: 'vgm_no',           l: 'VGM No',          w: 80,  filtre: false, bos: true },
+    { k: 'vgm_kaynak',       l: 'VGM Src',         w: 75,  filtre: true,  bos: true },
+    { k: 'vgm_tarih',        l: 'VGM Date',        w: 80,  filtre: true,  bos: true },
+    /* ── 8. KONTEYNER & GÇB ─────────────────────────── */
+    { k: 'booking_no',       l: 'Booking',         w: 85,  filtre: false, bos: true },
+    { k: 'konteyner_no',     l: 'Cont. No',        w: 90,  filtre: false, bos: true },
+    { k: 'muhur_no',         l: 'Seal No',         w: 80,  filtre: false, bos: true },
+    { k: 'gcb_no',           l: 'GÇB No',          w: 85,  filtre: false, bos: true },
+    { k: 'gcb_id',           l: 'GÇB ID',          w: 75,  filtre: false, bos: true },
+    { k: 'gcb_tarih',        l: 'GÇB Date',        w: 80,  filtre: true,  bos: true },
+    { k: 'gcb_kur',          l: 'GÇB Rate',        w: 65,  filtre: false, bos: true },
     { k: 'gcb_kapandi', l: 'GÇB Kapandı', w: 75, filtre: true, bos: true },
     { k: 'gcb_kapama_tarihi', l: 'GÇB Kapama Tarihi', w: 95, filtre: true, bos: true },
     { k: 'mensei_no', l: 'Menşei No', w: 80, filtre: false, bos: true },
@@ -1113,14 +1133,14 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   /* ── TEK TABLO + STICKY KOLONLAR ── */
   var stickyBg = 'var(--sf)';
   var stickyBgH = 'var(--s2)';
-  h += '<div style="overflow-x:auto;border:0.5px solid var(--b);border-radius:8px">';
+  h += '<div style="overflow:auto;border:0.5px solid var(--b);border-radius:8px;max-height:calc(100vh - 280px)">';
   h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
-  /* THEAD */
-  h += '<thead><tr>';
+  /* THEAD — sticky top */
+  h += '<thead><tr style="position:sticky;top:0;z-index:4">';
   h += '<th style="position:sticky;left:0;z-index:3;background:' + stickyBgH + ';width:28px;min-width:28px;' + thS + ';border-right:2px solid var(--b)"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
-  h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:110px;min-width:110px;' + thS + '" title="Kolon #2 — tedarikciAd"><span style="font-size:8px;color:var(--t3);opacity:.6">#2</span> Tedarikçi</th>';
-  h += '<th style="position:sticky;left:138px;z-index:3;background:' + stickyBgH + ';width:85px;min-width:85px;' + thS + '" title="Kolon #3 — urun_kodu"><span style="font-size:8px;color:var(--t3);opacity:.6">#3</span> Ürün Kodu</th>';
-  h += '<th style="position:sticky;left:223px;z-index:3;background:' + stickyBgH + ';width:180px;min-width:180px;' + thS + ';border-right:2px solid var(--b)" title="Kolon #4 — aciklama"><span style="font-size:8px;color:var(--t3);opacity:.6">#4</span> Ürün Açıklaması</th>';
+  h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:120px;min-width:120px;' + thS + '" title="Kolon #2 — tedarikciAd"><span style="font-size:8px;color:var(--t3);opacity:.6">#2</span> Supplier</th>';
+  h += '<th style="position:sticky;left:148px;z-index:3;background:' + stickyBgH + ';width:90px;min-width:90px;' + thS + '" title="Kolon #3 — urun_kodu"><span style="font-size:8px;color:var(--t3);opacity:.6">#3</span> Item Code</th>';
+  h += '<th style="position:sticky;left:238px;z-index:3;background:' + stickyBgH + ';width:220px;min-width:220px;' + thS + ';border-right:2px solid var(--b)" title="Kolon #4 — aciklama"><span style="font-size:8px;color:var(--t3);opacity:.6">#4</span> Description</th>';
   var _kolNo = 4; // 1=chk, 2=tedarikci, 3=urun_kodu, 4=aciklama (sticky)
   GORUNEN_KOLONLAR.forEach(function(kol) {
     if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
@@ -1157,9 +1177,9 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '" onclick="event.stopPropagation()">';
     /* Sticky kolonlar */
     h += '<td onclick="event.stopPropagation()" style="position:sticky;left:0;z-index:2;background:' + cellBg + ';' + tdS + ';text-align:center;max-width:28px;border-right:2px solid var(--b)"><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="event.stopPropagation();window._ihrUrunChkDegis()"></td>';
-    h += '<td onclick="event.stopPropagation()" style="position:sticky;left:28px;z-index:2;background:' + cellBg + ';' + tdS + ';max-width:110px" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
-    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" onclick="event.stopPropagation()" style="position:sticky;left:138px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-family:monospace;max-width:85px">' + _esc(u.urun_kodu || '') + '</td>';
-    h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" onclick="event.stopPropagation()" style="position:sticky;left:223px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:180px;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
+    h += '<td onclick="event.stopPropagation()" style="position:sticky;left:28px;z-index:2;background:' + cellBg + ';' + tdS + ';max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
+    h += '<td data-alan="urun_kodu" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" style="position:sticky;left:148px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-family:monospace;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.urun_kodu || '') + '</td>';
+    h += '<td data-alan="aciklama" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" style="position:sticky;left:238px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
     /* Kalan kolonlar */
     GORUNEN_KOLONLAR.forEach(function(kol) {
       var k = kol.k; if (k === 'tedarikciAd' || k === 'urun_kodu' || k === 'aciklama') return;
