@@ -106,16 +106,17 @@ try {
   tokenValid = dosyaId && age < 30;
 } catch(e) { tokenValid = false; }
 
-// State
-var state = { screen: 'welcome', tur: '', belgeNo: '', belgeTarih: '', file: null, fileB64: '' };
+// State — window'a at (inline onclick'ler erissin)
+window.state = { screen: 'welcome', tur: '', belgeNo: '', belgeTarih: '', file: null, fileB64: '' };
+var state = window.state;
 
-function render() {
+window.render = function() {
   var app = document.getElementById('app');
   if (!tokenValid) { app.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:16px;font-weight:500;margin-bottom:8px">Link gecersiz veya suresi dolmus</div><div style="font-size:13px;color:#6b7280">Lutfen yeni bir link talep edin.</div></div>'; return; }
   if (state.screen === 'welcome') renderWelcome(app);
   else if (state.screen === 'form') renderForm(app);
   else if (state.screen === 'done') renderDone(app);
-}
+};
 
 function stepBar(active) {
   var steps = [{l:'Karsilama',n:1},{l:'Belge Bilgisi',n:2},{l:'Tamamlandi',n:3}];
