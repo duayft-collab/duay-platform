@@ -27,6 +27,8 @@ var _EVRAK_OCR_PROMPT = {
   SIG: { prompt:'Bu bir sigorta policesidir. Su alanlari cikar: police_no, sigorta_sirketi, baslangic_tarihi (YYYY-MM-DD), bitis_tarihi, sigorta_degeri (sayi), doviz, kapsam_turu. Sadece JSON ver.', alanlar:['police_no','sigorta_sirketi','baslangic_tarihi','bitis_tarihi','sigorta_degeri','doviz','kapsam_turu'] },
 };
 
+var ETIKET_RENK = { Mavi:'#185FA5', Pembe:'#D4537E', Sari:'#BA7517', Yesil:'#16A34A', Mor:'#7C3AED', Turuncu:'#D85A30', Kirmizi:'#DC2626', Lacivert:'#1E3A5F', Turkuaz:'#0EA5E9', Lime:'#84CC16', Bordo:'#881337', Altin:'#D4A017', Gri:'#6B7280', Beyaz:'#F9FAFB', Siyah:'#111827', Kahve:'#78350F', Mercan:'#FB7185', Buz:'#E0F2FE', Lavanta:'#C4B5FD', Nane:'#6EE7B7', Somon:'#FDA4AF', Safran:'#FBBF24', Kobalt:'#3B82F6', Fusya:'#EC4899', Zeytin:'#65A30D', Indigo:'#4F46E5', Bakir:'#EA580C', Camgobegi:'#06B6D4', Ametist:'#8B5CF6', Gumus:'#94A3B8' };
+
 var _g   = function(id) { return document.getElementById(id); };
 var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
 var _cu  = function() { return window.CU?.() || window.Auth?.getCU?.(); };
@@ -971,7 +973,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   uniq('tedarikciAd').sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.tedarikciAd === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
   h += '</select>';
   h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'etiket_rengi\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Etiket</option>';
-  ['Mavi', 'Pembe', 'Sarı', 'Yeşil', 'Mor', 'Turuncu'].forEach(function(v) { h += '<option value="' + v + '"' + (_filtreler.etiket_rengi === v ? ' selected' : '') + '>' + v + '</option>'; });
+  Object.keys(ETIKET_RENK).forEach(function(v) { h += '<option value="' + v + '"' + (_filtreler.etiket_rengi === v ? ' selected' : '') + '>' + v + '</option>'; });
   h += '</select>';
   h += '<select class="fi" onchange="event.stopPropagation();window._ihrFiltrele(\'once_yukle\',this.value)" style="font-size:10px;padding:3px 6px;flex-shrink:0;max-width:100px" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="">Yükle</option>';
   uniq('once_yukle').forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (_filtreler.once_yukle === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
@@ -1093,8 +1095,8 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     : KOLONLAR.filter(function(col) { return _IHR_KOLON_DEFAULT.indexOf(col.k) !== -1; });
 
   /* ── FREEZE LAYOUT: Sol sabit 3 kolon + Sağ kaydırılabilir ── */
-  var ETIKET_RENK = { Mavi: '#185FA5', Pembe: '#D4537E', 'Sarı': '#BA7517', 'Yeşil': '#16A34A', Mor: '#7C3AED', Turuncu: '#D85A30' };
-  var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'İspanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], gcb_kapandi: ['', 'Kapandı', 'Açık'], vgm_kaynak: ['', 'Liman', 'Forwarder', 'İnternet'], konteyner_para: ['', 'USD', 'EUR', 'TRY'], once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'] };
+  // ETIKET_RENK modul scope'ta tanimli (asagida)
+  var SELECT_KOLONLAR = { fatura_turu: ['', 'İhraç Kayıtlı KDV\'siz', 'KDV\'li', 'Transit Ticaret', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'], mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Almanya', 'İspanya', 'Diğer'], dib: ['H', 'E'], imo_urun: ['H', 'E'], gcb_kapandi: ['', 'Kapandı', 'Açık'], vgm_kaynak: ['', 'Liman', 'Forwarder', 'İnternet'], konteyner_para: ['', 'USD', 'EUR', 'TRY'], once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'] };
   var DATE_KOLONLAR = ['alis_fatura_tarihi', 'gcb_tarih', 'gcb_kapama_tarihi', 'mensei_tarih', 'vgm_tarih', 'police_tarihi'];
   var sortedUrunler = urunler.slice().sort(function(a, b) { return (parseInt(a.konteyner_sira) || 99) - (parseInt(b.konteyner_sira) || 99); });
 
@@ -1167,7 +1169,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
       if (k === 'kdv_dahil') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace;font-weight:500">' + kdvDahil.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td>'; return; }
       if (k === 'miktar') { h += '<td style="' + tdS + ';text-align:right;cursor:text" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'miktar\')">' + (miktar || 0).toLocaleString('tr-TR') + ' ' + _esc(u.birim || '') + '</td>'; return; }
       if (k === 'birim_fiyat') { h += '<td style="' + tdS + ';text-align:right;font-family:monospace;cursor:text;color:' + (v ? 'var(--t)' : 'var(--t3)') + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'birim_fiyat\')">' + (v ? birimFiyat.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(u.doviz || '') : '') + '</td>'; return; }
-      if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td style="' + tdS + ';text-align:center"><div style="display:flex;align-items:center;gap:3px;justify-content:center">'; if (er) h += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + er + '"></span>'; h += '<span>' + vs + '</span></div></td>'; return; }
+      if (k === 'etiket_rengi') { var er = ETIKET_RENK[v] || ''; h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center;padding:2px"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'etiket_rengi\',this.value);var _sel=this;setTimeout(function(){var _opt=_sel.options[_sel.selectedIndex];_sel.style.color=_opt?.dataset?.renk||\'var(--t)\';},10)" style="font-size:10px;border:none;background:transparent;cursor:pointer;color:' + (er || 'var(--t3)') + ';font-weight:500;width:100%"><option value="">—</option>'; Object.keys(ETIKET_RENK).forEach(function(rk) { h += '<option value="' + rk + '" data-renk="' + ETIKET_RENK[rk] + '"' + (v === rk ? ' selected' : '') + ' style="color:' + ETIKET_RENK[rk] + '">' + '\u25cf ' + rk + '</option>'; }); h += '</select></td>'; return; }
       if (k === 'doviz') { h += '<td style="' + tdS + ';text-align:center">' + vs + '</td>'; return; }
       if (k === 'imo_msds') { if (u.imo_urun === 'E') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--ac);font-size:10px">PDF</a>' : '<button class="btn btns" onclick="event.stopPropagation();window._ihrMsdsYukle(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Yükle</button>') + '</td>'; } else { h += '<td style="' + tdS + '"><span style="font-size:9px;color:var(--t3)">—</span></td>'; } return; }
       if (k === 'yukleme_durumu') { var vgmVar = parseFloat(u.vgm_kg || 0) > 0; var durumVal = vgmVar ? 'Yüklendi' : (v || ''); var durumBg2 = durumVal === 'Yüklendi' ? '#EAF3DE' : 'var(--s2)'; var durumClr = durumVal === 'Yüklendi' ? '#27500A' : 'var(--t2)'; h += '<td style="' + tdS + '">' + (durumVal ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + durumBg2 + ';color:' + durumClr + '">' + _esc(durumVal) + '</span>' : '') + '</td>'; return; }
@@ -1450,11 +1452,11 @@ window._ihrInlineEdit = function(td, urunId, alan) {
   var SELECT_ALANLAR = {
     doviz: ['USD', 'EUR', 'TRY', 'GBP'],
     birim: ['PCS', 'KGS', 'MTR', 'SET', 'TON', 'M2', 'M3', 'LTR'],
-    etiket_rengi: ['Mavi', 'Pembe', 'Sarı', 'Yeşil', 'Mor', 'Turuncu'],
+    etiket_rengi: Object.keys(ETIKET_RENK),
     once_yukle: ['Önce Yükle', 'Sonra Yükle', 'Yer Olursa Yükle'],
     dilli_urun: ['H', 'E'],
     imo_urun: ['H', 'E'],
-    fatura_turu: ['', 'İhraç Kayıtlı KDV\'li', 'İhraç Kayıtlı KDV\'siz', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'],
+    fatura_turu: ['', 'İhraç Kayıtlı KDV\'siz', 'KDV\'li', 'Transit Ticaret', 'Özel Matrah', 'Tevkifatlı', 'KDV Muaf'],
     mense_ulke: ['Türkiye', 'Çin', 'Hindistan', 'İtalya', 'Diğer']
   };
   var SAYISALLAR = ['miktar', 'birim_fiyat', 'konteyner_sira', 'kdv_orani', 'brut_kg', 'net_kg', 'hacim_m3', 'koli_adet'];
@@ -2541,7 +2543,7 @@ window._ihrKdvIadeHesapla = function() {
   var dosyalar = _loadD().filter(function(d) { return !d.isDeleted && (d.createdAt || '').startsWith(ayKey); });
   var ihrKdv = 0;
   dosyalar.forEach(function(d) {
-    var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
+    var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted && (u.fatura_turu || '').indexOf('KDV') !== -1; });
     urunler.forEach(function(u) { ihrKdv += parseFloat(u.kdv_tutar) || ((parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0) * ((parseFloat(u.kdv_orani) || 0) / 100)); });
   });
   var satinalma = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : [];
