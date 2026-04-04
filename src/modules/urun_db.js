@@ -9,8 +9,21 @@
 
 var URUN_DB_KEY = 'ak_urun_db1';
 
-function loadUrunDB() { try { return JSON.parse(localStorage.getItem(URUN_DB_KEY) || '[]'); } catch(e) { return []; } }
-function storeUrunDB(d) { localStorage.setItem(URUN_DB_KEY, JSON.stringify(d)); }
+function loadUrunDB() { try { var raw = localStorage.getItem(URUN_DB_KEY); if (!raw) return []; if (raw.startsWith('_LZ_') && typeof LZString !== 'undefined') return JSON.parse(LZString.decompressFromUTF16(raw.slice(4))) || []; return JSON.parse(raw) || []; } catch(e) { return []; } }
+function storeUrunDB(d) {
+  try {
+    var json = JSON.stringify(d);
+    if (typeof LZString !== 'undefined' && json.length > 500) localStorage.setItem(URUN_DB_KEY, '_LZ_' + LZString.compressToUTF16(json));
+    else localStorage.setItem(URUN_DB_KEY, json);
+  } catch(e) { localStorage.setItem(URUN_DB_KEY, JSON.stringify(d)); }
+  // Firestore sync
+  try {
+    var tid = window.DEFAULT_TENANT_ID || localStorage.getItem('tenantId') || 'tenant_default';
+    var base = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
+    var FB_DB = window.Auth?.getFBDB?.();
+    if (FB_DB) FB_DB.collection(base).doc('urun_db').set({ data: d, syncedAt: new Date().toISOString() }, { merge: true }).catch(function(e) { console.warn('[UrunDB] sync hata:', e.message); });
+  } catch(e) {}
+}
 
 /**
  * Duay Ürün Kodu otomatik üretir: SatıcıKodu-ÜrünKodu
@@ -29,7 +42,7 @@ var URUN_COUNTRIES = ['Türkiye','Çin','Almanya','ABD','İtalya','Fransa','İng
 function openUrunModal(id) {
   var old = document.getElementById('mo-urun-db'); if (old) old.remove();
   var data = loadUrunDB();
-  var u = id ? data.find(function(x) { return x.id === id; }) : null;
+  var u = id ? data.find(function(x) { return String(x.id) === String(id); }) : null;
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   // Cari listesi (satıcılar)
@@ -158,7 +171,7 @@ window._saveUrunDB = function() {
   };
 
   if (eid) {
-    var existing = data.find(function(x) { return x.id === eid; });
+    var existing = data.find(function(x) { return String(x.id) === String(eid); });
     if (existing) { entry.changeLog = (existing.changeLog || []).concat([{ ts: new Date().toISOString(), by: window.Auth?.getCU?.()?.name }]); Object.assign(existing, entry); }
   } else {
     entry.id = typeof generateNumericId === 'function' ? generateNumericId() : Date.now();
@@ -199,7 +212,7 @@ function renderUrunDB() {
     panel.dataset.injected = '1';
     panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">🗃️ Ürün Veritabanı</div><div style="font-size:10px;color:var(--t3)">Ürün tanımları, kodlar, teknik bilgiler</div></div>'
-      + '<div style="display:flex;gap:6px"><button class="btn btns" onclick="window._exportUrunXlsx?.()" style="font-size:11px">⬇ Excel</button><button class="btn btns" onclick="window._importUrunXlsx?.()" style="font-size:11px">📥 İçe Aktar</button><button class="btn btnp" onclick="openUrunModal(null)" style="font-size:12px">+ Ürün Ekle</button></div>'
+      + '<div style="display:flex;gap:6px"><button class="btn btns" onclick="window._exportUrunXlsx?.()" style="font-size:11px">\u2b07 Excel</button><button class="btn btns" onclick="window._importUrunXlsx?.()" style="font-size:11px">\ud83d\udce5 Iceri Aktar</button><button class="btn btnp" onclick="openUrunModal(null)" style="font-size:12px">+ Urun Ekle</button></div>'
     + '</div>'
     + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;background:var(--s2)">'
       + '<input class="fi" id="udb-search" placeholder="🔍 Ürün adı, kod, kategori..." oninput="renderUrunDB()" style="font-size:11px;flex:1">'
@@ -207,7 +220,7 @@ function renderUrunDB() {
     + '<div id="udb-list" style="overflow-x:auto"></div>';
   }
 
-  var data = loadUrunDB();
+  var data = loadUrunDB().filter(function(u) { return !u.isDeleted; });
   var search = (document.getElementById('udb-search')?.value || '').toLowerCase();
   var fl = data.filter(function(u) {
     if (!search) return true;
@@ -218,33 +231,105 @@ function renderUrunDB() {
   if (!cont) return;
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
+  // Toplu islem bar
+  var bulkBar = '<div id="udb-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #E24B4A;align-items:center;gap:8px;font-size:11px;color:#791F1F">'
+    + '<span id="udb-bulk-cnt">0</span> urun secili '
+    + '<button onclick="event.stopPropagation();window._urunDBTopluSil()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;font-size:10px;cursor:pointer;font-family:inherit">Toplu Sil</button>'
+    + '<button onclick="event.stopPropagation();window._urunDBTumunuSec()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);font-size:10px;cursor:pointer;font-family:inherit">Tumunu Sec</button>'
+    + '</div>';
+
   if (!fl.length) {
-    cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px">🗃️</div><div style="margin-top:8px">Ürün bulunamadı</div></div>';
+    cont.innerHTML = bulkBar + '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px">\ud83d\uddc3\ufe0f</div><div style="margin-top:8px">Urun bulunamadi</div></div>';
     return;
   }
 
-  var html = '<div style="display:grid;grid-template-columns:60px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;min-width:800px">'
-    + '<div>Görsel</div><div>Duay Kodu</div><div>Satıcı Kodu</div><div>Ürün Adı</div><div>Kategori</div><div>Menşei</div><div>GTİP</div><div>İşlem</div></div>';
+  var html = bulkBar;
+  html += '<div style="display:grid;grid-template-columns:30px 60px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;min-width:850px">'
+    + '<div></div><div>Gorsel</div><div>Duay Kodu</div><div>Satici Kodu</div><div>Urun Adi</div><div>Kategori</div><div>Mensei</div><div>GTIP</div><div>Islem</div></div>';
 
   fl.forEach(function(u) {
-    html += '<div style="display:grid;grid-template-columns:60px 100px 120px 1fr 80px 80px 80px 90px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:800px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
-      + '<div>' + (u.image ? '<img src="' + u.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">' : '<div style="width:40px;height:40px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">📦</div>') + '</div>'
-      + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || '—') + '</div>'
-      + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || '—') + '</div>'
-      + '<div style="font-weight:500">' + esc(u.duayName || '—') + '<div style="font-size:9px;color:var(--t3)">' + esc(u.vendorName || '') + '</div></div>'
-      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || '—') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || '—') + '</div>'
-      + '<div style="font-size:10px;font-family:monospace;color:var(--t3)">' + esc(u.gtip || '—') + '</div>'
-      + '<div style="display:flex;gap:3px"><button onclick="openUrunModal(' + u.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">✏️</button><button onclick="window._deleteUrun?.(' + u.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button></div>'
+    var uid = String(u.id);
+    html += '<div style="display:grid;grid-template-columns:30px 60px 100px 120px 1fr 80px 80px 80px 90px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+      + '<div><input type="checkbox" class="udb-bulk-chk" data-id="' + esc(uid) + '" onclick="event.stopPropagation();window._urunDBBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)"></div>'
+      + '<div>' + (u.image ? '<img src="' + u.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">' : '<div style="width:40px;height:40px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
+      + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || '\u2014') + '</div>'
+      + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || '\u2014') + '</div>'
+      + '<div style="font-weight:500">' + esc(u.duayName || '\u2014') + '<div style="font-size:9px;color:var(--t3)">' + esc(u.vendorName || '') + '</div></div>'
+      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || '\u2014') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || '\u2014') + '</div>'
+      + '<div style="font-size:10px;font-family:monospace;color:var(--t3)">' + esc(u.gtip || '\u2014') + '</div>'
+      + '<div style="display:flex;gap:3px"><button onclick="event.stopPropagation();openUrunModal(\'' + esc(uid) + '\')" class="btn btns" style="font-size:10px;padding:2px 6px">\u270f\ufe0f</button><button onclick="event.stopPropagation();window._deleteUrun?.(\'' + esc(uid) + '\')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">\ud83d\uddd1</button></div>'
     + '</div>';
   });
   cont.innerHTML = html;
 }
 
+/**
+ * Tek urun soft delete.
+ * @param {string|number} id Urun ID
+ */
 window._deleteUrun = function(id) {
-  window.confirmModal?.('Bu ürünü silmek istediğinizden emin misiniz?', {
-    title: 'Ürün Sil', danger: true, confirmText: 'Evet',
-    onConfirm: function() { storeUrunDB(loadUrunDB().filter(function(x) { return x.id !== id; })); renderUrunDB(); window.toast?.('Silindi', 'ok'); }
+  window.confirmModal?.('Bu urunu silmek istediginizden emin misiniz?', {
+    title: 'Urun Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var data = loadUrunDB();
+      var item = data.find(function(x) { return String(x.id) === String(id); });
+      if (item) {
+        item.isDeleted = true;
+        item.deletedAt = new Date().toISOString();
+        item.deletedBy = window.Auth?.getCU?.()?.id || '';
+        storeUrunDB(data);
+        window.logActivity?.('urun_db', 'Urun silindi: ' + (item.duayName || item.duayCode || id));
+      }
+      renderUrunDB();
+      window.toast?.('Silindi', 'ok');
+    }
+  });
+};
+
+/** Checkbox sayacini guncelle */
+window._urunDBBulkCheck = function() {
+  var n = document.querySelectorAll('.udb-bulk-chk:checked').length;
+  var bar = document.getElementById('udb-bulk-bar');
+  var cnt = document.getElementById('udb-bulk-cnt');
+  if (bar) bar.style.display = n ? 'flex' : 'none';
+  if (cnt) cnt.textContent = n;
+};
+
+/** Tumunu sec/kaldir */
+window._urunDBTumunuSec = function() {
+  var boxes = document.querySelectorAll('.udb-bulk-chk');
+  var allChecked = Array.from(boxes).every(function(cb) { return cb.checked; });
+  boxes.forEach(function(cb) { cb.checked = !allChecked; });
+  window._urunDBBulkCheck();
+};
+
+/**
+ * Toplu silme — secili urunleri soft delete yapar.
+ */
+window._urunDBTopluSil = function() {
+  var checked = document.querySelectorAll('.udb-bulk-chk:checked');
+  var ids = Array.from(checked).map(function(cb) { return cb.dataset.id; });
+  if (!ids.length) { window.toast?.('Urun secin', 'err'); return; }
+  window.confirmModal?.(ids.length + ' urun silinecek?', {
+    title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var data = loadUrunDB();
+      var now = new Date().toISOString();
+      var cuId = window.Auth?.getCU?.()?.id || '';
+      ids.forEach(function(id) {
+        var item = data.find(function(x) { return String(x.id) === String(id); });
+        if (item) {
+          item.isDeleted = true;
+          item.deletedAt = now;
+          item.deletedBy = cuId;
+        }
+      });
+      storeUrunDB(data);
+      window.toast?.(ids.length + ' urun silindi', 'ok');
+      window.logActivity?.('urun_db', 'Toplu silme: ' + ids.length + ' urun');
+      renderUrunDB();
+    }
   });
 };
 
