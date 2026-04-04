@@ -2760,8 +2760,8 @@ function _verifiedWrite(path, data, retry) {
   // Yazma
   FB_DB.doc(path).set({ data: data, syncedAt: syncedAt }, { merge: true })
     .then(function() {
-      // Doğrulama: Safari'de 400ms, diğerlerinde 200ms bekle
-      var delay = _isSafari ? 400 : 200;
+      // Doğrulama: Safari'de 1200ms (longPolling yavaş), diğerlerinde 300ms bekle
+      var delay = _isSafari ? 1200 : 300;
       setTimeout(function() {
         FB_DB.doc(path).get().then(function(snap) {
           if (snap.exists && snap.data()?.syncedAt === syncedAt) {
