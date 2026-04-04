@@ -316,17 +316,25 @@ function _ihrRenderDosyaDetay(id) {
   /* Timeline */
   h += timelineH;
 
-  /* Alt sekmeler */
+  /* Alt sekmeler — 7 sekme + paydas % */
+  var _pctRenk = function(p) { return p >= 100 ? '#16A34A' : p >= 51 ? '#22C55E' : p > 0 ? '#D97706' : '#DC2626'; };
   var SEKMELER = [
-    { id: 'ozet', l: 'Özet' },
-    { id: 'urunler', l: 'Ürünler' },
-    { id: 'evraklar', l: 'Evraklar' },
-    { id: 'gumrukcu', l: 'Gümrükçü' },
-    { id: 'forwarder', l: 'Forwarder' }
+    { id: 'ozet', l: 'Ozet', paydas: null },
+    { id: 'urunler', l: 'Urunler', paydas: null },
+    { id: 'evraklar', l: 'Evraklar', paydas: null },
+    { id: 'musteri', l: 'Musteri', paydas: 'musteri' },
+    { id: 'sigortaci', l: 'Sigortaci', paydas: 'sigortaci' },
+    { id: 'gumrukcu', l: 'Gumrukcu', paydas: 'gumrukcu' },
+    { id: 'forwarder', l: 'Forwarder', paydas: 'forwarder' }
   ];
-  h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px" id="ihr-detay-tabs">';
+  h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
-    h += '<div onclick="window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + '</div>';
+    var pctHtml = '';
+    if (t.paydas) {
+      var pp = window._ihrPaydasPct?.(id, t.paydas);
+      if (pp) pctHtml = ' <span style="font-size:9px;color:' + _pctRenk(pp.pct) + ';font-weight:600">%' + pp.pct + '</span>';
+    }
+    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + pctHtml + '</div>';
   });
   h += '</div>';
   h += '<div id="ihr-detay-content" style="padding:16px 20px"></div>';
@@ -846,6 +854,8 @@ window._ihrDetayTab = function(tab, id) {
   if (tab === 'ozet') { _ihrDetayRenderOzet(d); return; }
   if (tab === 'urunler') { _ihrDetayRenderUrunler(d, c); return; }
   if (tab === 'evraklar') { window._ihrDetayRenderEvraklar(d, c); return; }
+  if (tab === 'musteri') { window._ihrDetayRenderMusteri(d, c); return; }
+  if (tab === 'sigortaci') { window._ihrDetayRenderSigortaci(d, c); return; }
   if (tab === 'gumrukcu') {
     var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
     var gm = d.gumrukcu_id ? gumrukculer.find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
@@ -3935,6 +3945,434 @@ window._ihrSablonIndir = function(sablonKey) {
   var tarih = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   XLSX.writeFile(wb, 'duay_sablon_' + sablonKey + '_' + tarih + '.xlsx');
   window.toast?.('Sablon indirildi', 'ok');
+};
+
+// ══════════════════════════════════════════════════════════════════
+// IHR-OPS-REDESIGN-002 — Asama 1: Altyapi + Yardimci Fonksiyonlar
+// ══════════════════════════════════════════════════════════════════
+
+// ── BOLUM I: Paydas Tamamlanma % ─────────────────────────────
+var _PAYDAS_KONTROL = {
+  musteri: ['musteriAd','musteri_mail','musteri_yetkili','musteri_tel'],
+  sigortaci: ['sigortaFirma','police_no','sigorta_deger'],
+  gumrukcu: ['gumrukcu_id','gcb_tarih','gcb_durum'],
+  forwarder: ['forwarder_id','booking_no','konteyner_no','muhur_no']
+};
+
+/**
+ * Paydas tamamlanma yuzdesini hesaplar.
+ * @param {string} dosyaId
+ * @param {string} paydas musteri|sigortaci|gumrukcu|forwarder
+ * @returns {{pct:number, eksikler:string[]}}
+ */
+window._ihrPaydasPct = function(dosyaId, paydas) {
+  var kontrol = _PAYDAS_KONTROL[paydas];
+  if (!kontrol) return { pct: 0, eksikler: [] };
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return { pct: 0, eksikler: kontrol.slice() };
+  // Gumrukcu/forwarder icin dosya + GCB/BL kontrolu
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var gcb = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; })[0];
+  var bl = _loadBL().filter(function(b) { return String(b.dosya_id) === String(dosyaId) && !b.isDeleted; })[0];
+  var kaynakObj = Object.assign({}, d, gcb || {}, bl || {});
+  var dolu = 0; var eksikler = [];
+  kontrol.forEach(function(k) {
+    if (kaynakObj[k] && String(kaynakObj[k]).trim()) dolu++;
+    else eksikler.push(k);
+  });
+  return { pct: Math.round(dolu / kontrol.length * 100), eksikler: eksikler };
+};
+
+// ── BOLUM F: Kambiyo 90 Gun Countdown ────────────────────────
+/**
+ * GCB tescil tarihinden 90 gun kambiyo sayaci.
+ * @param {string} dosyaId
+ * @returns {?{kalanGun:number, deadline:string, durum:string, odenmis:boolean}}
+ */
+window._ihrKambiyo90 = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  var gcb = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; })[0];
+  var gcbTarih = gcb?.tescil_tarihi || d?.gcb_tescil_tarihi;
+  if (!gcbTarih) return null;
+  var deadline = new Date(gcbTarih);
+  deadline.setDate(deadline.getDate() + 90);
+  var kalanGun = Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24));
+  return {
+    kalanGun: kalanGun,
+    deadline: deadline.toLocaleDateString('tr-TR'),
+    durum: kalanGun < 0 ? 'gecmis' : kalanGun < 15 ? 'kritik' : kalanGun < 30 ? 'uyari' : 'normal',
+    odenmis: !!(d?.kambiyo_odenmis)
+  };
+};
+
+// ── BOLUM C: Konteyner Kapasitesi Gauge ──────────────────────
+var _KONTEYNER_TIP = {
+  '40HC': { m3: 76, kg: 28000 },
+  '20DC': { m3: 33, kg: 28000 },
+  '40DC': { m3: 67, kg: 28000 }
+};
+
+/**
+ * Konteyner kapasite gauge HTML'i olusturur.
+ * @param {string} dosyaId
+ * @returns {string} HTML
+ */
+window._ihrKonteynerGauge = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  var tip = (d?.konteyner_tipi || '40HC').toUpperCase();
+  var kap = _KONTEYNER_TIP[tip] || _KONTEYNER_TIP['40HC'];
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var topM3 = 0, topKG = 0;
+  urunler.forEach(function(u) {
+    topM3 += parseFloat(u.hacim_m3) || 0;
+    topKG += (parseFloat(u.brut_kg) || 0);
+  });
+  var pctM3 = Math.min(100, Math.round(topM3 / kap.m3 * 100));
+  var pctKG = Math.min(100, Math.round(topKG / kap.kg * 100));
+  var renk = function(p) { return p >= 95 ? '#DC2626' : p >= 80 ? '#D97706' : '#16A34A'; };
+
+  var h = '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+  h += '<span style="font-size:11px;font-weight:600">Konteyner ' + _esc(tip) + '</span>';
+  h += '<div style="display:flex;gap:4px">';
+  Object.keys(_KONTEYNER_TIP).forEach(function(t) {
+    var aktif = t === tip;
+    h += '<button onclick="event.stopPropagation();window._ihrSetKonteynerTip(\'' + dosyaId + '\',\'' + t + '\')" style="padding:2px 8px;border-radius:4px;font-size:9px;cursor:pointer;font-family:inherit;border:0.5px solid ' + (aktif ? 'var(--ac)' : 'var(--b)') + ';background:' + (aktif ? 'var(--ac)' : 'var(--sf)') + ';color:' + (aktif ? '#fff' : 'var(--t2)') + '">' + t + '</button>';
+  });
+  h += '</div></div>';
+  // M3 gauge
+  h += '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px"><span>Hacim (m\u00b3)</span><span>' + topM3.toFixed(1) + ' / ' + kap.m3 + ' m\u00b3</span></div>';
+  h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + pctM3 + '%;background:' + renk(pctM3) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
+  // KG gauge
+  h += '<div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px"><span>Agirlik (KG)</span><span>' + topKG.toLocaleString('tr-TR') + ' / ' + kap.kg.toLocaleString('tr-TR') + ' KG</span></div>';
+  h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + pctKG + '%;background:' + renk(pctKG) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
+  // Uyari mesajlari
+  var maxPct = Math.max(pctM3, pctKG);
+  if (maxPct >= 95) h += '<div style="font-size:9px;color:#DC2626;margin-top:6px;font-weight:500">\ud83d\udd34 Konteyner neredeyse dolu</div>';
+  else if (maxPct >= 80) h += '<div style="font-size:9px;color:#D97706;margin-top:6px">\u26a0 ' + tip + ' kapasitesinin %' + maxPct + '\'i dolu</div>';
+  h += '</div>';
+  return h;
+};
+
+/** Konteyner tipini degistir */
+window._ihrSetKonteynerTip = function(dosyaId, tip) {
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
+  if (d) { d.konteyner_tipi = tip; d.updatedAt = _now(); _storeD(dosyalar); }
+  _ihrReRender();
+};
+
+// ── BOLUM J: Otomatik Iletisim Logu ─────────────────────────
+/**
+ * Ihracat dosyasina iletisim logu yazar.
+ * @param {string} dosyaId
+ * @param {string} aksiyon
+ * @param {string} [hedef]
+ * @param {string} [evrakTur]
+ */
+window._ihrLog = function(dosyaId, aksiyon, hedef, evrakTur) {
+  var logKey = 'ak_ihr_log_' + dosyaId;
+  var loglar = [];
+  try { loglar = JSON.parse(localStorage.getItem(logKey) || '[]'); } catch(e) {}
+  loglar.unshift({
+    id: Date.now().toString(),
+    aksiyon: aksiyon,
+    hedef: hedef || null,
+    evrakTur: evrakTur || null,
+    kim: _cu()?.name || 'Duay Admin',
+    tarih: _now()
+  });
+  if (loglar.length > 200) loglar = loglar.slice(0, 200);
+  try { localStorage.setItem(logKey, JSON.stringify(loglar)); } catch(e) {}
+};
+
+// ── BOLUM E: 5 Seviyeli Evrak Durumu ─────────────────────────
+/**
+ * Evrakin durum seviyesini belirler.
+ * @param {Object} evrak
+ * @param {number} dosyaAsama
+ * @returns {{seviye:number, label:string, renk:string}}
+ */
+window._ihrEvrakDurumSeviye = function(evrak, dosyaAsama) {
+  var zorunluAsama = { PI:1, CI:2, PL:2, GCB:3, BL:4, SIG:1, SEVK:3, YUK:3 };
+  var gerekliMi = (dosyaAsama || 1) >= (zorunluAsama[evrak.tur] || 99);
+  if (!gerekliMi) return { seviye: 5, label: 'Henuz gerekmez', renk: '#888' };
+  if (evrak.durum === 'gonderildi' || evrak.durum === 'tamamlandi') return { seviye: 4, label: 'Tamamlandi', renk: '#3B6D11' };
+  if (evrak.durum === 'onay_bekliyor' || evrak.durum === 'onaylandi') return { seviye: 3, label: 'Onay bekliyor', renk: '#EF9F27' };
+  if (evrak.durum === 'hazirlaniyor' || evrak.durum === 'taslak') return { seviye: 2, label: 'Hazirlaniyor', renk: '#BA7517' };
+  return { seviye: 1, label: 'Kritik eksik', renk: '#A32D2D' };
+};
+
+// ── BOLUM G: BL Kademeli Onay ────────────────────────────────
+var _BL_ADIMLAR = [
+  { id: 'draft_alindi', label: 'Forwarder Draft BL Gonderdi' },
+  { id: 'ic_onaylandi', label: 'Duay Ic Kontrol' },
+  { id: 'musteri_onayladi', label: 'Musteri Draft Onayi' },
+  { id: 'odeme_alindi', label: 'Odeme Alindi' },
+  { id: 'orijinal_released', label: 'Orijinal BL Teslim' }
+];
+
+/**
+ * BL kademeli onay modali acar.
+ * @param {string} dosyaId
+ */
+window._ihrBlOnayAc = function(dosyaId) {
+  var old = _g('mo-bl-onay'); if (old) old.remove();
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  var mevcutAdim = d.bl_adim || '';
+  var mevcutIdx = -1;
+  _BL_ADIMLAR.forEach(function(a, i) { if (a.id === mevcutAdim) mevcutIdx = i; });
+
+  var h = '<div style="padding:16px 20px">';
+  _BL_ADIMLAR.forEach(function(a, i) {
+    var tamamlandi = i <= mevcutIdx;
+    var aktif = i === mevcutIdx + 1;
+    // orijinal_released icin ozel kontrol
+    var kilitli = (a.id === 'orijinal_released' && mevcutIdx < 3);
+    var bg = tamamlandi ? '#EAF3DE' : aktif ? '#E6F1FB' : 'var(--s2)';
+    var renk = tamamlandi ? '#16A34A' : aktif ? '#185FA5' : 'var(--t3)';
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;background:' + bg + '">';
+    h += '<div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:' + (tamamlandi ? '#16A34A' : 'var(--s2)') + ';color:' + (tamamlandi ? '#fff' : 'var(--t3)') + '">' + (tamamlandi ? '\u2713' : (i + 1)) + '</div>';
+    h += '<div style="flex:1"><div style="font-size:11px;font-weight:500;color:' + renk + '">' + _esc(a.label) + '</div></div>';
+    if (aktif && !kilitli) {
+      h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrBlOnayAdim(\'' + dosyaId + '\',\'' + a.id + '\')" style="font-size:10px;padding:4px 12px">Onayla</button>';
+    } else if (kilitli) {
+      h += '<span style="font-size:9px;color:var(--t3)">Once odeme alinmali</span>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-bl-onay';
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600">BL Onay Akisi</div><button onclick="event.stopPropagation();document.getElementById(\'mo-bl-onay\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u2715</button></div>'
+    + h
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);text-align:right"><button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-bl-onay\')?.remove()">Kapat</button></div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/** BL onay adimi tamamla */
+window._ihrBlOnayAdim = function(dosyaId, adimId) {
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  d.bl_adim = adimId;
+  d.updatedAt = _now();
+  _storeD(dosyalar);
+  var adimLabel = '';
+  _BL_ADIMLAR.forEach(function(a) { if (a.id === adimId) adimLabel = a.label; });
+  window._ihrLog(dosyaId, 'BL adim: ' + adimLabel, null, 'BL');
+  window.toast?.(adimLabel + ' tamamlandi', 'ok');
+  window.logActivity?.('ihracat', 'BL onay: ' + adimLabel);
+  _g('mo-bl-onay')?.remove();
+  window._ihrBlOnayAc(dosyaId);
+};
+
+// ── BOLUM H: Dosya Klonlama ─────────────────────────────────
+/**
+ * Dosya klonlama modali acar.
+ * @param {string} kaynakDosyaId
+ */
+window._ihrKlon = function(kaynakDosyaId) {
+  var old = _g('mo-ihr-klon'); if (old) old.remove();
+  var kaynak = _loadD().find(function(x) { return String(x.id) === String(kaynakDosyaId); });
+  if (!kaynak) { window.toast?.('Kaynak dosya bulunamadi', 'err'); return; }
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-ihr-klon';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Dosya Klonla</div>'
+    + '<div style="padding:16px 20px">'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Kaynak: <b>' + _esc(kaynak.dosyaNo || '') + '</b> — ' + _esc(kaynak.musteriAd || '') + '</div>'
+    + '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Kopyalanacak bolumler:</div>'
+    + '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px"><input type="checkbox" id="klon-urunler" checked> Urun listesi (fiyat haric)</label>'
+    + '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px"><input type="checkbox" id="klon-musteri" checked> Musteri bilgileri</label>'
+    + '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px"><input type="checkbox" id="klon-paydas" checked> Paydas kisi bilgileri</label>'
+    + '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px"><input type="checkbox" id="klon-konteyner" checked> Konteyner tipi</label>'
+    + '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px"><input type="checkbox" id="klon-evraklar"> Evraklar (bos)</label>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-ihr-klon\')?.remove()">Iptal</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrKlonKaydet(\'' + kaynakDosyaId + '\')">Yeni Emir Olustur</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/** Klonu kaydet ve yeni dosya olustur */
+window._ihrKlonKaydet = function(kaynakId) {
+  var kaynak = _loadD().find(function(x) { return String(x.id) === String(kaynakId); });
+  if (!kaynak) return;
+
+  var yeniId = _genId();
+  // Dosya no: IHR-YIL-SIRA
+  var yil = new Date().getFullYear();
+  var mevcut = _loadD().filter(function(dd) { return !dd.isDeleted; });
+  var sira = mevcut.length + 1;
+  var dosyaNo = 'IHR-' + yil + '-' + String(sira).padStart(3, '0');
+
+  var yeni = {
+    id: yeniId,
+    dosyaNo: dosyaNo,
+    asamaNo: 1,
+    durum: 'taslak',
+    createdAt: _now(),
+    createdBy: _cu()?.id
+  };
+
+  // Musteri bilgileri
+  if (_g('klon-musteri')?.checked) {
+    yeni.musteriAd = kaynak.musteriAd || '';
+    yeni.musteri_mail = kaynak.musteri_mail || '';
+    yeni.musteri_yetkili = kaynak.musteri_yetkili || '';
+    yeni.musteri_tel = kaynak.musteri_tel || '';
+    yeni.musteri_ulke = kaynak.musteri_ulke || '';
+    yeni.musteri_adres = kaynak.musteri_adres || '';
+  }
+  // Paydas
+  if (_g('klon-paydas')?.checked) {
+    yeni.gumrukcu_id = kaynak.gumrukcu_id || '';
+    yeni.forwarder_id = kaynak.forwarder_id || '';
+    yeni.teslim_sekli = kaynak.teslim_sekli || '';
+    yeni.varis_limani = kaynak.varis_limani || '';
+  }
+  // Konteyner
+  if (_g('klon-konteyner')?.checked) {
+    yeni.konteyner_tipi = kaynak.konteyner_tipi || '40HC';
+  }
+
+  // Dosyayi kaydet
+  var dosyalar = _loadD();
+  dosyalar.unshift(yeni);
+  _storeD(dosyalar);
+
+  // Urunleri kopyala (fiyat haric)
+  if (_g('klon-urunler')?.checked) {
+    var kaynakUrunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(kaynakId) && !u.isDeleted; });
+    if (kaynakUrunler.length) {
+      var tumUrunler = _loadU();
+      kaynakUrunler.forEach(function(u) {
+        var kopya = Object.assign({}, u);
+        kopya.id = _genId();
+        kopya.dosya_id = yeniId;
+        kopya.birim_fiyat = null;
+        kopya.toplam_tutar = null;
+        kopya.createdAt = _now();
+        kopya.createdBy = _cu()?.id;
+        tumUrunler.unshift(kopya);
+      });
+      window.storeIhracatUrunler?.(tumUrunler);
+    }
+  }
+
+  window._ihrLog(yeniId, 'Dosya klonlandi (kaynak: ' + (kaynak.dosyaNo || kaynakId) + ')', null, null);
+  window.logActivity?.('ihracat', 'Dosya klonlandi: ' + dosyaNo + ' (kaynak: ' + kaynak.dosyaNo + ')');
+  _g('mo-ihr-klon')?.remove();
+  window.toast?.('Yeni dosya olusturuldu: ' + dosyaNo, 'ok');
+  _ihrAcDosya(yeniId);
+};
+
+// ── BOLUM K/L: Musteri ve Sigortaci Placeholder Render ───────
+/**
+ * Musteri sekmesi render (Asama 3'te detaylandirilacak).
+ * @param {Object} d Dosya objesi
+ * @param {HTMLElement} c Container element
+ */
+window._ihrDetayRenderMusteri = function(d, c) {
+  if (!c) return;
+  var kambiyo = window._ihrKambiyo90?.(d.id);
+  var h = '<div style="padding:16px 20px">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:13px;font-weight:600">Musteri Bilgileri</div><button class="btn btns" onclick="event.stopPropagation();window._ihrMusteriDuzenle?.(\'' + d.id + '\')" style="font-size:10px">Duzenle</button></div>';
+  // Musteri bilgi karti
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+  h += _detayRow('Firma', d.musteriAd || '\u2014');
+  h += _detayRow('Yetkili', d.musteri_yetkili || '\u2014');
+  h += _detayRow('E-posta', d.musteri_mail || '\u2014');
+  h += _detayRow('Telefon', d.musteri_tel || '\u2014');
+  h += _detayRow('Ulke', d.musteri_ulke || '\u2014');
+  h += _detayRow('Adres', d.musteri_adres || '\u2014');
+  h += '</div>';
+  // Kambiyo sayaci
+  if (kambiyo) {
+    var kRenk = kambiyo.durum === 'gecmis' ? '#DC2626' : kambiyo.durum === 'kritik' ? '#DC2626' : kambiyo.durum === 'uyari' ? '#D97706' : '#16A34A';
+    h += '<div style="padding:14px;background:var(--s2);border-radius:10px;margin-bottom:12px">';
+    h += '<div style="font-size:11px;color:var(--t3);margin-bottom:4px">Kambiyo 90 Gun</div>';
+    if (kambiyo.odenmis) {
+      h += '<div style="font-size:20px;font-weight:700;color:#16A34A">Odendi \u2713</div>';
+    } else {
+      h += '<div style="font-size:28px;font-weight:700;color:' + kRenk + '">' + kambiyo.kalanGun + ' gun</div>';
+      h += '<div style="font-size:10px;color:var(--t3)">Son tarih: ' + kambiyo.deadline + '</div>';
+      if (kambiyo.kalanGun <= 15 && kambiyo.kalanGun > 0) h += '<div style="font-size:10px;color:#DC2626;margin-top:4px;font-weight:500">\u26a0 Acil odeme gerekli!</div>';
+    }
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKambiyoOde?.(\'' + d.id + '\')" style="font-size:10px;margin-top:8px">' + (kambiyo.odenmis ? 'Geri Al' : 'Odeme Alindi') + '</button>';
+    h += '</div>';
+  }
+  // Konteyner gauge
+  h += window._ihrKonteynerGauge?.(d.id) || '';
+  h += '</div>';
+  c.innerHTML = h;
+};
+
+/** Kambiyo odeme durumu toggle */
+window._ihrKambiyoOde = function(dosyaId) {
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  d.kambiyo_odenmis = !d.kambiyo_odenmis;
+  d.updatedAt = _now();
+  _storeD(dosyalar);
+  window._ihrLog(dosyaId, d.kambiyo_odenmis ? 'Kambiyo odendi' : 'Kambiyo odeme geri alindi', null, null);
+  window.toast?.(d.kambiyo_odenmis ? 'Kambiyo odendi' : 'Odeme geri alindi', 'ok');
+  _ihrReRender();
+};
+
+/**
+ * Sigortaci sekmesi render (Asama 3'te detaylandirilacak).
+ * @param {Object} d Dosya objesi
+ * @param {HTMLElement} c Container element
+ */
+window._ihrDetayRenderSigortaci = function(d, c) {
+  if (!c) return;
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
+  var malBedeli = 0;
+  urunler.forEach(function(u) { malBedeli += (parseFloat(u.birim_fiyat) || 0) * (parseFloat(u.miktar) || 0); });
+  var navlun = parseFloat(d.navlun_bedeli) || 0;
+  var cifDeger = malBedeli + navlun;
+  var sigortaDeger = cifDeger * 1.10;
+
+  var h = '<div style="padding:16px 20px">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:13px;font-weight:600">Sigortaci Bilgileri</div><button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaciDuzenle?.(\'' + d.id + '\')" style="font-size:10px">Duzenle</button></div>';
+  // Firma bilgi
+  h += _detayRow('Firma', d.sigortaFirma || '\u2014');
+  h += _detayRow('Yetkili', d.sigorta_yetkili || '\u2014');
+  h += _detayRow('E-posta', d.sigorta_mail || '\u2014');
+  h += _detayRow('Telefon', d.sigorta_tel || '\u2014');
+  // Sigorta degeri hesaplama
+  h += '<div style="padding:14px;background:var(--s2);border-radius:10px;margin:12px 0">';
+  h += '<div style="font-size:11px;font-weight:600;margin-bottom:8px">Sigorta Degeri Hesaplama</div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>Mal Bedeli</span><span style="font-family:monospace">' + malBedeli.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + (d.doviz || 'USD') + '</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>+ Navlun</span><span style="font-family:monospace">' + navlun.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-top:1px solid var(--b)"><span>= CIF Deger</span><span style="font-family:monospace;font-weight:500">' + cifDeger.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>+ %10</span><span style="font-family:monospace">' + (cifDeger * 0.10).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid var(--b);font-weight:600;color:#185FA5"><span>Sigorta Degeri</span><span style="font-family:monospace">' + sigortaDeger.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + (d.doviz || 'USD') + '</span></div>';
+  h += '</div>';
+  // Police bilgileri
+  h += '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Police Bilgileri</div>';
+  h += _detayRow('Police No', d.police_no || '\u2014');
+  h += _detayRow('Police Tarihi', d.police_tarihi || '\u2014');
+  h += _detayRow('Bitis Tarihi', d.police_bitis || '\u2014');
+  // Police bitis uyarisi
+  if (d.police_bitis) {
+    var pbGun = Math.ceil((new Date(d.police_bitis) - new Date()) / 86400000);
+    if (pbGun < 0) h += '<div style="font-size:10px;color:#DC2626;margin-top:4px;font-weight:500">\ud83d\udd34 Police suresi dolmus!</div>';
+    else if (pbGun < 15) h += '<div style="font-size:10px;color:#D97706;margin-top:4px">\u26a0 Police suresi ' + pbGun + ' gun kaldi</div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
 };
 
 })();
