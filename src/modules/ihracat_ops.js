@@ -8,7 +8,7 @@
 
 // IHR-06: Kolon yonetimi sabitleri
 var _IHR_KOLON_KEY = 'ak_ihr_kolon_v1';
-var _IHR_KOLON_DEFAULT = ['tedarikciAd','aciklama','standart_urun_adi','miktar','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','mense_ulke','hs_kodu'];
+var _IHR_KOLON_DEFAULT = ['tedarikciAd','proforma_id','urun_kodu','aciklama','standart_urun_adi','fatura_urun_adi','gumrukcu_tanim','mense_ulke','hs_kodu','miktar','birim_fiyat','doviz','kdv_orani','koli_adet','brut_kg','net_kg','hacim_m3','konteyner_sira','etiket_rengi','once_yukle','fatura_turu','alis_fatura_no','alis_fatura_tarihi'];
 var _IHR_KOLON_PRESETS = {
   'CI/PL':  ['tedarikciAd','standart_urun_adi','fatura_urun_adi','aciklama','miktar','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','mense_ulke','hs_kodu'],
   'GCB':    ['tedarikciAd','urun_kodu','aciklama','miktar','birim_fiyat','doviz','mense_ulke','hs_kodu','fatura_turu','gcb_no','gcb_tarih','gcb_kur','gcb_kapandi','gcb_kapama_tarihi'],
@@ -1172,7 +1172,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
       if (SELECT_KOLONLAR[k]) { h += '<td onclick="event.stopPropagation()" style="' + tdS + '"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">'; SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; }); h += '</select></td>'; return; }
       if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace">' + vs + '</td>'; return; }
       if (k === 'kdv_orani') { h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'kdv_orani\',parseFloat(this.value))" style="font-size:10px;border:none;background:transparent;cursor:pointer;text-align:center">'; [0, 1, 5, 10, 18, 20].forEach(function(kv) { h += '<option value="' + kv + '"' + (kdvOrani === kv ? ' selected' : '') + '>%' + kv + '</option>'; }); h += '</select></td>'; return; }
-      h += '<td ondblclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;max-width:' + kol.w + 'px" title="' + vs + '">' + vs + '</td>';
+      h += '<td data-alan="' + k + '" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'' + k + '\')" style="' + tdS + ';cursor:text;max-width:' + kol.w + 'px" title="' + vs + '">' + vs + '</td>';
     });
     h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrUrunSil(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Sil</button></td>';
     h += '</tr>';
@@ -1226,6 +1226,7 @@ window._ihrUrunTopluSil = function(dosyaId) {
       seciliIdler.forEach(function(sid) { var u = urunler.find(function(x) { return String(x.id) === String(sid); }); if (u) { u.isDeleted = true; u.deletedAt = _now(); u.deletedBy = _cu()?.id; } });
       window.storeIhracatUrunler?.(urunler);
       window.toast?.(seciliIdler.length + ' ürün silindi', 'ok');
+      if (_aktifDosyaId) { var _ddTS = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); var _ccTS = _g('ihr-detay-content'); if (_ddTS && _ccTS) { _ihrDetayRenderUrunler(_ddTS, _ccTS); return; } }
       window.renderIhracatOps?.();
     }
   });
@@ -2113,7 +2114,7 @@ window._ihrDogrula = function(dosyaId) {
   mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">CI / PL Doğrulama</div><div style="padding:18px 20px">' + ic + '</div><div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end"><button class="btn btns" onclick="document.getElementById(\'mo-dogrula\')?.remove()">Kapat</button>' + (hatalar.length === 0 ? '<button class="btn btns" onclick="document.getElementById(\'mo-dogrula\')?.remove();window._ihrPdfOnizle(\'' + dosyaId + '\',\'CI\',null)">CI Oluştur</button><button class="btn btnp" onclick="document.getElementById(\'mo-dogrula\')?.remove();window._ihrPdfOnizle(\'' + dosyaId + '\',\'PL\',null)">PL Oluştur</button>' : '') + '</div></div>';
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
-window._ihrUrunSil = function(id) { window.confirmModal?.('Bu ürünü silmek istediğinizden emin misiniz?', { title: 'Ürün Sil', danger: true, confirmText: 'Sil', onConfirm: function() { var u = _loadU(); var item = u.find(function(x) { return String(x.id) === String(id); }); if (item) { item.isDeleted = true; item.deletedAt = _now(); } _storeU(u); window.toast?.('Silindi', 'ok'); window.renderIhracatOps?.(); } }); };
+window._ihrUrunSil = function(id) { window.confirmModal?.('Bu ürünü silmek istediğinizden emin misiniz?', { title: 'Ürün Sil', danger: true, confirmText: 'Sil', onConfirm: function() { var u = _loadU(); var item = u.find(function(x) { return String(x.id) === String(id); }); if (item) { item.isDeleted = true; item.deletedAt = _now(); } _storeU(u); window.toast?.('Silindi', 'ok'); if (_aktifDosyaId) { var _ddUS = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); var _ccUS = _g('ihr-detay-content'); if (_ddUS && _ccUS) { _ihrDetayRenderUrunler(_ddUS, _ccUS); return; } } window.renderIhracatOps?.(); } }); };
 
 // ── GÜMRÜKÇÜ CRUD ────────────────────────────────────────
 function _gmForm(id) {
