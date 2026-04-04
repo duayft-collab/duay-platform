@@ -2771,13 +2771,28 @@ function _verifiedWrite(path, data, retry) {
             console.warn('[SYNC:RETRY]', collection, 'doğrulama başarısız, tekrar deneniyor…', retry + 1);
             _verifiedWrite(path, data, retry + 1);
           } else {
-            _setSyncStatus('error', collection + ' yazma doğrulanamadı');
-            window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
-            window.addNotif?.('🔴', 'Sync hatası: ' + collection + ' doğrulanamadı', 'err', 'admin');
+            // Log koleksiyonları sessizce geç — kullanıcıya hata gösterme
+            var _silentCols = ['activity', 'notifications', 'trash', 'updateLog'];
+            if (_silentCols.indexOf(collection) !== -1) {
+              console.warn('[SYNC:SKIP]', collection, 'doğrulama başarısız — log koleksiyonu, sessizce atlanıyor');
+              _setSyncStatus('ok');
+            } else {
+              _setSyncStatus('error', collection + ' yazma doğrulanamadı');
+              window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
+              window.addNotif?.('🔴', 'Sync hatası: ' + collection + ' doğrulanamadı', 'err', 'admin');
+            }
           }
         }).catch(function(e) {
           if (retry < 2) _verifiedWrite(path, data, retry + 1);
-          else { _setSyncStatus('error', e.message); window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err'); }
+          else {
+            var _silentCols2 = ['activity', 'notifications', 'trash', 'updateLog'];
+            if (_silentCols2.indexOf(collection) === -1) {
+              _setSyncStatus('error', e.message);
+              window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
+            } else {
+              console.warn('[SYNC:SKIP]', collection, 'doğrulama hatası — sessizce atlanıyor');
+            }
+          }
         });
       }, delay);
     })
@@ -2786,9 +2801,14 @@ function _verifiedWrite(path, data, retry) {
       if (retry < 2) {
         setTimeout(function() { _verifiedWrite(path, data, retry + 1); }, 1000);
       } else {
-        _setSyncStatus('error', e.message);
-        _queueOfflineWrite(path, data, 'set');
-        window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
+        var _silentCols3 = ['activity', 'notifications', 'trash', 'updateLog'];
+        if (_silentCols3.indexOf(collection) === -1) {
+          _setSyncStatus('error', e.message);
+          _queueOfflineWrite(path, data, 'set');
+          window.toast?.('Son işleminiz kaydedilemedi — tekrar deneyin', 'err');
+        } else {
+          console.warn('[SYNC:SKIP]', collection, 'yazma hatası — sessizce atlanıyor');
+        }
       }
     });
 }
