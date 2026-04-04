@@ -155,7 +155,7 @@ function initFirebase() {
     FB_DB   = firebase.firestore();
     // Safari performans: cache boyutu sınırla + forceLongPolling
     try {
-      FB_DB.settings({ cacheSizeBytes: 5 * 1024 * 1024, merge: true }); // 5MB cache limit
+      FB_DB.settings({ cacheSizeBytes: 5 * 1024 * 1024, experimentalForceLongPolling: true, merge: true }); // 5MB cache + Safari ITP fix
     } catch(e) {}
     // Safari multi-tab persistence desteklemiyor → synchronizeTabs:false
     FB_DB.enablePersistence({ synchronizeTabs: false }).catch(function(e) {
