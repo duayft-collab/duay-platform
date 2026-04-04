@@ -50,6 +50,7 @@ var token = params.get('token') || '';
 var dosyaId='',firmaId='',firmaAd='',firmaMail='',tip='',ts=0;
 var valid = false;
 try { var d=atob(token).split(':'); dosyaId=d[0]||''; firmaId=d[1]||''; firmaAd=d[2]||''; firmaMail=d[3]||''; tip=d[4]||'navlun'; ts=parseInt(d[5])||0; valid=!!dosyaId&&(Date.now()-ts)<30*86400000; } catch(e) {}
+window._parsedToken = { dosyaId:dosyaId, firmaId:firmaId, firmaAd:firmaAd, firmaMail:firmaMail, tip:tip };
 
 window.tState = { screen:'welcome', fiyat:'', doviz:'USD', gecerlilik:'7', transit:'', notlar:'', file:null };
 var dosyaNo='', musteriAd='', pol='', pod='', kontTipi='', brut='', hacim='';
@@ -104,7 +105,12 @@ function renderDone(el) {
 
 window.tSubmit = function() {
   if(!tState.fiyat){alert('Fiyat zorunlu');return;}
-  var record={id:Date.now().toString(),teklif_id:'TKL-'+Date.now().toString().slice(-6),dosya_id:dosyaId,tip:tip,firma_id:firmaId,firma_ad:firmaAd,firma_mail:firmaMail,fiyat:parseFloat(tState.fiyat)||0,doviz:tState.doviz||'USD',gecerlilik_gun:parseInt(tState.gecerlilik)||7,transit_gun:parseInt(tState.transit)||0,notlar:tState.notlar||'',gonderildi_at:new Date().toISOString(),durum:'beklemede',kilitli:true};
+  var _did = dosyaId || window._parsedToken?.dosyaId || '';
+  var _fid = firmaId || window._parsedToken?.firmaId || '';
+  var _fad = firmaAd || window._parsedToken?.firmaAd || '';
+  var _fml = firmaMail || window._parsedToken?.firmaMail || '';
+  var _tip = tip || window._parsedToken?.tip || 'navlun';
+  var record={id:Date.now().toString(),teklif_id:'TKL-'+Date.now().toString().slice(-6),dosya_id:_did,tip:_tip,firma_id:_fid,firma_ad:_fad,firma_mail:_fml,fiyat:parseFloat(tState.fiyat)||0,doviz:tState.doviz||'USD',gecerlilik_gun:parseInt(tState.gecerlilik)||7,transit_gun:parseInt(tState.transit)||0,notlar:tState.notlar||'',gonderildi_at:new Date().toISOString(),durum:'beklemede',kilitli:true};
   if(fbDb){
     var base='duay_tenant_default';
     fbDb.collection(base).doc('ihracat_teklifler').get().then(function(snap){

@@ -106,6 +106,8 @@ try {
   var age = (Date.now() - timestamp) / 86400000;
   tokenValid = dosyaId && age < 30;
 } catch(e) { tokenValid = false; }
+window._parsedToken = { dosyaId:dosyaId, muhatabAd:muhatabAd, muhatabMail:muhatabMail, muhatabTip:muhatabTip };
+window.state.dosyaId = dosyaId;
 
 // State — window'a at (inline onclick'ler erissin)
 window.state = { screen: 'welcome', tur: '', belgeNo: '', belgeTarih: '', file: null, fileB64: '' };
@@ -208,7 +210,7 @@ window.submitUpload = function() {
   var btn = document.querySelector('.btn-p'); if (btn) { btn.disabled = true; btn.textContent = 'Gonderiliyor...'; }
   var record = {
     id: Date.now().toString(),
-    dosya_id: dosyaId,
+    dosya_id: dosyaId || window.state?.dosyaId || window._parsedToken?.dosyaId || '',
     tur: state.tur,
     belge_no: state.belgeNo,
     belge_tarihi: state.belgeTarih,
