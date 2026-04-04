@@ -463,9 +463,14 @@ function _ihrDetayRenderOzet(d) {
   var _aktifAdim = null;
   _akisAdimlar.forEach(function(adim, idx) {
     var durum = adim.custom ? (adim.custom() ? 'tamam' : 'eksik') : (_evrakDurum(adim.tur) === 'onaylandi' || _evrakDurum(adim.tur) === 'gonderildi' ? 'tamam' : _evrakDurum(adim.tur) ? 'taslak' : 'eksik');
-    var bg = durum === 'tamam' ? '#EAF3DE' : durum === 'taslak' ? '#FAEEDA' : '#F3F4F6';
-    var fg = durum === 'tamam' ? '#16A34A' : durum === 'taslak' ? '#D97706' : '#9CA3AF';
-    var icon = durum === 'tamam' ? '✅' : durum === 'taslak' ? '🟡' : '⬜';
+    // EVRAK-DOSYA-BADGE-001: dosya yuklu mu kontrolu
+    var _adimEvrak = evraklar.find(function(e) { return e.tur === adim.tur; });
+    var _adimDosyaVar = _adimEvrak && _adimEvrak.dosyalar && _adimEvrak.dosyalar.length > 0;
+    var bg, fg, icon;
+    if (durum === 'tamam' && _adimDosyaVar) { bg = '#EAF3DE'; fg = '#16A34A'; icon = '\u2705'; }
+    else if (durum === 'tamam' && !_adimDosyaVar) { bg = '#FEF9C3'; fg = '#D97706'; icon = '\u26a0\ufe0f'; }
+    else if (durum === 'taslak') { bg = '#FAEEDA'; fg = '#D97706'; icon = '\ud83d\udfe1'; }
+    else { bg = '#F3F4F6'; fg = '#9CA3AF'; icon = '\u2b1c'; }
     if (durum === 'eksik' && !_aktifAdim) { _aktifAdim = adim; bg = '#FEF2F2'; fg = '#DC2626'; icon = '🔴'; }
     _akisHtml += '<div style="display:flex;flex-direction:column;align-items:center;min-width:60px">';
     _akisHtml += '<div style="width:32px;height:32px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid ' + fg + '">' + icon + '</div>';
@@ -624,6 +629,14 @@ function _ihrDetayRenderOzet(d) {
     /* Sol: evrak adi + akis (inline editable) + zaman + yukleyen */
     h += '<div style="flex:1;min-width:0">';
     h += '<span style="font-size:12px;font-weight:' + (kayit ? '500' : '400') + ';color:var(--t)">' + _esc(ev.l) + '</span>';
+    // EVRAK-DOSYA-BADGE-001: dosya durumu badge
+    if (kayit && dosyalar.length > 0) {
+      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#EAF3DE;color:#085041;border:0.5px solid #97C459"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A"></span>' + dosyalar.length + ' dosya</span>';
+    } else if (kayit) {
+      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#FAEEDA;color:#633806;border:0.5px solid #EF9F27"><span style="width:6px;height:6px;border-radius:50%;background:#D97706"></span>Dosya Yok</span>';
+    } else {
+      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:var(--s2);color:var(--t3)"><span style="width:6px;height:6px;border-radius:50%;background:var(--t3)"></span>Kayit Yok</span>';
+    }
     if (revNo > 0) h += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">Rev.' + revNo + '</span>';
     h += '<div style="font-size:10px;color:var(--t3)">';
     // Kaynak → Hedef (tiklaninca inline edit)
@@ -655,10 +668,12 @@ function _ihrDetayRenderOzet(d) {
     h += '<button class="btn btns" onclick="window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:2px 8px">Goruntule</button>';
     /* Dosya yukle — dis evraklar Smart OCR, ic evraklar normal */
     var _ocrEvraklar = ['GCB','BL','MENSEI','EUR1','INSP','SIG'];
+    var _yukBtnMetin = (dosyalar.length > 0) ? '+ Ekle' : 'Yukle';
+    var _yukBtnStil = (dosyalar.length > 0) ? 'color:#16A34A;border-color:#97C459' : 'color:#185FA5';
     if (_ocrEvraklar.indexOf(ev.tur) !== -1) {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;' + _yukBtnStil + '">' + _yukBtnMetin + '</button>';
     } else {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;' + _yukBtnStil + '">' + _yukBtnMetin + '</button>';
     }
     if (kayit && kayit.dosya_url) {
       h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:2px 8px;text-decoration:none">Indir</a>';
