@@ -629,13 +629,14 @@ function _ihrDetayRenderOzet(d) {
     /* Sol: evrak adi + akis (inline editable) + zaman + yukleyen */
     h += '<div style="flex:1;min-width:0">';
     h += '<span style="font-size:12px;font-weight:' + (kayit ? '500' : '400') + ';color:var(--t)">' + _esc(ev.l) + '</span>';
-    // EVRAK-DOSYA-BADGE-001: dosya durumu badge
-    if (kayit && dosyalar.length > 0) {
-      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#EAF3DE;color:#085041;border:0.5px solid #97C459"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A"></span>' + dosyalar.length + ' dosya</span>';
+    // EVRAK-DOSYA-BADGE-001: dosya durumu badge (dosya_url fallback dahil)
+    var _topDosya = dosyalar.length + ((kayit && kayit.dosya_url && !dosyalar.length) ? 1 : 0);
+    if (kayit && _topDosya > 0) {
+      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#EAF3DE;color:#085041;border:0.5px solid #97C459;vertical-align:middle"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A"></span>' + _topDosya + ' dosya</span>';
     } else if (kayit) {
-      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#FAEEDA;color:#633806;border:0.5px solid #EF9F27"><span style="width:6px;height:6px;border-radius:50%;background:#D97706"></span>Dosya Yok</span>';
+      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#FAEEDA;color:#633806;border:0.5px solid #EF9F27;vertical-align:middle"><span style="width:6px;height:6px;border-radius:50%;background:#D97706"></span>Dosya yok</span>';
     } else {
-      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:var(--s2);color:var(--t3)"><span style="width:6px;height:6px;border-radius:50%;background:var(--t3)"></span>Kayit Yok</span>';
+      h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:var(--s2);color:var(--t3);vertical-align:middle"><span style="width:6px;height:6px;border-radius:50%;background:var(--t3)"></span>Kayit Yok</span>';
     }
     if (revNo > 0) h += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">Rev.' + revNo + '</span>';
     h += '<div style="font-size:10px;color:var(--t3)">';
@@ -717,11 +718,17 @@ function _ihrDetayRenderOzet(d) {
     var dosyalar2 = ev.dosyalar || [];
     h += '<div style="padding:8px 12px;border-radius:8px;border:0.5px solid var(--b);background:var(--s2);margin-bottom:5px">';
     h += '<div style="display:flex;align-items:center;justify-content:space-between">';
+    var _ozelDosyaUrl = ev.dosya_url;
+    var _ozelTopDosya = dosyalar2.length + (_ozelDosyaUrl && !dosyalar2.length ? 1 : 0);
     h += '<div><span style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(ev.belge_adi || ev.tur) + '</span>';
+    if (_ozelTopDosya > 0) h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#EAF3DE;color:#085041;border:0.5px solid #97C459;vertical-align:middle"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A"></span>' + _ozelTopDosya + ' dosya</span>';
+    else h += '<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:500;margin-left:6px;background:#FAEEDA;color:#633806;border:0.5px solid #EF9F27;vertical-align:middle"><span style="width:6px;height:6px;border-radius:50%;background:#D97706"></span>Dosya yok</span>';
     if (dosyalar2.length) h += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">Rev.' + dosyalar2.length + '</span>';
     h += '<div style="font-size:10px;color:var(--t3)">' + _esc(ev.kaynak || '') + ' \u2192 ' + _esc(ev.hedef || '') + '</div></div>';
     h += '<div style="display:flex;gap:4px">';
-    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;color:#185FA5">Yukle</button>';
+    var _ozelBtnMetin = _ozelTopDosya > 0 ? '+ Ekle' : 'Yukle';
+    var _ozelBtnStil = _ozelTopDosya > 0 ? 'color:#085041;border-color:#97C459' : 'color:#633806;border-color:#EF9F27';
+    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;' + _ozelBtnStil + '">' + _ozelBtnMetin + '</button>';
     h += '</div></div></div>';
   });
   // + Belge Ekle butonu
