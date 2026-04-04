@@ -516,6 +516,20 @@ window._ihrGeriDon = function() { _aktifDosyaId = null; _ihrRenderContent(); };
 
 function _ihrDetayRenderOzet(d) {
   var c = _g('ihr-detay-content'); if (!c) return;
+
+  /* COCKPIT-FIX-001: Ust bar, timeline ve sekme barini gizle — cockpit kendi topbar'ini kullaniyor */
+  var _ihrContent = _g('ihr-content');
+  if (_ihrContent) {
+    var _kids = _ihrContent.children;
+    for (var _ki = 0; _ki < _kids.length; _ki++) {
+      var _kid = _kids[_ki];
+      if (_kid.id === 'ihr-detay-content') continue;
+      _kid.style.display = 'none';
+    }
+  }
+  /* Content padding'i kaldir — cockpit tam ekran */
+  c.style.padding = '0';
+
   var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi' || e.durum === 'tamamlandi'; }).length;
   var gcbList = _loadG().filter(function(g) { return String(g.dosya_id) === String(d.id) && !g.isDeleted; });
@@ -570,7 +584,11 @@ function _ihrDetayRenderOzet(d) {
   };
 
   /* Kesin px yukseklik — Safari calc() sorunu icin */
-  var _cockpitH = window.innerHeight - 247;
+  /* Runtime'da kalan alani hesapla: content div'in ustundeki her seyi olc */
+  var _cockpitH = window.innerHeight;
+  if (c && c.getBoundingClientRect) {
+    _cockpitH = window.innerHeight - Math.round(c.getBoundingClientRect().top);
+  }
   if (_cockpitH < 340) _cockpitH = 340;
 
   /* ═══════════════════════════════════════════════════════════
@@ -835,6 +853,20 @@ function _ihrDetayRenderOzet(d) {
 
 window._ihrDetayTab = function(tab, id) {
   var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) return;
+
+  /* COCKPIT-FIX-001: Cockpit disindaki sekmelere gecerken gizlenen elementleri geri getir */
+  if (tab !== 'ozet') {
+    var _ihrContent = _g('ihr-content');
+    if (_ihrContent) {
+      var _kids = _ihrContent.children;
+      for (var _ri = 0; _ri < _kids.length; _ri++) {
+        _kids[_ri].style.display = '';
+      }
+    }
+    var _cc = _g('ihr-detay-content');
+    if (_cc) _cc.style.padding = '16px 20px';
+  }
+
   document.querySelectorAll('#ihr-detay-tabs > div').forEach(function(b) { b.style.borderBottomColor = 'transparent'; b.style.color = 'var(--t2)'; b.style.fontWeight = '400'; });
   var active = _g('ihr-dt-' + tab); if (active) { active.style.borderBottomColor = 'var(--ac)'; active.style.color = 'var(--ac)'; active.style.fontWeight = '500'; }
   var c = _g('ihr-detay-content'); if (!c) return;
