@@ -145,8 +145,10 @@ function _processImageFile(file) {
     var b64Full = ev.target.result;
     var b64Data = b64Full.split(',')[1] || b64Full;
     var mediaType = file.type || 'image/jpeg';
-    // API key — window.__ANTHROPIC_KEY veya localStorage
-    var apiKey = window.__ANTHROPIC_KEY || localStorage.getItem('ak_anthropic_key') || '';
+    // API key — btoa ile sifreli saklanir
+    var _storedKey = localStorage.getItem('ak_anthropic_key');
+    var apiKey = _storedKey ? (function() { try { return atob(_storedKey); } catch(e) { return _storedKey; } })() : '';
+    if (!apiKey) apiKey = window.__ANTHROPIC_KEY || '';
     if (!apiKey) {
       // API key yoksa kullanicidan iste
       if (body) body.innerHTML = '<div style="padding:24px;text-align:center">'

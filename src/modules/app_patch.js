@@ -4380,3 +4380,109 @@ window._saveUrunInline = function() {
     }
   }, 1000);
 })();
+
+// ══ API-KEY-001: Ayarlar Entegrasyonlar ══════════════════════
+window._saveAnthropicKey = function() {
+  var val = document.getElementById('set-anthropic-key')?.value?.trim();
+  if (!val || val.indexOf('\u25cf') !== -1) { window.toast?.('Gecersiz key', 'err'); return; }
+  if (val.indexOf('sk-ant-') !== 0) { window.toast?.('sk-ant- ile baslamali', 'err'); return; }
+  try { localStorage.setItem('ak_anthropic_key', btoa(val)); } catch(e) { window.toast?.('Kayit hatasi', 'err'); return; }
+  window.toast?.('API key kaydedildi', 'ok');
+  window._renderEntegrasyonlar?.();
+};
+window._clearAnthropicKey = function() {
+  window.confirmModal?.('API key silinecek. Devam?', { danger:true, confirmText:'Sil', onConfirm:function() {
+    localStorage.removeItem('ak_anthropic_key');
+    window.toast?.('API key silindi', 'ok');
+    window._renderEntegrasyonlar?.();
+  }});
+};
+window._renderEntegrasyonlar = function() {
+  var panel = document.getElementById('panel-settings');
+  if (!panel) return;
+  var storedKey = localStorage.getItem('ak_anthropic_key');
+  var hasKey = !!storedKey;
+  var h = '<div style="max-width:600px;margin:0 auto;padding:24px">';
+  h += '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:16px">Entegrasyonlar</div>';
+  h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:16px">';
+  h += '<div style="font-size:13px;font-weight:500;margin-bottom:4px">Anthropic API Key</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:10px">OCR belge okuma ve Smart Evrak analizi icin gereklidir.</div>';
+  h += '<input type="password" class="fi" id="set-anthropic-key" placeholder="sk-ant-..." value="' + (hasKey ? '\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf\u25cf' : '') + '" style="width:100%;font-family:monospace;margin-bottom:8px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">';
+  h += '<div style="display:flex;gap:8px;align-items:center">';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();window._saveAnthropicKey()" style="font-size:11px">Kaydet</button>';
+  if (hasKey) h += '<button class="btn btns btnd" onclick="event.stopPropagation();window._clearAnthropicKey()" style="font-size:11px">Temizle</button>';
+  h += '<span style="font-size:11px;color:' + (hasKey ? '#16A34A' : '#D97706') + ';font-weight:500">' + (hasKey ? 'Kayitli \u2713' : 'Girilmedi') + '</span>';
+  h += '</div></div>';
+  h += '</div>';
+  panel.innerHTML = h;
+};
+
+// Settings navigasyonu — app_patch render map'e ekle
+(function() {
+  if (typeof _TN2_GROUPS !== 'undefined' && _TN2_GROUPS.sistem && Array.isArray(_TN2_GROUPS.sistem.mods)) {
+    // Settings zaten var, render'i override et
+  }
+  // settings paneli acilinca entegrasyonlar render
+  var origRenders = window._patchedRenders;
+  if (origRenders && !origRenders.settings) {
+    origRenders.settings = function() { window._renderEntegrasyonlar?.(); };
+  }
+})();
+
+// ══ TOPBAR-LINK-001: Hizli erisim kisayollari ════════════════
+var _QL_KEY = 'ak_quicklinks';
+function _loadQL() { try { return JSON.parse(localStorage.getItem(_QL_KEY) || '[]'); } catch(e) { return []; } }
+function _storeQL(d) { localStorage.setItem(_QL_KEY, JSON.stringify(d.slice(0, 10))); }
+
+(function() {
+  setTimeout(function() {
+    var topRight = document.querySelector('.tn2-right,.nav-right,.topbar-right,[data-topbar-right]');
+    if (!topRight) topRight = document.querySelector('.tn2-bar > div:last-child,.topbar > div:last-child');
+    if (!topRight || topRight.querySelector('[data-quicklink-btn]')) return;
+    var btn = document.createElement('div');
+    btn.dataset.quicklinkBtn = '1';
+    btn.style.cssText = 'position:relative;cursor:pointer;display:flex;align-items:center';
+    btn.innerHTML = '<div style="width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--s2);color:var(--t2)" title="Hizli Erisim">\u2606</div>';
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      var dd = btn.querySelector('.ql-dropdown');
+      if (dd) { dd.remove(); return; }
+      var links = _loadQL();
+      var dropdown = document.createElement('div');
+      dropdown.className = 'ql-dropdown';
+      dropdown.style.cssText = 'position:absolute;top:100%;right:0;width:220px;background:var(--sf);border:1px solid var(--b);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;padding:8px 0;margin-top:4px';
+      var dh = '<div style="padding:4px 12px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Kisayollar</div>';
+      if (!links.length) dh += '<div style="padding:12px;font-size:11px;color:var(--t3);text-align:center">Henuz kisayol yok</div>';
+      links.forEach(function(l, i) {
+        dh += '<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+        dh += '<span onclick="event.stopPropagation();' + (l.tip === 'dis' ? 'window.open(\'' + l.url.replace(/'/g, "\\'") + '\')' : 'window.App?.nav?.(\'' + l.url + '\')') + '" style="flex:1;font-size:11px;color:var(--t)">' + (typeof escapeHtml === 'function' ? escapeHtml(l.ad) : l.ad) + '</span>';
+        dh += '<span onclick="event.stopPropagation();window._qlSil(' + i + ')" style="font-size:10px;color:var(--t3);cursor:pointer">\u2717</span>';
+        dh += '</div>';
+      });
+      dh += '<div style="border-top:1px solid var(--b);padding:6px 12px;margin-top:4px"><button onclick="event.stopPropagation();window._qlEkle()" style="width:100%;padding:6px;border:1px dashed var(--b);border-radius:6px;background:none;font-size:10px;color:var(--t3);cursor:pointer;font-family:inherit">+ Kisayol Ekle</button></div>';
+      dropdown.innerHTML = dh;
+      btn.appendChild(dropdown);
+      setTimeout(function() { document.addEventListener('click', function _qlClose() { dropdown.remove(); document.removeEventListener('click', _qlClose); }); }, 10);
+    };
+    topRight.insertBefore(btn, topRight.firstChild);
+  }, 1500);
+})();
+
+window._qlEkle = function() {
+  var ad = prompt('Kisayol adi:'); if (!ad) return;
+  var url = prompt('Hedef (modul adi veya URL):', 'dashboard'); if (!url) return;
+  var tip = url.indexOf('http') === 0 ? 'dis' : 'ic';
+  var links = _loadQL();
+  links.push({ ad: ad.trim(), url: url.trim(), tip: tip });
+  _storeQL(links);
+  window.toast?.('Kisayol eklendi', 'ok');
+};
+window._qlSil = function(idx) {
+  var links = _loadQL();
+  links.splice(idx, 1);
+  _storeQL(links);
+  window.toast?.('Kisayol silindi', 'ok');
+  // Dropdown'u yenile
+  var btn = document.querySelector('[data-quicklink-btn]');
+  if (btn) { var dd = btn.querySelector('.ql-dropdown'); if (dd) dd.remove(); btn.click(); }
+};

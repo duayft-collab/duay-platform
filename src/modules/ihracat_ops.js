@@ -2711,7 +2711,8 @@ function _smartOcrModal(dosyaId, evrakTur, b64Full, b64Data, mediaType, file, oc
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 
   // API key
-  var apiKey = window.__ANTHROPIC_KEY || localStorage.getItem('ak_anthropic_key') || '';
+  var _storedKey2 = localStorage.getItem('ak_anthropic_key');
+  var apiKey = _storedKey2 ? (function() { try { return atob(_storedKey2); } catch(e) { return _storedKey2; } })() : (window.__ANTHROPIC_KEY || '');
   if (!apiKey) {
     var right = _g('smart-ocr-right');
     if (right) right.innerHTML = '<div style="padding:16px"><div style="font-size:12px;font-weight:500;margin-bottom:8px">API Key Gerekli</div><input class="fi" id="socr-key" placeholder="sk-ant-..." style="width:100%;margin-bottom:8px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"><button class="btn btnp" onclick="event.stopPropagation();var k=document.getElementById(\'socr-key\')?.value;if(k){localStorage.setItem(\'ak_anthropic_key\',k);document.getElementById(\'mo-smart-evrak\')?.remove();window._ihrSmartEvrakYukle(\'' + dosyaId + '\',\'' + evrakTur + '\');}">Kaydet</button></div>';
