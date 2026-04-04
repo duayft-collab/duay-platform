@@ -7,8 +7,8 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'duay-platform-v11';
-const CACHE_VERSION = '11.0.0';
+const CACHE_NAME    = 'duay-platform-v12';
+const CACHE_VERSION = '12.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
@@ -123,7 +123,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Statik dosyalar → Cache-First, arka planda güncelle (Stale-While-Revalidate)
+  // Statik dosyalar → Network-First, offline'da cache fallback
   if (
     request.method === 'GET' && (
       url.pathname.endsWith('.js')  ||
@@ -135,14 +135,10 @@ self.addEventListener('fetch', event => {
   ) {
     event.respondWith(
       caches.open(CACHE_NAME).then(cache =>
-        cache.match(request).then(cached => {
-          const networkFetch = fetch(request).then(response => {
-            if (response.ok) cache.put(request, response.clone());
-            return response;
-          }).catch(() => null);
-
-          return cached || networkFetch;
-        })
+        fetch(request).then(response => {
+          if (response.ok) cache.put(request, response.clone());
+          return response;
+        }).catch(() => cache.match(request))
       )
     );
     return;
