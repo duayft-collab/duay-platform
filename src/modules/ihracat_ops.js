@@ -1902,13 +1902,17 @@ window._ihrDetayRenderEvraklar = function(d, c) {
 
     /* CI Arsiv listesi */
     if (arsivCI.length > 0) {
-      h += '<div style="padding:6px 14px;border-top:0.5px solid var(--b);background:#FAEEDA11">';
-      h += '<div style="font-size:9px;color:var(--t3);margin-bottom:4px">Arsiv (' + arsivCI.length + ' eski CI)</div>';
+      h += '<div style="padding:8px 14px;border-top:0.5px solid var(--b);background:#FAEEDA22">';
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+      h += '<span style="font-size:10px;color:#633806;font-weight:500">Arsiv (' + arsivCI.length + ' eski CI)</span>';
+      h += '<button onclick="event.stopPropagation();window._ihrCIArsivTumunuSil?.(\'' + d.id + '\')" style="background:none;border:0.5px solid #DC2626;border-radius:4px;color:#DC2626;cursor:pointer;font-size:9px;padding:2px 8px;font-family:inherit">Tumunu Sil</button>';
+      h += '</div>';
       arsivCI.forEach(function(ac) {
-        h += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:10px;opacity:.6">';
-        h += '<span style="flex:1">' + _esc(ac.createdAt || '').slice(0, 10) + '</span>';
-        if (ac.dosya_url) h += '<a href="' + _esc(ac.dosya_url) + '" target="_blank" style="color:#185FA5;font-size:9px;text-decoration:none">Indir</a>';
-        h += '<button onclick="event.stopPropagation();window._ihrEvrakArsivSil?.(\'' + ac.id + '\',\'' + d.id + '\')" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:9px">\u2717</button>';
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--b);font-size:10px">';
+        h += '<span style="color:var(--t3);font-family:monospace">' + _esc(ac.createdAt || '').slice(0, 10) + '</span>';
+        h += '<span style="flex:1;color:var(--t2)">' + _esc(ac.durum || 'taslak') + '</span>';
+        if (ac.dosya_url) h += '<a href="' + _esc(ac.dosya_url) + '" target="_blank" style="color:#185FA5;font-size:10px;text-decoration:none">Indir</a>';
+        h += '<button onclick="event.stopPropagation();window._ihrEvrakArsivSil?.(\'' + ac.id + '\',\'' + d.id + '\')" class="btn btns btnd" style="font-size:9px;padding:2px 6px;color:#DC2626">Sil</button>';
         h += '</div>';
       });
       h += '</div>';
@@ -1932,7 +1936,26 @@ window._ihrDetayRenderEvraklar = function(d, c) {
   c.innerHTML = h;
 };
 
-/** CI arsiv silme */
+/** CI arsiv tumunu sil */
+window._ihrCIArsivTumunuSil = function(dosyaId) {
+  var evraklar = _loadE();
+  var ciAll = evraklar.filter(function(e) { return String(e.dosya_id) === String(dosyaId) && e.tur === 'CI' && !e.isDeleted; });
+  ciAll.sort(function(a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+  var arsivler = ciAll.slice(1);
+  if (!arsivler.length) { window.toast?.('Silinecek arsiv yok', 'warn'); return; }
+  window.confirmModal?.(arsivler.length + ' arsiv CI silinecek?', {
+    title: 'Arsiv Temizle', danger: true, confirmText: 'Tumunu Sil',
+    onConfirm: function() {
+      arsivler.forEach(function(ac) { ac.isDeleted = true; ac.deletedAt = _now(); });
+      _storeE(evraklar);
+      window._ihrLog(dosyaId, arsivler.length + ' CI arsiv silindi', null, 'CI');
+      window.toast?.(arsivler.length + ' arsiv silindi', 'ok');
+      _ihrReRender();
+    }
+  });
+};
+
+/** CI arsiv tek silme */
 window._ihrEvrakArsivSil = function(evrakId, dosyaId) {
   window.confirmModal?.('Bu arsiv CI silinsin mi?', {
     title: 'Arsiv Sil', danger: true, confirmText: 'Sil',
