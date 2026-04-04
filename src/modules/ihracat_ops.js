@@ -7,21 +7,23 @@
 'use strict';
 
 // IHR-06: Kolon yonetimi sabitleri
-var _IHR_KOLON_KEY = 'ak_ihr_kolon_v2';
+var _IHR_KOLON_KEY = 'ak_ihr_kolon_v3';
 // Is akisi sirasina gore varsayilan kolonlar — en sik kullanilan 24 alan
 var _IHR_KOLON_DEFAULT = [
-  // G1 Kimlik
-  'tedarikciAd','urun_kodu','aciklama','standart_urun_adi','gumrukcu_tanim',
-  // G2 Fiyat
-  'miktar','birim_fiyat','doviz','fatura_turu','kdv_orani',
-  // G3 Ambalaj
+  // G1 Kimlik (6)
+  'tedarikciAd','urun_kodu','aciklama','standart_urun_adi','fatura_urun_adi','gumrukcu_tanim',
+  // G2 Fiyat (7)
+  'miktar','birim','birim_fiyat','doviz','fatura_turu','kdv_orani','toplam_tutar',
+  // G3 Ambalaj (4)
   'koli_adet','brut_kg','net_kg','hacim_m3',
-  // G5 Gumruk
-  'mense_ulke','hs_kodu',
-  // G6 Yukleme
-  'konteyner_sira','etiket_rengi','once_yukle','konteyner_no','muhur_no',
-  // G7 Alim
-  'alis_fatura_no','alis_fatura_tarihi'
+  // G5 Gumruk (3)
+  'mense_ulke','hs_kodu','imo_gerekli',
+  // G6 Yukleme (7)
+  'konteyner_sira','etiket_rengi','once_yukle','konteyner_no','muhur_no','yukleme_durumu','stok_durumu',
+  // G7 GCB & Ihracat (4)
+  'alis_fatura_no','alis_fatura_tarihi','gcb_no','gcb_durum',
+  // G8 Durum (2)
+  'musteri_onay','duay_onay'
 ];
 // IHR-KOLON-V3: Grup isimleri
 var _IHR_GRUP_AD = {
@@ -1073,9 +1075,9 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'teklif_tarihi',     l:'Teklif Tarihi',                   en:'Offer Date',              g:2, ro:false, w:85,  filtre:true,  bos:true },
     { k:'miktar',            l:'Miktar',                          en:'Quantity',                g:2, ro:false, w:75,  filtre:false, bos:true },
     { k:'birim',             l:'Birim',                           en:'Unit Type',               g:2, ro:false, w:55,  filtre:true,  bos:true },
-    { k:'kdv_orani',         l:'KDV Orani',                       en:'VAT Rate %',              g:2, ro:false, w:55,  filtre:true,  bos:false },
-    { k:'doviz',             l:'Doviz',                           en:'Currency',                g:2, ro:false, w:50,  filtre:true,  bos:false },
-    { k:'doviz_kur',         l:'Doviz Kuru (TRY)',                en:'Currency Rate TRY',       g:2, ro:false, w:75,  filtre:false, bos:true },
+    { k:'kdv_orani',         l:'KDV Orani',                       en:'VAT Rate %',              g:2, ro:false, w:70,  filtre:true,  bos:false },
+    { k:'doviz',             l:'Doviz',                           en:'Currency',                g:2, ro:false, w:65,  filtre:true,  bos:false },
+    { k:'doviz_kur',         l:'Doviz Kuru (TRY)',                en:'Currency Rate TRY',       g:2, ro:false, w:85,  filtre:false, bos:true },
     { k:'ihracat_kur',       l:'Ihracat Kuru',                    en:'Export Rate',             g:2, ro:false, w:70,  filtre:false, bos:true },
     { k:'birim_fiyat',       l:'Birim Fiyat',                     en:'Unit Price',              g:2, ro:false, w:95,  filtre:false, bos:true },
     { k:'toplam_tutar',      l:'Toplam (KDV Haric)',              en:'Total Excl. Tax TRY',     g:2, ro:true,  w:95,  filtre:false, bos:false },
@@ -1084,14 +1086,14 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'doviz_toplami',     l:'Doviz Toplami',                   en:'Currency Total',          g:2, ro:true,  w:85,  filtre:false, bos:false },
 
     /* ══ G3 — AMBALAJ & AGIRLIK ═════════════════════════════ */
-    { k:'koli_adet',         l:'Koli Adedi',                      en:'Package Qty (Ctns)',      g:3, ro:false, w:65,  filtre:false, bos:true },
+    { k:'koli_adet',         l:'Koli Adedi',                      en:'Package Qty (Ctns)',      g:3, ro:false, w:75,  filtre:false, bos:true },
     { k:'ambalaj_tipi',      l:'Ambalaj Tipi',                    en:'Package Type',            g:3, ro:false, w:80,  filtre:true,  bos:true },
     { k:'birim_brut_kg',     l:'1 Urun Brut (KG)',                en:'1 Pcs Gross Weight',      g:3, ro:false, w:80,  filtre:false, bos:true },
-    { k:'brut_kg',           l:'Toplam Brut (KG)',                en:'Total Gross KG',          g:3, ro:true,  w:80,  filtre:false, bos:false },
+    { k:'brut_kg',           l:'Toplam Brut (KG)',                en:'Total Gross KG',          g:3, ro:true,  w:90,  filtre:false, bos:false },
     { k:'birim_net_kg',      l:'1 Urun Net (KG)',                 en:'1 Pcs Net Weight',        g:3, ro:false, w:75,  filtre:false, bos:true },
-    { k:'net_kg',            l:'Toplam Net (KG)',                 en:'Total Net KG',            g:3, ro:true,  w:75,  filtre:false, bos:false },
+    { k:'net_kg',            l:'Toplam Net (KG)',                 en:'Total Net KG',            g:3, ro:true,  w:90,  filtre:false, bos:false },
     { k:'koli_olcu',         l:'1 Koli Olculeri',                 en:'1 Pkg Dimensions',        g:3, ro:false, w:90,  filtre:false, bos:true },
-    { k:'hacim_m3',          l:'Toplam Hacim (m3)',               en:'Total CBM',               g:3, ro:true,  w:70,  filtre:false, bos:false },
+    { k:'hacim_m3',          l:'Toplam Hacim (m3)',               en:'Total CBM',               g:3, ro:true,  w:85,  filtre:false, bos:false },
 
     /* ══ G4 — HAMMADDE ══════════════════════════════════════ */
     { k:'hammadde_adi',      l:'Hammadde Adi',                    en:'Raw Material',            g:4, ro:false, w:110, filtre:false, bos:true },
@@ -1100,8 +1102,8 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'hammadde_kaynak',   l:'Fiyat Kaynagi',                   en:'Price Source',            g:4, ro:false, w:90,  filtre:false, bos:true },
 
     /* ══ G5 — GUMRUK & SINIFLANDIRMA ════════════════════════ */
-    { k:'mense_ulke',        l:'Mensei Ulke',                     en:'Country of Origin',       g:5, ro:false, w:80,  filtre:true,  bos:true },
-    { k:'hs_kodu',           l:'GTIP / HS Kodu',                  en:'HS Code',                 g:5, ro:false, w:95,  filtre:false, bos:true },
+    { k:'mense_ulke',        l:'Mensei Ulke',                     en:'Country of Origin',       g:5, ro:false, w:90,  filtre:true,  bos:true },
+    { k:'hs_kodu',           l:'GTIP / HS Kodu',                  en:'HS Code',                 g:5, ro:false, w:100, filtre:false, bos:true },
     { k:'gumrukcu_tanim',    l:'Gumrukcu Tanimi',                  en:'Customs Description',     g:5, ro:false, w:140, filtre:false, bos:true },
     { k:'imo_gerekli',       l:'IMO Gerekli Mi?',                 en:'IMO Required',            g:5, ro:false, w:65,  filtre:true,  bos:true },
     { k:'imo_no',            l:'IMO No',                          en:'IMO Number',              g:5, ro:false, w:75,  filtre:false, bos:true },
@@ -1205,16 +1207,17 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   var stickyBgH = 'var(--s2)';
   h += '<div style="overflow:auto;border:0.5px solid var(--b);border-radius:8px;max-height:calc(100vh - 280px)">';
   h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
-  /* THEAD — Model C: grup bant + TR/EN iki satir */
+  /* THEAD — Model C: grup bant + dile gore tek satir baslik */
+  var _dil = localStorage.getItem('ak_lang') || 'tr';
   var _GRUP_RENK = {
-    1: { bg:'#E6F1FB', c:'#0C447C', l:'Urun Kimligi' },
-    2: { bg:'#FAEEDA', c:'#633806', l:'Fiyat & Teklif' },
-    3: { bg:'#EAF3DE', c:'#085041', l:'Ambalaj' },
-    4: { bg:'#F3E8FF', c:'#6B21A8', l:'Hammadde' },
-    5: { bg:'#FCE7F3', c:'#9D174D', l:'Gumruk' },
-    6: { bg:'#E0F2FE', c:'#075985', l:'Lojistik' },
-    7: { bg:'#FEF3C7', c:'#854D0E', l:'GCB & Ihracat' },
-    8: { bg:'var(--s2)', c:'var(--t3)', l:'Durum' }
+    1: { bg:'#E6F1FB', c:'#0C447C', tr:'Urun Kimligi',         en:'Product Identity' },
+    2: { bg:'#FAEEDA', c:'#633806', tr:'Fiyat & Teklif',        en:'Price & Offer' },
+    3: { bg:'#EAF3DE', c:'#085041', tr:'Ambalaj',               en:'Packaging' },
+    4: { bg:'#F3E8FF', c:'#6B21A8', tr:'Hammadde',              en:'Raw Material' },
+    5: { bg:'#FCE7F3', c:'#9D174D', tr:'Gumruk',                en:'Customs' },
+    6: { bg:'#E0F2FE', c:'#075985', tr:'Lojistik',              en:'Logistics' },
+    7: { bg:'#FEF3C7', c:'#854D0E', tr:'GCB & Ihracat',         en:'GCB & Export' },
+    8: { bg:'var(--s2)', c:'var(--t3)', tr:'Durum',              en:'Status' }
   };
   // Gorunen kolonlarin grup colspan'larini hesapla (sticky haric)
   var _grpColspans = {};
@@ -1229,27 +1232,25 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   var _gbS = 'padding:3px 8px;font-size:9px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;border-right:0.5px solid rgba(0,0,0,.06)';
   h += '<tr style="position:sticky;top:0;z-index:5">';
   h += '<th style="position:sticky;left:0;z-index:6;background:' + stickyBgH + ';width:28px;min-width:28px;' + _gbS + ';border-right:2px solid var(--b)" rowspan="2"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
-  h += '<th colspan="3" style="position:sticky;left:28px;z-index:6;background:#E6F1FB;color:#0C447C;' + _gbS + ';border-right:2px solid var(--b)">Urun Kimligi</th>';
+  h += '<th colspan="3" style="position:sticky;left:28px;z-index:6;background:#E6F1FB;color:#0C447C;' + _gbS + ';border-right:2px solid var(--b)">' + (_dil === 'en' ? 'Product Identity' : 'Urun Kimligi') + '</th>';
   // Gruplar sirali
   var _grpSira = [1,2,3,4,5,6,7,8];
   _grpSira.forEach(function(g) {
     var cs = _grpColspans[g] || 0;
     if (!cs) return;
     var gr = _GRUP_RENK[g] || _GRUP_RENK[8];
-    h += '<th colspan="' + cs + '" style="background:' + gr.bg + ';color:' + gr.c + ';' + _gbS + '">' + gr.l + '</th>';
+    h += '<th colspan="' + cs + '" style="background:' + gr.bg + ';color:' + gr.c + ';' + _gbS + '">' + (_dil === 'en' ? gr.en : gr.tr) + '</th>';
   });
   h += '<th style="width:50px;min-width:50px;' + _gbS + ';background:var(--s2)" rowspan="2"></th>';
   h += '</tr>';
 
-  /* Satir 2 — TR/EN kolon basliklari */
-  var _thWr = 'display:flex;flex-direction:column;gap:1px';
-  var _thTr = 'font-size:10px;font-weight:500;color:var(--t2);line-height:1.2';
-  var _thEn = 'font-size:8px;color:var(--t3);font-weight:400';
+  /* Satir 2 — Dile gore tek satirli kolon basliklari */
+  var _thS2 = 'font-size:10px;font-weight:500;color:var(--t2);line-height:1.3;white-space:nowrap';
   h += '<tr style="position:sticky;top:24px;z-index:4">';
   /* 3 sticky kolon */
-  h += '<th style="position:sticky;left:28px;z-index:5;background:' + stickyBgH + ';width:120px;min-width:120px;padding:5px 8px;border-right:0.5px solid var(--b);vertical-align:top"><div style="' + _thWr + '"><span style="' + _thTr + '">Tedarikci</span><span style="' + _thEn + '">Vendor</span></div></th>';
-  h += '<th style="position:sticky;left:148px;z-index:5;background:' + stickyBgH + ';width:90px;min-width:90px;padding:5px 8px;border-right:0.5px solid var(--b);vertical-align:top"><div style="' + _thWr + '"><span style="' + _thTr + '">Urun Kodu</span><span style="' + _thEn + '">Product Code</span></div></th>';
-  h += '<th style="position:sticky;left:238px;z-index:5;background:' + stickyBgH + ';width:220px;min-width:220px;padding:5px 8px;border-right:2px solid var(--b);vertical-align:top"><div style="' + _thWr + '"><span style="' + _thTr + '">Urun Adi</span><span style="' + _thEn + '">Product Name</span></div></th>';
+  h += '<th style="position:sticky;left:28px;z-index:5;background:' + stickyBgH + ';width:120px;min-width:120px;padding:5px 8px;border-right:0.5px solid var(--b)"><span style="' + _thS2 + '">' + (_dil === 'en' ? 'Vendor' : 'Tedarikci') + '</span></th>';
+  h += '<th style="position:sticky;left:148px;z-index:5;background:' + stickyBgH + ';width:100px;min-width:100px;padding:5px 8px;border-right:0.5px solid var(--b)"><span style="' + _thS2 + '">' + (_dil === 'en' ? 'Product Code' : 'Urun Kodu') + '</span></th>';
+  h += '<th style="position:sticky;left:248px;z-index:5;background:' + stickyBgH + ';width:200px;min-width:200px;padding:5px 8px;border-right:2px solid var(--b)"><span style="' + _thS2 + '">' + (_dil === 'en' ? 'Product Name' : 'Urun Adi') + '</span></th>';
   /* Kalan kolonlar */
   var _kolNo = 4;
   GORUNEN_KOLONLAR.forEach(function(kol) {
@@ -1257,9 +1258,9 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     _kolNo++;
     var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === ''; }).length : 0;
     var _roBg = kol.ro ? 'background:#FAEEDA;color:#633806;font-weight:500;' : '';
-    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;padding:5px 8px;border-right:0.5px solid var(--b);vertical-align:top;' + _roBg + '" title="' + _esc(kol.en) + '">';
-    h += '<div style="' + _thWr + '">';
-    h += '<span style="' + _thTr + '">' + kol.l;
+    var _kolLabel = _dil === 'en' ? kol.en : kol.l;
+    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;padding:5px 8px;border-right:0.5px solid var(--b);' + _roBg + '" title="' + _esc(kol.en) + ' — ' + _esc(kol.l) + '">';
+    h += '<span style="' + _thS2 + '">' + _kolLabel;
     if (kol.filtre) {
       var aktif = _filtreler[kol.k];
       h += ' <select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + ';vertical-align:middle">';
@@ -1268,8 +1269,6 @@ function _ihrDetayRenderUrunlerInner(d, el) {
       h += '</select>';
     }
     h += '</span>';
-    h += '<span style="' + _thEn + '">' + _esc(kol.en) + '</span>';
-    h += '</div>';
     if (kol.bos && bosCount > 0) h += '<div style="font-size:8px;color:#D97706;margin-top:1px">' + bosCount + ' bos</div>';
     h += '</th>';
   });
@@ -1291,8 +1290,8 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     /* Sticky kolonlar */
     h += '<td onclick="event.stopPropagation()" style="position:sticky;left:0;z-index:2;background:' + cellBg + ';' + tdS + ';text-align:center;max-width:28px;border-right:2px solid var(--b)"><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="event.stopPropagation();window._ihrUrunChkDegis()"></td>';
     h += '<td onclick="event.stopPropagation()" style="position:sticky;left:28px;z-index:2;background:' + cellBg + ';' + tdS + ';max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
-    h += '<td data-alan="urun_kodu" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" style="position:sticky;left:148px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-family:monospace;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.urun_kodu || '') + '</td>';
-    h += '<td data-alan="aciklama" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" style="position:sticky;left:238px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
+    h += '<td data-alan="urun_kodu" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'urun_kodu\')" style="position:sticky;left:148px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-family:monospace;font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(u.urun_kodu || '') + '</td>';
+    h += '<td data-alan="aciklama" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" style="position:sticky;left:248px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
     /* Kalan kolonlar */
     GORUNEN_KOLONLAR.forEach(function(kol) {
       var k = kol.k; if (k === 'tedarikciAd' || k === 'urun_kodu' || k === 'aciklama') return;
