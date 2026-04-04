@@ -4517,3 +4517,46 @@ window._qlSil = function(idx) {
   var btn = document.querySelector('[data-quicklink-btn]');
   if (btn) { var dd = btn.querySelector('.ql-dropdown'); if (dd) dd.remove(); btn.click(); }
 };
+
+// ══ KPI-FIRMA-001: Tedarikci/Firma KPI Paneli ════════════════
+window._renderFirmaKpi = function() {
+  var panel = document.getElementById('panel-firma-kpi');
+  if (!panel) { panel = document.getElementById('ihr-detay-content'); }
+  if (!panel) return;
+  var teklifler = []; try { teklifler = JSON.parse(localStorage.getItem('ak_ihr_teklifler') || '[]'); } catch(e) {}
+  var uploads = []; try { uploads = JSON.parse(localStorage.getItem('ak_ihr_uploads') || '[]'); } catch(e) {}
+  var fwList = typeof window.loadIhracatForwarder === 'function' ? window.loadIhracatForwarder() : [];
+  if (!fwList.length) { try { fwList = JSON.parse(localStorage.getItem('ak_forwarder1') || '[]'); } catch(e) {} }
+  var gmList = typeof window.loadIhracatGumrukcu === 'function' ? window.loadIhracatGumrukcu() : [];
+  if (!gmList.length) { try { gmList = JSON.parse(localStorage.getItem('ak_gumrukcu1') || '[]'); } catch(e) {} }
+  var tumFirmalar = fwList.map(function(f) { return { id: f.id, ad: f.firma_adi, tip: 'FW' }; }).concat(gmList.map(function(g) { return { id: g.id, ad: g.firma_adi, tip: 'GM' }; }));
+
+  var h = '<div style="max-width:800px;margin:0 auto;padding:16px">';
+  h += '<div style="font-size:16px;font-weight:600;margin-bottom:16px">Tedarikci / Firma KPI</div>';
+  if (!tumFirmalar.length) { h += '<div style="text-align:center;padding:32px;color:var(--t3)">Kayitli firma yok</div>'; }
+  tumFirmalar.forEach(function(firma) {
+    var firmaTeklifler = teklifler.filter(function(t) { return String(t.firma_id) === String(firma.id); });
+    var firmaUploads = uploads.filter(function(u) { return String(u.muhatap_ad).indexOf(firma.ad) !== -1; });
+    // Hesaplamalar
+    var toplamTeklif = firmaTeklifler.length;
+    var ortHiz = 0;
+    if (toplamTeklif > 0) { var toplam = firmaTeklifler.reduce(function(s, t) { return s + (t.transit_gun || 0); }, 0); ortHiz = Math.round(toplam / toplamTeklif); }
+    var belgeSayisi = firmaUploads.length;
+    var skorPuan = Math.min(100, (toplamTeklif * 20) + (belgeSayisi * 15) + (ortHiz < 10 ? 30 : ortHiz < 20 ? 15 : 0));
+    var skorHarf = skorPuan >= 80 ? 'A' : skorPuan >= 60 ? 'B' : skorPuan >= 40 ? 'C' : 'D';
+    var skorRenk = skorPuan >= 80 ? '#16A34A' : skorPuan >= 60 ? '#D97706' : '#DC2626';
+    h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:16px">';
+    h += '<div style="width:40px;height:40px;border-radius:50%;background:' + skorRenk + '18;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:' + skorRenk + ';flex-shrink:0">' + skorHarf + '</div>';
+    h += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + (typeof escapeHtml === 'function' ? escapeHtml(firma.ad) : firma.ad) + ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">' + firma.tip + '</span></div>';
+    h += '<div style="font-size:10px;color:var(--t3);display:flex;gap:12px;margin-top:2px">';
+    h += '<span>Teklif: ' + toplamTeklif + '</span>';
+    h += '<span>Belge: ' + belgeSayisi + '</span>';
+    h += '<span>Ort. Transit: ' + (ortHiz || '—') + 'g</span>';
+    h += '<span>Skor: %' + skorPuan + '</span>';
+    h += '</div></div>';
+    h += '<div style="font-size:24px;font-weight:700;color:' + skorRenk + '">' + skorPuan + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  panel.innerHTML = h;
+};

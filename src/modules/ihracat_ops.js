@@ -607,6 +607,14 @@ function _ihrDetayRenderOzet(d) {
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDisTarafLink?.(\'' + d.id + '\')" style="font-size:11px;width:100%;color:#185FA5">🔗 Yukleme Linki Olustur</button>';
   h += '</div>';
 
+  /* Teklif Sistemi */
+  h += '<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--b)">';
+  h += '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Teklif Sistemi</div>';
+  h += '<div style="display:flex;gap:6px">';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrTeklifGonder?.(\'' + d.id + '\')" style="font-size:11px;flex:1">Teklif Iste</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTeklifKarsilastir?.(\'' + d.id + '\')" style="font-size:11px;flex:1">Karsilastir</button>';
+  h += '</div></div>';
+
   /* Kontrol Listeleri */
   h += '<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--b)">';
   h += '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Kontrol Listeleri</div>';
@@ -2918,5 +2926,70 @@ window._ihrYuklemeKontrol = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 
 window._ihrKonteynerDizilim = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'kdl'); };
 window._ihrTeslimatKontrol = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'tkl'); };
 window._ihrSevkIzni = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'svk'); };
+
+// ══ TEKLİF-PORTAL-001: Teklif gonder + karsilastir ═══════════
+window._ihrTeklifGonder = function(dosyaId) {
+  var old = _g('mo-teklif-gonder'); if (old) old.remove();
+  var fwList = _loadFW().filter(function(f) { return !f.isDeleted && f.aktif; });
+  var gmList = _loadGM().filter(function(g) { return !g.isDeleted; });
+  var d = dosyaId ? _loadD().find(function(x) { return String(x.id) === String(dosyaId); }) : null;
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-teklif-gonder';
+  var h = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden;max-height:85vh;display:flex;flex-direction:column">';
+  h += '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600;flex-shrink:0">Teklif Daveti Gonder</div>';
+  h += '<div style="flex:1;overflow-y:auto;padding:16px 20px">';
+  h += '<div><div class="fl">Teklif Tipi</div><select class="fi" id="tg-tip" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="navlun">Navlun</option><option value="sigorta">Sigorta</option><option value="nakliye">Nakliye</option></select></div>';
+  h += '<div style="margin-top:10px;font-size:11px;font-weight:500;margin-bottom:6px">Firmalar (sec)</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:200px;overflow-y:auto">';
+  fwList.forEach(function(f) { h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;cursor:pointer"><input type="checkbox" class="tg-firma-chk" data-id="' + f.id + '" data-ad="' + _esc(f.firma_adi) + '" data-mail="' + _esc(f.email || '') + '" data-tip="forwarder">' + _esc(f.firma_adi) + ' <span style="font-size:9px;color:var(--t3)">FW</span></label>'; });
+  gmList.forEach(function(g) { h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;cursor:pointer"><input type="checkbox" class="tg-firma-chk" data-id="' + g.id + '" data-ad="' + _esc(g.firma_adi) + '" data-mail="' + _esc(g.email || '') + '" data-tip="gumrukcu">' + _esc(g.firma_adi) + ' <span style="font-size:9px;color:var(--t3)">GM</span></label>'; });
+  h += '</div>';
+  if (d) { h += '<div style="margin-top:10px;padding:8px;background:var(--s2);border-radius:6px;font-size:10px;color:var(--t3)">POL: ' + _esc(d.yukleme_limani || '') + ' · POD: ' + _esc(d.varis_limani || '') + ' · ' + _esc(d.konteyner_turu || '40HC') + '</div>'; }
+  h += '</div>';
+  h += '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0"><button class="btn btns" onclick="document.getElementById(\'mo-teklif-gonder\')?.remove()">Iptal</button><button class="btn btnp" onclick="event.stopPropagation();window._ihrTeklifGonderKaydet(\'' + (dosyaId || '') + '\')">Gonder</button></div></div>';
+  mo.innerHTML = h; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrTeklifGonderKaydet = function(dosyaId) {
+  var tip = (_g('tg-tip') || {}).value || 'navlun';
+  var secili = []; document.querySelectorAll('.tg-firma-chk:checked').forEach(function(cb) { secili.push({ id: cb.dataset.id, ad: cb.dataset.ad, mail: cb.dataset.mail, tip: cb.dataset.tip }); });
+  if (!secili.length) { window.toast?.('En az 1 firma sec', 'err'); return; }
+  var linkler = [];
+  secili.forEach(function(f) {
+    var payload = (dosyaId||'') + ':' + f.id + ':' + f.ad + ':' + f.mail + ':' + tip + ':' + Date.now();
+    var token = btoa(payload);
+    linkler.push({ firma: f.ad, link: 'https://duayft-collab.github.io/duay-platform/teklif.html?token=' + token });
+  });
+  // Linkleri goster
+  _g('mo-teklif-gonder')?.remove();
+  var old2 = _g('mo-teklif-linkler'); if (old2) old2.remove();
+  var mo2 = document.createElement('div'); mo2.className = 'mo'; mo2.id = 'mo-teklif-linkler';
+  var h2 = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">' + secili.length + ' Firmaya Teklif Linki</div><div style="padding:16px 20px;max-height:400px;overflow-y:auto">';
+  linkler.forEach(function(l) { h2 += '<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:500;margin-bottom:4px">' + _esc(l.firma) + '</div><div style="display:flex;gap:4px"><input class="fi" value="' + l.link + '" readonly style="font-size:9px;font-family:monospace"><button class="btn btns" onclick="event.stopPropagation();navigator.clipboard?.writeText(this.previousElementSibling.value);window.toast?.(\'Kopyalandi\',\'ok\')" style="font-size:10px;flex-shrink:0">Kopyala</button></div></div>'; });
+  h2 += '</div><div style="padding:12px 20px;border-top:1px solid var(--b);text-align:right"><button class="btn btnp" onclick="document.getElementById(\'mo-teklif-linkler\')?.remove()">Kapat</button></div></div>';
+  mo2.innerHTML = h2; document.body.appendChild(mo2); setTimeout(function() { mo2.classList.add('open'); }, 10);
+  window.toast?.(secili.length + ' firmaya teklif daveti olusturuldu', 'ok');
+  window.logActivity?.('ihracat', 'Teklif daveti: ' + secili.length + ' firma, tip: ' + tip);
+};
+
+window._ihrTeklifKarsilastir = function(dosyaId) {
+  // Firestore'dan teklifleri cek (localStorage fallback)
+  var teklifler = [];
+  try { teklifler = JSON.parse(localStorage.getItem('ak_ihr_teklifler') || '[]').filter(function(t) { return String(t.dosya_id) === String(dosyaId) && !t.isDeleted; }); } catch(e) {}
+  var old = _g('mo-teklif-karsilastir'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-teklif-karsilastir';
+  var h = '<div class="moc" style="max-width:700px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Teklif Karsilastirma</div><div style="padding:16px 20px">';
+  if (!teklifler.length) { h += '<div style="text-align:center;padding:24px;color:var(--t3)">Henuz teklif gelmedi</div>'; }
+  else {
+    teklifler.sort(function(a, b) { return (a.fiyat || 0) - (b.fiyat || 0); });
+    h += '<table class="tbl" style="font-size:11px"><thead><tr><th>Firma</th><th>Fiyat</th><th>Doviz</th><th>Transit</th><th>Gecerlilik</th><th></th></tr></thead><tbody>';
+    teklifler.forEach(function(t, i) {
+      var renk = i === 0 ? '#16A34A' : i === teklifler.length - 1 ? '#DC2626' : '#D97706';
+      h += '<tr><td style="font-weight:500">' + _esc(t.firma_ad) + '</td><td style="color:' + renk + ';font-weight:700">' + (t.fiyat || 0) + '</td><td>' + (t.doviz || 'USD') + '</td><td>' + (t.transit_gun || '—') + ' gun</td><td>' + (t.gecerlilik_gun || '—') + ' gun</td><td><button class="btn btns" style="font-size:10px;color:#16A34A">Kabul</button></td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+  h += '</div><div style="padding:12px 20px;border-top:1px solid var(--b);text-align:right"><button class="btn btns" onclick="document.getElementById(\'mo-teklif-karsilastir\')?.remove()">Kapat</button></div></div>';
+  mo.innerHTML = h; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
 
 })();

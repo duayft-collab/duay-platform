@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Duay Global — Teklif Portali</title>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa;color:#1a1a2e;min-height:100vh;display:flex}
+.side{width:300px;background:#0f1923;color:#fff;padding:48px 28px;display:flex;flex-direction:column;justify-content:center;min-height:100vh;flex-shrink:0}
+.side h1{font-size:20px;font-weight:600;margin-bottom:6px}
+.side p{font-size:12px;opacity:.7;line-height:1.5;margin-bottom:20px}
+.side-item{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:12px;opacity:.8}
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.06);padding:32px;max-width:520px;width:100%}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:#e6f1fb;color:#0c447c;border-radius:8px;font-size:11px;font-weight:500;margin-bottom:14px}
+.fl{font-size:11px;color:#6b7280;margin-bottom:3px;display:block}
+.fi{width:100%;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;outline:none;font-family:inherit}
+.fi:focus{border-color:#185FA5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.btn-p{width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:12px}
+.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.done-circle{width:72px;height:72px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:#16a34a}
+.summary{background:#f8f9fa;border-radius:10px;padding:12px;margin:14px 0;font-size:11px}
+.summary div{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0f0}
+.summary div:last-child{border:none}
+@media(max-width:768px){.side{display:none}}
+</style>
+</head>
+<body>
+<div class="side">
+  <h1>Duay Global LLC</h1>
+  <p>Kapali zarf teklif sistemi.<br>Diger firmalarin tekliflerini goremezsiniz.</p>
+  <div class="side-item"><span>🔒</span> Kapali zarf — sadece siz gorursunuz</div>
+  <div class="side-item"><span>⏱</span> Sureli — gecerlilik biter</div>
+  <div class="side-item"><span>📊</span> KPI skorunuz otomatik hesaplanir</div>
+</div>
+<div class="main"><div class="card" id="app"></div></div>
+
+<script>
+(function() {
+'use strict';
+var fbDb;
+try { var app = firebase.apps.length ? firebase.app() : firebase.initializeApp({apiKey:'AIzaSyDNWvZjgjpzM3eUcA_xDsapWZZaOs0qwWE',authDomain:'operasyon-platform.firebaseapp.com',projectId:'operasyon-platform'}); fbDb = firebase.firestore(app); } catch(e) { console.error(e); }
+
+var params = new URLSearchParams(location.search);
+var token = params.get('token') || '';
+var dosyaId='',firmaId='',firmaAd='',firmaMail='',tip='',ts=0;
+var valid = false;
+try { var d=atob(token).split(':'); dosyaId=d[0]||''; firmaId=d[1]||''; firmaAd=d[2]||''; firmaMail=d[3]||''; tip=d[4]||'navlun'; ts=parseInt(d[5])||0; valid=!!dosyaId&&(Date.now()-ts)<30*86400000; } catch(e) {}
+
+window.tState = { screen:'welcome', fiyat:'', doviz:'USD', gecerlilik:'7', transit:'', notlar:'', file:null };
+var dosyaNo='', musteriAd='', pol='', pod='', kontTipi='', brut='', hacim='';
+
+function esc(s){var d2=document.createElement('div');d2.textContent=s||'';return d2.innerHTML;}
+var tipLabels={navlun:'Navlun Teklifi',sigorta:'Sigorta Teklifi',nakliye:'Nakliye Teklifi'};
+
+window.tRender = function() {
+  var el=document.getElementById('app');
+  if(!valid){el.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:15px;font-weight:500">Link gecersiz veya suresi dolmus</div></div>';return;}
+  if(tState.screen==='welcome') renderWelcome(el);
+  else if(tState.screen==='form') renderForm(el);
+  else if(tState.screen==='done') renderDone(el);
+};
+
+function renderWelcome(el) {
+  el.innerHTML='<div class="chip">📦 '+esc(dosyaNo||dosyaId)+'</div>'
+    +'<div style="font-size:15px;font-weight:500;margin-bottom:6px">'+esc(tipLabels[tip]||'Teklif Daveti')+'</div>'
+    +'<div style="font-size:12px;color:#6b7280;margin-bottom:16px">'+esc(firmaAd)+', asagidaki kargo icin teklifinizi bekliyoruz.</div>'
+    +'<div style="background:#f8f9fa;border-radius:8px;padding:10px;font-size:11px;margin-bottom:16px">'
+    +(pol?'<div>POL: '+esc(pol)+'</div>':'')+(pod?'<div>POD: '+esc(pod)+'</div>':'')
+    +(brut?'<div>Brut: '+esc(brut)+' kg</div>':'')+(hacim?'<div>Hacim: '+esc(hacim)+' m3</div>':'')
+    +(kontTipi?'<div>Konteyner: '+esc(kontTipi)+'</div>':'')
+    +'</div>'
+    +'<button class="btn-p" onclick="tState.screen=\'form\';tRender()">Teklifi Hazirla →</button>';
+}
+
+function renderForm(el) {
+  var h='<div class="chip">'+esc(tipLabels[tip]||'Teklif')+'</div>';
+  if(tip==='navlun'){
+    h+='<div class="row2"><div><label class="fl">Fiyat *</label><input class="fi" type="number" id="tf-fiyat" value="'+esc(tState.fiyat)+'" oninput="tState.fiyat=this.value"></div><div><label class="fl">Doviz</label><select class="fi" id="tf-doviz" onchange="tState.doviz=this.value"><option>USD</option><option>EUR</option><option>TRY</option></select></div></div>';
+    h+='<div class="row2"><div><label class="fl">Gecerlilik (gun)</label><input class="fi" type="number" id="tf-gec" value="'+esc(tState.gecerlilik)+'" oninput="tState.gecerlilik=this.value"></div><div><label class="fl">Transit Sure (gun)</label><input class="fi" type="number" id="tf-transit" value="'+esc(tState.transit)+'" oninput="tState.transit=this.value"></div></div>';
+  } else if(tip==='sigorta'){
+    h+='<div class="row2"><div><label class="fl">Prim Orani (%)</label><input class="fi" type="number" step="0.01" id="tf-fiyat" value="'+esc(tState.fiyat)+'" oninput="tState.fiyat=this.value"></div><div><label class="fl">Doviz</label><select class="fi" id="tf-doviz" onchange="tState.doviz=this.value"><option>USD</option><option>EUR</option><option>TRY</option></select></div></div>';
+    h+='<div><label class="fl">Kapsam</label><input class="fi" id="tf-kapsam" placeholder="All Risks / ICC A" oninput="tState.kapsam=this.value"></div>';
+  } else {
+    h+='<div class="row2"><div><label class="fl">Fiyat *</label><input class="fi" type="number" id="tf-fiyat" value="'+esc(tState.fiyat)+'" oninput="tState.fiyat=this.value"></div><div><label class="fl">Doviz</label><select class="fi" id="tf-doviz" onchange="tState.doviz=this.value"><option>USD</option><option>EUR</option><option>TRY</option></select></div></div>';
+    h+='<div class="row2"><div><label class="fl">Arac Tipi</label><input class="fi" id="tf-arac" oninput="tState.aracTipi=this.value"></div><div><label class="fl">Transit (gun)</label><input class="fi" type="number" id="tf-transit" value="'+esc(tState.transit)+'" oninput="tState.transit=this.value"></div></div>';
+  }
+  h+='<div style="margin-top:8px"><label class="fl">Notlar</label><textarea class="fi" rows="3" style="resize:vertical" oninput="tState.notlar=this.value">'+esc(tState.notlar)+'</textarea></div>';
+  h+='<div style="margin-top:8px"><label class="fl">Belge (opsiyonel)</label><input type="file" accept=".pdf,.jpg,.png" style="font-size:11px" onchange="if(this.files[0]&&this.files[0].size<5*1024*1024)tState.file=this.files[0]"></div>';
+  h+='<button class="btn-p" onclick="tSubmit()" '+(tState.fiyat?'':'disabled')+'>Teklifi Gonder</button>';
+  el.innerHTML=h;
+}
+
+function renderDone(el) {
+  el.innerHTML='<div class="done-circle">✓</div>'
+    +'<div style="text-align:center;font-size:16px;font-weight:600;margin-bottom:6px">Teklifiniz Alindi!</div>'
+    +'<div style="text-align:center;font-size:12px;color:#6b7280;margin-bottom:14px">Referans: TKL-'+Date.now().toString().slice(-6)+'</div>'
+    +'<div class="summary"><div><span style="color:#6b7280">Firma</span><span>'+esc(firmaAd)+'</span></div><div><span style="color:#6b7280">Fiyat</span><span>'+esc(tState.fiyat)+' '+esc(tState.doviz)+'</span></div><div><span style="color:#6b7280">Tip</span><span>'+esc(tipLabels[tip]||tip)+'</span></div><div><span style="color:#6b7280">Durum</span><span style="color:#16a34a;font-weight:500">Iletildi ✓</span></div></div>';
+}
+
+window.tSubmit = function() {
+  if(!tState.fiyat){alert('Fiyat zorunlu');return;}
+  var record={id:Date.now().toString(),teklif_id:'TKL-'+Date.now().toString().slice(-6),dosya_id:dosyaId,tip:tip,firma_id:firmaId,firma_ad:firmaAd,firma_mail:firmaMail,fiyat:parseFloat(tState.fiyat)||0,doviz:tState.doviz||'USD',gecerlilik_gun:parseInt(tState.gecerlilik)||7,transit_gun:parseInt(tState.transit)||0,notlar:tState.notlar||'',gonderildi_at:new Date().toISOString(),durum:'beklemede',kilitli:true};
+  if(fbDb){
+    var base='duay_tenant_default';
+    fbDb.collection(base).doc('ihracat_teklifler').get().then(function(snap){
+      var existing=snap.exists&&snap.data()?.data?snap.data().data:[];
+      existing.unshift(record);
+      return fbDb.collection(base).doc('ihracat_teklifler').set({data:existing,syncedAt:new Date().toISOString()},{merge:true});
+    }).then(function(){tState.screen='done';tRender();}).catch(function(){tState.screen='done';tRender();});
+  } else { tState.screen='done';tRender(); }
+};
+
+// Dosya bilgisi cek
+if(valid&&fbDb){
+  fbDb.collection('duay_tenant_default').doc('ihracatDosyalar').get().then(function(snap){
+    if(!snap.exists)return;var d2=snap.data()?.data||[];var f=d2.find(function(x){return String(x.id)===String(dosyaId);});
+    if(f){dosyaNo=f.dosyaNo||'';musteriAd=f.musteriAd||'';pol=f.yukleme_limani||'';pod=f.varis_limani||'';kontTipi=f.konteyner_turu||'';}
+    tRender();
+  }).catch(function(){tRender();});
+} else { tRender(); }
+})();
+</script>
+</body>
+</html>
