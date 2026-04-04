@@ -1116,14 +1116,16 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   /* THEAD */
   h += '<thead><tr>';
   h += '<th style="position:sticky;left:0;z-index:3;background:' + stickyBgH + ';width:28px;min-width:28px;' + thS + ';border-right:2px solid var(--b)"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
-  h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:110px;min-width:110px;' + thS + '">Tedarikçi</th>';
-  h += '<th style="position:sticky;left:138px;z-index:3;background:' + stickyBgH + ';width:85px;min-width:85px;' + thS + '">Ürün Kodu</th>';
-  h += '<th style="position:sticky;left:223px;z-index:3;background:' + stickyBgH + ';width:180px;min-width:180px;' + thS + ';border-right:2px solid var(--b)">Ürün Açıklaması</th>';
+  h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:110px;min-width:110px;' + thS + '" title="Kolon #2 — tedarikciAd"><span style="font-size:8px;color:var(--t3);opacity:.6">#2</span> Tedarikçi</th>';
+  h += '<th style="position:sticky;left:138px;z-index:3;background:' + stickyBgH + ';width:85px;min-width:85px;' + thS + '" title="Kolon #3 — urun_kodu"><span style="font-size:8px;color:var(--t3);opacity:.6">#3</span> Ürün Kodu</th>';
+  h += '<th style="position:sticky;left:223px;z-index:3;background:' + stickyBgH + ';width:180px;min-width:180px;' + thS + ';border-right:2px solid var(--b)" title="Kolon #4 — aciklama"><span style="font-size:8px;color:var(--t3);opacity:.6">#4</span> Ürün Açıklaması</th>';
+  var _kolNo = 4; // 1=chk, 2=tedarikci, 3=urun_kodu, 4=aciklama (sticky)
   GORUNEN_KOLONLAR.forEach(function(kol) {
     if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
+    _kolNo++;
     var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === ''; }).length : 0;
-    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;' + thS + '">';
-    h += '<div style="display:flex;align-items:center;gap:2px"><span>' + kol.l + '</span>';
+    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;' + thS + '" title="Kolon #' + _kolNo + ' — ' + kol.k + ' — ' + kol.l + '">';
+    h += '<div style="display:flex;align-items:center;gap:2px"><span style="font-size:8px;color:var(--t3);opacity:.6;margin-right:2px">#' + _kolNo + '</span><span>' + kol.l + '</span>';
     if (kol.filtre) {
       var aktif = _filtreler[kol.k];
       h += '<select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + '">';
@@ -2488,9 +2490,11 @@ window._ihrKolonAyar = function(dosyaId) {
     h += '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">' + gr.baslik + '</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
     gKols.forEach(function(k) {
       var chk = saved.indexOf(k) !== -1;
+      var kolIdx = allKols.findIndex(function(kk) { return kk.k === k; });
+      var kolNumStr = kolIdx >= 0 ? '#' + (kolIdx + 4) : '';
       h += '<label style="display:flex;align-items:center;gap:4px;padding:3px 8px;border:0.5px solid var(--b);border-radius:6px;background:' + (chk ? '#E6F1FB' : 'var(--sf)') + ';cursor:pointer;font-size:11px;color:' + (chk ? '#0C447C' : 'var(--t2)') + ';user-select:none">';
       h += '<input type="checkbox" data-kol="' + k + '" ' + (chk ? 'checked' : '') + ' onchange="event.stopPropagation();window._ihrKolonChk(this)" onclick="event.stopPropagation()" style="accent-color:#185FA5;cursor:pointer;width:12px;height:12px">';
-      h += _esc(kolMap[k]) + '</label>';
+      h += '<span style="font-size:8px;color:var(--t3);opacity:.6">' + kolNumStr + '</span> ' + _esc(kolMap[k]) + '</label>';
     });
     h += '</div></div>';
   });
