@@ -77,9 +77,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 var fbApp, fbDb;
 try {
   var cfg = {
-    apiKey: window.__ENV__?.FB_API_KEY || 'YOUR_API_KEY',
-    authDomain: window.__ENV__?.FB_AUTH_DOMAIN || 'YOUR_AUTH_DOMAIN',
-    projectId: window.__ENV__?.FB_PROJECT_ID || 'YOUR_PROJECT_ID'
+    apiKey: 'AIzaSyDNWvZjgjpzM3eUcA_xDsapWZZaOs0qwWE',
+    authDomain: 'operasyon-platform.firebaseapp.com',
+    projectId: 'operasyon-platform',
+    storageBucket: 'operasyon-platform.firebasestorage.app'
   };
   fbApp = firebase.initializeApp(cfg, 'upload-portal');
   fbDb = firebase.firestore(fbApp);
