@@ -616,25 +616,25 @@ function _ihrDetayRenderOzet(d) {
   var _saglikPct = Math.round((_hsPct + _evrakPct) / 2);
   var _saglikRenk = _kpiRenk(_saglikPct);
 
-  var h = '<div style="display:grid;grid-template-columns:220px 1fr 280px;grid-template-rows:1fr 32px;height:calc(100vh - 290px);min-height:340px;gap:0;overflow:hidden;border:0.5px solid var(--b);border-radius:0 0 8px 8px;background:var(--sf)">';
+  var h = '<div style="display:grid;grid-template-columns:240px 1fr 320px;grid-template-rows:1fr 32px;height:calc(100vh - 290px);min-height:340px;gap:0;overflow:hidden;border:0.5px solid var(--b);border-radius:0 0 8px 8px;background:var(--sf)">';
 
   /* ══ SOL KOLON (220px) ══ */
   h += '<div style="grid-row:1;border-right:0.5px solid var(--b);overflow:hidden;display:flex;flex-direction:column;padding:0">';
   /* KPI 2x2 */
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid var(--b);flex-shrink:0">';
-  h += '<div style="padding:6px 8px;border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b)"><div style="font-size:8px;color:var(--t3)">HS</div><div style="font-size:16px;font-weight:700;color:' + _kpiRenk(_hsPct) + '">%' + _hsPct + '</div></div>';
-  h += '<div style="padding:6px 8px;border-bottom:0.5px solid var(--b)"><div style="font-size:8px;color:var(--t3)">Evrak</div><div style="font-size:16px;font-weight:700;color:' + _kpiRenk(_evrakPct) + '">%' + _evrakPct + '</div></div>';
-  h += '<div style="padding:6px 8px;border-right:0.5px solid var(--b)"><div style="font-size:8px;color:var(--t3)">Kalan</div><div style="font-size:16px;font-weight:700;color:' + _kalanRenk(kalanGun) + '">' + (kalanGun !== null ? kalanGun + 'g' : '\u2014') + '</div></div>';
-  h += '<div style="padding:6px 8px"><div style="font-size:8px;color:var(--t3)">Saglik</div><div style="font-size:16px;font-weight:700;color:' + _saglikRenk + '">%' + _saglikPct + '</div></div>';
+  h += '<div style="padding:12px;border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b)"><div style="font-size:11px;color:var(--t3)">HS</div><div style="font-size:28px;font-weight:700;color:' + _kpiRenk(_hsPct) + '">%' + _hsPct + '</div></div>';
+  h += '<div style="padding:12px;border-bottom:0.5px solid var(--b)"><div style="font-size:11px;color:var(--t3)">Evrak</div><div style="font-size:28px;font-weight:700;color:' + _kpiRenk(_evrakPct) + '">%' + _evrakPct + '</div></div>';
+  h += '<div style="padding:12px;border-right:0.5px solid var(--b)"><div style="font-size:11px;color:var(--t3)">Kalan</div><div style="font-size:28px;font-weight:700;color:' + _kalanRenk(kalanGun) + '">' + (kalanGun !== null ? kalanGun + 'g' : '\u2014') + '</div></div>';
+  h += '<div style="padding:12px"><div style="font-size:11px;color:var(--t3)">Saglik</div><div style="font-size:28px;font-weight:700;color:' + _saglikRenk + '">%' + _saglikPct + '</div></div>';
   h += '</div>';
   /* Dosya bilgileri */
-  h += '<div style="padding:8px 10px;flex:1;overflow-y:auto">';
+  h += '<div style="padding:10px 12px;flex:1;overflow-y:auto">';
   [['Musteri', d.musteriAd], ['Teslim', (d.teslim_sekli || '') + ' ' + (d.varis_limani || '')], ['Odeme', d.odeme_sarti], ['Sorumlu', d.sorumluAd], ['Bitis', d.bitis_tarihi]].forEach(function(r) {
     var v = r[1] || '\u2014';
     var vRenk = r[0] === 'Bitis' && kalanGun !== null && kalanGun < 7 ? _kalanRenk(kalanGun) : 'var(--t)';
-    h += '<div style="padding:3px 0;border-bottom:0.5px solid var(--b)">';
-    h += '<div style="font-size:9px;color:var(--t3)">' + r[0] + '</div>';
-    h += '<div style="font-size:11px;font-weight:500;color:' + vRenk + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(v) + '</div>';
+    h += '<div style="padding:4px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<div style="font-size:12px;color:var(--t3)">' + r[0] + '</div>';
+    h += '<div style="font-size:13px;font-weight:500;color:' + vRenk + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(v) + '</div>';
     h += '</div>';
   });
   h += '</div>';
@@ -697,10 +697,10 @@ function _ihrDetayRenderOzet(d) {
 
   /* ══ SAG KOLON — Evrak Durumu ══ */
   h += '<div style="grid-row:1;overflow:hidden;display:flex;flex-direction:column;padding:0">';
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;flex-shrink:0;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;flex-shrink:0;border-bottom:0.5px solid var(--b)">';
   var _evAktif = evraklar.filter(function(e) { return !e.isDeleted; }).length;
-  h += '<span style="font-size:11px;font-weight:500">Evrak Durumu</span>';
-  h += '<span style="font-size:9px;color:var(--t3)">' + _evAktif + ' aktif \u00b7 ' + tamam + ' tamam</span>';
+  h += '<span style="font-size:12px;font-weight:600">Evrak Durumu</span>';
+  h += '<span style="font-size:10px;color:var(--t3)">' + _evAktif + ' aktif \u00b7 ' + tamam + ' tamam</span>';
   h += '</div>';
   h += '<div style="flex:1;overflow-y:auto;padding:8px 14px">';
   /* Evrak listesi — kompakt 5 seviye */
@@ -710,30 +710,30 @@ function _ihrDetayRenderOzet(d) {
     evraklar.forEach(function(e) { if (e.tur === ev.tur && !e.isDeleted) kayit = e; });
     var sev = window._ihrEvrakDurumSeviye?.(kayit || { tur: ev.tur, durum: null }, dosyaAsama) || { seviye: 1, label: 'Eksik', renk: '#A32D2D' };
     var isDuay = ev.kim === 'duay';
-    h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--b);flex-wrap:wrap">';
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid var(--b);flex-wrap:wrap">';
     /* Sol: renkli nokta */
     h += '<div style="width:8px;height:8px;border-radius:50%;background:' + sev.renk + ';flex-shrink:0"></div>';
     /* Evrak adi */
-    h += '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</div><div style="font-size:9px;color:var(--t3)">' + _esc(ev.uretici) + ' \u2192 ' + _esc(ev.alici) + '</div></div>';
+    h += '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</div><div style="font-size:10px;color:var(--t3)">' + _esc(ev.uretici) + ' \u2192 ' + _esc(ev.alici) + '</div></div>';
     /* Durum pill */
-    h += '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + sev.renk + '22;color:' + sev.renk + ';font-weight:500;white-space:nowrap">' + sev.label + '</span>';
+    h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + sev.renk + '22;color:' + sev.renk + ';font-weight:500;white-space:nowrap">' + sev.label + '</span>';
     /* Aksiyon butonlari */
     h += '<div style="display:flex;gap:3px;flex-shrink:0">';
     if (isDuay && ['PI','CI','PL','SEVK','YUK'].indexOf(ev.tur) !== -1) {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:9px;padding:2px 6px">Gor</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:3px 8px">Gor</button>';
     }
     if (ev.tur === 'BL') {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrBlOnayAc?.(\'' + d.id + '\')" style="font-size:9px;padding:2px 6px;color:#185FA5">BL Onay</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrBlOnayAc?.(\'' + d.id + '\')" style="font-size:10px;padding:3px 8px;color:#185FA5">BL Onay</button>';
     } else if (!kayit && isDuay) {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakOlustur?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 6px">Olustur</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakOlustur?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 8px">Olustur</button>';
     } else if (kayit && kayit.durum === 'taslak' && isDuay) {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakOnayla?.(\'' + kayit.id + '\')" style="font-size:9px;padding:2px 6px;color:#16A34A">Onayla</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakOnayla?.(\'' + kayit.id + '\')" style="font-size:10px;padding:3px 8px;color:#16A34A">Onayla</button>';
     } else if (kayit && kayit.durum === 'onaylandi' && isDuay) {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakGonderModal?.(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 6px">Gonder</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakGonderModal?.(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 8px">Gonder</button>';
     }
     var _ocrE = ['GCB','BL','MENSEI','EUR1','INSP','SIG'];
     if (_ocrE.indexOf(ev.tur) !== -1) {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 6px">Yukle</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 8px">Yukle</button>';
     }
     h += '</div>';
     h += '</div>';
@@ -4078,7 +4078,7 @@ window._ihrKonteynerGauge = function(dosyaId) {
 
   var h = '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
-  h += '<span style="font-size:11px;font-weight:600">Konteyner ' + _esc(tip) + '</span>';
+  h += '<span style="font-size:12px;font-weight:600">Konteyner ' + _esc(tip) + '</span>';
   h += '<div style="display:flex;gap:4px">';
   Object.keys(_KONTEYNER_TIP).forEach(function(t) {
     var aktif = t === tip;
@@ -4086,10 +4086,10 @@ window._ihrKonteynerGauge = function(dosyaId) {
   });
   h += '</div></div>';
   // M3 gauge
-  h += '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px"><span>Hacim (m\u00b3)</span><span>' + topM3.toFixed(1) + ' / ' + kap.m3 + ' m\u00b3</span></div>';
+  h += '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:3px"><span>Hacim (m\u00b3)</span><span>' + topM3.toFixed(1) + ' / ' + kap.m3 + ' m\u00b3</span></div>';
   h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + barM3 + '%;background:' + renk(pctM3) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
   // KG gauge
-  h += '<div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px"><span>Agirlik (KG)</span><span>' + topKG.toLocaleString('tr-TR') + ' / ' + kap.kg.toLocaleString('tr-TR') + ' KG</span></div>';
+  h += '<div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:3px"><span>Agirlik (KG)</span><span>' + topKG.toLocaleString('tr-TR') + ' / ' + kap.kg.toLocaleString('tr-TR') + ' KG</span></div>';
   h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + barKG + '%;background:' + renk(pctKG) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
   // Uyari mesajlari
   var maxPct = Math.max(pctM3, pctKG);
