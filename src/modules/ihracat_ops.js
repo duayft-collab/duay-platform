@@ -124,7 +124,7 @@ window.renderIhracatOps = function() {
   var panel = _g('panel-ihracat-ops'); if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div class="ph"><div><div class="pht">İhracat Ops</div><div class="phs">İhracat emirleri ve operasyon takibi</div></div><div class="ur"><button class="btn btns" onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="font-size:11px">Formlar</button><button class="btn btns" onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="font-size:11px">KDV Iade</button><button class="btn btns" onclick="window.excelImportAc?.()">Excel Import</button><button class="btn btns" onclick="window._ihrRunChecks()">Kontrol Et</button><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div><div id="ihr-tabs" style="display:flex;border-bottom:0.5px solid var(--b);padding:0 20px"></div><div id="ihr-content" style="padding:0"></div>';
+    panel.innerHTML = '<div class="ph"><div><div class="pht">İhracat Ops</div><div class="phs">İhracat emirleri ve operasyon takibi</div></div><div class="ur"><button class="btn btns" onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="font-size:11px">Formlar</button><button class="btn btns" onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="font-size:11px">KDV Iade</button><button class="btn btns" onclick="window._ihrExcelImportV3?.()">Excel Import</button><button class="btn btns" onclick="window._ihrRunChecks()">Kontrol Et</button><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div><div id="ihr-tabs" style="display:flex;border-bottom:0.5px solid var(--b);padding:0 20px"></div><div id="ihr-content" style="padding:0"></div>';
   }
   _ihrRenderTabs(); _ihrRenderContent();
 };
@@ -3017,6 +3017,720 @@ window._ihrTeklifKarsilastir = function(dosyaId) {
   }
   h += '</div><div style="padding:12px 20px;border-top:1px solid var(--b);text-align:right"><button class="btn btns" onclick="document.getElementById(\'mo-teklif-karsilastir\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = h; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+// ══════════════════════════════════════════════════════════════════
+// EXCEL IMPORT V3 — Sablon + AI Hibrit
+// ══════════════════════════════════════════════════════════════════
+
+/** @type {Object} V3 sablon tanımlari */
+var V3_SABLONLAR = {
+  'yeni_urun': {
+    ad: 'Yeni Urun Listesi', ikon: '\ud83d\udce6',
+    aciklama: 'Tedarikci yeni urunler',
+    kolonlar: [
+      { key:'tedarikci',        tr:'Tedarikci / Satici',             en:'Vendor / Supplier' },
+      { key:'urun_kodu',        tr:'Urun Kodu',                      en:'Product Code / Item Code' },
+      { key:'urun_adi_tr',      tr:'Urun Adi (Turkce)',              en:'Unique Product Name (TR)' },
+      { key:'standart_urun_adi',tr:'Standart Urun Adi (EN)',         en:'Standard Name (CI/PL)' },
+      { key:'birim_fiyat',      tr:'Birim Fiyat',                    en:'Unit Price' },
+      { key:'para_birimi',      tr:'Para Birimi',                    en:'Currency (USD/EUR/TRY)' },
+      { key:'brut_kg',          tr:'Brut Agirlik (1 Urun)',          en:'1 Product Weight Gross' },
+      { key:'koli_adet',        tr:'Koli Adedi',                     en:'Ctns / Package Quantity' },
+      { key:'hs_kodu',          tr:'GTIP / HS Kodu',                 en:'HS Code / Tariff Code' }
+    ]
+  },
+  'fiyat': {
+    ad: 'Fiyat Guncellemesi', ikon: '\ud83d\udcb0',
+    aciklama: 'Mevcut urunlere fiyat',
+    kolonlar: [
+      { key:'urun_kodu',   tr:'Urun Kodu',   en:'Product Code' },
+      { key:'birim_fiyat', tr:'Birim Fiyat',  en:'Unit Price' },
+      { key:'para_birimi', tr:'Para Birimi',  en:'Currency' },
+      { key:'kur',         tr:'Kur',          en:'Exchange Rate' }
+    ]
+  },
+  'agirlik': {
+    ad: 'Agirlik & Ambalaj', ikon: '\u2696\ufe0f',
+    aciklama: 'KG, Koli, CBM',
+    kolonlar: [
+      { key:'urun_kodu',    tr:'Urun Kodu',        en:'Product Code' },
+      { key:'brut_kg',      tr:'Brut KG',           en:'Gross Weight' },
+      { key:'net_kg',       tr:'Net KG',            en:'Net Weight' },
+      { key:'koli_adet',    tr:'Koli Adedi',        en:'Ctns' },
+      { key:'ambalaj_tipi', tr:'Ambalaj Tipi',      en:'Package Type' },
+      { key:'olcu_koli',    tr:'Olculer (1 Koli)',  en:'Dimensions' },
+      { key:'hacim_m3',     tr:'Hacim (CBM)',       en:'CBM' }
+    ]
+  },
+  'gumruk': {
+    ad: 'Gumruk Bilgileri', ikon: '\ud83d\udec3',
+    aciklama: 'HS Kodu, GCB, IMO',
+    kolonlar: [
+      { key:'urun_kodu',   tr:'Urun Kodu',    en:'Product Code' },
+      { key:'hs_kodu',     tr:'GTIP / HS',    en:'HS Code' },
+      { key:'mensei_ulke', tr:'Mensei Ulke',   en:'Country of Origin' },
+      { key:'imo_gerekli', tr:'IMO Gerekli',   en:'IMO Required' },
+      { key:'imo_no',      tr:'IMO No',        en:'IMO Number' },
+      { key:'gcb_id',      tr:'GCB No',        en:'Export Declaration ID' }
+    ]
+  },
+  'konteyner': {
+    ad: 'Konteyner & Yukleme', ikon: '\ud83d\udea2',
+    aciklama: 'Konteyner, Muhur, Sira',
+    kolonlar: [
+      { key:'urun_kodu',           tr:'Urun Kodu',            en:'Product Code' },
+      { key:'konteyner_no',        tr:'Konteyner No',         en:'Container No' },
+      { key:'muhur_no',            tr:'Muhur No',             en:'Seal No' },
+      { key:'konteyner_sirasi',    tr:'Konteyner Sirasi',     en:'Loading Order' },
+      { key:'yuklenebilir_miktar', tr:'Yuklenebilir Miktar',  en:'Loadable Qty' }
+    ]
+  },
+  'tumu': {
+    ad: 'Tumunu Aktar (AI)', ikon: '\ud83d\udccb',
+    aciklama: '34 kolon \u00b7 AI ile',
+    kolonlar: null
+  }
+};
+
+/** V3 state */
+var _v3 = {
+  dosyaId: null,
+  adim: 1,
+  seciliSablon: null,
+  dosya: null,
+  dosyaAdi: '',
+  excelData: [],
+  excelKolonlar: [],
+  eslestirme: {},
+  dupMod: 'guncelle',
+  satirSayisi: 0
+};
+
+/**
+ * Excel Import V3 ana giris noktasi.
+ * @param {string} [dosyaId] Ihracat dosya ID
+ */
+window._ihrExcelImportV3 = function(dosyaId) {
+  _v3.dosyaId = dosyaId || _aktifDosyaId || null;
+  _v3.adim = 1;
+  _v3.seciliSablon = null;
+  _v3.dosya = null;
+  _v3.dosyaAdi = '';
+  _v3.excelData = [];
+  _v3.excelKolonlar = [];
+  _v3.eslestirme = {};
+  _v3.dupMod = 'guncelle';
+  _v3.satirSayisi = 0;
+
+  var old = document.getElementById('mo-import-v3');
+  if (old) old.remove();
+
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-import-v3';
+  mo.innerHTML = '<div class="moc" style="max-width:960px;width:95vw;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+    + '<div style="font-size:14px;font-weight:600">Excel\'den Urun Aktar</div>'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'mo-import-v3\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u2715</button>'
+    + '</div>'
+    + '<div id="import-v3-steps" style="flex-shrink:0"></div>'
+    + '<div id="import-v3-body" style="flex:1;overflow-y:auto;min-height:300px"></div>'
+    + '<div id="import-v3-footer" style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0"></div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+  _v3RenderSteps();
+  _v3Adim1();
+};
+
+/** Step bar render */
+function _v3RenderSteps() {
+  var el = document.getElementById('import-v3-steps');
+  if (!el) return;
+  var adimlar = ['Sablon Sec', 'Dosya Yukle', 'Eslestir / Onayla', 'Aktar'];
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:4px;padding:10px 20px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+    + adimlar.map(function(a, i) {
+      var n = i + 1;
+      var ok = n < _v3.adim;
+      var on = n === _v3.adim;
+      return '<div style="display:flex;align-items:center;gap:4px">'
+        + '<div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:' + (ok ? '#EAF3DE' : on ? '#185FA5' : 'var(--s2)') + ';color:' + (ok ? '#27500A' : on ? '#fff' : 'var(--t3)') + '">' + (ok ? '\u2713' : n) + '</div>'
+        + '<span style="font-size:11px;color:' + (on ? '#185FA5' : 'var(--t3)') + ';font-weight:' + (on ? '600' : '400') + '">' + a + '</span>'
+        + (i < 3 ? '<span style="color:var(--t3);margin:0 4px;font-size:9px">\u2192</span>' : '')
+        + '</div>';
+    }).join('')
+    + '</div>';
+}
+
+// ── ADIM 1 — SABLON SEC ──────────────────────────────────────
+function _v3Adim1() {
+  _v3.adim = 1; _v3RenderSteps();
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+
+  var h = '<div style="padding:20px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">';
+  var keys = Object.keys(V3_SABLONLAR);
+  keys.forEach(function(key) {
+    var s = V3_SABLONLAR[key];
+    var kolSay = s.kolonlar ? s.kolonlar.length : 34;
+    var secili = _v3.seciliSablon === key;
+    h += '<div onclick="event.stopPropagation();window._v3SablonSec(\'' + key + '\')" style="border:2px solid ' + (secili ? '#185FA5' : 'var(--b)') + ';border-radius:10px;padding:16px;cursor:pointer;background:' + (secili ? '#E6F1FB' : 'var(--sf)') + ';transition:all .15s">'
+      + '<div style="font-size:20px;margin-bottom:6px">' + s.ikon + '</div>'
+      + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + _esc(s.ad) + '</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin:4px 0">' + _esc(s.aciklama) + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">Kolonlar: ' + kolSay + ' alan</div>'
+      + '</div>';
+  });
+  h += '</div>';
+  h += '<div id="v3-sablon-info" style="margin-top:12px"></div>';
+  h += '</div>';
+  body.innerHTML = h;
+
+  if (_v3.seciliSablon) _v3SablonInfoGuncelle();
+
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-import-v3\')?.remove()">Iptal</button>'
+    + '<button class="btn btnp" id="v3-devam-1" onclick="event.stopPropagation();window._v3Adim1Devam()" style="' + (_v3.seciliSablon ? '' : 'opacity:.4;pointer-events:none') + '">Devam \u2192</button>';
+}
+
+window._v3SablonSec = function(key) {
+  _v3.seciliSablon = key;
+  _v3Adim1();
+};
+
+function _v3SablonInfoGuncelle() {
+  var info = document.getElementById('v3-sablon-info');
+  if (!info || !_v3.seciliSablon) return;
+  var s = V3_SABLONLAR[_v3.seciliSablon];
+  if (!s) return;
+  var kolSay = s.kolonlar ? s.kolonlar.length : 34;
+  info.innerHTML = '<div style="background:#E6F1FB;border-radius:8px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="font-size:12px;color:#0C447C;font-weight:500">' + _esc(s.ad) + ' secildi \u00b7 ' + kolSay + ' kolon aktarilacak</div>'
+    + (s.kolonlar ? '<button class="btn btns" onclick="event.stopPropagation();window._ihrSablonIndir(\'' + _v3.seciliSablon + '\')" style="font-size:10px;padding:4px 12px">\u2b07 Sablonu Indir</button>' : '')
+    + '</div>';
+}
+
+window._v3Adim1Devam = function() {
+  if (!_v3.seciliSablon) { window.toast?.('Sablon secin', 'err'); return; }
+  _v3Adim2();
+};
+
+// ── ADIM 2 — DOSYA YUKLE ─────────────────────────────────────
+function _v3Adim2() {
+  _v3.adim = 2; _v3RenderSteps();
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+
+  var s = V3_SABLONLAR[_v3.seciliSablon];
+  var h = '<div style="display:flex;gap:16px;padding:20px;flex-wrap:wrap">';
+  if (s.kolonlar) {
+    h += '<div style="flex:1;min-width:240px;padding:20px;border:1px solid var(--b);border-radius:10px;background:var(--s2);text-align:center">'
+      + '<div style="font-size:24px;margin-bottom:8px">\ud83d\udcc4</div>'
+      + '<div style="font-size:13px;font-weight:500;margin-bottom:6px">Hazir Sablonu Indir</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Bu sablonu indir, Excel\'de doldur, geri yukle</div>'
+      + '<button class="btn btns" onclick="event.stopPropagation();window._ihrSablonIndir(\'' + _v3.seciliSablon + '\')" style="font-size:11px">\u2b07 Sablon Indir</button>'
+      + '</div>';
+  }
+  h += '<div style="flex:1;min-width:240px;padding:20px;border:2px dashed var(--bm);border-radius:10px;text-align:center;cursor:pointer" onclick="event.stopPropagation();document.getElementById(\'v3-file-input\')?.click()" id="v3-drop-zone">'
+    + '<div style="font-size:32px;margin-bottom:8px">\ud83d\udce5</div>'
+    + '<div style="font-size:13px;font-weight:500;margin-bottom:6px">Dosya Yukle</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:4px">.xlsx \u00b7 .csv \u00b7 .jpg \u00b7 .png \u00b7 .pdf</div>'
+    + '<div id="v3-file-info" style="font-size:11px;color:#185FA5;margin-top:8px;font-weight:500"></div>'
+    + '<input type="file" id="v3-file-input" accept=".xlsx,.xls,.csv,.jpg,.jpeg,.png,.pdf" style="display:none" onchange="event.stopPropagation();window._v3DosyaSecildi(this)">'
+    + '</div>';
+  h += '</div>';
+  h += '<div style="padding:0 20px 12px;font-size:10px;color:var(--t3)">Gorsel/PDF yuklerseniz AI otomatik okur (API key gerekli)</div>';
+  body.innerHTML = h;
+
+  // Drag & drop — Safari uyumlu
+  var dz = document.getElementById('v3-drop-zone');
+  if (dz) {
+    dz.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); dz.style.borderColor = '#185FA5'; dz.style.background = '#E6F1FB'; });
+    dz.addEventListener('dragleave', function(e) { e.preventDefault(); e.stopPropagation(); dz.style.borderColor = ''; dz.style.background = ''; });
+    dz.addEventListener('drop', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      dz.style.borderColor = ''; dz.style.background = '';
+      var f = e.dataTransfer?.files?.[0];
+      if (f) {
+        var inp = document.getElementById('v3-file-input');
+        try { var dt = new DataTransfer(); dt.items.add(f); if (inp) { inp.files = dt.files; window._v3DosyaSecildi(inp); } } catch(e2) { /* Safari fallback */ if (inp) window._v3DosyaSecildi({ files: [f] }); }
+      }
+    });
+  }
+
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();window._v3Geri(1)">\u2190 Geri</button>'
+    + '<button class="btn btnp" id="v3-devam-2" onclick="event.stopPropagation();window._v3Adim2Devam()" style="opacity:.4;pointer-events:none">Devam \u2192</button>';
+}
+
+window._v3DosyaSecildi = function(input) {
+  var file = input.files?.[0];
+  if (!file) return;
+  _v3.dosyaAdi = file.name;
+  _v3.dosya = file;
+  var info = document.getElementById('v3-file-info');
+  var sizeKB = Math.round(file.size / 1024);
+  if (info) info.textContent = file.name + ' \u00b7 ' + sizeKB + ' KB';
+  var btn = document.getElementById('v3-devam-2');
+  if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+};
+
+window._v3Adim2Devam = function() {
+  if (!_v3.dosya) { window.toast?.('Dosya secin', 'err'); return; }
+  var file = _v3.dosya;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var imageExts = ['jpg', 'jpeg', 'png', 'pdf'];
+  var body = document.getElementById('import-v3-body');
+
+  if (imageExts.indexOf(ext) !== -1) {
+    if (body) body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t2)"><div style="font-size:32px;margin-bottom:12px">\ud83d\udd0d</div>Gorsel okunuyor...<div style="font-size:10px;color:var(--t3);margin-top:8px">Claude Vision API kullaniliyor</div></div>';
+    _v3ProcessImage(file);
+    return;
+  }
+
+  if (body) body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t2)">Dosya okunuyor...</div>';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      if (ext === 'csv') {
+        var lines = e.target.result.split('\n').filter(function(l) { return l.trim(); });
+        var rows = lines.map(function(l) { return l.split(/[,;\t]/).map(function(c) { return c.trim().replace(/^"|"$/g, ''); }); });
+        _v3ProcessRawData(rows);
+      } else if (typeof XLSX !== 'undefined') {
+        var wb = XLSX.read(e.target.result, { type: 'array' });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        _v3ProcessRawData(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }));
+      } else {
+        window.toast?.('XLSX kutuphanesi bulunamadi', 'err');
+      }
+    } catch (err) {
+      if (body) body.innerHTML = '<div style="padding:40px;text-align:center;color:#DC2626">' + _esc(err.message) + '</div>';
+    }
+  };
+  if (ext === 'csv') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+};
+
+function _v3ProcessRawData(rows) {
+  if (!rows || rows.length < 2) { window.toast?.('Dosyada veri bulunamadi', 'err'); return; }
+  var headerRowIdx = 0, maxDolu = 0;
+  for (var ri = 0; ri < Math.min(10, rows.length); ri++) {
+    var dolu = 0;
+    for (var ci = 0; ci < rows[ri].length; ci++) { if (String(rows[ri][ci] || '').trim()) dolu++; }
+    if (dolu > maxDolu) { maxDolu = dolu; headerRowIdx = ri; }
+  }
+  if (maxDolu < 2) { window.toast?.('Baslik satiri bulunamadi', 'err'); return; }
+  _v3.excelKolonlar = rows[headerRowIdx].map(function(k, i) { return String(k || '').trim() || ('Sutun_' + (i + 1)); });
+  _v3.excelData = rows.slice(headerRowIdx + 1).filter(function(r) {
+    return r.some(function(c) { return String(c || '').trim(); });
+  }).map(function(r) {
+    var obj = {};
+    _v3.excelKolonlar.forEach(function(k, i) { obj[k] = String(r[i] || '').trim(); });
+    return obj;
+  });
+  if (!_v3.excelData.length) { window.toast?.('Veri satirlari bulunamadi', 'err'); return; }
+  _v3.satirSayisi = _v3.excelData.length;
+  window.toast?.(_v3.satirSayisi + ' satir okundu', 'ok');
+  _v3Adim3();
+}
+
+/** Gorsel/PDF dosyasini Claude Vision ile isle */
+function _v3ProcessImage(file) {
+  var body = document.getElementById('import-v3-body');
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var b64Full = ev.target.result;
+    var b64Data = b64Full.split(',')[1] || b64Full;
+    var mediaType = file.type || 'image/jpeg';
+    var _storedKey = localStorage.getItem('ak_anthropic_key');
+    var apiKey = _storedKey ? (function() { try { return atob(_storedKey); } catch(e) { return _storedKey; } })() : '';
+    if (!apiKey) apiKey = window.__ANTHROPIC_KEY || '';
+    if (!apiKey) {
+      if (body) body.innerHTML = '<div style="padding:24px;text-align:center">'
+        + '<div style="font-size:13px;font-weight:500;margin-bottom:12px">Anthropic API Key Gerekli</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Gorsel okuma icin Claude Vision API kullanilir.</div>'
+        + '<input class="fi" id="v3-api-key" placeholder="sk-ant-..." style="width:100%;max-width:400px;margin-bottom:12px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">'
+        + '<div style="display:flex;gap:8px;justify-content:center">'
+        + '<button class="btn btns" onclick="event.stopPropagation();window._v3Geri(2)">Iptal</button>'
+        + '<button class="btn btnp" onclick="event.stopPropagation();var k=document.getElementById(\'v3-api-key\')?.value;if(k){try{localStorage.setItem(\'ak_anthropic_key\',btoa(k));}catch(e){localStorage.setItem(\'ak_anthropic_key\',k);}window._v3Adim2Devam();}">Kaydet ve Devam</button>'
+        + '</div></div>';
+      return;
+    }
+    var prompt = 'Bu belgeden urun listesini cikar. Her urun icin su alanlari bul: urun adi/aciklamasi, urun kodu, miktar, birim, birim fiyat, para birimi, HS kodu, brut kg, koli adedi. JSON array formatinda ver: [{"aciklama":"...","urun_kodu":"...","miktar":0,"birim":"PCS","birim_fiyat":0,"doviz":"USD","hs_kodu":"...","brut_kg":0,"koli_adet":0}]. Bulamazsan bos birak. Sadece JSON ver.';
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mediaType, data: b64Data } }, { type: 'text', text: prompt }] }] })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      try {
+        var text = data.content && data.content[0] ? data.content[0].text : '';
+        var jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        var urunler = JSON.parse(jsonStr);
+        if (!Array.isArray(urunler) || !urunler.length) throw new Error('Urun bulunamadi');
+        _v3.excelKolonlar = Object.keys(urunler[0]);
+        _v3.excelData = urunler.map(function(u) { var obj = {}; _v3.excelKolonlar.forEach(function(k) { obj[k] = String(u[k] || ''); }); return obj; });
+        _v3.satirSayisi = _v3.excelData.length;
+        _v3.eslestirme = {};
+        _v3.excelKolonlar.forEach(function(k) { _v3.eslestirme[k] = k; });
+        window.toast?.(_v3.satirSayisi + ' urun okundu (Vision)', 'ok');
+        _v3Adim3();
+      } catch(parseErr) {
+        if (body) body.innerHTML = '<div style="padding:24px;text-align:center;color:#DC2626"><div style="font-size:13px;font-weight:500;margin-bottom:8px">Gorsel okunamadi</div><div style="font-size:11px;color:var(--t3)">' + _esc(parseErr.message) + '</div><button class="btn btns" onclick="event.stopPropagation();window._v3Geri(2)" style="margin-top:12px">\u2190 Geri</button></div>';
+      }
+    })
+    .catch(function(err) {
+      if (body) body.innerHTML = '<div style="padding:24px;text-align:center;color:#DC2626"><div style="font-size:13px;font-weight:500;margin-bottom:8px">API Hatasi</div><div style="font-size:11px">' + _esc(err.message) + '</div><button class="btn btns" onclick="event.stopPropagation();window._v3Geri(2)" style="margin-top:8px">\u2190 Geri</button></div>';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── ADIM 3 — ESLESTIR / ONAYLA ───────────────────────────────
+function _v3Adim3() {
+  _v3.adim = 3; _v3RenderSteps();
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+
+  var sablon = V3_SABLONLAR[_v3.seciliSablon];
+  var hasApiKey = !!(localStorage.getItem('ak_anthropic_key') || window.__ANTHROPIC_KEY);
+  var aiMode = hasApiKey && sablon.kolonlar;
+
+  if (aiMode && Object.keys(_v3.eslestirme).length === 0) {
+    body.innerHTML = '<div style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:12px">\ud83e\udde0</div><div style="font-size:13px;font-weight:500">AI eslestirme yapiliyor...</div><div style="font-size:11px;color:var(--t3);margin-top:4px">Excel kolonlari sistem alanlariyla eslestirilyor</div></div>';
+    footer.innerHTML = '';
+    _v3AiEslestir(sablon);
+    return;
+  }
+
+  if (Object.keys(_v3.eslestirme).length === 0 && sablon.kolonlar) {
+    _v3.eslestirme = {};
+    sablon.kolonlar.forEach(function(kol, i) {
+      if (i < _v3.excelKolonlar.length) {
+        _v3.eslestirme[_v3.excelKolonlar[i]] = kol.key;
+      }
+    });
+  }
+
+  _v3RenderEslestirme(body, footer, sablon, aiMode);
+}
+
+function _v3RenderEslestirme(body, footer, sablon, aiMode) {
+  var h = '';
+  if (!aiMode && sablon.kolonlar) {
+    h += '<div style="padding:10px 20px;background:#FAEEDA;border-bottom:1px solid var(--b);font-size:11px;color:#633806">'
+      + 'AI devre disi \u2014 sablon sirasi kullaniliyor. Excel\'inizin kolon sirasi sablonla eslesiyorsa direkt aktarilir.'
+      + '</div>';
+  }
+  h += '<div style="padding:8px 20px;background:#E6F1FB;border-bottom:1px solid var(--b);font-size:11px;color:#0C447C">'
+    + _esc(_v3.dosyaAdi) + ' \u00b7 ' + _v3.satirSayisi + ' satir \u00b7 ' + _v3.excelKolonlar.length + ' kolon'
+    + '</div>';
+
+  var eslesti = 0;
+  _v3.excelKolonlar.forEach(function(k) { if (_v3.eslestirme[k] && _v3.eslestirme[k] !== 'atla') eslesti++; });
+  h += '<div style="padding:8px 20px;font-size:10px;color:var(--t3)">' + eslesti + '/' + _v3.excelKolonlar.length + ' kolon eslesti</div>';
+
+  var tumAlanlar = [
+    { v:'atla', l:'\u2014 Atla / Skip \u2014' },
+    { v:'aciklama', l:'Urun Aciklamasi' }, { v:'urun_kodu', l:'Urun Kodu' },
+    { v:'standart_urun_adi', l:'Standart Adi (EN)' }, { v:'tedarikci', l:'Tedarikci' },
+    { v:'birim_fiyat', l:'Birim Fiyat' }, { v:'para_birimi', l:'Para Birimi' },
+    { v:'brut_kg', l:'Brut KG' }, { v:'net_kg', l:'Net KG' },
+    { v:'koli_adet', l:'Koli Adedi' }, { v:'hacim_m3', l:'Hacim (CBM)' },
+    { v:'hs_kodu', l:'HS / GTIP Kodu' }, { v:'mensei_ulke', l:'Mensei Ulke' },
+    { v:'miktar', l:'Miktar' }, { v:'birim', l:'Birim' },
+    { v:'doviz', l:'Doviz' }, { v:'kur', l:'Kur' },
+    { v:'mense_ulke', l:'Mense Ulke' }, { v:'konteyner_no', l:'Konteyner No' },
+    { v:'muhur_no', l:'Muhur No' }, { v:'konteyner_sirasi', l:'Konteyner Sirasi' },
+    { v:'yuklenebilir_miktar', l:'Yuklenebilir Miktar' },
+    { v:'ambalaj_tipi', l:'Ambalaj Tipi' }, { v:'olcu_koli', l:'Olculer (1 Koli)' },
+    { v:'imo_gerekli', l:'IMO Gerekli' }, { v:'imo_no', l:'IMO No' },
+    { v:'gcb_id', l:'GCB No' }, { v:'urun_adi_tr', l:'Urun Adi (TR)' },
+    { v:'fatura_urun_adi', l:'Fatura Adi' }, { v:'gumrukcu_tanim', l:'Gumrukcu Tanim' },
+    { v:'siparis_no', l:'Siparis No' }, { v:'marka', l:'Marka' },
+    { v:'kdv_orani', l:'KDV Orani' }, { v:'toplam_fiyat', l:'Toplam Fiyat' }
+  ];
+
+  _v3.excelKolonlar.forEach(function(k) {
+    if (k.indexOf('Sutun_') === 0) {
+      var dolu = false;
+      for (var si = 0; si < Math.min(5, _v3.excelData.length); si++) { if (_v3.excelData[si][k]) { dolu = true; break; } }
+      if (!dolu) return;
+    }
+    var secili = _v3.eslestirme[k] || 'atla';
+    var eslesmis = secili !== 'atla';
+    var guven = _v3.eslestirme['_guven_' + k] || '';
+    var bg = eslesmis ? (guven === 'dusuk' ? '#FEF9C3' : '#EAF3DE') : '#FAEEDA';
+    var fg = eslesmis ? (guven === 'dusuk' ? '#854F0B' : '#085041') : '#633806';
+    var ornekler = [];
+    for (var oi = 0; oi < Math.min(3, _v3.excelData.length); oi++) {
+      var ov = _v3.excelData[oi][k];
+      if (ov) ornekler.push(String(ov).slice(0, 20));
+    }
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 20px;border-bottom:0.5px solid var(--b);font-size:11px">';
+    h += '<span style="flex:0 0 180px;font-family:monospace;font-size:10px;padding:3px 6px;border-radius:4px;background:' + bg + ';color:' + fg + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      + (eslesmis ? (guven === 'dusuk' ? '? ' : '\u2713 ') : '') + _esc(k) + '</span>';
+    h += '<span style="color:var(--t3)">\u2192</span>';
+    h += '<select class="fi" style="font-size:11px;min-width:180px;padding:5px 8px;' + (eslesmis ? 'border-color:#97C459;background:#EAF3DE' : '') + '" onchange="event.stopPropagation();window._v3EslGuncelle(\'' + _esc(k).replace(/'/g, "\\'") + '\',this.value)" onclick="event.stopPropagation()">';
+    tumAlanlar.forEach(function(a) { h += '<option value="' + a.v + '"' + (secili === a.v ? ' selected' : '') + '>' + _esc(a.l) + '</option>'; });
+    h += '</select>';
+    h += '<span style="flex:1;font-size:9px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(ornekler.join(' \u00b7 ')) + '</span>';
+    h += '</div>';
+  });
+
+  body.innerHTML = h;
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();window._v3Geri(2)">\u2190 Geri</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._v3Adim3Devam()">Devam \u2192</button>';
+}
+
+window._v3EslGuncelle = function(k, v) { _v3.eslestirme[k] = v; };
+
+/** AI ile kolon eslestirme */
+function _v3AiEslestir(sablon) {
+  var _storedKey = localStorage.getItem('ak_anthropic_key');
+  var apiKey = _storedKey ? (function() { try { return atob(_storedKey); } catch(e) { return _storedKey; } })() : '';
+  if (!apiKey) apiKey = window.__ANTHROPIC_KEY || '';
+
+  if (!apiKey || !sablon.kolonlar) {
+    _v3.eslestirme = {};
+    sablon.kolonlar.forEach(function(kol, i) {
+      if (i < _v3.excelKolonlar.length) _v3.eslestirme[_v3.excelKolonlar[i]] = kol.key;
+    });
+    _v3RenderEslestirme(document.getElementById('import-v3-body'), document.getElementById('import-v3-footer'), sablon, false);
+    return;
+  }
+
+  var sistemAlanlari = sablon.kolonlar.map(function(k) { return k.key + ' | ' + k.tr + ' | ' + k.en; }).join('\n');
+  var prompt = 'Sen bir veri eslestirme asistanisin.\n\nExcel basliklari: [' + _v3.excelKolonlar.join(', ') + ']\nSecilen sablon: ' + sablon.ad + '\nSistem alanlari:\n' + sistemAlanlari + '\n\nHer Excel basligini en uygun sistem alaniyla eslestir.\nEmin olmadiklarini "?" ile isaretle.\n\nJSON formatinda yanit ver:\n{"eslesme":[{"excel":"Excel Basligi","sistem_key":"alan_key","guven":"yuksek|orta|dusuk"}],"eslesmeyen":["eslesmeyen basliklar"]}';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    try {
+      var text = data.content && data.content[0] ? data.content[0].text : '';
+      var jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      var result = JSON.parse(jsonStr);
+      _v3.eslestirme = {};
+      if (result.eslesme && Array.isArray(result.eslesme)) {
+        result.eslesme.forEach(function(e) {
+          _v3.eslestirme[e.excel] = e.sistem_key;
+          _v3.eslestirme['_guven_' + e.excel] = e.guven || 'orta';
+        });
+      }
+      _v3.excelKolonlar.forEach(function(k) {
+        if (!_v3.eslestirme[k]) _v3.eslestirme[k] = 'atla';
+      });
+      window.toast?.('AI eslestirme tamamlandi', 'ok');
+      _v3RenderEslestirme(document.getElementById('import-v3-body'), document.getElementById('import-v3-footer'), sablon, true);
+    } catch(e) {
+      console.warn('[V3:AI] Parse hatasi, sablon sirasi kullaniliyor:', e.message);
+      _v3.eslestirme = {};
+      sablon.kolonlar.forEach(function(kol, i) {
+        if (i < _v3.excelKolonlar.length) _v3.eslestirme[_v3.excelKolonlar[i]] = kol.key;
+      });
+      _v3RenderEslestirme(document.getElementById('import-v3-body'), document.getElementById('import-v3-footer'), sablon, false);
+    }
+  })
+  .catch(function(err) {
+    console.warn('[V3:AI] API hatasi, sablon sirasi kullaniliyor:', err.message);
+    _v3.eslestirme = {};
+    if (sablon.kolonlar) {
+      sablon.kolonlar.forEach(function(kol, i) {
+        if (i < _v3.excelKolonlar.length) _v3.eslestirme[_v3.excelKolonlar[i]] = kol.key;
+      });
+    }
+    _v3RenderEslestirme(document.getElementById('import-v3-body'), document.getElementById('import-v3-footer'), sablon, false);
+  });
+}
+
+window._v3Adim3Devam = function() { _v3Adim4(); };
+
+// ── ADIM 4 — ONIZLEME & AKTAR ────────────────────────────────
+function _v3Adim4() {
+  _v3.adim = 4; _v3RenderSteps();
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+
+  var mappedRows = [];
+  var atlandiKolonlar = [];
+  _v3.excelKolonlar.forEach(function(k) {
+    if ((!_v3.eslestirme[k] || _v3.eslestirme[k] === 'atla') && k.indexOf('_guven_') !== 0) atlandiKolonlar.push(k);
+  });
+  _v3.excelData.forEach(function(satir) {
+    var mapped = {};
+    _v3.excelKolonlar.forEach(function(k) {
+      var alan = _v3.eslestirme[k];
+      if (alan && alan !== 'atla' && alan.indexOf('_guven_') !== 0) mapped[alan] = satir[k];
+    });
+    if (Object.keys(mapped).length > 0) mappedRows.push(mapped);
+  });
+
+  var mevcutU = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
+  var dosyaUrunler = _v3.dosyaId ? mevcutU.filter(function(u) { return String(u.dosya_id) === String(_v3.dosyaId) && !u.isDeleted; }) : mevcutU.filter(function(u) { return !u.isDeleted; });
+  var cakismaSay = 0;
+  mappedRows.forEach(function(m) {
+    if (m.urun_kodu) {
+      var dup = dosyaUrunler.find(function(u) { return u.urun_kodu === m.urun_kodu; });
+      if (dup) cakismaSay++;
+    }
+  });
+
+  var h = '<div style="padding:12px 20px;background:var(--s2);border-bottom:1px solid var(--b);font-size:11px;display:flex;gap:12px;flex-wrap:wrap">';
+  h += '<span style="color:#085041;font-weight:500">' + mappedRows.length + ' satir aktarilacak</span>';
+  if (atlandiKolonlar.length) h += '<span style="color:var(--t3)">' + atlandiKolonlar.length + ' kolon atlandi</span>';
+  if (cakismaSay) h += '<span style="color:#D97706">' + cakismaSay + ' mevcut urun koduna cakisma</span>';
+  h += '</div>';
+
+  if (mappedRows.length > 0) {
+    var onizKolonlar = Object.keys(mappedRows[0]).slice(0, 8);
+    h += '<div style="overflow-x:auto;padding:12px 20px"><table class="tbl" style="font-size:10px"><thead><tr>';
+    onizKolonlar.forEach(function(k) { h += '<th style="white-space:nowrap">' + _esc(k) + '</th>'; });
+    h += '</tr></thead><tbody>';
+    mappedRows.slice(0, 5).forEach(function(m, ri) {
+      h += '<tr>';
+      onizKolonlar.forEach(function(k) { h += '<td style="background:' + (ri % 2 ? 'var(--s2)' : '') + '">' + _esc(String(m[k] || '').slice(0, 30)) + '</td>'; });
+      h += '</tr>';
+    });
+    if (mappedRows.length > 5) h += '<tr><td colspan="' + onizKolonlar.length + '" style="text-align:center;color:var(--t3);font-style:italic">... ve ' + (mappedRows.length - 5) + ' satir daha</td></tr>';
+    h += '</tbody></table></div>';
+  }
+
+  if (cakismaSay > 0) {
+    h += '<div style="padding:12px 20px;border-top:1px solid var(--b)">';
+    h += '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Cakisma Secenegi</div>';
+    [{ k:'guncelle', l:'Mevcut urunleri guncelle' }, { k:'yeni', l:'Sadece yeni urun ekle' }, { k:'tumu', l:'Tumunu yeni ekle (mukerrer olusabilir)' }].forEach(function(d) {
+      var aktif = _v3.dupMod === d.k;
+      h += '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;cursor:pointer" onclick="event.stopPropagation();window._v3DupSec(\'' + d.k + '\')">';
+      h += '<span style="color:' + (aktif ? '#185FA5' : 'var(--t3)') + ';font-size:16px">' + (aktif ? '\u25c9' : '\u25cb') + '</span>';
+      h += '<span style="color:' + (aktif ? 'var(--t)' : 'var(--t2)') + '">' + d.l + '</span></label>';
+    });
+    h += '</div>';
+  }
+
+  body.innerHTML = h;
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();window._v3Geri(3)">\u2190 Geri</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrExcelImportV3Execute()">Aktar (' + mappedRows.length + ' satir)</button>';
+  _v3._mappedRows = mappedRows;
+}
+
+window._v3DupSec = function(mod) { _v3.dupMod = mod; _v3Adim4(); };
+
+/**
+ * V3 import uygula — eslestirilen verileri ihracat urunlerine yazar.
+ */
+window._ihrExcelImportV3Execute = function() {
+  var rows = _v3._mappedRows;
+  if (!rows || !rows.length) { window.toast?.('Aktarilacak veri yok', 'err'); return; }
+
+  var cu = typeof window.CU === 'function' ? window.CU() : (window.Auth?.getCU?.());
+  var mevcutU = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
+  var dosyaId = _v3.dosyaId;
+  var genId = typeof window.generateNumericId === 'function' ? window.generateNumericId : function() { return Date.now() + Math.floor(Math.random() * 10000); };
+  var nowStr = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  var eklenen = 0, guncellenen = 0, atlandi = 0;
+
+  rows.forEach(function(m) {
+    var dup = null;
+    if (m.urun_kodu && dosyaId) {
+      dup = mevcutU.find(function(u) { return !u.isDeleted && u.urun_kodu === m.urun_kodu && String(u.dosya_id) === String(dosyaId); });
+    }
+    if (dup && _v3.dupMod === 'guncelle') {
+      Object.keys(m).forEach(function(k) { if (m[k] && String(m[k]).trim()) dup[k] = m[k]; });
+      dup.updatedAt = nowStr; guncellenen++;
+    } else if (dup && _v3.dupMod === 'yeni') {
+      atlandi++;
+    } else {
+      mevcutU.unshift({
+        id: genId(), dosya_id: dosyaId || '',
+        aciklama: m.aciklama || m.urun_adi_tr || '',
+        standart_urun_adi: m.standart_urun_adi || m.aciklama || '',
+        urun_kodu: m.urun_kodu || '', hs_kodu: m.hs_kodu || '',
+        kdv_orani: m.kdv_orani || '',
+        miktar: parseFloat(m.miktar || 0), birim: m.birim || 'PCS',
+        birim_fiyat: parseFloat(m.birim_fiyat || 0),
+        doviz: m.doviz || m.para_birimi || 'USD',
+        brut_kg: parseFloat(m.brut_kg || 0), net_kg: parseFloat(m.net_kg || 0),
+        hacim_m3: parseFloat(m.hacim_m3 || 0), koli_adet: parseInt(m.koli_adet || 0),
+        mense_ulke: m.mense_ulke || m.mensei_ulke || '',
+        tedarikciAd: m.tedarikci || '', gumrukcu_tanim: m.gumrukcu_tanim || '',
+        fatura_urun_adi: m.fatura_urun_adi || '',
+        konteyner_no: m.konteyner_no || '', muhur_no: m.muhur_no || '',
+        konteyner_sira: m.konteyner_sirasi || '',
+        imo_gerekli: m.imo_gerekli || '', imo_no: m.imo_no || '',
+        gcb_id: m.gcb_id || '', ambalaj_tipi: m.ambalaj_tipi || '',
+        olcu_koli: m.olcu_koli || '',
+        kaynak: 'excel_v3', createdAt: nowStr, createdBy: cu?.id
+      });
+      eklenen++;
+    }
+  });
+
+  if (typeof window.storeIhracatUrunler === 'function') window.storeIhracatUrunler(mevcutU);
+
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (body) {
+    body.innerHTML = '<div style="padding:32px 20px;text-align:center">'
+      + '<div style="font-size:36px;margin-bottom:12px">\u2705</div>'
+      + '<div style="font-size:16px;font-weight:600;margin-bottom:20px">Import Tamamlandi</div>'
+      + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">'
+      + '<div style="background:#EAF3DE;border-radius:10px;padding:16px 24px;text-align:center;min-width:90px"><div style="font-size:28px;font-weight:700;color:#16A34A">' + eklenen + '</div><div style="font-size:11px;color:#085041">Eklendi</div></div>'
+      + '<div style="background:#E6F1FB;border-radius:10px;padding:16px 24px;text-align:center;min-width:90px"><div style="font-size:28px;font-weight:700;color:#185FA5">' + guncellenen + '</div><div style="font-size:11px;color:#0C447C">Guncellendi</div></div>'
+      + '<div style="background:#FAEEDA;border-radius:10px;padding:16px 24px;text-align:center;min-width:90px"><div style="font-size:28px;font-weight:700;color:#D97706">' + atlandi + '</div><div style="font-size:11px;color:#633806">Atlandi</div></div>'
+      + '</div></div>';
+  }
+  if (footer) {
+    footer.innerHTML = '<button class="btn btnp" onclick="event.stopPropagation();document.getElementById(\'mo-import-v3\')?.remove();if(window._aktifDosyaId){window._ihrRenderDosyaDetay?.(window._aktifDosyaId);}else{window.renderIhracatOps?.();}">Urunlere Git \u2192</button>';
+  }
+
+  window.toast?.(eklenen + ' urun aktarildi' + (guncellenen ? ' \u00b7 ' + guncellenen + ' guncellendi' : '') + (atlandi ? ' \u00b7 ' + atlandi + ' atlandi' : ''), 'ok');
+  window.logActivity?.('import', 'Excel V3: ' + eklenen + ' eklendi, ' + guncellenen + ' guncellendi, ' + atlandi + ' atlandi');
+};
+
+// ── GERI NAVIGASYON ──────────────────────────────────────────
+window._v3Geri = function(adim) {
+  if (adim === 1) _v3Adim1();
+  else if (adim === 2) _v3Adim2();
+  else if (adim === 3) { _v3.eslestirme = {}; _v3Adim3(); }
+};
+
+// ── SABLON INDIR ─────────────────────────────────────────────
+/**
+ * Secilen sablonun bos Excel dosyasini indirir.
+ * @param {string} sablonKey V3_SABLONLAR key
+ */
+window._ihrSablonIndir = function(sablonKey) {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kutuphanesi yuklu degil', 'err'); return; }
+  var sablon = V3_SABLONLAR[sablonKey];
+  if (!sablon || !sablon.kolonlar) { window.toast?.('Bu sablon icin indirme desteklenmiyor', 'err'); return; }
+
+  var headers = sablon.kolonlar.map(function(k) { return k.tr + ' (' + k.en + ')'; });
+  var ornekMap = {
+    tedarikci: 'ABC Trading Co.', urun_kodu: 'PRD-001', urun_adi_tr: 'Ornek Urun',
+    standart_urun_adi: 'Sample Product', birim_fiyat: '12.50', para_birimi: 'USD',
+    brut_kg: '25.5', net_kg: '22.0', koli_adet: '10', hs_kodu: '8471.30.00',
+    mensei_ulke: 'Turkiye', imo_gerekli: 'H', imo_no: '1234', gcb_id: 'GCB-2026-001',
+    konteyner_no: 'MSKU1234567', muhur_no: 'SL12345', konteyner_sirasi: '1',
+    yuklenebilir_miktar: '500', ambalaj_tipi: 'KARTON', olcu_koli: '40x30x25',
+    hacim_m3: '0.03', kur: '32.50', miktar: '100'
+  };
+  var ornekSatir = sablon.kolonlar.map(function(k) { return ornekMap[k.key] || ''; });
+
+  var ws = XLSX.utils.aoa_to_sheet([headers, ornekSatir]);
+  ws['!cols'] = headers.map(function(h2) { return { wch: Math.max(20, h2.length + 2) }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sablon.ad);
+  var tarih = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  XLSX.writeFile(wb, 'duay_sablon_' + sablonKey + '_' + tarih + '.xlsx');
+  window.toast?.('Sablon indirildi', 'ok');
 };
 
 })();
