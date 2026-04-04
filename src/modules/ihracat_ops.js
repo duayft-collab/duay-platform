@@ -616,7 +616,7 @@ function _ihrDetayRenderOzet(d) {
   var _saglikPct = Math.round((_hsPct + _evrakPct) / 2);
   var _saglikRenk = _kpiRenk(_saglikPct);
 
-  var h = '<div style="display:grid;grid-template-columns:220px 1fr 280px;grid-template-rows:1fr 32px;height:calc(100vh - 285px);min-height:320px;gap:0;overflow:hidden">';
+  var h = '<div style="display:grid;grid-template-columns:220px 1fr 280px;grid-template-rows:1fr 32px;height:calc(100vh - 290px);min-height:340px;gap:0;overflow:hidden;border:0.5px solid var(--b);border-radius:0 0 8px 8px;background:var(--sf)">';
 
   /* ══ SOL KOLON (220px) ══ */
   h += '<div style="grid-row:1;border-right:0.5px solid var(--b);overflow:hidden;display:flex;flex-direction:column;padding:0">';
@@ -628,12 +628,14 @@ function _ihrDetayRenderOzet(d) {
   h += '<div style="padding:10px"><div style="font-size:9px;color:var(--t3)">Saglik</div><div style="font-size:20px;font-weight:700;color:' + _saglikRenk + '">%' + _saglikPct + '</div></div>';
   h += '</div>';
   /* Dosya bilgileri */
-  h += '<div style="padding:10px;flex:1;overflow-y:auto">';
-  var _bilgiS = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--b);font-size:11px';
+  h += '<div style="padding:8px 10px;flex:1;overflow-y:auto">';
   [['Musteri', d.musteriAd], ['Teslim', (d.teslim_sekli || '') + ' ' + (d.varis_limani || '')], ['Odeme', d.odeme_sarti], ['Sorumlu', d.sorumluAd], ['Bitis', d.bitis_tarihi]].forEach(function(r) {
     var v = r[1] || '\u2014';
-    var renk = r[0] === 'Bitis' && kalanGun !== null && kalanGun < 7 ? 'color:' + _kalanRenk(kalanGun) + ';font-weight:600' : 'color:var(--t);font-weight:500';
-    h += '<div style="' + _bilgiS + '"><span style="color:var(--t3)">' + r[0] + '</span><span style="' + renk + ';font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(v) + '</span></div>';
+    var vRenk = r[0] === 'Bitis' && kalanGun !== null && kalanGun < 7 ? _kalanRenk(kalanGun) : 'var(--t)';
+    h += '<div style="padding:3px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<div style="font-size:9px;color:var(--t3)">' + r[0] + '</div>';
+    h += '<div style="font-size:11px;font-weight:500;color:' + vRenk + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(v) + '</div>';
+    h += '</div>';
   });
   h += '</div>';
   /* Paydas hizli erisim */
@@ -708,7 +710,7 @@ function _ihrDetayRenderOzet(d) {
     evraklar.forEach(function(e) { if (e.tur === ev.tur && !e.isDeleted) kayit = e; });
     var sev = window._ihrEvrakDurumSeviye?.(kayit || { tur: ev.tur, durum: null }, dosyaAsama) || { seviye: 1, label: 'Eksik', renk: '#A32D2D' };
     var isDuay = ev.kim === 'duay';
-    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--b);flex-wrap:wrap">';
     /* Sol: renkli nokta */
     h += '<div style="width:8px;height:8px;border-radius:50%;background:' + sev.renk + ';flex-shrink:0"></div>';
     /* Evrak adi */
@@ -3948,11 +3950,11 @@ window._ihrKonteynerGauge = function(dosyaId) {
     topM3 += parseFloat(u.hacim_m3) || 0;
     topKG += (parseFloat(u.brut_kg) || 0);
   });
-  // Sanity check — gercek disi degerler icin sinirla
-  topM3 = Math.min(topM3, kap.m3 * 1.1);
-  topKG = Math.min(topKG, kap.kg * 1.5);
-  var pctM3 = Math.min(100, Math.round(topM3 / kap.m3 * 100));
-  var pctKG = Math.min(100, Math.round(topKG / kap.kg * 100));
+  // Sanity check — gauge bari max %100 ama gosterge deger gercek
+  var pctM3 = Math.min(Math.round(topM3 / kap.m3 * 100), 999);
+  var pctKG = Math.min(Math.round(topKG / kap.kg * 100), 999);
+  var barM3 = Math.min(pctM3, 100);
+  var barKG = Math.min(pctKG, 100);
   var renk = function(p) { return p >= 95 ? '#DC2626' : p >= 80 ? '#D97706' : '#16A34A'; };
 
   var h = '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">';
@@ -3966,13 +3968,14 @@ window._ihrKonteynerGauge = function(dosyaId) {
   h += '</div></div>';
   // M3 gauge
   h += '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px"><span>Hacim (m\u00b3)</span><span>' + topM3.toFixed(1) + ' / ' + kap.m3 + ' m\u00b3</span></div>';
-  h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + pctM3 + '%;background:' + renk(pctM3) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
+  h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + barM3 + '%;background:' + renk(pctM3) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
   // KG gauge
   h += '<div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px"><span>Agirlik (KG)</span><span>' + topKG.toLocaleString('tr-TR') + ' / ' + kap.kg.toLocaleString('tr-TR') + ' KG</span></div>';
-  h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + pctKG + '%;background:' + renk(pctKG) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
+  h += '<div style="height:10px;background:var(--s2);border-radius:5px;overflow:hidden;position:relative"><div style="height:100%;width:' + barKG + '%;background:' + renk(pctKG) + ';border-radius:5px;transition:width .3s"></div><div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.2)"></div></div></div>';
   // Uyari mesajlari
   var maxPct = Math.max(pctM3, pctKG);
-  if (maxPct >= 95) h += '<div style="font-size:9px;color:#DC2626;margin-top:6px;font-weight:500">\ud83d\udd34 Konteyner neredeyse dolu</div>';
+  if (pctM3 > 100 || pctKG > 100) h += '<div style="font-size:9px;color:#DC2626;margin-top:6px;font-weight:500">\ud83d\udd34 Konteyner kapasitesi asildi! (M\u00b3 %' + pctM3 + ', KG %' + pctKG + ')</div>';
+  else if (maxPct >= 95) h += '<div style="font-size:9px;color:#DC2626;margin-top:6px;font-weight:500">\ud83d\udd34 Konteyner neredeyse dolu</div>';
   else if (maxPct >= 80) h += '<div style="font-size:9px;color:#D97706;margin-top:6px">\u26a0 ' + tip + ' kapasitesinin %' + maxPct + '\'i dolu</div>';
   h += '</div>';
   return h;
