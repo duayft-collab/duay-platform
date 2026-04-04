@@ -853,8 +853,109 @@ window._renderSistemTestler = function() {
   var scoreColor = failed === 0 ? '#16a34a' : failed <= 2 ? '#D97706' : '#dc2626';
 
   panel.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:18px;font-weight:500;color:var(--t)">Sistem Testleri</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Son: ' + new Date().toLocaleTimeString('tr-TR') + '</div></div><div style="display:flex;align-items:center;gap:12px"><div style="text-align:center"><div style="font-size:28px;font-weight:500;color:' + scoreColor + '">' + passed + '/' + results.length + '</div><div style="font-size:10px;color:var(--t3)">Test geçti</div></div><button onclick="window._renderSistemTestler?.()" style="padding:8px 16px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t)">Yeniden Çalıştır</button></div></div>'
-    + '<div style="display:flex;flex-direction:column;gap:6px">' + results.map(function(r) { var c = r.result.ok ? '#16a34a' : r.result.warn ? '#D97706' : '#dc2626'; var ic = r.result.ok ? '✓' : r.result.warn ? '⚠' : '✗'; var bg = r.result.ok ? '#EAF3DE' : r.result.warn ? '#FAEEDA' : '#FCEBEB'; return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px"><div style="width:22px;height:22px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:' + c + ';flex-shrink:0">' + ic + '</div><div style="flex:1;font-size:12px;font-weight:500;color:var(--t)">' + r.label + '</div><div style="font-size:11px;color:' + c + ';font-weight:500">' + r.result.val + '</div></div>'; }).join('') + '</div></div>';
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:18px;font-weight:500;color:var(--t)">Sistem Testleri</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Son: ' + new Date().toLocaleTimeString('tr-TR') + '</div></div><div style="display:flex;align-items:center;gap:12px"><div style="text-align:center"><div style="font-size:28px;font-weight:500;color:' + scoreColor + '">' + passed + '/' + results.length + '</div><div style="font-size:10px;color:var(--t3)">Test geçti</div></div><button onclick="window._renderSistemTestler?.()" style="padding:8px 16px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t)">Yeniden Çalıştır</button><button onclick="window._runDataConsistency?.()" style="padding:8px 16px;border-radius:7px;border:0.5px solid #185FA5;background:#E6F1FB;font-size:11px;cursor:pointer;font-family:inherit;color:#0C447C;margin-left:8px">Veri Kontrolü</button></div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">' + results.map(function(r) { var c = r.result.ok ? '#16a34a' : r.result.warn ? '#D97706' : '#dc2626'; var ic = r.result.ok ? '✓' : r.result.warn ? '⚠' : '✗'; var bg = r.result.ok ? '#EAF3DE' : r.result.warn ? '#FAEEDA' : '#FCEBEB'; return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px"><div style="width:22px;height:22px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:' + c + ';flex-shrink:0">' + ic + '</div><div style="flex:1;font-size:12px;font-weight:500;color:var(--t)">' + r.label + '</div><div style="font-size:11px;color:' + c + ';font-weight:500">' + r.result.val + '</div></div>'; }).join('') + '</div>'
+    + '<div id="data-consistency-results" style="margin-top:20px"></div>'
+    + '</div>';
+};
+
+// ══ DATA-CONSISTENCY-001 ══════════════════════════════════════
+window._runDataConsistency = function() {
+  var el = document.getElementById('data-consistency-results');
+  if (!el) { window.toast?.('Sonuc alani bulunamadi', 'err'); return; }
+  el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--t2)">Kontroller calisiyor...</div>';
+  var t0 = Date.now();
+  var checks = [];
+
+  // Veri yukle
+  var ihrDosyalar = typeof loadIhracatDosyalar === 'function' ? loadIhracatDosyalar() : [];
+  var ihrUrunlerAll = []; try { ihrUrunlerAll = JSON.parse(localStorage.getItem('ak_ihr_urun1') || '[]'); } catch(e) {}
+  var ihrUrunlerAktif = ihrUrunlerAll.filter(function(u) { return !u.isDeleted; });
+  var ihrEvraklar = typeof loadIhracatEvraklar === 'function' ? loadIhracatEvraklar() : [];
+  var ihrGcb = typeof loadIhracatGcb === 'function' ? loadIhracatGcb() : [];
+  var aktifDosyaIds = {};
+  ihrDosyalar.forEach(function(d) { aktifDosyaIds[String(d.id)] = true; });
+
+  // 1) Orphan urunler
+  var t1 = Date.now();
+  var orphanN = ihrUrunlerAktif.filter(function(u) { return u.dosya_id && !aktifDosyaIds[String(u.dosya_id)]; }).length;
+  checks.push({ label:'Orphan Urunler', ok: orphanN === 0, warn: false, val: orphanN === 0 ? 'Temiz' : orphanN + ' orphan urun', ms: Date.now() - t1 });
+
+  // 2) Evrak zinciri tutarliligi
+  var t2 = Date.now();
+  var zincirSapma = 0;
+  ihrDosyalar.forEach(function(d) {
+    var evs = {}; ihrEvraklar.filter(function(e) { return String(e.dosya_id) === String(d.id); }).forEach(function(e) { evs[e.tur] = e.durum; });
+    if ((evs.CI === 'onaylandi' || evs.CI === 'gonderildi') && evs.PI !== 'onaylandi' && evs.PI !== 'gonderildi') zincirSapma++;
+    if ((evs.PL === 'onaylandi' || evs.PL === 'gonderildi') && evs.CI !== 'onaylandi' && evs.CI !== 'gonderildi') zincirSapma++;
+  });
+  checks.push({ label:'Evrak Zinciri', ok: zincirSapma === 0, warn: false, val: zincirSapma === 0 ? 'Tutarli' : zincirSapma + ' dosyada sira bozuk', ms: Date.now() - t2 });
+
+  // 3) Silinmis urun orani
+  var t3 = Date.now();
+  var silOran = ihrUrunlerAll.length > 0 ? Math.round(ihrUrunlerAll.filter(function(u) { return u.isDeleted; }).length / ihrUrunlerAll.length * 100) : 0;
+  checks.push({ label:'Silinmis Urun Orani', ok: silOran < 80, warn: silOran >= 80 && silOran < 95, val: '%' + silOran + (silOran >= 80 ? ' — temizlik onerilir' : ''), ms: Date.now() - t3 });
+
+  // 4) Duplicate urun kodu
+  var t4 = Date.now();
+  var kodSay = {}; ihrUrunlerAktif.forEach(function(u) { if (u.urun_kodu) { kodSay[u.urun_kodu] = (kodSay[u.urun_kodu] || 0) + 1; } });
+  var dupN = Object.keys(kodSay).filter(function(k) { return kodSay[k] > 1; }).length;
+  checks.push({ label:'Duplicate Urun Kodu', ok: dupN === 0, warn: dupN > 0, val: dupN === 0 ? 'Temiz' : dupN + ' cift urun kodu', ms: Date.now() - t4 });
+
+  // 5) GCB ↔ Evrak senkron
+  var t5 = Date.now();
+  var gcbEksik = 0;
+  ihrEvraklar.filter(function(e) { return e.tur === 'GCB' && e.durum === 'taslak'; }).forEach(function(e) {
+    var gercekGcb = ihrGcb.find(function(g) { return String(g.dosya_id) === String(e.dosya_id) && !g.isDeleted; });
+    if (!gercekGcb) gcbEksik++;
+  });
+  checks.push({ label:'GCB Senkron', ok: gcbEksik === 0, warn: false, val: gcbEksik === 0 ? 'Tutarli' : gcbEksik + ' dosyada GCB eksik', ms: Date.now() - t5 });
+
+  // 6) Fiyat tutarsizligi
+  var t6 = Date.now();
+  var fiyatMap = {};
+  ihrUrunlerAktif.forEach(function(u) { if (u.urun_kodu && u.birim_fiyat) { if (!fiyatMap[u.urun_kodu]) fiyatMap[u.urun_kodu] = new Set(); fiyatMap[u.urun_kodu].add(String(u.birim_fiyat)); } });
+  var fiyatTutarsiz = Object.keys(fiyatMap).filter(function(k) { return fiyatMap[k].size > 1; }).length;
+  checks.push({ label:'Fiyat Tutarliligi', ok: fiyatTutarsiz === 0, warn: fiyatTutarsiz > 0, val: fiyatTutarsiz === 0 ? 'Tutarli' : fiyatTutarsiz + ' urunde fiyat farki', ms: Date.now() - t6 });
+
+  // 7) LS ↔ Firestore senkron
+  var t7 = Date.now();
+  var fbOk = !!window.Auth?.getFBDB?.();
+  checks.push({ label:'Firestore Senkron', ok: fbOk, warn: !fbOk, val: fbOk ? 'Bagli' : 'Bagli degil — kontrol edilemedi', ms: Date.now() - t7 });
+
+  // 8) Bos zorunlu alanlar
+  var t8 = Date.now();
+  var bosAciklama = ihrUrunlerAktif.filter(function(u) { return !u.aciklama; }).length;
+  var bosMiktar = ihrUrunlerAktif.filter(function(u) { return !parseFloat(u.miktar); }).length;
+  var bosFiyat = ihrUrunlerAktif.filter(function(u) { return !parseFloat(u.birim_fiyat); }).length;
+  var bosTop = bosAciklama + bosMiktar + bosFiyat;
+  checks.push({ label:'Bos Zorunlu Alanlar', ok: bosTop === 0, warn: bosTop > 0, val: bosTop === 0 ? 'Temiz' : bosAciklama + ' aciklama, ' + bosMiktar + ' miktar, ' + bosFiyat + ' fiyat bos', ms: Date.now() - t8 });
+
+  // Sonuc render
+  var totalMs = Date.now() - t0;
+  var gecti = checks.filter(function(c) { return c.ok; }).length;
+  var sorunlu = checks.filter(function(c) { return !c.ok && !c.warn; }).length;
+  var ozet = gecti + '/' + checks.length + ' gecti' + (sorunlu > 0 ? ' — ' + sorunlu + ' sorun' : '');
+  var ozetRenk = sorunlu === 0 ? '#16A34A' : '#DC2626';
+
+  var h = '<div style="border-top:2px solid var(--b);padding-top:20px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h += '<div style="font-size:16px;font-weight:500;color:var(--t)">Data Consistency Check</div>';
+  h += '<div style="display:flex;align-items:center;gap:12px"><div style="font-size:20px;font-weight:600;color:' + ozetRenk + '">' + ozet + '</div><div style="font-size:10px;color:var(--t3)">' + totalMs + 'ms</div></div>';
+  h += '</div>';
+  checks.forEach(function(c) {
+    var renk = c.ok ? '#16A34A' : c.warn ? '#D97706' : '#DC2626';
+    var ikon = c.ok ? '\u2713' : c.warn ? '\u26a0' : '\u2717';
+    var bg = c.ok ? '#EAF3DE' : c.warn ? '#FAEEDA' : '#FCEBEB';
+    h += '<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px;margin-bottom:4px">';
+    h += '<div style="width:22px;height:22px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:' + renk + ';flex-shrink:0">' + ikon + '</div>';
+    h += '<div style="flex:1;font-size:12px;font-weight:500;color:var(--t)">' + c.label + '</div>';
+    h += '<div style="font-size:11px;color:' + renk + ';font-weight:500">' + c.val + '</div>';
+    h += '<div style="font-size:9px;color:var(--t3);min-width:40px;text-align:right">' + c.ms + 'ms</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
 };
 
 // ════════════════════════════════════════════════════════════════
