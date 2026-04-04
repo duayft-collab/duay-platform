@@ -268,7 +268,7 @@ function _ihrRenderGcbList(el) {
   var h = '<div style="display:flex;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:13px;font-weight:500">GÇB Takip</div><button class="btn btnp" onclick="window._ihrGcbEkle(null)" style="font-size:11px">+ GÇB Ekle</button></div>';
   if (!gcbAll.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)">Henüz GÇB yok</div>'; el.innerHTML = h; return; }
   h += '<table class="tbl"><thead><tr><th>GÇB No</th><th>Dosya</th><th>Tescil</th><th>FOB</th><th>Durum</th><th></th></tr></thead><tbody>';
-  gcbAll.forEach(function(g) { var dosya = _loadD().find(function(d) { return d.id === g.dosya_id; }); h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(g.beyan_no || '—') + '</td><td style="font-size:11px">' + _esc(dosya?.dosyaNo || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(g.tescil_tarihi || '—') + '</td><td style="font-size:11px">' + (g.fob_deger ? g.fob_deger.toLocaleString('tr-TR') + ' ' + (g.doviz || '') : '—') + '</td><td>' + _badge(g.durum || 'bekliyor', '#D97706', 'rgba(217,119,6,.1)') + '</td><td><button class="btn btns" onclick="window._ihrGcbDuzenle(\'' + g.id + '\')" style="font-size:11px;padding:3px 8px">✏️</button></td></tr>'; });
+  gcbAll.forEach(function(g) { var dosya = _loadD().find(function(d) { return d.id === g.dosya_id; }); h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(g.beyan_no || '—') + '</td><td style="font-size:11px">' + _esc(dosya?.dosyaNo || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(g.tescil_tarihi || '—') + '</td><td style="font-size:11px">' + (g.fob_deger ? g.fob_deger.toLocaleString('tr-TR') + ' ' + (g.doviz || '') : '—') + '</td><td>' + _badge(g.durum || 'bekliyor', '#D97706', 'rgba(217,119,6,.1)') + '</td><td><button class="btn btns" onclick="window._ihrGcbDuzenle(\'' + g.id + '\')" style="font-size:11px;padding:3px 8px">\u270f\ufe0f</button><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrGcbSil?.(\'' + g.id + '\')" style="font-size:11px;padding:3px 8px">\ud83d\uddd1</button></td></tr>'; });
   h += '</tbody></table>'; el.innerHTML = h;
 }
 
@@ -278,7 +278,7 @@ function _ihrRenderBlList(el) {
   var h = '<div style="display:flex;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:13px;font-weight:500">Konşimento Takip</div><button class="btn btnp" onclick="window._ihrBlEkle(null)" style="font-size:11px">+ BL Ekle</button></div>';
   if (!blAll.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)">Henüz BL yok</div>'; el.innerHTML = h; return; }
   h += '<table class="tbl"><thead><tr><th>BL No</th><th>Dosya</th><th>Consignee</th><th>Yükleme</th><th>Tür</th><th></th></tr></thead><tbody>';
-  blAll.forEach(function(b) { var dosya = _loadD().find(function(d) { return d.id === b.dosya_id; }); h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(b.bl_no || '—') + '</td><td style="font-size:11px">' + _esc(dosya?.dosyaNo || '—') + '</td><td style="font-size:11px">' + _esc(b.consignee || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(b.yukleme_tarihi || '—') + '</td><td style="font-size:11px">' + _esc({ seaway: 'SeaWay', hardcopy: 'Hard Copy', telex: 'Telex' }[b.bl_turu] || '—') + '</td><td><button class="btn btns" onclick="window._ihrBlDuzenle(\'' + b.id + '\')" style="font-size:11px;padding:3px 8px">✏️</button></td></tr>'; });
+  blAll.forEach(function(b) { var dosya = _loadD().find(function(d) { return d.id === b.dosya_id; }); h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(b.bl_no || '—') + '</td><td style="font-size:11px">' + _esc(dosya?.dosyaNo || '—') + '</td><td style="font-size:11px">' + _esc(b.consignee || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(b.yukleme_tarihi || '—') + '</td><td style="font-size:11px">' + _esc({ seaway: 'SeaWay', hardcopy: 'Hard Copy', telex: 'Telex' }[b.bl_turu] || '—') + '</td><td><button class="btn btns" onclick="window._ihrBlDuzenle(\'' + b.id + '\')" style="font-size:11px;padding:3px 8px">\u270f\ufe0f</button><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrBlSil?.(\'' + b.id + '\')" style="font-size:11px;padding:3px 8px">\ud83d\uddd1</button></td></tr>'; });
   h += '</tbody></table>'; el.innerHTML = h;
 }
 
@@ -705,6 +705,7 @@ function _ihrDetayRenderOzet(d) {
         if (df.yukleme_tarihi) h += '<span style="color:var(--t3)">' + _esc(df.yukleme_tarihi.slice(0, 16)) + '</span>';
         if (df.revizyon) h += '<span style="padding:1px 4px;border-radius:3px;background:var(--s2);color:var(--t3)">R' + df.revizyon + '</span>';
         if (df.url_veya_b64) h += '<a href="' + _esc(df.url_veya_b64) + '" target="_blank" style="color:#185FA5;text-decoration:none">Ac</a>';
+        h += '<button onclick="event.stopPropagation();window._ihrEvrakDosyaSil?.(\'' + (kayit ? kayit.id : '') + '\',\'' + df.id + '\')" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:10px;padding:0 2px" title="Sil">\u2717</button>';
         h += '</div>';
       });
       h += '</div>';
@@ -729,6 +730,7 @@ function _ihrDetayRenderOzet(d) {
     var _ozelBtnMetin = _ozelTopDosya > 0 ? '+ Ekle' : 'Yukle';
     var _ozelBtnStil = _ozelTopDosya > 0 ? 'color:#085041;border-color:#97C459' : 'color:#633806;border-color:#EF9F27';
     h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:2px 8px;' + _ozelBtnStil + '">' + _ozelBtnMetin + '</button>';
+    h += '<button class="btn btns btnd" onclick="event.stopPropagation();window._ihrOzelEvrakSil?.(\'' + ev.id + '\')" style="font-size:10px;padding:2px 8px">Sil</button>';
     h += '</div></div></div>';
   });
   // + Belge Ekle butonu
@@ -2819,6 +2821,43 @@ window._ihrSmartEvrakKaydet = function(dosyaId, evrakTur) {
   window.toast?.(evrakTur + ' okundu ve kaydedildi', 'ok');
   window.logActivity?.('ihracat', evrakTur + ' Smart OCR ile kaydedildi');
   if (_aktifDosyaId) { var _dd5 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd5) _ihrDetayRenderOzet(_dd5); }
+};
+
+// ══ CRUD-EVRAK-001: Silme fonksiyonlari ══════════════════════
+window._ihrEvrakDosyaSil = function(evrakId, dosyaId) {
+  window.confirmModal?.('Bu dosya kalici olarak silinecek?', { title:'Dosya Sil', danger:true, confirmText:'Evet, Sil', onConfirm: function() {
+    var evraklar = _loadE(); var ev = evraklar.find(function(e) { return String(e.id) === String(evrakId); });
+    if (ev && Array.isArray(ev.dosyalar)) { ev.dosyalar = ev.dosyalar.filter(function(df) { return String(df.id) !== String(dosyaId); }); ev.updatedAt = _now(); }
+    _storeE(evraklar); window.toast?.('Dosya silindi', 'ok');
+    if (_aktifDosyaId) { var _dd6 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd6) _ihrDetayRenderOzet(_dd6); }
+  }});
+};
+
+window._ihrGcbSil = function(id) {
+  window.confirmModal?.('Bu GCB kaydini silmek istediginizden emin misiniz?', { title:'GCB Sil', danger:true, confirmText:'Evet, Sil', onConfirm: function() {
+    var list = _loadG(); var g = list.find(function(x) { return String(x.id) === String(id); });
+    if (g) { g.isDeleted = true; g.deletedAt = _now(); } _storeG(list);
+    window.toast?.('GCB silindi', 'ok'); window.logActivity?.('ihracat', 'GCB silindi: ' + (g ? g.beyan_no : id));
+    window.renderIhracatOps?.();
+  }});
+};
+
+window._ihrBlSil = function(id) {
+  window.confirmModal?.('Bu BL kaydini silmek istediginizden emin misiniz?', { title:'BL Sil', danger:true, confirmText:'Evet, Sil', onConfirm: function() {
+    var list = _loadBL(); var b = list.find(function(x) { return String(x.id) === String(id); });
+    if (b) { b.isDeleted = true; b.deletedAt = _now(); } _storeBL(list);
+    window.toast?.('BL silindi', 'ok'); window.logActivity?.('ihracat', 'BL silindi: ' + (b ? b.bl_no : id));
+    window.renderIhracatOps?.();
+  }});
+};
+
+window._ihrOzelEvrakSil = function(id) {
+  window.confirmModal?.('Bu belge silinecek?', { title:'Belge Sil', danger:true, confirmText:'Evet, Sil', onConfirm: function() {
+    var evraklar = _loadE(); var ev = evraklar.find(function(e) { return String(e.id) === String(id); });
+    if (ev) { ev.isDeleted = true; ev.deletedAt = _now(); } _storeE(evraklar);
+    window.toast?.('Belge silindi', 'ok');
+    if (_aktifDosyaId) { var _dd7 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd7) _ihrDetayRenderOzet(_dd7); }
+  }});
 };
 
 })();
