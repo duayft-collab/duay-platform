@@ -1205,32 +1205,74 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   var stickyBgH = 'var(--s2)';
   h += '<div style="overflow:auto;border:0.5px solid var(--b);border-radius:8px;max-height:calc(100vh - 280px)">';
   h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
-  /* THEAD — sticky top */
-  h += '<thead><tr style="position:sticky;top:0;z-index:4">';
-  h += '<th style="position:sticky;left:0;z-index:3;background:' + stickyBgH + ';width:28px;min-width:28px;' + thS + ';border-right:2px solid var(--b)"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
-  h += '<th style="position:sticky;left:28px;z-index:3;background:' + stickyBgH + ';width:120px;min-width:120px;' + thS + '" title="Vendor / Supplier — Tedarikci"><span style="font-size:8px;color:var(--t3);opacity:.6">#2</span> Tedarikci</th>';
-  h += '<th style="position:sticky;left:148px;z-index:3;background:' + stickyBgH + ';width:90px;min-width:90px;' + thS + '" title="Product Code — Urun Kodu"><span style="font-size:8px;color:var(--t3);opacity:.6">#3</span> Urun Kodu</th>';
-  h += '<th style="position:sticky;left:238px;z-index:3;background:' + stickyBgH + ';width:220px;min-width:220px;' + thS + ';border-right:2px solid var(--b)" title="Product Name (TR) — Urun Adi"><span style="font-size:8px;color:var(--t3);opacity:.6">#4</span> Urun Adi</th>';
-  var _kolNo = 4; // 1=chk, 2=tedarikci, 3=urun_kodu, 4=aciklama (sticky)
+  /* THEAD — Model C: grup bant + TR/EN iki satir */
+  var _GRUP_RENK = {
+    1: { bg:'#E6F1FB', c:'#0C447C', l:'Urun Kimligi' },
+    2: { bg:'#FAEEDA', c:'#633806', l:'Fiyat & Teklif' },
+    3: { bg:'#EAF3DE', c:'#085041', l:'Ambalaj' },
+    4: { bg:'#F3E8FF', c:'#6B21A8', l:'Hammadde' },
+    5: { bg:'#FCE7F3', c:'#9D174D', l:'Gumruk' },
+    6: { bg:'#E0F2FE', c:'#075985', l:'Lojistik' },
+    7: { bg:'#FEF3C7', c:'#854D0E', l:'GCB & Ihracat' },
+    8: { bg:'var(--s2)', c:'var(--t3)', l:'Durum' }
+  };
+  // Gorunen kolonlarin grup colspan'larini hesapla (sticky haric)
+  var _grpColspans = {};
+  GORUNEN_KOLONLAR.forEach(function(kol) {
+    if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
+    var g = kol.g || 1;
+    _grpColspans[g] = (_grpColspans[g] || 0) + 1;
+  });
+
+  h += '<thead>';
+  /* Satir 1 — Grup bant */
+  var _gbS = 'padding:3px 8px;font-size:9px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;border-right:0.5px solid rgba(0,0,0,.06)';
+  h += '<tr style="position:sticky;top:0;z-index:5">';
+  h += '<th style="position:sticky;left:0;z-index:6;background:' + stickyBgH + ';width:28px;min-width:28px;' + _gbS + ';border-right:2px solid var(--b)" rowspan="2"><input type="checkbox" id="ihr-chk-all" onchange="event.stopPropagation();window._ihrUrunTumChk(this.checked)"></th>';
+  h += '<th colspan="3" style="position:sticky;left:28px;z-index:6;background:#E6F1FB;color:#0C447C;' + _gbS + ';border-right:2px solid var(--b)">Urun Kimligi</th>';
+  // Gruplar sirali
+  var _grpSira = [1,2,3,4,5,6,7,8];
+  _grpSira.forEach(function(g) {
+    var cs = _grpColspans[g] || 0;
+    if (!cs) return;
+    var gr = _GRUP_RENK[g] || _GRUP_RENK[8];
+    h += '<th colspan="' + cs + '" style="background:' + gr.bg + ';color:' + gr.c + ';' + _gbS + '">' + gr.l + '</th>';
+  });
+  h += '<th style="width:50px;min-width:50px;' + _gbS + ';background:var(--s2)" rowspan="2"></th>';
+  h += '</tr>';
+
+  /* Satir 2 — TR/EN kolon basliklari */
+  var _thWr = 'display:flex;flex-direction:column;gap:1px';
+  var _thTr = 'font-size:10px;font-weight:500;color:var(--t2);line-height:1.2';
+  var _thEn = 'font-size:8px;color:var(--t3);font-weight:400';
+  h += '<tr style="position:sticky;top:24px;z-index:4">';
+  /* 3 sticky kolon */
+  h += '<th style="position:sticky;left:28px;z-index:5;background:' + stickyBgH + ';width:120px;min-width:120px;padding:5px 8px;border-right:0.5px solid var(--b);vertical-align:top"><div style="' + _thWr + '"><span style="' + _thTr + '">Tedarikci</span><span style="' + _thEn + '">Vendor</span></div></th>';
+  h += '<th style="position:sticky;left:148px;z-index:5;background:' + stickyBgH + ';width:90px;min-width:90px;padding:5px 8px;border-right:0.5px solid var(--b);vertical-align:top"><div style="' + _thWr + '"><span style="' + _thTr + '">Urun Kodu</span><span style="' + _thEn + '">Product Code</span></div></th>';
+  h += '<th style="position:sticky;left:238px;z-index:5;background:' + stickyBgH + ';width:220px;min-width:220px;padding:5px 8px;border-right:2px solid var(--b);vertical-align:top"><div style="' + _thWr + '"><span style="' + _thTr + '">Urun Adi</span><span style="' + _thEn + '">Product Name</span></div></th>';
+  /* Kalan kolonlar */
+  var _kolNo = 4;
   GORUNEN_KOLONLAR.forEach(function(kol) {
     if (kol.k === 'tedarikciAd' || kol.k === 'urun_kodu' || kol.k === 'aciklama') return;
     _kolNo++;
     var bosCount = kol.bos ? urunler.filter(function(u) { return !u[kol.k] || String(u[kol.k]).trim() === ''; }).length : 0;
-    var _roBg = kol.ro ? 'background:#FEF9C333;' : '';
-    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;' + thS + ';' + _roBg + '" title="' + kol.en + ' — ' + kol.l + '">';
-    h += '<div style="display:flex;align-items:center;gap:2px"><span style="font-size:8px;color:var(--t3);opacity:.6;margin-right:2px">#' + _kolNo + '</span><span>' + kol.l + '</span>';
+    var _roBg = kol.ro ? 'background:#FAEEDA;color:#633806;font-weight:500;' : '';
+    h += '<th style="width:' + kol.w + 'px;min-width:' + kol.w + 'px;padding:5px 8px;border-right:0.5px solid var(--b);vertical-align:top;' + _roBg + '" title="' + _esc(kol.en) + '">';
+    h += '<div style="' + _thWr + '">';
+    h += '<span style="' + _thTr + '">' + kol.l;
     if (kol.filtre) {
       var aktif = _filtreler[kol.k];
-      h += '<select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + '">';
-      h += '<option value="">' + (aktif ? '\u25cf' : '\u25be') + '</option><option value="">(Tümü)</option>';
+      h += ' <select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + ';vertical-align:middle">';
+      h += '<option value="">' + (aktif ? '\u25cf' : '\u25be') + '</option><option value="">(Tumu)</option>';
       uniq(kol.k).sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (aktif === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
       h += '</select>';
     }
+    h += '</span>';
+    h += '<span style="' + _thEn + '">' + _esc(kol.en) + '</span>';
     h += '</div>';
-    if (kol.bos && bosCount > 0) h += '<div style="font-size:9px;color:#D97706;margin-top:2px">' + bosCount + ' boş</div>';
+    if (kol.bos && bosCount > 0) h += '<div style="font-size:8px;color:#D97706;margin-top:1px">' + bosCount + ' bos</div>';
     h += '</th>';
   });
-  h += '<th style="width:50px;min-width:50px;' + thS + '"></th>';
   h += '</tr></thead>';
   /* TBODY */
   h += '<tbody id="ihr-urun-tbody">';
