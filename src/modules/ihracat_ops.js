@@ -616,19 +616,19 @@ function _ihrDetayRenderOzet(d) {
   var _saglikPct = Math.round((_hsPct + _evrakPct) / 2);
   var _saglikRenk = _kpiRenk(_saglikPct);
 
-  var h = '<div style="display:grid;grid-template-columns:220px 1fr 1fr;grid-template-rows:1fr 32px;height:calc(100vh - 220px);gap:0;overflow:hidden">';
+  var h = '<div style="display:grid;grid-template-columns:220px 1fr 280px;grid-template-rows:1fr 32px;height:calc(100vh - 285px);min-height:320px;gap:0;overflow:hidden">';
 
   /* ══ SOL KOLON (220px) ══ */
-  h += '<div style="grid-row:1;border-right:0.5px solid var(--b);overflow-y:auto;padding:0">';
+  h += '<div style="grid-row:1;border-right:0.5px solid var(--b);overflow:hidden;display:flex;flex-direction:column;padding:0">';
   /* KPI 2x2 */
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid var(--b);flex-shrink:0">';
   h += '<div style="padding:10px;border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">HS Doluluk</div><div style="font-size:20px;font-weight:700;color:' + _kpiRenk(_hsPct) + '">%' + _hsPct + '</div></div>';
   h += '<div style="padding:10px;border-bottom:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">Evrak</div><div style="font-size:20px;font-weight:700;color:' + _kpiRenk(_evrakPct) + '">%' + _evrakPct + '</div></div>';
   h += '<div style="padding:10px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">Kalan Gun</div><div style="font-size:20px;font-weight:700;color:' + _kalanRenk(kalanGun) + '">' + (kalanGun !== null ? kalanGun : '\u2014') + '</div></div>';
   h += '<div style="padding:10px"><div style="font-size:9px;color:var(--t3)">Saglik</div><div style="font-size:20px;font-weight:700;color:' + _saglikRenk + '">%' + _saglikPct + '</div></div>';
   h += '</div>';
   /* Dosya bilgileri */
-  h += '<div style="padding:10px">';
+  h += '<div style="padding:10px;flex:1;overflow-y:auto">';
   var _bilgiS = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--b);font-size:11px';
   [['Musteri', d.musteriAd], ['Teslim', (d.teslim_sekli || '') + ' ' + (d.varis_limani || '')], ['Odeme', d.odeme_sarti], ['Sorumlu', d.sorumluAd], ['Bitis', d.bitis_tarihi]].forEach(function(r) {
     var v = r[1] || '\u2014';
@@ -637,7 +637,7 @@ function _ihrDetayRenderOzet(d) {
   });
   h += '</div>';
   /* Paydas hizli erisim */
-  h += '<div style="padding:8px 10px;border-top:0.5px solid var(--b)">';
+  h += '<div style="padding:8px 10px;border-top:0.5px solid var(--b);flex-shrink:0">';
   h += '<div style="font-size:9px;color:var(--t3);margin-bottom:6px">PAYDASLAR</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   var _paydaslar = [
@@ -651,7 +651,7 @@ function _ihrDetayRenderOzet(d) {
   });
   h += '</div></div>';
   /* Teklif + Kontrol butonlari */
-  h += '<div style="padding:8px 10px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:4px">';
+  h += '<div style="padding:8px 10px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:4px;flex-shrink:0">';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaTeklif?.(\'' + d.id + '\')" style="font-size:10px;text-align:left">Sigorta Teklif</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderTeklif?.(\'' + d.id + '\')" style="font-size:10px;text-align:left">Navlun Teklif</button>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKlon?.(\'' + d.id + '\')" style="font-size:10px;text-align:left;color:#185FA5">Dosya Klonla</button>';
@@ -694,12 +694,13 @@ function _ihrDetayRenderOzet(d) {
   h += '</div>'; /* orta kolon bitti */
 
   /* ══ SAG KOLON — Evrak Durumu ══ */
-  h += '<div style="grid-row:1;overflow-y:auto;padding:12px 14px">';
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+  h += '<div style="grid-row:1;overflow:hidden;display:flex;flex-direction:column;padding:0">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;flex-shrink:0;border-bottom:0.5px solid var(--b)">';
   var _evAktif = evraklar.filter(function(e) { return !e.isDeleted; }).length;
   h += '<span style="font-size:11px;font-weight:500">Evrak Durumu</span>';
   h += '<span style="font-size:9px;color:var(--t3)">' + _evAktif + ' aktif \u00b7 ' + tamam + ' tamam</span>';
   h += '</div>';
+  h += '<div style="flex:1;overflow-y:auto;padding:8px 14px">';
   /* Evrak listesi — kompakt 5 seviye */
   var dosyaAsama = parseInt(d.asamaNo || d.asama || 1) || 1;
   EVRAK_LISTESI.forEach(function(ev) {
@@ -737,6 +738,7 @@ function _ihrDetayRenderOzet(d) {
   });
   /* + Belge Ekle */
   h += '<button onclick="event.stopPropagation();window._ihrOzelEvrakEkle?.(\'' + d.id + '\')" style="width:100%;padding:6px;border:1px dashed var(--b);border-radius:6px;background:none;color:var(--t3);font-size:10px;cursor:pointer;font-family:inherit;margin-top:6px">+ Belge Ekle</button>';
+  h += '</div>'; /* evrak scroll div */
   h += '</div>'; /* sag kolon bitti */
 
   /* ══ ALT BAR (grid-column: 1/-1) ══ */
@@ -3946,6 +3948,9 @@ window._ihrKonteynerGauge = function(dosyaId) {
     topM3 += parseFloat(u.hacim_m3) || 0;
     topKG += (parseFloat(u.brut_kg) || 0);
   });
+  // Sanity check — gercek disi degerler icin sinirla
+  topM3 = Math.min(topM3, kap.m3 * 1.1);
+  topKG = Math.min(topKG, kap.kg * 1.5);
   var pctM3 = Math.min(100, Math.round(topM3 / kap.m3 * 100));
   var pctKG = Math.min(100, Math.round(topKG / kap.kg * 100));
   var renk = function(p) { return p >= 95 ? '#DC2626' : p >= 80 ? '#D97706' : '#16A34A'; };
