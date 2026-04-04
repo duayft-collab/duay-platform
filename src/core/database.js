@@ -426,7 +426,10 @@ function _mergeDataSets(localKey, fsData, collection) {
   if (!Array.isArray(fsData)) return fsData;
 
   var localData;
-  try { localData = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch(e) { localData = []; }
+  try {
+    // FIX: _read() kullan — LZ-String sıkıştırılmış veriyi de çözer
+    localData = _read(localKey, []);
+  } catch(e) { localData = []; }
   if (!Array.isArray(localData) || localData.length === 0) return fsData;
   if (fsData.length === 0) return localData;
 
@@ -610,8 +613,8 @@ function _syncFirestoreMerged(path, data) {
     var FB_DB = window.Auth?.getFBDB?.();
     if (!FB_DB) return;
     var collection = path.split('/').pop();
-    _writingNow[collection] = Date.now() + 5000;
     var syncedAt = new Date().toISOString();
+    _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
     FB_DB.doc(path).set({ data: data, syncedAt: syncedAt, mergedAt: syncedAt }, { merge: true })
       .then(function() { console.info('[DB:merge-write]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : 'ok'); })
       .catch(function(e) { console.warn('[DB:merge-write error]', path, e.message); });
@@ -682,8 +685,9 @@ function _syncFirestore(path, data, mode = 'set') {
     const collection = path.split('/').pop();
     const syncedAt = new Date().toISOString();
     const payload = { data, syncedAt };
-    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle (2s pencere)
-    _writingNow[collection] = Date.now() + 2000;
+    // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle
+    // syncedAt tabanlı — echo tespiti sabit süre yerine exact match ile yapılır
+    _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     // Verbose log yalnızca debug modda
@@ -1717,7 +1721,8 @@ const _listeners = {};
 /**
  * P1: Kendi yazdığımız koleksiyonları takip eder.
  * onSnapshot kendi yazımımızı geri okumasın diye kullanılır.
- * @type {Object.<string, number>} collection → expiry timestamp
+ * syncedAt değeri saklanır — echo tespiti timestamp karşılaştırmasıyla yapılır.
+ * @type {Object.<string, {expiry: number, syncedAt: string}>}
  */
 const _writingNow = {};
 
@@ -1779,6 +1784,8 @@ function _listenCollection(collection, localKey, onUpdate) {
         }
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch(e) {}
+      // FIX: Init merge sonrası cache invalidate
+      try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection(collection); } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz
       if (Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
         _syncFirestoreMerged(_base2 + '/' + collection, merged);
@@ -1796,11 +1803,21 @@ function _listenCollection(collection, localKey, onUpdate) {
       if (!snap.exists) {
         return;
       }
-      // P1: Kendi yazmamızdan gelen echo'yu atla
-      if (_writingNow[collection] && Date.now() < _writingNow[collection]) {
-        return;
+      // P1: Kendi yazmamızdan gelen echo'yu atla — syncedAt bazlı exact match
+      var _wn = _writingNow[collection];
+      if (_wn) {
+        var _snapSyncedAt = snap.data()?.syncedAt || '';
+        // syncedAt eşleşiyorsa bu bizim kendi yazmamız (echo) — atla
+        if (_snapSyncedAt && _snapSyncedAt === _wn.syncedAt) {
+          delete _writingNow[collection];
+          return;
+        }
+        // Süre henüz dolmadıysa ve syncedAt farklıysa bu başka cihazdan — İŞLE
+        // Süre dolduysa temizle
+        if (Date.now() >= _wn.expiry) {
+          delete _writingNow[collection];
+        }
       }
-      delete _writingNow[collection];
 
       // Throttle: 300ms'de max 1 işlem (hızlı sync)
       var now = Date.now();
@@ -1850,6 +1867,12 @@ function _listenCollection(collection, localKey, onUpdate) {
         }
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
+      // FIX: In-memory cache'i invalidate et — onSnapshot bypass sorunu
+      try {
+        if (typeof window.invalidateCacheForCollection === 'function') {
+          window.invalidateCacheForCollection(collection);
+        }
+      } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz (trash/notifications/activity hariç)
       if (_rtNoMerge.indexOf(collection) === -1 && Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
         _syncFirestoreMerged(_base2 + '/' + collection, merged);
@@ -2719,7 +2742,7 @@ function _verifiedWrite(path, data, retry) {
 
   _setSyncStatus('syncing');
   var syncedAt = new Date().toISOString();
-  _writingNow[collection] = Date.now() + 2000;
+  _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
 
   // Yazma
   FB_DB.doc(path).set({ data: data, syncedAt: syncedAt }, { merge: true })

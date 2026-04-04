@@ -55,6 +55,43 @@ window.clearDataCache = function() {
   console.info('[Cache] Önbellek temizlendi');
 };
 
+/**
+ * Tek koleksiyon cache'ini invalidate et — onSnapshot sonrası çağrılır.
+ * Tüm cache'i silmekten daha verimli.
+ * @param {string} cacheKey  Cache key (ör: 'tasks', 'users', 'kargo')
+ */
+window.invalidateCacheKey = function(cacheKey) {
+  if (_cache[cacheKey] !== undefined) {
+    delete _cache[cacheKey];
+  }
+};
+
+/**
+ * Firestore koleksiyon adından cache key'e dönüştürme tablosu.
+ * onSnapshot'tan gelen koleksiyon adını cache key'e eşler.
+ */
+var _COL_TO_CACHE = {
+  tasks:'tasks', users:'users', kargo:'kargo', konteyner:'konteyn',
+  ik:'ik', pirim:'pirim', stok:'stok', crm:'crm', announcements:'ann',
+  notes:'notes', hedefler:'hdf', odemeler:'odm', izin:'izin',
+  notifications:'notifs', activity:'act', calendar:'cal'
+};
+
+/**
+ * Firestore koleksiyon adına göre cache invalidate eder.
+ * database.js onSnapshot callback'inden çağrılır.
+ * @param {string} collection  Firestore koleksiyon adı
+ */
+window.invalidateCacheForCollection = function(collection) {
+  var cacheKey = _COL_TO_CACHE[collection];
+  if (cacheKey && _cache[cacheKey] !== undefined) {
+    delete _cache[cacheKey];
+    if (localStorage.getItem('ak_debug')) {
+      console.info('[Cache] Invalidated:', collection, '→', cacheKey);
+    }
+  }
+};
+
 // Tüm kritik koleksiyonları önbellekle
 // DOMContentLoaded'da çalıştır — database.js yüklendikten sonra
 function _initCache() {
