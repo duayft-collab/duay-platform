@@ -607,6 +607,16 @@ function _ihrDetayRenderOzet(d) {
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDisTarafLink?.(\'' + d.id + '\')" style="font-size:11px;width:100%;color:#185FA5">🔗 Yukleme Linki Olustur</button>';
   h += '</div>';
 
+  /* Kontrol Listeleri */
+  h += '<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--b)">';
+  h += '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Kontrol Listeleri</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrYuklemeKontrol?.(\'' + d.id + '\')" style="font-size:10px">Yukleme Kontrol</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKonteynerDizilim?.(\'' + d.id + '\')" style="font-size:10px">Konteyner Dizilim</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTeslimatKontrol?.(\'' + d.id + '\')" style="font-size:10px">Teslimat Kontrol</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSevkIzni?.(\'' + d.id + '\')" style="font-size:10px">Sevk Izni</button>';
+  h += '</div></div>';
+
   h += '</div>'; /* sol blok bitti */
 
   /* ── SAĞ BLOK: Evraklar ── */
@@ -2902,5 +2912,11 @@ window._ihrDisTarafLinkOlustur = function(dosyaId) {
   }
   window.logActivity?.('ihracat', 'Dis taraf linki olusturuldu: ' + ad + ' (' + tip + ')');
 };
+
+// ══ 4 YENI BELGE INDIRME ══════════════════════════════════════
+window._ihrYuklemeKontrol = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'ykl'); };
+window._ihrKonteynerDizilim = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'kdl'); };
+window._ihrTeslimatKontrol = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'tkl'); };
+window._ihrSevkIzni = function(dosyaId) { window._ihrDocxIndir?.(dosyaId, 'svk'); };
 
 })();

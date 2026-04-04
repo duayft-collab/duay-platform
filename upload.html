@@ -139,18 +139,35 @@ function renderWelcome(el) {
 }
 
 function renderForm(el) {
-  var turler = [{v:'GCB',l:'GCB Beyannamesi',ic:'📋'},{v:'BL',l:'Konsimento',ic:'🚢'},{v:'MENSEI',l:'Mense',ic:'🌍'},{v:'SIG',l:'Sigorta',ic:'🛡️'},{v:'EUR1',l:'EUR.1',ic:'📜'},{v:'OZEL',l:'Diger',ic:'📎'}];
+  var turler = [
+    {v:'GCB',l:'GCB Beyannamesi',ic:'📋'},{v:'BL',l:'Konsimento BL',ic:'🚢'},
+    {v:'MENSEI',l:'Mense Belgesi',ic:'🌍'},{v:'EUR1',l:'EUR.1',ic:'📜'},
+    {v:'INSP',l:'Inspeksiyon',ic:'🔍'},{v:'SIG',l:'Sigorta Policesi',ic:'🛡️'},
+    {v:'VGM',l:'VGM Belgesi',ic:'⚖️'},{v:'BOOKING',l:'Booking PDF',ic:'📦'},
+    {v:'GEMI',l:'Gemi Programi',ic:'🚢'},{v:'ALIS_FATURA',l:'Alis Faturasi',ic:'🧾'}
+  ];
+  // Tur bazli ek alanlar
+  var ekAlanlar = {
+    BL: '<div class="fg" style="margin-top:8px"><label class="fl">BL Turu</label><select class="fi" id="up-bl-tur" onchange="state.ekVeri=state.ekVeri||{};state.ekVeri.bl_turu=this.value"><option value="draft">Draft</option><option value="original">Orijinal</option></select></div>',
+    INSP: '<div class="fg" style="margin-top:8px"><label class="fl">Inspeksiyon Firmasi</label><input class="fi" id="up-insp-firma" placeholder="Firma adi" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.insp_firma=this.value"></div>',
+    SIG: '<div class="row2" style="margin-top:8px"><div class="fg"><label class="fl">Police No</label><input class="fi" id="up-police-no" placeholder="POL-..." oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.police_no=this.value"></div><div class="fg"><label class="fl">Sigorta Tutari</label><input class="fi" type="number" id="up-sig-tutar" placeholder="0.00" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.sigorta_tutari=this.value"></div></div>',
+    VGM: '<div class="row2" style="margin-top:8px"><div class="fg"><label class="fl">Konteyner No</label><input class="fi" id="up-kont-no" placeholder="XXXX1234567" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.konteyner_no=this.value"></div><div class="fg"><label class="fl">VGM KG</label><input class="fi" type="number" id="up-vgm-kg" placeholder="0" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.vgm_kg=this.value"></div></div>',
+    BOOKING: '<div class="fg" style="margin-top:8px"><label class="fl">Booking No</label><input class="fi" id="up-booking-no" placeholder="BKG-..." oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.booking_no=this.value"></div>',
+    GEMI: '<div class="row2" style="margin-top:8px"><div class="fg"><label class="fl">Gemi Adi</label><input class="fi" id="up-gemi" placeholder="MSC OSCAR" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.gemi_adi=this.value"></div><div class="fg"><label class="fl">Sefer No</label><input class="fi" id="up-sefer" placeholder="V.123" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.sefer_no=this.value"></div></div>',
+    ALIS_FATURA: '<div class="row2" style="margin-top:8px"><div class="fg"><label class="fl">Fatura No</label><input class="fi" id="up-fat-no" oninput="state.belgeNo=this.value"></div><div class="fg"><label class="fl">Irsaliye No</label><input class="fi" id="up-irs-no" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.irsaliye_no=this.value"></div></div><div class="row2"><div class="fg"><label class="fl">KDVsiz Tutar</label><input class="fi" type="number" id="up-kdvsiz" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.kdvsiz_tutar=this.value"></div><div class="fg"><label class="fl">KDV Tutari</label><input class="fi" type="number" id="up-kdv" oninput="state.ekVeri=state.ekVeri||{};state.ekVeri.kdv_tutari=this.value"></div></div>',
+  };
   var canSubmit = state.tur && state.belgeNo && state.belgeTarih && state.file;
   el.innerHTML = stepBar(2)
     + '<div class="chip">📦 ' + esc(dosyaNo || dosyaId) + '</div>'
     + '<div style="font-size:13px;font-weight:500;margin-bottom:10px">Belge Turu</div>'
-    + '<div class="tur-grid">' + turler.map(function(t) {
-      return '<div class="tur-btn' + (state.tur === t.v ? ' sel' : '') + '" onclick="state.tur=\'' + t.v + '\';render()"><span class="ic">' + t.ic + '</span>' + t.l + '</div>';
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px">' + turler.map(function(t) {
+      return '<div class="tur-btn' + (state.tur === t.v ? ' sel' : '') + '" onclick="state.tur=\'' + t.v + '\';state.ekVeri={};render()"><span class="ic">' + t.ic + '</span>' + t.l + '</div>';
     }).join('') + '</div>'
     + '<div class="row2"><div class="fg"><label class="fl">Belge Numarasi *</label><input class="fi' + (!state.belgeNo && state.tur ? ' err' : '') + '" id="up-bno" value="' + esc(state.belgeNo) + '" placeholder="GCB-2026-..." oninput="state.belgeNo=this.value"></div>'
     + '<div class="fg"><label class="fl">Belge Tarihi *</label><input type="date" class="fi' + (!state.belgeTarih && state.tur ? ' err' : '') + '" id="up-btar" value="' + esc(state.belgeTarih) + '" onchange="state.belgeTarih=this.value"></div></div>'
+    + (ekAlanlar[state.tur] || '')
     + (state.file ? '<div class="file-preview">📎 ' + esc(state.file.name) + ' <span style="color:#6b7280">(' + Math.round(state.file.size/1024) + 'KB)</span><span onclick="state.file=null;state.fileB64=\'\';render()" style="margin-left:auto;cursor:pointer;color:#dc2626">✕</span></div>' : '<div class="drop" id="up-drop" onclick="document.getElementById(\'up-file\').click()"><div class="ic2">☁️</div><p>Dosyayi buraya birakin veya tiklayin</p><div class="tags"><span class="tag">PDF</span><span class="tag">JPG</span><span class="tag">PNG</span><span class="tag">Max 5MB</span></div></div>')
-    + '<input type="file" id="up-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this)">'
+    + '<input type="file" id="up-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.tiff" style="display:none" onchange="handleFile(this)">'
     + '<button class="btn-p" ' + (canSubmit ? '' : 'disabled') + ' onclick="submitUpload()">Gonder ve Tamamla →</button>'
     + '<div class="lock">🔒 Bu link yalnizca size ozel</div>';
   // Drag drop
@@ -164,7 +181,7 @@ function renderForm(el) {
 }
 
 function renderDone(el) {
-  var turLabels = {GCB:'GCB Beyannamesi',BL:'Konsimento',MENSEI:'Mense Sahadetnamesi',SIG:'Sigorta Policesi',EUR1:'EUR.1 / A.TR',OZEL:'Diger'};
+  var turLabels = {GCB:'GCB Beyannamesi',BL:'Konsimento',MENSEI:'Mense Sahadetnamesi',SIG:'Sigorta Policesi',EUR1:'EUR.1 / A.TR',INSP:'Inspeksiyon',VGM:'VGM Belgesi',BOOKING:'Booking PDF',GEMI:'Gemi Programi',ALIS_FATURA:'Alis Faturasi',OZEL:'Diger'};
   el.innerHTML = stepBar(4)
     + '<div class="done-circle">✓</div>'
     + '<div style="text-align:center;font-size:18px;font-weight:600;margin-bottom:6px">Yuklendi!</div>'
@@ -199,6 +216,7 @@ window.submitUpload = function() {
     muhatap_tip: muhatabTip,
     dosya_adi: state.file.name,
     dosya_boyut: state.file.size,
+    ek_veri: state.ekVeri || {},
     yuklendi_at: new Date().toISOString(),
     durum: 'beklemede'
   };
