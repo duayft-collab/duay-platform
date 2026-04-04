@@ -3112,7 +3112,11 @@ var _v3 = {
  * @param {string} [dosyaId] Ihracat dosya ID
  */
 window._ihrExcelImportV3 = function(dosyaId) {
-  _v3.dosyaId = dosyaId || _aktifDosyaId || null;
+  _v3.dosyaId = dosyaId
+    || (typeof _aktifDosyaId !== 'undefined' && _aktifDosyaId)
+    || window._ihrAktifDosyaId
+    || document.querySelector('[data-dosya-id]')?.dataset?.dosyaId
+    || null;
   _v3.adim = 1;
   _v3.seciliSablon = null;
   _v3.dosya = null;
