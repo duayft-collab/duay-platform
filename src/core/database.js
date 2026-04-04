@@ -1786,9 +1786,15 @@ function _listenCollection(collection, localKey, onUpdate) {
       } catch(e) {}
       // FIX: Init merge sonrası cache invalidate
       try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection(collection); } catch(e) {}
-      // Merge sonucu Firestore'dan farklıysa geri yaz
-      if (Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
-        _syncFirestoreMerged(_base2 + '/' + collection, merged);
+      // Merge sonucu Firestore'dan farklıysa geri yaz (sayı veya içerik farkı)
+      if (Array.isArray(merged) && Array.isArray(fsData)) {
+        var _needWrite = merged.length !== fsData.length;
+        if (!_needWrite) {
+          var _fsIds = {};
+          fsData.forEach(function(it) { var k = it.id || it._id; if (k) _fsIds[k] = true; });
+          _needWrite = merged.some(function(it) { var k = it.id || it._id; return k && !_fsIds[k]; });
+        }
+        if (_needWrite) _syncFirestoreMerged(_base2 + '/' + collection, merged);
       }
       if (typeof onUpdate === 'function') {
         try { onUpdate(merged); } catch(e) {}
@@ -1874,8 +1880,14 @@ function _listenCollection(collection, localKey, onUpdate) {
         }
       } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz (trash/notifications/activity hariç)
-      if (_rtNoMerge.indexOf(collection) === -1 && Array.isArray(merged) && Array.isArray(fsData) && merged.length > fsData.length) {
-        _syncFirestoreMerged(_base2 + '/' + collection, merged);
+      if (_rtNoMerge.indexOf(collection) === -1 && Array.isArray(merged) && Array.isArray(fsData)) {
+        var _needWriteRT = merged.length !== fsData.length;
+        if (!_needWriteRT) {
+          var _fsIdsRT = {};
+          fsData.forEach(function(it) { var k = it.id || it._id; if (k) _fsIdsRT[k] = true; });
+          _needWriteRT = merged.some(function(it) { var k = it.id || it._id; return k && !_fsIdsRT[k]; });
+        }
+        if (_needWriteRT) _syncFirestoreMerged(_base2 + '/' + collection, merged);
       }
 
       // UI'ı yenile (throttled)
