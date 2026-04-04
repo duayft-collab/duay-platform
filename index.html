@@ -924,6 +924,7 @@ function _doLogin() {
     <!-- Firebase sekmesi kaldırıldı — Veri Yönetimi ile birleştirildi -->
     <div class="set-nav-item" id="sni-veri" onclick="setNav('veri',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Veri Yönetimi</div>
     <div class="set-nav-item active" id="sni-monitor" onclick="setNav('monitor',this)"><div class="set-nav-dot" style="background:#185FA5"></div>Sağlık Monitörü<span id="set-monitor-badge" style="display:none;font-size:9px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#791F1F;margin-left:auto">!</span></div>
+    <div class="set-nav-item" id="sni-gunluk" onclick="setNav('gunluk',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Geliştirme Günlüğü</div>
     <div style="font-size:9px;font-weight:500;letter-spacing:.06em;color:var(--t3);padding:0 16px;margin:14px 0 6px;text-transform:uppercase">Diğer</div>
     <div class="set-nav-item" id="sni-surum" onclick="setNav('surum',this)"><div class="set-nav-dot" style="background:var(--t3)"></div>Sürüm Geçmişi</div>
   </div>
@@ -1071,6 +1072,113 @@ function _doLogin() {
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btns" style="font-size:12px" onclick="window._cleanNotifications?.()">🗑 Bildirimleri Temizle</button>
         <button class="btn btns" style="font-size:12px" onclick="window._manualSync?.()">☁️ Manuel Sync</button>
+      </div>
+    </div>
+
+    <!-- SAYFA: Geliştirme Günlüğü -->
+    <div id="set-page-gunluk" class="set-page">
+      <h2 style="font-size:15px;font-weight:600;color:var(--t);margin:0 0 4px">Geliştirme Günlüğü</h2>
+      <p style="font-size:12px;color:var(--t3);margin:0 0 20px">Sistem güncellemeleri ve geliştirme geçmişi</p>
+
+      <!-- KART 1 — 4 Nisan 2026, v8.3.0 (AR) -->
+      <div style="border:0.5px solid var(--color-border-secondary,var(--b));border-radius:8px;padding:14px 16px;margin-bottom:12px;background:var(--color-background-primary,var(--sf))">
+        <div style="font-size:11px;color:var(--color-text-tertiary,var(--t3));font-weight:500;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary,var(--b))">4 Nisan 2026 — v8.3.0 (AR)</div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">IHR-OPS-REDESIGN-002 — İhracat Ops Tam Yeniden Tasarım</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • 7 sekme: Özet, Ürünler, Evraklar, Müşteri, Sigortacı, Gümrükçü, Forwarder<br>
+          • Özet: 3 kolon grid, scroll yok, viewport'a sığıyor<br>
+          • Konteyner kapasitesi gauge (40HC/20DC/40DC) — %80 sarı, %95 kırmızı uyarı<br>
+          • Kambiyo 90 gün countdown — GÇB tescil tarihinden otomatik başlar<br>
+          • BL kademeli 5 adım onay sistemi — ödeme alınmadan orijinal BL paylaşılmaz<br>
+          • Dosya klonlama — tekrar sipariş için mevcut dosyadan yeni emir oluştur<br>
+          • Paydaş tamamlanma % göstergesi — Müşteri, Sigortacı, Gümrükçü, Forwarder<br>
+          • Otomatik iletişim logu — kim gönderdi, kime, ne zaman (max 200 kayıt)<br>
+          • 5 seviyeli evrak durum sistemi — Kritik/Hazırlanıyor/Onay/Tamam/Opsiyonel<br>
+          • CI arşivleme — 6 mükerrer CI → 1 aktif, 5 silinebilir arşiv<br>
+          • Evrak butonları sadeleşti — İndir ▾ (DOCX/Excel/PDF) + Gönder + Yükle<br>
+          • Müşteri sekmesi — firma bilgisi, paylaşılan evraklar, konteyner doluluk, log<br>
+          • Sigortacı sekmesi — poliçe bilgisi, CIF hesaplama, paylaşım engeli
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">REALTIME-SYNC-001 — Cihazlar Arası Anlık Güncelleme</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • 12 ihracat koleksiyonu onSnapshot ile realtime dinlemeye alındı<br>
+          • experimentalForceLongPolling:true — Safari cross-site tracking sorunu çözüldü<br>
+          • Veri çakışması ve gecikme riski ortadan kalktı
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">EXCEL-IMPORT-V3 — Excel Import Yenilendi</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • 6 şablon: Yeni Ürün, Fiyat Güncelleme, Ağırlık &amp; Ambalaj, Gümrük, Konteyner, Tümü<br>
+          • AI eşleştirme — API key varsa otomatik, yoksa şablon modu<br>
+          • Hazır boş şablon indirme özelliği
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">GORUNUM-SISTEMI-001 — Akıllı Kolon Görünümü</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • 5 preset: Otomatik, Hazırlık, CI/PL, Yükleme, Gümrük, Tam Görünüm<br>
+          • Grup başlığına tıkla → o grubun kolonlarını aç/kapat<br>
+          • Aşamaya göre otomatik kolon seti (dosya aşaması 1-5)
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">IHR-KOLON-V3 — 88 Kolon, 8 Grup</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • TR/EN ikili başlık — tek dil gösterimi (ak_lang ayarına göre)<br>
+          • Hesaplanan alanlar sarı arka plan (read-only — toplam tutar, CBM, KG toplamları)<br>
+          • Mükerrer kolonlar birleştirildi, dead code temizlendi
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">CACHE-BUG-FIX — 3 Kritik Cache Hatası</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • onSnapshot cache invalidation — B cihazı artık eski veri görmüyor<br>
+          • LZ-String merge fix — sıkıştırılmış veri merge sırasında kaybolmuyordu<br>
+          • Echo tespiti — syncedAt exact match ile kendi yazmamızın echo'su doğru tespit ediliyor
+        </div>
+      </div>
+
+      <!-- KART 2 — 2 Nisan 2026, v8.2.0 -->
+      <div style="border:0.5px solid var(--color-border-secondary,var(--b));border-radius:8px;padding:14px 16px;margin-bottom:12px;background:var(--color-background-primary,var(--sf))">
+        <div style="font-size:11px;color:var(--color-text-tertiary,var(--t3));font-weight:500;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary,var(--b))">2 Nisan 2026 — v8.2.0</div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">BEL-TUR-001 — 10 Belge Türü ve DOCX Sistemi</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • PI, CI, PL, Sevk Emri, Yükleme Talimatı, GÇB, VGM, Menşe, Sigorta, BL<br>
+          • DOCX otomatik üretim — ürün verilerinden otomatik doldurma<br>
+          • Upload.html — dış taraf belge yükleme portalı (gümrükçü, forwarder, sigortacı)<br>
+          • Teklif.html — kapalı zarf navlun/sigorta/nakliye teklif portalı
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">ODM-FIX-001 — 9 Kritik Operasyon Düzeltmesi</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • Mükerrer filtreler kaldırıldı<br>
+          • Toplu silme panel atma sorunu çözüldü (_ihrDetayRenderUrunler ile)<br>
+          • Araçlar modal düzeltildi
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">DASH-NAKIT-001 — Nakit Akışı Geliştirmeleri</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • KPI grid, personel filtresi, projeksiyon<br>
+          • Gecikme yaş dağılımı grafiği
+        </div>
+      </div>
+
+      <!-- KART 3 — Ocak 2026, v8.0.0 -->
+      <div style="border:0.5px solid var(--color-border-secondary,var(--b));border-radius:8px;padding:14px 16px;margin-bottom:12px;background:var(--color-background-primary,var(--sf))">
+        <div style="font-size:11px;color:var(--color-text-tertiary,var(--t3));font-weight:500;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary,var(--b))">Ocak 2026 — v8.0.0</div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">DB-MONITOR-001/002 — Veritabanı Sağlık İzleme</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • Sistem → Ayarlar → Sağlık Monitörü paneli<br>
+          • Depolama, Bildirim, Sync hata, Offline kuyruk, FS Listener takibi
+        </div>
+
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary,var(--t));margin:10px 0 4px">Başlangıç — v8.0.0 temel kurulum</div>
+        <div style="font-size:11px;color:var(--color-text-secondary,var(--t2));padding-left:10px;line-height:1.6">
+          • Vanilla JS SPA mimarisi, Firebase Firestore, GitHub Pages<br>
+          • Safari-only optimizasyon, LZ-String sıkıştırma<br>
+          • Çok kullanıcılı yapı, rol bazlı yetkilendirme
+        </div>
       </div>
     </div>
 
@@ -1282,83 +1390,83 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 };
 </script>
 
-<script src="config/firebase.js?v=20260404AS"></script>
+<script src="config/firebase.js?v=20260404AT"></script>
 
 <!-- 2. CORE -->
-<script src="src/i18n/translations.js?v=20260404AS"></script>
-<script src="src/core/database.js?v=20260404AS"></script>
-<script src="src/core/cache.js?v=20260404AS"></script>
-<script src="src/core/utils.js?v=20260404AS"></script>
-<script src="src/core/auth.js?v=20260404AS"></script>
-<script src="src/core/gdrive.js?v=20260404AS"></script>
+<script src="src/i18n/translations.js?v=20260404AT"></script>
+<script src="src/core/database.js?v=20260404AT"></script>
+<script src="src/core/cache.js?v=20260404AT"></script>
+<script src="src/core/utils.js?v=20260404AT"></script>
+<script src="src/core/auth.js?v=20260404AT"></script>
+<script src="src/core/gdrive.js?v=20260404AT"></script>
 
 <!-- 3. MODÜLLER -->
-<script src="src/modules/panel_stubs.js?v=20260404AS"></script>
-<script src="src/modules/admin.js?v=20260404AS"></script>
-<script src="src/modules/kargo.js?v=20260404AS"></script>
-<script src="src/modules/navlun.js?v=20260404AS"></script>
-<script src="src/modules/loj_features.js?v=20260404AS"></script>
-<script src="src/modules/pirim.js?v=20260404AS"></script>
+<script src="src/modules/panel_stubs.js?v=20260404AT"></script>
+<script src="src/modules/admin.js?v=20260404AT"></script>
+<script src="src/modules/kargo.js?v=20260404AT"></script>
+<script src="src/modules/navlun.js?v=20260404AT"></script>
+<script src="src/modules/loj_features.js?v=20260404AT"></script>
+<script src="src/modules/pirim.js?v=20260404AT"></script>
 <!-- PUSULA v3.0 — 8 modül -->
-<script src="src/modules/pusula_core.js?v=20260404AS"></script>
-<script src="src/modules/pusula_export.js?v=20260404AS"></script>
-<script src="src/modules/pusula_subtask.js?v=20260404AS"></script>
-<script src="src/modules/pusula_task.js?v=20260404AS"></script>
-<script src="src/modules/pusula_detail.js?v=20260404AS"></script>
-<script src="src/modules/pusula_render.js?v=20260404AS"></script>
-<script src="src/modules/pusula_views.js?v=20260404AS"></script>
-<script src="src/modules/pusula_features.js?v=20260404AS"></script>
-<script src="src/modules/ik.js?v=20260404AS"></script>
-<script src="src/modules/crm.js?v=20260404AS"></script>
-<script src="src/modules/stok.js?v=20260404AS"></script>
-<script src="src/modules/urun_db.js?v=20260404AS"></script>
-<script src="src/modules/satis_teklif.js?v=20260404AS"></script>
-<script src="src/modules/satin_alma.js?v=20260404AS"></script>
-<script src="src/modules/hesap_ozeti.js?v=20260404AS"></script>
-<script src="src/modules/gcb.js?v=20260404AS"></script>
-<script src="src/modules/alarm.js?v=20260404AS"></script>
+<script src="src/modules/pusula_core.js?v=20260404AT"></script>
+<script src="src/modules/pusula_export.js?v=20260404AT"></script>
+<script src="src/modules/pusula_subtask.js?v=20260404AT"></script>
+<script src="src/modules/pusula_task.js?v=20260404AT"></script>
+<script src="src/modules/pusula_detail.js?v=20260404AT"></script>
+<script src="src/modules/pusula_render.js?v=20260404AT"></script>
+<script src="src/modules/pusula_views.js?v=20260404AT"></script>
+<script src="src/modules/pusula_features.js?v=20260404AT"></script>
+<script src="src/modules/ik.js?v=20260404AT"></script>
+<script src="src/modules/crm.js?v=20260404AT"></script>
+<script src="src/modules/stok.js?v=20260404AT"></script>
+<script src="src/modules/urun_db.js?v=20260404AT"></script>
+<script src="src/modules/satis_teklif.js?v=20260404AT"></script>
+<script src="src/modules/satin_alma.js?v=20260404AT"></script>
+<script src="src/modules/hesap_ozeti.js?v=20260404AT"></script>
+<script src="src/modules/gcb.js?v=20260404AT"></script>
+<script src="src/modules/alarm.js?v=20260404AT"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-<script src="src/modules/excel_import.js?v=20260404AS"></script>
-<script src="src/modules/finans.js?v=20260404AS"></script>
-<script src="src/modules/helpers.js?v=20260404AS"></script>
+<script src="src/modules/excel_import.js?v=20260404AT"></script>
+<script src="src/modules/finans.js?v=20260404AT"></script>
+<script src="src/modules/helpers.js?v=20260404AT"></script>
 
 <!-- 3b. Panel HTML Inject + Modals (helpers.js ve ik.js sonrasi) -->
-<script src="src/modules/announce.js?v=20260404AS"></script>
-<script src="src/modules/takvim.js?v=20260404AS"></script>
-<script src="src/modules/notes.js?v=20260404AS"></script>
-<script src="src/modules/hedefler.js?v=20260404AS"></script>
-<script src="src/modules/odemeler.js?v=20260404AS"></script>
-<script src="src/modules/kpi.js?v=20260404AS"></script>
-<script src="src/modules/ik_panel.js?v=20260404AS"></script>
-<script src="src/modules/puantaj.js?v=20260404AS"></script>
-<script src="src/modules/izin.js?v=20260404AS"></script>
-<script src="src/modules/crm_panel.js?v=20260404AS"></script>
-<script src="src/modules/extra_panels.js?v=20260404AS"></script>
-<script src="src/modules/docs.js?v=20260404AS"></script>
-<script src="src/modules/formlar.js?v=20260404AS"></script>
-<script src="src/modules/gorusme.js?v=20260404AS"></script>
-<script src="src/modules/ceo.js?v=20260404AS"></script>
-<script src="src/modules/hesap.js?v=20260404AS"></script>
-<script src="src/modules/hesap_makinesi.js?v=20260404AS"></script>
-<script src="src/core/confirm_modal.js?v=20260404AS"></script>
-<script src="src/modules/modals.js?v=20260404AS"></script>
-<script src="src/modules/dashboard.js?v=20260404AS"></script>
-<script src="src/modules/dashboardDetay.js?v=20260404AS"></script>
-<script src="src/modules/urunler.js?v=20260404AS"></script>
-<script src="src/modules/numuneler.js?v=20260404AS"></script>
-<script src="src/modules/ihracat_ops.js?v=20260404AS"></script>
+<script src="src/modules/announce.js?v=20260404AT"></script>
+<script src="src/modules/takvim.js?v=20260404AT"></script>
+<script src="src/modules/notes.js?v=20260404AT"></script>
+<script src="src/modules/hedefler.js?v=20260404AT"></script>
+<script src="src/modules/odemeler.js?v=20260404AT"></script>
+<script src="src/modules/kpi.js?v=20260404AT"></script>
+<script src="src/modules/ik_panel.js?v=20260404AT"></script>
+<script src="src/modules/puantaj.js?v=20260404AT"></script>
+<script src="src/modules/izin.js?v=20260404AT"></script>
+<script src="src/modules/crm_panel.js?v=20260404AT"></script>
+<script src="src/modules/extra_panels.js?v=20260404AT"></script>
+<script src="src/modules/docs.js?v=20260404AT"></script>
+<script src="src/modules/formlar.js?v=20260404AT"></script>
+<script src="src/modules/gorusme.js?v=20260404AT"></script>
+<script src="src/modules/ceo.js?v=20260404AT"></script>
+<script src="src/modules/hesap.js?v=20260404AT"></script>
+<script src="src/modules/hesap_makinesi.js?v=20260404AT"></script>
+<script src="src/core/confirm_modal.js?v=20260404AT"></script>
+<script src="src/modules/modals.js?v=20260404AT"></script>
+<script src="src/modules/dashboard.js?v=20260404AT"></script>
+<script src="src/modules/dashboardDetay.js?v=20260404AT"></script>
+<script src="src/modules/urunler.js?v=20260404AT"></script>
+<script src="src/modules/numuneler.js?v=20260404AT"></script>
+<script src="src/modules/ihracat_ops.js?v=20260404AT"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
-<script src="src/modules/ihracat_formlar.js?v=20260404AS"></script>
-<script src="src/modules/talimatlar.js?v=20260404AS"></script>
+<script src="src/modules/ihracat_formlar.js?v=20260404AT"></script>
+<script src="src/modules/talimatlar.js?v=20260404AT"></script>
 
 <!-- 4. APP INIT — her zaman en son -->
-<script src="src/core/app.js?v=20260404AS"></script>
-<script src="src/modules/app_patch.js?v=20260404AS"></script>
-<script src="src/modules/lojistik.js?v=20260404AS"></script>
-<script src="src/modules/ik_hub.js?v=20260404AS"></script>
-<script src="src/modules/iddia.js?v=20260404AS"></script>
-<script src="src/modules/sozler.js?v=20260404AS"></script>
-<script src="src/modules/crm_hub.js?v=20260404AS"></script>
+<script src="src/core/app.js?v=20260404AT"></script>
+<script src="src/modules/app_patch.js?v=20260404AT"></script>
+<script src="src/modules/lojistik.js?v=20260404AT"></script>
+<script src="src/modules/ik_hub.js?v=20260404AT"></script>
+<script src="src/modules/iddia.js?v=20260404AT"></script>
+<script src="src/modules/sozler.js?v=20260404AT"></script>
+<script src="src/modules/crm_hub.js?v=20260404AT"></script>
 
 
   <script>
