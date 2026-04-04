@@ -1801,55 +1801,151 @@ window._ihrUrunTedarikciGrupla = function() {
 /* ── EVRAKLAR DETAY PANEL ─────────────────────────────────── */
 window._ihrDetayRenderEvraklar = function(d, c) {
   if (!c) c = _g('ihr-detay-content'); if (!c) return;
-  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id); });
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
+  var dosyaAsama = parseInt(d.asamaNo || d.asama || 1) || 1;
   var EVRAK_LIST = [
-    { tur: 'PI',    l: 'Proforma Invoice',        uretici: 'Duay',      aciklama: 'Satış teklifi / ön fatura',         duay: true },
-    { tur: 'CI',    l: 'Commercial Invoice',       uretici: 'Duay',      aciklama: 'Ticari fatura — CI tam + sansürlü', duay: true },
-    { tur: 'PL',    l: 'Packing List',             uretici: 'Duay',      aciklama: 'Ambalaj ve yükleme listesi',        duay: true },
-    { tur: 'SEVK',  l: 'Konteyner Sevk Emri',      uretici: 'Duay',      aciklama: 'Shipping instruction → Forwarder',  duay: true },
-    { tur: 'YUK',   l: 'Yükleme Talimatı',         uretici: 'Duay',      aciklama: 'Tedarikçi + Forwarder yükleme',     duay: true },
-    { tur: 'GCB',   l: 'Gümrük Çıkış Beyannamesi', uretici: 'Gümrükçü',  aciklama: 'GÇB → Duay → Forwarder',           duay: false },
-    { tur: 'BL',    l: 'Bill of Lading',            uretici: 'Forwarder', aciklama: 'Konşimento → Duay → Müşteri',       duay: false },
-    { tur: 'MENSEI',l: 'Menşei Şahadetnamesi',      uretici: 'Gümrükçü',  aciklama: 'Müşteri için menşei belgesi',       duay: false },
-    { tur: 'EUR1',  l: 'EUR.1 / A.TR',              uretici: 'Gümrükçü',  aciklama: 'Kara nakliyeli sevkiyatlarda',      duay: false },
-    { tur: 'INSP',  l: 'Inspection Raporu',          uretici: 'Gözetim',   aciklama: 'Gözetim şirketi → Duay → Müşteri', duay: false },
-    { tur: 'SIG',   l: 'Sigorta Poliçesi',           uretici: 'Sigorta',   aciklama: 'Teslim şekline göre belirlenir',   duay: false }
+    { tur:'PI',    l:'Proforma Invoice',        uretici:'Duay',      hedef:'Musteri',           duay:true },
+    { tur:'CI',    l:'Commercial Invoice',       uretici:'Duay',      hedef:'Gumrukcu + Musteri',duay:true },
+    { tur:'PL',    l:'Packing List',             uretici:'Duay',      hedef:'Gumrukcu + Musteri',duay:true },
+    { tur:'SEVK',  l:'Konteyner Sevk Emri',      uretici:'Duay',      hedef:'Forwarder',         duay:true },
+    { tur:'YUK',   l:'Yukleme Talimati',         uretici:'Duay',      hedef:'Tedarikci + FWD',   duay:true },
+    { tur:'GCB',   l:'Gumruk Cikis Beyannamesi', uretici:'Gumrukcu',  hedef:'Duay + FWD',        duay:false },
+    { tur:'BL',    l:'Bill of Lading',            uretici:'Forwarder', hedef:'Duay + Musteri',    duay:false },
+    { tur:'MENSEI',l:'Mensei Sahadetnamesi',      uretici:'Gumrukcu',  hedef:'Musteri',           duay:false },
+    { tur:'EUR1',  l:'EUR.1 / A.TR',              uretici:'Gumrukcu',  hedef:'Musteri',           duay:false },
+    { tur:'INSP',  l:'Inspection Raporu',          uretici:'Gozetim',   hedef:'Duay + Musteri',   duay:false },
+    { tur:'SIG',   l:'Sigorta Policesi',           uretici:'Sigorta',   hedef:'Duay',             duay:false }
   ];
-  var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi'; }).length;
+  var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi' || e.durum === 'tamamlandi'; }).length;
   var h = '';
-  /* Özet bar */
+  /* Ozet bar */
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
-  h += '<div><div style="font-size:13px;font-weight:500">Evrak Durumu</div><div style="font-size:11px;color:var(--t2);margin-top:2px">' + tamam + ' / ' + EVRAK_LIST.length + ' tamamlandı</div></div>';
-  h += '<div style="width:160px;height:6px;background:var(--b);border-radius:3px;overflow:hidden"><div style="width:' + Math.round((tamam / EVRAK_LIST.length) * 100) + '%;height:100%;background:#185FA5;border-radius:3px"></div></div>';
-  h += '</div>';
-  /* Evrak kartları */
+  h += '<div><div style="font-size:13px;font-weight:600">Evrak Durumu</div><div style="font-size:11px;color:var(--t2);margin-top:2px">' + tamam + ' / ' + EVRAK_LIST.length + ' tamamlandi</div></div>';
+  h += '<div style="display:flex;gap:6px;align-items:center">';
+  h += '<div style="width:140px;height:6px;background:var(--b);border-radius:3px;overflow:hidden"><div style="width:' + Math.round((tamam / EVRAK_LIST.length) * 100) + '%;height:100%;background:#185FA5;border-radius:3px"></div></div>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrOzelEvrakEkle?.(\'' + d.id + '\')" style="font-size:10px;padding:3px 10px">+ Belge Ekle</button>';
+  h += '</div></div>';
+
+  /* Evrak kartlari — 5 seviyeli durum */
   EVRAK_LIST.forEach(function(ev) {
-    var kayit = null; evraklar.forEach(function(e) { if (e.tur === ev.tur) kayit = e; });
-    var durum = kayit ? (EVRAK_DURUM[kayit.durum] || EVRAK_DURUM.taslak) : { l: 'Henüz Yok', c: '#9CA3AF', bg: 'rgba(156,163,175,.1)' };
+    var kayit = null;
+    evraklar.forEach(function(e) { if (e.tur === ev.tur && !e.isDeleted) kayit = e; });
+    var sev = window._ihrEvrakDurumSeviye?.(kayit || { tur: ev.tur, durum: null }, dosyaAsama) || { seviye:1, label:'Eksik', renk:'#A32D2D' };
     var zamanTxt = kayit ? (kayit.gonderim_tarihi || kayit.updatedAt || '').slice(0, 16).replace('T', ' ') : '';
-    h += '<div style="border:0.5px solid var(--b);border-radius:10px;margin-bottom:8px;overflow:hidden">';
-    h += '<div style="display:flex;align-items:center;padding:10px 14px;background:var(--s2);gap:10px">';
-    h += '<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</span>' + _badge(durum.l, durum.c, durum.bg);
-    if (zamanTxt) h += '<span style="font-size:10px;color:var(--t3)">' + _esc(zamanTxt) + '</span>';
-    h += '</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + _esc(ev.uretici) + ' — ' + _esc(ev.aciklama) + '</div></div>';
-    /* Butonlar */
-    h += '<div style="display:flex;gap:5px">';
-    h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle(\'' + d.id + '\',\'' + ev.tur + '\',null)" style="font-size:10px;padding:3px 10px">Görüntüle</button>';
-    if (kayit && kayit.dosya_url) h += '<a href="' + _esc(kayit.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;padding:3px 10px;text-decoration:none">İndir</a>';
-    if (ev.duay) {
-      if (!kayit) h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakOlustur(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Oluştur</button>';
-      else if (kayit.durum === 'taslak') h += '<button class="btn" onclick="event.stopPropagation();window._ihrEvrakOnayla(\'' + kayit.id + '\')" style="font-size:10px;padding:3px 10px;background:#EAF3DE;color:#27500A;border-color:#97C459">Onayla</button>';
-      else if (kayit.durum === 'onaylandi') h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakGonderModal(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Gönder</button>';
-      else if (kayit.durum === 'gonderildi') h += '<span style="font-size:10px;color:#16A34A;padding:3px 6px">\u2713 Gönderildi</span>';
-    } else {
-      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Yükle</button>';
+
+    /* CI arsivleme — birden fazla CI varsa */
+    var arsivCI = [];
+    if (ev.tur === 'CI') {
+      var ciAll = evraklar.filter(function(e) { return e.tur === 'CI' && !e.isDeleted; });
+      ciAll.sort(function(a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+      if (ciAll.length > 1) { kayit = ciAll[0]; arsivCI = ciAll.slice(1); }
     }
-    if (kayit) h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDuzenle(\'' + kayit.id + '\')" style="font-size:10px;padding:3px 10px">\u270f\ufe0f</button>';
+
+    h += '<div style="border:0.5px solid var(--b);border-radius:10px;margin-bottom:8px;overflow:hidden">';
+    /* Header — seviye nokta + baslik + durum pill */
+    h += '<div style="display:flex;align-items:center;padding:10px 14px;background:var(--s2);gap:10px">';
+    h += '<div style="width:8px;height:8px;border-radius:50%;background:' + sev.renk + ';flex-shrink:0"></div>';
+    h += '<div style="flex:1;min-width:0">';
+    h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    h += '<span style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</span>';
+    h += '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + sev.renk + '22;color:' + sev.renk + ';font-weight:500">' + sev.label + '</span>';
+    if (zamanTxt) h += '<span style="font-size:9px;color:var(--t3)">' + _esc(zamanTxt) + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + _esc(ev.uretici) + ' \u2192 ' + _esc(ev.hedef) + '</div>';
+    h += '</div>';
+
+    /* Butonlar — 3 buton sistemi + ozel kurallar */
+    h += '<div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap">';
+
+    /* BL ozel: sadece BL Onay Akisi butonu */
+    if (ev.tur === 'BL') {
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrBlOnayAc?.(\'' + d.id + '\')" style="font-size:10px;padding:3px 10px;color:#185FA5">BL Onay Akisi \u2192</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'BL\')" style="font-size:10px;padding:3px 10px">Yukle</button>';
+    }
+    /* SIG ozel: Gonder butonu yok */
+    else if (ev.tur === 'SIG') {
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle?.(\'' + d.id + '\',\'SIG\',null)" style="font-size:10px;padding:3px 10px">Goruntule</button>';
+      h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'SIG\')" style="font-size:10px;padding:3px 10px">Yukle</button>';
+    }
+    /* Normal evraklar: Indir + Gonder + Yukle */
+    else {
+      /* Indir dropdown */
+      if (ev.duay && ['PI','CI','PL','SEVK','YUK'].indexOf(ev.tur) !== -1) {
+        var _dt = { PI:'pi', CI:'ci', PL:'pl', SEVK:'sevk', YUK:'yuk' }[ev.tur] || ev.tur.toLowerCase();
+        h += '<div style="position:relative;display:inline-block">';
+        h += '<button class="btn btns" onclick="event.stopPropagation();var dd=this.nextElementSibling;dd.style.display=dd.style.display===\'block\'?\'none\':\'block\'" style="font-size:10px;padding:3px 10px">Indir \u25be</button>';
+        h += '<div style="display:none;position:absolute;top:100%;right:0;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;min-width:100px">';
+        h += '<div onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'' + _dt + '\');window._ihrLog?.(\'' + d.id + '\',\'' + ev.tur + ' DOCX indirildi\',null,\'' + ev.tur + '\');this.parentElement.style.display=\'none\'" style="padding:6px 12px;font-size:10px;cursor:pointer;color:#185FA5" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">DOCX</div>';
+        h += '<div onclick="event.stopPropagation();window._ihrExcelIndir?.(\'' + d.id + '\',\'' + ev.tur + '\');window._ihrLog?.(\'' + d.id + '\',\'' + ev.tur + ' Excel indirildi\',null,\'' + ev.tur + '\');this.parentElement.style.display=\'none\'" style="padding:6px 12px;font-size:10px;cursor:pointer;color:#1D6A2A" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">Excel</div>';
+        h += '<div onclick="event.stopPropagation();window._ihrPdfIndir?.(\'' + d.id + '\',\'' + ev.tur + '\');window._ihrLog?.(\'' + d.id + '\',\'' + ev.tur + ' PDF indirildi\',null,\'' + ev.tur + '\');this.parentElement.style.display=\'none\'" style="padding:6px 12px;font-size:10px;cursor:pointer;color:#C62828" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">PDF</div>';
+        h += '</div></div>';
+      }
+      /* Gonder/Olustur/Onayla */
+      if (ev.duay) {
+        if (!kayit) h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakOlustur?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Olustur</button>';
+        else if (kayit.durum === 'taslak') h += '<button class="btn" onclick="event.stopPropagation();window._ihrEvrakOnayla?.(\'' + kayit.id + '\')" style="font-size:10px;padding:3px 10px;background:#EAF3DE;color:#27500A;border:0.5px solid #97C459">Onayla</button>';
+        else if (kayit.durum === 'onaylandi') h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakGonderModal?.(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Gonder</button>';
+        else if (kayit.durum === 'gonderildi') h += '<span style="font-size:10px;color:#16A34A;padding:3px 6px">\u2713</span>';
+      }
+      /* Yukle */
+      var _ocrE = ['GCB','MENSEI','EUR1','INSP'];
+      if (_ocrE.indexOf(ev.tur) !== -1) {
+        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Yukle</button>';
+      } else if (!ev.duay) {
+        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:10px;padding:3px 10px">Yukle</button>';
+      }
+    }
     h += '</div></div>';
+
+    /* Not */
     if (kayit && kayit.not) h += '<div style="padding:6px 14px;font-size:11px;color:var(--t2);border-top:0.5px solid var(--b)">' + _esc(kayit.not) + '</div>';
+
+    /* CI Arsiv listesi */
+    if (arsivCI.length > 0) {
+      h += '<div style="padding:6px 14px;border-top:0.5px solid var(--b);background:#FAEEDA11">';
+      h += '<div style="font-size:9px;color:var(--t3);margin-bottom:4px">Arsiv (' + arsivCI.length + ' eski CI)</div>';
+      arsivCI.forEach(function(ac) {
+        h += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:10px;opacity:.6">';
+        h += '<span style="flex:1">' + _esc(ac.createdAt || '').slice(0, 10) + '</span>';
+        if (ac.dosya_url) h += '<a href="' + _esc(ac.dosya_url) + '" target="_blank" style="color:#185FA5;font-size:9px;text-decoration:none">Indir</a>';
+        h += '<button onclick="event.stopPropagation();window._ihrEvrakArsivSil?.(\'' + ac.id + '\',\'' + d.id + '\')" style="background:none;border:none;color:#DC2626;cursor:pointer;font-size:9px">\u2717</button>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
     h += '</div>';
   });
+
+  /* Ozel evraklar */
+  var ozelEvraklar = evraklar.filter(function(e) { return e.tur && e.tur.indexOf('OZEL_') === 0; });
+  if (ozelEvraklar.length) {
+    h += '<div style="font-size:11px;font-weight:500;margin:12px 0 6px;color:var(--t3)">Ozel Belgeler</div>';
+    ozelEvraklar.forEach(function(ev) {
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:4px">';
+      h += '<span style="flex:1;font-size:11px">' + _esc(ev.belge_adi || ev.tur) + '</span>';
+      if (ev.dosya_url) h += '<a href="' + _esc(ev.dosya_url) + '" target="_blank" style="font-size:10px;color:#185FA5;text-decoration:none">Indir</a>';
+      h += '<button class="btn btns btnd" onclick="event.stopPropagation();window._ihrOzelEvrakSil?.(\'' + ev.id + '\')" style="font-size:9px;padding:2px 6px">Sil</button>';
+      h += '</div>';
+    });
+  }
   c.innerHTML = h;
+};
+
+/** CI arsiv silme */
+window._ihrEvrakArsivSil = function(evrakId, dosyaId) {
+  window.confirmModal?.('Bu arsiv CI silinsin mi?', {
+    title: 'Arsiv Sil', danger: true, confirmText: 'Sil',
+    onConfirm: function() {
+      var evraklar = _loadE();
+      var ev = evraklar.find(function(e) { return String(e.id) === String(evrakId); });
+      if (ev) { ev.isDeleted = true; ev.deletedAt = _now(); }
+      _storeE(evraklar);
+      window._ihrLog(dosyaId, 'CI arsiv silindi', null, 'CI');
+      window.toast?.('Arsiv silindi', 'ok');
+      _ihrReRender();
+    }
+  });
 };
 
 /* ── STUB'LAR ────────────────────────────────────────────── */
