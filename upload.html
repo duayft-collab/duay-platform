@@ -210,7 +210,7 @@ window.submitUpload = function() {
   var btn = document.querySelector('.btn-p'); if (btn) { btn.disabled = true; btn.textContent = 'Gonderiliyor...'; }
   var record = {
     id: Date.now().toString(),
-    dosya_id: dosyaId || window.state?.dosyaId || window._parsedToken?.dosyaId || '',
+    dosya_id: (window._parsedToken?.dosyaId || window.state?.dosyaId || dosyaId || ''),
     tur: state.tur,
     belge_no: state.belgeNo,
     belge_tarihi: state.belgeTarih,
