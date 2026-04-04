@@ -52,7 +52,8 @@ var valid = false;
 try { var d=atob(token).split(':'); dosyaId=d[0]||''; firmaId=d[1]||''; firmaAd=d[2]||''; firmaMail=d[3]||''; tip=d[4]||'navlun'; ts=parseInt(d[5])||0; valid=!!dosyaId&&(Date.now()-ts)<30*86400000; } catch(e) {}
 window._parsedToken = { dosyaId:dosyaId, firmaId:firmaId, firmaAd:firmaAd, firmaMail:firmaMail, tip:tip };
 
-window.tState = { screen:'welcome', fiyat:'', doviz:'USD', gecerlilik:'7', transit:'', notlar:'', file:null };
+window.tState = { screen:'welcome', fiyat:'', doviz:'USD', gecerlilik:'7', transit:'', notlar:'', file:null, dosyaId:dosyaId };
+var tState = window.tState;
 var dosyaNo='', musteriAd='', pol='', pod='', kontTipi='', brut='', hacim='';
 
 function esc(s){var d2=document.createElement('div');d2.textContent=s||'';return d2.innerHTML;}
