@@ -133,6 +133,27 @@ function _ihrReRender() {
   }
   window.renderIhracatOps?.();
 }
+/** Gorunum preset degistir */
+window._ihrSetGorunum = function(dosyaId, presetKey) {
+  try { localStorage.setItem('ak_ihr_preset_' + dosyaId, presetKey); } catch(e) {}
+  _ihrReRender();
+};
+
+/** Grup toggle — tikla ac/kapat */
+window._ihrToggleGrup = function(dosyaId, grup) {
+  var key = 'ak_ihr_gizli_grup_' + dosyaId;
+  var gizli = [];
+  try { var raw = localStorage.getItem(key); if (raw) gizli = raw.split(','); } catch(e) {}
+  var gs = String(grup);
+  if (gizli.indexOf(gs) !== -1) {
+    gizli = gizli.filter(function(g) { return g !== gs; });
+  } else {
+    gizli.push(gs);
+  }
+  try { localStorage.setItem(key, gizli.join(',')); } catch(e) {}
+  _ihrReRender();
+};
+
 var _search = '';
 var _durumFilter = 'all';
 
@@ -1162,12 +1183,58 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'duay_not',          l:'Duaya Ozel Not',                  en:'Internal Note',           g:8, ro:false, w:140, filtre:false, bos:true }
   ];
 
-  // IHR-06: Gorunen kolon filtresi
+  // GORUNUM-SISTEMI-001: Asama bazli otomatik gorunum + preset sistemi
   window._ihrAllKolonlar = KOLONLAR;
-  var _savedKols; try { _savedKols = JSON.parse(localStorage.getItem(_IHR_KOLON_KEY) || 'null'); } catch(e) { _savedKols = null; }
-  var GORUNEN_KOLONLAR = (Array.isArray(_savedKols) && _savedKols.length)
-    ? KOLONLAR.filter(function(col) { return _savedKols.indexOf(col.k) !== -1; })
-    : KOLONLAR.filter(function(col) { return _IHR_KOLON_DEFAULT.indexOf(col.k) !== -1; });
+  var _dil = localStorage.getItem('ak_lang') || 'tr';
+
+  // Asama bazli otomatik kolon setleri
+  var _ASAMA_KOLONLAR = {
+    1: ['tedarikciAd','urun_kodu','aciklama','standart_urun_adi','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hs_kodu'],
+    2: ['tedarikciAd','urun_kodu','standart_urun_adi','miktar','birim','birim_fiyat','doviz','koli_adet','brut_kg','toplam_tutar','hs_kodu','gumrukcu_tanim'],
+    3: ['tedarikciAd','urun_kodu','standart_urun_adi','koli_adet','brut_kg','net_kg','hacim_m3','konteyner_no','muhur_no','konteyner_sira','etiket_rengi'],
+    4: ['urun_kodu','standart_urun_adi','hs_kodu','mense_ulke','gumrukcu_tanim','gcb_id','gcb_tarih','gcb_durum'],
+    5: ['urun_kodu','standart_urun_adi','toplam_tutar','gcb_id','gcb_kapama_tarihi','musteri_onay','duay_onay']
+  };
+  // Preset kolon setleri
+  var _PRESET_KOLONLAR = {
+    auto: null,
+    hazirlik: ['tedarikciAd','urun_kodu','aciklama','standart_urun_adi','fatura_urun_adi','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hs_kodu'],
+    ci_pl: ['tedarikciAd','urun_kodu','standart_urun_adi','miktar','birim','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','toplam_tutar','hs_kodu','mense_ulke'],
+    yukleme: ['urun_kodu','standart_urun_adi','koli_adet','brut_kg','net_kg','hacim_m3','konteyner_no','muhur_no','konteyner_sira','once_yukle','etiket_rengi','yukleme_durumu'],
+    gumruk: ['urun_kodu','standart_urun_adi','hs_kodu','mense_ulke','gumrukcu_tanim','imo_gerekli','imo_no','gcb_id','gcb_no','gcb_tarih','gcb_toplam','gcb_durum'],
+    tam: null
+  };
+
+  // Aktif gorunumu belirle
+  var _dosyaId = d.id;
+  var _dosyaAsama = parseInt(d.asamaNo || d.asama || 1) || 1;
+  var _aktifPreset = 'auto';
+  try { _aktifPreset = localStorage.getItem('ak_ihr_preset_' + _dosyaId) || 'auto'; } catch(e) {}
+
+  var _gorunumKolonlari;
+  if (_aktifPreset === 'tam') {
+    _gorunumKolonlari = null; // tum kolonlar
+  } else if (_aktifPreset !== 'auto' && _PRESET_KOLONLAR[_aktifPreset]) {
+    _gorunumKolonlari = _PRESET_KOLONLAR[_aktifPreset];
+  } else {
+    // Auto — dosya asamasina gore veya kullanici secimi
+    var _savedKols; try { _savedKols = JSON.parse(localStorage.getItem(_IHR_KOLON_KEY) || 'null'); } catch(e) { _savedKols = null; }
+    if (Array.isArray(_savedKols) && _savedKols.length) {
+      _gorunumKolonlari = _savedKols;
+    } else if (_ASAMA_KOLONLAR[_dosyaAsama]) {
+      _gorunumKolonlari = _ASAMA_KOLONLAR[_dosyaAsama];
+    } else {
+      _gorunumKolonlari = _IHR_KOLON_DEFAULT;
+    }
+  }
+
+  // Gizli gruplari kontrol et
+  var _gizliGruplar = [];
+  try { var _gg = localStorage.getItem('ak_ihr_gizli_grup_' + _dosyaId); if (_gg) _gizliGruplar = _gg.split(','); } catch(e) {}
+
+  var GORUNEN_KOLONLAR = _gorunumKolonlari
+    ? KOLONLAR.filter(function(col) { return _gorunumKolonlari.indexOf(col.k) !== -1 && _gizliGruplar.indexOf(String(col.g)) === -1; })
+    : KOLONLAR.filter(function(col) { return _gizliGruplar.indexOf(String(col.g)) === -1; });
 
   /* ── FREEZE LAYOUT: Sol sabit 3 kolon + Sağ kaydırılabilir ── */
   // ETIKET_RENK modul scope'ta tanimli (asagida)
@@ -1202,13 +1269,29 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   var tdS = 'padding:5px 8px;border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
   var thS = 'padding:4px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);border-right:0.5px solid var(--b);font-size:10px;white-space:nowrap;vertical-align:top;text-align:left';
 
+  /* ── PRESET BAR ── */
+  var _presetBtnS = 'padding:4px 10px;border-radius:20px;font-size:10px;cursor:pointer;font-family:inherit;';
+  var _presetOn = 'background:#0f1923;color:#fff;border:0.5px solid #0f1923;font-weight:500;';
+  var _presetOff = 'background:var(--sf);color:var(--t2);border:0.5px solid var(--b);';
+  var _presetList = [
+    { k:'auto', l:'Otomatik' }, { k:'hazirlik', l:'Hazirlik' }, { k:'ci_pl', l:'CI / PL' },
+    { k:'yukleme', l:'Yukleme' }, { k:'gumruk', l:'Gumruk' }, { k:'tam', l:'Tam Gorunum' }
+  ];
+  h += '<div style="display:flex;align-items:center;gap:5px;padding:6px 0;flex-wrap:wrap">';
+  h += '<span style="font-size:10px;color:var(--t3);margin-right:4px">Gorunum:</span>';
+  _presetList.forEach(function(p) {
+    var on = _aktifPreset === p.k;
+    h += '<button onclick="event.stopPropagation();window._ihrSetGorunum(\'' + _dosyaId + '\',\'' + p.k + '\')" style="' + _presetBtnS + (on ? _presetOn : _presetOff) + '">' + p.l + '</button>';
+  });
+  h += '<span style="font-size:9px;color:var(--t3);margin-left:6px">' + GORUNEN_KOLONLAR.length + ' kolon</span>';
+  h += '</div>';
+
   /* ── TEK TABLO + STICKY KOLONLAR ── */
   var stickyBg = 'var(--sf)';
   var stickyBgH = 'var(--s2)';
-  h += '<div style="overflow:auto;border:0.5px solid var(--b);border-radius:8px;max-height:calc(100vh - 280px)">';
-  h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:fixed">';
+  h += '<div style="overflow:auto;border:0.5px solid var(--b);border-radius:8px;max-height:calc(100vh - 310px)">';
+  h += '<table class="tbl" style="font-size:10px;border-collapse:collapse;table-layout:auto">';
   /* THEAD — Model C: grup bant + dile gore tek satir baslik */
-  var _dil = localStorage.getItem('ak_lang') || 'tr';
   var _GRUP_RENK = {
     1: { bg:'#E6F1FB', c:'#0C447C', tr:'Urun Kimligi',         en:'Product Identity' },
     2: { bg:'#FAEEDA', c:'#633806', tr:'Fiyat & Teklif',        en:'Price & Offer' },
@@ -1239,7 +1322,8 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     var cs = _grpColspans[g] || 0;
     if (!cs) return;
     var gr = _GRUP_RENK[g] || _GRUP_RENK[8];
-    h += '<th colspan="' + cs + '" style="background:' + gr.bg + ';color:' + gr.c + ';' + _gbS + '">' + (_dil === 'en' ? gr.en : gr.tr) + '</th>';
+    var gizli = _gizliGruplar.indexOf(String(g)) !== -1;
+    h += '<th colspan="' + cs + '" style="background:' + gr.bg + ';color:' + gr.c + ';' + _gbS + ';cursor:pointer;' + (gizli ? 'opacity:.5;' : '') + '" onclick="event.stopPropagation();window._ihrToggleGrup(\'' + _dosyaId + '\',' + g + ')" title="Tikla: grubu ac/kapat">' + (gizli ? '\u25b6 ' : '\u25bc ') + (_dil === 'en' ? gr.en : gr.tr) + '</th>';
   });
   h += '<th style="width:50px;min-width:50px;' + _gbS + ';background:var(--s2)" rowspan="2"></th>';
   h += '</tr>';
