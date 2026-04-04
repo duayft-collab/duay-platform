@@ -4413,8 +4413,39 @@ window._renderEntegrasyonlar = function() {
   if (hasKey) h += '<button class="btn btns btnd" onclick="event.stopPropagation();window._clearAnthropicKey()" style="font-size:11px">Temizle</button>';
   h += '<span style="font-size:11px;color:' + (hasKey ? '#16A34A' : '#D97706') + ';font-weight:500">' + (hasKey ? 'Kayitli \u2713' : 'Girilmedi') + '</span>';
   h += '</div></div>';
+  // EmailJS ayarlari
+  var ejPub = localStorage.getItem('ak_emailjs_public');
+  var ejSvc = localStorage.getItem('ak_emailjs_service');
+  var hasEj = !!ejPub && !!ejSvc;
+  h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:16px">';
+  h += '<div style="font-size:13px;font-weight:500;margin-bottom:4px">EmailJS (Dis Taraf Mail)</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:10px">Dis taraf belge yukleme portali icin e-posta bildirimi.</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+  h += '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">Public Key</div><input class="fi" id="set-ej-pub" placeholder="..." style="font-size:11px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>';
+  h += '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">Service ID</div><input class="fi" id="set-ej-svc" placeholder="service_..." style="font-size:11px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>';
+  h += '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">Template (Yukleyene)</div><input class="fi" id="set-ej-tpl-up" placeholder="template_..." style="font-size:11px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>';
+  h += '<div><div style="font-size:10px;color:var(--t3);margin-bottom:2px">Template (Bize)</div><input class="fi" id="set-ej-tpl-adm" placeholder="template_..." style="font-size:11px" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:8px;align-items:center">';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();window._saveEmailJSKeys()" style="font-size:11px">Kaydet</button>';
+  h += '<span style="font-size:11px;color:' + (hasEj ? '#16A34A' : '#D97706') + ';font-weight:500">' + (hasEj ? 'Kayitli \u2713' : 'Girilmedi') + '</span>';
+  h += '</div></div>';
   h += '</div>';
   panel.innerHTML = h;
+};
+
+window._saveEmailJSKeys = function() {
+  var pub = (document.getElementById('set-ej-pub')?.value || '').trim();
+  var svc = (document.getElementById('set-ej-svc')?.value || '').trim();
+  var tplUp = (document.getElementById('set-ej-tpl-up')?.value || '').trim();
+  var tplAdm = (document.getElementById('set-ej-tpl-adm')?.value || '').trim();
+  if (!pub || !svc) { window.toast?.('Public Key ve Service ID zorunlu', 'err'); return; }
+  localStorage.setItem('ak_emailjs_public', btoa(pub));
+  localStorage.setItem('ak_emailjs_service', btoa(svc));
+  if (tplUp) localStorage.setItem('ak_emailjs_template_up', btoa(tplUp));
+  if (tplAdm) localStorage.setItem('ak_emailjs_template_admin', btoa(tplAdm));
+  window.toast?.('EmailJS ayarlari kaydedildi', 'ok');
+  window._renderEntegrasyonlar?.();
 };
 
 // Settings navigasyonu — app_patch render map'e ekle

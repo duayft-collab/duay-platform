@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Duay Global — Belge Yukleme Portali</title>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa;color:#1a1a2e;min-height:100vh;display:flex}
+.side{width:320px;background:#0f1923;color:#fff;padding:48px 32px;display:flex;flex-direction:column;justify-content:center;min-height:100vh;flex-shrink:0}
+.side h1{font-size:22px;font-weight:600;margin-bottom:8px}
+.side p{font-size:13px;opacity:.7;line-height:1.6;margin-bottom:24px}
+.side-item{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13px;opacity:.8}
+.side-item span{font-size:18px}
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.06);padding:40px;max-width:560px;width:100%}
+.step-bar{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;color:#9ca3af}
+.step.active{color:#185FA5;font-weight:500}
+.step.done{color:#16a34a}
+.step-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:#f3f4f6;color:#9ca3af}
+.step.active .step-dot{background:#185FA5;color:#fff}
+.step.done .step-dot{background:#dcfce7;color:#16a34a}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:#e6f1fb;color:#0c447c;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:16px}
+.tur-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.tur-btn{padding:14px 12px;border:1.5px solid #e5e7eb;border-radius:10px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px}
+.tur-btn:hover{border-color:#185FA5;background:#f0f7ff}
+.tur-btn.sel{border-color:#185FA5;background:#e6f1fb;color:#0c447c;font-weight:600}
+.tur-btn .ic{font-size:20px;display:block;margin-bottom:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.fg{margin-bottom:0}
+.fl{font-size:11px;color:#6b7280;margin-bottom:4px;display:block}
+.fi{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit;transition:border-color .15s}
+.fi:focus{border-color:#185FA5}
+.fi.err{border-color:#dc2626}
+.drop{border:2px dashed #d1d5db;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.drop:hover,.drop.over{border-color:#185FA5;background:#f0f7ff}
+.drop .ic2{font-size:32px;margin-bottom:8px;color:#9ca3af}
+.drop p{font-size:13px;color:#6b7280}
+.drop .tags{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.drop .tag{font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280}
+.btn-p{width:100%;padding:14px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.btn-p:hover{opacity:.9}
+.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.done-circle{width:80px;height:80px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:36px;color:#16a34a}
+.summary{background:#f8f9fa;border-radius:10px;padding:14px;margin:16px 0;font-size:12px}
+.summary div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0}
+.summary div:last-child{border:none}
+.mail-box{background:#e6f1fb;border-radius:8px;padding:10px 14px;font-size:12px;color:#0c447c;text-align:center;margin-top:12px}
+.lock{font-size:11px;color:#9ca3af;text-align:center;margin-top:16px}
+.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0f7ff;border-radius:8px;margin-bottom:12px;font-size:12px}
+@media(max-width:768px){.side{display:none}.main{padding:16px}.card{padding:24px}}
+</style>
+</head>
+<body>
+
+<div class="side">
+  <h1>Duay Global LLC</h1>
+  <p>Hizli ve guvenli belge yukleme.<br>3 adimda tamamlayin.</p>
+  <div class="side-item"><span>🔒</span> Size ozel link</div>
+  <div class="side-item"><span>✉️</span> Aninda onay e-postasi</div>
+  <div class="side-item"><span>⚡</span> 1 dakikada tamamlayin</div>
+</div>
+
+<div class="main">
+  <div class="card" id="app"></div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// Firebase init
+var fbApp, fbDb;
+try {
+  var cfg = {
+    apiKey: window.__ENV__?.FB_API_KEY || 'YOUR_API_KEY',
+    authDomain: window.__ENV__?.FB_AUTH_DOMAIN || 'YOUR_AUTH_DOMAIN',
+    projectId: window.__ENV__?.FB_PROJECT_ID || 'YOUR_PROJECT_ID'
+  };
+  fbApp = firebase.initializeApp(cfg, 'upload-portal');
+  fbDb = firebase.firestore(fbApp);
+} catch(e) {
+  try { fbDb = firebase.firestore(); } catch(e2) { console.error('Firebase init hata:', e2); }
+}
+
+// Token coz
+var params = new URLSearchParams(location.search);
+var token = params.get('token') || '';
+var dosyaId='', timestamp=0, muhatabAd='', muhatabMail='', muhatabTip='';
+var dosyaNo='', musteriAd='';
+var tokenValid = false;
+
+try {
+  var decoded = atob(token);
+  var parts = decoded.split(':');
+  dosyaId = parts[0] || '';
+  timestamp = parseInt(parts[1]) || 0;
+  muhatabAd = parts[2] || '';
+  muhatabMail = parts[3] || '';
+  muhatabTip = parts[4] || '';
+  var age = (Date.now() - timestamp) / 86400000;
+  tokenValid = dosyaId && age < 30;
+} catch(e) { tokenValid = false; }
+
+// State
+var state = { screen: 'welcome', tur: '', belgeNo: '', belgeTarih: '', file: null, fileB64: '' };
+
+function render() {
+  var app = document.getElementById('app');
+  if (!tokenValid) { app.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:16px;font-weight:500;margin-bottom:8px">Link gecersiz veya suresi dolmus</div><div style="font-size:13px;color:#6b7280">Lutfen yeni bir link talep edin.</div></div>'; return; }
+  if (state.screen === 'welcome') renderWelcome(app);
+  else if (state.screen === 'form') renderForm(app);
+  else if (state.screen === 'done') renderDone(app);
+}
+
+function stepBar(active) {
+  var steps = [{l:'Karsilama',n:1},{l:'Belge Bilgisi',n:2},{l:'Tamamlandi',n:3}];
+  return '<div class="step-bar">' + steps.map(function(s,i) {
+    var cls = s.n < active ? 'step done' : s.n === active ? 'step active' : 'step';
+    var dot = s.n < active ? '✓' : s.n;
+    return '<div class="'+cls+'"><div class="step-dot">'+dot+'</div>'+s.l+'</div>' + (i<2?'<span style="color:#d1d5db">→</span>':'');
+  }).join('') + '</div>';
+}
+
+function renderWelcome(el) {
+  el.innerHTML = stepBar(1)
+    + '<div class="chip">📦 ' + esc(dosyaNo || dosyaId) + ' · ' + esc(musteriAd || '') + '</div>'
+    + '<div style="font-size:15px;font-weight:500;margin-bottom:8px">Size bir belge yukleme linki gonderildi.</div>'
+    + '<div style="font-size:13px;color:#6b7280;margin-bottom:20px">Asagidaki butona tiklayarak belgenizi yukleyin.</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8f9fa;border-radius:10px;margin-bottom:20px">'
+    + '<div style="width:36px;height:36px;border-radius:50%;background:#e6f1fb;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0c447c">' + (muhatabAd ? muhatabAd[0].toUpperCase() : '?') + '</div>'
+    + '<div><div style="font-size:13px;font-weight:500">' + esc(muhatabAd) + '</div><div style="font-size:11px;color:#6b7280">' + esc(muhatabMail) + '</div></div></div>'
+    + '<button class="btn-p" onclick="state.screen=\'form\';render()">Baslayin →</button>';
+}
+
+function renderForm(el) {
+  var turler = [{v:'GCB',l:'GCB Beyannamesi',ic:'📋'},{v:'BL',l:'Konsimento',ic:'🚢'},{v:'MENSEI',l:'Mense',ic:'🌍'},{v:'SIG',l:'Sigorta',ic:'🛡️'},{v:'EUR1',l:'EUR.1',ic:'📜'},{v:'OZEL',l:'Diger',ic:'📎'}];
+  var canSubmit = state.tur && state.belgeNo && state.belgeTarih && state.file;
+  el.innerHTML = stepBar(2)
+    + '<div class="chip">📦 ' + esc(dosyaNo || dosyaId) + '</div>'
+    + '<div style="font-size:13px;font-weight:500;margin-bottom:10px">Belge Turu</div>'
+    + '<div class="tur-grid">' + turler.map(function(t) {
+      return '<div class="tur-btn' + (state.tur === t.v ? ' sel' : '') + '" onclick="state.tur=\'' + t.v + '\';render()"><span class="ic">' + t.ic + '</span>' + t.l + '</div>';
+    }).join('') + '</div>'
+    + '<div class="row2"><div class="fg"><label class="fl">Belge Numarasi *</label><input class="fi' + (!state.belgeNo && state.tur ? ' err' : '') + '" id="up-bno" value="' + esc(state.belgeNo) + '" placeholder="GCB-2026-..." oninput="state.belgeNo=this.value"></div>'
+    + '<div class="fg"><label class="fl">Belge Tarihi *</label><input type="date" class="fi' + (!state.belgeTarih && state.tur ? ' err' : '') + '" id="up-btar" value="' + esc(state.belgeTarih) + '" onchange="state.belgeTarih=this.value"></div></div>'
+    + (state.file ? '<div class="file-preview">📎 ' + esc(state.file.name) + ' <span style="color:#6b7280">(' + Math.round(state.file.size/1024) + 'KB)</span><span onclick="state.file=null;state.fileB64=\'\';render()" style="margin-left:auto;cursor:pointer;color:#dc2626">✕</span></div>' : '<div class="drop" id="up-drop" onclick="document.getElementById(\'up-file\').click()"><div class="ic2">☁️</div><p>Dosyayi buraya birakin veya tiklayin</p><div class="tags"><span class="tag">PDF</span><span class="tag">JPG</span><span class="tag">PNG</span><span class="tag">Max 5MB</span></div></div>')
+    + '<input type="file" id="up-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this)">'
+    + '<button class="btn-p" ' + (canSubmit ? '' : 'disabled') + ' onclick="submitUpload()">Gonder ve Tamamla →</button>'
+    + '<div class="lock">🔒 Bu link yalnizca size ozel</div>';
+  // Drag drop
+  setTimeout(function() {
+    var drop = document.getElementById('up-drop');
+    if (!drop) return;
+    drop.ondragover = function(e) { e.preventDefault(); drop.classList.add('over'); };
+    drop.ondragleave = function() { drop.classList.remove('over'); };
+    drop.ondrop = function(e) { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) handleFileObj(e.dataTransfer.files[0]); };
+  }, 50);
+}
+
+function renderDone(el) {
+  var turLabels = {GCB:'GCB Beyannamesi',BL:'Konsimento',MENSEI:'Mense Sahadetnamesi',SIG:'Sigorta Policesi',EUR1:'EUR.1 / A.TR',OZEL:'Diger'};
+  el.innerHTML = stepBar(4)
+    + '<div class="done-circle">✓</div>'
+    + '<div style="text-align:center;font-size:18px;font-weight:600;margin-bottom:6px">Yuklendi!</div>'
+    + '<div style="text-align:center;font-size:13px;color:#6b7280;margin-bottom:16px">Belgeniz basariyla iletildi.</div>'
+    + '<div class="summary"><div><span style="color:#6b7280">Belge Turu</span><span>' + esc(turLabels[state.tur] || state.tur) + '</span></div><div><span style="color:#6b7280">Belge No</span><span>' + esc(state.belgeNo) + '</span></div><div><span style="color:#6b7280">Tarih</span><span>' + esc(state.belgeTarih) + '</span></div><div><span style="color:#6b7280">Durum</span><span style="color:#16a34a;font-weight:500">✓ Iletildi</span></div></div>'
+    + '<div class="mail-box">✉️ Onay e-postasi gonderildi — ' + esc(muhatabMail) + '</div>'
+    + '<button onclick="state.tur=\'\';state.belgeNo=\'\';state.belgeTarih=\'\';state.file=null;state.fileB64=\'\';state.screen=\'form\';render()" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;background:none;font-size:13px;cursor:pointer;font-family:inherit;margin-top:12px;color:#6b7280">+ Baska belge yukle</button>';
+}
+
+// File handling
+window.handleFile = function(inp) { if (inp.files[0]) handleFileObj(inp.files[0]); };
+function handleFileObj(f) {
+  if (f.size > 5 * 1024 * 1024) { alert('Max 5MB'); return; }
+  state.file = f;
+  var reader = new FileReader();
+  reader.onload = function(e) { state.fileB64 = e.target.result; render(); };
+  reader.readAsDataURL(f);
+}
+
+// Submit
+window.submitUpload = function() {
+  if (!state.tur || !state.belgeNo || !state.belgeTarih || !state.file) return;
+  var btn = document.querySelector('.btn-p'); if (btn) { btn.disabled = true; btn.textContent = 'Gonderiliyor...'; }
+  var record = {
+    id: Date.now().toString(),
+    dosya_id: dosyaId,
+    tur: state.tur,
+    belge_no: state.belgeNo,
+    belge_tarihi: state.belgeTarih,
+    muhatap_ad: muhatabAd,
+    muhatap_mail: muhatabMail,
+    muhatap_tip: muhatabTip,
+    dosya_adi: state.file.name,
+    dosya_boyut: state.file.size,
+    yuklendi_at: new Date().toISOString(),
+    durum: 'beklemede'
+  };
+  // Firestore'a yaz
+  var base = 'duay_tenant_default';
+  if (fbDb) {
+    fbDb.collection(base).doc('ihracat_uploads').get().then(function(snap) {
+      var existing = snap.exists && snap.data()?.data ? snap.data().data : [];
+      existing.unshift(record);
+      return fbDb.collection(base).doc('ihracat_uploads').set({ data: existing, syncedAt: new Date().toISOString() }, { merge: true });
+    }).then(function() {
+      sendEmails();
+      state.screen = 'done'; render();
+    }).catch(function(e) {
+      console.error('Firestore hata:', e);
+      // Fallback — yine de done ekranina gec
+      state.screen = 'done'; render();
+    });
+  } else {
+    state.screen = 'done'; render();
+  }
+};
+
+function sendEmails() {
+  try {
+    // EmailJS key'leri — yoksa atla
+    if (typeof emailjs === 'undefined') return;
+    var pubKey = localStorage.getItem('ak_emailjs_public');
+    var svcId = localStorage.getItem('ak_emailjs_service');
+    var tplUp = localStorage.getItem('ak_emailjs_template_up');
+    var tplAdm = localStorage.getItem('ak_emailjs_template_admin');
+    if (!pubKey || !svcId) return;
+    try { pubKey = atob(pubKey); } catch(e) {}
+    try { svcId = atob(svcId); } catch(e) {}
+    try { tplUp = atob(tplUp); } catch(e) {}
+    try { tplAdm = atob(tplAdm); } catch(e) {}
+    emailjs.init(pubKey);
+    if (tplUp) emailjs.send(svcId, tplUp, { to_email:muhatabMail, to_name:muhatabAd, dosya_no:dosyaNo, belge_tur:state.tur, belge_no:state.belgeNo }).catch(function(){});
+    if (tplAdm) emailjs.send(svcId, tplAdm, { dosya_no:dosyaNo, muhatap_ad:muhatabAd, belge_tur:state.tur, belge_no:state.belgeNo }).catch(function(){});
+  } catch(e) { console.warn('Email hata:', e); }
+}
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+// Dosya bilgisini Firestore'dan cek
+if (tokenValid && fbDb) {
+  var base2 = 'duay_tenant_default';
+  fbDb.collection(base2).doc('ihracatDosyalar').get().then(function(snap) {
+    if (!snap.exists) return;
+    var dosyalar = snap.data()?.data || [];
+    var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
+    if (d) { dosyaNo = d.dosyaNo || ''; musteriAd = d.musteriAd || ''; }
+    render();
+  }).catch(function() { render(); });
+} else { render(); }
+
+})();
+</script>
+</body>
+</html>

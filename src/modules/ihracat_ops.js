@@ -601,6 +601,12 @@ function _ihrDetayRenderOzet(d) {
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrIcNakliyeTeklif(\'' + d.id + '\')" style="font-size:11px;justify-content:flex-start">İç Nakliye Teklif Talebi</button>';
   h += '</div></div>';
 
+  /* Dis Taraf Link */
+  h += '<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--b)">';
+  h += '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Dis Taraf Belge Yukleme</div>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDisTarafLink?.(\'' + d.id + '\')" style="font-size:11px;width:100%;color:#185FA5">🔗 Yukleme Linki Olustur</button>';
+  h += '</div>';
+
   h += '</div>'; /* sol blok bitti */
 
   /* ── SAĞ BLOK: Evraklar ── */
@@ -2859,6 +2865,42 @@ window._ihrOzelEvrakSil = function(id) {
     window.toast?.('Belge silindi', 'ok');
     if (_aktifDosyaId) { var _dd7 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); }); if (_dd7) _ihrDetayRenderOzet(_dd7); }
   }});
+};
+
+// ══ EXTERNAL-UPLOAD-001: Dis taraf link olusturma ═════════════
+window._ihrDisTarafLink = function(dosyaId) {
+  var old = _g('mo-dis-link'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-dis-link';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Yukleme Linki Olustur</div>'
+    + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:10px">'
+    + '<div><div class="fl">Muhatap Tipi</div><select class="fi" id="dl-tip" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()"><option value="gumrukcu">Gumrukcu</option><option value="forwarder">Forwarder</option><option value="sigortaci">Sigortaci</option><option value="tedarikci">Tedarikci</option></select></div>'
+    + '<div><div class="fl">Ad Soyad / Firma</div><input class="fi" id="dl-ad" placeholder="Firma adi" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+    + '<div><div class="fl">E-posta</div><input class="fi" id="dl-mail" placeholder="ornek@firma.com" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"></div>'
+    + '<div id="dl-result"></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="document.getElementById(\'mo-dis-link\')?.remove()">Iptal</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrDisTarafLinkOlustur(\'' + dosyaId + '\')">Olustur</button>'
+    + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrDisTarafLinkOlustur = function(dosyaId) {
+  var ad = (_g('dl-ad')?.value || '').trim();
+  var mail = (_g('dl-mail')?.value || '').trim();
+  var tip = _g('dl-tip')?.value || 'gumrukcu';
+  if (!ad) { window.toast?.('Ad zorunlu', 'err'); return; }
+  var payload = dosyaId + ':' + Date.now() + ':' + ad + ':' + mail + ':' + tip;
+  var token = btoa(payload);
+  var link = 'https://duayft-collab.github.io/duay-platform/upload.html?token=' + token;
+  var result = _g('dl-result');
+  if (result) {
+    result.innerHTML = '<div style="margin-top:8px"><div class="fl">Olusturulan Link</div>'
+      + '<div style="display:flex;gap:6px"><input class="fi" id="dl-link" value="' + link + '" readonly style="font-size:10px;font-family:monospace"><button class="btn btnp" onclick="event.stopPropagation();navigator.clipboard?.writeText(document.getElementById(\'dl-link\')?.value);window.toast?.(\'Link kopyalandi\',\'ok\')" style="font-size:11px;flex-shrink:0">Kopyala</button></div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:4px">Link 30 gun gecerlidir. ' + ad + ' icin olusturuldu.</div></div>';
+  }
+  window.logActivity?.('ihracat', 'Dis taraf linki olusturuldu: ' + ad + ' (' + tip + ')');
 };
 
 })();
