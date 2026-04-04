@@ -4212,36 +4212,169 @@ window._ihrKlonKaydet = function(kaynakId) {
 window._ihrDetayRenderMusteri = function(d, c) {
   if (!c) return;
   var kambiyo = window._ihrKambiyo90?.(d.id);
-  var h = '<div style="padding:16px 20px">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:13px;font-weight:600">Musteri Bilgileri</div><button class="btn btns" onclick="event.stopPropagation();window._ihrMusteriDuzenle?.(\'' + d.id + '\')" style="font-size:10px">Duzenle</button></div>';
-  // Musteri bilgi karti
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
-  h += _detayRow('Firma', d.musteriAd || '\u2014');
-  h += _detayRow('Yetkili', d.musteri_yetkili || '\u2014');
-  h += _detayRow('E-posta', d.musteri_mail || '\u2014');
-  h += _detayRow('Telefon', d.musteri_tel || '\u2014');
-  h += _detayRow('Ulke', d.musteri_ulke || '\u2014');
-  h += _detayRow('Adres', d.musteri_adres || '\u2014');
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
+  var musteriEvraklar = evraklar.filter(function(e) { return ['PI','CI','PL','BL','MENSEI'].indexOf(e.tur) !== -1; });
+  var loglar = [];
+  try { loglar = JSON.parse(localStorage.getItem('ak_ihr_log_' + d.id) || '[]'); } catch(e) {}
+
+  var h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 20px">';
+
+  /* ── SOL: Musteri bilgi + gonderilen evraklar ── */
+  h += '<div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:13px;font-weight:600">Musteri Bilgileri</div><button class="btn btns" onclick="event.stopPropagation();window._ihrMusteriDuzenle?.(\'' + d.id + '\')" style="font-size:10px">Duzenle</button></div>';
+  /* Bilgi karti */
+  h += '<div style="background:var(--s2);border-radius:8px;padding:12px;margin-bottom:12px">';
+  [['Firma', d.musteriAd], ['Yetkili', d.musteri_yetkili], ['E-posta', d.musteri_mail], ['Telefon', d.musteri_tel], ['Ulke', d.musteri_ulke], ['Adres', d.musteri_adres]].forEach(function(r) {
+    h += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span style="color:var(--t3)">' + r[0] + '</span><span style="font-weight:500;color:var(--t);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(r[1] || '\u2014') + '</span></div>';
+  });
   h += '</div>';
-  // Kambiyo sayaci
+  /* Musteriye gonderilen evraklar */
+  h += '<div style="font-size:11px;font-weight:600;margin-bottom:6px">Musteriye Gonderilen Evraklar</div>';
+  if (musteriEvraklar.length) {
+    musteriEvraklar.forEach(function(ev) {
+      var durumRenk = ev.durum === 'gonderildi' ? '#16A34A' : ev.durum === 'onaylandi' ? '#185FA5' : '#D97706';
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:0.5px solid var(--b)">';
+      h += '<div style="width:6px;height:6px;border-radius:50%;background:' + durumRenk + '"></div>';
+      h += '<span style="font-size:11px;flex:1">' + _esc(ev.tur) + '</span>';
+      h += '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:' + durumRenk + '22;color:' + durumRenk + '">' + _esc(ev.durum || 'taslak') + '</span>';
+      if (ev.gonderim_tarihi) h += '<span style="font-size:9px;color:var(--t3);font-family:monospace">' + _esc(ev.gonderim_tarihi.slice(0, 10)) + '</span>';
+      h += '</div>';
+    });
+  } else {
+    h += '<div style="font-size:10px;color:var(--t3);padding:8px 0">Henuz evrak gonderilmedi</div>';
+  }
+  h += '</div>'; /* sol bitti */
+
+  /* ── SAG: Kambiyo + Konteyner + Ek satis + Log ── */
+  h += '<div>';
+  /* Kambiyo 90 gun */
   if (kambiyo) {
-    var kRenk = kambiyo.durum === 'gecmis' ? '#DC2626' : kambiyo.durum === 'kritik' ? '#DC2626' : kambiyo.durum === 'uyari' ? '#D97706' : '#16A34A';
-    h += '<div style="padding:14px;background:var(--s2);border-radius:10px;margin-bottom:12px">';
-    h += '<div style="font-size:11px;color:var(--t3);margin-bottom:4px">Kambiyo 90 Gun</div>';
+    var kRenk = kambiyo.durum === 'gecmis' || kambiyo.durum === 'kritik' ? '#DC2626' : kambiyo.durum === 'uyari' ? '#D97706' : '#16A34A';
+    h += '<div style="padding:16px;background:var(--s2);border-radius:10px;margin-bottom:12px;text-align:center">';
+    h += '<div style="font-size:10px;color:var(--t3);margin-bottom:6px">Kambiyo 90 Gun</div>';
     if (kambiyo.odenmis) {
-      h += '<div style="font-size:20px;font-weight:700;color:#16A34A">Odendi \u2713</div>';
+      h += '<div style="font-size:32px;font-weight:700;color:#16A34A">Odendi \u2713</div>';
     } else {
-      h += '<div style="font-size:28px;font-weight:700;color:' + kRenk + '">' + kambiyo.kalanGun + ' gun</div>';
-      h += '<div style="font-size:10px;color:var(--t3)">Son tarih: ' + kambiyo.deadline + '</div>';
-      if (kambiyo.kalanGun <= 15 && kambiyo.kalanGun > 0) h += '<div style="font-size:10px;color:#DC2626;margin-top:4px;font-weight:500">\u26a0 Acil odeme gerekli!</div>';
+      h += '<div style="font-size:40px;font-weight:700;color:' + kRenk + '">' + kambiyo.kalanGun + '</div>';
+      h += '<div style="font-size:11px;color:var(--t3)">gun kaldi \u00b7 Son: ' + kambiyo.deadline + '</div>';
+      if (kambiyo.kalanGun <= 15 && kambiyo.kalanGun > 0) h += '<div style="font-size:10px;color:#DC2626;margin-top:6px;font-weight:600">\u26a0 Acil odeme gerekli!</div>';
     }
     h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKambiyoOde?.(\'' + d.id + '\')" style="font-size:10px;margin-top:8px">' + (kambiyo.odenmis ? 'Geri Al' : 'Odeme Alindi') + '</button>';
     h += '</div>';
   }
-  // Konteyner gauge
+  /* Konteyner gauge + ek satis */
   h += window._ihrKonteynerGauge?.(d.id) || '';
+  /* Iletisim logu */
+  h += '<div style="margin-top:12px">';
+  h += '<div style="font-size:11px;font-weight:600;margin-bottom:6px">Iletisim Logu</div>';
+  var _sonLog = loglar.slice(0, 10);
+  if (_sonLog.length) {
+    _sonLog.forEach(function(log) {
+      h += '<div style="display:flex;gap:6px;padding:3px 0;border-bottom:0.5px solid var(--b);font-size:10px">';
+      h += '<span style="color:var(--t3);font-family:monospace;flex-shrink:0">' + _esc((log.tarih || '').slice(0, 10)) + '</span>';
+      h += '<span style="color:var(--t);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(log.aksiyon || '') + '</span>';
+      if (log.kim) h += '<span style="color:var(--t3)">' + _esc(log.kim) + '</span>';
+      h += '</div>';
+    });
+    if (loglar.length > 10) h += '<div style="font-size:9px;color:var(--t3);padding:4px 0">... ve ' + (loglar.length - 10) + ' kayit daha</div>';
+  } else {
+    h += '<div style="font-size:10px;color:var(--t3);padding:8px 0">Henuz log yok</div>';
+  }
   h += '</div>';
+  h += '</div>'; /* sag bitti */
+
+  h += '</div>'; /* 2 kolon grid bitti */
   c.innerHTML = h;
+};
+
+/** Musteri bilgileri duzenleme modali */
+window._ihrMusteriDuzenle = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  var old = _g('mo-mus-edit'); if (old) old.remove();
+  var fS = 'class="fi" style="font-size:11px;width:100%" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"';
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-mus-edit';
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Musteri Bilgileri Duzenle</div>'
+    + '<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Firma Adi</div><input ' + fS + ' id="me-firma" value="' + _esc(d.musteriAd || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Yetkili</div><input ' + fS + ' id="me-yetkili" value="' + _esc(d.musteri_yetkili || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">E-posta</div><input ' + fS + ' id="me-mail" value="' + _esc(d.musteri_mail || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Telefon</div><input ' + fS + ' id="me-tel" value="' + _esc(d.musteri_tel || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Ulke</div><input ' + fS + ' id="me-ulke" value="' + _esc(d.musteri_ulke || '') + '"></div>'
+    + '<div style="grid-column:1/-1"><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Adres</div><input ' + fS + ' id="me-adres" value="' + _esc(d.musteri_adres || '') + '"></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-mus-edit\')?.remove()">Iptal</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrMusteriKaydet(\'' + dosyaId + '\')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrMusteriKaydet = function(dosyaId) {
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  d.musteriAd = (_g('me-firma')?.value || '').trim();
+  d.musteri_yetkili = (_g('me-yetkili')?.value || '').trim();
+  d.musteri_mail = (_g('me-mail')?.value || '').trim();
+  d.musteri_tel = (_g('me-tel')?.value || '').trim();
+  d.musteri_ulke = (_g('me-ulke')?.value || '').trim();
+  d.musteri_adres = (_g('me-adres')?.value || '').trim();
+  d.updatedAt = _now();
+  _storeD(dosyalar);
+  _g('mo-mus-edit')?.remove();
+  window.toast?.('Musteri bilgileri guncellendi', 'ok');
+  window._ihrLog(dosyaId, 'Musteri bilgileri guncellendi', null, null);
+  _ihrReRender();
+};
+
+/** Sigortaci bilgileri duzenleme modali */
+window._ihrSigortaciDuzenle = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  var old = _g('mo-sig-edit'); if (old) old.remove();
+  var fS = 'class="fi" style="font-size:11px;width:100%" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"';
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sig-edit';
+  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Sigortaci Bilgileri Duzenle</div>'
+    + '<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Firma</div><input ' + fS + ' id="se-firma" value="' + _esc(d.sigortaFirma || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Yetkili</div><input ' + fS + ' id="se-yetkili" value="' + _esc(d.sigorta_yetkili || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">E-posta</div><input ' + fS + ' id="se-mail" value="' + _esc(d.sigorta_mail || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Telefon</div><input ' + fS + ' id="se-tel" value="' + _esc(d.sigorta_tel || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Police No</div><input ' + fS + ' id="se-police" value="' + _esc(d.police_no || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Police Tarihi</div><input type="date" ' + fS + ' id="se-ptarihi" value="' + _esc(d.police_tarihi || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Bitis Tarihi</div><input type="date" ' + fS + ' id="se-pbitis" value="' + _esc(d.police_bitis || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Prim Tutari</div><input type="number" ' + fS + ' id="se-prim" value="' + _esc(d.sigorta_prim || '') + '"></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Navlun Bedeli</div><input type="number" ' + fS + ' id="se-navlun" value="' + _esc(d.navlun_bedeli || '') + '"></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+    + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-sig-edit\')?.remove()">Iptal</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrSigortaciKaydet(\'' + dosyaId + '\')">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrSigortaciKaydet = function(dosyaId) {
+  var dosyalar = _loadD();
+  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  d.sigortaFirma = (_g('se-firma')?.value || '').trim();
+  d.sigorta_yetkili = (_g('se-yetkili')?.value || '').trim();
+  d.sigorta_mail = (_g('se-mail')?.value || '').trim();
+  d.sigorta_tel = (_g('se-tel')?.value || '').trim();
+  d.police_no = (_g('se-police')?.value || '').trim();
+  d.police_tarihi = (_g('se-ptarihi')?.value || '').trim();
+  d.police_bitis = (_g('se-pbitis')?.value || '').trim();
+  d.sigorta_prim = parseFloat(_g('se-prim')?.value || 0) || null;
+  d.navlun_bedeli = parseFloat(_g('se-navlun')?.value || 0) || null;
+  d.updatedAt = _now();
+  _storeD(dosyalar);
+  _g('mo-sig-edit')?.remove();
+  window.toast?.('Sigortaci bilgileri guncellendi', 'ok');
+  window._ihrLog(dosyaId, 'Sigortaci bilgileri guncellendi', null, null);
+  _ihrReRender();
 };
 
 /** Kambiyo odeme durumu toggle */
@@ -4270,35 +4403,68 @@ window._ihrDetayRenderSigortaci = function(d, c) {
   var navlun = parseFloat(d.navlun_bedeli) || 0;
   var cifDeger = malBedeli + navlun;
   var sigortaDeger = cifDeger * 1.10;
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
+  var sigEvrak = evraklar.find(function(e) { return e.tur === 'SIG'; });
 
-  var h = '<div style="padding:16px 20px">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:13px;font-weight:600">Sigortaci Bilgileri</div><button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaciDuzenle?.(\'' + d.id + '\')" style="font-size:10px">Duzenle</button></div>';
-  // Firma bilgi
-  h += _detayRow('Firma', d.sigortaFirma || '\u2014');
-  h += _detayRow('Yetkili', d.sigorta_yetkili || '\u2014');
-  h += _detayRow('E-posta', d.sigorta_mail || '\u2014');
-  h += _detayRow('Telefon', d.sigorta_tel || '\u2014');
-  // Sigorta degeri hesaplama
-  h += '<div style="padding:14px;background:var(--s2);border-radius:10px;margin:12px 0">';
-  h += '<div style="font-size:11px;font-weight:600;margin-bottom:8px">Sigorta Degeri Hesaplama</div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>Mal Bedeli</span><span style="font-family:monospace">' + malBedeli.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + (d.doviz || 'USD') + '</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>+ Navlun</span><span style="font-family:monospace">' + navlun.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-top:1px solid var(--b)"><span>= CIF Deger</span><span style="font-family:monospace;font-weight:500">' + cifDeger.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>+ %10</span><span style="font-family:monospace">' + (cifDeger * 0.10).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid var(--b);font-weight:600;color:#185FA5"><span>Sigorta Degeri</span><span style="font-family:monospace">' + sigortaDeger.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + (d.doviz || 'USD') + '</span></div>';
+  var h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 20px">';
+
+  /* ── SOL: Firma + Police ── */
+  h += '<div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:13px;font-weight:600">Sigortaci Bilgileri</div><button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaciDuzenle?.(\'' + d.id + '\')" style="font-size:10px">Duzenle</button></div>';
+  /* Firma karti */
+  h += '<div style="background:var(--s2);border-radius:8px;padding:12px;margin-bottom:12px">';
+  [['Firma', d.sigortaFirma], ['Yetkili', d.sigorta_yetkili], ['E-posta', d.sigorta_mail], ['Telefon', d.sigorta_tel]].forEach(function(r) {
+    h += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span style="color:var(--t3)">' + r[0] + '</span><span style="font-weight:500;color:var(--t)">' + _esc(r[1] || '\u2014') + '</span></div>';
+  });
   h += '</div>';
-  // Police bilgileri
-  h += '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Police Bilgileri</div>';
-  h += _detayRow('Police No', d.police_no || '\u2014');
-  h += _detayRow('Police Tarihi', d.police_tarihi || '\u2014');
-  h += _detayRow('Bitis Tarihi', d.police_bitis || '\u2014');
-  // Police bitis uyarisi
+  /* Police bilgileri */
+  h += '<div style="font-size:12px;font-weight:600;margin-bottom:8px">Police Bilgileri</div>';
+  h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:12px;margin-bottom:8px">';
+  [['Police No', d.police_no], ['Police Tarihi', d.police_tarihi], ['Bitis Tarihi', d.police_bitis], ['Prim Tutari', d.sigorta_prim ? d.sigorta_prim + ' ' + (d.sigorta_prim_doviz || 'USD') : null], ['Para Birimi', d.sigorta_prim_doviz]].forEach(function(r) {
+    h += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span style="color:var(--t3)">' + r[0] + '</span><span style="font-weight:500;color:var(--t)">' + _esc(r[1] || '\u2014') + '</span></div>';
+  });
+  h += '</div>';
+  /* Police bitis uyarisi */
   if (d.police_bitis) {
     var pbGun = Math.ceil((new Date(d.police_bitis) - new Date()) / 86400000);
-    if (pbGun < 0) h += '<div style="font-size:10px;color:#DC2626;margin-top:4px;font-weight:500">\ud83d\udd34 Police suresi dolmus!</div>';
-    else if (pbGun < 15) h += '<div style="font-size:10px;color:#D97706;margin-top:4px">\u26a0 Police suresi ' + pbGun + ' gun kaldi</div>';
+    if (pbGun < 0) h += '<div style="font-size:10px;color:#DC2626;padding:6px 10px;background:#FEF2F2;border-radius:6px;margin-bottom:8px;font-weight:500">\ud83d\udd34 Police suresi ' + Math.abs(pbGun) + ' gun once doldu!</div>';
+    else if (pbGun < 15) h += '<div style="font-size:10px;color:#D97706;padding:6px 10px;background:#FAEEDA;border-radius:6px;margin-bottom:8px">\u26a0 Police suresi ' + pbGun + ' gun kaldi</div>';
   }
+  /* Police dosya yukle */
+  h += '<div style="display:flex;gap:6px;margin-top:8px">';
+  if (sigEvrak && sigEvrak.dosya_url) {
+    h += '<a href="' + _esc(sigEvrak.dosya_url) + '" target="_blank" class="btn btns" style="font-size:10px;text-decoration:none">Goruntule</a>';
+  }
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'SIG\')" style="font-size:10px;color:#185FA5">' + (sigEvrak ? '+ Yeni Versiyon' : 'Police Yukle') + '</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSigortaTeklif?.(\'' + d.id + '\')" style="font-size:10px">Teklif Iste</button>';
   h += '</div>';
+  h += '</div>'; /* sol bitti */
+
+  /* ── SAG: CIF hesaplama ── */
+  h += '<div>';
+  h += '<div style="font-size:13px;font-weight:600;margin-bottom:12px">Sigorta Degeri Hesaplama</div>';
+  h += '<div style="background:var(--s2);border-radius:10px;padding:16px">';
+  var _hesapS = 'display:flex;justify-content:space-between;font-size:11px;padding:4px 0';
+  h += '<div style="' + _hesapS + '"><span>Mal Bedeli</span><span style="font-family:monospace;font-weight:500">' + malBedeli.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(d.doviz || 'USD') + '</span></div>';
+  h += '<div style="' + _hesapS + '"><span style="color:var(--t3)">+ Navlun</span><span style="font-family:monospace">' + navlun.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
+  h += '<div style="' + _hesapS + ';border-top:1px solid var(--b);padding-top:6px"><span style="font-weight:500">= CIF Deger</span><span style="font-family:monospace;font-weight:600">' + cifDeger.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
+  h += '<div style="' + _hesapS + '"><span style="color:var(--t3)">+ %10 Marj</span><span style="font-family:monospace">' + (cifDeger * 0.10).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</span></div>';
+  h += '<div style="' + _hesapS + ';border-top:2px solid var(--ac);padding-top:8px;margin-top:4px"><span style="font-size:13px;font-weight:700;color:#185FA5">Sigorta Degeri</span><span style="font-size:14px;font-family:monospace;font-weight:700;color:#185FA5">' + sigortaDeger.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + _esc(d.doviz || 'USD') + '</span></div>';
+  h += '</div>';
+  /* Bilgi notu */
+  h += '<div style="margin-top:12px;padding:10px;background:#E6F1FB;border-radius:8px;font-size:10px;color:#0C447C">';
+  h += '<div style="font-weight:600;margin-bottom:4px">Hesaplama Yontemi</div>';
+  h += 'CIF = Mal Bedeli + Navlun<br>';
+  h += 'Sigorta Degeri = CIF x 1.10 (%10 marj)<br>';
+  h += '<span style="color:var(--t3)">Urun sayisi: ' + urunler.length + ' \u00b7 Toplam miktar: ' + urunler.reduce(function(s, u) { return s + (parseFloat(u.miktar) || 0); }, 0).toLocaleString('tr-TR') + '</span>';
+  h += '</div>';
+  /* Gonder butonu engeli */
+  h += '<div style="margin-top:12px;padding:8px 10px;background:#FAEEDA;border-radius:8px;font-size:10px;color:#633806">';
+  h += '\u26a0 Sigorta policesi "Gonder" butonu ile gonderilemez. Sadece goruntulenebilir ve yuklenebilir.';
+  h += '</div>';
+  h += '</div>'; /* sag bitti */
+
+  h += '</div>'; /* 2 kolon grid bitti */
   c.innerHTML = h;
 };
 
