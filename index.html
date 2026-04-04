@@ -1470,12 +1470,28 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 
 
   <script>
-    // Service Worker kaydı
+    // Service Worker kaydı + otomatik güncelleme
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.info('[SW] Kayıtlı:', reg.scope))
-          .catch(err => console.warn('[SW] Kayıt hatası:', err));
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+          console.info('[SW] Kayıtlı:', reg.scope);
+          reg.update();
+          reg.addEventListener('updatefound', () => {
+            var nw = reg.installing;
+            if (!nw) return;
+            nw.addEventListener('statechange', () => {
+              if (nw.state === 'activated' && navigator.serviceWorker.controller) {
+                console.info('[SW] Yeni versiyon aktif — sayfa yenileniyor');
+                window.location.reload();
+              }
+            });
+          });
+        }).catch(err => console.warn('[SW] Kayıt hatası:', err));
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (window._swReloading) return;
+          window._swReloading = true;
+          window.location.reload();
+        });
       });
     }
   </script>
