@@ -421,114 +421,155 @@ function _injectOdmPanel() {
 
   var _odmCatOpts = Object.entries(ODM_CATS).map(function(e) { return '<option value="' + e[0] + '">' + e[1].ic + ' ' + e[1].l + '</option>'; }).join('');
 
-  panel.innerHTML = [
-    // ═══ STICKY WRAPPER ═══
-    '<div style="position:sticky;top:0;z-index:200;background:var(--sf);border-bottom:0.5px solid var(--b)"><div style="max-width:1280px;margin:0 auto">',
+  /* Kategori sidebar butonlari */
+  var _catBtns = Object.entries(ODM_CATS).map(function(e) {
+    return '<button class="odm-sb-btn" onclick="event.stopPropagation();window._odmSidebarCatFilter(\'' + e[0] + '\')" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:5px;font-size:11px;color:var(--t2);cursor:pointer;width:100%;border:none;background:transparent;font-family:inherit;text-align:left">' + e[1].ic + ' ' + e[1].l + '</button>';
+  }).join('');
 
-    // ── Satır 1: Başlık + Butonlar ──
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:0.5px solid var(--b)">',
-      '<div>',
-        '<div style="font-size:15px;font-weight:700;color:var(--t)">Nakit Akışı</div>',
-        '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="odm-sub-title">Yükleniyor...</div>',
+  panel.innerHTML = [
+    /* ═══ STICKY WRAPPER ═══ */
+    '<div style="position:sticky;top:0;z-index:200;border-bottom:0.5px solid var(--b)">',
+
+    /* ── Dark TopBar ── */
+    '<div style="background:#0f1923;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px">',
+      '<div style="display:flex;align-items:center;gap:10px">',
+        '<div style="width:26px;height:26px;border-radius:6px;background:#185FA5;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;flex-shrink:0">NA</div>',
+        '<div><div style="font-size:14px;font-weight:600;color:#fff">Nakit Ak\u0131\u015f\u0131</div>',
+        '<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:1px" id="odm-sub-title">Y\u00fckleniyor...</div></div>',
       '</div>',
-      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">',
-        '<button onclick="openOdmChart()" class="odm-hdr-btn">Grafik</button>',
-        '<button onclick="exportOdmXlsx()" id="odm-excel-btn" class="odm-hdr-btn">Excel</button>',
-        '<button onclick="window._openOdmImportModal?.()" class="odm-hdr-btn">İçe Aktar</button>',
-        '<button onclick="openTahsilatModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#16a34a;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>',
-        '<button onclick="openOdmModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#dc2626;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Ödeme</button>',
+      '<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">',
+        '<button onclick="event.stopPropagation();openOdmChart()" style="padding:5px 10px;border:0.5px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:rgba(255,255,255,.7);font-size:10px;cursor:pointer;font-family:inherit">Grafik</button>',
+        '<button onclick="event.stopPropagation();exportOdmXlsx()" id="odm-excel-btn" style="padding:5px 10px;border:0.5px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:rgba(255,255,255,.7);font-size:10px;cursor:pointer;font-family:inherit">Excel</button>',
+        '<button onclick="event.stopPropagation();window._openOdmImportModal?.()" style="padding:5px 10px;border:0.5px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:rgba(255,255,255,.7);font-size:10px;cursor:pointer;font-family:inherit">\u0130\u00e7e Aktar</button>',
+        '<button onclick="event.stopPropagation();openTahsilatModal(null)" style="padding:6px 12px;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>',
+        '<button onclick="event.stopPropagation();openOdmModal(null)" style="padding:6px 12px;border:none;border-radius:6px;background:#dc2626;color:#fff;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">+ \u00d6deme</button>',
       '</div>',
     '</div>',
 
-    // ── Satır 2: 6 Metrik Kart ──
-    '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:0;border-bottom:0.5px solid var(--b)">',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Tahsilat <span id="odm-badge-tah" style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 7px;margin-left:4px"></span></div>',
-        '<div style="font-size:18px;font-weight:700;color:#16a34a;margin-top:4px" id="odm-m-tah-amt">₺0</div>',
+    /* ── 4 Hero KPI ── */
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b);background:var(--sf)">',
+      '<div style="padding:14px 18px;border-right:0.5px solid var(--b)">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Tahsilat <span id="odm-badge-tah" style="font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:1px 6px;margin-left:3px"></span></div>',
+        '<div style="font-size:22px;font-weight:700;color:#16a34a;margin-top:5px;font-family:\'DM Mono\',monospace" id="odm-m-tah-amt">\u20ba0</div>',
         '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-tah-chg"></div>',
       '</div>',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödeme <span id="odm-badge-odm" style="font-size:11px;background:#fce4ec;color:#c62828;border-radius:10px;padding:1px 7px;margin-left:4px"></span></div>',
-        '<div style="font-size:18px;font-weight:700;color:#dc2626;margin-top:4px" id="odm-m-odm-amt">₺0</div>',
+      '<div style="padding:14px 18px;border-right:0.5px solid var(--b)">',
+        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay \u00d6deme <span id="odm-badge-odm" style="font-size:10px;background:#fce4ec;color:#c62828;border-radius:10px;padding:1px 6px;margin-left:3px"></span></div>',
+        '<div style="font-size:22px;font-weight:700;color:#dc2626;margin-top:5px;font-family:\'DM Mono\',monospace" id="odm-m-odm-amt">\u20ba0</div>',
         '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-odm-chg"></div>',
       '</div>',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
+      '<div style="padding:14px 18px;border-right:0.5px solid var(--b)">',
         '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Net Pozisyon</div>',
-        '<div style="font-size:18px;font-weight:700;margin-top:4px" id="odm-m-net">₺0</div>',
+        '<div style="font-size:22px;font-weight:700;margin-top:5px;font-family:\'DM Mono\',monospace" id="odm-m-net">\u20ba0</div>',
       '</div>',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b);cursor:pointer" onclick="setOdmTab(\'gecikti\')">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Gecikmiş</div>',
-        '<div style="font-size:18px;font-weight:700;color:#dc2626;margin-top:4px" id="odm-stat-late">0</div>',
-        '<div style="font-size:9px;color:#dc2626;margin-top:2px" id="odm-bento-late-hint"></div>',
-      '</div>',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b);cursor:pointer" onclick="setOdmTab(\'bekliyor\')">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Hafta Vadeli</div>',
-        '<div style="font-size:18px;font-weight:700;color:#d97706;margin-top:4px" id="odm-stat-soon">0</div>',
-        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-bento-week-amt">₺0</div>',
-      '</div>',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b)">',
-        '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Bu Ay Ödendi</div>',
-        '<div style="font-size:18px;font-weight:700;color:#10b981;margin-top:4px" id="odm-stat-paid">0</div>',
-        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-bento-paid-amt">₺0</div>',
-      '</div>',
-      '<div style="padding:12px 16px;border-right:0.5px solid var(--b);background:#E6F1FB08">',
-        '<div style="font-size:9px;color:#185FA5;text-transform:uppercase;letter-spacing:.04em">Tahsil Hızı</div>',
-        '<div style="font-size:18px;font-weight:700;color:#185FA5;margin-top:4px" id="odm-m-tahsil-hiz">— gün</div>',
-        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-tahsil-hiz-sub">Hedef: 15 gün</div>',
-      '</div>',
-      '<div style="padding:12px 16px;background:#FCEBEB08">',
-        '<div style="font-size:9px;color:#dc2626;text-transform:uppercase;letter-spacing:.04em">60+ Gün Gecikmiş</div>',
-        '<div style="font-size:18px;font-weight:700;color:#dc2626;margin-top:4px" id="odm-m-late60">0</div>',
-        '<div style="font-size:9px;color:#dc2626;margin-top:2px" id="odm-m-late60-sub"></div>',
+      '<div style="padding:14px 18px;background:#E6F1FB08">',
+        '<div style="font-size:9px;color:#185FA5;text-transform:uppercase;letter-spacing:.04em">Tahsil H\u0131z\u0131</div>',
+        '<div style="font-size:22px;font-weight:700;color:#185FA5;margin-top:5px;font-family:\'DM Mono\',monospace" id="odm-m-tahsil-hiz">\u2014 g\u00fcn</div>',
+        '<div style="font-size:9px;color:var(--t3);margin-top:2px" id="odm-m-tahsil-hiz-sub">Hedef: 15 g\u00fcn</div>',
       '</div>',
     '</div>',
 
-    // ── Satır 2b: Döviz Pozisyon ──
-    '<div id="odm-fx-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b);font-size:11px">',
-      '<div style="padding:8px 16px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>🇺🇸</span><span style="color:var(--t2)">USD</span><b id="odm-fx-usd" style="margin-left:auto;color:var(--t)">$0</b></div>',
-      '<div style="padding:8px 16px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>🇪🇺</span><span style="color:var(--t2)">EUR</span><b id="odm-fx-eur" style="margin-left:auto;color:var(--t)">€0</b></div>',
-      '<div style="padding:8px 16px;display:flex;align-items:center;gap:6px"><span>🇹🇷</span><span style="color:var(--t2)">TRY</span><b id="odm-fx-try" style="margin-left:auto;color:var(--t)">₺0</b></div>',
+    /* ── Doviz Pozisyon Bar ── */
+    '<div id="odm-fx-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid var(--b);font-size:11px;background:var(--sf)">',
+      '<div style="padding:7px 18px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>\ud83c\uddfa\ud83c\uddf8</span><span style="color:var(--t2)">USD</span><b id="odm-fx-usd" style="margin-left:auto;color:var(--t);font-family:\'DM Mono\',monospace">$0</b></div>',
+      '<div style="padding:7px 18px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px"><span>\ud83c\uddea\ud83c\uddfa</span><span style="color:var(--t2)">EUR</span><b id="odm-fx-eur" style="margin-left:auto;color:var(--t);font-family:\'DM Mono\',monospace">\u20ac0</b></div>',
+      '<div style="padding:7px 18px;display:flex;align-items:center;gap:6px"><span>\ud83c\uddf9\ud83c\uddf7</span><span style="color:var(--t2)">TRY</span><b id="odm-fx-try" style="margin-left:auto;color:var(--t);font-family:\'DM Mono\',monospace">\u20ba0</b></div>',
     '</div>',
 
-    // ── Satır 4: Sekmeler ──
+    /* ── Sekmeler (6 mevcut + 3 yeni) ── */
     '<div id="odm-tabs-row" style="display:flex;border-bottom:0.5px solid var(--b);background:var(--sf);overflow-x:auto;scrollbar-width:none;padding:0 16px">',
-      '<div id="odm-stab-all" class="odm-tab on" onclick="setOdmTab(\'all\')">Tümü <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
-      '<div id="odm-stab-odeme" class="odm-tab" onclick="setOdmTab(\'odeme\')">Ödemeler <span id="odm-stat-odm-n" style="font-size:10px;opacity:.7">0</span></div>',
-      '<div id="odm-stab-tahsilat" class="odm-tab" onclick="setOdmTab(\'tahsilat\')">Tahsilatlar <span id="odm-stat-tah-n" style="font-size:10px;opacity:.7">0</span></div>',
-      '<div id="odm-stab-bekliyor" class="odm-tab" onclick="setOdmTab(\'bekliyor\')" style="position:relative">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;padding:1px 6px;border-radius:10px;background:#dc2626;color:#fff;font-weight:600;display:none"></span></div>',
-      '<div id="odm-stab-projeksiyon" class="odm-tab" onclick="setOdmTab(\'projeksiyon\')">Projeksiyon</div>',
-      '<div id="odm-stab-analiz" class="odm-tab" onclick="setOdmTab(\'analiz\')">Analiz</div>',
+      '<div id="odm-stab-all" class="odm-tab on" onclick="event.stopPropagation();setOdmTab(\'all\')">T\u00fcm\u00fc <span id="odm-stat-total" style="font-size:10px;opacity:.7">0</span></div>',
+      '<div id="odm-stab-odeme" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'odeme\')">\u00d6demeler <span id="odm-stat-odm-n" style="font-size:10px;opacity:.7">0</span></div>',
+      '<div id="odm-stab-tahsilat" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'tahsilat\')">Tahsilatlar <span id="odm-stat-tah-n" style="font-size:10px;opacity:.7">0</span></div>',
+      '<div id="odm-stab-bekliyor" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'bekliyor\')" style="position:relative">Bekleyen <span id="odm-stat-pend-n" style="font-size:10px;padding:1px 6px;border-radius:10px;background:#dc2626;color:#fff;font-weight:600;display:none"></span></div>',
+      '<div id="odm-stab-projeksiyon" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'projeksiyon\')">Projeksiyon</div>',
+      '<div id="odm-stab-analiz" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'analiz\')">Analiz</div>',
+      '<div style="width:1px;background:var(--b);margin:8px 4px;flex-shrink:0"></div>',
+      '<div id="odm-stab-heatmap" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'heatmap\')" style="color:#185FA5">Is\u0131 Haritas\u0131</div>',
+      '<div id="odm-stab-dso" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'dso\')" style="color:#185FA5">DSO/DPO</div>',
+      '<div id="odm-stab-stres" class="odm-tab" onclick="event.stopPropagation();setOdmTab(\'stres\')" style="color:#185FA5">Stres Testi</div>',
     '</div>',
 
-    // ── Satır 5: Filtreler (tek satır) ──
-    '<div style="padding:6px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto">',
+    /* ── Filtre Satiri ── */
+    '<div style="padding:6px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;background:var(--sf)">',
       '<div style="position:relative;flex:1;min-width:160px">',
         '<svg style="position:absolute;left:8px;top:50%;transform:translateY(-50%)" width="12" height="12" fill="none" viewBox="0 0 13 13"><circle cx="6" cy="6" r="4.5" stroke="var(--t3)" stroke-width="1.3"/><path d="M10 10l2 2" stroke="var(--t3)" stroke-width="1.3" stroke-linecap="round"/></svg>',
-        '<input class="fi" type="search" id="odm-search" placeholder="Cari, tutar, fatura no…" oninput="renderOdemeler()" style="padding-left:28px;border-radius:7px;font-size:11px;height:30px;width:100%">',
+        '<input class="fi" type="search" id="odm-search" placeholder="Cari, tutar, fatura no\u2026" oninput="renderOdemeler()" style="padding-left:28px;border-radius:7px;font-size:11px;height:30px;width:100%">',
       '</div>',
-      '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;height:30px" title="Başlangıç">',
-      '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;height:30px" title="Bitiş">',
-      '<select id="odm-personel-f" onchange="renderOdemeler()" style="height:30px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;padding:0 8px;min-width:120px;color:var(--t2)"><option value="">Tüm Sorumlular</option></select>',
-      '<select id="odm-sort-f" onchange="renderOdemeler()" style="height:30px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;padding:0 6px;color:var(--t2);flex-shrink:0"><option value="date-desc">Tarih ↓</option><option value="date-asc">Tarih ↑</option><option value="amt-desc">Tutar ↓</option><option value="amt-asc">Tutar ↑</option><option value="status">Durum</option></select>',
-      '<span onclick="_odmClearFilters()" style="font-size:10px;color:var(--t3);cursor:pointer;flex-shrink:0;white-space:nowrap">✕ Temizle</span>',
+      '<input type="date" class="fi" id="odm-from-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;height:30px" title="Ba\u015flang\u0131\u00e7">',
+      '<input type="date" class="fi" id="odm-to-f" onchange="renderOdemeler()" style="border-radius:7px;font-size:11px;width:120px;height:30px" title="Bitis">',
+      '<select id="odm-personel-f" onchange="renderOdemeler()" style="height:30px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;padding:0 8px;min-width:120px;color:var(--t2)"><option value="">T\u00fcm Sorumlular</option></select>',
+      '<select id="odm-sort-f" onchange="renderOdemeler()" style="height:30px;border-radius:7px;border:0.5px solid var(--b);background:var(--sf);font-size:11px;padding:0 6px;color:var(--t2);flex-shrink:0"><option value="date-desc">Tarih \u2193</option><option value="date-asc">Tarih \u2191</option><option value="amt-desc">Tutar \u2193</option><option value="amt-asc">Tutar \u2191</option><option value="status">Durum</option></select>',
+      '<span onclick="event.stopPropagation();_odmClearFilters()" style="font-size:10px;color:var(--t3);cursor:pointer;flex-shrink:0;white-space:nowrap">\u2715 Temizle</span>',
       '<span id="odm-filter-summary" style="display:none"></span>',
     '</div>',
 
-    // Hidden filtre select'leri (uyumluluk)
-    '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="display:none"><option value="">Tüm Kategoriler</option>' + _odmCatOpts + '</select>',
+    /* Hidden filtre select'leri (uyumluluk) */
+    '<select class="fi" id="odm-cat-f" onchange="renderOdemeler()" style="display:none"><option value="">T\u00fcm Kategoriler</option>' + _odmCatOpts + '</select>',
     '<select class="fi" id="odm-status-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
-    '<select class="fi" id="odm-cari-f" onchange="renderOdemeler()" style="display:none"><option value="">Tüm Cariler</option></select>',
+    '<select class="fi" id="odm-cari-f" onchange="renderOdemeler()" style="display:none"><option value="">T\u00fcm Cariler</option></select>',
     '<select class="fi" id="odm-cur-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
     '<select class="fi" id="odm-user-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
     '<select class="fi" id="odm-freq-f" onchange="renderOdemeler()" style="display:none"><option value=""></option></select>',
 
-    '</div></div>', // ═══ STICKY WRAPPER CLOSE ═══
+    '</div>', /* ═══ STICKY WRAPPER CLOSE ═══ */
 
-    // CSS
+    /* ── Sidebar + Main Layout ── */
+    '<div style="display:flex;max-width:1280px;margin:0 auto;min-height:400px">',
+
+    /* Sol Sidebar */
+    '<div id="odm-sidebar" style="width:200px;flex-shrink:0;border-right:0.5px solid var(--b);padding:10px 0;background:var(--sf);overflow-y:auto">',
+      /* Kategoriler */
+      '<div style="padding:0 10px;margin-bottom:14px">',
+        '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;margin-bottom:6px;padding:0 10px">Kategoriler</div>',
+        '<button class="odm-sb-btn" onclick="event.stopPropagation();window._odmSidebarCatFilter(\'\')" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:5px;font-size:11px;color:var(--t2);cursor:pointer;width:100%;border:none;background:var(--s2);font-family:inherit;text-align:left;font-weight:500">T\u00fcm\u00fc</button>',
+        _catBtns,
+      '</div>',
+      /* Gecikme / Bu Hafta */
+      '<div style="padding:0 10px;margin-bottom:14px">',
+        '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;margin-bottom:6px;padding:0 10px">Durum</div>',
+        '<div style="padding:4px 10px;display:flex;justify-content:space-between;font-size:11px;cursor:pointer;border-radius:5px" onclick="event.stopPropagation();setOdmTab(\'gecikti\')"><span style="color:var(--t2)">Gecikmi\u015f</span><span style="font-weight:600;color:#dc2626" id="odm-stat-late">0</span></div>',
+        '<div style="padding:4px 10px;display:flex;justify-content:space-between;font-size:11px;cursor:pointer;border-radius:5px" onclick="event.stopPropagation();setOdmTab(\'bekliyor\')"><span style="color:var(--t2)">Bu Hafta</span><span style="font-weight:600;color:#d97706" id="odm-stat-soon">0</span></div>',
+        '<div style="padding:4px 10px;display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t2)">Bu Ay \u00d6dendi</span><span style="font-weight:600;color:#16a34a" id="odm-stat-paid">0</span></div>',
+        '<div style="padding:4px 10px;display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t2)">60+ G\u00fcn</span><span style="font-weight:600;color:#dc2626" id="odm-m-late60">0</span></div>',
+      '</div>',
+      /* Hidden compat IDs */
+      '<div style="display:none"><span id="odm-bento-late-hint"></span><span id="odm-bento-week-amt"></span><span id="odm-bento-paid-amt"></span><span id="odm-m-late60-sub"></span></div>',
+      /* Hizli Erisim */
+      '<div style="padding:0 10px;margin-bottom:14px">',
+        '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;margin-bottom:6px;padding:0 10px">H\u0131zl\u0131 Eri\u015fim</div>',
+        '<button onclick="event.stopPropagation();window.openBudgetManager?.()" style="display:block;width:calc(100% - 20px);margin:0 10px 4px;padding:5px 8px;border-radius:5px;font-size:10px;color:var(--t2);cursor:pointer;border:0.5px solid var(--b);background:var(--sf);font-family:inherit;text-align:left">B\u00fct\u00e7e Y\u00f6netimi</button>',
+        '<button onclick="event.stopPropagation();window.openBankaMutabakat?.()" style="display:block;width:calc(100% - 20px);margin:0 10px 4px;padding:5px 8px;border-radius:5px;font-size:10px;color:var(--t2);cursor:pointer;border:0.5px solid var(--b);background:var(--sf);font-family:inherit;text-align:left">Banka Mutabakat</button>',
+        '<button onclick="event.stopPropagation();window.openCurrencyReport?.()" style="display:block;width:calc(100% - 20px);margin:0 10px 4px;padding:5px 8px;border-radius:5px;font-size:10px;color:var(--t2);cursor:pointer;border:0.5px solid var(--b);background:var(--sf);font-family:inherit;text-align:left">D\u00f6viz Raporu</button>',
+        '<button onclick="event.stopPropagation();window.openProfitAnalysis?.()" style="display:block;width:calc(100% - 20px);margin:0 10px 4px;padding:5px 8px;border-radius:5px;font-size:10px;color:var(--t2);cursor:pointer;border:0.5px solid var(--b);background:var(--sf);font-family:inherit;text-align:left">Kar/Zarar Analizi</button>',
+      '</div>',
+      /* Mini DSO/Stres */
+      '<div style="padding:0 10px">',
+        '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;margin-bottom:6px;padding:0 10px">Analitik</div>',
+        '<div style="padding:5px 10px;font-size:10px;display:flex;justify-content:space-between"><span style="color:var(--t3)">DSO</span><span id="odm-sb-dso" style="font-weight:600;color:var(--t);font-family:\'DM Mono\',monospace">\u2014</span></div>',
+        '<div style="padding:5px 10px;font-size:10px;display:flex;justify-content:space-between"><span style="color:var(--t3)">DPO</span><span id="odm-sb-dpo" style="font-weight:600;color:var(--t);font-family:\'DM Mono\',monospace">\u2014</span></div>',
+        '<div style="padding:5px 10px;font-size:10px;display:flex;justify-content:space-between"><span style="color:var(--t3)">CCC</span><span id="odm-sb-ccc" style="font-weight:600;color:var(--t);font-family:\'DM Mono\',monospace">\u2014</span></div>',
+        '<div style="padding:8px 10px;font-size:10px;display:flex;justify-content:space-between;margin-top:4px"><span style="color:var(--t3)">Stres</span><span id="odm-sb-stres">\u2014</span></div>',
+      '</div>',
+    '</div>',
+
+    /* Ana Icerik */
+    '<div style="flex:1;min-width:0"><div id="odm-list" style="padding:0 20px"></div></div>',
+
+    '</div>', /* sidebar+main bitti */
+
+    /* ── Status Bar ── */
+    '<div id="odm-statusbar" style="height:32px;display:flex;align-items:center;padding:0 20px;border-top:0.5px solid var(--b);font-size:10px;color:var(--t3);gap:16px;background:var(--sf);max-width:1280px;margin:0 auto"></div>',
+
+    /* Hidden compat */
+    '<div id="odm-prog-bar" style="display:none"></div>',
+    '<div id="odm-prog-pct" style="display:none"></div>',
+    '<div id="odm-bento-total-amt" style="display:none"></div>',
+    '<div id="odm-bento-ratio" style="display:none"></div>',
+
+    /* CSS */
     '<style>',
-    '.odm-hdr-btn{padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}',
-    '.odm-hdr-btn:hover{border-color:var(--ac);color:var(--ac)}',
-    '.odm-tab{padding:11px 18px;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s}',
+    '.odm-tab{padding:10px 16px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;color:var(--t2);transition:all .12s}',
     '.odm-tab.on{border-bottom-color:var(--ac);color:var(--ac);font-weight:600}',
     '.odm-chip{font-size:10px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);cursor:pointer;white-space:nowrap;transition:all .12s;user-select:none}',
     '.odm-chip:hover{border-color:var(--ac);color:var(--ac)}',
@@ -538,16 +579,11 @@ function _injectOdmPanel() {
     '.odm-row-peek{overflow:hidden;transition:max-height .25s ease;max-height:0}',
     '.odm-row-peek.open{max-height:200px}',
     '.odm-day-hdr{padding:8px 20px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px dashed var(--b);display:flex;justify-content:space-between}',
+    '.odm-sb-btn:hover{background:var(--s2)}',
+    '.odm-hm-cell{aspect-ratio:1;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .1s;font-size:10px}',
+    '.odm-hm-cell:hover{transform:scale(1.08);box-shadow:0 2px 8px rgba(0,0,0,.12)}',
+    '@media(max-width:768px){#odm-sidebar{display:none}}',
     '</style>',
-
-    // Liste container
-    '<div style="max-width:1280px;margin:0 auto"><div id="odm-list" style="margin:0 20px"></div></div>',
-
-    // Progress bar (hidden — uyumluluk)
-    '<div id="odm-prog-bar" style="display:none"></div>',
-    '<div id="odm-prog-pct" style="display:none"></div>',
-    '<div id="odm-bento-total-amt" style="display:none"></div>',
-    '<div id="odm-bento-ratio" style="display:none"></div>',
   ].join('');
 
   // Sekme click
@@ -1119,6 +1155,9 @@ function renderOdemeler() {
   });
   const cont = _go('odm-list'); if (!cont) return;
 
+  // Sidebar mini widget guncelle
+  window._odmUpdateSidebarMini?.();
+
   // Projeksiyon sekmesi — özel render
   if (_odmCurrentTab === 'projeksiyon') {
     _renderProjeksiyonTab(cont);
@@ -1129,6 +1168,10 @@ function renderOdemeler() {
     window._renderOdmAnaliz?.();
     return;
   }
+  // Yeni sekmeler — FINANS-REDESIGN
+  if (_odmCurrentTab === 'heatmap') { window._renderOdmHeatmap?.(cont); return; }
+  if (_odmCurrentTab === 'dso') { window._renderOdmDsoDpo?.(cont); return; }
+  if (_odmCurrentTab === 'stres') { window._renderOdmStresTesti?.(cont); return; }
 
   if (!items.length) {
     cont.innerHTML = '<div style="text-align:center;padding:56px;color:var(--t2)">'
@@ -8164,4 +8207,307 @@ if (typeof Odemeler !== 'undefined') {
   Odemeler.renderCari           = renderCari;
   Odemeler.openKurSettings      = openKurSettings;
   Odemeler.openOdmCatMethodManager = openOdmCatMethodManager;
+
+// ════════════════════════════════════════════════════════════════
+// FINANS-REDESIGN: Sidebar kategori filtre + 3 yeni ozellik
+// ════════════════════════════════════════════════════════════════
+
+/** Sidebar kategori filtresi */
+window._odmSidebarCatFilter = function(cat) {
+  var catF = document.getElementById('odm-cat-f');
+  if (catF) catF.value = cat || '';
+  setOdmTab('all');
+  renderOdemeler();
+};
+
+/** Sidebar mini DSO/DPO/CCC + stres guncelle */
+window._odmUpdateSidebarMini = function() {
+  try {
+    var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && o.paid; });
+    var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && t.collected; });
+    var now = Date.now();
+    var cutoff = now - 60 * 86400000;
+    /* DSO */
+    var dsoSum = 0, dsoCnt = 0;
+    tah.forEach(function(t) {
+      if (!t.due || !t.collectedTs) return;
+      var dueMs = new Date(t.due).getTime();
+      var colMs = new Date(t.collectedTs).getTime();
+      if (dueMs < cutoff) return;
+      var days = Math.max(0, Math.round((colMs - dueMs) / 86400000));
+      dsoSum += days; dsoCnt++;
+    });
+    var dso = dsoCnt > 0 ? Math.round(dsoSum / dsoCnt) : null;
+    /* DPO */
+    var dpoSum = 0, dpoCnt = 0;
+    odm.forEach(function(o) {
+      if (!o.due || !o.paidTs) return;
+      var dueMs = new Date(o.due).getTime();
+      var pMs = new Date(o.paidTs).getTime();
+      if (dueMs < cutoff) return;
+      var days = Math.max(0, Math.round((pMs - dueMs) / 86400000));
+      dpoSum += days; dpoCnt++;
+    });
+    var dpo = dpoCnt > 0 ? Math.round(dpoSum / dpoCnt) : null;
+    var ccc = (dso !== null && dpo !== null) ? dso - dpo : null;
+    var _dsoRenk = function(v) { return v === null ? 'var(--t3)' : v <= 15 ? '#16a34a' : v <= 30 ? '#d97706' : '#dc2626'; };
+    var el1 = document.getElementById('odm-sb-dso'); if (el1) { el1.textContent = dso !== null ? dso + 'g' : '\u2014'; el1.style.color = _dsoRenk(dso); }
+    var el2 = document.getElementById('odm-sb-dpo'); if (el2) { el2.textContent = dpo !== null ? dpo + 'g' : '\u2014'; el2.style.color = _dsoRenk(dpo); }
+    var el3 = document.getElementById('odm-sb-ccc'); if (el3) { el3.textContent = ccc !== null ? ccc + 'g' : '\u2014'; el3.style.color = ccc !== null && ccc < 0 ? '#16a34a' : ccc !== null && ccc > 15 ? '#dc2626' : 'var(--t)'; }
+    /* Stres mini */
+    var stresEl = document.getElementById('odm-sb-stres');
+    if (stresEl) {
+      var netPoz = 0;
+      (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && !t.collected; }).forEach(function(t) { netPoz += parseFloat(t.amount) || 0; });
+      (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && !o.paid; }).forEach(function(o) { netPoz -= parseFloat(o.amount) || 0; });
+      stresEl.innerHTML = (netPoz > 0 ? '<span style="color:#16a34a">\u25cf</span>' : '<span style="color:#dc2626">\u25cf</span>') + ' <span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--t)">' + (netPoz >= 0 ? '+' : '') + Math.round(netPoz).toLocaleString('tr-TR') + '</span>';
+    }
+    /* Status bar */
+    var sbEl = document.getElementById('odm-statusbar');
+    if (sbEl) {
+      var totalOdm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted; }).length;
+      var totalTah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted; }).length;
+      sbEl.innerHTML = '<span>' + totalOdm + ' odeme \u00b7 ' + totalTah + ' tahsilat</span><span style="margin-left:auto">Son guncelleme: ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+    }
+  } catch (e) { console.warn('[FINANS] Sidebar mini hata:', e); }
+};
+
+// ═══ OZELLIK 1: ISIL HARITASI ═══════════════════════════════
+var _odmHeatmapMonth = new Date().toISOString().slice(0, 7);
+
+window._renderOdmHeatmap = function(cont) {
+  if (!cont) return;
+  var ym = _odmHeatmapMonth.split('-');
+  var year = parseInt(ym[0]);
+  var month = parseInt(ym[1]) - 1;
+  var firstDay = new Date(year, month, 1);
+  var lastDay = new Date(year, month + 1, 0);
+  var daysInMonth = lastDay.getDate();
+  var startDow = (firstDay.getDay() + 6) % 7;
+  var ayAdi = ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'][month];
+
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted; });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted; });
+  var gunluk = {};
+  var topGiren = 0, topCikan = 0;
+  tah.forEach(function(t) { var d = (t.due || t.ts || '').slice(0, 10); if (d.startsWith(_odmHeatmapMonth)) { var amt = parseFloat(t.amount) || 0; gunluk[d] = (gunluk[d] || 0) + amt; topGiren += amt; } });
+  odm.forEach(function(o) { var d = (o.due || o.ts || '').slice(0, 10); if (d.startsWith(_odmHeatmapMonth)) { var amt = parseFloat(o.amount) || 0; gunluk[d] = (gunluk[d] || 0) - amt; topCikan += amt; } });
+  var maxAbs = 1;
+  Object.values(gunluk).forEach(function(v) { if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v); });
+
+  var h = '<div style="max-width:700px;padding:20px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  h += '<button onclick="event.stopPropagation();window._odmHeatmapNav(-1)" class="btn btns" style="font-size:11px;padding:4px 12px">\u2190 \u00d6nceki</button>';
+  h += '<div style="font-size:15px;font-weight:600;color:var(--t)">' + ayAdi + ' ' + year + '</div>';
+  h += '<button onclick="event.stopPropagation();window._odmHeatmapNav(1)" class="btn btns" style="font-size:11px;padding:4px 12px">Sonraki \u2192</button>';
+  h += '</div>';
+  /* Ozet kartlar */
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">';
+  h += '<div style="background:#EAF3DE;border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:9px;color:#27500A;text-transform:uppercase">Giren</div><div style="font-size:16px;font-weight:700;color:#16a34a;font-family:\'DM Mono\',monospace">+' + topGiren.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + '</div></div>';
+  h += '<div style="background:#FCEBEB;border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:9px;color:#791F1F;text-transform:uppercase">Cikan</div><div style="font-size:16px;font-weight:700;color:#dc2626;font-family:\'DM Mono\',monospace">-' + topCikan.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + '</div></div>';
+  var net = topGiren - topCikan;
+  h += '<div style="background:' + (net >= 0 ? '#E6F1FB' : '#FCEBEB') + ';border-radius:8px;padding:10px 14px;text-align:center"><div style="font-size:9px;color:' + (net >= 0 ? '#0C447C' : '#791F1F') + ';text-transform:uppercase">Net</div><div style="font-size:16px;font-weight:700;color:' + (net >= 0 ? '#185FA5' : '#dc2626') + ';font-family:\'DM Mono\',monospace">' + (net >= 0 ? '+' : '') + net.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + '</div></div>';
+  h += '</div>';
+  /* Hafta gunleri */
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;text-align:center;font-size:9px;color:var(--t3);font-weight:500">';
+  ['Pzt','Sal','\u00c7ar','Per','Cum','Cmt','Paz'].forEach(function(d) { h += '<div>' + d + '</div>'; });
+  h += '</div>';
+  /* Takvim grid */
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
+  for (var e = 0; e < startDow; e++) h += '<div></div>';
+  for (var day = 1; day <= daysInMonth; day++) {
+    var ds = _odmHeatmapMonth + '-' + String(day).padStart(2, '0');
+    var val = gunluk[ds] || 0;
+    var ratio = maxAbs > 0 ? Math.min(1, Math.abs(val) / maxAbs) : 0;
+    var intensity = Math.round(ratio * 200 + 55);
+    var bg = val > 0 ? 'rgba(22,163,74,' + (0.1 + ratio * 0.6).toFixed(2) + ')' : val < 0 ? 'rgba(220,38,38,' + (0.1 + ratio * 0.6).toFixed(2) + ')' : 'var(--s2)';
+    var fg = val !== 0 ? (ratio > 0.5 ? '#fff' : 'var(--t)') : 'var(--t3)';
+    var today = new Date().toISOString().slice(0, 10) === ds;
+    h += '<div class="odm-hm-cell" onclick="event.stopPropagation();window._odmHeatmapDayClick(\'' + ds + '\')" style="background:' + bg + ';color:' + fg + ';' + (today ? 'box-shadow:inset 0 0 0 2px var(--ac);' : '') + '">';
+    h += '<div style="font-weight:500">' + day + '</div>';
+    if (val !== 0) h += '<div style="font-size:8px;opacity:.85">' + (val > 0 ? '+' : '') + Math.round(val / 1000) + 'K</div>';
+    h += '</div>';
+  }
+  h += '</div></div>';
+  cont.innerHTML = h;
+};
+
+window._odmHeatmapNav = function(dir) {
+  var ym = _odmHeatmapMonth.split('-');
+  var d = new Date(parseInt(ym[0]), parseInt(ym[1]) - 1 + dir, 1);
+  _odmHeatmapMonth = d.toISOString().slice(0, 7);
+  var cont = document.getElementById('odm-list');
+  if (cont) window._renderOdmHeatmap(cont);
+};
+
+window._odmHeatmapDayClick = function(dateStr) {
+  var fromF = document.getElementById('odm-from-f');
+  var toF = document.getElementById('odm-to-f');
+  if (fromF) fromF.value = dateStr;
+  if (toF) toF.value = dateStr;
+  setOdmTab('all');
+  renderOdemeler();
+};
+
+// ═══ OZELLIK 2: DSO/DPO TRACKER ═════════════════════════════
+var _odmDsoPeriod = 60;
+
+window._renderOdmDsoDpo = function(cont) {
+  if (!cont) return;
+  var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && o.paid && o.due && o.paidTs; });
+  var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && t.collected && t.due && t.collectedTs; });
+  var cutoff = Date.now() - _odmDsoPeriod * 86400000;
+  var _calc = function(arr, tsField) {
+    var sum = 0, cnt = 0;
+    arr.forEach(function(r) {
+      var dueMs = new Date(r.due).getTime();
+      if (dueMs < cutoff) return;
+      var closeMs = new Date(r[tsField]).getTime();
+      sum += Math.max(0, Math.round((closeMs - dueMs) / 86400000));
+      cnt++;
+    });
+    return cnt > 0 ? Math.round(sum / cnt) : null;
+  };
+  var dso = _calc(tah, 'collectedTs');
+  var dpo = _calc(odm, 'paidTs');
+  var ccc = (dso !== null && dpo !== null) ? dso - dpo : null;
+  var _gaugeRenk = function(v, rev) { if (v === null) return 'var(--t3)'; if (rev) return v <= 15 ? '#dc2626' : v <= 30 ? '#d97706' : '#16a34a'; return v <= 15 ? '#16a34a' : v <= 30 ? '#d97706' : '#dc2626'; };
+  var _gaugeSvg = function(val, maxVal, color) {
+    var pct = val !== null ? Math.min(1, val / maxVal) : 0;
+    var r = 40; var circ = 2 * Math.PI * r; var dash = circ * pct;
+    return '<svg viewBox="0 0 100 100" width="90" height="90"><circle cx="50" cy="50" r="' + r + '" fill="none" stroke="var(--s2)" stroke-width="8"/><circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="8" stroke-dasharray="' + dash.toFixed(1) + ' ' + circ.toFixed(1) + '" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="48" text-anchor="middle" font-size="16" font-weight="700" fill="' + color + '" font-family="\'DM Mono\',monospace">' + (val !== null ? val : '\u2014') + '</text><text x="50" y="62" text-anchor="middle" font-size="9" fill="var(--t3)">gun</text></svg>';
+  };
+
+  var h = '<div style="max-width:800px;padding:20px">';
+  h += '<div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:4px">DSO / DPO Tracker</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Nakit donusum suresi — son ' + _odmDsoPeriod + ' gun</div>';
+  /* Period secici */
+  h += '<div style="display:flex;gap:6px;margin-bottom:16px">';
+  [30, 60, 90].forEach(function(p) {
+    var aktif = _odmDsoPeriod === p;
+    h += '<button onclick="event.stopPropagation();window._odmDsoSetPeriod(' + p + ')" class="odm-chip' + (aktif ? ' odm-chip-active' : '') + '">' + p + ' Gun</button>';
+  });
+  h += '</div>';
+  /* 3 gauge kart */
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">';
+  h += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:16px;text-align:center">' + _gaugeSvg(dso, 60, _gaugeRenk(dso, false)) + '<div style="font-size:11px;font-weight:600;color:var(--t);margin-top:6px">DSO</div><div style="font-size:9px;color:var(--t3)">Tahsilat Suresi</div></div>';
+  h += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:16px;text-align:center">' + _gaugeSvg(dpo, 60, _gaugeRenk(dpo, true)) + '<div style="font-size:11px;font-weight:600;color:var(--t);margin-top:6px">DPO</div><div style="font-size:9px;color:var(--t3)">Odeme Suresi</div></div>';
+  var cccRenk = ccc === null ? 'var(--t3)' : ccc <= 0 ? '#16a34a' : ccc <= 15 ? '#d97706' : '#dc2626';
+  h += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:12px;padding:16px;text-align:center">' + _gaugeSvg(ccc, 60, cccRenk) + '<div style="font-size:11px;font-weight:600;color:var(--t);margin-top:6px">CCC</div><div style="font-size:9px;color:var(--t3)">Nakit Donusum</div></div>';
+  h += '</div>';
+  /* En yavas 5 cari */
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+  /* Yavas tahsilat */
+  h += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px">';
+  h += '<div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--t)">En Yavas Tahsilat</div>';
+  var cariDso = {};
+  tah.forEach(function(t) {
+    if (new Date(t.due).getTime() < cutoff) return;
+    var key = t.cariName || t.name || '?';
+    if (!cariDso[key]) cariDso[key] = { sum: 0, cnt: 0 };
+    cariDso[key].sum += Math.max(0, Math.round((new Date(t.collectedTs).getTime() - new Date(t.due).getTime()) / 86400000));
+    cariDso[key].cnt++;
+  });
+  var cariDsoArr = Object.entries(cariDso).map(function(e) { return { name: e[0], avg: Math.round(e[1].sum / e[1].cnt) }; }).sort(function(a, b) { return b.avg - a.avg; }).slice(0, 5);
+  if (cariDsoArr.length) {
+    cariDsoArr.forEach(function(c) {
+      h += '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)"><span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">' + (typeof window.escapeHtml === 'function' ? window.escapeHtml(c.name) : c.name) + '</span><span style="font-weight:600;color:' + _gaugeRenk(c.avg, false) + ';font-family:\'DM Mono\',monospace">' + c.avg + 'g</span></div>';
+    });
+  } else { h += '<div style="font-size:10px;color:var(--t3)">Veri yok</div>'; }
+  h += '</div>';
+  /* Yavas odeme */
+  h += '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:14px">';
+  h += '<div style="font-size:11px;font-weight:600;margin-bottom:8px;color:var(--t)">En Yavas Odeme</div>';
+  var cariDpo = {};
+  odm.forEach(function(o) {
+    if (new Date(o.due).getTime() < cutoff) return;
+    var key = o.cariName || o.name || '?';
+    if (!cariDpo[key]) cariDpo[key] = { sum: 0, cnt: 0 };
+    cariDpo[key].sum += Math.max(0, Math.round((new Date(o.paidTs).getTime() - new Date(o.due).getTime()) / 86400000));
+    cariDpo[key].cnt++;
+  });
+  var cariDpoArr = Object.entries(cariDpo).map(function(e) { return { name: e[0], avg: Math.round(e[1].sum / e[1].cnt) }; }).sort(function(a, b) { return b.avg - a.avg; }).slice(0, 5);
+  if (cariDpoArr.length) {
+    cariDpoArr.forEach(function(c) {
+      h += '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)"><span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">' + (typeof window.escapeHtml === 'function' ? window.escapeHtml(c.name) : c.name) + '</span><span style="font-weight:600;color:' + _gaugeRenk(c.avg, true) + ';font-family:\'DM Mono\',monospace">' + c.avg + 'g</span></div>';
+    });
+  } else { h += '<div style="font-size:10px;color:var(--t3)">Veri yok</div>'; }
+  h += '</div></div></div>';
+  cont.innerHTML = h;
+};
+
+window._odmDsoSetPeriod = function(p) { _odmDsoPeriod = p; var cont = document.getElementById('odm-list'); if (cont) window._renderOdmDsoDpo(cont); };
+
+// ═══ OZELLIK 3: LIKIDITE STRES TESTI ════════════════════════
+window._renderOdmStresTesti = function(cont) {
+  if (!cont) return;
+  var odmAll = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && !o.paid; });
+  var tahAll = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && !t.collected; });
+  var netPoz = 0;
+  tahAll.forEach(function(t) { netPoz += parseFloat(t.amount) || 0; });
+  odmAll.forEach(function(o) { netPoz -= parseFloat(o.amount) || 0; });
+  var _esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : function(s) { return String(s || ''); };
+
+  /* Senaryo 1: En buyuk musteri gecikirse */
+  var cariTah = {};
+  tahAll.forEach(function(t) { var k = t.cariName || t.name || '?'; cariTah[k] = (cariTah[k] || 0) + (parseFloat(t.amount) || 0); });
+  var enBuyukCari = Object.entries(cariTah).sort(function(a, b) { return b[1] - a[1]; })[0];
+  var s1Etki = enBuyukCari ? enBuyukCari[1] : 0;
+  var s1Sonuc = netPoz - s1Etki;
+
+  /* Senaryo 2: Doviz %10 duserse */
+  var fxEtki = 0;
+  odmAll.forEach(function(o) {
+    var cur = (o.currency || o.doviz || 'TRY').toUpperCase();
+    if (cur !== 'TRY') fxEtki += (parseFloat(o.amount) || 0) * 0.10;
+  });
+  var s2Sonuc = netPoz - fxEtki;
+
+  /* Senaryo 3: 3 buyuk odeme ayni haftaya denk gelirse */
+  var top3 = odmAll.slice().sort(function(a, b) { return (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0); }).slice(0, 3);
+  var s3Etki = 0;
+  top3.forEach(function(o) { s3Etki += parseFloat(o.amount) || 0; });
+  var s3Sonuc = netPoz - s3Etki;
+
+  var senaryolar = [
+    { baslik: 'En buyuk musteri 30 gun gecikirse', aciklama: enBuyukCari ? _esc(enBuyukCari[0]) + ' — ' + Math.round(s1Etki).toLocaleString('tr-TR') + ' TL bekleyen tahsilat' : 'Tahsilat verisi yok', etki: s1Etki, sonuc: s1Sonuc },
+    { baslik: 'Doviz %10 duserse', aciklama: 'USD/EUR odemeler TRY karsiligi %10 artis', etki: fxEtki, sonuc: s2Sonuc },
+    { baslik: '3 buyuk odeme ayni haftaya denk gelirse', aciklama: top3.length + ' odeme toplam ' + Math.round(s3Etki).toLocaleString('tr-TR') + ' TL', etki: s3Etki, sonuc: s3Sonuc }
+  ];
+
+  var h = '<div style="max-width:800px;padding:20px">';
+  h += '<div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:4px">Likidite Stres Testi</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Olasi senaryolarda nakit pozisyonunuz</div>';
+  /* Mevcut pozisyon */
+  h += '<div style="background:' + (netPoz >= 0 ? '#EAF3DE' : '#FCEBEB') + ';border:1px solid ' + (netPoz >= 0 ? 'rgba(22,163,74,.2)' : 'rgba(220,38,38,.2)') + ';border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">';
+  h += '<div style="font-size:12px;color:var(--t2)">Mevcut Net Pozisyon</div>';
+  h += '<div style="font-size:20px;font-weight:700;color:' + (netPoz >= 0 ? '#16a34a' : '#dc2626') + ';font-family:\'DM Mono\',monospace">' + (netPoz >= 0 ? '+' : '') + Math.round(netPoz).toLocaleString('tr-TR') + ' TL</div>';
+  h += '</div>';
+  /* Senaryo kartlari */
+  h += '<div style="display:flex;flex-direction:column;gap:12px">';
+  senaryolar.forEach(function(s) {
+    var durum = s.sonuc > 0 ? 'green' : s.sonuc > -Math.abs(netPoz) * 0.3 ? 'amber' : 'red';
+    var dotRenk = durum === 'green' ? '#16a34a' : durum === 'amber' ? '#d97706' : '#dc2626';
+    var borderRenk = durum === 'green' ? 'rgba(22,163,74,.15)' : durum === 'amber' ? 'rgba(217,119,6,.15)' : 'rgba(220,38,38,.15)';
+    h += '<div style="background:var(--sf);border:1px solid ' + borderRenk + ';border-radius:10px;overflow:hidden">';
+    /* Header */
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:0.5px solid var(--b)">';
+    h += '<div style="width:10px;height:10px;border-radius:50%;background:' + dotRenk + ';flex-shrink:0"></div>';
+    h += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t)">' + s.baslik + '</div>';
+    h += '<div style="font-size:10px;color:var(--t3)">' + s.aciklama + '</div></div></div>';
+    /* Impact grid */
+    h += '<div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">';
+    h += '<div style="text-align:center"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Mevcut</div><div style="font-size:14px;font-weight:600;color:var(--t);font-family:\'DM Mono\',monospace">' + Math.round(netPoz).toLocaleString('tr-TR') + '</div></div>';
+    h += '<div style="text-align:center"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Etki</div><div style="font-size:14px;font-weight:600;color:#dc2626;font-family:\'DM Mono\',monospace">-' + Math.round(s.etki).toLocaleString('tr-TR') + '</div></div>';
+    h += '<div style="text-align:center"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Sonuc</div><div style="font-size:14px;font-weight:600;color:' + dotRenk + ';font-family:\'DM Mono\',monospace">' + (s.sonuc >= 0 ? '+' : '') + Math.round(s.sonuc).toLocaleString('tr-TR') + '</div></div>';
+    h += '</div>';
+    /* Progress bar */
+    var barPct = netPoz > 0 ? Math.max(0, Math.min(100, Math.round(s.sonuc / netPoz * 100))) : 0;
+    h += '<div style="padding:0 16px 12px"><div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + barPct + '%;background:' + dotRenk + ';border-radius:3px;transition:width .3s"></div></div></div>';
+    h += '</div>';
+  });
+  h += '</div></div>';
+  cont.innerHTML = h;
+};
+
 }
