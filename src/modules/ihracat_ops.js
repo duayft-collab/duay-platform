@@ -172,7 +172,6 @@ function _nextDosyaNo() {
 var IHR_TABS = [
   { id: 'dashboard', l: 'Dashboard' },
   { id: 'emirler', l: '\u0130hracat Emirleri' },
-  { id: 'belgeler', l: 'Belgeler' },
 ];
 
 /* ══════════════════════════════════════════════════════════ */
@@ -5235,7 +5234,7 @@ window._ihrRenderDashboard = function(el) {
   else h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:500;margin-top:6px;align-self:flex-start">G\u00fcncel</span>';
   h += '<div style="font-size:9px;color:#185FA5;margin-top:6px">A\u00e7 \u2192</div></div>';
   /* Hub 3: Belgeler */
-  h += '<div onclick="event.stopPropagation();window._ihrTab(\'belgeler\')" style="display:flex;flex-direction:column;flex:1;border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--sf)">';
+  h += '<div onclick="event.stopPropagation();window._ihrBelgelerModal?.()" style="display:flex;flex-direction:column;flex:1;border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--sf)">';
   h += '<div style="width:24px;height:24px;border-radius:6px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#633806;margin-bottom:6px">B</div>';
   h += '<div style="font-size:11px;font-weight:600;color:var(--t)">Belgeler</div>';
   h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">G\u00c7B \u00b7 BL \u00b7 CI \u00b7 PL</div>';
@@ -5260,8 +5259,9 @@ window._ihrRenderDashboard = function(el) {
 
   /* 6 KPI */
   h += '<div style="display:flex;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--b);background:var(--sf);flex-shrink:0;flex-wrap:wrap">';
-  [{ l:'Aktif Dosya',v:aktifD.length,c:'#185FA5' },{ l:'Gecikmi\u015f',v:geciken.length,c:'#dc2626' },{ l:'Bu Ay FOB',v:'$'+_fmtK(buAyFob),c:'#16a34a' },{ l:'KDV \u0130ade',v:'\u20ba'+_fmtK(kdv.bekleyen),c:'#7C3AED' },{ l:'A\u00e7\u0131k G\u00c7B',v:gcbAcik.length,c:'#d97706' },{ l:'Evrak Eksik',v:evSaglik.toplamEksik,c:'#dc2626' }].forEach(function(k) {
-    h += '<div style="flex:1;min-width:80px;text-align:center;background:var(--s2);border-radius:6px;padding:6px 4px"><div style="font-size:16px;font-weight:700;color:' + k.c + ';font-family:\'DM Mono\',monospace">' + k.v + '</div><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.03em;margin-top:2px">' + k.l + '</div></div>';
+  [{ l:'Aktif Dosya',v:aktifD.length,c:'#185FA5',fn:null },{ l:'Gecikmi\u015f',v:geciken.length,c:'#dc2626',fn:null },{ l:'Bu Ay FOB',v:'$'+_fmtK(buAyFob),c:'#16a34a',fn:null },{ l:'KDV \u0130ade',v:'\u20ba'+_fmtK(kdv.bekleyen),c:'#7C3AED',fn:null },{ l:'A\u00e7\u0131k G\u00c7B',v:gcbAcik.length,c:'#d97706',fn:null },{ l:'Evrak Eksik',v:evSaglik.toplamEksik,c:'#dc2626',fn:'window._ihrBelgelerModal?.()' }].forEach(function(k) {
+    var click = k.fn ? 'onclick="event.stopPropagation();' + k.fn + '" style="cursor:pointer;' : 'style="';
+    h += '<div ' + click + 'flex:1;min-width:80px;text-align:center;background:var(--s2);border-radius:6px;padding:6px 4px"><div style="font-size:16px;font-weight:700;color:' + k.c + ';font-family:\'DM Mono\',monospace">' + k.v + '</div><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.03em;margin-top:2px">' + k.l + '</div></div>';
   });
   h += '</div>';
 
@@ -5357,6 +5357,32 @@ window._ihrRenderDashboard = function(el) {
 window._ihrEvrakSaglik = _ihrEvrakSaglik;
 
 /* IHR-SIMPLIFY-001: Ayarlar modal (Roller + Templateler) */
+/* IHR-SIMPLIFY-002: Belgeler modal */
+window._ihrBelgelerModal = function() {
+  var existing = document.getElementById('mo-ihr-belgeler');
+  if (existing) { existing.remove(); return; }
+  var mo = document.createElement('div');
+  mo.id = 'mo-ihr-belgeler';
+  mo.className = 'mo';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  mo.innerHTML = '<div class="moc" style="max-width:900px;padding:0;border-radius:14px;overflow:hidden;max-height:85vh;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+      + '<div style="font-size:14px;font-weight:600;color:var(--t)">T\u00fcm Evraklar</div>'
+      + '<button onclick="event.stopPropagation();document.getElementById(\'mo-ihr-belgeler\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">\u00d7</button>'
+    + '</div>'
+    + '<div id="ihr-belgeler-modal-content" style="flex:1;overflow-y:auto;min-height:300px"></div>'
+    + '<div style="padding:10px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end;flex-shrink:0">'
+      + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-ihr-belgeler\')?.remove()">Kapat</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(function() {
+    mo.classList.add('open');
+    var contentEl = document.getElementById('ihr-belgeler-modal-content');
+    if (contentEl) _ihrRenderBelgeler(contentEl);
+  }, 10);
+};
+
 /* IHR-PAYDAS-001: 4 paydas sekmesi tek ekranda */
 window._ihrRenderPaydas = function(el, dosyaId) {
   if (!el) return;
