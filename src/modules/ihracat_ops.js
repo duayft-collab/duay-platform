@@ -1203,6 +1203,8 @@ window._ihrAcDosya = _ihrAcDosya;
 window._ihrRenderDosyaDetay = _ihrRenderDosyaDetay;
 window._ihrRenderContent = _ihrRenderContent;
 window._ihrDetayRenderOzet = _ihrDetayRenderOzet;
+// IHR-DASHBOARD-V2-FIX-001: cross-IIFE scope export
+window._ihrRiskSkoru = _ihrRiskSkoru;
 // DOCX modülü için veri erişim yardımcıları
 window._ihrLoadDosya   = function(id) { return _loadD().find(function(x) { return String(x.id) === String(id); }); };
 window._ihrLoadUrunler = function(id) { return _loadU().filter(function(u) { return String(u.dosya_id) === String(id) && !u.isDeleted; }); };
@@ -5250,6 +5252,9 @@ window._ihrRenderDashboard = function(el) {
   h += '</div>'; /* 3 kolon bitti */
   el.innerHTML = h;
 };
+
+/* IHR-DASHBOARD-V2-FIX-001: cross-IIFE scope export */
+window._ihrEvrakSaglik = _ihrEvrakSaglik;
 
 /* Dashboard arama & siralama */
 window._ihrDbAra = function(q) { window._ihrDbAraQ = (q || '').trim().toLowerCase(); var el = _g('ihr-content'); if (el && _aktifTab === 'dashboard') window._ihrRenderDashboard(el); };
