@@ -349,12 +349,14 @@ function _ihrRenderDosyaDetayInto(id, targetEl) {
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
     { id: 'mutabakat', l: 'Mutabakat', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
+    { id: 'kapat', l: 'Kapat', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 14px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
     var _tbdg = '';
     if (t.id === 'mutabakat') { var _mU2 = _loadU().filter(function(u2) { return String(u2.dosya_id) === String(id) && !u2.isDeleted; }); var _mSA2 = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : []; var _mFk = _mU2.filter(function(u2) { return !_mSA2.find(function(s2) { return u2.satinalma_id && String(s2.id) === String(u2.satinalma_id); }); }).length; if (_mFk > 0) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#FAEEDA;color:#633806">' + _mFk + '</span>'; }
+    if (t.id === 'kapat') { var _kpK = window._ihrKapamaKontrol?.(id); if (_kpK && !_kpK.kapanabilir) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#FCEBEB;color:#791F1F">' + _kpK.eksikler.length + '</span>'; else if (_kpK && _kpK.kapanabilir) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#EAF3DE;color:#27500A">\u2713</span>'; }
     h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + _tbdg + '</div>';
   });
   h += '</div>';
@@ -530,7 +532,8 @@ function _ihrRenderDosyaDetay(id) {
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
     { id: 'mutabakat', l: 'Mutabakat', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
+    { id: 'kapat', l: 'Kapat', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
@@ -1125,6 +1128,7 @@ window._ihrDetayTab = function(tab, id) {
   if (tab === 'evraklar') { window._ihrDetayRenderEvraklar(d, c); return; }
   if (tab === 'paydas') { window._ihrRenderPaydas?.(c, id); return; }
   if (tab === 'mutabakat') { window._ihrDetayRenderMutabakat?.(d, c); return; }
+  if (tab === 'kapat') { window._ihrDetayRenderKapat?.(d, c); return; }
   if (tab === 'musteri') { window._ihrDetayRenderMusteri(d, c); return; }
   if (tab === 'sigortaci') { window._ihrDetayRenderSigortaci(d, c); return; }
   if (tab === 'gumrukcu') {
@@ -2477,6 +2481,128 @@ window._ihrDetayRenderMutabakat = function(d, c) {
     h += '</div>';
   }
   c.innerHTML = h;
+};
+
+/* IHR-KAPAT-001: Dosya kapama kontrol listesi */
+window._ihrKapamaKontrol = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return { kapanabilir: false, tamamlandi: [], eksikler: [], uyarilar: [], kosullar: [], durum: '' };
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(dosyaId) && !e.isDeleted; });
+  var gcbList = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; });
+  var blList = _loadBL().filter(function(b) { return String(b.dosya_id) === String(dosyaId) && !b.isDeleted; });
+  var _evOk = function(tur) { var e = evraklar.find(function(x) { return x.tur === tur; }); return e && ['gonderildi', 'onaylandi', 'tamamlandi'].indexOf(e.durum) !== -1; };
+  var KOSULLAR = [
+    { grup: 'Belgeler', l: 'PI onayl\u0131', zorunlu: true, ok: _evOk('PI') },
+    { grup: 'Belgeler', l: 'CI g\u00f6nderildi', zorunlu: true, ok: _evOk('CI') },
+    { grup: 'Belgeler', l: 'PL haz\u0131r', zorunlu: true, ok: _evOk('PL') },
+    { grup: 'Belgeler', l: 'G\u00c7B tescilli', zorunlu: true, ok: gcbList.length > 0 },
+    { grup: 'Belgeler', l: 'BL al\u0131nd\u0131', zorunlu: true, ok: blList.length > 0 },
+    { grup: 'Belgeler', l: 'TR \u0130hracat Faturas\u0131', zorunlu: false, ok: _evOk('TRFAT') },
+    { grup: 'Finans', l: 'Sigorta poli\u00e7esi', zorunlu: true, ok: !!d.police_no || _evOk('SIG') },
+    { grup: 'Finans', l: 'KDV iade talebi', zorunlu: false, ok: !!d.kdv_iade_tarihi },
+    { grup: 'Finans', l: 'Kambiyo takibi', zorunlu: false, ok: !!d.kambiyo_takip },
+    { grup: 'Onay', l: 'M\u00fc\u015fteri teslim onay\u0131', zorunlu: true, ok: !!d.teslim_onay },
+    { grup: 'Onay', l: 'Belge mutabakat\u0131', zorunlu: false, ok: true },
+    { grup: 'Onay', l: 'G\u00fcmr\u00fck\u00e7\u00fc hesapla\u015fmas\u0131', zorunlu: false, ok: !!d.gumrukcu_hesap_ok }
+  ];
+  var tam = KOSULLAR.filter(function(k) { return k.ok; });
+  var eks = KOSULLAR.filter(function(k) { return !k.ok && k.zorunlu; });
+  var uy = KOSULLAR.filter(function(k) { return !k.ok && !k.zorunlu; });
+  return { kapanabilir: eks.length === 0 && d.durum !== 'kapandi', tamamlandi: tam, eksikler: eks, uyarilar: uy, kosullar: KOSULLAR, durum: d.durum };
+};
+
+window._ihrDetayRenderKapat = function(d, c) {
+  if (!c) c = _g('ihr-detay-content'); if (!c) return;
+  var dosyaId = d.id;
+  if (d.durum === 'kapandi') {
+    c.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:32px;margin-bottom:10px">\u2713</div><div style="font-size:14px;font-weight:500;color:#16A34A;margin-bottom:6px">Bu dosya kapat\u0131lm\u0131\u015f</div><div style="font-size:11px;color:var(--t3);margin-bottom:16px">Kapanma tarihi: ' + _esc(d.kapanma_tarihi || '\u2014') + '</div><button class="btn btns" onclick="event.stopPropagation();window._ihrKapamaRaporu?.(\'' + dosyaId + '\')">Kapama Raporu</button></div>';
+    return;
+  }
+  var kp = window._ihrKapamaKontrol(dosyaId);
+  var pct = Math.round(kp.tamamlandi.length / kp.kosullar.length * 100);
+  var pR2 = pct >= 80 ? '#16A34A' : pct >= 50 ? '#D97706' : '#DC2626';
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var topFOB = urunler.reduce(function(a, u) { return a + (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); }, 0);
+  var fU2 = function(n) { return '$' + Math.round(n || 0).toLocaleString('tr-TR'); };
+  var h = '';
+  /* Ozet */
+  h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:0.5px solid var(--b);background:var(--sf)"><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">' + _esc(d.dosyaNo || dosyaId) + '</div><div style="font-size:10px;color:var(--t3)">' + _esc(d.musteriAd || '\u2014') + ' \u00b7 ' + fU2(topFOB) + ' FOB</div></div>';
+  if (!kp.kapanabilir) h += '<div style="background:#FCEBEB;border:1px solid #FCA5A5;border-radius:6px;padding:5px 10px;font-size:10px;color:#991B1B">' + kp.eksikler.length + ' zorunlu eksik</div>';
+  else h += '<div style="background:#EAF3DE;border:1px solid #86EFAC;border-radius:6px;padding:5px 10px;font-size:10px;color:#14532D">Haz\u0131r</div>';
+  h += '</div>';
+  /* Progress + KPI */
+  var r2 = 30; var circ2 = 2 * Math.PI * r2; var dash2 = circ2 * pct / 100;
+  h += '<div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:12px 14px;border-bottom:0.5px solid var(--b)">';
+  h += '<svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="' + r2 + '" fill="none" stroke="var(--b)" stroke-width="8"/><circle cx="40" cy="40" r="' + r2 + '" fill="none" stroke="' + pR2 + '" stroke-width="8" stroke-dasharray="' + dash2.toFixed(1) + ' ' + circ2.toFixed(1) + '" stroke-linecap="round" transform="rotate(-90 40 40)"/><text x="40" y="37" text-anchor="middle" font-size="14" font-weight="500" fill="' + pR2 + '">%' + pct + '</text><text x="40" y="50" text-anchor="middle" font-size="8" fill="var(--t3)">haz\u0131r</text></svg>';
+  var kS2 = 'background:var(--s2);border-radius:6px;padding:7px;text-align:center';
+  var today2 = new Date().toISOString().slice(0, 10);
+  var kalanG2 = d.bitis_tarihi ? Math.ceil((new Date(d.bitis_tarihi) - new Date(today2)) / 86400000) : null;
+  var gR2 = kalanG2 === null ? 'var(--t3)' : kalanG2 < 0 ? '#DC2626' : kalanG2 < 7 ? '#D97706' : '#16A34A';
+  var gT2 = kalanG2 === null ? '\u2014' : kalanG2 < 0 ? Math.abs(kalanG2) + 'g ge\u00e7' : kalanG2 + 'g';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><div style="' + kS2 + '"><div style="font-size:9px;color:#27500A">Tamam</div><div style="font-size:18px;font-weight:500;color:#16A34A">' + kp.tamamlandi.length + '</div></div><div style="' + kS2 + '"><div style="font-size:9px;color:#791F1F">Zorunlu Eksik</div><div style="font-size:18px;font-weight:500;color:#DC2626">' + kp.eksikler.length + '</div></div><div style="' + kS2 + '"><div style="font-size:9px;color:#633806">Uyar\u0131</div><div style="font-size:18px;font-weight:500;color:#D97706">' + kp.uyarilar.length + '</div></div><div style="' + kS2 + '"><div style="font-size:9px;color:' + gR2 + '">Biti\u015f</div><div style="font-size:12px;font-weight:500;color:' + gR2 + '">' + gT2 + '</div></div></div>';
+  h += '</div>';
+  /* Kontrol listesi */
+  ['Belgeler', 'Finans', 'Onay'].forEach(function(grup) {
+    var gK = kp.kosullar.filter(function(k) { return k.grup === grup; });
+    h += '<div style="padding:5px 14px;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:#185FA5;background:var(--sf);border-bottom:0.5px solid var(--b)">' + grup + '</div>';
+    gK.forEach(function(k) {
+      var dC = k.ok ? '#16A34A' : k.zorunlu ? '#DC2626' : '#D97706';
+      var ic2 = k.ok ? '\u2713' : k.zorunlu ? '\u2717' : '!';
+      var tC = k.ok ? 'var(--t)' : k.zorunlu ? '#DC2626' : '#D97706';
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:0.5px solid var(--b);font-size:11px"><span style="width:16px;height:16px;border-radius:50%;background:' + dC + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0">' + ic2 + '</span><span style="flex:1;color:' + tC + '">' + _esc(k.l) + '</span>' + (!k.ok && !k.zorunlu ? '<span style="font-size:9px;color:#D97706">Opsiyonel</span>' : '') + '</div>';
+    });
+  });
+  /* Buton */
+  h += '<div style="padding:14px;border-top:0.5px solid var(--b)">';
+  if (!kp.kapanabilir) {
+    h += '<button disabled style="width:100%;padding:10px;background:#e5e7eb;color:#9ca3af;border:none;border-radius:8px;font-size:12px;cursor:not-allowed;font-family:inherit">Dosyay\u0131 Kapat \u2014 ' + kp.eksikler.length + ' zorunlu ko\u015ful eksik</button>';
+    h += '<div style="text-align:center;font-size:10px;color:var(--t3);margin-top:6px">Zorunlu ko\u015fullar tamamland\u0131\u011f\u0131nda aktif olacak</div>';
+  } else {
+    h += '<button onclick="event.stopPropagation();window._ihrDosyaKapat?.(\'' + dosyaId + '\')" style="width:100%;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:500">Dosyay\u0131 Kapat ve Ar\u015fivle \u2192</button>';
+    h += '<div style="text-align:center;font-size:10px;color:var(--t3);margin-top:6px">Bu i\u015flem geri al\u0131namaz.</div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+};
+
+window._ihrDosyaKapat = function(dosyaId) {
+  var kp = window._ihrKapamaKontrol(dosyaId);
+  if (!kp.kapanabilir) { window.toast?.('Ko\u015fullar tamamlanmadan kapat\u0131lamaz', 'err'); return; }
+  var dosyalar = _loadD(); var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  window.confirmModal?.(_esc(d.dosyaNo || dosyaId) + ' dosyas\u0131n\u0131 kapatmak ve ar\u015five almak istiyor musunuz?', { title: 'Dosya Kapat', danger: true, confirmText: 'Evet, Kapat', onConfirm: function() {
+    d.durum = 'kapandi'; d.kapanma_tarihi = _now(); d.kapanan_by = _cu()?.id; d.updatedAt = _now();
+    _storeD(dosyalar);
+    window.logActivity?.('ihracat', 'Dosya kapat\u0131ld\u0131 ve ar\u015five al\u0131nd\u0131', dosyaId);
+    window.toast?.('Dosya kapat\u0131ld\u0131', 'ok');
+    var el = document.getElementById('ihr-sag-cockpit');
+    if (el) _ihrRenderDosyaDetayInto(dosyaId, el);
+    setTimeout(function() { window._ihrKapamaRaporu?.(dosyaId); }, 500);
+  }});
+};
+
+window._ihrKapamaRaporu = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(dosyaId) && !e.isDeleted; });
+  var gcbList = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; });
+  var blList = _loadBL().filter(function(b) { return String(b.dosya_id) === String(dosyaId) && !b.isDeleted; });
+  var topFOB = urunler.reduce(function(a, u) { return a + (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); }, 0);
+  var topKg = urunler.reduce(function(a, u) { return a + (parseFloat(u.brut_kg) || 0); }, 0);
+  var topKoli = urunler.reduce(function(a, u) { return a + (parseInt(u.koli_adet) || 0); }, 0);
+  var acilis = (d.createdAt || '').slice(0, 10); var kapanis = d.kapanma_tarihi || new Date().toISOString().slice(0, 10);
+  var surGun = acilis && kapanis ? Math.ceil((new Date(kapanis) - new Date(acilis)) / 86400000) : '\u2014';
+  var fN2 = function(n) { return Math.round(n || 0).toLocaleString('tr-TR'); };
+  var belgeler = evraklar.map(function(e) { return '<span style="font-size:9px;padding:2px 7px;background:#EAF3DE;color:#27500A;border-radius:3px;margin:2px">' + e.tur + '</span>'; }).join('');
+  if (gcbList.length) belgeler += '<span style="font-size:9px;padding:2px 7px;background:#EAF3DE;color:#27500A;border-radius:3px;margin:2px">G\u00c7B</span>';
+  if (blList.length) belgeler += '<span style="font-size:9px;padding:2px 7px;background:#EAF3DE;color:#27500A;border-radius:3px;margin:2px">BL</span>';
+  var html = '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Kapama Raporu \u2014 ' + _esc(d.dosyaNo || dosyaId) + '</title><style>body{font-family:system-ui,sans-serif;margin:0;background:#f3f4f6;-webkit-print-color-adjust:exact}.page{background:#fff;max-width:800px;margin:20px auto;box-shadow:0 0 15px rgba(0,0,0,.1)}@media print{body{background:#fff}.noprint{display:none!important}.page{box-shadow:none;margin:0}}</style></head><body>'
+    + '<div class="noprint" style="position:sticky;top:0;background:#185FA5;padding:8px 20px;display:flex;justify-content:space-between;align-items:center"><span style="color:#fff;font-size:11px">Kapama Raporu \u00b7 ' + _esc(d.dosyaNo || dosyaId) + '</span><div style="display:flex;gap:8px"><button onclick="window.print()" style="background:#fff;color:#185FA5;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px">Yazd\u0131r</button><button onclick="window.close()" style="background:transparent;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px">Kapat</button></div></div>'
+    + '<div class="page"><div style="background:#0f1923;padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:18px;font-weight:300;color:#fff;letter-spacing:-.5px">DUAY<span style="font-weight:700"> global</span></div><div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px">Dosya Kapama Raporu</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:500;color:#85B7EB">' + _esc(d.dosyaNo || dosyaId) + '</div><div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:4px">Kapan\u0131\u015f: ' + kapanis + '</div></div></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr)"><div style="padding:14px;text-align:center;border-right:0.5px solid #e5e7eb"><div style="font-size:9px;color:#6b7280">M\u00fc\u015fteri</div><div style="font-size:12px;font-weight:500;margin-top:2px">' + _esc(d.musteriAd || '\u2014') + '</div></div><div style="padding:14px;text-align:center;border-right:0.5px solid #e5e7eb"><div style="font-size:9px;color:#6b7280">FOB</div><div style="font-size:14px;font-weight:500;color:#185FA5;margin-top:2px">$' + fN2(topFOB) + '</div></div><div style="padding:14px;text-align:center;border-right:0.5px solid #e5e7eb"><div style="font-size:9px;color:#6b7280">Toplam</div><div style="font-size:12px;font-weight:500;margin-top:2px">' + fN2(topKg) + ' kg \u00b7 ' + fN2(topKoli) + ' koli</div></div><div style="padding:14px;text-align:center"><div style="font-size:9px;color:#6b7280">S\u00fcre</div><div style="font-size:14px;font-weight:500;margin-top:2px">' + surGun + ' g\u00fcn</div></div></div>'
+    + '<div style="padding:14px 20px;border-top:0.5px solid #e5e7eb"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#185FA5;margin-bottom:8px">Belgeler</div><div style="display:flex;flex-wrap:wrap;gap:4px">' + belgeler + '</div></div>'
+    + '<div style="padding:14px 20px;border-top:0.5px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-end"><div style="max-width:55%"><div style="font-size:10px;line-height:1.7;color:#374151">T\u00fcm belgeler ar\u015fivlendi.</div></div><div style="text-align:center"><div style="width:140px;border-top:1px solid #111;padding-top:4px;font-size:9px;color:#6b7280">Onay / \u0130mza</div></div></div></div></body></html>';
+  var win = window.open('', '_blank', 'width=860,height=680,scrollbars=yes');
+  if (win) { win.document.write(html); win.document.close(); } else window.toast?.('Popup engellendi', 'err');
 };
 
 window._ihrMutabakatFiltre = function() {
