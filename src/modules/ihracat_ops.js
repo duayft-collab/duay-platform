@@ -348,12 +348,14 @@ function _ihrRenderDosyaDetayInto(id, targetEl) {
     { id: 'ozet', l: 'Ozet', paydas: null },
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
-    { id: 'mutabakat', l: 'Mutabakat', paydas: null }
+    { id: 'mutabakat', l: 'Mutabakat', paydas: null },
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 14px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
-    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + '</div>';
+    var _tbdg = '';
+    if (t.id === 'mutabakat') { var _mU2 = _loadU().filter(function(u2) { return String(u2.dosya_id) === String(id) && !u2.isDeleted; }); var _mSA2 = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : []; var _mFk = _mU2.filter(function(u2) { return !_mSA2.find(function(s2) { return u2.satinalma_id && String(s2.id) === String(u2.satinalma_id); }); }).length; if (_mFk > 0) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#FAEEDA;color:#633806">' + _mFk + '</span>'; }
+    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + _tbdg + '</div>';
   });
   h += '</div>';
   h += '<div id="ihr-detay-content" style="padding:0;flex:1;overflow-y:auto"></div>';
@@ -527,8 +529,8 @@ function _ihrRenderDosyaDetay(id) {
     { id: 'ozet', l: 'Ozet', paydas: null },
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
-    { id: 'mutabakat', l: 'Mutabakat', paydas: null }
+    { id: 'mutabakat', l: 'Mutabakat', paydas: null },
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
@@ -2412,6 +2414,7 @@ window._ihrDetayRenderMutabakat = function(d, c) {
   h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#EAF3DE;color:#27500A">' + topE + ' e\u015fle\u015fti</span>';
   if (topF > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#FEF2F2;color:#DC2626">' + topF + ' fark</span>';
   h += '<div style="flex:1"></div>';
+  h += '<select id="ihr-mut-filtre" onchange="event.stopPropagation();window._ihrMutabakatFiltre()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t);font-family:inherit"><option value="hepsi">T\u00fcm kalemler</option><option value="fark">Sadece farklar</option><option value="eslesen">Sadece e\u015fle\u015fenler</option><option value="alis_yok">Al\u0131\u015f eksik</option></select>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrMutabakatExcel?.(\'' + dosyaId + '\')" style="font-size:9px">Excel</button>';
   h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrMutabakatPdf?.(\'' + dosyaId + '\')" style="font-size:9px">PDF Rapor</button>';
   h += '</div>';
@@ -2440,9 +2443,11 @@ window._ihrDetayRenderMutabakat = function(d, c) {
   /* Satirlar */
   if (!satirlar.length) { h += '<div style="text-align:center;padding:40px;color:var(--t3);font-size:11px">\u00dcr\u00fcn bulunamad\u0131</div>'; }
   else {
+    h += '<div id="ihr-mut-satirlar">';
     satirlar.forEach(function(s, idx) {
       var u = s.u; var bgR = idx % 2 === 1 ? 'background:var(--s2)' : '';
-      h += '<div style="display:flex;border-bottom:0.5px solid var(--b);' + bgR + '">';
+      var durumKey = !s.esl ? 'alis_yok' : (s.dF > 500 || s.mF > 0) ? 'fark' : 'eslesen';
+      h += '<div data-durum="' + durumKey + '" style="display:flex;border-bottom:0.5px solid var(--b);' + bgR + '">';
       /* Urun */
       h += '<div style="padding:6px 8px;min-width:160px;flex:1;border-right:0.5px solid var(--b)"><div style="font-size:10px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">' + _esc(u.aciklama || u.urun_adi || '\u2014') + '</div><div style="font-size:8px;color:var(--t3)">' + _esc(u.urun_kodu || '') + '</div></div>';
       /* Alis */
@@ -2460,6 +2465,7 @@ window._ihrDetayRenderMutabakat = function(d, c) {
       h += '<div style="padding:6px 8px;min-width:75px;text-align:center;border-left:0.5px solid var(--b)"><span style="font-size:8px;padding:1px 6px;border-radius:3px;background:' + s.dB + ';color:' + s.dR + ';font-weight:500">' + s.dur + '</span></div>';
       h += '</div>';
     });
+    h += '</div>'; /* ihr-mut-satirlar bitti */
     /* Toplam */
     h += '<div style="display:flex;background:var(--s2);border-top:1px solid var(--b)">';
     h += '<div style="padding:7px 8px;min-width:160px;flex:1;font-weight:500;font-size:10px">TOPLAM</div>';
@@ -2471,6 +2477,17 @@ window._ihrDetayRenderMutabakat = function(d, c) {
     h += '</div>';
   }
   c.innerHTML = h;
+};
+
+window._ihrMutabakatFiltre = function() {
+  var f = document.getElementById('ihr-mut-filtre')?.value || 'hepsi';
+  var cont = document.getElementById('ihr-mut-satirlar'); if (!cont) return;
+  var rows = cont.children;
+  for (var ri = 0; ri < rows.length; ri++) {
+    var d2 = rows[ri].dataset.durum || '';
+    var goster = f === 'hepsi' || (f === 'fark' && d2 !== 'eslesen') || (f === 'eslesen' && d2 === 'eslesen') || (f === 'alis_yok' && d2 === 'alis_yok');
+    rows[ri].style.display = goster ? '' : 'none';
+  }
 };
 
 window._ihrMutabakatPdf = function(dosyaId) {
