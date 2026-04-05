@@ -1063,7 +1063,7 @@ window._ihrDetayTab = function(tab, id) {
         _sibs[_ri].removeAttribute('style');
       }
     }
-    if (_cc) _cc.setAttribute('style', 'padding:16px 20px');
+    if (_cc) _cc.setAttribute('style', 'padding:0;overflow-y:auto;height:100%');
   }
 
   document.querySelectorAll('#ihr-detay-tabs > div').forEach(function(b) { b.style.borderBottomColor = 'transparent'; b.style.color = 'var(--t2)'; b.style.fontWeight = '400'; });
@@ -2131,128 +2131,142 @@ window._ihrUrunTedarikciGrupla = function() {
 };
 
 /* ── EVRAKLAR DETAY PANEL ─────────────────────────────────── */
+window._ihrEvrakToggle = function(id) { var el = document.getElementById(id); if (!el) return; el.style.display = el.style.display === 'none' ? 'table-row' : 'none'; };
+
 window._ihrDetayRenderEvraklar = function(d, c) {
   if (!c) c = _g('ihr-detay-content'); if (!c) return;
   var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
   var dosyaAsama = parseInt(d.asamaNo || d.asama || 1) || 1;
+  var gm = null; try { _loadGM().forEach(function(g) { if (String(g.id) === String(d.gumrukcu_id)) gm = g; }); } catch(e2) {}
+  var fw = null; try { _loadFW().forEach(function(f) { if (String(f.id) === String(d.forwarder_id)) fw = f; }); } catch(e2) {}
+  var gmAd = gm ? _esc(gm.firma_adi || 'G\u00fcmr\u00fck\u00e7\u00fc') : 'G\u00fcmr\u00fck\u00e7\u00fc';
+  var fwAd = fw ? _esc(fw.firma_adi || 'Forwarder') : 'Forwarder';
   var EVRAK_LIST = [
-    { tur:'PI',    l:'Proforma Invoice',        uretici:'Duay',      hedef:'M\u00fc\u015fteri',             duay:true,  grup:'ticaret',   hedefler:['musteri'] },
-    { tur:'CI',    l:'Commercial Invoice',       uretici:'Duay',      hedef:'M\u00fc\u015fteri',             duay:true,  grup:'ticaret',   hedefler:['musteri'] },
-    { tur:'TRFAT', l:'TR \u0130hracat Faturas\u0131',   uretici:'Duay',      hedef:'G\u00fcmr\u00fck\u00e7\u00fc',            duay:true,  grup:'ticaret',   hedefler:['gumrukcu'] },
-    { tur:'PL',    l:'Packing List',             uretici:'Duay',      hedef:'G\u00fcmr\u00fck\u00e7\u00fc \u00b7 FW \u00b7 M\u00fc\u015fteri', duay:true,  grup:'lojistik',  hedefler:['gumrukcu','forwarder','musteri'] },
-    { tur:'SEVK',  l:'Konteyner Sevk Emri',      uretici:'Duay',      hedef:'Forwarder',          duay:true,  grup:'lojistik',  hedefler:['forwarder'] },
-    { tur:'YUK',   l:'Y\u00fckleme Talimat\u0131',     uretici:'Duay',      hedef:'Forwarder',          duay:true,  grup:'lojistik',  hedefler:['forwarder'] },
-    { tur:'TTF',   l:'Teklif Talep Formu',       uretici:'Duay',      hedef:'FW \u00b7 Sig. \u00b7 \u0130\u00e7 Nakliye', duay:true,  grup:'operasyon', hedefler:['forwarder','sigortaci'] },
-    { tur:'GCB',   l:'G\u00fcmr\u00fck \u00c7\u0131k\u0131\u015f Beyannamesi', uretici:'G\u00fcmr\u00fck\u00e7\u00fc', hedef:'Duay > FWD', duay:false, grup:'gumruk',    hedefler:['gumrukcu'] },
-    { tur:'BL',    l:'Bill of Lading',            uretici:'Forwarder', hedef:'Duay > M\u00fc\u015fteri',    duay:false, grup:'lojistik',  hedefler:['musteri'] },
-    { tur:'MENSEI',l:'Men\u015fei \u015eahadetnamesi',  uretici:'G\u00fcmr\u00fck\u00e7\u00fc', hedef:'M\u00fc\u015fteri', duay:false, grup:'mensei',    hedefler:['musteri'] },
-    { tur:'EUR1',  l:'EUR.1 / A.TR',              uretici:'G\u00fcmr\u00fck\u00e7\u00fc', hedef:'M\u00fc\u015fteri', duay:false, grup:'mensei',    hedefler:['musteri'] },
-    { tur:'INSP',  l:'Inspection Raporu',          uretici:'G\u00f6zetim',  hedef:'Duay > M\u00fc\u015fteri', duay:false, grup:'ticaret',   hedefler:['musteri'] },
-    { tur:'SIG',   l:'Sigorta Poli\u00e7esi',          uretici:'Sigorta',   hedef:'Duay',              duay:false, grup:'sigorta',   hedefler:[] }
+    { tur:'PI',    l:'Proforma Invoice',       grup:'ticaret',  uretici:'Duay',       taraflar:{musteri:true},                             sorumluTip:'duay',      bagimli:'',     duay:true  },
+    { tur:'CI',    l:'Commercial Invoice',     grup:'ticaret',  uretici:'Duay',       taraflar:{musteri:true},                             sorumluTip:'duay',      bagimli:'G\u00c7B', duay:true  },
+    { tur:'TRFAT', l:'TR \u0130hracat Faturas\u0131',  grup:'ticaret',  uretici:'Duay',       taraflar:{gumrukcu:true},                            sorumluTip:'duay',      bagimli:'G\u00c7B', duay:true  },
+    { tur:'INSP',  l:'Inspection Raporu',      grup:'ticaret',  uretici:'Muayene',    taraflar:{musteri:true},                             sorumluTip:'dis',       bagimli:'',     duay:false },
+    { tur:'PL',    l:'Packing List',           grup:'lojistik', uretici:'Duay',       taraflar:{musteri:true,gumrukcu:true,forwarder:true}, sorumluTip:'duay',      bagimli:'G\u00c7B', duay:true  },
+    { tur:'SEVK',  l:'Konteyner Sevk Emri',    grup:'lojistik', uretici:'Duay',       taraflar:{forwarder:true},                           sorumluTip:'duay',      bagimli:'',     duay:true  },
+    { tur:'YUK',   l:'Y\u00fckleme Talimat\u0131',    grup:'lojistik', uretici:'Duay',       taraflar:{forwarder:true},                           sorumluTip:'duay',      bagimli:'',     duay:true  },
+    { tur:'BL',    l:'Bill of Lading',         grup:'lojistik', uretici:'Forwarder',  taraflar:{musteri:true,forwarder:true},              sorumluTip:'forwarder', bagimli:'\u00d6deme', duay:false },
+    { tur:'TTF',   l:'Teklif Talep Formu',     grup:'operasyon',uretici:'Duay',       taraflar:{forwarder:true,sigortaci:true},            sorumluTip:'duay',      bagimli:'',     duay:true  },
+    { tur:'GCB',   l:'G\u00c7B',              grup:'gumruk',   uretici:'G\u00fcmr\u00fck\u00e7\u00fc',  taraflar:{gumrukcu:true,forwarder:true},             sorumluTip:'gumrukcu',  bagimli:'BL',   duay:false },
+    { tur:'MENSEI',l:'Men\u015fei \u015eahadetnamesi', grup:'mensei',   uretici:'G\u00fcmr\u00fck\u00e7\u00fc',  taraflar:{musteri:true},                             sorumluTip:'gumrukcu',  bagimli:'',     duay:false },
+    { tur:'EUR1',  l:'EUR.1 / A.TR',          grup:'mensei',   uretici:'G\u00fcmr\u00fck\u00e7\u00fc',  taraflar:{musteri:true},                             sorumluTip:'gumrukcu',  bagimli:'',     duay:false },
+    { tur:'SIG',   l:'Sigorta Poli\u00e7esi', grup:'sigorta',  uretici:'Sigortac\u0131', taraflar:{sigortaci:true},                           sorumluTip:'sigortaci', bagimli:'BL',   duay:false }
   ];
-  var EVRAK_GRUPLARI = [
-    { id:'ticaret',   l:'Ticaret Belgeleri',    renk:'#185FA5', bg:'#E6F1FB' },
-    { id:'lojistik',  l:'Lojistik Belgeleri',   renk:'#D97706', bg:'#FAEEDA' },
-    { id:'operasyon', l:'Operasyon Belgeleri',   renk:'#7F77DD', bg:'#EEEDFE' },
-    { id:'gumruk',    l:'G\u00fcmr\u00fck Belgeleri',     renk:'#DC2626', bg:'#FEF2F2' },
-    { id:'sigorta',   l:'Sigorta Belgeleri',    renk:'#9333EA', bg:'#F3E8FF' },
-    { id:'mensei',    l:'Men\u015fei Belgeleri',     renk:'#16A34A', bg:'#EAF3DE' }
+  var GRUPLAR = [
+    { id:'ticaret',  l:'T\u0130CARET BELGELER\u0130',   renk:'#185FA5' },
+    { id:'lojistik', l:'LOJ\u0130ST\u0130K BELGELER\u0130',  renk:'#d97706' },
+    { id:'operasyon',l:'OPERASYON BELGELER\u0130', renk:'#7F77DD' },
+    { id:'gumruk',   l:'G\u00dcMR\u00dcK BELGELER\u0130',   renk:'#dc2626' },
+    { id:'mensei',   l:'MEN\u015eE\u0130 BELGELER\u0130',   renk:'#16a34a' },
+    { id:'sigorta',  l:'S\u0130GORTA BELGELER\u0130',  renk:'#7c3aed' }
   ];
-  var _hedefEtiket = function(h2) { return { musteri:'M\u00fc\u015fteri', gumrukcu:'G\u00fcmr\u00fck\u00e7\u00fc', forwarder:'Forwarder', sigortaci:'Sigortac\u0131' }[h2] || h2; };
-  var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi' || e.durum === 'tamamlandi'; }).length;
-  var eksik = EVRAK_LIST.length - tamam;
+  /* Yardimci fonksiyonlar */
+  var _tl = function(taraflarObj, taraf, kayit) {
+    if (!taraflarObj[taraf]) return '<td style="text-align:center;padding:4px 6px;border-left:1px solid var(--b)"><span style="color:var(--t3)">\u2014</span></td>';
+    var bg, ic, title;
+    if (!kayit) { bg = '#fee2e2'; ic = '!'; title = 'Eksik'; }
+    else if (kayit.durum === 'gonderildi' || kayit.durum === 'tamamlandi' || kayit.durum === 'onaylandi') { bg = '#dcfce7'; ic = '\u2713'; title = 'Haz\u0131r'; }
+    else if (kayit.durum === 'taslak' || kayit.durum === 'hazirlaniyor') { bg = '#fef9c3'; ic = '\u23f3'; title = 'Haz\u0131rlan\u0131yor'; }
+    else { bg = '#f3f4f6'; ic = '\u25cb'; title = 'Hen\u00fcz gerekmez'; }
+    var tbg = taraf === 'musteri' ? '#eff6ff' : taraf === 'gumrukcu' ? '#fff7ed' : taraf === 'forwarder' ? '#fffbeb' : taraf === 'sigortaci' ? '#faf5ff' : '';
+    return '<td style="text-align:center;padding:4px 6px;border-left:1px solid var(--b);background:' + tbg + '" title="' + title + '"><div style="width:22px;height:22px;border-radius:50%;background:' + bg + ';display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:10px">' + ic + '</div></td>';
+  };
+  var _doluluk = function(kayit) { if (!kayit) return 0; if (kayit.durum === 'gonderildi' || kayit.durum === 'tamamlandi') return 100; if (kayit.durum === 'onaylandi') return 85; if (kayit.durum === 'hazirlaniyor') return 55; if (kayit.durum === 'taslak') return 30; return 10; };
+  var _dolulukHtml = function(pct) { var r = pct >= 85 ? '#16a34a' : pct >= 50 ? '#ca8a04' : pct > 0 ? '#dc2626' : '#d1d5db'; return '<div style="width:44px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto"><div style="width:' + pct + '%;height:4px;background:' + r + ';border-radius:2px"></div></div><div style="font-size:8px;text-align:center;color:' + r + ';margin-top:1px">' + (pct > 0 ? '%' + pct : '\u2014') + '</div>'; };
+  var _sorumluHtml = function(ev) { var ad, bg, clr; if (ev.sorumluTip === 'gumrukcu') { ad = gmAd; bg = '#fff7ed'; clr = '#d97706'; } else if (ev.sorumluTip === 'forwarder') { ad = fwAd; bg = '#fffbeb'; clr = '#d97706'; } else if (ev.sorumluTip === 'sigortaci') { ad = 'Sigortac\u0131'; bg = '#faf5ff'; clr = '#7c3aed'; } else if (ev.sorumluTip === 'dis') { ad = 'D\u0131\u015f Taraf'; bg = '#f3f4f6'; clr = '#6b7280'; } else { ad = 'Duay'; bg = '#eff6ff'; clr = '#185FA5'; } return '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:' + bg + ';color:' + clr + ';font-weight:500">' + ad + '</span>'; };
+
+  var tamam = 0, kritik = 0, hazir = 0;
+  EVRAK_LIST.forEach(function(ev) { var k = evraklar.find(function(e) { return e.tur === ev.tur; }); var p = _doluluk(k); if (p >= 85) tamam++; else if (p >= 30) hazir++; else kritik++; });
   var h = '';
 
   /* Toolbar */
-  h += '<div style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:0.5px solid var(--b);background:var(--sf)">';
-  h += '<span style="font-size:11px;font-weight:500;color:var(--t)">' + tamam + '/' + EVRAK_LIST.length + ' belge</span>';
-  if (eksik > 0) h += '<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#FEF2F2;color:#991B1B">' + eksik + ' eksik</span>';
-  h += '<div style="width:100px;height:5px;background:var(--b);border-radius:3px;overflow:hidden"><div style="width:' + Math.round(tamam / EVRAK_LIST.length * 100) + '%;height:100%;background:#185FA5;border-radius:3px"></div></div>';
+  h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--sf);border-bottom:0.5px solid var(--b);position:sticky;top:0;z-index:10">';
+  h += '<span style="font-size:10px;font-weight:500;color:var(--t)">' + tamam + '/' + EVRAK_LIST.length + ' belge</span>';
+  if (kritik > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#fee2e2;color:#dc2626">' + kritik + ' kritik</span>';
+  if (hazir > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#fef9c3;color:#ca8a04">' + hazir + ' haz\u0131rlan\u0131yor</span>';
   h += '<div style="flex:1"></div>';
-  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTumBelgeLink?.(\'' + d.id + '\')" style="font-size:9px;padding:3px 8px;color:#185FA5">\ud83d\udd17 T\u00fcm\u00fcn\u00fc Payla\u015f</button>';
-  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrOzelEvrakEkle?.(\'' + d.id + '\')" style="font-size:9px;padding:3px 8px">+ Belge Ekle</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrTumBelgeLink?.(\'' + d.id + '\')" style="font-size:9px">\u2197 T\u00fcm\u00fcn\u00fc Payla\u015f</button>';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrOzelEvrakEkle?.(\'' + d.id + '\')" style="font-size:9px">+ Belge Ekle</button>';
   h += '</div>';
 
-  /* Grup bazli render */
-  EVRAK_GRUPLARI.forEach(function(grup) {
-    var grupBelgeler = EVRAK_LIST.filter(function(ev) { return ev.grup === grup.id; });
-    if (!grupBelgeler.length) return;
-    /* Grup basligi */
-    h += '<div style="padding:4px 14px;background:' + grup.bg + ';border-bottom:0.5px solid var(--b)">';
-    h += '<span style="font-size:9px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:' + grup.renk + '">' + _esc(grup.l) + '</span>';
-    h += '</div>';
+  /* Legend */
+  h += '<div style="display:flex;gap:10px;padding:4px 14px;background:var(--sf);border-bottom:0.5px solid var(--b);font-size:8px;color:var(--t3)">';
+  h += '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dcfce7;margin-right:3px"></span>Haz\u0131r</span>';
+  h += '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fef9c3;margin-right:3px"></span>Haz\u0131rlan\u0131yor</span>';
+  h += '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fee2e2;margin-right:3px"></span>Eksik</span>';
+  h += '<span style="margin-left:6px;font-style:italic">Sat\u0131ra t\u0131kla: detay g\u00f6r</span></div>';
 
-    grupBelgeler.forEach(function(ev) {
-      var kayit = null;
-      evraklar.forEach(function(e) { if (e.tur === ev.tur && !e.isDeleted) kayit = e; });
-      var sev = window._ihrEvrakDurumSeviye?.(kayit || { tur: ev.tur, durum: null }, dosyaAsama) || { seviye:1, label:'Eksik', renk:'#A32D2D' };
-      var zamanTxt = kayit ? (kayit.gonderim_tarihi || kayit.updatedAt || '').slice(0, 16).replace('T', ' ') : '';
-      /* CI arsivleme */
-      var arsivCI = [];
-      if (ev.tur === 'CI') { var ciAll = evraklar.filter(function(e) { return e.tur === 'CI' && !e.isDeleted; }); ciAll.sort(function(a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); }); if (ciAll.length > 1) { kayit = ciAll[0]; arsivCI = ciAll.slice(1); } }
+  /* Tablo */
+  h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px">';
+  h += '<thead><tr style="background:var(--sf)">';
+  h += '<th style="padding:6px 10px;text-align:left;font-size:9px;font-weight:500;color:var(--t3);border-bottom:0.5px solid var(--b);min-width:170px">Belge</th>';
+  h += '<th style="padding:6px 8px;text-align:left;font-size:9px;font-weight:500;color:var(--t3);border-bottom:0.5px solid var(--b);min-width:70px">Sorumlu</th>';
+  h += '<th style="padding:6px 8px;text-align:center;font-size:9px;font-weight:500;color:var(--t3);border-bottom:0.5px solid var(--b);min-width:55px">Doluluk</th>';
+  h += '<th style="padding:6px 8px;text-align:center;font-size:9px;font-weight:500;color:#185FA5;border-bottom:0.5px solid var(--b);background:#eff6ff;min-width:65px">M\u00fc\u015fteri</th>';
+  h += '<th style="padding:6px 8px;text-align:center;font-size:9px;font-weight:500;color:#d97706;border-bottom:0.5px solid var(--b);background:#fff7ed;min-width:65px">G\u00fcmr\u00fck\u00e7\u00fc</th>';
+  h += '<th style="padding:6px 8px;text-align:center;font-size:9px;font-weight:500;color:#d97706;border-bottom:0.5px solid var(--b);background:#fffbeb;min-width:65px">Forwarder</th>';
+  h += '<th style="padding:6px 8px;text-align:center;font-size:9px;font-weight:500;color:#7c3aed;border-bottom:0.5px solid var(--b);background:#faf5ff;min-width:65px">Sigortac\u0131</th>';
+  h += '<th style="padding:6px 8px;text-align:center;font-size:9px;font-weight:500;color:var(--t3);border-bottom:0.5px solid var(--b);min-width:60px">Aksiyon</th>';
+  h += '</tr></thead><tbody>';
 
-      h += '<div style="border-bottom:0.5px solid var(--b)">';
-      h += '<div style="display:flex;align-items:center;padding:8px 14px;gap:8px">';
-      /* Sol: dot + ad + durum + zaman */
-      h += '<div style="width:7px;height:7px;border-radius:50%;background:' + sev.renk + ';flex-shrink:0"></div>';
-      h += '<div style="flex:1;min-width:0">';
-      h += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
-      h += '<span style="font-size:11px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</span>';
-      h += '<span style="font-size:8px;padding:1px 6px;border-radius:8px;background:' + sev.renk + '22;color:' + sev.renk + ';font-weight:500">' + sev.label + '</span>';
-      if (zamanTxt) h += '<span style="font-size:8px;color:var(--t3)">' + _esc(zamanTxt) + '</span>';
-      h += '</div>';
-      /* Hedef etiketleri */
-      if (ev.hedefler && ev.hedefler.length > 0) {
-        h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">';
-        ev.hedefler.forEach(function(hd, hi) { h += (hi > 0 ? ' \u00b7 ' : '\u2192 ') + _hedefEtiket(hd); });
-        h += '</div>';
-      }
-      h += '</div>';
-      /* Sag: butonlar + link */
-      h += '<div style="display:flex;gap:3px;flex-shrink:0;flex-wrap:wrap;align-items:center">';
-      if (ev.tur === 'BL') {
-        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrBlOnayAc?.(\'' + d.id + '\')" style="font-size:9px;padding:2px 8px;color:#185FA5">BL Onay</button>';
-        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'BL\')" style="font-size:9px;padding:2px 8px">Yukle</button>';
-      } else if (ev.tur === 'SIG') {
-        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrPdfOnizle?.(\'' + d.id + '\',\'SIG\',null)" style="font-size:9px;padding:2px 8px">G\u00f6r</button>';
-        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'SIG\')" style="font-size:9px;padding:2px 8px">Y\u00fckle</button>';
+  GRUPLAR.forEach(function(grup) {
+    var gb = EVRAK_LIST.filter(function(ev) { return ev.grup === grup.id; });
+    if (!gb.length) return;
+    h += '<tr><td colspan="8" style="padding:4px 10px;background:var(--s2);font-size:8px;font-weight:600;letter-spacing:.07em;color:' + grup.renk + ';border-top:0.5px solid var(--b);border-bottom:0.5px solid var(--b)">' + grup.l + '</td></tr>';
+    gb.forEach(function(ev) {
+      var kayit = evraklar.find(function(e) { return e.tur === ev.tur; });
+      var pct = _doluluk(kayit);
+      var expId = 'evr-exp-' + d.id + '-' + ev.tur;
+      h += '<tr onclick="event.stopPropagation();window._ihrEvrakToggle(\'' + expId + '\')" style="cursor:pointer;border-bottom:0.5px solid var(--b)">';
+      /* Belge adi */
+      h += '<td style="padding:6px 10px"><div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:' + (pct >= 85 ? '#16a34a' : pct >= 30 ? '#ca8a04' : pct > 0 ? '#dc2626' : '#d1d5db') + ';flex-shrink:0"></span><div><div style="font-size:10px;font-weight:500;color:var(--t)">' + _esc(ev.l) + '</div><div style="font-size:8px;color:var(--t3)">' + _esc(ev.uretici) + '</div>';
+      if (ev.bagimli && pct < 85) h += '<div style="font-size:8px;color:#dc2626">\u2192 ' + _esc(ev.bagimli) + ' bloke</div>';
+      h += '</div></div></td>';
+      /* Sorumlu */
+      h += '<td style="padding:4px 8px">' + _sorumluHtml(ev) + '</td>';
+      /* Doluluk */
+      h += '<td style="padding:4px 8px;text-align:center">' + _dolulukHtml(pct) + '</td>';
+      /* Taraf sutunlari */
+      h += _tl(ev.taraflar, 'musteri', kayit);
+      h += _tl(ev.taraflar, 'gumrukcu', kayit);
+      h += _tl(ev.taraflar, 'forwarder', kayit);
+      h += _tl(ev.taraflar, 'sigortaci', kayit);
+      /* Aksiyon */
+      h += '<td style="padding:4px 8px;text-align:right">';
+      if (!kayit) {
+        if (ev.duay) h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakOlustur?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:8px;padding:1px 7px">Olu\u015ftur</button>';
+        else h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:8px;padding:1px 7px">Y\u00fckle</button>';
+      } else if (pct >= 85) {
+        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrBelgeLink?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:8px;padding:1px 7px">\ud83d\udd17 Link</button>';
       } else {
-        if (ev.duay && ['PI','CI','PL','SEVK','YUK'].indexOf(ev.tur) !== -1) {
-          var _dt = { PI:'pi', CI:'ci', PL:'pl', SEVK:'sevk', YUK:'yuk' }[ev.tur] || ev.tur.toLowerCase();
-          h += '<div style="position:relative;display:inline-block">';
-          h += '<button class="btn btns" onclick="event.stopPropagation();var dd=this.nextElementSibling;dd.style.display=dd.style.display===\'block\'?\'none\':\'block\'" style="font-size:9px;padding:2px 8px">\u0130ndir \u25be</button>';
-          h += '<div style="display:none;position:absolute;top:100%;right:0;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;min-width:80px">';
-          h += '<div onclick="event.stopPropagation();window._ihrDocxIndir?.(\'' + d.id + '\',\'' + _dt + '\');this.parentElement.style.display=\'none\'" style="padding:5px 10px;font-size:9px;cursor:pointer;color:#185FA5" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">DOCX</div>';
-          h += '<div onclick="event.stopPropagation();window._ihrExcelIndir?.(\'' + d.id + '\',\'' + ev.tur + '\');this.parentElement.style.display=\'none\'" style="padding:5px 10px;font-size:9px;cursor:pointer;color:#1D6A2A" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">Excel</div>';
-          h += '<div onclick="event.stopPropagation();window._ihrPdfIndir?.(\'' + d.id + '\',\'' + ev.tur + '\');this.parentElement.style.display=\'none\'" style="padding:5px 10px;font-size:9px;cursor:pointer;color:#C62828" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">PDF</div>';
-          h += '</div></div>';
-        }
-        if (ev.duay) {
-          if (!kayit) h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakOlustur?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 8px">Olu\u015ftur</button>';
-          else if (kayit.durum === 'taslak') h += '<button class="btn" onclick="event.stopPropagation();window._ihrEvrakOnayla?.(\'' + kayit.id + '\')" style="font-size:9px;padding:2px 8px;background:#EAF3DE;color:#27500A;border:0.5px solid #97C459">Onayla</button>';
-          else if (kayit.durum === 'onaylandi') h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakGonderModal?.(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 8px">G\u00f6nder</button>';
-          else if (kayit.durum === 'gonderildi') h += '<span style="font-size:9px;color:#16A34A;padding:2px 4px">\u2713</span>';
-        }
-        var _ocrE = ['GCB','MENSEI','EUR1','INSP'];
-        if (_ocrE.indexOf(ev.tur) !== -1) h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 8px">Y\u00fckle</button>';
-        else if (!ev.duay) h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrEvrakDosyaYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 8px">Y\u00fckle</button>';
+        if (kayit.durum === 'taslak' && ev.duay) h += '<button class="btn" onclick="event.stopPropagation();window._ihrEvrakOnayla?.(\'' + kayit.id + '\')" style="font-size:8px;padding:1px 7px;background:#EAF3DE;color:#27500A;border:0.5px solid #97C459">Onayla</button>';
+        else if (kayit.durum === 'onaylandi' && ev.duay) h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrEvrakGonderModal?.(\'' + kayit.id + '\',\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:8px;padding:1px 7px">G\u00f6nder</button>';
+        else h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrSmartEvrakYukle?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:8px;padding:1px 7px">Devam</button>';
       }
-      /* Link butonu — hedefi olan belgeler icin */
-      if (ev.hedefler && ev.hedefler.length > 0 && kayit && (kayit.durum === 'onaylandi' || kayit.durum === 'gonderildi' || kayit.durum === 'tamamlandi')) {
-        h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrBelgeLink?.(\'' + d.id + '\',\'' + ev.tur + '\')" style="font-size:9px;padding:2px 8px;color:#185FA5;border-color:#185FA5">\ud83d\udd17 Link</button>';
-      }
-      h += '</div></div>';
-      if (kayit && kayit.not) h += '<div style="padding:4px 14px 6px;font-size:10px;color:var(--t2);border-top:0.5px solid var(--b)">' + _esc(kayit.not) + '</div>';
-      /* CI Arsiv */
-      if (arsivCI.length > 0) {
-        h += '<div style="padding:6px 14px;border-top:0.5px solid var(--b);background:#FAEEDA22">';
-        h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:9px;color:#633806;font-weight:500">Ar\u015fiv (' + arsivCI.length + ')</span><button onclick="event.stopPropagation();window._ihrCIArsivTumunuSil?.(\'' + d.id + '\')" style="background:none;border:0.5px solid #DC2626;border-radius:4px;color:#DC2626;cursor:pointer;font-size:8px;padding:1px 6px;font-family:inherit">Sil</button></div>';
-        arsivCI.forEach(function(ac) { h += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:9px"><span style="color:var(--t3);font-family:monospace">' + _esc(ac.createdAt || '').slice(0, 10) + '</span><span style="flex:1;color:var(--t2)">' + _esc(ac.durum || 'taslak') + '</span>' + (ac.dosya_url ? '<a href="' + _esc(ac.dosya_url) + '" target="_blank" style="color:#185FA5;text-decoration:none">Indir</a>' : '') + '<button onclick="event.stopPropagation();window._ihrEvrakArsivSil?.(\'' + ac.id + '\',\'' + d.id + '\')" class="btn btns btnd" style="font-size:8px;padding:1px 4px;color:#DC2626">Sil</button></div>'; });
+      h += '</td></tr>';
+      /* Expand satiri */
+      h += '<tr id="' + expId + '" style="display:none"><td colspan="8" style="padding:8px 14px;background:#eff6ff;border-bottom:0.5px solid #dbeafe;font-size:9px">';
+      if (!kayit) {
+        h += '<div style="color:#dc2626">\u26a0 Hen\u00fcz belge y\u00fcklenmedi / olu\u015fturulmad\u0131.';
+        if (ev.bagimli) h += ' Bu belge olmadan <strong>' + _esc(ev.bagimli) + '</strong> tamamlanamaz.';
+        h += '</div>';
+      } else {
+        var durR = pct >= 85 ? '#16a34a' : pct >= 50 ? '#ca8a04' : '#dc2626';
+        h += '<div style="display:flex;gap:16px;flex-wrap:wrap"><div><div style="font-weight:500;color:#185FA5;margin-bottom:3px">Durum: <span style="color:' + durR + '">' + _esc(kayit.durum || '?') + '</span></div>';
+        if (kayit.gonderim_tarihi || kayit.updatedAt) h += '<div style="color:#6b7280">Son g\u00fcncelleme: ' + _esc((kayit.gonderim_tarihi || kayit.updatedAt || '').slice(0, 10)) + '</div>';
+        if (kayit.yukleyen_ad) h += '<div style="color:#6b7280">Y\u00fckleyen: ' + _esc(kayit.yukleyen_ad) + '</div>';
+        h += '</div>';
+        if (ev.bagimli && pct < 85) h += '<div style="color:#dc2626">\u26a0 Tamamlanmadan <strong>' + _esc(ev.bagimli) + '</strong> yap\u0131lamaz.</div>';
         h += '</div>';
       }
-      h += '</div>';
+      h += '</td></tr>';
     });
   });
+  h += '</tbody></table></div>';
 
   /* Ozel evraklar */
   var ozelEvraklar = evraklar.filter(function(e) { return e.tur && e.tur.indexOf('OZEL_') === 0; });
