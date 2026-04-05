@@ -1210,6 +1210,17 @@ window._ihrUrunAra = function(q) {
     _ihrRenderContent();
   }
 };
+/* IHR-HS-FILTER-001: HS eksik filtre toggle */
+window._ihrHsFilter = function(dosyaId) {
+  if (window.__ihrHsFilterAktif) {
+    window.__ihrHsFilterAktif = false;
+    window._ihrUrunAramaQ = '';
+  } else {
+    window.__ihrHsFilterAktif = true;
+    window._ihrUrunAramaQ = '__HS_EKSIK__';
+  }
+  window._ihrDetayTab('urunler', dosyaId);
+};
 // IHR-ZINCIR-001: Evrak zincir kontrolu
 function _evrakZincirKontrol(dosyaId, tur) {
   var ZINCIR = { CI: 'PI', PL: 'CI', GCB: 'PL', BL: 'GCB' };
@@ -1272,6 +1283,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
 
   /* Filtreleme uygula */
   var urunler = tumurunler.filter(function(u) {
+    if (_aramaQ === '__HS_EKSIK__') { return !u.hs_kodu; }
     if (_aramaQ) {
       var q = _aramaQ.toLowerCase();
       if ((u.urun_kodu || '').toLowerCase().indexOf(q) === -1 &&
@@ -1324,7 +1336,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   if (toplamM3 > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:var(--s2);color:var(--t2);white-space:nowrap">' + toplamM3.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' m\u00b3</span>';
   if (toplamUSD > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#E6F1FB;color:#0C447C;font-weight:500;white-space:nowrap">$' + toplamUSD.toLocaleString('tr-TR', { minimumFractionDigits: 0 }) + '</span>';
   if (toplamEUR > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#EAF3DE;color:#27500A;font-weight:500;white-space:nowrap">\u20ac' + toplamEUR.toLocaleString('tr-TR', { minimumFractionDigits: 0 }) + '</span>';
-  if (eksikHs > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#FEF2F2;color:#991B1B;white-space:nowrap">HS Eksik: ' + eksikHs + '</span>';
+  if (eksikHs > 0) { var _hsAktif = !!window.__ihrHsFilterAktif; h += '<button onclick="event.stopPropagation();window._ihrHsFilter?.(\'' + _dosyaId + '\')" style="font-size:9px;padding:1px 7px;border-radius:10px;background:' + (_hsAktif ? '#DC2626' : '#FEF2F2') + ';color:' + (_hsAktif ? '#fff' : '#991B1B') + ';white-space:nowrap;border:none;cursor:pointer;font-family:inherit" title="T\u0131kla: HS eksik \u00fcr\u00fcnleri filtrele">' + (_hsAktif ? '\u2715 ' : '') + 'HS Eksik: ' + eksikHs + '</button>'; }
   if (tutarsizSayi > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#FAEEDA;color:#633806;white-space:nowrap">Tutarsız: ' + tutarsizSayi + '</span>';
   for (var ftk in faturaTuruGrup) { if (faturaTuruGrup[ftk] > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#EEEDFE;color:#26215C;white-space:nowrap">' + _esc(ftk.slice(0, 15)) + ': $' + Math.round(faturaTuruGrup[ftk]).toLocaleString('tr-TR') + '</span>'; }
   h += '</div>';
