@@ -4305,74 +4305,291 @@ window._ihrExcelImportV3 = function(dosyaId) {
   _v3Adim1();
 };
 
-/** Step bar render */
+/** Step bar render — EXCEL-IMPORT-UPGRADE-001 */
 function _v3RenderSteps() {
   var el = document.getElementById('import-v3-steps');
   if (!el) return;
-  var adimlar = ['Sablon Sec', 'Dosya Yukle', 'Eslestir / Onayla', 'Aktar'];
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:4px;padding:10px 20px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
-    + adimlar.map(function(a, i) {
-      var n = i + 1;
-      var ok = n < _v3.adim;
-      var on = n === _v3.adim;
-      return '<div style="display:flex;align-items:center;gap:4px">'
-        + '<div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:' + (ok ? '#EAF3DE' : on ? '#185FA5' : 'var(--s2)') + ';color:' + (ok ? '#27500A' : on ? '#fff' : 'var(--t3)') + '">' + (ok ? '\u2713' : n) + '</div>'
-        + '<span style="font-size:11px;color:' + (on ? '#185FA5' : 'var(--t3)') + ';font-weight:' + (on ? '600' : '400') + '">' + a + '</span>'
-        + (i < 3 ? '<span style="color:var(--t3);margin:0 4px;font-size:9px">\u2192</span>' : '')
-        + '</div>';
-    }).join('')
-    + '</div>';
+  var adimlar = [
+    { n:1, ikon:'\ud83d\udcc1', l:'Dosya Yükle', alt:'Excel dosyanı seç' },
+    { n:2, ikon:'\ud83d\udccb', l:'Sayfa Seç', alt:'Hangi sayfa?' },
+    { n:3, ikon:'\ud83d\udd17', l:'Eşleştir', alt:'Sütunları eşleştir' },
+    { n:4, ikon:'\ud83d\udc40', l:'Kontrol & Aktar', alt:'Son kontrol' }
+  ];
+  var h = '<div style="display:flex;align-items:center;padding:12px 20px;background:var(--sf);border-bottom:0.5px solid var(--b)">';
+  adimlar.forEach(function(a, i) {
+    var tamamlandi = _v3.adim > a.n;
+    var aktif = _v3.adim === a.n;
+    var numBg = tamamlandi ? '#16A34A' : aktif ? '#185FA5' : 'var(--b)';
+    var numClr = (tamamlandi || aktif) ? '#fff' : 'var(--t3)';
+    var txtClr = aktif ? '#185FA5' : tamamlandi ? '#27500A' : 'var(--t3)';
+    h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1">';
+    h += '<div style="width:32px;height:32px;border-radius:50%;background:'+numBg+';color:'+numClr+';display:flex;align-items:center;justify-content:center;font-size:'+(tamamlandi?'14px':'13px')+';font-weight:600;margin-bottom:4px">'+(tamamlandi?'\u2713':a.ikon)+'</div>';
+    h += '<div style="font-size:10px;font-weight:500;color:'+txtClr+'">'+a.l+'</div>';
+    if (aktif) h += '<div style="font-size:9px;color:var(--t3);margin-top:1px">'+a.alt+'</div>';
+    h += '</div>';
+    if (i < adimlar.length-1) h += '<div style="flex:0 0 32px;height:2px;background:'+(tamamlandi?'#16A34A':'var(--b)')+';border-radius:1px;margin-bottom:20px"></div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
 }
 
-// ── ADIM 1 — SABLON SEC ──────────────────────────────────────
+// ── ADIM 1 — DOSYA YUKLE (EXCEL-IMPORT-UPGRADE-001) ─────────
 function _v3Adim1() {
   _v3.adim = 1; _v3RenderSteps();
   var body = document.getElementById('import-v3-body');
   var footer = document.getElementById('import-v3-footer');
   if (!body) return;
-
-  var h = '<div style="padding:20px">';
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">';
-  var keys = Object.keys(V3_SABLONLAR);
-  keys.forEach(function(key) {
-    var s = V3_SABLONLAR[key];
-    var kolSay = s.kolonlar ? s.kolonlar.length : 34;
-    var secili = _v3.seciliSablon === key;
-    h += '<div onclick="event.stopPropagation();window._v3SablonSec(\'' + key + '\')" style="border:2px solid ' + (secili ? '#185FA5' : 'var(--b)') + ';border-radius:10px;padding:16px;cursor:pointer;background:' + (secili ? '#E6F1FB' : 'var(--sf)') + ';transition:all .15s">'
-      + '<div style="font-size:20px;margin-bottom:6px">' + s.ikon + '</div>'
-      + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + _esc(s.ad) + '</div>'
-      + '<div style="font-size:11px;color:var(--t3);margin:4px 0">' + _esc(s.aciklama) + '</div>'
-      + '<div style="font-size:10px;color:var(--t3)">Kolonlar: ' + kolSay + ' alan</div>'
-      + '</div>';
-  });
+  var h = '<div style="padding:32px 20px;text-align:center">';
+  h += '<div style="font-size:48px;margin-bottom:12px">\ud83d\udcca</div>';
+  h += '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:6px">Excel dosyan\u0131 buraya b\u0131rak!</div>';
+  h += '<div style="font-size:12px;color:var(--t3);margin-bottom:24px">Ya da a\u015fa\u011f\u0131daki butona t\u0131kla. .xlsx veya .xls dosyas\u0131 olmal\u0131.</div>';
+  h += '<div id="v3-drop-zone" onclick="event.stopPropagation();document.getElementById(\'v3-file-input\').click()" style="border:3px dashed var(--b);border-radius:16px;padding:32px;cursor:pointer;background:var(--s2);transition:all .2s;margin:0 auto;max-width:400px">';
+  h += '<input type="file" id="v3-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="event.stopPropagation();window._v3DosyaSec(this)">';
+  if (_v3.dosyaAdi) {
+    h += '<div style="font-size:32px;margin-bottom:8px">\u2705</div>';
+    h += '<div style="font-size:14px;font-weight:500;color:#16A34A">'+_esc(_v3.dosyaAdi)+'</div>';
+    h += '<div style="font-size:11px;color:var(--t3);margin-top:4px">'+_v3.satirSayisi+' sat\u0131r haz\u0131r</div>';
+    h += '<div style="font-size:10px;color:#185FA5;margin-top:8px;text-decoration:underline;cursor:pointer">Farkl\u0131 dosya se\u00e7</div>';
+  } else {
+    h += '<div style="font-size:14px;color:var(--t2);margin-bottom:12px">Dosyay\u0131 s\u00fcr\u00fckle & b\u0131rak</div>';
+    h += '<button style="padding:10px 24px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:500">\ud83d\udcc2 Dosya Se\u00e7</button>';
+  }
   h += '</div>';
-  h += '<div id="v3-sablon-info" style="margin-top:12px"></div>';
+  h += '<div style="margin-top:16px;font-size:11px;color:var(--t3)">\ud83d\udca1 \u0130pucu: Dosyan\u0131n ilk sat\u0131r\u0131 ba\u015fl\u0131k sat\u0131r\u0131 olmal\u0131 (\u00dcr\u00fcn Ad\u0131, Miktar, Fiyat vb.)</div>';
   h += '</div>';
   body.innerHTML = h;
-
-  if (_v3.seciliSablon) _v3SablonInfoGuncelle();
-
-  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-import-v3\')?.remove()">Iptal</button>'
-    + '<button class="btn btnp" id="v3-devam-1" onclick="event.stopPropagation();window._v3Adim1Devam()" style="' + (_v3.seciliSablon ? '' : 'opacity:.4;pointer-events:none') + '">Devam \u2192</button>';
+  _v3KurDragDrop();
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-import-v3\')?.remove()">İptal</button>'
+    + '<button class="btn btnp" id="v3-devam-1" onclick="event.stopPropagation();window._v3Adim2()" style="'+(_v3.dosyaAdi?'':'opacity:.4;pointer-events:none')+'">Devam \u2192 Sayfa Se\u00e7</button>';
 }
 
-window._v3SablonSec = function(key) {
-  _v3.seciliSablon = key;
-  _v3Adim1();
+function _v3KurDragDrop() {
+  var zone = document.getElementById('v3-drop-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.style.borderColor='#185FA5'; zone.style.background='#E6F1FB'; }, { capture:true });
+  zone.addEventListener('dragleave', function(){ zone.style.borderColor='var(--b)'; zone.style.background='var(--s2)'; }, { capture:true });
+  zone.addEventListener('drop', function(e){ e.preventDefault(); zone.style.borderColor='var(--b)'; zone.style.background='var(--s2)'; var f=e.dataTransfer.files[0]; if(f) window._v3DosyaOku(f); }, { capture:true });
+}
+
+window._v3DosyaSec = function(input) { var f = input.files && input.files[0]; if (f) window._v3DosyaOku(f); };
+
+window._v3DosyaOku = function(f) {
+  _v3.dosyaAdi = f.name;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      if (!window.XLSX) { window.toast?.('Excel okuyucu y\u00fckl\u00fcyor...', 'warn'); return; }
+      var wb = window.XLSX.read(e.target.result, { type:'array', cellText:false, cellDates:true });
+      _v3.excelSheets = wb.SheetNames;
+      _v3.seciliSheet = 0;
+      _v3._wb = wb;
+      _v3OkuSheet(wb, wb.SheetNames[0]);
+      _v3Adim1();
+    } catch(err) { window.toast?.('Dosya okunamad\u0131: ' + err.message, 'err'); }
+  };
+  reader.readAsArrayBuffer(f);
 };
 
-function _v3SablonInfoGuncelle() {
-  var info = document.getElementById('v3-sablon-info');
-  if (!info || !_v3.seciliSablon) return;
-  var s = V3_SABLONLAR[_v3.seciliSablon];
-  if (!s) return;
-  var kolSay = s.kolonlar ? s.kolonlar.length : 34;
-  info.innerHTML = '<div style="background:#E6F1FB;border-radius:8px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">'
-    + '<div style="font-size:12px;color:#0C447C;font-weight:500">' + _esc(s.ad) + ' secildi \u00b7 ' + kolSay + ' kolon aktarilacak</div>'
-    + (s.kolonlar ? '<button class="btn btns" onclick="event.stopPropagation();window._ihrSablonIndir(\'' + _v3.seciliSablon + '\')" style="font-size:10px;padding:4px 12px">\u2b07 Sablonu Indir</button>' : '')
-    + '</div>';
+function _v3OkuSheet(wb, sheetName) {
+  var ws = wb.Sheets[sheetName];
+  var json = window.XLSX.utils.sheet_to_json(ws, { header:1, raw:false, defval:'' });
+  if (!json.length) { _v3.excelData = []; _v3.excelKolonlar = []; _v3.satirSayisi = 0; return; }
+  var basliklar = json[0].map(function(b){ return String(b||'').trim(); }).filter(Boolean);
+  _v3.excelKolonlar = basliklar;
+  _v3.excelData = json.slice(1).filter(function(r){ return r.some(function(c){ return c!==''; }); }).map(function(r){
+    var obj = {};
+    basliklar.forEach(function(b, i){ obj[b] = r[i] !== undefined ? String(r[i]||'').trim() : ''; });
+    return obj;
+  });
+  _v3.satirSayisi = _v3.excelData.length;
+  _v3.eslestirme = {};
+  _v3.guvenilik = {};
 }
 
+// ── ADIM 2 — SAYFA SEC (EXCEL-IMPORT-UPGRADE-001) ───────────
+function _v3Adim2() {
+  _v3.adim = 2; _v3RenderSteps();
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+  var sheets = _v3.excelSheets || [];
+  var h = '<div style="padding:24px 20px">';
+  h += '<div style="font-size:16px;font-weight:500;margin-bottom:4px">\ud83d\udccb Hangi sayfa?</div>';
+  h += '<div style="font-size:12px;color:var(--t3);margin-bottom:20px">Dosyanda birden fazla sayfa varsa hangisini aktarmak istedi\u011fini se\u00e7.</div>';
+  if (sheets.length <= 1) {
+    h += '<div style="background:#EAF3DE;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px"><span style="font-size:24px">\u2705</span><div><div style="font-weight:500;color:#27500A">'+_esc(sheets[0]||'Sayfa1')+'</div><div style="font-size:11px;color:#3B6D11">'+_v3.satirSayisi+' sat\u0131r verisi mevcut</div></div></div>';
+  } else {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">';
+    sheets.forEach(function(sh, idx) {
+      var secili = _v3.seciliSheet === idx;
+      h += '<div onclick="event.stopPropagation();window._v3SheetSec('+idx+')" style="border:2px solid '+(secili?'#185FA5':'var(--b)')+';border-radius:10px;padding:14px;cursor:pointer;background:'+(secili?'#E6F1FB':'var(--sf)')+';text-align:center"><div style="font-size:28px;margin-bottom:6px">\ud83d\udcc4</div><div style="font-size:12px;font-weight:500;color:'+(secili?'#185FA5':'var(--t)')+'">'+_esc(sh)+'</div>'+(secili?'<div style="font-size:10px;color:#185FA5;margin-top:3px">\u2713 Se\u00e7ili</div>':'')+'</div>';
+    });
+    h += '</div>';
+  }
+  h += '<div style="margin-top:16px;padding:10px 14px;background:#FAEEDA;border-radius:8px;font-size:11px;color:#633806">\ud83d\udca1 Se\u00e7ilen sayfada <strong>'+_v3.satirSayisi+'</strong> sat\u0131r ve <strong>'+_v3.excelKolonlar.length+'</strong> s\u00fctun var.</div>';
+  h += '</div>';
+  body.innerHTML = h;
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();window._v3Adim1()">\u2190 Geri</button><button class="btn btnp" onclick="event.stopPropagation();window._v3Adim3()">Devam \u2192 E\u015fle\u015ftir</button>';
+}
+
+window._v3SheetSec = function(idx) { _v3.seciliSheet = idx; if (_v3._wb) _v3OkuSheet(_v3._wb, _v3.excelSheets[idx]); _v3Adim2(); };
+
+// ── ADIM 3 — AKILLI ESLESTIRME (EXCEL-IMPORT-UPGRADE-001) ───
+function _v3Adim3() { _v3.adim = 3; _v3RenderSteps(); _v3OtomatikEslesDir(); _v3Adim3Render(); }
+
+function _v3OtomatikEslesDir() {
+  if (Object.keys(_v3.eslestirme).length > 0) return;
+  var ALAN_ESLEME = {
+    aciklama:['aciklama','urun adi','urun ad\u0131','product name','\u00fcr\u00fcn ad\u0131','product description','\u00fcr\u00fcn a\u00e7\u0131klama','item name','a\u00e7\u0131klama'],
+    urun_kodu:['urun kodu','\u00fcr\u00fcn kodu','urun no','\u00fcr\u00fcn no','product code','article','kod','code','item code','sku'],
+    miktar:['miktar','adet','qty','quantity','amount','miktar\u0131','adet say\u0131s\u0131'],
+    birim:['birim','unit','\u00f6l\u00e7\u00fc','olcu','birimi'],
+    birim_fiyat:['birim fiyat','fiyat','price','unit price','birim fiyat\u0131','fiyat\u0131'],
+    doviz:['doviz','d\u00f6viz','para birimi','currency','para'],
+    hs_kodu:['hs','hs kodu','gtip','g\u00fcmr\u00fck kodu','gumruk kodu','tariff','hs code'],
+    koli_adet:['koli','koli adet','koli say\u0131s\u0131','carton','box','kol\u0131'],
+    brut_kg:['brut','br\u00fct kg','brut kg','gross weight','br\u00fct a\u011f\u0131rl\u0131k','gross kg'],
+    net_kg:['net','net kg','net weight','net a\u011f\u0131rl\u0131k'],
+    hacim_m3:['hacim','m3','cbm','volume','hacim m3'],
+    tedarikciAd:['tedarikci','tedarik\u00e7i','supplier','vendor','satici','sat\u0131c\u0131','tedarik\u00e7i ad\u0131']
+  };
+  var guvenTespit = {};
+  _v3.excelKolonlar.forEach(function(excKol) {
+    var kucuk = excKol.toLowerCase().replace(/[^a-z0-9\u011f\u00fc\u015f\u0131\u00f6\u00e7]/g,'');
+    var enIyi = null; var enIyiSkor = 0;
+    Object.keys(ALAN_ESLEME).forEach(function(sistemAlan) {
+      ALAN_ESLEME[sistemAlan].forEach(function(anahtar) {
+        var kucukAnahtar = anahtar.toLowerCase().replace(/[^a-z0-9\u011f\u00fc\u015f\u0131\u00f6\u00e7]/g,'');
+        var skor = 0;
+        if (kucuk === kucukAnahtar) skor = 100;
+        else if (kucuk.indexOf(kucukAnahtar) !== -1 || kucukAnahtar.indexOf(kucuk) !== -1) skor = 75;
+        else if (kucuk.slice(0,4) === kucukAnahtar.slice(0,4) && kucuk.length > 3) skor = 50;
+        if (skor > enIyiSkor) { enIyiSkor = skor; enIyi = sistemAlan; }
+      });
+    });
+    if (enIyi && enIyiSkor >= 50) { _v3.eslestirme[excKol] = enIyi; guvenTespit[excKol] = enIyiSkor; }
+    else { _v3.eslestirme[excKol] = 'atla'; guvenTespit[excKol] = 0; }
+  });
+  _v3.guvenilik = guvenTespit;
+}
+
+function _v3Adim3Render() {
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+  var TUM_ALANLAR = [
+    { v:'atla', l:'\u2014 Atla (bu s\u00fctun aktar\u0131lmas\u0131n) \u2014' },
+    { v:'aciklama', l:'\u00dcr\u00fcn A\u00e7\u0131klamas\u0131' }, { v:'urun_kodu', l:'\u00dcr\u00fcn Kodu' },
+    { v:'miktar', l:'Miktar' }, { v:'birim', l:'Birim' }, { v:'birim_fiyat', l:'Birim Fiyat' },
+    { v:'doviz', l:'D\u00f6viz' }, { v:'hs_kodu', l:'HS / GTIP Kodu' },
+    { v:'koli_adet', l:'Koli Adeti' }, { v:'brut_kg', l:'Br\u00fct A\u011f\u0131rl\u0131k' },
+    { v:'net_kg', l:'Net A\u011f\u0131rl\u0131k' }, { v:'hacim_m3', l:'Hacim (m\u00b3)' },
+    { v:'tedarikciAd', l:'Tedarik\u00e7i Ad\u0131' }
+  ];
+  var eslesti = Object.values(_v3.eslestirme).filter(function(v){ return v&&v!=='atla'; }).length;
+  var pct = _v3.excelKolonlar.length > 0 ? Math.round(eslesti/_v3.excelKolonlar.length*100) : 0;
+  var pctRenk = pct>=70?'#16A34A':pct>=40?'#D97706':'#DC2626';
+  var h = '';
+  h += '<div style="padding:10px 16px;background:var(--sf);border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:12px">';
+  h += '<div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--t2)">E\u015fle\u015fme durumu</span><span style="font-size:11px;font-weight:500;color:'+pctRenk+'">'+eslesti+'/'+_v3.excelKolonlar.length+' (%'+pct+')</span></div>';
+  h += '<div style="height:6px;background:var(--b);border-radius:3px"><div style="width:'+pct+'%;height:6px;background:'+pctRenk+';border-radius:3px"></div></div></div>';
+  h += '<button onclick="event.stopPropagation();window._v3SifirlaEslestir()" style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\ud83d\udd04 S\u0131f\u0131rla</button>';
+  h += '<button onclick="event.stopPropagation();window._v3YenidenOtomatik()" style="font-size:9px;padding:3px 8px;border:0.5px solid #185FA5;border-radius:4px;background:#E6F1FB;cursor:pointer;color:#185FA5;font-family:inherit">\ud83e\udde0 Otomatik</button>';
+  h += '</div>';
+  h += '<div style="padding:0 0 8px">';
+  _v3.excelKolonlar.forEach(function(excKol, idx) {
+    var secili = _v3.eslestirme[excKol] || 'atla';
+    var guv = _v3.guvenilik[excKol] || 0;
+    var eslesti2 = secili !== 'atla';
+    var bg = idx % 2 === 0 ? 'var(--sf)' : 'var(--s2)';
+    var ornekDeger = _v3.excelData[0] ? (_v3.excelData[0][excKol]||'') : '';
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:'+bg+';border-bottom:0.5px solid var(--b)">';
+    h += '<div style="min-width:150px;flex:0 0 150px"><div style="font-size:11px;font-weight:500;color:var(--t)">'+_esc(excKol)+'</div>';
+    if (ornekDeger) h += '<div style="font-size:9px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">\u00d6rnek: '+_esc(String(ornekDeger).slice(0,25))+'</div>';
+    h += '</div><span style="font-size:16px;color:var(--t3)">\u2192</span>';
+    h += '<div style="flex:1"><select onchange="event.stopPropagation();window._v3EslestirSec(\''+_esc(excKol)+'\',this.value)" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:1.5px solid '+(eslesti2?'#16A34A':'var(--b)')+';border-radius:6px;background:'+(eslesti2?'#EAF3DE':'var(--sf)')+';color:var(--t);font-family:inherit;cursor:pointer">';
+    TUM_ALANLAR.forEach(function(a){ h += '<option value="'+a.v+'"'+(secili===a.v?' selected':'')+'>'+_esc(a.l)+'</option>'; });
+    h += '</select></div>';
+    if (guv > 0) { var guvRenk=guv>=75?'#16A34A':guv>=50?'#D97706':'#DC2626'; var guvBg=guv>=75?'#EAF3DE':guv>=50?'#FAEEDA':'#FCEBEB'; h += '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:'+guvBg+';color:'+guvRenk+';font-weight:500;flex-shrink:0;min-width:40px;text-align:center">%'+guv+'</span>'; }
+    else { h += '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#f3f4f6;color:var(--t3);flex-shrink:0;min-width:40px;text-align:center">Atla</span>'; }
+    h += '</div>';
+  });
+  h += '</div>';
+  body.innerHTML = h;
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();window._v3Adim2()">\u2190 Geri</button><button class="btn btnp" onclick="event.stopPropagation();window._v3Adim4()">Devam \u2192 \u00d6nizle</button>';
+}
+
+window._v3EslestirSec = function(kolAdi, deger) { _v3.eslestirme[kolAdi] = deger; };
+window._v3SifirlaEslestir = function() { _v3.eslestirme = {}; _v3.guvenilik = {}; _v3Adim3Render(); };
+window._v3YenidenOtomatik = function() { _v3.eslestirme = {}; _v3.guvenilik = {}; _v3OtomatikEslesDir(); _v3Adim3Render(); window.toast?.('Otomatik e\u015fle\u015ftirme tamamland\u0131', 'ok'); };
+
+// ── ADIM 4 — ONIZLE & AKTAR (EXCEL-IMPORT-UPGRADE-001) ──────
+function _v3Adim4() {
+  _v3.adim = 4; _v3RenderSteps();
+  var body = document.getElementById('import-v3-body');
+  var footer = document.getElementById('import-v3-footer');
+  if (!body) return;
+  var ZORUNLU = ['aciklama','miktar'];
+  var eksikZorunlu = ZORUNLU.filter(function(z){ return !Object.values(_v3.eslestirme).includes(z); });
+  var mappedRows = _v3.excelData.map(function(satir){
+    var mapped = {};
+    _v3.excelKolonlar.forEach(function(k){ var alan = _v3.eslestirme[k]; if (alan && alan !== 'atla') mapped[alan] = satir[k]; });
+    return mapped;
+  }).filter(function(m){ return Object.keys(m).length > 0; });
+  _v3._mappedRows = mappedRows;
+  var hataliSatirlar = [];
+  mappedRows.forEach(function(m, idx){
+    var h2 = [];
+    if (!m.aciklama || !String(m.aciklama).trim()) h2.push('\u00dcr\u00fcn ad\u0131 bo\u015f');
+    if (m.miktar && isNaN(parseFloat(m.miktar))) h2.push('Miktar say\u0131 de\u011fil');
+    if (m.birim_fiyat && isNaN(parseFloat(m.birim_fiyat))) h2.push('Fiyat say\u0131 de\u011fil');
+    if (h2.length) hataliSatirlar.push({ satir: idx+1, hatalar: h2 });
+  });
+  var eslesti = Object.values(_v3.eslestirme).filter(function(v){ return v&&v!=='atla'; }).length;
+  var hazir = mappedRows.length - hataliSatirlar.length;
+  var h = '';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--b)">';
+  h += '<div style="background:#EAF3DE;padding:12px;text-align:center"><div style="font-size:9px;color:#27500A">Toplam</div><div style="font-size:22px;font-weight:500;color:#16A34A">'+mappedRows.length+'</div></div>';
+  h += '<div style="background:#E6F1FB;padding:12px;text-align:center"><div style="font-size:9px;color:#0C447C">E\u015fle\u015fen</div><div style="font-size:22px;font-weight:500;color:#185FA5">'+eslesti+'</div></div>';
+  h += '<div style="background:'+(hataliSatirlar.length?'#FCEBEB':'#EAF3DE')+';padding:12px;text-align:center"><div style="font-size:9px;color:'+(hataliSatirlar.length?'#791F1F':'#27500A')+'">Hatal\u0131</div><div style="font-size:22px;font-weight:500;color:'+(hataliSatirlar.length?'#DC2626':'#16A34A')+'">'+hataliSatirlar.length+'</div></div>';
+  h += '<div style="background:'+(eksikZorunlu.length?'#FCEBEB':'#EAF3DE')+';padding:12px;text-align:center"><div style="font-size:9px;color:'+(eksikZorunlu.length?'#791F1F':'#27500A')+'">Aktar\u0131labilir</div><div style="font-size:22px;font-weight:500;color:'+(eksikZorunlu.length?'#DC2626':'#16A34A')+'">'+hazir+'</div></div>';
+  h += '</div>';
+  if (eksikZorunlu.length) {
+    h += '<div style="padding:10px 16px;background:#FCEBEB;border-bottom:0.5px solid #FCA5A5;display:flex;align-items:center;gap:8px"><span style="font-size:16px">\u26a0\ufe0f</span><div><div style="font-size:11px;font-weight:500;color:#991B1B">Zorunlu alanlar e\u015fle\u015fmedi!</div><div style="font-size:10px;color:#7F1D1D">Eksik: '+eksikZorunlu.map(function(z){ return z==='aciklama'?'\u00dcr\u00fcn Ad\u0131':'Miktar'; }).join(', ')+'</div></div>';
+    h += '<button onclick="event.stopPropagation();window._v3Adim3()" style="margin-left:auto;font-size:10px;padding:3px 10px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;cursor:pointer;color:#DC2626;font-family:inherit">\u2190 Geri</button></div>';
+  }
+  if (hataliSatirlar.length > 0) {
+    h += '<div style="padding:8px 16px;background:#FAEEDA;border-bottom:0.5px solid var(--b)"><div style="font-size:10px;font-weight:500;color:#633806;margin-bottom:4px">\u26a0\ufe0f '+hataliSatirlar.length+' sat\u0131rda sorun var</div>';
+    hataliSatirlar.slice(0,3).forEach(function(hs){ h += '<div style="font-size:10px;color:#92400E">Sat\u0131r '+hs.satir+': '+hs.hatalar.join(', ')+'</div>'; });
+    if (hataliSatirlar.length > 3) h += '<div style="font-size:10px;color:var(--t3)">...ve '+(hataliSatirlar.length-3)+' sat\u0131r daha</div>';
+    h += '</div>';
+  }
+  if (mappedRows.length > 0) {
+    var onizKolonlar = Object.keys(mappedRows[0]).slice(0,6);
+    var ALAN_ADI = { aciklama:'\u00dcr\u00fcn Ad\u0131', urun_kodu:'Kod', miktar:'Miktar', birim:'Birim', birim_fiyat:'Fiyat', doviz:'D\u00f6viz', hs_kodu:'HS', koli_adet:'Koli', brut_kg:'Br\u00fct', tedarikciAd:'Tedarik\u00e7i' };
+    h += '<div style="padding:10px 16px 4px;font-size:10px;font-weight:500;color:var(--t2)">\ud83d\udc41\ufe0f \u0130lk 10 sat\u0131r \u00f6nizleme:</div>';
+    h += '<div style="overflow-x:auto;padding:0 16px 12px"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:var(--s2)"><th style="padding:4px 8px;text-align:left;border:0.5px solid var(--b);color:#185FA5">#</th>';
+    onizKolonlar.forEach(function(k){ h += '<th style="padding:4px 8px;text-align:left;border:0.5px solid var(--b);color:#185FA5;white-space:nowrap">'+(ALAN_ADI[k]||k)+'</th>'; });
+    h += '</tr></thead><tbody>';
+    mappedRows.slice(0,10).forEach(function(m, ri){
+      var hataVar = hataliSatirlar.find(function(hs){ return hs.satir === ri+1; });
+      h += '<tr style="background:'+(hataVar?'#FEF2F2':(ri%2?'var(--s2)':'var(--sf)'))+'">';
+      h += '<td style="padding:3px 8px;border:0.5px solid var(--b);color:var(--t3)">'+(ri+1)+(hataVar?'\u26a0\ufe0f':'')+'</td>';
+      onizKolonlar.forEach(function(k){ var val = String(m[k]||'').slice(0,25); h += '<td style="padding:3px 8px;border:0.5px solid var(--b);'+((!val&&ZORUNLU.indexOf(k)!==-1)?'background:#FCEBEB':'')+'">'+(_esc(val)||'<span style="color:#DC2626">Bo\u015f!</span>')+'</td>'; });
+      h += '</tr>';
+    });
+    if (mappedRows.length > 10) h += '<tr><td colspan="'+(onizKolonlar.length+1)+'" style="padding:6px;text-align:center;color:var(--t3);font-style:italic">... ve '+(mappedRows.length-10)+' sat\u0131r daha</td></tr>';
+    h += '</tbody></table></div>';
+  }
+  body.innerHTML = h;
+  var importEngel = eksikZorunlu.length > 0 || mappedRows.length === 0;
+  footer.innerHTML = '<button class="btn btns" onclick="event.stopPropagation();window._v3Adim3()">\u2190 Geri</button>'
+    + (importEngel ? '<button class="btn btnp" disabled style="opacity:.4;cursor:not-allowed">\u26d4 \u00d6nce Zorunlu Alanlar\u0131 E\u015fle\u015ftir</button>'
+    : '<button class="btn btnp" onclick="event.stopPropagation();window._ihrExcelImportV3Execute()" style="background:#16A34A;border-color:#16A34A">\u2705 '+hazir+' Sat\u0131r\u0131 Aktar</button>');
+}
+
+// ── ESKI FONKSIYONLAR KALDIRILDI (EXCEL-IMPORT-UPGRADE-001) ──
+// _v3AiEslestir, _v3RenderEslestirme, _v3ProcessRawData → yerine _v3OtomatikEslesDir, _v3Adim3Render, _v3OkuSheet
 window._v3Adim1Devam = function() {
   if (!_v3.seciliSablon) { window.toast?.('Sablon secin', 'err'); return; }
   _v3Adim2();
