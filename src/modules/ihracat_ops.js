@@ -348,7 +348,8 @@ function _ihrRenderDosyaDetayInto(id, targetEl) {
     { id: 'ozet', l: 'Ozet', paydas: null },
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
+    { id: 'mutabakat', l: 'Mutabakat', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 14px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
@@ -526,7 +527,8 @@ function _ihrRenderDosyaDetay(id) {
     { id: 'ozet', l: 'Ozet', paydas: null },
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
+    { id: 'mutabakat', l: 'Mutabakat', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
@@ -1120,6 +1122,7 @@ window._ihrDetayTab = function(tab, id) {
   if (tab === 'urunler') { _ihrDetayRenderUrunler(d, c); return; }
   if (tab === 'evraklar') { window._ihrDetayRenderEvraklar(d, c); return; }
   if (tab === 'paydas') { window._ihrRenderPaydas?.(c, id); return; }
+  if (tab === 'mutabakat') { window._ihrDetayRenderMutabakat?.(d, c); return; }
   if (tab === 'musteri') { window._ihrDetayRenderMusteri(d, c); return; }
   if (tab === 'sigortaci') { window._ihrDetayRenderSigortaci(d, c); return; }
   if (tab === 'gumrukcu') {
@@ -2373,6 +2376,129 @@ window._ihrDetayRenderEvraklar = function(d, c) {
 };
 
 /* IHR-DOKUMAN-001: Belge bazli paylasim linki */
+/* IHR-MUTABAKAT-001: Alis/CI/PL/GCB karsilastirma */
+window._ihrDetayRenderMutabakat = function(d, c) {
+  if (!c) c = _g('ihr-detay-content'); if (!c) return;
+  var dosyaId = d.id;
+  var ihU = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var tumSA = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : [];
+  var gcbM = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; });
+  var fN = function(n) { return Math.round(n).toLocaleString('tr-TR'); };
+
+  var satirlar = ihU.map(function(u) {
+    var esl = tumSA.find(function(s) { var uA = (u.aciklama || u.urun_adi || '').toLowerCase(); var sA = (s.urun || '').toLowerCase(); return (u.satinalma_id && String(s.id) === String(u.satinalma_id)) || (uA.length > 5 && sA.length > 5 && (uA.indexOf(sA.slice(0, 8)) !== -1 || sA.indexOf(uA.slice(0, 8)) !== -1)); }) || null;
+    var ciM = parseFloat(u.miktar) || 0; var ciT = ciM * (parseFloat(u.birim_fiyat) || 0);
+    var aM = esl ? (parseFloat(esl.miktar) || 0) : null; var aT = esl ? (aM * (parseFloat(esl.birimFiyat) || 0)) : null;
+    var mF = aM !== null ? Math.abs(ciM - aM) : null; var dF = aT !== null ? Math.abs(ciT - aT) : null;
+    var dur, dR, dB;
+    if (!esl) { dur = 'Al\u0131\u015f yok'; dR = '#A32D2D'; dB = '#FCEBEB'; }
+    else if (dF > 500) { dur = '$' + fN(dF) + ' fark'; dR = '#A32D2D'; dB = '#FCEBEB'; }
+    else if (mF > 0) { dur = 'Miktar +' + Math.round(mF); dR = '#633806'; dB = '#FAEEDA'; }
+    else if (!u.hs_kodu || u.hs_kodu.length < 6) { dur = 'HS eksik'; dR = '#633806'; dB = '#FAEEDA'; }
+    else { dur = 'E\u015fle\u015fti'; dR = '#27500A'; dB = '#EAF3DE'; }
+    return { u: u, esl: esl, ciM: ciM, ciT: ciT, aM: aM, aT: aT, mF: mF, dF: dF, dur: dur, dR: dR, dB: dB };
+  });
+
+  var topE = satirlar.filter(function(s) { return s.dur === 'E\u015fle\u015fti'; }).length;
+  var topF = satirlar.filter(function(s) { return s.dur !== 'E\u015fle\u015fti'; }).length;
+  var topCI = satirlar.reduce(function(a, s) { return a + s.ciT; }, 0);
+  var topAL = satirlar.reduce(function(a, s) { return a + (s.aT || 0); }, 0);
+  var marj = topCI > 0 ? Math.round((topCI - topAL) / topCI * 1000) / 10 : 0;
+  var h = '';
+
+  /* Toolbar */
+  h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--sf);border-bottom:0.5px solid var(--b);position:sticky;top:0;z-index:10">';
+  h += '<span style="font-size:11px;font-weight:500">Belge Mutabakat</span>';
+  h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#EAF3DE;color:#27500A">' + topE + ' e\u015fle\u015fti</span>';
+  if (topF > 0) h += '<span style="font-size:9px;padding:1px 7px;border-radius:10px;background:#FEF2F2;color:#DC2626">' + topF + ' fark</span>';
+  h += '<div style="flex:1"></div>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrMutabakatExcel?.(\'' + dosyaId + '\')" style="font-size:9px">Excel</button>';
+  h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrMutabakatPdf?.(\'' + dosyaId + '\')" style="font-size:9px">PDF Rapor</button>';
+  h += '</div>';
+
+  /* KPI */
+  h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--b)">';
+  var kS = 'background:var(--s2);border-radius:6px;padding:7px 10px;text-align:center';
+  h += '<div style="' + kS + '"><div style="font-size:9px;color:var(--t3)">Kalem</div><div style="font-size:18px;font-weight:500;color:var(--t)">' + satirlar.length + '</div></div>';
+  h += '<div style="' + kS + '"><div style="font-size:9px;color:#27500A">E\u015fle\u015fen</div><div style="font-size:18px;font-weight:500;color:#16A34A">' + topE + '</div></div>';
+  h += '<div style="' + kS + '"><div style="font-size:9px;color:#633806">Fark</div><div style="font-size:18px;font-weight:500;color:#D97706">' + topF + '</div></div>';
+  h += '<div style="' + kS + '"><div style="font-size:9px;color:#0C447C">CI Toplam</div><div style="font-size:18px;font-weight:500;color:#185FA5">$' + fN(topCI) + '</div></div>';
+  h += '<div style="' + kS + '"><div style="font-size:9px;color:var(--t3)">Br\u00fct Marj</div><div style="font-size:18px;font-weight:500;color:' + (marj > 10 ? '#16A34A' : marj > 0 ? '#D97706' : '#DC2626') + '">' + (marj > 0 ? '%' + marj : '\u2014') + '</div></div>';
+  h += '</div>';
+
+  /* Basliklar */
+  var kH = 'padding:5px 8px;font-size:9px;font-weight:500;border-left:0.5px solid var(--b)';
+  h += '<div style="display:flex;background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  h += '<div style="padding:5px 8px;font-size:9px;font-weight:500;color:var(--t3);min-width:160px;flex:1">\u00dcr\u00fcn</div>';
+  h += '<div style="' + kH + ';min-width:130px;background:#FAEEDA;color:#633806">Al\u0131\u015f Faturas\u0131</div>';
+  h += '<div style="' + kH + ';min-width:130px;background:#E6F1FB;color:#0C447C">CI</div>';
+  h += '<div style="' + kH + ';min-width:110px;background:#EAF3DE;color:#27500A">PL</div>';
+  h += '<div style="' + kH + ';min-width:100px;background:#FCEBEB;color:#791F1F">G\u00c7B</div>';
+  h += '<div style="' + kH + ';min-width:75px;color:var(--t3)">Durum</div>';
+  h += '</div>';
+
+  /* Satirlar */
+  if (!satirlar.length) { h += '<div style="text-align:center;padding:40px;color:var(--t3);font-size:11px">\u00dcr\u00fcn bulunamad\u0131</div>'; }
+  else {
+    satirlar.forEach(function(s, idx) {
+      var u = s.u; var bgR = idx % 2 === 1 ? 'background:var(--s2)' : '';
+      h += '<div style="display:flex;border-bottom:0.5px solid var(--b);' + bgR + '">';
+      /* Urun */
+      h += '<div style="padding:6px 8px;min-width:160px;flex:1;border-right:0.5px solid var(--b)"><div style="font-size:10px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">' + _esc(u.aciklama || u.urun_adi || '\u2014') + '</div><div style="font-size:8px;color:var(--t3)">' + _esc(u.urun_kodu || '') + '</div></div>';
+      /* Alis */
+      h += '<div style="padding:6px 8px;min-width:130px;background:' + (s.esl ? '#FAEEDA' : '#FCEBEB') + ';border-left:0.5px solid var(--b)">';
+      if (s.esl) { h += '<div style="font-size:10px">' + fN(s.aM) + '</div><div style="font-size:8px;color:#633806">$' + fN(s.aT || 0) + '</div>'; }
+      else { h += '<div style="font-size:9px;color:#A32D2D;font-style:italic">E\u015fle\u015fme yok</div>'; }
+      h += '</div>';
+      /* CI */
+      h += '<div style="padding:6px 8px;min-width:130px;background:#E6F1FB;border-left:0.5px solid var(--b)"><div style="font-size:10px;color:' + (s.mF > 0 ? '#DC2626' : 'var(--t)') + '">' + fN(s.ciM) + ' ' + _esc(u.birim || 'kg') + '</div><div style="font-size:8px;color:#0C447C">$' + fN(s.ciT) + '</div></div>';
+      /* PL */
+      h += '<div style="padding:6px 8px;min-width:110px;background:#EAF3DE;border-left:0.5px solid var(--b)"><div style="font-size:10px;color:#27500A">' + (u.koli_adet ? fN(u.koli_adet) + ' koli' : '\u2014') + '</div><div style="font-size:8px;color:#27500A">' + (u.brut_kg ? fN(u.brut_kg) + ' kg' : '\u2014') + '</div></div>';
+      /* GCB */
+      h += '<div style="padding:6px 8px;min-width:100px;background:#FCEBEB;border-left:0.5px solid var(--b)"><div style="font-size:9px;color:' + (gcbM.length ? '#27500A' : '#791F1F') + '">' + (gcbM.length ? _esc(gcbM[0].tescil_no || 'Tescilli') : 'Bekleniyor') + '</div></div>';
+      /* Durum */
+      h += '<div style="padding:6px 8px;min-width:75px;text-align:center;border-left:0.5px solid var(--b)"><span style="font-size:8px;padding:1px 6px;border-radius:3px;background:' + s.dB + ';color:' + s.dR + ';font-weight:500">' + s.dur + '</span></div>';
+      h += '</div>';
+    });
+    /* Toplam */
+    h += '<div style="display:flex;background:var(--s2);border-top:1px solid var(--b)">';
+    h += '<div style="padding:7px 8px;min-width:160px;flex:1;font-weight:500;font-size:10px">TOPLAM</div>';
+    h += '<div style="padding:7px 8px;min-width:130px;background:#FAEEDA;border-left:0.5px solid var(--b);font-weight:500;font-size:10px;color:#633806">$' + fN(topAL) + '</div>';
+    h += '<div style="padding:7px 8px;min-width:130px;background:#E6F1FB;border-left:0.5px solid var(--b);font-weight:500;font-size:10px;color:#0C447C">$' + fN(topCI) + '</div>';
+    h += '<div style="padding:7px 8px;min-width:110px;background:#EAF3DE;border-left:0.5px solid var(--b);font-size:10px;color:#27500A">' + fN(satirlar.reduce(function(a, s2) { return a + (parseInt(s2.u.koli_adet) || 0); }, 0)) + ' koli</div>';
+    h += '<div style="padding:7px 8px;min-width:100px;background:#FCEBEB;border-left:0.5px solid var(--b);font-size:10px;color:#791F1F">' + gcbM.length + ' G\u00c7B</div>';
+    h += '<div style="padding:7px 8px;min-width:75px;border-left:0.5px solid var(--b);font-size:10px;font-weight:500;color:' + (marj > 10 ? '#16A34A' : '#D97706') + '">' + (marj > 0 ? '%' + marj : '\u2014') + '</div>';
+    h += '</div>';
+  }
+  c.innerHTML = h;
+};
+
+window._ihrMutabakatPdf = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var c2 = document.createElement('div');
+  window._ihrDetayRenderMutabakat(d, c2);
+  var bugun = new Date().toLocaleDateString('tr-TR');
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mutabakat Raporu</title><style>body{font-family:system-ui,sans-serif;margin:20px;font-size:11px}@media print{.noprint{display:none}}</style></head><body><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div><div style="font-size:16px;font-weight:500">Belge Mutabakat Raporu</div><div style="font-size:11px;color:#6b7280">' + _esc(d.dosyaNo || dosyaId) + ' \u00b7 ' + _esc(d.musteriAd || '') + '</div></div><div style="text-align:right;font-size:10px;color:#6b7280">Duay Global LLC<br>' + bugun + '</div></div>' + c2.innerHTML + '<div class="noprint" style="margin-top:20px"><button onclick="window.print()" style="padding:6px 16px;background:#185FA5;color:#fff;border:none;border-radius:4px;cursor:pointer">Yazd\u0131r / PDF</button></div></body></html>';
+  var win = window.open('', '_blank', 'width=1000,height=700,scrollbars=yes');
+  if (win) { win.document.write(html); win.document.close(); } else window.toast?.('Popup engellendi', 'err');
+};
+
+window._ihrMutabakatExcel = function(dosyaId) {
+  var ihU = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var tumSA = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : [];
+  var satirlar = ['\u00dcr\u00fcn\tHS\tCI Miktar\tCI Tutar($)\tAl\u0131\u015f Miktar\tAl\u0131\u015f Tutar($)\tMiktar Fark\tDe\u011fer Fark($)\tKoli\tBr\u00fct Kg\tDurum'];
+  ihU.forEach(function(u) {
+    var esl = tumSA.find(function(s) { var uA = (u.aciklama || '').toLowerCase(); var sA = (s.urun || '').toLowerCase(); return (u.satinalma_id && String(s.id) === String(u.satinalma_id)) || (uA.length > 5 && sA.length > 5 && (uA.indexOf(sA.slice(0, 8)) !== -1 || sA.indexOf(uA.slice(0, 8)) !== -1)); });
+    var ciM = parseFloat(u.miktar) || 0; var ciT = ciM * (parseFloat(u.birim_fiyat) || 0);
+    var aM = esl ? (parseFloat(esl.miktar) || 0) : 0; var aT = esl ? (aM * (parseFloat(esl.birimFiyat) || 0)) : 0;
+    var dur = !esl ? 'Al\u0131\u015f yok' : Math.abs(ciT - aT) > 500 ? 'Deger fark\u0131' : Math.abs(ciM - aM) > 0 ? 'Miktar fark\u0131' : 'E\u015fle\u015fti';
+    satirlar.push([u.aciklama || '', u.hs_kodu || '', ciM, Math.round(ciT), aM, Math.round(aT), Math.round(Math.abs(ciM - aM)), Math.round(Math.abs(ciT - aT)), u.koli_adet || 0, u.brut_kg || 0, dur].join('\t'));
+  });
+  var blob = new Blob(['\ufeff' + satirlar.join('\n')], { type: 'text/tab-separated-values;charset=utf-8' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (_loadD().find(function(x) { return String(x.id) === String(dosyaId); })?.dosyaNo || dosyaId) + '_mutabakat.xls'; a.click();
+  window.toast?.('Excel indirildi', 'ok');
+};
+
 window._ihrBelgeLink = function(dosyaId, tur) {
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
   if (!d) return;
