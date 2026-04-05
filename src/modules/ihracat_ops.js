@@ -171,10 +171,8 @@ function _nextDosyaNo() {
 
 var IHR_TABS = [
   { id: 'dashboard', l: 'Dashboard' },
-  { id: 'emirler', l: 'İhracat Emirleri' },
+  { id: 'emirler', l: '\u0130hracat Emirleri' },
   { id: 'belgeler', l: 'Belgeler' },
-  { id: 'roller', l: 'Roller' },
-  { id: 'templateler', l: 'Templateler' },
 ];
 
 /* ══════════════════════════════════════════════════════════ */
@@ -182,7 +180,7 @@ window.renderIhracatOps = function() {
   var panel = _g('panel-ihracat-ops'); if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
-    panel.innerHTML = '<div class="ph"><div><div class="pht">İhracat Ops</div><div class="phs">İhracat emirleri ve operasyon takibi</div></div><div class="ur"><button class="btn btns" onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="font-size:11px">Formlar</button><button class="btn btns" onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="font-size:11px">KDV Iade</button><button class="btn btns" onclick="event.stopPropagation();window._ihrExcelImportV3?.()">Excel Import</button><button class="btn btns" onclick="window._ihrRunChecks()">Kontrol Et</button><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div><div id="ihr-tabs" style="display:none"></div><div id="ihr-content" style="padding:0"></div>';
+    panel.innerHTML = '<div class="ph"><div><div class="pht">İhracat Ops</div><div class="phs">İhracat emirleri ve operasyon takibi</div></div><div class="ur"><button class="btn btns" onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="font-size:11px">Formlar</button><button class="btn btns" onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="font-size:11px">KDV Iade</button><button class="btn btns" onclick="event.stopPropagation();window._ihrExcelImportV3?.()">Excel Import</button><button class="btn btns" onclick="event.stopPropagation();window._ihrAyarlarModal?.()" style="font-size:11px">\u2699 Ayarlar</button><button class="btn btns" onclick="window._ihrRunChecks()">Kontrol Et</button><button class="btn btnp" onclick="window._ihrYeniEmir()">+ Yeni Emir</button></div></div><div id="ihr-tabs" style="display:none"></div><div id="ihr-content" style="padding:0"></div>';
   }
   _ihrRenderTabs(); _ihrRenderContent();
 };
@@ -5248,14 +5246,14 @@ window._ihrRenderDashboard = function(el) {
   else h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:500;margin-top:6px;align-self:flex-start">Tamam</span>';
   h += '<div style="font-size:9px;color:#185FA5;margin-top:6px">A\u00e7 \u2192</div></div>';
   /* Hub 4: Roller */
-  h += '<div onclick="event.stopPropagation();window._ihrTab(\'roller\')" style="display:flex;flex-direction:column;flex:1;border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--sf)">';
+  h += '<div onclick="event.stopPropagation();window._ihrAyarlarModal?.();setTimeout(function(){window._ihrAyarlarTab?.(\'roller\')},50)" style="display:flex;flex-direction:column;flex:1;border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--sf)">';
   h += '<div style="width:24px;height:24px;border-radius:6px;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#27500A;margin-bottom:6px">R</div>';
   h += '<div style="font-size:11px;font-weight:600;color:var(--t)">Roller & Firmalar</div>';
   h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">G\u00fcmr\u00fck\u00e7\u00fc \u00b7 FW \u00b7 Sig.</div>';
   h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:500;margin-top:6px;align-self:flex-start">G\u00fcncel</span>';
   h += '<div style="font-size:9px;color:#185FA5;margin-top:6px">A\u00e7 \u2192</div></div>';
   /* Hub 5: Templateler */
-  h += '<div onclick="event.stopPropagation();window._ihrTab(\'templateler\')" style="display:flex;flex-direction:column;flex:1;border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--sf)">';
+  h += '<div onclick="event.stopPropagation();window._ihrAyarlarModal?.();setTimeout(function(){window._ihrAyarlarTab?.(\'templateler\')},50)" style="display:flex;flex-direction:column;flex:1;border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--sf)">';
   h += '<div style="width:24px;height:24px;border-radius:6px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#3C3489;margin-bottom:6px">T</div>';
   h += '<div style="font-size:11px;font-weight:600;color:var(--t)">Templateler</div>';
   h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">CI \u00b7 PL \u00b7 PI \u015fablonlar\u0131</div>';
@@ -5360,6 +5358,45 @@ window._ihrRenderDashboard = function(el) {
 
 /* IHR-DASHBOARD-V2-FIX-001: cross-IIFE scope export */
 window._ihrEvrakSaglik = _ihrEvrakSaglik;
+
+/* IHR-SIMPLIFY-001: Ayarlar modal (Roller + Templateler) */
+window._ihrAyarlarModal = function() {
+  var existing = document.getElementById('mo-ihr-ayarlar');
+  if (existing) { existing.remove(); return; }
+  var mo = document.createElement('div');
+  mo.id = 'mo-ihr-ayarlar';
+  mo.className = 'mo';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  mo.innerHTML = '<div class="moc" style="max-width:800px;padding:0;border-radius:14px;overflow:hidden;max-height:85vh;display:flex;flex-direction:column">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b);flex-shrink:0">'
+      + '<div style="font-size:14px;font-weight:600;color:var(--t)">\u0130hracat Ayarlar\u0131</div>'
+      + '<button onclick="event.stopPropagation();document.getElementById(\'mo-ihr-ayarlar\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">\u00d7</button>'
+    + '</div>'
+    + '<div style="display:flex;border-bottom:0.5px solid var(--b);padding:0 20px;flex-shrink:0">'
+      + '<div class="ihr-ayarlar-tab" data-tab="roller" onclick="event.stopPropagation();window._ihrAyarlarTab(\'roller\')" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:500">Roller & Firmalar</div>'
+      + '<div class="ihr-ayarlar-tab" data-tab="templateler" onclick="event.stopPropagation();window._ihrAyarlarTab(\'templateler\')" style="padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2)">Templateler</div>'
+    + '</div>'
+    + '<div id="ihr-ayarlar-content" style="flex:1;overflow-y:auto;min-height:300px"></div>'
+    + '<div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end;flex-shrink:0">'
+      + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-ihr-ayarlar\')?.remove()">Kapat</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); window._ihrAyarlarTab('roller'); }, 10);
+};
+
+window._ihrAyarlarTab = function(tab) {
+  var el = document.getElementById('ihr-ayarlar-content');
+  if (!el) return;
+  document.querySelectorAll('.ihr-ayarlar-tab').forEach(function(t) {
+    var aktif = t.dataset.tab === tab;
+    t.style.borderBottom = aktif ? '2px solid var(--ac)' : '2px solid transparent';
+    t.style.color = aktif ? 'var(--ac)' : 'var(--t2)';
+    t.style.fontWeight = aktif ? '500' : '400';
+  });
+  if (tab === 'roller') { _ihrRenderRoller(el); }
+  else if (tab === 'templateler') { _ihrRenderTemplates(el); }
+};
 
 /* Dashboard arama & siralama */
 window._ihrDbAra = function(q) { window._ihrDbAraQ = (q || '').trim().toLowerCase(); var el = _g('ihr-content'); if (el && _aktifTab === 'dashboard') window._ihrRenderDashboard(el); };
