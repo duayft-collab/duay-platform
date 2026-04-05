@@ -517,18 +517,18 @@ window._ihrGeriDon = function() { _aktifDosyaId = null; _ihrRenderContent(); };
 function _ihrDetayRenderOzet(d) {
   var c = _g('ihr-detay-content'); if (!c) return;
 
-  /* COCKPIT-FIX-001: Ust bar, timeline ve sekme barini gizle — cockpit kendi topbar'ini kullaniyor */
-  var _ihrContent = _g('ihr-content');
-  if (_ihrContent) {
-    var _kids = _ihrContent.children;
-    for (var _ki = 0; _ki < _kids.length; _ki++) {
-      var _kid = _kids[_ki];
-      if (_kid.id === 'ihr-detay-content') continue;
-      _kid.style.display = 'none';
+  /* COCKPIT-FIX-002: Ust bar, timeline ve sekme barini gizle */
+  /* ihr-detay-content'in kardes elementlerini bul ve gizle */
+  if (c.parentElement) {
+    var _siblings = c.parentElement.children;
+    for (var _si = 0; _si < _siblings.length; _si++) {
+      if (_siblings[_si] !== c) {
+        _siblings[_si].setAttribute('style', 'display:none !important');
+      }
     }
   }
   /* Content padding'i kaldir — cockpit tam ekran */
-  c.style.padding = '0';
+  c.setAttribute('style', 'padding:0;margin:0');
 
   var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi' || e.durum === 'tamamlandi'; }).length;
@@ -854,17 +854,16 @@ function _ihrDetayRenderOzet(d) {
 window._ihrDetayTab = function(tab, id) {
   var d = _loadD().find(function(x) { return String(x.id) === String(id); }); if (!d) return;
 
-  /* COCKPIT-FIX-001: Cockpit disindaki sekmelere gecerken gizlenen elementleri geri getir */
+  /* COCKPIT-FIX-002: Cockpit disindaki sekmelere gecerken gizlenen elementleri geri getir */
   if (tab !== 'ozet') {
-    var _ihrContent = _g('ihr-content');
-    if (_ihrContent) {
-      var _kids = _ihrContent.children;
-      for (var _ri = 0; _ri < _kids.length; _ri++) {
-        _kids[_ri].style.display = '';
+    var _cc = _g('ihr-detay-content');
+    if (_cc && _cc.parentElement) {
+      var _sibs = _cc.parentElement.children;
+      for (var _ri = 0; _ri < _sibs.length; _ri++) {
+        _sibs[_ri].removeAttribute('style');
       }
     }
-    var _cc = _g('ihr-detay-content');
-    if (_cc) _cc.style.padding = '16px 20px';
+    if (_cc) _cc.setAttribute('style', 'padding:16px 20px');
   }
 
   document.querySelectorAll('#ihr-detay-tabs > div').forEach(function(b) { b.style.borderBottomColor = 'transparent'; b.style.color = 'var(--t2)'; b.style.fontWeight = '400'; });
