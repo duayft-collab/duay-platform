@@ -629,6 +629,30 @@ function _syncFirestoreMerged(path, data) {
 var _offlineWriteQueue = [];
 var _offlineQueueProcessing = false;
 
+// Sayfa yenilense bile kuyruk kaybolmasın — localStorage'dan yükle
+try {
+  var _savedQueue = JSON.parse(localStorage.getItem('ak_write_queue') || '[]');
+  if (Array.isArray(_savedQueue) && _savedQueue.length > 0) {
+    // 24 saatten eski kayıtları at
+    var _now = Date.now();
+    _offlineWriteQueue = _savedQueue.filter(function(q) { return q.ts && (_now - q.ts) < 86400000; });
+    if (_offlineWriteQueue.length > 0) {
+      console.info('[DB:queue] localStorage\'dan', _offlineWriteQueue.length, 'bekleyen yazma yüklendi');
+    }
+  }
+} catch(e) {}
+
+/** Kuyruğu localStorage'a kaydet */
+function _persistQueue() {
+  try {
+    if (_offlineWriteQueue.length > 0) {
+      localStorage.setItem('ak_write_queue', JSON.stringify(_offlineWriteQueue));
+    } else {
+      localStorage.removeItem('ak_write_queue');
+    }
+  } catch(e) {}
+}
+
 function _queueOfflineWrite(path, data, mode) {
   // Aynı path için eski kuyruğu güncelle (en güncel veri kazanır)
   var existing = _offlineWriteQueue.findIndex(function(q) { return q.path === path; });
@@ -638,26 +662,40 @@ function _queueOfflineWrite(path, data, mode) {
   } else {
     _offlineWriteQueue.push({ path: path, data: data, mode: mode || 'set', ts: Date.now() });
   }
+  _persistQueue();
   console.info('[DB:queue] Kuyruğa eklendi:', path, '| Kuyruk:', _offlineWriteQueue.length);
-  // Auth hazır olunca kuyruğu işle
+  // Auth hazır olunca kuyruğu işle — onAuthStateChanged ile (timeout yok)
   if (!_offlineQueueProcessing) {
     _offlineQueueProcessing = true;
-    var _checkInterval = setInterval(function() {
-      var fbAuth = window.Auth?.getFBAuth?.();
-      var fbDB = window.Auth?.getFBDB?.();
-      if (fbDB && fbAuth?.currentUser) {
-        clearInterval(_checkInterval);
-        _offlineQueueProcessing = false;
-        console.info('[DB:queue] Auth hazır — kuyruk işleniyor:', _offlineWriteQueue.length, 'kayıt');
-        var queue = _offlineWriteQueue.splice(0);
-        queue.forEach(function(q) {
-          _syncFirestore(q.path, q.data, q.mode);
-        });
-      }
-    }, 1000);
-    // 30 saniye sonra timeout — sonsuz döngü engeli
-    setTimeout(function() { clearInterval(_checkInterval); _offlineQueueProcessing = false; }, 30000);
+    var _fbAuth = window.Auth?.getFBAuth?.();
+    if (_fbAuth) {
+      var _unsub = _fbAuth.onAuthStateChanged(function(user) {
+        if (user && window.Auth?.getFBDB?.()) {
+          if (_unsub) _unsub();
+          _offlineQueueProcessing = false;
+          console.info('[DB:queue] Auth hazır — kuyruk işleniyor:', _offlineWriteQueue.length, 'kayıt');
+          var queue = _offlineWriteQueue.splice(0);
+          _persistQueue();
+          queue.forEach(function(q) {
+            _syncFirestore(q.path, q.data, q.mode);
+          });
+        }
+      });
+    }
   }
+}
+
+/** Login sonrası bekleyen kuyruğu işle — startRealtimeSync'ten çağrılır */
+function _processPersistedQueue() {
+  if (_offlineWriteQueue.length === 0) return;
+  var FB_DB = window.Auth?.getFBDB?.();
+  if (!FB_DB) return;
+  console.info('[DB:queue] Login sonrası kuyruk işleniyor:', _offlineWriteQueue.length, 'kayıt');
+  var queue = _offlineWriteQueue.splice(0);
+  _persistQueue();
+  queue.forEach(function(q) {
+    _syncFirestore(q.path, q.data, q.mode);
+  });
 }
 
 /**
@@ -2091,6 +2129,8 @@ function startRealtimeSync() {
   console.log('[SYNC] startRealtimeSync çağrıldı. _syncStarted:', Object.keys(_syncStarted).length, '| FB_DB:', !!window.Auth?.getFBDB?.(), '| FB_AUTH currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
   if (_syncStarted._all) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
   _syncStarted._all = true;
+  // Bekleyen yazma kuyruğunu işle (sayfa yenileme/timeout'tan kalan)
+  _processPersistedQueue();
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
     // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
