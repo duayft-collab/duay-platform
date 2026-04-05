@@ -2221,6 +2221,9 @@ function startRealtimeSync() {
   // Sync göstergesini başlat
   _setSyncStatus('ok');
 
+  // REALTIME-FIX-001: Yardımcı koleksiyonları başlat (aux_sync.js)
+  setTimeout(function() { window.AuxSync?.start(); }, 500);
+
   // ── Token yenileme — 45 dakikada bir (1 saatlik expiry öncesi) ──
   if (!window._tokenRefreshTimer) {
     window._tokenRefreshTimer = setInterval(function() {
@@ -2382,6 +2385,8 @@ function stopRealtimeSync() {
   });
   _syncStarted = {};
   console.info('[DB] Realtime sync durduruldu.');
+  // REALTIME-FIX-001: Yardımcı listener'ları da durdur
+  window.AuxSync?.stop();
 }
 
 
