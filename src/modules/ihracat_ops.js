@@ -543,10 +543,7 @@ function _ihrRenderDosyaDetay(id) {
     { id: 'ozet', l: 'Ozet', paydas: null },
     { id: 'urunler', l: 'Urunler', paydas: null },
     { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'musteri', l: 'Musteri', paydas: 'musteri' },
-    { id: 'sigortaci', l: 'Sigortaci', paydas: 'sigortaci' },
-    { id: 'gumrukcu', l: 'Gumrukcu', paydas: 'gumrukcu' },
-    { id: 'forwarder', l: 'Forwarder', paydas: 'forwarder' }
+    { id: 'paydas', l: 'Payda\u015flar', paydas: null }
   ];
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
@@ -879,11 +876,10 @@ function _ihrDetayRenderOzet(d) {
   h += '<span style="font-size:9px;padding:2px 7px;border-radius:3px;background:' + durumObj.bg + ';color:' + durumObj.c + ';font-weight:500;flex-shrink:0">' + _esc(durumObj.l) + '</span>';
   /* Ayrac */
   h += '<div style="width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0"></div>';
-  /* 7 sekme inline */
+  /* 4 sekme inline */
   var _sekmeler = [
     { id:'ozet', l:'Ozet' }, { id:'urunler', l:'Urunler' }, { id:'evraklar', l:'Evraklar' },
-    { id:'musteri', l:'Musteri' }, { id:'sigortaci', l:'Sigortaci' },
-    { id:'gumrukcu', l:'Gumrukcu' }, { id:'forwarder', l:'Forwarder' }
+    { id:'paydas', l:'Payda\u015flar' }
   ];
   _sekmeler.forEach(function(s) {
     var aktif = s.id === 'ozet';
@@ -1138,6 +1134,7 @@ window._ihrDetayTab = function(tab, id) {
   if (tab === 'ozet') { _ihrDetayRenderOzet(d); return; }
   if (tab === 'urunler') { _ihrDetayRenderUrunler(d, c); return; }
   if (tab === 'evraklar') { window._ihrDetayRenderEvraklar(d, c); return; }
+  if (tab === 'paydas') { window._ihrRenderPaydas?.(c, id); return; }
   if (tab === 'musteri') { window._ihrDetayRenderMusteri(d, c); return; }
   if (tab === 'sigortaci') { window._ihrDetayRenderSigortaci(d, c); return; }
   if (tab === 'gumrukcu') {
@@ -5360,6 +5357,74 @@ window._ihrRenderDashboard = function(el) {
 window._ihrEvrakSaglik = _ihrEvrakSaglik;
 
 /* IHR-SIMPLIFY-001: Ayarlar modal (Roller + Templateler) */
+/* IHR-PAYDAS-001: 4 paydas sekmesi tek ekranda */
+window._ihrRenderPaydas = function(el, dosyaId) {
+  if (!el) return;
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  var _paydaslar = [
+    { id: 'musteri', l: 'M\u00fc\u015fteri', ikon: 'M\u00dc' },
+    { id: 'sigortaci', l: 'Sigortac\u0131', ikon: 'S\u0130' },
+    { id: 'gumrukcu', l: 'G\u00fcmr\u00fck\u00e7\u00fc', ikon: 'G\u00dc' },
+    { id: 'forwarder', l: 'Forwarder', ikon: 'FW' }
+  ];
+  var h = '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 16px;background:var(--sf)">';
+  _paydaslar.forEach(function(p) {
+    var pp = window._ihrPaydasPct?.(dosyaId, p.id) || { pct: 0 };
+    var pctRenk = pp.pct >= 100 ? '#16a34a' : pp.pct > 0 ? '#d97706' : '#dc2626';
+    h += '<div id="ihr-paydas-tab-' + p.id + '" onclick="event.stopPropagation();window._ihrPaydasAlt(\'' + p.id + '\',\'' + dosyaId + '\')" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);display:flex;align-items:center;gap:4px">';
+    h += p.l;
+    if (pp.pct < 100) h += ' <span style="font-size:9px;color:' + pctRenk + ';font-weight:600">%' + pp.pct + '</span>';
+    else h += ' <span style="font-size:9px;color:#16a34a">\u2713</span>';
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '<div id="ihr-paydas-icerik" style="padding:0"></div>';
+  el.innerHTML = h;
+  window._ihrPaydasAlt('musteri', dosyaId);
+};
+
+window._ihrPaydasAlt = function(tip, dosyaId) {
+  ['musteri','sigortaci','gumrukcu','forwarder'].forEach(function(t) {
+    var btn = document.getElementById('ihr-paydas-tab-' + t);
+    if (btn) {
+      btn.style.borderBottom = t === tip ? '2px solid var(--ac)' : '2px solid transparent';
+      btn.style.color = t === tip ? 'var(--ac)' : 'var(--t2)';
+      btn.style.fontWeight = t === tip ? '500' : '400';
+    }
+  });
+  var el = document.getElementById('ihr-paydas-icerik');
+  if (!el) return;
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  if (!d) return;
+  if (tip === 'musteri') { window._ihrDetayRenderMusteri?.(d, el); }
+  else if (tip === 'sigortaci') { window._ihrDetayRenderSigortaci?.(d, el); }
+  else if (tip === 'gumrukcu') {
+    var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
+    var gm = d.gumrukcu_id ? gumrukculer.find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
+    var gh = '<div style="padding:16px 20px">';
+    gh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:12px;font-weight:500">G\u00fcmr\u00fck\u00e7\u00fc</div><button class="btn btnp" onclick="event.stopPropagation();window._ihrGumrukcuAta(\'' + d.id + '\')" style="font-size:11px">' + (gm ? 'De\u011fi\u015ftir' : 'Ata') + '</button></div>';
+    if (gm) {
+      var _dr = function(l, v) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t3)">' + l + '</span><span style="color:var(--t);font-weight:500">' + (typeof window.escapeHtml === 'function' ? window.escapeHtml(v || '\u2014') : (v || '\u2014')) + '</span></div>'; };
+      gh += _dr('Firma', gm.firma_adi) + _dr('Yetkili', gm.yetkili_adi) + _dr('Telefon', gm.telefon) + _dr('E-posta', gm.eposta);
+      gh += '<div style="margin-top:12px;display:flex;gap:6px"><button class="btn btns" onclick="event.stopPropagation();window._ihrGumrukcuMail?.(\'' + d.id + '\')" style="font-size:11px">Mail G\u00f6nder</button><button class="btn btns" onclick="event.stopPropagation();window._ihrGumrukcuDuzenle?.(\'' + gm.id + '\')" style="font-size:11px">D\u00fczenle</button></div>';
+    } else { gh += '<div style="text-align:center;padding:24px;color:var(--t3)">G\u00fcmr\u00fck\u00e7\u00fc atanmad\u0131</div>'; }
+    gh += '</div>'; el.innerHTML = gh;
+  }
+  else if (tip === 'forwarder') {
+    var forwarderlar = _loadFW().filter(function(f) { return !f.isDeleted; });
+    var fw = d.forwarder_id ? forwarderlar.find(function(f) { return String(f.id) === String(d.forwarder_id); }) : null;
+    var fh = '<div style="padding:16px 20px">';
+    fh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:12px;font-weight:500">Forwarder</div><button class="btn btnp" onclick="event.stopPropagation();window._ihrForwarderAta?.(\'' + d.id + '\')" style="font-size:11px">' + (fw ? 'De\u011fi\u015ftir' : 'Ata') + '</button></div>';
+    if (fw) {
+      var _dr2 = function(l, v) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t3)">' + l + '</span><span style="color:var(--t);font-weight:500">' + (typeof window.escapeHtml === 'function' ? window.escapeHtml(v || '\u2014') : (v || '\u2014')) + '</span></div>'; };
+      fh += _dr2('Firma', fw.firma_adi) + _dr2('Yetkili', fw.yetkili_adi) + _dr2('Telefon', fw.telefon) + _dr2('E-posta', fw.eposta);
+      fh += '<div style="margin-top:12px;display:flex;gap:6px"><button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderMail?.(\'' + d.id + '\')" style="font-size:11px">Mail G\u00f6nder</button><button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderDuzenle?.(\'' + fw.id + '\')" style="font-size:11px">D\u00fczenle</button></div>';
+    } else { fh += '<div style="text-align:center;padding:24px;color:var(--t3)">Forwarder atanmad\u0131</div>'; }
+    fh += '</div>'; el.innerHTML = fh;
+  }
+};
+
 window._ihrAyarlarModal = function() {
   var existing = document.getElementById('mo-ihr-ayarlar');
   if (existing) { existing.remove(); return; }
