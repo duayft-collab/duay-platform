@@ -6178,7 +6178,7 @@ window._ihrRenderDashboard = function(el) {
   var _imS = 'width:100%;padding:5px;border-radius:5px;font-size:9px;cursor:pointer;font-family:inherit;';
   h += '<div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:3px"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">H\u0131zl\u0131 \u0130\u015flemler</div>';
   h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">KDV \u0130ade Hesapla</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrExcelImportV3?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Excel Import</button>';
+  h += '<button onclick="event.stopPropagation();window.excelImportAc?.(_aktifDosyaId||\'\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Excel Import \u2191</button>';
   h += '<button onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Formlar</button>';
   h += '<button onclick="event.stopPropagation();window._ihrAyarlarModal?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Rol & Firmalar</button>';
   h += '</div></div>';
