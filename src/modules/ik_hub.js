@@ -2081,7 +2081,7 @@ function go(id,btn,title){
   if(id==='suggest')     _ikRenderSuggestions();
   if(id==='admin')       renderAdminPanel();
 }
-function st(pre,id,btn){
+function _ikSt(pre,id,btn){
   document.querySelectorAll(`[id^="${pre}-"].tpanel`).forEach(p=>p.classList.remove('active'));
   const el=document.getElementById(pre+'-'+id);if(el) el.classList.add('active');
   const parentPanel=el?.closest('.panel');
@@ -2579,7 +2579,7 @@ function bankStaticAdd(idx){
   }
   renderIQList();
   const formTab = document.querySelectorAll('#panel-mulakat .tab')[1];
-  if(formTab){ st('mul','form',formTab); }
+  if(formTab){ _ikSt('mul','form',formTab); }
   renderSoruBankasi();
 }
 async function saveInterview(){
@@ -3110,7 +3110,7 @@ function createUser(){
   document.getElementById('nu-display').value='';
   document.getElementById('nu-pass').value='';
   renderAdminUserList();
-  setTimeout(()=>{ errEl.innerHTML=''; st('admin','list',document.querySelectorAll('#panel-admin .tab')[0]); },1800);
+  setTimeout(()=>{ errEl.innerHTML=''; _ikSt('admin','list',document.querySelectorAll('#panel-admin .tab')[0]); },1800);
 }
 
 function openEditUser(uid){
@@ -3212,7 +3212,7 @@ function aiAddToForm(idx){
   }
   renderIQList();
   go('mulakat',null,_ikT('interview_form_nav'));
-  setTimeout(()=>{ const t=document.querySelectorAll('#panel-mulakat .tab')[1]; if(t) st('mul','form',t); },50);
+  setTimeout(()=>{ const t=document.querySelectorAll('#panel-mulakat .tab')[1]; if(t) _ikSt('mul','form',t); },50);
 }
 
 // ══════════════════════════════════════════════════
@@ -3470,7 +3470,7 @@ function _ikStTab(group, tab, btn) {
     // st fonksiyonu 'mul' gibi group id kullanıyor
     // hub'daki ID'ler ikh- prefix'li, geçici swap yap
     const groupEl = document.getElementById('ikh-' + group + '-' + tab);
-    st(group, tab, btn);
+    _ikSt(group, tab, btn);
   }
 }
 
