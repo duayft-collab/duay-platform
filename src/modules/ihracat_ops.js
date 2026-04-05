@@ -2451,7 +2451,7 @@ window._ihrEvrakEkle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrEvrakDuzenle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrEvrakOnayla = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrEvrakGonder = function() { window.toast?.('Yakında', 'warn'); };
-window._ihrEvrakOlustur = function() { window.toast?.('Yakında', 'warn'); };
+/* _ihrEvrakOlustur eski stub kaldırıldı — tanım ikinci IIFE'de */
 window._ihrGumrukcuAta = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrGumrukcuEkle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrGumrukcuDuzenle = function() { window.toast?.('Yakında', 'warn'); };
@@ -2468,29 +2468,144 @@ window._ihrGumrukcuMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrForwarderMail = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateEkle = function() { window.toast?.('Yakında', 'warn'); };
 window._ihrTemplateKullan = function(id) { window._ihrYeniEmir(id); };
-window._ihrPdfOnizle = function(dosyaId, tur, urunler) {
+/* IHR-BELGE-B-001: PDF onizleme → belge uret sistemi */
+window._ihrPdfOnizle = function(dosyaId, tur) {
+  window._ihrBelgeUret(dosyaId, tur);
+};
+
+/* _ihrEvrakOlustur — tanım ikinci IIFE'de (satır ~3081), evrak kaydı oluşturur + _ihrPdfOnizle çağırır */
+
+/** Doluluk hesapla */
+window._ihrDolulukHesapla = function(dosyaId, tur) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return { pct: 0, dolu: [], eksik: [] };
+  var u = _loadU().filter(function(x) { return String(x.dosya_id) === String(dosyaId) && !x.isDeleted; });
+  var KONTROLLER = {
+    PI: [['M\u00fc\u015fteri ad\u0131', !!d.musteriAd], ['\u00dcr\u00fcnler mevcut', u.length > 0], ['Birim fiyatlar', u.every(function(x) { return x.birim_fiyat > 0; })], ['Teslim \u015fekli', !!d.teslim_sekli], ['\u00d6deme ko\u015fullar\u0131', !!(d.odeme_kosulu || d.odeme_sarti)]],
+    CI: [['M\u00fc\u015fteri ad\u0131', !!d.musteriAd], ['\u00dcr\u00fcnler mevcut', u.length > 0], ['HS kodlar\u0131', u.length > 0 && u.every(function(x) { return !!x.hs_kodu; })], ['Birim fiyatlar', u.every(function(x) { return x.birim_fiyat > 0; })], ['Teslim \u015fekli', !!d.teslim_sekli]],
+    PL: [['\u00dcr\u00fcnler mevcut', u.length > 0], ['Koli adetleri', u.every(function(x) { return x.koli_adet > 0; })], ['Br\u00fct a\u011f\u0131rl\u0131k', u.every(function(x) { return x.brut_kg > 0; })], ['Hacim', u.every(function(x) { return x.hacim_m3 > 0; })], ['Konteyner tipi', !!d.konteyner_tipi]],
+    TRFAT: [['M\u00fc\u015fteri ad\u0131', !!d.musteriAd], ['\u00dcr\u00fcnler mevcut', u.length > 0], ['Birim fiyatlar', u.every(function(x) { return x.birim_fiyat > 0; })], ['Teslim \u015fekli', !!d.teslim_sekli]],
+    SEVK: [['Forwarder atand\u0131', !!d.forwarder_id], ['Konteyner tipi', !!d.konteyner_tipi], ['Liman bilgisi', !!(d.yukl_limani || d.varis_limani)]],
+    YUK: [['Forwarder atand\u0131', !!d.forwarder_id], ['\u00dcr\u00fcnler mevcut', u.length > 0], ['Koli adetleri', u.every(function(x) { return x.koli_adet > 0; })], ['Teslim tarihi', !!d.bitis_tarihi]],
+    TTF: [['\u00dcr\u00fcnler mevcut', u.length > 0], ['Birim fiyatlar', u.every(function(x) { return x.birim_fiyat > 0; })], ['Teslim \u015fekli', !!d.teslim_sekli]]
+  };
+  var kontrol = KONTROLLER[tur] || [];
+  var dolu = kontrol.filter(function(k) { return k[1]; }).map(function(k) { return k[0]; });
+  var eksik = kontrol.filter(function(k) { return !k[1]; }).map(function(k) { return k[0]; });
+  return { pct: kontrol.length > 0 ? Math.round(dolu.length / kontrol.length * 100) : 0, dolu: dolu, eksik: eksik };
+};
+
+/** Belge uret — doluluk modali */
+window._ihrBelgeUret = function(dosyaId, tur) {
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) { window.toast?.('Dosya bulunamadı', 'err'); return; }
-  // IHR-HS-001: CI/PL için HS kodu zorunlu
-  if (tur === 'CI' || tur === 'PL') {
-    var _hsU2 = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
-    var _hsE2 = _hsU2.filter(function(u) { return !u.hs_kodu; }).length;
-    if (_hsE2 > 0) { window.toast?.(_hsE2 + ' üründe HS/GTIP kodu eksik — ' + tur + ' üretilemez', 'err'); return; }
+  if (!d) { window.toast?.('Dosya bulunamad\u0131', 'err'); return; }
+  var dl = window._ihrDolulukHesapla(dosyaId, tur);
+  var TUR_ADI = { PI: 'Proforma Invoice', CI: 'Commercial Invoice', PL: 'Packing List', TRFAT: 'TR \u0130hracat Faturas\u0131', SEVK: 'Sevk Emri', YUK: 'Y\u00fckleme Talimat\u0131', TTF: 'Teklif Talep Formu' };
+  var turAdi = TUR_ADI[tur] || tur;
+  var pR = dl.pct >= 80 ? '#16A34A' : dl.pct >= 50 ? '#ca8a04' : '#dc2626';
+  var pB = dl.pct >= 80 ? '#EAF3DE' : dl.pct >= 50 ? '#fef9c3' : '#fef2f2';
+  var old = _g('mo-belge-uret'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-belge-uret';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var dR = dl.dolu.map(function(x) { return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px"><span style="width:7px;height:7px;border-radius:50%;background:#16A34A;flex-shrink:0"></span>' + _esc(x) + '</div>'; }).join('');
+  var eR = dl.eksik.map(function(x) { return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px"><span style="width:7px;height:7px;border-radius:50%;background:#dc2626;flex-shrink:0"></span>' + _esc(x) + '</div>'; }).join('');
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
+    + '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:600">' + _esc(turAdi) + ' Olu\u015ftur</div><button onclick="event.stopPropagation();document.getElementById(\'mo-belge-uret\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div>'
+    + '<div style="padding:14px 18px">'
+    + '<div style="background:' + pB + ';border-radius:8px;padding:10px 12px;margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;font-weight:500;color:' + pR + '">Veri doluluk oran\u0131</span><span style="font-size:16px;font-weight:700;color:' + pR + '">%' + dl.pct + '</span></div><div style="height:6px;background:rgba(0,0,0,.1);border-radius:3px"><div style="width:' + dl.pct + '%;height:6px;background:' + pR + ';border-radius:3px"></div></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div><div style="font-size:9px;font-weight:500;color:#16A34A;text-transform:uppercase;margin-bottom:5px">Dolu Alanlar</div>' + dR + '</div><div><div style="font-size:9px;font-weight:500;color:#dc2626;text-transform:uppercase;margin-bottom:5px">Eksik Alanlar</div>' + eR + '</div></div>'
+    + (dl.eksik.length > 0 ? '<div style="background:#fef9c3;border-radius:5px;padding:6px 10px;font-size:9px;color:#92400E;margin-bottom:10px">\u26a0 ' + dl.eksik.length + ' eksik alan var. Yine de olu\u015fturabilirsiniz.</div>' : '')
+    + '<div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:6px">\u0130\u00e7erik Seviyesi</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:14px">'
+    + '<button id="bu-sev-yonetici" onclick="event.stopPropagation();window._ihrBuSetSeviye(\'yonetici\')" style="flex:1;padding:6px;font-size:9px;border-radius:5px;border:1.5px solid #185FA5;background:#E6F1FB;cursor:pointer;font-family:inherit;font-weight:500;color:#0C447C">Y\u00f6netici</button>'
+    + '<button id="bu-sev-sirket" onclick="event.stopPropagation();window._ihrBuSetSeviye(\'sirket\')" style="flex:1;padding:6px;font-size:9px;border-radius:5px;border:0.5px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u015eirket \u0130\u00e7i</button>'
+    + '<button id="bu-sev-dis" onclick="event.stopPropagation();window._ihrBuSetSeviye(\'dis\')" style="flex:1;padding:6px;font-size:9px;border-radius:5px;border:0.5px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">D\u0131\u015f Taraf</button>'
+    + '</div><input type="hidden" id="bu-dosya-id" value="' + _esc(dosyaId) + '"><input type="hidden" id="bu-tur" value="' + _esc(tur) + '"><input type="hidden" id="bu-seviye" value="yonetici">'
+    + '</div>'
+    + '<div style="padding:10px 18px;border-top:0.5px solid var(--b);display:flex;gap:8px;justify-content:flex-end"><button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-belge-uret\')?.remove()">\u0130ptal</button><button class="btn btnp" onclick="event.stopPropagation();window._ihrBelgeAc()">Olu\u015ftur \u2192</button></div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrBuSetSeviye = function(s) {
+  ['yonetici', 'sirket', 'dis'].forEach(function(x) {
+    var btn = document.getElementById('bu-sev-' + x); if (!btn) return;
+    if (x === s) { btn.style.border = '1.5px solid #185FA5'; btn.style.background = '#E6F1FB'; btn.style.color = '#0C447C'; btn.style.fontWeight = '500'; }
+    else { btn.style.border = '0.5px solid var(--b)'; btn.style.background = 'transparent'; btn.style.color = 'var(--t2)'; btn.style.fontWeight = '400'; }
+  });
+  var hid = document.getElementById('bu-seviye'); if (hid) hid.value = s;
+};
+
+/** Belge ac — HTML yeni pencere */
+window._ihrBelgeAc = function() {
+  var dosyaId = _g('bu-dosya-id')?.value; var tur = _g('bu-tur')?.value; var seviye = _g('bu-seviye')?.value || 'dis';
+  if (!dosyaId || !tur) return;
+  document.getElementById('mo-belge-uret')?.remove();
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var urunler = _loadU().filter(function(x) { return String(x.dosya_id) === String(dosyaId) && !x.isDeleted; });
+  var gm = null; _loadGM().forEach(function(g) { if (String(g.id) === String(d.gumrukcu_id)) gm = g; });
+  var fw = null; _loadFW().forEach(function(f) { if (String(f.id) === String(d.forwarder_id)) fw = f; });
+  var html = window._ihrBelgeHtml(d, tur, seviye, urunler, gm, fw);
+  var win = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+  if (win) { win.document.write(html); win.document.close(); }
+  else { window.toast?.('Popup engellendi', 'err'); }
+  window.logActivity?.('ihracat', tur + ' belgesi olu\u015fturuldu (' + seviye + ')', dosyaId);
+};
+
+/** Belge HTML sablonu — Design B */
+window._ihrBelgeHtml = function(d, tur, seviye, urunler, gm, fw) {
+  var y = seviye === 'yonetici';
+  var ic = seviye === 'yonetici' || seviye === 'sirket';
+  var TUR_ADI = { PI: 'PROFORMA INVOICE', CI: 'COMMERCIAL INVOICE', PL: 'PACKING LIST', TRFAT: 'T\u00dcRK\u00c7E \u0130HRACAT FATURASI', SEVK: 'SEVK EMR\u0130', YUK: 'Y\u00dcKLEME TALIMATI', TTF: 'TEKL\u0130F TALEP FORMU' };
+  var turAdi = TUR_ADI[tur] || tur;
+  var topUSD = 0, topKoli = 0, topKg = 0, topM3 = 0;
+  urunler.forEach(function(u) { topUSD += (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); topKoli += parseInt(u.koli_adet) || 0; topKg += parseFloat(u.brut_kg) || 0; topM3 += parseFloat(u.hacim_m3) || 0; });
+  var fU = function(n) { return '$' + Math.round(n).toLocaleString('tr-TR'); };
+  var maliyetUSD = topUSD * 0.815; var karUSD = topUSD - maliyetUSD; var marjPct = topUSD > 0 ? Math.round(karUSD / topUSD * 1000) / 10 : 0;
+  var belgeNo = tur + '-' + (d.dosyaNo || '0001').replace('IHR-', '');
+  var bugun = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  var gecerlilik = new Date(Date.now() + 30 * 86400000).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  /* Urun satirlari */
+  var uS = '';
+  if (!urunler.length) uS = '<tr><td colspan="' + (y ? 7 : 6) + '" style="text-align:center;color:#9ca3af;font-style:italic;padding:16px">\u00dcr\u00fcn girilmemi\u015f</td></tr>';
+  else urunler.forEach(function(u) {
+    var t = (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0);
+    uS += '<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px">' + _esc(u.aciklama || u.urun_adi || '\u2014') + '<br><span style="font-size:9px;color:#6b7280">' + _esc(u.urun_kodu || '') + '</span></td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:center">' + (u.hs_kodu || '<span style="color:#dc2626">Eksik</span>') + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right">' + (parseFloat(u.miktar) || 0).toLocaleString('tr-TR') + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:center">' + _esc(u.birim || 'kg') + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right">' + _esc(u.doviz || 'USD') + ' ' + (parseFloat(u.birim_fiyat) || 0).toFixed(2) + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right;font-weight:600">' + fU(t) + '</td>' + (y ? '<td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right;color:#dc2626;background:#fef2f2">' + fU(t * 0.815) + '</td>' : '') + '</tr>';
+  });
+
+  /* PL satirlari */
+  var pS = '';
+  urunler.forEach(function(u) {
+    pS += '<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px">' + _esc(u.aciklama || '\u2014') + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:center">' + _esc(u.hs_kodu || '\u2014') + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right">' + (parseInt(u.koli_adet) || 0) + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right">' + (parseFloat(u.brut_kg) || 0).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right">' + (parseFloat(u.net_kg) || (parseFloat(u.brut_kg) || 0) * 0.95).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right">' + (parseFloat(u.hacim_m3) || 0).toLocaleString('tr-TR', { maximumFractionDigits: 3 }) + '</td></tr>';
+  });
+
+  var icerik = '';
+  /* PI/CI/TRFAT tablo */
+  if (tur === 'PI' || tur === 'CI' || tur === 'TRFAT') {
+    icerik += '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:16px"><thead><tr style="background:#f9fafb"><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:left">\u00dcr\u00fcn</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">HS</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">Miktar</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">Birim</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">B.Fiyat</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">Tutar</th>' + (y ? '<th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;background:#fef2f2;color:#dc2626">Maliyet</th>' : '') + '</tr></thead><tbody>' + uS + '</tbody></table>';
   }
-  // IHR-ZINCIR-001: Evrak sırası kontrolü
-  if ((tur === 'CI' || tur === 'PL') && !_evrakZincirKontrol(dosyaId, tur)) {
-    var _oncekiAd = { CI: 'PI', PL: 'CI' }[tur];
-    window.toast?.('Önce ' + _oncekiAd + ' onaylanmalı', 'err'); return;
+  /* PL tablo */
+  if (tur === 'PL') {
+    icerik += '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:16px"><thead><tr style="background:#f9fafb"><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:left">\u00dcr\u00fcn</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">HS</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">Koli</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">Br\u00fct kg</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">Net kg</th><th style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">m\u00b3</th></tr></thead><tbody>' + pS + '<tr style="background:#f9fafb;font-weight:600"><td style="padding:6px 8px;border:1px solid #e5e7eb">TOPLAM</td><td style="border:1px solid #e5e7eb"></td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">' + topKoli + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">' + topKg.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">' + Math.round(topKg * 0.95).toLocaleString('tr-TR') + '</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">' + topM3.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr></tbody></table>';
   }
-  var evraklar = _loadE();
-  var kayit = null; evraklar.forEach(function(e) { if (String(e.dosya_id) === String(dosyaId) && e.tur === tur) kayit = e; });
-  /* Dış evrak ise ve URL varsa yeni sekmede aç */
-  if (kayit && kayit.dosya_url) { window.open(kayit.dosya_url, '_blank'); return; }
-  /* Kayıt yoksa önce oluştur uyarısı */
-  if (!kayit) { window.toast?.('Önce "Oluştur" butonuna basın', 'warn'); return; }
-  if (!urunler) urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
-  if (!urunler.length) { window.toast?.('Ürün eklenmemiş — önce Ürünler sekmesinden ürün ekleyin', 'warn'); return; }
-  window.toast?.(_esc(tur) + ' önizleme — PDF render yakında', 'warn');
+  /* SEVK/YUK */
+  if (tur === 'SEVK' || tur === 'YUK') {
+    icerik += '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:16px"><tbody><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280;width:160px">Forwarder</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + (fw ? _esc(fw.firma_adi) : '\u2014') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Y\u00fckleme Liman\u0131</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + _esc(d.yukl_limani || 'Mersin') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Var\u0131\u015f Liman\u0131</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + _esc(d.teslim_limani || d.varis_limani || '\u2014') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Konteyner</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + _esc(d.konteyner_tipi || '40HC') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Toplam</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + topKoli + ' koli / ' + topKg.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' kg</td></tr></tbody></table>';
+  }
+  /* TTF */
+  if (tur === 'TTF') {
+    icerik += '<div style="margin-bottom:12px;font-size:11px;line-height:1.7">A\u015fa\u011f\u0131da belirtilen sevkiyat i\u00e7in teklif talep etmekteyiz.</div><table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:16px"><tbody><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280;width:180px">Y\u00fckleme Noktas\u0131</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + _esc(d.yukl_limani || 'Mersin') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Var\u0131\u015f Noktas\u0131</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + _esc(d.teslim_limani || d.varis_limani || '\u2014') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Konteyner</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + _esc(d.konteyner_tipi || '40HC') + '</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">A\u011f\u0131rl\u0131k</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + topKg.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' kg</td></tr><tr><td style="padding:6px 10px;border:1px solid #e5e7eb;color:#6b7280">Hacim</td><td style="padding:6px 10px;border:1px solid #e5e7eb;font-weight:500">' + topM3.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' m\u00b3</td></tr></tbody></table>';
+  }
+
+  var yonHtml = y ? '<div style="background:#fef2f2;border-left:4px solid #dc2626;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#991b1b;border-radius:0 4px 4px 0">G\u0130ZL\u0130 \u2014 Maliyet: ' + fU(maliyetUSD) + ' \u00b7 Marj: %' + marjPct + ' \u00b7 K\u00e2r: ' + fU(karUSD) + '</div>' : '';
+  var sirHtml = ic ? '<div style="background:#eff6ff;border-left:4px solid #185FA5;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#1e40af;border-radius:0 4px 4px 0">Dahili: ' + _esc(d.dosyaNo || '\u2014') + ' \u00b7 G\u00fcmr\u00fck\u00e7\u00fc: ' + (gm ? _esc(gm.firma_adi) : 'Atanmad\u0131') + '</div>' : '';
+  var topBlok = (tur === 'PI' || tur === 'CI' || tur === 'TRFAT') ? '<div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:240px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;padding:6px 12px;font-size:10px;border-bottom:1px solid #e5e7eb"><span style="color:#6b7280">Ara Toplam</span><span>' + fU(topUSD) + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 12px;font-size:10px;border-bottom:1px solid #e5e7eb"><span style="color:#6b7280">KDV (0%)</span><span>$0</span></div>' + (y ? '<div style="display:flex;justify-content:space-between;padding:6px 12px;font-size:10px;border-bottom:1px solid #e5e7eb;background:#fef2f2"><span style="color:#dc2626">K\u00e2r [G\u0130ZL\u0130]</span><span style="color:#16A34A">' + fU(karUSD) + '</span></div>' : '') + '<div style="display:flex;justify-content:space-between;padding:8px 12px;font-size:13px;font-weight:700;background:#185FA5;color:#fff"><span>TOPLAM</span><span>' + fU(topUSD) + ' USD</span></div></div></div>' : '';
+  var tarafGrid = (tur === 'PI' || tur === 'CI' || tur === 'TRFAT') ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px"><div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#185FA5;margin-bottom:8px">Sat\u0131c\u0131</div><div style="font-size:12px;font-weight:600">Duay Global LLC</div><div style="font-size:10px;color:#6b7280;line-height:1.7;margin-top:4px">\u0130stanbul, T\u00fcrkiye</div></div><div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px"><div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#185FA5;margin-bottom:8px">Al\u0131c\u0131</div><div style="font-size:12px;font-weight:600">' + _esc(d.musteriAd || '\u2014') + '</div><div style="font-size:10px;color:#6b7280;line-height:1.7;margin-top:4px">' + _esc(d.musteriUlke || '') + '</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"><div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px"><div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#185FA5;margin-bottom:8px">Teslimat</div><div style="font-size:10px;line-height:1.9">Teslim: <strong>' + _esc(d.teslim_sekli || 'FOB') + '</strong><br>\u00d6deme: <strong>' + _esc(d.odeme_kosulu || d.odeme_sarti || '\u2014') + '</strong></div></div><div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px"><div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#185FA5;margin-bottom:8px">Banka</div><div style="font-size:10px;line-height:1.9">T\u00fcrkiye \u0130\u015f Bankas\u0131<br>SWIFT: ISBKTRIS</div></div></div>' : '';
+
+  return '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>' + turAdi + ' \u2014 ' + belgeNo + '</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:0;background:#f3f4f6;-webkit-print-color-adjust:exact}.page{background:#fff;max-width:840px;margin:20px auto;box-shadow:0 0 20px rgba(0,0,0,.1)}@media print{body{background:#fff}.no-print{display:none!important}.page{box-shadow:none;margin:0;max-width:100%}}</style></head><body>'
+    + '<div class="no-print" style="position:sticky;top:0;z-index:100;background:#185FA5;padding:8px 20px;display:flex;align-items:center;justify-content:space-between"><span style="color:#fff;font-size:11px">' + turAdi + ' \u00b7 ' + belgeNo + ' \u00b7 ' + (y ? 'Y\u00f6netici' : ic ? '\u015eirket \u0130\u00e7i' : 'D\u0131\u015f Taraf') + '</span><div style="display:flex;gap:8px"><button onclick="window.print()" style="background:#fff;color:#185FA5;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:500">Yazd\u0131r / PDF</button><button onclick="window.close()" style="background:transparent;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px">Kapat</button></div></div>'
+    + '<div class="page" style="padding:0"><div style="padding:20px 24px;border-bottom:3px solid #185FA5;display:flex;align-items:flex-start;justify-content:space-between"><div><div style="font-size:18px;font-weight:700;color:#185FA5;letter-spacing:-.5px">DUAY<span style="color:#111;font-weight:300"> global</span></div><div style="font-size:9px;color:#6b7280;margin-top:2px">Uluslararas\u0131 Tekstil Ticareti \u00b7 \u0130stanbul, T\u00fcrkiye</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:300;color:#111;letter-spacing:-.5px">' + turAdi + '</div><div style="font-size:10px;color:#6b7280;margin-top:4px">No: ' + belgeNo + '</div><div style="font-size:10px;color:#6b7280">Tarih: ' + bugun + '</div></div></div>'
+    + '<div style="padding:20px 24px">' + yonHtml + sirHtml + tarafGrid + icerik + topBlok
+    + '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-end"><div style="font-size:9px;color:#9ca3af;max-width:55%;line-height:1.6">Bu belge Duay Global LLC taraf\u0131ndan d\u00fczenlenmi\u015ftir.</div><div style="text-align:right"><div style="font-size:9px;color:#9ca3af;margin-bottom:20px">\u0130mza / Ka\u015fe:</div><div style="width:180px;border-top:1px solid #111;font-size:9px;color:#6b7280;padding-top:4px;text-align:center">Duay Global LLC</div></div></div></div></div></body></html>';
 };
 
 /* ── EVRAK GÖNDER MODAL ───────────────────────────────────── */
