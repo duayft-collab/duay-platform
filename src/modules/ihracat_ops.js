@@ -500,24 +500,16 @@ function _ihrRenderDosyaDetay(id) {
   var aktifIdx = -1;
   DURUM_STEPS.forEach(function(s, i) { if (s.v === d.durum) aktifIdx = i; });
 
-  /* Timeline */
-  var timelineH = '<div style="display:flex;align-items:flex-start;gap:0;padding:14px 20px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  /* Timeline — kompakt chip bar */
+  var timelineH = '<div style="display:flex;align-items:center;gap:4px;padding:6px 14px;border-bottom:0.5px solid var(--b);background:var(--sf);flex-shrink:0;overflow-x:auto">';
   DURUM_STEPS.forEach(function(s, i) {
     var tamamlandi = i < aktifIdx;
-    var aktifmi    = i === aktifIdx;
-    var numBg  = tamamlandi ? '#EAF3DE' : aktifmi ? '#185FA5' : 'var(--sf)';
-    var numClr = tamamlandi ? '#27500A' : aktifmi ? '#fff'    : 'var(--t3)';
-    var numBrd = (tamamlandi || aktifmi) ? 'none' : '1px solid var(--bm)';
-    var txtClr = aktifmi ? '#185FA5' : tamamlandi ? '#27500A' : 'var(--t3)';
-    var numTxt = tamamlandi ? '&#10003;' : (i + 1);
-    timelineH += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">';
-    timelineH += '<div style="width:24px;height:24px;border-radius:50%;background:' + numBg + ';color:' + numClr + ';border:' + numBrd + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500">' + numTxt + '</div>';
-    timelineH += '<div style="font-size:10px;color:' + txtClr + ';font-weight:' + (aktifmi ? '500' : '400') + ';white-space:nowrap">' + _esc(s.l) + '</div>';
-    timelineH += '</div>';
-    if (i < DURUM_STEPS.length - 1) {
-      var lineBg = i < aktifIdx ? '#185FA5' : 'var(--b)';
-      timelineH += '<div style="flex:1;height:1px;background:' + lineBg + ';margin-top:12px"></div>';
-    }
+    var aktifmi = i === aktifIdx;
+    var bg = tamamlandi ? '#EAF3DE' : aktifmi ? '#185FA5' : 'var(--s2)';
+    var fg = tamamlandi ? '#27500A' : aktifmi ? '#fff' : 'var(--t3)';
+    var fw = aktifmi ? '500' : '400';
+    timelineH += '<span style="background:' + bg + ';color:' + fg + ';border-radius:4px;padding:2px 8px;font-size:10px;font-weight:' + fw + ';white-space:nowrap">' + (tamamlandi ? '\u2713 ' : '') + _esc(s.l) + '</span>';
+    if (i < DURUM_STEPS.length - 1) timelineH += '<span style="color:var(--t3);font-size:10px">\u203a</span>';
   });
   timelineH += '</div>';
 
@@ -1380,7 +1372,6 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     var on = _aktifPreset === p.k;
     h += '<button onclick="event.stopPropagation();window._ihrSetGorunum(\'' + _dosyaId + '\',\'' + p.k + '\')" style="' + _presetBtnI + (on ? _presetOnI : _presetOffI) + '">' + p.l + '</button>';
   });
-  h += '<span style="font-size:9px;color:var(--t3);flex-shrink:0">' + _tmpKolSay + ' kolon</span>';
   h += '</div>';
   /* Sag araçlar grubu */
   h += '<div style="flex-shrink:0;display:flex;gap:3px;align-items:center">';
