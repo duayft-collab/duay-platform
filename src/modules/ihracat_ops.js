@@ -752,15 +752,17 @@ function _ihrDetayRenderOzet(d) {
 
   var EVRAK_LISTESI = [
     { tur: 'PI',    l: 'Proforma Invoice',     uretici: 'Duay',      alici: 'M\u00fc\u015fteri',               kim: 'duay' },
-    { tur: 'CI',    l: 'Commercial Invoice',    uretici: 'Duay',      alici: 'G\u00fcmr\u00fck\u00e7\u00fc + M\u00fc\u015fteri',    kim: 'duay' },
-    { tur: 'PL',    l: 'Packing List',          uretici: 'Duay',      alici: 'G\u00fcmr\u00fck\u00e7\u00fc + M\u00fc\u015fteri',    kim: 'duay' },
+    { tur: 'CI',    l: 'Commercial Invoice',    uretici: 'Duay',      alici: 'M\u00fc\u015fteri',               kim: 'duay' },
+    { tur: 'PL',    l: 'Packing List',          uretici: 'Duay',      alici: 'G\u00fcmr\u00fck\u00e7\u00fc \u00b7 FW \u00b7 M\u00fc\u015fteri', kim: 'duay' },
     { tur: 'SEVK',  l: 'Sevk Emri',             uretici: 'Duay',      alici: 'Forwarder',              kim: 'duay' },
-    { tur: 'YUK',   l: 'Y\u00fckleme Talimat\u0131',      uretici: 'Duay',      alici: 'Tedarik\u00e7i + Forwarder',  kim: 'duay' },
+    { tur: 'YUK',   l: 'Y\u00fckleme Talimat\u0131',      uretici: 'Duay',      alici: 'Forwarder',              kim: 'duay' },
     { tur: 'GCB',   l: 'G\u00c7B',                   uretici: 'G\u00fcmr\u00fck\u00e7\u00fc',  alici: 'Duay > Forwarder',       kim: 'dis' },
     { tur: 'BL',    l: 'Bill of Lading',         uretici: 'Forwarder', alici: 'Duay > M\u00fc\u015fteri',         kim: 'dis' },
     { tur: 'MENSEI',l: 'Men\u015fei \u015eahadetnamesi',   uretici: 'G\u00fcmr\u00fck\u00e7\u00fc',  alici: 'Duay > M\u00fc\u015fteri',         kim: 'dis' },
     { tur: 'EUR1',  l: 'EUR.1 / A.TR',           uretici: 'G\u00fcmr\u00fck\u00e7\u00fc',  alici: 'Duay > M\u00fc\u015fteri',         kim: 'dis' },
     { tur: 'INSP',  l: 'Inspection Raporu',      uretici: 'G\u00f6zetim',   alici: 'Duay > M\u00fc\u015fteri',         kim: 'dis' },
+    { tur: 'TRFAT', l: 'TR \u0130hracat Faturas\u0131',   uretici: 'Duay',      alici: 'G\u00fcmr\u00fck\u00e7\u00fc',              kim: 'duay' },
+    { tur: 'TTF',   l: 'Teklif Talep Formu',    uretici: 'Duay',      alici: 'FW \u00b7 Sig. \u00b7 \u0130\u00e7 Nakliye',   kim: 'duay' },
     { tur: 'SIG',   l: 'Sigorta Poli\u00e7esi',       uretici: 'Sigorta',   alici: 'Duay',                   kim: 'dis' }
   ];
   var _evrakPct = EVRAK_LISTESI.length > 0 ? Math.round(tamam / EVRAK_LISTESI.length * 100) : 0;
@@ -2134,24 +2136,27 @@ window._ihrDetayRenderEvraklar = function(d, c) {
   var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; });
   var dosyaAsama = parseInt(d.asamaNo || d.asama || 1) || 1;
   var EVRAK_LIST = [
-    { tur:'PI',    l:'Proforma Invoice',        uretici:'Duay',      hedef:'Musteri',           duay:true,  grup:'ticaret',  hedefler:['musteri'] },
-    { tur:'CI',    l:'Commercial Invoice',       uretici:'Duay',      hedef:'Gumrukcu + Musteri',duay:true,  grup:'ticaret',  hedefler:['musteri','gumrukcu'] },
-    { tur:'PL',    l:'Packing List',             uretici:'Duay',      hedef:'Gumrukcu + Musteri',duay:true,  grup:'lojistik', hedefler:['musteri','gumrukcu','forwarder'] },
-    { tur:'SEVK',  l:'Konteyner Sevk Emri',      uretici:'Duay',      hedef:'Forwarder',         duay:true,  grup:'lojistik', hedefler:['forwarder'] },
-    { tur:'YUK',   l:'Yukleme Talimati',         uretici:'Duay',      hedef:'Tedarikci + FWD',   duay:true,  grup:'lojistik', hedefler:['forwarder'] },
-    { tur:'GCB',   l:'Gumruk Cikis Beyannamesi', uretici:'Gumrukcu',  hedef:'Duay + FWD',        duay:false, grup:'gumruk',   hedefler:['gumrukcu'] },
-    { tur:'BL',    l:'Bill of Lading',            uretici:'Forwarder', hedef:'Duay + Musteri',    duay:false, grup:'lojistik', hedefler:['musteri'] },
-    { tur:'MENSEI',l:'Mensei Sahadetnamesi',      uretici:'Gumrukcu',  hedef:'Musteri',           duay:false, grup:'mensei',   hedefler:['musteri'] },
-    { tur:'EUR1',  l:'EUR.1 / A.TR',              uretici:'Gumrukcu',  hedef:'Musteri',           duay:false, grup:'mensei',   hedefler:['musteri'] },
-    { tur:'INSP',  l:'Inspection Raporu',          uretici:'Gozetim',   hedef:'Duay + Musteri',   duay:false, grup:'ticaret',  hedefler:['musteri'] },
-    { tur:'SIG',   l:'Sigorta Policesi',           uretici:'Sigorta',   hedef:'Duay',             duay:false, grup:'sigorta',  hedefler:[] }
+    { tur:'PI',    l:'Proforma Invoice',        uretici:'Duay',      hedef:'M\u00fc\u015fteri',             duay:true,  grup:'ticaret',   hedefler:['musteri'] },
+    { tur:'CI',    l:'Commercial Invoice',       uretici:'Duay',      hedef:'M\u00fc\u015fteri',             duay:true,  grup:'ticaret',   hedefler:['musteri'] },
+    { tur:'TRFAT', l:'TR \u0130hracat Faturas\u0131',   uretici:'Duay',      hedef:'G\u00fcmr\u00fck\u00e7\u00fc',            duay:true,  grup:'ticaret',   hedefler:['gumrukcu'] },
+    { tur:'PL',    l:'Packing List',             uretici:'Duay',      hedef:'G\u00fcmr\u00fck\u00e7\u00fc \u00b7 FW \u00b7 M\u00fc\u015fteri', duay:true,  grup:'lojistik',  hedefler:['gumrukcu','forwarder','musteri'] },
+    { tur:'SEVK',  l:'Konteyner Sevk Emri',      uretici:'Duay',      hedef:'Forwarder',          duay:true,  grup:'lojistik',  hedefler:['forwarder'] },
+    { tur:'YUK',   l:'Y\u00fckleme Talimat\u0131',     uretici:'Duay',      hedef:'Forwarder',          duay:true,  grup:'lojistik',  hedefler:['forwarder'] },
+    { tur:'TTF',   l:'Teklif Talep Formu',       uretici:'Duay',      hedef:'FW \u00b7 Sig. \u00b7 \u0130\u00e7 Nakliye', duay:true,  grup:'operasyon', hedefler:['forwarder','sigortaci'] },
+    { tur:'GCB',   l:'G\u00fcmr\u00fck \u00c7\u0131k\u0131\u015f Beyannamesi', uretici:'G\u00fcmr\u00fck\u00e7\u00fc', hedef:'Duay > FWD', duay:false, grup:'gumruk',    hedefler:['gumrukcu'] },
+    { tur:'BL',    l:'Bill of Lading',            uretici:'Forwarder', hedef:'Duay > M\u00fc\u015fteri',    duay:false, grup:'lojistik',  hedefler:['musteri'] },
+    { tur:'MENSEI',l:'Men\u015fei \u015eahadetnamesi',  uretici:'G\u00fcmr\u00fck\u00e7\u00fc', hedef:'M\u00fc\u015fteri', duay:false, grup:'mensei',    hedefler:['musteri'] },
+    { tur:'EUR1',  l:'EUR.1 / A.TR',              uretici:'G\u00fcmr\u00fck\u00e7\u00fc', hedef:'M\u00fc\u015fteri', duay:false, grup:'mensei',    hedefler:['musteri'] },
+    { tur:'INSP',  l:'Inspection Raporu',          uretici:'G\u00f6zetim',  hedef:'Duay > M\u00fc\u015fteri', duay:false, grup:'ticaret',   hedefler:['musteri'] },
+    { tur:'SIG',   l:'Sigorta Poli\u00e7esi',          uretici:'Sigorta',   hedef:'Duay',              duay:false, grup:'sigorta',   hedefler:[] }
   ];
   var EVRAK_GRUPLARI = [
-    { id:'ticaret',  l:'Ticaret Belgeleri',  renk:'#185FA5', bg:'#E6F1FB' },
-    { id:'lojistik', l:'Lojistik Belgeleri', renk:'#D97706', bg:'#FAEEDA' },
-    { id:'gumruk',   l:'G\u00fcmr\u00fck Belgeleri',   renk:'#DC2626', bg:'#FEF2F2' },
-    { id:'sigorta',  l:'Sigorta Belgeleri',  renk:'#7F77DD', bg:'#EEEDFE' },
-    { id:'mensei',   l:'Men\u015fei Belgeleri',   renk:'#16A34A', bg:'#EAF3DE' }
+    { id:'ticaret',   l:'Ticaret Belgeleri',    renk:'#185FA5', bg:'#E6F1FB' },
+    { id:'lojistik',  l:'Lojistik Belgeleri',   renk:'#D97706', bg:'#FAEEDA' },
+    { id:'operasyon', l:'Operasyon Belgeleri',   renk:'#7F77DD', bg:'#EEEDFE' },
+    { id:'gumruk',    l:'G\u00fcmr\u00fck Belgeleri',     renk:'#DC2626', bg:'#FEF2F2' },
+    { id:'sigorta',   l:'Sigorta Belgeleri',    renk:'#9333EA', bg:'#F3E8FF' },
+    { id:'mensei',    l:'Men\u015fei Belgeleri',     renk:'#16A34A', bg:'#EAF3DE' }
   ];
   var _hedefEtiket = function(h2) { return { musteri:'M\u00fc\u015fteri', gumrukcu:'G\u00fcmr\u00fck\u00e7\u00fc', forwarder:'Forwarder', sigortaci:'Sigortac\u0131' }[h2] || h2; };
   var tamam = evraklar.filter(function(e) { return e.durum === 'gonderildi' || e.durum === 'tamamlandi'; }).length;
