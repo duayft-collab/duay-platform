@@ -330,37 +330,32 @@ function _ihrRenderDosyaDetayInto(id, targetEl) {
   timelineH += '</div>';
   timelineH += '</div>';
 
-  /* Ust bar */
-  var h = '<div style="padding:8px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s2)">';
-  h += '<span style="font-size:13px;font-weight:500;color:var(--ac)">' + _esc(d.dosyaNo) + '</span>';
-  h += '<span style="font-size:12px;color:var(--t2)">' + _esc(d.musteriAd || '') + '</span>';
-  h += _dosyaBadge(d.durum);
-  if (gecikmiMi) h += '<span style="font-size:11px;color:#DC2626;font-weight:500">\u26a0 Gecikti</span>';
-  h += '<div style="margin-left:auto;display:flex;gap:6px">';
-  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDosyaDuzenle?.(\'' + id + '\')" style="font-size:10px">D\u00fczenle</button>';
-  if (_isManager()) h += '<button class="btn" style="font-size:10px;background:#16A34A;color:#fff;border-color:#16A34A" onclick="event.stopPropagation();window._ihrDurumDegistir?.(\'' + id + '\')">Durum</button>';
-  h += '</div></div>';
-  h += timelineH;
-
-  /* Sekmeler */
-  var _pctRenk = function(p) { return p >= 100 ? '#16A34A' : p >= 51 ? '#22C55E' : p > 0 ? '#D97706' : '#DC2626'; };
+  /* IHR-NAV-001: Ust bar + sekmeler tek satir */
+  var _kpBdg2 = window._ihrKapamaKontrol?.(id);
+  var _evAll3 = _loadE().filter(function(e3) { return String(e3.dosya_id) === String(id) && !e3.isDeleted; });
   var SEKMELER = [
-    { id: 'ozet', l: 'Ozet', paydas: null },
-    { id: 'urunler', l: 'Urunler', paydas: null },
-    { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'mutabakat', l: 'Mutabakat', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
-    { id: 'kapat', l: 'Kapat', paydas: null }
+    { id: 'ozet', l: '\u00d6zet' }, { id: 'urunler', l: '\u00dcr\u00fcnler' }, { id: 'evraklar', l: 'Evraklar' },
+    { id: 'mutabakat', l: 'Mutabakat' }, { id: 'paydas', l: 'Payda\u015flar' }, { id: 'kapat', l: 'Kapat' }
   ];
-  h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0;overflow-x:auto" id="ihr-detay-tabs">';
-  h += '<div onclick="event.stopPropagation();window._ihrTab(\'dashboard\')" style="padding:6px 10px;font-size:10px;cursor:pointer;color:#0C447C;background:#E6F1FB;border-right:0.5px solid var(--b);white-space:nowrap;display:flex;align-items:center;gap:3px;flex-shrink:0">\u2190 Dash</div>';
+  var h = '<div style="padding:0 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;background:var(--s2);min-height:40px;flex-wrap:nowrap;overflow:hidden">';
+  h += '<span style="font-size:11px;font-weight:500;color:var(--ac);flex-shrink:0">' + _esc(d.dosyaNo) + '</span>';
+  h += '<span style="font-size:10px;color:var(--t2);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">' + _esc(d.musteriAd || '') + '</span>';
+  h += _dosyaBadge(d.durum);
+  if (gecikmiMi) h += '<span style="font-size:9px;color:#DC2626;font-weight:500;flex-shrink:0">Gecikti</span>';
+  h += '<div style="flex:1;display:flex;align-items:stretch;height:40px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
-    var _tbdg = '';
-    if (t.id === 'mutabakat') { var _mU2 = _loadU().filter(function(u2) { return String(u2.dosya_id) === String(id) && !u2.isDeleted; }); var _mSA2 = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : []; var _mFk = _mU2.filter(function(u2) { return !_mSA2.find(function(s2) { return u2.satinalma_id && String(s2.id) === String(u2.satinalma_id); }); }).length; if (_mFk > 0) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#FAEEDA;color:#633806">' + _mFk + '</span>'; }
-    if (t.id === 'kapat') { var _kpK = window._ihrKapamaKontrol?.(id); if (_kpK && !_kpK.kapanabilir) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#FCEBEB;color:#791F1F">' + _kpK.eksikler.length + '</span>'; else if (_kpK && _kpK.kapanabilir) _tbdg = ' <span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#EAF3DE;color:#27500A">\u2713</span>'; }
-    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + _tbdg + '</div>';
+    var _tb3 = '';
+    if (t.id === 'kapat' && _kpBdg2 && !_kpBdg2.kapanabilir) _tb3 = ' <span style="font-size:8px;padding:1px 4px;border-radius:8px;background:#FCEBEB;color:#791F1F">' + _kpBdg2.eksikler.length + '</span>';
+    else if (t.id === 'kapat' && _kpBdg2 && _kpBdg2.kapanabilir) _tb3 = ' <span style="font-size:8px;padding:1px 4px;border-radius:8px;background:#EAF3DE;color:#27500A">\u2713</span>';
+    if (t.id === 'evraklar') { var _ek3 = _evAll3.filter(function(e4) { return !e4.durum || e4.durum === 'taslak'; }).length; if (_ek3 > 0) _tb3 = ' <span style="font-size:8px;padding:1px 4px;border-radius:8px;background:#FAEEDA;color:#633806">' + _ek3 + '</span>'; }
+    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:0 12px;font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + _tb3 + '</div>';
   });
   h += '</div>';
+  h += '<div style="display:flex;gap:4px;flex-shrink:0">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDosyaDuzenle?.(\'' + id + '\')" style="font-size:10px;padding:3px 8px">D\u00fczenle</button>';
+  if (_isManager()) h += '<button class="btn" style="font-size:10px;padding:3px 10px;background:#16A34A;color:#fff;border-color:#16A34A" onclick="event.stopPropagation();window._ihrDurumDegistir?.(\'' + id + '\')">Durum</button>';
+  h += '</div></div>';
+  h += timelineH;
   h += '<div id="ihr-detay-content" style="padding:0;flex:1;overflow-y:auto"></div>';
   targetEl.innerHTML = h;
   _ihrDetayRenderOzet(d);
@@ -511,42 +506,38 @@ function _ihrRenderDosyaDetay(id) {
   timelineH += '<div style="width:1px;height:12px;background:var(--b)"></div><span style="font-size:8px;color:' + _etaRnk2 + '">ETA ' + _etaTrh2 + '</span></div>';
   timelineH += '</div>';
 
-  /* Üst bar */
-  var h = '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--s2)">';
-  h += '<button onclick="window._ihrGeriDon()" class="btn btns" style="font-size:11px;padding:4px 10px">\u2190 Geri</button>';
-  h += '<span style="font-size:13px;font-weight:500;color:var(--ac)">' + _esc(d.dosyaNo) + '</span>';
-  h += '<span style="font-size:12px;color:var(--t2)">' + _esc(d.musteriAd || '') + '</span>';
-  h += _dosyaBadge(d.durum);
-  if (gecikmiMi) h += '<span style="font-size:11px;color:#DC2626;font-weight:500">\u26a0\ufe0f Gecikti</span>';
-  h += '<div style="margin-left:auto;display:flex;gap:6px">';
-  h += '<button class="btn btns" onclick="window._ihrDosyaDuzenle(\'' + id + '\')" style="font-size:11px">Düzenle</button>';
-  if (_isManager()) h += '<button class="btn" style="font-size:11px;background:#16A34A;color:#fff;border-color:#16A34A" onclick="window._ihrDurumDegistir(\'' + id + '\')">Durum Değiştir</button>';
-  h += '</div></div>';
-
-  /* Timeline */
-  h += timelineH;
-
-  /* Alt sekmeler — 7 sekme + paydas % */
-  var _pctRenk = function(p) { return p >= 100 ? '#16A34A' : p >= 51 ? '#22C55E' : p > 0 ? '#D97706' : '#DC2626'; };
+  /* IHR-NAV-001: Ust bar + sekmeler tek satir */
+  var _kpBdg = window._ihrKapamaKontrol?.(id);
+  var _evAll2 = _loadE().filter(function(e2) { return String(e2.dosya_id) === String(id) && !e2.isDeleted; });
   var SEKMELER = [
-    { id: 'ozet', l: 'Ozet', paydas: null },
-    { id: 'urunler', l: 'Urunler', paydas: null },
-    { id: 'evraklar', l: 'Evraklar', paydas: null },
-    { id: 'mutabakat', l: 'Mutabakat', paydas: null },
-    { id: 'paydas', l: 'Payda\u015flar', paydas: null },
-    { id: 'kapat', l: 'Kapat', paydas: null }
+    { id: 'ozet', l: '\u00d6zet' }, { id: 'urunler', l: '\u00dcr\u00fcnler' }, { id: 'evraklar', l: 'Evraklar' },
+    { id: 'mutabakat', l: 'Mutabakat' }, { id: 'paydas', l: 'Payda\u015flar' }, { id: 'kapat', l: 'Kapat' }
   ];
-  h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px;overflow-x:auto" id="ihr-detay-tabs">';
+  var h = '<div style="padding:0 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;background:var(--s2);min-height:40px;flex-wrap:nowrap;overflow:hidden">';
+  h += '<button onclick="event.stopPropagation();window._ihrGeriDon()" class="btn btns" style="font-size:10px;padding:3px 8px;flex-shrink:0">\u2190 Geri</button>';
+  h += '<span style="font-size:11px;font-weight:500;color:var(--ac);flex-shrink:0">' + _esc(d.dosyaNo) + '</span>';
+  h += '<span style="font-size:10px;color:var(--t2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">' + _esc(d.musteriAd || '') + '</span>';
+  h += _dosyaBadge(d.durum);
+  if (gecikmiMi) h += '<span style="font-size:9px;color:#DC2626;font-weight:500;flex-shrink:0">Gecikti</span>';
+  /* Sekmeler ortada */
+  h += '<div style="flex:1;display:flex;align-items:stretch;height:40px;overflow-x:auto" id="ihr-detay-tabs">';
   SEKMELER.forEach(function(t, i) {
-    var pctHtml = '';
-    if (t.paydas) {
-      var pp = window._ihrPaydasPct?.(id, t.paydas);
-      if (pp) pctHtml = ' <span style="font-size:9px;color:' + _pctRenk(pp.pct) + ';font-weight:600">%' + pp.pct + '</span>';
-    }
-    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + pctHtml + '</div>';
+    var _tbdg2 = '';
+    if (t.id === 'kapat' && _kpBdg && !_kpBdg.kapanabilir) _tbdg2 = ' <span style="font-size:8px;padding:1px 4px;border-radius:8px;background:#FCEBEB;color:#791F1F">' + _kpBdg.eksikler.length + '</span>';
+    else if (t.id === 'kapat' && _kpBdg && _kpBdg.kapanabilir) _tbdg2 = ' <span style="font-size:8px;padding:1px 4px;border-radius:8px;background:#EAF3DE;color:#27500A">\u2713</span>';
+    if (t.id === 'evraklar') { var _eksEv2 = _evAll2.filter(function(e3) { return !e3.durum || e3.durum === 'taslak'; }).length; if (_eksEv2 > 0) _tbdg2 = ' <span style="font-size:8px;padding:1px 4px;border-radius:8px;background:#FAEEDA;color:#633806">' + _eksEv2 + '</span>'; }
+    h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:0 12px;font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + _tbdg2 + '</div>';
   });
   h += '</div>';
-  h += '<div id="ihr-detay-content" style="padding:16px 20px"></div>';
+  /* Sag butonlar */
+  h += '<div style="display:flex;gap:4px;flex-shrink:0">';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDosyaDuzenle?.(\'' + id + '\')" style="font-size:10px;padding:3px 8px">D\u00fczenle</button>';
+  if (_isManager()) h += '<button class="btn" style="font-size:10px;padding:3px 10px;background:#16A34A;color:#fff;border-color:#16A34A" onclick="event.stopPropagation();window._ihrDurumDegistir?.(\'' + id + '\')">Durum</button>';
+  h += '</div>';
+  h += '</div>';
+  /* Surec bar */
+  h += timelineH;
+  h += '<div id="ihr-detay-content" style="padding:0;overflow-y:auto"></div>';
   el.innerHTML = h;
   _ihrDetayRenderOzet(d);
 }
@@ -1121,6 +1112,8 @@ window._ihrDetayTab = function(tab, id) {
     if (_cc) _cc.setAttribute('style', 'padding:0;overflow-y:auto;height:100%');
   }
 
+  /* IHR-NAV-001: Eski paydas sekme id'lerini yonlendir */
+  if (tab === 'musteri' || tab === 'sigortaci' || tab === 'gumrukcu' || tab === 'forwarder') tab = 'paydas';
   document.querySelectorAll('#ihr-detay-tabs > div').forEach(function(b) { b.style.borderBottomColor = 'transparent'; b.style.color = 'var(--t2)'; b.style.fontWeight = '400'; });
   var active = _g('ihr-dt-' + tab); if (active) { active.style.borderBottomColor = 'var(--ac)'; active.style.color = 'var(--ac)'; active.style.fontWeight = '500'; }
   var c = _g('ihr-detay-content'); if (!c) return;
@@ -4264,7 +4257,12 @@ var _v3 = {
   excelKolonlar: [],
   eslestirme: {},
   dupMod: 'guncelle',
-  satirSayisi: 0
+  satirSayisi: 0,
+  excelSheets: [],
+  seciliSheet: 0,
+  guvenilik: {},
+  hatalar: [],
+  importOzet: null
 };
 
 /**
