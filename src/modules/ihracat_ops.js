@@ -5626,6 +5626,54 @@ function _ihrAlarmlar() {
 }
 
 /** Dashboard ana render */
+/* IHR-DASH-001: Dashboard yardimci fonksiyonlari */
+var _ihrGunlukGorevler = function(aktifD, evraklar, gcbList, blList) {
+  var gorevler = []; var today = _today();
+  aktifD.forEach(function(d) {
+    var dE = evraklar.filter(function(e) { return String(e.dosya_id) === String(d.id); });
+    var dG = gcbList.filter(function(g) { return String(g.dosya_id) === String(d.id); });
+    var dB = blList.filter(function(b) { return String(b.dosya_id) === String(d.id); });
+    var kG = d.bitis_tarihi ? Math.ceil((new Date(d.bitis_tarihi) - new Date(today)) / 86400000) : null;
+    if (!dG.length && !['taslak', 'kapandi', 'iptal'].includes(d.durum)) gorevler.push({ l: 'G\u00c7B tescil \u2014 ' + _esc(d.dosyaNo || ''), acillik: kG !== null && kG < 3 ? 'kritik' : 'uyari', dosyaId: d.id });
+    if (!dB.length && !['taslak', 'kapandi', 'iptal'].includes(d.durum)) gorevler.push({ l: 'BL bekle \u2014 ' + _esc(d.dosyaNo || ''), acillik: kG !== null && kG < 5 ? 'kritik' : 'uyari', dosyaId: d.id });
+    if (!dE.find(function(e) { return e.tur === 'CI' && (e.durum === 'onaylandi' || e.durum === 'gonderildi'); })) gorevler.push({ l: 'CI onay \u2014 ' + _esc(d.dosyaNo || ''), acillik: 'normal', dosyaId: d.id });
+    if (!dE.find(function(e) { return e.tur === 'SIG'; })) gorevler.push({ l: 'Sigorta y\u00fckle \u2014 ' + _esc(d.dosyaNo || ''), acillik: 'normal', dosyaId: d.id });
+    if (kG !== null && kG < 0) gorevler.push({ l: Math.abs(kG) + 'g gecikmi\u015f \u2014 ' + _esc(d.dosyaNo || ''), acillik: 'kritik', dosyaId: d.id });
+  });
+  gorevler.sort(function(a, b) { var s = { kritik: 0, uyari: 1, normal: 2 }; return (s[a.acillik] || 3) - (s[b.acillik] || 3); });
+  return gorevler.slice(0, 8);
+};
+
+var _ihrKambiyoSayac = function(aktifD) {
+  var bugun = new Date();
+  return aktifD.filter(function(d) { return d.gib_tarihi || d.createdAt; }).map(function(d) {
+    var bas = new Date(d.gib_tarihi || d.createdAt); var gecen = Math.floor((bugun - bas) / 86400000); var kalan = 90 - gecen;
+    return { dosyaNo: d.dosyaNo || d.id, kalan: kalan, pct: Math.min(100, Math.round(gecen / 90 * 100)), acillik: kalan < 10 ? 'kritik' : kalan < 20 ? 'uyari' : 'normal', dosyaId: d.id };
+  }).filter(function(x) { return x.kalan < 30; }).sort(function(a, b) { return a.kalan - b.kalan; });
+};
+
+var _ihrBekleyenOnaylar = function(aktifD, evraklar) {
+  var onaylar = [];
+  aktifD.forEach(function(d) {
+    var dE = evraklar.filter(function(e) { return String(e.dosya_id) === String(d.id); });
+    ['PI', 'CI', 'PL'].forEach(function(tur) {
+      var e = dE.find(function(x) { return x.tur === tur; });
+      if (e && e.durum === 'taslak') onaylar.push({ tur: tur, dosyaNo: d.dosyaNo || d.id, mesaj: tur + ' onay bekleniyor', dosyaId: d.id });
+    });
+  });
+  return onaylar.slice(0, 5);
+};
+
+var _ihrGcbBlTakip = function(aktifD, gcbList, blList) {
+  var eksikler = [];
+  aktifD.forEach(function(d) {
+    if (['taslak', 'kapandi', 'iptal'].includes(d.durum)) return;
+    if (!gcbList.find(function(g) { return String(g.dosya_id) === String(d.id); })) eksikler.push({ tip: 'G\u00c7B', dosyaNo: d.dosyaNo || d.id, sorumlular: 'G\u00fcmr\u00fck\u00e7\u00fc', dosyaId: d.id });
+    if (!blList.find(function(b) { return String(b.dosya_id) === String(d.id); })) eksikler.push({ tip: 'BL', dosyaNo: d.dosyaNo || d.id, sorumlular: 'Forwarder', dosyaId: d.id });
+  });
+  return eksikler.slice(0, 6);
+};
+
 window._ihrRenderDashboard = function(el) {
   if (!el) return;
   var _esc2 = typeof window.escapeHtml === 'function' ? window.escapeHtml : function(s) { return String(s || ''); };
@@ -5639,6 +5687,14 @@ window._ihrRenderDashboard = function(el) {
   var evSaglik = _ihrEvrakSaglik();
   var kdv = _ihrKdvIadePotansiyeli();
   var gcbAcik = _loadG().filter(function(g) { return !g.isDeleted && g.durum !== 'kapandi'; });
+  var evraklarAll = _loadE().filter(function(e) { return !e.isDeleted; });
+  var gcbListAll = _loadG().filter(function(g) { return !g.isDeleted; });
+  var blListAll = _loadBL().filter(function(b) { return !b.isDeleted; });
+  var gorevler = _ihrGunlukGorevler(aktifD, evraklarAll, gcbListAll, blListAll);
+  var kambiyo = _ihrKambiyoSayac(aktifD);
+  var onaylar = _ihrBekleyenOnaylar(aktifD, evraklarAll);
+  var gcbBlEksik = _ihrGcbBlTakip(aktifD, gcbListAll, blListAll);
+  var acilGorev = gorevler.filter(function(g) { return g.acillik === 'kritik'; }).length;
   var usd = (window.LIVE_RATES?.USD || 44.55);
   var eur = (window.LIVE_RATES?.EUR || 51.70);
   var altin = (window.LIVE_RATES?.ALTIN || 4350);
@@ -5799,33 +5855,80 @@ window._ihrRenderDashboard = function(el) {
   if (!fwgm.length) h += '<div style="font-size:9px;color:var(--t3)">Veri yok</div>';
   h += '</div></div>';
 
-  /* SAG (240px) — Ulke + FOB Trend + Toplu Evrak + Hizli Islem */
-  h += '<div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:var(--sf)">';
-  var ulkeler = _ihrUlkeDagilimi().slice(0, 5); var ulkeMax = ulkeler.length > 0 ? ulkeler[0].toplam : 1;
-  h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b)"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">\u00dclke Bazl\u0131 FOB</div>';
-  ulkeler.forEach(function(u) { var pct = Math.round(u.toplam / ulkeMax * 100); h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:9px"><span style="min-width:65px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc2(u.ulke) + '</span><div style="flex:1;height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:#185FA5;border-radius:3px"></div></div><span style="font-size:8px;color:var(--t3)">%' + u.pct + '</span></div>'; });
-  if (!ulkeler.length) h += '<div style="font-size:9px;color:var(--t3)">Veri yok</div>';
+  /* SAG (240px) — Gorevler + Alarmlar + GCB/BL + Onaylar + Kambiyo + Hizli Islem */
+  h += '<div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;background:var(--sf)">';
+
+  /* 5A — Gunluk Gorev Listesi */
+  h += '<div style="padding:10px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);letter-spacing:.07em">Bug\u00fcn\u00fcn G\u00f6revleri</div>';
+  if (acilGorev > 0) h += '<span style="font-size:8px;padding:1px 6px;border-radius:10px;background:#FCEBEB;color:#791F1F">' + acilGorev + ' acil</span>';
   h += '</div>';
-  var fobT = _ihrFobTrend(); var fobMax = Math.max.apply(null, fobT.map(function(f) { return f.toplam; }).concat([1]));
-  h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b)"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">FOB Trend (6 Ay)</div><div style="display:flex;align-items:flex-end;gap:3px;height:36px">';
-  fobT.forEach(function(f, i) { var bH = fobMax > 0 ? Math.max(2, Math.round(f.toplam / fobMax * 36)) : 2; h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:100%;height:' + bH + 'px;background:' + (i === fobT.length - 1 ? '#185FA5' : '#B0C4DE') + ';border-radius:2px"></div><span style="font-size:7px;color:var(--t3)">' + f.ay + '</span></div>'; });
+  if (!gorevler.length) h += '<div style="font-size:10px;color:var(--t3);text-align:center;padding:8px">G\u00f6rev yok</div>';
+  else gorevler.forEach(function(g) { var dC2 = g.acillik === 'kritik' ? '#DC2626' : g.acillik === 'uyari' ? '#D97706' : '#185FA5'; h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--b);font-size:10px;cursor:pointer" onclick="event.stopPropagation();window._ihrAcDosya?.(\'' + g.dosyaId + '\')"><span style="width:7px;height:7px;border-radius:50%;background:' + dC2 + ';flex-shrink:0"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t)">' + g.l + '</span></div>'; });
   h += '</div>';
-  if (fobT.length >= 2) { var onceki = fobT[fobT.length - 2].toplam; var sonraki = fobT[fobT.length - 1].toplam; var deg = onceki > 0 ? Math.round((sonraki - onceki) / onceki * 100) : 0; h += '<div style="font-size:9px;text-align:right;margin-top:4px;font-weight:600;color:' + (deg >= 0 ? '#16a34a' : '#dc2626') + '">' + (deg >= 0 ? '+' : '') + deg + '% ' + (deg >= 0 ? '\u2191' : '\u2193') + '</div>'; }
-  h += '</div>';
-  h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b)"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Toplu Evrak</div>';
-  var secili = window._ihrTopluSecili || [];
-  if (secili.length) { h += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px">'; secili.forEach(function(id) { var dd = _loadD().find(function(x) { return String(x.id) === String(id); }); if (dd) h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--s2);color:var(--t2)">' + _esc2(dd.dosyaNo) + ' <span onclick="event.stopPropagation();window._ihrTopluCikar?.(\'' + id + '\')" style="cursor:pointer;color:var(--t3)">\u2715</span></span>'; }); h += '</div>'; }
-  h += '<div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick="event.stopPropagation();window._ihrTopluSecDialog?.()" style="font-size:8px;padding:3px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t2);cursor:pointer;font-family:inherit">+ Se\u00e7</button>';
-  ['CI','PL','PI'].forEach(function(t) { h += '<button onclick="event.stopPropagation();window._ihrTopluEvrakUret?.(\'' + t + '\')" style="font-size:8px;padding:3px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--ac);cursor:pointer;font-family:inherit;font-weight:500">' + t + '</button>'; });
+
+  /* 5B — Alarm Merkezi */
+  var _dashAlarm = [];
+  aktifD.forEach(function(d2) {
+    var kG3 = d2.bitis_tarihi ? Math.ceil((new Date(d2.bitis_tarihi) - new Date(today)) / 86400000) : null;
+    if (kG3 !== null && kG3 < 0) _dashAlarm.push({ seviye: 'kritik', mesaj: _esc2(d2.dosyaNo || '') + ': ' + Math.abs(kG3) + 'g gecikmi\u015f', dosyaId: d2.id });
+    if (kG3 !== null && kG3 >= 0 && kG3 < 7) _dashAlarm.push({ seviye: 'uyari', mesaj: _esc2(d2.dosyaNo || '') + ': ' + kG3 + 'g kald\u0131', dosyaId: d2.id });
+  });
+  if (_dashAlarm.length) {
+    h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);letter-spacing:.07em;margin-bottom:5px">Alarm Merkezi</div>';
+    _dashAlarm.slice(0, 3).forEach(function(a2) { var bg2 = a2.seviye === 'kritik' ? '#FCEBEB' : '#FAEEDA'; var tc2 = a2.seviye === 'kritik' ? '#991B1B' : '#92400E'; h += '<div style="background:' + bg2 + ';border-radius:4px;padding:4px 8px;margin-bottom:4px;font-size:10px;color:' + tc2 + ';cursor:pointer" onclick="event.stopPropagation();window._ihrAcDosya?.(\'' + a2.dosyaId + '\')">' + a2.mesaj + '</div>'; });
+    h += '</div>';
+  }
+
+  /* 5C — GCB & BL Takip */
+  if (gcbBlEksik.length) {
+    h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);letter-spacing:.07em">G\u00c7B & BL Takip</div><span style="font-size:8px;padding:1px 6px;border-radius:10px;background:#FCEBEB;color:#791F1F">' + gcbBlEksik.length + '</span></div>';
+    gcbBlEksik.slice(0, 4).forEach(function(e2) { h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)"><span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#791F1F;font-weight:500">' + e2.tip + '</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc2(e2.dosyaNo) + '</span><span style="font-size:9px;color:var(--t3)">' + _esc2(e2.sorumlular) + '</span></div>'; });
+    h += '</div>';
+  }
+
+  /* 5D — Bekleyen Onaylar */
+  if (onaylar.length) {
+    h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);letter-spacing:.07em">Bekleyen Onaylar</div><span style="font-size:8px;padding:1px 6px;border-radius:10px;background:#FAEEDA;color:#633806">' + onaylar.length + '</span></div>';
+    onaylar.slice(0, 3).forEach(function(o2) { h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)"><span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#FAEEDA;color:#633806;font-weight:500">' + o2.tur + '</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc2(o2.mesaj) + '</span></div>'; });
+    h += '</div>';
+  }
+
+  /* 5E — Kambiyo Sayac */
+  if (kambiyo.length) {
+    h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);letter-spacing:.07em;margin-bottom:5px">Kambiyo 90 G\u00fcn</div>';
+    kambiyo.slice(0, 3).forEach(function(k2) { var kR2 = k2.acillik === 'kritik' ? '#DC2626' : k2.acillik === 'uyari' ? '#D97706' : 'var(--t2)'; h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t)">' + _esc2(k2.dosyaNo) + '</span><div style="width:50px;height:4px;background:var(--b);border-radius:2px"><div style="width:' + k2.pct + '%;height:4px;background:' + kR2 + ';border-radius:2px"></div></div><span style="font-size:9px;color:' + kR2 + ';min-width:28px">' + k2.kalan + 'g</span></div>'; });
+    h += '</div>';
+  }
+
+  /* 5F — FOB Trend (kompakt) */
+  var fobT = _ihrFobTrend(); var fobMax = Math.max.apply(null, fobT.map(function(f2) { return f2.toplam; }).concat([1]));
+  h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">FOB Trend</div><div style="display:flex;align-items:flex-end;gap:3px;height:28px">';
+  fobT.forEach(function(f2, i2) { var bH2 = fobMax > 0 ? Math.max(2, Math.round(f2.toplam / fobMax * 28)) : 2; h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px"><div style="width:100%;height:' + bH2 + 'px;background:' + (i2 === fobT.length - 1 ? '#185FA5' : '#B0C4DE') + ';border-radius:2px"></div><span style="font-size:6px;color:var(--t3)">' + f2.ay + '</span></div>'; });
   h += '</div></div>';
-  h += '<div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:4px"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">H\u0131zl\u0131 \u0130\u015flemler</div>';
-  h += '<button onclick="event.stopPropagation();window._ihrYeniEmir?.()" style="width:100%;padding:6px;border:none;border-radius:5px;background:#185FA5;color:#fff;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">+ Yeni Emir</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrRunChecks?.()" style="width:100%;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t2);font-size:10px;cursor:pointer;font-family:inherit">Toplu Kontrol</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrExcelImportV3?.()" style="width:100%;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t2);font-size:10px;cursor:pointer;font-family:inherit">Excel Import</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="width:100%;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t2);font-size:10px;cursor:pointer;font-family:inherit">KDV \u0130ade</button>';
+
+  /* 5G — Hizli Islemler (sadelestirilmis) */
+  var _imS = 'width:100%;padding:5px;border-radius:5px;font-size:9px;cursor:pointer;font-family:inherit;';
+  h += '<div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:3px"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">H\u0131zl\u0131 \u0130\u015flemler</div>';
+  h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">KDV \u0130ade Hesapla</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrExcelImportV3?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Excel Import</button>';
+  h += '<button onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Formlar</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrAyarlarModal?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Rol & Firmalar</button>';
   h += '</div></div>';
 
   h += '</div>'; /* 3 kolon bitti */
+
+  /* FOB vs Hedef bar */
+  var fobHedef = parseFloat(localStorage.getItem('ak_ihr_fob_hedef') || '0') || 40000000;
+  var fobHPct = fobHedef > 0 ? Math.min(100, Math.round(buAyFob / fobHedef * 100)) : 0;
+  var fobHRnk = fobHPct >= 80 ? '#16A34A' : fobHPct >= 50 ? '#D97706' : '#DC2626';
+  h += '<div style="padding:5px 14px;background:var(--sf);border-top:0.5px solid var(--b);display:flex;align-items:center;gap:10px">';
+  h += '<span style="font-size:9px;color:var(--t3)">FOB Hedef</span>';
+  h += '<div style="flex:1;height:6px;background:var(--s2);border-radius:3px"><div style="width:' + fobHPct + '%;height:6px;background:' + fobHRnk + ';border-radius:3px"></div></div>';
+  h += '<span style="font-size:10px;font-weight:500;color:' + fobHRnk + '">%' + fobHPct + '</span>';
+  h += '<span style="font-size:9px;color:var(--t3)">$' + _fmtK(buAyFob) + ' / $' + _fmtK(fobHedef) + '</span>';
+  h += '</div>';
+
   el.innerHTML = h;
 };
 

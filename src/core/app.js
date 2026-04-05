@@ -917,6 +917,7 @@ function init() {
   _LANG = localStorage.getItem('ak_lang') || 'tr';
   _DARK = localStorage.getItem('ak_theme') === 'dark';
   applyTheme();
+  document.documentElement.style.zoom = '0.9';
   if (window.I18n?.loadLang) _LANG = window.I18n.loadLang();
   if (window.I18n?.apply)    window.I18n.apply();
 
