@@ -6455,6 +6455,8 @@ window._ihrEvrakSetiUret = function(setKey) {
 window._bmAktifDil = 'en';
 window._bmAktifYon = 'portrait';
 
+window._bmAktifDep = 'ihracat';
+
 window._ihrBelgePaneliAc = function(dosyaId) {
   dosyaId = dosyaId || window._ihrAktifDosyaId || '';
   var d = dosyaId ? _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; }) : null;
@@ -6466,12 +6468,20 @@ window._ihrBelgePaneliAc = function(dosyaId) {
 
   var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Shipping Order', ST:'Shipping Instruction', NTF:'Freight Quote Request', NFO:'Freight Price Approval', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Account Statement', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Export File Cover', PARASUT:'Para\u015f\u00fct Excel' };
   var GRUPLAR = [
-    { ad:'DI\u015e TARAF (M\u00dc\u015eTER\u0130)', turler:[{k:'PI',l:'en'},{k:'CI',l:'en'},{k:'PL',l:'en'},{k:'FI',l:'en'},{k:'SI',l:'en'},{k:'GCI',l:'en'}] },
-    { ad:'LOJ\u0130ST\u0130K / G\u00dcMR\u00dcK', turler:[{k:'KT',l:'tr'},{k:'SE',l:'en'},{k:'ST',l:'en'},{k:'NTF',l:'en'},{k:'NFO',l:'tr'},{k:'SIG',l:'tr'}] },
-    { ad:'TEDAR\u0130K / \u0130\u00c7', turler:[{k:'PO',l:'tr'},{k:'MTF',l:'tr'},{k:'MTET',l:'tr'},{k:'IRK',l:'tr'},{k:'QC',l:'tr'},{k:'KYT',l:'tr'}] },
-    { ad:'RAPORLAMA', turler:[{k:'HOS',l:'en'},{k:'TD',l:'tr'},{k:'OD',l:'tr'},{k:'KAPAK',l:'en'},{k:'PARASUT',l:'tr'}] }
+    { ad:'DI\u015e TARAF (M\u00dc\u015eTER\u0130)', dep:'ihracat', turler:[{k:'PI',l:'en'},{k:'CI',l:'en'},{k:'PL',l:'en'},{k:'FI',l:'en'},{k:'SI',l:'en'},{k:'GCI',l:'en'}] },
+    { ad:'LOJ\u0130ST\u0130K / G\u00dcMR\u00dcK', dep:'ihracat', turler:[{k:'KT',l:'tr'},{k:'SE',l:'en'},{k:'ST',l:'en'},{k:'NTF',l:'en'},{k:'NFO',l:'tr'},{k:'SIG',l:'tr'}] },
+    { ad:'TEDAR\u0130K / \u0130\u00c7', dep:'ihracat', turler:[{k:'PO',l:'tr'},{k:'MTF',l:'tr'},{k:'MTET',l:'tr'},{k:'IRK',l:'tr'},{k:'QC',l:'tr'},{k:'KYT',l:'tr'}] },
+    { ad:'RAPORLAMA', dep:'ihracat', turler:[{k:'HOS',l:'en'},{k:'TD',l:'tr'},{k:'OD',l:'tr'},{k:'KAPAK',l:'en'},{k:'PARASUT',l:'tr'}] },
+    { ad:'KDV \u0130ADE', dep:'kdv', turler:[{k:'KDV',l:'tr'},{k:'KDV-R',l:'tr'}] },
+    { ad:'SATI\u015e', dep:'satis', turler:[{k:'TEK',l:'tr'},{k:'SIP',l:'tr'}] },
+    { ad:'MUHASEBE', dep:'muhasebe', turler:[{k:'MUH-TD',l:'tr'},{k:'MUH-OD',l:'tr'},{k:'MUH-HS',l:'en'}] },
+    { ad:'DOCX \u015eABLONLAR', dep:'diger', turler:[{k:'DOCX-PL',l:'en'},{k:'DOCX-CI',l:'en'},{k:'DOCX-FRQ',l:'tr'},{k:'DOCX-IRQ',l:'tr'}] }
   ];
-  var DOCX = [{k:'DOCX-PL',l:'PL \u015eablon'},{k:'DOCX-CI',l:'CI \u015eablon'},{k:'DOCX-FRQ',l:'Forwarder Teklif'},{k:'DOCX-IRQ',l:'Sigorta Teklif'}];
+  TUR_AD['KDV'] = 'KDV \u0130ade Hesaplama'; TUR_AD['KDV-R'] = 'KDV \u0130ade Raporu';
+  TUR_AD['TEK'] = 'Sat\u0131\u015f Teklifi'; TUR_AD['SIP'] = 'Sat\u0131\u015f Sipari\u015fi';
+  TUR_AD['MUH-TD'] = 'Tahsilat Dekontu'; TUR_AD['MUH-OD'] = '\u00d6deme Dekontu'; TUR_AD['MUH-HS'] = 'Hesap \u00d6zeti';
+  TUR_AD['DOCX-PL'] = 'PL \u015eablon'; TUR_AD['DOCX-CI'] = 'CI \u015eablon'; TUR_AD['DOCX-FRQ'] = 'Forwarder Teklif'; TUR_AD['DOCX-IRQ'] = 'Sigorta Teklif';
+  var DOCX = [];
   var _belge_setleri = {
     musteri:{l:'\ud83d\udce6 M\u00fc\u015fteri',turler:['PI','CI','PL']},
     gumrukcu:{l:'\ud83c\udfdb G\u00fcmr\u00fck\u00e7\u00fc',turler:['CI','PL']},
@@ -6488,6 +6498,16 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0"><div><div style="font-size:15px;font-weight:600">Belge Y\u00f6netimi</div>';
   if (d) h += '<div style="font-size:10px;color:var(--t3)">' + _esc2(d.dosyaNo||'') + ' \u00b7 ' + _esc2(d.musteriAd||'') + '</div>';
   h += '</div><button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div>';
+
+  /* DEPARTMAN BUTONLARI */
+  var _depSec = window._bmAktifDep || 'ihracat';
+  var _depBtnS = 'font-size:9px;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:inherit;';
+  h += '<div style="padding:8px 18px;border-bottom:0.5px solid var(--b);display:flex;gap:4px;flex-shrink:0">';
+  [{k:'ihracat',l:'\u0130hracat'},{k:'kdv',l:'KDV \u0130ade'},{k:'satis',l:'Sat\u0131\u015f'},{k:'muhasebe',l:'Muhasebe'},{k:'diger',l:'Di\u011fer'}].forEach(function(dp) {
+    var on = _depSec === dp.k;
+    h += '<button onclick="event.stopPropagation();window._bmAktifDep=\'' + dp.k + '\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _depBtnS + 'border:0.5px solid ' + (on ? '#185FA5' : 'var(--b)') + ';background:' + (on ? '#185FA5' : 'transparent') + ';color:' + (on ? '#fff' : 'var(--t2)') + '">' + dp.l + '</button>';
+  });
+  h += '</div>';
 
   /* ARAC CUBUGU */
   h += '<div style="padding:10px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0">';
@@ -6509,7 +6529,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
 
   /* BELGE LISTESI */
   h += '<div style="flex:1;overflow-y:auto">';
-  GRUPLAR.forEach(function(g) {
+  GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }).forEach(function(g) {
     h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:8px 18px 4px;background:var(--s2);text-transform:uppercase">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
       var isParasut = t.k === 'PARASUT';
@@ -6521,24 +6541,22 @@ window._ihrBelgePaneliAc = function(dosyaId) {
       h += '<span style="flex:1;font-size:11px;color:var(--t)">' + (TUR_AD[t.k] || t.k) + '</span>';
       h += '<span style="font-size:9px;color:var(--t3)">' + t.l.toUpperCase() + '</span>';
       h += durumPill;
+      var isDOCX2 = t.k.indexOf('DOCX-') === 0;
+      var isKDV = t.k === 'KDV' || t.k === 'KDV-R';
       if (isParasut) {
         h += '<button onclick="event.stopPropagation();window._ihrParasutExcel?.(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Excel</button>';
+      } else if (isDOCX2) {
+        var dxAlt = t.k.replace('DOCX-','').toLowerCase();
+        h += '<button onclick="event.stopPropagation();window._ihrFormIndir?.(\'' + dxAlt + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 DOCX</button>';
+      } else if (isKDV) {
+        h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Hesapla</button>';
       } else {
         h += '<button onclick="event.stopPropagation();window._bmTekUret(\'' + dosyaId + '\',\'' + t.k + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u00dcret \u2192</button>';
       }
       h += '</div>';
     });
   });
-  /* DOCX */
-  h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:8px 18px 4px;background:var(--s2);text-transform:uppercase">\ud83d\udcc4 DOCX \u015eABLONLAR</div>';
-  DOCX.forEach(function(dx) {
-    var alt = dx.k.replace('DOCX-','').toLowerCase();
-    h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 18px;border-bottom:0.5px solid var(--b);background:var(--sf)">';
-    h += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:600">DOCX</span>';
-    h += '<span style="flex:1;font-size:11px;color:var(--t)">' + dx.l + '</span>';
-    h += '<button onclick="event.stopPropagation();window._ihrFormIndir?.(\'' + alt + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 DOCX</button>';
-    h += '</div>';
-  });
+  /* DOCX artık GRUPLAR içinde (dep:'diger') */
   h += '</div>';
 
   /* FOOTER */
