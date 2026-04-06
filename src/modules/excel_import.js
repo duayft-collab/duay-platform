@@ -137,7 +137,9 @@ function _processSheet(wb, name) {
 window.excelImportAc = function(dosyaId) {
   _adim = 1; _workbook = null; _sheetNames = []; _selectedSheet = '';
   _excelData = []; _kolonlar = []; _eslestirme = {};
-  _ihrDosyaId = dosyaId || ''; _dosyaAdi = ''; _dosyaBoyut = 0; _dosyaSatir = 0; _dosyaKolon = 0;
+  var _ilkDosya = (typeof window.loadIhracatDosyalar === 'function' ? window.loadIhracatDosyalar().filter(function(d) { return !d.isDeleted && d.durum !== 'kapandi'; }) : [])[0];
+  _ihrDosyaId = dosyaId || window._ihrAktifDosyaId || (_ilkDosya ? _ilkDosya.id : '') || '';
+  _dosyaAdi = ''; _dosyaBoyut = 0; _dosyaSatir = 0; _dosyaKolon = 0;
   _gecerliSatirlar = []; _hataliSatirlar = [];
   _eklenen = 0; _guncellenen = 0; _atlandi = 0; _cakismaMod = 'guncelle';
 
@@ -207,6 +209,24 @@ function _renderSol() {
     if (secili) h += '<span style="font-size:8px;color:#185FA5">\u2713</span>';
     h += '</div>';
   });
+
+  /* Dosya yoksa mesaj */
+  if (!dosyalar.length) h += '<div style="font-size:9px;color:var(--t3);padding:6px 0">Aktif ihracat dosyas\u0131 bulunamad\u0131</div>';
+  if (dosyalar.length > 6) h += '<div style="font-size:9px;color:var(--t3);padding:4px 0">+ ' + (dosyalar.length - 6) + ' dosya daha</div>';
+
+  /* Hızlı Mod — Şablon Listesi */
+  h += '<div style="font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--t3);margin:14px 0 6px">HIZLI MOD</div>';
+  var sablonlar = _loadSablonlar();
+  if (sablonlar.length) {
+    sablonlar.slice(0, 4).forEach(function(s, i) {
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:0.5px solid var(--b);font-size:9px">';
+      h += '<span style="flex:1;color:var(--t)">' + _esc(s.ad) + '</span>';
+      h += '<button onclick="event.stopPropagation();window._eiSablonYukle(' + i + ')" style="font-size:8px;padding:1px 6px;border:0.5px solid #185FA5;border-radius:3px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">Uygula</button>';
+      h += '</div>';
+    });
+  } else {
+    h += '<div style="font-size:9px;color:var(--t3)">Hen\u00fcz kay\u0131tl\u0131 \u015fablon yok</div>';
+  }
 
   /* Özellikler */
   h += '<div style="font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--t3);margin:14px 0 6px">\u00d6ZELL\u0130KLER</div>';
