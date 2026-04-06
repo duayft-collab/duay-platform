@@ -60,6 +60,18 @@ function _fmtMoney(v,c) { var n=parseFloat(v)||0; return (c||'USD')+' '+n.toLoca
 
 function _sortU(urunler) { return urunler.slice().sort(function(a,b){ return (parseInt(a.konteyner_sira)||99)-(parseInt(b.konteyner_sira)||99); }); }
 
+function _grupKonteyner(urunler) {
+  var grups = {}; var siraList = [];
+  urunler.forEach(function(u) {
+    var sira = u.konteyner_sira ? String(u.konteyner_sira) : '1';
+    if (!grups[sira]) { grups[sira] = []; siraList.push(sira); }
+    grups[sira].push(u);
+  });
+  siraList.sort(function(a, b) { return parseInt(a) - parseInt(b); });
+  return { grups: grups, siraList: siraList };
+}
+window._grupKonteyner = _grupKonteyner;
+
 // ════════════════════════════════════════════════════════════════
 // FORM 1: PACKING LIST
 // ════════════════════════════════════════════════════════════════
@@ -74,6 +86,10 @@ function makePackingList(dosya, urunler, bl) {
   var kontNo=bl.konteyner_no||'_________________________';
   var sealNo=bl.seal_no||'_________________________';
   var kontTur=dosya.konteyner_turu||'[ ] 20DC    [ ] 40DC    [ ] 40HC';
+
+  /* Cok konteyner kontrolu — birden fazla varsa multi sayfa */
+  var ktGrup = _grupKonteyner(urunler);
+  if (ktGrup.siraList.length > 1) { return makePackingListMulti(dosya, urunler, bl); }
 
   var totKoli=0,totBrut=0,totNet=0;
   urunler.forEach(function(u){ totKoli+=parseInt(u.koli_adet)||0; totBrut+=parseFloat(u.brut_kg)||0; totNet+=parseFloat(u.net_kg)||0; });
@@ -113,6 +129,96 @@ function makePackingList(dosya, urunler, bl) {
     blank(300), signatureTbl(),
   ]}]});
 }
+
+// ════════════════════════════════════════════════════════════════
+// FORM 1B: PACKING LIST — MULTI KONTEYNER (PL-MULTI-KONT-001)
+// ════════════════════════════════════════════════════════════════
+function makePackingListMulti(dosya, urunler, bl) {
+  dosya=dosya||{}; urunler=urunler||[]; bl=bl||{};
+  var plNo=(dosya.dosyaNo||'______').replace('IHR-','PL-');
+  var invNo=(dosya.dosyaNo||'______').replace('IHR-','INV-');
+  var tarih=_fmtDate(dosya.bitis_tarihi)||_todayFmt();
+  var konsigne=bl.consignee||dosya.musteriAd||'[Consignee]';
+  var pol=dosya.yukleme_limani||'Istanbul, Turkey';
+  var pod=dosya.varis_limani||'[Varis Limani]';
+  var ktGrup = _grupKonteyner(urunler);
+  var totKoli=0,totBrut=0,totNet=0;
+  urunler.forEach(function(u){ totKoli+=parseInt(u.koli_adet)||0; totBrut+=parseFloat(u.brut_kg)||0; totNet+=parseFloat(u.net_kg)||0; });
+
+  var children = [];
+  ktGrup.siraList.forEach(function(sira, idx) {
+    var ktU = ktGrup.grups[sira];
+    var ilkU = ktU[0] || {};
+    var kontNo = ilkU.konteyner_no || bl.konteyner_no || '_________________________';
+    var sealNo2 = ilkU.muhur_no || bl.seal_no || '_________________________';
+    var kontTur = dosya.konteyner_turu || dosya.konteyner_tipi || '40HC';
+    var kKoli=0, kBrut=0, kNet=0;
+    ktU.forEach(function(u){ kKoli+=parseInt(u.koli_adet)||0; kBrut+=parseFloat(u.brut_kg)||0; kNet+=parseFloat(u.net_kg)||0; });
+    var sayfaBaslik = plNo + ' \u2014 Container ' + sira + '/' + ktGrup.siraList.length;
+
+    var rows = [];
+    _sortU(ktU).forEach(function(u, i) {
+      var last = i === ktU.length - 1;
+      var desc = u.standart_urun_adi || u.fatura_urun_adi || u.aciklama || u.urun_kodu || '[Urun]';
+      rows.push(new D.TableRow({children:[
+        dataCellC([reg(String(i+1),17)],400,!last),
+        dataCell([reg(desc,17)],3800,!last),
+        dataCellC([reg(u.paket_turu||'Carton',17)],1600,!last),
+        dataCellC([reg(String(parseInt(u.koli_adet)||'\u2014'),17)],1200,!last),
+        dataCellC([reg(String(parseFloat(u.miktar)||'\u2014')+' '+(u.birim||'PCS'),17)],1200,!last),
+        dataCellC([reg((parseFloat(u.net_kg)||0).toFixed(2),17)],1800,!last),
+        dataCellC([reg((parseFloat(u.brut_kg)||0).toFixed(2),17)],1800,!last),
+      ]}));
+    });
+    /* Konteyner alt toplam */
+    rows.push(new D.TableRow({children:[
+      totalCellR([bold('Container '+sira+' Sub-Total',15)],400+3800+1600),
+      totalCell([bold(String(kKoli),17)],1200),
+      totalCell([bold('',17)],1200),
+      totalCell([bold(kNet.toFixed(2)+' kg',17)],1800),
+      totalCell([bold(kBrut.toFixed(2)+' kg',17)],1800),
+    ]}));
+    /* Son konteynirda genel toplam */
+    if (idx === ktGrup.siraList.length - 1) {
+      rows.push(new D.TableRow({children:[
+        totalCellR([bold('GRAND TOTAL',17)],400+3800+1600),
+        totalCell([bold(String(totKoli),17)],1200),
+        totalCell([bold('',17)],1200),
+        totalCell([bold(totNet.toFixed(2)+' kg',17)],1800),
+        totalCell([bold(totBrut.toFixed(2)+' kg',17)],1800),
+      ]}));
+    }
+
+    var pg = [
+      headerTbl('Packing List', sayfaBaslik+'\nDate: '+tarih+'  \u00b7  Ref: '+invNo, 'Uluslararasi Ticaret  \u00b7  '+pol+'  \u00b7  export@duayglobal.com'),
+      blank(200),
+      tbl([new D.TableRow({children:[
+        new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
+        new D.TableCell({children:[p([label('Consignee / Buyer')],'left',80),p([bold(konsigne,18)],'left',0)],width:{size:8838,type:'dxa'},borders:allNone,margins:cellMargS}),
+      ]})],[6000,8838]),
+      blank(200),
+      new D.Table({width:{size:CW,type:'dxa'},columnWidths:[400,3800,1600,1200,1200,1800,1800],borders:allNone,
+        rows:[new D.TableRow({children:[
+          hdrCell('#',400),hdrCell('Description of Goods',3800),hdrCell('Package Type',1600),
+          hdrCell('Qty (Pkgs)',1200),hdrCell('Unit Qty',1200),
+          hdrCell('Net Weight (kg)',1800),hdrCell('Gross Weight (kg)',1800),
+        ]})].concat(rows)
+      }),
+      blank(200),
+      tbl([new D.TableRow({children:[
+        new D.TableCell({children:[p([label('Container No')],'left',40),p([reg(kontNo,17)],'left',0)],width:{size:4000,type:'dxa'},borders:allNone,margins:cellMargS}),
+        new D.TableCell({children:[p([label('Seal No')],'left',40),p([reg(sealNo2,17)],'left',0)],width:{size:4000,type:'dxa'},borders:allNone,margins:cellMargS}),
+        new D.TableCell({children:[p([label('Container Type')],'left',40),p([reg(kontTur,17)],'left',0)],width:{size:6838,type:'dxa'},borders:allNone,margins:cellMargS}),
+      ]})],[4000,4000,6838]),
+      blank(300),
+      signatureTbl(),
+    ];
+    if (idx < ktGrup.siraList.length - 1) pg.push(new D.Paragraph({ children: [], pageBreakBefore: true }));
+    children = children.concat(pg);
+  });
+  return new D.Document({sections:[{properties:pageProps,children:children}]});
+}
+window.makePackingListMulti = makePackingListMulti;
 
 // ════════════════════════════════════════════════════════════════
 // FORM 2: COMMERCIAL INVOICE
