@@ -1486,21 +1486,18 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   h += '<button onclick="event.stopPropagation();window._ihrUrunEkle(\'' + _dosyaId + '\')" style="font-size:9px;padding:2px 10px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">+ Ekle</button>';
   h += '</div>';
   h += '</div>'; /* SATIR 1 bitti */
-  /* BELGE TOOLBAR (SATIR 1.5) */
-  h += '<div style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--sf);border-bottom:0.5px solid var(--b);flex-wrap:nowrap;overflow-x:auto">';
-  h += '<span style="font-size:9px;color:var(--t3);flex-shrink:0;margin-right:2px">Belge \u00fcret:</span>';
-  var _bdS = 'font-size:9px;padding:3px 10px;border-radius:4px;border:0.5px solid var(--b);background:var(--sf);cursor:pointer;font-family:inherit;color:var(--t2);white-space:nowrap;flex-shrink:0';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'PI\')" style="' + _bdS + '">PI</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'CI\')" style="' + _bdS + '">CI</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'PL\')" style="' + _bdS + '">PL</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'TRFAT\')" style="' + _bdS + '">TR Fatura</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'SEVK\')" style="' + _bdS + '">Sevk Emri</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'YUK\')" style="' + _bdS + '">Y\u00fck. Tal.</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'TTF\')" style="' + _bdS + '">TTF</button>';
-  h += '<div style="width:1px;height:16px;background:var(--b);flex-shrink:0;margin:0 4px"></div>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgePaneliAc?.(\'' + _dosyaId + '\')" style="' + _bdS + ';background:#185FA5;color:#fff;border-color:#185FA5;font-weight:500">\ud83d\udcc4 Belgeler</button>';
-  h += '<div style="flex:1"></div>';
-  if (eksikHs > 0) h += '<button onclick="event.stopPropagation();window._ihrHsToplu(\'' + _dosyaId + '\')" style="' + _bdS + ';color:#D97706;border-color:#D97706;margin-left:6px">HS Toplu (' + eksikHs + ')</button>';
+  /* BELGE TOOLBAR — temizlenmis (URUN-TASARIM-001) */
+  h += '<div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--sf);border-bottom:0.5px solid var(--b);flex-wrap:nowrap;overflow-x:auto">';
+  h += '<button onclick="event.stopPropagation();window._ihrTumBelgeleriUret(\'' + _dosyaId + '\')" style="font-size:9px;padding:3px 12px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0">Belgeler \u25be</button>';
+  h += '<div style="width:1px;height:16px;background:var(--b);flex-shrink:0;margin:0 3px"></div>';
+  h += '<button onclick="event.stopPropagation();window._ihrDosyaDuzenle?.(\'' + _dosyaId + '\')" style="font-size:9px;padding:3px 9px;border-radius:4px;border:0.5px solid var(--b);background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;flex-shrink:0">D\u00fczenle</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrDurumDegistir?.(\'' + _dosyaId + '\')" style="font-size:9px;padding:3px 9px;border-radius:4px;border:0.5px solid var(--b);background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;flex-shrink:0">Durum</button>';
+  h += '<div style="width:1px;height:16px;background:var(--b);flex-shrink:0;margin:0 3px"></div>';
+  h += '<button onclick="event.stopPropagation();window._ihrKaynakFiltre?.(\'' + _dosyaId + '\',\'el\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #27500A;color:#27500A;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0">EL</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrKaynakFiltre?.(\'' + _dosyaId + '\',\'sa\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #0C447C;color:#0C447C;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0">SA</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrKaynakFiltre?.(\'' + _dosyaId + '\',\'im\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #3C3489;color:#3C3489;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0">IM</button>';
+  if (eksikHs > 0) h += '<button onclick="event.stopPropagation();window._ihrHsToplu(\'' + _dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #D97706;color:#854F0B;background:#FAEEDA;cursor:pointer;font-family:inherit;flex-shrink:0;margin-left:4px">HS Toplu (' + eksikHs + ')</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrTopluOnayla?.(\'' + _dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #27500A;color:#27500A;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0">Toplu Onayla</button>';
   h += '</div>';
 
   /* SATIR 2: Filtre + Presetler + Küçük Araçlar (28px) */
@@ -7003,6 +7000,80 @@ window._ihrMutabakatOzet = function(dosyaId) {
   hO += '</div></body></html>';
   var w2 = window.open('', '_blank');
   if (w2) { w2.document.write(hO); w2.document.close(); }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   URUN-TASARIM-001 — Yeni fonksiyonlar
+   ══════════════════════════════════════════════════════════════ */
+window._ihrKaynakFiltre = function(dosyaId, kaynak) {
+  window._ihrUrunKaynakFiltre = (window._ihrUrunKaynakFiltre === kaynak) ? null : kaynak;
+  var d2 = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
+  var c2 = _g('ihr-detay-content');
+  if (d2 && c2) _ihrDetayRenderUrunler(d2, c2);
+};
+
+window._ihrTopluOnayla = function(dosyaId) {
+  var secili = Array.from(document.querySelectorAll('.ihr-urun-chk:checked')).map(function(cb) { return cb.dataset.id; });
+  if (!secili.length) { window.toast?.('\u00d6nce \u00fcr\u00fcn se\u00e7in', 'warn'); return; }
+  window.confirmModal?.('Se\u00e7ili ' + secili.length + ' \u00fcr\u00fcn\u00fc onayla?', {
+    title: 'Toplu Onayla', confirmText: 'Onayla',
+    onConfirm: function() {
+      var urunler = _loadU();
+      secili.forEach(function(id) { var u = urunler.find(function(x) { return String(x.id) === String(id); }); if (u) { u.onay_durumu = 'onaylandi'; u.updatedAt = _now(); u.updatedBy = _cu()?.id; } });
+      _storeU(urunler);
+      window.toast?.('Toplu onayland\u0131: ' + secili.length + ' \u00fcr\u00fcn', 'ok');
+      _ihrReRender();
+    }
+  });
+};
+
+window._ihrUrunPeekAc = function(id) {
+  var panel = document.getElementById('ihr-peek-panel'); if (!panel) return;
+  var u = _loadU().find(function(x) { return String(x.id) === String(id); }); if (!u) return;
+  var kaynak = u.kaynak || 'el';
+  var kR = kaynak === 'sa' ? { bg: '#E6F1FB', c: '#0C447C', l: 'SA Sat\u0131nalma' } : kaynak === 'im' ? { bg: '#EEEDFE', c: '#3C3489', l: 'IM Import' } : { bg: '#EAF3DE', c: '#27500A', l: 'EL Manuel' };
+  var fld = function(l, v, renk) { return '<div style="padding:4px 12px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t2)">' + l + '</span><span style="font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' + (renk ? 'color:' + renk : '') + '">' + _esc(String(v || '\u2014')) + '</span></div>'; };
+  var h2 = '<div style="padding:7px 12px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:var(--s2)"><span style="font-size:10px;font-weight:500">' + _esc(u.urun_kodu || u.aciklama || '\u2014') + '</span><button onclick="event.stopPropagation();window._ihrUrunPeekKapat()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3)">\u00d7</button></div>';
+  h2 += fld('Kaynak', '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:' + kR.bg + ';color:' + kR.c + '">' + kR.l + '</span>');
+  h2 += fld('Standart Ad', u.standart_urun_adi, !u.standart_urun_adi ? '#DC2626' : null);
+  h2 += fld('HS Kodu', u.hs_kodu, !u.hs_kodu ? '#DC2626' : '#16A34A');
+  h2 += fld('Miktar', (u.miktar || '\u2014') + ' ' + (u.birim || ''));
+  h2 += fld('Br\u00fct KG', u.brut_kg ? u.brut_kg + ' kg' : '\u2014', !u.brut_kg ? '#DC2626' : null);
+  h2 += fld('Fiyat', u.birim_fiyat ? (u.doviz || '') + ' ' + u.birim_fiyat : '\u2014', !u.birim_fiyat ? '#DC2626' : '#185FA5');
+  h2 += fld('Koli', u.koli_adet);
+  h2 += fld('Men\u015fei', u.mense_ulke);
+  h2 += '<div style="padding:8px 12px;display:flex;flex-direction:column;gap:4px">';
+  h2 += '<button onclick="event.stopPropagation();window._ihrInlineEdit?.(null,\'' + id + '\',\'aciklama\')" style="font-size:9px;padding:4px;border-radius:5px;border:0.5px solid #185FA5;color:#185FA5;cursor:pointer;font-family:inherit">D\u00fczenle</button>';
+  h2 += '</div>';
+  panel.style.width = '210px';
+  panel.innerHTML = h2;
+};
+
+window._ihrUrunPeekKapat = function() {
+  var p = document.getElementById('ihr-peek-panel'); if (p) p.style.width = '0';
+};
+
+window._ihrDosyaAraModal = function() {
+  var dosyalar = _loadD().filter(function(d2) { return !d2.isDeleted; });
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ihr-dosya-ara';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var renderL = function(q) {
+    var fil = q ? dosyalar.filter(function(d2) { return (d2.dosyaNo || '').toLowerCase().indexOf(q) !== -1 || (d2.musteriAd || '').toLowerCase().indexOf(q) !== -1; }) : dosyalar;
+    return fil.slice(0, 20).map(function(d2) {
+      return '<div onclick="event.stopPropagation();window._ihrSetAktifDosya(\'' + d2.id + '\')" style="padding:10px 16px;border-bottom:0.5px solid var(--b);cursor:pointer;display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="font-size:12px;font-weight:500">' + _esc(d2.dosyaNo) + '</div><div style="font-size:10px;color:var(--t2)">' + _esc(d2.musteriAd || '') + '</div></div></div>';
+    }).join('') || '<div style="padding:20px;text-align:center;color:var(--t3)">Sonu\u00e7 bulunamad\u0131</div>';
+  };
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden"><div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:8px"><input id="ihr-dosya-ara-inp" class="fi" placeholder="Dosya no veya m\u00fc\u015fteri ara..." style="flex:1;font-size:12px" oninput="event.stopPropagation();document.getElementById(\'ihr-dosya-ara-liste\').innerHTML=window._ihrAraRender?.(this.value.toLowerCase())||\'\'"><button onclick="event.stopPropagation();document.getElementById(\'mo-ihr-dosya-ara\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div><div id="ihr-dosya-ara-liste" style="max-height:340px;overflow-y:auto">' + renderL('') + '</div></div>';
+  window._ihrAraRender = renderL;
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._ihrSetAktifDosya = function(id) {
+  _aktifDosyaId = id; window._ihrAktifDosyaId = id;
+  document.getElementById('mo-ihr-dosya-ara')?.remove();
+  window.toast?.('Aktif dosya de\u011fi\u015ftirildi', 'ok');
+  _ihrReRender();
 };
 
 })();
