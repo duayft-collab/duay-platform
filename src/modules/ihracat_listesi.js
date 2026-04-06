@@ -526,6 +526,37 @@ const Urunler = { openForm: openIhracatListesiForm };
 window.IhracatListesi = Urunler;
 window.openIhracatListesiForm = openIhracatListesiForm;
 
+/** Ana render — panel açıldığında çağrılır */
+window.renderIhracatListesi = function() {
+  var panel = document.getElementById('panel-ihracat-listesi');
+  if (!panel) return;
+  var _esc2 = function(s) { return String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--b)"><div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:15px;font-weight:700;color:var(--t)">Al\u0131nan Teklifler</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Sat\u0131\u015f ve \u0130hracat i\u00e7in merkezi \u00fcr\u00fcn kayna\u011f\u0131</div></div><div style="display:flex;gap:6px;align-items:center"><input id="il-search" class="fi" placeholder="Ara..." style="width:160px;font-size:11px;padding:4px 8px" oninput="event.stopPropagation();window.renderIhracatListesi()"><button onclick="event.stopPropagation();window.openIhracatListesiForm()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Yeni Kay\u0131t</button></div></div></div><div id="il-liste-content" style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"></div>';
+  }
+  var cont = document.getElementById('il-liste-content'); if (!cont) return;
+  var d = typeof loadIhracatListesi === 'function' ? loadIhracatListesi() : [];
+  var q = (document.getElementById('il-search')?.value || '').toLowerCase();
+  if (q) d = d.filter(function(u) { return (u.duayAdi||u.urunAdi||u.standartAdi||'').toLowerCase().indexOf(q)!==-1||(u.duayKodu||'').toLowerCase().indexOf(q)!==-1||(u.tedarikci||'').toLowerCase().indexOf(q)!==-1; });
+  if (!d.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">Hen\u00fcz kay\u0131t yok \u2014 Yeni Kay\u0131t ekleyin</div>'; return; }
+  var thS = 'font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:6px 10px;background:var(--s2)';
+  var h = '<div style="display:grid;grid-template-columns:48px 120px 1fr 140px 80px 100px;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="'+thS+'">G\u00f6rsel</div><div style="'+thS+'">Kod</div><div style="'+thS+'">Ad</div><div style="'+thS+'">Tedarik\u00e7i</div><div style="'+thS+'">Men\u015fei</div><div style="'+thS+'">i\u015flem</div></div>';
+  d.forEach(function(u) {
+    var gorsel = u.urunGorseli||u.urunGorseliVal||'';
+    var gH = gorsel ? '<img src="'+gorsel+'" style="width:36px;height:36px;object-fit:cover;border-radius:5px;border:0.5px solid var(--b)">' : '<div style="width:36px;height:36px;border-radius:5px;border:0.5px dashed var(--b);display:flex;align-items:center;justify-content:center;font-size:14px">\ud83d\udce6</div>';
+    h += '<div style="display:grid;grid-template-columns:48px 120px 1fr 140px 80px 100px;border-bottom:0.5px solid var(--b);align-items:center;cursor:pointer" onclick="event.stopPropagation();window.openIhracatListesiForm(\''+u.id+'\')">';
+    h += '<div style="padding:6px 10px">'+gH+'</div>';
+    h += '<div style="padding:6px 10px;font-size:10px;font-family:monospace;color:var(--t3)">'+_esc2(u.duayKodu||'\u2014')+'</div>';
+    h += '<div style="padding:6px 10px"><div style="font-size:11px;font-weight:500;color:var(--t)">'+_esc2(u.duayAdi||u.urunAdi||u.standartAdi||'\u2014')+'</div></div>';
+    h += '<div style="padding:6px 10px;font-size:10px;color:var(--t2)">'+_esc2(u.tedarikci||'\u2014')+'</div>';
+    h += '<div style="padding:6px 10px;font-size:10px;color:var(--t3)">'+_esc2(u.mensei||'\u2014')+'</div>';
+    h += '<div style="padding:4px 8px"><button onclick="event.stopPropagation();window.openIhracatListesiForm(\''+u.id+'\')" style="padding:3px 8px;border:0.5px solid var(--ac);border-radius:4px;background:none;color:var(--ac);font-size:9px;cursor:pointer;font-family:inherit">D\u00fczenle</button></div>';
+    h += '</div>';
+  });
+  cont.innerHTML = h;
+};
 
 if (typeof module !== 'undefined' && module.exports) { module.exports = IhracatListesi; }
 
