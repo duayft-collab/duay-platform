@@ -282,6 +282,8 @@ function _sagAdim2(el) {
     h += '</select>';
   }
   h += '<button onclick="event.stopPropagation();window._eiSablonKaydet()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u267b\ufe0f \u015eablon Kaydet</button>';
+  var _eslSay = Object.values(_eslestirme).filter(function(v) { return v && v !== 'atla'; }).length;
+  h += '<span style="margin-left:auto;font-size:10px;color:var(--t3)">' + _eslSay + '/' + _kolonlar.length + ' e\u015fle\u015fti</span>';
   h += '</div>';
 
   /* Başlık */
