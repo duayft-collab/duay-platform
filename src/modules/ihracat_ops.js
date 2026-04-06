@@ -1167,6 +1167,11 @@ window._ihrEmirTopluSil = function() {
 };
 window._ihrDurumFilter = function(v) { _durumFilter = v; _ihrRenderContent(); };
 window._ihrAcDosya = _ihrAcDosya;
+window._ihrAktifDosyaId = null;
+/* _aktifDosyaId değişince window'u güncelle */
+var _origAcDosya = _ihrAcDosya;
+function _ihrAcDosyaWrapped(id) { _origAcDosya(id); window._ihrAktifDosyaId = _aktifDosyaId; }
+window._ihrAcDosya = _ihrAcDosyaWrapped;
 window._ihrRenderDosyaDetay = _ihrRenderDosyaDetay;
 window._ihrRenderContent = _ihrRenderContent;
 window._ihrDetayRenderOzet = _ihrDetayRenderOzet;
@@ -1344,7 +1349,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'YUK\')" style="' + _bdS + '">Y\u00fck. Tal.</button>';
   h += '<button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + _dosyaId + '\',\'TTF\')" style="' + _bdS + '">TTF</button>';
   h += '<div style="width:1px;height:16px;background:var(--b);flex-shrink:0;margin:0 4px"></div>';
-  h += '<button onclick="event.stopPropagation();window._ihrTumBelgeleriUret(\'' + _dosyaId + '\')" style="' + _bdS + ';color:#185FA5;border-color:#185FA5;font-weight:500">T\u00fcm\u00fcn\u00fc \u00dcret</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgePaneliAc?.(\'' + _dosyaId + '\')" style="' + _bdS + ';background:#185FA5;color:#fff;border-color:#185FA5;font-weight:500">\ud83d\udcc4 Belgeler</button>';
   h += '<div style="flex:1"></div>';
   if (eksikHs > 0) h += '<button onclick="event.stopPropagation();window._ihrHsToplu(\'' + _dosyaId + '\')" style="' + _bdS + ';color:#D97706;border-color:#D97706;margin-left:6px">HS Toplu (' + eksikHs + ')</button>';
   h += '</div>';
@@ -6211,8 +6216,9 @@ window._ihrRenderDashboard = function(el) {
   /* 5G — Hizli Islemler (sadelestirilmis) */
   var _imS = 'width:100%;padding:5px;border-radius:5px;font-size:9px;cursor:pointer;font-family:inherit;';
   h += '<div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:3px"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">H\u0131zl\u0131 \u0130\u015flemler</div>';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgePaneliAc?.(window._ihrAktifDosyaId||\'\')" style="' + _imS + 'background:#185FA5;color:#fff;border-color:#185FA5;font-weight:500;margin-bottom:4px">\ud83d\udcc4 Belge Y\u00f6netimi</button>';
+  h += '<button onclick="event.stopPropagation();window.excelImportAc?.(\'\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Import Docs</button>';
   h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">KDV \u0130ade Hesapla</button>';
-  h += '<button onclick="event.stopPropagation();window.excelImportAc?.(_aktifDosyaId||\'\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Import Docs</button>';
   h += '<button onclick="event.stopPropagation();window._ihrAyarlarModal?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Rol & Firmalar</button>';
   h += '</div></div>';
 
@@ -6441,6 +6447,147 @@ window._ihrEvrakSetiUret = function(setKey) {
     setTimeout(function() { window._ihrBelgeUretDogrudan?.(dosyaId, tur, 'en'); uretSiradaki(); }, 800 * (idx - 1));
   };
   uretSiradaki();
+};
+
+/* ══════════════════════════════════════════════════════════════
+   MERKEZ\u0130 BELGE Y\u00d6NET\u0130M PANEL\u0130 (BELGE-MERKEZ-001)
+   ══════════════════════════════════════════════════════════════ */
+window._bmAktifDil = 'en';
+window._bmAktifYon = 'portrait';
+
+window._ihrBelgePaneliAc = function(dosyaId) {
+  dosyaId = dosyaId || window._ihrAktifDosyaId || '';
+  var d = dosyaId ? _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; }) : null;
+  var evraklar = d ? _loadE().filter(function(e) { return String(e.dosya_id) === String(d.id) && !e.isDeleted; }) : [];
+
+  var old = document.getElementById('mo-belge-merkez'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-belge-merkez';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+
+  var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Shipping Order', ST:'Shipping Instruction', NTF:'Freight Quote Request', NFO:'Freight Price Approval', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Account Statement', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Export File Cover', PARASUT:'Para\u015f\u00fct Excel' };
+  var GRUPLAR = [
+    { ad:'DI\u015e TARAF (M\u00dc\u015eTER\u0130)', turler:[{k:'PI',l:'en'},{k:'CI',l:'en'},{k:'PL',l:'en'},{k:'FI',l:'en'},{k:'SI',l:'en'},{k:'GCI',l:'en'}] },
+    { ad:'LOJ\u0130ST\u0130K / G\u00dcMR\u00dcK', turler:[{k:'KT',l:'tr'},{k:'SE',l:'en'},{k:'ST',l:'en'},{k:'NTF',l:'en'},{k:'NFO',l:'tr'},{k:'SIG',l:'tr'}] },
+    { ad:'TEDAR\u0130K / \u0130\u00c7', turler:[{k:'PO',l:'tr'},{k:'MTF',l:'tr'},{k:'MTET',l:'tr'},{k:'IRK',l:'tr'},{k:'QC',l:'tr'},{k:'KYT',l:'tr'}] },
+    { ad:'RAPORLAMA', turler:[{k:'HOS',l:'en'},{k:'TD',l:'tr'},{k:'OD',l:'tr'},{k:'KAPAK',l:'en'},{k:'PARASUT',l:'tr'}] }
+  ];
+  var DOCX = [{k:'DOCX-PL',l:'PL \u015eablon'},{k:'DOCX-CI',l:'CI \u015eablon'},{k:'DOCX-FRQ',l:'Forwarder Teklif'},{k:'DOCX-IRQ',l:'Sigorta Teklif'}];
+  var _belge_setleri = {
+    musteri:{l:'\ud83d\udce6 M\u00fc\u015fteri',turler:['PI','CI','PL']},
+    gumrukcu:{l:'\ud83c\udfdb G\u00fcmr\u00fck\u00e7\u00fc',turler:['CI','PL']},
+    forwarder:{l:'\ud83d\udea2 Forwarder',turler:['CI','PL','SE']},
+    sigortaci:{l:'\ud83d\udee1 Sigortac\u0131',turler:['CI','PL']}
+  };
+  var _esc2 = function(s) { return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var dilSec = window._bmAktifDil || 'en';
+  var yonSec = window._bmAktifYon || 'portrait';
+
+  var h = '<div class="moc" style="max-width:780px;padding:0;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:92vh">';
+
+  /* HEADER */
+  h += '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0"><div><div style="font-size:15px;font-weight:600">Belge Y\u00f6netimi</div>';
+  if (d) h += '<div style="font-size:10px;color:var(--t3)">' + _esc2(d.dosyaNo||'') + ' \u00b7 ' + _esc2(d.musteriAd||'') + '</div>';
+  h += '</div><button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div>';
+
+  /* ARAC CUBUGU */
+  h += '<div style="padding:10px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0">';
+  /* Set butonlari */
+  Object.keys(_belge_setleri).forEach(function(sk) {
+    var s = _belge_setleri[sk];
+    h += '<button onclick="event.stopPropagation();' + s.turler.map(function(t){return 'var c=document.getElementById(\'bm-chk-'+t+'\');if(c)c.checked=true;';}).join('') + 'window._bmGuncelle()" style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">' + s.l + '</button>';
+  });
+  h += '<div style="width:1px;height:16px;background:var(--b)"></div>';
+  /* Dil */
+  h += '<button onclick="event.stopPropagation();window._bmAktifDil=\'en\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (dilSec==='en'?'#185FA5':'var(--b)') + ';background:' + (dilSec==='en'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (dilSec==='en'?'#185FA5':'var(--t2)') + ';font-family:inherit">\ud83c\uddec\ud83c\udde7 EN</button>';
+  h += '<button onclick="event.stopPropagation();window._bmAktifDil=\'tr\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (dilSec==='tr'?'#185FA5':'var(--b)') + ';background:' + (dilSec==='tr'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (dilSec==='tr'?'#185FA5':'var(--t2)') + ';font-family:inherit">\ud83c\uddf9\ud83c\uddf7 TR</button>';
+  h += '<div style="width:1px;height:16px;background:var(--b)"></div>';
+  /* Yon */
+  h += '<button onclick="event.stopPropagation();window._bmAktifYon=\'portrait\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (yonSec==='portrait'?'#185FA5':'var(--b)') + ';background:' + (yonSec==='portrait'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (yonSec==='portrait'?'#185FA5':'var(--t2)') + ';font-family:inherit">\u2195 Dikey</button>';
+  h += '<button onclick="event.stopPropagation();window._bmAktifYon=\'landscape\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (yonSec==='landscape'?'#185FA5':'var(--b)') + ';background:' + (yonSec==='landscape'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (yonSec==='landscape'?'#185FA5':'var(--t2)') + ';font-family:inherit">\u2194 Yatay</button>';
+  h += '<div style="margin-left:auto"><label style="font-size:9px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="bm-chk-all" onchange="event.stopPropagation();document.querySelectorAll(\'[id^=bm-chk-]\').forEach(function(c){if(c.id!==\'bm-chk-all\')c.checked=document.getElementById(\'bm-chk-all\').checked});window._bmGuncelle()"> T\u00fcm\u00fcn\u00fc Se\u00e7</label></div>';
+  h += '</div>';
+
+  /* BELGE LISTESI */
+  h += '<div style="flex:1;overflow-y:auto">';
+  GRUPLAR.forEach(function(g) {
+    h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:8px 18px 4px;background:var(--s2);text-transform:uppercase">' + g.ad + '</div>';
+    g.turler.forEach(function(t) {
+      var isParasut = t.k === 'PARASUT';
+      var mevcut = evraklar.find(function(e) { return e.tur === t.k; });
+      var durumPill = mevcut ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:500">\u2713 Mevcut</span>' : '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:var(--s2);color:var(--t3)">\u2014</span>';
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 18px;border-bottom:0.5px solid var(--b)">';
+      h += '<input type="checkbox" id="bm-chk-' + t.k + '" onchange="event.stopPropagation();window._bmGuncelle()" style="width:16px;height:16px;cursor:pointer">';
+      h += '<span style="font-size:9px;font-weight:600;color:#185FA5;background:#E6F1FB;padding:1px 7px;border-radius:3px;min-width:48px;text-align:center">' + t.k + '</span>';
+      h += '<span style="flex:1;font-size:11px;color:var(--t)">' + (TUR_AD[t.k] || t.k) + '</span>';
+      h += '<span style="font-size:9px;color:var(--t3)">' + t.l.toUpperCase() + '</span>';
+      h += durumPill;
+      if (isParasut) {
+        h += '<button onclick="event.stopPropagation();window._ihrParasutExcel?.(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Excel</button>';
+      } else {
+        h += '<button onclick="event.stopPropagation();window._bmTekUret(\'' + dosyaId + '\',\'' + t.k + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u00dcret \u2192</button>';
+      }
+      h += '</div>';
+    });
+  });
+  /* DOCX */
+  h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:8px 18px 4px;background:var(--s2);text-transform:uppercase">\ud83d\udcc4 DOCX \u015eABLONLAR</div>';
+  DOCX.forEach(function(dx) {
+    var alt = dx.k.replace('DOCX-','').toLowerCase();
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 18px;border-bottom:0.5px solid var(--b);background:var(--sf)">';
+    h += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:600">DOCX</span>';
+    h += '<span style="flex:1;font-size:11px;color:var(--t)">' + dx.l + '</span>';
+    h += '<button onclick="event.stopPropagation();window._ihrFormIndir?.(\'' + alt + '\')" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 DOCX</button>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  /* FOOTER */
+  h += '<div style="padding:10px 18px;border-top:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">';
+  h += '<span id="bm-secili-sayi" style="font-size:11px;color:var(--t2)">0 belge se\u00e7ildi</span>';
+  h += '<div style="display:flex;gap:8px">';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove()" style="font-size:11px;padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u0130ptal</button>';
+  h += '<button onclick="event.stopPropagation();window._bmTopluUret(\'' + dosyaId + '\')" style="font-size:11px;padding:6px 18px;border:none;border-radius:6px;background:#16A34A;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Se\u00e7ilenleri \u00dcret \u2192</button>';
+  h += '</div></div>';
+  h += '</div>';
+
+  mo.innerHTML = h;
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._bmGuncelle = function() {
+  var sayi = document.querySelectorAll('[id^="bm-chk-"]:checked').length;
+  var allChk = document.getElementById('bm-chk-all');
+  if (allChk) sayi = Math.max(0, sayi - (allChk.checked ? 1 : 0));
+  var el = document.getElementById('bm-secili-sayi');
+  if (el) el.textContent = sayi + ' belge se\u00e7ildi';
+};
+
+window._bmTekUret = function(dosyaId, tur) {
+  var lang = window._bmAktifDil || 'en';
+  window._ihrBelgeUretDogrudan?.(dosyaId, tur, lang);
+};
+
+window._bmTopluUret = function(dosyaId) {
+  if (window._bmTopluLoading) return;
+  window._bmTopluLoading = true;
+  var secili = [];
+  document.querySelectorAll('[id^="bm-chk-"]:checked').forEach(function(c) {
+    var t = c.id.replace('bm-chk-', '');
+    if (t !== 'all' && t.indexOf('DOCX') === -1 && t !== 'PARASUT') secili.push(t);
+  });
+  if (!secili.length) { window.toast?.('Belge se\u00e7ilmedi', 'warn'); window._bmTopluLoading = false; return; }
+  window.toast?.(secili.length + ' belge \u00fcretiliyor...', 'ok');
+  secili.forEach(function(tur, i) {
+    setTimeout(function() {
+      window._bmTekUret(dosyaId, tur);
+      if (i === secili.length - 1) { window._bmTopluLoading = false; window.toast?.('T\u00fcm belgeler \u00fcretildi', 'ok'); }
+    }, i * 700);
+  });
+};
+
+/* _ihrTumBelgeleriUret → merkezi panele yonlendir */
+window._ihrTumBelgeleriUret = function(dosyaId) {
+  window._ihrBelgePaneliAc(dosyaId || window._ihrAktifDosyaId || '');
 };
 
 })();
