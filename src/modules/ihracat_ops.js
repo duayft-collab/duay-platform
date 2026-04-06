@@ -565,7 +565,24 @@ function _ihrRenderBlList(el) {
 /* ── BELGELER ────────────────────────────────────────────── */
 function _ihrRenderBelgeler(el) {
   var evraklar = _loadE().filter(function(e) { return !e.isDeleted; });
-  var h = '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:500">Tüm Evraklar (' + evraklar.length + ')</div></div>';
+  var h = '';
+
+  /* Evrak Setleri */
+  h += '<div style="padding:10px 20px;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--t3);margin-bottom:6px">EVRAK SETLER\u0130</div>';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  var _evSetler = [
+    { k:'musteri', l:'\ud83d\udce6 M\u00fc\u015fteri Seti', c:'#185FA5', bg:'#E6F1FB', ac:'PI + CI + PL' },
+    { k:'gumrukcu', l:'\ud83c\udfdb G\u00fcmr\u00fck\u00e7\u00fc Seti', c:'#16A34A', bg:'#EAF3DE', ac:'CI + PL + TR Fatura' },
+    { k:'forwarder', l:'\ud83d\udea2 Forwarder Seti', c:'#D97706', bg:'#FAEEDA', ac:'CI + PL + Sevk + Y\u00fckleme' },
+    { k:'sigortaci', l:'\ud83d\udee1 Sigortac\u0131 Seti', c:'#7C3AED', bg:'#F5F3FF', ac:'CI + PL + Teklif Formu' }
+  ];
+  _evSetler.forEach(function(s) {
+    h += '<button onclick="event.stopPropagation();window._ihrEvrakSetiUret?.(\'' + s.k + '\')" style="padding:5px 12px;border-radius:6px;font-size:10px;cursor:pointer;border:0.5px solid ' + s.c + ';background:' + s.bg + ';color:' + s.c + ';font-family:inherit;font-weight:500">' + s.l + ' <span style="font-size:8px;font-weight:400;opacity:.7">(' + s.ac + ')</span></button>';
+  });
+  h += '</div></div>';
+
+  h += '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:500">T\u00fcm Evraklar (' + evraklar.length + ')</div></div>';
   if (!evraklar.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)">Henüz evrak yok</div>'; el.innerHTML = h; return; }
   h += '<table class="tbl"><thead><tr><th>Tür</th><th>Dosya</th><th>Durum</th><th>Hazırlayan</th><th>Tarih</th><th></th></tr></thead><tbody>';
   evraklar.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); }).forEach(function(e) {
@@ -6395,6 +6412,30 @@ window._ihrSartliKuralCalistir = function(dosyaId, tetikleyiciTip, context) {
       window.logActivity?.('ihr_sartli_kural', 'Kural \u00e7al\u0131\u015ft\u0131: ' + (kural.ad || 'Kural'));
     }, gecikme * 1000);
   });
+};
+
+/** Evrak seti uret — tek tikla coklu belge */
+window._ihrEvrakSetiUret = function(setKey) {
+  var SETLER = {
+    musteri: { label:'\ud83d\udce6 M\u00fc\u015fteri Seti', turler:['PI','CI','PL'] },
+    gumrukcu: { label:'\ud83c\udfdb G\u00fcmr\u00fck\u00e7\u00fc Seti', turler:['CI','PL'] },
+    forwarder: { label:'\ud83d\udea2 Forwarder Seti', turler:['CI','PL'] },
+    sigortaci: { label:'\ud83d\udee1 Sigortac\u0131 Seti', turler:['CI','PL'] }
+  };
+  var set = SETLER[setKey]; if (!set) return;
+  var dosyaId = _aktifDosyaId;
+  if (!dosyaId) { window.toast?.('\u00d6nce bir dosya a\u00e7\u0131n', 'warn'); return; }
+  var btnKey = 'seti_' + setKey + '_' + dosyaId;
+  if (window[btnKey]) return;
+  window[btnKey] = true;
+  window.toast?.(set.label + ' \u00fcretiliyor \u2014 ' + set.turler.join(', '), 'ok');
+  var idx = 0;
+  var uretSiradaki = function() {
+    if (idx >= set.turler.length) { window[btnKey] = false; window.toast?.(set.label + ' tamamland\u0131 (' + set.turler.length + ' belge)', 'ok'); return; }
+    var tur = set.turler[idx++];
+    setTimeout(function() { window._ihrBelgeUretDogrudan?.(dosyaId, tur, 'en'); uretSiradaki(); }, 800 * (idx - 1));
+  };
+  uretSiradaki();
 };
 
 })();

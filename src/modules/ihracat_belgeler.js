@@ -474,15 +474,61 @@ var BELGE_MAP = {
 
 window._ihrBelgeDil = 'en';
 
+/** Dil zorlama tablosu — bu belge tipleri kesinlikle EN */
+var EN_ZORUNLU = ['PI','CI','PL','FI','SI','GCI','KT','SE','ST','NTF','NFO','KAPAK'];
+
 window._ihrBelgeHtml = function(d, tur, seviye, urunler, opts) {
   opts = opts || {};
   var lang = opts.lang || (seviye === 'dis' ? 'en' : 'tr');
+  if (EN_ZORUNLU.indexOf(tur) !== -1) lang = 'en';
+  var orientation = opts.orientation || 'portrait';
   if (!urunler) {
     urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(d.id) && !u.isDeleted; });
   }
   var fn = BELGE_MAP[tur];
-  if (fn) return fn(d, urunler, opts, lang);
-  return '<html><body><p>Belge t\u00fcr\u00fc bulunamad\u0131: ' + _esc(tur) + '</p></body></html>';
+  if (!fn) return '<html><body><p>Belge t\u00fcr\u00fc bulunamad\u0131: ' + _esc(tur) + '</p></body></html>';
+
+  /* Çok sayfalı yapı — PI, CI, PL için */
+  var COK_SAYFALI = ['PI','CI','PL','GCI'];
+  var SAYFA_BASINA = opts.sayfaBasina || 15;
+
+  if (COK_SAYFALI.indexOf(tur) !== -1 && urunler.length > SAYFA_BASINA) {
+    var toplamSayfa = Math.ceil(urunler.length / SAYFA_BASINA);
+    var belgeNo = (tur === 'PI' ? 'PI-' : tur === 'GCI' ? '' : '') + (d.dosyaNo || d.id || '');
+    var sayfalar = [];
+    for (var si = 0; si < toplamSayfa; si++) {
+      var sayfaUrunler = urunler.slice(si * SAYFA_BASINA, (si + 1) * SAYFA_BASINA);
+      var sayfaOpts = Object.assign({}, opts, { _sayfaNo: si + 1, _toplamSayfa: toplamSayfa, _sayfaUrunler: sayfaUrunler, _ilkSayfa: si === 0, _sonSayfa: si === toplamSayfa - 1, _belgeNo: belgeNo, lang: lang, orientation: orientation });
+      sayfalar.push(fn(d, sayfaUrunler, sayfaOpts, lang));
+    }
+    /* Sayfaları birleştir — tek HTML dökümanı */
+    var pageCSS = '@page{size:A4 ' + orientation + ';margin:15mm}';
+    var combined = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + tur + '</title>' + _C_CSS()
+      + '<style>' + pageCSS + ' .page{page-break-after:always;max-width:210mm;margin:0 auto;padding:20px 24px} .page:last-child{page-break-after:auto} .no-print-area{display:none} @media print{.no-print{display:none!important}}</style>'
+      + '</head><body>';
+    sayfalar.forEach(function(s, idx) {
+      /* Sayfa HTML'inden DOCTYPE/html/head/body taglarını çıkar */
+      var inner = s.replace(/<!DOCTYPE[^>]*>/i, '').replace(/<\/?html[^>]*>/gi, '').replace(/<head>[\s\S]*?<\/head>/i, '').replace(/<\/?body[^>]*>/gi, '');
+      combined += '<div class="page">' + inner;
+      /* Sayfa alt toplamı */
+      var sayfaTop = 0; urunler.slice(idx * SAYFA_BASINA, (idx + 1) * SAYFA_BASINA).forEach(function(u) { sayfaTop += (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); });
+      var sayfaAdet = Math.min(SAYFA_BASINA, urunler.length - idx * SAYFA_BASINA);
+      combined += '<div style="display:flex;justify-content:flex-end;margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb"><div style="min-width:220px"><div style="display:flex;justify-content:space-between;padding:4px 10px;font-size:10px;background:#f9fafb"><span style="color:#6b7280">Page Subtotal (' + sayfaAdet + ' items)</span><span style="font-weight:600">' + _fmt(sayfaTop) + '</span></div></div></div>';
+      /* Sayfa numarası */
+      combined += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:8px;border-top:1px solid #e5e7eb"><div style="font-size:9px;color:#9ca3af">' + _esc(belgeNo) + ' \u2014 ' + _esc(d.dosyaNo || '') + '</div><div style="font-size:9px;color:#9ca3af;font-weight:600">Page ' + (idx + 1) + ' of ' + toplamSayfa + '</div></div>';
+      combined += '</div>'; /* page bitti */
+    });
+    combined += '</body></html>';
+    return combined;
+  }
+
+  /* Tek sayfalı — standart üretim */
+  var html = fn(d, urunler, opts, lang);
+  /* Orientation CSS ekle */
+  if (orientation === 'landscape') {
+    html = html.replace('</style>', '@page{size:A4 landscape;margin:15mm}</style>');
+  }
+  return html;
 };
 
 /* ══════════════════════════════════════════════════════════════
