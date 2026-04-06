@@ -2641,9 +2641,10 @@ window._ihrTumBelgeleriUret = function(dosyaId) {
     { ad:'D\u0131\u015f Taraf (M\u00fc\u015fteri)', turler:['PI','CI','PL','FI','SI','GCI'], defLang:'en' },
     { ad:'Lojistik / G\u00fcmr\u00fck', turler:['KT','SE','ST','NTF','NFO','SIG'], defLang:'tr' },
     { ad:'Tedarik / \u0130\u00e7', turler:['PO','MTF','MTET','IRK','QC','KYT'], defLang:'tr' },
-    { ad:'Raporlama', turler:['HOS','TD','OD','KAPAK','PARASUT'], defLang:'tr' }
+    { ad:'Raporlama', turler:['HOS','TD','OD','KAPAK','PARASUT'], defLang:'tr' },
+    { ad:'\ud83d\udcc4 DOCX \u015eablonlar', turler:['DOCX-PL','DOCX-CI','DOCX-FRQ','DOCX-IRQ'], defLang:'en' }
   ];
-  var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Sevk Emri', ST:'Sevk Talimat\u0131', NTF:'Navlun Teklif Talep', NFO:'Navlun Fiyat Onay', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Hesap \u00d6zeti', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Dosya Kapa\u011f\u0131', PARASUT:'Para\u015f\u00fct Excel' };
+  var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Sevk Emri', ST:'Sevk Talimat\u0131', NTF:'Navlun Teklif Talep', NFO:'Navlun Fiyat Onay', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Hesap \u00d6zeti', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Dosya Kapa\u011f\u0131', PARASUT:'Para\u015f\u00fct Excel', 'DOCX-PL':'Packing List \u2014 Bo\u015f \u015eablon', 'DOCX-CI':'Commercial Invoice \u2014 Bo\u015f \u015eablon', 'DOCX-FRQ':'Forwarder Teklif Talep', 'DOCX-IRQ':'Sigorta Teklif Talep' };
   var old = document.getElementById('mo-tumbelge'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-tumbelge';
   mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
@@ -2659,12 +2660,17 @@ window._ihrTumBelgeleriUret = function(dosyaId) {
     h2 += '<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px;padding-bottom:3px;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
       var isParasut = t === 'PARASUT';
-      h2 += '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px">';
-      h2 += '<span style="min-width:45px;font-weight:600;color:#185FA5;font-size:10px">' + t + '</span>';
+      var isDOCX = t.indexOf('DOCX-') === 0;
+      var docxAlt = isDOCX ? t.replace('DOCX-', '').toLowerCase() : '';
+      h2 += '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px;' + (isDOCX ? 'background:var(--sf)' : '') + '">';
+      if (isDOCX) h2 += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:600;min-width:35px;text-align:center">DOCX</span>';
+      else h2 += '<span style="min-width:45px;font-weight:600;color:#185FA5;font-size:10px">' + t + '</span>';
       h2 += '<span style="flex:1;color:var(--t2)">' + (TUR_AD[t] || t) + '</span>';
-      h2 += '<span style="font-size:8px;color:var(--t3);padding:1px 5px;border-radius:3px;background:var(--s2)">' + dilSec.toUpperCase() + '</span>';
+      if (!isDOCX) h2 += '<span style="font-size:8px;color:var(--t3);padding:1px 5px;border-radius:3px;background:var(--s2)">' + dilSec.toUpperCase() + '</span>';
       if (isParasut) {
         h2 += '<button onclick="event.stopPropagation();window._ihrParasutExcel?.(\'' + dosyaId + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Excel</button>';
+      } else if (isDOCX) {
+        h2 += '<button onclick="event.stopPropagation();window._ihrFormIndir?.(\'' + docxAlt + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 DOCX \u0130ndir</button>';
       } else {
         h2 += '<button onclick="event.stopPropagation();window._ihrBelgeUretDogrudan(\'' + dosyaId + '\',\'' + t + '\',\'' + dilSec + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">\u00dcret \u2192</button>';
       }
@@ -6207,7 +6213,6 @@ window._ihrRenderDashboard = function(el) {
   h += '<div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:3px"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">H\u0131zl\u0131 \u0130\u015flemler</div>';
   h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">KDV \u0130ade Hesapla</button>';
   h += '<button onclick="event.stopPropagation();window.excelImportAc?.(_aktifDosyaId||\'\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Import Docs</button>';
-  h += '<button onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Formlar</button>';
   h += '<button onclick="event.stopPropagation();window._ihrAyarlarModal?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Rol & Firmalar</button>';
   h += '</div></div>';
 

@@ -501,17 +501,12 @@ window._ihrFormIndir = function(tip) {
 // ── Panel render ─────────────────────────────────────────────
 window.renderIhracatFormlar = function() {
   var panel=document.getElementById('panel-ihracat-formlar'); if(!panel)return;
-  panel.innerHTML='<div style="padding:16px 24px">'
-    +'<div style="margin-bottom:8px"><div style="font-size:16px;font-weight:700;color:var(--t)">Ihracat Formlari</div>'
-    +'<div style="font-size:11px;color:var(--t3)">v2.0 — Dosya verisinden otomatik dolar</div></div>'
-    +'<div style="margin-bottom:12px;padding:10px 14px;background:#FAEEDA;border:0.5px solid #EF9F27;border-radius:8px;font-size:11px;color:#633806">'
-    +'Dolu belge icin: Ihracat → Dosya Ac → Evrak bolumundeki <strong>DOCX</strong> butonunu kullanin. Bu sayfa bos sablon indirir.</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-    +_fk('Packing List','Ambalaj ve agirlik bilgileri','pl')
-    +_fk('Commercial Invoice','Satis faturasi','ci')
-    +_fk('Forwarder Teklif Talep','Nakliye fiyat talebi','frq')
-    +_fk('Sigorta Teklif Talep','Nakliyat sigortasi talebi','irq')
-    +'</div></div>';
+  panel.innerHTML='<div style="padding:32px 24px;text-align:center">'
+    +'<div style="font-size:36px;margin-bottom:12px">\ud83d\udcc4</div>'
+    +'<div style="font-size:16px;font-weight:500;color:var(--t);margin-bottom:8px">Bu b\u00f6l\u00fcm ta\u015f\u0131nd\u0131</div>'
+    +'<div style="font-size:12px;color:var(--t3);margin-bottom:20px;line-height:1.6">Formlara ula\u015fmak i\u00e7in:<br>\u0130hracat Ops \u2192 Dosya A\u00e7 \u2192 \u00dcr\u00fcnler sekmesi \u2192 <strong>Belge \u00dcret</strong> \u2192 <strong>DOCX \u015eablonlar</strong> grubu</div>'
+    +'<button class="btn btnp" onclick="event.stopPropagation();window.renderIhracatOps?.()" style="font-size:12px;padding:8px 20px">Belge \u00dcret Men\u00fcs\u00fcne Git \u2192</button>'
+    +'</div>';
 };
 function _fk(b,a,t){return '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div style="padding:14px 16px;border-bottom:0.5px solid var(--b)"><div style="font-size:13px;font-weight:500">'+b+'</div><div style="font-size:11px;color:var(--t3);margin-top:3px">'+a+'</div></div><div style="padding:12px 16px"><button class="btn btns" onclick="event.stopPropagation();window._ihrFormIndir(\''+t+'\')" style="width:100%;font-size:11px">Bos Sablon Indir</button></div></div>';}
 
