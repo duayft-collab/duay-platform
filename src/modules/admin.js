@@ -3350,4 +3350,54 @@ window._doBulkRole = function() {
   window.toast?.(ids.length + ' kullanıcı rolü güncellendi ✓', 'ok'); window.logActivity?.('user', 'Toplu rol: ' + ids.length + ' → ' + role);
 };
 
+/* ══════════════════════════════════════════════════════════════
+   SARTLI KURAL YONETIMI (IHR-BELGE-FIX-001)
+   ══════════════════════════════════════════════════════════════ */
+window._ihrSartliKuralYonet = function() {
+  if (!window.isAdmin?.()) return;
+  var _SK = 'ak_ihr_sartli_v1';
+  var _load = function() { try { return JSON.parse(localStorage.getItem(_SK) || '[]'); } catch(e) { return []; } };
+  var _store = function(d) { try { localStorage.setItem(_SK, JSON.stringify(d)); } catch(e) {} };
+  var kurallar = _load();
+  var old = document.getElementById('mo-sartli-kural'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sartli-kural';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var _esc2 = function(s) { return String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var _render = function() {
+    kurallar = _load();
+    var h = '<div class="moc" style="max-width:640px;padding:0;border-radius:14px;overflow:hidden">';
+    h += '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:600">Şartlı Belge Üretim Kuralları</div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();window._ihrSartliKuralEkle()" style="font-size:10px;padding:3px 10px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">+ Kural Ekle</button><button onclick="event.stopPropagation();document.getElementById(\'mo-sartli-kural\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button></div></div>';
+    h += '<div style="padding:10px 18px;max-height:50vh;overflow-y:auto">';
+    if (!kurallar.length) h += '<div style="text-align:center;padding:24px;color:var(--t3);font-size:11px">Henüz kural yok</div>';
+    kurallar.forEach(function(k, idx) {
+      var tetOzet = k.tetikleyici ? (k.tetikleyici.tip === 'evrak_olusunca' ? (k.tetikleyici.evrak_tur || '') + ' oluşunca' : k.tetikleyici.tip === 'alan_dolunca' ? (k.tetikleyici.alan || '') + ' dolunca' : k.tetikleyici.tip === 'durum_degisince' ? 'Durum → ' + (k.tetikleyici.durum || '') : '—') : '—';
+      var aksOzet = k.aksiyon ? ('→ ' + (k.aksiyon.belge_tur || '') + ' üret (' + (k.aksiyon.lang || 'en') + ')') : '—';
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:11px">';
+      h += '<span onclick="event.stopPropagation();window._ihrSartliToggle(' + idx + ')" style="width:10px;height:10px;border-radius:50%;background:' + (k.aktif ? '#16A34A' : '#DC2626') + ';cursor:pointer;flex-shrink:0"></span>';
+      h += '<span style="font-weight:500;min-width:80px">' + _esc2(k.ad || 'Kural') + '</span>';
+      h += '<span style="flex:1;color:var(--t3);font-size:10px">' + _esc2(tetOzet) + '</span>';
+      h += '<span style="color:var(--t2);font-size:10px">' + _esc2(aksOzet) + '</span>';
+      h += '<button onclick="event.stopPropagation();window._ihrSartliSil(' + idx + ')" style="font-size:9px;color:#DC2626;background:none;border:none;cursor:pointer">🗑</button>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+    mo.innerHTML = h;
+  };
+  _render();
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+
+  window._ihrSartliToggle = function(idx) { var d = _load(); if (d[idx]) { d[idx].aktif = !d[idx].aktif; _store(d); } _render(); };
+  window._ihrSartliSil = function(idx) {
+    window.confirmModal?.('Bu kuralı silmek istediğinizden emin misiniz?', function() { var d = _load(); d.splice(idx, 1); _store(d); _render(); window.toast?.('Kural silindi', 'ok'); });
+  };
+  window._ihrSartliKuralEkle = function() {
+    var genId = typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now();
+    var d = _load();
+    d.push({ id: genId, ad: 'Yeni Kural', aktif: true, tetikleyici: { tip: 'evrak_olusunca', evrak_tur: 'PI' }, aksiyon: { tip: 'belge_uret', belge_tur: 'CI', lang: 'en', gecikme_sn: 0 }, createdAt: new Date().toISOString() });
+    _store(d); _render();
+    window.toast?.('Kural eklendi — düzenlemek için listeye bakın', 'ok');
+    window.logActivity?.('admin', 'Şartlı kural eklendi');
+  };
+};
+
 })();

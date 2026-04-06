@@ -2620,14 +2620,58 @@ window._ihrMutabakatExcel = function(dosyaId) {
 
 /* IHR-URUN-001: Tumunu Uret + HS Toplu */
 window._ihrTumBelgeleriUret = function(dosyaId) {
-  var TUR_L = ['PI', 'CI', 'PL', 'TRFAT', 'SEVK', 'YUK', 'TTF'];
-  var TUR_A = { PI: 'Proforma Invoice', CI: 'Commercial Invoice', PL: 'Packing List', TRFAT: 'TR \u0130hracat Faturas\u0131', SEVK: 'Sevk Emri', YUK: 'Y\u00fckleme Talimat\u0131', TTF: 'Teklif Talep Formu' };
+  var BELGE_GRUPLARI = [
+    { ad:'D\u0131\u015f Taraf (M\u00fc\u015fteri)', turler:['PI','CI','PL','FI','SI','GCI'], defLang:'en' },
+    { ad:'Lojistik / G\u00fcmr\u00fck', turler:['KT','SE','ST','NTF','NFO','SIG'], defLang:'tr' },
+    { ad:'Tedarik / \u0130\u00e7', turler:['PO','MTF','MTET','IRK','QC','KYT'], defLang:'tr' },
+    { ad:'Raporlama', turler:['HOS','TD','OD','KAPAK','PARASUT'], defLang:'tr' }
+  ];
+  var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Sevk Emri', ST:'Sevk Talimat\u0131', NTF:'Navlun Teklif Talep', NFO:'Navlun Fiyat Onay', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Hesap \u00d6zeti', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Dosya Kapa\u011f\u0131', PARASUT:'Para\u015f\u00fct Excel' };
   var old = document.getElementById('mo-tumbelge'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-tumbelge';
   mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
-  var rows = TUR_L.map(function(t) { return '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px"><span style="min-width:50px;font-weight:500;color:#185FA5">' + t + '</span><span style="flex:1;color:var(--t2)">' + TUR_A[t] + '</span><button onclick="event.stopPropagation();window._ihrBelgeUret(\'' + dosyaId + '\',\'' + t + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">\u00dcret \u2192</button></div>'; }).join('');
-  mo.innerHTML = '<div class="moc" style="max-width:440px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:600">T\u00fcm Belgeler</div><button onclick="event.stopPropagation();document.getElementById(\'mo-tumbelge\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div><div style="padding:10px 18px"><div style="font-size:10px;color:var(--t2);margin-bottom:10px">Hangi belgeyi \u00fcretmek istiyorsunuz?</div>' + rows + '</div><div style="padding:10px 18px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-tumbelge\')?.remove()">Kapat</button></div></div>';
+  var dilSec = window._ihrBelgeDil || 'en';
+  var h2 = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">';
+  h2 += '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:600">Belge \u00dcret</div><button onclick="event.stopPropagation();document.getElementById(\'mo-tumbelge\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div>';
+  h2 += '<div style="padding:8px 18px;border-bottom:0.5px solid var(--b);display:flex;gap:6px">';
+  h2 += '<button onclick="event.stopPropagation();window._ihrBelgeDil=\'en\';window._ihrTumBelgeleriUret(\'' + dosyaId + '\')" style="font-size:10px;padding:3px 10px;border-radius:4px;border:0.5px solid ' + (dilSec === 'en' ? '#185FA5' : 'var(--b)') + ';background:' + (dilSec === 'en' ? '#E6F1FB' : 'transparent') + ';cursor:pointer;color:' + (dilSec === 'en' ? '#185FA5' : 'var(--t2)') + ';font-family:inherit">\ud83c\uddec\ud83c\udde7 English</button>';
+  h2 += '<button onclick="event.stopPropagation();window._ihrBelgeDil=\'tr\';window._ihrTumBelgeleriUret(\'' + dosyaId + '\')" style="font-size:10px;padding:3px 10px;border-radius:4px;border:0.5px solid ' + (dilSec === 'tr' ? '#185FA5' : 'var(--b)') + ';background:' + (dilSec === 'tr' ? '#E6F1FB' : 'transparent') + ';cursor:pointer;color:' + (dilSec === 'tr' ? '#185FA5' : 'var(--t2)') + ';font-family:inherit">\ud83c\uddf9\ud83c\uddf7 T\u00fcrk\u00e7e</button>';
+  h2 += '</div>';
+  h2 += '<div style="padding:10px 18px;max-height:55vh;overflow-y:auto">';
+  BELGE_GRUPLARI.forEach(function(g) {
+    h2 += '<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px;padding-bottom:3px;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
+    g.turler.forEach(function(t) {
+      var isParasut = t === 'PARASUT';
+      h2 += '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px">';
+      h2 += '<span style="min-width:45px;font-weight:600;color:#185FA5;font-size:10px">' + t + '</span>';
+      h2 += '<span style="flex:1;color:var(--t2)">' + (TUR_AD[t] || t) + '</span>';
+      h2 += '<span style="font-size:8px;color:var(--t3);padding:1px 5px;border-radius:3px;background:var(--s2)">' + dilSec.toUpperCase() + '</span>';
+      if (isParasut) {
+        h2 += '<button onclick="event.stopPropagation();window._ihrParasutExcel?.(\'' + dosyaId + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Excel</button>';
+      } else {
+        h2 += '<button onclick="event.stopPropagation();window._ihrBelgeUretDogrudan(\'' + dosyaId + '\',\'' + t + '\',\'' + dilSec + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">\u00dcret \u2192</button>';
+      }
+      h2 += '</div>';
+    });
+  });
+  h2 += '</div>';
+  h2 += '<div style="padding:10px 18px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-tumbelge\')?.remove()">Kapat</button></div>';
+  h2 += '</div>';
+  mo.innerHTML = h2;
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+/** Dogrudan belge uret — modal atla, tek adimda */
+window._ihrBelgeUretDogrudan = function(dosyaId, tur, lang) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
+  if (!d) { window.toast?.('Dosya bulunamad\u0131', 'err'); return; }
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  lang = lang || window._ihrBelgeDil || 'en';
+  var html = window._ihrBelgeHtml?.(d, tur, 'dis', urunler, { lang: lang });
+  if (!html) { window.toast?.('Belge \u00fcretilemedi', 'err'); return; }
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+  window.toast?.(tur + ' belgesi \u00fcretildi (' + lang.toUpperCase() + ')', 'ok');
 };
 
 window._ihrHsToplu = function(dosyaId) {
@@ -6145,7 +6189,7 @@ window._ihrRenderDashboard = function(el) {
   var _imS = 'width:100%;padding:5px;border-radius:5px;font-size:9px;cursor:pointer;font-family:inherit;';
   h += '<div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:3px"><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">H\u0131zl\u0131 \u0130\u015flemler</div>';
   h += '<button onclick="event.stopPropagation();window._ihrKdvIadeHesapla?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">KDV \u0130ade Hesapla</button>';
-  h += '<button onclick="event.stopPropagation();window.excelImportAc?.(_aktifDosyaId||\'\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Excel Import \u2191</button>';
+  h += '<button onclick="event.stopPropagation();window.excelImportAc?.(_aktifDosyaId||\'\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Import Docs</button>';
   h += '<button onclick="event.stopPropagation();window.App?.nav?.(\'ihracat-formlar\')" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Formlar</button>';
   h += '<button onclick="event.stopPropagation();window._ihrAyarlarModal?.()" style="' + _imS + 'background:transparent;border:0.5px solid var(--b);color:var(--t2)">Rol & Firmalar</button>';
   h += '</div></div>';
@@ -6322,6 +6366,35 @@ window._ihrTopluEvrakUret = function(tur) {
   if (!secili.length) { window.toast?.('\u00d6nce dosya se\u00e7in', 'err'); return; }
   secili.forEach(function(id) { window._ihrPdfOnizle?.(id, tur, null); });
   window.toast?.(secili.length + ' dosya i\u00e7in ' + tur + ' \u00fcretiliyor', 'ok');
+};
+
+/* ══════════════════════════════════════════════════════════════
+   SARTLI KURAL SISTEMI (IHR-BELGE-FIX-001)
+   ══════════════════════════════════════════════════════════════ */
+var _SARTLI_KEY = 'ak_ihr_sartli_v1';
+function _loadSartli() { try { return JSON.parse(localStorage.getItem(_SARTLI_KEY) || '[]'); } catch(e) { return []; } }
+function _storeSartli(d) { try { localStorage.setItem(_SARTLI_KEY, JSON.stringify(d)); } catch(e) {} }
+
+window._ihrSartliKuralCalistir = function(dosyaId, tetikleyiciTip, context) {
+  var kurallar = _loadSartli().filter(function(k) { return k.aktif; });
+  if (!kurallar.length) return;
+  context = context || {};
+  kurallar.forEach(function(kural) {
+    if (kural.tetikleyici.tip !== tetikleyiciTip) return;
+    var eslesme = false;
+    if (tetikleyiciTip === 'evrak_olusunca') eslesme = context.evrak_tur === kural.tetikleyici.evrak_tur;
+    else if (tetikleyiciTip === 'alan_dolunca') eslesme = context.alan === kural.tetikleyici.alan;
+    else if (tetikleyiciTip === 'durum_degisince') eslesme = context.durum === kural.tetikleyici.durum;
+    if (!eslesme) return;
+    var gecikme = parseInt(kural.aksiyon.gecikme_sn) || 0;
+    setTimeout(function() {
+      if (kural.aksiyon.tip === 'belge_uret') {
+        window._ihrBelgeUretDogrudan(dosyaId, kural.aksiyon.belge_tur, kural.aksiyon.lang || 'en');
+      }
+      window.toast?.('\ud83e\udd16 \u015eartl\u0131 kural: ' + (kural.ad || 'Kural') + ' \u00e7al\u0131\u015ft\u0131', 'ok');
+      window.logActivity?.('ihr_sartli_kural', 'Kural \u00e7al\u0131\u015ft\u0131: ' + (kural.ad || 'Kural'));
+    }, gecikme * 1000);
+  });
 };
 
 })();
