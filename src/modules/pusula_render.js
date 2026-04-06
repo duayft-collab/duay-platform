@@ -125,17 +125,26 @@ function renderPusula() {
   // ── HTML üretimi ───────────────────────────────────────────
   var h = '';
 
-  // ── ÜST BAR ───────────────────────────────────────────────
-  var _q = _getDailyQuote();
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b)">';
-  h += '<div><div style="font-size:18px;font-weight:700;color:var(--t)">Pusula</div>';
-  h += '<div style="font-style:italic;color:var(--t2);font-size:11px;margin-top:2px">"' + (window.escapeHtml?.(_q.text) || _q.text) + '" — ' + (window.escapeHtml?.(_q.author) || _q.author) + '</div></div>';
-  h += '<div style="display:flex;gap:6px;align-items:center">';
-  h += '<button class="btn btns" onclick="event.stopPropagation();setPusView(\'kanban\')" style="font-size:11px">Kanban</button>';
-  h += '<button class="btn btns" onclick="event.stopPropagation();setPusView(\'odak\')" style="font-size:11px">Odak</button>';
+  // ── HEADER (PUSULA-TASARIM-001) ──────────────────────────────
+  h += '<div style="padding:10px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:10px">';
+  h += '<div style="flex:1"><div style="font-size:16px;font-weight:500;color:var(--t)">Pusula</div>';
+  h += '<div style="font-size:11px;color:var(--t2);margin-top:1px">G\u00f6rev Y\u00f6netimi \u00b7 ' + new Date().toLocaleDateString('tr-TR', {month:'long',year:'numeric'}) + '</div></div>';
+  if (ovCount > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FCEBEB;color:#791F1F;font-weight:500">' + ovCount + ' gecikmi\u015f</span>';
+  if (weekC > 0) h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAEEDA;color:#633806;font-weight:500">' + weekC + ' bu hafta</span>';
+  h += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E6F1FB;color:#0C447C;font-weight:500">' + allVis.length + ' toplam</span>';
+  h += '</div>';
+  // ── TOOLBAR ────────────────────────────────────────────────
+  h += '<div style="padding:7px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:8px;background:var(--sf);flex-wrap:wrap">';
+  h += '<div style="display:flex;border:0.5px solid var(--b);border-radius:7px;overflow:hidden">';
+  [['liste','Liste'],['kanban','Kanban'],['kadran','Kadran'],['odak','Odak']].forEach(function(v) {
+    var isOn = PUS_VIEW === v[0];
+    h += '<button onclick="event.stopPropagation();setPusView(\'' + v[0] + '\')" style="font-size:11px;padding:4px 12px;border:none;cursor:pointer;font-family:inherit;' + (isOn ? 'background:#185FA5;color:#fff;font-weight:500' : 'background:transparent;color:var(--t2)') + '">' + v[1] + '</button>';
+  });
+  h += '</div>';
+  h += '<div style="width:1px;height:20px;background:var(--b)"></div>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._pusXlsxExport?.()" style="font-size:11px">XLSX</button>';
-  h += '<button class="btn btnp" onclick="event.stopPropagation();openAddTask()" style="font-size:12px">+ Görev</button>';
-  h += '</div></div>';
+  h += '<button onclick="event.stopPropagation();openAddTask()" style="margin-left:auto;font-size:11px;padding:5px 16px;border:none;border-radius:7px;background:#185FA5;color:#fff;font-weight:500;cursor:pointer;font-family:inherit">+ Yeni G\u00f6rev</button>';
+  h += '</div>';
 
   // ── GECİKME BANNERI ────────────────────────────────────────
   if (ovCount > 0) {
@@ -154,14 +163,18 @@ function renderPusula() {
   // ══ SOL KOLON ══════════════════════════════════════════════
   h += '<div style="flex:1;overflow-y:auto;padding:12px 16px">';
 
-  // KPI bar (6 kart)
-  h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
-  h += _kpiKart('Toplam', allVis.length, 'var(--sf)', 'var(--t)', 'var(--b)');
-  h += _kpiKart('Gecikmiş', ovCount, '#FCEBEB', '#DC2626', '#FECACA');
-  h += _kpiKart('Bugün', todayC, '#FAEEDA', '#D97706', '#F5D9A0');
-  h += _kpiKart('Bu Hafta', weekC, '#E6F1FB', '#185FA5', '#B4D5F7');
-  h += _kpiKart('Tamamlandı', doneCount, '#EAF3DE', '#16A34A', '#C6E7B0');
-  h += _kpiKart('Yüksek Öncelik', hiPriC, '#EEEDFE', '#534AB7', '#D4D0FB');
+  // KPI şeridi (5 kolon — PUSULA-TASARIM-001)
+  var waitC2 = allVis.filter(function(t2){ return t2.status==='waiting'; }).length;
+  var rvC2 = allVis.filter(function(t2){ return t2.status==='review'; }).length;
+  var ipC2 = allVis.filter(function(t2){ return t2.status==='inprogress'; }).length;
+  var todoC2 = allVis.filter(function(t2){ return !t2.done && (!t2.status || t2.status==='todo'); }).length;
+  h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:12px">';
+  [['Yap\u0131lacak',todoC2,'#185FA5'],['Devam',ipC2,'#D97706'],['\u0130nceleme',rvC2,'#7F77DD'],['Tamamland\u0131',doneCount,'#16A34A'],['Bekliyor',waitC2,'#888780']].forEach(function(k,i) {
+    h += '<div style="padding:10px 16px;text-align:center' + (i<4?';border-right:0.5px solid var(--b)':'') + '">';
+    h += '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">' + k[0] + '</div>';
+    h += '<div style="font-size:20px;font-weight:500;color:' + k[2] + '">' + k[1] + '</div>';
+    h += '</div>';
+  });
   h += '</div>';
 
   // Toolbar
@@ -261,7 +274,18 @@ function renderPusula() {
   h += _renderKaynaklarBlok();
 
   h += '</div>'; // sağ kolon sonu
+  // Detay paneli (başta gizli — PUSULA-TASARIM-001)
+  h += '<div id="pus-detay-panel" style="width:0;overflow:hidden;border-left:0.5px solid var(--b);transition:width .2s;flex-shrink:0;background:var(--sf);display:flex;flex-direction:column"></div>';
   h += '</div>'; // 2 kolon layout sonu
+
+  // Footer
+  h += '<div style="padding:7px 18px;border-top:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:var(--sf);font-size:10px;color:var(--t2)">';
+  h += '<span>' + allVis.length + ' g\u00f6rev \u00b7 ' + ovCount + ' gecikmi\u015f \u00b7 ' + doneCount + ' tamamland\u0131</span>';
+  h += '<div style="display:flex;gap:12px">';
+  h += '<span style="cursor:pointer" onclick="event.stopPropagation();window.pomoStart?.()">Pomodoro</span>';
+  h += '<span>\u00b7</span>';
+  h += '<span style="cursor:pointer" onclick="event.stopPropagation();window._pusXlsxExport?.()">Excel</span>';
+  h += '</div></div>';
 
   panel.innerHTML = h;
 
@@ -556,3 +580,49 @@ window._pusSetTab       = _pusSetTab;
 window._pusFiltre       = _pusFiltre;
 window._pusSayfa        = _pusSayfa;
 window._pusAktifTab     = _pusAktifTab;
+
+/* ── Detay Yan Panel (PUSULA-TASARIM-001) ──────────────────── */
+window.openPusDetail = function(id) {
+  var panel = document.getElementById('pus-detay-panel'); if (!panel) return;
+  var tasks = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
+  var t = tasks.find(function(x) { return String(x.id) === String(id); }); if (!t) return;
+  var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
+  var atanan = users.find(function(u) { return String(u.id) === String(t.uid); });
+  var ini = atanan ? (atanan.name || '').split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase() : '??';
+  var priL = ['', 'Y\u00fcksek', 'Orta', 'D\u00fc\u015f\u00fck'][t.pri || 3] || 'Normal';
+  var priC = ['', '#FCEBEB', '#FAEEDA', '#EAF3DE'][t.pri || 3] || '#EAF3DE';
+  var priT = ['', '#791F1F', '#633806', '#27500A'][t.pri || 3] || '#27500A';
+  var statusMap = { todo: 'Yap\u0131lacak', inprogress: 'Devam', review: '\u0130nceleme', done: 'Tamamland\u0131', waiting: 'Bekliyor' };
+  var isOv = t.due && t.due < new Date().toISOString().slice(0, 10) && !t.done;
+  var dueTxt = t.due ? (isOv ? '<span style="color:#A32D2D;font-weight:500">' + t.due + ' \u2014 Gecikmi\u015f</span>' : t.due) : '\u2014';
+  var subs = t.subtasks || []; var doneSubs = subs.filter(function(s) { return s.done; }).length;
+  var _e = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || '').replace(/</g, '&lt;'); };
+
+  panel.style.width = '260px';
+  var h2 = '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h2 += '<div style="font-size:11px;font-weight:500;color:var(--t);flex:1;line-height:1.4">' + _e(t.title) + '</div>';
+  h2 += '<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:' + priC + ';color:' + priT + ';font-weight:500;flex-shrink:0;margin-left:6px">' + priL + '</span>';
+  h2 += '<span onclick="event.stopPropagation();window.closePusDetail()" style="cursor:pointer;font-size:16px;color:var(--t3);margin-left:8px;flex-shrink:0">\u00d7</span>';
+  h2 += '</div>';
+  h2 += '<div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1">';
+  h2 += '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:3px">Durum</div><span style="font-size:10px;padding:2px 8px;border-radius:8px;background:#E6F1FB;color:#0C447C;font-weight:500">' + (statusMap[t.status || 'todo'] || 'Yap\u0131lacak') + '</span></div>';
+  h2 += '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:3px">Atanan</div><div style="display:flex;align-items:center;gap:6px"><div style="width:26px;height:26px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#0C447C">' + ini + '</div><span style="font-size:11px;color:var(--t)">' + _e(atanan?.name || '\u2014') + '</span></div></div>';
+  h2 += '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:3px">Son tarih</div><div style="font-size:11px">' + dueTxt + '</div></div>';
+  if (subs.length) {
+    h2 += '<div style="height:0.5px;background:var(--b)"></div>';
+    h2 += '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:5px">Alt G\u00f6revler (' + doneSubs + '/' + subs.length + ')</div>';
+    subs.slice(0, 5).forEach(function(s) {
+      h2 += '<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:' + (s.done ? 'var(--t3)' : 'var(--t)') + ';padding:2px 0"><div style="width:12px;height:12px;border-radius:3px;flex-shrink:0;' + (s.done ? 'background:#EAF3DE;border:0.5px solid #97C459' : 'border:0.5px solid var(--bm)') + ';display:flex;align-items:center;justify-content:center;font-size:8px;color:#27500A">' + (s.done ? '\u2713' : '') + '</div>' + _e(s.title || '') + '</div>';
+    });
+    h2 += '</div>';
+  }
+  h2 += '<div style="height:0.5px;background:var(--b)"></div>';
+  h2 += '<button onclick="event.stopPropagation();editTask(' + id + ')" style="width:100%;padding:6px;border:0.5px solid var(--b);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)">D\u00fczenle</button>';
+  h2 += '</div>';
+  panel.innerHTML = h2;
+};
+
+window.closePusDetail = function() {
+  var panel = document.getElementById('pus-detay-panel'); if (!panel) return;
+  panel.style.width = '0';
+};
