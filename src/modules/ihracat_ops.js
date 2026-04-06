@@ -6449,71 +6449,74 @@ window._ihrBelgelerModal = function() {
 };
 
 /* IHR-PAYDAS-001: 4 paydas sekmesi tek ekranda */
+/* ══════════════════════════════════════════════════════════════
+   PAYDAS EKRANI — 2x2 GRID (PAYDAS-EKRAN-001)
+   ══════════════════════════════════════════════════════════════ */
 window._ihrRenderPaydas = function(el, dosyaId) {
   if (!el) return;
-  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) return;
-  var _paydaslar = [
-    { id: 'musteri', l: 'M\u00fc\u015fteri', ikon: 'M\u00dc' },
-    { id: 'sigortaci', l: 'Sigortac\u0131', ikon: 'S\u0130' },
-    { id: 'gumrukcu', l: 'G\u00fcmr\u00fck\u00e7\u00fc', ikon: 'G\u00dc' },
-    { id: 'forwarder', l: 'Forwarder', ikon: 'FW' }
-  ];
-  var h = '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 16px;background:var(--sf)">';
-  _paydaslar.forEach(function(p) {
-    var pp = window._ihrPaydasPct?.(dosyaId, p.id) || { pct: 0 };
-    var pctRenk = pp.pct >= 100 ? '#16a34a' : pp.pct > 0 ? '#d97706' : '#dc2626';
-    h += '<div id="ihr-paydas-tab-' + p.id + '" onclick="event.stopPropagation();window._ihrPaydasAlt(\'' + p.id + '\',\'' + dosyaId + '\')" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2);display:flex;align-items:center;gap:4px">';
-    h += p.l;
-    if (pp.pct < 100) h += ' <span style="font-size:9px;color:' + pctRenk + ';font-weight:600">%' + pp.pct + '</span>';
-    else h += ' <span style="font-size:9px;color:#16a34a">\u2713</span>';
-    h += '</div>';
-  });
-  h += '</div>';
-  h += '<div id="ihr-paydas-icerik" style="padding:0"></div>';
-  el.innerHTML = h;
-  window._ihrPaydasAlt('musteri', dosyaId);
-};
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return;
+  var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
+  var forwarderlar = _loadFW().filter(function(f) { return !f.isDeleted; });
+  var gm = d.gumrukcu_id ? gumrukculer.find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
+  var fw = d.forwarder_id ? forwarderlar.find(function(f) { return String(f.id) === String(d.forwarder_id); }) : null;
+  var musteriAd = d.musteriAd || '\u2014';
+  var sigortaVar = !!(d.police_no);
+  var fN = function(v) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(v || '\u2014') : (v || '\u2014'); };
+  var _pr = function(l, v, renk) { return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--b);font-size:10px"><span style="color:var(--t3)">' + l + '</span><span style="font-weight:500;color:' + (renk || 'var(--t)') + ';text-align:right;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + v + '</span></div>'; };
+  var _ch = function(ikon, rBg, rT, baslik, alt, pct) { var pH = pct === 100 ? '<span style="font-size:9px;padding:2px 8px;border-radius:8px;background:#EAF3DE;color:#27500A;font-weight:600">\u2713 Tam</span>' : pct > 0 ? '<span style="font-size:9px;padding:2px 8px;border-radius:8px;background:#FAEEDA;color:#854F0B;font-weight:600">%' + pct + '</span>' : '<span style="font-size:9px;padding:2px 8px;border-radius:8px;background:#FCEBEB;color:#791F1F;font-weight:600">Atanmad\u0131</span>'; return '<div style="padding:8px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;background:' + rBg + ';color:' + rT + '">' + ikon + '</div><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">' + baslik + '</div><div style="font-size:9px;color:var(--t3)">' + alt + '</div></div>' + pH + '</div>'; };
+  var _cbtn = function(btns) { return '<div style="padding:6px 14px;border-top:0.5px solid var(--b);display:flex;gap:5px;background:var(--sf)">' + btns.map(function(b) { var s = b.tip === 'p' ? 'border:0.5px solid var(--ac);color:var(--ac)' : 'border:0.5px solid var(--b);color:var(--t2)'; return '<button onclick="event.stopPropagation();' + (b.fn || '') + '" style="font-size:9px;padding:3px 9px;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;' + s + '">' + b.l + '</button>'; }).join('') + '</div>'; };
 
-window._ihrPaydasAlt = function(tip, dosyaId) {
-  ['musteri','sigortaci','gumrukcu','forwarder'].forEach(function(t) {
-    var btn = document.getElementById('ihr-paydas-tab-' + t);
-    if (btn) {
-      btn.style.borderBottom = t === tip ? '2px solid var(--ac)' : '2px solid transparent';
-      btn.style.color = t === tip ? 'var(--ac)' : 'var(--t2)';
-      btn.style.fontWeight = t === tip ? '500' : '400';
-    }
-  });
-  var el = document.getElementById('ihr-paydas-icerik');
-  if (!el) return;
-  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) return;
-  if (tip === 'musteri') { window._ihrDetayRenderMusteri?.(d, el); }
-  else if (tip === 'sigortaci') { window._ihrDetayRenderSigortaci?.(d, el); }
-  else if (tip === 'gumrukcu') {
-    var gumrukculer = _loadGM().filter(function(g) { return !g.isDeleted; });
-    var gm = d.gumrukcu_id ? gumrukculer.find(function(g) { return String(g.id) === String(d.gumrukcu_id); }) : null;
-    var gh = '<div style="padding:16px 20px">';
-    gh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:12px;font-weight:500">G\u00fcmr\u00fck\u00e7\u00fc</div><button class="btn btnp" onclick="event.stopPropagation();window._ihrGumrukcuAta(\'' + d.id + '\')" style="font-size:11px">' + (gm ? 'De\u011fi\u015ftir' : 'Ata') + '</button></div>';
-    if (gm) {
-      var _dr = function(l, v) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t3)">' + l + '</span><span style="color:var(--t);font-weight:500">' + (typeof window.escapeHtml === 'function' ? window.escapeHtml(v || '\u2014') : (v || '\u2014')) + '</span></div>'; };
-      gh += _dr('Firma', gm.firma_adi) + _dr('Yetkili', gm.yetkili_adi) + _dr('Telefon', gm.telefon) + _dr('E-posta', gm.eposta);
-      gh += '<div style="margin-top:12px;display:flex;gap:6px"><button class="btn btns" onclick="event.stopPropagation();window._ihrGumrukcuMail?.(\'' + d.id + '\')" style="font-size:11px">Mail G\u00f6nder</button><button class="btn btns" onclick="event.stopPropagation();window._ihrGumrukcuDuzenle?.(\'' + gm.id + '\')" style="font-size:11px">D\u00fczenle</button></div>';
-    } else { gh += '<div style="text-align:center;padding:24px;color:var(--t3)">G\u00fcmr\u00fck\u00e7\u00fc atanmad\u0131</div>'; }
-    gh += '</div>'; el.innerHTML = gh;
+  var atananS = (musteriAd !== '\u2014' ? 1 : 0) + (gm ? 1 : 0) + (fw ? 1 : 0) + (sigortaVar ? 1 : 0);
+  var h = '<div style="padding:9px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:var(--sf);flex-shrink:0"><div><div style="font-size:13px;font-weight:500;color:var(--t)">Payda\u015flar</div><div style="font-size:10px;color:var(--t2);margin-top:1px">' + fN(d.dosyaNo) + ' \u00b7 ' + fN(d.musteriAd) + '</div></div><span style="font-size:9px;padding:2px 8px;border-radius:8px;background:' + (atananS >= 3 ? '#EAF3DE;color:#27500A' : '#FAEEDA;color:#854F0B') + ';font-weight:500">' + atananS + '/4 atand\u0131</span></div>';
+
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;flex:1;overflow-y:auto">';
+
+  /* MUSTERI */
+  h += '<div style="border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b);display:flex;flex-direction:column">';
+  h += _ch('M\u00dc', '#E6F1FB', '#0C447C', 'M\u00fc\u015fteri', 'Al\u0131c\u0131 taraf', musteriAd !== '\u2014' ? 100 : 0);
+  h += '<div style="padding:8px 14px;flex:1">' + _pr('Firma', fN(musteriAd)) + _pr('\u00dclke', fN(d.varis_ulkesi || d.varis_limani)) + _pr('E-posta', fN(d.musteriEmail), '#185FA5') + _pr('Telefon', fN(d.musteriTel)) + '</div>';
+  h += (d.musteriEmail ? '<div style="padding:5px 14px;background:#EAF3DE;border-top:0.5px solid #C0DD97;font-size:9px;color:#27500A;display:flex;align-items:center;gap:5px"><div style="width:7px;height:7px;border-radius:50%;background:#16A34A"></div>BL bilgileri mevcut</div>' : '<div style="padding:5px 14px;background:#FAEEDA;border-top:0.5px solid #FAC775;font-size:9px;color:#854F0B;display:flex;align-items:center;gap:5px"><div style="width:7px;height:7px;border-radius:50%;background:#D97706"></div>\u0130leti\u015fim bilgileri eksik</div>');
+  h += _cbtn([{l:'D\u00fczenle',fn:''},{l:'Mail G\u00f6nder',tip:'p',fn:''}]);
+  h += '</div>';
+
+  /* GUMRUKCU */
+  var gmPct = gm ? Math.round([gm.firma_adi, gm.yetkili_adi, gm.eposta, gm.telefon].filter(Boolean).length / 4 * 100) : 0;
+  h += '<div style="border-bottom:0.5px solid var(--b);display:flex;flex-direction:column">';
+  h += _ch('G\u00dc', '#EAF3DE', '#27500A', 'G\u00fcmr\u00fck\u00e7\u00fc', 'G\u00fcmr\u00fck m\u00fc\u015favirli\u011fi', gmPct);
+  h += '<div style="padding:8px 14px;flex:1">';
+  if (gm) { h += _pr('Firma', fN(gm.firma_adi)) + _pr('Yetkili', fN(gm.yetkili_adi)) + _pr('E-posta', fN(gm.eposta), '#185FA5') + _pr('Telefon', fN(gm.telefon)); if (gm.vekalet_bitis) { var vGun = Math.ceil((new Date(gm.vekalet_bitis) - new Date()) / 86400000); h += _pr('Vekalet', gm.vekalet_bitis + (vGun <= 30 ? ' (' + vGun + 'g)' : ' \u2713'), vGun <= 7 ? '#DC2626' : vGun <= 30 ? '#D97706' : '#16A34A'); } }
+  else h += '<div style="text-align:center;padding:20px;color:var(--t3);font-size:10px">G\u00fcmr\u00fck\u00e7\u00fc atanmad\u0131</div>';
+  h += '</div>';
+  h += _cbtn([{l:gm?'De\u011fi\u015ftir':'Ata',fn:'window._ihrGumrukcuAta(\''+dosyaId+'\')'},{l:'Mail',tip:'p',fn:'window._ihrGumrukcuMail?.(\''+dosyaId+'\')'},{l:'G\u00c7B Ekle',fn:'window._ihrGcbEkle?.(\''+dosyaId+'\')'}]);
+  h += '</div>';
+
+  /* FORWARDER */
+  var fwPct = fw ? Math.round([fw.firma_adi, fw.yetkili_adi, fw.eposta, fw.telefon].filter(Boolean).length / 4 * 100) : 0;
+  h += '<div style="border-right:0.5px solid var(--b);display:flex;flex-direction:column">';
+  h += _ch('FW', '#FAEEDA', '#633806', 'Forwarder', 'Navlun & lojistik', fwPct);
+  h += '<div style="padding:8px 14px;flex:1">';
+  if (fw) { h += _pr('Firma', fN(fw.firma_adi)) + _pr('Yetkili', fN(fw.yetkili_adi)) + _pr('E-posta', fN(fw.eposta), '#185FA5') + _pr('Konteyner', fN(d.konteyner_tipi)) + _pr('Navlun', d.navlun ? d.navlun + ' ' + (d.doviz || 'USD') : 'Bekleniyor', d.navlun ? '#16A34A' : '#D97706'); }
+  else h += '<div style="text-align:center;padding:20px;color:var(--t3);font-size:10px">Forwarder atanmad\u0131</div>';
+  h += '</div>';
+  h += _cbtn([{l:fw?'De\u011fi\u015ftir':'Ata',fn:'window._ihrForwarderAta?.(\''+dosyaId+'\')'},{l:'Mail',tip:'p',fn:'window._ihrForwarderMail?.(\''+dosyaId+'\')'},{l:'BL Ekle',fn:'window._ihrBlEkle?.(\''+dosyaId+'\')'},{l:'Teklif',fn:'window._ihrBelgeLinkOlustur?.(\''+dosyaId+'\',\'TTF\')'}]);
+  h += '</div>';
+
+  /* SIGORTACI */
+  h += '<div style="display:flex;flex-direction:column">';
+  h += _ch('SG', '#EEEDFE', '#3C3489', 'Sigortac\u0131', 'Kargo sigortas\u0131', sigortaVar ? 100 : 0);
+  if (sigortaVar) {
+    h += '<div style="padding:8px 14px;flex:1">' + _pr('Poli\u00e7e No', fN(d.police_no)) + _pr('Sigorta Bedeli', d.sigorta_bedel ? d.sigorta_bedel + ' ' + (d.doviz || 'USD') : '\u2014') + _pr('Ba\u015flang\u0131\u00e7', fN(d.sigorta_baslangic)) + _pr('Biti\u015f', fN(d.sigorta_bitis)) + '</div>';
+    h += '<div style="padding:5px 14px;background:#EAF3DE;border-top:0.5px solid #C0DD97;font-size:9px;color:#27500A;display:flex;align-items:center;gap:5px"><div style="width:7px;height:7px;border-radius:50%;background:#16A34A"></div>Poli\u00e7e aktif</div>';
+    h += _cbtn([{l:'D\u00fczenle',fn:''},{l:'G\u00f6r\u00fcnt\u00fcle',tip:'p',fn:''}]);
+  } else {
+    var teslim = (d.teslim_sekli || '').toUpperCase();
+    var sigNot = ['CIF', 'CIP'].indexOf(teslim) !== -1 ? teslim + ' teslimde sigorta zorunludur' : 'CFR/FOB teslimde opsiyonel';
+    h += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;text-align:center"><div style="font-size:24px;opacity:.25;margin-bottom:8px">\ud83d\udee1</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">Hen\u00fcz sigortac\u0131 atanmad\u0131</div><div style="font-size:9px;color:var(--t3);margin-bottom:12px">' + sigNot + '</div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation()" style="font-size:10px;padding:4px 12px;border-radius:5px;border:0.5px solid var(--ac);color:var(--ac);background:transparent;cursor:pointer;font-family:inherit">Sigortac\u0131 Ata</button><button onclick="event.stopPropagation();window._ihrBelgeLinkOlustur?.(\'' + dosyaId + '\',\'SIG\')" style="font-size:10px;padding:4px 12px;border-radius:5px;border:0.5px solid var(--b);color:var(--t2);background:transparent;cursor:pointer;font-family:inherit">Teklif Linki</button></div></div>';
   }
-  else if (tip === 'forwarder') {
-    var forwarderlar = _loadFW().filter(function(f) { return !f.isDeleted; });
-    var fw = d.forwarder_id ? forwarderlar.find(function(f) { return String(f.id) === String(d.forwarder_id); }) : null;
-    var fh = '<div style="padding:16px 20px">';
-    fh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:12px;font-weight:500">Forwarder</div><button class="btn btnp" onclick="event.stopPropagation();window._ihrForwarderAta?.(\'' + d.id + '\')" style="font-size:11px">' + (fw ? 'De\u011fi\u015ftir' : 'Ata') + '</button></div>';
-    if (fw) {
-      var _dr2 = function(l, v) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t3)">' + l + '</span><span style="color:var(--t);font-weight:500">' + (typeof window.escapeHtml === 'function' ? window.escapeHtml(v || '\u2014') : (v || '\u2014')) + '</span></div>'; };
-      fh += _dr2('Firma', fw.firma_adi) + _dr2('Yetkili', fw.yetkili_adi) + _dr2('Telefon', fw.telefon) + _dr2('E-posta', fw.eposta);
-      fh += '<div style="margin-top:12px;display:flex;gap:6px"><button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderMail?.(\'' + d.id + '\')" style="font-size:11px">Mail G\u00f6nder</button><button class="btn btns" onclick="event.stopPropagation();window._ihrForwarderDuzenle?.(\'' + fw.id + '\')" style="font-size:11px">D\u00fczenle</button></div>';
-    } else { fh += '<div style="text-align:center;padding:24px;color:var(--t3)">Forwarder atanmad\u0131</div>'; }
-    fh += '</div>'; el.innerHTML = fh;
-  }
+  h += '</div>';
+
+  h += '</div>'; /* grid */
+  el.innerHTML = h;
 };
 
 window._ihrAyarlarModal = function() {
