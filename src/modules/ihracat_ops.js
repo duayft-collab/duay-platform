@@ -2418,8 +2418,39 @@ window._ihrDetayRenderMutabakat = function(d, c) {
   h += '<div style="flex:1"></div>';
   h += '<select id="ihr-mut-filtre" onchange="event.stopPropagation();window._ihrMutabakatFiltre()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t);font-family:inherit"><option value="hepsi">T\u00fcm kalemler</option><option value="fark">Sadece farklar</option><option value="eslesen">Sadece e\u015fle\u015fenler</option><option value="alis_yok">Al\u0131\u015f eksik</option></select>';
   h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrMutabakatExcel?.(\'' + dosyaId + '\')" style="font-size:9px">Excel</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrKarRaporu?.(\'' + dosyaId + '\')" style="font-size:9px">\ud83d\udcb0 K\u00e2r Raporu</button>';
+  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrMutabakatOzet?.(\'' + dosyaId + '\')" style="font-size:9px">\ud83d\udcca \u00d6zet Rapor</button>';
   h += '<button class="btn btnp" onclick="event.stopPropagation();window._ihrMutabakatPdf?.(\'' + dosyaId + '\')" style="font-size:9px">PDF Rapor</button>';
   h += '</div>';
+
+  /* VGM KG Kontrolü */
+  var plBrutKg = ihU.reduce(function(a,u){ return a + (parseFloat(u.brut_kg)||0); }, 0);
+  var vgmKg2 = ihU.reduce(function(a,u){ return a + (parseFloat(u.vgm_kg)||0); }, 0);
+  var vgmVar2 = vgmKg2 > 0;
+  var gcb1kg = gcbM[0]; var gcbBrutKg = gcb1kg ? (parseFloat(gcb1kg.brut_kg || gcb1kg.toplam_kg || 0)) : null;
+  var blListKg = _loadBL().filter(function(b){ return String(b.dosya_id)===String(dosyaId)&&!b.isDeleted; });
+  var bl1kg = blListKg[0]; var blKg2 = bl1kg ? (parseFloat(bl1kg.toplam_kg || 0)) : null;
+  var kgEsit = function(a, b) { return b !== null && Math.abs(a - b) < 1; };
+  h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--t3);margin-bottom:6px">VGM KG KONTROL\u00dc</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px">';
+  var _vS = 'border-radius:6px;padding:7px 10px;text-align:center';
+  h += '<div style="' + _vS + ';background:#E6F1FB;border:0.5px solid #B5D4F4"><div style="font-size:8px;color:#0C447C">VGM</div><div style="font-size:16px;font-weight:600;color:#185FA5">' + (vgmVar2 ? fN(vgmKg2) : '\u2014') + '</div><div style="font-size:8px;color:var(--t3)">Referans</div></div>';
+  var _plMatch = vgmVar2 && kgEsit(vgmKg2, plBrutKg); var _plClr = _plMatch ? '#16A34A' : (vgmVar2 ? '#DC2626' : 'var(--t)');
+  h += '<div style="' + _vS + ';background:' + (_plMatch ? '#EAF3DE' : 'var(--s2)') + ';border:0.5px solid ' + (_plMatch ? '#C0DD97' : 'var(--b)') + '"><div style="font-size:8px;color:var(--t3)">PL</div><div style="font-size:16px;font-weight:600;color:' + _plClr + '">' + fN(plBrutKg) + '</div>' + (vgmVar2 && !_plMatch ? '<div style="font-size:8px;color:#DC2626">Fark: ' + fN(plBrutKg - vgmKg2) + '</div>' : '') + '</div>';
+  var _gcbMatch = gcbBrutKg !== null && vgmVar2 && kgEsit(vgmKg2, gcbBrutKg); var _gcbClr2 = gcbBrutKg === null ? 'var(--t3)' : (_gcbMatch ? '#16A34A' : '#DC2626');
+  h += '<div style="' + _vS + ';background:' + (_gcbMatch ? '#EAF3DE' : 'var(--s2)') + ';border:0.5px solid ' + (_gcbMatch ? '#C0DD97' : 'var(--b)') + '"><div style="font-size:8px;color:var(--t3)">G\u00c7B</div><div style="font-size:16px;font-weight:600;color:' + _gcbClr2 + '">' + (gcbBrutKg !== null ? fN(gcbBrutKg) : '\u2014') + '</div>' + (gcbBrutKg === null ? '<div style="font-size:8px;color:#D97706">Bekleniyor</div>' : '') + '</div>';
+  var _blMatch = blKg2 !== null && vgmVar2 && kgEsit(vgmKg2, blKg2); var _blClr2 = blKg2 === null ? 'var(--t3)' : (_blMatch ? '#16A34A' : '#DC2626');
+  h += '<div style="' + _vS + ';background:' + (_blMatch ? '#EAF3DE' : 'var(--s2)') + ';border:0.5px solid ' + (_blMatch ? '#C0DD97' : 'var(--b)') + '"><div style="font-size:8px;color:var(--t3)">BL</div><div style="font-size:16px;font-weight:600;color:' + _blClr2 + '">' + (blKg2 !== null ? fN(blKg2) : '\u2014') + '</div>' + (blKg2 === null ? '<div style="font-size:8px;color:#D97706">Bekleniyor</div>' : '') + '</div>';
+  h += '</div>';
+  /* Sonuç pill'leri */
+  h += '<div style="display:flex;gap:5px;flex-wrap:wrap">';
+  if (vgmVar2) {
+    h += '<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:' + (_plMatch ? '#EAF3DE' : '#FCEBEB') + ';color:' + (_plMatch ? '#27500A' : '#791F1F') + '">' + (_plMatch ? 'VGM = PL \u2713' : 'VGM \u2260 PL') + '</span>';
+    h += '<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:' + (gcbBrutKg === null ? '#FAEEDA' : _gcbMatch ? '#EAF3DE' : '#FCEBEB') + ';color:' + (gcbBrutKg === null ? '#854F0B' : _gcbMatch ? '#27500A' : '#791F1F') + '">' + (gcbBrutKg === null ? 'G\u00c7B bekleniyor' : _gcbMatch ? 'VGM = G\u00c7B \u2713' : 'VGM \u2260 G\u00c7B') + '</span>';
+    h += '<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:' + (blKg2 === null ? '#FAEEDA' : _blMatch ? '#EAF3DE' : '#FCEBEB') + ';color:' + (blKg2 === null ? '#854F0B' : _blMatch ? '#27500A' : '#791F1F') + '">' + (blKg2 === null ? 'BL bekleniyor' : _blMatch ? 'VGM = BL \u2713' : 'VGM \u2260 BL') + '</span>';
+  } else { h += '<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:#FAEEDA;color:#854F0B">VGM girilmemi\u015f</span>'; }
+  h += '</div></div>';
 
   /* KPI */
   h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--b)">';
@@ -6696,6 +6727,130 @@ window._bmTopluUret = function(dosyaId) {
 /* _ihrTumBelgeleriUret → merkezi panele yonlendir */
 window._ihrTumBelgeleriUret = function(dosyaId) {
   window._ihrBelgePaneliAc(dosyaId || window._ihrAktifDosyaId || '');
+};
+
+/* ══════════════════════════════════════════════════════════════
+   KAR RAPORU (MUTABAKAT-001)
+   ══════════════════════════════════════════════════════════════ */
+window._ihrKarRaporu = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
+  if (!d) { window.toast?.('Dosya bulunamad\u0131', 'err'); return; }
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var tumSA = typeof window.loadSatinalma === 'function' ? window.loadSatinalma() : [];
+  var fN = function(n) { return (parseFloat(n) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var doviz = urunler[0]?.doviz || 'USD';
+  var topFOB = urunler.reduce(function(a, u) { return a + (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); }, 0);
+  var navlunGelir = parseFloat(d.navlun || 0);
+  var sigortaGelir = parseFloat(d.sigorta_bedel || 0);
+  var topAlis = urunler.reduce(function(acc, u) {
+    var esl = tumSA.find(function(s) { return u.satinalma_id && String(s.id) === String(u.satinalma_id); });
+    return acc + (esl ? (parseFloat(esl.miktar) || 0) * (parseFloat(esl.birimFiyat) || 0) : 0);
+  }, 0);
+  var navlunGider = parseFloat(d.navlun_odeme || d.navlun || 0);
+  var sigortaGider = parseFloat(d.sigorta_prim || d.sigorta_bedel || 0);
+  var gumrukGider = parseFloat(d.gumruk_masraf || 0);
+  var digerGider = parseFloat(d.diger_masraf || 0);
+  var topGider = topAlis + navlunGider + sigortaGider + gumrukGider + digerGider;
+  var netKar = topFOB - topGider;
+  var marjPct = topFOB > 0 ? Math.round(netKar / topFOB * 1000) / 10 : 0;
+  var urunKarlar = urunler.map(function(u) {
+    var ciT = (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0);
+    var esl = tumSA.find(function(s) { return u.satinalma_id && String(s.id) === String(u.satinalma_id); });
+    var alisT = esl ? (parseFloat(esl.miktar) || 0) * (parseFloat(esl.birimFiyat) || 0) : 0;
+    return { ad: u.standart_urun_adi || u.aciklama || u.urun_kodu || '\u2014', ciT: ciT, alisT: alisT, kar: ciT - alisT, marj: ciT > 0 ? Math.round((ciT - alisT) / ciT * 1000) / 10 : 0 };
+  });
+
+  var karRenk = netKar >= 0 ? '#16A34A' : '#DC2626';
+  var marjBg = marjPct > 15 ? '#16A34A' : marjPct > 5 ? '#D97706' : '#DC2626';
+  var hR = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>K\u00e2r Raporu</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff}.page{max-width:210mm;margin:0 auto;padding:20px 24px}.no-print{background:#0C2340;padding:8px 16px;display:flex;gap:8px;justify-content:flex-end}@media print{.no-print{display:none!important}}</style></head><body>';
+  hR += '<div class="no-print"><button onclick="window.print()" style="padding:4px 16px;background:#185FA5;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px">Yazd\u0131r</button><button onclick="window.close()" style="padding:4px 16px;background:transparent;color:#fff;border:0.5px solid rgba(255,255,255,.3);border-radius:4px;cursor:pointer;font-size:11px">Kapat</button></div>';
+  hR += '<div class="page">';
+  hR += '<div style="background:#0C2340;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0"><div style="color:#fff"><div style="font-size:8px;color:rgba(255,255,255,.5)">DUAY GLOBAL TRADE</div><div style="font-size:16px;font-weight:700;margin-top:2px">K\u00c2R RAPORU</div></div><div style="text-align:right;color:rgba(255,255,255,.7);font-size:9px">' + _esc(d.dosyaNo || '') + '<br>' + new Date().toISOString().slice(0, 10) + '</div></div>';
+  /* Gelirler */
+  hR += '<div style="padding:12px 20px;border:0.5px solid var(--b)"><div style="font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--t3);margin-bottom:8px">GEL\u0130RLER</div>';
+  var _kS2 = 'display:flex;justify-content:space-between;padding:4px 0;font-size:10px;border-bottom:0.5px solid #eee';
+  hR += '<div style="' + _kS2 + '"><span>Sat\u0131\u015f (CI \u2014 FOB)</span><span style="font-weight:500">' + doviz + ' ' + fN(topFOB) + '</span></div>';
+  hR += '<div style="' + _kS2 + '"><span>Navlun Geliri</span><span>' + fN(navlunGelir) + '</span></div>';
+  hR += '<div style="' + _kS2 + '"><span>Sigorta Geliri</span><span>' + fN(sigortaGelir) + '</span></div>';
+  hR += '<div style="' + _kS2 + ';border-bottom:2px solid #1a1a1a;font-weight:600"><span>TOPLAM GEL\u0130R</span><span>' + doviz + ' ' + fN(topFOB + navlunGelir + sigortaGelir) + '</span></div>';
+  hR += '</div>';
+  /* Giderler */
+  hR += '<div style="padding:12px 20px;border:0.5px solid var(--b);border-top:none"><div style="font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--t3);margin-bottom:8px">G\u0130DERLER</div>';
+  hR += '<div style="' + _kS2 + '"><span>Al\u0131\u015f Maliyeti</span><span style="color:#DC2626">' + (topAlis > 0 ? fN(topAlis) : '\u2014 (al\u0131\u015f faturas\u0131 ba\u011fl\u0131 de\u011fil)') + '</span></div>';
+  hR += '<div style="' + _kS2 + '"><span>Navlun \u00d6demesi</span><span>' + fN(navlunGider) + '</span></div>';
+  hR += '<div style="' + _kS2 + '"><span>Sigorta \u00d6demesi</span><span>' + fN(sigortaGider) + '</span></div>';
+  hR += '<div style="' + _kS2 + '"><span>G\u00fcmr\u00fck Masraf\u0131</span><span>' + (gumrukGider > 0 ? fN(gumrukGider) : '\u2014 (girilmemi\u015f)') + '</span></div>';
+  hR += '<div style="' + _kS2 + '"><span>Di\u011fer Masraflar</span><span>' + fN(digerGider) + '</span></div>';
+  hR += '<div style="' + _kS2 + ';border-bottom:2px solid #1a1a1a;font-weight:600"><span>TOPLAM G\u0130DER</span><span>' + fN(topGider) + '</span></div>';
+  hR += '</div>';
+  /* Net Kâr */
+  hR += '<div style="background:' + (netKar >= 0 ? '#EAF3DE' : '#FCEBEB') + ';padding:12px 20px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700;color:' + karRenk + '">';
+  hR += '<span>NET K\u00c2R</span><span>' + doviz + ' ' + fN(netKar) + ' (%' + marjPct + ')</span></div>';
+  /* Ürün bazlı */
+  hR += '<div style="padding:12px 20px"><div style="font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--t3);margin-bottom:8px">\u00dcR\u00dcN BAZINDA K\u00c2R ANAL\u0130Z\u0130</div>';
+  hR += '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f8f8f8;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a"><th style="padding:5px 8px;text-align:left">\u00dcr\u00fcn</th><th style="padding:5px 8px;text-align:right">Sat\u0131\u015f</th><th style="padding:5px 8px;text-align:right">Al\u0131\u015f</th><th style="padding:5px 8px;text-align:right">K\u00e2r</th><th style="padding:5px 8px;text-align:right">Marj %</th></tr></thead><tbody>';
+  urunKarlar.forEach(function(uk) {
+    hR += '<tr><td style="padding:4px 8px;border-bottom:0.5px solid #eee">' + _esc(uk.ad.slice(0, 30)) + '</td><td style="padding:4px 8px;text-align:right;border-bottom:0.5px solid #eee">' + fN(uk.ciT) + '</td><td style="padding:4px 8px;text-align:right;border-bottom:0.5px solid #eee;' + (uk.alisT === 0 ? 'color:#999;font-style:italic' : '') + '">' + (uk.alisT > 0 ? fN(uk.alisT) : 'e\u015fle\u015fmedi') + '</td><td style="padding:4px 8px;text-align:right;border-bottom:0.5px solid #eee;color:' + (uk.kar >= 0 ? '#16A34A' : '#DC2626') + '">' + fN(uk.kar) + '</td><td style="padding:4px 8px;text-align:right;border-bottom:0.5px solid #eee">%' + uk.marj + '</td></tr>';
+  });
+  hR += '</tbody></table></div>';
+  hR += '</div></body></html>';
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(hR); w.document.close(); }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   MUTABAKAT OZET RAPORU (MUTABAKAT-001)
+   ══════════════════════════════════════════════════════════════ */
+window._ihrMutabakatOzet = function(dosyaId) {
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
+  if (!d) { window.toast?.('Dosya bulunamad\u0131', 'err'); return; }
+  var urunler = _loadU().filter(function(u) { return String(u.dosya_id) === String(dosyaId) && !u.isDeleted; });
+  var gcbList2 = _loadG().filter(function(g) { return String(g.dosya_id) === String(dosyaId) && !g.isDeleted; });
+  var blList2 = _loadBL().filter(function(b) { return String(b.dosya_id) === String(dosyaId) && !b.isDeleted; });
+  var evraklar2 = _loadE().filter(function(e) { return String(e.dosya_id) === String(dosyaId) && !e.isDeleted; });
+  var fN = function(n) { return (parseFloat(n) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+  var ciUrun = urunler.length;
+  var plKoli = urunler.reduce(function(a, u) { return a + (parseInt(u.koli_adet) || 0); }, 0);
+  var plBrut = urunler.reduce(function(a, u) { return a + (parseFloat(u.brut_kg) || 0); }, 0);
+  var plNet = urunler.reduce(function(a, u) { return a + (parseFloat(u.net_kg) || 0); }, 0);
+  var ciTutar = urunler.reduce(function(a, u) { return a + (parseFloat(u.miktar) || 0) * (parseFloat(u.birim_fiyat) || 0); }, 0);
+  var hsOk = urunler.filter(function(u) { return u.hs_kodu && u.hs_kodu.length >= 6; }).length;
+  var gcb1o = gcbList2[0]; var bl1o = blList2[0];
+  var gcbBrut = gcb1o ? (parseFloat(gcb1o.brut_kg || gcb1o.toplam_kg || 0)) : null;
+  var blBrut = bl1o ? (parseFloat(bl1o.toplam_kg || 0)) : null;
+  var vgmBrut = urunler.reduce(function(a, u) { return a + (parseFloat(u.vgm_kg) || 0); }, 0) || null;
+
+  var hO = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>M\u00fctabakat \u00d6zet</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff}.page{max-width:210mm;margin:0 auto;padding:20px 24px}.no-print{background:#0C2340;padding:8px 16px;display:flex;gap:8px;justify-content:flex-end}@media print{.no-print{display:none!important}}</style></head><body>';
+  hO += '<div class="no-print"><button onclick="window.print()" style="padding:4px 16px;background:#185FA5;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px">Yazd\u0131r</button><button onclick="window.close()" style="padding:4px 16px;background:transparent;color:#fff;border:0.5px solid rgba(255,255,255,.3);border-radius:4px;cursor:pointer;font-size:11px">Kapat</button></div>';
+  hO += '<div class="page">';
+  hO += '<div style="background:#0C2340;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0"><div style="color:#fff"><div style="font-size:8px;color:rgba(255,255,255,.5)">DUAY GLOBAL TRADE</div><div style="font-size:16px;font-weight:700;margin-top:2px">M\u00dcTABAKAT \u00d6ZET RAPORU</div></div><div style="text-align:right;color:rgba(255,255,255,.7);font-size:9px">' + _esc(d.dosyaNo || '') + ' \u00b7 ' + _esc(d.musteriAd || '') + '<br>' + new Date().toISOString().slice(0, 10) + '</div></div>';
+
+  /* Karşılaştırma tablosu */
+  hO += '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:1px"><thead><tr style="background:#f8f8f8"><th style="padding:6px 8px;text-align:left;border:0.5px solid #ddd"></th><th style="padding:6px 8px;text-align:right;border:0.5px solid #ddd;background:rgba(24,95,165,.06);color:#185FA5">CI (Ref)</th><th style="padding:6px 8px;text-align:right;border:0.5px solid #ddd">PL</th><th style="padding:6px 8px;text-align:right;border:0.5px solid #ddd">G\u00c7B</th><th style="padding:6px 8px;text-align:right;border:0.5px solid #ddd">BL</th><th style="padding:6px 8px;text-align:right;border:0.5px solid #ddd">VGM</th></tr></thead><tbody>';
+  var _oRow = function(label, ci, pl, gcb, bl, vgm) {
+    return '<tr><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:500">' + label + '</td><td style="padding:5px 8px;border:0.5px solid #ddd;text-align:right;background:rgba(24,95,165,.03);font-weight:500">' + ci + '</td><td style="padding:5px 8px;border:0.5px solid #ddd;text-align:right">' + pl + '</td><td style="padding:5px 8px;border:0.5px solid #ddd;text-align:right">' + gcb + '</td><td style="padding:5px 8px;border:0.5px solid #ddd;text-align:right">' + bl + '</td><td style="padding:5px 8px;border:0.5px solid #ddd;text-align:right">' + vgm + '</td></tr>';
+  };
+  hO += _oRow('\u00dcr\u00fcn Kalemi', ciUrun, ciUrun, gcb1o ? (gcb1o.urun_sayisi || ciUrun) : '\u2014', '\u2014', ciUrun);
+  hO += _oRow('Toplam Koli', '\u2014', plKoli, gcb1o ? (gcb1o.toplam_koli || '\u2014') : '\u2014', bl1o ? (bl1o.toplam_koli || '\u2014') : '\u2014', plKoli);
+  hO += _oRow('Br\u00fct KG', '\u2014', fN(plBrut), gcbBrut !== null ? fN(gcbBrut) : '\u2014', blBrut !== null ? fN(blBrut) : '\u2014', vgmBrut ? fN(vgmBrut) : '\u2014');
+  hO += _oRow('Net KG', '\u2014', fN(plNet), '\u2014', '\u2014', '\u2014');
+  hO += _oRow('Toplam Tutar', fN(ciTutar), '\u2014', gcb1o ? fN(gcb1o.fob_deger || ciTutar) : '\u2014', '\u2014', '\u2014');
+  hO += _oRow('HS Kodu', hsOk + '/' + ciUrun, hsOk + '/' + ciUrun, '\u2014', '\u2014', '\u2014');
+  hO += '</tbody></table>';
+
+  /* Evrak durumu */
+  hO += '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">';
+  ['PI', 'CI', 'PL', 'GCB', 'BL', 'SIG'].forEach(function(tur) {
+    var var2 = evraklar2.find(function(e) { return e.tur === tur; });
+    var bg2 = var2 ? '#EAF3DE' : '#FCEBEB';
+    var clr2 = var2 ? '#27500A' : '#791F1F';
+    hO += '<div style="background:' + bg2 + ';border-radius:6px;padding:6px 12px;text-align:center;min-width:50px"><div style="font-size:9px;font-weight:600;color:' + clr2 + '">' + tur + '</div><div style="font-size:14px;margin-top:2px">' + (var2 ? '\u2713' : '\u2717') + '</div></div>';
+  });
+  hO += '</div>';
+  hO += '</div></body></html>';
+  var w2 = window.open('', '_blank');
+  if (w2) { w2.document.write(hO); w2.document.close(); }
 };
 
 })();
