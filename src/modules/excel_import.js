@@ -306,7 +306,7 @@ function _sagAdim2(el) {
   /* Başlıklar */
   h += '<div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;padding:4px 16px"><span style="font-size:8px;font-weight:700;letter-spacing:.6px;color:var(--t3);text-transform:uppercase">EXCEL S\u00dcTUNU</span><span></span><span style="font-size:8px;font-weight:700;letter-spacing:.6px;color:var(--t3);text-transform:uppercase">DUAY ALANI</span></div>';
 
-  /* Satırlar */
+  /* Satırlar — SELECT-TO-BADGE (UX-004) */
   _kolonlar.forEach(function(excKol) {
     var secili = _eslestirme[excKol] || 'atla';
     var skor = _eiSkorHesapla(excKol, secili);
@@ -317,12 +317,14 @@ function _sagAdim2(el) {
     var rowBg = eslesmis ? '#F0FFF4' : onayGer ? '#FFFBEB' : '';
     var okClr = eslesmis ? '#16A34A' : onayGer ? '#D97706' : 'var(--t3)';
     var okTxt = eslesmis ? '\u2192' : onayGer ? '?' : '\u2192';
+    var escK = excKol.replace(/[^a-zA-Z0-9]/g, '_');
 
     h += '<div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;align-items:center;padding:6px 16px;border-bottom:0.5px solid var(--b);' + (rowBg ? 'background:' + rowBg : '') + '">';
 
-    /* Sol — Excel kolon */
-    h += '<div style="min-width:0"><div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(excKol) + '</span>';
-    if (zorunluMu) h += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#FEF2F2;color:#DC2626">Zorunlu</span>';
+    /* Sol — Excel kolon (kutu içinde) */
+    h += '<div style="min-width:0"><div style="display:flex;align-items:center;gap:4px">';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:5px;padding:3px 8px;font-size:10px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">' + _esc(excKol) + '</div>';
+    if (zorunluMu) h += '<span style="font-size:8px;color:#DC2626;flex-shrink:0">Zorunlu</span>';
     h += '</div>';
     if (ornekler) h += '<div style="font-size:9px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">' + _esc(ornekler) + '</div>';
     h += '</div>';
@@ -330,7 +332,7 @@ function _sagAdim2(el) {
     /* Ok */
     h += '<span style="text-align:center;font-size:14px;font-weight:600;color:' + okClr + '">' + okTxt + '</span>';
 
-    /* Sağ — Duay alanı */
+    /* Sağ — Badge only (select yok) */
     h += '<div style="min-width:0">';
     if (eslesmis || onayGer) {
       var alanAd = ''; DUAY_ALANLARI.forEach(function(a) { if (a.v === secili) alanAd = a.l; });
@@ -339,18 +341,12 @@ function _sagAdim2(el) {
       var badgeClr = eslesmis ? '#27500A' : '#854F0B';
       var aiBg = eslesmis ? '#185FA5' : '#D97706';
       var aiTxt = eslesmis ? 'AI' : '? kontrol';
-      h += '<div onclick="event.stopPropagation();var s=this.nextElementSibling;s.style.display=s.style.display===\'none\'?\'block\':\'none\';this.style.display=s.style.display===\'none\'?\'flex\':\'none\'" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;border-radius:6px;cursor:pointer;background:' + badgeBg + ';border:0.5px solid ' + badgeBorder + '">';
+      h += '<div id="bm-badge-' + escK + '" onclick="event.stopPropagation();window._eiPopupSec(\'' + escK + '\',\'' + _esc(excKol).replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;border-radius:5px;cursor:pointer;background:' + badgeBg + ';border:0.5px solid ' + badgeBorder + '">';
       h += '<span style="font-size:10px;font-weight:500;color:' + badgeClr + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(alanAd) + '</span>';
       h += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:' + aiBg + ';color:#fff;font-weight:500;flex-shrink:0">' + aiTxt + '</span>';
       h += '</div>';
-      h += '<select style="display:none;width:100%;font-size:10px;padding:4px 8px;border-radius:5px;border:0.5px solid var(--b);background:var(--sf);color:var(--t);font-family:inherit;cursor:pointer" onchange="event.stopPropagation();window._eiEslestirGuncelle(\'' + _esc(excKol) + '\',this.value);this.style.display=\'none\';this.previousElementSibling.style.display=\'flex\'" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">';
-      DUAY_ALANLARI.forEach(function(a) { h += '<option value="' + a.v + '"' + (secili === a.v ? ' selected' : '') + '>' + _esc(a.l) + '</option>'; });
-      h += '</select>';
     } else {
-      h += '<select style="width:100%;font-size:10px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--b);background:var(--sf);color:var(--t3);font-family:inherit;cursor:pointer" onchange="event.stopPropagation();window._eiEslestirGuncelle(\'' + _esc(excKol) + '\',this.value);window._renderAll?.()" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">';
-      h += '<option value="atla" selected>+ E\u015fle\u015ftir...</option>';
-      DUAY_ALANLARI.forEach(function(a) { if (a.v !== 'atla') h += '<option value="' + a.v + '">' + _esc(a.l) + '</option>'; });
-      h += '</select>';
+      h += '<div id="bm-badge-' + escK + '" onclick="event.stopPropagation();window._eiPopupSec(\'' + escK + '\',\'' + _esc(excKol).replace(/'/g, "\\'") + '\')" style="border:1.5px dashed var(--b);border-radius:5px;padding:4px 8px;font-size:9px;color:var(--t3);cursor:pointer">+ E\u015fle\u015ftir...</div>';
     }
     h += '</div></div>';
   });
@@ -557,6 +553,32 @@ window._eiAktar = function() {
   if (typeof window.storeIhracatUrunler === 'function') window.storeIhracatUrunler(mevcutU);
   window.logActivity?.('import', 'Excel V5: ' + _eklenen + ' eklendi, ' + _guncellenen + ' g\u00fcncellendi, ' + _atlandi + ' atland\u0131');
   _adim = 4; _renderAll();
+};
+
+/* ── Popup Select (UX-004) ──────────────────────────────────── */
+window._eiPopupSec = function(escK, kolonAdi) {
+  document.getElementById('ei-popup-sel')?.remove();
+  var badge = document.getElementById('bm-badge-' + escK);
+  if (!badge) return;
+  var rect = badge.getBoundingClientRect();
+  var sel = document.createElement('select');
+  sel.id = 'ei-popup-sel';
+  sel.size = Math.min(DUAY_ALANLARI.length, 10);
+  sel.setAttribute('style', 'position:fixed;top:' + rect.bottom + 'px;left:' + rect.left + 'px;width:' + Math.max(rect.width, 180) + 'px;z-index:9999;font-size:11px;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);box-shadow:0 4px 16px rgba(0,0,0,.12);padding:4px 0;font-family:inherit');
+  DUAY_ALANLARI.forEach(function(a) {
+    var opt = document.createElement('option');
+    opt.value = a.v; opt.textContent = a.l;
+    if (_eslestirme[kolonAdi] === a.v) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.onchange = function() {
+    window._eiEslestirGuncelle?.(kolonAdi, sel.value);
+    sel.remove();
+    _renderAll();
+  };
+  sel.onblur = function() { setTimeout(function() { sel.remove(); }, 150); };
+  document.body.appendChild(sel);
+  sel.focus();
 };
 
 /* ── Window Exports ─────────────────────────────────────────── */
