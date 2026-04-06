@@ -152,7 +152,7 @@ window.excelImportAc = function(dosyaId) {
     + '<div id="ei-steps" style="flex-shrink:0"></div>'
     + '<div style="display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden">'
     + '<div id="ei-sol" style="border-right:0.5px solid var(--b);background:var(--sf);overflow-y:auto;padding:12px"></div>'
-    + '<div id="ei-sag" style="overflow-y:auto;padding:12px"></div>'
+    + '<div id="ei-sag" style="display:flex;flex-direction:column;overflow-y:auto"></div>'
     + '</div>'
     + '<div id="ei-footer" style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-top:0.5px solid var(--b);background:var(--sf);flex-shrink:0"></div>'
     + '</div>';
