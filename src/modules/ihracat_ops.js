@@ -6791,6 +6791,8 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   /* Yon */
   h += '<button onclick="event.stopPropagation();window._bmAktifYon=\'portrait\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (yonSec==='portrait'?'#185FA5':'var(--b)') + ';background:' + (yonSec==='portrait'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (yonSec==='portrait'?'#185FA5':'var(--t2)') + ';font-family:inherit">\u2195 Dikey</button>';
   h += '<button onclick="event.stopPropagation();window._bmAktifYon=\'landscape\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (yonSec==='landscape'?'#185FA5':'var(--b)') + ';background:' + (yonSec==='landscape'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (yonSec==='landscape'?'#185FA5':'var(--t2)') + ';font-family:inherit">\u2194 Yatay</button>';
+  var _aramaQ = (window._bmArama || '').toLowerCase();
+  h += '<input id="bm-arama" placeholder="Belge ara..." value="' + (window._bmArama || '') + '" oninput="event.stopPropagation();window._bmArama=this.value;window._ihrBelgePaneliAc(\'' + dosyaId + '\')" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:9px;padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;width:120px;background:var(--sf);color:var(--t);font-family:inherit">';
   h += '<div style="margin-left:auto"><label style="font-size:9px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="bm-chk-all" onchange="event.stopPropagation();document.querySelectorAll(\'[id^=bm-chk-]\').forEach(function(c){if(c.id!==\'bm-chk-all\')c.checked=document.getElementById(\'bm-chk-all\').checked});window._bmGuncelle()"> T\u00fcm\u00fcn\u00fc Se\u00e7</label></div>';
   h += '</div>';
 
@@ -6802,6 +6804,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }).forEach(function(g) {
     h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:5px 14px;background:var(--s2);text-transform:uppercase;position:sticky;top:0;z-index:2;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
+      if (_aramaQ && t.k.toLowerCase().indexOf(_aramaQ) === -1 && (TUR_AD[t.k]||'').toLowerCase().indexOf(_aramaQ) === -1) return;
       var isParasut = t.k === 'PARASUT';
       var isDOCX2 = t.k.indexOf('DOCX-') === 0;
       var isKDV = t.k === 'KDV' || t.k === 'KDV-R';
