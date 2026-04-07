@@ -6766,10 +6766,17 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button>';
   h += '</div>';
 
+  var _sekmeSec = window._bmSekme || 'uretilen';
+  var _bilinen_turler = {}; GRUPLAR.forEach(function(g) { g.turler.forEach(function(t) { _bilinen_turler[t.k] = true; }); });
+  var yuklenenEvraklar = evraklar.filter(function(e) { return !_bilinen_turler[e.tur] && e.dosya_url; });
   /* DEPARTMAN BUTONLARI */
   var _depSec = window._bmAktifDep || 'ihracat';
   var _depBtnS = 'font-size:9px;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:inherit;';
-  h += '<div style="padding:8px 18px;border-bottom:0.5px solid var(--b);display:flex;gap:4px;flex-shrink:0">';
+  h += '<div style="padding:6px 14px;border-bottom:0.5px solid var(--b);display:flex;gap:4px;align-items:center;flex-shrink:0">';
+  var _sS2 = function(k) { var on = _sekmeSec === k; return 'font-size:10px;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:inherit;border:0.5px solid ' + (on ? '#185FA5' : 'var(--b)') + ';background:' + (on ? '#185FA5' : 'transparent') + ';color:' + (on ? '#fff' : 'var(--t2)'); };
+  h += '<button onclick="event.stopPropagation();window._bmSekme=\'uretilen\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _sS2('uretilen') + '">\u00dcretilen</button>';
+  h += '<button onclick="event.stopPropagation();window._bmSekme=\'yuklenen\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _sS2('yuklenen') + '">Y\u00fcklenen (' + yuklenenEvraklar.length + ')</button>';
+  h += '<div style="width:1px;height:14px;background:var(--b);margin:0 2px"></div>';
   [{k:'ihracat',l:'\u0130hracat'},{k:'kdv',l:'KDV \u0130ade'},{k:'satis',l:'Sat\u0131\u015f'},{k:'muhasebe',l:'Muhasebe'},{k:'diger',l:'Di\u011fer'}].forEach(function(dp) {
     var on = _depSec === dp.k;
     h += '<button onclick="event.stopPropagation();window._bmAktifDep=\'' + dp.k + '\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _depBtnS + 'border:0.5px solid ' + (on ? '#185FA5' : 'var(--b)') + ';background:' + (on ? '#185FA5' : 'transparent') + ';color:' + (on ? '#fff' : 'var(--t2)') + '">' + dp.l + '</button>';
@@ -6871,6 +6878,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   });
   h += '</div>';
   h += '</div>'; /* sag panel bitti */
+  if (_sekmeSec === 'yuklenen') { h += '<div style="font-size:8px;font-weight:700;color:var(--t3);padding:5px 14px;background:var(--s2);text-transform:uppercase;border-bottom:0.5px solid var(--b)">Y\u00fcklenen Dosyalar</div>'; if (yuklenenEvraklar.length) { yuklenenEvraklar.forEach(function(e) { var tarihE = e.createdAt ? e.createdAt.slice(5,10).replace('-','/') : ''; h += '<div style="display:flex;align-items:center;gap:7px;padding:6px 14px;border-bottom:0.5px solid var(--b)"><span style="font-size:9px;font-weight:600;background:var(--s2);color:var(--t3);padding:1px 6px;border-radius:3px;min-width:38px;text-align:center;flex-shrink:0">' + _esc2((e.tur||'').toUpperCase()) + '</span><span style="flex:1;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc2(e.ad||e.tur||e.id) + '</span>' + (tarihE ? '<span style="font-size:8px;color:var(--t3)">' + tarihE + '</span>' : '') + (e.dosya_url ? '<button onclick="event.stopPropagation();window.open(\'' + _esc2(e.dosya_url) + '\',\'_blank\')" style="font-size:9px;padding:2px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">G\u00f6r\u00fcnt\u00fcle</button>' : '') + '</div>'; }); } else { h += '<div style="padding:20px 14px;font-size:11px;color:var(--t3);text-align:center">Y\u00fcklenen dosya yok</div>'; } h += '<div style="padding:10px 14px"><label style="display:block;border:1.5px dashed var(--b);border-radius:6px;padding:14px;text-align:center;cursor:pointer" onclick="event.stopPropagation();window._ihrEvrakEkle?.(\'' + dosyaId + '\')"><div style="font-size:12px;color:var(--t2);margin-bottom:3px">+ Dosya Y\u00fckle</div><div style="font-size:9px;color:var(--t3)">PDF, JPG, PNG, XLSX \u2014 maks 20 MB</div></label></div>'; }
   h += '</div>'; /* grid bitti */
 
   /* FOOTER */
