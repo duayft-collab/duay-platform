@@ -443,3 +443,52 @@ Her kod tesliminin sonunda commit mesajından SONRA tam olarak 3 ipucu yaz. Atla
 KULLANIM / EDGE CASE / PERFORMANS / GÜVENLİK / ENTEGRASYON / DEBUG / VERİ / GELECEK BAKIM
 
 Her teslimde 3 farklı kategoriden seç.
+
+## KOD DEĞİŞİKLİK KURALLARI — Oturumdan Öğrenildi
+
+### KURAL: Büyük Fonksiyon Değişikliği Yasak
+Tek talimatla 150+ satır fonksiyon değiştirme yasak. Yapılacaklar:
+1. Fonksiyonu parçalara böl (her parça ayrı talimat)
+2. Veya: fonksiyonu ayrı .tmp dosyasına yaz, node ile birleştir
+3. Her değişiklik grep ile doğrulanabilir boyutta olmalı
+
+### KURAL: display:flex Inherit Sorunu
+Global CSS `.moc` çocuklarına `display:flex` uygular. Yeni panel veya liste div'i oluştururken:
+- Her zaman `display:block` veya `display:flex;flex-direction:column` açıkça yaz
+- Sadece `overflow-y:auto` yazmak yetmez — flex inherit gelir
+- Doğrulama: `window.getComputedStyle(el).display` ile kontrol et
+
+### KURAL: arguments[N] Kullanımı Yasak
+`arguments[4]`, `arguments[5]` gibi index'li erişim yasak. Yapılacaklar:
+- Fonksiyon imzasına her zaman isimli parametre ekle: `function(d, tur, seviye, urunler, gm, fw, opts)`
+- Yeni parametre gerekirce imzaya ekle, geriye dönük uyumluluk için default değer ver
+- `opts = opts || {}` ile güvenli erişim sağla
+
+### KURAL: Modal İçinde position:fixed Popup Yasak
+`overflow:hidden` olan bir modal içinde `position:fixed` popup (native select, tooltip vb.) çalışmaz — görünmez veya kesilir. Yapılacaklar:
+- Native `<select size=N>` yerine her zaman yeni `.mo` modal aç
+- Popup içerik modal üzerine ayrı div olarak `document.body.appendChild` ile ekle
+- Arama input'u olan mini modal tercih et (daha kullanışlı)
+
+---
+
+## YANIT ALT BİLGİSİ KURALI — Zorunlu
+
+Her uygulama raporunun en altında şu format zorunludur:
+
+```
+Terminal [N] | [YYYY-MM-DD HH:MM:SS] | Bu işlem: [N]. kez
+```
+
+Örnek:
+```
+Terminal 03 | 2026-04-07 17:18:44 | Bu işlem: 1. kez
+```
+
+Kurallar:
+- Terminal numarası: hangi terminalde çalıştığı (01, 03 vb.)
+- Zaman damgası: komutun çalıştığı an
+- Bu işlem kaçıncı kez: o talimat kodunun bu oturumda kaçıncı kez uygulandığı
+- Eğer ilk kez: "1. kez", ikinci deneme: "2. kez (retry)" yaz
+
+---
