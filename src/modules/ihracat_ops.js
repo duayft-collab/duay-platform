@@ -721,6 +721,7 @@ function _emirStepBar() {
 function _emirRenderAdim() {
   var body = _g('ihr-emir-body'); if (!body) return;
   _emirStepBar();
+  var _ed = window._ihrEmirEditId ? (_loadD().find(function(x){ return String(x.id)===String(window._ihrEmirEditId); })||null) : null;
   var users = _loadUsers().filter(function(u) { return u.status === 'active'; });
   var cariList = _loadCari().filter(function(c) { return !c.isDeleted; });
   var gumrukculer = _loadGM(); var forwarderlar = _loadFW();
@@ -802,6 +803,7 @@ function _emirRenderAdim() {
     h += '</div></div>';
   }
   body.innerHTML = h;
+  if (_ed) { setTimeout(function() { window._ihrEmirDoldur?.(_ed); }, 30); }
   /* Footer güncelle */
   var ftr = _g('ihr-emir-footer');
   if (ftr) {
@@ -816,13 +818,15 @@ function _emirRenderAdim() {
   _emirStepBar();
 }
 
-window._ihrYeniEmir = function() {
+window._ihrYeniEmir = function(editId) {
+  window._ihrEmirEditId = editId ? String(editId) : null;
+  var _editDosya = editId ? (_loadD().find(function(x){ return String(x.id)===String(editId); })||null) : null;
   window._ihrEmirAdim = 1;
   var ex = _g('mo-ihr-emir'); if (ex) ex.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ihr-emir';
   mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
   mo.innerHTML = '<div class="moc" style="max-width:920px;width:96vw;max-height:94vh;padding:0;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">'
-    + '<div style="padding:10px 16px;border-bottom:0.5px solid var(--b);background:var(--sf);display:flex;align-items:center;gap:10px;flex-shrink:0"><div><div style="font-size:13px;font-weight:500">+ Yeni \u0130hracat Emri</div><div style="font-size:9px;color:var(--t3)">\u0130hracat Talimat A\u00e7ma Formu \u00b7 Y\u00f6netici Olu\u015fturur</div></div><div style="margin-left:auto;display:flex;gap:6px"><button onclick="event.stopPropagation();window._ihrEmirTemplateSec?.()" style="padding:4px 10px;border-radius:5px;background:#7C2D12;color:#fff;border:none;font-size:9px;cursor:pointer;font-family:inherit">Template Kaydet</button><button onclick="event.stopPropagation();document.getElementById(\'mo-ihr-emir\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div></div>'
+    + '<div style="padding:10px 16px;border-bottom:0.5px solid var(--b);background:var(--sf);display:flex;align-items:center;gap:10px;flex-shrink:0"><div><div style="font-size:13px;font-weight:500">' + (_editDosya ? '\u270f\ufe0f Dosya D\u00fczenle \u2014 ' + _esc(_editDosya.dosyaNo||'') : '+ Yeni \u0130hracat Emri') + '</div><div style="font-size:9px;color:var(--t3)">\u0130hracat Talimat A\u00e7ma Formu \u00b7 Y\u00f6netici Olu\u015fturur</div></div><div style="margin-left:auto;display:flex;gap:6px"><button onclick="event.stopPropagation();window._ihrEmirTemplateSec?.()" style="padding:4px 10px;border-radius:5px;background:#7C2D12;color:#fff;border:none;font-size:9px;cursor:pointer;font-family:inherit">Template Kaydet</button><button onclick="event.stopPropagation();document.getElementById(\'mo-ihr-emir\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div></div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:7px 14px;background:var(--sf);border-bottom:0.5px solid var(--b);flex-shrink:0"><div><div style="font-size:8px;color:var(--t3)">Form Ad\u0131</div><div style="font-size:9px;font-weight:500">\u0130hracat Talimat\u0131</div></div><div><div style="font-size:8px;color:var(--t3)">Olu\u015fturma</div><div style="font-size:9px;font-weight:500;color:#27500A">' + _today() + '</div></div><div><div style="font-size:8px;color:var(--t3)">G\u00fcncelleyen</div><div style="font-size:9px;font-weight:500;color:#27500A">' + _esc(_cu()?.name || '') + '</div></div><div><div style="font-size:8px;color:var(--t3)">G\u00fcncelleme Nedeni</div><input class="fi" id="ihr-guncelleme-neden" placeholder="G\u00fcncelleme nedeni..." style="font-size:9px" onclick="event.stopPropagation()"></div></div>'
     + '<div id="ihr-step-bar" style="padding:7px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;flex-shrink:0;overflow-x:auto"></div>'
     + '<div id="ihr-emir-body" style="flex:1;overflow-y:auto;padding:14px 16px"></div>'
@@ -831,6 +835,25 @@ window._ihrYeniEmir = function() {
     + '</div>';
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
   _emirRenderAdim();
+};
+
+window._ihrEmirDoldur = function(d) {
+  if (!d) return;
+  var _sv = function(id, val) { var el = _g(id); if (el && val !== undefined && val !== null) el.value = val; };
+  _sv('ihr-form-tipi', d.form_tipi); _sv('ihr-musteri', d.musteri_id); _sv('ihr-incoterms', d.teslim_sekli);
+  _sv('ihr-varis', d.varis_limani); _sv('ihr-gorev-baslangic', d.baslangic_tarihi);
+  _sv('ihr-talimat-giren', d.talimat_giren); _sv('ihr-talimat-onaylayan', d.talimat_onaylayan);
+  _sv('ihr-gorev-sorumlusu', d.gorev_sorumlusu); _sv('ihr-wa-link', d.whatsapp_link);
+  _sv('ihr-wa-hatirlatma', d.whatsapp_hatirlatma); _sv('ihr-gumrukcu', d.gumrukcu_id);
+  _sv('ihr-gumrukcu-not', d.gumrukcu_not); _sv('ihr-forwarder', d.forwarder_id);
+  _sv('ihr-konteyner', d.konteyner_tipi); _sv('ihr-konsimento-turu', d.konsimento_turu);
+  _sv('ihr-konsimento-notify', d.konsimento_notify); _sv('ihr-konsimento-consignee', d.konsimento_consignee);
+  _sv('ihr-forwarder-not', d.forwarder_not); _sv('ihr-bl-not', d.bl_ozel_not);
+  _sv('ihr-ci-not', d.ci_ozel_not); _sv('ihr-ek-dok-1', d.ek_dok_1); _sv('ihr-ek-dok-2', d.ek_dok_2);
+  _sv('ihr-ek-dok-3', d.ek_dok_3); _sv('ihr-ek-dok-4', d.ek_dok_4);
+  _sv('ihr-sigorta-durum', d.sigorta_durum); _sv('ihr-sigorta-not', d.sigorta_not);
+  _sv('ihr-muhasebeci-not', d.muhasebeci_not); _sv('ihr-tedarikci-not', d.tedarikci_not);
+  _sv('ihr-banka-zorunlu', d.banka_zorunlu); _sv('ihr-guncelleme-neden', d.guncelleme_nedeni);
 };
 
 window._ihrEmirKaydet = function() {
@@ -1478,7 +1501,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--sf);border-bottom:0.5px solid var(--b);min-height:30px;flex-wrap:nowrap;overflow:hidden">';
   /* Sol grup */
   h += '<div style="flex-shrink:0;display:flex;gap:6px;align-items:center">';
-  h += '<span style="font-size:9px;font-family:monospace;color:#185FA5;font-weight:500">' + _esc(d.dosyaNo || '') + '</span>';
+  h += '<span style="font-size:13px;font-family:monospace;color:#185FA5;font-weight:700;letter-spacing:-.3px">' + _esc(d.dosyaNo || '') + '</span><span style="font-size:9px;color:var(--t3);margin-left:4px">' + _esc(d.musteriAd||'') + '</span>';
   h += '<div style="width:1px;height:14px;background:var(--b);flex-shrink:0"></div>';
   h += '<span style="font-size:10px;font-weight:500;color:var(--t)">' + urunler.length + '/' + tumurunler.length + ' kalem</span>';
   h += '</div>';
