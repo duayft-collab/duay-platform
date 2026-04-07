@@ -1846,7 +1846,14 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'d_teslim_alan_adi', l:'Teslim Alan Ad Soyad',            en:'Receiver Name',           g:18, ro:true, w:110, filtre:false, bos:true, dosya:true },
     { k:'d_teslim_alan_cep', l:'Teslim Alan Cep',                 en:'Receiver Mobile',         g:18, ro:true, w:90,  filtre:false, bos:true, dosya:true },
     { k:'d_teslim_alan_tc',  l:'Teslim Alan TC',                  en:'Receiver ID',             g:18, ro:true, w:85,  filtre:false, bos:true, dosya:true },
-    { k:'d_teslim_alan_firma',l:'Teslim Alan Firma',              en:'Receiver Company',        g:18, ro:true, w:110, filtre:true,  bos:true, dosya:true }
+    { k:'d_teslim_alan_firma',l:'Teslim Alan Firma',              en:'Receiver Company',        g:18, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    /* ══ G19 — SORUMLULAR ════════════════════════════════════ */
+    { k:'d_ihr_sor_adi',     l:'Ihracat Sorumlusu',               en:'Export Responsible',      g:19, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_ihr_sor_tc',      l:'Ihracat Sor. TC',                 en:'Export Resp. ID',         g:19, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_urun_sor_adi',    l:'Urun Arastirma Sor.',             en:'Product Research Resp.',  g:19, ro:true, w:120, filtre:true,  bos:true, dosya:true },
+    { k:'d_urun_sor_tc',     l:'Urun Arastirma TC',               en:'Product Resp. ID',        g:19, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_yukleme_sor_adi', l:'Yukleme Sorumlusu',               en:'Loading Responsible',     g:19, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_yukleme_sor_tc',  l:'Yukleme Sor. TC',                 en:'Loading Resp. ID',        g:19, ro:true, w:85,  filtre:false, bos:true, dosya:true }
   ];
 
   // GORUNUM-SISTEMI-001: Asama bazli otomatik gorunum + preset sistemi
