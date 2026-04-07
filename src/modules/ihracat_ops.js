@@ -1509,7 +1509,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
           (u.aciklama || '').toLowerCase().indexOf(q) === -1 &&
           (u.tedarikciAd || '').toLowerCase().indexOf(q) === -1) return false;
     }
-    for (var fk in _filtreler) { if (_filtreler[fk] && String(u[fk] || '') !== String(_filtreler[fk])) return false; }
+    for (var fk in _filtreler) { if (!_filtreler[fk]) continue; var _fv = String(u[fk] || ''); var _ff = String(_filtreler[fk]); var _isTarihF = DATE_KOLONLAR.indexOf(fk) !== -1 || fk === 'kayit_tarihi'; if (_isTarihF) { if (_fv.slice(0,10) !== _ff.slice(0,10)) return false; } else { if (_fv !== _ff) return false; } }
     return true;
   });
 
