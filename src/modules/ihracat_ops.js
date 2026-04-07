@@ -6713,6 +6713,7 @@ window._bmNeden = function(tur) {
 
 window._ihrBelgePaneliAc = function(dosyaId) {
   /* IHR-BELGE-PANEL-V2-001 */
+  if (!window._bmPanelAcildi) { window._bmAktifDep = 'ihracat'; window._bmAktifDil = 'en'; window._bmSekme = 'uretilen'; window._bmArama = ''; window._bmPanelAcildi = true; }
   dosyaId = dosyaId || window._ihrAktifDosyaId || '';
   var tumDosyalar = _loadD().filter(function(x) { return !x.isDeleted; });
   var d = dosyaId ? tumDosyalar.find(function(x) { return String(x.id) === String(dosyaId); }) : tumDosyalar[0] || null;
@@ -6724,20 +6725,21 @@ window._ihrBelgePaneliAc = function(dosyaId) {
 
   var old = document.getElementById('mo-belge-merkez'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-belge-merkez';
-  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  mo.onclick = function(e) { if (e.target === mo) { window._bmPanelAcildi = false; mo.remove(); } };
   var tamam = evraklar.length;
   var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Shipping Order', ST:'Shipping Instruction', NTF:'Freight Quote Request', NFO:'Freight Price Approval', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Account Statement', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Export File Cover', PARASUT:'Para\u015f\u00fct Excel' };
   var GRUPLAR = [
     { ad:'DI\u015e TARAF (M\u00dc\u015eTER\u0130)', dep:'ihracat', turler:[{k:'PI',l:'en'},{k:'CI',l:'en'},{k:'PL',l:'en'},{k:'FI',l:'en'},{k:'SI',l:'en'},{k:'GCI',l:'en'}] },
     { ad:'LOJ\u0130ST\u0130K / G\u00dcMR\u00dcK', dep:'ihracat', turler:[{k:'KT',l:'tr'},{k:'SE',l:'en'},{k:'ST',l:'en'},{k:'NTF',l:'en'},{k:'NFO',l:'tr'},{k:'SIG',l:'tr'}] },
     { ad:'TEDAR\u0130K / \u0130\u00c7', dep:'ihracat', turler:[{k:'PO',l:'tr'},{k:'MTF',l:'tr'},{k:'MTET',l:'tr'},{k:'IRK',l:'tr'},{k:'QC',l:'tr'},{k:'KYT',l:'tr'}] },
-    { ad:'RAPORLAMA', dep:'ihracat', turler:[{k:'HOS',l:'en'},{k:'TD',l:'tr'},{k:'OD',l:'tr'},{k:'KAPAK',l:'en'},{k:'PARASUT',l:'tr'}] },
+    { ad:'RAPORLAMA', dep:'ihracat', turler:[{k:'HOS',l:'en'},{k:'TD',l:'tr'},{k:'OD',l:'tr'},{k:'KAPAK',l:'en'},{k:'PARASUT',l:'tr'},{k:'KAR',l:'tr'},{k:'MUTABAKAT',l:'tr'}] },
     { ad:'KDV \u0130ADE', dep:'kdv', turler:[{k:'KDV',l:'tr'},{k:'KDV-R',l:'tr'}] },
     { ad:'SATI\u015e', dep:'satis', turler:[{k:'TEK',l:'tr'},{k:'SIP',l:'tr'}] },
     { ad:'MUHASEBE', dep:'muhasebe', turler:[{k:'MUH-TD',l:'tr'},{k:'MUH-OD',l:'tr'},{k:'MUH-HS',l:'en'}] },
     { ad:'DOCX \u015eABLONLAR', dep:'diger', turler:[{k:'DOCX-PL',l:'en'},{k:'DOCX-CI',l:'en'},{k:'DOCX-FRQ',l:'tr'},{k:'DOCX-IRQ',l:'tr'}] }
   ];
   TUR_AD['KDV'] = 'KDV \u0130ade Hesaplama'; TUR_AD['KDV-R'] = 'KDV \u0130ade Raporu';
+  TUR_AD['KAR'] = 'Kar Raporu'; TUR_AD['MUTABAKAT'] = 'Mutabakat \u00d6zeti';
   TUR_AD['TEK'] = 'Sat\u0131\u015f Teklifi'; TUR_AD['SIP'] = 'Sat\u0131\u015f Sipari\u015fi';
   TUR_AD['MUH-TD'] = 'Tahsilat Dekontu'; TUR_AD['MUH-OD'] = '\u00d6deme Dekontu'; TUR_AD['MUH-HS'] = 'Hesap \u00d6zeti';
   TUR_AD['DOCX-PL'] = 'PL \u015eablon'; TUR_AD['DOCX-CI'] = 'CI \u015eablon'; TUR_AD['DOCX-FRQ'] = 'Forwarder Teklif'; TUR_AD['DOCX-IRQ'] = 'Sigorta Teklif';
