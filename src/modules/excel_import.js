@@ -86,7 +86,12 @@ var DUAY_ALANLARI = (function() {
       { v:'mense_ulke', l:'Men\u015fei \u00dclke', a:'\u00dcretim \u00fclkesi' }
     ]);
   }
-  var dinamik = kolonlar.filter(function(k) { return k.k !== 'ihracat_id'; }).map(function(k) {
+  var dinamik = kolonlar.filter(function(k) {
+    if (k.k === 'ihracat_id') return false;
+    if (k.ro === true) return false;
+    if (k.dosya === true) return false;
+    return true;
+  }).map(function(k) {
     return { v: k.k, l: k.l || k.k, a: k.en || '' };
   });
   return sabit.concat(dinamik);
