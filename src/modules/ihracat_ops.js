@@ -1837,7 +1837,16 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'d_phytosanitary',   l:'Phytosanitary Belgesi',           en:'Phytosanitary Cert.',     g:17, ro:true, w:90,  filtre:true,  bos:true, dosya:true },
     { k:'d_t1_belge',        l:'T1 Belgesi',                      en:'T1 Document',             g:17, ro:true, w:75,  filtre:true,  bos:true, dosya:true },
     { k:'d_atr_belge',       l:'ATR Belgesi',                     en:'ATR Certificate',         g:17, ro:true, w:75,  filtre:true,  bos:true, dosya:true },
-    { k:'d_eur1_belge',      l:'EUR.1 Menshei Belgesi',           en:'EUR.1 Certificate',       g:17, ro:true, w:90,  filtre:true,  bos:true, dosya:true }
+    { k:'d_eur1_belge',      l:'EUR.1 Menshei Belgesi',           en:'EUR.1 Certificate',       g:17, ro:true, w:90,  filtre:true,  bos:true, dosya:true },
+    /* ══ G18 — TESLİMAT ══════════════════════════════════════ */
+    { k:'d_teslim_firma',    l:'Teslim Firma Adi',                en:'Delivery Company',        g:18, ro:true, w:120, filtre:true,  bos:true, dosya:true },
+    { k:'d_teslim_depo_sor', l:'Depo Sorumlusu',                  en:'Warehouse Responsible',   g:18, ro:true, w:110, filtre:false, bos:true, dosya:true },
+    { k:'d_teslim_depo_cep', l:'Depo Sor. Cep',                   en:'Warehouse Mobile',        g:18, ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    { k:'d_teslim_depo_tc',  l:'Depo Sor. TC',                    en:'Warehouse ID',            g:18, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_teslim_alan_adi', l:'Teslim Alan Ad Soyad',            en:'Receiver Name',           g:18, ro:true, w:110, filtre:false, bos:true, dosya:true },
+    { k:'d_teslim_alan_cep', l:'Teslim Alan Cep',                 en:'Receiver Mobile',         g:18, ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    { k:'d_teslim_alan_tc',  l:'Teslim Alan TC',                  en:'Receiver ID',             g:18, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_teslim_alan_firma',l:'Teslim Alan Firma',              en:'Receiver Company',        g:18, ro:true, w:110, filtre:true,  bos:true, dosya:true }
   ];
 
   // GORUNUM-SISTEMI-001: Asama bazli otomatik gorunum + preset sistemi
