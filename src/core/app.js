@@ -815,6 +815,7 @@ function _initApp(user) {
   renderPinbar();
   updateAllBadges();
   _initNsecState();
+  setTimeout(function() { window._initNsecHover?.(); }, 500);
   // Top Nav v2 restore
   setTimeout(function() { window._tn2Restore?.(); }, 200);
   _resetIdleTimer();
@@ -3526,6 +3527,21 @@ window._setSidebarTheme = function(theme) {
   }, 100);
 })();
 window.toggleNsec       = toggleNsec;
+
+/* GK-19: Sidebar grup hover davranisi */
+window._initNsecHover = function() {
+  var sidebar = document.querySelector('aside.sidebar');
+  if (!sidebar) return;
+  var headers = sidebar.querySelectorAll('.nsec-header');
+  headers.forEach(function(h) {
+    h.addEventListener('mouseenter', function() {
+      var nsId = h.id;
+      if (!nsId) return;
+      if (!h.classList.contains('collapsed')) return;
+      toggleNsec(nsId);
+    });
+  });
+};
 
 // ── TOP NAV v2 — Grup/Modül routing ─────────────────────────
 var _TN2_GROUPS = {
