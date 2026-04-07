@@ -1923,7 +1923,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     var rowBg = tutarsiz ? '#FAEEDA11' : 'inherit';
     var cellBg = rowBg === 'inherit' ? stickyBg : rowBg;
 
-    h += '<tr style="background:' + rowBg + '" data-id="' + u.id + '" onclick="event.stopPropagation()">';
+    h += '<tr style="background:' + rowBg + ';cursor:pointer" data-id="' + u.id + '" onclick="event.stopPropagation();window._ihrUrunPeekAc?.(\'' + u.id + '\')">';
     /* Sticky kolonlar */
     h += '<td onclick="event.stopPropagation()" style="position:sticky;left:0;z-index:2;background:' + cellBg + ';' + tdS + ';text-align:center;max-width:28px;border-right:2px solid var(--b)"><input type="checkbox" class="ihr-urun-chk" data-id="' + u.id + '" onchange="event.stopPropagation();window._ihrUrunChkDegis()"></td>';
     h += '<td onclick="event.stopPropagation()" style="position:sticky;left:28px;z-index:2;background:' + cellBg + ';' + tdS + ';max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(u.tedarikciAd || '') + '">' + _esc(u.tedarikciAd || u.tedarikci || '') + '</td>';
