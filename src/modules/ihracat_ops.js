@@ -6864,9 +6864,11 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   if (_hatalar3.length) { _hatalar3.forEach(function(ht) { h += '<div style="background:#FEF2F2;border:0.5px solid #F7C1C1;border-radius:5px;padding:4px 8px;font-size:9px;color:#791F1F;margin-bottom:3px"><strong>' + ht.k + ':</strong> ' + _esc2(ht.msg).slice(0, 60) + '</div>'; }); }
   else h += '<div style="font-size:9px;color:#16A34A">\u2713 T\u00fcm belgeler \u00fcretilebilir</div>';
   h += '</div>';
-  /* Özellikler */
-  h += '<div style="padding:10px 12px;flex:1"><div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);margin-bottom:5px">\u00d6ZELL\u0130KLER</div>';
-  h += '<div style="font-size:9px;color:var(--t2);line-height:1.8">\u2713 \u00c7oklu se\u00e7im + toplu \u00fcretim<br>\u2713 Departman filtresi (6 kategori)<br>\u2713 Evrak setleri tek t\u0131kla<br>\u2713 Teklif link \u00fcretici<br>\u2713 Hata a\u00e7\u0131klamas\u0131<br>\u2713 EN/TR \u00b7 Dikey/Yatay<br>\u2713 KDV \u0130ade, Sat\u0131\u015f, Muhasebe</div>';
+  /* Evrak Setleri */
+  h += '<div style="padding:10px 12px;flex:1"><div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);margin-bottom:6px">EVRAK SETLER\u0130</div>';
+  [{l:'M\u00fc\u015fteri Seti',t:['PI','CI','PL']},{l:'G\u00fcmr\u00fck\u00e7\u00fc Seti',t:['CI','PL']},{l:'Forwarder Seti',t:['CI','PL','SE']},{l:'Sigortac\u0131 Seti',t:['CI','PL']}].forEach(function(s) {
+    h += '<button onclick="event.stopPropagation();' + s.t.map(function(k){return 'var c=document.getElementById(\'bm-chk-'+k+'\');if(c)c.checked=true;';}).join('') + 'window._bmGuncelle()" style="display:block;width:100%;text-align:left;font-size:10px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t);cursor:pointer;font-family:inherit;margin-bottom:4px">' + s.l + ' \u2014 ' + s.t.join('+') + '</button>';
+  });
   h += '</div>';
   h += '</div>'; /* sag panel bitti */
   h += '</div>'; /* grid bitti */
