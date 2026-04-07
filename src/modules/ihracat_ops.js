@@ -1777,6 +1777,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   try { _aktifPreset = localStorage.getItem('ak_ihr_preset_' + _dosyaId) || 'auto'; } catch(e) {}
 
   var _gorunumKolonlari;
+  var _savedW = {}; try { _savedW = JSON.parse(localStorage.getItem(_IHR_KOLON_W_KEY) || '{}') || {}; } catch(e2) { _savedW = {}; }
   if (_aktifPreset === 'tam') {
     _gorunumKolonlari = null; // tum kolonlar
   } else if (_aktifPreset !== 'auto' && _PRESET_KOLONLAR[_aktifPreset]) {
@@ -1784,7 +1785,6 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   } else {
     // Auto — dosya asamasina gore veya kullanici secimi
     var _savedKols; try { _savedKols = JSON.parse(localStorage.getItem(_IHR_KOLON_KEY) || 'null'); } catch(e) { _savedKols = null; }
-    var _savedW = {}; try { _savedW = JSON.parse(localStorage.getItem(_IHR_KOLON_W_KEY) || '{}') || {}; } catch(e2) { _savedW = {}; }
     if (Array.isArray(_savedKols) && _savedKols.length) {
       _gorunumKolonlari = _savedKols;
     } else if (_ASAMA_KOLONLAR[_dosyaAsama]) {
