@@ -31,54 +31,66 @@ function _loadZorunlu() { try { var d = JSON.parse(localStorage.getItem(IHR_ZORU
 function _saveZorunlu(d) { try { localStorage.setItem(IHR_ZORUNLU_KEY, JSON.stringify(d)); } catch(e) {} }
 
 /* ── AI Eşleştirme Haritası ─────────────────────────────────── */
-var AI_MAP = {
-  aciklama:['aciklama','a\u00e7\u0131klama','description','product','urun adi','\u00fcr\u00fcn ad\u0131','mal adi','item name','goods'],
-  urun_kodu:['kod','code','sku','urun kodu','\u00fcr\u00fcn kodu','product code','item code','part','article'],
-  birim_fiyat:['fiyat','price','unit price','birim fiyat','tutar','amount','cost'],
-  miktar:['miktar','qty','quantity','adet','piece','pcs'],
-  birim:['birim','unit','\u00f6l\u00e7\u00fc','olcu','uom'],
-  hs_kodu:['hs','gtip','tarife','g\u00fcmr\u00fck kodu','hs code','tariff','customs'],
-  brut_kg:['br\u00fct','brut','gross','br\u00fct kg','gross kg','gross weight','gw'],
-  net_kg:['net','net kg','net weight','nw'],
-  koli_adet:['koli','carton','ctn','package','paket','box','ctns'],
-  tedarikciAd:['tedarik\u00e7i','tedarikci','supplier','vendor','firma','factory'],
-  alis_fatura_no:['fatura no','invoice no','inv no','fatura numaras\u0131'],
-  alis_fatura_tarihi:['fatura tarihi','invoice date','tarih','date'],
-  doviz:['doviz','d\u00f6viz','currency','para birimi','cur'],
-  ambalaj_tipi:['ambalaj','package type','paket tipi','box type'],
-  mense_ulke:['mense','origin','country','coo','men\u015fei'],
-  etiket_rengi:['etiket','renk','color','label'],
-  konteyner_sira:['s\u0131ra','loading order','sira','order'],
-  kdv_orani:['kdv','vat','tax','vergi']
-};
+var AI_MAP = (function() {
+  var map = {
+    aciklama:['aciklama','a\u00e7\u0131klama','description','product','urun adi','\u00fcr\u00fcn ad\u0131','mal adi','item name','goods','product name','unique product name'],
+    urun_kodu:['kod','code','sku','urun kodu','\u00fcr\u00fcn kodu','product code','item code','part','article'],
+    birim_fiyat:['fiyat','price','unit price','birim fiyat','tutar','amount','cost','price unit'],
+    miktar:['miktar','qty','quantity','adet','piece','pcs'],
+    birim:['birim','unit','\u00f6l\u00e7\u00fc','olcu','uom','quantty type','quantity type'],
+    hs_kodu:['hs','gtip','tarife','g\u00fcmr\u00fck kodu','hs code','tariff','customs','hsc code'],
+    brut_kg:['br\u00fct','brut','gross','br\u00fct kg','gross kg','gross weight','gw','1 product weight gross','total gross weight'],
+    net_kg:['net','net kg','net weight','nw','1 product weight net','total net weight'],
+    koli_adet:['koli','carton','ctn','package','paket','box','ctns','package quantitiy','package quantity'],
+    tedarikciAd:['tedarik\u00e7i','tedarikci','supplier','vendor','firma','factory'],
+    alis_fatura_no:['fatura no','invoice no','inv no','fatura numaras\u0131','offer/invoice id'],
+    alis_fatura_tarihi:['fatura tarihi','invoice date','tarih','date','offer date'],
+    doviz:['doviz','d\u00f6viz','currency','para birimi','cur'],
+    ambalaj_tipi:['ambalaj','package type','paket tipi','box type'],
+    mense_ulke:['mense','origin','country','coo','men\u015fei','men\u015fei \u00fclke'],
+    standart_urun_adi:['ingilizce','english','standart','unique product name','standard name'],
+    fatura_urun_adi:['fatura urun','invoice product','turkish','t\u00fcrk\u00e7e','tr ad\u0131'],
+    hacim_m3:['m3','hacim','volume','cbm','cubic','total m3'],
+    etiket_rengi:['etiket','renk','color','label','kutu etiket'],
+    konteyner_sira:['s\u0131ra','loading order','sira','order'],
+    kdv_orani:['kdv','vat','tax rate','vergi','tax'],
+    anahtar_kelime:['anahtar','keyword','anahtar kelime']
+  };
+  var kolonlar = window._ihrAllKolonlar || [];
+  kolonlar.forEach(function(k) {
+    if (!map[k.k]) map[k.k] = [];
+    var ekle = function(s) { if (s && map[k.k].indexOf(s.toLowerCase()) === -1) map[k.k].push(s.toLowerCase()); };
+    ekle(k.k); ekle(k.l); ekle(k.en);
+  });
+  return map;
+})();
 
 /* ── Duay Alanları ──────────────────────────────────────────── */
-var DUAY_ALANLARI = [
-  { v:'atla', l:'\u2014 E\u015fle\u015ftirme (atla) \u2014', a:'' },
-  { v:'aciklama', l:'\u00dcr\u00fcn A\u00e7\u0131klamas\u0131', a:'CI / PL / BL\'de g\u00f6r\u00fcn\u00fcr' },
-  { v:'standart_urun_adi', l:'\u0130ngilizce Ad\u0131 (CI/PL)', a:'M\u00fc\u015fteriye giden belgede' },
-  { v:'fatura_urun_adi', l:'Fatura \u00dcr\u00fcn Ad\u0131', a:'TR faturada g\u00f6r\u00fcn\u00fcr' },
-  { v:'urun_kodu', l:'\u00dcr\u00fcn Kodu', a:'\u0130\u00e7 referans kodu' },
-  { v:'satici_urun_kodu', l:'Sat\u0131c\u0131 Kodu', a:'Tedarik\u00e7i \u00fcr\u00fcn kodu' },
-  { v:'birim_fiyat', l:'Birim Fiyat', a:'D\u00f6viz cinsinden' },
-  { v:'miktar', l:'Miktar', a:'Adet / KG / MT vb.' },
-  { v:'birim', l:'Birim', a:'PCS, KG, MT, SET...' },
-  { v:'doviz', l:'D\u00f6viz', a:'USD, EUR, TRY' },
-  { v:'hs_kodu', l:'HS / GTIP', a:'G\u00fcmr\u00fck tarife kodu' },
-  { v:'brut_kg', l:'Br\u00fct KG', a:'Koli dahil a\u011f\u0131rl\u0131k' },
-  { v:'net_kg', l:'Net KG', a:'Mal a\u011f\u0131rl\u0131\u011f\u0131' },
-  { v:'koli_adet', l:'Koli Adedi', a:'Ka\u00e7 kolide' },
-  { v:'ambalaj_tipi', l:'Ambalaj Tipi', a:'KARTON, PALET...' },
-  { v:'tedarikciAd', l:'Tedarik\u00e7i', a:'Firma ad\u0131' },
-  { v:'mense_ulke', l:'Men\u015fei \u00dclke', a:'\u00dcretim \u00fclkesi' },
-  { v:'etiket_rengi', l:'Etiket Rengi', a:'Dahili s\u0131n\u0131fland\u0131rma' },
-  { v:'konteyner_sira', l:'Y\u00fckleme S\u0131ras\u0131', a:'Konteynere y\u00fckleme \u00f6nceli\u011fi' },
-  { v:'alis_fatura_no', l:'Al\u0131\u015f Fatura No', a:'Tedarik\u00e7i fatura numaras\u0131' },
-  { v:'alis_fatura_tarihi', l:'Fatura Tarihi', a:'Al\u0131\u015f fatura tarihi' },
-  { v:'fatura_turu', l:'Fatura T\u00fcr\u00fc', a:'\u0130hra\u00e7 kay\u0131tl\u0131, KDVsiz...' },
-  { v:'kdv_orani', l:'KDV %', a:'0, 10, 20' },
-  { v:'anahtar_kelime', l:'Anahtar Kelime', a:'Arama ve filtreleme i\u00e7in' }
-];
+var DUAY_ALANLARI = (function() {
+  var sabit = [{ v:'atla', l:'\u2014 E\u015fle\u015ftirme (atla) \u2014', a:'' }];
+  var kolonlar = window._ihrAllKolonlar || [];
+  if (!kolonlar.length) {
+    return sabit.concat([
+      { v:'aciklama', l:'\u00dcr\u00fcn A\u00e7\u0131klamas\u0131', a:'CI/PL/BL\'de g\u00f6r\u00fcn\u00fcr' },
+      { v:'standart_urun_adi', l:'\u0130ngilizce Ad\u0131 (CI/PL)', a:'M\u00fc\u015fteriye giden belgede' },
+      { v:'urun_kodu', l:'\u00dcr\u00fcn Kodu', a:'\u0130\u00e7 referans kodu' },
+      { v:'birim_fiyat', l:'Birim Fiyat', a:'D\u00f6viz cinsinden' },
+      { v:'miktar', l:'Miktar', a:'Adet/KG/MT vb.' },
+      { v:'birim', l:'Birim', a:'PCS, KG, MT...' },
+      { v:'doviz', l:'D\u00f6viz', a:'USD, EUR, TRY' },
+      { v:'hs_kodu', l:'HS / GTIP', a:'G\u00fcmr\u00fck tarife kodu' },
+      { v:'tedarikciAd', l:'Tedarik\u00e7i', a:'Firma ad\u0131' },
+      { v:'brut_kg', l:'Br\u00fct KG', a:'Koli dahil a\u011f\u0131rl\u0131k' },
+      { v:'net_kg', l:'Net KG', a:'Mal a\u011f\u0131rl\u0131\u011f\u0131' },
+      { v:'koli_adet', l:'Koli Adedi', a:'Ka\u00e7 kolide' },
+      { v:'mense_ulke', l:'Men\u015fei \u00dclke', a:'\u00dcretim \u00fclkesi' }
+    ]);
+  }
+  var dinamik = kolonlar.filter(function(k) { return k.k !== 'ihracat_id'; }).map(function(k) {
+    return { v: k.k, l: k.l || k.k, a: k.en || '' };
+  });
+  return sabit.concat(dinamik);
+})();
 
 /* ── State ───────────────────────────────────────────────────── */
 var _adim = 1, _workbook = null, _sheetNames = [], _selectedSheet = '';
