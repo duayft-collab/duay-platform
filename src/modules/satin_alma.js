@@ -2206,4 +2206,49 @@ var SA_URUN_KOLONLAR = [
 window._SA_URUN_KOLONLAR = SA_URUN_KOLONLAR;
 window._loadSAU = _loadSAU;
 window._storeSAU = _storeSAU;
+
+/* SA-KATALOG-AUTOCOMPLETE-001: Katalog arama ve otodoldurma */
+window._saKatalogAra = function(inputEl, urunId) {
+  var q = (inputEl.value || '').toLowerCase().trim();
+  var oldDd = document.getElementById('sa-katalog-dropdown');
+  if (oldDd) oldDd.remove();
+  if (q.length < 2) return;
+  var katalog = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+  var eslesme = katalog.filter(function(k) {
+    return (k.urun_kodu || '').toLowerCase().indexOf(q) !== -1 ||
+           (k.aciklama || '').toLowerCase().indexOf(q) !== -1 ||
+           (k.standart_urun_adi || '').toLowerCase().indexOf(q) !== -1;
+  }).slice(0, 8);
+  if (!eslesme.length) return;
+  var rect = inputEl.getBoundingClientRect();
+  var dd = document.createElement('div'); dd.id = 'sa-katalog-dropdown';
+  dd.style.cssText = 'position:fixed;top:' + (rect.bottom + 2) + 'px;left:' + rect.left + 'px;width:' + Math.max(rect.width, 280) + 'px;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:9999;max-height:240px;overflow-y:auto';
+  eslesme.forEach(function(k) {
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:11px';
+    row.innerHTML = '<span style="font-weight:500;color:#185FA5">' + (k.urun_kodu || '\u2014') + '</span> <span style="color:var(--t)">' + (k.aciklama || '') + '</span>' + (k.tedarikciAd ? '<span style="color:var(--t3);font-size:9px;float:right">' + k.tedarikciAd + '</span>' : '');
+    row.onmouseenter = function() { row.style.background = 'var(--s2)'; };
+    row.onmouseleave = function() { row.style.background = ''; };
+    row.onclick = function(e) {
+      e.stopPropagation();
+      dd.remove();
+      if (urunId) {
+        var urunler = _loadSAU(); var u = urunler.find(function(x) { return String(x.id) === String(urunId); });
+        if (u) {
+          u.urun_kodu = k.urun_kodu || ''; u.aciklama = k.aciklama || ''; u.standart_urun_adi = k.standart_urun_adi || '';
+          u.tedarikciAd = k.tedarikciAd || ''; u.hs_kodu = k.hs_kodu || ''; u.mense_ulke = k.mense_ulke || '';
+          u.birim = k.birim || ''; u.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+          _storeSAU(urunler); window._saUrunListeRender?.(); window.toast?.('Katalogdan dolduruldu', 'ok');
+        }
+      } else {
+        ['urun_kodu', 'aciklama', 'standart_urun_adi', 'tedarikciAd', 'hs_kodu', 'mense_ulke', 'birim'].forEach(function(f) {
+          var inp = document.getElementById('sau-yeni-' + f); if (inp) inp.value = k[f] || '';
+        });
+      }
+    };
+    dd.appendChild(row);
+  });
+  document.body.appendChild(dd);
+  document.addEventListener('click', function rm() { dd.remove(); document.removeEventListener('click', rm); }, { once: true });
+};
 }
