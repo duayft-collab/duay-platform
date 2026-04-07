@@ -2017,10 +2017,15 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     h += '<span style="' + _thS2 + '">' + _kolLabel;
     if (kol.filtre) {
       var aktif = _filtreler[kol.k];
-      h += ' <select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + ';vertical-align:middle">';
-      h += '<option value="">' + (aktif ? '\u25cf' : '\u25be') + '</option><option value="">(Tumu)</option>';
-      uniq(kol.k).sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (aktif === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
-      h += '</select>';
+      var _isTarih = DATE_KOLONLAR.indexOf(kol.k) !== -1 || kol.k === 'kayit_tarihi';
+      if (_isTarih) {
+        h += ' <input type="date" onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" value="' + _esc(aktif || '') + '" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + ';vertical-align:middle;width:20px">';
+      } else {
+        h += ' <select onchange="event.stopPropagation();window._ihrFiltrele(\'' + kol.k + '\',this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:9px;cursor:pointer;color:' + (aktif ? '#185FA5' : 'var(--t3)') + ';vertical-align:middle">';
+        h += '<option value="">' + (aktif ? '\u25cf' : '\u25be') + '</option><option value="">(Tumu)</option>';
+        uniq(kol.k).sort().forEach(function(v) { h += '<option value="' + _esc(v) + '"' + (aktif === v ? ' selected' : '') + '>' + _esc(v) + '</option>'; });
+        h += '</select>';
+      }
     }
     h += '</span>';
     if (kol.bos && bosCount > 0) h += '<div style="font-size:8px;color:#D97706;margin-top:1px">' + bosCount + ' bos</div>';
