@@ -1928,6 +1928,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     h += '<td data-alan="aciklama" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrInlineEdit(this,\'' + u.id + '\',\'aciklama\')" style="position:sticky;left:248px;z-index:2;background:' + cellBg + ';' + tdS + ';cursor:text;font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:2px solid var(--b)" title="' + _esc(u.aciklama || '') + '">' + _esc(u.aciklama || '') + '</td>';
     /* Kalan kolonlar */
     GORUNEN_KOLONLAR.forEach(function(kol) {
+      var _kw = (_savedW && _savedW[kol.k] && _savedW[kol.k] >= 40) ? _savedW[kol.k] : (kol.w || 80);
       var k = kol.k; if (k === 'tedarikciAd' || k === 'urun_kodu' || k === 'aciklama') return;
       var v = u[k]; var vs = _esc(v || '');
       // Read-only hesaplanan alanlar — sari arka plan
