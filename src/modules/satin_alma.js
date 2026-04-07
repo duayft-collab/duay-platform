@@ -2147,4 +2147,63 @@ if (typeof module !== 'undefined' && module.exports) {
   window._openSAModal    = _openSAModal;
   window._loadSA         = _loadSA;
   window._storeSA        = _storeSA;
+
+/* ═══════════════════════════════════════════════════════════════
+   SA ÜRÜN LİSTESİ — v1.0
+   Satınalma ürün veritabanı. İhracat Ops'tan bağımsız.
+   localStorage: ak_sa_urunler_v1
+═══════════════════════════════════════════════════════════════ */
+var SA_URUN_KEY = 'ak_sa_urunler_v1';
+function _loadSAU() { try { return JSON.parse(localStorage.getItem(SA_URUN_KEY) || '[]'); } catch(e) { return []; } }
+function _storeSAU(d) { try { localStorage.setItem(SA_URUN_KEY, JSON.stringify(d)); } catch(e) {} }
+
+var SA_URUN_KOLONLAR = [
+  /* G1 — ÜRÜN KİMLİĞİ */
+  { k:'job_id',          l:'\u00dcr\u00fcn Job ID',     en:'Job ID',              g:1, ro:false, w:90,  filtre:true  },
+  { k:'urun_kodu',       l:'\u00dcr\u00fcn Kodu',       en:'Product Code',        g:1, ro:false, w:100, filtre:false },
+  { k:'aciklama',        l:'\u00dcr\u00fcn Ad\u0131 (TR)',en:'Product Name (TR)',  g:1, ro:false, w:200, filtre:false },
+  { k:'standart_urun_adi',l:'\u0130ngilizce Ad\u0131',  en:'Product Name (EN)',   g:1, ro:false, w:160, filtre:false },
+  { k:'anahtar_kelime',  l:'Anahtar Kelime',             en:'Keywords',            g:1, ro:false, w:100, filtre:false },
+  { k:'tedarikciAd',     l:'Tedarik\u00e7i',             en:'Supplier',            g:1, ro:false, w:120, filtre:true  },
+  { k:'satici_urun_kodu',l:'Sat\u0131c\u0131 Kodu',      en:'Vendor Code',         g:1, ro:false, w:90,  filtre:false },
+  /* G2 — ALIŞ FİYATI */
+  { k:'miktar',          l:'Miktar',                      en:'Quantity',            g:2, ro:false, w:75,  filtre:false },
+  { k:'birim',           l:'Birim',                       en:'Unit',                g:2, ro:false, w:55,  filtre:true  },
+  { k:'doviz',           l:'D\u00f6viz',                  en:'Currency',            g:2, ro:false, w:60,  filtre:true  },
+  { k:'alis_birim_fiyat',l:'Al\u0131\u015f Birim Fiyat', en:'Purchase Price',      g:2, ro:false, w:100, filtre:false },
+  { k:'alis_toplam',     l:'Al\u0131\u015f Toplam',      en:'Purchase Total',      g:2, ro:true,  w:100, filtre:false },
+  { k:'kdv_orani',       l:'KDV %',                      en:'VAT %',               g:2, ro:false, w:65,  filtre:true  },
+  /* G3 — KAR & SATIŞ */
+  { k:'kar_marji',       l:'Kar Marj\u0131 %',           en:'Profit Margin %',     g:3, ro:false, w:80,  filtre:false },
+  { k:'satis_birim_fiyat',l:'Sat\u0131\u015f Birim Fiyat',en:'Sales Price',        g:3, ro:true,  w:100, filtre:false },
+  { k:'satis_doviz',     l:'Sat\u0131\u015f D\u00f6viz', en:'Sales Currency',      g:3, ro:false, w:70,  filtre:true  },
+  { k:'satis_toplam',    l:'Sat\u0131\u015f Toplam',     en:'Sales Total',         g:3, ro:true,  w:100, filtre:false },
+  /* G4 — TEKLİF */
+  { k:'pi_no',           l:'PI No',                      en:'PI No',               g:4, ro:false, w:90,  filtre:true  },
+  { k:'pi_tarihi',       l:'PI Tarihi',                  en:'PI Date',             g:4, ro:false, w:85,  filtre:true  },
+  { k:'pi_gecerlilik',   l:'Ge\u00e7erlilik',            en:'Validity',            g:4, ro:false, w:85,  filtre:false },
+  { k:'teklif_durum',    l:'Teklif Durumu',               en:'Quote Status',        g:4, ro:false, w:90,  filtre:true  },
+  { k:'onay_tarihi',     l:'Onay Tarihi',                en:'Approval Date',       g:4, ro:false, w:85,  filtre:true  },
+  /* G5 — AMBALAJ */
+  { k:'koli_adet',       l:'Koli Adedi',                 en:'Cartons',             g:5, ro:false, w:75,  filtre:false },
+  { k:'ambalaj_tipi',    l:'Ambalaj Tipi',                en:'Package Type',        g:5, ro:false, w:80,  filtre:true  },
+  { k:'brut_kg',         l:'Br\u00fct KG',               en:'Gross KG',            g:5, ro:false, w:80,  filtre:false },
+  { k:'net_kg',          l:'Net KG',                     en:'Net KG',              g:5, ro:false, w:75,  filtre:false },
+  { k:'hacim_m3',        l:'Hacim M3',                   en:'CBM',                 g:5, ro:false, w:75,  filtre:false },
+  /* G6 — GÜMRÜK */
+  { k:'hs_kodu',         l:'HS / GTIP',                  en:'HS Code',             g:6, ro:false, w:100, filtre:false },
+  { k:'mense_ulke',      l:'Men\u015fei \u00dclke',      en:'Country of Origin',   g:6, ro:false, w:90,  filtre:true  },
+  { k:'gumrukcu_tanim',  l:'G\u00fcmr\u00fck\u00e7\u00fc Tan\u0131m\u0131',en:'Customs Desc',g:6, ro:false, w:140, filtre:false },
+  /* G7 — DURUM */
+  { k:'musteri_onay',    l:'M\u00fc\u015fteri Onay',     en:'Customer Approval',   g:7, ro:false, w:90,  filtre:true  },
+  { k:'stok_durumu',     l:'Stok Durumu',                en:'Stock Status',        g:7, ro:false, w:80,  filtre:true  },
+  { k:'teslim_suresi',   l:'Teslim S\u00fcresi (G\u00fcn)',en:'Lead Time (Days)',  g:7, ro:false, w:85,  filtre:false },
+  /* G8 — NOTLAR */
+  { k:'onemli_not',      l:'\u00d6nemli Notlar',         en:'Important Notes',     g:8, ro:false, w:140, filtre:false },
+  { k:'ic_not',          l:'\u0130\u00e7 Not',           en:'Internal Note',       g:8, ro:false, w:120, filtre:false }
+];
+
+window._SA_URUN_KOLONLAR = SA_URUN_KOLONLAR;
+window._loadSAU = _loadSAU;
+window._storeSAU = _storeSAU;
 }
