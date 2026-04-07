@@ -6787,12 +6787,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
 
   /* ARAC CUBUGU */
   h += '<div style="padding:10px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0">';
-  /* Set butonlari */
-  Object.keys(_belge_setleri).forEach(function(sk) {
-    var s = _belge_setleri[sk];
-    h += '<button onclick="event.stopPropagation();' + s.turler.map(function(t){return 'var c=document.getElementById(\'bm-chk-'+t+'\');if(c)c.checked=true;';}).join('') + 'window._bmGuncelle()" style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">' + s.l + '</button>';
-  });
-  h += '<div style="width:1px;height:16px;background:var(--b)"></div>';
+  /* Set butonlari sag panele tasindi (IHR-BELGE-LISTE-001) */
   /* Dil */
   h += '<button onclick="event.stopPropagation();window._bmAktifDil=\'en\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (dilSec==='en'?'#185FA5':'var(--b)') + ';background:' + (dilSec==='en'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (dilSec==='en'?'#185FA5':'var(--t2)') + ';font-family:inherit">\ud83c\uddec\ud83c\udde7 EN</button>';
   h += '<button onclick="event.stopPropagation();window._bmAktifDil=\'tr\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid ' + (dilSec==='tr'?'#185FA5':'var(--b)') + ';background:' + (dilSec==='tr'?'#E6F1FB':'transparent') + ';cursor:pointer;color:' + (dilSec==='tr'?'#185FA5':'var(--t2)') + ';font-family:inherit">\ud83c\uddf9\ud83c\uddf7 TR</button>';
@@ -6809,7 +6804,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;flex:1;overflow:hidden">';
 
   /* SOL — BELGE LISTESI */
-  h += '<div id="bm-liste" style="overflow-y:auto">';
+  h += '<div id="bm-liste" style="overflow-y:auto;overflow-x:hidden;border-right:0.5px solid var(--b)">';
   GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }).forEach(function(g) {
     h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:5px 14px;background:var(--s2);text-transform:uppercase;position:sticky;top:0;z-index:2;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
@@ -6820,7 +6815,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
       var mevcut = evraklar.find(function(e) { return e.tur === t.k; });
       var hata = _bmHataKontrol(t.k, d || {}, urunler, fw2);
       var durumPill = mevcut ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:500">\u2713</span>' : hata ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#FCEBEB;color:#791F1F;font-weight:500">\u2717</span>' : '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:var(--s2);color:var(--t3)">\u2014</span>';
-      h += '<div data-bm-tur="' + t.k + '" style="display:flex;align-items:center;gap:7px;padding:6px 14px;border-bottom:0.5px solid var(--b);min-height:36px">';
+      h += '<div data-bm-tur="' + t.k + '" style="display:flex;align-items:center;gap:7px;padding:6px 14px;border-bottom:0.5px solid var(--b);min-height:36px;min-width:0">';
       if (!isDOCX2) h += '<input type="checkbox" id="bm-chk-' + t.k + '" onchange="event.stopPropagation();window._bmGuncelle()" style="width:14px;height:14px;cursor:pointer">';
       h += '<span style="font-size:9px;font-weight:600;color:#185FA5;background:#E6F1FB;padding:1px 6px;border-radius:3px;min-width:42px;text-align:center">' + t.k + '</span>';
       h += '<span style="flex:1;font-size:10px;color:var(--t)">' + (TUR_AD[t.k] || t.k) + '</span>';
