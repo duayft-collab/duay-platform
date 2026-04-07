@@ -275,7 +275,7 @@ function openNumuneForm(tip, id) {
 
   // Ortak alanlar
   h += _section('Temel Bilgiler', _grid(4,
-    _inp('nmsid','NMS ID',{val:nmsId,ro:true})+_sel('urn','URN Ürün Kodu',urunOpts,{req:true,sel:n.urnKodu})+_inp('lot','Lot/Parti No',{req:true,val:n.lotNo,ro})+_inp('tarih','Tarih',{type:'date',req:true,val:n.gelisTarihi||_today(),ro})
+    _inp('nmsid','NMS ID',{val:nmsId,ro:true})+_inp('urn','URN Ürün Kodu',{req:true,val:n.urnKodu||'',ph:'Yazın — katalogdan eşleşir'})+_inp('lot','Lot/Parti No',{req:true,val:n.lotNo,ro})+_inp('tarih','Tarih',{type:'date',req:true,val:n.gelisTarihi||_today(),ro})
   )+_grid(4,
     _sel('tedarikci','Tedarikçi',cariOpts,{sel:n.tedarikciId})+_inp('depo','Depo Kodu (Dolap-Raf-Kutu)',{val:n.depoKodu,ro})+_sel('sorumlu','Sorumlu',userOpts,{sel:n.sorumluId})+_sel('saklama','Saklama Süresi',SAKLAMA,{sel:n.saklamaSuresi})
   )+_grid(4,
@@ -323,6 +323,9 @@ function openNumuneForm(tip, id) {
     +'<button onclick="window.renderNumuneler()" style="padding:8px 20px;border:0.5px solid '+BD+';border-radius:8px;background:'+BG1+';color:'+T2+';font-size:12px;cursor:pointer;font-family:inherit">İptal</button></div>';
   h += '</div>';
   panel.innerHTML = h;
+  /* NMS-KATALOG-001: URN input'a autocomplete bağla */
+  var _urnInp = _g('nms-urn');
+  if (_urnInp) { _urnInp.setAttribute('autocomplete', 'off'); _urnInp.addEventListener('input', function(e) { e.stopPropagation(); window._nmsKatalogAra?.(this); }); _urnInp.addEventListener('click', function(e) { e.stopPropagation(); }); }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -678,4 +681,45 @@ window._nmsBulkDelete = function() {
     if (typeof window.storeNumune === 'function') window.storeNumune(data); if (typeof storeTrash === 'function') storeTrash(trash);
     window._nmsBulkClear(); window.renderNumuneler?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
   }});
+};
+
+/* NMS-KATALOG-001: Numune formuna katalog autocomplete */
+window._nmsKatalogAra = function(inputEl) {
+  var q = (inputEl.value || '').toLowerCase().trim();
+  var oldDd = document.getElementById('nms-katalog-dd');
+  if (oldDd) oldDd.remove();
+  if (q.length < 2) return;
+  var katalog = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+  var eslesme = katalog.filter(function(k) {
+    return (k.urun_kodu || '').toLowerCase().indexOf(q) !== -1 ||
+           (k.urunKodu || '').toLowerCase().indexOf(q) !== -1 ||
+           (k.aciklama || '').toLowerCase().indexOf(q) !== -1 ||
+           (k.urunAdi || '').toLowerCase().indexOf(q) !== -1;
+  }).slice(0, 8);
+  if (!eslesme.length) return;
+  var rect = inputEl.getBoundingClientRect();
+  var dd = document.createElement('div'); dd.id = 'nms-katalog-dd';
+  dd.style.cssText = 'position:fixed;top:' + (rect.bottom + 2) + 'px;left:' + rect.left + 'px;width:' + Math.max(rect.width, 280) + 'px;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:9999;max-height:240px;overflow-y:auto';
+  var _esc2 = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  eslesme.forEach(function(k) {
+    var kod = k.urun_kodu || k.urunKodu || '';
+    var ad = k.aciklama || k.urunAdi || k.duayAdi || '';
+    var ted = k.tedarikciAd || '';
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:11px';
+    row.innerHTML = '<span style="font-weight:500;color:#185FA5">' + _esc2(kod || '\u2014') + '</span> <span style="color:var(--t)">' + _esc2(ad) + '</span>' + (ted ? '<span style="color:var(--t3);font-size:9px;float:right">' + _esc2(ted) + '</span>' : '');
+    row.onmouseenter = function() { row.style.background = 'var(--s2)'; };
+    row.onmouseleave = function() { row.style.background = ''; };
+    row.onclick = function(e) {
+      e.stopPropagation(); dd.remove();
+      inputEl.value = kod;
+      var _g2 = function(id) { return document.getElementById(id); };
+      var _sf = function(id, v) { var el = _g2(id); if (el && v) el.value = v; };
+      _sf('nms-lot', k.lotNo || '');
+      window.toast?.('Katalogdan dolduruldu: ' + (kod || ''), 'ok');
+    };
+    dd.appendChild(row);
+  });
+  document.body.appendChild(dd);
+  document.addEventListener('click', function rm() { dd.remove(); document.removeEventListener('click', rm); }, { once: true });
 };
