@@ -277,7 +277,7 @@ function _ihrRenderSagCockpit() {
 
 /** Dosya detayini verilen elemente render eder (master-detail icin) */
 function _ihrRenderDosyaDetayInto(id, targetEl) {
-  var d = _loadD().find(function(x) { return String(x.id) === String(id); });
+  try { var d = _loadD().find(function(x) { return String(x.id) === String(id); });
   if (!d || !targetEl) return;
   var today = _today();
   var gecikmiMi = d.bitis_tarihi && d.bitis_tarihi < today && !['kapandi', 'iptal'].includes(d.durum);
@@ -366,6 +366,7 @@ function _ihrRenderDosyaDetayInto(id, targetEl) {
   h += '<div id="ihr-detay-content" style="padding:0;flex:1;overflow-y:auto"></div>';
   targetEl.innerHTML = h;
   _ihrDetayRenderOzet(d);
+  } catch(e) { console.error('[IHR] RenderDosyaDetayInto hata:', e); if (targetEl) targetEl.innerHTML = '<div style="padding:24px;color:#DC2626;font-size:12px;font-family:monospace">[IHR-ERR] ' + _esc(String(e.message||e)) + '</div>'; }
 }
 
 /** Master-detail — dosya sec */
