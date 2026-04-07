@@ -2072,6 +2072,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
       if (k === 'doviz') { h += '<td style="' + tdS + ';text-align:center">' + vs + '</td>'; return; }
       if (k === 'imo_msds') { var _imoFlag = u.imo_gerekli || u.imo_urun || 'H'; if (_imoFlag === 'E') { h += '<td style="' + tdS + '">' + (v ? '<a href="' + _esc(v) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--ac);font-size:10px">PDF</a>' : '<button class="btn btns" onclick="event.stopPropagation();window._ihrMsdsYukle(\'' + u.id + '\')" style="font-size:9px;padding:1px 5px">Yukle</button>') + '</td>'; } else { h += '<td style="' + tdS + '"><span style="font-size:9px;color:var(--t3)">\u2014</span></td>'; } return; }
       if (k === 'yukleme_durumu') { var vgmVar = parseFloat(u.vgm_kg || 0) > 0; var durumVal = vgmVar ? 'Yüklendi' : (v || ''); var durumBg2 = durumVal === 'Yüklendi' ? '#EAF3DE' : 'var(--s2)'; var durumClr = durumVal === 'Yüklendi' ? '#27500A' : 'var(--t2)'; h += '<td style="' + tdS + '">' + (durumVal ? '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:' + durumBg2 + ';color:' + durumClr + '">' + _esc(durumVal) + '</span>' : '') + '</td>'; return; }
+      if (k === 'job_id') { h += '<td data-alan="job_id" data-uid="' + u.id + '" onclick="event.stopPropagation();window._ihrJobIdSec(this,\'' + u.id + '\')" style="' + tdS + ';cursor:pointer;color:var(--ac);max-width:' + _kw + 'px">' + _esc(v || '+ Se\u00e7') + '</td>'; return; }
       if (SELECT_KOLONLAR[k]) { h += '<td onclick="event.stopPropagation()" style="' + tdS + '"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'' + k + '\',this.value)" style="font-size:10px;border:none;background:transparent;width:100%;cursor:pointer;color:var(--t)">'; SELECT_KOLONLAR[k].forEach(function(sv) { h += '<option value="' + _esc(sv) + '"' + (String(v || '') === sv ? ' selected' : '') + '>' + _esc(sv || '—') + '</option>'; }); h += '</select></td>'; return; }
       if (DATE_KOLONLAR.indexOf(k) !== -1) { h += '<td ondblclick="event.stopPropagation();window._ihrInlineDateEdit(this,\'' + u.id + '\',\'' + k + '\')" onclick="event.stopPropagation()" style="' + tdS + ';cursor:text;font-family:monospace">' + vs + '</td>'; return; }
       if (k === 'kdv_orani') { h += '<td onclick="event.stopPropagation()" style="' + tdS + ';text-align:center"><select onchange="event.stopPropagation();window._ihrInlineSelectDegis(\'' + u.id + '\',\'kdv_orani\',parseFloat(this.value))" style="font-size:10px;border:none;background:transparent;cursor:pointer;text-align:center">'; [0, 1, 5, 10, 18, 20].forEach(function(kv) { h += '<option value="' + kv + '"' + (kdvOrani === kv ? ' selected' : '') + '>%' + kv + '</option>'; }); h += '</select></td>'; return; }
@@ -3496,6 +3497,7 @@ window._ihrUrunEkle = function(dosyaId) {
     + '<div style="border-top:0.5px solid var(--b);padding-top:10px;margin-top:2px">'
     + '<div style="font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Belge & Referans</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div class="fg"><div class="fl">Job ID (Pusula)</div><select class="fi" id="ihr-urun-job-id" onclick="event.stopPropagation()"><option value="">— Seçin —</option></select></div>'
     + '<div class="fg"><div class="fl">Proforma ID</div><input class="fi" id="ihr-urun-proforma"></div>'
     + '<div class="fg"><div class="fl">Teslim Tarihi</div><input class="fi" type="date" id="ihr-urun-teslim-tarih"></div>'
     + '<div class="fg"><div class="fl">Satış Sipariş ID</div><input class="fi" id="ihr-urun-satis-siparis"></div>'
@@ -3511,6 +3513,8 @@ window._ihrUrunEkle = function(dosyaId) {
     + '<button class="btn btns" onclick="document.getElementById(\'mo-ihr-urun\')?.remove()">İptal</button>'
     + '<button class="btn btnp" onclick="window._ihrUrunKaydet()">Ürün Ekle</button></div></div>';
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+  /* Job ID combobox doldur */
+  window._getPusulaJobs?.(function(jobs) { var sel = _g('ihr-urun-job-id'); if (!sel) return; jobs.forEach(function(j) { var o = document.createElement('option'); o.value = j.id; o.textContent = j.id + (j.ad ? ' \u2014 ' + j.ad.slice(0, 30) : ''); sel.appendChild(o); }); });
 };
 window._ihrUrunKaydet = function() {
   var aciklama = (_g('ihr-urun-aciklama')?.value || '').trim(); var miktar = parseFloat(_g('ihr-urun-miktar')?.value || 0);
@@ -3561,6 +3565,7 @@ window._ihrUrunKaydet = function() {
     imo_urun: _g('ihr-urun-imo')?.checked ? 'E' : 'H',
     dilli_urun: _g('ihr-urun-dilli')?.checked ? 'E' : 'H',
     duay_not: (_g('ihr-urun-duay-not')?.value || '').trim(),
+    job_id: _g('ihr-urun-job-id')?.value || '',
     createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now(), kayit_tarihi: _today()
   });
   _storeU(urunler); _g('mo-ihr-urun')?.remove(); window.toast?.('Ürün eklendi', 'ok');
@@ -7282,6 +7287,22 @@ window._getPusulaJobs = window._getPusulaJobs || function(cb) {
   var tasks = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
   var jobs = tasks.filter(function(t) { return !t.done && t.status !== 'done'; }).map(function(t) { return { id: String(t.id), ad: t.title || '' }; });
   cb(jobs.slice(0, 50));
+};
+
+window._ihrJobIdSec = function(td, urunId) {
+  if (td.querySelector('select')) return;
+  var sel = document.createElement('select');
+  sel.style.cssText = 'width:100%;font-size:10px;border:1px solid #185FA5;border-radius:3px;background:var(--sf);color:var(--t)';
+  var _opt0 = document.createElement('option'); _opt0.value = ''; _opt0.textContent = '\u2014 Se\u00e7 \u2014'; sel.appendChild(_opt0);
+  var u = _loadU().find(function(x) { return String(x.id) === String(urunId); });
+  window._getPusulaJobs(function(jobs) {
+    jobs.forEach(function(j) { var o = document.createElement('option'); o.value = j.id; o.textContent = j.id + (j.ad ? ' \u2014 ' + j.ad.slice(0, 25) : ''); if (u && String(u.job_id) === String(j.id)) o.selected = true; sel.appendChild(o); });
+    sel.onchange = function() {
+      var dosyalar = _loadU(); var idx = dosyalar.findIndex(function(x) { return String(x.id) === String(urunId); });
+      if (idx !== -1) { dosyalar[idx].job_id = sel.value; dosyalar[idx].updatedAt = _now(); _storeU(dosyalar); window.toast?.('Job ID g\u00fcncellendi', 'ok'); _ihrReRender(); }
+    };
+    td.innerHTML = ''; td.appendChild(sel); sel.focus();
+  });
 };
 
 })();
