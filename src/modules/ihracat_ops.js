@@ -6770,6 +6770,9 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button>';
   h += '</div>';
 
+  var _cu2 = window.CU?.() || window.Auth?.getCU?.() || {};
+  var _isAdm2 = (_cu2.role === 'admin' || _cu2.role === 'superadmin' || _cu2.isAdmin === true);
+  var _gorGruplar = _isAdm2 ? GRUPLAR : GRUPLAR.filter(function(g) { return g.dep === 'ihracat' && (g.ad.indexOf('DI\u015e') !== -1 || g.ad.indexOf('D\u0130\u015e') !== -1); });
   var _sekmeSec = window._bmSekme || 'uretilen';
   var _bilinen_turler = {}; GRUPLAR.forEach(function(g) { g.turler.forEach(function(t) { _bilinen_turler[t.k] = true; }); });
   var yuklenenEvraklar = evraklar.filter(function(e) { return !_bilinen_turler[e.tur] && e.dosya_url; });
@@ -6781,10 +6784,12 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<button onclick="event.stopPropagation();window._bmSekme=\'uretilen\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _sS2('uretilen') + '">\u00dcretilen</button>';
   h += '<button onclick="event.stopPropagation();window._bmSekme=\'yuklenen\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _sS2('yuklenen') + '">Y\u00fcklenen (' + yuklenenEvraklar.length + ')</button>';
   h += '<div style="width:1px;height:14px;background:var(--b);margin:0 2px"></div>';
+  if (_isAdm2) {
   [{k:'ihracat',l:'\u0130hracat'},{k:'kdv',l:'KDV \u0130ade'},{k:'satis',l:'Sat\u0131\u015f'},{k:'muhasebe',l:'Muhasebe'},{k:'diger',l:'Di\u011fer'}].forEach(function(dp) {
     var on = _depSec === dp.k;
     h += '<button onclick="event.stopPropagation();window._bmAktifDep=\'' + dp.k + '\';window._ihrBelgePaneliAc(\'' + dosyaId + '\')" style="' + _depBtnS + 'border:0.5px solid ' + (on ? '#185FA5' : 'var(--b)') + ';background:' + (on ? '#185FA5' : 'transparent') + ';color:' + (on ? '#fff' : 'var(--t2)') + '">' + dp.l + '</button>';
   });
+  }
   h += '</div>';
 
   /* ARAC CUBUGU */
@@ -6807,7 +6812,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
 
   /* SOL — BELGE LISTESI */
   h += '<div id="bm-liste" style="display:block;overflow-y:auto;overflow-x:hidden;border-right:0.5px solid var(--b)">';
-  GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }).forEach(function(g) {
+  (_isAdm2 ? GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }) : _gorGruplar).forEach(function(g) {
     h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:5px 14px;background:var(--s2);text-transform:uppercase;position:sticky;top:0;z-index:2;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
       if (_aramaQ && t.k.toLowerCase().indexOf(_aramaQ) === -1 && (TUR_AD[t.k]||'').toLowerCase().indexOf(_aramaQ) === -1) return;
