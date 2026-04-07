@@ -2983,6 +2983,8 @@ window._ihrTumBelgeLink = function(dosyaId) {
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
 
+window._ihrBelgeLinkOlustur = function(dosyaId, tur) { window._ihrBelgeLink?.(dosyaId, tur); };
+
 /** CI arsiv tumunu sil */
 window._ihrCIArsivTumunuSil = function(dosyaId) {
   var evraklar = _loadE();
