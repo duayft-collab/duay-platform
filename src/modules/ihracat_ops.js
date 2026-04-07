@@ -33,9 +33,10 @@ var _IHR_GRUP_AD = {
   3: 'Ambalaj & Agirlik',
   4: 'Hammadde',
   5: 'Gumruk & Siniflandirma',
-  6: 'Lojistik & Yukleme',
+  6: 'Lojistik & Teslimat',
   7: 'GCB & Ihracat',
-  8: 'Durum & Onay'
+  8: 'Durum & Onay',
+  9: 'Yukleme & Konteyner'
 };
 var _IHR_KOLON_PRESETS = {
   'CI/PL':  ['tedarikciAd','standart_urun_adi','fatura_urun_adi','aciklama','miktar','birim','birim_fiyat','doviz','koli_adet','brut_kg','net_kg','hacim_m3','mense_ulke','hs_kodu'],
@@ -1657,6 +1658,9 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'tuketim_suresi',    l:'Tuketim Suresi (Gun)',            en:'Shelf Life (Days)',       g:1, ro:false, w:80,  filtre:false, bos:true },
     { k:'son_kullanma',      l:'Son Kullanma Tarihi',              en:'Expiry Date',             g:1, ro:false, w:85,  filtre:true,  bos:true },
     { k:'katalog_siparis',   l:'Katalog Siparis Kaynagi',         en:'Catalog Order Source',    g:1, ro:false, w:100, filtre:false, bos:true },
+    { k:'job_id',            l:'Job ID (Pusula)',                  en:'Job ID',                  g:1, ro:false, w:90,  filtre:true,  bos:true },
+    { k:'kayit_tarihi',      l:'Kayit Tarihi',                    en:'Record Date',             g:1, ro:true,  w:85,  filtre:true,  bos:false },
+    { k:'satici_sira_no',    l:'Satici Sira No',                  en:'Vendor Line No',          g:1, ro:false, w:65,  filtre:false, bos:true },
 
     /* ══ G2 — FIYAT & TEKLIF ════════════════════════════════ */
     { k:'teklif_id',         l:'Teklif/Fatura No',                en:'Offer/Invoice ID',        g:2, ro:false, w:90,  filtre:false, bos:true },
@@ -1711,17 +1715,18 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'konteyner_sira',    l:'Yukleme Sirasi',                  en:'Loading Order',           g:6, ro:false, w:65,  filtre:false, bos:true },
     { k:'once_yukle',        l:'Yukleme Onceligi',                en:'Load Priority',           g:6, ro:false, w:80,  filtre:true,  bos:true },
     { k:'yuklenebilir_miktar',l:'Yuklenebilir Miktar',            en:'Loadable Qty',            g:6, ro:false, w:80,  filtre:false, bos:true },
-    { k:'konteyner_no',      l:'Konteyner No',                    en:'Container No',            g:6, ro:false, w:100, filtre:false, bos:true },
-    { k:'muhur_no',          l:'Muhur No',                        en:'Seal No',                 g:6, ro:false, w:80,  filtre:false, bos:true },
-    { k:'booking_no',        l:'Booking No',                      en:'Booking No',              g:6, ro:false, w:85,  filtre:false, bos:true },
-    { k:'teslim_tarihi',     l:'Teslim Tarihi',                   en:'Delivery Date',           g:6, ro:false, w:85,  filtre:true,  bos:true },
-    { k:'teslim_alan',       l:'Teslim Alan',                     en:'Received By',             g:6, ro:false, w:85,  filtre:false, bos:true },
-    { k:'teslim_eden',       l:'Teslim Eden',                     en:'Delivered By',            g:6, ro:false, w:85,  filtre:false, bos:true },
-    { k:'yukleme_durumu',    l:'Yukleme Durumu',                  en:'Loading Status',          g:6, ro:false, w:85,  filtre:true,  bos:true },
+    /* ══ G9 — YÜKLEME & KONTEYNER ══════════════════════════ */
+    { k:'konteyner_no',      l:'Konteyner No',                    en:'Container No',            g:9, ro:false, w:100, filtre:false, bos:true },
+    { k:'muhur_no',          l:'Muhur No',                        en:'Seal No',                 g:9, ro:false, w:80,  filtre:false, bos:true },
+    { k:'booking_no',        l:'Booking No',                      en:'Booking No',              g:9, ro:false, w:85,  filtre:false, bos:true },
+    { k:'teslim_tarihi',     l:'Teslim Tarihi',                   en:'Delivery Date',           g:9, ro:false, w:85,  filtre:true,  bos:true },
+    { k:'teslim_alan',       l:'Teslim Alan',                     en:'Received By',             g:9, ro:false, w:85,  filtre:false, bos:true },
+    { k:'teslim_eden',       l:'Teslim Eden',                     en:'Delivered By',            g:9, ro:false, w:85,  filtre:false, bos:true },
+    { k:'yukleme_durumu',    l:'Yukleme Durumu',                  en:'Loading Status',          g:9, ro:false, w:85,  filtre:true,  bos:true },
     /* VGM */
-    { k:'vgm_kg',            l:'VGM Agirlik',                     en:'VGM Weight',              g:6, ro:false, w:70,  filtre:false, bos:true },
+    { k:'vgm_kg',            l:'VGM Agirlik',                     en:'VGM Weight',              g:9, ro:false, w:70,  filtre:false, bos:true },
     /* Tasima */
-    { k:'nakliye_firma',     l:'Nakliye Firmasi',                 en:'Transport Company',       g:6, ro:false, w:100, filtre:false, bos:true },
+    { k:'nakliye_firma',     l:'Nakliye Firmasi',                 en:'Transport Company',       g:9, ro:false, w:100, filtre:false, bos:true },
 
     /* ══ G7 — GCB & IHRACAT ═════════════════════════════════ */
     { k:'alis_fatura_no',    l:'Alis Fatura No',                  en:'Purchase Invoice No',     g:7, ro:false, w:90,  filtre:false, bos:true },
@@ -1852,7 +1857,8 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     5: { bg:'#FCE7F3', c:'#9D174D', tr:'Gumruk',                en:'Customs' },
     6: { bg:'#E0F2FE', c:'#075985', tr:'Lojistik',              en:'Logistics' },
     7: { bg:'#FEF3C7', c:'#854D0E', tr:'GCB & Ihracat',         en:'GCB & Export' },
-    8: { bg:'var(--s2)', c:'var(--t3)', tr:'Durum',              en:'Status' }
+    8: { bg:'var(--s2)', c:'var(--t3)', tr:'Durum',              en:'Status' },
+    9: { bg:'#DBEAFE', c:'#1E40AF', tr:'Y\u00fckleme & Konteyner', en:'Loading & Container' }
   };
   // Gorunen kolonlarin grup colspan'larini hesapla (sticky haric)
   var _grpColspans = {};
@@ -7144,6 +7150,13 @@ window._ihrSatinalmaGecis = function() {
 
 window._ihrImportDocs = function(dosyaId) {
   window.excelImportAc?.(dosyaId || '');
+};
+
+/* Pusula Job listesi — Firestore'dan cek */
+window._getPusulaJobs = window._getPusulaJobs || function(cb) {
+  var tasks = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
+  var jobs = tasks.filter(function(t) { return !t.done && t.status !== 'done'; }).map(function(t) { return { id: String(t.id), ad: t.title || '' }; });
+  cb(jobs.slice(0, 50));
 };
 
 })();
