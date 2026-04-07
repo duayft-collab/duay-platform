@@ -6804,7 +6804,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;flex:1;overflow:hidden">';
 
   /* SOL — BELGE LISTESI */
-  h += '<div id="bm-liste" style="overflow-y:auto;overflow-x:hidden;border-right:0.5px solid var(--b)">';
+  h += '<div id="bm-liste" style="display:block;overflow-y:auto;overflow-x:hidden;border-right:0.5px solid var(--b)">';
   GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }).forEach(function(g) {
     h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:5px 14px;background:var(--s2);text-transform:uppercase;position:sticky;top:0;z-index:2;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
