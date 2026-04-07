@@ -2223,6 +2223,54 @@ window._saUrunListeAc = function() {
   window._saUrunListeRender?.();
 };
 
+/* SA-PI-OLUSTUR-001: Secili urunlerden PI olustur */
+window._saPiOlustur = function() {
+  var secili = [];
+  document.querySelectorAll('.sau-chk:checked').forEach(function(chk) { secili.push(chk.getAttribute('data-id')); });
+  var urunler = _loadSAU();
+  var seciliUrunler = secili.length ? urunler.filter(function(u) { return secili.indexOf(String(u.id)) !== -1; }) : urunler.filter(function(u) { return !u.isDeleted; });
+  if (!seciliUrunler.length) { window.toast?.('Urun secin', 'warn'); return; }
+  var cariList = typeof window.loadCari === 'function' ? window.loadCari().filter(function(c) { return !c.isDeleted; }) : [];
+  var _esc2 = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var toplamSatis = seciliUrunler.reduce(function(s, u) { return s + (parseFloat(u.alis_birim_fiyat) || 0) * (1 + (parseFloat(u.kar_marji) || 0) / 100) * (parseFloat(u.miktar) || 0); }, 0);
+  var old = document.getElementById('sa-pi-modal'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'sa-pi-modal';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:12px;overflow:hidden">'
+    + '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:500">PI Olustur</span><button onclick="document.getElementById(\'sa-pi-modal\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">x</button></div>'
+    + '<div style="padding:16px 18px;display:grid;gap:10px">'
+    + '<div><div style="font-size:11px;color:var(--t2);margin-bottom:4px">Musteri *</div><select id="sa-pi-musteri" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;font-size:11px;background:var(--sf);color:var(--t);font-family:inherit"><option value="">— Secin —</option>' + cariList.map(function(c) { return '<option value="' + c.id + '">' + _esc2(c.name || c.firma_adi || '') + '</option>'; }).join('') + '</select></div>'
+    + '<div><div style="font-size:11px;color:var(--t2);margin-bottom:4px">PI No *</div><input id="sa-pi-no" placeholder="PI-2026-001" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;font-size:11px;background:var(--sf);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+    + '<div><div style="font-size:11px;color:var(--t2);margin-bottom:4px">Gecerlilik Tarihi</div><input type="date" id="sa-pi-gecerlilik" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;font-size:11px;background:var(--sf);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+    + '<div style="background:var(--s2);border-radius:6px;padding:10px 14px"><div style="font-size:10px;color:var(--t2)">' + seciliUrunler.length + ' urun · Toplam Satis: <strong>$' + Math.round(toplamSatis).toLocaleString('tr-TR') + '</strong></div></div>'
+    + '</div>'
+    + '<div style="padding:10px 18px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end;gap:8px">'
+    + '<button onclick="document.getElementById(\'sa-pi-modal\')?.remove()" style="font-size:11px;padding:5px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit">Iptal</button>'
+    + '<button onclick="event.stopPropagation();window._saPiKaydet()" style="font-size:11px;padding:5px 16px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">PI Olustur</button>'
+    + '</div></div>';
+  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
+window._saPiKaydet = function() {
+  var musteriId = document.getElementById('sa-pi-musteri')?.value;
+  var piNo = (document.getElementById('sa-pi-no')?.value || '').trim();
+  var gecerlilik = document.getElementById('sa-pi-gecerlilik')?.value || '';
+  if (!musteriId) { window.toast?.('Musteri secin', 'warn'); return; }
+  if (!piNo) { window.toast?.('PI No girin', 'warn'); return; }
+  var secili = []; document.querySelectorAll('.sau-chk:checked').forEach(function(chk) { secili.push(chk.getAttribute('data-id')); });
+  var urunler = _loadSAU();
+  var seciliUrunler = secili.length ? urunler.filter(function(u) { return secili.indexOf(String(u.id)) !== -1; }) : urunler.filter(function(u) { return !u.isDeleted; });
+  seciliUrunler.forEach(function(u) {
+    u.pi_no = piNo; u.pi_tarihi = new Date().toISOString().slice(0, 10);
+    u.pi_gecerlilik = gecerlilik; u.teklif_durum = 'Onay Bekliyor';
+    u.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  });
+  _storeSAU(urunler);
+  document.getElementById('sa-pi-modal')?.remove();
+  window._saUrunListeRender?.();
+  window.toast?.('PI olusturuldu: ' + piNo, 'ok');
+};
+
 /* SA-KATALOG-AUTOCOMPLETE-001: Katalog arama ve otodoldurma */
 window._saKatalogAra = function(inputEl, urunId) {
   var q = (inputEl.value || '').toLowerCase().trim();
