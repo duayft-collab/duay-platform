@@ -54,18 +54,30 @@ var AI_MAP = {
 
 /* ── Duay Alanları ──────────────────────────────────────────── */
 var DUAY_ALANLARI = [
-  { v:'atla', l:'\u2014 E\u015fle\u015ftirme (atla) \u2014' },
-  { v:'aciklama', l:'\u00dcr\u00fcn A\u00e7\u0131klamas\u0131' }, { v:'urun_kodu', l:'\u00dcr\u00fcn Kodu' },
-  { v:'birim_fiyat', l:'Birim Fiyat' }, { v:'miktar', l:'Miktar' }, { v:'birim', l:'Birim' },
-  { v:'doviz', l:'D\u00f6viz' }, { v:'hs_kodu', l:'HS / GTIP' },
-  { v:'brut_kg', l:'Br\u00fct KG' }, { v:'net_kg', l:'Net KG' },
-  { v:'koli_adet', l:'Koli Adedi' }, { v:'ambalaj_tipi', l:'Ambalaj Tipi' },
-  { v:'tedarikciAd', l:'Tedarik\u00e7i' }, { v:'mense_ulke', l:'Men\u015fei \u00dclke' },
-  { v:'etiket_rengi', l:'Etiket Rengi' }, { v:'konteyner_sira', l:'Y\u00fckleme S\u0131ras\u0131' },
-  { v:'standart_urun_adi', l:'\u0130ngilizce Ad\u0131 (CI/PL)' }, { v:'satici_urun_kodu', l:'Sat\u0131c\u0131 Kodu' },
-  { v:'alis_fatura_no', l:'Al\u0131\u015f Fatura No' }, { v:'alis_fatura_tarihi', l:'Fatura Tarihi' },
-  { v:'fatura_turu', l:'Fatura T\u00fcr\u00fc' }, { v:'kdv_orani', l:'KDV %' },
-  { v:'fatura_urun_adi', l:'Fatura \u00dcr\u00fcn Ad\u0131' }, { v:'anahtar_kelime', l:'Anahtar Kelime' }
+  { v:'atla', l:'\u2014 E\u015fle\u015ftirme (atla) \u2014', a:'' },
+  { v:'aciklama', l:'\u00dcr\u00fcn A\u00e7\u0131klamas\u0131', a:'CI / PL / BL\'de g\u00f6r\u00fcn\u00fcr' },
+  { v:'standart_urun_adi', l:'\u0130ngilizce Ad\u0131 (CI/PL)', a:'M\u00fc\u015fteriye giden belgede' },
+  { v:'fatura_urun_adi', l:'Fatura \u00dcr\u00fcn Ad\u0131', a:'TR faturada g\u00f6r\u00fcn\u00fcr' },
+  { v:'urun_kodu', l:'\u00dcr\u00fcn Kodu', a:'\u0130\u00e7 referans kodu' },
+  { v:'satici_urun_kodu', l:'Sat\u0131c\u0131 Kodu', a:'Tedarik\u00e7i \u00fcr\u00fcn kodu' },
+  { v:'birim_fiyat', l:'Birim Fiyat', a:'D\u00f6viz cinsinden' },
+  { v:'miktar', l:'Miktar', a:'Adet / KG / MT vb.' },
+  { v:'birim', l:'Birim', a:'PCS, KG, MT, SET...' },
+  { v:'doviz', l:'D\u00f6viz', a:'USD, EUR, TRY' },
+  { v:'hs_kodu', l:'HS / GTIP', a:'G\u00fcmr\u00fck tarife kodu' },
+  { v:'brut_kg', l:'Br\u00fct KG', a:'Koli dahil a\u011f\u0131rl\u0131k' },
+  { v:'net_kg', l:'Net KG', a:'Mal a\u011f\u0131rl\u0131\u011f\u0131' },
+  { v:'koli_adet', l:'Koli Adedi', a:'Ka\u00e7 kolide' },
+  { v:'ambalaj_tipi', l:'Ambalaj Tipi', a:'KARTON, PALET...' },
+  { v:'tedarikciAd', l:'Tedarik\u00e7i', a:'Firma ad\u0131' },
+  { v:'mense_ulke', l:'Men\u015fei \u00dclke', a:'\u00dcretim \u00fclkesi' },
+  { v:'etiket_rengi', l:'Etiket Rengi', a:'Dahili s\u0131n\u0131fland\u0131rma' },
+  { v:'konteyner_sira', l:'Y\u00fckleme S\u0131ras\u0131', a:'Konteynere y\u00fckleme \u00f6nceli\u011fi' },
+  { v:'alis_fatura_no', l:'Al\u0131\u015f Fatura No', a:'Tedarik\u00e7i fatura numaras\u0131' },
+  { v:'alis_fatura_tarihi', l:'Fatura Tarihi', a:'Al\u0131\u015f fatura tarihi' },
+  { v:'fatura_turu', l:'Fatura T\u00fcr\u00fc', a:'\u0130hra\u00e7 kay\u0131tl\u0131, KDVsiz...' },
+  { v:'kdv_orani', l:'KDV %', a:'0, 10, 20' },
+  { v:'anahtar_kelime', l:'Anahtar Kelime', a:'Arama ve filtreleme i\u00e7in' }
 ];
 
 /* ── State ───────────────────────────────────────────────────── */
@@ -575,7 +587,10 @@ window._eiPopupSec = function(escK, kolonAdi) {
   window._eiPopupKolonAdi = kolonAdi;
   DUAY_ALANLARI.forEach(function(a) {
     var aktif = (_eslestirme[kolonAdi] === a.v);
-    h += '<div onclick="event.stopPropagation();window._eiEslestirGuncelle?.(\'' + _esc(window._eiPopupKolonAdi || '').replace(/'/g, '\\\'') + '\',\'' + a.v + '\');document.getElementById(\'ei-alan-modal\')?.remove();_renderAll();" style="padding:9px 16px;cursor:pointer;font-size:11px;border-bottom:0.5px solid var(--b);background:' + (aktif ? '#E6F1FB' : 'transparent') + ';color:' + (aktif ? '#0C447C' : 'var(--t)') + ';font-weight:' + (aktif ? '500' : '400') + '">' + _esc(a.l) + '</div>';
+    h += '<div onclick="event.stopPropagation();window._eiEslestirGuncelle?.(\'' + _esc(window._eiPopupKolonAdi || '').replace(/'/g, '\\\'') + '\',\'' + a.v + '\');document.getElementById(\'ei-alan-modal\')?.remove();_renderAll();" style="padding:9px 16px;cursor:pointer;border-bottom:0.5px solid var(--b);background:' + (aktif ? '#E6F1FB' : 'transparent') + '">';
+    h += '<div style="font-size:11px;color:' + (aktif ? '#0C447C' : 'var(--t)') + ';font-weight:' + (aktif ? '500' : '400') + '">' + _esc(a.l) + '</div>';
+    h += (a.a ? '<div style="font-size:9px;color:var(--t3);margin-top:1px">' + _esc(a.a) + '</div>' : '');
+    h += '</div>';
   });
   h += '</div></div>';
   mo.innerHTML = h;
