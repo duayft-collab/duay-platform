@@ -3559,7 +3559,7 @@ var _TN2_GROUPS = {
     { id:'kargo',           label:'Kargo'           },
     { id:'ihracat-ops',     label:'İhracat Ops'     },
     { id:'urunler',         label:'Ürün Kataloğu'   },
-    { id:'urun-fiyat',     label:'Ürün Fiyat Listesi' },
+    { id:'sa-urun-liste',  label:'Ürün Fiyat Listesi', fn: function() { window._saUrunListeAc?.(); } },
     { id:'numune',          label:'Numune Arşivi'   },
   ]},
   operasyon: { label:'Operasyon', mods: [
