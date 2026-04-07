@@ -2328,7 +2328,7 @@ window._saUrunListeRender = function() {
   var topAlisUSD = urunler.reduce(function(s,u){ return s+(parseFloat(u.alis_birim_fiyat||0)*parseFloat(u.miktar||0)); },0);
   var topSatisUSD = urunler.reduce(function(s,u){ var sf=(parseFloat(u.alis_birim_fiyat||0))*(1+(parseFloat(u.kar_marji)||0)/100); return s+(sf*parseFloat(u.miktar||0)); },0);
   var avgMarj = urunler.length ? (urunler.reduce(function(s,u){return s+(parseFloat(u.kar_marji)||0);},0)/urunler.length).toFixed(1) : '0';
-  var _kpi = function(l,v,c){ return '<div style="background:var(--s2);border-radius:6px;padding:8px 14px;min-width:120px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">'+l+'</div><div style="font-size:18px;font-weight:500;color:'+(c||'var(--t)')+'">'+v+'</div></div>'; };
+  var _kpi = function(l,v,c){ return '<div style="background:var(--s2);border-radius:8px;padding:12px 18px;min-width:140px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+l+'</div><div style="font-size:22px;font-weight:500;color:'+(c||'var(--t)')+'">'+v+'</div></div>'; };
   h += '<div style="display:flex;gap:12px;padding:12px 18px;border-bottom:0.5px solid var(--b);flex-wrap:wrap">' + _kpi('Toplam',urunler.length) + _kpi('Al\u0131\u015f','$'+Math.round(topAlisUSD).toLocaleString('tr-TR')) + _kpi('Sat\u0131\u015f','$'+Math.round(topSatisUSD).toLocaleString('tr-TR'),'#16A34A') + _kpi('Marj','%'+avgMarj,'#185FA5') + '</div>';
   h += '<div style="display:flex;gap:6px;padding:8px 18px;border-bottom:0.5px solid var(--b);align-items:center">';
   h += '<button onclick="event.stopPropagation();window._saUrunYeniEkle?.()" style="font-size:11px;padding:5px 14px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">+ \u00dcr\u00fcn</button>';
@@ -2355,6 +2355,8 @@ window._saUrunListeRender = function() {
     h += '</tr>';
   });
   h += '</tbody></table></div></div>';
+  var inner = document.getElementById('sa-urun-liste-inner');
+  if (inner) { inner.innerHTML = h; return; }
   var cont = document.getElementById('sa-urun-liste-cont');
   if (!cont) { cont = document.createElement('div'); cont.id = 'sa-urun-liste-cont'; panel.appendChild(cont); }
   cont.innerHTML = h;
