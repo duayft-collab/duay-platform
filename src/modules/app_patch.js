@@ -65,6 +65,7 @@ window._yetkiKontrol = function(islem) {
     'arsiv': () => { window.renderArsiv?.(); },
     'docs': () => { window.renderDocs?.(); },
     'urunler': () => { window.renderUrunler?.(); },
+    'urun-fiyat': () => { window._saUrunListeAc?.(); },
     'alindi-teklifler': () => { window.renderIhracatListesi?.(); },
     'alis-teklifleri': () => { window.renderAlisTeklifleri?.(); },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
