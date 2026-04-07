@@ -2380,4 +2380,94 @@ window._saUrunYeniKaydet = function() {
 };
 
 window._saUrunYeniEkle = function() { window._saUrunListeRender(); };
+
+/* ── SA PI Olu\u015ftur (SA-PI-OLUSTUR-001) ──────────────────── */
+window._saPiOlustur = function() {
+  var secili = [];
+  document.querySelectorAll('.sau-chk:checked').forEach(function(chk) {
+    var id = chk.getAttribute('data-id');
+    var u = _loadSAU().find(function(x){ return String(x.id)===String(id) && !x.isDeleted; });
+    if (u) secili.push(u);
+  });
+  if (!secili.length) { window.toast?.('\u00dcr\u00fcn se\u00e7ilmedi', 'warn'); return; }
+  var jobId = secili[0].job_id || '';
+  var bugun = new Date().toLocaleDateString('tr-TR', {day:'2-digit',month:'long',year:'numeric'});
+  var gecerlilik = new Date(Date.now()+30*86400000).toLocaleDateString('tr-TR', {day:'2-digit',month:'long',year:'numeric'});
+  var _e = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var satirlar = secili.map(function(u,i){
+    var satisFiyat = (parseFloat(u.alis_birim_fiyat)||0)*(1+(parseFloat(u.kar_marji)||0)/100);
+    var satisTop = satisFiyat*(parseFloat(u.miktar)||0);
+    return '<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">'+(i+1)+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid #e5e7eb">'+_e(u.aciklama||u.standart_urun_adi||'')+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">'+_e(u.urun_kodu||'')+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">'+((parseFloat(u.miktar)||0).toLocaleString('tr-TR'))+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">'+_e(u.birim||'PCS')+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">'+_e(u.satis_doviz||u.doviz||'USD')+' '+satisFiyat.toFixed(2)+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;font-weight:600">'+_e(u.satis_doviz||u.doviz||'USD')+' '+satisTop.toFixed(2)+'</td></tr>';
+  }).join('');
+  var genelTop = secili.reduce(function(s,u){ return s+((parseFloat(u.alis_birim_fiyat)||0)*(1+(parseFloat(u.kar_marji)||0)/100)*(parseFloat(u.miktar)||0)); },0);
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Proforma Invoice</title>'
+    +'<style>body{font-family:system-ui,sans-serif;margin:0;padding:24px;font-size:11px;color:#1a1a1a}'
+    +'table{width:100%;border-collapse:collapse}th{background:#f9fafb;padding:6px 8px;border:1px solid #e5e7eb;text-align:left;font-size:10px}'
+    +'.no-print{background:#0C2340;padding:8px 16px;display:flex;gap:8px;justify-content:flex-end;margin:-24px -24px 24px}'
+    +'@media print{.no-print{display:none}}</style></head><body>'
+    +'<div class="no-print"><button onclick="window.print()" style="padding:5px 14px;background:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px">\ud83d\udda8 Yazd\u0131r / PDF</button></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:20px">'
+    +'<div><div style="font-size:18px;font-weight:700">PROFORMA INVOICE</div>'
+    +(jobId?'<div style="font-size:11px;color:#6b7280">Job ID: '+_e(jobId)+'</div>':'')+'</div>'
+    +'<div style="text-align:right;font-size:10px;color:#6b7280"><div style="font-size:13px;font-weight:600;color:#1a1a1a">Duay Global LLC</div>'
+    +'<div>Tarih: '+bugun+'</div><div>Ge\u00e7erlilik: '+gecerlilik+'</div></div></div>'
+    +'<table><thead><tr><th style="width:30px">#</th><th>\u00dcr\u00fcn A\u00e7\u0131klamas\u0131</th><th>Kod</th><th style="text-align:right">Miktar</th><th>Birim</th><th style="text-align:right">Birim Fiyat</th><th style="text-align:right">Toplam</th></tr></thead>'
+    +'<tbody>'+satirlar+'</tbody>'
+    +'<tfoot><tr><td colspan="6" style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;font-weight:600">GENEL TOPLAM</td>'
+    +'<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;font-weight:700;font-size:13px">USD '+genelTop.toFixed(2)+'</td></tr></tfoot></table>'
+    +'</body></html>';
+  var w = window.open('','_blank'); if(w){ w.document.write(html); w.document.close(); }
+  window.toast?.('PI olu\u015fturuldu \u2014 '+secili.length+' \u00fcr\u00fcn', 'ok');
+};
+
+/* SA-TOPLU-MARJ-001: Toplu kar marji guncelleme */
+window._saTopluMarj = function() {
+  var secili = [];
+  document.querySelectorAll('.sau-chk:checked').forEach(function(chk) { secili.push(chk.getAttribute('data-id')); });
+  var hedef = secili.length ? secili.length + ' secili urun' : 'tum urunler';
+  var old = document.getElementById('sa-marj-modal'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.id = 'sa-marj-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:12px;padding:0;width:340px;overflow:hidden">'
+    + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<span style="font-size:13px;font-weight:500">Toplu Kar Marji</span>'
+    + '<button onclick="document.getElementById(\'sa-marj-modal\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:16px;color:var(--t3)">x</button></div>'
+    + '<div style="padding:16px">'
+    + '<div style="font-size:11px;color:var(--t2);margin-bottom:12px">Uygulama: <strong>' + hedef + '</strong></div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:6px">Kar Marji %</div>'
+    + '<input id="sa-marj-input" type="number" min="0" max="999" step="0.5" placeholder="Orn: 25" style="width:100%;font-size:14px;padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit;box-sizing:border-box">'
+    + '<div style="display:flex;gap:8px;margin-top:16px">'
+    + '<button onclick="document.getElementById(\'sa-marj-modal\')?.remove()" style="flex:1;font-size:11px;padding:7px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit">Iptal</button>'
+    + '<button onclick="event.stopPropagation();window._saTopluMarjUygula()" style="flex:1;font-size:11px;padding:7px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Uygula</button>'
+    + '</div></div></div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { document.getElementById('sa-marj-input')?.focus(); }, 50);
+};
+
+window._saTopluMarjUygula = function() {
+  var marj = parseFloat(document.getElementById('sa-marj-input')?.value);
+  if (isNaN(marj) || marj < 0) { window.toast?.('Gecerli bir marj girin', 'warn'); return; }
+  var seciliIds = [];
+  document.querySelectorAll('.sau-chk:checked').forEach(function(chk) { seciliIds.push(chk.getAttribute('data-id')); });
+  var urunler = _loadSAU();
+  var sayac = 0;
+  urunler.forEach(function(u) {
+    if (u.isDeleted) return;
+    if (seciliIds.length && seciliIds.indexOf(String(u.id)) === -1) return;
+    u.kar_marji = marj;
+    u.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    sayac++;
+  });
+  _storeSAU(urunler);
+  document.getElementById('sa-marj-modal')?.remove();
+  window._saUrunListeRender?.();
+  window.toast?.('%' + marj + ' marj — ' + sayac + ' urune uygulandi', 'ok');
+};
 }
