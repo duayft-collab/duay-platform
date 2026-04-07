@@ -150,7 +150,7 @@ window.excelImportAc = function(dosyaId) {
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:0.5px solid var(--b);background:var(--sf);flex-shrink:0"><div><div style="font-size:15px;font-weight:600">Import Docs</div><div style="font-size:10px;color:var(--t3)">Excel / CSV \u2192 \u0130hracat \u00dcr\u00fcn Aktar</div></div>'
     + '<div style="display:flex;gap:8px;align-items:center"><button onclick="event.stopPropagation();window._ihrExcelSablonIndir?.()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Haz\u0131r \u015eablon</button><button onclick="event.stopPropagation();document.getElementById(\'mo-excel-import\')?.remove()" style="font-size:16px;border:none;background:transparent;cursor:pointer;color:var(--t3)">\u2715</button></div></div>'
     + '<div id="ei-steps" style="flex-shrink:0"></div>'
-    + '<div style="display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden">'
+    + '<div style="display:grid;grid-template-columns:320px 1fr;flex:1;overflow:hidden">'
     + '<div id="ei-sol" style="display:block;border-right:0.5px solid var(--b);background:var(--sf);overflow-y:auto;padding:12px"></div>'
     + '<div id="ei-sag" style="display:flex;flex-direction:column;overflow-y:auto"></div>'
     + '</div>'
@@ -319,7 +319,9 @@ function _sagAdim2(el) {
     var okTxt = eslesmis ? '\u2192' : onayGer ? '?' : '\u2192';
     var escK = excKol.replace(/[^a-zA-Z0-9]/g, '_');
 
-    h += '<div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;align-items:center;padding:6px 16px;border-bottom:0.5px solid var(--b);' + (rowBg ? 'background:' + rowBg : '') + '">';
+    var zorunluEslesmemis = zorunluMu && (secili === 'atla' || !secili);
+    var satirBg = zorunluEslesmemis ? '#FEF2F2' : (rowBg || '');
+    h += '<div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;align-items:center;padding:10px 16px;border-bottom:0.5px solid var(--b);' + (satirBg ? 'background:' + satirBg : '') + '">';
 
     /* Sol — Excel kolon (kutu içinde) */
     h += '<div style="min-width:0"><div style="display:flex;align-items:center;gap:4px">';
@@ -557,28 +559,33 @@ window._eiAktar = function() {
 
 /* ── Popup Select (UX-004) ──────────────────────────────────── */
 window._eiPopupSec = function(escK, kolonAdi) {
-  document.getElementById('ei-popup-sel')?.remove();
-  var badge = document.getElementById('bm-badge-' + escK);
-  if (!badge) return;
-  var rect = badge.getBoundingClientRect();
-  var sel = document.createElement('select');
-  sel.id = 'ei-popup-sel';
-  sel.size = Math.min(DUAY_ALANLARI.length, 10);
-  sel.setAttribute('style', 'position:fixed;top:' + rect.bottom + 'px;left:' + rect.left + 'px;width:' + Math.max(rect.width, 180) + 'px;z-index:9999;font-size:11px;border:1px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);box-shadow:0 4px 16px rgba(0,0,0,.12);padding:4px 0;font-family:inherit');
+  document.getElementById('ei-alan-modal')?.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'ei-alan-modal';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var ornekler = _excelData.slice(0, 3).map(function(r) { return String(r[kolonAdi] || '').slice(0, 30); }).filter(Boolean).join(' \u00b7 ');
+  var h = '<div class="moc" style="max-width:440px;padding:0;border-radius:12px;overflow:hidden">';
+  h += '<div style="padding:10px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h += '<div><div style="font-size:12px;font-weight:500">Alan Se\u00e7</div><div style="font-size:10px;color:var(--t3)">' + _esc(kolonAdi) + (ornekler ? ' \u00b7 ' + _esc(ornekler) : '') + '</div></div>';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'ei-alan-modal\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3)">\u00d7</button>';
+  h += '</div>';
+  h += '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b)">';
+  h += '<input id="ei-alan-ara" placeholder="Alan ara..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._eiAlanFiltrele(this.value)" style="width:100%;font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit;box-sizing:border-box">';
+  h += '</div>';
+  h += '<div id="ei-alan-liste" style="max-height:280px;overflow-y:auto">';
+  window._eiPopupKolonAdi = kolonAdi;
   DUAY_ALANLARI.forEach(function(a) {
-    var opt = document.createElement('option');
-    opt.value = a.v; opt.textContent = a.l;
-    if (_eslestirme[kolonAdi] === a.v) opt.selected = true;
-    sel.appendChild(opt);
+    var aktif = (_eslestirme[kolonAdi] === a.v);
+    h += '<div onclick="event.stopPropagation();window._eiEslestirGuncelle?.(\'' + _esc(window._eiPopupKolonAdi || '').replace(/'/g, '\\\'') + '\',\'' + a.v + '\');document.getElementById(\'ei-alan-modal\')?.remove();_renderAll();" style="padding:9px 16px;cursor:pointer;font-size:11px;border-bottom:0.5px solid var(--b);background:' + (aktif ? '#E6F1FB' : 'transparent') + ';color:' + (aktif ? '#0C447C' : 'var(--t)') + ';font-weight:' + (aktif ? '500' : '400') + '">' + _esc(a.l) + '</div>';
   });
-  sel.onchange = function() {
-    window._eiEslestirGuncelle?.(kolonAdi, sel.value);
-    sel.remove();
-    _renderAll();
-  };
-  sel.onblur = function() { setTimeout(function() { sel.remove(); }, 150); };
-  document.body.appendChild(sel);
-  sel.focus();
+  h += '</div></div>';
+  mo.innerHTML = h;
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); var inp = document.getElementById('ei-alan-ara'); if (inp) inp.focus(); }, 10);
+};
+window._eiAlanFiltrele = function(q) {
+  var items = document.querySelectorAll('#ei-alan-liste > div');
+  q = q.toLowerCase();
+  items.forEach(function(item) { item.style.display = (!q || item.textContent.toLowerCase().indexOf(q) !== -1) ? '' : 'none'; });
 };
 
 /* ── Window Exports ─────────────────────────────────────────── */
