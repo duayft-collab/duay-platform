@@ -3520,10 +3520,21 @@ window._ihrUrunKaydet = function() {
   var cariList = typeof window.loadCari === 'function' ? window.loadCari() : [];
   var tedarikciId = _g('ihr-urun-tedarikci')?.value || '';
   var tedarikci = null; cariList.forEach(function(c) { if (String(c.id) === String(tedarikciId)) tedarikci = c; });
-  var urunler = _loadU(); urunler.unshift({
+  var urunler = _loadU();
+  var _urunKodu = (_g('ihr-urun-kod')?.value || '').trim();
+  var _tedAd = tedarikci ? tedarikci.name : '';
+  /* Mukerrer kontrol: ayni urun_kodu + tedarikciAd varsa engelle */
+  var _mukerrer = urunler.find(function(x) {
+    if (x.isDeleted || String(x.dosya_id) !== String(dosyaId)) return false;
+    var kodEsles = _urunKodu && x.urun_kodu && String(x.urun_kodu).toLowerCase() === String(_urunKodu).toLowerCase();
+    var tedEsles = _tedAd && x.tedarikciAd && String(x.tedarikciAd).toLowerCase() === String(_tedAd).toLowerCase();
+    return kodEsles && tedEsles;
+  });
+  if (_mukerrer) { window.toast?.('Bu urun zaten kayitli: ' + _urunKodu + ' — ' + _tedAd, 'warn'); return; }
+  urunler.unshift({
     id: _genId(), dosya_id: dosyaId,
-    tedarikci_id: tedarikciId, tedarikciAd: tedarikci ? tedarikci.name : '',
-    urun_kodu: (_g('ihr-urun-kod')?.value || '').trim(),
+    tedarikci_id: tedarikciId, tedarikciAd: _tedAd,
+    urun_kodu: _urunKodu,
     satici_urun_kodu: (_g('ihr-urun-satici-kod')?.value || '').trim(),
     aciklama: aciklama,
     standart_urun_adi: (_g('ihr-urun-standart-adi')?.value || '').trim(),
