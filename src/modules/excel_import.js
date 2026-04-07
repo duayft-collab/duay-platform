@@ -151,7 +151,7 @@ window.excelImportAc = function(dosyaId) {
     + '<div style="display:flex;gap:8px;align-items:center"><button onclick="event.stopPropagation();window._ihrExcelSablonIndir?.()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Haz\u0131r \u015eablon</button><button onclick="event.stopPropagation();document.getElementById(\'mo-excel-import\')?.remove()" style="font-size:16px;border:none;background:transparent;cursor:pointer;color:var(--t3)">\u2715</button></div></div>'
     + '<div id="ei-steps" style="flex-shrink:0"></div>'
     + '<div style="display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden">'
-    + '<div id="ei-sol" style="border-right:0.5px solid var(--b);background:var(--sf);overflow-y:auto;padding:12px"></div>'
+    + '<div id="ei-sol" style="display:block;border-right:0.5px solid var(--b);background:var(--sf);overflow-y:auto;padding:12px"></div>'
     + '<div id="ei-sag" style="display:flex;flex-direction:column;overflow-y:auto"></div>'
     + '</div>'
     + '<div id="ei-footer" style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-top:0.5px solid var(--b);background:var(--sf);flex-shrink:0"></div>'
