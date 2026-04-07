@@ -1492,8 +1492,13 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   var _dosyaMap = {};
   if (d) { Object.keys(d).forEach(function(dk) { _dosyaMap[dk] = d[dk]; }); }
   if (_blObj) { Object.keys(_blObj).forEach(function(bk) { if (!_dosyaMap[bk]) _dosyaMap[bk] = _blObj[bk]; _dosyaMap['_' + bk] = _blObj[bk]; }); }
+  var _fwObj = _loadFW().find(function(f) { return String(f.id) === String((_dosyaMap && _dosyaMap.forwarder_id) || ''); });
+  var _gmObj = _loadGM().find(function(g) { return String(g.id) === String((_dosyaMap && _dosyaMap.gumrukcu_id) || ''); });
+  if (_dosyaMap) { _dosyaMap.forwarder_adi = _fwObj ? (_fwObj.firma_adi || _fwObj.name || '') : ''; _dosyaMap.gumrukcu_adi = _gmObj ? (_gmObj.firma_adi || _gmObj.name || '') : ''; }
   var _filtreler = window._ihrUrunFiltreler || {};
   var _aramaQ = window._ihrUrunAramaQ || '';
+  /* Mevcut urunlerde kayit_tarihi yoksa doldur */
+  tumurunler.forEach(function(u) { if (!u.kayit_tarihi) u.kayit_tarihi = (u.createdAt || '').slice(0, 10) || _today(); });
 
   /* Filtreleme uygula */
   var urunler = tumurunler.filter(function(u) {
@@ -2467,7 +2472,7 @@ window._ihrSatinalmaKaydet = function() {
   seciliIds.forEach(function(sid) {
     var s = satinalma.find(function(x) { return String(x.id) === String(sid); }); if (!s) return;
     var tedarikci = null; cariList.forEach(function(c) { if (c.name === s.tedarikci) tedarikci = c; });
-    urunler.unshift({ id: _genId(), dosya_id: dosyaId, tedarikci_id: tedarikci ? tedarikci.id : '', tedarikciAd: s.tedarikci || '', urun_kodu: s.urunKodu || s.urun_kodu || '', aciklama: s.urun || s.aciklama || '', standart_urun_adi: s.standart_urun_adi || s.urun || s.aciklama || '', hs_kodu: s.hs_kodu || '', kdv_orani: s.kdv_orani || '', miktar: parseFloat(s.miktar || 0), birim: s.birim || 'PCS', birim_fiyat: parseFloat(s.birimFiyat || s.birim_fiyat || 0), doviz: s.doviz || 'USD', kaynak: 'satinalma_' + sid, createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now() });
+    urunler.unshift({ id: _genId(), dosya_id: dosyaId, tedarikci_id: tedarikci ? tedarikci.id : '', tedarikciAd: s.tedarikci || '', urun_kodu: s.urunKodu || s.urun_kodu || '', aciklama: s.urun || s.aciklama || '', standart_urun_adi: s.standart_urun_adi || s.urun || s.aciklama || '', hs_kodu: s.hs_kodu || '', kdv_orani: s.kdv_orani || '', miktar: parseFloat(s.miktar || 0), birim: s.birim || 'PCS', birim_fiyat: parseFloat(s.birimFiyat || s.birim_fiyat || 0), doviz: s.doviz || 'USD', kaynak: 'satinalma_' + sid, createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now(), kayit_tarihi: _today() });
   });
   window.storeIhracatUrunler?.(urunler);
   _g('mo-satinalma-cek')?.remove();
@@ -3545,7 +3550,7 @@ window._ihrUrunKaydet = function() {
     imo_urun: _g('ihr-urun-imo')?.checked ? 'E' : 'H',
     dilli_urun: _g('ihr-urun-dilli')?.checked ? 'E' : 'H',
     duay_not: (_g('ihr-urun-duay-not')?.value || '').trim(),
-    createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now()
+    createdAt: _now(), createdBy: _cu()?.id, updatedAt: _now(), kayit_tarihi: _today()
   });
   _storeU(urunler); _g('mo-ihr-urun')?.remove(); window.toast?.('Ürün eklendi', 'ok');
   window.logActivity?.('ihracat', 'Ürün eklendi: ' + aciklama);
