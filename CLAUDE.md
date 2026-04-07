@@ -219,6 +219,66 @@ Admin menüsüne "Sistem Kalitesi" alt sayfası eklenecek.
 - Kontrol: hard refresh sonrası renderPirim() çıktısı
 - Öncelik: Yüksek — 13 talimat bittikten sonra ikinci fix
 
+## ⚠️ ZORUNLU UYGULAMA PROTOKOLÜ — HER TALİMATTA UYGULANIR
+
+Bu bölümü atla, sırayı değiştir veya adım geç → hatalı uygulama.
+
+### ADIM 1 — Talimatı anlamadan önce dosyayı oku
+
+Talimat hangi dosyada değişiklik yapacağını söyler. O dosyayı aç. Hedef metnin gerçekten o dosyada olduğunu teyit et:
+
+```
+grep -n "HEDEF_METİN" DOSYA_ADI
+```
+
+Eğer grep 0 döndürürse — dur. Baran'a söyle: "Hedef metin bulunamadı, talimat güncel dosya ile uyuşmuyor."
+
+### ADIM 2 — Değişikliği yap, hemen doğrula
+
+Her tek değişiklikten sonra — hepsini bitirdikten sonra değil, her birinden hemen sonra:
+
+```
+grep -c "YENİ_METİN" DOSYA_ADI
+```
+
+Sonuç beklenen sayıyla eşleşmiyorsa değişikliği tekrar yap. Bir sonraki değişikliğe geçme.
+
+### ADIM 3 — Syntax kontrolü
+
+```
+node --check DOSYA_ADI
+```
+
+Hata varsa commit atma. Hatayı düzelt, tekrar kontrol et.
+
+### ADIM 4 — Raporu yaz, Baran'a göster
+
+Commit atmadan önce şu formatı yaz:
+
+```
+UYGULAMA RAPORU — [TALİMAT_KODU]
+Değişiklik 1 — [ne yapıldı]: grep → [N] ✓
+Değişiklik 2 — [ne yapıldı]: grep → [N] ✓
+node --check: OK ✓
+Commit için onayını bekliyorum.
+```
+
+Baran "commit at" veya "ok" demeden commit atma.
+
+### ADIM 5 — Commit at
+
+Baran onayladıktan sonra commit at.
+
+### YASAK DAVRANIŞLAR
+
+- grep doğrulaması yapmadan "değiştirdim" demek
+- node --check çalıştırmadan commit atmak
+- "Tamamlandı" demek ama grep çıktısı paylaşmamak
+- Baran onayı olmadan commit atmak
+- Bulamadığım metni "buldum ve değiştirdim" diye geçiştirmek
+
+---
+
 ## STANDART TALİMAT ŞABLONU — Her talimat bu formatta yazılır
 
 Aşağıdaki şablon Claude Code için zorunlu çalışma formatıdır. Bu şablonu okuyan her yapay zeka bu formatı harfiyen uygular. Şablondan sapma yasaktır.
@@ -347,3 +407,39 @@ Commit mesajından sonra, her zaman, tam olarak 3 ipucu yaz:
 ---
 
 Bu şablonu okuyan her yapay zeka — Claude Code, Claude chat, başka model — yukarıdaki formatı eksiksiz uygular. Şablondan herhangi bir adımı atlamak yasaktır. "Zaman kazanmak için" veya "basit değişiklik olduğu için" atlamak da yasaktır. Her talimat, küçük de olsa büyük de olsa aynı disiplinle uygulanır.
+
+---
+
+## IP_UCU_KURALI — Her Teslimde 3 Zorunlu İpucu
+
+Her kod tesliminin sonunda commit mesajından SONRA tam olarak 3 ipucu yaz. Atlamak yasaktır.
+
+### Format
+
+**💡 İpucu 1: [KULLANIM veya EDGE CASE]**
+
+[2-4 cümle. Spesifik — fonksiyon adı, değişken adı içerir. "Her zaman test edin" gibi genel cümleler yasak.]
+
+→ [Tek cümle pratik not.]
+
+**💡 İpucu 2: [PERFORMANS veya GÜVENLİK]**
+
+[2-4 cümle. Spesifik.]
+
+→ [Tek cümle pratik not.]
+
+**💡 İpucu 3: [DEBUG veya GELECEK BAKIM]**
+
+[2-4 cümle. Spesifik.]
+
+→ [Tek cümle pratik not.]
+
+### Kural
+
+İpuçları doğrudan teslim edilen kodla ilgili olacak. Hangi fonksiyon, hangi değişken, hangi edge case — spesifik. Genel ve jenerik yasak.
+
+### Kategoriler
+
+KULLANIM / EDGE CASE / PERFORMANS / GÜVENLİK / ENTEGRASYON / DEBUG / VERİ / GELECEK BAKIM
+
+Her teslimde 3 farklı kategoriden seç.
