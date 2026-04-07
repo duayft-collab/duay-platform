@@ -2008,7 +2008,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     var _roBg = kol.ro ? 'background:#FAEEDA;color:#633806;font-weight:500;' : '';
     var _kolLabel = _dil === 'en' ? kol.en : kol.l;
     var _kw = (_savedW[kol.k] && _savedW[kol.k] >= 40) ? _savedW[kol.k] : kol.w;
-    h += '<th style="width:' + _kw + 'px;min-width:' + _kw + 'px;padding:5px 8px;border-right:0.5px solid var(--b);' + _roBg + '" title="' + _esc(kol.en) + ' — ' + _esc(kol.l) + '">';
+    h += '<th style="width:' + _kw + 'px;min-width:' + _kw + 'px;padding:5px 8px;border-right:0.5px solid var(--b);' + (_thBg || _roBg) + '" title="' + _esc(kol.en) + ' — ' + _esc(kol.l) + '">';
     h += '<span style="' + _thS2 + '">' + _kolLabel;
     if (kol.filtre) {
       var aktif = _filtreler[kol.k];
