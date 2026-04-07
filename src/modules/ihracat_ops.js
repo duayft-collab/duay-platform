@@ -6891,14 +6891,72 @@ window._bmTopluUret = function(dosyaId) {
   });
 };
 
-/* _ihrTumBelgeleriUret → merkezi panele yonlendir */
+/* _ihrTumBelgeleriUret → floating panel (IHR-BELGE-PANEL-001) */
 window._ihrTumBelgeleriUret = function(dosyaId) {
-  window._ihrBelgePaneliAc(dosyaId || window._ihrAktifDosyaId || '');
+  window._ihrBelgeFloatPanel(dosyaId || window._ihrAktifDosyaId || '');
 };
 
 /* ══════════════════════════════════════════════════════════════
    KAR RAPORU (MUTABAKAT-001)
    ══════════════════════════════════════════════════════════════ */
+window._ihrBelgeFloatPanel = function(dosyaId) {
+  dosyaId = dosyaId || window._ihrAktifDosyaId || '';
+  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
+  if (!d) { window.toast?.('\u00d6nce bir dosya se\u00e7in', 'warn'); return; }
+  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(dosyaId) && !e.isDeleted; });
+  var dil = window._ihrBelgeFloatDil || 'en';
+  var old = document.getElementById('mo-belge-float'); if (old) old.remove();
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-belge-float';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var KARTLAR = [
+    { k:'PI', ad:'Proforma Invoice', bg:'#E6F1FB', c:'#0C447C', b:'#B5D4F4' },
+    { k:'CI', ad:'Commercial Invoice', bg:'#EAF3DE', c:'#27500A', b:'#C0DD97' },
+    { k:'PL', ad:'Packing List', bg:'#EEEDFE', c:'#3C3489', b:'#AFA9EC' },
+    { k:'TRFAT', ad:'Transit Fatura', bg:'#FAEEDA', c:'#633806', b:'#FAC775' },
+    { k:'SEVK', ad:'Sevk \u0130rsaliyesi', bg:'#F1EFE8', c:'#444441', b:'#D3D1C7' },
+    { k:'YUK', ad:'Y\u00fckleme Talimat\u0131', bg:'#F1EFE8', c:'#444441', b:'#D3D1C7' },
+    { k:'TTF', ad:'Ta\u015f\u0131ma Talimat\u0131', bg:'#FCEBEB', c:'#791F1F', b:'#F7C1C1' }
+  ];
+  var h = '<div class="moc" style="max-width:840px;padding:0;border-radius:12px;overflow:hidden">';
+  h += '<div style="background:#042C53;padding:0 14px;height:40px;display:flex;align-items:center;gap:10px">';
+  h += '<span style="font-size:12px;font-weight:500;color:#85B7EB">Belgeler</span>';
+  h += '<span style="font-size:9px;color:rgba(255,255,255,.35);font-family:monospace">' + _esc(d.dosyaNo||'') + '</span>';
+  h += '<div style="display:flex;border:0.5px solid rgba(255,255,255,.2);border-radius:3px;overflow:hidden;margin-left:8px">';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgeFloatDil=\'en\';window._ihrBelgeFloatPanel(\'' + dosyaId + '\')" style="font-size:8px;padding:2px 8px;background:' + (dil==='en'?'#185FA5':'transparent') + ';color:' + (dil==='en'?'#fff':'rgba(255,255,255,.5)') + ';border:none;cursor:pointer;font-family:inherit">EN</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgeFloatDil=\'tr\';window._ihrBelgeFloatPanel(\'' + dosyaId + '\')" style="font-size:8px;padding:2px 8px;background:' + (dil==='tr'?'#185FA5':'transparent') + ';color:' + (dil==='tr'?'#fff':'rgba(255,255,255,.5)') + ';border:none;cursor:pointer;font-family:inherit;border-left:0.5px solid rgba(255,255,255,.2)">TR</button>';
+  h += '</div>';
+  h += '<div style="margin-left:auto;display:flex;gap:6px">';
+  h += '<button onclick="event.stopPropagation();window._ihrDetayTab(\'evraklar\',\'' + dosyaId + '\');document.getElementById(\'mo-belge-float\')?.remove()" style="font-size:8px;padding:2px 8px;border:0.5px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);border-radius:3px;cursor:pointer;font-family:inherit">Evraklar Sekmesi \u2192</button>';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-float\')?.remove()" style="font-size:14px;padding:0 8px;border:none;background:transparent;color:rgba(255,255,255,.4);cursor:pointer">\u00d7</button>';
+  h += '</div></div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);background:#fff">';
+  var mevcutTurler = {};
+  evraklar.forEach(function(e) { if (!mevcutTurler[e.tur] || e.createdAt > mevcutTurler[e.tur].createdAt) mevcutTurler[e.tur] = e; });
+  KARTLAR.forEach(function(kart, idx) {
+    var ev = mevcutTurler[kart.k];
+    var tarih = ev ? (ev.createdAt||'').slice(0,10) : '';
+    h += '<div style="padding:10px;border-right:' + (idx<6?'0.5px solid #D3D1C7':'none') + '">';
+    h += '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><div style="width:14px;height:14px;background:' + kart.bg + ';border:0.5px solid ' + kart.b + ';border-radius:2px;flex-shrink:0"></div><span style="font-size:11px;font-weight:600;color:' + kart.c + '">' + _esc(kart.k) + '</span></div>';
+    h += '<div style="font-size:7px;color:#888780;margin-bottom:6px;line-height:1.3">' + _esc(kart.ad) + '</div>';
+    h += '<div style="font-size:7px;margin-bottom:8px;color:' + (ev?'#27500A':'#B4B2A9') + '">' + (ev ? '\u2713 ' + tarih : '\u2014 Hen\u00fcz yok') + '</div>';
+    h += '<button onclick="event.stopPropagation();window._ihrBelgeUretDogrudan(\'' + dosyaId + '\',\'' + kart.k + '\',\'' + dil + '\');document.getElementById(\'mo-belge-float\')?.remove()" style="width:100%;font-size:7px;padding:2px 0;border:none;background:#185FA5;color:#fff;border-radius:2px;cursor:pointer;font-family:inherit;margin-bottom:3px">\u00dcret</button>';
+    h += '<div style="display:flex;gap:2px">';
+    h += '<button onclick="event.stopPropagation();' + (ev?'window._ihrPdfOnizle?.(\'' + dosyaId + '\',\'' + kart.k + '\',null)':'') + '" ' + (ev?'':'disabled') + ' style="flex:1;font-size:7px;padding:1px 0;border:0.5px solid #D3D1C7;background:transparent;color:' + (ev?'#444441':'#B4B2A9') + ';border-radius:2px;cursor:' + (ev?'pointer':'default') + ';font-family:inherit">G\u00f6r</button>';
+    h += '<button onclick="event.stopPropagation();" ' + (ev&&ev.dosya_url?'':'disabled') + ' style="flex:1;font-size:7px;padding:1px 0;border:0.5px solid #D3D1C7;background:transparent;color:' + (ev&&ev.dosya_url?'#444441':'#B4B2A9') + ';border-radius:2px;cursor:' + (ev&&ev.dosya_url?'pointer':'default') + ';font-family:inherit">\u2193</button>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+  var hazirSay = Object.keys(mevcutTurler).filter(function(k){ return KARTLAR.find(function(x){return x.k===k;}); }).length;
+  h += '<div style="padding:8px 14px;background:#F8F8F6;border-top:0.5px solid #D3D1C7;display:flex;align-items:center;gap:8px">';
+  h += '<span style="font-size:7px;color:#888780">' + hazirSay + '/7 belge haz\u0131r</span>';
+  h += '<div style="margin-left:auto;display:flex;gap:4px">';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-float\')?.remove()" class="btn btns" style="font-size:7px;padding:2px 8px">Kapat</button>';
+  h += '</div></div></div>';
+  mo.innerHTML = h;
+  document.body.appendChild(mo);
+  setTimeout(function() { mo.classList.add('open'); }, 10);
+};
+
 window._ihrKarRaporu = function(dosyaId) {
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
   if (!d) { window.toast?.('Dosya bulunamad\u0131', 'err'); return; }
