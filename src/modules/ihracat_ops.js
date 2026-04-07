@@ -6863,10 +6863,10 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '<div style="padding:10px 12px;border-bottom:0.5px solid var(--b)"><div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);margin-bottom:5px">TEKL\u0130F L\u0130NKLER\u0130</div>';
   var _fwAd = fw2 ? _esc2(fw2.firma_adi || 'Forwarder') : 'Atanmad\u0131';
   h += '<div style="background:#E6F1FB;border:0.5px solid #B5D4F4;border-radius:5px;padding:5px 8px;display:flex;align-items:center;margin-bottom:4px;' + (fw2 ? '' : 'opacity:.5') + '"><span style="flex:1;font-size:9px;font-weight:500;color:#0C447C">Navlun Teklifi</span>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeLinkOlustur?.(\'' + dosyaId + '\',\'TTF\')" style="font-size:8px;padding:1px 6px;border:0.5px solid #185FA5;border-radius:3px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit"' + (fw2 ? '' : ' disabled') + '>Kopyala</button></div>';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgeLink?.(\'' + dosyaId + '\',\'NTF\')" style="font-size:8px;padding:1px 6px;border:0.5px solid #185FA5;border-radius:3px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit"' + (fw2 ? '' : ' disabled') + '>Kopyala</button></div>';
   var _sigAd = d && d.sigortaci_id ? 'Sigortac\u0131' : 'Atanmad\u0131';
   h += '<div style="background:#F5F3FF;border:0.5px solid #DDD6FE;border-radius:5px;padding:5px 8px;display:flex;align-items:center;' + (d && d.sigortaci_id ? '' : 'opacity:.5') + '"><span style="flex:1;font-size:9px;font-weight:500;color:#7C3AED">Sigorta Teklifi</span>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeLinkOlustur?.(\'' + dosyaId + '\',\'SIG\')" style="font-size:8px;padding:1px 6px;border:0.5px solid #7C3AED;border-radius:3px;background:transparent;cursor:pointer;color:#7C3AED;font-family:inherit"' + (d && d.sigortaci_id ? '' : ' disabled') + '>Kopyala</button></div>';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgeLink?.(\'' + dosyaId + '\',\'SIG\')" style="font-size:8px;padding:1px 6px;border:0.5px solid #7C3AED;border-radius:3px;background:transparent;cursor:pointer;color:#7C3AED;font-family:inherit"' + (d && d.sigortaci_id ? '' : ' disabled') + '>Kopyala</button></div>';
   h += '</div>';
   /* Üretilemeyenler */
   h += '<div style="padding:10px 12px;border-bottom:0.5px solid var(--b)"><div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);margin-bottom:5px">\u00dcRET\u0130LEMEYENLER</div>';
