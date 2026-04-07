@@ -133,9 +133,11 @@ function _processSheet(wb, name) {
   var ws = wb.Sheets[name];
   var json = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
   if (!json.length) { _excelData = []; _kolonlar = []; _dosyaSatir = 0; _dosyaKolon = 0; return; }
-  var baslik = json[0].map(function(b) { return String(b || '').trim(); }).filter(Boolean);
+  var baslikIdx = 0;
+  for (var bi = 0; bi < Math.min(json.length, 10); bi++) { if (json[bi].filter(function(c) { return String(c||'').trim(); }).length >= 2) { baslikIdx = bi; break; } }
+  var baslik = json[baslikIdx].map(function(b) { return String(b || '').trim(); }).filter(Boolean);
   _kolonlar = baslik; _dosyaKolon = baslik.length;
-  _excelData = json.slice(1).filter(function(r) { return r.some(function(c) { return c !== ''; }); }).map(function(r) {
+  _excelData = json.slice(baslikIdx + 1).filter(function(r) { return r.some(function(c) { return c !== ''; }); }).map(function(r) {
     var obj = {};
     baslik.forEach(function(b, i) { obj[b] = r[i] !== undefined ? String(r[i] || '').trim() : ''; });
     return obj;
