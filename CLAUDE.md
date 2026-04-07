@@ -218,3 +218,132 @@ Admin menüsüne "Sistem Kalitesi" alt sayfası eklenecek.
 - Semptom: PİRİM-V2 commitleri var ama Safari'de eski görünüm
 - Kontrol: hard refresh sonrası renderPirim() çıktısı
 - Öncelik: Yüksek — 13 talimat bittikten sonra ikinci fix
+
+## STANDART TALİMAT ŞABLONU — Her talimat bu formatta yazılır
+
+Aşağıdaki şablon Claude Code için zorunlu çalışma formatıdır. Bu şablonu okuyan her yapay zeka bu formatı harfiyen uygular. Şablondan sapma yasaktır.
+
+---
+
+### ŞABLON BAŞLANGIÇ
+
+## Bu talimat ne yapar?
+
+[Teknik değil, iş etkisi. "Bu güncelleme X sorununu çözer / Y özelliğini getirir." Max 3 cümle.]
+
+**Commit:** `tip: MODUL-ISLEM-NNN — kisa aciklama`
+
+---
+
+## Değiştirilecek Dosya: `dosya/yolu.js`
+
+---
+
+### ADIM 0 — Başlamadan önce ölç
+
+Hiçbir değişiklik yapmadan önce şu komutu çalıştır ve çıktıyı Baran'a göster:
+
+```bash
+grep -n "HEDEF_METİN" DOSYA_ADI
+node --check DOSYA_ADI && echo "SYNTAX OK"
+```
+
+Baran "devam et" demeden bir sonraki adıma geçme.
+
+---
+
+### DEĞİŞİKLİK N — [Değişikliğin adı]
+
+**Bul — dosyada şu metni ara:**
+
+[Dosyada geçen, benzersiz, tam metin. Satır numarası değil — metin. Çünkü satır numaraları kayar, metin kayamaz.]
+
+**Değiştir — şununla:**
+
+[Yeni metin. Kelimesi kelimesine. Claude Code yorumlamaz, birebir uygular.]
+
+**Hemen doğrula — değişiklikten sonra:**
+
+```bash
+grep -c "YENİ_METİN" DOSYA_ADI
+```
+
+Beklenen sonuç: [N]. Farklı çıkarsa değişikliği tekrar yap. Bir sonraki değişikliğe geçme.
+
+---
+
+[Gerektiği kadar DEĞİŞİKLİK N bloğu tekrarlanır. Her blok kendi doğrulamasını içerir.]
+
+---
+
+### ZORUNLU FİNAL TEST — Commit öncesi
+
+```bash
+node --check DOSYA_ADI && echo "SYNTAX OK"
+grep -c "DEĞİŞİKLİK_1_KANITI" DOSYA_ADI
+grep -c "DEĞİŞİKLİK_2_KANITI" DOSYA_ADI
+```
+
+Beklenen sonuçlar:
+- SYNTAX OK
+- Kanıt 1: [N]
+- Kanıt 2: [N]
+
+Tüm sonuçlar beklenenle eşleşiyorsa UYGULAMA RAPORU'nu yaz ve Baran'ı bekle.
+
+---
+
+### UYGULAMA RAPORU
+
+```
+TALİMAT: [TALİMAT_KODU]
+Değişiklik 1 — [ne yapıldı]: grep → [N] ✓
+Değişiklik 2 — [ne yapıldı]: grep → [N] ✓
+SYNTAX: OK ✓
+Commit için onayını bekliyorum.
+```
+
+Baran "commit at" veya "ok" demeden commit atma. Kesinlikle.
+
+---
+
+### TALİMAT FOOTER — Her talimatın en altında bulunur
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Konu: [MODÜL]  │ Alt konu: [KONU]                           │
+│ Tarih: YYYY-MM-DD  │ Satır: N  │ Kelime: N                  │
+│ Başlık: [TALİMAT_KODU]                                       │
+│ Not: [1-2 cümle — ne değişti, neden]                        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 3 ZORUNLU İPUCU — Her teslimde
+
+Commit mesajından sonra, her zaman, tam olarak 3 ipucu yaz:
+
+**💡 İpucu 1: [KULLANIM veya EDGE CASE]**
+
+[2-4 cümle. Spesifik — fonksiyon adı, değişken adı, satır içerir. "Her zaman test edin" gibi genel cümleler yasak.]
+
+→ [Tek cümle pratik not.]
+
+**💡 İpucu 2: [PERFORMANS veya GÜVENLİK]**
+
+[2-4 cümle. Spesifik.]
+
+→ [Tek cümle pratik not.]
+
+**💡 İpucu 3: [DEBUG veya GELECEK BAKIM]**
+
+[2-4 cümle. Spesifik.]
+
+→ [Tek cümle pratik not.]
+
+### ŞABLON BİTİŞ
+
+---
+
+Bu şablonu okuyan her yapay zeka — Claude Code, Claude chat, başka model — yukarıdaki formatı eksiksiz uygular. Şablondan herhangi bir adımı atlamak yasaktır. "Zaman kazanmak için" veya "basit değişiklik olduğu için" atlamak da yasaktır. Her talimat, küçük de olsa büyük de olsa aynı disiplinle uygulanır.
