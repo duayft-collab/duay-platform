@@ -498,6 +498,10 @@ function _doLogin() {
 
   <!-- ═══ YÖNETİM ═══ -->
   <div class="nsec-header nsec" id="nsec-yonetim" onclick="toggleNsec('nsec-yonetim')">YÖNETİM <span class="nsec-arrow">▾</span></div>
+      <button class="nb" onclick="nav('pusula-pro',this)" id="nb-pusula-pro">
+    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 1l.5 1.5M8 15l-.5-1.5M1 8l1.5.5M15 8l-1.5-.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Pusula Pro</span>
+  </button>
       <button class="nb" onclick="nav('kpi-panel',this)" id="nb-kpi-panel">
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
     <span>KPI & Performans</span>
@@ -1220,6 +1224,7 @@ function _importFullBackup(){var inp=document.createElement('input');inp.type='f
       <div class="panel" id="panel-alarm"></div>
       <div class="panel" id="panel-sistem-testler"></div>
       <div class="panel" id="panel-platform-rules"></div>
+      <div class="panel" id="panel-pusula-pro"></div>
 
       <!-- Boş panel containerları — ilgili modüller tarafından doldurulur -->
       <div id="panel-ik"        class="panel"></div>
@@ -1422,6 +1427,7 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/pusula_render.js?v=20260407BB"></script>
 <script src="src/modules/pusula_views.js?v=20260407BB"></script>
 <script src="src/modules/pusula_features.js?v=20260407BB"></script>
+<script src="src/modules/pusula_pro.js?v=20260408AA"></script>
 <script src="src/modules/ik.js?v=20260407BB"></script>
 <script src="src/modules/crm.js?v=20260407BB"></script>
 <script src="src/modules/stok.js?v=20260407BB"></script>
