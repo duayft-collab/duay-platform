@@ -6834,6 +6834,10 @@ window._ihrBelgePaneliAc = function(dosyaId) {
         h += '<button onclick="event.stopPropagation();window._bmNeden(\'' + t.k + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;cursor:pointer;color:#DC2626;font-family:inherit">Neden?</button>';
       } else if (mevcut) {
         h += '<button onclick="event.stopPropagation();window._ihrPdfOnizle?.(\'' + dosyaId + '\',\'' + t.k + '\',null)" style="font-size:9px;padding:2px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">G\u00f6r\u00fcnt\u00fcle</button>';
+      } else if (t.k === 'KAR') {
+        h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove();window._ihrKarRaporu?.(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u00dcret \u2192</button>';
+      } else if (t.k === 'MUTABAKAT') {
+        h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-merkez\')?.remove();window._ihrMutabakatOzet?.(\'' + dosyaId + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u00dcret \u2192</button>';
       } else {
         h += '<button onclick="event.stopPropagation();window._bmTekUret(\'' + dosyaId + '\',\'' + t.k + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u00dcret \u2192</button>';
       }
