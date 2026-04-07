@@ -1753,7 +1753,70 @@ function _ihrDetayRenderUrunlerInner(d, el) {
     { k:'duay_onay',         l:'Duay Onay Durumu',                en:'Duay Approval',           g:8, ro:false, w:85,  filtre:true,  bos:true },
     { k:'kdv_iadesi',        l:'KDV Iadesi Tutari',               en:'VAT Refund Amount',       g:8, ro:false, w:90,  filtre:false, bos:true },
     { k:'onemli_not_1',      l:'Onemli Notlar',                   en:'Important Notes',         g:8, ro:false, w:140, filtre:false, bos:true },
-    { k:'duay_not',          l:'Duaya Ozel Not',                  en:'Internal Note',           g:8, ro:false, w:140, filtre:false, bos:true }
+    { k:'duay_not',          l:'Duaya Ozel Not',                  en:'Internal Note',           g:8, ro:false, w:140, filtre:false, bos:true },
+    /* ══ G9 — KONTEYNER & BL ════════════════════════════════ */
+    { k:'d_konteyner_no',    l:'Konteyner No',                    en:'Container No',            g:9,  ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_muhur_no',        l:'Muhur No',                        en:'Seal No',                 g:9,  ro:true, w:80,  filtre:false, bos:true, dosya:true },
+    { k:'d_konteyner_tipi',  l:'Konteyner Tipi',                  en:'Container Type',          g:9,  ro:true, w:75,  filtre:true,  bos:true, dosya:true },
+    { k:'d_bl_no',           l:'BL No',                           en:'BL No',                   g:9,  ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_bl_turu',         l:'BL Turu',                         en:'BL Type',                 g:9,  ro:true, w:80,  filtre:true,  bos:true, dosya:true },
+    { k:'d_yukleme_tarihi',  l:'Yukleme Tarihi',                  en:'Loading Date',            g:9,  ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    { k:'d_booking_no',      l:'Booking No',                      en:'Booking No',              g:9,  ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    { k:'d_booking_tarihi',  l:'Booking Tarihi',                  en:'Booking Date',            g:9,  ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    /* ══ G10 — TAŞIMA & GEMİ ════════════════════════════════ */
+    { k:'d_tasiyici_firma',  l:'Tasiyici Firma',                  en:'Carrier',                 g:10, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_gemi_adi',        l:'Gemi Adi',                        en:'Vessel Name',             g:10, ro:true, w:110, filtre:false, bos:true, dosya:true },
+    { k:'d_sefer_no',        l:'Sefer No',                        en:'Voyage No',               g:10, ro:true, w:80,  filtre:false, bos:true, dosya:true },
+    { k:'d_cikis_limani',    l:'Cikis Limani',                    en:'Port of Loading',         g:10, ro:true, w:100, filtre:true,  bos:true, dosya:true },
+    { k:'d_varis_limani',    l:'Varis Limani',                    en:'Port of Discharge',       g:10, ro:true, w:100, filtre:true,  bos:true, dosya:true },
+    { k:'d_teslim_sekli',    l:'Teslim Sekli',                    en:'Incoterms',               g:10, ro:true, w:75,  filtre:true,  bos:true, dosya:true },
+    { k:'d_konsimento_turu', l:'Konsimento Turu',                 en:'BL Release Type',         g:10, ro:true, w:90,  filtre:true,  bos:true, dosya:true },
+    /* ══ G11 — İÇ NAKLİYE & YÜKLEME ════════════════════════ */
+    { k:'d_nakliye_firma',   l:'Nakliye Firmasi',                 en:'Transport Co.',           g:11, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_nakliye_organize',l:'Organize Eden',                   en:'Transport Organizer',     g:11, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_arac_plaka',      l:'Arac Plaka',                      en:'Truck Plate',             g:11, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_dorse_plaka',     l:'Dorse Plaka',                     en:'Trailer Plate',           g:11, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_sofor_kimlik',    l:'Sofor TC / Kimlik',               en:'Driver ID',               g:11, ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    { k:'d_nakliye_fiyat',   l:'Nakliye Fiyati',                  en:'Transport Cost',          g:11, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_yukleme_noktasi', l:'Yukleme Noktasi',                 en:'Loading Point',           g:11, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_yukleme_sorumlu', l:'Yukleme Sorumlusu',               en:'Loading Supervisor',      g:11, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    /* ══ G12 — SİGORTA ══════════════════════════════════════ */
+    { k:'d_sigorta_firma',   l:'Sigorta Firmasi',                 en:'Insurance Co.',           g:12, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_police_no',       l:'Police No',                       en:'Policy No',               g:12, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_police_tarihi',   l:'Police Tarihi',                   en:'Policy Date',             g:12, ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    { k:'d_police_bitis',    l:'Police Bitis',                    en:'Policy Expiry',           g:12, ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    { k:'d_sigorta_prim',    l:'Sigorta Primi',                   en:'Insurance Premium',       g:12, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    /* ══ G13 — FORWARDER & NAVLUN ═══════════════════════════ */
+    { k:'d_forwarder_adi',   l:'Forwarder',                       en:'Freight Forwarder',       g:13, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_navlun_tutar',    l:'Navlun Tutari',                   en:'Freight Amount',          g:13, ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    { k:'d_navlun_doviz',    l:'Navlun Doviz',                    en:'Freight Currency',        g:13, ro:true, w:70,  filtre:true,  bos:true, dosya:true },
+    { k:'d_fw_teklif_id',    l:'FW Teklif ID',                    en:'FW Quote ID',             g:13, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_fw_teklif_tarihi',l:'FW Teklif Tarihi',                en:'FW Quote Date',           g:13, ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    /* ══ G14 — GÜMRÜK & MASRAF ══════════════════════════════ */
+    { k:'d_gumrukcu_adi',    l:'Gumrukcu',                        en:'Customs Agent',           g:14, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_kirmizi_hat',     l:'Kirmizi Hat',                     en:'Red Line',                g:14, ro:true, w:70,  filtre:true,  bos:true, dosya:true },
+    { k:'d_gumruk_masraf',   l:'Gumruk Masrafi',                  en:'Customs Cost',            g:14, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_ozel_kod',        l:'Ozel Kod',                        en:'Special Code',            g:14, ro:true, w:80,  filtre:false, bos:true, dosya:true },
+    /* ══ G15 — İNSPEKSİYON ══════════════════════════════════ */
+    { k:'d_inspeksiyon_firma',l:'Inspeksiyon Firmasi',            en:'Inspection Co.',          g:15, ro:true, w:110, filtre:true,  bos:true, dosya:true },
+    { k:'d_inspeksiyon_dosya',l:'Inspeksiyon Dosya No',           en:'Inspection File No',      g:15, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_inspeksiyon_tarih',l:'Inspeksiyon Tarihi',             en:'Inspection Date',         g:15, ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    { k:'d_inspeksiyon_fiyat',l:'Inspeksiyon Fiyati',             en:'Inspection Fee',          g:15, ro:true, w:85,  filtre:false, bos:true, dosya:true },
+    { k:'d_inspeksiyon_kod',  l:'Inspeksiyon Kodu',               en:'Inspection Code',         g:15, ro:true, w:80,  filtre:false, bos:true, dosya:true },
+    /* ══ G16 — MÜŞTERİ & SİPARİŞ ═══════════════════════════ */
+    { k:'d_musteri_adi',     l:'Musteri Adi',                     en:'Customer Name',           g:16, ro:true, w:120, filtre:true,  bos:true, dosya:true },
+    { k:'d_siparis_no',      l:'Siparis No',                      en:'Order No',                g:16, ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    { k:'d_revizyon_no',     l:'Revizyon No',                     en:'Revision No',             g:16, ro:true, w:70,  filtre:false, bos:true, dosya:true },
+    { k:'d_onay_tarihi',     l:'Onay Tarihi',                     en:'Approval Date',           g:16, ro:true, w:85,  filtre:true,  bos:true, dosya:true },
+    { k:'d_musteri_siparis_id',l:'Musteri Siparis ID',            en:'Customer PO ID',          g:16, ro:true, w:90,  filtre:false, bos:true, dosya:true },
+    /* ══ G17 — BELGELER & SERTİFİKALAR ══════════════════════ */
+    { k:'d_akreditif_no',    l:'Akreditif / LC No',               en:'Letter of Credit No',     g:17, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_swift_ref',       l:'Swift Ref / Odeme Ref',           en:'Swift / Payment Ref',     g:17, ro:true, w:100, filtre:false, bos:true, dosya:true },
+    { k:'d_fumigasyon',      l:'Fumigasyon Belgesi',              en:'Fumigation Cert.',        g:17, ro:true, w:90,  filtre:true,  bos:true, dosya:true },
+    { k:'d_phytosanitary',   l:'Phytosanitary Belgesi',           en:'Phytosanitary Cert.',     g:17, ro:true, w:90,  filtre:true,  bos:true, dosya:true },
+    { k:'d_t1_belge',        l:'T1 Belgesi',                      en:'T1 Document',             g:17, ro:true, w:75,  filtre:true,  bos:true, dosya:true },
+    { k:'d_atr_belge',       l:'ATR Belgesi',                     en:'ATR Certificate',         g:17, ro:true, w:75,  filtre:true,  bos:true, dosya:true },
+    { k:'d_eur1_belge',      l:'EUR.1 Menshei Belgesi',           en:'EUR.1 Certificate',       g:17, ro:true, w:90,  filtre:true,  bos:true, dosya:true }
   ];
 
   // GORUNUM-SISTEMI-001: Asama bazli otomatik gorunum + preset sistemi
