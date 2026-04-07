@@ -1572,7 +1572,7 @@ function _ihrDetayRenderUrunlerInner(d, el) {
   h += '</div>'; /* SATIR 1 bitti */
   /* BELGE TOOLBAR — temizlenmis (URUN-TASARIM-001) */
   h += '<div style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--sf);border-bottom:0.5px solid var(--b);flex-wrap:nowrap;overflow-x:auto">';
-  h += '<button onclick="event.stopPropagation();window._ihrTumBelgeleriUret(\'' + _dosyaId + '\')" title="PI, CI, PL gibi ihracat belgelerini y\u00f6netir ve basar" style="font-size:9px;padding:3px 12px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0">Belgeler \u25be</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrBelgePaneliAc?.(\'' + _dosyaId + '\')" title="PI, CI, PL gibi ihracat belgelerini y\u00f6netir ve basar" style="font-size:9px;padding:3px 12px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0">Belgeler \u25be</button>';
   h += '<div style="width:1px;height:16px;background:var(--b);flex-shrink:0;margin:0 3px"></div>';
   h += '<button onclick="event.stopPropagation();window._ihrKaynakFiltre?.(\'' + _dosyaId + '\',\'el\')" title="Manuel girilen \u00fcr\u00fcnleri filtreler" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #27500A;color:#27500A;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0">EL</button>';
   h += '<button onclick="event.stopPropagation();window._ihrKaynakFiltre?.(\'' + _dosyaId + '\',\'sa\')" title="Sat\u0131nalmadan gelen \u00fcr\u00fcnleri filtreler" style="font-size:9px;padding:2px 8px;border-radius:4px;border:0.5px solid #0C447C;color:#0C447C;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0">SA</button>';
@@ -6953,10 +6953,7 @@ window._bmTopluUret = function(dosyaId) {
   });
 };
 
-/* _ihrTumBelgeleriUret → floating panel (IHR-BELGE-PANEL-001) */
-window._ihrTumBelgeleriUret = function(dosyaId) {
-  window._ihrBelgeFloatPanel(dosyaId || window._ihrAktifDosyaId || '');
-};
+/* IHR-BELGELER-BTN-001: override kaldirildi — _ihrBelgePaneliAc kullaniliyor */
 
 /* ══════════════════════════════════════════════════════════════
    KAR RAPORU (MUTABAKAT-001)
