@@ -2908,54 +2908,8 @@ window._ihrMutabakatExcel = function(dosyaId) {
   window.toast?.('Excel indirildi', 'ok');
 };
 
-/* IHR-URUN-001: Tumunu Uret + HS Toplu */
-window._ihrTumBelgeleriUret = function(dosyaId) {
-  var BELGE_GRUPLARI = [
-    { ad:'D\u0131\u015f Taraf (M\u00fc\u015fteri)', turler:['PI','CI','PL','FI','SI','GCI'], defLang:'en' },
-    { ad:'Lojistik / G\u00fcmr\u00fck', turler:['KT','SE','ST','NTF','NFO','SIG'], defLang:'tr' },
-    { ad:'Tedarik / \u0130\u00e7', turler:['PO','MTF','MTET','IRK','QC','KYT'], defLang:'tr' },
-    { ad:'Raporlama', turler:['HOS','TD','OD','KAPAK','PARASUT'], defLang:'tr' },
-    { ad:'\ud83d\udcc4 DOCX \u015eablonlar', turler:['DOCX-PL','DOCX-CI','DOCX-FRQ','DOCX-IRQ'], defLang:'en' }
-  ];
-  var TUR_AD = { PI:'Proforma Invoice', CI:'Commercial Invoice', PL:'Packing List', FI:'Freight Invoice', SI:'Sample Invoice', GCI:'Customs Invoice', KT:'Kon\u015fimento Talimat\u0131', SE:'Sevk Emri', ST:'Sevk Talimat\u0131', NTF:'Navlun Teklif Talep', NFO:'Navlun Fiyat Onay', SIG:'Sigorta Talep', PO:'Purchase Order', MTF:'Mal Teslim Formu', MTET:'Mal Teslim Etme', IRK:'\u0130rsaliye', QC:'Kalite Kontrol', KYT:'Y\u00fckleme Tutana\u011f\u0131', HOS:'Hesap \u00d6zeti', TD:'Tahsilat Dekontu', OD:'\u00d6deme Dekontu', KAPAK:'Dosya Kapa\u011f\u0131', PARASUT:'Para\u015f\u00fct Excel', 'DOCX-PL':'Packing List \u2014 Bo\u015f \u015eablon', 'DOCX-CI':'Commercial Invoice \u2014 Bo\u015f \u015eablon', 'DOCX-FRQ':'Forwarder Teklif Talep', 'DOCX-IRQ':'Sigorta Teklif Talep' };
-  var old = document.getElementById('mo-tumbelge'); if (old) old.remove();
-  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-tumbelge';
-  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
-  var dilSec = window._ihrBelgeDil || 'en';
-  var h2 = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden">';
-  h2 += '<div style="padding:12px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:600">Belge \u00dcret</div><button onclick="event.stopPropagation();document.getElementById(\'mo-tumbelge\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">\u00d7</button></div>';
-  h2 += '<div style="padding:8px 18px;border-bottom:0.5px solid var(--b);display:flex;gap:6px">';
-  h2 += '<button onclick="event.stopPropagation();window._ihrBelgeDil=\'en\';window._ihrTumBelgeleriUret(\'' + dosyaId + '\')" style="font-size:10px;padding:3px 10px;border-radius:4px;border:0.5px solid ' + (dilSec === 'en' ? '#185FA5' : 'var(--b)') + ';background:' + (dilSec === 'en' ? '#E6F1FB' : 'transparent') + ';cursor:pointer;color:' + (dilSec === 'en' ? '#185FA5' : 'var(--t2)') + ';font-family:inherit">\ud83c\uddec\ud83c\udde7 English</button>';
-  h2 += '<button onclick="event.stopPropagation();window._ihrBelgeDil=\'tr\';window._ihrTumBelgeleriUret(\'' + dosyaId + '\')" style="font-size:10px;padding:3px 10px;border-radius:4px;border:0.5px solid ' + (dilSec === 'tr' ? '#185FA5' : 'var(--b)') + ';background:' + (dilSec === 'tr' ? '#E6F1FB' : 'transparent') + ';cursor:pointer;color:' + (dilSec === 'tr' ? '#185FA5' : 'var(--t2)') + ';font-family:inherit">\ud83c\uddf9\ud83c\uddf7 T\u00fcrk\u00e7e</button>';
-  h2 += '</div>';
-  h2 += '<div style="padding:10px 18px;max-height:55vh;overflow-y:auto">';
-  BELGE_GRUPLARI.forEach(function(g) {
-    h2 += '<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px;padding-bottom:3px;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
-    g.turler.forEach(function(t) {
-      var isParasut = t === 'PARASUT';
-      var isDOCX = t.indexOf('DOCX-') === 0;
-      var docxAlt = isDOCX ? t.replace('DOCX-', '').toLowerCase() : '';
-      h2 += '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:11px;' + (isDOCX ? 'background:var(--sf)' : '') + '">';
-      if (isDOCX) h2 += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:600;min-width:35px;text-align:center">DOCX</span>';
-      else h2 += '<span style="min-width:45px;font-weight:600;color:#185FA5;font-size:10px">' + t + '</span>';
-      h2 += '<span style="flex:1;color:var(--t2)">' + (TUR_AD[t] || t) + '</span>';
-      if (!isDOCX) h2 += '<span style="font-size:8px;color:var(--t3);padding:1px 5px;border-radius:3px;background:var(--s2)">' + dilSec.toUpperCase() + '</span>';
-      if (isParasut) {
-        h2 += '<button onclick="event.stopPropagation();window._ihrParasutExcel?.(\'' + dosyaId + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 Excel</button>';
-      } else if (isDOCX) {
-        h2 += '<button onclick="event.stopPropagation();window._ihrFormIndir?.(\'' + docxAlt + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u2b07 DOCX \u0130ndir</button>';
-      } else {
-        h2 += '<button onclick="event.stopPropagation();window._ihrBelgeUretDogrudan(\'' + dosyaId + '\',\'' + t + '\',\'' + dilSec + '\');document.getElementById(\'mo-tumbelge\')?.remove()" style="font-size:9px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">\u00dcret \u2192</button>';
-      }
-      h2 += '</div>';
-    });
-  });
-  h2 += '</div>';
-  h2 += '<div style="padding:10px 18px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-tumbelge\')?.remove()">Kapat</button></div>';
-  h2 += '</div>';
-  mo.innerHTML = h2;
-  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
-};
+/* IHR-OLUKOD-001: _ihrTumBelgeleriUret olu kod temizlendi — _ihrBelgePaneliAc kullaniliyor */
+window._ihrTumBelgeleriUret = function(dosyaId) { window._ihrBelgePaneliAc?.(dosyaId); };
 
 /** Dogrudan belge uret — modal atla, tek adimda */
 window._ihrBelgeUretDogrudan = function(dosyaId, tur, lang) {
@@ -6962,63 +6916,8 @@ window._bmTopluUret = function(dosyaId) {
 /* ══════════════════════════════════════════════════════════════
    KAR RAPORU (MUTABAKAT-001)
    ══════════════════════════════════════════════════════════════ */
-window._ihrBelgeFloatPanel = function(dosyaId) {
-  dosyaId = dosyaId || window._ihrAktifDosyaId || '';
-  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
-  if (!d) { window.toast?.('\u00d6nce bir dosya se\u00e7in', 'warn'); return; }
-  var evraklar = _loadE().filter(function(e) { return String(e.dosya_id) === String(dosyaId) && !e.isDeleted; });
-  var dil = window._ihrBelgeFloatDil || 'en';
-  var old = document.getElementById('mo-belge-float'); if (old) old.remove();
-  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-belge-float';
-  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
-  var KARTLAR = [
-    { k:'PI', ad:'Proforma Invoice', bg:'#E6F1FB', c:'#0C447C', b:'#B5D4F4' },
-    { k:'CI', ad:'Commercial Invoice', bg:'#EAF3DE', c:'#27500A', b:'#C0DD97' },
-    { k:'PL', ad:'Packing List', bg:'#EEEDFE', c:'#3C3489', b:'#AFA9EC' },
-    { k:'TRFAT', ad:'Transit Fatura', bg:'#FAEEDA', c:'#633806', b:'#FAC775' },
-    { k:'SEVK', ad:'Sevk \u0130rsaliyesi', bg:'#F1EFE8', c:'#444441', b:'#D3D1C7' },
-    { k:'YUK', ad:'Y\u00fckleme Talimat\u0131', bg:'#F1EFE8', c:'#444441', b:'#D3D1C7' },
-    { k:'TTF', ad:'Ta\u015f\u0131ma Talimat\u0131', bg:'#FCEBEB', c:'#791F1F', b:'#F7C1C1' }
-  ];
-  var h = '<div class="moc" style="max-width:840px;padding:0;border-radius:12px;overflow:hidden">';
-  h += '<div style="background:#042C53;padding:0 14px;height:40px;display:flex;align-items:center;gap:10px">';
-  h += '<span style="font-size:12px;font-weight:500;color:#85B7EB">Belgeler</span>';
-  h += '<span style="font-size:9px;color:rgba(255,255,255,.35);font-family:monospace">' + _esc(d.dosyaNo||'') + '</span>';
-  h += '<div style="display:flex;border:0.5px solid rgba(255,255,255,.2);border-radius:3px;overflow:hidden;margin-left:8px">';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeFloatDil=\'en\';window._ihrBelgeFloatPanel(\'' + dosyaId + '\')" style="font-size:8px;padding:2px 8px;background:' + (dil==='en'?'#185FA5':'transparent') + ';color:' + (dil==='en'?'#fff':'rgba(255,255,255,.5)') + ';border:none;cursor:pointer;font-family:inherit">EN</button>';
-  h += '<button onclick="event.stopPropagation();window._ihrBelgeFloatDil=\'tr\';window._ihrBelgeFloatPanel(\'' + dosyaId + '\')" style="font-size:8px;padding:2px 8px;background:' + (dil==='tr'?'#185FA5':'transparent') + ';color:' + (dil==='tr'?'#fff':'rgba(255,255,255,.5)') + ';border:none;cursor:pointer;font-family:inherit;border-left:0.5px solid rgba(255,255,255,.2)">TR</button>';
-  h += '</div>';
-  h += '<div style="margin-left:auto;display:flex;gap:6px">';
-  h += '<button onclick="event.stopPropagation();window._ihrDetayTab(\'evraklar\',\'' + dosyaId + '\');document.getElementById(\'mo-belge-float\')?.remove()" style="font-size:8px;padding:2px 8px;border:0.5px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);border-radius:3px;cursor:pointer;font-family:inherit">Evraklar Sekmesi \u2192</button>';
-  h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-float\')?.remove()" style="font-size:14px;padding:0 8px;border:none;background:transparent;color:rgba(255,255,255,.4);cursor:pointer">\u00d7</button>';
-  h += '</div></div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);background:#fff">';
-  var mevcutTurler = {};
-  evraklar.forEach(function(e) { if (!mevcutTurler[e.tur] || e.createdAt > mevcutTurler[e.tur].createdAt) mevcutTurler[e.tur] = e; });
-  KARTLAR.forEach(function(kart, idx) {
-    var ev = mevcutTurler[kart.k];
-    var tarih = ev ? (ev.createdAt||'').slice(0,10) : '';
-    h += '<div style="padding:10px;border-right:' + (idx<6?'0.5px solid #D3D1C7':'none') + '">';
-    h += '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><div style="width:14px;height:14px;background:' + kart.bg + ';border:0.5px solid ' + kart.b + ';border-radius:2px;flex-shrink:0"></div><span style="font-size:11px;font-weight:600;color:' + kart.c + '">' + _esc(kart.k) + '</span></div>';
-    h += '<div style="font-size:7px;color:#888780;margin-bottom:6px;line-height:1.3">' + _esc(kart.ad) + '</div>';
-    h += '<div style="font-size:7px;margin-bottom:8px;color:' + (ev?'#27500A':'#B4B2A9') + '">' + (ev ? '\u2713 ' + tarih : '\u2014 Hen\u00fcz yok') + '</div>';
-    h += '<button onclick="event.stopPropagation();window._ihrBelgeUretDogrudan(\'' + dosyaId + '\',\'' + kart.k + '\',\'' + dil + '\');document.getElementById(\'mo-belge-float\')?.remove()" style="width:100%;font-size:7px;padding:2px 0;border:none;background:#185FA5;color:#fff;border-radius:2px;cursor:pointer;font-family:inherit;margin-bottom:3px">\u00dcret</button>';
-    h += '<div style="display:flex;gap:2px">';
-    h += '<button onclick="event.stopPropagation();' + (ev?'window._ihrPdfOnizle?.(\'' + dosyaId + '\',\'' + kart.k + '\',null)':'') + '" ' + (ev?'':'disabled') + ' style="flex:1;font-size:7px;padding:1px 0;border:0.5px solid #D3D1C7;background:transparent;color:' + (ev?'#444441':'#B4B2A9') + ';border-radius:2px;cursor:' + (ev?'pointer':'default') + ';font-family:inherit">G\u00f6r</button>';
-    h += '<button onclick="event.stopPropagation();" ' + (ev&&ev.dosya_url?'':'disabled') + ' style="flex:1;font-size:7px;padding:1px 0;border:0.5px solid #D3D1C7;background:transparent;color:' + (ev&&ev.dosya_url?'#444441':'#B4B2A9') + ';border-radius:2px;cursor:' + (ev&&ev.dosya_url?'pointer':'default') + ';font-family:inherit">\u2193</button>';
-    h += '</div></div>';
-  });
-  h += '</div>';
-  var hazirSay = Object.keys(mevcutTurler).filter(function(k){ return KARTLAR.find(function(x){return x.k===k;}); }).length;
-  h += '<div style="padding:8px 14px;background:#F8F8F6;border-top:0.5px solid #D3D1C7;display:flex;align-items:center;gap:8px">';
-  h += '<span style="font-size:7px;color:#888780">' + hazirSay + '/7 belge haz\u0131r</span>';
-  h += '<div style="margin-left:auto;display:flex;gap:4px">';
-  h += '<button onclick="event.stopPropagation();document.getElementById(\'mo-belge-float\')?.remove()" class="btn btns" style="font-size:7px;padding:2px 8px">Kapat</button>';
-  h += '</div></div></div>';
-  mo.innerHTML = h;
-  document.body.appendChild(mo);
-  setTimeout(function() { mo.classList.add('open'); }, 10);
-};
+/* IHR-OLUKOD-001: _ihrBelgeFloatPanel olu kod temizlendi — _ihrBelgePaneliAc kullaniliyor */
+window._ihrBelgeFloatPanel = function(dosyaId) { window._ihrBelgePaneliAc?.(dosyaId); };
 
 window._ihrKarRaporu = function(dosyaId) {
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
