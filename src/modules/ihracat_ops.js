@@ -207,7 +207,7 @@ function _ihrRenderContent() {
 /* ── EMİRLER — Split Pane Peek (IHR-PEEK-001) ───────────── */
 function _ihrRenderEmirler(el) {
   el.innerHTML = '<div style="display:flex;height:calc(100vh - 140px);min-height:500px;overflow:hidden">'
-    + '<div id="ihr-sol-liste" style="width:220px;flex-shrink:0;border-right:0.5px solid var(--b);overflow:hidden;display:none;flex-direction:column;background:var(--sf)"></div>'
+    + '<div id="ihr-sol-liste" style="width:0;flex-shrink:0;border-right:none;overflow:hidden;display:none;flex-direction:column;background:var(--sf)"></div>'
     + '<div id="ihr-sag-cockpit" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>'
     + '</div>';
   _ihrRenderSolListe();
@@ -256,8 +256,15 @@ function _ihrRenderSagCockpit() {
   if (!el) return;
 
   if (!_aktifPeekId) {
-    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:8px;color:var(--t2)"><div style="font-size:24px;opacity:.3">\u2190</div><div style="font-size:12px">Soldan bir dosya se\u00e7in</div></div>';
-    return;
+    var _solGizli = document.getElementById('ihr-sol-liste') && document.getElementById('ihr-sol-liste').style.display === 'none';
+    if (_solGizli) {
+      var _ilkId = _aktifDosyaId || (window._ihrAktifDosyaId) || (_loadD().filter(function(x){return !x.isDeleted;}).length > 0 ? _loadD().filter(function(x){return !x.isDeleted;})[0].id : null);
+      if (_ilkId) { _aktifPeekId = String(_ilkId); _aktifDosyaId = String(_ilkId); window._ihrAktifDosyaId = String(_ilkId); }
+    }
+    if (!_aktifPeekId) {
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:8px;color:var(--t2)"><div style="font-size:24px;opacity:.3">\ud83d\udcc2</div><div style="font-size:12px">Dosya se\u00e7ilmedi \u2014 De\u011fi\u015ftir butonunu kullan\u0131n</div></div>';
+      return;
+    }
   }
 
   var d = _loadD().filter(function(x) { return !x.isDeleted; }).find(function(x) { return String(x.id) === String(_aktifPeekId); });
@@ -1064,7 +1071,7 @@ function _ihrDetayRenderOzet(d) {
     h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + s.id + '\',\'' + d.id + '\')" style="padding:8px 14px;font-size:11px;cursor:pointer;border-bottom:2px solid ' + (aktifS ? 'var(--ac)' : 'transparent') + ';color:' + (aktifS ? 'var(--ac)' : 'var(--t2)') + ';font-weight:' + (aktifS ? '500' : '400') + '">' + s.l + '</div>';
   });
   h += '<div style="margin-left:auto;padding:0 12px;display:flex;gap:5px;align-items:center">';
-  h += '<button onclick="event.stopPropagation();window._ihrEvrakEkle?.(\'' + d.id + '\')" style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Upload</button>';
+  h += '<button onclick="event.stopPropagation();window._ihrImportDocs?.(\'' + d.id + '\')" title="Tedarik\u00e7i faturas\u0131ndan \u00fcr\u00fcnleri i\u00e7e aktar\u0131r" style="font-size:9px;padding:3px 8px;border:0.5px solid #B5D4F4;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">Import Docs</button>';
   h += '</div></div>';
 
   /* ═══ BOLUM 4 — 3 KOLON ANA ALAN ═════════════════════════ */
