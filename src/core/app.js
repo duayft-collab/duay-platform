@@ -3729,6 +3729,33 @@ function _applyRoleUI(user) {
     setTimeout(() => window.updatePusBadge?.(), 500);
   }
 
+  // GK-08: Yetkisiz menu ogelerini canModule ile gizle
+  if (user.role !== 'admin') {
+    document.querySelectorAll('.sidebar .nb').forEach(function(btn) {
+      var oc = btn.getAttribute('onclick') || '';
+      var m = oc.match(/nav\(['"]([^'"]+)['"]/);
+      if (!m) return;
+      var modId = m[1];
+      // dashboard, announce her zaman gorunur
+      if (modId === 'dashboard' || modId === 'announce') return;
+      btn.style.display = canModule(modId) ? '' : 'none';
+    });
+    // Bos kalan nsec basliklari gizle
+    document.querySelectorAll('.nsec-header').forEach(function(hdr) {
+      var next = hdr.nextElementSibling;
+      var anyVisible = false;
+      while (next && !next.classList.contains('nsec-header')) {
+        if (next.classList.contains('nb') && next.style.display !== 'none') anyVisible = true;
+        next = next.nextElementSibling;
+      }
+      hdr.style.display = anyVisible ? '' : 'none';
+    });
+  } else {
+    // Admin: tum butonlari goster
+    document.querySelectorAll('.sidebar .nb').forEach(function(btn) { btn.style.display = ''; });
+    document.querySelectorAll('.nsec-header').forEach(function(hdr) { hdr.style.display = ''; });
+  }
+
   console.info('[UI] Role applied:', user.role);
 }
 
