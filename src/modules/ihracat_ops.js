@@ -6710,6 +6710,7 @@ window._bmNeden = function(tur) {
 };
 
 window._ihrBelgePaneliAc = function(dosyaId) {
+  /* IHR-BELGE-PANEL-V2-001 */
   dosyaId = dosyaId || window._ihrAktifDosyaId || '';
   var tumDosyalar = _loadD().filter(function(x) { return !x.isDeleted; });
   var d = dosyaId ? tumDosyalar.find(function(x) { return String(x.id) === String(dosyaId); }) : tumDosyalar[0] || null;
@@ -6749,7 +6750,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   var dilSec = window._bmAktifDil || 'en';
   var yonSec = window._bmAktifYon || 'portrait';
 
-  var h = '<div class="moc" style="max-width:820px;padding:0;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:90vh">';
+  var h = '<div class="moc" style="max-width:980px;width:96vw;padding:0;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:92vh">';
 
   /* HEADER — dosya select */
   h += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;gap:8px;flex-shrink:0">';
@@ -6794,12 +6795,12 @@ window._ihrBelgePaneliAc = function(dosyaId) {
   h += '</div>';
 
   /* ANA BODY — 2 kolon grid */
-  h += '<div style="display:grid;grid-template-columns:1fr 196px;flex:1;overflow:hidden">';
+  h += '<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;flex:1;overflow:hidden">';
 
   /* SOL — BELGE LISTESI */
   h += '<div id="bm-liste" style="overflow-y:auto">';
   GRUPLAR.filter(function(g) { return !g.dep || g.dep === _depSec; }).forEach(function(g) {
-    h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:6px 14px 3px;background:var(--s2);text-transform:uppercase">' + g.ad + '</div>';
+    h += '<div style="font-size:8px;font-weight:700;letter-spacing:.8px;color:var(--t3);padding:5px 14px;background:var(--s2);text-transform:uppercase;position:sticky;top:0;z-index:2;border-bottom:0.5px solid var(--b)">' + g.ad + '</div>';
     g.turler.forEach(function(t) {
       var isParasut = t.k === 'PARASUT';
       var isDOCX2 = t.k.indexOf('DOCX-') === 0;
@@ -6807,7 +6808,7 @@ window._ihrBelgePaneliAc = function(dosyaId) {
       var mevcut = evraklar.find(function(e) { return e.tur === t.k; });
       var hata = _bmHataKontrol(t.k, d || {}, urunler, fw2);
       var durumPill = mevcut ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#EAF3DE;color:#27500A;font-weight:500">\u2713</span>' : hata ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#FCEBEB;color:#791F1F;font-weight:500">\u2717</span>' : '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:var(--s2);color:var(--t3)">\u2014</span>';
-      h += '<div data-bm-tur="' + t.k + '" style="display:flex;align-items:center;gap:6px;padding:5px 14px;border-bottom:0.5px solid var(--b)">';
+      h += '<div data-bm-tur="' + t.k + '" style="display:flex;align-items:center;gap:7px;padding:6px 14px;border-bottom:0.5px solid var(--b);min-height:36px">';
       if (!isDOCX2) h += '<input type="checkbox" id="bm-chk-' + t.k + '" onchange="event.stopPropagation();window._bmGuncelle()" style="width:14px;height:14px;cursor:pointer">';
       h += '<span style="font-size:9px;font-weight:600;color:#185FA5;background:#E6F1FB;padding:1px 6px;border-radius:3px;min-width:42px;text-align:center">' + t.k + '</span>';
       h += '<span style="flex:1;font-size:10px;color:var(--t)">' + (TUR_AD[t.k] || t.k) + '</span>';
