@@ -1995,6 +1995,7 @@ window._ihrUrunChkDegis = function() {
   var secili = document.querySelectorAll('.ihr-urun-chk:checked').length;
   var topluSilBtn = _g('ihr-urun-toplu-sil');
   if (topluSilBtn) { topluSilBtn.style.display = secili > 0 ? 'inline-flex' : 'none'; topluSilBtn.textContent = secili + ' Ürünü Sil'; }
+  var _onayBtn = document.getElementById('ihr-toplu-onayla-btn'); if (_onayBtn) { _onayBtn.textContent = secili > 0 ? 'Toplu Onayla (' + secili + ')' : 'Toplu Onayla'; _onayBtn.style.opacity = secili > 0 ? '1' : '.45'; _onayBtn.style.background = secili > 0 ? '#27500A' : 'transparent'; _onayBtn.style.color = secili > 0 ? '#fff' : '#27500A'; }
 };
 window._ihrUrunHepsiniSec = function() {
   var chkAll = _g('ihr-chk-all');
