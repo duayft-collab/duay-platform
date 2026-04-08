@@ -474,6 +474,7 @@ window._saV2SatisKaydet = function(alisId) {
   teklifler.unshift(kayit);
   window._saTeklifStore?.(teklifler);
   document.getElementById('sav2-satis-modal')?.remove();
+  window._saV2TakipGorevOlustur(kayit);
   window.toast?.('Satış teklifi kaydedildi: '+teklifId,'ok');
 };
 
@@ -1062,5 +1063,62 @@ window._saV2YoneticiGuncellemeReddet = function(id, aciklama) {
   window.toast?.('Güncelleme talebi reddedildi', 'warn');
   window.renderSatinAlmaV2?.();
 };
+
+/* ── SA-V2-TAKIP-001: Satış takip görev otomasyonu ─────────── */
+window._saV2TakipGorevOlustur = function(teklif) {
+  try {
+    if (typeof window._ppLoad !== 'function' || typeof window._ppStore !== 'function') return;
+    var takipTarih = new Date();
+    takipTarih.setDate(takipTarih.getDate() + 2);
+    var takipStr = takipTarih.toISOString().slice(0,10);
+    var gorev = {
+      id: window._saId?.() || Date.now()+Math.random().toString(36).slice(2,6),
+      baslik: 'Takip: '+_saEsc(teklif.musteriAd||'Müşteri')+' — '+_saEsc(teklif.teklifId||''),
+      aciklama: 'Satış teklifi gönderildi. Müşteri yanıtı takip edilmeli. Teklif ID: '+(teklif.teklifId||''),
+      departman: 'Satış',
+      oncelik: 'yuksek',
+      durum: 'plan',
+      bitTarih: takipStr,
+      basT: takipStr,
+      job_id: teklif.teklifId||'',
+      _ppSource: 'pro',
+      _kaynak: 'satis_takip',
+      _teklifId: teklif.teklifId||'',
+      _musteriAd: teklif.musteriAd||'',
+      _tekrarGun: 3,
+      createdAt: window._saNow?.(),
+      updatedAt: window._saNow?.()
+    };
+    var tasks = window._ppLoad();
+    tasks.unshift(gorev);
+    window._ppStore(tasks);
+    console.log('[SA-V2] Takip görevi oluşturuldu:', gorev.baslik);
+  } catch(e) { console.error('[SA-V2] Takip görevi hatası:', e); }
+};
+
+window._saV2TakipKontrol = function() {
+  try {
+    if (typeof window._ppLoad !== 'function') return;
+    var tasks = window._ppLoad();
+    var bugun = new Date().toISOString().slice(0,10);
+    var guncellendi = false;
+    tasks.forEach(function(t) {
+      if (t._kaynak !== 'satis_takip' || t.durum === 'tamamlandi') return;
+      if (t.bitTarih && t.bitTarih <= bugun) {
+        var yeniTarih = new Date();
+        yeniTarih.setDate(yeniTarih.getDate() + (t._tekrarGun||3));
+        t.bitTarih = yeniTarih.toISOString().slice(0,10);
+        t.baslik = 'Takip ('+(parseInt(t._tekrarSay||0)+1)+'. hatırlatma): '+(t._musteriAd||'Müşteri');
+        t._tekrarSay = (parseInt(t._tekrarSay||0)+1);
+        t.updatedAt = window._saNow?.();
+        guncellendi = true;
+        window.toast?.('Takip hatırlatması: '+(t._musteriAd||'Müşteri'),'info');
+      }
+    });
+    if (guncellendi) window._ppStore(tasks);
+  } catch(e) { console.error('[SA-V2] Takip kontrol hatası:', e); }
+};
+
+setTimeout(function(){ window._saV2TakipKontrol?.(); }, 3000);
 
 console.log('[SAV2-RENDER] v2.0 yüklendi');
