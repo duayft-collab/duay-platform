@@ -1207,7 +1207,13 @@ window._ppTakvimPanelRender = function(body) {
   try { var fEl = document.getElementById('pp-tak-filtre'); if (fEl) filtre = fEl.value; } catch(e) {}
   var liste = filtre ? olaylar.filter(function(o) { return o.kategori === filtre; }) : olaylar;
   var h = '<div style="display:flex;height:100%;flex-direction:column;flex:1">';
+  var sekme = window._ppTakSekme || 'etkinlik';
   h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
+  h += '<div style="display:flex;gap:3px;margin-right:8px">';
+  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'etkinlik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='etkinlik'?'var(--t)':'transparent')+';color:'+(sekme==='etkinlik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Etkinlikler</button>';
+  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'odeme\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='odeme'?'var(--t)':'transparent')+';color:'+(sekme==='odeme'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Ödemeler</button>';
+  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'abonelik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='abonelik'?'var(--t)':'transparent')+';color:'+(sekme==='abonelik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Abonelikler</button>';
+  h += '</div>';
   h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
   h += '<select id="pp-tak-filtre" onchange="event.stopPropagation();window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t);font-family:inherit">';
   h += '<option value="">Tüm Kategoriler</option>';
@@ -1215,6 +1221,8 @@ window._ppTakvimPanelRender = function(body) {
   h += '</select>';
   h += '<span style="font-size:11px;color:var(--t3);margin-left:auto">' + liste.length + ' etkinlik</span>';
   h += '</div>';
+  if (sekme === 'odeme') { window._ppOdemePanelRender(body, h); return; }
+  if (sekme === 'abonelik') { window._ppAbonelikPanelRender(body, h); return; }
   h += '<div style="flex:1;overflow-y:auto">';
   if (!liste.length) {
     h += '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Etkinlik yok</div>';
@@ -1409,3 +1417,127 @@ window._ppHayatBaslat = function() {
 
 window._ppHayatLoad = _ppHayatLoad;
 setTimeout(function() { window._ppHayatBaslat?.(); }, 1200);
+
+/* ── Rutin Ödemeler + Abonelik Takibi ──────────────────────── */
+var PP_ODEME_KEY = 'ak_pp_odemeler_v1';
+var PP_ABONELIK_KEY = 'ak_pp_abonelik_v1';
+
+function _ppOdemeLoad(){ try{ var r=localStorage.getItem(PP_ODEME_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+function _ppOdemeStore(d){ try{ localStorage.setItem(PP_ODEME_KEY,JSON.stringify(d)); }catch(e){} }
+function _ppAbonelikLoad(){ try{ var r=localStorage.getItem(PP_ABONELIK_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+function _ppAbonelikStore(d){ try{ localStorage.setItem(PP_ABONELIK_KEY,JSON.stringify(d)); }catch(e){} }
+
+window._ppOdemeBaslat = function() {
+  if (_ppOdemeLoad().length > 0) return;
+  var odemeler = [
+    { id:'OD-001', baslik:'Ofis Kirası', kategori:'Kira', tutar:'', para:'TRY', periyot:'Aylık', periyotDetay:'Her ayın 1. günü', sorumlu:'Muhasebe', oncelik:'Kritik', hatirlatmaGun:5, durum:'active', createdAt:_ppNow() },
+    { id:'OD-002', baslik:'Elektrik Faturası', kategori:'Fatura', tutar:'', para:'TRY', periyot:'Aylık', periyotDetay:'Her ayın 15. günü', sorumlu:'Muhasebe', oncelik:'Normal', hatirlatmaGun:3, durum:'active', createdAt:_ppNow() },
+    { id:'OD-003', baslik:'İnternet / Telefon', kategori:'Fatura', tutar:'', para:'TRY', periyot:'Aylık', periyotDetay:'Her ayın 10. günü', sorumlu:'Muhasebe', oncelik:'Normal', hatirlatmaGun:3, durum:'active', createdAt:_ppNow() },
+    { id:'OD-004', baslik:'Muhasebe / Mali Müşavir', kategori:'Hizmet', tutar:'', para:'TRY', periyot:'Aylık', periyotDetay:'Her ayın son iş günü', sorumlu:'Yönetim', oncelik:'Normal', hatirlatmaGun:5, durum:'active', createdAt:_ppNow() }
+  ];
+  odemeler.forEach(function(o){ o.sonrakiCalisma = window._ppTakvimSonrakiHesapla?.(o)||null; });
+  _ppOdemeStore(odemeler);
+};
+
+window._ppAbonelikBaslat = function() {
+  if (_ppAbonelikLoad().length > 0) return;
+  var abonelikler = [
+    { id:'AB-001', baslik:'Google Workspace', kategori:'SaaS', tutar:'', para:'USD', periyot:'Aylık', yenileme:'', hatirlatmaGun:14, durum:'active', createdAt:_ppNow() },
+    { id:'AB-002', baslik:'GitHub', kategori:'SaaS', tutar:'', para:'USD', periyot:'Aylık', yenileme:'', hatirlatmaGun:14, durum:'active', createdAt:_ppNow() },
+    { id:'AB-003', baslik:'Domain / Hosting', kategori:'Altyapı', tutar:'', para:'USD', periyot:'Yıllık', yenileme:'', hatirlatmaGun:30, durum:'active', createdAt:_ppNow() }
+  ];
+  _ppAbonelikStore(abonelikler);
+};
+
+setTimeout(function(){ window._ppOdemeBaslat?.(); window._ppAbonelikBaslat?.(); }, 1500);
+
+window._ppOdemePanelRender = function(body, h) {
+  var odemeler = _ppOdemeLoad().filter(function(o){ return !o.isDeleted; });
+  var bugun = _ppToday();
+  h += '<div style="flex:1;overflow-y:auto">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="font-size:9px;color:var(--t3)">'+odemeler.length+' rutin ödeme</div>';
+  h += '<button onclick="event.stopPropagation();window._ppOdemeYeniAc()" style="font-size:10px;padding:3px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">+ Ekle</button>';
+  h += '</div>';
+  odemeler.forEach(function(o) {
+    var sonraki = o.sonrakiCalisma || (window._ppTakvimSonrakiHesapla?.(o)) || '—';
+    var kalan = sonraki&&sonraki!=='—' ? Math.ceil((new Date(sonraki)-new Date(bugun))/86400000) : null;
+    var kRenk = kalan===0?'#A32D2D':kalan!==null&&kalan<=5?'#854F0B':'#185FA5';
+    var kBg = kalan===0?'#FCEBEB':kalan!==null&&kalan<=5?'#FAEEDA':'#E6F1FB';
+    h += '<div style="display:grid;grid-template-columns:120px 1fr 80px 90px 70px 60px;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--b)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+    h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:#E6F1FB;color:#185FA5;font-weight:500">'+_ppEsc(o.kategori||'')+'</span>';
+    h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">'+_ppEsc(o.baslik)+'</div><div style="font-size:9px;color:var(--t3)">'+_ppEsc(o.periyotDetay||'')+'</div></div>';
+    h += '<div style="font-size:9px;color:var(--t2)">'+_ppEsc(o.tutar?(o.tutar+' '+o.para):'—')+'</div>';
+    h += '<div style="font-size:9px;color:var(--t3)">'+sonraki+'</div>';
+    h += kalan!==null?'<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:'+kBg+';color:'+kRenk+';font-weight:500">'+(kalan===0?'Bugün':kalan+' gün')+'</span>':'<span></span>';
+    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();window._ppOdemeSil(\''+o.id+'\')" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  body.innerHTML = h;
+};
+
+window._ppOdemeYeniAc = function() {
+  var baslik=prompt('Ödeme adı:'); if(!baslik||!baslik.trim()) return;
+  var kategori=prompt('Kategori (Kira/Fatura/Hizmet/Vergi):')||'Fatura';
+  var tutar=prompt('Tutar (opsiyonel):')||'';
+  var periyotDetay=prompt('Ne zaman? (örn: Her ayın 15. günü):')||'';
+  var yeni={id:'OD-'+Date.now(),baslik:baslik.trim(),kategori:kategori,tutar:tutar,para:'TRY',periyot:'Aylık',periyotDetay:periyotDetay,sorumlu:'',oncelik:'Normal',hatirlatmaGun:3,durum:'active',createdAt:_ppNow()};
+  yeni.sonrakiCalisma=window._ppTakvimSonrakiHesapla?.(yeni)||null;
+  var liste=_ppOdemeLoad(); liste.unshift(yeni); _ppOdemeStore(liste);
+  window.toast?.('Ödeme eklendi','ok'); window._ppModRender();
+};
+
+window._ppOdemeSil = function(id) {
+  if(!confirm('Bu ödemeyi silmek istediğinizden emin misiniz?')) return;
+  var liste=_ppOdemeLoad(); var i=liste.findIndex(function(x){return x.id===id;}); if(i===-1) return;
+  liste[i].isDeleted=true; liste[i].deletedAt=_ppNow(); _ppOdemeStore(liste);
+  window.toast?.('Ödeme silindi','ok'); window._ppModRender();
+};
+
+window._ppAbonelikPanelRender = function(body, h) {
+  var abonelikler = _ppAbonelikLoad().filter(function(a){ return !a.isDeleted; });
+  var bugun = _ppToday();
+  h += '<div style="flex:1;overflow-y:auto">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:0.5px solid var(--b)">';
+  h += '<div style="font-size:9px;color:var(--t3)">'+abonelikler.length+' abonelik</div>';
+  h += '<button onclick="event.stopPropagation();window._ppAbonelikYeniAc()" style="font-size:10px;padding:3px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">+ Ekle</button>';
+  h += '</div>';
+  abonelikler.forEach(function(a) {
+    var yenileme = a.yenileme || '—';
+    var kalan = yenileme&&yenileme!=='—' ? Math.ceil((new Date(yenileme)-new Date(bugun))/86400000) : null;
+    var kRenk = kalan!==null&&kalan<=30?'#A32D2D':'#185FA5';
+    var kBg = kalan!==null&&kalan<=30?'#FCEBEB':'#E6F1FB';
+    h += '<div style="display:grid;grid-template-columns:100px 1fr 80px 100px 80px 60px;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--b)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+    h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:#EEEDFE;color:#3C3489;font-weight:500">'+_ppEsc(a.kategori||'')+'</span>';
+    h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">'+_ppEsc(a.baslik)+'</div><div style="font-size:9px;color:var(--t3)">'+_ppEsc(a.periyot||'')+'</div></div>';
+    h += '<div style="font-size:9px;color:var(--t2)">'+_ppEsc(a.tutar?(a.tutar+' '+a.para):'—')+'</div>';
+    h += '<div style="font-size:9px;color:var(--t3)">'+yenileme+'</div>';
+    h += kalan!==null?'<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:'+kBg+';color:'+kRenk+';font-weight:500">'+kalan+' gün</span>':'<span></span>';
+    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();window._ppAbonelikSil(\''+a.id+'\')" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  body.innerHTML = h;
+};
+
+window._ppAbonelikYeniAc = function() {
+  var baslik=prompt('Abonelik adı:'); if(!baslik||!baslik.trim()) return;
+  var kategori=prompt('Kategori (SaaS/Altyapı/Lisans):')||'SaaS';
+  var tutar=prompt('Aylık tutar (opsiyonel):')||'';
+  var para=prompt('Para birimi (TRY/USD/EUR):')||'USD';
+  var yenileme=prompt('Yenileme tarihi (YYYY-MM-DD):')||'';
+  var yeni={id:'AB-'+Date.now(),baslik:baslik.trim(),kategori:kategori,tutar:tutar,para:para,periyot:'Aylık',yenileme:yenileme,hatirlatmaGun:14,durum:'active',createdAt:_ppNow()};
+  var liste=_ppAbonelikLoad(); liste.unshift(yeni); _ppAbonelikStore(liste);
+  window.toast?.('Abonelik eklendi','ok'); window._ppModRender();
+};
+
+window._ppAbonelikSil = function(id) {
+  if(!confirm('Bu aboneliği silmek istediğinizden emin misiniz?')) return;
+  var liste=_ppAbonelikLoad(); var i=liste.findIndex(function(x){return x.id===id;}); if(i===-1) return;
+  liste[i].isDeleted=true; liste[i].deletedAt=_ppNow(); _ppAbonelikStore(liste);
+  window.toast?.('Abonelik silindi','ok'); window._ppModRender();
+};
+
+window._ppOdemeLoad = _ppOdemeLoad;
+window._ppAbonelikLoad = _ppAbonelikLoad;
