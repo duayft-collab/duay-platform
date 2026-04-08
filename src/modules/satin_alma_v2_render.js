@@ -446,6 +446,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="background:var(--s2);border-radius:6px;padding:12px 14px;border:0.5px solid var(--b);margin-bottom:12px">';
   ic += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px" id="st-ozet-urun-say">0 ürün</div>';
   ic += '<div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px"><span style="color:var(--t3)">Toplam satış tutarı</span><span style="font-weight:500" id="st-ozet-toplam-satis">₺0.00</span></div>';
+  ic += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px"><span style="color:var(--t3)">EUR alternatif</span><span style="color:#185FA5" id="st-ozet-eur">—</span></div>';
   ic += '<div style="height:0.5px;background:var(--b);margin:6px 0"></div>';
   ic += '<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--t3)">Toplam kâr</span><span style="font-weight:500;color:#0F6E56" id="st-ozet-toplam-kar">₺0.00</span></div>';
   ic += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px"><span style="color:var(--t3)">Ort. marj</span><span style="color:#0F6E56" id="st-ozet-ort-marj">%0</span></div>';
@@ -483,6 +484,7 @@ window._saV2SatisKaydet = function(alisId) {
     musteriKod:document.getElementById('st-musteri-kod')?.value||'',
     urunler:urunler,
     toplamSatis:toplamSatis.toFixed(2),
+    toplamEUR: (parseFloat(toplamSatis) / ((window._saKur||{}).EUR||51.70) * ((window._saKur||{}).USD||44.55)).toFixed(2),
     toplamKar:toplamKar,
     ortMarj:ortMarj,
     teslim:document.getElementById('st-teslim')?.value||'',
@@ -810,10 +812,14 @@ window._saV2SatisOzetGuncelle = function() {
   });
   var toplamKar = toplamSatis - toplamAlis;
   var ortMarj = toplamAlis>0 ? ((toplamKar/toplamAlis)*100).toFixed(1) : 0;
+  var eurKur = (window._saKur||{}).EUR || 51.70;
+  var usdKur = (window._saKur||{}).USD || 44.55;
+  var toplamEUR = (toplamSatis / eurKur * usdKur).toFixed(2);
   var el1 = document.getElementById('st-ozet-toplam-satis'); if(el1) el1.textContent = '₺'+toplamSatis.toFixed(2);
   var el2 = document.getElementById('st-ozet-toplam-kar'); if(el2) el2.textContent = '₺'+toplamKar.toFixed(2);
   var el3 = document.getElementById('st-ozet-ort-marj'); if(el3) el3.textContent = '%'+ortMarj;
   var el4 = document.getElementById('st-ozet-urun-say'); if(el4) el4.textContent = window._saV2SatisUrunler.length+' ürün · '+toplamMiktar+' adet';
+  var el5 = document.getElementById('st-ozet-eur'); if(el5) el5.textContent = '€'+toplamEUR;
 };
 
 window._saV2UrunSecModal = function() {
