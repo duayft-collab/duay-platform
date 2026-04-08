@@ -113,6 +113,42 @@ window.renderSatinAlmaV2 = function() {
     h += '</div>';
     h += '</div>';
     h += '</div>';
+    /* SA-V2-SICAKLIK-001: Müşteri Sıcaklık Skoru */
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin-top:14px">';
+    h += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:500;color:var(--t)">Müşteri Sıcaklık Skoru</div>';
+    var musteriMap = {};
+    tumListe.forEach(function(t) {
+      var mk = t.musteriKod || t.musteriAd || '—';
+      if (!musteriMap[mk]) musteriMap[mk] = { ad: t.musteriAd || mk, kod: mk, teklifSay: 0, kabulSay: 0, sonTeklif: null };
+      musteriMap[mk].teklifSay++;
+      if (t.durum === 'onaylandi') musteriMap[mk].kabulSay++;
+      if (!musteriMap[mk].sonTeklif || (t.createdAt || '') > musteriMap[mk].sonTeklif) musteriMap[mk].sonTeklif = t.createdAt || '';
+    });
+    var bugunDt = new Date();
+    Object.values(musteriMap).forEach(function(m) {
+      var gunFark = m.sonTeklif ? Math.floor((bugunDt - new Date(m.sonTeklif)) / (1000 * 60 * 60 * 24)) : 999;
+      var kabulOran = m.teklifSay > 0 ? Math.round(m.kabulSay / m.teklifSay * 100) : 0;
+      var skorRenk = '#A32D2D', skorBg = '#FCEBEB', skorLbl = 'Soğuk';
+      if (gunFark <= 7 && kabulOran >= 50) { skorRenk = '#0F6E56'; skorBg = '#E1F5EE'; skorLbl = 'Sıcak'; }
+      else if (gunFark <= 14 || kabulOran >= 30) { skorRenk = '#854F0B'; skorBg = '#FAEEDA'; skorLbl = 'Ilık'; }
+      m.skorRenk = skorRenk; m.skorBg = skorBg; m.skorLbl = skorLbl; m.gunFark = gunFark; m.kabulOran = kabulOran;
+    });
+    var takipListe = Object.values(musteriMap).filter(function(m) { return m.gunFark >= 2 && m.gunFark <= 7; });
+    if (takipListe.length) {
+      h += '<div style="padding:8px 14px;background:#FAEEDA;border-bottom:0.5px solid var(--b);font-size:10px;color:#633806;font-weight:500">Bu hafta takip edilmesi gerekenler: ' + takipListe.length + ' müşteri</div>';
+    }
+    if (!Object.keys(musteriMap).length) {
+      h += '<div style="padding:20px;text-align:center;font-size:11px;color:var(--t3)">Henüz müşteri verisi yok</div>';
+    }
+    Object.values(musteriMap).sort(function(a, b) { return a.gunFark - b.gunFark; }).forEach(function(m) {
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b)">';
+      h += '<div style="width:8px;height:8px;border-radius:50%;background:' + m.skorRenk + ';flex-shrink:0"></div>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _saEsc(m.ad) + '</div>';
+      h += '<div style="font-size:9px;color:var(--t3)">Kod: ' + _saEsc(m.kod) + ' · ' + m.teklifSay + ' teklif · %' + m.kabulOran + ' kabul · Son: ' + (m.gunFark >= 999 ? '—' : m.gunFark + ' gün önce') + '</div></div>';
+      h += '<span style="font-size:9px;padding:3px 8px;border-radius:10px;background:' + m.skorBg + ';color:' + m.skorRenk + ';font-weight:500">' + m.skorLbl + '</span>';
+      h += '</div>';
+    });
+    h += '</div>';
     panel.innerHTML = h;
     return;
   }
