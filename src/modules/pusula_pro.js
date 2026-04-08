@@ -513,25 +513,43 @@ window._ppYeniGorev = function() {
 };
 
 window._ppAltGorevler = [];
-window._ppAltGorevEkle = function() {
-  var inp = document.getElementById('ppf-altYeni'); if(!inp||!inp.value.trim()) return;
-  window._ppAltGorevler.push({id:_ppId(),baslik:inp.value.trim(),tamamlandi:false});
-  inp.value='';
-  var list = document.getElementById('ppf-altGorevList'); if(!list) return;
-  list.innerHTML = window._ppAltGorevler.map(function(ag,i){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--b)">'
-      +'<input type="checkbox" style="width:12px;height:12px">'
-      +'<span style="font-size:12px;flex:1;color:var(--t)">'+_ppEsc(ag.baslik)+'</span>'
-      +'<button onclick="event.stopPropagation();window._ppAltGorevSil('+i+')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:14px;line-height:1;padding:0">×</button>'
-      +'</div>';
+window._ppAltGorevRender = function() {
+  var list = document.getElementById('ppf-altGorevList'); if (!list) return;
+  list.innerHTML = window._ppAltGorevler.map(function(ag, i) {
+    var sorVal = _ppEsc(ag.sorumlu || '');
+    var bitVal = _ppEsc(ag.bitTarih || '');
+    var sureVal = _ppEsc(ag.sure || '');
+    return '<div>'
+      + '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--b)">'
+      + '<input type="checkbox" style="width:12px;height:12px">'
+      + '<div id="pp-ag-expand-' + i + '" onclick="event.stopPropagation();window._ppAltGorevToggle(' + i + ')" style="width:16px;height:16px;border:0.5px solid var(--b);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--t3);background:var(--sf);flex-shrink:0">+</div>'
+      + '<span style="font-size:12px;flex:1;color:var(--t)">' + _ppEsc(ag.baslik) + '</span>'
+      + '<button onclick="event.stopPropagation();window._ppAltGorevSil(' + i + ')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:14px;line-height:1;padding:0">×</button>'
+      + '</div>'
+      + '<div id="pp-ag-detail-' + i + '" style="display:none;background:var(--sf);border-bottom:0.5px solid var(--b);padding:10px 14px">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">'
+      + '<div><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:500">SORUMLU</div>'
+      + '<input id="pp-ag-sor-' + i + '" value="' + sorVal + '" placeholder="Kullanıcı adı" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+      + '<div><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:500">BİTİŞ TARİHİ</div>'
+      + '<input type="date" id="pp-ag-bit-' + i + '" value="' + bitVal + '" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+      + '<div><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:500">SÜRE</div>'
+      + '<input id="pp-ag-sure-' + i + '" value="' + sureVal + '" placeholder="30 dk" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+      + '</div>'
+      + '<button onclick="event.stopPropagation();window._ppAltGorevDetayKaydet(' + i + ')" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Kaydet</button>'
+      + '</div>'
+      + '</div>';
   }).join('');
 };
+
+window._ppAltGorevEkle = function() {
+  var inp = document.getElementById('ppf-altYeni'); if (!inp || !inp.value.trim()) return;
+  window._ppAltGorevler.push({ id: _ppId(), baslik: inp.value.trim(), tamamlandi: false, sorumlu: '', bitTarih: '', sure: '' });
+  inp.value = '';
+  window._ppAltGorevRender();
+};
 window._ppAltGorevSil = function(i) {
-  window._ppAltGorevler.splice(i,1);
-  var list = document.getElementById('ppf-altGorevList');
-  if(list) list.innerHTML = window._ppAltGorevler.map(function(ag,j){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--b)"><input type="checkbox" style="width:12px;height:12px"><span style="font-size:12px;flex:1;color:var(--t)">'+_ppEsc(ag.baslik)+'</span><button onclick="event.stopPropagation();window._ppAltGorevSil('+j+')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:14px;line-height:1;padding:0">×</button></div>';
-  }).join('');
+  window._ppAltGorevler.splice(i, 1);
+  window._ppAltGorevRender();
 };
 
 window._ppGorevKaydet = function() {
@@ -1278,4 +1296,26 @@ window._ppRevYukle = function() {
       var h = document.getElementById('pp-rev-hedef'); if (h) h.innerHTML = bugun.hedef || '';
     }
   } catch(e) {}
+};
+
+/* ── PP-ALT-GOREV-001: Alt Görev Detay Toggle ──────────────── */
+window._ppAltGorevToggle = function(i) {
+  var detail = document.getElementById('pp-ag-detail-' + i);
+  var expand = document.getElementById('pp-ag-expand-' + i);
+  if (!detail) return;
+  var acik = detail.style.display !== 'none';
+  detail.style.display = acik ? 'none' : 'block';
+  if (expand) expand.textContent = acik ? '+' : '−';
+};
+
+window._ppAltGorevDetayKaydet = function(i) {
+  var ag = window._ppAltGorevler[i]; if (!ag) return;
+  var sor = document.getElementById('pp-ag-sor-' + i);
+  var bit = document.getElementById('pp-ag-bit-' + i);
+  var sure = document.getElementById('pp-ag-sure-' + i);
+  if (sor) ag.sorumlu = sor.value;
+  if (bit) ag.bitTarih = bit.value;
+  if (sure) ag.sure = sure.value;
+  window._ppAltGorevToggle(i);
+  window.toast?.('Alt görev güncellendi', 'ok');
 };
