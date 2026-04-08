@@ -86,6 +86,7 @@ window._ppRender = function() {
     + '<div id="pp-body" style="flex:1;overflow:hidden;display:flex"></div>'
     + '</div>';
   window._ppSetMod('akis');
+  setTimeout(function() { window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
 };
 
 window._ppSetMod = function(mod) {
@@ -104,6 +105,57 @@ window._ppModRender = function() {
   var body = document.getElementById('pp-body');
   if (!body) return;
   var mod = window._ppAktifMod || 'akis';
+  if (mod === 'calisma') {
+    var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
+    var kritik = tasks.filter(function(t) { return t.oncelik === 'kritik'; });
+    var devam  = tasks.filter(function(t) { return t.durum === 'devam' && t.oncelik !== 'kritik'; });
+    var plan   = tasks.filter(function(t) { return (!t.durum || t.durum === 'plan') && t.oncelik !== 'kritik'; });
+    var _grup = function(lbl, cls, arr) {
+      if (!arr.length) return '';
+      var h = '<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--s2);border-bottom:0.5px solid var(--b);position:sticky;top:0">';
+      h += '<span style="font-size:8px;padding:2px 7px;border-radius:3px;font-weight:500;' + cls + '">' + lbl + '</span>';
+      h += '<span style="font-size:8px;color:var(--t3)">' + arr.length + ' görev</span></div>';
+      arr.forEach(function(t) {
+        var pr = PP_PRIORITIES[t.oncelik || 'normal'];
+        h += '<div onclick="event.stopPropagation();window._ppTaskAc(\'' + t.id + '\')" style="display:grid;grid-template-columns:26px 1fr 90px 80px 70px;align-items:center;padding:7px 10px 7px 14px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+        h += '<input type="checkbox" onclick="event.stopPropagation();window._ppTamamla(\'' + t.id + '\')" style="width:13px;height:13px;cursor:pointer">';
+        h += '<div><div style="font-size:11px;color:var(--t)">' + _ppEsc(t.baslik || t.title || '') + '</div>';
+        if (t.altGorevSay) h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Alt görev ' + t.altGorevTam + '/' + t.altGorevSay + '</div>';
+        h += '</div>';
+        h += '<div style="font-size:9px;color:var(--t2)">' + _ppEsc(t.sorumlu || '—') + '</div>';
+        h += '<div style="font-size:9px;color:var(--t3)">' + _ppEsc(t.bitTarih || '—') + '</div>';
+        h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + pr.bg + ';color:' + pr.c + '">' + pr.l + '</span>';
+        h += '</div>';
+      });
+      return h;
+    };
+    body.innerHTML = ''
+      + '<div style="width:180px;border-right:0.5px solid var(--b);padding:8px 0;overflow-y:auto;flex-shrink:0">'
+      + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.08em;padding:8px 14px 3px">ÇALIŞMA ALANI</div>'
+      + '<div onclick="event.stopPropagation();window._ppSidebarSec(\'tum\')" style="display:flex;align-items:center;gap:7px;padding:5px 14px;cursor:pointer;font-size:11px;background:var(--s2);font-weight:500"><div style="width:5px;height:5px;border-radius:50%;background:#E24B4A"></div>Tüm Görevler<span style="margin-left:auto;font-size:8px;padding:1px 5px;border-radius:6px;background:var(--b)">' + tasks.length + '</span></div>'
+      + '<div onclick="event.stopPropagation();window._ppSidebarSec(\'kritik\')" style="display:flex;align-items:center;gap:7px;padding:5px 14px;cursor:pointer;font-size:11px"><div style="width:5px;height:5px;border-radius:50%;background:#E24B4A"></div>Kritik<span style="margin-left:auto;font-size:8px;padding:1px 5px;border-radius:6px;background:var(--s2)">' + kritik.length + '</span></div>'
+      + '<div onclick="event.stopPropagation();window._ppSidebarSec(\'bugun\')" style="display:flex;align-items:center;gap:7px;padding:5px 14px;cursor:pointer;font-size:11px"><div style="width:5px;height:5px;border-radius:50%;background:#EF9F27"></div>Bugün</div>'
+      + '</div>'
+      + '<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">'
+      + '<div style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0">'
+      + '<button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Görev</button>'
+      + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:11px;padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
+      + '</div>'
+      + '<div style="flex:1;overflow-y:auto">'
+      + _grup('KRİTİK', 'background:#FCEBEB;color:#A32D2D', kritik)
+      + _grup('DEVAM EDİYOR', 'background:#E1F5EE;color:#0F6E56', devam)
+      + _grup('PLANLANDI', 'background:#E6F1FB;color:#185FA5', plan)
+      + (tasks.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--t3);font-size:13px">Henüz görev yok<br><br><button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:11px;padding:6px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">+ İlk Görevi Ekle</button></div>' : '')
+      + '</div>'
+      + '<div style="border-top:0.5px solid var(--b);padding:8px 14px;display:flex;gap:6px;flex-shrink:0">'
+      + '<input id="pp-quick" placeholder="Hızlı görev ekle — Enter..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ppHizliEkle(this)" style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;font-family:inherit;color:var(--t)">'
+      + '<button onclick="event.stopPropagation();var i=document.getElementById(\'pp-quick\');window._ppHizliEkle(i)" style="font-size:10px;padding:6px 12px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">+ Ekle</button>'
+      + '</div></div>'
+      + '<div style="width:240px;border-left:0.5px solid var(--b);padding:12px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:10px">'
+      + window._ppSagPanel()
+      + '</div>';
+    return;
+  }
   if (mod === 'odak') {
     body.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;background:var(--sf)">'
       + '<div style="font-size:11px;color:var(--t3);letter-spacing:.1em;margin-bottom:16px">ODAK MODU</div>'
@@ -131,3 +183,142 @@ window._ppExport = window._ppExport;
 window.renderPusulaPro = window._ppRender;
 window.PusulaProLoaded = true;
 console.log('[PUSULA-PRO] v1.0 yüklendi | Export: window._ppExport()');
+
+/* ── Frog Sistemi ───────────────────────────────────────────── */
+window._ppFrogBelirle = function() {
+  var tasks = _ppLoad().filter(function(t){ return !t.isDeleted && t.durum !== 'tamamlandi'; });
+  if (!tasks.length) return null;
+  var kritik = tasks.filter(function(t){ return t.oncelik==='kritik'; });
+  var yuksek = tasks.filter(function(t){ return t.oncelik==='yuksek'; });
+  var frog = kritik[0] || yuksek[0] || tasks[0];
+  window._ppAktifFrog = frog;
+  var el = document.getElementById('pp-frog-txt');
+  if (el && frog) el.textContent = frog.baslik || frog.title || '';
+  return frog;
+};
+
+window._ppFrogBasla = function() {
+  var frog = window._ppAktifFrog || window._ppFrogBelirle();
+  if (!frog) { window.toast?.('Önce görev ekle', 'warn'); return; }
+  window._ppSetMod('odak');
+  var el = document.getElementById('pp-odak-frog');
+  if (el) el.textContent = frog.baslik || frog.title || '';
+  setTimeout(function(){ window._ppDwBasla?.(); }, 300);
+};
+
+/* ── Deep Work Sayacı ──────────────────────────────────────── */
+var _ppDwInterval = null;
+var _ppDwSaniye   = 0;
+var _ppDwHedef    = 90 * 60;
+
+window._ppDwBasla = function() {
+  if (_ppDwInterval) { clearInterval(_ppDwInterval); _ppDwInterval = null; window.toast?.('Durakladı','info'); return; }
+  window.toast?.('Deep Work başladı — 90 dk','ok');
+  _ppDwInterval = setInterval(function() {
+    _ppDwSaniye++;
+    var pct = Math.min((_ppDwSaniye/_ppDwHedef)*100, 100);
+    var s = _ppDwSaniye;
+    var hh = Math.floor(s/3600);
+    var mm = Math.floor((s%3600)/60);
+    var ss = s%60;
+    var str = (hh?String(hh).padStart(2,'0')+':':'') + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+    var t1 = document.getElementById('pp-dw-timer');
+    var t2 = document.getElementById('pp-odak-timer');
+    var b1 = document.getElementById('pp-dw-bar');
+    if (t1) t1.textContent = str;
+    if (t2) t2.textContent = str;
+    if (b1) b1.style.width = pct.toFixed(1) + '%';
+    if (_ppDwSaniye >= _ppDwHedef) {
+      clearInterval(_ppDwInterval); _ppDwInterval = null;
+      window.toast?.('Deep Work tamamlandı! 90 dk odak +200 puan','ok');
+      window._ppSkorEkle(200);
+    }
+  }, 1000);
+};
+
+/* ── Skor Sistemi ───────────────────────────────────────────── */
+var _ppSkorKey = 'ak_pp_skor_v1';
+
+window._ppSkorOku = function() {
+  try { return JSON.parse(localStorage.getItem(_ppSkorKey)||'{"bugun":0,"hafta":0,"toplam":0,"tarih":""}'); } catch(e) { return {bugun:0,hafta:0,toplam:0,tarih:''}; }
+};
+
+window._ppSkorEkle = function(puan) {
+  var s = window._ppSkorOku();
+  var bugun = _ppToday();
+  if (s.tarih !== bugun) { s.bugun = 0; s.tarih = bugun; }
+  s.bugun  += puan;
+  s.hafta  += puan;
+  s.toplam += puan;
+  localStorage.setItem(_ppSkorKey, JSON.stringify(s));
+  var el = document.getElementById('pp-skor-n');
+  var pl = document.getElementById('pp-score-pill');
+  if (el) el.textContent = s.bugun;
+  if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+s.bugun+' pt</span> · Hafta <span style="color:#1D9E75">'+s.hafta+'</span>';
+  return s;
+};
+
+window._ppSkorGuncelle = function() {
+  var s = window._ppSkorOku();
+  var el = document.getElementById('pp-skor-n');
+  var pl = document.getElementById('pp-score-pill');
+  if (el) el.textContent = s.bugun;
+  if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+s.bugun+' pt</span> · Hafta <span style="color:#1D9E75">'+s.hafta+'</span>';
+};
+
+/* ── PP-003: Çalışma Modu Yardımcıları ──────────────────────── */
+window._ppHizliEkle = function(inp) {
+  if (!inp || !inp.value.trim()) return;
+  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: 'normal', durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _ppCu()?.displayName || _ppCu()?.email || '' };
+  var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
+  inp.value = '';
+  window.toast?.('Görev eklendi', 'ok');
+  window._ppModRender();
+};
+
+window._ppTamamla = function(id) {
+  var tasks = _ppLoad(); var t = tasks.find(function(x) { return x.id === id; });
+  if (t) { t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); _ppStore(tasks); }
+  window.toast?.('Tamamlandı', 'ok');
+  setTimeout(function() { window._ppModRender(); }, 400);
+};
+
+window._ppYeniGorev = function() {
+  var baslik = prompt('Görev başlığı:');
+  if (!baslik || !baslik.trim()) return;
+  var yeni = { id: _ppId(), baslik: baslik.trim(), oncelik: 'normal', durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _ppCu()?.displayName || '' };
+  var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
+  window.toast?.('Görev eklendi', 'ok');
+  window._ppModRender();
+};
+
+window._ppAra = function(q) {
+  window._ppSearchQ = q;
+  window._ppModRender();
+};
+
+window._ppSidebarSec = function(sec) {
+  window._ppSidebarAktif = sec;
+  window._ppModRender();
+};
+
+window._ppTaskAc = function(id) {
+  window.toast?.('Görev detayı yakında...', 'info');
+};
+
+window._ppSagPanel = function() {
+  return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">'
+    + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:8px">DEEP WORK</div>'
+    + '<div style="font-size:28px;font-weight:500;letter-spacing:.02em;margin-bottom:4px" id="pp-dw-timer">00:00:00</div>'
+    + '<div style="font-size:9px;color:var(--t3);margin-bottom:8px">90 dk blok</div>'
+    + '<div style="height:3px;background:var(--b);border-radius:2px;margin-bottom:10px"><div id="pp-dw-bar" style="height:3px;background:var(--t);border-radius:2px;width:0%"></div></div>'
+    + '<div style="display:flex;gap:5px">'
+    + '<button onclick="event.stopPropagation();window._ppDwBasla?.()" style="flex:1;font-size:10px;padding:6px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Başla</button>'
+    + '<button onclick="event.stopPropagation();window._ppSetMod(\'odak\')" style="flex:1;font-size:10px;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Odak →</button>'
+    + '</div></div>'
+    + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">'
+    + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:6px">BUGÜNKÜ SKOR</div>'
+    + '<div style="font-size:26px;font-weight:500;color:#1D9E75" id="pp-skor-n">0</div>'
+    + '<div style="font-size:9px;color:var(--t3);margin-top:2px">Görev tamamladıkça artar</div>'
+    + '</div>';
+};
