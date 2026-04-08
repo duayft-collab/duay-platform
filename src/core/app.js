@@ -1056,6 +1056,7 @@ function _renderPanel(id) {
     suggestions:() => safe(() => window.renderSugg?.()),
     trash:      () => safe(() => window.renderTrashPanel?.()),
     hesap:      () => safe(() => window.renderHesapHistory?.()),
+    'pusula-pro': () => safe(() => window.renderPusulaPro?.() || window._ppRender?.()),
   };
 
   // app_patch ve hub modülleri için fallback

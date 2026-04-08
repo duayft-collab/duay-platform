@@ -170,6 +170,32 @@ window._ppModRender = function() {
       + '<button onclick="event.stopPropagation();window._ppDwBasla?.()" style="font-size:12px;padding:10px 28px;background:var(--t);color:var(--sf);border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500">Başla</button>'
       + '<button onclick="event.stopPropagation();window._ppSetMod(\'calisma\')" style="font-size:12px;padding:10px 20px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Çık</button>'
       + '</div></div>';
+  } else if (mod === 'akis') {
+    var msgs = window._ppMesajlariOku?.('sirket') || [];
+    var tasks = _ppLoad().filter(function(t) { return !t.isDeleted && t.durum !== 'tamamlandi'; });
+    var bugun = _ppToday();
+    var bugunTasks = tasks.filter(function(t) { return t.bitTarih === bugun || t.oncelik === 'kritik'; });
+    var _bugunH = bugunTasks.length
+      ? bugunTasks.map(function(t) {
+          var pr = PP_PRIORITIES[t.oncelik || 'normal'];
+          return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)"><div style="width:5px;height:5px;border-radius:50%;background:' + pr.c + '"></div><span style="font-size:12px;flex:1">' + _ppEsc(t.baslik || t.title || '') + '</span></div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--t3);padding:12px 0">Bugün için kritik görev yok</div>';
+    var _msgH = msgs.length
+      ? msgs.slice(0, 5).map(function(m) {
+          return '<div style="padding:10px 12px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)"><div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:3px">' + _ppEsc(m.gonderen || '') + '</div><div style="font-size:11px;color:var(--t2)">' + _ppEsc(m.icerik || '') + '</div></div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--t3);padding:12px 0">Henüz şirket yayını yok</div>';
+    body.innerHTML = ''
+      + '<div style="flex:1;padding:20px;overflow-y:auto">'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">BUGÜN</div>'
+      + _bugunH
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin:16px 0 10px">ŞİRKET YAYINLARI</div>'
+      + _msgH
+      + '</div>'
+      + '<div style="width:240px;border-left:0.5px solid var(--b);padding:12px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:10px">'
+      + window._ppSagPanel()
+      + '</div>';
   } else {
     body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t3);font-size:13px">'
       + window._ppModLabel(mod) + ' modu yakında aktif olacak...</div>';
