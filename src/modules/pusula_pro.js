@@ -222,6 +222,80 @@ window._ppModRender = function() {
       + '<div style="width:240px;border-left:0.5px solid var(--b);padding:12px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:10px">'
       + window._ppSagPanel()
       + '</div>';
+  } else if (mod === 'degerlendirme') {
+    var skor = window._ppSkorOku?.() || { bugun: 0, hafta: 0, toplam: 0 };
+    var degTasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
+    var tamamlanan = degTasks.filter(function(t) { return t.durum === 'tamamlandi'; });
+    var bekleyen = degTasks.filter(function(t) { return t.durum !== 'tamamlandi'; });
+    var habits = window._ppHabitLoad?.() || [];
+    var habitH = '';
+    if (habits.length) {
+      habitH = '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:14px;background:var(--sf)"><div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:10px">Alışkanlık durumu</div>';
+      habits.forEach(function(h2) {
+        var s2 = h2.streak || 0;
+        var dots = '';
+        for (var di = 0; di < 7; di++) { dots += '<div style="width:8px;height:8px;border-radius:50%;background:' + (di < s2 % 7 ? 'var(--t)' : 'var(--b)') + '"></div>'; }
+        habitH += '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--b)"><span style="font-size:11px;flex:1">' + _ppEsc(h2.baslik || '') + '</span><div style="display:flex;gap:3px">' + dots + '</div><span style="font-size:9px;color:var(--t3);min-width:28px;text-align:right">' + s2 + ' gün</span></div>';
+      });
+      habitH += '</div>';
+    }
+    body.innerHTML = '<div style="flex:1;overflow-y:auto;padding:24px;max-width:700px;margin:0 auto;width:100%">'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.1em;margin-bottom:16px">HAFTALIK DEĞERLENDİRME</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">'
+      + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:6px">HAFTA SKORU</div><div style="font-size:28px;font-weight:500;color:#1D9E75">' + skor.hafta + '</div><div style="font-size:9px;color:var(--t3)">puan</div></div>'
+      + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:6px">TAMAMLANAN</div><div style="font-size:28px;font-weight:500;color:var(--t)">' + tamamlanan.length + '</div><div style="font-size:9px;color:var(--t3)">görev</div></div>'
+      + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:6px">BEKLEYEN</div><div style="font-size:28px;font-weight:500;color:#A32D2D">' + bekleyen.length + '</div><div style="font-size:9px;color:var(--t3)">görev</div></div>'
+      + '</div>'
+      + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:14px;background:var(--sf)">'
+      + '<div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:10px">Bu hafta ne yaptım?</div>'
+      + '<div id="pp-rev-yapti" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:80px;padding:10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);font-size:12px;color:var(--t);line-height:1.6;outline:none;font-family:inherit"></div>'
+      + '</div>'
+      + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:14px;background:var(--sf)">'
+      + '<div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:10px">Ne öğrendim?</div>'
+      + '<div id="pp-rev-ogrendi" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:80px;padding:10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);font-size:12px;color:var(--t);line-height:1.6;outline:none;font-family:inherit"></div>'
+      + '</div>'
+      + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:14px;background:var(--sf)">'
+      + '<div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:10px">Gelecek hafta en kritik 3 hedef</div>'
+      + '<div id="pp-rev-hedef" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:60px;padding:10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);font-size:12px;color:var(--t);line-height:1.6;outline:none;font-family:inherit"></div>'
+      + '</div>'
+      + habitH
+      + '<div style="display:flex;justify-content:flex-end;margin-top:8px">'
+      + '<button onclick="event.stopPropagation();window._ppRevKaydet()" style="font-size:12px;padding:8px 24px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Değerlendirmeyi Kaydet</button>'
+      + '</div>'
+      + '</div>';
+    setTimeout(function() { window._ppRevYukle?.(); }, 50);
+    return;
+  }
+  if (mod === 'ceo') {
+    var tasks = _ppLoad().filter(function(t){ return !t.isDeleted && t.durum!=='tamamlandi'; });
+    var kritik = tasks.filter(function(t){ return t.oncelik==='kritik'; });
+    var depMap = {};
+    tasks.forEach(function(t){ var d=t.departman||'Diğer'; if(!depMap[d]) depMap[d]=0; depMap[d]++; });
+    var takUyari = window._ppTakvimHatirlatmaKontrol?.() || [];
+    var skor = window._ppSkorOku?.() || {bugun:0,hafta:0};
+    body.innerHTML = '<div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px">'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.1em">ŞİRKET NABZI</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
+      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:5px">AKTİF GÖREV</div><div style="font-size:26px;font-weight:500">'+tasks.length+'</div></div>'
+      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:#FCEBEB"><div style="font-size:8px;color:#A32D2D;font-weight:500;letter-spacing:.07em;margin-bottom:5px">KRİTİK</div><div style="font-size:26px;font-weight:500;color:#A32D2D">'+kritik.length+'</div></div>'
+      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:5px">TAKVİM UYARI</div><div style="font-size:26px;font-weight:500;color:'+(takUyari.length>0?'#854F0B':'var(--t)')+'">'+takUyari.length+'</div></div>'
+      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:5px">HAFTA SKORU</div><div style="font-size:26px;font-weight:500;color:#1D9E75">'+skor.hafta+'</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px;background:var(--sf)">'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">DEPARTMAN BAZLI</div>'
+      +Object.keys(depMap).map(function(dep){ var sayi=depMap[dep]; var pct=tasks.length?Math.round(sayi/tasks.length*100):0; return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>'+_ppEsc(dep)+'</span><span style="color:var(--t3)">'+sayi+' görev</span></div><div style="height:3px;background:var(--b);border-radius:2px"><div style="height:3px;background:var(--t);border-radius:2px;width:'+pct+'%"></div></div></div>'; }).join('')
+      +'</div>'
+      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px;background:var(--sf)">'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">KRİTİK BEKLEYENLER</div>'
+      +(kritik.length ? kritik.slice(0,6).map(function(t){ return '<div style="padding:6px 0;border-bottom:0.5px solid var(--b);font-size:11px;display:flex;align-items:center;gap:8px"><div style="width:5px;height:5px;border-radius:50%;background:#A32D2D;flex-shrink:0"></div><span style="flex:1">'+_ppEsc(t.baslik||t.title||'')+'</span><span style="font-size:9px;color:var(--t3)">'+(t.bitTarih||'—')+'</span></div>'; }).join('') : '<div style="font-size:12px;color:var(--t3);padding:10px 0">Kritik görev yok</div>')
+      +'</div></div>'
+      +(takUyari.length ? '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px;background:#FAEEDA">'
+        +'<div style="font-size:9px;font-weight:500;color:#854F0B;letter-spacing:.08em;margin-bottom:10px">TAKVİM UYARILARI</div>'
+        +takUyari.map(function(u){ return '<div style="padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,.06);font-size:11px;display:flex;align-items:center;gap:8px"><div style="font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(133,79,11,.15);color:#854F0B;font-weight:500;white-space:nowrap">'+(u.kalan===0?'Bugün':u.kalan+' gün')+'</div><span style="flex:1;color:#633806">'+_ppEsc(u.olay.baslik)+'</span></div>'; }).join('')
+        +'</div>' : '')
+      +'</div>';
+    return;
   } else {
     body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t3);font-size:13px">'
       + window._ppModLabel(mod) + ' modu yakında aktif olacak...</div>';
@@ -1157,4 +1231,51 @@ window._ppTakvimYeniAc = function() {
   var olaylar = _ppTakvimLoad(); olaylar.unshift(yeni); _ppTakvimStore(olaylar);
   window.toast?.('Etkinlik eklendi', 'ok');
   window._ppModRender();
+};
+
+/* ── PP-DEG-001: Haftalık Değerlendirme ─────────────────────── */
+var PP_REV_KEY = 'ak_pp_review_v1';
+
+window._ppHaftaNo = function() {
+  var d = new Date();
+  var j = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var thu = new Date(j); thu.setUTCDate(j.getUTCDate() + (4 - (j.getUTCDay() || 7)));
+  var yStart = new Date(Date.UTC(thu.getUTCFullYear(), 0, 1));
+  return d.getFullYear() + '-W' + Math.ceil((((thu - yStart) / 86400000) + 1) / 7);
+};
+
+window._ppRevKaydet = function() {
+  var yapti = document.getElementById('pp-rev-yapti')?.innerHTML || '';
+  var ogrendi = document.getElementById('pp-rev-ogrendi')?.innerHTML || '';
+  var hedef = document.getElementById('pp-rev-hedef')?.innerHTML || '';
+  if (!yapti.trim() && !ogrendi.trim() && !hedef.trim()) { window.toast?.('Bir şeyler yaz önce', 'warn'); return; }
+  var hafta = window._ppHaftaNo();
+  var liste = [];
+  try { liste = JSON.parse(localStorage.getItem(PP_REV_KEY) || '[]'); } catch(e) {}
+  var idx = liste.findIndex(function(r) { return r.hafta === hafta; });
+  var kayit = { id: _ppId(), tarih: _ppToday(), hafta: hafta, yapti: yapti, ogrendi: ogrendi, hedef: hedef, updatedAt: _ppNow() };
+  if (idx !== -1) {
+    kayit.id = liste[idx].id;
+    kayit.createdAt = liste[idx].createdAt || _ppNow();
+    liste[idx] = kayit;
+  } else {
+    kayit.createdAt = _ppNow();
+    liste.unshift(kayit);
+    if (liste.length > 52) liste = liste.slice(0, 52);
+  }
+  try { localStorage.setItem(PP_REV_KEY, JSON.stringify(liste)); } catch(e) {}
+  window.toast?.('Değerlendirme kaydedildi ✓', 'ok');
+};
+
+window._ppRevYukle = function() {
+  try {
+    var liste = JSON.parse(localStorage.getItem(PP_REV_KEY) || '[]');
+    var bugunHafta = window._ppHaftaNo();
+    var bugun = liste.find(function(r) { return r.hafta === bugunHafta; });
+    if (bugun) {
+      var y = document.getElementById('pp-rev-yapti'); if (y) y.innerHTML = bugun.yapti || '';
+      var o = document.getElementById('pp-rev-ogrendi'); if (o) o.innerHTML = bugun.ogrendi || '';
+      var h = document.getElementById('pp-rev-hedef'); if (h) h.innerHTML = bugun.hedef || '';
+    }
+  } catch(e) {}
 };
