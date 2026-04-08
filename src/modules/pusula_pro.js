@@ -358,7 +358,7 @@ console.log('[PUSULA-PRO] v1.0 yüklendi | Export: window._ppExport()');
 /* ── Frog Sistemi ───────────────────────────────────────────── */
 window._ppFrogBelirle = function() {
   if (window._ppAktifFrog && window._ppAktifFrog._ppSource === 'pro') return window._ppAktifFrog;
-  var tasks = _ppLoad().filter(function(t){ return !t.isDeleted && t.durum !== 'tamamlandi'; });
+  var tasks = _ppLoad().filter(function(t){ return !t.isDeleted && t.durum !== 'tamamlandi' && (t._ppSource==='pro' || (t.createdAt && t.createdAt > '2026-04-07')); });
   if (!tasks.length) return null;
   var kritik = tasks.filter(function(t){ return t.oncelik==='kritik'; });
   var yuksek = tasks.filter(function(t){ return t.oncelik==='yuksek'; });
