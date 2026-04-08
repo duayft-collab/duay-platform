@@ -10,7 +10,7 @@
 var PP_KEY        = 'ak_pusula_pro_v1';
 var PP_TASK_KEY   = 'ak_tk2';
 var PP_MOD        = 'akis';
-var PP_MODS       = ['akis','calisma','odak','degerlendirme','ceo'];
+var PP_MODS       = ['akis','calisma','takvim','odak','degerlendirme','ceo'];
 
 var PP_PRIORITIES = {
   kritik: { l:'Kritik', c:'#A32D2D', bg:'#FCEBEB' },
@@ -66,7 +66,7 @@ window._ppRender = function() {
   if (panel.dataset.injected) { window._ppModRender(); return; }
   panel.dataset.injected = '1';
   var _modBtns = PP_MODS.map(function(m) {
-    var lbl = {akis:'Akış',calisma:'Çalışma',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[m];
+    var lbl = {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[m];
     return '<button onclick="event.stopPropagation();window._ppSetMod(\'' + m + '\')" id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
   }).join('');
   panel.innerHTML = ''
@@ -185,6 +185,7 @@ window._ppModRender = function() {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted && t.durum !== 'tamamlandi'; });
     var bugun = _ppToday();
     var bugunTasks = tasks.filter(function(t) { return t.bitTarih === bugun || t.oncelik === 'kritik'; });
+    var takvimUyari = window._ppTakvimHatirlatmaKontrol?.() || [];
     var _bugunH = bugunTasks.length
       ? bugunTasks.map(function(t) {
           var pr = PP_PRIORITIES[t.oncelik || 'normal'];
@@ -200,6 +201,17 @@ window._ppModRender = function() {
       + '<div style="flex:1;padding:20px;overflow-y:auto">'
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">BUGÜN</div>'
       + _bugunH
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin:16px 0 8px">YAKLAŞAN GÖREVLER</div>'
+      + (takvimUyari.length ? takvimUyari.slice(0,3).map(function(u){
+          var renk = u.kalan===0?'#A32D2D':u.kalan<=2?'#854F0B':'#185FA5';
+          var bg = u.kalan===0?'#FCEBEB':u.kalan<=2?'#FAEEDA':'#E6F1FB';
+          return '<div style="padding:8px 12px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf);display:flex;align-items:center;gap:10px">'
+            +'<div style="font-size:9px;padding:2px 7px;border-radius:3px;background:'+bg+';color:'+renk+';font-weight:500;white-space:nowrap">'+(u.kalan===0?'Bugün':u.kalan+' gün')+'</div>'
+            +'<div style="flex:1"><div style="font-size:11px;font-weight:500;color:var(--t)">'+_ppEsc(u.olay.baslik)+'</div>'
+            +'<div style="font-size:9px;color:var(--t3)">'+_ppEsc(u.olay.periyot)+' · '+_ppEsc(u.olay.sorumluUnvan||'')+'</div></div>'
+            +'<div style="font-size:9px;color:var(--t3)">'+u.sonraki+'</div>'
+            +'</div>';
+        }).join('') : '<div style="font-size:12px;color:var(--t3);padding:8px 0">Yaklaşan takvim görevi yok</div>')
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin:16px 0 10px">ŞİRKET YAYINLARI</div>'
       + _msgH
       + '</div>'
@@ -213,7 +225,7 @@ window._ppModRender = function() {
 };
 
 window._ppModLabel = function(mod) {
-  return {akis:'Akış',calisma:'Çalışma',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[mod] || mod;
+  return {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[mod] || mod;
 };
 
 /* ── Global Export ──────────────────────────────────────────── */
@@ -952,3 +964,69 @@ window._ppGorevDuzenle = function(id) {
     if (kaydet) kaydet.textContent = 'Güncelle';
   }, 150);
 };
+
+/* ── Şirket Takvimi ─────────────────────────────────────────── */
+var PP_TAKVIM_KEY = 'ak_pp_takvim_v1';
+function _ppTakvimLoad(){ try{ var r=localStorage.getItem(PP_TAKVIM_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+function _ppTakvimStore(d){ try{ localStorage.setItem(PP_TAKVIM_KEY,JSON.stringify(d)); }catch(e){} }
+
+window._ppTakvimSonrakiHesapla = function(olay) {
+  var bugun = new Date();
+  var pd = (olay.periyotDetay||'').toLowerCase();
+  var periyot = (olay.periyot||'').toLowerCase();
+  try {
+    if (periyot==='günlük'||periyot==='gunluk') {
+      var d = new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d.toISOString().slice(0,10);
+    }
+    if (periyot==='haftalık'||periyot==='haftalik') {
+      var gunler = {pazartesi:1,salı:2,sali:2,çarşamba:3,carsamba:3,perşembe:4,persembe:4,cuma:5,cumartesi:6,pazar:0};
+      for (var g in gunler) { if (pd.indexOf(g)!==-1) { var hedef=gunler[g]; var d2=new Date(); var cur=d2.getDay(); var delta=(hedef-cur+7)%7||7; d2.setDate(d2.getDate()+delta); d2.setHours(9,0,0,0); return d2.toISOString().slice(0,10); } }
+    }
+    if (periyot==='aylık'||periyot==='aylik') {
+      var m = pd.match(/(\d+)\.\s*g[üu]n/i); if(m){ var gun=parseInt(m[1]); var d3=new Date(); d3.setDate(gun); if(d3<=bugun) d3.setMonth(d3.getMonth()+1); d3.setHours(9,0,0,0); return d3.toISOString().slice(0,10); }
+      var m2 = pd.match(/ayın son/i); if(m2){ var d4=new Date(); d4.setMonth(d4.getMonth()+1,0); d4.setHours(17,0,0,0); return d4.toISOString().slice(0,10); }
+    }
+    if (periyot==='yıllık'||periyot==='yillik') {
+      var d5=new Date(); d5.setFullYear(d5.getFullYear()+1); d5.setMonth(0,15); d5.setHours(9,0,0,0); return d5.toISOString().slice(0,10);
+    }
+  } catch(e) {}
+  return null;
+};
+
+window._ppTakvimHatirlatmaKontrol = function() {
+  var olaylar = _ppTakvimLoad().filter(function(o){ return o.durum==='active' && !o.isDeleted; });
+  var bugun = _ppToday();
+  var uyarilar = [];
+  olaylar.forEach(function(o) {
+    var sonraki = o.sonrakiCalisma || window._ppTakvimSonrakiHesapla(o);
+    if (!sonraki) return;
+    var kalan = Math.ceil((new Date(sonraki) - new Date(bugun)) / 86400000);
+    var hatirlatma = parseInt(o.hatirlatmaGun||3);
+    if (kalan >= 0 && kalan <= hatirlatma) {
+      uyarilar.push({ olay:o, sonraki:sonraki, kalan:kalan });
+    }
+  });
+  return uyarilar;
+};
+
+window._ppTakvimBaslat = function() {
+  if (_ppTakvimLoad().length > 0) return;
+  var baslangic = [
+    { id:'TAK-001', baslik:'Aylık Ödeme Raporu', kategori:'MUHASEBE', periyot:'Aylık', periyotDetay:'Her ayın 1. Pazartesi 10:00', sorumluUnvan:'Muhasebe Yöneticisi', oncelik:'Normal', hatirlatmaGun:3, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-002', baslik:'SGK Bildirimi', kategori:'İK', periyot:'Aylık', periyotDetay:'Her ayın 23. günü', sorumluUnvan:'İnsan Kaynakları', oncelik:'Kritik', hatirlatmaGun:5, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-003', baslik:'Muhtasar Beyanname', kategori:'VERGİ', periyot:'Aylık', periyotDetay:'Her ayın 26. günü', sorumluUnvan:'Mali Müşavir', oncelik:'Kritik', hatirlatmaGun:5, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-004', baslik:'KDV Beyannamesi', kategori:'VERGİ', periyot:'Aylık', periyotDetay:'Her ayın 28. günü', sorumluUnvan:'Mali Müşavir', oncelik:'Kritik', hatirlatmaGun:5, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-005', baslik:'Maaş Ödemeleri', kategori:'İK', periyot:'Aylık', periyotDetay:'Her ayın son iş günü', sorumluUnvan:'İK / Muhasebe', oncelik:'Kritik', hatirlatmaGun:3, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-006', baslik:'Haftalık Operasyon Toplantısı', kategori:'YÖNETİM', periyot:'Haftalık', periyotDetay:'Her Pazartesi 10:00', sorumluUnvan:'Operasyon Müdürü', oncelik:'Normal', hatirlatmaGun:1, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-007', baslik:'Sigorta Poliçe Kontrolü', kategori:'SİGORTA', periyot:'Aylık', periyotDetay:'Her ayın 1. haftası', sorumluUnvan:'Operasyon Yöneticisi', oncelik:'Normal', hatirlatmaGun:7, durum:'active', createdAt:_ppNow() },
+    { id:'TAK-008', baslik:'Yıllık Bağımsız Denetim', kategori:'HUKUKİ', periyot:'Yıllık', periyotDetay:'Her yılın Ocak ayı', sorumluUnvan:'Genel Müdür', oncelik:'Kritik', hatirlatmaGun:30, durum:'active', createdAt:_ppNow() }
+  ];
+  baslangic.forEach(function(o){ o.sonrakiCalisma = window._ppTakvimSonrakiHesapla(o); });
+  _ppTakvimStore(baslangic);
+  console.log('[PP-TAKVIM] '+baslangic.length+' başlangıç kaydı yüklendi');
+};
+
+window._ppTakvimLoad = _ppTakvimLoad;
+window._ppTakvimStore = _ppTakvimStore;
+window.PusulaProTakvimLoaded = true;
+setTimeout(function(){ window._ppTakvimBaslat?.(); }, 800);
