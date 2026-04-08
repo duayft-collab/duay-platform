@@ -3079,7 +3079,7 @@ window._ihrBelgeLink = function(dosyaId, tur) {
   if (!d) return;
   var payload = dosyaId + ':' + tur + ':' + Date.now();
   var token = btoa(unescape(encodeURIComponent(payload)));
-  var link = 'https://duayft-collab.github.io/duay-platform/upload.html?token=' + token + '&tur=' + tur;
+  var link = ''+window.location.href.split('/').slice(0,-1).join('/')+'/'+'upload.html?token=' + token + '&tur=' + tur;
   var old = _g('mo-belge-link'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-belge-link';
   mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
@@ -3102,7 +3102,7 @@ window._ihrTumBelgeLink = function(dosyaId) {
   var rows = evraklar.map(function(ev) {
     var payload = dosyaId + ':' + ev.tur + ':' + Date.now();
     var token = btoa(unescape(encodeURIComponent(payload)));
-    var link = 'https://duayft-collab.github.io/duay-platform/upload.html?token=' + token + '&tur=' + ev.tur;
+    var link = ''+window.location.href.split('/').slice(0,-1).join('/')+'/'+'upload.html?token=' + token + '&tur=' + ev.tur;
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b)"><span style="font-size:10px;font-weight:500;min-width:50px">' + _esc(ev.tur) + '</span><input value="' + link + '" readonly style="flex:1;font-size:9px;font-family:monospace;padding:2px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf)"><button onclick="event.stopPropagation();navigator.clipboard?.writeText(this.previousElementSibling.value);window.toast?.(\'Kopyaland\u0131\',\'ok\')" style="font-size:9px;padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">Kopyala</button></div>';
   }).join('');
   mo.innerHTML = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden"><div style="padding:12px 18px;border-bottom:0.5px solid var(--b);font-size:13px;font-weight:600">T\u00fcm Belge Linkleri</div><div style="padding:14px 18px;max-height:60vh;overflow-y:auto">' + rows + '</div><div style="padding:10px 18px;border-top:0.5px solid var(--b);font-size:10px;color:var(--t3)">Her link 30 g\u00fcn ge\u00e7erli. Login gerekmez.</div></div>';
@@ -4488,7 +4488,7 @@ window._ihrDisTarafLinkOlustur = function(dosyaId) {
   if (!ad) { window.toast?.('Ad zorunlu', 'err'); return; }
   var payload = dosyaId + ':' + Date.now() + ':' + ad + ':' + mail + ':' + tip;
   var token = btoa(payload);
-  var link = 'https://duayft-collab.github.io/duay-platform/upload.html?token=' + token;
+  var link = ''+window.location.href.split('/').slice(0,-1).join('/')+'/'+'upload.html?token=' + token;
   var result = _g('dl-result');
   if (result) {
     result.innerHTML = '<div style="margin-top:8px"><div class="fl">Olusturulan Link</div>'
@@ -4534,7 +4534,7 @@ window._ihrTeklifGonderKaydet = function(dosyaId) {
   secili.forEach(function(f) {
     var payload = (dosyaId||'') + ':' + f.id + ':' + f.ad + ':' + f.mail + ':' + tip + ':' + Date.now();
     var token = btoa(payload);
-    linkler.push({ firma: f.ad, link: 'https://duayft-collab.github.io/duay-platform/teklif.html?token=' + token });
+    linkler.push({ firma: f.ad, link: ''+window.location.href.split('/').slice(0,-1).join('/')+'/'+'teklif.html?token=' + token });
   });
   // Linkleri goster
   _g('mo-teklif-gonder')?.remove();
