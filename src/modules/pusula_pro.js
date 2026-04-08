@@ -132,31 +132,57 @@ window._ppModRender = function() {
     var kritik = tasks.filter(function(t) { return t.oncelik === 'kritik'; });
     var devam  = tasks.filter(function(t) { return t.durum === 'devam' && t.oncelik !== 'kritik'; });
     var plan   = tasks.filter(function(t) { return (!t.durum || t.durum === 'plan') && t.oncelik !== 'kritik'; });
-    var _grup = function(lbl, cls, arr) {
+    var _grup = function(lbl,cls,arr){
       if (!arr.length) return '';
-      var h = '<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--s2);border-bottom:0.5px solid var(--b);position:sticky;top:0">';
-      h += '<span style="font-size:8px;padding:2px 7px;border-radius:3px;font-weight:500;' + cls + '">' + lbl + '</span>';
-      h += '<span style="font-size:8px;color:var(--t3)">' + arr.length + ' görev</span></div>';
-      arr.forEach(function(t) {
-        var pr = PP_PRIORITIES[t.oncelik || 'normal'];
-        var sorumluStr = Array.isArray(t.sorumlu) ? t.sorumlu.map(function(s) { return s.ad || s; }).join(', ') : (t.sorumlu || '—');
-        var bitGec = t.bitTarih && t.bitTarih < _ppToday();
-        h += '<div onclick="event.stopPropagation();window._ppTaskAc(\'' + t.id + '\')" style="display:grid;grid-template-columns:22px 1fr 70px 72px 72px 56px 60px;align-items:center;padding:6px 8px 6px 12px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
-        h += '<input type="checkbox" ' + (t.durum === 'tamamlandi' ? 'checked' : '') + ' onclick="event.stopPropagation();window._ppTamamla(\'' + t.id + '\')" style="width:12px;height:12px;cursor:pointer">';
-        h += '<div><div style="font-size:11px;color:' + (t.durum === 'tamamlandi' ? 'var(--t3)' : 'var(--t)') + (t.durum === 'tamamlandi' ? ';text-decoration:line-through' : '') + '">' + _ppEsc(t.baslik || t.title || '') + '</div>';
-        if (t.altGorevSay) h += '<div style="font-size:8px;color:var(--t3);margin-top:1px">Alt görev ' + (t.altGorevTam || 0) + '/' + t.altGorevSay + '</div>';
-        h += '</div>';
-        h += '<div style="font-size:9px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(sorumluStr) + '</div>';
-        h += '<div style="font-size:9px;color:var(--t3)">' + (t.basT ? _ppEsc(t.basT.slice(0, 10)) : '—') + '</div>';
-        h += '<div style="font-size:9px;color:' + (bitGec ? '#A32D2D' : 'var(--t3)') + '">' + (t.bitTarih ? _ppEsc(t.bitTarih.slice(0, 10)) : '—') + '</div>';
-        h += '<span style="font-size:8px;padding:2px 5px;border-radius:3px;background:' + pr.bg + ';color:' + pr.c + '">' + pr.l + '</span>';
-        h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">';
-        h += '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\'' + t.id + '\')" title="Düzenle" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2)">✎</button>';
-        h += '<button onclick="event.stopPropagation();window._ppGorevSil(\'' + t.id + '\')" title="Sil" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button>';
-        h += '</div>';
-        h += '</div>';
+      var h2 = '<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--s2);border-bottom:0.5px solid var(--b);position:sticky;top:0">';
+      h2 += '<span style="font-size:8px;padding:2px 7px;border-radius:3px;font-weight:500;'+cls+'">'+lbl+'</span>';
+      h2 += '<span style="font-size:8px;color:var(--t3)">'+arr.length+' görev</span></div>';
+      arr.forEach(function(t){
+        var pr = PP_PRIORITIES[t.oncelik||'normal'];
+        var sorumluAd = Array.isArray(t.sorumlu) ? (t.sorumlu[0]?.ad||t.sorumlu[0]||'—') : (t.sorumlu||'—');
+        var sorumluIni = sorumluAd !== '—' ? sorumluAd.split(' ').map(function(s){return s[0];}).join('').slice(0,2).toUpperCase() : '?';
+        var kenarRenk = t.oncelik==='kritik'?'#A32D2D':t.oncelik==='yuksek'?'#854F0B':'#1D9E75';
+        var agSay = t.altGorevSay||0; var agTam = t.altGorevTam||0;
+        var jobId = t.job_id||t.jobId||'';
+        var tarihGec = t.bitTarih && t.bitTarih < _ppToday();
+        h2 += '<div id="pp-tr-'+t.id+'" style="border-left:3px solid '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
+        h2 += '<div onclick="event.stopPropagation()" style="display:grid;grid-template-columns:22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:default">';
+        h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
+        h2 += '<div>';
+        h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'">' + _ppEsc(t.baslik||t.title||'') + '</div>';
+        h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">';
+        if (jobId) h2 += '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_ppEsc(jobId)+'</span>';
+        if (agSay) h2 += '<span style="font-size:8px;color:var(--t3)">Alt görev '+agTam+'/'+agSay+'</span>';
+        if (agSay) h2 += '<button onclick="event.stopPropagation();window._ppAltGorevToggleRow(\''+t.id+'\')" id="pp-ag-btn-'+t.id+'" style="font-size:8px;padding:1px 5px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">&#9658; Göster</button>';
+        h2 += '</div></div>';
+        h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:9px;color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span></div>';
+        h2 += '<div style="font-size:9px;color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+'</div>';
+        h2 += '<div style="font-size:9px;color:'+(tarihGec?'#A32D2D':'var(--t3)')+(tarihGec?';font-weight:500':'')+'">'+(t.bitTarih?t.bitTarih.slice(0,10):'—')+'</div>';
+        h2 += '<span style="font-size:8px;padding:2px 5px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span>';
+        h2 += '<div style="display:flex;align-items:center;gap:2px" onclick="event.stopPropagation()">';
+        h2 += '<button onclick="event.stopPropagation();window._ppPeekAc(\''+t.id+'\')" title="Hızlı göz at" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="6" cy="6" r="3"/><path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z"/></svg></button>';
+        h2 += '<button onclick="event.stopPropagation();window._ppGorevMesaj(\''+t.id+'\')" title="Mesajlaş" style="width:22px;height:22px;border:0.5px solid #B5D4F4;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;display:flex;align-items:center;justify-content:center;position:relative"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1h10a1 1 0 011 1v5a1 1 0 01-1 1H7L4.5 11V8H1a1 1 0 01-1-1V2a1 1 0 011-1z"/></svg></button>';
+        h2 += '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\''+t.id+'\')" title="Düzenle" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 2l2 2-6 6H2V8l6-6z"/></svg></button>';
+        h2 += '<button onclick="event.stopPropagation();window._ppGorevSil(\''+t.id+'\')" title="Sil" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3H4z"/></svg></button>';
+        h2 += '</div></div>';
+        h2 += '<div id="pp-ag-panel-'+t.id+'" style="display:none;background:var(--s2);border-top:0.5px solid var(--b);padding:6px 10px 6px 46px">';
+        if (agSay && t.altGorevler && t.altGorevler.length) {
+          h2 += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em">ALT GÖREVLER</span><div style="display:flex;gap:4px"><button onclick="event.stopPropagation();window._ppAltGorevTopluTamamla(\''+t.id+'\')" style="font-size:8px;padding:1px 6px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">Toplu tamamla</button></div></div>';
+          t.altGorevler.forEach(function(ag,i){
+            h2 += '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:0.5px solid var(--b)">';
+            h2 += '<input type="checkbox" '+(ag.tamamlandi?'checked':'')+' style="width:11px;height:11px">';
+            h2 += '<span style="font-size:11px;flex:1;color:'+(ag.tamamlandi?'var(--t3)':'var(--t)')+(ag.tamamlandi?';text-decoration:line-through':'')+'">' + _ppEsc(ag.baslik) + '</span>';
+            if (ag.sorumlu) h2 += '<span style="font-size:9px;color:var(--t3)">'+_ppEsc(ag.sorumlu)+'</span>';
+            if (ag.bitTarih) h2 += '<span style="font-size:9px;color:var(--t3)">'+ag.bitTarih+'</span>';
+            h2 += '</div>';
+          });
+        } else {
+          h2 += '<div style="font-size:11px;color:var(--t3);padding:4px 0">Alt görev yok</div>';
+        }
+        h2 += '</div>';
+        h2 += '</div>';
       });
-      return h;
+      return h2;
     };
     body.innerHTML = ''
       + '<div style="width:180px;border-right:0.5px solid var(--b);padding:8px 0;overflow-y:auto;flex-shrink:0">'
@@ -459,7 +485,8 @@ window._ppYeniGorev = function() {
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
     +'<input id="ppf-baslik" placeholder="Görev başlığı..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:15px;font-weight:500;padding:8px 0;border:none;border-bottom:2px solid var(--bm);border-radius:0;background:transparent;width:100%;color:var(--t);font-family:inherit;outline:none">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-    +_sel('job_id','JOB ID',jobOpts)
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">JOB ID</div>'
+    +'<input id="ppf-job_id" placeholder="JOB-2026-XXXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
     +_sel('departman','DEPARTMAN','<option>Satış</option><option>Satınalma</option><option>Operasyon</option><option>Finans</option><option>İK</option>')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
@@ -1541,3 +1568,66 @@ window._ppAbonelikSil = function(id) {
 
 window._ppOdemeLoad = _ppOdemeLoad;
 window._ppAbonelikLoad = _ppAbonelikLoad;
+
+/* ── PP-GOREV-SATIR-001: Yeni satır helper'ları ─────────────── */
+window._ppAltGorevToggleRow = function(id) {
+  var panel = document.getElementById('pp-ag-panel-'+id);
+  var btn = document.getElementById('pp-ag-btn-'+id);
+  if (!panel) return;
+  var acik = panel.style.display !== 'none';
+  panel.style.display = acik ? 'none' : 'block';
+  if (btn) btn.innerHTML = acik ? '&#9658; Göster' : '&#9660; Gizle';
+};
+
+window._ppAltGorevTopluTamamla = function(id) {
+  var tasks = _ppLoad();
+  var t = tasks.find(function(x){ return String(x.id)===String(id); });
+  if (!t || !t.altGorevler) return;
+  t.altGorevler.forEach(function(ag){ ag.tamamlandi = true; });
+  t.altGorevTam = t.altGorevler.length;
+  t.updatedAt = _ppNow();
+  _ppStore(tasks);
+  window.toast?.('Tüm alt görevler tamamlandı','ok');
+  window._ppModRender();
+};
+
+window._ppPeekAc = function(id) {
+  var mevcut = document.getElementById('pp-peek-modal');
+  if (mevcut && mevcut.dataset.id === String(id)) { mevcut.remove(); return; }
+  if (mevcut) mevcut.remove();
+  var tasks = _ppLoad();
+  var t = tasks.find(function(x){ return String(x.id)===String(id); });
+  if (!t) return;
+  var pr = PP_PRIORITIES[t.oncelik||'normal'];
+  var modal = document.createElement('div');
+  modal.id = 'pp-peek-modal';
+  modal.dataset.id = String(id);
+  modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9998;width:420px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:18px';
+  var sorumluAd = Array.isArray(t.sorumlu) ? t.sorumlu.map(function(s){return s.ad||s;}).join(', ') : (t.sorumlu||'—');
+  modal.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:500;color:var(--t)">'+_ppEsc(t.baslik||t.title||'')+'</div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+    +'<div style="background:var(--s2);border-radius:6px;padding:8px"><div style="font-size:8px;color:var(--t3);font-weight:500;margin-bottom:3px">ÖNCELİK</div><span style="font-size:11px;padding:2px 7px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span></div>'
+    +'<div style="background:var(--s2);border-radius:6px;padding:8px"><div style="font-size:8px;color:var(--t3);font-weight:500;margin-bottom:3px">SORUMLU</div><div style="font-size:11px;color:var(--t)">'+_ppEsc(sorumluAd)+'</div></div>'
+    +'<div style="background:var(--s2);border-radius:6px;padding:8px"><div style="font-size:8px;color:var(--t3);font-weight:500;margin-bottom:3px">BAŞLANGIÇ</div><div style="font-size:11px;color:var(--t)">'+(t.basT||'—')+'</div></div>'
+    +'<div style="background:var(--s2);border-radius:6px;padding:8px"><div style="font-size:8px;color:var(--t3);font-weight:500;margin-bottom:3px">BİTİŞ</div><div style="font-size:11px;color:var(--t)">'+(t.bitTarih||'—')+'</div></div>'
+    +'</div>'
+    +(t.aciklama?'<div style="font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:10px;padding:8px;background:var(--s2);border-radius:6px">'+t.aciklama+'</div>':'')
+    +'<div style="display:flex;gap:6px;justify-content:flex-end">'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove();window._ppGorevDuzenle(\''+id+'\')" style="font-size:11px;padding:6px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Düzenle</button>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove()" style="font-size:11px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Kapat</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+  document.addEventListener('click', function rm(e){ if(!modal.contains(e.target)){modal.remove();document.removeEventListener('click',rm);} });
+};
+
+window._ppGorevMesaj = function(id) {
+  var tasks = _ppLoad();
+  var t = tasks.find(function(x){ return String(x.id)===String(id); });
+  if (!t) return;
+  window._ppMesajGonder?.('Görev: '+_ppEsc(t.baslik||t.title||''), 'kisisel', '');
+  window._ppMesajPanelAc?.();
+  window.toast?.('Görev mesajına geçildi','info');
+};
