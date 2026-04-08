@@ -229,4 +229,48 @@ window._steklifDurumPanelHTML = function(teklif) {
   return h;
 };
 
+/* ── SA-V2-REVIZYON-001: Rev Numarası Increment + Geçmiş ──── */
+window._steklifRevNo = function(id) {
+  var teklifler = window._saTeklifLoad?.() || [];
+  var t = teklifler.find(function(x) { return x.id === id; });
+  if (!t) return;
+  var mevcutRev = parseInt(t.revNo || '01', 10);
+  var yeniRev = String(mevcutRev + 1).padStart(2, '0');
+  if (!t.revGecmisi) t.revGecmisi = [];
+  t.revGecmisi.push({
+    revNo: t.revNo || '01',
+    tarih: window._saNow?.(),
+    kullanici: window._saCu?.()?.displayName || '',
+    snapshot: JSON.stringify({ urunler: t.urunler, teslim: t.teslim, odeme: t.odeme, musteriAd: t.musteriAd })
+  });
+  t.revNo = yeniRev;
+  t.updatedAt = window._saNow?.();
+  window._saTeklifStore?.(teklifler);
+  window.toast?.('Rev ' + yeniRev + ' oluşturuldu', 'ok');
+  return yeniRev;
+};
+
+window._steklifRevGecmisHTML = function(teklif) {
+  if (!teklif || !teklif.revGecmisi || !teklif.revGecmisi.length) return '';
+  var h = '<div style="background:var(--s2);border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:6px">REVİZYON GEÇMİŞİ — Mevcut: Rev ' + (teklif.revNo || '01') + '</div>';
+  teklif.revGecmisi.slice().reverse().forEach(function(r) {
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<span style="font-size:9px;font-family:monospace;background:#E6F1FB;color:#0C447C;padding:1px 6px;border-radius:3px;font-weight:500">Rev ' + r.revNo + '</span>';
+    h += '<span style="font-size:9px;color:var(--t3)">' + (r.tarih || '').slice(0, 16).replace('T', ' ') + '</span>';
+    h += '<span style="font-size:9px;color:var(--t2)">' + (typeof _saEsc === 'function' ? _saEsc(r.kullanici || '') : (r.kullanici || '')) + '</span>';
+    h += '<button onclick="event.stopPropagation();window._steklifRevGoster(\'' + encodeURIComponent(r.snapshot || '{}') + '\')" style="font-size:9px;padding:1px 6px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">Gör</button>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+};
+
+window._steklifRevGoster = function(encodedSnap) {
+  try {
+    var snap = JSON.parse(decodeURIComponent(encodedSnap));
+    window.toast?.('Rev snapshot: ' + JSON.stringify(snap).slice(0, 80) + '...', 'info');
+  } catch(e) { window.toast?.('Snapshot okunamadı', 'warn'); }
+};
+
 console.log('[PI] v1.0 yüklendi — 3 tasarim hazir');

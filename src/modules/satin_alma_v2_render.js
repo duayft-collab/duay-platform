@@ -291,6 +291,7 @@ window._saV2PeekHTML = function(t) {
   h += '<span id="sav2-marj-val" style="font-size:11px;font-weight:500;color:#0C447C;white-space:nowrap">%'+marj+' → ₺'+satis+'</span></div>';
   h += '</div>';
   if (typeof window._steklifDurumPanelHTML === 'function') h += window._steklifDurumPanelHTML(t);
+  if (typeof window._steklifRevGecmisHTML === 'function') h += window._steklifRevGecmisHTML(t);
   h += '<div style="display:flex;flex-direction:column;gap:5px">';
   if (t.durum==='bekleyen') {
     h += '<button onclick="event.stopPropagation();window._saV2OnayaGonderTek(\''+t.id+'\')" style="font-size:10px;padding:7px;border:none;border-radius:5px;background:#854F0B;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Onaya Gönder</button>';
@@ -1004,6 +1005,7 @@ window._saV2DuzenleKaydet = function(id) {
   t.miktar = _v('miktar');
   t.tedarikci = _v('tedarikci');
   t.jobId = _v('jobId');
+  if (typeof window._steklifRevNo === 'function') window._steklifRevNo(t.id);
   t.updatedAt = window._saNow?.();
   window._saV2Store?.(liste);
   document.getElementById('sav2-duzenle-modal')?.remove();
