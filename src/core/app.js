@@ -3774,6 +3774,12 @@ function _applyRoleUI(user) {
     document.querySelectorAll('.nsec-header').forEach(function(hdr) { hdr.style.display = ''; });
   }
 
+  // GK-PUSULA-001: data-admin-only elementleri sadece admin/manager gorsun
+  var _isAdmRole = ['admin', 'manager'].indexOf(user.role) !== -1;
+  document.querySelectorAll('[data-admin-only="true"]').forEach(function(el) {
+    el.style.display = _isAdmRole ? '' : 'none';
+  });
+
   console.info('[UI] Role applied:', user.role);
 }
 
