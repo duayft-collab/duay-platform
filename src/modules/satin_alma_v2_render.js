@@ -510,24 +510,22 @@ window._saV2FormGorsel = function(inp) {
 };
 
 window._saV2KatalogDoldur = function(kod) {
-  if (!kod || kod.length < 5) return;
-  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
-  var u = urunler.find(function(x) { return (x.duayKodu || '').toLowerCase() === kod.toLowerCase(); });
-  if (!u) return;
-  var bilgi = document.getElementById('sav2f-katalog-bilgi');
-  if (bilgi) bilgi.innerHTML = '<span style="color:#0F6E56">✓ Katalogda bulundu: ' + _saEsc(u.duayAdi || u.urunAdi || '') + '</span>';
-  var alanlar = { urunAdi: u.standartAdi || u.urunAdi, turkceAdi: u.duayAdi || u.urunAdi, marka: u.marka, gtip: u.gtip || u.hscKodu, saticiKodu: u.saticiKodu || u.urunKodu, netAg: u.netAgirlik, brutAg: u.brutAgirlik };
-  Object.keys(alanlar).forEach(function(k) {
-    var el = document.getElementById('sav2f-' + k);
-    if (el && alanlar[k]) el.value = alanlar[k];
-  });
-  var birimEl = document.getElementById('sav2f-birim');
-  if (birimEl && u.birim) {
-    Array.from(birimEl.options).forEach(function(o) { if (o.value === u.birim) o.selected = true; });
-  }
-  var menEl = document.getElementById('sav2f-mensei');
-  if (menEl && u.mensei) {
-    Array.from(menEl.options).forEach(function(o) { if (o.value === u.mensei) o.selected = true; });
+  if (!kod || kod.length < 5) { var be=document.getElementById('sav2f-katalog-bilgi'); if(be) be.textContent=''; return; }
+  var urunler = typeof window.loadUrunler==='function' ? window.loadUrunler() : [];
+  var u = urunler.find(function(x){ return (x.duayKodu||'').toLowerCase()===kod.toLowerCase(); });
+  var bilgiEl = document.getElementById('sav2f-katalog-bilgi');
+  if (!u) { if(bilgiEl) bilgiEl.innerHTML='<span style="color:#A32D2D">Katalogda bulunamadı</span>'; return; }
+  if (bilgiEl) bilgiEl.innerHTML='<span style="color:#0F6E56">✓ '+_saEsc(u.duayAdi||u.urunAdi||'')+'</span>';
+  var alanlar = {urunAdi:u.standartAdi||u.urunAdi,turkceAdi:u.duayAdi||u.urunAdi,marka:u.marka,gtip:u.gtip||u.hscKodu,saticiKodu:u.saticiKodu||u.urunKodu,netAg:u.netAgirlik,brutAg:u.brutAgirlik};
+  Object.keys(alanlar).forEach(function(k){ var el=document.getElementById('sav2f-'+k); if(el&&alanlar[k]) el.value=alanlar[k]; });
+  var birimEl=document.getElementById('sav2f-birim'); if(birimEl&&u.birim){ Array.from(birimEl.options).forEach(function(o){if(o.value===u.birim)o.selected=true;}); }
+  var menEl=document.getElementById('sav2f-mensei'); if(menEl&&u.mensei){ Array.from(menEl.options).forEach(function(o){if(o.value===u.mensei)o.selected=true;}); }
+  if (u.gorsel) {
+    window._saV2FormGorselData = u.gorsel;
+    var oniz=document.getElementById('sav2f-gorsel-oniz');
+    if(oniz) oniz.innerHTML='<img src="'+u.gorsel+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';
+    var ad=document.getElementById('sav2f-gorsel-ad');
+    if(ad) ad.textContent='Katalogdan otomatik';
   }
 };
 
