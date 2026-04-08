@@ -5,7 +5,7 @@
 
 /* ── Ana render ─────────────────────────────────────────────── */
 window.renderSatinAlmaV2 = function() {
-  var panel = document.getElementById('panel-satin-alma');
+  var panel = document.getElementById('panel-satinalma');
   if (!panel) return;
   var kpi  = window._saV2Kpi?.() || {buAy:0,bekleyen:0,ortMarj:0,toplam:0};
   var liste = _saV2Load().filter(function(t){ return !t.isDeleted; });
