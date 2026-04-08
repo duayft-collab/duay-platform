@@ -567,7 +567,9 @@ window._saV2FormGorsel = function(inp) {
 window._saV2KatalogDoldur = function(kod) {
   if (!kod || kod.length < 5) { var be=document.getElementById('sav2f-katalog-bilgi'); if(be) be.textContent=''; return; }
   var urunler = typeof window.loadUrunler==='function' ? window.loadUrunler() : [];
-  var u = urunler.find(function(x){ return (x.duayKodu||'').toLowerCase()===kod.toLowerCase(); });
+  var ihrUrunler = typeof window.loadIhracatUrunler==='function' ? window.loadIhracatUrunler() : [];
+  var tumUrunler = urunler.concat(ihrUrunler);
+  var u = tumUrunler.find(function(x){ return (x.duayKodu||'').toLowerCase()===kod.toLowerCase(); });
   var bilgiEl = document.getElementById('sav2f-katalog-bilgi');
   if (!u) { if(bilgiEl) bilgiEl.innerHTML='<span style="color:#A32D2D">Katalogda bulunamadı</span>'; return; }
   if (bilgiEl) bilgiEl.innerHTML='<span style="color:#0F6E56">✓ '+_saEsc(u.duayAdi||u.urunAdi||'')+'</span>';
