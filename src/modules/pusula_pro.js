@@ -124,14 +124,21 @@ window._ppModRender = function() {
       h += '<span style="font-size:8px;color:var(--t3)">' + arr.length + ' görev</span></div>';
       arr.forEach(function(t) {
         var pr = PP_PRIORITIES[t.oncelik || 'normal'];
-        h += '<div onclick="event.stopPropagation();window._ppTaskAc(\'' + t.id + '\')" style="display:grid;grid-template-columns:26px 1fr 90px 80px 70px;align-items:center;padding:7px 10px 7px 14px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
-        h += '<input type="checkbox" onclick="event.stopPropagation();window._ppTamamla(\'' + t.id + '\')" style="width:13px;height:13px;cursor:pointer">';
-        h += '<div><div style="font-size:11px;color:var(--t)">' + _ppEsc(t.baslik || t.title || '') + '</div>';
-        if (t.altGorevSay) h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Alt görev ' + t.altGorevTam + '/' + t.altGorevSay + '</div>';
+        var sorumluStr = Array.isArray(t.sorumlu) ? t.sorumlu.map(function(s) { return s.ad || s; }).join(', ') : (t.sorumlu || '—');
+        var bitGec = t.bitTarih && t.bitTarih < _ppToday();
+        h += '<div onclick="event.stopPropagation();window._ppTaskAc(\'' + t.id + '\')" style="display:grid;grid-template-columns:22px 1fr 70px 72px 72px 56px 60px;align-items:center;padding:6px 8px 6px 12px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+        h += '<input type="checkbox" ' + (t.durum === 'tamamlandi' ? 'checked' : '') + ' onclick="event.stopPropagation();window._ppTamamla(\'' + t.id + '\')" style="width:12px;height:12px;cursor:pointer">';
+        h += '<div><div style="font-size:11px;color:' + (t.durum === 'tamamlandi' ? 'var(--t3)' : 'var(--t)') + (t.durum === 'tamamlandi' ? ';text-decoration:line-through' : '') + '">' + _ppEsc(t.baslik || t.title || '') + '</div>';
+        if (t.altGorevSay) h += '<div style="font-size:8px;color:var(--t3);margin-top:1px">Alt görev ' + (t.altGorevTam || 0) + '/' + t.altGorevSay + '</div>';
         h += '</div>';
-        h += '<div style="font-size:9px;color:var(--t2)">' + _ppEsc(t.sorumlu || '—') + '</div>';
-        h += '<div style="font-size:9px;color:var(--t3)">' + _ppEsc(t.bitTarih || '—') + '</div>';
-        h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + pr.bg + ';color:' + pr.c + '">' + pr.l + '</span>';
+        h += '<div style="font-size:9px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(sorumluStr) + '</div>';
+        h += '<div style="font-size:9px;color:var(--t3)">' + (t.basT ? _ppEsc(t.basT.slice(0, 10)) : '—') + '</div>';
+        h += '<div style="font-size:9px;color:' + (bitGec ? '#A32D2D' : 'var(--t3)') + '">' + (t.bitTarih ? _ppEsc(t.bitTarih.slice(0, 10)) : '—') + '</div>';
+        h += '<span style="font-size:8px;padding:2px 5px;border-radius:3px;background:' + pr.bg + ';color:' + pr.c + '">' + pr.l + '</span>';
+        h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">';
+        h += '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\'' + t.id + '\')" title="Düzenle" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2)">✎</button>';
+        h += '<button onclick="event.stopPropagation();window._ppGorevSil(\'' + t.id + '\')" title="Sil" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button>';
+        h += '</div>';
         h += '</div>';
       });
       return h;
@@ -464,7 +471,23 @@ window._ppGorevKaydet = function() {
     updatedAt: _ppNow(),
     sorumluId: _ppCu()?.uid||''
   };
-  var tasks=_ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
+  var tasks=_ppLoad();
+  if (window._ppDuzenleHedef) {
+    var idx = tasks.findIndex(function(t){ return String(t.id) === String(window._ppDuzenleHedef); });
+    if (idx !== -1) {
+      Object.assign(tasks[idx], yeni);
+      tasks[idx].id = window._ppDuzenleHedef;
+      tasks[idx].updatedAt = _ppNow();
+      _ppStore(tasks);
+      window._ppDuzenleHedef = null;
+      document.getElementById('pp-gorev-modal')?.remove();
+      window.toast?.('Görev güncellendi', 'ok');
+      window._ppModRender();
+      return;
+    }
+    window._ppDuzenleHedef = null;
+  }
+  tasks.unshift(yeni); _ppStore(tasks);
   if(yeni.isFrog){window._ppAktifFrog=yeni; var el=document.getElementById('pp-frog-txt'); if(el) el.textContent=yeni.baslik;}
   document.getElementById('pp-gorev-modal')?.remove();
   window._ppDosyaEkleri=[];
@@ -887,4 +910,45 @@ window._ppUserTaglerAl = function(containerId) {
   var wrap = document.getElementById(containerId+'-wrap');
   if (!wrap) return [];
   return Array.from(wrap.querySelectorAll('[data-uid]')).map(function(el){ return { uid:el.dataset.uid, ad:el.dataset.ad }; });
+};
+
+/* ── PP-012: Görev Sil / Düzenle ────────────────────────────── */
+window._ppGorevSil = function(id) {
+  if (window.confirmModal) {
+    window.confirmModal('Bu görevi silmek istediğinizden emin misiniz?', { title: 'Görevi Sil', danger: true, confirmText: 'Sil', onConfirm: function() { window._ppGorevSilYap(id); } });
+    return;
+  }
+  if (!confirm('Bu görevi silmek istediğinizden emin misiniz?')) return;
+  window._ppGorevSilYap(id);
+};
+
+window._ppGorevSilYap = function(id) {
+  var tasks = _ppLoad();
+  var i = tasks.findIndex(function(t) { return String(t.id) === String(id); });
+  if (i === -1) return;
+  tasks[i].isDeleted = true;
+  tasks[i].deletedAt = _ppNow();
+  _ppStore(tasks);
+  window.toast?.('Görev silindi', 'ok');
+  window._ppModRender();
+};
+
+window._ppGorevDuzenle = function(id) {
+  var tasks = _ppLoad();
+  var t = tasks.find(function(x) { return String(x.id) === String(id); });
+  if (!t) return;
+  window._ppDuzenleHedef = id;
+  window._ppYeniGorev();
+  setTimeout(function() {
+    var b = document.getElementById('ppf-baslik'); if (b) b.value = t.baslik || t.title || '';
+    var d = document.getElementById('ppf-departman'); if (d) d.value = t.departman || '';
+    var o = document.getElementById('ppf-oncelik'); if (o) o.value = t.oncelik || 'normal';
+    var s = document.getElementById('ppf-durum'); if (s) s.value = t.durum || 'plan';
+    var bt = document.getElementById('ppf-basT'); if (bt) bt.value = t.basT || '';
+    var bit = document.getElementById('ppf-bitT'); if (bit) bit.value = t.bitTarih || '';
+    var sure = document.getElementById('ppf-sure'); if (sure) sure.value = t.sure || '';
+    var acik = document.getElementById('ppf-aciklama'); if (acik) acik.innerHTML = t.aciklama || '';
+    var kaydet = document.querySelector('#pp-gorev-modal button[onclick*="_ppGorevKaydet"]');
+    if (kaydet) kaydet.textContent = 'Güncelle';
+  }, 150);
 };
