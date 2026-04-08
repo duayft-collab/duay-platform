@@ -6,6 +6,21 @@
 ════════════════════════════════════════════════════════════════ */
 'use strict';
 
+/* ── İzolasyon Koruması ─────────────────────────────────────── */
+(function() {
+  if (window._ppIzoleKontrol) return;
+  window._ppIzoleKontrol = true;
+  var _korunanKeyler = ['ak_pusula_pro_v1','ak_pp_notlar_v1','ak_pp_challenge_v1','ak_pp_habit_v1','ak_pp_goal_v1','ak_pp_mesaj_v1','ak_pp_skor_v1','ak_pp_takvim_v1','ak_pp_hayat_v1','ak_pp_review_v1'];
+  var _eskiKeyler = ['ak_tk2','ak_tasks','companyCalendar_events_v1'];
+  window._ppEskiVeriKarisiyor = function(key) {
+    return _eskiKeyler.indexOf(key) !== -1;
+  };
+  window._ppKorunanKey = function(key) {
+    return _korunanKeyler.indexOf(key) !== -1;
+  };
+  console.log('[PP-IZOLE] Pusula Pro izolasyon aktif — eski Pusula verisi korunur, karışmaz');
+})();
+
 /* ── Sabitler ───────────────────────────────────────────────── */
 var PP_KEY        = 'ak_pusula_pro_v1';
 var PP_TASK_KEY   = 'ak_tk2';
@@ -963,13 +978,20 @@ window._ppDosyaSil = function(i) {
 /* ── Kullanıcı Tag Sistemi ──────────────────────────────────── */
 window._ppKullanicilar = function() {
   try {
-    var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
-    if (!users.length) {
-      var cu = _ppCu();
-      if (cu) users = [cu];
+    var users = [];
+    if (typeof window.loadUsers === 'function') {
+      var ham = window.loadUsers();
+      if (Array.isArray(ham)) users = ham;
     }
-    return users.filter(function(u){ return !u.isDeleted && u.displayName; });
-  } catch(e) { return []; }
+    if (!users.length && typeof window.Auth !== 'undefined') {
+      var cu = window.Auth?.getCU?.();
+      if (cu && cu.uid) users = [cu];
+    }
+    return users.filter(function(u) { return u && !u.isDeleted && (u.displayName || u.email); });
+  } catch(e) {
+    console.warn('[PP-IZOLE] loadUsers hatası:', e.message);
+    return [];
+  }
 };
 
 window._ppUserTagHTML = function(containerId, placeholder) {
@@ -1318,4 +1340,15 @@ window._ppAltGorevDetayKaydet = function(i) {
   if (sure) ag.sure = sure.value;
   window._ppAltGorevToggle(i);
   window.toast?.('Alt görev güncellendi', 'ok');
+};
+
+/* ── Eski Pusula ile çakışma engeli ────────────────────────── */
+if (typeof window.Pusula !== 'undefined' && !window.Pusula._isPro) {
+  console.log('[PP-IZOLE] Eski Pusula mevcut — Pusula Pro ayrı namespace kullanıyor');
+}
+window.PusulaPro = {
+  render: window._ppRender,
+  setMod: window._ppSetMod,
+  version: '1.0',
+  _isPro: true
 };
