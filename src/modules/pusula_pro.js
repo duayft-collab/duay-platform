@@ -804,13 +804,20 @@ window._ppMesajPanelAc = function() {
 };
 
 window._ppMsgTab = function(tip) {
-  var msgs = window._ppMesajlariOku(tip);
+  var msgs = tip === 'hayat' ? (window._ppHayatKartlariOku ? window._ppHayatKartlariOku() : []) : window._ppMesajlariOku(tip);
   var list = document.getElementById('pp-msg-list');
   if (!list) return;
   document.querySelectorAll('[id^="pp-msg-tab-"]').forEach(function(el){ el.style.borderBottom='none'; el.style.fontWeight=''; el.style.color='var(--t3)'; });
   var aktif = document.getElementById('pp-msg-tab-'+tip);
   if (aktif) { aktif.style.borderBottom='2px solid var(--t)'; aktif.style.fontWeight='500'; aktif.style.color='var(--t)'; }
-  list.innerHTML = msgs.length ? msgs.map(function(m){ return '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b)"><div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:3px">'+_ppEsc(m.gonderen)+'</div><div style="font-size:11px;color:var(--t2)">'+_ppEsc(m.icerik)+'</div><div style="font-size:8px;color:var(--t3);margin-top:4px">'+m.tarih+'</div></div>'; }).join('') : '<div style="padding:30px;text-align:center;color:var(--t3);font-size:12px">Mesaj yok</div>';
+  var tipRenk = { aile:'#A32D2D', kitap:'#185FA5', gelisim:'#1D9E75' };
+  list.innerHTML = msgs.length ? msgs.map(function(m) {
+    var etiket = m.tip ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:var(--s2);color:' + (tipRenk[m.tip] || 'var(--t3)') + ';margin-left:6px">' + _ppEsc(m.tip) + '</span>' : '';
+    return '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b)">'
+      + '<div style="font-size:8px;color:var(--t3);margin-bottom:3px">' + ((m.tarih || '').slice(0, 16)) + etiket + '</div>'
+      + '<div style="font-size:11px;color:var(--t2);line-height:1.5">' + _ppEsc(m.icerik || m.gonderen || '') + '</div>'
+      + '</div>';
+  }).join('') : '<div style="padding:30px;text-align:center;color:var(--t3);font-size:12px">Henüz kart yok</div>';
 };
 
 window._ppMsgGonderForm = function() {
@@ -1352,3 +1359,53 @@ window.PusulaPro = {
   version: '1.0',
   _isPro: true
 };
+
+/* ── Hayat Kartları ─────────────────────────────────────────── */
+var PP_HAYAT_KEY = 'ak_pp_hayat_v1';
+function _ppHayatLoad() { try { var r = localStorage.getItem(PP_HAYAT_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function _ppHayatStore(d) { try { localStorage.setItem(PP_HAYAT_KEY, JSON.stringify(d)); } catch(e) {} }
+
+var _ppHayatHavuz = [
+  { tip:'aile', icerik:'3 kızınla bu hafta sonu masa oyunu oynayabilirsin. Catan veya Codenames 8 yaş üstü için ideal.' },
+  { tip:'aile', icerik:'İstanbul Oyuncak Müzesi — Göztepe. Kızların için harika bir hafta sonu aktivitesi.' },
+  { tip:'aile', icerik:'Eşinle baş başa bir akşam planladın mı? Bu hafta bir gece ayrı zaman önemli.' },
+  { tip:'aile', icerik:'Kızlarına bu hafta ne öğrettiklerini sor. Dinlemek yeterliyken değer katmak daha güzel.' },
+  { tip:'aile', icerik:'Piknik planla — Belgrad Ormanı veya Polonezköy bu mevsimde güzel olur.' },
+  { tip:'kitap', icerik:'Cal Newport — Digital Minimalism. Deep Work felsefesinin kişisel hayata uygulaması. 230 sayfa.' },
+  { tip:'kitap', icerik:'Gary Keller — The One Thing. Günde bir kritik görev felsefesi — Frog metodunun kitabı.' },
+  { tip:'kitap', icerik:'Greg McKeown — Essentialism. Daha az ama daha iyi. İş yükü yönetiminde klasik.' },
+  { tip:'kitap', icerik:'Daniel Kahneman — Thinking Fast and Slow. Karar verme mekanizmaları üzerine derin bir okuma.' },
+  { tip:'gelisim', icerik:'Tracy şunu söyler: En başarılı insanlar işte en iyi olanlardır çünkü evde en dinlenmiş olanlardır.' },
+  { tip:'gelisim', icerik:'Bu hafta 5 kritik görev tamamladın. İyi iş — ama dinlenme de üretkenliğin parçası.' },
+  { tip:'gelisim', icerik:'Newport: Derin odak için sabah ilk 2 saati koru. Telefon kapalı, bildirim yok.' },
+  { tip:'gelisim', icerik:'80/20 kuralı: Hangi 2 müşteri gelirinizin %80\'ini oluşturuyor? Onlara daha fazla zaman ver.' },
+  { tip:'gelisim', icerik:'Haftalık review yapmak, haftanın en verimli 30 dakikasıdır. Planlayan kazanır.' }
+];
+
+window._ppHayatKartiGoster = function() {
+  var havuz = _ppHayatHavuz;
+  var gosterilen = _ppHayatLoad().map(function(h) { return h.icerik; });
+  var kalan = havuz.filter(function(h) { return gosterilen.indexOf(h.icerik) === -1; });
+  if (!kalan.length) { _ppHayatStore([]); kalan = havuz; }
+  var secilen = kalan[Math.floor(Math.random() * kalan.length)];
+  var kayit = { id: _ppId(), tip: secilen.tip, icerik: secilen.icerik, tarih: _ppNow(), okundu: false };
+  var liste = _ppHayatLoad(); liste.unshift(kayit);
+  if (liste.length > 30) liste = liste.slice(0, 30);
+  _ppHayatStore(liste);
+  window._ppBildirimGuncelle?.();
+  return kayit;
+};
+
+window._ppHayatKartlariOku = function() {
+  return _ppHayatLoad();
+};
+
+window._ppHayatBaslat = function() {
+  var liste = _ppHayatLoad();
+  var bugun = _ppToday();
+  var bugunVar = liste.some(function(h) { return h.tarih && h.tarih.slice(0, 10) === bugun; });
+  if (!bugunVar) { window._ppHayatKartiGoster(); }
+};
+
+window._ppHayatLoad = _ppHayatLoad;
+setTimeout(function() { window._ppHayatBaslat?.(); }, 1200);
