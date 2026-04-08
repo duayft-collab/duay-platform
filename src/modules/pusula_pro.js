@@ -1273,14 +1273,22 @@ window._ppTakvimPanelRender = function(body) {
     var kb = katBg[o.kategori] || 'var(--s2)';
     h += '<div style="display:grid;grid-template-columns:100px 1fr 100px 90px 80px 70px;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid var(--b);font-size:11px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
     h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + kb + ';color:' + kr + ';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center">' + _ppEsc(o.kategori || '') + '</span>';
-    h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">' + _ppEsc(o.baslik || '') + '</div><div style="font-size:9px;color:var(--t3);margin-top:1px">' + _ppEsc(o.periyot || '') + (o.periyotDetay ? ' · ' + _ppEsc(o.periyotDetay) : '') + '</div></div>';
-    h += '<div style="font-size:9px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(o.sorumluUnvan || '') + '</div>';
+    h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">' + _ppEsc(o.baslik || '') + '</div><div style="font-size:9px;color:var(--t3);margin-top:1px">' + _ppEsc(o.periyot || '') + (o.periyotDetay ? ' · ' + _ppEsc(o.periyotDetay) : '') + '</div>'
+      + '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap">'
+      + (o.altKategori ? '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#185FA5">' + _ppEsc(o.altKategori) + '</span>' : '')
+      + (o.kaynak ? '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#F1EFE8;color:#5F5E5A">' + _ppEsc(o.kaynak) + '</span>' : '')
+      + '</div>'
+      + '</div>';
+    h += '<div style="overflow:hidden"><div style="font-size:9px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(o.sorumluUnvan || '') + '</div>'
+      + (o.atananGorevli ? '<div style="font-size:8px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(o.atananGorevli) + '</div>' : '')
+      + '</div>';
     h += '<div style="font-size:9px;color:var(--t3)">' + _ppEsc(sonraki) + '</div>';
     h += kalan !== null
       ? '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + kalanBg + ';color:' + kalanRenk + ';font-weight:500;text-align:center">' + (kalan === 0 ? 'Bugün' : (kalan < 0 ? 'Geçti' : kalan + ' gün')) + '</span>'
       : '<span></span>';
     h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">';
     h += '<button onclick="event.stopPropagation();window._ppTakvimTamamla(\'' + o.id + '\')" title="Tamamlandı" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#1D9E75">✓</button>';
+    if (o.ilgiliDokuman) h += '<button onclick="event.stopPropagation();window.open(\'' + _ppEsc(o.ilgiliDokuman) + '\')" title="Belge" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;display:inline-flex;align-items:center;justify-content:center;padding:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></button>';
     h += '<button onclick="event.stopPropagation();window._ppTakvimSil(\'' + o.id + '\')" title="Sil" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button>';
     h += '</div></div>';
   });
