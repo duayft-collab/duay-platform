@@ -988,6 +988,35 @@ window._ppTakvimSonrakiHesapla = function(olay) {
     }
     if (periyot==='aylık'||periyot==='aylik') {
       var m = pd.match(/(\d+)\.\s*g[üu]n/i); if(m){ var gun=parseInt(m[1]); var d3=new Date(); d3.setDate(gun); if(d3<=bugun) d3.setMonth(d3.getMonth()+1); d3.setHours(9,0,0,0); return d3.toISOString().slice(0,10); }
+      var dowMap = {pazartesi:1,salı:2,sali:2,çarşamba:3,carsamba:3,perşembe:4,persembe:4,cuma:5,cumartesi:6,pazar:0};
+      var mNDow = pd.match(/(\d+)\.\s*([a-zçğışöü]+)/i);
+      if (mNDow) {
+        var nth = parseInt(mNDow[1]);
+        var dowAd = mNDow[2].toLowerCase().replace('ş','s').replace('ğ','g').replace('ü','u').replace('ö','o').replace('ı','i').replace('ç','c');
+        var dow = dowMap[dowAd] !== undefined ? dowMap[dowAd] : -1;
+        if (dow >= 0) {
+          var now2 = new Date();
+          for (var ay2=0; ay2<3; ay2++) {
+            var y2=now2.getFullYear(), m3=now2.getMonth()+ay2;
+            if (m3>11){ m3-=12; y2++; }
+            var first=new Date(y2,m3,1); var firstDow=first.getDay();
+            var delta2=(dow-firstDow+7)%7; var day2=1+delta2+(nth-1)*7;
+            var cand2=new Date(y2,m3,day2); cand2.setHours(9,0,0,0);
+            if (cand2.getMonth()===m3 && cand2>new Date()) { return cand2.toISOString().slice(0,10); }
+          }
+        }
+      }
+      var mHafta = pd.match(/(\d+)\.\s*hafta/i);
+      if (mHafta) {
+        var nthH = parseInt(mHafta[1]);
+        var now3 = new Date();
+        for (var ay3=0; ay3<3; ay3++) {
+          var y3=now3.getFullYear(), m4=now3.getMonth()+ay3;
+          if (m4>11){ m4-=12; y3++; }
+          var d6=new Date(y3,m4,1+(nthH-1)*7); d6.setHours(9,0,0,0);
+          if (d6.getMonth()===m4 && d6>new Date()) { return d6.toISOString().slice(0,10); }
+        }
+      }
       var m2 = pd.match(/ayın son/i); if(m2){ var d4=new Date(); d4.setMonth(d4.getMonth()+1,0); d4.setHours(17,0,0,0); return d4.toISOString().slice(0,10); }
     }
     if (periyot==='yıllık'||periyot==='yillik') {
@@ -1014,7 +1043,16 @@ window._ppTakvimHatirlatmaKontrol = function() {
 };
 
 window._ppTakvimBaslat = function() {
-  if (_ppTakvimLoad().length > 0) return;
+  var mevcut = _ppTakvimLoad();
+  var guncellendi = false;
+  mevcut.forEach(function(o) {
+    if (!o.sonrakiCalisma) {
+      o.sonrakiCalisma = window._ppTakvimSonrakiHesapla?.(o) || null;
+      if (o.sonrakiCalisma) guncellendi = true;
+    }
+  });
+  if (guncellendi) { _ppTakvimStore(mevcut); console.log('[PP-TAKVIM] sonrakiCalisma güncellendi'); }
+  if (mevcut.length > 0) return;
   var baslangic = [
     { id:'TAK-001', baslik:'Aylık Ödeme Raporu', kategori:'MUHASEBE', periyot:'Aylık', periyotDetay:'Her ayın 1. Pazartesi 10:00', sorumluUnvan:'Muhasebe Yöneticisi', oncelik:'Normal', hatirlatmaGun:3, durum:'active', createdAt:_ppNow() },
     { id:'TAK-002', baslik:'SGK Bildirimi', kategori:'İK', periyot:'Aylık', periyotDetay:'Her ayın 23. günü', sorumluUnvan:'İnsan Kaynakları', oncelik:'Kritik', hatirlatmaGun:5, durum:'active', createdAt:_ppNow() },
@@ -1025,7 +1063,7 @@ window._ppTakvimBaslat = function() {
     { id:'TAK-007', baslik:'Sigorta Poliçe Kontrolü', kategori:'SİGORTA', periyot:'Aylık', periyotDetay:'Her ayın 1. haftası', sorumluUnvan:'Operasyon Yöneticisi', oncelik:'Normal', hatirlatmaGun:7, durum:'active', createdAt:_ppNow() },
     { id:'TAK-008', baslik:'Yıllık Bağımsız Denetim', kategori:'HUKUKİ', periyot:'Yıllık', periyotDetay:'Her yılın Ocak ayı', sorumluUnvan:'Genel Müdür', oncelik:'Kritik', hatirlatmaGun:30, durum:'active', createdAt:_ppNow() }
   ];
-  baslangic.forEach(function(o){ o.sonrakiCalisma = window._ppTakvimSonrakiHesapla(o); });
+  baslangic.forEach(function(o){ o.sonrakiCalisma = window._ppTakvimSonrakiHesapla?.(o)||null; });
   _ppTakvimStore(baslangic);
   console.log('[PP-TAKVIM] '+baslangic.length+' başlangıç kaydı yüklendi');
 };
