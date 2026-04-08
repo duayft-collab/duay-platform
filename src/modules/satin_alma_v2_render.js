@@ -234,7 +234,7 @@ window._saV2PeekHTML = function(t) {
   var tl    = (alisF*kur).toFixed(2);
   var marj  = parseFloat(t.karMarji)||33;
   var satis = (alisF*kur*(1+marj/100)).toFixed(2);
-  var h = '<div style="position:fixed;top:0;right:0;width:320px;height:100vh;background:'+window._s2+';border-left:0.5px solid '+window._b+';overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;z-index:8888;box-shadow:-4px 0 16px rgba(0,0,0,.08)">';
+  var h = '<div style="position:fixed;top:40px;right:0;width:320px;height:calc(100vh - 40px);background:'+window._s2+';border-left:0.5px solid '+window._b+';overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;z-index:8888;box-shadow:-4px 0 16px rgba(0,0,0,.08)">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:10px;font-weight:500;color:'+window._t+'">Teklif Detayı</span><button onclick="event.stopPropagation();window.SAV2_AKT_ID=null;window.renderSatinAlmaV2()" style="font-size:14px;border:none;background:none;cursor:pointer;color:'+window._t3+';line-height:1">×</button></div>';
   h += '<div style="display:flex;gap:8px;align-items:flex-start">';
   if (t.gorsel) h += '<img src="'+t.gorsel+'" style="width:56px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0">';
