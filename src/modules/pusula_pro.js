@@ -1252,6 +1252,7 @@ window._ppTakvimPanelRender = function(body) {
   h += '</div>';
   h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
   h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:var(--s2);font-family:inherit">CSV Import<input type="file" accept=".csv,.txt" style="display:none" onchange="event.stopPropagation();var r=new FileReader();r.onload=function(e){window._ppTakvimCSVImport(e.target.result);};r.readAsText(this.files[0])"></label>';
+  h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:transparent;font-family:inherit">JSON Import<input type="file" accept=".json" style="display:none" onchange="event.stopPropagation();window._ppTakvimJSONImport(this)"></label>';
   h += '<select id="pp-tak-filtre" onchange="event.stopPropagation();window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t);font-family:inherit">';
   h += '<option value="">Tüm Kategoriler</option>';
   ['MUHASEBE','İK','VERGİ','SİGORTA','YÖNETİM','HUKUKİ','LOJİSTİK','OPERASYON'].forEach(function(k) { h += '<option value="' + k + '"' + (filtre === k ? ' selected' : '') + '>' + k + '</option>'; });
@@ -1765,4 +1766,62 @@ window._ppTakvimCSVImport = function(csvText) {
   window._ppTakvimStore?.(liste);
   window.toast?.(eklenen + ' etkinlik eklendi, ' + atlanan + ' atlandı', 'ok');
   window._ppModRender?.();
+};
+
+/* ── PP-TAK-V2-004: JSON Import ─────────────────────────────── */
+window._ppTakvimJSONImport = function(inp) {
+  var f = inp.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) { window.toast?.('Geçersiz format — dizi bekleniyor', 'warn'); return; }
+      var liste = window._ppTakvimLoad?.() || [];
+      var eklenen = 0;
+      data.forEach(function(ev) {
+        if (!ev.name && !ev.baslik) return;
+        var yeni = {
+          id: window._ppId?.() || (Date.now() + Math.random().toString(36).slice(2, 6)),
+          name: ev.name || ev.baslik || '',
+          baslik: ev.baslik || ev.name || '',
+          period: ev.period || ev.periyot || '',
+          periyot: ev.periyot || ev.period || '',
+          periodDetail: ev.periodDetail || ev.periyotDetay || '',
+          periyotDetay: ev.periyotDetay || ev.periodDetail || '',
+          category: ev.category || ev.kategori || '',
+          kategori: ev.kategori || ev.category || '',
+          altKategori: ev.altKategori || ev.subCategory || '',
+          kaynak: ev.kaynak || ev.source || '',
+          resp: ev.resp || ev.sorumlu || '',
+          sorumlu: ev.sorumlu || ev.resp || '',
+          sorumluUnvan: ev.sorumluUnvan || ev.sorumlu || ev.resp || '',
+          atananGorevli: ev.atananGorevli || ev.assigned || '',
+          ilgiliDokuman: ev.ilgiliDokuman || ev.doc || '',
+          detail: ev.detail || ev.detay || '',
+          detay: ev.detay || ev.detail || '',
+          addToCalendar: ev.addToCalendar || ev.takvimeEkle || 'Evet',
+          takvimeEkle: ev.takvimeEkle || ev.addToCalendar || 'Evet',
+          priority: ev.priority || ev.oncelik || 'Normal',
+          oncelik: ev.oncelik || ev.priority || 'Normal',
+          startDate: ev.startDate || ev.basTarih || '',
+          basTarih: ev.basTarih || ev.startDate || '',
+          durum: ev.status || ev.durum || 'active',
+          status: ev.status || ev.durum || 'active',
+          no: ev.no || '',
+          hatirlatmaGun: ev.hatirlatmaGun || 3,
+          createdAt: window._ppNow?.(),
+          updatedAt: window._ppNow?.()
+        };
+        yeni.sonrakiCalisma = window._ppTakvimSonrakiHesapla?.(yeni) || null;
+        liste.push(yeni);
+        eklenen++;
+      });
+      window._ppTakvimStore?.(liste);
+      window.toast?.(eklenen + ' etkinlik içe aktarıldı', 'ok');
+      window._ppModRender?.();
+    } catch(err) {
+      window.toast?.('JSON parse hatası: ' + err.message, 'warn');
+    }
+  };
+  r.readAsText(f, 'UTF-8');
 };
