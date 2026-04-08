@@ -180,6 +180,10 @@ window._ppModRender = function() {
       + '<button onclick="event.stopPropagation();window._ppDwBasla?.()" style="font-size:12px;padding:10px 28px;background:var(--t);color:var(--sf);border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500">Başla</button>'
       + '<button onclick="event.stopPropagation();window._ppSetMod(\'calisma\')" style="font-size:12px;padding:10px 20px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Çık</button>'
       + '</div></div>';
+  } else if (mod === 'takvim') {
+    if (typeof window._ppTakvimPanelRender === 'function') { window._ppTakvimPanelRender(body); }
+    else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
+    return;
   } else if (mod === 'akis') {
     var msgs = window._ppMesajlariOku?.('sirket') || [];
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted && t.durum !== 'tamamlandi'; });
@@ -1030,3 +1034,87 @@ window._ppTakvimLoad = _ppTakvimLoad;
 window._ppTakvimStore = _ppTakvimStore;
 window.PusulaProTakvimLoaded = true;
 setTimeout(function(){ window._ppTakvimBaslat?.(); }, 800);
+
+/* ── PP-013B: Takvim Panel UI ───────────────────────────────── */
+window._ppTakvimPanelRender = function(body) {
+  if (!body) return;
+  var olaylar = _ppTakvimLoad().filter(function(o) { return !o.isDeleted; });
+  var bugun = _ppToday();
+  var katRenk = { MUHASEBE:'#185FA5', 'İK':'#1D9E75', 'VERGİ':'#A32D2D', 'SİGORTA':'#854F0B', 'YÖNETİM':'#534AB7', 'HUKUKİ':'#888780', 'LOJİSTİK':'#0F6E56', 'OPERASYON':'#854F0B' };
+  var katBg = { MUHASEBE:'#E6F1FB', 'İK':'#E1F5EE', 'VERGİ':'#FCEBEB', 'SİGORTA':'#FAEEDA', 'YÖNETİM':'#EEEDFE', 'HUKUKİ':'#F1EFE8', 'LOJİSTİK':'#E1F5EE', 'OPERASYON':'#FAEEDA' };
+  var filtre = '';
+  try { var fEl = document.getElementById('pp-tak-filtre'); if (fEl) filtre = fEl.value; } catch(e) {}
+  var liste = filtre ? olaylar.filter(function(o) { return o.kategori === filtre; }) : olaylar;
+  var h = '<div style="display:flex;height:100%;flex-direction:column;flex:1">';
+  h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
+  h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
+  h += '<select id="pp-tak-filtre" onchange="event.stopPropagation();window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t);font-family:inherit">';
+  h += '<option value="">Tüm Kategoriler</option>';
+  ['MUHASEBE','İK','VERGİ','SİGORTA','YÖNETİM','HUKUKİ','LOJİSTİK','OPERASYON'].forEach(function(k) { h += '<option value="' + k + '"' + (filtre === k ? ' selected' : '') + '>' + k + '</option>'; });
+  h += '</select>';
+  h += '<span style="font-size:11px;color:var(--t3);margin-left:auto">' + liste.length + ' etkinlik</span>';
+  h += '</div>';
+  h += '<div style="flex:1;overflow-y:auto">';
+  if (!liste.length) {
+    h += '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Etkinlik yok</div>';
+  }
+  liste.forEach(function(o) {
+    var sonraki = o.sonrakiCalisma || (window._ppTakvimSonrakiHesapla ? window._ppTakvimSonrakiHesapla(o) : '—') || '—';
+    var kalan = (sonraki && sonraki !== '—') ? Math.ceil((new Date(sonraki) - new Date(bugun)) / 86400000) : null;
+    var kalanRenk = kalan === 0 ? '#A32D2D' : (kalan !== null && kalan <= 3 ? '#854F0B' : '#185FA5');
+    var kalanBg = kalan === 0 ? '#FCEBEB' : (kalan !== null && kalan <= 3 ? '#FAEEDA' : '#E6F1FB');
+    var kr = katRenk[o.kategori] || '#888780';
+    var kb = katBg[o.kategori] || 'var(--s2)';
+    h += '<div style="display:grid;grid-template-columns:100px 1fr 100px 90px 80px 70px;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid var(--b);font-size:11px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+    h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + kb + ';color:' + kr + ';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center">' + _ppEsc(o.kategori || '') + '</span>';
+    h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">' + _ppEsc(o.baslik || '') + '</div><div style="font-size:9px;color:var(--t3);margin-top:1px">' + _ppEsc(o.periyot || '') + (o.periyotDetay ? ' · ' + _ppEsc(o.periyotDetay) : '') + '</div></div>';
+    h += '<div style="font-size:9px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(o.sorumluUnvan || '') + '</div>';
+    h += '<div style="font-size:9px;color:var(--t3)">' + _ppEsc(sonraki) + '</div>';
+    h += kalan !== null
+      ? '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + kalanBg + ';color:' + kalanRenk + ';font-weight:500;text-align:center">' + (kalan === 0 ? 'Bugün' : (kalan < 0 ? 'Geçti' : kalan + ' gün')) + '</span>'
+      : '<span></span>';
+    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">';
+    h += '<button onclick="event.stopPropagation();window._ppTakvimTamamla(\'' + o.id + '\')" title="Tamamlandı" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#1D9E75">✓</button>';
+    h += '<button onclick="event.stopPropagation();window._ppTakvimSil(\'' + o.id + '\')" title="Sil" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button>';
+    h += '</div></div>';
+  });
+  h += '</div></div>';
+  body.innerHTML = h;
+};
+
+window._ppTakvimTamamla = function(id) {
+  var olaylar = _ppTakvimLoad();
+  var o = olaylar.find(function(x) { return String(x.id) === String(id); });
+  if (!o) return;
+  o.sonTamamlandiAt = _ppNow();
+  o.sonrakiCalisma = (window._ppTakvimSonrakiHesapla ? window._ppTakvimSonrakiHesapla(o) : null) || null;
+  _ppTakvimStore(olaylar);
+  window.toast?.('Tamamlandı — Sonraki: ' + (o.sonrakiCalisma || '—'), 'ok');
+  window._ppModRender();
+};
+
+window._ppTakvimSil = function(id) {
+  if (!confirm('Bu etkinliği silmek istediğinizden emin misiniz?')) return;
+  var olaylar = _ppTakvimLoad();
+  var i = olaylar.findIndex(function(x) { return String(x.id) === String(id); });
+  if (i === -1) return;
+  olaylar[i].isDeleted = true;
+  olaylar[i].deletedAt = _ppNow();
+  _ppTakvimStore(olaylar);
+  window.toast?.('Etkinlik silindi', 'ok');
+  window._ppModRender();
+};
+
+window._ppTakvimYeniAc = function() {
+  var baslik = prompt('Etkinlik adı:'); if (!baslik || !baslik.trim()) return;
+  var periyot = prompt('Periyot (Günlük/Haftalık/Aylık/Yıllık):') || 'Aylık';
+  var periyotDetay = prompt('Periyot detayı (örn: Her ayın 23. günü):') || '';
+  var kategori = prompt('Kategori (MUHASEBE/İK/VERGİ/SİGORTA/YÖNETİM/HUKUKİ/LOJİSTİK/OPERASYON):') || 'YÖNETİM';
+  var sorumlu = prompt('Sorumlu unvan:') || '';
+  var hatirlatma = parseInt(prompt('Kaç gün önce hatırlat:') || '3');
+  var yeni = { id: 'TAK-' + Date.now(), baslik: baslik.trim(), kategori: kategori.toUpperCase(), periyot: periyot, periyotDetay: periyotDetay, sorumluUnvan: sorumlu, oncelik: 'Normal', hatirlatmaGun: hatirlatma, durum: 'active', createdAt: _ppNow() };
+  yeni.sonrakiCalisma = (window._ppTakvimSonrakiHesapla ? window._ppTakvimSonrakiHesapla(yeni) : null) || null;
+  var olaylar = _ppTakvimLoad(); olaylar.unshift(yeni); _ppTakvimStore(olaylar);
+  window.toast?.('Etkinlik eklendi', 'ok');
+  window._ppModRender();
+};
