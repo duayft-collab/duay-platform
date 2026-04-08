@@ -400,7 +400,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ KODU</div>';
-  ic += '<input id="st-musteri-kod" value="0000" placeholder="3230" oninput="event.stopPropagation();var sid=window._saTeklifId?.(this.value)||(this.value+\'-\'+Date.now());document.getElementById(\'st-id-goster\').textContent=sid;document.getElementById(\'st-id\').value=sid" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:monospace"></div>';
+  ic += '<input id="st-musteri-kod" value="0000" placeholder="3230" oninput="event.stopPropagation();var sid=window._saTeklifId?.(this.value)||(this.value+\'-\'+Date.now());document.getElementById(\'st-id-goster\').textContent=sid;document.getElementById(\'st-id\').value=sid;window._saV2MusteriKodAra(this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:monospace"></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ ADI</div>';
   ic += '<input id="st-musteri-ad" placeholder="Müşteri adı" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">GEÇERLİLİK TARİHİ</div>';
@@ -417,10 +417,30 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal()" style="font-size:10px;padding:4px 12px;border:0.5px dashed var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit">+ Ürün Ekle</button>';
   ic += '</div></div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESLİM KOŞULU</div>';
-  ic += '<input id="st-teslim" value="FOB İstanbul" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
+  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESLİM KOŞULU (INCOTERMS)</div>';
+  ic += '<select id="st-teslim" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+  ic += '<option value="FOB Istanbul">FOB Istanbul</option>';
+  ic += '<option value="CIF Destination">CIF Destination</option>';
+  ic += '<option value="EXW Istanbul">EXW Istanbul</option>';
+  ic += '<option value="CFR Destination">CFR Destination</option>';
+  ic += '<option value="DDP Destination">DDP Destination</option>';
+  ic += '<option value="DAP Destination">DAP Destination</option>';
+  ic += '<option value="FCA Istanbul">FCA Istanbul</option>';
+  ic += '<option value="CPT Destination">CPT Destination</option>';
+  ic += '<option value="CIP Destination">CIP Destination</option>';
+  ic += '<option value="DPU Destination">DPU Destination</option>';
+  ic += '</select></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
-  ic += '<input id="st-odeme" value="30% Avans, 70% Akreditif" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
+  ic += '<select id="st-odeme" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+  ic += '<option>30% Advance, 70% L/C at sight</option>';
+  ic += '<option>50% Advance, 50% L/C at sight</option>';
+  ic += '<option>100% Advance before shipment</option>';
+  ic += '<option>L/C at sight</option>';
+  ic += '<option>T/T 30 days after B/L</option>';
+  ic += '<option>T/T 60 days after B/L</option>';
+  ic += '<option>D/P at sight</option>';
+  ic += '<option>Open Account 30 days</option>';
+  ic += '</select></div>';
   ic += '</div>';
   ic += '<div style="background:var(--s2);border-radius:6px;padding:12px 14px;border:0.5px solid var(--b);margin-bottom:12px">';
   ic += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px" id="st-ozet-urun-say">0 ürün</div>';
@@ -456,6 +476,7 @@ window._saV2SatisKaydet = function(alisId) {
   var kayit = {
     id:window._saId?.(),
     teklifId:teklifId,
+    revNo: '01',
     alisId:alisId,
     musteriAd:musteriAd,
     musteriKod:document.getElementById('st-musteri-kod')?.value||'',
@@ -1120,5 +1141,18 @@ window._saV2TakipKontrol = function() {
 };
 
 setTimeout(function(){ window._saV2TakipKontrol?.(); }, 3000);
+
+/* ── SA-V2-PI-004: Müşteri kodu otomatik doldurma ─────────── */
+window._saV2MusteriKodAra = function(kod) {
+  if (!kod || kod.length < 2) return;
+  var cariler = typeof window.loadCari === 'function' ? window.loadCari() : [];
+  var musteri = cariler.find(function(c) {
+    return (c.musteriKod || c.kod || c.id || '').toString() === kod.toString();
+  });
+  var adEl = document.getElementById('st-musteri-ad');
+  if (musteri && adEl && !adEl.value) {
+    adEl.value = musteri.ad || musteri.unvan || musteri.name || '';
+  }
+};
 
 console.log('[SAV2-RENDER] v2.0 yüklendi');
