@@ -62,10 +62,10 @@ window.renderSatinAlmaV2 = function() {
   h += '</div></div>';
 
   /* --- LISTE + PEEK --- */
-  h += '<div style="display:grid;grid-template-columns:'+(window.SAV2_AKT_ID?'1fr 300px':'1fr')+';flex:1;overflow:hidden">';
+  h += '<div style="flex:1;overflow:hidden;position:relative">';
 
   /* Liste */
-  h += '<div style="display:flex;flex-direction:column;overflow:hidden'+(window.SAV2_AKT_ID?';border-right:0.5px solid '+window._b:'')+'">';
+  h += '<div style="display:flex;flex-direction:column;overflow:hidden;height:100%">';
   h += '<div style="display:flex;align-items:center;padding:5px 10px;background:'+window._s2+';border-bottom:0.5px solid '+window._b+';font-size:8px;font-weight:500;color:'+window._t3+';letter-spacing:.06em;flex-shrink:0">';
   h += '<div style="width:22px"><input type="checkbox" id="sav2-all-cb" onchange="event.stopPropagation();window._saV2TumSec(this.checked)" style="width:11px;height:11px;cursor:pointer"></div>';
   h += '<div style="width:34px">GRS</div>';
@@ -127,14 +127,19 @@ window.renderSatinAlmaV2 = function() {
   }
   h += '</div>';
 
-  /* Peek panel */
-  if (window.SAV2_AKT_ID) {
-    var akt = liste.find(function(t){return t.id===window.SAV2_AKT_ID;});
-    h += window._saV2PeekHTML(akt);
-  }
-
   h += '</div></div>';
   panel.innerHTML = h;
+
+  /* Peek panel overlay — liste dışında, body'ye sabit */
+  var eskiPeek = document.getElementById('sav2-peek-overlay');
+  if (eskiPeek) eskiPeek.remove();
+  if (window.SAV2_AKT_ID) {
+    var aktif = liste.find(function(t){return t.id===window.SAV2_AKT_ID;});
+    var peekDiv = document.createElement('div');
+    peekDiv.id = 'sav2-peek-overlay';
+    peekDiv.innerHTML = window._saV2PeekHTML(aktif);
+    document.body.appendChild(peekDiv);
+  }
 };
 
 /* ── Filtre uygulayıcı ──────────────────────────────────────── */
@@ -174,7 +179,7 @@ window._saV2PeekHTML = function(t) {
   var tl    = (alisF*kur).toFixed(2);
   var marj  = parseFloat(t.karMarji)||33;
   var satis = (alisF*kur*(1+marj/100)).toFixed(2);
-  var h = '<div style="background:'+window._s2+';overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px">';
+  var h = '<div style="position:fixed;top:0;right:0;width:320px;height:100vh;background:'+window._s2+';border-left:0.5px solid '+window._b+';overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;z-index:8888;box-shadow:-4px 0 16px rgba(0,0,0,.08)">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:10px;font-weight:500;color:'+window._t+'">Teklif Detayı</span><button onclick="event.stopPropagation();window.SAV2_AKT_ID=null;window.renderSatinAlmaV2()" style="font-size:14px;border:none;background:none;cursor:pointer;color:'+window._t3+';line-height:1">×</button></div>';
   h += '<div style="display:flex;gap:8px;align-items:flex-start">';
   if (t.gorsel) h += '<img src="'+t.gorsel+'" style="width:56px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0">';
