@@ -66,6 +66,7 @@ window._yetkiKontrol = function(islem) {
     'docs': () => { window.renderDocs?.(); },
     'urunler': () => { window.renderUrunler?.(); },
     'urun-fiyat': () => { window._saUrunListeAc?.(); },
+    'satin-alma': () => { window.renderSatinAlmaV2?.(); },
     'alindi-teklifler': () => { window.renderIhracatListesi?.(); },
     'alis-teklifleri': () => { window.renderAlisTeklifleri?.(); },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
