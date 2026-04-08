@@ -261,6 +261,164 @@ window._saV2GoselYukle = function(id) {
 /* ── Placeholder fonksiyonlar ───────────────────────────────── */
 window._saV2TeklifOlustur = function(id) { window.toast?.('Satış teklifi formu — yakında','info'); };
 window._saV2Duzenle = function(id) { window.toast?.('Düzenleme — yakında','info'); };
-window._saV2YeniTeklif = function() { window.toast?.('Yeni teklif formu — yakında','info'); };
+window._saV2YeniTeklif = function() {
+  var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); return; }
+  var modal = document.createElement('div');
+  modal.id = 'sav2-form-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px 0;overflow-y:auto';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  var musteriKod = '0000';
+  var teklifId = window._saTeklifId?.(musteriKod) || (musteriKod + '-' + Date.now());
+  var _f = function(id, lbl, ph, tip) {
+    return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
+      + '<input id="sav2f-' + id + '" type="' + (tip || 'text') + '" placeholder="' + (ph || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
+  };
+  var _s = function(id, lbl, opts) {
+    return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
+      + '<select id="sav2f-' + id + '" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">' + opts + '</select></div>';
+  };
+  modal.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:660px;overflow:hidden">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
+    + '<div>'
+    + '<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Alış Teklifi</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace" id="sav2f-id-goster">ID: ' + teklifId + '</div>'
+    + '</div>'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>'
+    + '</div>'
+    + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">DUAY ÜRÜN KODU</div>'
+    + '<div style="display:flex;gap:5px">'
+    + '<input id="sav2f-duayKodu" placeholder="11·XXXX·XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2KatalogDoldur(this.value)" style="flex:1;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">'
+    + '<button onclick="event.stopPropagation();window._saV2KatalogAra()" style="font-size:10px;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit;white-space:nowrap">Katalog</button>'
+    + '</div>'
+    + '<div id="sav2f-katalog-bilgi" style="font-size:9px;color:var(--t3);margin-top:3px"></div>'
+    + '</div>'
+    + _f('urunAdi', 'İNG. ÜRÜN ADI (CI/PL/BL)', 'Standart İngilizce ad')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + _f('turkceAdi', 'TÜRKÇE ÜRÜN ADI', 'Türkçe ad')
+    + _f('marka', 'MARKA', 'Marka')
+    + _s('birim', 'BİRİM', '<option>Adet</option><option>Kg</option><option>Ton</option><option>m²</option><option>Lt</option><option>Koli</option>')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + _s('mensei', 'MENŞEİ', '<option value="TR">TR — Türkiye</option><option value="CN">CN — Çin</option><option value="DE">DE — Almanya</option><option value="IT">IT — İtalya</option><option value="JP">JP — Japonya</option>')
+    + _f('gtip', 'GTİP KODU', '8482.10.10')
+    + _f('saticiKodu', 'SATICI ÜRÜN KODU', 'MTL-0412')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + _f('tedarikci', 'TEDARİKÇİ', 'Tedarikçi adı')
+    + _f('alisF', 'ALİŞ FİYATI', '2.40')
+    + _s('para', 'PARA BİRİMİ', '<option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option>')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + _f('miktar', 'MİKTAR', '200')
+    + _f('jobId', 'JOB ID', '0041')
+    + _f('teslimat', 'TESLİM SÜRESİ (gün)', '14', 'number')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + _f('netAg', 'NET AĞIRLIK (kg)', '', 'number')
+    + _f('brutAg', 'BRÜT AĞIRLIK (kg)', '', 'number')
+    + '</div>'
+    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">GÖRSEL (maks 5MB)</div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<div id="sav2f-gorsel-oniz" style="width:48px;height:48px;border-radius:6px;background:var(--s2);border:0.5px solid var(--b);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>'
+    + '<label style="font-size:10px;padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;cursor:pointer;color:var(--t2);background:var(--s2)">Görsel Seç<input type="file" accept="image/*" style="display:none" onchange="event.stopPropagation();window._saV2FormGorsel(this)"></label>'
+    + '<span id="sav2f-gorsel-ad" style="font-size:9px;color:var(--t3)">Seçilmedi</span>'
+    + '</div></div>'
+    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ KODU (Teklif ID için)</div>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<input id="sav2f-musteriKod" placeholder="3230" oninput="event.stopPropagation();var tid=window._saTeklifId?.(this.value)||\'0000-\'+Date.now();document.getElementById(\'sav2f-id-goster\').textContent=\'ID: \'+tid;document.getElementById(\'sav2f-teklifId\').value=tid" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100px;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:monospace">'
+    + '<input id="sav2f-teklifId" value="' + teklifId + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:11px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:#0C447C;font-family:monospace">'
+    + '</div></div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
+    + '<div style="font-size:9px;color:var(--t3)">* Duay kodu girilince katalogdan otomatik dolar</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
+    + '<button onclick="event.stopPropagation();window._saV2FormKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
+    + '</div></div>'
+    + '</div>';
+  document.body.appendChild(modal);
+  window._saV2FormGorselData = null;
+  setTimeout(function() { document.getElementById('sav2f-duayKodu')?.focus(); }, 100);
+};
+
+window._saV2FormGorsel = function(inp) {
+  var f = inp.files[0]; if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { window.toast?.('5MB sınırı aşıldı', 'warn'); return; }
+  var r = new FileReader();
+  r.onload = function(e) {
+    window._saV2FormGorselData = e.target.result;
+    var oniz = document.getElementById('sav2f-gorsel-oniz');
+    if (oniz) oniz.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">';
+    var ad = document.getElementById('sav2f-gorsel-ad');
+    if (ad) ad.textContent = f.name;
+  };
+  r.readAsDataURL(f);
+};
+
+window._saV2KatalogDoldur = function(kod) {
+  if (!kod || kod.length < 5) return;
+  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+  var u = urunler.find(function(x) { return (x.duayKodu || '').toLowerCase() === kod.toLowerCase(); });
+  if (!u) return;
+  var bilgi = document.getElementById('sav2f-katalog-bilgi');
+  if (bilgi) bilgi.innerHTML = '<span style="color:#0F6E56">✓ Katalogda bulundu: ' + _saEsc(u.duayAdi || u.urunAdi || '') + '</span>';
+  var alanlar = { urunAdi: u.standartAdi || u.urunAdi, turkceAdi: u.duayAdi || u.urunAdi, marka: u.marka, gtip: u.gtip || u.hscKodu, saticiKodu: u.saticiKodu || u.urunKodu, netAg: u.netAgirlik, brutAg: u.brutAgirlik };
+  Object.keys(alanlar).forEach(function(k) {
+    var el = document.getElementById('sav2f-' + k);
+    if (el && alanlar[k]) el.value = alanlar[k];
+  });
+  var birimEl = document.getElementById('sav2f-birim');
+  if (birimEl && u.birim) {
+    Array.from(birimEl.options).forEach(function(o) { if (o.value === u.birim) o.selected = true; });
+  }
+  var menEl = document.getElementById('sav2f-mensei');
+  if (menEl && u.mensei) {
+    Array.from(menEl.options).forEach(function(o) { if (o.value === u.mensei) o.selected = true; });
+  }
+};
+
+window._saV2KatalogAra = function() { window.toast?.('Katalog arama — yakında', 'info'); };
+
+window._saV2FormKaydet = function() {
+  var _v = function(id) { return document.getElementById('sav2f-' + id)?.value?.trim() || ''; };
+  var duayKodu = _v('duayKodu');
+  var urunAdi = _v('urunAdi');
+  if (!urunAdi) { window.toast?.('Ürün adı zorunlu', 'warn'); return; }
+  var yeni = {
+    id: window._saId?.() || Date.now() + Math.random().toString(36).slice(2, 8),
+    teklifId: _v('teklifId'),
+    duayKodu: duayKodu,
+    urunAdi: urunAdi,
+    turkceAdi: _v('turkceAdi'),
+    marka: _v('marka'),
+    birim: document.getElementById('sav2f-birim')?.value || 'Adet',
+    mensei: document.getElementById('sav2f-mensei')?.value || 'TR',
+    gtip: _v('gtip'),
+    saticiKodu: _v('saticiKodu'),
+    tedarikci: _v('tedarikci'),
+    alisF: _v('alisF'),
+    para: document.getElementById('sav2f-para')?.value || 'USD',
+    miktar: _v('miktar'),
+    jobId: _v('jobId'),
+    teslimat: _v('teslimat'),
+    netAgirlik: _v('netAg'),
+    brutAgirlik: _v('brutAg'),
+    gorsel: window._saV2FormGorselData || '',
+    durum: 'bekleyen',
+    karMarji: 33,
+    createdAt: window._saNow?.(),
+    updatedAt: window._saNow?.(),
+    olusturan: window._saCu?.()?.displayName || ''
+  };
+  var liste = window._saV2Load?.() || [];
+  liste.unshift(yeni);
+  window._saV2Store?.(liste);
+  document.getElementById('sav2-form-modal')?.remove();
+  window.toast?.('Teklif kaydedildi', 'ok');
+  window.renderSatinAlmaV2?.();
+};
 
 console.log('[SAV2-RENDER] v2.0 yüklendi');
