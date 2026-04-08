@@ -93,7 +93,7 @@ window._ppRender = function() {
     + '<div id="pp-not-panel" style="flex-shrink:0">' + window._ppNotPanelHTML() + '</div>'
     + '</div>';
   window._ppSetMod('akis');
-  setTimeout(function() { window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
+  setTimeout(function() { window._ppAktifFrog = null; window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
 };
 
 window._ppSetMod = function(mod) {
@@ -242,6 +242,7 @@ console.log('[PUSULA-PRO] v1.0 yüklendi | Export: window._ppExport()');
 
 /* ── Frog Sistemi ───────────────────────────────────────────── */
 window._ppFrogBelirle = function() {
+  if (window._ppAktifFrog && window._ppAktifFrog._ppSource === 'pro') return window._ppAktifFrog;
   var tasks = _ppLoad().filter(function(t){ return !t.isDeleted && t.durum !== 'tamamlandi'; });
   if (!tasks.length) return null;
   var kritik = tasks.filter(function(t){ return t.oncelik==='kritik'; });
@@ -483,6 +484,7 @@ window._ppGorevKaydet = function() {
     dosyalar: window._ppDosyaEkleri||[],
     dosyaSay: (window._ppDosyaEkleri||[]).length,
     isFrog: document.getElementById('ppf-frog')?.checked||false,
+    _ppSource: 'pro',
     createdAt: _ppNow(),
     updatedAt: _ppNow(),
     sorumluId: _ppCu()?.uid||''
