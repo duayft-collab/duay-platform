@@ -4613,3 +4613,24 @@ window._renderFirmaKpi = function() {
   h += '</div>';
   panel.innerHTML = h;
 };
+
+/* ── MENU-GRUP-001: Kargo → Lojistik, SA-V2 → Satınalma ───── */
+(function _menuGrupDuzenle() {
+  if (!window._TN2_GROUPS) return;
+  var G = window._TN2_GROUPS;
+  /* Kargo: Satınalma'dan çıkar, Lojistik'e taşı */
+  if (G.satinalma && Array.isArray(G.satinalma.mods)) {
+    G.satinalma.mods = G.satinalma.mods.filter(function(m) { return m.id !== 'kargo'; });
+  }
+  if (G.lojistik && Array.isArray(G.lojistik.mods)) {
+    if (!G.lojistik.mods.some(function(m) { return m.id === 'kargo'; })) {
+      G.lojistik.mods.unshift({ id: 'kargo', label: 'Kargo Takibi' });
+    }
+  }
+  /* SA-V2 Alış Teklifleri V2 → Satınalma grubuna ekle (idempotent) */
+  if (G.satinalma && Array.isArray(G.satinalma.mods)) {
+    if (!G.satinalma.mods.some(function(m) { return m.id === 'satin-alma'; })) {
+      G.satinalma.mods.unshift({ id: 'satin-alma', label: 'Alış Teklifleri V2' });
+    }
+  }
+})();

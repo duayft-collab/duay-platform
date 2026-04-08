@@ -3592,6 +3592,7 @@ var _TN2_GROUPS = {
     { id:'platform-rules', label:'Platform Kuralları' },
   ]},
 };
+window._TN2_GROUPS = _TN2_GROUPS;
 var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
 if (_tn2ActiveGrp === 'ekip') _tn2ActiveGrp = 'sistem';
 if (_tn2ActiveGrp === 'finans') _tn2ActiveGrp = 'muhasebe';
