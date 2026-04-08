@@ -349,6 +349,12 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Alış fiyatından hesaplanır — satış fiyatı teklife işlenir, kataloğa değil</div></div>';
   ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove()" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;padding:0 4px">×</button>';
   ic += '</div>';
+  ic += '<div style="display:flex;align-items:center;gap:6px;padding:8px 20px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  ic += '<span style="font-size:9px;color:var(--t3);font-weight:500">PI TASARIM:</span>';
+  ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\'A\';document.querySelectorAll(\'.pi-tas-btn\').forEach(function(b){b.style.background=\'transparent\';b.style.color=\'var(--t2)\'});this.style.background=\'var(--t)\';this.style.color=\'var(--sf)\'" class="pi-tas-btn" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">A — Corporate</button>';
+  ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\'B\';document.querySelectorAll(\'.pi-tas-btn\').forEach(function(b){b.style.background=\'transparent\';b.style.color=\'var(--t2)\'});this.style.background=\'#185FA5\';this.style.color=\'#fff\'" class="pi-tas-btn" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit">B — Modern</button>';
+  ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\'C\';document.querySelectorAll(\'.pi-tas-btn\').forEach(function(b){b.style.background=\'transparent\';b.style.color=\'var(--t2)\'});this.style.background=\'#1D9E75\';this.style.color=\'#fff\'" class="pi-tas-btn" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit">C — Premium</button>';
+  ic += '</div>';
   ic += '<div style="padding:20px;display:flex;flex-direction:column;gap:14px">';
   ic += '<div style="background:#E6F1FB;border:0.5px solid #B5D4F4;border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:12px">';
   if(t.gorsel) ic += '<img src="'+t.gorsel+'" style="width:44px;height:44px;border-radius:5px;object-fit:cover;flex-shrink:0">';
@@ -436,36 +442,27 @@ window._saV2SatisKaydet = function(alisId) {
 };
 
 window._saV2SatisPDF = function() {
+  var teklifId = document.getElementById('st-id')?.value||'';
   var musteriAd = document.getElementById('st-musteri-ad')?.value||'';
   var musteriKod = document.getElementById('st-musteri-kod')?.value||'';
   var gecerlilik = document.getElementById('st-gecerlilik')?.value||'';
-  var teslim = document.getElementById('st-teslim')?.value||'FOB İstanbul';
+  var teslim = document.getElementById('st-teslim')?.value||'FOB Istanbul';
   var odeme = document.getElementById('st-odeme')?.value||'';
-  var teklifId = document.getElementById('st-id')?.value||'';
-  var urunler = window._saV2SatisUrunler||[];
-  var toplamSatis=0; var toplamAlis=0;
-  urunler.forEach(function(u){ toplamSatis+=u.alisTl*(1+u.marj/100)*u.miktar; toplamAlis+=u.alisTl*u.miktar; });
-  var toplamKar=(toplamSatis-toplamAlis).toFixed(2);
-  var ortMarj=toplamAlis>0?((toplamSatis-toplamAlis)/toplamAlis*100).toFixed(1):0;
-  var bugun=new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
-  var win=window.open('','_blank','width=900,height=700');
-  if(!win){window.toast?.('Popup engellendi','warn');return;}
-  var satirlar='';
-  urunler.forEach(function(u,i){
-    var sF=(u.alisTl*(1+u.marj/100)).toFixed(2);
-    var top=(u.alisTl*(1+u.marj/100)*u.miktar).toFixed(2);
-    satirlar+='<tr><td>'+(i+1)+'</td><td><strong>'+u.urunAdi+'</strong><br><span style="font-size:9px;color:#888">'+u.duayKodu+'</span></td><td>'+u.miktar+'</td><td>₺'+u.alisTl.toFixed(2)+'</td><td>%'+u.marj+'</td><td>₺'+sF+'</td><td>₺'+top+'</td></tr>';
-  });
-  win.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Teklif '+teklifId+'</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:32px}.hd{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:20px}.logo{font-size:18px;font-weight:700}.logo small{display:block;font-size:9px;color:#666;font-weight:400;margin-top:2px}.tno{text-align:right}.tno .l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.08em}.tno .v{font-size:15px;font-weight:700;font-family:monospace}.ig{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.ib .l{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;border-bottom:0.5px solid #eee;padding-bottom:4px;margin-bottom:6px}.ib .v{font-size:12px;line-height:1.6}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;padding:8px;border-bottom:1px solid #111;text-align:left}td{font-size:11px;padding:9px 8px;border-bottom:0.5px solid #eee}.oz{background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px;padding:12px 14px;margin-bottom:16px}.or{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}.or.kar{color:#15803d;font-weight:600;font-size:13px;border-top:1px solid #ddd;padding-top:8px;margin-top:4px}.kg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}.kb .l{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}.kb .v{font-size:11px;font-weight:500}.imza{border-top:1px solid #aaa;width:180px;text-align:center;padding-top:5px;font-size:9px;color:#666}.ft{color:#888;font-size:9px}.np{text-align:center;margin-top:20px}@media print{.np{display:none}}</style></head><body>');
-  win.document.write('<div class="hd"><div class="logo">DUAY<small>Uluslararası Ticaret Ltd. Şti.</small></div><div class="tno"><div class="l">Teklif No</div><div class="v">'+teklifId+'</div></div></div>');
-  win.document.write('<div class="ig"><div class="ib"><div class="l">Alıcı</div><div class="v"><strong>'+(musteriAd||'—')+'</strong><br>Müşteri Kodu: '+(musteriKod||'—')+'</div></div><div class="ib"><div class="l">Teklif Bilgileri</div><div class="v">Tarih: '+bugun+'<br>Geçerlilik: '+(gecerlilik||'Belirtilmedi')+'</div></div></div>');
-  win.document.write('<table><thead><tr><th>#</th><th>Ürün / Kodu</th><th>Miktar</th><th>Birim Alış</th><th>Marj</th><th>Birim Satış</th><th>Toplam</th></tr></thead><tbody>'+satirlar+'</tbody></table>');
-  win.document.write('<div class="oz"><div class="or"><span>Toplam Satış Tutarı</span><span>₺'+toplamSatis.toFixed(2)+'</span></div><div class="or kar"><span>Toplam Kâr ('+ortMarj+'%)</span><span>₺'+toplamKar+'</span></div></div>');
-  win.document.write('<div class="kg"><div class="kb"><div class="l">Teslim Koşulu</div><div class="v">'+teslim+'</div></div><div class="kb"><div class="l">Ödeme Koşulu</div><div class="v">'+odeme+'</div></div></div>');
-  win.document.write('<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px"><div class="imza">Yetkili İmza / Kaşe</div><div class="ft">Duay Uluslararası Ticaret Ltd. Şti. · '+bugun+'</div></div>');
-  win.document.write('<div class="np"><button onclick="window.print()" style="font-size:13px;padding:10px 28px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500">🖨 Yazdır / PDF Kaydet</button></div>');
-  win.document.write('</body></html>');
-  win.document.close();
+  var tasarim = window._saV2AktifPITasarim || 'A';
+  var teklif = {
+    teklifId: teklifId,
+    musteriAd: musteriAd,
+    musteriKod: musteriKod,
+    gecerlilik: gecerlilik,
+    teslim: teslim,
+    odeme: odeme,
+    urunler: window._saV2SatisUrunler || [],
+    revNo: '01'
+  };
+  if (typeof window._piOlustur !== 'function') {
+    window.toast?.('PI modülü yüklenmedi','warn'); return;
+  }
+  window._piOlustur(teklif, tasarim, 'musteri');
 };
 window._saV2Duzenle = function(id) { window.toast?.('Düzenleme — yakında','info'); };
 window._saV2YeniTeklif = function() {
