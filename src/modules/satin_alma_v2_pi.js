@@ -193,4 +193,40 @@ window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod) {
   return h;
 };
 
+/* ── SA-V2-PIPELINE-001: Teklif Durum Pipeline ─────────────── */
+var ST_DURUMLAR = ['taslak','gonderildi','inceliyor','kabul','reddedildi','revizyon'];
+var ST_DURUM_LBL = {taslak:'Taslak',gonderildi:'Gönderildi',inceliyor:'İnceliyor',kabul:'Kabul',reddedildi:'Reddedildi',revizyon:'Revizyon İstedi'};
+var ST_DURUM_RENK = {taslak:'#888780',gonderildi:'#185FA5',inceliyor:'#854F0B',kabul:'#0F6E56',reddedildi:'#A32D2D',revizyon:'#534AB7'};
+
+window._steklifDurumGuncelle = function(id, yeniDurum) {
+  var teklifler = window._saTeklifLoad?.() || [];
+  var t = teklifler.find(function(x){return x.id===id;});
+  if (!t) { window.toast?.('Teklif bulunamadı','warn'); return; }
+  var eskiDurum = t.durum;
+  t.durum = yeniDurum;
+  t.updatedAt = window._saNow?.();
+  if (yeniDurum === 'gonderildi' && !t.gonderimTarih) t.gonderimTarih = window._saNow?.();
+  if (yeniDurum === 'kabul') t.kabulTarih = window._saNow?.();
+  if (yeniDurum === 'reddedildi') t.redTarih = window._saNow?.();
+  window._saTeklifStore?.(teklifler);
+  if (typeof window.logActivity === 'function') window.logActivity('TEKLIF_DURUM',{id:id,eski:eskiDurum,yeni:yeniDurum});
+  window.toast?.('Durum güncellendi: '+ST_DURUM_LBL[yeniDurum],'ok');
+};
+
+window._steklifDurumPanelHTML = function(teklif) {
+  if (!teklif) return '';
+  var h = '<div style="background:var(--s2);border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">DURUM PIPELINE</div>';
+  h += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">';
+  ST_DURUMLAR.forEach(function(d) {
+    var aktif = teklif.durum === d;
+    var renk = ST_DURUM_RENK[d]||'#888';
+    h += '<button onclick="event.stopPropagation();window._steklifDurumGuncelle(\''+teklif.id+'\',\''+d+'\')" ';
+    h += 'style="font-size:9px;padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit;font-weight:'+(aktif?'500':'400')+';';
+    h += 'background:'+(aktif?renk:'transparent')+';color:'+(aktif?'#fff':renk)+';border:0.5px solid '+renk+'">'+ST_DURUM_LBL[d]+'</button>';
+  });
+  h += '</div></div>';
+  return h;
+};
+
 console.log('[PI] v1.0 yüklendi — 3 tasarim hazir');

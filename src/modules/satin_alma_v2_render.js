@@ -290,6 +290,7 @@ window._saV2PeekHTML = function(t) {
   h += '<input type="range" min="5" max="60" value="'+marj+'" id="sav2-marj-slider" oninput="event.stopPropagation();document.getElementById(\'sav2-marj-val\').textContent=\'%\'+this.value+\' → ₺\'+('+tl+'*(1+this.value/100)).toFixed(2)" style="flex:1">';
   h += '<span id="sav2-marj-val" style="font-size:11px;font-weight:500;color:#0C447C;white-space:nowrap">%'+marj+' → ₺'+satis+'</span></div>';
   h += '</div>';
+  if (typeof window._steklifDurumPanelHTML === 'function') h += window._steklifDurumPanelHTML(t);
   h += '<div style="display:flex;flex-direction:column;gap:5px">';
   if (t.durum==='bekleyen') {
     h += '<button onclick="event.stopPropagation();window._saV2OnayaGonderTek(\''+t.id+'\')" style="font-size:10px;padding:7px;border:none;border-radius:5px;background:#854F0B;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Onaya Gönder</button>';
