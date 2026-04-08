@@ -318,11 +318,109 @@ window._ppTamamla = function(id) {
 };
 
 window._ppYeniGorev = function() {
-  var baslik = prompt('Görev başlığı:');
-  if (!baslik || !baslik.trim()) return;
-  var yeni = { id: _ppId(), baslik: baslik.trim(), oncelik: 'normal', durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _ppCu()?.displayName || '' };
-  var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
-  window.toast?.('Görev eklendi', 'ok');
+  var mevcut = document.getElementById('pp-gorev-modal'); if(mevcut){mevcut.remove();return;}
+  var ekip = ['Baran A.','Ayşe Y.','Mehmet K.','Zeynep K.'];
+  var kpiler = ['—','KPI-01 Satış Hedefi','KPI-02 Nakit Akışı','KPI-03 Satınalma','KPI-07 SGK/Ödemeler'];
+  var mo = document.createElement('div'); mo.id='pp-gorev-modal';
+  mo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 0;overflow-y:auto';
+  mo.onclick=function(e){if(e.target===mo)mo.remove();};
+  var _sel=function(id,lbl,opts,bg){ return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">'+lbl+'</div><select id="ppf-'+id+'" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:'+(bg||'var(--s2)')+';color:var(--t);font-family:inherit">'+opts+'</select></div>'; };
+  var _inp=function(id,lbl,type,ph){ return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">'+lbl+'</div><input id="ppf-'+id+'" type="'+(type||'text')+'" placeholder="'+(ph||'')+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'; };
+  mo.innerHTML='<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:620px;overflow:hidden">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
+    +'<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Görev</div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button></div>'
+    +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
+    +'<input id="ppf-baslik" placeholder="Görev başlığı..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:15px;font-weight:500;padding:8px 0;border:none;border-bottom:2px solid var(--bm);border-radius:0;background:transparent;width:100%;color:var(--t);font-family:inherit;outline:none">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    +_sel('job_id','JOB ID','<option value="">— Seç —</option><option>JOB-2026-0041</option><option>JOB-2026-0040</option><option>JOB-2026-0039</option><option value="yeni">+ Yeni Job ID</option>')
+    +_sel('departman','DEPARTMAN','<option>Satış</option><option>Satınalma</option><option>Operasyon</option><option>Finans</option><option>İK</option>')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
+    +_sel('oncelik','ÖNCELİK','<option value="kritik">Kritik</option><option value="yuksek">Yüksek</option><option value="normal" selected>Normal</option><option value="dusuk">Düşük</option>','var(--s2)')
+    +_sel('durum','DURUM','<option value="plan" selected>Plan</option><option value="devam">Devam</option><option value="bekliyor">Bekliyor</option>')
+    +_sel('kpi','KPI BAĞLA',kpiler.map(function(k){return '<option>'+k+'</option>';}).join(''))
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
+    +_inp('basT','BAŞLANGIÇ','date','')
+    +_inp('bitT','BİTİŞ TARİHİ','date','')
+    +_inp('sure','TAHMİNİ SÜRE','text','örn: 90 dk')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
+    +_sel('sorumlu','SORUMLU',ekip.map(function(e){return '<option>'+e+'</option>';}).join(''))
+    +_sel('gozlemci','GÖZLEMCİ','<option value="">— Ekle —</option>'+ekip.map(function(e){return '<option>'+e+'</option>';}).join(''))
+    +_sel('enerji','ENERJİ','<option value="yuksek">Yüksek</option><option value="orta" selected>Orta</option><option value="dusuk">Düşük</option>')
+    +'</div>'
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">AÇIKLAMA / ARAŞTIRMA NOTU</div>'
+    +'<textarea id="ppf-aciklama" placeholder="Görev detayları, araştırma notları..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);height:70px;resize:none;font-family:inherit;box-sizing:border-box"></textarea></div>'
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">ALT GÖREVLER</div>'
+    +'<div id="ppf-altGorevList" style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;background:var(--s2)"></div>'
+    +'<div style="display:flex;gap:6px;margin-top:6px"><input id="ppf-altYeni" placeholder="+ Alt görev ekle..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\'){event.preventDefault();window._ppAltGorevEkle()}" style="flex:1;font-size:12px;padding:5px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
+    +'<button onclick="event.stopPropagation();window._ppAltGorevEkle()" style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Ekle</button></div></div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
+    +'<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" id="ppf-frog" onclick="event.stopPropagation()" style="width:13px;height:13px">Bu görevi bugünün Frogu yap</label>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
+    +'<button onclick="event.stopPropagation();window._ppGorevKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
+    +'</div></div></div>';
+  document.body.appendChild(mo);
+  setTimeout(function(){document.getElementById('ppf-baslik')?.focus();},100);
+  window._ppAltGorevler=[];
+};
+
+window._ppAltGorevler = [];
+window._ppAltGorevEkle = function() {
+  var inp = document.getElementById('ppf-altYeni'); if(!inp||!inp.value.trim()) return;
+  window._ppAltGorevler.push({id:_ppId(),baslik:inp.value.trim(),tamamlandi:false});
+  inp.value='';
+  var list = document.getElementById('ppf-altGorevList'); if(!list) return;
+  list.innerHTML = window._ppAltGorevler.map(function(ag,i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--b)">'
+      +'<input type="checkbox" style="width:12px;height:12px">'
+      +'<span style="font-size:12px;flex:1;color:var(--t)">'+_ppEsc(ag.baslik)+'</span>'
+      +'<button onclick="event.stopPropagation();window._ppAltGorevSil('+i+')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:14px;line-height:1;padding:0">×</button>'
+      +'</div>';
+  }).join('');
+};
+window._ppAltGorevSil = function(i) {
+  window._ppAltGorevler.splice(i,1);
+  var list = document.getElementById('ppf-altGorevList');
+  if(list) list.innerHTML = window._ppAltGorevler.map(function(ag,j){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--b)"><input type="checkbox" style="width:12px;height:12px"><span style="font-size:12px;flex:1;color:var(--t)">'+_ppEsc(ag.baslik)+'</span><button onclick="event.stopPropagation();window._ppAltGorevSil('+j+')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:14px;line-height:1;padding:0">×</button></div>';
+  }).join('');
+};
+
+window._ppGorevKaydet = function() {
+  var baslik = document.getElementById('ppf-baslik')?.value.trim();
+  if(!baslik){window.toast?.('Görev başlığı zorunlu','warn');return;}
+  var yeni = {
+    id: _ppId(),
+    baslik: baslik,
+    job_id: document.getElementById('ppf-job_id')?.value||'',
+    departman: document.getElementById('ppf-departman')?.value||'',
+    oncelik: document.getElementById('ppf-oncelik')?.value||'normal',
+    durum: document.getElementById('ppf-durum')?.value||'plan',
+    kpi: document.getElementById('ppf-kpi')?.value||'',
+    basT: document.getElementById('ppf-basT')?.value||'',
+    bitTarih: document.getElementById('ppf-bitT')?.value||'',
+    sure: document.getElementById('ppf-sure')?.value||'',
+    sorumlu: document.getElementById('ppf-sorumlu')?.value||'',
+    gozlemci: document.getElementById('ppf-gozlemci')?.value||'',
+    enerji: document.getElementById('ppf-enerji')?.value||'',
+    aciklama: document.getElementById('ppf-aciklama')?.value||'',
+    altGorevler: window._ppAltGorevler||[],
+    altGorevSay: (window._ppAltGorevler||[]).length,
+    altGorevTam: 0,
+    isFrog: document.getElementById('ppf-frog')?.checked||false,
+    createdAt: _ppNow(),
+    updatedAt: _ppNow(),
+    sorumluId: _ppCu()?.uid||''
+  };
+  var tasks=_ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
+  if(yeni.isFrog){window._ppAktifFrog=yeni; var el=document.getElementById('pp-frog-txt'); if(el) el.textContent=yeni.baslik;}
+  document.getElementById('pp-gorev-modal')?.remove();
+  window.toast?.('Görev eklendi'+(yeni.isFrog?' — Frog seçildi':''),'ok');
   window._ppModRender();
 };
 
