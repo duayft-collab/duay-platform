@@ -421,4 +421,77 @@ window._saV2FormKaydet = function() {
   window.renderSatinAlmaV2?.();
 };
 
+/* ── Onay Akışı ─────────────────────────────────────────────── */
+window._saV2YoneticiOnayla = function(id) {
+  var liste = window._saV2Load?.() || [];
+  var t = liste.find(function(x) { return x.id === id; });
+  if (!t) return;
+  t.durum = 'onaylandi';
+  t.onaylayanId = window._saCu?.()?.uid || '';
+  t.onaylayanAd = window._saCu?.()?.displayName || '';
+  t.onayTarih = window._saNow?.();
+  t.updatedAt = window._saNow?.();
+  window._saV2Store?.(liste);
+  window._saV2ZincirEtkisi(t);
+  window.toast?.('Teklif onaylandı — zincirleme etki başlatıldı', 'ok');
+  window.renderSatinAlmaV2?.();
+};
+
+window._saV2YoneticiReddet = function(id, neden) {
+  var liste = window._saV2Load?.() || [];
+  var t = liste.find(function(x) { return x.id === id; });
+  if (!t) return;
+  t.durum = 'reddedildi';
+  t.redNedeni = neden || '';
+  t.updatedAt = window._saNow?.();
+  window._saV2Store?.(liste);
+  window.toast?.('Teklif reddedildi', 'warn');
+  window.renderSatinAlmaV2?.();
+};
+
+window._saV2ZincirEtkisi = function(t) {
+  try {
+    /* 1. Ürün Kataloğu — son alış fiyatı güncelle */
+    if (t.duayKodu && typeof window.loadUrunler === 'function') {
+      var urunler = window.loadUrunler();
+      var u = urunler.find(function(x) { return (x.duayKodu || '') === (t.duayKodu || ''); });
+      if (u) {
+        u.sonAlisFiyati = t.alisF;
+        u.sonAlisPara = t.para;
+        u.sonAlisTed = t.tedarikci;
+        u.sonAlisTarih = window._saNow?.();
+      }
+      if (typeof window.saveUrunler === 'function') window.saveUrunler(urunler);
+    }
+    /* 2. Aktivite logu */
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('SATINALMA_ONAY', { teklifId: t.teklifId, urun: t.urunAdi, fiyat: t.alisF, para: t.para, tedarikci: t.tedarikci });
+    }
+    /* 3. Pusula Pro görev oluştur */
+    if (typeof window._ppLoad === 'function' && typeof window._ppStore === 'function') {
+      var ppTasks = window._ppLoad();
+      ppTasks.unshift({
+        id: window._saId?.(),
+        baslik: 'Sevkiyat: ' + (t.urunAdi || 'Ürün') + ' (' + (t.miktar || '') + ' ' + (t.birim || '') + ')',
+        departman: 'Operasyon',
+        oncelik: 'yuksek',
+        durum: 'plan',
+        job_id: t.jobId || '',
+        aciklama: 'Satın alma onaylandı. Tedarikçi: ' + (t.tedarikci || ''),
+        _ppSource: 'pro',
+        createdAt: window._saNow?.(),
+        updatedAt: window._saNow?.(),
+        _kaynak: 'satinalma_onay'
+      });
+      window._ppStore(ppTasks);
+    }
+    console.log('[SAV2] Zincirleme etki tamamlandı:', t.teklifId);
+  } catch(e) { console.error('[SAV2] Zincirleme hata:', e); }
+};
+
+/* ── Eski renderSatinAlma köprüsü ──────────────────────────── */
+if (typeof window.renderSatinAlma !== 'function') {
+  window.renderSatinAlma = window.renderSatinAlmaV2;
+}
+
 console.log('[SAV2-RENDER] v2.0 yüklendi');
