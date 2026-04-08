@@ -1251,6 +1251,7 @@ window._ppTakvimPanelRender = function(body) {
   h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'abonelik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='abonelik'?'var(--t)':'transparent')+';color:'+(sekme==='abonelik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Abonelikler</button>';
   h += '</div>';
   h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
+  h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:var(--s2);font-family:inherit">CSV Import<input type="file" accept=".csv,.txt" style="display:none" onchange="event.stopPropagation();var r=new FileReader();r.onload=function(e){window._ppTakvimCSVImport(e.target.result);};r.readAsText(this.files[0])"></label>';
   h += '<select id="pp-tak-filtre" onchange="event.stopPropagation();window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t);font-family:inherit">';
   h += '<option value="">Tüm Kategoriler</option>';
   ['MUHASEBE','İK','VERGİ','SİGORTA','YÖNETİM','HUKUKİ','LOJİSTİK','OPERASYON'].forEach(function(k) { h += '<option value="' + k + '"' + (filtre === k ? ' selected' : '') + '>' + k + '</option>'; });
@@ -1317,7 +1318,7 @@ window._ppTakvimYeniAc = function() {
   var kategori = prompt('Kategori (MUHASEBE/İK/VERGİ/SİGORTA/YÖNETİM/HUKUKİ/LOJİSTİK/OPERASYON):') || 'YÖNETİM';
   var sorumlu = prompt('Sorumlu unvan:') || '';
   var hatirlatma = parseInt(prompt('Kaç gün önce hatırlat:') || '3');
-  var yeni = { id: 'TAK-' + Date.now(), baslik: baslik.trim(), kategori: kategori.toUpperCase(), periyot: periyot, periyotDetay: periyotDetay, sorumluUnvan: sorumlu, oncelik: 'Normal', hatirlatmaGun: hatirlatma, durum: 'active', createdAt: _ppNow() };
+  var yeni = { id: 'TAK-' + Date.now(), baslik: baslik.trim(), kategori: kategori.toUpperCase(), altKategori: '', kaynak: '', ilgiliDokuman: '', atananGorevli: '', takvimeEkle: 'Evet', no: '', periyot: periyot, periyotDetay: periyotDetay, sorumluUnvan: sorumlu, oncelik: 'Normal', hatirlatmaGun: hatirlatma, durum: 'active', createdAt: _ppNow() };
   yeni.sonrakiCalisma = (window._ppTakvimSonrakiHesapla ? window._ppTakvimSonrakiHesapla(yeni) : null) || null;
   var olaylar = _ppTakvimLoad(); olaylar.unshift(yeni); _ppTakvimStore(olaylar);
   window.toast?.('Etkinlik eklendi', 'ok');
@@ -1639,4 +1640,61 @@ window._ppGorevMesaj = function(id) {
   window._ppMesajGonder?.('Görev: '+_ppEsc(t.baslik||t.title||''), 'kisisel', '');
   window._ppMesajPanelAc?.();
   window.toast?.('Görev mesajına geçildi','info');
+};
+
+/* ── PP-TAK-V2-001: CSV Import ──────────────────────────────── */
+window._ppTakvimCSVImport = function(csvText) {
+  if (!csvText || !csvText.trim()) { window.toast?.('CSV boş', 'warn'); return; }
+  var satirlar = csvText.trim().split(/\r?\n/);
+  if (satirlar.length < 2) { window.toast?.('Veri yok', 'warn'); return; }
+  var basliklar = satirlar[0].split(',').map(function(s) { return s.trim().toLowerCase().replace(/['"]/g, ''); });
+  var kolonMap = {
+    'no': 'no', 'periyot': 'periyot', 'kategori': 'kategori',
+    'alt kategori': 'altKategori', 'altkategori': 'altKategori',
+    'kaynak': 'kaynak',
+    'etkinlik adi': 'baslik', 'etkinlik adı': 'baslik',
+    'etkinlik detayi': 'periyotDetay', 'etkinlik detayı': 'periyotDetay',
+    'periyot detayi': 'periyotDetay', 'periyot detayı': 'periyotDetay',
+    'sorumlu kisi': 'sorumluUnvan', 'sorumlu kişi': 'sorumluUnvan',
+    'atanmis gorevli': 'atananGorevli', 'atanmış görevli': 'atananGorevli',
+    'ilgili dokuman': 'ilgiliDokuman', 'ilgili döküman': 'ilgiliDokuman'
+  };
+  var liste = window._ppTakvimLoad?.() || [];
+  var eklenen = 0;
+  var atlanan = 0;
+  for (var i = 1; i < satirlar.length; i++) {
+    var kolonlar = satirlar[i].split(',').map(function(s) { return s.trim().replace(/^["']|["']$/g, ''); });
+    if (!kolonlar.some(function(k) { return k.length > 0; })) continue;
+    var vals = {};
+    basliklar.forEach(function(b, idx) {
+      var key = kolonMap[b] || b;
+      vals[key] = kolonlar[idx] || '';
+    });
+    if (!vals.baslik) { atlanan++; continue; }
+    var yeni = {
+      id: window._ppId?.() || Date.now() + Math.random().toString(36).slice(2, 6),
+      no: vals.no || '',
+      baslik: vals.baslik,
+      kategori: vals.kategori || 'Genel',
+      altKategori: vals.altKategori || '',
+      kaynak: vals.kaynak || '',
+      periyot: vals.periyot || 'Tek Seferlik',
+      periyotDetay: vals.periyotDetay || '',
+      sorumluUnvan: vals.sorumluUnvan || '',
+      atananGorevli: vals.atananGorevli || '',
+      ilgiliDokuman: vals.ilgiliDokuman || '',
+      takvimeEkle: 'Evet',
+      oncelik: 'Normal',
+      hatirlatmaGun: 1,
+      durum: 'active',
+      createdAt: window._ppNow?.(),
+      isDeleted: false
+    };
+    yeni.sonrakiCalisma = window._ppTakvimSonrakiHesapla?.(yeni) || null;
+    liste.push(yeni);
+    eklenen++;
+  }
+  window._ppTakvimStore?.(liste);
+  window.toast?.(eklenen + ' etkinlik eklendi, ' + atlanan + ' atlandı', 'ok');
+  window._ppModRender?.();
 };
