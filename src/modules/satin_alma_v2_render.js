@@ -308,18 +308,15 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">GEÇERLİLİK TARİHİ</div>';
   ic += '<input type="date" id="st-gecerlilik" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   ic += '</div>';
-  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden">';
-  ic += '<div style="display:grid;grid-template-columns:44px 90px 1fr 70px 90px 80px 90px;align-items:center;padding:6px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em">';
-  ic += '<div></div><div>DUAY KODU</div><div>ÜRÜN ADI</div><div>MİKTAR</div><div>ALİŞ TL</div><div>MARJ %</div><div>SATIŞ FİYATI</div></div>';
-  ic += '<div style="display:grid;grid-template-columns:44px 90px 1fr 70px 90px 80px 90px;align-items:center;padding:8px 10px">';
-  if(t.gorsel) ic += '<img src="'+t.gorsel+'" style="width:34px;height:34px;border-radius:4px;object-fit:cover">';
-  else ic += '<div style="width:34px;height:34px;border-radius:4px;background:var(--s2);border:0.5px solid var(--b)"></div>';
-  ic += '<div style="font-size:9px;padding:2px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500;display:inline-block">'+_saEsc(t.duayKodu||'—')+'</div>';
-  ic += '<div style="font-size:11px;font-weight:500;color:var(--t)">'+_saEsc(t.urunAdi||'—')+'</div>';
-  ic += '<div><input id="st-miktar" type="number" value="'+miktar+'" min="1" onclick="event.stopPropagation()" oninput="event.stopPropagation();window._stHesapla(\''+alisTl+'\')" style="width:60px;font-size:11px;padding:5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
-  ic += '<div style="font-size:11px;color:var(--t2)">₺'+alisTl+'</div>';
-  ic += '<div><input id="st-marj" type="number" value="33" min="1" max="90" onclick="event.stopPropagation()" oninput="event.stopPropagation();window._stHesapla(\''+alisTl+'\')" style="width:60px;font-size:11px;padding:5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
-  ic += '<div style="font-size:12px;font-weight:500;color:#0F6E56" id="st-satis-f">₺'+satisFiyat+'</div>';
+  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-bottom:12px">';
+  ic += '<table style="width:100%;border-collapse:collapse">';
+  ic += '<thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em">';
+  ic += '<th style="padding:6px 8px;text-align:left">GRS</th><th style="padding:6px 8px;text-align:left">DUAY KODU</th><th style="padding:6px 8px;text-align:left">ÜRÜN ADI</th><th style="padding:6px 8px;text-align:left">MİKTAR</th><th style="padding:6px 8px;text-align:left">ALİŞ TL</th><th style="padding:6px 8px;text-align:left">MARJ %</th><th style="padding:6px 8px;text-align:left">BİRİM SATIŞ</th><th style="padding:6px 8px;text-align:left">TOPLAM</th><th style="padding:6px 8px"></th>';
+  ic += '</tr></thead>';
+  ic += '<tbody id="st-urun-tbody"></tbody>';
+  ic += '</table>';
+  ic += '<div style="padding:8px;border-top:0.5px solid var(--b)">';
+  ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal()" style="font-size:10px;padding:4px 12px;border:0.5px dashed var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit">+ Ürün Ekle</button>';
   ic += '</div></div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESLİM KOŞULU</div>';
@@ -327,12 +324,12 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
   ic += '<input id="st-odeme" value="30% Avans, 70% Akreditif" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   ic += '</div>';
-  ic += '<div style="background:var(--s2);border-radius:6px;padding:12px 14px;border:0.5px solid var(--b)">';
-  ic += '<div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px"><span style="color:var(--t3)">Birim alış maliyeti</span><span>₺'+alisTl+'</span></div>';
-  ic += '<div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px"><span style="color:var(--t3)">Birim satış fiyatı</span><span style="font-weight:500" id="st-ozet-satis">₺'+satisFiyat+'</span></div>';
-  ic += '<div style="height:0.5px;background:var(--b);margin:8px 0"></div>';
-  ic += '<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--t3)">Toplam kâr tahmini</span><span style="font-weight:500;color:#0F6E56" id="st-ozet-kar">₺'+toplamKar+'</span></div>';
-  ic += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px"><span style="color:var(--t3)">Ort. marj</span><span style="color:#0F6E56" id="st-ozet-marj">%'+marj+'</span></div>';
+  ic += '<div style="background:var(--s2);border-radius:6px;padding:12px 14px;border:0.5px solid var(--b);margin-bottom:12px">';
+  ic += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px" id="st-ozet-urun-say">0 ürün</div>';
+  ic += '<div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px"><span style="color:var(--t3)">Toplam satış tutarı</span><span style="font-weight:500" id="st-ozet-toplam-satis">₺0.00</span></div>';
+  ic += '<div style="height:0.5px;background:var(--b);margin:6px 0"></div>';
+  ic += '<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--t3)">Toplam kâr</span><span style="font-weight:500;color:#0F6E56" id="st-ozet-toplam-kar">₺0.00</span></div>';
+  ic += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px"><span style="color:var(--t3)">Ort. marj</span><span style="color:#0F6E56" id="st-ozet-ort-marj">%0</span></div>';
   ic += '</div>';
   ic += '<div style="font-size:9px;font-family:monospace;background:var(--s2);padding:7px 10px;border-radius:4px;border:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
   ic += '<span style="color:var(--t3)">TEKLİF ID:</span><span style="color:#0C447C;font-weight:500" id="st-id-goster">'+satisId+'</span>';
@@ -346,34 +343,28 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div></div>';
   modal.innerHTML = ic;
   document.body.appendChild(modal);
-};
-
-window._stHesapla = function(alisTlStr) {
-  var marj = parseFloat(document.getElementById('st-marj')?.value)||33;
-  var miktar = parseFloat(document.getElementById('st-miktar')?.value)||1;
-  var alisTl = parseFloat(alisTlStr)||0;
-  var satisF = (alisTl*(1+marj/100)).toFixed(2);
-  var kar = ((alisTl*marj/100)*miktar).toFixed(2);
-  var el1=document.getElementById('st-satis-f'); if(el1) el1.textContent='₺'+satisF;
-  var el2=document.getElementById('st-ozet-satis'); if(el2) el2.textContent='₺'+satisF;
-  var el3=document.getElementById('st-ozet-kar'); if(el3) el3.textContent='₺'+kar;
-  var el4=document.getElementById('st-ozet-marj'); if(el4) el4.textContent='%'+marj;
+  window._saV2SatisUrunler = [];
+  window._saV2SatisUrunEkle(t);
 };
 
 window._saV2SatisKaydet = function(alisId) {
   var teklifId = document.getElementById('st-id')?.value||'';
   var musteriAd = document.getElementById('st-musteri-ad')?.value?.trim()||'';
-  var satisFiyat = document.getElementById('st-satis-f')?.textContent?.replace('₺','')||'0';
-  var marj = document.getElementById('st-marj')?.value||'33';
-  var miktar = document.getElementById('st-miktar')?.value||'1';
+  var urunler = window._saV2SatisUrunler||[];
+  var toplamSatis = 0; var toplamAlis = 0;
+  urunler.forEach(function(u){ toplamSatis+=u.alisTl*(1+u.marj/100)*u.miktar; toplamAlis+=u.alisTl*u.miktar; });
+  var toplamKar = (toplamSatis-toplamAlis).toFixed(2);
+  var ortMarj = toplamAlis>0?((toplamSatis-toplamAlis)/toplamAlis*100).toFixed(1):0;
   var kayit = {
     id:window._saId?.(),
     teklifId:teklifId,
     alisId:alisId,
     musteriAd:musteriAd,
-    satisFiyat:satisFiyat,
-    karMarji:marj,
-    miktar:miktar,
+    musteriKod:document.getElementById('st-musteri-kod')?.value||'',
+    urunler:urunler,
+    toplamSatis:toplamSatis.toFixed(2),
+    toplamKar:toplamKar,
+    ortMarj:ortMarj,
     teslim:document.getElementById('st-teslim')?.value||'',
     odeme:document.getElementById('st-odeme')?.value||'',
     gecerlilik:document.getElementById('st-gecerlilik')?.value||'',
@@ -395,43 +386,27 @@ window._saV2SatisPDF = function() {
   var teslim = document.getElementById('st-teslim')?.value||'FOB İstanbul';
   var odeme = document.getElementById('st-odeme')?.value||'';
   var teklifId = document.getElementById('st-id')?.value||'';
-  var satisFiyat = document.getElementById('st-satis-f')?.textContent||'';
-  var toplamKar = document.getElementById('st-ozet-kar')?.textContent||'';
-  var marj = document.getElementById('st-ozet-marj')?.textContent||'';
-  var miktar = document.getElementById('st-miktar')?.value||'1';
-  var alisTl = '₺'+(document.getElementById('st-alis-tl-hidden')?.value||'0');
-  var urunAdi = document.getElementById('st-urun-adi-hidden')?.value||'';
-  var duayKodu = document.getElementById('st-duay-kodu-hidden')?.value||'';
-  var bugun = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
-  var win = window.open('','_blank','width=900,height=700');
-  if(!win){ window.toast?.('Popup engellendi','warn'); return; }
-  win.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Teklif '+teklifId+'</title><style>');
-  win.document.write('*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:32px}');
-  win.document.write('.hd{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:20px}');
-  win.document.write('.logo{font-size:18px;font-weight:700}.logo small{display:block;font-size:9px;color:#666;font-weight:400;margin-top:2px}');
-  win.document.write('.tno{text-align:right}.tno .l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.08em}.tno .v{font-size:15px;font-weight:700;font-family:monospace}');
-  win.document.write('.ig{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}');
-  win.document.write('.ib .l{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;border-bottom:0.5px solid #eee;padding-bottom:4px;margin-bottom:6px}');
-  win.document.write('.ib .v{font-size:12px;line-height:1.6}');
-  win.document.write('table{width:100%;border-collapse:collapse;margin-bottom:16px}th{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;padding:8px;border-bottom:1px solid #111;text-align:left}');
-  win.document.write('td{font-size:11px;padding:9px 8px;border-bottom:0.5px solid #eee}');
-  win.document.write('.oz{background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px;padding:12px 14px;margin-bottom:16px}');
-  win.document.write('.or{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}.or.kar{color:#15803d;font-weight:600;font-size:13px;border-top:1px solid #ddd;padding-top:8px;margin-top:4px}');
-  win.document.write('.kg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}');
-  win.document.write('.kb .l{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}.kb .v{font-size:11px;font-weight:500}');
-  win.document.write('.ft{border-top:1px solid #eee;padding-top:12px;display:flex;justify-content:space-between;color:#888;font-size:9px;margin-top:24px}');
-  win.document.write('.imza{border-top:1px solid #aaa;width:180px;text-align:center;padding-top:5px;font-size:9px;color:#666}');
-  win.document.write('.np{text-align:center;margin-top:20px}@media print{.np{display:none}}');
-  win.document.write('</style></head><body>');
+  var urunler = window._saV2SatisUrunler||[];
+  var toplamSatis=0; var toplamAlis=0;
+  urunler.forEach(function(u){ toplamSatis+=u.alisTl*(1+u.marj/100)*u.miktar; toplamAlis+=u.alisTl*u.miktar; });
+  var toplamKar=(toplamSatis-toplamAlis).toFixed(2);
+  var ortMarj=toplamAlis>0?((toplamSatis-toplamAlis)/toplamAlis*100).toFixed(1):0;
+  var bugun=new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
+  var win=window.open('','_blank','width=900,height=700');
+  if(!win){window.toast?.('Popup engellendi','warn');return;}
+  var satirlar='';
+  urunler.forEach(function(u,i){
+    var sF=(u.alisTl*(1+u.marj/100)).toFixed(2);
+    var top=(u.alisTl*(1+u.marj/100)*u.miktar).toFixed(2);
+    satirlar+='<tr><td>'+(i+1)+'</td><td><strong>'+u.urunAdi+'</strong><br><span style="font-size:9px;color:#888">'+u.duayKodu+'</span></td><td>'+u.miktar+'</td><td>₺'+u.alisTl.toFixed(2)+'</td><td>%'+u.marj+'</td><td>₺'+sF+'</td><td>₺'+top+'</td></tr>';
+  });
+  win.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Teklif '+teklifId+'</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:32px}.hd{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:20px}.logo{font-size:18px;font-weight:700}.logo small{display:block;font-size:9px;color:#666;font-weight:400;margin-top:2px}.tno{text-align:right}.tno .l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.08em}.tno .v{font-size:15px;font-weight:700;font-family:monospace}.ig{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}.ib .l{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;border-bottom:0.5px solid #eee;padding-bottom:4px;margin-bottom:6px}.ib .v{font-size:12px;line-height:1.6}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;padding:8px;border-bottom:1px solid #111;text-align:left}td{font-size:11px;padding:9px 8px;border-bottom:0.5px solid #eee}.oz{background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px;padding:12px 14px;margin-bottom:16px}.or{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}.or.kar{color:#15803d;font-weight:600;font-size:13px;border-top:1px solid #ddd;padding-top:8px;margin-top:4px}.kg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}.kb .l{font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}.kb .v{font-size:11px;font-weight:500}.imza{border-top:1px solid #aaa;width:180px;text-align:center;padding-top:5px;font-size:9px;color:#666}.ft{color:#888;font-size:9px}.np{text-align:center;margin-top:20px}@media print{.np{display:none}}</style></head><body>');
   win.document.write('<div class="hd"><div class="logo">DUAY<small>Uluslararası Ticaret Ltd. Şti.</small></div><div class="tno"><div class="l">Teklif No</div><div class="v">'+teklifId+'</div></div></div>');
-  win.document.write('<div class="ig"><div class="ib"><div class="l">Alıcı</div><div class="v"><strong>'+(musteriAd||'—')+'</strong><br>Müşteri Kodu: '+(musteriKod||'—')+'</div></div>');
-  win.document.write('<div class="ib"><div class="l">Teklif Bilgileri</div><div class="v">Tarih: '+bugun+'<br>Geçerlilik: '+(gecerlilik||'Belirtilmedi')+'</div></div></div>');
-  win.document.write('<table><thead><tr><th>#</th><th>Ürün / Kodu</th><th>Miktar</th><th>Birim Alış</th><th>Marj</th><th>Birim Satış</th><th>Toplam</th></tr></thead><tbody>');
-  win.document.write('<tr><td>1</td><td><strong>'+(urunAdi||'—')+'</strong><br><span style="font-size:9px;color:#888">'+duayKodu+'</span></td><td>'+miktar+'</td><td>'+alisTl+'</td><td>'+marj+'</td><td>'+satisFiyat+'</td><td>'+satisFiyat+'</td></tr>');
-  win.document.write('</tbody></table>');
-  win.document.write('<div class="oz"><div class="or"><span>Toplam Satış Tutarı</span><span>'+satisFiyat+'</span></div><div class="or kar"><span>Toplam Kâr</span><span>'+toplamKar+'</span></div></div>');
+  win.document.write('<div class="ig"><div class="ib"><div class="l">Alıcı</div><div class="v"><strong>'+(musteriAd||'—')+'</strong><br>Müşteri Kodu: '+(musteriKod||'—')+'</div></div><div class="ib"><div class="l">Teklif Bilgileri</div><div class="v">Tarih: '+bugun+'<br>Geçerlilik: '+(gecerlilik||'Belirtilmedi')+'</div></div></div>');
+  win.document.write('<table><thead><tr><th>#</th><th>Ürün / Kodu</th><th>Miktar</th><th>Birim Alış</th><th>Marj</th><th>Birim Satış</th><th>Toplam</th></tr></thead><tbody>'+satirlar+'</tbody></table>');
+  win.document.write('<div class="oz"><div class="or"><span>Toplam Satış Tutarı</span><span>₺'+toplamSatis.toFixed(2)+'</span></div><div class="or kar"><span>Toplam Kâr ('+ortMarj+'%)</span><span>₺'+toplamKar+'</span></div></div>');
   win.document.write('<div class="kg"><div class="kb"><div class="l">Teslim Koşulu</div><div class="v">'+teslim+'</div></div><div class="kb"><div class="l">Ödeme Koşulu</div><div class="v">'+odeme+'</div></div></div>');
-  win.document.write('<div style="display:flex;justify-content:space-between;align-items:flex-end"><div class="imza">Yetkili İmza / Kaşe</div><div class="ft"><span>Duay Uluslararası Ticaret Ltd. Şti.</span><span>'+bugun+'</span></div></div>');
+  win.document.write('<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px"><div class="imza">Yetkili İmza / Kaşe</div><div class="ft">Duay Uluslararası Ticaret Ltd. Şti. · '+bugun+'</div></div>');
   win.document.write('<div class="np"><button onclick="window.print()" style="font-size:13px;padding:10px 28px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500">🖨 Yazdır / PDF Kaydet</button></div>');
   win.document.write('</body></html>');
   win.document.close();
@@ -669,5 +644,79 @@ window._saV2ZincirEtkisi = function(t) {
 if (typeof window.renderSatinAlma !== 'function') {
   window.renderSatinAlma = window.renderSatinAlmaV2;
 }
+
+/* ── SA-V2-COKLU-001: Çoklu ürün ekleme ────────────────────── */
+window._saV2SatisUrunler = [];
+
+window._saV2SatisUrunEkle = function(t) {
+  var kur = (window._saKur||{})[t.para]||44.55;
+  var alisF = parseFloat(t.alisF)||0;
+  var alisTl = parseFloat((alisF*kur).toFixed(2));
+  window._saV2SatisUrunler.push({ id:t.id, duayKodu:t.duayKodu||'', urunAdi:t.urunAdi||'', gorsel:t.gorsel||'', alisTl:alisTl, miktar:1, marj:33 });
+  window._saV2SatisTabloyuGuncelle();
+};
+
+window._saV2SatisTabloyuGuncelle = function() {
+  var tbody = document.getElementById('st-urun-tbody');
+  if (!tbody) return;
+  var html = '';
+  window._saV2SatisUrunler.forEach(function(u, i) {
+    var satisFiyat = (u.alisTl*(1+u.marj/100)).toFixed(2);
+    var toplam = (satisFiyat*u.miktar).toFixed(2);
+    html += '<tr>';
+    html += '<td style="padding:8px">'+(u.gorsel?'<img src="'+u.gorsel+'" style="width:30px;height:30px;border-radius:4px;object-fit:cover">':'<div style="width:30px;height:30px;border-radius:4px;background:var(--s2);border:0.5px solid var(--b)"></div>')+'</td>';
+    html += '<td style="padding:8px;font-size:9px;color:#0C447C;font-weight:500">'+_saEsc(u.duayKodu)+'</td>';
+    html += '<td style="padding:8px;font-size:11px;font-weight:500">'+_saEsc(u.urunAdi)+'</td>';
+    html += '<td style="padding:8px"><input type="number" value="'+u.miktar+'" min="1" style="width:55px;font-size:11px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit" onchange="event.stopPropagation();window._saV2SatisUrunler['+i+'].miktar=parseFloat(this.value)||1;window._saV2SatisOzetGuncelle()"></td>';
+    html += '<td style="padding:8px;font-size:11px;color:var(--t2)">₺'+u.alisTl.toFixed(2)+'</td>';
+    html += '<td style="padding:8px"><input type="number" value="'+u.marj+'" min="1" max="90" style="width:55px;font-size:11px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit" onchange="event.stopPropagation();window._saV2SatisUrunler['+i+'].marj=parseFloat(this.value)||33;window._saV2SatisOzetGuncelle()"></td>';
+    html += '<td style="padding:8px;font-size:11px;font-weight:500;color:#0F6E56">₺'+satisFiyat+'</td>';
+    html += '<td style="padding:8px;font-size:11px;font-weight:500">₺'+toplam+'</td>';
+    html += '<td style="padding:8px"><button onclick="event.stopPropagation();window._saV2SatisUrunler.splice('+i+',1);window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle()" style="font-size:10px;padding:2px 6px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:#A32D2D">Kaldır</button></td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+  window._saV2SatisOzetGuncelle();
+};
+
+window._saV2SatisOzetGuncelle = function() {
+  var toplamSatis = 0; var toplamAlis = 0; var toplamMiktar = 0;
+  window._saV2SatisUrunler.forEach(function(u) {
+    var satisFiyat = u.alisTl*(1+u.marj/100);
+    toplamSatis += satisFiyat*u.miktar;
+    toplamAlis  += u.alisTl*u.miktar;
+    toplamMiktar += u.miktar;
+  });
+  var toplamKar = toplamSatis - toplamAlis;
+  var ortMarj = toplamAlis>0 ? ((toplamKar/toplamAlis)*100).toFixed(1) : 0;
+  var el1 = document.getElementById('st-ozet-toplam-satis'); if(el1) el1.textContent = '₺'+toplamSatis.toFixed(2);
+  var el2 = document.getElementById('st-ozet-toplam-kar'); if(el2) el2.textContent = '₺'+toplamKar.toFixed(2);
+  var el3 = document.getElementById('st-ozet-ort-marj'); if(el3) el3.textContent = '%'+ortMarj;
+  var el4 = document.getElementById('st-ozet-urun-say'); if(el4) el4.textContent = window._saV2SatisUrunler.length+' ürün · '+toplamMiktar+' adet';
+};
+
+window._saV2UrunSecModal = function() {
+  var liste = window._saV2Load?.() || [];
+  if (!liste.length) { window.toast?.('Önce alış teklifi ekleyin','warn'); return; }
+  var mevcut = document.getElementById('sav2-urun-sec-modal'); if(mevcut) mevcut.remove();
+  var m = document.createElement('div');
+  m.id = 'sav2-urun-sec-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center';
+  m.onclick = function(e){ if(e.target===m) m.remove(); };
+  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:600px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">';
+  ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--b)"><span style="font-size:13px;font-weight:500">Ürün Seç</span><button onclick="event.stopPropagation();document.getElementById(\'sav2-urun-sec-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3)">×</button></div>';
+  ic += '<div style="flex:1;overflow-y:auto">';
+  liste.filter(function(t){return !t.isDeleted;}).forEach(function(t) {
+    var payload = JSON.stringify({id:t.id,duayKodu:t.duayKodu||'',urunAdi:t.urunAdi||'',gorsel:t.gorsel||'',alisF:t.alisF||0,para:t.para||'USD'}).replace(/"/g,'&quot;');
+    ic += '<div onclick="event.stopPropagation();window._saV2SatisUrunEkle('+payload+');document.getElementById(\'sav2-urun-sec-modal\')?.remove()" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+    ic += (t.gorsel?'<img src="'+t.gorsel+'" style="width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0">':'<div style="width:36px;height:36px;border-radius:4px;background:var(--s2);flex-shrink:0"></div>');
+    ic += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">'+_saEsc(t.urunAdi||'—')+'</div>';
+    ic += '<div style="font-size:9px;color:var(--t3);margin-top:1px">'+_saEsc(t.duayKodu||'—')+' · '+_saEsc(t.alisF||'—')+' '+_saEsc(t.para||'')+'</div></div>';
+    ic += '</div>';
+  });
+  ic += '</div></div>';
+  m.innerHTML = ic;
+  document.body.appendChild(m);
+};
 
 console.log('[SAV2-RENDER] v2.0 yüklendi');
