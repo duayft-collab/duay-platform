@@ -324,6 +324,16 @@ window._ppYeniGorev = function() {
   var mevcut = document.getElementById('pp-gorev-modal'); if(mevcut){mevcut.remove();return;}
   var ekip = ['Baran A.','Ayşe Y.','Mehmet K.','Zeynep K.'];
   var kpiler = ['—','KPI-01 Satış Hedefi','KPI-02 Nakit Akışı','KPI-03 Satınalma','KPI-07 SGK/Ödemeler'];
+  var jobOpts = '<option value="">— Seç —</option>';
+  try {
+    var eskiTasks = JSON.parse(localStorage.getItem('ak_tk2')||'[]');
+    var jobIds = [];
+    eskiTasks.forEach(function(t){ if(t.jobId && jobIds.indexOf(t.jobId)===-1) jobIds.push(t.jobId); });
+    var ppTasks = _ppLoad();
+    ppTasks.forEach(function(t){ if(t.job_id && jobIds.indexOf(t.job_id)===-1) jobIds.push(t.job_id); });
+    if(jobIds.length) jobIds.forEach(function(j){ jobOpts += '<option value="'+j+'">'+j+'</option>'; });
+  } catch(e) {}
+  jobOpts += '<option value="yeni">+ Yeni Job ID oluştur</option>';
   var mo = document.createElement('div'); mo.id='pp-gorev-modal';
   mo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 0;overflow-y:auto';
   mo.onclick=function(e){if(e.target===mo)mo.remove();};
@@ -336,7 +346,7 @@ window._ppYeniGorev = function() {
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
     +'<input id="ppf-baslik" placeholder="Görev başlığı..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:15px;font-weight:500;padding:8px 0;border:none;border-bottom:2px solid var(--bm);border-radius:0;background:transparent;width:100%;color:var(--t);font-family:inherit;outline:none">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-    +_sel('job_id','JOB ID','<option value="">— Seç —</option><option>JOB-2026-0041</option><option>JOB-2026-0040</option><option>JOB-2026-0039</option><option value="yeni">+ Yeni Job ID</option>')
+    +_sel('job_id','JOB ID',jobOpts)
     +_sel('departman','DEPARTMAN','<option>Satış</option><option>Satınalma</option><option>Operasyon</option><option>Finans</option><option>İK</option>')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
@@ -360,6 +370,12 @@ window._ppYeniGorev = function() {
     +'<div id="ppf-altGorevList" style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;background:var(--s2)"></div>'
     +'<div style="display:flex;gap:6px;margin-top:6px"><input id="ppf-altYeni" placeholder="+ Alt görev ekle..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\'){event.preventDefault();window._ppAltGorevEkle()}" style="flex:1;font-size:12px;padding:5px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
     +'<button onclick="event.stopPropagation();window._ppAltGorevEkle()" style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Ekle</button></div></div>'
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">DOSYA EKİ (PDF, Excel, JPG — maks 5MB)</div>'
+    +'<div id="ppf-dosya-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px"></div>'
+    +'<label style="display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:6px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:var(--s2)">'
+    +'<svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M7 1v8M4 4l3-3 3 3M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
+    +'Dosya Seç <input type="file" id="ppf-dosya" multiple accept=".pdf,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none" onchange="event.stopPropagation();window._ppDosyaEkle(this)"></label>'
+    +'</div>'
     +'</div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
     +'<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" id="ppf-frog" onclick="event.stopPropagation()" style="width:13px;height:13px">Bu görevi bugünün Frogu yap</label>'
@@ -369,7 +385,21 @@ window._ppYeniGorev = function() {
     +'</div></div></div>';
   document.body.appendChild(mo);
   setTimeout(function(){document.getElementById('ppf-baslik')?.focus();},100);
+  var jobSel = document.getElementById('ppf-job_id');
+  if(jobSel) jobSel.onchange = function(e){
+    e.stopPropagation();
+    if(this.value==='yeni'){
+      var j = prompt('Yeni Job ID:');
+      if(j && j.trim()){
+        var o = document.createElement('option');
+        o.value = j.trim(); o.text = j.trim(); o.selected = true;
+        this.add(o, this.options.length-1);
+        this.value = j.trim();
+      } else { this.value = ''; }
+    }
+  };
   window._ppAltGorevler=[];
+  window._ppDosyaEkleri=[];
 };
 
 window._ppAltGorevler = [];
@@ -415,6 +445,8 @@ window._ppGorevKaydet = function() {
     altGorevler: window._ppAltGorevler||[],
     altGorevSay: (window._ppAltGorevler||[]).length,
     altGorevTam: 0,
+    dosyalar: window._ppDosyaEkleri||[],
+    dosyaSay: (window._ppDosyaEkleri||[]).length,
     isFrog: document.getElementById('ppf-frog')?.checked||false,
     createdAt: _ppNow(),
     updatedAt: _ppNow(),
@@ -423,6 +455,7 @@ window._ppGorevKaydet = function() {
   var tasks=_ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
   if(yeni.isFrog){window._ppAktifFrog=yeni; var el=document.getElementById('pp-frog-txt'); if(el) el.textContent=yeni.baslik;}
   document.getElementById('pp-gorev-modal')?.remove();
+  window._ppDosyaEkleri=[];
   window.toast?.('Görev eklendi'+(yeni.isFrog?' — Frog seçildi':''),'ok');
   window._ppModRender();
 };
@@ -739,3 +772,45 @@ window._ppNotPanelHTML = function() {
 
 window._ppNotLoad = _ppNotLoad;
 window._ppNotStore = _ppNotStore;
+
+/* ── Dosya Eki Sistemi ──────────────────────────────────────── */
+window._ppDosyaEkleri = [];
+
+window._ppDosyaEkle = function(inp) {
+  if(!inp.files||!inp.files.length) return;
+  var dosyalar = Array.from(inp.files);
+  var hatalar = [];
+  dosyalar.forEach(function(f) {
+    if(f.size > 5*1024*1024) { hatalar.push(f.name+' 5MB sınırını aşıyor'); return; }
+    var izin = ['application/pdf','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','image/jpeg','image/jpg','image/png'];
+    if(izin.indexOf(f.type)===-1 && !f.name.match(/\.(pdf|xls|xlsx|jpg|jpeg|png)$/i)) { hatalar.push(f.name+' desteklenmiyor'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var ek = { id:_ppId(), ad:f.name, tip:f.type, boyut:f.size, data:e.target.result, tarih:_ppNow() };
+      window._ppDosyaEkleri.push(ek);
+      window._ppDosyaListGuncelle();
+    };
+    reader.readAsDataURL(f);
+  });
+  if(hatalar.length) window.toast?.(hatalar.join(', '),'warn');
+  inp.value='';
+};
+
+window._ppDosyaListGuncelle = function() {
+  var list = document.getElementById('ppf-dosya-list'); if(!list) return;
+  list.innerHTML = window._ppDosyaEkleri.map(function(d,i) {
+    var ikon = d.tip.indexOf('pdf')!==-1 ? '📄' : d.tip.indexOf('image')!==-1 ? '🖼' : '📊';
+    var kb = Math.round(d.boyut/1024);
+    return '<div style="display:flex;align-items:center;gap:5px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);font-size:10px">'
+      +'<span style="font-size:12px">'+ikon+'</span>'
+      +'<span style="color:var(--t);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(d.ad)+'</span>'
+      +'<span style="color:var(--t3)">'+kb+'KB</span>'
+      +'<button onclick="event.stopPropagation();window._ppDosyaSil('+i+')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:12px;line-height:1;padding:0">×</button>'
+      +'</div>';
+  }).join('');
+};
+
+window._ppDosyaSil = function(i) {
+  window._ppDosyaEkleri.splice(i,1);
+  window._ppDosyaListGuncelle();
+};
