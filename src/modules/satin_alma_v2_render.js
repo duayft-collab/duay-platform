@@ -61,6 +61,61 @@ window.renderSatinAlmaV2 = function() {
   h += '<button onclick="event.stopPropagation()" style="font-size:10px;padding:5px 10px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">↓ Dışa Aktar</button>';
   h += '</div></div>';
 
+  if ((window.SAV2_MOD||'teklifler') === 'raporlar') {
+    var tumListe = _saV2Load().filter(function(t){return !t.isDeleted;});
+    var onaylilar = tumListe.filter(function(t){return t.durum==='onaylandi';});
+    var bekleyenler = tumListe.filter(function(t){return t.durum==='bekleyen';});
+    var toplamAlis = onaylilar.reduce(function(a,t){var kur=(window._saKur||{})[t.para]||44.55;return a+(parseFloat(t.alisF)||0)*kur*(parseFloat(t.miktar)||1);},0);
+    var urunMap = {}; onaylilar.forEach(function(t){var k=t.duayKodu||t.urunAdi||'—';if(!urunMap[k])urunMap[k]={ad:t.urunAdi||k,kod:t.duayKodu||'',adet:0,toplamAlis:0,marjToplam:0,say:0};urunMap[k].adet+=(parseFloat(t.miktar)||1);var kur=(window._saKur||{})[t.para]||44.55;urunMap[k].toplamAlis+=(parseFloat(t.alisF)||0)*kur*(parseFloat(t.miktar)||1);urunMap[k].marjToplam+=(parseFloat(t.karMarji)||33);urunMap[k].say++;});
+    var tedMap = {}; onaylilar.forEach(function(t){var k=t.tedarikci||'—';if(!tedMap[k])tedMap[k]={ad:k,say:0,toplamAlis:0};tedMap[k].say++;var kur=(window._saKur||{})[t.para]||44.55;tedMap[k].toplamAlis+=(parseFloat(t.alisF)||0)*kur*(parseFloat(t.miktar)||1);});
+    var ayMap = {}; tumListe.forEach(function(t){var ay=(t.createdAt||'').slice(0,7);if(!ay)return;if(!ayMap[ay])ayMap[ay]={ay:ay,say:0,alis:0};ayMap[ay].say++;var kur=(window._saKur||{})[t.para]||44.55;ayMap[ay].alis+=(parseFloat(t.alisF)||0)*kur*(parseFloat(t.miktar)||1);});
+    h += '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px">';
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:12px"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.06em;margin-bottom:4px">TOPLAM ALİŞ (ONAYLI)</div><div style="font-size:22px;font-weight:500;color:var(--t)">₺'+Math.round(toplamAlis/1000)+'K</div></div>';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:12px"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.06em;margin-bottom:4px">ONAYLI TEKLİF</div><div style="font-size:22px;font-weight:500;color:#0F6E56">'+onaylilar.length+'</div></div>';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:12px"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.06em;margin-bottom:4px">BEKLEYEN</div><div style="font-size:22px;font-weight:500;color:#854F0B">'+bekleyenler.length+'</div></div>';
+    h += '</div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+    h += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:500;color:var(--t)">Ürün Bazlı Alış</div>';
+    Object.values(urunMap).sort(function(a,b){return b.toplamAlis-a.toplamAlis;}).slice(0,8).forEach(function(u){
+      var ortMarj = u.say>0?(u.marjToplam/u.say).toFixed(0):0;
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:0.5px solid var(--b)">';
+      h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">'+_saEsc(u.ad)+'</div><div style="font-size:9px;color:var(--t3);margin-top:1px">'+_saEsc(u.kod)+' · '+u.adet+' adet · Ort. marj %'+ortMarj+'</div></div>';
+      h += '<div style="font-size:12px;font-weight:500;color:#0C447C">₺'+Math.round(u.toplamAlis/1000)+'K</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+    h += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:500;color:var(--t)">Tedarikçi Bazlı</div>';
+    Object.values(tedMap).sort(function(a,b){return b.toplamAlis-a.toplamAlis;}).forEach(function(td){
+      var pct = toplamAlis>0?((td.toplamAlis/toplamAlis)*100).toFixed(0):0;
+      h += '<div style="padding:8px 14px;border-bottom:0.5px solid var(--b)">';
+      h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;font-weight:500;color:var(--t)">'+_saEsc(td.ad)+'</span><span style="font-size:11px;color:#0C447C;font-weight:500">₺'+Math.round(td.toplamAlis/1000)+'K</span></div>';
+      h += '<div style="height:4px;background:var(--s2);border-radius:2px"><div style="height:4px;border-radius:2px;background:#185FA5;width:'+pct+'%"></div></div>';
+      h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">'+td.say+' teklif · %'+pct+' pay</div>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+    h += '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);font-size:11px;font-weight:500;color:var(--t)">Aylık Trend</div>';
+    Object.values(ayMap).sort(function(a,b){return a.ay.localeCompare(b.ay);}).forEach(function(ay){
+      var maxAlis = Math.max.apply(null,Object.values(ayMap).map(function(a){return a.alis;}));
+      var pct = maxAlis>0?((ay.alis/maxAlis)*100).toFixed(0):0;
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:0.5px solid var(--b)">';
+      h += '<div style="font-size:10px;color:var(--t2);width:60px;flex-shrink:0">'+ay.ay+'</div>';
+      h += '<div style="flex:1;height:6px;background:var(--s2);border-radius:3px"><div style="height:6px;border-radius:3px;background:#1D9E75;width:'+pct+'%"></div></div>';
+      h += '<div style="font-size:10px;font-weight:500;color:var(--t);min-width:50px;text-align:right">₺'+Math.round(ay.alis/1000)+'K</div>';
+      h += '<div style="font-size:9px;color:var(--t3);min-width:40px;text-align:right">'+ay.say+' teklif</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    h += '</div>';
+    h += '</div>';
+    panel.innerHTML = h;
+    return;
+  }
+
   /* --- LISTE + PEEK --- */
   h += '<div style="flex:1;overflow:hidden;position:relative">';
 
