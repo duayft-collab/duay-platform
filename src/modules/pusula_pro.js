@@ -70,7 +70,8 @@ window._ppRender = function() {
     return '<button onclick="event.stopPropagation();window._ppSetMod(\'' + m + '\')" id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
   }).join('');
   panel.innerHTML = ''
-    + '<div style="display:flex;flex-direction:column;height:100%;background:var(--sf)">'
+    + '<div style="display:flex;height:100%;width:100%">'
+    + '<div id="pp-inner" style="flex:1;display:flex;flex-direction:column;height:100%;background:var(--sf);min-width:0">'
     + '<div id="pp-head" style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:40px;border-bottom:0.5px solid var(--b);flex-shrink:0">'
     + '<div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A"></div>Pusula OS</div>'
     + '<div style="display:flex;gap:3px" id="pp-modes">' + _modBtns + '</div>'
@@ -88,6 +89,8 @@ window._ppRender = function() {
     + '<button onclick="event.stopPropagation();window._ppFrogBasla?.()" style="font-size:10px;padding:5px 14px;background:#A32D2D;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:500">Başla →</button>'
     + '</div>'
     + '<div id="pp-body" style="flex:1;overflow:hidden;display:flex"></div>'
+    + '</div>'
+    + '<div id="pp-not-panel" style="flex-shrink:0">' + window._ppNotPanelHTML() + '</div>'
     + '</div>';
   window._ppSetMod('akis');
   setTimeout(function() { window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
@@ -677,3 +680,62 @@ window._ppHabitEkle = function() {
   window.toast?.('Alışkanlık eklendi', 'ok');
   window._ppModRender();
 };
+
+/* ── Notlar Sistemi ─────────────────────────────────────────── */
+var PP_NOT_KEY = 'ak_pp_notlar_v1';
+function _ppNotLoad() { try { var r = localStorage.getItem(PP_NOT_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function _ppNotStore(d) { try { localStorage.setItem(PP_NOT_KEY, JSON.stringify(d)); } catch(e) {} }
+
+window._ppNotEkle = function() {
+  var ta = document.getElementById('pp-not-input');
+  var cat = document.getElementById('pp-not-cat');
+  if (!ta || !ta.value.trim()) return;
+  var yeni = { id: _ppId(), icerik: ta.value.trim(), kategori: cat?.value || 'Kişisel', tarih: _ppNow(), createdAt: _ppNow() };
+  var notlar = _ppNotLoad(); notlar.unshift(yeni); _ppNotStore(notlar);
+  ta.value = '';
+  window._ppNotRender();
+  window.toast?.('Not kaydedildi', 'ok');
+};
+
+window._ppNotRender = function() {
+  var list = document.getElementById('pp-not-list'); if (!list) return;
+  var notlar = _ppNotLoad();
+  var katRenk = { 'Satış':'background:#E6F1FB;color:#185FA5', 'Satınalma':'background:#E1F5EE;color:#0F6E56', 'Kişisel':'background:#EEEDFE;color:#3C3489', 'Aile':'background:#FCEBEB;color:#A32D2D', 'Fikir':'background:#FAEEDA;color:#854F0B' };
+  list.innerHTML = notlar.length ? notlar.map(function(n) {
+    return '<div style="border:0.5px solid var(--b);border-radius:6px;padding:9px;margin-bottom:7px;background:var(--s2);cursor:pointer" onmouseover="this.style.background=\'var(--sf)\'" onmouseout="this.style.background=\'var(--s2)\'">'
+      + '<div style="font-size:8px;color:var(--t3);margin-bottom:4px">' + (n.tarih || '').slice(0, 16) + '</div>'
+      + '<div style="font-size:11px;color:var(--t);line-height:1.5">' + _ppEsc(n.icerik) + '</div>'
+      + '<span style="display:inline-block;font-size:8px;padding:1px 6px;border-radius:3px;margin-top:5px;' + (katRenk[n.kategori] || 'background:var(--s2);color:var(--t3)') + '">' + _ppEsc(n.kategori) + '</span>'
+      + '</div>';
+  }).join('') : '<div style="font-size:11px;color:var(--t3);text-align:center;padding:20px">Henüz not yok</div>';
+};
+
+window._ppNotPanelHTML = function() {
+  var notlar = _ppNotLoad();
+  var katRenk = { 'Satış':'background:#E6F1FB;color:#185FA5', 'Satınalma':'background:#E1F5EE;color:#0F6E56', 'Kişisel':'background:#EEEDFE;color:#3C3489', 'Aile':'background:#FCEBEB;color:#A32D2D', 'Fikir':'background:#FAEEDA;color:#854F0B' };
+  var h = '<div style="width:220px;border-left:0.5px solid var(--b);display:flex;flex-direction:column;flex-shrink:0;height:100%">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
+  h += '<div style="font-size:11px;font-weight:500;color:var(--t)">Notlarım</div>';
+  h += '</div>';
+  h += '<div id="pp-not-list" style="flex:1;overflow-y:auto;padding:8px">';
+  h += notlar.length ? notlar.map(function(n) {
+    return '<div style="border:0.5px solid var(--b);border-radius:6px;padding:9px;margin-bottom:7px;background:var(--s2)">'
+      + '<div style="font-size:8px;color:var(--t3);margin-bottom:4px">' + (n.tarih || '').slice(0, 16) + '</div>'
+      + '<div style="font-size:11px;color:var(--t);line-height:1.5">' + _ppEsc(n.icerik) + '</div>'
+      + '<span style="display:inline-block;font-size:8px;padding:1px 6px;border-radius:3px;margin-top:5px;' + (katRenk[n.kategori] || 'background:var(--s2);color:var(--t3)') + '">' + _ppEsc(n.kategori) + '</span>'
+      + '</div>';
+  }).join('') : '<div style="font-size:11px;color:var(--t3);text-align:center;padding:20px">Henüz not yok</div>';
+  h += '</div>';
+  h += '<div style="border-top:0.5px solid var(--b);padding:8px;flex-shrink:0">';
+  h += '<textarea id="pp-not-input" placeholder="Not yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:7px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:none;height:60px;font-family:inherit;box-sizing:border-box"></textarea>';
+  h += '<div style="display:flex;gap:4px;margin-top:5px">';
+  h += '<select id="pp-not-cat" onclick="event.stopPropagation()" style="flex:1;font-size:9px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:transparent;color:var(--t2);font-family:inherit">';
+  h += '<option>Kişisel</option><option>Satış</option><option>Satınalma</option><option>Aile</option><option>Fikir</option>';
+  h += '</select>';
+  h += '<button onclick="event.stopPropagation();window._ppNotEkle()" style="font-size:9px;padding:4px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Kaydet</button>';
+  h += '</div></div></div>';
+  return h;
+};
+
+window._ppNotLoad = _ppNotLoad;
+window._ppNotStore = _ppNotStore;
