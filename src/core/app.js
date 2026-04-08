@@ -3556,12 +3556,15 @@ var _TN2_GROUPS = {
   ]},
   satinalma: { label:'Satınalma', mods: [
     { id:'satinalma',       label:'İş Takibi'       },
-    { id:'alis-teklifleri', label:'Alış Teklifleri' },
-    { id:'kargo',           label:'Kargo'           },
+    { id:'alis-teklifleri', label:'Alış Teklifleri', _kullanilamaz:true },
     { id:'ihracat-ops',     label:'İhracat Ops'     },
     { id:'urunler',         label:'Ürün Kataloğu'   },
-    { id:'sa-urun-liste',  label:'Ürün Fiyat Listesi', fn: function() { window._saUrunListeAc?.(); } },
-    { id:'numune',          label:'Numune Arşivi'   },
+    { id:'sa-urun-liste',  label:'Ürün Fiyat Listesi', _kullanilamaz:true, fn: function() { window._saUrunListeAc?.(); } },
+    { id:'numune',          label:'Numune Arşivi', _kullanilamaz:true },
+  ]},
+  lojistik: { label:'Lojistik', mods: [
+    { id:'kargo',           label:'Kargo'           },
+    { id:'lojistik',        label:'Lojistik Merkezi'},
   ]},
   operasyon: { label:'Operasyon', mods: [
     { id:'evrak',     label:'Evrak'            },
@@ -3617,7 +3620,9 @@ window._tn2SelectGrp = function(grp, el) {
   if (!visMods.length) { bar3.innerHTML = ''; bar3.style.display = 'none'; window.App?.nav?.('dashboard'); return; }
   bar3.style.display = 'flex';
   bar3.innerHTML = visMods.map(function(m) {
-    return '<div class="tn2-mod' + (_tn2ActiveMod === m.id ? ' on' : '') + '" data-mod="' + m.id + '" onclick="window._tn2SelectMod(\'' + m.id + '\',this)">' + m.label + '</div>';
+    var _kStil = m._kullanilamaz ? 'color:#A32D2D;opacity:.7' : '';
+    var _kTitle = m._kullanilamaz ? ' title="Yakında — henüz aktif değil"' : '';
+    return '<div class="tn2-mod' + (_tn2ActiveMod === m.id ? ' on' : '') + '" data-mod="' + m.id + '" style="' + _kStil + '"' + _kTitle + ' onclick="window._tn2SelectMod(\'' + m.id + '\',this)">' + m.label + '</div>';
   }).join('');
   // İlk görünür modülü seç
   if (!visMods.find(function(m) { return m.id === _tn2ActiveMod; })) {
