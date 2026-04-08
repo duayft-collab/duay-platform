@@ -259,7 +259,123 @@ window._saV2GoselYukle = function(id) {
 };
 
 /* ── Placeholder fonksiyonlar ───────────────────────────────── */
-window._saV2TeklifOlustur = function(id) { window.toast?.('Satış teklifi formu — yakında','info'); };
+window._saV2TeklifOlustur = function(id) {
+  var liste = window._saV2Load?.() || [];
+  var t = liste.find(function(x){return x.id===id;});
+  if(!t){ window.toast?.('Teklif bulunamadı','warn'); return; }
+  var mevcut = document.getElementById('sav2-satis-modal'); if(mevcut) mevcut.remove();
+  var modal = document.createElement('div');
+  modal.id = 'sav2-satis-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px 0;overflow-y:auto';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  var kur = (window._saKur||{})[t.para]||44.55;
+  var alisF = parseFloat(t.alisF)||0;
+  var alisTl = (alisF*kur).toFixed(2);
+  var marj = 33;
+  var satisFiyat = (alisF*kur*(1+marj/100)).toFixed(2);
+  var miktar = parseFloat(t.miktar)||1;
+  var toplamKar = ((alisF*kur*(1+marj/100)-alisF*kur)*miktar).toFixed(2);
+  var musteriKod = '0000';
+  var satisId = window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now());
+  modal.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:720px;overflow:hidden">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
+    +'<div><div style="font-size:14px;font-weight:500;color:var(--t)">Satış Teklifi Oluştur</div>'
+    +'<div style="font-size:10px;color:var(--t3);margin-top:2px">Alış teklifinden otomatik doldu — satış fiyatı teklife işlenir</div></div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 240px">'
+    +'<div style="padding:16px;border-right:0.5px solid var(--b)">'
+    +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+    +'<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ KODU</div>'
+    +'<input id="st-musteri-kod" value="0000" placeholder="3230" oninput="event.stopPropagation();var sid=window._saTeklifId?.(this.value)||(this.value+\'-\'+Date.now());document.getElementById(\'st-id-goster\').textContent=sid;document.getElementById(\'st-id\').value=sid" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:90px;font-size:12px;padding:6px 9px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:monospace"></div>'
+    +'<div style="flex:1"><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ ADI</div>'
+    +'<input id="st-musteri-ad" placeholder="Müşteri adı" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 9px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    +'<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">GEÇERLİLİK</div>'
+    +'<input type="date" id="st-gecerlilik" onclick="event.stopPropagation()" style="font-size:12px;padding:6px 9px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    +'</div>'
+    +'<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:6px">ÜRÜN SATIRLARI</div>'
+    +'<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-bottom:10px">'
+    +'<div style="display:grid;grid-template-columns:32px 80px 1fr 55px 70px 60px 75px;align-items:center;padding:5px 8px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em">'
+    +'<div></div><div>DUAY KODU</div><div>ÜRÜN ADI</div><div>MİKTAR</div><div>ALİŞ TL</div><div>MARJ %</div><div>SATIŞ FİYATI</div></div>'
+    +'<div style="display:grid;grid-template-columns:32px 80px 1fr 55px 70px 60px 75px;align-items:center;padding:8px 8px" id="st-urun-satir">'
+    +(t.gorsel?'<img src="'+t.gorsel+'" style="width:26px;height:26px;border-radius:3px;object-fit:cover">':'<div style="width:26px;height:26px;border-radius:3px;background:var(--s2);border:0.5px solid var(--b)"></div>')
+    +'<div style="font-size:8px;padding:1px 4px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_saEsc(t.duayKodu||'—')+'</div>'
+    +'<div style="font-size:11px;font-weight:500;color:var(--t)">'+_saEsc(t.urunAdi||'')+'</div>'
+    +'<div><input id="st-miktar" type="number" value="'+miktar+'" min="1" onclick="event.stopPropagation()" oninput="event.stopPropagation();window._stHesapla()" style="width:50px;font-size:11px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    +'<div style="font-size:10px;color:var(--t2)" id="st-alis-tl">₺'+alisTl+'</div>'
+    +'<div><input id="st-marj" type="number" value="33" min="1" max="90" onclick="event.stopPropagation()" oninput="event.stopPropagation();window._stHesapla()" style="width:50px;font-size:11px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    +'<div style="font-size:11px;font-weight:500;color:#0F6E56" id="st-satis-f">₺'+satisFiyat+'</div>'
+    +'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESLİM KOŞULU</div>'
+    +'<input id="st-teslim" value="FOB İstanbul" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 9px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    +'<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>'
+    +'<input id="st-odeme" value="30% Avans, 70% Akreditif" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 9px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    +'</div></div>'
+    +'<div style="padding:16px;background:var(--s2)">'
+    +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:8px">TEKLİF ÖZETİ</div>'
+    +'<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:6px;padding:10px;margin-bottom:10px">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px"><span style="color:var(--t3)">Birim alış</span><span>₺'+alisTl+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px"><span style="color:var(--t3)">Birim satış</span><span style="font-weight:500" id="st-ozet-satis">₺'+satisFiyat+'</span></div>'
+    +'<div style="height:0.5px;background:var(--b);margin:6px 0"></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--t3)">Toplam kâr</span><span style="font-weight:500;color:#0F6E56" id="st-ozet-kar">₺'+toplamKar+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px"><span style="color:var(--t3)">Marj</span><span style="color:#0F6E56" id="st-ozet-marj">%33</span></div>'
+    +'</div>'
+    +'<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEKLİF ID</div>'
+    +'<div style="font-size:10px;font-family:monospace;background:var(--sf);padding:7px 9px;border-radius:4px;border:0.5px solid var(--b);margin-bottom:4px" id="st-id-goster">'+satisId+'</div>'
+    +'<input id="st-id" type="hidden" value="'+satisId+'">'
+    +'<div style="font-size:8px;color:var(--t3);margin-bottom:10px">[MüşteriKodu]-[YYYYAyGünSaatDak]</div>'
+    +'<button onclick="event.stopPropagation();window._saV2SatisPDF()" style="width:100%;font-size:11px;padding:8px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-weight:500;font-family:inherit;margin-bottom:5px">PDF Oluştur → Gönder</button>'
+    +'<button onclick="event.stopPropagation();window._saV2SatisKaydet(\''+t.id+'\')" style="width:100%;font-size:11px;padding:7px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Taslak Kaydet</button>'
+    +'</div></div></div>';
+  document.body.appendChild(modal);
+};
+
+window._stHesapla = function() {
+  var kur = (window._saKur||{}).USD||44.55;
+  var marj = parseFloat(document.getElementById('st-marj')?.value)||33;
+  var miktar = parseFloat(document.getElementById('st-miktar')?.value)||1;
+  var alisTlEl = document.getElementById('st-alis-tl');
+  var alisTl = alisTlEl ? parseFloat(alisTlEl.textContent.replace('₺',''))||0 : 0;
+  var satisF = (alisTl*(1+marj/100)).toFixed(2);
+  var kar = ((alisTl*(1+marj/100)-alisTl)*miktar).toFixed(2);
+  var el1=document.getElementById('st-satis-f'); if(el1) el1.textContent='₺'+satisF;
+  var el2=document.getElementById('st-ozet-satis'); if(el2) el2.textContent='₺'+satisF;
+  var el3=document.getElementById('st-ozet-kar'); if(el3) el3.textContent='₺'+kar;
+  var el4=document.getElementById('st-ozet-marj'); if(el4) el4.textContent='%'+marj;
+};
+
+window._saV2SatisKaydet = function(alisId) {
+  var teklifId = document.getElementById('st-id')?.value||'';
+  var musteriAd = document.getElementById('st-musteri-ad')?.value?.trim()||'';
+  var satisFiyat = document.getElementById('st-satis-f')?.textContent?.replace('₺','')||'0';
+  var marj = document.getElementById('st-marj')?.value||'33';
+  var miktar = document.getElementById('st-miktar')?.value||'1';
+  var kayit = {
+    id:window._saId?.(),
+    teklifId:teklifId,
+    alisId:alisId,
+    musteriAd:musteriAd,
+    satisFiyat:satisFiyat,
+    karMarji:marj,
+    miktar:miktar,
+    teslim:document.getElementById('st-teslim')?.value||'',
+    odeme:document.getElementById('st-odeme')?.value||'',
+    gecerlilik:document.getElementById('st-gecerlilik')?.value||'',
+    durum:'taslak',
+    createdAt:window._saNow?.(),
+    updatedAt:window._saNow?.()
+  };
+  var teklifler = window._saTeklifLoad?.() || [];
+  teklifler.unshift(kayit);
+  window._saTeklifStore?.(teklifler);
+  document.getElementById('sav2-satis-modal')?.remove();
+  window.toast?.('Satış teklifi kaydedildi: '+teklifId,'ok');
+};
+
+window._saV2SatisPDF = function() {
+  window.toast?.('PDF oluşturma — yakında aktif olacak','info');
+};
 window._saV2Duzenle = function(id) { window.toast?.('Düzenleme — yakında','info'); };
 window._saV2YeniTeklif = function() {
   var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); return; }
