@@ -315,20 +315,84 @@ window._ppTaskAc = function(id) {
 };
 
 window._ppSagPanel = function() {
-  return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">'
-    + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:8px">DEEP WORK</div>'
-    + '<div style="font-size:28px;font-weight:500;letter-spacing:.02em;margin-bottom:4px" id="pp-dw-timer">00:00:00</div>'
-    + '<div style="font-size:9px;color:var(--t3);margin-bottom:8px">90 dk blok</div>'
-    + '<div style="height:3px;background:var(--b);border-radius:2px;margin-bottom:10px"><div id="pp-dw-bar" style="height:3px;background:var(--t);border-radius:2px;width:0%"></div></div>'
-    + '<div style="display:flex;gap:5px">'
-    + '<button onclick="event.stopPropagation();window._ppDwBasla?.()" style="flex:1;font-size:10px;padding:6px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Başla</button>'
-    + '<button onclick="event.stopPropagation();window._ppSetMod(\'odak\')" style="flex:1;font-size:10px;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Odak →</button>'
-    + '</div></div>'
-    + '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">'
-    + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:6px">BUGÜNKÜ SKOR</div>'
-    + '<div style="font-size:26px;font-weight:500;color:#1D9E75" id="pp-skor-n">0</div>'
-    + '<div style="font-size:9px;color:var(--t3);margin-top:2px">Görev tamamladıkça artar</div>'
-    + '</div>';
+  var challenges = (typeof _ppChallengeLoad === 'function') ? _ppChallengeLoad() : [];
+  var aktifChl = challenges.find(function(c) { return !c.tamamlandi; });
+  var habits = (typeof _ppHabitLoad === 'function') ? _ppHabitLoad() : [];
+  var goals = (typeof _ppGoalLoad === 'function') ? _ppGoalLoad() : [];
+  var aktifGoal = goals[0];
+  var skor = window._ppSkorOku?.() || { bugun: 0, hafta: 0 };
+
+  var h = '';
+
+  /* Deep Work */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:5px;display:flex;justify-content:space-between">DEEP WORK <span id="pp-dw-i" style="cursor:pointer;font-size:8px;width:13px;height:13px;border:0.5px solid var(--b);border-radius:50%;display:flex;align-items:center;justify-content:center">i</span></div>';
+  h += '<div style="font-size:26px;font-weight:500;letter-spacing:.02em;margin-bottom:2px" id="pp-dw-timer">00:00:00</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-bottom:7px">90 dk blok · <span id="pp-dw-pct">%0</span></div>';
+  h += '<div style="height:3px;background:var(--b);border-radius:2px;margin-bottom:9px"><div id="pp-dw-bar" style="height:3px;background:var(--t);border-radius:2px;width:0%"></div></div>';
+  h += '<div style="display:flex;gap:4px">';
+  h += '<button onclick="event.stopPropagation();window._ppDwBasla?.()" style="flex:1;font-size:10px;padding:5px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Başla</button>';
+  h += '<button onclick="event.stopPropagation();window._ppSetMod(\'odak\')" style="flex:1;font-size:10px;padding:5px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Odak →</button>';
+  h += '</div></div>';
+
+  /* Skor */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:5px">BUGÜNKÜ SKOR</div>';
+  h += '<div style="font-size:24px;font-weight:500;color:#1D9E75" id="pp-skor-n">' + skor.bugun + '</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Hafta: ' + skor.hafta + ' pt</div>';
+  h += '</div>';
+
+  /* Aktif Hedef */
+  if (aktifGoal) {
+    var gun = aktifGoal.bitTarih ? Math.max(0, Math.ceil((new Date(aktifGoal.bitTarih) - new Date()) / 86400000)) : '?';
+    var pct = aktifGoal.pct || 0;
+    h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">';
+    h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:5px;display:flex;justify-content:space-between">AKTİF HEDEF <span onclick="event.stopPropagation();window._ppGoalAc()" style="font-size:8px;color:#378ADD;cursor:pointer">Tümü</span></div>';
+    h += '<div style="font-size:12px;font-weight:500;margin-bottom:3px;line-height:1.35">' + _ppEsc(aktifGoal.baslik) + '</div>';
+    h += '<div style="font-size:9px;color:var(--t3);margin-bottom:6px">' + gun + ' gün kaldı · %' + pct + '</div>';
+    h += '<div style="height:3px;background:var(--b);border-radius:2px;margin-bottom:3px"><div style="height:3px;background:#378ADD;border-radius:2px;width:' + pct + '%"></div></div>';
+    h += '</div>';
+  } else {
+    h += '<div onclick="event.stopPropagation();window._ppGoalAc()" style="border:0.5px dashed var(--b);border-radius:8px;padding:12px;text-align:center;cursor:pointer;color:var(--t3);font-size:11px">+ 12 Hedef Ekle</div>';
+  }
+
+  /* Aktif Challenge */
+  if (aktifChl) {
+    var chlPct = aktifChl.hedef ? Math.round((aktifChl.tamamlanan || 0) / aktifChl.hedef * 100) : 0;
+    var periyotRenk = {aylik:'#854F0B',uc_aylik:'#1D9E75',alti_aylik:'#185FA5',yillik:'#534AB7'}[aktifChl.periyot] || '#854F0B';
+    var periyotBg = {aylik:'#FAEEDA',uc_aylik:'#E1F5EE',alti_aylik:'#E6F1FB',yillik:'#EEEDFE'}[aktifChl.periyot] || '#FAEEDA';
+    var periyotLbl = {aylik:'Aylık',uc_aylik:'3 Aylık',alti_aylik:'6 Aylık',yillik:'Yıllık'}[aktifChl.periyot] || 'Aylık';
+    h += '<div style="background:' + periyotBg + ';border:0.5px solid var(--b);border-radius:8px;padding:12px">';
+    h += '<div style="font-size:8px;font-weight:500;color:' + periyotRenk + ';letter-spacing:.07em;margin-bottom:4px;display:flex;justify-content:space-between">AKTİF CHALLENGE <span style="font-size:8px;padding:1px 6px;border-radius:3px;background:rgba(0,0,0,.06)">' + periyotLbl + '</span></div>';
+    h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:5px;line-height:1.35">' + _ppEsc(aktifChl.baslik) + '</div>';
+    h += '<div style="height:4px;background:rgba(0,0,0,.08);border-radius:2px;margin-bottom:3px"><div style="height:4px;background:' + periyotRenk + ';border-radius:2px;width:' + chlPct + '%"></div></div>';
+    h += '<div style="display:flex;justify-content:space-between;font-size:8px;color:' + periyotRenk + '">';
+    h += '<span>' + (aktifChl.tamamlanan || 0) + '/' + aktifChl.hedef + ' tamamlandı</span><span>+' + aktifChl.puan + ' pt ödül</span>';
+    h += '</div></div>';
+  } else {
+    h += '<div onclick="event.stopPropagation();window._ppChallengeAc()" style="border:0.5px dashed var(--b);border-radius:8px;padding:12px;text-align:center;cursor:pointer;color:var(--t3);font-size:11px">+ Challenge Ekle</div>';
+  }
+
+  /* Alışkanlıklar */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.07em;margin-bottom:7px;display:flex;justify-content:space-between">ALIŞKANLIK <span onclick="event.stopPropagation();window._ppHabitEkle()" style="font-size:8px;color:var(--t3);cursor:pointer">+ Ekle</span></div>';
+  if (habits.length) {
+    habits.slice(0, 4).forEach(function(h2) {
+      var streak = h2.streak || 0;
+      var dots = '';
+      for (var i = 0; i < 7; i++) { dots += '<div style="width:6px;height:6px;border-radius:50%;background:' + (i < streak % 7 ? 'var(--t)' : 'var(--b)') + '"></div>'; }
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:0.5px solid var(--b)">';
+      h += '<span style="font-size:10px;flex:1">' + _ppEsc(h2.baslik) + '</span>';
+      h += '<div style="display:flex;gap:2px">' + dots + '</div>';
+      h += '<span style="font-size:8px;color:var(--t3);min-width:22px;text-align:right">' + streak + 'g</span>';
+      h += '</div>';
+    });
+  } else {
+    h += '<div style="font-size:11px;color:var(--t3);text-align:center;padding:8px">Henüz alışkanlık yok</div>';
+  }
+  h += '</div>';
+
+  return h;
 };
 
 /* ── Mesajlaşma Sistemi ─────────────────────────────────────── */
@@ -439,3 +503,53 @@ window._ppMsgGonderForm = function() {
 };
 
 window.PP_MSG_KEY = PP_MSG_KEY;
+
+/* ── Challenge + Alışkanlık + 12 Hedef Verisi ──────────────── */
+var PP_CHALLENGE_KEY = 'ak_pp_challenge_v1';
+var PP_HABIT_KEY     = 'ak_pp_habit_v1';
+var PP_GOAL_KEY      = 'ak_pp_goal_v1';
+
+function _ppChallengeLoad() { try { var r = localStorage.getItem(PP_CHALLENGE_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function _ppChallengeStore(d) { try { localStorage.setItem(PP_CHALLENGE_KEY, JSON.stringify(d)); } catch(e) {} }
+
+function _ppHabitLoad() { try { var r = localStorage.getItem(PP_HABIT_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function _ppHabitStore(d) { try { localStorage.setItem(PP_HABIT_KEY, JSON.stringify(d)); } catch(e) {} }
+
+function _ppGoalLoad() { try { var r = localStorage.getItem(PP_GOAL_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function _ppGoalStore(d) { try { localStorage.setItem(PP_GOAL_KEY, JSON.stringify(d)); } catch(e) {} }
+
+window._ppChallengeLoad = _ppChallengeLoad;
+window._ppHabitLoad = _ppHabitLoad;
+window._ppGoalLoad = _ppGoalLoad;
+
+window._ppGoalAc = function() {
+  var goals = _ppGoalLoad();
+  var baslik = prompt('Hedef başlığı (örn: Q2\'de 500K USD ciro):');
+  if (!baslik || !baslik.trim()) return;
+  var bitTarih = prompt('Bitiş tarihi (YYYY-MM-DD):') || '';
+  var yeni = { id: _ppId(), baslik: baslik.trim(), bitTarih: bitTarih, pct: 0, createdAt: _ppNow() };
+  goals.unshift(yeni); _ppGoalStore(goals);
+  window.toast?.('Hedef eklendi', 'ok');
+  window._ppModRender();
+};
+
+window._ppChallengeAc = function() {
+  var baslik = prompt('Challenge başlığı:');
+  if (!baslik || !baslik.trim()) return;
+  var periyot = prompt('Periyot (aylik/uc_aylik/alti_aylik/yillik):') || 'aylik';
+  var hedef = parseInt(prompt('Hedef sayı (örn: 5 müşteri için 5):') || '1');
+  var puan = {aylik:500,uc_aylik:2000,alti_aylik:5000,yillik:20000}[periyot] || 500;
+  var yeni = { id: _ppId(), baslik: baslik.trim(), periyot: periyot, hedef: hedef, tamamlanan: 0, puan: puan, createdAt: _ppNow() };
+  var challenges = _ppChallengeLoad(); challenges.unshift(yeni); _ppChallengeStore(challenges);
+  window.toast?.('Challenge eklendi — ' + puan + ' pt ödül', 'ok');
+  window._ppModRender();
+};
+
+window._ppHabitEkle = function() {
+  var baslik = prompt('Alışkanlık adı (örn: Sabah rutini):');
+  if (!baslik || !baslik.trim()) return;
+  var yeni = { id: _ppId(), baslik: baslik.trim(), streak: 0, sonTarih: '', createdAt: _ppNow() };
+  var habits = _ppHabitLoad(); habits.push(yeni); _ppHabitStore(habits);
+  window.toast?.('Alışkanlık eklendi', 'ok');
+  window._ppModRender();
+};
