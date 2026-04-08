@@ -197,6 +197,15 @@ window._ppModRender = function() {
       + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:11px;padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
+      + '<div style="display:grid;grid-template-columns:22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
+      + '<div></div>'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">GÖREV / JOB ID</div>'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">SORUMLU</div>'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">BAŞLANGIÇ</div>'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">BİTİŞ</div>'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">ÖNCELİK</div>'
+      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">AKSİYON</div>'
+      + '</div>'
       + _grup('KRİTİK', 'background:#FCEBEB;color:#A32D2D', kritik)
       + _grup('DEVAM EDİYOR', 'background:#E1F5EE;color:#0F6E56', devam)
       + _grup('PLANLANDI', 'background:#E6F1FB;color:#185FA5', plan)
