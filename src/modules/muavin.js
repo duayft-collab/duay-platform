@@ -139,6 +139,7 @@ window.renderMuavin = function() {
   else if(aktifTab==='islemler'){
     if(!tumIslemler.length){ h += '<div style="padding:40px;text-align:center;color:var(--t3)">Önce "Veri Yükle" sekmesinden Excel yükleyin</div>'; }
     else {
+      h += (window._mvOnayDurumuHTML?.()||'');
       h += '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">';
       h += '<input id="mv-ara" placeholder="Cari adı, fiş no, tarih, tutar, açıklama ara..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="window._mvAra(this.value)" style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
       h += '<span id="mv-ara-sonuc" style="font-size:10px;color:var(--t3);white-space:nowrap"></span>';

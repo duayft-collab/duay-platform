@@ -395,4 +395,91 @@ window._mvSablonIndir = function() {
   window.toast?.('Şablon indirildi — muavin_sablon.xlsx', 'ok');
 };
 
+/* ── MUAVIN-015: Mutabakat Onay Akışı ────────────────────────── */
+var _mvOnayKey = 'ak_muavin_onay_v1';
+
+window._mvOnayKaydet = function() {
+  var donem = window._mvDonem||'';
+  if(!donem){window.toast?.('Dönem seçin','warn');return;}
+  var onaylar = JSON.parse(localStorage.getItem(_mvOnayKey)||'[]');
+  var mevcut = onaylar.find(function(o){return o.donem===donem;});
+  if(mevcut){window.toast?.('Bu dönem zaten onaylanmış: '+mevcut.tarih,'warn');return;}
+  var islemler = window._mvSonIslemler||[];
+  if(!islemler.length){window.toast?.('Önce Excel yükleyin','warn');return;}
+  var topBorc = islemler.reduce(function(s,i){return s+(i.borc||0);},0);
+  var topAlacak = islemler.reduce(function(s,i){return s+(i.alacak||0);},0);
+  var kayit = {
+    donem: donem,
+    tarih: new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}),
+    onaylayan: window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor',
+    onaylayanId: window.CU?.()?.uid||'',
+    islemSayisi: islemler.length,
+    toplamBorc: topBorc,
+    toplamAlacak: topAlacak,
+    net: topBorc-topAlacak
+  };
+  onaylar.push(kayit);
+  localStorage.setItem(_mvOnayKey,JSON.stringify(onaylar));
+  window.toast?.('Mutabakat onaylandı: '+donem,'ok');
+  window.renderMuavin?.();
+};
+
+window._mvOnayDurumuHTML = function() {
+  var donem = window._mvDonem||'';
+  var onaylar = JSON.parse(localStorage.getItem(_mvOnayKey)||'[]');
+  var onay = onaylar.find(function(o){return o.donem===donem;});
+  var h = '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px 16px;margin-bottom:12px">';
+  h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:8px">Mutabakat Onay Durumu</div>';
+  if(onay){
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#E1F5EE;border-radius:6px">';
+    h += '<div style="font-size:20px">✓</div>';
+    h += '<div><div style="font-size:11px;font-weight:500;color:#085041">'+donem+' Mutabakatı Onaylandı</div>';
+    h += '<div style="font-size:10px;color:#0F6E56;margin-top:2px">'+onay.onaylayan+' · '+onay.tarih+'</div>';
+    h += '<div style="font-size:10px;color:#0F6E56">'+onay.islemSayisi+' işlem · Borç: '+onay.toplamBorc.toLocaleString('tr-TR')+' · Alacak: '+onay.toplamAlacak.toLocaleString('tr-TR')+'</div>';
+    h += '</div></div>';
+    h += '<button onclick="event.stopPropagation();window._mvOnayPDFAl()" style="font-size:10px;padding:5px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:transparent;cursor:pointer;color:#0F6E56;font-family:inherit;margin-top:8px">⎙ Onay Belgesi</button>';
+  } else {
+    h += '<div style="display:flex;align-items:center;justify-content:space-between">';
+    h += '<div style="font-size:11px;color:var(--t3)">Bu dönem henüz onaylanmadı</div>';
+    h += '<button onclick="event.stopPropagation();window._mvOnayKaydet()" style="font-size:11px;padding:6px 16px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Mutabakatı Onayla</button>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+};
+
+window._mvOnayPDFAl = function() {
+  var donem = window._mvDonem||'';
+  var onaylar = JSON.parse(localStorage.getItem(_mvOnayKey)||'[]');
+  var onay = onaylar.find(function(o){return o.donem===donem;});
+  if(!onay){window.toast?.('Onay bulunamadı','err');return;}
+  var html='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Mutabakat Onay Belgesi</title>';
+  html+='<style>body{font-family:Arial,sans-serif;margin:40px;color:#111;font-size:12px}';
+  html+='.baslik{text-align:center;border-bottom:2px solid #111;padding-bottom:16px;margin-bottom:24px}';
+  html+='.satir{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}';
+  html+='.onay-kutu{border:2px solid #0F6E56;border-radius:8px;padding:20px;margin:24px 0;text-align:center}';
+  html+='.imza{display:flex;justify-content:space-between;margin-top:60px}';
+  html+='.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px}';
+  html+='</style></head><body>';
+  html+='<div class="baslik"><h2>DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</h2><h3>MUAVİN DEFTER MUTABAKAT ONAY BELGESİ</h3></div>';
+  html+='<div class="satir"><span>Dönem</span><strong>'+onay.donem+'</strong></div>';
+  html+='<div class="satir"><span>İşlem Sayısı</span><strong>'+onay.islemSayisi+'</strong></div>';
+  html+='<div class="satir"><span>Toplam Borç</span><strong>'+onay.toplamBorc.toLocaleString('tr-TR')+' TL</strong></div>';
+  html+='<div class="satir"><span>Toplam Alacak</span><strong>'+onay.toplamAlacak.toLocaleString('tr-TR')+' TL</strong></div>';
+  html+='<div class="satir"><span>Net Bakiye</span><strong>'+onay.net.toLocaleString('tr-TR')+' TL</strong></div>';
+  html+='<div class="onay-kutu"><div style="font-size:24px;color:#0F6E56">✓</div>';
+  html+='<div style="font-size:16px;font-weight:bold;color:#0F6E56;margin:8px 0">MUTABAKAT ONAYLANDI</div>';
+  html+='<div>Onaylayan: <strong>'+onay.onaylayan+'</strong></div>';
+  html+='<div>Tarih: <strong>'+onay.tarih+'</strong></div></div>';
+  html+='<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Muhasebe Sorumlusu</div></div>';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Mali Müşavir</div></div>';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Yönetim</div></div></div>';
+  html+='</body></html>';
+  var win=window.open('','_blank');
+  if(!win){window.toast?.('Popup engellendi','warn');return;}
+  win.document.write(html);
+  win.document.close();
+  win.print();
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');
