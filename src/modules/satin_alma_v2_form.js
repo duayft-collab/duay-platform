@@ -50,7 +50,7 @@ window._saV2YeniTeklif = function() {
     + _s('birim', 'BİRİM', '<option>Adet</option><option>Kg</option><option>Ton</option><option>m²</option><option>Lt</option><option>Koli</option>')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + _s('mensei', 'MENŞEİ', '<option value="TR">TR — Türkiye</option><option value="CN">CN — Çin</option><option value="DE">DE — Almanya</option><option value="IT">IT — İtalya</option><option value="JP">JP — Japonya</option>')
+    + _s('mensei', 'MENŞEİ', '<option value="">Seç...</option>'+(window.MENSEI||['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join(''))
     + _f('gtip', 'GTİP KODU', '8482.10.10')
     + _f('saticiKodu', 'SATICI ÜRÜN KODU', 'MTL-0412')
     + '</div>'
@@ -159,10 +159,11 @@ window._saV2KatalogDoldur = function(kod) {
   var bilgiEl = document.getElementById('sav2f-katalog-bilgi');
   if (!u) { if(bilgiEl) bilgiEl.innerHTML='<span style="color:#A32D2D">Katalogda bulunamadı</span>'; return; }
   if (bilgiEl) bilgiEl.innerHTML='<span style="color:#0F6E56">✓ '+_saEsc(u.duayAdi||u.urunAdi||'')+'</span>';
-  var alanlar = {urunAdi:u.standartAdi||u.urunAdi,turkceAdi:u.duayAdi||u.urunAdi,marka:u.marka,gtip:u.gtip||u.hscKodu,saticiKodu:u.saticiKodu||u.urunKodu,netAg:u.netAgirlik,brutAg:u.brutAgirlik};
+  var alanlar = {urunAdi:u.standartAdi||u.urunAdi||u.ingAd,turkceAdi:u.duayAdi||u.urunAdi,marka:u.marka,gtip:u.gtip||u.hscKodu,saticiKodu:u.saticiKodu||u.urunKodu,netAg:u.netAgirlik,brutAg:u.brutAgirlik,tedarikci:u.tedarikci,alisF:u.alisF||u.sonFiyat||u.sonAlisFiyati};
   Object.keys(alanlar).forEach(function(k){ var el=document.getElementById('sav2f-'+k); if(el&&alanlar[k]) el.value=alanlar[k]; });
   var birimEl=document.getElementById('sav2f-birim'); if(birimEl&&u.birim){ Array.from(birimEl.options).forEach(function(o){if(o.value===u.birim)o.selected=true;}); }
-  var menEl=document.getElementById('sav2f-mensei'); if(menEl&&u.mensei){ Array.from(menEl.options).forEach(function(o){if(o.value===u.mensei)o.selected=true;}); }
+  var menEl=document.getElementById('sav2f-mensei'); if(menEl&&u.mensei){ Array.from(menEl.options).forEach(function(o){if(o.value===u.mensei||o.textContent===u.mensei)o.selected=true;}); }
+  var paraEl=document.getElementById('sav2f-para'); if(paraEl&&u.para){ Array.from(paraEl.options).forEach(function(o){if(o.value===(u.para||u.paraBirimi))o.selected=true;}); }
   if (u.gorsel) {
     window._saV2FormGorselData = u.gorsel;
     var oniz=document.getElementById('sav2f-gorsel-oniz');
