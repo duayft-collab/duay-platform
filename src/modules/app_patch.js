@@ -945,7 +945,7 @@ console.log('[app_patch] Yetki sistemi yüklendi');
 // ÜRÜN KATALOĞU — döküman bazlı, zengin alan seti
 // ════════════════════════════════════════════════════════════════
 var URUN_BIRIMLER = ['Adet','Kg','Metre','Lt','Ton','M²','M³','Paket','Kutu','Palet'];
-var URUN_ULKELER = ['Türkiye','Çin','Hindistan','Almanya','ABD','İtalya','Fransa','İngiltere','Japonya','Güney Kore','Brezilya','Mısır','Fas','İran','Pakistan','Diğer'];
+var URUN_ULKELER = window.MENSEI || ['Türkiye','Çin','Hindistan','Almanya','ABD','İtalya','Fransa','İngiltere','Japonya','Güney Kore','Brezilya','Mısır','Fas','İran','Pakistan','Diğer'];
 
 window.renderUrunler = function() {
   var panel = document.getElementById('panel-urunler'); if (!panel) return;
@@ -3782,7 +3782,7 @@ window._renderOzluSozBanner = function(modul) {
 // ════════════════════════════════════════════════════════════════
 
 /** @constant Ürün menşei ülke listesi */
-var URUN_MENSEI_LIST = ['Türkiye','Çin','Almanya','İtalya','Fransa','İspanya','Polonya','Hindistan','Japonya','Güney Kore','ABD','İngiltere','Hollanda','Belçika','Diğer'];
+var URUN_MENSEI_LIST = window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Fransa','İspanya','Polonya','Hindistan','Japonya','Güney Kore','ABD','İngiltere','Hollanda','Belçika','Diğer'];
 /** @constant Paket tipi seçenekleri */
 var URUN_PAKET_TIPI = ['Koli','Palet','BigBag','Varil','Çuval','Ambalajsız','Diğer'];
 /** @constant Ürün yapı seçenekleri */

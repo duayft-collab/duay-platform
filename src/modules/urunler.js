@@ -44,7 +44,20 @@ function _setSekmeler(s) { _lss(SK, s); }
 const BIRIMLER = [{v:'PCS',l:'Adet-PCS'},{v:'KGS',l:'Kg-KGS'},{v:'MTR',l:'Metre-MTR'},{v:'LTR',l:'Litre-LTR'},{v:'SET',l:'Set-SET'}];
 const PARA = ['USD','EUR','CNY','TRY'];
 const KDV = [20,10,0];
-const MENSEI = ['TR-Türkiye','CN-Çin','DE-Almanya','IT-İtalya','FR-Fransa','ES-İspanya','PL-Polonya','IN-Hindistan','JP-Japonya','KR-Güney Kore','US-ABD','GB-İngiltere','NL-Hollanda','BE-Belçika','TW-Tayvan','TH-Tayland','VN-Vietnam','ID-Endonezya','MY-Malezya','BR-Brezilya','MX-Meksika','ZA-Güney Afrika','EG-Mısır','SA-Suudi Arabistan','AE-BAE','XX-Diğer'];
+const MENSEI = [
+  'Türkiye','Çin','Hindistan','Almanya','ABD','İtalya','Fransa','İngiltere',
+  'Japonya','Güney Kore','Brezilya','Meksika','Kanada','Avustralya','Rusya',
+  'İspanya','Hollanda','İsviçre','İsveç','Polonya','Belçika','Avusturya',
+  'Norveç','Danimarka','Finlandiya','Portekiz','Çek Cumhuriyeti','Romanya',
+  'Macaristan','Yunanistan','Bulgaristan','Hırvatistan','Sırbistan','Ukrayna',
+  'Mısır','Fas','Nijerya','Etiyopya','Güney Afrika','Kenya','Tanzanya','Gana',
+  'Pakistan','Bangladeş','Vietnam','Endonezya','Filipinler','Tayland','Malezya',
+  'Singapur','Hong Kong','Tayvan','Myanmar','Sri Lanka','Nepal','Kamboçya',
+  'Suudi Arabistan','BAE','Katar','Kuveyt','Umman','İsrail','Ürdün','Lübnan',
+  'Irak','İran','Arjantin','Kolombiya','Şili','Peru','Venezuela',
+  'Diğer'
+];
+window.MENSEI = MENSEI;
 const DOT = c => '<span style="width:6px;height:6px;border-radius:50%;background:'+c+';display:inline-block;margin-right:4px"></span>';
 
 /* ── Form Yardımcıları ──────────────────────────────────────── */
