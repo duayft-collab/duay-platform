@@ -301,6 +301,7 @@ window._saV2PeekHTML = function(t) {
   }
   h += '<button onclick="event.stopPropagation();window._saV2GoselYukle(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Görsel Yükle</button>';
   h += '<button onclick="event.stopPropagation();window._saV2Duzenle(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Düzenle</button>';
+  h += '<button onclick="event.stopPropagation();window._saV2Kopyala(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Kopyala</button>';
   h += '</div></div>';
   return h;
 };
@@ -1162,6 +1163,30 @@ window._saV2MusteriKodAra = function(kod) {
   if (musteri && adEl && !adEl.value) {
     adEl.value = musteri.ad || musteri.unvan || musteri.name || '';
   }
+};
+
+/* ── SA-V2-KOPYA-001: Teklif Kopyala ────────────────────────── */
+window._saV2Kopyala = function(id) {
+  var liste = window._saV2Load?.() || [];
+  var t = liste.find(function(x) { return x.id === id; });
+  if (!t) { window.toast?.('Teklif bulunamadı', 'warn'); return; }
+  var yeni = JSON.parse(JSON.stringify(t));
+  yeni.id = window._saId?.() || (Date.now() + Math.random().toString(36).slice(2, 6));
+  yeni.teklifId = window._saTeklifId?.(t.musteriKod || '0000') || yeni.id;
+  yeni.durum = 'bekleyen';
+  yeni.revNo = '01';
+  yeni.revGecmisi = [];
+  yeni.guncellemeTalep = null;
+  yeni.createdAt = window._saNow?.();
+  yeni.updatedAt = window._saNow?.();
+  yeni.gonderimTarih = null;
+  yeni.kabulTarih = null;
+  yeni.redTarih = null;
+  liste.unshift(yeni);
+  window._saV2Store?.(liste);
+  window.SAV2_AKT_ID = yeni.id;
+  window.toast?.('Teklif kopyalandı — yeni ID: ' + yeni.teklifId, 'ok');
+  window.renderSatinAlmaV2?.();
 };
 
 console.log('[SAV2-RENDER] v2.0 yüklendi');
