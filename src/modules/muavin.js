@@ -131,6 +131,9 @@ window.renderMuavin = function() {
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
     h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px">';
     h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:6px">Muhasebeci Excel</div>';
+    h += window._mvDosyaAd
+      ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#E1F5EE;border-radius:5px;margin-bottom:8px"><div><div style="font-size:10px;font-weight:500;color:#085041">✓ '+window._mvDosyaAd+'</div><div style="font-size:9px;color:#0F6E56">'+window._mvDosyaSatir+' işlem · '+window._mvDosyaTarih+'</div></div><button onclick="event.stopPropagation();window._mvHam=\'\';window._mvDosyaAd=\'\';window._mvSonIslemler=[];window._mvDosyaSatir=0;window.renderMuavin()" style="font-size:10px;padding:3px 8px;border:0.5px solid #0F6E56;border-radius:4px;background:transparent;cursor:pointer;color:#0F6E56">Sil</button></div>'
+      : '<div style="padding:6px 10px;background:var(--s2);border-radius:5px;font-size:10px;color:var(--t3);margin-bottom:8px">Henüz yüklenmedi</div>';
     h += '<div style="font-size:10px;color:var(--t3);margin-bottom:8px">Excel\'den kopyala yapıştır veya dosya yükle (Tab ayrımlı)</div>';
     h += '<textarea id="mv-excel-ham" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Hesap Kodu | Açıklama | Borç | Alacak..." style="width:100%;height:160px;font-size:11px;font-family:monospace;padding:8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:vertical;box-sizing:border-box"></textarea>';
     h += '<div style="display:flex;gap:6px;margin-top:8px">';
@@ -182,6 +185,13 @@ window.renderMuavin = function() {
   }
   else if(aktifTab==='karsilastirma'){
     h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
+    if(window._mvDosyaAd||window._mvDosya2Ad){
+      h += '<div style="padding:8px 12px;background:var(--s2);border-radius:6px;margin-bottom:12px;font-size:10px;color:var(--t2)">';
+      h += '📂 '+(window._mvDosyaAd||'Yüklenmedi')+' ('+(window._mvDosyaSatir||0)+' işlem)';
+      h += ' <span style="color:var(--t3)">↔</span> ';
+      h += '📂 '+(window._mvDosya2Ad||'Yüklenmedi')+' ('+(window._mvDosya2Satir||0)+' işlem)';
+      h += '</div>';
+    }
     h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:6px">İkinci Excel (Bütçe / Önceki Dönem)</div>';
     h += '<textarea id="mv-excel-ham2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="İkinci Excel yapıştır veya dosya seç..." style="width:100%;height:120px;font-size:11px;font-family:monospace;padding:8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:vertical;box-sizing:border-box"></textarea>';
     h += '<div style="display:flex;gap:6px;margin-top:8px">';

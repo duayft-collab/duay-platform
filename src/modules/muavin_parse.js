@@ -32,6 +32,13 @@ window._mvHesapKategoriAd = function(hesapKodu) {
 };
 
 window._mvHam2 = '';
+window._mvHam = '';
+window._mvDosyaAd = '';
+window._mvDosya2Ad = '';
+window._mvDosyaSatir = 0;
+window._mvDosya2Satir = 0;
+window._mvDosyaTarih = '';
+window._mvDosya2Tarih = '';
 
 window._mvDosyaOku = function(inp) {
   var f = inp.files[0]; if(!f) return;
@@ -44,7 +51,7 @@ window._mvDosyaOku = function(inp) {
         var ws = wb.Sheets[wb.SheetNames[0]];
         var tsv = XLSX.utils.sheet_to_csv(ws, {FS:'\t', RS:'\n'});
         var ta = document.getElementById('mv-excel-ham');
-        if(ta) { ta.value = tsv; window.toast?.('.xlsx yüklendi — '+f.name,'ok'); }
+        if(ta) { ta.value = tsv; window._mvHam = tsv; window._mvDosyaAd = f.name; window._mvDosyaTarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.('.xlsx yüklendi — '+f.name,'ok'); }
       } catch(err) { window.toast?.('xlsx okunamadı: '+err.message,'err'); }
     };
     r.readAsArrayBuffer(f);
@@ -52,7 +59,7 @@ window._mvDosyaOku = function(inp) {
     var r2 = new FileReader();
     r2.onload = function(e) {
       var ta = document.getElementById('mv-excel-ham');
-      if(ta) { ta.value = e.target.result; window.toast?.(f.name+' yüklendi','ok'); }
+      if(ta) { ta.value = e.target.result; window._mvHam = e.target.result; window._mvDosyaAd = f.name; window._mvDosyaTarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.(f.name+' yüklendi','ok'); }
     };
     r2.readAsText(f, 'UTF-8');
   }
@@ -171,6 +178,7 @@ window._mvKarsilastir = function() {
   var islemSayisi = islemler.length;
   var kayit = {id:Date.now(),donem:donem,tarih:new Date().toISOString().slice(0,16).replace('T',' '),hesapSayisi:hesapSayisi,islemSayisi:islemSayisi,hesaplar:hesaplar,islemler:islemler};
   var liste = _mvLoad(); liste.push(kayit); if(liste.length>10) liste=liste.slice(-10); _mvStore(liste);
+  window._mvDosyaSatir = islemSayisi;
   window.toast?.('Parse tamamlandı: '+hesapSayisi+' hesap, '+islemSayisi+' işlem','ok');
   window.renderMuavin();
 };
@@ -190,7 +198,7 @@ window._mvDosyaOku2 = function(inp) {
         var ws = wb.Sheets[wb.SheetNames[0]];
         var tsv = XLSX.utils.sheet_to_csv(ws, { FS: '\t', RS: '\n' });
         var ta = document.getElementById('mv-excel-ham2');
-        if (ta) { ta.value = tsv; window._mvHam2 = tsv; window.toast?.('.xlsx yüklendi — ' + f.name, 'ok'); }
+        if (ta) { ta.value = tsv; window._mvHam2 = tsv; window._mvDosya2Ad = f.name; window._mvDosya2Tarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.('.xlsx yüklendi — ' + f.name, 'ok'); }
       } catch(err) { window.toast?.('xlsx okunamadı: ' + err.message, 'err'); }
     };
     r.readAsArrayBuffer(f);
@@ -198,7 +206,7 @@ window._mvDosyaOku2 = function(inp) {
     var r2 = new FileReader();
     r2.onload = function(e) {
       var ta = document.getElementById('mv-excel-ham2');
-      if (ta) { ta.value = e.target.result; window._mvHam2 = e.target.result; window.toast?.(f.name + ' yüklendi', 'ok'); }
+      if (ta) { ta.value = e.target.result; window._mvHam2 = e.target.result; window._mvDosya2Ad = f.name; window._mvDosya2Tarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.(f.name + ' yüklendi', 'ok'); }
     };
     r2.readAsText(f, 'UTF-8');
   }
@@ -238,6 +246,7 @@ window._mvKarsilastir2 = function() {
   });
   window._mvSonHesaplar2 = hesaplar2;
   window._mvSonIslemler2 = islemler2;
+  window._mvDosya2Satir = islemler2.length;
   window.toast?.('İkinci Excel: ' + islemler2.length + ' işlem yüklendi', 'ok');
   window._mvFarkRaporu();
 };
