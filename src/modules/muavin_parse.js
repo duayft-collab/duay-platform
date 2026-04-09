@@ -1,4 +1,36 @@
 
+/* ── MUAVIN-009: Hesap Kodu Kategori Tablosu ──────────────── */
+var _mvHesapKategori = {
+  '1':'Dönen Varlıklar', '10':'Hazır Değerler', '100':'Kasa',
+  '101':'Alınan Çekler', '102':'Bankalar', '103':'Verilen Çekler',
+  '11':'Menkul Kıymetler',
+  '12':'Ticari Alacaklar', '120':'Alıcılar', '121':'Alacak Senetleri',
+  '13':'Diğer Alacaklar', '15':'Stoklar', '150':'İlk Madde',
+  '153':'Ticari Mallar', '18':'Gelecek Aylara Ait Giderler',
+  '2':'Duran Varlıklar', '25':'Maddi Duran Varlıklar',
+  '253':'Tesis Makine', '254':'Taşıtlar', '255':'Demirbaşlar',
+  '3':'Kısa Vadeli Yabancı Kaynaklar', '32':'Ticari Borçlar',
+  '320':'Satıcılar', '321':'Borç Senetleri',
+  '33':'Diğer Borçlar', '34':'Alınan Avanslar',
+  '36':'Ödenecek Vergi', '360':'Ödenecek Vergi ve Fonlar',
+  '361':'Ödenecek SGK', '37':'Borç ve Gider Karşılıkları',
+  '38':'Gelecek Aylara Ait Gelirler',
+  '4':'Uzun Vadeli Yabancı Kaynaklar', '40':'Banka Kredileri',
+  '5':'Öz Kaynaklar', '50':'Ödenmiş Sermaye', '57':'Geçmiş Yıl Karı',
+  '6':'Gelirler', '60':'Brüt Satışlar', '601':'Yurt Dışı Satışlar',
+  '64':'Diğer Faaliyetlerden Gelirler',
+  '7':'Giderler', '70':'Maliyet', '74':'Hizmet Üretim Maliyeti',
+  '76':'Pazarlama Giderleri', '77':'Genel Yönetim Giderleri',
+  '770':'Genel Yönetim', '780':'Finansman Giderleri',
+  '79':'İşletme Faaliyetleri', '8':'Maliyet Hesapları'
+};
+
+window._mvHesapKategoriAd = function(hesapKodu) {
+  if (!hesapKodu) return '';
+  var kod = hesapKodu.split(/[\s\.\-]/)[0];
+  return _mvHesapKategori[kod] || _mvHesapKategori[kod.slice(0, 3)] || _mvHesapKategori[kod.slice(0, 2)] || _mvHesapKategori[kod.slice(0, 1)] || '';
+};
+
 window._mvHam2 = '';
 
 window._mvDosyaOku = function(inp) {

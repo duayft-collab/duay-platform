@@ -171,6 +171,7 @@ window.renderMuavin = function() {
     });
     h += '</tbody></table></div>';
     h += '</div>';
+    if (tumIslemler.length) h += (window._mvAgacHTML?.() || '');
   }
   h += '</div>';
   panel.innerHTML = h;
