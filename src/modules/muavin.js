@@ -142,6 +142,7 @@ window.renderMuavin = function() {
     h += '</div>';
     h += '<div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">';
     h += '<input id="mv-ara" placeholder="Cari adı, fiş no veya açıklama ara..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="window._mvAra(this.value)" style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+    h += '<span id="mv-ara-sonuc" style="font-size:10px;color:var(--t3);white-space:nowrap"></span>';
     h += '</div>';
     h += '<div style="overflow-x:auto">';
     h += '<table style="width:100%;border-collapse:collapse;font-size:10px;min-width:1200px">';
@@ -318,11 +319,50 @@ window._mvXLSMExport = function() {
 };
 
 window._mvAra = function(deger) {
-  var satirlar = document.querySelectorAll('#mv-islem-tbody tr');
+  var tbody = document.getElementById('mv-islem-tbody');
+  if(!tbody) return;
   var f = deger.toLowerCase().trim();
-  satirlar.forEach(function(tr){
-    tr.style.display = (!f || tr.textContent.toLowerCase().includes(f)) ? '' : 'none';
+  var islemler = window._mvSonIslemler||[];
+  if(!f){ tbody.innerHTML = window._mvIslemSatirHTML(islemler); var s=document.getElementById('mv-ara-sonuc'); if(s) s.textContent=''; return; }
+  var filtre = islemler.filter(function(i){
+    return (
+      (i.tarih||'').toLowerCase().includes(f) ||
+      (i.tip||'').toLowerCase().includes(f) ||
+      (i.fisNo||'').toLowerCase().includes(f) ||
+      (i.aciklama||'').toLowerCase().includes(f) ||
+      (i.cari||'').toLowerCase().includes(f) ||
+      String(i.borc||'').includes(f) ||
+      String(i.alacak||'').includes(f) ||
+      String(i.bakiye||'').includes(f) ||
+      String(i.borcDov||'').includes(f) ||
+      String(i.alacakDov||'').includes(f) ||
+      (i.ba||'').toLowerCase()===f
+    );
   });
+  var sonuc = document.getElementById('mv-ara-sonuc');
+  if(sonuc) sonuc.textContent = filtre.length+' sonuç / '+islemler.length+' işlem';
+  tbody.innerHTML = window._mvIslemSatirHTML(filtre);
+};
+
+window._mvIslemSatirHTML = function(islemler) {
+  if(!islemler.length) return '<tr><td colspan="13" style="padding:20px;text-align:center;color:var(--t3)">Sonuç bulunamadı</td></tr>';
+  return islemler.map(function(i){
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      +'<td style="padding:4px 6px;white-space:nowrap;text-align:right">'+i.tarih+'</td>'
+      +'<td style="padding:4px 6px;color:var(--t3);text-align:right">'+i.tip+'</td>'
+      +'<td style="padding:4px 6px;font-family:monospace;text-align:right">'+i.fisNo+'</td>'
+      +'<td style="padding:4px 6px;color:var(--t2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(i.aciklama||'')+'">'+i.aciklama+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:'+(i.borc?'#A32D2D':'var(--t3)')+'">'+(i.borc?i.borc.toLocaleString('tr-TR'):'')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:'+(i.alacak?'#0F6E56':'var(--t3)')+'">'+(i.alacak?i.alacak.toLocaleString('tr-TR'):'')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;font-weight:500">'+(i.bakiye||0).toLocaleString('tr-TR')+'</td>'
+      +'<td style="padding:4px 6px;text-align:center;color:'+(i.ba==='A'?'#0F6E56':'#A32D2D')+'">'+i.ba+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:var(--t3)">'+(i.borcDov?i.borcDov.toLocaleString('tr-TR'):'')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:var(--t3)">'+(i.alacakDov?i.alacakDov.toLocaleString('tr-TR'):'')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:var(--t3)">'+(i.bakiyeDov?i.bakiyeDov.toLocaleString('tr-TR'):'')+'</td>'
+      +'<td style="padding:4px 6px;text-align:center;color:'+(i.baDov==='A'?'#0F6E56':'#A32D2D')+'">'+(i.baDov||'')+'</td>'
+      +'<td style="padding:4px 6px;color:var(--t2);white-space:nowrap">'+(i.cari||'')+'</td>'
+      +'</tr>';
+  }).join('');
 };
 
 /* ── MUAVIN-006: İkinci Excel Karşılaştırma + Fark Raporu ──── */
