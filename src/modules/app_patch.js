@@ -986,6 +986,8 @@ window.renderUrunler = function() {
   else if (window._urunFiltre === 'gorselsiz') fl = fl.filter(function(u) { return !u.gorsel; });
   else if (window._urunFiltre === 'tamamlandi') fl = fl.filter(function(u) { return u.urunAdi && u.tedarikci && u.kategori && u.gorsel; });
   else if (window._urunFiltre === 'eksik') fl = fl.filter(function(u) { return !u.urunAdi || !u.tedarikci || !u.kategori || !u.gorsel; });
+  /* URUN-LIST-002: Tedarikçi filtresi */
+  if (window._urunTedFiltre) fl = fl.filter(function(u) { return u.tedarikci === window._urunTedFiltre; });
 
   /* Sayfalama (STANDART-FIX-013) */
   if (!window._urunSayfa) window._urunSayfa = 1;
@@ -1007,8 +1009,25 @@ window.renderUrunler = function() {
   });
   filtreH += '</div>';
 
+  /* URUN-LIST-002: Tedarikçi pill butonları */
+  var tedList = []; var _tedSet = {};
+  fl.forEach(function(u) { var t = u.tedarikci || ''; if (t && !_tedSet[t]) { _tedSet[t] = true; tedList.push(t); } });
+  tedList.sort();
+  var aktifTed = window._urunTedFiltre || '';
+  var tedH = '';
+  if (tedList.length > 1) {
+    tedH = '<div style="padding:4px 16px 6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">';
+    tedH += '<span style="font-size:9px;color:var(--t3);font-weight:500">TEDARİKÇİ:</span>';
+    tedH += '<button onclick="event.stopPropagation();window._urunTedFiltre=\'\';window.renderUrunler()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:20px;background:' + (aktifTed === '' ? 'var(--t)' : 'transparent') + ';color:' + (aktifTed === '' ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">Tümü</button>';
+    tedList.forEach(function(t) {
+      var ak = aktifTed === t;
+      tedH += '<button onclick="event.stopPropagation();window._urunTedFiltre=\'' + t.replace(/'/g, "\\'") + '\';window.renderUrunler()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:20px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit;white-space:nowrap">' + t + '</button>';
+    });
+    tedH += '</div>';
+  }
+
   /* Toplu islem bar */
-  var bulkH = filtreH + '<div id="urun-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #E24B4A;align-items:center;gap:8px;font-size:11px;color:#791F1F">'
+  var bulkH = filtreH + tedH + '<div id="urun-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #E24B4A;align-items:center;gap:8px;font-size:11px;color:#791F1F">'
     + '<span id="urun-bulk-cnt">0</span> urun secili '
     + '<button onclick="event.stopPropagation();window._urunTopluSil()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;font-size:10px;cursor:pointer;font-family:inherit">Toplu Sil</button>'
     + '<button onclick="event.stopPropagation();window._urunTopluGuncelle()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--ac);background:rgba(99,102,241,.06);color:var(--ac);font-size:10px;cursor:pointer;font-family:inherit">Toplu Guncelle</button>'
