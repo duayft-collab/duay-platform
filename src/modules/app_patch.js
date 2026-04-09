@@ -981,6 +981,11 @@ window.renderUrunler = function() {
   // List
   var q = (document.getElementById('urun-search')?.value || '').toLowerCase();
   var fl = q ? d.filter(function(u) { return (u.urunAdi||'').toLowerCase().includes(q) || (u.urunKodu||'').toLowerCase().includes(q) || (u.tedarikci||'').toLowerCase().includes(q) || (u.kategori||'').toLowerCase().includes(q) || (u.gtip||'').toLowerCase().includes(q); }) : d;
+  /* URUN-LIST-001: Görsel/Tamamlanma filtreleri */
+  if (window._urunFiltre === 'gorselli') fl = fl.filter(function(u) { return u.gorsel; });
+  else if (window._urunFiltre === 'gorselsiz') fl = fl.filter(function(u) { return !u.gorsel; });
+  else if (window._urunFiltre === 'tamamlandi') fl = fl.filter(function(u) { return u.urunAdi && u.tedarikci && u.kategori && u.gorsel; });
+  else if (window._urunFiltre === 'eksik') fl = fl.filter(function(u) { return !u.urunAdi || !u.tedarikci || !u.kategori || !u.gorsel; });
 
   /* Sayfalama (STANDART-FIX-013) */
   if (!window._urunSayfa) window._urunSayfa = 1;
@@ -993,8 +998,17 @@ window.renderUrunler = function() {
 
   var cont = document.getElementById('urun-list'); if (!cont) return;
 
+  /* URUN-LIST-001: Filtre butonları */
+  var _aktifFiltre = window._urunFiltre || 'tumu';
+  var filtreH = '<div style="display:flex;gap:6px;padding:6px 16px;flex-wrap:wrap">';
+  [['tumu','Tümü'],['gorselli','Görselli'],['gorselsiz','Görselsiz'],['tamamlandi','Tamamlandı'],['eksik','Eksik Bilgi']].forEach(function(f) {
+    var ak = _aktifFiltre === f[0];
+    filtreH += '<button onclick="event.stopPropagation();window._urunFiltre=\'' + f[0] + '\';window.renderUrunler()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:20px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + f[1] + '</button>';
+  });
+  filtreH += '</div>';
+
   /* Toplu islem bar */
-  var bulkH = '<div id="urun-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #E24B4A;align-items:center;gap:8px;font-size:11px;color:#791F1F">'
+  var bulkH = filtreH + '<div id="urun-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #E24B4A;align-items:center;gap:8px;font-size:11px;color:#791F1F">'
     + '<span id="urun-bulk-cnt">0</span> urun secili '
     + '<button onclick="event.stopPropagation();window._urunTopluSil()" style="padding:3px 10px;border-radius:5px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;font-size:10px;cursor:pointer;font-family:inherit">Toplu Sil</button>'
     + '<button onclick="event.stopPropagation();window._urunTopluGuncelle()" style="padding:3px 10px;border-radius:5px;border:0.5px solid var(--ac);background:rgba(99,102,241,.06);color:var(--ac);font-size:10px;cursor:pointer;font-family:inherit">Toplu Guncelle</button>'
@@ -1006,8 +1020,11 @@ window.renderUrunler = function() {
   sayfaUrun.forEach(function(u) {
     html += '<div style="display:flex;align-items:center;gap:12px;padding:3px 10px;border-bottom:0.5px solid var(--b);transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       + '<input type="checkbox" class="urun-bulk-chk" data-id="' + u.id + '" onclick="event.stopPropagation();window._urunBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac);flex-shrink:0">'
-      + '<div style="width:24px;height:24px;border-radius:5px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:24px;height:24px;object-fit:cover;border-radius:5px">' : '📦') + '</div>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + (u.imolu==='E'?' <span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>':'') + (_calcIhracatTam(u)?' <span style="color:#16A34A;font-size:10px">✓</span>':' <span style="color:#DC2626;font-size:10px" title="İhracat bilgisi eksik">⚠</span>') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + ' · %' + _calcIhracatPct(u) + '</div></div>'
+      + '<div style="position:relative;width:24px;height:24px;flex-shrink:0" onmouseenter="var z=this.querySelector(\'.uz\');if(z)z.style.display=\'block\'" onmouseleave="var z=this.querySelector(\'.uz\');if(z)z.style.display=\'none\'">'
+      + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:24px;height:24px;border-radius:3px;object-fit:cover;border:0.5px solid var(--b)">' : '<div style="width:24px;height:24px;border-radius:3px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:12px">📦</div>')
+      + (u.gorsel ? '<div class="uz" style="display:none;position:fixed;z-index:9999;pointer-events:none"><img src="' + u.gorsel + '" style="width:140px;height:140px;object-fit:cover;border-radius:8px;border:0.5px solid var(--b);box-shadow:0 4px 12px rgba(0,0,0,.2)"></div>' : '')
+      + '</div>'
+      + '<div onclick="event.stopPropagation();window._urunPeekAc?.(\'' + u.id + '\')" style="flex:1;cursor:pointer;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + (u.imolu==='E'?' <span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>':'') + (_calcIhracatTam(u)?' <span style="color:#16A34A;font-size:10px">✓</span>':' <span style="color:#DC2626;font-size:10px" title="İhracat bilgisi eksik">⚠</span>') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + ' · %' + _calcIhracatPct(u) + '</div></div>'
       + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + (u.sonFiyat ? u.sonFiyat.toLocaleString('tr-TR') + ' ' + (u.paraBirimi||'USD') : '—') + '</div>'
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
       + '<button onclick="event.stopPropagation();window.openUrunForm?.(\'' + u.id + '\')" style="padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:none;cursor:pointer;font-size:10px;color:var(--t3);font-family:inherit">\u270f\ufe0f</button>'
@@ -4747,4 +4764,46 @@ window._importOnizlemeOnayla = function() {
   window.toast?.('Import tamamlandı: '+window._importOnayListe.length+' ürün','ok');
   window.renderUrunler?.();
   window._importOnayListe=null;
+};
+
+/* ── URUN-LIST-001: Peek Panel ─────────────────────────────── */
+window._urunPeekAc = function(id) {
+  var mevcut = document.getElementById('urun-peek-panel');
+  if (mevcut && mevcut.dataset.id === String(id)) { mevcut.remove(); return; }
+  if (mevcut) mevcut.remove();
+  var esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : function(s) { return String(s || '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var u = (typeof window.loadUrunler === 'function' ? window.loadUrunler() : []).find(function(x) { return String(x.id) === String(id); });
+  if (!u) return;
+  var p = document.createElement('div');
+  p.id = 'urun-peek-panel';
+  p.dataset.id = String(id);
+  p.style.cssText = 'position:fixed;top:118px;right:0;width:300px;height:calc(100vh - 118px);background:var(--sf);border-left:0.5px solid var(--b);z-index:4000;overflow-y:auto;display:flex;flex-direction:column';
+  var h = '<div style="padding:14px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t)">Ürün Detayı</div>';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'urun-peek-panel\')?.remove()" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:16px">×</button></div>';
+  if (u.gorsel) h += '<img src="' + u.gorsel + '" style="width:100%;height:180px;object-fit:cover">';
+  h += '<div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">';
+  h += '<div style="font-size:14px;font-weight:500;color:var(--t)">' + esc(u.urunAdi || u.orijinalAdi || '—') + '</div>';
+  h += '<div style="font-size:11px;color:var(--t3)">' + esc(u.ingAd || u.standartAdi || '') + '</div>';
+  var rows = [
+    ['Duay Kodu', u.duayKodu], ['Tedarikçi', u.tedarikci], ['Kategori', u.kategori],
+    ['Menşei', u.mensei], ['Adet Türü', u.birim], ['Eski Kod', u.eskiKod],
+    ['Tüketim Süresi', u.tuketimSuresi ? (u.tuketimSuresi + ' gün') : null],
+    ['Kaydeden', u.createdBy], ['Kayıt Tarihi', u.createdAt]
+  ];
+  rows.forEach(function(r) {
+    if (!r[1]) return;
+    h += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<span style="font-size:10px;color:var(--t3)">' + r[0] + '</span>';
+    h += '<span style="font-size:10px;color:var(--t);font-weight:500;text-align:right;max-width:180px">' + esc(String(r[1])) + '</span>';
+    h += '</div>';
+  });
+  if (u.teknikAciklama) { h += '<div style="font-size:10px;color:var(--t2);margin-top:4px;line-height:1.5">' + esc(u.teknikAciklama) + '</div>'; }
+  h += '</div>';
+  h += '<div style="padding:12px 16px;border-top:0.5px solid var(--b);margin-top:auto;display:flex;gap:6px">';
+  h += '<button onclick="event.stopPropagation();window.openUrunForm(\'' + id + '\');document.getElementById(\'urun-peek-panel\')?.remove()" style="flex:1;font-size:11px;padding:7px 0;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Düzenle</button>';
+  h += '</div>';
+  p.innerHTML = h;
+  document.body.appendChild(p);
+  document.addEventListener('click', function rm(e) { if (!p.contains(e.target)) { p.remove(); document.removeEventListener('click', rm); } });
 };

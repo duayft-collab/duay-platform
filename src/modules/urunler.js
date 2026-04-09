@@ -752,7 +752,7 @@ window._uf2TaslakKaydet = function() {
 /* ── URUN-FORM-001: Floating modal kaydet ──────────────────── */
 window._uf2KaydetYeni = function() {
   const g = id => document.getElementById('uf2-' + id)?.value?.trim() || '';
-  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'saticiKodu', 'teknikAciklama', 'gorselBase64'];
+  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'teknikAciklama', 'gorselBase64'];
   const eksik = zorunlu.filter(f => {
     if (f === 'gorselBase64') return !document.getElementById('uf2-gorselBase64')?.value;
     return !g(f);
