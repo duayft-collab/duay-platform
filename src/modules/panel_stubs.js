@@ -974,7 +974,7 @@ window._renderPlatformRules = function() {
     { id: 'GK-05', kural: 'Dosyalar Firebase Storage URL', durum: 'ok' },
     { id: 'GK-06', kural: 'localStorage daima <%60 dolu', durum: 'ok' },
     { id: 'GK-07', kural: 'Her kayıtta updatedAt zorunlu', durum: 'ok' },
-    { id: 'GK-08', kural: 'Yetkisiz menü görünmez', durum: 'pending' },
+    { id: 'GK-08', kural: 'Yetkisiz menü görünmez', durum: 'ok' },
     { id: 'GK-09', kural: 'Form zorunlu alan validasyonu', durum: 'ok' },
     { id: 'GK-10', kural: 'createdBy + createdAt her kayıtta', durum: 'ok' },
     { id: 'GK-11', kural: 'Para formatı ₺1.234,56 (tr-TR)', durum: 'ok' },
@@ -985,7 +985,7 @@ window._renderPlatformRules = function() {
     { id: 'GK-16', kural: 'Kritik işlem logActivity yazılır', durum: 'ok' },
     { id: 'GK-17', kural: 'Safari iOS uyumlu', durum: 'ok' },
     { id: 'GK-18', kural: 'Yeni modül: KEYS+limit+SYNC_COLS', durum: 'ok' },
-    { id: 'GK-19', kural: 'Dropdown menüler hover ile açılır, dışarı çıkınca kapanır', durum: 'pending' },
+    { id: 'GK-19', kural: 'Dropdown menüler hover ile açılır, dışarı çıkınca kapanır', durum: 'ok' },
   ];
   var anayas = [
     { tarih: '2026-04-02', kural: 'Kural 01 — Sıfır Hardcode: API key ve şifreler asla kaynak kodda olmaz.' },
@@ -1001,8 +1001,6 @@ window._renderPlatformRules = function() {
 
   var yapilacaklar = [
     { id:'FINANS-KUR-001', baslik:'Finans paneli kur düzeltme', oncelik:'yüksek', aciklama:'Finans paneli eski fallback kurları gösteriyor' },
-    { id:'MOD-001', baslik:'GK-08 menü erişim kontrolü', oncelik:'yüksek', aciklama:'Yetkisiz kullanıcılara menü gösterilmemeli' },
-    { id:'GK-19', baslik:'Dropdown hover kapanma — tüm modüller', oncelik:'orta', aciklama:'' },
     { id:'EXP-002', baslik:'GÇB Takip modülü', oncelik:'orta', aciklama:'Gümrük çıkış beyannamesi takip modülü' },
     { id:'EXP-003', baslik:'Konişimento / B/L modülü', oncelik:'orta', aciklama:'Deniz taşımacılığı konişimento takibi' },
     { id:'ALR-001', baslik:'Akıllı alarm sistemi', oncelik:'orta', aciklama:'Vade, stok, kur alarm sistemi' },
