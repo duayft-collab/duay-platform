@@ -506,9 +506,13 @@ function _renderForm() {
       +['Adet','Kg','Ton','m²','m³','Set','Paket'].map(b=>'<option'+(u.birim===b?' selected':'')+'>'+b+'</option>').join('')+'</select></div>'
       +'</div>'
       +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:10px">KOD & TANIMLAR</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
       +_fi('duayKodu','DUAY KODU',u.duayKodu||'','text',false)
       +_fi('saticiKodu','SATICI KODU',u.saticiKodu||'','text',false)
+      +'<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">MENŞEİ <span style="color:#A32D2D">*</span></div>'
+      +'<select id="uf2-mensei" onchange="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Seç...</option>'
+      +(window.MENSEI||['Türkiye','Çin','Hindistan','Almanya','ABD','Diğer']).map(function(m){return '<option value="'+_esc(m)+'"'+(u.mensei===m?' selected':'')+'>'+_esc(m)+'</option>';}).join('')
+      +'</select></div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px">'
       +_fi('ingAd','İNGİLİZCE ADI',u.ingAd||u.standartAdi||'','text',false)
