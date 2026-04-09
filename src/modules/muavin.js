@@ -117,15 +117,28 @@ window.renderMuavin = function() {
     h += '<div style="font-size:12px;font-weight:500;color:var(--t)">'+donem+' — '+(son.hesapSayisi||0)+' hesap · '+(son.islemSayisi||0)+' işlem</div>';
     h += '<div style="display:flex;gap:6px">';
     h += '<button onclick="event.stopPropagation();window._mvCSVExport()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">↓ CSV</button>';
+    h += '<button onclick="event.stopPropagation();window._mvXLSMExport()" style="font-size:10px;padding:4px 10px;border:0.5px solid #0F6E56;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#0F6E56">↓ Excel</button>';
     h += '<div style="font-size:10px;color:var(--t3)">'+son.tarih+'</div></div></div>';
     var tumIslemler = son.islemler || [];
+    var topBorc = tumIslemler.reduce(function(s,i){return s+(i.borc||0);},0);
+    var topAlacak = tumIslemler.reduce(function(s,i){return s+(i.alacak||0);},0);
+    var topBakiye = tumIslemler.length ? tumIslemler[tumIslemler.length-1].bakiye : 0;
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">';
+    h += '<div style="background:var(--s2);border-radius:6px;padding:8px 12px;text-align:center"><div style="font-size:9px;color:var(--t3)">İŞLEM ADETİ</div><div style="font-size:20px;font-weight:500;color:var(--t)">'+tumIslemler.length+'</div></div>';
+    h += '<div style="background:#FCEBEB;border-radius:6px;padding:8px 12px;text-align:center"><div style="font-size:9px;color:#A32D2D">TOPLAM BORÇ</div><div style="font-size:16px;font-weight:500;color:#A32D2D">'+topBorc.toLocaleString('tr-TR')+'</div></div>';
+    h += '<div style="background:#E1F5EE;border-radius:6px;padding:8px 12px;text-align:center"><div style="font-size:9px;color:#0F6E56">TOPLAM ALACAK</div><div style="font-size:16px;font-weight:500;color:#0F6E56">'+topAlacak.toLocaleString('tr-TR')+'</div></div>';
+    h += '<div style="background:var(--s2);border-radius:6px;padding:8px 12px;text-align:center"><div style="font-size:9px;color:var(--t3)">NET BAKİYE</div><div style="font-size:16px;font-weight:500;color:var(--t)">'+(topBakiye||0).toLocaleString('tr-TR')+'</div></div>';
+    h += '</div>';
+    h += '<div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">';
+    h += '<input id="mv-ara" placeholder="Cari adı, fiş no veya açıklama ara..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="window._mvAra(this.value)" style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+    h += '</div>';
     h += '<div style="overflow-x:auto">';
     h += '<table style="width:100%;border-collapse:collapse;font-size:10px;min-width:1200px">';
     h += '<thead><tr style="background:var(--s2);position:sticky;top:0">';
     ['TARİH','TİP','FİŞ NO','AÇIKLAMA','BORÇ','ALACAK','BAKİYE','B/A','BORÇ(DÖV)','ALACAK(DÖV)','BAKİYE(DÖV)','B/A','CARİ ADI'].forEach(function(k){
       h += '<th style="padding:5px 6px;text-align:'+(k==='AÇIKLAMA'||k==='CARİ ADI'?'left':'right')+';border-bottom:0.5px solid var(--b);white-space:nowrap;font-size:9px">'+k+'</th>';
     });
-    h += '</tr></thead><tbody>';
+    h += '</tr></thead><tbody id="mv-islem-tbody">';
     tumIslemler.forEach(function(i){
       h += '<tr style="border-bottom:0.5px solid var(--b)">';
       h += '<td style="padding:4px 6px;white-space:nowrap;text-align:right">'+i.tarih+'</td>';
@@ -275,4 +288,30 @@ window._mvCSVExport = function() {
   window.toast?.('CSV indirildi: '+islemler.length+' işlem','ok');
 };
 
-console.log('[MUAVİN] v1.0 yüklendi');
+window._mvXLSMExport = function() {
+  var islemler = window._mvSonIslemler||[];
+  if(!islemler.length){window.toast?.('Önce Excel yükleyin','warn');return;}
+  if(typeof XLSX==='undefined'){window.toast?.('SheetJS yüklenmedi','err');return;}
+  var baslik = ['TARİH','TİP','FİŞ NO','AÇIKLAMA','BORÇ','ALACAK','BAKİYE','B/A','BORÇ(DÖV)','ALACAK(DÖV)','BAKİYE(DÖV)','B/A(DÖV)','CARİ ADI'];
+  var satirlar = [baslik];
+  islemler.forEach(function(i){
+    satirlar.push([i.tarih,i.tip,i.fisNo,i.aciklama.replace(/&lt;/g,'<').replace(/&gt;/g,'>'),i.borc||'',i.alacak||'',i.bakiye||'',i.ba,i.borcDov||'',i.alacakDov||'',i.bakiyeDov||'',i.baDov,i.cari]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(satirlar);
+  ws['!cols'] = [{wch:12},{wch:8},{wch:10},{wch:60},{wch:14},{wch:14},{wch:14},{wch:5},{wch:14},{wch:14},{wch:14},{wch:5},{wch:40}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Muavin');
+  var donem = window._mvDonem || 'export';
+  XLSX.writeFile(wb, 'muavin_'+donem+'.xlsx', {bookType:'xlsx'});
+  window.toast?.('Excel indirildi: '+islemler.length+' işlem','ok');
+};
+
+window._mvAra = function(deger) {
+  var satirlar = document.querySelectorAll('#mv-islem-tbody tr');
+  var f = deger.toLowerCase().trim();
+  satirlar.forEach(function(tr){
+    tr.style.display = (!f || tr.textContent.toLowerCase().includes(f)) ? '' : 'none';
+  });
+};
+
+console.log('[MUAVİN] v1.3 yüklendi');
