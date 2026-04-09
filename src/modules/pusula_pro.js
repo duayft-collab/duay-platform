@@ -466,6 +466,11 @@ window._ppHizliEkle = function(inp) {
 };
 
 window._ppTamamla = function(id) {
+  var bagKontrol = window._ppBagimlilikKontrol?.(id);
+  if (bagKontrol && !bagKontrol.gecerli) {
+    window.toast?.('Önce tamamlanması gereken: ' + bagKontrol.eksikler.join(', '), 'warn');
+    return;
+  }
   var tasks = _ppLoad(); var t = tasks.find(function(x) { return x.id === id; });
   if (t) {
     t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); _ppStore(tasks);
@@ -1833,4 +1838,71 @@ window._ppTakvimJSONImport = function(inp) {
     }
   };
   r.readAsText(f, 'UTF-8');
+};
+
+/* ── PP-BAGIMLILIK-001: Görev Önkoşul Zinciri ──────────────── */
+window._ppBagimlilikEkle = function(gorevId, onkosulId) {
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  var o = tasks.find(function(x) { return x.id === onkosulId; });
+  if (!t || !o) { window.toast?.('Görev bulunamadı', 'warn'); return; }
+  if (gorevId === onkosulId) { window.toast?.('Görev kendisine bağlanamaz', 'warn'); return; }
+  if (!t.onkosullar) t.onkosullar = [];
+  if (t.onkosullar.indexOf(onkosulId) !== -1) { window.toast?.('Bağımlılık zaten var', 'warn'); return; }
+  t.onkosullar.push(onkosulId);
+  t.updatedAt = _ppNow();
+  window._ppStore?.(tasks);
+  window.toast?.('Önkoşul eklendi: ' + _ppEsc(o.baslik || ''), 'ok');
+  window._ppModRender?.();
+};
+
+window._ppBagimlilikKaldir = function(gorevId, onkosulId) {
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  if (!t || !t.onkosullar) return;
+  t.onkosullar = t.onkosullar.filter(function(id) { return id !== onkosulId; });
+  t.updatedAt = _ppNow();
+  window._ppStore?.(tasks);
+  window.toast?.('Önkoşul kaldırıldı', 'ok');
+  window._ppModRender?.();
+};
+
+window._ppBagimlilikKontrol = function(gorevId) {
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  if (!t || !t.onkosullar || !t.onkosullar.length) return { gecerli: true, eksikler: [] };
+  var eksikler = t.onkosullar.filter(function(oid) {
+    var o = tasks.find(function(x) { return x.id === oid; });
+    return !o || o.durum !== 'tamamlandi';
+  }).map(function(oid) {
+    var o = tasks.find(function(x) { return x.id === oid; });
+    return o ? o.baslik : oid;
+  });
+  return { gecerli: eksikler.length === 0, eksikler: eksikler };
+};
+
+window._ppBagimlilikPanelHTML = function(gorev) {
+  if (!gorev) return '';
+  var tasks = window._ppLoad?.() || [];
+  var kontrol = window._ppBagimlilikKontrol(gorev.id);
+  var h = '<div style="background:var(--s2);border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:6px">ÖNKOŞULLAR';
+  if (!kontrol.gecerli) h += ' <span style="color:#A32D2D;font-weight:700">⚠ ' + kontrol.eksikler.length + ' eksik</span>';
+  h += '</div>';
+  if (gorev.onkosullar && gorev.onkosullar.length) {
+    gorev.onkosullar.forEach(function(oid) {
+      var o = tasks.find(function(x) { return x.id === oid; });
+      if (!o) return;
+      var tamam = o.durum === 'tamamlandi';
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:0.5px solid var(--b)">';
+      h += '<span style="font-size:10px;color:' + (tamam ? '#0F6E56' : '#854F0B') + '">' + (tamam ? '✓' : '○') + '</span>';
+      h += '<span style="font-size:11px;color:var(--t2);flex:1">' + _ppEsc(o.baslik || '') + '</span>';
+      h += '<button onclick="event.stopPropagation();window._ppBagimlilikKaldir(\'' + gorev.id + '\',\'' + oid + '\')" style="font-size:9px;border:none;background:none;cursor:pointer;color:var(--t3)">×</button>';
+      h += '</div>';
+    });
+  } else {
+    h += '<div style="font-size:10px;color:var(--t3);padding:4px 0">Önkoşul yok</div>';
+  }
+  h += '</div>';
+  return h;
 };
