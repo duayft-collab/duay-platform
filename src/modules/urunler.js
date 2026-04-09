@@ -440,6 +440,11 @@ function openUrunForm(editId) {
     + (u.gorsel ? '<img id="uf2-gorselPrev" src="' + u.gorsel + '" style="max-height:100px;border-radius:6px;border:0.5px solid var(--b);display:block;margin-bottom:6px">' : '<img id="uf2-gorselPrev" style="display:none;max-height:100px;border-radius:6px;margin-bottom:6px">')
     + '<div style="border:0.5px dashed var(--b);border-radius:6px;padding:16px;text-align:center;color:var(--t3);font-size:11px">+ Görsel Yükle (JPG / PNG / WEBP · max 5MB)</div>'
     + '<input type="file" accept="image/*" onchange="window._uf2FileChange(\'gorsel\',this)" style="display:none"></label>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'
+    + _fi('marka','MARKA',u.marka||'',false,'text','Marka adı')
+    + _fi('netAgirlik','NET AĞIRLIK (Kg)',u.netAgirlik||'',false,'number','0.00')
+    + _fi('brutAgirlik','BRÜT AĞIRLIK (Kg)',u.brutAgirlik||'',false,'number','0.00')
+    + '</div>'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TEKNİK AÇIKLAMA <span style="color:#A32D2D">*</span></div>'
     + '<textarea id="uf2-teknikAciklama" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Ürün teknik özellikleri, önemli detaylar..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:70px;resize:none;font-family:inherit;box-sizing:border-box">' + _esc(u.teknikAciklama || '') + '</textarea></div>'
     + '<input type="hidden" id="uf2-duayKoduOto" value="' + _esc(duayKoduOto) + '">'
@@ -772,6 +777,11 @@ window._uf2KaydetYeni = function() {
     existing.eskiKod = g('eskiKod');
     existing.saticiNotGizli = document.getElementById('uf2-saticiNotGizli')?.checked||false;
     existing.tuketimSuresi = g('tuketimSuresi');
+    existing.marka = g('marka');
+    existing.netAgirlik = g('netAgirlik');
+    existing.brutAgirlik = g('brutAgirlik');
+    existing.alisF = g('alisF');
+    existing.para = g('para')||'USD';
     existing.updatedAt = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
     existing.updatedBy = window.CU?.()?.displayName||'';
   } else {
@@ -781,6 +791,7 @@ window._uf2KaydetYeni = function() {
       saticiKodu: g('saticiKodu'), teknikAciklama: g('teknikAciklama'), sonTuketim: g('sonTuketim') || '',
       gorsel: document.getElementById('uf2-gorselBase64')?.value || '',
       eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
+      marka: g('marka'), netAgirlik: g('netAgirlik'), brutAgirlik: g('brutAgirlik'), alisF: g('alisF'), para: g('para')||'USD',
       status: 'aktif',
       createdAt: new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}),
       createdById: window.CU?.()?.uid||window.CU?.()?.id||'',
