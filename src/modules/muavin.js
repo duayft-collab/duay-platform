@@ -74,8 +74,8 @@ window.renderMuavin = function() {
   var son = kayitlar.length ? kayitlar[kayitlar.length-1] : null;
   var tumIslemler = son ? (son.islemler||[]) : [];
   if(tumIslemler.length) { window._mvSonIslemler = tumIslemler; window._mvSonHesaplar = son.hesaplar||{}; }
-  var uyarilar = window._mvUyarilar||{mukerrer:[],tutarsiz:[],supheli:[]};
-  var topUyari = (uyarilar.mukerrer||[]).length+(uyarilar.tutarsiz||[]).length+(uyarilar.supheli||[]).length;
+  var uyarilar = window._mvUyarilar||{mukerrer:[],tutarsiz:[],supheli:[],kdv:[]};
+  var topUyari = (uyarilar.mukerrer||[]).length+(uyarilar.tutarsiz||[]).length+(uyarilar.supheli||[]).length+(uyarilar.kdv||[]).length;
   var h = '<div style="padding:16px 20px;max-width:1200px">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
   h += '<div><div style="font-size:16px;font-weight:500;color:var(--t)">Muavin Defter Kontrol</div>';
@@ -93,6 +93,7 @@ window.renderMuavin = function() {
     if(uyarilar.mukerrer.length) h += '<span style="font-size:10px;color:#633806">🔁 Mükerrer: '+uyarilar.mukerrer.length+'</span>';
     if(uyarilar.tutarsiz.length) h += '<span style="font-size:10px;color:#633806">⚡ Tutarsız: '+uyarilar.tutarsiz.length+'</span>';
     if(uyarilar.supheli.length) h += '<span style="font-size:10px;color:#633806">🔍 Şüpheli: '+uyarilar.supheli.length+'</span>';
+    if(uyarilar.kdv&&uyarilar.kdv.length) h += '<span style="font-size:10px;color:#633806">🧾 Şüpheli KDV oranı: '+uyarilar.kdv.length+'</span>';
     h += '</div>';
   }
   if(tumIslemler.length){

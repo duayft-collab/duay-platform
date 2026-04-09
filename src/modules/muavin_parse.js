@@ -136,6 +136,37 @@ window._mvKarsilastir = function() {
   });
   window._mvSonHesaplar = hesaplar;
   window._mvSonIslemler = islemler;
+  /* MUAVIN-016: Mükerrer/tutarsız/şüpheli/KDV tespiti */
+  var fisNoMap = {};
+  var mukerrerler = [];
+  var tutarsizlar = [];
+  var supheliler = [];
+  var kdvFarklari = [];
+  islemler.forEach(function(i) {
+    if (i.fisNo) {
+      if (fisNoMap[i.fisNo]) { if (mukerrerler.indexOf(i.fisNo) === -1) mukerrerler.push(i.fisNo); }
+      else { fisNoMap[i.fisNo] = true; }
+    }
+    if (i.borc && i.alacak && Math.abs(Math.abs(i.bakiye) - Math.abs(i.borc - i.alacak)) > 1) {
+      tutarsizlar.push(i.fisNo || i.tarih);
+    }
+    if ((i.borc > 100000 || i.alacak > 100000) && (!i.aciklama || i.aciklama.length < 5)) {
+      supheliler.push({ tip: 'Yüksek tutar + kısa açıklama', fisNo: i.fisNo, tutar: i.borc || i.alacak });
+    }
+    var kdvOran = i.aciklama ? (i.aciklama.match(/%(\d+)\s*KDV/i) || i.aciklama.match(/KDV[:\s]+%?(\d+)/i)) : null;
+    if (kdvOran) {
+      var oran = parseInt(kdvOran[1]);
+      if (oran !== 0 && oran !== 1 && oran !== 8 && oran !== 10 && oran !== 18 && oran !== 20) {
+        kdvFarklari.push({ fisNo: i.fisNo, oran: oran });
+      }
+    }
+  });
+  window._mvUyarilar = {
+    mukerrer: mukerrerler,
+    tutarsiz: tutarsizlar,
+    supheli: supheliler,
+    kdv: kdvFarklari
+  };
   var hesapSayisi = Object.keys(hesaplar).length;
   var islemSayisi = islemler.length;
   var kayit = {id:Date.now(),donem:donem,tarih:new Date().toISOString().slice(0,16).replace('T',' '),hesapSayisi:hesapSayisi,islemSayisi:islemSayisi,hesaplar:hesaplar,islemler:islemler};
