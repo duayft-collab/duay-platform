@@ -297,8 +297,6 @@ window._saV2SatisOzetGuncelle = function() {
 };
 
 window._saV2UrunSecModal = function() {
-  var liste = window._saV2Load?.() || [];
-  if (!liste.length) { window.toast?.('Önce alış teklifi ekleyin','warn'); return; }
   var mevcut = document.getElementById('sav2-urun-sec-modal'); if(mevcut) mevcut.remove();
   var m = document.createElement('div');
   m.id = 'sav2-urun-sec-modal';
@@ -306,17 +304,44 @@ window._saV2UrunSecModal = function() {
   m.onclick = function(e){ if(e.target===m) m.remove(); };
   var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:600px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">';
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--b)"><span style="font-size:13px;font-weight:500">Ürün Seç</span><button onclick="event.stopPropagation();document.getElementById(\'sav2-urun-sec-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3)">×</button></div>';
-  ic += '<div style="flex:1;overflow-y:auto">';
-  liste.filter(function(t){return !t.isDeleted;}).forEach(function(t) {
-    var payload = JSON.stringify({id:t.id,duayKodu:t.duayKodu||'',urunAdi:t.urunAdi||'',gorsel:t.gorsel||'',alisF:t.alisF||0,para:t.para||'USD'}).replace(/"/g,'&quot;');
-    ic += '<div onclick="event.stopPropagation();window._saV2SatisUrunEkle('+payload+');document.getElementById(\'sav2-urun-sec-modal\')?.remove()" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
-    ic += (t.gorsel?'<img src="'+t.gorsel+'" style="width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0">':'<div style="width:36px;height:36px;border-radius:4px;background:var(--s2);flex-shrink:0"></div>');
-    ic += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">'+_saEsc(t.urunAdi||'—')+'</div>';
-    ic += '<div style="font-size:9px;color:var(--t3);margin-top:1px">'+_saEsc(t.duayKodu||'—')+' · '+_saEsc(t.alisF||'—')+' '+_saEsc(t.para||'')+'</div></div>';
-    ic += '</div>';
-  });
-  ic += '</div></div>';
+  ic += '<div style="padding:8px 16px;border-bottom:0.5px solid var(--b)">';
+  ic += '<input id="sav2-urun-ara" placeholder="Ürün adı, kod veya tedarikçi ara..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="window._saV2UrunAra(this.value)" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">';
+  ic += '</div>';
+  ic += '<div id="sav2-urun-liste" style="flex:1;overflow-y:auto">'+window._saV2UrunListHTML('')+'</div>';
+  ic += '</div>';
   m.innerHTML = ic;
   document.body.appendChild(m);
+  setTimeout(function(){ document.getElementById('sav2-urun-ara')?.focus(); }, 100);
+};
+
+window._saV2UrunListHTML = function(filtre) {
+  var tumListe = (window._saV2Load?.() || []).filter(function(t){return !t.isDeleted;});
+  var katalog = typeof window.loadUrunler==='function' ? window.loadUrunler() : [];
+  var ihrUrunler = typeof window.loadIhracatUrunler==='function' ? window.loadIhracatUrunler() : [];
+  var tumKatalog = katalog.concat(ihrUrunler).filter(function(u){return !u.isDeleted;});
+  var kaynaklar = tumListe.concat(tumKatalog.map(function(u){
+    return {id:u.id||u._id,urunAdi:u.urunAdi||u.ad||u.name||'',duayKodu:u.duayKodu||u.kod||'',tedarikci:u.tedarikci||'',alisF:u.alisF||u.satisFiyati||'',para:'USD',birim:u.birim||'Adet',gorsel:u.gorsel||''};
+  }));
+  if (filtre && filtre.trim()) {
+    var f = filtre.trim().toLowerCase();
+    kaynaklar = kaynaklar.filter(function(t){
+      return (t.urunAdi||'').toLowerCase().includes(f) || (t.duayKodu||'').toLowerCase().includes(f) || (t.tedarikci||'').toLowerCase().includes(f);
+    });
+  }
+  if (!kaynaklar.length) return '<div style="padding:30px;text-align:center;color:var(--t3);font-size:12px">Ürün bulunamadı</div>';
+  return kaynaklar.map(function(t){
+    var payload = JSON.stringify({duayKodu:t.duayKodu,urunAdi:t.urunAdi,alisF:t.alisF,para:t.para||'USD',miktar:1,birim:t.birim,gorsel:t.gorsel||''}).replace(/"/g,'&quot;');
+    var gorselSrc = t.gorsel || '';
+    return '<div onclick="event.stopPropagation();window._saV2SatisUrunEkle(JSON.parse(this.dataset.p));document.getElementById(\'sav2-urun-sec-modal\')?.remove()" data-p="'+payload+'" style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      +(gorselSrc ? '<img src="'+gorselSrc+'" style="width:32px;height:32px;border-radius:4px;object-fit:cover">' : '<div style="width:32px;height:32px;border-radius:4px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:14px">📦</div>')
+      +'<div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">'+_saEsc(t.urunAdi||'—')+'</div>'
+      +'<div style="font-size:10px;color:var(--t3)">'+_saEsc(t.duayKodu||'')+(t.tedarikci?' · '+_saEsc(t.tedarikci):'')+(t.alisF?' · '+t.alisF+' '+(t.para||'USD'):'')+'</div></div>'
+      +'</div>';
+  }).join('');
+};
+
+window._saV2UrunAra = function(deger) {
+  var liste = document.getElementById('sav2-urun-liste');
+  if (liste) liste.innerHTML = window._saV2UrunListHTML(deger);
 };
 
