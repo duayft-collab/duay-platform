@@ -318,7 +318,7 @@ function _renderEtap2(u) {
   if (u.dib === 'E') h += _info('amber','DIB (Dahilde İşleme Belgesi) var — Gümrük işlemlerinde DIB kapsamı kontrol edilmelidir.');
 
   h += _section('Onay Bilgileri', '', _grid(4,'12px',
-    _sel('kategori','Kategori',['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer'],{req:true,sel:u.kategori})
+    _sel('kategori','Kategori',(window._ufKatYukle?window._ufKatYukle():['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer']),{req:true,sel:u.kategori})
     + _inp('marka2','Marka',{val:u.marka,req:true})
     + _inp('uretici','Gerçek Üretici',{val:u.gercekUretici,req:true})
     + _sel('mensei2','Menşei',MENSEI.map(m=>{const p=m.split('-');return{v:p[0],l:p[1]};}),{req:true,sel:u.mensei})

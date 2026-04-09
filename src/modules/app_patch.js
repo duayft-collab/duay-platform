@@ -963,7 +963,9 @@ window.renderUrunler = function() {
       + (window.isAdmin?.() ? '<button onclick="window._insertDemoUrunler?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🎲 Demo</button>' : '')
       + '<button onclick="window.openUrunForm?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Ürün Ekle</button>'
       + '<button onclick="event.stopPropagation();window.App?.nav(\'satinalma\')" style="font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">→ Satınalma</button>'
-      + '<button onclick="event.stopPropagation();window.App?.nav(\'belgeyonetimi\')" style="font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Evraklar →</button></div>'
+      + '<button onclick="event.stopPropagation();window.App?.nav(\'belgeyonetimi\')" style="font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Evraklar →</button>'
+      + (window.isAdmin?.() ? '<button onclick="event.stopPropagation();var p=document.getElementById(\'uf-kat-yonetim\');if(p){p.style.display=p.style.display===\'none\'?\'\':\'none\';}else{var d=document.createElement(\'div\');d.id=\'uf-kat-yonetim\';d.style.cssText=\'position:fixed;top:130px;right:20px;z-index:5000\';d.innerHTML=window._ufKatPanelHTML();document.body.appendChild(d);}" style="font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">⚙ Kategoriler</button>' : '')
+      + '</div>'
       + '</div>'
       + '<div id="urun-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
       + '</div>'
@@ -3802,8 +3804,57 @@ var UF_KDV_ORANLARI = [0, 1, 8, 10, 18, 20];
 var UF_BIRIMLER = ['Adet','Kg','Set','Metre','Litre','Kutu','Palet','Ton','M²','M³'];
 /** @constant IMO sınıfları */
 var UF_IMO_SINIFLAR = ['1-Patlayıcılar','2-Gazlar','3-Yanıcı Sıvılar','4-Yanıcı Katılar','5-Oksitleyiciler','6-Zehirli','7-Radyoaktif','8-Aşındırıcılar','9-Diğer Tehlikeli'];
-/** @constant Ürün kategori listesi (admin genişletebilir) */
-var UF_KATEGORILER = ['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat Malzemesi','Otomotiv','Tarım','Diğer'];
+/** Ürün kategori listesi — dinamik (localStorage + admin yönetimi) */
+var UF_KAT_KEY = 'ak_urun_kategori_v1';
+function _ufKatYukle() {
+  try { var r=localStorage.getItem(UF_KAT_KEY); return r?JSON.parse(r):['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer']; } catch(e) { return ['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer']; }
+}
+function _ufKatKaydet(liste) { try { localStorage.setItem(UF_KAT_KEY,JSON.stringify(liste)); } catch(e){} }
+var UF_KATEGORILER = _ufKatYukle();
+window.UF_KATEGORILER = UF_KATEGORILER;
+window._ufKatYukle = _ufKatYukle;
+
+window._ufKatEkle = function(ad) {
+  if(!ad||!ad.trim()){window.toast?.('Kategori adı boş olamaz','warn');return;}
+  var liste=_ufKatYukle();
+  if(liste.indexOf(ad.trim())!==-1){window.toast?.('Bu kategori zaten var','warn');return;}
+  liste.push(ad.trim()); _ufKatKaydet(liste);
+  window.UF_KATEGORILER=liste;
+  window.toast?.('Kategori eklendi: '+ad,'ok');
+  window._ufKatPanelGuncelle?.();
+};
+
+window._ufKatSil = function(ad) {
+  if(!window.isAdmin?.()){window.toast?.('Sadece admin silebilir','warn');return;}
+  var liste=_ufKatYukle().filter(function(k){return k!==ad;});
+  _ufKatKaydet(liste); window.UF_KATEGORILER=liste;
+  window.toast?.(ad+' silindi','ok');
+  window._ufKatPanelGuncelle?.();
+};
+
+window._ufKatPanelHTML = function() {
+  var liste=_ufKatYukle();
+  var h='<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:16px;max-width:600px">';
+  h+='<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:12px">Ürün Kategori Yönetimi</div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:12px">';
+  h+='<input id="uf-kat-yeni" onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ufKatEkle(this.value.trim())" placeholder="Yeni kategori adı..." style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+  h+='<button onclick="event.stopPropagation();var inp=document.getElementById(\'uf-kat-yeni\');window._ufKatEkle(inp?.value);if(inp)inp.value=\'\'" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">+ Ekle</button>';
+  h+='</div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  liste.forEach(function(k){
+    h+='<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;border:0.5px solid var(--b);border-radius:20px;background:var(--s2)">';
+    h+='<span style="font-size:11px;color:var(--t)">'+k+'</span>';
+    if(window.isAdmin?.()) h+='<button onclick="event.stopPropagation();window._ufKatSil(\''+k+'\')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:12px;padding:0 2px;line-height:1">×</button>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+  return h;
+};
+
+window._ufKatPanelGuncelle = function() {
+  var p=document.getElementById('uf-kat-yonetim');
+  if(p) p.innerHTML=window._ufKatPanelHTML();
+};
 
 
 // ── YARDIMCI: Tooltip destekli form alanı üreteci ──
