@@ -2547,17 +2547,17 @@ window._importUrunlerExcel = function() {
       var d = typeof loadUrunler==='function'?loadUrunler():[];
       var cariList = typeof loadCari==='function'?loadCari():[];
       var cariNames = cariList.map(function(c){return c.name;});
-      var added=0, errors=[];
+      var added=0, errors=[], yeniUrunler=[];
       rows.forEach(function(r,i) {
         var ad = r['Orijinal Adı']||r['orijinalAdi']||r['Ad']||'';
         var ted = r['Tedarikçi']||r['tedarikci']||'';
         if (!ad) {errors.push('Satır '+(i+2)+': Ürün adı boş');return;}
         if (ted && cariNames.indexOf(ted)===-1) {errors.push('Satır '+(i+2)+': Tedarikçi "'+ted+'" tanımsız');return;}
         var sat=(ted||'X').replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase();
-        d.unshift({
+        var yeni = {
           id:typeof generateNumericId==='function'?generateNumericId():Date.now()+i,
-          duayKodu:'DUAY-'+sat+'-'+String(d.length+1).padStart(3,'0'),
-          urunKodu:'DUAY-'+sat+'-'+String(d.length+1).padStart(3,'0'),
+          duayKodu:'DUAY-'+sat+'-'+String(d.length+added+1).padStart(3,'0'),
+          urunKodu:'DUAY-'+sat+'-'+String(d.length+added+1).padStart(3,'0'),
           orijinalAdi:ad, urunAdi:ad,
           standartAdi:r['Standart Adı']||r['standartAdi']||'',
           kategori:r['Kategori']||r['kategori']||'',
@@ -2565,19 +2565,18 @@ window._importUrunlerExcel = function() {
           mensei:r['Menşei']||r['mensei']||'',
           gtip:r['GTİP']||r['gtip']||'',
           marka:r['Marka']||r['marka']||'',
+          alisF:r['Alış Fiyatı']||r['alisF']||'',
+          para:r['Döviz']||r['para']||'USD',
           tedarikci:ted, saticiId:ted,
           kdvOrani:parseInt(r['KDV%']||r['kdvOrani']||'20'),
           status:'aktif', ts:new Date().toISOString(), createdBy:window.Auth?.getCU?.()?.id,
           changeLog:[{ts:new Date().toISOString(),by:window.Auth?.getCU?.()?.id,action:'Excel import'}]
-        });
+        };
+        yeniUrunler.push(yeni);
+        d.unshift(yeni);
         added++;
       });
-      if (typeof storeUrunler==='function') storeUrunler(d);
-      window.renderUrunler?.();
-      var msg = added+' ürün eklendi';
-      if (errors.length) msg += ', '+errors.length+' hata:\n'+errors.slice(0,5).join('\n');
-      window.toast?.(errors.length?msg:'✓ '+msg, errors.length?'warn':'ok');
-      if (errors.length) console.warn('[Import]', errors);
+      window._importOnizlemeGoster(yeniUrunler, errors, d);
     };
     reader.readAsBinaryString(this.files[0]);
   };
@@ -4688,3 +4687,64 @@ window._renderFirmaKpi = function() {
     }
   }
 })();
+
+/* ── URUN-IMPORT-001: Import Önizleme Modalı ──────────────── */
+window._importOnizlemeGoster = function(yeniUrunler, hatalar, mevcutListe) {
+  var mevcut=document.getElementById('import-onizleme-modal');
+  if(mevcut) mevcut.remove();
+  var mo=document.createElement('div');
+  mo.id='import-onizleme-modal';
+  mo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 0;overflow-y:auto';
+  var h='<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:900px;overflow:hidden">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">';
+  h+='<div><div style="font-size:14px;font-weight:500;color:var(--t)">Excel Import Önizleme</div>';
+  h+='<div style="font-size:10px;color:var(--t3);margin-top:1px">'+yeniUrunler.length+' ürün yüklenecek'+(hatalar.length?' · '+hatalar.length+' hata var':'')+'</div></div>';
+  h+='<button onclick="event.stopPropagation();document.getElementById(\'import-onizleme-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3)">×</button></div>';
+  if(hatalar.length){
+    h+='<div style="background:#FCEBEB;padding:10px 20px;border-bottom:0.5px solid var(--b)">';
+    h+='<div style="font-size:10px;font-weight:500;color:#A32D2D;margin-bottom:4px">⚠ Hatalı Satırlar (atlanacak)</div>';
+    hatalar.slice(0,5).forEach(function(e){ h+='<div style="font-size:10px;color:#A32D2D">• '+e+'</div>'; });
+    if(hatalar.length>5) h+='<div style="font-size:10px;color:#A32D2D">...ve '+(hatalar.length-5)+' hata daha</div>';
+    h+='</div>';
+  }
+  h+='<div style="overflow-x:auto;max-height:400px">';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:10px">';
+  h+='<thead><tr style="background:var(--s2);position:sticky;top:0">';
+  ['#','DUAY KODU','ÜRÜN ADI','TEDARİKÇİ','KATEGORİ','BİRİM','ALIŞ F','DÖVİZ'].forEach(function(k){
+    h+='<th style="padding:6px 8px;text-align:left;border-bottom:0.5px solid var(--b);font-size:9px;white-space:nowrap">'+k+'</th>';
+  });
+  h+='</tr></thead><tbody>';
+  yeniUrunler.forEach(function(u,i){
+    h+='<tr style="border-bottom:0.5px solid var(--b)'+(i%2===0?';background:var(--s2)':'')+'">';
+    h+='<td style="padding:5px 8px;color:var(--t3)">'+(i+1)+'</td>';
+    h+='<td style="padding:5px 8px;font-family:monospace;font-size:9px">'+(u.duayKodu||'—')+'</td>';
+    h+='<td style="padding:5px 8px;font-weight:500;color:var(--t)">'+(u.urunAdi||u.orijinalAdi||'—')+'</td>';
+    h+='<td style="padding:5px 8px;color:var(--t2)">'+(u.tedarikci||'—')+'</td>';
+    h+='<td style="padding:5px 8px;color:var(--t3)">'+(u.kategori||'—')+'</td>';
+    h+='<td style="padding:5px 8px;color:var(--t3)">'+(u.birim||'—')+'</td>';
+    h+='<td style="padding:5px 8px;text-align:right">'+(u.alisF||'—')+'</td>';
+    h+='<td style="padding:5px 8px;color:var(--t3)">'+(u.para||'USD')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">';
+  h+='<div style="font-size:11px;color:var(--t3)">Bu işlem geri alınamaz. Mevcut ürünler etkilenmez, sadece yeni ürünler eklenir.</div>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<button onclick="event.stopPropagation();document.getElementById(\'import-onizleme-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>';
+  h+='<button onclick="event.stopPropagation();window._importOnizlemeOnayla()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">'+yeniUrunler.length+' Ürünü Kaydet</button>';
+  h+='</div></div>';
+  h+='</div>';
+  mo.innerHTML=h;
+  mo.onclick=function(e){if(e.target===mo)mo.remove();};
+  document.body.appendChild(mo);
+  window._importOnayListe = mevcutListe;
+};
+
+window._importOnizlemeOnayla = function() {
+  if(!window._importOnayListe){window.toast?.('Veri bulunamadı','err');return;}
+  if(typeof storeUrunler==='function') storeUrunler(window._importOnayListe);
+  document.getElementById('import-onizleme-modal')?.remove();
+  window.toast?.('Import tamamlandı: '+window._importOnayListe.length+' ürün','ok');
+  window.renderUrunler?.();
+  window._importOnayListe=null;
+};
