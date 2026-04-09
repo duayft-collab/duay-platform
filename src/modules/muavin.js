@@ -189,14 +189,24 @@ window.renderMuavin = function() {
     h += (window._mvCariOzetHTML?.()||'<div style="padding:40px;text-align:center;color:var(--t3)">Önce Excel yükleyin</div>');
   }
   else if(aktifTab==='karsilastirma'){
-    h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
-    if(window._mvDosyaAd||window._mvDosya2Ad){
-      h += '<div style="padding:8px 12px;background:var(--s2);border-radius:6px;margin-bottom:12px;font-size:10px;color:var(--t2)">';
-      h += '📂 '+(window._mvDosyaAd||'Yüklenmedi')+' ('+(window._mvDosyaSatir||0)+' işlem)';
-      h += ' <span style="color:var(--t3)">↔</span> ';
-      h += '📂 '+(window._mvDosya2Ad||'Yüklenmedi')+' ('+(window._mvDosya2Satir||0)+' işlem)';
-      h += '</div>';
+    if (window._mvDosyaAd || window._mvDosya2Ad) {
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--s2);border-radius:6px;margin-bottom:12px;border:0.5px solid var(--b)">';
+      h += '<div style="flex:1"><div style="font-size:9px;color:var(--t3);font-weight:500;margin-bottom:3px">KARŞILAŞTIRILAN DOSYALAR</div>';
+      h += '<div style="display:flex;align-items:center;gap:8px">';
+      h += '<span style="font-size:11px;color:var(--t)">📂 ' + (window._mvDosyaAd || 'Yüklenmedi') + '</span>';
+      if (window._mvDosyaSatir) h += '<span style="font-size:9px;color:var(--t3)">(' + window._mvDosyaSatir + ' işlem)</span>';
+      h += '<span style="font-size:14px;color:var(--t3)">↔</span>';
+      h += '<span style="font-size:11px;color:var(--t)">📂 ' + (window._mvDosya2Ad || 'Yüklenmedi') + '</span>';
+      if (window._mvDosya2Satir) h += '<span style="font-size:9px;color:var(--t3)">(' + window._mvDosya2Satir + ' işlem)</span>';
+      h += '</div></div>';
+      var ikiDosya = window._mvDosyaAd && window._mvDosya2Ad;
+      h += '<div style="text-align:right"><div style="font-size:9px;color:' + (ikiDosya ? '#0F6E56' : '#854F0B') + '">' + (ikiDosya ? '✓ Hazır' : '⚠ Eksik dosya') + '</div>';
+      if (ikiDosya) h += '<button onclick="event.stopPropagation();window._mvKarsilastir2()" style="font-size:10px;padding:4px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;margin-top:4px">Karşılaştır →</button>';
+      h += '</div></div>';
+    } else {
+      h += '<div style="padding:10px 14px;background:#FAEEDA;border-radius:6px;margin-bottom:12px;font-size:10px;color:#854F0B">⚠ Karşılaştırma için önce "Veri Yükle" sekmesinden her iki Excel\'i yükleyin</div>';
     }
+    h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
     h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:6px">İkinci Excel (Bütçe / Önceki Dönem)</div>';
     h += '<textarea id="mv-excel-ham2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="İkinci Excel yapıştır veya dosya seç..." style="width:100%;height:120px;font-size:11px;font-family:monospace;padding:8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:vertical;box-sizing:border-box"></textarea>';
     h += '<div style="display:flex;gap:6px;margin-top:8px">';
