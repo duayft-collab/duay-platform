@@ -95,6 +95,36 @@ window._mvDosyaOku = function(inp) {
   r.readAsText(f,'UTF-8');
 };
 
+var _mvHesapKoduMap = {
+  kira:       '770.01',
+  fatura:     '770.02',
+  abonelik:   '770.03',
+  vergi:      '360.01',
+  sigorta:    '370.01',
+  maas:       '335.01',
+  kredi_k:    '780.01',
+  kredi:      '300.01',
+  diger:      '770.99'
+};
+
+window._mvSistemTutar = function(hesapKodu, donem) {
+  var odmler = typeof window.loadOdm==='function' ? window.loadOdm() : [];
+  var yil = parseInt(donem); var q = parseInt(donem.replace(/^\d{4}Q/,''));
+  var ayBaslangic = (q-1)*3; var ayBitis = ayBaslangic+2;
+  var donemOdm = odmler.filter(function(o){
+    if (o.isDeleted) return false;
+    var tarih = new Date(o.dueDate||o.createdAt||'');
+    if (isNaN(tarih)) return false;
+    var ay = tarih.getMonth(); var oy = tarih.getFullYear();
+    return oy===yil && ay>=ayBaslangic && ay<=ayBitis;
+  });
+  var kategoriList = [];
+  Object.keys(_mvHesapKoduMap).forEach(function(k){ if(_mvHesapKoduMap[k]===hesapKodu) kategoriList.push(k); });
+  var toplam = donemOdm.filter(function(o){ return kategoriList.indexOf(o.kategori||o.category||'') !== -1; })
+    .reduce(function(s,o){ return s+(parseFloat(o.amountTRY)||parseFloat(o.amount)||0); },0);
+  return toplam;
+};
+
 window._mvKarsilastir = function() {
   var text = document.getElementById('mv-excel-ham')?.value||'';
   if(!text.trim()){window.toast?.('Excel verisi giriniz','warn');return;}
@@ -106,7 +136,7 @@ window._mvKarsilastir = function() {
     var hesap = (parcalar[0]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     var aciklama = (parcalar[1]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     var excelTutar = parseFloat(parcalar[2]||parcalar[3]||'0')||0;
-    var sistemTutar = 0;
+    var sistemTutar = window._mvSistemTutar ? window._mvSistemTutar(hesap, donem) : 0;
     var fark = excelTutar - sistemTutar;
     var durum = Math.abs(fark) < 0.01 ? 'eslesir' : sistemTutar===0 ? 'eksik' : 'fark';
     if(durum==='eslesir') eslesen++;
