@@ -354,5 +354,147 @@ window._mvBaranSatirHTML = function(islemler) {
   }).join('');
 };
 
+/* ── T3-MV-003: Fuzzy cari adı eşleştirme ──────────────────── */
+function _mvFuzzyEsles(a, b) {
+  if (!a || !b) return 0;
+  a = a.toLowerCase().replace(/[^a-züğışçöa-z0-9\s]/gi, '').trim();
+  b = b.toLowerCase().replace(/[^a-züğışçöa-z0-9\s]/gi, '').trim();
+  if (a === b) return 100;
+  var aKelimeler = a.split(/\s+/).filter(function(k){ return k.length > 2; });
+  var bKelimeler = b.split(/\s+/).filter(function(k){ return k.length > 2; });
+  var eslesenKelime = 0;
+  aKelimeler.forEach(function(ak) {
+    if (bKelimeler.some(function(bk){ return bk.indexOf(ak) !== -1 || ak.indexOf(bk) !== -1; })) eslesenKelime++;
+  });
+  if (!aKelimeler.length) return 0;
+  return Math.round((eslesenKelime / aKelimeler.length) * 100);
+}
+
+function _mvCariCikar(aciklama) {
+  if (!aciklama) return '';
+  var hvlMatch = aciklama.match(/HVL-([^-\s]+)/i);
+  if (hvlMatch) return hvlMatch[1].trim();
+  var snMatch = aciklama.match(/SN:\d+\s+([A-ZÜĞIŞÇÖ][^-]+?)(?:\s{2,}|$)/i);
+  if (snMatch) return snMatch[1].trim();
+  var intMatch = aciklama.match(/INT-HVL-([^-\s]+)/i);
+  if (intMatch) return intMatch[1].trim();
+  var buyukMatch = aciklama.match(/([A-ZÜĞIŞÇÖ][A-ZÜĞIŞÇÖa-züğışçö\s]{4,30})/);
+  if (buyukMatch) return buyukMatch[1].trim();
+  return '';
+}
+
+function _mvTarihFark(t1, t2) {
+  try {
+    var d1 = new Date(t1.split('.').reverse().join('-'));
+    var d2 = new Date(t2.split('.').reverse().join('-'));
+    return Math.abs((d1 - d2) / 86400000);
+  } catch(e) { return 999; }
+}
+
+window._mvEslestir = function() {
+  var islemlerM = window._mvSonIslemler || [];
+  var islemlerB = window._mvSonIslemlerB || [];
+  if (!islemlerM.length || !islemlerB.length) {
+    window.toast && window.toast('Her iki dosya da yüklenmeli', 'warn');
+    return;
+  }
+  window.toast && window.toast('Karşılaştırılıyor...', 'info');
+  var eslesen = [], farkVar = [], dovizFark = [], sadeceMuhasebe = [], sadeceBaran = [];
+  var eslesenMIdx = [], eslesenBIdx = [];
+
+  islemlerB.forEach(function(b, bi) {
+    var bCari = _mvCariCikar(b.aciklama) || b.islemTuru || '';
+    var bTutar = b.borcMeblagh || b.alacakMeblagh || 0;
+    var bDoviz = b.borcDoviz || b.alacakDoviz || 'TRY';
+    var enIyiSkor = 0, enIyiM = null, enIyiMi = -1;
+
+    islemlerM.forEach(function(m, mi) {
+      if (eslesenMIdx.indexOf(mi) !== -1) return;
+      var mCari = m.cariAd || '';
+      var cariSkor = _mvFuzzyEsles(bCari, mCari);
+      if (cariSkor < 60) return;
+      var tarihFark = _mvTarihFark(b.tarih || '', m.tarih || '');
+      if (tarihFark > 5) return;
+      var toplam = cariSkor + Math.max(0, 30 - tarihFark * 5);
+      if (toplam > enIyiSkor) { enIyiSkor = toplam; enIyiM = m; enIyiMi = mi; }
+    });
+
+    if (!enIyiM) { sadeceBaran.push(b); return; }
+
+    var mTutar = enIyiM.borc || enIyiM.alacak || 0;
+    var mDoviz = 'TRY';
+    eslesenMIdx.push(enIyiMi);
+    eslesenBIdx.push(bi);
+
+    if (bDoviz !== 'TRY' && bDoviz !== mDoviz) {
+      dovizFark.push({ m: enIyiM, b: b, not: 'Para birimi farklı: ' + bDoviz + ' / ' + mDoviz });
+    } else if (Math.abs(bTutar - mTutar) > 1) {
+      farkVar.push({ m: enIyiM, b: b, fark: Math.abs(bTutar - mTutar) });
+    } else {
+      eslesen.push({ m: enIyiM, b: b });
+    }
+  });
+
+  islemlerM.forEach(function(m, mi) {
+    if (eslesenMIdx.indexOf(mi) === -1) sadeceMuhasebe.push(m);
+  });
+
+  window._mvEslesmeSonucu = { eslesen: eslesen, farkVar: farkVar, dovizFark: dovizFark, sadeceMuhasebe: sadeceMuhasebe, sadeceBaran: sadeceBaran };
+  window.toast && window.toast('Karşılaştırma tamamlandı — ' + eslesen.length + ' eşleşti, ' + (farkVar.length + sadeceMuhasebe.length + sadeceBaran.length) + ' fark', 'ok');
+  window._mvAktifTab = 'karsilastirma';
+  window.renderMuavin && window.renderMuavin();
+};
+
+window._mvEslesmeSonucHTML = function() {
+  var s = window._mvEslesmeSonucu;
+  if (!s) return '';
+  var h = '<div style="overflow-y:auto">';
+  h += '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:0.5px solid var(--b);background:var(--s2)">';
+  var ozetler = [
+    { lbl: 'Eşleşti', val: s.eslesen.length, renk: '#27500A', bg: '#EAF3DE' },
+    { lbl: 'Tutar Farkı', val: s.farkVar.length, renk: '#854F0B', bg: '#FAEEDA' },
+    { lbl: 'Döviz Farkı', val: s.dovizFark.length, renk: '#185FA5', bg: '#E6F1FB' },
+    { lbl: 'Sadece Muhasebe', val: s.sadeceMuhasebe.length, renk: '#A32D2D', bg: '#FCEBEB' },
+    { lbl: 'Sadece Baran', val: s.sadeceBaran.length, renk: '#633806', bg: '#FAEEDA' }
+  ];
+  ozetler.forEach(function(o, i) {
+    h += '<div style="padding:10px 12px;border-right:' + (i<4?'0.5px solid var(--b)':'none') + ';background:' + o.bg + '">';
+    h += '<div style="font-size:18px;font-weight:500;color:' + o.renk + '">' + o.val + '</div>';
+    h += '<div style="font-size:10px;color:' + o.renk + ';margin-top:2px">' + o.lbl + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  if (s.farkVar.length) {
+    h += '<div style="padding:10px 12px;font-size:11px;font-weight:500;color:var(--t);border-bottom:0.5px solid var(--b);background:#FAEEDA">Tutar Farkları (' + s.farkVar.length + ')</div>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:var(--s2)"><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Cari</th><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Tarih M</th><th style="padding:5px 8px;text-align:right;border-bottom:0.5px solid var(--b)">Tutar M (TL)</th><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Tarih B</th><th style="padding:5px 8px;text-align:right;border-bottom:0.5px solid var(--b)">Tutar B</th><th style="padding:5px 8px;text-align:right;border-bottom:0.5px solid var(--b)">Fark</th></tr></thead><tbody>';
+    s.farkVar.forEach(function(f) {
+      var mT = f.m.borc || f.m.alacak || 0;
+      var bT = f.b.borcMeblagh || f.b.alacakMeblagh || 0;
+      h += '<tr style="border-bottom:0.5px solid var(--b);background:#FAEEDA"><td style="padding:4px 8px;font-weight:500">' + (typeof window._esc==='function'?window._esc(f.m.cariAd||'—'):(f.m.cariAd||'—')) + '</td><td style="padding:4px 8px">' + (f.m.tarih||'—') + '</td><td style="padding:4px 8px;text-align:right;font-family:monospace">' + mT.toLocaleString('tr-TR',{minimumFractionDigits:2}) + '</td><td style="padding:4px 8px">' + (f.b.tarih||'—') + '</td><td style="padding:4px 8px;text-align:right;font-family:monospace">' + bT.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ' + (f.b.borcDoviz||f.b.alacakDoviz||'') + '</td><td style="padding:4px 8px;text-align:right;font-family:monospace;color:#A32D2D;font-weight:500">' + f.fark.toLocaleString('tr-TR',{minimumFractionDigits:2}) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+  if (s.sadeceMuhasebe.length) {
+    h += '<div style="padding:10px 12px;font-size:11px;font-weight:500;color:var(--t);border-bottom:0.5px solid var(--b);border-top:0.5px solid var(--b);background:#FCEBEB">Sadece Muhasebede (' + s.sadeceMuhasebe.length + ')</div>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:var(--s2)"><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Cari</th><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Tarih</th><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Fiş No</th><th style="padding:5px 8px;text-align:right;border-bottom:0.5px solid var(--b)">Borç</th><th style="padding:5px 8px;text-align:right;border-bottom:0.5px solid var(--b)">Alacak</th></tr></thead><tbody>';
+    s.sadeceMuhasebe.forEach(function(m) {
+      h += '<tr style="border-bottom:0.5px solid var(--b);background:#FCEBEB"><td style="padding:4px 8px;font-weight:500">' + (typeof window._esc==='function'?window._esc(m.cariAd||'—'):(m.cariAd||'—')) + '</td><td style="padding:4px 8px">' + (m.tarih||'—') + '</td><td style="padding:4px 8px;font-family:monospace">' + (m.fisNo||'—') + '</td><td style="padding:4px 8px;text-align:right;font-family:monospace">' + (m.borc?m.borc.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—') + '</td><td style="padding:4px 8px;text-align:right;font-family:monospace">' + (m.alacak?m.alacak.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—') + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+  if (s.sadeceBaran.length) {
+    h += '<div style="padding:10px 12px;font-size:11px;font-weight:500;color:var(--t);border-bottom:0.5px solid var(--b);border-top:0.5px solid var(--b);background:#FAEEDA">Sadece Baran\'da (' + s.sadeceBaran.length + ')</div>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:var(--s2)"><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">İşlem Türü</th><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Tarih</th><th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--b)">Açıklama</th><th style="padding:5px 8px;text-align:right;border-bottom:0.5px solid var(--b)">Tutar</th></tr></thead><tbody>';
+    s.sadeceBaran.forEach(function(b) {
+      var tutar = b.borcMeblagh || b.alacakMeblagh || 0;
+      var doviz = b.borcDoviz || b.alacakDoviz || '';
+      h += '<tr style="border-bottom:0.5px solid var(--b);background:#FAEEDA"><td style="padding:4px 8px">' + (typeof window._esc==='function'?window._esc(b.islemTuru||'—'):(b.islemTuru||'—')) + '</td><td style="padding:4px 8px">' + (b.tarih||'—') + '</td><td style="padding:4px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (typeof window._esc==='function'?window._esc(b.aciklama||''):(b.aciklama||'')) + '">' + (typeof window._esc==='function'?window._esc(b.aciklama||'—'):(b.aciklama||'—')) + '</td><td style="padding:4px 8px;text-align:right;font-family:monospace">' + (tutar?tutar.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—') + ' ' + doviz + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+  h += '</div>';
+  return h;
+};
+
 console.log('[MUAVIN-PARSE] yüklendi');
 
