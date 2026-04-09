@@ -30,6 +30,15 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\'B\';document.querySelectorAll(\'.pi-tas-btn\').forEach(function(b){b.style.background=\'transparent\';b.style.color=\'var(--t2)\'});this.style.background=\'#185FA5\';this.style.color=\'#fff\'" class="pi-tas-btn" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit">B — Modern</button>';
   ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\'C\';document.querySelectorAll(\'.pi-tas-btn\').forEach(function(b){b.style.background=\'transparent\';b.style.color=\'var(--t2)\'});this.style.background=\'#1D9E75\';this.style.color=\'#fff\'" class="pi-tas-btn" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit">C — Premium</button>';
   ic += '</div>';
+  /* SA-V2-PI-005: Dil seçici */
+  ic += '<div style="display:flex;align-items:center;gap:6px;padding:6px 20px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  ic += '<span style="font-size:9px;color:var(--t3);font-weight:500">PI DİL:</span>';
+  ['EN', 'CN', 'AR', 'RU'].forEach(function(d, i) {
+    var lblr = { EN: 'English', CN: '中文', AR: 'عربي', RU: 'Русский' };
+    var aktif = (window._saV2AktifPIDil || 'EN') === d;
+    ic += '<button onclick="event.stopPropagation();window._saV2AktifPIDil=\'' + d + '\';document.querySelectorAll(\'.pi-dil-btn\').forEach(function(b){b.style.background=\'transparent\';b.style.fontWeight=\'400\'});this.style.background=\'var(--bm)\';this.style.fontWeight=\'500\'" class="pi-dil-btn" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:' + (aktif ? 'var(--bm)' : 'transparent') + ';cursor:pointer;font-family:inherit;font-weight:' + (aktif ? '500' : '400') + '">' + (lblr[d] || d) + '</button>';
+  });
+  ic += '</div>';
   ic += '<div style="padding:20px;display:flex;flex-direction:column;gap:14px">';
   ic += '<div style="background:#E6F1FB;border:0.5px solid #B5D4F4;border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:12px">';
   if(t.gorsel) ic += '<img src="'+t.gorsel+'" style="width:44px;height:44px;border-radius:5px;object-fit:cover;flex-shrink:0">';
@@ -156,7 +165,8 @@ window._saV2SatisPDF = function() {
     teslim: teslim,
     odeme: odeme,
     urunler: window._saV2SatisUrunler || [],
-    revNo: '01'
+    revNo: '01',
+    dil: window._saV2AktifPIDil || 'EN'
   };
   if (typeof window._piOlustur !== 'function') {
     window.toast?.('PI modülü yüklenmedi','warn'); return;
