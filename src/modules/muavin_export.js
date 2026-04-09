@@ -178,4 +178,81 @@ window._mvNotPanelGuncelle = function() {
   }).join('') : '<div style="font-size:10px;color:var(--t3)">Bu dönem için not yok</div>';
 };
 
+/* ── MUAVIN-011: Sistem vs Excel Fark ──────────────────────── */
+window._mvSistemFarkHTML = function() {
+  var islemler = window._mvSonIslemler || [];
+  if (!islemler.length) return '<div style="padding:20px;text-align:center;color:var(--t3)">Önce Excel yükleyin</div>';
+  var donem = window._mvDonem || '';
+  var odmler = typeof window.loadOdm === 'function' ? window.loadOdm() : [];
+  var yil = parseInt(donem); var q = parseInt((donem || '').replace(/^\d{4}Q/, ''));
+  var ayBas = (q - 1) * 3; var ayBit = ayBas + 2;
+  var donemOdm = odmler.filter(function(o) {
+    if (o.isDeleted) return false;
+    var t = new Date(o.dueDate || o.createdAt || '');
+    return !isNaN(t) && t.getFullYear() === yil && t.getMonth() >= ayBas && t.getMonth() <= ayBit;
+  });
+  var sistemToplam = donemOdm.reduce(function(s, o) { return s + (parseFloat(o.amountTRY) || parseFloat(o.amount) || 0); }, 0);
+  var excelToplam = islemler.reduce(function(s, i) { return s + (i.borc || 0); }, 0);
+  var fark = excelToplam - sistemToplam;
+  var h = '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:12px">Sistem vs Excel Karşılaştırma</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">';
+  h += '<div style="background:var(--s2);border-radius:6px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--t3)">EXCEL TOPLAM</div><div style="font-size:18px;font-weight:500;color:#A32D2D">' + excelToplam.toLocaleString('tr-TR') + '</div></div>';
+  h += '<div style="background:var(--s2);border-radius:6px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--t3)">SİSTEM TOPLAM</div><div style="font-size:18px;font-weight:500;color:#0F6E56">' + sistemToplam.toLocaleString('tr-TR') + '</div></div>';
+  h += '<div style="background:' + (Math.abs(fark) < 1 ? '#E1F5EE' : '#FCEBEB') + ';border-radius:6px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--t3)">FARK</div><div style="font-size:18px;font-weight:500;color:' + (Math.abs(fark) < 1 ? '#0F6E56' : '#A32D2D') + '">' + fark.toLocaleString('tr-TR') + '</div></div>';
+  h += '</div>';
+  h += '<div style="font-size:10px;color:var(--t3)">Sistem: ' + donemOdm.length + ' ödeme kaydı · Excel: ' + islemler.length + ' işlem · Dönem: ' + donem + '</div>';
+  h += '</div>';
+  return h;
+};
+
+/* ── MUAVIN-011: PDF Özet Raporu ──────────────────────────── */
+window._mvPDFRaporu = function() {
+  var islemler = window._mvSonIslemler || [];
+  if (!islemler.length) { window.toast?.('Önce Excel yükleyin', 'warn'); return; }
+  var donem = window._mvDonem || 'export';
+  var topBorc = islemler.reduce(function(s, i) { return s + (i.borc || 0); }, 0);
+  var topAlacak = islemler.reduce(function(s, i) { return s + (i.alacak || 0); }, 0);
+  var net = topBorc - topAlacak;
+  var hesaplar = window._mvSonHesaplar || {};
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  var html = '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Muavin Raporu ' + donem + '</title>';
+  html += '<style>body{font-family:Arial,sans-serif;margin:30px;color:#111;font-size:11px}';
+  html += '.baslik{text-align:center;margin-bottom:20px}.baslik h1{font-size:18px;margin:0}.baslik p{color:#555;margin:4px 0}';
+  html += '.kpi{display:flex;gap:16px;margin-bottom:20px}.kpi-kart{border:1px solid #ddd;border-radius:6px;padding:10px 16px;flex:1;text-align:center}.kpi-kart .lbl{font-size:9px;color:#888;text-transform:uppercase}.kpi-kart .val{font-size:20px;font-weight:bold;margin-top:2px}';
+  html += 'table{width:100%;border-collapse:collapse;margin-bottom:20px}th,td{border:1px solid #ddd;padding:5px 8px;font-size:10px}th{background:#f5f5f5;font-weight:bold}';
+  html += '.imza{display:flex;justify-content:space-between;margin-top:40px}.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px}';
+  html += '</style></head><body>';
+  html += '<div class="baslik"><h1>MUAVİN DEFTER KONTROL RAPORU</h1>';
+  html += '<p>DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</p>';
+  html += '<p>Dönem: ' + donem + ' &nbsp;|&nbsp; Oluşturma: ' + tarih + '</p></div>';
+  html += '<div class="kpi">';
+  html += '<div class="kpi-kart"><div class="lbl">İşlem Adeti</div><div class="val">' + islemler.length + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Toplam Borç</div><div class="val" style="color:#c00">' + topBorc.toLocaleString('tr-TR') + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Toplam Alacak</div><div class="val" style="color:#060">' + topAlacak.toLocaleString('tr-TR') + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Net Bakiye</div><div class="val" style="color:' + (net > 0 ? '#c00' : '#060') + '">' + net.toLocaleString('tr-TR') + '</div></div>';
+  html += '</div>';
+  html += '<h3 style="margin-bottom:8px">Hesap Özeti</h3>';
+  html += '<table><thead><tr><th>Hesap Kodu</th><th>Cari Adı</th><th>İşlem</th><th style="text-align:right">Borç</th><th style="text-align:right">Alacak</th><th style="text-align:right">Bakiye</th></tr></thead><tbody>';
+  Object.keys(hesaplar).forEach(function(k) {
+    var h2 = hesaplar[k];
+    html += '<tr><td>' + k + '</td><td>' + (h2.cari || '') + '</td><td style="text-align:center">' + (h2.islemler || []).length + '</td>';
+    html += '<td style="text-align:right">' + (h2.borc || 0).toLocaleString('tr-TR') + '</td>';
+    html += '<td style="text-align:right">' + (h2.alacak || 0).toLocaleString('tr-TR') + '</td>';
+    html += '<td style="text-align:right">' + (h2.bakiye || 0).toLocaleString('tr-TR') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div class="imza">';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Hazırlayan</div></div>';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Mali Müşavir</div></div>';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Yönetim</div></div>';
+  html += '</div>';
+  html += '</body></html>';
+  var win = window.open('', '_blank');
+  if (!win) { window.toast?.('Popup engellendi', 'warn'); return; }
+  win.document.write(html);
+  win.document.close();
+  window.toast?.('PDF raporu açıldı', 'ok');
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');
