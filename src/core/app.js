@@ -146,9 +146,9 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings'],
-  lead:    ['dashboard','announce','pusula','puantaj','takvim','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber'],
-  staff:   ['dashboard','announce','pusula','takvim','notes','links','izin','pirim'],
+  manager: ['dashboard','announce','pusula','pusula-pro','puantaj','takvim','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','hesap-ozeti','muavin'],
+  lead:    ['dashboard','announce','pusula','pusula-pro','puantaj','takvim','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma'],
+  staff:   ['dashboard','announce','pusula','pusula-pro','takvim','notes','links','izin','pirim'],
 };
 
 /** Admin-only paneller */
