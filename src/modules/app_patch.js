@@ -988,6 +988,8 @@ window.renderUrunler = function() {
   else if (window._urunFiltre === 'eksik') fl = fl.filter(function(u) { return !u.urunAdi || !u.tedarikci || !u.kategori || !u.gorsel; });
   /* URUN-LIST-002: Tedarikçi filtresi */
   if (window._urunTedFiltre) fl = fl.filter(function(u) { return u.tedarikci === window._urunTedFiltre; });
+  /* GIZLILIK-002: Seviye bazlı filtre */
+  if (typeof window.canSee === 'function') fl = fl.filter(function(u) { return window.canSee(u.gizlilik || 1); });
 
   /* Sayfalama (STANDART-FIX-013) */
   if (!window._urunSayfa) window._urunSayfa = 1;

@@ -499,6 +499,10 @@ function openUrunForm(editId) {
     + '<div style="font-size:9px;color:var(--t3);margin-right:auto">'
     + (editId&&u.createdBy?'Kaydeden: '+_esc(u.createdBy)+' · '+_esc(u.createdAt||''):'Yeni kayıt — '+(_cu()?.displayName||''))
     + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<div style="font-size:9px;color:var(--t3)">GİZLİLİK:</div>'
+    + (typeof window.gizlilikSelect === 'function' ? window.gizlilikSelect(u.gizlilik || 1, 'uf2-gizlilik') : '<select id="uf2-gizlilik" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="1">Herkes</option><option value="2">Staff</option><option value="3">Lead</option><option value="4">Müdür</option><option value="5">Admin</option></select>')
+    + '</div>'
     + '<div style="display:flex;gap:8px">'
     + '<button onclick="event.stopPropagation();document.getElementById(\'urun-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
     + '<button onclick="event.stopPropagation();window._uf2KaydetYeni()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet →</button>'
@@ -808,6 +812,7 @@ window._uf2KaydetYeni = function() {
     existing.tedarikci = g('tedarikci'); existing.kategori = g('kategori'); existing.birim = g('birim');
     existing.mensei = g('mensei'); existing.saticiKodu = g('saticiKodu'); existing.teknikAciklama = g('teknikAciklama');
     existing.gorsel = document.getElementById('uf2-gorselBase64')?.value || existing.gorsel || '';
+    existing.gizlilik = parseInt(document.getElementById('uf2-gizlilik')?.value || existing.gizlilik || '1');
     existing.sonTuketim = g('sonTuketim'); existing.duayKodu = duayKodu;
     existing.eskiKod = g('eskiKod');
     existing.saticiNotGizli = document.getElementById('uf2-saticiNotGizli')?.checked||false;
@@ -825,6 +830,7 @@ window._uf2KaydetYeni = function() {
       tedarikci: g('tedarikci'), kategori: g('kategori'), birim: g('birim'), mensei: g('mensei'),
       saticiKodu: g('saticiKodu'), teknikAciklama: g('teknikAciklama'), sonTuketim: g('sonTuketim') || '',
       gorsel: document.getElementById('uf2-gorselBase64')?.value || '',
+      gizlilik: parseInt(document.getElementById('uf2-gizlilik')?.value || '1'),
       eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
       marka: g('marka'), netAgirlik: g('netAgirlik'), brutAgirlik: g('brutAgirlik'), alisF: g('alisF'), para: g('para')||'USD',
       status: 'aktif',
