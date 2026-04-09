@@ -173,10 +173,20 @@ window.renderMuavin = function() {
     h += '</div>';
     if (tumIslemler.length) h += (window._mvAgacHTML?.() || '');
   }
+  h += (window._mvCariOzetHTML?.()||'');
+  h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-top:16px">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:10px">Muhasebeci Notları</div>';
+  h += '<div style="display:flex;gap:6px;margin-bottom:10px">';
+  h += '<input id="mv-not-inp" onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._mvNotKaydet()" placeholder="Not ekle (Örn: Q1 2026 — 3 eksik fiş, takipte)..." style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+  h += '<button onclick="event.stopPropagation();window._mvNotKaydet()" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Kaydet</button>';
+  h += '</div>';
+  h += '<div id="mv-not-panel" style="max-height:150px;overflow-y:auto"></div>';
+  h += '</div>';
   h += '</div>';
   panel.innerHTML = h;
   /* BUG-002: render sonrası ikinci Excel textarea restore */
   setTimeout(function() { var ta = document.getElementById('mv-excel-ham2'); if (ta && window._mvHam2) ta.value = window._mvHam2; }, 50);
+  setTimeout(function(){ window._mvNotPanelGuncelle?.(); }, 100);
 };
 
 console.log('[MUAVİN] v1.3 yüklendi');
