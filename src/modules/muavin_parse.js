@@ -40,216 +40,139 @@ window._mvDosya2Satir = 0;
 window._mvDosyaTarih = '';
 window._mvDosya2Tarih = '';
 
-window._mvDosyaOku = function(inp) {
-  var f = inp.files[0]; if(!f) return;
-  var isXlsx = f.name.match(/\.xlsx?$/i);
-  if(isXlsx) {
-    var r = new FileReader();
-    r.onload = function(e) {
-      try {
-        var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-        var ws = wb.Sheets[wb.SheetNames[0]];
-        var tsv = XLSX.utils.sheet_to_csv(ws, {FS:'\t', RS:'\n'});
-        var ta = document.getElementById('mv-excel-ham');
-        if(ta) { ta.value = tsv; window._mvHam = tsv; window._mvDosyaAd = f.name; window._mvDosyaTarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.('.xlsx yüklendi — '+f.name,'ok'); }
-      } catch(err) { window.toast?.('xlsx okunamadı: '+err.message,'err'); }
-    };
-    r.readAsArrayBuffer(f);
-  } else {
-    var r2 = new FileReader();
-    r2.onload = function(e) {
-      var ta = document.getElementById('mv-excel-ham');
-      if(ta) { ta.value = e.target.result; window._mvHam = e.target.result; window._mvDosyaAd = f.name; window._mvDosyaTarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.(f.name+' yüklendi','ok'); }
-    };
-    r2.readAsText(f, 'UTF-8');
-  }
-};
+function _mvMetaKaydet(taraf, ad, satir, boyutStr) {
+  try {
+    var donem = window._mvDonem || (new Date().getFullYear() + 'Q' + Math.ceil((new Date().getMonth()+1)/3));
+    var tarihStr = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
+    var meta = JSON.parse(localStorage.getItem('ak_muavin_meta_v1')||'{}');
+    if (!meta[donem]) meta[donem] = {};
+    meta[donem][taraf] = { ad: ad, satir: satir, tarih: tarihStr, boyut: boyutStr };
+    localStorage.setItem('ak_muavin_meta_v1', JSON.stringify(meta));
+  } catch(e) { console.warn('[MUAVİN] meta kayıt hata:', e); }
+}
 
-var _mvHesapKoduMap = {
-  kira:       '770.01',
-  fatura:     '770.02',
-  abonelik:   '770.03',
-  vergi:      '360.01',
-  sigorta:    '370.01',
-  maas:       '335.01',
-  kredi_k:    '780.01',
-  kredi:      '300.01',
-  diger:      '770.99'
-};
-
-window._mvSistemTutar = function(hesapKodu, donem) {
-  var odmler = typeof window.loadOdm==='function' ? window.loadOdm() : [];
-  var yil = parseInt(donem); var q = parseInt(donem.replace(/^\d{4}Q/,''));
-  var ayBaslangic = (q-1)*3; var ayBitis = ayBaslangic+2;
-  var donemOdm = odmler.filter(function(o){
-    if (o.isDeleted) return false;
-    var tarih = new Date(o.dueDate||o.createdAt||'');
-    if (isNaN(tarih)) return false;
-    var ay = tarih.getMonth(); var oy = tarih.getFullYear();
-    return oy===yil && ay>=ayBaslangic && ay<=ayBitis;
-  });
-  var kategoriList = [];
-  Object.keys(_mvHesapKoduMap).forEach(function(k){ if(_mvHesapKoduMap[k]===hesapKodu) kategoriList.push(k); });
-  var toplam = donemOdm.filter(function(o){ return kategoriList.indexOf(o.kategori||o.category||'') !== -1; })
-    .reduce(function(s,o){ return s+(parseFloat(o.amountTRY)||parseFloat(o.amount)||0); },0);
-  return toplam;
-};
-
-window._mvKarsilastir = function() {
-  var text = document.getElementById('mv-excel-ham')?.value||'';
-  if(!text.trim()){window.toast?.('Excel verisi giriniz','warn');return;}
-  var satirlar = text.split(/\r?\n/);
-  var donem = window._mvDonem || new Date().getFullYear()+'Q'+Math.ceil((new Date().getMonth()+1)/3);
-  var hesaplar = {};
-  var aktifCari = '';
-  var aktifHesapKodu = '';
+function _mvParseMuhasebeci(tsv) {
+  var satirlar = tsv.split('\n');
   var islemler = [];
-  satirlar.forEach(function(satir){
-    if(!satir.trim()) return;
-    var p = satir.split(/\t/).map(function(x){
-      return x.trim().replace(/^"|"$/g,'').replace(/\u00A0/g,' ');
-    });
-    var ilk = p[0]||'';
-    var tarihRe = /^\d{2}[.\-\/]\d{2}[.\-\/]\d{4}$/;
-    var hesapRe = /^\d{3}[\.\-]\w/;
-    var toplamRe = /Nakli|Genel\s*Toplam|Yekün/i;
-    if(toplamRe.test(ilk) || toplamRe.test(satir)) return;
-    if(hesapRe.test(ilk)) {
-      var bosHucre = ilk.indexOf(' ');
-      aktifHesapKodu = bosHucre>0 ? ilk.slice(0,bosHucre) : ilk;
-      aktifCari = bosHucre>0 ? ilk.slice(bosHucre+1).trim() : (p[1]||'');
-      if(!hesaplar[aktifHesapKodu]) hesaplar[aktifHesapKodu]={ad:aktifHesapKodu,cari:aktifCari,islemler:[],borc:0,alacak:0,bakiye:0};
+  var mevcutCari = '';
+  var mevcutHesapKodu = '';
+  satirlar.forEach(function(satir) {
+    var kolonlar = satir.split('\t');
+    var ilk = (kolonlar[0]||'').trim();
+    if (!ilk) return;
+    var skipler = ['nakli','genel','tarih','tip','fiş','borç','alacak','bakiye','hesap','dönem','tl','b/a'];
+    if (skipler.some(function(k){return ilk.toLowerCase().indexOf(k)!==-1;})) return;
+    var tarihVal = new Date(kolonlar[0]);
+    if (isNaN(tarihVal.getTime())) {
+      var m = ilk.match(/^(\d{2,3}[\.\w]+)\s+(.+)$/);
+      if (m) { mevcutHesapKodu = m[1]; mevcutCari = m[2].trim(); }
       return;
     }
-    if(tarihRe.test(ilk) && aktifHesapKodu) {
-      var tip = p[1]||'';
-      var fisNo = p[2]||'';
-      var aciklama = (p[3]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      var borc = parseFloat((p[4]||'').replace(/\./g,'').replace(',','.'))||0;
-      var alacak = parseFloat((p[5]||'').replace(/\./g,'').replace(',','.'))||0;
-      var bakiye = parseFloat((p[6]||'').replace(/\./g,'').replace(',','.'))||0;
-      var ba = p[7]||'';
-      var borcDov = parseFloat((p[9]||'').replace(/\./g,'').replace(',','.'))||0;
-      var alacakDov = parseFloat((p[10]||'').replace(/\./g,'').replace(',','.'))||0;
-      var bakiyeDov = parseFloat((p[11]||'').replace(/\./g,'').replace(',','.'))||0;
-      var baDov = p[12]||'';
-      var islem = {tarih:ilk,tip:tip,fisNo:fisNo,aciklama:aciklama,borc:borc,alacak:alacak,bakiye:bakiye,ba:ba,borcDov:borcDov,alacakDov:alacakDov,bakiyeDov:bakiyeDov,baDov:baDov,hesap:aktifHesapKodu,cari:aktifCari};
-      hesaplar[aktifHesapKodu].islemler.push(islem);
-      hesaplar[aktifHesapKodu].borc += borc;
-      hesaplar[aktifHesapKodu].alacak += alacak;
-      hesaplar[aktifHesapKodu].bakiye = bakiye;
-      islemler.push(islem);
-    }
+    var borc = parseFloat((kolonlar[4]||'').replace(',','.'))||0;
+    var alacak = parseFloat((kolonlar[5]||'').replace(',','.'))||0;
+    var tip = (kolonlar[1]||'').trim();
+    var fisNo = (kolonlar[2]||'').trim();
+    if (!tip && !fisNo && borc===0 && alacak===0) return;
+    islemler.push({
+      tarih: tarihVal.toLocaleDateString('tr-TR'),
+      tip: tip, fisNo: fisNo,
+      aciklama: (kolonlar[3]||'').trim(),
+      borc: borc, alacak: alacak,
+      bakiye: parseFloat((kolonlar[6]||'').replace(',','.'))||0,
+      ba: (kolonlar[7]||'').trim(),
+      cariAd: mevcutCari, hesapKodu: mevcutHesapKodu,
+      _taraf: 'muhasebeci'
+    });
   });
-  window._mvSonHesaplar = hesaplar;
-  window._mvSonIslemler = islemler;
-  /* MUAVIN-016: Mükerrer/tutarsız/şüpheli/KDV tespiti */
-  var fisNoMap = {};
-  var mukerrerler = [];
-  var tutarsizlar = [];
-  var supheliler = [];
-  var kdvFarklari = [];
-  islemler.forEach(function(i) {
-    if (i.fisNo) {
-      if (fisNoMap[i.fisNo]) { if (mukerrerler.indexOf(i.fisNo) === -1) mukerrerler.push(i.fisNo); }
-      else { fisNoMap[i.fisNo] = true; }
-    }
-    if (i.borc && i.alacak && Math.abs(Math.abs(i.bakiye) - Math.abs(i.borc - i.alacak)) > 1) {
-      tutarsizlar.push(i.fisNo || i.tarih);
-    }
-    if ((i.borc > 100000 || i.alacak > 100000) && (!i.aciklama || i.aciklama.length < 5)) {
-      supheliler.push({ tip: 'Yüksek tutar + kısa açıklama', fisNo: i.fisNo, tutar: i.borc || i.alacak });
-    }
-    var kdvOran = i.aciklama ? (i.aciklama.match(/%(\d+)\s*KDV/i) || i.aciklama.match(/KDV[:\s]+%?(\d+)/i)) : null;
-    if (kdvOran) {
-      var oran = parseInt(kdvOran[1]);
-      if (oran !== 0 && oran !== 1 && oran !== 8 && oran !== 10 && oran !== 18 && oran !== 20) {
-        kdvFarklari.push({ fisNo: i.fisNo, oran: oran });
+  return islemler;
+}
+
+function _mvParseBaran(tsv) {
+  var satirlar = tsv.split('\n');
+  var islemler = [];
+  var baslik = false;
+  var km = {islemTuru:0,tarih:1,aciklama:2,faturaSeri:3,faturaSira:4,borcMeblagh:7,borcDoviz:8,alacakMeblagh:9,alacakDoviz:10,tlBakiye:11};
+  satirlar.forEach(function(satir) {
+    var k = satir.split('\t').map(function(x){return x.trim();});
+    if (!baslik) {
+      if ((k[0]||'').toLowerCase().indexOf('işlem')!==-1||(k[0]||'').toLowerCase().indexOf('tür')!==-1) {
+        k.forEach(function(h,i){
+          var hh=h.toLowerCase();
+          if(hh.indexOf('işlem türü')!==-1) km.islemTuru=i;
+          else if(hh==='tarih') km.tarih=i;
+          else if(hh==='açıklama'||hh==='aciklama') km.aciklama=i;
+          else if(hh.indexOf('fatura seri')!==-1) km.faturaSeri=i;
+          else if(hh.indexOf('fatura sıra')!==-1||hh.indexOf('fatura sira')!==-1) km.faturaSira=i;
+          else if(hh.indexOf('borç meblağ')!==-1) km.borcMeblagh=i;
+          else if(hh.indexOf('borç döviz')!==-1) km.borcDoviz=i;
+          else if(hh.indexOf('alacak meblağ')!==-1) km.alacakMeblagh=i;
+          else if(hh.indexOf('alacak döviz')!==-1) km.alacakDoviz=i;
+          else if(hh.indexOf('tl bakiye')!==-1) km.tlBakiye=i;
+        });
+        baslik=true;
       }
+      return;
     }
+    if (k.length<3) return;
+    var islemTuru=k[km.islemTuru]||'';
+    var tarih=k[km.tarih]||'';
+    if (!islemTuru&&!tarih) return;
+    var tObj=new Date(tarih);
+    islemler.push({
+      islemTuru: islemTuru,
+      tarih: !isNaN(tObj.getTime())?tObj.toLocaleDateString('tr-TR'):tarih,
+      aciklama: k[km.aciklama]||'',
+      faturaSeri: k[km.faturaSeri]||'',
+      faturaSira: k[km.faturaSira]||'',
+      borcMeblagh: parseFloat((k[km.borcMeblagh]||'').replace(',','.'))||0,
+      borcDoviz: k[km.borcDoviz]||'',
+      alacakMeblagh: parseFloat((k[km.alacakMeblagh]||'').replace(',','.'))||0,
+      alacakDoviz: k[km.alacakDoviz]||'',
+      tlBakiye: parseFloat((k[km.tlBakiye]||'').replace(',','.'))||0,
+      _taraf:'baran'
+    });
   });
-  window._mvUyarilar = {
-    mukerrer: mukerrerler,
-    tutarsiz: tutarsizlar,
-    supheli: supheliler,
-    kdv: kdvFarklari
-  };
-  var hesapSayisi = Object.keys(hesaplar).length;
-  var islemSayisi = islemler.length;
-  var kayit = {id:Date.now(),donem:donem,tarih:new Date().toISOString().slice(0,16).replace('T',' '),hesapSayisi:hesapSayisi,islemSayisi:islemSayisi,hesaplar:hesaplar,islemler:islemler};
-  var liste = _mvLoad(); liste.push(kayit); if(liste.length>10) liste=liste.slice(-10); _mvStore(liste);
-  window._mvDosyaSatir = islemSayisi;
-  window.toast?.('Parse tamamlandı: '+hesapSayisi+' hesap, '+islemSayisi+' işlem','ok');
-  window.renderMuavin();
-};
+  return islemler;
+}
 
-/* ── MUAVIN-006: İkinci Excel Karşılaştırma + Fark Raporu ──── */
-window._mvSonHesaplar2 = null;
-window._mvSonIslemler2 = [];
-
-window._mvDosyaOku2 = function(inp) {
+window._mvDosyaOku = function(inp, taraf) {
   var f = inp.files[0]; if (!f) return;
-  var isXlsx = f.name.match(/\.xlsx?$/i);
-  if (isXlsx) {
-    var r = new FileReader();
-    r.onload = function(e) {
+  taraf = taraf || 'muhasebeci';
+  var boyutKB = Math.round(f.size/1024);
+  var boyutStr = boyutKB>1024?(Math.round(boyutKB/102.4)/10)+' MB':boyutKB+' KB';
+
+  function _isle(tsv) {
+    var islemler = taraf==='baran' ? _mvParseBaran(tsv) : _mvParseMuhasebeci(tsv);
+    if (!islemler.length) { window.toast&&window.toast('Geçerli işlem bulunamadı — format uyumsuz olabilir','warn'); return; }
+    _mvMetaKaydet(taraf, f.name, islemler.length, boyutStr);
+    if (taraf==='muhasebeci') { window._mvSonIslemler=islemler; window._mvSonHesaplar={}; }
+    else { window._mvSonIslemlerB=islemler; }
+    window._mvEslesmeSonucu=null;
+    window.toast&&window.toast(f.name+' yüklendi — '+islemler.length+' işlem','ok');
+    window._mvAktifTab='karsilastirma';
+    window.renderMuavin&&window.renderMuavin();
+  }
+
+  if (/\.xlsx?$/i.test(f.name)) {
+    var r=new FileReader();
+    r.onload=function(e){
       try {
-        var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-        var ws = wb.Sheets[wb.SheetNames[0]];
-        var tsv = XLSX.utils.sheet_to_csv(ws, { FS: '\t', RS: '\n' });
-        var ta = document.getElementById('mv-excel-ham2');
-        if (ta) { ta.value = tsv; window._mvHam2 = tsv; window._mvDosya2Ad = f.name; window._mvDosya2Tarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.('.xlsx yüklendi — ' + f.name, 'ok'); }
-      } catch(err) { window.toast?.('xlsx okunamadı: ' + err.message, 'err'); }
+        if(typeof XLSX==='undefined'){window.toast&&window.toast('SheetJS yüklenmedi','err');return;}
+        var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        _isle(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{FS:'\t',RS:'\n'}));
+      } catch(err){console.warn('[MUAVİN] xlsx hata:',err);window.toast&&window.toast('xlsx okunamadı: '+err.message,'err');}
     };
     r.readAsArrayBuffer(f);
   } else {
-    var r2 = new FileReader();
-    r2.onload = function(e) {
-      var ta = document.getElementById('mv-excel-ham2');
-      if (ta) { ta.value = e.target.result; window._mvHam2 = e.target.result; window._mvDosya2Ad = f.name; window._mvDosya2Tarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}); window.toast?.(f.name + ' yüklendi', 'ok'); }
-    };
-    r2.readAsText(f, 'UTF-8');
+    var r2=new FileReader();
+    r2.onload=function(e){_isle(e.target.result);};
+    r2.readAsText(f,'UTF-8');
   }
 };
 
-window._mvKarsilastir2 = function() {
-  var text = document.getElementById('mv-excel-ham2')?.value || window._mvHam2 || '';
-  if (!text.trim()) { window.toast?.('İkinci Excel verisi giriniz — önce yapıştırın veya dosya seçin', 'warn'); return; }
-  var islemler2 = [];
-  var hesaplar2 = {};
-  var aktifCari = '', aktifHesapKodu = '';
-  var satirlar = text.split(/\r?\n/);
-  satirlar.forEach(function(satir) {
-    if (!satir.trim()) return;
-    var p = satir.split(/\t/).map(function(x) { return x.trim().replace(/^"|"$/g, '').replace(/\u00A0/g, ' '); });
-    var ilk = p[0] || '';
-    var tarihRe = /^\d{2}[.\-\/]\d{2}[.\-\/]\d{4}$/;
-    var hesapRe = /^\d{3}[\.\-]\w/;
-    var toplamRe = /Nakli|Genel\s*Toplam|Yekün/i;
-    if (toplamRe.test(satir)) return;
-    if (hesapRe.test(ilk)) {
-      var bo = ilk.indexOf(' ');
-      aktifHesapKodu = bo > 0 ? ilk.slice(0, bo) : ilk;
-      aktifCari = bo > 0 ? ilk.slice(bo + 1).trim() : (p[1] || '');
-      if (!hesaplar2[aktifHesapKodu]) hesaplar2[aktifHesapKodu] = { ad: aktifHesapKodu, cari: aktifCari, islemler: [], borc: 0, alacak: 0 };
-      return;
-    }
-    if (tarihRe.test(ilk) && aktifHesapKodu) {
-      var borc = parseFloat((p[4] || '').replace(/\./g, '').replace(',', '.')) || 0;
-      var alacak = parseFloat((p[5] || '').replace(/\./g, '').replace(',', '.')) || 0;
-      var islem = { tarih: ilk, fisNo: p[2] || '', aciklama: (p[3] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'), borc: borc, alacak: alacak, hesap: aktifHesapKodu, cari: aktifCari };
-      hesaplar2[aktifHesapKodu].islemler.push(islem);
-      hesaplar2[aktifHesapKodu].borc += borc;
-      hesaplar2[aktifHesapKodu].alacak += alacak;
-      islemler2.push(islem);
-    }
-  });
-  window._mvSonHesaplar2 = hesaplar2;
-  window._mvSonIslemler2 = islemler2;
-  window._mvDosya2Satir = islemler2.length;
-  window.toast?.('İkinci Excel: ' + islemler2.length + ' işlem yüklendi', 'ok');
-  window._mvFarkRaporu();
-};
+window._mvSonIslemlerB = [];
+
+/* v3.0: iki dosya okuma artık _mvDosyaOku(inp, taraf) ile yapılıyor */
 
 window._mvFarkRaporu = function() {
   var is1 = window._mvSonIslemler || [];
@@ -410,6 +333,25 @@ window._mvIletimRaporuPDF = function() {
   win.document.close();
   win.print();
   window.toast?.('Rapor açıldı — yazdır veya PDF kaydet','ok');
+};
+
+window._mvBaranSatirHTML = function(islemler) {
+  if (!islemler||!islemler.length) return '<tr><td colspan="11" style="padding:20px;text-align:center;color:var(--t3);font-size:11px">Kayıt bulunamadı</td></tr>';
+  return islemler.map(function(i){
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      +'<td style="padding:4px 8px;font-size:10px;color:var(--t2)">'+window._esc(i.islemTuru||'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px">'+(i.tarih||'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+window._esc(i.aciklama||'')+'">'+window._esc(i.aciklama||'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;font-family:monospace">'+window._esc(i.faturaSeri||'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;font-family:monospace;color:#185FA5">'+window._esc(i.faturaSira||'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:right;font-family:monospace">'+(i.borcMeblagh?i.borcMeblagh.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:center">'+window._esc(i.borcDoviz||'')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:right;font-family:monospace">'+(i.alacakMeblagh?i.alacakMeblagh.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:center">'+window._esc(i.alacakDoviz||'')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:right;font-family:monospace">'+(i.tlBakiye?i.tlBakiye.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
+      +'<td></td>'
+      +'</tr>';
+  }).join('');
 };
 
 console.log('[MUAVIN-PARSE] yüklendi');
