@@ -55,6 +55,7 @@ window._yetkiKontrol = function(islem) {
     'hesap-ozeti': () => { window.renderHesapOzeti?.(); }, 'muavin': () => { window.renderMuavin?.(); },
     'gcb': () => { window.renderGcb?.(); },
     'alarm': () => { window.renderAlarm?.(); },
+    'platform-rules': () => { window.renderPlatformKurallari?.(); },
     'kpi-panel': () => { window.renderKpiPanel?.() || window.KPI?.render?.(); },
     'users': () => { window.renderUsers?.() || window.Admin?.renderUsers?.(); },
     'activity': () => { window.renderActivity?.(); },
@@ -4835,4 +4836,52 @@ window._urunPeekAc = function(id) {
   p.innerHTML = h;
   document.body.appendChild(p);
   document.addEventListener('click', function rm(e) { if (!p.contains(e.target)) { p.remove(); document.removeEventListener('click', rm); } });
+};
+
+/* ── PLATFORM-KURAL-001: Platform Kuralları Paneli ─────────── */
+window.renderPlatformKurallari = function() {
+  var panel = document.getElementById('panel-platform-rules');
+  if(!panel) return;
+  var kurallar = [
+    {id:'K09',kat:'Veri',baslik:'Rollback Zorunluluğu',aciklama:'Tüm işlemler geri alınabilir olmalı. Silme işlemlerinde soft-delete kullanılır.',durum:'aktif'},
+    {id:'K10',kat:'Mimari',baslik:'Merkezi State',aciklama:'Modüller arası doğrudan erişim yasaktır. Tüm veri merkezi store üzerinden okunur.',durum:'aktif'},
+    {id:'K11',kat:'Performans',baslik:'10K Kayıt 2s Altı',aciklama:'10.000 kayıt 2 saniyenin altında yüklenmeli. UI etkileşimleri 100ms altı.',durum:'aktif'},
+    {id:'K12',kat:'UX',baslik:'Double-Click Önleme',aciklama:'Tüm butonlarda double-click önleme, loading state ve disabled state zorunludur.',durum:'aktif'},
+    {id:'K13',kat:'Güvenlik',baslik:'Bağımsız Validasyon',aciklama:'Frontend ve backend validasyonu birbirinden bağımsız çalışmalıdır.',durum:'aktif'},
+    {id:'K14',kat:'Mimari',baslik:'Modül İzolasyonu',aciklama:'Modüller birbirine doğrudan erişemez. Sadece window.* API üzerinden iletişim.',durum:'aktif'},
+    {id:'K16',kat:'Hata',baslik:'Sessiz Hata Yasağı',aciklama:'Hiçbir hata sessizce yutulmaz. Tüm hatalar loglanır veya kullanıcıya gösterilir.',durum:'aktif'},
+    {id:'K17',kat:'Veri',baslik:'Zorunlu Alan Import',aciklama:'Zorunlu alanlar eksik kayıtlar import edilemez.',durum:'aktif'},
+    {id:'D10',kat:'UI',baslik:'Tek Render',aciklama:'Aynı element üzerinde çift render yasaktır.',durum:'aktif'},
+    {id:'D13',kat:'Mimari',baslik:'Modül State İzolasyonu',aciklama:'Her modül kendi state\'ini yönetir, başka modülün state\'ine dokunmaz.',durum:'aktif'},
+    {id:'GK-01',kat:'Güvenlik',baslik:'XSS Koruması',aciklama:'Tüm kullanıcı girdileri _esc() ile sanitize edilir.',durum:'aktif'},
+    {id:'GK-08',kat:'RBAC',baslik:'Yetkisiz Menü Gizleme',aciklama:'Kullanıcı yetkisi olmayan menü grupları sidebar\'da görünmez.',durum:'aktif'},
+    {id:'GK-19',kat:'UX',baslik:'Dropdown Hover',aciklama:'Sidebar grup hover davranışı tutarlı çalışmalı.',durum:'aktif'},
+    {id:'GK-19-ALL',kat:'Açık',baslik:'Bekleyen Görevler',aciklama:'Oturum dokümanı template hazırlanacak.',durum:'bekliyor'}
+  ];
+  var kategoriler = [];
+  kurallar.forEach(function(k){ if(kategoriler.indexOf(k.kat)===-1) kategoriler.push(k.kat); });
+  var h = '<div style="padding:20px;max-width:900px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
+  h += '<div><div style="font-size:16px;font-weight:500;color:var(--t)">Platform Kuralları</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-top:2px">ANAYASA v4.0 — Duay Platform temel kuralları</div></div>';
+  h += '<div style="font-size:11px;color:var(--t3)">'+kurallar.filter(function(k){return k.durum==='aktif';}).length+' aktif · '+kurallar.filter(function(k){return k.durum==='bekliyor';}).length+' bekliyor</div>';
+  h += '</div>';
+  kategoriler.forEach(function(kat){
+    var katKurallar = kurallar.filter(function(k){return k.kat===kat;});
+    h += '<div style="margin-bottom:16px">';
+    h += '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">'+kat.toUpperCase()+'</div>';
+    katKurallar.forEach(function(k){
+      var renk = k.durum==='aktif'?'#0F6E56':'#854F0B';
+      var bg = k.durum==='aktif'?'#E1F5EE':'#FAEEDA';
+      h += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)">';
+      h += '<div style="font-size:10px;font-family:monospace;font-weight:500;color:var(--t);min-width:50px">'+k.id+'</div>';
+      h += '<div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:3px">'+k.baslik+'</div>';
+      h += '<div style="font-size:10px;color:var(--t2);line-height:1.5">'+k.aciklama+'</div></div>';
+      h += '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:'+bg+';color:'+renk+';white-space:nowrap">'+k.durum+'</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  h += '</div>';
+  panel.innerHTML = h;
 };
