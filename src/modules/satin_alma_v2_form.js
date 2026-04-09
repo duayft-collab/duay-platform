@@ -94,6 +94,29 @@ window._saV2YeniTeklif = function() {
     + '<input id="sav2f-musteriKod" placeholder="3230" oninput="event.stopPropagation();var tid=window._saTeklifId?.(this.value)||\'0000-\'+Date.now();document.getElementById(\'sav2f-id-goster\').textContent=\'ID: \'+tid;document.getElementById(\'sav2f-teklifId\').value=tid" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100px;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:monospace">'
     + '<input id="sav2f-teklifId" value="' + teklifId + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:11px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:#0C447C;font-family:monospace">'
     + '</div></div>'
+    + '<div style="margin-bottom:12px">'
+    + '<div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:6px">İÇ NOTLAR <span style="font-size:8px;color:var(--t3)">(Müşteriye gitmez)</span></div>'
+    + '<div style="border:0.5px solid var(--b);border-radius:5px;overflow:hidden">'
+    + '<div style="display:flex;gap:2px;padding:4px 6px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'bold\')" style="font-size:11px;font-weight:700;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">B</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'italic\')" style="font-size:11px;font-style:italic;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">I</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertUnorderedList\')" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">• —</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertOrderedList\')" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">1.</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.getElementById(\'sav2f-not-div\').innerHTML=\'\'" style="font-size:10px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕</button>'
+    + '</div>'
+    + '<div id="sav2f-not-div" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:60px;max-height:150px;overflow-y:auto;padding:8px 10px;font-size:12px;color:var(--t);font-family:inherit;outline:none;line-height:1.5"></div>'
+    + '<input type="hidden" id="sav2f-not">'
+    + '</div>'
+    + '<div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:6px;margin-top:10px">TESLİMAT KOŞULLARI <span style="font-size:8px;color:var(--t3)">(PI\'ye gider)</span></div>'
+    + '<div style="border:0.5px solid var(--b);border-radius:5px;overflow:hidden">'
+    + '<div style="display:flex;gap:2px;padding:4px 6px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'bold\')" style="font-size:11px;font-weight:700;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">B</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'italic\')" style="font-size:11px;font-style:italic;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">I</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.getElementById(\'sav2f-teslimatKosul-div\').innerHTML=\'\'" style="font-size:10px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕</button>'
+    + '</div>'
+    + '<div id="sav2f-teslimatKosul-div" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:50px;max-height:100px;overflow-y:auto;padding:8px 10px;font-size:12px;color:var(--t);font-family:inherit;outline:none;line-height:1.5"></div>'
+    + '<input type="hidden" id="sav2f-teslimatKosul">'
+    + '</div></div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
     + '<div style="font-size:9px;color:var(--t3)">* Duay kodu girilince katalogdan otomatik dolar</div>'
@@ -217,6 +240,8 @@ window._saV2FormKaydet = function() {
     teslimYeri: _v('teslimYeri'),
     teslimMasraf: document.getElementById('sav2f-teslimMasraf')?.value || '',
     gorsel: window._saV2FormGorselData || '',
+    icNotlar: document.getElementById('sav2f-not-div')?.innerHTML || '',
+    teslimatKosul: document.getElementById('sav2f-teslimatKosul-div')?.innerHTML || '',
     durum: 'bekleyen',
     karMarji: 33,
     createdAt: window._saNow?.(),
