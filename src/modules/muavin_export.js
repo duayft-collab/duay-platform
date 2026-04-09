@@ -255,4 +255,53 @@ window._mvPDFRaporu = function() {
   window.toast?.('PDF raporu açıldı', 'ok');
 };
 
+/* ── MUAVIN-012: Dönem Karşılaştırma ────────────────────────── */
+window._mvDonemKarsilastirHTML = function() {
+  var tumKayitlar = typeof _mvLoad==='function'?_mvLoad():[];
+  if(!tumKayitlar.length) return '<div style="padding:20px;text-align:center;color:var(--t3)">Henüz karşılaştırma verisi yok</div>';
+  var donemler = {};
+  tumKayitlar.forEach(function(k){
+    if(!k.donem) return;
+    if(!donemler[k.donem]) donemler[k.donem]=k;
+    else if(k.id>donemler[k.donem].id) donemler[k.donem]=k;
+  });
+  var sirali = Object.keys(donemler).sort();
+  if(sirali.length<2) return '<div style="padding:20px;text-align:center;color:var(--t3)">En az 2 dönem yüklü olmalı (Şu an: '+sirali.length+')</div>';
+  var h='<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px">';
+  h+='<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:12px">Dönem Karşılaştırma — '+sirali.join(' · ')+'</div>';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:10px">';
+  h+='<thead><tr style="background:var(--s2)">';
+  h+='<th style="padding:6px 8px;text-align:left;border-bottom:0.5px solid var(--b);font-size:9px">HESAP</th>';
+  sirali.forEach(function(d){
+    h+='<th style="padding:6px 8px;text-align:right;border-bottom:0.5px solid var(--b);font-size:9px">'+d+' BORÇ</th>';
+    h+='<th style="padding:6px 8px;text-align:right;border-bottom:0.5px solid var(--b);font-size:9px">'+d+' ALACAK</th>';
+  });
+  h+='<th style="padding:6px 8px;text-align:right;border-bottom:0.5px solid var(--b);font-size:9px;color:#854F0B">DEĞİŞİM</th>';
+  h+='</tr></thead><tbody>';
+  var tumHesaplar = {};
+  sirali.forEach(function(d){
+    var k=donemler[d];
+    Object.keys(k.hesaplar||{}).forEach(function(hk){tumHesaplar[hk]=true;});
+  });
+  Object.keys(tumHesaplar).sort().forEach(function(hk){
+    h+='<tr style="border-bottom:0.5px solid var(--b)">';
+    h+='<td style="padding:5px 8px;font-family:monospace;font-size:10px">'+hk+'</td>';
+    var borclar=[];
+    sirali.forEach(function(d){
+      var hv=(donemler[d].hesaplar||{})[hk];
+      var borc=hv?hv.borc||0:0;
+      var alacak=hv?hv.alacak||0:0;
+      borclar.push(borc);
+      h+='<td style="padding:5px 8px;text-align:right;color:'+(borc?'#A32D2D':'var(--t3)')+'">'+(borc?borc.toLocaleString('tr-TR'):'—')+'</td>';
+      h+='<td style="padding:5px 8px;text-align:right;color:'+(alacak?'#0F6E56':'var(--t3)')+'">'+(alacak?alacak.toLocaleString('tr-TR'):'—')+'</td>';
+    });
+    var degisim = borclar.length>=2 ? borclar[borclar.length-1]-borclar[0] : 0;
+    var degisimYuzde = borclar[0] ? Math.round(degisim/borclar[0]*100) : 0;
+    h+='<td style="padding:5px 8px;text-align:right;font-weight:500;color:'+(degisim>0?'#A32D2D':degisim<0?'#0F6E56':'var(--t3)')+'">'+(degisim?(degisim>0?'+':'')+degisim.toLocaleString('tr-TR')+' ('+degisimYuzde+'%)':'—')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');

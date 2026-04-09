@@ -106,7 +106,7 @@ window.renderMuavin = function() {
     h += '<div style="border:0.5px solid var(--b);border-radius:6px;padding:10px 14px"><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em">NET</div><div style="font-size:18px;font-weight:500;color:'+(net>0?'#A32D2D':net<0?'#0F6E56':'var(--t)')+';margin-top:2px">'+net.toLocaleString('tr-TR')+'</div></div>';
     h += '</div>';
   }
-  var tablar = [{id:'yukle',lbl:'Veri Yükle'},{id:'islemler',lbl:'İşlem Listesi'+(tumIslemler.length?' ('+tumIslemler.length+')':'')},{id:'agac',lbl:'Hesap Ağacı'},{id:'cari',lbl:'Cari Özet'},{id:'karsilastirma',lbl:'Karşılaştırma'},{id:'notlar',lbl:'Notlar'}];
+  var tablar = [{id:'yukle',lbl:'Veri Yükle'},{id:'islemler',lbl:'İşlem Listesi'+(tumIslemler.length?' ('+tumIslemler.length+')':'')},{id:'agac',lbl:'Hesap Ağacı'},{id:'cari',lbl:'Cari Özet'},{id:'karsilastirma',lbl:'Karşılaştırma'},{id:'donem',lbl:'Dönem Karşılaştırma'},{id:'notlar',lbl:'Notlar'}];
   h += '<div style="display:flex;border-bottom:0.5px solid var(--b);margin-bottom:16px;gap:0">';
   tablar.forEach(function(t){
     var ak = aktifTab===t.id;
@@ -171,6 +171,9 @@ window.renderMuavin = function() {
     h += '</div></div>';
     h += (window._mvSistemFarkHTML?.() || '');
     h += '<div id="mv-fark-panel"></div>';
+  }
+  else if(aktifTab==='donem'){
+    h += (window._mvDonemKarsilastirHTML?.()||'');
   }
   else if(aktifTab==='notlar'){
     h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px">';
