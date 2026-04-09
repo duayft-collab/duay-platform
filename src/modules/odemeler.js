@@ -1931,6 +1931,9 @@ function saveOdm() {
 }
 
 function markOdmPaid(id) {
+  if (window._odmBusy) { window.toast?.('İşlem devam ediyor','warn'); return; }
+  window._odmBusy = true;
+  setTimeout(function(){ window._odmBusy = false; }, 1500);
   const d = window.loadOdm ? loadOdm() : [];
   const o = d.find(x => x.id === id); if (!o) return;
   // Onay bekleyen ödeme ödendi işaretlenemez
@@ -2019,6 +2022,9 @@ window.postponeOdm = postponeOdm;
 window._savePostpone = _savePostpone;
 
 function toggleOdmPaid(id) {
+  if (window._odmBusy) { window.toast?.('İşlem devam ediyor','warn'); return; }
+  window._odmBusy = true;
+  setTimeout(function(){ window._odmBusy = false; }, 1000);
   const d = window.loadOdm ? loadOdm() : [];
   const o = d.find(x => x.id === id); if (!o) return;
   o.paid   = !o.paid;
@@ -2046,6 +2052,10 @@ function delOdm(id) {
     window.toast?.('Onaylanmış kayıtlar yönetici izni olmadan silinemez', 'err');
     return;
   }
+
+  if (window._odmBusy) { window.toast?.('İşlem devam ediyor','warn'); return; }
+  window._odmBusy = true;
+  setTimeout(function(){ window._odmBusy = false; }, 1500);
 
   window.confirmModal('Bu ödemeyi silmek istediğinizden emin misiniz?\n\n"' + (o.name || '') + '"', {
     title: 'Ödeme Sil',
