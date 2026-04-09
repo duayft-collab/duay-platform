@@ -2,7 +2,7 @@
 /* ═══════════════════════════════════════════════════════════════
    src/modules/muavin.js — Muavin Defter Kontrol Modülü
    Çeyreklik muhasebe Excel karşılaştırma + fark raporu
-   v1.3.0
+   v2.6.0
 ════════════════════════════════════════════════════════════════ */
 /*
 ℹ️ MUAVİN DEFTER KONTROL — NE YAPAR, NASIL KULLANILIR?
@@ -58,6 +58,19 @@
                           CARİ ADI kolonu (hesap başlığı satıra taşındı),
                           Nakli Yekün/Genel Toplam filtrelendi,
                           tüm işlemler tek tabloda, döviz kolonları eklendi
+   v1.4.0 (2026-04-09) — MUAVIN-005: xlsx/CSV export + arama filtresi
+   v1.5.0 (2026-04-09) — MUAVIN-006: İkinci Excel karşılaştırma
+   v1.6.0 (2026-04-09) — MUAVIN-SPLIT: 3 dosya mimarisi (parse/export/main)
+   v1.7.0 (2026-04-09) — MUAVIN-009: Hesap kodu otomatik kategori + ağaç
+   v1.8.0 (2026-04-09) — MUAVIN-010: Cari bazlı özet + muhasebeci notları
+   v1.9.0 (2026-04-09) — MUAVIN-011: Sistem vs Excel fark + PDF raporu
+   v2.0.0 (2026-04-09) — MUAVIN-UI-001: Tab bazlı 6 sekme A tasarım
+   v2.1.0 (2026-04-09) — MUAVIN-012: Dönem karşılaştırma Q bazlı
+   v2.2.0 (2026-04-09) — MUAVIN-013: Fiş detay popup + tarih aralığı filtresi
+   v2.3.0 (2026-04-09) — MUAVIN-014: Excel şablon indir (muhasebeci formatı)
+   v2.4.0 (2026-04-09) — MUAVIN-015: Mutabakat onay akışı + onay belgesi PDF
+   v2.5.0 (2026-04-09) — MUAVIN-016: Mükerrer fiş + KDV + şüpheli tespit
+   v2.6.0 (2026-04-09) — MUAVIN-017: Fark işaretleme + muhasebeci iletim PDF
 */
 
 var MUAVİN_KEY = 'ak_muavin_v1';
@@ -192,6 +205,7 @@ window.renderMuavin = function() {
     h += '<button onclick="event.stopPropagation();window._mvNotKaydet()" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Kaydet</button>';
     h += '</div>';
     h += '<div id="mv-not-panel"></div>';
+    h += '<div style="margin-top:12px"><button onclick="event.stopPropagation();window._mvTopluMutabakatPDF()" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">⎙ Toplu Mutabakat Raporu (Tüm Dönemler)</button></div>';
     h += '</div>';
   }
   h += '</div>';
@@ -203,4 +217,4 @@ window.renderMuavin = function() {
   },50);
 };
 
-console.log('[MUAVİN] v1.3 yüklendi');
+console.log('[MUAVİN] v2.6 yüklendi');

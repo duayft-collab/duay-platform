@@ -482,4 +482,55 @@ window._mvOnayPDFAl = function() {
   win.print();
 };
 
+/* ── MUAVIN-018: Toplu Mutabakat PDF ──────────────────────── */
+window._mvTopluMutabakatPDF = function() {
+  var onaylar = JSON.parse(localStorage.getItem('ak_muavin_onay_v1') || '[]');
+  if (!onaylar.length) { window.toast?.('Onaylanmış dönem bulunamadı', 'warn'); return; }
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  var kullanici = window.CU?.()?.displayName || '';
+  var html = '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Toplu Mutabakat Raporu</title>';
+  html += '<style>body{font-family:Arial,sans-serif;margin:30px;color:#111;font-size:11px}';
+  html += '.baslik{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:20px}';
+  html += '.donem-kart{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:12px;page-break-inside:avoid}';
+  html += '.onay-satir{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;font-size:10px}';
+  html += '.onay-badge{display:inline-block;padding:2px 8px;background:#0F6E56;color:#fff;border-radius:3px;font-size:10px;margin-bottom:8px}';
+  html += '.imza{display:flex;justify-content:space-between;margin-top:50px}';
+  html += '.imza-alan{text-align:center;width:180px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px}';
+  html += '</style></head><body>';
+  html += '<div class="baslik"><h2>DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</h2>';
+  html += '<h3>TOPLU MUAVİN MUTABAKAT RAPORU</h3>';
+  html += '<p>Tarih: ' + tarih + ' &nbsp;|&nbsp; Hazırlayan: ' + kullanici + '</p>';
+  html += '<p>Toplam ' + onaylar.length + ' dönem onaylanmış</p></div>';
+  var genelBorc = 0; var genelAlacak = 0;
+  onaylar.sort(function(a, b) { return a.donem > b.donem ? 1 : -1; }).forEach(function(o) {
+    genelBorc += o.toplamBorc || 0; genelAlacak += o.toplamAlacak || 0;
+    html += '<div class="donem-kart">';
+    html += '<span class="onay-badge">✓ ONAYLANDI</span>';
+    html += '<div class="onay-satir"><span>Dönem</span><strong>' + (o.donem || '') + '</strong></div>';
+    html += '<div class="onay-satir"><span>İşlem Sayısı</span><strong>' + (o.islemSayisi || 0) + '</strong></div>';
+    html += '<div class="onay-satir"><span>Toplam Borç</span><strong>' + (o.toplamBorc || 0).toLocaleString('tr-TR') + ' TL</strong></div>';
+    html += '<div class="onay-satir"><span>Toplam Alacak</span><strong>' + (o.toplamAlacak || 0).toLocaleString('tr-TR') + ' TL</strong></div>';
+    html += '<div class="onay-satir"><span>Net</span><strong>' + (o.net || 0).toLocaleString('tr-TR') + ' TL</strong></div>';
+    html += '<div class="onay-satir"><span>Onaylayan</span><strong>' + (o.onaylayan || '') + '</strong></div>';
+    html += '<div class="onay-satir"><span>Onay Tarihi</span><strong>' + (o.tarih || '') + '</strong></div>';
+    html += '</div>';
+  });
+  html += '<div style="border:2px solid #111;border-radius:6px;padding:14px;margin-top:16px">';
+  html += '<div style="font-weight:bold;margin-bottom:8px">GENEL TOPLAM</div>';
+  html += '<div class="onay-satir"><span>Tüm Dönemler Toplam Borç</span><strong>' + genelBorc.toLocaleString('tr-TR') + ' TL</strong></div>';
+  html += '<div class="onay-satir"><span>Tüm Dönemler Toplam Alacak</span><strong>' + genelAlacak.toLocaleString('tr-TR') + ' TL</strong></div>';
+  html += '<div class="onay-satir"><span>Net Bakiye</span><strong>' + (genelBorc - genelAlacak).toLocaleString('tr-TR') + ' TL</strong></div>';
+  html += '</div>';
+  html += '<div class="imza">';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Şirket Yetkilisi</div></div>';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Mali Müşavir</div></div>';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Yönetim</div></div>';
+  html += '</div></body></html>';
+  var win = window.open('', '_blank');
+  if (!win) { window.toast?.('Popup engellendi', 'warn'); return; }
+  win.document.write(html);
+  win.document.close();
+  window.toast?.('Toplu mutabakat raporu açıldı', 'ok');
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');
