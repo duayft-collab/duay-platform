@@ -1,4 +1,6 @@
 
+window._mvHam2 = '';
+
 window._mvDosyaOku = function(inp) {
   var f = inp.files[0]; if(!f) return;
   var isXlsx = f.name.match(/\.xlsx?$/i);
@@ -125,7 +127,7 @@ window._mvDosyaOku2 = function(inp) {
         var ws = wb.Sheets[wb.SheetNames[0]];
         var tsv = XLSX.utils.sheet_to_csv(ws, { FS: '\t', RS: '\n' });
         var ta = document.getElementById('mv-excel-ham2');
-        if (ta) { ta.value = tsv; window.toast?.('.xlsx yüklendi — ' + f.name, 'ok'); }
+        if (ta) { ta.value = tsv; window._mvHam2 = tsv; window.toast?.('.xlsx yüklendi — ' + f.name, 'ok'); }
       } catch(err) { window.toast?.('xlsx okunamadı: ' + err.message, 'err'); }
     };
     r.readAsArrayBuffer(f);
@@ -133,15 +135,15 @@ window._mvDosyaOku2 = function(inp) {
     var r2 = new FileReader();
     r2.onload = function(e) {
       var ta = document.getElementById('mv-excel-ham2');
-      if (ta) { ta.value = e.target.result; window.toast?.(f.name + ' yüklendi', 'ok'); }
+      if (ta) { ta.value = e.target.result; window._mvHam2 = e.target.result; window.toast?.(f.name + ' yüklendi', 'ok'); }
     };
     r2.readAsText(f, 'UTF-8');
   }
 };
 
 window._mvKarsilastir2 = function() {
-  var text = document.getElementById('mv-excel-ham2')?.value || '';
-  if (!text.trim()) { window.toast?.('İkinci Excel verisi giriniz', 'warn'); return; }
+  var text = document.getElementById('mv-excel-ham2')?.value || window._mvHam2 || '';
+  if (!text.trim()) { window.toast?.('İkinci Excel verisi giriniz — önce yapıştırın veya dosya seçin', 'warn'); return; }
   var islemler2 = [];
   var hesaplar2 = {};
   var aktifCari = '', aktifHesapKodu = '';

@@ -174,6 +174,8 @@ window.renderMuavin = function() {
   }
   h += '</div>';
   panel.innerHTML = h;
+  /* BUG-002: render sonrası ikinci Excel textarea restore */
+  setTimeout(function() { var ta = document.getElementById('mv-excel-ham2'); if (ta && window._mvHam2) ta.value = window._mvHam2; }, 50);
 };
 
 console.log('[MUAVİN] v1.3 yüklendi');
