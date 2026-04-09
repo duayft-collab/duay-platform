@@ -131,6 +131,7 @@ window.renderMuavin = function() {
     h += '<button onclick="event.stopPropagation();window._mvXLSMExport()" style="font-size:10px;padding:4px 10px;border:0.5px solid #0F6E56;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#0F6E56">↓ Excel</button>';
     h += '<div style="font-size:10px;color:var(--t3)">'+son.tarih+'</div></div></div>';
     var tumIslemler = son.islemler || [];
+    window._mvSonIslemler = tumIslemler;
     var topBorc = tumIslemler.reduce(function(s,i){return s+(i.borc||0);},0);
     var topAlacak = tumIslemler.reduce(function(s,i){return s+(i.alacak||0);},0);
     var topBakiye = tumIslemler.length ? tumIslemler[tumIslemler.length-1].bakiye : 0;
