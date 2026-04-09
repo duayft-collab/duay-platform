@@ -414,35 +414,89 @@ function _renderForm() {
 
     let h = _renderSekmeBar();
     h += _renderHeader(u);
-    h += '<div style="max-width:860px;margin:0 auto;padding:20px 32px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">';
-    // Geri butonu
-    h += '<div><span onclick="window.renderUrunler?.()" style="font-size:10px;color:'+BLUE+';cursor:pointer">← Ürün Listesi</span></div>';
+    const cariList = _loadCari();
+    const cariOpts = cariList.map(c => '<option value="'+_esc(c.ad||c.name||'')+'"'+(u.tedarikci===(c.ad||c.name)?' selected':'')+'>'+_esc(c.ad||c.firmaAdi||c.name||'')+'</option>').join('');
+    const katList = (window._ufKatYukle?window._ufKatYukle():['Mobilya','Tekstil','Elektronik','Kimyasal','Gıda','Metal','Makine','Plastik','İnşaat','Otomotiv','Tarım','Diğer']);
+    const katOpts = katList.map(k => '<option value="'+_esc(k)+'"'+(u.kategori===k?' selected':'')+'>'+_esc(k)+'</option>').join('');
+    const gorselSrc = u.gorsel||'';
 
-    if (_sahbAcik) {
-      h += _renderSAHB(u);
-    } else {
-      switch (_aktifEtap) {
-        case 1: h += _renderEtap1(u); break;
-        case 2: h += _renderEtap2(u); break;
-        case 3: h += _renderEtap3(u); break;
-        case 4: h += _renderEtap4(u); break;
-      }
-      // Etap navigasyon butonları
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:0.5px solid '+BD+'">';
-      if (_aktifEtap > 1) {
-        h += '<button onclick="window._uf2Etap('+(_aktifEtap-1)+')" style="padding:6px 14px;border:0.5px solid '+BD+';border-radius:6px;background:'+BG1+';font-size:11px;cursor:pointer;font-family:inherit;color:'+T2+'">← Geri</button>';
-      } else { h += '<div></div>'; }
-      if (_aktifEtap < 4) {
-        h += '<button onclick="window._uf2Etap('+(_aktifEtap+1)+')" style="padding:6px 14px;border:none;border-radius:6px;background:'+BLUE+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Bu Aşamayı Tamamla →</button>';
-      } else {
-        h += '<button onclick="window._uf2TaslakKaydet()" style="padding:6px 14px;border:none;border-radius:6px;background:'+GREEN+';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Ürünü Kaydet</button>';
-      }
-      h += '</div>';
-    }
-    h += '</div>';
+    const _fi = (id,lbl,val,type,req) => '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">'+lbl+(req?' <span style="color:#A32D2D">*</span>':'')+'</div><input id="uf2-'+id+'" type="'+(type||'text')+'" value="'+_esc(val||'')+'" oninput="event.stopPropagation();window._uf2PrevGuncelle&&window._uf2PrevGuncelle()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
+
+    const SOL = '<div style="width:190px;min-width:190px;border-right:0.5px solid var(--b);background:var(--s2);display:flex;flex-direction:column;padding:14px;gap:10px">'
+      +(gorselSrc?'<img src="'+gorselSrc+'" style="width:100%;height:110px;object-fit:cover;border-radius:6px;border:0.5px solid var(--b)">'
+        :'<div id="uf-prev-img" style="width:100%;height:110px;border:0.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--t3)">+ Görsel</div>')
+      +'<div id="uf-prev-ad" style="font-size:13px;font-weight:500;color:var(--t);min-height:18px;line-height:1.3">'+(u.urunAdi||u.orijinalAdi||'<span style="color:var(--t3)">Ürün adı...</span>')+'</div>'
+      +'<div id="uf-prev-ted" style="font-size:10px;color:var(--t3)">'+(u.tedarikci||'Tedarikçi...')+'</div>'
+      +'<div id="uf-prev-fiyat" style="font-size:15px;font-weight:500;color:#0F6E56">'+(u.alisF?u.alisF+' '+(u.para||'USD'):'— Fiyat')+'</div>'
+      +'<div id="uf-prev-kat" style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--sf);border:0.5px solid var(--b);color:var(--t2);display:inline-block">'+(u.kategori||'Kategori')+'</div>'
+      +'<div id="uf-prev-birim" style="font-size:10px;color:var(--t3)">'+(u.birim?'Birim: '+u.birim:'')+'</div>'
+      +'<div style="margin-top:auto;display:flex;flex-direction:column;gap:6px">'
+      +'<button onclick="event.stopPropagation();window._uf2TaslakKaydet()" style="font-size:12px;padding:8px 0;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500;width:100%">Kaydet</button>'
+      +'<button onclick="event.stopPropagation();delete document.getElementById(\'panel-urunler\').dataset.injected;window.renderUrunler?.()" style="font-size:11px;padding:6px 0;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);width:100%">← Liste</button>'
+      +'</div></div>';
+
+    const SAG = '<div style="flex:1;overflow-y:auto;padding:18px 22px">'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:10px">TEMEL BİLGİLER</div>'
+      +'<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px">'
+      +_fi('urunAdi','ÜRÜN ADI (TÜRKÇE)',u.urunAdi||u.orijinalAdi,'text',true)
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+      +'<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TEDARİKÇİ <span style="color:#A32D2D">*</span></div>'
+      +'<div style="display:flex;gap:4px">'
+      +'<select id="uf2-tedarikci" onchange="event.stopPropagation();window._uf2PrevGuncelle&&window._uf2PrevGuncelle()" style="flex:1;font-size:12px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Seç...</option>'+cariOpts+'</select>'
+      +'<button onclick="event.stopPropagation();window._uf2YeniTedarikci()" title="Potansiyel tedarikçi ekle" style="font-size:12px;padding:0 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t3)">+</button>'
+      +'</div></div>'
+      +'<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">KATEGORİ <span style="color:#A32D2D">*</span></div>'
+      +'<select id="uf2-kategori" onchange="event.stopPropagation();window._uf2PrevGuncelle&&window._uf2PrevGuncelle()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Seç...</option>'+katOpts+'</select>'
+      +'</div>'
+      +'</div>'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:10px">FİYAT & BİRİM</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
+      +_fi('alisF','ALIŞ FİYATI',u.alisF||'','number',false)
+      +'<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">DÖVİZ</div>'
+      +'<select id="uf2-para" onchange="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
+      +['USD','EUR','TRY','CNY','GBP'].map(c=>'<option'+(u.para===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>'
+      +'<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">BİRİM</div>'
+      +'<select id="uf2-birim" onchange="event.stopPropagation();window._uf2PrevGuncelle&&window._uf2PrevGuncelle()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
+      +['Adet','Kg','Ton','m²','m³','Set','Paket'].map(b=>'<option'+(u.birim===b?' selected':'')+'>'+b+'</option>').join('')+'</select></div>'
+      +'</div>'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:10px">KOD & TANIMLAR</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+      +_fi('duayKodu','DUAY KODU',u.duayKodu||'','text',false)
+      +_fi('saticiKodu','SATICI KODU',u.saticiKodu||'','text',false)
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px">'
+      +_fi('ingAd','İNGİLİZCE ADI',u.ingAd||u.standartAdi||'','text',false)
+      +'</div>'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:10px">AÇIKLAMA</div>'
+      +'<textarea id="uf2-teknikAciklama" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Teknik açıklama, not..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:80px;resize:none;font-family:inherit;box-sizing:border-box">'+_esc(u.teknikAciklama||u.aciklama||'')+'</textarea>'
+      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin:14px 0 10px">GÖRSEL</div>'
+      +'<label style="display:block;cursor:pointer">'
+      +(gorselSrc?'<img src="'+gorselSrc+'" style="max-height:120px;border-radius:6px;border:0.5px solid var(--b)">'
+        :'<div style="border:0.5px dashed var(--b);border-radius:6px;padding:20px;text-align:center;color:var(--t3);font-size:11px">+ Görsel Yükle (JPG / PNG / WEBP)</div>')
+      +'<input type="file" accept="image/*" onchange="window._uf2FileChange?.(\'gorsel\',this)" style="display:none"></label>'
+      +'<div style="height:30px"></div>'
+      +'</div>';
+
+    const splitDiv = document.createElement('div');
+    splitDiv.style.cssText = 'display:flex;height:calc(100vh - 210px);border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin:12px 0';
+    splitDiv.innerHTML = SOL + SAG;
     panel.innerHTML = h;
-    // Toplam hesapla (Etap 1)
-    window._uf2Recalc?.();
+    panel.appendChild(splitDiv);
+
+    window._uf2PrevGuncelle = function() {
+      const get = id => document.getElementById('uf2-'+id)?.value||'';
+      const sel = document.getElementById('uf2-tedarikci');
+      const tedAd = sel ? (sel.options[sel.selectedIndex]?.text||'') : '';
+      const el = id => document.getElementById(id);
+      const ad = get('urunAdi');
+      const f = get('alisF'); const p = get('para'); const b = get('birim');
+      if(el('uf-prev-ad')) el('uf-prev-ad').innerHTML = ad||'<span style="color:var(--t3)">Ürün adı...</span>';
+      if(el('uf-prev-ted')) el('uf-prev-ted').textContent = tedAd||'Tedarikçi...';
+      if(el('uf-prev-fiyat')) el('uf-prev-fiyat').textContent = f?(f+' '+(p||'USD')):'— Fiyat';
+      if(el('uf-prev-kat')) el('uf-prev-kat').textContent = get('kategori')||'Kategori';
+      if(el('uf-prev-birim')) el('uf-prev-birim').textContent = b?('Birim: '+b):'';
+    };
   } catch (e) { console.error('[urunler] _renderForm hata:', e); }
 }
 
