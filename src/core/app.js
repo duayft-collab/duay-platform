@@ -1068,7 +1068,7 @@ function _renderPanel(id) {
       'ik-hub':    () => safe(() => window.IkHub?.render?.()),
       'crm-hub':   () => safe(() => window.CrmHub?.render?.()),
       gorevler:    () => safe(() => window.Pusula?.render?.()),
-      'kpi-panel': () => safe(() => window.renderKpiPanel?.() || window.KPI?.render?.()),
+      'muavin': () => safe(() => window.renderMuavin?.()), 'kpi-panel': () => safe(() => window.renderKpiPanel?.() || window.KPI?.render?.()),
     };
     if (hubRenders[id]) hubRenders[id]();
     else window._patchRender?.(id);
@@ -3576,7 +3576,7 @@ var _TN2_GROUPS = {
     { id:'hesap-ozeti',  label:'Hesap Özeti'  },
     { id:'finans',       label:'Finans Paneli' },
     { id:'pirim',        label:'Prim'          },
-    { id:'kpi-panel',    label:'KPI'           },
+    { id:'kpi-panel',    label:'KPI'           },    { id:'muavin',       label:'Muavin Defter' },
   ]},
   ik: { label:'İK', mods: [
     { id:'ik-hub',  label:'İK Merkezi'      },
