@@ -153,7 +153,7 @@ window._ppModRender = function() {
         var agSay = t.altGorevSay||0; var agTam = t.altGorevTam||0;
         var jobId = t.job_id||t.jobId||'';
         var tarihGec = t.bitTarih && t.bitTarih < _ppToday();
-        h2 += '<div id="pp-tr-'+t.id+'" style="border-left:3px solid '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
+        h2 += '<div id="pp-tr-'+t.id+'" style="box-shadow:-3px 0 0 0 '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
         h2 += '<div onclick="event.stopPropagation()" style="display:grid;grid-template-columns:22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:default">';
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
         h2 += '<div>';
