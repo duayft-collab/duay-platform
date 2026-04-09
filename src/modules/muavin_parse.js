@@ -262,5 +262,115 @@ window._mvFarkRaporu = function() {
   h2.innerHTML = h;
 };
 
+/* ── MUAVIN-016-017: Fark İşaretleme + Muhasebeci İletim ───── */
+window._mvDuzeltmeNotu = {};
+
+window._mvMuhasebeciFarkRaporuHTML = function() {
+  var is1 = window._mvSonIslemler||[];
+  var is2 = window._mvSonIslemler2||[];
+  var donem = window._mvDonem||'';
+  var farklar = [];
+  if(is1.length && is2.length) {
+    var h1map = {};
+    is1.forEach(function(i){var k=i.fisNo||i.tarih; h1map[k]=i;});
+    var h2map = {};
+    is2.forEach(function(i){var k=i.fisNo||i.tarih; h2map[k]=i;});
+    is1.forEach(function(i1){
+      var k=i1.fisNo||i1.tarih;
+      if(!h2map[k]) farklar.push({tip:'sistemde_var',i:i1,aciklama:'Muhasebecide kayıt yok'});
+      else if(Math.abs((i1.borc||0)-(h2map[k].borc||0))>0.01) farklar.push({tip:'tutar_farki',i:i1,i2:h2map[k],aciklama:'Tutar uyuşmuyor'});
+    });
+    is2.forEach(function(i2){
+      var k=i2.fisNo||i2.tarih;
+      if(!h1map[k]) farklar.push({tip:'muhasebecide_var',i:i2,aciklama:'Sistemde kayıt yok'});
+    });
+  } else if(is1.length) {
+    var odmler = typeof window.loadOdm==='function'?window.loadOdm():[];
+    var yil=parseInt(donem); var q=parseInt((donem||'').replace(/^\d{4}Q/,''));
+    var ayBas=(q-1)*3; var ayBit=ayBas+2;
+    var donemOdm = odmler.filter(function(o){
+      if(o.isDeleted) return false;
+      var t=new Date(o.dueDate||o.createdAt||'');
+      return !isNaN(t)&&t.getFullYear()===yil&&t.getMonth()>=ayBas&&t.getMonth()<=ayBit;
+    });
+    var odmFisler = {};
+    donemOdm.forEach(function(o){if(o.fisNo||o.referans) odmFisler[o.fisNo||o.referans]=o;});
+    is1.forEach(function(i){
+      var k=i.fisNo;
+      if(k&&!odmFisler[k]) farklar.push({tip:'sistemde_yok',i:i,aciklama:'Platform kayıtlarında bu fiş bulunamadı'});
+    });
+  }
+  window._mvSonFarklar = farklar;
+  if(!farklar.length) return '<div style="padding:16px;background:#E1F5EE;border-radius:8px;color:#085041;font-size:11px">✓ Fark bulunamadı — tüm kayıtlar uyuşuyor</div>';
+  var h='<div style="border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+  h+='<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);background:var(--s2);display:flex;align-items:center;justify-content:space-between">';
+  h+='<div style="font-size:11px;font-weight:500;color:var(--t)">'+farklar.length+' Fark Tespit Edildi</div>';
+  h+='<button onclick="event.stopPropagation();window._mvIletimRaporuPDF()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#A32D2D;color:#fff;cursor:pointer;font-family:inherit">⎙ Muhasebeciye Gönder</button>';
+  h+='</div>';
+  farklar.forEach(function(f,idx){
+    var renk = f.tip==='sistemde_var'?'#185FA5':f.tip==='muhasebecide_var'?'#854F0B':'#A32D2D';
+    var etiket = f.tip==='sistemde_var'?'Muhasebecide Yok':f.tip==='muhasebecide_var'?'Sistemde Yok':'Tutar Farkı';
+    h+='<div style="padding:10px 16px;border-bottom:0.5px solid var(--b)">';
+    h+='<div style="display:flex;align-items:flex-start;gap:10px">';
+    h+='<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:'+renk+';color:#fff;white-space:nowrap;margin-top:1px">'+etiket+'</span>';
+    h+='<div style="flex:1">';
+    h+='<div style="font-size:11px;color:var(--t);font-weight:500">'+(f.i.fisNo?'Fiş: '+f.i.fisNo:'Tarih: '+f.i.tarih)+'</div>';
+    h+='<div style="font-size:10px;color:var(--t2);margin-top:2px">'+f.i.aciklama+'</div>';
+    if(f.i.borc) h+='<div style="font-size:10px;color:var(--t3)">Borç: '+f.i.borc.toLocaleString('tr-TR')+'</div>';
+    h+='</div>';
+    h+='</div>';
+    h+='<div style="margin-top:6px"><textarea id="mv-not-'+idx+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="window._mvDuzeltmeNotu['+idx+']=this.value" placeholder="Düzeltme notu — ne yapılacak?" style="width:100%;font-size:10px;padding:6px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);height:50px;resize:none;font-family:inherit;box-sizing:border-box"></textarea></div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+};
+
+window._mvIletimRaporuPDF = function() {
+  var farklar = window._mvSonFarklar||[];
+  if(!farklar.length){window.toast?.('Fark bulunamadı','warn');return;}
+  var donem = window._mvDonem||'export';
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  var kullanici = window.CU?.()?.displayName||'';
+  var html='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Muavin Fark Raporu</title>';
+  html+='<style>body{font-family:Arial,sans-serif;margin:30px;color:#111;font-size:11px}';
+  html+='.baslik{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:20px}';
+  html+='.fark{border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:10px}';
+  html+='.etiket{display:inline-block;padding:2px 8px;border-radius:3px;color:#fff;font-size:10px;margin-bottom:6px}';
+  html+='.not{background:#f9f9f9;border:1px solid #ddd;padding:8px;border-radius:4px;margin-top:6px;font-style:italic}';
+  html+='.imza{display:flex;justify-content:space-between;margin-top:50px}';
+  html+='.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px}';
+  html+='</style></head><body>';
+  html+='<div class="baslik"><h2>DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</h2>';
+  html+='<h3>MUAVİN DEFTER FARK VE DÜZELTİM RAPORU</h3>';
+  html+='<p>Dönem: <strong>'+donem+'</strong> &nbsp;|&nbsp; Tarih: '+tarih+'&nbsp;|&nbsp; Hazırlayan: '+kullanici+'</p></div>';
+  html+='<p>Bu rapor, şirket kayıtları ile muhasebeci muavin defteri arasındaki farklılıkları göstermektedir.</p>';
+  html+='<h3>Tespit Edilen Farklar ('+farklar.length+' adet)</h3>';
+  farklar.forEach(function(f,i){
+    var renk = f.tip==='sistemde_var'?'#185FA5':f.tip==='muhasebecide_var'?'#854F0B':'#A32D2D';
+    var etiket = f.tip==='sistemde_var'?'Muhasebecide Yok':f.tip==='muhasebecide_var'?'Sistemde Yok':'Tutar Farkı';
+    var not = window._mvDuzeltmeNotu[i]||'';
+    html+='<div class="fark">';
+    html+='<span class="etiket" style="background:'+renk+'">'+etiket+'</span>';
+    html+='<div><strong>'+(f.i.fisNo?'Fiş No: '+f.i.fisNo:'Tarih: '+f.i.tarih)+'</strong></div>';
+    if(f.i.cari) html+='<div>Cari: '+f.i.cari+'</div>';
+    if(f.i.borc) html+='<div>Borç: '+f.i.borc.toLocaleString('tr-TR')+' TL</div>';
+    if(not) html+='<div class="not">Düzeltme Notu: '+not+'</div>';
+    else html+='<div class="not" style="color:#999">Düzeltme notu girilmedi</div>';
+    html+='</div>';
+  });
+  html+='<div class="imza">';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Şirket Yetkilisi</div></div>';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Mali Müşavir</div></div>';
+  html+='</div>';
+  html+='</body></html>';
+  var win=window.open('','_blank');
+  if(!win){window.toast?.('Popup engellendi','warn');return;}
+  win.document.write(html);
+  win.document.close();
+  win.print();
+  window.toast?.('Rapor açıldı — yazdır veya PDF kaydet','ok');
+};
+
 console.log('[MUAVIN-PARSE] yüklendi');
 

@@ -175,6 +175,9 @@ window.renderMuavin = function() {
     h += '<button onclick="event.stopPropagation();window._mvKarsilastir2()" style="font-size:10px;padding:5px 16px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Karşılaştır →</button>';
     h += '</div></div>';
     h += (window._mvSistemFarkHTML?.() || '');
+    h += '<div id="mv-muhasebeci-fark" style="margin-bottom:12px">';
+    h += (window._mvMuhasebeciFarkRaporuHTML?.()||'');
+    h += '</div>';
     h += '<div id="mv-fark-panel"></div>';
   }
   else if(aktifTab==='donem'){
