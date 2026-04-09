@@ -68,6 +68,22 @@ window._piOlustur = function(teklif, tasarim, katman) {
   win.document.write('<div class="np" style="text-align:center;margin:20px"><button onclick="window.print()" style="font-size:13px;padding:10px 28px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500">Print / Save PDF</button></div>');
   win.document.write('</body></html>');
   win.document.close();
+  if(teklif && teklif.id) {
+    var mevcutDurum = teklif.durum||'taslak';
+    if(mevcutDurum==='taslak'||mevcutDurum==='revizyon') {
+      window._steklifDurumGuncelle?.(teklif.id, 'gonderildi');
+      var teklifler = window._saTeklifLoad?.() || [];
+      var idx = teklifler.findIndex(function(t){return String(t.id)===String(teklif.id);});
+      if(idx>-1){
+        teklifler[idx].gonderimTarih = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
+        teklifler[idx].gonderenAd = window.CU?.()?.displayName||window.CU?.()?.email||'';
+        teklifler[idx].gonderenId = window.CU?.()?.uid||'';
+        teklifler[idx].pdfTasarim = tasarim||'A';
+        window._saTeklifStore?.(teklifler);
+        window.toast?.('Teklif "Gönderildi" olarak işaretlendi','ok');
+      }
+    }
+  }
 };
 
 /* ── Ürün satırları ─────────────────────────────────────────── */
@@ -239,6 +255,22 @@ window._steklifDurumPanelHTML = function(teklif) {
     h += 'background:'+(aktif?renk:'transparent')+';color:'+(aktif?'#fff':renk)+';border:0.5px solid '+renk+'">'+ST_DURUM_LBL[d]+'</button>';
   });
   h += '</div></div>';
+  return h;
+};
+
+window._steklifOzetHTML = function(t) {
+  var RENKLER = {taslak:'#888',gonderildi:'#185FA5',inceliyor:'#854F0B',kabul:'#0F6E56',reddedildi:'#A32D2D',revizyon:'#854F0B'};
+  var ETIKET = {taslak:'Taslak',gonderildi:'Gönderildi',inceliyor:'İnceliyor',kabul:'Kabul',reddedildi:'Reddedildi',revizyon:'Revizyon'};
+  var durum = t.durum||'taslak';
+  var renk = RENKLER[durum]||'#888';
+  var h = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px">';
+  h += '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:'+renk+';color:#fff">'+(ETIKET[durum]||durum)+'</span>';
+  if(t.gonderimTarih) h += '<span style="font-size:9px;color:var(--t3)">📤 '+t.gonderimTarih+(t.gonderenAd?' · '+t.gonderenAd:'')+'</span>';
+  if(t.takipTarih) {
+    var takipGec = new Date(t.takipTarih)<new Date();
+    h += '<span style="font-size:9px;color:'+(takipGec?'#A32D2D':'var(--t3)')+'">📅 Takip: '+t.takipTarih+(takipGec?' ⚠':'')+'</span>';
+  }
+  h += '</div>';
   return h;
 };
 
