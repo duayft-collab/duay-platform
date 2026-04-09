@@ -37,7 +37,7 @@ window._saV2YeniTeklif = function() {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">DUAY ÜRÜN KODU</div>'
     + '<div style="display:flex;gap:5px">'
-    + '<input id="sav2f-duayKodu" placeholder="11·XXXX·XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2KatalogDoldur(this.value)" style="flex:1;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">'
+    + '<input id="sav2f-duayKodu" placeholder="11·XXXX·XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2KatalogDoldur(this.value);window._saV2UrunAraDropdown?.(this,\'sav2f-duayKodu\')" style="flex:1;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">'
     + '<button onclick="event.stopPropagation();window._saV2KatalogAra()" style="font-size:10px;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit;white-space:nowrap">Katalog</button>'
     + '</div>'
     + '<div id="sav2f-katalog-bilgi" style="font-size:9px;color:var(--t3);margin-top:3px"></div>'
@@ -104,6 +104,50 @@ window._saV2FormGorsel = function(inp) {
     if (ad) ad.textContent = f.name;
   };
   r.readAsDataURL(f);
+};
+
+/* ── URUN-ARA-001: Anlık Ürün Arama Dropdown ──────────────── */
+window._saV2UrunAraDropdown = function(inp, hedefId) {
+  var val = inp.value.trim().toLowerCase();
+  var mevcut = document.getElementById('sa-urun-dropdown');
+  if (mevcut) mevcut.remove();
+  if (val.length < 2) return;
+  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler() : []).concat(typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : []).filter(function(u) { return !u.isDeleted; });
+  var eslesen = tumListe.filter(function(u) {
+    return (u.duayKodu || '').toLowerCase().includes(val)
+      || (u.urunAdi || '').toLowerCase().includes(val)
+      || (u.ingAd || u.standartAdi || '').toLowerCase().includes(val)
+      || (u.tedarikci || '').toLowerCase().includes(val)
+      || (u.marka || '').toLowerCase().includes(val)
+      || (u.saticiKodu || '').toLowerCase().includes(val);
+  }).slice(0, 8);
+  if (!eslesen.length) return;
+  var rect = inp.getBoundingClientRect();
+  var dd = document.createElement('div');
+  dd.id = 'sa-urun-dropdown';
+  dd.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + (rect.bottom + 2) + 'px;width:' + Math.max(rect.width, 360) + 'px;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;z-index:9999;max-height:280px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)';
+  eslesen.forEach(function(u) {
+    var item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b)';
+    item.onmouseenter = function() { this.style.background = 'var(--s2)'; };
+    item.onmouseleave = function() { this.style.background = ''; };
+    var gorsel = u.gorsel ? '<img src="' + u.gorsel + '" style="width:28px;height:28px;border-radius:3px;object-fit:cover;flex-shrink:0">' : '<div style="width:28px;height:28px;border-radius:3px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">📦</div>';
+    item.innerHTML = gorsel
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:11px;font-weight:500;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (u.urunAdi || u.ingAd || '—') + '</div>'
+      + '<div style="font-size:9px;color:var(--t3)">' + (u.duayKodu || '') + (u.tedarikci ? ' · ' + u.tedarikci : '') + (u.marka ? ' · ' + u.marka : '') + '</div>'
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--t3);text-align:right">' + (u.birim || '') + '</div>';
+    item.onclick = function(e) {
+      e.stopPropagation();
+      var kodInp = document.getElementById(hedefId || 'sav2f-duayKodu');
+      if (kodInp) { kodInp.value = u.duayKodu || ''; window._saV2KatalogDoldur(u.duayKodu || ''); }
+      dd.remove();
+    };
+    dd.appendChild(item);
+  });
+  document.body.appendChild(dd);
+  document.addEventListener('click', function rm() { dd.remove(); document.removeEventListener('click', rm); }, { once: true });
 };
 
 window._saV2KatalogDoldur = function(kod) {
