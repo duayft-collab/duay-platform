@@ -103,8 +103,8 @@ window._mvKarsilastir = function() {
   var eslesen=0,farkli=0,eksik=0;
   var satirSonuc = satirlar.slice(1).map(function(satir){
     var parcalar = satir.split(/\t|,|;/).map(function(p){return p.trim().replace(/^"|"$/g,'');});
-    var hesap = parcalar[0]||'';
-    var aciklama = parcalar[1]||'';
+    var hesap = (parcalar[0]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var aciklama = (parcalar[1]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     var excelTutar = parseFloat(parcalar[2]||parcalar[3]||'0')||0;
     var sistemTutar = 0;
     var fark = excelTutar - sistemTutar;
