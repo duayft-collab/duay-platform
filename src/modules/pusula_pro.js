@@ -1906,3 +1906,83 @@ window._ppBagimlilikPanelHTML = function(gorev) {
   h += '</div>';
   return h;
 };
+
+/* ── PP-ZAMAN-001: Görev Zaman Takibi ──────────────────────── */
+var _ppZamanAktif = null;
+var _ppZamanBaslangic = null;
+
+window._ppZamanBaslat = function(gorevId) {
+  if (_ppZamanAktif && _ppZamanAktif !== gorevId) {
+    window._ppZamanDurdur(_ppZamanAktif);
+  }
+  _ppZamanAktif = gorevId;
+  _ppZamanBaslangic = Date.now();
+  window.toast?.('Zaman başlatıldı', 'ok');
+  window._ppZamanUIGuncelle();
+};
+
+window._ppZamanDurdur = function(gorevId) {
+  if (!_ppZamanAktif || !_ppZamanBaslangic) return;
+  var sure = Math.floor((Date.now() - _ppZamanBaslangic) / 1000);
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  if (t) {
+    if (!t.zamanKayitlari) t.zamanKayitlari = [];
+    t.zamanKayitlari.push({
+      baslangic: new Date(_ppZamanBaslangic).toISOString().slice(0, 19).replace('T', ' '),
+      sure: sure,
+      kullanici: (window._saCu?.() || _ppCu())?.displayName || ''
+    });
+    t.toplamSure = (t.toplamSure || 0) + sure;
+    t.updatedAt = _ppNow();
+    window._ppStore?.(tasks);
+  }
+  _ppZamanAktif = null;
+  _ppZamanBaslangic = null;
+  var dk = Math.floor(sure / 60); var sn = sure % 60;
+  window.toast?.('Zaman durduruldu: ' + dk + 'dk ' + sn + 'sn', 'ok');
+  window._ppModRender?.();
+};
+
+window._ppZamanUIGuncelle = function() {
+  var el = document.getElementById('pp-zaman-badge');
+  if (!el) return;
+  if (!_ppZamanAktif) { el.textContent = ''; return; }
+  var gecen = Math.floor((Date.now() - _ppZamanBaslangic) / 1000);
+  var dk = Math.floor(gecen / 60); var sn = gecen % 60;
+  el.textContent = dk + 'dk ' + String(sn).padStart(2, '0') + 'sn';
+  setTimeout(window._ppZamanUIGuncelle, 1000);
+};
+
+window._ppZamanFormatla = function(saniye) {
+  if (!saniye) return '—';
+  var sa = Math.floor(saniye / 3600);
+  var dk = Math.floor((saniye % 3600) / 60);
+  if (sa > 0) return sa + 's ' + dk + 'dk';
+  return dk + 'dk ' + (saniye % 60) + 'sn';
+};
+
+window._ppZamanPanelHTML = function(gorev) {
+  if (!gorev) return '';
+  var aktif = _ppZamanAktif === gorev.id;
+  var h = '<div style="background:var(--s2);border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em">ZAMAN TAKİBİ</div>';
+  h += '<div style="font-size:10px;font-weight:500;color:var(--t)">' + window._ppZamanFormatla(gorev.toplamSure || 0) + '</div>';
+  h += '</div>';
+  if (aktif) {
+    h += '<div id="pp-zaman-badge" style="font-size:11px;color:#0F6E56;font-weight:500;margin-bottom:6px">0dk 00sn</div>';
+    h += '<button onclick="event.stopPropagation();window._ppZamanDurdur(\'' + gorev.id + '\')" style="font-size:10px;padding:5px 12px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">■ Durdur</button>';
+  } else {
+    h += '<button onclick="event.stopPropagation();window._ppZamanBaslat(\'' + gorev.id + '\')" style="font-size:10px;padding:5px 12px;border:0.5px solid #0F6E56;border-radius:5px;background:transparent;cursor:pointer;color:#0F6E56;font-family:inherit">▶ Başlat</button>';
+  }
+  if (gorev.zamanKayitlari && gorev.zamanKayitlari.length) {
+    h += '<div style="margin-top:8px;border-top:0.5px solid var(--b);padding-top:6px">';
+    gorev.zamanKayitlari.slice(-3).reverse().forEach(function(k) {
+      h += '<div style="font-size:9px;color:var(--t3);padding:2px 0">' + (k.baslangic || '').slice(0, 16) + ' · ' + window._ppZamanFormatla(k.sure) + '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+};
