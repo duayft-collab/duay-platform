@@ -4,6 +4,54 @@
    Çeyreklik muhasebe Excel karşılaştırma + fark raporu
    v1.0.0
 ════════════════════════════════════════════════════════════════ */
+/*
+ℹ️ MUAVİN DEFTER KONTROL — NE YAPAR, NASIL KULLANILIR?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 NE İŞE YARAR?
+   Her çeyrek sonunda muhasebeciden gelen Excel dosyasını,
+   sistemin kendi kayıtlarıyla karşılaştırır. Farkları bulur,
+   rapor çıkarır. Kısaca: "Muhasebeci ne diyor, sistem ne diyor,
+   nerede uyuşmuyor?" sorusunu yanıtlar.
+   Açılış: Üst Menü → Muhasebe → Muavin Defter
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 DÖNEM SEÇİMİ
+   Sağ üstte 4 buton: 2026 Q1 · Q2 · Q3 · Q4
+   Q1 = Ocak-Mart | Q2 = Nisan-Haziran
+   Q3 = Temmuz-Eylül | Q4 = Ekim-Aralık
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 KULLANIM ADIMLARI (3 adım)
+   1️⃣  Muhasebeciden Excel al (ham muavin döküm dosyası)
+   2️⃣  Sol panele yapıştır VEYA "Dosya Seç" ile yükle
+       Format: Hesap Kodu | Açıklama | Borç | Alacak
+       Desteklenen: .xlsx / .csv / .txt / Tab / Virgül / Noktalı virgül
+   3️⃣  "Karşılaştır →" butonuna bas → rapor otomatik çıkar
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 SONUÇ RAPORU — 3 RENK
+   🟢 Eşleşiyor  → Excel ile sistem aynı, sorun yok
+   🔴 Fark var   → Tutar uyuşmuyor, araştır
+   🟡 Eksik      → Sistemde bu hesap koduna kayıt yok
+   Her satırda: Hesap Kodu · Açıklama · Excel Tutarı ·
+                Sistem Tutarı · Fark · Durum
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗂️  HESAP KODU → KATEGORİ EŞLEŞTİRME
+   770.01 → Kira        | 770.02 → Fatura
+   770.03 → Abonelik    | 360.01 → Vergi
+   370.01 → Sigorta     | 335.01 → Maaş
+   780.01 → Kredi Kartı | 300.01 → Kredi
+   770.99 → Diğer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  ÖNEMLİ NOTLAR
+   • Sistem tutarı: Nakit Akışı modülündeki ödemelerden hesaplanır
+   • Dövizli ödemelerde amountTRY (kayıt anındaki kur) kullanılır
+   • Sonuçlar saklanır (son 20 karşılaştırma — ak_muavin_v1)
+   • Fark çıkarsa: ya sistemde eksik kayıt var, ya hesap kodu farklı
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 SÜRÜM GEÇMİŞİ
+   v1.0.0 (2026-04-09) — İlk sürüm: Excel yükleme, karşılaştırma,
+                          fark raporu, 3 KPI (eşleşen/fark/eksik)
+   v1.1.0 (2026-04-09) — MUAVIN-002: Gerçek sistem tutarı hesaplama,
+                          9 kategori→hesapKodu mapping, dönem filtresi
+*/
 
 var MUAVİN_KEY = 'ak_muavin_v1';
 
