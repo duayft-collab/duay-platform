@@ -430,6 +430,12 @@ function openUrunForm(editId) {
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">DUAY KODU <span style="font-size:9px;color:#0F6E56">(Otomatik)</span></div>'
     + '<input id="uf2-duayKodu" value="' + _esc(duayKoduOto) + '" readonly onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace;box-sizing:border-box"></div>'
     + '</div>'
+    + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">ÜRÜN GÖRSELİ <span style="color:#A32D2D">*</span></div>'
+    + '<input type="hidden" id="uf2-gorselBase64" value="' + _esc(u.gorsel || '') + '">'
+    + '<label style="display:block;cursor:pointer;margin-bottom:10px">'
+    + (u.gorsel ? '<img id="uf2-gorselPrev" src="' + u.gorsel + '" style="max-height:100px;border-radius:6px;border:0.5px solid var(--b);display:block;margin-bottom:6px">' : '<img id="uf2-gorselPrev" style="display:none;max-height:100px;border-radius:6px;margin-bottom:6px">')
+    + '<div style="border:0.5px dashed var(--b);border-radius:6px;padding:16px;text-align:center;color:var(--t3);font-size:11px">+ Görsel Yükle (JPG / PNG / WEBP · max 5MB)</div>'
+    + '<input type="file" accept="image/*" onchange="window._uf2FileChange(\'gorsel\',this)" style="display:none"></label>'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TEKNİK AÇIKLAMA <span style="color:#A32D2D">*</span></div>'
     + '<textarea id="uf2-teknikAciklama" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Ürün teknik özellikleri, önemli detaylar..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:70px;resize:none;font-family:inherit;box-sizing:border-box">' + _esc(u.teknikAciklama || '') + '</textarea></div>'
     + '<input type="hidden" id="uf2-duayKoduOto" value="' + _esc(duayKoduOto) + '">'
@@ -673,10 +679,22 @@ window._uf2Recalc = function() {
   if (m && f && t) { t.value = ((parseFloat(m.value)||0) * (parseFloat(f.value)||0)).toLocaleString('tr-TR'); }
 };
 
-window._uf2FileChange = function(id, inp) {
-  if (!inp.files?.[0]) return;
-  const prev = _g('uf2-'+id+'-preview');
-  if (prev) prev.textContent = _esc(inp.files[0].name);
+window._uf2FileChange = function(fieldId, inp) {
+  const f = inp?.files?.[0]; if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { window.toast?.('Dosya 5MB limitini aşıyor', 'warn'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const b64 = e.target.result;
+    const hid = document.getElementById('uf2-' + fieldId + 'Base64');
+    const adEl = document.getElementById('uf2-' + fieldId + 'Ad');
+    const prevEl = document.getElementById('uf2-' + fieldId + 'Prev');
+    const oldPrev = _g('uf2-' + fieldId + '-preview');
+    if (hid) hid.value = b64;
+    if (adEl) adEl.textContent = f.name + ' (' + Math.round(f.size / 1024) + 'KB)';
+    if (oldPrev) oldPrev.textContent = f.name;
+    if (prevEl && f.type.startsWith('image/')) { prevEl.src = b64; prevEl.style.display = 'block'; }
+  };
+  reader.readAsDataURL(f);
 };
 
 let _sahbMaddeSayisi = 5;
@@ -728,9 +746,12 @@ window._uf2TaslakKaydet = function() {
 /* ── URUN-FORM-001: Floating modal kaydet ──────────────────── */
 window._uf2KaydetYeni = function() {
   const g = id => document.getElementById('uf2-' + id)?.value?.trim() || '';
-  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'saticiKodu', 'teknikAciklama'];
-  const eksik = zorunlu.filter(f => !g(f));
-  if (eksik.length) { window.toast?.('Eksik bilgi — teklif verilemez: ' + eksik.join(', '), 'warn'); return; }
+  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'saticiKodu', 'teknikAciklama', 'gorselBase64'];
+  const eksik = zorunlu.filter(f => {
+    if (f === 'gorselBase64') return !document.getElementById('uf2-gorselBase64')?.value;
+    return !g(f);
+  });
+  if (eksik.length) { window.toast?.('Eksik bilgi — teklif verilemez: ' + eksik.map(f => f === 'gorselBase64' ? 'Ürün Görseli' : f).join(', '), 'warn'); return; }
   const data = _loadU();
   const duayKodu = g('duayKoduOto') || ('11.' + Date.now().toString().slice(-6));
   const dupKod = data.filter(u => !u.isDeleted && u.duayKodu === duayKodu && String(u.id) !== _aktifSekme);
@@ -740,6 +761,7 @@ window._uf2KaydetYeni = function() {
     existing.urunAdi = g('urunAdi'); existing.ingAd = g('ingAd'); existing.standartAdi = g('ingAd');
     existing.tedarikci = g('tedarikci'); existing.kategori = g('kategori'); existing.birim = g('birim');
     existing.mensei = g('mensei'); existing.saticiKodu = g('saticiKodu'); existing.teknikAciklama = g('teknikAciklama');
+    existing.gorsel = document.getElementById('uf2-gorselBase64')?.value || existing.gorsel || '';
     existing.sonTuketim = g('sonTuketim'); existing.duayKodu = duayKodu;
     existing.eskiKod = g('eskiKod');
     existing.saticiNotGizli = document.getElementById('uf2-saticiNotGizli')?.checked||false;
@@ -750,6 +772,7 @@ window._uf2KaydetYeni = function() {
       id: _genId(), duayKodu: duayKodu, urunAdi: g('urunAdi'), ingAd: g('ingAd'), standartAdi: g('ingAd'),
       tedarikci: g('tedarikci'), kategori: g('kategori'), birim: g('birim'), mensei: g('mensei'),
       saticiKodu: g('saticiKodu'), teknikAciklama: g('teknikAciklama'), sonTuketim: g('sonTuketim') || '',
+      gorsel: document.getElementById('uf2-gorselBase64')?.value || '',
       eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
       status: 'aktif', createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       createdBy: window.CU?.()?.displayName || '', updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
