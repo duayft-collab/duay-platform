@@ -465,10 +465,81 @@ window._uf2SAHBTamamla = function() { _sahbAcik = false; _aktifEtap = 2;
   const s = _getSekmeler(); const sk = s.find(x=>x.id===_aktifSekme); if(sk){sk.etap=2;sk.durum='devam';_setSekmeler(s);} _renderForm(); };
 
 window._uf2YeniTedarikci = function() {
-  if (typeof window._openCariForm === 'function') { window._openCariForm(null, 'Potansiyel Tedarikçi'); }
-  else if (typeof window.openCariModal === 'function') { window.openCariModal(null, 'Potansiyel Tedarikçi'); }
-  else if (typeof window.addCariModal === 'function') { window.addCariModal(); }
-  else if (typeof window.toast === 'function') { window.toast('Cari modülü yüklenmedi', 'error'); }
+  var mevcut = document.getElementById('uf2-pot-ted-modal');
+  if (mevcut) { mevcut.remove(); return; }
+  var mo = document.createElement('div');
+  mo.id = 'uf2-pot-ted-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 0;overflow-y:auto';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var _fi = function(id, lbl, ph, req) {
+    return '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:4px">' + lbl + (req ? ' <span style="color:#A32D2D">*</span>' : '') + '</div>'
+      + '<input id="pt-' + id + '" placeholder="' + ph + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
+  };
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:640px;overflow:hidden">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Potansiyel Tedarikçi Ekle</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:1px">Onay sonrası aktif cariye dönüşür</div></div>'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'uf2-pot-ted-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button></div>'
+    + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + _fi('firma', 'FİRMA ADI', 'Firma adı', true)
+    + _fi('web', 'WEB SİTESİ', 'https://...', false)
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + _fi('muhatap', 'GÖRÜŞÜLECEK MUHATAP AD SOYAD', 'Ad Soyad', true)
+    + _fi('cep', 'CEP NUMARASI', '+90 5xx xxx xx xx', true)
+    + '</div>'
+    + _fi('mail', 'E-POSTA ADRESİ', 'ornek@firma.com', true)
+    + '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:4px">HANGİ SEKTÖRLERDE ÇALIŞMIŞ <span style="color:#A32D2D">*</span></div>'
+    + '<textarea id="pt-sektor" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Örn: Mobilya, Metal, Tekstil — önceki çalışma sektörleri..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:60px;resize:none;font-family:inherit;box-sizing:border-box"></textarea></div>'
+    + '<div><div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:4px">FİRMA NASIL BULUNDU <span style="color:#A32D2D">*</span></div>'
+    + '<textarea id="pt-nasil" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Örn: Alibaba, fuar, referans, soğuk arama..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:60px;resize:none;font-family:inherit;box-sizing:border-box"></textarea></div>'
+    + '<div style="background:#FAEEDA;border-radius:6px;padding:10px 14px">'
+    + '<div style="font-size:10px;font-weight:500;color:#854F0B;margin-bottom:6px">Onay için gerekli belgeler (yöneticiye gönderilecek)</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+    + '<label style="font-size:10px;cursor:pointer;color:var(--t2)">Vergi Levhası<input type="file" id="pt-vergi" accept=".pdf,.jpg,.png" style="display:none" onchange="document.getElementById(\'pt-vergi-lbl\').textContent=this.files[0]?.name||\'\'"><div id="pt-vergi-lbl" style="font-size:9px;color:var(--t3);margin-top:2px">Seçilmedi</div></label>'
+    + '<label style="font-size:10px;cursor:pointer;color:var(--t2)">Ticaret Sicil<input type="file" id="pt-ticaret" accept=".pdf,.jpg,.png" style="display:none" onchange="document.getElementById(\'pt-ticaret-lbl\').textContent=this.files[0]?.name||\'\'"><div id="pt-ticaret-lbl" style="font-size:9px;color:var(--t3);margin-top:2px">Seçilmedi</div></label>'
+    + '<label style="font-size:10px;cursor:pointer;color:var(--t2)">İmza Sirküleri<input type="file" id="pt-imza" accept=".pdf,.jpg,.png" style="display:none" onchange="document.getElementById(\'pt-imza-lbl\').textContent=this.files[0]?.name||\'\'"><div id="pt-imza-lbl" style="font-size:9px;color:var(--t3);margin-top:2px">Seçilmedi</div></label>'
+    + '</div></div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'uf2-pot-ted-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
+    + '<button onclick="event.stopPropagation();window._uf2PotTedKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Onaya Gönder</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  setTimeout(function() { document.getElementById('pt-firma')?.focus(); }, 100);
+};
+
+window._uf2PotTedKaydet = function() {
+  var g = function(id) { return document.getElementById('pt-' + id)?.value?.trim() || ''; };
+  var firma = g('firma'), mail = g('mail'), muhatap = g('muhatap'), cep = g('cep');
+  var sektor = document.getElementById('pt-sektor')?.value?.trim() || '';
+  var nasil = document.getElementById('pt-nasil')?.value?.trim() || '';
+  if (!firma || !mail || !muhatap || !cep || !sektor || !nasil) { window.toast?.('Tüm zorunlu alanları doldurun', 'warn'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { window.toast?.('Geçerli bir e-posta girin', 'warn'); return; }
+  var kayit = {
+    id: window.generateId?.() || ('PT' + Date.now()),
+    tip: 'potansiyel',
+    ad: firma,
+    web: g('web'),
+    muhatap: muhatap,
+    cep: cep,
+    mail: mail,
+    sektor: sektor,
+    nasil: nasil,
+    onayDurum: 'bekliyor',
+    createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    createdBy: window.CU?.()?.displayName || ''
+  };
+  var cariler = typeof window.loadCari === 'function' ? window.loadCari() : [];
+  cariler.push(kayit);
+  if (typeof window.storeCari === 'function') window.storeCari(cariler);
+  if (typeof window.addNotif === 'function') {
+    var admins = (typeof window.loadUsers === 'function' ? window.loadUsers() : []).filter(function(u) { return u.rol === 'admin' || u.role === 'admin'; });
+    admins.forEach(function(a) { window.addNotif('🏢', 'Yeni potansiyel tedarikçi onay bekliyor: ' + firma, 'warn', 'cariler', a.uid || a.id); });
+  }
+  window.toast?.('Potansiyel tedarikçi onaya gönderildi: ' + firma, 'ok');
+  document.getElementById('uf2-pot-ted-modal')?.remove();
 };
 
 window._uf2Recalc = function() {
