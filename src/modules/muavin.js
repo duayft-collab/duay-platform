@@ -121,6 +121,7 @@ window.renderMuavin = function() {
     h += '<textarea id="mv-excel-ham" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Hesap Kodu | Açıklama | Borç | Alacak..." style="width:100%;height:160px;font-size:11px;font-family:monospace;padding:8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:vertical;box-sizing:border-box"></textarea>';
     h += '<div style="display:flex;gap:6px;margin-top:8px">';
     h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2)">📂 Dosya Seç<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku(this)" style="display:none"></label>';
+    h += '<button onclick="event.stopPropagation();window._mvSablonIndir()" style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">⬇ Şablon İndir</button>';
     h += '<button onclick="event.stopPropagation();window._mvKarsilastir();window._mvAktifTab=\'islemler\';window.renderMuavin()" style="font-size:10px;padding:5px 16px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Yükle ve Analiz Et →</button>';
     h += '</div></div>';
     h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px">';

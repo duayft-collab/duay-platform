@@ -369,4 +369,30 @@ window._mvTarihFiltrele = function() {
   tbody.innerHTML=window._mvIslemSatirHTML?window._mvIslemSatirHTML(filtre):'';
 };
 
+/* ── MUAVIN-014: Excel Şablon İndir ────────────────────────── */
+window._mvSablonIndir = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('SheetJS yüklenmedi', 'err'); return; }
+  var baslik = ['Hesap Kodu + Cari Adı', '', '', '', '', '', '', '', ''];
+  var header = ['TARİH', 'TİP', 'FİŞ NO', 'AÇIKLAMA', 'BORÇ (TL)', 'ALACAK (TL)', 'BAKİYE (TL)', 'B/A', 'TİP (TL)'];
+  var ornek2 = ['16.05.2025', 'Mahsup', '00210', 'Açıklama metni buraya yazılır', '36857,69', '', '36857,69', 'B', 'TL'];
+  var ornek3 = ['30.05.2025', 'Mahsup', '00232', '', '', '124368,53', '87510,84', 'A', 'TL'];
+  var nakli = ['', '', '', 'Nakli Yekün Hariç :', '123811,04', '124368,53', '557,49', 'A'];
+  var genel = ['', '', '', 'Genel Toplam :', '123811,04', '124368,53', '557,49', 'A'];
+  var bos = [];
+  var satirlar = [
+    baslik, header, ornek2, ornek3, nakli, genel, bos,
+    ['320.A02 BAŞKA FİRMA LTD. ŞTİ.'],
+    header,
+    ['01.06.2025', 'Mahsup', '00310', 'Örnek işlem', '50000', '', '50000', 'B', 'TL'],
+    ['', '', '', 'Genel Toplam :', '50000', '0', '50000', 'B']
+  ];
+  var ws = XLSX.utils.aoa_to_sheet(satirlar);
+  ws['!cols'] = [{ wch: 40 }, { wch: 8 }, { wch: 10 }, { wch: 50 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 5 }, { wch: 5 }];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Muavin Format');
+  XLSX.writeFile(wb, 'muavin_sablon.xlsx');
+  window.toast?.('Şablon indirildi — muavin_sablon.xlsx', 'ok');
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');
