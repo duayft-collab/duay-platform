@@ -1,3 +1,4 @@
+var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 window._saV2Duzenle = function(id) {
   var liste = window._saV2Load?.() || [];
   var t = liste.find(function(x) { return x.id === id; });

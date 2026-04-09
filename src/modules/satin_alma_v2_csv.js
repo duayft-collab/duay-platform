@@ -1,3 +1,4 @@
+var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 /* ── SA-V2-CSV-001: Toplu CSV Import ───────────────────────── */
 window._saV2CSVImport = function() {
   var mevcut = document.getElementById('sav2-csv-modal'); if (mevcut) { mevcut.remove(); return; }

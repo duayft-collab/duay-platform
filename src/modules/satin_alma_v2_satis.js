@@ -1,3 +1,4 @@
+var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 /* ── Placeholder fonksiyonlar ───────────────────────────────── */
 window._saV2TeklifOlustur = function(id) {
   var liste = window._saV2Load?.() || [];
