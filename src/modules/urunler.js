@@ -457,7 +457,19 @@ function openUrunForm(editId) {
     + _fi('brutAgirlik','BRÜT AĞIRLIK (Kg)',u.brutAgirlik||'',false,'number','0.00')
     + '</div>'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TEKNİK AÇIKLAMA <span style="color:#A32D2D">*</span></div>'
-    + '<textarea id="uf2-teknikAciklama" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Ürün teknik özellikleri, önemli detaylar..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:70px;resize:none;font-family:inherit;box-sizing:border-box">' + _esc(u.teknikAciklama || '') + '</textarea></div>'
+    + '<div style="border:0.5px solid var(--b);border-radius:5px;overflow:hidden">'
+    + '<div style="display:flex;gap:2px;padding:4px 6px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'bold\')" title="Kalın" style="font-size:11px;font-weight:700;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">B</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'italic\')" title="İtalik" style="font-size:11px;font-style:italic;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">I</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'underline\')" title="Altı Çizili" style="font-size:11px;text-decoration:underline;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">U</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertUnorderedList\')" title="Liste" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">• —</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertOrderedList\')" title="Numaralı Liste" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">1.</button>'
+    + '<button type="button" onclick="event.stopPropagation();var u2=prompt(\'Link URL:\');if(u2)document.execCommand(\'createLink\',false,u2)" title="Link" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">🔗</button>'
+    + '<button type="button" onclick="event.stopPropagation();document.getElementById(\'uf2-teknikAciklama-div\').innerHTML=\'\'" title="Temizle" style="font-size:10px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕</button>'
+    + '</div>'
+    + '<div id="uf2-teknikAciklama-div" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:80px;max-height:200px;overflow-y:auto;padding:8px 10px;font-size:12px;color:var(--t);font-family:inherit;outline:none;line-height:1.5">' + (u.teknikAciklama||'') + '</div>'
+    + '<input type="hidden" id="uf2-teknikAciklama">'
+    + '</div></div>'
     + '<input type="hidden" id="uf2-duayKoduOto" value="' + _esc(duayKoduOto) + '">'
     + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px;margin-top:4px">BELGELER</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
@@ -768,6 +780,9 @@ window._uf2TaslakKaydet = function() {
 /* ── URUN-FORM-001: Floating modal kaydet ──────────────────── */
 window._uf2KaydetYeni = function() {
   const g = id => document.getElementById('uf2-' + id)?.value?.trim() || '';
+  var teknikDiv = document.getElementById('uf2-teknikAciklama-div');
+  var teknikHidden = document.getElementById('uf2-teknikAciklama');
+  if(teknikDiv && teknikHidden) teknikHidden.value = teknikDiv.innerHTML||'';
   const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'teknikAciklama', 'gorselBase64'];
   const eksik = zorunlu.filter(f => {
     if (f === 'gorselBase64') return !document.getElementById('uf2-gorselBase64')?.value;
