@@ -36,6 +36,21 @@ window.g        = id  => document.getElementById(id);
 window.st       = (id, v) => { const el = window.g(id); if (el) el.textContent = v; };
 window.CU       = () => window.Auth?.getCU?.();
 window.isAdmin  = () => window.Auth?.getCU?.()?.role === 'admin';
+window.GIZ_SEVIYE = { HERKES: 1, STAFF: 2, LEAD: 3, MANAGER: 4, ADMIN: 5 };
+window.kullaniciSeviye = function() {
+  var cu = window.CU?.(); if (!cu) return 1;
+  var rol = cu.role || cu.rol || 'staff';
+  if (rol === 'admin') return 5; if (rol === 'manager') return 4;
+  if (rol === 'lead') return 3; if (rol === 'staff') return 2;
+  return 1;
+};
+window.canSee = function(s) { if (!s) return true; return window.kullaniciSeviye() >= parseInt(s); };
+window.gizlilikLabel = function(s) { return { 1: 'Herkes', 2: 'Staff', 3: 'Lead', 4: 'Müdür', 5: 'Admin' }[s] || 'Herkes'; };
+window.gizlilikSelect = function(secili, id) {
+  var h = '<select id="' + (id || 'giz-seviye') + '" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">';
+  [1, 2, 3, 4, 5].forEach(function(s) { h += '<option value="' + s + '"' + (secili == s ? ' selected' : '') + '>' + window.gizlilikLabel(s) + '</option>'; });
+  return h + '</select>';
+};
 window.initials = name => (name||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
 // AVC — Avatar renk paleti, pusula.js ve diğer modüller tarafından kullanılır
 // app.js'den ÖNCE yüklenen modüller için buraya erken export yapılır
