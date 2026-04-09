@@ -74,7 +74,6 @@ window._yetkiKontrol = function(islem) {
     'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
     'sistem-testler': () => { window._renderSistemTestler?.(); },
-    'platform-rules': () => { window._renderPlatformRules?.(); },
     'etkinlik': () => { window.renderEtkinlik?.(); },
     'tebligat': () => { window.renderTebligat?.(); },
     'resmi': () => { window.renderResmi?.(); },
