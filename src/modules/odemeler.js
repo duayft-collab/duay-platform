@@ -5697,6 +5697,16 @@ window.renderOdemeler = function() {
     var _dN = document.querySelectorAll ? (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && o.approvalStatus === 'pending_dual_approval'; }).length : 0;
     if (_isManagerO() && _dN > 0 && !window._odmDualToastShown) { window._odmDualToastShown = true; window.toast?.(_dN + ' ödeme yüksek tutar onayı bekliyor', 'warn'); }
     if (_dN === 0) window._odmDualToastShown = false;
+    var kurGunFark = _odmRatesDate ? Math.floor((new Date()-new Date(_odmRatesDate))/(1000*60*60*24)) : 999;
+    var kurEl = document.getElementById('odm-kur-date');
+    if (kurEl && kurGunFark > 1) {
+      kurEl.style.color = kurGunFark > 3 ? '#A32D2D' : '#854F0B';
+      kurEl.title = kurGunFark + ' gün önce güncellendi';
+      kurEl.textContent += ' ⚠ ' + kurGunFark + 'g önce';
+    } else if (kurEl) {
+      kurEl.style.color = '';
+      kurEl.title = '';
+    }
   }, 100);
 };
 
