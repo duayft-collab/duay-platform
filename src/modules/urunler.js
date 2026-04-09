@@ -371,32 +371,64 @@ function _renderEtap4(u) {
    ════════════════════════════════════════════════════════════════ */
 /** @public */
 function openUrunForm(editId) {
-  try {
-    const panel = _g('panel-urunler');
-    if (!panel) {
-      console.warn('[urunler] panel-urunler bulunamadı, renderUrunler ile yükleniyor');
-      window.renderUrunler?.();
-      setTimeout(() => openUrunForm(editId), 150);
-      return;
-    }
-    let sekmeler = _getSekmeler();
-
-    if (editId) {
-      _aktifSekme = String(editId);
-      if (!sekmeler.find(s => s.id === _aktifSekme)) {
-        const u = _loadU().find(x => x.id == editId) || {};
-        sekmeler.push({ id: _aktifSekme, duayKodu: u.duayKodu || '', baslik: u.duayAdi || u.urunAdi || 'Ürün', etap: 1, durum: 'devam' });
-        _setSekmeler(sekmeler);
-      }
-    } else if (!_aktifSekme || !sekmeler.find(s => s.id === _aktifSekme)) {
-      const newId = _genId();
-      _aktifSekme = String(newId);
-      sekmeler.push({ id: _aktifSekme, duayKodu: '', baslik: 'Yeni Ürün', etap: 1, durum: 'yeni' });
-      _setSekmeler(sekmeler);
-    }
-
-    _renderForm();
-  } catch (e) { console.error('[urunler] openUrunForm hata:', e); }
+  var mevcut = document.getElementById('urun-form-modal');
+  if (mevcut) mevcut.remove();
+  const u = editId ? (_loadU().find(x => String(x.id) === String(editId)) || {}) : {};
+  const isYeni = !editId;
+  const cariList = _loadCari();
+  const cariOpts = cariList.filter(c => !c.isDeleted).map(c => '<option value="' + _esc(c.ad || c.firmaAdi || '') + '"' + (u.tedarikci === (c.ad || c.firmaAdi) ? ' selected' : '') + '>' + _esc(c.ad || c.firmaAdi || '') + '</option>').join('');
+  const katList = window._ufKatYukle ? window._ufKatYukle() : ['Mobilya', 'Tekstil', 'Elektronik', 'Kimyasal', 'Gıda', 'Metal', 'Makine', 'Plastik', 'İnşaat', 'Otomotiv', 'Tarım', 'Diğer'];
+  const katOpts = katList.map(k => '<option value="' + _esc(k) + '"' + (u.kategori === k ? ' selected' : '') + '>' + k + '</option>').join('');
+  const birimler = ['Adet', 'Paket', 'Koli', 'Kasa', 'Set', 'Kg', 'Ton', 'm²', 'm³', 'Lt', 'ml'];
+  const birimOpts = birimler.map(b => '<option' + (u.birim === b ? ' selected' : '') + '>' + b + '</option>').join('');
+  const duayKoduOto = isYeni ? ('DUAY-' + (Date.now().toString().slice(-6))) : (u.duayKodu || '');
+  if (editId) { _aktifSekme = String(editId); }
+  const mo = document.createElement('div');
+  mo.id = 'urun-form-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick = e => { if (e.target === mo) mo.remove(); };
+  const _fi = (id, lbl, val, req, type, ph) => '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">' + lbl + (req ? ' <span style="color:#A32D2D">*</span>' : '') + '</div><input id="uf2-' + id + '" type="' + (type || 'text') + '" value="' + _esc(val || '') + '" placeholder="' + (ph || '') + '" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:700px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
+    + '<div><div style="font-size:14px;font-weight:500;color:var(--t)">' + (isYeni ? 'Yeni Ürün' : 'Ürün Düzenle') + '</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:1px">Etap 1 — Temel Kayıt · Duay Kodu: <span style="font-family:monospace">' + duayKoduOto + '</span></div></div>'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'urun-form-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button></div>'
+    + '<div style="overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + _fi('urunAdi', 'ÜRÜN ADI (TÜRKÇE)', u.urunAdi || '', true, 'text', 'Türkçe ürün adı')
+    + _fi('ingAd', 'ÜRÜN ADI (İNGİLİZCE)', u.ingAd || u.standartAdi || '', true, 'text', 'English product name')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TEDARİKÇİ <span style="color:#A32D2D">*</span></div>'
+    + '<div style="display:flex;gap:4px"><select id="uf2-tedarikci" onclick="event.stopPropagation()" style="flex:1;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Seç...</option>' + cariOpts + '</select>'
+    + '<button onclick="event.stopPropagation();window._uf2YeniTedarikci()" title="Potansiyel tedarikçi ekle" style="padding:0 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t3);font-size:14px">+</button></div></div>'
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">KATEGORİ <span style="color:#A32D2D">*</span></div>'
+    + '<select id="uf2-kategori" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Seç...</option>' + katOpts + '</select></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">ADET TÜRÜ <span style="color:#A32D2D">*</span></div>'
+    + '<select id="uf2-birim" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">' + birimOpts + '</select></div>'
+    + _fi('mensei', 'MENŞEİ ÜLKE', u.mensei || u.menseiUlke || '', true, 'text', 'Örn: Çin, Türkiye')
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">SON TÜKETİM TARİHİ</div>'
+    + '<input id="uf2-sonTuketim" type="date" value="' + (u.sonTuketim || '') + '" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + _fi('saticiKodu', 'SATICI ÜRÜN KODU', u.saticiKodu || '', true, 'text', 'Satıcının kodu')
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">DUAY KODU <span style="font-size:9px;color:#0F6E56">(Otomatik)</span></div>'
+    + '<input id="uf2-duayKodu" value="' + _esc(duayKoduOto) + '" readonly onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace;box-sizing:border-box"></div>'
+    + '</div>'
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TEKNİK AÇIKLAMA <span style="color:#A32D2D">*</span></div>'
+    + '<textarea id="uf2-teknikAciklama" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Ürün teknik özellikleri, önemli detaylar..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:70px;resize:none;font-family:inherit;box-sizing:border-box">' + _esc(u.teknikAciklama || '') + '</textarea></div>'
+    + '<input type="hidden" id="uf2-duayKoduOto" value="' + _esc(duayKoduOto) + '">'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
+    + '<div style="font-size:10px;color:var(--t3)">* Zorunlu alan</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'urun-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
+    + '<button onclick="event.stopPropagation();window._uf2KaydetYeni()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet →</button>'
+    + '</div></div></div>';
+  document.body.appendChild(mo);
+  setTimeout(() => document.getElementById('uf2-urunAdi')?.focus(), 100);
 }
 
 function _renderForm() {
@@ -652,6 +684,39 @@ window._uf2TaslakKaydet = function() {
   if (sk) { sk.baslik = vals.duayAdi || vals.stdAdi || 'Ürün'; sk.durum = 'devam'; sk.duayKodu = vals.duayKod || ''; _setSekmeler(s); }
   if (typeof window.toast === 'function') window.toast('Taslak kaydedildi', 'success');
   _renderForm();
+};
+
+/* ── URUN-FORM-001: Floating modal kaydet ──────────────────── */
+window._uf2KaydetYeni = function() {
+  const g = id => document.getElementById('uf2-' + id)?.value?.trim() || '';
+  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'saticiKodu', 'teknikAciklama'];
+  const eksik = zorunlu.filter(f => !g(f));
+  if (eksik.length) { window.toast?.('Eksik alan: ' + eksik.join(', '), 'warn'); return; }
+  const data = _loadU();
+  const duayKodu = g('duayKoduOto') || ('DUAY-' + Date.now().toString().slice(-6));
+  const dupKod = data.filter(u => !u.isDeleted && u.duayKodu === duayKodu && String(u.id) !== _aktifSekme);
+  if (dupKod.length) { window.toast?.('Kod çakışması, tekrar dene', 'err'); return; }
+  let existing = _aktifSekme ? data.find(x => String(x.id) === _aktifSekme) : null;
+  if (existing) {
+    existing.urunAdi = g('urunAdi'); existing.ingAd = g('ingAd'); existing.standartAdi = g('ingAd');
+    existing.tedarikci = g('tedarikci'); existing.kategori = g('kategori'); existing.birim = g('birim');
+    existing.mensei = g('mensei'); existing.saticiKodu = g('saticiKodu'); existing.teknikAciklama = g('teknikAciklama');
+    existing.sonTuketim = g('sonTuketim'); existing.duayKodu = duayKodu;
+    existing.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  } else {
+    const yeni = {
+      id: _genId(), duayKodu: duayKodu, urunAdi: g('urunAdi'), ingAd: g('ingAd'), standartAdi: g('ingAd'),
+      tedarikci: g('tedarikci'), kategori: g('kategori'), birim: g('birim'), mensei: g('mensei'),
+      saticiKodu: g('saticiKodu'), teknikAciklama: g('teknikAciklama'), sonTuketim: g('sonTuketim') || '',
+      status: 'aktif', createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      createdBy: window.CU?.()?.displayName || '', updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    };
+    data.push(yeni);
+  }
+  _storeU(data);
+  window.toast?.('Ürün kaydedildi: ' + g('urunAdi'), 'ok');
+  document.getElementById('urun-form-modal')?.remove();
+  window.renderUrunler?.();
 };
 
 /* ════════════════════════════════════════════════════════════════
