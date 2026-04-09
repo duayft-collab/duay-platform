@@ -1215,6 +1215,43 @@ window._ppTakvimHatirlatmaKontrol = function() {
   return uyarilar;
 };
 
+window._ppTakvimMigration = function() {
+  if (localStorage.getItem('ak_pp_takvim_migration_v1')) return;
+  var calEvents = typeof window.loadCal === 'function' ? window.loadCal() : [];
+  if (!calEvents || !calEvents.length) return;
+  var ppMevcut = _ppTakvimLoad();
+  var mevcutIdler = ppMevcut.map(function(o){ return o.id; });
+  var tipKategori = { meeting:'TOPLANTI', deadline:'SON TARİH', holiday:'TATİL', task:'GÖREV', personal:'KİŞİSEL' };
+  var eklenen = 0;
+  calEvents.forEach(function(e) {
+    var yeniId = 'CAL-' + e.id;
+    if (mevcutIdler.indexOf(yeniId) !== -1) return;
+    ppMevcut.push({
+      id: yeniId,
+      baslik: e.title || e.desc || '—',
+      kategori: tipKategori[e.type] || 'DİĞER',
+      periyot: 'Tek Seferlik',
+      periyotDetay: (e.date || '') + (e.time ? ' ' + e.time : ''),
+      sorumluUnvan: '',
+      oncelik: e.type === 'deadline' ? 'Yüksek' : 'Normal',
+      hatirlatmaGun: 1,
+      durum: 'active',
+      createdAt: e.updatedAt || _ppNow(),
+      sonrakiCalisma: e.date || null,
+      aciklama: e.desc || '',
+      isDeleted: false,
+      kaynak: 'eski-takvim'
+    });
+    eklenen++;
+  });
+  if (eklenen > 0) {
+    _ppTakvimStore(ppMevcut);
+    localStorage.setItem('ak_pp_takvim_migration_v1', '1');
+    console.log('[PP-TAKVIM] Migration: ' + eklenen + ' etkinlik aktarıldı');
+    window.toast && window.toast('Eski takvimden ' + eklenen + ' etkinlik aktarıldı', 'ok');
+  }
+};
+
 window._ppTakvimBaslat = function() {
   var mevcut = _ppTakvimLoad();
   var guncellendi = false;
@@ -1260,15 +1297,18 @@ window._ppTakvimBaslat = function() {
 window._ppTakvimLoad = _ppTakvimLoad;
 window._ppTakvimStore = _ppTakvimStore;
 window.PusulaProTakvimLoaded = true;
-setTimeout(function(){ window._ppTakvimBaslat?.(); }, 800);
+setTimeout(function(){
+  window._ppTakvimMigration?.();
+  window._ppTakvimBaslat?.();
+}, 800);
 
 /* ── PP-013B: Takvim Panel UI ───────────────────────────────── */
 window._ppTakvimPanelRender = function(body) {
   if (!body) return;
   var olaylar = _ppTakvimLoad().filter(function(o) { return !o.isDeleted; });
   var bugun = _ppToday();
-  var katRenk = { MUHASEBE:'#185FA5', 'İK':'#1D9E75', 'VERGİ':'#A32D2D', 'SİGORTA':'#854F0B', 'YÖNETİM':'#534AB7', 'HUKUKİ':'#888780', 'LOJİSTİK':'#0F6E56', 'OPERASYON':'#854F0B' };
-  var katBg = { MUHASEBE:'#E6F1FB', 'İK':'#E1F5EE', 'VERGİ':'#FCEBEB', 'SİGORTA':'#FAEEDA', 'YÖNETİM':'#EEEDFE', 'HUKUKİ':'#F1EFE8', 'LOJİSTİK':'#E1F5EE', 'OPERASYON':'#FAEEDA' };
+  var katRenk = { MUHASEBE:'#185FA5', 'İK':'#1D9E75', 'VERGİ':'#A32D2D', 'SİGORTA':'#854F0B', 'YÖNETİM':'#534AB7', 'HUKUKİ':'#888780', 'LOJİSTİK':'#0F6E56', 'OPERASYON':'#854F0B', 'TOPLANTI':'#534AB7', 'SON TARİH':'#A32D2D', 'TATİL':'#1D9E75', 'GÖREV':'#185FA5', 'KİŞİSEL':'#888780', 'DİĞER':'#888780' };
+  var katBg = { MUHASEBE:'#E6F1FB', 'İK':'#E1F5EE', 'VERGİ':'#FCEBEB', 'SİGORTA':'#FAEEDA', 'YÖNETİM':'#EEEDFE', 'HUKUKİ':'#F1EFE8', 'LOJİSTİK':'#E1F5EE', 'OPERASYON':'#FAEEDA', 'TOPLANTI':'#EEEDFE', 'SON TARİH':'#FCEBEB', 'TATİL':'#E1F5EE', 'GÖREV':'#E6F1FB', 'KİŞİSEL':'#F1EFE8', 'DİĞER':'#F1EFE8' };
   var filtre = '';
   try { var fEl = document.getElementById('pp-tak-filtre'); if (fEl) filtre = fEl.value; } catch(e) {}
   var liste = filtre ? olaylar.filter(function(o) { return o.kategori === filtre; }) : olaylar;
@@ -1285,7 +1325,7 @@ window._ppTakvimPanelRender = function(body) {
   h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:transparent;font-family:inherit">JSON Import<input type="file" accept=".json" style="display:none" onchange="event.stopPropagation();window._ppTakvimJSONImport(this)"></label>';
   h += '<select id="pp-tak-filtre" onchange="event.stopPropagation();window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t);font-family:inherit">';
   h += '<option value="">Tüm Kategoriler</option>';
-  ['MUHASEBE','İK','VERGİ','SİGORTA','YÖNETİM','HUKUKİ','LOJİSTİK','OPERASYON'].forEach(function(k) { h += '<option value="' + k + '"' + (filtre === k ? ' selected' : '') + '>' + k + '</option>'; });
+  ['MUHASEBE','İK','VERGİ','SİGORTA','YÖNETİM','HUKUKİ','LOJİSTİK','OPERASYON','TOPLANTI','SON TARİH','TATİL','GÖREV','KİŞİSEL','DİĞER'].forEach(function(k) { h += '<option value="' + k + '"' + (filtre === k ? ' selected' : '') + '>' + k + '</option>'; });
   h += '</select>';
   h += '<span style="font-size:11px;color:var(--t3);margin-left:auto">' + liste.length + ' etkinlik</span>';
   h += '</div>';
