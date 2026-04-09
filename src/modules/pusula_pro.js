@@ -478,7 +478,8 @@ window._ppTamamla = function(id) {
 
 window._ppYeniGorev = function() {
   var mevcut = document.getElementById('pp-gorev-modal'); if(mevcut){mevcut.remove();return;}
-  var ekip = ['Baran A.','Ayşe Y.','Mehmet K.','Zeynep K.'];
+  var ekip = (typeof window.loadUsers === 'function' ? window.loadUsers() : []).filter(function(u) { return !u.isDeleted; }).map(function(u) { return { val: u.uid || u.id, lbl: u.displayName || u.ad || u.name || u.email || '?' }; });
+  if (!ekip.length) ekip = [{ val: '', lbl: 'Baran A.' }, { val: '', lbl: 'Ayşe Y.' }, { val: '', lbl: 'Mehmet K.' }];
   var kpiler = ['—','KPI-01 Satış Hedefi','KPI-02 Nakit Akışı','KPI-03 Satınalma','KPI-07 SGK/Ödemeler'];
   var jobOpts = '<option value="">— Seç —</option>';
   try {
