@@ -42,7 +42,7 @@ window._saV2YeniTeklif = function() {
     + '</div>'
     + '<div id="sav2f-katalog-bilgi" style="font-size:9px;color:var(--t3);margin-top:3px"></div>'
     + '</div>'
-    + _f('urunAdi', 'İNG. ÜRÜN ADI (CI/PL/BL)', 'Standart İngilizce ad')
+    + _f('urunAdi', 'ÜRÜN ADI (İngilizce)', 'Standart İngilizce ad')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + _f('turkceAdi', 'TÜRKÇE ÜRÜN ADI', 'Türkçe ad')
@@ -56,13 +56,28 @@ window._saV2YeniTeklif = function() {
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + _f('tedarikci', 'TEDARİKÇİ', 'Tedarikçi adı')
-    + _f('alisF', 'ALİŞ FİYATI', '2.40')
+    + _f('alisF', 'BİRİM ALIŞ FİYATI', '2.40')
     + _s('para', 'PARA BİRİMİ', '<option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option>')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + _f('miktar', 'MİKTAR', '200')
     + _f('jobId', 'JOB ID', '0041')
-    + _f('teslimat', 'TESLİM SÜRESİ (gün)', '14', 'number')
+    + _f('teslimat', 'TAHMİNİ TESLİM SÜRESİ (Gün)', '14', 'number')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    + _f('teslimYeri','TESLİM YERİ','Örn: İstanbul Depo, FOB Shanghai, CIF Mersin')
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TESLİMAT MASRAFI <span style="color:#A32D2D">*</span></div>'
+    + '<select id="sav2f-teslimMasraf" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
+    + '<option value="">Seç...</option>'
+    + '<option value="Alıcı">Alıcı Öder</option>'
+    + '<option value="Satıcı">Satıcı Öder</option>'
+    + '<option value="Paylaşımlı">Paylaşımlı</option>'
+    + '<option value="EXW">EXW — Fabrikadan Teslim</option>'
+    + '<option value="FOB">FOB — Gemiye Yüklenmiş</option>'
+    + '<option value="CIF">CIF — Sigorta ve Navlun Dahil</option>'
+    + '<option value="DDP">DDP — Gümrük Dahil Teslim</option>'
+    + '<option value="DAP">DAP — Varış Yerinde Teslim</option>'
+    + '</select></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + _f('netAg', 'NET AĞIRLIK (kg)', '', 'number')
@@ -199,6 +214,8 @@ window._saV2FormKaydet = function() {
     teslimat: _v('teslimat'),
     netAgirlik: _v('netAg'),
     brutAgirlik: _v('brutAg'),
+    teslimYeri: _v('teslimYeri'),
+    teslimMasraf: document.getElementById('sav2f-teslimMasraf')?.value || '',
     gorsel: window._saV2FormGorselData || '',
     durum: 'bekleyen',
     karMarji: 33,
