@@ -421,7 +421,11 @@ function openUrunForm(editId) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">ADET TÜRÜ <span style="color:#A32D2D">*</span></div>'
     + '<select id="uf2-birim" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">' + birimOpts + '</select></div>'
-    + _fi('mensei', 'MENŞEİ ÜLKE', u.mensei || u.menseiUlke || '', true, 'text', 'Örn: Çin, Türkiye')
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">MENŞEİ ÜLKE <span style="color:#A32D2D">*</span></div>'
+    + '<select id="uf2-mensei" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
+    + '<option value="">Seç...</option>'
+    + (window.MENSEI||['Türkiye','Çin','Hindistan','Almanya','ABD','Diğer']).map(m=>'<option value="'+m+'"'+(u.mensei===m?' selected':'')+'>'+m+'</option>').join('')
+    + '</select></div>'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">SON TÜKETİM TARİHİ</div>'
     +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'','number',false)+'</div>'
     + '</div>'
@@ -464,7 +468,9 @@ function openUrunForm(editId) {
     + '</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
-    + '<div style="font-size:10px;color:var(--t3)">* Zorunlu alan</div>'
+    + '<div style="font-size:9px;color:var(--t3);margin-right:auto">'
+    + (editId&&u.createdBy?'Kaydeden: '+_esc(u.createdBy)+' · '+_esc(u.createdAt||''):'Yeni kayıt — '+(_cu()?.displayName||''))
+    + '</div>'
     + '<div style="display:flex;gap:8px">'
     + '<button onclick="event.stopPropagation();document.getElementById(\'urun-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
     + '<button onclick="event.stopPropagation();window._uf2KaydetYeni()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet →</button>'
@@ -766,7 +772,8 @@ window._uf2KaydetYeni = function() {
     existing.eskiKod = g('eskiKod');
     existing.saticiNotGizli = document.getElementById('uf2-saticiNotGizli')?.checked||false;
     existing.tuketimSuresi = g('tuketimSuresi');
-    existing.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    existing.updatedAt = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
+    existing.updatedBy = window.CU?.()?.displayName||'';
   } else {
     const yeni = {
       id: _genId(), duayKodu: duayKodu, urunAdi: g('urunAdi'), ingAd: g('ingAd'), standartAdi: g('ingAd'),
@@ -774,8 +781,12 @@ window._uf2KaydetYeni = function() {
       saticiKodu: g('saticiKodu'), teknikAciklama: g('teknikAciklama'), sonTuketim: g('sonTuketim') || '',
       gorsel: document.getElementById('uf2-gorselBase64')?.value || '',
       eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
-      status: 'aktif', createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      createdBy: window.CU?.()?.displayName || '', updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      status: 'aktif',
+      createdAt: new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}),
+      createdById: window.CU?.()?.uid||window.CU?.()?.id||'',
+      createdBy: window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor',
+      updatedAt: new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}),
+      updatedBy: window.CU?.()?.displayName||''
     };
     data.push(yeni);
   }
