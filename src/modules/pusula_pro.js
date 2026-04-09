@@ -1986,3 +1986,80 @@ window._ppZamanPanelHTML = function(gorev) {
   h += '</div>';
   return h;
 };
+
+/* ── PP-ONAY-001: Görev Onay Akışı ─────────────────────────── */
+window._ppOnayGonder = function(gorevId) {
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  if (!t) return;
+  t.onayDurum = 'bekliyor';
+  t.onayTalep = _ppNow();
+  t.onayTalepEden = (_ppCu() || {}).displayName || (_ppCu() || {}).email || '';
+  t.durum = 'bekliyor';
+  t.updatedAt = t.onayTalep;
+  window._ppStore?.(tasks);
+  window.toast?.('Onay talebi gönderildi', 'ok');
+  if (typeof window.addNotif === 'function') {
+    var admins = (typeof window.loadUsers === 'function' ? window.loadUsers() : []).filter(function(u) { return u.rol === 'admin' || u.rol === 'manager' || u.role === 'admin' || u.role === 'manager'; });
+    admins.forEach(function(a) { window.addNotif('✅', 'Görev onay bekliyor: ' + _ppEsc(t.baslik || ''), 'warn', 'pusula', a.uid || a.id, gorevId); });
+  }
+  window._ppModRender?.();
+};
+
+window._ppOnayKabul = function(gorevId, aciklama) {
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  if (!t) return;
+  t.onayDurum = 'onaylandi';
+  t.onayTarih = _ppNow();
+  t.onayYapan = (_ppCu() || {}).displayName || (_ppCu() || {}).email || '';
+  t.onayAciklama = aciklama || '';
+  t.durum = 'tamamlandi';
+  t.updatedAt = t.onayTarih;
+  window._ppStore?.(tasks);
+  window.toast?.('Görev onaylandı', 'ok');
+  window._ppModRender?.();
+};
+
+window._ppOnayReddet = function(gorevId, aciklama) {
+  var tasks = window._ppLoad?.() || [];
+  var t = tasks.find(function(x) { return x.id === gorevId; });
+  if (!t) return;
+  t.onayDurum = 'reddedildi';
+  t.onayTarih = _ppNow();
+  t.onayYapan = (_ppCu() || {}).displayName || (_ppCu() || {}).email || '';
+  t.onayAciklama = aciklama || '';
+  t.durum = 'devam';
+  t.updatedAt = t.onayTarih;
+  window._ppStore?.(tasks);
+  window.toast?.('Görev reddedildi: ' + _ppEsc(aciklama || ''), 'warn');
+  window._ppModRender?.();
+};
+
+window._ppOnayPanelHTML = function(gorev) {
+  if (!gorev) return '';
+  var h = '<div style="background:var(--s2);border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px">';
+  h += '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:6px">ONAY AKIŞI</div>';
+  var renk = { bekliyor: '#854F0B', onaylandi: '#0F6E56', reddedildi: '#A32D2D' };
+  var lbl = { bekliyor: 'Onay Bekleniyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
+  if (gorev.onayDurum) {
+    h += '<div style="font-size:10px;font-weight:500;color:' + (renk[gorev.onayDurum] || 'var(--t2)') + '">' + (lbl[gorev.onayDurum] || gorev.onayDurum) + '</div>';
+    if (gorev.onayTalepEden) h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Talep eden: ' + _ppEsc(gorev.onayTalepEden) + '</div>';
+    if (gorev.onayYapan) h += '<div style="font-size:9px;color:var(--t3)">İşlem yapan: ' + _ppEsc(gorev.onayYapan) + '</div>';
+    if (gorev.onayAciklama) h += '<div style="font-size:9px;color:var(--t3)">Not: ' + _ppEsc(gorev.onayAciklama) + '</div>';
+    if (gorev.onayDurum === 'bekliyor') {
+      h += '<div style="display:flex;gap:6px;margin-top:8px">';
+      h += '<button onclick="event.stopPropagation();window._ppOnayKabul(\'' + gorev.id + '\',\'\')" style="font-size:10px;padding:4px 10px;border:0.5px solid #0F6E56;border-radius:5px;background:transparent;cursor:pointer;color:#0F6E56;font-family:inherit">Onayla</button>';
+      h += '<button onclick="event.stopPropagation();var a=prompt(\'Red nedeni:\');if(a!==null)window._ppOnayReddet(\'' + gorev.id + '\',a)" style="font-size:10px;padding:4px 10px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Reddet</button>';
+      h += '</div>';
+    }
+  } else {
+    if (gorev.durum === 'devam' || gorev.durum === 'bekliyor') {
+      h += '<button onclick="event.stopPropagation();window._ppOnayGonder(\'' + gorev.id + '\')" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Onaya Gönder</button>';
+    } else {
+      h += '<div style="font-size:10px;color:var(--t3)">Onay akışı başlatılmadı</div>';
+    }
+  }
+  h += '</div>';
+  return h;
+};
