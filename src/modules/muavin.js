@@ -90,43 +90,6 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
   });
   h += '</div>';
 
-  /* Dosya durumu */
-  var mMeta = (meta[donem] || {}).muhasebeci || {};
-  var bMeta = (meta[donem] || {}).baran || {};
-  h += '<div style="padding:10px 12px;border-bottom:0.5px solid var(--b)">';
-  h += '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Dosyalar</div>';
-
-  /* Muhasebeci dosyası */
-  h += '<div style="margin-bottom:8px">';
-  h += '<div style="font-size:9px;color:var(--t2);margin-bottom:3px;font-weight:500">Muhasebeci</div>';
-  if (mMeta.ad) {
-    h += '<div style="background:#EAF3DE;border-radius:5px;padding:5px 8px">';
-    h += '<div style="font-size:10px;font-weight:500;color:#27500A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + window._esc(mMeta.ad) + '</div>';
-    h += '<div style="font-size:9px;color:#3B6D11;margin-top:1px">' + (mMeta.satir || 0) + ' işlem · ' + (mMeta.tarih || '') + '</div>';
-    h += '<div style="font-size:9px;color:#3B6D11">' + (mMeta.boyut || '') + '</div>';
-    h += '<button onclick="event.stopPropagation();window._mvDosyaKaldir(\'muhasebeci\')" style="font-size:9px;padding:2px 6px;border:0.5px solid #3B6D11;border-radius:3px;background:transparent;cursor:pointer;color:#3B6D11;font-family:inherit;margin-top:3px">Kaldır</button>';
-    h += '</div>';
-  } else {
-    h += '<label style="display:block;font-size:10px;padding:5px 8px;border:0.5px dashed var(--b);border-radius:5px;cursor:pointer;color:var(--t3);text-align:center">+ Yükle<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku(this,\'muhasebeci\')" style="display:none"></label>';
-  }
-  h += '</div>';
-
-  /* Baran dosyası */
-  h += '<div>';
-  h += '<div style="font-size:9px;color:var(--t2);margin-bottom:3px;font-weight:500">Baran (Hesap Ekstresi)</div>';
-  if (bMeta.ad) {
-    h += '<div style="background:#E6F1FB;border-radius:5px;padding:5px 8px">';
-    h += '<div style="font-size:10px;font-weight:500;color:#0C447C;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + window._esc(bMeta.ad) + '</div>';
-    h += '<div style="font-size:9px;color:#185FA5;margin-top:1px">' + (bMeta.satir || 0) + ' işlem · ' + (bMeta.tarih || '') + '</div>';
-    h += '<div style="font-size:9px;color:#185FA5">' + (bMeta.boyut || '') + '</div>';
-    h += '<button onclick="event.stopPropagation();window._mvDosyaKaldir(\'baran\')" style="font-size:9px;padding:2px 6px;border:0.5px solid #185FA5;border-radius:3px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit;margin-top:3px">Kaldır</button>';
-    h += '</div>';
-  } else {
-    h += '<label style="display:block;font-size:10px;padding:5px 8px;border:0.5px dashed var(--b);border-radius:5px;cursor:pointer;color:var(--t3);text-align:center">+ Yükle<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku(this,\'baran\')" style="display:none"></label>';
-  }
-  h += '</div>';
-  h += '</div>';
-
   /* Sekme listesi */
   var sekmeler = [
     { id: 'karsilastirma', lbl: 'Karşılaştırma', badge: (kpi.farkVar + kpi.sadeceMuhasebe + kpi.sadeceBaran) || null, badgeRenk: 'warn' },
@@ -159,6 +122,58 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
     }
   }
   h += '</div>';
+  h += '</div>';
+  return h;
+}
+
+/* ── ÜST DOSYA YÜKLEME BARI ── */
+function _mvUstDosyaBarHTML(meta, donem) {
+  var mMeta = (meta[donem] || {}).muhasebeci || {};
+  var bMeta = (meta[donem] || {}).baran || {};
+  var h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b);border-bottom:0.5px solid var(--b)">';
+
+  /* Muhasebeci */
+  h += '<div style="background:var(--sf);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">';
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  if (mMeta.ad) {
+    h += '<div style="width:8px;height:8px;border-radius:50%;background:#27500A;flex-shrink:0"></div>';
+    h += '<div>';
+    h += '<div style="font-size:11px;font-weight:500;color:#27500A">' + window._esc(mMeta.ad) + '</div>';
+    h += '<div style="font-size:10px;color:#3B6D11;margin-top:1px">' + (mMeta.satir||0) + ' işlem · ' + (mMeta.boyut||'') + ' · ' + (mMeta.tarih||'') + '</div>';
+    h += '</div>';
+  } else {
+    h += '<div style="width:8px;height:8px;border-radius:50%;background:var(--b);flex-shrink:0"></div>';
+    h += '<div style="font-size:11px;color:var(--t3)">Muhasebeci Excel yüklenmedi</div>';
+  }
+  h += '</div>';
+  if (mMeta.ad) {
+    h += '<button onclick="event.stopPropagation();window._mvDosyaKaldir(\'muhasebeci\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #3B6D11;border-radius:4px;background:transparent;cursor:pointer;color:#3B6D11;font-family:inherit;flex-shrink:0">Kaldır</button>';
+  } else {
+    h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Muhasebeci Yükle<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku(this,\'muhasebeci\')" style="display:none"></label>';
+  }
+  h += '</div>';
+
+  /* Baran */
+  h += '<div style="background:var(--sf);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-left:0.5px solid var(--b)">';
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  if (bMeta.ad) {
+    h += '<div style="width:8px;height:8px;border-radius:50%;background:#0C447C;flex-shrink:0"></div>';
+    h += '<div>';
+    h += '<div style="font-size:11px;font-weight:500;color:#0C447C">' + window._esc(bMeta.ad) + '</div>';
+    h += '<div style="font-size:10px;color:#185FA5;margin-top:1px">' + (bMeta.satir||0) + ' işlem · ' + (bMeta.boyut||'') + ' · ' + (bMeta.tarih||'') + '</div>';
+    h += '</div>';
+  } else {
+    h += '<div style="width:8px;height:8px;border-radius:50%;background:var(--b);flex-shrink:0"></div>';
+    h += '<div style="font-size:11px;color:var(--t3)">Baran Ekstresi yüklenmedi</div>';
+  }
+  h += '</div>';
+  if (bMeta.ad) {
+    h += '<button onclick="event.stopPropagation();window._mvDosyaKaldir(\'baran\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit;flex-shrink:0">Kaldır</button>';
+  } else {
+    h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Baran Yükle<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku(this,\'baran\')" style="display:none"></label>';
+  }
+  h += '</div>';
+
   h += '</div>';
   return h;
 }
@@ -320,6 +335,7 @@ window.renderMuavin = function() {
   sagIcerik += '</div>';
 
   /* KPI şeridi — her sekmede göster */
+  sagIcerik += _mvUstDosyaBarHTML(meta, donem);
   sagIcerik += _mvKpiSeritHTML(kpi);
 
   /* Sekme içeriği */
@@ -345,6 +361,15 @@ window.renderMuavin = function() {
 };
 
 /* ── Dosya kaldır ── */
+window._mvYuklemeBaslat = function(taraf) {
+  var meta = _mvMetaLoad();
+  var donem = _mvAktifDonem();
+  if (!meta[donem]) meta[donem] = {};
+  meta[donem][taraf] = { ad: 'Yükleniyor...', satir: 0, tarih: '', boyut: '' };
+  _mvMetaStore(meta);
+  window.renderMuavin && window.renderMuavin();
+};
+
 window._mvDosyaKaldir = function(taraf) {
   var donem = _mvAktifDonem();
   window.confirmModal('Dosyayı kaldır', '"' + taraf + '" dosyası kaldırılacak. Eşleştirme sonuçları da sıfırlanacak.', function() {

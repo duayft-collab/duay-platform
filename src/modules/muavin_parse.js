@@ -141,6 +141,8 @@ window._mvDosyaOku = function(inp, taraf) {
   var boyutKB = Math.round(f.size/1024);
   var boyutStr = boyutKB>1024?(Math.round(boyutKB/102.4)/10)+' MB':boyutKB+' KB';
 
+  window._mvYuklemeBaslat && window._mvYuklemeBaslat(taraf);
+
   function _isle(tsv) {
     var islemler = taraf==='baran' ? _mvParseBaran(tsv) : _mvParseMuhasebeci(tsv);
     if (!islemler.length) { window.toast&&window.toast('Geçerli işlem bulunamadı — format uyumsuz olabilir','warn'); return; }
