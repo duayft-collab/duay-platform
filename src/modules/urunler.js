@@ -630,6 +630,17 @@ window._uf2TaslakKaydet = function() {
     const key = el.id.replace('uf2-','').replace(/-([a-z])/g, (_,c) => c.toUpperCase());
     vals[key] = el.type === 'checkbox' ? el.checked : el.value;
   });
+  /* URUN-DUP-001: Duplicate tespiti */
+  const yeniAd = (vals.duayAdi || vals.orijinalAdi || vals.urunAdi || '').trim().toLowerCase();
+  const yeniKod = (vals.duayKodu || vals.duayKod || '').trim().toLowerCase();
+  if (yeniAd) {
+    const dupAd = data.filter(u => !u.isDeleted && String(u.id) !== _aktifSekme && (u.urunAdi || u.orijinalAdi || u.duayAdi || '').trim().toLowerCase() === yeniAd);
+    if (dupAd.length) { window.toast?.('Uyarı: "' + (vals.duayAdi || vals.urunAdi) + '" adında ' + dupAd.length + ' ürün zaten var!', 'warn'); }
+  }
+  if (yeniKod) {
+    const dupKod = data.filter(u => !u.isDeleted && String(u.id) !== _aktifSekme && (u.duayKodu || '').trim().toLowerCase() === yeniKod);
+    if (dupKod.length) { window.toast?.('Uyarı: "' + (vals.duayKodu || vals.duayKod) + '" kodu zaten kullanılıyor!', 'warn'); return; }
+  }
   let existing = data.find(x => String(x.id) === _aktifSekme);
   if (existing) { Object.assign(existing, vals, { updatedAt: new Date().toISOString() });
   } else {
