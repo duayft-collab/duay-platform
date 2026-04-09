@@ -394,7 +394,7 @@ function openUrunForm(editId) {
   const katOpts = katList.map(k => '<option value="' + _esc(k) + '"' + (u.kategori === k ? ' selected' : '') + '>' + k + '</option>').join('');
   const birimler = ['Adet', 'Paket', 'Koli', 'Kasa', 'Set', 'Kg', 'Ton', 'm²', 'm³', 'Lt', 'ml'];
   const birimOpts = birimler.map(b => '<option' + (u.birim === b ? ' selected' : '') + '>' + b + '</option>').join('');
-  const duayKoduOto = isYeni ? ('DUAY-' + (Date.now().toString().slice(-6))) : (u.duayKodu || '');
+  const duayKoduOto = isYeni ? ('11.' + (Date.now().toString().slice(-6))) : (u.duayKodu || '');
   if (editId) { _aktifSekme = String(editId); }
   const mo = document.createElement('div');
   mo.id = 'urun-form-modal';
@@ -423,7 +423,7 @@ function openUrunForm(editId) {
     + '<select id="uf2-birim" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">' + birimOpts + '</select></div>'
     + _fi('mensei', 'MENŞEİ ÜLKE', u.mensei || u.menseiUlke || '', true, 'text', 'Örn: Çin, Türkiye')
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">SON TÜKETİM TARİHİ</div>'
-    + '<input id="uf2-sonTuketim" type="date" value="' + (u.sonTuketim || '') + '" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+    +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'','number',false)+'</div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + _fi('saticiKodu', 'SATICI ÜRÜN KODU', u.saticiKodu || '', true, 'text', 'Satıcının kodu')
@@ -532,6 +532,7 @@ function _renderForm() {
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
       +_fi('duayKodu','DUAY KODU',u.duayKodu||'','text',false)
       +_fi('saticiKodu','SATICI KODU',u.saticiKodu||'','text',false)
+      +_fi('eskiKod','ESKİ ÜRÜN KODU',u.eskiKod||'','text',false)
       +'<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">MENŞEİ <span style="color:#A32D2D">*</span></div>'
       +'<select id="uf2-mensei" onchange="event.stopPropagation()" style="width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Seç...</option>'
       +(window.MENSEI||['Türkiye','Çin','Hindistan','Almanya','ABD','Diğer']).map(function(m){return '<option value="'+_esc(m)+'"'+(u.mensei===m?' selected':'')+'>'+_esc(m)+'</option>';}).join('')
@@ -542,6 +543,7 @@ function _renderForm() {
       +'</div>'
       +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:10px">AÇIKLAMA</div>'
       +'<textarea id="uf2-teknikAciklama" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Teknik açıklama, not..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);height:80px;resize:none;font-family:inherit;box-sizing:border-box">'+_esc(u.teknikAciklama||u.aciklama||'')+'</textarea>'
+      +'<label style="display:flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer"><input type="checkbox" id="uf2-saticiNotGizli" onclick="event.stopPropagation()"'+(u.saticiNotGizli?' checked':'')+' style="width:13px;height:13px"><span style="font-size:10px;color:var(--t2)">Bu not satıcıya özeldir — müşteri teklifine gitmez</span></label>'
       +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin:14px 0 10px">GÖRSEL</div>'
       +'<label style="display:block;cursor:pointer">'
       +(gorselSrc?'<img src="'+gorselSrc+'" style="max-height:120px;border-radius:6px;border:0.5px solid var(--b)">'
@@ -728,9 +730,9 @@ window._uf2KaydetYeni = function() {
   const g = id => document.getElementById('uf2-' + id)?.value?.trim() || '';
   const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'saticiKodu', 'teknikAciklama'];
   const eksik = zorunlu.filter(f => !g(f));
-  if (eksik.length) { window.toast?.('Eksik alan: ' + eksik.join(', '), 'warn'); return; }
+  if (eksik.length) { window.toast?.('Eksik bilgi — teklif verilemez: ' + eksik.join(', '), 'warn'); return; }
   const data = _loadU();
-  const duayKodu = g('duayKoduOto') || ('DUAY-' + Date.now().toString().slice(-6));
+  const duayKodu = g('duayKoduOto') || ('11.' + Date.now().toString().slice(-6));
   const dupKod = data.filter(u => !u.isDeleted && u.duayKodu === duayKodu && String(u.id) !== _aktifSekme);
   if (dupKod.length) { window.toast?.('Kod çakışması, tekrar dene', 'err'); return; }
   let existing = _aktifSekme ? data.find(x => String(x.id) === _aktifSekme) : null;
@@ -739,12 +741,16 @@ window._uf2KaydetYeni = function() {
     existing.tedarikci = g('tedarikci'); existing.kategori = g('kategori'); existing.birim = g('birim');
     existing.mensei = g('mensei'); existing.saticiKodu = g('saticiKodu'); existing.teknikAciklama = g('teknikAciklama');
     existing.sonTuketim = g('sonTuketim'); existing.duayKodu = duayKodu;
+    existing.eskiKod = g('eskiKod');
+    existing.saticiNotGizli = document.getElementById('uf2-saticiNotGizli')?.checked||false;
+    existing.tuketimSuresi = g('tuketimSuresi');
     existing.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
   } else {
     const yeni = {
       id: _genId(), duayKodu: duayKodu, urunAdi: g('urunAdi'), ingAd: g('ingAd'), standartAdi: g('ingAd'),
       tedarikci: g('tedarikci'), kategori: g('kategori'), birim: g('birim'), mensei: g('mensei'),
       saticiKodu: g('saticiKodu'), teknikAciklama: g('teknikAciklama'), sonTuketim: g('sonTuketim') || '',
+      eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
       status: 'aktif', createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       createdBy: window.CU?.()?.displayName || '', updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
