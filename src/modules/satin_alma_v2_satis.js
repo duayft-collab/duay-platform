@@ -202,6 +202,10 @@ window._saV2TakipGorevOlustur = function(teklif) {
     var tasks = window._ppLoad();
     tasks.unshift(gorev);
     window._ppStore(tasks);
+    /* Teklif objesine takip tarihi yaz */
+    var teklifler = window._saTeklifLoad?.() || [];
+    var tk = teklifler.find(function(x){return x.teklifId===(teklif.teklifId||'');});
+    if(tk){ tk.takipTarih = takipStr; window._saTeklifStore?.(teklifler); }
     console.log('[SA-V2] Takip görevi oluşturuldu:', gorev.baslik);
   } catch(e) { console.error('[SA-V2] Takip görevi hatası:', e); }
 };
