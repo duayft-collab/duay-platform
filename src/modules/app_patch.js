@@ -52,7 +52,7 @@ window._yetkiKontrol = function(islem) {
     hesap:   () => { window.renderHesapHistory?.(); },
     notes:   () => { window.renderNotes?.(); },
     'finans': () => { window.renderFinans?.() || window.Finans?.render?.(); },
-    'hesap-ozeti': () => { window.renderHesapOzeti?.(); },
+    'hesap-ozeti': () => { window.renderHesapOzeti?.(); }, 'muavin': () => { window.renderMuavin?.(); },
     'gcb': () => { window.renderGcb?.(); },
     'alarm': () => { window.renderAlarm?.(); },
     'kpi-panel': () => { window.renderKpiPanel?.() || window.KPI?.render?.(); },
