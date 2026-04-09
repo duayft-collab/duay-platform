@@ -101,35 +101,39 @@ window.renderMuavin = function() {
   h += '<div style="font-size:10px;color:var(--t3)">Nakit Akışı ve Tahsilat modülündeki kayıtlar otomatik yüklenir</div>';
   h += '</div></div>';
 
-  /* Sonuç */
-  var sonuclar = _mvLoad().filter(function(s){return s.donem===donem;});
-  if (sonuclar.length) {
-    var son = sonuclar[sonuclar.length-1];
-    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:16px">';
+  /* Sonuç — hesap gruplu */
+  var kayitlar = _mvLoad().filter(function(s){return s.donem===donem;});
+  if(kayitlar.length) {
+    var son = kayitlar[kayitlar.length-1];
+    h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
     h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
-    h += '<div style="font-size:12px;font-weight:500;color:var(--t)">Karşılaştırma Sonucu — '+donem+'</div>';
-    h += '<div style="font-size:10px;color:var(--t3)">'+son.tarih+'</div></div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">';
-    h += '<div style="background:#E1F5EE;border-radius:6px;padding:10px;text-align:center"><div style="font-size:9px;color:#0F6E56">EŞLEŞİYOR</div><div style="font-size:20px;font-weight:500;color:#0F6E56">'+(son.eslesen||0)+'</div></div>';
-    h += '<div style="background:#FCEBEB;border-radius:6px;padding:10px;text-align:center"><div style="font-size:9px;color:#A32D2D">FARK VAR</div><div style="font-size:20px;font-weight:500;color:#A32D2D">'+(son.farkli||0)+'</div></div>';
-    h += '<div style="background:#FAEEDA;border-radius:6px;padding:10px;text-align:center"><div style="font-size:9px;color:#854F0B">EKSİK</div><div style="font-size:20px;font-weight:500;color:#854F0B">'+(son.eksik||0)+'</div></div>';
-    h += '</div>';
-    if (son.satirlar && son.satirlar.length) {
-      h += '<table style="width:100%;border-collapse:collapse">';
-      h += '<thead><tr style="background:var(--s2)"><th style="font-size:9px;padding:6px 8px;text-align:left;border-bottom:0.5px solid var(--b)">HESAP</th><th style="font-size:9px;padding:6px 8px;text-align:left">AÇIKLAMA</th><th style="font-size:9px;padding:6px 8px;text-align:right">EXCEL</th><th style="font-size:9px;padding:6px 8px;text-align:right">SİSTEM</th><th style="font-size:9px;padding:6px 8px;text-align:right">FARK</th><th style="font-size:9px;padding:6px 8px;text-align:center">DURUM</th></tr></thead><tbody>';
-      son.satirlar.forEach(function(s){
-        var farkRenk = s.durum==='eslesir' ? '#0F6E56' : s.durum==='fark' ? '#A32D2D' : '#854F0B';
+    h += '<div style="font-size:12px;font-weight:500;color:var(--t)">'+donem+' — '+(son.hesapSayisi||0)+' hesap · '+(son.islemSayisi||0)+' işlem</div>';
+    h += '<div style="display:flex;gap:6px">';
+    h += '<button onclick="event.stopPropagation();window._mvCSVExport()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">↓ CSV</button>';
+    h += '<div style="font-size:10px;color:var(--t3)">'+son.tarih+'</div></div></div>';
+    Object.keys(son.hesaplar||{}).forEach(function(hAd){
+      var hv = son.hesaplar[hAd];
+      h += '<div style="margin-bottom:12px">';
+      h += '<div style="font-size:11px;font-weight:500;color:var(--t);padding:6px 8px;background:var(--s2);border-radius:5px;margin-bottom:4px;display:flex;justify-content:space-between">';
+      h += '<span>'+hAd+'</span>';
+      h += '<span style="font-size:10px;color:var(--t3)">Borç: '+(hv.borc||0).toLocaleString('tr-TR')+'  Alacak: '+(hv.alacak||0).toLocaleString('tr-TR')+'  Bakiye: '+(hv.topBakiye||hv.bakiye||0).toLocaleString('tr-TR')+'</span>';
+      h += '</div>';
+      h += '<table style="width:100%;border-collapse:collapse;font-size:10px">';
+      h += '<thead><tr style="background:var(--s2)"><th style="padding:4px 6px;text-align:left;border-bottom:0.5px solid var(--b)">Tarih</th><th style="padding:4px 6px;text-align:left">Tip</th><th style="padding:4px 6px;text-align:left">Fiş No</th><th style="padding:4px 6px;text-align:left">Açıklama</th><th style="padding:4px 6px;text-align:right">Borç</th><th style="padding:4px 6px;text-align:right">Alacak</th><th style="padding:4px 6px;text-align:right">Bakiye</th><th style="padding:4px 6px;text-align:center">B/A</th></tr></thead><tbody>';
+      (hv.islemler||[]).forEach(function(i){
         h += '<tr style="border-bottom:0.5px solid var(--b)">';
-        h += '<td style="font-size:10px;padding:6px 8px;font-family:monospace">'+s.hesap+'</td>';
-        h += '<td style="font-size:10px;padding:6px 8px;color:var(--t2)">'+s.aciklama+'</td>';
-        h += '<td style="font-size:10px;padding:6px 8px;text-align:right">'+s.excel+'</td>';
-        h += '<td style="font-size:10px;padding:6px 8px;text-align:right">'+s.sistem+'</td>';
-        h += '<td style="font-size:10px;padding:6px 8px;text-align:right;color:'+farkRenk+';font-weight:500">'+s.fark+'</td>';
-        h += '<td style="font-size:10px;padding:6px 8px;text-align:center"><span style="font-size:9px;padding:2px 6px;border-radius:3px;background:'+(s.durum==='eslesir'?'#E1F5EE':s.durum==='fark'?'#FCEBEB':'#FAEEDA')+';color:'+farkRenk+'">'+s.durum+'</span></td>';
+        h += '<td style="padding:4px 6px;white-space:nowrap">'+i.tarih+'</td>';
+        h += '<td style="padding:4px 6px;color:var(--t3)">'+i.tip+'</td>';
+        h += '<td style="padding:4px 6px;font-family:monospace">'+i.fisNo+'</td>';
+        h += '<td style="padding:4px 6px;color:var(--t2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+i.aciklama+'">'+i.aciklama+'</td>';
+        h += '<td style="padding:4px 6px;text-align:right">'+(i.borc?i.borc.toLocaleString('tr-TR'):'')+'</td>';
+        h += '<td style="padding:4px 6px;text-align:right">'+(i.alacak?i.alacak.toLocaleString('tr-TR'):'')+'</td>';
+        h += '<td style="padding:4px 6px;text-align:right;font-weight:500">'+i.bakiye.toLocaleString('tr-TR')+'</td>';
+        h += '<td style="padding:4px 6px;text-align:center;color:'+(i.ba==='A'?'#0F6E56':'#A32D2D')+'">'+i.ba+'</td>';
         h += '</tr>';
       });
-      h += '</tbody></table>';
-    }
+      h += '</tbody></table></div>';
+    });
     h += '</div>';
   }
   h += '</div>';
@@ -176,29 +180,72 @@ window._mvSistemTutar = function(hesapKodu, donem) {
 window._mvKarsilastir = function() {
   var text = document.getElementById('mv-excel-ham')?.value||'';
   if(!text.trim()){window.toast?.('Excel verisi giriniz','warn');return;}
-  var satirlar = text.split(/\r?\n/).filter(function(s){return s.trim();});
+  var satirlar = text.split(/\r?\n/);
   var donem = window._mvDonem || new Date().getFullYear()+'Q'+Math.ceil((new Date().getMonth()+1)/3);
-  var eslesen=0,farkli=0,eksik=0;
-  var satirSonuc = satirlar.slice(1).map(function(satir){
-    var parcalar = satir.split(/\t|,|;/).map(function(p){return p.trim().replace(/^"|"$/g,'');});
-    var hesap = (parcalar[0]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    var aciklama = (parcalar[1]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    var excelTutar = parseFloat(parcalar[2]||parcalar[3]||'0')||0;
-    var sistemTutar = window._mvSistemTutar ? window._mvSistemTutar(hesap, donem) : 0;
-    var fark = excelTutar - sistemTutar;
-    var durum = Math.abs(fark) < 0.01 ? 'eslesir' : sistemTutar===0 ? 'eksik' : 'fark';
-    if(durum==='eslesir') eslesen++;
-    else if(durum==='fark') farkli++;
-    else eksik++;
-    return {hesap:hesap,aciklama:aciklama,excel:excelTutar.toFixed(2),sistem:sistemTutar.toFixed(2),fark:fark.toFixed(2),durum:durum};
-  }).filter(function(s){return s.hesap;});
-  var kayit = {id:Date.now(),donem:donem,tarih:new Date().toISOString().slice(0,16).replace('T',' '),eslesen:eslesen,farkli:farkli,eksik:eksik,satirlar:satirSonuc};
-  var liste = _mvLoad();
-  liste.push(kayit);
-  if(liste.length>20) liste=liste.slice(-20);
-  _mvStore(liste);
-  window.toast?.('Karşılaştırma tamamlandı: '+eslesen+' eşleşir, '+farkli+' fark, '+eksik+' eksik','ok');
+  var hesaplar = {};
+  var aktifHesap = null;
+  var islemler = [];
+  satirlar.forEach(function(satir){
+    if(!satir.trim()) return;
+    var p = satir.split(/\t/).map(function(x){return x.trim().replace(/^"|"$/g,'').replace(/\./g,'').replace(',','.');});
+    if(p.length < 3) return;
+    var ilk = p[0]||'';
+    var tarihRe = /^\d{2}[.\-\/]\d{2}[.\-\/]\d{4}$/;
+    var hesapRe = /^\d{3}[\.\-]/;
+    if(hesapRe.test(ilk) || (ilk && !tarihRe.test(ilk) && p.length <= 3 && isNaN(parseFloat(p[1])))) {
+      aktifHesap = ilk + (p[1]?' '+p[1]:'');
+      if(!hesaplar[aktifHesap]) hesaplar[aktifHesap] = {ad:aktifHesap, islemler:[], borc:0, alacak:0, bakiye:0};
+      return;
+    }
+    if(tarihRe.test(ilk) && aktifHesap) {
+      var tip = p[1]||'';
+      var fisNo = p[2]||'';
+      var aciklama = (p[3]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var borc = parseFloat(p[4])||0;
+      var alacak = parseFloat(p[5])||0;
+      var bakiye = parseFloat(p[6])||0;
+      var ba = p[7]||'';
+      var islem = {tarih:ilk,tip:tip,fisNo:fisNo,aciklama:aciklama,borc:borc,alacak:alacak,bakiye:bakiye,ba:ba,hesap:aktifHesap};
+      hesaplar[aktifHesap].islemler.push(islem);
+      hesaplar[aktifHesap].borc += borc;
+      hesaplar[aktifHesap].alacak += alacak;
+      hesaplar[aktifHesap].bakiye = bakiye;
+      islemler.push(islem);
+      return;
+    }
+    if((ilk.indexOf('Nakli')!==-1||ilk.indexOf('Genel')!==-1) && aktifHesap) {
+      var topBorc = parseFloat(p[4])||0;
+      var topAlacak = parseFloat(p[5])||0;
+      var topBakiye = parseFloat(p[6])||0;
+      if(ilk.indexOf('Genel')!==-1) {
+        hesaplar[aktifHesap].topBorc = topBorc;
+        hesaplar[aktifHesap].topAlacak = topAlacak;
+        hesaplar[aktifHesap].topBakiye = topBakiye;
+      }
+    }
+  });
+  window._mvSonHesaplar = hesaplar;
+  window._mvSonIslemler = islemler;
+  var hesapSayisi = Object.keys(hesaplar).length;
+  var islemSayisi = islemler.length;
+  var kayit = {id:Date.now(),donem:donem,tarih:new Date().toISOString().slice(0,16).replace('T',' '),hesapSayisi:hesapSayisi,islemSayisi:islemSayisi,hesaplar:hesaplar,islemler:islemler};
+  var liste = _mvLoad(); liste.push(kayit); if(liste.length>10) liste=liste.slice(-10); _mvStore(liste);
+  window.toast?.('Parse tamamlandı: '+hesapSayisi+' hesap, '+islemSayisi+' işlem','ok');
   window.renderMuavin();
+};
+
+window._mvCSVExport = function() {
+  var islemler = window._mvSonIslemler||[];
+  if(!islemler.length){window.toast?.('Önce Excel yükleyin','warn');return;}
+  var satirlar = ['Hesap\tTarih\tTip\tFiş No\tAçıklama\tBorç\tAlacak\tBakiye\tB/A'];
+  islemler.forEach(function(i){
+    satirlar.push([i.hesap,i.tarih,i.tip,i.fisNo,i.aciklama,i.borc,i.alacak,i.bakiye,i.ba].join('\t'));
+  });
+  var blob = new Blob(['\uFEFF'+satirlar.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='muavin_islem_listesi_'+(window._mvDonem||'export')+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  window.toast?.('CSV indirildi: '+islemler.length+' işlem','ok');
 };
 
 console.log('[MUAVİN] v1.0 yüklendi');
