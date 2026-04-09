@@ -1973,6 +1973,9 @@ window.renderSatisTeklifleri = function() {
       + (t.gonderimTarih ? '<div style="font-size:9px;color:var(--t3);margin-top:2px">📤 ' + esc(t.gonderimTarih) + (t.gonderenAd ? ' · ' + esc(t.gonderenAd) : '') + '</div>' : '')
       + (t.takipTarih ? (function() { var gec = new Date(t.takipTarih) < new Date(); return '<div style="font-size:9px;color:' + (gec ? '#A32D2D' : 'var(--t3)') + ';margin-top:1px">📅 Takip: ' + esc(t.takipTarih) + (gec ? ' ⚠ Geçti' : '') + '</div>'; })() : '')
       + '</div>'
+      + '<div style="flex-shrink:0;text-align:right">'
+      + (t.createdAt ? '<div style="font-size:8px;color:var(--t3)">📝 ' + esc((t.createdAt || '').slice(0, 10)) + '</div>' : '')
+      + '</div>'
       // İşlem butonları (pill boyutunda)
       + '<div style="display:flex;gap:3px;flex-shrink:0">'
       + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--s2);color:var(--t3)">PDF</button>'
