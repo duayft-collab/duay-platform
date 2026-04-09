@@ -142,15 +142,20 @@ window.renderMuavin = function() {
     h += '<button onclick="event.stopPropagation();window._mvKarsilastir();window._mvAktifTab=\'islemler\';window.renderMuavin()" style="font-size:10px;padding:5px 16px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Yükle ve Analiz Et →</button>';
     h += '</div></div>';
     h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px">';
-    h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:6px">Sistem Verileri ('+donem+')</div>';
-    var odmler=typeof window.loadOdm==='function'?window.loadOdm():[];
-    var tah=typeof window.loadTahsilat==='function'?window.loadTahsilat():[];
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">';
-    h += '<div style="background:var(--s2);border-radius:5px;padding:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">ÖDEME</div><div style="font-size:18px;font-weight:500;color:var(--t)">'+odmler.length+'</div></div>';
-    h += '<div style="background:var(--s2);border-radius:5px;padding:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">TAHSİLAT</div><div style="font-size:18px;font-weight:500;color:var(--t)">'+tah.length+'</div></div>';
-    h += '<div style="background:var(--s2);border-radius:5px;padding:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">TOPLAM</div><div style="font-size:18px;font-weight:500;color:var(--t)">'+(odmler.length+tah.length)+'</div></div>';
+    h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:6px">Bizim Excel (Şirket Kaydı)</div>';
+    h += '<div style="font-size:10px;color:var(--t3);margin-bottom:8px">Şirketin kendi muavin kaydı — karşılaştırma için yükle</div>';
+    h += window._mvDosya2Ad
+      ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#E1F5EE;border-radius:5px;margin-bottom:8px">'
+        + '<div><div style="font-size:10px;font-weight:500;color:#085041">✓ ' + window._mvDosya2Ad + '</div>'
+        + '<div style="font-size:9px;color:#0F6E56">' + (window._mvDosya2Satir || 0) + ' işlem · ' + (window._mvDosya2Tarih || '') + '</div></div>'
+        + '<button onclick="event.stopPropagation();window._mvHam2=\'\';window._mvDosya2Ad=\'\';window._mvSonIslemler2=[];window._mvDosya2Satir=0;window.renderMuavin()" style="font-size:10px;padding:3px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">Sil</button>'
+        + '</div>'
+      : '<div style="padding:6px 10px;background:var(--s2);border-radius:5px;font-size:10px;color:var(--t3);margin-bottom:8px">📂 Henüz yüklenmedi</div>';
+    h += '<textarea id="mv-excel-ham2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Şirket muavin Excel\'ini yapıştır veya dosya seç..." style="width:100%;height:120px;font-size:11px;font-family:monospace;padding:8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:vertical;box-sizing:border-box"></textarea>';
+    h += '<div style="display:flex;gap:6px;margin-top:8px">';
+    h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2)">📂 Dosya Seç<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku2(this)" style="display:none"></label>';
+    h += '<button onclick="event.stopPropagation();window._mvKarsilastir2()" style="font-size:10px;padding:5px 16px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Karşılaştır →</button>';
     h += '</div>';
-    h += '<div style="font-size:10px;color:var(--t3)">Nakit Akışı ve Tahsilat modülündeki kayıtlar otomatik yüklenir</div>';
     h += '</div></div>';
   }
   else if(aktifTab==='islemler'){
