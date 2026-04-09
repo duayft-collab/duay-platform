@@ -4857,30 +4857,58 @@ window.renderPlatformKurallari = function() {
     {id:'GK-19',kat:'UX',baslik:'Dropdown Hover',aciklama:'Sidebar grup hover davranışı tutarlı çalışmalı.',durum:'aktif'},
     {id:'GK-19-ALL',kat:'Açık',baslik:'Bekleyen Görevler',aciklama:'Oturum dokümanı template hazırlanacak.',durum:'bekliyor'}
   ];
-  var kategoriler = [];
-  kurallar.forEach(function(k){ if(kategoriler.indexOf(k.kat)===-1) kategoriler.push(k.kat); });
+  /* --- localStorage'dan durum override --- */
+  var durumKey = 'ak_platform_kural_durum_v1';
+  var durumlar = JSON.parse(localStorage.getItem(durumKey)||'{}');
+  kurallar.forEach(function(k){ if(durumlar[k.id]) k.durum = durumlar[k.id]; });
+
+  var aktifKatTab = window._pkAktifTab||'genel';
   var h = '<div style="padding:20px;max-width:900px">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
   h += '<div><div style="font-size:16px;font-weight:500;color:var(--t)">Platform Kuralları</div>';
   h += '<div style="font-size:11px;color:var(--t3);margin-top:2px">ANAYASA v4.0 — Duay Platform temel kuralları</div></div>';
-  h += '<div style="font-size:11px;color:var(--t3)">'+kurallar.filter(function(k){return k.durum==='aktif';}).length+' aktif · '+kurallar.filter(function(k){return k.durum==='bekliyor';}).length+' bekliyor</div>';
+  h += '<div style="font-size:11px;color:var(--t3)">'+kurallar.filter(function(k){return k.durum==='aktif';}).length+' aktif · '+kurallar.filter(function(k){return k.durum!=='aktif';}).length+' diğer</div>';
   h += '</div>';
-  kategoriler.forEach(function(kat){
-    var katKurallar = kurallar.filter(function(k){return k.kat===kat;});
-    h += '<div style="margin-bottom:16px">';
-    h += '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">'+kat.toUpperCase()+'</div>';
-    katKurallar.forEach(function(k){
-      var renk = k.durum==='aktif'?'#0F6E56':'#854F0B';
-      var bg = k.durum==='aktif'?'#E1F5EE':'#FAEEDA';
-      h += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)">';
-      h += '<div style="font-size:10px;font-family:monospace;font-weight:500;color:var(--t);min-width:50px">'+k.id+'</div>';
-      h += '<div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:3px">'+k.baslik+'</div>';
-      h += '<div style="font-size:10px;color:var(--t2);line-height:1.5">'+k.aciklama+'</div></div>';
-      h += '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:'+bg+';color:'+renk+';white-space:nowrap">'+k.durum+'</span>';
-      h += '</div>';
-    });
+  /* --- 6 sekme tab bar --- */
+  h += '<div style="display:flex;border-bottom:0.5px solid var(--b);margin-bottom:16px;gap:0">';
+  [{id:'genel',lbl:'Genel'},{id:'ui',lbl:'UI'},{id:'veri',lbl:'Veri'},{id:'guvenlik',lbl:'Güvenlik'},{id:'rbac',lbl:'RBAC'},{id:'acik',lbl:'Açık Görevler'}].forEach(function(t){
+    var ak=aktifKatTab===t.id;
+    h += '<div onclick="event.stopPropagation();window._pkAktifTab=\''+t.id+'\';window.renderPlatformKurallari()" style="padding:8px 16px;font-size:11px;cursor:pointer;border-bottom:'+(ak?'2px solid var(--t)':'2px solid transparent')+';font-weight:'+(ak?'500':'400')+';color:'+(ak?'var(--t)':'var(--t3)')+'">'+t.lbl+'</div>';
+  });
+  h += '</div>';
+  /* --- sekmeye göre filtre --- */
+  var katMap = {genel:['Mimari','Performans','Hata'],ui:['UX','UI'],veri:['Veri'],guvenlik:['Güvenlik'],rbac:['RBAC'],acik:['Açık']};
+  var gosteKatlar = katMap[aktifKatTab]||['Mimari'];
+  var gosterKurallar = kurallar.filter(function(k){return gosteKatlar.indexOf(k.kat)!==-1;});
+  /* --- kural kartları --- */
+  var isAdmin = window.isAdmin?.();
+  if(gosterKurallar.length===0){
+    h += '<div style="text-align:center;padding:40px;color:var(--t3);font-size:12px">Bu kategoride kural yok</div>';
+  }
+  gosterKurallar.forEach(function(k){
+    var renk = k.durum==='aktif'?'#0F6E56': k.durum==='donduruldu'?'#6B7280':'#854F0B';
+    var bg = k.durum==='aktif'?'#E1F5EE': k.durum==='donduruldu'?'#F3F4F6':'#FAEEDA';
+    h += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)">';
+    h += '<div style="font-size:10px;font-family:monospace;font-weight:500;color:var(--t);min-width:50px">'+k.id+'</div>';
+    h += '<div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:3px">'+k.baslik+'</div>';
+    h += '<div style="font-size:10px;color:var(--t2);line-height:1.5">'+k.aciklama+'</div></div>';
+    h += '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:'+bg+';color:'+renk+';white-space:nowrap">'+k.durum+'</span>';
+    if(isAdmin) {
+      h += '<button onclick="event.stopPropagation();window._pkDurumDegistir(\''+k.id+'\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);margin-left:6px">'+(k.durum==='aktif'?'Dondur':'Aktifleştir')+'</button>';
+    }
     h += '</div>';
   });
   h += '</div>';
   panel.innerHTML = h;
+};
+
+/** @description Platform kuralı durum değiştir (admin only) */
+window._pkDurumDegistir = function(kuralId) {
+  if(!window.isAdmin?.()) return;
+  var key = 'ak_platform_kural_durum_v1';
+  var durumlar = JSON.parse(localStorage.getItem(key)||'{}');
+  durumlar[kuralId] = durumlar[kuralId]==='donduruldu'?'aktif':'donduruldu';
+  localStorage.setItem(key, JSON.stringify(durumlar));
+  window.toast?.('Kural durumu güncellendi: '+kuralId,'ok');
+  window.renderPlatformKurallari?.();
 };
