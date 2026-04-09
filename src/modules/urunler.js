@@ -519,7 +519,8 @@ window._uf2PotTedKaydet = function() {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { window.toast?.('Geçerli bir e-posta girin', 'warn'); return; }
   var kayit = {
     id: window.generateId?.() || ('PT' + Date.now()),
-    tip: 'potansiyel',
+    cariType: 'potansiyel',
+    tip: 'tedarikci',
     ad: firma,
     web: g('web'),
     muhatap: muhatap,
