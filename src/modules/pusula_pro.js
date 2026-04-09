@@ -1708,6 +1708,9 @@ window._ppPeekAc = function(id) {
     +'<div style="background:var(--s2);border-radius:6px;padding:8px"><div style="font-size:8px;color:var(--t3);font-weight:500;margin-bottom:3px">BİTİŞ</div><div style="font-size:11px;color:var(--t)">'+(t.bitTarih||'—')+'</div></div>'
     +'</div>'
     +(t.aciklama?'<div style="font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:10px;padding:8px;background:var(--s2);border-radius:6px">'+t.aciklama+'</div>':'')
+    +(typeof window._ppBagimlilikPanelHTML === 'function' ? window._ppBagimlilikPanelHTML(t) : '')
+    +(typeof window._ppZamanPanelHTML === 'function' ? window._ppZamanPanelHTML(t) : '')
+    +(typeof window._ppOnayPanelHTML === 'function' ? window._ppOnayPanelHTML(t) : '')
     +'<div style="display:flex;gap:6px;justify-content:flex-end">'
     +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove();window._ppGorevDuzenle(\''+id+'\')" style="font-size:11px;padding:6px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Düzenle</button>'
     +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove()" style="font-size:11px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Kapat</button>'
