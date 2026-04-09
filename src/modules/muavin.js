@@ -108,6 +108,17 @@ window.renderMuavin = function() {
   h += '<div style="font-size:10px;color:var(--t3)">Nakit Akışı ve Tahsilat modülündeki kayıtlar otomatik yüklenir</div>';
   h += '</div></div>';
 
+  /* İkinci Excel Karşılaştırma */
+  h += '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:16px">';
+  h += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:8px">İkinci Excel Karşılaştırma (Bütçe / Önceki Dönem)</div>';
+  h += '<div style="font-size:10px;color:var(--t3);margin-bottom:8px">Birinci Excel yüklendikten sonra karşılaştırmak istediğiniz ikinci Excel\'i yükleyin</div>';
+  h += '<textarea id="mv-excel-ham2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="İkinci Excel — yapıştır veya dosya seç" style="width:100%;height:80px;font-size:11px;font-family:monospace;padding:8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:vertical;box-sizing:border-box"></textarea>';
+  h += '<div style="display:flex;gap:6px;margin-top:8px">';
+  h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2)">Dosya Seç<input type="file" accept=".xlsx,.csv,.txt" onchange="window._mvDosyaOku2(this)" style="display:none"></label>';
+  h += '<button onclick="event.stopPropagation();window._mvKarsilastir2()" style="font-size:10px;padding:5px 14px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Karşılaştır →</button>';
+  h += '</div></div>';
+  h += '<div id="mv-fark-panel"></div>';
+
   /* Sonuç — hesap gruplu */
   var kayitlar = _mvLoad().filter(function(s){return s.donem===donem;});
   if(kayitlar.length) {
@@ -312,6 +323,124 @@ window._mvAra = function(deger) {
   satirlar.forEach(function(tr){
     tr.style.display = (!f || tr.textContent.toLowerCase().includes(f)) ? '' : 'none';
   });
+};
+
+/* ── MUAVIN-006: İkinci Excel Karşılaştırma + Fark Raporu ──── */
+window._mvSonHesaplar2 = null;
+window._mvSonIslemler2 = [];
+
+window._mvDosyaOku2 = function(inp) {
+  var f = inp.files[0]; if (!f) return;
+  var isXlsx = f.name.match(/\.xlsx?$/i);
+  if (isXlsx) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      try {
+        var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var tsv = XLSX.utils.sheet_to_csv(ws, { FS: '\t', RS: '\n' });
+        var ta = document.getElementById('mv-excel-ham2');
+        if (ta) { ta.value = tsv; window.toast?.('.xlsx yüklendi — ' + f.name, 'ok'); }
+      } catch(err) { window.toast?.('xlsx okunamadı: ' + err.message, 'err'); }
+    };
+    r.readAsArrayBuffer(f);
+  } else {
+    var r2 = new FileReader();
+    r2.onload = function(e) {
+      var ta = document.getElementById('mv-excel-ham2');
+      if (ta) { ta.value = e.target.result; window.toast?.(f.name + ' yüklendi', 'ok'); }
+    };
+    r2.readAsText(f, 'UTF-8');
+  }
+};
+
+window._mvKarsilastir2 = function() {
+  var text = document.getElementById('mv-excel-ham2')?.value || '';
+  if (!text.trim()) { window.toast?.('İkinci Excel verisi giriniz', 'warn'); return; }
+  var islemler2 = [];
+  var hesaplar2 = {};
+  var aktifCari = '', aktifHesapKodu = '';
+  var satirlar = text.split(/\r?\n/);
+  satirlar.forEach(function(satir) {
+    if (!satir.trim()) return;
+    var p = satir.split(/\t/).map(function(x) { return x.trim().replace(/^"|"$/g, '').replace(/\u00A0/g, ' '); });
+    var ilk = p[0] || '';
+    var tarihRe = /^\d{2}[.\-\/]\d{2}[.\-\/]\d{4}$/;
+    var hesapRe = /^\d{3}[\.\-]\w/;
+    var toplamRe = /Nakli|Genel\s*Toplam|Yekün/i;
+    if (toplamRe.test(satir)) return;
+    if (hesapRe.test(ilk)) {
+      var bo = ilk.indexOf(' ');
+      aktifHesapKodu = bo > 0 ? ilk.slice(0, bo) : ilk;
+      aktifCari = bo > 0 ? ilk.slice(bo + 1).trim() : (p[1] || '');
+      if (!hesaplar2[aktifHesapKodu]) hesaplar2[aktifHesapKodu] = { ad: aktifHesapKodu, cari: aktifCari, islemler: [], borc: 0, alacak: 0 };
+      return;
+    }
+    if (tarihRe.test(ilk) && aktifHesapKodu) {
+      var borc = parseFloat((p[4] || '').replace(/\./g, '').replace(',', '.')) || 0;
+      var alacak = parseFloat((p[5] || '').replace(/\./g, '').replace(',', '.')) || 0;
+      var islem = { tarih: ilk, fisNo: p[2] || '', aciklama: (p[3] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'), borc: borc, alacak: alacak, hesap: aktifHesapKodu, cari: aktifCari };
+      hesaplar2[aktifHesapKodu].islemler.push(islem);
+      hesaplar2[aktifHesapKodu].borc += borc;
+      hesaplar2[aktifHesapKodu].alacak += alacak;
+      islemler2.push(islem);
+    }
+  });
+  window._mvSonHesaplar2 = hesaplar2;
+  window._mvSonIslemler2 = islemler2;
+  window.toast?.('İkinci Excel: ' + islemler2.length + ' işlem yüklendi', 'ok');
+  window._mvFarkRaporu();
+};
+
+window._mvFarkRaporu = function() {
+  var is1 = window._mvSonIslemler || [];
+  var is2 = window._mvSonIslemler2 || [];
+  if (!is1.length || !is2.length) { window.toast?.('Her iki Excel de yüklü olmalı', 'warn'); return; }
+  var h2 = document.getElementById('mv-fark-panel');
+  if (!h2) return;
+  var h1map = {};
+  is1.forEach(function(i) { var k = i.fisNo || i.tarih; if (!h1map[k]) h1map[k] = i; });
+  var farklar = [];
+  is2.forEach(function(i2) {
+    var k = i2.fisNo || i2.tarih;
+    var i1 = h1map[k];
+    if (!i1) { farklar.push({ tip: 'sadece2', i2: i2 }); return; }
+    if (Math.abs((i1.borc || 0) - (i2.borc || 0)) > 0.01 || Math.abs((i1.alacak || 0) - (i2.alacak || 0)) > 0.01) {
+      farklar.push({ tip: 'tutar', i1: i1, i2: i2 });
+    }
+  });
+  is1.forEach(function(i1) {
+    var k = i1.fisNo || i1.tarih;
+    var bulundu = is2.some(function(i2) { return (i2.fisNo || i2.tarih) === k; });
+    if (!bulundu) farklar.push({ tip: 'sadece1', i1: i1 });
+  });
+  var h = '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-top:16px">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:12px">Fark Raporu — ' + is1.length + ' vs ' + is2.length + ' işlem · ' + farklar.length + ' fark</div>';
+  if (!farklar.length) {
+    h += '<div style="color:#0F6E56;font-size:12px;padding:12px 0">✓ İki Excel tamamen eşleşiyor</div>';
+  } else {
+    h += '<table style="width:100%;border-collapse:collapse;font-size:10px">';
+    h += '<thead><tr style="background:var(--s2)"><th style="padding:5px 6px;text-align:left">TİP</th><th style="padding:5px 6px">FİŞ NO</th><th style="padding:5px 6px">AÇIKLAMA</th><th style="padding:5px 6px;text-align:right">BORÇ 1</th><th style="padding:5px 6px;text-align:right">BORÇ 2</th><th style="padding:5px 6px;text-align:right">FARK</th></tr></thead><tbody>';
+    farklar.forEach(function(f) {
+      var renk = f.tip === 'tutar' ? '#854F0B' : f.tip === 'sadece1' ? '#A32D2D' : '#185FA5';
+      var lbl = f.tip === 'tutar' ? 'Tutar Farkı' : f.tip === 'sadece1' ? 'Sadece 1.Excel' : 'Sadece 2.Excel';
+      var i = f.i1 || f.i2;
+      var b1 = (f.i1?.borc || 0).toLocaleString('tr-TR');
+      var b2 = (f.i2?.borc || 0).toLocaleString('tr-TR');
+      var fark = ((f.i1?.borc || 0) - (f.i2?.borc || 0)).toLocaleString('tr-TR');
+      h += '<tr style="border-bottom:0.5px solid var(--b)">';
+      h += '<td style="padding:4px 6px;color:' + renk + ';font-weight:500">' + lbl + '</td>';
+      h += '<td style="padding:4px 6px;font-family:monospace">' + (i?.fisNo || '—') + '</td>';
+      h += '<td style="padding:4px 6px;color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (i?.aciklama || '—') + '</td>';
+      h += '<td style="padding:4px 6px;text-align:right">' + b1 + '</td>';
+      h += '<td style="padding:4px 6px;text-align:right">' + b2 + '</td>';
+      h += '<td style="padding:4px 6px;text-align:right;color:' + renk + ';font-weight:500">' + fark + '</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+  }
+  h += '</div>';
+  h2.innerHTML = h;
 };
 
 console.log('[MUAVİN] v1.3 yüklendi');
