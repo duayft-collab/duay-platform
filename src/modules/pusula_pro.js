@@ -139,8 +139,16 @@ window._ppModRender = function() {
       h2 += '<span style="font-size:8px;color:var(--t3)">'+arr.length+' görev</span></div>';
       arr.forEach(function(t){
         var pr = PP_PRIORITIES[t.oncelik||'normal'];
-        var sorumluAd = Array.isArray(t.sorumlu) ? (t.sorumlu[0]?.ad||t.sorumlu[0]||'—') : (t.sorumlu||'—');
-        var sorumluIni = sorumluAd !== '—' ? sorumluAd.split(' ').map(function(s){return s[0];}).join('').slice(0,2).toUpperCase() : '?';
+        var sorumluRaw = t.sorumlu;
+        var sorumluAd = '—';
+        if (Array.isArray(sorumluRaw)) {
+          sorumluAd = sorumluRaw.map(function(s) { return s && typeof s === 'object' ? (s.ad || s.name || s.displayName || '?') : String(s || ''); }).filter(Boolean).join(', ') || '—';
+        } else if (sorumluRaw && typeof sorumluRaw === 'object') {
+          sorumluAd = sorumluRaw.ad || sorumluRaw.name || sorumluRaw.displayName || '—';
+        } else if (typeof sorumluRaw === 'string' && sorumluRaw.trim()) {
+          sorumluAd = sorumluRaw.trim();
+        }
+        var sorumluIni = sorumluAd !== '—' ? sorumluAd.split(' ').map(function(s) { return s[0] || ''; }).join('').slice(0, 2).toUpperCase() : '?';
         var kenarRenk = t.oncelik==='kritik'?'#A32D2D':t.oncelik==='yuksek'?'#854F0B':'#1D9E75';
         var agSay = t.altGorevSay||0; var agTam = t.altGorevTam||0;
         var jobId = t.job_id||t.jobId||'';
