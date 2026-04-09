@@ -200,7 +200,9 @@ window.renderSatinAlmaV2 = function() {
     h += '<div style="width:50px;font-size:9px;color:#0C447C;font-family:monospace">'+_saEsc(t.jobId||'—')+'</div>';
     var stRenk = {bekleyen:'background:#FAEEDA;color:#854F0B',onaylandi:'background:#E1F5EE;color:#0F6E56',reddedildi:'background:#FCEBEB;color:#A32D2D'}[t.durum]||'background:'+window._s2+';color:'+window._t3;
     var stLbl  = {bekleyen:'Bekliyor',onaylandi:'Onaylı',reddedildi:'Reddedildi'}[t.durum]||t.durum||'Taslak';
-    h += '<div style="width:52px"><span style="font-size:8px;padding:2px 5px;border-radius:3px;font-weight:500;'+stRenk+'">'+stLbl+'</span></div>';
+    h += '<div style="width:52px"><span style="font-size:8px;padding:2px 5px;border-radius:3px;font-weight:500;'+stRenk+'">'+stLbl+'</span>';
+    if(typeof window._steklifOzetHTML==='function') h += window._steklifOzetHTML(t);
+    h += '</div>';
     h += '</div>';
   });
 
@@ -291,6 +293,7 @@ window._saV2PeekHTML = function(t) {
   h += '<span id="sav2-marj-val" style="font-size:11px;font-weight:500;color:#0C447C;white-space:nowrap">%'+marj+' → ₺'+satis+'</span></div>';
   h += '</div>';
   if (typeof window._steklifDurumPanelHTML === 'function') h += window._steklifDurumPanelHTML(t);
+  if (typeof window._steklifOzetHTML === 'function') h += window._steklifOzetHTML(t);
   if (typeof window._steklifRevGecmisHTML === 'function') h += window._steklifRevGecmisHTML(t);
   h += '<div style="display:flex;flex-direction:column;gap:5px">';
   if (t.durum==='bekleyen') {
