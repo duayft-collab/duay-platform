@@ -141,6 +141,9 @@ window.renderMuavin = function() {
       h += '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">';
       h += '<input id="mv-ara" placeholder="Cari adı, fiş no, tarih, tutar, açıklama ara..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="window._mvAra(this.value)" style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
       h += '<span id="mv-ara-sonuc" style="font-size:10px;color:var(--t3);white-space:nowrap"></span>';
+      h += '<input id="mv-tarih-bas" type="date" onchange="event.stopPropagation();window._mvTarihFiltrele()" style="font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit" title="Başlangıç tarihi">';
+      h += '<span style="font-size:10px;color:var(--t3)">—</span>';
+      h += '<input id="mv-tarih-bit" type="date" onchange="event.stopPropagation();window._mvTarihFiltrele()" style="font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit" title="Bitiş tarihi">';
       h += '<button onclick="event.stopPropagation();window._mvCSVExport()" style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">↓ CSV</button>';
       h += '<button onclick="event.stopPropagation();window._mvXLSMExport()" style="font-size:10px;padding:5px 10px;border:0.5px solid #0F6E56;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#0F6E56">↓ Excel</button>';
       h += '<button onclick="event.stopPropagation();window._mvPDFRaporu()" style="font-size:10px;padding:5px 10px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#A32D2D">⎙ PDF</button>';

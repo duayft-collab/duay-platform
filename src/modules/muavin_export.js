@@ -63,7 +63,7 @@ window._mvIslemSatirHTML = function(islemler) {
     return '<tr style="border-bottom:0.5px solid var(--b)">'
       +'<td style="padding:4px 6px;white-space:nowrap;text-align:right">'+i.tarih+'</td>'
       +'<td style="padding:4px 6px;color:var(--t3);text-align:right">'+i.tip+'</td>'
-      +'<td style="padding:4px 6px;font-family:monospace;text-align:right">'+i.fisNo+'</td>'
+      +'<td style="padding:4px 6px;font-family:monospace;text-align:right;cursor:pointer;color:#185FA5;text-decoration:underline" onclick="event.stopPropagation();window._mvFisDetayAc(\''+i.fisNo+'\')">'+(i.fisNo||'—')+'</td>'
       +'<td style="padding:4px 6px;color:var(--t2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(i.aciklama||'')+'">'+i.aciklama+'</td>'
       +'<td style="padding:4px 6px;text-align:right;color:'+(i.borc?'#A32D2D':'var(--t3)')+'">'+(i.borc?i.borc.toLocaleString('tr-TR'):'')+'</td>'
       +'<td style="padding:4px 6px;text-align:right;color:'+(i.alacak?'#0F6E56':'var(--t3)')+'">'+(i.alacak?i.alacak.toLocaleString('tr-TR'):'')+'</td>'
@@ -302,6 +302,71 @@ window._mvDonemKarsilastirHTML = function() {
   });
   h+='</tbody></table></div>';
   return h;
+};
+
+/* ── MUAVIN-013: Fiş Detay Popup ───────────────────────────── */
+window._mvFisDetayAc = function(fisNo) {
+  var islemler = window._mvSonIslemler||[];
+  var fis = islemler.filter(function(i){return i.fisNo===fisNo;});
+  var mevcut = document.getElementById('mv-fis-popup');
+  if(mevcut&&mevcut.dataset.fis===fisNo){mevcut.remove();return;}
+  if(mevcut) mevcut.remove();
+  if(!fis.length) return;
+  var topBorc = fis.reduce(function(s,i){return s+(i.borc||0);},0);
+  var topAlacak = fis.reduce(function(s,i){return s+(i.alacak||0);},0);
+  var p = document.createElement('div');
+  p.id = 'mv-fis-popup';
+  p.dataset.fis = fisNo;
+  p.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--sf);border:0.5px solid var(--b);border-radius:10px;z-index:9999;width:560px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)';
+  var h='<div style="padding:14px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h+='<div><div style="font-size:13px;font-weight:500;color:var(--t)">Fiş Detayı</div>';
+  h+='<div style="font-size:10px;font-family:monospace;color:var(--t3)">'+fisNo+'</div></div>';
+  h+='<button onclick="event.stopPropagation();document.getElementById(\'mv-fis-popup\')?.remove()" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:18px">×</button></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 18px;border-bottom:0.5px solid var(--b)">';
+  h+='<div style="text-align:center"><div style="font-size:9px;color:var(--t3)">İŞLEM</div><div style="font-size:20px;font-weight:500;color:var(--t)">'+fis.length+'</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:9px;color:var(--t3)">TOPLAM BORÇ</div><div style="font-size:16px;font-weight:500;color:#A32D2D">'+topBorc.toLocaleString('tr-TR')+'</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:9px;color:var(--t3)">TOPLAM ALACAK</div><div style="font-size:16px;font-weight:500;color:#0F6E56">'+topAlacak.toLocaleString('tr-TR')+'</div></div>';
+  h+='</div>';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:10px">';
+  h+='<thead><tr style="background:var(--s2)"><th style="padding:6px 10px;text-align:left;border-bottom:0.5px solid var(--b)">TARİH</th><th style="padding:6px 10px;text-align:left">CARİ</th><th style="padding:6px 10px;text-align:right">BORÇ</th><th style="padding:6px 10px;text-align:right">ALACAK</th><th style="padding:6px 10px;text-align:center">B/A</th></tr></thead><tbody>';
+  fis.forEach(function(i){
+    h+='<tr style="border-bottom:0.5px solid var(--b)">';
+    h+='<td style="padding:5px 10px;white-space:nowrap">'+i.tarih+'</td>';
+    h+='<td style="padding:5px 10px;color:var(--t2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+i.cari+'</td>';
+    h+='<td style="padding:5px 10px;text-align:right;color:'+(i.borc?'#A32D2D':'var(--t3)')+'">'+(i.borc?i.borc.toLocaleString('tr-TR'):'—')+'</td>';
+    h+='<td style="padding:5px 10px;text-align:right;color:'+(i.alacak?'#0F6E56':'var(--t3)')+'">'+(i.alacak?i.alacak.toLocaleString('tr-TR'):'—')+'</td>';
+    h+='<td style="padding:5px 10px;text-align:center;color:'+(i.ba==='A'?'#0F6E56':'#A32D2D')+'">'+i.ba+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  h+='<div style="padding:12px 18px;border-top:0.5px solid var(--b);text-align:right">';
+  h+='<button onclick="event.stopPropagation();document.getElementById(\'mv-fis-popup\')?.remove()" style="font-size:11px;padding:6px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Kapat</button>';
+  h+='</div>';
+  p.innerHTML=h;
+  document.body.appendChild(p);
+  document.addEventListener('click',function rm(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',rm);}});
+};
+
+/* ── MUAVIN-013: Tarih Aralığı Filtresi ─────────────────────── */
+window._mvTarihFiltrele = function() {
+  var bas=document.getElementById('mv-tarih-bas')?.value||'';
+  var bit=document.getElementById('mv-tarih-bit')?.value||'';
+  var tbody=document.getElementById('mv-islem-tbody');
+  if(!tbody) return;
+  var islemler=window._mvSonIslemler||[];
+  var filtre=islemler.filter(function(i){
+    if(!bas&&!bit) return true;
+    var t=i.tarih||'';
+    var parca=t.split(/[.\-\/]/);
+    if(parca.length<3) return true;
+    var iso=parca[2]+'-'+(parca[1].length<2?'0':'')+parca[1]+'-'+(parca[0].length<2?'0':'')+parca[0];
+    if(bas&&iso<bas) return false;
+    if(bit&&iso>bit) return false;
+    return true;
+  });
+  var sonuc=document.getElementById('mv-ara-sonuc');
+  if(sonuc) sonuc.textContent=filtre.length+' sonuç / '+islemler.length+' işlem';
+  tbody.innerHTML=window._mvIslemSatirHTML?window._mvIslemSatirHTML(filtre):'';
 };
 
 console.log('[MUAVIN-EXPORT] yüklendi');
