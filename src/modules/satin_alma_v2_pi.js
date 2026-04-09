@@ -43,10 +43,10 @@ window._piGizliKodUret = function() {
 
 /* ── Çok Dilli PI Etiketleri ────────────────────────────────── */
 var PI_DILLER = {
-  EN: { sirket:'DUAY GLOBAL LLC', piNo:'PI No', tarih:'Date', gecerli:'Valid until', revNo:'Rev', alici:'Bill To', kosullar:'Terms', incoterms:'Incoterms', odeme:'Payment', teslimat:'Delivery', urun:'Item Description', miktar:'Qty', birim:'Unit', birimFiyat:'Unit Price', tutar:'Amount', toplam:'TOTAL', imza:'Authorized Signature', not:'This is a Proforma Invoice only.' },
-  CN: { sirket:'DUAY GLOBAL LLC', piNo:'形式发票号', tarih:'日期', gecerli:'有效期至', revNo:'版本', alici:'买方', kosullar:'条款', incoterms:'国际贸易术语', odeme:'付款方式', teslimat:'交货期', urun:'商品描述', miktar:'数量', birim:'单位', birimFiyat:'单价', tutar:'金额', toplam:'合计', imza:'授权签名', not:'本文件仅为形式发票。' },
-  AR: { sirket:'DUAY GLOBAL LLC', piNo:'رقم الفاتورة المبدئية', tarih:'التاريخ', gecerli:'صالح حتى', revNo:'النسخة', alici:'المشتري', kosullar:'الشروط', incoterms:'شروط التسليم', odeme:'شروط الدفع', teslimat:'موعد التسليم', urun:'وصف البضاعة', miktar:'الكمية', birim:'الوحدة', birimFiyat:'سعر الوحدة', tutar:'المبلغ', toplam:'المجموع', imza:'التوقيع المعتمد', not:'هذه الوثيقة فاتورة مبدئية فقط.' },
-  RU: { sirket:'DUAY GLOBAL LLC', piNo:'№ проформы', tarih:'Дата', gecerli:'Действительно до', revNo:'Ред.', alici:'Покупатель', kosullar:'Условия', incoterms:'Инкотермс', odeme:'Условия оплаты', teslimat:'Поставка', urun:'Описание товара', miktar:'Кол-во', birim:'Ед.', birimFiyat:'Цена за ед.', tutar:'Сумма', toplam:'ИТОГО', imza:'Уполномоченная подпись', not:'Настоящий документ является только проформой.' }
+  EN: { sirket:'DUAY GLOBAL LLC', piNo:'PI No', tarih:'Date', gecerli:'Valid until', revNo:'Rev', alici:'Bill To', kosullar:'Terms', incoterms:'Incoterms', odeme:'Payment', teslimat:'Delivery', urun:'Item Description', miktar:'Qty', birim:'Unit', birimFiyat:'Unit Price', tutar:'Amount', toplam:'TOTAL', imza:'Authorized Signature', not:'This is a Proforma Invoice only.', eskiKod:'Old Code' },
+  CN: { sirket:'DUAY GLOBAL LLC', piNo:'形式发票号', tarih:'日期', gecerli:'有效期至', revNo:'版本', alici:'买方', kosullar:'条款', incoterms:'国际贸易术语', odeme:'付款方式', teslimat:'交货期', urun:'商品描述', miktar:'数量', birim:'单位', birimFiyat:'单价', tutar:'金额', toplam:'合计', imza:'授权签名', not:'本文件仅为形式发票。', eskiKod:'旧产品编码' },
+  AR: { sirket:'DUAY GLOBAL LLC', piNo:'رقم الفاتورة المبدئية', tarih:'التاريخ', gecerli:'صالح حتى', revNo:'النسخة', alici:'المشتري', kosullar:'الشروط', incoterms:'شروط التسليم', odeme:'شروط الدفع', teslimat:'موعد التسليم', urun:'وصف البضاعة', miktar:'الكمية', birim:'الوحدة', birimFiyat:'سعر الوحدة', tutar:'المبلغ', toplam:'المجموع', imza:'التوقيع المعتمد', not:'هذه الوثيقة فاتورة مبدئية فقط.', eskiKod:'الرمز القديم' },
+  RU: { sirket:'DUAY GLOBAL LLC', piNo:'№ проформы', tarih:'Дата', gecerli:'Действительно до', revNo:'Ред.', alici:'Покупатель', kosullar:'Условия', incoterms:'Инкотермс', odeme:'Условия оплаты', teslimat:'Поставка', urun:'Описание товара', miktar:'Кол-во', birim:'Ед.', birimFiyat:'Цена за ед.', tutar:'Сумма', toplam:'ИТОГО', imza:'Уполномоченная подпись', not:'Настоящий документ является только проформой.', eskiKod:'Старый код' }
 };
 
 /* ── PI ana fonksiyon ───────────────────────────────────────── */
@@ -79,7 +79,7 @@ window._piUrunSatirlari = function(teklif, katman) {
   return urunler.map(function(u, i) {
     var satisF = (u.alisTl * (1 + (u.marj || 33) / 100)).toFixed(2);
     var toplam = (satisF * (u.miktar || 1)).toFixed(2);
-    return { no: i + 1, kod: u.duayKodu || '', ad: u.urunAdi || '', miktar: u.miktar || 1, birim: 'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel || '' };
+    return { no: i+1, kod: u.duayKodu||u.kod||'', eskiKod: u.eskiKod||'', ad: u.urunAdi||u.ad||'', miktar: u.miktar||1, birim: u.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||'' };
   });
 };
 
@@ -121,7 +121,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="padding:0 32px"><table><thead><tr>';
   h += '<th style="width:32px">#</th><th>' + L.urun + '</th><th style="width:55px">' + L.miktar + '</th><th style="width:55px">' + L.birim + '</th><th style="width:90px;text-align:right">' + L.birimFiyat + '</th><th style="width:100px;text-align:right">' + L.tutar + '</th>';
   h += '</tr></thead><tbody>';
-  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div></td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500">$' + s.toplam + '</td></tr>'; });
+  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500">$' + s.toplam + '</td></tr>'; });
   h += '</tbody></table></div>';
   h += '<div style="display:flex;justify-content:flex-end;padding:14px 32px;border-top:0.5px solid #eee">';
   h += '<div style="text-align:right"><div style="font-size:14px;font-weight:700;border-top:1px solid #111;padding-top:8px;margin-top:4px">' + L.toplam + ' USD ' + toplamSatis + '</div></div></div>';
@@ -156,7 +156,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="padding:0 28px"><table><thead><tr style="background:#E6F1FB">';
   h += '<th style="color:#0C447C;width:32px">#</th><th style="color:#0C447C">' + L.urun + '</th><th style="color:#0C447C;width:55px">' + L.miktar + '</th><th style="color:#0C447C;width:55px">' + L.birim + '</th><th style="color:#0C447C;width:90px;text-align:right">' + L.birimFiyat + '</th><th style="color:#0C447C;width:100px;text-align:right">' + L.tutar + '</th>';
   h += '</tr></thead><tbody>';
-  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div></td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500;color:#185FA5">$' + s.toplam + '</td></tr>'; });
+  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500;color:#185FA5">$' + s.toplam + '</td></tr>'; });
   h += '</tbody></table></div>';
   h += '<div style="display:flex;justify-content:flex-end;align-items:center;padding:12px 28px;border-top:0.5px solid #eee;gap:24px">';
   h += '<div style="background:#185FA5;color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;font-weight:700">' + L.toplam + ': USD ' + toplamSatis + '</div></div>';
@@ -193,7 +193,7 @@ window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<table><thead><tr style="border-bottom:1px solid #1D9E75">';
   h += '<th style="color:#1D9E75;width:32px">#</th><th style="color:#1D9E75">' + L.urun + '</th><th style="color:#1D9E75;width:55px">' + L.miktar + '</th><th style="color:#1D9E75;width:55px">' + L.birim + '</th><th style="color:#1D9E75;width:90px;text-align:right">' + L.birimFiyat + '</th><th style="color:#1D9E75;width:100px;text-align:right">' + L.tutar + '</th>';
   h += '</tr></thead><tbody>';
-  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div></td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">USD ' + s.satisF + '</td><td style="text-align:right;font-weight:500">' + s.toplam + '</td></tr>'; });
+  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">USD ' + s.satisF + '</td><td style="text-align:right;font-weight:500">' + s.toplam + '</td></tr>'; });
   h += '</tbody></table>';
   h += '<div style="border-top:1px solid #1D9E75;padding-top:12px;margin-top:0;display:flex;justify-content:space-between;align-items:baseline">';
   h += '<div style="font-size:8px;color:#aaa">All amounts in USD</div>';
