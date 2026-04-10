@@ -150,7 +150,7 @@ function _mvUstDosyaBarHTML(meta, donem) {
   }
   h += '</div>';
   if (mMeta.ad) {
-    h += '<button onclick="event.stopPropagation();window._mvDosyaKaldir(\'muhasebeci\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #3B6D11;border-radius:4px;background:transparent;cursor:pointer;color:#3B6D11;font-family:inherit;flex-shrink:0">Kaldır</button>';
+    h += '<button onclick="(event||window.event||{stopPropagation:function(){}}).stopPropagation();window._mvDosyaKaldir(\'muhasebeci\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #3B6D11;border-radius:4px;background:transparent;cursor:pointer;color:#3B6D11;font-family:inherit;flex-shrink:0">Kaldır</button>';
   } else {
     h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Muhasebeci Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'muhasebeci\')" style="display:none"></label>';
   }
@@ -171,7 +171,7 @@ function _mvUstDosyaBarHTML(meta, donem) {
   }
   h += '</div>';
   if (bMeta.ad) {
-    h += '<button onclick="event.stopPropagation();window._mvDosyaKaldir(\'baran\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit;flex-shrink:0">Kaldır</button>';
+    h += '<button onclick="(event||window.event||{stopPropagation:function(){}}).stopPropagation();window._mvDosyaKaldir(\'baran\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit;flex-shrink:0">Kaldır</button>';
   } else {
     h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Baran Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'baran\')" style="display:none"></label>';
   }
