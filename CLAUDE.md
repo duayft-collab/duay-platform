@@ -279,6 +279,72 @@ Baran onayladıktan sonra commit at.
 
 ---
 
+## TALİMAT YAZMA KURALLARI — Claude bu kurallara uymak zorundadır
+
+### Talimat yazmadan önce zorunlu: ADIM 0
+Her talimat yazmadan önce Claude Code ilgili dosyayı okur:
+```bash
+wc -l DOSYA
+grep -n "DEĞİŞTİRİLECEK_FONKSİYON" DOSYA
+sed -n 'BAŞLANGIÇ,BİTİŞp' DOSYA
+```
+Çıktı buraya yapıştırılır. Claude görür, onaylar, sonra talimatı yazar.
+ADIM 0 atlanırsa talimat geçersizdir.
+
+### Talimat başı — zorunlu
+Her talimatın en tepesinde:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TALİMAT : [KOD]  |  TERMİNAL : T1/T3
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Bu talimat ne yapar? — zorunlu
+Her talimatın ilk bölümü iş etkisini açıklar. Teknik değil, iş dili. Max 2 cümle.
+
+### Terminal kuralı
+- **T1** — Mevcut kodu düzelten işler (bug fix, silme, refactor, standart uyumu)
+- **T3** — Yeni ekran, yeni modül, yeni davranış
+- T1 ve T3 aynı dosyaya aynı anda dokunamaz
+
+### Kod satır limitleri
+- T1 tipi: max 50 satır kod değişikliği
+- T3 tipi: max 80 satır kod değişikliği
+- Aşılıyorsa talimat ikiye bölünür
+
+### Talimat ID formatı
+`[MODUL]-[ISLEM]-[NNN]` — Örn: `T3-MV-002`, `SIL-001`, `TAKVİM-BIRLESTIR-001`
+Aynı ID iki kez kullanılamaz. ID'siz talimat uygulanmaz.
+
+### Talimat footer — zorunlu
+Her talimatın en altında:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TALİMAT  : [KOD]
+TERMİNAL : T1 veya T3
+TARİH    : YYYY-AA-GG
+SATIR    : N değişiklik / ~N satır
+KELİME   : ~N
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Onay protokolü
+1. Claude Code talimatı uygular
+2. Uygulama Raporu yazar, Baran'a gönderir
+3. Claude test eder, Baran'a bildirir: "Test geçti / Test başarısız"
+4. Baran "commit at" der
+5. Claude Code commit atar
+Baran onayı olmadan commit atılamaz. Claude "commit at" diyemez.
+
+### Kesin yasaklar
+- ADIM 0 okumadan talimat yazmak
+- Onaysız canlı veri değiştirmek (localStorage, Firestore)
+- Bir talimatla birden fazla dosya değiştirmek (zorunlu değilse)
+- 150+ satır tek talimat
+- "Bul" metni dosyada yoksa devam etmek
+
+---
+
 ## STANDART TALİMAT ŞABLONU — Her talimat bu formatta yazılır
 
 Aşağıdaki şablon Claude Code için zorunlu çalışma formatıdır. Bu şablonu okuyan her yapay zeka bu formatı harfiyen uygular. Şablondan sapma yasaktır.
