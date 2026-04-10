@@ -31,14 +31,7 @@ window._mvHesapKategoriAd = function(hesapKodu) {
   return _mvHesapKategori[kod] || _mvHesapKategori[kod.slice(0, 3)] || _mvHesapKategori[kod.slice(0, 2)] || _mvHesapKategori[kod.slice(0, 1)] || '';
 };
 
-window._mvHam2 = '';
-window._mvHam = '';
-window._mvDosyaAd = '';
-window._mvDosya2Ad = '';
-window._mvDosyaSatir = 0;
-window._mvDosya2Satir = 0;
-window._mvDosyaTarih = '';
-window._mvDosya2Tarih = '';
+/* v3.0: ölü global'ler temizlendi — meta artık ak_muavin_meta_v1'de */
 
 function _mvMetaKaydet(taraf, ad, satir, boyutStr) {
   try {
@@ -194,7 +187,7 @@ window._mvSonIslemlerB = [];
 
 window._mvFarkRaporu = function() {
   var is1 = window._mvSonIslemler || [];
-  var is2 = window._mvSonIslemler2 || [];
+  var is2 = window._mvSonIslemlerB || [];
   if (!is1.length || !is2.length) { window.toast?.('Her iki Excel de yüklü olmalı', 'warn'); return; }
   var h2 = document.getElementById('mv-fark-panel');
   if (!h2) return;
@@ -248,7 +241,7 @@ window._mvDuzeltmeNotu = {};
 
 window._mvMuhasebeciFarkRaporuHTML = function() {
   var is1 = window._mvSonIslemler||[];
-  var is2 = window._mvSonIslemler2||[];
+  var is2 = window._mvSonIslemlerB||[];
   var donem = window._mvDonem||'';
   var farklar = [];
   if(is1.length && is2.length) {
