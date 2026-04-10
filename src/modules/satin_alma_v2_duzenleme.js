@@ -1,37 +1,15 @@
 var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 /* ── SA-V2-GUNCELLEME-001: Düzenleme + Kilit + Güncelleme Talebi ── */
 window._saV2DuzenleForm = function(id) {
-  var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
-  if (!t) return;
-  var mevcut = document.getElementById('sav2-duzenle-modal'); if (mevcut) mevcut.remove();
-  var modal = document.createElement('div');
-  modal.id = 'sav2-duzenle-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
-  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
-  var _f = function(fid, lbl, val) { return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div><input id="sav2dz-' + fid + '" value="' + _saEsc(val || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'; };
-  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:600px;max-height:90vh;overflow-y:auto">';
-  ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">';
-  ic += '<div style="font-size:14px;font-weight:500;color:var(--t)">Teklif Düzenle</div>';
-  ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-duzenle-modal\')?.remove()" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>';
-  ic += '</div><div style="padding:20px;display:flex;flex-direction:column;gap:12px">';
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  ic += _f('urunAdi', 'İNG. ÜRÜN ADI', t.urunAdi);
-  ic += _f('duayKodu', 'DUAY KODU', t.duayKodu);
-  ic += '</div>';
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
-  ic += _f('alisF', 'ALİŞ FİYATI', t.alisF);
-  ic += _f('miktar', 'MİKTAR', t.miktar);
-  ic += _f('tedarikci', 'TEDARİKÇİ', t.tedarikci);
-  ic += '</div>';
-  ic += _f('jobId', 'JOB ID', t.jobId);
-  ic += '</div>';
-  ic += '<div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">';
-  ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-duzenle-modal\')?.remove()" style="font-size:12px;padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>';
-  ic += '<button onclick="event.stopPropagation();window._saV2DuzenleKaydet(\'' + id + '\')" style="font-size:12px;padding:7px 18px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>';
-  ic += '</div></div>';
-  modal.innerHTML = ic;
-  document.body.appendChild(modal);
+  var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+  var kayit = liste.find(function(t){return String(t.id)===String(id);});
+  if(!kayit){window.toast?.('Kayıt bulunamadı','err');return;}
+  window._saV2DuzenleKayit = kayit;
+  if(typeof window._saV2YeniTeklif==='function'){
+    window._saV2YeniTeklif(kayit);
+  } else {
+    window.toast?.('Form yüklenemedi','err');
+  }
 };
 
 window._saV2DuzenleKaydet = function(id) {

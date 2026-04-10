@@ -9,8 +9,9 @@ window._saV2Duzenle = function(id) {
   }
   window._saV2DuzenleForm(id);
 };
-window._saV2YeniTeklif = function() {
-  var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); return; }
+window._saV2YeniTeklif = function(duzenleKayit) {
+  var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); if(!duzenleKayit) return; }
+  var _isDuzenle = !!duzenleKayit;
   var modal = document.createElement('div');
   modal.id = 'sav2-form-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px 0;overflow-y:auto';
@@ -97,6 +98,29 @@ window._saV2YeniTeklif = function() {
   window._saV2UrunSayac = 0;
   window._saV2UrunSatirEkle();
   window._saV2DatalistDoldur?.();
+  /* Düzenleme modu: mevcut veriyle formu doldur */
+  if (_isDuzenle && duzenleKayit) {
+    var _set = function(fid, val) { var el = document.getElementById(fid); if(el) el.value = val||''; };
+    _set('sav2f-tedarikci', duzenleKayit.tedarikci);
+    _set('sav2f-jobId', duzenleKayit.jobId);
+    _set('sav2f-duayKodu', duzenleKayit.duayKodu);
+    _set('sav2f-urunAdi', duzenleKayit.urunAdi);
+    _set('sav2f-turkceAdi', duzenleKayit.turkceAdi);
+    _set('sav2f-marka', duzenleKayit.marka);
+    _set('sav2f-birim', duzenleKayit.birim);
+    _set('sav2f-mensei', duzenleKayit.mensei);
+    _set('sav2f-gtip', duzenleKayit.gtip);
+    _set('sav2f-alisF', duzenleKayit.alisF);
+    _set('sav2f-miktar', duzenleKayit.miktar);
+    _set('sav2f-notlar', duzenleKayit.notlar);
+    var baslikEl = modal.querySelector('[style*="font-size:14px"]');
+    if(baslikEl) baslikEl.textContent = 'Teklif Düzenle';
+    var idEl = document.getElementById('sav2f-id-goster');
+    if(idEl) idEl.textContent = 'ID: ' + (duzenleKayit.teklifId||duzenleKayit.id);
+    window._saV2DuzenleAktifId = duzenleKayit.id;
+  } else {
+    window._saV2DuzenleAktifId = null;
+  }
   setTimeout(function() { document.getElementById('sav2f-duayKodu')?.focus(); }, 100);
 };
 
