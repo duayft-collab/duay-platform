@@ -249,7 +249,7 @@ function _renderCrmList(fl,users,cont){
     var peekTr=document.createElement('tr');
     peekTr.id='peek-crm-'+c.id;
     peekTr.style.display='none';
-    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
+    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();window._crmSatisTeklif?.('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #0F6E56;background:#E8F5F0;color:#0F6E56;cursor:pointer;font-family:inherit">Satış Teklifi</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
     tbody.appendChild(peekTr);
   });
   table.appendChild(tbody);
@@ -487,4 +487,25 @@ window._crmBulkDelete = function() {
     if (typeof storeCrmData === 'function') storeCrmData(data); if (typeof storeTrash === 'function') storeTrash(trash);
     window._crmBulkClear(); window.renderCrm?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
   }});
+};
+
+/** @description CRM müşteri kaydından satış teklifi oluştur — satis-teklifleri paneline yönlendir */
+window._crmSatisTeklif = function(crmId) {
+  var data = typeof loadCrmData === 'function' ? loadCrmData() : [];
+  var musteri = data.find(function(c) { return c.id === crmId; });
+  if (!musteri) { window.toast?.('Müşteri bulunamadı', 'err'); return; }
+  window._crmSatisMusteriData = musteri;
+  if (typeof window.App?.nav === 'function') window.App.nav('satis-teklifleri');
+  setTimeout(function() {
+    window._openSatisModal?.();
+    setTimeout(function() {
+      var sel = document.getElementById('st-musteri');
+      if (sel && musteri.name) {
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === musteri.name) { sel.selectedIndex = i; break; }
+        }
+      }
+      window._crmSatisMusteriData = null;
+    }, 200);
+  }, 300);
 };
