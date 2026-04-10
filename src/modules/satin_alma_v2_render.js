@@ -379,6 +379,7 @@ window._saV2PeekHTML = function(t) {
   h += '<button onclick="event.stopPropagation();window._saV2GoselYukle(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Görsel Yükle</button>';
   h += '<button onclick="event.stopPropagation();window._saV2Duzenle(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Düzenle</button>';
   h += '<button onclick="event.stopPropagation();window._saV2Kopyala(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Kopyala</button>';
+  h += '<button onclick="event.stopPropagation();window._saV2Karsilastir(\''+_saEsc(_saV2DuayKodu(t))+'\')" style="font-size:10px;padding:5px;border:0.5px solid #185FA5;border-radius:5px;background:#E6F1FB;cursor:pointer;color:#185FA5;font-family:inherit">\u2194 Kar\u015f\u0131la\u015ft\u0131r</button>';
   h += '<button onclick="event.stopPropagation();window._saV2TekSil(\''+t.id+'\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>';
   h += '</div></div>';
   return h;
@@ -523,4 +524,66 @@ window._saV2TopluSilYap = function(secili) {
   window.renderSatinAlmaV2?.();
 };
 
-console.log('[SAV2-RENDER] v2.0 yüklendi');
+/* ── SAV2-KARSILASTIR-001: Tedarikçi Karşılaştırma ─────────── */
+window._saV2Karsilastir = function(duayKodu) {
+  if (!duayKodu || duayKodu === '\u2014') { window.toast?.('\u00dcr\u00fcn kodu bulunamad\u0131', 'warn'); return; }
+  var mevcut = document.getElementById('sav2-karsilastir-modal');
+  if (mevcut) mevcut.remove();
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var eslesen = liste.filter(function(t) {
+    if (t.isDeleted) return false;
+    if (t.urunler && t.urunler.length) return t.urunler.some(function(u) { return (u.duayKodu || '').trim() === duayKodu; });
+    return (t.duayKodu || '').trim() === duayKodu;
+  }).sort(function(a, b) { return (b.createdAt || '') > (a.createdAt || '') ? 1 : -1; });
+  if (eslesen.length < 1) { window.toast?.('Bu \u00fcr\u00fcn i\u00e7in ba\u015fka teklif yok', 'info'); return; }
+  var modal = document.createElement('div');
+  modal.id = 'sav2-karsilastir-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:32px 0;overflow-y:auto';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  var h = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:720px;max-height:80vh;overflow-y:auto">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">';
+  h += '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Tedarik\u00e7i Kar\u015f\u0131la\u015ft\u0131rma</div>';
+  h += '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + _saEsc(duayKodu) + ' \u2014 ' + eslesen.length + ' teklif</div></div>';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-karsilastir-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">\u00d7</button></div>';
+  h += '<div style="padding:16px 20px">';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  h += '<thead><tr style="background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.05em">';
+  h += '<th style="padding:6px 8px;text-align:left">TEDAR\u0130K\u00c7\u0130</th>';
+  h += '<th style="padding:6px 8px;text-align:left">PI NO</th>';
+  h += '<th style="padding:6px 8px;text-align:left">TAR\u0130H</th>';
+  h += '<th style="padding:6px 8px;text-align:right">B\u0130R\u0130M F\u0130YAT</th>';
+  h += '<th style="padding:6px 8px;text-align:right">M\u0130KTAR</th>';
+  h += '<th style="padding:6px 8px;text-align:right">TOPLAM</th>';
+  h += '<th style="padding:6px 8px;text-align:center">DURUM</th>';
+  h += '</tr></thead><tbody>';
+  var enDusuk = Infinity;
+  eslesen.forEach(function(t) {
+    var u = (t.urunler && t.urunler.length) ? t.urunler.find(function(x) { return (x.duayKodu || '').trim() === duayKodu; }) || t.urunler[0] : t;
+    var fiyat = parseFloat(u.alisF || t.alisF) || 0;
+    if (fiyat > 0 && fiyat < enDusuk) enDusuk = fiyat;
+  });
+  eslesen.forEach(function(t) {
+    var u = (t.urunler && t.urunler.length) ? t.urunler.find(function(x) { return (x.duayKodu || '').trim() === duayKodu; }) || t.urunler[0] : t;
+    var fiyat = parseFloat(u.alisF || t.alisF) || 0;
+    var para = u.para || t.toplamPara || 'USD';
+    var miktar = parseFloat(u.miktar || t.miktar) || 0;
+    var toplam = (fiyat * miktar).toFixed(2);
+    var enIyi = fiyat > 0 && fiyat === enDusuk;
+    var durum = t.durum || 'bekleyen';
+    var durumRenk = durum === 'onaylandi' ? '#0F6E56' : durum === 'reddedildi' ? '#A32D2D' : '#854F0B';
+    h += '<tr style="border-bottom:0.5px solid var(--b);background:' + (enIyi ? '#F0FBF6' : 'transparent') + '">';
+    h += '<td style="padding:8px;font-weight:500;color:var(--t)">' + _saEsc(t.tedarikci || '\u2014') + (enIyi ? ' <span style="font-size:8px;padding:1px 5px;border-radius:8px;background:#E1F5EE;color:#0F6E56">\u2605 En iyi</span>' : '') + '</td>';
+    h += '<td style="padding:8px;color:var(--t3)">' + _saEsc(t.piNo || '\u2014') + '</td>';
+    h += '<td style="padding:8px;color:var(--t3)">' + _saEsc((t.piTarih || t.createdAt || '\u2014').slice(0, 10)) + '</td>';
+    h += '<td style="padding:8px;text-align:right;font-weight:500;color:' + (enIyi ? '#0F6E56' : 'var(--t)') + '">' + fiyat.toFixed(2) + ' ' + _saEsc(para) + '</td>';
+    h += '<td style="padding:8px;text-align:right;color:var(--t3)">' + miktar + ' ' + _saEsc(u.birim || t.birim || '') + '</td>';
+    h += '<td style="padding:8px;text-align:right;color:var(--t)">' + toplam + ' ' + _saEsc(para) + '</td>';
+    h += '<td style="padding:8px;text-align:center"><span style="font-size:9px;padding:1px 6px;border-radius:8px;background:' + durumRenk + '22;color:' + durumRenk + '">' + _saEsc(durum) + '</span></td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div></div>';
+  modal.innerHTML = h;
+  document.body.appendChild(modal);
+};
+
+console.log('[SAV2-RENDER] v2.0 y\u00fcklendi');
