@@ -600,7 +600,7 @@ window._saV2Karsilastir = function(duayKodu) {
 window._saV2TopluOnayla = function() {
   var secili = Object.keys(window.SAV2_SECILI||{}).filter(function(k){return window.SAV2_SECILI[k];});
   if(!secili.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
-  if(!confirm(secili.length+' teklif onaylanacak. Emin misin?')) return;
+  window.confirmModal(secili.length+' teklif onaylanacak. Emin misin?',{confirmText:'Onayla',danger:false,onConfirm:function(){
   var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
   var now = new Date().toISOString();
   liste.forEach(function(t){
@@ -613,12 +613,13 @@ window._saV2TopluOnayla = function() {
   window.SAV2_SECILI={};
   window.toast?.(secili.length+' teklif onaylandı','ok');
   window.renderSatinAlmaV2?.();
+  }});
 };
 
 window._saV2TopluReddet = function() {
   var secili = Object.keys(window.SAV2_SECILI||{}).filter(function(k){return window.SAV2_SECILI[k];});
   if(!secili.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
-  if(!confirm(secili.length+' teklif reddedilecek. Emin misin?')) return;
+  window.confirmModal(secili.length+' teklif reddedilecek. Emin misin?',{confirmText:'Reddet',danger:true,onConfirm:function(){
   var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
   var now = new Date().toISOString();
   liste.forEach(function(t){
@@ -631,6 +632,7 @@ window._saV2TopluReddet = function() {
   window.SAV2_SECILI={};
   window.toast?.(secili.length+' teklif reddedildi','ok');
   window.renderSatinAlmaV2?.();
+  }});
 };
 
 /* ── SAV2-HATIRLATMA-001: 5 gün yanıtsız teklif otomatik uyarı ── */

@@ -1107,8 +1107,7 @@ window._ppGorevSil = function(id) {
     window.confirmModal('Bu görevi silmek istediğinizden emin misiniz?', { title: 'Görevi Sil', danger: true, confirmText: 'Sil', onConfirm: function() { window._ppGorevSilYap(id); } });
     return;
   }
-  if (!confirm('Bu görevi silmek istediğinizden emin misiniz?')) return;
-  window._ppGorevSilYap(id);
+  window.confirmModal('Bu g\u00f6revi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){ window._ppGorevSilYap(id); }});
 };
 
 window._ppGorevSilYap = function(id) {
@@ -1399,7 +1398,7 @@ window._ppTakvimTamamla = function(id) {
 };
 
 window._ppTakvimSil = function(id) {
-  if (!confirm('Bu etkinliği silmek istediğinizden emin misiniz?')) return;
+  window.confirmModal('Bu etkinli\u011fi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){
   var olaylar = _ppTakvimLoad();
   var i = olaylar.findIndex(function(x) { return String(x.id) === String(id); });
   if (i === -1) return;
@@ -1408,6 +1407,7 @@ window._ppTakvimSil = function(id) {
   _ppTakvimStore(olaylar);
   window.toast?.('Etkinlik silindi', 'ok');
   window._ppModRender();
+  }});
 };
 
 window._ppTakvimYeniAc = function() {
@@ -1685,10 +1685,11 @@ window._ppOdemeYeniAc = function() {
 };
 
 window._ppOdemeSil = function(id) {
-  if(!confirm('Bu ödemeyi silmek istediğinizden emin misiniz?')) return;
+  window.confirmModal('Bu \u00f6demeyi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){
   var liste=_ppOdemeLoad(); var i=liste.findIndex(function(x){return x.id===id;}); if(i===-1) return;
   liste[i].isDeleted=true; liste[i].deletedAt=_ppNow(); _ppOdemeStore(liste);
-  window.toast?.('Ödeme silindi','ok'); window._ppModRender();
+  window.toast?.('\u00d6deme silindi','ok'); window._ppModRender();
+  }});
 };
 
 window._ppAbonelikPanelRender = function(body, h) {
@@ -1729,10 +1730,11 @@ window._ppAbonelikYeniAc = function() {
 };
 
 window._ppAbonelikSil = function(id) {
-  if(!confirm('Bu aboneliği silmek istediğinizden emin misiniz?')) return;
+  window.confirmModal('Bu aboneli\u011fi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){
   var liste=_ppAbonelikLoad(); var i=liste.findIndex(function(x){return x.id===id;}); if(i===-1) return;
   liste[i].isDeleted=true; liste[i].deletedAt=_ppNow(); _ppAbonelikStore(liste);
   window.toast?.('Abonelik silindi','ok'); window._ppModRender();
+  }});
 };
 
 window._ppOdemeLoad = _ppOdemeLoad;
