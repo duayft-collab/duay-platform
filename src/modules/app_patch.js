@@ -1007,6 +1007,18 @@ window.renderUrunler = function() {
     var ak = _aktifFiltre === f[0];
     filtreH += '<button onclick="event.stopPropagation();window._urunFiltre=\'' + f[0] + '\';window.renderUrunler()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:20px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + f[1] + '</button>';
   });
+  /* URUN-AUDIT-002: Admin user filtre */
+  var isAdmin = window.isAdmin?.();
+  var kullanicilar = isAdmin ? [] : [];
+  if (isAdmin) { var _uSet = {}; d.forEach(function(u){ var c = u.createdBy||''; if(c && !_uSet[c]){ _uSet[c]=true; kullanicilar.push(c); } }); kullanicilar.sort(); }
+  var aktifUser = window._urunUserFiltre||'';
+  if(isAdmin && kullanicilar.length > 1) {
+    filtreH += '<select onchange="event.stopPropagation();window._urunUserFiltre=this.value;window.renderUrunler()" onclick="event.stopPropagation()" style="font-size:10px;padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit">';
+    filtreH += '<option value="">Tüm Kullanıcılar</option>';
+    kullanicilar.forEach(function(k){ filtreH += '<option value="'+esc(k)+'"'+(aktifUser===k?' selected':'')+'>'+esc(k)+'</option>'; });
+    filtreH += '</select>';
+  }
+  if(isAdmin && aktifUser) fl = fl.filter(function(u){ return (u.createdBy||'')===aktifUser; });
   filtreH += '</div>';
 
   /* URUN-LIST-002: Tedarikçi pill butonları */
@@ -1043,7 +1055,7 @@ window.renderUrunler = function() {
       + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:24px;height:24px;border-radius:3px;object-fit:cover;border:0.5px solid var(--b)">' : '<div style="width:24px;height:24px;border-radius:3px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:12px">📦</div>')
       + (u.gorsel ? '<div class="uz" style="display:none;position:fixed;z-index:9999;pointer-events:none"><img src="' + u.gorsel + '" style="width:140px;height:140px;object-fit:cover;border-radius:8px;border:0.5px solid var(--b);box-shadow:0 4px 12px rgba(0,0,0,.2)"></div>' : '')
       + '</div>'
-      + '<div onclick="event.stopPropagation();window._urunPeekAc?.(\'' + u.id + '\')" style="flex:1;cursor:pointer;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + (u.imolu==='E'?' <span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>':'') + (_calcIhracatTam(u)?' <span style="color:#16A34A;font-size:10px">✓</span>':' <span style="color:#DC2626;font-size:10px" title="İhracat bilgisi eksik">⚠</span>') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + ' · %' + _calcIhracatPct(u) + '</div></div>'
+      + '<div onclick="event.stopPropagation();window._urunPeekAc?.(\'' + u.id + '\')" style="flex:1;cursor:pointer;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(u.urunAdi||'—') + (u.imolu==='E'?' <span style="font-size:8px;padding:1px 4px;border-radius:3px;background:#F59E0B22;color:#D97706;font-weight:700">IMO</span>':'') + (_calcIhracatTam(u)?' <span style="color:#16A34A;font-size:10px">✓</span>':' <span style="color:#DC2626;font-size:10px" title="İhracat bilgisi eksik">⚠</span>') + '</div><div style="font-size:10px;color:var(--t3)">' + esc(u.urunKodu||u.duayKodu||'') + ' · ' + esc(u.tedarikci||'') + ' · ' + esc(u.kategori||'') + (u.createdBy?' · <span style="color:var(--t3)">'+esc(u.createdBy)+'</span>':'') + (u.createdAt?' · <span style="color:var(--t3);font-size:9px">'+esc(String(u.createdAt).slice(0,10))+'</span>':'') + ' · %' + _calcIhracatPct(u) + '</div></div>'
       + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + (u.sonFiyat ? u.sonFiyat.toLocaleString('tr-TR') + ' ' + (u.paraBirimi||'USD') : '—') + '</div>'
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
       + '<button onclick="event.stopPropagation();window.openUrunForm?.(\'' + u.id + '\')" style="padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:none;cursor:pointer;font-size:10px;color:var(--t3);font-family:inherit">\u270f\ufe0f</button>'
@@ -4929,4 +4941,24 @@ window._pkDurumDegistir = function(kuralId) {
     var zatenVar = g.operasyon.mods.some(function(m){ return m.id === 'pusula-pro'; });
     if(!zatenVar) g.operasyon.mods.unshift({ id:'pusula-pro', label:'Pusula Pro' });
   }
+})();
+
+/* SYNC-008: window.Pusula alias — app.js compat */
+(function() {
+  'use strict';
+  if (!window.Pusula && window.PusulaPro) {
+    window.Pusula = {
+      render: function() { window.renderPusulaPro?.(); },
+      updateBadge: function() { window.PusulaPro?.updateBadge?.(); },
+      visTasks: function() { return window.PusulaPro?.visTasks?.(); },
+      openDetail: function(id) { window.PusulaPro?.openDetail?.(id); },
+      setView: function(v, btn) { window.PusulaPro?.setView?.(v, btn); },
+      exportXlsx: function() { window.PusulaPro?.exportXlsx?.(); }
+    };
+  }
+  setTimeout(function() {
+    if (!window.Pusula && window.PusulaPro) {
+      window.Pusula = window.PusulaPro;
+    }
+  }, 2000);
 })();
