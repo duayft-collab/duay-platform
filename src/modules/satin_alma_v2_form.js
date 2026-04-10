@@ -188,45 +188,55 @@ window._saV2KatalogDoldur = function(kod) {
 window._saV2KatalogAra = function() { window.toast?.('Katalog arama — yakında', 'info'); };
 
 window._saV2FormKaydet = function() {
-  var _v = function(id) { return document.getElementById('sav2f-' + id)?.value?.trim() || ''; };
-  var duayKodu = _v('duayKodu');
-  var urunAdi = _v('urunAdi');
-  if (!urunAdi) { window.toast?.('Ürün adı zorunlu', 'warn'); return; }
-  var yeni = {
-    id: window._saId?.() || Date.now() + Math.random().toString(36).slice(2, 8),
-    teklifId: _v('teklifId'),
-    duayKodu: duayKodu,
-    urunAdi: urunAdi,
-    turkceAdi: _v('turkceAdi'),
-    marka: _v('marka'),
-    birim: document.getElementById('sav2f-birim')?.value || 'Adet',
-    mensei: document.getElementById('sav2f-mensei')?.value || 'TR',
-    gtip: _v('gtip'),
-    saticiKodu: _v('saticiKodu'),
-    tedarikci: _v('tedarikci'),
-    alisF: _v('alisF'),
-    para: document.getElementById('sav2f-para')?.value || 'USD',
-    miktar: _v('miktar'),
-    jobId: _v('jobId'),
-    teslimat: _v('teslimat'),
-    netAgirlik: _v('netAg'),
-    brutAgirlik: _v('brutAg'),
-    teslimYeri: _v('teslimYeri'),
-    teslimMasraf: document.getElementById('sav2f-teslimMasraf')?.value || '',
-    gorsel: window._saV2FormGorselData || '',
-    icNotlar: document.getElementById('sav2f-not-div')?.innerHTML || '',
-    teslimatKosul: document.getElementById('sav2f-teslimatKosul-div')?.innerHTML || '',
-    durum: 'bekleyen',
-    karMarji: 33,
-    createdAt: window._saNow?.(),
-    updatedAt: window._saNow?.(),
-    olusturan: window._saCu?.()?.displayName || ''
+  var g = function(id) { var el = document.getElementById('sav2f-' + id); return el ? (el.value || '').trim() : ''; };
+  var baslik = {
+    tedarikci: g('tedarikci'), jobId: g('jobId'), piNo: g('piNo'), piTarih: g('piTarih'),
+    teslimYeri: g('teslimYeri'), teslimMasraf: document.getElementById('sav2f-teslimMasraf')?.value || '',
+    teslimat: g('teslimat'), teklifId: g('teklifId'), musteriKod: g('musteriKod')
   };
-  var liste = window._saV2Load?.() || [];
-  liste.unshift(yeni);
-  window._saV2Store?.(liste);
+  if (!baslik.tedarikci) { window.toast?.('Tedarikçi zorunlu', 'warn'); return; }
+  var satirlar = document.querySelectorAll('[data-urun-satir]');
+  if (!satirlar.length) { window.toast?.('En az 1 ürün ekleyin', 'warn'); return; }
+  var urunler = [];
+  var hatalar = [];
+  satirlar.forEach(function(satir) {
+    var idx = satir.getAttribute('data-urun-satir');
+    var gu = function(k) { var el = document.getElementById('sav2u-' + idx + '-' + k); return el ? (el.value || '').trim() : ''; };
+    var urun = {
+      duayKodu: gu('duayKodu'), urunAdi: gu('urunAdi'), turkceAdi: gu('turkceAdi'),
+      marka: gu('marka'), miktar: parseFloat(gu('miktar')) || 0, birim: gu('birim') || 'Adet',
+      alisF: parseFloat(gu('alisF')) || 0, para: gu('para') || 'USD',
+      mensei: gu('mensei'), gtip: gu('gtip'), saticiKodu: gu('saticiKodu'),
+      netAg: parseFloat(gu('netAg')) || 0, brutAg: parseFloat(gu('brutAg')) || 0
+    };
+    if (!urun.duayKodu && !urun.urunAdi) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Kod veya ad zorunlu'); return; }
+    if (!urun.miktar) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Miktar zorunlu'); return; }
+    if (!urun.alisF) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Fiyat zorunlu'); return; }
+    urun.toplam = (urun.miktar * urun.alisF).toFixed(2);
+    urunler.push(urun);
+  });
+  if (hatalar.length) { window.toast?.(hatalar[0], 'warn'); return; }
+  if (!urunler.length) { window.toast?.('Ge\u00e7erli \u00fcr\u00fcn bulunamad\u0131', 'warn'); return; }
+  var notDiv = document.getElementById('sav2f-not-div');
+  var kosulDiv = document.getElementById('sav2f-teslimatKosul-div');
+  var toplamTutar = urunler.reduce(function(s, u) { return s + parseFloat(u.toplam || 0); }, 0);
+  var kayit = {
+    id: typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now()),
+    tedarikci: baslik.tedarikci, jobId: baslik.jobId, piNo: baslik.piNo, piTarih: baslik.piTarih,
+    teslimYeri: baslik.teslimYeri, teslimMasraf: baslik.teslimMasraf, teslimat: baslik.teslimat,
+    teklifId: baslik.teklifId, musteriKod: baslik.musteriKod,
+    urunler: urunler, urunSayisi: urunler.length,
+    toplamTutar: toplamTutar.toFixed(2), toplamPara: urunler[0]?.para || 'USD',
+    icNotlar: notDiv ? notDiv.innerHTML : '', teslimatKosul: kosulDiv ? kosulDiv.innerHTML : '',
+    gorsel: window._saV2FormGorselData || '', durum: 'bekleyen',
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdBy: window.CU?.()?.displayName || '', createdById: window.CU?.()?.uid || ''
+  };
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  liste.unshift(kayit);
+  if (typeof window._saV2Store === 'function') window._saV2Store(liste);
   document.getElementById('sav2-form-modal')?.remove();
-  window.toast?.('Teklif kaydedildi', 'ok');
+  window.toast?.('Teklif kaydedildi \u2014 ' + urunler.length + ' \u00fcr\u00fcn', 'ok');
   window.renderSatinAlmaV2?.();
 };
 
@@ -419,6 +429,7 @@ window._saV2UrunSatirEkle = function() {
   };
   var satir = document.createElement('div');
   satir.className = 'sav2f-urun-satir';
+  satir.setAttribute('data-urun-satir', String(idx));
   satir.style.cssText = 'border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;background:var(--s2);display:flex;flex-direction:column;gap:8px;margin-bottom:8px';
   satir.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between">'
     + '<span style="font-size:9px;font-weight:500;color:var(--t2)">Ürün ' + (idx + 1) + '</span>'
