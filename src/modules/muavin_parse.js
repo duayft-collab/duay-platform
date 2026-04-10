@@ -162,7 +162,15 @@ window._mvDosyaOku = function(inp, taraf) {
         if(typeof XLSX==='undefined'){window.toast&&window.toast('SheetJS yüklenmedi','err');return;}
         var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
         _isle(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{FS:'\t',RS:'\n'}));
-      } catch(err){console.warn('[MUAVİN] xlsx hata:',err);window.toast&&window.toast('xlsx okunamadı: '+err.message,'err');}
+      } catch(err){
+  console.warn('[MUAVİN] xlsx hata:',err);
+  window.toast&&window.toast('xlsx okunamadı: '+err.message,'err');
+  var _meta=JSON.parse(localStorage.getItem('ak_muavin_meta_v1')||'{}');
+  var _don=window._mvDonem||(new Date().getFullYear()+'Q'+Math.ceil((new Date().getMonth()+1)/3));
+  if(_meta[_don]){delete _meta[_don][taraf];}
+  localStorage.setItem('ak_muavin_meta_v1',JSON.stringify(_meta));
+  window.renderMuavin&&window.renderMuavin();
+}
     };
     r.readAsArrayBuffer(f);
   } else {
