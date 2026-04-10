@@ -2056,7 +2056,7 @@ window._openSatisModal = function(fromAlis) {
   var existingForm = document.getElementById('satis-inline-form');
   if (existingForm) { existingForm.remove(); return; }
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
-  var musteriList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.cariType==='onayli');}) : [];
+  var musteriList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='Müşteri'||c.tip==='musteri'||c.cariType==='onayli');}) : [];
   var cont = document.getElementById('satis-list'); if (!cont) return;
   var form = document.createElement('div');
   form.id = 'satis-inline-form';
