@@ -60,9 +60,9 @@ window.renderSatinAlmaV2 = function() {
   var seciliSay = window.SAV2_SECILI ? Object.keys(window.SAV2_SECILI).filter(function(k){return window.SAV2_SECILI[k];}).length : 0;
   h += '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:0.5px solid '+window._b+';flex-shrink:0;overflow-x:auto">';
   h += '<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;white-space:nowrap;flex-shrink:0;font-family:inherit">+ Yeni Teklif</button>';
-  var _canSatisTeklif = window.isAdmin?.() || (window.CU?.()?.role||window.CU?.()?.rol||'')==='manager';
+  var _canSatisTeklif = window.isAdmin?.() || ['manager','lead'].indexOf(window.CU?.()?.role||window.CU?.()?.rol||'')!==-1;
   h += '<div style="width:0.5px;height:18px;background:'+window._b+';flex-shrink:0"></div>';
-  h += '<input id="sav2-srch" placeholder="Duay kodu, ürün adı, tedarikçi..." oninput="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:10px;padding:5px 9px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t+';min-width:180px;font-family:inherit">';
+  h += '<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Duay kodu, ürün adı, tedarikçi..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:10px;padding:5px 9px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t+';min-width:180px;font-family:inherit">';
   h += '<select id="sav2-durum" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="font-size:10px;padding:5px 8px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t2+';flex-shrink:0;font-family:inherit"><option value="">Tüm durumlar</option><option value="bekleyen">Bekleyen</option><option value="onaylandi">Onaylı</option><option value="reddedildi">Reddedildi</option></select>';
   h += '<select id="sav2-ted" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="font-size:10px;padding:5px 8px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t2+';flex-shrink:0;font-family:inherit"><option value="">Tüm tedarikçiler</option></select>';
   h += '<select id="sav2-tarih" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="font-size:10px;padding:5px 8px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t2+';flex-shrink:0;font-family:inherit"><option value="">Bu ay</option><option value="hafta">Bu hafta</option><option value="3ay">Son 3 ay</option><option value="hepsi">Tümü</option></select>';
@@ -273,7 +273,7 @@ window.renderSatinAlmaV2 = function() {
 
 /* ── Filtre uygulayıcı ──────────────────────────────────────── */
 window._saV2FiltreLi = function(liste) {
-  var q    = document.getElementById('sav2-srch')?.value?.toLowerCase?.() || '';
+  var q    = (window._sav2SrchVal || document.getElementById('sav2-srch')?.value || '').toLowerCase();
   var dur  = document.getElementById('sav2-durum')?.value || '';
   var ted  = document.getElementById('sav2-ted')?.value || '';
   var tar  = document.getElementById('sav2-tarih')?.value || '';
