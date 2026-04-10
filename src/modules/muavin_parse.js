@@ -31,7 +31,19 @@ window._mvHesapKategoriAd = function(hesapKodu) {
   return _mvHesapKategori[kod] || _mvHesapKategori[kod.slice(0, 3)] || _mvHesapKategori[kod.slice(0, 2)] || _mvHesapKategori[kod.slice(0, 1)] || '';
 };
 
-/* v3.0: ölü global'ler temizlendi — meta artık ak_muavin_meta_v1'de */
+function _mvParseTarih(s) {
+  if(!s) return null;
+  var str = String(s).trim();
+  var m = str.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
+  if(m) {
+    var gun=parseInt(m[1]),ay=parseInt(m[2]),yil=parseInt(m[3]);
+    if(yil<100) yil+=2000;
+    var d=new Date(yil,ay-1,gun);
+    return isNaN(d.getTime())?null:d;
+  }
+  var d2=new Date(s);
+  return isNaN(d2.getTime())?null:d2;
+}
 
 function _mvMetaKaydet(taraf, ad, satir, boyutStr) {
   try {
@@ -55,8 +67,8 @@ function _mvParseMuhasebeci(tsv) {
     if (!ilk) return;
     var skipler = ['nakli','genel','tarih','tip','fiş','borç','alacak','bakiye','hesap','dönem','tl','b/a'];
     if (skipler.some(function(k){return ilk.toLowerCase().indexOf(k)!==-1;})) return;
-    var tarihVal = new Date(kolonlar[0]);
-    if (isNaN(tarihVal.getTime())) {
+    var tarihObj = _mvParseTarih(kolonlar[0]);
+    if (!tarihObj) {
       var m = ilk.match(/^(\d{2,3}[\.\w]+)\s+(.+)$/);
       if (m) { mevcutHesapKodu = m[1]; mevcutCari = m[2].trim(); }
       return;
@@ -67,7 +79,7 @@ function _mvParseMuhasebeci(tsv) {
     var fisNo = (kolonlar[2]||'').trim();
     if (!tip && !fisNo && borc===0 && alacak===0) return;
     islemler.push({
-      tarih: tarihVal.toLocaleDateString('tr-TR'),
+      tarih: tarihObj.toLocaleDateString('tr-TR'),
       tip: tip, fisNo: fisNo,
       aciklama: (kolonlar[3]||'').trim(),
       borc: borc, alacak: alacak,
@@ -110,10 +122,10 @@ function _mvParseBaran(tsv) {
     var islemTuru=k[km.islemTuru]||'';
     var tarih=k[km.tarih]||'';
     if (!islemTuru&&!tarih) return;
-    var tObj=new Date(tarih);
+    var tObj=_mvParseTarih(tarih);
     islemler.push({
       islemTuru: islemTuru,
-      tarih: !isNaN(tObj.getTime())?tObj.toLocaleDateString('tr-TR'):tarih,
+      tarih: tObj?tObj.toLocaleDateString('tr-TR'):tarih,
       aciklama: k[km.aciklama]||'',
       faturaSeri: k[km.faturaSeri]||'',
       faturaSira: k[km.faturaSira]||'',
