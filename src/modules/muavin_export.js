@@ -570,4 +570,108 @@ window._mvTopluMutabakatPDF = function() {
   window.toast?.('Toplu mutabakat raporu açıldı', 'ok');
 };
 
+window._mvMutabakatPDFRaporu = function() {
+  var s = window._mvEslesmeSonucu;
+  if (!s) { window.toast && window.toast('Önce karşılaştırma yapın', 'warn'); return; }
+  var donem = window._mvDonem || '';
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  var meta = JSON.parse(localStorage.getItem('ak_muavin_meta_v1') || '{}');
+  var mMeta = (meta[donem] || {}).muhasebeci || {};
+  var bMeta = (meta[donem] || {}).baran || {};
+
+  var html = '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">';
+  html += '<title>Mutabakat Raporu ' + donem + '</title>';
+  html += '<style>';
+  html += 'body{font-family:Arial,sans-serif;margin:30px;color:#111;font-size:11px}';
+  html += 'h1{font-size:16px;margin:0}h2{font-size:12px;margin:16px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}';
+  html += '.baslik{text-align:center;margin-bottom:20px}.baslik p{color:#555;margin:4px 0;font-size:11px}';
+  html += '.dosyalar{display:flex;gap:16px;margin-bottom:20px}';
+  html += '.dosya-kart{flex:1;border:1px solid #ddd;border-radius:6px;padding:10px;font-size:10px}';
+  html += '.dosya-kart .lbl{font-size:9px;color:#888;text-transform:uppercase;margin-bottom:4px}';
+  html += '.kpi{display:flex;gap:12px;margin-bottom:20px}';
+  html += '.kpi-kart{flex:1;border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center}';
+  html += '.kpi-kart .lbl{font-size:9px;color:#888;text-transform:uppercase}';
+  html += '.kpi-kart .val{font-size:20px;font-weight:bold;margin-top:2px}';
+  html += 'table{width:100%;border-collapse:collapse;margin-bottom:16px}';
+  html += 'th,td{border:1px solid #ddd;padding:4px 7px;font-size:10px}';
+  html += 'th{background:#f5f5f5;font-weight:bold;text-align:left}';
+  html += '.eslesti{background:#EAF3DE}.fark{background:#FAEEDA}.eksik{background:#FCEBEB}';
+  html += '.imza{display:flex;justify-content:space-between;margin-top:40px}';
+  html += '.imza-alan{text-align:center;width:180px}';
+  html += '.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px;font-size:10px}';
+  html += '</style></head><body>';
+
+  html += '<div class="baslik"><h1>MUHASEBE MUTABAKATI RAPORU</h1>';
+  html += '<p>DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</p>';
+  html += '<p>Dönem: <b>' + donem + '</b> &nbsp;|&nbsp; Oluşturma: ' + tarih + '</p></div>';
+
+  html += '<div class="dosyalar">';
+  html += '<div class="dosya-kart"><div class="lbl">Muhasebeci Excel</div>';
+  html += '<b>' + (mMeta.ad || '—') + '</b><br>' + (mMeta.satir || 0) + ' işlem · ' + (mMeta.tarih || '') + '</div>';
+  html += '<div class="dosya-kart"><div class="lbl">Baran Ekstresi</div>';
+  html += '<b>' + (bMeta.ad || '—') + '</b><br>' + (bMeta.satir || 0) + ' işlem · ' + (bMeta.tarih || '') + '</div>';
+  html += '</div>';
+
+  var topFark = s.farkVar.length + s.sadeceMuhasebe.length + s.sadeceBaran.length + s.dovizFark.length;
+  html += '<div class="kpi">';
+  html += '<div class="kpi-kart"><div class="lbl">Eşleşen</div><div class="val" style="color:#27500A">' + s.eslesen.length + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Tutar Farkı</div><div class="val" style="color:#854F0B">' + s.farkVar.length + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Sadece Muhasebe</div><div class="val" style="color:#A32D2D">' + s.sadeceMuhasebe.length + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Sadece Baran</div><div class="val" style="color:#633806">' + s.sadeceBaran.length + '</div></div>';
+  html += '<div class="kpi-kart"><div class="lbl">Döviz Farkı</div><div class="val" style="color:#185FA5">' + s.dovizFark.length + '</div></div>';
+  html += '</div>';
+
+  if (s.farkVar.length) {
+    html += '<h2>Tutar Farkları (' + s.farkVar.length + ' kayıt)</h2>';
+    html += '<table><thead><tr><th>Cari</th><th>Tarih (Muhasebe)</th><th>Tutar (Muhasebe)</th><th>Tarih (Baran)</th><th>Tutar (Baran)</th><th>Fark</th></tr></thead><tbody>';
+    s.farkVar.forEach(function(f) {
+      var mT = f.m.borc || f.m.alacak || 0;
+      var bT = f.b.borcMeblagh || f.b.alacakMeblagh || 0;
+      html += '<tr class="fark"><td>' + (f.m.cariAd || '—') + '</td><td>' + (f.m.tarih || '—') + '</td>';
+      html += '<td style="text-align:right">' + mT.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' TL</td>';
+      html += '<td>' + (f.b.tarih || '—') + '</td>';
+      html += '<td style="text-align:right">' + bT.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ' + (f.b.borcDoviz || f.b.alacakDoviz || 'TL') + '</td>';
+      html += '<td style="text-align:right;font-weight:bold">' + f.fark.toLocaleString('tr-TR', {minimumFractionDigits:2}) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if (s.sadeceMuhasebe.length) {
+    html += '<h2>Sadece Muhasebede (' + s.sadeceMuhasebe.length + ' kayıt — Baran ekstresinde yok)</h2>';
+    html += '<table><thead><tr><th>Cari</th><th>Tarih</th><th>Fiş No</th><th>Borç</th><th>Alacak</th></tr></thead><tbody>';
+    s.sadeceMuhasebe.forEach(function(m) {
+      html += '<tr class="eksik"><td>' + (m.cariAd || '—') + '</td><td>' + (m.tarih || '—') + '</td>';
+      html += '<td>' + (m.fisNo || '—') + '</td>';
+      html += '<td style="text-align:right">' + (m.borc ? m.borc.toLocaleString('tr-TR', {minimumFractionDigits:2}) : '—') + '</td>';
+      html += '<td style="text-align:right">' + (m.alacak ? m.alacak.toLocaleString('tr-TR', {minimumFractionDigits:2}) : '—') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if (s.sadeceBaran.length) {
+    html += '<h2>Sadece Baran Ekstresinde (' + s.sadeceBaran.length + ' kayıt — Muhasebede yok)</h2>';
+    html += '<table><thead><tr><th>İşlem Türü</th><th>Tarih</th><th>Açıklama</th><th>Tutar</th></tr></thead><tbody>';
+    s.sadeceBaran.forEach(function(b) {
+      var t = b.borcMeblagh || b.alacakMeblagh || 0;
+      html += '<tr class="eksik"><td>' + (b.islemTuru || '—') + '</td><td>' + (b.tarih || '—') + '</td>';
+      html += '<td>' + (b.aciklama || '—').slice(0, 60) + '</td>';
+      html += '<td style="text-align:right">' + t.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ' + (b.borcDoviz || b.alacakDoviz || '') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  html += '<div class="imza">';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Hazırlayan</div></div>';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Muhasebeci</div></div>';
+  html += '<div class="imza-alan"><div class="imza-cizgi">Yönetim</div></div>';
+  html += '</div>';
+  html += '</body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { window.toast && window.toast('Popup engellendi', 'warn'); return; }
+  win.document.write(html);
+  win.document.close();
+  window.toast && window.toast('Mutabakat raporu açıldı', 'ok');
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');

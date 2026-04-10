@@ -330,6 +330,7 @@ window.renderMuavin = function() {
   sagIcerik += '<div style="display:flex;gap:6px">';
   if (aktifTab === 'karsilastirma' && mMeta.ad && bMeta.ad) {
     sagIcerik += '<button onclick="event.stopPropagation();window._mvEslestir()" style="font-size:11px;padding:5px 12px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Karşılaştır →</button>';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvMutabakatPDFRaporu()" style="font-size:11px;padding:5px 12px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;color:#A32D2D;cursor:pointer;font-family:inherit">PDF Raporu</button>';
   }
   sagIcerik += '</div>';
   sagIcerik += '</div>';
