@@ -200,11 +200,12 @@ window.renderSatinAlmaV2 = function() {
     h += '</div></div>';
     h += '<div style="width:86px"><span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_saEsc(_saV2DuayKodu(t))+'</span></div>';
     h += '<div style="width:130px;font-size:11px;font-weight:500;color:'+window._t+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(_saV2UrunAdi(t))+(_saV2UrunSayisi(t)>1?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#E6F1FB;color:#0C447C;margin-left:4px">+'+(_saV2UrunSayisi(t)-1)+'</span>':'')+'</div>';
-    h += '<div style="width:100px;font-size:10px;color:'+window._t2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(t.turkceAdi||t.duayAdi||'—')+'</div>';
-    h += '<div style="width:50px;font-size:10px;color:'+window._t2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(t.marka||'—')+'</div>';
-    h += '<div style="width:38px;font-size:10px;color:'+window._t3+'">'+_saEsc(t.birim||'—')+'</div>';
-    h += '<div style="width:38px;font-size:10px;color:'+window._t3+'">'+_saEsc(t.mensei||'—')+'</div>';
-    h += '<div style="width:52px;font-size:9px;font-family:monospace;color:'+window._t3+'">'+_saEsc(t.gtip||'—')+'</div>';
+    var _u0 = _saV2IlkUrun(t);
+    h += '<div style="width:100px;font-size:10px;color:'+window._t2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(_u0.turkceAdi||t.turkceAdi||t.duayAdi||'\u2014')+'</div>';
+    h += '<div style="width:50px;font-size:10px;color:'+window._t2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(_u0.marka||t.marka||'\u2014')+'</div>';
+    h += '<div style="width:38px;font-size:10px;color:'+window._t3+'">'+_saEsc(_u0.birim||t.birim||'\u2014')+'</div>';
+    h += '<div style="width:38px;font-size:10px;color:'+window._t3+'">'+_saEsc(_u0.mensei||t.mensei||'\u2014')+'</div>';
+    h += '<div style="width:52px;font-size:9px;font-family:monospace;color:'+window._t3+'">'+_saEsc(_u0.gtip||t.gtip||'\u2014')+'</div>';
     h += '<div style="width:65px;font-size:11px;font-weight:500;color:'+kenar+'">'+_saEsc(_saV2AlisF(t)||'\u2014')+' '+_saEsc(_saV2Para(t))+'</div>';
     h += '<div style="width:50px;font-size:9px;color:#0C447C;font-family:monospace">'+_saEsc(t.jobId||'—')+'</div>';
     var stRenk = {bekleyen:'background:#FAEEDA;color:#854F0B',onaylandi:'background:#E1F5EE;color:#0F6E56',reddedildi:'background:#FCEBEB;color:#A32D2D'}[t.durum]||'background:'+window._s2+';color:'+window._t3;
@@ -213,6 +214,17 @@ window.renderSatinAlmaV2 = function() {
     if(typeof window._steklifOzetHTML==='function') h += window._steklifOzetHTML(t);
     h += '</div>';
     h += '</div>';
+    if (t.urunler && t.urunler.length > 1) {
+      t.urunler.forEach(function(u, i) {
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 12px 4px 32px;border-bottom:0.5px solid '+window._b+';background:'+window._s2+'">';
+        h += '<span style="font-size:9px;color:'+window._t3+';min-width:16px">'+(i+1)+'.</span>';
+        h += '<span style="font-size:10px;font-family:monospace;color:'+window._t3+';min-width:80px">'+_saEsc(u.duayKodu||'\u2014')+'</span>';
+        h += '<span style="font-size:10px;color:'+window._t+';flex:1">'+_saEsc(u.urunAdi||u.turkceAdi||'\u2014')+'</span>';
+        h += '<span style="font-size:10px;color:'+window._t3+'">'+(u.miktar||0)+' '+_saEsc(u.birim||'')+'</span>';
+        h += '<span style="font-size:10px;color:#0F6E56;min-width:80px;text-align:right">'+_saEsc(u.toplam||'')+' '+_saEsc(u.para||'')+'</span>';
+        h += '</div>';
+      });
+    }
   });
 
   h += '</div>';
@@ -403,14 +415,16 @@ window._saV2Kopyala = function(id) {
   var t = liste.find(function(x) { return x.id === id; });
   if (!t) { window.toast?.('Teklif bulunamadı', 'warn'); return; }
   var yeni = JSON.parse(JSON.stringify(t));
-  yeni.id = window._saId?.() || (Date.now() + Math.random().toString(36).slice(2, 6));
+  yeni.id = typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now());
   yeni.teklifId = window._saTeklifId?.(t.musteriKod || '0000') || yeni.id;
   yeni.durum = 'bekleyen';
   yeni.revNo = '01';
   yeni.revGecmisi = [];
   yeni.guncellemeTalep = null;
-  yeni.createdAt = window._saNow?.();
-  yeni.updatedAt = window._saNow?.();
+  yeni.piNo = '';
+  yeni.piTarih = '';
+  yeni.createdAt = new Date().toISOString();
+  yeni.updatedAt = new Date().toISOString();
   yeni.gonderimTarih = null;
   yeni.kabulTarih = null;
   yeni.redTarih = null;
