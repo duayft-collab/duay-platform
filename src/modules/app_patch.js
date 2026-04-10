@@ -62,6 +62,7 @@ window._yetkiKontrol = function(islem) {
     'trash': () => { window.renderTrashPanel?.(); },
     'links': () => { window.renderLinks?.(); },
     'numune': () => { window.renderNumuneler?.(); },
+    'satinalma-siparis': () => { window.renderSatinAlmaSiparis?.(); },
     'evrak': () => { window.renderEvrak?.(); },
     'arsiv': () => { window.renderArsiv?.(); },
     'docs': () => { window.renderDocs?.(); },
@@ -4784,11 +4785,14 @@ window._renderFirmaKpi = function() {
       G.lojistik.mods.unshift({ id: 'kargo', label: 'Kargo Takibi' });
     }
   }
-  /* SA-V2 Alış Teklifleri V2 → Satınalma grubuna ekle (idempotent) */
-  if (G.satinalma && Array.isArray(G.satinalma.mods)) {
-    if (!G.satinalma.mods.some(function(m) { return m.id === 'satin-alma'; })) {
-      G.satinalma.mods.unshift({ id: 'satin-alma', label: 'Alış Teklifleri V2' });
-    }
+  /* Satınalma menüsü — tam yeniden yapılandır */
+  if (G.satinalma) {
+    G.satinalma.mods = [
+      { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri V2' },
+      { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
+      { id: 'satinalma-siparis', label: 'Sipari\u015fler' },
+      { id: 'numune',            label: 'Numune Ar\u015fivi' },
+    ];
   }
 })();
 
@@ -5010,3 +5014,45 @@ window._pkDurumDegistir = function(kuralId) {
     }
   }, 2000);
 })();
+
+/* ── MENU-SATINALMA-001: Siparişler Paneli ─────────────────── */
+window.renderSatinAlmaSiparis = function() {
+  var panel = document.getElementById('panel-satinalma-siparis');
+  if (!panel) return;
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var siparisler = liste.filter(function(t) { return !t.isDeleted && t.durum === 'kabul'; });
+  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return String(s || ''); };
+  var h = '<div style="padding:16px">';
+  h += '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Sipari\u015fler</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Onayl\u0131 al\u0131\u015f tekliflerinden olu\u015fan sipari\u015fler</div>';
+  if (!siparisler.length) {
+    h += '<div style="text-align:center;padding:60px;color:var(--t3)">Hen\u00fcz onayland\u0131 sipari\u015f yok<br><span style="font-size:11px">Al\u0131\u015f Teklifleri V2\'den teklif onayland\u0131\u011f\u0131nda burada g\u00f6r\u00fcn\u00fcr</span></div>';
+  } else {
+    h += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    h += '<thead><tr style="border-bottom:1px solid var(--b)">';
+    h += '<th style="padding:8px;text-align:left;color:var(--t3);font-weight:500">Teklif ID</th>';
+    h += '<th style="padding:8px;text-align:left;color:var(--t3);font-weight:500">Tedarik\u00e7i</th>';
+    h += '<th style="padding:8px;text-align:left;color:var(--t3);font-weight:500">\u00dcr\u00fcn</th>';
+    h += '<th style="padding:8px;text-align:right;color:var(--t3);font-weight:500">Toplam</th>';
+    h += '<th style="padding:8px;text-align:left;color:var(--t3);font-weight:500">Onay Tarihi</th>';
+    h += '<th style="padding:8px;text-align:left;color:var(--t3);font-weight:500">\u0130\u015flemler</th>';
+    h += '</tr></thead><tbody>';
+    siparisler.forEach(function(t) {
+      var urunAdi = typeof window._saV2UrunAdi === 'function' ? window._saV2UrunAdi(t) : (t.urunAdi || '\u2014');
+      var toplam = t.toplamTutar || (typeof window._saV2AlisF === 'function' ? window._saV2AlisF(t) : '') || '\u2014';
+      var para = t.toplamPara || (typeof window._saV2Para === 'function' ? window._saV2Para(t) : 'USD');
+      var tarih = (t.onayTarih || t.updatedAt || '').slice(0, 10);
+      h += '<tr style="border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
+      h += '<td style="padding:8px;font-family:monospace;color:var(--t3);font-size:10px">' + esc(String(t.id || '').slice(-8)) + '</td>';
+      h += '<td style="padding:8px;font-weight:500;color:var(--t)">' + esc(t.tedarikci || '\u2014') + '</td>';
+      h += '<td style="padding:8px;color:var(--t2)">' + esc(urunAdi) + (t.urunSayisi > 1 ? ' +' + (t.urunSayisi - 1) + ' \u00fcr\u00fcn' : '') + '</td>';
+      h += '<td style="padding:8px;text-align:right;color:#0F6E56;font-weight:500">' + esc(toplam) + ' ' + esc(para) + '</td>';
+      h += '<td style="padding:8px;color:var(--t3)">' + esc(tarih) + '</td>';
+      h += '<td style="padding:8px"><button onclick="event.stopPropagation();window.App?.nav(\'satin-alma\')" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Detay \u2192</button></td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+  }
+  h += '</div>';
+  panel.innerHTML = h;
+};
