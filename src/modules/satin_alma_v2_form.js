@@ -539,7 +539,7 @@ window._saV2DatalistDoldur = function() {
   var jobSet = {};
   liste.forEach(function(t) { if (t.jobId) jobSet[t.jobId] = true; });
   var gorevler = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
-  gorevler.forEach(function(g) { if (g.jobId) jobSet[g.jobId] = true; if (g.id && !g.isDeleted && g.status !== 'done') jobSet[g.id.slice(-4)] = true; });
+  gorevler.forEach(function(g) { if (g.jobId) jobSet[g.jobId] = true; if (g.id && !g.isDeleted && g.status !== 'done') jobSet[String(g.id).slice(-4)] = true; });
   var jobDl = document.getElementById('sav2f-job-list');
   if (jobDl) jobDl.innerHTML = Object.keys(jobSet).sort().map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
 };
@@ -555,7 +555,7 @@ window._saV2JobIdAra = function(inp) {
     return !g.isDeleted && g.status !== 'done' &&
       ((g.jobId || '').toLowerCase().includes(val) ||
        (g.baslik || g.title || '').toLowerCase().includes(val) ||
-       (g.id || '').toLowerCase().includes(val));
+       (String(g.id || '')).toLowerCase().includes(val));
   }).slice(0, 8);
   var mevcutTeklifler = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
   var mevcutJobSet = {};
