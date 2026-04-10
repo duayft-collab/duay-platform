@@ -1025,7 +1025,7 @@ const DEFAULT_TASKS = [
 ];
 
 /** @returns {Array<Object>} */
-function loadTasks()       { var d = _read(KEYS.tasks); var arr = Array.isArray(d) ? d : DEFAULT_TASKS; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+function loadTasks()       { var d = _read(KEYS.tasks); var arr = Array.isArray(d) ? d : DEFAULT_TASKS; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); var cu = window.CU?.(); if (!cu || cu.role === 'admin' || cu.rol === 'admin') return filtreli; var uid = cu.uid || cu.id || ''; if (!uid) return filtreli; return filtreli.filter(function(k) { return (k.assignedTo === uid) || (k.createdById === uid) || (k.createdBy === uid) || (!k.assignedTo && !k.createdById && !k.createdBy); }); }
 /** @param {Array<Object>} d */
 function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); if (d.length > 500) { var _active = d.filter(function(t) { return !t.isDeleted && t.status !== 'done'; }); var _done = d.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100); var _del = d.filter(function(t) { return t.isDeleted; }).slice(-50); d = _active.concat(_done, _del); } _write(KEYS.tasks, d);
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
@@ -1292,7 +1292,7 @@ const DEFAULT_IK = [
   { id: 3, name: 'Yeni Aday',  pos: 'Muhasebeci',   dept: 'muhasebe',  start: '2026-04-01', status: 'pending',   stage: 1, email: '',               phone: '', note: 'Belgeler bekleniyor' },
 ];
 
-/** @returns {Array<Object>} */ function loadIk()       { var d = _read(KEYS.ik); var arr = Array.isArray(d) ? d : DEFAULT_IK; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadIk()       { var d = _read(KEYS.ik); var arr = Array.isArray(d) ? d : DEFAULT_IK; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storeIk(d)     { _write(KEYS.ik, d); 
   const _fp_ik = _fsPath('ik'); if (_fp_ik) _syncFirestore(_fp_ik, d);
 }
@@ -1374,7 +1374,7 @@ const DEFAULT_PIRIM_PARAMS = [
   { code: 'CE', label: 'CEO Takdir',           base: 'serbest', rate: null, locked: false },
 ];
 
-/** @returns {Array<Object>} */ function loadPirim()          { const d = _read(KEYS.pirim); const arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadPirim()          { const d = _read(KEYS.pirim); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storePirim(d)        { _write(KEYS.pirim, d); 
   const _fp_pirim = _fsPath('pirim'); if (_fp_pirim) _syncFirestore(_fp_pirim, d);
 }
@@ -1570,7 +1570,7 @@ function storeTahsilat(d) {
  * İzin kayıtlarını yükler.
  * @returns {Array<Object>}
  */
-function loadIzin()    { const d = _read(KEYS.izin); return Array.isArray(d) ? d : []; }
+function loadIzin()    { const d = _read(KEYS.izin); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /**
  * İzin kayıtlarını yazar. Hata durumunda false döner.
  * @param {Array<Object>} d
