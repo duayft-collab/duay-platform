@@ -39,7 +39,7 @@ window._saV2YeniTeklif = function() {
     + '<input id="sav2f-tedarikci" list="sav2f-ted-list" placeholder="Tedarik\u00e7i ad\u0131" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
     + '<datalist id="sav2f-ted-list"></datalist></div>'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">JOB ID</div>'
-    + '<input id="sav2f-jobId" list="sav2f-job-list" placeholder="0041" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
+    + '<input id="sav2f-jobId" list="sav2f-job-list" placeholder="0041" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2JobIdAra?.(this)" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
     + '<datalist id="sav2f-job-list"></datalist></div>'
     + _f('piNo', 'SATICI PI NO', 'PI-2026-001')
     + '</div>'
@@ -120,7 +120,7 @@ window._saV2UrunAraDropdown = function(inp, hedefId) {
   var mevcut = document.getElementById('sa-urun-dropdown');
   if (mevcut) mevcut.remove();
   if (val.length < 2) return;
-  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler() : []).concat(typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : []).filter(function(u) { return !u.isDeleted; });
+  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : []).concat(typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : []).filter(function(u) { return !u.isDeleted; });
   var eslesen = tumListe.filter(function(u) {
     return (u.duayKodu || '').toLowerCase().includes(val)
       || (u.urunAdi || '').toLowerCase().includes(val)
@@ -160,7 +160,7 @@ window._saV2UrunAraDropdown = function(inp, hedefId) {
 
 window._saV2KatalogDoldur = function(kod) {
   if (!kod || kod.length < 5) { var be=document.getElementById('sav2f-katalog-bilgi'); if(be) be.textContent=''; return; }
-  var urunler = typeof window.loadUrunler==='function' ? window.loadUrunler() : [];
+  var urunler = typeof window.loadUrunler==='function' ? window.loadUrunler({tumKullanicilar:true}) : [];
   var ihrUrunler = typeof window.loadIhracatUrunler==='function' ? window.loadIhracatUrunler() : [];
   var tumUrunler = urunler.concat(ihrUrunler);
   var u = tumUrunler.find(function(x){ return (x.duayKodu||'').toLowerCase()===kod.toLowerCase(); });
@@ -268,7 +268,7 @@ window._saV2ZincirEtkisi = function(t) {
   try {
     /* 1. Ürün Kataloğu — son alış fiyatı güncelle */
     if (t.duayKodu && typeof window.loadUrunler === 'function') {
-      var urunler = window.loadUrunler();
+      var urunler = window.loadUrunler({tumKullanicilar:true});
       var u = urunler.find(function(x) { return (x.duayKodu || '') === (t.duayKodu || ''); });
       if (u) {
         u.sonAlisFiyati = t.alisF;
@@ -383,7 +383,7 @@ window._saV2UrunSecModal = function() {
 
 window._saV2UrunListHTML = function(filtre) {
   var tumListe = (window._saV2Load?.() || []).filter(function(t){return !t.isDeleted;});
-  var katalog = typeof window.loadUrunler==='function' ? window.loadUrunler() : [];
+  var katalog = typeof window.loadUrunler==='function' ? window.loadUrunler({tumKullanicilar:true}) : [];
   var ihrUrunler = typeof window.loadIhracatUrunler==='function' ? window.loadIhracatUrunler() : [];
   var tumKatalog = katalog.concat(ihrUrunler).filter(function(u){return !u.isDeleted;});
   var kaynaklar = tumListe.concat(tumKatalog.map(function(u){
@@ -468,7 +468,7 @@ window._saV2UrunSatirEkle = function() {
 /** Ürün satırından katalog otomatik doldurma */
 window._saV2UrunKatalogDoldur = function(pre, kod) {
   if (!kod || kod.length < 3) return;
-  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
   var ihrUrunler = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
   var tumUrunler = urunler.concat(ihrUrunler);
   var u = tumUrunler.find(function(x) { return (x.duayKodu || '').toLowerCase() === kod.toLowerCase(); });
@@ -489,7 +489,7 @@ window._saV2UrunAdAra = function(pre, deger) {
   var inp = document.getElementById(pre + 'urunAdi');
   if (!deger || deger.length < 2) { if (dd) dd.remove(); return; }
   var q = deger.toLowerCase();
-  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
   var ihrUrunler = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
   var tum = urunler.concat(ihrUrunler);
   var sonuc = tum.filter(function(u) {
@@ -542,5 +542,44 @@ window._saV2DatalistDoldur = function() {
   gorevler.forEach(function(g) { if (g.jobId) jobSet[g.jobId] = true; if (g.id && !g.isDeleted && g.status !== 'done') jobSet[g.id.slice(-4)] = true; });
   var jobDl = document.getElementById('sav2f-job-list');
   if (jobDl) jobDl.innerHTML = Object.keys(jobSet).sort().map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
+};
+
+/** Job ID custom dropdown — PP görevler + mevcut teklifler live search */
+window._saV2JobIdAra = function(inp) {
+  var val = (inp.value || '').trim().toLowerCase();
+  var dd = document.getElementById('sav2-jobid-dropdown');
+  if (dd) dd.remove();
+  if (val.length < 1) return;
+  var gorevler = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
+  var eslesen = gorevler.filter(function(g) {
+    return !g.isDeleted && g.status !== 'done' &&
+      ((g.jobId || '').toLowerCase().includes(val) ||
+       (g.baslik || g.title || '').toLowerCase().includes(val) ||
+       (g.id || '').toLowerCase().includes(val));
+  }).slice(0, 8);
+  var mevcutTeklifler = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var mevcutJobSet = {};
+  mevcutTeklifler.forEach(function(t) { if (t.jobId) mevcutJobSet[t.jobId] = true; });
+  var tumListe = eslesen.map(function(g) { return { id: g.jobId || g.id, ad: g.baslik || g.title || g.jobId || g.id, kaynak: 'PP G\u00f6rev' }; });
+  Object.keys(mevcutJobSet).filter(function(j) { return j.toLowerCase().includes(val); }).forEach(function(j) {
+    if (!tumListe.find(function(x) { return x.id === j; })) tumListe.push({ id: j, ad: j, kaynak: 'Mevcut Teklif' });
+  });
+  if (!tumListe.length) return;
+  var rect = inp.getBoundingClientRect();
+  var dd2 = document.createElement('div');
+  dd2.id = 'sav2-jobid-dropdown';
+  dd2.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + (rect.bottom + 2) + 'px;width:' + Math.max(rect.width, 280) + 'px;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;z-index:10001;max-height:240px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)';
+  tumListe.forEach(function(item) {
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center';
+    row.onmouseenter = function() { this.style.background = 'var(--s2)'; };
+    row.onmouseleave = function() { this.style.background = ''; };
+    row.innerHTML = '<span style="font-size:11px;font-weight:500;color:var(--t)">' + _saEsc(item.id) + '</span>'
+      + '<span style="font-size:9px;color:var(--t3)">' + _saEsc(item.kaynak) + '</span>';
+    row.onclick = function(e) { e.stopPropagation(); inp.value = item.id; dd2.remove(); };
+    dd2.appendChild(row);
+  });
+  document.body.appendChild(dd2);
+  document.addEventListener('click', function rm() { dd2.remove(); document.removeEventListener('click', rm); }, { once: true });
 };
 
