@@ -674,4 +674,51 @@ window._mvMutabakatPDFRaporu = function() {
   window.toast && window.toast('Mutabakat raporu açıldı', 'ok');
 };
 
+window._mvOnlemRaporuPDF = function() {
+  var kategoriler = window._mvSonKategoriler;
+  if(!kategoriler){window.toast?.('Önce karşılaştırma yapın','warn');return;}
+  var toplamHata = Object.values(kategoriler).reduce(function(s,k){return s+k.items.length;},0);
+  if(!toplamHata){window.toast?.('Hata bulunamadı','ok');return;}
+  var tarih=new Date().toLocaleDateString('tr-TR');
+  var donem=window._mvDonem||'';
+  var html='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Muavin Önlem Raporu</title>';
+  html+='<style>body{font-family:Arial,sans-serif;margin:30px;color:#111;font-size:11px}';
+  html+='.baslik{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:20px}';
+  html+='.ozet{display:flex;gap:12px;margin-bottom:20px}';
+  html+='.ozet-kart{border:1px solid #ddd;border-radius:6px;padding:10px;flex:1;text-align:center}';
+  html+='.ozet-sayi{font-size:24px;font-weight:bold}';
+  html+='.kat{margin-bottom:16px}';
+  html+='.kat-baslik{font-weight:bold;padding:8px;border-radius:4px;margin-bottom:6px}';
+  html+='.onlem{background:#f5f5f5;border-left:3px solid #185FA5;padding:8px 12px;margin:4px 0;border-radius:0 4px 4px 0}';
+  html+='.imza{display:flex;justify-content:space-between;margin-top:50px}';
+  html+='.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px}';
+  html+='</style></head><body>';
+  html+='<div class="baslik"><h2>DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</h2>';
+  html+='<h3>MUAVİN HATA TESPİT VE ÖNLEM RAPORU</h3>';
+  html+='<p>Dönem: <strong>'+donem+'</strong> | Tarih: '+tarih+'</p></div>';
+  html+='<div class="ozet">';
+  Object.values(kategoriler).forEach(function(k){
+    if(!k.items.length) return;
+    html+='<div class="ozet-kart"><div class="ozet-sayi" style="color:#A32D2D">'+k.items.length+'</div><div style="font-size:9px;margin-top:4px">'+k.ad+'</div></div>';
+  });
+  html+='</div>';
+  var onlemler={eksik_kayit:['İlgili fişi karşı tarafın sistemine girin','Dönem kapanmadan mutabakat sağlayın','Eksik fişin belgelerini temin edin'],tutar_farki:['Orijinal belgeyi kontrol edin','Düzeltme fişi kesin','KDV tutarını ayrı kontrol edin'],tarih_farki:['Fiş tarihini belge üzerinden doğrulayın','Dönem geçişi varsa provizyon kontrolü yapın'],mukerrer:['Mükerrer kaydı iptal edin','Neden oluştuğunu kayıt altına alın'],yuksek_tutar:['Açıklama ve belge ekleyin','Yönetici onayı alın']};
+  Object.entries(kategoriler).forEach(function(entry){
+    var key=entry[0],k=entry[1];
+    if(!k.items.length) return;
+    html+='<div class="kat"><div class="kat-baslik" style="background:#f0f0f0">'+k.ad+' ('+k.items.length+' adet)</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px"><thead><tr style="background:#f5f5f5"><th style="padding:5px;text-align:left">Fiş No</th><th style="padding:5px;text-align:left">Detay</th><th style="padding:5px;text-align:right">Tutar</th></tr></thead><tbody>';
+    k.items.slice(0,15).forEach(function(item){html+='<tr style="border-bottom:1px solid #eee"><td style="padding:4px 5px;font-family:monospace">'+(item.fisNo||'—')+'</td><td style="padding:4px 5px">'+(item.durum||item.tarih1||item.taraf||'')+'</td><td style="padding:4px 5px;text-align:right">'+(item.tutar?item.tutar.toLocaleString('tr-TR'):item.fark?'Fark: '+item.fark.toLocaleString('tr-TR'):'')+'</td></tr>';});
+    html+='</tbody></table>';
+    if(onlemler[key]){html+='<div style="font-weight:bold;margin-bottom:4px;font-size:10px">Önerilen Önlemler:</div>';onlemler[key].forEach(function(o){html+='<div class="onlem">'+o+'</div>';});}
+    html+='</div>';
+  });
+  html+='<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Hazırlayan</div></div><div class="imza-alan"><div class="imza-cizgi">Mali Müşavir</div></div><div class="imza-alan"><div class="imza-cizgi">Yönetim Onayı</div></div></div>';
+  html+='</body></html>';
+  var win=window.open('','_blank');
+  if(!win){window.toast?.('Popup engellendi','warn');return;}
+  win.document.write(html);win.document.close();win.print();
+  window.toast?.('Önlem raporu açıldı','ok');
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');

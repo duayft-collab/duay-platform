@@ -519,5 +519,64 @@ window._mvEslesmeSonucHTML = function() {
   return h;
 };
 
+window._mvHataKategoriHTML = function() {
+  var is1 = window._mvSonIslemler||[];
+  var isB = window._mvSonIslemlerB||[];
+  if(!is1.length&&!isB.length) return '<div style="padding:20px;text-align:center;color:var(--t3)">Önce her iki Excel\'i yükleyin</div>';
+  var kategoriler = {
+    eksik_kayit: {ad:'Eksik Kayıt',aciklama:'Bir tarafta var diğerinde yok',renkBg:'#FCEBEB',renkText:'#A32D2D',items:[]},
+    tutar_farki: {ad:'Tutar Farkı',aciklama:'Aynı fiş farklı tutar',renkBg:'#FAEEDA',renkText:'#854F0B',items:[]},
+    tarih_farki: {ad:'Tarih Farkı',aciklama:'Aynı fiş farklı tarih',renkBg:'#E6F1FB',renkText:'#185FA5',items:[]},
+    mukerrer: {ad:'Mükerrer Kayıt',aciklama:'Aynı fiş birden fazla kez',renkBg:'#FAEEDA',renkText:'#854F0B',items:[]},
+    yuksek_tutar: {ad:'Yüksek Tutar Uyarısı',aciklama:'100.000 TL üstü açıklamasız',renkBg:'#FCEBEB',renkText:'#A32D2D',items:[]}
+  };
+  var fisMap1={},fisMapB={};
+  is1.forEach(function(i){if(i.fisNo){if(fisMap1[i.fisNo])kategoriler.mukerrer.items.push({fisNo:i.fisNo,taraf:'Muhasebeci'});else fisMap1[i.fisNo]=i;}});
+  isB.forEach(function(i){if(i.fisNo){if(fisMapB[i.fisNo])kategoriler.mukerrer.items.push({fisNo:i.fisNo,taraf:'Şirket'});else fisMapB[i.fisNo]=i;}});
+  Object.keys(fisMap1).forEach(function(fis){
+    var i1=fisMap1[fis],iB=fisMapB[fis];
+    if(!iB){kategoriler.eksik_kayit.items.push({fisNo:fis,durum:'Muhasebecide var, şirkette yok',tutar:i1.borc||i1.alacak,tarih:i1.tarih});}
+    else{
+      if(Math.abs((i1.borc||0)-(iB.borc||0))>1||Math.abs((i1.alacak||0)-(iB.alacak||0))>1) kategoriler.tutar_farki.items.push({fisNo:fis,tutar1:i1.borc||i1.alacak,tutarB:iB.borc||iB.alacak,fark:Math.abs((i1.borc||0)-(iB.borc||0))});
+      if(i1.tarih!==iB.tarih) kategoriler.tarih_farki.items.push({fisNo:fis,tarih1:i1.tarih,tarihB:iB.tarih});
+    }
+  });
+  Object.keys(fisMapB).forEach(function(fis){if(!fisMap1[fis])kategoriler.eksik_kayit.items.push({fisNo:fis,durum:'Şirkette var, muhasebecide yok',tutar:fisMapB[fis].borc||fisMapB[fis].alacak,tarih:fisMapB[fis].tarih});});
+  is1.forEach(function(i){if((i.borc>100000||i.alacak>100000)&&(!i.aciklama||i.aciklama.trim().length<5))kategoriler.yuksek_tutar.items.push({fisNo:i.fisNo,tutar:i.borc||i.alacak,tarih:i.tarih});});
+  var toplamHata = Object.values(kategoriler).reduce(function(s,k){return s+k.items.length;},0);
+  window._mvSonKategoriler = kategoriler;
+  if(!toplamHata) return '<div style="padding:16px;background:#E1F5EE;border-radius:8px;color:#085041;font-size:12px;font-weight:500">✓ Hata bulunamadı — kayıtlar uyuşuyor</div>';
+  var h='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">';
+  Object.values(kategoriler).forEach(function(k){
+    h+='<div style="background:'+k.renkBg+';border-radius:8px;padding:12px;text-align:center">';
+    h+='<div style="font-size:22px;font-weight:500;color:'+k.renkText+'">'+k.items.length+'</div>';
+    h+='<div style="font-size:9px;font-weight:500;color:'+k.renkText+';margin-top:2px">'+k.ad.toUpperCase()+'</div>';
+    h+='<div style="font-size:8px;color:'+k.renkText+';opacity:.7;margin-top:2px">'+k.aciklama+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  Object.entries(kategoriler).forEach(function(entry){
+    var kat=entry[1];
+    if(!kat.items.length) return;
+    h+='<div style="border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:10px">';
+    h+='<div style="background:'+kat.renkBg+';padding:10px 14px;display:flex;align-items:center;justify-content:space-between">';
+    h+='<div><span style="font-size:11px;font-weight:500;color:'+kat.renkText+'">'+kat.ad+'</span><span style="font-size:9px;color:'+kat.renkText+';margin-left:8px;opacity:.8">'+kat.aciklama+'</span></div>';
+    h+='<span style="font-size:11px;font-weight:500;color:'+kat.renkText+'">'+kat.items.length+' adet</span>';
+    h+='</div>';
+    h+='<table style="width:100%;border-collapse:collapse;font-size:10px"><tbody>';
+    kat.items.slice(0,10).forEach(function(item){
+      h+='<tr style="border-bottom:0.5px solid var(--b)">';
+      h+='<td style="padding:6px 12px;font-family:monospace;color:var(--t)">'+(item.fisNo||'—')+'</td>';
+      h+='<td style="padding:6px 12px;color:var(--t2)">'+(item.durum||item.tarih1||item.taraf||'')+'</td>';
+      h+='<td style="padding:6px 12px;text-align:right;color:var(--t3)">'+(item.tutar?item.tutar.toLocaleString('tr-TR'):item.fark?'Fark: '+item.fark.toLocaleString('tr-TR'):'')+'</td>';
+      h+='<td style="padding:6px 12px;color:var(--t3)">'+(item.tarih||item.tarihB||'')+'</td>';
+      h+='</tr>';
+    });
+    if(kat.items.length>10) h+='<tr><td colspan="4" style="padding:6px 12px;color:var(--t3);font-style:italic">...ve '+(kat.items.length-10)+' kayıt daha</td></tr>';
+    h+='</tbody></table></div>';
+  });
+  return h;
+};
+
 console.log('[MUAVIN-PARSE] yüklendi');
 

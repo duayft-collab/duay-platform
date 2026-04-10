@@ -100,6 +100,7 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
     { id: 'baran', lbl: 'Baran Ekstresi', badge: kpi.bSay || null, badgeRenk: 'info' },
     { id: 'cari', lbl: 'Cari Özet', badge: null },
     { id: 'donem', lbl: 'Dönem Karş.', badge: null },
+    { id: 'hata-analiz', lbl: 'Hata Analizi'+(window._mvSonKategoriler?(' ('+Object.values(window._mvSonKategoriler).reduce(function(s,k){return s+k.items.length;},0)+')'):''), badge: null, badgeRenk: 'warn' },
     { id: 'notlar', lbl: 'Notlar', badge: ((meta[donem] || {}).notSay) || null, badgeRenk: 'default' }
   ];
   h += '<div style="padding:8px 0;flex:1">';
@@ -324,7 +325,7 @@ window.renderMuavin = function() {
   /* Sağ içerik */
   var sagIcerik = '';
   /* Sağ üst başlık */
-  var sekmeAdlari = { karsilastirma: 'Karşılaştırma', muhasebeci: 'Muhasebeci Excel', baran: 'Baran Ekstresi', cari: 'Cari Özet', donem: 'Dönem Karşılaştırma', notlar: 'Notlar' };
+  var sekmeAdlari = { karsilastirma: 'Karşılaştırma', muhasebeci: 'Muhasebeci Excel', baran: 'Baran Ekstresi', cari: 'Cari Özet', donem: 'Dönem Karşılaştırma', 'hata-analiz': 'Hata Analizi', notlar: 'Notlar' };
   sagIcerik += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--b)">';
   sagIcerik += '<div>';
   sagIcerik += '<div style="font-size:13px;font-weight:500;color:var(--t)">' + (sekmeAdlari[aktifTab] || aktifTab) + '</div>';
@@ -348,6 +349,15 @@ window.renderMuavin = function() {
   else if (aktifTab === 'baran') sagIcerik += _mvBaranIcerikHTML(islemlerB);
   else if (aktifTab === 'cari') sagIcerik += (window._mvCariOzetHTML ? window._mvCariOzetHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Önce Excel yükleyin</div>');
   else if (aktifTab === 'donem') sagIcerik += (window._mvDonemKarsilastirHTML ? window._mvDonemKarsilastirHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Dönem verisi yok</div>');
+  else if (aktifTab === 'hata-analiz') {
+    sagIcerik += '<div style="padding:12px">';
+    sagIcerik += '<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end">';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvHataKategoriHTML&&window.renderMuavin()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">↺ Yenile</button>';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvOnlemRaporuPDF()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#A32D2D;color:#fff;cursor:pointer;font-family:inherit">⎙ Önlem Raporu PDF</button>';
+    sagIcerik += '</div>';
+    sagIcerik += (window._mvHataKategoriHTML ? window._mvHataKategoriHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Önce her iki Excel\'i yükleyin</div>');
+    sagIcerik += '</div>';
+  }
   else if (aktifTab === 'notlar') sagIcerik += _mvNotlarIcerikHTML(donem);
 
   /* Ana yapı: Sol nav + Sağ içerik */
