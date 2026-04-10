@@ -71,6 +71,8 @@ window.renderSatinAlmaV2 = function() {
   if (seciliSay>0) {
     h += '<button onclick="event.stopPropagation();window._saV2OnayaGonder()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#854F0B;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Onaya Gönder ('+seciliSay+')</button>';
     h += '<button onclick="event.stopPropagation();window._saV2TopluSil()" style="font-size:10px;padding:5px 12px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;color:#A32D2D;cursor:pointer;font-weight:500;font-family:inherit">Sil ('+seciliSay+')</button>';
+    h += '<button onclick="event.stopPropagation();window._saV2TopluOnayla()" style="font-size:10px;padding:5px 10px;border:none;border-radius:5px;background:#0F6E56;color:#fff;cursor:pointer;font-family:inherit;flex-shrink:0">✓ Toplu Onayla ('+seciliSay+')</button>';
+    h += '<button onclick="event.stopPropagation();window._saV2TopluReddet()" style="font-size:10px;padding:5px 10px;border:none;border-radius:5px;background:#A32D2D;color:#fff;cursor:pointer;font-family:inherit;flex-shrink:0">✗ Toplu Reddet ('+seciliSay+')</button>';
   }
   h += '<button onclick="event.stopPropagation();window._saV2CSVImport()" style="font-size:10px;padding:5px 10px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';white-space:nowrap;flex-shrink:0;font-family:inherit">↑ CSV Import</button>';
   h += '<button onclick="event.stopPropagation()" style="font-size:10px;padding:5px 10px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">↓ Dışa Aktar</button>';
@@ -585,6 +587,43 @@ window._saV2Karsilastir = function(duayKodu) {
   h += '</tbody></table></div></div>';
   modal.innerHTML = h;
   document.body.appendChild(modal);
+};
+
+/* ── SAV2-TOPLU-001: Toplu Onayla + Toplu Reddet ───────────── */
+window._saV2TopluOnayla = function() {
+  var secili = Object.keys(window.SAV2_SECILI||{}).filter(function(k){return window.SAV2_SECILI[k];});
+  if(!secili.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
+  if(!confirm(secili.length+' teklif onaylanacak. Emin misin?')) return;
+  var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+  var now = new Date().toISOString();
+  liste.forEach(function(t){
+    if(secili.indexOf(String(t.id))!==-1){
+      t.durum='kabul'; t.updatedAt=now; t.onayTarih=now;
+      t.onayKisi=window.CU?.()?.displayName||'';
+    }
+  });
+  if(typeof window._saV2Store==='function') window._saV2Store(liste);
+  window.SAV2_SECILI={};
+  window.toast?.(secili.length+' teklif onaylandı','ok');
+  window.renderSatinAlmaV2?.();
+};
+
+window._saV2TopluReddet = function() {
+  var secili = Object.keys(window.SAV2_SECILI||{}).filter(function(k){return window.SAV2_SECILI[k];});
+  if(!secili.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
+  if(!confirm(secili.length+' teklif reddedilecek. Emin misin?')) return;
+  var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+  var now = new Date().toISOString();
+  liste.forEach(function(t){
+    if(secili.indexOf(String(t.id))!==-1){
+      t.durum='reddedildi'; t.updatedAt=now; t.redTarih=now;
+      t.redKisi=window.CU?.()?.displayName||'';
+    }
+  });
+  if(typeof window._saV2Store==='function') window._saV2Store(liste);
+  window.SAV2_SECILI={};
+  window.toast?.(secili.length+' teklif reddedildi','ok');
+  window.renderSatinAlmaV2?.();
 };
 
 /* ── SAV2-HATIRLATMA-001: 5 gün yanıtsız teklif otomatik uyarı ── */
