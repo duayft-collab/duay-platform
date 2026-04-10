@@ -440,8 +440,7 @@ window._saV2UrunSatirEkle = function() {
     + '<div id="' + pre + 'katalog-bilgi" style="font-size:8px;color:var(--t3);margin-top:2px"></div>'
     + '</div>'
     + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">\u00dcR\u00dcN ADI (\u0130ngilizce)</div>'
-    + '<input id="' + pre + 'urunAdi" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
-    + '<div id="' + pre + 'urunAdi-dropdown" style="display:none;position:absolute;z-index:10000;background:var(--sf);border:0.5px solid var(--b);border-radius:5px;max-height:120px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12);width:280px"></div></div>'
+    + '<input id="' + pre + 'urunAdi" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
     + _uf('turkceAdi', 'T\u00dcRK\u00c7E ADI', 'T\u00fcrk\u00e7e')
@@ -483,10 +482,12 @@ window._saV2UrunKatalogDoldur = function(pre, kod) {
   var paraEl = document.getElementById(pre + 'para'); if (paraEl && u.para) { Array.from(paraEl.options).forEach(function(o) { if (o.value === (u.para || u.paraBirimi)) o.selected = true; }); }
 };
 
-/** Ürün adına göre arama dropdown */
+/** Ürün adına göre arama dropdown (body append + fixed) */
 window._saV2UrunAdAra = function(pre, deger) {
-  var dd = document.getElementById(pre + 'urunAdi-dropdown');
-  if (!dd || !deger || deger.length < 2) { if (dd) dd.style.display = 'none'; return; }
+  var ddId = 'sa-urun-ad-dd-' + pre.replace(/[^a-z0-9]/gi, '');
+  var dd = document.getElementById(ddId);
+  var inp = document.getElementById(pre + 'urunAdi');
+  if (!deger || deger.length < 2) { if (dd) dd.remove(); return; }
   var q = deger.toLowerCase();
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
   var ihrUrunler = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
@@ -494,8 +495,20 @@ window._saV2UrunAdAra = function(pre, deger) {
   var sonuc = tum.filter(function(u) {
     return (u.urunAdi || '').toLowerCase().includes(q) || (u.standartAdi || '').toLowerCase().includes(q) || (u.duayAdi || '').toLowerCase().includes(q) || (u.duayKodu || '').toLowerCase().includes(q);
   }).slice(0, 8);
-  if (!sonuc.length) { dd.style.display = 'none'; return; }
-  dd.style.display = 'block';
+  if (!sonuc.length) { if (dd) dd.remove(); return; }
+  if (!dd) {
+    dd = document.createElement('div');
+    dd.id = ddId;
+    dd.style.cssText = 'position:fixed;z-index:10001;background:var(--sf);border:0.5px solid var(--b);border-radius:5px;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)';
+    document.body.appendChild(dd);
+    document.addEventListener('click', function rm() { dd.remove(); document.removeEventListener('click', rm); }, { once: true });
+  }
+  if (inp) {
+    var rect = inp.getBoundingClientRect();
+    dd.style.left = rect.left + 'px';
+    dd.style.top = (rect.bottom + 2) + 'px';
+    dd.style.width = Math.max(rect.width, 300) + 'px';
+  }
   dd.innerHTML = sonuc.map(function(u) {
     return '<div onclick="event.stopPropagation();window._saV2UrunSecimDoldur?.(\'' + pre + '\',\'' + _saEsc(u.duayKodu || '') + '\')" style="padding:6px 10px;font-size:10px;cursor:pointer;border-bottom:0.5px solid var(--b);color:var(--t)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">'
       + '<span style="font-weight:500;color:#0C447C">' + _saEsc(u.duayKodu || '') + '</span> ' + _saEsc(u.urunAdi || u.standartAdi || '') + ' <span style="color:var(--t3);font-size:9px">' + _saEsc(u.tedarikci || '') + '</span></div>';
@@ -503,8 +516,9 @@ window._saV2UrunAdAra = function(pre, deger) {
 };
 
 window._saV2UrunSecimDoldur = function(pre, duayKodu) {
-  var dd = document.getElementById(pre + 'urunAdi-dropdown');
-  if (dd) dd.style.display = 'none';
+  var ddId = 'sa-urun-ad-dd-' + pre.replace(/[^a-z0-9]/gi, '');
+  var dd = document.getElementById(ddId);
+  if (dd) dd.remove();
   window._saV2UrunKatalogDoldur(pre, duayKodu);
   var kodEl = document.getElementById(pre + 'duayKodu');
   if (kodEl) kodEl.value = duayKodu;
