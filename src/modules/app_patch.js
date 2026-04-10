@@ -5020,7 +5020,7 @@ window.renderSatinAlmaSiparis = function() {
   var panel = document.getElementById('panel-satinalma-siparis');
   if (!panel) return;
   var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
-  var siparisler = liste.filter(function(t) { return !t.isDeleted && t.durum === 'kabul'; });
+  var siparisler = liste.filter(function(t) { return !t.isDeleted && (t.durum === 'onaylandi' || t.durum === 'kabul'); });
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return String(s || ''); };
   var h = '<div style="padding:16px">';
   h += '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Sipari\u015fler</div>';
