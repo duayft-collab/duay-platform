@@ -220,6 +220,7 @@ window.renderSatinAlmaV2 = function() {
     h += '<div style="width:52px"><span style="font-size:8px;padding:2px 5px;border-radius:3px;font-weight:500;'+stRenk+'">'+stLbl+'</span>';
     if(typeof window._steklifOzetHTML==='function') h += window._steklifOzetHTML(t);
     h += '</div>';
+    if(t.createdBy||t.createdAt) h += '<div style="font-size:8px;color:'+window._t3+';padding:0 4px;white-space:nowrap">'+(t.createdBy?_saEsc(t.createdBy):'')+(t.createdAt?' · '+_saEsc(String(t.createdAt).slice(0,10)):'')+'</div>';
     h += '</div>';
     if (t.urunler && t.urunler.length > 1) {
       t.urunler.forEach(function(u, i) {
@@ -251,6 +252,12 @@ window.renderSatinAlmaV2 = function() {
 
   h += '</div></div>';
   panel.innerHTML = h;
+
+  /* SAV2-FIX: Arama focus koruması */
+  if(window._sav2SrchVal) {
+    var _srchEl = document.getElementById('sav2-srch');
+    if(_srchEl) { _srchEl.focus(); _srchEl.setSelectionRange(_srchEl.value.length, _srchEl.value.length); }
+  }
 
   /* SAV2-UI-001: Tedarikçi select dinamik doldur */
   var tedSel = document.getElementById('sav2-ted');
