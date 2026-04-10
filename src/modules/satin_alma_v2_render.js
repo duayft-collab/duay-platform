@@ -341,6 +341,34 @@ window._saV2PeekHTML = function(t) {
   if (typeof window._steklifDurumPanelHTML === 'function') h += window._steklifDurumPanelHTML(t);
   if (typeof window._steklifOzetHTML === 'function') h += window._steklifOzetHTML(t);
   if (typeof window._steklifRevGecmisHTML === 'function') h += window._steklifRevGecmisHTML(t);
+  var tumListe = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var _pkDuayKodu = (_saV2IlkUrun(t).duayKodu || t.duayKodu || '').trim();
+  if (_pkDuayKodu) {
+    var gecmis = tumListe.filter(function(x) {
+      return !x.isDeleted && String(x.id) !== String(t.id) &&
+        x.urunler && x.urunler.some(function(u) { return (u.duayKodu || '').trim() === _pkDuayKodu; });
+    }).sort(function(a, b) { return (b.createdAt || '') > (a.createdAt || '') ? 1 : -1; }).slice(0, 5);
+    if (gecmis.length) {
+      h += '<div style="padding:10px 14px;border-top:0.5px solid '+window._b+'">';
+      h += '<div style="font-size:9px;font-weight:500;color:'+window._t3+';letter-spacing:.05em;margin-bottom:8px">F\u0130YAT GE\u00c7M\u0130\u015e\u0130 \u2014 '+_saEsc(_pkDuayKodu)+'</div>';
+      h += '<table style="width:100%;border-collapse:collapse;font-size:10px">';
+      h += '<thead><tr style="background:'+window._s2+'"><th style="padding:4px 6px;text-align:left">Tarih</th><th style="padding:4px 6px;text-align:left">Tedarik\u00e7i</th><th style="padding:4px 6px;text-align:right">Fiyat</th><th style="padding:4px 6px;text-align:center">Durum</th></tr></thead><tbody>';
+      gecmis.forEach(function(g) {
+        var gu = g.urunler.find(function(u) { return (u.duayKodu || '').trim() === _pkDuayKodu; }) || {};
+        var fiyat = gu.alisF || gu.birimFiyat || '\u2014';
+        var para = gu.para || g.toplamPara || 'USD';
+        var durum = g.durum || 'bekleyen';
+        var durumRenk = durum === 'kabul' ? '#0F6E56' : durum === 'reddedildi' ? '#A32D2D' : '#854F0B';
+        h += '<tr style="border-bottom:0.5px solid '+window._b+'">';
+        h += '<td style="padding:4px 6px;color:'+window._t3+'">' + _saEsc((g.teklifTarih || g.createdAt || '\u2014').slice(0, 10)) + '</td>';
+        h += '<td style="padding:4px 6px;color:'+window._t2+'">' + _saEsc(g.tedarikci || '\u2014') + '</td>';
+        h += '<td style="padding:4px 6px;text-align:right;font-weight:500;color:'+window._t+'">' + _saEsc(fiyat) + ' ' + _saEsc(para) + '</td>';
+        h += '<td style="padding:4px 6px;text-align:center"><span style="font-size:9px;padding:1px 6px;border-radius:8px;background:' + durumRenk + '22;color:' + durumRenk + '">' + _saEsc(durum) + '</span></td>';
+        h += '</tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+  }
   h += '<div style="display:flex;flex-direction:column;gap:5px">';
   if (t.durum==='bekleyen') {
     h += '<button onclick="event.stopPropagation();window._saV2OnayaGonderTek(\''+t.id+'\')" style="font-size:10px;padding:7px;border:none;border-radius:5px;background:#854F0B;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Onaya Gönder</button>';
