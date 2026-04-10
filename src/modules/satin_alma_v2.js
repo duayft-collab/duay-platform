@@ -55,9 +55,11 @@ function _saV2Store(d) {
   } catch(e) { console.error('[SAV2]',e); }
 }
 function _saTeklifLoad() {
+  if (typeof window.loadSatisTeklifleri === 'function') return window.loadSatisTeklifleri();
   try { var r=localStorage.getItem(SAV2_TEKLIF_KEY); return r?JSON.parse(r):[]; } catch(e){ return []; }
 }
 function _saTeklifStore(d) {
+  if (typeof window.storeSatisTeklifleri === 'function') { window.storeSatisTeklifleri(d); return; }
   try { localStorage.setItem(SAV2_TEKLIF_KEY,JSON.stringify(d)); } catch(e){}
 }
 
