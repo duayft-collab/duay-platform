@@ -132,9 +132,7 @@ const CHANGELOG = [
 const ALL_MODULES = [
   { id:'dashboard',  label:'Dashboard'           },
   { id:'announce',   label:'Duyurular'            },
-  { id:'pusula',     label:'Görevler'             },
   { id:'puantaj',    label:'Puantaj'              },
-  { id:'takvim',     label:'Takvim'               },
   { id:'notes',      label:'Notlar'               },
   { id:'links',      label:'Hızlı Linkler'        },
   { id:'hedefler',   label:'Hedefler'             },
@@ -161,8 +159,8 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula','pusula-pro','puantaj','takvim','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','hesap-ozeti','muavin'],
-  lead:    ['dashboard','announce','pusula','pusula-pro','puantaj','takvim','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma'],
+  manager: ['dashboard','announce','pusula-pro','puantaj','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','hesap-ozeti','muavin'],
+  lead:    ['dashboard','announce','pusula-pro','puantaj','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma'],
   staff:   ['dashboard','announce','pusula','pusula-pro','takvim','notes','links','izin','pirim'],
 };
 
@@ -785,10 +783,6 @@ function _initApp(user) {
   // Planlanmış duyuruları kontrol et
   _checkScheduledAnnouncements();
 
-  // Şirket yıllık takvimini localStorage'a merge et (yoksa ekle, varsa atla)
-  if (typeof window.mergeCompanyCalendar === 'function') {
-    window.mergeCompanyCalendar();
-  }
   // Zamanlanmış duyuruları kontrol et
   if (typeof window.checkScheduledAnnouncements === 'function') {
     window.checkScheduledAnnouncements();
@@ -1041,13 +1035,11 @@ function _renderPanel(id) {
 
   const RENDERS = {
     dashboard:  () => safe(_renderDashboard),
-    pusula:     () => safe(() => { window.Pusula?.init?.(); window.Pusula?.render?.(); }),
     kargo:      () => safe(() => { window.Kargo?.render?.(); window.Kargo?.renderKonteyn?.(); }),
     lojistik:   () => safe(() => { window.renderLojistik?.(); }),
     pirim:      () => safe(() => window.Pirim?.render?.()),
     admin:      () => safe(() => { window.Admin?.render?.(); window.Admin?.renderLog?.(); }),
     announce:   () => safe(() => { window.renderAnnouncements?.(); window.updateAnnBadge?.(); }),
-    takvim:     () => safe(() => { window.renderCal?.(); setTimeout(() => window.checkYaklasanEtkinlikler?.(), 100); }),
     puantaj:    () => safe(() => window.renderPuantaj?.()),
     notes:      () => safe(() => window.renderNotes?.()),
     links:      () => safe(() => window.renderLinks?.()),
