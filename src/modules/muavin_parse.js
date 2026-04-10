@@ -155,7 +155,7 @@ window._mvDosyaOku = function(inp, taraf) {
     window.renderMuavin&&window.renderMuavin();
   }
 
-  if (/\.xlsx?$/i.test(f.name)) {
+  if (/\.xls[xm]?$/i.test(f.name)) {
     var r=new FileReader();
     r.onload=function(e){
       try {
