@@ -5,6 +5,7 @@
  */
 (function() {
 'use strict';
+var _kargoCanEdit = function() { var r = window.CU?.()?.role || window.CU?.()?.rol || ''; return r === 'admin' || r === 'manager' || r === 'lead'; };
 
 // ═══ STATE ═══
 var _tab = localStorage.getItem('ak_kargo_tab') || 'deniz';
@@ -56,7 +57,7 @@ function renderKargo() {
   var h = '';
   /* Başlık */
   h += '<div class="ph"><div><div class="pht">Kargo Takip</div><div class="phs">Deniz / Hava / Kara gönderi yönetimi</div></div>';
-  h += '<div class="ur"><button class="btn btns" onclick="window._kargoXlsx()">XLSX</button><button class="btn btnp" onclick="window._kargoYeniModal()">+ Yeni Gönderi</button></div></div>';
+  h += '<div class="ur"><button class="btn btns" onclick="window._kargoXlsx()">XLSX</button>' + (_kargoCanEdit() ? '<button class="btn btnp" onclick="window._kargoYeniModal()">+ Yeni G\u00f6nderi</button>' : '') + '</div></div>';
 
   /* Ana sekmeler */
   h += '<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b);padding:0 20px">';
@@ -124,7 +125,7 @@ function _renderListe(liste) {
   h += '</tr></thead><tbody>';
 
   if (!sayfa.length) {
-    h += '<tr><td colspan="10" style="padding:40px;text-align:center;color:var(--t3)">Kayıt bulunamadı. <button class="btn btnp" onclick="window._kargoYeniModal()" style="margin-top:8px">+ Yeni Gönderi</button></td></tr>';
+    h += '<tr><td colspan="10" style="padding:40px;text-align:center;color:var(--t3)">Kay\u0131t bulunamad\u0131.' + (_kargoCanEdit() ? ' <button class="btn btnp" onclick="window._kargoYeniModal()" style="margin-top:8px">+ Yeni G\u00f6nderi</button>' : '') + '</td></tr>';
   }
 
   sayfa.forEach(function(k) {
@@ -179,6 +180,7 @@ function _renderAlarm(liste) {
 
 // ═══ YENİ KAYIT ═══
 window._kargoYeniModal = function() {
+  if (!_kargoCanEdit()) { window.toast?.('Bu i\u015flem i\u00e7in yetkiniz yok', 'warn'); return; }
   var old = document.getElementById('mo-kargo-yeni'); if (old) old.remove();
   var firmaOpts = _loadKFirma().map(function(f) { return '<option>' + _esc(f) + '</option>'; }).join('');
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-kargo-yeni';
@@ -228,17 +230,16 @@ window._kargoTumChk = function(c) { _secili = {}; if (c) { _loadK().filter(funct
 window._kargoChkDegis = function(id, c) { if (c) _secili[id] = true; else delete _secili[id]; renderKargo(); };
 
 window._kargoSil = function(id) {
+  if (!_kargoCanEdit()) { window.toast?.('Bu i\u015flem i\u00e7in yetkiniz yok', 'warn'); return; }
   var silFunc = function() { var liste = _loadKAll(); var x = liste.find(function(k) { return k.id === id; }); if (x) { x.isDeleted = true; x.deletedAt = _now(); } _storeK(liste); window.toast?.('Silindi', 'ok'); renderKargo(); };
-  if (typeof window.confirmModal === 'function') window.confirmModal('Bu kargo kaydı silinecek?', { danger: true, confirmText: 'Sil', onConfirm: silFunc });
-  else if (confirm('Silinecek. Emin misiniz?')) silFunc();
+  if (typeof window.confirmModal === 'function') window.confirmModal('Bu kargo kayd\u0131 silinecek?', { danger: true, confirmText: 'Sil', onConfirm: silFunc });
 };
 
 window._kargoTopluSil = function() {
   if (!window._yetkiKontrol?.('toplu_sil')) return;
   var ids = Object.keys(_secili); if (!ids.length) return;
   var silFunc = function() { var liste = _loadKAll(); ids.forEach(function(id) { var x = liste.find(function(k) { return k.id === id; }); if (x) { x.isDeleted = true; x.deletedAt = _now(); } }); _storeK(liste); _secili = {}; window.toast?.(ids.length + ' kayıt silindi', 'ok'); renderKargo(); };
-  if (typeof window.confirmModal === 'function') window.confirmModal(ids.length + ' kargo kaydı silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: silFunc });
-  else if (confirm(ids.length + ' kayıt silinecek?')) silFunc();
+  window.confirmModal(ids.length + ' kargo kayd\u0131 silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: silFunc });
 };
 
 window._kargoTakipGuncelle = function(id) {
