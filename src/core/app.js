@@ -884,6 +884,9 @@ function _initApp(user) {
 
   // Dashboard ilk render
   try { _renderDashboard(); } catch (e) {}
+
+  // Firebase sync badge
+  setTimeout(function(){ window._fbBadgeInit?.(); }, 1500);
 }
 
 /**
@@ -3816,4 +3819,56 @@ function _applyRoleUI(user) {
 })();
 
 window._applyRoleUI = _applyRoleUI;
+
+// ════════════════════════════════════════════════════════════════
+// FIREBASE SYNC BADGE — sag alt kose durum gostergesi
+// ════════════════════════════════════════════════════════════════
+window._fbBadgeInit = function() {
+  if(document.getElementById('fb-sync-badge')) return;
+  var badge = document.createElement('div');
+  badge.id = 'fb-sync-badge';
+  badge.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;border:0.5px solid var(--b);background:var(--sf);cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.08)';
+  badge.onclick = function(e){ e.stopPropagation(); window._fbBadgeDetay(); };
+  document.body.appendChild(badge);
+  window.addEventListener('online', function(){ window._fbSyncLog.offline=false; window._fbBadgeGuncelle?.(); });
+  window.addEventListener('offline', function(){ window._fbSyncLog.offline=true; window._fbBadgeGuncelle?.(); });
+  window._fbBadgeGuncelle();
+  setInterval(window._fbBadgeGuncelle, 5000);
+};
+
+window._fbSyncLog = { sonGonder: null, sonAl: null, offline: false, bekleyen: 0 };
+
+window._fbBadgeGuncelle = function() {
+  var badge = document.getElementById('fb-sync-badge');
+  if(!badge) return;
+  var log = window._fbSyncLog;
+  var renk = log.offline ? '#A32D2D' : log.bekleyen > 0 ? '#854F0B' : '#0F6E56';
+  var ikon = log.offline ? '\uD83D\uDD34' : log.bekleyen > 0 ? '\uD83D\uDFE1' : '\uD83D\uDFE2';
+  var etiket = log.offline ? 'Offline' : log.bekleyen > 0 ? 'Senkronlan\u0131yor' : 'Senkron';
+  var saat = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  badge.innerHTML = '<span style="font-size:10px">'+ikon+'</span>'
+    +'<span style="font-size:10px;color:'+renk+';font-weight:500">'+etiket+'</span>'
+    +'<span style="font-size:9px;color:var(--t3)">'+saat+'</span>';
+};
+
+window._fbBadgeDetay = function() {
+  var mevcut = document.getElementById('fb-badge-detay');
+  if(mevcut){ mevcut.remove(); return; }
+  var log = window._fbSyncLog;
+  var d = document.createElement('div');
+  d.id = 'fb-badge-detay';
+  d.style.cssText = 'position:fixed;bottom:44px;right:12px;z-index:9999;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;padding:14px 16px;min-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.12)';
+  var fmt = function(dt){ return dt ? new Date(dt).toLocaleTimeString('tr-TR') : '\u2014'; };
+  d.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:10px">Firebase Senkronizasyon</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Son G\u00f6nderme</span><span style="color:var(--t)">'+fmt(log.sonGonder)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Son Alma</span><span style="color:var(--t)">'+fmt(log.sonAl)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Bekleyen Yazma</span><span style="color:'+(log.bekleyen?'#A32D2D':'#0F6E56')+'">'+log.bekleyen+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--t3)">Ba\u011flant\u0131</span><span style="color:'+(log.offline?'#A32D2D':'#0F6E56')+'">'+(log.offline?'\u274C Offline':'\u2705 Firebase')+'</span></div>'
+    +'</div>'
+    +'<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--b);font-size:9px;color:var(--t3)">Her 5 saniyede g\u00fcncellenir \u00b7 T\u0131kla kapat</div>';
+  d.onclick = function(e){ e.stopPropagation(); d.remove(); };
+  document.body.appendChild(d);
+  document.addEventListener('click', function rm(){ d.remove(); document.removeEventListener('click',rm); }, {once:true});
+};
 

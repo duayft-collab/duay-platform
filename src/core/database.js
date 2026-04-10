@@ -727,6 +727,7 @@ function _syncFirestore(path, data, mode = 'set') {
     // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle
     // syncedAt tabanlı — echo tespiti sabit süre yerine exact match ile yapılır
     _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
+    if(window._fbSyncLog){ window._fbSyncLog.sonGonder = new Date().toISOString(); window._fbSyncLog.bekleyen = Math.max(0,(window._fbSyncLog.bekleyen||0)-1); window._fbBadgeGuncelle?.(); }
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
     // Verbose log yalnızca debug modda
@@ -1894,6 +1895,7 @@ function _listenCollection(collection, localKey, onUpdate) {
         return;
       }
       _lastDataHash[collection] = dataHash;
+      if(window._fbSyncLog){ window._fbSyncLog.sonAl = new Date().toISOString(); window._fbBadgeGuncelle?.(); }
 
       // trash, notifications, activity → merge yok, Firestore master
       var _rtNoMerge = ['trash', 'notifications', 'activity'];
@@ -3184,6 +3186,19 @@ window._migrateRecord = function(kayit) {
   if (!('deletedAt' in kayit)) kayit.deletedAt = null;
   if (!('createdAt' in kayit)) kayit.createdAt = kayit.ts || kayit.olusturma || new Date().toISOString();
   if (!('updatedAt' in kayit)) kayit.updatedAt = kayit.guncellenme || kayit.updatedAt || new Date().toISOString();
+  var _fixTarih = function(s) {
+    if(!s) return s;
+    if(String(s).match(/^\d{4}-\d{2}-\d{2}T/)) return s;
+    var m = String(s).match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/);
+    if(m) {
+      var g=parseInt(m[1]),ay=parseInt(m[2]),y=parseInt(m[3]);
+      if(y<100) y+=2000;
+      return new Date(y,ay-1,g).toISOString();
+    }
+    var d=new Date(s); return isNaN(d.getTime())?s:d.toISOString();
+  };
+  if(kayit.updatedAt) kayit.updatedAt = _fixTarih(kayit.updatedAt);
+  if(kayit.createdAt) kayit.createdAt = _fixTarih(kayit.createdAt);
   return kayit;
 };
 
