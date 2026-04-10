@@ -1303,7 +1303,7 @@ const DEFAULT_IK = [
 
 const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx','TNT'];
 
-/** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo); const arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storeKargo(d)       { _write(KEYS.kargo, d); 
   const _fp_kargo = _fsPath('kargo'); if (_fp_kargo) _syncFirestore(_fp_kargo, d);
 }
@@ -1311,7 +1311,7 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @returns {Array<string>} */ function loadKargoFirmalar() { const d = _read(KEYS.kargoFirms); return (Array.isArray(d) && d.length) ? d : DEFAULT_KARGO_FIRMALAR; }
 /** @param {Array<string>} d */ function storeKargoFirmalar(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoFirms, d); var _fp = _fsPath('kargoFirms'); if (_fp) _syncFirestore(_fp, d); }
 
-/** @returns {Array<Object>} */ function loadKonteyn()       { var d = _read(KEYS.konteyner); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadKonteyn()       { var d = _read(KEYS.konteyner); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d);
   var _fp = _fsPath('konteyner'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1329,13 +1329,13 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @param {Object} d        */ function storeKargoChecks(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat Operasyon
-/** @returns {Array<Object>} */ function loadIhracatOps()   { var d = _read(KEYS.ihracatOps); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadIhracatOps()   { var d = _read(KEYS.ihracatOps); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storeIhracatOps(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat V2 koleksiyonları
-function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 function storeIhracatDosyalar(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatDosyalar, d.slice(0,200)); var fp = _fsPath('ihracatDosyalar'); if (fp) _syncFirestore(fp, d); }
-function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 function storeIhracatEvraklar(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatUrunler(d) {
@@ -1347,9 +1347,9 @@ function storeIhracatUrunler(d) {
   _write(KEYS.ihracatUrunler, yazilacak.slice(0, 1000));
   var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, yazilacak);
 }
-function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 function storeIhracatGcb(d)     { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatGcb, d.slice(0,200)); var fp = _fsPath('ihracatGcb'); if (fp) _syncFirestore(fp, d); }
-function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 function storeIhracatBl(d)      { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatBl, d.slice(0,200)); var fp = _fsPath('ihracatBl'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatTemplate()  { var d = _read(KEYS.ihracatTemplate); return Array.isArray(d) ? d : []; }
 function storeIhracatTemplate(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatTemplate, d.slice(0,100)); var fp = _fsPath('ihracatTemplate'); if (fp) _syncFirestore(fp, d); }
@@ -1409,7 +1409,7 @@ const DEFAULT_CRM = [
   { id: 2, name: 'Bulut Yazılım',  contact: 'Selin Hanım', phone: '0232 444 20 20', email: 'selin@example.com', city: 'İzmir',    status: 'teklif', value: 45000,  owner: 2, note: 'Fiyat teklifi gönderildi',    ts: '2026-02-15' },
   { id: 3, name: 'Mavi Lojistik',  contact: 'Emre Bey',    phone: '0312 333 30 30', email: 'emre@example.com',  city: 'Ankara',   status: 'lead',   value: 80000,  owner: 2, note: 'İlk görüşme yapıldı',        ts: '2026-03-10' },
 ];
-/** @returns {Array<Object>} */ function loadCrmData()    { var d = _read(KEYS.crm); var arr = Array.isArray(d) ? d : DEFAULT_CRM; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadCrmData()    { var d = _read(KEYS.crm); var arr = Array.isArray(d) ? d : DEFAULT_CRM; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storeCrmData(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.crm, d); 
   const _fp_crm = _fsPath('crm'); if (_fp_crm) _syncFirestore(_fp_crm, d);
 }
