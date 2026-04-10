@@ -59,9 +59,8 @@ window.renderSatinAlmaV2 = function() {
   /* --- FİLTRELER YAN YANA --- */
   var seciliSay = window.SAV2_SECILI ? Object.keys(window.SAV2_SECILI).filter(function(k){return window.SAV2_SECILI[k];}).length : 0;
   h += '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:0.5px solid '+window._b+';flex-shrink:0;overflow-x:auto">';
-  var _canTeklif = window.isAdmin?.() || (window.CU?.()?.role||window.CU?.()?.rol||'')==='manager';
-  if(_canTeklif) h += '<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;white-space:nowrap;flex-shrink:0;font-family:inherit">+ Yeni Teklif</button>';
-  else h += '<div style="font-size:10px;padding:5px 12px;border-radius:5px;background:var(--s2);color:var(--t3);flex-shrink:0">Sadece y\u00f6neticiler teklif olu\u015fturabilir</div>';
+  h += '<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;white-space:nowrap;flex-shrink:0;font-family:inherit">+ Yeni Teklif</button>';
+  var _canSatisTeklif = window.isAdmin?.() || (window.CU?.()?.role||window.CU?.()?.rol||'')==='manager';
   h += '<div style="width:0.5px;height:18px;background:'+window._b+';flex-shrink:0"></div>';
   h += '<input id="sav2-srch" placeholder="Duay kodu, ürün adı, tedarikçi..." oninput="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:10px;padding:5px 9px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t+';min-width:180px;font-family:inherit">';
   h += '<select id="sav2-durum" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="font-size:10px;padding:5px 8px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;color:'+window._t2+';flex-shrink:0;font-family:inherit"><option value="">Tüm durumlar</option><option value="bekleyen">Bekleyen</option><option value="onaylandi">Onaylı</option><option value="reddedildi">Reddedildi</option></select>';
@@ -247,6 +246,19 @@ window.renderSatinAlmaV2 = function() {
   h += '</div></div>';
   panel.innerHTML = h;
 
+  /* SAV2-UI-001: Tedarikçi select dinamik doldur */
+  var tedSel = document.getElementById('sav2-ted');
+  if(tedSel && tedSel.options.length <= 1) {
+    var _tedArr = []; var _tedS = {};
+    liste.forEach(function(t){ var td=t.tedarikci||''; if(td&&!_tedS[td]){_tedS[td]=true;_tedArr.push(td);} });
+    _tedArr.sort();
+    _tedArr.forEach(function(ted){
+      var opt = document.createElement('option');
+      opt.value = ted; opt.textContent = ted;
+      tedSel.appendChild(opt);
+    });
+  }
+
   /* Peek panel overlay — liste dışında, body'ye sabit */
   var eskiPeek = document.getElementById('sav2-peek-overlay');
   if (eskiPeek) eskiPeek.remove();
@@ -329,9 +341,9 @@ window._saV2PeekHTML = function(t) {
   h += '<div style="display:flex;flex-direction:column;gap:5px">';
   if (t.durum==='bekleyen') {
     h += '<button onclick="event.stopPropagation();window._saV2OnayaGonderTek(\''+t.id+'\')" style="font-size:10px;padding:7px;border:none;border-radius:5px;background:#854F0B;color:#fff;cursor:pointer;font-weight:500;font-family:inherit">Onaya Gönder</button>';
-    h += '<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="font-size:10px;padding:6px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
+    if(_canSatisTeklif) h += '<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="font-size:10px;padding:6px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
   } else if (t.durum==='onaylandi') {
-    h += '<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="font-size:10px;padding:7px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
+    if(_canSatisTeklif) h += '<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="font-size:10px;padding:7px;border:none;border-radius:5px;background:'+window._t+';color:'+window._sf+';cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
   }
   h += '<button onclick="event.stopPropagation();window._saV2GoselYukle(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Görsel Yükle</button>';
   h += '<button onclick="event.stopPropagation();window._saV2Duzenle(\''+t.id+'\')" style="font-size:10px;padding:5px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">Düzenle</button>';
