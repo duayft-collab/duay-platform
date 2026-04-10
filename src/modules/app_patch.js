@@ -1091,17 +1091,7 @@ window._urunTopluSil = function() {
   window.confirmModal?.(ids.length + ' urun silinecek?', {
     title: 'Toplu Sil', danger: true, confirmText: 'Evet, Sil',
     onConfirm: function() {
-      // loadUrunler isDeleted'lari filtreler — ham veriyi DB._read ile al
-      var raw = typeof window.DB?._readRaw === 'function' ? window.DB._readRaw('ak_urunler1') : null;
-      if (!raw) {
-        // Fallback: LZ-String destekli okuma
-        try {
-          var ls = localStorage.getItem('ak_urunler1') || '[]';
-          if (ls.startsWith('_LZ_') && typeof LZString !== 'undefined') raw = JSON.parse(LZString.decompressFromUTF16(ls.slice(4)));
-          else raw = JSON.parse(ls);
-        } catch(e) { raw = []; }
-      }
-      if (!Array.isArray(raw)) raw = [];
+      var raw = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true, _dahilSilinenler:true}) : [];
       var now = new Date().toISOString();
       var cuId = window.Auth?.getCU?.()?.id || '';
       var silinen = 0;
@@ -1123,13 +1113,7 @@ window._urunTekSil = function(id) {
   window.confirmModal?.('Bu urunu silmek istediginizden emin misiniz?', {
     title: 'Urun Sil', danger: true, confirmText: 'Evet, Sil',
     onConfirm: function() {
-      var raw;
-      try {
-        var ls = localStorage.getItem('ak_urunler1') || '[]';
-        if (ls.startsWith('_LZ_') && typeof LZString !== 'undefined') raw = JSON.parse(LZString.decompressFromUTF16(ls.slice(4)));
-        else raw = JSON.parse(ls);
-      } catch(e) { raw = []; }
-      if (!Array.isArray(raw)) raw = [];
+      var raw = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true, _dahilSilinenler:true}) : [];
       var item = raw.find(function(u) { return String(u.id) === String(id); });
       if (item) {
         item.isDeleted = true;
