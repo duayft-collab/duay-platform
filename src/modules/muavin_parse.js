@@ -145,7 +145,15 @@ window._mvDosyaOku = function(inp, taraf) {
 
   function _isle(tsv) {
     var islemler = taraf==='baran' ? _mvParseBaran(tsv) : _mvParseMuhasebeci(tsv);
-    if (!islemler.length) { window.toast&&window.toast('Geçerli işlem bulunamadı — format uyumsuz olabilir','warn'); return; }
+    if (!islemler.length) {
+      window.toast&&window.toast('Geçerli işlem bulunamadı — format uyumsuz olabilir','warn');
+      var _m2=JSON.parse(localStorage.getItem('ak_muavin_meta_v1')||'{}');
+      var _d2=window._mvDonem||(new Date().getFullYear()+'Q'+Math.ceil((new Date().getMonth()+1)/3));
+      if(_m2[_d2]){delete _m2[_d2][taraf];}
+      localStorage.setItem('ak_muavin_meta_v1',JSON.stringify(_m2));
+      window.renderMuavin&&window.renderMuavin();
+      return;
+    }
     _mvMetaKaydet(taraf, f.name, islemler.length, boyutStr);
     if (taraf==='muhasebeci') { window._mvSonIslemler=islemler; window._mvSonHesaplar={}; }
     else { window._mvSonIslemlerB=islemler; }
