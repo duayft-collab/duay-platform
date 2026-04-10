@@ -5056,3 +5056,72 @@ window.renderSatinAlmaSiparis = function() {
   h += '</div>';
   panel.innerHTML = h;
 };
+
+/* ── LIST-STANDART-001: Global List Helper ──────────────────── */
+window._listHelper = {
+  sayfalama: function(toplam, sayfa, boyut, renderFn, containerId) {
+    var toplamS = Math.ceil(toplam/boyut);
+    var h = '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:0.5px solid var(--b);font-size:10px">';
+    h += '<span style="color:var(--t3)">'+((sayfa-1)*boyut+1)+'-'+Math.min(sayfa*boyut,toplam)+' / '+toplam+' kay\u0131t</span>';
+    h += '<div style="display:flex;gap:3px">';
+    h += '<button onclick="event.stopPropagation();window._lhSayfa(\''+containerId+'\','+(sayfa-1)+','+boyut+',\''+renderFn+'\')" '+(sayfa<=1?'disabled':'')+' style="padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-size:10px">\u2190</button>';
+    for(var i=Math.max(1,sayfa-1);i<=Math.min(toplamS,sayfa+1);i++){
+      h += '<button onclick="event.stopPropagation();window._lhSayfa(\''+containerId+'\','+i+','+boyut+',\''+renderFn+'\')" style="padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;background:'+(i===sayfa?'var(--t)':'transparent')+';color:'+(i===sayfa?'var(--sf)':'var(--t2)')+';cursor:pointer;font-size:10px">'+i+'</button>';
+    }
+    h += '<button onclick="event.stopPropagation();window._lhSayfa(\''+containerId+'\','+(sayfa+1)+','+boyut+',\''+renderFn+'\')" '+(sayfa>=toplamS?'disabled':'')+' style="padding:2px 7px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-size:10px">\u2192</button>';
+    h += '</div></div>';
+    return h;
+  },
+  topluBar: function(seciliSay, islemler) {
+    if(!seciliSay) return '';
+    var h = '<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:#FAEEDA;border-bottom:0.5px solid #854F0B">';
+    h += '<span style="font-size:10px;color:#633806;font-weight:500">'+seciliSay+' kay\u0131t se\u00e7ildi</span>';
+    islemler.forEach(function(i){
+      h += '<button onclick="event.stopPropagation();'+i.fn+'()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2)">'+i.label+'</button>';
+    });
+    h += '</div>';
+    return h;
+  },
+  siralaOku: function(key, aktif, yon) {
+    if(aktif!==key) return key;
+    return yon==='asc'?'desc':'asc';
+  },
+  renkBadge: function(durum) {
+    var renkler = {
+      bekleyen:'background:#FAEEDA;color:#633806',
+      onaylandi:'background:#E1F5EE;color:#085041',
+      kabul:'background:#E1F5EE;color:#085041',
+      reddedildi:'background:#FCEBEB;color:#791F1F',
+      taslak:'background:#F1EFE8;color:#444441',
+      gonderildi:'background:#E6F1FB;color:#0C447C',
+      inceliyor:'background:#EEEDFE;color:#3C3489',
+      aktif:'background:#E1F5EE;color:#085041',
+      pasif:'background:#F1EFE8;color:#444441'
+    };
+    var stil = renkler[durum]||'background:#F1EFE8;color:#444441';
+    return '<span style="font-size:8px;padding:2px 6px;border-radius:8px;'+stil+'">'+durum+'</span>';
+  },
+  exportCSV: function(basliklar, satirlar, dosyaAdi) {
+    var csv = [basliklar].concat(satirlar).map(function(r){
+      return r.map(function(c){var s=String(c||'').replace(/"/g,'""');return s.includes(',')||s.includes('"')?'"'+s+'"':s;}).join(',');
+    }).join('\n');
+    var blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href=url;a.download=(dosyaAdi||'export')+'_'+(new Date().toISOString().slice(0,10))+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    window.toast?.('Export tamamland\u0131','ok');
+  },
+  aksiyon: function(ikonlar) {
+    return '<div style="display:flex;gap:2px;justify-content:flex-end">'+ikonlar.map(function(i){
+      return '<button onclick="event.stopPropagation();'+i.fn+'" title="'+i.title+'" style="width:22px;height:22px;border:0.5px solid '+(i.renk||'var(--b)')+';border-radius:3px;background:transparent;cursor:pointer;font-size:11px;color:'+(i.renk||'var(--t2)')+'">'+i.ikon+'</button>';
+    }).join('')+'</div>';
+  }
+};
+
+window._lhSayfa = function(containerId, sayfa, boyut, renderFn) {
+  if(sayfa<1) return;
+  window['_'+containerId+'Sayfa'] = sayfa;
+  if(typeof window[renderFn]==='function') window[renderFn]();
+};
