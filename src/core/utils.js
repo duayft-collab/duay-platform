@@ -682,6 +682,41 @@ window._loadingOverlay = function(el, goster) {
   }
 };
 
+/* ── UX-09: Silme sonrası Geri Al toast ── */
+window._undoToast = function(mesaj, geriAlFn, sure) {
+  sure = sure || 5000;
+  var toastId = 'undo-toast-' + Date.now();
+  var div = document.createElement('div');
+  div.id = toastId;
+  div.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+  div.innerHTML = '<span>' + mesaj + '</span>'
+    + '<button onclick="document.getElementById(\'' + toastId + '\').remove();window._undoToastCallbacks[\'' + toastId + '\'] && window._undoToastCallbacks[\'' + toastId + '\']()" '
+    + 'style="background:#fff;color:#111;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:500">Geri Al</button>';
+  window._undoToastCallbacks = window._undoToastCallbacks || {};
+  window._undoToastCallbacks[toastId] = geriAlFn;
+  document.body.appendChild(div);
+  setTimeout(function() {
+    var el = document.getElementById(toastId);
+    if (el) el.remove();
+    delete window._undoToastCallbacks[toastId];
+  }, sure);
+};
+
+/* ── UX-12: Toast süre standardı ── */
+window._toastSure = { ok: 3000, info: 3000, warn: 5000, err: 8000 };
+
+/* ── UX-14: Boş durum ekranı ── */
+window._emptyState = function(mesaj, aksiyon, aksiyonFn) {
+  var btn = aksiyon && aksiyonFn
+    ? '<button onclick="event.stopPropagation();(' + aksiyonFn.toString() + ')()" style="margin-top:12px;font-size:11px;padding:6px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t);font-family:inherit">' + aksiyon + '</button>'
+    : '';
+  return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:28px;margin-bottom:8px">📭</div>'
+    + '<div style="font-size:12px;font-weight:500;color:var(--t2)">' + mesaj + '</div>'
+    + btn
+    + '</div>';
+};
+
 window._btnGuard = function(btn, fn, ms) {
   if (!btn || btn.disabled) return;
   btn.disabled = true;
