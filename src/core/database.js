@@ -478,8 +478,9 @@ function _mergeDataSets(localKey, fsData, collection) {
       mergedMap[key] = item;
     } else {
       // Daha güncel olanı seç (updatedAt > ts > syncedAt karşılaştır)
-      var fsTs = item.updatedAt || item.ts || item.syncedAt || '';
-      var localTs = existing.updatedAt || existing.ts || existing.syncedAt || '';
+      var _ft = function(s){ if(!s) return ''; if(typeof s!=='string') return String(s); var m=s.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})\s*(.*)$/); if(m){var y=parseInt(m[3]);if(y<100)y+=2000;return y+'-'+(m[2].length<2?'0':'')+m[2]+'-'+(m[1].length<2?'0':'')+m[1]+(m[4]?' '+m[4]:'');} return s; };
+      var fsTs = _ft(item.updatedAt || item.ts || item.syncedAt || '');
+      var localTs = _ft(existing.updatedAt || existing.ts || existing.syncedAt || '');
       if (fsTs >= localTs) {
         mergedMap[key] = item;
       }
