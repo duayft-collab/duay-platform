@@ -535,13 +535,16 @@ window._saV2DatalistDoldur = function() {
   liste.forEach(function(t) { if (t.tedarikci) tedSet[t.tedarikci] = true; });
   var tedDl = document.getElementById('sav2f-ted-list');
   if (tedDl) tedDl.innerHTML = Object.keys(tedSet).sort().map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
-  /* Job ID: PP görevler + mevcut teklifler */
+  /* Job ID: Sadece PP Görevlerden */
   var jobSet = {};
-  liste.forEach(function(t) { if (t.jobId) jobSet[t.jobId] = true; });
   var gorevler = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
-  gorevler.forEach(function(g) { if (g.jobId) jobSet[g.jobId] = true; if (g.id && !g.isDeleted && g.status !== 'done') jobSet[String(g.id).slice(-4)] = true; });
+  gorevler.forEach(function(g) {
+    if(g.jobId && !g.isDeleted && g.status !== 'done') jobSet[g.jobId] = true;
+  });
   var jobDl = document.getElementById('sav2f-job-list');
-  if (jobDl) jobDl.innerHTML = Object.keys(jobSet).sort().map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
+  if(jobDl) jobDl.innerHTML = Object.keys(jobSet).sort().map(function(k){
+    return '<option value="' + _saEsc(k) + '">';
+  }).join('');
 };
 
 /** Job ID custom dropdown — PP görevler + mevcut teklifler live search */
@@ -557,13 +560,7 @@ window._saV2JobIdAra = function(inp) {
        (g.baslik || g.title || '').toLowerCase().includes(val) ||
        (String(g.id || '')).toLowerCase().includes(val));
   }).slice(0, 8);
-  var mevcutTeklifler = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
-  var mevcutJobSet = {};
-  mevcutTeklifler.forEach(function(t) { if (t.jobId) mevcutJobSet[t.jobId] = true; });
   var tumListe = eslesen.map(function(g) { return { id: g.jobId || g.id, ad: g.baslik || g.title || g.jobId || g.id, kaynak: 'PP G\u00f6rev' }; });
-  Object.keys(mevcutJobSet).filter(function(j) { return j.toLowerCase().includes(val); }).forEach(function(j) {
-    if (!tumListe.find(function(x) { return x.id === j; })) tumListe.push({ id: j, ad: j, kaynak: 'Mevcut Teklif' });
-  });
   if (!tumListe.length) return;
   var rect = inp.getBoundingClientRect();
   var dd2 = document.createElement('div');
