@@ -145,12 +145,13 @@ window._saV2SatisKaydet = function(alisId) {
     createdAt:window._saNow?.(),
     updatedAt:window._saNow?.()
   };
-  var teklifler = window._saTeklifLoad?.() || [];
+  var teklifler = typeof window.loadSatisTeklifleri === 'function' ? window.loadSatisTeklifleri() : [];
   teklifler.unshift(kayit);
-  window._saTeklifStore?.(teklifler);
+  if (typeof window.storeSatisTeklifleri === 'function') window.storeSatisTeklifleri(teklifler);
   document.getElementById('sav2-satis-modal')?.remove();
   window._saV2TakipGorevOlustur(kayit);
-  window.toast?.('Satış teklifi kaydedildi: '+teklifId,'ok');
+  window.renderSatisTeklifleri?.();
+  window.toast?.('Sat\u0131\u015f teklifi kaydedildi: ' + teklifId, 'ok');
 };
 
 window._saV2SatisPDF = function() {
