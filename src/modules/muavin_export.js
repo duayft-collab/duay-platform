@@ -156,12 +156,45 @@ window._mvNotKaydet = function() {
   var inp = document.getElementById('mv-not-inp');
   if(!inp||!inp.value.trim()) return;
   var notlar = JSON.parse(localStorage.getItem(_mvNotKey)||'[]');
-  notlar.unshift({id:Date.now(),tarih:new Date().toISOString().slice(0,16).replace('T',' '),donem:window._mvDonem||'',not:inp.value.trim(),kullanici:window.CU?.()?.displayName||''});
+  var editId = inp.dataset.editId;
+  if (editId) {
+    var idx = notlar.findIndex(function(n){ return String(n.id) === String(editId); });
+    if (idx !== -1) { notlar[idx].not = inp.value.trim(); notlar[idx].updatedAt = new Date().toISOString().slice(0,16).replace('T',' '); }
+    delete inp.dataset.editId;
+    localStorage.setItem(_mvNotKey, JSON.stringify(notlar));
+    inp.value = '';
+    window.toast && window.toast('Not güncellendi', 'ok');
+    window._mvNotPanelGuncelle && window._mvNotPanelGuncelle();
+    return;
+  }
+  notlar.unshift({id: typeof window.generateNumericId === 'function' ? window.generateNumericId() : (typeof window.generateId === 'function' ? window.generateId() : Date.now()),tarih:new Date().toISOString().slice(0,16).replace('T',' '),donem:window._mvDonem||'',not:inp.value.trim(),kullanici:window.CU?.()?.displayName||''});
   if(notlar.length>50) notlar=notlar.slice(0,50);
   localStorage.setItem(_mvNotKey,JSON.stringify(notlar));
   inp.value='';
   window.toast?.('Not kaydedildi','ok');
   window._mvNotPanelGuncelle();
+};
+
+window._mvNotSil = function(id) {
+  window.confirmModal('Notu Sil', 'Bu not silinecek. Geri alınamaz.', function() {
+    var notlar = JSON.parse(localStorage.getItem(_mvNotKey || 'ak_muavin_notlar_v1') || '[]');
+    var yeni = notlar.filter(function(n) { return String(n.id) !== String(id); });
+    localStorage.setItem(_mvNotKey || 'ak_muavin_notlar_v1', JSON.stringify(yeni));
+    window.toast && window.toast('Not silindi', 'ok');
+    window._mvNotPanelGuncelle && window._mvNotPanelGuncelle();
+  });
+};
+
+window._mvNotDuzenle = function(id) {
+  var notlar = JSON.parse(localStorage.getItem(_mvNotKey || 'ak_muavin_notlar_v1') || '[]');
+  var not = notlar.find(function(n) { return String(n.id) === String(id); });
+  if (!not) return;
+  var inp = document.getElementById('mv-not-inp');
+  if (!inp) return;
+  inp.value = not.not || '';
+  inp.focus();
+  inp.dataset.editId = id;
+  window.toast && window.toast('Notu düzenle — kaydet butonuna bas', 'info');
 };
 
 window._mvNotPanelGuncelle = function() {
@@ -174,6 +207,10 @@ window._mvNotPanelGuncelle = function() {
     return '<div style="padding:8px 0;border-bottom:0.5px solid var(--b)">'
       +'<div style="font-size:9px;color:var(--t3)">'+n.tarih+(n.kullanici?' · '+n.kullanici:'')+(n.donem?' · '+n.donem:'')+'</div>'
       +'<div style="font-size:11px;color:var(--t);margin-top:2px">'+n.not+'</div>'
+      +'<div style="display:flex;gap:4px;margin-top:4px">'
+      +'<button onclick="event.stopPropagation();window._mvNotDuzenle(\''+n.id+'\')" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Düzenle</button>'
+      +'<button onclick="event.stopPropagation();window._mvNotSil(\''+n.id+'\')" style="font-size:10px;padding:2px 8px;border:0.5px solid #F09595;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>'
+      +'</div>'
       +'</div>';
   }).join('') : '<div style="font-size:10px;color:var(--t3)">Bu dönem için not yok</div>';
 };
