@@ -75,7 +75,7 @@ window.renderSatinAlmaV2 = function() {
     h += '<button onclick="event.stopPropagation();window._saV2TopluReddet()" style="font-size:10px;padding:5px 10px;border:none;border-radius:5px;background:#A32D2D;color:#fff;cursor:pointer;font-family:inherit;flex-shrink:0">✗ Toplu Reddet ('+seciliSay+')</button>';
   }
   h += '<button onclick="event.stopPropagation();window._saV2CSVImport()" style="font-size:10px;padding:5px 10px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';white-space:nowrap;flex-shrink:0;font-family:inherit">↑ CSV Import</button>';
-  h += '<button onclick="event.stopPropagation()" style="font-size:10px;padding:5px 10px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit">↓ Dışa Aktar</button>';
+  h += '<button onclick="event.stopPropagation();window._saV2ExportCSV()" style="font-size:10px;padding:5px 10px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;color:'+window._t2+';font-family:inherit;flex-shrink:0">↓ CSV Export</button>';
   h += '</div></div>';
 
   if ((window.SAV2_MOD||'teklifler') === 'raporlar') {
@@ -653,6 +653,54 @@ window._saV2HatirlatmaKontrol = function() {
     });
   });
   if(uyarilar.length>0) window.toast?.(uyarilar.length+' teklif 5 günden fazladır yanıtsız','warn');
+};
+
+/* ── SAV2-EXPORT-001: CSV Export ────────────────────────────── */
+window._saV2ExportCSV = function() {
+  var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+  var secili = Object.keys(window.SAV2_SECILI||{}).filter(function(k){return window.SAV2_SECILI[k];});
+  var kayitlar = secili.length ? liste.filter(function(t){return secili.indexOf(String(t.id))!==-1;}) : liste.filter(function(t){return !t.isDeleted;});
+  if(!kayitlar.length){window.toast?.('Dışa aktarılacak kayıt yok','warn');return;}
+  var satirlar = [['Teklif ID','Tedarikci','Job ID','PI No','PI Tarih','Teklif Tarih','Urun Adi','Duay Kodu','Miktar','Birim','Birim Fiyat','Para','Toplam','Teslim Yeri','Teslim Masraf','Durum','Olusturan','Olusturma Tarihi']];
+  kayitlar.forEach(function(t){
+    var urunler = t.urunler&&t.urunler.length ? t.urunler : [t];
+    urunler.forEach(function(u,i){
+      satirlar.push([
+        i===0?(t.id||''):'',
+        i===0?(t.tedarikci||''):'',
+        i===0?(t.jobId||''):'',
+        i===0?(t.piNo||''):'',
+        i===0?(t.piTarih||''):'',
+        i===0?(t.teklifTarih||''):'',
+        u.urunAdi||u.turkceAdi||'',
+        u.duayKodu||'',
+        u.miktar||'',
+        u.birim||'',
+        u.alisF||u.birimFiyat||'',
+        u.para||'USD',
+        u.toplam||'',
+        i===0?(t.teslimYeri||''):'',
+        i===0?(t.teslimMasraf||''):'',
+        i===0?(t.durum||'bekleyen'):'',
+        i===0?(t.createdBy||''):'',
+        i===0?(t.createdAt||'').slice(0,10):''
+      ]);
+    });
+  });
+  var csv = satirlar.map(function(r){
+    return r.map(function(c){
+      var s=String(c||'').replace(/"/g,'""');
+      return s.indexOf(',')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1?'"'+s+'"':s;
+    }).join(',');
+  }).join('\n');
+  var bom = '\uFEFF';
+  var blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download='alis_teklifleri_'+(new Date().toISOString().slice(0,10))+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  window.toast?.(kayitlar.length+' kayıt export edildi','ok');
 };
 
 console.log('[SAV2-RENDER] v2.0 y\u00fcklendi');
