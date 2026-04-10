@@ -99,7 +99,7 @@ window._yetkiKontrol = function(islem) {
       try { fn(); } catch (e) { console.warn('[app_patch] render hatası:', id, e); }
     }
     // FIX 5: Özlü söz banner — her panel geçişinde inject et
-    var ozluModulMap = {odemeler:'nakit-akisi',satinalma:'satinalma',kargo:'kargo',pusula:'pusula',admin:'dashboard'};
+    var ozluModulMap = {odemeler:'nakit-akisi',satinalma:'satinalma',kargo:'kargo',pusula:'pusula-pro',admin:'dashboard'};
     var ozluKey = ozluModulMap[id];
     if (ozluKey && typeof window._renderOzluSozBanner === 'function') {
       setTimeout(function() {
@@ -695,7 +695,6 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
 window.MODULE_NAV_MAP = {
   'dashboard':  [],
   'announce':   ['nb-ann'],
-  'takvim':     ['nb-tak'],
   'notes':      ['nb-nt'],
   'links':      ['nb-lnk'],
   'rehber':     [],
@@ -720,7 +719,7 @@ window.MODULE_NAV_MAP = {
   'arsiv':      [],
   'tebligat':   [],
   'resmi':      [],
-  'pusula':     ['nb-pus'],
+  'pusula-pro': ['nb-pus'],
   'hedefler':   [],
   'ceo':        ['nb-ceo'],
   'kpi-panel':  ['nb-kpi-panel'],
@@ -732,14 +731,13 @@ window.MODULE_NAV_MAP = {
 };
 
 window.PANEL_MODULE_MAP = {
-  'dashboard':'dashboard','announce':'announce','takvim':'takvim',
   'notes':'notes','links':'links','rehber':'rehber',
   'crm':'crm','gorusme':'gorusme','etkinlik':'etkinlik','numune':'numune',
   'lojistik':'lojistik','stok':'stok','kargo':'kargo',
   'finans':'finans','odemeler':'odemeler','pirim':'pirim','hesap':'hesap',
   'ik-hub':'ik','ik':'ik','evrak':'evrak','temizlik':'temizlik','puantaj':'puantaj',
   'docs':'docs','formlar':'formlar','arsiv':'arsiv','tebligat':'tebligat','resmi':'resmi',
-  'pusula':'pusula','hedefler':'hedefler',
+  'pusula':'pusula-pro','hedefler':'hedefler',
   'ceo':'ceo','kpi-panel':'kpi-panel','admin':'users',
   'activity':'activity','settings':'settings','trash':'trash',
   'hesap-ozeti':'hesap-ozeti','gcb':'gcb','alarm':'alarm',
@@ -3038,11 +3036,11 @@ window._checkIncotermsGorev = function(teklifId) {
   var cu = window.Auth?.getCU?.();
   if (teslim==='CFR'||teslim==='CIF'||teslim==='CIP') {
     tasks.push({id:typeof generateNumericId==='function'?generateNumericId():Date.now(),title:'Forwarder\'dan navlun fiyatı iste — '+t.teklifNo,jobId:jobId,pri:2,due:deadline,uid:cu?.id,status:'todo',done:false,createdAt:now,createdBy:cu?.id,source:'incoterms'});
-    window.addNotif?.('📋','Yeni görev: Navlun fiyatı iste — '+t.teklifNo,'info','pusula',cu?.id);
+    window.addNotif?.('📋','Yeni görev: Navlun fiyatı iste — '+t.teklifNo,'info','pusula-pro',cu?.id);
   }
   if (teslim==='CIF'||teslim==='CIP') {
     tasks.push({id:(typeof generateNumericId==='function'?generateNumericId():Date.now())+1,title:'Sigortacıdan fiyat iste — '+t.teklifNo,jobId:jobId,pri:2,due:deadline,uid:cu?.id,status:'todo',done:false,createdAt:now,createdBy:cu?.id,source:'incoterms'});
-    window.addNotif?.('📋','Yeni görev: Sigorta fiyatı iste — '+t.teklifNo,'info','pusula',cu?.id);
+    window.addNotif?.('📋','Yeni görev: Sigorta fiyatı iste — '+t.teklifNo,'info','pusula-pro',cu?.id);
   }
   if (typeof saveTasks==='function') saveTasks(tasks);
 };
@@ -3805,7 +3803,7 @@ var OZLU_SOZLER = {
   'nakit-akisi': ['Para bir araçtır, amaç değil. — Henry Ford','Nakit akışı, işin oksijenidir.','Geliri değil, kârı takip et.','Bütçe, paranıza plan vermektir.','Tasarruf, gelecekteki özgürlüktür.','Finansal disiplin, başarının temelidir.','Borç, geçmişin geleceğe faturasıdır.','Her kuruş hesap ister.','Nakit kraldır.','Kazanmak değil, tutabilmek önemlidir.'],
   satinalma: ['Ucuz alan iki kez alır.','İyi satınalma, kârlılığın yarısıdır.','Doğru tedarikçi, doğru iş demektir.','Kalite asla tesadüf değildir. — John Ruskin','Fiyat unutulur, kalite kalır.','Her zincir en zayıf halkası kadar güçlüdür.','Güven, ticaretin temelidir.','İyi anlaşma, iki tarafı da memnun eder.','Zamanında teslimat, söz tutmaktır.','Tedarik zinciri, rekabet avantajıdır.'],
   kargo: ['İyi planlama, yarı zaferdir.','Lojistik, savaşı kazandırır. — Eisenhower','Doğru ürün, doğru yerde, doğru zamanda.','Her konteyner bir hikaye taşır.','Denizcilik, sabır ve hassasiyet işidir.','Geciken kargo, kaybedilen müşteridir.','Detay, lojistiğin kalbidir.','Güvenli sevkiyat, güvenilir ortaktır.','Takip etmediğin yük kayıptır.','Dünya ticaretinin %90ı deniz yoluyla taşınır.'],
-  pusula: ['Yapılacaklar listesi, hayallerinin haritasıdır.','Bugün yapabileceğini yarına bırakma.','Küçük görevler, büyük başarılar inşa eder.','Odaklanmak, hayır demeyi bilmektir. — Steve Jobs','Disiplin, motivasyonun yerini alır.','Bitirilen iş, başlatılan işten değerlidir.','Zaman yönetimi, hayat yönetimidir.','Her büyük proje, tek bir adımla başlar.','Öncelikleri belirle, gerisini unut.','Verimlilik, doğru işi doğru zamanda yapmaktır.'],
+  'pusula-pro': ['Yapılacaklar listesi, hayallerinin haritasıdır.','Bugün yapabileceğini yarına bırakma.','Küçük görevler, büyük başarılar inşa eder.','Odaklanmak, hayır demeyi bilmektir. — Steve Jobs','Disiplin, motivasyonun yerini alır.','Bitirilen iş, başlatılan işten değerlidir.','Zaman yönetimi, hayat yönetimidir.','Her büyük proje, tek bir adımla başlar.','Öncelikleri belirle, gerisini unut.','Verimlilik, doğru işi doğru zamanda yapmaktır.'],
   'satis-teklifleri': ['Müşteri satın almaz, satın almasına izin verilir.','İyi teklif, müşterinin sorununu çözer.','Fiyat değil, değer sat. — Warren Buffett','Her hayır, bir evete daha yakındır.','Güven olmadan satış olmaz.','Müşterini dinle, çözümü o söyler.','Satış, ilişki kurma sanatıdır.','Takip etmeyen satıcı, kaybeden satıcıdır.','Zamanında teklif, kazanılan iştir.','En iyi reklam, memnun müşteridir.'],
 };
 window._getOzluSoz = function(modul) {
