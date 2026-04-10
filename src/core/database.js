@@ -1283,7 +1283,7 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 }
 
 /** @returns {Array<string>} */ function loadKargoFirmalar() { const d = _read(KEYS.kargoFirms); return (Array.isArray(d) && d.length) ? d : DEFAULT_KARGO_FIRMALAR; }
-/** @param {Array<string>} d */ function storeKargoFirmalar(d) { _write(KEYS.kargoFirms, d); var _fp = _fsPath('kargoFirms'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array<string>} d */ function storeKargoFirmalar(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoFirms, d); var _fp = _fsPath('kargoFirms'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array<Object>} */ function loadKonteyn()       { const d = _read(KEYS.konteyner);  return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d);
@@ -1291,28 +1291,29 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 }
 
 /** @returns {Object}        */ function loadKargoHistory()  { const d = _read(KEYS.kargoHistory);  return (d && typeof d==='object') ? d : {}; }
-/** @param  {Object} d       */ function storeKargoHistory(d) { _write(KEYS.kargoHistory, d); var _fp = _fsPath('kargoHistory'); if (_fp) _syncFirestore(_fp, d); }
+/** @param  {Object} d       */ function storeKargoHistory(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoHistory, d); var _fp = _fsPath('kargoHistory'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoMasraf()   { const d = _read(KEYS.kargoMasraf);   return (d && typeof d==='object') ? d : {}; }
-/** @param  {Object} d       */ function storeKargoMasraf(d) { _write(KEYS.kargoMasraf, d); var _fp = _fsPath('kargoMasraf'); if (_fp) _syncFirestore(_fp, d); }
+/** @param  {Object} d       */ function storeKargoMasraf(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoMasraf, d); var _fp = _fsPath('kargoMasraf'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoBelge()    { const d = _read(KEYS.kargoBelge);    return (d && typeof d==='object') ? d : {}; }
-/** @param  {Object} d       */ function storeKargoBelge(d)  { _write(KEYS.kargoBelge, d); var _fp = _fsPath('kargoBelge'); if (_fp) _syncFirestore(_fp, d); }
+/** @param  {Object} d       */ function storeKargoBelge(d)  { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoBelge, d); var _fp = _fsPath('kargoBelge'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoChecks()   { const d = _read(KEYS.kargoChecks); return (d && typeof d === 'object') ? d : {}; }
-/** @param {Object} d        */ function storeKargoChecks(d) { _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Object} d        */ function storeKargoChecks(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat Operasyon
 /** @returns {Array<Object>} */ function loadIhracatOps()   { const d = _read(KEYS.ihracatOps); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeIhracatOps(d) { _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array<Object>} d */ function storeIhracatOps(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat V2 koleksiyonları
 function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-function storeIhracatDosyalar(d){ _write(KEYS.ihracatDosyalar, d.slice(0,200)); var fp = _fsPath('ihracatDosyalar'); if (fp) _syncFirestore(fp, d); }
+function storeIhracatDosyalar(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatDosyalar, d.slice(0,200)); var fp = _fsPath('ihracatDosyalar'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); return Array.isArray(d) ? d : []; }
-function storeIhracatEvraklar(d){ _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
+function storeIhracatEvraklar(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); return Array.isArray(d) ? d : []; }
 function storeIhracatUrunler(d) {
+  var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d;
   var yazilacak = d.map(function(u) {
     if (!u.isDeleted) return u;
     return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null };
@@ -1321,17 +1322,17 @@ function storeIhracatUrunler(d) {
   var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, yazilacak);
 }
 function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); return Array.isArray(d) ? d : []; }
-function storeIhracatGcb(d)     { _write(KEYS.ihracatGcb, d.slice(0,200)); var fp = _fsPath('ihracatGcb'); if (fp) _syncFirestore(fp, d); }
+function storeIhracatGcb(d)     { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatGcb, d.slice(0,200)); var fp = _fsPath('ihracatGcb'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); return Array.isArray(d) ? d : []; }
-function storeIhracatBl(d)      { _write(KEYS.ihracatBl, d.slice(0,200)); var fp = _fsPath('ihracatBl'); if (fp) _syncFirestore(fp, d); }
+function storeIhracatBl(d)      { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatBl, d.slice(0,200)); var fp = _fsPath('ihracatBl'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatTemplate()  { var d = _read(KEYS.ihracatTemplate); return Array.isArray(d) ? d : []; }
-function storeIhracatTemplate(d){ _write(KEYS.ihracatTemplate, d.slice(0,100)); var fp = _fsPath('ihracatTemplate'); if (fp) _syncFirestore(fp, d); }
+function storeIhracatTemplate(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatTemplate, d.slice(0,100)); var fp = _fsPath('ihracatTemplate'); if (fp) _syncFirestore(fp, d); }
 function loadGumrukculer()      { var d = _read(KEYS.gumrukculer); return Array.isArray(d) ? d : []; }
-function storeGumrukculer(d)    { _write(KEYS.gumrukculer, d.slice(0,50)); var fp = _fsPath('gumrukculer'); if (fp) _syncFirestore(fp, d); }
+function storeGumrukculer(d)    { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.gumrukculer, d.slice(0,50)); var fp = _fsPath('gumrukculer'); if (fp) _syncFirestore(fp, d); }
 function loadForwarderlar()     { var d = _read(KEYS.forwarderlar); return Array.isArray(d) ? d : []; }
-function storeForwarderlar(d)   { _write(KEYS.forwarderlar, d.slice(0,50)); var fp = _fsPath('forwarderlar'); if (fp) _syncFirestore(fp, d); }
+function storeForwarderlar(d)   { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.forwarderlar, d.slice(0,50)); var fp = _fsPath('forwarderlar'); if (fp) _syncFirestore(fp, d); }
 function loadEvrakWorkflow()    { var d = _read(KEYS.evrakWorkflow); return Array.isArray(d) ? d : []; }
-function storeEvrakWorkflow(d)  { _write(KEYS.evrakWorkflow, d.slice(0,500)); var fp = _fsPath('evrakWorkflow'); if (fp) _syncFirestore(fp, d); }
+function storeEvrakWorkflow(d)  { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.evrakWorkflow, d.slice(0,500)); var fp = _fsPath('evrakWorkflow'); if (fp) _syncFirestore(fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 10 — PİRİM
@@ -1353,7 +1354,7 @@ const DEFAULT_PIRIM_PARAMS = [
 }
 
 /** @returns {Array<Object>} */ function loadPirimParams()    { const d = _read(KEYS.pirimParams); return (Array.isArray(d) && d.length) ? d : DEFAULT_PIRIM_PARAMS; }
-/** @param {Array<Object>} d */ function storePirimParams(d)  { _write(KEYS.pirimParams, d); var _fp = _fsPath('pirimParams'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array<Object>} d */ function storePirimParams(d)  { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.pirimParams, d); var _fp = _fsPath('pirimParams'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 11 — STOK & NUMUNE
@@ -1520,7 +1521,7 @@ function storeTahsilat(d) {
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeUpdateLog(d) { _write(KEYS.updateLog, d); var _fp = _fsPath('updateLog'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array<Object>} */ function loadSmartGoals() { var d = _read(KEYS.smartGoals); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeSmartGoals(d) { _write(KEYS.smartGoals, d); var _fp = _fsPath('smartGoals'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array<Object>} d */ function storeSmartGoals(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.smartGoals, d); var _fp = _fsPath('smartGoals'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 17 — İZİN YÖNETİMİ
@@ -1576,7 +1577,7 @@ const DEFAULT_KPI = [
 /** @param {Array<Object>} d Son 500 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 500)); var _fp = _fsPath('kpiLog'); if (_fp) _syncFirestore(_fp, d.slice(0, 500)); }
 
 /** @returns {Array<Object>} */ function loadKarar()       { const d = _read(KEYS.kararlar); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeKarar(d)     { _write(KEYS.kararlar, d); var _fp = _fsPath('kararlar'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array<Object>} d */ function storeKarar(d)     { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kararlar, d); var _fp = _fsPath('kararlar'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 21 — EVRAK & ARŞİV
@@ -1597,7 +1598,7 @@ const DEFAULT_ARSIV_BELGELER = [
 }
 
 /** @returns {Array<Object>} */ function loadDolaplar()        { const d = _read(KEYS.arsivDolaplar); return Array.isArray(d) ? d : DEFAULT_DOLAPLAR; }
-/** @param {Array<Object>} d */ function storeDolaplar(d)      { _write(KEYS.arsivDolaplar, d); var _fp = _fsPath('arsivDolaplar'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array<Object>} d */ function storeDolaplar(d)      { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.arsivDolaplar, d); var _fp = _fsPath('arsivDolaplar'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array<Object>} */ function loadArsivBelgeler()   { const d = _read(KEYS.arsivBelgeler); return Array.isArray(d) ? d : DEFAULT_ARSIV_BELGELER; }
 /** @param {Array<Object>} d */ function storeArsivBelgeler(d) { _write(KEYS.arsivBelgeler, d);
