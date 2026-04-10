@@ -1503,20 +1503,20 @@ function storeTahsilat(d) {
 /** @returns {Array} */ function loadUrunler() { var d = _read(KEYS.urunler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeUrunler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-/** @param {Array} d */ function storeIhracatListesi(d) { _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); return Array.isArray(d) ? d : []; }
-/** @param {Array} d */ function storeAlisTeklifleri(d) { _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeAlisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-/** @param {Array} d */ function storeSatisTeklifleri(d) { _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeSatisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); return Array.isArray(d) ? d : []; }
-/** @param {Array} d */ function storeFikirler(d) { _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeFikirler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadIddialar() { var d = _read(KEYS.iddialar); return Array.isArray(d) ? d : []; }
-/** @param {Array} d */ function storeIddialar(d) { _write(KEYS.iddialar, d); var _fp = _fsPath('iddialar'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeIddialar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.iddialar, d); var _fp = _fsPath('iddialar'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadTeklifSartlar() { var d = _read(KEYS.teklifSartlar); return Array.isArray(d) ? d : []; }
-/** @param {Array} d */ function storeTeklifSartlar(d) { _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeTeklifSartlar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeUpdateLog(d) { _write(KEYS.updateLog, d); var _fp = _fsPath('updateLog'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array<Object>} */ function loadSmartGoals() { var d = _read(KEYS.smartGoals); return Array.isArray(d) ? d : []; }
