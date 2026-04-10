@@ -36,33 +36,32 @@ window._saV2YeniTeklif = function() {
     + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">'
     + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b)">TEKLİF BAŞLIĞI</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + _f('tedarikci', 'TEDARİKÇİ', 'Tedarikçi adı')
-    + _f('jobId', 'JOB ID', '0041')
+    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEDAR\u0130K\u00c7\u0130</div>'
+    + '<input id="sav2f-tedarikci" list="sav2f-ted-list" placeholder="Tedarik\u00e7i ad\u0131" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
+    + '<datalist id="sav2f-ted-list"></datalist></div>'
+    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">JOB ID</div>'
+    + '<input id="sav2f-jobId" list="sav2f-job-list" placeholder="0041" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
+    + '<datalist id="sav2f-job-list"></datalist></div>'
     + _f('piNo', 'SATICI PI NO', 'PI-2026-001')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + _f('piTarih', 'PI TARİHİ', '', 'date')
-    + _f('teslimYeri','TESLİM YERİ','FOB Shanghai, CIF Mersin')
-    + _f('teslimat', 'TESLİM SÜRESİ (Gün)', '14', 'number')
+    + _f('piTarih', 'PI TAR\u0130H\u0130', '', 'date')
+    + _f('teslimYeri','TESL\u0130M YER\u0130','FOB Shanghai, CIF Mersin')
+    + _f('teslimat', 'TESL\u0130M S\u00dcRES\u0130 (G\u00fcn)', '14', 'number')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TESLİMAT MASRAFI</div>'
+    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TESL\u0130MAT MASRAFI</div>'
     + '<select id="sav2f-teslimMasraf" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
-    + '<option value="">Seç...</option>'
-    + '<option value="EXW">EXW — Fabrikadan Teslim</option>'
-    + '<option value="FOB">FOB — Gemiye Yüklenmiş</option>'
-    + '<option value="CIF">CIF — Sigorta ve Navlun Dahil</option>'
-    + '<option value="DDP">DDP — Gümrük Dahil Teslim</option>'
-    + '<option value="DAP">DAP — Varış Yerinde Teslim</option>'
-    + '<option value="Alıcı">Alıcı Öder</option>'
-    + '<option value="Satıcı">Satıcı Öder</option>'
-    + '<option value="Paylaşımlı">Paylaşımlı</option>'
+    + '<option value="">Se\u00e7...</option>'
+    + '<option value="EXW">EXW \u2014 Fabrikadan Teslim</option>'
+    + '<option value="FOB">FOB \u2014 Gemiye Y\u00fcklenmi\u015f</option>'
+    + '<option value="CIF">CIF \u2014 Sigorta ve Navlun Dahil</option>'
+    + '<option value="DDP">DDP \u2014 G\u00fcmr\u00fck Dahil Teslim</option>'
+    + '<option value="DAP">DAP \u2014 Var\u0131\u015f Yerinde Teslim</option>'
     + '</select></div>'
-    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ KODU (Teklif ID)</div>'
-    + '<div style="display:flex;gap:6px;align-items:center">'
-    + '<input id="sav2f-musteriKod" placeholder="3230" oninput="event.stopPropagation();var tid=window._saTeklifId?.(this.value)||\'0000-\'+Date.now();document.getElementById(\'sav2f-id-goster\').textContent=\'ID: \'+tid;document.getElementById(\'sav2f-teklifId\').value=tid" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100px;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:monospace">'
-    + '<input id="sav2f-teklifId" value="' + teklifId + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:11px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:#0C447C;font-family:monospace">'
-    + '</div></div>'
+    + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEKL\u0130F ID</div>'
+    + '<input id="sav2f-teklifId" value="' + teklifId + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:#0C447C;font-family:monospace;box-sizing:border-box">'
+    + '</div>'
     + '</div>'
     + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b);margin-top:6px;display:flex;align-items:center;justify-content:space-between">ÜRÜNLER<button onclick="event.stopPropagation();window._saV2UrunSatirEkle()" style="font-size:9px;padding:3px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Ürün Ekle</button></div>'
     + '<div id="sav2f-urunler-container"></div>'
@@ -101,6 +100,7 @@ window._saV2YeniTeklif = function() {
   window._saV2FormGorselData = null;
   window._saV2UrunSayac = 0;
   window._saV2UrunSatirEkle();
+  window._saV2DatalistDoldur?.();
   setTimeout(function() { document.getElementById('sav2f-duayKodu')?.focus(); }, 100);
 };
 
@@ -192,7 +192,7 @@ window._saV2FormKaydet = function() {
   var baslik = {
     tedarikci: g('tedarikci'), jobId: g('jobId'), piNo: g('piNo'), piTarih: g('piTarih'),
     teslimYeri: g('teslimYeri'), teslimMasraf: document.getElementById('sav2f-teslimMasraf')?.value || '',
-    teslimat: g('teslimat'), teklifId: g('teklifId'), musteriKod: g('musteriKod')
+    teslimat: g('teslimat'), teklifId: g('teklifId')
   };
   if (!baslik.tedarikci) { window.toast?.('Tedarikçi zorunlu', 'warn'); return; }
   var satirlar = document.querySelectorAll('[data-urun-satir]');
@@ -224,7 +224,7 @@ window._saV2FormKaydet = function() {
     id: typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now()),
     tedarikci: baslik.tedarikci, jobId: baslik.jobId, piNo: baslik.piNo, piTarih: baslik.piTarih,
     teslimYeri: baslik.teslimYeri, teslimMasraf: baslik.teslimMasraf, teslimat: baslik.teslimat,
-    teklifId: baslik.teklifId, musteriKod: baslik.musteriKod,
+    teklifId: baslik.teklifId,
     urunler: urunler, urunSayisi: urunler.length,
     toplamTutar: toplamTutar.toFixed(2), toplamPara: urunler[0]?.para || 'USD',
     icNotlar: notDiv ? notDiv.innerHTML : '', teslimatKosul: kosulDiv ? kosulDiv.innerHTML : '',
@@ -443,7 +443,9 @@ window._saV2UrunSatirEkle = function() {
     + '</div>'
     + '<div id="' + pre + 'katalog-bilgi" style="font-size:8px;color:var(--t3);margin-top:2px"></div>'
     + '</div>'
-    + _uf('urunAdi', '\u00dcR\u00dcN ADI (\u0130ngilizce)', 'Standart ad')
+    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">\u00dcR\u00dcN ADI (\u0130ngilizce)</div>'
+    + '<input id="' + pre + 'urunAdi" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
+    + '<div id="' + pre + 'urunAdi-dropdown" style="display:none;position:absolute;z-index:10000;background:var(--sf);border:0.5px solid var(--b);border-radius:5px;max-height:120px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12);width:280px"></div></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
     + _uf('turkceAdi', 'T\u00dcRK\u00c7E ADI', 'T\u00fcrk\u00e7e')
@@ -483,5 +485,46 @@ window._saV2UrunKatalogDoldur = function(pre, kod) {
   var birimEl = document.getElementById(pre + 'birim'); if (birimEl && u.birim) { Array.from(birimEl.options).forEach(function(o) { if (o.value === u.birim) o.selected = true; }); }
   var menEl = document.getElementById(pre + 'mensei'); if (menEl && u.mensei) { Array.from(menEl.options).forEach(function(o) { if (o.value === u.mensei || o.textContent === u.mensei) o.selected = true; }); }
   var paraEl = document.getElementById(pre + 'para'); if (paraEl && u.para) { Array.from(paraEl.options).forEach(function(o) { if (o.value === (u.para || u.paraBirimi)) o.selected = true; }); }
+};
+
+/** Ürün adına göre arama dropdown */
+window._saV2UrunAdAra = function(pre, deger) {
+  var dd = document.getElementById(pre + 'urunAdi-dropdown');
+  if (!dd || !deger || deger.length < 2) { if (dd) dd.style.display = 'none'; return; }
+  var q = deger.toLowerCase();
+  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
+  var ihrUrunler = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
+  var tum = urunler.concat(ihrUrunler);
+  var sonuc = tum.filter(function(u) {
+    return (u.urunAdi || '').toLowerCase().includes(q) || (u.standartAdi || '').toLowerCase().includes(q) || (u.duayAdi || '').toLowerCase().includes(q) || (u.duayKodu || '').toLowerCase().includes(q);
+  }).slice(0, 8);
+  if (!sonuc.length) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = sonuc.map(function(u) {
+    return '<div onclick="event.stopPropagation();window._saV2UrunSecimDoldur?.(\'' + pre + '\',\'' + _saEsc(u.duayKodu || '') + '\')" style="padding:6px 10px;font-size:10px;cursor:pointer;border-bottom:0.5px solid var(--b);color:var(--t)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">'
+      + '<span style="font-weight:500;color:#0C447C">' + _saEsc(u.duayKodu || '') + '</span> ' + _saEsc(u.urunAdi || u.standartAdi || '') + ' <span style="color:var(--t3);font-size:9px">' + _saEsc(u.tedarikci || '') + '</span></div>';
+  }).join('');
+};
+
+window._saV2UrunSecimDoldur = function(pre, duayKodu) {
+  var dd = document.getElementById(pre + 'urunAdi-dropdown');
+  if (dd) dd.style.display = 'none';
+  window._saV2UrunKatalogDoldur(pre, duayKodu);
+  var kodEl = document.getElementById(pre + 'duayKodu');
+  if (kodEl) kodEl.value = duayKodu;
+};
+
+/** Tedarikçi + Job ID datalist doldurma */
+window._saV2DatalistDoldur = function() {
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var tedSet = {}, jobSet = {};
+  liste.forEach(function(t) {
+    if (t.tedarikci) tedSet[t.tedarikci] = true;
+    if (t.jobId) jobSet[t.jobId] = true;
+  });
+  var tedDl = document.getElementById('sav2f-ted-list');
+  if (tedDl) tedDl.innerHTML = Object.keys(tedSet).map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
+  var jobDl = document.getElementById('sav2f-job-list');
+  if (jobDl) jobDl.innerHTML = Object.keys(jobSet).map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
 };
 
