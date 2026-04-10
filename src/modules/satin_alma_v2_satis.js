@@ -2,7 +2,7 @@ var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=
 /* ── Placeholder fonksiyonlar ───────────────────────────────── */
 window._saV2TeklifOlustur = function(id) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x){return x.id===id;});
+  var t = liste.find(function(x){return String(x.id)===String(id);});
   if(!t){ window.toast?.('Teklif bulunamadı','warn'); return; }
   var mevcut = document.getElementById('sav2-satis-modal'); if(mevcut) mevcut.remove();
   var modal = document.createElement('div');
