@@ -4910,3 +4910,23 @@ window._pkDurumDegistir = function(kuralId) {
   window.toast?.('Kural durumu güncellendi: '+kuralId,'ok');
   window.renderPlatformKurallari?.();
 };
+
+/* ── PUSULA-REDIRECT: eski 'pusula' → 'pusula-pro' ─────────── */
+(function() {
+  var _origNav = window.App && window.App.nav;
+  if(!_origNav) return;
+  window.App.nav = function(mod, sub, opts) {
+    if(mod === 'pusula') mod = 'pusula-pro';
+    return _origNav.call(this, mod, sub, opts);
+  };
+})();
+
+/* ── SIDEBAR: Pusula Pro'yu operasyon grubuna ekle ──────────── */
+(function() {
+  var g = window._TN2_GROUPS;
+  if(!g) return;
+  if(g.operasyon && g.operasyon.mods) {
+    var zatenVar = g.operasyon.mods.some(function(m){ return m.id === 'pusula-pro'; });
+    if(!zatenVar) g.operasyon.mods.unshift({ id:'pusula-pro', label:'Pusula Pro' });
+  }
+})();
