@@ -1311,7 +1311,7 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @returns {Array<string>} */ function loadKargoFirmalar() { const d = _read(KEYS.kargoFirms); return (Array.isArray(d) && d.length) ? d : DEFAULT_KARGO_FIRMALAR; }
 /** @param {Array<string>} d */ function storeKargoFirmalar(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoFirms, d); var _fp = _fsPath('kargoFirms'); if (_fp) _syncFirestore(_fp, d); }
 
-/** @returns {Array<Object>} */ function loadKonteyn()       { const d = _read(KEYS.konteyner);  return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadKonteyn()       { var d = _read(KEYS.konteyner); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeKonteyn(d)     { _write(KEYS.konteyner, d);
   var _fp = _fsPath('konteyner'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1329,15 +1329,15 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 /** @param {Object} d        */ function storeKargoChecks(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat Operasyon
-/** @returns {Array<Object>} */ function loadIhracatOps()   { const d = _read(KEYS.ihracatOps); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadIhracatOps()   { var d = _read(KEYS.ihracatOps); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeIhracatOps(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatOps, d); const _fp = _fsPath('ihracatOps'); if (_fp) _syncFirestore(_fp, d); }
 
 // İhracat V2 koleksiyonları
 function loadIhracatDosyalar()  { var d = _read(KEYS.ihracatDosyalar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatDosyalar(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatDosyalar, d.slice(0,200)); var fp = _fsPath('ihracatDosyalar'); if (fp) _syncFirestore(fp, d); }
-function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); return Array.isArray(d) ? d : []; }
+function loadIhracatEvraklar()  { var d = _read(KEYS.ihracatEvraklar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatEvraklar(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatEvraklar, d.slice(0,500)); var fp = _fsPath('ihracatEvraklar'); if (fp) _syncFirestore(fp, d); }
-function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); return Array.isArray(d) ? d : []; }
+function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatUrunler(d) {
   var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d;
   var yazilacak = d.map(function(u) {
@@ -1347,9 +1347,9 @@ function storeIhracatUrunler(d) {
   _write(KEYS.ihracatUrunler, yazilacak.slice(0, 1000));
   var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, yazilacak);
 }
-function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); return Array.isArray(d) ? d : []; }
+function loadIhracatGcb()       { var d = _read(KEYS.ihracatGcb); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatGcb(d)     { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatGcb, d.slice(0,200)); var fp = _fsPath('ihracatGcb'); if (fp) _syncFirestore(fp, d); }
-function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); return Array.isArray(d) ? d : []; }
+function loadIhracatBl()        { var d = _read(KEYS.ihracatBl); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatBl(d)      { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatBl, d.slice(0,200)); var fp = _fsPath('ihracatBl'); if (fp) _syncFirestore(fp, d); }
 function loadIhracatTemplate()  { var d = _read(KEYS.ihracatTemplate); return Array.isArray(d) ? d : []; }
 function storeIhracatTemplate(d){ var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.ihracatTemplate, d.slice(0,100)); var fp = _fsPath('ihracatTemplate'); if (fp) _syncFirestore(fp, d); }
@@ -1386,7 +1386,7 @@ const DEFAULT_PIRIM_PARAMS = [
 // BÖLÜM 11 — STOK & NUMUNE
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadStok()    { const d = _read(KEYS.stok);   return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadStok()    { var d = _read(KEYS.stok); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeStok(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.stok, d); 
   const _fp_stok = _fsPath('stok'); if (_fp_stok) _syncFirestore(_fp_stok, d);
 }
@@ -1409,7 +1409,7 @@ const DEFAULT_CRM = [
   { id: 2, name: 'Bulut Yazılım',  contact: 'Selin Hanım', phone: '0232 444 20 20', email: 'selin@example.com', city: 'İzmir',    status: 'teklif', value: 45000,  owner: 2, note: 'Fiyat teklifi gönderildi',    ts: '2026-02-15' },
   { id: 3, name: 'Mavi Lojistik',  contact: 'Emre Bey',    phone: '0312 333 30 30', email: 'emre@example.com',  city: 'Ankara',   status: 'lead',   value: 80000,  owner: 2, note: 'İlk görüşme yapıldı',        ts: '2026-03-10' },
 ];
-/** @returns {Array<Object>} */ function loadCrmData()    { const d = _read(KEYS.crm);  return Array.isArray(d) ? d : DEFAULT_CRM; }
+/** @returns {Array<Object>} */ function loadCrmData()    { var d = _read(KEYS.crm); var arr = Array.isArray(d) ? d : DEFAULT_CRM; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeCrmData(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.crm, d); 
   const _fp_crm = _fsPath('crm'); if (_fp_crm) _syncFirestore(_fp_crm, d);
 }
@@ -1418,7 +1418,7 @@ const DEFAULT_CRM = [
 // BÖLÜM 13 — REHBER
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadRehber()  { const d = _read(KEYS.rehber); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadRehber()  { var d = _read(KEYS.rehber); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeRehber(d){ _write(KEYS.rehber, d); 
   const _fp_rehber = _fsPath('rehber'); if (_fp_rehber) _syncFirestore(_fp_rehber, d);
 }
@@ -1430,7 +1430,7 @@ const DEFAULT_CRM = [
 const DEFAULT_HDF = [
   { id: 1, uid: 0, title: 'Q1 2026 Satış Hedefi', desc: 'Aylık satış 500K TL — aylık raporlarla ölçülecek', from: '2026-01-01', to: '2026-03-31', status: 'progress', steps: [] },
 ];
-/** @returns {Array<Object>} */ function loadHdf()     { const d = _read(KEYS.hedefler); return Array.isArray(d) ? d : DEFAULT_HDF; }
+/** @returns {Array<Object>} */ function loadHdf()     { var d = _read(KEYS.hedefler); var arr = Array.isArray(d) ? d : DEFAULT_HDF; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeHdf(d)   { _write(KEYS.hedefler, d); 
   const _fp_hedefler = _fsPath('hedefler'); if (_fp_hedefler) _syncFirestore(_fp_hedefler, d);
 }
@@ -1559,7 +1559,7 @@ function storeTahsilat(d) {
 /** @param {Array} d */ function storeTeklifSartlar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeUpdateLog(d) { _write(KEYS.updateLog, d); var _fp = _fsPath('updateLog'); if (_fp) _syncFirestore(_fp, d); }
-/** @returns {Array<Object>} */ function loadSmartGoals() { var d = _read(KEYS.smartGoals); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadSmartGoals() { var d = _read(KEYS.smartGoals); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeSmartGoals(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.smartGoals, d); var _fp = _fsPath('smartGoals'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
@@ -1587,7 +1587,7 @@ function storeIzin(d)  {
 // BÖLÜM 18 — TEBLİGAT
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadTebligat()   { const d = _read(KEYS.tebligat); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadTebligat()   { var d = _read(KEYS.tebligat); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeTebligat(d) { _write(KEYS.tebligat, d); 
   const _fp_tebligat = _fsPath('tebligat'); if (_fp_tebligat) _syncFirestore(_fp_tebligat, d);
 }
@@ -1596,7 +1596,7 @@ function storeIzin(d)  {
 // BÖLÜM 19 — TEMİZLİK ROTİNLERİ
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadTemizlik()   { const d = _read(KEYS.temizlik); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadTemizlik()   { var d = _read(KEYS.temizlik); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeTemizlik(d) { _write(KEYS.temizlik, d); var _fp = _fsPath('temizlik'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
@@ -1615,7 +1615,7 @@ const DEFAULT_KPI = [
 /** @returns {Array<Object>} */ function loadKpiLog()      { const d = _read(KEYS.kpiLog); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 500 kayıt */ function storeKpiLog(d) { _write(KEYS.kpiLog, d.slice(0, 500)); var _fp = _fsPath('kpiLog'); if (_fp) _syncFirestore(_fp, d.slice(0, 500)); }
 
-/** @returns {Array<Object>} */ function loadKarar()       { const d = _read(KEYS.kararlar); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadKarar()       { var d = _read(KEYS.kararlar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeKarar(d)     { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kararlar, d); var _fp = _fsPath('kararlar'); if (_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
@@ -1631,7 +1631,7 @@ const DEFAULT_ARSIV_BELGELER = [
   { id: 2, dolapId: 1, name: 'Gelir Tablosu Q1',  cat: 'fatura', raf: 'Raf 2', date: '2026-03-31', exp: '',           status: 'pending',  note: 'Onay bekliyor', file: null },
 ];
 
-/** @returns {Array<Object>} */ function loadEvrak()           { const d = _read(KEYS.evrak);        return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadEvrak()           { var d = _read(KEYS.evrak); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeEvrak(d)         { _write(KEYS.evrak, d);
   var _fp = _fsPath('evrak'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1639,12 +1639,12 @@ const DEFAULT_ARSIV_BELGELER = [
 /** @returns {Array<Object>} */ function loadDolaplar()        { const d = _read(KEYS.arsivDolaplar); return Array.isArray(d) ? d : DEFAULT_DOLAPLAR; }
 /** @param {Array<Object>} d */ function storeDolaplar(d)      { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.arsivDolaplar, d); var _fp = _fsPath('arsivDolaplar'); if (_fp) _syncFirestore(_fp, d); }
 
-/** @returns {Array<Object>} */ function loadArsivBelgeler()   { const d = _read(KEYS.arsivBelgeler); return Array.isArray(d) ? d : DEFAULT_ARSIV_BELGELER; }
+/** @returns {Array<Object>} */ function loadArsivBelgeler()   { var d = _read(KEYS.arsivBelgeler); var arr = Array.isArray(d) ? d : DEFAULT_ARSIV_BELGELER; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeArsivBelgeler(d) { _write(KEYS.arsivBelgeler, d);
   var _fp = _fsPath('arsivBelgeler'); if (_fp) _syncFirestore(_fp, d);
 }
 
-/** @returns {Array<Object>} */ function loadResmi()           { const d = _read(KEYS.resmiEvrak);   return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadResmi()           { var d = _read(KEYS.resmiEvrak); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeResmi(d)         { _write(KEYS.resmiEvrak, d);
   var _fp = _fsPath('resmiEvrak'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1653,7 +1653,7 @@ const DEFAULT_ARSIV_BELGELER = [
 // BÖLÜM 22 — ETKİNLİK / FUAR
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadEtkinlik()       { const d = _read(KEYS.etkinlik);   return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadEtkinlik()       { var d = _read(KEYS.etkinlik); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeEtkinlik(d)     { _write(KEYS.etkinlik, d);
   var _fp = _fsPath('etkinlik'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1675,7 +1675,7 @@ function loadTaskChats()    { const d = _read(KEYS.taskChats); return (d && type
 // BÖLÜM 24 — KUTLAMA / TEBRIK
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadGrt()     { const d = _read(KEYS.greetings); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadGrt()     { var d = _read(KEYS.greetings); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeGrt(d)   { _write(KEYS.greetings, d);
   var _fp = _fsPath('greetings'); if (_fp) _syncFirestore(_fp, d);
 }
