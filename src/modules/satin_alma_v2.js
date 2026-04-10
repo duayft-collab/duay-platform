@@ -21,7 +21,7 @@ var _t  = 'var(--t)',  _t2 = 'var(--t2)', _t3 = 'var(--t3)';
 
 /* ── Yardımcılar ────────────────────────────────────────────── */
 var _saEsc  = window._saEsc  = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
-var _saNow  = window._saNow  = function(){ return new Date().toISOString().slice(0,19).replace('T',' '); };
+var _saNow  = window._saNow  = function(){ return new Date().toISOString(); };
 var _saToday= window._saToday= function(){ return new Date().toISOString().slice(0,10); };
 var _saId   = window._saId   = function(){ return typeof window.generateId==='function'?window.generateId():Date.now()+Math.random().toString(36).slice(2,8); };
 var _saCu   = window._saCu   = function(){ return window.Auth?.getCU?.() || window.CU?.(); };
@@ -36,6 +36,7 @@ window._saTeklifId = function(musteriKod) {
 
 /* ── Veri fonksiyonları ─────────────────────────────────────── */
 function _saV2Load() {
+  if (typeof window.loadAlisTeklifleri === 'function') return window.loadAlisTeklifleri();
   try {
     var r = localStorage.getItem(SAV2_KEY);
     if (!r) return [];
@@ -45,6 +46,7 @@ function _saV2Load() {
   } catch(e) { return []; }
 }
 function _saV2Store(d) {
+  if (typeof window.storeAlisTeklifleri === 'function') { window.storeAlisTeklifleri(d); return; }
   try {
     var s = JSON.stringify(d);
     if (typeof LZString!=='undefined' && s.length>500)
