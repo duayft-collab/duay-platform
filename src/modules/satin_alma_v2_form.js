@@ -15,7 +15,29 @@ window._saV2YeniTeklif = function(duzenleKayit) {
   var modal = document.createElement('div');
   modal.id = 'sav2-form-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px 0;overflow-y:auto';
-  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  var _draftKey = 'ak_sav2_draft_v1';
+  var _draftTimer = null;
+  function _draftOku() {
+    try { return JSON.parse(localStorage.getItem(_draftKey)||'null'); } catch(e){return null;}
+  }
+  function _draftSil() {
+    localStorage.removeItem(_draftKey);
+    if(_draftTimer) clearInterval(_draftTimer);
+  }
+  function _draftKaydet() {
+    var g = function(id){ var el=document.getElementById(id); return el?(el.value||'').trim():''; };
+    var draft = {
+      ts: new Date().toISOString(),
+      tedarikci: g('sav2f-tedarikci'), jobId: g('sav2f-jobId'),
+      piNo: g('sav2f-piNo'), piTarih: g('sav2f-piTarih'),
+      teslimYeri: g('sav2f-teslimYeri'), teslimMasraf: g('sav2f-teslimMasraf'),
+      teslimat: g('sav2f-teslimat')
+    };
+    try { localStorage.setItem(_draftKey, JSON.stringify(draft)); } catch(e){}
+  }
+  var _eskiDraft = _draftOku();
+  var _draftBanner = _eskiDraft ? '<div id="sav2-draft-banner" style="background:#FAEEDA;border:0.5px solid #854F0B;border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;color:#633806">Kaydedilmemi\u015f taslak bulundu \u2014 '+_eskiDraft.ts.slice(0,16).replace('T',' ')+'</span><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();window._sav2DraftYukle()" style="font-size:10px;padding:4px 10px;border:none;border-radius:4px;background:#854F0B;color:#fff;cursor:pointer;font-family:inherit">Devam Et</button><button onclick="event.stopPropagation();window._sav2DraftSil()" style="font-size:10px;padding:4px 10px;border:0.5px solid #854F0B;border-radius:4px;background:transparent;color:#854F0B;cursor:pointer;font-family:inherit">Sil</button></div></div>' : '';
+  modal.onclick = function(e) { if (e.target === modal) { _draftSil(); modal.remove(); } };
   var teklifId = window._saTeklifId?.('0000') || ('0000-' + Date.now());
   var _f = function(id, lbl, ph, tip) {
     return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
@@ -31,9 +53,10 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Alış Teklifi</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace" id="sav2f-id-goster">ID: ' + teklifId + '</div>'
     + '</div>'
-    + '<button onclick="event.stopPropagation();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>'
+    + '<button onclick="event.stopPropagation();window._sav2DraftSil?.();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>'
     + '</div>'
     + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">'
+    + _draftBanner
     + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b)">TEKLİF BAŞLIĞI</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEDAR\u0130K\u00c7\u0130</div>'
@@ -89,11 +112,27 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
     + '<div style="font-size:9px;color:var(--t3)">* Duay kodu girilince katalogdan otomatik dolar</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<button onclick="event.stopPropagation();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
+    + '<button onclick="event.stopPropagation();window._sav2DraftSil?.();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
     + '<button onclick="event.stopPropagation();window._saV2FormKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
     + '</div></div>'
     + '</div>';
   document.body.appendChild(modal);
+  _draftTimer = setInterval(_draftKaydet, 10000);
+  window._sav2DraftYukle = function() {
+    var d = _draftOku(); if(!d) return;
+    var s = function(id,v){ var el=document.getElementById(id); if(el) el.value=v; };
+    s('sav2f-tedarikci',d.tedarikci||''); s('sav2f-jobId',d.jobId||'');
+    s('sav2f-piNo',d.piNo||''); s('sav2f-piTarih',d.piTarih||'');
+    s('sav2f-teslimYeri',d.teslimYeri||''); s('sav2f-teslimMasraf',d.teslimMasraf||'');
+    s('sav2f-teslimat',d.teslimat||'');
+    document.getElementById('sav2-draft-banner')?.remove();
+    window.toast?.('Taslak y\u00fcklendi','ok');
+  };
+  window._sav2DraftSil = function() {
+    _draftSil();
+    document.getElementById('sav2-draft-banner')?.remove();
+    window.toast?.('Taslak silindi','ok');
+  };
   window._saV2FormGorselData = null;
   window._saV2UrunSayac = 0;
   window._saV2UrunSatirEkle();
@@ -255,6 +294,7 @@ window._saV2FormKaydet = function() {
   var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
   liste.unshift(kayit);
   if (typeof window._saV2Store === 'function') window._saV2Store(liste);
+  window._sav2DraftSil?.();
   document.getElementById('sav2-form-modal')?.remove();
   window.toast?.('Teklif kaydedildi \u2014 ' + urunler.length + ' \u00fcr\u00fcn', 'ok');
   window.renderSatinAlmaV2?.();
