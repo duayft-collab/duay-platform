@@ -721,4 +721,123 @@ window._mvOnlemRaporuPDF = function() {
   window.toast?.('Önlem raporu açıldı','ok');
 };
 
+window._mvMuhasebeciyeGonderPDF = function() {
+  var kategoriler = window._mvSonKategoriler;
+  if(!kategoriler){window.toast?.('Önce karşılaştırma yapın','warn');return;}
+  var toplamHata = Object.values(kategoriler).reduce(function(s,k){return s+k.items.length;},0);
+  if(!toplamHata){window.toast?.('Hata bulunamadı — gönderilecek fark yok','ok');return;}
+  var tarih=new Date().toLocaleDateString('tr-TR');
+  var donem=window._mvDonem||'';
+  var html='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Muhasebeciye Fark Bildirimi</title>';
+  html+='<style>body{font-family:Arial,sans-serif;margin:35px;color:#111;font-size:11px}';
+  html+='.baslik{border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:20px}';
+  html+='.resmi{background:#f8f8f8;border:1px solid #ddd;padding:14px;margin-bottom:16px;border-radius:4px}';
+  html+='.fark-satir{border-bottom:1px solid #eee;padding:8px 0;display:flex;gap:12px}';
+  html+='.etiket{font-size:9px;padding:2px 6px;border-radius:3px;color:#fff;white-space:nowrap}';
+  html+='.talep{background:#EBF4FF;border-left:3px solid #185FA5;padding:8px 12px;margin:12px 0;border-radius:0 4px 4px 0;font-size:10px}';
+  html+='.imza{display:flex;justify-content:space-between;margin-top:50px}';
+  html+='.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:40px}';
+  html+='</style></head><body>';
+  html+='<div class="baslik"><h2 style="margin:0 0 4px">DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</h2>';
+  html+='<div style="font-size:12px;color:#555">Mali Müşavir Bildirim Yazısı</div></div>';
+  html+='<div class="resmi">';
+  html+='<div><strong>Konu:</strong> '+donem+' Dönemi Muavin Defter Fark Bildirimi</div>';
+  html+='<div style="margin-top:4px"><strong>Tarih:</strong> '+tarih+'</div>';
+  html+='<div style="margin-top:4px"><strong>Toplam Fark Sayısı:</strong> '+toplamHata+' adet</div>';
+  html+='</div>';
+  html+='<p>Sayın Mali Müşavirimiz,</p>';
+  html+='<p>'+donem+' dönemine ait muavin defter karşılaştırması sonucunda aşağıdaki farklılıklar tespit edilmiştir. Söz konusu kayıtların tarafınızca incelenerek gerekli düzeltmelerin yapılmasını talep ederiz.</p>';
+  Object.entries(kategoriler).forEach(function(entry){
+    var key=entry[0],k=entry[1];
+    if(!k.items.length) return;
+    var renkler={eksik_kayit:'#A32D2D',tutar_farki:'#854F0B',tarih_farki:'#185FA5',mukerrer:'#854F0B',yuksek_tutar:'#A32D2D'};
+    html+='<h3 style="margin:16px 0 8px;font-size:11px">'+k.ad+' ('+k.items.length+' adet)</h3>';
+    k.items.slice(0,20).forEach(function(item){
+      html+='<div class="fark-satir">';
+      html+='<span class="etiket" style="background:'+(renkler[key]||'#555')+'">'+k.ad+'</span>';
+      html+='<span style="font-family:monospace;min-width:80px">'+(item.fisNo||'—')+'</span>';
+      html+='<span style="flex:1">'+(item.durum||item.tarih1||item.taraf||item.aciklama||'')+'</span>';
+      html+='<span style="color:#A32D2D">'+(item.tutar?item.tutar.toLocaleString('tr-TR')+' TL':item.fark?'Fark: '+item.fark.toLocaleString('tr-TR')+' TL':'')+'</span>';
+      html+='</div>';
+    });
+    var talepler={eksik_kayit:'Yukarıdaki fişlerin kayıtlarınıza işlenmesini talep ederiz.',tutar_farki:'Tutar farklılıklarının belge üzerinden kontrol edilerek düzeltilmesini talep ederiz.',tarih_farki:'Fiş tarihlerinin orijinal belgelerle karşılaştırılarak düzeltilmesini talep ederiz.',mukerrer:'Mükerrer kayıtların iptal edilerek tekil hale getirilmesini talep ederiz.',yuksek_tutar:'Yüksek tutarlı işlemlere açıklama ve belge eklenmesini talep ederiz.'};
+    if(talepler[key]) html+='<div class="talep">Talebimiz: '+talepler[key]+'</div>';
+  });
+  html+='<div class="imza">';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Şirket Yetkilisi</div></div>';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Mali İşler Sorumlusu</div></div>';
+  html+='</div></body></html>';
+  var win=window.open('','_blank');
+  if(!win){window.toast?.('Popup engellendi','warn');return;}
+  win.document.write(html);win.document.close();win.print();
+  window.toast?.('Muhasebeciye gönderim raporu açıldı','ok');
+};
+
+window._mvIcMuhasebeRaporuPDF = function() {
+  var kategoriler = window._mvSonKategoriler;
+  if(!kategoriler){window.toast?.('Önce karşılaştırma yapın','warn');return;}
+  var toplamHata = Object.values(kategoriler).reduce(function(s,k){return s+k.items.length;},0);
+  if(!toplamHata){window.toast?.('Hata bulunamadı','ok');return;}
+  var tarih=new Date().toLocaleDateString('tr-TR');
+  var donem=window._mvDonem||'';
+  var deadline=new Date(Date.now()+7*24*60*60*1000).toLocaleDateString('tr-TR');
+  var html='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>İç Muhasebe Aksiyon Raporu</title>';
+  html+='<style>body{font-family:Arial,sans-serif;margin:30px;color:#111;font-size:11px}';
+  html+='.baslik{background:#111;color:#fff;padding:14px;margin-bottom:20px;border-radius:4px}';
+  html+='.ozet-grid{display:flex;gap:10px;margin-bottom:16px}';
+  html+='.ozet-kart{border:1px solid #ddd;border-radius:6px;padding:10px;flex:1;text-align:center}';
+  html+='.aksiyon-satir{border:1px solid #ddd;border-radius:4px;padding:10px;margin-bottom:8px}';
+  html+='.oncelik{font-size:9px;padding:2px 6px;border-radius:3px;color:#fff;display:inline-block;margin-bottom:6px}';
+  html+='.checklist{list-style:none;padding:0;margin:6px 0 0}';
+  html+='.checklist li{padding:3px 0;padding-left:16px;position:relative;font-size:10px}';
+  html+='.checklist li:before{content:"☐";position:absolute;left:0}';
+  html+='.imza{display:flex;justify-content:space-between;margin-top:40px}';
+  html+='.imza-alan{text-align:center;width:180px}.imza-cizgi{border-top:1px solid #111;padding-top:6px;margin-top:35px}';
+  html+='</style></head><body>';
+  html+='<div class="baslik"><h2 style="margin:0 0 4px;font-size:16px">İÇ MUHASEBE AKSİYON RAPORU</h2>';
+  html+='<div style="font-size:10px;opacity:.8">Dönem: '+donem+' | Tarih: '+tarih+' | Aksiyon Deadline: '+deadline+'</div></div>';
+  html+='<div class="ozet-grid">';
+  html+='<div class="ozet-kart"><div style="font-size:22px;font-weight:bold;color:#A32D2D">'+toplamHata+'</div><div style="font-size:9px;margin-top:2px">TOPLAM HATA</div></div>';
+  Object.values(kategoriler).forEach(function(k){
+    if(!k.items.length) return;
+    html+='<div class="ozet-kart"><div style="font-size:18px;font-weight:bold">'+k.items.length+'</div><div style="font-size:9px;margin-top:2px">'+k.ad.toUpperCase()+'</div></div>';
+  });
+  html+='</div>';
+  var aksiyonlar={
+    eksik_kayit:{oncelik:'KRİTİK',renk:'#A32D2D',gorevler:['Eksik fişi sistem kayıtlarında ara','Orijinal belgeyi temin et','Döneme işle ve muhasebeciye bildir','Neden eksik kaldığını raporla']},
+    tutar_farki:{oncelik:'YÜKSEK',renk:'#854F0B',gorevler:['Orijinal fatura/belge ile karşılaştır','KDV tutarını ayrı kontrol et','Düzeltme fişi hazırla','Muhasebeciye bildir']},
+    tarih_farki:{oncelik:'ORTA',renk:'#185FA5',gorevler:['Belge tarihini doğrula','Dönem geçişi kontrolü yap','Gerekirse ters kayıt aç']},
+    mukerrer:{oncelik:'YÜKSEK',renk:'#854F0B',gorevler:['Hangi kaydın doğru olduğunu belirle','Yanlış kaydı iptal et','Neden mükerrer girildiğini araştır']},
+    yuksek_tutar:{oncelik:'İZLEME',renk:'#5F5E5A',gorevler:['Yönetici onayını kontrol et','Açıklama ve belge ekle','Karşı taraf mutabakatını al']}
+  };
+  Object.entries(kategoriler).forEach(function(entry){
+    var key=entry[0],k=entry[1];
+    if(!k.items.length) return;
+    var aks=aksiyonlar[key]||{oncelik:'NORMAL',renk:'#555',gorevler:[]};
+    html+='<div class="aksiyon-satir">';
+    html+='<span class="oncelik" style="background:'+aks.renk+'">'+aks.oncelik+'</span> ';
+    html+='<strong style="font-size:11px">'+k.ad+'</strong> <span style="color:#555;font-size:10px">('+k.items.length+' kayıt)</span>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:10px;margin:6px 0"><thead><tr style="background:#f5f5f5"><th style="padding:4px;text-align:left">Fiş No</th><th style="padding:4px;text-align:left">Detay</th><th style="padding:4px;text-align:right">Tutar</th></tr></thead><tbody>';
+    k.items.slice(0,10).forEach(function(item){html+='<tr style="border-bottom:1px solid #eee"><td style="padding:3px 4px;font-family:monospace">'+(item.fisNo||'—')+'</td><td style="padding:3px 4px">'+(item.durum||item.tarih1||item.taraf||'')+'</td><td style="padding:3px 4px;text-align:right">'+(item.tutar?item.tutar.toLocaleString('tr-TR')+' TL':'')+'</td></tr>';});
+    html+='</tbody></table>';
+    if(aks.gorevler.length){
+      html+='<div style="font-size:10px;font-weight:bold;margin-top:6px">Yapılacaklar:</div>';
+      html+='<ul class="checklist">';
+      aks.gorevler.forEach(function(g){html+='<li>'+g+'</li>';});
+      html+='</ul>';
+    }
+    html+='<div style="margin-top:6px;font-size:9px;color:#555">Sorumlu: _______________ | Tamamlanma Tarihi: '+deadline+'</div>';
+    html+='</div>';
+  });
+  html+='<div class="imza">';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Hazırlayan</div></div>';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Muhasebe Müdürü</div></div>';
+  html+='<div class="imza-alan"><div class="imza-cizgi">Genel Müdür</div></div>';
+  html+='</div></body></html>';
+  var win=window.open('','_blank');
+  if(!win){window.toast?.('Popup engellendi','warn');return;}
+  win.document.write(html);win.document.close();win.print();
+  window.toast?.('İç muhasebe aksiyon raporu açıldı','ok');
+};
+
 console.log('[MUAVIN-EXPORT] yüklendi');

@@ -354,6 +354,8 @@ window.renderMuavin = function() {
     sagIcerik += '<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end">';
     sagIcerik += '<button onclick="event.stopPropagation();window._mvHataKategoriHTML&&window.renderMuavin()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">↺ Yenile</button>';
     sagIcerik += '<button onclick="event.stopPropagation();window._mvOnlemRaporuPDF()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#A32D2D;color:#fff;cursor:pointer;font-family:inherit">⎙ Önlem Raporu PDF</button>';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvMuhasebeciyeGonderPDF()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">📤 Muhasebeciye Gönder</button>';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvIcMuhasebeRaporuPDF()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#111;color:#fff;cursor:pointer;font-family:inherit">📋 İç Muhasebe Aksiyon</button>';
     sagIcerik += '</div>';
     sagIcerik += (window._mvHataKategoriHTML ? window._mvHataKategoriHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Önce her iki Excel\'i yükleyin</div>');
     sagIcerik += '</div>';
