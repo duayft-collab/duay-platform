@@ -822,7 +822,7 @@ window._uf2KaydetYeni = function() {
     existing.brutAgirlik = g('brutAgirlik');
     existing.alisF = g('alisF');
     existing.para = g('para')||'USD';
-    existing.updatedAt = new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
+    existing.updatedAt = new Date().toISOString();
     existing.updatedBy = window.CU?.()?.displayName||'';
   } else {
     const yeni = {
@@ -834,10 +834,10 @@ window._uf2KaydetYeni = function() {
       eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
       marka: g('marka'), netAgirlik: g('netAgirlik'), brutAgirlik: g('brutAgirlik'), alisF: g('alisF'), para: g('para')||'USD',
       status: 'aktif',
-      createdAt: new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}),
+      createdAt: new Date().toISOString(),
       createdById: window.CU?.()?.uid||window.CU?.()?.id||'',
       createdBy: window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor',
-      updatedAt: new Date().toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'}),
+      updatedAt: new Date().toISOString(),
       updatedBy: window.CU?.()?.displayName||''
     };
     data.push(yeni);
