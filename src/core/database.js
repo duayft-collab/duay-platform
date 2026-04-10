@@ -2214,7 +2214,7 @@ function startRealtimeSync() {
     ['urunler',       KEYS.urunler,       () => window.renderUrunler?.()],
     ['fikirler',      KEYS.fikirler,      () => window._onFikirUpdate?.()],
     ['iddialar',      KEYS.iddialar,      () => window.renderIddia?.()],
-    ['alisTeklifleri', KEYS.alisTeklifleri, () => window.renderAlisTeklifleri?.()],
+    ['alisTeklifleri', KEYS.alisTeklifleri, () => window.renderSatinAlmaV2?.()],
     ['satisTeklifleri',KEYS.satisTeklifleri,() => window.renderSatisTeklifleri?.()],
     ['teklifSartlar', KEYS.teklifSartlar, () => {}],
     ['updateLog',     KEYS.updateLog,     () => {}],
