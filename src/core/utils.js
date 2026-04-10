@@ -652,3 +652,24 @@ window.getPermLevel       = getPermLevel;
 window.canAction          = canAction;
 window.check12hRule       = check12hRule;
 window.requireAction      = requireAction;
+
+window._btnGuard = function(btn, fn, ms) {
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  var orig = btn.innerHTML;
+  btn.innerHTML = '<span style="opacity:.6">' + orig + '</span>';
+  var done = false;
+  function _restore() {
+    if (done) return; done = true;
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+  try {
+    var result = fn();
+    if (result && typeof result.then === 'function') {
+      result.then(_restore).catch(function(e){ _restore(); throw e; });
+    } else {
+      setTimeout(_restore, ms || 1500);
+    }
+  } catch(e) { _restore(); throw e; }
+};
