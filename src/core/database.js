@@ -1025,7 +1025,7 @@ const DEFAULT_TASKS = [
 ];
 
 /** @returns {Array<Object>} */
-function loadTasks()       { const d = _read(KEYS.tasks); return Array.isArray(d) ? d : DEFAULT_TASKS; }
+function loadTasks()       { var d = _read(KEYS.tasks); var arr = Array.isArray(d) ? d : DEFAULT_TASKS; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */
 function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); if (d.length > 500) { var _active = d.filter(function(t) { return !t.isDeleted && t.status !== 'done'; }); var _done = d.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100); var _del = d.filter(function(t) { return t.isDeleted; }).slice(-50); d = _active.concat(_done, _del); } _write(KEYS.tasks, d);
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
@@ -1292,7 +1292,7 @@ const DEFAULT_IK = [
   { id: 3, name: 'Yeni Aday',  pos: 'Muhasebeci',   dept: 'muhasebe',  start: '2026-04-01', status: 'pending',   stage: 1, email: '',               phone: '', note: 'Belgeler bekleniyor' },
 ];
 
-/** @returns {Array<Object>} */ function loadIk()       { const d = _read(KEYS.ik); return Array.isArray(d) ? d : DEFAULT_IK; }
+/** @returns {Array<Object>} */ function loadIk()       { var d = _read(KEYS.ik); var arr = Array.isArray(d) ? d : DEFAULT_IK; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeIk(d)     { _write(KEYS.ik, d); 
   const _fp_ik = _fsPath('ik'); if (_fp_ik) _syncFirestore(_fp_ik, d);
 }
@@ -1549,13 +1549,13 @@ function storeTahsilat(d) {
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeSatisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 
-/** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); return Array.isArray(d) ? d : []; }
+/** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeFikirler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
 
-/** @returns {Array} */ function loadIddialar() { var d = _read(KEYS.iddialar); return Array.isArray(d) ? d : []; }
+/** @returns {Array} */ function loadIddialar() { var d = _read(KEYS.iddialar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeIddialar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.iddialar, d); var _fp = _fsPath('iddialar'); if (_fp) _syncFirestore(_fp, d); }
 
-/** @returns {Array} */ function loadTeklifSartlar() { var d = _read(KEYS.teklifSartlar); return Array.isArray(d) ? d : []; }
+/** @returns {Array} */ function loadTeklifSartlar() { var d = _read(KEYS.teklifSartlar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeTeklifSartlar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeUpdateLog(d) { _write(KEYS.updateLog, d); var _fp = _fsPath('updateLog'); if (_fp) _syncFirestore(_fp, d); }
