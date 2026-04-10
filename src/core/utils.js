@@ -653,6 +653,35 @@ window.canAction          = canAction;
 window.check12hRule       = check12hRule;
 window.requireAction      = requireAction;
 
+window._skeletonRows = function(n, kolonSayisi) {
+  var cols = kolonSayisi || 4;
+  var satir = '<tr style="border-bottom:0.5px solid var(--b)">';
+  for (var c = 0; c < cols; c++) {
+    var genislik = (c === 0 ? 120 : c === 1 ? 80 : 60) + Math.floor(Math.random() * 40);
+    satir += '<td style="padding:6px 8px"><div style="height:10px;width:' + genislik + 'px;background:linear-gradient(90deg,var(--s2) 25%,var(--b) 50%,var(--s2) 75%);background-size:200% 100%;animation:skeleton-pulse 1.2s ease-in-out infinite;border-radius:3px"></div></td>';
+  }
+  satir += '</tr>';
+  var html = '';
+  for (var i = 0; i < (n || 5); i++) html += satir;
+  return html;
+};
+
+window._loadingOverlay = function(el, goster) {
+  if (!el) return;
+  if (goster) {
+    if (el.querySelector('[data-loading-overlay]')) return;
+    var overlay = document.createElement('div');
+    overlay.setAttribute('data-loading-overlay', '1');
+    overlay.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:inherit';
+    overlay.innerHTML = '<div style="width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--t);border-radius:50%;animation:skeleton-pulse 0.7s linear infinite"></div>';
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    el.appendChild(overlay);
+  } else {
+    var existing = el.querySelector('[data-loading-overlay]');
+    if (existing) existing.remove();
+  }
+};
+
 window._btnGuard = function(btn, fn, ms) {
   if (!btn || btn.disabled) return;
   btn.disabled = true;
