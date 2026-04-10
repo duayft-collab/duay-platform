@@ -1471,24 +1471,26 @@ function addToTrash(item, moduleName, collection) {
 // BÖLÜM 16 — RUTİN ÖDEMELER
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadOdm()     { const d = _read(KEYS.odemeler); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadOdm() { var d = _read(KEYS.odemeler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(-1000);} _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
 /** @returns {Array<Object>} */
 function loadTahsilat() {
   var d = _read(KEYS.tahsilat);
-  if (Array.isArray(d) && d.length > 0) return d;
-  // Migrasyon: eski 'duay_tahsilat' key'inden oku
-  try {
-    var oldData = JSON.parse(localStorage.getItem('duay_tahsilat') || '[]');
-    if (Array.isArray(oldData) && oldData.length > 0) {
-      _write(KEYS.tahsilat, oldData);
-      console.info('[DB] Tahsilat migrasyon: duay_tahsilat → ' + KEYS.tahsilat + ' (' + oldData.length + ' kayıt)');
-      return oldData;
-    }
-  } catch(e) {}
-  return [];
+  var arr = Array.isArray(d) ? d : [];
+  if (!arr.length) {
+    // Migrasyon: eski 'duay_tahsilat' key'inden oku
+    try {
+      var oldData = JSON.parse(localStorage.getItem('duay_tahsilat') || '[]');
+      if (Array.isArray(oldData) && oldData.length > 0) {
+        _write(KEYS.tahsilat, oldData);
+        console.info('[DB] Tahsilat migrasyon: duay_tahsilat \u2192 ' + KEYS.tahsilat + ' (' + oldData.length + ' kay\u0131t)');
+        arr = oldData;
+      }
+    } catch(e) {}
+  }
+  return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; });
 }
 /** @param {Array<Object>} d */
 function storeTahsilat(d) {
