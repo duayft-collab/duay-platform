@@ -6,6 +6,9 @@
    v3.0.0 (2026-04-09) — T3-MV-001: Tam yeniden tasarım
 ════════════════════════════════════════════════════════════════ */
 
+function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+if (!window._esc) window._esc = _esc;
+
 var _MV_KEY = 'ak_muavin_v1';
 var _MV_META_KEY = 'ak_muavin_meta_v1';
 
