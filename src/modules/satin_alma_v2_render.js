@@ -14,6 +14,7 @@ function _saV2UrunSayisi(t) { return (t.urunler && t.urunler.length) ? t.urunler
 
 /* ── Ana render ─────────────────────────────────────────────── */
 window.renderSatinAlmaV2 = function() {
+  window._saV2HatirlatmaKontrol?.();
   var panel = document.getElementById('panel-satin-alma');
   if (!panel) return;
   var kpi  = window._saV2Kpi?.() || {buAy:0,bekleyen:0,ortMarj:0,toplam:0};
@@ -584,6 +585,35 @@ window._saV2Karsilastir = function(duayKodu) {
   h += '</tbody></table></div></div>';
   modal.innerHTML = h;
   document.body.appendChild(modal);
+};
+
+/* ── SAV2-HATIRLATMA-001: 5 gün yanıtsız teklif otomatik uyarı ── */
+window._saV2HatirlatmaKontrol = function() {
+  var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+  var simdi = Date.now();
+  var besGun = 5*24*60*60*1000;
+  var uyarilar = liste.filter(function(t){
+    if(t.isDeleted||t.durum==='kabul'||t.durum==='reddedildi') return false;
+    var tarih = t.gonderimTarih||t.updatedAt||t.createdAt||'';
+    if(!tarih) return false;
+    var gecen = simdi - new Date(tarih).getTime();
+    return gecen > besGun;
+  });
+  if(!uyarilar.length) return;
+  var bildirimKey = 'sav2_hatirlatma_'+new Date().toISOString().slice(0,10);
+  if(localStorage.getItem(bildirimKey)) return;
+  localStorage.setItem(bildirimKey, '1');
+  uyarilar.forEach(function(t){
+    var urunAdi = _saV2UrunAdi(t)||'Ürün';
+    window.addNotif?.({
+      tip: 'uyari',
+      baslik: 'Yanıtsız Teklif — '+urunAdi,
+      mesaj: (t.tedarikci||'Tedarikçi')+' teklifine 5+ gün yanıt yok. Takip et.',
+      link: 'satinalma',
+      tarih: new Date().toISOString()
+    });
+  });
+  if(uyarilar.length>0) window.toast?.(uyarilar.length+' teklif 5 günden fazladır yanıtsız','warn');
 };
 
 console.log('[SAV2-RENDER] v2.0 y\u00fcklendi');
