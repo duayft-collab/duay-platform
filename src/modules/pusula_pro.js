@@ -1319,6 +1319,7 @@ window._ppTakvimPanelRender = function(body) {
   h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'etkinlik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='etkinlik'?'var(--t)':'transparent')+';color:'+(sekme==='etkinlik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Etkinlikler</button>';
   h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'odeme\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='odeme'?'var(--t)':'transparent')+';color:'+(sekme==='odeme'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Ödemeler</button>';
   h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'abonelik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='abonelik'?'var(--t)':'transparent')+';color:'+(sekme==='abonelik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Abonelikler</button>';
+  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'klasik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='klasik'?'var(--t)':'transparent')+';color:'+(sekme==='klasik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Takvim Görünümü</button>';
   h += '</div>';
   h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
   h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:var(--s2);font-family:inherit">CSV Import<input type="file" accept=".csv,.txt" style="display:none" onchange="event.stopPropagation();var r=new FileReader();r.onload=function(e){window._ppTakvimCSVImport(e.target.result);};r.readAsText(this.files[0])"></label>';
@@ -1329,6 +1330,25 @@ window._ppTakvimPanelRender = function(body) {
   h += '</select>';
   h += '<span style="font-size:11px;color:var(--t3);margin-left:auto">' + liste.length + ' etkinlik</span>';
   h += '</div>';
+  if (sekme === 'klasik') {
+    body.innerHTML = h + '<div id="pp-klasik-takvim-wrap" style="flex:1;overflow-y:auto"></div></div>';
+    setTimeout(function() {
+      var wrap = document.getElementById('pp-klasik-takvim-wrap');
+      if (!wrap) return;
+      if (typeof window.renderCal === 'function') {
+        var panelTakvim = document.getElementById('panel-takvim');
+        if (panelTakvim && panelTakvim.innerHTML) {
+          wrap.innerHTML = panelTakvim.innerHTML;
+        } else {
+          wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Takvim yükleniyor...</div>';
+          setTimeout(function(){ window.renderCal(); }, 200);
+        }
+      } else {
+        wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Takvim modülü bulunamadı.</div>';
+      }
+    }, 50);
+    return;
+  }
   if (sekme === 'odeme') { window._ppOdemePanelRender(body, h); return; }
   if (sekme === 'abonelik') { window._ppAbonelikPanelRender(body, h); return; }
   h += '<div style="flex:1;overflow-y:auto">';
