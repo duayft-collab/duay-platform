@@ -5353,27 +5353,61 @@ window._epOzetGoster = function() {
 };
 window._epAlisfaturaPDF = function() {
   var a = window._epVeri.alis; if (!a.length) { window.toast?.('Al\u0131\u015f y\u00fcklenmedi', 'warn'); return; }
-  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:12pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}tfoot td{font-weight:bold;background:#f5f5f5}</style></head><body>';
-  h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>ALI\u015e FATURALARI \u2014 ' + ay + '</h2>';
-  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>Fatura No</th><th>Tedarik\u00e7i</th><th style="text-align:right">KDV</th><th style="text-align:right">Toplam TL</th></tr></thead><tbody>';
-  var tTL = 0, tKDV = 0;
-  a.forEach(function(r, i) { var tl = parseFloat(r['Genel Toplam (TL)']) || 0; var kdv = parseFloat(r['Toplam KDV']) || 0; tTL += tl; tKDV += kdv; var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : ''; h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td style="font-family:monospace">' + (r['Fi\u015f/Fatura No'] || '') + '</td><td>' + (r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '').slice(0, 40) + '</td><td style="text-align:right">' + kdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td><td style="text-align:right">' + tl.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
-  h += '</tbody><tfoot><tr><td colspan="4">TOPLAM (' + a.length + ')</td><td style="text-align:right">' + tKDV.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td><td style="text-align:right">' + tTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr></tfoot></table></body></html>';
+  var fatNolu = a.filter(function(r) { return String(r['Fi\u015f/Fatura No'] || '').trim().length > 0; });
+  var tarihler = fatNolu.map(function(r) { return r['D\u00fczenleme tarihi']; }).filter(Boolean).sort();
+  var yilAy = tarihler.length ? new Date(tarihler[0]).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' }) : '\u2014';
+  var alisKdv = fatNolu.reduce(function(t, r) { return t + (parseFloat(r['Toplam KDV']) || 0); }, 0);
+  var css = 'body{font-family:Arial,sans-serif;font-size:8pt;margin:25px}h1{font-size:11pt;font-weight:bold;text-align:center;margin:4px 0}.ust{display:flex;justify-content:space-between;margin-bottom:10px;font-size:8pt}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px 5px;border:0.5px solid #bbb;text-align:left;font-weight:bold}td{padding:4px 5px;border:0.5px solid #ddd}.not{font-size:7pt;margin-top:8px;font-style:italic}.imza{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:50px}.imza-alan{text-align:center}.imza-cizgi{border-top:0.5px solid #111;margin-top:50px;padding-top:4px;font-size:7pt}';
+  var h = '<html><head><meta charset="UTF-8"><style>' + css + '</style></head><body>';
+  h += '<div class="ust"><div>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.<br>Karadolap Mh. Ne\u015feli Sk. 1/5 Ey\u00fcpsultan \u0130stanbul</div><div style="text-align:right">Rapor Tarihi: ' + new Date().toLocaleDateString('tr-TR') + '</div></div>';
+  h += '<h1>ALI\u015e FATURALARI</h1>';
+  h += '<div style="text-align:center;font-size:8pt;margin-bottom:4px">D\u00f6nem: <strong>' + yilAy + '</strong> \u00a0|\u00a0 Evrak Say\u0131s\u0131: <strong>' + fatNolu.length + '</strong></div>';
+  h += '<div style="text-align:center;font-size:7pt;color:#555;margin-bottom:8px">ALI\u015e KDV: ' + alisKdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TRY</div>';
+  h += '<table><thead><tr><th style="width:25px">No</th><th style="width:60px">Tarih</th><th style="width:60px">\u0130\u015flem</th><th>Cari Ad\u0131</th><th style="width:110px">\u0130hracat ID</th><th style="width:120px">Fatura No</th><th style="width:30px;text-align:center">GIB</th><th style="width:30px;text-align:center">PR\u015e</th></tr></thead><tbody>';
+  fatNolu.forEach(function(r, i) {
+    var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : '';
+    var islem = String(r['Belge T\u00fcr\u00fc'] || 'Fi\u015f / Fatura');
+    var cari = String(r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '');
+    var fatIsmi = String(r['Fatura ismi'] || '');
+    var ihrId = (fatIsmi.match(/(\d{4}-\d{13,16})/) || [])[1] || '';
+    var fatNo = String(r['Fi\u015f/Fatura No'] || '');
+    h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td>' + islem + '</td><td>' + cari + '</td><td style="font-family:monospace;font-size:7pt">' + ihrId + '</td><td style="font-family:monospace;font-size:7pt">' + fatNo + '</td><td style="text-align:center">\u25a1</td><td style="text-align:center">\u25a1</td></tr>';
+  });
+  h += '</tbody></table>';
+  h += '<p class="not">KDV \u0130ADE L\u0130STELER\u0130, SGK, VERG\u0130 TAHAKKUKLARININ tamam\u0131 listeye eklenecek.</p>';
+  h += '<p class="not">EL\u0130N\u0130ZDE BU L\u0130STEDE OLMAYAN B\u0130R FATURA VARSA PARA\u015e\u00dcTE \u0130\u015eLENMEM\u0130\u015e DEMEKT\u0130R. DUAY\'A AYNI G\u00dcN B\u0130LD\u0130R\u0130N\u0130Z.</p>';
+  h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Alan: Ad Soyad TC imza - Tarih Saat</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Eden: Ad Soyad TC imza - Tarih Saat</div></div></div>';
+  h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
-  window.logActivity?.('export', 'Al\u0131\u015f Fatura PDF');
+  window.logActivity?.('export', 'Al\u0131\u015f Fatura PDF - ' + yilAy);
 };
 window._epSatisfaturaPDF = function() {
   var s = window._epVeri.satis; if (!s.length) { window.toast?.('Sat\u0131\u015f y\u00fcklenmedi', 'warn'); return; }
-  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:12pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}tfoot td{font-weight:bold;background:#f5f5f5}</style></head><body>';
-  h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>SATI\u015e FATURALARI \u2014 ' + ay + '</h2>';
-  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>T\u00fcr</th><th>Fatura No</th><th>M\u00fc\u015fteri</th><th style="text-align:right">Toplam TL</th></tr></thead><tbody>';
-  var tTL = 0;
-  s.forEach(function(r, i) { var tl = parseFloat(r['Genel Toplam (TL)']) || 0; tTL += tl; var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : ''; h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td>' + (r['Fatura t\u00fcr\u00fc'] || '') + '</td><td style="font-family:monospace">' + (r['Fatura s\u0131ra'] || '') + '</td><td>' + (r['M\u00fc\u015fteri'] || '').slice(0, 30) + '</td><td style="text-align:right">' + tl.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
-  h += '</tbody><tfoot><tr><td colspan="5">TOPLAM (' + s.length + ')</td><td style="text-align:right">' + tTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr></tfoot></table></body></html>';
+  var fatNolu = s.filter(function(r) { return String(r['Fatura s\u0131ra'] || '').trim().length > 0; });
+  var unique = {}; fatNolu = fatNolu.filter(function(r) { var k = r['Fatura s\u0131ra']; if (unique[k]) return false; unique[k] = true; return true; });
+  var tarihler = fatNolu.map(function(r) { return r['D\u00fczenleme tarihi']; }).filter(Boolean).sort();
+  var yilAy = tarihler.length ? new Date(tarihler[0]).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' }) : '\u2014';
+  var css = 'body{font-family:Arial,sans-serif;font-size:8pt;margin:25px}h1{font-size:11pt;font-weight:bold;text-align:center;margin:4px 0}.ust{display:flex;justify-content:space-between;margin-bottom:10px;font-size:8pt}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px 5px;border:0.5px solid #bbb;text-align:left;font-weight:bold}td{padding:4px 5px;border:0.5px solid #ddd}.not{font-size:7pt;margin-top:8px;font-style:italic}.imza{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:50px}.imza-alan{text-align:center}.imza-cizgi{border-top:0.5px solid #111;margin-top:50px;padding-top:4px;font-size:7pt}';
+  var h = '<html><head><meta charset="UTF-8"><style>' + css + '</style></head><body>';
+  h += '<div class="ust"><div>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.<br>Karadolap Mh. Ne\u015feli Sk. 1/5 Ey\u00fcpsultan \u0130stanbul</div><div style="text-align:right">Rapor Tarihi: ' + new Date().toLocaleDateString('tr-TR') + '</div></div>';
+  h += '<h1>SATI\u015e FATURALARI</h1>';
+  h += '<div style="text-align:center;font-size:8pt;margin-bottom:8px">D\u00f6nem: <strong>' + yilAy + '</strong> \u00a0|\u00a0 Evrak Say\u0131s\u0131: <strong>' + fatNolu.length + '</strong></div>';
+  h += '<table><thead><tr><th style="width:25px">No</th><th style="width:60px">Tarih</th><th style="width:70px">\u0130\u015flem</th><th>Cari Ad\u0131</th><th style="width:120px">\u0130hracat ID</th><th style="width:120px">Fatura No</th><th style="width:30px;text-align:center">GIB</th><th style="width:30px;text-align:center">PR\u015e</th></tr></thead><tbody>';
+  fatNolu.forEach(function(r, i) {
+    var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : '';
+    var islem = String(r['Fatura t\u00fcr\u00fc'] || '');
+    var cari = String(r['M\u00fc\u015fteri'] || '');
+    var fatIsmi = String(r['Fatura ismi'] || '');
+    var ihrId = (fatIsmi.match(/(\d{4}-\d{13,16})/) || [])[1] || '';
+    var fatNo = String(r['Fatura s\u0131ra'] || '');
+    h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td>' + islem + '</td><td>' + cari + '</td><td style="font-family:monospace;font-size:7pt">' + ihrId + '</td><td style="font-family:monospace;font-size:7pt">' + fatNo + '</td><td style="text-align:center">\u25a1</td><td style="text-align:center">\u25a1</td></tr>';
+  });
+  h += '</tbody></table>';
+  h += '<p class="not">Evraklar\u0131 teslim ald\u0131ktan ve kontrol ettikten sonra bu listede olmayan bir evrak var ise Duay\'a mutlaka ayn\u0131 g\u00fcn bilgi veriniz.</p>';
+  h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Alan: Ad Soyad TC imza - Tarih Saat</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Eden: Ad Soyad TC imza - Tarih Saat</div></div></div>';
+  h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
-  window.logActivity?.('export', 'Sat\u0131\u015f Fatura PDF');
+  window.logActivity?.('export', 'Sat\u0131\u015f Fatura PDF - ' + yilAy);
 };
 window._epKdvIadePDF = function() {
   var a = window._epVeri.alis.filter(function(r) { return parseFloat(r['Toplam KDV']) > 0; });
