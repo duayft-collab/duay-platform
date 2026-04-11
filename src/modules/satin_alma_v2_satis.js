@@ -127,6 +127,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div></div></div>';
   modal.innerHTML = ic;
   document.body.appendChild(modal);
+  window._saV2AktifPITasarim = window._saV2AktifPITasarim || 'A';
+  window._saV2AktifPIDil = window._saV2AktifPIDil || 'EN';
   window._saV2SatisUrunler = [];
   window._saV2SatisUrunEkle(t);
   window._stSartlar = (window._saV2Sartlar?.() || []).slice(0, 5);
