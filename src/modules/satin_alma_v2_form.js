@@ -399,47 +399,57 @@ window._saV2SatisUrunEkle = function(t) {
 window._saV2SatisTabloyuGuncelle = function() {
   var tbody = document.getElementById('st-urun-tbody');
   if (!tbody) return;
+  var urunler = window._saV2SatisUrunler || [];
+  var boyut = 50;
+  var sayfa = window._stUrunSayfa || 1;
+  var toplamSayfa = Math.max(1, Math.ceil(urunler.length / boyut));
+  if (sayfa > toplamSayfa) sayfa = toplamSayfa;
+  window._stUrunSayfa = sayfa;
+  var bas = (sayfa - 1) * boyut;
+  var goster = urunler.slice(bas, bas + boyut);
   var hedefPara = document.getElementById('st-para-birimi')?.value || 'USD';
-  var paraSym = ({USD:'$',EUR:'\u20ac',GBP:'\u00a3',TRY:'\u20ba',CNY:'\u00a5'})[hedefPara] || (hedefPara+' ');
+  var paraSym = ({ USD: '$', EUR: '\u20ac', GBP: '\u00a3', TRY: '\u20ba', CNY: '\u00a5' })[hedefPara] || (hedefPara + ' ');
   var kurlar = window._saKur || {};
-  var html = '';
-  window._saV2SatisUrunler.forEach(function(u, i) {
+  /* Her \u00fcr\u00fcn\u00fc hesapla */
+  urunler.forEach(function(u) {
     var orjPara = u.alisOrjPara || 'TRY';
-    var orjF = (u.alisOrjF != null) ? parseFloat(u.alisOrjF) : parseFloat(u.alisTl||0);
-    if(u.alisOrjF == null) orjPara = 'TRY';
-    var alisHedef = window._saV2KurCevir(orjF, orjPara, hedefPara);
-    var satisFiyat = alisHedef * (1 + (parseFloat(u.marj)||0)/100);
-    var toplam = satisFiyat * (parseFloat(u.miktar)||0);
+    var orjF = (u.alisOrjF != null) ? parseFloat(u.alisOrjF) : parseFloat(u.alisTl || 0);
+    if (u.alisOrjF == null) orjPara = 'TRY';
+    var alisHedef = typeof window._saV2KurCevir === 'function' ? window._saV2KurCevir(orjF, orjPara, hedefPara) : orjF;
     u.alisHedef = alisHedef;
-    u.satisFiyat = satisFiyat;
-    u.toplam = toplam;
+    u.satisFiyat = alisHedef * (1 + (parseFloat(u.marj) || 0) / 100);
+    u.toplam = u.satisFiyat * (parseFloat(u.miktar) || 0);
     u.paraBirimi = hedefPara;
-    html += '<tr>';
-    html += '<td style="padding:8px">'+(u.gorsel?'<img src="'+u.gorsel+'" style="width:30px;height:30px;border-radius:4px;object-fit:cover">':'<div style="width:30px;height:30px;border-radius:4px;background:var(--s2);border:0.5px solid var(--b)"></div>')+'</td>';
-    html += '<td style="padding:8px;font-size:9px;color:#0C447C;font-weight:500">'+_saEsc(u.duayKodu)+'</td>';
-    html += '<td style="padding:8px;font-size:11px;font-weight:500">'+_saEsc(u.urunAdi)+'</td>';
-    html += '<td style="padding:8px"><input type="number" value="'+u.miktar+'" min="1" style="width:55px;font-size:11px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit" onchange="event.stopPropagation();window._saV2SatisUrunler['+i+'].miktar=parseFloat(this.value)||1;window._saV2SatisTabloyuGuncelle();window._saV2PIOnizlemeGuncelle?.()"></td>';
-    html += '<td style="padding:8px;font-size:11px;color:var(--t2)">'+paraSym+alisHedef.toFixed(2)+'</td>';
-    html += '<td style="padding:8px"><input type="number" value="'+u.marj+'" min="1" max="90" style="width:55px;font-size:11px;padding:4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit" onchange="event.stopPropagation();window._saV2SatisUrunler['+i+'].marj=parseFloat(this.value)||33;window._saV2SatisTabloyuGuncelle();window._saV2PIOnizlemeGuncelle?.()"></td>';
-    html += '<td style="padding:8px;font-size:11px;font-weight:500;color:#0F6E56">'+paraSym+satisFiyat.toFixed(2)+'</td>';
-    html += '<td style="padding:8px;font-size:11px;font-weight:500">'+paraSym+toplam.toFixed(2)+'</td>';
-    html += '<td style="padding:8px"><button onclick="event.stopPropagation();window._saV2SatisUrunler.splice('+i+',1);window._saV2SatisTabloyuGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="font-size:10px;padding:2px 6px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:#A32D2D">Kald\u0131r</button></td>';
-    html += '</tr>';
   });
-  tbody.innerHTML = html;
-  /* Kur bilgisi göster (banka satırı altına) */
+  tbody.innerHTML = goster.map(function(u, idx) {
+    var gIdx = bas + idx;
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      + '<td style="padding:4px 6px;width:28px">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
+      + '<td style="padding:4px 6px;font-size:10px"><div style="font-weight:500">' + _saEsc(u.duayKodu || '') + (u.duayKodu ? ' \u2014 ' : '') + _saEsc(u.urunAdi || '\u2014') + '</div>' + (u.eskiKod ? '<div style="font-size:8px;color:var(--t3)">(' + _saEsc(u.eskiKod) + ')</div>' : '') + '</td>'
+      + '<td style="padding:4px 6px"><input type="number" value="' + (u.miktar || 1) + '" min="1" oninput="event.stopPropagation();window._saV2SatisUrunler[' + gIdx + '].miktar=parseFloat(this.value)||1;window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="width:55px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
+      + '<td style="padding:4px 6px;font-size:10px;color:var(--t2)">' + paraSym + (u.alisHedef || 0).toFixed(2) + '</td>'
+      + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2SatisUrunler[' + gIdx + '].marj=parseFloat(this.value)||33;window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="width:50px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
+      + '<td style="padding:4px 6px;font-size:10px;font-weight:500;color:#0F6E56">' + paraSym + (u.satisFiyat || 0).toFixed(2) + '</td>'
+      + '<td style="padding:4px 6px;font-size:10px;font-weight:500">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
+      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2SatisUrunler.splice(' + gIdx + ',1);window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="font-size:9px;padding:2px 6px;border:0.5px solid #A32D2D;border-radius:3px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Kald\u0131r</button></td>'
+      + '</tr>';
+  }).join('');
+  /* Sayfalama */
+  var spEl = document.getElementById('st-urun-sayfalama');
+  if (!spEl) { spEl = document.createElement('div'); spEl.id = 'st-urun-sayfalama'; tbody.parentElement.parentElement.appendChild(spEl); }
+  if (toplamSayfa > 1) {
+    spEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--s2);border-top:0.5px solid var(--b);font-size:10px">'
+      + '<span style="color:var(--t3)">' + urunler.length + ' \u00fcr\u00fcn \u00b7 Sayfa ' + sayfa + '/' + toplamSayfa + '</span>'
+      + '<div style="display:flex;gap:4px">'
+      + (sayfa > 1 ? '<button onclick="event.stopPropagation();window._stUrunSayfa=' + (sayfa - 1) + ';window._saV2SatisTabloyuGuncelle()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">\u2190</button>' : '')
+      + (sayfa < toplamSayfa ? '<button onclick="event.stopPropagation();window._stUrunSayfa=' + (sayfa + 1) + ';window._saV2SatisTabloyuGuncelle()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">\u2192</button>' : '')
+      + '</div></div>';
+  } else { spEl.innerHTML = ''; }
+  /* Kur bilgisi */
   var kurBilgi = document.getElementById('st-kur-bilgi');
   var bankaEl = document.getElementById('st-banka-bilgi');
-  if(!kurBilgi && bankaEl){
-    kurBilgi = document.createElement('div');
-    kurBilgi.id = 'st-kur-bilgi';
-    kurBilgi.style.cssText = 'font-size:8px;color:var(--t3);margin-top:3px;font-family:monospace;padding:0 2px';
-    bankaEl.parentNode.insertBefore(kurBilgi, bankaEl.nextSibling);
-  }
-  if(kurBilgi){
-    var kb = kurlar[hedefPara];
-    kurBilgi.textContent = hedefPara === 'TRY' ? '' : ('1 '+hedefPara+' = '+(kb?kb.toFixed(2):'?')+' TRY');
-  }
+  if (!kurBilgi && bankaEl) { kurBilgi = document.createElement('div'); kurBilgi.id = 'st-kur-bilgi'; kurBilgi.style.cssText = 'font-size:8px;color:var(--t3);margin-top:3px;font-family:monospace;padding:0 2px'; bankaEl.parentNode.insertBefore(kurBilgi, bankaEl.nextSibling); }
+  if (kurBilgi) { var kb = kurlar[hedefPara]; kurBilgi.textContent = hedefPara === 'TRY' ? '' : ('1 ' + hedefPara + ' = ' + (kb ? kb.toFixed(2) : '?') + ' TRY'); }
   window._saV2SatisOzetGuncelle();
 };
 
