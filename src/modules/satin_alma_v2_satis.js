@@ -86,7 +86,7 @@ window._saV2TeklifOlustur = function(id) {
   /* SATIS-JOBID-001: Job ID seçimi + tedarikçi karşılaştırma */
   ic += '<div style="display:flex;align-items:end;gap:8px;padding:8px 10px;background:#FFFCF5;border:0.5px solid #F4E4BC;border-radius:5px;margin-top:6px">';
   ic += '<div style="flex:1"><div style="font-size:8px;font-weight:500;color:#854F0B;letter-spacing:.06em;margin-bottom:3px">JOB ID SEÇ (Tedarik Kaynağı)</div>';
-  ic += '<select id="st-job-id" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit"><option value="">— Job seçin (opsiyonel) —</option>';
+  ic += '<select id="st-job-id" onchange="event.stopPropagation();if(this.value)window._saV2JobUrunSecModal(this.value)" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit"><option value="">— Job seçin (opsiyonel) —</option>';
   var _jobSet = {};
   try {
     var _alis = typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : [];
@@ -422,7 +422,7 @@ window._saV2SartManuelEkle = function() {
   inp.value = '';
 };
 
-/* SATIS-JOBID-001: Job ID'ye göre tedarikçi karşılaştırma modalı */
+/* SATIS-JOBID-001 + SATIS-FORM-FIX-001: Job ID'ye göre ürün bazlı tedarikçi karşılaştırma modalı */
 window._saV2JobUrunSecModal = function(jobId) {
   if (!jobId) { window.toast?.('Önce Job ID se\u00e7in', 'warn'); return; }
   var mevcut = document.getElementById('st-job-urun-modal');
@@ -433,31 +433,63 @@ window._saV2JobUrunSecModal = function(jobId) {
     window.toast?.('Bu Job ID i\u00e7in al\u0131\u015f teklifi bulunamad\u0131', 'warn');
     return;
   }
+  /* Ürün bazlı gruplama: { urunKey: [{tedarikci, alisF, ...}, ...] } */
+  var urunMap = {};
+  jobTeklifleri.forEach(function(at){
+    var urunler = Array.isArray(at.urunler) && at.urunler.length ? at.urunler : [{
+      duayKodu: at.duayKodu, urunAdi: at.urunAdi, alisF: at.alisF, miktar: at.miktar||1, para: at.para||at.toplamPara||'USD', gorsel: at.gorsel
+    }];
+    urunler.forEach(function(u){
+      var key = (u.duayKodu||u.urunAdi||'_bos').trim().toLowerCase();
+      if (!urunMap[key]) urunMap[key] = { duayKodu: u.duayKodu||'', urunAdi: u.urunAdi||'\u2014', gorsel: u.gorsel||'', teklifler: [] };
+      urunMap[key].teklifler.push({
+        tedarikci: at.tedarikci||'\u2014',
+        piNo: at.piNo||'',
+        tarih: (at.teklifTarih||at.createdAt||'').slice(0,10),
+        alisF: parseFloat(u.alisF)||0,
+        miktar: parseFloat(u.miktar)||1,
+        para: u.para||at.toplamPara||'USD',
+        gorsel: u.gorsel||at.gorsel||''
+      });
+    });
+  });
+  var urunKeys = Object.keys(urunMap);
   var modal = document.createElement('div');
   modal.id = 'st-job-urun-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:24px';
   modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
-  var h = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:720px;max-height:85vh;display:flex;flex-direction:column">';
+  var h = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:780px;max-height:85vh;display:flex;flex-direction:column">';
   h += '<div style="padding:14px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
-  h += '<div><div style="font-size:13px;font-weight:500;color:var(--t)">Tedarik\u00e7i Kar\u015f\u0131la\u015ft\u0131rma</div>';
-  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Job ID: <strong>'+_saEsc(jobId)+'</strong> \u00b7 '+jobTeklifleri.length+' tedarik\u00e7i</div></div>';
+  h += '<div><div style="font-size:13px;font-weight:500;color:var(--t)">\u00dcr\u00fcn Bazl\u0131 Tedarik\u00e7i Kar\u015f\u0131la\u015ft\u0131rma</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Job ID: <strong>'+_saEsc(jobId)+'</strong> \u00b7 '+urunKeys.length+' farkl\u0131 \u00fcr\u00fcn \u00b7 '+jobTeklifleri.length+' teklif</div></div>';
   h += '<button onclick="event.stopPropagation();document.getElementById(\'st-job-urun-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">\u00d7</button>';
   h += '</div>';
   h += '<div style="flex:1;overflow-y:auto;padding:14px 18px">';
-  jobTeklifleri.forEach(function(at, ti){
-    var urunler = Array.isArray(at.urunler) && at.urunler.length ? at.urunler : [{
-      duayKodu: at.duayKodu, urunAdi: at.urunAdi, alisF: at.alisF, miktar: at.miktar||1, para: at.para||'USD', gorsel: at.gorsel
-    }];
-    h += '<div style="border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:var(--s2)">';
-    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="font-size:12px;color:var(--t)">'+_saEsc(at.tedarikci||'\u2014')+'</strong>';
-    h += '<span style="font-size:9px;color:var(--t3)">PI: '+_saEsc(at.piNo||'\u2014')+' \u00b7 '+(at.teklifTarih||at.createdAt||'').slice(0,10)+'</span></div>';
-    urunler.forEach(function(u, ui){
-      var uniqId = 'job-urun-'+ti+'-'+ui;
-      h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--b)">';
-      h += '<input type="checkbox" id="'+uniqId+'" data-tedarikci="'+_saEsc(at.tedarikci||'')+'" data-duaykodu="'+_saEsc(u.duayKodu||'')+'" data-urunadi="'+_saEsc(u.urunAdi||'')+'" data-alisf="'+(parseFloat(u.alisF)||0)+'" data-miktar="'+(parseFloat(u.miktar)||1)+'" data-para="'+(u.para||at.toplamPara||'USD')+'" data-gorsel="'+_saEsc(u.gorsel||'')+'" style="width:14px;height:14px;cursor:pointer">';
-      h += '<label for="'+uniqId+'" style="flex:1;font-size:10px;cursor:pointer">';
-      h += '<div style="font-weight:500;color:var(--t)">'+_saEsc(u.duayKodu||'')+(u.duayKodu?' — ':'')+_saEsc(u.urunAdi||'\u2014')+'</div>';
-      h += '<div style="font-size:9px;color:var(--t3)">Miktar: '+(u.miktar||1)+' \u00b7 Al\u0131\u015f: <strong style="color:#0F6E56">'+(parseFloat(u.alisF)||0).toFixed(2)+' '+(u.para||at.toplamPara||'USD')+'</strong></div>';
+  urunKeys.forEach(function(key, ui){
+    var u = urunMap[key];
+    /* En düşük fiyatı bul (TL bazında) */
+    var enDusukIdx = -1; var enDusukTL = Infinity;
+    u.teklifler.forEach(function(t, ti){
+      var kur = (window._saKur||{})[t.para] || 1;
+      var tl = t.alisF * kur;
+      if (tl > 0 && tl < enDusukTL) { enDusukTL = tl; enDusukIdx = ti; }
+    });
+    h += '<div style="border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:10px;background:var(--s2)">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">';
+    if (u.gorsel) h += '<img src="'+u.gorsel+'" style="width:28px;height:28px;border-radius:4px;object-fit:cover">';
+    h += '<div><div style="font-size:12px;font-weight:600;color:var(--t)">'+_saEsc(u.duayKodu||'')+(u.duayKodu?' \u2014 ':'')+_saEsc(u.urunAdi)+'</div>';
+    h += '<div style="font-size:9px;color:var(--t3)">'+u.teklifler.length+' tedarik\u00e7i teklifi</div></div></div>';
+    u.teklifler.forEach(function(t, ti){
+      var enDusuk = (ti === enDusukIdx);
+      var uniqId = 'job-pu-'+ui+'-'+ti;
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:4px;'+(enDusuk?'background:rgba(15,110,86,.08);border:0.5px solid #0F6E56':'')+'">';
+      h += '<input type="checkbox" id="'+uniqId+'"'+(enDusuk?' checked':'')+' data-tedarikci="'+_saEsc(t.tedarikci)+'" data-duaykodu="'+_saEsc(u.duayKodu||'')+'" data-urunadi="'+_saEsc(u.urunAdi)+'" data-alisf="'+t.alisF+'" data-miktar="'+t.miktar+'" data-para="'+t.para+'" data-gorsel="'+_saEsc(t.gorsel)+'" style="width:14px;height:14px;cursor:pointer">';
+      h += '<label for="'+uniqId+'" style="flex:1;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
+      h += '<div><strong style="color:var(--t)">'+_saEsc(t.tedarikci)+'</strong>';
+      if (t.piNo||t.tarih) h += '<span style="font-size:8px;color:var(--t3);margin-left:6px">'+(t.piNo?'PI: '+_saEsc(t.piNo):'')+(t.tarih?(t.piNo?' \u00b7 ':'')+t.tarih:'')+'</span>';
+      h += '</div>';
+      h += '<div style="text-align:right"><strong style="color:'+(enDusuk?'#0F6E56':'var(--t)')+';font-size:11px">'+t.alisF.toFixed(2)+' '+t.para+'</strong>';
+      h += '<div style="font-size:8px;color:var(--t3)">Miktar: '+t.miktar+(enDusuk?' \u00b7 \u2b50 En d\u00fc\u015f\u00fck':'')+'</div></div>';
       h += '</label></div>';
     });
     h += '</div>';
