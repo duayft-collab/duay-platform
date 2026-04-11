@@ -103,6 +103,11 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<button onclick="event.stopPropagation();window._saV2JobUrunSecModal(document.getElementById(\'st-job-id\').value)" style="font-size:10px;padding:7px 12px;border:none;border-radius:5px;background:#854F0B;color:#fff;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ Tedarikçi Karşılaştır</button>';
   ic += '</div>';
 
+  ic += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--s2);border-radius:6px;margin:6px 0">';
+  ic += '<span style="font-size:10px;color:var(--t3)">Toplu Marj:</span>';
+  ic += '<input type="number" id="sav2-toplu-marj" min="0" max="500" step="0.5" placeholder="%" onclick="event.stopPropagation()" oninput="event.stopPropagation()" style="width:70px;font-size:10px;padding:4px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t);font-family:inherit">';
+  ic += '<button onclick="event.stopPropagation();window._saV2TopluMarjUygula()" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t);font-family:inherit">T\u00fcm\u00fcne Uygula</button>';
+  ic += '<span style="font-size:9px;color:var(--t3)">\u2014 sonra tek tek de\u011fi\u015ftirilebilir</span></div>';
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px">';
   ic += '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
   ic += '<th style="padding:5px 8px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:5px 8px">MİKTAR</th><th style="padding:5px 8px">ALIŞ</th><th style="padding:5px 8px">MARJ %</th><th style="padding:5px 8px">SATIŞ</th><th style="padding:5px 8px">TOPLAM</th></tr></thead>';

@@ -741,3 +741,19 @@ window._saV2JobIdAra = function(inp) {
   document.addEventListener('click', function rm() { dd2.remove(); document.removeEventListener('click', rm); }, { once: true });
 };
 
+/* \u2500\u2500 SATIS-MARJ-TOPLU-001: Toplu Marj Uygula \u2500\u2500 */
+window._saV2TopluMarjUygula = function() {
+  var inp = document.getElementById('sav2-toplu-marj');
+  var marj = parseFloat(inp?.value);
+  if (isNaN(marj) || marj < 0) { window.toast?.('Ge\u00e7erli marj girin', 'warn'); return; }
+  (window._saV2SatisUrunler || []).forEach(function(u) {
+    u.marj = marj;
+    u.satisFiyat = (u.alisHedef || 0) * (1 + marj / 100);
+    u.toplam = u.satisFiyat * (parseFloat(u.miktar) || 1);
+  });
+  window._saV2SatisTabloyuGuncelle?.();
+  window._saV2SatisOzetGuncelle?.();
+  window._saV2PIOnizlemeGuncelle?.();
+  window.toast?.('%' + marj + ' marj t\u00fcm \u00fcr\u00fcnlere uyguland\u0131', 'ok');
+};
+
