@@ -1992,8 +1992,47 @@ window.renderSatisTeklifleri = function() {
       + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriReddetti?.(' + t.id + ')" style="'+pillS+'background:#DC262618;color:#DC2626">✗</button>' : '')
       + (t.durum!=='taslak' ? '<button onclick="window._reviseSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--al);color:var(--ac)">Rev</button>' : '')
       + (t.durum==='kabul' ? '<button onclick="window._createPR?.(' + t.id + ')" style="'+pillS+'background:#D9770618;color:#D97706">PR</button>' : '')
+      + '<button onclick="event.stopPropagation();window._saV2TeklifDuzenle(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">D\u00fczenle</button>'
+      + '<button onclick="event.stopPropagation();window._saV2DurumDegistir(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Durum</button>'
+      + '<button onclick="event.stopPropagation();window._saV2SatisPDF(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">PDF</button>'
       + '</div></div>';
   }).join('');
+};
+
+/* ── SATIS-LISTE-001: Düzenle / Durum Değiştir / PDF helper'ları ─── */
+window._saV2TeklifDuzenle = function(id) {
+  var teklifler = window.loadSatisTeklifleri?.() || [];
+  var t = teklifler.find(function(x){ return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamad\u0131', 'err'); return; }
+  if (typeof window._saV2TeklifOlustur === 'function') window._saV2TeklifOlustur(t);
+};
+
+window._saV2DurumDegistir = function(id) {
+  var teklifler = window.loadSatisTeklifleri?.() || [];
+  var t = teklifler.find(function(x){ return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamad\u0131', 'err'); return; }
+  var durumlar = ['taslak','gonderildi','onaylandi','revizyon','iptal'];
+  var h = '<div id="st-durum-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()">';
+  h += '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);padding:20px;width:280px">';
+  h += '<div style="font-size:12px;font-weight:500;margin-bottom:12px">Durum De\u011fi\u015ftir</div>';
+  h += '<div style="font-size:10px;color:var(--t3);margin-bottom:8px">Mevcut: '+(t.durum||'taslak')+'</div>';
+  durumlar.forEach(function(d){
+    h += '<button onclick="event.stopPropagation();window._saV2DurumUygula(\''+id+'\',\''+d+'\');document.getElementById(\'st-durum-modal\')?.remove()" style="display:block;width:100%;text-align:left;font-size:10px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(t.durum===d?'var(--s2)':'transparent')+';cursor:pointer;margin-bottom:4px;font-family:inherit;color:var(--t)">'+d.charAt(0).toUpperCase()+d.slice(1)+(t.durum===d?' \u2713':'')+'</button>';
+  });
+  h += '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', h);
+};
+
+window._saV2DurumUygula = function(id, yeniDurum) {
+  var teklifler = window.loadSatisTeklifleri?.() || [];
+  var idx = teklifler.findIndex(function(x){ return String(x.id) === String(id); });
+  if (idx < 0) return;
+  teklifler[idx].durum = yeniDurum;
+  teklifler[idx].updatedAt = new Date().toISOString();
+  window.storeSatisTeklifleri?.(teklifler);
+  window.logActivity?.('update', 'Sat\u0131\u015f teklifi durum: ' + yeniDurum + ' \u2014 ' + (teklifler[idx].teklifNo || ''));
+  window.toast?.('Durum g\u00fcncellendi: ' + yeniDurum, 'ok');
+  window.renderSatisTeklifleri?.();
 };
 
 /* ── SATIS-LISTE-001: PI Güncelleme ─────────────────────────── */
