@@ -840,4 +840,37 @@ window._mvIcMuhasebeRaporuPDF = function() {
   window.toast?.('İç muhasebe aksiyon raporu açıldı','ok');
 };
 
-console.log('[MUAVIN-EXPORT] yüklendi');
+/* \u2500\u2500 MUAVIN-EXCEL-001: Birle\u015fik Excel \u0130ndir \u2500\u2500 */
+window._mvBirlesikExcelIndir = function() {
+  var firmalar = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
+  if (!firmalar.length) { window.toast?.('\u00d6nce dosya y\u00fckleyin', 'warn'); return; }
+  var satirlar = [];
+  satirlar.push(['Tarih', 'Fatura No', 'Bor\u00e7 TL', 'Alacak TL', 'Firma Ad\u0131', 'Kaynak', 'Durum']);
+  firmalar.forEach(function(f) {
+    (f.sonuc || []).forEach(function(r) {
+      var m = r.muhasebeci, s = r.sirket;
+      if (m) {
+        satirlar.push([m.tarih || '', m.faturaNo || '', m.tip === 'borc' ? m.tutarTL.toFixed(2) : '', m.tip === 'alacak' ? m.tutarTL.toFixed(2) : '', m.firma || f.ad || '', 'Muhasebeci', r.durum]);
+      }
+      if (s) {
+        satirlar.push([s.tarih || '', s.faturaNo || '', s.tip === 'borc' ? s.tutarTL.toFixed(2) : '', s.tip === 'alacak' ? s.tutarTL.toFixed(2) : '', s.firma || f.ad || '', '\u015eirket', r.durum]);
+      }
+    });
+  });
+  var csv = satirlar.map(function(r) {
+    return r.map(function(c) { var s = String(c || '').replace(/"/g, '""'); return s.indexOf(',') !== -1 || s.indexOf('"') !== -1 ? '"' + s + '"' : s; }).join(',');
+  }).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'muavin_birlesik_' + (new Date().toISOString().slice(0, 10)) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  window.toast?.('Excel indirildi', 'ok');
+  window.logActivity?.('export', 'Muavin birle\u015fik Excel indirildi');
+};
+
+console.log('[MUAVIN-EXPORT] y\u00fcklendi');
