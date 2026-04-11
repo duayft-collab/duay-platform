@@ -172,7 +172,9 @@ window._mvDosyaOku = function(inp, taraf) {
       if (!_meta[_don]) _meta[_don] = {};
       var _genericSheets = ['Sheet1','Sayfa1','Sheet','Sayfa','Data','Veri','1','-',''];
       var _dosyaAdi = f.name.replace(/\.(xlsx?|csv|txt|ods)$/i, '').trim();
-      var firmaAdi = document.getElementById('mv-firma-adi')?.value?.trim() || (sheetAdi && _genericSheets.indexOf(sheetAdi) === -1 ? sheetAdi : null) || _dosyaAdi;
+      /* Dosya ad\u0131ndan firma ad\u0131 temizle: tarih, say\u0131, Ekstre gibi g\u00fcr\u00fclt\u00fc kald\u0131r */
+      var _temizDosyaAdi = _dosyaAdi.replace(/[-_]/g, ' ').replace(/\b\d{1,4}\b/g, '').replace(/\b(ekstre|ekstresi|hesap|hareket|rapor|liste|mutabakat|cari|detay)\b/gi, '').replace(/\s+/g, ' ').trim();
+      var firmaAdi = document.getElementById('mv-firma-adi')?.value?.trim() || (sheetAdi && _genericSheets.indexOf(sheetAdi) === -1 ? sheetAdi : null) || _temizDosyaAdi || _dosyaAdi;
       if (taraf === 'muhasebeci' && typeof window._mvNormalize?.muhasebecdenNormalize === 'function') {
         _meta[_don].muhasebeci = _meta[_don].muhasebeci || {};
         _meta[_don].muhasebeci.normalArr = window._mvNormalize.muhasebecdenNormalize(islemler, firmaAdi);
