@@ -118,7 +118,10 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
     { id: 'baran', lbl: 'Baran Ekstresi', badge: kpi.bSay || null, badgeRenk: 'info' },
     { id: 'cari', lbl: 'Cari Özet', badge: null },
     { id: 'donem', lbl: 'Dönem Karş.', badge: null },
-    { id: 'hata-analiz', lbl: 'Hata Analizi'+(window._mvSonKategoriler?(' ('+Object.values(window._mvSonKategoriler).reduce(function(s,k){return s+k.items.length;},0)+')'):''), badge: null, badgeRenk: 'warn' },
+    { id: 'firma-firma', lbl: 'Firma Firma', badge: (typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi().length : null), badgeRenk: 'info' },
+    { id: 'toplu-karsilastir', lbl: 'Toplu Kar\u015f.', badge: null },
+    { id: 'cari-bakiye', lbl: 'Cari Bakiye', badge: null },
+    { id: 'hata-analiz', lbl: 'Hata Analizi' + (window._mvSonKategoriler ? (' (' + Object.values(window._mvSonKategoriler).reduce(function(s, k) { return s + k.items.length; }, 0) + ')') : ''), badge: null, badgeRenk: 'warn' },
     { id: 'notlar', lbl: 'Notlar', badge: ((meta[donem] || {}).notSay) || null, badgeRenk: 'default' }
   ];
   h += '<div style="padding:8px 0;flex:1">';
@@ -356,7 +359,7 @@ window.renderMuavin = function() {
   /* Sağ içerik */
   var sagIcerik = '';
   /* Sağ üst başlık */
-  var sekmeAdlari = { karsilastirma: 'Karşılaştırma', muhasebeci: 'Muhasebeci Excel', baran: 'Baran Ekstresi', cari: 'Cari Özet', donem: 'Dönem Karşılaştırma', 'hata-analiz': 'Hata Analizi', notlar: 'Notlar' };
+  var sekmeAdlari = { karsilastirma: 'Kar\u015f\u0131la\u015ft\u0131rma', muhasebeci: 'Muhasebeci Excel', baran: 'Baran Ekstresi', cari: 'Cari \u00d6zet', donem: 'D\u00f6nem Kar\u015f\u0131la\u015ft\u0131rma', 'firma-firma': 'Firma Firma', 'toplu-karsilastir': 'Toplu Kar\u015f.', 'cari-bakiye': 'Cari Bakiye', 'hata-analiz': 'Hata Analizi', notlar: 'Notlar' };
   sagIcerik += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--b)">';
   sagIcerik += '<div>';
   sagIcerik += '<div style="font-size:13px;font-weight:500;color:var(--t)">' + (sekmeAdlari[aktifTab] || aktifTab) + '</div>';
@@ -379,7 +382,32 @@ window.renderMuavin = function() {
   else if (aktifTab === 'muhasebeci') sagIcerik += _mvMuhasebeIcerikHTML(islemlerM);
   else if (aktifTab === 'baran') sagIcerik += _mvBaranIcerikHTML(islemlerB);
   else if (aktifTab === 'cari') sagIcerik += (window._mvCariOzetHTML ? window._mvCariOzetHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Önce Excel yükleyin</div>');
-  else if (aktifTab === 'donem') sagIcerik += (window._mvDonemKarsilastirHTML ? window._mvDonemKarsilastirHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Dönem verisi yok</div>');
+  else if (aktifTab === 'donem') sagIcerik += (window._mvDonemKarsilastirHTML ? window._mvDonemKarsilastirHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">D\u00f6nem verisi yok</div>');
+  else if (aktifTab === 'firma-firma') {
+    var _firmalar = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
+    if (!_firmalar.length) { sagIcerik += '<div style="padding:40px;text-align:center;color:var(--t3)">\u00d6nce dosya y\u00fckleyin ve kar\u015f\u0131la\u015ft\u0131r\u0131n</div>'; }
+    else { sagIcerik += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:12px">'; _firmalar.forEach(function(f) { var renk = f.skor >= 90 ? '#0F6E56' : f.skor >= 70 ? '#854F0B' : '#A32D2D'; sagIcerik += '<div onclick="event.stopPropagation();window._mvAktifFirma=\'' + f.ad.replace(/'/g, "\\'") + '\';window._mvAktifTab=\'karsilastirma\';window.renderMuavin()" style="border:0.5px solid var(--b);border-radius:8px;padding:12px;cursor:pointer;background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:500;color:var(--t)">' + window._esc(f.ad) + '</div><div style="font-size:18px;font-weight:700;color:' + renk + '">%' + f.skor + '</div></div><div style="display:flex;gap:8px;margin-top:8px;font-size:10px"><span style="color:var(--t3)">' + f.toplam + ' i\u015flem</span><span style="color:#0F6E56">' + (f.toplam - f.fark) + ' mutab\u0131k</span><span style="color:#A32D2D">' + f.fark + ' fark</span></div></div>'; }); sagIcerik += '</div>'; }
+  }
+  else if (aktifTab === 'toplu-karsilastir') {
+    sagIcerik += '<div style="padding:16px"><div style="font-size:13px;font-weight:500;margin-bottom:8px">Toplu Kar\u015f\u0131la\u015ft\u0131rma</div>';
+    sagIcerik += '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">T\u00fcm firmalar\u0131n mutabakat \u00f6zeti</div>';
+    var _tf = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
+    var _topSkor = _tf.length ? Math.round(_tf.reduce(function(s, f) { return s + f.skor; }, 0) / _tf.length) : 0;
+    sagIcerik += '<div style="font-size:28px;font-weight:700;color:' + (_topSkor >= 90 ? '#0F6E56' : _topSkor >= 70 ? '#854F0B' : '#A32D2D') + ';margin-bottom:12px">%' + _topSkor + ' Genel Mutabakat</div>';
+    sagIcerik += '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)"><th style="padding:6px 8px;text-align:left">Firma</th><th style="padding:6px 8px;text-align:right">Skor</th><th style="padding:6px 8px;text-align:right">Toplam</th><th style="padding:6px 8px;text-align:right">Fark</th></tr></thead><tbody>';
+    _tf.forEach(function(f) { var r = f.skor >= 90 ? '#0F6E56' : f.skor >= 70 ? '#854F0B' : '#A32D2D'; sagIcerik += '<tr style="border-bottom:0.5px solid var(--b)"><td style="padding:6px 8px;font-weight:500">' + window._esc(f.ad) + '</td><td style="padding:6px 8px;text-align:right;color:' + r + ';font-weight:500">%' + f.skor + '</td><td style="padding:6px 8px;text-align:right">' + f.toplam + '</td><td style="padding:6px 8px;text-align:right;color:#A32D2D">' + f.fark + '</td></tr>'; });
+    sagIcerik += '</tbody></table></div>';
+  }
+  else if (aktifTab === 'cari-bakiye') {
+    sagIcerik += '<div style="padding:16px"><div style="font-size:13px;font-weight:500;margin-bottom:8px">Cari Bakiye \u00d6zeti</div>';
+    sagIcerik += '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Muhasebeci ve \u015firket verisi aras\u0131ndaki net bakiye fark\u0131</div>';
+    var _cf = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
+    var _topFark = _cf.reduce(function(s, f) { return s + f.sonuc.reduce(function(a, r) { return a + (r.farkTL || 0); }, 0); }, 0);
+    sagIcerik += '<div style="font-size:22px;font-weight:700;color:' + (_topFark < 100 ? '#0F6E56' : '#A32D2D') + ';margin-bottom:12px">Toplam Fark: \u20ba' + _topFark.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</div>';
+    sagIcerik += '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)"><th style="padding:6px 8px;text-align:left">Firma</th><th style="padding:6px 8px;text-align:right">Muhasebeci TL</th><th style="padding:6px 8px;text-align:right">\u015eirket TL</th><th style="padding:6px 8px;text-align:right">Fark TL</th></tr></thead><tbody>';
+    _cf.forEach(function(f) { var muhTL = f.sonuc.reduce(function(s, r) { return s + (r.muhasebeci ? r.muhasebeci.tutarTL : 0); }, 0); var sirTL = f.sonuc.reduce(function(s, r) { return s + (r.sirket ? r.sirket.tutarTL : 0); }, 0); var fark = Math.abs(muhTL - sirTL); sagIcerik += '<tr style="border-bottom:0.5px solid var(--b)"><td style="padding:6px 8px;font-weight:500">' + window._esc(f.ad) + '</td><td style="padding:6px 8px;text-align:right">' + muhTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td><td style="padding:6px 8px;text-align:right">' + sirTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td><td style="padding:6px 8px;text-align:right;color:' + (fark < 1 ? '#0F6E56' : '#A32D2D') + '">' + fark.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
+    sagIcerik += '</tbody></table></div>';
+  }
   else if (aktifTab === 'hata-analiz') {
     sagIcerik += '<div style="padding:12px">';
     sagIcerik += '<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end">';
