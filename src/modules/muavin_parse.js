@@ -714,5 +714,55 @@ window._mvFirmaKarsilastirHTML = function(firma) {
   return h;
 };
 
+/* MUAVIN-PARSE-FIRMA-001: Tek sheet'ten çoklu firma ayrıştırma */
+window._mvMuhasebeciFirmaAyristir = function(satirlar) {
+  var firmalar = {};
+  var aktifFirma = null;
+  var firmaSatir = /^\d{3}\.\w+\s+(.+)/;
+  satirlar.forEach(function(satir) {
+    if(!satir||!satir[0]) return;
+    var ilkKolon = String(satir[0]).trim();
+    var firmaEslesmesi = ilkKolon.match(firmaSatir);
+    if(firmaEslesmesi) {
+      aktifFirma = firmaEslesmesi[1].trim();
+      firmalar[aktifFirma] = firmalar[aktifFirma]||[];
+      return;
+    }
+    if(ilkKolon==='TAR\u0130H'||ilkKolon==='Tarih') return;
+    if(!aktifFirma) return;
+    var tarih = satir[0];
+    var borc = parseFloat(satir[4])||0;
+    var alacak = parseFloat(satir[5])||0;
+    if(!tarih||(borc===0&&alacak===0)) return;
+    var aciklama = String(satir[3]||'');
+    firmalar[aktifFirma].push({
+      tarih: tarih,
+      tip: satir[1]||'',
+      fisNo: satir[2]||'',
+      aciklama: aciklama,
+      borc: borc,
+      alacak: alacak,
+      bakiye: parseFloat(satir[6])||0,
+      firma: aktifFirma
+    });
+  });
+  return firmalar;
+};
+
+window._mvMuhasebeciFirmaListele = function(satirlar) {
+  var firmalar = window._mvMuhasebeciFirmaAyristir(satirlar);
+  return Object.keys(firmalar).map(function(ad){
+    var kayitlar = firmalar[ad];
+    var normalArr = window._mvNormalize?.muhasebecdenNormalize(kayitlar, ad)||[];
+    return {
+      ad: ad,
+      kayitSayisi: kayitlar.length,
+      normalArr: normalArr,
+      toplamBorc: kayitlar.reduce(function(s,r){return s+r.borc;},0),
+      toplamAlacak: kayitlar.reduce(function(s,r){return s+r.alacak;},0)
+    };
+  });
+};
+
 console.log('[MUAVIN-PARSE] y\u00fcklendi');
 
