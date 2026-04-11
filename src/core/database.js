@@ -468,9 +468,12 @@ function _mergeDataSets(localKey, fsData, collection) {
   // Sonra Firestore verilerini ekle — aynı ID varsa ts karşılaştır
   fsData.forEach(function(item) {
     var key = item.id || item._id;
-    if (!key) { // ID'siz kayıt — Firestore kazanır
+    if (!key) { // ID'siz kayıt — stabil key ile dedupe
       var dupCheck = localData.find(function(l) { return l.name === item.name && l.ts === item.ts; });
-      if (!dupCheck) mergedMap['_noId_' + Math.random()] = item;
+      if (!dupCheck) {
+        var noIdKey = '_noId_' + (item.name||'').replace(/\s+/g,'_').slice(0,20) + '_' + (item.ts||item.syncedAt||'').slice(0,10);
+        mergedMap[noIdKey] = item;
+      }
       return;
     }
     var existing = mergedMap[key];
@@ -481,11 +484,11 @@ function _mergeDataSets(localKey, fsData, collection) {
       var _ft = function(s){ if(!s) return ''; if(typeof s!=='string') return String(s); var m=s.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})\s*(.*)$/); if(m){var y=parseInt(m[3]);if(y<100)y+=2000;return y+'-'+(m[2].length<2?'0':'')+m[2]+'-'+(m[1].length<2?'0':'')+m[1]+(m[4]?' '+m[4]:'');} return s; };
       var fsTs = _ft(item.updatedAt || item.ts || item.syncedAt || '');
       var localTs = _ft(existing.updatedAt || existing.ts || existing.syncedAt || '');
-      if (fsTs >= localTs) {
+      if (fsTs > localTs) {
         mergedMap[key] = item;
       }
       // isDeleted propagation: silinen taraf daha yeniyse silinmiş ver kazanır
-      if (item.isDeleted && fsTs >= localTs) mergedMap[key] = item;
+      if (item.isDeleted && fsTs > localTs) mergedMap[key] = item;
       if (existing.isDeleted && localTs >= fsTs) mergedMap[key] = existing;
     }
   });
@@ -640,7 +643,7 @@ function _syncFirestoreMerged(path, data) {
     if (!FB_DB) return;
     var collection = path.split('/').pop();
     var syncedAt = new Date().toISOString();
-    _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
+    _writingNow[collection] = { expiry: Date.now() + 30000, syncedAt: syncedAt };
     FB_DB.doc(path).set({ data: data, syncedAt: syncedAt, mergedAt: syncedAt }, { merge: true })
       .then(function() { console.info('[DB:merge-write]', path, '→', Array.isArray(data) ? data.length + ' kayıt' : 'ok'); })
       .catch(function(e) { console.warn('[DB:merge-write error]', path, e.message); });
@@ -751,7 +754,7 @@ function _syncFirestore(path, data, mode = 'set') {
     const payload = { data, syncedAt };
     // P1: onSnapshot'ın kendi yazmamızı geri okumasını engelle
     // syncedAt tabanlı — echo tespiti sabit süre yerine exact match ile yapılır
-    _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
+    _writingNow[collection] = { expiry: Date.now() + 30000, syncedAt: syncedAt };
     if(window._fbSyncLog){ window._fbSyncLog.sonGonder = new Date().toISOString(); window._fbSyncLog.bekleyen = Math.max(0,(window._fbSyncLog.bekleyen||0)-1); window._fbBadgeGuncelle?.(); }
     // localStorage'a timestamp kaydet
     try { localStorage.setItem(collection + '_ts', syncedAt); } catch(e) {}
@@ -2856,7 +2859,7 @@ function _verifiedWrite(path, data, retry) {
 
   _setSyncStatus('syncing');
   var syncedAt = new Date().toISOString();
-  _writingNow[collection] = { expiry: Date.now() + 5000, syncedAt: syncedAt };
+  _writingNow[collection] = { expiry: Date.now() + 30000, syncedAt: syncedAt };
 
   // Yazma
   FB_DB.doc(path).set({ data: data, syncedAt: syncedAt }, { merge: true })
