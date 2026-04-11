@@ -57,6 +57,12 @@ function _ppStore(d) {
     if (typeof LZString!=='undefined' && s.length>500) { localStorage.setItem(PP_KEY,'_LZ_'+LZString.compressToUTF16(s)); }
     else { localStorage.setItem(PP_KEY,s); }
   } catch(e) { console.error('[PP]',e); }
+  /* PUSULA-SYNC-001: Firestore sync */
+  if(typeof window._write === 'function') window._write(window.KEYS?.pusula||'ak_pusula_pro_v1', d);
+  if(typeof window._fsPath === 'function' && typeof window._syncFirestore === 'function') {
+    var _fp = window._fsPath('pusula');
+    if (_fp) window._syncFirestore(_fp, d);
+  }
 }
 
 /* ── Eski Pusula Export ─────────────────────────────────────── */

@@ -247,6 +247,7 @@ const KEYS = {
   alarms        : 'ak_alarms1',
   alarmLog      : 'ak_alarm_log1',
   sozler        : 'ak_sozler1',
+  pusula        : 'ak_pusula_pro_v1',
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -629,7 +630,8 @@ var _ALL_SYNC_COLS = [
   'taskChats','notifications','iddialar','sozler','gcb',
   'ihracatDosyalar','ihracatEvraklar','ihracatUrunler',
   'ihracatGcb','ihracatBl','ihracatTemplate',
-  'gumrukculer','forwarderlar','evrakWorkflow'
+  'gumrukculer','forwarderlar','evrakWorkflow',
+  'pusula'
 ];
 
 /**
@@ -2263,6 +2265,8 @@ function startRealtimeSync() {
       if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
       if (typeof window._renderNotifPanel === 'function') window._renderNotifPanel();
     }],
+    // PUSULA-SYNC-001: Pusula görevleri — multi-cihaz realtime sync
+    ['pusula', KEYS.pusula, () => { window._ppModRender?.(); }],
   ];
 
   SYNC_MAP.forEach(([col, key, render]) => {
@@ -3290,6 +3294,10 @@ if (typeof module !== 'undefined' && module.exports) {
     'nowTs', 'GlobalErrorHandler',
   ];
   fns.forEach(name => { if (DB[name]) window[name] = DB[name]; });
+  // PUSULA-SYNC-001: Pusula sync için low-level API expose
+  window._write = _write;
+  window._syncFirestore = _syncFirestore;
+  window.KEYS = KEYS;
 }
 
 // Uygulama açılışında şişmiş veriyi bir kez temizle
