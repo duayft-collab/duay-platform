@@ -5334,7 +5334,7 @@ window.renderEvrakPaketi = function() {
   /* 2. PDF \u00dcret */
   h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px"><div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:10px">2. PDF \u00dcret ve Yazd\u0131r</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
-  [['Al\u0131\u015f Fatura Listesi', '_epAlisfaturaPDF'], ['Sat\u0131\u015f Fatura Listesi', '_epSatisfaturaPDF'], ['KDV \u0130ade Raporu', '_epKdvIadePDF'], ['Check List', '_epCheckListPDF'], ['Kapak Sayfas\u0131', '_epKapakPDF']].forEach(function(b) {
+  [['Al\u0131\u015f Fatura Listesi', '_epAlisfaturaPDF'], ['Sat\u0131\u015f Fatura Listesi', '_epSatisfaturaPDF'], ['KDV \u0130ade Raporu', '_epKdvIadePDF'], ['Check List', '_epCheckListPDF'], ['Kapak Sayfas\u0131', '_epKapakPDF'], ['Zarf Etiketi', '_epZarfEtiketiPDF']].forEach(function(b) {
     h += '<button onclick="event.stopPropagation();window.' + b[1] + '?.()" style="font-size:10px;padding:6px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">' + b[0] + '</button>';
   });
   h += '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>';
