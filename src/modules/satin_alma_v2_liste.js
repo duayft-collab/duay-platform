@@ -158,6 +158,11 @@ window._saV2DetayHTML = function(t) {
   h+='<div style="display:flex;flex-direction:column;gap:5px;margin-top:10px">';
   var _canSatis=window.isAdmin?.()||['manager','lead'].includes(window.CU?.()?.role||window.CU?.()?.rol||'');
   if(_canSatis) h+='<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="padding:7px;border:none;border-radius:5px;background:#185FA5;color:#fff;font-size:10px;cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
+  if(_canSatis && !t.hazirlanmaTarihi) {
+    h += '<button onclick="event.stopPropagation();window._saV2DosyaHazir(\''+t.id+'\')" style="padding:7px;border:none;border-radius:5px;background:#0F6E56;color:#fff;font-size:10px;cursor:pointer;font-weight:500;font-family:inherit;width:100%;margin-top:4px">\u2713 Dosya Sat\u0131\u015fa Haz\u0131r</button>';
+  } else if(t.hazirlanmaTarihi) {
+    h += '<div style="padding:6px;background:#E1F5EE;border-radius:5px;font-size:9px;color:#085041;text-align:center;margin-top:4px">\u2713 Haz\u0131r \u00b7 '+(t.hazirlanmaTarihi||'').slice(0,16).replace('T',' ')+'</div>';
+  }
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">';
   h+='<button ondblclick="event.stopPropagation();window._saV2DuzenleForm?.(\''+t.id+'\')" onclick="event.stopPropagation();window._saV2DuzenleForm?.(\''+t.id+'\')" style="padding:6px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:var(--color-text-secondary)">✏ Düzenle</button>';
   h+='<button onclick="event.stopPropagation();window._saV2Kopyala?.(\''+t.id+'\')" style="padding:6px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:var(--color-text-secondary)">⎘ Kopyala</button>';
@@ -187,4 +192,35 @@ window._saV2TeklifOlusturUrun = function(teklifId, urunIdx) {
   var t = liste.find(function(x){return String(x.id)===String(teklifId);});
   if(!t){window.toast?.('Teklif bulunamadı','warn');return;}
   window._saV2TeklifOlustur?.(teklifId);
+};
+
+/* SAV2-HAZIR-001: Dosya Satışa Hazır işaretleme */
+window._saV2DosyaHazir = function(id) {
+  window.confirmModal?.('Bu dosya sat\u0131\u015fa haz\u0131r olarak i\u015faretlenecek. Devam?', {
+    title: 'Dosya Sat\u0131\u015fa Haz\u0131r',
+    confirmText: 'Evet, \u0130\u015faretle',
+    onConfirm: function() {
+      var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+      var t = liste.find(function(x){return String(x.id)===String(id);});
+      if(!t){window.toast?.('Teklif bulunamad\u0131','warn');return;}
+      var now = new Date().toISOString();
+      t.hazirlanmaTarihi = now;
+      t.updatedAt = now;
+      if(typeof window._saV2Store==='function') window._saV2Store(liste);
+      window.logActivity?.('edit','Dosya sat\u0131\u015fa haz\u0131r: '+(window._saV2UrunAdi?.(t)||t.id));
+      if(typeof window.storeKpi==='function'||typeof window.logKpi==='function') {
+        var kpiVeri = {
+          tip: 'dosya_hazir',
+          teklifId: id,
+          urunAdi: window._saV2UrunAdi?.(t)||'',
+          tedarikci: t.tedarikci||'',
+          hazirlanmaTarihi: now,
+          createdBy: window.CU?.()?.displayName||''
+        };
+        window.logKpi?.(kpiVeri)||window.storeKpi?.(kpiVeri);
+      }
+      window.toast?.('Dosya sat\u0131\u015fa haz\u0131r olarak i\u015faretlendi','ok');
+      window.renderSatinAlmaV2?.();
+    }
+  });
 };
