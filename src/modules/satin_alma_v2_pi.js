@@ -84,16 +84,29 @@ window._piOlustur = function(teklif, tasarim, katman) {
   }
 };
 
-/* ── Ürün satırları ─────────────────────────────────────────── */
+/* ── Ürün satırları (PI-FIYAT-001: form-set fiyat önceliği + number safety) ── */
 window._piUrunSatirlari = function(teklif, katman) {
   var urunler = teklif.urunler || [];
   if (!urunler.length && teklif.urunAdi) {
     urunler = [{ duayKodu: teklif.duayKodu || '', urunAdi: teklif.urunAdi || '', miktar: teklif.miktar || 1, alisTl: parseFloat(teklif.alisF) || 0, marj: 33, gorsel: teklif.gorsel || '' }];
   }
   return urunler.map(function(u, i) {
-    var satisF = (u.alisTl * (1 + (u.marj || 33) / 100)).toFixed(2);
-    var toplam = (satisF * (u.miktar || 1)).toFixed(2);
-    return { no: i+1, kod: u.duayKodu||u.kod||'', eskiKod: u.eskiKod||'', ad: u.urunAdi||u.ad||'', miktar: u.miktar||1, birim: u.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||'' };
+    var miktar = parseFloat(u.miktar) || 1;
+    /* Alış öncelik: alisHedef (form'da kur çevrilmiş) > alisTl > alisF */
+    var alis = parseFloat(u.alisHedef != null ? u.alisHedef : (u.alisTl != null ? u.alisTl : u.alisF)) || 0;
+    var marj = parseFloat(u.marj);
+    if (isNaN(marj)) marj = 33;
+    /* Satış öncelik: satisFiyat (form'da set edilen) > alisHedef × marj */
+    var satisNum = (u.satisFiyat != null && !isNaN(parseFloat(u.satisFiyat)))
+      ? parseFloat(u.satisFiyat)
+      : alis * (1 + marj / 100);
+    /* Toplam öncelik: u.toplam (form'dan) > satisNum × miktar */
+    var toplamNum = (u.toplam != null && !isNaN(parseFloat(u.toplam)))
+      ? parseFloat(u.toplam)
+      : satisNum * miktar;
+    var satisF = satisNum.toFixed(2);
+    var toplam = toplamNum.toFixed(2);
+    return { no: i+1, kod: u.duayKodu||u.kod||'', eskiKod: u.eskiKod||'', ad: u.urunAdi||u.ad||'', miktar: miktar, birim: u.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||'' };
   });
 };
 
