@@ -388,30 +388,36 @@ window._mvYuklemeBaslat = function(taraf) {
 
 window._mvDosyaKaldir = function(taraf) {
   var donem = _mvAktifDonem();
-  window.confirmModal('Dosyayı kaldır', '"' + taraf + '" dosyası kaldırılacak. Eşleştirme sonuçları da sıfırlanacak.', function() {
-    var meta = _mvMetaLoad();
-    if (!meta[donem]) meta[donem] = {};
-    if (taraf === 'muhasebeci') { delete meta[donem].muhasebeci; window._mvSonIslemler = []; }
-    if (taraf === 'baran') { delete meta[donem].baran; window._mvSonIslemlerB = []; }
-    window._mvEslesmeSonucu = null;
-    _mvMetaStore(meta);
-    window.toast && window.toast('Dosya kaldırıldı', 'ok');
-    window.renderMuavin();
+  window.confirmModal?.('\u201c' + taraf + '\u201d dosyas\u0131 kald\u0131r\u0131lacak. E\u015fle\u015ftirme sonu\u00e7lar\u0131 da s\u0131f\u0131rlanacak.', {
+    title: 'Dosyay\u0131 kald\u0131r', danger: true, confirmText: 'Kald\u0131r',
+    onConfirm: function() {
+      var meta = _mvMetaLoad();
+      if (!meta[donem]) meta[donem] = {};
+      if (taraf === 'muhasebeci') { delete meta[donem].muhasebeci; window._mvSonIslemler = []; }
+      if (taraf === 'baran') { delete meta[donem].baran; window._mvSonIslemlerB = []; }
+      window._mvEslesmeSonucu = null;
+      _mvMetaStore(meta);
+      window.toast?.('Dosya kald\u0131r\u0131ld\u0131', 'ok');
+      window.renderMuavin();
+    }
   });
 };
 
 /* ── Dönem onayla ── */
 window._mvDonemiOnayla = function() {
   var donem = _mvAktifDonem();
-  window.confirmModal('Dönemi Onayla', donem + ' dönemi için mutabakat onaylanacak. Bu işlem kaydedilecek.', function() {
-    var meta = _mvMetaLoad();
-    if (!meta[donem]) meta[donem] = {};
-    meta[donem].onay = 'onaylandi';
-    meta[donem].onayTarih = new Date().toLocaleString('tr-TR');
-    meta[donem].onayKisi = window.CU && window.CU() ? (window.CU().name || window.CU().email || '') : '';
-    _mvMetaStore(meta);
-    window.toast && window.toast(donem + ' onaylandı ✓', 'ok');
-    window.renderMuavin();
+  window.confirmModal?.(donem + ' d\u00f6nemi i\u00e7in mutabakat onaylanacak. Bu i\u015flem kaydedilecek.', {
+    title: 'D\u00f6nemi Onayla', confirmText: 'Onayla',
+    onConfirm: function() {
+      var meta = _mvMetaLoad();
+      if (!meta[donem]) meta[donem] = {};
+      meta[donem].onay = 'onaylandi';
+      meta[donem].onayTarih = new Date().toISOString();
+      meta[donem].onayKisi = window.CU?.() ? (window.CU().name || window.CU().email || '') : '';
+      _mvMetaStore(meta);
+      window.toast?.(donem + ' onayland\u0131 \u2713', 'ok');
+      window.renderMuavin();
+    }
   });
 };
 
