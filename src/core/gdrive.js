@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════
  * src/core/gdrive.js — Google Drive Entegrasyonu v1.0
  *
- * Duay Global Trade — Görsel ve Belge Depolama
+ * Duay Global LLC — Görsel ve Belge Depolama
  * Base64 fallback: Drive bağlı değilse localStorage'a yazar
  *
  * Yükleme sırası: auth.js → database.js → bu dosya

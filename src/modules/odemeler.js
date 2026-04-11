@@ -3343,7 +3343,7 @@ function exportOdmPaymentPDF(id) {
   const win = window.open('', '_blank');
   const html = '<html><body style="font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto">'
     + '<h2 style="color:#1e1b4b;margin-bottom:4px">Ödeme Talimatı</h2>'
-    + '<p style="color:#6b7280;font-size:13px;margin-bottom:24px">Duay Global Trade</p>'
+    + '<p style="color:#6b7280;font-size:13px;margin-bottom:24px">Duay Global LLC</p>'
     + '<table style="width:100%;border-collapse:collapse;font-size:14px">'
     + '<tr style="background:#f5f5ff"><td style="padding:10px;font-weight:600;width:40%">Ödeme Adı</td><td style="padding:10px">' + o.name + '</td></tr>'
     + '<tr><td style="padding:10px;font-weight:600">Tutar</td><td style="padding:10px;font-weight:700;color:#6366F1">₺' + parseFloat(o.amount || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td></tr>'
@@ -5177,7 +5177,7 @@ function openOdmReminderModal(id) {
   if (!o) return;
   const users = window.loadUsers ? loadUsers() : [];
   const u = users.find(x => x.id === o.assignedTo);
-  const msg = `Sayın ${u?.name||'İlgili'},\n\n"${o.name}" ödemesi için son tarih: ${o.due||'—'}\nTutar: ${_odmFmtAmt(o.amount,o.currency||'TRY')} ${_odmTLKarsiligi(o.amount,o.currency||'TRY')}\n\nLütfen zamanında işlem yapınız.\n\nDuay Global Trade`;
+  const msg = `Sayın ${u?.name||'İlgili'},\n\n"${o.name}" ödemesi için son tarih: ${o.due||'—'}\nTutar: ${_odmFmtAmt(o.amount,o.currency||'TRY')} ${_odmTLKarsiligi(o.amount,o.currency||'TRY')}\n\nLütfen zamanında işlem yapınız.\n\nDuay Global LLC`;
 
   const mo = document.createElement('div');
   mo.className = 'mo'; ;
@@ -5583,7 +5583,7 @@ Talep Eden: ${cu?.name||'—'}
 Not: ${o.note||'—'}
 
 Lütfen Duay Platform üzerinden onaylayın.
-Duay Global Trade`;
+Duay Global LLC`;
 
   const mo = document.createElement('div');
   mo.className = 'mo'; ;
@@ -7536,7 +7536,7 @@ function openCariStatement(cariId, format) {
     // Başlık
     + '<div style="background:' + headerColor + ';padding:18px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between" id="cari-stmt-header">'
     + '<div>'
-      + '<div style="font-size:16px;font-weight:700">DUAY GLOBAL TRADE LLC</div>'
+      + '<div style="font-size:16px;font-weight:700">DUAY GLOBAL LLC</div>'
       + '<div style="font-size:11px;opacity:.7;margin-top:2px">' + formatLabel + ' — ' + esc(c.name) + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:6px;align-items:center">'
@@ -7578,7 +7578,7 @@ function openCariStatement(cariId, format) {
     + '</div>'
     // Müşteri formatında imza alanı
     + (format === 'musteri' ? '<div style="padding:16px 24px;border-top:1px solid var(--b);display:grid;grid-template-columns:1fr 1fr;gap:40px;font-size:10px;color:var(--t3)">'
-      + '<div><div style="margin-bottom:30px">Düzenleyen:</div><div style="border-top:1px solid var(--t3);padding-top:4px">DUAY GLOBAL TRADE LLC</div></div>'
+      + '<div><div style="margin-bottom:30px">Düzenleyen:</div><div style="border-top:1px solid var(--t3);padding-top:4px">DUAY GLOBAL LLC</div></div>'
       + '<div><div style="margin-bottom:30px">Onaylayan:</div><div style="border-top:1px solid var(--t3);padding-top:4px">' + esc(c.name) + '</div></div>'
     + '</div>' : '')
     + '<div style="padding:10px 24px;border-top:1px solid var(--b);text-align:right;background:var(--s2)">'

@@ -3302,7 +3302,7 @@ window.downloadMonthlyReport = function(rapor) {
 
   // Sayfa 1: Özet
   var ozet = [
-    ['DUAY GLOBAL TRADE — AYLIK RAPOR'],
+    ['DUAY GLOBAL LLC — AYLIK RAPOR'],
     ['Dönem', r.donem],
     ['Oluşturma Tarihi', r.olusturma.slice(0, 10)],
     [],

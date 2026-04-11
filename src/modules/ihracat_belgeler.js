@@ -22,7 +22,7 @@ var _fmtI = function(n) { return (parseInt(n) || 0).toLocaleString('tr-TR'); };
 
 /* ── DUAY Sabit Bilgileri ───────────────────────────────────── */
 var DUAY = {
-  ad: 'DUAY GLOBAL TRADE LTD. \u015eTİ.',
+  ad: 'DUAY ULUSLARARASI T\u0130CARET LTD. \u015eT\u0130.',
   adres: 'Maslak Mah. Ao\u00e7 2 Cad. No:7/1 Sar\u0131yer / \u0130stanbul',
   tel: '+90 212 XXX XX XX', fax: '+90 212 XXX XX XX',
   vkn: 'XXXXXXXXXX', eori: 'TR-XXXXXXXXXX',

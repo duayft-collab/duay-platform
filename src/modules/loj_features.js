@@ -668,7 +668,7 @@ function showLojPerformansRaporu() {
   @media print { @page { margin: 15mm; } }
 </style></head><body>
 <h1>Lojistik Performans Raporu</h1>
-<div class="sub">Oluşturulma: ${d} · Duay Global Trade Operasyon Platformu</div>
+<div class="sub">Oluşturulma: ${d} · Duay Global LLC Operasyon Platformu</div>
 
 <div class="grid">
   <div class="stat"><div class="stat-v">${kargo.length}</div><div class="stat-l">Toplam Kargo</div></div>
@@ -717,7 +717,7 @@ function showLojPerformansRaporu() {
 </div>
 
 <div class="footer">
-  <span>Duay Global Trade — Operasyon Platformu</span>
+  <span>Duay Global LLC — Operasyon Platformu</span>
   <span>${d} tarihinde oluşturulmuştur</span>
 </div>
 <script>window.onload=()=>window.print();<\/script>
