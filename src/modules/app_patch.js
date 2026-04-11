@@ -5189,7 +5189,10 @@ window.renderEvrakPaketi = function() {
   h += '<button onclick="event.stopPropagation();window._epKdvIadePDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">KDV \u0130ade PDF</button>';
   h += '<button onclick="event.stopPropagation();window._epCheckListPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Check List PDF</button>';
   h += '<button onclick="event.stopPropagation();window._epKapakPDF?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kapak PDF</button>';
-  h += '</div></div></div>';
+  h += '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#0F6E56;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>';
+  h += '</div>';
+  h += '<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><div style="font-size:9px;color:var(--t3)">Haz\u0131rlayan:</div><input id="ep-hazirlayan" value="' + (window.CU?.()?.displayName || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
+  h += '</div></div>';
   h += '</div>';
   panel.innerHTML = h;
 };
@@ -5369,7 +5372,7 @@ window._epAlisfaturaPDF = function() {
     var islem = String(r['Belge T\u00fcr\u00fc'] || 'Fi\u015f / Fatura');
     var cari = String(r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '');
     var fatIsmi = String(r['Fatura ismi'] || '');
-    var ihrId = (fatIsmi.match(/(\d{4}-\d{13,16})/) || [])[1] || '';
+    var ihrId = window._epIhracatIdAyikla?.(fatIsmi) || '';
     var fatNo = String(r['Fi\u015f/Fatura No'] || '');
     h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td>' + islem + '</td><td>' + cari + '</td><td style="font-family:monospace;font-size:7pt">' + ihrId + '</td><td style="font-family:monospace;font-size:7pt">' + fatNo + '</td><td style="text-align:center">\u25a1</td><td style="text-align:center">\u25a1</td></tr>';
   });
@@ -5398,7 +5401,7 @@ window._epSatisfaturaPDF = function() {
     var islem = String(r['Fatura t\u00fcr\u00fc'] || '');
     var cari = String(r['M\u00fc\u015fteri'] || '');
     var fatIsmi = String(r['Fatura ismi'] || '');
-    var ihrId = (fatIsmi.match(/(\d{4}-\d{13,16})/) || [])[1] || '';
+    var ihrId = window._epIhracatIdAyikla?.(fatIsmi) || '';
     var fatNo = String(r['Fatura s\u0131ra'] || '');
     h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td>' + islem + '</td><td>' + cari + '</td><td style="font-family:monospace;font-size:7pt">' + ihrId + '</td><td style="font-family:monospace;font-size:7pt">' + fatNo + '</td><td style="text-align:center">\u25a1</td><td style="text-align:center">\u25a1</td></tr>';
   });
@@ -5449,4 +5452,45 @@ window._epKapakPDF = function() {
   h += '</div><div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Eden</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Alan</div></div></div></div></body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
   window.logActivity?.('export', 'Kapak PDF \u2014 ' + ay);
+};
+
+/* \u2500\u2500 EVRAK-PAKET-004: Yard\u0131mc\u0131lar \u2500\u2500 */
+window._epHazirlayan = function() { return document.getElementById('ep-hazirlayan')?.value?.trim() || window.CU?.()?.displayName || ''; };
+
+window._epIhracatIdAyikla = function(metin) {
+  if (!metin) return '';
+  var m = String(metin).match(/(\d{4}[-\/]\d{6,16})/);
+  if (m) return m[1];
+  m = String(metin).match(/([A-Z]{2,4}\d{4}[-\/]?\d{6,16})/);
+  if (m) return m[1];
+  m = String(metin).match(/(GCB[-\s]?\d{6,})/i);
+  return m ? m[1] : '';
+};
+
+window._epIptalMi = function(r) {
+  var ismi = String(r['Fatura ismi'] || r['Belge T\u00fcr\u00fc'] || '').toLowerCase();
+  var durum = String(r['Durum'] || '').toLowerCase();
+  return ismi.indexOf('iptal') !== -1 || durum.indexOf('iptal') !== -1 || durum.indexOf('cancel') !== -1;
+};
+
+window._epValidasyonKontrol = function() {
+  var a = window._epVeri.alis, s = window._epVeri.satis;
+  var hatalar = [];
+  if (!a.length && !s.length) hatalar.push('Hi\u00e7 dosya y\u00fcklenmedi');
+  if (a.length && !a[0]['Fi\u015f/Fatura No'] && !a[0]['Fatura ismi']) hatalar.push('Al\u0131\u015f Excel format\u0131 uyumsuz \u2014 "Fi\u015f/Fatura No" kolonu bulunamad\u0131');
+  if (s.length && !s[0]['Fatura s\u0131ra'] && !s[0]['Fatura ismi']) hatalar.push('Sat\u0131\u015f Excel format\u0131 uyumsuz \u2014 "Fatura s\u0131ra" kolonu bulunamad\u0131');
+  return hatalar;
+};
+
+window._epTumunuYazdir = function() {
+  var hatalar = window._epValidasyonKontrol();
+  if (hatalar.length) { window.toast?.(hatalar[0], 'err'); return; }
+  var a = window._epVeri.alis, s = window._epVeri.satis;
+  if (!a.length && !s.length) { window.toast?.('Dosya y\u00fckleyin', 'warn'); return; }
+  window.toast?.('5 PDF haz\u0131rlan\u0131yor...', 'info');
+  setTimeout(function() { if (a.length) window._epAlisfaturaPDF?.(); }, 200);
+  setTimeout(function() { if (s.length) window._epSatisfaturaPDF?.(); }, 600);
+  setTimeout(function() { if (a.length) window._epKdvIadePDF?.(); }, 1000);
+  setTimeout(function() { window._epCheckListPDF?.(); }, 1400);
+  setTimeout(function() { window._epKapakPDF?.(); }, 1800);
 };
