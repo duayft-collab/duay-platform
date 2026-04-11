@@ -687,7 +687,8 @@ window._mvFirmaListesi = function() {
   var muhArr = (d.muhasebeci || {}).normalArr || [];
   var sirArr = (d.baran || {}).normalArr || [];
   var firmalar = {};
-  muhArr.forEach(function(r) { var f = r.firma || '?'; firmalar[f] = firmalar[f] || { ad: f, muhasebeci: [], sirket: [] }; firmalar[f].muhasebeci.push(r); });
+  var esl = window._mvFirmaEslestirmeler || {};
+  muhArr.forEach(function(r) { var f = r.firma || '?'; var eslF = esl[f] || f; firmalar[eslF] = firmalar[eslF] || { ad: eslF, muhasebeci: [], sirket: [] }; firmalar[eslF].muhasebeci.push(r); });
   sirArr.forEach(function(r) { var f = r.firma || '?'; firmalar[f] = firmalar[f] || { ad: f, muhasebeci: [], sirket: [] }; firmalar[f].sirket.push(r); });
   return Object.values(firmalar).map(function(f) {
     var sonuc = typeof window._mvNormalize?.karsilastir === 'function' ? window._mvNormalize.karsilastir(f.muhasebeci, f.sirket) : [];
