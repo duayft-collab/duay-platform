@@ -5177,6 +5177,19 @@ window.renderEvrakPaketi = function() {
     h += '<input type="checkbox" ' + (bitti ? 'checked' : '') + ' onchange="event.stopPropagation();var d=JSON.parse(localStorage.getItem(\'ak_evrak_paketi\')||\'{}\')||{};if(!d[\'' + ayKey + '\'])d[\'' + ayKey + '\']={};d[\'' + ayKey + '\'][\'' + c.replace(/'/g, "\\'") + '\']=this.checked;localStorage.setItem(\'ak_evrak_paketi\',JSON.stringify(d));window.renderEvrakPaketi()" style="accent-color:#0F6E56">';
     h += '<span style="font-size:11px;color:' + (bitti ? 'var(--t3)' : 'var(--t)') + ';' + (bitti ? 'text-decoration:line-through' : '') + '">' + c + '</span></div>';
   });
+  h += '<div style="margin-top:16px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+  h += '<div style="padding:8px 12px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;font-weight:500;color:var(--t)">Excel Dosyalar\u0131 Y\u00fckle</div>';
+  h += '<div style="padding:12px;display:flex;flex-direction:column;gap:10px">';
+  h += '<div><div style="font-size:9px;color:var(--t3);margin-bottom:4px">Al\u0131\u015f Faturalar\u0131 (Para\u015f\u00fct Export)</div><input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epAlisYukle?.(this)" style="font-size:10px;width:100%"></div>';
+  h += '<div><div style="font-size:9px;color:var(--t3);margin-bottom:4px">Sat\u0131\u015f Faturalar\u0131 (Para\u015f\u00fct Export)</div><input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epSatisYukle?.(this)" style="font-size:10px;width:100%"></div>';
+  h += '<div id="ep-ozet" style="display:none;background:#E1F5EE;border-radius:6px;padding:10px;font-size:10px"></div>';
+  h += '<div id="ep-pdf-butonlar" style="display:none;display:flex;gap:6px;flex-wrap:wrap">';
+  h += '<button onclick="event.stopPropagation();window._epAlisfaturaPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Al\u0131\u015f PDF</button>';
+  h += '<button onclick="event.stopPropagation();window._epSatisfaturaPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Sat\u0131\u015f PDF</button>';
+  h += '<button onclick="event.stopPropagation();window._epKdvIadePDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">KDV \u0130ade PDF</button>';
+  h += '<button onclick="event.stopPropagation();window._epCheckListPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Check List PDF</button>';
+  h += '<button onclick="event.stopPropagation();window._epKapakPDF?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kapak PDF</button>';
+  h += '</div></div></div>';
   h += '</div>';
   panel.innerHTML = h;
 };
@@ -5306,4 +5319,100 @@ window._lhSayfa = function(containerId, sayfa, boyut, renderFn) {
   if(sayfa<1) return;
   window['_'+containerId+'Sayfa'] = sayfa;
   if(typeof window[renderFn]==='function') window[renderFn]();
+};
+
+/* \u2500\u2500 EVRAK-PAKET-002: Excel Y\u00fckle + 5 PDF \u00dcret \u2500\u2500 */
+window._epVeri = { alis: [], satis: [] };
+window._epAlisYukle = function(inp) {
+  if (!inp.files[0]) return;
+  if (typeof XLSX === 'undefined') { window.toast?.('SheetJS y\u00fckl\u00fc de\u011fil', 'err'); return; }
+  var r = new FileReader();
+  r.onload = function(e) { var wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true }); window._epVeri.alis = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]); window._epOzetGoster(); window.toast?.('Al\u0131\u015f y\u00fcklendi: ' + window._epVeri.alis.length + ' kay\u0131t', 'ok'); };
+  r.readAsBinaryString(inp.files[0]);
+};
+window._epSatisYukle = function(inp) {
+  if (!inp.files[0]) return;
+  if (typeof XLSX === 'undefined') { window.toast?.('SheetJS y\u00fckl\u00fc de\u011fil', 'err'); return; }
+  var r = new FileReader();
+  r.onload = function(e) { var wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true }); window._epVeri.satis = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]); window._epOzetGoster(); window.toast?.('Sat\u0131\u015f y\u00fcklendi: ' + window._epVeri.satis.length + ' kay\u0131t', 'ok'); };
+  r.readAsBinaryString(inp.files[0]);
+};
+window._epOzetGoster = function() {
+  var ozet = document.getElementById('ep-ozet'); var butonlar = document.getElementById('ep-pdf-butonlar');
+  if (!ozet) return;
+  var a = window._epVeri.alis, s = window._epVeri.satis;
+  if (!a.length && !s.length) return;
+  var alisToplam = a.reduce(function(t, r) { return t + (parseFloat(r['Genel Toplam (TL)']) || 0); }, 0);
+  var alisKdv = a.reduce(function(t, r) { return t + (parseFloat(r['Toplam KDV']) || 0); }, 0);
+  var satisToplam = s.reduce(function(t, r) { return t + (parseFloat(r['Genel Toplam (TL)']) || 0); }, 0);
+  var ihracatSayisi = s.filter(function(r) { return (r['Fatura t\u00fcr\u00fc'] || '').indexOf('\u0130hracat') !== -1; }).length;
+  ozet.style.display = 'block';
+  ozet.innerHTML = '<div style="font-size:10px;font-weight:500;color:#085041;margin-bottom:6px">\u00d6zet</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px"><div>Al\u0131\u015f: <strong>' + a.length + '</strong> fatura</div><div>KDV: <strong>' + alisKdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></div><div>Sat\u0131\u015f: <strong>' + s.length + '</strong> fatura</div><div>\u0130hracat: <strong>' + ihracatSayisi + '</strong></div></div>';
+  if (butonlar) butonlar.style.display = 'flex';
+  window._epOzetVeri = { alisSayisi: a.length, alisKdv: alisKdv, satisSayisi: s.length, ihracatSayisi: ihracatSayisi, alisToplam: alisToplam, satisToplam: satisToplam };
+};
+window._epAlisfaturaPDF = function() {
+  var a = window._epVeri.alis; if (!a.length) { window.toast?.('Al\u0131\u015f y\u00fcklenmedi', 'warn'); return; }
+  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:12pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}tfoot td{font-weight:bold;background:#f5f5f5}</style></head><body>';
+  h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>ALI\u015e FATURALARI \u2014 ' + ay + '</h2>';
+  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>Fatura No</th><th>Tedarik\u00e7i</th><th style="text-align:right">KDV</th><th style="text-align:right">Toplam TL</th></tr></thead><tbody>';
+  var tTL = 0, tKDV = 0;
+  a.forEach(function(r, i) { var tl = parseFloat(r['Genel Toplam (TL)']) || 0; var kdv = parseFloat(r['Toplam KDV']) || 0; tTL += tl; tKDV += kdv; var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : ''; h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td style="font-family:monospace">' + (r['Fi\u015f/Fatura No'] || '') + '</td><td>' + (r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '').slice(0, 40) + '</td><td style="text-align:right">' + kdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td><td style="text-align:right">' + tl.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
+  h += '</tbody><tfoot><tr><td colspan="4">TOPLAM (' + a.length + ')</td><td style="text-align:right">' + tKDV.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td><td style="text-align:right">' + tTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr></tfoot></table></body></html>';
+  var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window.logActivity?.('export', 'Al\u0131\u015f Fatura PDF');
+};
+window._epSatisfaturaPDF = function() {
+  var s = window._epVeri.satis; if (!s.length) { window.toast?.('Sat\u0131\u015f y\u00fcklenmedi', 'warn'); return; }
+  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:12pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}tfoot td{font-weight:bold;background:#f5f5f5}</style></head><body>';
+  h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>SATI\u015e FATURALARI \u2014 ' + ay + '</h2>';
+  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>T\u00fcr</th><th>Fatura No</th><th>M\u00fc\u015fteri</th><th style="text-align:right">Toplam TL</th></tr></thead><tbody>';
+  var tTL = 0;
+  s.forEach(function(r, i) { var tl = parseFloat(r['Genel Toplam (TL)']) || 0; tTL += tl; var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : ''; h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td>' + (r['Fatura t\u00fcr\u00fc'] || '') + '</td><td style="font-family:monospace">' + (r['Fatura s\u0131ra'] || '') + '</td><td>' + (r['M\u00fc\u015fteri'] || '').slice(0, 30) + '</td><td style="text-align:right">' + tl.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
+  h += '</tbody><tfoot><tr><td colspan="5">TOPLAM (' + s.length + ')</td><td style="text-align:right">' + tTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr></tfoot></table></body></html>';
+  var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window.logActivity?.('export', 'Sat\u0131\u015f Fatura PDF');
+};
+window._epKdvIadePDF = function() {
+  var a = window._epVeri.alis.filter(function(r) { return parseFloat(r['Toplam KDV']) > 0; });
+  if (!a.length) { window.toast?.('KDV\'li al\u0131\u015f yok', 'warn'); return; }
+  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:13pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}.uyari{background:#fff3cd;border:0.5px solid #ffc107;padding:8px;font-size:8pt;margin:10px 0}</style></head><body>';
+  h += '<h1>\u0130HRACAT KDV \u0130ADE RAPORU</h1><h2>' + ay + '</h2>';
+  h += '<div class="uyari">\u00d6NEML\u0130: KDV tutarlar\u0131 orijinal faturalarla kar\u015f\u0131la\u015ft\u0131r\u0131lacak.</div>';
+  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>Fatura No</th><th>Tedarik\u00e7i</th><th style="text-align:right">\u0130ade KDV TL</th></tr></thead><tbody>';
+  var tKDV = 0;
+  a.forEach(function(r, i) { var kdv = parseFloat(r['Toplam KDV']) || 0; tKDV += kdv; var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : ''; h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td style="font-family:monospace">' + (r['Fi\u015f/Fatura No'] || '') + '</td><td>' + (r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '').slice(0, 35) + '</td><td style="text-align:right;color:#0F6E56;font-weight:bold">' + kdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
+  h += '</tbody><tfoot><tr><td colspan="4"><strong>TOPLAM \u0130ADE</strong></td><td style="text-align:right;color:#0F6E56"><strong>' + tKDV.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></td></tr></tfoot></table></body></html>';
+  var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window.logActivity?.('export', 'KDV \u0130ade PDF');
+};
+window._epCheckListPDF = function() {
+  var o = window._epOzetVeri || {};
+  var bugun = new Date().toLocaleDateString('tr-TR');
+  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:13pt;text-align:center}table{width:100%;border-collapse:collapse}td{padding:6px;border:0.5px solid #ddd}.no{width:30px;text-align:center;font-weight:bold}.chk{width:60px;text-align:center}.imza{margin-top:40px;display:flex;justify-content:space-between}.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:0.5px solid #111;margin-top:50px;padding-top:4px;font-size:8pt}</style></head><body>';
+  h += '<h1>DOSYA KAPAMA CHECK LIST</h1><p style="text-align:center">' + bugun + ' \u2014 ' + ay + '</p>';
+  var md = ['GIB faturalar\u0131 kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131. Al\u0131\u015f: <strong>' + (o.alisSayisi || '\u2014') + '</strong>', 'Tak\u0131ma bildirildi', 'Fatura \u00e7\u0131kt\u0131lar\u0131 al\u0131nd\u0131', 'Tebligatlar kontrol edildi', 'Evrak listeleri Y\u00f6netime sunuldu', 'Evraklar muhasebeciye teslim edildi', '\u00d6nceki ay\u0131n beyannamesi kontrol edildi', 'Vergi ve SGK borcu kontrol edildi', '\u0130ptal faturalar i\u015faretlendi', '\u0130hracat ekleri dosyaya eklendi. \u0130hracat: <strong>' + (o.ihracatSayisi || '\u2014') + '</strong>'];
+  h += '<table><thead><tr style="background:#f0f0f0"><td class="no">No</td><td>KONTROLLER</td><td class="chk">\u2713</td></tr></thead><tbody>';
+  md.forEach(function(m, i) { h += '<tr><td class="no">' + (i + 1) + '</td><td>' + m + '</td><td class="chk">\u25a1</td></tr>'; });
+  h += '</tbody></table>';
+  h += '<p style="font-size:8pt;margin-top:8px">KDV \u0130ade: <strong>' + (o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></p>';
+  h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Dosya Sorumlusu</div></div><div class="imza-alan"><div class="imza-cizgi">Y\u00f6netim</div></div></div></body></html>';
+  var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window.logActivity?.('export', 'Check List PDF');
+};
+window._epKapakPDF = function() {
+  var o = window._epOzetVeri || {};
+  var bugun = new Date().toLocaleDateString('tr-TR');
+  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;margin:40px}.kapak{border:2px solid #111;padding:40px;min-height:80vh;display:flex;flex-direction:column;justify-content:space-between}h1{font-size:18pt;text-align:center}h2{font-size:13pt;text-align:center;color:#555;margin-bottom:30px}.bilgi td{padding:8px;border-bottom:0.5px solid #ddd;font-size:10pt}.bilgi td:first-child{color:#555;width:200px}.ozet{background:#f5f5f5;padding:16px;margin:20px 0}.imza{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #111;margin-top:60px;padding-top:6px;font-size:9pt}</style></head><body><div class="kapak"><div>';
+  h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>MUHASEBE DOSYASI KAPAK SAYFASI</h2>';
+  h += '<table class="bilgi"><tr><td>D\u00f6nem:</td><td><strong>' + ay + '</strong></td></tr><tr><td>Tarih:</td><td>' + bugun + '</td></tr><tr><td>Teslim:</td><td>Resmi Muhasebeci</td></tr></table>';
+  h += '<div class="ozet"><strong>\u0130\u00c7ER\u0130K</strong><table style="width:100%;margin-top:10px"><tr><td>Al\u0131\u015f:</td><td><strong>' + (o.alisSayisi || 0) + '</strong> fatura</td><td>KDV:</td><td><strong>' + (o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></td></tr><tr><td>Sat\u0131\u015f:</td><td><strong>' + (o.satisSayisi || 0) + '</strong> fatura</td><td>\u0130hracat:</td><td><strong>' + (o.ihracatSayisi || 0) + '</strong></td></tr></table></div>';
+  h += '</div><div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Eden</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Alan</div></div></div></div></body></html>';
+  var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window.logActivity?.('export', 'Kapak PDF \u2014 ' + ay);
 };
