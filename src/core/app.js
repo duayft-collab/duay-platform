@@ -824,6 +824,7 @@ function _initApp(user) {
   updateAllBadges();
   _initNsecState();
   setTimeout(function() { window._initNsecHover?.(); }, 500);
+  setTimeout(function() { window._initTn2Hover?.(); }, 600);
   // Top Nav v2 restore
   setTimeout(function() { window._tn2Restore?.(); }, 200);
   _resetIdleTimer();
@@ -3506,6 +3507,24 @@ window._initNsecHover = function() {
       if (!nsId) return;
       if (!h.classList.contains('collapsed')) return;
       toggleNsec(nsId);
+    });
+  });
+};
+
+/* GK-19-ALL-001: TOP NAV v2 grup hover davranisi */
+window._initTn2Hover = function() {
+  var grps = document.querySelectorAll('.tn2-grp');
+  if (!grps.length) return;
+  grps.forEach(function(g) {
+    if (g.dataset.hoverInit === '1') return;
+    g.dataset.hoverInit = '1';
+    g.addEventListener('mouseenter', function() {
+      var grpId = g.dataset.grp;
+      if (!grpId || grpId === 'pusula-pro') return;
+      if (g.classList.contains('on')) return;
+      if (typeof window._tn2SelectGrp === 'function') {
+        window._tn2SelectGrp(grpId, g);
+      }
     });
   });
 };
