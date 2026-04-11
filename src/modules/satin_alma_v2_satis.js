@@ -247,11 +247,6 @@ window._saV2BankaGuncelle = function(para) {
   if(el) el.textContent = bankalar[para] || bankalar['USD'];
 };
 
-window._saV2BankaMetni = function(para) {
-  var bankalar = {'USD':'USD IBAN: TR12 0001 2003 4500 0123 4567 89','EUR':'EUR IBAN: TR98 0001 2003 4500 0987 6543 21','GBP':'GBP IBAN: TR45 0001 2003 4500 0111 2222 33','TRY':'TL IBAN: TR11 0001 2003 4500 0444 5555 66'};
-  return bankalar[para]||bankalar['USD'];
-};
-
 window._saV2PIOnizlemeGuncelle = function() {
   var onizleme = document.getElementById('st-pi-onizleme');
   if(!onizleme) return;
