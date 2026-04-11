@@ -79,17 +79,26 @@ window._saV2Kpi = function() {
 };
 
 /* ── Kur çekici (fallback zinciri) ─────────────────────────── */
-window._saKur = { USD:44.55, EUR:51.70, GBP:59.30, _son:null };
+window._saKur = window._saKur || { USD:44.55, EUR:51.70, GBP:59.30, CNY:6.20, TRY:1, _son:null };
 window._saKurCek = function() {
-  if (window._saKur._son && (Date.now()-window._saKur._son)<3600000) return;
-  fetch('https://api.frankfurter.app/latest?from=USD,EUR,GBP&to=TRY')
-    .then(function(r){ return r.json(); })
+  var simdi = Date.now();
+  if(window._saKur._son && simdi - window._saKur._son < 3600000) return;
+  fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,EUR,GBP')
+    .then(function(r){return r.json();})
     .then(function(d){
-      if (d.rates) {
+      if(d&&d.rates){
         window._saKur.USD = d.rates.TRY||44.55;
+        window._saKur.EUR = d.rates.TRY/d.rates.EUR||51.70;
+        window._saKur.GBP = d.rates.TRY/d.rates.GBP||59.30;
+        window._saKur.CNY = d.rates.TRY/7.2||6.20;
+        window._saKur.TRY = 1;
         window._saKur._son = Date.now();
+        console.log('[KUR] G\u00fcncellendi:', {USD:window._saKur.USD.toFixed(2), EUR:window._saKur.EUR.toFixed(2), GBP:window._saKur.GBP.toFixed(2)});
       }
-    }).catch(function(){});
+    })
+    .catch(function(e){
+      console.warn('[KUR] API hatas\u0131, fallback kullan\u0131l\u0131yor:', e.message);
+    });
 };
 window._saKurCek();
 

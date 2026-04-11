@@ -77,6 +77,11 @@ window._saV2TeklifOlustur = function(id) {
   ['30% Advance, 70% L/C at sight','50% Advance, 50% L/C at sight','100% Advance before shipment','L/C at sight','T/T 30 days after B/L','T/T 60 days after B/L','D/P at sight','Open Account 30 days'].forEach(function(o){ic += '<option>'+o+'</option>';});
   ic += '</select></div>';
   ic += '<div id="st-banka-bilgi" style="font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C">USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası</div>';
+  ic += '<div id="st-kur-bilgi" style="font-size:9px;color:var(--t3);padding:4px 10px;background:var(--s2);border-radius:4px;margin-top:4px">';
+  ic += '1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
+  ic += '1 EUR = '+(window._saKur?.EUR||51.70).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
+  ic += '1 GBP = '+(window._saKur?.GBP||59.30).toFixed(2)+' TL';
+  ic += '</div>';
 
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden">';
   ic += '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
