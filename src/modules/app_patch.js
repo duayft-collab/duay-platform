@@ -63,6 +63,9 @@ window._yetkiKontrol = function(islem) {
     'links': () => { window.renderLinks?.(); },
     'numune': () => { window.renderNumuneler?.(); },
     'satinalma-siparis': () => { window.renderSatinAlmaSiparis?.(); },
+    'evrak-paketi': () => { window.renderEvrakPaketi?.(); },
+    'kdv-iadesi': () => { window.renderKdvIadesi?.(); },
+    'periyodik-kontrol': () => { window.renderPeriyodikKontrol?.(); },
     'evrak': () => { window.renderEvrak?.(); },
     'arsiv': () => { window.renderArsiv?.(); },
     'docs': () => { window.renderDocs?.(); },
@@ -4885,9 +4888,18 @@ window._renderFirmaKpi = function() {
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
     ];
   }
+  /* Muhasebe men\u00fcs\u00fcne 3 yeni mod\u00fcl */
+  if (G.muhasebe && Array.isArray(G.muhasebe.mods)) {
+    ['evrak-paketi', 'kdv-iadesi', 'periyodik-kontrol'].forEach(function(id) {
+      if (!G.muhasebe.mods.some(function(m) { return m.id === id; })) {
+        var lbl = { 'evrak-paketi': 'Evrak Paketi', 'kdv-iadesi': 'KDV \u0130adesi', 'periyodik-kontrol': 'Periyodik Kontrol' }[id];
+        G.muhasebe.mods.push({ id: id, label: lbl });
+      }
+    });
+  }
 })();
 
-/* ── URUN-IMPORT-001: Import Önizleme Modalı ──────────────── */
+/* \u2500\u2500 URUN-IMPORT-001: Import \u00d6nizleme Modal\u0131 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 window._importOnizlemeGoster = function(yeniUrunler, hatalar, mevcutListe) {
   var mevcut=document.getElementById('import-onizleme-modal');
   if(mevcut) mevcut.remove();
@@ -5155,7 +5167,93 @@ window.renderSatinAlmaSiparis = function() {
   panel.innerHTML = h;
 };
 
-/* ── LIST-STANDART-001: Global List Helper ──────────────────── */
+/* \u2500\u2500 MUHASEBE-RUTIN-001: Evrak Paketi + KDV \u0130adesi + Periyodik Kontrol \u2500\u2500 */
+window.renderEvrakPaketi = function() {
+  var panel = document.getElementById('panel-evrak-paketi'); if (!panel) return;
+  var aylar = ['Ocak','\u015eubat','Mart','Nisan','May\u0131s','Haziran','Temmuz','A\u011fustos','Eyl\u00fcl','Ekim','Kas\u0131m','Aral\u0131k'];
+  var buAy = new Date().getMonth();
+  var durum = JSON.parse(localStorage.getItem('ak_evrak_paketi') || '{}');
+  var checklist = ['Faturalar (al\u0131\u015f+sat\u0131\u015f)','Banka ekstresi','Kasa defteri','BA-BS formu','E-defter beyan','SGK bildirge','Muhtasar beyanname','KDV beyanname','Gelen \u00e7ekler','G\u00f6nderilen \u00e7ekler','Senet listesi','Kira \u00f6deme makbuzu'];
+  var h = '<div style="padding:16px"><div style="font-size:16px;font-weight:500;margin-bottom:4px">Evrak Paketi</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Ayl\u0131k muhasebe evrak kontrol listesi</div>';
+  h += '<div style="display:flex;gap:4px;margin-bottom:16px;overflow-x:auto">';
+  aylar.forEach(function(a, i) { var ak = i === buAy; h += '<button onclick="event.stopPropagation();window._epAktifAy=' + i + ';window.renderEvrakPaketi()" style="font-size:10px;padding:4px 10px;border:0.5px solid ' + (ak ? 'var(--t)' : 'var(--b)') + ';border-radius:4px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + a + '</button>'; });
+  h += '</div>';
+  var aktifAy = window._epAktifAy != null ? window._epAktifAy : buAy;
+  var ayKey = new Date().getFullYear() + '-' + String(aktifAy + 1).padStart(2, '0');
+  var ayDurum = durum[ayKey] || {};
+  var tamamSay = checklist.filter(function(c) { return ayDurum[c]; }).length;
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">' + tamamSay + '/' + checklist.length + ' tamamland\u0131</div>';
+  h += '<div style="height:4px;background:var(--b);border-radius:2px;margin-bottom:12px"><div style="height:4px;border-radius:2px;background:#0F6E56;width:' + Math.round(tamamSay / checklist.length * 100) + '%"></div></div>';
+  checklist.forEach(function(c) {
+    var bitti = ayDurum[c] || false;
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<input type="checkbox" ' + (bitti ? 'checked' : '') + ' onchange="event.stopPropagation();var d=JSON.parse(localStorage.getItem(\'ak_evrak_paketi\')||\'{}\')||{};if(!d[\'' + ayKey + '\'])d[\'' + ayKey + '\']={};d[\'' + ayKey + '\'][\'' + c.replace(/'/g, "\\'") + '\']=this.checked;localStorage.setItem(\'ak_evrak_paketi\',JSON.stringify(d));window.renderEvrakPaketi()" style="accent-color:#0F6E56">';
+    h += '<span style="font-size:11px;color:' + (bitti ? 'var(--t3)' : 'var(--t)') + ';' + (bitti ? 'text-decoration:line-through' : '') + '">' + c + '</span></div>';
+  });
+  h += '</div>';
+  panel.innerHTML = h;
+};
+
+window.renderKdvIadesi = function() {
+  var panel = document.getElementById('panel-kdv-iadesi'); if (!panel) return;
+  var durum = JSON.parse(localStorage.getItem('ak_kdv_iadesi') || '{}');
+  var adimlar = ['KDV beyannamesi haz\u0131rla','Fatura listesi olu\u015ftur','Belge d\u00fczeni kontrol','YMM raporu al','Ba\u015fvuru dosyas\u0131 haz\u0131rla','Vergi dairesine ba\u015fvur','Takip ve sonu\u00e7'];
+  var h = '<div style="padding:16px"><div style="font-size:16px;font-weight:500;margin-bottom:4px">KDV \u0130adesi Takip</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">KDV iadesi s\u00fcreci ad\u0131m ad\u0131m takip</div>';
+  var tamamSay = adimlar.filter(function(a) { return durum[a]; }).length;
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">' + tamamSay + '/' + adimlar.length + ' ad\u0131m tamamland\u0131</div>';
+  h += '<div style="height:4px;background:var(--b);border-radius:2px;margin-bottom:12px"><div style="height:4px;border-radius:2px;background:#185FA5;width:' + Math.round(tamamSay / adimlar.length * 100) + '%"></div></div>';
+  adimlar.forEach(function(a, i) {
+    var bitti = durum[a] || false;
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<div style="width:24px;height:24px;border-radius:50%;background:' + (bitti ? '#0F6E56' : 'var(--s2)') + ';border:0.5px solid ' + (bitti ? '#0F6E56' : 'var(--b)') + ';display:flex;align-items:center;justify-content:center;color:' + (bitti ? '#fff' : 'var(--t3)') + ';font-size:10px;font-weight:500;flex-shrink:0">' + (bitti ? '\u2713' : (i + 1)) + '</div>';
+    h += '<span style="flex:1;font-size:11px;color:' + (bitti ? 'var(--t3)' : 'var(--t)') + '">' + a + '</span>';
+    h += '<button onclick="event.stopPropagation();var d=JSON.parse(localStorage.getItem(\'ak_kdv_iadesi\')||\'{}\')||{};d[\'' + a.replace(/'/g, "\\'") + '\']=!' + bitti + ';localStorage.setItem(\'ak_kdv_iadesi\',JSON.stringify(d));window.renderKdvIadesi()" style="font-size:9px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">' + (bitti ? 'Geri Al' : 'Bitti') + '</button>';
+    h += '</div>';
+  });
+  h += '</div>';
+  panel.innerHTML = h;
+};
+
+window.renderPeriyodikKontrol = function() {
+  var panel = document.getElementById('panel-periyodik-kontrol'); if (!panel) return;
+  var kontroller = [
+    { id: 'kasa', lbl: 'Kasa say\u0131m\u0131', periyot: 'Haftal\u0131k', son: null },
+    { id: 'banka', lbl: 'Banka mutabakat\u0131', periyot: 'Ayl\u0131k', son: null },
+    { id: 'stok', lbl: 'Stok say\u0131m\u0131', periyot: '3 Ayl\u0131k', son: null },
+    { id: 'cari', lbl: 'Cari mutabakat', periyot: 'Ayl\u0131k', son: null },
+    { id: 'kdv', lbl: 'KDV kontrol', periyot: 'Ayl\u0131k', son: null },
+    { id: 'sgk', lbl: 'SGK prim kontrol', periyot: 'Ayl\u0131k', son: null },
+    { id: 'vergi', lbl: 'Vergi \u00f6deme kontrol', periyot: 'Ayl\u0131k', son: null },
+    { id: 'arsiv', lbl: 'Belge ar\u015fiv kontrol', periyot: '6 Ayl\u0131k', son: null }
+  ];
+  var durum = JSON.parse(localStorage.getItem('ak_periyodik_kontrol') || '{}');
+  kontroller.forEach(function(k) { k.son = durum[k.id] || null; });
+  var h = '<div style="padding:16px"><div style="font-size:16px;font-weight:500;margin-bottom:4px">Periyodik Kontrol</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Rutin muhasebe kontrolleri ve son yap\u0131lma tarihleri</div>';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  h += '<th style="padding:8px;text-align:left">Kontrol</th><th style="padding:8px;text-align:left">Periyot</th><th style="padding:8px;text-align:left">Son Yap\u0131lma</th><th style="padding:8px;text-align:center">Durum</th><th style="padding:8px"></th>';
+  h += '</tr></thead><tbody>';
+  var bugun = new Date().toISOString().slice(0, 10);
+  kontroller.forEach(function(k) {
+    var gecGun = k.son ? Math.round((new Date(bugun) - new Date(k.son)) / 86400000) : 999;
+    var limitGun = k.periyot === 'Haftal\u0131k' ? 7 : k.periyot === 'Ayl\u0131k' ? 30 : k.periyot === '3 Ayl\u0131k' ? 90 : 180;
+    var durumRenk = gecGun > limitGun ? '#A32D2D' : gecGun > limitGun * 0.8 ? '#854F0B' : '#0F6E56';
+    var durumLbl = gecGun > limitGun ? 'Gecikmi\u015f' : gecGun > limitGun * 0.8 ? 'Yak\u0131n' : 'G\u00fcncel';
+    h += '<tr style="border-bottom:0.5px solid var(--b)">';
+    h += '<td style="padding:8px;font-weight:500">' + k.lbl + '</td>';
+    h += '<td style="padding:8px;color:var(--t3)">' + k.periyot + '</td>';
+    h += '<td style="padding:8px;color:var(--t3)">' + (k.son || 'Hi\u00e7') + '</td>';
+    h += '<td style="padding:8px;text-align:center"><span style="font-size:9px;padding:2px 8px;border-radius:8px;background:' + durumRenk + '22;color:' + durumRenk + ';font-weight:500">' + durumLbl + '</span></td>';
+    h += '<td style="padding:8px"><button onclick="event.stopPropagation();var d=JSON.parse(localStorage.getItem(\'ak_periyodik_kontrol\')||\'{}\')||{};d[\'' + k.id + '\']=new Date().toISOString().slice(0,10);localStorage.setItem(\'ak_periyodik_kontrol\',JSON.stringify(d));window.renderPeriyodikKontrol()" style="font-size:9px;padding:3px 10px;border:none;border-radius:4px;background:#0F6E56;color:#fff;cursor:pointer;font-family:inherit">Yap\u0131ld\u0131 \u2713</button></td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  panel.innerHTML = h;
+};
+
+/* \u2500\u2500 LIST-STANDART-001: Global List Helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 window._listHelper = {
   sayfalama: function(toplam, sayfa, boyut, renderFn, containerId) {
     var toplamS = Math.ceil(toplam/boyut);
