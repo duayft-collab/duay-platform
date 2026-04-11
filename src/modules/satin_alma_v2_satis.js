@@ -1,9 +1,16 @@
 var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 /* ── Placeholder fonksiyonlar ───────────────────────────────── */
 window._saV2TeklifOlustur = function(id) {
+  if (!id) {
+    var bos = { id: typeof window.generateId === 'function' ? window.generateId() : ('tmp-' + Date.now()), urunler: [], tedarikci: '', jobId: '', teslimYeri: '', teslimMasraf: '', toplamTutar: 0, toplamPara: 'USD', durum: 'taslak' };
+    id = bos.id;
+    var _eskiLoad = window._saV2Load;
+    window._saV2Load = function() { return [bos].concat(typeof _eskiLoad === 'function' ? _eskiLoad() : []); };
+    setTimeout(function() { window._saV2Load = _eskiLoad; }, 5000);
+  }
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x){return String(x.id)===String(id);});
-  if(!t){ window.toast?.('Teklif bulunamadı','warn'); return; }
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamad\u0131', 'warn'); return; }
   var mevcut = document.getElementById('sav2-satis-modal'); if(mevcut) mevcut.remove();
   var modal = document.createElement('div');
   modal.id = 'sav2-satis-modal';
