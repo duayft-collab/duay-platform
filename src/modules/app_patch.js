@@ -4655,9 +4655,86 @@ window._renderEntegrasyonlar = function() {
   h += '<button class="btn btnp" onclick="event.stopPropagation();window._saveEmailJSKeys()" style="font-size:11px">Kaydet</button>';
   h += '<span style="font-size:11px;color:' + (hasEj ? '#16A34A' : '#D97706') + ';font-weight:500">' + (hasEj ? 'Kayitli \u2713' : 'Girilmedi') + '</span>';
   h += '</div></div>';
+  /* AYARLAR-BANKA-SART-001: Banka Hesapları kartı */
+  var _esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){return String(s||'').replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:12px">Banka Hesapları (IBAN)</div>';
+  ['USD','EUR','GBP','TRY'].forEach(function(para){
+    var mevcut = (typeof window._loadBankalar === 'function' ? window._loadBankalar() : {})[para] || '';
+    h += '<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:3px">'+para+' IBAN / Banka Bilgisi</div>';
+    h += '<div style="display:flex;gap:6px"><input id="ayar-banka-'+para+'" value="'+_esc(mevcut)+'" placeholder="'+para+' IBAN: TR... \u00b7 Banka Ad\u0131 \u00b7 SWIFT: ..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:monospace">';
+    h += '<button onclick="event.stopPropagation();window._ayarBankaKaydet(\''+para+'\')" style="font-size:10px;padding:6px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Kaydet</button></div></div>';
+  });
+  h += '</div>';
+  /* Teklif Şartları kartı */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:4px">Teklif \u015eartlar\u0131</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-bottom:10px">Varsay\u0131lan \u015fartlar (max 10). Her \u015fart ayr\u0131 sat\u0131rda.</div>';
+  h += '<div id="ayar-sartlar-liste"></div>';
+  h += '<button onclick="event.stopPropagation();window._ayarSartEkle()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);margin-top:6px">+ \u015eart Ekle</button>';
+  h += '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="event.stopPropagation();window._ayarSartlariKaydet()" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>';
+  h += '<button onclick="event.stopPropagation();window._ayarSartlariSifirla()" style="font-size:10px;padding:6px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">Varsay\u0131lana D\u00f6n</button></div>';
+  h += '</div>';
   h += '</div>';
   panel.innerHTML = h;
+  setTimeout(function(){window._ayarSartlariYukle?.();},50);
 };
+
+/* AYARLAR-BANKA-SART-001: Helper fonksiyonlar */
+window._ayarBankaKaydet = function(para) {
+  var el = document.getElementById('ayar-banka-'+para);
+  if(!el) return;
+  var bankalar = (typeof window._loadBankalar === 'function' ? window._loadBankalar() : {});
+  bankalar[para] = el.value.trim();
+  window._saveBankalar?.(bankalar);
+  window.toast?.('Kaydedildi','ok');
+};
+
+window._ayarSartEkle = function() {
+  var liste = document.getElementById('ayar-sartlar-liste');
+  if(!liste) return;
+  var sayfa = liste.querySelectorAll('input').length;
+  if(sayfa>=10){window.toast?.('Maksimum 10 \u015fart','warn');return;}
+  var div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+  div.innerHTML = '<span style="font-size:9px;color:var(--t3);min-width:16px;padding-top:7px">'+(sayfa+1)+'.</span><input onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><button onclick="event.stopPropagation();this.parentElement.remove();window._ayarSartNoGuncelle()" style="font-size:10px;border:none;background:none;cursor:pointer;color:#A32D2D">\u2715</button>';
+  liste.appendChild(div);
+};
+
+window._ayarSartNoGuncelle = function() {
+  var liste = document.getElementById('ayar-sartlar-liste');
+  if(!liste) return;
+  liste.querySelectorAll('span').forEach(function(s,i){s.textContent=(i+1)+'.';});
+};
+
+window._ayarSartlariKaydet = function() {
+  var liste = document.getElementById('ayar-sartlar-liste');
+  if(!liste) return;
+  var sartlar = Array.from(liste.querySelectorAll('input')).map(function(i){return i.value.trim();}).filter(Boolean);
+  window._saV2SartlarKaydet?.(sartlar);
+  window.toast?.('\u015eartlar kaydedildi','ok');
+};
+
+window._ayarSartlariSifirla = function() {
+  window._saV2SartlarKaydet?.([]);
+  window._ayarSartlariYukle?.();
+  window.toast?.('Varsay\u0131lana d\u00f6nd\u00fcr\u00fcld\u00fc','ok');
+};
+
+window._ayarSartlariYukle = function() {
+  var liste = document.getElementById('ayar-sartlar-liste');
+  if(!liste) return;
+  var _esc2 = typeof escapeHtml === 'function' ? escapeHtml : function(s){return String(s||'').replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  liste.innerHTML='';
+  (typeof window._saV2Sartlar === 'function' ? window._saV2Sartlar() : []).forEach(function(s,i){
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+    div.innerHTML='<span style="font-size:9px;color:var(--t3);min-width:16px;padding-top:7px">'+(i+1)+'.</span><input value="'+_esc2(s)+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><button onclick="event.stopPropagation();this.parentElement.remove();window._ayarSartNoGuncelle()" style="font-size:10px;border:none;background:none;cursor:pointer;color:#A32D2D">\u2715</button>';
+    liste.appendChild(div);
+  });
+};
+
+setTimeout(function(){window._ayarSartlariYukle?.();},200);
 
 window._saveEmailJSKeys = function() {
   var pub = (document.getElementById('set-ej-pub')?.value || '').trim();
