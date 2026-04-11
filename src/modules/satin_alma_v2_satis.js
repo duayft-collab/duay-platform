@@ -29,7 +29,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Satış Teklifi Oluştur</div>';
   ic += '<div style="font-size:9px;color:var(--t3);margin-top:2px">'+_saEsc(_urunAdi)+(t.urunler&&t.urunler.length>1?' · '+t.urunler.length+' ürün':'')+'</div></div>';
   ic += '<div style="display:flex;align-items:center;gap:6px">';
-  ['A','B','C'].forEach(function(d){
+  ['A','I','L','O'].forEach(function(d){
     var ak=(window._saV2AktifPITasarim||'A')===d;
     ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\''+d+'\';window._saV2PIOnizlemeGuncelle()" class="pi-tas-btn" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:'+(ak?'var(--t)':'transparent')+';color:'+(ak?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">'+d+'</button>';
   });
