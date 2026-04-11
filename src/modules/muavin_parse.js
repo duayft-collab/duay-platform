@@ -782,5 +782,84 @@ window._mvMuhasebeciFirmaListele = function(satirlar) {
   });
 };
 
+/* \u2500\u2500 MUAVIN-FIRMA-ESLESTIR-001: Otomatik + Manuel E\u015fle\u015ftirme \u2500\u2500 */
+window._mvFirmaEslestirmeler = JSON.parse(localStorage.getItem('ak_mv_eslestirme') || '{}');
+
+window._mvFirmaEslestirmeYap = function() {
+  var meta = window._mvMeta || {};
+  var donem = typeof window._mvAktifDonem === 'function' ? window._mvAktifDonem() : '';
+  var d = meta[donem] || {};
+  var muhFirmalar = (d.muhasebeci || {}).normalArr ? [... new Set((d.muhasebeci.normalArr || []).map(function(r) { return r.firma || ''; }).filter(Boolean))] : [];
+  var sirFirmalar = (d.baran || {}).normalArr ? [... new Set((d.baran.normalArr || []).map(function(r) { return r.firma || ''; }).filter(Boolean))] : [];
+  var eslestirmeler = window._mvFirmaEslestirmeler = window._mvFirmaEslestirmeler || {};
+  var cozulemeyenler = [];
+  muhFirmalar.forEach(function(muh) {
+    if (eslestirmeler[muh]) return;
+    var enIyi = null, enSkor = 0;
+    sirFirmalar.forEach(function(sir) {
+      var skor = typeof _mvFuzzyEsles === 'function' ? _mvFuzzyEsles(muh, sir) : 0;
+      if (skor > enSkor) { enSkor = skor; enIyi = sir; }
+    });
+    if (enSkor >= 80) { eslestirmeler[muh] = enIyi; }
+    else { cozulemeyenler.push({ muh: muh, oneri: enIyi, skor: enSkor }); }
+  });
+  localStorage.setItem('ak_mv_eslestirme', JSON.stringify(eslestirmeler));
+  return { eslestirmeler: eslestirmeler, cozulemeyenler: cozulemeyenler };
+};
+
+window._mvFirmaEslestirmeMenuAc = function() {
+  var mevcut = document.getElementById('mv-eslestirme-modal');
+  if (mevcut) { mevcut.remove(); return; }
+  var sonuc = window._mvFirmaEslestirmeYap();
+  var coz = sonuc.cozulemeyenler;
+  var esl = sonuc.eslestirmeler;
+  var meta = window._mvMeta || {};
+  var donem = typeof window._mvAktifDonem === 'function' ? window._mvAktifDonem() : '';
+  var d = meta[donem] || {};
+  var sirFirmalar = (d.baran || {}).normalArr ? [... new Set((d.baran.normalArr || []).map(function(r) { return r.firma || ''; }).filter(Boolean))] : [];
+  var esc = typeof window._esc === 'function' ? window._esc : function(s) { return String(s || ''); };
+  var mo = document.createElement('div');
+  mo.id = 'mv-eslestirme-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var h = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:680px;max-height:85vh;display:flex;flex-direction:column">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--b)">';
+  h += '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Firma E\u015fle\u015ftirme</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Muhasebeci firma adlar\u0131 ile \u015firket firma adlar\u0131n\u0131 e\u015fle\u015ftirin</div></div>';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'mv-eslestirme-modal\')?.remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--t3)">\u00d7</button></div>';
+  h += '<div style="overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px">';
+  if (Object.keys(esl).length) {
+    h += '<div style="font-size:10px;font-weight:500;color:#0F6E56;margin-bottom:4px">Otomatik E\u015fle\u015ftirilenler (' + Object.keys(esl).length + ')</div>';
+    Object.keys(esl).forEach(function(k) {
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#E1F5EE;border-radius:5px;font-size:10px">';
+      h += '<span style="flex:1;color:#085041">' + esc(k) + '</span><span style="color:var(--t3)">\u2192</span><span style="flex:1;color:#085041">' + esc(esl[k]) + '</span>';
+      h += '<button onclick="event.stopPropagation();delete window._mvFirmaEslestirmeler[\'' + k.replace(/'/g, "\\'") + '\'];localStorage.setItem(\'ak_mv_eslestirme\',JSON.stringify(window._mvFirmaEslestirmeler));document.getElementById(\'mv-eslestirme-modal\')?.remove();window._mvFirmaEslestirmeMenuAc()" style="font-size:9px;border:none;background:none;cursor:pointer;color:#A32D2D">\u2715</button></div>';
+    });
+  }
+  if (coz.length) {
+    h += '<div style="font-size:10px;font-weight:500;color:#A32D2D;margin-top:8px;margin-bottom:4px">E\u015fle\u015ftirilemeyen (' + coz.length + ')</div>';
+    coz.forEach(function(item, idx) {
+      h += '<div style="border:0.5px solid var(--b);border-radius:5px;padding:8px 10px">';
+      h += '<div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:6px">' + esc(item.muh) + '</div>';
+      h += '<div style="display:flex;gap:6px;align-items:center">';
+      h += '<select id="mv-esl-' + idx + '" onclick="event.stopPropagation()" style="flex:1;font-size:10px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">E\u015fle\u015ftirme se\u00e7...</option>';
+      sirFirmalar.forEach(function(sf) { h += '<option value="' + esc(sf) + '"' + (sf === item.oneri ? ' selected' : '') + '>' + esc(sf) + (sf === item.oneri ? ' (%' + item.skor + ')' : '') + '</option>'; });
+      h += '</select>';
+      h += '<button onclick="event.stopPropagation();var sel=document.getElementById(\'mv-esl-' + idx + '\');if(!sel||!sel.value){window.toast?.(\'\u015eART SE\u00c7\u0130N\',\'warn\');return;}window._mvFirmaEslestirmeler[\'' + item.muh.replace(/'/g, "\\'") + '\']=sel.value;localStorage.setItem(\'ak_mv_eslestirme\',JSON.stringify(window._mvFirmaEslestirmeler));sel.closest(\'div[style*=border]\').style.background=\'#E1F5EE\';window.toast?.(\'\u2713 E\u015fle\u015ftirildi\',\'ok\')" style="font-size:10px;padding:5px 12px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">E\u015fle\u015ftir</button>';
+      h += '</div></div>';
+    });
+  }
+  if (!coz.length && !Object.keys(esl).length) {
+    h += '<div style="text-align:center;padding:40px;color:var(--t3);font-size:11px">\u00d6nce her iki dosyay\u0131 da y\u00fckleyin</div>';
+  }
+  h += '</div>';
+  h += '<div style="padding:10px 16px;border-top:0.5px solid var(--b);display:flex;justify-content:space-between">';
+  h += '<span style="font-size:9px;color:var(--t3);line-height:32px">E\u015fle\u015ftirmeler otomatik kaydedilir</span>';
+  h += '<button onclick="event.stopPropagation();window.renderMuavin?.();document.getElementById(\'mv-eslestirme-modal\')?.remove()" style="font-size:11px;padding:7px 20px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Uygula ve Kapat</button>';
+  h += '</div></div>';
+  mo.innerHTML = h;
+  document.body.appendChild(mo);
+};
+
 console.log('[MUAVIN-PARSE] y\u00fcklendi');
 
