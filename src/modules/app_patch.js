@@ -5248,6 +5248,7 @@ window.renderEvrakPaketi = function() {
   h += '<button onclick="event.stopPropagation();window._epKdvIadePDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">KDV \u0130ade PDF</button>';
   h += '<button onclick="event.stopPropagation();window._epCheckListPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Check List PDF</button>';
   h += '<button onclick="event.stopPropagation();window._epKapakPDF?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kapak PDF</button>';
+  h += '<button onclick="event.stopPropagation();window._epZarfEtiketiPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Zarf Etiketi</button>';
   h += '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#0F6E56;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>';
   h += '</div>';
   h += '<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><div style="font-size:9px;color:var(--t3)">Haz\u0131rlayan:</div><input id="ep-hazirlayan" value="' + (window.CU?.()?.displayName || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
@@ -5546,7 +5547,7 @@ window._epKapakPDF = function() {
   var o = window._epOzetVeri || {};
   var bugun = new Date().toLocaleDateString('tr-TR');
   var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;margin:40px}.kapak{border:2px solid #111;padding:40px;min-height:80vh;display:flex;flex-direction:column;justify-content:space-between}h1{font-size:18pt;text-align:center}h2{font-size:13pt;text-align:center;color:#555;margin-bottom:30px}.bilgi td{padding:8px;border-bottom:0.5px solid #ddd;font-size:10pt}.bilgi td:first-child{color:#555;width:200px}.ozet{background:#f5f5f5;padding:16px;margin:20px 0}.imza{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #111;margin-top:60px;padding-top:6px;font-size:9pt}</style></head><body><div class="kapak"><div>';
+  var h = '<html><head><meta charset="UTF-8"><style>@page{size:A4;margin:20mm}body{font-family:Arial,sans-serif;margin:20px;font-size:9pt}.kapak{border:2px solid #185FA5;padding:24px;height:calc(100vh - 40mm);display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box}h1{font-size:16pt;text-align:center;color:#185FA5;margin:0}h2{font-size:11pt;text-align:center;color:#555;margin:4px 0 16px}.bilgi td{padding:5px 8px;border-bottom:0.5px solid #ddd;font-size:9pt}.bilgi td:first-child{color:#555;width:160px}.ozet{background:#f5f5f5;padding:12px;margin:12px 0;border-radius:4px}.imza{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:20px}.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #111;margin-top:40px;padding-top:4px;font-size:8pt}</style></head><body><div class="kapak"><div>';
   h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>MUHASEBE DOSYASI KAPAK SAYFASI</h2>';
   h += '<table class="bilgi"><tr><td>D\u00f6nem:</td><td><strong>' + ay + '</strong></td></tr><tr><td>Tarih:</td><td>' + bugun + '</td></tr><tr><td>Teslim:</td><td>Resmi Muhasebeci</td></tr></table>';
   h += '<div class="ozet"><strong>\u0130\u00c7ER\u0130K</strong><table style="width:100%;margin-top:10px"><tr><td>Al\u0131\u015f:</td><td><strong>' + (o.alisSayisi || 0) + '</strong> fatura</td><td>KDV:</td><td><strong>' + (o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></td></tr><tr><td>Sat\u0131\u015f:</td><td><strong>' + (o.satisSayisi || 0) + '</strong> fatura</td><td>\u0130hracat:</td><td><strong>' + (o.ihracatSayisi || 0) + '</strong></td></tr></table></div>';
@@ -5559,6 +5560,22 @@ window._epKapakPDF = function() {
   h += '</div><div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Eden<br>Ad Soyad / TC / \u0130mza / Tarih Saat</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Alan<br>Ad Soyad / TC / \u0130mza / Tarih Saat</div></div></div></div></body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
   window.logActivity?.('export', 'Kapak PDF \u2014 ' + ay);
+};
+
+window._epZarfEtiketiPDF = function() {
+  var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  var o = window._epOzetVeri || {};
+  var hazirlayan = typeof window._epHazirlayan === 'function' ? window._epHazirlayan() : '';
+  var h = '<html><head><meta charset="UTF-8"><style>@page{size:A4;margin:30mm}body{font-family:Arial,sans-serif;margin:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh}.zarf{border:2px solid #185FA5;border-radius:8px;padding:30px 40px;width:400px;text-align:center}.logo{font-size:20pt;font-weight:700;color:#185FA5;letter-spacing:3px;margin-bottom:4px}.alt{font-size:8pt;color:#666;letter-spacing:1px;margin-bottom:20px}.donem{font-size:14pt;font-weight:700;color:#111;margin-bottom:8px}.icerik{font-size:10pt;color:#333;margin-bottom:16px;line-height:1.6}.adres{font-size:8pt;color:#888;border-top:0.5px solid #ddd;padding-top:12px;margin-top:12px}</style></head><body>';
+  h += '<div class="zarf"><div class="logo">DUAY</div><div class="alt">ULUSLARARASI T\u0130CARET LTD. \u015eT\u0130.</div>';
+  h += '<div class="donem">' + ay + '</div>';
+  h += '<div class="icerik">MUHASEBE EVRAK DOSYASI<br>';
+  h += 'Al\u0131\u015f: <strong>' + (o.alisSayisi || 0) + '</strong> \u00b7 Sat\u0131\u015f: <strong>' + (o.satisSayisi || 0) + '</strong> \u00b7 \u0130hracat: <strong>' + (o.ihracatSayisi || 0) + '</strong></div>';
+  h += '<div style="font-size:9pt;color:#555">Haz\u0131rlayan: ' + hazirlayan + '</div>';
+  h += '<div class="adres">Karadolap Mh. Ne\u015feli Sk. 1/5 Ey\u00fcpsultan \u0130stanbul<br>Tel: +90 212 625 5 444</div>';
+  h += '</div></body></html>';
+  var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window.logActivity?.('export', 'Zarf Etiketi PDF \u2014 ' + ay);
 };
 
 /* \u2500\u2500 EVRAK-PAKET-004: Yard\u0131mc\u0131lar \u2500\u2500 */
