@@ -1947,7 +1947,7 @@ function _listenCollection(collection, localKey, onUpdate) {
         merged = Array.isArray(fsData) ? fsData : fsData;
       } else if (_rtAppendOnly.indexOf(collection) !== -1) {
         // Append-only: ID bazlı birleştir, hiçbir kayıt silinmez
-        var _localArr = _read(localKey) || [];
+        var _localArr = Array.isArray(_read(localKey)) ? _read(localKey) : [];
         var _fsArr = Array.isArray(fsData) ? fsData : [];
         var _appendMap = {};
         _localArr.forEach(function(r){ if(r && r.id) _appendMap[r.id] = r; });
