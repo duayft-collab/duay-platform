@@ -1503,7 +1503,7 @@ function storeTahsilat(d) {
 /** @param {Array<Object>} d */ function storeSatinalma(d) { _write(KEYS.satinalma, d);
   var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
 }
-/** @returns {Array<Object>} */ function loadCari() { const d = _read(KEYS.cari); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
+/** @returns {Array<Object>} @param {Object} [opts] tumKullanicilar */ function loadCari(opts) { var d = _read(KEYS.cari); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
 /** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;});
   var tumCari = _read(KEYS.cari) || [];
   d.forEach(function(yeni) {

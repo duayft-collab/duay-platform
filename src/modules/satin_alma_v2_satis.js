@@ -22,7 +22,7 @@ window._saV2TeklifOlustur = function(id) {
   var _duayKodu = (t.urunler && t.urunler.length) ? (_u0.duayKodu || '') : (t.duayKodu || '');
   var musteriKod = '0000';
   var satisId = window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now());
-  var musteriList = (typeof window.loadCari === 'function' ? window.loadCari() : []).filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.cariType==='onayli');});
+  var musteriList = (typeof window.loadCari === 'function' ? window.loadCari({tumKullanicilar:true}) : []).filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='M\u00fc\u015fteri'||c.cariType==='onayli'||c.tip==='musteri');});
   var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:960px;max-height:92vh;display:flex;flex-direction:column">';
 
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
