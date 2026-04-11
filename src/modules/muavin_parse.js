@@ -645,12 +645,16 @@ window._mvNormalize = {
   },
   sirkettenNormalize: function(satirlar, kurTablosu) {
     var self = window._mvNormalize;
-    return satirlar.filter(function(s) { return s.tarih && (s.borcMeblag || s.alacakMeblag); }).map(function(s) {
+    return satirlar.filter(function(s) { return s.tarih && (s.borcMeblagh || s.alacakMeblagh || s.borcMeblag || s.alacakMeblag); }).map(function(s) {
       var fatNo = s.faturaSira || self.faturaNoAyikla(s.aciklama);
-      var borcUSD = self.tutarNormalize(s.borcDovizCinsi === 'USD' ? s.borcMeblag : 0);
-      var alacakUSD = self.tutarNormalize(s.alacakDovizCinsi === 'USD' ? s.alacakMeblag : 0);
-      var borcTL = self.tutarNormalize(s.borcDovizCinsi === 'TL' ? s.borcMeblag : 0);
-      var alacakTL = self.tutarNormalize(s.alacakDovizCinsi === 'TL' ? s.alacakMeblag : 0);
+      var _bMeb = s.borcMeblagh || s.borcMeblag || 0;
+      var _aMeb = s.alacakMeblagh || s.alacakMeblag || 0;
+      var _bDov = s.borcDoviz || s.borcDovizCinsi || '';
+      var _aDov = s.alacakDoviz || s.alacakDovizCinsi || '';
+      var borcUSD = self.tutarNormalize(_bDov === 'USD' ? _bMeb : 0);
+      var alacakUSD = self.tutarNormalize(_aDov === 'USD' ? _aMeb : 0);
+      var borcTL = self.tutarNormalize(_bDov === 'TL' || _bDov === 'TRY' ? _bMeb : 0);
+      var alacakTL = self.tutarNormalize(_aDov === 'TL' || _aDov === 'TRY' ? _aMeb : 0);
       var kur = kurTablosu && s.tarih ? kurTablosu[self.tarihNormalize(s.tarih)] || kurTablosu['varsayilan'] || 44.55 : 44.55;
       var netUSD = borcUSD - alacakUSD;
       var netTL = borcTL - alacakTL + (netUSD * kur);
