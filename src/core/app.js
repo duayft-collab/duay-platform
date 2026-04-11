@@ -3556,50 +3556,50 @@ window._initNsecHover = function() {
 
 // ── TOP NAV v2 — Grup/Modül routing ─────────────────────────
 var _TN2_GROUPS = {
-  dashboard: { label:'Dashboard', mods: [
-    { id:'dashboard', label:'Dashboard' },
+  dashboard: { label:'Kokpit', mods: [
+    { id:'dashboard', label:'Kokpit' },
   ]},
   satis: { label:'Satış', mods: [
-    { id:'crm',              label:'CRM'              },
-    { id:'satis-teklifleri', label:'Satış Teklifleri' },
-    { id:'cari',             label:'Cariler'          },
+    { id:'crm',              label:'Müşteri İlişkileri' },
+    { id:'satis-teklifleri', label:'Proforma Teklifler' },
+    { id:'cari',             label:'Cari Hesaplar'      },
   ]},
-  satinalma: { label:'Satınalma', mods: [
+  satinalma: { label:'Satın Alma', mods: [
     { id:'satinalma',       label:'İş Takibi'       },
-    { id:'alis-teklifleri', label:'Alış Teklifleri', _kullanilamaz:true },
+    { id:'alis-teklifleri', label:'Tedarik Teklifleri', _kullanilamaz:true },
     { id:'ihracat-ops',     label:'İhracat Ops'     },
     { id:'urunler',         label:'Ürün Kataloğu'   },
     { id:'sa-urun-liste',  label:'Ürün Fiyat Listesi', _kullanilamaz:true, fn: function() { window._saUrunListeAc?.(); } },
-    { id:'numune',          label:'Numune Arşivi', _kullanilamaz:true },
+    { id:'numune',          label:'Numune Takibi', _kullanilamaz:true },
   ]},
   lojistik: { label:'Lojistik', mods: [
-    { id:'kargo',           label:'Kargo'           },
-    { id:'lojistik',        label:'Lojistik Merkezi'},
+    { id:'kargo',           label:'Kargo Takibi'    },
+    { id:'lojistik',        label:'Sevkiyat Merkezi'},
   ]},
   operasyon: { label:'Operasyon', mods: [
-    { id:'evrak',     label:'Evrak'            },
-    { id:'temizlik',  label:'Temizlik Kontrol' },
-    { id:'arsiv-hub', label:'Arşiv'            },
+    { id:'evrak',     label:'Evrak Yönetimi'   },
+    { id:'temizlik',  label:'Saha Kontrol'     },
+    { id:'arsiv-hub', label:'Belge Arşivi'     },
   ]},
   muhasebe: { label:'Muhasebe', mods: [
     { id:'odemeler',     label:'Nakit Akışı'  },
-    { id:'hesap-ozeti',  label:'Hesap Özeti'  },
-    { id:'finans',       label:'Finans Paneli' },
+    { id:'hesap-ozeti',  label:'Bilanço Özeti' },
+    { id:'finans',       label:'Finansal Göstergeler' },
     { id:'pirim',        label:'Prim'          },
-    { id:'kpi-panel',    label:'KPI'           },    { id:'muavin',       label:'Muavin Defter' },
+    { id:'kpi-panel',    label:'KPI'           },    { id:'muavin',       label:'Muavin Defteri' },
   ]},
-  ik: { label:'İK', mods: [
-    { id:'ik-hub',  label:'İK Merkezi'      },
-    { id:'izin',    label:'İzin Takibi'     },
-    { id:'puantaj', label:'Puantaj'         },
+  ik: { label:'İnsan Kaynakları', mods: [
+    { id:'ik-hub',  label:'Personel Yönetimi' },
+    { id:'izin',    label:'İzin Yönetimi'     },
+    { id:'puantaj', label:'Mesai Takibi'      },
     { id:'formlar', label:'Form Şablonları' },
   ]},
   sistem: { label:'Sistem', mods: [
-    { id:'admin',          label:'Kullanıcılar'       },
-    { id:'settings',       label:'Ayarlar'            },
+    { id:'admin',          label:'Kullanıcı Yönetimi' },
+    { id:'settings',       label:'Platform Ayarları' },
     { id:'alarm',          label:'Alarmlar'           },
     { id:'sistem-testler', label:'Sistem Testleri'    },
-    { id:'platform-rules', label:'Platform Kuralları' },
+    { id:'platform-rules', label:'Sistem Kuralları' },
   ]},
 };
 window._TN2_GROUPS = _TN2_GROUPS;

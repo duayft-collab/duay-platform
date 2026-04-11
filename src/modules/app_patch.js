@@ -621,8 +621,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'links',     label:'Hızlı Linkler'        },
     { id:'satinalma', label:'Satın Alma'           },
     { id:'urunler',   label:'Ürün Kataloğu'        },
-    { id:'alis-teklifleri', label:'Alış Teklifleri' },
-    { id:'satis-teklifleri',label:'Satış Teklifleri'},
+    { id:'alis-teklifleri', label:'Tedarik Teklifleri' },
+    { id:'satis-teklifleri',label:'Proforma Teklifler'},
     { id:'cari',      label:'Cari Yönetimi'        },
   ];
 
