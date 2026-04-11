@@ -41,7 +41,7 @@ window._saV2TeklifOlustur = function(id) {
     ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\''+d+'\';window._saV2PIOnizlemeGuncelle()" class="pi-tas-btn" style="font-size:9px;padding:2px 10px;border:0.5px solid var(--b);border-radius:4px;background:'+(ak?'var(--t)':'transparent')+';color:'+(ak?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">'+d+'</button>';
   });
   ic += '<div style="width:0.5px;height:16px;background:var(--b)"></div>';
-  ['EN','CN','AR','RU'].forEach(function(d){
+  ['EN','AR'].forEach(function(d){
     var ak=(window._saV2AktifPIDil||'EN')===d;
     ic += '<button onclick="event.stopPropagation();window._saV2AktifPIDil=\''+d+'\';window._saV2PIOnizlemeGuncelle()" class="pi-dil-btn" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:'+(ak?'var(--bm)':'transparent')+';cursor:pointer;font-family:inherit">'+d+'</button>';
   });
