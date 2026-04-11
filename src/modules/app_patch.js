@@ -5005,10 +5005,17 @@ window.renderPlatformKurallari = function() {
     {id:'K17',kat:'Veri',baslik:'Zorunlu Alan Import',aciklama:'Zorunlu alanlar eksik kayıtlar import edilemez.',durum:'aktif'},
     {id:'D10',kat:'UI',baslik:'Tek Render',aciklama:'Aynı element üzerinde çift render yasaktır.',durum:'aktif'},
     {id:'D13',kat:'Mimari',baslik:'Modül State İzolasyonu',aciklama:'Her modül kendi state\'ini yönetir, başka modülün state\'ine dokunmaz.',durum:'aktif'},
-    {id:'GK-01',kat:'Güvenlik',baslik:'XSS Koruması',aciklama:'Tüm kullanıcı girdileri _esc() ile sanitize edilir.',durum:'aktif'},
-    {id:'GK-08',kat:'RBAC',baslik:'Yetkisiz Menü Gizleme',aciklama:'Kullanıcı yetkisi olmayan menü grupları sidebar\'da görünmez.',durum:'aktif'},
-    {id:'GK-19',kat:'UX',baslik:'Dropdown Hover',aciklama:'Sidebar grup hover davranışı tutarlı çalışmalı.',durum:'aktif'},
-    {id:'GK-19-ALL',kat:'Açık',baslik:'Bekleyen Görevler',aciklama:'Oturum dokümanı template hazırlanacak.',durum:'bekliyor'}
+    {id:'STD01',kat:'Veri',baslik:'Soft Delete',aciklama:'isDeleted + deletedAt + deletedBy pattern',oncelik:'kritik',durum:'aktif'},
+    {id:'STD02',kat:'G\u00fcvenlik',baslik:'XSS Korumas\u0131',aciklama:'T\u00fcm kullan\u0131c\u0131 \u00e7\u0131kt\u0131s\u0131 _esc() ile escape',oncelik:'kritik',durum:'aktif'},
+    {id:'STD03',kat:'Veri',baslik:'ID \u00dcretimi',aciklama:'generateId() zorunlu, Date.now() yasak',oncelik:'yuksek',durum:'aktif'},
+    {id:'STD04',kat:'UX',baslik:'confirmModal',aciklama:'T\u00fcm silme i\u015flemleri confirmModal kullan\u0131r',oncelik:'yuksek',durum:'aktif'},
+    {id:'STD05',kat:'Safari',baslik:'stopPropagation',aciklama:'T\u00fcm onclick stopPropagation i\u00e7ermeli',oncelik:'yuksek',durum:'aktif'},
+    {id:'STD06',kat:'Veri',baslik:'Zaman Damgas\u0131',aciklama:'createdAt + updatedAt t\u00fcm kay\u0131tlarda zorunlu',oncelik:'yuksek',durum:'aktif'},
+    {id:'STD07',kat:'UI',baslik:'Peek Panel',aciklama:'Her liste sat\u0131r\u0131nda peek panel zorunlu',oncelik:'orta',durum:'aktif'},
+    {id:'STD08',kat:'G\u00fcvenlik',baslik:'5MB Limit',aciklama:'Dosya boyutu 5MB ile s\u0131n\u0131rl\u0131',oncelik:'orta',durum:'aktif'},
+    {id:'GK-08',kat:'RBAC',baslik:'Yetkisiz Men\u00fc Gizleme',aciklama:'Kullan\u0131c\u0131 yetkisi olmayan men\u00fc gruplar\u0131 g\u00f6r\u00fcnmez',oncelik:'yuksek',durum:'aktif'},
+    {id:'GK-19',kat:'UX',baslik:'Dropdown Hover',aciklama:'Sidebar grup hover tutarl\u0131 \u00e7al\u0131\u015fmal\u0131',oncelik:'orta',durum:'aktif'},
+    {id:'GK-19-ALL',kat:'A\u00e7\u0131k',baslik:'Bekleyen G\u00f6revler',aciklama:'Oturum dok\u00fcman\u0131 template haz\u0131rlanacak',oncelik:'dusuk',durum:'bekliyor'}
   ];
   /* --- localStorage'dan durum override --- */
   var durumKey = 'ak_platform_kural_durum_v1';
@@ -5030,7 +5037,7 @@ window.renderPlatformKurallari = function() {
   });
   h += '</div>';
   /* --- sekmeye göre filtre --- */
-  var katMap = {genel:['Mimari','Performans','Hata'],ui:['UX','UI'],veri:['Veri'],guvenlik:['Güvenlik'],rbac:['RBAC'],acik:['Açık']};
+  var katMap = {genel:['Mimari','Performans','Hata','Do\u011frulama','Safari'],ui:['UX','UI'],veri:['Veri'],guvenlik:['G\u00fcvenlik'],rbac:['RBAC'],acik:['\u0041\u00e7\u0131k']};
   var gosteKatlar = katMap[aktifKatTab]||['Mimari'];
   var gosterKurallar = kurallar.filter(function(k){return gosteKatlar.indexOf(k.kat)!==-1;});
   /* --- kural kartları --- */
