@@ -226,45 +226,54 @@ function _mvKpiSeritHTML(kpi) {
   return h;
 }
 
-/* ── KARŞILAŞTIRMA SEKMESİ HTML ── */
+/* \u2500\u2500 KAR\u015eILA\u015eTIRMA SEKMES\u0130 HTML \u2014 Split Panel \u2500\u2500 */
 function _mvKarsilastirmaIcerikHTML(kpi, meta, donem) {
+  var firmalar = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
+  var aktifFirma = window._mvAktifFirma || (firmalar.length ? firmalar[0].ad : null);
+  window._mvAktifFirma = aktifFirma;
+  var aktif = firmalar.find(function(f) { return f.ad === aktifFirma; });
   var mMeta = (meta[donem] || {}).muhasebeci || {};
   var bMeta = (meta[donem] || {}).baran || {};
-  var h = '';
   if (!mMeta.ad || !bMeta.ad) {
-    h += '<div style="padding:40px;text-align:center">';
-    h += '<div style="font-size:13px;color:var(--t2);font-weight:500;margin-bottom:8px">İki dosya da yüklenmeli</div>';
-    h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Sol panelden Muhasebeci ve Baran Excel dosyalarını yükleyin</div>';
-    if (!mMeta.ad) h += '<div style="font-size:11px;color:#A32D2D;margin-bottom:4px">✗ Muhasebeci Excel eksik</div>';
-    if (!bMeta.ad) h += '<div style="font-size:11px;color:#A32D2D">✗ Baran Ekstresi eksik</div>';
-    h += '</div>';
-    return h;
+    var h2 = '<div style="padding:40px;text-align:center">';
+    h2 += '<div style="font-size:13px;color:var(--t2);font-weight:500;margin-bottom:8px">\u0130ki dosya da y\u00fcklenmeli</div>';
+    h2 += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Sol panelden Muhasebeci ve Baran Excel dosyalar\u0131n\u0131 y\u00fckleyin</div>';
+    if (!mMeta.ad) h2 += '<div style="font-size:11px;color:#A32D2D;margin-bottom:4px">\u2717 Muhasebeci Excel eksik</div>';
+    if (!bMeta.ad) h2 += '<div style="font-size:11px;color:#A32D2D">\u2717 Baran Ekstresi eksik</div>';
+    h2 += '</div>';
+    return h2;
   }
-  /* Dosya özet başlığı */
-  h += '<div style="display:flex;gap:12px;padding:12px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
-  h += '<div style="flex:1;border:0.5px solid #97C459;border-radius:6px;padding:8px 10px;background:#EAF3DE">';
-  h += '<div style="font-size:9px;font-weight:500;color:#27500A;text-transform:uppercase;letter-spacing:.04em">Muhasebeci Excel</div>';
-  h += '<div style="font-size:11px;font-weight:500;color:#0C3A1E;margin-top:2px">' + window._esc(mMeta.ad) + '</div>';
-  h += '<div style="font-size:10px;color:#3B6D11;margin-top:2px">' + mMeta.satir + ' işlem · ' + mMeta.tarih + ' · ' + mMeta.boyut + '</div>';
-  h += '</div>';
-  h += '<div style="display:flex;align-items:center;font-size:18px;color:var(--t3)">↔</div>';
-  h += '<div style="flex:1;border:0.5px solid #85B7EB;border-radius:6px;padding:8px 10px;background:#E6F1FB">';
-  h += '<div style="font-size:9px;font-weight:500;color:#0C447C;text-transform:uppercase;letter-spacing:.04em">Baran Ekstresi</div>';
-  h += '<div style="font-size:11px;font-weight:500;color:#042C53;margin-top:2px">' + window._esc(bMeta.ad) + '</div>';
-  h += '<div style="font-size:10px;color:#185FA5;margin-top:2px">' + bMeta.satir + ' işlem · ' + bMeta.tarih + ' · ' + bMeta.boyut + '</div>';
-  h += '</div>';
-  h += '<div style="display:flex;align-items:center">';
-  h += '<button onclick="event.stopPropagation();window._mvEslestir()" style="font-size:11px;padding:8px 16px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Karşılaştır →</button>';
-  h += '</div>';
-  h += '</div>';
-  /* Sonuç tablosu */
-  if (window._mvEslesmeSonucu) {
-    h += window._mvEslesmeSonucHTML ? window._mvEslesmeSonucHTML() : '<div style="padding:20px;text-align:center;color:var(--t3);font-size:11px">Sonuç yükleniyor...</div>';
+  var h = '<div style="display:flex;height:100%;gap:0">';
+  /* Sol: Firma listesi */
+  h += '<div style="width:240px;flex-shrink:0;border-right:0.5px solid var(--b);overflow-y:auto">';
+  h += '<div style="padding:8px 12px;font-size:9px;font-weight:500;color:var(--t3);border-bottom:0.5px solid var(--b)">' + firmalar.length + ' F\u0130RMA</div>';
+  if (!firmalar.length) {
+    h += '<div style="padding:20px;text-align:center;font-size:10px;color:var(--t3)">\u00d6nce dosya y\u00fckleyin</div>';
   } else {
-    h += '<div style="padding:40px;text-align:center;color:var(--t3);font-size:11px">Her iki dosyayı yükledikten sonra "Karşılaştır" butonuna basın</div>';
+    firmalar.forEach(function(f) {
+      var secili = f.ad === aktifFirma;
+      var renk = f.skor >= 90 ? '#0F6E56' : f.skor >= 70 ? '#854F0B' : '#A32D2D';
+      h += '<div onclick="event.stopPropagation();window._mvAktifFirma=\'' + f.ad.replace(/'/g, "\\'") + '\';window._mvKarsilastirmaYenile()" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:0.5px solid var(--b);cursor:pointer;background:' + (secili ? '#E6F1FB' : 'transparent') + ';border-left:' + (secili ? '2px solid #185FA5' : '2px solid transparent') + '">';
+      h += '<div style="font-size:10px;font-weight:' + (secili ? '500' : '400') + ';color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">' + window._esc(f.ad) + '</div>';
+      h += '<div style="font-size:10px;font-weight:500;color:' + renk + '">%' + f.skor + '</div></div>';
+    });
   }
+  h += '</div>';
+  /* Sa\u011f: Detay */
+  h += '<div style="flex:1;overflow-y:auto">';
+  h += typeof window._mvFirmaKarsilastirHTML === 'function' ? window._mvFirmaKarsilastirHTML(aktif) : '<div style="padding:40px;text-align:center;color:var(--t3)">Firma se\u00e7in</div>';
+  h += '</div></div>';
   return h;
 }
+
+window._mvKarsilastirmaYenile = function() {
+  var sagEl = document.querySelector('#mv-icerik .mv-sag-icerik') || document.getElementById('mv-icerik');
+  if (!sagEl) { window.renderMuavin?.(); return; }
+  var kpi = typeof _mvKpiHesapla === 'function' ? _mvKpiHesapla(window._mvSonIslemler || [], window._mvSonIslemlerB || []) : {};
+  var meta = typeof _mvMetaLoad === 'function' ? _mvMetaLoad() : {};
+  var donem = typeof _mvAktifDonem === 'function' ? _mvAktifDonem() : '';
+  window.renderMuavin?.();
+};
 
 /* ── MUHASEBE İŞLEMLER SEKMESİ ── */
 function _mvMuhasebeIcerikHTML(islemlerM) {
