@@ -4664,6 +4664,23 @@ window._renderEntegrasyonlar = function() {
   h += '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="event.stopPropagation();window._ayarSartlariKaydet()" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>';
   h += '<button onclick="event.stopPropagation();window._ayarSartlariSifirla()" style="font-size:10px;padding:6px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">Varsay\u0131lana D\u00f6n</button></div>';
   h += '</div>';
+  /* AYARLAR-LOGO-001: Şirket Logosu kartı */
+  var _logoMevcut = '';
+  try { _logoMevcut = localStorage.getItem('ak_company_logo') || ''; } catch(e) {}
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
+  h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:4px">\u015eirket Logosu</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-bottom:10px">PI ve fatura PDF\'lerinde kullan\u0131l\u0131r. SVG / PNG / JPG \u00b7 Maks 500KB</div>';
+  h += '<div style="display:flex;align-items:center;gap:12px">';
+  h += '<div id="ayar-logo-onizleme" style="width:80px;height:80px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">';
+  if (_logoMevcut) h += '<img src="'+_logoMevcut+'" style="max-width:100%;max-height:100%;object-fit:contain">';
+  else h += '<span style="font-size:9px;color:var(--t3);text-align:center">Logo\nyok</span>';
+  h += '</div>';
+  h += '<div style="flex:1">';
+  h += '<input type="file" id="ayar-logo-input" accept="image/svg+xml,image/png,image/jpeg" onchange="event.stopPropagation();window._ayarLogoYukle(this)" style="font-size:10px;width:100%;margin-bottom:6px">';
+  h += '<div style="display:flex;gap:6px">';
+  h += '<button onclick="event.stopPropagation();window._ayarLogoSil()" style="font-size:10px;padding:6px 12px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#A32D2D">Logoyu Sil</button>';
+  h += '<span id="ayar-logo-durum" style="font-size:10px;color:'+(_logoMevcut?'#16A34A':'#D97706')+';font-weight:500;align-self:center">'+(_logoMevcut?'Y\u00fckl\u00fc \u2713':'Logo y\u00fcklenmedi')+'</span>';
+  h += '</div></div></div></div>';
   h += '</div>';
   panel.innerHTML = h;
   setTimeout(function(){window._ayarSartlariYukle?.();},50);
@@ -4708,6 +4725,47 @@ window._ayarSartlariSifirla = function() {
   window._saV2SartlarKaydet?.([]);
   window._ayarSartlariYukle?.();
   window.toast?.('Varsay\u0131lana d\u00f6nd\u00fcr\u00fcld\u00fc','ok');
+};
+
+/* AYARLAR-LOGO-001: Şirket logosu helper'ları */
+window._ayarLogoYukle = function(input) {
+  var f = input?.files?.[0];
+  if (!f) return;
+  if (f.size > 500 * 1024) { window.toast?.('Logo 500KB\'\u0131 a\u015famaz', 'warn'); input.value = ''; return; }
+  if (!/^image\/(svg\+xml|png|jpeg|jpg)$/.test(f.type)) { window.toast?.('Sadece SVG, PNG, JPG kabul edilir', 'warn'); input.value = ''; return; }
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      localStorage.setItem('ak_company_logo', e.target.result);
+      var oniz = document.getElementById('ayar-logo-onizleme');
+      if (oniz) oniz.innerHTML = '<img src="'+e.target.result+'" style="max-width:100%;max-height:100%;object-fit:contain">';
+      var durum = document.getElementById('ayar-logo-durum');
+      if (durum) { durum.textContent = 'Y\u00fckl\u00fc \u2713'; durum.style.color = '#16A34A'; }
+      window.toast?.('Logo kaydedildi', 'ok');
+      window.logActivity?.('edit', '\u015eirket logosu y\u00fcklendi: ' + f.name);
+    } catch(err) {
+      window.toast?.('Logo kaydedilemedi: ' + err.message, 'err');
+    }
+  };
+  r.onerror = function() { window.toast?.('Dosya okunamad\u0131', 'err'); };
+  r.readAsDataURL(f);
+};
+
+window._ayarLogoSil = function() {
+  if (!confirm('Logo silinsin mi?')) return;
+  try { localStorage.removeItem('ak_company_logo'); } catch(e) {}
+  var oniz = document.getElementById('ayar-logo-onizleme');
+  if (oniz) oniz.innerHTML = '<span style="font-size:9px;color:var(--t3);text-align:center">Logo\nyok</span>';
+  var durum = document.getElementById('ayar-logo-durum');
+  if (durum) { durum.textContent = 'Logo y\u00fcklenmedi'; durum.style.color = '#D97706'; }
+  var inp = document.getElementById('ayar-logo-input');
+  if (inp) inp.value = '';
+  window.toast?.('Logo silindi', 'ok');
+  window.logActivity?.('delete', '\u015eirket logosu silindi');
+};
+
+window._loadLogo = function() {
+  try { return localStorage.getItem('ak_company_logo') || ''; } catch(e) { return ''; }
 };
 
 window._ayarSartlariYukle = function() {
