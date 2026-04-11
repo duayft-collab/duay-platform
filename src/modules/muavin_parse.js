@@ -589,5 +589,75 @@ window._mvHataKategoriHTML = function() {
   return h;
 };
 
-console.log('[MUAVIN-PARSE] yüklendi');
+/* ── MUAVIN-NORMALIZE-001: Ortak Form Normalize Engine ──────── */
+window._mvNormalize = {
+  faturaNoRegex: /BAT\d{10,16}|[A-Z]{2,5}\d{8,16}/g,
+  faturaNoAyikla: function(metin) {
+    if (!metin) return null;
+    var eslesmeler = String(metin).match(window._mvNormalize.faturaNoRegex);
+    return eslesmeler ? eslesmeler[0] : null;
+  },
+  tarihNormalize: function(t) {
+    if (!t) return null;
+    if (t instanceof Date) return t.toISOString().slice(0, 10);
+    var s = String(t).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    var m = s.match(/(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})/);
+    if (m) { var g = m[1].padStart(2, '0'), ay = m[2].padStart(2, '0'), y = m[3].length === 2 ? '20' + m[3] : m[3]; return y + '-' + ay + '-' + g; }
+    return null;
+  },
+  tutarNormalize: function(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    var s = String(v).replace(/[^\d\.,\-]/g, '').replace(',', '.');
+    return parseFloat(s) || 0;
+  },
+  muhasebecdenNormalize: function(satirlar, firmaAdi) {
+    var self = window._mvNormalize;
+    return satirlar.filter(function(s) { return s.tarih && (s.borc || s.alacak); }).map(function(s) {
+      var fatNo = self.faturaNoAyikla(s.aciklama);
+      var tutar = self.tutarNormalize(s.borc || 0) - self.tutarNormalize(s.alacak || 0);
+      return { kaynak: 'muhasebeci', firma: firmaAdi || s.firma || '', faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', ham: s };
+    });
+  },
+  sirkettenNormalize: function(satirlar, kurTablosu) {
+    var self = window._mvNormalize;
+    return satirlar.filter(function(s) { return s.tarih && (s.borcMeblag || s.alacakMeblag); }).map(function(s) {
+      var fatNo = s.faturaSira || self.faturaNoAyikla(s.aciklama);
+      var borcUSD = self.tutarNormalize(s.borcDovizCinsi === 'USD' ? s.borcMeblag : 0);
+      var alacakUSD = self.tutarNormalize(s.alacakDovizCinsi === 'USD' ? s.alacakMeblag : 0);
+      var borcTL = self.tutarNormalize(s.borcDovizCinsi === 'TL' ? s.borcMeblag : 0);
+      var alacakTL = self.tutarNormalize(s.alacakDovizCinsi === 'TL' ? s.alacakMeblag : 0);
+      var kur = kurTablosu && s.tarih ? kurTablosu[self.tarihNormalize(s.tarih)] || kurTablosu['varsayilan'] || 44.55 : 44.55;
+      var netUSD = borcUSD - alacakUSD;
+      var netTL = borcTL - alacakTL + (netUSD * kur);
+      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama), faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, ham: s };
+    });
+  },
+  firmaAdiAyikla: function(aciklama) {
+    if (!aciklama) return '';
+    var s = String(aciklama);
+    var patterns = [/HVL-([^-]+)-/, /SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]+?)(?:\s+(?:V\.NO|TCKN|VKN|A\.\u015e|LTD))/i, /([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc\s]{5,}(?:A\.\u015e\.|LTD\.|A\.S\.))/];
+    for (var i = 0; i < patterns.length; i++) { var m = s.match(patterns[i]); if (m && m[1]) return m[1].trim(); }
+    return '';
+  },
+  karsilastir: function(muhasebeci, sirket, esikTL) {
+    esikTL = esikTL || 1;
+    var map = {};
+    muhasebeci.forEach(function(r) { var k = r.faturaNo || r.tarih + '_' + r.tutarTL; map[k] = map[k] || { muhasebeci: null, sirket: null }; map[k].muhasebeci = r; });
+    sirket.forEach(function(r) { var k = r.faturaNo || r.tarih + '_' + r.tutarTL; map[k] = map[k] || { muhasebeci: null, sirket: null }; map[k].sirket = r; });
+    return Object.values(map).map(function(cift) {
+      var m = cift.muhasebeci, s = cift.sirket;
+      if (m && s) { var fark = Math.abs((m.tutarTL || 0) - (s.tutarTL || 0)); return { durum: fark <= esikTL ? 'mutabik' : 'fark', farkTL: fark, muhasebeci: m, sirket: s }; }
+      else if (m) { return { durum: 'sadece_muhasebeci', farkTL: m.tutarTL || 0, muhasebeci: m, sirket: null }; }
+      else { return { durum: 'sadece_sirket', farkTL: s.tutarTL || 0, muhasebeci: null, sirket: s }; }
+    });
+  },
+  mutabakatSkoru: function(sonuclar) {
+    if (!sonuclar.length) return 0;
+    var mutabik = sonuclar.filter(function(r) { return r.durum === 'mutabik'; }).length;
+    return Math.round((mutabik / sonuclar.length) * 100);
+  }
+};
+
+console.log('[MUAVIN-PARSE] y\u00fcklendi');
 
