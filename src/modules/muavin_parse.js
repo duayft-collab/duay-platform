@@ -704,7 +704,9 @@ window._mvFirmaKarsilastirHTML = function(firma) {
   var h = '<div style="padding:16px">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
   h += '<div style="font-size:14px;font-weight:500">' + esc(firma.ad) + '</div>';
-  h += '<div style="font-size:24px;font-weight:700;color:' + renk + '">%' + firma.skor + '</div></div>';
+  h += '<div style="display:flex;align-items:center;gap:8px"><div style="font-size:24px;font-weight:700;color:' + renk + '">%' + firma.skor + '</div>';
+  h += '<button onclick="event.stopPropagation();window._mvMutabakatMektubu?.(\'' + esc(firma.ad).replace(/'/g, "\\'") + '\')" style="font-size:9px;padding:4px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u2399 Mektup PDF</button>';
+  h += '</div></div>';
   h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">';
   h += '<div style="background:var(--s2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">TOPLAM</div><div style="font-size:18px;font-weight:500">' + firma.toplam + '</div></div>';
   h += '<div style="background:#E1F5EE;border-radius:6px;padding:8px;text-align:center"><div style="font-size:9px;color:#085041">MUTABIK</div><div style="font-size:18px;font-weight:500;color:#0F6E56">' + (firma.toplam - firma.fark) + '</div></div>';
