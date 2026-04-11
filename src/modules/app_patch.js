@@ -5211,69 +5211,58 @@ window.renderSatinAlmaSiparis = function() {
   panel.innerHTML = h;
 };
 
-/* \u2500\u2500 MUHASEBE-RUTIN-001: Evrak Paketi + KDV \u0130adesi + Periyodik Kontrol \u2500\u2500 */
+/* \u2500\u2500 EVRAK-PAKET-UI-001: Mockup birebir \u2014 5 ad\u0131m sol panel + sa\u011f \u00f6zet \u2500\u2500 */
 window.renderEvrakPaketi = function() {
   var panel = document.getElementById('panel-evrak-paketi'); if (!panel) return;
-  var aylar = ['Ocak','\u015eubat','Mart','Nisan','May\u0131s','Haziran','Temmuz','A\u011fustos','Eyl\u00fcl','Ekim','Kas\u0131m','Aral\u0131k'];
-  var buAy = new Date().getMonth();
-  var durum = JSON.parse(localStorage.getItem('ak_evrak_paketi') || '{}');
-  var checklist = ['Faturalar (al\u0131\u015f+sat\u0131\u015f)','Banka ekstresi','Kasa defteri','BA-BS formu','E-defter beyan','SGK bildirge','Muhtasar beyanname','KDV beyanname','Gelen \u00e7ekler','G\u00f6nderilen \u00e7ekler','Senet listesi','Kira \u00f6deme makbuzu'];
-  var h = '<div style="padding:16px"><div style="font-size:16px;font-weight:500;margin-bottom:4px">Evrak Paketi</div>';
-  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Ayl\u0131k muhasebe evrak kontrol listesi</div>';
-  h += '<div style="display:flex;gap:4px;margin-bottom:16px;overflow-x:auto">';
-  var _varsAy = window._epAktifAy != null ? window._epAktifAy : (buAy > 0 ? buAy - 1 : 11);
-  aylar.forEach(function(a, i) { var ak = i === _varsAy; h += '<button onclick="event.stopPropagation();window._epAktifAy=' + i + ';window.renderEvrakPaketi()" style="font-size:10px;padding:4px 10px;border:0.5px solid ' + (ak ? 'var(--t)' : 'var(--b)') + ';border-radius:4px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + a + '</button>'; });
-  h += '</div>';
-  var aktifAy = window._epAktifAy != null ? window._epAktifAy : (buAy > 0 ? buAy - 1 : 11);
-  var ayKey = new Date().getFullYear() + '-' + String(aktifAy + 1).padStart(2, '0');
-  var ayDurum = durum[ayKey] || {};
-  var tamamSay = checklist.filter(function(c) { return ayDurum[c]; }).length;
-  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">' + tamamSay + '/' + checklist.length + ' tamamland\u0131</div>';
-  h += '<div style="height:4px;background:var(--b);border-radius:2px;margin-bottom:12px"><div style="height:4px;border-radius:2px;background:#0F6E56;width:' + Math.round(tamamSay / checklist.length * 100) + '%"></div></div>';
-  checklist.forEach(function(c) {
-    var bitti = ayDurum[c] || false;
-    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--b)">';
-    h += '<input type="checkbox" ' + (bitti ? 'checked' : '') + ' onchange="event.stopPropagation();var d=JSON.parse(localStorage.getItem(\'ak_evrak_paketi\')||\'{}\')||{};if(!d[\'' + ayKey + '\'])d[\'' + ayKey + '\']={};d[\'' + ayKey + '\'][\'' + c.replace(/'/g, "\\'") + '\']=this.checked;localStorage.setItem(\'ak_evrak_paketi\',JSON.stringify(d));window.renderEvrakPaketi()" style="accent-color:#0F6E56">';
-    h += '<span style="font-size:11px;color:' + (bitti ? 'var(--t3)' : 'var(--t)') + ';' + (bitti ? 'text-decoration:line-through' : '') + '">' + c + '</span></div>';
-  });
-  h += '<div style="margin-top:16px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
-  h += '<div style="padding:8px 12px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;font-weight:500;color:var(--t)">Excel Dosyalar\u0131 Y\u00fckle</div>';
-  h += '<div style="padding:12px;display:flex;flex-direction:column;gap:10px">';
-  h += '<div><div style="font-size:9px;color:var(--t3);margin-bottom:4px">Al\u0131\u015f Faturalar\u0131 (Para\u015f\u00fct Export)</div><input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epAlisYukle?.(this)" style="font-size:10px;width:100%"></div>';
-  h += '<div><div style="font-size:9px;color:var(--t3);margin-bottom:4px">Sat\u0131\u015f Faturalar\u0131 (Para\u015f\u00fct Export)</div><input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epSatisYukle?.(this)" style="font-size:10px;width:100%"></div>';
-  h += '<div id="ep-ozet" style="display:none;background:#E1F5EE;border-radius:6px;padding:10px;font-size:10px"></div>';
-  h += '<div id="ep-pdf-butonlar" style="display:none;display:flex;gap:6px;flex-wrap:wrap">';
-  h += '<button onclick="event.stopPropagation();window._epAlisfaturaPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Al\u0131\u015f PDF</button>';
-  h += '<button onclick="event.stopPropagation();window._epSatisfaturaPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Sat\u0131\u015f PDF</button>';
-  h += '<button onclick="event.stopPropagation();window._epKdvIadePDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">KDV \u0130ade PDF</button>';
-  h += '<button onclick="event.stopPropagation();window._epCheckListPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Check List PDF</button>';
-  h += '<button onclick="event.stopPropagation();window._epKapakPDF?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kapak PDF</button>';
-  h += '<button onclick="event.stopPropagation();window._epZarfEtiketiPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Zarf Etiketi</button>';
-  h += '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#0F6E56;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>';
-  h += '</div>';
-  h += '<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><div style="font-size:9px;color:var(--t3)">Haz\u0131rlayan:</div><input id="ep-hazirlayan" value="' + (window.CU?.()?.displayName || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
-  h += '<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
-  h += '<div style="font-size:10px;color:var(--t3)">' + tamamSay + '/' + checklist.length + ' kontrol tamamland\u0131</div>';
-  h += '<button onclick="event.stopPropagation();window._epTamamlandi?.()" style="font-size:11px;padding:7px 20px;border:none;border-radius:6px;background:' + (tamamSay === checklist.length ? '#0F6E56' : 'var(--b)') + ';color:' + (tamamSay === checklist.length ? '#fff' : 'var(--t3)') + ';cursor:pointer;font-family:inherit;font-weight:500">' + (tamamSay === checklist.length ? '\u2713 D\u00f6nemi Kapat' : 'T\u00fcm kontrolleri tamamlay\u0131n') + '</button>';
-  h += '</div>';
-  h += '</div></div>';
-  h += '<div style="margin-top:16px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
-  h += '<div style="padding:8px 12px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;font-weight:500">Evrak Teslim Onay\u0131</div>';
-  h += '<div style="padding:12px;display:flex;flex-direction:column;gap:8px">';
-  h += '<div style="font-size:9px;color:var(--t3)">A\u015fa\u011f\u0131daki kontroller yap\u0131lmadan \u0130\u015fi Tamamla butonu aktif olmaz:</div>';
-  var _epKontroller = [
-    { id: 'ep-kontrol-alis', lbl: 'Al\u0131\u015f faturalar\u0131 listesi ile faturalar kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131 (fatura no, firma ad\u0131, ihracat ID tiklendi)' },
-    { id: 'ep-kontrol-satis', lbl: 'Sat\u0131\u015f faturalar\u0131 listesi ile faturalar kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131' },
-    { id: 'ep-kontrol-kdv', lbl: 'KDV iade raporu kontrol edildi' },
-    { id: 'ep-kontrol-gib', lbl: 'GIB sisteminden tebligatlar kontrol edildi' },
-    { id: 'ep-kontrol-kapak', lbl: 'Kapak sayfas\u0131 dolduruldu ve imzaland\u0131' }
+  var o = window._epOzetVeri || {};
+  var ay = (function() { var d = new Date(); d.setMonth(d.getMonth() - 1); return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); })();
+  var kontroller = ['ep-k1', 'ep-k2', 'ep-k3', 'ep-k4', 'ep-k5'];
+  var tamamlandi = kontroller.filter(function(k) { return localStorage.getItem(k); }).length;
+  var h = '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden;background:var(--sf)">';
+  h += '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">';
+  h += '<div><div style="font-size:15px;font-weight:500;color:var(--t)">Evrak Paketi</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Muhasebeciye Ayl\u0131k Teslim \u2014 ' + ay + '</div></div>';
+  h += '<div style="font-size:9px;padding:3px 8px;border-radius:10px;background:' + (tamamlandi >= 5 ? '#E1F5EE' : '#FAEEDA') + ';color:' + (tamamlandi >= 5 ? '#085041' : '#633806') + ';font-weight:500">' + tamamlandi + '/5 Tamamland\u0131</div></div>';
+  h += '<div style="display:grid;grid-template-columns:280px 1fr;min-height:520px">';
+  /* Sol: 5 ad\u0131m */
+  h += '<div style="border-right:0.5px solid var(--b);padding:14px">';
+  h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:10px;letter-spacing:.05em">ADIMLAR</div>';
+  var adimlar = [
+    { no: 1, baslik: 'Excel Y\u00fckle', aciklama: 'Al\u0131\u015f + Sat\u0131\u015f faturalar\u0131', done: !!o.alisSayisi, icerik: o.alisSayisi ? '<div style="margin-top:6px;display:flex;gap:4px"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#E1F5EE;color:#085041">Al\u0131\u015f: ' + o.alisSayisi + '</span><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#E1F5EE;color:#085041">Sat\u0131\u015f: ' + (o.satisSayisi || 0) + '</span></div>' : '<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px"><div style="font-size:9px;color:var(--t3)">Al\u0131\u015f: <input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epAlisYukle?.(this)" style="font-size:9px"></div><div style="font-size:9px;color:var(--t3)">Sat\u0131\u015f: <input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epSatisYukle?.(this)" style="font-size:9px"></div></div>' },
+    { no: 2, baslik: 'PDF \u00dcret', aciklama: '6 belge otomatik', done: !!o.alisSayisi, icerik: '<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">' + ['Al\u0131\u015f Fatura', 'Sat\u0131\u015f Fatura', 'KDV \u0130ade', 'Check List', 'Kapak', 'Zarf'].map(function(ad) { return '<div style="font-size:9px;display:flex;justify-content:space-between"><span style="color:var(--t2)">' + ad + '</span><span style="color:' + (o.alisSayisi ? '#0F6E56' : '#854F0B') + '">' + (o.alisSayisi ? 'Haz\u0131r' : 'Bekliyor') + '</span></div>'; }).join('') + '</div>' },
+    { no: 3, baslik: 'Yazd\u0131r', aciklama: 'T\u00fcm belgeler tek komut', done: false, icerik: '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="margin-top:6px;width:100%;font-size:10px;padding:5px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>' },
+    { no: 4, baslik: 'Kontrol Et', aciklama: 'Fatura tikleme zorunlu', done: tamamlandi >= 5, icerik: '<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">' + [['ep-k1', 'Al\u0131\u015f faturalar\u0131 kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131'], ['ep-k2', 'Sat\u0131\u015f faturalar\u0131 kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131'], ['ep-k3', 'KDV iade kontrol edildi'], ['ep-k4', 'GIB tebligatlar kontrol edildi'], ['ep-k5', 'Kapak imzaland\u0131']].map(function(k) { return '<label style="display:flex;gap:5px;font-size:9px;color:var(--t2);cursor:pointer"><input type="checkbox" ' + (localStorage.getItem(k[0]) ? 'checked' : '') + ' onclick="event.stopPropagation();if(this.checked)localStorage.setItem(\'' + k[0] + '\',\'1\');else localStorage.removeItem(\'' + k[0] + '\');window.renderEvrakPaketi?.()" style="width:11px;height:11px;margin-top:1px"> ' + k[1] + '</label>'; }).join('') + '</div>' },
+    { no: 5, baslik: 'Tamamla', aciklama: 'Bildirim + KPI kayd\u0131', done: false, icerik: '<button onclick="event.stopPropagation();window._epTamamla?.()" ' + (tamamlandi < 5 ? 'disabled' : '') + ' style="margin-top:6px;width:100%;font-size:10px;padding:5px;border:none;border-radius:5px;background:' + (tamamlandi >= 5 ? '#0F6E56' : '#D3D1C7') + ';color:#fff;cursor:' + (tamamlandi >= 5 ? 'pointer' : 'not-allowed') + ';font-family:inherit">' + (tamamlandi >= 5 ? '\u2713 \u0130\u015fi Tamamla' : '\u00d6nce kontrolleri tamamla') + '</button>' }
   ];
-  _epKontroller.forEach(function(k) {
-    h += '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:10px"><input type="checkbox" id="' + k.id + '" onclick="event.stopPropagation();window._epKontrolGuncelle()" style="margin-top:2px;width:13px;height:13px"><span>' + k.lbl + '</span></label>';
+  adimlar.forEach(function(a) {
+    h += '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--b)">';
+    h += '<div style="width:22px;height:22px;border-radius:50%;background:' + (a.done ? '#0F6E56' : '#185FA5') + ';color:#fff;font-size:9px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' + (a.done ? '\u2713' : a.no) + '</div>';
+    h += '<div style="flex:1"><div style="font-size:10px;font-weight:500;color:var(--t)">' + a.baslik + '</div>';
+    h += '<div style="font-size:9px;color:var(--t3);margin-top:1px">' + a.aciklama + '</div>' + a.icerik + '</div></div>';
   });
-  h += '<button id="ep-tamamla-btn" onclick="event.stopPropagation();window._epTamamla()" disabled style="margin-top:8px;padding:10px;border:none;border-radius:6px;background:#ccc;color:#fff;font-size:11px;font-weight:500;cursor:not-allowed;font-family:inherit;width:100%">\u2713 \u0130\u015fi Tamamla</button>';
-  h += '</div></div>';
   h += '</div>';
+  /* Sa\u011f: \u00d6zet + PDF butonlar\u0131 + ge\u00e7mi\u015f */
+  h += '<div style="padding:14px">';
+  h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:10px;letter-spacing:.05em">\u00d6ZET \u2014 ' + ay.toUpperCase() + '</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">';
+  [['Al\u0131\u015f', o.alisSayisi || 0, ''], ['Sat\u0131\u015f', o.satisSayisi || 0, ''], ['KDV \u0130ade', o.alisKdv ? (o.alisKdv.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' TL') : '\u2014', '#0F6E56'], ['\u0130hracat', o.ihracatSayisi || 0, '']].forEach(function(k) {
+    h += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;border:0.5px solid var(--b);text-align:center"><div style="font-size:9px;color:var(--t3)">' + k[0] + '</div><div style="font-size:' + (k[2] ? '14' : '22') + 'px;font-weight:500;color:' + (k[2] || 'var(--t)') + '">' + k[1] + '</div></div>';
+  });
+  h += '</div>';
+  h += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
+  [['Al\u0131\u015f PDF', '_epAlisfaturaPDF'], ['Sat\u0131\u015f PDF', '_epSatisfaturaPDF'], ['KDV \u0130ade', '_epKdvIadePDF'], ['Check List', '_epCheckListPDF'], ['Kapak', '_epKapakPDF'], ['Zarf', '_epZarfEtiketiPDF']].forEach(function(b) {
+    h += '<button onclick="event.stopPropagation();window.' + b[1] + '?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">' + b[0] + '</button>';
+  });
+  h += '</div>';
+  h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:8px;letter-spacing:.05em">GE\u00c7M\u0130\u015e</div>';
+  var gecmis = [];
+  for (var gi = 0; gi < 3; gi++) { var gd = new Date(); gd.setMonth(gd.getMonth() - gi - 1); var gk = 'ak_ep_tamamlandi_' + gd.getFullYear() + '_' + gd.getMonth(); var gv = localStorage.getItem(gk); if (gv) { try { gecmis.push(JSON.parse(gv)); } catch(e) {} } }
+  h += '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px;text-align:left">D\u00f6nem</th><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px;text-align:left">Haz\u0131rlayan</th><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px;text-align:left">Tarih</th><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px">Durum</th></tr></thead><tbody>';
+  if (gecmis.length) { gecmis.forEach(function(g) { h += '<tr><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b)">' + (g.ay || '') + '</td><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b);color:var(--t2)">' + (g.hazirlayan || '') + '</td><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b);color:var(--t3)">' + (g.tarih ? new Date(g.tarih).toLocaleDateString('tr-TR') : '') + '</td><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b);text-align:center"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#E1F5EE;color:#085041">Tamamland\u0131</span></td></tr>'; }); }
+  else { h += '<tr><td colspan="4" style="font-size:10px;padding:20px;text-align:center;color:var(--t3)">Hen\u00fcz tamamlanm\u0131\u015f d\u00f6nem yok</td></tr>'; }
+  h += '</tbody></table>';
+  h += '<div style="margin-top:12px;padding:8px 10px;background:#FAEEDA;border-radius:6px;font-size:9px;color:#633806">Haz\u0131rlayan: <strong>' + (window.CU?.()?.displayName || '\u2014') + '</strong> \u00b7 Bu belge Duay Uluslararas\u0131 Ticaret Ltd. \u015eti. i\u00e7 kullan\u0131m\u0131na mahsustur.</div>';
+  h += '</div></div></div>';
   panel.innerHTML = h;
 };
 
