@@ -2324,7 +2324,7 @@ window._printSatisTeklif = function(id) {
     + '.sig-line{border-top:1px solid #333;margin-top:40px;padding-top:4px;font-size:10px}'
     + '@media print{button{display:none!important}body{padding:10mm}}</style></head><body>'
     // Header
-    + '<div class="header"><h1>DUAY GLOBAL</h1><h2>TRADE COMPANY &bull; ISTANBUL</h2><h3>PROFORMA INVOICE</h3></div>'
+    + '<div class="header"><h1>DUAY GLOBAL LLC</h1><h2>ISTANBUL &bull; T\u00dcRK\u0130YE</h2><h3>PROFORMA INVOICE</h3></div>'
     // Meta
     + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(t.teklifNo) + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + (t.gecerlilikTarihi ? t.gecerlilikTarihi : '5 working days') + '</div></div>'
     + '<div class="meta-box" style="margin-bottom:12px"><b>CUSTOMER:</b> ' + esc(t.musteri||'—') + '</div>'
@@ -2360,9 +2360,9 @@ window._printSatisTeklif = function(id) {
     // Satıcı notu (opsiyonel)
     + (function(){var sn=t.saticiNotu;if(!sn||!sn.pdfEkle)return '';var html='<div style="margin-top:15px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;font-size:9px;color:#0c4a6e"><h4 style="color:#0c4a6e;font-size:10px;margin-bottom:6px">SELLER\'S NOTES</h4>';if(sn.urunKarsilastir)html+='<div style="margin-bottom:4px">'+esc(sn.urunKarsilastir)+'</div>';if(sn.ozelHusus)html+='<div>'+esc(sn.ozelHusus)+'</div>';return html+'</div>';})()
     // Signature
-    + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL TRADE</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
+    + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL LLC</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
     // Footer
-    + '<div class="footer">Duay Int. Trade Company · www.duaycor.com · brn.simsek@gmail.com<br>Karadolap Mh. Neşeli Sk. 1-5 Eyüp İstanbul TÜRKİYE · +90 532 270 5 113 · +90 212 625 5 444</div>'
+    + '<div class="footer">Duay Global LLC · www.duaycor.com · brn.simsek@gmail.com<br>Karadolap Mh. Neşeli Sk. 1-5 Eyüp İstanbul TÜRKİYE · +90 532 270 5 113 · +90 212 625 5 444</div>'
     + '<button onclick="window.print()" style="margin-top:15px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:4px;background:#fff;color:#1a365d;font-weight:600">🖨 Print / PDF</button>'
     + '</body></html>');
   w.document.close();
@@ -2521,7 +2521,7 @@ window._printSatisTeklifB = function(id) {
     +'.total{background:#f8fafc;font-weight:700;font-size:14px}@media print{button{display:none!important}}</style></head><body>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:20px;font-weight:800;color:#6366F1">DUAY GLOBAL</div><div style="font-size:10px;color:#999">Istanbul, Turkey</div></div>'
     +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(t.teklifNo)+'</div><div style="font-size:11px;color:#666">'+(t.ts||'').slice(0,10)+'</div></div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL TRADE</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
     +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(t.musteri||'')+'</div></div></div>'
     +'<table><thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'
     +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+(u.satisFiyat||0).toFixed(2)+' '+cur+'</td><td style="text-align:right">'+((u.satisFiyat||0)*(u.miktar||0)).toFixed(2)+' '+cur+'</td></tr>';}).join('')
@@ -2544,7 +2544,7 @@ window._printSatisTeklifC = function(id) {
     +'table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f0f0f0;padding:8px;font-size:10px;border:1px solid #ddd}td{padding:8px;border:1px solid #ddd}'
     +'@media print{button{display:none!important}}</style></head><body>'
     // Kapak
-    +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL TRADE</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(t.teklifNo)+'</div>'
+    +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL LLC</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(t.teklifNo)+'</div>'
     +'<div style="font-size:14px">Prepared for: <b>'+esc(t.musteri||'')+'</b></div><div style="font-size:12px;color:#666;margin-top:8px">Date: '+(t.ts||'').slice(0,10)+'</div></div>'
     // Sayfa 2: Ürünler
     +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Product Details</h2>'
@@ -2558,7 +2558,7 @@ window._printSatisTeklifC = function(id) {
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Payment:</b> '+(t.odemeKosulu||'Advance')+'</div>'
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Validity:</b> '+(t.gecerlilikTarihi||'30 days')+'</div>'
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Origin:</b> Turkey</div></div>'
-    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL TRADE</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(t.musteri||'Customer')+'</div></div></div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(t.musteri||'Customer')+'</div></div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
   w.document.close();
 };
@@ -2624,14 +2624,14 @@ window._openSAContract = function(id) {
   var cur = sa.currency||'USD';
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Sözleşme #'+id+'</title><style>body{font-family:system-ui;padding:40px;max-width:700px;margin:0 auto;font-size:12px;line-height:1.6}h1{text-align:center;color:#1a365d;font-size:18px}h2{font-size:14px;color:#1a365d;margin-top:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}.sig{display:flex;justify-content:space-between;margin-top:40px}.sig div{width:40%;text-align:center}@media print{button{display:none!important}}</style></head><body>'
-    +'<h1>SATIN ALMA SÖZLEŞMESİ</h1><div style="text-align:center;color:#666;margin-bottom:20px">DUAY GLOBAL TRADE LLC — '+esc(sa.supplier||sa.piNo||'')+'</div>'
-    +'<h2>1. Taraflar</h2><p><b>Alıcı:</b> DUAY GLOBAL TRADE LLC<br><b>Satıcı:</b> '+esc(sa.vendor?.name||sa.supplier||'')+'</p>'
+    +'<h1>SATIN ALMA SÖZLEŞMESİ</h1><div style="text-align:center;color:#666;margin-bottom:20px">DUAY GLOBAL LLC — '+esc(sa.supplier||sa.piNo||'')+'</div>'
+    +'<h2>1. Taraflar</h2><p><b>Alıcı:</b> DUAY GLOBAL LLC<br><b>Satıcı:</b> '+esc(sa.vendor?.name||sa.supplier||'')+'</p>'
     +'<h2>2. Ürün Bilgileri</h2><table><tr><th>Açıklama</th><th>Toplam</th><th>KDV</th><th>Döviz</th></tr>'
     +'<tr><td>'+esc(sa.supplier||sa.piNo||'Ürün')+'</td><td>'+(sa.totalAmount||0)+' '+cur+'</td><td>'+(sa.kdv||0)+' '+cur+'</td><td>'+cur+'</td></tr></table>'
     +'<h2>3. Ödeme Koşulları</h2><p>Avans: %'+(sa.advanceRate||0)+' ('+(sa.advanceAmount||0)+' '+cur+')<br>Kalan: '+(sa.remainingAmount||0)+' '+cur+' — Vade: '+(sa.vadeDate||'—')+'</p>'
     +'<h2>4. Teslimat</h2><p>Teslimat Tarihi: '+(sa.deliveryDate||'—')+'<br>Teslimat Yeri: '+(sa.deliveryPlace||'—')+'</p>'
     +'<h2>5. Özel Şartlar</h2><p>'+(sa.notes||'—')+'</p>'
-    +'<div class="sig"><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">ALICI<br>DUAY GLOBAL TRADE LLC</div></div><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">SATICI<br>'+esc(sa.vendor?.name||sa.supplier||'')+'</div></div></div>'
+    +'<div class="sig"><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">ALICI<br>DUAY GLOBAL LLC</div></div><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">SATICI<br>'+esc(sa.vendor?.name||sa.supplier||'')+'</div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">🖨 Yazdır / PDF</button></body></html>');
   w.document.close();
 };
@@ -2922,7 +2922,7 @@ window._createPR = function(teklifId) {
   var prNo = 'PR-'+yr+'-'+prSeq;
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PR '+prNo+'</title><style>body{font-family:system-ui;padding:30px;max-width:700px;margin:0 auto;font-size:12px}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:6px 8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}@media print{button{display:none!important}}</style></head><body>'
-    +'<h1>PURCHASE REQUISITION</h1><div style="text-align:center;color:#666;font-size:11px;margin-bottom:16px">DUAY GLOBAL TRADE — İÇ BELGE</div>'
+    +'<h1>PURCHASE REQUISITION</h1><div style="text-align:center;color:#666;font-size:11px;margin-bottom:16px">DUAY GLOBAL LLC — İÇ BELGE</div>'
     +'<table><tr><td><b>PR No:</b> '+prNo+'</td><td><b>Tarih:</b> '+new Date().toISOString().slice(0,10)+'</td></tr>'
     +'<tr><td><b>Satış Teklif Ref:</b> '+esc(t.teklifNo)+'</td><td><b>Müşteri:</b> '+esc(t.musteri||'')+'</td></tr>'
     +'<tr><td colspan="2"><b>Job ID:</b> '+(t.jobId||'—')+'</td></tr></table>'
@@ -3624,7 +3624,7 @@ window._printTedPerf = function() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Tedarikçi Performans</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
-    + '<h1>TEDARİKÇİ PERFORMANS RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL TRADE' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
+    + '<h1>TEDARİKÇİ PERFORMANS RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL LLC' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
     + '<table><thead><tr><th>Tedarikçi</th><th>Toplam ($)</th><th>Sayı</th><th>Ort. Teslimat</th><th>Zamanında %</th><th>Fiyat Sapma %</th><th>Risk</th></tr></thead><tbody>'
     + data.map(function(t) {
         var cls = t.riskSkor <= 20 ? 'good' : t.riskSkor > 50 ? 'bad' : '';
@@ -3817,7 +3817,7 @@ window._printMustAnaliz = function() {
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Müşteri Analizi</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
-    + '<h1>MÜŞTERİ ANALİZ RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL TRADE' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
+    + '<h1>MÜŞTERİ ANALİZ RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL LLC' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
     + '<table><thead><tr><th>Müşteri</th><th>Satış ($)</th><th>Kâr ($)</th><th>Marj %</th><th>Kabul %</th><th>Ödeme</th><th>Gecikmiş</th><th>CLV</th></tr></thead><tbody>'
     + data.map(function(m) {
         var cls = m.degerSkor >= 60 ? 'good' : m.degerSkor < 30 ? 'bad' : '';
@@ -3847,7 +3847,7 @@ window._createIsTakipBelgesi = function(s) {
   var kalan = (parseFloat(s.totalAmount)||0) - avans;
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>ITB '+itbNo+'</title><style>body{font-family:Arial,sans-serif;padding:25px;max-width:700px;margin:0 auto;font-size:11px}h1{text-align:center;color:#1a365d;font-size:16px;margin-bottom:2px}h2{text-align:center;font-size:10px;color:#666;margin-bottom:16px}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.sec{font-size:12px;font-weight:700;color:#1a365d;margin-top:14px;margin-bottom:6px;border-bottom:2px solid #1a365d;padding-bottom:3px}.warn{background:#FEF3C7;border:1px solid #F59E0B;border-radius:4px;padding:8px;font-size:10px;color:#92400E;margin:8px 0}@media print{button{display:none!important}}</style></head><body>'
-    +'<h1>İŞ TAKİP BELGESİ — SATIN ALMA</h1><h2>DUAY GLOBAL TRADE</h2>'
+    +'<h1>İŞ TAKİP BELGESİ — SATIN ALMA</h1><h2>DUAY GLOBAL LLC</h2>'
     +'<table><tr><td><b>Belge No:</b> '+itbNo+'</td><td><b>Tarih:</b> '+(s.approvedAt||new Date().toISOString()).slice(0,10)+'</td></tr><tr><td><b>Job ID:</b> '+esc(s.jobId||'—')+'</td><td><b>PI No:</b> '+esc(s.piNo||'—')+'</td></tr></table>'
     +'<div class="warn"><b>SORUMLU:</b> '+esc(sorumlu?.name||'—')+'<br>Bu siparişi takip etmekle yükümlüsünüz.</div>'
     +'<div class="sec">TEDARİKÇİ BİLGİLERİ</div><table><tr><td><b>Ad:</b> '+esc(s.supplier||'')+'</td><td><b>İletişim:</b> '+esc(s.supplierContact||'—')+'</td></tr></table>'
@@ -5256,6 +5256,22 @@ window.renderEvrakPaketi = function() {
   h += '<button onclick="event.stopPropagation();window._epTamamlandi?.()" style="font-size:11px;padding:7px 20px;border:none;border-radius:6px;background:' + (tamamSay === checklist.length ? '#0F6E56' : 'var(--b)') + ';color:' + (tamamSay === checklist.length ? '#fff' : 'var(--t3)') + ';cursor:pointer;font-family:inherit;font-weight:500">' + (tamamSay === checklist.length ? '\u2713 D\u00f6nemi Kapat' : 'T\u00fcm kontrolleri tamamlay\u0131n') + '</button>';
   h += '</div>';
   h += '</div></div>';
+  h += '<div style="margin-top:16px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">';
+  h += '<div style="padding:8px 12px;background:var(--s2);border-bottom:0.5px solid var(--b);font-size:10px;font-weight:500">Evrak Teslim Onay\u0131</div>';
+  h += '<div style="padding:12px;display:flex;flex-direction:column;gap:8px">';
+  h += '<div style="font-size:9px;color:var(--t3)">A\u015fa\u011f\u0131daki kontroller yap\u0131lmadan \u0130\u015fi Tamamla butonu aktif olmaz:</div>';
+  var _epKontroller = [
+    { id: 'ep-kontrol-alis', lbl: 'Al\u0131\u015f faturalar\u0131 listesi ile faturalar kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131 (fatura no, firma ad\u0131, ihracat ID tiklendi)' },
+    { id: 'ep-kontrol-satis', lbl: 'Sat\u0131\u015f faturalar\u0131 listesi ile faturalar kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131' },
+    { id: 'ep-kontrol-kdv', lbl: 'KDV iade raporu kontrol edildi' },
+    { id: 'ep-kontrol-gib', lbl: 'GIB sisteminden tebligatlar kontrol edildi' },
+    { id: 'ep-kontrol-kapak', lbl: 'Kapak sayfas\u0131 dolduruldu ve imzaland\u0131' }
+  ];
+  _epKontroller.forEach(function(k) {
+    h += '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:10px"><input type="checkbox" id="' + k.id + '" onclick="event.stopPropagation();window._epKontrolGuncelle()" style="margin-top:2px;width:13px;height:13px"><span>' + k.lbl + '</span></label>';
+  });
+  h += '<button id="ep-tamamla-btn" onclick="event.stopPropagation();window._epTamamla()" disabled style="margin-top:8px;padding:10px;border:none;border-radius:6px;background:#ccc;color:#fff;font-size:11px;font-weight:500;cursor:not-allowed;font-family:inherit;width:100%">\u2713 \u0130\u015fi Tamamla</button>';
+  h += '</div></div>';
   h += '</div>';
   panel.innerHTML = h;
 };
@@ -5561,6 +5577,41 @@ window._epValidasyonKontrol = function() {
   if (a.length && !a[0]['Fi\u015f/Fatura No'] && !a[0]['Fatura ismi']) hatalar.push('Al\u0131\u015f Excel format\u0131 uyumsuz \u2014 "Fi\u015f/Fatura No" kolonu bulunamad\u0131');
   if (s.length && !s[0]['Fatura s\u0131ra'] && !s[0]['Fatura ismi']) hatalar.push('Sat\u0131\u015f Excel format\u0131 uyumsuz \u2014 "Fatura s\u0131ra" kolonu bulunamad\u0131');
   return hatalar;
+};
+
+window._epKontrolGuncelle = function() {
+  var ids = ['ep-kontrol-alis', 'ep-kontrol-satis', 'ep-kontrol-kdv', 'ep-kontrol-gib', 'ep-kontrol-kapak'];
+  var hepsi = ids.every(function(id) { return document.getElementById(id)?.checked; });
+  var btn = document.getElementById('ep-tamamla-btn');
+  if (!btn) return;
+  btn.disabled = !hepsi;
+  btn.style.background = hepsi ? '#0F6E56' : '#ccc';
+  btn.style.cursor = hepsi ? 'pointer' : 'not-allowed';
+};
+
+window._epTamamla = function() {
+  var buAy = new Date().getMonth();
+  var aktifAy = window._epAktifAy != null ? window._epAktifAy : (buAy > 0 ? buAy - 1 : 11);
+  var aylar = ['Ocak', '\u015eubat', 'Mart', 'Nisan', 'May\u0131s', 'Haziran', 'Temmuz', 'A\u011fustos', 'Eyl\u00fcl', 'Ekim', 'Kas\u0131m', 'Aral\u0131k'];
+  var ay = aylar[aktifAy] + ' ' + new Date().getFullYear();
+  var hazirlayan = typeof window._epHazirlayan === 'function' ? window._epHazirlayan() : '';
+  window.confirmModal?.('\u0130\u015fi tamamla?', {
+    title: ay + ' muhasebe dosyas\u0131 tamamland\u0131 olarak i\u015faretlenecek.',
+    confirmText: 'Tamamla',
+    onConfirm: function() {
+      var ayKey = new Date().getFullYear() + '-' + String(aktifAy + 1).padStart(2, '0');
+      var durum = JSON.parse(localStorage.getItem('ak_evrak_paketi') || '{}');
+      if (!durum[ayKey]) durum[ayKey] = {};
+      durum[ayKey]._islemTamamlandi = true;
+      durum[ayKey]._islemTarih = new Date().toISOString();
+      durum[ayKey]._islemKisi = hazirlayan;
+      localStorage.setItem('ak_evrak_paketi', JSON.stringify(durum));
+      window.logActivity?.('complete', 'Evrak Paketi tamamland\u0131: ' + ay + ' \u2014 ' + hazirlayan);
+      window.addNotif?.('\u2713', 'Evrak Paketi tamamland\u0131: ' + ay, 'ok', 'evrak-paketi');
+      window.toast?.('Evrak Paketi tamamland\u0131 \u2014 ' + ay, 'ok');
+      window.renderEvrakPaketi?.();
+    }
+  });
 };
 
 window._epTamamlandi = function() {
