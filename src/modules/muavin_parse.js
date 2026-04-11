@@ -380,18 +380,29 @@ window._mvBaranSatirHTML = function(islemler) {
 /* ── T3-MV-003: Fuzzy cari adı eşleştirme ──────────────────── */
 function _mvFuzzyEsles(a, b) {
   if (!a || !b) return 0;
-  a = a.toLowerCase().replace(/[^a-züğışçöa-z0-9\s]/gi, '').trim();
-  b = b.toLowerCase().replace(/[^a-züğışçöa-z0-9\s]/gi, '').trim();
-  if (a === b) return 100;
-  var aKelimeler = a.split(/\s+/).filter(function(k){ return k.length > 2; });
-  var bKelimeler = b.split(/\s+/).filter(function(k){ return k.length > 2; });
-  var eslesenKelime = 0;
-  aKelimeler.forEach(function(ak) {
-    if (bKelimeler.some(function(bk){ return bk.indexOf(ak) !== -1 || ak.indexOf(bk) !== -1; })) eslesenKelime++;
-  });
-  if (!aKelimeler.length) return 0;
-  return Math.round((eslesenKelime / aKelimeler.length) * 100);
+  var norm = function(s) { return s.toLowerCase().replace(/\s+/g, ' ').trim()
+    .replace(/\bltd\b|\bllc\b|\b\u015fti\b|\ba\.\u015f\b|\binc\b|\bcorp\b|\bco\b/gi, '')
+    .replace(/[^a-z0-9\u011f\u00fc\u015f\u0131\u00f6\u00e7\u0430-\u044f\s]/gi, '').trim(); };
+  var na = norm(a), nb = norm(b);
+  if (na === nb) return 100;
+  if (na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1) return 90;
+  var wordsA = na.split(' ').filter(Boolean);
+  var wordsB = nb.split(' ').filter(Boolean);
+  var esles = wordsA.filter(function(w) { return wordsB.some(function(x) { return x === w || (x.length > 3 && w.indexOf(x) !== -1) || (w.length > 3 && x.indexOf(w) !== -1); }); });
+  var wordScore = wordsA.length > 0 ? (esles.length / Math.max(wordsA.length, wordsB.length)) * 100 : 0;
+  /* Levenshtein mesafesi */
+  var lenA = na.length, lenB = nb.length;
+  if (lenA > 60 || lenB > 60) return Math.round(wordScore);
+  var dp = [];
+  for (var i = 0; i <= lenA; i++) { dp[i] = [i]; }
+  for (var j = 0; j <= lenB; j++) { dp[0][j] = j; }
+  for (var i2 = 1; i2 <= lenA; i2++) for (var j2 = 1; j2 <= lenB; j2++) {
+    dp[i2][j2] = na[i2 - 1] === nb[j2 - 1] ? dp[i2 - 1][j2 - 1] : 1 + Math.min(dp[i2 - 1][j2], dp[i2][j2 - 1], dp[i2 - 1][j2 - 1]);
+  }
+  var levScore = Math.max(0, (1 - dp[lenA][lenB] / Math.max(lenA, lenB)) * 100);
+  return Math.round(Math.max(wordScore, levScore));
 }
+window._mvFuzzyMatch = _mvFuzzyEsles;
 
 function _mvCariCikar(aciklama) {
   if (!aciklama) return '';

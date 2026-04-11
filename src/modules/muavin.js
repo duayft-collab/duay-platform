@@ -35,19 +35,37 @@ function _mvAktifDonem() {
   return window._mvDonem || (new Date().getFullYear() + 'Q' + Math.ceil((new Date().getMonth() + 1) / 3));
 }
 function _mvDonemListesi() {
-  var yil = new Date().getFullYear();
-  var sonuclar = [];
-  [yil, yil - 1].forEach(function(y) {
-    ['Q1','Q2','Q3','Q4'].forEach(function(q) { sonuclar.push(y + q); });
+  var buYil = new Date().getFullYear();
+  var liste = [];
+  liste.push(buYil + '-YIL');
+  liste.push((buYil - 1) + '-YIL');
+  [buYil, buYil - 1].forEach(function(y) {
+    ['Q1', 'Q2', 'Q3', 'Q4'].forEach(function(q) { liste.push(y + 'Q' + q.slice(1)); });
   });
-  return sonuclar;
+  return liste;
 }
+window._mvDonemListesi = _mvDonemListesi;
 function _mvDonemEtiket(d) {
+  if (!d) return '\u2014';
+  if (d.indexOf('-YIL') !== -1) return d.replace('-YIL', '') + ' \u00b7 Tam Y\u0131l (Oca\u2013Ara)';
   var yil = d.slice(0, 4);
   var q = d.slice(4);
-  var aylar = { Q1: 'Oca–Mar', Q2: 'Nis–Haz', Q3: 'Tem–Eyl', Q4: 'Eki–Ara' };
-  return yil + ' ' + q + ' · ' + (aylar[q] || '');
+  var aylar = { Q1: 'Oca\u2013Mar', Q2: 'Nis\u2013Haz', Q3: 'Tem\u2013Eyl', Q4: 'Eki\u2013Ara' };
+  return yil + ' ' + q + ' \u00b7 ' + (aylar[q] || '');
 }
+window._mvDonemEtiket = _mvDonemEtiket;
+window._mvDonemAralik = function(d) {
+  if (!d) return null;
+  var yil = parseInt(d.slice(0, 4));
+  if (d.indexOf('-YIL') !== -1) return { bas: yil + '-01-01', son: yil + '-12-31' };
+  var q = d.slice(4);
+  var araliklar = { Q1: [1, 3], Q2: [4, 6], Q3: [7, 9], Q4: [10, 12] };
+  var ay = araliklar[q];
+  if (!ay) return null;
+  var bas = yil + '-' + String(ay[0]).padStart(2, '0') + '-01';
+  var son = new Date(yil, ay[1], 0);
+  return { bas: bas, son: son.getFullYear() + '-' + String(son.getMonth() + 1).padStart(2, '0') + '-' + String(son.getDate()).padStart(2, '0') };
+};
 
 /* ── KPI hesapla ── */
 function _mvKpiHesapla(islemlerM, islemlerB) {
@@ -176,6 +194,10 @@ function _mvUstDosyaBarHTML(meta, donem) {
   } else {
     h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Baran Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'baran\')" style="display:none"></label>';
   }
+  h += '</div>';
+  h += '<div style="padding:6px 14px;border-top:0.5px solid var(--b);display:flex;align-items:center;gap:8px">';
+  h += '<div style="font-size:9px;color:var(--t3);white-space:nowrap">Firma Ad\u0131</div>';
+  h += '<input id="mv-firma-adi" value="' + window._esc(bMeta.firmaAdi || '') + '" placeholder="Dosya ad\u0131ndan otomatik al\u0131n\u0131r..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">';
   h += '</div>';
 
   h += '</div>';
