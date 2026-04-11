@@ -5412,18 +5412,31 @@ window._epOzetGoster = function() {
   if (butonlar) butonlar.style.display = 'flex';
   window._epOzetVeri = { alisSayisi: a.length, alisKdv: alisKdv, satisSayisi: s.length, ihracatSayisi: ihracatSayisi, alisToplam: alisToplam, satisToplam: satisToplam };
 };
+/* \u2500\u2500 EVRAK-PAKET-005: Ortak PDF Header/Footer/Style \u2500\u2500 */
+window._epLogoSVG = function() {
+  var logo = localStorage.getItem('ak_sirket_logo') || '';
+  if (logo) return '<img src="' + logo + '" style="height:48px;object-fit:contain">';
+  return '<div style="display:inline-flex;align-items:center;gap:8px"><div style="width:40px;height:40px;background:#185FA5;border-radius:6px;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-weight:700;font-size:18px;font-family:Arial">D</span></div><div><div style="font-size:14px;font-weight:700;color:#185FA5;letter-spacing:2px">DUAY</div><div style="font-size:7px;color:#666;letter-spacing:1px">ULUSLARARASI T\u0130CARET</div></div></div>';
+};
+window._epPDFHeader = function(baslik, altBaslik) {
+  var hazirlayan = typeof window._epHazirlayan === 'function' ? window._epHazirlayan() : '';
+  return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #185FA5;margin-bottom:16px"><div>' + window._epLogoSVG() + '</div><div style="text-align:right"><div style="font-size:16px;font-weight:700;color:#185FA5;margin-bottom:2px">' + baslik + '</div><div style="font-size:10px;color:#555">' + altBaslik + '</div>' + (hazirlayan ? '<div style="font-size:8px;color:#888;margin-top:4px">Haz\u0131rlayan: ' + hazirlayan + '</div>' : '') + '<div style="font-size:8px;color:#888">Rapor: ' + new Date().toLocaleDateString('tr-TR') + '</div></div></div>';
+};
+window._epPDFFooter = function() {
+  return '<div style="margin-top:30px;padding-top:8px;border-top:0.5px solid #ddd;font-size:7px;color:#999;display:flex;justify-content:space-between"><span>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti. \u00b7 Karadolap Mh. Ne\u015feli Sk. 1/5 Ey\u00fcpsultan \u0130stanbul</span><span>Tel: +90 212 625 5 444</span></div>';
+};
+window._epPDFStyle = function() {
+  return '<style>@page{margin:15mm}body{font-family:Arial,Helvetica,sans-serif;font-size:8.5pt;color:#1a1a1a;margin:20px}table{width:100%;border-collapse:collapse;font-size:8pt;margin:12px 0}thead tr{background:#185FA5;color:#fff}th{padding:6px 8px;text-align:left;font-weight:600;font-size:7.5pt}tbody tr:nth-child(even){background:#f7f9fc}td{padding:5px 8px;border-bottom:0.5px solid #e0e0e0}tfoot td{font-weight:700;background:#f0f4f8;border-top:1.5px solid #185FA5;padding:6px 8px}.not{font-size:7.5pt;color:#555;margin-top:10px;padding:8px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:2px}.imza{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:50px}.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #333;margin-top:50px;padding-top:6px;font-size:7.5pt;color:#333}</style>';
+};
+
 window._epAlisfaturaPDF = function() {
   var a = window._epVeri.alis; if (!a.length) { window.toast?.('Al\u0131\u015f y\u00fcklenmedi', 'warn'); return; }
   var fatNolu = a.filter(function(r) { return String(r['Fi\u015f/Fatura No'] || '').trim().length > 0; });
   var tarihler = fatNolu.map(function(r) { return r['D\u00fczenleme tarihi']; }).filter(Boolean).sort();
   var yilAy = tarihler.length ? new Date(tarihler[0]).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' }) : '\u2014';
   var alisKdv = fatNolu.reduce(function(t, r) { return t + (parseFloat(r['Toplam KDV']) || 0); }, 0);
-  var css = 'body{font-family:Arial,sans-serif;font-size:8pt;margin:25px}h1{font-size:11pt;font-weight:bold;text-align:center;margin:4px 0}.ust{display:flex;justify-content:space-between;margin-bottom:10px;font-size:8pt}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px 5px;border:0.5px solid #bbb;text-align:left;font-weight:bold}td{padding:4px 5px;border:0.5px solid #ddd}.not{font-size:7pt;margin-top:8px;font-style:italic}.imza{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:50px}.imza-alan{text-align:center}.imza-cizgi{border-top:0.5px solid #111;margin-top:50px;padding-top:4px;font-size:7pt}';
-  var h = '<html><head><meta charset="UTF-8"><style>' + css + '</style></head><body>';
-  h += '<div class="ust"><div>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.<br>Karadolap Mh. Ne\u015feli Sk. 1/5 Ey\u00fcpsultan \u0130stanbul</div><div style="text-align:right">Rapor Tarihi: ' + new Date().toLocaleDateString('tr-TR') + '</div></div>';
-  h += '<h1>ALI\u015e FATURALARI</h1>';
-  h += '<div style="text-align:center;font-size:8pt;margin-bottom:4px">D\u00f6nem: <strong>' + yilAy + '</strong> \u00a0|\u00a0 Evrak Say\u0131s\u0131: <strong>' + fatNolu.length + '</strong></div>';
-  h += '<div style="text-align:center;font-size:7pt;color:#555;margin-bottom:8px">ALI\u015e KDV: ' + alisKdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TRY</div>';
+  var h = '<html><head><meta charset="UTF-8">' + window._epPDFStyle() + '</head><body>';
+  h += window._epPDFHeader('ALI\u015e FATURALARI L\u0130STES\u0130', yilAy + ' \u00b7 ' + fatNolu.length + ' fatura \u00b7 KDV: ' + alisKdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL');
   h += '<table><thead><tr><th style="width:25px">No</th><th style="width:60px">Tarih</th><th style="width:60px">\u0130\u015flem</th><th>Cari Ad\u0131</th><th style="width:110px">\u0130hracat ID</th><th style="width:120px">Fatura No</th><th style="width:30px;text-align:center">GIB</th><th style="width:30px;text-align:center">PR\u015e</th></tr></thead><tbody>';
   fatNolu.forEach(function(r, i) {
     var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : '';
@@ -5438,6 +5451,7 @@ window._epAlisfaturaPDF = function() {
   h += '<p class="not">KDV \u0130ADE L\u0130STELER\u0130, SGK, VERG\u0130 TAHAKKUKLARININ tamam\u0131 listeye eklenecek.</p>';
   h += '<p class="not">EL\u0130N\u0130ZDE BU L\u0130STEDE OLMAYAN B\u0130R FATURA VARSA PARA\u015e\u00dcTE \u0130\u015eLENMEM\u0130\u015e DEMEKT\u0130R. DUAY\'A AYNI G\u00dcN B\u0130LD\u0130R\u0130N\u0130Z.</p>';
   h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Alan: Ad Soyad TC imza - Tarih Saat</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Eden: Ad Soyad TC imza - Tarih Saat</div></div></div>';
+  h += window._epPDFFooter();
   h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
   window.logActivity?.('export', 'Al\u0131\u015f Fatura PDF - ' + yilAy);
@@ -5448,11 +5462,8 @@ window._epSatisfaturaPDF = function() {
   var unique = {}; fatNolu = fatNolu.filter(function(r) { var k = r['Fatura s\u0131ra']; if (unique[k]) return false; unique[k] = true; return true; });
   var tarihler = fatNolu.map(function(r) { return r['D\u00fczenleme tarihi']; }).filter(Boolean).sort();
   var yilAy = tarihler.length ? new Date(tarihler[0]).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' }) : '\u2014';
-  var css = 'body{font-family:Arial,sans-serif;font-size:8pt;margin:25px}h1{font-size:11pt;font-weight:bold;text-align:center;margin:4px 0}.ust{display:flex;justify-content:space-between;margin-bottom:10px;font-size:8pt}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px 5px;border:0.5px solid #bbb;text-align:left;font-weight:bold}td{padding:4px 5px;border:0.5px solid #ddd}.not{font-size:7pt;margin-top:8px;font-style:italic}.imza{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:50px}.imza-alan{text-align:center}.imza-cizgi{border-top:0.5px solid #111;margin-top:50px;padding-top:4px;font-size:7pt}';
-  var h = '<html><head><meta charset="UTF-8"><style>' + css + '</style></head><body>';
-  h += '<div class="ust"><div>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.<br>Karadolap Mh. Ne\u015feli Sk. 1/5 Ey\u00fcpsultan \u0130stanbul</div><div style="text-align:right">Rapor Tarihi: ' + new Date().toLocaleDateString('tr-TR') + '</div></div>';
-  h += '<h1>SATI\u015e FATURALARI</h1>';
-  h += '<div style="text-align:center;font-size:8pt;margin-bottom:8px">D\u00f6nem: <strong>' + yilAy + '</strong> \u00a0|\u00a0 Evrak Say\u0131s\u0131: <strong>' + fatNolu.length + '</strong></div>';
+  var h = '<html><head><meta charset="UTF-8">' + window._epPDFStyle() + '</head><body>';
+  h += window._epPDFHeader('SATI\u015e FATURALARI L\u0130STES\u0130', yilAy + ' \u00b7 ' + fatNolu.length + ' fatura');
   h += '<table><thead><tr><th style="width:25px">No</th><th style="width:60px">Tarih</th><th style="width:70px">\u0130\u015flem</th><th>Cari Ad\u0131</th><th style="width:120px">\u0130hracat ID</th><th style="width:120px">Fatura No</th><th style="width:30px;text-align:center">GIB</th><th style="width:30px;text-align:center">PR\u015e</th></tr></thead><tbody>';
   fatNolu.forEach(function(r, i) {
     var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : '';
@@ -5466,6 +5477,7 @@ window._epSatisfaturaPDF = function() {
   h += '</tbody></table>';
   h += '<p class="not">Evraklar\u0131 teslim ald\u0131ktan ve kontrol ettikten sonra bu listede olmayan bir evrak var ise Duay\'a mutlaka ayn\u0131 g\u00fcn bilgi veriniz.</p>';
   h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Alan: Ad Soyad TC imza - Tarih Saat</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Eden: Ad Soyad TC imza - Tarih Saat</div></div></div>';
+  h += window._epPDFFooter();
   h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
   window.logActivity?.('export', 'Sat\u0131\u015f Fatura PDF - ' + yilAy);
