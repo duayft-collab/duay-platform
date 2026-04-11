@@ -77,11 +77,13 @@ function _mvParseMuhasebeci(tsv) {
     var alacak = parseFloat((kolonlar[5]||'').replace(',','.'))||0;
     var tip = (kolonlar[1]||'').trim();
     var fisNo = (kolonlar[2]||'').trim();
+    var aciklama = (kolonlar[3]||'').trim();
+    var faturaNo = (typeof window._mvNormalize?.faturaNoAyikla === 'function' ? (window._mvNormalize.faturaNoAyikla(aciklama) || window._mvNormalize.faturaNoAyikla(fisNo)) : null) || fisNo;
     if (!tip && !fisNo && borc===0 && alacak===0) return;
     islemler.push({
       tarih: tarihObj.toLocaleDateString('tr-TR'),
-      tip: tip, fisNo: fisNo,
-      aciklama: (kolonlar[3]||'').trim(),
+      tip: tip, fisNo: fisNo, faturaNo: faturaNo,
+      aciklama: aciklama,
       borc: borc, alacak: alacak,
       bakiye: parseFloat((kolonlar[6]||'').replace(',','.'))||0,
       ba: (kolonlar[7]||'').trim(),
