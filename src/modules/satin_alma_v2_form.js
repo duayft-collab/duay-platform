@@ -396,6 +396,35 @@ window._saV2SatisUrunEkle = function(t) {
   window._saV2SatisTabloyuGuncelle();
 };
 
+/* SATIS-URUN-KALDIR-001: ID bazlı ürün güncelleme helper'ları */
+window._saV2UrunMiktar = function(id, val) {
+  var arr = window._saV2SatisUrunler || [];
+  var i = arr.findIndex(function(x){ return String(x.id) === String(id); });
+  if (i < 0) return;
+  arr[i].miktar = parseFloat(val) || 1;
+  window._saV2SatisTabloyuGuncelle();
+  window._saV2SatisOzetGuncelle();
+  window._saV2PIOnizlemeGuncelle?.();
+};
+
+window._saV2UrunMarj = function(id, val) {
+  var arr = window._saV2SatisUrunler || [];
+  var i = arr.findIndex(function(x){ return String(x.id) === String(id); });
+  if (i < 0) return;
+  arr[i].marj = parseFloat(val) || 33;
+  window._saV2SatisTabloyuGuncelle();
+  window._saV2SatisOzetGuncelle();
+  window._saV2PIOnizlemeGuncelle?.();
+};
+
+window._saV2UrunSil = function(id) {
+  var arr = window._saV2SatisUrunler || [];
+  window._saV2SatisUrunler = arr.filter(function(x){ return String(x.id) !== String(id); });
+  window._saV2SatisTabloyuGuncelle();
+  window._saV2SatisOzetGuncelle();
+  window._saV2PIOnizlemeGuncelle?.();
+};
+
 window._saV2SatisTabloyuGuncelle = function() {
   var tbody = document.getElementById('st-urun-tbody');
   if (!tbody) return;
@@ -426,12 +455,12 @@ window._saV2SatisTabloyuGuncelle = function() {
     return '<tr style="border-bottom:0.5px solid var(--b)">'
       + '<td style="padding:4px 6px;width:28px">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
       + '<td style="padding:4px 6px;font-size:10px"><div style="font-weight:500">' + _saEsc(u.duayKodu || '') + (u.duayKodu ? ' \u2014 ' : '') + _saEsc(u.urunAdi || '\u2014') + '</div>' + (u.eskiKod ? '<div style="font-size:8px;color:var(--t3)">(' + _saEsc(u.eskiKod) + ')</div>' : '') + '</td>'
-      + '<td style="padding:4px 6px"><input type="number" value="' + (u.miktar || 1) + '" min="1" oninput="event.stopPropagation();window._saV2SatisUrunler[' + gIdx + '].miktar=parseFloat(this.value)||1;window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="width:55px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
+      + '<td style="padding:4px 6px"><input type="number" value="' + (u.miktar || 1) + '" min="1" oninput="event.stopPropagation();window._saV2UrunMiktar(\'' + (u.id || gIdx) + '\', this.value)" style="width:55px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
       + '<td style="padding:4px 6px;font-size:10px;color:var(--t2)">' + paraSym + (u.alisHedef || 0).toFixed(2) + '</td>'
-      + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2SatisUrunler[' + gIdx + '].marj=parseFloat(this.value)||33;window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="width:50px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
+      + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" style="width:50px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500;color:#0F6E56">' + paraSym + (u.satisFiyat || 0).toFixed(2) + '</td>'
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
-      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2SatisUrunler.splice(' + gIdx + ',1);window._saV2SatisTabloyuGuncelle();window._saV2SatisOzetGuncelle();window._saV2PIOnizlemeGuncelle?.()" style="font-size:9px;padding:2px 6px;border:0.5px solid #A32D2D;border-radius:3px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Kald\u0131r</button></td>'
+      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + (u.id || gIdx) + '\')" style="font-size:9px;padding:2px 6px;border:0.5px solid #A32D2D;border-radius:3px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Kald\u0131r</button></td>'
       + '</tr>';
   }).join('');
   /* Sayfalama */
