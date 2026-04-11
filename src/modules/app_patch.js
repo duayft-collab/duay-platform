@@ -5521,10 +5521,16 @@ window._epKdvIadePDF = function() {
   var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:13pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}.uyari{background:#fff3cd;border:0.5px solid #ffc107;padding:8px;font-size:8pt;margin:10px 0}</style></head><body>';
   h += '<h1>\u0130HRACAT KDV \u0130ADE RAPORU</h1><h2>' + ay + '</h2>';
   h += '<div class="uyari">\u00d6NEML\u0130: KDV tutarlar\u0131 orijinal faturalarla kar\u015f\u0131la\u015ft\u0131r\u0131lacak.</div>';
-  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>Fatura No</th><th>Tedarik\u00e7i</th><th style="text-align:right">\u0130ade KDV TL</th></tr></thead><tbody>';
+  h += '<table><thead><tr><th>No</th><th>Tarih</th><th>Fatura No</th><th style="width:110px">\u0130hracat ID</th><th>Tedarik\u00e7i</th><th style="text-align:right">\u0130ade KDV TL</th></tr></thead><tbody>';
   var tKDV = 0;
-  a.forEach(function(r, i) { var kdv = parseFloat(r['Toplam KDV']) || 0; tKDV += kdv; var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : ''; h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td style="font-family:monospace">' + (r['Fi\u015f/Fatura No'] || '') + '</td><td>' + (r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '').slice(0, 35) + '</td><td style="text-align:right;color:#0F6E56;font-weight:bold">' + kdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>'; });
-  h += '</tbody><tfoot><tr><td colspan="4"><strong>TOPLAM \u0130ADE</strong></td><td style="text-align:right;color:#0F6E56"><strong>' + tKDV.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></td></tr></tfoot></table></body></html>';
+  a.forEach(function(r, i) {
+    var kdv = parseFloat(r['Toplam KDV']) || 0;
+    tKDV += kdv;
+    var tar = r['D\u00fczenleme tarihi'] ? new Date(r['D\u00fczenleme tarihi']).toLocaleDateString('tr-TR') : '';
+    var ihracatId = String(r['Fatura ismi']||'').match(/\d{4}-\d{10,16}/)?.[0] || '\u2014';
+    h += '<tr><td>' + (i + 1) + '</td><td>' + tar + '</td><td style="font-family:monospace">' + (r['Fi\u015f/Fatura No'] || '') + '</td><td style="font-family:monospace;font-size:7pt;color:#1e40af">' + ihracatId + '</td><td>' + (r['Tedarik\u00e7i / \u00c7al\u0131\u015fan'] || '').slice(0, 35) + '</td><td style="text-align:right;color:#0F6E56;font-weight:bold">' + kdv.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td colspan="5"><strong>TOPLAM \u0130ADE</strong></td><td style="text-align:right;color:#0F6E56"><strong>' + tKDV.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></td></tr></tfoot></table></body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
   window.logActivity?.('export', 'KDV \u0130ade PDF');
 };
