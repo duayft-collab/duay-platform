@@ -6454,7 +6454,8 @@ window._openQuickCari = function(editId) {
       + '<div id="qc-panel-genel" class="qc-panel">'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
           + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı" value="' + esc(c?.name || '') + '"></div>'
-          + '<div><div class="fl">TİP *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarikçi</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>Müşteri</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Diğer</option></select></div>'
+          + '<div><div class="fl">T\u0130P *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarik\u00e7i</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>M\u00fc\u015fteri</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Di\u011fer</option></select></div>'
+          + '<div><div class="fl">M\u00dc\u015eTER\u0130 KODU (4 hane)</div><input class="fi" id="qc-kod" maxlength="4" placeholder="3230" value="' + esc(c?.kod || '') + '" style="font-family:monospace"></div>'
           + '<div><div class="fl">CARİ AŞAMA</div><select class="fi" id="qc-caritype"><option value="potansiyel"' + ((c?.cariType || 'potansiyel') === 'potansiyel' ? ' selected' : '') + '>🔵 Potansiyel</option><option value="aktif"' + (c?.cariType === 'aktif' ? ' selected' : '') + '>🟡 Aktif</option><option value="onayli"' + (c?.cariType === 'onayli' ? ' selected' : '') + ' disabled>🟢 Onaylı (yönetici atar)</option></select></div>'
           + '<div><div class="fl">VKN (10 HANE) *</div><input class="fi" id="qc-tax" value="' + esc(c?.vkn || c?.taxNo || '') + '" placeholder="0000000000" maxlength="10" pattern="[0-9]{10}"></div>'
           + '<div><div class="fl">TCKN (11 HANE)</div><input class="fi" id="qc-tckn" value="' + esc(c?.tckn || '') + '" placeholder="Bireysel için" maxlength="11"></div>'
@@ -6574,6 +6575,7 @@ window._saveQuickCari = function() {
   var entry = {
     name: name,
     type: document.getElementById('qc-type')?.value || 'diger',
+    kod: document.getElementById('qc-kod')?.value?.slice(0, 4) || '',
     cariType: document.getElementById('qc-caritype')?.value || 'potansiyel',
     vkn: vknVal,
     tckn: (document.getElementById('qc-tckn')?.value || '').trim(),

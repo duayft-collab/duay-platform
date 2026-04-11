@@ -311,3 +311,35 @@ window._saV2SatisKaydetVeGit = function(alisId) {
   window._saV2SatisKaydet?.(alisId);
   setTimeout(function(){window.App?.nav?.('satis-teklifleri');},300);
 };
+
+/** Banka bilgisi — ak_bankalar1 key'inden veya varsayılan */
+window._saV2BankaMetni = function(para) {
+  var ayarlar = typeof window._loadBankalar === 'function' ? window._loadBankalar() : {};
+  var varsayilan = {
+    'USD': 'USD IBAN: TR33 0006 2000 3940 0006 2986 58 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS',
+    'EUR': 'EUR IBAN: TR55 0006 2000 3940 0009 0830 97 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS',
+    'GBP': 'GBP IBAN: TR77 0006 2000 3940 0011 3456 78 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS',
+    'TRY': 'TL IBAN: TR22 0006 2000 3940 0001 2345 67 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS'
+  };
+  return ayarlar[para] || varsayilan[para] || varsayilan['USD'];
+};
+window._loadBankalar = function() { try { var d = localStorage.getItem('ak_bankalar1'); return d ? JSON.parse(d) : {}; } catch(e) { return {}; } };
+window._saveBankalar = function(obj) { try { localStorage.setItem('ak_bankalar1', JSON.stringify(obj)); } catch(e) {} };
+
+/** PI Şartları — varsayılan 10 madde, ayarlardan yönetilebilir */
+window._saV2Sartlar = function() {
+  try { var d = localStorage.getItem('ak_pi_sartlar'); if (d) return JSON.parse(d); } catch(e) {}
+  return [
+    'Payment: 30% deposit, 70% before dispatch/shipment.',
+    'Tax Note: 20% VAT applicable for domestic shipments only.',
+    'Bank Charges: All transfer fees outside T\u00fcrkiye belong to buyer.',
+    'Disputes: Istanbul Courts shall have jurisdiction.',
+    'Insurance: Buyer\'s responsibility unless CIF terms.',
+    'Attention: Goods must be inspected within 14 days from delivery.',
+    'Validity: This offer is valid for the period stated above only.',
+    'Packaging: Standard export packaging unless otherwise agreed.',
+    'Force Majeure: Seller not liable for delays due to force majeure.',
+    'Governing Law: Republic of T\u00fcrkiye law applies to this contract.'
+  ];
+};
+window._saV2SartlarKaydet = function(liste) { try { localStorage.setItem('ak_pi_sartlar', JSON.stringify(liste)); } catch(e) {} };

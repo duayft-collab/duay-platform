@@ -30,8 +30,10 @@ var _saCu   = window._saCu   = function(){ return window.Auth?.getCU?.() || wind
 window._saTeklifId = function(musteriKod) {
   var d = new Date();
   var pad = function(n,l){ return String(n).padStart(l||2,'0'); };
-  var tarih = String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
-  return (musteriKod||'0000') + '-' + tarih;
+  var yy = String(d.getFullYear()).slice(-2);
+  var tarih = yy + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+  var kod = String(musteriKod||'0000').slice(-4).padStart(4,'0');
+  return kod + '-' + tarih;
 };
 
 /* ── Veri fonksiyonları ─────────────────────────────────────── */
