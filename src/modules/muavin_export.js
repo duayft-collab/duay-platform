@@ -869,4 +869,65 @@ window._mvBirlesikExcelIndir = function() {
   window.logActivity?.('export', 'Muavin birle\u015fik Excel indirildi: ' + dosyaAdi);
 };
 
+/* \u2500\u2500 MUAVIN-MEKTUP-001: Firma Mutabakat Mektubu PDF \u2500\u2500 */
+window._mvMutabakatMektubu = function(firmaAdi) {
+  var firmalar = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
+  var firma = firmalar.find(function(f) { return f.ad === firmaAdi; });
+  if (!firma) { window.toast?.('Firma bulunamad\u0131', 'warn'); return; }
+  var bugun = new Date().toLocaleDateString('tr-TR');
+  var sonuc = firma.sonuc || [];
+  var mutabik = sonuc.filter(function(r) { return r.durum === 'mutabik'; });
+  var farkli = sonuc.filter(function(r) { return r.durum !== 'mutabik'; });
+  var toplamMuh = sonuc.reduce(function(s, r) { return s + (r.muhasebeci ? r.muhasebeci.tutarTL : 0); }, 0);
+  var toplamSir = sonuc.reduce(function(s, r) { return s + (r.sirket ? r.sirket.tutarTL : 0); }, 0);
+  var netFark = Math.abs(toplamMuh - toplamSir);
+  var esc = typeof window._esc === 'function' ? window._esc : function(s) { return String(s || ''); };
+  var h = '<html><head><meta charset="UTF-8"><style>';
+  h += 'body{font-family:Arial,sans-serif;font-size:11pt;margin:40px;color:#111}';
+  h += 'h1{font-size:14pt;font-weight:bold;text-align:center;margin-bottom:4px}';
+  h += 'h2{font-size:11pt;text-align:center;color:#555;margin-bottom:20px}';
+  h += '.bilgi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;font-size:10pt}.bilgi div{padding:6px;border:0.5px solid #ddd}';
+  h += 'table{width:100%;border-collapse:collapse;font-size:9pt;margin:12px 0}';
+  h += 'th{background:#f0f0f0;padding:5px;text-align:left;border:0.5px solid #ccc;font-weight:bold}';
+  h += 'td{padding:5px;border:0.5px solid #ccc}';
+  h += '.imza{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px}';
+  h += '.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #111;margin-top:40px;padding-top:6px;font-size:9pt}';
+  h += '</style></head><body>';
+  h += '<h1>CAR\u0130 HESAP MUTABAKAT MEKTUBU</h1>';
+  h += '<h2>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h2>';
+  h += '<div class="bilgi">';
+  h += '<div><strong>Cari Hesap Sahibi:</strong> ' + esc(firmaAdi) + '</div>';
+  h += '<div><strong>D\u00fczenleme Tarihi:</strong> ' + bugun + '</div>';
+  h += '<div><strong>D\u00f6nem:</strong> ' + (typeof window._mvDonemEtiket === 'function' ? window._mvDonemEtiket(typeof window._mvAktifDonem === 'function' ? window._mvAktifDonem() : '') : '\u2014') + '</div>';
+  h += '<div><strong>Mutabakat Skoru:</strong> %' + firma.skor + '</div></div>';
+  h += '<p style="margin:12px 0;font-size:10pt">Taraflar aras\u0131ndaki cari hesap bakiyesi a\u015fa\u011f\u0131da g\u00f6sterilmektedir. Kay\u0131tlar kar\u015f\u0131l\u0131kl\u0131 olarak incelenmi\u015f ve a\u015fa\u011f\u0131daki bilgilerin do\u011frulu\u011fu teyit edilmi\u015ftir.</p>';
+  h += '<table><tr><th>Tarih</th><th>Fatura No</th><th>Muhasebeci TL</th><th>\u015eirket TL</th><th>Fark TL</th><th>Durum</th></tr>';
+  sonuc.forEach(function(r) {
+    var src = r.muhasebeci || r.sirket || {};
+    var renk = r.durum === 'mutabik' ? '#0F6E56' : r.durum === 'fark' ? '#854F0B' : '#A32D2D';
+    var dl = r.durum === 'mutabik' ? 'Mutab\u0131k' : r.durum === 'fark' ? 'Fark Var' : r.durum === 'sadece_muhasebeci' ? 'Sadece Muh.' : 'Sadece \u015eirket';
+    h += '<tr><td>' + esc(src.tarih || '\u2014') + '</td>';
+    h += '<td style="font-family:monospace;font-size:8pt">' + esc(src.faturaNo || '\u2014') + '</td>';
+    h += '<td style="text-align:right">' + (r.muhasebeci ? r.muhasebeci.tutarTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) : '\u2014') + '</td>';
+    h += '<td style="text-align:right">' + (r.sirket ? r.sirket.tutarTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) : '\u2014') + '</td>';
+    h += '<td style="text-align:right;color:' + renk + '">' + (r.farkTL || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>';
+    h += '<td style="color:' + renk + '">' + dl + '</td></tr>';
+  });
+  h += '</table>';
+  h += '<div style="margin:12px 0;font-size:10pt;border:0.5px solid #ddd;padding:10px">';
+  h += '<strong>\u00d6ZET:</strong> Toplam ' + sonuc.length + ' kay\u0131t incelenmi\u015f, ';
+  h += mutabik.length + ' kay\u0131t mutab\u0131k, ' + farkli.length + ' kay\u0131tta fark tespit edilmi\u015ftir.<br>';
+  h += 'Muhasebeci toplam: <strong>' + toplamMuh.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong> \u00b7 ';
+  h += '\u015eirket toplam: <strong>' + toplamSir.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong> \u00b7 ';
+  h += 'Net fark: <strong style="color:' + (netFark < 1 ? '#0F6E56' : '#A32D2D') + '">' + netFark.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></div>';
+  h += '<div class="imza">';
+  h += '<div class="imza-alan"><div class="imza-cizgi">Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.<br>Ka\u015fe / \u0130mza</div></div>';
+  h += '<div class="imza-alan"><div class="imza-cizgi">' + esc(firmaAdi) + '<br>Ka\u015fe / \u0130mza</div></div>';
+  h += '</div></body></html>';
+  var win = window.open('', '_blank');
+  if (win) { win.document.write(h); win.document.close(); win.print(); }
+  else { window.toast?.('Popup engellendi \u2014 taray\u0131c\u0131 izni verin', 'warn'); }
+  window.logActivity?.('export', 'Mutabakat mektubu: ' + firmaAdi);
+};
+
 console.log('[MUAVIN-EXPORT] y\u00fcklendi');
