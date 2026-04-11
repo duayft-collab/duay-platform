@@ -1972,7 +1972,7 @@ window.renderSatisTeklifleri = function() {
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:monospace;letter-spacing:-.3px">' + esc(t.teklifNo||'—') + '</div>'
       + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
-      + '<div style="font-size:9px;color:var(--t3);font-family:monospace">' + esc(t.teklifNo||(t.id?String(t.id).slice(-8):'—')) + '</div></div>'
+      + '<div style="font-size:9px;color:var(--t3);font-family:monospace">' + esc(t.createdBy||'') + (t.createdBy?' \u00b7 ':'') + (t.createdAt?new Date(t.createdAt).toLocaleDateString('tr-TR'):'') + '</div></div>'
       // Orta: Tutar (bold, sağa yasla)
       + '<div style="font-size:13px;font-weight:700;color:var(--t);white-space:nowrap">' + (t.genelToplam||0).toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + (t.paraBirimi||'USD') + '</span></div>'
       // Durum badge
@@ -1995,6 +1995,7 @@ window.renderSatisTeklifleri = function() {
       + '<button onclick="event.stopPropagation();window._saV2TeklifDuzenle(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">D\u00fczenle</button>'
       + '<button onclick="event.stopPropagation();window._saV2DurumDegistir(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Durum</button>'
       + '<button onclick="event.stopPropagation();window._saV2SatisPDF(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">PDF</button>'
+      + '<button onclick="event.stopPropagation();window._saV2TeklifSil(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>'
       + '</div></div>';
   }).join('');
 };
@@ -2004,6 +2005,9 @@ window._saV2TeklifDuzenle = function(id) {
   var teklifler = window.loadSatisTeklifleri?.() || [];
   var t = teklifler.find(function(x){ return String(x.id) === String(id); });
   if (!t) { window.toast?.('Teklif bulunamad\u0131', 'err'); return; }
+  window._saV2AktifDuzenlemeTeklif = t;
+  window._saV2AktifPITasarim = t.pdfTasarim || 'A';
+  window._saV2AktifPIDil = t.pdfDil || 'EN';
   if (typeof window._saV2TeklifOlustur === 'function') window._saV2TeklifOlustur(t);
 };
 
@@ -2033,6 +2037,27 @@ window._saV2DurumUygula = function(id, yeniDurum) {
   window.logActivity?.('update', 'Sat\u0131\u015f teklifi durum: ' + yeniDurum + ' \u2014 ' + (teklifler[idx].teklifNo || ''));
   window.toast?.('Durum g\u00fcncellendi: ' + yeniDurum, 'ok');
   window.renderSatisTeklifleri?.();
+};
+
+window._saV2TeklifSil = function(id) {
+  window.confirmModal?.('Teklifi sil?', {
+    title: 'Teklif silinecek. Geri al\u0131namaz.',
+    danger: true,
+    confirmText: 'Sil',
+    onConfirm: function() {
+      var teklifler = window.loadSatisTeklifleri?.() || [];
+      var idx = teklifler.findIndex(function(x){ return String(x.id) === String(id); });
+      if (idx < 0) return;
+      var t = teklifler[idx];
+      t.isDeleted = true;
+      t.deletedAt = new Date().toISOString();
+      t.deletedBy = window.CU?.()?.displayName || '';
+      window.storeSatisTeklifleri?.(teklifler);
+      window.logActivity?.('delete', 'Sat\u0131\u015f teklifi silindi: ' + (t.teklifNo || ''));
+      window.toast?.('Teklif silindi', 'ok');
+      window.renderSatisTeklifleri?.();
+    }
+  });
 };
 
 /* ── SATIS-LISTE-001: PI Güncelleme ─────────────────────────── */
