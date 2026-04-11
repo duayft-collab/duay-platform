@@ -5251,6 +5251,10 @@ window.renderEvrakPaketi = function() {
   h += '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#0F6E56;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>';
   h += '</div>';
   h += '<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><div style="font-size:9px;color:var(--t3)">Haz\u0131rlayan:</div><input id="ep-hazirlayan" value="' + (window.CU?.()?.displayName || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
+  h += '<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h += '<div style="font-size:10px;color:var(--t3)">' + tamamSay + '/' + checklist.length + ' kontrol tamamland\u0131</div>';
+  h += '<button onclick="event.stopPropagation();window._epTamamlandi?.()" style="font-size:11px;padding:7px 20px;border:none;border-radius:6px;background:' + (tamamSay === checklist.length ? '#0F6E56' : 'var(--b)') + ';color:' + (tamamSay === checklist.length ? '#fff' : 'var(--t3)') + ';cursor:pointer;font-family:inherit;font-weight:500">' + (tamamSay === checklist.length ? '\u2713 D\u00f6nemi Kapat' : 'T\u00fcm kontrolleri tamamlay\u0131n') + '</button>';
+  h += '</div>';
   h += '</div></div>';
   h += '</div>';
   panel.innerHTML = h;
@@ -5520,7 +5524,13 @@ window._epKapakPDF = function() {
   h += '<h1>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h1><h2>MUHASEBE DOSYASI KAPAK SAYFASI</h2>';
   h += '<table class="bilgi"><tr><td>D\u00f6nem:</td><td><strong>' + ay + '</strong></td></tr><tr><td>Tarih:</td><td>' + bugun + '</td></tr><tr><td>Teslim:</td><td>Resmi Muhasebeci</td></tr></table>';
   h += '<div class="ozet"><strong>\u0130\u00c7ER\u0130K</strong><table style="width:100%;margin-top:10px"><tr><td>Al\u0131\u015f:</td><td><strong>' + (o.alisSayisi || 0) + '</strong> fatura</td><td>KDV:</td><td><strong>' + (o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></td></tr><tr><td>Sat\u0131\u015f:</td><td><strong>' + (o.satisSayisi || 0) + '</strong> fatura</td><td>\u0130hracat:</td><td><strong>' + (o.ihracatSayisi || 0) + '</strong></td></tr></table></div>';
-  h += '</div><div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Eden</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Alan</div></div></div></div></body></html>';
+  h += '<div style="margin:16px 0"><strong style="font-size:10pt">EVRAK KONTROL</strong><table style="width:100%;margin-top:8px;border-collapse:collapse"><tbody>';
+  ['Al\u0131\u015f fatura listesi mevcut','Sat\u0131\u015f fatura listesi mevcut','KDV iade listesi mevcut','Check list dolduruldu','\u0130hracat evraklar\u0131 eklendi','Banka ekstresi eklendi','SGK bildirge eklendi','Muhtasar beyanname eklendi'].forEach(function(m) {
+    h += '<tr style="border-bottom:0.5px solid #ddd"><td style="padding:5px 8px;font-size:9pt">' + m + '</td><td style="width:40px;text-align:center;font-size:12pt">\u25a1</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  h += '<div style="font-size:8pt;color:#555;margin-bottom:8px">Haz\u0131rlayan: ' + (typeof window._epHazirlayan === 'function' ? window._epHazirlayan() : '') + '</div>';
+  h += '</div><div class="imza"><div class="imza-alan"><div class="imza-cizgi">Teslim Eden<br>Ad Soyad / TC / \u0130mza / Tarih Saat</div></div><div class="imza-alan"><div class="imza-cizgi">Teslim Alan<br>Ad Soyad / TC / \u0130mza / Tarih Saat</div></div></div></div></body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
   window.logActivity?.('export', 'Kapak PDF \u2014 ' + ay);
 };
@@ -5551,6 +5561,30 @@ window._epValidasyonKontrol = function() {
   if (a.length && !a[0]['Fi\u015f/Fatura No'] && !a[0]['Fatura ismi']) hatalar.push('Al\u0131\u015f Excel format\u0131 uyumsuz \u2014 "Fi\u015f/Fatura No" kolonu bulunamad\u0131');
   if (s.length && !s[0]['Fatura s\u0131ra'] && !s[0]['Fatura ismi']) hatalar.push('Sat\u0131\u015f Excel format\u0131 uyumsuz \u2014 "Fatura s\u0131ra" kolonu bulunamad\u0131');
   return hatalar;
+};
+
+window._epTamamlandi = function() {
+  var durum = JSON.parse(localStorage.getItem('ak_evrak_paketi') || '{}');
+  var buAy = new Date().getMonth();
+  var aktifAy = window._epAktifAy != null ? window._epAktifAy : (buAy > 0 ? buAy - 1 : 11);
+  var ayKey = new Date().getFullYear() + '-' + String(aktifAy + 1).padStart(2, '0');
+  var ayDurum = durum[ayKey] || {};
+  var tamamSay = Object.values(ayDurum).filter(Boolean).length;
+  if (tamamSay < 12) { window.toast?.('T\u00fcm kontrolleri tamamlay\u0131n (' + tamamSay + '/12)', 'warn'); return; }
+  window.confirmModal?.('Bu d\u00f6nemi kapatmak istedi\u011finizden emin misiniz?', {
+    title: 'D\u00f6nem Kapat', confirmText: 'Evet, Kapat',
+    onConfirm: function() {
+      durum[ayKey] = durum[ayKey] || {};
+      durum[ayKey]._tamamlandi = true;
+      durum[ayKey]._tamamTarih = new Date().toISOString();
+      durum[ayKey]._tamamKisi = window.CU?.()?.displayName || '';
+      localStorage.setItem('ak_evrak_paketi', JSON.stringify(durum));
+      window.toast?.('D\u00f6nem kapat\u0131ld\u0131 \u2713', 'ok');
+      window.logActivity?.('evrak-paketi', 'D\u00f6nem kapat\u0131ld\u0131: ' + ayKey);
+      window.addNotif?.('\u2713', 'Evrak paketi tamamland\u0131: ' + ayKey, 'ok', 'evrak-paketi');
+      window.renderEvrakPaketi?.();
+    }
+  });
 };
 
 window._epTumunuYazdir = function() {
