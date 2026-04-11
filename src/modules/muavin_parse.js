@@ -659,5 +659,60 @@ window._mvNormalize = {
   }
 };
 
+/* ── MUAVIN-FIRMA-001: Firma Bazlı Liste + Mutabakat Skoru ── */
+window._mvFirmaListesi = function() {
+  var meta = window._mvMeta || {};
+  var donem = typeof window._mvAktifDonem === 'function' ? window._mvAktifDonem() : '';
+  var d = meta[donem] || {};
+  var muhArr = (d.muhasebeci || {}).normalArr || [];
+  var sirArr = (d.baran || {}).normalArr || [];
+  var firmalar = {};
+  muhArr.forEach(function(r) { var f = r.firma || '?'; firmalar[f] = firmalar[f] || { ad: f, muhasebeci: [], sirket: [] }; firmalar[f].muhasebeci.push(r); });
+  sirArr.forEach(function(r) { var f = r.firma || '?'; firmalar[f] = firmalar[f] || { ad: f, muhasebeci: [], sirket: [] }; firmalar[f].sirket.push(r); });
+  return Object.values(firmalar).map(function(f) {
+    var sonuc = typeof window._mvNormalize?.karsilastir === 'function' ? window._mvNormalize.karsilastir(f.muhasebeci, f.sirket) : [];
+    var skor = typeof window._mvNormalize?.mutabakatSkoru === 'function' ? window._mvNormalize.mutabakatSkoru(sonuc) : 0;
+    var fark = sonuc.filter(function(r) { return r.durum !== 'mutabik'; }).length;
+    return { ad: f.ad, skor: skor, fark: fark, toplam: sonuc.length, sonuc: sonuc };
+  }).sort(function(a, b) { return a.skor - b.skor; });
+};
+
+window._mvFirmaKarsilastirHTML = function(firma) {
+  if (!firma) return '<div style="padding:40px;text-align:center;color:var(--t3)">Firma se\u00e7in</div>';
+  var esc = typeof window._esc === 'function' ? window._esc : function(s) { return String(s || ''); };
+  var renk = firma.skor >= 90 ? '#0F6E56' : firma.skor >= 70 ? '#854F0B' : '#A32D2D';
+  var h = '<div style="padding:16px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h += '<div style="font-size:14px;font-weight:500">' + esc(firma.ad) + '</div>';
+  h += '<div style="font-size:24px;font-weight:700;color:' + renk + '">%' + firma.skor + '</div></div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">';
+  h += '<div style="background:var(--s2);border-radius:6px;padding:8px;text-align:center"><div style="font-size:9px;color:var(--t3)">TOPLAM</div><div style="font-size:18px;font-weight:500">' + firma.toplam + '</div></div>';
+  h += '<div style="background:#E1F5EE;border-radius:6px;padding:8px;text-align:center"><div style="font-size:9px;color:#085041">MUTABIK</div><div style="font-size:18px;font-weight:500;color:#0F6E56">' + (firma.toplam - firma.fark) + '</div></div>';
+  h += '<div style="background:#FCEBEB;border-radius:6px;padding:8px;text-align:center"><div style="font-size:9px;color:#791F1F">FARK</div><div style="font-size:18px;font-weight:500;color:#A32D2D">' + firma.fark + '</div></div></div>';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:var(--s2);border-bottom:0.5px solid var(--b)">';
+  h += '<th style="padding:6px;text-align:left">Durum</th><th style="padding:6px;text-align:left">Fatura No</th><th style="padding:6px;text-align:left">Tarih</th><th style="padding:6px;text-align:right">Muhasebeci TL</th><th style="padding:6px;text-align:right">\u015eirket TL</th><th style="padding:6px;text-align:right">Fark</th>';
+  h += '</tr></thead><tbody>';
+  (firma.sonuc || []).forEach(function(r) {
+    var bg = r.durum === 'mutabik' ? '' : '#FFF8F8';
+    var dr = r.durum === 'mutabik' ? '#0F6E56' : r.durum === 'fark' ? '#854F0B' : '#A32D2D';
+    var dl = r.durum === 'mutabik' ? '\u2713 Mutab\u0131k' : r.durum === 'fark' ? '\u26a0 Fark' : r.durum === 'sadece_muhasebeci' ? '\u2190 Sadece Muh.' : '\u2192 Sadece \u015eirket';
+    var src = r.muhasebeci || r.sirket || {};
+    var fatNo = src.faturaNo || '\u2014';
+    var tarih = src.tarih || '\u2014';
+    var muhTL = r.muhasebeci ? r.muhasebeci.tutarTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) : '\u2014';
+    var sirTL = r.sirket ? r.sirket.tutarTL.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) : '\u2014';
+    var farkTL = (r.farkTL || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+    h += '<tr style="border-bottom:0.5px solid var(--b);background:' + bg + '">';
+    h += '<td style="padding:5px 6px;color:' + dr + ';font-weight:500">' + dl + '</td>';
+    h += '<td style="padding:5px 6px;font-family:monospace;font-size:9px">' + esc(fatNo) + '</td>';
+    h += '<td style="padding:5px 6px;color:var(--t3)">' + esc(tarih) + '</td>';
+    h += '<td style="padding:5px 6px;text-align:right">' + muhTL + '</td>';
+    h += '<td style="padding:5px 6px;text-align:right">' + sirTL + '</td>';
+    h += '<td style="padding:5px 6px;text-align:right;color:' + dr + '">' + farkTL + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  return h;
+};
+
 console.log('[MUAVIN-PARSE] y\u00fcklendi');
 
