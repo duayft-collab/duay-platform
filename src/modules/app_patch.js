@@ -5221,9 +5221,10 @@ window.renderEvrakPaketi = function() {
   var h = '<div style="padding:16px"><div style="font-size:16px;font-weight:500;margin-bottom:4px">Evrak Paketi</div>';
   h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Ayl\u0131k muhasebe evrak kontrol listesi</div>';
   h += '<div style="display:flex;gap:4px;margin-bottom:16px;overflow-x:auto">';
-  aylar.forEach(function(a, i) { var ak = i === buAy; h += '<button onclick="event.stopPropagation();window._epAktifAy=' + i + ';window.renderEvrakPaketi()" style="font-size:10px;padding:4px 10px;border:0.5px solid ' + (ak ? 'var(--t)' : 'var(--b)') + ';border-radius:4px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + a + '</button>'; });
+  var _varsAy = window._epAktifAy != null ? window._epAktifAy : (buAy > 0 ? buAy - 1 : 11);
+  aylar.forEach(function(a, i) { var ak = i === _varsAy; h += '<button onclick="event.stopPropagation();window._epAktifAy=' + i + ';window.renderEvrakPaketi()" style="font-size:10px;padding:4px 10px;border:0.5px solid ' + (ak ? 'var(--t)' : 'var(--b)') + ';border-radius:4px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + a + '</button>'; });
   h += '</div>';
-  var aktifAy = window._epAktifAy != null ? window._epAktifAy : buAy;
+  var aktifAy = window._epAktifAy != null ? window._epAktifAy : (buAy > 0 ? buAy - 1 : 11);
   var ayKey = new Date().getFullYear() + '-' + String(aktifAy + 1).padStart(2, '0');
   var ayDurum = durum[ayKey] || {};
   var tamamSay = checklist.filter(function(c) { return ayDurum[c]; }).length;
