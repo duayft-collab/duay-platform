@@ -30,7 +30,7 @@ window._saV2TeklifOlustur = function(id) {
   var musteriKod = '0000';
   var satisId = window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now());
   var musteriList = (typeof window.loadCari === 'function' ? window.loadCari({tumKullanicilar:true}) : []).filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='M\u00fc\u015fteri'||c.cariType==='onayli'||c.tip==='musteri');});
-  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:960px;max-height:92vh;display:flex;flex-direction:column">';
+  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:min(1200px,95vw);max-height:92vh;display:flex;flex-direction:column">';
 
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
   ic += '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Satış Teklifi Oluştur</div>';
@@ -124,7 +124,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input type="hidden" id="st-teslim" value="">';
   ic += '</div>';
 
-  ic += '<div style="width:320px;flex-shrink:0;background:var(--s2);overflow-y:auto;padding:12px" id="st-pi-onizleme-panel">';
+  ic += '<div style="width:380px;flex-shrink:0;background:var(--s2);overflow-y:auto;padding:12px" id="st-pi-onizleme-panel">';
   ic += '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">CANLI PI ÖNİZLEME</div>';
   ic += '<div id="st-pi-onizleme" style="background:var(--sf);border:0.5px solid var(--b);border-radius:6px;padding:12px;font-size:9px">';
   ic += '<div style="text-align:center;border-bottom:0.5px solid var(--b);padding-bottom:8px;margin-bottom:8px">';
@@ -152,6 +152,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">';
   ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove()" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u0130ptal</button>';
   ic += '<div style="display:flex;gap:6px">';
+  ic += '<button onclick="event.stopPropagation();window._saV2TamOnIzle()" style="font-size:11px;padding:7px 14px;border:0.5px solid #185FA5;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#185FA5;font-weight:500">\u{1F441} Tam \u00d6n \u0130zle</button>';
   ic += '<button onclick="event.stopPropagation();window._saV2SatisKaydet(\''+t.id+'\')" style="font-size:11px;padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Taslak Kaydet</button>';
   ic += '<button onclick="event.stopPropagation();window._saV2SatisKaydetVeGit(\''+t.id+'\')" style="font-size:11px;padding:7px 20px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-weight:500;font-family:inherit">Teklifi Oluştur →</button>';
   ic += '</div></div></div>';
@@ -537,4 +538,45 @@ window._saV2JobUrunEkle = function() {
   modal.remove();
   window.toast?.(eklenenSay + ' \u00fcr\u00fcn eklendi', 'ok');
   window._saV2PIOnizlemeGuncelle?.();
+};
+
+/* SATIS-UI-001: Tam Önizleme — _piOlustur ile gerçek PDF preview */
+window._saV2TamOnIzle = function() {
+  var musteri = document.getElementById('st-musteri-ad')?.value || '';
+  var teklifId = document.getElementById('st-id')?.value || '';
+  if (!musteri) { window.toast?.('\u00d6nce m\u00fc\u015fteri se\u00e7in', 'warn'); return; }
+  if (!window._saV2SatisUrunler || !window._saV2SatisUrunler.length) {
+    window.toast?.('En az bir \u00fcr\u00fcn ekleyin', 'warn');
+    return;
+  }
+  var teklif = {
+    teklifId: teklifId,
+    musteriAd: musteri,
+    musteriKod: document.getElementById('st-musteri-kod')?.value || '',
+    gecerlilik: document.getElementById('st-gecerlilik')?.value || '',
+    teslim: (document.getElementById('st-incoterm')?.value || 'EXW') + ' ' + (document.getElementById('st-liman')?.value || 'Turkey'),
+    odeme: document.getElementById('st-odeme')?.value || '',
+    paraBirimi: document.getElementById('st-para-birimi')?.value || 'USD',
+    urunler: window._saV2SatisUrunler.map(function(u) {
+      return {
+        duayKodu: u.duayKodu || '',
+        urunAdi: u.urunAdi || '',
+        miktar: u.miktar || 1,
+        birim: u.birim || 'pcs',
+        alisF: u.alisHedef || u.alisOrjF || 0,
+        satisFiyat: u.satisFiyat || 0,
+        toplam: u.toplam || 0,
+        para: u.paraBirimi || 'USD',
+        gorsel: u.gorsel || ''
+      };
+    }),
+    revNo: '01',
+    dil: window._saV2AktifPIDil || 'EN'
+  };
+  var tasarim = window._saV2AktifPITasarim || 'A';
+  if (typeof window._piOlustur !== 'function') {
+    window.toast?.('PI mod\u00fcl\u00fc y\u00fcklenmedi', 'warn');
+    return;
+  }
+  window._piOlustur(teklif, tasarim, 'musteri');
 };
