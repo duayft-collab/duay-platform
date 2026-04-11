@@ -160,12 +160,30 @@ window._mvDosyaOku = function(inp, taraf) {
       return;
     }
     _mvMetaKaydet(taraf, f.name, islemler.length, boyutStr);
-    if (taraf==='muhasebeci') { window._mvSonIslemler=islemler; window._mvSonHesaplar={}; }
-    else { window._mvSonIslemlerB=islemler; }
-    window._mvEslesmeSonucu=null;
-    window.toast&&window.toast(f.name+' yüklendi — '+islemler.length+' işlem','ok');
-    window._mvAktifTab='karsilastirma';
-    window.renderMuavin&&window.renderMuavin();
+    if (taraf === 'muhasebeci') { window._mvSonIslemler = islemler; window._mvSonHesaplar = {}; }
+    else { window._mvSonIslemlerB = islemler; }
+    window._mvEslesmeSonucu = null;
+    /* Normalize engine \u2014 firma ay\u0131r\u0131\u015ft\u0131rma */
+    try {
+      var _don = window._mvDonem || (new Date().getFullYear() + 'Q' + Math.ceil((new Date().getMonth() + 1) / 3));
+      var _meta = JSON.parse(localStorage.getItem('ak_muavin_meta_v1') || '{}');
+      if (!_meta[_don]) _meta[_don] = {};
+      var firmaAdi = document.getElementById('mv-firma-adi')?.value || f.name.replace(/\.(xlsx?|csv|txt)$/i, '').trim();
+      if (taraf === 'muhasebeci' && typeof window._mvNormalize?.muhasebecdenNormalize === 'function') {
+        _meta[_don].muhasebeci = _meta[_don].muhasebeci || {};
+        _meta[_don].muhasebeci.normalArr = window._mvNormalize.muhasebecdenNormalize(islemler, firmaAdi);
+        _meta[_don].muhasebeci.firmaAdi = firmaAdi;
+      } else if (taraf === 'baran' && typeof window._mvNormalize?.sirkettenNormalize === 'function') {
+        _meta[_don].baran = _meta[_don].baran || {};
+        _meta[_don].baran.normalArr = window._mvNormalize.sirkettenNormalize(islemler, null);
+        _meta[_don].baran.firmaAdi = firmaAdi;
+      }
+      localStorage.setItem('ak_muavin_meta_v1', JSON.stringify(_meta));
+      window._mvMeta = _meta;
+    } catch (normErr) { console.warn('[MUAVIN] normalize hata:', normErr); }
+    window.toast?.( f.name + ' y\u00fcklendi \u2014 ' + islemler.length + ' i\u015flem', 'ok');
+    window._mvAktifTab = 'karsilastirma';
+    window.renderMuavin?.();
   }
 
   if (/\.xls[xm]?$/i.test(f.name)) {
