@@ -5475,6 +5475,8 @@ window._epAlisfaturaPDF = function() {
   h += window._epPDFFooter();
   h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  var _ayKey = new Date().getFullYear() + '-' + String((window._epAktifAy != null ? window._epAktifAy : new Date().getMonth()) + 1).padStart(2, '0');
+  window._epDokumanKaydet?.('alis_pdf', _ayKey, 'Al\u0131\u015f Fatura PDF - ' + fatNolu.length + ' fatura');
   window.logActivity?.('export', 'Al\u0131\u015f Fatura PDF - ' + yilAy);
 };
 window._epSatisfaturaPDF = function() {
@@ -5501,6 +5503,7 @@ window._epSatisfaturaPDF = function() {
   h += window._epPDFFooter();
   h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
+  window._epDokumanKaydet?.('satis_pdf', new Date().getFullYear() + '-' + String((window._epAktifAy != null ? window._epAktifAy : new Date().getMonth()) + 1).padStart(2, '0'), 'Sat\u0131\u015f Fatura PDF - ' + fatNolu.length + ' fatura');
   window.logActivity?.('export', 'Sat\u0131\u015f Fatura PDF - ' + yilAy);
 };
 window._epKdvIadePDF = function() {
@@ -5606,11 +5609,42 @@ window._epTamamla = function() {
       durum[ayKey]._islemTarih = new Date().toISOString();
       durum[ayKey]._islemKisi = hazirlayan;
       localStorage.setItem('ak_evrak_paketi', JSON.stringify(durum));
+      window._epDokumanKaydet?.('tamamlandi', ayKey, 'Evrak paketi tamamland\u0131: ' + ay);
       window.logActivity?.('complete', 'Evrak Paketi tamamland\u0131: ' + ay + ' \u2014 ' + hazirlayan);
       window.addNotif?.('\u2713', 'Evrak Paketi tamamland\u0131: ' + ay, 'ok', 'evrak-paketi');
       window.toast?.('Evrak Paketi tamamland\u0131 \u2014 ' + ay, 'ok');
       window.renderEvrakPaketi?.();
     }
+  });
+};
+
+/* \u2500\u2500 EVRAK-PAKET-009: Dok\u00fcman Kay\u0131t + 5 G\u00fcn Kural \u2500\u2500 */
+window._epDokumanKaydet = function(tip, ayKey, icerik) {
+  var docs = JSON.parse(localStorage.getItem('ak_ep_docs') || '[]');
+  docs.push({
+    id: typeof window.generateId === 'function' ? window.generateId() : ('EPD' + Date.now()),
+    tip: tip, ayKey: ayKey, icerik: icerik || '',
+    createdAt: new Date().toISOString(),
+    createdBy: window.CU?.()?.displayName || '',
+    createdById: window.CU?.()?.uid || ''
+  });
+  if (docs.length > 200) docs = docs.slice(-200);
+  localStorage.setItem('ak_ep_docs', JSON.stringify(docs));
+};
+
+window._epDokumanListele = function(ayKey) {
+  var docs = JSON.parse(localStorage.getItem('ak_ep_docs') || '[]');
+  var bugun = new Date();
+  var isAdmin = window.isAdmin?.() || false;
+  return docs.filter(function(d) {
+    if (ayKey && d.ayKey !== ayKey) return false;
+    if (d.isDeleted) return false;
+    if (!isAdmin) {
+      var olusturma = new Date(d.createdAt);
+      var gunFark = Math.round((bugun - olusturma) / 86400000);
+      if (gunFark > 5) return false;
+    }
+    return true;
   });
 };
 
