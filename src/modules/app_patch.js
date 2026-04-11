@@ -5507,7 +5507,12 @@ window._epSatisfaturaPDF = function() {
   window.logActivity?.('export', 'Sat\u0131\u015f Fatura PDF - ' + yilAy);
 };
 window._epKdvIadePDF = function() {
-  var a = window._epVeri.alis.filter(function(r) { return parseFloat(r['Toplam KDV']) > 0; });
+  var _kdvHaricKelimeler = ['kdv\'siz','kdvsiz','transit ticaret','ihra\u00e7 kay\u0131tl\u0131','ihracat kay\u0131tl\u0131','ihrac kayitli','i\u0307hra\u00e7 kay\u0131tl\u0131'];
+  var a = window._epVeri.alis.filter(function(r) {
+    if (parseFloat(r['Toplam KDV']) <= 0) return false;
+    var isim = String(r['Fatura ismi']||'').toLowerCase();
+    return !_kdvHaricKelimeler.some(function(k){ return isim.includes(k); });
+  });
   if (!a.length) { window.toast?.('KDV\'li al\u0131\u015f yok', 'warn'); return; }
   var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
   var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:13pt;text-align:center}h2{font-size:10pt;text-align:center;color:#555}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f0f0f0;padding:4px;border:0.5px solid #ccc}td{padding:4px;border:0.5px solid #ddd}.uyari{background:#fff3cd;border:0.5px solid #ffc107;padding:8px;font-size:8pt;margin:10px 0}</style></head><body>';
