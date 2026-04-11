@@ -5509,6 +5509,8 @@ window._epSatisfaturaPDF = function() {
 window._epKdvIadePDF = function() {
   var _kdvHaricKelimeler = ['kdv\'siz','kdvsiz','transit ticaret','ihra\u00e7 kay\u0131tl\u0131','ihracat kay\u0131tl\u0131','ihrac kayitli','i\u0307hra\u00e7 kay\u0131tl\u0131'];
   var a = window._epVeri.alis.filter(function(r) {
+    var fatNo = String(r['Fi\u015f/Fatura No']||'').trim();
+    if (!fatNo || fatNo.length < 3) return false;
     if (parseFloat(r['Toplam KDV']) <= 0) return false;
     var isim = String(r['Fatura ismi']||'').toLowerCase();
     return !_kdvHaricKelimeler.some(function(k){ return isim.includes(k); });
