@@ -150,7 +150,7 @@ window._mvDosyaOku = function(inp, taraf) {
 
   window._mvYuklemeBaslat && window._mvYuklemeBaslat(taraf);
 
-  function _isle(tsv) {
+  function _isle(tsv, sheetAdi) {
     var islemler = taraf==='baran' ? _mvParseBaran(tsv) : _mvParseMuhasebeci(tsv);
     if (!islemler.length) {
       window.toast&&window.toast('Geçerli işlem bulunamadı — format uyumsuz olabilir','warn');
@@ -170,7 +170,9 @@ window._mvDosyaOku = function(inp, taraf) {
       var _don = window._mvDonem || (new Date().getFullYear() + 'Q' + Math.ceil((new Date().getMonth() + 1) / 3));
       var _meta = JSON.parse(localStorage.getItem('ak_muavin_meta_v1') || '{}');
       if (!_meta[_don]) _meta[_don] = {};
-      var firmaAdi = document.getElementById('mv-firma-adi')?.value || f.name.replace(/\.(xlsx?|csv|txt)$/i, '').trim();
+      var _genericSheets = ['Sheet1','Sayfa1','Sheet','Sayfa','Data','Veri','1','-',''];
+      var _dosyaAdi = f.name.replace(/\.(xlsx?|csv|txt|ods)$/i, '').trim();
+      var firmaAdi = document.getElementById('mv-firma-adi')?.value?.trim() || (sheetAdi && _genericSheets.indexOf(sheetAdi) === -1 ? sheetAdi : null) || _dosyaAdi;
       if (taraf === 'muhasebeci' && typeof window._mvNormalize?.muhasebecdenNormalize === 'function') {
         _meta[_don].muhasebeci = _meta[_don].muhasebeci || {};
         _meta[_don].muhasebeci.normalArr = window._mvNormalize.muhasebecdenNormalize(islemler, firmaAdi);
@@ -194,7 +196,7 @@ window._mvDosyaOku = function(inp, taraf) {
       try {
         if(typeof XLSX==='undefined'){window.toast&&window.toast('SheetJS yüklenmedi','err');return;}
         var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
-        _isle(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{FS:'\t',RS:'\n'}));
+        _isle(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{FS:'\t',RS:'\n'}), wb.SheetNames[0] || '');
       } catch(err){
   console.warn('[MUAVİN] xlsx hata:',err);
   window.toast&&window.toast('xlsx okunamadı: '+err.message,'err');
