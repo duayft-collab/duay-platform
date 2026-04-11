@@ -1103,21 +1103,33 @@ window._ppUserTaglerAl = function(containerId) {
 
 /* ── PP-012: Görev Sil / Düzenle ────────────────────────────── */
 window._ppGorevSil = function(id) {
-  if (window.confirmModal) {
-    window.confirmModal('Bu görevi silmek istediğinizden emin misiniz?', { title: 'Görevi Sil', danger: true, confirmText: 'Sil', onConfirm: function() { window._ppGorevSilYap(id); } });
-    return;
-  }
-  window.confirmModal('Bu g\u00f6revi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){ window._ppGorevSilYap(id); }});
+  window.confirmModal?.('G\u00f6revi sil?', {
+    title: 'G\u00f6rev silinecek',
+    danger: true,
+    confirmText: 'Sil',
+    onConfirm: function() { window._ppGorevSilYap(id); }
+  });
 };
 
 window._ppGorevSilYap = function(id) {
   var tasks = _ppLoad();
   var i = tasks.findIndex(function(t) { return String(t.id) === String(id); });
   if (i === -1) return;
-  tasks[i].isDeleted = true;
-  tasks[i].deletedAt = _ppNow();
+  var gorev = tasks[i];
+  var now = _ppNow();
+  gorev.isDeleted = true;
+  gorev.deletedAt = now;
+  gorev.deletedBy = window.CU?.()?.displayName || '';
   _ppStore(tasks);
-  window.toast?.('Görev silindi', 'ok');
+  window.logActivity?.('delete', 'Pusula g\u00f6rev silindi: ' + (gorev.baslik || gorev.title || gorev.id));
+  try {
+    var trashRaw = localStorage.getItem('ak_trash1') || '[]';
+    var trash = JSON.parse(trashRaw);
+    if (!Array.isArray(trash)) trash = [];
+    trash.push(Object.assign({}, gorev, { _trashKaynak: 'pusula', _trashTarih: now }));
+    localStorage.setItem('ak_trash1', JSON.stringify(trash));
+  } catch(e) {}
+  window.toast?.('G\u00f6rev silindi', 'ok');
   window._ppModRender();
 };
 
