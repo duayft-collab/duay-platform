@@ -2012,9 +2012,16 @@ window._saV2TeklifDuzenle = function(id) {
   var t = teklifler.find(function(x){ return String(x.id) === String(id); });
   if (!t) { window.toast?.('Teklif bulunamad\u0131', 'err'); return; }
   window._saV2AktifDuzenlemeTeklif = t;
-  window._saV2AktifPITasarim = t.pdfTasarim || 'A';
-  window._saV2AktifPIDil = t.pdfDil || 'EN';
-  if (typeof window._saV2TeklifOlustur === 'function') window._saV2TeklifOlustur(t);
+  window._saV2AktifPITasarim = t.pdfTasarim || window._saV2AktifPITasarim || 'A';
+  window._saV2AktifPIDil = t.pdfDil || window._saV2AktifPIDil || 'EN';
+  window._saV2SatisUrunler = JSON.parse(JSON.stringify(t.urunler || []));
+  if (typeof window._saV2SatisModalAc === 'function') {
+    window._saV2SatisModalAc(t);
+  } else if (typeof window._saV2TeklifOlustur === 'function') {
+    window._saV2TeklifOlustur(null);
+  } else {
+    window.toast?.('Sat\u0131\u015f formu bulunamad\u0131', 'err');
+  }
 };
 
 window._saV2DurumDegistir = function(id) {
