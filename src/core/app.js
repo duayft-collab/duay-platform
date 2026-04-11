@@ -829,9 +829,6 @@ function _initApp(user) {
   setTimeout(function() { window._tn2Restore?.(); }, 200);
   _resetIdleTimer();
 
-  // Modüllerin ilk yüklemesi
-  if (typeof window.renderPusula === 'function') { /* panele gidilince render edilir */ }
-
   // Sistem bildirimleri (800ms sonra — UI hazır olsun)
   setTimeout(generateSystemNotifs, 800);
   // Bekleyen görev atama bildirimleri
@@ -1828,35 +1825,7 @@ function _renderDashboardPusulaWidget(cu, tasks, today) {
     }
   }
 
-  const statsEl = document.getElementById('db-pusula-stats');
-  if (statsEl) {
-    const myT   = tasks.filter(t => t.uid === cu.id || (t.participants||[]).includes(cu.id));
-    const total = myT.length;
-    const done  = myT.filter(t => t.done || t.status === 'done').length;
-    const inprog = myT.filter(t => t.status === 'inprogress').length;
-    const overdue = myT.filter(t => !t.done && t.due && t.due < today).length;
-    const critical = myT.filter(t => !t.done && t.pri === 1).length;
-    const pct = total ? Math.round(done/total*100) : 0;
-    const weekIds = (() => { try { return JSON.parse(localStorage.getItem('ak_pus_week_focus_' + cu.id) || '[]'); } catch(e) { return []; } })();
-    statsEl.innerHTML = '<div style="padding:14px 16px">'
-      + '<div style="margin-bottom:14px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-          + '<span style="font-size:12px;color:var(--t2)">Genel Ilerleme</span>'
-          + '<span style="font-size:13px;font-weight:700;color:' + (pct>=80?'var(--grt)':pct>=50?'var(--amt)':'var(--ac)') + '">' + pct + '%</span>'
-        + '</div>'
-        + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden">'
-          + '<div style="height:100%;width:' + pct + '%;background:' + (pct>=80?'var(--gr)':pct>=50?'var(--am)':'var(--ac)') + ';border-radius:3px;transition:width .4s"></div>'
-        + '</div>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-        + '<div style="background:var(--s2);border-radius:9px;padding:9px 11px"><div style="font-size:18px;font-weight:700;color:var(--t)">' + done + '<span style="font-size:11px;color:var(--t3);font-weight:400">/' + total + '</span></div><div style="font-size:10px;color:var(--t3);margin-top:1px">Tamamlanan</div></div>'
-        + '<div style="background:var(--s2);border-radius:9px;padding:9px 11px"><div style="font-size:18px;font-weight:700;color:var(--ac)">' + inprog + '</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Devam Eden</div></div>'
-        + '<div style="background:' + (overdue?'rgba(239,68,68,.08)':'var(--s2)') + ';border-radius:9px;padding:9px 11px;border:1px solid ' + (overdue?'rgba(239,68,68,.2)':'transparent') + '"><div style="font-size:18px;font-weight:700;color:' + (overdue?'var(--rdt)':'var(--t)') + '">' + overdue + '</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Gecikmiş</div></div>'
-        + '<div style="background:var(--s2);border-radius:9px;padding:9px 11px"><div style="font-size:18px;font-weight:700;color:' + (critical?'#ef4444':'var(--t)') + '">' + critical + '</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Kritik</div></div>'
-      + '</div>'
-      + (weekIds.length ? '<div style="margin-top:10px;background:rgba(99,102,241,.06);border-radius:8px;padding:8px 11px;font-size:11px;color:var(--t2)">Bu hafta <strong style="color:var(--ac)">' + weekIds.length + '</strong> odak gorev secildi</div>' : '')
-    + '</div>';
-  }
+  /* PUSULA-TEMIZLIK-001: db-pusula-stats bloğu kaldırıldı (eski sistem) */
 }
 
 
@@ -2383,7 +2352,7 @@ function doGSearch(q) {
       .slice(0, 3).forEach(t => results.push({
         icon: '🧭', title: t.title, sub: `Görev · ${t.done ? 'Tamamlandı' : 'Devam ediyor'}`,
         module: 'pusula',
-        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('pusula'); setTimeout(() => window.Pusula?.openDetail?.(t.id), 300); }
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('pusula'); setTimeout(() => window._ppGorevDetay?.(t.id), 300); }
       }));
   } catch (e) {}
 
