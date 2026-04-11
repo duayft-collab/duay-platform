@@ -83,7 +83,27 @@ window._saV2TeklifOlustur = function(id) {
   ic += '1 GBP = '+(window._saKur?.GBP||59.30).toFixed(2)+' TL';
   ic += '</div>';
 
-  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden">';
+  /* SATIS-JOBID-001: Job ID seçimi + tedarikçi karşılaştırma */
+  ic += '<div style="display:flex;align-items:end;gap:8px;padding:8px 10px;background:#FFFCF5;border:0.5px solid #F4E4BC;border-radius:5px;margin-top:6px">';
+  ic += '<div style="flex:1"><div style="font-size:8px;font-weight:500;color:#854F0B;letter-spacing:.06em;margin-bottom:3px">JOB ID SEÇ (Tedarik Kaynağı)</div>';
+  ic += '<select id="st-job-id" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit"><option value="">— Job seçin (opsiyonel) —</option>';
+  var _jobSet = {};
+  try {
+    var _alis = typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : [];
+    _alis.forEach(function(at){ if(at && at.jobId) _jobSet[at.jobId] = (_jobSet[at.jobId]||0)+1; });
+  } catch(e) {}
+  try {
+    var _gorev = typeof window._ppLoad === 'function' ? window._ppLoad() : [];
+    _gorev.forEach(function(g){ if(g && !g.isDeleted && g.job_id) _jobSet[g.job_id] = (_jobSet[g.job_id]||0)+1; });
+  } catch(e) {}
+  Object.keys(_jobSet).sort().forEach(function(jid){
+    ic += '<option value="'+_saEsc(jid)+'">'+_saEsc(jid)+' ('+_jobSet[jid]+' kayıt)</option>';
+  });
+  ic += '</select></div>';
+  ic += '<button onclick="event.stopPropagation();window._saV2JobUrunSecModal(document.getElementById(\'st-job-id\').value)" style="font-size:10px;padding:7px 12px;border:none;border-radius:5px;background:#854F0B;color:#fff;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ Tedarikçi Karşılaştır</button>';
+  ic += '</div>';
+
+  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px">';
   ic += '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
   ic += '<th style="padding:5px 8px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:5px 8px">MİKTAR</th><th style="padding:5px 8px">ALIŞ</th><th style="padding:5px 8px">MARJ %</th><th style="padding:5px 8px">SATIŞ</th><th style="padding:5px 8px">TOPLAM</th></tr></thead>';
   ic += '<tbody id="st-urun-tbody"></tbody></table>';
@@ -400,4 +420,84 @@ window._saV2SartManuelEkle = function() {
   window._stSartlar.push(inp.value.trim());
   window._saV2SartListeGuncelle();
   inp.value = '';
+};
+
+/* SATIS-JOBID-001: Job ID'ye göre tedarikçi karşılaştırma modalı */
+window._saV2JobUrunSecModal = function(jobId) {
+  if (!jobId) { window.toast?.('Önce Job ID se\u00e7in', 'warn'); return; }
+  var mevcut = document.getElementById('st-job-urun-modal');
+  if (mevcut) mevcut.remove();
+  var alisTeklifleri = typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : [];
+  var jobTeklifleri = alisTeklifleri.filter(function(at){ return at && !at.isDeleted && String(at.jobId) === String(jobId); });
+  if (!jobTeklifleri.length) {
+    window.toast?.('Bu Job ID i\u00e7in al\u0131\u015f teklifi bulunamad\u0131', 'warn');
+    return;
+  }
+  var modal = document.createElement('div');
+  modal.id = 'st-job-urun-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  var h = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:720px;max-height:85vh;display:flex;flex-direction:column">';
+  h += '<div style="padding:14px 18px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h += '<div><div style="font-size:13px;font-weight:500;color:var(--t)">Tedarik\u00e7i Kar\u015f\u0131la\u015ft\u0131rma</div>';
+  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Job ID: <strong>'+_saEsc(jobId)+'</strong> \u00b7 '+jobTeklifleri.length+' tedarik\u00e7i</div></div>';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'st-job-urun-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">\u00d7</button>';
+  h += '</div>';
+  h += '<div style="flex:1;overflow-y:auto;padding:14px 18px">';
+  jobTeklifleri.forEach(function(at, ti){
+    var urunler = Array.isArray(at.urunler) && at.urunler.length ? at.urunler : [{
+      duayKodu: at.duayKodu, urunAdi: at.urunAdi, alisF: at.alisF, miktar: at.miktar||1, para: at.para||'USD', gorsel: at.gorsel
+    }];
+    h += '<div style="border:0.5px solid var(--b);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:var(--s2)">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="font-size:12px;color:var(--t)">'+_saEsc(at.tedarikci||'\u2014')+'</strong>';
+    h += '<span style="font-size:9px;color:var(--t3)">PI: '+_saEsc(at.piNo||'\u2014')+' \u00b7 '+(at.teklifTarih||at.createdAt||'').slice(0,10)+'</span></div>';
+    urunler.forEach(function(u, ui){
+      var uniqId = 'job-urun-'+ti+'-'+ui;
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--b)">';
+      h += '<input type="checkbox" id="'+uniqId+'" data-tedarikci="'+_saEsc(at.tedarikci||'')+'" data-duaykodu="'+_saEsc(u.duayKodu||'')+'" data-urunadi="'+_saEsc(u.urunAdi||'')+'" data-alisf="'+(parseFloat(u.alisF)||0)+'" data-miktar="'+(parseFloat(u.miktar)||1)+'" data-para="'+(u.para||at.toplamPara||'USD')+'" data-gorsel="'+_saEsc(u.gorsel||'')+'" style="width:14px;height:14px;cursor:pointer">';
+      h += '<label for="'+uniqId+'" style="flex:1;font-size:10px;cursor:pointer">';
+      h += '<div style="font-weight:500;color:var(--t)">'+_saEsc(u.duayKodu||'')+(u.duayKodu?' — ':'')+_saEsc(u.urunAdi||'\u2014')+'</div>';
+      h += '<div style="font-size:9px;color:var(--t3)">Miktar: '+(u.miktar||1)+' \u00b7 Al\u0131\u015f: <strong style="color:#0F6E56">'+(parseFloat(u.alisF)||0).toFixed(2)+' '+(u.para||at.toplamPara||'USD')+'</strong></div>';
+      h += '</label></div>';
+    });
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '<div style="padding:10px 16px;border-top:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;background:var(--s2)">';
+  h += '<div style="font-size:9px;color:var(--t3)">Se\u00e7ili \u00fcr\u00fcnler sat\u0131\u015f teklif tablosuna eklenir</div>';
+  h += '<div style="display:flex;gap:6px">';
+  h += '<button onclick="event.stopPropagation();document.getElementById(\'st-job-urun-modal\')?.remove()" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u0130ptal</button>';
+  h += '<button onclick="event.stopPropagation();window._saV2JobUrunEkle()" style="font-size:11px;padding:7px 18px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-weight:500;font-family:inherit">Se\u00e7ilenleri Ekle</button>';
+  h += '</div></div>';
+  h += '</div>';
+  modal.innerHTML = h;
+  document.body.appendChild(modal);
+};
+
+window._saV2JobUrunEkle = function() {
+  var modal = document.getElementById('st-job-urun-modal');
+  if (!modal) return;
+  var checked = modal.querySelectorAll('input[type="checkbox"]:checked');
+  if (!checked.length) { window.toast?.('En az bir \u00fcr\u00fcn se\u00e7in', 'warn'); return; }
+  window._saV2SatisUrunler = window._saV2SatisUrunler || [];
+  var eklenenSay = 0;
+  checked.forEach(function(cb){
+    var t = {
+      id: typeof window.generateId === 'function' ? window.generateId() : ('jb-'+Date.now()+'-'+eklenenSay),
+      duayKodu: cb.dataset.duaykodu || '',
+      urunAdi: cb.dataset.urunadi || '',
+      gorsel: cb.dataset.gorsel || '',
+      alisF: parseFloat(cb.dataset.alisf) || 0,
+      para: cb.dataset.para || 'USD',
+      miktar: parseFloat(cb.dataset.miktar) || 1,
+      tedarikci: cb.dataset.tedarikci || ''
+    };
+    if (typeof window._saV2SatisUrunEkle === 'function') {
+      window._saV2SatisUrunEkle(t);
+    }
+    eklenenSay++;
+  });
+  modal.remove();
+  window.toast?.(eklenenSay + ' \u00fcr\u00fcn eklendi', 'ok');
+  window._saV2PIOnizlemeGuncelle?.();
 };
