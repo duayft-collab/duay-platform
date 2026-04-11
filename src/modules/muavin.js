@@ -389,7 +389,11 @@ window.renderMuavin = function() {
     else { sagIcerik += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:12px">'; _firmalar.forEach(function(f) { var renk = f.skor >= 90 ? '#0F6E56' : f.skor >= 70 ? '#854F0B' : '#A32D2D'; sagIcerik += '<div onclick="event.stopPropagation();window._mvAktifFirma=\'' + f.ad.replace(/'/g, "\\'") + '\';window._mvAktifTab=\'karsilastirma\';window.renderMuavin()" style="border:0.5px solid var(--b);border-radius:8px;padding:12px;cursor:pointer;background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:500;color:var(--t)">' + window._esc(f.ad) + '</div><div style="font-size:18px;font-weight:700;color:' + renk + '">%' + f.skor + '</div></div><div style="display:flex;gap:8px;margin-top:8px;font-size:10px"><span style="color:var(--t3)">' + f.toplam + ' i\u015flem</span><span style="color:#0F6E56">' + (f.toplam - f.fark) + ' mutab\u0131k</span><span style="color:#A32D2D">' + f.fark + ' fark</span></div></div>'; }); sagIcerik += '</div>'; }
   }
   else if (aktifTab === 'toplu-karsilastir') {
-    sagIcerik += '<div style="padding:16px"><div style="font-size:13px;font-weight:500;margin-bottom:8px">Toplu Kar\u015f\u0131la\u015ft\u0131rma</div>';
+    sagIcerik += '<div style="padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:13px;font-weight:500">Toplu Kar\u015f\u0131la\u015ft\u0131rma</div>';
+    sagIcerik += '<div style="display:flex;gap:6px">';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvBirlesikExcelIndir?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u2b07 Birle\u015fik Excel</button>';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvTopluMutabakatPDF?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#A32D2D">\u2399 PDF Raporu</button>';
+    sagIcerik += '</div></div>';
     sagIcerik += '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">T\u00fcm firmalar\u0131n mutabakat \u00f6zeti</div>';
     var _tf = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
     var _topSkor = _tf.length ? Math.round(_tf.reduce(function(s, f) { return s + f.skor; }, 0) / _tf.length) : 0;
@@ -399,7 +403,8 @@ window.renderMuavin = function() {
     sagIcerik += '</tbody></table></div>';
   }
   else if (aktifTab === 'cari-bakiye') {
-    sagIcerik += '<div style="padding:16px"><div style="font-size:13px;font-weight:500;margin-bottom:8px">Cari Bakiye \u00d6zeti</div>';
+    sagIcerik += '<div style="padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:13px;font-weight:500">Cari Bakiye \u00d6zeti</div>';
+    sagIcerik += '<button onclick="event.stopPropagation();window._mvBirlesikExcelIndir?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u2b07 Excel</button></div>';
     sagIcerik += '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Muhasebeci ve \u015firket verisi aras\u0131ndaki net bakiye fark\u0131</div>';
     var _cf = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
     var _topFark = _cf.reduce(function(s, f) { return s + f.sonuc.reduce(function(a, r) { return a + (r.farkTL || 0); }, 0); }, 0);
