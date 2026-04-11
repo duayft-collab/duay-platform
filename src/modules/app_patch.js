@@ -50,7 +50,6 @@ window._yetkiKontrol = function(islem) {
     lojistik:() => { window.Lojistik?.render?.(); },
     'ik-hub':() => { const p=document.getElementById('panel-ik-hub'); if(p && window.IkHub) { IkHub.inject(p); IkHub.render?.(); } },
     hesap:   () => { window.renderHesapHistory?.(); },
-    notes:   () => { window.renderNotes?.(); },
     'finans': () => { window.renderFinans?.() || window.Finans?.render?.(); },
     'hesap-ozeti': () => { window.renderHesapOzeti?.(); }, 'muavin': () => { window.renderMuavin?.(); },
     'gcb': () => { window.renderGcb?.(); },
@@ -478,18 +477,6 @@ window.openPuanModal = window.openPuanModal || function() {
   window.openMo?.('mo-puan');
 };
 
-// setNoteView
-window.setNoteView = window.setNoteView || function(v, btn) {
-  document.querySelectorAll('#nt-v-grid, #nt-v-list').forEach(b => b.classList.remove('on'));
-  if (btn) btn.classList.add('on');
-  window.renderNotes?.();
-};
-
-// openNoteModal
-window.openNoteModal = window.openNoteModal || function(id) {
-  window.openMo?.('mo-note');
-};
-
 // exportHdfXlsx, openHdfModal
 window.exportHdfXlsx = window.exportHdfXlsx || function() {};
 window.openHdfModal   = window.openHdfModal   || function() { window.openMo?.('mo-hdf'); };
@@ -699,7 +686,6 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
 window.MODULE_NAV_MAP = {
   'dashboard':  [],
   'announce':   ['nb-ann'],
-  'notes':      ['nb-nt'],
   'links':      ['nb-lnk'],
   'rehber':     [],
   'crm':        [],
@@ -735,7 +721,7 @@ window.MODULE_NAV_MAP = {
 };
 
 window.PANEL_MODULE_MAP = {
-  'notes':'notes','links':'links','rehber':'rehber',
+  'links':'links','rehber':'rehber',
   'crm':'crm','gorusme':'gorusme','etkinlik':'etkinlik','numune':'numune',
   'lojistik':'lojistik','stok':'stok','kargo':'kargo',
   'finans':'finans','odemeler':'odemeler','pirim':'pirim','hesap':'hesap',
@@ -3438,7 +3424,7 @@ window._setArsivTab = function(tab) {
   if (!cont) return;
   // Alt modül render
   var renderMap = {
-    docs: function() { if (typeof window.renderNotes === 'function') { cont.innerHTML = '<div id="panel-docs-inner"></div>'; } else { cont.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t3)">Döküman modülü yükleniyor...</div>'; } },
+    docs: function() { cont.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t3)">Döküman modülü yükleniyor...</div>'; },
     arsiv: function() { if (typeof window.renderArsiv === 'function') window.renderArsiv(); },
     tebligat: function() { if (typeof window.renderTebligat === 'function') window.renderTebligat(); },
     resmi: function() { if (typeof window.renderResmi === 'function') window.renderResmi(); },

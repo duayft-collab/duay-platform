@@ -133,7 +133,6 @@ const ALL_MODULES = [
   { id:'dashboard',  label:'Dashboard'           },
   { id:'announce',   label:'Duyurular'            },
   { id:'puantaj',    label:'Puantaj'              },
-  { id:'notes',      label:'Notlar'               },
   { id:'links',      label:'Hızlı Linkler'        },
   { id:'hedefler',   label:'Hedefler'             },
   { id:'odemeler',   label:'Rutin Ödemeler'       },
@@ -159,9 +158,9 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula-pro','puantaj','notes','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','hesap-ozeti','muavin'],
-  lead:    ['dashboard','announce','pusula-pro','puantaj','notes','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma'],
-  staff:   ['dashboard','announce','pusula','pusula-pro','takvim','notes','links','izin','pirim'],
+  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','hesap-ozeti','muavin'],
+  lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma'],
+  staff:   ['dashboard','announce','pusula','pusula-pro','takvim','links','izin','pirim'],
 };
 
 /** Admin-only paneller */
@@ -1041,7 +1040,6 @@ function _renderPanel(id) {
     admin:      () => safe(() => { window.Admin?.render?.(); window.Admin?.renderLog?.(); }),
     announce:   () => safe(() => { window.renderAnnouncements?.(); window.updateAnnBadge?.(); }),
     puantaj:    () => safe(() => window.renderPuantaj?.()),
-    notes:      () => safe(() => window.renderNotes?.()),
     links:      () => safe(() => window.renderLinks?.()),
     hedefler:   () => safe(() => window.renderHedefler?.()),
     odemeler:   () => safe(() => window.renderOdemeler?.()),
@@ -2353,17 +2351,6 @@ function doGSearch(q) {
         icon: '🧭', title: t.title, sub: `Görev · ${t.done ? 'Tamamlandı' : 'Devam ediyor'}`,
         module: 'pusula',
         action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('pusula'); setTimeout(() => window._ppGorevDetay?.(t.id), 300); }
-      }));
-  } catch (e) {}
-
-  // Notlar
-  try {
-    loadNotes()
-      .filter(n => n.uid === cu?.id && ((n.title || '').toLowerCase().includes(q) || (n.body || '').toLowerCase().includes(q)))
-      .slice(0, 3).forEach(n => results.push({
-        icon: '📝', title: n.title, sub: `Not · ${n.cat || ''}`,
-        module: 'notes',
-        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('notes'); setTimeout(() => window.viewNote?.(n.id), 300); }
       }));
   } catch (e) {}
 
