@@ -1982,7 +1982,8 @@ window.renderSatisTeklifleri = function() {
       // Sol: Teklif No (bold, büyük) + müşteri + ürün sayısı
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:monospace;letter-spacing:-.3px">' + esc(t.teklifNo||'—') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div></div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
+      + '<div style="font-size:9px;color:var(--t3);font-family:monospace">' + esc(t.teklifNo||(t.id?String(t.id).slice(-8):'—')) + '</div></div>'
       // Orta: Tutar (bold, sağa yasla)
       + '<div style="font-size:13px;font-weight:700;color:var(--t);white-space:nowrap">' + (t.genelToplam||0).toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + (t.paraBirimi||'USD') + '</span></div>'
       // Durum badge
@@ -1996,12 +1997,23 @@ window.renderSatisTeklifleri = function() {
       // İşlem butonları (pill boyutunda)
       + '<div style="display:flex;gap:3px;flex-shrink:0">'
       + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--s2);color:var(--t3)">PDF</button>'
+      + '<button onclick="event.stopPropagation();window._stPeekAc(\'' + t.id + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Detay</button>'
+      + '<button onclick="event.stopPropagation();window._stPIGuncelle(\'' + t.id + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:#185FA5">PI ↻</button>'
       + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriOnayladi?.(' + t.id + ')" style="'+pillS+'background:#16A34A18;color:#16A34A">✓</button>' : '')
       + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriReddetti?.(' + t.id + ')" style="'+pillS+'background:#DC262618;color:#DC2626">✗</button>' : '')
       + (t.durum!=='taslak' ? '<button onclick="window._reviseSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--al);color:var(--ac)">Rev</button>' : '')
       + (t.durum==='kabul' ? '<button onclick="window._createPR?.(' + t.id + ')" style="'+pillS+'background:#D9770618;color:#D97706">PR</button>' : '')
       + '</div></div>';
   }).join('');
+};
+
+/* ── SATIS-LISTE-001: PI Güncelleme ─────────────────────────── */
+window._stPIGuncelle = function(id) {
+  var liste = typeof window.loadSatisTeklifleri==='function'?window.loadSatisTeklifleri():[];
+  var t = liste.find(function(x){return String(x.id)===String(id);});
+  if(!t){window.toast?.('Teklif bulunamadı','warn');return;}
+  window._saV2TeklifOlustur?.(t.alisTeklifiId||id);
+  window.toast?.('PI formu açıldı','ok');
 };
 
 /* ── Satış Teklif Peek Panel ────────────────────────────────── */
