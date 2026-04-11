@@ -765,8 +765,8 @@ function _syncFirestore(path, data, mode = 'set') {
     var _useCritical = !!KEYS[collection] || _ALL_SYNC_COLS.indexOf(collection) !== -1;
 
     if (mode === 'set') {
-      // trash, notifications, activity → merge yok, direkt üzerine yaz
-      var _noMergeCols = ['trash', 'notifications', 'activity'];
+      // trash → merge yok, direkt üzerine yaz (notifications/activity append-only merge'e geçti)
+      var _noMergeCols = ['trash'];
       if (Array.isArray(data) && _noMergeCols.indexOf(collection) !== -1) {
         var _nmPayload = { data: data, syncedAt: syncedAt };
         if (_useCritical && _isSafari) { _verifiedWrite(path, data); }
@@ -1938,12 +1938,21 @@ function _listenCollection(collection, localKey, onUpdate) {
       _lastDataHash[collection] = dataHash;
       if(window._fbSyncLog){ window._fbSyncLog.sonAl = new Date().toISOString(); window._fbBadgeGuncelle?.(); }
 
-      // trash, notifications, activity → merge yok, Firestore master
-      var _rtNoMerge = ['trash', 'notifications', 'activity'];
+      // trash → Firestore master (silme propagation)
+      // notifications, activity, taskChats → append-only merge (ezilme önleme)
+      var _rtNoMerge = ['trash'];
+      var _rtAppendOnly = ['notifications', 'activity', 'taskChats'];
       var merged;
       if (_rtNoMerge.indexOf(collection) !== -1) {
-        // Merge yapmadan direkt Firestore verisini al
         merged = Array.isArray(fsData) ? fsData : fsData;
+      } else if (_rtAppendOnly.indexOf(collection) !== -1) {
+        // Append-only: ID bazlı birleştir, hiçbir kayıt silinmez
+        var _localArr = _read(localKey) || [];
+        var _fsArr = Array.isArray(fsData) ? fsData : [];
+        var _appendMap = {};
+        _localArr.forEach(function(r){ if(r && r.id) _appendMap[r.id] = r; });
+        _fsArr.forEach(function(r){ if(r && r.id && !_appendMap[r.id]) _appendMap[r.id] = r; });
+        merged = Object.values(_appendMap);
       } else {
         merged = _mergeDataSets(localKey, fsData, collection);
       }
@@ -2967,7 +2976,7 @@ function _startBgSyncCheck() {
     var base = 'duay_' + tid;
     // Tüm SYNC_MAP koleksiyonlarını kontrol et
     var allCols = _ALL_SYNC_COLS.map(function(col) { return [col, KEYS[col] || 'ak_' + col]; });
-    var _bgNoMerge = ['trash', 'notifications', 'activity', 'taskChats'];
+    var _bgNoMerge = ['trash'];
     allCols.forEach(function(pair) {
       var col = pair[0]; var key = pair[1];
       if (_bgNoMerge.indexOf(col) !== -1) {
