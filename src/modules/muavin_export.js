@@ -857,20 +857,16 @@ window._mvBirlesikExcelIndir = function() {
       }
     });
   });
-  var csv = satirlar.map(function(r) {
-    return r.map(function(c) { var s = String(c || '').replace(/"/g, '""'); return s.indexOf(',') !== -1 || s.indexOf('"') !== -1 ? '"' + s + '"' : s; }).join(',');
-  }).join('\n');
-  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'muavin_birlesik_' + (new Date().toISOString().slice(0, 10)) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  if (typeof XLSX === 'undefined') { window.toast?.('SheetJS y\u00fcklenmedi', 'err'); return; }
+  var ws = XLSX.utils.aoa_to_sheet(satirlar);
+  ws['!cols'] = [12, 20, 14, 14, 30, 12, 14, 40].map(function(w) { return { wch: w }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Mutabakat');
+  var donem = typeof window._mvAktifDonem === 'function' ? window._mvAktifDonem() : '';
+  var dosyaAdi = 'muavin_birlesik_' + (donem || new Date().toISOString().slice(0, 10)) + '.xlsx';
+  XLSX.writeFile(wb, dosyaAdi);
   window.toast?.('Excel indirildi', 'ok');
-  window.logActivity?.('export', 'Muavin birle\u015fik Excel indirildi');
+  window.logActivity?.('export', 'Muavin birle\u015fik Excel indirildi: ' + dosyaAdi);
 };
 
 console.log('[MUAVIN-EXPORT] y\u00fcklendi');
