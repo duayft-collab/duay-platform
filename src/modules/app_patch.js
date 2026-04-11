@@ -5211,58 +5211,45 @@ window.renderSatinAlmaSiparis = function() {
   panel.innerHTML = h;
 };
 
-/* \u2500\u2500 EVRAK-PAKET-UI-001: Mockup birebir \u2014 5 ad\u0131m sol panel + sa\u011f \u00f6zet \u2500\u2500 */
+/* \u2500\u2500 EVRAK-PAKET-UI-002: Basit d\u00fcz layout \u2500\u2500 */
 window.renderEvrakPaketi = function() {
   var panel = document.getElementById('panel-evrak-paketi'); if (!panel) return;
   var o = window._epOzetVeri || {};
   var ay = (function() { var d = new Date(); d.setMonth(d.getMonth() - 1); return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); })();
-  var kontroller = ['ep-k1', 'ep-k2', 'ep-k3', 'ep-k4', 'ep-k5'];
-  var tamamlandi = kontroller.filter(function(k) { return localStorage.getItem(k); }).length;
-  var h = '<div style="border:0.5px solid var(--b);border-radius:10px;overflow:hidden;background:var(--sf)">';
-  h += '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">';
-  h += '<div><div style="font-size:15px;font-weight:500;color:var(--t)">Evrak Paketi</div>';
-  h += '<div style="font-size:9px;color:var(--t3);margin-top:2px">Muhasebeciye Ayl\u0131k Teslim \u2014 ' + ay + '</div></div>';
-  h += '<div style="font-size:9px;padding:3px 8px;border-radius:10px;background:' + (tamamlandi >= 5 ? '#E1F5EE' : '#FAEEDA') + ';color:' + (tamamlandi >= 5 ? '#085041' : '#633806') + ';font-weight:500">' + tamamlandi + '/5 Tamamland\u0131</div></div>';
-  h += '<div style="display:grid;grid-template-columns:280px 1fr;min-height:520px">';
-  /* Sol: 5 ad\u0131m */
-  h += '<div style="border-right:0.5px solid var(--b);padding:14px">';
-  h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:10px;letter-spacing:.05em">ADIMLAR</div>';
-  var adimlar = [
-    { no: 1, baslik: 'Excel Y\u00fckle', aciklama: 'Al\u0131\u015f + Sat\u0131\u015f faturalar\u0131', done: !!o.alisSayisi, icerik: o.alisSayisi ? '<div style="margin-top:6px;display:flex;gap:4px"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#E1F5EE;color:#085041">Al\u0131\u015f: ' + o.alisSayisi + '</span><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#E1F5EE;color:#085041">Sat\u0131\u015f: ' + (o.satisSayisi || 0) + '</span></div>' : '<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px"><div style="font-size:9px;color:var(--t3)">Al\u0131\u015f: <input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epAlisYukle?.(this)" style="font-size:9px"></div><div style="font-size:9px;color:var(--t3)">Sat\u0131\u015f: <input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epSatisYukle?.(this)" style="font-size:9px"></div></div>' },
-    { no: 2, baslik: 'PDF \u00dcret', aciklama: '6 belge otomatik', done: !!o.alisSayisi, icerik: '<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">' + ['Al\u0131\u015f Fatura', 'Sat\u0131\u015f Fatura', 'KDV \u0130ade', 'Check List', 'Kapak', 'Zarf'].map(function(ad) { return '<div style="font-size:9px;display:flex;justify-content:space-between"><span style="color:var(--t2)">' + ad + '</span><span style="color:' + (o.alisSayisi ? '#0F6E56' : '#854F0B') + '">' + (o.alisSayisi ? 'Haz\u0131r' : 'Bekliyor') + '</span></div>'; }).join('') + '</div>' },
-    { no: 3, baslik: 'Yazd\u0131r', aciklama: 'T\u00fcm belgeler tek komut', done: false, icerik: '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="margin-top:6px;width:100%;font-size:10px;padding:5px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>' },
-    { no: 4, baslik: 'Kontrol Et', aciklama: 'Fatura tikleme zorunlu', done: tamamlandi >= 5, icerik: '<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">' + [['ep-k1', 'Al\u0131\u015f faturalar\u0131 kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131'], ['ep-k2', 'Sat\u0131\u015f faturalar\u0131 kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131'], ['ep-k3', 'KDV iade kontrol edildi'], ['ep-k4', 'GIB tebligatlar kontrol edildi'], ['ep-k5', 'Kapak imzaland\u0131']].map(function(k) { return '<label style="display:flex;gap:5px;font-size:9px;color:var(--t2);cursor:pointer"><input type="checkbox" ' + (localStorage.getItem(k[0]) ? 'checked' : '') + ' onclick="event.stopPropagation();if(this.checked)localStorage.setItem(\'' + k[0] + '\',\'1\');else localStorage.removeItem(\'' + k[0] + '\');window.renderEvrakPaketi?.()" style="width:11px;height:11px;margin-top:1px"> ' + k[1] + '</label>'; }).join('') + '</div>' },
-    { no: 5, baslik: 'Tamamla', aciklama: 'Bildirim + KPI kayd\u0131', done: false, icerik: '<button onclick="event.stopPropagation();window._epTamamla?.()" ' + (tamamlandi < 5 ? 'disabled' : '') + ' style="margin-top:6px;width:100%;font-size:10px;padding:5px;border:none;border-radius:5px;background:' + (tamamlandi >= 5 ? '#0F6E56' : '#D3D1C7') + ';color:#fff;cursor:' + (tamamlandi >= 5 ? 'pointer' : 'not-allowed') + ';font-family:inherit">' + (tamamlandi >= 5 ? '\u2713 \u0130\u015fi Tamamla' : '\u00d6nce kontrolleri tamamla') + '</button>' }
-  ];
-  adimlar.forEach(function(a) {
-    h += '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--b)">';
-    h += '<div style="width:22px;height:22px;border-radius:50%;background:' + (a.done ? '#0F6E56' : '#185FA5') + ';color:#fff;font-size:9px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' + (a.done ? '\u2713' : a.no) + '</div>';
-    h += '<div style="flex:1"><div style="font-size:10px;font-weight:500;color:var(--t)">' + a.baslik + '</div>';
-    h += '<div style="font-size:9px;color:var(--t3);margin-top:1px">' + a.aciklama + '</div>' + a.icerik + '</div></div>';
-  });
+  var h = '<div style="padding:20px;max-width:900px">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><div><div style="font-size:16px;font-weight:500;color:var(--t)">Evrak Paketi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Muhasebeciye Ayl\u0131k Teslim \u2014 ' + ay + '</div></div></div>';
+  h += '<div style="display:flex;flex-direction:column;gap:12px">';
+  /* 1. Excel Y\u00fckle */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px"><div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:10px">1. Excel Y\u00fckle</div>';
+  h += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+  h += '<div style="flex:1;min-width:200px"><div style="font-size:9px;color:var(--t3);margin-bottom:4px">Al\u0131\u015f Faturalar\u0131 (Para\u015f\u00fct Export)</div><input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epAlisYukle?.(this)" style="font-size:10px;width:100%"></div>';
+  h += '<div style="flex:1;min-width:200px"><div style="font-size:9px;color:var(--t3);margin-bottom:4px">Sat\u0131\u015f Faturalar\u0131 (Para\u015f\u00fct Export)</div><input type="file" accept=".xlsx,.xls,.csv" onchange="event.stopPropagation();window._epSatisYukle?.(this)" style="font-size:10px;width:100%"></div>';
   h += '</div>';
-  /* Sa\u011f: \u00d6zet + PDF butonlar\u0131 + ge\u00e7mi\u015f */
-  h += '<div style="padding:14px">';
-  h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:10px;letter-spacing:.05em">\u00d6ZET \u2014 ' + ay.toUpperCase() + '</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">';
-  [['Al\u0131\u015f', o.alisSayisi || 0, ''], ['Sat\u0131\u015f', o.satisSayisi || 0, ''], ['KDV \u0130ade', o.alisKdv ? (o.alisKdv.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' TL') : '\u2014', '#0F6E56'], ['\u0130hracat', o.ihracatSayisi || 0, '']].forEach(function(k) {
-    h += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;border:0.5px solid var(--b);text-align:center"><div style="font-size:9px;color:var(--t3)">' + k[0] + '</div><div style="font-size:' + (k[2] ? '14' : '22') + 'px;font-weight:500;color:' + (k[2] || 'var(--t)') + '">' + k[1] + '</div></div>';
-  });
+  if (o.alisSayisi) { h += '<div style="margin-top:10px;padding:8px 10px;background:#E1F5EE;border-radius:6px;font-size:10px;color:#085041">Al\u0131\u015f: <strong>' + o.alisSayisi + '</strong> fatura \u00b7 Sat\u0131\u015f: <strong>' + (o.satisSayisi || 0) + '</strong> fatura \u00b7 KDV: <strong>' + ((o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })) + ' TL</strong> \u00b7 \u0130hracat: <strong>' + (o.ihracatSayisi || 0) + '</strong></div>'; }
   h += '</div>';
-  h += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
-  [['Al\u0131\u015f PDF', '_epAlisfaturaPDF'], ['Sat\u0131\u015f PDF', '_epSatisfaturaPDF'], ['KDV \u0130ade', '_epKdvIadePDF'], ['Check List', '_epCheckListPDF'], ['Kapak', '_epKapakPDF'], ['Zarf', '_epZarfEtiketiPDF']].forEach(function(b) {
-    h += '<button onclick="event.stopPropagation();window.' + b[1] + '?.()" style="font-size:10px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">' + b[0] + '</button>';
+  /* 2. PDF \u00dcret */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px"><div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:10px">2. PDF \u00dcret ve Yazd\u0131r</div>';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  [['Al\u0131\u015f Fatura Listesi', '_epAlisfaturaPDF'], ['Sat\u0131\u015f Fatura Listesi', '_epSatisfaturaPDF'], ['KDV \u0130ade Raporu', '_epKdvIadePDF'], ['Check List', '_epCheckListPDF'], ['Kapak Sayfas\u0131', '_epKapakPDF']].forEach(function(b) {
+    h += '<button onclick="event.stopPropagation();window.' + b[1] + '?.()" style="font-size:10px;padding:6px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">' + b[0] + '</button>';
   });
+  h += '<button onclick="event.stopPropagation();window._epTumunuYazdir?.()" style="font-size:10px;padding:6px 14px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">T\u00fcm\u00fcn\u00fc Yazd\u0131r</button>';
+  h += '</div></div>';
+  /* 3. Kontrol */
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px"><div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:10px">3. Kontrol Et</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:8px">';
+  [['ep-k1', 'Al\u0131\u015f faturalar\u0131 listesi ile faturalar kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131'], ['ep-k2', 'Sat\u0131\u015f faturalar\u0131 listesi ile faturalar kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131'], ['ep-k3', 'KDV iade raporu kontrol edildi'], ['ep-k4', 'GIB sisteminden tebligatlar kontrol edildi'], ['ep-k5', 'Kapak sayfas\u0131 dolduruldu ve imzaland\u0131']].forEach(function(k) {
+    h += '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:10px;color:var(--t2)"><input type="checkbox" ' + (localStorage.getItem(k[0]) ? 'checked' : '') + ' onclick="event.stopPropagation();if(this.checked)localStorage.setItem(\'' + k[0] + '\',\'1\');else localStorage.removeItem(\'' + k[0] + '\');window.renderEvrakPaketi?.()" style="margin-top:2px;width:13px;height:13px"><span>' + k[1] + '</span></label>';
+  });
+  h += '</div></div>';
+  /* 4. Tamamla */
+  var tamamlandi = ['ep-k1', 'ep-k2', 'ep-k3', 'ep-k4', 'ep-k5'].filter(function(k) { return localStorage.getItem(k); }).length;
+  h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px"><div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:10px">4. \u0130\u015fi Tamamla</div>';
+  h += '<div style="font-size:10px;color:var(--t3);margin-bottom:8px">' + tamamlandi + '/5 kontrol tamamland\u0131</div>';
+  h += '<button onclick="event.stopPropagation();window._epTamamla?.()" ' + (tamamlandi < 5 ? 'disabled' : '') + ' style="padding:8px 24px;border:none;border-radius:6px;background:' + (tamamlandi >= 5 ? '#0F6E56' : '#ccc') + ';color:#fff;font-size:11px;font-weight:500;cursor:' + (tamamlandi >= 5 ? 'pointer' : 'not-allowed') + ';font-family:inherit">' + (tamamlandi >= 5 ? '\u2713 \u0130\u015fi Tamamla' : '\u00d6nce t\u00fcm kontrolleri tamamla') + '</button>';
+  h += '</div></div>';
+  h += '<div style="margin-top:16px;padding:8px 10px;background:#FAEEDA;border-radius:6px;font-size:9px;color:#633806">Haz\u0131rlayan: <strong>' + (window.CU?.()?.displayName || '\u2014') + '</strong> \u00b7 Bu belge Duay Uluslararas\u0131 Ticaret Ltd. \u015eti. i\u00e7 kullan\u0131m\u0131na mahsustur.</div>';
   h += '</div>';
-  h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-bottom:8px;letter-spacing:.05em">GE\u00c7M\u0130\u015e</div>';
-  var gecmis = [];
-  for (var gi = 0; gi < 3; gi++) { var gd = new Date(); gd.setMonth(gd.getMonth() - gi - 1); var gk = 'ak_ep_tamamlandi_' + gd.getFullYear() + '_' + gd.getMonth(); var gv = localStorage.getItem(gk); if (gv) { try { gecmis.push(JSON.parse(gv)); } catch(e) {} } }
-  h += '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px;text-align:left">D\u00f6nem</th><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px;text-align:left">Haz\u0131rlayan</th><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px;text-align:left">Tarih</th><th style="font-size:8px;font-weight:500;color:var(--t3);padding:5px 8px">Durum</th></tr></thead><tbody>';
-  if (gecmis.length) { gecmis.forEach(function(g) { h += '<tr><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b)">' + (g.ay || '') + '</td><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b);color:var(--t2)">' + (g.hazirlayan || '') + '</td><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b);color:var(--t3)">' + (g.tarih ? new Date(g.tarih).toLocaleDateString('tr-TR') : '') + '</td><td style="font-size:10px;padding:6px 8px;border-bottom:0.5px solid var(--b);text-align:center"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#E1F5EE;color:#085041">Tamamland\u0131</span></td></tr>'; }); }
-  else { h += '<tr><td colspan="4" style="font-size:10px;padding:20px;text-align:center;color:var(--t3)">Hen\u00fcz tamamlanm\u0131\u015f d\u00f6nem yok</td></tr>'; }
-  h += '</tbody></table>';
-  h += '<div style="margin-top:12px;padding:8px 10px;background:#FAEEDA;border-radius:6px;font-size:9px;color:#633806">Haz\u0131rlayan: <strong>' + (window.CU?.()?.displayName || '\u2014') + '</strong> \u00b7 Bu belge Duay Uluslararas\u0131 Ticaret Ltd. \u015eti. i\u00e7 kullan\u0131m\u0131na mahsustur.</div>';
-  h += '</div></div></div>';
   panel.innerHTML = h;
 };
 
