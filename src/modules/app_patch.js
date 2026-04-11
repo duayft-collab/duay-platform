@@ -5618,16 +5618,50 @@ window._epCheckListPDF = function() {
   var o = window._epOzetVeri || {};
   var bugun = new Date().toLocaleDateString('tr-TR');
   var ay = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-  var h = '<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt;margin:30px}h1{font-size:13pt;text-align:center}table{width:100%;border-collapse:collapse}td{padding:6px;border:0.5px solid #ddd}.no{width:30px;text-align:center;font-weight:bold}.chk{width:60px;text-align:center}.imza{margin-top:40px;display:flex;justify-content:space-between}.imza-alan{text-align:center;width:200px}.imza-cizgi{border-top:0.5px solid #111;margin-top:50px;padding-top:4px;font-size:8pt}</style></head><body>';
-  h += '<h1>DOSYA KAPAMA CHECK LIST</h1><p style="text-align:center">' + bugun + ' \u2014 ' + ay + '</p>';
-  var md = ['GIB faturalar\u0131 kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131. Al\u0131\u015f: <strong>' + (o.alisSayisi || '\u2014') + '</strong>', 'Tak\u0131ma bildirildi', 'Fatura \u00e7\u0131kt\u0131lar\u0131 al\u0131nd\u0131', 'Tebligatlar kontrol edildi', 'Evrak listeleri Y\u00f6netime sunuldu', 'Evraklar muhasebeciye teslim edildi', '\u00d6nceki ay\u0131n beyannamesi kontrol edildi', 'Vergi ve SGK borcu kontrol edildi', '\u0130ptal faturalar i\u015faretlendi', '\u0130hracat ekleri dosyaya eklendi. \u0130hracat: <strong>' + (o.ihracatSayisi || '\u2014') + '</strong>'];
-  h += '<table><thead><tr style="background:#f0f0f0"><td class="no">No</td><td>KONTROLLER</td><td class="chk">\u2713</td></tr></thead><tbody>';
-  md.forEach(function(m, i) { h += '<tr><td class="no">' + (i + 1) + '</td><td>' + m + '</td><td class="chk">\u25a1</td></tr>'; });
-  h += '</tbody></table>';
-  h += '<p style="font-size:8pt;margin-top:8px">KDV \u0130ade: <strong>' + (o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></p>';
-  h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Dosya Sorumlusu</div></div><div class="imza-alan"><div class="imza-cizgi">Y\u00f6netim</div></div></div></body></html>';
+  var hazirlayan = typeof window._epHazirlayan === 'function' ? window._epHazirlayan() : '';
+  var css = 'body{font-family:Arial,sans-serif;font-size:9pt;margin:25px}h1{font-size:13pt;font-weight:bold;text-align:center;margin-bottom:2px}h2{font-size:9pt;text-align:center;color:#555;margin-bottom:12px}table{width:100%;border-collapse:collapse;margin-bottom:12px}td{padding:5px 8px;border:0.5px solid #ddd;vertical-align:top}.no{width:28px;text-align:center;font-weight:bold;font-size:8pt}.chk{width:50px;text-align:center;font-size:11pt}.bolum{background:#f0f0f0;font-weight:bold;font-size:9pt;padding:6px 8px;border:0.5px solid #ccc}.amac{font-size:8pt;color:#555;border:0.5px solid #ddd;padding:6px 8px;margin-bottom:10px;background:#fafafa}.imza{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:30px}.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #111;margin-top:40px;padding-top:4px;font-size:8pt}';
+  var h = '<html><head><meta charset="UTF-8"><style>' + css + '</style></head><body>';
+  h += '<h1>DOSYA KAPAMA CHECK LIST</h1>';
+  h += '<h2>Tarih: ' + bugun + ' \u00b7 D\u00f6nem: ' + ay + ' \u00b7 Haz\u0131rlayan: ' + hazirlayan + '</h2>';
+  h += '<div class="amac">AMA\u00c7: T\u00fcm yasal evraklar\u0131n Resmi Muhasebeciye eksiksiz, fazlas\u0131z zaman\u0131nda liste ile teslim edilmesini sa\u011flamak ve teslim edilen evraklar\u0131 ar\u015five/referans dosyaya al\u0131p muhafaza etmek.</div>';
+  /* B\u00d6L\u00dcM 1: KONTROLLER */
+  var bolumler = [
+    { baslik: 'KONTROLLER', maddeler: [
+      'GIB sistemi \u00fczerinden t\u00fcm faturalar muhasebeci ile kar\u015f\u0131la\u015ft\u0131r\u0131ld\u0131. Al\u0131\u015f Fatura Say\u0131s\u0131: <strong>' + (o.alisSayisi || '\u2014') + '</strong>',
+      'Tak\u0131m arkada\u015flar\u0131na ilgili ay\u0131n muhasebe dosyas\u0131n\u0131n kapat\u0131laca\u011f\u0131 bildirildi.',
+      'Excel listede yer alan t\u00fcm faturalar\u0131n \u00e7\u0131kt\u0131s\u0131 al\u0131nd\u0131 ve kapal\u0131 zarfa yerle\u015ftirildi.',
+      'GIB sistemi \u00fczerinden t\u00fcm tebligatlar kontrol edildi ve resmi muhasebeciye PDF g\u00f6nderildi.',
+      'Muhasebece Teslim Edilecek Evrak Listeleri Y\u00f6netime sunuldu ve kontrol edildi.',
+      'T\u00fcm evraklar resmi muhasebeciye bizzat teslim edildi.',
+      'Bir \u00f6nceki ay\u0131n teslim edilen evraklar\u0131n\u0131n beyannamesi kontrol edildi.',
+      'Vergi ve SGK Borcu ayr\u0131 ayr\u0131 kontrol edildi. Ekran g\u00f6r\u00fcnt\u00fcs\u00fc al\u0131nd\u0131.',
+      '\u0130ptal edilen al\u0131\u015f ve sat\u0131\u015f faturalar\u0131n\u0131n \u00e7\u0131kt\u0131lar\u0131 KIRMIZI \u0130PTAL yaz\u0131s\u0131 ile i\u015faretlendi.',
+      '\u0130hracat fatura ekleri (G\u00c7B, G\u00fcmr\u00fck\u00e7\u00fc Faturas\u0131, Bor\u00e7 Dekontu, Kapak) dosyaya eklendi. \u0130hracat Fatura Say\u0131s\u0131: <strong>' + (o.ihracatSayisi || '\u2014') + '</strong>'
+    ]},
+    { baslik: 'B\u0130LG\u0130LEND\u0130RMELER', maddeler: [
+      'KDV \u0130adeleri Listeleri sunuldu ve YMM mail ile bilgilendirildi. KDV \u0130ade Tutar\u0131: <strong>' + (o.alisKdv || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong>'
+    ]},
+    { baslik: 'DOSYADA YER ALAN EVRAKLAR', maddeler: [
+      'Elektronik faturalar\u0131n tamam\u0131 mevcut.',
+      'KDV Tahakkuklar\u0131n\u0131n tamam\u0131 mevcut.',
+      '\u0130hracata ait KDV \u0130ade listesi, G\u00c7B ve ilgili evraklar mevcut.',
+      'Navlun sigorta poli\u00e7eleri mevcut.',
+      'T\u00fcm tahsilat makbuzlar\u0131 mevcut.'
+    ]},
+    { baslik: 'SORUMLULUK', maddeler: [
+      'Bu kontrol listesindeki t\u00fcm maddeler do\u011frudur ve eksiksizdir.',
+      'Eksik veya hatal\u0131 evrak tespit edilmesi halinde sorumluluk kabul edilir.'
+    ]}
+  ];
+  bolumler.forEach(function(b) {
+    h += '<table><thead><tr><td class="no bolum">No</td><td class="bolum">' + b.baslik + '</td><td class="chk bolum">\u2713</td></tr></thead><tbody>';
+    b.maddeler.forEach(function(m, i) { h += '<tr><td class="no">' + (i + 1) + '</td><td style="font-size:9pt">' + m + '</td><td class="chk">\u25a1</td></tr>'; });
+    h += '</tbody></table>';
+  });
+  h += '<div class="imza"><div class="imza-alan"><div class="imza-cizgi">Dosya Sorumlusu<br>Ad Soyad / \u0130mza / Tarih</div></div><div class="imza-alan"><div class="imza-cizgi">Duay Y\u00f6netim<br>Ad Soyad / \u0130mza / Tarih</div></div></div>';
+  h += '</body></html>';
   var w = window.open('', '_blank'); if (w) { w.document.write(h); w.document.close(); w.print(); }
-  window.logActivity?.('export', 'Check List PDF');
+  window.logActivity?.('export', 'Check List PDF \u2014 4 b\u00f6l\u00fcm');
 };
 window._epKapakPDF = function() {
   var o = window._epOzetVeri || {};
