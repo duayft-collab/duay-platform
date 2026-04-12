@@ -532,10 +532,103 @@ window._saV2TopluSilYap = function(secili) {
 };
 
 /**
- * SAV2-LISTE-FIX-001: Seçili satin_alma teklifleri toplu satış teklifine ekle.
- * _saV2ListeSecili'den seçili id'leri al, confirmModal ile onay,
- * her biri için loadSatisTeklifleri'ye yeni taslak entry ekle (ALIS-SATIS-
- * TOPLU-001 ile aynı pattern: müşteri "— BELİRTİLECEK —" placeholder).
+ * SAV2-BULK-SATIS-REDESIGN-001: "Satış Teklifi Oluştur" butonu için akıllı handler.
+ * Eğer hiç seçili teklif yoksa veya sadece tıklanan teklif seçiliyse, normal
+ * tek-teklif akışı (_saV2TeklifOlustur) çalışır. Eğer 1+ seçili öğe varsa,
+ * confirmModal ile "Seçili X teklifi forma eklemek istiyor musunuz?" sorulur.
+ *   - Evet → window._saV2TopluFormAc(seciliIds) ile birleşmiş ürünlerle aç
+ *   - Hayır → fallback: window._saV2TeklifOlustur(clickedId) tek-teklif akışı
+ */
+window._saV2TeklifOlusturAkilli = function(clickedId) {
+  var seciliIds = Object.keys(window._saV2ListeSecili||{}).filter(function(k){return window._saV2ListeSecili[k];});
+  // Seçim yok veya sadece tıklananın kendisi seçili → direkt tek-teklif
+  if (!seciliIds.length || (seciliIds.length === 1 && String(seciliIds[0]) === String(clickedId))) {
+    window._saV2TeklifOlustur?.(clickedId);
+    return;
+  }
+  var msg = 'Seçili ' + seciliIds.length + ' teklifi forma eklemek istiyor musunuz?';
+  var topluAc = function() { window._saV2TopluFormAc?.(seciliIds); };
+  var tekAc = function() { window._saV2TeklifOlustur?.(clickedId); };
+  if (typeof window.confirmModal === 'function') {
+    window.confirmModal(msg, {
+      title: 'Toplu Form',
+      confirmText: 'Evet, Topluca',
+      cancelText: 'Hayır, Sadece Bunu',
+      onConfirm: topluAc,
+      onCancel: tekAc
+    });
+  } else {
+    if (confirm(msg)) topluAc(); else tekAc();
+  }
+};
+
+/**
+ * SAV2-BULK-SATIS-REDESIGN-001: Seçili satin alma teklifleri için
+ * birleşmiş ürünlerle satış teklifi formunu aç. _saV2Load()'tan id'leri
+ * bul, ürünleri birleştir, _saV2TeklifOlustur'a temp teklif id'si vererek
+ * çağır (mevcut monkey-patch deseniyle: _saV2Load'u geçici override et,
+ * temp teklif'i listenin başına ekle, _saV2TeklifOlustur(tempId), 5 sn
+ * sonra restore).
+ */
+window._saV2TopluFormAc = function(ids) {
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var idStr = ids.map(String);
+  var secili = liste.filter(function(t) { return idStr.indexOf(String(t.id)) !== -1 && !t.isDeleted; });
+  if (!secili.length) { window.toast?.('Seçili teklif bulunamadı', 'err'); return; }
+  // Tüm ürünleri birleştir — her biri kaynak teklif id + tedarikçi audit ile
+  var birlesmisUrunler = [];
+  secili.forEach(function(t) {
+    var us = (t.urunler && t.urunler.length) ? t.urunler : [t];
+    us.forEach(function(u) {
+      birlesmisUrunler.push({
+        urunAdi: u.urunAdi || u.turkceAdi || t.urunAdi || '',
+        turkceAdi: u.turkceAdi || u.urunAdi || '',
+        duayKodu: u.duayKodu || t.duayKodu || '',
+        miktar: parseFloat(u.miktar) || 0,
+        birim: u.birim || 'Adet',
+        alisF: parseFloat(u.alisF || t.alisF) || 0,
+        para: t.toplamPara || t.para || 'USD',
+        kaynakTeklifId: t.id,
+        kaynakTedarikci: t.tedarikci || ''
+      });
+    });
+  });
+  // Tüm seçililer aynı tedarikçideyse onu kullan, değilse boş
+  var tedarikciler = secili.map(function(t){return t.tedarikci||'';}).filter(Boolean);
+  var tekTedarikci = tedarikciler.length && tedarikciler.every(function(x){return x===tedarikciler[0];}) ? tedarikciler[0] : '';
+  var tempId = 'tmp-bulk-' + Date.now();
+  var tempTeklif = {
+    id: tempId,
+    urunler: birlesmisUrunler,
+    tedarikci: tekTedarikci,
+    jobId: '',
+    teslimYeri: '',
+    teslimMasraf: '',
+    toplamPara: secili[0].toplamPara || secili[0].para || 'USD',
+    toplamTutar: birlesmisUrunler.reduce(function(s,u){return s + ((u.miktar||0)*(u.alisF||0));}, 0),
+    durum: 'taslak'
+  };
+  // _saV2Load monkey-patch — temp teklif'i listenin başına yerleştir
+  var _eskiLoad = window._saV2Load;
+  window._saV2Load = function() {
+    var orig = (typeof _eskiLoad === 'function') ? _eskiLoad() : [];
+    return [tempTeklif].concat(orig);
+  };
+  // Form'u aç
+  if (typeof window._saV2TeklifOlustur === 'function') {
+    window._saV2TeklifOlustur(tempId);
+  } else {
+    window.toast?.('_saV2TeklifOlustur tanımlı değil', 'err');
+  }
+  // Restore (modal render etmesine yetecek süre)
+  setTimeout(function() { window._saV2Load = _eskiLoad; }, 5000);
+};
+
+/**
+ * @deprecated SAV2-BULK-SATIS-REDESIGN-001 ile değiştirildi —
+ * artık _saV2TeklifOlusturAkilli + _saV2TopluFormAc kullanılıyor.
+ * Bu fonksiyon artık çağrılmıyor (button kaldırıldı), backward compat
+ * için bırakıldı. Konsoldan veya başka modülden çağrılırsa hala çalışır.
  */
 window._saV2BulkSatisEkle = function() {
   var seciliIds = Object.keys(window._saV2ListeSecili||{}).filter(function(k){return window._saV2ListeSecili[k];});

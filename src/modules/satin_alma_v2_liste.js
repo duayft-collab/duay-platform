@@ -61,7 +61,6 @@ window.renderSatinAlmaV2 = function() {
     h+='<span style="font-size:10px;color:#633806;font-weight:500">'+seciliSay+' seçildi</span>';
     h+='<button onclick="event.stopPropagation();window._saV2TopluOnayla()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">✓ Onayla</button>';
     h+='<button onclick="event.stopPropagation();window._saV2TopluReddet()" style="font-size:9px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">✕ Reddet</button>';
-    h+='<button onclick="event.stopPropagation();window._saV2BulkSatisEkle?.()" style="font-size:9px;padding:2px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">+ Satış Teklifine Ekle</button>';
     h+='<button onclick="event.stopPropagation();window._saV2TopluSil()" style="font-size:9px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>';
     h+='</div>';
   }
@@ -159,7 +158,7 @@ window._saV2DetayHTML = function(t) {
   }
   h+='<div style="display:flex;flex-direction:column;gap:5px;margin-top:10px">';
   var _canSatis=window.isAdmin?.()||['manager','lead'].includes(window.CU?.()?.role||window.CU?.()?.rol||'');
-  if(_canSatis) h+='<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="padding:7px;border:none;border-radius:5px;background:#185FA5;color:#fff;font-size:10px;cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
+  if(_canSatis) h+='<button onclick="event.stopPropagation();window._saV2TeklifOlusturAkilli?.(\''+t.id+'\')" style="padding:7px;border:none;border-radius:5px;background:#185FA5;color:#fff;font-size:10px;cursor:pointer;font-weight:500;font-family:inherit">Satış Teklifi Oluştur</button>';
   if(_canSatis && !t.hazirlanmaTarihi) {
     h += '<button onclick="event.stopPropagation();window._saV2DosyaHazir(\''+t.id+'\')" style="padding:7px;border:none;border-radius:5px;background:#0F6E56;color:#fff;font-size:10px;cursor:pointer;font-weight:500;font-family:inherit;width:100%;margin-top:4px">\u2713 Dosya Sat\u0131\u015fa Haz\u0131r</button>';
   } else if(t.hazirlanmaTarihi) {
