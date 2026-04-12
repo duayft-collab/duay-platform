@@ -109,6 +109,7 @@ function renderSatisTeklif() {
       + '<div style="color:var(--t3)">' + (t.date || '—') + '</div>'
       + '<div style="display:flex;gap:3px">'
         + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:10px;padding:2px 6px" title="Standard PDF">📄</button>'
+        + '<button onclick="event.stopPropagation();window._stKarAnaliz?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Kar Analizi">📊</button>'
         + '<button onclick="event.stopPropagation();window._openSTModal?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">✏️</button>'
         + '<button onclick="event.stopPropagation();window._stUpdatePI?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="PI Güncelle">🔄</button>'
         + '<button onclick="event.stopPropagation();window._copyST?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">📋</button>'
@@ -448,6 +449,90 @@ window._stPreview = function(id) {
     + (t.bankInfo ? '<div class="section"><div class="section-title">' + L('bankTitle') + '</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.bankInfo) + '</pre></div>' : '')
     + '<div style="margin-top:30px;text-align:center;font-size:10px;color:#9ca3af">' + L('footer') + ' · Duay Global LLC · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
     + '<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1e1b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">' + L('print') + '</button></div>'
+    + '</body></html>');
+  w.document.close();
+};
+
+/**
+ * KAR-ANALIZ-001 — Yazdirilabilir kar analizi yeni pencerede.
+ * Her urun icin loadUrunler()'dan duayKodu eslesmesiyle alisF (alis fiyati)
+ * cekilir, kar/marj hesaplanir. Cost bulunamayan urunler asterisk ile isaretlenir.
+ * @param {number} id Teklif id
+ */
+window._stKarAnaliz = function(id) {
+  var data = _loadST();
+  var t = data.find(function(x) { return x.id === id; });
+  if (!t) { window.toast?.('Teklif bulunamadı', 'err'); return; }
+  var esc = window._esc;
+  var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
+  var fmt = function(n) { return Number(n||0).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); };
+  var cur = t.currency || 'USD';
+
+  var rows = (t.items || []).map(function(i) {
+    var u = urunler.find(function(x) { return x.duayKodu === i.code; });
+    var alisF = u ? (parseFloat(u.alisF) || 0) : 0;
+    var qty = parseFloat(i.qty) || 0;
+    var satisF = parseFloat(i.price) || 0;
+    var alisToplam = alisF * qty;
+    var satisToplam = satisF * qty;
+    var kar = satisToplam - alisToplam;
+    var marjPct = satisToplam > 0 ? (kar / satisToplam * 100) : 0;
+    return { desc: i.desc || i.code || '—', qty: qty, unit: i.unit || '', alisF: alisF, alisToplam: alisToplam, satisF: satisF, satisToplam: satisToplam, kar: kar, marjPct: marjPct, hasCost: alisF > 0 };
+  });
+
+  var totalAlis = rows.reduce(function(a, r) { return a + r.alisToplam; }, 0);
+  var totalSatis = rows.reduce(function(a, r) { return a + r.satisToplam; }, 0);
+  var totalKar = totalSatis - totalAlis;
+  var avgMarj = totalSatis > 0 ? (totalKar / totalSatis * 100) : 0;
+  var missingCount = rows.filter(function(r) { return !r.hasCost; }).length;
+  var marjColor = avgMarj < 10 ? '#dc2626' : avgMarj < 25 ? '#d97706' : '#059669';
+
+  var w = window.open('', '_blank', 'width=900,height=1000');
+  w.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Kar Analizi — ' + esc(t.teklifNo || '') + '</title>'
+    + '<style>body{font-family:"Segoe UI",sans-serif;padding:30px;color:#1a1a2e;max-width:850px;margin:0 auto}'
+    + '.hdr{border-bottom:3px solid #1e1b4b;padding-bottom:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}'
+    + 'h1{font-size:20px;margin:0;color:#1e1b4b}'
+    + '.meta{font-size:11px;color:#6b7280;margin-top:6px}'
+    + '.warn{background:#fef3c7;border:1px solid #f59e0b;color:#78350f;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:14px}'
+    + 'table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}'
+    + 'th{background:#1e1b4b;color:#fff;padding:8px 6px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em}'
+    + 'td{border-bottom:1px solid #eee;padding:7px 6px}'
+    + '.r{text-align:right;font-family:"DM Mono",monospace}'
+    + '.total{background:#f5f3ff;font-weight:700;border-top:2px solid #1e1b4b}'
+    + '.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}'
+    + '.sbox{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px}'
+    + '.slbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}'
+    + '.sval{font-size:16px;font-weight:700;color:#1e1b4b;font-family:"DM Mono",monospace}'
+    + '.kr{color:' + (totalKar >= 0 ? '#059669' : '#dc2626') + '}'
+    + '.mj{color:' + marjColor + '}'
+    + '.miss{color:#dc2626;font-size:9px;margin-left:4px}'
+    + '@media print{button{display:none!important}body{padding:20px}}</style></head><body>'
+    + '<div class="hdr"><div><h1>📊 Kar Analizi</h1><div class="meta">REF: <b>' + esc(t.teklifNo || '—') + '</b> · Müşteri: <b>' + esc(t.customerName || '—') + '</b></div><div class="meta">Tarih: ' + (t.date || '—') + ' · Para Birimi: <b>' + esc(cur) + '</b> · Toplam Kalem: ' + rows.length + '</div></div>'
+    + '<div style="text-align:right;font-size:10px;color:#9ca3af">Hazırlanan: ' + new Date().toLocaleString('tr-TR') + '<br>Duay Global LLC</div></div>'
+    + (missingCount > 0 ? '<div class="warn">⚠️ ' + missingCount + ' ürünün alış fiyatı (alisF) urunler veritabanında bulunamadı — bu satırların kar hesabı 0 olarak gösteriliyor. Ürün kayıtlarını güncelleyin.</div>' : '')
+    + '<table><thead><tr><th style="width:34%">ÜRÜN</th><th class="r">ADET</th><th>BİRİM</th><th class="r">ALIŞ F.</th><th class="r">SATIŞ F.</th><th class="r">ALIŞ TOPLAM</th><th class="r">SATIŞ TOPLAM</th><th class="r">KAR</th><th class="r">MARJ%</th></tr></thead><tbody>'
+    + rows.map(function(r) {
+        var rowMarjColor = r.marjPct < 10 ? '#dc2626' : r.marjPct < 25 ? '#d97706' : '#059669';
+        return '<tr><td>' + esc(r.desc) + (r.hasCost ? '' : '<span class="miss">⚠ alisF yok</span>') + '</td>'
+          + '<td class="r">' + r.qty + '</td>'
+          + '<td>' + esc(r.unit) + '</td>'
+          + '<td class="r">' + (r.hasCost ? fmt(r.alisF) : '—') + '</td>'
+          + '<td class="r">' + fmt(r.satisF) + '</td>'
+          + '<td class="r">' + (r.hasCost ? fmt(r.alisToplam) : '—') + '</td>'
+          + '<td class="r">' + fmt(r.satisToplam) + '</td>'
+          + '<td class="r" style="color:' + (r.kar >= 0 ? '#059669' : '#dc2626') + ';font-weight:600">' + fmt(r.kar) + '</td>'
+          + '<td class="r" style="color:' + rowMarjColor + ';font-weight:600">%' + r.marjPct.toFixed(1) + '</td></tr>';
+      }).join('')
+    + '<tr class="total"><td colspan="5">TOPLAM</td><td class="r">' + fmt(totalAlis) + '</td><td class="r">' + fmt(totalSatis) + '</td><td class="r kr">' + fmt(totalKar) + '</td><td class="r mj">%' + avgMarj.toFixed(1) + '</td></tr>'
+    + '</tbody></table>'
+    + '<div class="summary">'
+      + '<div class="sbox"><div class="slbl">Toplam Maliyet</div><div class="sval">' + esc(cur) + ' ' + fmt(totalAlis) + '</div></div>'
+      + '<div class="sbox"><div class="slbl">Toplam Ciro</div><div class="sval">' + esc(cur) + ' ' + fmt(totalSatis) + '</div></div>'
+      + '<div class="sbox"><div class="slbl">Net Kar</div><div class="sval kr">' + esc(cur) + ' ' + fmt(totalKar) + '</div></div>'
+      + '<div class="sbox"><div class="slbl">Ortalama Marj</div><div class="sval mj">%' + avgMarj.toFixed(2) + '</div></div>'
+    + '</div>'
+    + '<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center">Bu rapor sadece dahili kullanım icindir. Müşteriye gönderilmemelidir.</div>'
+    + '<div style="margin-top:18px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1e1b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">🖨 Yazdır / PDF</button></div>'
     + '</body></html>');
   w.document.close();
 };

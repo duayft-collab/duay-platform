@@ -427,7 +427,7 @@ function openUrunForm(editId) {
     + (window.MENSEI||['Türkiye','Çin','Hindistan','Almanya','ABD','Diğer']).map(m=>'<option value="'+m+'"'+(u.mensei===m?' selected':'')+'>'+m+'</option>').join('')
     + '</select></div>'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">SON TÜKETİM TARİHİ</div>'
-    +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'','number',false)+'</div>'
+    +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'',false,'number','')+'</div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px">'
     + _fi('teslimSuresi','TESLİM SÜRESİ (Gün)',u.teslimSuresi||'',false,'number','Örn: 30')
