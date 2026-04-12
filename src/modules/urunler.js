@@ -429,6 +429,9 @@ function openUrunForm(editId) {
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">SON TÜKETİM TARİHİ</div>'
     +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'','number',false)+'</div>'
     + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px">'
+    + _fi('teslimSuresi','TESLİM SÜRESİ (Gün)',u.teslimSuresi||'',false,'number','Örn: 30')
+    + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + _fi('saticiKodu', 'SATICI ÜRÜN KODU', u.saticiKodu || '', true, 'text', 'Satıcının kodu')
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">DUAY KODU <span style="font-size:9px;color:#0F6E56">(Otomatik)</span></div>'
@@ -471,6 +474,8 @@ function openUrunForm(editId) {
     + '<input type="hidden" id="uf2-teknikAciklama">'
     + '</div></div>'
     + '<input type="hidden" id="uf2-duayKoduOto" value="' + _esc(duayKoduOto) + '">'
+    + '<div style="margin-top:10px;margin-bottom:10px"><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">ÖNEMLİ NOT</div>'
+    + '<textarea id="uf2-onemliNot" rows="3" oninput="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Bu ürünle ilgili dikkat edilecek önemli bilgiler..." style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;resize:vertical">' + _esc(u.onemliNot||'') + '</textarea></div>'
     + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px;margin-top:4px">BELGELER</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div style="border:0.5px solid var(--b);border-radius:6px;padding:10px">'
@@ -817,6 +822,8 @@ window._uf2KaydetYeni = function() {
     existing.eskiKod = g('eskiKod');
     existing.saticiNotGizli = document.getElementById('uf2-saticiNotGizli')?.checked||false;
     existing.tuketimSuresi = g('tuketimSuresi');
+    existing.teslimSuresi = g('teslimSuresi');
+    existing.onemliNot = g('onemliNot');
     existing.marka = g('marka');
     existing.netAgirlik = g('netAgirlik');
     existing.brutAgirlik = g('brutAgirlik');
@@ -832,6 +839,7 @@ window._uf2KaydetYeni = function() {
       gorsel: document.getElementById('uf2-gorselBase64')?.value || '',
       gizlilik: parseInt(document.getElementById('uf2-gizlilik')?.value || '1'),
       eskiKod: g('eskiKod'), saticiNotGizli: document.getElementById('uf2-saticiNotGizli')?.checked||false, tuketimSuresi: g('tuketimSuresi'),
+      teslimSuresi: g('teslimSuresi'), onemliNot: g('onemliNot'),
       marka: g('marka'), netAgirlik: g('netAgirlik'), brutAgirlik: g('brutAgirlik'), alisF: g('alisF'), para: g('para')||'USD',
       status: 'aktif',
       createdAt: new Date().toISOString(),
