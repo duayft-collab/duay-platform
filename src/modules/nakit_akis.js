@@ -218,22 +218,43 @@
 
   // ── Render Bölümleri ─────────────────────────────────────────────
 
-  /** @param {Object} m Metrik objesi @returns {string} HTML */
+  /**
+   * @param {Object} m Metrik objesi
+   * @returns {string} HTML — 4 özet kart. NET POZİSYON ve GECİKMİŞ TAHSİLAT
+   *   tıklanabilir, hover'da accent border + cursor:pointer.
+   */
   function _naRenderSummary(m) {
     var t = _naT();
     var netColor = m.netTRY >= 0 ? 'var(--gr,#16A34A)' : 'var(--rd,#DC2626)';
-    var card = function(label, value, sub, color) {
-      return '<div style="background:var(--sf,#fff);border:1px solid var(--b,#e5e7eb);border-radius:12px;padding:14px 16px">'
+    /**
+     * @param {string} label
+     * @param {string} value
+     * @param {string} sub
+     * @param {string} color
+     * @param {string} [onclickAction] Tıklama JS (varsa kart clickable olur)
+     */
+    var card = function(label, value, sub, color, onclickAction) {
+      var clickable = !!onclickAction;
+      var clickStyle = clickable ? ';cursor:pointer;transition:border-color .15s,box-shadow .15s' : '';
+      var clickAttrs = clickable
+        ? ' onclick="' + onclickAction + '"'
+          + ' onmouseenter="this.style.borderColor=\'var(--ac,#6366F1)\';this.style.boxShadow=\'0 2px 8px rgba(99,102,241,.12)\'"'
+          + ' onmouseleave="this.style.borderColor=\'\';this.style.boxShadow=\'\'"'
+        : '';
+      return '<div style="background:var(--sf,#fff);border:1px solid var(--b,#e5e7eb);border-radius:12px;padding:14px 16px' + clickStyle + '"' + clickAttrs + '>'
         + '<div style="font-size:9px;font-weight:700;color:var(--t3,#6b7280);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">' + _naEsc(label) + '</div>'
         + '<div style="font-size:20px;font-weight:800;color:' + color + ';font-family:\'DM Mono\',monospace">' + _naEsc(value) + '</div>'
         + '<div style="font-size:10px;color:var(--t3,#6b7280);margin-top:4px">' + _naEsc(sub) + '</div>'
       + '</div>';
     };
+    // Tıklama aksiyonları — tek-tırnak escape ile inline onclick
+    var actNet = 'nav(\'odemeler\',this)';
+    var actOverdue = 'nav(\'odemeler\',this);setTimeout(function(){window.setOdmTab&&window.setOdmTab(\'tahsilat\')},120)';
     return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px">'
-      + card(t.net_position, _naFmtTRY(m.netTRY),     t.net_sub, netColor)
+      + card(t.net_position, _naFmtTRY(m.netTRY),     t.net_sub, netColor, actNet)
       + card(t.month_in,     _naFmtTRY(m.monthIn),    m.monthInCount  + ' ' + t.month_in_sub,  'var(--gr,#16A34A)')
       + card(t.month_out,    _naFmtTRY(m.monthOut),   m.monthOutCount + ' ' + t.month_out_sub, 'var(--rd,#DC2626)')
-      + card(t.overdue,      _naFmtTRY(m.overdueTRY), m.overdueCount  + ' ' + t.overdue_sub,   'var(--am,#D97706)')
+      + card(t.overdue,      _naFmtTRY(m.overdueTRY), m.overdueCount  + ' ' + t.overdue_sub,   'var(--am,#D97706)', actOverdue)
     + '</div>';
   }
 
