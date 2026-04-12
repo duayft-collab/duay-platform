@@ -294,7 +294,7 @@ function _injectTebligatPanel() {
   const sel = _gex('teb-assigned');
   if (sel && typeof loadUsers === 'function') {
     const users = loadUsers();
-    sel.innerHTML = '<option value="">Atanmadı</option>' + users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+    sel.innerHTML = '<option value="">Atanmadı</option>' + users.map(u=>`<option value="${u.id}">${window._esc(u.name)}</option>`).join('');
   }
 }
 
@@ -389,7 +389,7 @@ function _injectTemizlikPanel() {
   const sel = _gex('tmz-uid');
   if (sel && typeof loadUsers === 'function') {
     const users = loadUsers();
-    sel.innerHTML = '<option value="0">Genel / Tüm Personel</option>' + users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+    sel.innerHTML = '<option value="0">Genel / Tüm Personel</option>' + users.map(u=>`<option value="${u.id}">${window._esc(u.name)}</option>`).join('');
   }
 }
 
@@ -426,7 +426,7 @@ function _injectEvrakPanel() {
   const sel = _gex('evrak-user-f');
   if (sel && typeof loadUsers === 'function') {
     const users = loadUsers();
-    sel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+    sel.innerHTML = '<option value="0">Tüm Personel</option>' + users.map(u=>`<option value="${u.id}">${window._esc(u.name)}</option>`).join('');
   }
 }
 

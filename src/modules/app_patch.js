@@ -182,7 +182,7 @@ window.openKonteynModal = window.openKonteynModal || function(editId) {
   if (sel && sel.options.length <= 1) {
     const users = typeof loadUsers === 'function' ? loadUsers() : [];
     sel.innerHTML = '<option value="">Sorumlu seçin...</option>' +
-      users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+      users.map(u => `<option value="${u.id}">${window._esc(u.name)}</option>`).join('');
   }
   if (editId) {
     const k = (typeof loadKonteyn === 'function' ? loadKonteyn() : []).find(x => x.id === editId);
@@ -344,7 +344,7 @@ window.openKonteynDetail = window.openKonteynDetail || function(id) {
   // Viewers/izin listesi
   const viewerNames = (k.viewers || []).map(vid => {
     const vu = users.find(x => x.id === vid);
-    return vu ? escapeHtml(vu.name) : '?';
+    return vu ? window._esc(vu.name) : '?';
   });
 
   const old = document.getElementById('mo-ktn-detail');
@@ -353,14 +353,14 @@ window.openKonteynDetail = window.openKonteynDetail || function(id) {
   mo.className = 'mo'; mo.id = 'mo-ktn-detail'; 
   mo.innerHTML = `<div class="moc" style="max-width:520px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:15px;font-weight:700;color:var(--t)">🚢 ${escapeHtml(k.no || '—')}</span>
+      <span style="font-size:15px;font-weight:700;color:var(--t)">🚢 ${window._esc(k.no || '—')}</span>
       <button onclick="document.getElementById('mo-ktn-detail').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
     </div>
     <div style="padding:16px 20px;max-height:75vh;overflow-y:auto">
       <!-- Mühür + Hat -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div><div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Mühür No</div><div style="font-size:13px;font-weight:600;color:var(--t);font-family:'DM Mono',monospace">${escapeHtml(k.seal || '—')}</div></div>
-        <div><div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Hat / Armatör</div><div style="font-size:13px;color:var(--t)">${escapeHtml(k.hat || '—')}</div></div>
+        <div><div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Mühür No</div><div style="font-size:13px;font-weight:600;color:var(--t);font-family:'DM Mono',monospace">${window._esc(k.seal || '—')}</div></div>
+        <div><div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Hat / Armatör</div><div style="font-size:13px;color:var(--t)">${window._esc(k.hat || '—')}</div></div>
       </div>
       <!-- Progress -->
       <div style="margin-bottom:14px">
@@ -383,13 +383,13 @@ window.openKonteynDetail = window.openKonteynDetail || function(id) {
         </div>
         <div style="display:none;padding:10px 14px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-            <div><span style="color:var(--t3)">Yükleme:</span> ${escapeHtml(k['from-port'] || '—')}</div>
-            <div><span style="color:var(--t3)">Varış:</span> ${escapeHtml(k['to-port'] || '—')}</div>
+            <div><span style="color:var(--t3)">Yükleme:</span> ${window._esc(k['from-port'] || '—')}</div>
+            <div><span style="color:var(--t3)">Varış:</span> ${window._esc(k['to-port'] || '—')}</div>
             <div><span style="color:var(--t3)">ETD:</span> ${k.etd || '—'}</div>
             <div><span style="color:var(--t3)">ETA:</span> ${k.eta || '—'}</div>
           </div>
-          <div style="margin-top:8px;font-size:12px"><span style="color:var(--t3)">Sorumlu:</span> ${escapeHtml(u.name)}</div>
-          ${k.desc ? `<div style="margin-top:6px;font-size:12px;color:var(--t2)">${escapeHtml(k.desc)}</div>` : ''}
+          <div style="margin-top:8px;font-size:12px"><span style="color:var(--t3)">Sorumlu:</span> ${window._esc(u.name)}</div>
+          ${k.desc ? `<div style="margin-top:6px;font-size:12px;color:var(--t2)">${window._esc(k.desc)}</div>` : ''}
         </div>
       </div>
       <!-- Accordion: Takip İzinleri (admin) -->
@@ -403,7 +403,7 @@ window.openKonteynDetail = window.openKonteynDetail || function(id) {
           <div style="display:flex;gap:6px">
             <select id="ktn-add-viewer-${id}" class="fi" style="flex:1;font-size:12px">
               <option value="">Kullanıcı seçin…</option>
-              ${users.filter(ux => ux.id !== k.uid && !(k.viewers||[]).includes(ux.id)).map(ux => `<option value="${ux.id}">${escapeHtml(ux.name)}</option>`).join('')}
+              ${users.filter(ux => ux.id !== k.uid && !(k.viewers||[]).includes(ux.id)).map(ux => `<option value="${ux.id}">${window._esc(ux.name)}</option>`).join('')}
             </select>
             <button class="btn btnp" style="font-size:11px;padding:4px 12px" onclick="window._addKtnViewer(${id})">+ İzin Ver</button>
           </div>
@@ -1796,7 +1796,7 @@ window._atRowUrunChange = function(sel) {
   var urunData = (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(u) { return u.id === parseInt(opt.value); });
   var stdEl = tr.querySelector('.at-std');
   if (stdEl && urunData?.teknikAciklama) {
-    stdEl.innerHTML = (opt.dataset.std || '—') + '<div style="font-size:8px;color:var(--t3);margin-top:1px">' + (typeof escapeHtml === 'function' ? escapeHtml(urunData.teknikAciklama) : urunData.teknikAciklama) + '</div>';
+    stdEl.innerHTML = (opt.dataset.std || '—') + '<div style="font-size:8px;color:var(--t3);margin-top:1px">' + (typeof escapeHtml === 'function' ? window._esc(urunData.teknikAciklama) : urunData.teknikAciklama) + '</div>';
   }
   // FIX 7.2: MOQ kontrolü
   var moq = parseInt(opt.dataset.moq || '0');
@@ -4940,7 +4940,7 @@ function _storeQL(d) { localStorage.setItem(_QL_KEY, JSON.stringify(d.slice(0, 1
       if (!links.length) dh += '<div style="padding:12px;font-size:11px;color:var(--t3);text-align:center">Henuz kisayol yok</div>';
       links.forEach(function(l, i) {
         dh += '<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
-        dh += '<span onclick="event.stopPropagation();' + (l.tip === 'dis' ? 'window.open(\'' + l.url.replace(/'/g, "\\'") + '\')' : 'window.App?.nav?.(\'' + l.url + '\')') + '" style="flex:1;font-size:11px;color:var(--t)">' + (typeof escapeHtml === 'function' ? escapeHtml(l.ad) : l.ad) + '</span>';
+        dh += '<span onclick="event.stopPropagation();' + (l.tip === 'dis' ? 'window.open(\'' + l.url.replace(/'/g, "\\'") + '\')' : 'window.App?.nav?.(\'' + l.url + '\')') + '" style="flex:1;font-size:11px;color:var(--t)">' + (typeof escapeHtml === 'function' ? window._esc(l.ad) : l.ad) + '</span>';
         dh += '<span onclick="event.stopPropagation();window._qlSil(' + i + ')" style="font-size:10px;color:var(--t3);cursor:pointer">\u2717</span>';
         dh += '</div>';
       });
@@ -5001,7 +5001,7 @@ window._renderFirmaKpi = function() {
     var skorRenk = skorPuan >= 80 ? '#16A34A' : skorPuan >= 60 ? '#D97706' : '#DC2626';
     h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:16px">';
     h += '<div style="width:40px;height:40px;border-radius:50%;background:' + skorRenk + '18;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:' + skorRenk + ';flex-shrink:0">' + skorHarf + '</div>';
-    h += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + (typeof escapeHtml === 'function' ? escapeHtml(firma.ad) : firma.ad) + ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">' + firma.tip + '</span></div>';
+    h += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + (typeof escapeHtml === 'function' ? window._esc(firma.ad) : firma.ad) + ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">' + firma.tip + '</span></div>';
     h += '<div style="font-size:10px;color:var(--t3);display:flex;gap:12px;margin-top:2px">';
     h += '<span>Teklif: ' + toplamTeklif + '</span>';
     h += '<span>Belge: ' + belgeSayisi + '</span>';

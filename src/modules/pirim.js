@@ -894,7 +894,7 @@ function renderLeaderboard() {
     const u  = users.find(x => x.id === parseInt(uid)) || { name: '?' };
     const isMe = parseInt(uid) === cuLb?.id;
     const showName = isAdminLb || isMe;
-    const displayName = showName ? escapeHtml(u.name) + (isMe ? ' (sen)' : '') : `Kullanıcı #${i+1}`;
+    const displayName = showName ? window._esc(u.name) + (isMe ? ' (sen)' : '') : `Kullanıcı #${i+1}`;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);${isMe?'background:rgba(99,102,241,.05);border-radius:8px;padding:8px;margin:-0 -4px;':''}">
       <span style="font-size:16px;width:22px;text-align:center">${medals[i] || `${i+1}`}</span>
       <div style="width:28px;height:28px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0">${showName ? window._esc((u.name||'?')[0]) : '?'}</div>
@@ -992,10 +992,10 @@ function openPirimModal(id) {
   // Personel kısıtı: admin/yönetici tüm personeli görür, user sadece kendisini
   if (usel) {
     if (admin) {
-      usel.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+      usel.innerHTML = users.map(u => `<option value="${u.id}">${window._esc(u.name)}</option>`).join('');
       usel.disabled = false;
     } else {
-      usel.innerHTML = `<option value="${cu?.id}">${escapeHtml(cu?.name || 'Ben')}</option>`;
+      usel.innerHTML = `<option value="${cu?.id}">${window._esc(cu?.name || 'Ben')}</option>`;
       usel.disabled = true;
     }
   }
@@ -1016,7 +1016,7 @@ function openPirimModal(id) {
     const myTasks = admin ? tasks : tasks.filter(t => t.uid === cu?.id);
     const activeTasks = myTasks.filter(t => !t.done && t.status !== 'done').slice(0, 50);
     taskSel.innerHTML = '<option value="">— Görev seçin —</option>'
-      + activeTasks.map(t => `<option value="${t.id}">${escapeHtml(t.title)} ${t.due ? '(📅 ' + t.due + ')' : ''}</option>`).join('');
+      + activeTasks.map(t => `<option value="${t.id}">${window._esc(t.title)} ${t.due ? '(📅 ' + t.due + ')' : ''}</option>`).join('');
   }
   const taskInfo = window.g('prm-task-info');
   if (taskInfo) { taskInfo.style.display = 'none'; taskInfo.innerHTML = ''; }
@@ -1384,7 +1384,7 @@ function openPirimPeer(id) {
   const users = (window.loadUsers?.() || []).filter(u => u.id !== cu?.id && !u.admin);
   if (sel) {
     sel.innerHTML = `<option value="">— Kişi seçin —</option>` +
-      users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+      users.map(u => `<option value="${u.id}">${window._esc(u.name)}</option>`).join('');
   }
   const noteEl = window.g('peer-note');
   if (noteEl) noteEl.value = '';
@@ -1683,7 +1683,7 @@ function showPirimPdf() {
       <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">EK DOKÜMANLAR (${extraDocs.length})</div>
       ${extraDocs.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--b)">
         <span style="font-size:14px">${d.name.endsWith('.pdf')?'📄':d.name.match(/\.(png|jpg|jpeg)$/i)?'🖼':'📎'}</span>
-        <a href="${d.data}" download="${escapeHtml(d.name)}" style="flex:1;font-size:12px;color:var(--ac);text-decoration:none">${escapeHtml(d.name)}</a>
+        <a href="${d.data}" download="${window._esc(d.name)}" style="flex:1;font-size:12px;color:var(--ac);text-decoration:none">${window._esc(d.name)}</a>
         <span style="font-size:10px;color:var(--t3)">${d.uploadedAt?.slice(0,10)||''}</span>
         ${window.isAdmin?.() ? `<button onclick="deletePirimDoc(${d.id})" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3)">🗑</button>` : ''}
       </div>`).join('')}
@@ -2831,11 +2831,11 @@ function openPirimGlossary() {
       ${GLOSSARY.map(g => `<div style="border-bottom:1px solid var(--b);padding:12px 0">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="font-size:20px">${g.emoji}</span>
-          <span style="font-size:14px;font-weight:700;color:var(--t)">${escapeHtml(g.term)}</span>
+          <span style="font-size:14px;font-weight:700;color:var(--t)">${window._esc(g.term)}</span>
           <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--al);color:var(--ac)">${g.rate}</span>
         </div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:4px">${escapeHtml(g.desc)}</div>
-        <div style="font-size:11px;color:var(--t3);background:var(--s2);padding:6px 10px;border-radius:6px;font-family:'DM Mono',monospace">Örnek: ${escapeHtml(g.example)}</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:4px">${window._esc(g.desc)}</div>
+        <div style="font-size:11px;color:var(--t3);background:var(--s2);padding:6px 10px;border-radius:6px;font-family:'DM Mono',monospace">Örnek: ${window._esc(g.example)}</div>
       </div>`).join('')}
     </div>
   </div>`;
@@ -3061,7 +3061,7 @@ function checkPirimExpiry() {
       p.status = 'expired';
       p.expiredAt = _now();
       changed = true;
-      window.addNotif?.('⏰', '"' + escapeHtml(p.title) + '" hak süresi doldu — iptal edildi', 'err', 'pirim');
+      window.addNotif?.('⏰', '"' + window._esc(p.title) + '" hak süresi doldu — iptal edildi', 'err', 'pirim');
     }
   });
   if (changed) window.storePirim?.(d);

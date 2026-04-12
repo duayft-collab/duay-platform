@@ -704,7 +704,7 @@ function openSatisTeklif(alisId) {
   mo.innerHTML = `<div class="moc" style="max-width:500px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">📤 Satış Teklifi Oluştur</div>
-      <div style="font-size:11px;color:var(--t3);margin-top:2px">Kaynak: ${escapeHtml(alis.from)} → ${escapeHtml(alis.to)} · ${alis.birimFiyat} ${alis.para}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:2px">Kaynak: ${window._esc(alis.from)} → ${window._esc(alis.to)} · ${alis.birimFiyat} ${alis.para}</div>
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -830,15 +830,15 @@ function _nvsSatisPreview(alisId) {
         <div style="font-size:11px;color:#9ca3af">${new Date().toLocaleDateString('tr-TR')}</div></div>
       </div>
     </div>
-    <div class="row"><span class="lbl">Müşteri</span><span class="val">${escapeHtml(musteri)}</span></div>
-    <div class="row"><span class="lbl">Güzergah</span><span class="val">${escapeHtml(alis.from)} → ${escapeHtml(alis.to)}</span></div>
+    <div class="row"><span class="lbl">Müşteri</span><span class="val">${window._esc(musteri)}</span></div>
+    <div class="row"><span class="lbl">Güzergah</span><span class="val">${window._esc(alis.from)} → ${window._esc(alis.to)}</span></div>
     <div class="row"><span class="lbl">Taşıma Tipi</span><span class="val">${(TASIMA_TIPLERI[alis.tasimaTipi]||{}).l||alis.tasimaTipi}</span></div>
-    <div class="row"><span class="lbl">Konteyner / Araç</span><span class="val">${escapeHtml(alis.aracTipi||'—')}</span></div>
-    <div class="row"><span class="lbl">Taşıyıcı / Armatör</span><span class="val">${escapeHtml(alis.tasiyan||'—')}</span></div>
+    <div class="row"><span class="lbl">Konteyner / Araç</span><span class="val">${window._esc(alis.aracTipi||'—')}</span></div>
+    <div class="row"><span class="lbl">Taşıyıcı / Armatör</span><span class="val">${window._esc(alis.tasiyan||'—')}</span></div>
     <div class="row"><span class="lbl">Transit Süre</span><span class="val">${alis.transitSure||'—'} gün</span></div>
     <div class="price">${satisFiyat} ${alis.para}</div>
     ${bas||bit ? `<div class="row"><span class="lbl">Geçerlilik</span><span class="val">${bas||'—'} — ${bit||'—'}</span></div>` : ''}
-    ${not ? `<div class="row"><span class="lbl">Şartlar / Notlar</span><span class="val">${escapeHtml(not)}</span></div>` : ''}
+    ${not ? `<div class="row"><span class="lbl">Şartlar / Notlar</span><span class="val">${window._esc(not)}</span></div>` : ''}
     <div class="ft">
       <div>Teklif No: <b>${teklifId}</b> · Bu teklif bilgilendirme amaçlıdır.</div>
       <div style="margin-top:4px">Duay Global LLC · ${new Date().toLocaleDateString('tr-TR')}</div>
@@ -877,7 +877,7 @@ function openNavlunCompare() {
     const minFiyat = Math.min(...teklifler.map(t=>t.birimFiyat||Infinity));
     const minTransit = Math.min(...teklifler.map(t=>t.transitSure||Infinity));
     return `<div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">📍 ${escapeHtml(route)}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:8px">📍 ${window._esc(route)}</div>
       <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
         <tr style="background:var(--s2)">
           <th style="padding:6px 10px;text-align:left;border:1px solid var(--b)">Taşıyıcı</th>
@@ -894,8 +894,8 @@ function openNavlunCompare() {
           const isFastest  = t.transitSure === minTransit;
           const bg = isCheapest ? 'rgba(34,197,94,.08)' : (isFastest ? 'rgba(59,130,246,.06)' : '');
           return `<tr style="background:${bg}">
-            <td style="padding:6px 10px;border:1px solid var(--b);font-weight:500">${escapeHtml(t.tasiyan||'—')}${isCheapest?' <span style="color:#22C55E;font-size:9px">★ En ucuz</span>':''}${isFastest&&!isCheapest?' <span style="color:#3B82F6;font-size:9px">⚡ En hızlı</span>':''}</td>
-            <td style="padding:6px 10px;border:1px solid var(--b)">${escapeHtml(t.teklifVeren||t.satici||'—')}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b);font-weight:500">${window._esc(t.tasiyan||'—')}${isCheapest?' <span style="color:#22C55E;font-size:9px">★ En ucuz</span>':''}${isFastest&&!isCheapest?' <span style="color:#3B82F6;font-size:9px">⚡ En hızlı</span>':''}</td>
+            <td style="padding:6px 10px;border:1px solid var(--b)">${window._esc(t.teklifVeren||t.satici||'—')}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:right;font-weight:700;font-family:'DM Mono',monospace;color:${isCheapest?'#22C55E':'var(--t)'}">${(t.birimFiyat||0).toLocaleString('tr-TR')}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:center">${t.para||'USD'}</td>
             <td style="padding:6px 10px;border:1px solid var(--b);text-align:center;color:${isFastest?'#3B82F6':'var(--t)'};font-weight:${isFastest?'700':'400'}">${t.transitSure||'—'} gün${isFastest?' ⚡':''}</td>
@@ -1100,7 +1100,7 @@ function openNavlunPerformans() {
         return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
           <div style="width:24px;font-size:12px;font-weight:700;color:var(--t3);text-align:center">${i+1}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;color:var(--t)">${escapeHtml(s.name)}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${window._esc(s.name)}</div>
             <div style="font-size:10px;color:var(--t3)">${s.total} teklif · Ort. ${s.avgTransit} gün transit</div>
           </div>
           <div style="text-align:right">

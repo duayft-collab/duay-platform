@@ -802,8 +802,8 @@ function renderIkPersonel() {
       myRecord.forEach(p => {
         const card = document.createElement('div');
         card.style.cssText = 'padding:16px;background:var(--s2);border-radius:10px;border:1px solid var(--b)';
-        card.innerHTML = `<div style="font-weight:600;font-size:14px;color:var(--t)">${escapeHtml(p.name)}</div>
-          <div style="font-size:12px;color:var(--t2);margin-top:4px">${escapeHtml(p.pos||'')} — ${escapeHtml(p.dept||'')}</div>
+        card.innerHTML = `<div style="font-weight:600;font-size:14px;color:var(--t)">${window._esc(p.name)}</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:4px">${window._esc(p.pos||'')} — ${window._esc(p.dept||'')}</div>
           <div style="font-size:11px;color:var(--t3);margin-top:4px">Başlangıç: ${p.start||'—'} / Durum: ${p.status||'—'}</div>`;
         frag.appendChild(card);
       });
@@ -1192,7 +1192,7 @@ function openIkMaasModal(id) {
         <div style="background:var(--s2);border-radius:10px;padding:14px">
           <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">PERSONEL BILGISI</div>
           <select class="fi" id="ikm-uid" required style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'">
-            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${escapeHtml(u.name)}</option>`).join('')}
+            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${window._esc(u.name)}</option>`).join('')}
           </select>
           <input class="fi" type="month" id="ikm-ay-modal" value="${entry?.ay||ay}" required style="font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--b);margin-top:8px;transition:border-color .15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b)'">
         </div>
@@ -2783,7 +2783,7 @@ function renderTests(){
       + '<div style="font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px">Test Sonucu Kaydet</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
         + '<select id="td-aday" style="padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text)">'
-          + candidates.map(function(c){return '<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>';}).join('')
+          + candidates.map(function(c){return '<option value="'+c.id+'">'+window._esc(c.name)+'</option>';}).join('')
         + '</select>'
         + '<select id="td-puan" style="padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text)">'
           + '<option value="1">1 — Zayif</option><option value="2">2 — Orta</option><option value="3" selected>3 — Iyi</option><option value="4">4 — Cok Iyi</option><option value="5">5 — Mukemmel</option>'
@@ -3486,7 +3486,7 @@ function openAiAnalysis(candId) {
   mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">AI Aday Analizi</div>'
-      + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(c.name) + ' — ' + escapeHtml(c.position) + '</div>'
+      + '<div style="font-size:11px;color:var(--t3)">' + window._esc(c.name) + ' — ' + window._esc(c.position) + '</div>'
     + '</div>'
     + '<div id="ai-cand-body" style="padding:20px;min-height:120px;display:flex;align-items:center;justify-content:center">'
       + '<div style="text-align:center;color:var(--t3)"><div class="spinner" style="width:24px;height:24px;border:3px solid var(--b);border-top-color:var(--ac);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 8px"></div><div style="font-size:12px">AI analiz yapiliyor...</div></div>'
@@ -3510,7 +3510,7 @@ function openAiAnalysis(candId) {
       var body = document.getElementById('ai-cand-body');
       if(body) body.innerHTML = '<div style="font-size:12px;color:var(--t);line-height:1.7">'
         + '<div style="font-weight:700;color:#10B981;margin-bottom:6px">Guclu Yonler</div>'
-        + '<div style="margin-bottom:12px;color:var(--t2)">' + escapeHtml(c.position) + ' pozisyonu icin basvurmus. ' + (c.notes ? escapeHtml(c.notes) : 'On gorusme notu mevcut degil.') + '</div>'
+        + '<div style="margin-bottom:12px;color:var(--t2)">' + window._esc(c.position) + ' pozisyonu icin basvurmus. ' + (c.notes ? window._esc(c.notes) : 'On gorusme notu mevcut degil.') + '</div>'
         + '<div style="font-weight:700;color:#F59E0B;margin-bottom:6px">Zayif Yonler</div>'
         + '<div style="margin-bottom:12px;color:var(--t2)">Detayli degerlendirme icin mulakat sonuclari beklenmeli.</div>'
         + '<div style="font-weight:700;color:#6366F1;margin-bottom:6px">Genel Profil</div>'
@@ -3532,10 +3532,10 @@ function openAiAnalysis(candId) {
   }).then(function(r){ return r.json(); }).then(function(data){
     var text = data.content?.[0]?.text || 'Yanit alinamadi';
     var body = document.getElementById('ai-cand-body');
-    if(body) body.innerHTML = '<div style="font-size:12px;color:var(--t);line-height:1.7;white-space:pre-line">' + escapeHtml(text) + '</div>';
+    if(body) body.innerHTML = '<div style="font-size:12px;color:var(--t);line-height:1.7;white-space:pre-line">' + window._esc(text) + '</div>';
   }).catch(function(e){
     var body = document.getElementById('ai-cand-body');
-    if(body) body.innerHTML = '<div style="color:var(--rdt);font-size:12px">API hatasi: ' + escapeHtml(e.message) + '</div>';
+    if(body) body.innerHTML = '<div style="color:var(--rdt);font-size:12px">API hatasi: ' + window._esc(e.message) + '</div>';
   });
 }
 window.openAiAnalysis = openAiAnalysis;
@@ -3563,7 +3563,7 @@ function openCompareModal() {
   var rows = FACTORS.map(function(f){
     var sa = (evalSc[f]||3); var sb = (evalSc[f]||3); // Mock — gerçek skorda aday bazlı olmalı
     var winner = sa > sb ? 'a' : sb > sa ? 'b' : '';
-    return '<tr><td style="padding:6px 10px;font-size:11px;border:1px solid var(--b)">' + escapeHtml(f) + '</td>'
+    return '<tr><td style="padding:6px 10px;font-size:11px;border:1px solid var(--b)">' + window._esc(f) + '</td>'
       + '<td style="padding:6px 10px;text-align:center;font-weight:600;border:1px solid var(--b);background:' + (winner==='a'?'rgba(34,197,94,.08)':'') + '">' + sa + '/5</td>'
       + '<td style="padding:6px 10px;text-align:center;font-weight:600;border:1px solid var(--b);background:' + (winner==='b'?'rgba(34,197,94,.08)':'') + '">' + sb + '/5</td></tr>';
   }).join('');
@@ -3574,18 +3574,18 @@ function openCompareModal() {
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
         + '<div style="text-align:center;padding:16px;background:var(--s2);border-radius:10px">'
           + '<div style="width:48px;height:48px;border-radius:14px;background:var(--al);color:var(--ac);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;margin:0 auto 8px">' + (a.name||'?')[0] + '</div>'
-          + '<div style="font-size:14px;font-weight:600;color:var(--t)">' + escapeHtml(a.name) + '</div>'
-          + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(a.position) + '</div>'
+          + '<div style="font-size:14px;font-weight:600;color:var(--t)">' + window._esc(a.name) + '</div>'
+          + '<div style="font-size:11px;color:var(--t3)">' + window._esc(a.position) + '</div>'
           + '<div style="font-size:18px;font-weight:800;color:var(--ac);margin-top:4px">' + (a.score||0) + '</div>'
         + '</div>'
         + '<div style="text-align:center;padding:16px;background:var(--s2);border-radius:10px">'
           + '<div style="width:48px;height:48px;border-radius:14px;background:rgba(245,158,11,.1);color:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;margin:0 auto 8px">' + (b.name||'?')[0] + '</div>'
-          + '<div style="font-size:14px;font-weight:600;color:var(--t)">' + escapeHtml(b.name) + '</div>'
-          + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(b.position) + '</div>'
+          + '<div style="font-size:14px;font-weight:600;color:var(--t)">' + window._esc(b.name) + '</div>'
+          + '<div style="font-size:11px;color:var(--t3)">' + window._esc(b.position) + '</div>'
           + '<div style="font-size:18px;font-weight:800;color:#F59E0B;margin-top:4px">' + (b.score||0) + '</div>'
         + '</div>'
       + '</div>'
-      + '<table style="width:100%;border-collapse:collapse"><tr style="background:var(--s2)"><th style="padding:6px 10px;text-align:left;font-size:10px;border:1px solid var(--b)">Kriter</th><th style="padding:6px 10px;text-align:center;font-size:10px;border:1px solid var(--b)">' + escapeHtml(a.name.split(' ')[0]) + '</th><th style="padding:6px 10px;text-align:center;font-size:10px;border:1px solid var(--b)">' + escapeHtml(b.name.split(' ')[0]) + '</th></tr>' + rows + '</table>'
+      + '<table style="width:100%;border-collapse:collapse"><tr style="background:var(--s2)"><th style="padding:6px 10px;text-align:left;font-size:10px;border:1px solid var(--b)">Kriter</th><th style="padding:6px 10px;text-align:center;font-size:10px;border:1px solid var(--b)">' + window._esc(a.name.split(' ')[0]) + '</th><th style="padding:6px 10px;text-align:center;font-size:10px;border:1px solid var(--b)">' + window._esc(b.name.split(' ')[0]) + '</th></tr>' + rows + '</table>'
     + '</div>'
     + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
       + '<button class="btn" onclick="_compareIds=[];document.getElementById(\'mo-cand-compare\').remove()">Kapat</button>'
@@ -3618,13 +3618,13 @@ function startFocusInterview(candId) {
     var pct = Math.round((qIdx+1)/questions.length*100);
     overlay.innerHTML = '<div style="max-width:600px;width:100%;max-height:90vh;overflow-y:auto;background:var(--sf);border-radius:16px;padding:0">'
       + '<div style="padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-        + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">Mulakat — ' + escapeHtml(c.name) + '</div>'
+        + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">Mulakat — ' + window._esc(c.name) + '</div>'
           + '<div style="font-size:11px;color:var(--t3)">Soru ' + (qIdx+1) + '/' + questions.length + '</div></div>'
         + '<button onclick="document.getElementById(\'ik-focus-overlay\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">ESC</button>'
       + '</div>'
       + '<div style="height:3px;background:var(--s2)"><div style="height:100%;width:' + pct + '%;background:var(--ac);transition:width .3s"></div></div>'
       + '<div style="padding:24px 20px">'
-        + '<div style="font-size:16px;font-weight:600;color:var(--t);line-height:1.5;margin-bottom:20px">' + escapeHtml(q) + '</div>'
+        + '<div style="font-size:16px;font-weight:600;color:var(--t);line-height:1.5;margin-bottom:20px">' + window._esc(q) + '</div>'
         + '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px">PUAN (1-5)</div>'
           + '<div style="display:flex;gap:6px">' + [1,2,3,4,5].map(function(n){ return '<button onclick="window._fmScore(' + qIdx + ',' + n + ')" style="width:40px;height:40px;border-radius:10px;border:2px solid ' + ((scores[qIdx]===n)?'var(--ac)':'var(--b)') + ';background:' + ((scores[qIdx]===n)?'var(--al)':'var(--sf)') + ';cursor:pointer;font-size:14px;font-weight:700;color:' + ((scores[qIdx]===n)?'var(--ac)':'var(--t3)') + ';font-family:inherit">' + n + '</button>'; }).join('') + '</div>'
         + '</div>'
@@ -3694,10 +3694,10 @@ function openRejectionLetter(candId) {
   mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">Red Mektubu</div>'
-      + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(c.name) + ' — ' + escapeHtml(c.position) + '</div>'
+      + '<div style="font-size:11px;color:var(--t3)">' + window._esc(c.name) + ' — ' + window._esc(c.position) + '</div>'
     + '</div>'
     + '<div style="padding:16px 20px">'
-      + '<textarea id="reject-letter-text" style="width:100%;min-height:250px;padding:14px;border:1.5px solid var(--b);border-radius:10px;font-size:13px;color:var(--t);background:var(--s);line-height:1.7;font-family:inherit;resize:vertical">' + escapeHtml(letter) + '</textarea>'
+      + '<textarea id="reject-letter-text" style="width:100%;min-height:250px;padding:14px;border:1.5px solid var(--b);border-radius:10px;font-size:13px;color:var(--t);background:var(--s);line-height:1.7;font-family:inherit;resize:vertical">' + window._esc(letter) + '</textarea>'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
       + '<button class="btn" onclick="document.getElementById(\'mo-reject-letter\').remove()">Kapat</button>'
@@ -3766,7 +3766,7 @@ function renderIkRaporlar() {
     + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:16px">'
       + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:10px">Pozisyon Dagilimi</div>'
       + Object.entries(posCounts).sort(function(a, b) { return b[1] - a[1]; }).map(function(e) {
-          return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:var(--t2)">' + escapeHtml(e[0]) + '</span><span style="font-weight:600;color:var(--ac)">' + e[1] + '</span></div>'
+          return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:var(--t2)">' + window._esc(e[0]) + '</span><span style="font-weight:600;color:var(--ac)">' + e[1] + '</span></div>'
             + '<div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.round(e[1] / maxPos * 100) + '%;background:var(--ac);border-radius:3px"></div></div></div>';
         }).join('')
     + '</div>';

@@ -176,7 +176,7 @@ function renderAnnouncements() {
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
             <span style="font-weight:700;font-size:14px;color:var(--t)">${ann.title}</span>
             <span class="badge" style="background:${t.bg};color:${t.tx};font-size:10px">${t.label}</span>
-            ${ann.dept ? `<span class="badge" style="background:rgba(99,102,241,.1);color:#6366F1;font-size:10px">${escapeHtml(ann.dept.toUpperCase())}</span>` : ''}
+            ${ann.dept ? `<span class="badge" style="background:rgba(99,102,241,.1);color:#6366F1;font-size:10px">${window._esc(ann.dept.toUpperCase())}</span>` : ''}
             ${ann.sticky ? `<span class="badge" style="background:rgba(245,158,11,.15);color:#D97706;font-size:10px">📌 Sabit</span>` : ''}
             ${!isRead ? `<span class="badge ba" style="font-size:10px">🔵 Yeni</span>` : ''}
           </div>
@@ -267,7 +267,7 @@ function saveAnn() {
   window.toast?.(eid ? 'Duyuru güncellendi ✓' : 'Duyuru yayınlandı ✓', 'ok');
   // Departman bildirimi — ilgili modül badge'ini güncelle
   if (!eid) {
-    window.addNotif?.('📢', `Yeni duyuru: "${escapeHtml(title)}"${dept ? ' — ' + dept.toUpperCase() : ''}`, 'info', 'announce');
+    window.addNotif?.('📢', `Yeni duyuru: "${window._esc(title)}"${dept ? ' — ' + dept.toUpperCase() : ''}`, 'info', 'announce');
     window.updateAllBadges?.();
   }
 }
