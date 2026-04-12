@@ -1187,7 +1187,6 @@ function renderOdemeler() {
         : isPend ? '<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:#FEF3C7;color:#d97706">Onay</span>'
         : '';
 
-      var _esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
       var _pendBorder = isPend ? 'border-left:3px solid #d97706;' : '';
       var _pendBg = isPend ? 'background:rgba(234,179,8,.04);' : '';
       var _rowId = 'odm-row-' + o.id;
@@ -1207,7 +1206,7 @@ function renderOdemeler() {
         // İçerik
         + '<div style="flex:1;display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:8px 12px;min-width:0">'
           + '<div style="min-width:0">'
-            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(o.cariName || o.name || '—') + (o.docs && o.docs.length ? ' <span style="font-size:10px;cursor:pointer" title="' + o.docs.length + ' belge" onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)">📎</span>' : '') + '</div>'
+            + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + window._esc(o.cariName || o.name || '—') + (o.docs && o.docs.length ? ' <span style="font-size:10px;cursor:pointer" title="' + o.docs.length + ' belge" onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',0)">📎</span>' : '') + '</div>'
             + '<div style="font-size:10px;color:var(--t3);margin-top:2px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
               + (o.cat && !isTah ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + (cat.ic||'') + ' ' + (cat.l||'') + '</span>' : '')
               + (o.yontem ? '<span style="background:var(--s2);padding:1px 5px;border-radius:4px">' + window._esc(o.yontem) + '</span>' : '')
@@ -1233,11 +1232,11 @@ function renderOdemeler() {
       var peekHtml =
         '<div class="odm-row-peek" id="' + _peekId + '">'
         + '<div style="padding:10px 16px 10px 60px;background:var(--s2);display:grid;grid-template-columns:repeat(5,1fr);gap:8px;font-size:11px">'
-          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Cari</div><div style="font-weight:500;color:var(--t)">' + _esc(o.cariName || '—') + '</div></div>'
-          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Fatura No</div><div style="font-weight:500;color:var(--t)">' + _esc(o.docNo || o.ref || '—') + '</div></div>'
-          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Job ID</div><div style="font-weight:500;color:var(--t)">' + _esc(o.taskId || '—') + '</div></div>'
-          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Kaydeden</div><div style="font-weight:500;color:var(--t)">' + _esc(_creator?.name || '—') + ' · ' + _fmtTs(o.ts) + '</div></div>'
-          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Ek Belge</div><div style="font-weight:500;color:var(--t)">' + (o.docs && o.docs.length ? o.docs.map(function(d, i) { return '<span onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',' + i + ')" style="cursor:pointer;color:#185FA5;font-size:10px;display:block">📎 ' + _esc(d.name || 'Belge ' + (i + 1)) + '</span>'; }).join('') : '<span style="color:var(--t3);font-size:10px">Belge yok</span>') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Cari</div><div style="font-weight:500;color:var(--t)">' + window._esc(o.cariName || '—') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Fatura No</div><div style="font-weight:500;color:var(--t)">' + window._esc(o.docNo || o.ref || '—') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Job ID</div><div style="font-weight:500;color:var(--t)">' + window._esc(o.taskId || '—') + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Kaydeden</div><div style="font-weight:500;color:var(--t)">' + window._esc(_creator?.name || '—') + ' · ' + _fmtTs(o.ts) + '</div></div>'
+          + '<div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Ek Belge</div><div style="font-weight:500;color:var(--t)">' + (o.docs && o.docs.length ? o.docs.map(function(d, i) { return '<span onclick="event.stopPropagation();' + (isTah ? 'viewTahDoc' : 'viewOdmDoc') + '(' + o.id + ',' + i + ')" style="cursor:pointer;color:#185FA5;font-size:10px;display:block">📎 ' + window._esc(d.name || 'Belge ' + (i + 1)) + '</span>'; }).join('') : '<span style="color:var(--t3);font-size:10px">Belge yok</span>') + '</div></div>'
         + '</div>'
         + '<div style="padding:6px 16px 8px 60px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:6px;align-items:center">'
           + (function() {
@@ -1253,7 +1252,7 @@ function renderOdemeler() {
               + (_canDel ? '<button onclick="event.stopPropagation();' + (isTah ? 'delTahsilat' : 'delOdm') + '(' + o.id + ')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(220,38,38,.08);color:#dc2626;cursor:pointer;font-family:inherit">Sil</button>' : '')
               + (_canDel ? '<button onclick="event.stopPropagation();window._odmRevertRecord?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(107,114,128,.08);color:#6B7280;cursor:pointer;font-family:inherit">Geri Al</button>' : '')
               + (isRejected && _canEdit ? '<button onclick="event.stopPropagation();window._odmResubmit?.(' + o.id + ',\'' + (isTah?'tah':'odm') + '\')" style="font-size:10px;padding:4px 10px;border:none;border-radius:6px;background:rgba(59,130,246,.08);color:#3B82F6;cursor:pointer;font-family:inherit">Düzenle & Tekrar Gönder</button>' : '')
-              + (isRejected && o.rejectionNote ? '<div style="font-size:9px;color:#dc2626;padding:2px 0">Ret sebebi: ' + _esc(o.rejectionNote) + '</div>' : '')
+              + (isRejected && o.rejectionNote ? '<div style="font-size:9px;color:#dc2626;padding:2px 0">Ret sebebi: ' + window._esc(o.rejectionNote) + '</div>' : '')
               + '<button onclick="event.stopPropagation();' + (isTah ? 'openTahsilatModal(' + o.id + ')' : 'openOdmModal(' + o.id + ')') + '" style="font-size:10px;padding:4px 10px;border:0.5px solid #185FA5;border-radius:6px;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit;margin-left:auto">↗ Tam Kayıt</button>';
           })()
         + '</div>'
@@ -1414,16 +1413,15 @@ function openOdmModal(id) {
 
   // Cari listesi — sadece onaylı cariler seçilebilir
   var cariList = typeof loadCari === 'function' ? loadCari() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var cariOpts = '<option value="">— Cari Seçin * —</option>' + cariList.map(function(c) {
     var isPending = c.status === 'pending_approval';
-    var label = esc(c.name) + ' (' + (c.type || '') + ')' + (isPending ? ' ⏳ Onay Bekliyor' : '');
-    return '<option value="' + esc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPending ? ' disabled style="color:#999"' : '') + '>' + label + '</option>';
+    var label = window._esc(c.name) + ' (' + (c.type || '') + ')' + (isPending ? ' ⏳ Onay Bekliyor' : '');
+    return '<option value="' + window._esc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPending ? ' disabled style="color:#999"' : '') + '>' + label + '</option>';
   }).join('');
 
   // Görev listesi
   var taskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t) { return !t.done; }).slice(0, 50) : [];
-  var taskOpts = '<option value="">— Görev Seçin —</option>' + taskList.map(function(t) { return '<option value="' + t.id + '"' + (o?.taskId == t.id ? ' selected' : '') + '>' + esc(t.title.slice(0, 40)) + '</option>'; }).join('');
+  var taskOpts = '<option value="">— Görev Seçin —</option>' + taskList.map(function(t) { return '<option value="' + t.id + '"' + (o?.taskId == t.id ? ' selected' : '') + '>' + window._esc(t.title.slice(0, 40)) + '</option>'; }).join('');
 
   // Ödeme türleri — admin düzenleyebilir
   var odmTurleri = _odmLoadMethods();
@@ -1442,7 +1440,7 @@ function openOdmModal(id) {
 
     // 2. Ödeme Kısa Adı
     + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Ödeme Kısa Adı <span style="color:#dc2626">*</span></label>'
-    + '<input class="fi" id="odm-f-name" placeholder="Örn: Ofis Kirası" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + esc(o?.name||'') + '"></div>'
+    + '<input class="fi" id="odm-f-name" placeholder="Örn: Ofis Kirası" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + window._esc(o?.name||'') + '"></div>'
 
     // 3. Cari / Tedarikçi
     + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Cari / Tedarikçi <span style="color:#dc2626">*</span></label>'
@@ -1471,7 +1469,7 @@ function openOdmModal(id) {
 
     // 6b. Fatura / Referans No
     + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Fatura / Referans No <span style="color:#dc2626">*</span></label>'
-    + '<input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + esc(o?.docNo||'') + '"></div>'
+    + '<input class="fi" id="odm-f-docno" placeholder="FTR-2026-001" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + window._esc(o?.docNo||'') + '"></div>'
 
     // 7. Ödeme Yöntemi
     + '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Ödeme Yöntemi <span style="color:#dc2626">*</span></label>'
@@ -1953,7 +1951,7 @@ function markOdmPaid(id) {
   // Dekont uyarısı
   setTimeout(() => {
     window.toast?.('Lütfen dekontu yüklemeyi unutmayın', 'warn');
-    window.addNotif?.('📎', `"${escapeHtml(o.name)}" için dekont yüklenmedi`, 'warn', 'odemeler');
+    window.addNotif?.('📎', `"${window._esc(o.name)}" için dekont yüklenmedi`, 'warn', 'odemeler');
   }, 1500);
 }
 
@@ -1970,7 +1968,7 @@ function postponeOdm(id) {
   mo.innerHTML = `<div class="moc" style="max-width:400px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b)">
       <div style="font-size:15px;font-weight:700;color:var(--t)">Ödeme Erteleme</div>
-      <div style="font-size:12px;color:var(--t3);margin-top:2px">${escapeHtml(o.name)} — ${o.due || '—'}</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:2px">${window._esc(o.name)} — ${o.due || '—'}</div>
     </div>
     <div style="padding:16px 20px">
       <div class="fg"><div class="fl">YENİ TARİH <span style="color:var(--rd)">*</span></div>
@@ -2014,7 +2012,7 @@ function _savePostpone(id) {
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-postpone')?.remove();
   _logOdmAction(id, 'Erteleme talebi: ' + reason + ' → ' + newDate);
-  window.addNotif?.('⏳', '"' + escapeHtml(o.name) + '" erteleme onayı bekliyor — ' + escapeHtml(reason), 'warn', 'odemeler');
+  window.addNotif?.('⏳', '"' + window._esc(o.name) + '" erteleme onayı bekliyor — ' + window._esc(reason), 'warn', 'odemeler');
   window.toast?.('Erteleme talebi yöneticiye gönderildi', 'ok');
   renderOdemeler();
 }
@@ -2391,7 +2389,7 @@ function _odmImportRenderPreview(fileName, parsed, errors) {
     dropzone.innerHTML = '<div style="display:flex;align-items:center;gap:10px;justify-content:center">'
       + '<span style="font-size:20px">📄</span>'
       + '<div style="text-align:left">'
-        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + (typeof escapeHtml === 'function' ? escapeHtml(fileName) : fileName) + '</div>'
+        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + (typeof escapeHtml === 'function' ? window._esc(fileName) : fileName) + '</div>'
         + '<div style="font-size:11px;color:var(--t3)">' + parsed.length + ' satır bulundu</div>'
       + '</div>'
       + '<button onclick="event.stopPropagation();document.getElementById(\'odm-import-finp\').value=\'\';document.getElementById(\'odm-import-finp\').click()" style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit">Değiştir</button>'
@@ -2439,19 +2437,18 @@ function _odmImportRenderPreview(fileName, parsed, errors) {
   previewRows.forEach(function(r, i) {
     var hasError = r._errors && r._errors.length > 0;
     var bg = hasError ? 'background:rgba(239,68,68,.08)' : (i % 2 === 0 ? 'background:var(--sf)' : 'background:var(--s2)');
-    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
     var catInfo = ODM_CATS[r.cat] || ODM_CATS.diger;
     var curSym = (ODM_CURRENCY[r.currency] || {}).sym || r.currency;
 
     html += '<div style="display:grid;grid-template-columns:30px 1fr 90px 60px 80px 90px 1fr 90px;gap:0;padding:6px 10px;border-bottom:1px solid var(--b);font-size:11px;' + bg + '">'
       + '<div style="color:var(--t3)">' + r._rowIdx + '</div>'
-      + '<div style="font-weight:600;color:' + (hasError && !r.name ? '#EF4444' : 'var(--t)') + '">' + (r.name ? esc(r.name) : '<i style="color:#EF4444">eksik</i>') + '</div>'
+      + '<div style="font-weight:600;color:' + (hasError && !r.name ? '#EF4444' : 'var(--t)') + '">' + (r.name ? window._esc(r.name) : '<i style="color:#EF4444">eksik</i>') + '</div>'
       + '<div style="color:' + (hasError && (!r.amount || r.amount <= 0) ? '#EF4444' : 'var(--t)') + ';font-weight:600">' + (r.amount > 0 ? r.amount.toLocaleString('tr-TR') : '<i style="color:#EF4444">eksik</i>') + '</div>'
       + '<div style="color:var(--t3)">' + r.currency + '</div>'
       + '<div style="color:' + (hasError && !r.due ? '#EF4444' : 'var(--t3)') + '">' + (r.due || '<i style="color:#EF4444">eksik</i>') + '</div>'
       + '<div style="font-size:10px">' + catInfo.ic + ' ' + catInfo.l + '</div>'
-      + '<div style="color:var(--t3);font-size:10px">' + (r.cari ? esc(r.cari) : '—') + '</div>'
-      + '<div style="color:var(--t3);font-size:10px;font-family:monospace">' + (r.docNo ? esc(r.docNo) : '—') + '</div>'
+      + '<div style="color:var(--t3);font-size:10px">' + (r.cari ? window._esc(r.cari) : '—') + '</div>'
+      + '<div style="color:var(--t3);font-size:10px;font-family:monospace">' + (r.docNo ? window._esc(r.docNo) : '—') + '</div>'
     + '</div>';
 
     // Hata detayı
@@ -2850,11 +2847,10 @@ function openTahsilatModal(id) {
   const kurHTML = _odmKurModeHTML(curVal !== 'TRY' ? curVal : 'USD');
 
   var tahCariList = typeof loadCari === 'function' ? loadCari() : [];
-  var tahEsc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var tahCariOpts = '<option value="">— Cari Seçin * —</option>' + tahCariList.map(function(c) {
     var isPend = c.status === 'pending_approval';
-    var lbl = tahEsc(c.name) + ' (' + (c.type || '') + ')' + (isPend ? ' ⏳' : '');
-    return '<option value="' + tahEsc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPend ? ' disabled style="color:#999"' : '') + '>' + lbl + '</option>';
+    var lbl = window._esc(c.name) + ' (' + (c.type || '') + ')' + (isPend ? ' ⏳' : '');
+    return '<option value="' + window._esc(c.name) + '"' + (o?.cariName === c.name ? ' selected' : '') + (isPend ? ' disabled style="color:#999"' : '') + '>' + lbl + '</option>';
   }).join('');
   var tahMethods = _odmLoadMethods();
 
@@ -2870,7 +2866,7 @@ function openTahsilatModal(id) {
 
   // 2. Tahsilat Kısa Adı
   html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Kısa Adı <span style="color:#dc2626">*</span></label>';
-  html += '<input class="fi" id="tah-f-name" placeholder="Örn: Mart ayı satış tahsilatı" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + tahEsc(o?.name||'') + '"></div>';
+  html += '<input class="fi" id="tah-f-name" placeholder="Örn: Mart ayı satış tahsilatı" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + window._esc(o?.name||'') + '"></div>';
 
   // 3. Cari / Müşteri
   html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Cari / Müşteri <span style="color:#dc2626">*</span></label>';
@@ -2898,7 +2894,7 @@ function openTahsilatModal(id) {
 
   // 6b. Fatura / Referans No
   html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Fatura / Referans No <span style="color:#dc2626">*</span></label>';
-  html += '<input class="fi" id="tah-f-ref" placeholder="INV-2026-001" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + tahEsc(o?.ref||'') + '"></div>';
+  html += '<input class="fi" id="tah-f-ref" placeholder="INV-2026-001" style="font-size:13px;padding:10px 12px;border-radius:8px" value="' + window._esc(o?.ref||'') + '"></div>';
 
   // 7. Tahsilat Yöntemi
   html += '<div><label style="display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px">Tahsilat Yöntemi <span style="color:#dc2626">*</span></label>';
@@ -2924,7 +2920,7 @@ function openTahsilatModal(id) {
   // Hidden alanlar
   html += '<input type="hidden" id="tah-f-eid" value="' + (o?o.id:'') + '">';
   html += '<input type="hidden" id="tah-f-actual" value="' + (o?.actualDate||'') + '">';
-  html += '<input type="hidden" id="tah-f-banka" value="' + tahEsc(o?.banka||'') + '">';
+  html += '<input type="hidden" id="tah-f-banka" value="' + window._esc(o?.banka||'') + '">';
   html += '<input type="hidden" id="tah-f-user" value="' + (o?.assignedTo||'') + '">';
   html += '<input type="hidden" id="tah-f-collected" value="' + (o&&o.collected?'1':'') + '">';
   html += '<input type="hidden" id="tah-f-alarm" value="' + (o?o.alarmDays||3:3) + '">';
@@ -3178,7 +3174,7 @@ function saveTahsilat() {
   if (!eid && !_isAdminO()) {
     var _yoneticiler = (window.loadUsers?.() || []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
     _yoneticiler.forEach(function(m) {
-      window.addNotif?.('💰', 'Yeni tahsilat onay bekliyor: ' + escapeHtml(name) + ' - ' + amount + ' ' + currency + ' (' + (_CUo()?.name || '') + ')', 'warn', 'odemeler', m.id);
+      window.addNotif?.('💰', 'Yeni tahsilat onay bekliyor: ' + window._esc(name) + ' - ' + amount + ' ' + currency + ' (' + (_CUo()?.name || '') + ')', 'warn', 'odemeler', m.id);
     });
     window.toast?.('Tahsilat eklendi — yönetici onayı bekleniyor', 'ok');
   } else {
@@ -3793,7 +3789,7 @@ function approveOdm(id) {
     o.due = o.postponeDate;
     o.postponeApproved = true;
     window.toast?.('Erteleme onaylandı — yeni tarih: ' + o.due, 'ok');
-    window.addNotif?.('✅', '"' + escapeHtml(o.name) + '" erteleme onaylandı → ' + o.due, 'ok', 'odemeler');
+    window.addNotif?.('✅', '"' + window._esc(o.name) + '" erteleme onaylandı → ' + o.due, 'ok', 'odemeler');
   } else {
     window.toast?.('Ödeme onaylandı', 'ok');
   }
@@ -3857,12 +3853,12 @@ function openApprovalFlow(odmId) {
   mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:14px;overflow:hidden">'
     + '<div style="padding:16px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">Onaya Gonder</div>'
-      + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + escapeHtml(o.name) + ' — ' + amount.toLocaleString('tr-TR') + ' TL</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + window._esc(o.name) + ' — ' + amount.toLocaleString('tr-TR') + ' TL</div>'
       + (needsDualApproval ? '<div style="font-size:10px;color:#F59E0B;margin-top:4px;font-weight:600">5.000 TL ustu — cift onay gerekli</div>' : '')
     + '</div>'
     + '<div style="padding:16px 20px">'
       + '<div class="fg"><div class="fl">ARA ONAYCI <span style="color:var(--rd)">*</span></div>'
-        + '<select class="fi" id="oaf-approver">' + managers.map(u => '<option value="' + u.id + '">' + escapeHtml(u.name) + ' (' + u.role + ')</option>').join('') + '</select></div>'
+        + '<select class="fi" id="oaf-approver">' + managers.map(u => '<option value="' + u.id + '">' + window._esc(u.name) + ' (' + u.role + ')</option>').join('') + '</select></div>'
       + (needsDualApproval ? '<div class="fg"><div class="fl">FİNAL ONAYCI</div><div style="font-size:11px;color:var(--t3);padding:6px 0">Ara onay sonrasi ilk yoneticiye otomatik gider</div></div>' : '')
       + '<div class="fg"><div class="fl">NOT (opsiyonel)</div><input class="fi" id="oaf-note" placeholder="Onay notu..."></div>'
     + '</div>'
@@ -3892,7 +3888,7 @@ window._submitApprovalFlow = function(odmId) {
 
   window.storeOdm ? storeOdm(d) : null;
   document.getElementById('mo-odm-approval')?.remove();
-  window.addNotif?.('💰', '"' + escapeHtml(o.name) + '" onayinizi bekliyor', 'warn', 'odemeler', approverId);
+  window.addNotif?.('💰', '"' + window._esc(o.name) + '" onayinizi bekliyor', 'warn', 'odemeler', approverId);
   window.toast?.('Onaya gonderildi', 'ok');
   renderOdemeler();
 };
@@ -4017,15 +4013,15 @@ function showOdmApprovalTimeline(odmId) {
   mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">Onay Gecmisi</div>'
-        + '<div style="font-size:11px;color:var(--t3)">' + escapeHtml(o.name||'') + '</div></div>'
+        + '<div style="font-size:11px;color:var(--t3)">' + window._esc(o.name||'') + '</div></div>'
       + '<span style="font-size:10px;padding:3px 10px;border-radius:6px;background:' + st.bg + ';color:' + st.c + ';font-weight:600">' + st.l + '</span>'
     + '</div>'
     + '<div style="padding:16px 20px;max-height:50vh;overflow-y:auto">'
       + (log.length ? log.map((l,i) => '<div style="display:flex;gap:10px;padding-bottom:12px;'+(i<log.length-1?'border-left:2px solid var(--b);margin-left:5px;padding-left:16px':'margin-left:5px;padding-left:16px')+'">'
         + '<div style="width:12px;height:12px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:2px;margin-left:-22px"></div>'
-        + '<div><div style="font-size:12px;font-weight:500;color:var(--t)">' + escapeHtml(l.actorName||'?') + ' — ' + escapeHtml(l.action||'') + '</div>'
+        + '<div><div style="font-size:12px;font-weight:500;color:var(--t)">' + window._esc(l.actorName||'?') + ' — ' + window._esc(l.action||'') + '</div>'
           + '<div style="font-size:10px;color:var(--t3)">' + (l.ts||'').slice(0,16) + '</div>'
-          + (l.note ? '<div style="font-size:11px;color:var(--t2);margin-top:2px">' + escapeHtml(l.note) + '</div>' : '')
+          + (l.note ? '<div style="font-size:11px;color:var(--t2);margin-top:2px">' + window._esc(l.note) + '</div>' : '')
         + '</div></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--t3);font-size:12px">Henuz onay gecmisi yok</div>')
     + '</div>'
     + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">'
@@ -4049,7 +4045,7 @@ window._odmTaskSearch = function(val) {
     var q = val.trim().toLowerCase();
     var found = tasks.find(function(t) { return String(t.id) === q || (t.title || '').toLowerCase().includes(q); });
     if (found) {
-      badge.innerHTML = '<span style="color:#10B981;font-weight:600">&#10003; ' + escapeHtml(found.title) + '</span>';
+      badge.innerHTML = '<span style="color:#10B981;font-weight:600">&#10003; ' + window._esc(found.title) + '</span>';
       var inp = document.getElementById('odm-f-taskid');
       if (inp) inp.value = found.id;
     } else {
@@ -4842,15 +4838,14 @@ function openBankaManager() {
   var ex = document.getElementById('mo-banka-mgr');
   if (ex) { ex.remove(); return; }
   var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-banka-mgr'; ;
   var listHTML = bankalar.length ? bankalar.map(function(b) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b)">'
       + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(b.name) + ' <span style="font-size:10px;color:var(--t3)">(' + (b.hesapTur || 'TRY') + ')</span></div>'
-        + '<div style="font-size:10px;color:var(--t3);font-family:monospace">' + esc(b.iban || '—') + (b.swift ? ' · SWIFT: ' + esc(b.swift) : '') + '</div>'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + window._esc(b.name) + ' <span style="font-size:10px;color:var(--t3)">(' + (b.hesapTur || 'TRY') + ')</span></div>'
+        + '<div style="font-size:10px;color:var(--t3);font-family:monospace">' + window._esc(b.iban || '—') + (b.swift ? ' · SWIFT: ' + window._esc(b.swift) : '') + '</div>'
       + '</div>'
       + '<button onclick="_removeBanka(' + b.id + ')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:14px" title="Sil">×</button>'
     + '</div>';
@@ -4943,8 +4938,7 @@ function _onYontemChange(prefix) {
     var sel = document.getElementById(prefix + '-f-banka-sel');
     if (sel && bankalar.length) {
       sel.innerHTML = '<option value="">— Banka Seçin * —</option>' + bankalar.map(function(b) {
-        var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
-        return '<option value="' + b.id + '">' + esc(b.name) + ' (' + (b.hesapTur || 'TRY') + ') — ' + esc((b.iban || '').slice(0, 16)) + '...</option>';
+        return '<option value="' + b.id + '">' + window._esc(b.name) + ' (' + (b.hesapTur || 'TRY') + ') — ' + window._esc((b.iban || '').slice(0, 16)) + '...</option>';
       }).join('');
     }
   }
@@ -4959,7 +4953,6 @@ window._onYontemChange = _onYontemChange;
  */
 function _bankaDropdownHTML(prefix, o) {
   var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var yontem = o?.yontem || '';
   var isBanka = yontem === 'Havale/EFT';
   return '<div id="' + prefix + '-banka-wrap" style="display:' + (isBanka ? 'block' : 'none') + ';margin-top:8px" data-loaded="' + (isBanka ? '1' : '') + '">'
@@ -4967,7 +4960,7 @@ function _bankaDropdownHTML(prefix, o) {
     + '<select class="fi" id="' + prefix + '-f-banka-sel" style="border-radius:8px">'
     + '<option value="">— Banka Seçin * —</option>'
     + bankalar.map(function(b) {
-        return '<option value="' + b.id + '"' + (o?.bankaId == b.id ? ' selected' : '') + '>' + esc(b.name) + ' (' + (b.hesapTur || 'TRY') + ') — ' + esc((b.iban || '').slice(0, 16)) + '...</option>';
+        return '<option value="' + b.id + '"' + (o?.bankaId == b.id ? ' selected' : '') + '>' + window._esc(b.name) + ' (' + (b.hesapTur || 'TRY') + ') — ' + window._esc((b.iban || '').slice(0, 16)) + '...</option>';
       }).join('')
     + '</select></div>'
     + '</div>';
@@ -6433,7 +6426,6 @@ function _cariDropdownHTML(selectedId, inputId) {
 window._openQuickCari = function(editId) {
   var old = document.getElementById('mo-quick-cari'); if (old) old.remove();
   var c = editId ? loadCari().find(function(x) { return x.id === editId; }) : null;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-quick-cari'; mo.style.display = 'flex'; ;
@@ -6453,21 +6445,21 @@ window._openQuickCari = function(editId) {
       // Genel sekmesi
       + '<div id="qc-panel-genel" class="qc-panel">'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-          + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı" value="' + esc(c?.name || '') + '"></div>'
+          + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı" value="' + window._esc(c?.name || '') + '"></div>'
           + '<div><div class="fl">T\u0130P *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarik\u00e7i</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>M\u00fc\u015fteri</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Di\u011fer</option></select></div>'
-          + '<div><div class="fl">M\u00dc\u015eTER\u0130 KODU (4 hane)</div><input class="fi" id="qc-kod" maxlength="4" placeholder="3230" value="' + esc(c?.kod || '') + '" style="font-family:monospace"></div>'
+          + '<div><div class="fl">M\u00dc\u015eTER\u0130 KODU (4 hane)</div><input class="fi" id="qc-kod" maxlength="4" placeholder="3230" value="' + window._esc(c?.kod || '') + '" style="font-family:monospace"></div>'
           + '<div><div class="fl">CARİ AŞAMA</div><select class="fi" id="qc-caritype"><option value="potansiyel"' + ((c?.cariType || 'potansiyel') === 'potansiyel' ? ' selected' : '') + '>🔵 Potansiyel</option><option value="aktif"' + (c?.cariType === 'aktif' ? ' selected' : '') + '>🟡 Aktif</option><option value="onayli"' + (c?.cariType === 'onayli' ? ' selected' : '') + ' disabled>🟢 Onaylı (yönetici atar)</option></select></div>'
-          + '<div><div class="fl">VKN (10 HANE) *</div><input class="fi" id="qc-tax" value="' + esc(c?.vkn || c?.taxNo || '') + '" placeholder="0000000000" maxlength="10" pattern="[0-9]{10}"></div>'
-          + '<div><div class="fl">TCKN (11 HANE)</div><input class="fi" id="qc-tckn" value="' + esc(c?.tckn || '') + '" placeholder="Bireysel için" maxlength="11"></div>'
-          + '<div><div class="fl">VERGİ DAİRESİ *</div><input class="fi" id="qc-taxoffice" value="' + esc(c?.taxOffice || '') + '" placeholder="Vergi dairesi"></div>'
-          + '<div><div class="fl">ÜLKE *</div><input class="fi" id="qc-country" value="' + esc(c?.country || '') + '" placeholder="Türkiye"></div>'
-          + '<div><div class="fl">ŞEHİR</div><input class="fi" id="qc-city" value="' + esc(c?.city || '') + '"></div>'
-          + '<div><div class="fl">TELEFON</div><input class="fi" id="qc-phone" value="' + esc(c?.phone || '') + '"></div>'
-          + '<div><div class="fl">E-POSTA</div><input class="fi" type="email" id="qc-email" value="' + esc(c?.email || '') + '"></div>'
-          + '<div><div class="fl">WEB</div><input class="fi" id="qc-web" value="' + esc(c?.web || '') + '" placeholder="www.firma.com"></div>'
-          + '<div><div class="fl">POSTA KODU</div><input class="fi" id="qc-zip" value="' + esc(c?.zip || '') + '"></div>'
+          + '<div><div class="fl">VKN (10 HANE) *</div><input class="fi" id="qc-tax" value="' + window._esc(c?.vkn || c?.taxNo || '') + '" placeholder="0000000000" maxlength="10" pattern="[0-9]{10}"></div>'
+          + '<div><div class="fl">TCKN (11 HANE)</div><input class="fi" id="qc-tckn" value="' + window._esc(c?.tckn || '') + '" placeholder="Bireysel için" maxlength="11"></div>'
+          + '<div><div class="fl">VERGİ DAİRESİ *</div><input class="fi" id="qc-taxoffice" value="' + window._esc(c?.taxOffice || '') + '" placeholder="Vergi dairesi"></div>'
+          + '<div><div class="fl">ÜLKE *</div><input class="fi" id="qc-country" value="' + window._esc(c?.country || '') + '" placeholder="Türkiye"></div>'
+          + '<div><div class="fl">ŞEHİR</div><input class="fi" id="qc-city" value="' + window._esc(c?.city || '') + '"></div>'
+          + '<div><div class="fl">TELEFON</div><input class="fi" id="qc-phone" value="' + window._esc(c?.phone || '') + '"></div>'
+          + '<div><div class="fl">E-POSTA</div><input class="fi" type="email" id="qc-email" value="' + window._esc(c?.email || '') + '"></div>'
+          + '<div><div class="fl">WEB</div><input class="fi" id="qc-web" value="' + window._esc(c?.web || '') + '" placeholder="www.firma.com"></div>'
+          + '<div><div class="fl">POSTA KODU</div><input class="fi" id="qc-zip" value="' + window._esc(c?.zip || '') + '"></div>'
         + '</div>'
-        + '<div style="margin-top:10px"><div class="fl">ADRES</div><textarea class="fi" id="qc-address" rows="2" style="resize:none">' + esc(c?.address || '') + '</textarea></div>'
+        + '<div style="margin-top:10px"><div class="fl">ADRES</div><textarea class="fi" id="qc-address" rows="2" style="resize:none">' + window._esc(c?.address || '') + '</textarea></div>'
       + '</div>'
       // Finansal sekmesi
       + '<div id="qc-panel-finans" class="qc-panel" style="display:none">'
@@ -6475,9 +6467,9 @@ window._openQuickCari = function(editId) {
           + '<div><div class="fl">PARA BİRİMİ *</div><select class="fi" id="qc-currency"><option value="USD"' + (c?.currency === 'USD' ? ' selected' : '') + '>USD</option><option value="EUR"' + (c?.currency === 'EUR' ? ' selected' : '') + '>EUR</option><option value="TRY"' + (c?.currency === 'TRY' ? ' selected' : '') + '>TRY</option><option value="GBP"' + (c?.currency === 'GBP' ? ' selected' : '') + '>GBP</option></select></div>'
           + '<div><div class="fl">KREDİ LİMİTİ</div><input class="fi" type="number" id="qc-limit" value="' + (c?.limitAmount || '') + '"></div>'
           + '<div><div class="fl">ÖDEME VADESİ (gün)</div><input class="fi" type="number" id="qc-payterm" value="' + (c?.paymentTerm || '') + '" placeholder="30"></div>'
-          + '<div><div class="fl">BANKA ADI</div><input class="fi" id="qc-bank" value="' + esc(c?.bankName || '') + '"></div>'
-          + '<div><div class="fl">IBAN</div><input class="fi" id="qc-iban" value="' + esc(c?.iban || '') + '"></div>'
-          + '<div><div class="fl">SWIFT</div><input class="fi" id="qc-swift" value="' + esc(c?.swift || '') + '"></div>'
+          + '<div><div class="fl">BANKA ADI</div><input class="fi" id="qc-bank" value="' + window._esc(c?.bankName || '') + '"></div>'
+          + '<div><div class="fl">IBAN</div><input class="fi" id="qc-iban" value="' + window._esc(c?.iban || '') + '"></div>'
+          + '<div><div class="fl">SWIFT</div><input class="fi" id="qc-swift" value="' + window._esc(c?.swift || '') + '"></div>'
         + '</div>'
       + '</div>'
       // Kişiler sekmesi
@@ -6486,10 +6478,10 @@ window._openQuickCari = function(editId) {
             var contacts = c?.contacts || [];
             return contacts.map(function(ct, i) {
               return '<div class="qc-contact-row" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px;margin-bottom:6px">'
-                + '<input class="fi qc-ct-name" placeholder="Ad Soyad" value="' + esc(ct.name || '') + '" style="font-size:11px;padding:5px">'
-                + '<input class="fi qc-ct-pos" placeholder="Pozisyon" value="' + esc(ct.position || '') + '" style="font-size:11px;padding:5px">'
-                + '<input class="fi qc-ct-phone" placeholder="Telefon" value="' + esc(ct.phone || '') + '" style="font-size:11px;padding:5px">'
-                + '<input class="fi qc-ct-email" placeholder="E-posta" value="' + esc(ct.email || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-name" placeholder="Ad Soyad" value="' + window._esc(ct.name || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-pos" placeholder="Pozisyon" value="' + window._esc(ct.position || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-phone" placeholder="Telefon" value="' + window._esc(ct.phone || '') + '" style="font-size:11px;padding:5px">'
+                + '<input class="fi qc-ct-email" placeholder="E-posta" value="' + window._esc(ct.email || '') + '" style="font-size:11px;padding:5px">'
                 + '<button onclick="this.closest(\'.qc-contact-row\').remove()" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px">✕</button>'
               + '</div>';
             }).join('');
@@ -6520,10 +6512,10 @@ window._openQuickCari = function(editId) {
         + '<div style="font-size:9px;color:var(--t3);margin-top:2px">PDF/JPG/PNG, maks 5MB</div>'
         + '<div id="qc-docs-list" style="margin-top:10px">' + (function() {
             var docs = c?.documents || [];
-            return docs.map(function(d) { return '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--b)">📎 ' + esc(d.name || '?') + ' (' + (d.type || '—') + ')</div>'; }).join('') || '<div style="font-size:11px;color:var(--t3)">Belge yok</div>';
+            return docs.map(function(d) { return '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--b)">📎 ' + window._esc(d.name || '?') + ' (' + (d.type || '—') + ')</div>'; }).join('') || '<div style="font-size:11px;color:var(--t3)">Belge yok</div>';
           })()
         + '</div>'
-        + '<div style="margin-top:10px"><div class="fl">NOTLAR</div><textarea class="fi" id="qc-notes" rows="2" style="resize:none">' + esc(c?.notes || '') + '</textarea></div>'
+        + '<div style="margin-top:10px"><div class="fl">NOTLAR</div><textarea class="fi" id="qc-notes" rows="2" style="resize:none">' + window._esc(c?.notes || '') + '</textarea></div>'
       + '</div>'
       + '<input type="hidden" id="qc-edit-id" value="' + (c?.id || '') + '">'
     + '</div>'
@@ -6662,7 +6654,6 @@ function renderCari() {
     )) return false;
     return true;
   });
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var cont = document.getElementById('cari-list');
   if (!cont) return;
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
@@ -6748,9 +6739,9 @@ function renderCari() {
       return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #FDE68A;cursor:pointer;background:' + (isSel ? '#FEF3C7' : '#FFFBEB') + '">'
         + '<span style="font-size:14px">⏳</span>'
         + '<div style="flex:1;min-width:0">'
-          + '<div style="font-size:12px;font-weight:600;color:#92400E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + '</div>'
+          + '<div style="font-size:12px;font-weight:600;color:#92400E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + '</div>'
           + '<div style="font-size:10px;color:#B45309">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer')
-            + (createdByUser ? ' · ' + esc(createdByUser.name) : '') + ' · ' + (c.createdAt || '').slice(0, 10) + '</div>'
+            + (createdByUser ? ' · ' + window._esc(createdByUser.name) : '') + ' · ' + (c.createdAt || '').slice(0, 10) + '</div>'
         + '</div>'
         + (isManager
           ? '<div style="display:flex;gap:4px;flex-shrink:0">'
@@ -6786,7 +6777,7 @@ function renderCari() {
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(c.name) + statusBadge + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + statusBadge + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
     + '</div>';
   }).join('');
@@ -6817,7 +6808,6 @@ function _renderCariDetail(id) {
   if (!cont) return;
   var c = loadCari().find(function(x) { return x.id === id; });
   if (!c) { cont.innerHTML = ''; return; }
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
@@ -6837,10 +6827,10 @@ function _renderCariDetail(id) {
     // Başlık
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
       + '<div>'
-        + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + esc(c.name) + '</div>'
-        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + esc(c.phone) : '') + (c.email ? ' · ' + esc(c.email) : '') + '</div>'
-        + (c.iban ? '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">IBAN: ' + esc(c.iban) + '</div>' : '')
-        + (c.address ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + esc(c.address) + '</div>' : '')
+        + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + window._esc(c.name) + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + window._esc(c.phone) : '') + (c.email ? ' · ' + window._esc(c.email) : '') + '</div>'
+        + (c.iban ? '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">IBAN: ' + window._esc(c.iban) + '</div>' : '')
+        + (c.address ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + window._esc(c.address) + '</div>' : '')
       + '</div>'
       + '<div style="display:flex;gap:6px">'
         + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
@@ -6857,7 +6847,7 @@ function _renderCariDetail(id) {
           return '<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">'
             + '<div>'
               + '<div style="font-size:13px;font-weight:700;color:#92400E">⏳ Onay Bekliyor</div>'
-              + '<div style="font-size:11px;color:#B45309;margin-top:2px">Oluşturan: ' + (createdByUser ? esc(createdByUser.name) : '—') + ' · ' + (c.createdAt || '').slice(0, 16) + '</div>'
+              + '<div style="font-size:11px;color:#B45309;margin-top:2px">Oluşturan: ' + (createdByUser ? window._esc(createdByUser.name) : '—') + ' · ' + (c.createdAt || '').slice(0, 16) + '</div>'
             + '</div>'
             + (_isManagerO()
               ? '<div style="display:flex;gap:8px">'
@@ -6877,7 +6867,7 @@ function _renderCariDetail(id) {
           var approverUser = (typeof loadUsers === 'function' ? loadUsers() : []).find(function(u) { return u.id === c.approvedBy; });
           return '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:8px 16px;margin-bottom:16px;display:flex;align-items:center;gap:8px">'
             + '<span style="font-size:12px;color:#16A34A;font-weight:600">✅ Onaylandı</span>'
-            + '<span style="font-size:10px;color:#15803D">' + (approverUser ? esc(approverUser.name) : '') + ' · ' + (c.approvedAt || '').slice(0, 16) + '</span>'
+            + '<span style="font-size:10px;color:#15803D">' + (approverUser ? window._esc(approverUser.name) : '') + ' · ' + (c.approvedAt || '').slice(0, 16) + '</span>'
           + '</div>';
         }
         return '';
@@ -6932,7 +6922,7 @@ function _renderCariDetail(id) {
                   var tlAmt = cur === 'TRY' ? h.amount : Math.round((h.amount || 0) * kur);
                   return '<div style="display:grid;grid-template-columns:80px 1fr 80px 60px 70px 80px 70px;padding:5px 14px;border-bottom:1px solid var(--b);font-size:11px;background:' + (i % 2 ? 'var(--s2)' : 'var(--sf)') + '">'
                     + '<div style="color:var(--t3)">' + (h.date || '—').slice(0, 10) + '</div>'
-                    + '<div style="color:var(--t)">' + esc(h.name || '—') + '</div>'
+                    + '<div style="color:var(--t)">' + window._esc(h.name || '—') + '</div>'
                     + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + Number(h.amount || 0).toLocaleString('tr-TR') + '</div>'
                     + '<div style="color:var(--t3)">' + cur + '</div>'
                     + '<div style="text-align:right;color:var(--t3)">' + (cur !== 'TRY' ? kur : '—') + '</div>'
@@ -6948,7 +6938,7 @@ function _renderCariDetail(id) {
                   var sign = h.type === 'tahsilat' ? '+' : '-';
                   return '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px;padding:5px 14px;border-bottom:1px solid var(--b);font-size:11px;background:' + (i % 2 ? 'var(--s2)' : 'var(--sf)') + '">'
                     + '<div style="color:var(--t3)">' + (h.date || '—').slice(0, 10) + '</div>'
-                    + '<div style="color:var(--t)">' + esc(h.name || '—') + '</div>'
+                    + '<div style="color:var(--t)">' + window._esc(h.name || '—') + '</div>'
                     + '<div style="text-align:right;font-weight:600;color:' + color + '">' + sign + '₺' + Number(h.amount || 0).toLocaleString('tr-TR') + '</div>'
                     + '<div style="text-align:right;font-size:10px;color:var(--t3)">' + h.status + '</div>'
                   + '</div>';
@@ -6989,7 +6979,6 @@ window._exportCariPDF = function() {
   if (!_cariSelectedId) { window.toast?.('Cari seçin', 'err'); return; }
   var c = loadCari().find(function(x) { return x.id === _cariSelectedId; });
   if (!c) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
   var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
@@ -6998,7 +6987,7 @@ window._exportCariPDF = function() {
   var totalA = cTah.reduce(function(a, t) { return a + (parseFloat(t.amount) || 0); }, 0);
 
   var w = window.open('', '_blank', 'width=700,height=900');
-  w.document.write('<!DOCTYPE html><html><head><title>Cari Ekstre — ' + esc(c.name) + '</title>'
+  w.document.write('<!DOCTYPE html><html><head><title>Cari Ekstre — ' + window._esc(c.name) + '</title>'
     + '<style>body{font-family:Segoe UI,sans-serif;padding:40px;color:#1a1a2e;max-width:650px;margin:0 auto}'
     + '.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px}'
     + '@media print{button{display:none!important}}</style></head><body>'
@@ -7006,7 +6995,7 @@ window._exportCariPDF = function() {
       + '<div style="font-size:20px;font-weight:700">Duay Global LLC</div>'
       + '<div style="font-size:12px;color:#6b7280">Cari Hesap Ekstresi · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
     + '</div>'
-    + '<div style="font-size:16px;font-weight:700;margin-bottom:12px">' + esc(c.name) + '</div>'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:12px">' + window._esc(c.name) + '</div>'
     + '<div class="row"><span style="color:#6b7280">Toplam Alacak</span><span style="color:#16A34A;font-weight:700">₺' + Math.round(totalA).toLocaleString('tr-TR') + '</span></div>'
     + '<div class="row"><span style="color:#6b7280">Toplam Borç</span><span style="color:#DC2626;font-weight:700">₺' + Math.round(totalB).toLocaleString('tr-TR') + '</span></div>'
     + '<div class="row"><span style="color:#6b7280">Net Bakiye</span><span style="font-weight:700">₺' + Math.round(totalA - totalB).toLocaleString('tr-TR') + '</span></div>'
@@ -7171,7 +7160,6 @@ window._tahToggleQuickView = function(id) {
   var d = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
   var o = d.find(function(x) { return x.id === id; });
   if (!o) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
   var rates = _odmGetRates();
   var kurRate = o.kurRate || rates[o.currency] || 1;
   var curSym = o.currency === 'USD' ? '$' : o.currency === 'EUR' ? '€' : '₺';
@@ -7193,11 +7181,11 @@ window._tahToggleQuickView = function(id) {
     + '</div>'
     + '<div>'
       + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Detay</div>'
-      + (assigned ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sorumlu:</span> ' + esc(assigned.name) + '</div>' : '')
+      + (assigned ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Sorumlu:</span> ' + window._esc(assigned.name) + '</div>' : '')
       + '<div style="margin-bottom:4px"><span style="color:var(--t3)">Vade:</span> ' + (o.due || '—') + '</div>'
-      + (o.cariName ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari:</span> ' + esc(o.cariName) + '</div>' : '')
-      + (o.ref ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Referans No:</span> ' + esc(o.ref) + '</div>' : '')
-      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Not:</span> ' + esc(o.note) + '</div>' : '')
+      + (o.cariName ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Cari:</span> ' + window._esc(o.cariName) + '</div>' : '')
+      + (o.ref ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Referans No:</span> ' + window._esc(o.ref) + '</div>' : '')
+      + (o.note ? '<div style="margin-bottom:4px"><span style="color:var(--t3)">Not:</span> ' + window._esc(o.note) + '</div>' : '')
     + '</div>'
     + '<div>'
       + '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Durum</div>'
@@ -7258,7 +7246,6 @@ function openOdmTrashPanel() {
   if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
   var ex = document.getElementById('mo-odm-trash');
   if (ex) { ex.remove(); return; }
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
 
   var odmTrash = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return o.isDeleted; });
   var tahTrash = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return t.isDeleted; });
@@ -7269,7 +7256,7 @@ function openOdmTrashPanel() {
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--b)">'
       + '<span style="font-size:14px">' + (type === 'odeme' ? '💸' : '💰') + '</span>'
       + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(item.name || '—') + '</div>'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(item.name || '—') + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (type === 'odeme' ? 'Ödeme' : 'Tahsilat') + ' · Silen: ' + (delBy?.name || '—') + ' · ' + (item.deletedAt || '').slice(0, 16) + '</div>'
       + '</div>'
       + '<div style="font-size:12px;font-weight:600;color:var(--t)">₺' + Number(item.amount || 0).toLocaleString('tr-TR') + '</div>'
@@ -7423,7 +7410,6 @@ function openCariStatement(cariId, format) {
   var st = _buildCariStatement(cariId);
   if (!st) { window.toast?.('Cari bulunamadı', 'err'); return; }
   var c = st.cari;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var today = _todayStr();
 
   var ex = document.getElementById('mo-cari-stmt');
@@ -7448,10 +7434,10 @@ function openCariStatement(cariId, format) {
 
     rowsHTML += '<tr style="background:' + rowBg + ';border-bottom:1px solid var(--b)">';
     rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:' + (isLate ? '#DC2626' : 'var(--t3)') + '">' + (h.date || '—').slice(0, 10) + '</td>';
-    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:var(--t)">' + esc(h.name) + '</td>';
+    rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:var(--t)">' + window._esc(h.name) + '</td>';
     // Format user/admin ekstra sütunlar
     if (format !== 'musteri') {
-      rowsHTML += '<td style="padding:5px 8px;font-size:10px;color:var(--t3)">' + esc(h.docNo) + '</td>';
+      rowsHTML += '<td style="padding:5px 8px;font-size:10px;color:var(--t3)">' + window._esc(h.docNo) + '</td>';
     }
     rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:#DC2626;text-align:right;font-weight:600">' + (borc ? borc + ' ' + h.currency : '') + '</td>';
     rowsHTML += '<td style="padding:5px 8px;font-size:11px;color:#16A34A;text-align:right;font-weight:600">' + (alacak ? alacak + ' ' + h.currency : '') + '</td>';
@@ -7525,7 +7511,7 @@ function openCariStatement(cariId, format) {
       allChanges.slice(0, 10).forEach(function(ch) {
         var byUser = st.users.find(function(u) { return u.id === ch.by; });
         auditHTML += '<div style="font-size:10px;padding:3px 0;border-bottom:1px solid #FED7AA;color:#78350F">'
-          + '<b>' + (ch.ts || '').slice(0, 16) + '</b> · ' + (byUser?.name || '—') + ' · <i>' + esc(ch.itemName || '') + '</i> → ' + ch.changes.join(', ')
+          + '<b>' + (ch.ts || '').slice(0, 16) + '</b> · ' + (byUser?.name || '—') + ' · <i>' + window._esc(ch.itemName || '') + '</i> → ' + ch.changes.join(', ')
           + '</div>';
       });
       auditHTML += '</div>';
@@ -7537,7 +7523,7 @@ function openCariStatement(cariId, format) {
     + '<div style="background:' + headerColor + ';padding:18px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between" id="cari-stmt-header">'
     + '<div>'
       + '<div style="font-size:16px;font-weight:700">DUAY GLOBAL LLC</div>'
-      + '<div style="font-size:11px;opacity:.7;margin-top:2px">' + formatLabel + ' — ' + esc(c.name) + '</div>'
+      + '<div style="font-size:11px;opacity:.7;margin-top:2px">' + formatLabel + ' — ' + window._esc(c.name) + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:6px;align-items:center">'
       + '<button onclick="_exportCariStmtXlsx(' + cariId + ',\'' + format + '\')" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px">⬇ Excel</button>'
@@ -7579,7 +7565,7 @@ function openCariStatement(cariId, format) {
     // Müşteri formatında imza alanı
     + (format === 'musteri' ? '<div style="padding:16px 24px;border-top:1px solid var(--b);display:grid;grid-template-columns:1fr 1fr;gap:40px;font-size:10px;color:var(--t3)">'
       + '<div><div style="margin-bottom:30px">Düzenleyen:</div><div style="border-top:1px solid var(--t3);padding-top:4px">DUAY GLOBAL LLC</div></div>'
-      + '<div><div style="margin-bottom:30px">Onaylayan:</div><div style="border-top:1px solid var(--t3);padding-top:4px">' + esc(c.name) + '</div></div>'
+      + '<div><div style="margin-bottom:30px">Onaylayan:</div><div style="border-top:1px solid var(--t3);padding-top:4px">' + window._esc(c.name) + '</div></div>'
     + '</div>' : '')
     + '<div style="padding:10px 24px;border-top:1px solid var(--b);text-align:right;background:var(--s2)">'
     + '<span style="font-size:9px;color:var(--t3)">Oluşturulma: ' + today + ' · DUAY Platform v9.1</span>'
@@ -7738,7 +7724,6 @@ window._calcAdvancedRiskScore = _calcAdvancedRiskScore;
  */
 window.openProfitAnalysis = function() {
   if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var cariList = (typeof loadCari === 'function' ? loadCari() : []).filter(function(c) { return !c.isDeleted; });
   var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted; });
   var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted; });
@@ -7779,11 +7764,11 @@ window.openProfitAnalysis = function() {
     // En kârlı 5
     + '<div style="font-size:11px;font-weight:700;color:#16A34A;text-transform:uppercase;margin-bottom:6px">En Kârlı 5 Cari</div>'
     + topProfit.map(function(p) {
-        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b)"><span>' + esc(p.name) + '</span><span style="color:#16A34A;font-weight:600">+₺' + Math.round(p.net).toLocaleString('tr-TR') + '</span></div>';
+        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b)"><span>' + window._esc(p.name) + '</span><span style="color:#16A34A;font-weight:600">+₺' + Math.round(p.net).toLocaleString('tr-TR') + '</span></div>';
       }).join('')
     + '<div style="margin-top:16px;font-size:11px;font-weight:700;color:#DC2626;text-transform:uppercase;margin-bottom:6px">En Zararlı 5 Cari</div>'
     + topLoss.map(function(p) {
-        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b)"><span>' + esc(p.name) + '</span><span style="color:#DC2626;font-weight:600">₺' + Math.round(p.net).toLocaleString('tr-TR') + '</span></div>';
+        return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--b)"><span>' + window._esc(p.name) + '</span><span style="color:#DC2626;font-weight:600">₺' + Math.round(p.net).toLocaleString('tr-TR') + '</span></div>';
       }).join('')
     + '</div></div>';
   document.body.appendChild(mo);
@@ -7916,7 +7901,6 @@ window._cariBulkDelete = function() {
 window._assignCariReview = function(cariId) {
   if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
   var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
   var c = loadCari().find(function(x) { return x.id === cariId; });
   if (!c) return;
 
@@ -7924,10 +7908,10 @@ window._assignCariReview = function(cariId) {
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-cari-review'; ;
   mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">👁 Cari İncelet — ' + esc(c.name) + '</div>'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;color:var(--t)">👁 Cari İncelet — ' + window._esc(c.name) + '</div>'
     + '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
     + '<div><div class="fl">İNCELEYECEK KİŞİ *</div><select class="fi" id="cr-user">'
-    + users.map(function(u) { return '<option value="' + u.id + '">' + esc(u.name) + ' (' + u.role + ')</option>'; }).join('')
+    + users.map(function(u) { return '<option value="' + u.id + '">' + window._esc(u.name) + ' (' + u.role + ')</option>'; }).join('')
     + '</select></div>'
     + '<div><div class="fl">NOT</div><textarea class="fi" id="cr-note" rows="2" style="resize:none" placeholder="İnceleme talimatı..."></textarea></div>'
     + '</div>'
