@@ -1076,7 +1076,7 @@ window._urunTopluSil = function() {
       var silinen = 0;
       ids.forEach(function(id) {
         var x = raw.find(function(u) { return String(u.id) === String(id); });
-        if (x && !x.isDeleted) { x.isDeleted = true; x.deletedAt = now; x.deletedBy = cuId; silinen++; }
+        if (x && !x.isDeleted) { x.isDeleted = true; x.deletedAt = now; x.updatedAt = now; x.deletedBy = cuId; silinen++; }
       });
       if (typeof window.storeUrunler === 'function') window.storeUrunler(raw);
       else if (typeof window.DB?.storeUrunler === 'function') window.DB.storeUrunler(raw);
@@ -1095,8 +1095,10 @@ window._urunTekSil = function(id) {
       var raw = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true, _dahilSilinenler:true}) : [];
       var item = raw.find(function(u) { return String(u.id) === String(id); });
       if (item) {
+        var _delTs = new Date().toISOString();
         item.isDeleted = true;
-        item.deletedAt = new Date().toISOString();
+        item.deletedAt = _delTs;
+        item.updatedAt = _delTs;
         item.deletedBy = window.Auth?.getCU?.()?.id || '';
       }
       if (typeof window.storeUrunler === 'function') window.storeUrunler(raw);
