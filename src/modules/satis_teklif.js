@@ -50,7 +50,7 @@ function renderSatisTeklif() {
 
   var cont = document.getElementById('st-list');
   if (!cont) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
 
   /* Sayfalama */
   if (!window._stekSayfa) window._stekSayfa = 1;
@@ -81,6 +81,7 @@ function renderSatisTeklif() {
       + '<div style="display:flex;gap:3px">'
         + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:10px;padding:2px 6px" title="Standard PDF">📄</button>'
         + '<button onclick="event.stopPropagation();window._openSTModal?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">✏️</button>'
+        + '<button onclick="event.stopPropagation();window._stUpdatePI?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="PI Güncelle">🔄</button>'
         + '<button onclick="event.stopPropagation();window._copyST?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">📋</button>'
         + '<button onclick="event.stopPropagation();window._deleteST?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">🗑</button>'
       + '</div>'
@@ -108,7 +109,7 @@ window._openSTModal = function(id) {
   var old = document.getElementById('mo-satis-teklif'); if (old) old.remove();
   var data = _loadST();
   var t = id ? data.find(function(x) { return x.id === id; }) : null;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
 
   // Müşteri listesi (sadece müşteri tipindeki cariler)
   var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) { return c.type === 'musteri' || !c.type; }) : [];
@@ -175,7 +176,7 @@ window._openSTModal = function(id) {
 function _stItemRowHTML(item, idx) {
   // Ürün dropdown from urun_db
   var urunList = typeof loadUrunDB === 'function' ? loadUrunDB() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var urunOpts = '<option value="">— Ürün Seçin —</option>' + urunList.map(function(u) { return '<option value="' + esc(u.duayCode) + '">' + esc(u.duayCode + ' — ' + u.duayName) + '</option>'; }).join('');
 
   return '<div class="st-item-row" style="display:grid;grid-template-columns:30px 1fr 1fr 70px 60px 80px 80px 30px;gap:6px;margin-bottom:6px;align-items:center;font-size:11px">'
@@ -291,7 +292,7 @@ window._stPreview = function(id) {
   var data = _loadST();
   var t = data.find(function(x) { return x.id === id; });
   if (!t) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var total = (t.items || []).reduce(function(a, i) { return a + (i.total || 0); }, 0);
 
   var w = window.open('', '_blank', 'width=800,height=1000');
@@ -336,6 +337,40 @@ window._copyST = function(id) {
   _storeST(data);
   renderSatisTeklif();
   window.toast?.('Teklif kopyalandı: ' + copy.teklifNo, 'ok');
+};
+
+/**
+ * PI numarasını yenile — mevcut teklifNo'nun son 4 rakamını koruyup
+ * yeni format (XXXX-YYMMDDHHMI) ile değiştirir. Eski numara
+ * previousTeklifNo alanında saklanır, updatedAt güncellenir, Firestore'a
+ * storeSatisTeklifleri üzerinden senkronize edilir.
+ * @param {number} id Teklif id
+ */
+window._stUpdatePI = function(id) {
+  var data = _loadST();
+  var t = data.find(function(x) { return x.id === id; });
+  if (!t) return;
+  var oldNo = t.teklifNo || '—';
+  window.confirmModal?.('"' + oldNo + '" teklifinin PI numarası yenilenecek. Eski numara previousTeklifNo alanında saklanacak. Devam edilsin mi?', {
+    title: 'PI Güncelle', confirmText: 'Evet, Güncelle',
+    onConfirm: function() {
+      var d = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var ts = String(d.getFullYear()).slice(-2) + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+      var digits = (t.teklifNo || '').replace(/[^0-9]/g, '');
+      var xxxx = digits.length >= 4 ? digits.slice(-4) : String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+      var newPI = xxxx + '-' + ts;
+      t.previousTeklifNo = t.teklifNo;
+      t.teklifNo = newPI;
+      t.updatedAt = new Date().toISOString();
+      _storeST(data);
+      if (typeof window.storeSatisTeklifleri === 'function') {
+        try { window.storeSatisTeklifleri(data); } catch (e) { console.warn('[satis_teklif] Firestore sync hata:', e); }
+      }
+      renderSatisTeklif();
+      window.toast?.('PI güncellendi: ' + newPI, 'ok');
+    }
+  });
 };
 
 window._deleteST = function(id) {
