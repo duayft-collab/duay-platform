@@ -71,7 +71,7 @@ function renderSatisTeklif() {
 
   sayfaListe.forEach(function(t) {
     var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
-    html += '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+    html += '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onclick="event.stopPropagation();window._stPeek?.(' + t.id + ')" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div onclick="event.stopPropagation()"><input type="checkbox" class="stek-row-chk" data-id="' + t.id + '" onchange="event.stopPropagation();window._stekChkGuncelle()"></div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(t.teklifNo || '—') + '</div>'
       + '<div style="font-weight:500">' + esc(t.customerName || '—') + '</div>'
@@ -101,6 +101,58 @@ function renderSatisTeklif() {
 
   cont.innerHTML = html;
 }
+
+/**
+ * Hızlı önizleme paneli (peek) — sağdan kayan slide-in.
+ * Teklif satırına tıklanınca açılır, kapat butonu ile kapanır.
+ * Gösterilenler: teklif no, müşteri adı, tutar, para birimi, tarih,
+ * ürün sayısı, durum. Tüm iç element'ler stopPropagation kullanır.
+ * @param {number} id Teklif id
+ */
+window._stPeek = function(id) {
+  var data = _loadST();
+  var t = data.find(function(x) { return x.id === id; });
+  if (!t) return;
+  var esc = window._esc;
+  // Onceki paneli temizle
+  var oldPeek = document.getElementById('mo-st-peek');
+  if (oldPeek) oldPeek.remove();
+
+  var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
+  var itemCount = (t.items || []).length;
+  var status = t.status || (t.previousTeklifNo ? 'PI Güncellendi' : 'Aktif');
+
+  var panel = document.createElement('div');
+  panel.id = 'mo-st-peek';
+  panel.style.cssText = 'position:fixed;top:0;right:0;width:360px;max-width:90vw;height:100vh;background:var(--sf);border-left:1px solid var(--b);box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:9999;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease-out';
+  panel.onclick = function(e) { e.stopPropagation(); };
+  panel.innerHTML = ''
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--b);background:var(--s2);position:sticky;top:0;z-index:1">'
+      + '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">📤</span><span style="font-size:13px;font-weight:600;color:var(--t)">Teklif Önizleme</span></div>'
+      + '<button onclick="event.stopPropagation();document.getElementById(\'mo-st-peek\')?.remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);padding:2px 10px;border-radius:6px;line-height:1" title="Kapat">×</button>'
+    + '</div>'
+    + '<div style="padding:18px">'
+      + '<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Teklif No</div><div style="font-family:monospace;font-size:14px;font-weight:700;color:var(--ac)">' + esc(t.teklifNo || '—') + '</div></div>'
+      + '<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Müşteri</div><div style="font-size:13px;font-weight:500;color:var(--t)">' + esc(t.customerName || '—') + '</div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'
+        + '<div><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Tutar</div><div style="font-size:14px;font-weight:700;color:var(--t)">' + total.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</div></div>'
+        + '<div><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Para Birimi</div><div style="font-size:14px;font-weight:700;color:var(--t)">' + esc(t.currency || 'USD') + '</div></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'
+        + '<div><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Tarih</div><div style="font-size:12px;color:var(--t2);font-family:monospace">' + esc(t.date || '—') + '</div></div>'
+        + '<div><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Ürün Sayısı</div><div style="font-size:12px;color:var(--t)">' + itemCount + ' kalem</div></div>'
+      + '</div>'
+      + '<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Durum</div><div style="font-size:12px"><span style="display:inline-block;padding:3px 12px;border-radius:99px;background:var(--al);color:var(--ac);font-weight:600;font-size:11px">' + esc(status) + '</span></div></div>'
+      + '<div style="display:flex;gap:6px;margin-top:18px;padding-top:14px;border-top:1px solid var(--b)">'
+        + '<button onclick="event.stopPropagation();window._openSTModal?.(' + t.id + ');document.getElementById(\'mo-st-peek\')?.remove()" class="btn btnp" style="flex:1;font-size:11px">✏️ Düzenle</button>'
+        + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:11px">📄 PDF</button>'
+      + '</div>'
+    + '</div>';
+
+  document.body.appendChild(panel);
+  // Sağdan kayan animasyon
+  setTimeout(function() { panel.style.transform = 'translateX(0)'; }, 10);
+};
 
 /**
  * Teklif formu modalı.
