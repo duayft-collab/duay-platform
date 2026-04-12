@@ -3847,3 +3847,31 @@ window._fbBadgeDetay = function() {
   document.addEventListener('click', function rm(){ d.remove(); document.removeEventListener('click',rm); }, {once:true});
 };
 
+/* ════════════════════════════════════════════════════════════════
+ * SYNC-IOS-001: Tab/sayfa görünür olduğunda Firestore sync tazele
+ * ════════════════════════════════════════════════════════════════
+ * Tab arka plana alındığında Firestore listener'ları durabiliyor
+ * (özellikle iOS Safari mobile'da agresif). Sayfa tekrar görünür
+ * olduğunda manuel sync ve realtime listener'ı yeniden başlat.
+ *
+ * - visibilitychange: tüm tarayıcılar (tab göründüğünde tetiklenir)
+ * - pageshow + persisted: iOS Safari bfcache'den geri dönüş
+ *   (visibilitychange tetiklenmeyebiliyor)
+ *
+ * Database.js'teki mevcut visibilitychange listener (L2305) token
+ * refresh içindir, bu yeni listener sync trigger içindir — ikisi
+ * birlikte çalışır, conflict yok.
+ * ════════════════════════════════════════════════════════════════ */
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') {
+    window._manualSync?.();
+    window.startRealtimeSync?.();
+  }
+});
+
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) {
+    window._manualSync?.();
+  }
+});
+
