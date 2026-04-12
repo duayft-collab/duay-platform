@@ -2102,7 +2102,7 @@ var STAGES=[
 // Adaylar — localStorage persistansı
 const CAND_KEY = 'ak_ik_candidates';
 function _loadCandidates() {
-  try { const d = JSON.parse(localStorage.getItem(CAND_KEY)||'null'); if(Array.isArray(d)) return d; } catch(e) {}
+  try { const d = JSON.parse(localStorage.getItem(CAND_KEY)||'null'); if(Array.isArray(d)) return d; } catch(e) { console.warn('[ik_hub] hata:', e); }
   return [
     {id:1,name:'Ahmet Yilmaz',position:'Satinalma Asistani',stage:'test-drive',score:4.2,notes:'Web sitesini incelemis, istekli.',disc:'D',loc:'Eyupsultan',phone:'',email:'',status:'mulakat',createdAt:'2026-03-20'},
     {id:2,name:'Ayse Kaya',position:'IK Yoneticisi',stage:'interview',score:3.8,notes:'Sertifikalari tam.',disc:'S',loc:'Besiktas',phone:'',email:'',status:'yeni',createdAt:'2026-03-22'},
@@ -2112,7 +2112,7 @@ function _storeCandidates(d) { localStorage.setItem(CAND_KEY, JSON.stringify(d))
 let candidates = _loadCandidates();
 let selCand=null;
 var FACTORS=['Dış görünüş','Dikkat','Deneyim (miktar)','Deneyim (kalite)','Merak','Hırs','Kararlılık','Yenilikçilik','Kendini yönetme','Analitik yetenek','Karar alma','Öğrenci Zihniyeti','Referanslar'];
-let evalSc = (function(){ try { var s = JSON.parse(localStorage.getItem('ak_ik_eval_scores')); if(s && typeof s === 'object') return s; } catch(e){} return Object.fromEntries(FACTORS.map(f=>[f,3])); })();
+let evalSc = (function(){ try { var s = JSON.parse(localStorage.getItem('ak_ik_eval_scores')); if(s && typeof s === 'object') return s; } catch(e){ console.warn('[ik_hub] hata:', e); } return Object.fromEntries(FACTORS.map(f=>[f,3])); })();
 // DEFAULT_SORULAR — SORU_BANKASI yüklendikten sonra buildBankFlat() ile zenginleştirilir
 // Başlangıç değeri: basit string listesi (SORU_BANKASI henüz tanımlanmadı)
 var DEFAULT_SORU_METINLERI = [
@@ -2677,7 +2677,7 @@ JSON formatında döndür — başka hiçbir şey yazma:
 }
 function clearForm(){
   ['mf-aday','mf-pozisyon','mf-gorusen','mf-not'].forEach(id=>document.getElementById(id).value='');
-  try { const mfT=document.getElementById('mf-tarih'); if(mfT) mfT.value=new Date().toISOString().slice(0,16); } catch(e) {}
+  try { const mfT=document.getElementById('mf-tarih'); if(mfT) mfT.value=new Date().toISOString().slice(0,16); } catch(e) { console.warn('[ik_hub] hata:', e); }
   initDefaultIQ(); iqItems.forEach((item,i)=>{ item.id='iq_def_reset_'+i+'_'+generateNumericId(); });
   renderIQList();document.getElementById('save-msg').innerHTML='';
 }
@@ -2778,7 +2778,7 @@ function renderTests(){
   var tdWrap = document.getElementById('tg2')?.parentElement;
   if (tdWrap) {
     var saved = {};
-    try { saved = JSON.parse(localStorage.getItem('ak_ik_test_drive')||'{}'); } catch(e) {}
+    try { saved = JSON.parse(localStorage.getItem('ak_ik_test_drive')||'{}'); } catch(e) { console.warn('[ik_hub] hata:', e); }
     tdWrap.insertAdjacentHTML('beforeend', '<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px">'
       + '<div style="font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px">Test Sonucu Kaydet</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -2790,7 +2790,7 @@ function renderTests(){
         + '</select>'
       + '</div>'
       + '<textarea id="td-not" style="width:100%;margin-top:8px;min-height:50px;padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text);resize:vertical" placeholder="Test gozlemleri...">' + (saved.notes||'') + '</textarea>'
-      + '<button onclick="var d={};try{d=JSON.parse(localStorage.getItem(\'ak_ik_test_drive\')||\'{}\')}catch(e){};d[document.getElementById(\'td-aday\').value]={puan:document.getElementById(\'td-puan\').value,notes:document.getElementById(\'td-not\').value,ts:new Date().toISOString()};localStorage.setItem(\'ak_ik_test_drive\',JSON.stringify(d));window.toast?.(\'Kaydedildi\',\'ok\')" style="margin-top:8px;padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit">Kaydet</button>'
+      + '<button onclick="var d={};try{d=JSON.parse(localStorage.getItem(\'ak_ik_test_drive\')||\'{}\')}catch(e){console.warn(\'[ik_hub] hata:\',e)};d[document.getElementById(\'td-aday\').value]={puan:document.getElementById(\'td-puan\').value,notes:document.getElementById(\'td-not\').value,ts:new Date().toISOString()};localStorage.setItem(\'ak_ik_test_drive\',JSON.stringify(d));window.toast?.(\'Kaydedildi\',\'ok\')" style="margin-top:8px;padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit">Kaydet</button>'
     + '</div>');
   }
 }
@@ -2818,7 +2818,7 @@ function renderEval(){
     </div>
   </div>`;
 }
-function setSc(f,v){evalSc[f]=v;try{localStorage.setItem('ak_ik_eval_scores',JSON.stringify(evalSc));}catch(e){} renderEval();}
+function setSc(f,v){evalSc[f]=v;try{localStorage.setItem('ak_ik_eval_scores',JSON.stringify(evalSc));}catch(e){ console.warn('[ik_hub] hata:', e); } renderEval();}
 
 // ══════════════════════════════════════════════════
 // TEŞEKKÜR
@@ -3219,8 +3219,8 @@ function aiAddToForm(idx){
 // ══════════════════════════════════════════════════
 // INIT — Platform entegrasyonunda render'lar sekme tıklanınca çalışır
 // ══════════════════════════════════════════════════
-try { getUsers(); } catch(e) {}  // Kullanıcı DB'sini başlat
-try { const mfT=document.getElementById('mf-tarih'); if(mfT) mfT.value=new Date().toISOString().slice(0,16); } catch(e) {}
+try { getUsers(); } catch(e) { console.warn('[ik_hub] hata:', e); }  // Kullanıcı DB'sini başlat
+try { const mfT=document.getElementById('mf-tarih'); if(mfT) mfT.value=new Date().toISOString().slice(0,16); } catch(e) { console.warn('[ik_hub] hata:', e); }
 
 // App başlangıçta gizli, login ekranı görünür
 window.addEventListener('DOMContentLoaded', ()=>{

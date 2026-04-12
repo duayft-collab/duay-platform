@@ -1745,7 +1745,7 @@ function _deletePdf() {
     danger: true,
     confirmText: 'Evet, Kaldır',
     onConfirm: () => {
-      try { localStorage.removeItem(PDF_KEY); } catch(e) {}
+      try { localStorage.removeItem(PDF_KEY); } catch(e) { console.warn('[pirim] hata:', e); }
       window.toast?.('PDF kaldırıldı', 'ok');
       showPirimPdf();
     }
@@ -2854,7 +2854,7 @@ function _loadPirimDocs() {
   try { return JSON.parse(localStorage.getItem(PIRIM_DOC_KEY) || '[]'); } catch { return []; }
 }
 function _storePirimDocs(d) {
-  try { localStorage.setItem(PIRIM_DOC_KEY, JSON.stringify(d)); } catch(e) {}
+  try { localStorage.setItem(PIRIM_DOC_KEY, JSON.stringify(d)); } catch(e) { console.warn('[pirim] hata:', e); }
 }
 
 function uploadPirimDoc() {

@@ -745,7 +745,7 @@ function _fetchTCMBRates() {
           }
         }).catch(function() {
           // Son bilinen kur — localStorage cache
-          try { var c = JSON.parse(localStorage.getItem('ak_tcmb_cache') || '{}'); if (c.rates) { Object.assign(_saLiveRates, c.rates); _saKurSource = 'cache'; } } catch(e) {}
+          try { var c = JSON.parse(localStorage.getItem('ak_tcmb_cache') || '{}'); if (c.rates) { Object.assign(_saLiveRates, c.rates); _saKurSource = 'cache'; } } catch(e) { console.warn('[satin_alma] hata:', e); }
         });
     });
 }
@@ -1042,7 +1042,7 @@ window._saUploadDoc = function() {
   var inp = document.createElement('input');
   inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png,.xlsx,.docx'; inp.multiple = true;
   inp.onchange = function() {
-    var ex = []; try { ex = JSON.parse(document.getElementById('sa-f-docs')?.value || '[]'); } catch(e) {}
+    var ex = []; try { ex = JSON.parse(document.getElementById('sa-f-docs')?.value || '[]'); } catch(e) { console.warn('[satin_alma] hata:', e); }
     Array.from(this.files).forEach(function(file) {
       if (file.size > 8*1024*1024) { window.toast?.('Dosya çok büyük (max 8MB)', 'warn'); return; }
       var r = new FileReader();
@@ -1938,7 +1938,7 @@ var SA_DEFAULT_FATURA_TYPES = [
 ];
 
 function _saGetFaturaTypes() {
-  try { var d = JSON.parse(localStorage.getItem(SA_FATURA_KEY)); if (Array.isArray(d) && d.length) return d; } catch(e) {}
+  try { var d = JSON.parse(localStorage.getItem(SA_FATURA_KEY)); if (Array.isArray(d) && d.length) return d; } catch(e) { console.warn('[satin_alma] hata:', e); }
   return SA_DEFAULT_FATURA_TYPES;
 }
 function _saStoreFaturaTypes(d) { localStorage.setItem(SA_FATURA_KEY, JSON.stringify(d)); }
@@ -2017,7 +2017,7 @@ var SA_BUDGET_KEY = 'ak_sa_budget';
 window._openSABudget = function() {
   if (!_isAdmSA()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
   var budget = 0;
-  try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) {}
+  try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) { console.warn('[satin_alma] hata:', e); }
   var old = document.getElementById('mo-sa-budget'); if (old) old.remove();
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-sa-budget'; mo.style.display = 'flex'; 
@@ -2042,7 +2042,7 @@ function _saRenderBudgetBar(all) {
   var bar = document.getElementById('sa-budget-bar');
   if (!bar) return;
   var budget = 0;
-  try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) {}
+  try { budget = parseFloat(localStorage.getItem(SA_BUDGET_KEY) || '0') || 0; } catch(e) { console.warn('[satin_alma] hata:', e); }
   if (!budget) { bar.style.display = 'none'; return; }
 
   var thisMonth = new Date().toISOString().slice(0, 7);
@@ -2156,7 +2156,7 @@ if (typeof module !== 'undefined' && module.exports) {
 ═══════════════════════════════════════════════════════════════ */
 var SA_URUN_KEY = 'ak_sa_urunler_v1';
 function _loadSAU() { try { return JSON.parse(localStorage.getItem(SA_URUN_KEY) || '[]'); } catch(e) { return []; } }
-function _storeSAU(d) { try { localStorage.setItem(SA_URUN_KEY, JSON.stringify(d)); } catch(e) {} }
+function _storeSAU(d) { try { localStorage.setItem(SA_URUN_KEY, JSON.stringify(d)); } catch(e) { console.warn('[satin_alma] hata:', e); } }
 
 var SA_URUN_KOLONLAR = [
   /* G1 — ÜRÜN KİMLİĞİ */

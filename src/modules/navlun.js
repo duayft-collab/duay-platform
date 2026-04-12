@@ -1156,7 +1156,7 @@ if (typeof module!=='undefined'&&module.exports) {
       b.style.fontWeight = active ? '600' : '400';
     });
   };
-  try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) {}
+  try { window.dispatchEvent(new CustomEvent('navlun-ready')); } catch(e) { console.warn('[navlun] hata:', e); }
 }
 
 // ── Navlun Peek toggle ──────────────────────────
