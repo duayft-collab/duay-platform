@@ -128,12 +128,12 @@ function _sidebarItem(u) {
 
   el.innerHTML = `
     <div style="position:relative;flex-shrink:0">
-      <div style="width:36px;height:36px;border-radius:10px;background:${rm.bg};border:1.5px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${rm.color}">${escapeHtml(av)}</div>
+      <div style="width:36px;height:36px;border-radius:10px;background:${rm.bg};border:1.5px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${rm.color}">${window._esc(av)}</div>
       <div style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;border:2px solid var(--sf);background:${online?'#22C55E':u.status==='active'?'#9CA3AF':'#EF4444'}"></div>
     </div>
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:${isSelected?'700':'500'};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(u.name)}</div>
-      <div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(u.email||'—')}</div>
+      <div style="font-size:13px;font-weight:${isSelected?'700':'500'};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window._esc(u.name)}</div>
+      <div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window._esc(u.email||'—')}</div>
     </div>
     <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${rm.bg};color:${rm.color};flex-shrink:0">${rm.label}</span>`;
   return el;
@@ -152,7 +152,7 @@ function _renderDetail(uid) {
   if (window._editingUser && window._editingUser.uid === uid && window._editingUser.editorId !== _getCU()?.id) {
     var elapsed = Math.round((Date.now() - window._editingUser.ts) / 60000);
     if (elapsed < 5) {
-      conflictHTML = '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#D97706;font-weight:500">⚠️ Bu kullanıcı şu an <b>' + escapeHtml(window._editingUser.editorName) + '</b> tarafından düzenleniyor (' + elapsed + ' dk önce açıldı)</div>';
+      conflictHTML = '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#D97706;font-weight:500">⚠️ Bu kullanıcı şu an <b>' + window._esc(window._editingUser.editorName) + '</b> tarafından düzenleniyor (' + elapsed + ' dk önce açıldı)</div>';
     }
   }
   // Bu admin bu kullanıcıyı görüntülüyor olarak işaretle
@@ -169,10 +169,10 @@ function _renderDetail(uid) {
     <!-- Profil Basligi -->
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:16px">
       <div style="padding:24px;display:flex;align-items:center;gap:20px">
-        <div style="width:72px;height:72px;border-radius:18px;background:${rm.bg};border:2px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:${rm.color};flex-shrink:0">${escapeHtml(av)}</div>
+        <div style="width:72px;height:72px;border-radius:18px;background:${rm.bg};border:2px solid ${rm.border};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:${rm.color};flex-shrink:0">${window._esc(av)}</div>
         <div style="flex:1">
-          <div style="font-size:20px;font-weight:700;color:var(--t);margin-bottom:4px">${escapeHtml(u.name)}</div>
-          <div style="font-size:13px;color:var(--t2);margin-bottom:6px">${escapeHtml(u.email||'—')}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--t);margin-bottom:4px">${window._esc(u.name)}</div>
+          <div style="font-size:13px;color:var(--t2);margin-bottom:6px">${window._esc(u.email||'—')}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <span style="font-size:11px;padding:3px 10px;border-radius:6px;background:${rm.bg};color:${rm.color};border:1px solid ${rm.border};font-weight:600">${rm.icon} ${rm.label}</span>
             ${u.status==='active'
@@ -190,7 +190,7 @@ function _renderDetail(uid) {
       <div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--b)">
         <div style="padding:14px;border-right:1px solid var(--b)">
           <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Departman</div>
-          <div style="font-size:13px;color:var(--t);font-weight:500">${escapeHtml(u.dept||'Belirtilmedi')}</div>
+          <div style="font-size:13px;color:var(--t);font-weight:500">${window._esc(u.dept||'Belirtilmedi')}</div>
         </div>
         <div style="padding:14px;border-right:1px solid var(--b)">
           <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Moduller</div>
@@ -305,7 +305,7 @@ function _renderDetail(uid) {
               '<span style="padding:1px 6px;border-radius:4px;background:' + prevMeta.bg + ';color:' + prevMeta.color + '">' + prevMeta.label + '</span>' +
               ' → <span style="padding:1px 6px;border-radius:4px;background:' + newMeta.bg + ';color:' + newMeta.color + '">' + newMeta.label + '</span>' +
             '</div>' +
-            '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + (r.changedAt || '—') + (changer ? ' · ' + escapeHtml(changer.name) : '') + '</div>' +
+            '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + (r.changedAt || '—') + (changer ? ' · ' + window._esc(changer.name) : '') + '</div>' +
           '</div>';
         }).join('') +
         '</div></div>';
@@ -344,7 +344,7 @@ function _renderDetail(uid) {
         <button class="btn btns" onclick="window._openTempPerm(${u.id})" style="font-size:10px">Gecici Yetki</button>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${Object.entries(PERM_TEMPLATES).map(([k,v]) => `<button class="btn btns" onclick="applyPermTemplate(${u.id},'${k}')" style="font-size:11px">${escapeHtml(v.label)}</button>`).join('')}
+        ${Object.entries(PERM_TEMPLATES).map(([k,v]) => `<button class="btn btns" onclick="applyPermTemplate(${u.id},'${k}')" style="font-size:11px">${window._esc(v.label)}</button>`).join('')}
       </div>
     </div>
 
@@ -357,7 +357,7 @@ function _renderDetail(uid) {
           const expiry = u.permExpiry?.[m.id];
           return '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:'+(hasAccess?'rgba(34,197,94,.06)':'var(--s2)')+';border:1px solid '+(hasAccess?'rgba(34,197,94,.2)':'var(--b)')+'">'
             + '<div style="width:8px;height:8px;border-radius:50%;background:'+(hasAccess?'#22C55E':'#D1D5DB')+';flex-shrink:0"></div>'
-            + '<span style="font-size:11px;color:'+(hasAccess?'var(--t)':'var(--t3)')+';flex:1">' + escapeHtml(m.label) + '</span>'
+            + '<span style="font-size:11px;color:'+(hasAccess?'var(--t)':'var(--t3)')+';flex:1">' + window._esc(m.label) + '</span>'
             + (expiry ? '<span style="font-size:9px;color:#F59E0B" title="Suresi: '+expiry+'">⏰</span>' : '')
             + '</div>';
         }).join('')}
@@ -727,7 +727,7 @@ function openPermModal(id) {
       el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Henüz değişiklik yok</div>';
     } else {
       el.innerHTML = ch.map(function(c) {
-        return '<div class="perm-change-card"><b>' + escapeHtml(c.label) + '</b><br>'
+        return '<div class="perm-change-card"><b>' + window._esc(c.label) + '</b><br>'
           + '<span style="color:' + c.oldLevel.color + '">' + c.oldLevel.full + '</span> → '
           + '<span style="color:' + c.newLevel.color + '">' + c.newLevel.full + '</span></div>';
       }).join('');
@@ -803,7 +803,7 @@ function openPermModal(id) {
     // Header
     + '<div style="display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--b);margin-bottom:16px">'
       + '<div style="width:40px;height:40px;border-radius:10px;background:' + rm.bg + ';color:' + rm.color + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">' + initials(u.name) + '</div>'
-      + '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t)">' + escapeHtml(u.name) + '</div><div style="font-size:11px;color:var(--t3)">' + escapeHtml(u.email || '') + '</div></div>'
+      + '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t)">' + window._esc(u.name) + '</div><div style="font-size:11px;color:var(--t3)">' + window._esc(u.email || '') + '</div></div>'
       + '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:' + rm.bg + ';color:' + rm.color + ';font-weight:600">' + rm.label + '</span>'
       + '<span id="perm-change-count" style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(217,119,6,.1);color:#D97706;font-weight:600"></span>'
     + '</div>'
@@ -854,10 +854,10 @@ function openPermModal(id) {
               var curLevel = _permCurrent[mid] || 'view';
               var icon = MOD_ICONS[mid] || '📋';
 
-              return '<div class="perm-row" data-modid="' + mid + '" data-label="' + escapeHtml(m.label) + '">'
+              return '<div class="perm-row" data-modid="' + mid + '" data-label="' + window._esc(m.label) + '">'
                 + '<input type="checkbox" class="perm-cb" value="' + mid + '" ' + (curLevel !== 'none' ? 'checked' : '') + ' ' + (isUserAdmin ? 'disabled' : '') + ' onchange="window._permSetLevel2(\'' + mid + '\',this.checked?\'view\':\'none\')" style="accent-color:var(--ac);width:14px;height:14px;flex-shrink:0">'
                 + '<span style="font-size:16px;flex-shrink:0">' + icon + '</span>'
-                + '<span style="font-size:12px;font-weight:500;color:var(--t);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.label) + '</span>'
+                + '<span style="font-size:12px;font-weight:500;color:var(--t);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + window._esc(m.label) + '</span>'
                 + '<div style="display:flex;gap:3px;flex-shrink:0">'
                   + _PERM_LEVELS.map(function(l) {
                       return '<button class="perm-lvl-btn' + (l.value === curLevel ? ' active' : '') + '" data-level="' + l.value + '" onclick="window._permSetLevel2(\'' + mid + '\',\'' + l.value + '\')"' + (isUserAdmin ? ' disabled' : '') + '>' + l.full.split(' ').slice(1).join(' ') + '</button>';
@@ -1047,7 +1047,7 @@ function savePermissions() {
         + '<div style="font-size:40px;margin-bottom:12px">🔐</div>'
         + '<div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:8px">Yetki Değişikliği Onayı</div>'
         + '<div style="font-size:13px;color:var(--t2);line-height:1.5">'
-          + '<b>' + escapeHtml(u.name) + '</b> kullanıcısının '
+          + '<b>' + window._esc(u.name) + '</b> kullanıcısının '
           + '<b>' + _changeDesc.join(', ') + '</b> değiştiriliyor.'
         + '</div>'
       + '</div>'
@@ -1145,8 +1145,8 @@ function renderActivityLog() {
     const u = users.find(x => x.id === l.uid) || { name: l.uname || 'Sistem' };
     const icon = typeIcons[l.type] || '•';
     return `<tr>
-      <td style="font-weight:500">${u.name}</td>
-      <td style="font-size:12px">${l.message || '—'}</td>
+      <td style="font-weight:500">${window._esc(u.name)}</td>
+      <td style="font-size:12px">${window._esc(l.message || '—')}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--t2)">${l.ts || '—'}</td>
       <td><span style="font-size:14px">${icon}</span></td>
     </tr>`;
@@ -1190,7 +1190,7 @@ function renderSuggestions() {
       <div class="adot" style="background:var(--ac);margin-top:6px"></div>
       <div style="flex:1">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:4px">
-          <span style="font-weight:600;font-size:13px">${u.name}</span>
+          <span style="font-weight:600;font-size:13px">${window._esc(u.name)}</span>
           <div style="display:flex;gap:6px;align-items:center">
             <span class="badge ${st.c}">${st.l}</span>
             ${isAdmin() ? `
@@ -1732,10 +1732,10 @@ function renderUsers(filter=''){
               </div>
               <div style="flex:1;min-width:0">
                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-                  <span style="font-size:15px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${u.name}</span>
+                  <span style="font-size:15px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${window._esc(u.name)}</span>
                   ${isSelf?`<span style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;flex-shrink:0;letter-spacing:.03em">SİZ</span>`:''}
                 </div>
-                <div style="font-size:11px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</div>
+                <div style="font-size:11px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${window._esc(u.email)}</div>
               </div>
             </div>
 
@@ -1809,8 +1809,8 @@ function renderUsers(filter=''){
                   <div style="width:44px;height:44px;border-radius:50%;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;margin:0 auto">${initials(u.name)}</div>
                   <div style="position:absolute;bottom:0;right:-1px;width:12px;height:12px;border-radius:50%;background:${isActive?'#22C55E':'#EF4444'};border:2px solid var(--sf)"></div>
                 </div>
-                <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name.split(' ')[0]}</div>
-                <div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.email?.split('@')[0]||'—'}</div>
+                <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window._esc(u.name.split(' ')[0])}</div>
+                <div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window._esc(u.email?.split('@')[0]||'—')}</div>
                 ${isSelf?`<div style="margin-top:5px"><span style="background:#6366F1;color:#fff;font-size:8px;font-weight:700;padding:1px 6px;border-radius:4px">SİZ</span></div>`:''}
               </div>`;
             }).join('')}
@@ -1870,10 +1870,10 @@ function renderUsers(filter=''){
                   <div style="width:34px;height:34px;border-radius:10px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name)}</div>
                   <div>
                     <div style="font-size:13px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:5px">
-                      ${u.name}
+                      ${window._esc(u.name)}
                       ${isSelf?`<span style="background:#6366F1;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px">SİZ</span>`:''}
                     </div>
-                    <div style="font-size:11px;color:var(--t3)">${u.email}</div>
+                    <div style="font-size:11px;color:var(--t3)">${window._esc(u.email)}</div>
                   </div>
                 </div>
               </td>
@@ -1951,7 +1951,7 @@ function renderSettingsAdmin(){
   // Sürüm geçmişi
   const vh=g('ver-hist');
   if(vh){
-    vh.innerHTML=CHANGELOG.slice(0,8).map(c=>`<div class="dr"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${c.v}</span><span style="font-size:11px;color:var(--t2)">${escapeHtml(c.note)}</span><span style="font-size:10px;color:var(--t3)">${c.ts.slice(0,10)}</span></div>`).join('');
+    vh.innerHTML=CHANGELOG.slice(0,8).map(c=>`<div class="dr"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${c.v}</span><span style="font-size:11px;color:var(--t2)">${window._esc(c.note)}</span><span style="font-size:10px;color:var(--t3)">${c.ts.slice(0,10)}</span></div>`).join('');
   }
   // Puantaj yetki kartı artık kullanıcı profilinde (adm-detail)
 }
@@ -1975,14 +1975,14 @@ function showUserActivity(uid) {
   mo.innerHTML = `<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
       <div style="width:10px;height:10px;border-radius:50%;background:${isOnline?'#22C55E':'#9CA3AF'};flex-shrink:0"></div>
-      <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--t)">${escapeHtml(u.name)}</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--t)">${window._esc(u.name)}</div>
       <div style="font-size:11px;color:var(--t3)">${u.lastLogin ? 'Son giriş: '+u.lastLogin : 'Hiç giriş yapmadı'}${daysSince!==null?' · '+daysSince+' gün önce':''}</div></div>
       <button onclick="document.getElementById('mo-user-activity').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>
     </div>
     <div style="padding:8px 20px;max-height:50vh;overflow-y:auto">
       ${acts.length ? acts.map(a => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--b)">
         <div style="font-size:10px;color:var(--t3);white-space:nowrap;min-width:70px">${(a.ts||'').slice(5,16)}</div>
-        <div style="font-size:12px;color:var(--t)">${escapeHtml(a.detail||a.message||'')}</div>
+        <div style="font-size:12px;color:var(--t)">${window._esc(a.detail||a.message||'')}</div>
       </div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--t3);font-size:12px">Aktivite kaydı yok</div>'}
     </div>
     <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
@@ -2038,8 +2038,8 @@ function openSessionManager() {
         return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
           <div style="width:8px;height:8px;border-radius:50%;background:${age<1?'#22C55E':age<24?'#F59E0B':'#9CA3AF'};flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;color:var(--t)">${escapeHtml(s.name)}${isSelf?' (sen)':''}</div>
-            <div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.device||'—')}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--t)">${window._esc(s.name)}${isSelf?' (sen)':''}</div>
+            <div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${window._esc(s.device||'—')}</div>
           </div>
           <div style="font-size:10px;color:var(--t3);white-space:nowrap">${age<1?'Az önce':age+'s önce'}</div>
           ${!isSelf?`<button class="btn btns btnd" onclick="_terminateSession(${s.uid})" style="font-size:10px;padding:2px 8px">Sonlandır</button>`:''}
@@ -2158,12 +2158,12 @@ function checkInactiveUsers() {
 
     // 60+ gün: otomatik pasif uyarısı (pasife almaz, admin onayı gerekli)
     if (daysSince >= 60 && !sent[u.id + '_60']) {
-      window.addNotif?.('🚨', escapeHtml(u.name) + ' 60+ gündür giriş yapmadı — pasife alınması öneriliyor', 'err', 'admin');
+      window.addNotif?.('🚨', window._esc(u.name) + ' 60+ gündür giriş yapmadı — pasife alınması öneriliyor', 'err', 'admin');
       sent[u.id + '_60'] = todayS; changed = true;
     }
     // 30+ gün: bildirim
     else if (daysSince >= 30 && !sent[u.id + '_30']) {
-      window.addNotif?.('⚠️', escapeHtml(u.name) + ' 30+ gündür giriş yapmadı', 'warn', 'admin');
+      window.addNotif?.('⚠️', window._esc(u.name) + ' 30+ gündür giriş yapmadı', 'warn', 'admin');
       sent[u.id + '_30'] = todayS; changed = true;
     }
   });
@@ -2210,7 +2210,7 @@ function openInviteModal() {
     ${invites.length ? `<div style="border-top:1px solid var(--b);padding:10px 20px;max-height:30vh;overflow-y:auto">
       <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Bekleyen Davetler (${invites.filter(i=>!i.used).length})</div>
       ${invites.filter(i=>!i.used).map(i => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--b)">
-        <div style="flex:1;font-size:12px;color:var(--t)">${escapeHtml(i.email)}</div>
+        <div style="flex:1;font-size:12px;color:var(--t)">${window._esc(i.email)}</div>
         <code style="font-size:10px;background:var(--s2);padding:2px 6px;border-radius:4px;color:var(--ac)">${i.code}</code>
         <button onclick="_copyInviteCode('${i.code}')" class="btn btns" style="font-size:10px;padding:2px 6px">Kopyala</button>
       </div>`).join('')}
@@ -2337,9 +2337,9 @@ function openDeptModal() {
       ${depts.map(d => {
         const count = users.filter(u => u.dept === d).length;
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)">
-          <span style="flex:1;font-size:13px;font-weight:500;color:var(--t)">${escapeHtml(d)}</span>
+          <span style="flex:1;font-size:13px;font-weight:500;color:var(--t)">${window._esc(d)}</span>
           <span style="font-size:11px;color:var(--t3)">${count} kisi</span>
-          <button onclick="_delDept('${escapeHtml(d)}')" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3);padding:2px">✕</button>
+          <button onclick="_delDept('${window._esc(d)}')" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3);padding:2px">✕</button>
         </div>`;
       }).join('')}
     </div>
@@ -2402,8 +2402,8 @@ function openAuditLog() {
     <div style="max-height:60vh;overflow-y:auto">
       ${logs.length ? logs.map(l => `<div style="display:flex;gap:8px;padding:8px 20px;border-bottom:1px solid var(--b);font-size:12px">
         <span style="color:var(--t3);white-space:nowrap;min-width:90px">${(l.ts||'').slice(0,16)}</span>
-        <span style="color:var(--ac);font-weight:500;min-width:60px">${escapeHtml(l.byName||'?')}</span>
-        <span style="color:var(--t);flex:1">${escapeHtml(l.detail||'')}</span>
+        <span style="color:var(--ac);font-weight:500;min-width:60px">${window._esc(l.byName||'?')}</span>
+        <span style="color:var(--t);flex:1">${window._esc(l.detail||'')}</span>
       </div>`).join('') : '<div style="padding:32px;text-align:center;color:var(--t3)">Kayit yok</div>'}
     </div>
     <div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);text-align:right">
@@ -2448,7 +2448,7 @@ function startImpersonation(uid) {
   const banner = document.createElement('div');
   banner.id = 'impersonation-bar';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#F59E0B;color:#000;padding:6px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;font-family:inherit';
-  banner.innerHTML = '<span>Goruntulenme modu: ' + escapeHtml(target.name) + ' (' + (ROLE_META[target.role]?.label||target.role) + ') olarak goruntuluyorsunuz</span>'
+  banner.innerHTML = '<span>Goruntulenme modu: ' + window._esc(target.name) + ' (' + (ROLE_META[target.role]?.label||target.role) + ') olarak goruntuluyorsunuz</span>'
     + '<button onclick="Admin.stopImpersonation()" style="background:#000;color:#F59E0B;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit">Cikar</button>';
   document.body.prepend(banner);
   window.toast?.('Goruntulenme modu: ' + target.name, 'ok');
@@ -2496,7 +2496,7 @@ window._openTempPerm = function(uid) {
   mo.innerHTML = '<div class="moc" style="max-width:400px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Gecici Yetki Ver</div></div>'
     + '<div style="padding:16px 20px">'
-      + '<div class="fg"><div class="fl">MODUL</div><select class="fi" id="tp-mod">' + mods.map(m => '<option value="' + m.id + '">' + escapeHtml(m.label) + '</option>').join('') + '</select></div>'
+      + '<div class="fg"><div class="fl">MODUL</div><select class="fi" id="tp-mod">' + mods.map(m => '<option value="' + m.id + '">' + window._esc(m.label) + '</option>').join('') + '</select></div>'
       + '<div class="fg"><div class="fl">BITIS TARIHI</div><input type="date" class="fi" id="tp-date"></div>'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
@@ -2539,7 +2539,7 @@ function checkPermExpiry() {
         }
         delete u.permExpiry[mod];
         changed = true;
-        window.addNotif?.('⏰', escapeHtml(u.name) + ' — ' + mod + ' yetkisi suresi doldu', 'warn', 'admin');
+        window.addNotif?.('⏰', window._esc(u.name) + ' — ' + mod + ' yetkisi suresi doldu', 'warn', 'admin');
         _auditLog('perm_expired', u.id, mod + ' yetkisi suresi doldu');
       }
     });
@@ -2563,7 +2563,7 @@ function openBulkRoleChange() {
       + '<div class="fg"><div class="fl">HEDEF ROL</div><select class="fi" id="br-role"><option value="staff">Personel</option><option value="lead">Takim Lideri</option><option value="manager">Yonetici</option></select></div>'
       + '<div class="fg" style="margin-top:8px"><div class="fl">KULLANICILAR</div>'
         + '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">'
-          + users.map(u => '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px"><input type="checkbox" class="br-cb" value="' + u.id + '" style="accent-color:var(--ac)"><span style="flex:1">' + escapeHtml(u.name) + '</span><span style="font-size:10px;color:var(--t3)">' + (ROLE_META[u.role]?.label||u.role) + '</span></label>').join('')
+          + users.map(u => '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px"><input type="checkbox" class="br-cb" value="' + u.id + '" style="accent-color:var(--ac)"><span style="flex:1">' + window._esc(u.name) + '</span><span style="font-size:10px;color:var(--t3)">' + (ROLE_META[u.role]?.label||u.role) + '</span></label>').join('')
         + '</div></div>'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
@@ -2664,7 +2664,7 @@ async function firebaseSync() {
   const body = document.getElementById('fb-sync-body');
   if (!body) return;
 
-  const escH = typeof escapeHtml === 'function' ? escapeHtml : (s => s);
+  const escH = typeof window._esc === 'function' ? window._esc : (s => s);
 
   body.innerHTML = `
     <div style="width:100%">
@@ -2877,7 +2877,7 @@ window._cloneUserPerms = function(targetUid) {
   mo.innerHTML = '<div class="moc" style="max-width:420px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t)">📋 Yetki Klonla</div>'
-      + '<div style="font-size:11px;color:var(--t3);margin-top:2px">Hedef: <b>' + escapeHtml(target.name) + '</b></div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-top:2px">Hedef: <b>' + window._esc(target.name) + '</b></div>'
     + '</div>'
     + '<div style="padding:16px 20px">'
       + '<div class="fl" style="margin-bottom:6px">KAYNAK KULLANICI</div>'
@@ -2885,7 +2885,7 @@ window._cloneUserPerms = function(targetUid) {
         + '<option value="">— Kopyalanacak kullanıcı seçin —</option>'
         + users.filter(function(u) { return u.id !== targetUid; }).map(function(u) {
             var rm = ROLE_META[u.role] || ROLE_META.staff;
-            return '<option value="' + u.id + '">' + escapeHtml(u.name) + ' (' + rm.label + ')</option>';
+            return '<option value="' + u.id + '">' + window._esc(u.name) + ' (' + rm.label + ')</option>';
           }).join('')
       + '</select>'
       + '<div style="margin-top:10px;padding:8px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t3)">Kopyalanacaklar: Rol, modül izinleri, döküman erişimi, özel yetkiler</div>'
@@ -2912,7 +2912,7 @@ window._execClonePerms = function(targetUid) {
   var target = users.find(function(x) { return x.id === targetUid; });
   if (!source || !target) return;
 
-  var msg = '"' + escapeHtml(source.name) + '" kullanıcısının tüm yetkileri "' + escapeHtml(target.name) + '" kullanıcısına kopyalanacak. Emin misiniz?';
+  var msg = '"' + window._esc(source.name) + '" kullanıcısının tüm yetkileri "' + window._esc(target.name) + '" kullanıcısına kopyalanacak. Emin misiniz?';
 
   window.confirmModal(msg, {
     title: 'Yetki Klonla',
@@ -3007,7 +3007,7 @@ window._openUserManageModal = function(uid) {
   if (!u) return;
   var rm = ROLE_META[u.role] || ROLE_META.staff;
   var av = initials(u.name);
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = typeof window._esc === 'function' ? window._esc : function(s) { return s; };
 
   var old = document.getElementById('mo-user-manage'); if (old) old.remove();
   var mo = document.createElement('div');
@@ -3271,7 +3271,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var users = loadUsers();
     var u = users.find(function(x) { return x.id === cu.id; });
     if (!u) return;
-    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var esc = typeof window._esc === 'function' ? window._esc : function(s) { return s; };
     var mods = u.modules === null ? 'Tüm modüller' : (Array.isArray(u.modules) ? u.modules.join(', ') : '—');
     var perms = u.permissions || {};
     var permLog = u.permissionLog || [];
