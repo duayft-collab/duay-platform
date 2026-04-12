@@ -3216,6 +3216,31 @@ window._musteriOnayladi = function(id) {
   t.durum = 'kabul';
   t.kabulTarihi = new Date().toISOString();
   if (typeof storeSatisTeklifleri==='function') storeSatisTeklifleri(d);
+  // SATIS-SATIN-BAGLANTI-001: Müşteri onayında ilgili alış tekliflerini işaretle
+  // (urunAdi/duayKodu eşleşmesiyle) — proforma alımı için 48 saatlik acil görev
+  var _alisler = typeof loadAlisTeklifleri==='function' ? loadAlisTeklifleri() : [];
+  var _now = new Date().toISOString();
+  var _bitis = new Date(Date.now()+172800000).toISOString();
+  var _degisti = false;
+  (t.urunler||[]).forEach(function(u) {
+    _alisler.forEach(function(a) {
+      var aAd = (a.urunAdi||a.ad||'').toLowerCase().trim();
+      var uAd = (u.urunAdi||u.ad||'').toLowerCase().trim();
+      var kod = (a.duayKodu||'').trim();
+      var uKod = (u.duayKodu||u.code||'').trim();
+      if ((kod && uKod && kod===uKod) || (aAd && uAd && aAd.slice(0,12)===uAd.slice(0,12))) {
+        a.satisMusteriOnay = true;
+        a.satisOnayTarihi = _now;
+        a.acilGorevBitis = _bitis;
+        a.satisTeklifRef = t.teklifNo || t.teklifId || '';
+        _degisti = true;
+        if(typeof addNotif==='function') addNotif('acil','Proforma al — 48h: '+(u.urunAdi||''),'warn','alis-teklifleri');
+      }
+    });
+  });
+  if (_degisti && typeof storeAlisTeklifleri==='function') storeAlisTeklifleri(_alisler);
+  t.kilitli = true;
+  t.kilitTarihi = _now;
   window.toast?.('Müşteri onayı kaydedildi — PR oluşturuluyor...','ok');
   // Otomatik PR
   window._createPR(id);
