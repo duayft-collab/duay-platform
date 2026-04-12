@@ -1638,7 +1638,8 @@ function renderUsers(filter=''){
   if (!window._usersViewInitialized) { USERS_VIEW = 'table'; window._usersViewInitialized = true; }
   _injectUsersPanel();
   if(!window.isAdmin?.())return;
-  const users=loadUsers();
+  // ADMIN-USER-DEDUP-001: soft-delete edilmis kullanicilari listede gosterme
+  const users=loadUsers().filter(u=>!u.isDeleted);
   const roleF=g('u-role-filter')?.value||'';
   const statusF=g('u-status-filter')?.value||'';
   let list=users.filter(u=>{
