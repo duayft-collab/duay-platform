@@ -490,7 +490,7 @@ function _mergeDataSets(localKey, fsData, collection) {
       }
       // isDeleted propagation: silinen taraf daha yeniyse silinmiş ver kazanır
       if (item.isDeleted && fsTs > localTs) mergedMap[key] = item;
-      if (existing.isDeleted && localTs >= fsTs) mergedMap[key] = existing;
+      if (existing.isDeleted) mergedMap[key] = existing;
     }
   });
 
