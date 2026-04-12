@@ -257,3 +257,36 @@ window._saV2DosyaHazir = function(id) {
     }
   });
 };
+
+/**
+ * SATINALMA-ONAYA-SUN-001
+ * Satış müşteri onayı sonrası işaretlenmiş alış teklifini (t.satisMusteriOnay)
+ * yönetici onayına sun: durumu 'onay-hazir' yap, onayaSunmaTarihi set et,
+ * storeAlisTeklifleri ile DB'ye yaz, admin/manager rolüne bildirim gönder.
+ * @param {string|number} id Alış teklif id'si
+ */
+window._saV2OnayaSun = function(id) {
+  var liste = typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : [];
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamadı', 'err'); return; }
+  if (!t.satisMusteriOnay) {
+    window.toast?.('Bu teklif henüz satış onayı almamış', 'warn');
+    return;
+  }
+  t.durum = 'onay-hazir';
+  t.onayaSunmaTarihi = new Date().toISOString();
+  if (typeof window.storeAlisTeklifleri === 'function') {
+    try { window.storeAlisTeklifleri(liste); } catch (e) { console.warn('[onaya-sun] store hata:', e); }
+  }
+  // Admin / manager bildirim
+  var users = typeof window.loadUsers === 'function' ? window.loadUsers() : [];
+  var mgrs = users.filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active' && !u.isDeleted; });
+  var urunAdi = (typeof window._saV2UrunAdi === 'function' ? window._saV2UrunAdi(t) : (t.urunAdi || '')) || '';
+  mgrs.forEach(function(m) {
+    if (typeof window.addNotif === 'function') {
+      window.addNotif('📋', 'Onay bekliyor: ' + urunAdi + ' (' + (t.tedarikci || '?') + ')', 'warn', 'satinalma-v2', m.id);
+    }
+  });
+  window.toast?.('Onaya sunuldu — ' + mgrs.length + ' yöneticiye bildirildi', 'ok');
+  window.renderSatinAlmaV2?.();
+};
