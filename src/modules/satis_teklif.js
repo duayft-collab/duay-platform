@@ -10,6 +10,35 @@
 var ST_KEY = 'ak_satis_teklif1';
 var ST_CURRENCIES = ['TRY','USD','EUR','GBP','JPY','CNY','AED','XAU','BTC'];
 var ST_INCOTERMS = ['EXW','FOB','CFR','CIF','DDP','FCA','CPT','CIP','DAP','DPU'];
+var ST_LANGS = ['TR','EN','CN','AR','RU'];
+
+/**
+ * Çok dilli teklif çeviri tablosu — form etiketleri + PDF başlıkları.
+ * Yeni anahtar eklerken her dile karşılığını eklemek zorunlu.
+ */
+var ST_T = {
+  TR: { customer:'MÜŞTERİ', quoteNo:'TEKLİF NO', date:'TARİH', validity:'GEÇERLİLİK', deliveryTime:'TESLİM SÜRESİ', incoterm:'TESLİM ŞEKLİ', currency:'PARA BİRİMİ', lang:'DİL', items:'ÜRÜN SATIRLARI', addItem:'+ Ürün Ekle', total:'Toplam', terms:'ŞARTLAR & KOŞULLAR', bank:'BANKA BİLGİLERİ', notes:'NOTLAR', save:'Kaydet', cancel:'İptal', no:'NO', desc:'AÇIKLAMA', qty:'MİKTAR', unit:'BİRİM', unitPrice:'BİRİM FİYAT', proforma:'PROFORMA FATURA', ref:'REF', to:'ALICI', details:'BİLGİLER', delivery:'Teslim', termsTitle:'ŞARTLAR & KOŞULLAR', bankTitle:'BANKA BİLGİLERİ', footer:'Bu proforma fatura yalnızca bilgilendirme amaçlıdır.', print:'🖨 Yazdır / PDF' },
+  EN: { customer:'CUSTOMER', quoteNo:'QUOTE NO', date:'DATE', validity:'VALIDITY', deliveryTime:'DELIVERY TIME', incoterm:'INCOTERM', currency:'CURRENCY', lang:'LANGUAGE', items:'ITEM LINES', addItem:'+ Add Item', total:'Total', terms:'TERMS & CONDITIONS', bank:'BANKING DETAILS', notes:'NOTES', save:'Save', cancel:'Cancel', no:'NO', desc:'DESCRIPTION', qty:'QTY', unit:'UNIT', unitPrice:'UNIT PRICE', proforma:'PROFORMA INVOICE', ref:'REF', to:'TO', details:'DETAILS', delivery:'Delivery', termsTitle:'TERMS & CONDITIONS', bankTitle:'BANKING DETAILS', footer:'This proforma invoice is for informational purposes only.', print:'🖨 Print / PDF' },
+  CN: { customer:'客户', quoteNo:'报价单号', date:'日期', validity:'有效期', deliveryTime:'交货时间', incoterm:'贸易条款', currency:'货币', lang:'语言', items:'产品行', addItem:'+ 添加项目', total:'总计', terms:'条款和条件', bank:'银行详情', notes:'备注', save:'保存', cancel:'取消', no:'编号', desc:'描述', qty:'数量', unit:'单位', unitPrice:'单价', proforma:'形式发票', ref:'参考', to:'收件人', details:'详情', delivery:'交货', termsTitle:'条款和条件', bankTitle:'银行详情', footer:'此形式发票仅供参考。', print:'🖨 打印 / PDF' },
+  AR: { customer:'العميل', quoteNo:'رقم العرض', date:'التاريخ', validity:'الصلاحية', deliveryTime:'وقت التسليم', incoterm:'شروط التسليم', currency:'العملة', lang:'اللغة', items:'بنود المنتج', addItem:'+ إضافة بند', total:'المجموع', terms:'الشروط والأحكام', bank:'تفاصيل البنك', notes:'ملاحظات', save:'حفظ', cancel:'إلغاء', no:'الرقم', desc:'الوصف', qty:'الكمية', unit:'الوحدة', unitPrice:'سعر الوحدة', proforma:'فاتورة مبدئية', ref:'مرجع', to:'إلى', details:'التفاصيل', delivery:'التسليم', termsTitle:'الشروط والأحكام', bankTitle:'تفاصيل البنك', footer:'هذه الفاتورة المبدئية للأغراض الإعلامية فقط.', print:'🖨 طباعة / PDF' },
+  RU: { customer:'КЛИЕНТ', quoteNo:'НОМЕР ПРЕДЛОЖЕНИЯ', date:'ДАТА', validity:'СРОК ДЕЙСТВИЯ', deliveryTime:'СРОК ДОСТАВКИ', incoterm:'ИНКОТЕРМС', currency:'ВАЛЮТА', lang:'ЯЗЫК', items:'СТРОКИ ТОВАРОВ', addItem:'+ Добавить', total:'Итого', terms:'УСЛОВИЯ', bank:'БАНКОВСКИЕ ДАННЫЕ', notes:'ПРИМЕЧАНИЯ', save:'Сохранить', cancel:'Отмена', no:'НО', desc:'ОПИСАНИЕ', qty:'КОЛ-ВО', unit:'ЕДИНИЦА', unitPrice:'ЦЕНА', proforma:'ПРОФОРМА-СЧЁТ', ref:'РЕФ', to:'КОМУ', details:'ДЕТАЛИ', delivery:'Доставка', termsTitle:'УСЛОВИЯ', bankTitle:'БАНКОВСКИЕ ДАННЫЕ', footer:'Этот проформа-счёт носит только информационный характер.', print:'🖨 Печать / PDF' }
+};
+function _stT(key, lang) { return (ST_T[lang] || ST_T.TR)[key] || key; }
+
+/**
+ * Form içindeki [data-stk] etiketlerini canlı olarak günceller.
+ * Dil dropdown onchange ile çağrılır — modal yeniden render edilmeden
+ * sadece textContent değişir, kullanıcı verisi korunur.
+ * @param {string} newLang Yeni dil kodu (TR/EN/CN/AR/RU)
+ */
+window._stChangeLang = function(newLang) {
+  var modal = document.getElementById('mo-satis-teklif');
+  if (!modal) return;
+  modal.querySelectorAll('[data-stk]').forEach(function(el) {
+    var key = el.getAttribute('data-stk');
+    el.textContent = _stT(key, newLang);
+  });
+};
 
 function _loadST() { try { return JSON.parse(localStorage.getItem(ST_KEY) || '[]'); } catch(e) { return []; } }
 function _storeST(d) { localStorage.setItem(ST_KEY, JSON.stringify(d)); }
@@ -168,6 +197,9 @@ window._openSTModal = function(id) {
   var custOpts = '<option value="">— Müşteri Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc(c.name) + '"' + (t?.customerName === c.name ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
   var curOpts = ST_CURRENCIES.map(function(c) { return '<option value="' + c + '"' + (t?.currency === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
   var incoOpts = ST_INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (t?.incoterm === i ? ' selected' : '') + '>' + i + '</option>'; }).join('');
+  // SAT-LANG-001: dil seçici varsayilan EN (mevcut sablon ingilizce), kullanici degistirebilir
+  var lang = t?.lang || 'EN';
+  var langOpts = ST_LANGS.map(function(L) { return '<option value="' + L + '"' + (lang === L ? ' selected' : '') + '>' + L + '</option>'; }).join('');
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-satis-teklif'; mo.style.zIndex = '2100';
@@ -179,39 +211,40 @@ window._openSTModal = function(id) {
     + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
       // Satır 1: Müşteri + Teklif No + Tarih
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl">MÜŞTERİ *</div><select class="fi" id="st-customer">' + custOpts + '</select></div>'
-        + '<div><div class="fl">TEKLİF NO</div><input class="fi" id="st-no" value="' + (t?.teklifNo || _generateTeklifNo()) + '" readonly style="background:var(--s2);font-family:monospace"></div>'
-        + '<div><div class="fl">TARİH</div><input type="date" class="fi" id="st-date" value="' + (t?.date || new Date().toISOString().slice(0, 10)) + '"></div>'
+        + '<div><div class="fl"><span data-stk="customer">' + _stT('customer', lang) + '</span> *</div><select class="fi" id="st-customer">' + custOpts + '</select></div>'
+        + '<div><div class="fl" data-stk="quoteNo">' + _stT('quoteNo', lang) + '</div><input class="fi" id="st-no" value="' + (t?.teklifNo || _generateTeklifNo()) + '" readonly style="background:var(--s2);font-family:monospace"></div>'
+        + '<div><div class="fl" data-stk="date">' + _stT('date', lang) + '</div><input type="date" class="fi" id="st-date" value="' + (t?.date || new Date().toISOString().slice(0, 10)) + '"></div>'
       + '</div>'
-      // Satır 2: Geçerlilik + Teslim + İncoterm + Döviz
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl">GEÇERLİLİK</div><input type="date" class="fi" id="st-validity" value="' + (t?.validity || '') + '"></div>'
-        + '<div><div class="fl">TESLİM SÜRESİ</div><input class="fi" id="st-delivery" value="' + (t?.deliveryTime || '') + '" placeholder="30 gün"></div>'
-        + '<div><div class="fl">TESLİM ŞEKLİ</div><select class="fi" id="st-incoterm">' + incoOpts + '</select></div>'
-        + '<div><div class="fl">PARA BİRİMİ</div><select class="fi" id="st-currency">' + curOpts + '</select></div>'
+      // Satır 2: Geçerlilik + Teslim + İncoterm + Döviz + Dil
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
+        + '<div><div class="fl" data-stk="validity">' + _stT('validity', lang) + '</div><input type="date" class="fi" id="st-validity" value="' + (t?.validity || '') + '"></div>'
+        + '<div><div class="fl" data-stk="deliveryTime">' + _stT('deliveryTime', lang) + '</div><input class="fi" id="st-delivery" value="' + (t?.deliveryTime || '') + '" placeholder="30"></div>'
+        + '<div><div class="fl" data-stk="incoterm">' + _stT('incoterm', lang) + '</div><select class="fi" id="st-incoterm">' + incoOpts + '</select></div>'
+        + '<div><div class="fl" data-stk="currency">' + _stT('currency', lang) + '</div><select class="fi" id="st-currency">' + curOpts + '</select></div>'
+        + '<div><div class="fl" data-stk="lang">' + _stT('lang', lang) + '</div><select class="fi" id="st-lang" onchange="window._stChangeLang?.(this.value)">' + langOpts + '</select></div>'
       + '</div>'
       // Ürün satırları
       + '<div style="border:1px solid var(--b);border-radius:10px;padding:14px">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-          + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase">ÜRÜN SATIRLARI</div>'
-          + '<button onclick="window._stAddItem?.()" class="btn btns" style="font-size:10px;padding:3px 10px">+ Ürün Ekle</button>'
+          + '<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase" data-stk="items">' + _stT('items', lang) + '</div>'
+          + '<button onclick="window._stAddItem?.()" class="btn btns" style="font-size:10px;padding:3px 10px" data-stk="addItem">' + _stT('addItem', lang) + '</button>'
         + '</div>'
         + '<div id="st-items">' + (function() {
             var items = t?.items || [{ no: 1, code: '', desc: '', qty: 1, unit: 'Adet', price: 0, total: 0 }];
             return items.map(function(item, idx) { return window._stItemRow ? window._stItemRow(item, idx) : ''; }).join('') || '<div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">Ürün ekleyin</div>';
           })()
         + '</div>'
-        + '<div style="display:flex;justify-content:flex-end;margin-top:10px;font-size:14px;font-weight:700;color:var(--t)">Toplam: <span id="st-total" style="margin-left:8px;color:var(--ac)">0</span></div>'
+        + '<div style="display:flex;justify-content:flex-end;margin-top:10px;font-size:14px;font-weight:700;color:var(--t)"><span data-stk="total">' + _stT('total', lang) + '</span>: <span id="st-total" style="margin-left:8px;color:var(--ac)">0</span></div>'
       + '</div>'
       // Şartlar + Banka + Not
-      + '<div><div class="fl">ŞARTLAR & KOŞULLAR</div><textarea class="fi" id="st-terms" rows="3" style="resize:none">' + (t?.terms || 'Payment: 30% advance, 70% before shipment\nDelivery: Within 30 days after order confirmation\nValidity: 15 days') + '</textarea></div>'
-      + '<div><div class="fl">BANKA BİLGİLERİ</div><textarea class="fi" id="st-bank" rows="2" style="resize:none">' + (t?.bankInfo || 'Bank: ...\nIBAN: ...\nSWIFT: ...') + '</textarea></div>'
-      + '<div><div class="fl">NOTLAR</div><textarea class="fi" id="st-notes" rows="2" style="resize:none">' + (t?.notes || '') + '</textarea></div>'
+      + '<div><div class="fl" data-stk="terms">' + _stT('terms', lang) + '</div><textarea class="fi" id="st-terms" rows="3" style="resize:none">' + (t?.terms || 'Payment: 30% advance, 70% before shipment\nDelivery: Within 30 days after order confirmation\nValidity: 15 days') + '</textarea></div>'
+      + '<div><div class="fl" data-stk="bank">' + _stT('bank', lang) + '</div><textarea class="fi" id="st-bank" rows="2" style="resize:none">' + (t?.bankInfo || 'Bank: ...\nIBAN: ...\nSWIFT: ...') + '</textarea></div>'
+      + '<div><div class="fl" data-stk="notes">' + _stT('notes', lang) + '</div><textarea class="fi" id="st-notes" rows="2" style="resize:none">' + (t?.notes || '') + '</textarea></div>'
       + '<input type="hidden" id="st-eid" value="' + (t?.id || '') + '">'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
-      + '<button class="btn" onclick="document.getElementById(\'mo-satis-teklif\').remove()">İptal</button>'
-      + '<button class="btn btnp" onclick="window._saveST?.()">Kaydet</button>'
+      + '<button class="btn" onclick="document.getElementById(\'mo-satis-teklif\').remove()" data-stk="cancel">' + _stT('cancel', lang) + '</button>'
+      + '<button class="btn btnp" onclick="window._saveST?.()" data-stk="save">' + _stT('save', lang) + '</button>'
     + '</div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
@@ -314,6 +347,7 @@ window._saveST = function() {
     deliveryTime: document.getElementById('st-delivery')?.value || '',
     incoterm: document.getElementById('st-incoterm')?.value || 'FOB',
     currency: document.getElementById('st-currency')?.value || 'USD',
+    lang: document.getElementById('st-lang')?.value || 'EN',
     items: items,
     terms: document.getElementById('st-terms')?.value || '',
     bankInfo: document.getElementById('st-bank')?.value || '',
@@ -346,9 +380,13 @@ window._stPreview = function(id) {
   if (!t) return;
   var esc = window._esc;
   var total = (t.items || []).reduce(function(a, i) { return a + (i.total || 0); }, 0);
+  // SAT-LANG-001: PDF cikti dil destegi (TR/EN/CN/AR/RU)
+  var lang = t.lang || 'EN';
+  var L = function(k) { return _stT(k, lang); };
+  var dir = lang === 'AR' ? 'rtl' : 'ltr';
 
   var w = window.open('', '_blank', 'width=800,height=1000');
-  w.document.write('<!DOCTYPE html><html><head><title>Proforma Invoice — ' + esc(t.teklifNo) + '</title>'
+  w.document.write('<!DOCTYPE html><html dir="' + dir + '" lang="' + lang.toLowerCase() + '"><head><meta charset="UTF-8"><title>' + L('proforma') + ' — ' + esc(t.teklifNo) + '</title>'
     + '<style>body{font-family:"Segoe UI",sans-serif;padding:40px;color:#1a1a2e;max-width:750px;margin:0 auto}'
     + '.hdr{border-bottom:3px solid #1e1b4b;padding-bottom:16px;margin-bottom:20px}'
     + 'table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#1e1b4b;color:#fff;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase}'
@@ -359,19 +397,19 @@ window._stPreview = function(id) {
     + '@media print{button{display:none!important}}</style></head><body>'
     + '<div class="hdr"><div style="display:flex;justify-content:space-between;align-items:flex-start">'
       + '<div><div style="font-size:22px;font-weight:800;color:#1e1b4b">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#6b7280;margin-top:4px">International Trade & Consulting</div></div>'
-      + '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1e1b4b">PROFORMA INVOICE</div><div style="font-size:12px;color:#6b7280;margin-top:4px">REF: ' + esc(t.teklifNo) + '</div><div style="font-size:11px;color:#6b7280">Date: ' + (t.date || '—') + '</div></div>'
+      + '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1e1b4b">' + L('proforma') + '</div><div style="font-size:12px;color:#6b7280;margin-top:4px">' + L('ref') + ': ' + esc(t.teklifNo) + '</div><div style="font-size:11px;color:#6b7280">' + L('date') + ': ' + (t.date || '—') + '</div></div>'
     + '</div></div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">'
-      + '<div><div class="section-title">TO</div><div style="font-size:13px;font-weight:600">' + esc(t.customerName) + '</div></div>'
-      + '<div><div class="section-title">DETAILS</div><div style="font-size:11px">Incoterm: <b>' + (t.incoterm || 'FOB') + '</b><br>Currency: <b>' + (t.currency || 'USD') + '</b><br>Delivery: ' + esc(t.deliveryTime || '—') + '<br>Validity: ' + (t.validity || '—') + '</div></div>'
+      + '<div><div class="section-title">' + L('to') + '</div><div style="font-size:13px;font-weight:600">' + esc(t.customerName) + '</div></div>'
+      + '<div><div class="section-title">' + L('details') + '</div><div style="font-size:11px">' + L('incoterm') + ': <b>' + (t.incoterm || 'FOB') + '</b><br>' + L('currency') + ': <b>' + (t.currency || 'USD') + '</b><br>' + L('delivery') + ': ' + esc(t.deliveryTime || '—') + '<br>' + L('validity') + ': ' + (t.validity || '—') + '</div></div>'
     + '</div>'
-    + '<table><tr><th>NO</th><th>DESCRIPTION</th><th>QTY</th><th>UNIT</th><th>UNIT PRICE</th><th>TOTAL</th></tr>'
+    + '<table><tr><th>' + L('no') + '</th><th>' + L('desc') + '</th><th>' + L('qty') + '</th><th>' + L('unit') + '</th><th>' + L('unitPrice') + '</th><th>' + L('total').toUpperCase() + '</th></tr>'
     + (t.items || []).map(function(i) { return '<tr><td>' + i.no + '</td><td>' + esc(i.desc || i.code) + '</td><td>' + (i.qty || 0) + '</td><td>' + (i.unit || '') + '</td><td>' + (i.price || 0).toLocaleString('tr-TR') + '</td><td>' + (i.total || 0).toLocaleString('tr-TR') + '</td></tr>'; }).join('')
-    + '<tr class="total-row"><td colspan="5" style="text-align:right">TOTAL</td><td>' + (t.currency || '$') + ' ' + total.toLocaleString('tr-TR') + '</td></tr></table>'
-    + (t.terms ? '<div class="section"><div class="section-title">TERMS & CONDITIONS</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.terms) + '</pre></div>' : '')
-    + (t.bankInfo ? '<div class="section"><div class="section-title">BANKING DETAILS</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.bankInfo) + '</pre></div>' : '')
-    + '<div style="margin-top:30px;text-align:center;font-size:10px;color:#9ca3af">This proforma invoice is for informational purposes only. · Duay Global LLC · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
-    + '<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1e1b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">🖨 Yazdır / PDF</button></div>'
+    + '<tr class="total-row"><td colspan="5" style="text-align:right">' + L('total').toUpperCase() + '</td><td>' + (t.currency || '$') + ' ' + total.toLocaleString('tr-TR') + '</td></tr></table>'
+    + (t.terms ? '<div class="section"><div class="section-title">' + L('termsTitle') + '</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.terms) + '</pre></div>' : '')
+    + (t.bankInfo ? '<div class="section"><div class="section-title">' + L('bankTitle') + '</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.bankInfo) + '</pre></div>' : '')
+    + '<div style="margin-top:30px;text-align:center;font-size:10px;color:#9ca3af">' + L('footer') + ' · Duay Global LLC · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
+    + '<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1e1b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">' + L('print') + '</button></div>'
     + '</body></html>');
   w.document.close();
 };
