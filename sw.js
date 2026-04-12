@@ -7,8 +7,8 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'duay-platform-v12';
-const CACHE_VERSION = '12.0.0';
+const CACHE_NAME    = 'duay-platform-v13';
+const CACHE_VERSION = '13.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
@@ -58,7 +58,6 @@ const PRECACHE_URLS = [
   '/src/modules/ceo.js',
   '/src/modules/hesap.js',
   '/src/modules/modals.js',
-  '/src/modules/satin_alma.js',
   '/src/modules/satis_teklif.js',
   '/src/modules/urun_db.js',
   '/src/modules/navlun.js',
