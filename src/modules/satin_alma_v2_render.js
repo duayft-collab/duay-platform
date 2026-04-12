@@ -509,7 +509,7 @@ window._saV2TekSilYap = function(id) {
 };
 
 window._saV2TopluSil = function() {
-  var secili = Object.keys(window.SAV2_SECILI||{}).filter(function(k){return window.SAV2_SECILI[k];});
+  var secili = Object.keys(window._saV2ListeSecili||{}).filter(function(k){return window._saV2ListeSecili[k];});
   if(!secili.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
   var msg = secili.length+' teklif silinecek. Emin misin?';
   if(!window.confirmModal) { if(!confirm(msg)) return; window._saV2TopluSilYap(secili); }
@@ -526,9 +526,75 @@ window._saV2TopluSilYap = function(secili) {
     }
   });
   if(typeof window._saV2Store==='function') window._saV2Store(liste);
-  window.SAV2_SECILI={};
+  window._saV2ListeSecili={};
   window.toast?.(secili.length+' teklif silindi','ok');
   window.renderSatinAlmaV2?.();
+};
+
+/**
+ * SAV2-LISTE-FIX-001: Seçili satin_alma teklifleri toplu satış teklifine ekle.
+ * _saV2ListeSecili'den seçili id'leri al, confirmModal ile onay,
+ * her biri için loadSatisTeklifleri'ye yeni taslak entry ekle (ALIS-SATIS-
+ * TOPLU-001 ile aynı pattern: müşteri "— BELİRTİLECEK —" placeholder).
+ */
+window._saV2BulkSatisEkle = function() {
+  var seciliIds = Object.keys(window._saV2ListeSecili||{}).filter(function(k){return window._saV2ListeSecili[k];});
+  if(!seciliIds.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
+  var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
+  var secili = liste.filter(function(t){return seciliIds.indexOf(String(t.id))!==-1 && !t.isDeleted;});
+  if(!secili.length){window.toast?.('Seçili teklif bulunamadı','err');return;}
+  var msg = 'Seçili '+secili.length+' teklifi satış teklifine eklemek istiyor musunuz?';
+  var doIt = function(){
+    var satisListe = typeof window.loadSatisTeklifleri === 'function' ? window.loadSatisTeklifleri() : [];
+    var year = new Date().getFullYear();
+    var sayac = satisListe.length;
+    var nowIso = new Date().toISOString();
+    var creator = (window.Auth && window.Auth.getCU && window.Auth.getCU()) || {};
+    secili.forEach(function(alis){
+      sayac++;
+      var urunler = (alis.urunler && alis.urunler.length ? alis.urunler : [alis]).map(function(u){
+        return {
+          urunAdi: u.urunAdi || u.turkceAdi || alis.urunAdi || '',
+          duayKodu: u.duayKodu || alis.duayKodu || '',
+          miktar: parseFloat(u.miktar) || 0,
+          birim: u.birim || 'Adet',
+          alisF: parseFloat(u.alisF || alis.alisF) || 0,
+          satisFiyat: parseFloat(u.alisF || alis.alisF) || 0,
+          toplam: (parseFloat(u.miktar)||0) * (parseFloat(u.alisF || alis.alisF)||0),
+          para: alis.toplamPara || alis.para || 'USD'
+        };
+      });
+      var newEntry = {
+        id: typeof generateNumericId === 'function' ? generateNumericId() : (Date.now() + sayac),
+        teklifNo: 'STK-' + year + '-' + String(sayac).padStart(6, '0'),
+        musteri: '— BELİRTİLECEK —',
+        jobId: alis.jobId || '',
+        urunler: urunler,
+        paraBirimi: alis.toplamPara || alis.para || 'USD',
+        toplamPara: alis.toplamPara || alis.para || 'USD',
+        genelToplam: parseFloat(alis.toplamTutar) || urunler.reduce(function(s,u){return s+(u.toplam||0);},0),
+        durum: 'taslak',
+        createdAt: nowIso,
+        createdBy: creator.name || '',
+        createdById: creator.id,
+        kaynakAlisV2Id: alis.id,
+        kaynakTedarikci: alis.tedarikci || '',
+        notlar: 'Satin Alma V2 teklifi #' + (alis.id || '?') + ' (tedarikçi: ' + (alis.tedarikci || '?') + ') üzerinden SAV2-LISTE-FIX-001 ile otomatik oluşturuldu'
+      };
+      satisListe.unshift(newEntry);
+    });
+    if(typeof window.storeSatisTeklifleri === 'function'){
+      try { window.storeSatisTeklifleri(satisListe); } catch(e){ console.warn('[sav2-bulk] storeSatisTeklifleri hata:', e); }
+    }
+    window.toast?.(secili.length+' satış teklifi oluşturuldu — müşteri ataması bekleniyor','ok');
+    window._saV2ListeSecili={};
+    window.renderSatinAlmaV2?.();
+    if(typeof window.renderSatisTeklifleri === 'function'){
+      try { window.renderSatisTeklifleri(); } catch(e){}
+    }
+  };
+  if(!window.confirmModal) { if(!confirm(msg)) return; doIt(); }
+  else { window.confirmModal('Satış Teklifine Ekle', msg, doIt); }
 };
 
 /* ── SAV2-KARSILASTIR-001: Tedarikçi Karşılaştırma ─────────── */
