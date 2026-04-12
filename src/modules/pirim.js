@@ -803,20 +803,20 @@ function renderPirim() {
       <div style="display:flex;align-items:center;gap:6px">
         ${admin ? '<input type="checkbox" class="pirim-row-chk" data-id="' + p.id + '" onclick="event.stopPropagation();window._pirimBulkCheck?.()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)">' : ''}
         <div>
-        <div style="font-weight:600;font-size:12px;color:var(--t)">${u.name}</div>
-        ${p.code ? `<div style="font-size:9px;color:var(--t3);font-family:'DM Mono',monospace">${p.code}</div>` : ''}
+        <div style="font-weight:600;font-size:12px;color:var(--t)">${window._esc(u.name||'')}</div>
+        ${p.code ? `<div style="font-size:9px;color:var(--t3);font-family:'DM Mono',monospace">${window._esc(p.code)}</div>` : ''}
       </div></div>
       <div><span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--alb);color:var(--ac)">${td?.emoji || ''} ${td?.label || p.type}</span></div>
       <div>
-        <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px" title="${p.title||''}">${p.title || '—'}</div>
-        ${p.note ? `<div style="font-size:10px;color:var(--t3)">${p.note.slice(0,30)}</div>` : ''}
+        <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px" title="${window._esc(p.title||'')}">${window._esc(p.title || '—')}</div>
+        ${p.note ? `<div style="font-size:10px;color:var(--t3)">${window._esc(p.note.slice(0,30))}</div>` : ''}
         ${_renderBcBadges(p.bonusCeza)}
       </div>
       <div style="font-weight:700;font-size:12px;font-family:'DM Mono',monospace;color:var(--ac)">${_fmt(p.amount)}</div>
       <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t2)">${p.date||'—'}</div>
       <div>
         <span class="badge ${st2.c}" style="font-size:10px">${st2.emoji} ${st2.l}</span>
-        ${p.status === 'peer_review' && p.peerUser ? `<div style="font-size:9px;color:var(--t3);margin-top:1px">👤 ${(users.find(x=>x.id===p.peerUser)||{name:'?'}).name}</div>` : ''}
+        ${p.status === 'peer_review' && p.peerUser ? `<div style="font-size:9px;color:var(--t3);margin-top:1px">👤 ${window._esc((users.find(x=>x.id===p.peerUser)||{name:'?'}).name)}</div>` : ''}
       </div>
       <td>
         <div style="display:flex;gap:4px;flex-wrap:wrap">
@@ -897,7 +897,7 @@ function renderLeaderboard() {
     const displayName = showName ? escapeHtml(u.name) + (isMe ? ' (sen)' : '') : `Kullanıcı #${i+1}`;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);${isMe?'background:rgba(99,102,241,.05);border-radius:8px;padding:8px;margin:-0 -4px;':''}">
       <span style="font-size:16px;width:22px;text-align:center">${medals[i] || `${i+1}`}</span>
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0">${showName ? (u.name||'?')[0] : '?'}</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0">${showName ? window._esc((u.name||'?')[0]) : '?'}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:${isMe?'700':'500'};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${displayName}</div>
       </div>
@@ -930,8 +930,8 @@ function renderUpcoming() {
     const daysLeft = Math.ceil((new Date(pd) - new Date()) / 86400000);
     return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--b)">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}</div>
-        <div style="font-size:10px;color:var(--t3)">${p.title||'—'}</div>
+        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window._esc(u.name||'')}</div>
+        <div style="font-size:10px;color:var(--t3)">${window._esc(p.title||'—')}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:12px;font-weight:700;color:var(--ac)">${_fmt(p.amount)}</div>
@@ -1445,7 +1445,7 @@ function peerRejectPirim(id) {
     <div class="moc" style="max-width:420px">
       <div class="mt" style="color:#EF4444">❌ Ara Onay — Reddet</div>
       <div style="padding:8px 12px;background:var(--s2);border-radius:8px;margin-bottom:12px;font-size:12px">
-        <b>${p.title||'—'}</b> — ${_fmt(p.amount)}
+        <b>${window._esc(p.title||'—')}</b> — ${_fmt(p.amount)}
       </div>
       <div class="fr"><div class="fl">RED NEDENİ *</div>
         <textarea class="fi" id="peer-reject-reason" rows="3" style="resize:none" placeholder="Açıklamanız..."></textarea>
@@ -1494,7 +1494,7 @@ function rejectPirim(id) {
       <div style="padding:18px 20px">
         <div style="padding:10px 12px;background:rgba(239,68,68,.06);border-radius:8px;margin-bottom:14px">
           <div style="font-size:11px;color:var(--t3)">Reddedilecek prim</div>
-          <div style="font-size:13px;font-weight:600;color:var(--t)">${p.title || '—'} — ${_fmt(p.amount)}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--t)">${window._esc(p.title || '—')} — ${_fmt(p.amount)}</div>
         </div>
         <div class="fr">
           <div class="fl">RED NEDENİ <span style="color:var(--rdt)">*</span></div>
@@ -1579,21 +1579,21 @@ function showPirimDetail(id) {
   if (!body) return;
   body.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      ${_dRow('Personel', u.name)}
+      ${_dRow('Personel', window._esc(u.name||''))}
       ${_dRow('İşlem Türü', `${td?.emoji||''} ${td?.label||p.type}`)}
-      ${_dRow('Açıklama', p.title||'—')}
-      ${p.code ? _dRow('İşlem Kodu', p.code) : ''}
+      ${_dRow('Açıklama', window._esc(p.title||'—'))}
+      ${p.code ? _dRow('İşlem Kodu', window._esc(p.code)) : ''}
       ${_dRow('Baz Tutar', _fmt(p.baseAmount))}
       ${_dRow('Oran', `%${((p.rate||0)*100).toFixed(0)}`)}
       ${_dRow('Net Prim', `<span style="font-weight:800;color:var(--ac)">${_fmt(p.amount)}</span>`)}
       ${_dRow('İşlem Tarihi', p.date||'—')}
       ${_dRow('Ödeme Tarihi', `<span style="color:${over?'var(--rd)':'var(--t)'}">${payD}${over?' ⚠️':''}</span>`)}
       ${_dRow('Durum', `<span class="badge ${st2.c}">${st2.emoji} ${st2.l}</span>`)}
-      ${p.note ? _dRow('Not', p.note) : ''}
+      ${p.note ? _dRow('Not', window._esc(p.note)) : ''}
       ${p.createdAt ? _dRow('Oluşturulma', p.createdAt) : ''}
       ${p.approvedAt ? _dRow('Onaylanma', p.approvedAt) : ''}
       ${p.paidAt ? _dRow('Ödeme T.', p.paidAt) : ''}
-      ${p.rejectReason ? _dRow('Red Nedeni', `<span style="color:var(--rd)">${p.rejectReason}</span>`) : ''}
+      ${p.rejectReason ? _dRow('Red Nedeni', `<span style="color:var(--rd)">${window._esc(p.rejectReason)}</span>`) : ''}
     </div>
     ${p.bonusCeza ? `<div style="margin-top:12px;padding:12px;background:var(--s2);border-radius:8px">
       <div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:8px">Bonus / Ceza Dökümü</div>
