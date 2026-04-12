@@ -346,7 +346,7 @@ else {
    */
   window.openUpdateHistory = function() {
     var anns = loadAnn().filter(function(a) { return a.isUpdate; });
-    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var esc = window._esc;
     var ex = document.getElementById('mo-update-history'); if (ex) ex.remove();
     var mo = document.createElement('div');
     mo.className = 'mo'; mo.id = 'mo-update-history'; mo.style.zIndex = '2200';

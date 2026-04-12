@@ -7,7 +7,7 @@
 'use strict';
 
 /* ── Helpers ─────────────────────────────────────────────────── */
-var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+var _esc = window._esc;
 var _g = function(id) { return document.getElementById(id); };
 var _now = function() { return new Date().toISOString().slice(0, 19).replace('T', ' '); };
 var _today = function() { return new Date().toISOString().slice(0, 10); };

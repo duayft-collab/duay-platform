@@ -8,7 +8,7 @@
 'use strict';
 
 var _g   = function(id) { return document.getElementById(id); };
-var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s||'')) : String(s||''); };
+var _esc = window._esc;
 var _cu  = function() { return window.CU?.() || window.Auth?.getCU?.(); };
 var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin'); };
 var _genId = function() { return typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now(); };

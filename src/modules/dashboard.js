@@ -20,7 +20,7 @@
 
 /* ── Kısayollar ─────────────────────────────────────────────── */
 const _g   = id => document.getElementById(id);
-const _esc = s => typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s)) : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _esc = window._esc;
 const _cu  = () => window.CU?.() || window.Auth?.getCU?.();
 const _isA = () => { const r = _cu()?.role; return r === 'admin' || r === 'manager'; };
 const _fmt = v => Math.round(Math.abs(v)).toLocaleString('tr-TR');

@@ -43,7 +43,7 @@ function openUrunModal(id) {
   var old = document.getElementById('mo-urun-db'); if (old) old.remove();
   var data = loadUrunDB();
   var u = id ? data.find(function(x) { return String(x.id) === String(id); }) : null;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
 
   // Cari listesi (satıcılar)
   var cariList = typeof loadCari === 'function' ? loadCari() : [];
@@ -229,7 +229,7 @@ function renderUrunDB() {
 
   var cont = document.getElementById('udb-list');
   if (!cont) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
 
   // Toplu islem bar
   var bulkBar = '<div id="udb-bulk-bar" style="display:none;padding:6px 16px;background:#FCEBEB;border-bottom:0.5px solid #E24B4A;align-items:center;gap:8px;font-size:11px;color:#791F1F">'

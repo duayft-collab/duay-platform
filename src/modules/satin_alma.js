@@ -214,7 +214,7 @@ function renderSatinAlma() {
   }
 
   var html = '';
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
 
   sayfaListe.forEach(function(s) {
     var st = SA_STATUS[s.status] || SA_STATUS.draft;
@@ -314,7 +314,7 @@ window._saToggleQuickView = function(id) {
   var d = _loadSA();
   var s = d.find(function(x) { return x.id === id; });
   if (!s) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var esc = window._esc;
   var sym = SA_CURRENCIES[s.currency] || '$';
   var st = SA_STATUS[s.status] || SA_STATUS.draft;
   var ftypes = _saGetFaturaTypes();
@@ -755,7 +755,7 @@ window._fetchTCMBRates = _fetchTCMBRates;
 function _openSAModal(id) {
   var old = document.getElementById('mo-satinalma'); if (old) old.remove();
   var s = id ? _loadSA().find(function(x) { return x.id === id; }) : null;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var esc = window._esc;
 
   // Kullanıcı listesi
   var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
@@ -1409,7 +1409,7 @@ window._openSADetail = function(id) {
   var d = _loadSA();
   var s = d.find(function(x) { return x.id === id; });
   if (!s) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var esc = window._esc;
   var st = SA_STATUS[s.status] || SA_STATUS.draft;
   var sym = SA_CURRENCIES[s.currency] || '$';
   var users = typeof loadUsers === 'function' ? loadUsers() : [];
@@ -1540,7 +1540,7 @@ window._deleteSA = function(id) {
     return;
   }
 
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var esc = window._esc;
   window.confirmModal('Bu kayıt silinsin mi?\n\n"' + esc(s.supplier || s.piNo || s.jobId || '') + '"\n\nOnaylanmış kayıtlar yönetici izni olmadan silinemez.', {
     title: 'Satın Alma Sil',
     danger: true,
@@ -1658,7 +1658,7 @@ window._saImportParse = function(inp) {
 
       var parsed = [];
       var errors = [];
-      var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+      var esc = window._esc;
 
       rows.slice(1).forEach(function(row, idx) {
         if (!row || row.every(function(c) { return !c && c !== 0; })) return;

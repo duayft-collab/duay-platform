@@ -25,7 +25,7 @@ function _loadKAll() { try { return JSON.parse(localStorage.getItem('ak_kargo2')
 function _loadKFirma() { return ['Maersk','CMA CGM','MSC','Turkish Cargo','DHL Express','FedEx','Yurtiçi','Aras','MNG','PTT']; }
 
 // ═══ YARDIMCI ═══
-function _esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+var _esc = window._esc;
 function _fmt(n) { return Number(n || 0).toLocaleString('tr-TR'); }
 function _tarih(d) { if (!d) return '—'; return d.slice(0, 10); }
 function _gun(d1, d2) { try { return Math.ceil((new Date(d2) - new Date(d1)) / 86400000); } catch(e) { return 0; } }

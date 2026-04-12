@@ -62,7 +62,7 @@ var _EVRAK_OCR_PROMPT = {
 var ETIKET_RENK = { Mavi:'#185FA5', Pembe:'#D4537E', Sari:'#BA7517', Yesil:'#16A34A', Mor:'#7C3AED', Turuncu:'#D85A30', Kirmizi:'#DC2626', Lacivert:'#1E3A5F', Turkuaz:'#0EA5E9', Lime:'#84CC16', Bordo:'#881337', Altin:'#D4A017', Gri:'#6B7280', Beyaz:'#F9FAFB', Siyah:'#111827', Kahve:'#78350F', Mercan:'#FB7185', Buz:'#E0F2FE', Lavanta:'#C4B5FD', Nane:'#6EE7B7', Somon:'#FDA4AF', Safran:'#FBBF24', Kobalt:'#3B82F6', Fusya:'#EC4899', Zeytin:'#65A30D', Indigo:'#4F46E5', Bakir:'#EA580C', Camgobegi:'#06B6D4', Ametist:'#8B5CF6', Gumus:'#94A3B8' };
 
 var _g   = function(id) { return document.getElementById(id); };
-var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
+var _esc = window._esc;
 var _cu  = function() { return window.CU?.() || window.Auth?.getCU?.(); };
 var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin'); };
 var _isManager = function() { return _isAdmin() || (_cu()?.role === 'manager'); };
@@ -3395,7 +3395,7 @@ window._evrakGonderKopyala = function() {
 (function IhracatOpsCRUD() {
 'use strict';
 var _g = function(id) { return document.getElementById(id); };
-var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
+var _esc = window._esc;
 var _cu = function() { return window.CU?.() || window.Auth?.getCU?.(); };
 var _genId = function() { return typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now(); };
 var _now = function() { return new Date().toISOString().slice(0, 19).replace('T', ' '); };

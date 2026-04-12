@@ -9,7 +9,7 @@
 
 var _LS_KEY = 'ak_talimatlar1';
 var _g = function(id) { return document.getElementById(id); };
-var _esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return String(s || ''); };
+var _esc = window._esc;
 var _now = function() { return new Date().toISOString(); };
 var _today = function() { return new Date().toISOString().slice(0, 10); };
 var _cu = function() { return typeof window.CU === 'function' ? window.CU() : window.CU; };

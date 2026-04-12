@@ -602,7 +602,7 @@ function delEtkinlikItem(id){
 function renderTrashPanel() {
   const p = _gst('panel-trash');
   if (!p) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){return s;};
+  var esc = window._esc;
   if (!p.dataset.injected) {
     p.dataset.injected = '1';
     p.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'

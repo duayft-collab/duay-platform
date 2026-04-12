@@ -13,7 +13,7 @@ var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin
 var _genId = function() { return typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now(); };
 var _now = function() { return new Date().toISOString().slice(0, 19).replace('T', ' '); };
 var _today = function() { return new Date().toISOString().slice(0, 10); };
-var _esc = function(s) { return typeof window.escapeHtml === 'function' ? window.escapeHtml(String(s || '')) : String(s || ''); };
+var _esc = window._esc;
 
 var ALARM_KEY = 'ak_alarms1';
 var ALARM_LOG_KEY = 'ak_alarm_log1';

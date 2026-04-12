@@ -1299,7 +1299,7 @@ window._pirimTaskSelected = function() {
 
   // Bilgi göster
   if (info) {
-    var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+    var esc = window._esc;
     var statusTxt = task.done ? '✅ Tamamlandı' : (task.status === 'inprogress' ? '🔄 Devam' : '📋 Bekliyor');
     info.innerHTML = '📌 <b>' + esc(task.title) + '</b>'
       + (task.start ? ' · Başlangıç: ' + task.start : '')

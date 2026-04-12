@@ -10,7 +10,7 @@
 var _cu = function() { return window.Auth?.getCU?.() || window.CU?.(); };
 var _isAdm = function() { return _cu()?.role === 'admin'; };
 var _now = function() { return typeof nowTs === 'function' ? nowTs() : new Date().toISOString(); };
-var _esc = function(s) { return typeof escapeHtml === 'function' ? escapeHtml(s) : s; };
+var _esc = window._esc;
 var _genId = function() { return typeof generateNumericId === 'function' ? generateNumericId() : Date.now(); };
 
 // ════════════════════════════════════════════════════════════════

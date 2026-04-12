@@ -288,7 +288,7 @@ window.manageKonteynViewers = function(id) {
   var k = konts.find(function(x) { return x.id === id; });
   if (!k) return;
   var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var viewers = k.viewers || [];
   var ex = document.getElementById('mo-ktn-viewers'); if (ex) ex.remove();
   var mo = document.createElement('div');
@@ -938,7 +938,7 @@ var URUN_ULKELER = window.MENSEI || ['Türkiye','Çin','Hindistan','Almanya','AB
 window.renderUrunler = function() {
   var panel = document.getElementById('panel-urunler'); if (!panel) return;
   var d = typeof loadUrunler === 'function' ? loadUrunler() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
@@ -1168,7 +1168,7 @@ window._urunTopluGuncelleKaydet = function() {
 window._openUrunModal = function(editId) {
   var ex = document.getElementById('mo-urun'); if (ex) ex.remove();
   var u = editId ? (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(x){return x.id===editId;}) : null;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted;}) : [];
   var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-urun';
   mo.innerHTML = '<div class="moc" style="max-width:680px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
@@ -1347,7 +1347,7 @@ window.renderAlisTeklifleri = function() {
 window._renderAlisContent = function() {
   var cont = document.getElementById('alis-list'); if (!cont) return;
   var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var today = new Date().toISOString().slice(0,10);
   var fmt = window._alisViewFormat || 'liste';
   // FIX 7.8: Arama filtresi
@@ -1441,7 +1441,7 @@ window._alisKarsilastir = function() {
   var all = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
   var teklifler = ids.map(function(id) { return all.find(function(t) { return t.id === id; }); }).filter(Boolean);
   if (teklifler.length < 2) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   // En düşük toplamı bul
   var minToplam = Math.min.apply(null, teklifler.map(function(t) { return t.toplamTutar || Infinity; }));
   var enIyi = teklifler.find(function(t) { return t.toplamTutar === minToplam; });
@@ -1589,7 +1589,7 @@ window._openAlisDetayModal = function(id) {
   var d = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
   var t = d.find(function(x){return x.id===id;});
   if (!t) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var satirlar = t.satirlar || [];
   var ex = document.getElementById('mo-alis-detay'); if (ex) ex.remove();
   var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-alis-detay';
@@ -1632,7 +1632,7 @@ var AT_FATURA_TURLERI = [
 window._openAlisModal = function() {
   var existingForm = document.getElementById('alis-inline-form');
   if (existingForm) { existingForm.remove(); return; }
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && c.type==='tedarikci';}) : [];
   var taskList = typeof loadTasks === 'function' ? loadTasks().filter(function(t){return !t.done;}).slice(0,50) : [];
   var cont = document.getElementById('alis-list'); if (!cont) return;
@@ -1756,7 +1756,7 @@ window._atRowCounter = 0;
 window._atAddRow = function() {
   var tbody = document.getElementById('at-rows'); if (!tbody) return;
   var urunList = typeof loadUrunler==='function'?loadUrunler():[];
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   // FIX 3: Tedarikçi seçiliyse filtrele
   var ted = document.getElementById('at-tedarikci')?.value || '';
   var filtered = ted ? urunList.filter(function(u){return (u.tedarikci||'')===ted || (u.saticiId||'')===ted;}) : urunList;
@@ -1918,7 +1918,7 @@ window._saveAlisTeklif = function() {
 window.renderSatisTeklifleri = function() {
   var panel = document.getElementById('panel-satis-teklifleri'); if (!panel) return;
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
@@ -2116,7 +2116,7 @@ window._stPeekAc = function(id) {
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
   var t = d.find(function(x) { return x.id === id; });
   if (!t) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var STAT = { taslak: 'Taslak', gonderildi: 'G\u00f6nderildi', onay: 'Onay Bekliyor', kabul: 'Kabul Edildi', red: 'Reddedildi' };
   var bc = { taslak: '#9CA3AF', gonderildi: '#3B82F6', onay: '#D97706', kabul: '#16A34A', red: '#DC2626' }[t.durum] || '#9CA3AF';
   var peek = document.createElement('div');
@@ -2162,7 +2162,7 @@ window._openSatisModal = function(fromAlis) {
   /* eslint-disable-next-line no-unreachable */
   var existingForm = document.getElementById('satis-inline-form');
   if (existingForm) { existingForm.remove(); return; }
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var musteriList = typeof loadCari === 'function' ? loadCari().filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='Müşteri'||c.tip==='musteri'||c.cariType==='onayli');}) : [];
   var cont = document.getElementById('satis-list'); if (!cont) return;
   var form = document.createElement('div');
@@ -2228,7 +2228,7 @@ window._stRowCounter = 0;
 window._stAddRow = function(fromAlis) {
   var tbody = document.getElementById('st-rows'); if (!tbody) return;
   var urunList = typeof loadUrunler==='function'?loadUrunler():[];
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   window._stRowCounter++;
   var n = window._stRowCounter;
   var alisFiyat = fromAlis?.birimFiyat||'';
@@ -2397,7 +2397,7 @@ window._saveSatisTeklif = function() {
 window._printSatisTeklif = function(id) {
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
   var t = d.find(function(x){return x.id===id;}); if (!t) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var cur = t.paraBirimi || 'USD';
   var curSym = cur==='USD'?'$':cur==='EUR'?'€':cur==='TRY'?'₺':cur;
   var totalAmt = (t.genelToplam||0).toFixed(2);
@@ -2575,7 +2575,7 @@ window._exportSatisTeklifXlsx = function() {
 /** Satış raporu */
 window._openSatisRapor = function() {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var toplamSatis=0,toplamAlis=0,toplamKar=0;
   var urunSatis={};
   d.forEach(function(t){
@@ -2617,7 +2617,7 @@ window._openSatisRapor = function() {
 window._printSatisTeklifB = function(id) {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
   var t = d.find(function(x){return x.id===id;}); if (!t) return;
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var cur = t.paraBirimi||'USD';
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
@@ -2639,7 +2639,7 @@ window._printSatisTeklifB = function(id) {
 window._printSatisTeklifC = function(id) {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
   var t = d.find(function(x){return x.id===id;}); if (!t) return;
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var cur = t.paraBirimi||'USD';
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
@@ -2724,7 +2724,7 @@ window._printSatisTeklifA = _origPrintSatis;
 window._openSAContract = function(id) {
   var sa = (typeof loadSatinalma==='function'?loadSatinalma():[]).find(function(s){return s.id===id;});
   if (!sa) return;
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var cur = sa.currency||'USD';
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Sözleşme #'+id+'</title><style>body{font-family:system-ui;padding:40px;max-width:700px;margin:0 auto;font-size:12px;line-height:1.6}h1{text-align:center;color:#1a365d;font-size:18px}h2{font-size:14px;color:#1a365d;margin-top:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}.sig{display:flex;justify-content:space-between;margin-top:40px}.sig div{width:40%;text-align:center}@media print{button{display:none!important}}</style></head><body>'
@@ -2810,7 +2810,7 @@ window._downloadUrunTemplate = function() {
 /** Satış raporu PDF çıktı */
 window._printSatisRapor = function() {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var toplamSatis=0,toplamAlis=0,toplamKar=0;
   var urunSatis={};
   d.forEach(function(t){
@@ -2901,7 +2901,7 @@ setInterval(_check7GunKurali, 30 * 60 * 1000);
 /** Job ID Hub — merkezi görünüm */
 window.openJobIdHub = function(jobId) {
   if (!jobId) return;
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var tasks = typeof loadTasks==='function'?loadTasks():[];
   var task = tasks.find(function(t){return t.jobId===jobId||String(t.id)===String(jobId);});
   var sa = typeof loadSatinalma==='function'?loadSatinalma().filter(function(s){return s.jobId===jobId||s.jobId===String(jobId);}):[];
@@ -3020,7 +3020,7 @@ window._createPR = function(teklifId) {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
   var t = d.find(function(x){return x.id===teklifId;});
   if (!t) return;
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var yr = new Date().getFullYear();
   var prSeq = typeof generateNumericId==='function'?String(generateNumericId()).slice(-4):String(Math.floor(Math.random()*9000)+1000);
   var prNo = 'PR-'+yr+'-'+prSeq;
@@ -3107,7 +3107,7 @@ window._stNavlunDagit = function() {
 window.openTeklifSartlarPanel = function() {
   if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
   var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var ex = document.getElementById('mo-sartlar'); if (ex) ex.remove();
   var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-sartlar';
   mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
@@ -3163,7 +3163,7 @@ window._saveSartEdit = function(id) {
 // ════════════════════════════════════════════════════════════════
 window._showPriceHistory = function(urunId) {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   var matches = [];
   d.forEach(function(t){
     (t.urunler||[]).forEach(function(u){
@@ -3218,7 +3218,7 @@ window._checkIncotermsGorev = function(teklifId) {
 // ════════════════════════════════════════════════════════════════
 window.openSistemBilgileri = function() {
   if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
-  var esc = typeof escapeHtml==='function'?escapeHtml:function(s){return s;};
+  var esc = window._esc;
   // Depolama hesapla
   var totalLS = 0;
   try { for (var k in localStorage) { if (localStorage.hasOwnProperty(k)) totalLS += (localStorage[k]||'').length; } } catch(e){}
@@ -3386,7 +3386,7 @@ window._fikirSecTab = function(tab, el) {
       var aktif = all.filter(function(i) { return !i.isDeleted && (i.status === 'aktif' || i.status === 'accepted' || i.status === 'pending' || i.status === 'challenge_pending'); }).slice(0, 5);
       if (!aktif.length) { miniCont.innerHTML = '<div style="text-align:center;padding:12px;color:var(--t3);font-size:11px">Aktif iddia yok</div>'; return; }
       miniCont.innerHTML = aktif.map(function(i) {
-        var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+        var esc = window._esc;
         return '<div style="padding:6px 0;border-bottom:0.5px solid var(--b);font-size:11px">'
           + '<div style="font-weight:500;color:var(--t)">' + (i.tip === 'challenge' ? '⚔️ ' : '🎯 ') + esc(i.baslik) + '</div>'
           + '<div style="font-size:9px;color:var(--t3);margin-top:2px">' + i.status + ' · ' + (i.deadline || '—') + '</div>'
@@ -3453,7 +3453,7 @@ window._onFikirUpdate = function() {
 /** Fikirler paneli */
 window.openFikirlerPanel = function() {
   var d = typeof loadFikirler === 'function' ? loadFikirler() : [];
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var katColors = {fikir:'var(--ac)',sorun:'#DC2626',oneri:'#D97706',motivasyon:'#16A34A'};
   var katIcons = {fikir:'💡',sorun:'⚠️',oneri:'📝',motivasyon:'🌟'};
   var ex = document.getElementById('mo-fikirler'); if (ex) ex.remove();
@@ -3636,7 +3636,7 @@ window._buildTedarikciPerformans = function(from, to) {
 /** @description Tedarikçi performans raporu modalı */
 window._openTedarikciPerformans = function() {
   document.getElementById('mo-reports')?.remove();
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var ex = document.getElementById('mo-ted-perf'); if (ex) ex.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ted-perf'; mo.style.zIndex = '2200';
   mo.innerHTML = '<div class="moc" style="max-width:720px;padding:0;border-radius:14px;overflow:hidden">'
@@ -3659,7 +3659,7 @@ window._openTedarikciPerformans = function() {
 /** @description Tedarikçi performans listesini render et */
 window._renderTedPerf = function() {
   var cont = document.getElementById('ted-perf-content'); if (!cont) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var from = document.getElementById('ted-from')?.value || '';
   var to = document.getElementById('ted-to')?.value || '';
   var data = window._buildTedarikciPerformans(from, to);
@@ -3725,7 +3725,7 @@ window._printTedPerf = function() {
   var from = document.getElementById('ted-from')?.value || '';
   var to = document.getElementById('ted-to')?.value || '';
   var data = window._buildTedarikciPerformans(from, to);
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Tedarikçi Performans</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
     + '<h1>TEDARİKÇİ PERFORMANS RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL LLC' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
@@ -3851,7 +3851,7 @@ window._openMusteriAnalizi = function() {
 /** @description Müşteri analiz listesini render et */
 window._renderMustAnaliz = function() {
   var cont = document.getElementById('must-analiz-content'); if (!cont) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var from = document.getElementById('must-from')?.value || '';
   var to = document.getElementById('must-to')?.value || '';
   var data = window._buildMusteriAnalizi(from, to);
@@ -3918,7 +3918,7 @@ window._printMustAnaliz = function() {
   var from = document.getElementById('must-from')?.value || '';
   var to = document.getElementById('must-to')?.value || '';
   var data = window._buildMusteriAnalizi(from, to);
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Müşteri Analizi</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
     + '<h1>MÜŞTERİ ANALİZ RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL LLC' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
@@ -3937,7 +3937,7 @@ window._printMustAnaliz = function() {
 // ════════════════════════════════════════════════════════════════
 window._createIsTakipBelgesi = function(s) {
   if (!s) return;
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(v) { return v; };
+  var esc = window._esc;
   var users = typeof loadUsers === 'function' ? loadUsers() : [];
   var sorumlu = users.find(function(u) { return u.id === s.responsibleId; }) || users.find(function(u) { return u.id === s.createdBy; });
   var onaylayan = users.find(function(u) { return u.id === s.approvedBy; });
@@ -4356,7 +4356,7 @@ function _ufGenerateDuayKodu(tedarikci, existingCount) {
 /** @description 4 asamali urun formunu acar */
 window._openUrunInline = function(editId) {
   var ex = document.getElementById('urun-inline-form'); if (ex) { ex.remove(); return; }
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
+  var esc = window._esc;
   var u = editId ? (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(x) { return x.id === editId; }) : null;
   var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) { return !c.isDeleted && c.type === 'tedarikci'; }) : [];
   var cont = document.getElementById('urun-list'); if (!cont) return;
@@ -4749,7 +4749,7 @@ window._renderEntegrasyonlar = function() {
   h += '<span style="font-size:11px;color:' + (hasEj ? '#16A34A' : '#D97706') + ';font-weight:500">' + (hasEj ? 'Kayitli \u2713' : 'Girilmedi') + '</span>';
   h += '</div></div>';
   /* AYARLAR-BANKA-SART-001: Banka Hesapları kartı */
-  var _esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){return String(s||'').replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var _esc = window._esc;
   h += '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:12px">';
   h += '<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:12px">Banka Hesapları (IBAN)</div>';
   ['USD','EUR','GBP','TRY'].forEach(function(para){
@@ -5113,7 +5113,7 @@ window._urunPeekAc = function(id) {
   var mevcut = document.getElementById('urun-peek-panel');
   if (mevcut && mevcut.dataset.id === String(id)) { mevcut.remove(); return; }
   if (mevcut) mevcut.remove();
-  var esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : function(s) { return String(s || '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var esc = window._esc;
   var u = (typeof window.loadUrunler === 'function' ? window.loadUrunler() : []).find(function(x) { return String(x.id) === String(id); });
   if (!u) return;
   var p = document.createElement('div');
@@ -5279,7 +5279,7 @@ window.renderSatinAlmaSiparis = function() {
   if (!panel) return;
   var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
   var siparisler = liste.filter(function(t) { return !t.isDeleted && (t.durum === 'onaylandi' || t.durum === 'kabul'); });
-  var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return String(s || ''); };
+  var esc = window._esc;
   var h = '<div style="padding:16px">';
   h += '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Sipari\u015fler</div>';
   h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Onayl\u0131 al\u0131\u015f tekliflerinden olu\u015fan sipari\u015fler</div>';
