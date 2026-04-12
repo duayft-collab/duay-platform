@@ -1929,7 +1929,7 @@ window.renderSatisTeklifleri = function() {
     panel.innerHTML = '<div style="position:sticky;top:0;z-index:200;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--b)">'
       + '<div><div style="font-size:15px;font-weight:700;color:var(--t)">Satış Teklifleri</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri teklifleri</div></div>'
-      + '<div style="display:flex;gap:6px"><button onclick="window._exportSatisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button onclick="window._openSatisRapor?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📊 Rapor</button><button onclick="window._saV2TeklifOlustur?.(null)" style="padding:7px 16px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button></div>'
+      + '<div style="display:flex;gap:6px"><button onclick="window._exportSatisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button><button onclick="window._exportSatisTeklifXlsm?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">XLSM</button><button onclick="window._openSatisRapor?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">📊 Rapor</button><button onclick="window._saV2TeklifOlustur?.(null)" style="padding:7px 16px;border:none;border-radius:7px;background:#0F6E56;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Satış Teklifi</button></div>'
       + '</div>'
       + '<div id="satis-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:0.5px solid var(--b)"></div>'
       + (typeof window._renderOzluSozBanner === 'function' ? window._renderOzluSozBanner('satis-teklifleri') : '')
@@ -2013,8 +2013,18 @@ window.renderSatisTeklifleri = function() {
     var _rowMarj = _stMarjPct(t);
     var _rowMarjStr = _rowMarj === null ? '—' : '%' + _rowMarj.toFixed(1);
     var _rowMarjColor = _rowMarj === null ? 'var(--t3)' : (_rowMarj >= 25 ? '#16A34A' : _rowMarj >= 10 ? '#D97706' : '#DC2626');
+    // SATIS-UX-003: createdAt formatı tarih+saat (toLocaleString)
+    var _createdStr = t.createdAt ? new Date(t.createdAt).toLocaleString('tr-TR', {dateStyle:'short', timeStyle:'short'}) : '—';
+    // SATIS-UX-003: Ürün listesi özeti (ilk 5 satır)
+    var _urunOzet = (t.urunler || []).slice(0, 5).map(function(u) {
+      var _uad = esc(u.urunAdi || u.duayKodu || '—');
+      var _miktar = parseFloat(u.miktar) || 0;
+      var _sf = parseFloat(u.satisFiyat || u.satisF) || 0;
+      var _toplam = _miktar * _sf;
+      return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:0.5px dotted var(--b)"><span style="color:var(--t)">' + _uad + '</span><span style="color:var(--t3);font-family:monospace">' + _miktar.toLocaleString('tr-TR') + ' × ' + _sf.toLocaleString('tr-TR') + ' = <span style="color:var(--t);font-weight:600">' + _toplam.toLocaleString('tr-TR',{minimumFractionDigits:2}) + '</span></span></div>';
+    }).join('') + ((t.urunler || []).length > 5 ? '<div style="font-size:10px;color:var(--t3);padding:3px 0">… ve ' + ((t.urunler || []).length - 5) + ' ürün daha</div>' : '');
     return '<div style="border-bottom:0.5px solid var(--b);border-left:' + _leftBorder + ';transition:background .1s">'
-      + '<div onclick="event.stopPropagation();window._stPeekAc?.(\'' + t.id + '\')" style="display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      + '<div onclick="event.stopPropagation();window._stToggleExpand?.(\'' + t.id + '\')" style="display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       // Sol: Müşteri adı büyük + teklif no/ürün sayısı küçük
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + '</div>'
@@ -2032,12 +2042,16 @@ window.renderSatisTeklifleri = function() {
       // İki buton: PDF + ···
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
       + '<button onclick="event.stopPropagation();window._printSatisTeklif?.(\'' + t.id + '\')" style="font-size:9px;padding:5px 14px;border-radius:5px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>'
-      + '<button onclick="event.stopPropagation();window._stToggleMenu?.(\'' + t.id + '\')" title="Daha fazla işlem" style="font-size:14px;padding:2px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);line-height:1">···</button>'
+      + '<button onclick="event.stopPropagation();window._stToggleExpand?.(\'' + t.id + '\')" title="Detayı aç/kapa" style="font-size:14px;padding:2px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);line-height:1">···</button>'
       + '</div>'
       + '</div>'
-      // İnline mini menü (varsayılan kapalı, _stToggleMenu ile flex/none)
-      + '<div id="st-menu-' + t.id + '" style="display:none;padding:8px 16px 12px 16px;background:var(--s2);border-top:0.5px solid var(--b);flex-wrap:wrap;gap:6px">'
+      // SATIS-UX-003: İnline expand div (createdAt+saat, ürün özeti, menü butonları). Toggle ile aç/kapa.
+      + '<div id="st-expand-' + t.id + '" style="display:none;padding:12px 16px 14px 16px;background:var(--s2);border-top:0.5px solid var(--b)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:10px;color:var(--t3)"><span>📅 Oluşturulma: <b style="color:var(--t2);font-family:monospace">' + esc(_createdStr) + '</b>' + (t.createdBy ? ' · <span style="color:var(--t3)">' + esc(t.createdBy) + '</span>' : '') + '</span><span>' + (t.urunler || []).length + ' ürün toplam</span></div>'
+      + (_urunOzet ? '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:6px;padding:8px 10px;margin-bottom:10px">' + _urunOzet + '</div>' : '')
+      + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
       + '<button onclick="event.stopPropagation();window._stPeekAc?.(\'' + t.id + '\')" style="' + pillS + '">Detay</button>'
+      + '<button onclick="event.stopPropagation();window._stKarAnaliz?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#0F6E56;color:#0F6E56">📊 Kar Analizi</button>'
       + '<button onclick="event.stopPropagation();window._stPIGuncelle?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#185FA5;color:#185FA5">PI ↻</button>'
       + '<button onclick="event.stopPropagation();window._saV2TeklifDuzenle?.(\'' + t.id + '\')" style="' + pillS + '">Düzenle</button>'
       + '<button onclick="event.stopPropagation();window._saV2DurumDegistir?.(\'' + t.id + '\')" style="' + pillS + '">Durum</button>'
@@ -2048,22 +2062,26 @@ window.renderSatisTeklifleri = function() {
       + '<button onclick="event.stopPropagation();window._saV2TeklifKopya?.(\'' + t.id + '\')" style="' + pillS + '">Kopyala</button>'
       + '<button onclick="event.stopPropagation();window._saV2TeklifSil?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#A32D2D;color:#A32D2D">Sil</button>'
       + '</div>'
+      + '</div>'
       + '</div>';
   }).join('');
 };
 
 /**
- * SATIS-LISTE-UX-002: Satır altında inline mini menü toggle.
- * Her menü açıldığında diğer açık menüler kapatılır.
+ * SATIS-UX-003: Satır altında inline expand panel toggle.
+ * createdAt+saat, ürün özeti ve menü butonlarını gösterir.
+ * Her expand açıldığında diğer açık expand'lar kapatılır.
  * @param {string|number} id Teklif id
  */
-window._stToggleMenu = function(id) {
-  var hedef = document.getElementById('st-menu-' + id);
-  document.querySelectorAll('[id^="st-menu-"]').forEach(function(m) {
+window._stToggleExpand = function(id) {
+  var hedef = document.getElementById('st-expand-' + id);
+  document.querySelectorAll('[id^="st-expand-"]').forEach(function(m) {
     if (m !== hedef) m.style.display = 'none';
   });
-  if (hedef) hedef.style.display = (hedef.style.display === 'flex') ? 'none' : 'flex';
+  if (hedef) hedef.style.display = (hedef.style.display === 'block') ? 'none' : 'block';
 };
+// SATIS-UX-003: Backward compat alias — eski kod _stToggleMenu çağırıyorsa expand'a yönlendir
+window._stToggleMenu = window._stToggleExpand;
 
 /* ── SATIS-LISTE-001: Düzenle / Durum Değiştir / PDF helper'ları ─── */
 window._saV2TeklifDuzenle = function(id) {
@@ -2704,6 +2722,25 @@ window._exportSatisTeklifXlsx = function() {
   window.toast?.('Excel indirildi ✓','ok');
 };
 
+/**
+ * SATIS-UX-003: XLSM (macro-enabled Excel) export — XLSX ile aynı veri,
+ * sadece dosya uzantısı .xlsm. Excel macro destekli template'ler için.
+ */
+window._exportSatisTeklifXlsm = function() {
+  if (typeof XLSX==='undefined'){window.toast?.('XLSX yüklenmedi','err');return;}
+  var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
+  var rows=[['Teklif No','Müşteri','Ürün Sayısı','Genel Toplam','Döviz','Tahmini Kâr','Durum','Tarih','Geçerlilik','Teslimat']];
+  d.forEach(function(t){rows.push([t.teklifNo||t.teklifId||'',t.musteri||t.musteriAd||'',(t.urunler||[]).length,parseFloat(t.genelToplam||t.toplamSatis||t.toplam)||0,t.paraBirimi||'USD',t.tahminKar||0,t.durum||'taslak',t.ts?.slice(0,10)||(t.createdAt||'').slice(0,10),t.gecerlilikTarihi||t.validUntil||'',t.teslimSekli||'FOB']);});
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Satış Teklifleri');
+  try {
+    XLSX.writeFile(wb,'satis-teklifleri-'+new Date().toISOString().slice(0,10)+'.xlsm', {bookType:'xlsm'});
+  } catch(e) {
+    // Fallback: bookType xlsm desteklemiyorsa xlsx'e düş ama uzantıyı xlsm tut
+    XLSX.writeFile(wb,'satis-teklifleri-'+new Date().toISOString().slice(0,10)+'.xlsm');
+  }
+  window.toast?.('XLSM indirildi ✓','ok');
+};
+
 /** Satış raporu */
 window._openSatisRapor = function() {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
@@ -2808,9 +2845,9 @@ window._printSatisTeklif = function(id) {
   mo.innerHTML = '<div class="moc" style="max-width:320px;padding:20px;border-radius:14px;text-align:center">'
     + '<div style="font-size:14px;font-weight:700;margin-bottom:12px">PDF Format Seçin</div>'
     + '<div style="display:flex;gap:8px;justify-content:center">'
-    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifA?.('+id+')" style="padding:12px 20px;border:1px solid #1a365d;border-radius:8px;background:#1a365d;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">A<div style="font-size:9px;font-weight:400;margin-top:2px">Klasik</div></button>'
-    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifB?.('+id+')" style="padding:12px 20px;border:1px solid #6366F1;border-radius:8px;background:#6366F1;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">B<div style="font-size:9px;font-weight:400;margin-top:2px">Modern</div></button>'
-    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifC?.('+id+')" style="padding:12px 20px;border:1px solid #059669;border-radius:8px;background:#059669;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">C<div style="font-size:9px;font-weight:400;margin-top:2px">Detaylı</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifA?.('+parseInt(id)+')" style="padding:12px 20px;border:1px solid #1a365d;border-radius:8px;background:#1a365d;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">A<div style="font-size:9px;font-weight:400;margin-top:2px">Klasik</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifB?.('+parseInt(id)+')" style="padding:12px 20px;border:1px solid #6366F1;border-radius:8px;background:#6366F1;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">B<div style="font-size:9px;font-weight:400;margin-top:2px">Modern</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifC?.('+parseInt(id)+')" style="padding:12px 20px;border:1px solid #059669;border-radius:8px;background:#059669;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">C<div style="font-size:9px;font-weight:400;margin-top:2px">Detaylı</div></button>'
     + '</div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
