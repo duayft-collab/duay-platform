@@ -1477,7 +1477,7 @@ function addToTrash(item, moduleName, collection) {
 // BÖLÜM 16 — RUTİN ÖDEMELER
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadOdm() { var d = _read(KEYS.odemeler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
+/** @returns {Array<Object>} */ function loadOdm() { var d = _read(KEYS.odemeler); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(-1000);} _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
@@ -1496,7 +1496,7 @@ function loadTahsilat() {
       }
     } catch(e) {}
   }
-  return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; });
+  return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }));
 }
 /** @param {Array<Object>} d */
 function storeTahsilat(d) {
@@ -1504,7 +1504,7 @@ function storeTahsilat(d) {
   var _fp_tahsilat = _fsPath('tahsilat');
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
-/** @returns {Array<Object>} */ function loadSatinalma() { const d = _read(KEYS.satinalma); return Array.isArray(d) ? d : []; }
+/** @returns {Array<Object>} */ function loadSatinalma() { const d = _read(KEYS.satinalma); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr); }
 /** @param {Array<Object>} d */ function storeSatinalma(d) { _write(KEYS.satinalma, d);
   var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
 }
