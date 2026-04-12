@@ -186,8 +186,8 @@ function _renderCrmKanban(fl,cont){
       card.style.cssText='background:var(--sf);border:1px solid var(--b);border-radius:var(--rs);padding:10px;margin-bottom:8px;cursor:pointer';
       card.addEventListener('click',()=>openCrmModal(c.id));
       card.innerHTML=`
-        <div style="font-size:12px;font-weight:500">${c.name}</div>
-        <div style="font-size:10px;color:var(--t2);margin-top:2px">${c.contact||''}</div>
+        <div style="font-size:12px;font-weight:500">${window._esc(c.name)}</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:2px">${window._esc(c.contact||'')}</div>
         <div style="font-size:11px;color:var(--ac);margin-top:4px;font-weight:600">${(c.value||0).toLocaleString('tr-TR')} ₺</div>
         ${_isAdminCLegacy()?`<div style="display:flex;gap:4px;margin-top:8px">
           ${s!=='lead'?`<button onclick="event.stopPropagation();setCrmStatus(${c.id},'${colPrev[s]}')" style="flex:1;padding:3px;background:var(--s2);border:1px solid var(--b);border-radius:4px;font-size:9px;cursor:pointer;color:var(--t2)">◀ Geri</button>`:''}
@@ -230,14 +230,14 @@ function _renderCrmList(fl,users,cont){
     tr.innerHTML=`
       <td style="width:30px;text-align:center">${window.isAdmin?.() ? '<input type="checkbox" class="crm-bulk-chk" data-id="' + c.id + '" onclick="event.stopPropagation();_crmBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)">' : ''}</td>
       <td>
-        <div style="font-weight:500;font-size:13px">${c.name}</div>
-        <div style="font-size:10px;color:var(--t2)">${c.phone||c.email||''}</div>
+        <div style="font-weight:500;font-size:13px">${window._esc(c.name)}</div>
+        <div style="font-size:10px;color:var(--t2)">${window._esc(c.phone||c.email||'')}</div>
       </td>
-      <td style="font-size:13px">${c.contact||'—'}</td>
+      <td style="font-size:13px">${window._esc(c.contact||'—')}</td>
       <td style="font-size:12px;color:var(--t2)">${c.city||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--ac)">${(c.value||0).toLocaleString('tr-TR')} ₺</td>
       <td><span class="badge ${st2.c}">${st2.l}</span></td>
-      <td style="font-size:11px;color:var(--t2)">${u.name}</td>
+      <td style="font-size:11px;color:var(--t2)">${window._esc(u.name)}</td>
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btns" onclick="openCrmModal(${c.id})">✏️</button>
@@ -249,7 +249,7 @@ function _renderCrmList(fl,users,cont){
     var peekTr=document.createElement('tr');
     peekTr.id='peek-crm-'+c.id;
     peekTr.style.display='none';
-    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();window._crmSatisTeklif?.('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #0F6E56;background:#E8F5F0;color:#0F6E56;cursor:pointer;font-family:inherit">Satış Teklifi</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
+    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+window._esc(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+window._esc(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+window._esc(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();window._crmSatisTeklif?.('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #0F6E56;background:#E8F5F0;color:#0F6E56;cursor:pointer;font-family:inherit">Satış Teklifi</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
     tbody.appendChild(peekTr);
   });
   table.appendChild(tbody);
@@ -400,17 +400,17 @@ function renderNumune(){
     tr.innerHTML=`
       <td>
         <div style="display:flex;align-items:center;gap:8px">
-          ${n.img?`<img src="${n.img.data}" style="width:32px;height:32px;object-fit:cover;border-radius:4px" title="${n.img.name}">`
+          ${n.img?`<img src="${n.img.data}" style="width:32px;height:32px;object-fit:cover;border-radius:4px" title="${window._esc(n.img.name)}">`
                  :`<div style="width:32px;height:32px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px">🧪</div>`}
           <div>
-            <div style="font-weight:500;font-size:13px">${n.name}</div>
-            <div style="font-size:10px;color:var(--t2)">${n.note||''}</div>
+            <div style="font-weight:500;font-size:13px">${window._esc(n.name)}</div>
+            <div style="font-size:10px;color:var(--t2)">${window._esc(n.note||'')}</div>
           </div>
         </div>
       </td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${n.code||'—'}</td>
       <td style="font-size:13px;font-weight:500">${n.qty}</td>
-      <td style="font-size:12px">${u.name}</td>
+      <td style="font-size:12px">${window._esc(u.name)}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--t2)">${n.date}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:${late?'var(--rd)':'var(--t2)'}">${n.iadeDate||'—'}${late?' ⚠':''}</td>
       <td>${n.returned?'<span class="badge bg">✅ İade Edildi</span>':n.dir==='giris'?'<span class="badge bb">📥 Stokta</span>':'<span class="badge ba">📤 Dışarıda</span>'}</td>
