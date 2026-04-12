@@ -1325,6 +1325,7 @@ window.renderAlisTeklifleri = function() {
       + '<input class="fi" id="alis-search" placeholder="Ara..." style="width:120px;font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:7px" oninput="window._renderAlisContent?.()">'
       + '<select class="fi" id="alis-sort" style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:7px" onchange="window._renderAlisContent?.()"><option value="">Sırala</option><option value="tarih">Tarih</option><option value="tutar">Tutar</option><option value="tedarikci">Tedarikçi</option></select>'
       + '<button onclick="window._alisKarsilastir?.()" id="alis-karsilastir-btn" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit" disabled>Karşılaştır</button>'
+      + '<button onclick="window._alisBulkSatisEkle?.()" id="alis-bulk-satis-btn" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t3);font-size:11px;cursor:pointer;font-family:inherit" disabled>+ Satış Teklifine Ekle</button>'
       + '<button onclick="window._exportAlisTeklifXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Excel</button>'
       + '<button onclick="window._openAlisModal?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Alış Teklifi</button>'
       + '</div></div>'
@@ -1387,7 +1388,7 @@ window._renderAlisListe = function(cont, d, esc, today) {
       // FIX 7.9: Süresi dolmuş kırmızı sol border
       var borderLeft = expired ? 'border-left:3px solid #DC2626;' : yaklasan ? 'border-left:3px solid #F59E0B;' : '';
       return '<div style="display:grid;grid-template-columns:24px 90px 130px 140px 60px 80px 50px 90px 80px 70px 120px;gap:0;padding:0;border-bottom:0.5px solid var(--b);min-width:950px;align-items:center;transition:background .1s;'+borderLeft+'" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
-        + '<div style="padding:4px 6px"><input type="checkbox" class="alis-compare-cb" value="' + t.id + '" onchange="window._alisCompareCheck?.()" style="cursor:pointer"></div>'
+        + '<div style="padding:4px 6px" onclick="event.stopPropagation()"><input type="checkbox" class="alis-row-cb" value="' + t.id + '" onclick="event.stopPropagation()" onchange="event.stopPropagation();window._alisCompareCheck?.()" style="cursor:pointer"></div>'
         + '<div style="padding:6px 8px;font-size:11px;font-weight:600;color:var(--t);font-family:monospace">' + esc(t.teklifNo||'') + '</div>'
         + '<div style="padding:6px 8px;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.tedarikci||'') + '</div>'
         + '<div style="padding:6px 8px;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.urunAdi||'') + '</div>'
@@ -1424,19 +1425,28 @@ window._copyAlisTeklif = function(id) {
 
 /** FIX 4: Karşılaştırma — checkbox kontrol */
 window._alisCompareCheck = function() {
-  var checked = document.querySelectorAll('.alis-compare-cb:checked');
+  var checked = document.querySelectorAll('.alis-row-cb:checked');
+  var n = checked.length;
+  // Karşılaştır butonu — 2-4 arası seçim ile aktif
   var btn = document.getElementById('alis-karsilastir-btn');
   if (btn) {
-    var n = checked.length;
     btn.disabled = n < 2 || n > 4;
     btn.style.color = (n >= 2 && n <= 4) ? 'var(--ac)' : 'var(--t3)';
     btn.textContent = n > 0 ? 'Karşılaştır (' + n + ')' : 'Karşılaştır';
+  }
+  // Satış Teklifine Ekle butonu — ≥1 seçim ile aktif (ALIS-SATIS-TOPLU-001)
+  var bulkBtn = document.getElementById('alis-bulk-satis-btn');
+  if (bulkBtn) {
+    bulkBtn.disabled = n < 1;
+    bulkBtn.style.color = n >= 1 ? '#0F6E56' : 'var(--t3)';
+    bulkBtn.style.borderColor = n >= 1 ? '#0F6E56' : 'var(--b)';
+    bulkBtn.textContent = n > 0 ? '+ Satış Teklifine Ekle (' + n + ')' : '+ Satış Teklifine Ekle';
   }
 };
 
 /** FIX 4: Karşılaştırma modal */
 window._alisKarsilastir = function() {
-  var checked = document.querySelectorAll('.alis-compare-cb:checked');
+  var checked = document.querySelectorAll('.alis-row-cb:checked');
   if (checked.length < 2 || checked.length > 4) { window.toast?.('2-4 teklif seçin', 'warn'); return; }
   var ids = Array.from(checked).map(function(cb) { return parseInt(cb.value); });
   var all = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
@@ -1497,10 +1507,13 @@ window._renderAlisKart = function(cont, d, esc, today) {
       var imoVar = (t.satirlar||[]).some(function(s){return s.imoMu;});
       return '<div style="border:0.5px solid var(--b);border-radius:10px;background:var(--sf);overflow:hidden;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'\'">'
         // Kart başlık
-        + '<div style="padding:12px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-        + '<div><div style="font-size:12px;font-weight:700;color:var(--t);font-family:monospace">' + esc(t.teklifNo||'') + '</div>'
-        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + esc(t.tedarikci||'') + '</div></div>'
-        + '<span style="font-size:8px;padding:2px 6px;border-radius:4px;background:'+badgeBg+';color:'+badgeColor+';font-weight:600">' + badgeText + '</span></div>'
+        + '<div style="padding:12px 14px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between;gap:8px">'
+        + '<div style="display:flex;align-items:center;gap:8px;min-width:0">'
+        + '<input type="checkbox" class="alis-row-cb" value="' + t.id + '" onclick="event.stopPropagation()" onchange="event.stopPropagation();window._alisCompareCheck?.()" style="cursor:pointer;flex-shrink:0">'
+        + '<div style="min-width:0"><div style="font-size:12px;font-weight:700;color:var(--t);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.teklifNo||'') + '</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.tedarikci||'') + '</div></div>'
+        + '</div>'
+        + '<span style="font-size:8px;padding:2px 6px;border-radius:4px;background:'+badgeBg+';color:'+badgeColor+';font-weight:600;flex-shrink:0">' + badgeText + '</span></div>'
         // Kart içerik
         + '<div style="padding:12px 14px">'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">'
@@ -1538,6 +1551,7 @@ window._renderAlisDetay = function(cont, d, esc, today) {
     html += '<div style="border-bottom:1.5px solid var(--b)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--s2)">'
       + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<input type="checkbox" class="alis-row-cb" value="' + t.id + '" onclick="event.stopPropagation()" onchange="event.stopPropagation();window._alisCompareCheck?.()" style="cursor:pointer">'
       + '<span style="font-size:12px;font-weight:700;font-family:monospace;color:var(--t)">' + esc(t.teklifNo||'') + '</span>'
       + '<span style="font-size:10px;color:var(--t2)">' + esc(t.tedarikci||'') + '</span>'
       + badge
@@ -2154,6 +2168,79 @@ window._stDuzenle = function(id) {
 
 window._convertToSatisTeklif = function(alisId) {
   window._saV2TeklifOlustur?.(alisId);
+};
+
+/**
+ * ALIS-SATIS-TOPLU-001: Seçili alış tekliflerini toplu olarak satış teklifine ekle.
+ * Modal açmaz — her seçili alış için yeni bir satış teklifi entry'si yaratıp
+ * storeSatisTeklifleri ile DB'ye yazar. Müşteri "— BELİRTİLECEK —" placeholder
+ * olarak işaretlenir, kullanıcı sonradan satış teklifleri panelinden düzenler.
+ * confirmModal ile tek onay alır, tek bulk yazma yapar.
+ */
+window._alisBulkSatisEkle = function() {
+  var checked = document.querySelectorAll('.alis-row-cb:checked');
+  var n = checked.length;
+  if (!n) { window.toast?.('Önce teklif seçin', 'warn'); return; }
+  var ids = Array.from(checked).map(function(cb) { return parseInt(cb.value); });
+  var alisListe = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var secili = ids.map(function(id) { return alisListe.find(function(t) { return t.id === id; }); }).filter(Boolean);
+  if (!secili.length) { window.toast?.('Seçili teklif bulunamadı', 'err'); return; }
+  window.confirmModal?.('Seçili ' + secili.length + ' teklifi satış teklifine eklemek istiyor musunuz?', {
+    title: 'Satış Teklifine Ekle',
+    confirmText: 'Evet, Ekle',
+    onConfirm: function() {
+      var satisListe = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+      var year = new Date().getFullYear();
+      var sayac = satisListe.length;
+      var nowIso = new Date().toISOString();
+      var creator = window.Auth?.getCU?.() || {};
+      secili.forEach(function(alis) {
+        sayac++;
+        var newEntry = {
+          id: typeof generateNumericId === 'function' ? generateNumericId() : (Date.now() + sayac),
+          teklifNo: 'STK-' + year + '-' + String(sayac).padStart(6, '0'),
+          musteri: '— BELİRTİLECEK —',
+          jobId: alis.jobId || '',
+          urunler: (alis.satirlar && alis.satirlar.length ? alis.satirlar : [{ urunKodu: '', standartAdi: alis.urunAdi || '', miktar: alis.miktar || 0, birim: 'Adet', birimFiyat: alis.birimFiyat || 0, toplamFiyat: alis.toplamTutar || 0 }]).map(function(s) {
+            return {
+              urunAdi: s.standartAdi || alis.urunAdi || '',
+              duayKodu: s.urunKodu || '',
+              miktar: parseFloat(s.miktar) || 0,
+              birim: s.birim || 'Adet',
+              alisF: parseFloat(s.birimFiyat) || 0,
+              satisFiyat: parseFloat(s.birimFiyat) || 0,
+              toplam: parseFloat(s.toplamFiyat) || 0,
+              para: alis.paraBirimi || 'USD'
+            };
+          }),
+          paraBirimi: alis.paraBirimi || 'USD',
+          toplamPara: alis.paraBirimi || 'USD',
+          genelToplam: parseFloat(alis.toplamTutar) || 0,
+          durum: 'taslak',
+          createdAt: nowIso,
+          createdBy: creator.name || '',
+          createdById: creator.id,
+          // Audit trail — alış kaynağı
+          kaynakAlisId: alis.id,
+          kaynakAlisTeklifNo: alis.teklifNo || '',
+          kaynakAlisTedarikci: alis.tedarikci || '',
+          notlar: 'Alış teklifi #' + (alis.teklifNo || '?') + ' (tedarikçi: ' + (alis.tedarikci || '?') + ') üzerinden ALIS-SATIS-TOPLU-001 ile otomatik oluşturuldu'
+        };
+        satisListe.unshift(newEntry);
+      });
+      if (typeof storeSatisTeklifleri === 'function') {
+        try { storeSatisTeklifleri(satisListe); } catch (e) { console.warn('[alis-bulk] storeSatisTeklifleri hata:', e); }
+      }
+      window.toast?.(secili.length + ' satış teklifi oluşturuldu — müşteri ataması bekleniyor', 'ok');
+      // Tüm checkbox'ları temizle ve butonları güncelle
+      document.querySelectorAll('.alis-row-cb:checked').forEach(function(cb) { cb.checked = false; });
+      window._alisCompareCheck?.();
+      // Aktif panel satış teklifleri ise yenile
+      if (typeof window.renderSatisTeklifleri === 'function') {
+        try { window.renderSatisTeklifleri(); } catch (e) {}
+      }
+    }
+  });
 };
 
 /** @deprecated SATIS-FORM-BIRLESTIR-001 — _saV2TeklifOlustur kullanın */
