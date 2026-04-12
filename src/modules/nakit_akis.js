@@ -11,7 +11,7 @@
  * Veri kaynakları:
  *   • window.loadOdm()       — ödemeler
  *   • window.loadTahsilat()  — tahsilatlar
- *   • window._odmGetRates()  — kur tablosu (varsa, yoksa fallback sabit)
+ *   • window._saKur          — kur tablosu (satin_alma_v2.js, API'den taze)
  *
  * Routing: App.nav('nakit-akis') → app_patch.js _newPanels['nakit-akis']
  * Panel id: panel-nakit-akis
@@ -21,8 +21,8 @@
   'use strict';
 
   // ── Sabitler ─────────────────────────────────────────────────────
-  /** Fallback kur tablosu (window._odmGetRates yoksa kullanılır). */
-  var NA_FALLBACK_RATES = { TRY: 1, USD: 34, EUR: 36, GBP: 42, JPY: 0.22, CNY: 4.7, AED: 9.2, XAU: 2400, BTC: 2200000 };
+  /** Fallback kur tablosu (window._saKur yoksa kullanılır — satin_alma_v2.js L82 ile uyumlu). */
+  var NA_FALLBACK_RATES = { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30, JPY: 0.30, CNY: 6.20, AED: 12.10, XAU: 3500, BTC: 2900000 };
 
   /** Projeksiyon bucket'ları — başlangıç ve bitiş gün sayıları. */
   var NA_BUCKETS = [
@@ -62,8 +62,8 @@
   // ── Yardımcı fonksiyonlar ────────────────────────────────────────
 
   /**
-   * Tutarı TRY'ye çevirir. Önce window._odmGetRates() denenir,
-   * yoksa NA_FALLBACK_RATES kullanılır.
+   * Tutarı TRY'ye çevirir. Önce window._saKur (satin_alma_v2.js global,
+   * API'den taze çekilir) denenir, yoksa NA_FALLBACK_RATES kullanılır.
    * @param {number} amount Tutar
    * @param {string} currency Para birimi kodu (TRY, USD, EUR vb.)
    * @returns {number} TRY karşılığı
@@ -71,7 +71,8 @@
   function _naToTRY(amount, currency) {
     var amt = parseFloat(amount) || 0;
     var cur = currency || 'TRY';
-    var rates = (typeof window._odmGetRates === 'function') ? window._odmGetRates() : null;
+    if (cur === 'TRY') return amt;
+    var rates = (typeof window._saKur === 'object' && window._saKur) ? window._saKur : null;
     var rate = (rates && rates[cur]) || NA_FALLBACK_RATES[cur] || 1;
     return amt * rate;
   }
