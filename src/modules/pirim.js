@@ -1931,7 +1931,7 @@ function printPirimSlip(id) {
   const win = window.open('', '_blank', 'width=580,height=750');
   if (!win) { window.toast?.('Popup engellenmiş — tarayıcı izni verin', 'err'); return; }
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
-  <title>Prim Fişi — ${u.name}</title>
+  <title>Prim Fişi — ${window._esc(u.name||'')}</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; padding: 32px; max-width: 500px; margin: 0 auto; color: #1a1a1a; }
@@ -1953,21 +1953,21 @@ function printPirimSlip(id) {
   <h2>Prim & Teşvik Yönetim Sistemi</h2>
   <hr class="divider">
   <table>
-    <tr><td class="lbl">Personel</td><td class="val">${u.name}</td></tr>
+    <tr><td class="lbl">Personel</td><td class="val">${window._esc(u.name||'')}</td></tr>
     <tr><td class="lbl">İşlem Türü</td><td class="val">${td?.emoji||''} ${td?.label||p.type}</td></tr>
-    <tr><td class="lbl">Açıklama</td><td class="val">${p.title||'—'}</td></tr>
-    ${p.code ? `<tr><td class="lbl">İşlem Kodu</td><td class="val">${p.code}</td></tr>` : ''}
+    <tr><td class="lbl">Açıklama</td><td class="val">${window._esc(p.title||'—')}</td></tr>
+    ${p.code ? `<tr><td class="lbl">İşlem Kodu</td><td class="val">${window._esc(p.code)}</td></tr>` : ''}
     <tr><td class="lbl">Baz Tutar</td><td class="val">${_fmt(p.baseAmount)}</td></tr>
     <tr><td class="lbl">Prim Oranı</td><td class="val">%${((p.rate||0)*100).toFixed(0)}</td></tr>
     <tr><td class="lbl" style="font-weight:bold">NET PRİM</td><td class="amount">${_fmt(p.amount)}</td></tr>
     <tr><td class="lbl">İşlem Tarihi</td><td class="val">${p.date||'—'}</td></tr>
     <tr><td class="lbl">Ödeme Tarihi</td><td class="val">${p.payDate||_calcExpiry(p.date)}</td></tr>
     <tr><td class="lbl">Durum</td><td><span class="badge">${st2.emoji} ${st2.l}</span></td></tr>
-    ${p.note ? `<tr><td class="lbl">Not</td><td>${p.note}</td></tr>` : ''}
+    ${p.note ? `<tr><td class="lbl">Not</td><td>${window._esc(p.note)}</td></tr>` : ''}
     ${p.approvedAt ? `<tr><td class="lbl">Onaylanma</td><td class="val">${p.approvedAt}</td></tr>` : ''}
   </table>
   <div class="sign">
-    <div>Hazırlayan<br><br>${u.name}</div>
+    <div>Hazırlayan<br><br>${window._esc(u.name||'')}</div>
     <div>Onaylayan<br><br>${p.approvedAt ? 'Onaylandı ✓' : '……………………'}</div>
   </div>
   <p class="footer">Operasyon Platformu · ${_now()} · Gizli ve Şirkete Özel</p>
@@ -2217,21 +2217,21 @@ function printPirimSlip(userId) {
   const streak = calcPirimStreak(cu);
 
   const win = window.open('','_blank');
-  win.document.write(`<html><head><title>Prim Özet — ${u.name||'?'}</title>
+  win.document.write(`<html><head><title>Prim Özet — ${window._esc(u.name||'?')}</title>
   <style>body{font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto}
   h2{color:#1e1b4b}table{width:100%;border-collapse:collapse}td,th{padding:8px;border:1px solid #eee;font-size:13px}
   th{background:#f5f5ff;font-weight:600}.green{color:#10B981}.ac{color:#6366F1}</style></head><body>
   <h2>⭐ Prim Özet Raporu</h2>
   <p style="color:#6b7280">Duay Global LLC · ${new Date().toLocaleDateString('tr-TR')}</p>
   <table style="margin-bottom:20px">
-    <tr><td><b>Personel</b></td><td>${u.name||'—'}</td></tr>
+    <tr><td><b>Personel</b></td><td>${window._esc(u.name||'—')}</td></tr>
     <tr><td><b>Bu Ay</b></td><td class="ac">${monthAmt.toLocaleString('tr-TR')} ₺</td></tr>
     <tr><td><b>Toplam</b></td><td class="ac">${total.toLocaleString('tr-TR')} ₺</td></tr>
     <tr><td><b>Seri</b></td><td>${streak} ay 🔥</td></tr>
     <tr><td><b>Rozetler</b></td><td>${badges||'—'}</td></tr>
   </table>
   <table><thead><tr><th>Tür</th><th>Açıklama</th><th>Tutar</th><th>Tarih</th></tr></thead><tbody>
-  ${all.slice(0,20).map(p=>`<tr><td>${PIRIM_TYPES[p.type]?.emoji||''} ${PIRIM_TYPES[p.type]?.label||p.type}</td><td>${p.title||'—'}</td><td class="ac">${(p.amount||0).toLocaleString('tr-TR')} ₺</td><td>${p.date||'—'}</td></tr>`).join('')}
+  ${all.slice(0,20).map(p=>`<tr><td>${PIRIM_TYPES[p.type]?.emoji||''} ${PIRIM_TYPES[p.type]?.label||p.type}</td><td>${window._esc(p.title||'—')}</td><td class="ac">${(p.amount||0).toLocaleString('tr-TR')} ₺</td><td>${p.date||'—'}</td></tr>`).join('')}
   </tbody></table>
   <button onclick="window.print()" style="margin-top:20px;background:#6366F1;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer">Yazdır / PDF</button>
   </body></html>`);
