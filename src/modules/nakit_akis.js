@@ -37,6 +37,7 @@
       title: 'Nakit Akışı', subtitle: 'Özet, vade ve projeksiyon',
       refresh: 'Yenile',
       net_position: 'NET POZİSYON', month_in: 'BU AY GİREN', month_out: 'BU AY ÇIKAN', overdue: 'GECİKMİŞ TAHSİLAT',
+      net_sub: 'Toplam giren − çıkan', month_in_sub: 'işlem', month_out_sub: 'işlem', overdue_sub: 'kayıt',
       today_due: 'BUGÜN VADESİ GELENLER', payments: 'Ödemeler', collections: 'Tahsilatlar',
       no_today_payments: 'Bugün ödenecek bir şey yok', no_today_collections: 'Bugün tahsil edilecek bir şey yok',
       projection: '30-60-90 GÜN PROJEKSİYON', records: 'kayıt', no_data: 'Veri yok'
@@ -45,6 +46,7 @@
       title: 'Cash Flow', subtitle: 'Summary, due and projection',
       refresh: 'Refresh',
       net_position: 'NET POSITION', month_in: 'MONTH INCOMING', month_out: 'MONTH OUTGOING', overdue: 'OVERDUE',
+      net_sub: 'Total in − out', month_in_sub: 'transactions', month_out_sub: 'transactions', overdue_sub: 'records',
       today_due: 'DUE TODAY', payments: 'Payments', collections: 'Collections',
       no_today_payments: 'Nothing to pay today', no_today_collections: 'Nothing to collect today',
       projection: '30-60-90 DAY PROJECTION', records: 'records', no_data: 'No data'
@@ -88,11 +90,17 @@
     return sign + '₺' + abs.toLocaleString('tr-TR');
   }
 
-  /** @returns {string} Bugünün YYYY-MM-DD formatı. */
-  function _naToday() { return new Date().toISOString().slice(0, 10); }
+  /** @returns {string} Bugünün YYYY-MM-DD formatı (LOCAL timezone — toISOString UTC olduğu için kullanılmaz). */
+  function _naToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
 
-  /** @returns {string} Bu ayın YYYY-MM prefix'i. */
-  function _naThisMonth() { return new Date().toISOString().slice(0, 7); }
+  /** @returns {string} Bu ayın YYYY-MM prefix'i (LOCAL timezone). */
+  function _naThisMonth() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
 
   /**
    * Bir kaydın "ne zaman gerçekleşti" tarihini döner. paidAt/collectedAt
@@ -126,6 +134,8 @@
   function _naCompute() {
     var odm = (typeof window.loadOdm === 'function') ? window.loadOdm() : [];
     var tah = (typeof window.loadTahsilat === 'function') ? window.loadTahsilat() : [];
+    if (!Array.isArray(odm)) odm = [];
+    if (!Array.isArray(tah)) tah = [];
     var today = _naToday();
     var thisMonth = _naThisMonth();
     var todayMs = new Date(today).getTime();
@@ -220,10 +230,10 @@
       + '</div>';
     };
     return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px">'
-      + card(t.net_position, _naFmtTRY(m.netTRY), 'Toplam giren − çıkan', netColor)
-      + card(t.month_in,     _naFmtTRY(m.monthIn),  m.monthInCount  + ' işlem', 'var(--gr,#16A34A)')
-      + card(t.month_out,    _naFmtTRY(m.monthOut), m.monthOutCount + ' işlem', 'var(--rd,#DC2626)')
-      + card(t.overdue,      _naFmtTRY(m.overdueTRY), m.overdueCount + ' kayıt', 'var(--am,#D97706)')
+      + card(t.net_position, _naFmtTRY(m.netTRY),     t.net_sub, netColor)
+      + card(t.month_in,     _naFmtTRY(m.monthIn),    m.monthInCount  + ' ' + t.month_in_sub,  'var(--gr,#16A34A)')
+      + card(t.month_out,    _naFmtTRY(m.monthOut),   m.monthOutCount + ' ' + t.month_out_sub, 'var(--rd,#DC2626)')
+      + card(t.overdue,      _naFmtTRY(m.overdueTRY), m.overdueCount  + ' ' + t.overdue_sub,   'var(--am,#D97706)')
     + '</div>';
   }
 
