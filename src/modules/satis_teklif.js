@@ -209,9 +209,11 @@ window._openSTModal = function(id) {
       + '<button onclick="document.getElementById(\'mo-satis-teklif\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
     + '</div>'
     + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
+      // MUSTERI-ONCEKI-SATIS-001: önceki teklif uyarı banner placeholder
+      + '<div id="st-prev-warn" style="display:none"></div>'
       // Satır 1: Müşteri + Teklif No + Tarih
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl"><span data-stk="customer">' + _stT('customer', lang) + '</span> *</div><select class="fi" id="st-customer">' + custOpts + '</select></div>'
+        + '<div><div class="fl"><span data-stk="customer">' + _stT('customer', lang) + '</span> *</div><select class="fi" id="st-customer" onchange="window._stCheckPrevTeklif?.()">' + custOpts + '</select></div>'
         + '<div><div class="fl" data-stk="quoteNo">' + _stT('quoteNo', lang) + '</div><input class="fi" id="st-no" value="' + (t?.teklifNo || _generateTeklifNo()) + '" readonly style="background:var(--s2);font-family:monospace"></div>'
         + '<div><div class="fl" data-stk="date">' + _stT('date', lang) + '</div><input type="date" class="fi" id="st-date" value="' + (t?.date || new Date().toISOString().slice(0, 10)) + '"></div>'
       + '</div>'
@@ -255,7 +257,43 @@ window._openSTModal = function(id) {
     var cont = document.getElementById('st-items');
     if (cont) cont.innerHTML = items.map(function(item, idx) { return _stItemRowHTML(item, idx); }).join('');
     _stCalcTotal();
+    // MUSTERI-ONCEKI-SATIS-001: form açıldığında önceki teklif kontrolü
+    if (typeof window._stCheckPrevTeklif === 'function') window._stCheckPrevTeklif();
   }, 50);
+};
+
+/**
+ * MUSTERI-ONCEKI-SATIS-001
+ * Müşteri seçildiğinde aynı müşteriye verilmiş önceki satış tekliflerini
+ * loadSatisTeklifleri() ile bul, varsa formun üstüne sarı uyarı banner'ı
+ * yerleştir. Banner'a tıklanınca en son teklifin peek panelini aç.
+ * Edit modunda mevcut teklif kendisi sayılmaz (id eşleşmesi ile dışlanır).
+ */
+window._stCheckPrevTeklif = function() {
+  var sel = document.getElementById('st-customer');
+  var warn = document.getElementById('st-prev-warn');
+  if (!sel || !warn) return;
+  var customerName = sel.value || '';
+  if (!customerName) { warn.style.display = 'none'; warn.innerHTML = ''; return; }
+  var currentId = parseInt(document.getElementById('st-eid')?.value || '0');
+  var allSatis = (typeof window.loadSatisTeklifleri === 'function') ? window.loadSatisTeklifleri() : [];
+  // Aynı müşteri (musteri alanı) — düzenlenen kayıt hariç
+  var prev = allSatis.filter(function(x) {
+    return (x.musteri === customerName || x.customerName === customerName) && x.id !== currentId;
+  });
+  if (!prev.length) { warn.style.display = 'none'; warn.innerHTML = ''; return; }
+  // En yeni: createdAt üzerinden sırala (descending)
+  prev.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+  var latest = prev[0];
+  var dateStr = (latest.createdAt || '').slice(0, 10) || '—';
+  var amt = (parseFloat(latest.genelToplam) || parseFloat(latest.toplam) || 0).toLocaleString('tr-TR') + ' ' + (latest.paraBirimi || latest.currency || 'USD');
+  var esc = (typeof window._esc === 'function') ? window._esc : function(s) { return String(s == null ? '' : s); };
+  warn.style.display = 'block';
+  warn.innerHTML = '<div onclick="event.stopPropagation();window._stPeekAc?.(' + latest.id + ')" style="padding:10px 14px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;cursor:pointer;font-size:12px;color:#92400E;display:flex;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background=\'#FDE68A\'" onmouseout="this.style.background=\'#FEF3C7\'">'
+    + '<span style="font-size:16px;flex-shrink:0">⚠️</span>'
+    + '<span style="flex:1"><strong>' + esc(customerName) + '</strong> müşterisine daha önce <strong>' + prev.length + '</strong> teklif verildi — en son: <strong>' + esc(dateStr) + '</strong> · <strong>' + esc(amt) + '</strong></span>'
+    + '<span style="font-size:10px;opacity:.85;flex-shrink:0">Detayı gör →</span>'
+  + '</div>';
 };
 
 function _stItemRowHTML(item, idx) {
