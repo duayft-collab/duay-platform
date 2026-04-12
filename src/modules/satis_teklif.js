@@ -64,15 +64,27 @@ function renderSatisTeklif() {
       + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">📤 Satış Teklifleri</div><div style="font-size:10px;color:var(--t3)">Proforma Invoice yönetimi</div></div>'
       + '<div style="display:flex;gap:6px"><button id="stek-toplu-sil-btn" onclick="event.stopPropagation();window._stekTopluSil()" class="btn btns btnd" style="font-size:11px;display:none">Seçilenleri Sil</button><button class="btn btns" onclick="window._exportSTXlsx?.()" style="font-size:11px">⬇ Excel</button><button class="btn btnp" onclick="window._openSTModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Teklif</button></div>'
     + '</div>'
-    + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;background:var(--s2)">'
+    + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;background:var(--s2);align-items:center">'
       + '<input class="fi" id="st-search" placeholder="🔍 Teklif no, müşteri ara..." oninput="renderSatisTeklif()" style="font-size:11px;flex:1">'
+      + '<select class="fi" id="st-musteri-filter" onchange="renderSatisTeklif()" style="font-size:11px;width:220px"><option value="">Tüm müşteriler</option></select>'
     + '</div>'
     + '<div id="st-list"></div>';
   }
 
   var data = _loadST();
   var search = (document.getElementById('st-search')?.value || '').toLowerCase();
+  var musteriFiltre = document.getElementById('st-musteri-filter')?.value || '';
+  // SATIS-LISTE-UX-001: Müşteri filter dropdown'ı dinamik populate
+  var _musFilEl = document.getElementById('st-musteri-filter');
+  if (_musFilEl) {
+    var _mevcut = _musFilEl.value;
+    var _musSet = {};
+    data.forEach(function(t) { if (t.customerName) _musSet[t.customerName] = true; });
+    var _opts = '<option value="">Tüm müşteriler</option>' + Object.keys(_musSet).sort().map(function(m) { return '<option value="' + window._esc(m) + '"' + (m === _mevcut ? ' selected' : '') + '>' + window._esc(m) + '</option>'; }).join('');
+    if (_musFilEl.innerHTML !== _opts) _musFilEl.innerHTML = _opts;
+  }
   var fl = data.filter(function(t) {
+    if (musteriFiltre && t.customerName !== musteriFiltre) return false;
     if (!search) return true;
     return (t.teklifNo || '').toLowerCase().includes(search) || (t.customerName || '').toLowerCase().includes(search) || (t.jobId || '').toLowerCase().includes(search) || (t.currency || '').toLowerCase().includes(search) || (t.incoterm || '').toLowerCase().includes(search);
   }).sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
@@ -95,17 +107,25 @@ function renderSatisTeklif() {
     return;
   }
 
-  var html = '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;z-index:2">'
-    + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>Müşteri</div><div>Toplam</div><div>Döviz</div><div>Tarih</div><div>İşlem</div></div>';
+  // SATIS-LISTE-UX-001: Durum badge renk haritasi
+  var ST_DURUM = {
+    taslak:     { bg:'#9CA3AF18', color:'#6B7280', label:'Taslak' },
+    onaylandi:  { bg:'#16A34A18', color:'#16A34A', label:'Onaylandı' },
+    reddedildi: { bg:'#DC262618', color:'#DC2626', label:'Reddedildi' },
+    revizyon:   { bg:'#D9770618', color:'#D97706', label:'Revizyon' }
+  };
+  var html = '<div style="display:grid;grid-template-columns:28px 110px 1fr 140px 100px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;z-index:2">'
+    + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>Müşteri</div><div>Tutar</div><div>Durum</div><div>Tarih</div><div>İşlem</div></div>';
 
   sayfaListe.forEach(function(t) {
     var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
-    html += '<div style="display:grid;grid-template-columns:28px 120px 1fr 100px 80px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onclick="event.stopPropagation();window._stPeek?.(' + t.id + ')" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+    var st = ST_DURUM[t.status] || ST_DURUM.taslak;
+    html += '<div style="display:grid;grid-template-columns:28px 110px 1fr 140px 100px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onclick="event.stopPropagation();window._stPeek?.(' + t.id + ')" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div onclick="event.stopPropagation()"><input type="checkbox" class="stek-row-chk" data-id="' + t.id + '" onchange="event.stopPropagation();window._stekChkGuncelle()"></div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(t.teklifNo || '—') + '</div>'
       + '<div style="font-weight:500">' + esc(t.customerName || '—') + '</div>'
-      + '<div style="font-weight:700">' + total.toLocaleString('tr-TR') + '</div>'
-      + '<div>' + (t.currency || 'USD') + '</div>'
+      + '<div style="font-weight:700">' + total.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(t.currency || 'USD') + '</span></div>'
+      + '<div><span style="font-size:9px;padding:3px 10px;border-radius:99px;background:' + st.bg + ';color:' + st.color + ';font-weight:700;white-space:nowrap">' + st.label + '</span></div>'
       + '<div style="color:var(--t3)">' + (t.date || '—') + '</div>'
       + '<div style="display:flex;gap:3px">'
         + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:10px;padding:2px 6px" title="Standard PDF">📄</button>'
