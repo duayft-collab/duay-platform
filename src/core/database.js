@@ -488,9 +488,8 @@ function _mergeDataSets(localKey, fsData, collection) {
       if (fsTs > localTs) {
         mergedMap[key] = item;
       }
-      // isDeleted propagation: silinen taraf daha yeniyse silinmiş ver kazanır
-      if (item.isDeleted && fsTs > localTs) mergedMap[key] = item;
-      if (existing.isDeleted) mergedMap[key] = existing;
+      // isDeleted propagation: tombstone immutable — herhangi bir taraf silinmisse merged sonuc da silinmis kalir
+      if (item.isDeleted || existing.isDeleted) { var _winner = (fsTs >= localTs) ? item : existing; _winner.isDeleted = true; _winner.deletedAt = item.deletedAt || existing.deletedAt || null; mergedMap[key] = _winner; }
     }
   });
 
@@ -573,7 +572,7 @@ function _mergeDataSets(localKey, fsData, collection) {
         var ihrUrun = JSON.parse(localStorage.getItem('ak_ihr_urun1') || '[]');
         var ihrTemiz = ihrUrun.map(function(u) {
           if (!u.isDeleted) return u;
-          return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null };
+          return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null, updatedAt: new Date().toISOString() };
         });
         localStorage.setItem('ak_ihr_urun1', JSON.stringify(ihrTemiz));
         changed = true;
@@ -1347,7 +1346,7 @@ function storeIhracatUrunler(d) {
   var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d;
   var yazilacak = d.map(function(u) {
     if (!u.isDeleted) return u;
-    return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null };
+    return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null, updatedAt: new Date().toISOString() };
   });
   _write(KEYS.ihracatUrunler, yazilacak.slice(0, 1000));
   var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, yazilacak);
