@@ -306,18 +306,18 @@ function renderCrmMusteriler() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:14px">${m.name}</span>
+            <span style="font-weight:700;font-size:14px">${window._esc(m.name)}</span>
             <span class="badge ${st.c}">${st.l}</span>
-            ${m.city?`<span style="font-size:11px;color:var(--t3)">📍 ${m.city}</span>`:''}
+            ${m.city?`<span style="font-size:11px;color:var(--t3)">📍 ${window._esc(m.city)}</span>`:''}
           </div>
-          ${m.contact?`<div style="font-size:12px;color:var(--t2);margin-bottom:2px">👤 ${m.contact}</div>`:''}
-          ${m.phone?`<div style="font-size:12px;color:var(--t2);margin-bottom:2px">📞 ${m.phone}</div>`:''}
-          ${m.email?`<div style="font-size:12px;color:var(--ac)">✉ ${m.email}</div>`:''}
-          ${m.note?`<div style="font-size:11px;color:var(--t3);margin-top:4px">💬 ${m.note.slice(0,80)}</div>`:''}
+          ${m.contact?`<div style="font-size:12px;color:var(--t2);margin-bottom:2px">👤 ${window._esc(m.contact)}</div>`:''}
+          ${m.phone?`<div style="font-size:12px;color:var(--t2);margin-bottom:2px">📞 ${window._esc(m.phone)}</div>`:''}
+          ${m.email?`<div style="font-size:12px;color:var(--ac)">✉ ${window._esc(m.email)}</div>`:''}
+          ${m.note?`<div style="font-size:11px;color:var(--t3);margin-top:4px">💬 ${window._esc(m.note.slice(0,80))}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
           ${m.value?`<div style="font-weight:700;font-size:15px;color:var(--ac);margin-bottom:4px">${m.value.toLocaleString('tr-TR')} ₺</div>`:''}
-          <div style="font-size:11px;color:var(--t3);margin-bottom:8px">${u.name}</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:8px">${window._esc(u.name)}</div>
           <div style="display:flex;gap:4px;justify-content:flex-end">
             <button class="btn btns" onclick="CrmHub.openGorusmeModal(null,'${m.id}')" title="Görüşme Ekle">📞</button>
             <button class="btn btns" onclick="CrmHub.openTeklifModal(null,'${m.id}')" title="Teklif Ekle">💼</button>
@@ -340,10 +340,10 @@ function _renderCrmKanban(items, users, cont) {
         <div class="kanban-col-title"><span class="badge ${val.c}">${val.l}</span> <span style="color:var(--t3)">${col_items.length}</span></div>
         ${col_items.map(m=>`
           <div class="kanban-item" onclick="window.openCrmModal?.(${m.id})">
-            <div style="font-weight:600;margin-bottom:4px">${m.name}</div>
-            ${m.contact?`<div style="color:var(--t2)">${m.contact}</div>`:''}
+            <div style="font-weight:600;margin-bottom:4px">${window._esc(m.name)}</div>
+            ${m.contact?`<div style="color:var(--t2)">${window._esc(m.contact)}</div>`:''}
             ${m.value?`<div style="color:var(--ac);font-weight:600">${m.value.toLocaleString('tr-TR')} ₺</div>`:''}
-            ${m.city?`<div style="color:var(--t3);font-size:10px">📍${m.city}</div>`:''}
+            ${m.city?`<div style="color:var(--t3);font-size:10px">📍${window._esc(m.city)}</div>`:''}
           </div>`).join('')}
         <button class="btn btns" onclick="window.openCrmModal?.(null)"
           style="width:100%;margin-top:6px;font-size:11px">+ Ekle</button>
@@ -429,12 +429,12 @@ function renderCrmGorusmeler() {
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span style="font-size:20px">${g.tip==='Telefon'?'📞':g.tip==='Video Toplantı'?'💻':g.tip==='Yüz Yüze'?'🤝':g.tip==='E-posta'?'✉️':'📱'}</span>
-            <span style="font-weight:700;font-size:13px">${musteri?.name||'Müşteri seçilmedi'}</span>
-            <span style="font-size:11px;background:var(--s2);padding:2px 8px;border-radius:6px">${g.tip||'Görüşme'}</span>
+            <span style="font-weight:700;font-size:13px">${window._esc(musteri?.name||'Müşteri seçilmedi')}</span>
+            <span style="font-size:11px;background:var(--s2);padding:2px 8px;border-radius:6px">${window._esc(g.tip||'Görüşme')}</span>
             <span class="badge ${g.tamamlandi?'bg':'ba'}">${g.tamamlandi?'✅ Tamamlandı':'⏳ Takip Bekliyor'}</span>
           </div>
-          ${g.konu?`<div style="font-size:13px;font-weight:500;margin-bottom:4px">${g.konu}</div>`:''}
-          ${g.not?`<div style="font-size:12px;color:var(--t2)">💬 ${g.not.slice(0,120)}</div>`:''}
+          ${g.konu?`<div style="font-size:13px;font-weight:500;margin-bottom:4px">${window._esc(g.konu)}</div>`:''}
+          ${g.not?`<div style="font-size:12px;color:var(--t2)">💬 ${window._esc(g.not.slice(0,120))}</div>`:''}
           <div style="font-size:11px;color:var(--t3);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap">
             ${g.tarih?`<span>📅 ${g.tarih}</span>`:''}
             ${g.takipTarih?`<span style="color:${overdue?'var(--rd)':'inherit'}">🔔 Takip: ${g.takipTarih}</span>`:''}
@@ -466,7 +466,7 @@ function openCrmGorusmeModal(id, musteriId) {
           <select class="fi" id="crmg-mid">
             <option value="">Seçin...</option>
             ${crm.filter(m=>!m.isDeleted).map(m=>
-              `<option value="${m.id}" ${(entry?.musteriId===m.id||musteriId===String(m.id))?'selected':''}>${m.name}</option>`
+              `<option value="${m.id}" ${(entry?.musteriId===m.id||musteriId===String(m.id))?'selected':''}>${window._esc(m.name)}</option>`
             ).join('')}
           </select></div>
         <div><label class="fl">Görüşme Tipi</label>
@@ -476,15 +476,15 @@ function openCrmGorusmeModal(id, musteriId) {
         <div><label class="fl">Tarih</label>
           <input class="fi" type="date" id="crmg-tarih" value="${entry?.tarih||new Date().toISOString().slice(0,10)}"></div>
         <div style="grid-column:1/-1"><label class="fl">Konu</label>
-          <input class="fi" id="crmg-konu" value="${entry?.konu||''}" placeholder="Görüşme konusu..."></div>
+          <input class="fi" id="crmg-konu" value="${window._esc(entry?.konu||'')}" placeholder="Görüşme konusu..."></div>
         <div style="grid-column:1/-1"><label class="fl">Görüşme Notu</label>
-          <textarea class="fi" id="crmg-not" rows="3" placeholder="Görüşme özeti, konuşulan konular...">${entry?.not||''}</textarea></div>
+          <textarea class="fi" id="crmg-not" rows="3" placeholder="Görüşme özeti, konuşulan konular...">${window._esc(entry?.not||'')}</textarea></div>
         <div><label class="fl">Takip Tarihi</label>
           <input class="fi" type="date" id="crmg-takip" value="${entry?.takipTarih||''}"></div>
         <div><label class="fl">Randevu Tarihi</label>
           <input class="fi" type="date" id="crmg-randevu" value="${entry?.randevuTarih||''}"></div>
         <div style="grid-column:1/-1"><label class="fl">Sonuç / Aksiyon</label>
-          <input class="fi" id="crmg-sonuc" value="${entry?.sonuc||''}" placeholder="Alınacak aksiyon, sonraki adım..."></div>
+          <input class="fi" id="crmg-sonuc" value="${window._esc(entry?.sonuc||'')}" placeholder="Alınacak aksiyon, sonraki adım..."></div>
       </div>
       <input type="hidden" id="crmg-eid" value="${id||''}">
       <div class="mf">
@@ -591,15 +591,15 @@ function renderCrmTeklifler() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:14px">${t.no||'#'+t.id}</span>
+            <span style="font-weight:700;font-size:14px">${window._esc(t.no||'#'+t.id)}</span>
             <span class="badge ${asama.c}">${asama.l}</span>
-            <span style="font-size:12px;color:var(--t2)">${m?.name||'—'}</span>
+            <span style="font-size:12px;color:var(--t2)">${window._esc(m?.name||'—')}</span>
           </div>
-          ${t.konu?`<div style="font-size:13px;font-weight:500;margin-bottom:4px">${t.konu}</div>`:''}
+          ${t.konu?`<div style="font-size:13px;font-weight:500;margin-bottom:4px">${window._esc(t.konu)}</div>`:''}
           <div style="font-size:11px;color:var(--t3);display:flex;gap:12px">
             ${t.tarih?`<span>📅 ${t.tarih}</span>`:''}
             ${t.gecerlilik?`<span>⏰ Geçerlilik: ${t.gecerlilik}</span>`:''}
-            <span>${u.name}</span>
+            <span>${window._esc(u.name)}</span>
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -631,16 +631,16 @@ function openCrmTeklifModal(id, musteriId) {
       <div class="mt">${entry?'✏️ Teklif Düzenle':'💼 Yeni Teklif'}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
         <div><label class="fl">Teklif No</label>
-          <input class="fi" id="crkt-no" value="${entry?.no||no}" placeholder="${no}"></div>
+          <input class="fi" id="crkt-no" value="${window._esc(entry?.no||no)}" placeholder="${no}"></div>
         <div><label class="fl">Müşteri *</label>
           <select class="fi" id="crkt-mid">
             <option value="">Seçin...</option>
             ${crm.filter(m=>!m.isDeleted).map(m=>
-              `<option value="${m.id}" ${(entry?.musteriId===m.id||musteriId===String(m.id))?'selected':''}>${m.name}</option>`
+              `<option value="${m.id}" ${(entry?.musteriId===m.id||musteriId===String(m.id))?'selected':''}>${window._esc(m.name)}</option>`
             ).join('')}
           </select></div>
         <div style="grid-column:1/-1"><label class="fl">Konu / Ürün</label>
-          <input class="fi" id="crkt-konu" value="${entry?.konu||''}" placeholder="Teklif konusu..."></div>
+          <input class="fi" id="crkt-konu" value="${window._esc(entry?.konu||'')}" placeholder="Teklif konusu..."></div>
         <div><label class="fl">Tutar (₺) *</label>
           <input class="fi" type="number" id="crkt-tutar" value="${entry?.tutar||''}" placeholder="0.00"></div>
         <div><label class="fl">Para Birimi</label>
@@ -656,7 +656,7 @@ function openCrmTeklifModal(id, musteriId) {
             ${CRM_TEKLIF_ASAMALAR.map(a=>`<option value="${a.id}" ${entry?.asama===a.id?'selected':''}>${a.l}</option>`).join('')}
           </select></div>
         <div style="grid-column:1/-1"><label class="fl">Not / Koşullar</label>
-          <textarea class="fi" id="crkt-not" rows="2" placeholder="Ödeme koşulları, notlar...">${entry?.not||''}</textarea></div>
+          <textarea class="fi" id="crkt-not" rows="2" placeholder="Ödeme koşulları, notlar...">${window._esc(entry?.not||'')}</textarea></div>
       </div>
       <input type="hidden" id="crkt-eid" value="${id||''}">
       <div class="mf">
@@ -759,17 +759,17 @@ function renderCrmNumune() {
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span style="font-size:18px">${n.dir==='giris'?'📥':'📤'}</span>
-            <span style="font-weight:700;font-size:14px">${n.name}</span>
-            ${n.code?`<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${n.code}</span>`:''}
+            <span style="font-weight:700;font-size:14px">${window._esc(n.name)}</span>
+            ${n.code?`<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${window._esc(n.code)}</span>`:''}
             ${n.returned?`<span class="badge bg">↩️ İade Edildi</span>`:overdue?`<span class="badge br">⚠️ İade Gecikmiş</span>`:''}
           </div>
           <div style="font-size:12px;color:var(--t2);display:flex;gap:16px;flex-wrap:wrap">
             <span>📦 ${n.qty||1} adet</span>
             ${n.date?`<span>📅 ${n.date}</span>`:''}
             ${n.iadeDate&&n.dir==='cikis'?`<span style="color:${overdue?'var(--rd)':'inherit'}">↩️ İade: ${n.iadeDate}</span>`:''}
-            <span>${u.name}</span>
+            <span>${window._esc(u.name)}</span>
           </div>
-          ${n.note?`<div style="font-size:11px;color:var(--t3);margin-top:4px">💬 ${n.note}</div>`:''}
+          ${n.note?`<div style="font-size:11px;color:var(--t3);margin-top:4px">💬 ${window._esc(n.note)}</div>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
           ${n.dir==='cikis'&&!n.returned?`<button class="btn btns btng" onclick="CrmHub.returnNumune(${n.id})">↩️ İade</button>`:''}
@@ -850,15 +850,15 @@ function renderCrmEtkinlik() {
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span style="font-size:20px">${e.tur==='fuar'?'🎪':e.tur==='konferans'?'🎤':'📅'}</span>
-            <span style="font-weight:700;font-size:14px">${e.ad||e.title||'İsimsiz'}</span>
+            <span style="font-weight:700;font-size:14px">${window._esc(e.ad||e.title||'İsimsiz')}</span>
             <span class="badge ${ended?'ba':upcoming?'bb':'bg'}">${ended?'✅ Tamamlandı':upcoming?'⏰ Yaklaşıyor':'🎪 Devam Ediyor'}</span>
           </div>
           <div style="font-size:12px;color:var(--t2);display:flex;gap:16px;flex-wrap:wrap">
             ${e.bas?`<span>📅 ${e.bas}${e.bitis&&e.bitis!==e.bas?' → '+e.bitis:''}</span>`:''}
-            ${e.yer?`<span>📍 ${e.yer}</span>`:''}
+            ${e.yer?`<span>📍 ${window._esc(e.yer)}</span>`:''}
             ${e.katilimci?`<span>👥 ${e.katilimci} kişi</span>`:''}
           </div>
-          ${e.desc||e.aciklama?`<div style="font-size:11px;color:var(--t3);margin-top:4px">💬 ${(e.desc||e.aciklama).slice(0,80)}</div>`:''}
+          ${e.desc||e.aciklama?`<div style="font-size:11px;color:var(--t3);margin-top:4px">💬 ${window._esc((e.desc||e.aciklama).slice(0,80))}</div>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
           <button class="btn btns" onclick="window.openEtkinlikModal?.(${e.id})">✏️</button>
