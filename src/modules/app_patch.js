@@ -1796,7 +1796,7 @@ window._atRowUrunChange = function(sel) {
   var urunData = (typeof loadUrunler === 'function' ? loadUrunler() : []).find(function(u) { return u.id === parseInt(opt.value); });
   var stdEl = tr.querySelector('.at-std');
   if (stdEl && urunData?.teknikAciklama) {
-    stdEl.innerHTML = (opt.dataset.std || '—') + '<div style="font-size:8px;color:var(--t3);margin-top:1px">' + (typeof escapeHtml === 'function' ? window._esc(urunData.teknikAciklama) : urunData.teknikAciklama) + '</div>';
+    stdEl.innerHTML = (opt.dataset.std || '—') + '<div style="font-size:8px;color:var(--t3);margin-top:1px">' + window._esc(urunData.teknikAciklama) + '</div>';
   }
   // FIX 7.2: MOQ kontrolü
   var moq = parseInt(opt.dataset.moq || '0');
@@ -4876,7 +4876,7 @@ window._loadLogo = function() {
 window._ayarSartlariYukle = function() {
   var liste = document.getElementById('ayar-sartlar-liste');
   if(!liste) return;
-  var _esc2 = typeof escapeHtml === 'function' ? escapeHtml : function(s){return String(s||'').replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var _esc2 = window._esc;
   liste.innerHTML='';
   (typeof window._saV2Sartlar === 'function' ? window._saV2Sartlar() : []).forEach(function(s,i){
     var div=document.createElement('div');
@@ -4940,7 +4940,7 @@ function _storeQL(d) { localStorage.setItem(_QL_KEY, JSON.stringify(d.slice(0, 1
       if (!links.length) dh += '<div style="padding:12px;font-size:11px;color:var(--t3);text-align:center">Henuz kisayol yok</div>';
       links.forEach(function(l, i) {
         dh += '<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
-        dh += '<span onclick="event.stopPropagation();' + (l.tip === 'dis' ? 'window.open(\'' + l.url.replace(/'/g, "\\'") + '\')' : 'window.App?.nav?.(\'' + l.url + '\')') + '" style="flex:1;font-size:11px;color:var(--t)">' + (typeof escapeHtml === 'function' ? window._esc(l.ad) : l.ad) + '</span>';
+        dh += '<span onclick="event.stopPropagation();' + (l.tip === 'dis' ? 'window.open(\'' + l.url.replace(/'/g, "\\'") + '\')' : 'window.App?.nav?.(\'' + l.url + '\')') + '" style="flex:1;font-size:11px;color:var(--t)">' + window._esc(l.ad) + '</span>';
         dh += '<span onclick="event.stopPropagation();window._qlSil(' + i + ')" style="font-size:10px;color:var(--t3);cursor:pointer">\u2717</span>';
         dh += '</div>';
       });
@@ -5001,7 +5001,7 @@ window._renderFirmaKpi = function() {
     var skorRenk = skorPuan >= 80 ? '#16A34A' : skorPuan >= 60 ? '#D97706' : '#DC2626';
     h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:16px">';
     h += '<div style="width:40px;height:40px;border-radius:50%;background:' + skorRenk + '18;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:' + skorRenk + ';flex-shrink:0">' + skorHarf + '</div>';
-    h += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + (typeof escapeHtml === 'function' ? window._esc(firma.ad) : firma.ad) + ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">' + firma.tip + '</span></div>';
+    h += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + window._esc(firma.ad) + ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--s2);color:var(--t3)">' + firma.tip + '</span></div>';
     h += '<div style="font-size:10px;color:var(--t3);display:flex;gap:12px;margin-top:2px">';
     h += '<span>Teklif: ' + toplamTeklif + '</span>';
     h += '<span>Belge: ' + belgeSayisi + '</span>';

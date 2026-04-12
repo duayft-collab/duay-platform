@@ -2389,7 +2389,7 @@ function _odmImportRenderPreview(fileName, parsed, errors) {
     dropzone.innerHTML = '<div style="display:flex;align-items:center;gap:10px;justify-content:center">'
       + '<span style="font-size:20px">📄</span>'
       + '<div style="text-align:left">'
-        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + (typeof escapeHtml === 'function' ? window._esc(fileName) : fileName) + '</div>'
+        + '<div style="font-size:13px;font-weight:600;color:var(--t)">' + window._esc(fileName) + '</div>'
         + '<div style="font-size:11px;color:var(--t3)">' + parsed.length + ' satır bulundu</div>'
       + '</div>'
       + '<button onclick="event.stopPropagation();document.getElementById(\'odm-import-finp\').value=\'\';document.getElementById(\'odm-import-finp\').click()" style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--t);font-family:inherit">Değiştir</button>'
