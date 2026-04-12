@@ -347,41 +347,56 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // ── Error boundary wrappers ─────────────────────────────────────
-// error-boundary-wrap
+// CRM-RENDER-001: setTimeout(0) ile next-tick'e ertelenir — boylece
+// crm_hub.js ve app_patch.js'in window.renderCrm override'lari
+// tamamlandiktan sonra wrap kurulur, _orig final hali yakalar.
+// Ek olarak wrap icinde null check var: eger orig hala undefined ise
+// console.warn ile bilgilendirir, sessizce return eder.
 
-(function() {
+setTimeout(function() {
   const _orig_renderCrm = window.renderCrm || (typeof renderCrm === 'function' ? renderCrm : null);
   if (_orig_renderCrm) {
     window.renderCrm = function(...args) {
+      if (typeof _orig_renderCrm !== 'function') { console.warn('[renderCrm] orig undefined, atlandi'); return; }
       try { return _orig_renderCrm(...args); }
       catch(err) {
         console.error('[renderCrm]', err);
         window.toast?.('Panel yüklenemedi: renderCrm', 'err');
       }
     };
+  } else {
+    console.warn('[crm_panel] renderCrm henuz tanimsiz, error-boundary atlandi');
   }
-})();
-(function() {
+}, 0);
+
+setTimeout(function() {
   const _orig_renderStok = window.renderStok || (typeof renderStok === 'function' ? renderStok : null);
   if (_orig_renderStok) {
     window.renderStok = function(...args) {
+      if (typeof _orig_renderStok !== 'function') { console.warn('[renderStok] orig undefined, atlandi'); return; }
       try { return _orig_renderStok(...args); }
       catch(err) {
         console.error('[renderStok]', err);
         window.toast?.('Panel yüklenemedi: renderStok', 'err');
       }
     };
+  } else {
+    console.warn('[crm_panel] renderStok henuz tanimsiz, error-boundary atlandi');
   }
-})();
-(function() {
+}, 0);
+
+setTimeout(function() {
   const _orig_renderNumune = window.renderNumune || (typeof renderNumune === 'function' ? renderNumune : null);
   if (_orig_renderNumune) {
     window.renderNumune = function(...args) {
+      if (typeof _orig_renderNumune !== 'function') { console.warn('[renderNumune] orig undefined, atlandi'); return; }
       try { return _orig_renderNumune(...args); }
       catch(err) {
         console.error('[renderNumune]', err);
         window.toast?.('Panel yüklenemedi: renderNumune', 'err');
       }
     };
+  } else {
+    console.warn('[crm_panel] renderNumune henuz tanimsiz, error-boundary atlandi');
   }
-})();
+}, 0);
