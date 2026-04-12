@@ -87,6 +87,7 @@ window._yetkiKontrol = function(islem) {
     'ihracat-formlar': () => { window.renderIhracatFormlar?.(); },
     'talimatlar': () => { window.renderTalimatlar?.(); },
     'dashboardDetay': () => { window.DashboardDetay?.render?.(); },
+    'nakit-akis': () => { window.renderNakitAkis?.(); },
   };
 
   // App.nav wrap — yeni paneller için ekstra render çağrısı
