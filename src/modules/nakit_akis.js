@@ -318,7 +318,10 @@
    */
   function renderNakitAkis() {
     var panel = document.getElementById('panel-nakit-akis');
-    if (!panel) return;
+    if (!panel) {
+      console.warn('[nakit_akis] panel-nakit-akis div bulunamadi — index.html kontrol et, render iptal');
+      return;
+    }
     var t = _naT();
     var m = _naCompute();
     panel.innerHTML = ''
