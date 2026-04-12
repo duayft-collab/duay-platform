@@ -661,22 +661,10 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
   console.info('[app_patch] ALL_MODULES genişletildi:', window.ALL_MODULES.length, 'modül');
 })();
 
-// ── CRM routing override ─────────────────────────────────────────
-// panel-crm artık CrmHub tarafından yönetiliyor
-(function _overrideCrmRouting() {
-  const _origRenderCrm = window.renderCrm;
-  window.renderCrm = function() {
-    if (window.CrmHub) {
-      window.CrmHub.render();
-    } else if (_origRenderCrm) {
-      _origRenderCrm();
-    }
-  };
-  // app.js'deki RENDERS objesine de ekle (geç bağlama)
-  if (window.App && window.App._addRender) {
-    window.App._addRender('crm', () => window.renderCrm());
-  }
-})();
+// RENDER-CRM-CONSOLIDATE-001: CRM routing override IIFE kaldirildi
+// crm_hub.js:989 zaten "window.renderCrm = renderCrmHub" ile ayni atamayi yapiyor.
+// _addRender('crm', ...) gec baglamasi icin crm_hub.js'in kendi init'i yeterli oldugundan
+// bu IIFE komple redundant'ti.
 
 // ════════════════════════════════════════════════════════════════
 // MODÜL YETKİ SİSTEMİ — _applyRoleUI  [v2]

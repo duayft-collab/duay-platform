@@ -458,7 +458,8 @@ if(typeof module!=='undefined'&&module.exports){module.exports=Crm;}
 else{
   window.Crm=Crm;
   window.CRM=Crm;
-  const fns=['renderCrm','openCrmModal','saveCrm','delCrm','setCrmStatus','setCrmView','exportCrmXlsx',
+  // RENDER-CRM-CONSOLIDATE-001: 'renderCrm' export listeden cikarildi — crm_hub.js renderCrmHub'i window.renderCrm'e atiyor, crm.js'in lokal renderCrm'i sadece kendi mutator'leri (addCrm/delCrm/setCrmStatus) icin internal kalir
+  const fns=['openCrmModal','saveCrm','delCrm','setCrmStatus','setCrmView','exportCrmXlsx',
     'renderNumune','openNumuneModal','editNumuneModal','saveNumune','returnNumune','delNumune','setNumuneFilter','exportNumuneXlsx'];
   fns.forEach(n=>{if(Crm[n])window[n]=Crm[n];});
   window.CRM_ST=CRM_ST;
