@@ -632,3 +632,102 @@ window._saV2TamOnIzle = function() {
   }
   window._piOlustur(teklif, tasarim, 'musteri');
 };
+
+/* ════════════════════════════════════════════════════════════════
+ * URUN-ONCEKI-SATIS-001
+ * Müşteri seçili iken her ürün satırında, aynı müşteriye daha önce
+ * satılmış ürünleri tespit edip turuncu uyarı ikonu (⚠) ekler. Tooltip
+ * (title attr) ile geçmiş tarih + fiyat gösterir.
+ *
+ * Mimari: _saV2SatisTabloyuGuncelle (form.js'te tanımlı) wrapper ile
+ * sarılır. Her render sonrası DOM'a uyarı ikonları enjekte edilir.
+ * setTimeout(0) ile install — form.js sync yüklendikten sonra çalışır.
+ * ════════════════════════════════════════════════════════════════ */
+
+/**
+ * Aktif satış teklifi formundaki ürün satırlarına önceki teklif uyarı
+ * ikonu ekler. _saV2SatisUrunler dizisindeki her ürün, st-musteri-ad
+ * değerinden alınan müşterinin önceki tekliflerinde aranır (urunAdi
+ * VEYA duayKodu eşleşmesi). Eşleşme varsa ürün adı hücresine ⚠ ikonu
+ * eklenir, title attr'inde geçmiş tarih + fiyat + döviz gösterilir.
+ */
+window._saV2UrunOncekiUyarilariEkle = function() {
+  var customer = (document.getElementById('st-musteri-ad')?.value || '').trim();
+  var tbody = document.getElementById('st-urun-tbody');
+  if (!tbody) return;
+  // Mevcut tüm uyarı ikonlarını temizle (her render'da yeniden hesaplanır)
+  tbody.querySelectorAll('.urun-onceki-warn').forEach(function(el) { el.remove(); });
+  if (!customer) return;
+  var urunler = window._saV2SatisUrunler || [];
+  if (!urunler.length) return;
+  var allSatis = (typeof window.loadSatisTeklifleri === 'function') ? window.loadSatisTeklifleri() : [];
+  var prevTeklifs = allSatis.filter(function(t) {
+    return (t.musteri === customer || t.customerName === customer) && !t.isDeleted;
+  });
+  if (!prevTeklifs.length) return;
+  var rows = tbody.querySelectorAll('tr');
+  urunler.forEach(function(u, idx) {
+    var row = rows[idx];
+    if (!row || !row.cells) return;
+    var nameCell = row.cells[1]; // ürün adı hücresi
+    if (!nameCell) return;
+    // Eşleşme ara — önceki tekliflerin urunler dizilerinde
+    var match = null;
+    var uAd = (u.urunAdi || '').trim().toLowerCase();
+    var uKod = (u.duayKodu || '').trim();
+    for (var i = 0; i < prevTeklifs.length; i++) {
+      var pt = prevTeklifs[i];
+      var ptUrunler = pt.urunler || [];
+      for (var j = 0; j < ptUrunler.length; j++) {
+        var pu = ptUrunler[j];
+        var puAd = (pu.urunAdi || pu.turkceAdi || '').trim().toLowerCase();
+        var puKod = (pu.duayKodu || '').trim();
+        var nameMatch = uAd && puAd && puAd === uAd;
+        var kodMatch = uKod && puKod && puKod === uKod;
+        if (nameMatch || kodMatch) {
+          match = {
+            date: (pt.createdAt || '').slice(0, 10) || '—',
+            price: parseFloat(pu.satisFiyat) || parseFloat(pu.alisF) || 0,
+            currency: pu.para || pt.paraBirimi || pt.toplamPara || ''
+          };
+          break;
+        }
+      }
+      if (match) break;
+    }
+    if (match) {
+      var icon = document.createElement('span');
+      icon.className = 'urun-onceki-warn';
+      icon.style.cssText = 'display:inline-block;margin-left:4px;color:#D97706;cursor:help;font-size:11px;font-weight:700';
+      icon.textContent = '⚠';
+      icon.title = 'Bu ürün bu müşteriye daha önce ' + match.date + ' tarihinde ' + match.price.toFixed(2) + ' ' + match.currency + ' fiyatıyla verildi.';
+      nameCell.appendChild(icon);
+    }
+  });
+};
+
+// _saV2SatisTabloyuGuncelle wrapper installation — form.js sync yüklendikten sonra
+setTimeout(function() {
+  if (typeof window._saV2SatisTabloyuGuncelle !== 'function') {
+    console.warn('[urun-onceki-001] _saV2SatisTabloyuGuncelle tanimli degil, wrapper kurulamadi');
+    return;
+  }
+  var _origTabloGuncelle = window._saV2SatisTabloyuGuncelle;
+  window._saV2SatisTabloyuGuncelle = function() {
+    var ret = _origTabloGuncelle.apply(this, arguments);
+    try { window._saV2UrunOncekiUyarilariEkle?.(); } catch (e) { console.warn('[urun-onceki-001] uyari hata:', e); }
+    return ret;
+  };
+}, 0);
+
+// Müşteri değişikliğinde de uyarıları yeniden hesapla
+// (_saV2CheckPrevTeklif zaten musteri onchange'de tetikleniyor — onun yanında bunu da çağır)
+setTimeout(function() {
+  var _origCheckPrev = window._saV2CheckPrevTeklif;
+  if (typeof _origCheckPrev !== 'function') return;
+  window._saV2CheckPrevTeklif = function() {
+    var ret = _origCheckPrev.apply(this, arguments);
+    try { window._saV2UrunOncekiUyarilariEkle?.(); } catch (e) { console.warn('[urun-onceki-001] musteri-trigger uyari hata:', e); }
+    return ret;
+  };
+}, 10);
