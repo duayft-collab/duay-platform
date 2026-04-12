@@ -1955,7 +1955,7 @@ window.renderSatisTeklifleri = function() {
     return ms.reduce(function(a,b) { return a+b; }, 0) / ms.length;
   };
   // SATIS-LISTE-UX-002: Toplam Deger fix — genelToplam yoksa toplam fallback'i
-  var _stToplamDeger = d.reduce(function(s,t) { return s + (parseFloat(t.genelToplam || t.toplam) || 0); }, 0);
+  var _stToplamDeger = d.reduce(function(s,t) { return s + (parseFloat(t.genelToplam || t.toplamSatis || t.toplam) || 0); }, 0);
   // SATIS-LISTE-UX-002: Ort. Marj hesabi
   var _stMarjlar = d.map(_stMarjPct).filter(function(m) { return m !== null; });
   var _stOrtMarj = _stMarjlar.length ? _stMarjlar.reduce(function(a,b) { return a+b; }, 0) / _stMarjlar.length : 0;
@@ -1966,12 +1966,12 @@ window.renderSatisTeklifleri = function() {
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kabul Edilen</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + d.filter(function(t){return t.durum==='kabul';}).length + '</div></div>'
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(_stToplamDeger).toLocaleString('tr-TR') + '</div></div>'
     + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ort. Marj</div><div style="font-size:22px;font-weight:600;color:' + _stMarjColor + '">%' + _stOrtMarj.toFixed(1) + '</div></div>';
-  /* SATIS-LISTE-UX-002: Müşteri dropdown her render'da güncellenir, mevcut seçim korunur */
+  /* SATIS-LISTE-UX-002: Müşteri dropdown her render'da güncellenir, mevcut seçim korunur. SATIS-SCHEMA-FIX-001 fallback: t.musteri || t.musteriAd */
   var _stMusFiltre = document.getElementById('st-musteri-filtre');
   if (_stMusFiltre) {
     var _stMevcutMus = _stMusFiltre.value;
     var _stMusSet = {};
-    d.forEach(function(t) { if (t.musteri) _stMusSet[t.musteri] = true; });
+    d.forEach(function(t) { var _m = t.musteri || t.musteriAd; if (_m) _stMusSet[_m] = true; });
     var _stOpts = '<option value="">Tüm müşteriler</option>' + Object.keys(_stMusSet).sort().map(function(m) { return '<option value="' + esc(m) + '"' + (m === _stMevcutMus ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('');
     if (_stMusFiltre.innerHTML !== _stOpts) _stMusFiltre.innerHTML = _stOpts;
   }
@@ -1980,59 +1980,89 @@ window.renderSatisTeklifleri = function() {
   var _stDur = document.getElementById('st-durum-filtre')?.value || '';
   var _stMus = document.getElementById('st-musteri-filtre')?.value || '';
   var filtreli = d.filter(function(t) {
-    if (_stQ && !((t.teklifNo || '').toLowerCase().includes(_stQ) || (t.musteri || '').toLowerCase().includes(_stQ) || (t.jobId || '').toLowerCase().includes(_stQ))) return false;
+    var _tMus = t.musteri || t.musteriAd || '';
+    if (_stQ && !((t.teklifNo || t.teklifId || '').toLowerCase().includes(_stQ) || _tMus.toLowerCase().includes(_stQ) || (t.jobId || '').toLowerCase().includes(_stQ))) return false;
     if (_stDur && t.durum !== _stDur) return false;
-    if (_stMus && t.musteri !== _stMus) return false;
+    if (_stMus && _tMus !== _stMus) return false;
     return true;
   });
   var cont = document.getElementById('satis-list'); if (!cont) return;
   if (!filtreli.length) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">' + (d.length ? 'Filtre sonucu yok' : 'Hen\u00fcz teklif yok') + '</div>'; return; }
   var badgeColors = {taslak:'#9CA3AF',gonderildi:'#3B82F6',onay:'#D97706',kabul:'#16A34A',red:'#DC2626'};
-  var pillS = 'font-size:8px;padding:1px 5px;border-radius:99px;cursor:pointer;font-family:inherit;border:none;font-weight:600;';
+  var pillS = 'font-size:9px;padding:4px 10px;border-radius:5px;cursor:pointer;font-family:inherit;border:0.5px solid var(--b);background:transparent;color:var(--t2);';
   cont.innerHTML = filtreli.map(function(t) {
     var bc = badgeColors[t.durum]||'#9CA3AF';
-    var gunFark = t.createdAt ? Math.floor((Date.now()-new Date(t.createdAt).getTime())/86400000) : 0;
-    var surRenk = gunFark>14?'#A32D2D':gunFark>7?'#854F0B':'var(--t3)';
-    // SATIS-SCHEMA-FIX-001: _saV2SatisKaydet ile yazılan eski şemalı kayıtlar için fallback
+    // SATIS-SCHEMA-FIX-001: eski şemalı kayıtlar için fallback alanlar
     var _teklifNo = t.teklifNo || t.teklifId || '—';
-    var _musteri = t.musteri || t.musteriAd || '';
-    var _genelToplam = parseFloat(t.genelToplam || t.toplamSatis || 0);
+    var _musteri = t.musteri || t.musteriAd || '—';
+    var _genelToplam = parseFloat(t.genelToplam || t.toplamSatis || t.toplam) || 0;
     var _paraBirimi = t.paraBirimi || 'TRY';
-    return '<div onclick="event.stopPropagation();window._stPeekAc?.(' + t.id + ')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s;cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
-      // Sol: Teklif No (bold, büyük) + müşteri + ürün sayısı
+    // SATIS-LISTE-UX-002: Geçerlilik kontrolü
+    var _gec = t.gecerlilikTarihi || t.validUntil || '';
+    var _sureBitti = false, _sureUyari = false;
+    if (_gec) {
+      var _bugun = new Date().toISOString().slice(0,10);
+      if (_gec < _bugun) _sureBitti = true;
+      else {
+        var _diffGun = Math.ceil((new Date(_gec).getTime() - new Date(_bugun).getTime()) / 86400000);
+        if (_diffGun >= 0 && _diffGun <= 7) _sureUyari = true;
+      }
+    }
+    var _leftBorder = _sureBitti ? '3px solid #A32D2D' : '3px solid transparent';
+    // SATIS-LISTE-UX-002: Per-row marj hesabı
+    var _rowMarj = _stMarjPct(t);
+    var _rowMarjStr = _rowMarj === null ? '—' : '%' + _rowMarj.toFixed(1);
+    var _rowMarjColor = _rowMarj === null ? 'var(--t3)' : (_rowMarj >= 25 ? '#16A34A' : _rowMarj >= 10 ? '#D97706' : '#DC2626');
+    return '<div style="border-bottom:0.5px solid var(--b);border-left:' + _leftBorder + ';transition:background .1s">'
+      + '<div onclick="event.stopPropagation();window._stPeekAc?.(\'' + t.id + '\')" style="display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+      // Sol: Müşteri adı büyük + teklif no/ürün sayısı küçük
       + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:monospace;letter-spacing:-.3px">' + esc(_teklifNo) + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
-      + '<div style="font-size:9px;color:var(--t3);font-family:monospace">' + esc(t.createdBy||'') + (t.createdBy?' \u00b7 ':'') + (t.createdAt?new Date(t.createdAt).toLocaleDateString('tr-TR'):'') + '</div>'
-      + '<div style="font-size:8px;color:'+surRenk+'">' + gunFark + ' g\u00fcn \u00f6nce' + (gunFark>14?' \u00b7 Takip gerekli':'') + '</div></div>'
-      // Orta: Tutar (bold, sağa yasla)
-      + '<div style="font-size:13px;font-weight:700;color:var(--t);white-space:nowrap">' + _genelToplam.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + _paraBirimi + '</span></div>'
-      // Durum badge
-      + '<div><span style="font-size:8px;padding:2px 8px;border-radius:99px;background:' + bc + '18;color:' + bc + ';font-weight:700;white-space:nowrap">' + (STAT[t.durum]||'Taslak') + '</span>'
-      + (t.gonderimTarih ? '<div style="font-size:9px;color:var(--t3);margin-top:2px">📤 ' + esc(t.gonderimTarih) + (t.gonderenAd ? ' · ' + esc(t.gonderenAd) : '') + '</div>' : '')
-      + (t.takipTarih ? (function() { var gec = new Date(t.takipTarih) < new Date(); return '<div style="font-size:9px;color:' + (gec ? '#A32D2D' : 'var(--t3)') + ';margin-top:1px">📅 Takip: ' + esc(t.takipTarih) + (gec ? ' ⚠ Geçti' : '') + '</div>'; })() : '')
-      + (t.onaylayanAd ? '<div style="font-size:8px;color:#0F6E56;margin-top:1px">Onaylayan: ' + esc(t.onaylayanAd) + '</div>' : '')
-      + (t.rededenAd ? '<div style="font-size:8px;color:#A32D2D;margin-top:1px">Reddeden: ' + esc(t.rededenAd) + '</div>' : '')
+      + '<div style="font-size:14px;font-weight:700;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + ' · ' + (t.urunler || []).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
       + '</div>'
-      + '<div style="flex-shrink:0;text-align:right">'
-      + (t.createdAt ? '<div style="font-size:8px;color:var(--t3)">📝 ' + esc((t.createdAt || '').slice(0, 10)) + '</div>' : '')
+      // Orta: Tutar bold + para birimi soluk
+      + '<div style="text-align:right;flex-shrink:0;min-width:130px"><div style="font-size:14px;font-weight:700;color:var(--t);white-space:nowrap">' + _genelToplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(_paraBirimi) + '</span></div></div>'
+      // Marj
+      + '<div style="text-align:right;flex-shrink:0;min-width:60px"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Marj</div><div style="font-size:13px;font-weight:700;color:' + _rowMarjColor + '">' + _rowMarjStr + '</div></div>'
+      // Durum badge + Süresi Doldu + ⚠
+      + '<div style="flex-shrink:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap;max-width:170px"><span style="font-size:9px;padding:3px 10px;border-radius:99px;background:' + bc + '18;color:' + bc + ';font-weight:700;white-space:nowrap">' + (STAT[t.durum] || 'Taslak') + '</span>'
+      + (_sureBitti ? '<span style="font-size:9px;padding:2px 8px;border-radius:99px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: ' + esc(_gec) + '">Süresi Doldu</span>' : '')
+      + (_sureUyari ? '<span title="Geçerlilik 7 gün içinde dolacak: ' + esc(_gec) + '" style="color:#D97706;font-size:14px;cursor:help">⚠</span>' : '')
       + '</div>'
-      // İşlem butonları (pill boyutunda)
-      + '<div style="display:flex;gap:3px;flex-shrink:0">'
-      + '<button onclick="window._printSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--s2);color:var(--t3)">PDF</button>'
-      + '<button onclick="event.stopPropagation();window._stPeekAc(\'' + t.id + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Detay</button>'
-      + '<button onclick="event.stopPropagation();window._stPIGuncelle(\'' + t.id + '\')" style="font-size:9px;padding:2px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:#185FA5">PI ↻</button>'
-      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriOnayladi?.(' + t.id + ')" style="'+pillS+'background:#16A34A18;color:#16A34A">✓</button>' : '')
-      + (t.durum==='taslak'||t.durum==='gonderildi' ? '<button onclick="window._musteriReddetti?.(' + t.id + ')" style="'+pillS+'background:#DC262618;color:#DC2626">✗</button>' : '')
-      + (t.durum!=='taslak' ? '<button onclick="window._reviseSatisTeklif?.(' + t.id + ')" style="'+pillS+'background:var(--al);color:var(--ac)">Rev</button>' : '')
-      + (t.durum==='kabul' ? '<button onclick="window._createPR?.(' + t.id + ')" style="'+pillS+'background:#D9770618;color:#D97706">PR</button>' : '')
-      + '<button onclick="event.stopPropagation();window._saV2TeklifDuzenle(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">D\u00fczenle</button>'
-      + '<button onclick="event.stopPropagation();window._saV2DurumDegistir(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Durum</button>'
-      + '<button onclick="event.stopPropagation();window._saV2SatisPDF(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:none;border-radius:4px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">PDF</button>'
-      + '<button onclick="event.stopPropagation();window._saV2TeklifSil(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>'
-      + '<button onclick="event.stopPropagation();window._saV2TeklifKopya(\''+t.id+'\')" style="font-size:8px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">Kopyala</button>'
-      + '</div></div>';
+      // İki buton: PDF + ···
+      + '<div style="display:flex;gap:4px;flex-shrink:0">'
+      + '<button onclick="event.stopPropagation();window._printSatisTeklif?.(\'' + t.id + '\')" style="font-size:9px;padding:5px 14px;border-radius:5px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>'
+      + '<button onclick="event.stopPropagation();window._stToggleMenu?.(\'' + t.id + '\')" title="Daha fazla işlem" style="font-size:14px;padding:2px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);line-height:1">···</button>'
+      + '</div>'
+      + '</div>'
+      // İnline mini menü (varsayılan kapalı, _stToggleMenu ile flex/none)
+      + '<div id="st-menu-' + t.id + '" style="display:none;padding:8px 16px 12px 16px;background:var(--s2);border-top:0.5px solid var(--b);flex-wrap:wrap;gap:6px">'
+      + '<button onclick="event.stopPropagation();window._stPeekAc?.(\'' + t.id + '\')" style="' + pillS + '">Detay</button>'
+      + '<button onclick="event.stopPropagation();window._stPIGuncelle?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#185FA5;color:#185FA5">PI ↻</button>'
+      + '<button onclick="event.stopPropagation();window._saV2TeklifDuzenle?.(\'' + t.id + '\')" style="' + pillS + '">Düzenle</button>'
+      + '<button onclick="event.stopPropagation();window._saV2DurumDegistir?.(\'' + t.id + '\')" style="' + pillS + '">Durum</button>'
+      + (t.durum === 'taslak' || t.durum === 'gonderildi' ? '<button onclick="event.stopPropagation();window._musteriOnayladi?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#16A34A;color:#16A34A">✓ Onay</button>' : '')
+      + (t.durum === 'taslak' || t.durum === 'gonderildi' ? '<button onclick="event.stopPropagation();window._musteriReddetti?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#DC2626;color:#DC2626">✗ Red</button>' : '')
+      + (t.durum !== 'taslak' ? '<button onclick="event.stopPropagation();window._reviseSatisTeklif?.(\'' + t.id + '\')" style="' + pillS + 'border-color:var(--ac);color:var(--ac)">Rev</button>' : '')
+      + (t.durum === 'kabul' ? '<button onclick="event.stopPropagation();window._createPR?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#D97706;color:#D97706">PR</button>' : '')
+      + '<button onclick="event.stopPropagation();window._saV2TeklifKopya?.(\'' + t.id + '\')" style="' + pillS + '">Kopyala</button>'
+      + '<button onclick="event.stopPropagation();window._saV2TeklifSil?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#A32D2D;color:#A32D2D">Sil</button>'
+      + '</div>'
+      + '</div>';
   }).join('');
+};
+
+/**
+ * SATIS-LISTE-UX-002: Satır altında inline mini menü toggle.
+ * Her menü açıldığında diğer açık menüler kapatılır.
+ * @param {string|number} id Teklif id
+ */
+window._stToggleMenu = function(id) {
+  var hedef = document.getElementById('st-menu-' + id);
+  document.querySelectorAll('[id^="st-menu-"]').forEach(function(m) {
+    if (m !== hedef) m.style.display = 'none';
+  });
+  if (hedef) hedef.style.display = (hedef.style.display === 'flex') ? 'none' : 'flex';
 };
 
 /* ── SATIS-LISTE-001: Düzenle / Durum Değiştir / PDF helper'ları ─── */
