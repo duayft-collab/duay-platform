@@ -1942,19 +1942,38 @@ window.renderSatisTeklifleri = function() {
       + '<div style="margin:12px 20px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;overflow:hidden"><div id="satis-list"></div></div>';
   }
   var STAT = {taslak:'Taslak',gonderildi:'Gönderildi',onay:'Onay Bekliyor',kabul:'Kabul Edildi',red:'Reddedildi'};
+  // SATIS-LISTE-UX-002: Per-teklif marj hesaplama helper
+  var _stMarjPct = function(t) {
+    var urunler = t.urunler || [];
+    if (!urunler.length) return null;
+    var ms = urunler.map(function(u) {
+      var sf = parseFloat(u.satisFiyat || u.satisF) || 0;
+      var af = parseFloat(u.alisF) || 0;
+      return sf > 0 ? ((sf - af) / sf) * 100 : null;
+    }).filter(function(m) { return m !== null; });
+    if (!ms.length) return null;
+    return ms.reduce(function(a,b) { return a+b; }, 0) / ms.length;
+  };
+  // SATIS-LISTE-UX-002: Toplam Deger fix — genelToplam yoksa toplam fallback'i
+  var _stToplamDeger = d.reduce(function(s,t) { return s + (parseFloat(t.genelToplam || t.toplam) || 0); }, 0);
+  // SATIS-LISTE-UX-002: Ort. Marj hesabi
+  var _stMarjlar = d.map(_stMarjPct).filter(function(m) { return m !== null; });
+  var _stOrtMarj = _stMarjlar.length ? _stMarjlar.reduce(function(a,b) { return a+b; }, 0) / _stMarjlar.length : 0;
+  var _stMarjColor = _stOrtMarj >= 25 ? '#16A34A' : _stOrtMarj >= 10 ? '#D97706' : '#DC2626';
   var statsEl = document.getElementById('satis-stats');
   if (statsEl) statsEl.innerHTML = '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam</div><div style="font-size:22px;font-weight:600">' + d.length + '</div></div>'
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Onay Bekleyen</div><div style="font-size:22px;font-weight:600;color:#D97706">' + d.filter(function(t){return t.durum==='onay';}).length + '</div></div>'
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kabul Edilen</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + d.filter(function(t){return t.durum==='kabul';}).length + '</div></div>'
-    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(d.reduce(function(s,t){return s+(parseFloat(t.genelToplam)||0);},0)).toLocaleString('tr-TR') + '</div></div>';
-  var bugunTakip = d.filter(function(t) { if (!t.takipTarih) return false; var td = new Date(t.takipTarih); var now = new Date(); return td.toDateString() === now.toDateString() || td < now; }).length;
-  if (statsEl) statsEl.innerHTML += '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Bugün Takip</div><div style="font-size:22px;font-weight:600;color:' + (bugunTakip > 0 ? '#A32D2D' : 'var(--t)') + '">' + bugunTakip + '</div></div>';
-  /* Müşteri dropdown doldur */
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(_stToplamDeger).toLocaleString('tr-TR') + '</div></div>'
+    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ort. Marj</div><div style="font-size:22px;font-weight:600;color:' + _stMarjColor + '">%' + _stOrtMarj.toFixed(1) + '</div></div>';
+  /* SATIS-LISTE-UX-002: Müşteri dropdown her render'da güncellenir, mevcut seçim korunur */
   var _stMusFiltre = document.getElementById('st-musteri-filtre');
-  if (_stMusFiltre && _stMusFiltre.options.length <= 1) {
+  if (_stMusFiltre) {
+    var _stMevcutMus = _stMusFiltre.value;
     var _stMusSet = {};
     d.forEach(function(t) { if (t.musteri) _stMusSet[t.musteri] = true; });
-    Object.keys(_stMusSet).sort().forEach(function(m) { var o = document.createElement('option'); o.value = m; o.textContent = m; _stMusFiltre.appendChild(o); });
+    var _stOpts = '<option value="">Tüm müşteriler</option>' + Object.keys(_stMusSet).sort().map(function(m) { return '<option value="' + esc(m) + '"' + (m === _stMevcutMus ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('');
+    if (_stMusFiltre.innerHTML !== _stOpts) _stMusFiltre.innerHTML = _stOpts;
   }
   /* Filtre uygula */
   var _stQ = (document.getElementById('st-srch')?.value || '').toLowerCase();
@@ -1974,15 +1993,20 @@ window.renderSatisTeklifleri = function() {
     var bc = badgeColors[t.durum]||'#9CA3AF';
     var gunFark = t.createdAt ? Math.floor((Date.now()-new Date(t.createdAt).getTime())/86400000) : 0;
     var surRenk = gunFark>14?'#A32D2D':gunFark>7?'#854F0B':'var(--t3)';
+    // SATIS-SCHEMA-FIX-001: _saV2SatisKaydet ile yazılan eski şemalı kayıtlar için fallback
+    var _teklifNo = t.teklifNo || t.teklifId || '—';
+    var _musteri = t.musteri || t.musteriAd || '';
+    var _genelToplam = parseFloat(t.genelToplam || t.toplamSatis || 0);
+    var _paraBirimi = t.paraBirimi || 'TRY';
     return '<div onclick="event.stopPropagation();window._stPeekAc?.(' + t.id + ')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);transition:background .1s;cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       // Sol: Teklif No (bold, büyük) + müşteri + ürün sayısı
       + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:monospace;letter-spacing:-.3px">' + esc(t.teklifNo||'—') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.musteri||'') + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:monospace;letter-spacing:-.3px">' + esc(_teklifNo) + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + ' · ' + (t.urunler||[]).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
       + '<div style="font-size:9px;color:var(--t3);font-family:monospace">' + esc(t.createdBy||'') + (t.createdBy?' \u00b7 ':'') + (t.createdAt?new Date(t.createdAt).toLocaleDateString('tr-TR'):'') + '</div>'
       + '<div style="font-size:8px;color:'+surRenk+'">' + gunFark + ' g\u00fcn \u00f6nce' + (gunFark>14?' \u00b7 Takip gerekli':'') + '</div></div>'
       // Orta: Tutar (bold, sağa yasla)
-      + '<div style="font-size:13px;font-weight:700;color:var(--t);white-space:nowrap">' + (t.genelToplam||0).toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + (t.paraBirimi||'USD') + '</span></div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--t);white-space:nowrap">' + _genelToplam.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + _paraBirimi + '</span></div>'
       // Durum badge
       + '<div><span style="font-size:8px;padding:2px 8px;border-radius:99px;background:' + bc + '18;color:' + bc + ';font-weight:700;white-space:nowrap">' + (STAT[t.durum]||'Taslak') + '</span>'
       + (t.gonderimTarih ? '<div style="font-size:9px;color:var(--t3);margin-top:2px">📤 ' + esc(t.gonderimTarih) + (t.gonderenAd ? ' · ' + esc(t.gonderenAd) : '') + '</div>' : '')

@@ -244,7 +244,14 @@ window._saV2SatisKaydet = function(alisId) {
     gecerlilik:document.getElementById('st-gecerlilik')?.value||'',
     durum:'taslak',
     createdAt:window._saNow?.(),
-    updatedAt:window._saNow?.()
+    updatedAt:window._saNow?.(),
+    // SATIS-SCHEMA-FIX-001: renderSatisTeklifleri ile uyumlu alan alias'lari
+    teklifNo: teklifId,
+    musteri: musteriAd,
+    genelToplam: parseFloat(toplamSatis),
+    paraBirimi: 'TRY',
+    createdBy: (window.Auth && window.Auth.getCU && window.Auth.getCU()?.name) || (window.CU && window.CU()?.name) || '',
+    jobId: document.getElementById('st-job-id')?.value || ''
   };
   var teklifler = typeof window.loadSatisTeklifleri === 'function' ? window.loadSatisTeklifleri() : [];
   teklifler.unshift(kayit);
