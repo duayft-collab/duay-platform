@@ -1478,7 +1478,7 @@ function addToTrash(item, moduleName, collection) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadOdm() { var d = _read(KEYS.odemeler); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(-1000);} _write(KEYS.odemeler, d);
+/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(-1000);} _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
 /** @returns {Array<Object>} */
@@ -1500,7 +1500,7 @@ function loadTahsilat() {
 }
 /** @param {Array<Object>} d */
 function storeTahsilat(d) {
-  var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.tahsilat, d);
+  var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.tahsilat, d);
   var _fp_tahsilat = _fsPath('tahsilat');
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
