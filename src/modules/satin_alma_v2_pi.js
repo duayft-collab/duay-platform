@@ -340,7 +340,7 @@ window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div><div style="font-size:18px;font-weight:700">Duay Global LLC</div>';
   h += '<div style="font-size:9px;color:#888;margin-top:4px">www.duaycor.com · +90 212 625 5 444 · WA: +90 532 270 5 113</div></div>';
   h += '<div style="text-align:right"><div style="font-size:8px;letter-spacing:.15em;color:#185FA5;font-weight:600">'+(L.baslik||'PROFORMA INVOICE')+'</div>';
-  h += '<div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px">'+(t.teklifNo||t.teklifId||t.id||'—')+'</div>';
+  h += '<div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px">'+(t.piNo||t.teklifNo||t.teklifId||t.id||'—')+'</div>';
   h += '<div style="font-size:9px;color:#888;margin-top:2px">'+bugun+'</div></div>';
   h += '</div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid #eee">';
@@ -382,7 +382,7 @@ window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</div>';
   h += '<div style="text-align:center;margin-bottom:18px">';
   h += '<div style="font-size:8px;letter-spacing:.2em;color:#aaa;margin-bottom:3px">'+(L.baslik||'PROFORMA INVOICE').toUpperCase()+'</div>';
-  h += '<div style="font-size:13px;font-family:monospace;font-weight:600">'+(t.teklifNo||t.teklifId||t.id||'—')+'</div>';
+  h += '<div style="font-size:13px;font-family:monospace;font-weight:600">'+(t.piNo||t.teklifNo||t.teklifId||t.id||'—')+'</div>';
   h += '<div style="font-size:8px;color:#aaa;margin-top:2px">'+bugun+'</div>';
   h += '</div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
@@ -416,7 +416,7 @@ window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px;padding:24px 28px;border:0.5px solid #e5e5e5">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">';
   h += '<div><div style="font-size:16px;font-weight:600">Duay Global LLC</div><div style="font-size:8px;color:#aaa;margin-top:3px">www.duaycor.com · +90 212 625 5 444 · WA: +90 532 270 5 113</div></div>';
-  h += '<div style="text-align:right"><div style="font-size:7px;letter-spacing:.15em;color:#aaa;margin-bottom:3px">'+(L.baslik||'PROFORMA INVOICE').toUpperCase()+'</div><div style="font-size:13px;font-weight:600;font-family:monospace">'+(t.teklifNo||t.teklifId||t.id||'—')+'</div><div style="font-size:8px;color:#aaa;margin-top:2px">'+bugun+'</div></div>';
+  h += '<div style="text-align:right"><div style="font-size:7px;letter-spacing:.15em;color:#aaa;margin-bottom:3px">'+(L.baslik||'PROFORMA INVOICE').toUpperCase()+'</div><div style="font-size:13px;font-weight:600;font-family:monospace">'+(t.piNo||t.teklifNo||t.teklifId||t.id||'—')+'</div><div style="font-size:8px;color:#aaa;margin-top:2px">'+bugun+'</div></div>';
   h += '</div>';
   h += '<div style="height:2px;background:#111;margin-bottom:14px"></div>';
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;font-size:8px">';
