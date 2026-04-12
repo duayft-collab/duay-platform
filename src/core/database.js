@@ -2194,7 +2194,7 @@ function startRealtimeSync() {
     ['users',         KEYS.users,         (data) => { _refreshCU(data); if (!window._adminSaving) window.renderUsers?.(); }],
     // Kritik — her kullanıcı için
     ['tasks',         KEYS.tasks,         (data) => { _checkNewAssignments(data); window.renderPusulaPro?.(); }],
-    ['calendar',      KEYS.calendar,      () => window.renderCal?.()],
+    ['calendar',      KEYS.calendar,      () => { window.renderCal?.(); window.renderPusulaPro?.(); }],
     ['announcements', KEYS.announcements, () => window.renderAnnouncements?.()],
     // Operasyon
     ['kargo',         KEYS.kargo,         () => window.Kargo?.render?.()],
@@ -2206,8 +2206,8 @@ function startRealtimeSync() {
     ['pirim',         KEYS.pirim,         () => window.Pirim?.render?.()],
     // Diğer
     ['hedefler',      KEYS.hedefler,      () => window.renderHedefler?.()],
-    ['odemeler',      KEYS.odemeler,      () => window.renderOdemeler?.()],
-    ['tahsilat',      KEYS.tahsilat,      () => window.renderOdemeler?.()],
+    ['odemeler',      KEYS.odemeler,      () => { window.renderOdemeler?.(); window.renderNakitAkis?.(); }],
+    ['tahsilat',      KEYS.tahsilat,      () => { window.renderOdemeler?.(); window.renderNakitAkis?.(); }],
     ['satinalma',     KEYS.satinalma,     () => window.renderSatinAlma?.()],
     ['cari',          KEYS.cari,          () => window.renderCari?.()],
     // Ek kritik koleksiyonlar
