@@ -1401,7 +1401,7 @@ const DEFAULT_NUMUNE = [
   { id: 2, dir: 'cikis', name: 'Renk Kartı Seti',         code: 'NM-002', qty: 1, date: '2026-03-15', uid: 3, iadeDate: '2026-03-30', returned: false, note: 'Fuar için çıkartıldı',  img: null },
 ];
 /** @returns {Array<Object>} */ function loadNumune()  { const d = _read(KEYS.numune); const arr = Array.isArray(d) ? d : DEFAULT_NUMUNE; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array<Object>} d */ function storeNumune(d){ var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.numune, d); 
+/** @param {Array<Object>} d */ function storeNumune(d){ var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.numune, d); 
   const _fp_numune = _fsPath('numune'); if (_fp_numune) _syncFirestore(_fp_numune, d);
 }
 
@@ -1548,20 +1548,20 @@ function storeTahsilat(d) {
 /** @returns {Array} @param {Object} [opts] tumKullanicilar / _dahilSilinenler */ function loadUrunler(opts) { var d = _read(KEYS.urunler); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }); if (!(opts && opts._dahilSilinenler)) filtreli = filtreli.filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
 /** @param {Array} d */ function storeUrunler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); if(Array.isArray(d) && d.length > 2000) { var aktif = d.filter(function(r){return !r.isDeleted;}); var silinen = d.filter(function(r){return r.isDeleted;}).sort(function(a,b){return (b.deletedAt||'')>(a.deletedAt||'')?1:-1;}).slice(0,200); d = aktif.concat(silinen); } _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array} d */ function storeAlisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeAlisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeSatisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-/** @param {Array} d */ function storeFikirler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeFikirler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadIddialar() { var d = _read(KEYS.iddialar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-/** @param {Array} d */ function storeIddialar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.iddialar, d); var _fp = _fsPath('iddialar'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeIddialar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.iddialar, d); var _fp = _fsPath('iddialar'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadTeklifSartlar() { var d = _read(KEYS.teklifSartlar); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-/** @param {Array} d */ function storeTeklifSartlar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeTeklifSartlar(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.teklifSartlar, d); var _fp = _fsPath('teklifSartlar'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadUpdateLog() { var d = _read(KEYS.updateLog); return Array.isArray(d) ? d : []; }
 /** @param {Array} d */ function storeUpdateLog(d) { _write(KEYS.updateLog, d); var _fp = _fsPath('updateLog'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array<Object>} */ function loadSmartGoals() { var d = _read(KEYS.smartGoals); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
