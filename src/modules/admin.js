@@ -58,6 +58,110 @@ function _debouncedSearch(val) {
 // ── Render: Split Layout ─────────────────────────────────────────
 let _selectedUserId = null;
 
+/**
+ * ADMIN-ONAY-LISTESI-001: "Bekleyen Onaylar" bölümü.
+ * loadAlisTeklifleri() içinden durum==='onay-hazir' olan kayıtları çeker
+ * ve admin panelinin en üstüne (adm-split öncesine) bir banner olarak basar.
+ * Hiç bekleyen yoksa container temizlenir (görünmez).
+ */
+function _renderBekleyenOnaylar() {
+  var panel = document.getElementById('panel-admin');
+  if (!panel) return;
+  // Container lazy inject — adm-split'in hemen öncesi
+  var cont = document.getElementById('admin-bekleyen-onay');
+  if (!cont) {
+    cont = document.createElement('div');
+    cont.id = 'admin-bekleyen-onay';
+    var split = panel.querySelector('.adm-split');
+    if (split) panel.insertBefore(cont, split);
+    else panel.insertBefore(cont, panel.firstChild);
+  }
+  var alis = (typeof loadAlisTeklifleri === 'function') ? loadAlisTeklifleri() : [];
+  var bekleyen = alis.filter(function(t) { return t.durum === 'onay-hazir'; });
+  if (!bekleyen.length) { cont.innerHTML = ''; return; }
+  var esc = window._esc;
+  cont.innerHTML = '<div style="padding:14px 20px;background:linear-gradient(135deg,#FAEEDA,#FCEBEB);border-bottom:1px solid var(--b)">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:18px">⏳</span><span style="font-size:14px;font-weight:700;color:#854F0B">Bekleyen Onaylar — ' + bekleyen.length + ' alış teklifi yöneticilik onayı bekliyor</span></div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    + bekleyen.map(function(t) {
+        var urunAdi = (t.urunler && t.urunler[0] && (t.urunler[0].urunAdi || t.urunler[0].turkceAdi)) || t.urunAdi || '—';
+        var urunCount = (t.urunler || []).length;
+        var tedarikci = t.tedarikci || '—';
+        var tutar = parseFloat(t.toplamTutar || t.genelToplam || t.toplam) || 0;
+        var para = t.toplamPara || t.paraBirimi || t.para || 'USD';
+        var sunmaTarih = t.onayaSunmaTarihi || t.updatedAt || t.createdAt || '';
+        var sunmaStr = sunmaTarih ? new Date(sunmaTarih).toLocaleString('tr-TR', {dateStyle:'short', timeStyle:'short'}) : '—';
+        var kaynakSatisNo = t.kaynakSatisTeklifNo || t.kaynakSatisNo || t.satisTeklifNo || t.kaynakTeklifNo || '—';
+        return '<div style="background:var(--sf);border:1px solid var(--b);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+          + '<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:600;color:var(--t)">' + esc(urunAdi) + (urunCount > 1 ? ' <span style="font-size:9px;color:var(--t3);font-weight:400">+' + (urunCount - 1) + ' ürün</span>' : '') + '</div>'
+          + '<div style="font-size:10px;color:var(--t3);margin-top:3px">🏭 ' + esc(tedarikci) + ' · 📅 Sunma: <span style="font-family:monospace">' + esc(sunmaStr) + '</span> · 🔗 Satış teklif: <span style="color:var(--ac);font-family:monospace">' + esc(kaynakSatisNo) + '</span></div></div>'
+          + '<div style="font-size:14px;font-weight:700;color:var(--t);white-space:nowrap">' + tutar.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span style="font-size:10px;color:var(--t3);font-weight:400">' + esc(para) + '</span></div>'
+          + '<div style="display:flex;gap:6px;flex-shrink:0">'
+          + '<button onclick="event.stopPropagation();window._adminOnayla?.(\'' + t.id + '\')" style="font-size:11px;padding:6px 14px;border:none;border-radius:6px;background:#16A34A;color:#fff;font-weight:600;cursor:pointer;font-family:inherit">✓ Onayla</button>'
+          + '<button onclick="event.stopPropagation();window._adminReddet?.(\'' + t.id + '\')" style="font-size:11px;padding:6px 14px;border:none;border-radius:6px;background:#DC2626;color:#fff;font-weight:600;cursor:pointer;font-family:inherit">✗ Reddet</button>'
+          + '</div></div>';
+      }).join('')
+    + '</div></div>';
+}
+
+/**
+ * ADMIN-ONAY-LISTESI-001: Alış teklifini onayla.
+ * Durum 'onaylandi', onaylayanId ve onayTarihi set edilir, kaydedilir,
+ * orijinal satınalmacıya (createdById) addNotif ile bildirim gönderilir.
+ */
+window._adminOnayla = function(id) {
+  if (!isAdmin()) { window.toast?.('Yetkiniz yok','err'); return; }
+  var alis = (typeof loadAlisTeklifleri === 'function') ? loadAlisTeklifleri() : [];
+  var t = alis.find(function(x) { return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamadı','err'); return; }
+  var now = new Date().toISOString();
+  t.durum = 'onaylandi';
+  t.onaylayanId = window.CU?.()?.id || '';
+  t.onayTarihi = now;
+  t.updatedAt = now;
+  if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(alis);
+  var hedef = t.createdById || t.uid;
+  if (window.addNotif && hedef) {
+    var urunAdi = (t.urunler && t.urunler[0] && (t.urunler[0].urunAdi || t.urunler[0].turkceAdi)) || t.urunAdi || '—';
+    window.addNotif('✅', 'Alış teklifin onaylandı: ' + urunAdi + ' (' + (t.tedarikci || '—') + ')', 'ok', 'satinalma', hedef);
+  }
+  window.logActivity?.('admin', 'Alis teklif onaylandi: ' + id);
+  window.toast?.('Onaylandı ✓','ok');
+  renderAdmin();
+};
+
+/**
+ * ADMIN-ONAY-LISTESI-001: Alış teklifini reddet.
+ * Confirm modal sonrası durum 'reddedildi', reddedenId/redTarihi set edilir.
+ */
+window._adminReddet = function(id) {
+  if (!isAdmin()) { window.toast?.('Yetkiniz yok','err'); return; }
+  var doIt = function() {
+    var alis = (typeof loadAlisTeklifleri === 'function') ? loadAlisTeklifleri() : [];
+    var t = alis.find(function(x) { return String(x.id) === String(id); });
+    if (!t) { window.toast?.('Teklif bulunamadı','err'); return; }
+    var now = new Date().toISOString();
+    t.durum = 'reddedildi';
+    t.reddedenId = window.CU?.()?.id || '';
+    t.redTarihi = now;
+    t.updatedAt = now;
+    if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(alis);
+    var hedef = t.createdById || t.uid;
+    if (window.addNotif && hedef) {
+      var urunAdi = (t.urunler && t.urunler[0] && (t.urunler[0].urunAdi || t.urunler[0].turkceAdi)) || t.urunAdi || '—';
+      window.addNotif('❌', 'Alış teklifin reddedildi: ' + urunAdi, 'err', 'satinalma', hedef);
+    }
+    window.logActivity?.('admin', 'Alis teklif reddedildi: ' + id);
+    window.toast?.('Reddedildi','warn');
+    renderAdmin();
+  };
+  if (window.confirmModal) {
+    window.confirmModal('Bu alış teklifini reddetmek istediğinizden emin misiniz?', { title:'Reddet', danger:true, confirmText:'Evet, Reddet', onConfirm: doIt });
+  } else {
+    if (confirm('Bu alış teklifini reddetmek istiyor musunuz?')) doIt();
+  }
+};
+
 function renderAdmin() {
   var _up = document.getElementById('panel-admin');
   if (_up) delete _up.dataset.injected;
@@ -69,6 +173,8 @@ function renderAdmin() {
   checkInactiveUsers();
   checkPermExpiry();
   registerSession();
+  // ADMIN-ONAY-LISTESI-001: Bekleyen alış teklif onaylarını panel üstüne bas
+  _renderBekleyenOnaylar();
 
   const users  = loadUsers();
   const search = (g('admin-search')?.value || '').toLowerCase();
