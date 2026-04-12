@@ -98,12 +98,12 @@ window.renderSatinAlmaV2 = function() {
     h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._saEsc?_saEsc(window._saV2UrunAdi?.(t)||'—'):window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+'</div>';
     h+='<div style="font-size:9px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(t.tedarikci||'—')+' · '+(t.jobId||'—')+'</div></div>';
     h+='<div style="font-size:10px;font-weight:500;color:#0F6E56">'+((window._saV2AlisF?.(t)||0).toLocaleString('tr-TR',{maximumFractionDigits:2}))+' '+(window._saV2Para?.(t)||'USD')+'</div>';
-    // SAV2-GECERLILIK-001: badge — sureBitti ise kirmizi "suresi-doldu", sureUyari ise yaninda turuncu uyari ikonu
-    var _bgColor=_sureBitti?'#FCEBEB':(durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA');
-    var _fgColor=_sureBitti?'#791F1F':(durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806');
-    var _badgeText=_sureBitti?'⛔ suresi-doldu':durum;
+    // SAV2-GECERLILIK-001: durum badge yanina ayri "Süresi Doldu" badge ve 7-gun ⚠ uyari ikonu
+    var _bgColor=durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA';
+    var _fgColor=durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806';
+    var _bittiBadge=_sureBitti?' <span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: '+_gecerlilik+'">Süresi Doldu</span>':'';
     var _uyariIkon=_sureUyari?' <span title="Gecerlilik 7 gun icinde dolacak: '+_gecerlilik+'" style="color:#D97706;font-size:10px;cursor:help">⚠</span>':'';
-    h+='<div style="display:flex;align-items:center;gap:2px"><span style="font-size:8px;padding:2px 6px;border-radius:8px;white-space:nowrap;background:'+_bgColor+';color:'+_fgColor+'">'+_badgeText+'</span>'+_uyariIkon+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:3px"><span style="font-size:8px;padding:2px 6px;border-radius:8px;white-space:nowrap;background:'+_bgColor+';color:'+_fgColor+'">'+durum+'</span>'+_bittiBadge+_uyariIkon+'</div>';
     h+='</div>';
     if(t.urunler&&t.urunler.length>1){
       t.urunler.forEach(function(u,idx){
@@ -141,14 +141,30 @@ window.renderSatinAlmaV2 = function() {
 window._saV2DetayHTML = function(t) {
   var _b='var(--color-border-tertiary)';
   var durum=t.durum||'bekleyen';
-  var solRenk=durum==='onaylandi'?'#0F6E56':durum==='reddedildi'?'#A32D2D':'#854F0B';
+  // SAV2-GECERLILIK-002: gecerlilik kontrolu (SAV2-GECERLILIK-001 ile ayni mantik)
+  var _gecerlilik=t.gecerlilikTarihi||t.validUntil||'';
+  var _sureBitti=false, _sureUyari=false;
+  if(_gecerlilik){
+    var _bugun=new Date().toISOString().slice(0,10);
+    if(_gecerlilik<_bugun) _sureBitti=true;
+    else {
+      var _diffGun=Math.ceil((new Date(_gecerlilik).getTime()-new Date(_bugun).getTime())/86400000);
+      if(_diffGun>=0 && _diffGun<=7) _sureUyari=true;
+    }
+  }
+  var solRenk=_sureBitti?'#A32D2D':(durum==='onaylandi'?'#0F6E56':durum==='reddedildi'?'#A32D2D':'#854F0B');
   var h='<div style="border-left:2px solid '+solRenk+'">';
   h+='<div style="padding:12px 14px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary)">';
   var gorsel=t.gorsel||(t.urunler&&t.urunler[0]?.gorsel)||'';
   if(gorsel) h+='<img src="'+gorsel+'" style="width:48px;height:48px;border-radius:6px;object-fit:cover;float:right;margin-left:8px">';
   h+='<div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">'+(window._saV2UrunAdi?.(t)||'—')+'</div>';
   h+='<div style="font-size:9px;color:var(--color-text-tertiary);margin-top:2px">'+(window._saV2DuayKodu?.(t)||'—')+' · '+(t.tedarikci||'—')+'</div>';
-  h+='<div style="margin-top:6px"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:'+(durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA')+';color:'+(durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806')+'">'+durum+'</span></div>';
+  // SAV2-GECERLILIK-002: durum badge yanina ayri "Süresi Doldu" badge ve 7-gun ⚠ uyari ikonu (liste view ile ayni pattern)
+  var _bgColor=durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA';
+  var _fgColor=durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806';
+  var _bittiBadge=_sureBitti?' <span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: '+_gecerlilik+'">Süresi Doldu</span>':'';
+  var _uyariIkon=_sureUyari?' <span title="Gecerlilik 7 gun icinde dolacak: '+_gecerlilik+'" style="color:#D97706;font-size:10px;cursor:help">⚠</span>':'';
+  h+='<div style="margin-top:6px;display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:'+_bgColor+';color:'+_fgColor+'">'+durum+'</span>'+_bittiBadge+_uyariIkon+'</div>';
   h+='<div style="clear:both"></div>';
   h+='</div>';
   h+='<div style="padding:10px 14px">';
