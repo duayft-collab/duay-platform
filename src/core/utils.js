@@ -110,6 +110,9 @@ const escapeHtml = str => {
     .replace(/'/g, '&#039;');
 };
 
+// XSS-ESC-001: window._esc kisayolu — modullerin innerHTML icine kullanici verisi yazarken kullanmasi icin
+window._esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
+
 // ════════════════════════════════════════════════════════════════
 // XSS KORUMA — DOMPurify Wrapper  [YENİ v8.2.0]
 // Anayasa Kural 02 — Stored XSS önleme

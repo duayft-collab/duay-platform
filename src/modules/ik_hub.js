@@ -861,11 +861,11 @@ function renderIkPersonel() {
         </div>
         <div style="flex:1;min-width:180px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:14px">${p.name}</span>
+            <span style="font-weight:700;font-size:14px">${window._esc(p.name||'')}</span>
             <span class="badge ${st.c}">${st.l}</span>
-            ${p.dept ? `<span style="font-size:11px;color:var(--t3);background:var(--s2);padding:1px 7px;border-radius:99px">${p.dept}</span>` : ''}
+            ${p.dept ? `<span style="font-size:11px;color:var(--t3);background:var(--s2);padding:1px 7px;border-radius:99px">${window._esc(p.dept)}</span>` : ''}
           </div>
-          <div style="font-size:12px;color:var(--t2);margin-bottom:6px">${p.pos || '—'}</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:6px">${window._esc(p.pos || '—')}</div>
           ${p.email ? `<div style="font-size:11px;color:var(--ac)">✉ ${p.email}</div>` : ''}
           ${p.phone ? `<div style="font-size:11px;color:var(--t3)">📞 ${p.phone}</div>` : ''}
           ${p.start ? `<div style="font-size:11px;color:var(--t3)">📅 Giriş: ${p.start}</div>` : ''}
@@ -939,7 +939,7 @@ function renderIkPuantaj() {
       _diffMin(r.pO, r.aO) + ' dk' : '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-weight:500">${u.name}</td>
+      <td style="font-weight:500">${window._esc(u.name||'')}</td>
       <td style="font-family:'DM Mono',monospace">${r.date}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--t2)">${r.pI||'—'} – ${r.pO||'—'}</td>
       <td style="font-family:'DM Mono',monospace">${r.aI||'<span style="color:var(--rd)">—</span>'} – ${r.aO||'—'}</td>
@@ -1035,7 +1035,7 @@ function renderIkIzin() {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span class="badge ${st.c}">${st.l}</span>
             <span style="font-size:12px;font-weight:600;background:var(--s2);padding:2px 8px;border-radius:6px">${iz.tip||'Yıllık İzin'}</span>
-            ${_isAdminIk() ? `<span style="font-size:12px;font-weight:600">${u.name}</span>` : ''}
+            ${_isAdminIk() ? `<span style="font-size:12px;font-weight:600">${window._esc(u.name||'')}</span>` : ''}
           </div>
           <div style="font-size:13px;font-weight:600;margin-bottom:4px">
             ${iz.bas||'—'} → ${iz.bitis||'—'}
@@ -1157,8 +1157,8 @@ function renderIkMaas() {
     const net  = m.net || ((m.brut||0)-sgk-gv);
     const tr   = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-weight:500">${u.name}</td>
-      <td style="font-size:12px;color:var(--t2)">${u.dept||'—'}</td>
+      <td style="font-weight:500">${window._esc(u.name||'')}</td>
+      <td style="font-size:12px;color:var(--t2)">${window._esc(u.dept||'—')}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:600">${(m.brut||0).toLocaleString('tr-TR')} ₺</td>
       <td style="font-family:'DM Mono',monospace;color:var(--t2)">${sgk.toFixed(0)} ₺</td>
       <td style="font-family:'DM Mono',monospace;color:var(--t2)">${gv.toFixed(0)} ₺</td>
@@ -1347,7 +1347,7 @@ function renderIkPerformans() {
         </div>
         <div style="flex:1;min-width:180px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:14px">${u.name}</span>
+            <span style="font-weight:700;font-size:14px">${window._esc(u.name||'')}</span>
             <span class="badge ${def.c}">${def.l}</span>
             ${p.donem?`<span style="font-size:11px;color:var(--t3)">${p.donem}</span>`:''}
           </div>
@@ -1355,7 +1355,7 @@ function renderIkPerformans() {
           ${p.gelisim?`<div style="font-size:12px;color:var(--t2);margin-bottom:2px">📈 <strong>Gelişim:</strong> ${p.gelisim}</div>`:''}
           ${p.hedef?`<div style="font-size:12px;color:var(--t2)">🎯 <strong>Hedef:</strong> ${p.hedef}</div>`:''}
           <div style="font-size:10px;color:var(--t3);margin-top:6px">
-            Değerlendiren: ${users.find(x=>x.id===p.degUid)?.name||'—'} · ${p.ts?.slice(0,10)||''}
+            Değerlendiren: ${window._esc(users.find(x=>x.id===p.degUid)?.name||'—')} · ${p.ts?.slice(0,10)||''}
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
@@ -1381,7 +1381,7 @@ function openIkPerfModal(id) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
         <div style="grid-column:1/-1"><label class="fl">Personel *</label>
           <select class="fi" id="ikperf-uid-modal">
-            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${u.name}</option>`).join('')}
+            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${window._esc(u.name||'')}</option>`).join('')}
           </select></div>
         <div><label class="fl">Değerlendirme Dönemi</label>
           <select class="fi" id="ikperf-donem-modal">
@@ -1501,7 +1501,7 @@ function renderIkSozlesme() {
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span style="font-size:20px">📄</span>
-            <span style="font-weight:700;font-size:14px">${u.name}</span>
+            <span style="font-weight:700;font-size:14px">${window._esc(u.name||'')}</span>
             <span style="font-size:11px;font-weight:700;background:var(--s2);padding:2px 8px;border-radius:6px">${s.tip||'Belirsiz Süreli'}</span>
             <span class="badge ${expired?'br':nearEnd?'ba':'bg'}">${expired?'❌ Süresi Geçmiş':nearEnd?'⏰ Yakında Bitiyor':'✅ Geçerli'}</span>
           </div>
@@ -1535,7 +1535,7 @@ function openIkSozlesmeModal(id) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
         <div style="grid-column:1/-1"><label class="fl">Personel *</label>
           <select class="fi" id="iksoz-uid">
-            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${u.name}</option>`).join('')}
+            ${users.map(u=>`<option value="${u.id}" ${entry?.uid===u.id?'selected':''}>${window._esc(u.name||'')}</option>`).join('')}
           </select></div>
         <div style="grid-column:1/-1"><label class="fl">Sözleşme Tipi</label>
           <select class="fi" id="iksoz-tip">
@@ -2232,7 +2232,7 @@ function renderPipe(){
     const col=document.createElement('div');col.className='stage-col';
     col.innerHTML=`<div class="stage-hdr"><span class="stage-lbl">${T(stage.i18n)}</span><span class="stage-cnt">${cards.length}</span></div>
     <div class="stage-body">${cards.map(c=>`<div class="pcard" onclick="openModal(${c.id})">
-      <div class="pcard-pos">${c.position}</div><div class="pcard-name">${c.name}</div>
+      <div class="pcard-pos">${window._esc(c.position||'')}</div><div class="pcard-name">${window._esc(c.name||'')}</div>
       <div class="pcard-meta">3 gün önce · ${c.loc}</div>
       <div class="pcard-foot"><div style="display:flex;gap:3px">
         <button onclick="event.stopPropagation();openAiAnalysis(${c.id})" style="background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:9px;padding:2px 5px;color:var(--text3)">AI</button>
@@ -2693,8 +2693,8 @@ function renderKayitlar(){
     <div class="db-row">
       <div class="db-av">${r.aday.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:13px;color:var(--text)">${r.aday}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${r.poz||'—'} · ${r.tarih} · ${r.gorusen}</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text)">${window._esc(r.aday||'')}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${window._esc(r.poz||'—')} · ${r.tarih} · ${window._esc(r.gorusen||'')}</div>
         ${r.not?`<div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5">${r.not.slice(0,120)}${r.not.length>120?'…':''}</div>`:''}
         <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           ${r.ai_degerlendirme ? `<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:${r.ai_degerlendirme.genel_puan>=7?'#ecfdf5':r.ai_degerlendirme.genel_puan>=5?'#fffbeb':'#fef2f2'};color:${r.ai_degerlendirme.genel_puan>=7?'#065f46':r.ai_degerlendirme.genel_puan>=5?'#92400e':'#991b1b'};border:1px solid ${r.ai_degerlendirme.genel_puan>=7?'#a7f3d0':r.ai_degerlendirme.genel_puan>=5?'#fde68a':'#fecaca'}">🤖 ${r.ai_degerlendirme.genel_puan}/10 · ${r.ai_degerlendirme.tavsiye}</span>` : ''}
@@ -2804,7 +2804,7 @@ function renderEval(){
   const avg=(Object.values(evalSc).reduce((a,b)=>a+b,0)/FACTORS.length).toFixed(1);
   el.innerHTML=`<div class="eval-wrap">
     <div class="eval-hd">
-      <div><div style="font-weight:700;font-size:14px;color:var(--text)">${selCand.name}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${selCand.position} · 1–5</div></div>
+      <div><div style="font-weight:700;font-size:14px;color:var(--text)">${window._esc(selCand.name||'')}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${window._esc(selCand.position||'')} · 1–5</div></div>
       <div style="text-align:right"><div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.1em;margin-bottom:2px">TOPLAM</div><div style="font-size:26px;font-weight:800;color:var(--accent)">${avg}</div></div>
     </div>
     <div class="eval-grid">${FACTORS.map(f=>`<div><div class="fac-hd"><span class="fac-lbl">${f}</span><span class="fac-sc">${evalSc[f]}</span></div><div class="fac-bars">${[1,2,3,4,5].map(v=>`<button class="fbar" style="background:${v<=evalSc[f]?'var(--accent)':'var(--bg3)'}" onclick="setSc('${f}',${v})"></button>`).join('')}</div></div>`).join('')}</div>
@@ -2927,7 +2927,7 @@ function _ikRenderSuggestions(){
         <span class="sug-status" style="background:#f0fdf4;color:#166534">${s.status}</span>
         <div style="font-weight:700;font-size:12px;color:var(--text);margin-bottom:3px;margin-top:4px">${s.title}</div>
         <div style="font-size:11px;color:var(--text2);line-height:1.5">${s.desc}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">${s.name} · ${s.date}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">${window._esc(s.name||'')} · ${s.date}</div>
       </div>
     </div>`;}).join('');
 }
