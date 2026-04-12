@@ -1309,7 +1309,7 @@ const DEFAULT_IK = [
 const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx','TNT'];
 
 /** @returns {Array<Object>} */ function loadKargo()         { const d = _read(KEYS.kargo); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array<Object>} d */ function storeKargo(d)       { _write(KEYS.kargo, d); 
+/** @param {Array<Object>} d */ function storeKargo(d)       { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.kargo, d);
   const _fp_kargo = _fsPath('kargo'); if (_fp_kargo) _syncFirestore(_fp_kargo, d);
 }
 
@@ -1392,7 +1392,7 @@ const DEFAULT_PIRIM_PARAMS = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadStok()    { var d = _read(KEYS.stok); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
-/** @param {Array<Object>} d */ function storeStok(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.stok, d); 
+/** @param {Array<Object>} d */ function storeStok(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.stok, d); 
   const _fp_stok = _fsPath('stok'); if (_fp_stok) _syncFirestore(_fp_stok, d);
 }
 
@@ -1415,7 +1415,7 @@ const DEFAULT_CRM = [
   { id: 3, name: 'Mavi Lojistik',  contact: 'Emre Bey',    phone: '0312 333 30 30', email: 'emre@example.com',  city: 'Ankara',   status: 'lead',   value: 80000,  owner: 2, note: 'İlk görüşme yapıldı',        ts: '2026-03-10' },
 ];
 /** @returns {Array<Object>} */ function loadCrmData()    { var d = _read(KEYS.crm); var arr = Array.isArray(d) ? d : DEFAULT_CRM; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array<Object>} d */ function storeCrmData(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.crm, d); 
+/** @param {Array<Object>} d */ function storeCrmData(d)  { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.crm, d); 
   const _fp_crm = _fsPath('crm'); if (_fp_crm) _syncFirestore(_fp_crm, d);
 }
 
@@ -1505,11 +1505,11 @@ function storeTahsilat(d) {
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
 /** @returns {Array<Object>} */ function loadSatinalma() { const d = _read(KEYS.satinalma); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr); }
-/** @param {Array<Object>} d */ function storeSatinalma(d) { _write(KEYS.satinalma, d);
+/** @param {Array<Object>} d */ function storeSatinalma(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.satinalma, d);
   var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
 }
 /** @returns {Array<Object>} @param {Object} [opts] tumKullanicilar */ function loadCari(opts) { var d = _read(KEYS.cari); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
-/** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;});
+/** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;});
   var tumCari = _read(KEYS.cari) || [];
   d.forEach(function(yeni) {
     if (!yeni.id || yeni._mukerrerKontrolAtla) return;
@@ -1538,7 +1538,7 @@ function storeTahsilat(d) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadNavlun() { var d = _read(KEYS.navlun); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d */ function storeNavlun(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.navlun, d);
+/** @param {Array<Object>} d */ function storeNavlun(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.navlun, d);
   var _fp = _fsPath('navlun'); if (_fp) _syncFirestore(_fp, d);
 }
 
@@ -1546,13 +1546,13 @@ function storeTahsilat(d) {
 // BÖLÜM 16D — ÜRÜNLER / ALIŞ TEKLİF / SATIŞ TEKLİF
 // ════════════════════════════════════════════════════════════════
 /** @returns {Array} @param {Object} [opts] tumKullanicilar / _dahilSilinenler */ function loadUrunler(opts) { var d = _read(KEYS.urunler); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }); if (!(opts && opts._dahilSilinenler)) filtreli = filtreli.filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
-/** @param {Array} d */ function storeUrunler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); if(Array.isArray(d) && d.length > 2000) { var aktif = d.filter(function(r){return !r.isDeleted;}); var silinen = d.filter(function(r){return r.isDeleted;}).sort(function(a,b){return (b.deletedAt||'')>(a.deletedAt||'')?1:-1;}).slice(0,200); d = aktif.concat(silinen); } _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeUrunler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); if(Array.isArray(d) && d.length > 2000) { var aktif = d.filter(function(r){return !r.isDeleted;}); var silinen = d.filter(function(r){return r.isDeleted;}).sort(function(a,b){return (b.deletedAt||'')>(a.deletedAt||'')?1:-1;}).slice(0,200); d = aktif.concat(silinen); } _write(KEYS.urunler, d); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeAlisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array} d */ function storeSatisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeSatisTeklifleri(d) { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeFikirler(d) { var _now2=new Date().toISOString(); d=d.map(function(t){if(!t.updatedAt)t.updatedAt=_now2;return t;}); _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
