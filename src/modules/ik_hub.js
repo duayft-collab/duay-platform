@@ -857,7 +857,7 @@ function renderIkPersonel() {
         <div style="width:44px;height:44px;border-radius:14px;background:var(--al);
           display:flex;align-items:center;justify-content:center;
           font-size:16px;font-weight:800;color:var(--ac);flex-shrink:0">
-          ${(p.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+          ${window._esc((p.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2))}
         </div>
         <div style="flex:1;min-width:180px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
@@ -2691,7 +2691,7 @@ function renderKayitlar(){
   if(!k.length){el.innerHTML='<div class="empty">'+_ikT('no_records')+'</div>';return;}
   el.innerHTML=k.map((r,ri)=>`
     <div class="db-row">
-      <div class="db-av">${r.aday.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+      <div class="db-av">${window._esc(r.aday.split(' ').map(n=>n[0]).join('').slice(0,2))}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:13px;color:var(--text)">${window._esc(r.aday||'')}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px">${window._esc(r.poz||'—')} · ${r.tarih} · ${window._esc(r.gorusen||'')}</div>

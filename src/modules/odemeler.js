@@ -2611,7 +2611,7 @@ function openOdmTahsilat() {
     const diff = t.due ? Math.ceil((new Date(t.due)-todayD)/86400000) : null;
     const late = diff !== null && diff < 0;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)">
-      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">${t.name||'—'}</div><div style="font-size:10px;color:var(--t3)">${t.from||'Müşteri'} · ${t.due||'—'}</div></div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">${window._esc(t.name||'—')}</div><div style="font-size:10px;color:var(--t3)">${t.from||'Müşteri'} · ${t.due||'—'}</div></div>
       <div style="font-size:13px;font-weight:600;color:var(--t)">₺${(parseFloat(t.amount)||0).toLocaleString('tr-TR')}</div>
       <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${late?'var(--rdb)':'var(--grb)'};color:${late?'var(--rdt)':'var(--grt)'}">${late?'Gecikti':'Bekliyor'}</span>
     </div>`;
@@ -2657,7 +2657,7 @@ function _renderTahsilatList(tah, cont) {
     if (!items.length) return '';
     return `<div style="font-size:9px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.08em;padding:10px 16px 4px">${label}</div>`
       + items.map(t => `<div style="display:grid;grid-template-columns:1fr 120px 90px 80px 100px;padding:9px 16px;border-bottom:1px solid var(--b);align-items:center;gap:0">
-        <div><div style="font-size:12px;font-weight:500;color:var(--t)">${t.name||'—'}</div><div style="font-size:10px;color:var(--t3)">${t.cariName||t.from||'Müşteri'}</div></div>
+        <div><div style="font-size:12px;font-weight:500;color:var(--t)">${window._esc(t.name||'—')}</div><div style="font-size:10px;color:var(--t3)">${window._esc(t.cariName||t.from||'Müşteri')}</div></div>
         <div style="font-size:13px;font-weight:600;color:var(--t)">₺${(parseFloat(t.amount)||0).toLocaleString('tr-TR')}</div>
         <div style="font-size:11px;color:${t.due<today?'var(--rdt)':'var(--t2)'}">${t.due||'—'}</div>
         <div style="font-size:9px;color:var(--t3);font-family:monospace">${(function(ts){try{var d=new Date(ts);return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.ts)}</div>
