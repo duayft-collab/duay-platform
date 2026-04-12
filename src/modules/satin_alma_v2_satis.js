@@ -51,9 +51,11 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="display:flex;flex:1;min-height:0;overflow:hidden">';
 
   ic += '<div style="flex:1;min-width:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;border-right:0.5px solid var(--b)">';
+  // MUSTERI-ONCEKI-SATIS-002: önceki teklif uyarı banner placeholder
+  ic += '<div id="sav2-prev-warn" style="display:none"></div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ <span style="color:#A32D2D">*</span></div>';
-  ic += '<select id="st-musteri-sec" onchange="event.stopPropagation();var sel=this.options[this.selectedIndex];document.getElementById(\'st-musteri-ad\').value=sel.text;document.getElementById(\'st-musteri-kod\').value=sel.dataset.kod||\'0000\';var k=sel.dataset.kod||\'0000\';var sid=window._saTeklifId?.(k)||(k+\'-\'+Date.now());document.getElementById(\'st-id-goster\').textContent=sid;document.getElementById(\'st-id\').value=sid;window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Müşteri seçin...</option>';
+  ic += '<select id="st-musteri-sec" onchange="event.stopPropagation();var sel=this.options[this.selectedIndex];document.getElementById(\'st-musteri-ad\').value=sel.text;document.getElementById(\'st-musteri-kod\').value=sel.dataset.kod||\'0000\';var k=sel.dataset.kod||\'0000\';var sid=window._saTeklifId?.(k)||(k+\'-\'+Date.now());document.getElementById(\'st-id-goster\').textContent=sid;document.getElementById(\'st-id\').value=sid;window._saV2PIOnizlemeGuncelle();window._saV2CheckPrevTeklif?.()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Müşteri seçin...</option>';
   musteriList.forEach(function(c){ic += '<option value="'+_saEsc(c.id||'')+'" data-kod="'+_saEsc(c.kod||(c.id?String(c.id).slice(-4):'0000'))+'" '+(window._crmSatisMusteriData&&(window._crmSatisMusteriData.name===c.name||window._crmSatisMusteriData.ad===c.ad)?'selected':'')+'>'+_saEsc(c.ad||c.name||'')+'</option>';});
   ic += '</select></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">PROFORMA NO</div>';
@@ -165,6 +167,56 @@ window._saV2TeklifOlustur = function(id) {
   window._stSartlar = (window._saV2Sartlar?.() || []).slice(0, 5);
   setTimeout(function() { window._saV2SartListeGuncelle(); }, 100);
   setTimeout(function(){ window._saV2PIOnizlemeGuncelle?.(); }, 50);
+  // MUSTERI-ONCEKI-SATIS-002: form açıldığında önceki teklif kontrolü
+  setTimeout(function(){ window._saV2CheckPrevTeklif?.(); }, 60);
+};
+
+/**
+ * MUSTERI-ONCEKI-SATIS-002
+ * _saV2TeklifOlustur form'unda müşteri seçildiğinde aynı müşteriye verilmiş
+ * önceki satış tekliflerini loadSatisTeklifleri() ile bul, varsa formun üstüne
+ * sarı uyarı banner'ı yerleştir. Banner'a tıklanınca en son teklifin peek
+ * paneli açılır (window._stPeekAc). Edit modunda mevcut teklif kendisi
+ * sayılmaz (window._saV2AktifDuzenlemeTeklif.id ile dışlanır).
+ *
+ * MUSTERI-ONCEKI-SATIS-001'in (satis_teklif.js) kardeş implementasyonu —
+ * aynı banner mantığı, farklı form ID'leri.
+ */
+window._saV2CheckPrevTeklif = function() {
+  var sel = document.getElementById('st-musteri-sec');
+  var warn = document.getElementById('sav2-prev-warn');
+  if (!sel || !warn) return;
+  var customerName = '';
+  if (sel.selectedIndex >= 0) {
+    var opt = sel.options[sel.selectedIndex];
+    customerName = (opt && opt.text) || '';
+  }
+  // Boş veya placeholder seçim
+  if (!customerName || customerName === 'Müşteri seçin...') {
+    warn.style.display = 'none'; warn.innerHTML = ''; return;
+  }
+  // Edit modunda mevcut teklif id'si (varsa) — kendi kendini exclude et
+  var currentDbId = window._saV2AktifDuzenlemeTeklif && window._saV2AktifDuzenlemeTeklif.id;
+  var allSatis = (typeof window.loadSatisTeklifleri === 'function') ? window.loadSatisTeklifleri() : [];
+  var prev = allSatis.filter(function(x) {
+    var match = (x.musteri === customerName || x.customerName === customerName);
+    if (!match) return false;
+    if (currentDbId != null && String(x.id) === String(currentDbId)) return false;
+    return true;
+  });
+  if (!prev.length) { warn.style.display = 'none'; warn.innerHTML = ''; return; }
+  // En yeni: createdAt desc sort
+  prev.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+  var latest = prev[0];
+  var dateStr = (latest.createdAt || '').slice(0, 10) || '—';
+  var amt = (parseFloat(latest.genelToplam) || parseFloat(latest.toplam) || 0).toLocaleString('tr-TR') + ' ' + (latest.paraBirimi || latest.currency || 'USD');
+  var esc = (typeof window._esc === 'function') ? window._esc : function(s) { return String(s == null ? '' : s); };
+  warn.style.display = 'block';
+  warn.innerHTML = '<div onclick="event.stopPropagation();window._stPeekAc?.(' + latest.id + ')" style="padding:10px 14px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;cursor:pointer;font-size:12px;color:#92400E;display:flex;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background=\'#FDE68A\'" onmouseout="this.style.background=\'#FEF3C7\'">'
+    + '<span style="font-size:16px;flex-shrink:0">⚠️</span>'
+    + '<span style="flex:1"><strong>' + esc(customerName) + '</strong> müşterisine daha önce <strong>' + prev.length + '</strong> teklif verildi — en son: <strong>' + esc(dateStr) + '</strong> · <strong>' + esc(amt) + '</strong></span>'
+    + '<span style="font-size:10px;opacity:.85;flex-shrink:0">Detayı gör →</span>'
+  + '</div>';
 };
 
 window._saV2SatisKaydet = function(alisId) {
