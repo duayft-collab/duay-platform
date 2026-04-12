@@ -93,7 +93,8 @@ window.renderSatinAlmaV2 = function() {
     if(t.urunler&&t.urunler.length>1){
       t.urunler.forEach(function(u,idx){
         h+='<div style="display:grid;grid-template-columns:20px 1fr 80px 70px;padding:3px 10px 3px 24px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
-        h+='<div style="font-size:9px;color:var(--color-text-tertiary)">'+(idx+1)+'.</div>';
+        // SAV2-GRUP-CB-001: grup ürün satırına checkbox — parent t.id state'ine bind
+        h+='<div style="font-size:9px;display:flex;align-items:center;gap:2px"><input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:10px;height:10px;cursor:pointer;flex-shrink:0"><span style="color:var(--color-text-tertiary)">'+(idx+1)+'.</span></div>';
         h+='<div style="font-size:9px;color:var(--color-text-secondary)">'+(u.urunAdi||u.turkceAdi||u.duayKodu||'—')+'</div>';
         h+='<div style="font-size:9px;color:#0F6E56">'+(u.alisF||'—')+' '+(u.para||'')+'</div>';
         h+='<button onclick="event.stopPropagation();window._saV2TeklifOlusturUrun(\''+t.id+'\','+idx+')" style="font-size:8px;padding:1px 6px;border:0.5px solid #185FA5;border-radius:3px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">→$</button>';
