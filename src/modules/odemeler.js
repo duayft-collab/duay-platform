@@ -5477,9 +5477,9 @@ function exportEFatura(id) {
   <ID>${o.id}</ID>
   <IssueDate>${_todayStr()}</IssueDate>
   <DueDate>${o.due||_todayStr()}</DueDate>
-  <Note>${o.note||''}</Note>
+  <Note>${window._esc(o.note||'')}</Note>
   <InvoiceLine>
-    <Item><Name>${o.name}</Name></Item>
+    <Item><Name>${window._esc(o.name)}</Name></Item>
     <Price><PriceAmount currencyID="TRY">${tl.toFixed(2)}</PriceAmount></Price>
     <TaxTotal>
       <TaxAmount currencyID="TRY">${kdv.toFixed(2)}</TaxAmount>
