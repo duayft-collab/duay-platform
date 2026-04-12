@@ -742,8 +742,8 @@ function _renderKrediKarti(o, users) {
     <div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:16px 20px;color:#fff">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
         <div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${o.name}</div>
-          <div style="font-size:11px;opacity:.7">${o.banka||'Banka'} • ${o.sonDortHane?'**** '+o.sonDortHane:''}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${window._esc(o.name)}</div>
+          <div style="font-size:11px;opacity:.7">${window._esc(o.banka||'Banka')} • ${o.sonDortHane?'**** '+window._esc(o.sonDortHane):''}</div>
         </div>
         <svg width="32" height="24" viewBox="0 0 32 24" fill="none"><rect width="32" height="24" rx="4" fill="rgba(255,255,255,.15)"/><circle cx="12" cy="12" r="8" fill="#EB001B" opacity=".8"/><circle cx="20" cy="12" r="8" fill="#F79E1B" opacity=".8"/></svg>
       </div>
@@ -802,7 +802,7 @@ function _renderAbonelikKart(o, users, today, todayD) {
     <div style="width:44px;height:44px;border-radius:12px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${abone.ic}</div>
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:600;color:var(--t)">${o.name}</span>
+        <span style="font-size:13px;font-weight:600;color:var(--t)">${window._esc(o.name)}</span>
         <span style="font-size:10px;padding:1px 7px;border-radius:99px;background:rgba(99,102,241,.1);color:#4F46E5">${abone.l}</span>
         <span class="badge ${sta.cls}" style="font-size:10px">${sta.ic} ${sta.l}</span>
         ${o.sozlesme ? '<span style="font-size:10px;color:var(--ac);cursor:pointer" onclick="viewOdmReceipt('+o.id+')">📄 Sözleşme</span>' : ''}
@@ -810,7 +810,7 @@ function _renderAbonelikKart(o, users, today, todayD) {
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
         <span style="font-size:14px;font-weight:700;color:var(--t)">₺${(parseFloat(o.amount)||0).toLocaleString('tr-TR',{minimumFractionDigits:2})}<span style="font-size:10px;font-weight:400;color:var(--t3)">/${ODM_FREQ[o.freq]||'ay'}</span></span>
         <span style="font-size:11px;color:${status==='gecikti'?'var(--rdt)':status==='yaklasan'?'var(--amt)':'var(--t3)'}">📅 ${o.due||'—'} ${diff!==null?'('+( diff<0?Math.abs(diff)+' gün gecikti':diff===0?'Bugün!':diff+' gün kaldı')+')'  :''}</span>
-        ${o.sozlesmeBitis ? '<span style="font-size:10px;color:var(--t3)">Sözleşme bitiş: '+o.sozlesmeBitis+'</span>' : ''}
+        ${o.sozlesmeBitis ? '<span style="font-size:10px;color:var(--t3)">Sözleşme bitiş: '+window._esc(o.sozlesmeBitis)+'</span>' : ''}
       </div>
     </div>
     <div style="display:flex;gap:5px;flex-shrink:0">
@@ -2611,7 +2611,7 @@ function openOdmTahsilat() {
     const diff = t.due ? Math.ceil((new Date(t.due)-todayD)/86400000) : null;
     const late = diff !== null && diff < 0;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)">
-      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">${window._esc(t.name||'—')}</div><div style="font-size:10px;color:var(--t3)">${t.from||'Müşteri'} · ${t.due||'—'}</div></div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">${window._esc(t.name||'—')}</div><div style="font-size:10px;color:var(--t3)">${window._esc(t.from||'Müşteri')} · ${t.due||'—'}</div></div>
       <div style="font-size:13px;font-weight:600;color:var(--t)">₺${(parseFloat(t.amount)||0).toLocaleString('tr-TR')}</div>
       <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${late?'var(--rdb)':'var(--grb)'};color:${late?'var(--rdt)':'var(--grt)'}">${late?'Gecikti':'Bekliyor'}</span>
     </div>`;
@@ -5185,7 +5185,7 @@ function openOdmReminderModal(id) {
     + '<div class="mt">📱 Hatırlatıcı Gönder</div>'
     + '<div class="fr"><div class="fl">ALICI</div>'
     + '<select class="fi" id="rem-user"><option value="">— Seçin —</option>'
-    + users.map(u=>'<option value="'+u.id+'"'+( u.id===o.assignedTo?' selected':'')+'>'+u.name+'</option>').join('')
+    + users.map(u=>'<option value="'+u.id+'"'+( u.id===o.assignedTo?' selected':'')+'>'+window._esc(u.name)+'</option>').join('')
     + '</select></div>'
     + '<div class="fr"><div class="fl">KANAL</div>'
     + '<div style="display:flex;gap:8px">'
@@ -5451,10 +5451,10 @@ function renderOdmCalendar(cont) {
     if (data) {
       data.odeme.slice(0,2).forEach(o => {
         const c = o.paid ? '#10B981' : (o.due<_todayStr()?'#EF4444':'#EF4444');
-        html += '<div style="font-size:8px;padding:1px 3px;border-radius:3px;margin-top:1px;background:' + (o.paid?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)') + ';color:' + c + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + o.name + '">' + o.name.slice(0,10) + '</div>';
+        html += '<div style="font-size:8px;padding:1px 3px;border-radius:3px;margin-top:1px;background:' + (o.paid?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)') + ';color:' + c + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + window._esc(o.name) + '">' + window._esc(o.name.slice(0,10)) + '</div>';
       });
       data.tah.slice(0,1).forEach(o => {
-        html += '<div style="font-size:8px;padding:1px 3px;border-radius:3px;margin-top:1px;background:rgba(16,185,129,.1);color:#10B981;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + o.name + '">↑' + o.name.slice(0,8) + '</div>';
+        html += '<div style="font-size:8px;padding:1px 3px;border-radius:3px;margin-top:1px;background:rgba(16,185,129,.1);color:#10B981;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + window._esc(o.name) + '">↑' + window._esc(o.name.slice(0,8)) + '</div>';
       });
     }
     html += '</div>';
@@ -6014,7 +6014,7 @@ window._odmSLATakibi = function() {
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sla';
   var html = '<div class="moc" style="max-width:580px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">SLA & Gecikme Takibi — ' + odm.length + ' kayıt</div><button onclick="document.getElementById(\'mo-sla\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:0;max-height:70vh;overflow-y:auto">';
   if (!odm.length) { html += '<div style="text-align:center;padding:32px;color:var(--t3)">Gecikmiş kayıt yok ✓</div>'; }
-  else { odm.forEach(function(o) { var diff = Math.ceil((new Date(today) - new Date(o.due)) / 86400000); var c = diff > 60 ? '#dc2626' : diff > 30 ? '#d97706' : '#666'; var amt = _odmToTRY(parseFloat(o.amount) || 0, o.currency || 'TRY'); html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + (o.name || o.cariName || '—') + '</div><div style="font-size:10px;color:var(--t3)">Vade: ' + o.due + '</div></div><div style="text-align:right"><div style="color:' + c + ';font-weight:600;font-size:12px">' + diff + ' gün gecikmiş</div><div style="font-size:10px;color:var(--t3)">₺' + Math.round(amt).toLocaleString('tr-TR') + '</div></div></div>'; }); }
+  else { odm.forEach(function(o) { var diff = Math.ceil((new Date(today) - new Date(o.due)) / 86400000); var c = diff > 60 ? '#dc2626' : diff > 30 ? '#d97706' : '#666'; var amt = _odmToTRY(parseFloat(o.amount) || 0, o.currency || 'TRY'); html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + window._esc(o.name || o.cariName || '—') + '</div><div style="font-size:10px;color:var(--t3)">Vade: ' + o.due + '</div></div><div style="text-align:right"><div style="color:' + c + ';font-weight:600;font-size:12px">' + diff + ' gün gecikmiş</div><div style="font-size:10px;color:var(--t3)">₺' + Math.round(amt).toLocaleString('tr-TR') + '</div></div></div>'; }); }
   html += '</div><div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btnp" onclick="document.getElementById(\'mo-sla\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = html; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
@@ -6025,7 +6025,7 @@ window._odmTekrarlayanTakvim = function() {
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-tekrar';
   var html = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">Tekrarlayan İşlem Takvimi</div><button onclick="document.getElementById(\'mo-tekrar\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:0;max-height:70vh;overflow-y:auto">';
   if (!odm.length) { html += '<div style="text-align:center;padding:32px;color:var(--t3)">Tekrarlayan kayıt bulunamadı.</div>'; }
-  else { odm.forEach(function(o) { var sym = (o.currency || 'TRY') === 'USD' ? '$' : (o.currency || 'TRY') === 'EUR' ? '€' : '₺'; html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + (o.name || '—') + '</div><div style="font-size:10px;color:var(--t3)">' + (o.cat === 'abonelik' ? 'Abonelik' : o.freq === 'aylik' ? 'Aylık' : 'Tekrarlayan') + '</div></div><div style="text-align:right"><div style="font-weight:600;font-size:12px">' + sym + (parseFloat(o.amount) || 0).toLocaleString('tr-TR') + '</div><div style="font-size:10px;color:var(--t3)">Sonraki: ' + (o.due || '—') + '</div></div></div>'; }); }
+  else { odm.forEach(function(o) { var sym = (o.currency || 'TRY') === 'USD' ? '$' : (o.currency || 'TRY') === 'EUR' ? '€' : '₺'; html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + window._esc(o.name || '—') + '</div><div style="font-size:10px;color:var(--t3)">' + (o.cat === 'abonelik' ? 'Abonelik' : o.freq === 'aylik' ? 'Aylık' : 'Tekrarlayan') + '</div></div><div style="text-align:right"><div style="font-weight:600;font-size:12px">' + sym + (parseFloat(o.amount) || 0).toLocaleString('tr-TR') + '</div><div style="font-size:10px;color:var(--t3)">Sonraki: ' + (o.due || '—') + '</div></div></div>'; }); }
   html += '</div><div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btnp" onclick="document.getElementById(\'mo-tekrar\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = html; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
@@ -6039,7 +6039,7 @@ window._odmCariAnalizi = function() {
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-cari-analiz';
   var html = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">Cari Analizi — Tahsilat Hızı</div><button onclick="document.getElementById(\'mo-cari-analiz\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:0;max-height:70vh;overflow-y:auto">';
   if (!list.length) { html += '<div style="text-align:center;padding:32px;color:var(--t3)">Tahsilat kaydı bulunamadı.</div>'; }
-  else { list.forEach(function(c) { var rc = c.risk === 'Yüksek' ? '#dc2626' : c.risk === 'Orta' ? '#d97706' : '#16a34a'; html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + c.name + '</div><div style="font-size:10px;color:var(--t3)">' + c.count + ' işlem · ₺' + Math.round(c.totalAmt).toLocaleString('tr-TR') + '</div></div><div style="text-align:right"><div style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + rc + '18;color:' + rc + ';font-weight:600">' + c.risk + ' Risk</div><div style="font-size:10px;color:var(--t3)">Ort. ' + c.avgDays + ' gün</div></div></div>'; }); }
+  else { list.forEach(function(c) { var rc = c.risk === 'Yüksek' ? '#dc2626' : c.risk === 'Orta' ? '#d97706' : '#16a34a'; html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + window._esc(c.name) + '</div><div style="font-size:10px;color:var(--t3)">' + c.count + ' işlem · ₺' + Math.round(c.totalAmt).toLocaleString('tr-TR') + '</div></div><div style="text-align:right"><div style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + rc + '18;color:' + rc + ';font-weight:600">' + c.risk + ' Risk</div><div style="font-size:10px;color:var(--t3)">Ort. ' + c.avgDays + ' gün</div></div></div>'; }); }
   html += '</div><div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btnp" onclick="document.getElementById(\'mo-cari-analiz\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = html; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
@@ -6050,7 +6050,7 @@ window._odmEksikDekont = function() {
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-eksik-dekont';
   var html = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">Eksik Dekont — ' + odm.length + ' kayıt</div><button onclick="document.getElementById(\'mo-eksik-dekont\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:0;max-height:70vh;overflow-y:auto">';
   if (!odm.length) { html += '<div style="text-align:center;padding:32px;color:var(--t3)">Tüm ödemelerde belge mevcut ✓</div>'; }
-  else { odm.forEach(function(o) { html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + (o.name || o.cariName || '—') + '</div><div style="font-size:10px;color:var(--t3)">' + (o.due || '—') + '</div></div><button onclick="typeof uploadOdmReceipt===\'function\'&&uploadOdmReceipt(' + o.id + ');document.getElementById(\'mo-eksik-dekont\')?.remove()" style="padding:4px 12px;background:#E6F1FB;color:#0C447C;border:none;border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit">📎 Dekont Yükle</button></div>'; }); }
+  else { odm.forEach(function(o) { html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:0.5px solid var(--b)"><div><div style="font-size:12px;font-weight:500">' + window._esc(o.name || o.cariName || '—') + '</div><div style="font-size:10px;color:var(--t3)">' + (o.due || '—') + '</div></div><button onclick="typeof uploadOdmReceipt===\'function\'&&uploadOdmReceipt(' + o.id + ');document.getElementById(\'mo-eksik-dekont\')?.remove()" style="padding:4px 12px;background:#E6F1FB;color:#0C447C;border:none;border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit">📎 Dekont Yükle</button></div>'; }); }
   html += '</div><div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btnp" onclick="document.getElementById(\'mo-eksik-dekont\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = html; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
@@ -6074,7 +6074,7 @@ window._odmBankaTalimatSecim = function() {
   if (!odm.length) { window.toast?.('Bekleyen ödeme yok', 'ok'); return; }
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-talimat-sec';
   var html = '<div class="moc" style="max-width:560px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">Banka Ödeme Talimatı</div><button onclick="document.getElementById(\'mo-talimat-sec\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:8px 0;max-height:60vh;overflow-y:auto"><div style="padding:8px 20px;font-size:11px;color:var(--t3)">PDF oluşturulacak ödemeyi seçin:</div>';
-  odm.slice(0, 15).forEach(function(o) { var sym = (o.currency || 'TRY') === 'USD' ? '$' : (o.currency || 'TRY') === 'EUR' ? '€' : '₺'; html += '<div onclick="typeof exportOdmPaymentPDF===\'function\'&&exportOdmPaymentPDF(' + o.id + ');document.getElementById(\'mo-talimat-sec\')?.remove()" style="display:flex;justify-content:space-between;padding:10px 20px;cursor:pointer;border-bottom:0.5px solid var(--b)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'"><span style="font-size:12px">' + (o.name || o.cariName || '—') + '</span><span style="font-weight:600;font-size:12px">' + sym + (parseFloat(o.amount) || 0).toLocaleString('tr-TR') + '</span></div>'; });
+  odm.slice(0, 15).forEach(function(o) { var sym = (o.currency || 'TRY') === 'USD' ? '$' : (o.currency || 'TRY') === 'EUR' ? '€' : '₺'; html += '<div onclick="typeof exportOdmPaymentPDF===\'function\'&&exportOdmPaymentPDF(' + o.id + ');document.getElementById(\'mo-talimat-sec\')?.remove()" style="display:flex;justify-content:space-between;padding:10px 20px;cursor:pointer;border-bottom:0.5px solid var(--b)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'"><span style="font-size:12px">' + window._esc(o.name || o.cariName || '—') + '</span><span style="font-weight:600;font-size:12px">' + sym + (parseFloat(o.amount) || 0).toLocaleString('tr-TR') + '</span></div>'; });
   html += '</div><div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end"><button class="btn btnp" onclick="document.getElementById(\'mo-talimat-sec\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = html; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
 };
