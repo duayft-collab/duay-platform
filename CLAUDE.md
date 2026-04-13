@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## **GIT MULTI-TERMINAL ZORUNLU KURAL**
+
+**Her commit öncesi:**
+
+1. **`git status` çalıştır**
+2. **Sadece KENDİ dosyalarını listele**
+3. **`git add <dosya1> <dosya2>` şeklinde EXPLICIT dosya adı ver**
+4. **`git add .` veya `git add -A` veya `git commit -a` YASAK**
+5. **Eğer başka terminal'in unstaged değişikliği aynı dosyada varsa — DUR, bildir, bekle**
+
+**İhlal = attribution karışıklığı = hata kaynağı.**
+
+Geçmişte bu kuralın ihlali birden fazla kez başka terminal'in işini yanlış commit mesajı altında push etmeye yol açtı (SATIS-SCHEMA-FILTER-001 253cc80, PUSULA-TEKRAR-001 2bed23a, SATIN-ALMA-V1-DELETE-001 fd07961). Her seferinde kod yayına gitti ama commit attribution karıştı, git history kirli, gelecekte debug/revert zorlaştı.
+
 ## Project Overview
 
 Duay Global Trade — Operasyon Platformu. A single-page, vanilla JavaScript enterprise platform for operations management (purchasing, supply chain, HR, CRM, finance). No build tools or bundler — all JS is loaded via `<script>` tags in `index.html`. Deployed as a static site to GitHub Pages.

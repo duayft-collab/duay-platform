@@ -583,16 +583,25 @@ window._ppYeniGorev = function() {
   var ekip = (typeof window.loadUsers === 'function' ? window.loadUsers() : []).filter(function(u) { return !u.isDeleted; }).map(function(u) { return { val: u.uid || u.id, lbl: u.displayName || u.ad || u.name || u.email || '?' }; });
   if (!ekip.length) ekip = [{ val: '', lbl: 'Baran A.' }, { val: '', lbl: 'Ayşe Y.' }, { val: '', lbl: 'Mehmet K.' }];
   var kpiler = ['—','KPI-01 Satış Hedefi','KPI-02 Nakit Akışı','KPI-03 Satınalma','KPI-07 SGK/Ödemeler'];
-  var jobOpts = '<option value="">— Seç —</option>';
+  // PUSULA-JOBID-KAYNAK-001: Job ID SADECE resmi Job kaydından alınır.
+  // ak_tk2 eski sistem localStorage, _ppLoad() PusulaPro kendi görevleri — ikisi de
+  // Job kaynağı değil. PusulaPro görev kendi job_id üretmez, var olan bir Job'a bağlanır.
+  var jobOpts = '<option value="">— Job ID seç —</option>';
   try {
-    var eskiTasks = JSON.parse(localStorage.getItem('ak_tk2')||'[]');
-    var jobIds = [];
-    eskiTasks.forEach(function(t){ if(t.jobId && jobIds.indexOf(t.jobId)===-1) jobIds.push(t.jobId); });
-    var ppTasks = _ppLoad();
-    ppTasks.forEach(function(t){ if(t.job_id && jobIds.indexOf(t.job_id)===-1) jobIds.push(t.job_id); });
-    if(jobIds.length) jobIds.forEach(function(j){ jobOpts += '<option value="'+j+'">'+j+'</option>'; });
+    var _jobList = [];
+    var _resmiJobs = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
+    _resmiJobs.forEach(function(t) {
+      var jid = t.jobId || t.job_id || t.id;
+      if (jid && _jobList.indexOf(jid) === -1 && !t.isDeleted) _jobList.push(jid);
+    });
+    if (_jobList.length) {
+      _jobList.sort().forEach(function(j) {
+        jobOpts += '<option value="'+j+'">'+j+'</option>';
+      });
+    } else {
+      jobOpts += '<option value="" disabled>Henüz Job kaydı yok</option>';
+    }
   } catch(e) {}
-  jobOpts += '<option value="yeni">+ Yeni Job ID oluştur</option>';
   var mo = document.createElement('div'); mo.id='pp-gorev-modal';
   mo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 0;overflow-y:auto';
   mo.onclick=function(e){if(e.target===mo)mo.remove();};
