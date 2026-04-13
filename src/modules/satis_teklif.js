@@ -56,7 +56,7 @@ function _generateTeklifNo() {
  * Teklif listesi render.
  */
 function renderSatisTeklif() {
-  var panel = document.getElementById('panel-satis-teklif');
+  var panel = document.getElementById('panel-satis-teklifleri');
   if (!panel) return;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
@@ -632,6 +632,8 @@ window._exportSTXlsx = function() {
 
 // Exports
 window.renderSatisTeklif = renderSatisTeklif;
+/* SATIS-TEKLIF-ROUTING-001: app_patch.js nav routing bu ismi çağırır */
+window.renderSatisTeklifleri = renderSatisTeklif;
 window._stekTopluChk = function(c) { document.querySelectorAll('.stek-row-chk').forEach(function(x) { x.checked = c; }); window._stekChkGuncelle(); };
 window._stekChkGuncelle = function() { var n = document.querySelectorAll('.stek-row-chk:checked').length; var btn = document.getElementById('stek-toplu-sil-btn'); if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = n + ' Teklif Sil'; } };
 window._stekTopluSil = function() { if (!window._yetkiKontrol?.('toplu_sil')) return; var ids = []; document.querySelectorAll('.stek-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return; window.confirmModal?.(ids.length + ' teklif silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: function() { var list = _loadST(); ids.forEach(function(id) { var x = list.find(function(s) { return String(s.id) === String(id); }); if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); } }); _storeST(list); window.toast?.(ids.length + ' teklif silindi', 'ok'); renderSatisTeklif(); } }); };
