@@ -731,6 +731,22 @@ function _openAdminModal() {
    ANA RENDER
    ════════════════════════════════════════════════════════════════ */
 /** @public */
+/* PIRIM-DASHBOARD-WIDGET-001: staff + lead için dashboard'a "Primim" widget'ı */
+window._pirimiGetir = function() {
+  var cu = window.CU?.() || window.Auth?.getCU?.();
+  if (!cu) return;
+  window.App?.nav?.('pirim');
+};
+
+function _renderPirimimWidget() {
+  const role = _cu()?.role || '';
+  if (role !== 'staff' && role !== 'lead') return '';
+  return '<div onclick="window._pirimiGetir()" style="cursor:pointer;padding:16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">'
+    + '<div style="font-size:12px;font-weight:600;color:var(--t)">\ud83d\udcb0 Primim</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:4px">Detay\u0131n\u0131 g\u00f6r \u2192</div>'
+    + '</div>';
+}
+
 function renderDashboard() {
   const panel = _g('panel-dashboard');
   if (!panel) return;
@@ -763,6 +779,7 @@ function renderDashboard() {
       h += '<div onclick="window._showSyncDetails?.()" style="cursor:pointer;padding:8px 16px;background:' + _dbAlertBg + ';border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border:1px solid ' + _dbAlertColor + '22"><span style="font-size:14px">' + (_dbH.hasRed ? '🔴' : '🟡') + '</span><span style="font-size:12px;font-weight:500;color:' + _dbAlertColor + ';flex:1">' + _dbAlertMsg + '</span><span style="font-size:10px;color:' + _dbAlertColor + '">Ayarlar →</span></div>';
     }
   }
+  h += _renderPirimimWidget();
   h += _renderBanner();
   h += _renderNakitBlok();
   h += _renderIhracatOzet();
