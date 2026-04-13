@@ -5242,7 +5242,7 @@ window._renderFirmaKpi = function() {
     G.satinalma.mods = [
       { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri V2' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
-      { id: 'satinalma-siparis', label: 'Sipari\u015fler' },
+      { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
     ];
   }
@@ -6048,4 +6048,34 @@ window.renderSiparisler = function() {
         + '<button onclick="event.stopPropagation();window._siparisDurumGuncelle?.(\'' + t.id + '\')" class="btn btns" style="font-size:9px;padding:2px 7px">✏️</button>'
         + '</div></div>';
     }).join('');
+};
+
+/**
+ * SIPARISLER-DURUM-DETAY-001
+ * Döngüsel durum güncelleme: bekliyor → hazirlaniyor → yolda → teslim → bekliyor
+ */
+window._siparisDurumGuncelle = function(id) {
+  var data = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var t = data.find(function(x) { return String(x.id) === String(id); });
+  if (!t) return;
+  var mevcut = t.siparisDurumu || 'bekliyor';
+  var sirali = ['bekliyor', 'hazirlaniyor', 'yolda', 'teslim'];
+  var sonraki = sirali[(sirali.indexOf(mevcut) + 1) % sirali.length];
+  t.siparisDurumu = sonraki;
+  t.updatedAt = new Date().toISOString();
+  if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(data);
+  window.toast?.('Sipariş durumu: ' + sonraki, 'ok');
+  window.renderSiparisler?.();
+};
+
+/**
+ * SIPARISLER-DURUM-DETAY-001
+ * Detay: alış teklifleri panel'ine yönlendirir, 400ms sonra detay modal açar.
+ */
+window._siparisDetay = function(id) {
+  var data = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var t = data.find(function(x) { return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+  window.App?.nav?.('alis-teklifleri');
+  setTimeout(function() { window._openAlisDetayModal?.(t.id); }, 400);
 };
