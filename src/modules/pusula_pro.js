@@ -184,7 +184,8 @@ window._ppModRender = function() {
       h2 += '<span style="font-size:8px;color:var(--t3)">'+arr.length+' görev</span></div>';
       arr.forEach(function(t){
         var pr = PP_PRIORITIES[t.oncelik||'normal'];
-        var sorumluRaw = t.sorumlu;
+        /* PUSULA-GOREV-BAGLANTI-001: sorumlu yoksa assignedToAd fallback */
+        var sorumluRaw = t.sorumlu || t.assignedToAd || '';
         var sorumluAd = '—';
         if (Array.isArray(sorumluRaw)) {
           sorumluAd = sorumluRaw.map(function(s) { return s && typeof s === 'object' ? (s.ad || s.name || s.displayName || '?') : String(s || ''); }).filter(Boolean).join(', ') || '—';
@@ -841,6 +842,9 @@ window._ppGorevKaydet = function() {
     tekrarBitis: document.getElementById('ppf-tekrarBitis')?.value||'',
     sure: document.getElementById('ppf-sure')?.value||'',
     sorumlu: window._ppUserTaglerAl('ppf-sorumlu'),
+    /* PUSULA-GOREV-BAGLANTI-001: assignedTo denormalize — liste görünümü ve filtre için */
+    assignedTo: (window._ppUserTaglerAl('ppf-sorumlu')[0]?.uid) || '',
+    assignedToAd: (window._ppUserTaglerAl('ppf-sorumlu')[0]?.ad) || '',
     gozlemci: window._ppUserTaglerAl('ppf-gozlemci'),
     enerji: document.getElementById('ppf-enerji')?.value||'',
     aciklama: document.getElementById('ppf-aciklama')?.innerHTML||'',
