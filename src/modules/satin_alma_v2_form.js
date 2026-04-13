@@ -67,8 +67,10 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<datalist id="sav2f-job-list"></datalist></div>'
     + _f('piNo', 'SATICI PI NO', 'PI-2026-001')
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
     + _f('piTarih', 'PI TAR\u0130H\u0130', '', 'date')
+    // SATINALMA-GECERLILIK-001: geçerlilik tarihi (KPI Süresi Yaklaşan için zorunlu)
+    + _f('gecerlilikTarihi', 'GE\u00c7ERL\u0130L\u0130K TAR\u0130H\u0130', '', 'date')
     + _f('teslimYeri','TESL\u0130M YER\u0130','FOB Shanghai, CIF Mersin')
     + _f('teslimat', 'TESL\u0130M S\u00dcRES\u0130 (G\u00fcn)', '14', 'number')
     + '</div>'
@@ -282,6 +284,8 @@ window._saV2FormKaydet = function() {
   var kayit = {
     id: typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now()),
     tedarikci: baslik.tedarikci, jobId: baslik.jobId, piNo: baslik.piNo, piTarih: baslik.piTarih,
+    // SATINALMA-GECERLILIK-001: geçerlilik tarihi (KPI Süresi Yaklaşan için)
+    gecerlilikTarihi: g('gecerlilikTarihi') || g('validUntil') || '',
     teslimYeri: baslik.teslimYeri, teslimMasraf: baslik.teslimMasraf, teslimat: baslik.teslimat,
     teklifId: baslik.teklifId || '',
     urunler: urunler, urunSayisi: urunler.length,
