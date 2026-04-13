@@ -173,9 +173,32 @@ window._stDurumGuncelle = function(id, yeniDurum) {
   t.updatedAt = new Date().toISOString();
   _storeST(data);
   window.toast?.('Durum güncellendi: ' + yeniDurum, 'ok');
-  // SATIS-KABUL-TAHSILAT-001: kabul durumunda tahsilat hatırlatması
+  // SATIS-KABUL-TAHSILAT-001: kabul durumunda otomatik tahsilat kaydı oluştur
   if (yeniDurum === 'kabul') {
     window.toast?.('✅ Kabul edildi — Tahsilat oluşturmayı unutmayın!', 'ok');
+    if (typeof loadTahsilat === 'function' && typeof storeTahsilat === 'function') {
+      var toplamTutar = (t.items||[]).reduce(function(s,i){ return s+(parseFloat(i.total)||0); }, 0);
+      if (toplamTutar > 0) {
+        var tahsilat = {
+          id: typeof generateNumericId==='function' ? generateNumericId() : Date.now(),
+          name: 'Satış: ' + (t.teklifNo||t.customerName||'Teklif'),
+          cariName: t.customerName || '',
+          amount: toplamTutar.toFixed(2),
+          currency: t.currency || 'USD',
+          tip: 'tahsilat', _src: 'tahsilat', type: 'tahsilat',
+          teklifId: t.id,
+          due: t.date || new Date().toISOString().slice(0,10),
+          collected: false,
+          ts: new Date().toISOString(),
+          createdBy: window.Auth?.getCU?.()?.uid || '',
+          source: 'satis-kabul'
+        };
+        var tahStore = loadTahsilat();
+        tahStore.unshift(tahsilat);
+        storeTahsilat(tahStore);
+        window.toast?.('📥 Tahsilat kaydı oluşturuldu (' + (t.currency||'USD') + ' ' + toplamTutar.toLocaleString('tr-TR') + ')', 'ok');
+      }
+    }
   }
   renderSatisTeklif();
 };
