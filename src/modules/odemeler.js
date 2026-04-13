@@ -1386,8 +1386,9 @@ function renderOdemeler() {
   });
 
   // ── İşlem toplamları barı (listenin EN ÜSTÜNDE) ────────────
-  var _filtOdm = items.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme'; });
-  var _filtTah = items.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat'; });
+  // NAKIT-TYPE-DISPLAY-001: 3-yollu fallback (_src + tip + type) — eski şemalar için
+  var _filtOdm = items.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme' || o.type === 'odeme'; });
+  var _filtTah = items.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat' || o.type === 'tahsilat'; });
   var _filtOdmAmt = _filtOdm.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o); }, 0);
   var _filtTahAmt = _filtTah.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o); }, 0);
   var _filtNet = _filtTahAmt - _filtOdmAmt;
