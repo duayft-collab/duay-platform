@@ -464,6 +464,7 @@ function _injectOdmPanel() {
       '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">',
         '<button onclick="openOdmChart()" class="odm-hdr-btn">Grafik</button>',
         '<button onclick="exportOdmXlsx()" id="odm-excel-btn" class="odm-hdr-btn">Excel</button>',
+        '<button onclick="window._odmPrintRapor?.()" class="odm-hdr-btn">🖨 PDF Raporu</button>',
         '<button onclick="window._openOdmImportModal?.()" class="odm-hdr-btn">İçe Aktar</button>',
         (_isAdminO() ? '<button onclick="window._guncelleKurlar?.()" class="odm-hdr-btn" style="border-color:#185FA5;color:#185FA5" title="Eski kayıtlardaki stale kurları (sıfır veya güncel kurdan %10+ sapma) yeniden hesaplar">🔄 Kurları Güncelle</button>' : ''),
         '<button onclick="openTahsilatModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#16a34a;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>',
@@ -7848,6 +7849,38 @@ function _guncelleKurlar() {
   renderOdemeler();
 }
 window._guncelleKurlar = _guncelleKurlar;
+
+/**
+ * NAKIT-EXPORT-PDF-001
+ * Nakit akışı raporunu yeni pencerede HTML tablo olarak açar ve print dialog tetikler.
+ * Kullanıcı tarayıcıdan "PDF olarak kaydet" seçeneği ile PDF çıktısı alabilir.
+ * XSS: user-input alanlar (name, cariName, currency, due) window._esc ile sanitize.
+ */
+window._odmPrintRapor = function() {
+  var odm = window.loadOdm?.() || [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  var bugun = new Date().toLocaleDateString('tr-TR');
+  var _e = window._esc || function(s) { return String(s||''); };
+  var html = '<html><head><title>Nakit Akışı Raporu</title>'
+    + '<style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}'
+    + 'th,td{border:0.5px solid #ccc;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}'
+    + 'h1{font-size:16px;margin-bottom:4px}p{font-size:11px;color:#666;margin-bottom:16px}</style></head><body>'
+    + '<h1>Nakit Akışı Raporu</h1><p>Oluşturulma: ' + _e(bugun) + '</p>'
+    + '<table><tr><th>Tür</th><th>Ad</th><th>Tutar</th><th>Para Birimi</th><th>Vade</th><th>Durum</th></tr>'
+    + odm.filter(function(o) { return !o.isDeleted; }).map(function(o) {
+        return '<tr><td>Ödeme</td><td>' + _e(o.name||'') + '</td><td>' + (parseFloat(o.amount)||0) + '</td><td>' + _e(o.currency||'') + '</td><td>' + _e(o.due||'—') + '</td><td>' + (o.paid ? 'Ödendi' : 'Bekliyor') + '</td></tr>';
+      }).join('')
+    + tah.filter(function(t) { return !t.isDeleted; }).map(function(t) {
+        return '<tr><td>Tahsilat</td><td>' + _e(t.cariName||t.name||'') + '</td><td>' + (parseFloat(t.amount)||0) + '</td><td>' + _e(t.currency||'') + '</td><td>' + _e(t.due||t.date||'—') + '</td><td>' + (t.collected ? 'Tahsil edildi' : 'Bekliyor') + '</td></tr>';
+      }).join('')
+    + '</table></body></html>';
+  var w = window.open('', '_blank');
+  if (!w) { window.toast?.('Popup engellendi — tarayıcı ayarlarından izin verin', 'err'); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function() { w.print(); }, 200);
+  window.logActivity?.('finans', 'Nakit Akışı PDF raporu oluşturuldu');
+};
 
 // ════════════════════════════════════════════════════════════════
 // GİZLİ FİNANSAL ÖZELLİKLER — SADECE ADMİN/YÖNETİCİ
