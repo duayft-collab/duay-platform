@@ -49,7 +49,7 @@ function _ppLoad() {
     if (!r) return [];
     if (r.startsWith('_LZ_') && typeof LZString!=='undefined') return JSON.parse(LZString.decompressFromUTF16(r.slice(4))||'[]');
     return JSON.parse(r);
-  } catch(e) { return []; }
+  } catch(e) { console.warn('[PP] load hata:', e); return []; }
 }
 function _ppStore(d) {
   try {
@@ -57,8 +57,9 @@ function _ppStore(d) {
     if (typeof LZString!=='undefined' && s.length>500) { localStorage.setItem(PP_KEY,'_LZ_'+LZString.compressToUTF16(s)); }
     else { localStorage.setItem(PP_KEY,s); }
   } catch(e) { console.error('[PP]',e); }
-  /* PUSULA-SYNC-001: Firestore sync */
-  if(typeof window._write === 'function') window._write(window.KEYS?.pusula||'ak_pusula_pro_v1', d);
+  /* PUSULA-KAYIT-FIX-001: storeTasks varsa onu kullan (unified store path), yoksa _write fallback */
+  if(typeof window.storeTasks==='function') { window.storeTasks(_ppLoad()); }
+  else if(typeof window._write === 'function') window._write(window.KEYS?.pusula||'ak_pusula_pro_v1', d);
   if(typeof window._fsPath === 'function' && typeof window._syncFirestore === 'function') {
     var _fp = window._fsPath('pusula');
     if (_fp) window._syncFirestore(_fp, d);
@@ -663,17 +664,19 @@ window._ppGorevKaydet = function() {
       window._ppDuzenleHedef = null;
       document.getElementById('pp-gorev-modal')?.remove();
       window.toast?.('Görev güncellendi', 'ok');
-      window._ppModRender();
+      // PUSULA-KAYIT-FIX-001: modal kapanma race condition için setTimeout
+      setTimeout(function(){ window._ppModRender?.(); }, 50);
       return;
     }
     window._ppDuzenleHedef = null;
   }
   tasks.unshift(yeni); _ppStore(tasks);
+  window.toast?.('Görev eklendi','ok');
   if(yeni.isFrog){window._ppAktifFrog=yeni; var el=document.getElementById('pp-frog-txt'); if(el) el.textContent=yeni.baslik;}
   document.getElementById('pp-gorev-modal')?.remove();
   window._ppDosyaEkleri=[];
-  window.toast?.('Görev eklendi'+(yeni.isFrog?' — Frog seçildi':''),'ok');
-  window._ppModRender();
+  // PUSULA-KAYIT-FIX-001: modal kapanma race condition için setTimeout
+  setTimeout(function(){ window._ppModRender?.(); }, 50);
 };
 
 window._ppAra = function(q) {
