@@ -1023,8 +1023,15 @@ function renderOdemeler() {
   // Stats hesapla — tüm veriden (filtre öncesi)
   var _allOdm = _odmAll.filter(function(o) { return !o.isDeleted; });
   var _allTah = _tahAll.filter(function(o) { return !o.isDeleted; });
-  var _odmThisMonth = _allOdm.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
-  var _tahThisMonth = _allTah.filter(function(o) { return (o.due||o.ts||'').startsWith(thisMonth); });
+  // NAKIT-BUAY-FIX-001 — type/tip/_src 3-yollu fallback ile ödeme/tahsilat ayrımı garanti
+  var _odmThisMonth = _allOdm.filter(function(o) {
+    return (o.due||o.ts||'').startsWith(thisMonth)
+      && (o._src==='odeme'||o.tip==='odeme'||o.type==='odeme');
+  });
+  var _tahThisMonth = _allTah.filter(function(t) {
+    return (t.due||t.date||t.ts||'').startsWith(thisMonth)
+      && (t._src==='tahsilat'||t.tip==='tahsilat'||t.type==='tahsilat');
+  });
   var _odmMonthAmt = _odmThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o); }, 0);
   var _tahMonthAmt = _tahThisMonth.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o); }, 0);
   var _netPos = _tahMonthAmt - _odmMonthAmt;
