@@ -467,6 +467,21 @@ window._ppFrogBelirle = function() {
 };
 
 window._ppFrogBasla = function() {
+  // PUSULA-SURE-SWITCH-001: Eğer timer zaten çalışıyorsa önceki göreve süreyi kaydet
+  if (window._ppAktifGorevId && window._ppTimerBaslangic) {
+    var _gecenDk = Math.round((Date.now() - window._ppTimerBaslangic) / 60000);
+    if (_gecenDk > 0) {
+      var _ts = _ppLoad();
+      var _gt = _ts.find(function(x){ return String(x.id)===String(window._ppAktifGorevId); });
+      if (_gt) {
+        _gt.toplamSureDk = (_gt.toplamSureDk || 0) + _gecenDk;
+        _gt.updatedAt = _ppNow();
+        _ppStore(_ts);
+      }
+    }
+    window._ppAktifGorevId = null;
+    window._ppTimerBaslangic = null;
+  }
   var frog = window._ppAktifFrog || window._ppFrogBelirle();
   if (!frog) { window.toast?.('Önce görev ekle', 'warn'); return; }
   window._ppSetMod('odak');
