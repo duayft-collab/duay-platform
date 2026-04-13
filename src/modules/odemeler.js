@@ -1411,6 +1411,9 @@ function renderOdemeler() {
   // NAKIT-TYPE-DISPLAY-001: 3-yollu fallback (_src + tip + type) — eski şemalar için
   var _filtOdm = items.filter(function(o) { return o._src === 'odeme' || o.tip === 'odeme' || o.type === 'odeme'; });
   var _filtTah = items.filter(function(o) { return o._src === 'tahsilat' || o.tip === 'tahsilat' || o.type === 'tahsilat'; });
+  // NAKIT-SEKME-FIX-001: sekme sayaçlarını filtered count ile güncelle (L1090-1091'deki _allOdm.length override)
+  _sto('odm-stat-odm-n', _filtOdm.length);
+  _sto('odm-stat-tah-n', _filtTah.length);
   var _filtOdmAmt = _filtOdm.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o); }, 0);
   var _filtTahAmt = _filtTah.reduce(function(s,o) { return s + _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o); }, 0);
   var _filtNet = _filtTahAmt - _filtOdmAmt;
