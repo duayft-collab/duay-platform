@@ -2590,6 +2590,8 @@ window._ppYedekPaneli = function() {
     +_btn('📝 Notlar','notlar')
     +'</div>'
     +'<button onclick="event.stopPropagation();window._ppExcelExport(\'tamyedek\')" style="width:100%;padding:11px;border:none;border-radius:7px;background:var(--t);color:var(--sf);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px">⬇ Tüm Verileri İndir (Tam Yedek)</button>'
+    // PUSULA-IMPORT-001: admin için import bölümü (Excel + JSON)
+    + (_ppIsAdmin() ? '<div style="border-top:0.5px solid var(--b);margin-top:14px;padding-top:14px"><div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:8px">İçe Aktar <span style="font-size:9px;color:#854F0B;background:#FAEEDA;padding:1px 6px;border-radius:3px;margin-left:4px">Yalnızca Admin</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label style="padding:8px 12px;border:0.5px solid var(--b);border-radius:7px;cursor:pointer;font-size:11px;color:var(--t2);text-align:center;background:var(--s2)">📊 Excel İçe Aktar<input type="file" accept=".xlsx,.xls" style="display:none" onchange="event.stopPropagation();window._ppExcelImport(this)"></label><label style="padding:8px 12px;border:0.5px solid var(--b);border-radius:7px;cursor:pointer;font-size:11px;color:var(--t2);text-align:center;background:var(--s2)">{ } JSON İçe Aktar<input type="file" accept=".json" style="display:none" onchange="event.stopPropagation();window._ppJSONImport(this)"></label></div></div>' : '')
     +'<div style="font-size:10px;color:var(--t3);text-align:center">Veriler .xlsx formatında indirilir</div>'
     +'</div>';
   document.body.appendChild(mo);
@@ -2758,4 +2760,85 @@ window._ppTopluDurumUygula = function(yeniDurum) {
   window._ppSeciliGorevler = {};
   window._ppModRender?.();
   window.toast?.(ids.length + ' görev → ' + yeniDurum, 'ok');
+};
+
+/* ── PUSULA-IMPORT-001: Excel + JSON içe aktarma (admin only) ── */
+
+/**
+ * Excel dosyası yükleyip görev ve takvim kayıtlarını içe aktarır.
+ * XLSX kütüphanesi yoksa CDN'den yüklenir, sonra tekrar çağrılır.
+ * Sayfa adları 'gorevler' ve 'takvim' olanlar işlenir. Mevcut kayıtların
+ * ID'leri yeni gelenlerle çakışırsa eski hali silinip yeni hali kalır
+ * (upsert, tombstone yok — dikkatli kullanım).
+ */
+window._ppExcelImport = function(input) {
+  if (!_ppIsAdmin()) { window.toast?.('Sadece admin içe aktarabilir', 'err'); return; }
+  var file = input?.files?.[0]; if (!file) return;
+  if (typeof XLSX === 'undefined') {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = function(){ window._ppExcelImport(input); };
+    document.head.appendChild(s);
+    window.toast?.('Excel hazırlanıyor...', 'info');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, {type:'binary'});
+      var ozet = [];
+      wb.SheetNames.forEach(function(sheet) {
+        var data = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
+        if (!data.length) return;
+        var key = sheet.toLowerCase();
+        if (key === 'gorevler') {
+          var mevcut = _ppLoad();
+          var yeniIds = new Set(data.map(function(r){return String(r.id||'');}));
+          var birlesmis = mevcut.filter(function(t){return !yeniIds.has(String(t.id));}).concat(data);
+          _ppStore(birlesmis); ozet.push('Görevler: '+data.length+' kayıt');
+        } else if (key === 'takvim') {
+          var mevcut2 = typeof _ppTakvimLoad==='function'?_ppTakvimLoad():[];
+          var yeniIds2 = new Set(data.map(function(r){return String(r.id||'');}));
+          var birlesmis2 = mevcut2.filter(function(t){return !yeniIds2.has(String(t.id));}).concat(data);
+          if(typeof _ppTakvimStore==='function') _ppTakvimStore(birlesmis2);
+          ozet.push('Takvim: '+data.length+' kayıt');
+        }
+      });
+      window.toast?.(ozet.join(' · ')||'İçe aktarıldı','ok');
+      document.getElementById('pp-yedek-modal')?.remove();
+      window._ppModRender?.();
+    } catch(err){ window.toast?.('Excel hatası: '+err.message,'err'); }
+  };
+  reader.readAsBinaryString(file);
+};
+
+/**
+ * JSON dosyası yükleyip görev/takvim verisini içe aktarır. İki format
+ * desteklenir:
+ * - Düz array → görev listesi (upsert ID bazlı)
+ * - Object { gorevler, takvim } → iki koleksiyon ayrı işlenir (replace)
+ */
+window._ppJSONImport = function(input) {
+  if (!_ppIsAdmin()) { window.toast?.('Sadece admin içe aktarabilir','err'); return; }
+  var file = input?.files?.[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      var ozet = [];
+      if (Array.isArray(data)) {
+        var mevcut = _ppLoad();
+        var yeniIds = new Set(data.map(function(r){return String(r.id||'');}));
+        _ppStore(mevcut.filter(function(t){return !yeniIds.has(String(t.id));}).concat(data));
+        ozet.push('Görevler: '+data.length);
+      } else if (data.gorevler||data.takvim) {
+        if(data.gorevler&&Array.isArray(data.gorevler)){_ppStore(data.gorevler);ozet.push('Görevler: '+data.gorevler.length);}
+        if(data.takvim&&Array.isArray(data.takvim)&&typeof _ppTakvimStore==='function'){_ppTakvimStore(data.takvim);ozet.push('Takvim: '+data.takvim.length);}
+      } else { window.toast?.('Tanımlanamayan JSON formatı','warn'); return; }
+      window.toast?.(ozet.join(' · ')||'İçe aktarıldı','ok');
+      document.getElementById('pp-yedek-modal')?.remove();
+      window._ppModRender?.();
+    } catch(err){ window.toast?.('JSON hatası: '+err.message,'err'); }
+  };
+  reader.readAsText(file);
 };
