@@ -586,6 +586,13 @@ window._ppYeniGorev = function() {
   // PUSULA-JOBID-KAYNAK-001: Job ID SADECE resmi Job kaydından alınır.
   // ak_tk2 eski sistem localStorage, _ppLoad() PusulaPro kendi görevleri — ikisi de
   // Job kaynağı değil. PusulaPro görev kendi job_id üretmez, var olan bir Job'a bağlanır.
+  // PUSULA-SABLON-001: kayıtlı şablonlar yüklenir (localStorage 'pp_sablonlar')
+  var _ppSablonlar = [];
+  try { _ppSablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) { _ppSablonlar = []; }
+  var _sablonOpts = '<option value="">— Şablon seç —</option>';
+  _ppSablonlar.forEach(function(s, i) {
+    _sablonOpts += '<option value="'+i+'">'+_ppEsc(s.ad || s.baslik || ('Şablon '+(i+1)))+'</option>';
+  });
   var jobOpts = '<option value="">— Job ID seç —</option>';
   try {
     var _jobList = [];
@@ -608,9 +615,14 @@ window._ppYeniGorev = function() {
   var _sel=function(id,lbl,opts,bg){ return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">'+lbl+'</div><select id="ppf-'+id+'" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:'+(bg||'var(--s2)')+';color:var(--t);font-family:inherit">'+opts+'</select></div>'; };
   var _inp=function(id,lbl,type,ph){ return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">'+lbl+'</div><input id="ppf-'+id+'" type="'+(type||'text')+'" placeholder="'+(ph||'')+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'; };
   mo.innerHTML='<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:620px;overflow:hidden">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
-    +'<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Görev</div>'
-    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b);gap:8px">'
+    +'<div style="font-size:14px;font-weight:500;color:var(--t);flex-shrink:0">Yeni Görev</div>'
+    // PUSULA-SABLON-001: şablon yükle dropdown + "Şablon Olarak Kaydet" butonu
+    +'<div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end">'
+    +'<select id="ppf-sablon" onchange="event.stopPropagation();window._ppSablonAc?.(this.value)" onclick="event.stopPropagation()" style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t2);font-family:inherit;max-width:180px" title="Kayıtlı şablondan yükle">'+_sablonOpts+'</select>'
+    +'<button onclick="event.stopPropagation();window._ppSablonKaydet?.()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit" title="Bu formu şablon olarak kaydet">💾 Şablon</button>'
+    +'</div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;flex-shrink:0">×</button></div>'
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
     +'<input id="ppf-baslik" placeholder="Görev başlığı..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:15px;font-weight:500;padding:8px 0;border:none;border-bottom:2px solid var(--bm);border-radius:0;background:transparent;width:100%;color:var(--t);font-family:inherit;outline:none">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
@@ -2644,4 +2656,81 @@ window._ppTopluDurum = function() {
   window._ppSeciliGorevler = {};
   window._ppModRender?.();
   window.toast?.(ids.length + ' görev güncellendi', 'ok');
+};
+
+/* ── PUSULA-SABLON-001: Görev şablonu yükle/kaydet ─────────── */
+
+/**
+ * Kayıtlı şablonu form alanlarına yükle. localStorage 'pp_sablonlar'
+ * key'inden oku, index ile seç, form input/select/textarea'larını doldur.
+ */
+window._ppSablonAc = function(idx) {
+  if (idx === '' || idx == null) return;
+  var sablonlar = [];
+  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) {}
+  var s = sablonlar[parseInt(idx)];
+  if (!s) { window.toast?.('Şablon bulunamadı', 'err'); return; }
+  var _setVal = function(id, val) {
+    var el = document.getElementById('ppf-' + id);
+    if (el && val != null) el.value = val;
+  };
+  _setVal('baslik', s.baslik);
+  _setVal('job_id', s.job_id);
+  _setVal('departman', s.departman);
+  _setVal('oncelik', s.oncelik);
+  _setVal('durum', s.durum);
+  _setVal('kpi', s.kpi);
+  _setVal('basT', s.basT);
+  _setVal('bitT', s.bitT);
+  _setVal('sure', s.sure);
+  _setVal('tekrar', s.tekrar);
+  _setVal('tekrarBitis', s.tekrarBitis);
+  _setVal('enerji', s.enerji);
+  var aciklamaEl = document.getElementById('ppf-aciklama');
+  if (aciklamaEl && s.aciklama != null) aciklamaEl.innerHTML = s.aciklama;
+  window.toast?.('Şablon yüklendi: ' + (s.ad || s.baslik || ''), 'ok');
+};
+
+/**
+ * Mevcut form içeriğini şablon olarak localStorage'a kaydet. Önce
+ * kullanıcıdan şablon adı iste (prompt), boş ise iptal. Aynı isimli
+ * şablon varsa eski üzerine yazar (isim unique değil — aynı isim
+ * listede iki kere çıkabilir ama çakışma yok).
+ */
+window._ppSablonKaydet = function() {
+  var baslik = document.getElementById('ppf-baslik')?.value?.trim();
+  if (!baslik) { window.toast?.('Önce görev başlığı gir', 'warn'); return; }
+  var ad = prompt('Şablon adı:', baslik);
+  if (!ad) return;
+  var _getVal = function(id) {
+    var el = document.getElementById('ppf-' + id);
+    return el ? el.value : '';
+  };
+  var sablon = {
+    ad: ad,
+    baslik: baslik,
+    job_id: _getVal('job_id'),
+    departman: _getVal('departman'),
+    oncelik: _getVal('oncelik'),
+    durum: _getVal('durum'),
+    kpi: _getVal('kpi'),
+    basT: _getVal('basT'),
+    bitT: _getVal('bitT'),
+    sure: _getVal('sure'),
+    tekrar: _getVal('tekrar'),
+    tekrarBitis: _getVal('tekrarBitis'),
+    enerji: _getVal('enerji'),
+    aciklama: document.getElementById('ppf-aciklama')?.innerHTML || '',
+    createdAt: _ppNow()
+  };
+  var sablonlar = [];
+  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) {}
+  sablonlar.push(sablon);
+  try {
+    localStorage.setItem('pp_sablonlar', JSON.stringify(sablonlar));
+    window.toast?.('Şablon kaydedildi: ' + ad, 'ok');
+  } catch(e) {
+    console.warn('[PP] şablon kaydedilemedi:', e);
+    window.toast?.('Şablon kaydedilemedi (localStorage hata)', 'err');
+  }
 };
