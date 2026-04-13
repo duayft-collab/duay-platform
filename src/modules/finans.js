@@ -29,7 +29,19 @@ const CUR_FLAGS = {
   CNY:'🇨🇳', SAR:'🇸🇦', AED:'🇦🇪', ALTIN:'🥇', PETROL:'🛢️',
 };
 
-const FALLBACK_RATES = {USD:44.55,EUR:51.70,GBP:59.30,ALTIN:4350,PETROL:85.0,CHF:51.20,JPY:0.298,CNY:6.14,SAR:11.88,AED:12.13};
+// KUR-MERKEZI-002: USD/EUR/GBP fallback DUAY_KUR'dan okur (module load time'da varsa)
+const FALLBACK_RATES = {
+  USD: window.DUAY_KUR?.USD || 44.55,
+  EUR: window.DUAY_KUR?.EUR || 51.70,
+  GBP: window.DUAY_KUR?.GBP || 59.30,
+  ALTIN: 4350,
+  PETROL: 85.0,
+  CHF: 51.20,
+  JPY: 0.298,
+  CNY: 6.14,
+  SAR: 11.88,
+  AED: 12.13
+};
 const CHANGE_MAP     = {};
 
 const BANK_DATA = [
