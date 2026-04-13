@@ -4925,12 +4925,29 @@ window._clearAnthropicKey = function() {
     window._renderEntegrasyonlar?.();
   }});
 };
+/* AYARLAR-ILERLEME-001: ortak sekme bar helper */
+window._ayarSekmeBarHtml = function(aktif) {
+  var sekmeler = [
+    { id: 'entegrasyonlar', ad: 'Entegrasyonlar', fn: '_renderEntegrasyonlar' },
+    { id: 'ilerleme', ad: '📊 İlerleme', fn: '_renderPlatformIlerleme' }
+  ];
+  var bar = '<div style="display:flex;border-bottom:0.5px solid var(--b);padding:0 24px;gap:4px;background:var(--sf);position:sticky;top:0;z-index:10">';
+  sekmeler.forEach(function(s) {
+    var on = aktif === s.id;
+    bar += '<button onclick="event.stopPropagation();window.' + s.fn + '?.()" style="background:none;border:none;border-bottom:2px solid ' + (on ? 'var(--ac)' : 'transparent') + ';padding:12px 16px;font-size:12px;color:' + (on ? 'var(--ac)' : 'var(--t2)') + ';font-weight:' + (on ? '600' : '400') + ';cursor:pointer;font-family:inherit">' + s.ad + '</button>';
+  });
+  bar += '</div>';
+  return bar;
+};
+
 window._renderEntegrasyonlar = function() {
   var panel = document.getElementById('panel-settings');
   if (!panel) return;
   var storedKey = localStorage.getItem('ak_anthropic_key');
   var hasKey = !!storedKey;
-  var h = '<div style="max-width:600px;margin:0 auto;padding:24px">';
+  // AYARLAR-ILERLEME-001: sekme bar
+  var h = window._ayarSekmeBarHtml('entegrasyonlar');
+  h += '<div style="max-width:600px;margin:0 auto;padding:24px">';
   h += '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:16px">Entegrasyonlar</div>';
   h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:16px">';
   h += '<div style="font-size:13px;font-weight:500;margin-bottom:4px">Anthropic API Key</div>';
@@ -4998,6 +5015,160 @@ window._renderEntegrasyonlar = function() {
   h += '</div>';
   panel.innerHTML = h;
   setTimeout(function(){window._ayarSartlariYukle?.();},50);
+};
+
+/**
+ * AYARLAR-ILERLEME-001
+ * Platform ilerleme durumu — 7 blok iş akışı renk kodlu kartları.
+ */
+window._renderPlatformIlerleme = function() {
+  var panel = document.getElementById('panel-settings');
+  if (!panel) return;
+
+  var BLOKLAR = [
+    {
+      baslik: '1. Müşteri Talebi',
+      renk: 'tamamlandi',
+      adimlar: [
+        {ad: 'CRM / Cari kayıt', durum: 'ok'},
+        {ad: 'Satış Teklifi (PI) oluşturma', durum: 'ok'},
+        {ad: 'PI tasarım A/B/C/I/L/O', durum: 'ok'},
+        {ad: 'Önceki teklif uyarısı', durum: 'ok'},
+        {ad: 'Dil seçimi (TR/EN/CN/AR/RU)', durum: 'kismi'},
+      ]
+    },
+    {
+      baslik: '2. Satış Teklifi Onayı',
+      renk: 'kismi',
+      adimlar: [
+        {ad: 'Durum takibi (taslak→kabul)', durum: 'ok'},
+        {ad: 'Revizyon sistemi R01→R02', durum: 'ok'},
+        {ad: 'Müşteri kabul → Tahsilat bağı', durum: 'eksik'},
+        {ad: 'Excel export (10 kolon)', durum: 'ok'},
+      ]
+    },
+    {
+      baslik: '3. Satın Alma — Alış Teklifi',
+      renk: 'kismi',
+      adimlar: [
+        {ad: 'Tedarikçi teklifi formu', durum: 'ok'},
+        {ad: 'Yönetici onay akışı', durum: 'ok'},
+        {ad: 'Geçerlilik tarihi KPI', durum: 'kismi'},
+        {ad: 'CSV / Excel import', durum: 'ok'},
+        {ad: 'Onay → Otomatik sipariş', durum: 'eksik'},
+      ]
+    },
+    {
+      baslik: '4. Sipariş Takibi',
+      renk: 'kismi',
+      adimlar: [
+        {ad: 'Sipariş listesi (onaylı teklifler)', durum: 'ok'},
+        {ad: 'Durum döngüsü (hazır→yolda→teslim)', durum: 'ok'},
+        {ad: 'Yeni sipariş modal', durum: 'ok'},
+        {ad: 'Excel export', durum: 'ok'},
+        {ad: 'Kargo modülü bağlantısı', durum: 'eksik'},
+      ]
+    },
+    {
+      baslik: '5. Lojistik / Teslimat',
+      renk: 'eksik',
+      adimlar: [
+        {ad: 'Kargo takibi (kargo.js var)', durum: 'kismi'},
+        {ad: 'Sipariş → Kargo köprüsü', durum: 'eksik'},
+        {ad: 'Teslimat tarihi takibi', durum: 'eksik'},
+        {ad: 'Numune arşivi', durum: 'kismi'},
+      ]
+    },
+    {
+      baslik: '6. Nakit Akışı / Tahsilat',
+      renk: 'kismi',
+      adimlar: [
+        {ad: 'Ödeme + tahsilat takibi', durum: 'ok'},
+        {ad: 'Kur sabitleme', durum: 'ok'},
+        {ad: 'Excel birleşik export', durum: 'ok'},
+        {ad: 'Import tip/src alanı', durum: 'ok'},
+        {ad: 'Satış kabul → Tahsilat otomatik', durum: 'eksik'},
+      ]
+    },
+    {
+      baslik: '7. Raporlama',
+      renk: 'eksik',
+      adimlar: [
+        {ad: 'Kar analizi (marj)', durum: 'ok'},
+        {ad: 'Cari karşılaştırma', durum: 'eksik'},
+        {ad: 'Konsolidasyon / dönem özeti', durum: 'eksik'},
+        {ad: 'Muavin defteri', durum: 'kismi'},
+      ]
+    }
+  ];
+
+  var RENK = {
+    ok:    {bg:'#EAF3DE', border:'#639922', text:'#27500A', dot:'#3B6D11'},
+    kismi: {bg:'#FAEEDA', border:'#EF9F27', text:'#412402', dot:'#854F0B'},
+    eksik: {bg:'#FCEBEB', border:'#E24B4A', text:'#501313', dot:'#A32D2D'}
+  };
+
+  var toplamAdim = 0, okAdim = 0, kismiAdim = 0, eksikAdim = 0;
+  BLOKLAR.forEach(function(b) {
+    b.adimlar.forEach(function(a) {
+      toplamAdim++;
+      if (a.durum === 'ok') okAdim++;
+      else if (a.durum === 'kismi') kismiAdim++;
+      else eksikAdim++;
+    });
+  });
+
+  var yuzde = Math.round((okAdim + kismiAdim * 0.5) / toplamAdim * 100);
+
+  // AYARLAR-ILERLEME-001: sekme bar
+  var h = window._ayarSekmeBarHtml('ilerleme');
+  h += '<div style="padding:24px;max-width:900px;margin:0 auto">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
+  h += '<div><div style="font-size:16px;font-weight:600;color:var(--t)">Platform İlerleme Durumu</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-top:2px">Talep girişinden teslimata iş akışı</div></div>';
+  h += '<div style="text-align:right">';
+  h += '<div style="font-size:28px;font-weight:700;color:var(--t)">%' + yuzde + '</div>';
+  h += '<div style="font-size:10px;color:var(--t3)">Genel tamamlanma</div>';
+  h += '</div></div>';
+
+  // Progress bar
+  h += '<div style="height:8px;background:var(--s2);border-radius:4px;margin-bottom:6px;overflow:hidden">';
+  h += '<div style="height:100%;background:linear-gradient(90deg,#3B6D11,#639922);border-radius:4px;width:' + yuzde + '%;transition:width .5s"></div>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:16px;margin-bottom:24px;font-size:10px;color:var(--t3)">';
+  h += '<span style="color:#3B6D11">■ Tamamlandı: ' + okAdim + '</span>';
+  h += '<span style="color:#854F0B">■ Kısmi: ' + kismiAdim + '</span>';
+  h += '<span style="color:#A32D2D">■ Eksik: ' + eksikAdim + '</span>';
+  h += '<span>Toplam: ' + toplamAdim + ' adım</span></div>';
+
+  // Bloklar grid
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+  BLOKLAR.forEach(function(blok) {
+    var rObj = RENK[blok.renk] || RENK.kismi;
+    var okSay = blok.adimlar.filter(function(a) { return a.durum === 'ok'; }).length;
+    var pct = Math.round(okSay / blok.adimlar.length * 100);
+    h += '<div style="border:0.5px solid ' + rObj.border + ';border-radius:10px;background:' + rObj.bg + ';padding:14px">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+    h += '<div style="font-size:12px;font-weight:600;color:' + rObj.text + '">' + blok.baslik + '</div>';
+    h += '<div style="font-size:11px;font-weight:700;color:' + rObj.dot + '">%' + pct + '</div>';
+    h += '</div>';
+    h += '<div style="height:4px;background:rgba(0,0,0,0.08);border-radius:2px;margin-bottom:10px;overflow:hidden">';
+    h += '<div style="height:100%;background:' + rObj.dot + ';border-radius:2px;width:' + pct + '%"></div>';
+    h += '</div>';
+    blok.adimlar.forEach(function(adim) {
+      var aRenk = RENK[adim.durum];
+      h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">';
+      h += '<div style="width:8px;height:8px;border-radius:50%;background:' + aRenk.dot + ';flex-shrink:0"></div>';
+      h += '<div style="font-size:11px;color:' + rObj.text + ';opacity:' + (adim.durum === 'eksik' ? '0.7' : '1') + '">' + adim.ad + '</div>';
+      if (adim.durum === 'kismi') h += '<span style="font-size:9px;color:' + aRenk.dot + ';margin-left:auto">kısmi</span>';
+      if (adim.durum === 'eksik') h += '<span style="font-size:9px;color:' + aRenk.dot + ';margin-left:auto">eksik</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  h += '</div></div>';
+
+  panel.innerHTML = h;
 };
 
 /* AYARLAR-BANKA-SART-001: Helper fonksiyonlar */
