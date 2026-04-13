@@ -6079,3 +6079,35 @@ window._siparisDetay = function(id) {
   window.App?.nav?.('alis-teklifleri');
   setTimeout(function() { window._openAlisDetayModal?.(t.id); }, 400);
 };
+
+/**
+ * SIPARISLER-EXCEL-001
+ * Siparişler panel'inden 8 kolonlu Excel export.
+ * Veri kaynağı: loadAlisTeklifleri filter(durum='onaylandi' veya siparisDurumu var).
+ */
+window._exportSiparislerXlsx = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenemedi', 'err'); return; }
+  var data = (typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [])
+    .filter(function(t) { return !t.isDeleted && (t.durum === 'onaylandi' || t.siparisDurumu); });
+  if (!data.length) { window.toast?.('Dışa aktarılacak sipariş yok', 'warn'); return; }
+  var rows = [['Teklif No', 'Tedarikçi', 'PI No', 'Job ID', 'Tutar', 'Para', 'Sipariş Durum', 'Oluşturma Tarihi']];
+  var esc = window._esc || function(s) { return String(s || ''); };
+  data.forEach(function(t) {
+    rows.push([
+      esc(t.teklifNo || t.piNo || ''),
+      esc(t.tedarikci || ''),
+      esc(t.piNo || ''),
+      esc(t.jobId || ''),
+      parseFloat(t.toplamTutar || t.netOdeme || 0),
+      esc(t.paraBirimi || t.toplamPara || 'USD'),
+      esc(t.siparisDurumu || 'bekliyor'),
+      (t.ts || t.createdAt || '').slice(0, 10)
+    ]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:22},{wch:14},{wch:14},{wch:12},{wch:8},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Siparisler');
+  XLSX.writeFile(wb, 'siparisler-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  window.toast?.('Excel indirildi ✓', 'ok');
+};
