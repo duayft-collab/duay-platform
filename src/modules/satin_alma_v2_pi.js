@@ -120,7 +120,10 @@ window._piCSS = function(tasarim) {
     + '.gizli-kod{position:fixed;bottom:12px;right:16px;font-size:8px;color:#ccc;font-family:monospace;letter-spacing:.1em}'
     + '@media print{.np{display:none}.gizli-kod{position:fixed;bottom:8px;right:12px}}'
     + (tasarim === 'B' ? '.accent{color:#185FA5}.total-box{background:#185FA5;color:#fff;padding:8px 16px;border-radius:4px}' : '')
-    + (tasarim === 'C' ? '.accent{color:#1D9E75}.top-bar{height:6px;background:#1D9E75;margin:-32px -32px 24px}' : '');
+    + (tasarim === 'C' ? '.accent{color:#1D9E75}.top-bar{height:6px;background:#1D9E75;margin:-32px -32px 24px}' : '')
+    + (tasarim === 'I' ? '.accent{color:#7C3AED}.top-bar{height:4px;background:#7C3AED;margin:-32px -32px 24px}.total-box{background:#7C3AED;color:#fff;padding:8px 16px}' : '')
+    + (tasarim === 'L' ? '.accent{color:#DC2626}.header-line{border-bottom:3px double #DC2626!important}.total-box{border:2px solid #DC2626;padding:8px 16px}' : '')
+    + (tasarim === 'O' ? 'body{background:#FFFBEB}.accent{color:#D97706}.top-bar{height:8px;background:#D97706;margin:-32px -32px 24px}.total-box{background:#D97706;color:#fff;padding:8px 16px}' : '');
 };
 
 /* ── Tasarım A — Corporate (siyah-beyaz klasik) ────────────── */
