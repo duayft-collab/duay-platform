@@ -173,6 +173,10 @@ window._stDurumGuncelle = function(id, yeniDurum) {
   t.updatedAt = new Date().toISOString();
   _storeST(data);
   window.toast?.('Durum güncellendi: ' + yeniDurum, 'ok');
+  // SATIS-KABUL-TAHSILAT-001: kabul durumunda tahsilat hatırlatması
+  if (yeniDurum === 'kabul') {
+    window.toast?.('✅ Kabul edildi — Tahsilat oluşturmayı unutmayın!', 'ok');
+  }
   renderSatisTeklif();
 };
 
