@@ -3424,6 +3424,7 @@ if (typeof module !== 'undefined' && module.exports) {
   // PUSULA-SYNC-001: Pusula sync için low-level API expose
   window._write = _write;
   window._syncFirestore = _syncFirestore;
+  window._fsPath = _fsPath;
   window.KEYS = KEYS;
 }
 
