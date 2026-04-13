@@ -64,6 +64,9 @@ function _ppStore(d) {
     if (_ppFp && typeof _syncFirestore === 'function') {
       _syncFirestore(_ppFp, d);
     }
+    /* PUSULA-SYNC-TEST-001: sync path görünürlüğü */
+    if (_ppFp) console.info('[PP-SYNC] Firestore yazıldı:', d.length, 'görev,', _ppFp);
+    else console.warn('[PP-SYNC] Firestore path yok — sync atlandı');
   } catch(_e) { console.warn('[PP] Firestore sync hata:', _e.message); }
   /* PUSULA-KAYIT-FIX-001: storeTasks varsa onu kullan (unified store path), yoksa _write fallback */
   if(typeof window.storeTasks==='function') { window.storeTasks(_ppLoad()); }
