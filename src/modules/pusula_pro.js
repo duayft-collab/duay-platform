@@ -247,6 +247,7 @@ window._ppModRender = function() {
       + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:11px;padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
+      + '<div style="padding:10px 14px 0"><input id="pp-calisma-ara" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppCalismaFiltre(this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;margin-bottom:10px"></div>'
       + '<div style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
       + '<div></div>'
       + '<div></div>'
@@ -881,6 +882,15 @@ window._ppGorevKaydet = function() {
 window._ppAra = function(q) {
   window._ppSearchQ = q;
   window._ppModRender();
+};
+
+/* PUSULA-CALISMA-ARAMA-001: lightweight DOM filtre — re-render yok, satır gizler */
+window._ppCalismaFiltre = function(q) {
+  q = (q||'').toLowerCase().trim();
+  document.querySelectorAll('[id^="pp-tr-"]').forEach(function(row){
+    var text = row.textContent.toLowerCase();
+    row.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
 };
 
 window._ppSidebarSec = function(sec) {
