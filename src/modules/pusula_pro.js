@@ -664,6 +664,7 @@ window._ppYeniGorev = function() {
     +'<div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end">'
     +'<select id="ppf-sablon" onchange="event.stopPropagation();window._ppSablonAc?.(this.value)" onclick="event.stopPropagation()" style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t2);font-family:inherit;max-width:180px" title="Kayıtlı şablondan yükle">'+_sablonOpts+'</select>'
     +'<button onclick="event.stopPropagation();window._ppSablonKaydet?.()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit" title="Bu formu şablon olarak kaydet">💾 Şablon</button>'
+    +'<button onclick="event.stopPropagation();window._ppSablonYonet()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">⚙ Yönet</button>'
     +'</div>'
     +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;flex-shrink:0">×</button></div>'
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
@@ -2791,6 +2792,45 @@ window._ppSablonKaydet = function() {
     console.warn('[PP] şablon kaydedilemedi:', e);
     window.toast?.('Şablon kaydedilemedi (localStorage hata)', 'err');
   }
+};
+
+/* ── PUSULA-SABLON-YONETIM-001: Şablon listesi modal + sil ─────── */
+window._ppSablonYonet = function() {
+  var sablonlar = [];
+  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar')||'[]'); } catch(e){}
+  var mo = document.createElement('div');
+  mo.id = 'pp-sablon-yonet-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:380px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    + '<span style="font-size:13px;font-weight:500;color:var(--t)">Şablonları Yönet</span>'
+    + '<button onclick="document.getElementById(\'pp-sablon-yonet-modal\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="overflow-y:auto;flex:1">'
+    + (sablonlar.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--t3);font-size:12px">Henüz şablon yok</div>' :
+      sablonlar.map(function(s,i){
+        return '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:0.5px solid var(--b)">'
+          + '<div style="flex:1">'
+          + '<div style="font-size:12px;font-weight:500;color:var(--t)">'+_ppEsc(s.ad||s.baslik||'Şablon '+(i+1))+'</div>'
+          + '<div style="font-size:9px;color:var(--t3);margin-top:2px">'+_ppEsc(s.departman||'')+(s.oncelik?' · '+s.oncelik:'')+'</div>'
+          + '</div>'
+          + '<button onclick="event.stopPropagation();window._ppSablonSil('+i+')" style="font-size:11px;padding:3px 10px;border:0.5px solid #DC2626;border-radius:5px;background:transparent;cursor:pointer;color:#DC2626;font-family:inherit">Sil</button>'
+          + '</div>';
+      }).join(''))
+    + '</div>'
+    + '</div>';
+  mo.onclick = function(e){ if(e.target===mo) mo.remove(); };
+  document.body.appendChild(mo);
+};
+
+window._ppSablonSil = function(idx) {
+  var sablonlar = [];
+  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar')||'[]'); } catch(e){}
+  sablonlar.splice(idx, 1);
+  localStorage.setItem('pp_sablonlar', JSON.stringify(sablonlar));
+  window.toast?.('Şablon silindi', 'ok');
+  document.getElementById('pp-sablon-yonet-modal')?.remove();
+  window._ppSablonYonet();
 };
 
 /**
