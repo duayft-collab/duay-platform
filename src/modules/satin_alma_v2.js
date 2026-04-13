@@ -94,6 +94,11 @@ window._saKurCek = function() {
         window._saKur.TRY = 1;
         window._saKur._son = Date.now();
         console.log('[KUR] G\u00fcncellendi:', {USD:window._saKur.USD.toFixed(2), EUR:window._saKur.EUR.toFixed(2), GBP:window._saKur.GBP.toFixed(2)});
+        // KUR-MERKEZI-001: merkezi kur objesi + Firestore sync
+        window.DUAY_KUR = { USD: window._saKur.USD, EUR: window._saKur.EUR, GBP: window._saKur.GBP, CNY: window._saKur.CNY, TRY: 1, _ts: new Date().toISOString() };
+        if (typeof _write === 'function') _write('ak_doviz_kur', window.DUAY_KUR);
+        var _kurFp = typeof _fsPath === 'function' ? _fsPath('kur') : null;
+        if (_kurFp && typeof _syncFirestore === 'function') _syncFirestore(_kurFp, window.DUAY_KUR);
       }
     })
     .catch(function(e){

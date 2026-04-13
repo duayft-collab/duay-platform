@@ -156,6 +156,11 @@ async function _odmFetchTCMB() {
   if (!_odmRatesCache || !Object.keys(_odmRatesCache).length) {
     _odmRatesCache = { USD: _tickerRates.USD || 44.55, EUR: _tickerRates.EUR || 51.70, GBP: _tickerRates.GBP || 59.30 };
   }
+  // KUR-MERKEZI-001: Taze (2 saat altı) DUAY_KUR varsa override — cihazlar arası tutarlılık
+  if (window.DUAY_KUR && window.DUAY_KUR._ts) {
+    var _kurYas = (Date.now() - new Date(window.DUAY_KUR._ts).getTime()) / 3600000;
+    if (_kurYas < 2) { Object.assign(_odmRatesCache, { USD: window.DUAY_KUR.USD, EUR: window.DUAY_KUR.EUR, GBP: window.DUAY_KUR.GBP }); }
+  }
 }
 
 // Sayfa yüklenince kur çek + ticker başlat

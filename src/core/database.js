@@ -176,6 +176,7 @@ const KEYS = {
   notes         : 'ak_nt1',
   activity      : 'ak_act1',
   currencies    : 'ak_currencies1',
+  kur           : 'ak_doviz_kur',
   kargoFirms    : 'ak_krg_firms1',
   rehber        : 'ak_rehber1',
   hedefler      : 'ak_hdf2',
@@ -2297,6 +2298,8 @@ function startRealtimeSync() {
   }
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
+    // KUR-MERKEZI-001: Döviz kuru — tüm cihazlarda senkronize
+    ['kur', KEYS.kur, function(data) { if (data && typeof data === 'object') { window.DUAY_KUR = data; window._saKur = data; } }],
     // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
     ['users',         KEYS.users,         (data) => { _refreshCU(data); if (!window._adminSaving) window.renderUsers?.(); }],
     // Kritik — her kullanıcı için
