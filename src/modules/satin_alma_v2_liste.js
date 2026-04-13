@@ -9,6 +9,11 @@ window._saV2ListeSecili = window._saV2ListeSecili || {};
 window._saV2AktifId = window._saV2AktifId || null;
 
 window.renderSatinAlmaV2 = function() {
+  /* SAV2-RENDER-MERGE-001: render.js yüklüyse gelişmiş 4-mod görünüme devret */
+  if (window._saV2RenderLoaded && typeof window._saV2RenderMain === 'function') {
+    window._saV2RenderMain();
+    return;
+  }
   var cont = document.getElementById('panel-satin-alma');
   if(!cont) return;
   var liste = typeof window._saV2Load==='function'?window._saV2Load():[];

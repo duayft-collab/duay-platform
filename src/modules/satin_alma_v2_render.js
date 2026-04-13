@@ -13,7 +13,9 @@ function _saV2Miktar(t) { if (t.urunler && t.urunler.length) return t.urunler.re
 function _saV2UrunSayisi(t) { return (t.urunler && t.urunler.length) ? t.urunler.length : 1; }
 
 /* ── Ana render ─────────────────────────────────────────────── */
-window.renderSatinAlmaV2 = function() {
+/* SAV2-RENDER-MERGE-001: gelişmiş render yüklendi bayrağı + _saV2RenderMain alias */
+window._saV2RenderLoaded = true;
+window._saV2RenderMain = function() {
   window._saV2HatirlatmaKontrol?.();
   var panel = document.getElementById('panel-satin-alma');
   if (!panel) return;
@@ -283,6 +285,8 @@ window.renderSatinAlmaV2 = function() {
     document.body.appendChild(peekDiv);
   }
 };
+/* SAV2-RENDER-MERGE-001: render.js yüklendiğinde renderSatinAlmaV2 direkt _saV2RenderMain'e bağlanır */
+window.renderSatinAlmaV2 = window._saV2RenderMain;
 
 /* ── Filtre uygulayıcı ──────────────────────────────────────── */
 window._saV2FiltreLi = function(liste) {
