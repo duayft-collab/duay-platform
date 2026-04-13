@@ -1044,6 +1044,7 @@ function _renderPanel(id) {
     links:      () => safe(() => window.renderLinks?.()),
     hedefler:   () => safe(() => window.renderHedefler?.()),
     odemeler:   () => safe(() => window.renderOdemeler?.()),
+    'nakit-akisi': () => safe(() => window.renderNakitAkis?.()),
     ik:         () => safe(() => { window.renderIk?.(); window.renderIkZimmet?.(); }),
     izin:       () => safe(() => window.renderIzin?.()),
     tebligat:   () => safe(() => window.renderTebligat?.()),

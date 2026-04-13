@@ -852,8 +852,18 @@ function renderOdemeler() {
 
   // Veri yükleme — tab'a göre
   const _cuOdm  = _CUo();
-  var _odmAll = (window.loadOdm ? loadOdm() : []).map(function(o) { if (!o._src) o._src = 'odeme'; return o; });
-  var _tahAll = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).map(function(t) { if (!t._src) t._src = 'tahsilat'; return t; });
+  var _odmAll = (window.loadOdm ? loadOdm() : []).map(function(o) {
+    if (!o._src) o._src = 'odeme';
+    if (!o.type && o.tip) o.type = o.tip;
+    if (!o.tip && o.type) o.tip = o.type;
+    return o;
+  });
+  var _tahAll = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).map(function(t) {
+    if (!t._src) t._src = 'tahsilat';
+    if (!t.type && t.tip) t.type = t.tip;
+    if (!t.tip && t.type) t.tip = t.type;
+    return t;
+  });
   let _allRaw;
   if (_odmCurrentTab === 'tahsilat') {
     _allRaw = _tahAll;
@@ -869,8 +879,8 @@ function renderOdemeler() {
   // Chip filtresi uygula
   if (_odmActiveChip && _odmActiveChip !== 'all') {
     _allRaw = _allRaw.filter(function(o) {
-      if (_odmActiveChip === 'odeme') return o._src === 'odeme' || o.tip === 'odeme';
-      if (_odmActiveChip === 'tahsilat') return o._src === 'tahsilat' || o.tip === 'tahsilat';
+      if (_odmActiveChip === 'odeme') return o._src === 'odeme' || o.tip === 'odeme' || o.type === 'odeme';
+      if (_odmActiveChip === 'tahsilat') return o._src === 'tahsilat' || o.tip === 'tahsilat' || o.type === 'tahsilat';
       if (_odmActiveChip === 'gecikti') return !o.paid && !o.collected && o.due && o.due < today;
       if (_odmActiveChip === 'pending') return o.approvalStatus === 'pending' || o.approvalStatus === 'ara_onay_bekleniyor' || o.approvalStatus === 'final_onay_bekleniyor' || o.approvalStatus === 'pending_dual_approval';
       if (_odmActiveChip === 'approved') return o.approvalStatus === 'approved' || o.approved;
@@ -925,8 +935,8 @@ function renderOdemeler() {
     const st = _getStatus(o);
 
     // Sekme filtresi
-    if (_odmCurrentTab === 'odeme'    && o._src !== 'odeme' && o.tip !== 'odeme') return false;
-    if (_odmCurrentTab === 'tahsilat' && o._src !== 'tahsilat' && o.tip !== 'tahsilat') return false;
+    if (_odmCurrentTab === 'odeme'    && o._src !== 'odeme' && o.tip !== 'odeme' && o.type !== 'odeme') return false;
+    if (_odmCurrentTab === 'tahsilat' && o._src !== 'tahsilat' && o.tip !== 'tahsilat' && o.type !== 'tahsilat') return false;
     if (_odmCurrentTab === 'bekliyor' && !['pending','ara_onay_bekleniyor','final_onay_bekleniyor','pending_dual_approval'].includes(o.approvalStatus)) return false;
     if (_odmCurrentTab === 'abonelik' && o.cat !== 'abonelik') return false;
     if (_odmCurrentTab === 'kredi_k'  && o.cat !== 'kredi_k')  return false;
