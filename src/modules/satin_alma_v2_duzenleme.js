@@ -23,6 +23,22 @@ window._saV2DuzenleKaydet = function(id) {
   t.miktar = _v('miktar');
   t.tedarikci = _v('tedarikci');
   t.jobId = _v('jobId');
+  // SATINALMA-DUZENLE-EKSIK-001: piNo + teslimat + teslimYeri + teslimMasraf + toplamTutar
+  t.piNo = _v('piNo');
+  t.teslimat = _v('teslimat');
+  t.teslimYeri = _v('teslimYeri');
+  t.teslimMasraf = _v('teslimMasraf');
+  t.toplamTutar = (function(){
+    var satirlar = document.querySelectorAll('[data-urun-satir]');
+    var top = 0;
+    satirlar.forEach(function(s){
+      var idx = s.getAttribute('data-urun-satir');
+      var m = parseFloat(document.getElementById('sav2u-'+idx+'-miktar')?.value||0);
+      var f = parseFloat(document.getElementById('sav2u-'+idx+'-alisF')?.value||0);
+      top += m * f;
+    });
+    return top.toFixed(2);
+  })();
   if (typeof window._steklifRevNo === 'function') window._steklifRevNo(t.id);
   t.updatedAt = window._saNow?.();
   window._saV2Store?.(liste);
