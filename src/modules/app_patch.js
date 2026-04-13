@@ -2027,7 +2027,7 @@ window.renderSatisTeklifleri = function() {
       // Sol: Müşteri adı büyük + teklif no/ürün sayısı küçük
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + ' · ' + (t.urunler || []).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + (t.revNo && t.revNo !== '01' ? ' <span style="font-size:8px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-family:inherit">R' + esc(t.revNo) + '</span>' : '') + ' · ' + (t.urunler || []).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
       + '</div>'
       // Orta: Tutar bold + para birimi soluk
       + '<div style="text-align:right;flex-shrink:0;min-width:130px"><div style="font-size:14px;font-weight:700;color:var(--t);white-space:nowrap">' + _genelToplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(_paraBirimi) + '</span></div></div>'

@@ -227,10 +227,15 @@ window._saV2SatisKaydet = function(alisId) {
   urunler.forEach(function(u){ toplamSatis+=u.alisTl*(1+u.marj/100)*u.miktar; toplamAlis+=u.alisTl*u.miktar; });
   var toplamKar = (toplamSatis-toplamAlis).toFixed(2);
   var ortMarj = toplamAlis>0?((toplamSatis-toplamAlis)/toplamAlis*100).toFixed(1):0;
+  /* SATIS-REV-DESTEK-001: aynı teklifId için mevcut kayıt varsa revNo otomatik artırılır */
+  var _mevcutlar = (typeof window.loadSatisTeklifleri==='function' ? window.loadSatisTeklifleri() : [])
+    .filter(function(t){ return t.teklifId===teklifId && !t.isDeleted; });
+  var _sonRev = _mevcutlar.length > 0 ? Math.max.apply(null, _mevcutlar.map(function(t){ return parseInt(t.revNo)||1; })) : 0;
+  var _yeniRevNo = String(_sonRev + 1).padStart(2,'0');
   var kayit = {
     id:window._saId?.(),
     teklifId:teklifId,
-    revNo: '01',
+    revNo: _yeniRevNo,
     alisId:alisId,
     musteriAd:musteriAd,
     musteriKod:document.getElementById('st-musteri-kod')?.value||'',
