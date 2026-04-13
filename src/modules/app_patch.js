@@ -6111,3 +6111,69 @@ window._exportSiparislerXlsx = function() {
   XLSX.writeFile(wb, 'siparisler-' + new Date().toISOString().slice(0, 10) + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
 };
+
+/**
+ * SIPARISLER-MODAL-001
+ * + Yeni Sipariş butonu handler'ı — basit modal (tedarikçi, PI no, notlar),
+ * kayıt storeAlisTeklifleri'ye durum=bekliyor + siparisDurumu=hazirlaniyor olarak eklenir.
+ */
+window._openSiparisModal = function(id) {
+  var old = document.getElementById('mo-siparis'); if (old) old.remove();
+  var esc = window._esc || function(s){ return String(s||''); };
+  var tedList = typeof loadCari === 'function'
+    ? loadCari().filter(function(c){ return !c.isDeleted && (c.type==='tedarikci' || c.tip==='tedarikci'); })
+    : [];
+  var tedOpts = '<option value="">— Tedarikçi seçin —</option>' + tedList.map(function(c){
+    return '<option value="'+esc(c.name||c.ad||'')+'">'+esc(c.name||c.ad||'')+'</option>';
+  }).join('');
+  var mo = document.createElement('div');
+  mo.className = 'mo'; mo.id = 'mo-siparis'; mo.style.zIndex = '2100';
+  mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--t)">+ Yeni Sipariş</div>'
+      + '<button onclick="document.getElementById(\'mo-siparis\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
+      + '<div><div class="fl">Tedarikçi *</div><select class="fi" id="sip-ted">'+tedOpts+'</select></div>'
+      + '<div><div class="fl">PI No</div><input class="fi" id="sip-pino" placeholder="PI-2026-..." style="font-family:monospace"></div>'
+      + '<div><div class="fl">Notlar</div><textarea class="fi" id="sip-notlar" rows="3" style="resize:none" placeholder="Sipariş notları..."></textarea></div>'
+    + '</div>'
+    + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button class="btn" onclick="document.getElementById(\'mo-siparis\').remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="window._saveSiparis?.()">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e){ if (e.target === mo) mo.remove(); });
+};
+
+window._saveSiparis = function() {
+  var ted = document.getElementById('sip-ted')?.value?.trim() || '';
+  var piNo = document.getElementById('sip-pino')?.value?.trim() || '';
+  var notlar = document.getElementById('sip-notlar')?.value?.trim() || '';
+  if (!ted) { window.toast?.('Tedarikçi zorunlu', 'warn'); return; }
+  var data = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [];
+  var now = new Date().toISOString();
+  var yeniId = 'sip-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+  var yr = new Date().getFullYear();
+  var seq = String(data.length + 1).padStart(4, '0');
+  data.unshift({
+    id: yeniId,
+    teklifNo: 'SIP-' + yr + '-' + seq,
+    tedarikci: ted,
+    piNo: piNo,
+    notlar: notlar,
+    durum: 'bekliyor',
+    siparisDurumu: 'hazirlaniyor',
+    urunler: [],
+    paraBirimi: 'USD',
+    toplamTutar: 0,
+    ts: now,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: (window.Auth?.getCU?.()?.name) || (window.CU?.()?.name) || ''
+  });
+  if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(data);
+  document.getElementById('mo-siparis')?.remove();
+  window.toast?.('Sipariş oluşturuldu ✓', 'ok');
+  window.renderSiparisler?.();
+};
