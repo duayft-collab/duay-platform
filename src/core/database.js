@@ -1477,7 +1477,19 @@ function addToTrash(item, moduleName, collection) {
 // BÖLÜM 16 — RUTİN ÖDEMELER
 // ════════════════════════════════════════════════════════════════
 
-/** @returns {Array<Object>} */ function loadOdm() { var d = _read(KEYS.odemeler); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
+/** @returns {Array<Object>} */
+function loadOdm() {
+  var d = _read(KEYS.odemeler);
+  var arr = Array.isArray(d) ? d : [];
+  // NAKIT-TYPE-STANDARD-001 — type/tip/_src senkronizasyonu
+  arr = arr.map(function(o) {
+    if (!o.type && o.tip) o.type = o.tip;
+    if (!o.tip && o.type) o.tip = o.type;
+    if (!o._src) o._src = (o.tip==='tahsilat'||o.type==='tahsilat') ? 'tahsilat' : 'odeme';
+    return o;
+  });
+  return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }));
+}
 /** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(-1000);} _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
@@ -1496,6 +1508,13 @@ function loadTahsilat() {
       }
     } catch(e) {}
   }
+  // NAKIT-TYPE-STANDARD-001 — type/tip/_src senkronizasyonu
+  arr = arr.map(function(o) {
+    if (!o.type && o.tip) o.type = o.tip;
+    if (!o.tip && o.type) o.tip = o.type;
+    if (!o._src) o._src = 'tahsilat';
+    return o;
+  });
   return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }));
 }
 /** @param {Array<Object>} d */
