@@ -647,8 +647,23 @@ window._deleteST = function(id) {
 window._exportSTXlsx = function() {
   var data = _loadST();
   if (!data.length || typeof XLSX === 'undefined') return;
-  var rows = [['Teklif No','Müşteri','Tarih','Döviz','İncoterm','Toplam']];
-  data.forEach(function(t) { var total = (t.items||[]).reduce(function(a,i){return a+(i.total||0);},0); rows.push([t.teklifNo,t.customerName,t.date,t.currency,t.incoterm,total]); });
+  // SATIS-EXCEL-10KOLON-001: 6 kolon → 10 kolon (ürün sayısı, durum, rev, dil)
+  var rows = [['TeklifNo','Müşteri','Tarih','Para','Incoterm','Ürün Sayısı','Toplam','Durum','Rev','Dil']];
+  data.forEach(function(t) {
+    var total = (t.items||[]).reduce(function(a,i){return a+(i.total||0);},0);
+    rows.push([
+      t.teklifNo || '',
+      t.customerName || '',
+      t.date || '',
+      t.currency || '',
+      t.incoterm || '',
+      (t.items||[]).length,
+      parseFloat(total.toFixed(2)),
+      t.status || 'taslak',
+      t.revNo || '01',
+      t.dil || t.lang || 'EN'
+    ]);
+  });
   var ws = XLSX.utils.aoa_to_sheet(rows); var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Teklifler');
   XLSX.writeFile(wb, 'SatisTeklif_' + new Date().toISOString().slice(0,10) + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
