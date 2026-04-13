@@ -128,6 +128,8 @@ window._ppRender = function() {
   });
   window._ppSetMod('akis');
   setTimeout(function() { window._ppAktifFrog = null; window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
+  // PUSULA-TAKVIM-BILDIRIM-001: sayfa açılınca 2 saniye sonra takvim hatırlatıcı kontrolü
+  setTimeout(window._ppTakvimHatirlaticiKontrol, 2000);
 };
 
 window._ppSetMod = function(mod) {
@@ -2268,4 +2270,33 @@ window._ppOnayPanelHTML = function(gorev) {
   }
   h += '</div>';
   return h;
+};
+
+/**
+ * PUSULA-TAKVIM-BILDIRIM-001
+ * Takvim etkinliklerini bugün/yarın/3 gün sonra aralıklarında kontrol eder
+ * ve her durum için tek-sefer notification üretir (duplicate prevent için
+ * localStorage key: 'pp_hat_<id>_<tarih>'). renderPusulaPro açılışında
+ * setTimeout 2s ile tetiklenir.
+ */
+window._ppTakvimHatirlaticiKontrol = function() {
+  var bugun = new Date();
+  var olaylar = typeof _ppTakvimLoad==='function' ? _ppTakvimLoad() : [];
+  olaylar.filter(function(o){ return !o.isDeleted; }).forEach(function(o) {
+    var tarih = o.sonrakiCalisma || o.basTarih || '';
+    if (!tarih) return;
+    var fark = Math.round((new Date(tarih) - bugun) / 86400000);
+    var key = 'pp_hat_' + o.id + '_' + String(tarih).slice(0,10);
+    if (localStorage.getItem(key)) return;
+    if (fark === 0) {
+      window.addNotif?.('⏰', 'Bugün: ' + (o.baslik||''), 'warn', 'pusula-pro');
+      localStorage.setItem(key, '1');
+    } else if (fark === 1) {
+      window.addNotif?.('📅', 'Yarın: ' + (o.baslik||''), 'info', 'pusula-pro');
+      localStorage.setItem(key, '1');
+    } else if (fark === 3) {
+      window.addNotif?.('🔔', '3 gün sonra: ' + (o.baslik||''), 'info', 'pusula-pro');
+      localStorage.setItem(key, '1');
+    }
+  });
 };
