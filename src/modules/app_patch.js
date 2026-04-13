@@ -44,6 +44,7 @@ window._yetkiKontrol = function(islem) {
     ceo:     () => { window.renderCeo?.(); },
     stok:    () => { window.Stok?.render?.(); window.renderDemirbaslar?.(); },
     satinalma: () => { window.renderSatinAlmaV2?.(); },
+    'siparisler': () => { window.renderSiparisler?.(); },
     'urun-db': () => { window.renderUrunDB?.(); },
     'satis-teklif': () => { window.renderSatisTeklif?.(); },
     cari: () => { window.renderCari?.(); },
@@ -5996,4 +5997,20 @@ window._epTumunuYazdir = function() {
   setTimeout(function() { if (a.length) window._epKdvIadePDF?.(); }, 1000);
   setTimeout(function() { window._epCheckListPDF?.(); }, 1400);
   setTimeout(function() { window._epKapakPDF?.(); }, 1800);
+};
+
+/**
+ * SIPARISLER-STUB-001
+ * Siparişler paneli stub — gelecekte sipariş takip modülü ile doldurulacak.
+ */
+window.renderSiparisler = function() {
+  var panel = document.getElementById('panel-siparisler');
+  if (!panel) return;
+  if (panel.dataset.injected) return;
+  panel.dataset.injected = '1';
+  panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:32px">📦</div>'
+    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Siparişler</div>'
+    + '<div style="font-size:12px;margin-top:8px">Yakında — sipariş takip modülü</div>'
+    + '</div>';
 };
