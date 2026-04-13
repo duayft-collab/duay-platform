@@ -88,6 +88,12 @@ window._yetkiKontrol = function(islem) {
     'talimatlar': () => { window.renderTalimatlar?.(); },
     'dashboardDetay': () => { window.DashboardDetay?.render?.(); },
     'nakit-akisi': () => { window.renderNakitAkis?.(); },
+    /* MENU-EKSIK-001: 5 yeni stub paneli */
+    'satis-rapor':         () => { window._renderSatisRapor?.(); },
+    'numune-arsivi':       () => { window._renderNumuneArsivi?.(); },
+    'teslimat-takip':      () => { window._renderTeslimatTakip?.(); },
+    'cari-karsilastirma':  () => { window._renderCariKarsilastirma?.(); },
+    'donem-ozeti':         () => { window._renderDonemOzeti?.(); },
   };
 
   // App.nav wrap — yeni paneller için ekstra render çağrısı
@@ -4925,11 +4931,12 @@ window._clearAnthropicKey = function() {
     window._renderEntegrasyonlar?.();
   }});
 };
-/* AYARLAR-ILERLEME-001: ortak sekme bar helper */
+/* AYARLAR-ILERLEME-001 + AYARLAR-SUREC-HARITASI-001: ortak sekme bar helper (3 sekme) */
 window._ayarSekmeBarHtml = function(aktif) {
   var sekmeler = [
     { id: 'entegrasyonlar', ad: 'Entegrasyonlar', fn: '_renderEntegrasyonlar' },
-    { id: 'ilerleme', ad: '📊 İlerleme', fn: '_renderPlatformIlerleme' }
+    { id: 'ilerleme', ad: '📊 İlerleme', fn: '_renderPlatformIlerleme' },
+    { id: 'surec-haritasi', ad: '🗺 Süreç Haritası', fn: '_renderSurecHaritasi' }
   ];
   var bar = '<div style="display:flex;border-bottom:0.5px solid var(--b);padding:0 24px;gap:4px;background:var(--sf);position:sticky;top:0;z-index:10">';
   sekmeler.forEach(function(s) {
@@ -6347,4 +6354,55 @@ window._saveSiparis = function() {
   document.getElementById('mo-siparis')?.remove();
   window.toast?.('Sipariş oluşturuldu ✓', 'ok');
   window.renderSiparisler?.();
+};
+
+/* MENU-EKSIK-001: 5 stub render fonksiyonu — "Yakında aktif olacak" placeholder */
+window._renderSatisRapor = function() {
+  var p = document.getElementById('panel-satis-rapor'); if(!p) return;
+  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:36px">📊</div>'
+    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Satış Raporu</div>'
+    + '<div style="font-size:12px;margin-top:6px">Müşteri bazlı satış analizi, marj raporu ve trend</div>'
+    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
+    + '</div>';
+};
+
+window._renderNumuneArsivi = function() {
+  var p = document.getElementById('panel-numune-arsivi'); if(!p) return;
+  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:36px">🧪</div>'
+    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Numune Arşivi</div>'
+    + '<div style="font-size:12px;margin-top:6px">Gönderilen ve alınan numuneler, onay durumları</div>'
+    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
+    + '</div>';
+};
+
+window._renderTeslimatTakip = function() {
+  var p = document.getElementById('panel-teslimat-takip'); if(!p) return;
+  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:36px">🚚</div>'
+    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Teslimat Takibi</div>'
+    + '<div style="font-size:12px;margin-top:6px">Sipariş → kargo → teslimat zinciri</div>'
+    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
+    + '</div>';
+};
+
+window._renderCariKarsilastirma = function() {
+  var p = document.getElementById('panel-cari-karsilastirma'); if(!p) return;
+  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:36px">⚖️</div>'
+    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Cari Karşılaştırma</div>'
+    + '<div style="font-size:12px;margin-top:6px">Muhasebeci dosyası ile platform karşılaştırma</div>'
+    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
+    + '</div>';
+};
+
+window._renderDonemOzeti = function() {
+  var p = document.getElementById('panel-donem-ozeti'); if(!p) return;
+  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
+    + '<div style="font-size:36px">📈</div>'
+    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Dönem Özeti</div>'
+    + '<div style="font-size:12px;margin-top:6px">Aylık/çeyreklik konsolidasyon raporu</div>'
+    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
+    + '</div>';
 };
