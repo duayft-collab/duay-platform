@@ -26,6 +26,8 @@ var PP_KEY        = 'ak_pusula_pro_v1';
 var PP_TASK_KEY   = 'ak_tk2';
 var PP_MOD        = 'akis';
 var PP_MODS       = ['akis','calisma','takvim','odak','degerlendirme','ceo'];
+// PUSULA-TOPLU-001: global toplu seçim state
+window._ppSeciliGorevler = window._ppSeciliGorevler || {};
 
 var PP_PRIORITIES = {
   kritik: { l:'Kritik', c:'#A32D2D', bg:'#FCEBEB' },
@@ -176,8 +178,10 @@ window._ppModRender = function() {
         var jobId = t.job_id||t.jobId||'';
         var tarihGec = t.bitTarih && t.bitTarih < _ppToday();
         h2 += '<div id="pp-tr-'+t.id+'" style="box-shadow:-3px 0 0 0 '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
-        h2 += '<div onclick="event.stopPropagation()" style="display:grid;grid-template-columns:22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:default">';
+        h2 += '<div onclick="event.stopPropagation()" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:default">';
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
+        // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
+        h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:#185FA5;cursor:pointer" title="Toplu işlem için seç">';
         h2 += '<div>';
         h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'">' + _ppEsc(t.baslik||t.title||'') + '</div>';
         h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">';
@@ -227,7 +231,8 @@ window._ppModRender = function() {
       + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:11px;padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
-      + '<div style="display:grid;grid-template-columns:22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
+      + '<div style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
+      + '<div></div>'
       + '<div></div>'
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">GÖREV / JOB ID</div>'
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">SORUMLU</div>'
@@ -236,6 +241,18 @@ window._ppModRender = function() {
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">ÖNCELİK</div>'
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em">AKSİYON</div>'
       + '</div>'
+      // PUSULA-TOPLU-001: toplu seçim bar (sadece seçili varsa gösterilir)
+      + (function(){
+          var _secSay = Object.values(window._ppSeciliGorevler||{}).filter(Boolean).length;
+          if (_secSay === 0) return '';
+          return '<div id="pp-toplu-bar" style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:#E6F1FB;border-bottom:0.5px solid #185FA5;position:sticky;top:32px;z-index:2">'
+            + '<span style="font-size:11px;font-weight:500;color:#0C447C">' + _secSay + ' görev seçildi</span>'
+            + '<button onclick="event.stopPropagation();window._ppTopluTamamla()" style="font-size:10px;padding:3px 10px;border:none;border-radius:4px;background:#15803D;color:#fff;cursor:pointer;font-family:inherit">✓ Tamamla</button>'
+            + '<button onclick="event.stopPropagation();window._ppTopluDurum()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Durum Değiştir</button>'
+            + '<button onclick="event.stopPropagation();window._ppTopluSil()" style="font-size:10px;padding:3px 10px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:#A32D2D">Sil</button>'
+            + '<button onclick="event.stopPropagation();window._ppSeciliGorevler={};window._ppModRender()" style="font-size:10px;padding:3px 8px;border:none;border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕ İptal</button>'
+            + '</div>';
+        })()
       + _grup('KRİTİK', 'background:#FCEBEB;color:#A32D2D', kritik)
       + _grup('DEVAM EDİYOR', 'background:#E1F5EE;color:#0F6E56', devam)
       + _grup('PLANLANDI', 'background:#E6F1FB;color:#185FA5', plan)
@@ -544,6 +561,15 @@ window._ppYeniGorev = function() {
     +_inp('bitT','BİTİŞ TARİHİ','date','')
     +_inp('sure','TAHMİNİ SÜRE','text','örn: 90 dk')
     +'</div>'
+    // PUSULA-TEKRAR-001: tekrar seçimi (periyot + bitiş tarihi)
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">TEKRAR</div>'
+    + '<select id="ppf-tekrar" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">'
+    + '<option value="">Tekrar yok</option><option value="gunluk">Her gün</option><option value="haftalik">Her hafta</option><option value="aylik">Her ay</option><option value="uc_aylik">Her 3 ayda bir</option><option value="yillik">Her yıl</option>'
+    + '</select></div>'
+    + '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">TEKRAR BİTİŞ</div>'
+    + '<input id="ppf-tekrarBitis" type="date" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+    + '</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
     +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">SORUMLU (birden fazla eklenebilir)</div>'
     +window._ppUserTagHTML('ppf-sorumlu','Kullanıcı adı yaz...')
@@ -652,6 +678,8 @@ window._ppGorevKaydet = function() {
     kpi: document.getElementById('ppf-kpi')?.value||'',
     basT: document.getElementById('ppf-basT')?.value||'',
     bitTarih: document.getElementById('ppf-bitT')?.value||'',
+    tekrar: document.getElementById('ppf-tekrar')?.value||'',
+    tekrarBitis: document.getElementById('ppf-tekrarBitis')?.value||'',
     sure: document.getElementById('ppf-sure')?.value||'',
     sorumlu: window._ppUserTaglerAl('ppf-sorumlu'),
     gozlemci: window._ppUserTaglerAl('ppf-gozlemci'),
@@ -686,6 +714,35 @@ window._ppGorevKaydet = function() {
     window._ppDuzenleHedef = null;
   }
   tasks.unshift(yeni); _ppStore(tasks);
+  // PUSULA-TEKRAR-001: tekrar varsa bir sonraki tarihli klon yarat
+  if(yeni.tekrar && yeni.bitTarih) {
+    var _sonrakiTarih = function(tarih, tekrar) {
+      var d = new Date(tarih);
+      if(tekrar==='gunluk') d.setDate(d.getDate()+1);
+      else if(tekrar==='haftalik') d.setDate(d.getDate()+7);
+      else if(tekrar==='aylik') d.setMonth(d.getMonth()+1);
+      else if(tekrar==='uc_aylik') d.setMonth(d.getMonth()+3);
+      else if(tekrar==='yillik') d.setFullYear(d.getFullYear()+1);
+      return d.toISOString().slice(0,10);
+    };
+    var _sonraki = _sonrakiTarih(yeni.bitTarih, yeni.tekrar);
+    var _bitis = yeni.tekrarBitis;
+    if(!_bitis || _sonraki <= _bitis) {
+      var klon = Object.assign({}, yeni, {
+        id: _ppId(),
+        baslik: yeni.baslik,
+        bitTarih: _sonraki,
+        basT: _sonraki,
+        durum: 'plan',
+        createdAt: _ppNow(),
+        updatedAt: _ppNow(),
+        _tekrarKaynak: yeni.id
+      });
+      tasks.unshift(klon);
+      _ppStore(tasks);
+      window.toast?.('Tekrarlayan görev oluşturuldu: '+_sonraki,'info');
+    }
+  }
   window.toast?.('Görev eklendi','ok');
   if(yeni.isFrog){window._ppAktifFrog=yeni; var el=document.getElementById('pp-frog-txt'); if(el) el.textContent=yeni.baslik;}
   document.getElementById('pp-gorev-modal')?.remove();
@@ -2458,4 +2515,66 @@ window._ppYedekPaneli = function() {
     +'</div>';
   document.body.appendChild(mo);
   setTimeout(function(){ mo.classList.add('open'); }, 10);
+};
+
+/* ── PUSULA-TOPLU-001: Toplu seçim/işlem handler'ları ────────── */
+
+/**
+ * Toplu bar'ı güncellemek için full re-render tetikler. Daha granüler
+ * bir update helper'a ihtiyaç duyulursa ileride optimize edilebilir.
+ */
+window._ppTopluBarGuncelle = function() { window._ppModRender?.(); };
+
+/**
+ * Seçili görevleri toplu olarak tamamlandı işaretle.
+ */
+window._ppTopluTamamla = function() {
+  var ids = Object.keys(window._ppSeciliGorevler||{}).filter(function(k){return window._ppSeciliGorevler[k];});
+  if (!ids.length) return;
+  var tasks = _ppLoad();
+  ids.forEach(function(id) {
+    var t = tasks.find(function(x){return String(x.id)===id;});
+    if (t) { t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); }
+  });
+  _ppStore(tasks);
+  window._ppSeciliGorevler = {};
+  window._ppModRender?.();
+  window.toast?.(ids.length + ' görev tamamlandı', 'ok');
+};
+
+/**
+ * Seçili görevleri toplu olarak soft-delete.
+ */
+window._ppTopluSil = function() {
+  var ids = Object.keys(window._ppSeciliGorevler||{}).filter(function(k){return window._ppSeciliGorevler[k];});
+  if (!ids.length) return;
+  if (!confirm(ids.length + ' görevi silmek istediğinize emin misiniz?')) return;
+  var tasks = _ppLoad();
+  ids.forEach(function(id) {
+    var t = tasks.find(function(x){return String(x.id)===id;});
+    if (t) { t.isDeleted = true; t.updatedAt = _ppNow(); }
+  });
+  _ppStore(tasks);
+  window._ppSeciliGorevler = {};
+  window._ppModRender?.();
+  window.toast?.(ids.length + ' görev silindi', 'warn');
+};
+
+/**
+ * Seçili görevlerin durumunu toplu değiştir (prompt ile yeni durum al).
+ */
+window._ppTopluDurum = function() {
+  var ids = Object.keys(window._ppSeciliGorevler||{}).filter(function(k){return window._ppSeciliGorevler[k];});
+  if (!ids.length) return;
+  var yeniDurum = prompt('Yeni durum (plan/devam/tamamlandi/beklemede):');
+  if (!yeniDurum) return;
+  var tasks = _ppLoad();
+  ids.forEach(function(id) {
+    var t = tasks.find(function(x){return String(x.id)===id;});
+    if (t) { t.durum = yeniDurum; t.updatedAt = _ppNow(); }
+  });
+  _ppStore(tasks);
+  window._ppSeciliGorevler = {};
+  window._ppModRender?.();
+  window.toast?.(ids.length + ' görev güncellendi', 'ok');
 };
