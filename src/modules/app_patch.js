@@ -843,20 +843,36 @@ function _applyRoleUI(user) {
 
 window._applyRoleUI = _applyRoleUI;
 
+/* GK-08: Muhasebe + Sistem menü text-based hard guard — non-admin/manager için defense-in-depth */
+window._gk08MenuGizle = function() {
+  var rol = window.CU?.()?.role || window.Auth?.getCU?.()?.role || '';
+  var isAdmin = rol==='admin' || rol==='manager';
+  if (!isAdmin) {
+    document.querySelectorAll('.nb').forEach(function(btn){
+      var txt = btn.textContent.trim();
+      if (txt.includes('Muhasebe') || txt.includes('Sistem')) {
+        var li = btn.closest('li, .nav-item, [class*="nav"]');
+        if (li && li.style) li.style.display = 'none';
+        btn.style.display = 'none';
+      }
+    });
+  }
+};
+
 // Auth hazır olunca ve auth değişince uygula
 (function() {
   const run = () => {
     const cu = window.Auth?.getCU?.();
-    if (cu) { _applyRoleUI(cu); return; }
+    if (cu) { _applyRoleUI(cu); setTimeout(function(){ window._gk08MenuGizle?.(); }, 500); return; }
     let n = 0;
     const t = setInterval(() => {
       const u = window.Auth?.getCU?.();
-      if (u || ++n > 30) { clearInterval(t); if (u) _applyRoleUI(u); }
+      if (u || ++n > 30) { clearInterval(t); if (u) { _applyRoleUI(u); setTimeout(function(){ window._gk08MenuGizle?.(); }, 500); } }
     }, 300);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(run, 700));
   else setTimeout(run, 700);
-  window.addEventListener('auth-changed', () => setTimeout(() => _applyRoleUI(window.Auth?.getCU?.()), 200));
+  window.addEventListener('auth-changed', () => setTimeout(function(){ _applyRoleUI(window.Auth?.getCU?.()); setTimeout(function(){ window._gk08MenuGizle?.(); }, 500); }, 200));
 })();
 
 console.log('[app_patch] Yetki sistemi yüklendi');
