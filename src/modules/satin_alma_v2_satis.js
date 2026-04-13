@@ -358,11 +358,12 @@ setTimeout(function(){ window._saV2TakipKontrol?.(); }, 3000);
 
 /* ── SATIS-FORM-C-001: Canlı PI Önizleme + Banka + Kaydet&Git ─── */
 window._saV2BankaGuncelle = function(para) {
+  // BANKA-IBAN-FIX-001: gerçek IBAN'larla güncellendi (Garanti + Albaraka)
   var bankalar = {
-    'USD': 'USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası',
-    'EUR': 'EUR IBAN: TR98 0001 2003 4500 0987 6543 21 · Garanti Bankası',
-    'GBP': 'GBP IBAN: TR45 0001 2003 4500 0111 2222 33 · Garanti Bankası',
-    'TRY': 'TL IBAN: TR11 0001 2003 4500 0444 5555 66 · Garanti Bankası'
+    'USD': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'EUR': 'T. GARANTİ BANKASI A.Ş. · EUR IBAN: TR66 0006 2001 1810 0009 0812 67 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'TRY': 'T. GARANTİ BANKASI A.Ş. · TL IBAN: TR24 0006 2001 1810 0006 2960 86 · YEŞİLPINAR ŞUBESİ / 1181 | ALBARAKA TÜRK · TL IBAN: TR54 0020 3000 0889 5310 0000 05 · ALİBEYKÖY / 117',
+    'GBP': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS'
   };
   var el = document.getElementById('st-banka-bilgi');
   if(el) el.textContent = bankalar[para] || bankalar['USD'];
@@ -431,11 +432,12 @@ window._saV2SatisKaydetVeGit = function(alisId) {
 /** Banka bilgisi — ak_bankalar1 key'inden veya varsayılan */
 window._saV2BankaMetni = function(para) {
   var ayarlar = typeof window._loadBankalar === 'function' ? window._loadBankalar() : {};
+  // BANKA-IBAN-FIX-001: gerçek IBAN'larla güncellendi (Garanti + Albaraka)
   var varsayilan = {
-    'USD': 'USD IBAN: TR33 0006 2000 3940 0006 2986 58 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS',
-    'EUR': 'EUR IBAN: TR55 0006 2000 3940 0009 0830 97 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS',
-    'GBP': 'GBP IBAN: TR77 0006 2000 3940 0011 3456 78 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS',
-    'TRY': 'TL IBAN: TR22 0006 2000 3940 0001 2345 67 \u00b7 Garanti Bankas\u0131 A.\u015e. \u00b7 SWIFT: TGBATRIS'
+    'USD': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'EUR': 'T. GARANTİ BANKASI A.Ş. · EUR IBAN: TR66 0006 2001 1810 0009 0812 67 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'TRY': 'T. GARANTİ BANKASI A.Ş. · TL IBAN: TR24 0006 2001 1810 0006 2960 86 · YEŞİLPINAR ŞUBESİ / 1181 | ALBARAKA TÜRK · TL IBAN: TR54 0020 3000 0889 5310 0000 05 · ALİBEYKÖY / 117',
+    'GBP': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS'
   };
   return ayarlar[para] || varsayilan[para] || varsayilan['USD'];
 };
