@@ -207,8 +207,9 @@ window._saV2RenderMain = function() {
     if (gorselSrc) h += '<img src="'+gorselSrc+'" style="width:100%;height:100%;object-fit:cover">';
     else h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="'+(gorselSrc?'#185FA5':'currentColor')+'" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
     h += '</div></div>';
-    h += '<div style="width:86px"><span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_saEsc(_saV2DuayKodu(t))+'</span></div>';
-    h += '<div style="width:130px;font-size:11px;font-weight:500;color:'+window._t+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(_saV2UrunAdi(t))+(_saV2UrunSayisi(t)>1?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#E6F1FB;color:#0C447C;margin-left:4px">+'+(_saV2UrunSayisi(t)-1)+'</span>':'')+'</div>';
+    /* SAV2-ESC-UPGRADE-001: window._esc (attribute-safe) öncelikli, _saEsc fallback */
+    h += '<div style="width:86px"><span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+(window._esc?.(_saV2DuayKodu(t))||_saV2DuayKodu(t)||'—')+'</span></div>';
+    h += '<div style="width:130px;font-size:11px;font-weight:500;color:'+window._t+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(window._esc?.(_saV2UrunAdi(t))||_saV2UrunAdi(t)||'—')+(_saV2UrunSayisi(t)>1?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#E6F1FB;color:#0C447C;margin-left:4px">+'+(_saV2UrunSayisi(t)-1)+'</span>':'')+'</div>';
     var _u0 = _saV2IlkUrun(t);
     h += '<div style="width:100px;font-size:10px;color:'+window._t2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(_u0.turkceAdi||t.turkceAdi||t.duayAdi||'\u2014')+'</div>';
     h += '<div style="width:50px;font-size:10px;color:'+window._t2+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_saEsc(_u0.marka||t.marka||'\u2014')+'</div>';
