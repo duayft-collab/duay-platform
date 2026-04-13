@@ -3644,6 +3644,14 @@ window._tn2Restore = function() {
   // GK-08: Yetkisiz grupları gizle
   document.querySelectorAll('.tn2-grp').forEach(function(gEl) {
     var gid = gEl.dataset.grp; if (!gid || gid === 'dashboard') return;
+    // GK-08-MENU-GIZLE-001: Muhasebe ve Sistem grupları sadece admin/manager için
+    // (canModule bazlı hasVisible kontrolü öncesi, sert grup-level guard)
+    if (gid === 'muhasebe' || gid === 'sistem') {
+      if (!cu || (cu.role !== 'admin' && cu.role !== 'manager')) {
+        gEl.style.display = 'none';
+        return;
+      }
+    }
     var grp = _TN2_GROUPS[gid];
     if (!grp) { gEl.style.display = 'none'; return; }
     var hasVisible = grp.mods.some(function(m) { return canModule(m.id); });
