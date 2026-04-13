@@ -6006,11 +6006,46 @@ window._epTumunuYazdir = function() {
 window.renderSiparisler = function() {
   var panel = document.getElementById('panel-siparisler');
   if (!panel) return;
-  if (panel.dataset.injected) return;
-  panel.dataset.injected = '1';
-  panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)">'
-    + '<div style="font-size:32px">📦</div>'
-    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Siparişler</div>'
-    + '<div style="font-size:12px;margin-top:8px">Yakında — sipariş takip modülü</div>'
-    + '</div>';
+  if (!panel.dataset.injected) {
+    panel.dataset.injected = '1';
+    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
+      + '<div><div style="font-size:14px;font-weight:700;color:var(--t)">📦 Siparişler</div>'
+      + '<div style="font-size:10px;color:var(--t3)">Sevkiyat emirleri ve sipariş takibi</div></div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button class="btn btns" onclick="window._exportSiparislerXlsx?.()" style="font-size:11px">⬇ Excel</button>'
+      + '<button class="btn btnp" onclick="window._openSiparisModal?.(null)" style="font-size:12px;font-weight:600">+ Yeni Sipariş</button>'
+      + '</div></div>'
+      + '<div id="siparis-stats" style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid var(--b)"></div>'
+      + '<div id="siparis-list" style="padding:16px"></div>';
+  }
+  var data = (typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [])
+    .filter(function(t) { return !t.isDeleted && (t.durum === 'onaylandi' || t.siparisDurumu); });
+  var statsEl = document.getElementById('siparis-stats');
+  if (statsEl) statsEl.innerHTML =
+    '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">TOPLAM SİPARİŞ</div><div style="font-size:20px;font-weight:600">' + data.length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">HAZIRLANIYOR</div><div style="font-size:20px;font-weight:600;color:#D97706">' + data.filter(function(t) { return t.siparisDurumu === 'hazirlaniyor'; }).length + '</div></div>'
+    + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">YOLDA</div><div style="font-size:20px;font-weight:600;color:#185FA5">' + data.filter(function(t) { return t.siparisDurumu === 'yolda'; }).length + '</div></div>'
+    + '<div style="padding:14px 20px"><div style="font-size:9px;color:var(--t3)">TESLİM EDİLDİ</div><div style="font-size:20px;font-weight:600;color:#16A34A">' + data.filter(function(t) { return t.siparisDurumu === 'teslim'; }).length + '</div></div>';
+  var listEl = document.getElementById('siparis-list');
+  if (!listEl) return;
+  if (!data.length) {
+    listEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px">📦</div><div style="margin-top:8px">Onaylı alış teklifi bulunamadı</div></div>';
+    return;
+  }
+  var esc = window._esc || function(s) { return String(s || ''); };
+  listEl.innerHTML = '<div style="display:grid;grid-template-columns:140px 1fr 120px 90px 90px;gap:0;font-size:9px;font-weight:700;color:var(--t3);padding:6px 12px;background:var(--s2);border-radius:6px 6px 0 0;text-transform:uppercase">'
+    + '<div>Teklif No</div><div>Tedarikçi</div><div>Tutar</div><div>Durum</div><div>İşlem</div></div>'
+    + data.map(function(t) {
+      var dur = t.siparisDurumu || 'bekliyor';
+      var durRenk = { hazirlaniyor: '#D97706', yolda: '#185FA5', teslim: '#16A34A', bekliyor: '#888780' }[dur] || '#888780';
+      return '<div style="display:grid;grid-template-columns:140px 1fr 120px 90px 90px;gap:0;padding:8px 12px;border-bottom:0.5px solid var(--b);font-size:11px;align-items:center">'
+        + '<div style="font-family:monospace;font-size:10px;color:var(--ac)">' + esc(t.teklifNo || t.piNo || '—') + '</div>'
+        + '<div>' + esc(t.tedarikci || '—') + '</div>'
+        + '<div>' + (parseFloat(t.toplamTutar || t.netOdeme || 0)).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' <span style="font-size:9px;color:var(--t3)">' + esc(t.paraBirimi || t.toplamPara || 'USD') + '</span></div>'
+        + '<div><span style="font-size:9px;padding:2px 8px;border-radius:99px;background:' + durRenk + '22;color:' + durRenk + ';font-weight:600">' + dur + '</span></div>'
+        + '<div style="display:flex;gap:3px">'
+        + '<button onclick="event.stopPropagation();window._siparisDetay?.(\'' + t.id + '\')" class="btn btns" style="font-size:9px;padding:2px 7px">👁</button>'
+        + '<button onclick="event.stopPropagation();window._siparisDurumGuncelle?.(\'' + t.id + '\')" class="btn btns" style="font-size:9px;padding:2px 7px">✏️</button>'
+        + '</div></div>';
+    }).join('');
 };
