@@ -150,7 +150,8 @@ window._ppSetMod = function(mod) {
 window._ppModRender = function() {
   var body = document.getElementById('pp-body');
   if (!body) return;
-  var mod = window._ppAktifMod || 'akis';
+  // PUSULA-AKIS-FIX-001: PP_MOD global state öncelikli (eski akış uyumluluğu)
+  var mod = window.PP_MOD || window._ppAktifMod || 'akis';
   if (mod === 'calisma') {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
     var kritik = tasks.filter(function(t) { return t.oncelik === 'kritik'; });
@@ -188,6 +189,12 @@ window._ppModRender = function() {
         if (jobId) h2 += '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_ppEsc(jobId)+'</span>';
         if (agSay) h2 += '<span style="font-size:8px;color:var(--t3)">Alt görev '+agTam+'/'+agSay+'</span>';
         if (agSay) h2 += '<button onclick="event.stopPropagation();window._ppAltGorevToggleRow(\''+t.id+'\')" id="pp-ag-btn-'+t.id+'" style="font-size:8px;padding:1px 5px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">&#9658; Göster</button>';
+        // PUSULA-DURUM-LOG-001: son durum değişikliğini meta satırında göster
+        if (t.durumLog && t.durumLog.length) {
+          var _sonLog = t.durumLog[t.durumLog.length - 1];
+          var _saat = String(_sonLog.zaman || '').slice(11, 16);
+          h2 += '<span style="font-size:8px;color:var(--t3);font-family:inherit" title="Son durum değişikliği">'+_ppEsc(_sonLog.kim || '?')+' → '+_ppEsc(_sonLog.e || '?')+(_saat ? ' · '+_saat : '')+'</span>';
+        }
         h2 += '</div></div>';
         h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:9px;color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span></div>';
         h2 += '<div style="font-size:9px;color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+'</div>';
@@ -512,6 +519,9 @@ window._ppTamamla = function(id) {
   }
   var tasks = _ppLoad(); var t = tasks.find(function(x) { return x.id === id; });
   if (t) {
+    // PUSULA-DURUM-LOG-001: durum değişikliğini logla (kim, ne zaman, eski→yeni)
+    t.durumLog = t.durumLog || [];
+    t.durumLog.push({ den: t.durum, e: 'tamamlandi', kim: (_ppCu()?.displayName || _ppCu()?.email || '?'), zaman: _ppNow() });
     t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); _ppStore(tasks);
     var puan = t.oncelik==='kritik'?120:t.oncelik==='yuksek'?80:40;
     window._ppSkorEkle?.(puan);
