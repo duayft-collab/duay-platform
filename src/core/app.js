@@ -146,6 +146,7 @@ const ALL_MODULES = [
   { id:'kpi',        label:'KPI & Performans'     },
   { id:'crm',        label:'CRM / Müşteriler'     },
   { id:'numune',     label:'Numune Arşivi'        },
+  { id:'siparisler', label:'Siparişler'           },
   { id:'temizlik',   label:'Temizlik Kontrol'     },
   { id:'resmi',      label:'Resmi Evrak'          },
   { id:'etkinlik',   label:'Etkinlik / Fuar'      },
@@ -158,9 +159,9 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','hesap-ozeti','muavin'],
-  lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma'],
-  staff:   ['dashboard','announce','pusula','pusula-pro','takvim','links','izin','pirim'],
+  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin'],
+  lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma','siparisler'],
+  staff:   ['dashboard','announce','pusula','pusula-pro','takvim','links','izin','pirim','siparisler'],
 };
 
 /** Admin-only paneller */
@@ -3543,6 +3544,7 @@ var _TN2_GROUPS = {
   satinalma: { label:'Satın Alma', mods: [
     { id:'satinalma',       label:'İş Takibi'       },
     { id:'alis-teklifleri', label:'Tedarik Teklifleri', _kullanilamaz:true },
+    { id:'siparisler',      label:'Siparişler'       },
     { id:'ihracat-ops',     label:'İhracat Ops'     },
     { id:'urunler',         label:'Ürün Kataloğu'   },
     { id:'sa-urun-liste',  label:'Ürün Fiyat Listesi', _kullanilamaz:true, fn: function() { window._saUrunListeAc?.(); } },
