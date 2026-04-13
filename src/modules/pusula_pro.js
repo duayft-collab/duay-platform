@@ -186,7 +186,8 @@ window._ppModRender = function() {
         h2 += '<div>';
         h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'">' + _ppEsc(t.baslik||t.title||'') + '</div>';
         h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">';
-        if (jobId) h2 += '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_ppEsc(jobId)+'</span>';
+        // PUSULA-JOB-BAGLANTI-001: jobId tiklanabilir → openJobIdHub aç
+        if (jobId) h2 += '<span onclick="event.stopPropagation();window.openJobIdHub?.(\''+_ppEsc(jobId)+'\')" title="Job Hub aç" style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500;cursor:pointer;text-decoration:underline">'+_ppEsc(jobId)+'</span>';
         if (agSay) h2 += '<span style="font-size:8px;color:var(--t3)">Alt görev '+agTam+'/'+agSay+'</span>';
         if (agSay) h2 += '<button onclick="event.stopPropagation();window._ppAltGorevToggleRow(\''+t.id+'\')" id="pp-ag-btn-'+t.id+'" style="font-size:8px;padding:1px 5px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">&#9658; Göster</button>';
         // PUSULA-SURE-TAKIP-001: harcanan toplam süre (sa + dk format)
