@@ -6881,6 +6881,27 @@ function renderCari() {
 
 window._selectCari = function(id) { _cariSelectedId = id; renderCari(); };
 
+/**
+ * CARI-OZET-EKSIK-001
+ * Cari detayından "Teklif Ver" butonu — Satış Teklifleri modalını açar ve
+ * müşteriyi otomatik seçer. satis_teklif.js modalı (mo-satis-teklif) kullanılır.
+ * @param {number} id Cari id
+ */
+window._cariTeklifVer = function(id) {
+  var c = (typeof loadCari === 'function' ? loadCari() : []).find(function(x) { return x.id === id; });
+  if (!c) { window.toast?.('Cari bulunamadı', 'err'); return; }
+  if (typeof window._openSTModal !== 'function') { window.toast?.('Satış Teklifleri modülü yüklenemedi', 'err'); return; }
+  window._openSTModal(null); // yeni teklif modal
+  // Modal async render olduğundan 100ms sonra müşteri select'i doldur
+  setTimeout(function() {
+    var sel = document.getElementById('st-customer');
+    if (sel) {
+      sel.value = c.name;
+      if (typeof window._stCheckPrevTeklif === 'function') window._stCheckPrevTeklif();
+    }
+  }, 100);
+};
+
 function _renderCariDetail(id) {
   var cont = document.getElementById('cari-detail');
   if (!cont) return;
@@ -6894,6 +6915,17 @@ function _renderCariDetail(id) {
   var totalBorc = cOdm.reduce(function(a, o) { return a + (parseFloat(o.amount) || 0); }, 0);
   var totalAlacak = cTah.reduce(function(a, t) { return a + (parseFloat(t.amount) || 0); }, 0);
   var netBakiye = totalAlacak - totalBorc;
+  // CARI-OZET-EKSIK-001: son satış teklifi tarihi
+  var _cariSonTeklif = '';
+  try {
+    var _stAll = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
+    var _cariTeklifler = _stAll.filter(function(st) { return !st.isDeleted && (st.customerName === c.name || st.musteri === c.name || st.musteriAd === c.name); });
+    _cariTeklifler.sort(function(a, b) { return (b.createdAt || b.date || '').localeCompare(a.createdAt || a.date || ''); });
+    if (_cariTeklifler.length) {
+      var _sonT = _cariTeklifler[0];
+      _cariSonTeklif = (_sonT.createdAt || _sonT.date || '').slice(0, 10) + ' (' + _cariTeklifler.length + ' teklif)';
+    }
+  } catch (e) {}
 
   // Tüm hareketler kronolojik
   var hareketler = [];
@@ -6905,12 +6937,19 @@ function _renderCariDetail(id) {
     // Başlık
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
       + '<div>'
-        + '<div style="font-size:18px;font-weight:700;color:var(--t)">' + window._esc(c.name) + '</div>'
+        // CARI-OZET-EKSIK-001: başlık yanına müşteri kodu rozeti
+        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px">' + window._esc(c.name)
+          + '<span style="font-size:10px;color:var(--t3);font-weight:500;font-family:monospace;padding:2px 8px;background:var(--s2);border-radius:10px" title="Müşteri kodu">' + window._esc(c.kod || c.musKod || '—') + '</span>'
+        + '</div>'
         + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + window._esc(c.phone) : '') + (c.email ? ' · ' + window._esc(c.email) : '') + '</div>'
         + (c.iban ? '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">IBAN: ' + window._esc(c.iban) + '</div>' : '')
         + (c.address ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + window._esc(c.address) + '</div>' : '')
+        // CARI-OZET-EKSIK-001: son satış teklifi tarihi
+        + (_cariSonTeklif ? '<div style="font-size:10px;color:var(--ac);margin-top:3px">📄 Son teklif: ' + window._esc(_cariSonTeklif) + '</div>' : '')
       + '</div>'
-      + '<div style="display:flex;gap:6px">'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+        // CARI-OZET-EKSIK-001: Teklif Ver butonu — Satış Teklifleri modal + müşteri pre-fill
+        + ((c.type === 'musteri' || !c.type) ? '<button class="btn btnp" onclick="window._cariTeklifVer?.(' + c.id + ')" style="font-size:11px;background:var(--ac);color:#fff;border-color:var(--ac)">📄 Teklif Ver</button>' : '')
         + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
         + ((c.cariType === 'potansiyel' || !c.cariType) ? '<button class="btn btns" onclick="window._upgradeCariToActive(' + c.id + ')" style="font-size:11px;color:#F59E0B">⬆ Aktif Yap</button>' : '')
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
