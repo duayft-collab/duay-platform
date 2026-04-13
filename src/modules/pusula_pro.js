@@ -646,7 +646,7 @@ window._ppTamamla = function(id) {
     t.durumLog = t.durumLog || [];
     t.durumLog.push({ den: t.durum, e: 'tamamlandi', kim: (_ppCu()?.displayName || _ppCu()?.email || '?'), zaman: _ppNow() });
     t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); _ppStore(tasks);
-    var puan = t.oncelik==='kritik'?120:t.oncelik==='yuksek'?80:40;
+    var puan = t.oncelik==='kritik'?120:t.oncelik==='yuksek'?80:t.oncelik==='dusuk'?20:40;
     window._ppSkorEkle?.(puan);
   }
   window.toast?.('Tamamlandı', 'ok');
