@@ -1359,7 +1359,7 @@ function renderOdemeler() {
         + '</div>'
       + '</div>'
       + '<div>'
-        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + curSym + new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(parseFloat(o.amount)||0) + '</div>'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + curSym + new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(parseFloat(o.amount)||0) + (o.lockedRate ? ' <span style="font-size:8px;color:#15803D" title="Kur sabitlendi">🔒</span>' : '') + '</div>'
         + (o.currency && o.currency !== 'TRY' ? (function() {
             var _kr = o.kurRate || _odmGetRates()[o.currency] || 1;
             var _tl = Math.round((parseFloat(o.amount)||0) * _kr);
