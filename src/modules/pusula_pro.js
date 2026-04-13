@@ -189,6 +189,11 @@ window._ppModRender = function() {
         if (jobId) h2 += '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500">'+_ppEsc(jobId)+'</span>';
         if (agSay) h2 += '<span style="font-size:8px;color:var(--t3)">Alt görev '+agTam+'/'+agSay+'</span>';
         if (agSay) h2 += '<button onclick="event.stopPropagation();window._ppAltGorevToggleRow(\''+t.id+'\')" id="pp-ag-btn-'+t.id+'" style="font-size:8px;padding:1px 5px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">&#9658; Göster</button>';
+        // PUSULA-SURE-TAKIP-001: harcanan toplam süre (sa + dk format)
+        if (t.toplamSureDk) {
+          var _sureText = t.toplamSureDk >= 60 ? Math.floor(t.toplamSureDk/60)+'sa '+(t.toplamSureDk%60)+'dk' : t.toplamSureDk+'dk';
+          h2 += '<span style="color:var(--t3);font-size:8px" title="Bu göreve harcanan toplam süre">⏱ '+_sureText+'</span>';
+        }
         // PUSULA-DURUM-LOG-001: son durum değişikliğini meta satırında göster
         if (t.durumLog && t.durumLog.length) {
           var _sonLog = t.durumLog[t.durumLog.length - 1];
@@ -439,6 +444,9 @@ window._ppFrogBasla = function() {
   var el = document.getElementById('pp-odak-frog');
   if (el) el.textContent = frog.baslik || frog.title || '';
   setTimeout(function(){ window._ppDwBasla?.(); }, 300);
+  // PUSULA-SURE-TAKIP-001: aktif görev bind — timer bitiminde bu ID'ye süre yazılır
+  window._ppAktifGorevId = window._ppAktifFrog?.id || null;
+  console.log('[PP] Timer başladı, görev:', window._ppAktifGorevId);
 };
 
 /* ── Deep Work Sayacı ──────────────────────────────────────── */
@@ -447,8 +455,31 @@ var _ppDwSaniye   = 0;
 var _ppDwHedef    = 90 * 60;
 
 window._ppDwBasla = function() {
-  if (_ppDwInterval) { clearInterval(_ppDwInterval); _ppDwInterval = null; window.toast?.('Durakladı','info'); return; }
+  if (_ppDwInterval) {
+    clearInterval(_ppDwInterval);
+    _ppDwInterval = null;
+    // PUSULA-SURE-TAKIP-001: pause anında harcanan süreyi aktif göreve kaydet
+    if (window._ppAktifGorevId && window._ppTimerBaslangic) {
+      var _gecenDk = Math.round((Date.now() - window._ppTimerBaslangic) / 60000);
+      if (_gecenDk > 0) {
+        var _tasks = _ppLoad();
+        var _t = _tasks.find(function(x){ return String(x.id) === String(window._ppAktifGorevId); });
+        if (_t) {
+          _t.toplamSureDk = (_t.toplamSureDk || 0) + _gecenDk;
+          _t.updatedAt = _ppNow();
+          _ppStore(_tasks);
+          window.toast?.(_gecenDk + ' dk kaydedildi: ' + (_t.baslik||''), 'ok');
+        }
+      }
+      window._ppAktifGorevId = null;
+      window._ppTimerBaslangic = null;
+    }
+    window.toast?.('Durakladı','info');
+    return;
+  }
   window.toast?.('Deep Work başladı — 90 dk','ok');
+  // PUSULA-SURE-TAKIP-001: timer başlangıç zamanını kaydet (pause'da süre hesabı için)
+  window._ppTimerBaslangic = Date.now();
   _ppDwInterval = setInterval(function() {
     _ppDwSaniye++;
     var pct = Math.min((_ppDwSaniye/_ppDwHedef)*100, 100);
