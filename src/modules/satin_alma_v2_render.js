@@ -223,6 +223,9 @@ window._saV2RenderMain = function() {
     if(typeof window._steklifOzetHTML==='function') h += window._steklifOzetHTML(t);
     h += '</div>';
     if(t.createdBy||t.createdAt) h += '<div style="font-size:8px;color:'+window._t3+';padding:0 4px;white-space:nowrap">'+(t.createdBy?_saEsc(t.createdBy):'')+(t.createdAt?' · '+_saEsc(String(t.createdAt).slice(0,10)):'')+'</div>';
+    /* SAV2-LISTE-BUTON-001: Görüntüle + PI butonları */
+    h += '<button onclick="event.stopPropagation();window._saV2DetayAc?.(\''+String(t.id)+'\')" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);margin-left:4px">👁 Gör</button>';
+    h += '<button onclick="event.stopPropagation();window._piOlustur?.(window._saV2Load?.().find(function(x){return String(x.id)===\''+String(t.id)+'\';}),\'A\',1)" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--ac);margin-left:2px">📄 PI</button>';
     h += '</div>';
     if (t.urunler && t.urunler.length > 1) {
       t.urunler.forEach(function(u, i) {
