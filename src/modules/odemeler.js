@@ -443,6 +443,7 @@ function _injectOdmPanel() {
         '<button onclick="openOdmChart()" class="odm-hdr-btn">Grafik</button>',
         '<button onclick="exportOdmXlsx()" id="odm-excel-btn" class="odm-hdr-btn">Excel</button>',
         '<button onclick="window._openOdmImportModal?.()" class="odm-hdr-btn">İçe Aktar</button>',
+        (_isAdminO() ? '<button onclick="window._guncelleKurlar?.()" class="odm-hdr-btn" style="border-color:#185FA5;color:#185FA5" title="Eski kayıtlardaki stale kurları (sıfır veya güncel kurdan %10+ sapma) yeniden hesaplar">🔄 Kurları Güncelle</button>' : ''),
         '<button onclick="openTahsilatModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#16a34a;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Tahsilat</button>',
         '<button onclick="openOdmModal(null)" style="padding:7px 14px;border:none;border-radius:7px;background:#dc2626;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ Ödeme</button>',
       '</div>',
@@ -1899,10 +1900,16 @@ function saveOdm() {
       // Explicit boş yapılabilecek alanlar
       if (entry.note !== undefined) o.note = entry.note;
       if (entry.due !== undefined) o.due = entry.due;
+      // NAKIT-KUR-GUNCELLE-001 — kur ve TRY karşılığını güncel rate ile yeniden hesapla
+      o.kurRate = _odmGetRates()[o.currency] || 1;
+      o.amountTRY = _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY');
       o.updated_at = _nowTso();
     }
   } else {
     const newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
+    // NAKIT-KUR-GUNCELLE-001 — yeni kayıtta kuru _odmGetRates() ile garanti et
+    newEntry.kurRate = _odmGetRates()[newEntry.currency] || 1;
+    newEntry.amountTRY = _odmToTRY(parseFloat(newEntry.amount)||0, newEntry.currency||'TRY');
     // Sadece admin otomatik onaylı — manager dahil diğerleri pending
     if (_isAdminO()) {
       newEntry.approved = true;
@@ -7726,6 +7733,58 @@ function _temizleDemoVeri() {
   renderOdemeler();
 }
 window._temizleDemoVeri = _temizleDemoVeri;
+
+/**
+ * NAKIT-KUR-GUNCELLE-001
+ * Stale kurRate'leri güncelle: kurRate 0 olan VEYA güncel kurdan %10+ sapan
+ * tüm odm+tahsilat kayıtlarını _odmGetRates() ile yeniden hesaplar.
+ * amountTRY ve kurUpdatedAt alanları da güncellenir. Sadece admin.
+ */
+function _guncelleKurlar() {
+  if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var rates = _odmGetRates();
+  var now = _nowTso();
+  var sayac = 0;
+  function _stale(eski, guncel) {
+    if (!guncel || guncel <= 0) return false;
+    if (!eski || eski <= 0) return true;
+    return Math.abs(guncel - eski) / guncel >= 0.10;
+  }
+  var odmAll = typeof loadOdm === 'function' ? loadOdm() : [];
+  odmAll.forEach(function(o) {
+    if (o.isDeleted) return;
+    var cur = o.currency || 'TRY';
+    if (cur === 'TRY') return; // TRY stale olmaz
+    var guncelKur = rates[cur] || 0;
+    var eskiKur = parseFloat(o.kurRate) || 0;
+    if (_stale(eskiKur, guncelKur)) {
+      o.kurRate = guncelKur;
+      o.amountTRY = _odmToTRY(parseFloat(o.amount)||0, cur);
+      o.kurUpdatedAt = now;
+      sayac++;
+    }
+  });
+  if (typeof storeOdm === 'function') storeOdm(odmAll);
+  var tahAll = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  tahAll.forEach(function(t) {
+    if (t.isDeleted) return;
+    var cur = t.currency || 'TRY';
+    if (cur === 'TRY') return;
+    var guncelKur = rates[cur] || 0;
+    var eskiKur = parseFloat(t.kurRate) || 0;
+    if (_stale(eskiKur, guncelKur)) {
+      t.kurRate = guncelKur;
+      t.amountTRY = _odmToTRY(parseFloat(t.amount)||0, cur);
+      t.kurUpdatedAt = now;
+      sayac++;
+    }
+  });
+  if (typeof storeTahsilat === 'function') storeTahsilat(tahAll);
+  window.toast?.(sayac + ' kaydin kuru guncellendi', 'ok');
+  window.logActivity?.('finans', 'Kur guncellemesi: ' + sayac + ' kayit yeniden hesaplandi');
+  renderOdemeler();
+}
+window._guncelleKurlar = _guncelleKurlar;
 
 // ════════════════════════════════════════════════════════════════
 // GİZLİ FİNANSAL ÖZELLİKLER — SADECE ADMİN/YÖNETİCİ
