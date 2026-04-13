@@ -182,8 +182,8 @@ window._ppModRender = function() {
         var agSay = t.altGorevSay||0; var agTam = t.altGorevTam||0;
         var jobId = t.job_id||t.jobId||'';
         var tarihGec = t.bitTarih && t.bitTarih < _ppToday();
-        h2 += '<div id="pp-tr-'+t.id+'" style="box-shadow:-3px 0 0 0 '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
-        h2 += '<div onclick="event.stopPropagation()" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:default">';
+        h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="box-shadow:-3px 0 0 0 '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
+        h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
         h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:#185FA5;cursor:pointer" title="Toplu işlem için seç">';
@@ -2196,6 +2196,35 @@ window._ppPeekAc = function(id) {
     +'</div>';
   document.body.appendChild(modal);
   document.addEventListener('click', function rm(e){ if(!modal.contains(e.target)){modal.remove();document.removeEventListener('click',rm);} });
+};
+
+/* PUSULA-PEEK-001: sağ kenar slide-in peek paneli (320px) */
+window._ppGorevPeek = function(id) {
+  var tasks = _ppLoad();
+  var t = tasks.find(function(x){ return String(x.id)===String(id); });
+  if (!t) return;
+  var mevcut = document.getElementById('pp-peek-panel');
+  if (mevcut) mevcut.remove();
+  var p = document.createElement('div');
+  p.id = 'pp-peek-panel';
+  p.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:320px;background:var(--sf);border-left:0.5px solid var(--b);z-index:500;overflow-y:auto;padding:20px';
+  p.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t)">'+_ppEsc(t.baslik||t.title||'')+'</div>'
+    + '<button onclick="document.getElementById(\'pp-peek-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;font-size:12px">'
+    + '<div><span style="color:var(--t3)">Durum:</span> <span style="color:var(--t)">'+_ppEsc(t.durum||'—')+'</span></div>'
+    + '<div><span style="color:var(--t3)">Öncelik:</span> <span style="color:var(--t)">'+_ppEsc(t.oncelik||'—')+'</span></div>'
+    + '<div><span style="color:var(--t3)">Departman:</span> <span style="color:var(--t)">'+_ppEsc(t.departman||'—')+'</span></div>'
+    + '<div><span style="color:var(--t3)">Bitiş:</span> <span style="color:var(--t)">'+_ppEsc(t.bitTarih||'—')+'</span></div>'
+    + (t.toplamSureDk ? '<div><span style="color:var(--t3)">Harcanan:</span> <span style="color:var(--t)">'+( t.toplamSureDk>=60 ? Math.floor(t.toplamSureDk/60)+'sa '+t.toplamSureDk%60+'dk' : t.toplamSureDk+'dk' )+'</span></div>' : '')
+    + (t.aciklama ? '<div style="margin-top:8px;padding:10px;background:var(--s2);border-radius:6px;color:var(--t2);font-size:11px">'+t.aciklama+'</div>' : '')
+    + '</div>'
+    + '<div style="margin-top:16px;display:flex;gap:8px">'
+    + '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\''+id+'\');document.getElementById(\'pp-peek-panel\')?.remove()" style="flex:1;padding:7px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:11px;color:var(--t2)">Düzenle</button>'
+    + '<button onclick="event.stopPropagation();window._ppGorevSil(\''+id+'\');document.getElementById(\'pp-peek-panel\')?.remove()" style="padding:7px 12px;border:0.5px solid #DC2626;border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:11px;color:#DC2626">Sil</button>'
+    + '</div>';
+  document.body.appendChild(p);
 };
 
 window._ppGorevMesaj = function(id) {
