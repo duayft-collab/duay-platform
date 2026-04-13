@@ -2012,8 +2012,10 @@ function markOdmPaid(id) {
   setTimeout(function(){ window._odmBusy = false; }, 1500);
   const d = window.loadOdm ? loadOdm() : [];
   const o = d.find(x => x.id === id); if (!o) return;
-  // Onay bekleyen ödeme ödendi işaretlenemez
-  if (_odmNeedsApproval(o) && o.approvalStatus !== 'approved') {
+  // NAKIT-TAHSILAT-ODENDI-001: Admin onay kontrolünü atlar, diğer roller onay gerektirir
+  if (_isAdminO()) {
+    // Admin bypass — onay gerekmez
+  } else if (_odmNeedsApproval(o) && o.approvalStatus !== 'approved') {
     window.toast?.('Bu ödeme henüz onaylanmadı — önce yönetici onayı gerekli', 'err');
     return;
   }
