@@ -1484,12 +1484,88 @@ window._ppTakBugun = function() {
   var body = document.getElementById('pp-body');
   if (body) window._ppTakvimPanelRender(body);
 };
+/**
+ * PUSULA-TAKVIM-GUN-001
+ * Bir gün hücresine tıklanınca direkt yeni etkinlik formu açmak yerine
+ * o günün etkinliklerini özet bir popup içinde göster. Kullanıcı o günü
+ * "incelerken" hem mevcut etkinlikleri görüyor hem tek tıkta yenisini
+ * ekleyebiliyor — Apple Calendar benzeri akış.
+ */
 window._ppTakGunTikla = function(dateStr) {
-  if (typeof window._ppTakvimYeniAc === 'function') window._ppTakvimYeniAc();
+  // Mevcut popup varsa kaldır
+  var eski = document.getElementById('pptak-gun-popup');
+  if (eski) eski.remove();
+
+  // O güne ait etkinlikleri birleştir (pusula takvim + ana loadCalendar)
+  var pusulaOlaylar = (typeof _ppTakvimLoad === 'function') ? _ppTakvimLoad().filter(function(o){return !o.isDeleted;}) : [];
+  var mainCal = (typeof window.loadCalendar === 'function') ? window.loadCalendar() : [];
+  if (!Array.isArray(mainCal)) mainCal = [];
+  mainCal = mainCal.filter(function(c){return !c.isDeleted;});
+  var olaylar = [];
+  pusulaOlaylar.forEach(function(o) {
+    var tarih = '';
+    if (o.sonrakiCalisma) tarih = String(o.sonrakiCalisma).slice(0,10);
+    else if (typeof window._ppTakvimSonrakiHesapla === 'function') {
+      var _hT = window._ppTakvimSonrakiHesapla(o);
+      if (_hT) tarih = String(_hT).slice(0,10);
+    }
+    if (!tarih && o.basTarih) tarih = String(o.basTarih).slice(0,10);
+    if (tarih === dateStr) {
+      olaylar.push({ kaynak:'pusula', id:o.id, baslik:o.baslik||'Etkinlik', kategori:(o.kategori||'DİĞER').toUpperCase() });
+    }
+  });
+  mainCal.forEach(function(c) {
+    var tarih = String(c.date||c.tarih||'').slice(0,10);
+    if (tarih === dateStr) {
+      olaylar.push({ kaynak:'main', id:c.id, baslik:c.title||c.baslik||c.name||'Etkinlik', kategori:(c.kategori||c.category||'DİĞER').toUpperCase() });
+    }
+  });
+
+  // Tıklanan gün hücresini bul
+  var hucre = document.querySelector('[onclick*="'+dateStr+'"]');
+  if (!hucre) return;
+
+  // Tarih başlığı (13 Nisan)
+  var aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  var dObj = new Date(dateStr);
+  var baslikStr = dObj.getDate() + ' ' + aylar[dObj.getMonth()];
+
+  // Kategori renk haritası (_ppTakvimPanelRender closure ile aynı)
+  var katRenk = { MUHASEBE:'#185FA5', 'İK':'#1D9E75', 'VERGİ':'#A32D2D', 'SİGORTA':'#854F0B', 'YÖNETİM':'#534AB7', 'HUKUKİ':'#888780', 'LOJİSTİK':'#0F6E56', 'OPERASYON':'#854F0B', 'TOPLANTI':'#534AB7', 'SON TARİH':'#A32D2D', 'TATİL':'#1D9E75', 'GÖREV':'#185FA5', 'KİŞİSEL':'#888780', 'DİĞER':'#888780' };
+  var katBg = { MUHASEBE:'#E6F1FB', 'İK':'#E1F5EE', 'VERGİ':'#FCEBEB', 'SİGORTA':'#FAEEDA', 'YÖNETİM':'#EEEDFE', 'HUKUKİ':'#F1EFE8', 'LOJİSTİK':'#E1F5EE', 'OPERASYON':'#FAEEDA', 'TOPLANTI':'#EEEDFE', 'SON TARİH':'#FCEBEB', 'TATİL':'#E1F5EE', 'GÖREV':'#E6F1FB', 'KİŞİSEL':'#F1EFE8', 'DİĞER':'#F1EFE8' };
+  var esc = window._esc || function(s){return String(s==null?'':s);};
+
+  // Popup HTML
+  var popup = document.createElement('div');
+  popup.id = 'pptak-gun-popup';
+  var rect = hucre.getBoundingClientRect();
+  popup.style.cssText = 'position:absolute;left:'+(rect.left + window.scrollX)+'px;top:'+(rect.bottom + window.scrollY + 4)+'px;min-width:220px;max-width:300px;background:var(--sf);border:1px solid var(--b);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:1000;padding:12px;font-family:inherit';
+  var iH = '<div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">'+esc(baslikStr)+'</div>';
+  if (!olaylar.length) {
+    iH += '<div style="font-size:11px;color:var(--t3);padding:10px 0;text-align:center">Bu gün etkinlik yok</div>';
+  } else {
+    olaylar.forEach(function(e) {
+      var kr = katRenk[e.kategori] || '#888780';
+      var kb = katBg[e.kategori] || '#F1EFE8';
+      iH += '<div onclick="event.stopPropagation();document.getElementById(\'pptak-gun-popup\')?.remove();window._ppTakEtkinlikAc?.(\''+e.kaynak+'\',\''+(e.id||'')+'\')" style="font-size:11px;padding:6px 10px;margin-bottom:5px;border-radius:6px;background:'+kb+';color:'+kr+';cursor:pointer;border-left:3px solid '+kr+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(e.baslik)+'">'+esc(e.baslik)+'</div>';
+    });
+  }
+  iH += '<button onclick="event.stopPropagation();document.getElementById(\'pptak-gun-popup\')?.remove();window._ppTakvimYeniAc?.();setTimeout(function(){var el=document.getElementById(\'pptak-basTarih\');if(el)el.value=\''+dateStr+'\';},120)" style="width:100%;font-size:11px;padding:7px;border:0.5px dashed var(--b);border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;margin-top:6px">+ Yeni Etkinlik</button>';
+  popup.innerHTML = iH;
+  document.body.appendChild(popup);
+
+  // Dışarı tıklayınca kapat — spec'te once:true dendi ama once:true inside
+  // click'te listener kaybolup sonraki outside click'i yakalayamadığı için
+  // self-removing pattern (persistent listener + removeEventListener) daha
+  // güvenilir. setTimeout 10ms — popup'ı açan click'in kendi bubbling'ini kaçır.
   setTimeout(function() {
-    var el = document.getElementById('pptak-basTarih');
-    if (el) el.value = dateStr;
-  }, 120);
+    var _gizle = function(ev) {
+      if (popup.contains(ev.target)) return;
+      popup.remove();
+      document.removeEventListener('click', _gizle);
+    };
+    document.addEventListener('click', _gizle);
+  }, 10);
 };
 window._ppTakEtkinlikAc = function(kaynak, id) {
   if (kaynak === 'pusula') {
