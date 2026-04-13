@@ -30,7 +30,7 @@ window.renderSatinAlmaV2 = function() {
     if(srch&&!((t.tedarikci||'').toLowerCase().includes(srch)||(window._saV2UrunAdi?.(t)||'').toLowerCase().includes(srch)||(window._saV2DuayKodu?.(t)||'').toLowerCase().includes(srch)||(t.jobId||'').toLowerCase().includes(srch)||(t.piNo||'').toLowerCase().includes(srch))) return false;
     if(durumF&&t.durum!==durumF) return false;
     if(tedF&&t.tedarikci!==tedF) return false;
-    if(paraF && (t.para||t.toplamPara||t.doviz||'')!==paraF) return false;
+    if(paraF && (t.para||t.toplamPara||t.doviz||t.paraBirimi||'')!==paraF) return false;
     if(tarihF==='hafta'&&(t.createdAt||'')<buHafta) return false;
     if(tarihF==='bu-ay'&&!(t.createdAt||'').startsWith(bugAy)) return false;
     return true;
