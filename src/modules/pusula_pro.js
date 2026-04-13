@@ -160,6 +160,15 @@ window._ppModRender = function() {
   var mod = window.PP_MOD || window._ppAktifMod || 'akis';
   if (mod === 'calisma') {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
+    /* PUSULA-UX-BUNDLE-001 #1: arama filtresi — _ppSearchQ global state bazlı */
+    var _aramaQ = (window._ppSearchQ || '').toLowerCase().trim();
+    if (_aramaQ) {
+      tasks = tasks.filter(function(t){
+        return (t.baslik||t.title||'').toLowerCase().includes(_aramaQ)
+          || (t.departman||'').toLowerCase().includes(_aramaQ)
+          || (t.aciklama||'').toLowerCase().includes(_aramaQ);
+      });
+    }
     /* PUSULA-GOREV-SIRALA-001: aktif sıralama kriteri (tarih / oncelik / durum / alfabe) */
     var _ppSK = window._ppSiralaKriter || 'tarih';
     var _oMap = {kritik:0, yuksek:1, normal:2, dusuk:3};
@@ -211,7 +220,9 @@ window._ppModRender = function() {
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
         h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:#185FA5;cursor:pointer" title="Toplu işlem için seç">';
         h2 += '<div>';
-        h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'">' + _ppEsc(t.baslik||t.title||'') + '</div>';
+        /* PUSULA-UX-BUNDLE-001 #2: öncelik bayrak emoji (title prefix) */
+        var _bayrak = t.oncelik==='kritik' ? '\ud83d\udd34' : t.oncelik==='yuksek' ? '\ud83d\udfe1' : t.oncelik==='normal' ? '\ud83d\udfe2' : '\u26aa';
+        h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:11px">'+_bayrak+'</span>' + _ppEsc(t.baslik||t.title||'') + '</div>';
         h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">';
         // PUSULA-JOB-BAGLANTI-001: jobId tiklanabilir → openJobIdHub aç
         if (jobId) h2 += '<span onclick="event.stopPropagation();window.openJobIdHub?.(\''+_ppEsc(jobId)+'\')" title="Job Hub aç" style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500;cursor:pointer;text-decoration:underline">'+_ppEsc(jobId)+'</span>';
@@ -246,8 +257,23 @@ window._ppModRender = function() {
             h2 += '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:0.5px solid var(--b)">';
             h2 += '<input type="checkbox" '+(ag.tamamlandi?'checked':'')+' style="width:11px;height:11px">';
             h2 += '<span style="font-size:11px;flex:1;color:'+(ag.tamamlandi?'var(--t3)':'var(--t)')+(ag.tamamlandi?';text-decoration:line-through':'')+'">' + _ppEsc(ag.baslik) + '</span>';
-            if (ag.sorumlu) h2 += '<span style="font-size:9px;color:var(--t3)">'+_ppEsc(ag.sorumlu)+'</span>';
-            if (ag.bitTarih) h2 += '<span style="font-size:9px;color:var(--t3)">'+ag.bitTarih+'</span>';
+            /* PUSULA-UX-BUNDLE-001 #3: alt görev detay satırı (sorumlu + tarihler) */
+            var _agSorAd = '';
+            if (ag.sorumlu) {
+              if (Array.isArray(ag.sorumlu) && ag.sorumlu.length) {
+                var _first = ag.sorumlu[0];
+                _agSorAd = (typeof _first === 'object') ? (_first.ad || _first.name || '') : String(_first || '');
+              } else if (typeof ag.sorumlu === 'string') {
+                _agSorAd = ag.sorumlu;
+              } else if (typeof ag.sorumlu === 'object') {
+                _agSorAd = ag.sorumlu.ad || ag.sorumlu.name || '';
+              }
+            }
+            h2 += '<span style="font-size:9px;color:var(--t3);margin-left:8px">'
+              + (_agSorAd ? '\ud83d\udc64 '+_ppEsc(_agSorAd) : '')
+              + (ag.basT ? ' \u00b7 \ud83d\udcc5 '+_ppEsc(ag.basT) : '')
+              + (ag.bitTarih ? ' \u2192 '+_ppEsc(ag.bitTarih) : '')
+              + '</span>';
             h2 += '</div>';
           });
         } else {
