@@ -5178,6 +5178,131 @@ window._renderPlatformIlerleme = function() {
   panel.innerHTML = h;
 };
 
+/**
+ * AYARLAR-SUREC-HARITASI-001
+ * 11 adımlı tam iş akışı accordion sayfası.
+ * Her adım: tetiklediği + etkilediği modüller (ok/kismi/eksik renk kodu).
+ */
+window._renderSurecHaritasi = function() {
+  var panel = document.getElementById('panel-settings');
+  if (!panel) return;
+  var STEPS = [
+    {n:'1',t:'Talep Girildi',d:'ok',
+     desc:'Müşteri talebi sisteme girilir. Cari kontrol edilir, önceki teklif uyarısı gelir.',
+     tet:['CRM: Müşteri kaydı oluşturulur veya güncellenir','PusulaPro: Araştırma görevi açılır, sorumlu atanır','Cari: Önceki teklif/ödeme geçmişi kontrol edilir'],
+     etk:['Satış Teklifleri: Müşteri bilgileri önceden dolu gelir','KPI: Aktif talep sayacı +1']},
+    {n:'2',t:'Araştırma Yapıldı',d:'kismi',
+     desc:'Tedarikçiler araştırılır. Numune talep edilmişse Numune Arşivine kaydedilir.',
+     tet:['PusulaPro: Görev durumu Devam olarak güncellenir','Numune Arşivi: Numune talebi kaydı [EKSİK]','Ürün Kataloğu: Fiyat ve stok bilgisi kontrol edilir'],
+     etk:['Alış Teklifleri: Tedarikçi listesi hazırlanır']},
+    {n:'3',t:'Satıcılardan Teklifler Alındı',d:'ok',
+     desc:'Her tedarikçi teklifi sisteme girilir. PI No, teslimat, geçerlilik tarihi kaydedilir.',
+     tet:['Alış Teklifleri V2: Tedarikçi başına ayrı kayıt','Döviz API: TL karşılığı otomatik hesaplanır','KPI: Bekleyen teklif sayacı güncellenir'],
+     etk:['Kar Analizi: Alış maliyeti baz alınır','Nakit Akışı: Planlanan çıkış tutarı görünür']},
+    {n:'4',t:'Karşılaştırıldı ve Seçildi',d:'kismi',
+     desc:'En uygun tedarikçi seçilir. Onay anında siparisDurumu otomatik hazirlaniyor olur.',
+     tet:['Alış Teklifleri: Seçilen teklif onaylandi olarak işaretlenir','Siparişler: siparisDurumu=hazirlaniyor OTOMATIK','Kar Analizi: Alış üzerinden marj hesaplanır'],
+     etk:['Siparişler: Onaylı teklif listeye otomatik düşer','Satış Teklifi: Alış maliyeti üzerinden fiyat önerilir']},
+    {n:'5',t:'Satış Teklifi Hazırlandı (PI)',d:'ok',
+     desc:'Müşteriye proforma invoice hazırlanır. Tasarım seçilir. Revizyon R01→R02 otomatik takip edilir.',
+     tet:['PI Tasarım: A/B/C/I/L/O şablonu seçilir','Şartlar: Ayarlardan varsayılan maddeler eklenir','IBAN: Banka bilgileri PI\'ya otomatik eklenir'],
+     etk:['CRM: Müşteri son teklif tarihi güncellenir','Revizyon: R01 oluşturulur, değişiklikte R02 otomatik']},
+    {n:'6',t:'Müşteri Onayladı',d:'kismi',
+     desc:'Kabul durumunda otomatik tahsilat kaydı oluşturulur. Cari hesabına işlem kısmen eksik.',
+     tet:['Satış Teklifleri: Teklif durumu → kabul','Tahsilat: Otomatik kayıt oluşturuldu','Cari: Müşteri borç kaydı [EKSİK]'],
+     etk:['Nakit Akışı: Beklenen tahsilat girişi görünür','KPI: Kabul oranı güncellenir']},
+    {n:'7',t:'Alış Siparişi Onaylandı + Avan Ödeme',d:'kismi',
+     desc:'Yönetici alış siparişini onaylar. Avan ödemesi nakit akışına işlenir.',
+     tet:['Siparişler: siparisDurumu → yolda','Nakit Akışı: Avan ödeme çıkışı kaydedilir','Tedarikçi e-posta bildirimi [EKSİK]'],
+     etk:['Lojistik: Kargo süreci başlar','KPI: Aktif sipariş sayacı güncellenir']},
+    {n:'8',t:'Lojistik Teslim Aldı',d:'eksik',
+     desc:'Tedarikçi kargoya verir. Takip numarası girilir. ETD/ETA tarihleri takip edilir.',
+     tet:['Kargo Takibi: Kargo kaydı oluşturulur, takip no girilir','Siparişler: Kargo köprüsü [EKSİK]','ETD/ETA tarihleri hesaplanır'],
+     etk:['Müşteri: Sevkiyat bildirimi gönderilebilir','Nakit Akışı: Kalan ödeme tarihi planlanır']},
+    {n:'9',t:'Teslim Edildi',d:'eksik',
+     desc:'Depoya, konteynıra veya doğrudan müşteriye teslim. Teslim belgesi kaydedilir.',
+     tet:['Siparişler: siparisDurumu → teslim','Teslimat belgesi kaydı [EKSİK]','Kalan tahsilat tetiklenir'],
+     etk:['Tahsilat: Son ödeme hatırlatması','Feedback: Müşteri formu gönderilir [EKSİK]']},
+    {n:'10',t:'Müşteriden Feedback Alındı',d:'eksik',
+     desc:'Müşteri memnuniyeti değerlendirilir. CRM skoru güncellenir. PusulaPro görevi kapatılır.',
+     tet:['CRM: Müşteri skoru güncellenir [EKSİK]','PusulaPro: Görev tamamlandı olarak kapatılır','KPI: Memnuniyet skoru eklenir [EKSİK]'],
+     etk:['Arşiv: Arşivleme süreci başlar','Dönem Özeti: İşlem raporlanır [EKSİK]']},
+    {n:'11',t:'Arşivlendi',d:'kismi',
+     desc:'Tüm belgeler arşive taşınır. Dönem özetine eklenir.',
+     tet:['Arşiv: Tüm belgeler derlenir','Satış Teklifleri: durum arşivlendi','Siparişler: Sipariş kapatılır'],
+     etk:['Dönem Özeti: Kapanan işlem eklenir [EKSİK]','KPI: Tamamlanan işlem +1']}
+  ];
+  var DR = {
+    ok:    {bg:'#EAF3DE', bc:'#639922', tc:'#27500A', lbl:'Mevcut'},
+    kismi: {bg:'#FAEEDA', bc:'#EF9F27', tc:'#412402', lbl:'Kısmi'},
+    eksik: {bg:'#FCEBEB', bc:'#E24B4A', tc:'#501313', lbl:'Eksik'}
+  };
+  panel.innerHTML = '';
+  var wrap = document.createElement('div');
+  var barD = document.createElement('div');
+  barD.innerHTML = window._ayarSekmeBarHtml('surec-haritasi');
+  wrap.appendChild(barD);
+  var cont = document.createElement('div');
+  cont.style.cssText = 'padding:16px 24px 32px;max-width:820px;margin:0 auto';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'margin-bottom:16px';
+  hdr.innerHTML = '<div style="font-size:15px;font-weight:600;color:var(--t)">Tam Süreç Haritası</div>'
+    +'<div style="font-size:11px;color:var(--t3);margin-top:2px">Her adıma tıkla — tetiklediği ve etkilediği modüller açılır</div>'
+    +'<div style="display:flex;gap:6px;margin-top:8px;font-size:10px">'
+    +'<span style="background:#EAF3DE;color:#27500A;padding:2px 8px;border-radius:99px">Mevcut</span>'
+    +'<span style="background:#FAEEDA;color:#412402;padding:2px 8px;border-radius:99px">Kısmi</span>'
+    +'<span style="background:#FCEBEB;color:#501313;padding:2px 8px;border-radius:99px">Eksik</span>'
+    +'</div>';
+  cont.appendChild(hdr);
+  STEPS.forEach(function(s, i) {
+    var dr = DR[s.d];
+    var id = 'sh' + i;
+    var card = document.createElement('div');
+    card.style.cssText = 'border:0.5px solid ' + dr.bc + ';border-radius:10px;margin-bottom:6px;overflow:hidden';
+    var head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:' + dr.bg;
+    head.onclick = function(e) {
+      e.stopPropagation();
+      var b = document.getElementById(id);
+      var open = b.style.display !== 'none' && b.style.display !== '';
+      b.style.display = open ? 'none' : 'block';
+      var arr = this.querySelector('.sh-arr');
+      if (arr) { arr.style.transform = open ? '' : 'rotate(90deg)'; }
+    };
+    head.innerHTML = '<div style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:' + dr.tc + ';flex-shrink:0">' + s.n + '</div>'
+      + '<div style="font-size:13px;font-weight:500;color:' + dr.tc + ';flex:1">' + s.t + '</div>'
+      + '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,0.5);color:' + dr.tc + '">' + dr.lbl + '</span>'
+      + '<span class="sh-arr" style="font-size:16px;color:' + dr.tc + ';opacity:.5;margin-left:6px;transition:transform .2s">›</span>';
+    var body = document.createElement('div');
+    body.id = id;
+    body.style.cssText = 'display:none;padding:12px 14px 14px;border-top:0.5px solid ' + dr.bc + ';background:var(--sf)';
+    var tetH = s.tet.map(function(x) {
+      var e = x.indexOf('[EKSİK]') !== -1;
+      return '<div style="font-size:11px;padding:5px 8px;border-radius:5px;margin-bottom:4px;background:' + (e ? '#FCEBEB' : 'var(--s2)') + ';color:' + (e ? '#A32D2D' : 'var(--t2)') + '">' + x + '</div>';
+    }).join('');
+    var etkH = s.etk.map(function(x) {
+      var e = x.indexOf('[EKSİK]') !== -1;
+      return '<div style="font-size:11px;padding:5px 8px;border-radius:5px;margin-bottom:4px;background:' + (e ? '#FCEBEB' : 'var(--s2)') + ';color:' + (e ? '#A32D2D' : 'var(--t2)') + '">' + x + '</div>';
+    }).join('');
+    body.innerHTML = '<div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">' + s.desc + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + '<div><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Tetikledikleri</div>' + tetH + '</div>'
+      + '<div><div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Etkiledikleri</div>' + etkH + '</div>'
+      + '</div>';
+    card.appendChild(head);
+    card.appendChild(body);
+    cont.appendChild(card);
+    if (i < STEPS.length - 1) {
+      var arr = document.createElement('div');
+      arr.style.cssText = 'text-align:center;color:var(--t3);font-size:14px;line-height:1;margin:-1px 0';
+      arr.textContent = '↓';
+      cont.appendChild(arr);
+    }
+  });
+  wrap.appendChild(cont);
+  panel.appendChild(wrap);
+};
+
 /* AYARLAR-BANKA-SART-001: Helper fonksiyonlar */
 window._ayarBankaKaydet = function(para) {
   var el = document.getElementById('ayar-banka-'+para);
