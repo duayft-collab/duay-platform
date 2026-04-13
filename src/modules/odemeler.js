@@ -6381,18 +6381,7 @@ function deleteCari(id) {
   });
 
   var silFunc = function() {
-    // Bağlı satınalma kayıtlarını işaretle
-    if (bagliKayitlar.length > 0) {
-      var satRaw = JSON.parse(localStorage.getItem('ak_satinalma1') || '[]');
-      satRaw.forEach(function(s) {
-        if ((s.supplier || '') === cariAd || (s.piNo || '') === cariAd) {
-          s.tedarikci_silindi = true;
-          s.tedarikci_silindi_at = new Date().toISOString();
-          s.tedarikci_eski_ad = cariAd;
-        }
-      });
-      localStorage.setItem('ak_satinalma1', JSON.stringify(satRaw));
-    }
+    // SISTEM-TEMIZLIK-001: ak_satinalma1 (V1) artık kullanılmıyor — dead write kaldırıldı
     c.isDeleted = true;
     c.deletedAt = new Date().toISOString();
     storeCari(raw);
