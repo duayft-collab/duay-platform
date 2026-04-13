@@ -2326,7 +2326,7 @@ function _openOdmImportModal() {
         + '</div>'
         // Şablon indir
         + '<div style="margin-top:12px;text-align:center">'
-          + '<button onclick="window._odmDownloadImportTemplate?.()" style="background:none;border:none;cursor:pointer;color:var(--ac);font-size:12px;font-family:inherit;text-decoration:underline">📋 Boş şablon indir (Ad, Tutar, Para Birimi, Tarih, Kategori, Cari, Doküman No)</button>'
+          + '<button onclick="window._odmDownloadImportTemplate?.()" style="background:none;border:none;cursor:pointer;color:var(--ac);font-size:12px;font-family:inherit;text-decoration:underline">📋 Boş şablon indir (Ad, Tutar, Para Birimi, Tarih, Kategori, Cari, Doküman No, Tip)</button>'
         + '</div>'
         // Önizleme alanı
         + '<div id="odm-import-preview" style="display:none;margin-top:16px"></div>'
