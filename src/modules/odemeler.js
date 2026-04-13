@@ -458,7 +458,7 @@ function _injectOdmPanel() {
     // ── Satır 1: Başlık + Butonlar ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:0.5px solid var(--b)">',
       '<div>',
-        '<div style="font-size:15px;font-weight:700;color:var(--t)">Nakit Akışı</div>',
+        '<div style="font-size:15px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px">Nakit Akışı<span id="odm-filter-badge" onclick="event.stopPropagation();window._odmClearFilters?.()" style="display:none;font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(217,119,6,.12);color:#D97706;font-weight:500;cursor:pointer" title="Filtre aktif — tıkla temizle">⚡ Filtre aktif</span></div>',
         '<div style="font-size:10px;color:var(--t3);margin-top:2px" id="odm-sub-title">Yükleniyor...</div>',
       '</div>',
       '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">',
@@ -1123,6 +1123,16 @@ function renderOdemeler() {
     var _df = _go('odm-from-f')?.value || ''; var _dt = _go('odm-to-f')?.value || '';
     var _dNote = (_df || _dt) ? ' · Tarih: ' + (_df || '...') + ' — ' + (_dt || '...') : '';
     _summaryEl.textContent = _roleNote + ' · ' + items.length + ' kayıt' + _dNote + ' · Net: ' + (_filteredNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_filteredNet)).toLocaleString('tr-TR');
+  }
+
+  // NAKIT-FILTRE-TEMIZLE-001 — Filtre aktif badge toggle
+  var _filterBadge = _go('odm-filter-badge');
+  if (_filterBadge) {
+    var _fbDf = _go('odm-from-f')?.value || '';
+    var _fbDt = _go('odm-to-f')?.value || '';
+    var _anyFilter = !!(q || catF || freqF || statF || userF || personelF || cariF || curF || _fbDf || _fbDt
+      || _odmActiveFilters.src || _odmActiveFilters.cat || _odmActiveFilters.status);
+    _filterBadge.style.display = _anyFilter ? 'inline-flex' : 'none';
   }
 
   // Vade uyumsuzluğu uyarısı (admin only)
@@ -3672,16 +3682,16 @@ function _odmChipClick(el) {
 }
 
 function _odmClearFilters() {
+  // NAKIT-FILTRE-TEMIZLE-001 — chip + 10 filtre input/select tümü sıfırlanır
   _odmActiveFilters = { src: '', cat: '', status: '' };
   document.querySelectorAll('.odm-chip').forEach(c => c.classList.remove('odm-chip-active'));
   const allChip = document.querySelector('.odm-chip[data-filter="src"][data-val=""]');
   if (allChip) allChip.classList.add('odm-chip-active');
-  const s = document.getElementById('odm-search');
-  if (s) s.value = '';
-  const uf = document.getElementById('odm-user-f');
-  if (uf) uf.value = '';
-  const ff = document.getElementById('odm-freq-f');
-  if (ff) ff.value = '';
+  // Tüm filter input/select'leri sıfırla
+  ['odm-search','odm-user-f','odm-freq-f','odm-cat-f','odm-status-f','odm-personel-f','odm-cari-f','odm-cur-f','odm-from-f','odm-to-f'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   renderOdemeler();
 }
 
