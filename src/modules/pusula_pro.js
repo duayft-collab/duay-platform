@@ -195,10 +195,16 @@ window._ppModRender = function() {
         }
         var sorumluIni = sorumluAd !== '—' ? sorumluAd.split(' ').map(function(s) { return s[0] || ''; }).join('').slice(0, 2).toUpperCase() : '?';
         var kenarRenk = t.oncelik==='kritik'?'#A32D2D':t.oncelik==='yuksek'?'#854F0B':'#1D9E75';
+        /* PUSULA-GOREV-RENK-001: sol border rengi — kritik öncelik override, aksi halde duruma göre */
+        var _borderRenk = t.oncelik==='kritik' ? '#DC2626'
+                        : t.durum==='tamamlandi' ? '#15803D'
+                        : t.durum==='devam'      ? '#2563EB'
+                        : t.durum==='bekliyor'   ? '#D97706'
+                        : 'var(--b)';
         var agSay = t.altGorevSay||0; var agTam = t.altGorevTam||0;
         var jobId = t.job_id||t.jobId||'';
         var tarihGec = t.bitTarih && t.bitTarih < _ppToday();
-        h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="box-shadow:-3px 0 0 0 '+kenarRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
+        h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
         h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
