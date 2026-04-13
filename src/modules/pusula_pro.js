@@ -360,7 +360,9 @@ window._ppModRender = function() {
     }
 
     if (!tasks.length) {
-      h += '<div style="text-align:center;padding:32px;color:var(--t3);font-size:13px">Henüz görev yok — Çalışma modundan ekle</div>';
+      h += '<div style="text-align:center;padding:32px;color:var(--t3);font-size:13px">Henüz görev yok — Çalışma modundan ekle'
+        + '<div><button onclick="event.stopPropagation();window.PP_MOD=\'calisma\';window._ppModRender?.()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--ac);margin-top:8px">→ Çalışma Moduna Geç</button></div>'
+        + '</div>';
     }
 
     h += '</div>';
