@@ -1501,6 +1501,8 @@ window._ppGorevDuzenle = function(id) {
     var bit = document.getElementById('ppf-bitT'); if (bit) bit.value = t.bitTarih || '';
     var sure = document.getElementById('ppf-sure'); if (sure) sure.value = t.sure || '';
     var acik = document.getElementById('ppf-aciklama'); if (acik) acik.innerHTML = t.aciklama || '';
+    /* PUSULA-JOBID-RESTORE-001: edit modunda Job ID input'u da restore */
+    var job = document.getElementById('ppf-job_id'); if (job) job.value = t.job_id || t.jobId || '';
     var kaydet = document.querySelector('#pp-gorev-modal button[onclick*="_ppGorevKaydet"]');
     if (kaydet) kaydet.textContent = 'Güncelle';
     /* PUSULA-GUNCELLE-FIX-001: mevcut alt görev + dosya state'ini düzenleme modal'ına yükle */
