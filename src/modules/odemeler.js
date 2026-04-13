@@ -247,6 +247,7 @@ function _odmKurModeHTML(cur) {
     + (allowManuel ? '<input type="number" id="odm-kur-manuel" style="font-size:11px;width:80px;border:0.5px solid var(--b);border-radius:6px;padding:2px 6px;display:' + (_odmRatesMode==='manuel'?'block':'none') + '"'
     + ' placeholder="Kur girin" oninput="_odmManualRateInput(this)">' : '')
     + '<span id="odm-kur-date" style="font-size:9px;color:var(--t3);margin-left:auto">' + sourceLabel + ' · ' + (_odmRatesDate||'Statik') + '</span>'
+    + '<button type="button" onclick="event.stopPropagation();window._odmKurSabitle()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--ac);border-radius:4px;background:transparent;cursor:pointer;color:var(--ac);font-family:inherit;margin-left:4px">🔒 Sabitle</button>'
     + '</div>';
 }
 
@@ -288,6 +289,27 @@ function _odmUpdateTLPreview() {
 
 window._odmKurModeChange   = _odmKurModeChange;
 window._odmManualRateInput = _odmManualRateInput;
+window._odmKurSabitle = function() {
+  var cur = document.getElementById('odm-f-currency')?.value
+         || document.getElementById('tah-f-currency')?.value || 'TRY';
+  if (cur === 'TRY') { window.toast?.('TRY kayıtlar için kur sabitleme gerekmez', 'info'); return; }
+  var rates = _odmGetRates();
+  var rate = rates[cur] || 1;
+  var hidden = document.getElementById('odm-locked-rate');
+  if (!hidden) {
+    hidden = document.createElement('input');
+    hidden.type = 'hidden'; hidden.id = 'odm-locked-rate';
+    (document.getElementById('odm-kur-wrap') || document.getElementById('tah-kur-wrap'))?.appendChild(hidden);
+  }
+  hidden.value = rate;
+  var valEl = document.getElementById('odm-kur-val');
+  if (valEl) {
+    valEl.style.color = '#15803D';
+    valEl.style.fontWeight = '600';
+    valEl.textContent = '🔒 ₺' + rate.toFixed(4) + ' (sabitlendi)';
+  }
+  window.toast?.('Kur sabitlendi: 1 ' + cur + ' = ₺' + rate.toFixed(4), 'ok');
+};
 window._odmUpdateTLPreview = _odmUpdateTLPreview;
 window._odmUpdateKurDisplay = _odmUpdateKurDisplay;
 window._odmFetchTCMB       = _odmFetchTCMB;
@@ -1911,6 +1933,13 @@ function saveOdm() {
     // NAKIT-KUR-GUNCELLE-001 — yeni kayıtta kuru _odmGetRates() ile garanti et
     newEntry.kurRate = _odmGetRates()[newEntry.currency] || 1;
     newEntry.amountTRY = _odmToTRY(parseFloat(newEntry.amount)||0, newEntry.currency||'TRY');
+    // NAKIT-KUR-SABITLE-001 — kullanıcı 🔒 Sabitle ile kuru kilitlediyse override
+    var _lockedEl = document.getElementById('odm-locked-rate');
+    if (_lockedEl && parseFloat(_lockedEl.value) > 0 && (newEntry.currency||'TRY') !== 'TRY') {
+      newEntry.lockedRate = parseFloat(_lockedEl.value);
+      newEntry.kurRate = newEntry.lockedRate;
+      newEntry.amountTRY = Math.round(parseFloat(newEntry.amount||0) * newEntry.lockedRate * 100) / 100;
+    }
     // Sadece admin otomatik onaylı — manager dahil diğerleri pending
     if (_isAdminO()) {
       newEntry.approved = true;
@@ -1938,6 +1967,8 @@ function saveOdm() {
   }
   window.storeOdm ? storeOdm(d) : null;
   _go('mo-odm-v9')?.remove();
+  // NAKIT-KUR-SABITLE-001 — locked-rate hidden input formla beraber temizle
+  document.getElementById('odm-locked-rate')?.remove();
   renderOdemeler();
   // Auth gecikmesi durumunda 500ms sonra yeniden render
   setTimeout(renderOdemeler, 500);
@@ -3184,6 +3215,13 @@ function saveTahsilat() {
     }
   } else {
     var newEntry = { id: generateNumericId(), ...entry, createdBy: _CUo()?.id };
+    // NAKIT-KUR-SABITLE-001 — kullanıcı 🔒 Sabitle ile kuru kilitlediyse override
+    var _tahLockedEl = document.getElementById('odm-locked-rate');
+    if (_tahLockedEl && parseFloat(_tahLockedEl.value) > 0 && (newEntry.currency||'TRY') !== 'TRY') {
+      newEntry.lockedRate = parseFloat(_tahLockedEl.value);
+      newEntry.kurRate = newEntry.lockedRate;
+      newEntry.amountTRY = Math.round(parseFloat(newEntry.amount||0) * newEntry.lockedRate * 100) / 100;
+    }
     if (_isAdminO()) {
       newEntry.approved = true;
       newEntry.approvedBy = _CUo()?.id;
@@ -3197,6 +3235,8 @@ function saveTahsilat() {
   }
   storeTahsilat(d);
   document.getElementById('mo-tahsilat')?.remove();
+  // NAKIT-KUR-SABITLE-001 — locked-rate hidden input formla beraber temizle
+  document.getElementById('odm-locked-rate')?.remove();
   if (!eid && !_isAdminO()) {
     var _yoneticiler = (window.loadUsers?.() || []).filter(function(u) { return (u.role === 'admin' || u.role === 'manager') && u.status === 'active'; });
     _yoneticiler.forEach(function(m) {
