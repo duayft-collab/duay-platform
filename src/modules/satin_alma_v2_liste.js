@@ -146,7 +146,8 @@ window.renderSatinAlmaV2 = function() {
         h+='<div style="display:grid;grid-template-columns:20px 1fr 90px 100px 80px 80px;padding:3px 10px 3px 24px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
         // SAV2-GRUP-CB-001: grup ürün satırına checkbox — parent t.id state'ine bind
         h+='<div style="font-size:9px;display:flex;align-items:center;gap:2px"><input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:10px;height:10px;cursor:pointer;flex-shrink:0"><span style="color:var(--color-text-tertiary)">'+(idx+1)+'.</span></div>';
-        h+='<div style="font-size:9px;color:var(--color-text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(u.urunAdi||u.turkceAdi||u.duayKodu||'—')+'</div>';
+        // SATINALMA-LISTE-XSS-002: ürün alt satırında window._esc sarmalama
+        h+='<div style="font-size:9px;color:var(--color-text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(window._esc?.(u.urunAdi||u.turkceAdi||u.duayKodu)||u.urunAdi||u.turkceAdi||u.duayKodu||'—')+'</div>';
         h+='<div style="font-size:9px;color:#0F6E56;white-space:nowrap">'+(u.alisF||'—')+' '+(u.para||'')+'</div>';
         h+='<div></div>';
         h+='<div></div>';
