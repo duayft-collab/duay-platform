@@ -289,6 +289,8 @@ window._ppModRender = function() {
       });
       return h2;
     };
+    /* PUSULA-ARAMA-FOCUS-FIX-001: re-render öncesi mevcut arama değerini sakla */
+    var _aramaDeger = document.getElementById('pp-search')?.value || window._ppSearchQ || '';
     body.innerHTML = ''
       + '<div style="width:180px;border-right:0.5px solid var(--b);padding:8px 0;overflow-y:auto;flex-shrink:0">'
       + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.08em;padding:8px 14px 3px">ÇALIŞMA ALANI</div>'
@@ -359,6 +361,12 @@ window._ppModRender = function() {
       + '<div style="width:240px;border-left:0.5px solid var(--b);padding:12px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:10px">'
       + window._ppSagPanel()
       + '</div>';
+    /* PUSULA-ARAMA-FOCUS-FIX-001: re-render sonrası arama input'u değeri restore + odak */
+    var _aramaInput = document.getElementById('pp-search');
+    if (_aramaInput) {
+      _aramaInput.value = _aramaDeger;
+      if (_aramaDeger) _aramaInput.focus();
+    }
     return;
   }
   if (mod === 'odak') {
