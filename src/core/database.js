@@ -1891,6 +1891,8 @@ function _listenCollection(collection, localKey, onUpdate) {
     });
 
     const unsubscribe = docRef.onSnapshot(snap => {
+      if (window.__lastHydrateRender && (Date.now() - window.__lastHydrateRender) < 300) return;
+      if (window.__skipSnapshotOnce?.[collection]) { delete window.__skipSnapshotOnce[collection]; return; }
       if (!snap.exists) {
         return;
       }
@@ -2182,12 +2184,117 @@ function _stripBase64BeforeWrite(key, data) {
   } catch (e) {}
 }
 
+/**
+ * SYNC-HYDRATE-001
+ * Bootstrap correction layer — app açılışında kritik koleksiyonları bir kere
+ * server'dan çek, local ile merge et, server daha yeniyse UI'ı anında yenile.
+ * onSnapshot listener'dan bağımsız tek-seferlik hidratasyon. _read() dokunmaz,
+ * 6 guard ile race/double-write/memory leak/type mismatch kapatılır.
+ */
+function hydrateFromServer() {
+  if (window.__hydrating) return;
+  window.__hydrating = true;
+  requestAnimationFrame(function() {
+    setTimeout(function() { window.__hydrating = false; }, 1000);
+  });
+
+  var FB_DB = window.Auth?.getFBDB?.();
+  var tid = typeof _getTid === 'function' ? _getTid() : '';
+  if (!FB_DB || !tid) { window.__hydrating = false; return; }
+
+  // ISO/epoch/string fark etmez — universal number karşılaştırması
+  var toTime = function(t) {
+    if (!t) return 0;
+    var d = new Date(t);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  };
+
+  // array veya object map — her ikisi de çalışır, sıralama stabil
+  var normalize = function(d) {
+    if (!d) return [];
+    return Array.isArray(d) ? d : Object.keys(d).sort().map(function(k){ return d[k]; });
+  };
+
+  // array içindeki en yeni updatedAt — length değil içerik bazlı diff
+  var _latestTs = function(arr) {
+    if (!arr.length) return 0;
+    return arr.reduce(function(max, r) {
+      var t = toTime(r.updatedAt || r.ts || r.createdAt || 0);
+      return t > max ? t : max;
+    }, 0);
+  };
+
+  var KRITIK = [
+    { col: 'satisTeklifleri', key: KEYS.satisTeklifleri, render: function(){ window.renderSatisTeklifleri?.(); } },
+    { col: 'alisTeklifleri',  key: KEYS.alisTeklifleri,  render: function(){ window.renderSatinAlmaV2?.(); } },
+    { col: 'users',           key: KEYS.users,           render: function(d){ _refreshCU(d); } },
+    { col: 'tasks',           key: KEYS.tasks,           render: function(d){ _checkNewAssignments(d); window.renderPusulaPro?.(); } },
+    { col: 'cari',            key: KEYS.cari,            render: function(){ window.renderCari?.(); } },
+  ];
+
+  var base = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
+
+  KRITIK.forEach(function(item) {
+    FB_DB.collection(base).doc(item.col).get()
+      .then(function(snap) {
+        if (!snap.exists) return;
+        var raw = snap.data()?.data;
+
+        // Guard 1: null / partial / wrong type
+        if (!raw || typeof raw !== 'object') {
+          console.warn('[HYDRATE] invalid fsData:', item.col);
+          return;
+        }
+
+        var fsData    = normalize(raw);
+        var localData = normalize(_read(item.key, []));
+        var merged    = _mergeDataSets(item.key, fsData, item.col);
+
+        var localTs  = _latestTs(localData);
+        var serverTs = _latestTs(fsData);
+
+        var needsUpdate = serverTs > localTs ||
+          (localData.length === 0 && fsData.length > 0);
+
+        if (needsUpdate) {
+          _write(item.key, merged);
+          console.info('[HYDRATE]', item.col, '→ server daha yeni:', serverTs, '>', localTs);
+
+          // Guard 2: double write — bu koleksiyon için onSnapshot'ı bir kez atla
+          window.__skipSnapshotOnce = window.__skipSnapshotOnce || {};
+          window.__skipSnapshotOnce[item.col] = true;
+          // Zombi flag temizliği — 3 saniye sonra sil
+          (function(col){
+            setTimeout(function(){ if (window.__skipSnapshotOnce) delete window.__skipSnapshotOnce[col]; }, 3000);
+          })(item.col);
+
+          // Guard 3: render race condition — onSnapshot ile flicker engeli
+          window.__lastHydrateRender = Date.now();
+          try { item.render(merged); } catch(e) {}
+          setTimeout(function() { window.__lastHydrateRender = 0; }, 500);
+        } else {
+          console.info('[HYDRATE]', item.col, '→ local güncel, güncelleme gerekmedi');
+        }
+      })
+      .catch(function(e) {
+        if (e.code !== 'permission-denied') console.warn('[HYDRATE]', item.col, e.message);
+      });
+  });
+}
+window.hydrateFromServer = hydrateFromServer;
+
 function startRealtimeSync() {
   console.log('[SYNC] startRealtimeSync çağrıldı. _syncStarted:', Object.keys(_syncStarted).length, '| FB_DB:', !!window.Auth?.getFBDB?.(), '| FB_AUTH currentUser:', !!window.Auth?.getFBAuth?.()?.currentUser);
   if (_syncStarted._all) { console.info('[DB] Realtime sync zaten çalışıyor — tekrar başlatma atlandı'); return; }
   _syncStarted._all = true;
   // Bekleyen yazma kuyruğunu işle (sayfa yenileme/timeout'tan kalan)
   _processPersistedQueue();
+  // SYNC-HYDRATE-001: Bootstrap correction layer — non-blocking
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(function() { hydrateFromServer(); });
+  } else {
+    setTimeout(function() { hydrateFromServer(); }, 0);
+  }
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   const SYNC_MAP = [
     // Kullanıcılar — tüm cihazlarda güncel kalmalı + CU güncelle
