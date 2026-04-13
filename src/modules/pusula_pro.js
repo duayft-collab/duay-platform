@@ -174,6 +174,26 @@ window._ppModRender = function() {
     var _filtreOncelik = document.getElementById('pp-filtre-oncelik')?.value || '';
     if (_filtreDurum) tasks = tasks.filter(function(t){ return t.durum === _filtreDurum; });
     if (_filtreOncelik) tasks = tasks.filter(function(t){ return t.oncelik === _filtreOncelik; });
+    /* PUSULA-KISI-FILTRE-001: sorumlu + gözlemci bazlı kullanıcı filtresi */
+    var _filtreKisi = document.getElementById('pp-filtre-kisi')?.value || '';
+    var _benimUid = window.Auth?.getCU?.()?.uid || window.CU?.()?.uid || '';
+    if (_filtreKisi === '__benim__') {
+      tasks = tasks.filter(function(t){
+        var uid = _benimUid;
+        var sorumlu = t.sorumlu||t.assignedTo||[];
+        var sorumluArr = Array.isArray(sorumlu) ? sorumlu : [sorumlu];
+        var gozlemci = t.gozlemci||[];
+        var gozlemciArr = Array.isArray(gozlemci) ? gozlemci : [gozlemci];
+        return sorumluArr.some(function(s){ return (s&&s.uid||s)===uid; })
+          || gozlemciArr.some(function(g){ return (g&&g.uid||g)===uid; });
+      });
+    } else if (_filtreKisi) {
+      tasks = tasks.filter(function(t){
+        var sorumlu = t.sorumlu||t.assignedTo||[];
+        var sorumluArr = Array.isArray(sorumlu) ? sorumlu : [sorumlu];
+        return sorumluArr.some(function(s){ return (s&&s.uid||s)===_filtreKisi; });
+      });
+    }
     /* PUSULA-GOREV-SIRALA-001: aktif sıralama kriteri (tarih / oncelik / durum / alfabe) */
     var _ppSK = window._ppSiralaKriter || 'tarih';
     var _oMap = {kritik:0, yuksek:1, normal:2, dusuk:3};
@@ -323,7 +343,13 @@ window._ppModRender = function() {
         + '<option value="normal">🟢 Normal</option>'
         + '<option value="dusuk">⚪ Düşük</option>'
       + '</select>'
-      + '<button onclick="event.stopPropagation();document.getElementById(\'pp-filtre-durum\').value=\'\';document.getElementById(\'pp-filtre-oncelik\').value=\'\';window._ppModRender?.()" style="font-size:10px;padding:4px 9px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">✕ Temizle</button>'
+      // PUSULA-KISI-FILTRE-001: kullanıcı filtresi (benim + tüm aktif kullanıcılar)
+      + '<select id="pp-filtre-kisi" onchange="event.stopPropagation();window._ppModRender?.()" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t2);font-family:inherit">'
+        + '<option value="">Tüm Kişiler</option>'
+        + '<option value="__benim__">👤 Benim Görevlerim</option>'
+        + (typeof window.loadUsers === 'function' ? loadUsers().filter(function(u){ return !u.isDeleted; }).map(function(u){ return '<option value="'+_ppEsc(u.uid||u.id)+'">'+_ppEsc(u.name||u.displayName||'')+'</option>'; }).join('') : '')
+      + '</select>'
+      + '<button onclick="event.stopPropagation();document.getElementById(\'pp-filtre-durum\').value=\'\';document.getElementById(\'pp-filtre-oncelik\').value=\'\';var _k=document.getElementById(\'pp-filtre-kisi\');if(_k)_k.value=\'\';window._ppModRender?.()" style="font-size:10px;padding:4px 9px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">✕ Temizle</button>'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
       + '<div style="padding:10px 14px 0"><input id="pp-calisma-ara" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppCalismaFiltre(this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;margin-bottom:10px"></div>'
