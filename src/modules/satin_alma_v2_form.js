@@ -310,6 +310,9 @@ window._saV2YoneticiOnayla = function(id) {
   var t = liste.find(function(x) { return x.id === id; });
   if (!t) return;
   t.durum = 'onaylandi';
+  /* SIPARISLER-AUTO-ONAY-001: onay anında sipariş hazırlık kaydı */
+  if (!t.siparisDurumu) t.siparisDurumu = 'hazirlaniyor';
+  t.siparisBaslangicTarihi = new Date().toISOString();
   t.onaylayanId = window._saCu?.()?.uid || '';
   t.onaylayanAd = window._saCu?.()?.displayName || '';
   t.onayTarih = window._saNow?.();
