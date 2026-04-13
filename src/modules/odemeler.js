@@ -3455,15 +3455,14 @@ function openOdmChart() {
     const d = new Date(); d.setMonth(d.getMonth() - i);
     months.push(d.toISOString().slice(0, 7));
   }
-  const cats = ['fatura', 'abonelik', 'kredi_k', 'kira', 'diger'];
-  const catColors = { fatura: '#F97316', abonelik: '#6366F1', kredi_k: '#8B5CF6', kira: '#10B981', diger: '#6B7280' };
-
   const mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-odm-chart'; ;
 
   const chartRows = months.map(m => {
-    const mItems = all.filter(o => (o.due || '').startsWith(m) || (o.paidTs || '').startsWith(m));
-    const total = mItems.reduce((s, o) => s + (parseFloat(o.amount) || 0), 0);
+    // NAKIT-GRAFIK-FIX-001: paid ise paidTs yoksa due, unpaid ise due — çift sayım yok
+    const mItems = all.filter(o => { var _key = o.paid ? (o.paidTs||o.due||'') : (o.due||''); return _key.startsWith(m); });
+    // NAKIT-GRAFIK-FIX-001: currency conversion — tüm tutarlar TL'ye çevrilir
+    const total = mItems.reduce((s, o) => s + (typeof _odmToTRY==='function' ? _odmToTRY(parseFloat(o.amount)||0, o.currency||'TRY', o) : (parseFloat(o.amount)||0)), 0);
     return { m, total, items: mItems };
   });
 
