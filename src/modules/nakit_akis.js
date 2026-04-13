@@ -14,7 +14,7 @@
  *   • window._saKur          — kur tablosu (satin_alma_v2.js, API'den taze)
  *
  * Routing: App.nav('nakit-akis') → app_patch.js _newPanels['nakit-akis']
- * Panel id: panel-nakit-akis
+ * Panel id: panel-nakit-akisi
  * ════════════════════════════════════════════════════════════════
  */
 (function() {
@@ -315,12 +315,12 @@
   }
 
   /**
-   * Ana render fonksiyonu — panel-nakit-akis div'ine içerik basar.
+   * Ana render fonksiyonu — panel-nakit-akisi div'ine içerik basar.
    */
   function renderNakitAkis() {
-    var panel = document.getElementById('panel-nakit-akis');
+    var panel = document.getElementById('panel-nakit-akisi');
     if (!panel) {
-      console.warn('[nakit_akis] panel-nakit-akis div bulunamadi — index.html kontrol et, render iptal');
+      console.warn('[nakit_akis] panel-nakit-akisi div bulunamadi — index.html kontrol et, render iptal');
       return;
     }
     var t = _naT();
