@@ -160,9 +160,22 @@ window._ppModRender = function() {
   var mod = window.PP_MOD || window._ppAktifMod || 'akis';
   if (mod === 'calisma') {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
-    var kritik = tasks.filter(function(t) { return t.oncelik === 'kritik'; });
-    var devam  = tasks.filter(function(t) { return t.durum === 'devam' && t.oncelik !== 'kritik'; });
-    var plan   = tasks.filter(function(t) { return (!t.durum || t.durum === 'plan') && t.oncelik !== 'kritik'; });
+    /* PUSULA-GOREV-SIRALA-001: aktif sıralama kriteri (tarih / oncelik / durum / alfabe) */
+    var _ppSK = window._ppSiralaKriter || 'tarih';
+    var _oMap = {kritik:0, yuksek:1, normal:2, dusuk:3};
+    var _dMap = {devam:0, plan:1, beklemede:2, tamamlandi:3};
+    var _ppSort = function(arr) {
+      var a2 = arr.slice();
+      if (_ppSK === 'oncelik') { a2.sort(function(a,b){ return (_oMap[a.oncelik||'normal']==null?99:_oMap[a.oncelik||'normal']) - (_oMap[b.oncelik||'normal']==null?99:_oMap[b.oncelik||'normal']); }); return a2; }
+      if (_ppSK === 'durum')   { a2.sort(function(a,b){ return (_dMap[a.durum||'plan']==null?99:_dMap[a.durum||'plan']) - (_dMap[b.durum||'plan']==null?99:_dMap[b.durum||'plan']); }); return a2; }
+      if (_ppSK === 'alfabe')  { a2.sort(function(a,b){ return String(a.baslik||a.title||'').localeCompare(String(b.baslik||b.title||''), 'tr'); }); return a2; }
+      /* default: tarih — yakın bitiş tarihi önce */
+      a2.sort(function(a,b){ return String(a.bitTarih||'9999-99-99').localeCompare(String(b.bitTarih||'9999-99-99')); });
+      return a2;
+    };
+    var kritik = _ppSort(tasks.filter(function(t) { return t.oncelik === 'kritik'; }));
+    var devam  = _ppSort(tasks.filter(function(t) { return t.durum === 'devam' && t.oncelik !== 'kritik'; }));
+    var plan   = _ppSort(tasks.filter(function(t) { return (!t.durum || t.durum === 'plan') && t.oncelik !== 'kritik'; }));
     var _grup = function(lbl,cls,arr){
       if (!arr.length) return '';
       var h2 = '<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--s2);border-bottom:0.5px solid var(--b);position:sticky;top:0">';
@@ -249,6 +262,12 @@ window._ppModRender = function() {
       + '<div style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0">'
       + '<button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Görev</button>'
       + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:11px;padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
+      + '<select id="pp-sirala" onchange="event.stopPropagation();window._ppSiralaGorevler(this.value)" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">'
+        + '<option value="tarih"'  +(_ppSK==='tarih'?' selected':'')+  '>Tarihe Göre</option>'
+        + '<option value="oncelik"'+(_ppSK==='oncelik'?' selected':'')+'>Önceliğe Göre</option>'
+        + '<option value="durum"'  +(_ppSK==='durum'?' selected':'')+  '>Duruma Göre</option>'
+        + '<option value="alfabe"' +(_ppSK==='alfabe'?' selected':'')+ '>A-Z</option>'
+      + '</select>'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
       + '<div style="padding:10px 14px 0"><input id="pp-calisma-ara" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppCalismaFiltre(this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;margin-bottom:10px"></div>'
@@ -888,6 +907,12 @@ window._ppGorevKaydet = function() {
 window._ppAra = function(q) {
   window._ppSearchQ = q;
   window._ppModRender();
+};
+
+/* PUSULA-GOREV-SIRALA-001: sıralama kriterini set et + re-render */
+window._ppSiralaGorevler = function(kriter) {
+  window._ppSiralaKriter = kriter;
+  window._ppModRender?.();
 };
 
 /* PUSULA-CALISMA-ARAMA-001: lightweight DOM filtre — re-render yok, satır gizler */
