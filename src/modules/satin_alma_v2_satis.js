@@ -28,7 +28,10 @@ window._saV2TeklifOlustur = function(id) {
   var _urunAdi = (t.urunler && t.urunler.length) ? (_u0.urunAdi || _u0.turkceAdi || '') : (t.urunAdi || '');
   var _duayKodu = (t.urunler && t.urunler.length) ? (_u0.duayKodu || '') : (t.duayKodu || '');
   var musteriKod = '0000';
-  var satisId = window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now());
+  // SATIS-EDITMOD-ID-KORU-001: edit modda eski teklifId'yi koru, yeni ID üretme
+  var satisId = (window._saV2AktifDuzenlemeTeklif && window._saV2AktifDuzenlemeTeklif.teklifId)
+    ? window._saV2AktifDuzenlemeTeklif.teklifId
+    : (window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now()));
   var musteriList = (typeof window.loadCari === 'function' ? window.loadCari({tumKullanicilar:true}) : []).filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='M\u00fc\u015fteri'||c.cariType==='onayli'||c.tip==='musteri');});
   var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:min(1200px,95vw);max-height:92vh;display:flex;flex-direction:column">';
 
