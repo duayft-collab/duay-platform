@@ -2212,7 +2212,8 @@ function viewOdmReceipt(id) {
 
 function exportOdmXlsx() {
   if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
-  const items = window.loadOdm ? loadOdm() : [];
+  /* NAKIT-EXPORT-BIRLESIK-001: isDeleted filtresi + ödeme birleşik liste */
+  const items = (window.loadOdm ? loadOdm() : []).filter(function(o){ return !o.isDeleted; });
   const users = window.loadUsers ? loadUsers() : [];
 
   const rows = [['ID','Ödeme Adı','Kategori','Sıklık','Tutar (₺)','Son Tarih','Durum','Sorumlu','Alarm (gün)','Not','Ödeme Tarihi','Dekont']];
@@ -2235,12 +2236,25 @@ function exportOdmXlsx() {
     ]);
   });
 
+  /* NAKIT-EXPORT-BIRLESIK-001: tahsilat kayıtları aynı sheet'e eklenir */
+  var tahItems = (typeof loadTahsilat==='function' ? loadTahsilat() : [])
+    .filter(function(t){ return !t.isDeleted; });
+  tahItems.forEach(function(t){
+    rows.push([
+      t.id, t.name||'', 'Tahsilat', '-',
+      parseFloat(t.amount)||0,
+      t.due||'',
+      t.collected ? 'Tahsil Edildi' : 'Bekliyor',
+      '—', '-', t.note||'', t.ts||'', '-'
+    ]);
+  });
+
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
   // Sütun genişlikleri
   ws['!cols'] = [8,24,14,12,12,12,10,16,12,24,18,8].map(w => ({ wch: w }));
   XLSX.utils.book_append_sheet(wb, ws, 'Nakit Akisi');
-  XLSX.writeFile(wb, 'rutin-odemeler-' + _todayStr() + '.xlsx');
+  XLSX.writeFile(wb, 'nakit-akisi-tam-' + _todayStr() + '.xlsx');
   window.toast?.('Excel indirildi ✓', 'ok');
   window.logActivity?.('finans', 'Rutin ödemeler Excel olarak indirildi');
 }
@@ -2261,14 +2275,16 @@ var _odmImportErrors = null;
  */
 function _odmDownloadImportTemplate() {
   if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenmedi', 'err'); return; }
-  var header = ['Ad', 'Tutar', 'Para Birimi', 'Tarih', 'Kategori', 'Cari', 'Doküman No'];
+  // NAKIT-IMPORT-TIP-001: Tip kolonu (odeme/tahsilat) eklendi
+  var header = ['Ad', 'Tutar', 'Para Birimi', 'Tarih', 'Kategori', 'Cari', 'Doküman No', 'Tip (odeme/tahsilat)'];
   var sample = [
-    ['Ofis kirası', 25000, 'TRY', '2026-04-01', 'Kira', 'ABC Gayrimenkul', 'KR-001'],
-    ['Internet faturası', 850, 'TRY', '2026-04-05', 'Abonelik', 'Turkcell', 'FAT-2026-04'],
-    ['Yazılım lisansı', 199, 'USD', '2026-04-10', 'Abonelik', 'GitHub Inc.', 'INV-4521'],
+    ['Ofis kirası', 25000, 'TRY', '2026-04-01', 'Kira', 'ABC Gayrimenkul', 'KR-001', 'odeme'],
+    ['Internet faturası', 850, 'TRY', '2026-04-05', 'Abonelik', 'Turkcell', 'FAT-2026-04', 'odeme'],
+    ['Yazılım lisansı', 199, 'USD', '2026-04-10', 'Abonelik', 'GitHub Inc.', 'INV-4521', 'odeme'],
+    ['Müşteri ödemesi', 50000, 'USD', '2026-04-15', 'Satış', 'XYZ Trading Ltd.', 'TH-2026-001', 'tahsilat'],
   ];
   var ws = XLSX.utils.aoa_to_sheet([header].concat(sample));
-  ws['!cols'] = [{wch:22},{wch:12},{wch:12},{wch:12},{wch:14},{wch:20},{wch:14}];
+  ws['!cols'] = [{wch:22},{wch:12},{wch:12},{wch:12},{wch:14},{wch:20},{wch:14},{wch:18}];
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
   XLSX.writeFile(wb, 'odeme-import-sablon.xlsx');
@@ -2372,6 +2388,8 @@ function _odmImportParseFile(file) {
       var catCol  = col('kategori') > -1 ? col('kategori') : col('cat');
       var cariCol = col('cari') > -1 ? col('cari') : col('firma');
       var docCol  = col('doküman') > -1 ? col('doküman') : (col('dokuman') > -1 ? col('dokuman') : col('doc'));
+      // NAKIT-IMPORT-TIP-001: Tip kolonu (odeme/tahsilat)
+      var tipCol  = col('tip') > -1 ? col('tip') : (col('tür') > -1 ? col('tür') : col('tur'));
 
       if (nameCol < 0) { window.toast?.('Başlık satırında "Ad" kolonu bulunamadı', 'err'); return; }
 
@@ -2415,6 +2433,10 @@ function _odmImportParseFile(file) {
 
         var cari = cariCol > -1 ? String(row[cariCol] || '').trim() : '';
         var docNo = docCol > -1 ? String(row[docCol] || '').trim() : '';
+        // NAKIT-IMPORT-TIP-001: Tip değeri — odeme (varsayılan) veya tahsilat
+        var tipDeger = tipCol > -1 ? String(row[tipCol] || '').toLowerCase().trim() : '';
+        if (tipDeger !== 'tahsilat' && tipDeger !== 'odeme' && tipDeger !== 'ödeme') tipDeger = 'odeme';
+        if (tipDeger === 'ödeme') tipDeger = 'odeme';
 
         // Doğrulama
         var rowErrors = [];
@@ -2433,6 +2455,7 @@ function _odmImportParseFile(file) {
           cat: cat,
           cari: cari,
           docNo: docNo,
+          tip: tipDeger,
           _rowIdx: idx + 1,
           _errors: rowErrors,
         });
@@ -2567,12 +2590,18 @@ window._odmImportConfirm = function() {
 
   var cu = window.Auth?.getCU?.();
   var isAdmin = cu?.role === 'admin';
+  // NAKIT-IMPORT-TIP-001: hem odeme hem tahsilat store'u hazır tut
   var existing = window.loadOdm ? loadOdm() : [];
+  var existingTah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
   var added = 0;
+  var tahAdded = 0;
 
   _odmImportRows.forEach(function(r) {
     // Hatalı satırları atla
     if (r._errors && r._errors.length > 0) return;
+
+    // NAKIT-IMPORT-TIP-001: tip değerine göre tahsilat vs odeme dallanması
+    var isTahsilat = (r.tip === 'tahsilat');
 
     var entry = {
       id:          generateNumericId(),
@@ -2586,13 +2615,19 @@ window._odmImportConfirm = function() {
       kurRate:     _odmGetRates()[r.currency || 'TRY'] || 1,
       due:         r.due || '',
       note:        r.cari ? ('Cari: ' + r.cari) : '',
+      cariName:    r.cari || '',
       docNo:       r.docNo || '',
       alarmDays:   3,
-      paid:        false,
       ts:          _nowTso(),
       createdBy:   cu?.id,
       source:      'import',
+      // NAKIT-IMPORT-TIP-001: _src + tip field'ları explicit set
+      _src:        isTahsilat ? 'tahsilat' : 'odeme',
+      tip:         isTahsilat ? 'tahsilat' : 'odeme',
+      type:        isTahsilat ? 'tahsilat' : 'odeme',
     };
+    // Tahsilat için collected, ödeme için paid field default
+    if (isTahsilat) entry.collected = false; else entry.paid = false;
 
     // Admin ise otomatik onaylı, değilse pending
     if (isAdmin) {
@@ -2606,17 +2641,25 @@ window._odmImportConfirm = function() {
       entry.approvalRequestedAt = _nowTso();
     }
 
-    existing.unshift(entry);
-    added++;
+    // NAKIT-IMPORT-TIP-001: doğru store'a push et
+    if (isTahsilat) {
+      existingTah.unshift(entry);
+      tahAdded++;
+    } else {
+      existing.unshift(entry);
+      added++;
+    }
   });
 
-  if (added === 0) { window.toast?.('İçe aktarılacak geçerli satır yok', 'err'); return; }
+  if (added === 0 && tahAdded === 0) { window.toast?.('İçe aktarılacak geçerli satır yok', 'err'); return; }
 
-  window.storeOdm ? storeOdm(existing) : null;
+  if (added > 0) window.storeOdm ? storeOdm(existing) : null;
+  if (tahAdded > 0 && typeof storeTahsilat === 'function') storeTahsilat(existingTah);
   document.getElementById('mo-odm-import')?.remove();
   renderOdemeler();
-  window.toast?.('📥 ' + added + ' ödeme içe aktarıldı ✓', 'ok');
-  window.logActivity?.('finans', 'Excel/CSV import: ' + added + ' ödeme aktarıldı');
+  var _toastMsg = '📥 ' + added + ' ödeme' + (tahAdded > 0 ? ' + ' + tahAdded + ' tahsilat' : '') + ' içe aktarıldı ✓';
+  window.toast?.(_toastMsg, 'ok');
+  window.logActivity?.('finans', 'Excel/CSV import: ' + added + ' ödeme + ' + tahAdded + ' tahsilat aktarıldı');
 
   // Admin değilse yöneticilere bildirim
   if (!isAdmin) {
