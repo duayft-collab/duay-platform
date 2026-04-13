@@ -7794,6 +7794,7 @@ function _guncelleKurlar() {
   var odmAll = typeof loadOdm === 'function' ? loadOdm() : [];
   odmAll.forEach(function(o) {
     if (o.isDeleted) return;
+    if (o.lockedRate) return; // NAKIT-KUR-LOCKED-PRESERVE-001 — manuel sabitlenmiş, otomatik güncelleme yapma
     var cur = o.currency || 'TRY';
     if (cur === 'TRY') return; // TRY stale olmaz
     var guncelKur = rates[cur] || 0;
@@ -7809,6 +7810,7 @@ function _guncelleKurlar() {
   var tahAll = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
   tahAll.forEach(function(t) {
     if (t.isDeleted) return;
+    if (t.lockedRate) return; // NAKIT-KUR-LOCKED-PRESERVE-001 — manuel sabitlenmiş, otomatik güncelleme yapma
     var cur = t.currency || 'TRY';
     if (cur === 'TRY') return;
     var guncelKur = rates[cur] || 0;
