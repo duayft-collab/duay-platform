@@ -868,4 +868,20 @@ window._saV2ExportCSV = function() {
   window.toast?.(kayitlar.length+' kayıt export edildi','ok');
 };
 
+/**
+ * SAV2-ROW-MENU-001
+ * Alış teklif satırından detay panelini açar — teklifin id'si ile
+ * _saV2AktifId set edilir ve renderSatinAlmaV2 çağrılarak sağ panelde
+ * _saV2DetayHTML render olur.
+ * @param {string|number} id Alış teklif id'si
+ */
+window._saV2RowMenu = function(id) {
+  if (id == null) return;
+  var liste = typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : [];
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamadı', 'warn'); return; }
+  window._saV2AktifId = String(id);
+  if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
+};
+
 console.log('[SAV2-RENDER] v2.0 y\u00fcklendi');
