@@ -497,6 +497,22 @@ window._ppDwBasla = function() {
     if (b1) b1.style.width = pct.toFixed(1) + '%';
     if (_ppDwSaniye >= _ppDwHedef) {
       clearInterval(_ppDwInterval); _ppDwInterval = null;
+      // PUSULA-SURE-AUTO-001: auto-finish path'te de harcanan süreyi aktif göreve yaz
+      if (window._ppAktifGorevId && window._ppTimerBaslangic) {
+        var _gecenDk = Math.round((Date.now() - window._ppTimerBaslangic) / 60000);
+        if (_gecenDk > 0) {
+          var _tasks = _ppLoad();
+          var _t = _tasks.find(function(x){ return String(x.id) === String(window._ppAktifGorevId); });
+          if (_t) {
+            _t.toplamSureDk = (_t.toplamSureDk || 0) + _gecenDk;
+            _t.updatedAt = _ppNow();
+            _ppStore(_tasks);
+            window.toast?.(_gecenDk + ' dk kaydedildi: ' + (_t.baslik||''), 'ok');
+          }
+        }
+        window._ppAktifGorevId = null;
+        window._ppTimerBaslangic = null;
+      }
       window.toast?.('Deep Work tamamlandı! 90 dk odak +200 puan','ok');
       window._ppSkorEkle(200);
     }

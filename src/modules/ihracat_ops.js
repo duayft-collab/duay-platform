@@ -7279,8 +7279,8 @@ window._ihrSetAktifDosya = function(id) {
 };
 
 window._ihrSatinalmaGecis = function() {
-  if (typeof window.nav === 'function') window.nav('satinalma');
-  else window.App?.nav?.('satinalma');
+  if (typeof window.nav === 'function') window.nav('satin-alma-v2');
+  else window.App?.nav?.('satin-alma-v2');
 };
 
 window._ihrImportDocs = function(dosyaId) {

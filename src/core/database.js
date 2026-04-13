@@ -2318,7 +2318,6 @@ function startRealtimeSync() {
     ['hedefler',      KEYS.hedefler,      () => window.renderHedefler?.()],
     ['odemeler',      KEYS.odemeler,      () => { window.renderOdemeler?.(); window.renderNakitAkis?.(); }],
     ['tahsilat',      KEYS.tahsilat,      () => { window.renderOdemeler?.(); window.renderNakitAkis?.(); }],
-    ['satinalma',     KEYS.satinalma,     () => window.renderSatinAlma?.()],
     ['cari',          KEYS.cari,          () => window.renderCari?.()],
     // Ek kritik koleksiyonlar
     ['konteyner',     KEYS.konteyner,     () => window.renderKargo?.()],
