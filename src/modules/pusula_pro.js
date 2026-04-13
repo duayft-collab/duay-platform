@@ -298,43 +298,68 @@ window._ppModRender = function() {
     else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
     return;
   } else if (mod === 'akis') {
-    var msgs = window._ppMesajlariOku?.('sirket') || [];
-    var tasks = _ppLoad().filter(function(t) { return !t.isDeleted && t.durum !== 'tamamlandi'; });
+    var tasks = _ppLoad().filter(function(t){ return !t.isDeleted; });
     var bugun = _ppToday();
-    var bugunTasks = tasks.filter(function(t) { return t.bitTarih === bugun || t.oncelik === 'kritik'; });
-    var takvimUyari = window._ppTakvimHatirlatmaKontrol?.() || [];
-    var _bugunH = bugunTasks.length
-      ? bugunTasks.map(function(t) {
-          var pr = PP_PRIORITIES[t.oncelik || 'normal'];
-          return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)"><div style="width:5px;height:5px;border-radius:50%;background:' + pr.c + '"></div><span style="font-size:12px;flex:1">' + _ppEsc(t.baslik || t.title || '') + '</span></div>';
-        }).join('')
-      : '<div style="font-size:12px;color:var(--t3);padding:12px 0">Bugün için kritik görev yok</div>';
-    var _msgH = msgs.length
-      ? msgs.slice(0, 5).map(function(m) {
-          return '<div style="padding:10px 12px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf)"><div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:3px">' + _ppEsc(m.gonderen || '') + '</div><div style="font-size:11px;color:var(--t2)">' + _ppEsc(m.icerik || '') + '</div></div>';
-        }).join('')
-      : '<div style="font-size:12px;color:var(--t3);padding:12px 0">Henüz şirket yayını yok</div>';
-    body.innerHTML = ''
-      + '<div style="flex:1;padding:20px;overflow-y:auto">'
-      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">BUGÜN</div>'
-      + _bugunH
-      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin:16px 0 8px">YAKLAŞAN GÖREVLER</div>'
-      + (takvimUyari.length ? takvimUyari.slice(0,3).map(function(u){
-          var renk = u.kalan===0?'#A32D2D':u.kalan<=2?'#854F0B':'#185FA5';
-          var bg = u.kalan===0?'#FCEBEB':u.kalan<=2?'#FAEEDA':'#E6F1FB';
-          return '<div style="padding:8px 12px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;background:var(--sf);display:flex;align-items:center;gap:10px">'
-            +'<div style="font-size:9px;padding:2px 7px;border-radius:3px;background:'+bg+';color:'+renk+';font-weight:500;white-space:nowrap">'+(u.kalan===0?'Bugün':u.kalan+' gün')+'</div>'
-            +'<div style="flex:1"><div style="font-size:11px;font-weight:500;color:var(--t)">'+_ppEsc(u.olay.baslik)+'</div>'
-            +'<div style="font-size:9px;color:var(--t3)">'+_ppEsc(u.olay.periyot)+' · '+_ppEsc(u.olay.sorumluUnvan||'')+'</div></div>'
-            +'<div style="font-size:9px;color:var(--t3)">'+u.sonraki+'</div>'
-            +'</div>';
-        }).join('') : '<div style="font-size:12px;color:var(--t3);padding:8px 0">Yaklaşan takvim görevi yok</div>')
-      + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin:16px 0 10px">ŞİRKET YAYINLARI</div>'
-      + _msgH
-      + '</div>'
-      + '<div style="width:240px;border-left:0.5px solid var(--b);padding:12px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:10px">'
-      + window._ppSagPanel()
-      + '</div>';
+    var kritik = tasks.filter(function(t){ return t.oncelik==='kritik' && t.durum!=='tamamlandi'; });
+    var devam = tasks.filter(function(t){ return t.durum==='devam'; });
+    var bugunVade = tasks.filter(function(t){ return t.bitTarih===bugun && t.durum!=='tamamlandi'; });
+    var frog = tasks.find(function(t){ return t.isFrog && t.durum!=='tamamlandi'; });
+
+    var h = '<div style="padding:16px;display:flex;flex-direction:column;gap:12px">';
+
+    // Frog
+    if (frog) {
+      h += '<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:14px 16px">'
+        + '<div style="font-size:9px;font-weight:600;color:#92400E;letter-spacing:.08em;margin-bottom:6px">BUGÜNÜN FROGU</div>'
+        + '<div style="font-size:14px;font-weight:600;color:#78350F">🐸 '+_ppEsc(frog.baslik||frog.title||'')+'</div>'
+        + '<div style="margin-top:8px"><button onclick="event.stopPropagation();window._ppFrogBasla&&window._ppFrogBasla()" style="font-size:11px;padding:5px 14px;background:#F59E0B;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit">Başla →</button></div>'
+        + '</div>';
+    }
+
+    // Özet kartlar
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
+    h += '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;text-align:center">'
+      + '<div style="font-size:22px;font-weight:700;color:var(--t)">'+devam.length+'</div>'
+      + '<div style="font-size:9px;color:var(--t3);margin-top:2px">Devam Ediyor</div></div>';
+    h += '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;text-align:center">'
+      + '<div style="font-size:22px;font-weight:700;color:#DC2626">'+kritik.length+'</div>'
+      + '<div style="font-size:9px;color:var(--t3);margin-top:2px">Kritik</div></div>';
+    h += '<div style="padding:12px;border:0.5px solid var(--b);border-radius:8px;text-align:center">'
+      + '<div style="font-size:22px;font-weight:700;color:#D97706">'+bugunVade.length+'</div>'
+      + '<div style="font-size:9px;color:var(--t3);margin-top:2px">Bugün Bitiyor</div></div>';
+    h += '</div>';
+
+    // Kritik görevler listesi
+    if (kritik.length) {
+      h += '<div><div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;margin-bottom:6px">KRİTİK GÖREVLER</div>';
+      kritik.slice(0,5).forEach(function(t){
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--b)">'
+          + '<div style="width:6px;height:6px;border-radius:50%;background:#DC2626;flex-shrink:0"></div>'
+          + '<span style="font-size:12px;color:var(--t);flex:1">'+_ppEsc(t.baslik||t.title||'')+'</span>'
+          + '<span style="font-size:9px;color:var(--t3)">'+_ppEsc(t.departman||'')+'</span>'
+          + '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Devam edenler
+    if (devam.length && !kritik.length) {
+      h += '<div><div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;margin-bottom:6px">DEVAM EDİYOR</div>';
+      devam.slice(0,5).forEach(function(t){
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--b)">'
+          + '<div style="width:6px;height:6px;border-radius:50%;background:#2563EB;flex-shrink:0"></div>'
+          + '<span style="font-size:12px;color:var(--t);flex:1">'+_ppEsc(t.baslik||t.title||'')+'</span>'
+          + '</div>';
+      });
+      h += '</div>';
+    }
+
+    if (!tasks.length) {
+      h += '<div style="text-align:center;padding:32px;color:var(--t3);font-size:13px">Henüz görev yok — Çalışma modundan ekle</div>';
+    }
+
+    h += '</div>';
+    body.innerHTML = h;
   } else if (mod === 'degerlendirme') {
     var skor = window._ppSkorOku?.() || { bugun: 0, hafta: 0, toplam: 0 };
     var degTasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
