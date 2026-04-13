@@ -388,6 +388,10 @@ window._saV2KurCevir = function(deger, orjPara, hedefPara) {
 };
 
 window._saV2SatisUrunEkle = function(t) {
+  // SATINALMA-V2-URUN-LIMIT-001: max 100 ürün per satış teklifi
+  if ((window._saV2SatisUrunler||[]).length >= 100) {
+    window.toast?.('Maksimum 100 ürün eklenebilir', 'warn'); return;
+  }
   var orjPara = t.para || 'USD';
   var orjF = parseFloat(t.alisF) || 0;
   var kur = (window._saKur||{})[orjPara] || 44.55;
@@ -578,6 +582,10 @@ window._saV2UrunSayac = 0;
 window._saV2UrunSatirEkle = function() {
   var con = document.getElementById('sav2f-urunler-container');
   if (!con) return;
+  // SATINALMA-V2-URUN-LIMIT-001: max 100 ürün per alış teklifi
+  if (con.querySelectorAll('.sav2f-urun-satir').length >= 100) {
+    window.toast?.('Maksimum 100 ürün eklenebilir', 'warn'); return;
+  }
   var idx = window._saV2UrunSayac++;
   var pre = 'sav2u-' + idx + '-';
   var _uf = function(id, lbl, ph, tip) {
