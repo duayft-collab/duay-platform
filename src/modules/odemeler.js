@@ -6611,6 +6611,7 @@ function renderCari() {
         + '<div style="display:flex;gap:6px">'
           + '<button onclick="window._exportCariXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
           + (_isAdminO() ? '<button onclick="_insertCariDemoData()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🎲 Demo</button>' : '')
+          + (_isAdminO() ? '<button onclick="window._temizleDemoVeri()" style="padding:6px 12px;border:0.5px solid #D97706;border-radius:7px;background:rgba(217,119,6,.06);color:#D97706;font-size:11px;cursor:pointer;font-family:inherit" title="kurRate=38.50 olan tum demo kayitlarini soft-delete yapar">🧹 Demo Temizle</button>' : '')
           + '<button id="cari-toplu-sil-btn" onclick="event.stopPropagation();window._cariBulkDelete()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:rgba(220,38,38,.06);color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit;display:none">Seçilenleri Sil</button>'
           + '<button onclick="window._openQuickCari?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Cari Ekle</button>'
         + '</div>'
@@ -7619,9 +7620,12 @@ window._exportCariStmtXlsx = _exportCariStmtXlsx;
 // ════════════════════════════════════════════════════════════════
 
 function _insertCariDemoData() {
+  // NAKIT-DEMO-TEMIZLE-001: zaten yüklüyse erken çık
+  if (typeof window._odmDemoYuklu !== 'undefined') return;
   if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
   var existing = typeof loadCari === 'function' ? loadCari() : [];
   if (existing.some(function(c) { return c.name === 'INNOCAP Trading Ltd'; })) {
+    window._odmDemoYuklu = true;
     window.toast?.('Demo veriler zaten yüklenmiş', 'warn'); return;
   }
   var now = _nowTso();
@@ -7664,6 +7668,7 @@ function _insertCariDemoData() {
   if (typeof storeOdm === 'function') storeOdm(odmData.concat(demoOdm));
   if (typeof storeTahsilat === 'function') storeTahsilat(tahData.concat(demoTah));
 
+  window._odmDemoYuklu = true;
   window.toast?.('Demo veriler yüklendi: 5 cari + 13 hareket ✓', 'ok');
   window.logActivity?.('settings', 'Demo veriler yüklendi: 5 cari, 8 ödeme, 5 tahsilat');
   renderOdemeler();
@@ -7671,6 +7676,46 @@ function _insertCariDemoData() {
 }
 
 window._insertCariDemoData = _insertCariDemoData;
+
+/**
+ * NAKIT-DEMO-TEMIZLE-001
+ * kurRate===38.50 olan tum odm + tah kayitlarini soft-delete yapar.
+ * Demo verisi yuklenmis kayitlar bu kur ile etiketlendi (NAKIT-DEMO-001
+ * sonrasi merkezi DUAY_KUR ile carpisma yaratiyor — production temizligi).
+ */
+function _temizleDemoVeri() {
+  if (!_isAdminO()) { window.toast?.('Admin yetkisi gerekli', 'err'); return; }
+  var now = _nowTso();
+  var cu = _CUo();
+  var sayac = 0;
+  var odmAll = typeof loadOdm === 'function' ? loadOdm() : [];
+  odmAll.forEach(function(o) {
+    if (parseFloat(o.kurRate) === 38.50 && !o.isDeleted) {
+      o.isDeleted = true;
+      o.deletedAt = now;
+      o.deletedBy = cu?.id;
+      o.deletedReason = 'demo-cleanup';
+      sayac++;
+    }
+  });
+  if (typeof storeOdm === 'function') storeOdm(odmAll);
+  var tahAll = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+  tahAll.forEach(function(t) {
+    if (parseFloat(t.kurRate) === 38.50 && !t.isDeleted) {
+      t.isDeleted = true;
+      t.deletedAt = now;
+      t.deletedBy = cu?.id;
+      t.deletedReason = 'demo-cleanup';
+      sayac++;
+    }
+  });
+  if (typeof storeTahsilat === 'function') storeTahsilat(tahAll);
+  window._odmDemoYuklu = undefined;
+  window.toast?.(sayac + ' demo kayit temizlendi', 'ok');
+  window.logActivity?.('settings', 'Demo veri temizligi: ' + sayac + ' kayit soft-delete');
+  renderOdemeler();
+}
+window._temizleDemoVeri = _temizleDemoVeri;
 
 // ════════════════════════════════════════════════════════════════
 // GİZLİ FİNANSAL ÖZELLİKLER — SADECE ADMİN/YÖNETİCİ
