@@ -164,6 +164,7 @@ window._ppModRender = function() {
       if (!arr.length) return '';
       var h2 = '<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--s2);border-bottom:0.5px solid var(--b);position:sticky;top:0">';
       h2 += '<span style="font-size:8px;padding:2px 7px;border-radius:3px;font-weight:500;'+cls+'">'+lbl+'</span>';
+      h2 += '<span style="font-size:9px;color:var(--t3);font-weight:400;margin-left:6px">('+arr.length+')</span>';
       h2 += '<span style="font-size:8px;color:var(--t3)">'+arr.length+' görev</span></div>';
       arr.forEach(function(t){
         var pr = PP_PRIORITIES[t.oncelik||'normal'];
