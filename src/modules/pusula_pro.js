@@ -105,6 +105,7 @@ window._ppRender = function() {
     + '<div id="pp-msg-dot" style="width:6px;height:6px;border-radius:50%;background:#E24B4A;position:absolute;top:4px;right:4px;display:none"></div>'
     + '</div>'
     + '<button onclick="event.stopPropagation();window._ppExport?.()" style="font-size:9px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Yedek Al</button>'
+    + '<button onclick="event.stopPropagation();window._ppYedekPaneli()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);flex-shrink:0">↓ Yedek</button>'
     + '</div></div>'
     + '<div id="pp-frog-bar" style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:#FCEBEB;border-bottom:0.5px solid #F7C1C1;flex-shrink:0">'
     + '<div style="font-size:8px;font-weight:500;color:#A32D2D;letter-spacing:.08em;min-width:90px">BUGÜNÜN FROGU</div>'
@@ -2299,4 +2300,86 @@ window._ppTakvimHatirlaticiKontrol = function() {
       localStorage.setItem(key, '1');
     }
   });
+};
+
+/**
+ * PUSULA-EXCEL-EXPORT-001
+ * Pusula Pro verilerini Excel (.xlsx) formatında dışa aktarır. XLSX
+ * kütüphanesi yüklü değilse CDN'den yükler, sonra tekrar kendini çağırır.
+ * @param {string} bolum 'gorevler' | 'takvim' | 'hedefler' | 'aliskanliklar' | 'notlar' | 'tamyedek'
+ */
+window._ppExcelExport = function(bolum) {
+  if (typeof XLSX === 'undefined') {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = function() { window._ppExcelExport(bolum); };
+    document.head.appendChild(s);
+    window.toast?.('Excel hazırlanıyor...', 'info');
+    return;
+  }
+  var tarih = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  var _temizle = function(arr) {
+    return (arr||[]).filter(function(r){return !r.isDeleted;}).map(function(r){
+      var o={};
+      Object.keys(r).forEach(function(k){
+        var v=r[k];
+        if(Array.isArray(v)) o[k]=v.map(function(x){return typeof x==='object'?(x.ad||x.name||x.displayName||JSON.stringify(x)):x;}).join(', ');
+        else if(typeof v==='object'&&v!==null) o[k]=JSON.stringify(v);
+        else o[k]=v;
+      });
+      return o;
+    });
+  };
+  var bolumler = {
+    gorevler: function(){ return _temizle(typeof _ppLoad==='function'?_ppLoad():[]) },
+    takvim: function(){ return _temizle(typeof _ppTakvimLoad==='function'?_ppTakvimLoad():[]) },
+    hedefler: function(){ return _temizle(typeof window._ppGoalLoad==='function'?window._ppGoalLoad():[]) },
+    aliskanliklar: function(){ return _temizle(typeof window._ppHabitLoad==='function'?window._ppHabitLoad():[]) },
+    notlar: function(){ return _temizle(typeof window._ppNotlarLoad==='function'?window._ppNotlarLoad():[]) }
+  };
+  var wb = XLSX.utils.book_new();
+  if (bolum === 'tamyedek') {
+    Object.keys(bolumler).forEach(function(b){
+      var d = bolumler[b]();
+      if(d.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(d), b);
+    });
+    XLSX.writeFile(wb, 'PusulaPro_TamYedek_'+tarih+'.xlsx');
+  } else if (bolumler[bolum]) {
+    var data = bolumler[bolum]();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.length?data:[{bilgi:'Veri yok'}]), bolum);
+    XLSX.writeFile(wb, 'PusulaPro_'+bolum+'_'+tarih+'.xlsx');
+  }
+  window.toast?.('Excel hazırlandı ✓', 'ok');
+};
+
+/**
+ * PUSULA-EXCEL-EXPORT-001
+ * Yedek alma panel modalı — 5 bölüm butonu + tam yedek butonu.
+ */
+window._ppYedekPaneli = function() {
+  var mevcut = document.getElementById('pp-yedek-modal');
+  if (mevcut) { mevcut.remove(); return; }
+  var mo = document.createElement('div');
+  mo.id = 'pp-yedek-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick = function(e){ if(e.target===mo) mo.remove(); };
+  var _btn = function(lbl, bolum, tam) {
+    return '<button onclick="event.stopPropagation();window._ppExcelExport(\''+bolum+'\')" style="padding:10px 14px;border:0.5px solid var(--b);border-radius:7px;background:'+(tam?'var(--t)':'var(--sf)')+';color:'+(tam?'var(--sf)':'var(--t)')+';font-size:12px;font-weight:'+(tam?'600':'400')+';cursor:pointer;font-family:inherit;text-align:left">'+lbl+'</button>';
+  };
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:420px;padding:24px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div style="font-size:15px;font-weight:500;color:var(--t)">Yedek Al / Dışa Aktar</div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-yedek-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3)">×</button></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    +_btn('📋 Görevler','gorevler')
+    +_btn('📅 Takvim Etkinlikleri','takvim')
+    +_btn('🎯 Hedefler','hedefler')
+    +_btn('🔄 Alışkanlıklar','aliskanliklar')
+    +_btn('📝 Notlar','notlar')
+    +'</div>'
+    +'<button onclick="event.stopPropagation();window._ppExcelExport(\'tamyedek\')" style="width:100%;padding:11px;border:none;border-radius:7px;background:var(--t);color:var(--sf);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px">⬇ Tüm Verileri İndir (Tam Yedek)</button>'
+    +'<div style="font-size:10px;color:var(--t3);text-align:center">Veriler .xlsx formatında indirilir</div>'
+    +'</div>';
+  document.body.appendChild(mo);
+  setTimeout(function(){ mo.classList.add('open'); }, 10);
 };
