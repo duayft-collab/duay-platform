@@ -75,7 +75,8 @@ window._ppExport = function() {
     var tasks = raw.startsWith('_LZ_') && typeof LZString!=='undefined'
       ? JSON.parse(LZString.decompressFromUTF16(raw.slice(4))||'[]')
       : JSON.parse(raw);
-    var blob = new Blob([JSON.stringify({export_date:new Date().toISOString(),count:tasks.length,tasks:tasks},null,2)],{type:'application/json'});
+    // PUSULA-IMPORT-FORMAT-FIX-001: export anahtarı 'gorevler' (import'un birincil formatı ile uyumlu)
+    var blob = new Blob([JSON.stringify({export_date:new Date().toISOString(),count:tasks.length,gorevler:tasks},null,2)],{type:'application/json'});
     var a = document.createElement('a'); a.href=URL.createObjectURL(blob);
     a.download='pusula_yedek_'+_ppToday()+'.json';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -2831,9 +2832,15 @@ window._ppJSONImport = function(input) {
         var yeniIds = new Set(data.map(function(r){return String(r.id||'');}));
         _ppStore(mevcut.filter(function(t){return !yeniIds.has(String(t.id));}).concat(data));
         ozet.push('Görevler: '+data.length);
-      } else if (data.gorevler||data.takvim) {
-        if(data.gorevler&&Array.isArray(data.gorevler)){_ppStore(data.gorevler);ozet.push('Görevler: '+data.gorevler.length);}
-        if(data.takvim&&Array.isArray(data.takvim)&&typeof _ppTakvimStore==='function'){_ppTakvimStore(data.takvim);ozet.push('Takvim: '+data.takvim.length);}
+      } else if (data.gorevler || data.takvim || data.tasks) {
+        // PUSULA-IMPORT-FORMAT-FIX-001: data.tasks fallback (eski export formatı uyumlu)
+        if ((data.gorevler || data.tasks) && Array.isArray(data.gorevler || data.tasks)) {
+          var _gList = data.gorevler || data.tasks;
+          _ppStore(_gList); ozet.push('Görevler: ' + _gList.length);
+        }
+        if (data.takvim && Array.isArray(data.takvim) && typeof _ppTakvimStore==='function') {
+          _ppTakvimStore(data.takvim); ozet.push('Takvim: '+data.takvim.length);
+        }
       } else { window.toast?.('Tanımlanamayan JSON formatı','warn'); return; }
       window.toast?.(ozet.join(' · ')||'İçe aktarıldı','ok');
       document.getElementById('pp-yedek-modal')?.remove();
