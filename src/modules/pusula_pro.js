@@ -59,13 +59,15 @@ function _ppStore(d) {
     if (typeof LZString!=='undefined' && s.length>500) { localStorage.setItem(PP_KEY,'_LZ_'+LZString.compressToUTF16(s)); }
     else { localStorage.setItem(PP_KEY,s); }
   } catch(e) { console.error('[PP]',e); }
+  try {
+    var _ppFp = typeof _fsPath === 'function' ? _fsPath('pusula') : null;
+    if (_ppFp && typeof _syncFirestore === 'function') {
+      _syncFirestore(_ppFp, d);
+    }
+  } catch(_e) { console.warn('[PP] Firestore sync hata:', _e.message); }
   /* PUSULA-KAYIT-FIX-001: storeTasks varsa onu kullan (unified store path), yoksa _write fallback */
   if(typeof window.storeTasks==='function') { window.storeTasks(_ppLoad()); }
   else if(typeof window._write === 'function') window._write(window.KEYS?.pusula||'ak_pusula_pro_v1', d);
-  if(typeof window._fsPath === 'function' && typeof window._syncFirestore === 'function') {
-    var _fp = window._fsPath('pusula');
-    if (_fp) window._syncFirestore(_fp, d);
-  }
 }
 
 /* ── Eski Pusula Export ─────────────────────────────────────── */
@@ -651,10 +653,12 @@ window._ppYeniGorev = function() {
     + '<input id="ppf-tekrarBitis" type="date" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
     + '</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
-    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">SORUMLU (birden fazla eklenebilir)</div>'
+    +'<div>'
+    +'<div style="font-size:9px;color:var(--t3);margin-bottom:5px;font-weight:500">SORUMLU <span style="font-weight:400;font-size:8px">(birden fazla eklenebilir)</span></div>'
     +window._ppUserTagHTML('ppf-sorumlu','Kullanıcı adı yaz...')
     +'</div>'
-    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">GÖZLEMCİ (birden fazla eklenebilir)</div>'
+    +'<div>'
+    +'<div style="font-size:9px;color:var(--t3);margin-bottom:5px;font-weight:500">GÖZLEMCİ <span style="font-weight:400;font-size:8px">(birden fazla eklenebilir)</span></div>'
     +window._ppUserTagHTML('ppf-gozlemci','Kullanıcı adı yaz...')
     +'</div>'
     +_sel('enerji','ENERJİ','<option value="yuksek">Yüksek</option><option value="orta" selected>Orta</option><option value="dusuk">Düşük</option>')
@@ -708,7 +712,9 @@ window._ppYeniGorev = function() {
 window._ppAltGorevler = [];
 window._ppAltGorevRender = function() {
   var list = document.getElementById('ppf-altGorevList'); if (!list) return;
-  list.innerHTML = window._ppAltGorevler.map(function(ag, i) {
+  var _agUserOpts = (window._ppKullanicilar ? window._ppKullanicilar() : []).map(function(u){ return '<option value="'+_ppEsc(u.displayName||u.email||'')+'">'; }).join('');
+  var _agDatalist = '<datalist id="pp-ag-userlist">'+_agUserOpts+'</datalist>';
+  list.innerHTML = _agDatalist + window._ppAltGorevler.map(function(ag, i) {
     var sorVal = _ppEsc(ag.sorumlu || '');
     var bitVal = _ppEsc(ag.bitTarih || '');
     var sureVal = _ppEsc(ag.sure || '');
@@ -722,7 +728,7 @@ window._ppAltGorevRender = function() {
       + '<div id="pp-ag-detail-' + i + '" style="display:none;background:var(--sf);border-bottom:0.5px solid var(--b);padding:10px 14px">'
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">'
       + '<div><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:500">SORUMLU</div>'
-      + '<input id="pp-ag-sor-' + i + '" value="' + sorVal + '" placeholder="Kullanıcı adı" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+      + '<input id="pp-ag-sor-' + i + '" list="pp-ag-userlist" value="' + sorVal + '" placeholder="Kullanıcı adı" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
       + '<div><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:500">BİTİŞ TARİHİ</div>'
       + '<input type="date" id="pp-ag-bit-' + i + '" value="' + bitVal + '" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
       + '<div><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:500">SÜRE</div>'
@@ -1213,10 +1219,12 @@ window._ppKullanicilar = function() {
 };
 
 window._ppUserTagHTML = function(containerId, placeholder) {
-  return '<div id="'+containerId+'-wrap" style="display:flex;flex-wrap:wrap;gap:5px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);min-height:36px;cursor:text" onclick="event.stopPropagation();this.querySelector(\'input\')?.focus()">'
-    + '<input id="'+containerId+'-input" placeholder="'+placeholder+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._ppUserAra(this,\''+containerId+'\')" style="border:none;background:transparent;font-size:11px;outline:none;color:var(--t);min-width:100px;font-family:inherit">'
+  return '<div style="position:relative">'
+    + '<div id="'+containerId+'-wrap" style="display:flex;flex-wrap:wrap;gap:5px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);min-height:36px;cursor:text" onclick="event.stopPropagation();this.querySelector(\'input\')?.focus()">'
+    + '<input id="'+containerId+'-input" placeholder="'+placeholder+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._ppUserAra(this,\''+containerId+'\')" style="border:none;background:transparent;font-size:11px;outline:none;color:var(--t);min-width:120px;flex:1;font-family:inherit">'
     + '</div>'
-    + '<div id="'+containerId+'-dd" style="display:none;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);margin-top:2px;overflow:hidden;max-height:160px;overflow-y:auto"></div>';
+    + '<div id="'+containerId+'-dd" style="display:none;position:absolute;z-index:9999;width:100%;left:0;top:100%;margin-top:2px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);overflow:hidden;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div>'
+    + '</div>';
 };
 
 window._ppUserAra = function(inp, containerId) {
