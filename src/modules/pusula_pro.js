@@ -796,7 +796,7 @@ window._ppAltGorevRender = function() {
       + '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--b)">'
       + '<input type="checkbox" style="width:12px;height:12px">'
       + '<div id="pp-ag-expand-' + i + '" onclick="event.stopPropagation();window._ppAltGorevToggle(' + i + ')" style="width:16px;height:16px;border:0.5px solid var(--b);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--t3);background:var(--sf);flex-shrink:0">+</div>'
-      + '<span style="font-size:12px;flex:1;color:var(--t)">' + _ppEsc(ag.baslik) + '</span>'
+      + '<input id="pp-ag-bas-'+i+'" value="'+_ppEsc(ag.baslik||'')+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:12px;flex:1;border:none;border-bottom:0.5px solid var(--b);background:transparent;color:var(--t);font-family:inherit;width:100%;outline:none;padding:2px 0">'
       + '<button onclick="event.stopPropagation();window._ppAltGorevSil(' + i + ')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:14px;line-height:1;padding:0">×</button>'
       + '</div>'
       + '<div id="pp-ag-detail-' + i + '" style="display:none;background:var(--sf);border-bottom:0.5px solid var(--b);padding:10px 14px">'
@@ -1998,6 +1998,8 @@ window._ppAltGorevToggle = function(i) {
 
 window._ppAltGorevDetayKaydet = function(i) {
   var ag = window._ppAltGorevler[i]; if (!ag) return;
+  // PUSULA-ALT-GOREV-BASLIK-DUZENLE-001: başlık input'undan oku
+  ag.baslik = document.getElementById('pp-ag-bas-'+i)?.value || ag.baslik;
   var sor = document.getElementById('pp-ag-sor-' + i);
   var bit = document.getElementById('pp-ag-bit-' + i);
   var sure = document.getElementById('pp-ag-sure-' + i);
