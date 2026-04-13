@@ -6349,6 +6349,7 @@ window.renderSiparisler = function() {
         + '<div style="display:flex;gap:3px">'
         + '<button onclick="event.stopPropagation();window._siparisDetay?.(\'' + t.id + '\')" class="btn btns" style="font-size:9px;padding:2px 7px">👁</button>'
         + '<button onclick="event.stopPropagation();window._siparisDurumGuncelle?.(\'' + t.id + '\')" class="btn btns" style="font-size:9px;padding:2px 7px">✏️</button>'
+        + '<button onclick="event.stopPropagation();window._siparisKargoAc?.(\'' + String(t.id) + '\')" class="btn btns" style="font-size:9px;padding:2px 6px">🚚</button>'
         + '</div></div>';
     }).join('');
 };
@@ -6369,6 +6370,27 @@ window._siparisDurumGuncelle = function(id) {
   if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(data);
   window.toast?.('Sipariş durumu: ' + sonraki, 'ok');
   window.renderSiparisler?.();
+};
+
+/* SIPARISLER-KARGO-KOPRU-001: Sipariş satırından Kargo modülüne yönlendirme */
+window._siparisKargoAc = function(id) {
+  var data = typeof loadAlisTeklifleri==='function' ? loadAlisTeklifleri() : [];
+  var t = data.find(function(x){ return String(x.id)===String(id); });
+  if (!t) { window.toast?.('Kayıt bulunamadı','err'); return; }
+  window.App?.nav?.('kargo');
+  setTimeout(function(){
+    if (typeof window._kargoYeniAc === 'function') {
+      window._kargoYeniAc({
+        teklifNo: t.teklifNo||t.piNo||'',
+        tedarikci: t.tedarikci||'',
+        tutar: t.toplamTutar||t.netOdeme||0,
+        para: t.paraBirimi||'USD',
+        refId: t.id
+      });
+    } else {
+      window.toast?.('Kargo modülü yükleniyor...','info');
+    }
+  }, 400);
 };
 
 /**
