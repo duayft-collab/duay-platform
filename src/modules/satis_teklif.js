@@ -128,6 +128,13 @@ function renderSatisTeklif() {
       + '<div><span style="font-size:9px;padding:3px 10px;border-radius:99px;background:' + st.bg + ';color:' + st.color + ';font-weight:700;white-space:nowrap">' + st.label + '</span></div>'
       + '<div style="color:var(--t3)">' + (t.date || '—') + '</div>'
       + '<div style="display:flex;gap:3px">'
+        + '<select onchange="event.stopPropagation();window._stDurumGuncelle?.(' + t.id + ',this.value)" onclick="event.stopPropagation()" style="font-size:9px;padding:2px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t2);font-family:inherit;cursor:pointer">'
+          + '<option value="taslak"' + (t.status === 'taslak' ? ' selected' : '') + '>Taslak</option>'
+          + '<option value="gonderildi"' + (t.status === 'gonderildi' ? ' selected' : '') + '>Gönderildi</option>'
+          + '<option value="onay"' + (t.status === 'onay' ? ' selected' : '') + '>Onay</option>'
+          + '<option value="kabul"' + (t.status === 'kabul' ? ' selected' : '') + '>Kabul</option>'
+          + '<option value="red"' + (t.status === 'red' ? ' selected' : '') + '>Reddedildi</option>'
+        + '</select>'
         + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:10px;padding:2px 6px" title="Standard PDF">📄</button>'
         + '<button onclick="event.stopPropagation();window._stKarAnaliz?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Kar Analizi">📊</button>'
         + '<button onclick="event.stopPropagation();window._openSTModal?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">✏️</button>'
@@ -151,6 +158,23 @@ function renderSatisTeklif() {
 
   cont.innerHTML = html;
 }
+
+/**
+ * SATIS-DURUM-INLINE-001
+ * Satış teklifi durumunu inline dropdown ile günceller.
+ * @param {number} id Teklif id
+ * @param {string} yeniDurum taslak|gonderildi|onay|kabul|red
+ */
+window._stDurumGuncelle = function(id, yeniDurum) {
+  var data = _loadST();
+  var t = data.find(function(x) { return x.id === id; });
+  if (!t) return;
+  t.status = yeniDurum;
+  t.updatedAt = new Date().toISOString();
+  _storeST(data);
+  window.toast?.('Durum güncellendi: ' + yeniDurum, 'ok');
+  renderSatisTeklif();
+};
 
 /**
  * Hızlı önizleme paneli (peek) — sağdan kayan slide-in.
