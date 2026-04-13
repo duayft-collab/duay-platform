@@ -89,7 +89,8 @@ window._ppRender = function() {
   panel.dataset.injected = '1';
   var _modBtns = PP_MODS.map(function(m) {
     var lbl = {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[m];
-    return '<button onclick="event.stopPropagation();window._ppSetMod(\'' + m + '\')" id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
+    // PUSULA-SEKME-FIX-001: inline onclick kaldırıldı, aşağıda addEventListener ile bağlanır (Safari propagation fix)
+    return '<button id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
   }).join('');
   panel.innerHTML = ''
     + '<div style="display:flex;height:100%;width:100%">'
@@ -114,6 +115,17 @@ window._ppRender = function() {
     + '</div>'
     + '<div id="pp-not-panel" style="flex-shrink:0">' + window._ppNotPanelHTML() + '</div>'
     + '</div>';
+  // PUSULA-SEKME-FIX-001: Safari inline onclick propagation sorununu önlemek için
+  // her sekme butonuna addEventListener ile bağlan. Closure ile 'm' değerini yakala.
+  PP_MODS.forEach(function(m) {
+    var _btn = document.getElementById('pp-mod-' + m);
+    if (_btn) {
+      _btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        window._ppSetMod(m);
+      });
+    }
+  });
   window._ppSetMod('akis');
   setTimeout(function() { window._ppAktifFrog = null; window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
 };
@@ -1322,89 +1334,181 @@ setTimeout(function(){
   window._ppTakvimBaslat?.();
 }, 800);
 
-/* ── PP-013B: Takvim Panel UI ───────────────────────────────── */
+/* ── PP-013B: Takvim Panel UI — PUSULA-TAKVIM-REDESIGN-001 ─── */
 window._ppTakvimPanelRender = function(body) {
   if (!body) return;
-  var olaylar = _ppTakvimLoad().filter(function(o) { return !o.isDeleted; });
-  var bugun = _ppToday();
+  // Migration: eski 'etkinlik'/'klasik' sekme → 'takvim'
+  if (window._ppTakSekme === 'etkinlik' || window._ppTakSekme === 'klasik') {
+    window._ppTakSekme = 'takvim';
+  }
+  var sekme = window._ppTakSekme || 'takvim';
   var katRenk = { MUHASEBE:'#185FA5', 'İK':'#1D9E75', 'VERGİ':'#A32D2D', 'SİGORTA':'#854F0B', 'YÖNETİM':'#534AB7', 'HUKUKİ':'#888780', 'LOJİSTİK':'#0F6E56', 'OPERASYON':'#854F0B', 'TOPLANTI':'#534AB7', 'SON TARİH':'#A32D2D', 'TATİL':'#1D9E75', 'GÖREV':'#185FA5', 'KİŞİSEL':'#888780', 'DİĞER':'#888780' };
   var katBg = { MUHASEBE:'#E6F1FB', 'İK':'#E1F5EE', 'VERGİ':'#FCEBEB', 'SİGORTA':'#FAEEDA', 'YÖNETİM':'#EEEDFE', 'HUKUKİ':'#F1EFE8', 'LOJİSTİK':'#E1F5EE', 'OPERASYON':'#FAEEDA', 'TOPLANTI':'#EEEDFE', 'SON TARİH':'#FCEBEB', 'TATİL':'#E1F5EE', 'GÖREV':'#E6F1FB', 'KİŞİSEL':'#F1EFE8', 'DİĞER':'#F1EFE8' };
-  var filtre = '';
-  try { var fEl = document.getElementById('pp-tak-filtre'); if (fEl) filtre = fEl.value; } catch(e) {}
-  var liste = filtre ? olaylar.filter(function(o) { return o.kategori === filtre; }) : olaylar;
-  var h = '<div style="display:flex;height:100%;flex-direction:column;flex:1">';
-  var sekme = window._ppTakSekme || 'etkinlik';
-  h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
-  h += '<div style="display:flex;gap:3px;margin-right:8px">';
-  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'etkinlik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='etkinlik'?'var(--t)':'transparent')+';color:'+(sekme==='etkinlik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Etkinlikler</button>';
-  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'odeme\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='odeme'?'var(--t)':'transparent')+';color:'+(sekme==='odeme'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Ödemeler</button>';
-  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'abonelik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='abonelik'?'var(--t)':'transparent')+';color:'+(sekme==='abonelik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Abonelikler</button>';
-  h += '<button onclick="event.stopPropagation();window._ppTakSekme=\'klasik\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:'+(sekme==='klasik'?'var(--t)':'transparent')+';color:'+(sekme==='klasik'?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">Takvim Görünümü</button>';
+  var _sekmeBtn = function(id, lbl) {
+    var aktif = sekme === id;
+    return '<button onclick="event.stopPropagation();window._ppTakSekme=\'' + id + '\';window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:' + (aktif ? 'var(--t)' : 'transparent') + ';color:' + (aktif ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">' + lbl + '</button>';
+  };
+  var hBase = '<div style="display:flex;flex-direction:column;height:100%;flex:1">';
+  hBase += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0;flex-wrap:wrap">';
+  hBase += '<div style="display:flex;gap:3px;margin-right:8px">';
+  hBase += _sekmeBtn('takvim', 'Takvim');
+  hBase += _sekmeBtn('odeme', 'Ödemeler');
+  hBase += _sekmeBtn('abonelik', 'Abonelikler');
+  hBase += '</div>';
+  if (sekme === 'odeme' || sekme === 'abonelik') {
+    var hBranch = hBase;
+    hBranch += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
+    hBranch += '</div>';
+    if (sekme === 'odeme') { window._ppOdemePanelRender(body, hBranch); return; }
+    if (sekme === 'abonelik') { window._ppAbonelikPanelRender(body, hBranch); return; }
+  }
+  if (!(window._ppTakAy instanceof Date)) {
+    window._ppTakAy = new Date();
+    window._ppTakAy.setDate(1);
+  }
+  var cur = new Date(window._ppTakAy);
+  cur.setDate(1);
+  var yil = cur.getFullYear();
+  var ay = cur.getMonth();
+  var AY_ADLARI = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  var h = hBase;
+  h += '<div style="display:flex;align-items:center;gap:6px;margin-left:auto">';
+  h += '<button onclick="event.stopPropagation();window._ppTakAyOnce()" style="font-size:14px;padding:2px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit;line-height:1">‹</button>';
+  h += '<span style="font-size:13px;font-weight:500;min-width:130px;text-align:center;color:var(--t)">' + AY_ADLARI[ay] + ' ' + yil + '</span>';
+  h += '<button onclick="event.stopPropagation();window._ppTakAySonra()" style="font-size:14px;padding:2px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit;line-height:1">›</button>';
+  h += '<button onclick="event.stopPropagation();window._ppTakBugun()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit;margin-left:4px">Bugün</button>';
+  h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500;margin-left:8px">+ Etkinlik</button>';
   h += '</div>';
-  h += '<button onclick="event.stopPropagation();window._ppTakvimYeniAc()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Etkinlik</button>';
-  h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:var(--s2);font-family:inherit">CSV Import<input type="file" accept=".csv,.txt" style="display:none" onchange="event.stopPropagation();var r=new FileReader();r.onload=function(e){window._ppTakvimCSVImport(e.target.result);};r.readAsText(this.files[0])"></label>';
-  h += '<label style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t2);background:transparent;font-family:inherit">JSON Import<input type="file" accept=".json" style="display:none" onchange="event.stopPropagation();window._ppTakvimJSONImport(this)"></label>';
-  h += '<select id="pp-tak-filtre" onchange="event.stopPropagation();window._ppTakvimPanelRender(document.getElementById(\'pp-body\'))" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t);font-family:inherit">';
-  h += '<option value="">Tüm Kategoriler</option>';
-  ['MUHASEBE','İK','VERGİ','SİGORTA','YÖNETİM','HUKUKİ','LOJİSTİK','OPERASYON','TOPLANTI','SON TARİH','TATİL','GÖREV','KİŞİSEL','DİĞER'].forEach(function(k) { h += '<option value="' + k + '"' + (filtre === k ? ' selected' : '') + '>' + k + '</option>'; });
-  h += '</select>';
-  h += '<span style="font-size:11px;color:var(--t3);margin-left:auto">' + liste.length + ' etkinlik</span>';
   h += '</div>';
-  if (sekme === 'klasik') {
-    body.innerHTML = h + '<div id="pp-klasik-takvim-wrap" style="flex:1;overflow-y:auto"></div></div>';
-    setTimeout(function() {
-      var wrap = document.getElementById('pp-klasik-takvim-wrap');
-      if (!wrap) return;
-      if (typeof window.renderCal === 'function') {
-        var panelTakvim = document.getElementById('panel-takvim');
-        if (panelTakvim && panelTakvim.innerHTML) {
-          wrap.innerHTML = panelTakvim.innerHTML;
-        } else {
-          wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Takvim yükleniyor...</div>';
-          setTimeout(function(){ window.renderCal(); }, 200);
-        }
-      } else {
-        wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Takvim modülü bulunamadı.</div>';
+  var pusulaOlaylar = (typeof _ppTakvimLoad === 'function' ? _ppTakvimLoad() : []).filter(function(o) { return !o.isDeleted; });
+  var mainCal = (typeof window.loadCalendar === 'function') ? window.loadCalendar() : [];
+  if (!Array.isArray(mainCal)) mainCal = [];
+  mainCal = mainCal.filter(function(c) { return !c.isDeleted; });
+  var _ownEsc = (typeof _ppEsc === 'function') ? _ppEsc : function(s) { return String(s == null ? '' : s); };
+  var gunOlaylariTopla = function(dateStr) {
+    var result = [];
+    pusulaOlaylar.forEach(function(o) {
+      var tarih = '';
+      if (o.sonrakiCalisma) tarih = String(o.sonrakiCalisma).slice(0, 10);
+      else if (typeof window._ppTakvimSonrakiHesapla === 'function') {
+        var _hT = window._ppTakvimSonrakiHesapla(o);
+        if (_hT) tarih = String(_hT).slice(0, 10);
       }
-    }, 50);
+      if (!tarih && o.basTarih) tarih = String(o.basTarih).slice(0, 10);
+      if (tarih === dateStr) {
+        result.push({ kaynak: 'pusula', id: o.id, baslik: o.baslik || 'Etkinlik', kategori: (o.kategori || 'DİĞER').toUpperCase() });
+      }
+    });
+    mainCal.forEach(function(c) {
+      var tarih = String(c.date || c.tarih || '').slice(0, 10);
+      if (tarih === dateStr) {
+        result.push({ kaynak: 'main', id: c.id, baslik: c.title || c.baslik || c.name || 'Etkinlik', kategori: (c.kategori || c.category || 'DİĞER').toUpperCase() });
+      }
+    });
+    return result;
+  };
+  var now = new Date();
+  var bugunStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  var ilkGun = new Date(yil, ay, 1);
+  var sonGun = new Date(yil, ay + 1, 0).getDate();
+  var ilkGunIdx = ilkGun.getDay();
+  var ofset = (ilkGunIdx === 0) ? 6 : ilkGunIdx - 1;
+  var gunAdlari = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--s2);border-bottom:0.5px solid var(--b);flex-shrink:0">';
+  gunAdlari.forEach(function(ga, i) {
+    var isHS = i >= 5;
+    h += '<div style="text-align:center;font-size:10px;font-weight:700;color:' + (isHS ? '#A32D2D' : 'var(--t3)') + ';padding:6px 0;letter-spacing:.04em">' + ga + '</div>';
+  });
+  h += '</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);flex:1;overflow-y:auto">';
+  var onceAySonGun = new Date(yil, ay, 0).getDate();
+  for (var oi = 0; oi < ofset; oi++) {
+    var onceGun = onceAySonGun - ofset + oi + 1;
+    h += '<div style="min-height:80px;border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b);padding:4px;background:var(--s2);opacity:0.4"><div style="font-size:11px;color:var(--t3);padding:2px 4px">' + onceGun + '</div></div>';
+  }
+  for (var gun = 1; gun <= sonGun; gun++) {
+    var dateStr = yil + '-' + String(ay+1).padStart(2,'0') + '-' + String(gun).padStart(2,'0');
+    var isToday = dateStr === bugunStr;
+    var hafIdx = (ofset + gun - 1) % 7;
+    var isHafSon = hafIdx >= 5;
+    var olaylar = gunOlaylariTopla(dateStr);
+    var bgRest = isHafSon ? 'rgba(163,45,45,0.02)' : 'transparent';
+    h += '<div onclick="event.stopPropagation();window._ppTakGunTikla(\'' + dateStr + '\')" style="min-height:80px;border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b);padding:4px;cursor:pointer;background:' + bgRest + '" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'' + bgRest + '\'">';
+    if (isToday) {
+      h += '<div style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#185FA5;color:#fff;font-size:11px;font-weight:600;margin-bottom:2px">' + gun + '</div>';
+    } else {
+      h += '<div style="font-size:11px;color:' + (isHafSon ? '#A32D2D' : 'var(--t2)') + ';padding:2px 4px;font-weight:' + (isHafSon ? '500' : '400') + '">' + gun + '</div>';
+    }
+    var maxOl = 3;
+    olaylar.slice(0, maxOl).forEach(function(e) {
+      var kr = katRenk[e.kategori] || '#888780';
+      var kb = katBg[e.kategori] || '#F1EFE8';
+      h += '<div onclick="event.stopPropagation();window._ppTakEtkinlikAc(\'' + e.kaynak + '\',\'' + (e.id || '') + '\')" style="font-size:9px;padding:2px 5px;margin-top:2px;border-radius:3px;background:' + kb + ';color:' + kr + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border-left:2px solid ' + kr + '" title="' + _ownEsc(e.baslik) + '">' + _ownEsc(e.baslik) + '</div>';
+    });
+    if (olaylar.length > maxOl) {
+      h += '<div style="font-size:8px;color:var(--t3);margin-top:2px;padding-left:4px">+' + (olaylar.length - maxOl) + ' daha</div>';
+    }
+    h += '</div>';
+  }
+  var dolu = ofset + sonGun;
+  var kalan = (7 - (dolu % 7)) % 7;
+  for (var sk = 1; sk <= kalan; sk++) {
+    h += '<div style="min-height:80px;border-right:0.5px solid var(--b);border-bottom:0.5px solid var(--b);padding:4px;background:var(--s2);opacity:0.4"><div style="font-size:11px;color:var(--t3);padding:2px 4px">' + sk + '</div></div>';
+  }
+  h += '</div>';
+  h += '</div>';
+  body.innerHTML = h;
+};
+
+/** PUSULA-TAKVIM-REDESIGN-001: ay navigasyonu helper'ları */
+window._ppTakAyOnce = function() {
+  if (!(window._ppTakAy instanceof Date)) window._ppTakAy = new Date();
+  window._ppTakAy.setDate(1);
+  window._ppTakAy.setMonth(window._ppTakAy.getMonth() - 1);
+  var body = document.getElementById('pp-body');
+  if (body) window._ppTakvimPanelRender(body);
+};
+window._ppTakAySonra = function() {
+  if (!(window._ppTakAy instanceof Date)) window._ppTakAy = new Date();
+  window._ppTakAy.setDate(1);
+  window._ppTakAy.setMonth(window._ppTakAy.getMonth() + 1);
+  var body = document.getElementById('pp-body');
+  if (body) window._ppTakvimPanelRender(body);
+};
+window._ppTakBugun = function() {
+  window._ppTakAy = new Date();
+  window._ppTakAy.setDate(1);
+  var body = document.getElementById('pp-body');
+  if (body) window._ppTakvimPanelRender(body);
+};
+window._ppTakGunTikla = function(dateStr) {
+  if (typeof window._ppTakvimYeniAc === 'function') window._ppTakvimYeniAc();
+  setTimeout(function() {
+    var el = document.getElementById('pptak-basTarih');
+    if (el) el.value = dateStr;
+  }, 120);
+};
+window._ppTakEtkinlikAc = function(kaynak, id) {
+  if (kaynak === 'pusula') {
+    var liste = (typeof _ppTakvimLoad === 'function') ? _ppTakvimLoad() : [];
+    var o = liste.find(function(x) { return String(x.id) === String(id); });
+    if (!o) return;
+    var parts = [o.baslik];
+    if (o.kategori) parts.push(o.kategori);
+    if (o.periyot) parts.push(o.periyot);
+    if (o.sorumluUnvan) parts.push(o.sorumluUnvan);
+    window.toast?.(parts.join(' · '), 'info');
     return;
   }
-  if (sekme === 'odeme') { window._ppOdemePanelRender(body, h); return; }
-  if (sekme === 'abonelik') { window._ppAbonelikPanelRender(body, h); return; }
-  h += '<div style="flex:1;overflow-y:auto">';
-  if (!liste.length) {
-    h += '<div style="padding:40px;text-align:center;color:var(--t3);font-size:12px">Etkinlik yok</div>';
+  if (kaynak === 'main') {
+    var cal = (typeof window.loadCalendar === 'function') ? window.loadCalendar() : [];
+    var c = cal.find(function(x) { return String(x.id) === String(id); });
+    if (!c) return;
+    var parts2 = [c.title || c.baslik || c.name || 'Etkinlik'];
+    if (c.kategori || c.category) parts2.push(c.kategori || c.category);
+    if (c.date || c.tarih) parts2.push(String(c.date || c.tarih).slice(0, 10));
+    window.toast?.(parts2.join(' · '), 'info');
   }
-  liste.forEach(function(o) {
-    var sonraki = o.sonrakiCalisma || (window._ppTakvimSonrakiHesapla ? window._ppTakvimSonrakiHesapla(o) : '—') || '—';
-    var kalan = (sonraki && sonraki !== '—') ? Math.ceil((new Date(sonraki) - new Date(bugun)) / 86400000) : null;
-    var kalanRenk = kalan === 0 ? '#A32D2D' : (kalan !== null && kalan <= 3 ? '#854F0B' : '#185FA5');
-    var kalanBg = kalan === 0 ? '#FCEBEB' : (kalan !== null && kalan <= 3 ? '#FAEEDA' : '#E6F1FB');
-    var kr = katRenk[o.kategori] || '#888780';
-    var kb = katBg[o.kategori] || 'var(--s2)';
-    h += '<div style="display:grid;grid-template-columns:100px 1fr 100px 90px 80px 70px;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid var(--b);font-size:11px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
-    h += '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + kb + ';color:' + kr + ';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center">' + _ppEsc(o.kategori || '') + '</span>';
-    h += '<div><div style="font-size:11px;font-weight:500;color:var(--t)">' + _ppEsc(o.baslik || '') + '</div><div style="font-size:9px;color:var(--t3);margin-top:1px">' + _ppEsc(o.periyot || '') + (o.periyotDetay ? ' · ' + _ppEsc(o.periyotDetay) : '') + '</div>'
-      + '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap">'
-      + (o.altKategori ? '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#185FA5">' + _ppEsc(o.altKategori) + '</span>' : '')
-      + (o.kaynak ? '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#F1EFE8;color:#5F5E5A">' + _ppEsc(o.kaynak) + '</span>' : '')
-      + '</div>'
-      + '</div>';
-    h += '<div style="overflow:hidden"><div style="font-size:9px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(o.sorumluUnvan || '') + '</div>'
-      + (o.atananGorevli ? '<div style="font-size:8px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _ppEsc(o.atananGorevli) + '</div>' : '')
-      + '</div>';
-    h += '<div style="font-size:9px;color:var(--t3)">' + _ppEsc(sonraki) + '</div>';
-    h += kalan !== null
-      ? '<span style="font-size:8px;padding:2px 6px;border-radius:3px;background:' + kalanBg + ';color:' + kalanRenk + ';font-weight:500;text-align:center">' + (kalan === 0 ? 'Bugün' : (kalan < 0 ? 'Geçti' : kalan + ' gün')) + '</span>'
-      : '<span></span>';
-    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">';
-    h += '<button onclick="event.stopPropagation();window._ppTakvimTamamla(\'' + o.id + '\')" title="Tamamlandı" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#1D9E75">✓</button>';
-    if (o.ilgiliDokuman) h += '<button onclick="event.stopPropagation();window.open(\'' + _ppEsc(o.ilgiliDokuman) + '\')" title="Belge" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;display:inline-flex;align-items:center;justify-content:center;padding:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></button>';
-    h += '<button onclick="event.stopPropagation();window._ppTakvimSil(\'' + o.id + '\')" title="Sil" style="font-size:9px;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D">×</button>';
-    h += '</div></div>';
-  });
-  h += '</div></div>';
-  body.innerHTML = h;
 };
 
 window._ppTakvimTamamla = function(id) {
