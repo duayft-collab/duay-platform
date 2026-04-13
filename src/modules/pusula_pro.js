@@ -863,6 +863,16 @@ window._ppGorevKaydet = function() {
   if (window._ppDuzenleHedef) {
     var idx = tasks.findIndex(function(t){ return String(t.id) === String(window._ppDuzenleHedef); });
     if (idx !== -1) {
+      /* PUSULA-GUNCELLE-FIX-001: silinmemesi gereken alanları mevcut kayıttan koru */
+      var _mevcutGorev = tasks[idx];
+      yeni.createdAt = _mevcutGorev.createdAt || yeni.createdAt;
+      yeni.sorumluId = _mevcutGorev.sorumluId || yeni.sorumluId;
+      if (!window._ppDosyaEkleri || !window._ppDosyaEkleri.length) {
+        yeni.dosyalar = _mevcutGorev.dosyalar || [];
+        yeni.dosyaSay = yeni.dosyalar.length;
+      }
+      yeni.toplamSureDk = _mevcutGorev.toplamSureDk || 0;
+      yeni.lockedRate = _mevcutGorev.lockedRate;
       Object.assign(tasks[idx], yeni);
       tasks[idx].id = window._ppDuzenleHedef;
       tasks[idx].updatedAt = _ppNow();
@@ -1411,6 +1421,10 @@ window._ppGorevDuzenle = function(id) {
     var acik = document.getElementById('ppf-aciklama'); if (acik) acik.innerHTML = t.aciklama || '';
     var kaydet = document.querySelector('#pp-gorev-modal button[onclick*="_ppGorevKaydet"]');
     if (kaydet) kaydet.textContent = 'Güncelle';
+    /* PUSULA-GUNCELLE-FIX-001: mevcut alt görev + dosya state'ini düzenleme modal'ına yükle */
+    window._ppAltGorevler = t.altGorevler || [];
+    window._ppDosyaEkleri = t.dosyalar || [];
+    if (window._ppAltGorevler.length) window._ppAltGorevRender?.();
   }, 150);
 };
 
