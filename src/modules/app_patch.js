@@ -6369,6 +6369,20 @@ window._siparisDurumGuncelle = function(id) {
   t.updatedAt = new Date().toISOString();
   if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(data);
   window.toast?.('Sipariş durumu: ' + sonraki, 'ok');
+  /* SIPARISLER-TESLIM-TAHSILAT-001: teslim anında bekleyen tahsilat uyarısı */
+  if (sonraki === 'teslim') {
+    window.toast?.('Teslimat tamamlandı — Kalan tahsilat kontrol edin!', 'ok');
+    if (typeof loadTahsilat === 'function') {
+      var tahsilatlar = loadTahsilat();
+      var bekleyen = tahsilatlar.filter(function(th){
+        return !th.collected && !th.isDeleted &&
+          (th.teklifId === String(t.id) || th.refId === String(t.id));
+      });
+      if (bekleyen.length) {
+        window.toast?.('📥 ' + bekleyen.length + ' bekleyen tahsilat var — Nakit Akışı\'nı kontrol et', 'warn');
+      }
+    }
+  }
   window.renderSiparisler?.();
 };
 
