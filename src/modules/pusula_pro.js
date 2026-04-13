@@ -2645,17 +2645,24 @@ window._ppTopluSil = function() {
 window._ppTopluDurum = function() {
   var ids = Object.keys(window._ppSeciliGorevler||{}).filter(function(k){return window._ppSeciliGorevler[k];});
   if (!ids.length) return;
-  var yeniDurum = prompt('Yeni durum (plan/devam/tamamlandi/beklemede):');
-  if (!yeniDurum) return;
-  var tasks = _ppLoad();
-  ids.forEach(function(id) {
-    var t = tasks.find(function(x){return String(x.id)===id;});
-    if (t) { t.durum = yeniDurum; t.updatedAt = _ppNow(); }
-  });
-  _ppStore(tasks);
-  window._ppSeciliGorevler = {};
-  window._ppModRender?.();
-  window.toast?.(ids.length + ' görev güncellendi', 'ok');
+  // PUSULA-TOPLU-MODAL-001: prompt() yerine mini modal — tema uyumlu, hatasız
+  var _durumlar = ['plan','devam','tamamlandi','beklemede'];
+  var mevcut = document.getElementById('pp-toplu-durum-modal');
+  if (mevcut) { mevcut.remove(); return; }
+  var mo = document.createElement('div');
+  mo.id = 'pp-toplu-durum-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);padding:20px;min-width:260px">'
+    + '<div style="font-size:13px;font-weight:500;color:var(--t);margin-bottom:14px">'+ids.length+' görev için yeni durum:</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    + _durumlar.map(function(d){
+        return '<button onclick="event.stopPropagation();document.getElementById(\'pp-toplu-durum-modal\')?.remove();window._ppTopluDurumUygula(\''+d+'\')" style="padding:8px 14px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);cursor:pointer;font-family:inherit;font-size:12px;text-align:left">'+d+'</button>';
+      }).join('')
+    + '</div>'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'pp-toplu-durum-modal\')?.remove()" style="margin-top:12px;width:100%;padding:6px;border:none;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit;font-size:11px">İptal</button>'
+    + '</div>';
+  mo.onclick = function(e){ if(e.target===mo) mo.remove(); };
+  document.body.appendChild(mo);
 };
 
 /* ── PUSULA-SABLON-001: Görev şablonu yükle/kaydet ─────────── */
@@ -2733,4 +2740,22 @@ window._ppSablonKaydet = function() {
     console.warn('[PP] şablon kaydedilemedi:', e);
     window.toast?.('Şablon kaydedilemedi (localStorage hata)', 'err');
   }
+};
+
+/**
+ * PUSULA-TOPLU-MODAL-001: Toplu durum değiştir modal'ı için handler.
+ * Modal'daki durum butonuna tıklanınca çağrılır.
+ */
+window._ppTopluDurumUygula = function(yeniDurum) {
+  var ids = Object.keys(window._ppSeciliGorevler||{}).filter(function(k){return window._ppSeciliGorevler[k];});
+  if (!ids.length) return;
+  var tasks = _ppLoad();
+  ids.forEach(function(id) {
+    var t = tasks.find(function(x){return String(x.id)===id;});
+    if (t) { t.durum = yeniDurum; t.updatedAt = _ppNow(); }
+  });
+  _ppStore(tasks);
+  window._ppSeciliGorevler = {};
+  window._ppModRender?.();
+  window.toast?.(ids.length + ' görev → ' + yeniDurum, 'ok');
 };
