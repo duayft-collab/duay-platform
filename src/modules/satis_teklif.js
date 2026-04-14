@@ -308,8 +308,13 @@ window._openSTModal = function(id) {
   var esc = window._esc;
 
   // Müşteri listesi — SATIS-MUSTERI-DATALIST-001: cari + geçmiş teklif müşterileri birleşik
-  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) { return !c.isDeleted && (c.type === 'musteri' || !c.type); }) : [];
-  /* SATIS-MUSTERI-FALLBACK-001: musteri filtresi sonrası boşsa tüm non-deleted cari'leri göster */
+  /* SATIS-MUSTERI-FIELD-FIX-001: exhaustive müşteri filtresi — type/tip/cariType alan varyasyonları + lang varyasyonları */
+  var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) {
+    return !c.isDeleted && (
+      c.type === 'musteri' || c.type === 'Müşteri' || c.tip === 'musteri' || c.cariType === 'onayli' || !c.type
+    );
+  }) : [];
+  /* SATIS-MUSTERI-FALLBACK-001: filtre sonrası boşsa tüm non-deleted cari'leri göster */
   if (cariList.length === 0 && typeof loadCari === 'function') {
     cariList = loadCari().filter(function(c) { return !c.isDeleted; });
   }
