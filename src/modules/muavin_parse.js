@@ -635,11 +635,18 @@ window._mvHataKategoriHTML = function() {
 
 /* ── MUAVIN-NORMALIZE-001: Ortak Form Normalize Engine ──────── */
 window._mvNormalize = {
-  faturaNoRegex: /BAT\d{10,16}|[A-Z]{2,5}\d{8,16}/g,
+  /* MUAVIN-SN-REGEX-001: SN:xxx yakalama + DA e-fatura + genel uzun prefix */
+  faturaNoRegex: /SN:?(\d{6,10})|BAT\d{10,16}|DA\d{12,16}|[A-Z]{2,5}\d{12,16}/g,
   faturaNoAyikla: function(metin) {
     if (!metin) return null;
-    var eslesmeler = String(metin).match(window._mvNormalize.faturaNoRegex);
-    return eslesmeler ? eslesmeler[0] : null;
+    var s = String(metin);
+    var snM = s.match(/\bSN:?(\d{6,10})\b/i);
+    if (snM) return 'SN' + snM[1];
+    var daM = s.match(/\bDA\d{12,16}\b/);
+    if (daM) return daM[0];
+    var genM = s.match(/\b[A-Z]{2,5}\d{12,16}\b/);
+    if (genM) return genM[0];
+    return null;
   },
   tarihNormalize: function(t) {
     if (!t) return null;
@@ -696,7 +703,8 @@ window._mvNormalize = {
       var fatNo = self.faturaNoAyikla(s.aciklama);
       var tutar = self.tutarNormalize(s.borc || 0) - self.tutarNormalize(s.alacak || 0);
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
-      return { kaynak: 'muhasebeci', firma: firmaAdi || s.firma || '', faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', dovizCinsi: 'TRY', dovizBorc: tutar > 0 ? Math.abs(tutar) : 0, dovizAlacak: tutar < 0 ? Math.abs(tutar) : 0, kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
+      return { kaynak: 'muhasebeci', firma: firmaAdi || s.firma || '', snNo: (fatNo && fatNo.indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && fatNo.indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', dovizCinsi: 'TRY', dovizBorc: tutar > 0 ? Math.abs(tutar) : 0, dovizAlacak: tutar < 0 ? Math.abs(tutar) : 0, kurAlis: null, kurSatis: null, ham: s };
     });
   },
   sirkettenNormalize: function(satirlar, kurTablosu) {
@@ -715,7 +723,8 @@ window._mvNormalize = {
       var netUSD = borcUSD - alacakUSD;
       var netTL = borcTL - alacakTL + (netUSD * kur);
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
-      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama), faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
+      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama), snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
     });
   },
   firmaAdiAyikla: function(aciklama) {
@@ -728,8 +737,9 @@ window._mvNormalize = {
   karsilastir: function(muhasebeci, sirket, esikTL) {
     esikTL = esikTL || 1;
     var map = {};
-    muhasebeci.forEach(function(r) { var k = r.faturaNo || r.tarih + '_' + r.tutarTL; map[k] = map[k] || { muhasebeci: null, sirket: null }; map[k].muhasebeci = r; });
-    sirket.forEach(function(r) { var k = r.faturaNo || r.tarih + '_' + r.tutarTL; map[k] = map[k] || { muhasebeci: null, sirket: null }; map[k].sirket = r; });
+    /* MUAVIN-SN-REGEX-001: karşılaştırma anahtarı önce snNo, sonra faturaNo, sonra tarih+tutar */
+    muhasebeci.forEach(function(r) { var k = r.snNo || r.faturaNo || (r.tarih + '_' + Math.round(r.tutarTL)); map[k] = map[k] || { muhasebeci: null, sirket: null }; map[k].muhasebeci = r; });
+    sirket.forEach(function(r) { var k = r.snNo || r.faturaNo || (r.tarih + '_' + Math.round(r.tutarTL)); map[k] = map[k] || { muhasebeci: null, sirket: null }; map[k].sirket = r; });
     return Object.values(map).map(function(cift) {
       var m = cift.muhasebeci, s = cift.sirket;
       if (m && s) { var fark = Math.abs((m.tutarTL || 0) - (s.tutarTL || 0)); return { durum: fark <= esikTL ? 'mutabik' : 'fark', farkTL: fark, muhasebeci: m, sirket: s }; }
