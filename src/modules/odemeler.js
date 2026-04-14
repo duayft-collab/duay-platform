@@ -7004,7 +7004,8 @@ function renderCari() {
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + statusBadge
+      /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name || 'İsimsiz Cari') + statusBadge
         + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t3);padding:1px 5px;background:var(--s2);border-radius:4px;vertical-align:middle" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
         + _riskHTML
         + hatirHTML
@@ -7237,7 +7238,8 @@ function _renderCariDetail(id) {
       + _avHTML
       + '<div>'
         // CARI-OZET-EKSIK-001: başlık yanına müşteri kodu rozeti
-        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px">' + window._esc(c.name)
+        /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
+        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px">' + window._esc(c.name || 'İsimsiz Cari')
           + '<span style="font-size:10px;color:var(--t3);font-weight:500;font-family:monospace;padding:2px 8px;background:var(--s2);border-radius:10px" title="Müşteri kodu">' + window._esc(c.kod || c.musKod || '—') + '</span>'
         + '</div>'
         + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + window._esc(c.phone) : '') + (c.email ? ' · ' + window._esc(c.email) : '') + _rBigHTML + '</div>'
