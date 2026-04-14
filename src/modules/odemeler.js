@@ -6985,6 +6985,8 @@ function renderCari() {
         + _riskHTML
         + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
+      /* CARI-HIZLI-TEKLIF-001: cari satırından direkt satış teklifi aç */
+      + ((c.type === 'musteri' || !c.type) ? '<button onclick="event.stopPropagation();window._stYeniMusteri?.(\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" class="btn btns" style="font-size:9px;padding:2px 7px;flex-shrink:0" title="Bu müşteriye yeni satış teklifi">+ Teklif</button>' : '')
     + '</div>';
   }).join('');
 
@@ -8708,4 +8710,20 @@ window._cariRiskSkor = function(c) {
     }
   } catch (e) {}
   return Math.max(0, Math.min(100, skor));
+};
+
+/* CARI-HIZLI-TEKLIF-001: cari listesinden müşteri adı prefilled satış teklifi aç */
+window._stYeniMusteri = function(musteriAdi) {
+  if (typeof window._openSTModal !== 'function') {
+    window.toast?.('Satış teklif modülü yüklenmedi','err'); return;
+  }
+  window._openSTModal();
+  setTimeout(function(){
+    var inp = document.getElementById('st-customer');
+    if (inp) {
+      inp.value = musteriAdi;
+      inp.dispatchEvent(new Event('change'));
+      inp.focus();
+    }
+  }, 400);
 };
