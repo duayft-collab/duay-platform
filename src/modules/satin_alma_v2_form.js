@@ -586,6 +586,33 @@ window._saV2UrunAra = function(deger) {
 
 /* ── Çoklu ürün satırı ekleme ──────────────────────────────── */
 window._saV2UrunSayac = 0;
+/* SATINALMA-V2-URUN-DATALIST-001: tek seferlik datalist — tüm ürün rows shared */
+window._saV2UrunDatalistInit = function() {
+  if (document.getElementById('sav2-urun-list')) return;
+  var urunler = [];
+  try {
+    if (typeof loadUrunler === 'function') {
+      urunler = loadUrunler().filter(function(u){ return !u.isDeleted; })
+        .map(function(u){ return u.ad||u.name||u.urunAdi||''; }).filter(Boolean);
+    }
+    if (typeof loadAlisTeklifleri === 'function') {
+      loadAlisTeklifleri().forEach(function(t){
+        (t.urunler||t.items||[]).forEach(function(i){
+          var ad = i.urunAdi||i.ad||i.name||'';
+          if (ad && urunler.indexOf(ad) === -1) urunler.push(ad);
+        });
+      });
+    }
+  } catch(e) {}
+  urunler = urunler.slice(0, 50);
+  var dl = document.createElement('datalist');
+  dl.id = 'sav2-urun-list';
+  dl.innerHTML = urunler.map(function(u){
+    return '<option value="'+String(u).replace(/"/g,'&quot;')+'">';
+  }).join('');
+  document.body.appendChild(dl);
+};
+
 window._saV2UrunSatirEkle = function() {
   var con = document.getElementById('sav2f-urunler-container');
   if (!con) return;
@@ -593,6 +620,8 @@ window._saV2UrunSatirEkle = function() {
   if (con.querySelectorAll('.sav2f-urun-satir').length >= 100) {
     window.toast?.('Maksimum 100 ürün eklenebilir', 'warn'); return;
   }
+  /* SATINALMA-V2-URUN-DATALIST-001: datalist lazy init (her modal açılışında bir kez) */
+  window._saV2UrunDatalistInit();
   var idx = window._saV2UrunSayac++;
   var pre = 'sav2u-' + idx + '-';
   var _uf = function(id, lbl, ph, tip) {
@@ -616,7 +645,7 @@ window._saV2UrunSatirEkle = function() {
     + '<div id="' + pre + 'katalog-bilgi" style="font-size:8px;color:var(--t3);margin-top:2px"></div>'
     + '</div>'
     + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">\u00dcR\u00dcN ADI (\u0130ngilizce)</div>'
-    + '<input id="' + pre + 'urunAdi" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
+    + '<input id="' + pre + 'urunAdi" list="sav2-urun-list" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
     + _uf('turkceAdi', 'T\u00dcRK\u00c7E ADI', 'T\u00fcrk\u00e7e')
