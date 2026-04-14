@@ -733,3 +733,19 @@ if (typeof module !== 'undefined' && module.exports) {
   // NOT: Object.defineProperty KULLANILMIYOR — crash'e yol açıyordu.
   // FB_AUTH ve FB_DB artık Auth.getFBAuth() / Auth.getFBDB() ile alınır.
 }
+
+/* ADMIN-DAVET-URL-001: ?davet=CODE URL parametresi yakala, pending state + form pre-fill */
+(function() {
+  try {
+    var davetCode = new URL(window.location.href).searchParams.get('davet');
+    if (!davetCode) return;
+    window._pendingDavetCode = davetCode;
+    var cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+    setTimeout(function(){
+      var inp = document.getElementById('signup-code') || document.getElementById('davet-input');
+      if (inp) { inp.value = davetCode; inp.dispatchEvent(new Event('input')); }
+      window.toast?.('Davet kodu algılandı: ' + davetCode, 'ok');
+    }, 300);
+  } catch(e) { console.warn('[ADMIN-DAVET-URL-001]', e); }
+})();
