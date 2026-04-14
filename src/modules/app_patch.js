@@ -866,20 +866,38 @@ window._gk08MenuGizle = function() {
   }
 };
 
+/* SIDEBAR-YETKI-GIZLE-001: canModule() bazlı sidebar buton görünürlük kontrolü */
+window._sidebarYetkiUygula = function() {
+  document.querySelectorAll('.nb').forEach(function(btn) {
+    var oc = btn.getAttribute('onclick') || '';
+    var match = oc.match(/nav\('([^']+)'/);
+    if (!match) return;
+    var modId = match[1];
+    if (typeof window.canModule === 'function' && window.canModule(modId) === false) {
+      btn.style.display = 'none';
+    }
+  });
+};
+
 // Auth hazır olunca ve auth değişince uygula
 (function() {
+  /* SIDEBAR-YETKI-GIZLE-001: _gk08MenuGizle + _sidebarYetkiUygula ardışık çağır */
+  var _postAuth = function() {
+    window._gk08MenuGizle?.();
+    window._sidebarYetkiUygula?.();
+  };
   const run = () => {
     const cu = window.Auth?.getCU?.();
-    if (cu) { _applyRoleUI(cu); setTimeout(function(){ window._gk08MenuGizle?.(); }, 500); return; }
+    if (cu) { _applyRoleUI(cu); setTimeout(_postAuth, 500); return; }
     let n = 0;
     const t = setInterval(() => {
       const u = window.Auth?.getCU?.();
-      if (u || ++n > 30) { clearInterval(t); if (u) { _applyRoleUI(u); setTimeout(function(){ window._gk08MenuGizle?.(); }, 500); } }
+      if (u || ++n > 30) { clearInterval(t); if (u) { _applyRoleUI(u); setTimeout(_postAuth, 500); } }
     }, 300);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(run, 700));
   else setTimeout(run, 700);
-  window.addEventListener('auth-changed', () => setTimeout(function(){ _applyRoleUI(window.Auth?.getCU?.()); setTimeout(function(){ window._gk08MenuGizle?.(); }, 500); }, 200));
+  window.addEventListener('auth-changed', () => setTimeout(function(){ _applyRoleUI(window.Auth?.getCU?.()); setTimeout(_postAuth, 500); }, 200));
 })();
 
 console.log('[app_patch] Yetki sistemi yüklendi');
