@@ -5124,6 +5124,21 @@ window._renderPlatformIlerleme = function() {
         {ad: 'Konsolidasyon / dönem özeti', durum: 'kismi'},
         {ad: 'Muavin defteri', durum: 'kismi'},
       ]
+    },
+    /* AYARLAR-ILERLEME-CARI-001: Cari Yönetimi bloğu */
+    {
+      baslik: '8. Cari Yönetimi',
+      renk: 'ok',
+      adimlar: [
+        {ad: 'Cari liste görünümü', durum: 'ok'},
+        {ad: 'Satış teklifi bağlantısı', durum: 'ok'},
+        {ad: 'Cari kodu (4 hane otomatik)', durum: 'ok'},
+        {ad: 'Müşteri feedback sistemi', durum: 'ok'},
+        {ad: 'Risk skoru (otomatik hesap)', durum: 'kismi'},
+        {ad: 'Excel export (16 kolon)', durum: 'ok'},
+        {ad: 'Hızlı teklif oluşturma', durum: 'ok'},
+        {ad: 'Ürün frekans analizi', durum: 'ok'},
+      ]
     }
   ];
 
@@ -5241,8 +5256,8 @@ window._renderSurecHaritasi = function() {
      desc:'Depoya, konteynıra veya doğrudan müşteriye teslim. Teslim belgesi kaydedilir.',
      tet:['Siparişler: siparisDurumu → teslim','Teslimat belgesi kaydı [EKSİK]','Kalan tahsilat tetiklenir'],
      etk:['Tahsilat: Son ödeme hatırlatması','Feedback: Müşteri formu gönderilir [EKSİK]']},
-    {n:'10',t:'Müşteriden Feedback Alındı',d:'eksik',
-     desc:'Müşteri memnuniyeti değerlendirilir. CRM skoru güncellenir. PusulaPro görevi kapatılır.',
+    {n:'10',t:'Müşteriden Feedback Alındı',d:'kismi',
+     desc:'Müşteri feedback modal + cari detay görüntüleme eklendi.',
      tet:['CRM: Müşteri skoru güncellenir [EKSİK]','PusulaPro: Görev tamamlandı olarak kapatılır','KPI: Memnuniyet skoru eklenir [EKSİK]'],
      etk:['Arşiv: Arşivleme süreci başlar','Dönem Özeti: İşlem raporlanır [EKSİK]']},
     {n:'11',t:'Arşivlendi',d:'kismi',
