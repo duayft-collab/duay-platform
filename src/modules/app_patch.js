@@ -6602,12 +6602,35 @@ window._renderCariKarsilastirma = function() {
   p.innerHTML = h;
 };
 
+/* DONEM-OZETI-V1-001: stub → bu ay ödeme/tahsilat/alış/satış KPI özeti */
 window._renderDonemOzeti = function() {
   var p = document.getElementById('panel-donem-ozeti'); if(!p) return;
-  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
-    + '<div style="font-size:36px">📈</div>'
-    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Dönem Özeti</div>'
-    + '<div style="font-size:12px;margin-top:6px">Aylık/çeyreklik konsolidasyon raporu</div>'
-    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
+  var esc = window._esc||function(s){return String(s||'');};
+  var buAy = new Date().toISOString().slice(0,7);
+  var gecenAy = new Date(new Date().setMonth(new Date().getMonth()-1)).toISOString().slice(0,7);
+
+  var odm = (typeof loadOdm==='function'?loadOdm():[]).filter(function(o){return !o.isDeleted;});
+  var tah = (typeof loadTahsilat==='function'?loadTahsilat():[]).filter(function(t){return !t.isDeleted;});
+  var alisTek = (typeof loadAlisTeklifleri==='function'?loadAlisTeklifleri():[]).filter(function(t){return !t.isDeleted;});
+  var satisTek = (typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[]).filter(function(t){return !t.isDeleted;});
+
+  var buAyOdm = odm.filter(function(o){return (o.due||o.ts||'').startsWith(buAy);});
+  var buAyTah = tah.filter(function(t){return (t.due||t.date||t.ts||'').startsWith(buAy);});
+  var buAyAlis = alisTek.filter(function(t){return (t.ts||t.createdAt||'').startsWith(buAy);});
+  var buAySatis = satisTek.filter(function(t){return (t.ts||t.createdAt||'').startsWith(buAy);});
+
+  var topOdm = buAyOdm.reduce(function(s,o){return s+parseFloat(o.amount||o.tutar||0);},0);
+  var topTah = buAyTah.reduce(function(s,t){return s+parseFloat(t.amount||t.tutar||0);},0);
+
+  p.innerHTML = '<div style="padding:20px;max-width:800px">'
+    + '<div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:4px">Dönem Özeti</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">'+buAy+' • Bu ay</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:16px">'
+    + '<div style="padding:14px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Ödeme Çıkışı</div><div style="font-size:20px;font-weight:600;color:#DC2626">'+topOdm.toLocaleString('tr-TR')+'</div><div style="font-size:9px;color:var(--t3)">'+buAyOdm.length+' işlem</div></div>'
+    + '<div style="padding:14px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Tahsilat Girişi</div><div style="font-size:20px;font-weight:600;color:#16A34A">'+topTah.toLocaleString('tr-TR')+'</div><div style="font-size:9px;color:var(--t3)">'+buAyTah.length+' işlem</div></div>'
+    + '<div style="padding:14px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Alış Teklifi</div><div style="font-size:20px;font-weight:600">'+buAyAlis.length+'</div><div style="font-size:9px;color:var(--t3)">Bu ay</div></div>'
+    + '<div style="padding:14px 16px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Satış Teklifi</div><div style="font-size:20px;font-weight:600">'+buAySatis.length+'</div><div style="font-size:9px;color:var(--t3)">Bu ay</div></div>'
+    + '</div>'
+    + '<div style="padding:12px 16px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2)">Net akış: <strong style="color:'+(topTah>=topOdm?'#16A34A':'#DC2626')+'">'+((topTah-topOdm)).toLocaleString('tr-TR')+'</strong> • Detaylı raporlar için Nakit Akışı sayfasını kullanın.</div>'
     + '</div>';
 };
