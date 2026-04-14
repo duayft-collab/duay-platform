@@ -7020,6 +7020,35 @@ function _renderCariDetail(id) {
     islemHTML = '<div style="font-size:11px;color:var(--t3);margin-top:10px;padding:8px;background:var(--s2);border-radius:6px;text-align:center">İşlem kaydı yok</div>';
   }
 
+  // CRM-CARI-FEEDBACK-001: cari bazlı feedback geçmişi + ortalama puan
+  var fbKey = 'ak_musteri_feedback_v1';
+  var tumFeedback = [];
+  try { tumFeedback = JSON.parse(localStorage.getItem(fbKey) || '[]'); } catch (e) {}
+  var cariFeedback = tumFeedback.filter(function(f) { return String(f.cariId) === String(c.id) || f.cariId === c.name; });
+  var fbHTML = '';
+  if (cariFeedback.length) {
+    var ort = Math.round(cariFeedback.reduce(function(s, f) { return s + (parseFloat(f.puan) || 0); }, 0) / cariFeedback.length * 10) / 10;
+    fbHTML = '<div style="margin-top:14px;border-top:0.5px solid var(--b);padding-top:12px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Müşteri Geri Bildirimleri</div>'
+      + '<div style="font-size:13px;font-weight:600">⭐ ' + ort + ' / 5</div>'
+      + '<div style="font-size:10px;color:var(--t3)">(' + cariFeedback.length + ' değerlendirme)</div>'
+      + '</div>'
+      + cariFeedback.slice(0, 5).map(function(f) {
+        var puan = Math.max(0, Math.min(5, parseInt(f.puan) || 0));
+        return '<div style="padding:6px 10px;background:var(--s2);border-radius:6px;margin-bottom:6px;font-size:11px">'
+          + '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+          + '<span>' + '⭐'.repeat(puan) + '</span>'
+          + '<span style="font-size:9px;color:var(--t3)">' + (window._esc?.(f.tarih) || f.tarih || '—') + '</span>'
+          + '</div>'
+          + (f.not ? '<div style="color:var(--t2)">' + (window._esc?.(f.not) || f.not) + '</div>' : '')
+          + '</div>';
+      }).join('')
+      + '</div>';
+  } else {
+    fbHTML = '<div style="margin-top:10px;font-size:11px;color:var(--t3);padding:8px;background:var(--s2);border-radius:6px;text-align:center">Henüz geri bildirim yok</div>';
+  }
+
   cont.innerHTML = '<div style="padding:20px">'
     // Başlık
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
@@ -7153,6 +7182,7 @@ function _renderCariDetail(id) {
         })()
     + '</div>'
     + islemHTML
+    + fbHTML
   + '</div>';
 }
 
