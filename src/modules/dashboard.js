@@ -751,7 +751,8 @@ function _renderPirimimWidget() {
     var ozet = {};
     primler.forEach(function(p){
       var uid = p.uid || p.assignedTo || 'unknown';
-      if (!ozet[uid]) ozet[uid] = { ad: userMap[uid] || '—', toplam:0, odenen:0, bekleyen:0 };
+      // PIRIM-DASH-CLICK-001: uid field'ı ozet value'ya eklenir (rows map preserve)
+      if (!ozet[uid]) ozet[uid] = { uid: uid, ad: userMap[uid] || '—', toplam:0, odenen:0, bekleyen:0 };
       var amt = parseFloat(p.amount) || 0;
       ozet[uid].toplam += amt;
       if (p.status === 'paid') ozet[uid].odenen += amt;
@@ -765,7 +766,8 @@ function _renderPirimimWidget() {
       + '<div>Personel</div><div style="text-align:right">Toplam</div><div style="text-align:right;color:#16A34A">Ödenen</div><div style="text-align:right;color:#D97706">Bekleyen</div></div>';
     rows.slice(0, 8).forEach(function(r){
       h += '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;font-size:11px;padding:5px 0;border-bottom:0.5px solid var(--b)">'
-        + '<div style="color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + r.ad + '</div>'
+        // PIRIM-DASH-CLICK-001: personel adı tıklanabilir → _pirimDetayGoster modal
+        + '<div onclick="event.stopPropagation();window._pirimDetayGoster?.(\'' + String(r.uid) + '\')" style="cursor:pointer;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Detay aç">' + r.ad + '</div>'
         + '<div style="text-align:right;color:var(--t);font-weight:500">' + fmt(r.toplam) + '</div>'
         + '<div style="text-align:right;color:#16A34A">' + fmt(r.odenen) + '</div>'
         + '<div style="text-align:right;color:#D97706">' + fmt(r.bekleyen) + '</div>'
