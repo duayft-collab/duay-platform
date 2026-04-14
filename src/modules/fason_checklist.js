@@ -136,6 +136,8 @@ window._fasonDetay = function(emirId) {
     + '<div style="font-size:10px;color:var(--t3)">'+window._esc(emir.fasonFirma||'')+(emir.tarih?' · Termin: '+emir.tarih:'')+'</div></div>'
     + '<div style="margin-left:auto;display:flex;gap:8px">'
     + '<button onclick="event.stopPropagation();window._fasonEtiketBas(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:var(--t2)">🏷 Numune Etiketi</button>'
+    /* FASON-LINK-001: Fasoncu linki kopyala */
+    + '<button onclick="event.stopPropagation();window._fasonLinkKopyala(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:var(--t2)">🔗 Fasoncu Linki</button>'
     /* FASON-KALITE-RAPORU-001: Kontrol sonuçları + ölçümler + notlar yazdırılabilir rapor */
     + '<button onclick="event.stopPropagation();window._fasonKaliteRaporu(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid #185FA5;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:#185FA5">📋 Kalite Raporu</button>'
     /* FASON-RULO-ETIKET-001: Rulo kayıt + etiket bas */
@@ -455,5 +457,89 @@ window._fasonRuloEtiket = function(emirId) {
   /* Detayı güncelle — rulo sayısı KPI refresh */
   window._fasonDetay(emirId);
 };
+
+/* FASON-LINK-001: Fasoncu linki kopyala — WhatsApp ile paylaşım için */
+window._fasonLinkKopyala = function(emirId) {
+  var link = location.origin + location.pathname + '?fason-link=' + emirId;
+  navigator.clipboard?.writeText(link).then(function(){
+    window.toast?.('Fasoncu linki kopyalandı ✓ WhatsApp ile gönder','ok');
+  }).catch(function(){ window.prompt('Linki kopyala:', link); });
+};
+
+/* FASON-LINK-001: Partner view — sadece rulo bas ekranı (header/menü yok) */
+window._fasonPartnerView = function(emirId) {
+  var emirler = _fasonLoad ? _fasonLoad() : [];
+  var emir = emirler.find(function(e){ return e.id===emirId; });
+  var getRulolar = function() {
+    try { return JSON.parse(localStorage.getItem('ak_fason_rulo_v1')||'[]').filter(function(r){ return r.emirId===emirId; }); } catch(e){ return []; }
+  };
+  if(!emir) {
+    document.body.innerHTML = '<div style="font-family:sans-serif;padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:12px">🏭</div><div style="font-size:16px;font-weight:500">Üretim emri bulunamadı</div><div style="font-size:12px;color:#666;margin-top:8px">Link geçersiz veya süresi dolmuş olabilir.</div></div>'; return;
+  }
+  var render = function() {
+    var rulolar = getRulolar();
+    var sonRulo = rulolar[rulolar.length-1];
+    document.body.innerHTML = '<div style="font-family:sans-serif;max-width:380px;margin:0 auto;padding:24px">'
+      +'<div style="font-size:11px;color:#999;margin-bottom:4px">DUAY GLOBAL · Fason Üretim</div>'
+      +'<div style="font-size:20px;font-weight:700;margin-bottom:16px;color:#111">'+window._esc(emir.urunAdi||'')+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
+      +'<div style="padding:10px;border:1px solid #eee;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:700;color:#111">'+emir.en+'m</div><div style="font-size:10px;color:#999">En</div></div>'
+      +'<div style="padding:10px;border:1px solid #eee;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:700;color:#111">'+emir.uzunluk+'m</div><div style="font-size:10px;color:#999">Uzunluk</div></div>'
+      +'<div style="padding:10px;border:1px solid #eee;border-radius:8px;text-align:center"><div style="font-size:16px;font-weight:600;color:#111">'+window._esc(emir.iplikSpec||'')+'</div><div style="font-size:10px;color:#999">İplik</div></div>'
+      +'<div style="padding:10px;border:1px solid #eee;border-radius:8px;text-align:center"><div style="font-size:16px;font-weight:600;color:#111">'+window._esc(emir.atkuCozgu||'')+'</div><div style="font-size:10px;color:#999">Atkı×Çözgü</div></div>'
+      +'</div>'
+      +'<div style="padding:12px;background:#F0FAF4;border:1px solid #C0DD97;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+      +'<div><div style="font-size:28px;font-weight:700;color:#16A34A;letter-spacing:4px">'+rulolar.length+'</div><div style="font-size:10px;color:#3B6D11">Basılan Rulo</div></div>'
+      +(sonRulo?'<div style="font-size:10px;color:#3B6D11;text-align:right">Son: R'+String(sonRulo.ruloNo).padStart(3,"0")+'<br>'+new Date(sonRulo.createdAt).toLocaleString("tr-TR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</div>':'')
+      +'</div>'
+      +'<button id="partner-bas-btn" onclick="window._fasonPartnerBas(\''+emirId+'\',render)" style="width:100%;padding:16px;background:#16A34A;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">🏷 Yeni Rulo Etiket Bas</button>'
+      +'<div style="margin-top:8px;text-align:center;font-size:10px;color:#999">Her basışta yeni rulo numarası oluşturulur ve kaydedilir</div>'
+      +'</div>';
+  };
+  render();
+};
+
+/* FASON-LINK-001: Partner view'dan rulo bas — kayıt + print (monospace A tasarım kısaltılmış) */
+window._fasonPartnerBas = function(emirId, renderCb) {
+  var btn = document.getElementById('partner-bas-btn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Kaydediliyor...'; }
+  var emirler = _fasonLoad ? _fasonLoad() : [];
+  var emir = emirler.find(function(e){ return e.id===emirId; });
+  if(!emir){ if(btn){ btn.disabled=false; btn.textContent='🏷 Yeni Rulo Etiket Bas'; } return; }
+  var ruloKey = 'ak_fason_rulo_v1';
+  var rulolar = [];
+  try { rulolar = JSON.parse(localStorage.getItem(ruloKey)||'[]'); } catch(e){}
+  var emirRulolar = rulolar.filter(function(r){ return r.emirId===emirId; });
+  var ruloNo = emirRulolar.length + 1;
+  var ruloId = emirId.slice(-6).toUpperCase()+'-R'+String(ruloNo).padStart(3,'0');
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  rulolar.push({ id:ruloId, emirId:emirId, ruloNo:ruloNo, urunAdi:emir.urunAdi, en:emir.en, uzunluk:emir.uzunluk, iplikSpec:emir.iplikSpec, atkuCozgu:emir.atkuCozgu, fasonFirma:emir.fasonFirma, tarih:new Date().toISOString().slice(0,10), createdAt:new Date().toISOString(), kaynak:'partner-link' });
+  try { localStorage.setItem(ruloKey, JSON.stringify(rulolar)); } catch(e){}
+  if(renderCb) renderCb();
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rulo '+ruloId+'</title>'
+    +'<style>body{font-family:monospace;padding:16px;max-width:220px;margin:0 auto}.e{border:3px solid #000;border-radius:6px;overflow:hidden}.h{background:#111;color:#fff;padding:8px 12px}.co{font-size:12px;font-weight:bold}.br{font-size:8px;color:#aaa}.b{padding:10px 12px}.un{font-size:12px;font-weight:bold;margin-bottom:8px}.r{display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-bottom:1px dashed #ccc}.r span:last-child{font-weight:bold}.rn{font-size:28px;font-weight:bold;text-align:center;letter-spacing:6px;margin:10px 0;padding:6px;background:#f0f0f0}.id{font-size:8px;color:#aaa;text-align:center}</style></head><body><div class="e">'
+    +'<div class="h"><div class="co">DUAY GLOBAL</div><div class="br">Uluslararası Ticaret Ltd.</div></div>'
+    +'<div class="b"><div class="un">'+window._esc(emir.urunAdi||'')+'</div>'
+    +'<div class="r"><span>İplik</span><span>'+window._esc(emir.iplikSpec||'')+'</span></div>'
+    +'<div class="r"><span>En</span><span>'+emir.en+' m</span></div>'
+    +'<div class="r"><span>Uzunluk</span><span>'+emir.uzunluk+' m</span></div>'
+    +'<div class="r"><span>Tarih</span><span>'+tarih+'</span></div>'
+    +'<div class="rn">R'+String(ruloNo).padStart(3,'0')+'</div>'
+    +'<div class="id">'+ruloId+'</div></div></div>'
+    +'<script>window.print();<\/script></body></html>';
+  var win = window.open('','_blank');
+  if(win){ win.document.write(html); win.document.close(); }
+};
+
+/* FASON-LINK-001: URL param kontrolü — ?fason-link=ID varsa partner view'ı aç */
+(function() {
+  var _flp = new URLSearchParams(window.location.search).get('fason-link');
+  if (_flp && typeof window._fasonPartnerView === 'function') {
+    document.addEventListener('DOMContentLoaded', function(){
+      window._fasonPartnerView(_flp);
+    });
+    if (document.readyState !== 'loading') window._fasonPartnerView(_flp);
+  }
+})();
 
 })();
