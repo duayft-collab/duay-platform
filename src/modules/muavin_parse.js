@@ -190,6 +190,15 @@ window._mvDosyaOku = function(inp, taraf) {
     window.toast?.( f.name + ' y\u00fcklendi \u2014 ' + islemler.length + ' i\u015flem', 'ok');
     window._mvAktifTab = 'karsilastirma';
     window.renderMuavin?.();
+    /* MUAVIN-OTO-ESLESTIR-001: her iki dosya da hazırsa otomatik karşılaştır */
+    setTimeout(function() {
+      var mOk = !!(window._mvSonIslemler && window._mvSonIslemler.length);
+      var bOk = !!(window._mvSonIslemlerB && window._mvSonIslemlerB.length);
+      if (mOk && bOk && !window._mvEslesmeSonucu) {
+        window.toast?.('Her iki dosya hazır — otomatik karşılaştırılıyor...', 'ok');
+        window._mvEslestir?.();
+      }
+    }, 600);
   }
 
   if (/\.xls[xm]?$/i.test(f.name)) {
