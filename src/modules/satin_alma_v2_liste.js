@@ -144,7 +144,9 @@ window.renderSatinAlmaV2 = function() {
       h+='<div style="display:flex;gap:3px"><button onclick="event.stopPropagation();window._saV2TeklifOlusturAkilli?.(\''+t.id+'\')" style="font-size:9px;padding:4px 7px;border:none;border-radius:4px;background:#185FA5;color:#fff;font-weight:600;cursor:pointer;font-family:inherit">Satış</button>';
       /* SATIS-LISTE-PI-GUNCELLE-001: hızlı PI No düzenleme butonu */
       h+='<button onclick="event.stopPropagation();window._saV2PIGuncelle(\''+t.id+'\')" title="PI No güncelle" style="font-size:9px;padding:3px 7px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">PI No</button>';
-      h+='<button onclick="event.stopPropagation();window._saV2RowMenu?.(\''+t.id+'\')" title="Daha fazla" style="font-size:11px;padding:2px 7px;border:0.5px solid '+_b+';border-radius:4px;background:transparent;cursor:pointer;color:var(--color-text-tertiary);line-height:1;font-family:inherit">···</button></div>';
+      h+='<button onclick="event.stopPropagation();window._saV2RowMenu?.(\''+t.id+'\')" title="Daha fazla" style="font-size:11px;padding:2px 7px;border:0.5px solid '+_b+';border-radius:4px;background:transparent;cursor:pointer;color:var(--color-text-tertiary);line-height:1;font-family:inherit">···</button>';
+      /* SATIS-LISTE-PEEK-001: hızlı bakış peek panel butonu */
+      h+='<button onclick="event.stopPropagation();window._saV2PeekPanel(\''+t.id+'\')" title="Hızlı bakış" style="font-size:9px;padding:3px 8px;border:0.5px solid '+_b+';border-radius:4px;background:transparent;cursor:pointer;color:var(--color-text-secondary);font-family:inherit">👁 Gör</button></div>';
     }
     h+='</div>';
     if(t.urunler&&t.urunler.length>1){
@@ -355,4 +357,43 @@ window._saV2PIGuncelle = function(id) {
   window.toast?.('PI No güncellendi: ' + (yeniPI || '(boş)'), 'ok');
   if (typeof window.logActivity === 'function') window.logActivity('satinalma-v2', 'PI No güncelle: ' + id + ' → ' + yeniPI);
   window.renderSatinAlmaV2?.();
+};
+
+/* SATIS-LISTE-PEEK-001: hızlı bakış peek panel — sağdan açılan ürün listesi + toplam */
+window._saV2PeekPanel = function(id) {
+  var liste = window._saV2Load ? window._saV2Load() : [];
+  var t = liste.find(function(x){ return x.id===id; });
+  if(!t) return;
+  var mevcut = document.getElementById('sav2-peek-panel'); if(mevcut) mevcut.remove();
+  var mo = document.createElement('div');
+  mo.id = 'sav2-peek-panel';
+  mo.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:380px;background:var(--sf);border-left:0.5px solid var(--b);z-index:9000;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.08)';
+  mo.onclick = function(e){ e.stopPropagation(); };
+  var urunler = t.urunler || t.urun || [];
+  var toplam = t.toplamTutar || t.genelToplam || t.toplam || 0;
+  var para = t.toplamPara || t.paraBirimi || 'USD';
+  var urunHTML = urunler.map(function(u,i){
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--b);font-size:11px">'
+      +'<div style="flex:1;color:var(--t)">'+window._esc(u.urunAdi||u.turkceAdi||u.ad||'—')+'<span style="color:var(--t3);font-size:9px;margin-left:4px">×'+( u.miktar||1)+'</span></div>'
+      +'<div style="color:var(--t2);font-family:monospace;font-size:10px">'+(parseFloat(u.satisFiyati||u.satis||0)*( u.miktar||1)).toFixed(2)+' '+para+'</div>'
+      +'</div>';
+  }).join('');
+  mo.innerHTML = '<div style="padding:16px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+    +'<div><div style="font-size:13px;font-weight:500;color:var(--t)">'+window._esc(t.musteriAdi||t.musteri||'—')+'</div>'
+    +'<div style="font-size:9px;color:var(--t3);margin-top:2px">'+window._esc(t.proformaNo||t.piNo||t.id)+'</div></div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'sav2-peek-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
+    +'</div>'
+    +'<div style="padding:12px 20px">'
+    +'<div style="font-size:10px;font-weight:500;color:var(--t3);margin-bottom:8px">ÜRÜNLER ('+urunler.length+')</div>'
+    +urunHTML
+    +'<div style="display:flex;justify-content:space-between;padding:10px 0;font-size:12px;font-weight:500;margin-top:4px">'
+    +'<span style="color:var(--t)">Toplam</span>'
+    +'<span style="color:var(--t);font-family:monospace">'+parseFloat(toplam).toFixed(2)+' '+para+'</span>'
+    +'</div>'
+    +'<div style="margin-top:8px;display:flex;gap:6px">'
+    +'<button onclick="event.stopPropagation();window._saV2TeklifDetay?.(\''+id+'\');document.getElementById(\'sav2-peek-panel\')?.remove()" style="flex:1;padding:7px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Detay Aç</button>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'sav2-peek-panel\')?.remove()" style="padding:7px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)">Kapat</button>'
+    +'</div></div>';
+  document.body.appendChild(mo);
+  document.addEventListener('click', function _peek(e){ if(!mo.contains(e.target)){ mo.remove(); document.removeEventListener('click',_peek); } });
 };
