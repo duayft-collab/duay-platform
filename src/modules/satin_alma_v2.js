@@ -71,9 +71,19 @@ window._saV2Kpi = function() {
   var buAy  = _saToday().slice(0,7);
   var buAyListe = liste.filter(function(t){ return (t.createdAt||'').startsWith(buAy); });
   var bekleyen  = liste.filter(function(t){ return t.durum==='bekleyen'; });
-  var onaylilar = liste.filter(function(t){ return t.durum==='onaylandi'; });
-  var marjlar   = onaylilar.map(function(t){ return parseFloat(t.karMarji)||0; });
-  var ortMarj   = marjlar.length ? (marjlar.reduce(function(a,b){return a+b;},0)/marjlar.length).toFixed(1) : 0;
+  /* SATINALMA-V2-KPI-MARJ-FIX-002: t.karMarji yok — alisF/satisF/toplamSatis + _saV2AlisF helper fallback chain */
+  var karlilar = liste.filter(function(t) {
+    var a = parseFloat((typeof window._saV2AlisF === 'function' ? window._saV2AlisF(t) : 0) || t.alisF || t.alisFiyati || 0);
+    var s = parseFloat(t.satisF || t.satisFiyati || t.toplamSatis || 0);
+    return a > 0 && s > 0;
+  });
+  var ortMarj = karlilar.length > 0
+    ? Math.round(karlilar.reduce(function(acc, t) {
+        var a = parseFloat((typeof window._saV2AlisF === 'function' ? window._saV2AlisF(t) : 0) || t.alisF || t.alisFiyati || 0);
+        var s = parseFloat(t.satisF || t.satisFiyati || t.toplamSatis || 0);
+        return acc + ((s - a) / a * 100);
+      }, 0) / karlilar.length)
+    : 0;
   var toplam    = buAyListe.reduce(function(a,t){ return a+(parseFloat(t.toplamTl)||0); },0);
   return { buAy:buAyListe.length, bekleyen:bekleyen.length, ortMarj:ortMarj, toplam:toplam };
 };
