@@ -197,6 +197,30 @@ window._stDurumGuncelle = function(id, yeniDurum) {
         tahStore.unshift(tahsilat);
         storeTahsilat(tahStore);
         window.toast?.('📥 Tahsilat kaydı oluşturuldu (' + (t.currency||'USD') + ' ' + toplamTutar.toLocaleString('tr-TR') + ')', 'ok');
+        /* SATIS-CARI-ALACAK-001: kabul edilen teklif için müşteri cari hesabına alacak kaydı */
+        if (typeof loadCari === 'function' && typeof storeCari === 'function') {
+          var cariList = loadCari();
+          var cariKayit = cariList.find(function(c) {
+            return c.name === t.customerName
+              || c.id === t.cariId
+              || c.musteri === t.customerName;
+          });
+          if (cariKayit) {
+            if (!Array.isArray(cariKayit.islemler)) cariKayit.islemler = [];
+            cariKayit.islemler.unshift({
+              tarih: new Date().toISOString().slice(0,10),
+              aciklama: 'Satış teklifi kabul: ' + (t.teklifNo||t.piNo||'PI'),
+              tutar: toplamTutar,
+              para: t.currency||'USD',
+              tip: 'alacak',
+              teklifId: t.id,
+              source: 'satis-kabul'
+            });
+            cariKayit.updatedAt = new Date().toISOString();
+            storeCari(cariList);
+            window.toast?.('Cari hesap güncellendi ✓', 'ok');
+          }
+        }
       }
     }
   }
