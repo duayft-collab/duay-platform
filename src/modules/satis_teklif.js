@@ -67,6 +67,15 @@ function renderSatisTeklif() {
     + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;background:var(--s2);align-items:center">'
       + '<input class="fi" id="st-search" placeholder="🔍 Teklif no, müşteri ara..." oninput="renderSatisTeklif()" style="font-size:11px;flex:1">'
       + '<select class="fi" id="st-musteri-filter" onchange="renderSatisTeklif()" style="font-size:11px;width:220px"><option value="">Tüm müşteriler</option></select>'
+      /* SATIS-LISTE-DURUM-FILTRE-001: durum filtresi dropdown */
+      + '<select id="st-durum-filtre" onchange="event.stopPropagation();window.renderSatisTeklif?.()" style="font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
+        + '<option value="">Tüm Durumlar</option>'
+        + '<option value="taslak">Taslak</option>'
+        + '<option value="gonderildi">Gönderildi</option>'
+        + '<option value="onay">Onay Bekliyor</option>'
+        + '<option value="kabul">Kabul</option>'
+        + '<option value="red">Reddedildi</option>'
+      + '</select>'
     + '</div>'
     + '<div id="st-list"></div>';
   }
@@ -83,8 +92,11 @@ function renderSatisTeklif() {
     var _opts = '<option value="">Tüm müşteriler</option>' + Object.keys(_musSet).sort().map(function(m) { return '<option value="' + window._esc(m) + '"' + (m === _mevcut ? ' selected' : '') + '>' + window._esc(m) + '</option>'; }).join('');
     if (_musFilEl.innerHTML !== _opts) _musFilEl.innerHTML = _opts;
   }
+  /* SATIS-LISTE-DURUM-FILTRE-001: durum filtresi — status veya durum alanını kontrol et */
+  var durumFiltre = document.getElementById('st-durum-filtre')?.value || '';
   var fl = data.filter(function(t) {
     if (musteriFiltre && t.customerName !== musteriFiltre) return false;
+    if (durumFiltre && (t.status || t.durum || '') !== durumFiltre) return false;
     if (!search) return true;
     return (t.teklifNo || '').toLowerCase().includes(search) || (t.customerName || '').toLowerCase().includes(search) || (t.jobId || '').toLowerCase().includes(search) || (t.currency || '').toLowerCase().includes(search) || (t.incoterm || '').toLowerCase().includes(search);
   }).sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
