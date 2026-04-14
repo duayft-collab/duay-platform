@@ -25,10 +25,11 @@
     if (!p.dataset.injected) {
       p.dataset.injected = '1';
       p.innerHTML = '<div style="display:flex;flex-direction:column;height:100%">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf);position:sticky;top:0;z-index:100">'
-        + '<div><div style="font-size:14px;font-weight:600;color:var(--t)">Fason Üretim</div>'
+        /* FASON-HEADER-LAYOUT-001: sticky → relative, buton flex-shrink:0 + kısa metin */
+        + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf);position:relative">'
+        + '<div style="min-width:0"><div style="font-size:14px;font-weight:600;color:var(--t)">Fason Üretim</div>'
         + '<div style="font-size:10px;color:var(--t3)">Üretim emirleri · Kontrol listeleri · Numune etiketleri</div></div>'
-        + '<button onclick="event.stopPropagation();window._fasonYeniEmir()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">+ Yeni Üretim Emri</button>'
+        + '<button onclick="event.stopPropagation();window._fasonYeniEmir()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;flex-shrink:0;white-space:nowrap">+ Yeni Emir</button>'
         + '</div>'
         + '<div id="fason-liste" style="flex:1;overflow-y:auto;padding:12px 20px"></div>'
         + '</div>';
