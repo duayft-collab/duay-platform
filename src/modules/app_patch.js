@@ -6576,14 +6576,52 @@ window._renderSatisRapor = function() {
     +'</tr></thead><tbody>'+satirlar+'</tbody></table></div>';
 };
 
+/* NUMUNE-ARSIVI-V1-001: stub → kayıt formu + localStorage tablo */
+window._numuneArsiviEkle = function() {
+  var u = document.getElementById('nm-urun')?.value?.trim();
+  if (!u) { window.toast?.('Ürün adı zorunlu','warn'); return; }
+  var d; try { d = JSON.parse(localStorage.getItem('ak_numune_arsivi_v1')||'[]'); } catch(e) { d = []; }
+  d.unshift({
+    id: Date.now(),
+    tarih: new Date().toISOString().slice(0,10),
+    urun: u,
+    tedarikci: document.getElementById('nm-ted')?.value?.trim()||'',
+    yon: document.getElementById('nm-yon')?.value||'gonderilen',
+    durum: document.getElementById('nm-dur')?.value||'bekliyor',
+    not: document.getElementById('nm-not')?.value?.trim()||''
+  });
+  try { localStorage.setItem('ak_numune_arsivi_v1', JSON.stringify(d)); } catch(e) {}
+  window.toast?.('Numune kaydedildi ✓','ok');
+  window._renderNumuneArsivi?.();
+};
+
 window._renderNumuneArsivi = function() {
   var p = document.getElementById('panel-numune-arsivi'); if(!p) return;
-  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
-    + '<div style="font-size:36px">🧪</div>'
-    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Numune Arşivi</div>'
-    + '<div style="font-size:12px;margin-top:6px">Gönderilen ve alınan numuneler, onay durumları</div>'
-    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
-    + '</div>';
+  var esc = window._esc||function(s){return String(s||'');};
+  var kayitlar = [];
+  try { kayitlar = JSON.parse(localStorage.getItem('ak_numune_arsivi_v1')||'[]'); } catch(e) {}
+  var satirlar = kayitlar.length ? kayitlar.slice(0,30).map(function(k){
+    var durRenk = k.durum==='onaylandi'?'#16A34A':k.durum==='reddedildi'?'#DC2626':'#D97706';
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      +'<td style="padding:6px 12px;font-size:11px">'+esc(k.tarih||'—')+'</td>'
+      +'<td style="padding:6px 12px;font-size:11px">'+esc(k.urun||'—')+'</td>'
+      +'<td style="padding:6px 12px;font-size:11px">'+esc(k.tedarikci||'—')+'</td>'
+      +'<td style="padding:6px 12px;font-size:11px">'+esc(k.yon||'—')+'</td>'
+      +'<td style="padding:6px 12px"><span style="font-size:9px;padding:2px 8px;border-radius:99px;background:'+durRenk+'22;color:'+durRenk+'">'+esc(k.durum||'bekliyor')+'</span></td>'
+      +'<td style="padding:6px 12px;font-size:11px">'+esc(k.not||'—')+'</td>'
+      +'</tr>';
+  }).join('') : '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--t3)">Numune kaydı yok</td></tr>';
+  p.innerHTML = '<div style="padding:0">'
+    +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'
+    +'<div style="flex:1;min-width:120px"><div style="font-size:9px;color:var(--t3);margin-bottom:4px">ÜRÜN</div><input id="nm-urun" placeholder="Ürün adı" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:11px;box-sizing:border-box"></div>'
+    +'<div style="flex:1;min-width:120px"><div style="font-size:9px;color:var(--t3);margin-bottom:4px">TEDARİKÇİ</div><input id="nm-ted" placeholder="Tedarikçi" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:11px;box-sizing:border-box"></div>'
+    +'<div><div style="font-size:9px;color:var(--t3);margin-bottom:4px">YÖN</div><select id="nm-yon" onclick="event.stopPropagation()" style="padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:11px"><option value="gonderilen">Gönderilen</option><option value="alinan">Alınan</option></select></div>'
+    +'<div><div style="font-size:9px;color:var(--t3);margin-bottom:4px">DURUM</div><select id="nm-dur" onclick="event.stopPropagation()" style="padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:11px"><option value="bekliyor">Bekliyor</option><option value="onaylandi">Onaylandı</option><option value="reddedildi">Reddedildi</option></select></div>'
+    +'<div style="flex:2;min-width:150px"><div style="font-size:9px;color:var(--t3);margin-bottom:4px">NOT</div><input id="nm-not" placeholder="Not..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:11px;box-sizing:border-box"></div>'
+    +'<button onclick="event.stopPropagation();window._numuneArsiviEkle()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;white-space:nowrap">+ Ekle</button>'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2);font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase"><th style="padding:6px 12px;text-align:left">Tarih</th><th style="padding:6px 12px;text-align:left">Ürün</th><th style="padding:6px 12px;text-align:left">Tedarikçi</th><th style="padding:6px 12px;text-align:left">Yön</th><th style="padding:6px 12px;text-align:left">Durum</th><th style="padding:6px 12px;text-align:left">Not</th></tr></thead><tbody>'+satirlar+'</tbody></table>'
+    +'</div>';
 };
 
 window._renderTeslimatTakip = function() {
