@@ -2366,6 +2366,19 @@ function _sendInvite() {
   logActivity('user', 'Davet gönderildi: ' + email + ' (' + code + ')');
   // Clipboard'a kopyala
   navigator.clipboard?.writeText(code).catch(() => {});
+  // ADMIN-DAVET-LINK-001: kopyalanabilir davet linki göster
+  var davetLink = window.location.origin + '?davet=' + code;
+  var linkDiv = document.createElement('div');
+  linkDiv.style.cssText = 'margin-top:8px;padding:10px;background:var(--s2);border-radius:6px;font-size:11px;color:var(--t);word-break:break-all';
+  linkDiv.innerHTML = '<div style="font-size:9px;color:var(--t3);margin-bottom:4px">DAVET LİNKİ — kopyala ve paylaş:</div>'
+    + '<span id="davet-link-text">' + davetLink + '</span>'
+    + '<button onclick="navigator.clipboard.writeText(\'' + davetLink + '\');window.toast?.(\'Link kopyalandı\',\'ok\')" '
+    + 'style="margin-left:8px;font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">Kopyala</button>';
+  var moInv = document.getElementById('mo-invite');
+  if (moInv) {
+    var target = moInv.querySelector('.mo-body') || moInv.querySelector('div');
+    if (target) target.appendChild(linkDiv);
+  }
 }
 
 function _copyInviteCode(code) {
