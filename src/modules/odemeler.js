@@ -7123,8 +7123,25 @@ function _renderCariDetail(id) {
   });
   var stHTML = '';
   if (cariST.length) {
+    /* CARI-AYLIK-KPI-001: Bu ay / geçen ay teklif KPI karşılaştırması */
+    var _buAy = new Date().toISOString().slice(0,7);
+    var _gecenAy = (function(){var d=new Date();d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);})();
+    var _buAyST = cariST.filter(function(t){ return String(t.date||t.ts||'').startsWith(_buAy); });
+    var _gecenAyST = cariST.filter(function(t){ return String(t.date||t.ts||'').startsWith(_gecenAy); });
+    var _ayHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;margin-top:14px">'
+      + '<div style="padding:8px 10px;background:var(--s2);border-radius:6px">'
+      + '<div style="font-size:9px;color:var(--t3)">BU AY</div>'
+      + '<div style="font-size:16px;font-weight:600">'+_buAyST.length+' teklif</div>'
+      + '<div style="font-size:10px;color:#16A34A">'+_buAyST.filter(function(t){return t.status==='kabul';}).length+' kabul</div>'
+      + '</div>'
+      + '<div style="padding:8px 10px;background:var(--s2);border-radius:6px">'
+      + '<div style="font-size:9px;color:var(--t3)">GEÇEN AY</div>'
+      + '<div style="font-size:16px;font-weight:600">'+_gecenAyST.length+' teklif</div>'
+      + '<div style="font-size:10px;color:#16A34A">'+_gecenAyST.filter(function(t){return t.status==='kabul';}).length+' kabul</div>'
+      + '</div></div>';
     var stKabul = cariST.filter(function(t){ return t.status==='kabul'; }).length;
     stHTML = '<div style="margin-top:14px;border-top:0.5px solid var(--b);padding-top:12px">'
+      + _ayHTML
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
       + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Satış Teklifleri</div>'
       + '<div style="font-size:11px;font-weight:600">'+cariST.length+' teklif</div>'
