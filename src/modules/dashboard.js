@@ -758,7 +758,8 @@ function _renderPirimimWidget() {
       if (p.status === 'paid') ozet[uid].odenen += amt;
       else ozet[uid].bekleyen += amt;
     });
-    var rows = Object.keys(ozet).map(function(k){ return ozet[k]; }).sort(function(a,b){ return b.toplam - a.toplam; });
+    /* PIRIM-DASH-SORT-BEKLEYEN-001: bekleyen prime göre sırala (en çok bekleyen üstte) */
+    var rows = Object.keys(ozet).map(function(k){ return ozet[k]; }).sort(function(a,b){ return b.bekleyen - a.bekleyen; });
     var fmt = function(n){ return n.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:0}); };
     var h = '<div onclick="window._pirimiGetir()" style="cursor:pointer;padding:14px 16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">'
       + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:8px">\ud83d\udcb0 Personel Prim Özeti <span style="font-size:9px;color:var(--t3);font-weight:400">(' + rows.length + ' personel)</span></div>'
