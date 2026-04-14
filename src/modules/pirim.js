@@ -1587,6 +1587,10 @@ window._pirimDetayGoster = function(uid) {
         + '<div style="color:' + (odendi?'#16A34A':'#D97706') + ';font-weight:500">' + (odendi?'\u00d6dendi':'Bekliyor') + '</div>'
         + '</div>';
     }).join('')
+    /* PIRIM-DETAY-EXCEL-001: Excel export butonu (footer öncesi) */
+    + '<div style="text-align:right;margin-top:8px">'
+    + '<button onclick="window._pirimDetayExcel?.(\'' + String(uid) + '\')" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">\u2b07 Excel</button>'
+    + '</div>'
     + '<div style="padding:8px;text-align:right;font-size:11px;font-weight:600">'
     + 'Toplam: ' + toplam.toLocaleString('tr-TR') + ' | \u00d6denen: ' + odenen.toLocaleString('tr-TR')
     + '</div></div>';
@@ -3224,3 +3228,27 @@ if (typeof module !== 'undefined' && module.exports) {
   window.printPirimSlip      = printPirimSlip;
   window.resubmitPirim       = resubmitPirim;
 }
+
+/* PIRIM-DETAY-EXCEL-001: Personel prim geçmişi Excel export */
+window._pirimDetayExcel = function(uid) {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenemedi','err'); return; }
+  var primler = typeof loadPirim==='function' ? loadPirim() : [];
+  var kisinin = primler.filter(function(p){ return !p.isDeleted && (p.uid===uid||p.personelId===uid); });
+  if (!kisinin.length) { window.toast?.('Veri yok','warn'); return; }
+  var rows = [['Dönem','Tutar','Para','Durum','Açıklama']];
+  kisinin.forEach(function(p){
+    rows.push([
+      p.donem||p.period||(p.ts||'').slice(0,7)||'—',
+      parseFloat(p.amount||p.tutar||0),
+      p.currency||p.para||'TRY',
+      p.status==='paid'||p.odendi ? 'Ödendi' : 'Bekliyor',
+      p.aciklama||p.description||''
+    ]);
+  });
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:12},{wch:8},{wch:12},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Prim Detay');
+  XLSX.writeFile(wb,'prim-'+String(uid).slice(0,8)+'-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  window.toast?.('Excel indirildi ✓','ok');
+};
