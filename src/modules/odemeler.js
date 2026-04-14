@@ -6976,6 +6976,28 @@ function _renderCariDetail(id) {
   cTah.forEach(function(t) { hareketler.push({ type: 'tahsilat', name: t.name, amount: t.amount, date: t.due || t.ts, status: t.collected ? 'Tahsil' : 'Bekliyor' }); });
   hareketler.sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
 
+  /* CARI-ISLEM-GECMISI-001: c.islemler dizisi (satış kabul, elle eklenen alacak/borç vb.) */
+  var islemler = c.islemler || [];
+  var islemHTML = '';
+  if (islemler.length) {
+    islemHTML = '<div style="margin-top:14px;border-top:0.5px solid var(--b);padding-top:12px">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">İşlem Geçmişi</div>'
+      + '<div style="display:grid;grid-template-columns:80px 1fr 100px 60px;gap:0;font-size:9px;font-weight:600;color:var(--t3);padding:4px 8px;background:var(--s2);border-radius:4px 4px 0 0;text-transform:uppercase">'
+      + '<div>Tarih</div><div>Açıklama</div><div>Tutar</div><div>Tip</div></div>'
+      + islemler.slice(0,10).map(function(ism){
+        var renk = ism.tip==='alacak'?'#16A34A':'#DC2626';
+        return '<div style="display:grid;grid-template-columns:80px 1fr 100px 60px;gap:0;padding:5px 8px;border-bottom:0.5px solid var(--b);font-size:10px;align-items:center">'
+          + '<div style="color:var(--t3)">' + (ism.tarih||'—') + '</div>'
+          + '<div>' + (window._esc?.(ism.aciklama)||ism.aciklama||'—') + '</div>'
+          + '<div style="font-family:monospace;font-size:9px">' + parseFloat(ism.tutar||0).toLocaleString('tr-TR') + ' ' + (ism.para||'') + '</div>'
+          + '<div style="color:'+renk+';font-weight:600">' + (ism.tip||'—') + '</div>'
+          + '</div>';
+      }).join('')
+      + '</div>';
+  } else {
+    islemHTML = '<div style="font-size:11px;color:var(--t3);margin-top:10px;padding:8px;background:var(--s2);border-radius:6px;text-align:center">İşlem kaydı yok</div>';
+  }
+
   cont.innerHTML = '<div style="padding:20px">'
     // Başlık
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
@@ -7106,6 +7128,7 @@ function _renderCariDetail(id) {
           }
         })()
     + '</div>'
+    + islemHTML
   + '</div>';
 }
 
