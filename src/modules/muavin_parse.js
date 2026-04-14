@@ -392,20 +392,31 @@ window._mvIletimRaporuPDF = function() {
 };
 
 window._mvBaranSatirHTML = function(islemler) {
-  if (!islemler||!islemler.length) return '<tr><td colspan="11" style="padding:20px;text-align:center;color:var(--t3);font-size:11px">Kayıt bulunamadı</td></tr>';
+  if (!islemler||!islemler.length) return '<tr><td colspan="12" style="padding:20px;text-align:center;color:var(--t3);font-size:11px">Kayıt bulunamadı</td></tr>';
+  /* MUAVIN-KOLON-UNIF-001: 12-kolon unified format (baran side) */
   return islemler.map(function(i){
+    var esnNo = i.snNo || i.faturaNo || (i.faturaSeri&&i.faturaSira ? i.faturaSeri+i.faturaSira : null) || '—';
+    var dovizCinsi = i.borcDoviz || i.alacakDoviz || i.borcDovizCinsi || i.alacakDovizCinsi || 'TRL';
+    var isTL = dovizCinsi==='TRL' || dovizCinsi==='TRY';
+    var borcMeb = parseFloat(i.borcMeblagh||i.borcMeblag||0);
+    var alacakMeb = parseFloat(i.alacakMeblagh||i.alacakMeblag||0);
+    var dovizTutar = isTL ? 0 : (borcMeb || alacakMeb);
+    var kurAlis = i.kurAlis ? i.kurAlis.toFixed(4) : (isTL?'—':'⏳');
+    var kurSatis = i.kurSatis ? i.kurSatis.toFixed(4) : (isTL?'—':'⏳');
+    var tip = i.islemTuru || '—';
     return '<tr style="border-bottom:0.5px solid var(--b)">'
-      +'<td style="padding:4px 8px;font-size:10px;color:var(--t2)">'+window._esc(i.islemTuru||'—')+'</td>'
       +'<td style="padding:4px 8px;font-size:10px">'+(i.tarih||'—')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+window._esc(i.aciklama||'')+'">'+window._esc(i.aciklama||'—')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;font-family:monospace">'+window._esc(i.faturaSeri||'—')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;font-family:monospace;color:#185FA5">'+window._esc(i.faturaSira||'—')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;text-align:right;font-family:monospace">'+(i.borcMeblagh?i.borcMeblagh.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;text-align:center">'+window._esc(i.borcDoviz||'')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;text-align:right;font-family:monospace">'+(i.alacakMeblagh?i.alacakMeblagh.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;text-align:center">'+window._esc(i.alacakDoviz||'')+'</td>'
-      +'<td style="padding:4px 8px;font-size:10px;text-align:right;font-family:monospace">'+(i.tlBakiye?i.tlBakiye.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
-      +'<td></td>'
+      +'<td style="padding:4px 8px;font-size:9px;color:var(--t3)">'+window._esc(tip)+'</td>'
+      +'<td style="padding:4px 8px;font-size:9px;font-family:monospace;color:#185FA5">'+window._esc(esnNo)+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+window._esc(i.aciklama||'')+'">'+window._esc((i.aciklama||'').slice(0,55))+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:right;color:'+(borcMeb>0?'#A32D2D':'var(--t3)')+'">'+(borcMeb>0?borcMeb.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:right;color:'+(alacakMeb>0?'#16A34A':'var(--t3)')+'">'+(alacakMeb>0?alacakMeb.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:10px;text-align:right;color:#185FA5;font-family:monospace">'+(dovizTutar?dovizTutar.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 8px;font-size:9px;color:#185FA5">'+window._esc(dovizCinsi)+'</td>'
+      +'<td style="padding:4px 8px;font-size:9px;text-align:right;color:#854F0B;font-family:monospace">'+kurAlis+'</td>'
+      +'<td style="padding:4px 8px;font-size:9px;text-align:right;color:#854F0B;font-family:monospace">'+kurSatis+'</td>'
+      +'<td style="padding:4px 8px;font-size:9px;color:var(--t3)">—</td>'
+      +'<td style="padding:4px 8px"></td>'
       +'</tr>';
   }).join('');
 };

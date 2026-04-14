@@ -332,8 +332,11 @@ function _mvMuhasebeIcerikHTML(islemlerM) {
   h += '</div>';
   h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:900px">';
   h += '<thead><tr style="background:var(--s2)">';
-  ['TARİH','TİP','FİŞ NO','CARİ ADI','AÇIKLAMA','BORÇ','ALACAK','BAKİYE','B/A','DURUM'].forEach(function(k) {
-    h += '<th style="padding:5px 8px;text-align:' + (['BORÇ','ALACAK','BAKİYE'].indexOf(k) !== -1 ? 'right' : 'left') + ';border-bottom:0.5px solid var(--b);font-size:9px;font-weight:500;color:var(--t2);white-space:nowrap">' + k + '</th>';
+  /* MUAVIN-KOLON-UNIF-001: 12-kolon unified başlık (muhasebeci + baran aynı) */
+  var _muhasKolonlar = ['TARİH','TİP','EŞLEŞME NO','AÇIKLAMA','TL BORÇ','TL ALACAK','DÖVİZ TUTAR','CİNS','TCMB ALIŞ','TCMB SATIŞ','CARİ ADI','DURUM'];
+  _muhasKolonlar.forEach(function(k) {
+    var sag = ['TL BORÇ','TL ALACAK','DÖVİZ TUTAR','TCMB ALIŞ','TCMB SATIŞ'].indexOf(k) !== -1;
+    h += '<th style="padding:5px 8px;text-align:'+(sag?'right':'left')+';border-bottom:0.5px solid var(--b);font-size:9px;font-weight:500;color:var(--t2);white-space:nowrap">'+k+'</th>';
   });
   h += '</tr></thead>';
   h += '<tbody id="mv-tablo-m">';
@@ -357,8 +360,11 @@ function _mvBaranIcerikHTML(islemlerB) {
   h += '</div>';
   h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:900px">';
   h += '<thead><tr style="background:var(--s2)">';
-  ['İŞLEM TÜRÜ','TARİH','AÇIKLAMA','FATURA SERİ','FATURA SIRA','BORÇ','BORÇ DÖV','ALACAK','ALACAK DÖV','TL BAKİYE','DURUM'].forEach(function(k) {
-    h += '<th style="padding:5px 8px;text-align:' + (['BORÇ','ALACAK','TL BAKİYE'].indexOf(k) !== -1 ? 'right' : 'left') + ';border-bottom:0.5px solid var(--b);font-size:9px;font-weight:500;color:var(--t2);white-space:nowrap">' + k + '</th>';
+  /* MUAVIN-KOLON-UNIF-001: 12-kolon unified başlık (muhasebeci + baran aynı) */
+  var _baranKolonlar = ['TARİH','TİP','EŞLEŞME NO','AÇIKLAMA','TL BORÇ','TL ALACAK','DÖVİZ TUTAR','CİNS','TCMB ALIŞ','TCMB SATIŞ','CARİ ADI','DURUM'];
+  _baranKolonlar.forEach(function(k) {
+    var sag = ['TL BORÇ','TL ALACAK','DÖVİZ TUTAR','TCMB ALIŞ','TCMB SATIŞ'].indexOf(k) !== -1;
+    h += '<th style="padding:5px 8px;text-align:'+(sag?'right':'left')+';border-bottom:0.5px solid var(--b);font-size:9px;font-weight:500;color:var(--t2);white-space:nowrap">'+k+'</th>';
   });
   h += '</tr></thead>';
   h += '<tbody id="mv-tablo-b">';

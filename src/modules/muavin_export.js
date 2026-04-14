@@ -58,22 +58,30 @@ window._mvAra = function(deger) {
 };
 
 window._mvIslemSatirHTML = function(islemler) {
-  if(!islemler.length) return '<tr><td colspan="13" style="padding:20px;text-align:center;color:var(--t3)">Sonuç bulunamadı</td></tr>';
+  if(!islemler.length) return '<tr><td colspan="12" style="padding:20px;text-align:center;color:var(--t3)">Sonuç bulunamadı</td></tr>';
+  /* MUAVIN-KOLON-UNIF-001: 12-kolon unified format (muhasebeci side) */
+  var _esc = window._esc || function(s){return String(s||'');};
   return islemler.map(function(i){
+    var esnNo = i.snNo || i.faturaNo || i.fisNo || '—';
+    var isTL = !i.dovizCinsi || i.dovizCinsi==='TRY' || i.dovizCinsi==='TRL';
+    var dovizTutar = isTL ? 0 : parseFloat(i.dovizBorc||i.dovizAlacak||0);
+    var kurAlis = i.kurAlis ? i.kurAlis.toFixed(4) : (isTL?'—':'⏳');
+    var kurSatis = i.kurSatis ? i.kurSatis.toFixed(4) : (isTL?'—':'⏳');
+    var tlBorc = parseFloat(i.borc||0);
+    var tlAlacak = parseFloat(i.alacak||0);
     return '<tr style="border-bottom:0.5px solid var(--b)">'
-      +'<td style="padding:4px 6px;white-space:nowrap;text-align:right">'+i.tarih+'</td>'
-      +'<td style="padding:4px 6px;color:var(--t3);text-align:right">'+i.tip+'</td>'
-      +'<td style="padding:4px 6px;font-family:monospace;text-align:right;cursor:pointer;color:#185FA5;text-decoration:underline" onclick="event.stopPropagation();window._mvFisDetayAc(\''+i.fisNo+'\')">'+(i.fisNo||'—')+'</td>'
-      +'<td style="padding:4px 6px;color:var(--t2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(i.aciklama||'')+'">'+i.aciklama+'</td>'
-      +'<td style="padding:4px 6px;text-align:right;color:'+(i.borc?'#A32D2D':'var(--t3)')+'">'+(i.borc?i.borc.toLocaleString('tr-TR'):'')+'</td>'
-      +'<td style="padding:4px 6px;text-align:right;color:'+(i.alacak?'#0F6E56':'var(--t3)')+'">'+(i.alacak?i.alacak.toLocaleString('tr-TR'):'')+'</td>'
-      +'<td style="padding:4px 6px;text-align:right;font-weight:500">'+(i.bakiye||0).toLocaleString('tr-TR')+'</td>'
-      +'<td style="padding:4px 6px;text-align:center;color:'+(i.ba==='A'?'#0F6E56':'#A32D2D')+'">'+i.ba+'</td>'
-      +'<td style="padding:4px 6px;text-align:right;color:var(--t3)">'+(i.borcDov?i.borcDov.toLocaleString('tr-TR'):'')+'</td>'
-      +'<td style="padding:4px 6px;text-align:right;color:var(--t3)">'+(i.alacakDov?i.alacakDov.toLocaleString('tr-TR'):'')+'</td>'
-      +'<td style="padding:4px 6px;text-align:right;color:var(--t3)">'+(i.bakiyeDov?i.bakiyeDov.toLocaleString('tr-TR'):'')+'</td>'
-      +'<td style="padding:4px 6px;text-align:center;color:'+(i.baDov==='A'?'#0F6E56':'#A32D2D')+'">'+(i.baDov||'')+'</td>'
-      +'<td style="padding:4px 6px;color:var(--t2);white-space:nowrap">'+(i.cari||'')+'</td>'
+      +'<td style="padding:4px 6px;white-space:nowrap">'+(i.tarih||'—')+'</td>'
+      +'<td style="padding:4px 6px;color:var(--t3);font-size:9px">'+(i.tip||'—')+'</td>'
+      +'<td style="padding:4px 6px;font-family:monospace;font-size:9px;color:#185FA5;cursor:pointer" onclick="event.stopPropagation();window._mvFisDetayAc?.(\''+_esc(esnNo)+'\')">'+_esc(esnNo)+'</td>'
+      +'<td style="padding:4px 6px;color:var(--t2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc(i.aciklama||'')+'">'+_esc((i.aciklama||'').slice(0,60))+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:'+(tlBorc>0?'#A32D2D':'var(--t3)')+'">'+(tlBorc>0?tlBorc.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:'+(tlAlacak>0?'#16A34A':'var(--t3)')+'">'+(tlAlacak>0?tlAlacak.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:#185FA5;font-family:monospace;font-size:10px">'+(dovizTutar?dovizTutar.toLocaleString('tr-TR',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td style="padding:4px 6px;font-size:9px;color:#185FA5">'+(i.dovizCinsi||'TRL')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:#854F0B;font-family:monospace;font-size:9px">'+kurAlis+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;color:#854F0B;font-family:monospace;font-size:9px">'+kurSatis+'</td>'
+      +'<td style="padding:4px 6px;color:var(--t3);font-size:9px">'+_esc(i.cariAd||i.cari||'')+'</td>'
+      +'<td style="padding:4px 6px"></td>'
       +'</tr>';
   }).join('');
 };
