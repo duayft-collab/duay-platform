@@ -213,6 +213,14 @@ function _mvUstDosyaBarHTML(meta, donem) {
   h += '</div>';
 
   h += '</div>';
+
+  /* MUAVIN-BIRLESIK-CARI-EXCEL-001: İki dosyadan biri yüklüyse Birleştirilmiş Excel butonu */
+  if (mMeta.ad || bMeta.ad) {
+    h += '<div style="padding:6px 12px;border-top:0.5px solid var(--b)">'
+      + '<button onclick="event.stopPropagation();window._mvBirlesikCariExcelIndir?.()" style="width:100%;font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t2);cursor:pointer;font-family:inherit;text-align:left">'
+      + '\u2193 Birle\u015ftirilmi\u015f Excel (Cari Adl\u0131)'
+      + '</button></div>';
+  }
   return h;
 }
 
@@ -609,6 +617,63 @@ window._mvAraB = function(deger) {
   });
   tbody.innerHTML = window._mvBaranSatirHTML ? window._mvBaranSatirHTML(filtre) : '';
   if (sonuc) sonuc.textContent = filtre.length + ' sonuç';
+};
+
+/* MUAVIN-BIRLESIK-CARI-EXCEL-001: Karşılaştırma öncesi raw veri export — CARİ ADI kolonlu
+   NOT: Mevcut window._mvBirlesikExcelIndir (muavin_export.js) firma-bazlı mutabakat sonuçlarını
+        export eder (_mvFirmaListesi gerekir). Bu yeni fonksiyon ise raw normalize edilmiş veriyi
+        direkt dışa aktarır — iki export parallel çalışır, L471 ve L484 buttons etkilenmez. */
+window._mvBirlesikCariExcelIndir = function() {
+  if (typeof XLSX === 'undefined') {
+    window.toast?.('Excel kütüphanesi yüklenemedi', 'err');
+    return;
+  }
+  var meta = typeof _mvMetaLoad === 'function' ? _mvMetaLoad() : (window._mvMeta || {});
+  var donem = typeof _mvAktifDonem === 'function' ? _mvAktifDonem() : '';
+  var d = meta[donem] || {};
+  var muhArr = (d.muhasebeci || {}).normalArr || window._mvSonIslemler || [];
+  var barArr = (d.baran || {}).normalArr || window._mvSonIslemlerB || [];
+  if (!muhArr.length && !barArr.length) {
+    window.toast?.('Önce dosya yükleyin', 'warn');
+    return;
+  }
+  var satirlar = [];
+  satirlar.push(['CARİ ADI', 'KAYNAK', 'TARİH', 'TİP', 'EŞLEŞME NO', 'AÇIKLAMA', 'TL BORÇ', 'TL ALACAK', 'DÖVİZ CİNS', 'TCMB ALIŞ']);
+  muhArr.forEach(function(i) {
+    satirlar.push([
+      i.firma || i.cariAd || '—',
+      'Muhasebeci',
+      i.tarih || '',
+      i.tip || '',
+      i.snNo || i.faturaNo || i.fisNo || '',
+      i.aciklama || '',
+      parseFloat(i.borc || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || '',
+      parseFloat(i.alacak || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || '',
+      i.dovizCinsi || 'TRY',
+      i.kurAlis || ''
+    ]);
+  });
+  barArr.forEach(function(i) {
+    var doviz = i.dovizCinsi || i.borcDoviz || i.alacakDoviz || 'TRL';
+    satirlar.push([
+      i.firma || i.firmaAdi || i.cariAd || '—',
+      'Baran Ekstresi',
+      i.tarih || '',
+      i.islemTuru || i.tip || '',
+      i.snNo || i.faturaNo || (i.faturaSeri && i.faturaSira ? i.faturaSeri + i.faturaSira : '') || '',
+      i.aciklama || '',
+      parseFloat(i.borcMeblagh || i.borcMeblag || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || '',
+      parseFloat(i.alacakMeblagh || i.alacakMeblag || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || '',
+      doviz,
+      i.kurAlis || ''
+    ]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(satirlar);
+  ws['!cols'] = [{wch:25},{wch:14},{wch:12},{wch:10},{wch:16},{wch:45},{wch:14},{wch:14},{wch:8},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Birlesik');
+  XLSX.writeFile(wb, 'muavin-birlesik-' + (donem || 'gecerli') + '-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  window.toast?.('Excel indirildi ✓ (' + (muhArr.length + barArr.length) + ' satır)', 'ok');
 };
 
 console.log('[MUAVİN] v3.0 B-layout yüklendi');
