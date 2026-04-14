@@ -454,7 +454,32 @@ window._saV2TopluExcel = function() {
   if (!secili.length) { window.toast?.('Önce teklif seçin', 'warn'); return; }
   var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
   var seciliListe = liste.filter(function(t) { return secili.includes(String(t.id)); });
-  if (typeof XLSX === 'undefined') { window.toast?.('Excel kütüphanesi yüklenmedi', 'err'); return; }
+  /* SATINALMA-V2-CSV-FALLBACK-001: XLSX yoksa CSV indir */
+  if (typeof XLSX === 'undefined') {
+    var csv = ['Tedarikçi,Ürün,Alış,Para,Miktar,Toplam,Durum,Tarih,Job ID\n'];
+    seciliListe.forEach(function(t) {
+      csv.push([
+        t.tedarikci || '',
+        (typeof window._saV2UrunAdi === 'function' ? window._saV2UrunAdi(t) : t.urunAdi) || '',
+        t.alisFiyati || t.alisF || '',
+        t.para || t.toplamPara || '',
+        t.miktar || '',
+        t.toplamTutar || '',
+        t.durum || '',
+        (t.createdAt || '').slice(0, 10),
+        t.jobId || ''
+      ].map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',') + '\n');
+    });
+    var blob = new Blob(csv, { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'alis-teklifleri-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    window.toast?.('CSV indirildi ✓ (' + seciliListe.length + ' teklif)', 'ok');
+    return;
+  }
   var satirlar = [['Tedarikçi','Ürün','Alış Fiyatı','Para','Miktar','Toplam','Durum','Tarih','Job ID']];
   seciliListe.forEach(function(t) {
     satirlar.push([
