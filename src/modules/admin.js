@@ -1767,7 +1767,15 @@ function _injectUsersPanel() {
       '</select>',
       '<span id="u-count-label" style="font-size:11px;color:var(--t3)"></span>',
     '</div>',
-    '<div id="u-grid"></div>',
+    /* ADMIN-USERS-SPLIT-001: sol u-grid + sağ u-detail */
+    '<div class="adm-users-split" style="display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start">',
+      '<div id="u-grid" style="min-width:0"></div>',
+      '<div id="u-detail" style="position:sticky;top:12px;background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:22px 18px;font-size:12px;color:var(--t3);text-align:center">',
+        '<div style="font-size:36px;margin-bottom:10px">👤</div>',
+        '<div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:4px">Bir kullanıcı seçin</div>',
+        '<div style="font-size:10px;color:var(--t3)">Tablodan bir satıra tıklayın</div>',
+      '</div>',
+    '</div>',
   ].join('');
   // View buton event delegation
   var panel2 = document.getElementById('panel-users');
@@ -2008,7 +2016,9 @@ function renderUsers(filter=''){
             const isActive=u.status==='active';
             const idx=users.indexOf(u);
             const avBg=AV_COLORS[idx%AV_COLORS.length];
-            return`<tr style="border-bottom:1px solid var(--b);background:${rowIdx%2===0?'var(--sf)':'var(--s2)'};opacity:${isActive?1:.6};transition:background .1s" onmouseenter="this.style.background='var(--al)'" onmouseleave="this.style.background='${rowIdx%2===0?'var(--sf)':'var(--s2)'}'">
+            const _rowSel = _selectedUserId === u.id;
+            const _rowBg = _rowSel ? 'var(--al)' : (rowIdx%2===0?'var(--sf)':'var(--s2)');
+            return`<tr onclick="if(!event.target.closest('button,input')){window._selectUserForDetail(${u.id})}" style="border-bottom:1px solid var(--b);background:${_rowBg};opacity:${isActive?1:.6};transition:background .1s;cursor:pointer${_rowSel?';box-shadow:inset 3px 0 0 var(--ac)':''}" onmouseenter="this.style.background='var(--al)'" onmouseleave="this.style.background='${_rowBg}'">
               <td style="padding:12px 16px;width:36px">
                 ${!isSelf?`<input type="checkbox" class="u-bulk-cb" data-uid="${u.id}" onchange="_onBulkCb()" style="accent-color:var(--ac);cursor:pointer">`:
                   `<span style="font-size:10px;color:var(--t3)">—</span>`}
@@ -2053,7 +2063,91 @@ function renderUsers(filter=''){
       </table>
     </div>`;
   }
+  /* ADMIN-USERS-SPLIT-001: seçili kullanıcı varsa detay panelini güncelle */
+  if (_selectedUserId && typeof window._renderUserDetail === 'function') {
+    window._renderUserDetail(_selectedUserId);
+  }
 }
+
+/* ADMIN-USERS-SPLIT-001: tablodan kullanıcı seç → sağ detay panelinde aç */
+window._selectUserForDetail = function(uid) {
+  _selectedUserId = uid;
+  window._renderUserDetail(uid);
+  renderUsers(g('u-search')?.value || '');
+};
+
+/* ADMIN-USERS-SPLIT-001: sağ panel render — avatar, rol select, modül badge, aksiyon */
+window._renderUserDetail = function(uid) {
+  var cont = g('u-detail');
+  if (!cont) return;
+  var users = loadUsers().filter(function(x){ return !x.isDeleted; });
+  var u = users.find(function(x){ return x.id === uid; });
+  if (!u) {
+    cont.style.textAlign = 'center';
+    cont.innerHTML = '<div style="font-size:36px;margin-bottom:10px">👤</div>'
+      + '<div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:4px">Bir kullanıcı seçin</div>'
+      + '<div style="font-size:10px;color:var(--t3)">Tablodan bir satıra tıklayın</div>';
+    return;
+  }
+  var rm = (typeof ROLE_META !== 'undefined' && ROLE_META[u.role]) || { bg:'var(--al)', border:'var(--ac)', color:'var(--ac)', icon:'👤', label:u.role||'—' };
+  var av = initials(u.name);
+  var isActive = u.status === 'active';
+  var esc = window._esc || function(s){ return String(s||''); };
+  var modCount = (u.modules && u.role !== 'admin') ? u.modules.length : 'Tümü';
+  var modText = (typeof modCount === 'number') ? (modCount + ' modül') : modCount;
+  var isSelf = u.id === _getCU()?.id;
+  cont.style.textAlign = 'left';
+  cont.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'
+    + '<div style="width:52px;height:52px;border-radius:14px;background:' + rm.bg + ';border:1.5px solid ' + rm.border + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:' + rm.color + ';flex-shrink:0">' + esc(av) + '</div>'
+    + '<div style="flex:1;min-width:0">'
+    +   '<div style="font-size:14px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(u.name) + (isSelf?' <span style="font-size:9px;background:#6366F1;color:#fff;padding:1px 6px;border-radius:4px;vertical-align:middle">SİZ</span>':'') + '</div>'
+    +   '<div style="font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(u.email || '—') + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="margin-bottom:12px">'
+    +   '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:4px;letter-spacing:.05em">Rol</div>'
+    +   '<select onchange="event.stopPropagation();window._usersRolDegistir(' + u.id + ',this.value)" style="width:100%;padding:7px 10px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-size:12px;font-family:inherit">'
+    +     '<option value="admin"' + (u.role==='admin'?' selected':'') + '>👑 Admin</option>'
+    +     '<option value="manager"' + (u.role==='manager'?' selected':'') + '>👔 Yönetici</option>'
+    +     '<option value="lead"' + (u.role==='lead'?' selected':'') + '>⭐ Takım Lideri</option>'
+    +     '<option value="staff"' + (u.role==='staff'?' selected':'') + '>👤 Personel</option>'
+    +   '</select>'
+    + '</div>'
+    + '<div style="margin-bottom:12px">'
+    +   '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:6px;letter-spacing:.05em">Erişim</div>'
+    +   '<div style="display:flex;flex-wrap:wrap;gap:4px">'
+    +     '<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:var(--al);color:var(--ac);font-weight:600">' + esc(modText) + '</span>'
+    +     '<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:' + (isActive?'rgba(22,163,74,.1)':'rgba(220,38,38,.1)') + ';color:' + (isActive?'#16A34A':'#DC2626') + ';font-weight:600">' + (isActive?'Aktif':'Pasif') + '</span>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="margin-bottom:14px">'
+    +   '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:700;margin-bottom:4px;letter-spacing:.05em">Son Giriş</div>'
+    +   '<div style="font-size:11px;font-family:\'DM Mono\',monospace;color:var(--t2)">' + (u.lastLogin ? esc(String(u.lastLogin).slice(0,16)) : '—') + '</div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">'
+    +   '<button class="btn btnp" onclick="event.stopPropagation();editUser(' + u.id + ')" style="font-size:12px;justify-content:center">✏️ Düzenle</button>'
+    +   '<button class="btn btns" onclick="event.stopPropagation();Admin.resetPassword(' + u.id + ')" style="font-size:11px;justify-content:center">🔑 Şifre Sıfırla</button>'
+    +   (isSelf ? '' : '<button class="btn btns" onclick="event.stopPropagation();toggleUser(' + u.id + ')" style="font-size:11px;justify-content:center;color:' + (isActive?'#D97706':'#16A34A') + '">' + (isActive ? '⏸ Askıya Al' : '▶ Aktifleştir') + '</button>')
+    + '</div>';
+};
+
+/* ADMIN-USERS-SPLIT-001: rol inline değişiklik — saveUsers + log + toast */
+window._usersRolDegistir = function(uid, yeniRol) {
+  if (!isAdmin()) { window.toast?.('Yetkiniz yok','err'); return; }
+  var users = loadUsers();
+  var u = users.find(function(x){ return x.id === uid; });
+  if (!u) return;
+  var eskiRol = u.role;
+  if (eskiRol === yeniRol) return;
+  u.role = yeniRol;
+  u.updatedAt = new Date().toISOString();
+  saveUsers(users);
+  window.logActivity?.('admin', 'Kullanici rol guncellendi: ' + u.name + ' ' + eskiRol + ' → ' + yeniRol);
+  window.toast?.('Rol güncellendi: ' + yeniRol, 'ok');
+  window._renderUserDetail(uid);
+  renderUsers(g('u-search')?.value || '');
+};
 
 function editUser(id){
   const users=loadUsers();const u=users.find(x=>x.id===id);if(!u)return;
