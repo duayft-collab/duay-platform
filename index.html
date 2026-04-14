@@ -416,7 +416,7 @@ function _doLogin() {
         <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 11l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Satış Teklifleri</span>
       </button>
-      <button class="nb" onclick="nav('satis-rapor',this)">
+      <button class="nb" onclick="if(window.canModule?.('satis-rapor')!==false){nav('satis-rapor',this);}else{window.toast?.('Bu bölüme erişim yetkiniz yok','warn');}">
         <span>📊</span><span>Satış Raporu</span>
       </button>
 
@@ -443,7 +443,7 @@ function _doLogin() {
         <span>📦</span>
         <span>Siparişler</span>
       </button>
-      <button class="nb" onclick="nav('numune-arsivi',this)">
+      <button class="nb" onclick="if(window.canModule?.('numune-arsivi')!==false){nav('numune-arsivi',this);}else{window.toast?.('Bu bölüme erişim yetkiniz yok','warn');}">
         <span>🧪</span><span>Numune Arşivi</span>
       </button>
 
@@ -454,7 +454,7 @@ function _doLogin() {
     <span>Kargo Takibi</span>
     <span class="nbdg" id="nb-odm-b" style="background:var(--rd);display:none">!</span>
   </button>
-      <button class="nb" onclick="nav('teslimat-takip',this)">
+      <button class="nb" onclick="if(window.canModule?.('teslimat-takip')!==false){nav('teslimat-takip',this);}else{window.toast?.('Bu bölüme erişim yetkiniz yok','warn');}">
         <span>🚚</span><span>Teslimat Takibi</span>
       </button>
 
@@ -477,10 +477,10 @@ function _doLogin() {
     <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h14M5 6v8" stroke="currentColor" stroke-width="1.3"/></svg>
     <span>Cari Yönetimi</span>
   </button>
-      <button class="nb" onclick="nav('cari-karsilastirma',this)">
+      <button class="nb" onclick="if(window.canModule?.('cari-karsilastirma')!==false){nav('cari-karsilastirma',this);}else{window.toast?.('Bu bölüme erişim yetkiniz yok','warn');}">
         <span>⚖️</span><span>Cari Karşılaştırma</span>
       </button>
-      <button class="nb" onclick="nav('donem-ozeti',this)">
+      <button class="nb" onclick="if(window.canModule?.('donem-ozeti')!==false){nav('donem-ozeti',this);}else{window.toast?.('Bu bölüme erişim yetkiniz yok','warn');}">
         <span>📈</span><span>Dönem Özeti</span>
       </button>
       <button class="nb" onclick="nav('pirim',this)">
