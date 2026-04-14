@@ -120,11 +120,18 @@ function renderSatisTeklif() {
   sayfaListe.forEach(function(t) {
     var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
     var st = ST_DURUM[t.status] || ST_DURUM.taslak;
+    /* SATIS-KAR-BADGE-001: kar oranı badge (alış verisi varsa görünür) */
+    var karInfo = window._stKarHesapla ? window._stKarHesapla(t) : null;
+    var karBadge = (karInfo && karInfo.oran) ? (
+      '<span style="font-size:9px;padding:1px 6px;border-radius:99px;margin-left:6px;background:'
+      +(karInfo.oran>=20?'#EAF3DE':'#FCEBEB')+';color:'+(karInfo.oran>=20?'#3B6D11':'#A32D2D')+';font-weight:600" title="Kar oranı">'
+      +karInfo.oran+'%</span>'
+    ) : '';
     html += '<div style="display:grid;grid-template-columns:28px 110px 1fr 140px 100px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onclick="event.stopPropagation();window._stPeek?.(' + t.id + ')" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div onclick="event.stopPropagation()"><input type="checkbox" class="stek-row-chk" data-id="' + t.id + '" onchange="event.stopPropagation();window._stekChkGuncelle()"></div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(t.teklifNo || '—') + '</div>'
       + '<div style="font-weight:500">' + esc(t.customerName || '—') + '</div>'
-      + '<div style="font-weight:700">' + total.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(t.currency || 'USD') + '</span></div>'
+      + '<div style="font-weight:700">' + total.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(t.currency || 'USD') + '</span>' + karBadge + '</div>'
       + '<div><span style="font-size:9px;padding:3px 10px;border-radius:99px;background:' + st.bg + ';color:' + st.color + ';font-weight:700;white-space:nowrap">' + st.label + '</span></div>'
       + '<div style="color:var(--t3)">' + (t.date || '—') + '</div>'
       + '<div style="display:flex;gap:3px">'
@@ -553,6 +560,29 @@ window._stPreview = function(id) {
     + '<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1e1b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">' + L('print') + '</button></div>'
     + '</body></html>');
   w.document.close();
+};
+
+/* SATIS-KAR-BADGE-001: Kar hesaplama helper — liste badge ve detay ekranı için */
+window._stKarHesapla = function(teklif) {
+  var urunler = typeof loadUrunler === 'function' ? loadUrunler() : [];
+  var items = teklif.items || teklif.urunler || [];
+  var satisToplam = 0;
+  var alisToplam = 0;
+  items.forEach(function(i) {
+    var qty = parseFloat(i.qty || i.miktar || 0) || 0;
+    var satis = parseFloat(i.price || i.birimFiyat || 0) || 0;
+    satisToplam += satis * qty;
+    // Alış önce item içinden, yoksa catalog lookup (duayKodu === i.code)
+    var alis = parseFloat(i.alisF || i.alisFiyat || i.costPrice || 0) || 0;
+    if (!alis && i.code) {
+      var u = urunler.find(function(x) { return x.duayKodu === i.code; });
+      if (u) alis = parseFloat(u.alisF) || 0;
+    }
+    alisToplam += alis * qty;
+  });
+  var kar = satisToplam - alisToplam;
+  var oran = satisToplam > 0 ? Math.round(kar / satisToplam * 100) : 0;
+  return { satis: satisToplam, alis: alisToplam, kar: kar, oran: oran };
 };
 
 /**
