@@ -6684,40 +6684,144 @@ window._renderTeslimatTakip = function() {
     + '</tr></thead><tbody>' + satirlar + '</tbody></table></div>';
 };
 
-/* CARI-KARSILASTIRMA-V1-001: stub → platform cari listesi + upload placeholder */
+/* CARI-KARSILASTIRMA-V2-001: Platform + Muhasebeci + Baran Ekstresi yan yana + not + resim export */
 window._renderCariKarsilastirma = function() {
-  var p = document.getElementById('panel-cari-karsilastirma');
-  if (!p) return;
-  var cariList = typeof loadCari==='function' ? loadCari() : [];
-  var esc = window._esc || function(s){return String(s||'');};
-  var h = '<div style="padding:20px;max-width:900px;margin:0 auto">';
-  h += '<div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:4px">Cari Karşılaştırma</div>';
-  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Platform cari verileri — muhasebeci dosyasıyla karşılaştır</div>';
-  h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:16px">';
-  h += '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:8px">Platform Cari Listesi (' + cariList.length + ' kayıt)</div>';
-  if (!cariList.length) {
-    h += '<div style="font-size:11px;color:var(--t3);padding:20px;text-align:center">Cari kaydı yok</div>';
-  } else {
-    h += '<div style="display:grid;grid-template-columns:1fr 120px 120px 80px;gap:0;font-size:9px;font-weight:600;color:var(--t3);padding:5px 10px;background:var(--s2);border-radius:4px 4px 0 0;text-transform:uppercase">'
-      + '<div>Cari Adı</div><div>Kod</div><div>Son İşlem</div><div>İşlem</div></div>';
-    h += cariList.filter(function(c){return !c.isDeleted;}).slice(0,50).map(function(c){
-      var sonIslem = (c.islemler||[]).length ? (c.islemler[0].tarih||'—') : '—';
-      return '<div style="display:grid;grid-template-columns:1fr 120px 120px 80px;gap:0;padding:7px 10px;border-bottom:0.5px solid var(--b);font-size:11px;align-items:center">'
-        + '<div style="font-weight:500">' + esc(c.name||'—') + '</div>'
-        + '<div style="font-family:monospace;font-size:10px;color:var(--t3)">' + esc(c.code||c.kod||'—') + '</div>'
-        + '<div style="font-size:10px;color:var(--t3)">' + sonIslem + '</div>'
-        + '<div><span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#EAF3DE;color:#27500A">' + (c.islemler||[]).length + ' işlem</span></div>'
-        + '</div>';
-    }).join('');
+  var p = document.getElementById('panel-cari-karsilastirma'); if(!p) return;
+  var esc = window._esc||function(s){return String(s||'');};
+
+  // Cari listesi
+  var cariList = (typeof loadCari==='function' ? loadCari() : []).filter(function(c){return !c.isDeleted;});
+  var cariOpts = cariList.map(function(c){ return '<option value="'+esc(c.name||'')+'">'+esc(c.name||'İsimsiz')+'</option>'; }).join('');
+
+  // Dönem listesi (muavin pattern)
+  var donemler = typeof _mvDonemListesi==='function' ? _mvDonemListesi() : ['2026Q1','2026Q2'];
+  var donemOpts = donemler.map(function(d){ return '<option value="'+d+'">'+(typeof _mvDonemEtiket==='function'?_mvDonemEtiket(d):d)+'</option>'; }).join('');
+
+  p.innerHTML = '<div style="padding:0">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf)">'
+    + '<div style="font-size:14px;font-weight:600;color:var(--t)">Cari Karşılaştırma</div>'
+    + '<div style="display:flex;gap:8px;align-items:center">'
+    + '<select id="ckars-cari" onclick="event.stopPropagation()" style="font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit"><option value="">Cari seçin...</option>'+cariOpts+'</select>'
+    + '<select id="ckars-donem" onclick="event.stopPropagation()" style="font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit">'+donemOpts+'</select>'
+    + '<button onclick="event.stopPropagation();window._ckarsKarsilastir?.()" style="padding:6px 14px;background:var(--ac);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Karşılaştır</button>'
+    + '</div></div>'
+    + '<div id="ckars-sonuc" style="min-height:200px"></div>'
+    + '</div>';
+};
+
+window._ckarsKarsilastir = function() {
+  var cariAdi = document.getElementById('ckars-cari')?.value?.trim();
+  var donem = document.getElementById('ckars-donem')?.value;
+  var sonuc = document.getElementById('ckars-sonuc');
+  if (!sonuc) return;
+  if (!cariAdi) { window.toast?.('Cari seçin','warn'); return; }
+
+  var stList = typeof loadST==='function' ? loadST() : [];
+  var platHar = [];
+  stList.filter(function(t){ return !t.isDeleted && (t.customerName===cariAdi||t.musteri===cariAdi); }).forEach(function(t){
+    platHar.push({ aciklama: t.teklifNo||t.piNo||'Teklif', tutar: parseFloat(t.toplamUSD||t.toplam||0), tarih: t.date||t.ts||'' });
+  });
+
+  var mvData = [];
+  try { mvData = JSON.parse(localStorage.getItem('ak_muavin_v1')||'[]'); } catch(e){}
+  var aralik = typeof _mvDonemAralik==='function' ? _mvDonemAralik(donem) : null;
+  function _inDonem(tarih) {
+    if (!aralik) return true;
+    return tarih >= aralik.bas && tarih <= aralik.son;
   }
-  h += '</div>';
-  h += '<div style="border:0.5px dashed var(--b);border-radius:10px;padding:24px;text-align:center;color:var(--t3)">';
-  h += '<div style="font-size:28px;margin-bottom:8px">📂</div>';
-  h += '<div style="font-size:13px;color:var(--t)">Muhasebeci Dosyası Yükle</div>';
-  h += '<div style="font-size:11px;margin-top:4px">Excel veya CSV formatında cari listesi</div>';
-  h += '<div style="margin-top:12px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:6px;padding:8px 16px;display:inline-block">Dosya yükleme — Yakında</div>';
-  h += '</div></div>';
-  p.innerHTML = h;
+  var muhData = mvData.filter(function(i){ return i.taraf==='muhasebeci' && _inDonem(i.tarih||i.date||''); });
+  var barData = mvData.filter(function(i){ return i.taraf==='baran' && _inDonem(i.tarih||i.date||''); });
+
+  function _cariFilter(arr) {
+    return arr.filter(function(i){
+      var ac = (i.aciklama||i.hesap||i.cariAdi||'').toLowerCase();
+      return ac.includes(cariAdi.toLowerCase()) || !cariAdi;
+    });
+  }
+  var muhFilt = _cariFilter(muhData);
+  var barFilt = _cariFilter(barData);
+
+  var platTop = platHar.reduce(function(s,i){return s+i.tutar;},0);
+  var muhTop = muhFilt.reduce(function(s,i){return s+parseFloat(i.borc||i.alacak||i.tutar||0);},0);
+  var barTop = barFilt.reduce(function(s,i){return s+parseFloat(i.borc||i.alacak||i.tutar||0);},0);
+  var esc = window._esc||function(s){return String(s||'');};
+
+  function _satir(plat, muh, bar) {
+    return '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:0.5px solid var(--b);font-size:11px">'
+      + '<div style="padding:8px 14px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px">'
+      + (plat.tutar ? '<span style="width:7px;height:7px;border-radius:50%;background:#16A34A;flex-shrink:0"></span>' : '<span style="width:7px;height:7px;border-radius:50%;background:#E24B4A;flex-shrink:0"></span>')
+      + '<div><div style="font-family:monospace;font-size:10px;font-weight:500">'+(plat.tutar?plat.tutar.toLocaleString('tr-TR')+' $':'—')+'</div><div style="font-size:9px;color:var(--t3)">'+esc(plat.aciklama||'')+'</div></div></div>'
+      + '<div style="padding:8px 14px;border-right:0.5px solid var(--b);display:flex;align-items:center;gap:6px">'
+      + (muh.borc||muh.alacak||muh.tutar ? '<span style="width:7px;height:7px;border-radius:50%;background:#16A34A;flex-shrink:0"></span>' : '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#A32D2D">Eksik</span>')
+      + '<div><div style="font-family:monospace;font-size:10px;font-weight:500">'+(muh.borc||muh.alacak||muh.tutar ? parseFloat(muh.borc||muh.alacak||muh.tutar||0).toLocaleString('tr-TR')+' ₺' : '—')+'</div><div style="font-size:9px;color:var(--t3)">'+esc(muh.aciklama||muh.hesap||'')+'</div></div></div>'
+      + '<div style="padding:8px 14px;display:flex;align-items:center;gap:6px">'
+      + (bar.borc||bar.alacak||bar.tutar ? '<span style="width:7px;height:7px;border-radius:50%;background:#16A34A;flex-shrink:0"></span>' : '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#A32D2D">Eksik</span>')
+      + '<div><div style="font-family:monospace;font-size:10px;font-weight:500">'+(bar.borc||bar.alacak||bar.tutar ? parseFloat(bar.borc||bar.alacak||bar.tutar||0).toLocaleString('tr-TR')+' ₺' : '—')+'</div><div style="font-size:9px;color:var(--t3)">'+esc(bar.aciklama||bar.hesap||'')+'</div></div></div>'
+      + '</div>';
+  }
+
+  var maxLen = Math.max(platHar.length, muhFilt.length, barFilt.length, 1);
+  var satirHTML = '';
+  for (var i=0; i<maxLen; i++) {
+    satirHTML += _satir(platHar[i]||{}, muhFilt[i]||{}, barFilt[i]||{});
+  }
+  if (!satirHTML) satirHTML = '<div style="padding:30px;text-align:center;color:var(--t3)">Bu dönemde eşleşen hareket bulunamadı</div>';
+
+  var farkMuh = platTop - muhTop;
+  var farkBar = platTop - barTop;
+  var farkRenk = function(f){ return Math.abs(f)<1?'#16A34A':'#DC2626'; };
+
+  sonuc.innerHTML = '<div id="ckars-rapor">'
+    + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:0.5px solid var(--b)">'
+    + '<div style="padding:12px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Platform</div><div style="font-size:18px;font-weight:500">'+platTop.toLocaleString('tr-TR')+' $</div><div style="font-size:9px;color:var(--t3)">'+platHar.length+' hareket</div></div>'
+    + '<div style="padding:12px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:#185FA5;text-transform:uppercase;letter-spacing:.05em">Muhasebeci</div><div style="font-size:18px;font-weight:500;color:#185FA5">'+muhTop.toLocaleString('tr-TR')+' ₺</div><div style="font-size:9px;color:'+farkRenk(farkMuh)+'">Fark: '+(farkMuh>0?'+':'')+farkMuh.toLocaleString('tr-TR')+'</div></div>'
+    + '<div style="padding:12px 16px"><div style="font-size:9px;color:#0F6E56;text-transform:uppercase;letter-spacing:.05em">Baran Ekstresi</div><div style="font-size:18px;font-weight:500;color:#0F6E56">'+barTop.toLocaleString('tr-TR')+' ₺</div><div style="font-size:9px;color:'+farkRenk(farkBar)+'">Fark: '+(farkBar>0?'+':'')+farkBar.toLocaleString('tr-TR')+'</div></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--s2);border-bottom:0.5px solid var(--b)">'
+    + '<div style="padding:5px 14px;font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;border-right:0.5px solid var(--b)">Platform</div>'
+    + '<div style="padding:5px 14px;font-size:9px;font-weight:500;color:#185FA5;text-transform:uppercase;border-right:0.5px solid var(--b)">Muhasebeci</div>'
+    + '<div style="padding:5px 14px;font-size:9px;font-weight:500;color:#0F6E56;text-transform:uppercase">Baran Ekstresi</div>'
+    + '</div>'
+    + satirHTML
+    + '<div style="padding:12px 16px;border-top:0.5px solid var(--b)">'
+    + '<div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:6px">Şirket Notu <span style="font-size:9px;font-weight:400;color:#185FA5;background:#E6F1FB;padding:1px 6px;border-radius:3px;margin-left:4px">Muhasebeciye gidecek</span></div>'
+    + '<textarea id="ckars-not" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" rows="3" placeholder="Karşılaştırma notu... (örn: Fatura #002 muhasebecide eksik, takip gerekiyor)" style="width:100%;padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:11px;resize:none;box-sizing:border-box"></textarea>'
+    + '</div>'
+    + '<div style="padding:10px 16px;border-top:0.5px solid var(--b);display:flex;gap:8px;justify-content:flex-end;background:var(--s2)">'
+    + '<button onclick="event.stopPropagation();window._ckarsExcel?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)">Excel İndir</button>'
+    + '<button onclick="event.stopPropagation();window._ckarsResim?.()" style="padding:6px 14px;background:var(--ac);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Resim Olarak İndir</button>'
+    + '</div>'
+    + '</div>';
+};
+
+window._ckarsResim = function() {
+  var el = document.getElementById('ckars-rapor');
+  if (!el) { window.toast?.('Önce karşılaştır','warn'); return; }
+  if (typeof html2canvas === 'undefined') {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = function(){ window._ckarsResim(); };
+    document.head.appendChild(s); return;
+  }
+  html2canvas(el, { backgroundColor: '#ffffff', scale: 2 }).then(function(canvas){
+    var a = document.createElement('a');
+    a.download = 'cari-karsilastirma-' + new Date().toISOString().slice(0,10) + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    window.toast?.('Resim indirildi ✓','ok');
+  });
+};
+
+window._ckarsExcel = function() {
+  if (typeof XLSX==='undefined') { window.toast?.('XLSX yüklenemedi','err'); return; }
+  var cariAdi = document.getElementById('ckars-cari')?.value||'—';
+  var donem = document.getElementById('ckars-donem')?.value||'—';
+  var rows = [['Cari: '+cariAdi, 'Dönem: '+donem, ''], ['Platform', 'Muhasebeci', 'Baran']];
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Karşılaştırma');
+  XLSX.writeFile(wb, 'cari-karsilastirma-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  window.toast?.('Excel indirildi ✓','ok');
 };
 
 /* DONEM-OZETI-V1-001: stub → bu ay ödeme/tahsilat/alış/satış KPI özeti */
