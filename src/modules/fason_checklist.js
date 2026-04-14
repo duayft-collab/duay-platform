@@ -117,17 +117,31 @@ window._fasonDetay = function(emirId) {
     + '<div style="font-size:10px;color:var(--t3)">'+window._esc(emir.fasonFirma||'')+(emir.tarih?' · Termin: '+emir.tarih:'')+'</div></div>'
     + '<div style="margin-left:auto;display:flex;gap:8px">'
     + '<button onclick="event.stopPropagation();window._fasonEtiketBas(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:var(--t2)">🏷 Numune Etiketi</button>'
+    /* FASON-KALITE-RAPORU-001: Kontrol sonuçları + ölçümler + notlar yazdırılabilir rapor */
+    + '<button onclick="event.stopPropagation();window._fasonKaliteRaporu(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid #185FA5;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:#185FA5">📋 Kalite Raporu</button>'
+    /* FASON-RULO-ETIKET-001: Rulo kayıt + etiket bas */
+    + '<button onclick="event.stopPropagation();window._fasonRuloEtiket(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid #16A34A;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:#16A34A">🏷 Rulo Etiket Bas</button>'
     + '</div></div>'
     + '<div style="flex:1;overflow-y:auto;padding:14px 20px">'
-    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'
+    /* FASON-RULO-ETIKET-001: 4 KPI → 5 KPI (rulo sayısı eklendi) */
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">'
     + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+emir.en+'m</div><div style="font-size:9px;color:var(--t3)">En</div></div>'
     + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+emir.uzunluk+'m</div><div style="font-size:9px;color:var(--t3)">Top Uzunluğu</div></div>'
     + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+window._esc(emir.iplikSpec||'')+'</div><div style="font-size:9px;color:var(--t3)">İplik</div></div>'
     + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+window._esc(emir.atkuCozgu||'')+'</div><div style="font-size:9px;color:var(--t3)">Atkı×Çözgü</div></div>'
+    + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600;color:#16A34A" id="fason-rulo-say">0</div><div style="font-size:9px;color:var(--t3)">Rulo</div></div>'
     + '</div>'
     + checkHTML
     + ruloListHTML
     + '</div></div>';
+
+  /* FASON-RULO-ETIKET-001: render sonrası rulo sayısı güncelle */
+  try {
+    var _rulolar = JSON.parse(localStorage.getItem('ak_fason_rulo_v1') || '[]');
+    var _ruloSay = _rulolar.filter(function(r){ return r.emirId === emirId; }).length;
+    var _ruloEl = document.getElementById('fason-rulo-say');
+    if (_ruloEl) _ruloEl.textContent = _ruloSay;
+  } catch(e) {}
 };
 
 window._fasonCheckToggle = function(emirId, cpId) {
@@ -205,6 +219,133 @@ window._fasonEtiketBas = function(emirId) {
     + '</body></html>';
   var win = window.open('','_blank');
   if(win) { win.document.write(html); win.document.close(); }
+};
+
+/* FASON-KALITE-RAPORU-001: Kalite kontrol raporu — 3 aşama × checkpoint × durum/ölçüm/not tablo */
+window._fasonKaliteRaporu = function(emirId) {
+  var emirler = _fasonLoad();
+  var emir = emirler.find(function(e){ return e.id === emirId; });
+  if (!emir) return;
+  var checkler = _fasonCheckLoad();
+  var emirCheck = {};
+  checkler.filter(function(c){ return c.emirId === emirId; }).forEach(function(c){ emirCheck[c.cpId] = c; });
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  var esc = window._esc || function(s){ return String(s || ''); };
+  var cpList = window._FASON_CHECKPOINTS || [];
+  var satirlar = cpList.map(function(cp) {
+    var k = emirCheck[cp.id] || {};
+    var durum = k.durum === 'tamam' ? '✓ TAMAM' : '✗ BEKLEYEN';
+    var durumRenk = k.durum === 'tamam' ? 'green' : 'red';
+    return '<tr><td style="padding:4px 8px;border:1px solid #ddd">' + esc(cp.asamaLbl) + '</td>'
+      + '<td style="padding:4px 8px;border:1px solid #ddd">' + esc(cp.lbl) + '</td>'
+      + '<td style="padding:4px 8px;border:1px solid #ddd;text-align:center;color:' + durumRenk + '">' + durum + '</td>'
+      + '<td style="padding:4px 8px;border:1px solid #ddd">' + esc(cp.hedef) + '</td>'
+      + '<td style="padding:4px 8px;border:1px solid #ddd">' + esc(k.olcum || '—') + (k.olcum && cp.birim ? ' ' + esc(cp.birim) : '') + '</td>'
+      + '<td style="padding:4px 8px;border:1px solid #ddd">' + esc(k.not || '—') + '</td>'
+      + '</tr>';
+  }).join('');
+  var tamamSay = cpList.filter(function(cp){ return (emirCheck[cp.id] || {}).durum === 'tamam'; }).length;
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Kalite Kontrol Raporu</title>'
+    + '<style>body{font-family:Arial,sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#111}'
+    + 'h1{font-size:16px;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:8px}'
+    + 'h2{font-size:11px;color:#555;margin-bottom:12px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px}'
+    + 'th{padding:6px 8px;background:#f0f0f0;border:1px solid #ddd;text-align:left;font-weight:bold}'
+    + '.kpi{display:flex;gap:16px;margin:12px 0;font-size:11px;flex-wrap:wrap}'
+    + '.kpi div{padding:8px 12px;border:1px solid #ddd;border-radius:4px;background:#fafafa}'
+    + '.ozet{margin-top:16px;padding:10px 14px;background:#f8f8f8;border-left:4px solid #185FA5;font-size:11px}'
+    + '.imza{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;font-size:10px}'
+    + '.imza-alan{text-align:center;border-top:1px solid #111;padding-top:6px;margin-top:40px}'
+    + '</style></head><body>'
+    + '<h1>KALİTE KONTROL RAPORU</h1>'
+    + '<h2>Duay Uluslararası Ticaret Ltd. Şti. — Fason Üretim Kontrolü</h2>'
+    + '<div class="kpi">'
+    + '<div><strong>Ürün:</strong> ' + esc(emir.urunAdi || '—') + '</div>'
+    + '<div><strong>Fason Firma:</strong> ' + esc(emir.fasonFirma || '—') + '</div>'
+    + '<div><strong>Tarih:</strong> ' + tarih + '</div>'
+    + '<div><strong>En:</strong> ' + esc(String(emir.en || '—')) + ' m · <strong>Uzunluk:</strong> ' + esc(String(emir.uzunluk || '—')) + ' m</div>'
+    + '<div><strong>İplik:</strong> ' + esc(emir.iplikSpec || '—') + ' · <strong>Atkı×Çözgü:</strong> ' + esc(emir.atkuCozgu || '—') + '</div>'
+    + '</div>'
+    + '<table><thead><tr><th>Aşama</th><th>Kontrol</th><th>Durum</th><th>Hedef</th><th>Ölçüm</th><th>Not</th></tr></thead>'
+    + '<tbody>' + satirlar + '</tbody></table>'
+    + '<div class="ozet"><strong>Özet:</strong> ' + tamamSay + ' / ' + cpList.length + ' kontrol tamamlandı · '
+    + '<strong>Sonuç:</strong> ' + (tamamSay === cpList.length ? '<span style="color:green">ÜRÜN KABUL EDİLEBİLİR</span>' : '<span style="color:#b45309">EKSİK KONTROL VAR</span>')
+    + '</div>'
+    + '<div class="imza">'
+    + '<div class="imza-alan">Kontrol Eden<br/><br/><span style="font-size:9px;color:#666">İsim / İmza / Tarih</span></div>'
+    + '<div class="imza-alan">Fason Firma Yetkilisi<br/><br/><span style="font-size:9px;color:#666">İsim / İmza / Tarih</span></div>'
+    + '</div>'
+    + '<script>window.print();<\/script></body></html>';
+  var win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
+};
+
+/* FASON-RULO-ETIKET-001: Rulo kayıt + etiket yazdırma
+   - Her emir birden fazla rulo içerebilir
+   - localStorage key: ak_fason_rulo_v1
+   - Rulo ID format: emirId-R001, emirId-R002, ...
+   - Barkod = ruloId */
+window._fasonRuloEtiket = function(emirId) {
+  var emirler = _fasonLoad();
+  var emir = emirler.find(function(e){ return e.id === emirId; });
+  if (!emir) return;
+  var esc = window._esc || function(s){ return String(s || ''); };
+
+  /* Rulo numarasını bul — bu emir için kaç rulo var */
+  var ruloKey = 'ak_fason_rulo_v1';
+  var rulolar = [];
+  try { rulolar = JSON.parse(localStorage.getItem(ruloKey) || '[]'); } catch(e) {}
+  var emirRulolar = rulolar.filter(function(r){ return r.emirId === emirId; });
+  var ruloNo = emirRulolar.length + 1;
+  var ruloId = emirId + '-R' + String(ruloNo).padStart(3, '0');
+  var tarih = new Date().toLocaleDateString('tr-TR');
+
+  /* Ruloyu kayıt et */
+  rulolar.push({
+    id: ruloId,
+    emirId: emirId,
+    ruloNo: ruloNo,
+    urunAdi: emir.urunAdi,
+    en: emir.en,
+    uzunluk: emir.uzunluk,
+    iplikSpec: emir.iplikSpec,
+    atkuCozgu: emir.atkuCozgu,
+    fasonFirma: emir.fasonFirma,
+    tarih: new Date().toISOString().slice(0, 10),
+    createdAt: new Date().toISOString()
+  });
+  try { localStorage.setItem(ruloKey, JSON.stringify(rulolar)); } catch(e) {}
+  window.toast?.('Rulo ' + ruloId + ' kaydedildi ✓', 'ok');
+
+  /* Etiketi bas */
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rulo Etiketi</title>'
+    + '<style>body{font-family:monospace;padding:16px;max-width:300px;margin:0 auto}'
+    + '.etiket{border:3px solid #000;padding:12px;border-radius:4px}'
+    + '.firma{font-size:11px;font-weight:bold;text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px}'
+    + '.urun{font-size:14px;font-weight:bold;margin-bottom:6px}'
+    + '.row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;border-bottom:1px dashed #ccc}'
+    + '.rulo-no{font-size:32px;font-weight:bold;text-align:center;letter-spacing:4px;margin:10px 0;padding:6px;background:#f0f0f0}'
+    + '.barkod{text-align:center;font-size:8px;letter-spacing:2px;margin-top:6px;word-break:break-all}'
+    + '</style></head><body>'
+    + '<div class="etiket">'
+    + '<div class="firma">DUAY ULUSLARARASI TİCARET LTD.ŞTİ.</div>'
+    + '<div class="urun">' + esc(emir.urunAdi || '') + '</div>'
+    + '<div class="row"><span>Fason Firma</span><span>' + esc(emir.fasonFirma || '—') + '</span></div>'
+    + '<div class="row"><span>En</span><span>' + esc(String(emir.en || '—')) + ' m</span></div>'
+    + '<div class="row"><span>Uzunluk</span><span>' + esc(String(emir.uzunluk || '—')) + ' m</span></div>'
+    + '<div class="row"><span>İplik</span><span>' + esc(emir.iplikSpec || '') + '</span></div>'
+    + '<div class="row"><span>Atkı×Çözgü</span><span>' + esc(emir.atkuCozgu || '') + '</span></div>'
+    + '<div class="row"><span>Tarih</span><span>' + tarih + '</span></div>'
+    + '<div class="rulo-no">RULO #' + ruloNo + '</div>'
+    + '<div class="barkod">' + esc(ruloId) + '</div>'
+    + '</div>'
+    + '<script>window.print();<\/script></body></html>';
+
+  var win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
+
+  /* Detayı güncelle — rulo sayısı KPI refresh */
+  window._fasonDetay(emirId);
 };
 
 })();
