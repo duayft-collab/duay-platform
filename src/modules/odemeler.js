@@ -1066,7 +1066,8 @@ function renderOdemeler() {
     var collected = _allTah.filter(function(t) { return t.collected && t.due && t.ts; });
     if (!collected.length) return null;
     var total = collected.reduce(function(s, t) {
-      var due = new Date(t.due); var paid = new Date(t.ts);
+      /* NAKIT-SAFARI-TARIH-001: nowTs "YYYY-MM-DD HH:MM:SS" Safari parse edemez, T ile normalize */
+      var due = new Date(t.due); var paid = new Date((t.ts||'').replace(' ','T'));
       return s + Math.abs(Math.ceil((paid - due) / 86400000));
     }, 0);
     return Math.round(total / collected.length);
@@ -1373,7 +1374,7 @@ function renderOdemeler() {
         + '<div style="width:26px;height:26px;border-radius:6px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">' + cat.ic + '</div>'
         + '<div style="min-width:0">'
           + '<div style="font-size:12px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + o.name + _odmSourceBadge(o) + (o.talimat?.durum==='aktif'?'<span style="font-size:9px;margin-left:3px" title="Otomatik ödeme talimatı aktif">🏦</span>':'') + '</div>'
-          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + (o.ts?' · <span style="color:var(--t3);font-family:monospace;font-size:9px" title="Kayıt tarihi">' + (function(ts){try{var d=new Date(ts);return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return (ts||'').slice(0,10);}})(o.ts) + '</span>':'') + '</div>'
+          + '<div style="font-size:10px;color:var(--t3);margin-top:1px">' + cat.l + ' · ' + freq + (assigned?' · '+assigned.name:'') + (o.talimat?.banka?' · '+o.talimat.banka:'') + (noReceipt?' · <span style="color:var(--amt);cursor:help" title="Fatura belgesi yuklenmemis — dekont ekleyin">📎 eksik</span>':'') + (o.currency&&o.currency!=='TRY'?' · '+o.currency:'') + (o.ts?' · <span style="color:var(--t3);font-family:monospace;font-size:9px" title="Kayıt tarihi">' + (function(ts){try{var d=new Date((ts||'').replace(' ','T'));return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return (ts||'').slice(0,10);}})(o.ts) + '</span>':'') + '</div>'
         + '</div>'
       + '</div>'
       + '<div>'
@@ -2780,7 +2781,7 @@ function _renderTahsilatList(tah, cont) {
         <div><div style="font-size:12px;font-weight:500;color:var(--t)">${window._esc(t.name||'—')}</div><div style="font-size:10px;color:var(--t3)">${window._esc(t.cariName||t.from||'Müşteri')}</div></div>
         <div style="font-size:13px;font-weight:600;color:var(--t)">₺${(parseFloat(t.amount)||0).toLocaleString('tr-TR')}</div>
         <div style="font-size:11px;color:${t.due<today?'var(--rdt)':'var(--t2)'}">${t.due||'—'}</div>
-        <div style="font-size:9px;color:var(--t3);font-family:monospace">${(function(ts){try{var d=new Date(ts);return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.ts)}</div>
+        <div style="font-size:9px;color:var(--t3);font-family:monospace">${(function(ts){try{var d=new Date((ts||'').replace(' ','T'));return d.getDate()+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.ts)}</div>
         <div><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${t.due<today?'var(--rdb)':'var(--grb)'};color:${t.due<today?'var(--rdt)':'var(--grt)'}">${t.due<today?'Gecikti':'Bekliyor'}</span></div>
       </div>`).join('');
   };
@@ -6158,7 +6159,7 @@ window._odmTekrarlayanTakvim = function() {
 window._odmCariAnalizi = function() {
   var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted; });
   var cariMap = {};
-  tah.forEach(function(t) { var key = t.cariName || t.cari || '—'; if (!cariMap[key]) cariMap[key] = { name: key, count: 0, totalAmt: 0, lateDays: 0, lateCount: 0 }; var c = cariMap[key]; c.count++; c.totalAmt += _odmToTRY(parseFloat(t.amount) || 0, t.currency || 'TRY', t); if (t.due && t.ts) { var diff = Math.ceil((new Date(t.ts) - new Date(t.due)) / 86400000); if (diff > 0) { c.lateDays += diff; c.lateCount++; } } });
+  tah.forEach(function(t) { var key = t.cariName || t.cari || '—'; if (!cariMap[key]) cariMap[key] = { name: key, count: 0, totalAmt: 0, lateDays: 0, lateCount: 0 }; var c = cariMap[key]; c.count++; c.totalAmt += _odmToTRY(parseFloat(t.amount) || 0, t.currency || 'TRY', t); if (t.due && t.ts) { var diff = Math.ceil((new Date((t.ts||'').replace(' ','T')) - new Date(t.due)) / 86400000); if (diff > 0) { c.lateDays += diff; c.lateCount++; } } });
   var list = Object.values(cariMap).map(function(c) { c.avgDays = c.lateCount > 0 ? Math.round(c.lateDays / c.lateCount) : 0; c.risk = c.avgDays > 60 ? 'Yüksek' : c.avgDays > 30 ? 'Orta' : 'Düşük'; return c; }).sort(function(a, b) { return b.avgDays - a.avgDays; });
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-cari-analiz';
   var html = '<div class="moc" style="max-width:600px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">Cari Analizi — Tahsilat Hızı</div><button onclick="document.getElementById(\'mo-cari-analiz\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:0;max-height:70vh;overflow-y:auto">';
