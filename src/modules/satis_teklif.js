@@ -309,7 +309,11 @@ window._openSTModal = function(id) {
 
   // Müşteri listesi — SATIS-MUSTERI-DATALIST-001: cari + geçmiş teklif müşterileri birleşik
   var cariList = typeof loadCari === 'function' ? loadCari().filter(function(c) { return !c.isDeleted && (c.type === 'musteri' || !c.type); }) : [];
-  var _cariAdlar = cariList.map(function(c) { return c.name || c.ad || ''; }).filter(Boolean);
+  /* SATIS-MUSTERI-FALLBACK-001: musteri filtresi sonrası boşsa tüm non-deleted cari'leri göster */
+  if (cariList.length === 0 && typeof loadCari === 'function') {
+    cariList = loadCari().filter(function(c) { return !c.isDeleted; });
+  }
+  var _cariAdlar = cariList.map(function(c) { return c.name || c.ad || c.firmaAdi || ''; }).filter(Boolean);
   // Geçmiş tekliflerden de unique müşteri adlarını topla (cari'de olmayan eski müşteriler için)
   try {
     var _stGecmis = typeof _loadST === 'function' ? _loadST() : [];
