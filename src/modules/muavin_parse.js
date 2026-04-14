@@ -644,12 +644,48 @@ window._mvNormalize = {
     var s = String(v).replace(/[^\d\.,\-]/g, '').replace(',', '.');
     return parseFloat(s) || 0;
   },
+  /* MUAVIN-KUR-CEK-001: TCMB tarihe özel kur → localStorage cache + fallback exchangerate */
+  kurCek: async function(tarih, doviz) {
+    if (!tarih || !doviz || doviz === 'TRL' || doviz === 'TRY') return null;
+    var cacheKey = 'ak_kur_' + tarih + '_' + doviz;
+    var cached = localStorage.getItem(cacheKey);
+    if (cached) { try { return JSON.parse(cached); } catch(e) {} }
+    var tarihNo = tarih.replace(/-/g, '');
+    var yil = tarih.slice(0, 4);
+    var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://www.tcmb.gov.tr/kurlar/' + yil + '/' + tarihNo + '.xml');
+    try {
+      var r = await fetch(proxyUrl);
+      var txt = await r.text();
+      var pattern = 'CurrencyCode="' + doviz + '"';
+      var idx = txt.indexOf(pattern);
+      if (idx === -1) throw new Error('TCMB no match');
+      var bolum = txt.slice(idx, idx + 400);
+      var alis = bolum.match(/<ForexBuying>([\d.]+)<\/ForexBuying>/);
+      var satis = bolum.match(/<ForexSelling>([\d.]+)<\/ForexSelling>/);
+      if (!alis) throw new Error('TCMB no ForexBuying');
+      var sonuc = { alis: parseFloat(alis[1]), satis: parseFloat(satis ? satis[1] : alis[1]) };
+      try { localStorage.setItem(cacheKey, JSON.stringify(sonuc)); } catch(e) {}
+      return sonuc;
+    } catch(e) {
+      try {
+        var r2 = await fetch('https://open.er-api.com/v6/latest/' + doviz);
+        var d2 = await r2.json();
+        if (d2.rates && d2.rates.TRY) {
+          var sonuc2 = { alis: parseFloat(d2.rates.TRY.toFixed(4)), satis: parseFloat((d2.rates.TRY * 1.005).toFixed(4)) };
+          try { localStorage.setItem(cacheKey, JSON.stringify(sonuc2)); } catch(e3) {}
+          return sonuc2;
+        }
+      } catch(e2) {}
+      return null;
+    }
+  },
   muhasebecdenNormalize: function(satirlar, firmaAdi) {
     var self = window._mvNormalize;
     return satirlar.filter(function(s) { return s.tarih && (s.borc || s.alacak); }).map(function(s) {
       var fatNo = self.faturaNoAyikla(s.aciklama);
       var tutar = self.tutarNormalize(s.borc || 0) - self.tutarNormalize(s.alacak || 0);
-      return { kaynak: 'muhasebeci', firma: firmaAdi || s.firma || '', faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', ham: s };
+      /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
+      return { kaynak: 'muhasebeci', firma: firmaAdi || s.firma || '', faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', dovizCinsi: 'TRY', dovizBorc: tutar > 0 ? Math.abs(tutar) : 0, dovizAlacak: tutar < 0 ? Math.abs(tutar) : 0, kurAlis: null, kurSatis: null, ham: s };
     });
   },
   sirkettenNormalize: function(satirlar, kurTablosu) {
@@ -667,7 +703,8 @@ window._mvNormalize = {
       var kur = kurTablosu && s.tarih ? kurTablosu[self.tarihNormalize(s.tarih)] || kurTablosu['varsayilan'] || 44.55 : 44.55;
       var netUSD = borcUSD - alacakUSD;
       var netTL = borcTL - alacakTL + (netUSD * kur);
-      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama), faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, ham: s };
+      /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
+      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama), faturaNo: fatNo, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
     });
   },
   firmaAdiAyikla: function(aciklama) {
@@ -881,6 +918,19 @@ window._mvFirmaEslestirmeMenuAc = function() {
   h += '</div></div>';
   mo.innerHTML = h;
   document.body.appendChild(mo);
+};
+
+/* MUAVIN-KUR-CEK-001: Tüm işlemler için kur doldur (TRY/TRL skip, diğerleri TCMB/fallback) */
+window._mvKurDoldur = async function(islemler) {
+  if (!Array.isArray(islemler) || !window._mvNormalize || typeof window._mvNormalize.kurCek !== 'function') return;
+  for (var i = 0; i < islemler.length; i++) {
+    var ism = islemler[i];
+    var doviz = ism.dovizCinsi || 'TRY';
+    if (doviz === 'TRY' || doviz === 'TRL') continue;
+    var kur = await window._mvNormalize.kurCek(ism.tarih, doviz);
+    if (kur) { ism.kurAlis = kur.alis; ism.kurSatis = kur.satis; }
+  }
+  if (typeof window.renderMuavin === 'function') window.renderMuavin();
 };
 
 console.log('[MUAVIN-PARSE] y\u00fcklendi');
