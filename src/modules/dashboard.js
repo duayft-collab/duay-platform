@@ -762,7 +762,11 @@ function _renderPirimimWidget() {
     var rows = Object.keys(ozet).map(function(k){ return ozet[k]; }).sort(function(a,b){ return b.bekleyen - a.bekleyen; });
     var fmt = function(n){ return n.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:0}); };
     var h = '<div onclick="window._pirimiGetir()" style="cursor:pointer;padding:14px 16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">'
-      + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:8px">\ud83d\udcb0 Personel Prim Özeti <span style="font-size:9px;color:var(--t3);font-weight:400">(' + rows.length + ' personel)</span></div>'
+      // PIRIM-ADMIN-EXCEL-001: başlık satırı flex — Excel butonu sağda
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--t)">\ud83d\udcb0 Personel Prim Özeti <span style="font-size:9px;color:var(--t3);font-weight:400">(' + rows.length + ' personel)</span></div>'
+        + '<button onclick="event.stopPropagation();window._pirimAdminExcel?.()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)" title="Prim özetini Excel olarak indir">⬇ Excel</button>'
+      + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;padding-bottom:4px;border-bottom:0.5px solid var(--b)">'
       + '<div>Personel</div><div style="text-align:right">Toplam</div><div style="text-align:right;color:#16A34A">Ödenen</div><div style="text-align:right;color:#D97706">Bekleyen</div></div>';
     rows.slice(0, 8).forEach(function(r){
@@ -862,6 +866,38 @@ window._openDashAdminModal = _openAdminModal;
    ════════════════════════════════════════════════════════════════ */
 /** @namespace Dashboard */
 const Dashboard = { render: renderDashboard };
+
+/* PIRIM-ADMIN-EXCEL-001: admin prim özet tablosu Excel export */
+window._pirimAdminExcel = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX kütüphanesi yüklenemedi', 'err'); return; }
+  var users = typeof loadUsers === 'function' ? loadUsers() : [];
+  var primler = typeof loadPirim === 'function' ? loadPirim() : [];
+  if (!primler.length) { window.toast?.('Prim kaydı yok', 'warn'); return; }
+  var userMap = {};
+  users.forEach(function(u) { userMap[u.uid || u.id] = u.displayName || u.name || u.email || '—'; });
+  var ozet = {};
+  primler.filter(function(p) { return !p.isDeleted; }).forEach(function(p) {
+    var uid = p.uid || p.personelId || p.assignedTo || 'unknown';
+    if (!ozet[uid]) ozet[uid] = { ad: userMap[uid] || '—', toplam: 0, odenen: 0, bekleyen: 0 };
+    var t = parseFloat(p.amount || p.tutar || 0) || 0;
+    ozet[uid].toplam += t;
+    if (p.status === 'paid' || p.odendi) ozet[uid].odenen += t;
+    else ozet[uid].bekleyen += t;
+  });
+  var rows = [['Personel', 'Toplam', 'Ödenen', 'Bekleyen']];
+  Object.keys(ozet).sort(function(a, b) { return ozet[b].bekleyen - ozet[a].bekleyen; })
+    .forEach(function(uid) {
+      var r = ozet[uid];
+      rows.push([r.ad, r.toplam, r.odenen, r.bekleyen]);
+    });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:24},{wch:12},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Prim Özeti');
+  XLSX.writeFile(wb, 'prim-ozeti-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  window.toast?.('Prim özeti indirildi ✓', 'ok');
+  if (typeof window.logActivity === 'function') window.logActivity('rapor', 'Prim özeti Excel export: ' + Object.keys(ozet).length + ' personel');
+};
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Dashboard;
