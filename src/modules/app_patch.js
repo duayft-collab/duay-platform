@@ -96,6 +96,8 @@ window._yetkiKontrol = function(islem) {
     'donem-ozeti':         () => { window._renderDonemOzeti?.(); },
     /* FASON-MODUL-001: Fason üretim modülü routing */
     'fason':               () => { window.renderFason?.(); },
+    /* PLATFORM-STANDARTLARI-001: Platform standartları modül routing */
+    'platform-standartlari':() => { window.renderPlatformStandartlari?.(); },
   };
 
   // App.nav wrap — yeni paneller için ekstra render çağrısı
@@ -4911,6 +4913,9 @@ window._saveUrunInline = function() {
   if (_TN2_GROUPS.sistem && Array.isArray(_TN2_GROUPS.sistem.mods)) {
     if (!_TN2_GROUPS.sistem.mods.some(function(m) { return m.id === 'talimatlar'; }))
       _TN2_GROUPS.sistem.mods.push({ id: 'talimatlar', label: 'Talimatlar' });
+    /* PLATFORM-STANDARTLARI-001: Platform Standartları → Sistem menüsü */
+    if (!_TN2_GROUPS.sistem.mods.some(function(m) { return m.id === 'platform-standartlari'; }))
+      _TN2_GROUPS.sistem.mods.push({ id: 'platform-standartlari', label: 'Platform Standartları' });
   }
   // NAV-001: ihracat-ops → Satinalma'dan cikar, Operasyon'a tasi
   if (_TN2_GROUPS.satinalma && Array.isArray(_TN2_GROUPS.satinalma.mods)) {
