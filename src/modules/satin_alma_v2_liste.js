@@ -77,21 +77,22 @@ window.renderSatinAlmaV2 = function() {
     h+='<button onclick="event.stopPropagation();window._saV2TopluSil()" style="font-size:9px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>';
     h+='</div>';
   }
-  h+='<div style="display:flex;flex:1;min-height:0;overflow:hidden">';
-  h+='<div style="flex:1;min-width:0;overflow-y:auto;border-right:0.5px solid '+_b+'">';
+  /* SATINALMA-LISTE-GENISLIK-001: wrapper min-width:0 + detay kapalıysa border-right gizle */
+  h+='<div style="display:flex;flex:1;min-width:0;min-height:0;overflow:hidden">';
+  h+='<div style="flex:1;min-width:0;overflow-y:auto;'+(window._saV2AktifId?'border-right:0.5px solid '+_b:'border-right:none')+'">';
   // ALIS-LISTE-C-001: 6 sütun grid — ÜRÜN/TEDARİKÇİ + TUTAR + DURUM + GEÇERLİLİK + İŞLEM
-  h+='<div style="display:grid;grid-template-columns:20px 1fr 90px 100px 80px 80px;padding:5px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0;z-index:1">';
+  h+='<div style="display:grid;grid-template-columns:20px minmax(200px,1fr) 110px 120px 90px 90px;padding:5px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0;z-index:1">';
   var _th=function(label,alan){
     var aktif=sir.alan===alan;
     var yon=aktif?(sir.yon==='asc'?'↑':'↓'):'↕';
-    return '<div onclick="event.stopPropagation();window._saV2ListeSirala={alan:\''+alan+'\',yon:\''+(aktif&&sir.yon==='asc'?'desc':'asc')+'\'};window.renderSatinAlmaV2()" style="font-size:9px;font-weight:500;color:'+(aktif?'var(--color-text-primary)':'var(--color-text-tertiary)')+';letter-spacing:.04em;cursor:pointer">'+label+' '+yon+'</div>';
+    return '<div onclick="event.stopPropagation();window._saV2ListeSirala={alan:\''+alan+'\',yon:\''+(aktif&&sir.yon==='asc'?'desc':'asc')+'\'};window.renderSatinAlmaV2()" style="font-size:10px;font-weight:500;color:'+(aktif?'var(--color-text-primary)':'var(--color-text-tertiary)')+';letter-spacing:.04em;cursor:pointer">'+label+' '+yon+'</div>';
   };
   h+='<div></div>';
   h+=_th('ÜRÜN / TEDARİKÇİ','createdAt');
   h+=_th('TUTAR','toplamTutar');
-  h+='<div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">DURUM</div>';
-  h+='<div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">GEÇERLİLİK</div>';
-  h+='<div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">İŞLEM</div>';
+  h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">DURUM</div>';
+  h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">GEÇERLİLİK</div>';
+  h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">İŞLEM</div>';
   h+='</div>';
   goster.forEach(function(t){
     var aktif=String(t.id)===String(window._saV2AktifId);
@@ -110,7 +111,7 @@ window.renderSatinAlmaV2 = function() {
     }
     // ALIS-LISTE-C-001: sol border öncelik — satışMüşteriOnay (turuncu) > süresi bitmiş (kırmızı) > yok
     var _solBorder = (t.satisMusteriOnay === true) ? '3px solid #D97706' : (_sureBitti ? '3px solid #A32D2D' : '3px solid transparent');
-    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px 1fr 90px 100px 80px 80px;padding:7px 10px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+(aktif?'#E6F1FB':secili?'#FFFCF5':'var(--color-background-primary)')+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+(secili?'#FFFCF5':'var(--color-background-primary)')+'\'">';
+    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(200px,1fr) 110px 120px 90px 90px;padding:7px 10px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+(aktif?'#E6F1FB':secili?'#FFFCF5':'var(--color-background-primary)')+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+(secili?'#FFFCF5':'var(--color-background-primary)')+'\'">';
     // Kolon 1: checkbox
     h+='<input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:11px;height:11px;cursor:pointer">';
     // Kolon 2: ürün/tedarikçi adı + jobId+piNo alt satır
@@ -143,7 +144,7 @@ window.renderSatinAlmaV2 = function() {
     h+='</div>';
     if(t.urunler&&t.urunler.length>1){
       t.urunler.forEach(function(u,idx){
-        h+='<div style="display:grid;grid-template-columns:20px 1fr 90px 100px 80px 80px;padding:3px 10px 3px 24px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
+        h+='<div style="display:grid;grid-template-columns:20px minmax(200px,1fr) 110px 120px 90px 90px;padding:3px 10px 3px 24px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
         // SAV2-GRUP-CB-001: grup ürün satırına checkbox — parent t.id state'ine bind
         h+='<div style="font-size:9px;display:flex;align-items:center;gap:2px"><input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:10px;height:10px;cursor:pointer;flex-shrink:0"><span style="color:var(--color-text-tertiary)">'+(idx+1)+'.</span></div>';
         // SATINALMA-LISTE-XSS-002: ürün alt satırında window._esc sarmalama
