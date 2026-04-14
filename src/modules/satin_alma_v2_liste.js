@@ -72,6 +72,8 @@ window.renderSatinAlmaV2 = function() {
   h+='<select id="sav2-tarih" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tarihe göre</option><option value="bu-ay"'+(tarihF==='bu-ay'?' selected':'')+'>Bu ay</option><option value="hafta"'+(tarihF==='hafta'?' selected':'')+'>Bu hafta</option></select>';
   h+='<div style="flex:1"></div>';
   h+='<button onclick="event.stopPropagation();window._saV2ExportCSV()" style="padding:4px 10px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)">↓ CSV</button>';
+  /* SATINALMA-V2-FEATURE-PACK-001: Tedarikçi karşılaştır butonu */
+  h+='<button onclick="event.stopPropagation();window._saV2TedarikciKarsilastir()" style="padding:4px 10px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)">Tedarikçi Karşılaştır</button>';
   /* ALIS-LISTE-UX-PACK-001: Tedarikçi gruplama toggle butonu */
   h+='<button onclick="event.stopPropagation();window._saV2GruplaToggle?.()" id="sav2-grupla-btn" style="padding:4px 10px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:'+(window._saV2GruplaAktif?'var(--color-text-primary)':'transparent')+';cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:'+(window._saV2GruplaAktif?'#fff':'var(--color-text-secondary)')+'">Tedarikçi Grupla</button>';
   h+='</div>';
@@ -81,6 +83,8 @@ window.renderSatinAlmaV2 = function() {
     h+='<button onclick="event.stopPropagation();window._saV2TopluOnayla()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">✓ Onayla</button>';
     h+='<button onclick="event.stopPropagation();window._saV2TopluReddet()" style="font-size:9px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">✕ Reddet</button>';
     h+='<button onclick="event.stopPropagation();window._saV2TopluSil()" style="font-size:9px;padding:2px 8px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>';
+    /* SATINALMA-V2-FEATURE-PACK-001: Toplu Excel export butonu */
+    h+='<button onclick="event.stopPropagation();window._saV2TopluExcel()" style="font-size:9px;padding:2px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">↓ Excel</button>';
     h+='</div>';
   }
   /* SATINALMA-LISTE-GENISLIK-001: wrapper min-width:0 + detay kapalıysa border-right gizle */
@@ -141,8 +145,13 @@ window.renderSatinAlmaV2 = function() {
     /* SATIS-LISTE-PI-NO-001: PI no monospace mavi rozet (ürün adı yanında) */
     var _piNoLst = t.piNo || t.pi_no || '';
     var _piHTMLLst = _piNoLst ? ' <span style="font-size:8px;font-family:monospace;color:#185FA5;background:#E6F1FB;padding:1px 4px;border-radius:3px" title="PI No">'+(window._esc?.(_piNoLst)||_piNoLst)+'</span>' : '';
-    h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(window._saV2UrunAdi?.(t))||window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+_piHTMLLst+'</div>';
-    h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+(t.jobId?' · '+(window._esc?.(t.jobId)||t.jobId)+'':'')+'</div></div>';
+    /* SATINALMA-V2-FEATURE-PACK-001: Rev badge (revNo>1) + Job ID tıklanabilir link */
+    var _revHTML = (t.revNo && t.revNo > 1) ? ' <span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace">Rev'+t.revNo+'</span>' : '';
+    var _jobHTML = t.jobId
+      ? '<span onclick="event.stopPropagation();window.nav?.(\'satin-alma\');setTimeout(function(){window._saV2AktifId=\''+t.jobId+'\';window.renderSatinAlmaV2?.()},100)" style="color:#185FA5;cursor:pointer;font-family:monospace;font-size:9px" title="Job ID → '+(window._esc?.(t.jobId)||t.jobId)+'">'+(window._esc?.(t.jobId)||t.jobId)+'</span>'
+      : '<span style="color:var(--color-text-tertiary);font-size:9px">—</span>';
+    h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(window._saV2UrunAdi?.(t))||window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+_piHTMLLst+_revHTML+'</div>';
+    h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+' · '+_jobHTML+'</div></div>';
     // Kolon 3: tutar + para birimi soluk
     h+='<div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap">'+((window._saV2AlisF?.(t)||parseFloat(t.toplamTutar)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}))+' <span style="font-size:9px;color:var(--color-text-tertiary);font-weight:400">'+(window._saV2Para?.(t)||t.toplamPara||'USD')+'</span></div>';
     /* ALIS-LISTE-UX-PACK-001: Kar marjı mini progress bar */
@@ -436,4 +445,66 @@ window._saV2GruplaAktif = window._saV2GruplaAktif || false;
 window._saV2GruplaToggle = function() {
   window._saV2GruplaAktif = !window._saV2GruplaAktif;
   window.renderSatinAlmaV2?.();
+};
+
+/* SATINALMA-V2-FEATURE-PACK-001: Toplu Excel export — seçili tekliflerden 9 kolon xlsx */
+window._saV2TopluExcel = function() {
+  var secili = Object.keys(window._saV2ListeSecili || {}).filter(function(k) { return window._saV2ListeSecili[k]; });
+  if (!secili.length) { window.toast?.('Önce teklif seçin', 'warn'); return; }
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var seciliListe = liste.filter(function(t) { return secili.includes(String(t.id)); });
+  if (typeof XLSX === 'undefined') { window.toast?.('Excel kütüphanesi yüklenmedi', 'err'); return; }
+  var satirlar = [['Tedarikçi','Ürün','Alış Fiyatı','Para','Miktar','Toplam','Durum','Tarih','Job ID']];
+  seciliListe.forEach(function(t) {
+    satirlar.push([
+      t.tedarikci || '',
+      (typeof window._saV2UrunAdi === 'function' ? window._saV2UrunAdi(t) : t.urunAdi) || '',
+      t.alisFiyati || t.alisF || '',
+      t.para || t.toplamPara || '',
+      t.miktar || '',
+      t.toplamTutar || '',
+      t.durum || '',
+      (t.createdAt || '').slice(0, 10),
+      t.jobId || ''
+    ]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(satirlar);
+  XLSX.utils.book_append_sheet(wb, ws, 'Teklifler');
+  XLSX.writeFile(wb, 'alis-teklifleri-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  window.toast?.('Excel indirildi ✓ (' + seciliListe.length + ' teklif)', 'ok');
+};
+
+/* SATINALMA-V2-FEATURE-PACK-001: Tedarikçi karşılaştır — grup bazlı özet modal */
+window._saV2TedarikciKarsilastir = function() {
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load().filter(function(t) { return !t.isDeleted; }) : [];
+  var gruplar = {};
+  liste.forEach(function(t) {
+    var k = t.tedarikci || 'Diğer';
+    if (!gruplar[k]) gruplar[k] = { say: 0, toplam: 0 };
+    gruplar[k].say++;
+    gruplar[k].toplam += parseFloat(t.toplamTutar || 0);
+  });
+  var esc = window._esc || function(s) { return String(s || ''); };
+  var mo = document.createElement('div');
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  var satirlar = Object.keys(gruplar).map(function(k) { return [k, gruplar[k]]; })
+    .sort(function(a, b) { return b[1].toplam - a[1].toplam; })
+    .map(function(e) {
+      return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px">'
+        + '<div style="font-weight:500;color:var(--color-text-primary)">' + esc(e[0]) + '</div>'
+        + '<div style="display:flex;gap:16px">'
+        + '<span style="color:var(--color-text-secondary)">' + e[1].say + ' teklif</span>'
+        + '<span style="font-family:monospace;font-weight:500">' + e[1].toplam.toLocaleString('tr-TR', {maximumFractionDigits: 0}) + '</span>'
+        + '</div></div>';
+    }).join('');
+  mo.innerHTML = '<div style="background:var(--color-background-primary);border-radius:12px;width:480px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column">'
+    + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center">'
+    + '<div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Tedarikçi Karşılaştırması</div>'
+    + '<button onclick="event.stopPropagation();this.closest(\'[style*=fixed]\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--color-text-tertiary)">×</button>'
+    + '</div>'
+    + '<div style="padding:16px 20px;overflow-y:auto">' + (satirlar || '<div style="padding:20px;text-align:center;color:var(--color-text-tertiary);font-size:11px">Teklif yok</div>') + '</div>'
+    + '</div>';
+  document.body.appendChild(mo);
 };
