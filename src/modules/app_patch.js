@@ -6536,14 +6536,44 @@ window._saveSiparis = function() {
 };
 
 /* MENU-EKSIK-001: 5 stub render fonksiyonu — "Yakında aktif olacak" placeholder */
+/* SATIS-RAPOR-V1-001: stub → müşteri bazlı satış sayısı + kabul oranı */
 window._renderSatisRapor = function() {
   var p = document.getElementById('panel-satis-rapor'); if(!p) return;
-  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
-    + '<div style="font-size:36px">📊</div>'
-    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Satış Raporu</div>'
-    + '<div style="font-size:12px;margin-top:6px">Müşteri bazlı satış analizi, marj raporu ve trend</div>'
-    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
-    + '</div>';
+  var stList = typeof loadST==='function' ? loadST() : [];
+  var esc = window._esc||function(s){return String(s||'');};
+  var aktif = stList.filter(function(t){ return !t.isDeleted; });
+  var toplam = aktif.length;
+  var kabul = aktif.filter(function(t){ return t.status==='kabul'; }).length;
+  var oran = toplam ? Math.round(kabul/toplam*100) : 0;
+  var musteriMap = {};
+  aktif.forEach(function(t){
+    var m = t.customerName||t.musteri||'Bilinmiyor';
+    if(!musteriMap[m]) musteriMap[m]={toplam:0,kabul:0};
+    musteriMap[m].toplam++;
+    if(t.status==='kabul') musteriMap[m].kabul++;
+  });
+  var satirlar = Object.keys(musteriMap).sort(function(a,b){
+    return musteriMap[b].toplam-musteriMap[a].toplam;
+  }).slice(0,15).map(function(m){
+    var r=musteriMap[m];
+    var o=r.toplam?Math.round(r.kabul/r.toplam*100):0;
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      +'<td style="padding:7px 12px">'+esc(m)+'</td>'
+      +'<td style="padding:7px 12px;text-align:center">'+r.toplam+'</td>'
+      +'<td style="padding:7px 12px;text-align:center;color:#16A34A">'+r.kabul+'</td>'
+      +'<td style="padding:7px 12px;text-align:center"><span style="padding:2px 8px;border-radius:99px;background:'+(o>=50?'#EAF3DE':'#FCEBEB')+';color:'+(o>=50?'#3B6D11':'#A32D2D')+';font-size:10px">'+o+'%</span></td>'
+      +'</tr>';
+  }).join('');
+  p.innerHTML='<div style="padding:20px">'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:0.5px solid var(--b);margin-bottom:16px">'
+    +'<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">TOPLAM TEKLİF</div><div style="font-size:24px;font-weight:600">'+toplam+'</div></div>'
+    +'<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">KABUL</div><div style="font-size:24px;font-weight:600;color:#16A34A">'+kabul+'</div></div>'
+    +'<div style="padding:14px 20px"><div style="font-size:9px;color:var(--t3)">KABUL ORANI</div><div style="font-size:24px;font-weight:600;color:'+(oran>=50?'#16A34A':'#D97706')+'">'+oran+'%</div></div>'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    +'<thead><tr style="background:var(--s2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">'
+    +'<th style="padding:7px 12px;text-align:left">Müşteri</th><th style="padding:7px 12px;text-align:center">Toplam</th><th style="padding:7px 12px;text-align:center">Kabul</th><th style="padding:7px 12px;text-align:center">Oran</th>'
+    +'</tr></thead><tbody>'+satirlar+'</tbody></table></div>';
 };
 
 window._renderNumuneArsivi = function() {
