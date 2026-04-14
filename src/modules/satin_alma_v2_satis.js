@@ -91,20 +91,10 @@ window._saV2TeklifOlustur = function(id) {
   /* SATIS-JOBID-001: Job ID seçimi + tedarikçi karşılaştırma */
   ic += '<div style="display:flex;align-items:end;gap:8px;padding:8px 10px;background:#FFFCF5;border:0.5px solid #F4E4BC;border-radius:5px;margin-top:6px">';
   ic += '<div style="flex:1"><div style="font-size:8px;font-weight:500;color:#854F0B;letter-spacing:.06em;margin-bottom:3px">JOB ID SEÇ (Tedarik Kaynağı)</div>';
-  ic += '<select id="st-job-id" onchange="event.stopPropagation();if(this.value)window._saV2JobUrunSecModal(this.value)" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit"><option value="">— Job seçin (opsiyonel) —</option>';
-  var _jobSet = {};
-  try {
-    var _alis = typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : [];
-    _alis.forEach(function(at){ if(at && at.jobId) _jobSet[at.jobId] = (_jobSet[at.jobId]||0)+1; });
-  } catch(e) {}
-  try {
-    var _gorev = typeof window._ppLoad === 'function' ? window._ppLoad() : [];
-    _gorev.forEach(function(g){ if(g && !g.isDeleted && g.job_id) _jobSet[g.job_id] = (_jobSet[g.job_id]||0)+1; });
-  } catch(e) {}
-  Object.keys(_jobSet).sort().forEach(function(jid){
-    ic += '<option value="'+_saEsc(jid)+'">'+_saEsc(jid)+' ('+_jobSet[jid]+' kayıt)</option>';
-  });
-  ic += '</select></div>';
+  /* JOB-ID-KAYNAK-FIX-001: select → aranabilir input (alış formuyla tutarlı) */
+  ic += '<input id="st-job-id" placeholder="Job ara... (örn: 0041)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._stJobIdAra?.(this)" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit">';
+  ic += '<datalist id="st-job-list"></datalist>';
+  ic += '</div>';
   ic += '<button onclick="event.stopPropagation();window._saV2JobUrunSecModal(document.getElementById(\'st-job-id\').value)" style="font-size:10px;padding:7px 12px;border:none;border-radius:5px;background:#854F0B;color:#fff;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ Tedarikçi Karşılaştır</button>';
   ic += '</div>';
 
@@ -748,3 +738,31 @@ setTimeout(function() {
     return ret;
   };
 }, 10);
+
+/* JOB-ID-KAYNAK-FIX-001: Satış form st-job-id input live arama (PP + mevcut alış teklifler) */
+window._stJobIdAra = function(inp) {
+  var val = (inp.value || '').trim().toLowerCase();
+  var dd = document.getElementById('st-job-dd');
+  if (dd) dd.remove();
+  if (!val) return;
+  var jobs = {};
+  try { (window.loadAlisTeklifleri?.() || []).forEach(function(t){ if(t.jobId) jobs[t.jobId]=(jobs[t.jobId]||0)+1; }); } catch(e){}
+  try { (window._ppLoad?.() || window.loadTasks?.() || []).forEach(function(g){ if(g.job_id||g.jobId) { var j=g.job_id||g.jobId; jobs[j]=(jobs[j]||0)+1; } }); } catch(e){}
+  var eslesen = Object.keys(jobs).filter(function(j){ return j.toLowerCase().includes(val); }).slice(0,8);
+  if (!eslesen.length) return;
+  var rect = inp.getBoundingClientRect();
+  var dd2 = document.createElement('div');
+  dd2.id = 'st-job-dd';
+  dd2.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+(rect.bottom+2)+'px;width:'+Math.max(rect.width,240)+'px;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;z-index:10001;max-height:200px;overflow-y:auto';
+  eslesen.forEach(function(jid) {
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:7px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:11px;display:flex;justify-content:space-between';
+    row.onmouseenter = function(){ this.style.background='var(--s2)'; };
+    row.onmouseleave = function(){ this.style.background=''; };
+    row.innerHTML = '<span style="font-weight:500;color:var(--t)">'+jid+'</span><span style="font-size:9px;color:var(--t3)">'+jobs[jid]+' kayıt</span>';
+    row.onclick = function(e){ e.stopPropagation(); inp.value=jid; dd2.remove(); window._saV2JobUrunSecModal?.(jid); };
+    dd2.appendChild(row);
+  });
+  document.body.appendChild(dd2);
+  document.addEventListener('click', function rm(){ dd2.remove(); document.removeEventListener('click',rm); }, {once:true});
+};

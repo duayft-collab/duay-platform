@@ -159,6 +159,17 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     var idEl = document.getElementById('sav2f-id-goster');
     if(idEl) idEl.textContent = 'ID: ' + (duzenleKayit.teklifId||duzenleKayit.id);
     window._saV2DuzenleAktifId = duzenleKayit.id;
+    /* JOB-ID-KAYNAK-FIX-001: datalist yüklenmeden önce input set edildiyse gecikmeli tekrar restore */
+    setTimeout(function() {
+      window._saV2DatalistDoldur?.();
+      var _restoreIds = ['sav2f-jobId','sav2f-tedarikci','sav2f-notlar'];
+      _restoreIds.forEach(function(fid) {
+        var el = document.getElementById(fid);
+        if (!el) return;
+        var key = fid.replace('sav2f-','');
+        if (duzenleKayit[key] && !el.value) el.value = duzenleKayit[key];
+      });
+    }, 120);
   } else {
     window._saV2DuzenleAktifId = null;
   }
@@ -740,8 +751,12 @@ window._saV2DatalistDoldur = function() {
   liste.forEach(function(t) { if (t.tedarikci) tedSet[t.tedarikci] = true; });
   var tedDl = document.getElementById('sav2f-ted-list');
   if (tedDl) tedDl.innerHTML = Object.keys(tedSet).sort().map(function(k) { return '<option value="' + _saEsc(k) + '">'; }).join('');
-  /* Job ID: Sadece PP Görevlerden */
+  /* JOB-ID-KAYNAK-FIX-001: PP görevler + mevcut alış tekliflerindeki Job ID'ler */
   var jobSet = {};
+  var mevcutTeklifler = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  mevcutTeklifler.forEach(function(t) {
+    if (t.jobId && !t.isDeleted) jobSet[t.jobId] = true;
+  });
   var gorevler = typeof window.loadTasks === 'function' ? window.loadTasks() : [];
   gorevler.forEach(function(g) {
     if(g.jobId && !g.isDeleted && g.status !== 'done') jobSet[g.jobId] = true;
