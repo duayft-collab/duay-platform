@@ -4923,6 +4923,14 @@ window._saveUrunInline = function() {
     _TN2_GROUPS.dashboard.mods = _TN2_GROUPS.dashboard.mods.filter(function(m) { return m.id !== 'dashboard'; });
     if (_TN2_GROUPS.dashboard.mods.length === 0) delete _TN2_GROUPS.dashboard;
   }
+  // FASON-MENU-FIX-001: Fason Üretim → İK'dan çıkar, Satınalma'ya taşı
+  if (_TN2_GROUPS.ik && Array.isArray(_TN2_GROUPS.ik.mods)) {
+    _TN2_GROUPS.ik.mods = _TN2_GROUPS.ik.mods.filter(function(m) { return m.id !== 'fason'; });
+  }
+  if (_TN2_GROUPS.satinalma && Array.isArray(_TN2_GROUPS.satinalma.mods)) {
+    if (!_TN2_GROUPS.satinalma.mods.some(function(m) { return m.id === 'fason'; }))
+      _TN2_GROUPS.satinalma.mods.push({ id: 'fason', label: 'Fason Üretim' });
+  }
 })();
 
 // NAV-001: Logo tiklaninca dashboard
