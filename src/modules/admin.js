@@ -1259,6 +1259,28 @@ function renderActivityLog() {
 
   const typeIcons = { user: '👤', kargo: '📦', view: '👁', system: '⚙️', login: '🟢', logout: '🔴' };
 
+  // ADMIN-ACTLOG-RELTIME-001: göreli zaman helper ("X dakika önce")
+  const _relTime = function(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return ts;
+    const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diffSec < 0) return d.toLocaleString('tr-TR');
+    if (diffSec < 60) return 'Az önce';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return diffMin + ' dakika önce';
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return diffHour + ' saat önce';
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 7) return diffDay + ' gün önce';
+    return d.toLocaleDateString('tr-TR');
+  };
+  const _absTime = function(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? String(ts) : d.toLocaleString('tr-TR');
+  };
+
   cont.innerHTML = `<table class="tbl"><thead><tr>
     <th>${window.t ? t('log.col.user')   : 'Kullanıcı'}</th>
     <th>${window.t ? t('log.col.action') : 'İşlem'}</th>
@@ -1271,7 +1293,7 @@ function renderActivityLog() {
     return `<tr>
       <td style="font-weight:500">${window._esc(u.name)}</td>
       <td style="font-size:12px">${window._esc(l.message || '—')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--t2)">${l.ts || '—'}</td>
+      <td style="font-size:11px;color:var(--t2)" title="${window._esc(_absTime(l.ts))}">${window._esc(_relTime(l.ts))}</td>
       <td><span style="font-size:14px">${icon}</span></td>
     </tr>`;
   }).join('')}
