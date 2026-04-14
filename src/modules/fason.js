@@ -24,6 +24,27 @@
     if (!p) return;
     if (!p.dataset.injected) {
       p.dataset.injected = '1';
+      /* FASON-DEMO-SEED-001: ilk açılışta demo kayıt oluştur */
+      if (typeof _fasonLoad === 'function') {
+        var _mevcut = _fasonLoad();
+        if (!_mevcut.length) {
+          _fasonStore([{
+            id: 'demo-' + Date.now(),
+            urunAdi: 'Polyester Kumaş 8×8',
+            fasonFirma: 'Test Fason Ltd.',
+            miktar: 50,
+            tarih: new Date(Date.now()+30*86400000).toISOString().slice(0,10),
+            en: 1.70,
+            uzunluk: 1000,
+            iplikSpec: '1100dtex',
+            atkuCozgu: '8×8',
+            fiyat: 2.5,
+            notlar: 'Demo kayıt — silinebilir',
+            createdAt: new Date().toISOString(),
+            durum: 'aktif'
+          }]);
+        }
+      }
       p.innerHTML = '<div style="display:flex;flex-direction:column;height:100%">'
         /* FASON-HEADER-LAYOUT-001: sticky → relative, buton flex-shrink:0 + kısa metin */
         + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf);position:relative">'
@@ -72,17 +93,29 @@
         + '<span>🧵 ' + esc(e.iplikSpec || '1100dtex') + '</span>'
         + '<span>🔢 ' + esc(e.atkuCozgu || '8×8') + '/cm</span>'
         + '</div>'
+        /* FASON-AKSIYON-001: Düzenle / Sil aksiyon butonları */
+        + '<div class="fason-aksiyon" style="display:none;margin-top:8px;display:flex;gap:6px">'
+        + '<button onclick="event.stopPropagation();window._fasonDuzenle(\'' + e.id + '\')"'
+        + ' style="flex:1;font-size:10px;padding:4px;border:0.5px solid var(--b);border-radius:5px;'
+        + 'background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">✏ Düzenle</button>'
+        + '<button onclick="event.stopPropagation();window.confirmModal?.(\'Bu üretim emrini silmek istediğinize emin misiniz?\',{onConfirm:function(){window._fasonSil(\'' + e.id + '\')}})"'
+        + ' style="flex:1;font-size:10px;padding:4px;border:0.5px solid #DC2626;border-radius:5px;'
+        + 'background:transparent;cursor:pointer;font-family:inherit;color:#DC2626">🗑 Sil</button>'
+        + '</div>'
         + '</div>';
     }).join('');
   };
 
-  window._fasonYeniEmir = function() {
+  window._fasonYeniEmir = function(mevcut) {
     var mo = document.createElement('div');
     mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center';
     mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    /* FASON-AKSIYON-001: düzenle modu — mevcut kayıt id'si dataset'e yazılır, _fasonKaydet okur */
+    mo.dataset.editId = (mevcut && mevcut.id) || '';
+    var _baslik = (mevcut && mevcut.id) ? 'Üretim Emri Düzenle' : 'Yeni Üretim Emri';
     var ic = '<div style="background:var(--sf);border-radius:12px;width:500px;max-height:85vh;overflow-y:auto;padding:20px">'
-      + '<div style="font-size:14px;font-weight:600;margin-bottom:16px">Yeni Üretim Emri</div>'
-      + _fasonFormAlanlari()
+      + '<div style="font-size:14px;font-weight:600;margin-bottom:16px">' + _baslik + '</div>'
+      + _fasonFormAlanlari(mevcut)
       + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
       + '<button onclick="event.stopPropagation();this.closest(\'[style*=fixed]\').remove()" style="padding:7px 16px;border:0.5px solid var(--b);border-radius:7px;background:transparent;cursor:pointer;font-family:inherit;font-size:12px">İptal</button>'
       + '<button onclick="event.stopPropagation();window._fasonKaydet(this)" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500">Kaydet</button>'
@@ -136,10 +169,44 @@
       return;
     }
     var liste = _fasonLoad();
-    liste.push(kayit);
+    /* FASON-AKSIYON-001: düzenle modunda mevcut kaydı güncelle */
+    var _modal = btn.closest('[style*="fixed"]');
+    var _editId = _modal && _modal.dataset ? _modal.dataset.editId : '';
+    if (_editId) {
+      var _idx = liste.findIndex(function(x){ return x.id === _editId; });
+      if (_idx !== -1) {
+        kayit.id = _editId;
+        kayit.createdAt = liste[_idx].createdAt || kayit.createdAt;
+        kayit.updatedAt = new Date().toISOString();
+        liste[_idx] = Object.assign({}, liste[_idx], kayit);
+      } else {
+        liste.push(kayit);
+      }
+    } else {
+      liste.push(kayit);
+    }
     _fasonStore(liste);
-    btn.closest('[style*="fixed"]')?.remove();
-    window.toast?.('Üretim emri oluşturuldu ✓', 'ok');
+    _modal?.remove();
+    window.toast?.(_editId ? 'Üretim emri güncellendi ✓' : 'Üretim emri oluşturuldu ✓', 'ok');
+    window._fasonRenderListe();
+  };
+
+  /* FASON-AKSIYON-001: düzenle + soft sil */
+  window._fasonDuzenle = function(id) {
+    var liste = _fasonLoad();
+    var emir = liste.find(function(e){ return e.id === id; });
+    if (!emir) return;
+    window._fasonYeniEmir(emir);
+  };
+
+  window._fasonSil = function(id) {
+    var liste = _fasonLoad();
+    var idx = liste.findIndex(function(e){ return e.id === id; });
+    if (idx === -1) return;
+    liste[idx].isDeleted = true;
+    liste[idx].deletedAt = new Date().toISOString();
+    _fasonStore(liste);
+    window.toast?.('Üretim emri silindi', 'ok');
     window._fasonRenderListe();
   };
 
