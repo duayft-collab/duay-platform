@@ -147,8 +147,9 @@ window.renderSatinAlmaV2 = function() {
     var _piHTMLLst = _piNoLst ? ' <span style="font-size:8px;font-family:monospace;color:#185FA5;background:#E6F1FB;padding:1px 4px;border-radius:3px" title="PI No">'+(window._esc?.(_piNoLst)||_piNoLst)+'</span>' : '';
     /* SATINALMA-V2-FEATURE-PACK-001: Rev badge (revNo>1) + Job ID tıklanabilir link */
     var _revHTML = (t.revNo && t.revNo > 1) ? ' <span style="font-size:8px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace">Rev'+t.revNo+'</span>' : '';
+    /* SATINALMA-V2-JOB-LINK-FIX-001: _saV2AktifId → _sav2SrchVal (arama filtresi) */
     var _jobHTML = t.jobId
-      ? '<span onclick="event.stopPropagation();window.nav?.(\'satin-alma\');setTimeout(function(){window._saV2AktifId=\''+t.jobId+'\';window.renderSatinAlmaV2?.()},100)" style="color:#185FA5;cursor:pointer;font-family:monospace;font-size:9px" title="Job ID → '+(window._esc?.(t.jobId)||t.jobId)+'">'+(window._esc?.(t.jobId)||t.jobId)+'</span>'
+      ? '<span onclick="event.stopPropagation();window._sav2SrchVal=\''+t.jobId+'\';window.SAV2_SAYFA=1;window.renderSatinAlmaV2?.()" style="color:#185FA5;cursor:pointer;font-family:monospace;font-size:9px" title="Job ID → '+(window._esc?.(t.jobId)||t.jobId)+'">'+(window._esc?.(t.jobId)||t.jobId)+'</span>'
       : '<span style="color:var(--color-text-tertiary);font-size:9px">—</span>';
     h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(window._saV2UrunAdi?.(t))||window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+_piHTMLLst+_revHTML+'</div>';
     h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+' · '+_jobHTML+'</div></div>';
@@ -483,7 +484,11 @@ window._saV2TedarikciKarsilastir = function() {
     var k = t.tedarikci || 'Diğer';
     if (!gruplar[k]) gruplar[k] = { say: 0, toplam: 0 };
     gruplar[k].say++;
-    gruplar[k].toplam += parseFloat(t.toplamTutar || 0);
+    /* SATINALMA-V2-JOB-LINK-FIX-001: para birimi karmasını düzelt — hepsini USD'ye çevir */
+    var _ham = parseFloat(t.toplamTutar || 0);
+    var _paraX = t.para || t.toplamPara || 'TRY';
+    var _usdX = typeof window._saV2KurCevir === 'function' ? window._saV2KurCevir(_ham, _paraX, 'USD') : _ham;
+    gruplar[k].toplam += _usdX || 0;
   });
   var esc = window._esc || function(s) { return String(s || ''); };
   var mo = document.createElement('div');
@@ -496,12 +501,12 @@ window._saV2TedarikciKarsilastir = function() {
         + '<div style="font-weight:500;color:var(--color-text-primary)">' + esc(e[0]) + '</div>'
         + '<div style="display:flex;gap:16px">'
         + '<span style="color:var(--color-text-secondary)">' + e[1].say + ' teklif</span>'
-        + '<span style="font-family:monospace;font-weight:500">' + e[1].toplam.toLocaleString('tr-TR', {maximumFractionDigits: 0}) + '</span>'
+        + '<span style="font-family:monospace;font-weight:500">' + e[1].toplam.toLocaleString('tr-TR', {maximumFractionDigits: 0}) + ' USD</span>'
         + '</div></div>';
     }).join('');
   mo.innerHTML = '<div style="background:var(--color-background-primary);border-radius:12px;width:480px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center">'
-    + '<div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Tedarikçi Karşılaştırması</div>'
+    + '<div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Tedarikçi Karşılaştırması</div><div style="font-size:9px;color:var(--color-text-tertiary);margin-top:2px">USD eşdeğeri — farklı para birimleri otomatik çevrilir</div></div>'
     + '<button onclick="event.stopPropagation();this.closest(\'[style*=fixed]\').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--color-text-tertiary)">×</button>'
     + '</div>'
     + '<div style="padding:16px 20px;overflow-y:auto">' + (satirlar || '<div style="padding:20px;text-align:center;color:var(--color-text-tertiary);font-size:11px">Teklif yok</div>') + '</div>'
