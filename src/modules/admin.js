@@ -3162,19 +3162,44 @@ window._admSwitchTab = function(tab, el) {
 };
 
 /* ADMIN-IZIN-KOPYALA-001: Kullanıcı modül/access izinlerini başka kullanıcıya kopyala */
+// ADMIN-IZIN-KOPYA-MODAL-001: prompt() → dropdown modal
 window._rolKopyala = function(fromId) {
   var users = loadUsers();
-  var fromUser = users.find(function(u){ return u.id === fromId; });
+  var fromUser = users.find(function(u) { return u.id === fromId; });
   if (!fromUser) return;
-  var targetId = prompt('Kime kopyalanacak? Kullanıcı ID girin:');
-  if (!targetId) return;
-  var toUser = users.find(function(u){ return String(u.id) === String(targetId); });
-  if (!toUser) { window.toast?.('Kullanıcı bulunamadı','err'); return; }
+  var mevcut = document.getElementById('mo-izin-kopya');
+  if (mevcut) { mevcut.remove(); return; }
+  var esc = window._esc || function(s) { return String(s || ''); };
+  var opts = users.filter(function(u) { return !u.isDeleted && u.id !== fromId; })
+    .map(function(u) { return '<option value="' + u.id + '">' + esc(u.name) + ' (' + esc(u.role || 'staff') + ')</option>'; }).join('');
+  var mo = document.createElement('div');
+  mo.id = 'mo-izin-kopya';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:360px;padding:20px">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px">İzinleri Kopyala</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">' + esc(fromUser.name) + ' → seçilen kullanıcıya</div>'
+    + '<select id="mo-izin-hedef" onclick="event.stopPropagation()" style="width:100%;padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:12px;margin-bottom:12px"><option value="">Kullanıcı seçin...</option>' + opts + '</select>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button onclick="document.getElementById(\'mo-izin-kopya\').remove()" style="padding:7px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:12px">İptal</button>'
+    + '<button onclick="window._rolKopyalaKaydet(' + fromId + ')" style="padding:7px 16px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500">Kopyala</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+};
+
+window._rolKopyalaKaydet = function(fromId) {
+  var toId = parseInt(document.getElementById('mo-izin-hedef')?.value || '0');
+  if (!toId) { window.toast?.('Kullanıcı seçin', 'warn'); return; }
+  var users = loadUsers();
+  var fromUser = users.find(function(u) { return u.id === fromId; });
+  var toUser = users.find(function(u) { return u.id === toId; });
+  if (!fromUser || !toUser) { window.toast?.('Kullanıcı bulunamadı', 'err'); return; }
   toUser.modules = fromUser.modules ? fromUser.modules.slice() : null;
   toUser.access = fromUser.access ? fromUser.access.slice() : [];
   toUser.updatedAt = new Date().toISOString();
   saveUsers(users);
-  window.toast?.(fromUser.name + ' izinleri → ' + toUser.name + ' kopyalandı ✓','ok');
+  document.getElementById('mo-izin-kopya')?.remove();
+  window.toast?.(fromUser.name + ' → ' + toUser.name + ' izinleri kopyalandı ✓', 'ok');
   window.renderUsers?.();
 };
 
