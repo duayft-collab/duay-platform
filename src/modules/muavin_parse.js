@@ -190,6 +190,19 @@ window._mvDosyaOku = function(inp, taraf) {
     window.toast?.( f.name + ' y\u00fcklendi \u2014 ' + islemler.length + ' i\u015flem', 'ok');
     window._mvAktifTab = 'karsilastirma';
     window.renderMuavin?.();
+    /* MUAVIN-KUR-AUTO-001: Dosya yüklenince döviz işlem varsa TCMB kurları otomatik çekilir */
+    if (typeof window._mvKurDoldur === 'function') {
+      var _kurIslemler = (taraf === 'muhasebeci')
+        ? (window._mvSonIslemler || [])
+        : (window._mvSonIslemlerB || []);
+      var _kurUSD = _kurIslemler.filter(function(i){
+        var d = i.dovizCinsi || '';
+        return d !== 'TRY' && d !== 'TRL' && d !== '';
+      });
+      if (_kurUSD.length > 0) {
+        window._mvKurDoldur(_kurIslemler);
+      }
+    }
     /* MUAVIN-OTO-ESLESTIR-001: her iki dosya da hazırsa otomatik karşılaştır */
     setTimeout(function() {
       var mOk = !!(window._mvSonIslemler && window._mvSonIslemler.length);
