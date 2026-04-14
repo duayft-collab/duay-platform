@@ -7107,6 +7107,36 @@ function _renderCariDetail(id) {
     fbHTML = '<div style="margin-top:10px;font-size:11px;color:var(--t3);padding:8px;background:var(--s2);border-radius:6px;text-align:center">Henüz geri bildirim yok</div>';
   }
 
+  /* CARI-SATIS-GECMISI-001: müşteriye ait satış teklifleri listesi */
+  var stList2 = typeof loadST==='function' ? loadST() : (typeof loadSatisTeklifleri==='function' ? loadSatisTeklifleri() : []);
+  var cariST = stList2.filter(function(t){
+    return !t.isDeleted && (t.customerName===c.name || t.musteri===c.name || t.musteriId===c.id || t.musteriId===String(c.id));
+  });
+  var stHTML = '';
+  if (cariST.length) {
+    var stKabul = cariST.filter(function(t){ return t.status==='kabul'; }).length;
+    stHTML = '<div style="margin-top:14px;border-top:0.5px solid var(--b);padding-top:12px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">Satış Teklifleri</div>'
+      + '<div style="font-size:11px;font-weight:600">'+cariST.length+' teklif</div>'
+      + '<div style="font-size:10px;color:#16A34A">'+stKabul+' kabul</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:90px 1fr 80px 60px;gap:0;font-size:9px;font-weight:600;color:var(--t3);padding:4px 8px;background:var(--s2);border-radius:4px 4px 0 0;text-transform:uppercase">'
+      + '<div>No</div><div>Tarih</div><div>Tutar</div><div>Durum</div></div>'
+      + cariST.slice(0,8).map(function(t){
+        var durRenk = t.status==='kabul'?'#16A34A':t.status==='red'?'#DC2626':'#D97706';
+        return '<div style="display:grid;grid-template-columns:90px 1fr 80px 60px;gap:0;padding:5px 8px;border-bottom:0.5px solid var(--b);font-size:10px;align-items:center">'
+          + '<div style="font-family:monospace;font-size:9px;color:var(--ac)">'+(window._esc?.(t.teklifNo||t.piNo||'—')||'—')+'</div>'
+          + '<div style="color:var(--t3)">'+String(t.date||t.ts||'—').slice(0,10)+'</div>'
+          + '<div style="font-size:9px">'+parseFloat(t.toplamUSD||t.toplam||0).toLocaleString('tr-TR')+'</div>'
+          + '<div style="color:'+durRenk+';font-size:9px;font-weight:600">'+(t.status||'—')+'</div>'
+          + '</div>';
+      }).join('')
+      + '</div>';
+  } else {
+    stHTML = '<div style="margin-top:10px;font-size:11px;color:var(--t3);padding:8px;background:var(--s2);border-radius:6px">Satış teklifi yok</div>';
+  }
+
   cont.innerHTML = '<div style="padding:20px">'
     // Başlık
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
@@ -7241,6 +7271,7 @@ function _renderCariDetail(id) {
     + '</div>'
     + islemHTML
     + fbHTML
+    + stHTML
   + '</div>';
 }
 
