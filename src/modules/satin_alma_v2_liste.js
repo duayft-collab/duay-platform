@@ -90,8 +90,9 @@ window.renderSatinAlmaV2 = function() {
   h+='<div></div>';
   h+=_th('ÜRÜN / TEDARİKÇİ','createdAt');
   h+=_th('TUTAR','toplamTutar');
-  h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">DURUM</div>';
-  h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">GEÇERLİLİK</div>';
+  /* SATIS-LISTE-SORT-001: DURUM + GEÇERLİLİK kolonlarını da sıralanabilir yap */
+  h+=_th('DURUM','durum');
+  h+=_th('GEÇERLİLİK','gecerlilikTarihi');
   h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em">İŞLEM</div>';
   h+='</div>';
   goster.forEach(function(t){
