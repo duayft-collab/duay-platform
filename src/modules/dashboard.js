@@ -740,6 +740,40 @@ window._pirimiGetir = function() {
 
 function _renderPirimimWidget() {
   const role = _cu()?.role || '';
+  /* PIRIM-DASHBOARD-ADMIN-001: Admin için tüm personel prim özet tablosu */
+  if (role === 'admin' || role === 'manager') {
+    if (typeof loadPirim !== 'function') return '';
+    var primler = loadPirim().filter(function(p){ return !p.isDeleted; });
+    if (!primler.length) return '';
+    var users = (typeof loadUsers === 'function' ? loadUsers() : []).filter(function(u){ return !u.isDeleted; });
+    var userMap = {};
+    users.forEach(function(u){ userMap[u.uid||u.id] = u.displayName || u.ad || u.name || u.email || '?'; });
+    var ozet = {};
+    primler.forEach(function(p){
+      var uid = p.uid || p.assignedTo || 'unknown';
+      if (!ozet[uid]) ozet[uid] = { ad: userMap[uid] || '—', toplam:0, odenen:0, bekleyen:0 };
+      var amt = parseFloat(p.amount) || 0;
+      ozet[uid].toplam += amt;
+      if (p.status === 'paid') ozet[uid].odenen += amt;
+      else ozet[uid].bekleyen += amt;
+    });
+    var rows = Object.keys(ozet).map(function(k){ return ozet[k]; }).sort(function(a,b){ return b.toplam - a.toplam; });
+    var fmt = function(n){ return n.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:0}); };
+    var h = '<div onclick="window._pirimiGetir()" style="cursor:pointer;padding:14px 16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:8px">\ud83d\udcb0 Personel Prim Özeti <span style="font-size:9px;color:var(--t3);font-weight:400">(' + rows.length + ' personel)</span></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;padding-bottom:4px;border-bottom:0.5px solid var(--b)">'
+      + '<div>Personel</div><div style="text-align:right">Toplam</div><div style="text-align:right;color:#16A34A">Ödenen</div><div style="text-align:right;color:#D97706">Bekleyen</div></div>';
+    rows.slice(0, 8).forEach(function(r){
+      h += '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;font-size:11px;padding:5px 0;border-bottom:0.5px solid var(--b)">'
+        + '<div style="color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + r.ad + '</div>'
+        + '<div style="text-align:right;color:var(--t);font-weight:500">' + fmt(r.toplam) + '</div>'
+        + '<div style="text-align:right;color:#16A34A">' + fmt(r.odenen) + '</div>'
+        + '<div style="text-align:right;color:#D97706">' + fmt(r.bekleyen) + '</div>'
+        + '</div>';
+    });
+    h += '<div style="font-size:10px;color:var(--t3);margin-top:6px;text-align:right">Detay → Prim Yönetimi</div></div>';
+    return h;
+  }
   if (role !== 'staff' && role !== 'lead') return '';
   return '<div onclick="window._pirimiGetir()" style="cursor:pointer;padding:16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf)">'
     + '<div style="font-size:12px;font-weight:600;color:var(--t)">\ud83d\udcb0 Primim</div>'
