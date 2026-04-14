@@ -644,10 +644,11 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
   }
 
   // Manager rolüne uygun olanları ekle
+  /* FASON-OVERRIDE-FIX-001: fason satinalma altgrubu, manager izin */
   const managerExtras = ['docs','formlar','gorusme','hesap','finans',
                          'arsiv','tebligat','evrak','resmi','temizlik',
                          'rehber','numune','etkinlik','links',
-                         'satinalma','cari'];
+                         'satinalma','cari','fason'];
   if (window.ROLE_DEFAULT_MODULES?.manager) {
     managerExtras.forEach(id => {
       if (!window.ROLE_DEFAULT_MODULES.manager.includes(id)) {
@@ -657,7 +658,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
   }
 
   // Lead ve Staff rollerine satinalma + hesap ekle
-  const leadStaffExtras = ['satinalma','hesap'];
+  /* FASON-OVERRIDE-FIX-001: fason lead/staff izin */
+  const leadStaffExtras = ['satinalma','hesap','fason'];
   ['lead','staff'].forEach(role => {
     if (window.ROLE_DEFAULT_MODULES?.[role]) {
       leadStaffExtras.forEach(id => {
@@ -5586,12 +5588,14 @@ window._renderFirmaKpi = function() {
     }
   }
   /* Satınalma menüsü — tam yeniden yapılandır */
+  /* FASON-OVERRIDE-FIX-001: fason L4930 push'u burada silinmesin, hardcoded array'e de eklendi */
   if (G.satinalma) {
     G.satinalma.mods = [
       { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri V2' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
+      { id: 'fason',             label: 'Fason \u00dcretim' },
     ];
   }
   /* Muhasebe men\u00fcs\u00fcne 3 yeni mod\u00fcl */
