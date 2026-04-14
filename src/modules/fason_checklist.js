@@ -85,6 +85,31 @@ window._fasonDetay = function(emirId) {
       + cpHTML + '</div>';
   }).join('');
 
+  /* FASON-RULO-LISTE-001: basılan rulolar listesi — emir bazlı */
+  var _rKey2 = 'ak_fason_rulo_v1';
+  var _rl = [];
+  try { _rl = JSON.parse(localStorage.getItem(_rKey2)||'[]'); } catch(e){}
+  var _emirRulolar = _rl.filter(function(r){ return r.emirId===emirId; });
+
+  var ruloListHTML = '<div style="margin-top:16px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">'
+    +'<div style="padding:8px 14px;background:var(--s2);font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between">'
+    +'<span>Basılan Rulolar ('+_emirRulolar.length+')</span></div>';
+  if(!_emirRulolar.length) {
+    ruloListHTML += '<div style="padding:16px;text-align:center;color:var(--t3);font-size:11px">'
+      +'Henüz rulo basılmadı — "Rulo Etiket Bas" butonunu kullanın</div>';
+  } else {
+    ruloListHTML += _emirRulolar.map(function(r) {
+      return '<div style="display:flex;align-items:center;padding:8px 14px;border-bottom:0.5px solid var(--b);font-size:11px">'
+        +'<div style="font-weight:500;color:var(--t);min-width:80px">RULO #'+r.ruloNo+'</div>'
+        +'<div style="color:var(--t3);flex:1">'+r.tarih+'</div>'
+        +'<div style="color:var(--t3)">'+r.en+'m × '+r.uzunluk+'m</div>'
+        +'<button onclick="event.stopPropagation();window._fasonRuloEtiket(\''+emirId+'\')" '
+        +'style="margin-left:8px;font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">🖨 Tekrar Bas</button>'
+        +'</div>';
+    }).join('');
+  }
+  ruloListHTML += '</div>';
+
   p.innerHTML = '<div style="display:flex;flex-direction:column;height:100%">'
     + '<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf)">'
     + '<button onclick="event.stopPropagation();window.renderFason()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3)">←</button>'
@@ -101,6 +126,7 @@ window._fasonDetay = function(emirId) {
     + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+window._esc(emir.atkuCozgu||'')+'</div><div style="font-size:9px;color:var(--t3)">Atkı×Çözgü</div></div>'
     + '</div>'
     + checkHTML
+    + ruloListHTML
     + '</div></div>';
 };
 
