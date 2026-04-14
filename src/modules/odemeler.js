@@ -7318,8 +7318,10 @@ function _renderCariDetail(id) {
           + (isExceeded ? '<div style="font-size:10px;color:#EF4444;margin-top:4px;font-weight:600">🚨 Kredi limiti aşıldı! Yeni ödeme oluşturulamaz.</div>' : pct >= 80 ? '<div style="font-size:10px;color:#F59E0B;margin-top:4px;font-weight:600">⚠️ Kredi limiti aşılmak üzere!</div>' : '')
         + '</div>';
       })()
+    /* CARI-SEKMELI-DETAY-001: sekme bar (Genel/Teklifler/Ürünler/Feedback) */
+    + _sekmeBarHTML
     // Format toggle + Hareket tablosu
-    + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:16px">'
+    + '<div class="csd-panel csd-panel-genel" style="background:var(--sf);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:16px">'
       + '<div style="padding:10px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
         + '<span style="font-size:12px;font-weight:600;color:var(--t)">Hareket Geçmişi</span>'
         + '<div style="display:flex;gap:4px">'
@@ -7365,9 +7367,10 @@ function _renderCariDetail(id) {
           }
         })()
     + '</div>'
-    + islemHTML
-    + fbHTML
-    + stHTML
+    + '<div class="csd-panel csd-panel-genel">' + islemHTML + '</div>'
+    + '<div class="csd-panel csd-panel-teklifler" style="display:none">' + stHTML + '</div>'
+    + '<div class="csd-panel csd-panel-urunler" style="display:none">' + _urunPanelHTML + '</div>'
+    + '<div class="csd-panel csd-panel-feedback" style="display:none">' + fbHTML + '</div>'
   + '</div>';
 }
 
@@ -8797,6 +8800,25 @@ window._cariRiskSkor = function(c) {
     }
   } catch (e) {}
   return Math.max(0, Math.min(100, skor));
+};
+
+/* CARI-SEKMELI-DETAY-001: Cari detay sekme toggle */
+window._csdTab = function(btn, panelName) {
+  document.querySelectorAll('.csd-tab').forEach(function(b){
+    b.style.color = 'var(--t3)';
+    b.style.fontWeight = '400';
+    b.style.borderBottom = '2px solid transparent';
+  });
+  if (btn) {
+    btn.style.color = 'var(--ac)';
+    btn.style.fontWeight = '600';
+    btn.style.borderBottom = '2px solid var(--ac)';
+  }
+  /* Tüm panel sınıflarını gizle, hedef panel sınıfını göster */
+  var allPanels = document.querySelectorAll('[class*="csd-panel-"]');
+  allPanels.forEach(function(p){ p.style.display = 'none'; });
+  var targetPanels = document.querySelectorAll('.csd-panel-' + panelName);
+  targetPanels.forEach(function(p){ p.style.display = ''; });
 };
 
 /* CARI-HIZLI-TEKLIF-001: cari listesinden müşteri adı prefilled satış teklifi aç */
