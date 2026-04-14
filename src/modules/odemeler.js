@@ -6746,7 +6746,7 @@ function renderCari() {
         // Sol panel — liste
         + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
           + '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);display:flex;gap:6px">'
-            + '<input class="fi" id="cari-search" placeholder="Ara..." oninput="renderCari()" style="font-size:11px;flex:1;border:0.5px solid var(--b);border-radius:7px">'
+            + '<input class="fi" id="cari-search" placeholder="Ara..." oninput="clearTimeout(window._cariSearchTimer);window._cariSearchTimer=setTimeout(renderCari,220)" style="font-size:11px;flex:1;border:0.5px solid var(--b);border-radius:7px">'
             + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
             + '<select class="fi" id="cari-stage-f" onchange="renderCari()" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
           + '</div>'
@@ -6758,6 +6758,8 @@ function renderCari() {
   }
 
   var all = loadCari().filter(function(c) { return !c.isDeleted; });
+  /* CARI-PERF-001: detay aç optimizasyonu — loadCari cache */
+  window._cariCache = all;
   // CARI-KPI-ISLEM-001: islemler bazlı alacak/borç/net bakiye hesabı
   var _kpiEl = document.getElementById('cari-kpi');
   if (_kpiEl) {
@@ -6802,6 +6804,15 @@ function renderCari() {
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
   var today = _todayStr();
+
+  /* CARI-PERF-001: odm'yi cariName bazlı bucket'lara dağıt (N×M filter → O(1) lookup) */
+  var _odmByName = {};
+  odm.filter(function(o){ return !o.isDeleted; }).forEach(function(o){
+    var key = o.cariName || '';
+    if (!_odmByName[key]) _odmByName[key] = [];
+    _odmByName[key].push(o);
+  });
+  var _sevenDaysLater = new Date(new Date().getTime() + 7*86400000).toISOString().slice(0,10);
 
   // ── İstatistik paneli ──────────────────────────────────────────
   var statsEl = document.getElementById('cari-stats');
@@ -6916,7 +6927,23 @@ function renderCari() {
     var stageBadge = stage === 'onayli' ? '🟢' : stage === 'aktif' ? '🟡' : '🔵';
     var statusBadge = c.status === 'rejected' ? ' <span style="font-size:9px;color:#DC2626;font-weight:600">Reddedildi</span>' : '';
     var stageLabel = stage === 'onayli' ? 'Onaylı' : stage === 'aktif' ? 'Aktif' : 'Potansiyel';
-    var sc = _getCariStatusColor(c);
+    /* CARI-PERF-001: inline fast lookup — odm bucket'tan O(1) erişim, N×M filter kaldırıldı */
+    var _cOdmFast = _odmByName[c.name] || [];
+    var _hasGecik = false, _hasYakin = false, _unpaidTRY = 0;
+    for (var _i = 0; _i < _cOdmFast.length; _i++) {
+      var _oItem = _cOdmFast[_i];
+      if (_oItem.paid) continue;
+      if (_oItem.due) {
+        if (_oItem.due < today) _hasGecik = true;
+        else if (_oItem.due <= _sevenDaysLater) _hasYakin = true;
+      }
+      _unpaidTRY += _odmToTRY(parseFloat(_oItem.amount||0), _oItem.currency||'TRY', _oItem);
+    }
+    var _cLimit = c.creditLimit || c.limitAmount || 0;
+    var sc;
+    if (_hasGecik || (_cLimit > 0 && _unpaidTRY > _cLimit)) sc = { icon:'🔴', color:'#DC2626', label:'Riskli' };
+    else if (_hasYakin) sc = { icon:'🟡', color:'#F59E0B', label:'Dikkat' };
+    else sc = { icon:'🟢', color:'#16A34A', label:'İyi' };
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
@@ -6970,7 +6997,9 @@ window._cariTeklifVer = function(id) {
 function _renderCariDetail(id) {
   var cont = document.getElementById('cari-detail');
   if (!cont) return;
-  var c = loadCari().find(function(x) { return x.id === id; });
+  /* CARI-PERF-001: renderCari'nin önbelleğini kullan (her detay tıklamasında loadCari reparse etme) */
+  var _cariSrc = window._cariCache || loadCari();
+  var c = _cariSrc.find(function(x) { return x.id === id; });
   if (!c) { cont.innerHTML = ''; return; }
 
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
