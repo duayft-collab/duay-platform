@@ -6624,14 +6624,44 @@ window._renderNumuneArsivi = function() {
     +'</div>';
 };
 
+// TESLIMAT-TAKIP-V1-001: stub → sipariş+kargo zinciri liste + KPI
 window._renderTeslimatTakip = function() {
-  var p = document.getElementById('panel-teslimat-takip'); if(!p) return;
-  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
-    + '<div style="font-size:36px">🚚</div>'
-    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Teslimat Takibi</div>'
-    + '<div style="font-size:12px;margin-top:6px">Sipariş → kargo → teslimat zinciri</div>'
-    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
-    + '</div>';
+  var p = document.getElementById('panel-teslimat-takip'); if (!p) return;
+  var siparisler = (typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [])
+    .filter(function(t) { return !t.isDeleted && t.siparisDurumu; });
+  var kargo = (typeof loadKargo === 'function' ? loadKargo() : [])
+    .filter(function(k) { return !k.isDeleted; });
+  var esc = window._esc || function(s) { return String(s || ''); };
+  var DURUM = { hazirlaniyor: '#D97706', yolda: '#185FA5', teslim: '#16A34A', bekliyor: '#888780' };
+  var satirlar = siparisler.length ? siparisler.slice(0, 30).map(function(t) {
+    var dur = t.siparisDurumu || 'bekliyor';
+    var renk = DURUM[dur] || '#888780';
+    var ilgiliKargo = kargo.find(function(k) { return k.teklifId === t.id || k.refId === t.id || k.piNo === t.piNo; });
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      + '<td style="padding:7px 12px;font-size:11px;font-family:monospace;color:var(--ac)">' + esc(t.teklifNo || t.piNo || '—') + '</td>'
+      + '<td style="padding:7px 12px;font-size:11px">' + esc(t.tedarikci || '—') + '</td>'
+      + '<td style="padding:7px 12px"><span style="font-size:9px;padding:2px 8px;border-radius:99px;background:' + renk + '22;color:' + renk + ';font-weight:600">' + dur + '</span></td>'
+      + '<td style="padding:7px 12px;font-size:11px">' + (ilgiliKargo ? esc(ilgiliKargo.trackingNo || ilgiliKargo.takipNo || '—') : '<span style="color:var(--t3)">Kargo yok</span>') + '</td>'
+      + '<td style="padding:7px 12px;font-size:11px">' + (ilgiliKargo ? esc(ilgiliKargo.etaDate || ilgiliKargo.eta || '—') : '—') + '</td>'
+      + '<td style="padding:7px 12px"><button onclick="event.stopPropagation();window._siparisKargoAc?.(\'' + String(t.id) + '\')" class="btn btns" style="font-size:9px;padding:2px 7px">Kargo</button></td>'
+      + '</tr>';
+  }).join('') : '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--t3)">Aktif sipariş bulunamadı</td></tr>';
+  p.innerHTML = '<div style="padding:0">'
+    + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:14px;font-weight:700;color:var(--t)">🚚 Teslimat Takibi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Sipariş → Kargo → Teslimat zinciri</div></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid var(--b)">'
+    + '<div style="padding:12px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">TOPLAM</div><div style="font-size:20px;font-weight:600">' + siparisler.length + '</div></div>'
+    + '<div style="padding:12px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">HAZIRLANIYOR</div><div style="font-size:20px;font-weight:600;color:#D97706">' + siparisler.filter(function(t) { return t.siparisDurumu === 'hazirlaniyor'; }).length + '</div></div>'
+    + '<div style="padding:12px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">YOLDA</div><div style="font-size:20px;font-weight:600;color:#185FA5">' + siparisler.filter(function(t) { return t.siparisDurumu === 'yolda'; }).length + '</div></div>'
+    + '<div style="padding:12px 20px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">TESLİM</div><div style="font-size:20px;font-weight:600;color:#16A34A">' + siparisler.filter(function(t) { return t.siparisDurumu === 'teslim'; }).length + '</div></div>'
+    + '</div>'
+    + '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2);font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase">'
+    + '<th style="padding:7px 12px;text-align:left">Teklif No</th>'
+    + '<th style="padding:7px 12px;text-align:left">Tedarikçi</th>'
+    + '<th style="padding:7px 12px;text-align:left">Durum</th>'
+    + '<th style="padding:7px 12px;text-align:left">Kargo No</th>'
+    + '<th style="padding:7px 12px;text-align:left">ETA</th>'
+    + '<th style="padding:7px 12px;text-align:left">İşlem</th>'
+    + '</tr></thead><tbody>' + satirlar + '</tbody></table></div>';
 };
 
 /* CARI-KARSILASTIRMA-V1-001: stub → platform cari listesi + upload placeholder */
