@@ -50,13 +50,71 @@ const _KPI_SEED = [
 /** Otomatik KPI'ların mevcut değerlerini hesapla */
 function _kpiAutoCalc(sid) {
   try {
+    /* KPI-LIVE-DATA-001: tüm _KPI_SEED SID'leri için dinamik hesaplama */
+    var buAy = new Date().toISOString().slice(0, 7); // YYYY-MM
+
     if (sid === 'kpi_ihracat') {
       const d = typeof loadIhracatDosyalar === 'function' ? loadIhracatDosyalar() : (window.loadIhracatDosyalar?.() || []);
       return d.filter(function(x) { return !x.isDeleted; }).length;
     }
     if (sid === 'kpi_tedarik') {
-      const d = typeof loadSatinalma === 'function' ? loadSatinalma() : (window.loadSatinalma?.() || []);
-      return d.filter(function(x) { return !x.isDeleted; }).length;
+      // Ortalama tedarik süresi (gün): alış teklif createdAt → onayTarih farkı ortalama
+      var aT = typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : (window.loadAlisTeklifleri?.() || []);
+      var tamamlanan = aT.filter(function(t){ return !t.isDeleted && t.durum==='onaylandi' && t.createdAt && t.onayTarih; });
+      if (!tamamlanan.length) return 0;
+      var topGun = tamamlanan.reduce(function(s,t){
+        var bas = new Date((t.createdAt||'').replace(' ','T')).getTime();
+        var son = new Date((t.onayTarih||'').replace(' ','T')).getTime();
+        if (isNaN(bas) || isNaN(son)) return s;
+        return s + Math.max(0, Math.round((son-bas)/86400000));
+      }, 0);
+      return Math.round(topGun / tamamlanan.length);
+    }
+    if (sid === 'kpi_satis') {
+      // Bu ayın toplam kabul edilmiş satış teklifi tutarı (TRY)
+      var sT = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : (window.loadSatisTeklifleri?.() || []);
+      var kabulBuAy = sT.filter(function(t){
+        if (t.isDeleted) return false;
+        if (t.status !== 'kabul' && t.durum !== 'kabul') return false;
+        var ts = t.ts || t.createdAt || t.date || '';
+        return String(ts).startsWith(buAy);
+      });
+      return Math.round(kabulBuAy.reduce(function(s,t){
+        var tutar = parseFloat(t.genelToplam||t.toplam||t.toplamSatis||0) || 0;
+        return s + tutar;
+      }, 0));
+    }
+    if (sid === 'kpi_tahsilat') {
+      // Ortalama tahsilat süresi (gün): due → ts (collected) diff
+      var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : (window.loadTahsilat?.() || []);
+      var toplanan = tah.filter(function(x){ return !x.isDeleted && x.collected && x.due && x.ts; });
+      if (!toplanan.length) return 0;
+      var totalDiff = toplanan.reduce(function(s,x){
+        var due = new Date(x.due).getTime();
+        var paid = new Date((x.ts||'').replace(' ','T')).getTime();
+        if (isNaN(due) || isNaN(paid)) return s;
+        return s + Math.max(0, Math.round((paid-due)/86400000));
+      }, 0);
+      return Math.round(totalDiff / toplanan.length);
+    }
+    if (sid === 'kpi_musteri') {
+      // Bu ay eklenen yeni müşteri sayısı
+      var cari = typeof loadCari === 'function' ? loadCari() : (window.loadCari?.() || []);
+      return cari.filter(function(c){
+        if (c.isDeleted) return false;
+        if (c.type !== 'musteri' && c.type) return false;
+        var ts = c.createdAt || c.ts || '';
+        return String(ts).startsWith(buAy);
+      }).length;
+    }
+    if (sid === 'kpi_gecikme') {
+      // Gecikmiş ihracat oranı (%): bitiş tarihi geçmiş && tamamlanmamış
+      var ih = typeof loadIhracatDosyalar === 'function' ? loadIhracatDosyalar() : (window.loadIhracatDosyalar?.() || []);
+      var aktif = ih.filter(function(x){ return !x.isDeleted && x.durum !== 'tamamlandi' && x.durum !== 'kapandi'; });
+      if (!aktif.length) return 0;
+      var bugun = new Date().toISOString().slice(0,10);
+      var gecikenSay = aktif.filter(function(x){ return x.bitisTarih && x.bitisTarih < bugun; }).length;
+      return Math.round((gecikenSay / aktif.length) * 100);
     }
   } catch(e) { /* modül yüklenmemiş olabilir */ }
   return 0;
