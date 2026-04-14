@@ -6732,10 +6732,52 @@ window._ckarsKarsilastir = function() {
   var muhData = mvData.filter(function(i){ return i.taraf==='muhasebeci' && _inDonem(i.tarih||i.date||''); });
   var barData = mvData.filter(function(i){ return i.taraf==='baran' && _inDonem(i.tarih||i.date||''); });
 
+  /* CARI-KARS-ESLEME-001: Akıllı cari adı eşleştirme — onay modalı */
+  if (!window._ckarsOnaylandi) {
+    var _mvTumAdlar = [];
+    mvData.forEach(function(item){
+      var ad = item.cariAdi||item.hesap||item.aciklama||'';
+      if (ad && _mvTumAdlar.indexOf(ad)===-1) _mvTumAdlar.push(ad);
+    });
+    var _oneriler = _mvTumAdlar.map(function(ad){
+      return { ad: ad, skor: (typeof window._ckarsBenzerligi==='function' ? window._ckarsBenzerligi(cariAdi, ad) : 0) };
+    }).filter(function(o){ return o.skor >= 40; })
+      .sort(function(a,b){ return b.skor - a.skor; }).slice(0,3);
+    if (_oneriler.length && _oneriler[0].skor < 100) {
+      var _escF = window._esc||function(s){return String(s||'');};
+      var _modalHTML = '<div style="padding:16px;min-width:320px;max-width:420px">'
+        + '<div style="font-size:13px;font-weight:600;margin-bottom:8px">Cari Adı Eşleştirme</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Platformdaki "<strong>'+_escF(cariAdi)+'</strong>" için muavinde şu eşleşmeler bulundu:</div>'
+        + _oneriler.map(function(o){
+            var safeAd = String(o.ad).replace(/'/g,'').replace(/"/g,'');
+            return '<div onclick="event.stopPropagation();document.querySelectorAll(\'.ck-onay-row\').forEach(function(r){r.style.background=\'\'});this.style.background=\'var(--al)\';window._ckarsSeciliMuavinAd=\''+safeAd+'\'" class="ck-onay-row" style="padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+              + '<span style="font-size:11px">'+_escF(o.ad)+'</span>'
+              + '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:'+(o.skor>=80?'#EAF3DE':o.skor>=60?'#FAEEDA':'#F1EFE8')+';color:'+(o.skor>=80?'#3B6D11':o.skor>=60?'#854F0B':'#5F5E5A')+'">%'+o.skor+'</span>'
+              + '</div>';
+          }).join('')
+        + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">'
+        + '<button onclick="document.getElementById(\'ckars-onay-mo\').remove()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:11px">İptal</button>'
+        + '<button onclick="event.stopPropagation();document.getElementById(\'ckars-onay-mo\').remove();window._ckarsDevam?.()" style="padding:6px 14px;background:var(--ac);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:500">Devam</button>'
+        + '</div></div>';
+      var _mo = document.createElement('div');
+      _mo.id = 'ckars-onay-mo';
+      _mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center';
+      _mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b)">'+_modalHTML+'</div>';
+      _mo.onclick = function(e){ if(e.target===_mo) _mo.remove(); };
+      document.body.appendChild(_mo);
+      window._ckarsSeciliMuavinAd = _oneriler[0].ad;
+      setTimeout(function(){ var r0 = document.querySelectorAll('.ck-onay-row')[0]; if (r0) r0.style.background='var(--al)'; }, 50);
+      return;
+    }
+    /* Eşleşme yok veya %100 tam eşleşme — direkt cariAdi ile devam */
+    window._ckarsSeciliMuavinAd = cariAdi;
+  }
+
   function _cariFilter(arr) {
+    var filterAd = (window._ckarsSeciliMuavinAd || cariAdi || '').toLowerCase();
     return arr.filter(function(i){
       var ac = (i.aciklama||i.hesap||i.cariAdi||'').toLowerCase();
-      return ac.includes(cariAdi.toLowerCase()) || !cariAdi;
+      return ac.includes(filterAd) || !filterAd;
     });
   }
   var muhFilt = _cariFilter(muhData);
@@ -6771,11 +6813,21 @@ window._ckarsKarsilastir = function() {
   var farkBar = platTop - barTop;
   var farkRenk = function(f){ return Math.abs(f)<1?'#16A34A':'#DC2626'; };
 
-  sonuc.innerHTML = '<div id="ckars-rapor">'
+  /* CARI-KARSILASTIRMA-V2-001 ek: satır sayısı + bakiye birlikte uyum kontrolü (±1 tolerans) */
+  var platSay = platHar.length;
+  var muhSay = muhFilt.length;
+  var barSay = barFilt.length;
+  var platMuhUyumlu = platSay === muhSay && Math.abs(platTop - muhTop) < 1;
+  var platBarUyumlu = platSay === barSay && Math.abs(platTop - barTop) < 1;
+  var bgRenk = (platMuhUyumlu && platBarUyumlu) ? 'background:#EAF3DE' : '';
+  var uyumluBadge = '<span style="font-size:9px;background:#EAF3DE;color:#3B6D11;padding:1px 6px;border-radius:3px;margin-left:4px">Uyumlu</span>';
+  var farkliBadge = '<span style="font-size:9px;background:#FCEBEB;color:#A32D2D;padding:1px 6px;border-radius:3px;margin-left:4px">Farklı</span>';
+
+  sonuc.innerHTML = '<div id="ckars-rapor" style="' + bgRenk + '">'
     + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:0.5px solid var(--b)">'
-    + '<div style="padding:12px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Platform</div><div style="font-size:18px;font-weight:500">'+platTop.toLocaleString('tr-TR')+' $</div><div style="font-size:9px;color:var(--t3)">'+platHar.length+' hareket</div></div>'
-    + '<div style="padding:12px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:#185FA5;text-transform:uppercase;letter-spacing:.05em">Muhasebeci</div><div style="font-size:18px;font-weight:500;color:#185FA5">'+muhTop.toLocaleString('tr-TR')+' ₺</div><div style="font-size:9px;color:'+farkRenk(farkMuh)+'">Fark: '+(farkMuh>0?'+':'')+farkMuh.toLocaleString('tr-TR')+'</div></div>'
-    + '<div style="padding:12px 16px"><div style="font-size:9px;color:#0F6E56;text-transform:uppercase;letter-spacing:.05em">Baran Ekstresi</div><div style="font-size:18px;font-weight:500;color:#0F6E56">'+barTop.toLocaleString('tr-TR')+' ₺</div><div style="font-size:9px;color:'+farkRenk(farkBar)+'">Fark: '+(farkBar>0?'+':'')+farkBar.toLocaleString('tr-TR')+'</div></div>'
+    + '<div style="padding:12px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Platform</div><div style="font-size:18px;font-weight:500">'+platTop.toLocaleString('tr-TR')+' $</div><div style="font-size:9px;color:var(--t3)">'+platSay+' hareket</div></div>'
+    + '<div style="padding:12px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:#185FA5;text-transform:uppercase;letter-spacing:.05em">Muhasebeci' + (platMuhUyumlu ? uyumluBadge : farkliBadge) + '</div><div style="font-size:18px;font-weight:500;color:#185FA5">'+muhTop.toLocaleString('tr-TR')+' ₺</div><div style="font-size:9px;color:'+farkRenk(farkMuh)+'">Fark: '+(farkMuh>0?'+':'')+farkMuh.toLocaleString('tr-TR')+' · '+muhSay+' hareket</div></div>'
+    + '<div style="padding:12px 16px"><div style="font-size:9px;color:#0F6E56;text-transform:uppercase;letter-spacing:.05em">Baran Ekstresi' + (platBarUyumlu ? uyumluBadge : farkliBadge) + '</div><div style="font-size:18px;font-weight:500;color:#0F6E56">'+barTop.toLocaleString('tr-TR')+' ₺</div><div style="font-size:9px;color:'+farkRenk(farkBar)+'">Fark: '+(farkBar>0?'+':'')+farkBar.toLocaleString('tr-TR')+' · '+barSay+' hareket</div></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--s2);border-bottom:0.5px solid var(--b)">'
     + '<div style="padding:5px 14px;font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;border-right:0.5px solid var(--b)">Platform</div>'
@@ -6810,6 +6862,34 @@ window._ckarsResim = function() {
     a.click();
     window.toast?.('Resim indirildi ✓','ok');
   });
+};
+
+/* CARI-KARS-ESLEME-001: Cari adı normalize — ltd/a.ş/san/tic gibi kelimeler + noktalama temizlenir */
+window._ckarsNormalize = function(str) {
+  return (str||'').toLowerCase()
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'')
+    .replace(/\b(ltd|sti|şti|as|a\.s|a\.ş|inc|co|limited|şirketi|ticaret|sanayi|san|tic)\b/g,'')
+    .replace(/\s+/g,' ').trim();
+};
+
+/* CARI-KARS-ESLEME-001: Benzerlik skoru (0-100) — tam eşleşme / substring / ortak kelime oranı */
+window._ckarsBenzerligi = function(a, b) {
+  var na = window._ckarsNormalize(a);
+  var nb = window._ckarsNormalize(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 100;
+  if (na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1) return 85;
+  var wa = na.split(' ').filter(Boolean);
+  var wb = nb.split(' ').filter(Boolean);
+  var ortak = wa.filter(function(w){ return wb.indexOf(w) !== -1; }).length;
+  var oran = ortak / Math.max(wa.length, wb.length, 1);
+  return Math.round(oran * 70);
+};
+
+/* CARI-KARS-ESLEME-001: Onay modal'ındaki Devam butonu — bypass flag ile _ckarsKarsilastir'ı tekrar çağır */
+window._ckarsDevam = function() {
+  window._ckarsOnaylandi = true;
+  try { window._ckarsKarsilastir?.(); } finally { window._ckarsOnaylandi = false; }
 };
 
 window._ckarsExcel = function() {
