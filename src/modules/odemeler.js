@@ -7142,6 +7142,27 @@ function _renderCariDetail(id) {
           + '</div>';
       }).join('')
       + '</div>';
+
+    /* CARI-URUN-FREKANS-001: En çok sipariş edilen ürünler top 5 */
+    var urunFreq = {};
+    cariST.forEach(function(t){
+      (t.urunler||t.items||[]).forEach(function(u){
+        var ad = u.urunAdi||u.ad||u.name||u.productName||u.desc||'';
+        if (ad) { urunFreq[ad] = (urunFreq[ad]||0) + 1; }
+      });
+    });
+    var topUrunler = Object.keys(urunFreq).sort(function(a,b){ return urunFreq[b]-urunFreq[a]; }).slice(0,5);
+    if (topUrunler.length) {
+      stHTML += '<div style="margin-top:10px;padding:8px 10px;background:var(--s2);border-radius:6px">'
+        + '<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">En Çok Sipariş Edilen</div>'
+        + topUrunler.map(function(u){
+          return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)">'
+            + '<div>'+(window._esc?.(u)||u)+'</div>'
+            + '<div style="color:var(--t3);font-size:9px">×'+urunFreq[u]+'</div>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    }
   } else {
     stHTML = '<div style="margin-top:10px;font-size:11px;color:var(--t3);padding:8px;background:var(--s2);border-radius:6px">Satış teklifi yok</div>';
   }
