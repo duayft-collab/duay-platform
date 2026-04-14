@@ -6690,7 +6690,29 @@ window._renderDonemOzeti = function() {
   var topOdm = buAyOdm.reduce(function(s,o){return s+parseFloat(o.amount||o.tutar||0);},0);
   var topTah = buAyTah.reduce(function(s,t){return s+parseFloat(t.amount||t.tutar||0);},0);
 
-  p.innerHTML = '<div style="padding:20px;max-width:800px">'
+  // DONEM-OZETI-3AY-001: Son 3 ay detay tablosu
+  var aylar = [0, 1, 2].map(function(i) {
+    var d = new Date(); d.setMonth(d.getMonth() - i);
+    return d.toISOString().slice(0, 7);
+  });
+  var satirlar = aylar.map(function(ay) {
+    var stSay = satisTek.filter(function(t) { return (t.date || t.ts || t.createdAt || '').startsWith(ay); }).length;
+    var stKabul = satisTek.filter(function(t) { return t.status === 'kabul' && (t.date || t.ts || t.createdAt || '').startsWith(ay); }).length;
+    var alSay = alisTek.filter(function(t) { return (t.piTarih || t.ts || t.createdAt || '').startsWith(ay); }).length;
+    var alOnay = alisTek.filter(function(t) { return t.durum === 'onaylandi' && (t.piTarih || t.ts || t.createdAt || '').startsWith(ay); }).length;
+    var naGiris = tah.filter(function(t) { return (t.due || t.date || t.ts || '').startsWith(ay); }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+    var naCikis = odm.filter(function(o) { return (o.due || o.ts || '').startsWith(ay); }).reduce(function(s, o) { return s + parseFloat(o.amount || 0); }, 0);
+    return '<tr style="border-bottom:0.5px solid var(--b)">'
+      + '<td style="padding:8px 12px;font-weight:500">' + esc(ay) + '</td>'
+      + '<td style="padding:8px 12px;text-align:center">' + stSay + ' / <span style="color:#16A34A">' + stKabul + '</span></td>'
+      + '<td style="padding:8px 12px;text-align:center">' + alSay + ' / <span style="color:#16A34A">' + alOnay + '</span></td>'
+      + '<td style="padding:8px 12px;text-align:right;color:#16A34A">+' + Math.round(naGiris).toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px 12px;text-align:right;color:#DC2626">-' + Math.round(naCikis).toLocaleString('tr-TR') + '</td>'
+      + '<td style="padding:8px 12px;text-align:right;font-weight:600;color:' + (naGiris >= naCikis ? '#16A34A' : '#DC2626') + '">' + Math.round(naGiris - naCikis).toLocaleString('tr-TR') + '</td>'
+      + '</tr>';
+  }).join('');
+
+  p.innerHTML = '<div style="padding:20px;max-width:900px">'
     + '<div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:4px">Dönem Özeti</div>'
     + '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">'+buAy+' • Bu ay</div>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin-bottom:16px">'
@@ -6699,6 +6721,17 @@ window._renderDonemOzeti = function() {
     + '<div style="padding:14px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Alış Teklifi</div><div style="font-size:20px;font-weight:600">'+buAyAlis.length+'</div><div style="font-size:9px;color:var(--t3)">Bu ay</div></div>'
     + '<div style="padding:14px 16px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Satış Teklifi</div><div style="font-size:20px;font-weight:600">'+buAySatis.length+'</div><div style="font-size:9px;color:var(--t3)">Bu ay</div></div>'
     + '</div>'
-    + '<div style="padding:12px 16px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2)">Net akış: <strong style="color:'+(topTah>=topOdm?'#16A34A':'#DC2626')+'">'+((topTah-topOdm)).toLocaleString('tr-TR')+'</strong> • Detaylı raporlar için Nakit Akışı sayfasını kullanın.</div>'
+    + '<div style="padding:12px 16px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2);margin-bottom:20px">Net akış: <strong style="color:'+(topTah>=topOdm?'#16A34A':'#DC2626')+'">'+((topTah-topOdm)).toLocaleString('tr-TR')+'</strong> • Detaylı raporlar için Nakit Akışı sayfasını kullanın.</div>'
+    // Son 3 Ay detay tablosu
+    + '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:8px">Son 3 Ay Detay</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">'
+    + '<thead><tr style="background:var(--s2);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase">'
+    + '<th style="padding:8px 12px;text-align:left">Dönem</th>'
+    + '<th style="padding:8px 12px;text-align:center">Satış (Top/Kabul)</th>'
+    + '<th style="padding:8px 12px;text-align:center">Alış (Top/Onay)</th>'
+    + '<th style="padding:8px 12px;text-align:right">Tahsilat</th>'
+    + '<th style="padding:8px 12px;text-align:right">Ödeme</th>'
+    + '<th style="padding:8px 12px;text-align:right">Net</th>'
+    + '</tr></thead><tbody>' + satirlar + '</tbody></table>'
     + '</div>';
 };
