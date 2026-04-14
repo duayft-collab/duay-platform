@@ -1564,6 +1564,35 @@ function delPirim(id) {
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 6 — DETAY MODAL
 // ════════════════════════════════════════════════════════════════
+
+/* PIRIM-PERSONEL-DETAY-001: Personel bazlı prim geçmişi — uid → tüm primler + toplam */
+window._pirimDetayGoster = function(uid) {
+  var primler = typeof loadPirim==='function' ? loadPirim() : [];
+  var kisinin = primler.filter(function(p){
+    return !p.isDeleted && (p.uid===uid || p.personelId===uid);
+  });
+  if (!kisinin.length) { window.toast?.('Prim kaydı yok','warn'); return; }
+  var toplam = kisinin.reduce(function(s,p){ return s+parseFloat(p.amount||p.tutar||0); },0);
+  var odenen = kisinin.filter(function(p){ return p.status==='paid'||p.odendi; })
+                      .reduce(function(s,p){ return s+parseFloat(p.amount||p.tutar||0); },0);
+  var html = '<div style="padding:16px;max-width:480px">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:12px">Prim Ge\u00e7mi\u015fi</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;font-size:9px;font-weight:600;color:var(--t3);padding:5px 8px;background:var(--s2);border-radius:4px 4px 0 0;text-transform:uppercase">'
+    + '<div>D\u00f6nem</div><div>Tutar</div><div>Durum</div></div>'
+    + kisinin.slice(0,20).map(function(p){
+      var odendi = p.status==='paid'||p.odendi;
+      return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:6px 8px;border-bottom:0.5px solid var(--b);font-size:11px">'
+        + '<div style="color:var(--t3)">' + (p.donem||p.period||(p.ts||'').slice(0,7)||'\u2014') + '</div>'
+        + '<div>' + parseFloat(p.amount||p.tutar||0).toLocaleString('tr-TR') + '</div>'
+        + '<div style="color:' + (odendi?'#16A34A':'#D97706') + ';font-weight:500">' + (odendi?'\u00d6dendi':'Bekliyor') + '</div>'
+        + '</div>';
+    }).join('')
+    + '<div style="padding:8px;text-align:right;font-size:11px;font-weight:600">'
+    + 'Toplam: ' + toplam.toLocaleString('tr-TR') + ' | \u00d6denen: ' + odenen.toLocaleString('tr-TR')
+    + '</div></div>';
+  window.confirmModal?.(html, {title:'', confirmText:'Kapat', cancelText:null, onConfirm:function(){}});
+};
+
 function showPirimDetail(id) {
   _ensurePirimModals();
   window._pirimDetailId = id;
