@@ -172,7 +172,8 @@ function _mvUstDosyaBarHTML(meta, donem) {
   }
   h += '</div>';
   if (mMeta.ad) {
-    h += '<button onclick="(event||window.event||{stopPropagation:function(){}}).stopPropagation();window._mvDosyaKaldir(\'muhasebeci\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #3B6D11;border-radius:4px;background:transparent;cursor:pointer;color:#3B6D11;font-family:inherit;flex-shrink:0">Kaldır</button>';
+    /* MUAVIN-SAFARI-BTN-001: inline stopPropagation yerine event arg olarak geçir, fonksiyon içinde guarded call */
+    h += '<button onclick="window._mvDosyaKaldir(\'muhasebeci\', event)" style="font-size:10px;padding:3px 8px;border:0.5px solid #3B6D11;border-radius:4px;background:transparent;cursor:pointer;color:#3B6D11;font-family:inherit;flex-shrink:0">Kaldır</button>';
   } else {
     h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Muhasebeci Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'muhasebeci\')" style="display:none"></label>';
   }
@@ -193,7 +194,7 @@ function _mvUstDosyaBarHTML(meta, donem) {
   }
   h += '</div>';
   if (bMeta.ad) {
-    h += '<button onclick="(event||window.event||{stopPropagation:function(){}}).stopPropagation();window._mvDosyaKaldir(\'baran\')" style="font-size:10px;padding:3px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit;flex-shrink:0">Kaldır</button>';
+    h += '<button onclick="window._mvDosyaKaldir(\'baran\', event)" style="font-size:10px;padding:3px 8px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit;flex-shrink:0">Kaldır</button>';
   } else {
     h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Baran Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'baran\')" style="display:none"></label>';
   }
@@ -451,7 +452,9 @@ window._mvYuklemeBaslat = function(taraf) {
   window.renderMuavin && window.renderMuavin();
 };
 
-window._mvDosyaKaldir = function(taraf) {
+window._mvDosyaKaldir = function(taraf, e) {
+  /* MUAVIN-SAFARI-BTN-001: event arg'dan güvenli stopPropagation + fallback */
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
   var donem = _mvAktifDonem();
   window.confirmModal?.('\u201c' + taraf + '\u201d dosyas\u0131 kald\u0131r\u0131lacak. E\u015fle\u015ftirme sonu\u00e7lar\u0131 da s\u0131f\u0131rlanacak.', {
     title: 'Dosyay\u0131 kald\u0131r', danger: true, confirmText: 'Kald\u0131r',
