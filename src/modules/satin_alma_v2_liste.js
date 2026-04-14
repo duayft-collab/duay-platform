@@ -114,10 +114,13 @@ window.renderSatinAlmaV2 = function() {
     h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(200px,1fr) 110px 120px 90px 90px;padding:7px 10px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+(aktif?'#E6F1FB':secili?'#FFFCF5':'var(--color-background-primary)')+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+(secili?'#FFFCF5':'var(--color-background-primary)')+'\'">';
     // Kolon 1: checkbox
     h+='<input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:11px;height:11px;cursor:pointer">';
-    // Kolon 2: ürün/tedarikçi adı + jobId+piNo alt satır
+    // Kolon 2: ürün/tedarikçi adı + jobId + PI rozet alt satır
     // SATINALMA-LISTE-XSS-001: window._esc ile user-input sanitize
-    h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(window._saV2UrunAdi?.(t))||window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+'</div>';
-    h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+(t.jobId?' · '+(window._esc?.(t.jobId)||t.jobId)+'':'')+(t.piNo?' · '+(window._esc?.(t.piNo)||t.piNo)+'':'')+'</div></div>';
+    /* SATIS-LISTE-PI-NO-001: PI no monospace mavi rozet (ürün adı yanında) */
+    var _piNoLst = t.piNo || t.pi_no || '';
+    var _piHTMLLst = _piNoLst ? ' <span style="font-size:8px;font-family:monospace;color:#185FA5;background:#E6F1FB;padding:1px 4px;border-radius:3px" title="PI No">'+(window._esc?.(_piNoLst)||_piNoLst)+'</span>' : '';
+    h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(window._saV2UrunAdi?.(t))||window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+_piHTMLLst+'</div>';
+    h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+(t.jobId?' · '+(window._esc?.(t.jobId)||t.jobId)+'':'')+'</div></div>';
     // Kolon 3: tutar + para birimi soluk
     h+='<div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap">'+((window._saV2AlisF?.(t)||parseFloat(t.toplamTutar)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}))+' <span style="font-size:9px;color:var(--color-text-tertiary);font-weight:400">'+(window._saV2Para?.(t)||t.toplamPara||'USD')+'</span></div>';
     // Kolon 4: durum badge + geçerlilik badge (mevcut _bittiBadge/_uyariIkon mantığı korunsun)
@@ -197,8 +200,10 @@ window._saV2DetayHTML = function(t) {
   h+='<div style="padding:12px 14px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary)">';
   var gorsel=t.gorsel||(t.urunler&&t.urunler[0]?.gorsel)||'';
   if(gorsel) h+='<img src="'+gorsel+'" style="width:48px;height:48px;border-radius:6px;object-fit:cover;float:right;margin-left:8px">';
+  /* SATIS-LISTE-PI-NO-001: detay başlıkta PI no rozet (alt satırda) */
+  var _piNoDet = t.piNo || t.pi_no || '';
   h+='<div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">'+(window._saV2UrunAdi?.(t)||'—')+'</div>';
-  h+='<div style="font-size:9px;color:var(--color-text-tertiary);margin-top:2px">'+(window._saV2DuayKodu?.(t)||'—')+' · '+(t.tedarikci||'—')+'</div>';
+  h+='<div style="font-size:9px;color:var(--color-text-tertiary);margin-top:2px">'+(window._saV2DuayKodu?.(t)||'—')+' · '+(t.tedarikci||'—')+(_piNoDet?' · <span style="font-family:monospace;color:#185FA5">PI: '+(window._esc?.(_piNoDet)||_piNoDet)+'</span>':'')+'</div>';
   // SAV2-GECERLILIK-002: durum badge yanina ayri "Süresi Doldu" badge ve 7-gun ⚠ uyari ikonu (liste view ile ayni pattern)
   var _bgColor=durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA';
   var _fgColor=durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806';
