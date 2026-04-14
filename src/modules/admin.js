@@ -1790,7 +1790,7 @@ function _injectUsersPanel() {
 }
 
 function renderUsers(filter=''){
-  if (!window._usersViewInitialized) { USERS_VIEW = 'table'; window._usersViewInitialized = true; }
+  /* ADMIN-USERS-VIEW-INIT-FIX-001: init check taşındı (_adminRenderUsers atamadan önce) */
   _injectUsersPanel();
   if(!window.isAdmin?.())return;
   // ADMIN-USER-DEDUP-001: soft-delete edilmis kullanicilari listede gosterme
@@ -3508,6 +3508,8 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
   window.Admin = Admin;
   // V18 eklenen fonksiyonlar
+  /* ADMIN-USERS-VIEW-INIT-FIX-001: Init tek seferlik — renderUsers atanmadan önce çalışsın ki her render'da reset olmasın */
+  if (!window._usersViewInitialized) { USERS_VIEW = 'table'; window._usersViewInitialized = true; }
   window._adminRenderUsers = renderUsers; // panel_stubs.js tarafından çağrılır
   window.renderUsers = function(...args) {
   if (window._adminSaving) return; // Kayıt sırasında form ezilmesin
