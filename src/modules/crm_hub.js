@@ -452,10 +452,30 @@ function renderCrmGorusmeler() {
   cont.replaceChildren(frag);
 }
 
+/* CRM-MUSTERI-CARI-MERGE-001: CRM müşteri kayıtları + Cari musteri kayıtları birleştirilir */
+function _crmMusteriListesi() {
+  const crmD = typeof loadCrmData==='function' ? loadCrmData() : [];
+  const crmActive = crmD.filter(function(m){ return !m.isDeleted; });
+  const cariD = typeof loadCari==='function' ? loadCari() : [];
+  const cariMusteri = cariD.filter(function(c){
+    return !c.isDeleted && (c.type==='musteri' || c.tip==='musteri' || !c.type);
+  });
+  const seenNames = {};
+  crmActive.forEach(function(m){ if (m.name) seenNames[m.name.toLowerCase().trim()] = true; });
+  const merged = crmActive.slice();
+  cariMusteri.forEach(function(c){
+    const key = (c.name||'').toLowerCase().trim();
+    if (!key || seenNames[key]) return;
+    merged.push({ id: 'cari-'+c.id, name: c.name, _fromCari: true });
+    seenNames[key] = true;
+  });
+  return merged;
+}
+
 function openCrmGorusmeModal(id, musteriId) {
   let mo=_gc('mo-crm-gorusme');
   if(!mo){mo=document.createElement('div');mo.className='mo';mo.id='mo-crm-gorusme';document.body.appendChild(mo);}
-  const crm=typeof loadCrmData==='function'?loadCrmData():[];
+  const crm=_crmMusteriListesi();
   const data=_loadGorusmeler();
   const entry=id?data.find(g=>g.id===id):null;
   mo.innerHTML=`
@@ -622,7 +642,7 @@ function renderCrmTeklifler() {
 function openCrmTeklifModal(id, musteriId) {
   let mo=_gc('mo-crm-teklif');
   if(!mo){mo=document.createElement('div');mo.className='mo';mo.id='mo-crm-teklif';document.body.appendChild(mo);}
-  const crm=typeof loadCrmData==='function'?loadCrmData():[];
+  const crm=_crmMusteriListesi();
   const data=_loadTeklifler();
   const entry=id?data.find(t=>t.id===id):null;
   const no=`TKL-${new Date().getFullYear()}-${String(data.length+1).padStart(3,'0')}`;
