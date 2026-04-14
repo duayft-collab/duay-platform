@@ -6740,6 +6740,8 @@ function renderCari() {
           + '<button onclick="window._openQuickCari?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Cari Ekle</button>'
         + '</div>'
       + '</div>'
+      // CARI-KPI-ISLEM-001: müşteri/alacak/borç/net bakiyesi (islemler kaynağı)
+      + '<div id="cari-kpi"></div>'
       + '<div style="display:flex;min-height:calc(100vh - 120px)">'
         // Sol panel — liste
         + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
@@ -6756,6 +6758,25 @@ function renderCari() {
   }
 
   var all = loadCari().filter(function(c) { return !c.isDeleted; });
+  // CARI-KPI-ISLEM-001: islemler bazlı alacak/borç/net bakiye hesabı
+  var _kpiEl = document.getElementById('cari-kpi');
+  if (_kpiEl) {
+    var _topAlacak = 0, _topBorc = 0;
+    all.forEach(function(c) {
+      (c.islemler || []).forEach(function(ism) {
+        var tutar = parseFloat(ism.tutar || 0) || 0;
+        if (ism.tip === 'alacak') _topAlacak += tutar;
+        else if (ism.tip === 'borc' || ism.tip === 'borç') _topBorc += tutar;
+      });
+    });
+    var _kpiNet = _topAlacak - _topBorc;
+    _kpiEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid var(--b);background:var(--sf)">'
+      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">MÜŞTERİ</div><div style="font-size:20px;font-weight:600;color:var(--t);margin-top:4px">' + all.length + '</div></div>'
+      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">TOPLAM ALACAK</div><div style="font-size:20px;font-weight:600;color:#16A34A;margin-top:4px">₺' + Math.round(_topAlacak).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">TOPLAM BORÇ</div><div style="font-size:20px;font-weight:600;color:#DC2626;margin-top:4px">₺' + Math.round(_topBorc).toLocaleString('tr-TR') + '</div></div>'
+      + '<div style="padding:14px 20px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">NET BAKİYE</div><div style="font-size:20px;font-weight:600;color:' + (_kpiNet >= 0 ? '#16A34A' : '#DC2626') + ';margin-top:4px">' + (_kpiNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_kpiNet)).toLocaleString('tr-TR') + '</div></div>'
+      + '</div>';
+  }
   var search = (document.getElementById('cari-search')?.value || '').toLowerCase();
   var typeF = document.getElementById('cari-type-f')?.value || '';
   var stageF = document.getElementById('cari-stage-f')?.value || '';
