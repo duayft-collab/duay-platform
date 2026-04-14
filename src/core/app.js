@@ -3668,7 +3668,45 @@ window._tn2Restore = function() {
   var grpEl = document.querySelector('.tn2-grp[data-grp="' + _tn2ActiveGrp + '"]');
   if (grpEl && grpEl.style.display !== 'none') window._tn2SelectGrp(_tn2ActiveGrp, grpEl);
   else window._tn2SelectGrp('dashboard', document.querySelector('.tn2-grp[data-grp="dashboard"]'));
+  // TN2-HOVER-001: hover dropdown binding
+  if (typeof window._tn2HoverInit === 'function') window._tn2HoverInit();
 };
+
+/**
+ * TN2-HOVER-001
+ * Top nav grup butonlarına hover dropdown desteği ekler.
+ * Shared #tn2-modules bar'ı target alır (yapıda per-group dropdown yok).
+ * Hover → _tn2SelectGrp (bar populate+show). Hover out → 200ms sonra hide.
+ * Bar mouseenter → timer cancel (user engaged). Idempotent (dataset.hoverBound).
+ */
+window._tn2HoverInit = function() {
+  var shared = document.getElementById('tn2-modules');
+  if (!shared) return;
+  var timer;
+  document.querySelectorAll('.tn2-grp').forEach(function(grp) {
+    if (grp.dataset.hoverBound === '1') return;
+    grp.dataset.hoverBound = '1';
+    grp.addEventListener('mouseenter', function() {
+      clearTimeout(timer);
+      var grpId = grp.dataset.grp;
+      if (!grpId || grpId === 'dashboard' || grp.style.display === 'none') return;
+      if (typeof window._tn2SelectGrp === 'function') {
+        window._tn2SelectGrp(grpId, grp);
+      }
+    });
+    grp.addEventListener('mouseleave', function() {
+      timer = setTimeout(function() { shared.style.display = 'none'; }, 200);
+    });
+  });
+  if (shared.dataset.hoverBound !== '1') {
+    shared.dataset.hoverBound = '1';
+    shared.addEventListener('mouseenter', function() { clearTimeout(timer); });
+    shared.addEventListener('mouseleave', function() {
+      timer = setTimeout(function() { shared.style.display = 'none'; }, 200);
+    });
+  }
+};
+
 window._initNsecState   = _initNsecState;
 window.openGSearch      = openGSearch;
 window.closeGSearch     = closeGSearch;
