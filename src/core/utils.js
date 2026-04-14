@@ -40,10 +40,9 @@ window.isAdmin = () => window.Auth?.getCU?.()?.role === 'admin';
 const isManager = () => ['admin','manager'].includes(window.Auth?.getCU?.()?.role);
 
 // ── Zaman Yardımcıları ────────────────────────────────────────────
-const _nowTs = () => {
-  const n = new Date(), p = v => String(v).padStart(2,'0');
-  return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
-};
+// CORE-NOWTS-ISO-001: ISO 8601 UTC format (Safari parse uyumlu)
+// Eski boşluklu kayıtlar odemeler.js replace(' ','T') fix'i ile okunur.
+const _nowTs = () => new Date().toISOString().slice(0, 19) + 'Z';
 const nowTs = _nowTs;
 const _p = n => String(n).padStart(2, '0');
 
