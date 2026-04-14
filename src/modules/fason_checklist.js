@@ -46,44 +46,45 @@ window._fasonDetay = function(emirId) {
   var asamaLbller = {'on-uretim':'Ön Üretim','uretim':'Üretim Sırasında','teslimat':'Teslimat'};
   var asamaIkon = {'on-uretim':'🔬','uretim':'🏭','teslimat':'📦'};
 
-  var checkHTML = asamalar.map(function(asama) {
+  /* FASON-TIMELINE-DETAY-001: dikey timeline render — daire+çizgi sol, ölçüm inline, not inline */
+  var checkHTML = '<div style="padding:0 0 8px">';
+  asamalar.forEach(function(asama) {
     var cplar = window._FASON_CHECKPOINTS.filter(function(cp){ return cp.asama===asama; });
     var asamaTamamlanan = cplar.filter(function(cp){ return emirCheck[cp.id]?.durum==='tamam'; }).length;
-    var asamaBg = asamaTamamlanan===cplar.length ? '#EAF3DE' : asamaTamamlanan>0 ? '#FAEEDA' : 'var(--s2)';
-    var asamaRenk = asamaTamamlanan===cplar.length ? '#16A34A' : asamaTamamlanan>0 ? '#D97706' : 'var(--t3)';
+    var asamaTam = asamaTamamlanan === cplar.length;
+    var asamaIdx = asamalar.indexOf(asama);
+    var asamaAktif = !asamaTam && (asamaIdx === 0 || asamalar.slice(0, asamaIdx).every(function(a){ return window._FASON_CHECKPOINTS.filter(function(cp){ return cp.asama === a; }).every(function(cp){ return emirCheck[cp.id]?.durum === 'tamam'; }); }));
+    var daireBg = asamaTam ? '#16A34A' : asamaAktif ? '#185FA5' : 'var(--b)';
+    var daireColor = (asamaTam || asamaAktif) ? '#fff' : 'var(--t3)';
+    var daireIcon = asamaTam ? '✓' : (asamaIdx + 1);
 
-    var cpHTML = cplar.map(function(cp) {
+    checkHTML += '<div style="display:flex;gap:10px;padding:10px 16px 0">';
+    checkHTML += '<div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">';
+    checkHTML += '<div style="width:22px;height:22px;border-radius:50%;background:' + daireBg + ';color:' + daireColor + ';font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;border:1.5px solid ' + daireBg + '">' + daireIcon + '</div>';
+    checkHTML += '<div style="width:1.5px;background:var(--b);flex:1;min-height:16px;margin-top:3px"></div>';
+    checkHTML += '</div>';
+    checkHTML += '<div style="flex:1;padding-bottom:10px">';
+    checkHTML += '<div style="font-size:11px;font-weight:500;color:var(--t);margin-bottom:6px;margin-top:2px">' + asamaIkon[asama] + '  ' + asamaLbller[asama] + '</div>';
+
+    cplar.forEach(function(cp) {
       var kayit = emirCheck[cp.id] || {};
       var tamam = kayit.durum === 'tamam';
-      var olcum = kayit.olcum || '';
-      var not = kayit.not || '';
-      var foto = kayit.foto ? '<div style="margin-top:6px"><img src="'+kayit.foto+'" style="width:60px;height:40px;object-fit:cover;border-radius:4px;border:0.5px solid var(--b)"></div>' : '';
+      checkHTML += '<div style="margin-bottom:4px;padding:8px 10px;border:0.5px solid var(--b);border-radius:7px;background:' + (tamam ? '#F0FAF4' : 'var(--sf)') + '">';
+      checkHTML += '<div style="display:flex;align-items:center;gap:8px">';
+      checkHTML += '<div onclick="event.stopPropagation();window._fasonCheckToggle(\'' + emirId + '\',\'' + cp.id + '\')" style="width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (tamam ? '#16A34A' : 'var(--b)') + ';background:' + (tamam ? '#16A34A' : 'transparent') + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">' + (tamam ? '<span style="color:#fff;font-size:9px">✓</span>' : '') + '</div>';
+      checkHTML += '<div style="flex:1"><div style="font-size:11px;color:var(--t);font-weight:' + (tamam ? '500' : '400') + '">' + (kayit.olcum ? '<span style="color:#185FA5;font-weight:500">' + window._esc(kayit.olcum) + ' ' + window._esc(cp.birim || '') + '</span> · ' : '') + window._esc(cp.lbl) + '</div>';
+      if (!tamam) checkHTML += '<div style="font-size:9px;color:var(--t3)">Hedef: ' + window._esc(cp.hedef) + '</div>';
+      checkHTML += '</div>';
+      if (cp.birim) checkHTML += '<input placeholder="' + window._esc(String(cp.hedef || '').split(' ')[0]) + '" value="' + window._esc(kayit.olcum || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="event.stopPropagation();window._fasonCheckOlcum(\'' + emirId + '\',\'' + cp.id + '\',this.value)" style="width:70px;padding:3px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-size:10px;font-family:inherit;text-align:right"> <span style="font-size:9px;color:var(--t3)">' + window._esc(cp.birim) + '</span>';
+      if (cp.id === 'PR03') checkHTML += '<label style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;cursor:pointer;color:var(--t2);white-space:nowrap;background:var(--s2);margin-left:4px">Foto<input type="file" accept="image/*" onchange="event.stopPropagation();window._fasonFotoYukle(\'' + emirId + '\',\'' + cp.id + '\',this)" style="display:none"></label>';
+      checkHTML += '</div>';
+      if (kayit.not || !tamam) checkHTML += '<input placeholder="Not..." value="' + window._esc(kayit.not || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="event.stopPropagation();window._fasonCheckNot(\'' + emirId + '\',\'' + cp.id + '\',this.value)" style="width:100%;margin-top:5px;padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-size:10px;font-family:inherit;box-sizing:border-box">';
+      checkHTML += '</div>';
+    });
 
-      return '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);background:'+(tamam?'#F0FAF4':'var(--sf)') + '">'
-        + '<div style="display:flex;align-items:center;gap:10px">'
-        + '<div onclick="event.stopPropagation();window._fasonCheckToggle(\''+emirId+'\',\''+cp.id+'\')" style="width:20px;height:20px;border-radius:50%;border:2px solid '+(tamam?'#16A34A':'var(--b)')+';background:'+(tamam?'#16A34A':'transparent')+';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">'
-        + (tamam?'<span style="color:#fff;font-size:11px;line-height:1">✓</span>':'')+'</div>'
-        + '<div style="flex:1">'
-        + '<div style="font-size:11px;font-weight:500;color:var(--t)">'+window._esc(cp.lbl)+(cp.zorunlu?'<span style="color:#DC2626;font-size:8px;margin-left:3px">*</span>':'')+'</div>'
-        + '<div style="font-size:9px;color:var(--t3)">Hedef: '+window._esc(cp.hedef)+'</div>'
-        + '</div>'
-        + (cp.birim ? '<input placeholder="Ölçüm" value="'+window._esc(olcum)+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="event.stopPropagation();window._fasonCheckOlcum(\''+emirId+'\',\''+cp.id+'\',this.value)" style="width:80px;padding:4px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-size:10px;font-family:inherit;text-align:right"> <span style="font-size:9px;color:var(--t3)">'+window._esc(cp.birim)+'</span>' : '')
-        + '</div>'
-        + '<div style="margin-top:4px;margin-left:30px;display:flex;gap:6px;align-items:center">'
-        + '<input placeholder="Not..." value="'+window._esc(not)+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="event.stopPropagation();window._fasonCheckNot(\''+emirId+'\',\''+cp.id+'\',this.value)" style="flex:1;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-size:10px;font-family:inherit">'
-        + (cp.id==='PR03' ? '<label style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;cursor:pointer;color:var(--t2);white-space:nowrap;background:var(--s2)">📷 Foto<input type="file" accept="image/*" onchange="event.stopPropagation();window._fasonFotoYukle(\''+emirId+'\',\''+cp.id+'\',this)" style="display:none"></label>' : '')
-        + '</div>'
-        + foto
-        + '</div>';
-    }).join('');
-
-    return '<div style="margin-bottom:12px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">'
-      + '<div style="padding:8px 14px;background:'+asamaBg+';display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="font-size:11px;font-weight:600;color:'+asamaRenk+'">'+asamaIkon[asama]+' '+asamaLbller[asama]+'</div>'
-      + '<div style="font-size:10px;color:'+asamaRenk+'">'+asamaTamamlanan+'/'+cplar.length+'</div>'
-      + '</div>'
-      + cpHTML + '</div>';
-  }).join('');
+    checkHTML += '</div></div>';
+  });
+  checkHTML += '</div>';
 
   /* FASON-RULO-LISTE-001: basılan rulolar listesi — emir bazlı */
   var _rKey2 = 'ak_fason_rulo_v1';
@@ -109,6 +110,24 @@ window._fasonDetay = function(emirId) {
     }).join('');
   }
   ruloListHTML += '</div>';
+
+  /* FASON-TIMELINE-DETAY-001: rulo strip — altta sabit özet (son rulo + toplam) */
+  var _sonRulo = _emirRulolar[_emirRulolar.length - 1];
+  var _sonRuloLbl = _sonRulo ? 'R' + String(_sonRulo.ruloNo).padStart(3, '0') : 'Henüz rulo yok';
+  var _sonRuloAlt;
+  if (_sonRulo) {
+    try { _sonRuloAlt = 'Son basılan · ' + new Date(_sonRulo.createdAt).toLocaleString('tr-TR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); }
+    catch(e) { _sonRuloAlt = 'Son basılan'; }
+  } else {
+    _sonRuloAlt = 'İlk ruloyu basmak için butona tıkla';
+  }
+  var ruloStripHTML = '<div style="margin:0 12px 10px;background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center">'
+    + '<div>'
+    + '<div style="font-size:16px;font-weight:500;color:#27500A">' + window._esc(_sonRuloLbl) + '</div>'
+    + '<div style="font-size:9px;color:#3B6D11">' + window._esc(_sonRuloAlt) + '</div>'
+    + '</div>'
+    + '<div style="font-size:12px;font-weight:500;color:#16A34A">' + _emirRulolar.length + ' rulo</div>'
+    + '</div>';
 
   p.innerHTML = '<div style="display:flex;flex-direction:column;height:100%">'
     + '<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf)">'
@@ -138,6 +157,7 @@ window._fasonDetay = function(emirId) {
     + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600;color:#16A34A" id="fason-rulo-say">0</div><div style="font-size:9px;color:var(--t3)">Rulo</div></div>'
     + '</div>'
     + checkHTML
+    + ruloStripHTML
     + ruloListHTML
     + '</div></div>';
 
