@@ -384,7 +384,11 @@ window._saV2PIOnizlemeGuncelle = function() {
   var piNo = document.getElementById('st-id')?.value||'—';
   var urunler = window._saV2SatisUrunler||[];
   var toplamSatis = urunler.reduce(function(s,u){return s+(parseFloat(u.satisFiyat)||0)*(parseFloat(u.miktar)||0);},0);
-  var h = '<div style="text-align:center;border-bottom:0.5px solid var(--b);padding-bottom:8px;margin-bottom:8px">';
+  /* PI-TASARIM-PREVIEW-BADGE-001: aktif tasarım + dil görsel feedback (preview hardcoded ama kullanıcı state'i görmeli) */
+  var _aktifT = window._saV2AktifPITasarim || 'A';
+  var _aktifD = window._saV2AktifPIDil || 'EN';
+  var h = '<div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:4px"><span style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--t);color:var(--sf);font-family:monospace">'+_aktifT+'</span><span style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--bm);color:var(--t);font-family:monospace">'+_aktifD+'</span></div>';
+  h += '<div style="text-align:center;border-bottom:0.5px solid var(--b);padding-bottom:8px;margin-bottom:8px">';
   h += '<div style="font-size:11px;font-weight:500;color:var(--t)">DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</div>';
   h += '<div style="font-size:8px;color:var(--t3)">www.duaycor.com · +90 212 625 5 444 · WhatsApp: +90 532 270 5 113</div>';
   h += '<div style="font-size:11px;font-weight:500;margin-top:6px;color:var(--t)">PROFORMA INVOICE</div>';
