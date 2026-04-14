@@ -1,0 +1,183 @@
+/* ── FASON CHECKLİST SİSTEMİ ─────────────────────────────── */
+/* FASON-CHECKLIST-001 */
+(function() {
+  'use strict';
+
+  /* fason.js ile aynı LS key'leri — veri paylaşımı */
+  var _FASON_KEY = 'ak_fason_v1';
+  var _FASON_CHECK_KEY = 'ak_fason_check_v1';
+
+  function _fasonLoad() {
+    try { return JSON.parse(localStorage.getItem(_FASON_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function _fasonCheckLoad() {
+    try { return JSON.parse(localStorage.getItem(_FASON_CHECK_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function _fasonCheckStore(d) {
+    try { localStorage.setItem(_FASON_CHECK_KEY, JSON.stringify(d)); } catch(e) {}
+  }
+
+var _FASON_CHECKPOINTS = [
+  /* AŞAMA 1: Ön Üretim */
+  { id:'OP01', asama:'on-uretim', asamaLbl:'Ön Üretim', lbl:'İplik dtex testi', hedef:'1100 dtex ±5%', birim:'dtex', zorunlu:true },
+  { id:'OP02', asama:'on-uretim', asamaLbl:'Ön Üretim', lbl:'Atkı-çözgü sayısı', hedef:'8×8 /cm', birim:'/cm', zorunlu:true },
+  { id:'OP03', asama:'on-uretim', asamaLbl:'Ön Üretim', lbl:'Ham kumaş ağırlığı (gramaj)', hedef:'≥200 gr/m²', birim:'gr/m²', zorunlu:false },
+  /* AŞAMA 2: Üretim Sırasında */
+  { id:'PR01', asama:'uretim', asamaLbl:'Üretim', lbl:'Kumaş eni ölçümü', hedef:'170 ±2 cm', birim:'cm', zorunlu:true },
+  { id:'PR02', asama:'uretim', asamaLbl:'Üretim', lbl:'Görsel hata kontrolü', hedef:'Defekt yok', birim:'', zorunlu:true },
+  { id:'PR03', asama:'uretim', asamaLbl:'Üretim', lbl:'Numune fotoğrafı', hedef:'Min. 3 fotoğraf', birim:'', zorunlu:true },
+  /* AŞAMA 3: Teslimat */
+  { id:'DL01', asama:'teslimat', asamaLbl:'Teslimat', lbl:'Top uzunluğu ölçümü', hedef:'1000m ±1%', birim:'m', zorunlu:true },
+  { id:'DL02', asama:'teslimat', asamaLbl:'Teslimat', lbl:'Ambalaj ve top sarımı kontrolü', hedef:'Standart sarım', birim:'', zorunlu:true },
+];
+
+window._fasonDetay = function(emirId) {
+  var emirler = _fasonLoad();
+  var emir = emirler.find(function(e){ return e.id===emirId; });
+  if(!emir) return;
+  var p = document.getElementById('panel-fason'); if(!p) return;
+
+  var checkler = _fasonCheckLoad();
+  var emirCheck = {};
+  checkler.filter(function(c){ return c.emirId===emirId; }).forEach(function(c){ emirCheck[c.cpId] = c; });
+
+  var asamalar = ['on-uretim','uretim','teslimat'];
+  var asamaLbller = {'on-uretim':'Ön Üretim','uretim':'Üretim Sırasında','teslimat':'Teslimat'};
+  var asamaIkon = {'on-uretim':'🔬','uretim':'🏭','teslimat':'📦'};
+
+  var checkHTML = asamalar.map(function(asama) {
+    var cplar = _FASON_CHECKPOINTS.filter(function(cp){ return cp.asama===asama; });
+    var asamaTamamlanan = cplar.filter(function(cp){ return emirCheck[cp.id]?.durum==='tamam'; }).length;
+    var asamaBg = asamaTamamlanan===cplar.length ? '#EAF3DE' : asamaTamamlanan>0 ? '#FAEEDA' : 'var(--s2)';
+    var asamaRenk = asamaTamamlanan===cplar.length ? '#16A34A' : asamaTamamlanan>0 ? '#D97706' : 'var(--t3)';
+
+    var cpHTML = cplar.map(function(cp) {
+      var kayit = emirCheck[cp.id] || {};
+      var tamam = kayit.durum === 'tamam';
+      var olcum = kayit.olcum || '';
+      var not = kayit.not || '';
+      var foto = kayit.foto ? '<div style="margin-top:6px"><img src="'+kayit.foto+'" style="width:60px;height:40px;object-fit:cover;border-radius:4px;border:0.5px solid var(--b)"></div>' : '';
+
+      return '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b);background:'+(tamam?'#F0FAF4':'var(--sf)') + '">'
+        + '<div style="display:flex;align-items:center;gap:10px">'
+        + '<div onclick="event.stopPropagation();window._fasonCheckToggle(\''+emirId+'\',\''+cp.id+'\')" style="width:20px;height:20px;border-radius:50%;border:2px solid '+(tamam?'#16A34A':'var(--b)')+';background:'+(tamam?'#16A34A':'transparent')+';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">'
+        + (tamam?'<span style="color:#fff;font-size:11px;line-height:1">✓</span>':'')+'</div>'
+        + '<div style="flex:1">'
+        + '<div style="font-size:11px;font-weight:500;color:var(--t)">'+window._esc(cp.lbl)+(cp.zorunlu?'<span style="color:#DC2626;font-size:8px;margin-left:3px">*</span>':'')+'</div>'
+        + '<div style="font-size:9px;color:var(--t3)">Hedef: '+window._esc(cp.hedef)+'</div>'
+        + '</div>'
+        + (cp.birim ? '<input placeholder="Ölçüm" value="'+window._esc(olcum)+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="event.stopPropagation();window._fasonCheckOlcum(\''+emirId+'\',\''+cp.id+'\',this.value)" style="width:80px;padding:4px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-size:10px;font-family:inherit;text-align:right"> <span style="font-size:9px;color:var(--t3)">'+window._esc(cp.birim)+'</span>' : '')
+        + '</div>'
+        + '<div style="margin-top:4px;margin-left:30px;display:flex;gap:6px;align-items:center">'
+        + '<input placeholder="Not..." value="'+window._esc(not)+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="event.stopPropagation();window._fasonCheckNot(\''+emirId+'\',\''+cp.id+'\',this.value)" style="flex:1;padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-size:10px;font-family:inherit">'
+        + (cp.id==='PR03' ? '<label style="font-size:9px;padding:3px 8px;border:0.5px solid var(--b);border-radius:4px;cursor:pointer;color:var(--t2);white-space:nowrap;background:var(--s2)">📷 Foto<input type="file" accept="image/*" onchange="event.stopPropagation();window._fasonFotoYukle(\''+emirId+'\',\''+cp.id+'\',this)" style="display:none"></label>' : '')
+        + '</div>'
+        + foto
+        + '</div>';
+    }).join('');
+
+    return '<div style="margin-bottom:12px;border:0.5px solid var(--b);border-radius:8px;overflow:hidden">'
+      + '<div style="padding:8px 14px;background:'+asamaBg+';display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:11px;font-weight:600;color:'+asamaRenk+'">'+asamaIkon[asama]+' '+asamaLbller[asama]+'</div>'
+      + '<div style="font-size:10px;color:'+asamaRenk+'">'+asamaTamamlanan+'/'+cplar.length+'</div>'
+      + '</div>'
+      + cpHTML + '</div>';
+  }).join('');
+
+  p.innerHTML = '<div style="display:flex;flex-direction:column;height:100%">'
+    + '<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:0.5px solid var(--b);background:var(--sf)">'
+    + '<button onclick="event.stopPropagation();window.renderFason()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3)">←</button>'
+    + '<div><div style="font-size:14px;font-weight:600">'+window._esc(emir.urunAdi||'')+'</div>'
+    + '<div style="font-size:10px;color:var(--t3)">'+window._esc(emir.fasonFirma||'')+(emir.tarih?' · Termin: '+emir.tarih:'')+'</div></div>'
+    + '<div style="margin-left:auto;display:flex;gap:8px">'
+    + '<button onclick="event.stopPropagation();window._fasonEtiketBas(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:var(--t2)">🏷 Numune Etiketi</button>'
+    + '</div></div>'
+    + '<div style="flex:1;overflow-y:auto;padding:14px 20px">'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'
+    + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+emir.en+'m</div><div style="font-size:9px;color:var(--t3)">En</div></div>'
+    + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+emir.uzunluk+'m</div><div style="font-size:9px;color:var(--t3)">Top Uzunluğu</div></div>'
+    + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+window._esc(emir.iplikSpec||'')+'</div><div style="font-size:9px;color:var(--t3)">İplik</div></div>'
+    + '<div style="padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);text-align:center"><div style="font-size:16px;font-weight:600">'+window._esc(emir.atkuCozgu||'')+'</div><div style="font-size:9px;color:var(--t3)">Atkı×Çözgü</div></div>'
+    + '</div>'
+    + checkHTML
+    + '</div></div>';
+};
+
+window._fasonCheckToggle = function(emirId, cpId) {
+  var checkler = _fasonCheckLoad();
+  var idx = checkler.findIndex(function(c){ return c.emirId===emirId && c.cpId===cpId; });
+  if(idx===-1) {
+    checkler.push({emirId:emirId,cpId:cpId,durum:'tamam',updatedAt:new Date().toISOString()});
+  } else {
+    checkler[idx].durum = checkler[idx].durum==='tamam' ? 'bekliyor' : 'tamam';
+    checkler[idx].updatedAt = new Date().toISOString();
+  }
+  _fasonCheckStore(checkler);
+  window._fasonDetay(emirId);
+};
+
+window._fasonCheckOlcum = function(emirId, cpId, val) {
+  var checkler = _fasonCheckLoad();
+  var idx = checkler.findIndex(function(c){ return c.emirId===emirId && c.cpId===cpId; });
+  if(idx===-1) { checkler.push({emirId:emirId,cpId:cpId,durum:'bekliyor',olcum:val}); }
+  else { checkler[idx].olcum = val; }
+  _fasonCheckStore(checkler);
+};
+
+window._fasonCheckNot = function(emirId, cpId, val) {
+  var checkler = _fasonCheckLoad();
+  var idx = checkler.findIndex(function(c){ return c.emirId===emirId && c.cpId===cpId; });
+  if(idx===-1) { checkler.push({emirId:emirId,cpId:cpId,durum:'bekliyor',not:val}); }
+  else { checkler[idx].not = val; }
+  _fasonCheckStore(checkler);
+};
+
+window._fasonFotoYukle = function(emirId, cpId, input) {
+  if(!input.files||!input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var checkler = _fasonCheckLoad();
+    var idx = checkler.findIndex(function(c){ return c.emirId===emirId && c.cpId===cpId; });
+    if(idx===-1) { checkler.push({emirId:emirId,cpId:cpId,durum:'bekliyor',foto:ev.target.result}); }
+    else { checkler[idx].foto = ev.target.result; checkler[idx].durum='tamam'; }
+    _fasonCheckStore(checkler);
+    window.toast?.('Fotoğraf kaydedildi ✓','ok');
+    window._fasonDetay(emirId);
+  };
+  reader.readAsDataURL(input.files[0]);
+};
+
+window._fasonEtiketBas = function(emirId) {
+  var emirler = _fasonLoad();
+  var emir = emirler.find(function(e){ return e.id===emirId; });
+  if(!emir) return;
+  var topNo = 'TOP-' + emirId.slice(-6).toUpperCase();
+  var tarih = new Date().toLocaleDateString('tr-TR');
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Numune Etiketi</title>'
+    + '<style>body{font-family:monospace;padding:20px;max-width:400px;margin:0 auto}'
+    + '.etiket{border:3px solid #000;padding:16px;border-radius:4px}'
+    + '.firma{font-size:14px;font-weight:bold;text-align:center;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}'
+    + '.urun{font-size:18px;font-weight:bold;margin-bottom:8px}'
+    + '.row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;border-bottom:1px dashed #ccc}'
+    + '.top-no{font-size:28px;font-weight:bold;text-align:center;letter-spacing:4px;margin:12px 0;padding:8px;background:#f0f0f0}'
+    + '.barkod{text-align:center;font-size:9px;letter-spacing:3px;margin-top:8px}'
+    + '</style></head><body>'
+    + '<div class="etiket">'
+    + '<div class="firma">DUAY ULUSLARARASI TİCARET LTD.ŞTİ.</div>'
+    + '<div class="urun">'+window._esc(emir.urunAdi||'')+'</div>'
+    + '<div class="row"><span>Fason Firma</span><span>'+window._esc(emir.fasonFirma||'—')+'</span></div>'
+    + '<div class="row"><span>Kumaş Eni</span><span>'+emir.en+' m</span></div>'
+    + '<div class="row"><span>Top Uzunluğu</span><span>'+emir.uzunluk+' m</span></div>'
+    + '<div class="row"><span>İplik Spec</span><span>'+window._esc(emir.iplikSpec||'')+'</span></div>'
+    + '<div class="row"><span>Atkı × Çözgü</span><span>'+window._esc(emir.atkuCozgu||'')+'</span></div>'
+    + '<div class="row"><span>Üretim Tarihi</span><span>'+tarih+'</span></div>'
+    + '<div class="top-no">'+topNo+'</div>'
+    + '<div class="barkod">||||| '+emirId+' |||||</div>'
+    + '</div>'
+    + '<script>window.print();<\/script>'
+    + '</body></html>';
+  var win = window.open('','_blank');
+  if(win) { win.document.write(html); win.document.close(); }
+};
+
+})();

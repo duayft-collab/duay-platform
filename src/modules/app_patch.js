@@ -94,6 +94,8 @@ window._yetkiKontrol = function(islem) {
     'teslimat-takip':      () => { window._renderTeslimatTakip?.(); },
     'cari-karsilastirma':  () => { window._renderCariKarsilastirma?.(); },
     'donem-ozeti':         () => { window._renderDonemOzeti?.(); },
+    /* FASON-MODUL-001: Fason üretim modülü routing */
+    'fason':               () => { window.renderFason?.(); },
   };
 
   // App.nav wrap — yeni paneller için ekstra render çağrısı
@@ -617,6 +619,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'etkinlik',  label:'Etkinlik / Fuar'      },
     { id:'links',     label:'Hızlı Linkler'        },
     { id:'satinalma', label:'Satın Alma'           },
+    /* FASON-MODUL-001: Fason üretim modülü */
+    { id:'fason',     label:'Fason Üretim'         },
     { id:'urunler',   label:'Ürün Kataloğu'        },
     { id:'alis-teklifleri', label:'Tedarik Teklifleri' },
     { id:'satis-teklifleri',label:'Proforma Teklifler'},
