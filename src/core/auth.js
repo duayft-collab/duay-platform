@@ -327,9 +327,9 @@ async function _localLogin(email, password, skipPwCheck = false) {
     CU = user;
     _persistSession(user);
     _logEntry('login', `Giriş: ${user.name}`);
-    // ADMIN-LASTLOGIN-001: lastLogin + loginCount güncelle
+    // ADMIN-LASTLOGIN-001 + FIX-001: lastLogin + loginCount güncelle
     try {
-      user.lastLogin = new Date().toISOString();
+      user.lastLogin = new Date().toISOString().slice(0, 16).replace('T', ' ');
       user.loginCount = (user.loginCount || 0) + 1;
       var _saveFn = (typeof window !== 'undefined' && typeof window.saveUsers === 'function')
         ? window.saveUsers
@@ -376,7 +376,20 @@ async function resolveCurrentUser(email) {
         }
       } catch(e) { console.warn('[auth] resolveCurrentUser Firestore fallback:', e.message); }
     }
-    if (user) { CU = user; _persistSession(user); _logEntry('login', `Firebase: ${user.name}`); }
+    if (user) {
+      CU = user;
+      _persistSession(user);
+      _logEntry('login', `Firebase: ${user.name}`);
+      /* ADMIN-LASTLOGIN-FIX-001: Firebase onAuthStateChanged yolu lastLogin güncellemiyordu */
+      try {
+        user.lastLogin = new Date().toISOString().slice(0, 16).replace('T', ' ');
+        user.loginCount = (user.loginCount || 0) + 1;
+        var _saveFn = (typeof window !== 'undefined' && typeof window.saveUsers === 'function')
+          ? window.saveUsers
+          : (typeof saveUsers === 'function' ? saveUsers : null);
+        if (_saveFn) _saveFn(users);
+      } catch (e) { console.warn('[auth] resolveCurrentUser lastLogin güncellenemedi:', e.message); }
+    }
     return user || null;
   } catch (e) {
     return null;
