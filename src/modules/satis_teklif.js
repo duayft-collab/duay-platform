@@ -319,7 +319,8 @@ window._openSTModal = function(id) {
   if (cariList.length === 0 && typeof loadCari === 'function') {
     cariList = loadCari({tumKullanicilar:true}).filter(function(c) { return !c.isDeleted; });
   }
-  var _cariAdlar = cariList.map(function(c) { return c.name || c.ad || c.firmaAdi || ''; }).filter(Boolean);
+  /* SATIS-MUSTERI-TITLE-FALLBACK-001: isim alanı chain'ine c.title + c.unvan eklendi (type-eksik kayıt fallback) */
+  var _cariAdlar = cariList.map(function(c) { return c.name || c.ad || c.firmaAdi || c.title || c.unvan || ''; }).filter(Boolean);
   // Geçmiş tekliflerden de unique müşteri adlarını topla (cari'de olmayan eski müşteriler için)
   try {
     var _stGecmis = typeof _loadST === 'function' ? _loadST() : [];
