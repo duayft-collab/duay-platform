@@ -5064,11 +5064,11 @@ window._renderPlatformIlerleme = function() {
     },
     {
       baslik: '2. Satış Teklifi Onayı',
-      renk: 'kismi',
+      renk: 'ok',
       adimlar: [
         {ad: 'Durum takibi (taslak→kabul)', durum: 'ok'},
         {ad: 'Revizyon sistemi R01→R02', durum: 'ok'},
-        {ad: 'Müşteri kabul → Tahsilat bağı', durum: 'eksik'},
+        {ad: 'Müşteri kabul → Tahsilat bağı', durum: 'ok'},
         {ad: 'Excel export (10 kolon)', durum: 'ok'},
       ]
     },
@@ -5080,7 +5080,7 @@ window._renderPlatformIlerleme = function() {
         {ad: 'Yönetici onay akışı', durum: 'ok'},
         {ad: 'Geçerlilik tarihi KPI', durum: 'kismi'},
         {ad: 'CSV / Excel import', durum: 'ok'},
-        {ad: 'Onay → Otomatik sipariş', durum: 'eksik'},
+        {ad: 'Onay → Otomatik sipariş', durum: 'ok'},
       ]
     },
     {
@@ -6565,6 +6565,11 @@ window._renderSatisRapor = function() {
       +'</tr>';
   }).join('');
   p.innerHTML='<div style="padding:20px">'
+    /* SATIS-RAPOR-EXCEL-001: başlık + Excel export butonu */
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div style="font-size:15px;font-weight:600;color:var(--t)">Satış Raporu</div>'
+    +'<button onclick="window._satisRaporExcel?.()" class="btn btns" style="font-size:11px">⬇ Excel</button>'
+    +'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:0.5px solid var(--b);margin-bottom:16px">'
     +'<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">TOPLAM TEKLİF</div><div style="font-size:24px;font-weight:600">'+toplam+'</div></div>'
     +'<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">KABUL</div><div style="font-size:24px;font-weight:600;color:#16A34A">'+kabul+'</div></div>'
@@ -6764,4 +6769,32 @@ window._renderDonemOzeti = function() {
     + '<th style="padding:8px 12px;text-align:right">Net</th>'
     + '</tr></thead><tbody>' + satirlar + '</tbody></table>'
     + '</div>';
+};
+
+/* SATIS-RAPOR-EXCEL-001: Müşteri bazlı satış raporu Excel export */
+window._satisRaporExcel = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenemedi','err'); return; }
+  var stList = typeof loadST==='function' ? loadST() : [];
+  var aktif = stList.filter(function(t){ return !t.isDeleted; });
+  if (!aktif.length) { window.toast?.('Veri yok','warn'); return; }
+  var musteriMap = {};
+  aktif.forEach(function(t){
+    var m = t.customerName||t.musteri||'Bilinmiyor';
+    if(!musteriMap[m]) musteriMap[m]={toplam:0,kabul:0,red:0};
+    musteriMap[m].toplam++;
+    if(t.status==='kabul') musteriMap[m].kabul++;
+    if(t.status==='red') musteriMap[m].red++;
+  });
+  var rows = [['Müşteri','Toplam','Kabul','Red','Kabul Oranı %']];
+  Object.keys(musteriMap).sort(function(a,b){ return musteriMap[b].toplam-musteriMap[a].toplam; }).forEach(function(m){
+    var r=musteriMap[m];
+    var o=r.toplam?Math.round(r.kabul/r.toplam*100):0;
+    rows.push([m,r.toplam,r.kabul,r.red,o]);
+  });
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:10},{wch:10},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'Satış Raporu');
+  XLSX.writeFile(wb,'satis-raporu-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  window.toast?.('Excel indirildi ✓','ok');
 };
