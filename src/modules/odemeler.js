@@ -6843,6 +6843,17 @@ function renderCari() {
   });
   var _sevenDaysLater = new Date(new Date().getTime() + 7*86400000).toISOString().slice(0,10);
 
+  /* CARI-TEKLIF-UYARI-001: müşteri bazlı son teklif tarihi indeksi (loop dışında tek seferlik) */
+  var _stListU = typeof loadST === 'function' ? loadST() : (typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : []);
+  var _stLastByName = {};
+  _stListU.forEach(function(t) {
+    if (t.isDeleted) return;
+    var key = t.customerName || t.musteri || '';
+    if (!key) return;
+    var ts = String(t.date || t.ts || '');
+    if (!_stLastByName[key] || ts > _stLastByName[key]) _stLastByName[key] = ts;
+  });
+
   // ── İstatistik paneli ──────────────────────────────────────────
   var statsEl = document.getElementById('cari-stats');
   if (!statsEl) {
@@ -6977,12 +6988,26 @@ function renderCari() {
     var _riskSkor = window._cariRiskSkor ? window._cariRiskSkor(c) : 0;
     var _riskRenk = _riskSkor >= 70 ? '#16A34A' : _riskSkor >= 40 ? '#D97706' : '#DC2626';
     var _riskHTML = ' <span title="Risk/güven skoru" style="font-size:8px;padding:1px 5px;border-radius:4px;background:' + _riskRenk + '22;color:' + _riskRenk + ';font-weight:600;vertical-align:middle">' + _riskSkor + '</span>';
+    /* CARI-TEKLIF-UYARI-001: son teklif hatırlatma rozeti — sadece musteri tipi */
+    var hatirHTML = '';
+    if (c.type === 'musteri') {
+      var _sonTarih = _stLastByName[c.name] || '';
+      var sonTeklifGun;
+      if (!_sonTarih) sonTeklifGun = 999;
+      else {
+        var _ms = Date.now() - new Date(String(_sonTarih).replace(' ', 'T')).getTime();
+        sonTeklifGun = isNaN(_ms) ? 999 : Math.floor(_ms / 86400000);
+      }
+      if (sonTeklifGun > 90) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#DC2626">⚠ ' + sonTeklifGun + 'g</span>';
+      else if (sonTeklifGun > 30) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#D97706">⏰ ' + sonTeklifGun + 'g</span>';
+    }
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
       + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + statusBadge
         + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t3);padding:1px 5px;background:var(--s2);border-radius:4px;vertical-align:middle" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
         + _riskHTML
+        + hatirHTML
         + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
       /* CARI-HIZLI-TEKLIF-001: cari satırından direkt satış teklifi aç */
@@ -7168,35 +7193,59 @@ function _renderCariDetail(id) {
         if (ad) { urunFreq[ad] = (urunFreq[ad]||0) + 1; }
       });
     });
-    var topUrunler = Object.keys(urunFreq).sort(function(a,b){ return urunFreq[b]-urunFreq[a]; }).slice(0,5);
-    if (topUrunler.length) {
-      stHTML += '<div style="margin-top:10px;padding:8px 10px;background:var(--s2);border-radius:6px">'
-        + '<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:6px">En Çok Sipariş Edilen</div>'
-        + topUrunler.map(function(u){
-          return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:0.5px solid var(--b)">'
-            + '<div>'+(window._esc?.(u)||u)+'</div>'
-            + '<div style="color:var(--t3);font-size:9px">×'+urunFreq[u]+'</div>'
-            + '</div>';
-        }).join('')
-        + '</div>';
-    }
   } else {
     stHTML = '<div style="margin-top:10px;font-size:11px;color:var(--t3);padding:8px;background:var(--s2);border-radius:6px">Satış teklifi yok</div>';
   }
 
+  /* CARI-SEKMELI-DETAY-001: Genel/Teklifler/Ürünler/Feedback sekmeli görünüm için yardımcı HTML parçaları */
+  var _urunFreqSafe = (typeof urunFreq !== 'undefined') ? urunFreq : {};
+  var _topUrunler = Object.keys(_urunFreqSafe).sort(function(a,b){ return _urunFreqSafe[b]-_urunFreqSafe[a]; }).slice(0,5);
+  var _urunPanelHTML = '';
+  if (_topUrunler.length) {
+    _urunPanelHTML = '<div style="padding:14px;background:var(--s2);border-radius:6px;margin-top:8px">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:8px">En Çok Sipariş Edilen</div>'
+      + _topUrunler.map(function(u){
+        return '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:0.5px solid var(--b)">'
+          + '<div>'+(window._esc?.(u)||u)+'</div>'
+          + '<div style="color:var(--t3);font-size:10px">×'+_urunFreqSafe[u]+'</div>'
+          + '</div>';
+      }).join('')
+      + '</div>';
+  } else {
+    _urunPanelHTML = '<div style="padding:20px;text-align:center;color:var(--t3);font-size:12px">Sipariş edilmiş ürün yok</div>';
+  }
+  var _sekmeBarHTML = '<div id="csd-sekme-bar" style="display:flex;border-bottom:0.5px solid var(--b);margin-top:12px;gap:0">'
+    + '<button class="csd-tab" data-panel="genel" onclick="event.stopPropagation();window._csdTab(this,\'genel\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--ac);border-bottom:2px solid var(--ac);font-family:inherit">Genel</button>'
+    + '<button class="csd-tab" data-panel="teklifler" onclick="event.stopPropagation();window._csdTab(this,\'teklifler\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Teklifler</button>'
+    + '<button class="csd-tab" data-panel="urunler" onclick="event.stopPropagation();window._csdTab(this,\'urunler\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Ürünler</button>'
+    + '<button class="csd-tab" data-panel="feedback" onclick="event.stopPropagation();window._csdTab(this,\'feedback\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Feedback</button>'
+    + '</div>';
+
+  /* CARI-DETAY-HEADER-001: avatar (firma baş harfleri) + büyük risk skoru */
+  var _inits = (c.name || '?').split(' ').slice(0, 2).map(function(s) { return s[0] || ''; }).join('').toUpperCase();
+  var _avRenk = c.type === 'tedarikci' ? '#E1F5EE' : '#E6F1FB';
+  var _avText = c.type === 'tedarikci' ? '#0F6E56' : '#185FA5';
+  var _avHTML = '<div style="width:36px;height:36px;border-radius:50%;background:' + _avRenk + ';color:' + _avText + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">' + window._esc(_inits) + '</div>';
+  var _rBig = typeof window._cariRiskSkor === 'function' ? window._cariRiskSkor(c) : null;
+  var _rBigRenk = _rBig === null ? 'var(--t3)' : _rBig >= 70 ? '#3B6D11' : _rBig >= 40 ? '#854F0B' : '#A32D2D';
+  var _rBigHTML = _rBig === null ? '' : '<span style="font-size:10px;color:' + _rBigRenk + ';font-weight:600;margin-left:6px" title="Risk/güven skoru 0-100">Skor: ' + _rBig + '</span>';
+
   cont.innerHTML = '<div style="padding:20px">'
     // Başlık
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div style="display:flex;align-items:center;gap:12px">'
+      + _avHTML
       + '<div>'
         // CARI-OZET-EKSIK-001: başlık yanına müşteri kodu rozeti
         + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px">' + window._esc(c.name)
           + '<span style="font-size:10px;color:var(--t3);font-weight:500;font-family:monospace;padding:2px 8px;background:var(--s2);border-radius:10px" title="Müşteri kodu">' + window._esc(c.kod || c.musKod || '—') + '</span>'
         + '</div>'
-        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + window._esc(c.phone) : '') + (c.email ? ' · ' + window._esc(c.email) : '') + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + window._esc(c.phone) : '') + (c.email ? ' · ' + window._esc(c.email) : '') + _rBigHTML + '</div>'
         + (c.iban ? '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">IBAN: ' + window._esc(c.iban) + '</div>' : '')
         + (c.address ? '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + window._esc(c.address) + '</div>' : '')
         // CARI-OZET-EKSIK-001: son satış teklifi tarihi
         + (_cariSonTeklif ? '<div style="font-size:10px;color:var(--ac);margin-top:3px">📄 Son teklif: ' + window._esc(_cariSonTeklif) + '</div>' : '')
+      + '</div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
         // CARI-OZET-EKSIK-001: Teklif Ver butonu — Satış Teklifleri modal + müşteri pre-fill
