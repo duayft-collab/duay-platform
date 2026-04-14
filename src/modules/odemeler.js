@@ -6344,6 +6344,21 @@ function saveCari(entry) {
     }
   }
 
+  // CARI-KOD-UNIQUE-001: Müşteri kodu format + mükerrer kontrolü (4 hane rakam, benzersiz)
+  if (entry.kod && String(entry.kod).trim()) {
+    var kodClean = String(entry.kod).trim();
+    if (!/^\d{4}$/.test(kodClean)) {
+      window.toast?.('Müşteri kodu 4 haneli rakam olmalı (örn: 1234)', 'warn');
+      return null;
+    }
+    entry.kod = kodClean;
+    var kodDup = d.find(function(c) { return c.kod === kodClean && c.id !== editId && !c.isDeleted; });
+    if (kodDup) {
+      window.toast?.('"' + kodClean + '" kodu zaten kullanımda: ' + (kodDup.name || '—'), 'err');
+      return null;
+    }
+  }
+
   // Firma adı benzerlik uyarısı (sadece uyarı, engelleme YOK)
   if (isNew && entry.name) {
     var similar = d.find(function(c) {
@@ -6568,7 +6583,17 @@ window._openQuickCari = function(editId) {
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
           + '<div><div class="fl">FİRMA ADI *</div><input class="fi" id="qc-name" placeholder="Firma adı" value="' + window._esc(c?.name || '') + '"></div>'
           + '<div><div class="fl">T\u0130P *</div><select class="fi" id="qc-type"><option value="tedarikci"' + (c?.type === 'tedarikci' ? ' selected' : '') + '>Tedarik\u00e7i</option><option value="musteri"' + (c?.type === 'musteri' ? ' selected' : '') + '>M\u00fc\u015fteri</option><option value="diger"' + (c?.type === 'diger' ? ' selected' : '') + '>Di\u011fer</option></select></div>'
-          + '<div><div class="fl">M\u00dc\u015eTER\u0130 KODU (4 hane)</div><input class="fi" id="qc-kod" maxlength="4" placeholder="3230" value="' + window._esc(c?.kod || '') + '" style="font-family:monospace"></div>'
+          /* CARI-OTO-KOD-001: input yanına Otomatik kod üret butonu */
+          + '<div><div class="fl">M\u00dc\u015eTER\u0130 KODU (4 hane)</div>'
+          + '<div style="display:flex;gap:6px;align-items:center">'
+          + '<input class="fi" id="qc-kod" maxlength="4" placeholder="3230"'
+          + ' value="' + window._esc(c?.kod || '') + '"'
+          + ' oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,4)"'
+          + ' onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"'
+          + ' style="font-family:monospace;flex:1">'
+          + '<button type="button" onclick="event.stopPropagation();window._cariOtoKod?.()"'
+          + ' style="white-space:nowrap;font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Otomatik</button>'
+          + '</div></div>'
           + '<div><div class="fl">CARİ AŞAMA</div><select class="fi" id="qc-caritype"><option value="potansiyel"' + ((c?.cariType || 'potansiyel') === 'potansiyel' ? ' selected' : '') + '>🔵 Potansiyel</option><option value="aktif"' + (c?.cariType === 'aktif' ? ' selected' : '') + '>🟡 Aktif</option><option value="onayli"' + (c?.cariType === 'onayli' ? ' selected' : '') + ' disabled>🟢 Onaylı (yönetici atar)</option></select></div>'
           + '<div><div class="fl">VKN (10 HANE) *</div><input class="fi" id="qc-tax" value="' + window._esc(c?.vkn || c?.taxNo || '') + '" placeholder="0000000000" maxlength="10" pattern="[0-9]{10}"></div>'
           + '<div><div class="fl">TCKN (11 HANE)</div><input class="fi" id="qc-tckn" value="' + window._esc(c?.tckn || '') + '" placeholder="Bireysel için" maxlength="11"></div>'
@@ -6795,7 +6820,9 @@ function renderCari() {
       (c.vkn || '').toLowerCase().includes(search) ||
       (c.city || '').toLowerCase().includes(search) ||
       (c.type || '').toLowerCase().includes(search) ||
-      (c.cariType || '').toLowerCase().includes(search)
+      (c.cariType || '').toLowerCase().includes(search) ||
+      /* CARI-KOD-ROZET-001: kod ile arama */
+      (c.kod && String(c.kod).includes(search))
     )) return false;
     return true;
   });
@@ -6947,7 +6974,9 @@ function renderCari() {
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + statusBadge + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + statusBadge
+        + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t3);padding:1px 5px;background:var(--s2);border-radius:4px;vertical-align:middle" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
+        + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
     + '</div>';
   }).join('');
@@ -8567,3 +8596,19 @@ if (typeof Odemeler !== 'undefined') {
   Odemeler.openKurSettings      = openKurSettings;
   Odemeler.openOdmCatMethodManager = openOdmCatMethodManager;
 }
+
+/* CARI-OTO-KOD-001: 4 haneli otomatik müşteri kodu üretimi */
+window._cariOtoKod = function() {
+  var mevcutKodlar = (typeof loadCari === 'function' ? loadCari() : [])
+    .filter(function(c){ return !c.isDeleted && c.kod && /^\d{4}$/.test(c.kod); })
+    .map(function(c){ return parseInt(c.kod, 10); });
+  var yeni = 1001;
+  while (mevcutKodlar.indexOf(yeni) !== -1) yeni++;
+  if (yeni > 9999) { window.toast?.('Kod aralığı doldu (1001-9999)','warn'); return; }
+  var inp = document.getElementById('qc-kod');
+  if (inp) {
+    inp.value = String(yeni);
+    inp.focus();
+    window.toast?.('Kod üretildi: ' + yeni, 'ok');
+  }
+};
