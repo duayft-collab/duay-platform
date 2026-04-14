@@ -242,10 +242,11 @@
           + ' onmouseenter="this.style.borderColor=\'var(--ac,#6366F1)\';this.style.boxShadow=\'0 2px 8px rgba(99,102,241,.12)\'"'
           + ' onmouseleave="this.style.borderColor=\'\';this.style.boxShadow=\'\'"'
         : '';
-      return '<div style="background:var(--sf,#fff);border:1px solid var(--b,#e5e7eb);border-radius:12px;padding:14px 16px' + clickStyle + '"' + clickAttrs + '>'
-        + '<div style="font-size:9px;font-weight:700;color:var(--t3,#6b7280);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">' + _naEsc(label) + '</div>'
-        + '<div style="font-size:20px;font-weight:800;color:' + color + ';font-family:\'DM Mono\',monospace">' + _naEsc(value) + '</div>'
-        + '<div style="font-size:10px;color:var(--t3,#6b7280);margin-top:4px">' + _naEsc(sub) + '</div>'
+      /* NAKIT-KPI-FIX-001: label/value/sub display:block + padding düzenlemesi */
+      return '<div style="background:var(--sf,#fff);border:1px solid var(--b,#e5e7eb);border-radius:12px;padding:16px' + clickStyle + '"' + clickAttrs + '>'
+        + '<div style="display:block;font-size:9px;font-weight:700;color:var(--t3,#6b7280);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">' + _naEsc(label) + '</div>'
+        + '<div style="display:block;font-size:22px;font-weight:700;color:' + color + ';font-family:\'DM Mono\',monospace">' + _naEsc(value) + '</div>'
+        + '<div style="display:block;font-size:10px;color:var(--t3,#6b7280);margin-top:4px">' + _naEsc(sub) + '</div>'
       + '</div>';
     };
     // Tıklama aksiyonları — tek-tırnak escape ile inline onclick

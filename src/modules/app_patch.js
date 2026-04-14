@@ -5599,10 +5599,11 @@ window._renderFirmaKpi = function() {
     ];
   }
   /* Muhasebe men\u00fcs\u00fcne 3 yeni mod\u00fcl */
+  /* NAKIT-KPI-FIX-001: nakit-akisi Muhasebe men\u00fcs\u00fcne ta\u015f\u0131nd\u0131 */
   if (G.muhasebe && Array.isArray(G.muhasebe.mods)) {
-    ['evrak-paketi', 'kdv-iadesi', 'periyodik-kontrol'].forEach(function(id) {
+    ['evrak-paketi', 'kdv-iadesi', 'periyodik-kontrol', 'nakit-akisi'].forEach(function(id) {
       if (!G.muhasebe.mods.some(function(m) { return m.id === id; })) {
-        var lbl = { 'evrak-paketi': 'Evrak Paketi', 'kdv-iadesi': 'KDV \u0130adesi', 'periyodik-kontrol': 'Periyodik Kontrol' }[id];
+        var lbl = { 'evrak-paketi': 'Evrak Paketi', 'kdv-iadesi': 'KDV \u0130adesi', 'periyodik-kontrol': 'Periyodik Kontrol', 'nakit-akisi': 'Nakit Ak\u0131\u015f\u0131' }[id];
         G.muhasebe.mods.push({ id: id, label: lbl });
       }
     });
