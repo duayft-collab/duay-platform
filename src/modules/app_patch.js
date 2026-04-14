@@ -6566,14 +6566,40 @@ window._renderTeslimatTakip = function() {
     + '</div>';
 };
 
+/* CARI-KARSILASTIRMA-V1-001: stub → platform cari listesi + upload placeholder */
 window._renderCariKarsilastirma = function() {
-  var p = document.getElementById('panel-cari-karsilastirma'); if(!p) return;
-  p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
-    + '<div style="font-size:36px">⚖️</div>'
-    + '<div style="font-size:16px;font-weight:600;margin-top:12px;color:var(--t)">Cari Karşılaştırma</div>'
-    + '<div style="font-size:12px;margin-top:6px">Muhasebeci dosyası ile platform karşılaştırma</div>'
-    + '<div style="margin-top:16px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:8px;padding:10px 16px;display:inline-block">Yakında aktif olacak</div>'
-    + '</div>';
+  var p = document.getElementById('panel-cari-karsilastirma');
+  if (!p) return;
+  var cariList = typeof loadCari==='function' ? loadCari() : [];
+  var esc = window._esc || function(s){return String(s||'');};
+  var h = '<div style="padding:20px;max-width:900px;margin:0 auto">';
+  h += '<div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:4px">Cari Karşılaştırma</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Platform cari verileri — muhasebeci dosyasıyla karşılaştır</div>';
+  h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:16px">';
+  h += '<div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:8px">Platform Cari Listesi (' + cariList.length + ' kayıt)</div>';
+  if (!cariList.length) {
+    h += '<div style="font-size:11px;color:var(--t3);padding:20px;text-align:center">Cari kaydı yok</div>';
+  } else {
+    h += '<div style="display:grid;grid-template-columns:1fr 120px 120px 80px;gap:0;font-size:9px;font-weight:600;color:var(--t3);padding:5px 10px;background:var(--s2);border-radius:4px 4px 0 0;text-transform:uppercase">'
+      + '<div>Cari Adı</div><div>Kod</div><div>Son İşlem</div><div>İşlem</div></div>';
+    h += cariList.filter(function(c){return !c.isDeleted;}).slice(0,50).map(function(c){
+      var sonIslem = (c.islemler||[]).length ? (c.islemler[0].tarih||'—') : '—';
+      return '<div style="display:grid;grid-template-columns:1fr 120px 120px 80px;gap:0;padding:7px 10px;border-bottom:0.5px solid var(--b);font-size:11px;align-items:center">'
+        + '<div style="font-weight:500">' + esc(c.name||'—') + '</div>'
+        + '<div style="font-family:monospace;font-size:10px;color:var(--t3)">' + esc(c.code||c.kod||'—') + '</div>'
+        + '<div style="font-size:10px;color:var(--t3)">' + sonIslem + '</div>'
+        + '<div><span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#EAF3DE;color:#27500A">' + (c.islemler||[]).length + ' işlem</span></div>'
+        + '</div>';
+    }).join('');
+  }
+  h += '</div>';
+  h += '<div style="border:0.5px dashed var(--b);border-radius:10px;padding:24px;text-align:center;color:var(--t3)">';
+  h += '<div style="font-size:28px;margin-bottom:8px">📂</div>';
+  h += '<div style="font-size:13px;color:var(--t)">Muhasebeci Dosyası Yükle</div>';
+  h += '<div style="font-size:11px;margin-top:4px">Excel veya CSV formatında cari listesi</div>';
+  h += '<div style="margin-top:12px;font-size:11px;color:var(--t3);background:var(--s2);border-radius:6px;padding:8px 16px;display:inline-block">Dosya yükleme — Yakında</div>';
+  h += '</div></div>';
+  p.innerHTML = h;
 };
 
 window._renderDonemOzeti = function() {
