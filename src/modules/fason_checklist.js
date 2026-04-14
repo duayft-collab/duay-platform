@@ -120,6 +120,12 @@ window._fasonDetay = function(emirId) {
     /* FASON-KALITE-RAPORU-001: Kontrol sonuçları + ölçümler + notlar yazdırılabilir rapor */
     + '<button onclick="event.stopPropagation();window._fasonKaliteRaporu(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid #185FA5;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:#185FA5">📋 Kalite Raporu</button>'
     /* FASON-RULO-ETIKET-001: Rulo kayıt + etiket bas */
+    /* FASON-ETIKET-ABC-001: A/B/C tasarım seçici */
+    + '<span style="display:inline-flex;gap:2px;margin-right:6px;vertical-align:middle">'
+    + '<button onclick="event.stopPropagation();window._fasonEtiketTasarim=\'A\'" style="font-size:8px;padding:2px 5px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;font-family:inherit">A</button>'
+    + '<button onclick="event.stopPropagation();window._fasonEtiketTasarim=\'B\'" style="font-size:8px;padding:2px 5px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;font-family:inherit">B</button>'
+    + '<button onclick="event.stopPropagation();window._fasonEtiketTasarim=\'C\'" style="font-size:8px;padding:2px 5px;border:0.5px solid #16A34A;border-radius:3px;background:transparent;cursor:pointer;font-family:inherit;color:#16A34A">C</button>'
+    + '</span>'
     + '<button onclick="event.stopPropagation();window._fasonRuloEtiket(\''+emirId+'\')" style="padding:6px 12px;border:0.5px solid #16A34A;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit;color:#16A34A">🏷 Rulo Etiket Bas</button>'
     + '</div></div>'
     + '<div style="flex:1;overflow-y:auto;padding:14px 20px">'
@@ -285,6 +291,9 @@ window._fasonKaliteRaporu = function(emirId) {
    - localStorage key: ak_fason_rulo_v1
    - Rulo ID format: emirId-R001, emirId-R002, ...
    - Barkod = ruloId */
+/* FASON-ETIKET-ABC-001: default tasarım C (yeşil şerit) */
+window._fasonEtiketTasarim = window._fasonEtiketTasarim || 'C';
+
 window._fasonRuloEtiket = function(emirId) {
   var emirler = _fasonLoad();
   var emir = emirler.find(function(e){ return e.id === emirId; });
@@ -317,29 +326,108 @@ window._fasonRuloEtiket = function(emirId) {
   try { localStorage.setItem(ruloKey, JSON.stringify(rulolar)); } catch(e) {}
   window.toast?.('Rulo ' + ruloId + ' kaydedildi ✓', 'ok');
 
-  /* Etiketi bas */
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rulo Etiketi</title>'
-    + '<style>body{font-family:monospace;padding:16px;max-width:300px;margin:0 auto}'
-    + '.etiket{border:3px solid #000;padding:12px;border-radius:4px}'
-    + '.firma{font-size:11px;font-weight:bold;text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px}'
-    + '.urun{font-size:14px;font-weight:bold;margin-bottom:6px}'
-    + '.row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;border-bottom:1px dashed #ccc}'
-    + '.rulo-no{font-size:32px;font-weight:bold;text-align:center;letter-spacing:4px;margin:10px 0;padding:6px;background:#f0f0f0}'
-    + '.barkod{text-align:center;font-size:8px;letter-spacing:2px;margin-top:6px;word-break:break-all}'
-    + '</style></head><body>'
-    + '<div class="etiket">'
-    + '<div class="firma">DUAY ULUSLARARASI TİCARET LTD.ŞTİ.</div>'
-    + '<div class="urun">' + esc(emir.urunAdi || '') + '</div>'
-    + '<div class="row"><span>Fason Firma</span><span>' + esc(emir.fasonFirma || '—') + '</span></div>'
-    + '<div class="row"><span>En</span><span>' + esc(String(emir.en || '—')) + ' m</span></div>'
-    + '<div class="row"><span>Uzunluk</span><span>' + esc(String(emir.uzunluk || '—')) + ' m</span></div>'
-    + '<div class="row"><span>İplik</span><span>' + esc(emir.iplikSpec || '') + '</span></div>'
-    + '<div class="row"><span>Atkı×Çözgü</span><span>' + esc(emir.atkuCozgu || '') + '</span></div>'
-    + '<div class="row"><span>Tarih</span><span>' + tarih + '</span></div>'
-    + '<div class="rulo-no">RULO #' + ruloNo + '</div>'
-    + '<div class="barkod">' + esc(ruloId) + '</div>'
-    + '</div>'
-    + '<script>window.print();<\/script></body></html>';
+  /* FASON-ETIKET-ABC-001: 3 tasarım seçeneği (A=siyah, B=mavi, C=yeşil şerit), default C */
+  var html = '';
+  var tasarim = window._fasonEtiketTasarim || 'C';
+
+  if (tasarim === 'A') {
+    html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiket '+ruloId+'</title>'
+      +'<style>body{font-family:monospace;padding:16px;max-width:220px;margin:0 auto}'
+      +'.e{border:2px solid #000;border-radius:6px;overflow:hidden}'
+      +'.h{background:#111;color:#fff;padding:8px 12px}'
+      +'.h .co{font-size:12px;font-weight:bold;letter-spacing:.05em}'
+      +'.h .br{font-size:8px;color:#aaa;margin-top:1px}'
+      +'.b{padding:10px 12px}'
+      +'.un{font-size:12px;font-weight:bold;margin-bottom:8px;color:#111}'
+      +'.r{display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-bottom:1px dashed #ccc}'
+      +'.r span:last-child{font-weight:bold}'
+      +'.rn{font-size:28px;font-weight:bold;text-align:center;letter-spacing:6px;margin:10px 0;padding:6px;background:#f0f0f0}'
+      +'.bc{text-align:center;font-size:8px;letter-spacing:2px;margin-top:4px;opacity:.4}'
+      +'</style></head><body><div class="e">'
+      +'<div class="h"><div class="co">DUAY GLOBAL</div><div class="br">Uluslararası Ticaret Ltd.</div></div>'
+      +'<div class="b">'
+      +'<div class="un">'+emir.urunAdi+'</div>'
+      +'<div class="r"><span>Atkı×Çözgü</span><span>'+emir.atkuCozgu+'</span></div>'
+      +'<div class="r"><span>İplik</span><span>'+emir.iplikSpec+'</span></div>'
+      +'<div class="r"><span>En</span><span>'+emir.en+' m</span></div>'
+      +'<div class="r"><span>Uzunluk</span><span>'+emir.uzunluk+' m</span></div>'
+      +'<div class="r"><span>İç Çap</span><span>≥76 mm</span></div>'
+      +'<div class="r"><span>Dış Çap</span><span>≤600 mm</span></div>'
+      +'<div class="r"><span>Et Kalınlığı</span><span>≥3 mm</span></div>'
+      +'<div class="r"><span>Kapasite</span><span>≥500 N</span></div>'
+      +'<div class="r"><span>Tarih</span><span>'+tarih+'</span></div>'
+      +'<div class="rn">R'+String(ruloNo).padStart(3,"0")+'</div>'
+      +'<div class="bc">'+ruloId+'</div>'
+      +'</div></div>'
+      +'<script>window.print();<\/script></body></html>';
+  }
+
+  if (tasarim === 'B') {
+    html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiket '+ruloId+'</title>'
+      +'<style>body{font-family:monospace;padding:16px;max-width:220px;margin:0 auto}'
+      +'.e{border:1.5px solid #185FA5;border-radius:6px;overflow:hidden}'
+      +'.h{background:#185FA5;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center}'
+      +'.h .logo{font-size:11px;font-weight:bold;letter-spacing:.03em}'
+      +'.h .num{font-size:22px;font-weight:bold}'
+      +'.b{padding:10px 12px}'
+      +'.un{font-size:11px;font-weight:bold;margin-bottom:8px;color:#111}'
+      +'.g{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-bottom:8px}'
+      +'.c{font-size:8px;color:#666}'
+      +'.c strong{display:block;font-size:11px;color:#111;font-weight:bold}'
+      +'.bar{height:24px;background:repeating-linear-gradient(90deg,#111 0,#111 1.5px,transparent 1.5px,transparent 3px,#111 3px,#111 4px,transparent 4px,transparent 6px);border-radius:2px}'
+      +'.id{font-size:7px;color:#aaa;text-align:center;margin-top:3px;letter-spacing:.03em}'
+      +'</style></head><body><div class="e">'
+      +'<div class="h"><div class="logo">DUAY GLOBAL</div><div class="num">R'+String(ruloNo).padStart(3,"0")+'</div></div>'
+      +'<div class="b">'
+      +'<div class="un">'+emir.urunAdi+'</div>'
+      +'<div class="g">'
+      +'<div class="c"><strong>'+emir.atkuCozgu+'</strong>Atkı×Çözgü</div>'
+      +'<div class="c"><strong>'+emir.iplikSpec+'</strong>İplik</div>'
+      +'<div class="c"><strong>'+emir.en+'m</strong>En</div>'
+      +'<div class="c"><strong>'+emir.uzunluk+'m</strong>Uzunluk</div>'
+      +'<div class="c"><strong>≥76mm</strong>İç Çap</div>'
+      +'<div class="c"><strong>≤600mm</strong>Dış Çap</div>'
+      +'<div class="c"><strong>≥3mm</strong>Et Kalınlığı</div>'
+      +'<div class="c"><strong>≥500N</strong>Kapasite</div>'
+      +'</div>'
+      +'<div class="bar"></div>'
+      +'<div class="id">'+ruloId+' · '+tarih+'</div>'
+      +'</div></div>'
+      +'<script>window.print();<\/script></body></html>';
+  }
+
+  if (tasarim === 'C') {
+    html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiket '+ruloId+'</title>'
+      +'<style>body{font-family:sans-serif;padding:16px;max-width:220px;margin:0 auto}'
+      +'.e{border:1px solid #ddd;border-radius:8px;overflow:hidden}'
+      +'.top{display:flex}'
+      +'.stripe{width:6px;background:#16A34A;flex-shrink:0}'
+      +'.hd{padding:8px 10px;flex:1}'
+      +'.brand{font-size:11px;font-weight:bold;color:#111}'
+      +'.sub{font-size:8px;color:#888;margin-top:1px}'
+      +'.mid{border-top:1px solid #eee;border-bottom:1px solid #eee;padding:7px 10px 7px 16px;background:#f9f9f9}'
+      +'.un{font-size:11px;font-weight:bold;color:#111}'
+      +'.sp{font-size:9px;color:#666;margin-top:2px}'
+      +'.bot{padding:8px 10px 8px 16px;display:flex;justify-content:space-between;align-items:flex-end}'
+      +'.dims{font-size:9px;color:#666}'
+      +'.dims strong{display:block;font-size:20px;color:#16A34A;font-weight:bold;letter-spacing:4px}'
+      +'.qr{width:40px;height:40px;border:1px solid #eee;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#aaa;text-align:center;line-height:1.3}'
+      +'.ci{font-size:7px;color:#ccc;text-align:right;padding:2px 10px 4px;letter-spacing:.05em}'
+      +'</style></head><body><div class="e">'
+      +'<div class="top"><div class="stripe"></div>'
+      +'<div class="hd"><div class="brand">DUAY GLOBAL</div><div class="sub">Uluslararası Ticaret · '+tarih+'</div></div>'
+      +'</div>'
+      +'<div class="mid"><div class="un">'+emir.urunAdi+'</div><div class="sp">'+emir.iplikSpec+' · '+emir.atkuCozgu+' /cm</div></div>'
+      +'<div class="bot">'
+      +'<div><div class="dims">En · Uzunluk · İç Ø · Dış Ø<strong>R'+String(ruloNo).padStart(3,"0")+'</strong></div>'
+      +'<div class="dims">'+emir.en+'m · '+emir.uzunluk+'m · ≥76mm · ≤600mm</div>'
+      +'<div class="dims" style="margin-top:3px">Et: ≥3mm · <span style="color:#16A34A;font-weight:bold">≥500 N</span></div></div>'
+      +'<div class="qr">QR<br>'+ruloNo+'</div>'
+      +'</div>'
+      +'<div class="ci">'+ruloId+'</div>'
+      +'</div>'
+      +'<script>window.print();<\/script></body></html>';
+  }
 
   var win = window.open('', '_blank');
   if (win) { win.document.write(html); win.document.close(); }
