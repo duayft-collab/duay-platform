@@ -142,6 +142,8 @@ window.renderSatinAlmaV2 = function() {
       h+='<div><button onclick="event.stopPropagation();window._saV2OnayaSun?.(\''+t.id+'\')" style="font-size:9px;padding:4px 8px;border:none;border-radius:4px;background:#D97706;color:#fff;font-weight:600;cursor:pointer;font-family:inherit">Onaya Sun</button></div>';
     } else {
       h+='<div style="display:flex;gap:3px"><button onclick="event.stopPropagation();window._saV2TeklifOlusturAkilli?.(\''+t.id+'\')" style="font-size:9px;padding:4px 7px;border:none;border-radius:4px;background:#185FA5;color:#fff;font-weight:600;cursor:pointer;font-family:inherit">Satış</button>';
+      /* SATIS-LISTE-PI-GUNCELLE-001: hızlı PI No düzenleme butonu */
+      h+='<button onclick="event.stopPropagation();window._saV2PIGuncelle(\''+t.id+'\')" title="PI No güncelle" style="font-size:9px;padding:3px 7px;border:0.5px solid #185FA5;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;font-family:inherit">PI No</button>';
       h+='<button onclick="event.stopPropagation();window._saV2RowMenu?.(\''+t.id+'\')" title="Daha fazla" style="font-size:11px;padding:2px 7px;border:0.5px solid '+_b+';border-radius:4px;background:transparent;cursor:pointer;color:var(--color-text-tertiary);line-height:1;font-family:inherit">···</button></div>';
     }
     h+='</div>';
@@ -333,5 +335,24 @@ window._saV2OnayaSun = function(id) {
     }
   });
   window.toast?.('Onaya sunuldu — ' + mgrs.length + ' yöneticiye bildirildi', 'ok');
+  window.renderSatinAlmaV2?.();
+};
+
+/* SATIS-LISTE-PI-GUNCELLE-001: Hızlı PI No düzenleme (liste satırından prompt ile) */
+window._saV2PIGuncelle = function(id) {
+  var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  var teklif = liste.find(function(t) { return String(t.id) === String(id); });
+  if (!teklif) { window.toast?.('Teklif bulunamadı', 'err'); return; }
+  var mevcutPI = teklif.piNo || teklif.pi_no || '';
+  var yeniPI = window.prompt('PI No girin:', mevcutPI);
+  if (yeniPI === null) return;
+  yeniPI = yeniPI.trim();
+  var idx = liste.findIndex(function(t) { return String(t.id) === String(id); });
+  if (idx === -1) return;
+  liste[idx].piNo = yeniPI;
+  liste[idx].updatedAt = new Date().toISOString();
+  if (typeof window._saV2Store === 'function') window._saV2Store(liste);
+  window.toast?.('PI No güncellendi: ' + (yeniPI || '(boş)'), 'ok');
+  if (typeof window.logActivity === 'function') window.logActivity('satinalma-v2', 'PI No güncelle: ' + id + ' → ' + yeniPI);
   window.renderSatinAlmaV2?.();
 };
