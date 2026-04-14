@@ -107,7 +107,15 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
     var ak = d === donem;
     var dMeta = meta[d] || {};
     var onayBadge = dMeta.onay === 'onaylandi' ? ' ✓' : '';
-    h += '<button onclick="event.stopPropagation();window._mvDonem=\'' + d + '\';window.renderMuavin()" style="display:block;width:100%;text-align:left;font-size:11px;padding:5px 8px;border-radius:5px;border:' + (ak ? '0.5px solid var(--b)' : 'none') + ';background:' + (ak ? 'var(--sf)' : 'transparent') + ';cursor:pointer;color:' + (ak ? 'var(--t)' : 'var(--t2)') + ';font-family:inherit;margin-bottom:2px;font-weight:' + (ak ? '500' : '400') + '">' + d.slice(0, 4) + ' ' + d.slice(4) + onayBadge + '</button>';
+    /* MUAVIN-DONEM-BADGE-001: yüklü dönem badge (yeşil onaylı / mavi 2 dosya / turuncu 1 dosya / boş) */
+    var muhVar = !!(dMeta.muhasebeci && dMeta.muhasebeci.ad);
+    var barVar = !!(dMeta.baran && dMeta.baran.ad);
+    var onayVar = !!(dMeta.onayTarih);
+    var donemBadge = onayVar ? ' <span style="font-size:7px;padding:0 3px;background:#16A34A;color:#fff;border-radius:2px">✓</span>'
+      : (muhVar && barVar) ? ' <span style="font-size:7px;padding:0 3px;background:#185FA5;color:#fff;border-radius:2px">2</span>'
+      : (muhVar || barVar) ? ' <span style="font-size:7px;padding:0 3px;background:#D97706;color:#fff;border-radius:2px">1</span>'
+      : '';
+    h += '<button onclick="event.stopPropagation();window._mvDonem=\'' + d + '\';window.renderMuavin()" style="display:block;width:100%;text-align:left;font-size:11px;padding:5px 8px;border-radius:5px;border:' + (ak ? '0.5px solid var(--b)' : 'none') + ';background:' + (ak ? 'var(--sf)' : 'transparent') + ';cursor:pointer;color:' + (ak ? 'var(--t)' : 'var(--t2)') + ';font-family:inherit;margin-bottom:2px;font-weight:' + (ak ? '500' : '400') + '">' + d.slice(0, 4) + ' ' + d.slice(4) + donemBadge + onayBadge + '</button>';
   });
   h += '</div>';
 
@@ -387,6 +395,36 @@ window.renderMuavin = function() {
   var islemlerM = window._mvSonIslemler || [];
   var islemlerB = window._mvSonIslemlerB || [];
   var kpi = _mvKpiHesapla(islemlerM, islemlerB);
+
+  /* MUAVIN-SIHIRBAZ-001: dosya yüklenmemişse adım adım kurulum ekranı göster */
+  var ikisiDeBos = !mMeta.ad && !bMeta.ad;
+  if (ikisiDeBos) {
+    var sihirbazHTML = '<div style="padding:40px 20px;max-width:480px;margin:0 auto">'
+      + '<div style="font-size:16px;font-weight:600;color:var(--t);margin-bottom:6px">Muavin Defter Kontrolü</div>'
+      + '<div style="font-size:12px;color:var(--t3);margin-bottom:24px">Muhasebeci ve şirket kayıtlarını karşılaştırmak için 3 adımı tamamlayın.</div>'
+      + '<div style="display:flex;flex-direction:column;gap:12px">'
+      + '<div style="padding:14px 16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf);display:flex;align-items:center;gap:12px">'
+      + '<div style="width:24px;height:24px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">1</div>'
+      + '<div><div style="font-size:12px;font-weight:500;color:var(--t)">Dönem seç</div><div style="font-size:10px;color:var(--t3)">Sol panelden yıl veya çeyrek dönem seçin</div></div>'
+      + '<div style="margin-left:auto;font-size:10px;padding:3px 8px;background:#EAF3DE;color:#3B6D11;border-radius:4px">Tamamlandı</div>'
+      + '</div>'
+      + '<div style="padding:14px 16px;border:0.5px solid var(--ac);border-radius:8px;background:#E6F1FB;display:flex;align-items:center;gap:12px">'
+      + '<div style="width:24px;height:24px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">2</div>'
+      + '<div style="flex:1"><div style="font-size:12px;font-weight:500;color:#185FA5">Muhasebeci dosyasını yükle</div><div style="font-size:10px;color:#185FA5;opacity:.7">Muhasebeciden aldığınız Excel veya CSV dosyası</div></div>'
+      + '<label style="font-size:10px;padding:5px 10px;border:none;border-radius:5px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">+ Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'muhasebeci\')" style="display:none"></label>'
+      + '</div>'
+      + '<div style="padding:14px 16px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf);display:flex;align-items:center;gap:12px;opacity:.6">'
+      + '<div style="width:24px;height:24px;border-radius:50%;background:var(--b);color:var(--t3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">3</div>'
+      + '<div><div style="font-size:12px;font-weight:500;color:var(--t)">Baran ekstresini yükle</div><div style="font-size:10px;color:var(--t3)">Şirket banka/ekstre verisi</div></div>'
+      + '</div>'
+      + '</div></div>';
+    var _hWiz = '<div style="display:flex;min-height:600px">';
+    _hWiz += _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB);
+    _hWiz += '<div style="flex:1;overflow-y:auto">' + sihirbazHTML + '</div>';
+    _hWiz += '</div>';
+    panel.innerHTML = _hWiz;
+    return;
+  }
 
   /* Sağ içerik */
   var sagIcerik = '';
