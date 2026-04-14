@@ -272,9 +272,16 @@ window._ppModRender = function() {
         }
         h2 += '</div></div>';
         h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:9px;color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span></div>';
-        h2 += '<div style="font-size:9px;color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+'</div>';
+        h2 += '<div style="font-size:9px;color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+(t.createdAt?'<div style="font-size:8px;color:var(--t3);margin-top:1px" title="Oluşturulma: '+_ppEsc(t.createdAt)+'">🕐 '+(function(ts){try{var d=new Date((ts||'').replace(' ','T'));return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.createdAt)+'</div>':'')+'</div>';
         h2 += '<div style="font-size:9px;color:'+(tarihGec?'#A32D2D':'var(--t3)')+(tarihGec?';font-weight:500':'')+'">'+(t.bitTarih?t.bitTarih.slice(0,10):'—')+'</div>';
         h2 += '<span style="font-size:8px;padding:2px 5px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span>';
+        // PUSULA-UX-BUNDLE-003 #2: inline öncelik değiştirme dropdown
+        h2 += '<select onchange="event.stopPropagation();window._ppOncelikDegistir?.(\''+String(t.id)+'\',this.value)" onclick="event.stopPropagation()" style="font-size:9px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;margin-left:2px" title="Önceliği değiştir">'
+          + '<option value="kritik"'+(t.oncelik==='kritik'?' selected':'')+'>🔴</option>'
+          + '<option value="yuksek"'+(t.oncelik==='yuksek'?' selected':'')+'>🟡</option>'
+          + '<option value="normal"'+(t.oncelik==='normal'?' selected':'')+'>🟢</option>'
+          + '<option value="dusuk"'+(t.oncelik==='dusuk'?' selected':'')+'>⚪</option>'
+          + '</select>';
         h2 += '<div style="display:flex;align-items:center;gap:2px" onclick="event.stopPropagation()">';
         h2 += '<button onclick="event.stopPropagation();window._ppPeekAc(\''+t.id+'\')" title="Hızlı göz at" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="6" cy="6" r="3"/><path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z"/></svg></button>';
         h2 += '<button onclick="event.stopPropagation();window._ppGorevMesaj(\''+t.id+'\')" title="Mesajlaş" style="width:22px;height:22px;border:0.5px solid #B5D4F4;border-radius:4px;background:transparent;cursor:pointer;color:#185FA5;display:flex;align-items:center;justify-content:center;position:relative"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1h10a1 1 0 011 1v5a1 1 0 01-1 1H7L4.5 11V8H1a1 1 0 01-1-1V2a1 1 0 011-1z"/></svg></button>';
@@ -329,7 +336,7 @@ window._ppModRender = function() {
       + '<button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:10px;padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Görev</button>'
       + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:11px;padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
       + '<select id="pp-sirala" onchange="event.stopPropagation();window._ppSiralaGorevler(this.value)" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">'
-        + '<option value="tarih"'  +(_ppSK==='tarih'?' selected':'')+  '>Tarihe Göre</option>'
+        + '<option value="tarih"'  +(_ppSK==='tarih'?' selected':'')+  '>Son Tarihe Göre</option>'
         + '<option value="oncelik"'+(_ppSK==='oncelik'?' selected':'')+'>Önceliğe Göre</option>'
         + '<option value="durum"'  +(_ppSK==='durum'?' selected':'')+  '>Duruma Göre</option>'
         + '<option value="alfabe"' +(_ppSK==='alfabe'?' selected':'')+ '>A-Z</option>'
@@ -1020,6 +1027,18 @@ window._ppAra = function(q) {
 /* PUSULA-GOREV-SIRALA-001: sıralama kriterini set et + re-render */
 window._ppSiralaGorevler = function(kriter) {
   window._ppSiralaKriter = kriter;
+  window._ppModRender?.();
+};
+
+/* PUSULA-UX-BUNDLE-003 #2: inline öncelik değiştirme handler */
+window._ppOncelikDegistir = function(id, yeniOncelik) {
+  var tasks = _ppLoad();
+  var t = tasks.find(function(x) { return String(x.id) === String(id); });
+  if (!t) return;
+  t.oncelik = yeniOncelik;
+  t.updatedAt = new Date().toISOString();
+  _ppStore(tasks);
+  window.toast?.('"' + (t.baslik || 'Görev') + '" önceliği: ' + yeniOncelik, 'ok');
   window._ppModRender?.();
 };
 
