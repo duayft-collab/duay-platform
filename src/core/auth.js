@@ -327,6 +327,15 @@ async function _localLogin(email, password, skipPwCheck = false) {
     CU = user;
     _persistSession(user);
     _logEntry('login', `Giriş: ${user.name}`);
+    // ADMIN-LASTLOGIN-001: lastLogin + loginCount güncelle
+    try {
+      user.lastLogin = new Date().toISOString();
+      user.loginCount = (user.loginCount || 0) + 1;
+      var _saveFn = (typeof window !== 'undefined' && typeof window.saveUsers === 'function')
+        ? window.saveUsers
+        : (typeof saveUsers === 'function' ? saveUsers : null);
+      if (_saveFn) _saveFn(users);
+    } catch (e) { console.warn('[auth] lastLogin güncellenemedi:', e.message); }
     // Arka planda şifreyi hash'e migrate et (plaintext ise)
     if (!skipPwCheck) _migratePasswordHash(user, password);
     // Realtime sync _finishLogin'den başlatılır — burada ÇAĞIRMA (duplike olur)
