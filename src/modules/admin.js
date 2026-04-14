@@ -289,6 +289,7 @@ function _renderDetail(uid) {
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button class="btn btnp" onclick="window._openUserManageModal?.(${u.id})" style="font-size:12px">⚙️ Yönet</button>
+          <button onclick="window._rolKopyala(${u.id})" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İzinleri Kopyala</button>
         </div>
       </div>
 
@@ -3158,6 +3159,23 @@ window._admSwitchTab = function(tab, el) {
       + (!isSelf ? '<button class="btn btns" onclick="Admin.deleteUser(' + u.id + ')" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#DC2626;border-color:#DC2626">Kullaniciyi Sil</button>' : '')
       + '</div>';
   }
+};
+
+/* ADMIN-IZIN-KOPYALA-001: Kullanıcı modül/access izinlerini başka kullanıcıya kopyala */
+window._rolKopyala = function(fromId) {
+  var users = loadUsers();
+  var fromUser = users.find(function(u){ return u.id === fromId; });
+  if (!fromUser) return;
+  var targetId = prompt('Kime kopyalanacak? Kullanıcı ID girin:');
+  if (!targetId) return;
+  var toUser = users.find(function(u){ return String(u.id) === String(targetId); });
+  if (!toUser) { window.toast?.('Kullanıcı bulunamadı','err'); return; }
+  toUser.modules = fromUser.modules ? fromUser.modules.slice() : null;
+  toUser.access = fromUser.access ? fromUser.access.slice() : [];
+  toUser.updatedAt = new Date().toISOString();
+  saveUsers(users);
+  window.toast?.(fromUser.name + ' izinleri → ' + toUser.name + ' kopyalandı ✓','ok');
+  window.renderUsers?.();
 };
 
 window._openUserManageModal = function(uid) {
