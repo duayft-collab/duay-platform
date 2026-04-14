@@ -493,12 +493,13 @@ window._saV2SatisTabloyuGuncelle = function() {
     return '<tr style="border-bottom:0.5px solid var(--b)">'
       + '<td style="padding:4px 6px;width:28px">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
       + '<td style="padding:4px 6px;font-size:10px"><div style="font-weight:500">' + _saEsc(u.duayKodu || '') + (u.duayKodu ? ' \u2014 ' : '') + _saEsc(u.urunAdi || '\u2014') + '</div>' + (u.eskiKod ? '<div style="font-size:8px;color:var(--t3)">(' + _saEsc(u.eskiKod) + ')</div>' : '') + '</td>'
-      + '<td style="padding:4px 6px"><input type="number" value="' + (u.miktar || 1) + '" min="1" oninput="event.stopPropagation();window._saV2UrunMiktar(\'' + (u.id || gIdx) + '\', this.value)" style="width:55px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
-      + '<td style="padding:4px 6px;font-size:10px;color:var(--t2)">' + paraSym + (u.alisHedef || 0).toFixed(2) + '</td>'
-      + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" style="width:50px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t)"></td>'
-      + '<td style="padding:3px 4px"><input type="number" min="0" step="0.01" value="' + (u.satisFiyat || 0).toFixed(2) + '" onchange="event.stopPropagation();window._saV2UrunSatisFiyat(\'' + (u.id || gIdx) + '\', parseFloat(this.value)||0)" oninput="event.stopPropagation()" style="width:80px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:#E1F5EE;color:#085041;font-family:inherit;font-weight:500"></td>'
+      /* SATIS-URUN-TBODY-STYLE-001: ALIŞ mavi, SATIŞ yeşil, input ortalama, Kaldır kırmızı */
+      + '<td style="padding:4px 6px"><input type="number" value="' + (u.miktar || 1) + '" min="1" oninput="event.stopPropagation();window._saV2UrunMiktar(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box"></td>'
+      + '<td style="padding:4px 6px;font-size:10px;color:#185FA5;font-weight:500">' + paraSym + (u.alisHedef || 0).toFixed(2) + '</td>'
+      + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box"></td>'
+      + '<td style="padding:3px 4px;color:#16A34A;font-weight:600"><input type="number" min="0" step="0.01" value="' + (u.satisFiyat || 0).toFixed(2) + '" onchange="event.stopPropagation();window._saV2UrunSatisFiyat(\'' + (u.id || gIdx) + '\', parseFloat(this.value)||0)" oninput="event.stopPropagation()" style="width:100%;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:#E1F5EE;color:#16A34A;font-family:inherit;font-weight:600;box-sizing:border-box"></td>'
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
-      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + (u.id || gIdx) + '\')" style="font-size:9px;padding:2px 6px;border:0.5px solid #A32D2D;border-radius:3px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Kald\u0131r</button></td>'
+      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + (u.id || gIdx) + '\')" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Kald\u0131r</button></td>'
       + '</tr>';
   }).join('');
   /* Sayfalama */
@@ -593,6 +594,27 @@ window._saV2UrunListHTML = function(filtre) {
 window._saV2UrunAra = function(deger) {
   var liste = document.getElementById('sav2-urun-liste');
   if (liste) liste.innerHTML = window._saV2UrunListHTML(deger);
+};
+
+/* SATIS-URUN-KAYNAK-SEC-001: Kaynak sekme toggle — aktif butona stil + liste yeniden çiz */
+window._saV2AktifKaynak = window._saV2AktifKaynak || 'satin';
+window._saV2KaynakSec = function(kaynak) {
+  window._saV2AktifKaynak = kaynak;
+  var btnSatin = document.getElementById('sav2-kaynak-satin');
+  var btnKatalog = document.getElementById('sav2-kaynak-katalog');
+  if (btnSatin) {
+    btnSatin.style.background = kaynak==='satin' ? 'var(--ac)' : 'transparent';
+    btnSatin.style.color = kaynak==='satin' ? '#fff' : 'var(--t3)';
+    btnSatin.style.fontWeight = kaynak==='satin' ? '500' : '400';
+  }
+  if (btnKatalog) {
+    btnKatalog.style.background = kaynak==='katalog' ? 'var(--ac)' : 'transparent';
+    btnKatalog.style.color = kaynak==='katalog' ? '#fff' : 'var(--t3)';
+    btnKatalog.style.fontWeight = kaynak==='katalog' ? '500' : '400';
+  }
+  var ara = document.getElementById('sav2-urun-ara');
+  var liste = document.getElementById('sav2-urun-liste');
+  if (liste) liste.innerHTML = window._saV2UrunListHTML(ara ? ara.value : '');
 };
 
 /* ── Çoklu ürün satırı ekleme ──────────────────────────────── */
