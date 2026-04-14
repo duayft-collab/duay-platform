@@ -7042,6 +7042,8 @@ function _renderCariDetail(id) {
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
         + (_isManagerO() ? '<button class="btn btns" onclick="window._assignCariReview(' + c.id + ')" style="font-size:11px;color:#6366F1">👁 İncelet</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
+        /* MUSTERI-FEEDBACK-001: Müşteri geri bildirim butonu */
+        + '<button class="btn btns" onclick="event.stopPropagation();window._musteriGeribildirimAc?.(\'' + c.id + '\',\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" style="font-size:11px">⭐ Feedback</button>'
       + '</div>'
     + '</div>'
     // Onay durumu banner

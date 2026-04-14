@@ -6798,3 +6798,58 @@ window._satisRaporExcel = function() {
   XLSX.writeFile(wb,'satis-raporu-'+new Date().toISOString().slice(0,10)+'.xlsx');
   window.toast?.('Excel indirildi ✓','ok');
 };
+
+/* MUSTERI-FEEDBACK-001: Yıldız puanı + not + localStorage kayıt */
+window._fbYildizSec = function(n) {
+  var el = document.getElementById('fb-puan');
+  if (el) el.value = n;
+  document.querySelectorAll('.fb-yildiz').forEach(function(b, j) {
+    b.style.color = j < n ? '#EF9F27' : 'var(--t3)';
+  });
+};
+
+window._musteriGeribildirimAc = function(cariId, cariAd) {
+  var mevcut = document.getElementById('mo-feedback');
+  if (mevcut) { mevcut.remove(); return; }
+  var esc = window._esc||function(s){return String(s||'');};
+  var mo = document.createElement('div');
+  mo.id = 'mo-feedback';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick = function(e){ if(e.target===mo) mo.remove(); };
+  var yildizHTML = '';
+  for (var i = 1; i <= 5; i++) {
+    yildizHTML += '<button onclick="event.stopPropagation();window._fbYildizSec('+i+')" class="fb-yildiz" style="font-size:20px;background:none;border:none;cursor:pointer;color:var(--t3)">★</button>';
+  }
+  mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:420px;padding:20px">'
+    + '<div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:4px">Müşteri Geri Bildirimi</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">' + esc(cariAd||'Müşteri') + '</div>'
+    + '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">'
+    + yildizHTML
+    + '<input type="hidden" id="fb-puan" value="0"></div>'
+    + '<textarea id="fb-not" placeholder="Geri bildirim notu..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" rows="3" style="width:100%;padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:12px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button onclick="document.getElementById(\'mo-feedback\').remove()" style="padding:7px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:12px">İptal</button>'
+    + '<button onclick="window._musteriGeribildirimKaydet(\'' + esc(String(cariId)) + '\')" style="padding:7px 16px;border:none;border-radius:6px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500">Kaydet</button>'
+    + '</div></div>';
+  document.body.appendChild(mo);
+};
+
+window._musteriGeribildirimKaydet = function(cariId) {
+  var puan = parseInt(document.getElementById('fb-puan')?.value||'0');
+  var not = document.getElementById('fb-not')?.value?.trim()||'';
+  if (!puan) { window.toast?.('Puan seçin (1-5 yıldız)','warn'); return; }
+  var KEY = 'ak_musteri_feedback_v1';
+  var kayitlar;
+  try { kayitlar = JSON.parse(localStorage.getItem(KEY)||'[]'); } catch(e) { kayitlar = []; }
+  kayitlar.unshift({
+    id: Date.now(),
+    cariId: cariId,
+    puan: puan,
+    not: not,
+    tarih: new Date().toISOString().slice(0,10),
+    ts: new Date().toISOString()
+  });
+  try { localStorage.setItem(KEY, JSON.stringify(kayitlar)); } catch(e) {}
+  document.getElementById('mo-feedback')?.remove();
+  window.toast?.('Geri bildirim kaydedildi ✓ (' + puan + ' yıldız)', 'ok');
+};
