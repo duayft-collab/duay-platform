@@ -447,6 +447,23 @@ window._saV2UrunSil = function(id) {
   window._saV2PIOnizlemeGuncelle?.();
 };
 
+/* SATIS-FORM-PARITE-001: mensei + birim state update handlers */
+window._saV2UrunMensei = function(id, val) {
+  var arr = window._saV2SatisUrunler || [];
+  var i = arr.findIndex(function(x){ return String(x.id) === String(id); });
+  if (i < 0) return;
+  arr[i].mensei = val || '';
+  window._saV2PIOnizlemeGuncelle?.();
+};
+
+window._saV2UrunBirim = function(id, val) {
+  var arr = window._saV2SatisUrunler || [];
+  var i = arr.findIndex(function(x){ return String(x.id) === String(id); });
+  if (i < 0) return;
+  arr[i].birim = val || 'Adet';
+  window._saV2PIOnizlemeGuncelle?.();
+};
+
 /* SATIS-MARJ-001: Direkt satış fiyatı girilirse marj geri hesaplanır */
 window._saV2UrunSatisFiyat = function(id, satisFiyat) {
   var arr = window._saV2SatisUrunler || [];
@@ -499,6 +516,13 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box"></td>'
       + '<td style="padding:3px 4px;color:#16A34A;font-weight:600"><input type="number" min="0" step="0.01" value="' + (u.satisFiyat || 0).toFixed(2) + '" onchange="event.stopPropagation();window._saV2UrunSatisFiyat(\'' + (u.id || gIdx) + '\', parseFloat(this.value)||0)" oninput="event.stopPropagation()" style="width:100%;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:#E1F5EE;color:#16A34A;font-family:inherit;font-weight:600;box-sizing:border-box"></td>'
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
+      /* SATIS-FORM-PARITE-001: Birim + Menşei inline seçimler */
+      + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunBirim(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">'
+      + ['Adet','Kg','m²','m','Litre','Koli','Ton'].map(function(b) { return '<option value="' + b + '"' + ((u.birim || 'Adet') === b ? ' selected' : '') + '>' + b + '</option>'; }).join('')
+      + '</select></td>'
+      + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">—</option>'
+      + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
+      + '</select></td>'
       + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + (u.id || gIdx) + '\')" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Kald\u0131r</button></td>'
       + '</tr>';
   }).join('');
