@@ -106,17 +106,19 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px">';
   /* SATIS-URUN-TABLO-001: table-layout:fixed + colgroup ile kolon genişlikleri sabit */
   ic += '<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
+  /* SATIS-URUN-KALDIR-FIX-001: 8 kolon (görsel + 7) — tbody 8 TD ile eşleşsin */
   ic += '<colgroup>'
-    + '<col style="width:34%">'   /* KOD / ÜRÜN ADI */
+    + '<col style="width:4%">'    /* görsel */
+    + '<col style="width:30%">'   /* KOD / ÜRÜN ADI */
     + '<col style="width:10%">'   /* MİKTAR */
-    + '<col style="width:15%">'   /* ALIŞ */
-    + '<col style="width:11%">'   /* MARJ % */
-    + '<col style="width:15%">'   /* SATIŞ */
+    + '<col style="width:14%">'   /* ALIŞ */
+    + '<col style="width:10%">'   /* MARJ % */
+    + '<col style="width:14%">'   /* SATIŞ */
     + '<col style="width:11%">'   /* TOPLAM */
-    + '<col style="width:4%">'    /* Kaldır */
+    + '<col style="width:7%">'    /* Kaldır */
     + '</colgroup>';
   ic += '<thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
-  ic += '<th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px">SATIŞ</th><th style="padding:7px 10px">TOPLAM</th><th style="padding:7px 10px"></th></tr></thead>';
+  ic += '<th style="padding:7px 10px"></th><th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px">SATIŞ</th><th style="padding:7px 10px">TOPLAM</th><th style="padding:7px 10px"></th></tr></thead>';
   ic += '<tbody id="st-urun-tbody"></tbody></table>';
   ic += '<div style="padding:6px 8px;border-top:0.5px solid var(--b)"><button onclick="event.stopPropagation();window._saV2UrunSecModal()" style="font-size:10px;padding:3px 10px;border:0.5px dashed var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit">+ Ürün Ekle</button></div>';
   ic += '</div>';
