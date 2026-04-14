@@ -17,7 +17,8 @@
     try { localStorage.setItem(_FASON_CHECK_KEY, JSON.stringify(d)); } catch(e) {}
   }
 
-var _FASON_CHECKPOINTS = [
+/* FASON-CHECKPOINTS-SCOPE-FIX-001: IIFE dışına export için window scope */
+window._FASON_CHECKPOINTS = [
   /* AŞAMA 1: Ön Üretim */
   { id:'OP01', asama:'on-uretim', asamaLbl:'Ön Üretim', lbl:'İplik dtex testi', hedef:'1100 dtex ±5%', birim:'dtex', zorunlu:true },
   { id:'OP02', asama:'on-uretim', asamaLbl:'Ön Üretim', lbl:'Atkı-çözgü sayısı', hedef:'8×8 /cm', birim:'/cm', zorunlu:true },
@@ -46,7 +47,7 @@ window._fasonDetay = function(emirId) {
   var asamaIkon = {'on-uretim':'🔬','uretim':'🏭','teslimat':'📦'};
 
   var checkHTML = asamalar.map(function(asama) {
-    var cplar = _FASON_CHECKPOINTS.filter(function(cp){ return cp.asama===asama; });
+    var cplar = window._FASON_CHECKPOINTS.filter(function(cp){ return cp.asama===asama; });
     var asamaTamamlanan = cplar.filter(function(cp){ return emirCheck[cp.id]?.durum==='tamam'; }).length;
     var asamaBg = asamaTamamlanan===cplar.length ? '#EAF3DE' : asamaTamamlanan>0 ? '#FAEEDA' : 'var(--s2)';
     var asamaRenk = asamaTamamlanan===cplar.length ? '#16A34A' : asamaTamamlanan>0 ? '#D97706' : 'var(--t3)';
