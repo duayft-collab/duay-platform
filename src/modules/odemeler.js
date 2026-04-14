@@ -6758,7 +6758,9 @@ function renderCari() {
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:200">'
         + '<div><div style="font-size:15px;font-weight:700;color:var(--t);letter-spacing:-.01em">Cari Yönetimi</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Müşteri & Tedarikçi</div></div>'
         + '<div style="display:flex;gap:6px">'
-          + '<button onclick="window._exportCariXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel</button>'
+          + '<button onclick="window._exportCariXlsx?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'">Excel (Ekstre)</button>'
+          /* CARI-EXCEL-ZENGIN-001: tüm cari listesi için 16-kolon export */
+          + '<button onclick="window._exportCariZengin?.()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit" title="Tüm cari listesi zengin export">Excel (Tümü)</button>'
           + (_isAdminO() ? '<button onclick="_insertCariDemoData()" style="padding:6px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--sf);color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">🎲 Demo</button>' : '')
           + (_isAdminO() ? '<button onclick="window._temizleDemoVeri()" style="padding:6px 12px;border:0.5px solid #D97706;border-radius:7px;background:rgba(217,119,6,.06);color:#D97706;font-size:11px;cursor:pointer;font-family:inherit" title="kurRate=38.50 olan tum demo kayitlarini soft-delete yapar">🧹 Demo Temizle</button>' : '')
           + '<button id="cari-toplu-sil-btn" onclick="event.stopPropagation();window._cariBulkDelete()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:rgba(220,38,38,.06);color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit;display:none">Seçilenleri Sil</button>'
@@ -6971,11 +6973,16 @@ function renderCari() {
     if (_hasGecik || (_cLimit > 0 && _unpaidTRY > _cLimit)) sc = { icon:'🔴', color:'#DC2626', label:'Riskli' };
     else if (_hasYakin) sc = { icon:'🟡', color:'#F59E0B', label:'Dikkat' };
     else sc = { icon:'🟢', color:'#16A34A', label:'İyi' };
+    /* CARI-RISK-SKOR-001: otomatik risk/güven skoru 0-100 */
+    var _riskSkor = window._cariRiskSkor ? window._cariRiskSkor(c) : 0;
+    var _riskRenk = _riskSkor >= 70 ? '#16A34A' : _riskSkor >= 40 ? '#D97706' : '#DC2626';
+    var _riskHTML = ' <span title="Risk/güven skoru" style="font-size:8px;padding:1px 5px;border-radius:4px;background:' + _riskRenk + '22;color:' + _riskRenk + ';font-weight:600;vertical-align:middle">' + _riskSkor + '</span>';
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
       + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name) + statusBadge
         + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t3);padding:1px 5px;background:var(--s2);border-radius:4px;vertical-align:middle" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
+        + _riskHTML
         + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
     + '</div>';
@@ -8642,4 +8649,63 @@ window._cariOtoKod = function() {
     inp.focus();
     window.toast?.('Kod üretildi: ' + yeni, 'ok');
   }
+};
+
+/* CARI-EXCEL-ZENGIN-001: Tüm cari listesi 16-kolon zengin Excel export */
+window._exportCariZengin = function() {
+  if (typeof XLSX === 'undefined') { window.toast?.('XLSX yüklenemedi','err'); return; }
+  var cariList = (typeof loadCari==='function' ? loadCari() : []).filter(function(c){ return !c.isDeleted; });
+  if (!cariList.length) { window.toast?.('Cari yok','warn'); return; }
+  var stList = typeof loadST==='function' ? loadST() : (typeof loadSatisTeklifleri==='function' ? loadSatisTeklifleri() : []);
+  var rows = [['Kod','Firma Adı','Tip','VKN','Ülke','Şehir','Telefon','E-posta','Para','Kredi Limiti','Ödeme Vadesi','IBAN','Banka','Teklif Sayısı','Kabul','Durum']];
+  cariList.forEach(function(c){
+    var cST = stList.filter(function(t){ return !t.isDeleted && (t.customerName===c.name||t.musteri===c.name); });
+    var kabul = cST.filter(function(t){ return t.status==='kabul'; }).length;
+    rows.push([
+      c.kod||'—', c.name||'—', c.type||c.tip||'—', c.vkn||c.taxNo||'—',
+      c.country||'—', c.city||'—', c.phone||c.cep||'—', c.email||c.mail||'—',
+      c.currency||'—', c.limitAmount||c.creditLimit||'', c.paymentTerm||'',
+      c.iban||'—', c.bankName||'—', cST.length, kabul, c.cariType||c.onayDurum||'—'
+    ]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:28},{wch:10},{wch:12},{wch:10},{wch:12},{wch:14},{wch:22},{wch:6},{wch:12},{wch:12},{wch:28},{wch:16},{wch:10},{wch:8},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Cari Listesi');
+  XLSX.writeFile(wb, 'cari-zengin-' + new Date().toISOString().slice(0,10) + '.xlsx');
+  window.toast?.('Excel indirildi ✓ (' + cariList.length + ' cari)', 'ok');
+};
+
+/* CARI-RISK-SKOR-001: Otomatik müşteri risk/güven skoru (0-100)
+   - Onay durumu: potansiyel -10, aktif +10, onaylı +20 (başlangıç 50)
+   - Teklif kabul oranı: -15 ile +15 arası (0.5 baseline)
+   - Feedback puanı: -20 ile +20 arası (3.0 baseline, 1-5 ölçek)
+   Sonuç: 0-100 arası clamp */
+window._cariRiskSkor = function(c) {
+  if (!c) return 0;
+  var skor = 50; // başlangıç nötr
+  // Onay durumu
+  if (c.cariType === 'onayli') skor += 20;
+  else if (c.cariType === 'aktif') skor += 10;
+  else skor -= 10; // potansiyel
+  // Teklif kabul oranı
+  try {
+    var stList = typeof loadST === 'function' ? loadST() : (typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : []);
+    var cST = stList.filter(function(t) { return !t.isDeleted && (t.customerName === c.name || t.musteri === c.name); });
+    if (cST.length) {
+      var kabul = cST.filter(function(t) { return t.status === 'kabul'; }).length;
+      var oran = kabul / cST.length;
+      skor += Math.round((oran - 0.5) * 30); // -15 ile +15 arası
+    }
+  } catch (e) {}
+  // Feedback puanı
+  try {
+    var fb = JSON.parse(localStorage.getItem('ak_musteri_feedback_v1') || '[]');
+    var cFb = fb.filter(function(f) { return String(f.cariId) === String(c.id) || f.cariId === c.name; });
+    if (cFb.length) {
+      var ort = cFb.reduce(function(s, f) { return s + parseFloat(f.puan || 0); }, 0) / cFb.length;
+      skor += Math.round((ort - 3) * 10); // -20 ile +20 arası
+    }
+  } catch (e) {}
+  return Math.max(0, Math.min(100, skor));
 };
