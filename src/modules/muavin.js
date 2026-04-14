@@ -247,7 +247,38 @@ function _mvKarsilastirmaIcerikHTML(kpi, meta, donem) {
     h2 += '</div>';
     return h2;
   }
-  var h = '<div style="display:flex;height:100%;gap:0">';
+  /* MUAVIN-FARK-BANNER-001: Karşılaştırma sonucu büyük renkli fark özeti banner */
+  var h = '';
+  var eslesen = window._mvEslesmeSonucu;
+  if (eslesen) {
+    var farkSay = (eslesen.farkVar||[]).length + (eslesen.sadeceMuhasebe||[]).length + (eslesen.sadeceBaran||[]).length;
+    var eslesenSay = (eslesen.eslesen||[]).length;
+    var toplamSay = farkSay + eslesenSay;
+    var farkTL = (eslesen.farkVar||[]).reduce(function(s,r){ return s+Math.abs((r.muhasebeci?r.muhasebeci.tutarTL:0)-(r.sirket?r.sirket.tutarTL:0)); }, 0);
+    var oran = toplamSay ? Math.round(eslesenSay/toplamSay*100) : 0;
+    var bannerRenk = farkSay===0 ? '#EAF3DE' : farkSay<=3 ? '#FAEEDA' : '#FCEBEB';
+    var textRenk = farkSay===0 ? '#3B6D11' : farkSay<=3 ? '#854F0B' : '#A32D2D';
+    h += '<div style="margin:12px;padding:14px 18px;background:'+bannerRenk+';border-radius:8px;border:0.5px solid '+textRenk+'40">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + '<div>'
+      + '<div style="font-size:13px;font-weight:600;color:'+textRenk+'">'
+      + (farkSay===0 ? 'Tam mutabakat — tüm işlemler eşleşiyor' : farkSay+' fark tespit edildi')
+      + '</div>'
+      + '<div style="font-size:11px;color:'+textRenk+';margin-top:3px;opacity:.8">'
+      + eslesenSay+'/'+toplamSay+' işlem eşleşti (%'+oran+')'
+      + (farkTL>0 ? ' · '+Math.round(farkTL).toLocaleString('tr-TR')+' ₺ açıklanamayan fark' : '')
+      + '</div>'
+      + '</div>'
+      + '<div style="font-size:28px;font-weight:700;color:'+textRenk+'">%'+oran+'</div>'
+      + '</div>'
+      + (farkSay===0 ? '' : '<div style="font-size:10px;color:'+textRenk+';margin-top:8px;display:flex;gap:16px">'
+      + '<span>Sadece Muhasebeci: <strong>'+(eslesen.sadeceMuhasebe||[]).length+'</strong></span>'
+      + '<span>Sadece Baran: <strong>'+(eslesen.sadeceBaran||[]).length+'</strong></span>'
+      + '<span>Tutar Farkı: <strong>'+(eslesen.farkVar||[]).length+'</strong></span>'
+      + '</div>')
+      + '</div>';
+  }
+  h += '<div style="display:flex;height:100%;gap:0">';
   /* Sol: Firma listesi */
   h += '<div style="width:240px;flex-shrink:0;border-right:0.5px solid var(--b);overflow-y:auto">';
   h += '<div style="padding:8px 12px;font-size:9px;font-weight:500;color:var(--t3);border-bottom:0.5px solid var(--b)">' + firmalar.length + ' F\u0130RMA</div>';
