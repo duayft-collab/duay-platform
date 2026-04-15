@@ -181,6 +181,8 @@ window._mvDosyaOku = function(inp, taraf) {
         _meta[_don].muhasebeci.firmaAdi = firmaAdi;
       } else if (taraf === 'baran' && typeof window._mvNormalize?.sirkettenNormalize === 'function') {
         _meta[_don].baran = _meta[_don].baran || {};
+        /* MUAVIN-BARAN-FIRMAADI-001: firmaAdi her Baran satırına eklenir — C kolonu için */
+        islemler.forEach(function(r){ r._firmaAdi = firmaAdi; });
         _meta[_don].baran.normalArr = window._mvNormalize.sirkettenNormalize(islemler, null);
         _meta[_don].baran.firmaAdi = firmaAdi;
       }
@@ -739,7 +741,8 @@ window._mvNormalize = {
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
       /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
       /* MUAVIN-CARIAD-NORMALIZE-001: firmaAdiAyikla öncelikli + s.firmaAdi/firma fallback */
-      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama) || s.firmaAdi || s.firma || '', cariAd: self.firmaAdiAyikla(s.aciklama) || s.firmaAdi || s.firma || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-BARAN-FIRMAADI-001: s._firmaAdi fallback chain'e eklendi (Baran Excel C kolonu) */
+      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama) || s._firmaAdi || s.firmaAdi || s.firma || '', cariAd: self.firmaAdiAyikla(s.aciklama) || s._firmaAdi || s.firmaAdi || s.firma || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
     });
   },
   firmaAdiAyikla: function(aciklama) {
