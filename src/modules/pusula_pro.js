@@ -890,7 +890,21 @@ window._ppYeniGorev = function() {
     +'<button onclick="event.stopPropagation();window._ppGorevKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
     +'</div></div></div>';
   document.body.appendChild(mo);
-  setTimeout(function(){document.getElementById('ppf-baslik')?.focus();},100);
+  setTimeout(function() {
+    document.getElementById('ppf-baslik')?.focus();
+    /* PUSULA-GOREV-GIZLILIK-FORM-EDIT-001: düzenleme modunda paylasilanlar checkbox restore */
+    if (window._ppDuzenleHedef) {
+      try {
+        var _mev = _ppLoad().find(function(t) { return String(t.id) === String(window._ppDuzenleHedef); });
+        if (_mev && Array.isArray(_mev.paylasilanlar) && _mev.paylasilanlar.length) {
+          _mev.paylasilanlar.forEach(function(uid) {
+            var chk = document.querySelector('.pp-paylasim-chk[value="' + String(uid).replace(/"/g, '\\"') + '"]');
+            if (chk) chk.checked = true;
+          });
+        }
+      } catch (e) { console.warn('[PUSULA-GIZLILIK-EDIT]', e.message); }
+    }
+  }, 100);
   var jobSel = document.getElementById('ppf-job_id');
   if(jobSel) jobSel.onchange = function(e){
     e.stopPropagation();
