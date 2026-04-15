@@ -184,11 +184,20 @@ window._mvDosyaOku = function(inp, taraf) {
         _meta[_don].muhasebeci.firmaAdi = firmaAdi;
       } else if (taraf === 'baran' && typeof window._mvNormalize?.sirkettenNormalize === 'function') {
         _meta[_don].baran = _meta[_don].baran || {};
-        /* MUAVIN-BARAN-FIRMAADI-INPUT-ZORUNLU-001: regex yok, sadece input — boşsa yüklemeyi iptal et */
-        var firmaAdi = document.getElementById('mv-firma-adi')?.value?.trim() || '';
+        /* MUAVIN-BARAN-FIRMAADI-PROMPT-001: input → LS → prompt fallback chain, bir kez yazılır */
+        var _inputEl = document.getElementById('mv-firma-adi');
+        var firmaAdi = (_inputEl?.value||'').trim();
         if (!firmaAdi) {
-          window.toast?.('Firma Adı alanını doldurun — Baran ekstresi yüklenmedi', 'warn');
-          return;
+          firmaAdi = (localStorage.getItem('ak_mv_son_firma')||'').trim();
+          if (!firmaAdi) {
+            firmaAdi = (window.prompt('Bu Baran ekstresinin cari adını yazın:','') || '').trim();
+          }
+          if (!firmaAdi) {
+            window.toast?.('Firma Adı zorunlu','warn');
+            return;
+          }
+          localStorage.setItem('ak_mv_son_firma', firmaAdi);
+          if (_inputEl) _inputEl.value = firmaAdi;
         }
         islemler.forEach(function(r){ r._firmaAdi = firmaAdi; });
         _meta[_don].baran.normalArr = window._mvNormalize.sirkettenNormalize(islemler, null);
