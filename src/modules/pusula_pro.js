@@ -116,11 +116,22 @@ window._ppRender = function() {
     + '<button onclick="event.stopPropagation();window._ppExport?.()" style="font-size:9px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Yedek Al</button>'
     + '<button onclick="event.stopPropagation();window._ppYedekPaneli()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);flex-shrink:0">↓ Yedek</button>'
     + '</div></div>'
-    + '<div id="pp-frog-bar" style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:#FCEBEB;border-bottom:0.5px solid #F7C1C1;flex-shrink:0">'
-    + '<div style="font-size:8px;font-weight:500;color:#A32D2D;letter-spacing:.08em;min-width:90px">BUGÜNÜN FROGU</div>'
-    + '<div id="pp-frog-txt" style="font-size:13px;font-weight:500;color:#501313;flex:1">Henüz belirlenmedi — görev ekle</div>'
-    + '<button onclick="event.stopPropagation();window._ppFrogBasla?.()" style="font-size:10px;padding:5px 14px;background:#A32D2D;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:500">Başla →</button>'
-    + '</div>'
+    /* PUSULA-FROG-001: frog bar — sadece frog varsa kırmızı, yoksa sade collapse */
+    + (function(){
+        var _hasFrog = !!(window._ppAktifFrog && (window._ppAktifFrog.baslik || window._ppAktifFrog.title));
+        if (_hasFrog) {
+          var _fTxt = window._ppEsc ? window._ppEsc(window._ppAktifFrog.baslik || window._ppAktifFrog.title || '') : (window._ppAktifFrog.baslik || window._ppAktifFrog.title || '');
+          return '<div id="pp-frog-bar" style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:#FCEBEB;border-bottom:0.5px solid #F7C1C1;flex-shrink:0">'
+            + '<div style="font-size:8px;font-weight:500;color:#A32D2D;letter-spacing:.08em;min-width:90px">BUGÜNÜN FROGU</div>'
+            + '<div id="pp-frog-txt" style="font-size:13px;font-weight:500;color:#501313;flex:1">' + _fTxt + '</div>'
+            + '<button onclick="event.stopPropagation();window._ppFrogBasla?.()" style="font-size:10px;padding:5px 14px;background:#A32D2D;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:500">Başla →</button>'
+            + '</div>';
+        }
+        return '<div id="pp-frog-bar" style="display:flex;align-items:center;gap:6px;padding:5px 16px;border-bottom:0.5px solid var(--b);flex-shrink:0;opacity:0.55">'
+          + '<span style="font-size:11px">🐸</span>'
+          + '<div id="pp-frog-txt" style="font-size:10px;color:var(--t3);flex:1">Frog belirlenmedi — kritik görev yoksa otomatik atanır</div>'
+          + '</div>';
+      })()
     + '<div id="pp-body" style="flex:1;overflow:hidden;display:flex"></div>'
     + '</div>'
     + '<div id="pp-not-panel" style="flex-shrink:0">' + window._ppNotPanelHTML() + '</div>'
@@ -185,11 +196,17 @@ window._ppModRender = function() {
       var re = new RegExp('(' + String(window._ppSearchQ).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
       return _ppEsc(s).replace(re, '<mark style="background:#FEF08A;border-radius:2px">$1</mark>');
     };
-    /* PUSULA-FILTRE-BAR-001: durum + öncelik DOM dropdown filtreleri */
-    var _filtreDurum = document.getElementById('pp-filtre-durum')?.value || '';
-    var _filtreOncelik = document.getElementById('pp-filtre-oncelik')?.value || '';
-    if (_filtreDurum) tasks = tasks.filter(function(t){ return t.durum === _filtreDurum; });
-    if (_filtreOncelik) tasks = tasks.filter(function(t){ return t.oncelik === _filtreOncelik; });
+    /* PUSULA-GECIK-001 + PUSULA-PILL-001: filtre state global değişkenlerden okunur */
+    var _filtreDurum   = window._ppFiltreDurum   || '';
+    var _filtreOncelik = window._ppFiltreOncelik || '';
+    var _gecikFiltre   = window._ppGecikFiltre   || false;
+    if (_gecikFiltre) {
+      var _bugunF = _ppToday();
+      tasks = tasks.filter(function(t){ return t.bitTarih && t.bitTarih < _bugunF && t.durum !== 'tamamlandi'; });
+    } else {
+      if (_filtreDurum)   tasks = tasks.filter(function(t){ return t.durum    === _filtreDurum; });
+      if (_filtreOncelik) tasks = tasks.filter(function(t){ return t.oncelik  === _filtreOncelik; });
+    }
     /* PUSULA-KISI-FILTRE-001: sorumlu + gözlemci bazlı kullanıcı filtresi */
     var _filtreKisi = document.getElementById('pp-filtre-kisi')?.value || '';
     var _benimUid = window.Auth?.getCU?.()?.uid || window.CU?.()?.uid || '';
@@ -255,6 +272,21 @@ window._ppModRender = function() {
         var agSay = t.altGorevSay||0; var agTam = t.altGorevTam||0;
         var jobId = t.job_id||t.jobId||'';
         var tarihGec = t.bitTarih && t.bitTarih < _ppToday();
+        /* PUSULA-TARIH-001: deadline renk skalası */
+        var _ppTarihBadge = function(bitTarih) {
+          if (!bitTarih) return { renk: 'var(--t3)', etiket: '—', bold: false };
+          var _bugunD = _ppToday();
+          var _yarin  = new Date(); _yarin.setDate(_yarin.getDate() + 1);
+          var _yarinS = _yarin.toISOString().slice(0,10);
+          var _haftaS = new Date(); _haftaS.setDate(_haftaS.getDate() + 7);
+          var _haftaStr = _haftaS.toISOString().slice(0,10);
+          if (bitTarih < _bugunD)  return { renk: '#A32D2D', etiket: bitTarih.slice(5), bold: true };
+          if (bitTarih === _bugunD) return { renk: '#E24B4A', etiket: 'Bugün', bold: true };
+          if (bitTarih === _yarinS) return { renk: '#BA7517', etiket: 'Yarın', bold: true };
+          if (bitTarih <= _haftaStr) return { renk: '#639922', etiket: bitTarih.slice(5), bold: false };
+          return { renk: 'var(--t3)', etiket: bitTarih.slice(5), bold: false };
+        };
+        var _tbadge = _ppTarihBadge(t.bitTarih);
         h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
         h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
@@ -286,7 +318,7 @@ window._ppModRender = function() {
         /* PP-SORUMLU-DEGISTIR-001: sorumlu yanında ↻ buton (kullanıcı listesinden seçim) */
         h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:9px;color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span><button onclick="event.stopPropagation();window._ppSorumluDegistir(\''+t.id+'\')" title="Sorumluyu değiştir" style="font-size:8px;padding:1px 4px;border:0.5px solid var(--b);border-radius:3px;cursor:pointer;background:transparent;color:var(--t3);font-family:inherit">↻</button></div>';
         h2 += '<div style="font-size:9px;color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+(t.createdAt?'<div style="font-size:8px;color:var(--t3);margin-top:1px" title="Oluşturulma: '+_ppEsc(t.createdAt)+'">🕐 '+(function(ts){try{var d=new Date((ts||'').replace(' ','T'));return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.createdAt)+'</div>':'')+'</div>';
-        h2 += '<div style="font-size:9px;color:'+(tarihGec?'#A32D2D':'var(--t3)')+(tarihGec?';font-weight:500':'')+'">'+(t.bitTarih?t.bitTarih.slice(0,10):'—')+'</div>';
+        h2 += '<div style="font-size:9px;color:'+_tbadge.renk+(';font-weight:')+(_tbadge.bold?'600':'400')+'">'+(_tbadge.etiket)+'</div>';
         h2 += '<span style="font-size:8px;padding:2px 5px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span>';
         // PUSULA-UX-BUNDLE-003 #2: inline öncelik değiştirme dropdown
         h2 += '<select onchange="event.stopPropagation();window._ppOncelikDegistir?.(\''+String(t.id)+'\',this.value)" onclick="event.stopPropagation()" style="font-size:9px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;margin-left:2px" title="Önceliği değiştir">'
@@ -354,28 +386,35 @@ window._ppModRender = function() {
         + '<option value="durum"'  +(_ppSK==='durum'?' selected':'')+  '>Duruma Göre</option>'
         + '<option value="alfabe"' +(_ppSK==='alfabe'?' selected':'')+ '>A-Z</option>'
       + '</select>'
-      // PUSULA-FILTRE-BAR-001: durum + öncelik filtre dropdownları + temizle butonu
-      + '<select id="pp-filtre-durum" onchange="event.stopPropagation();window._ppModRender?.()" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t2);font-family:inherit">'
-        + '<option value="">Tüm Durumlar</option>'
-        + '<option value="plan">Plan</option>'
-        + '<option value="devam">Devam Ediyor</option>'
-        + '<option value="bekliyor">Bekliyor</option>'
-        + '<option value="tamamlandi">Tamamlandı</option>'
-      + '</select>'
-      + '<select id="pp-filtre-oncelik" onchange="event.stopPropagation();window._ppModRender?.()" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t2);font-family:inherit">'
-        + '<option value="">Tüm Öncelikler</option>'
-        + '<option value="kritik">🔴 Kritik</option>'
-        + '<option value="yuksek">🟡 Yüksek</option>'
-        + '<option value="normal">🟢 Normal</option>'
-        + '<option value="dusuk">⚪ Düşük</option>'
-      + '</select>'
+      /* PUSULA-PILL-001: durum + öncelik pill seçici (global state: _ppFiltreDurum / _ppFiltreOncelik) */
+      + (function(){
+          var _fd = window._ppFiltreDurum || '';
+          var _fo = window._ppFiltreOncelik || '';
+          var _ps = function(tip, val, lbl) {
+            var aktif = (tip==='d' ? _fd : _fo) === val;
+            var _fn = tip==='d' ? '_ppFiltreDurum' : '_ppFiltreOncelik';
+            return '<button data-pp-pill="'+tip+'" data-val="'+val+'" onclick="event.stopPropagation();window._ppGecikFiltre=false;window.'+_fn+'=(window.'+_fn+'===\''+val+'\' ? \'\' : \''+val+'\');window._ppModRender?.()" style="font-size:10px;padding:3px 9px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:'+(aktif?'var(--t)':'transparent')+';color:'+(aktif?'var(--sf)':'var(--t2)')+'">'+lbl+'</button>';
+          };
+          return '<div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap">'
+            + _ps('d','','Tümü') + _ps('d','devam','Devam') + _ps('d','plan','Plan') + _ps('d','bekliyor','Bekliyor') + _ps('d','tamamlandi','Tamam')
+            + '<span style="width:1px;height:14px;background:var(--b);margin:0 3px"></span>'
+            + _ps('o','','Tümü') + _ps('o','kritik','🔴') + _ps('o','yuksek','🟡') + _ps('o','normal','🟢') + _ps('o','dusuk','⚪')
+            + '</div>';
+        })()
       // PUSULA-KISI-FILTRE-001: kullanıcı filtresi (benim + tüm aktif kullanıcılar)
       + '<select id="pp-filtre-kisi" onchange="event.stopPropagation();window._ppModRender?.()" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t2);font-family:inherit">'
         + '<option value="">Tüm Kişiler</option>'
         + '<option value="__benim__">👤 Benim Görevlerim</option>'
         + (typeof window.loadUsers === 'function' ? loadUsers().filter(function(u){ return !u.isDeleted; }).map(function(u){ return '<option value="'+_ppEsc(u.uid||u.id)+'">'+_ppEsc(u.name||u.displayName||'')+'</option>'; }).join('') : '')
       + '</select>'
-      + '<button onclick="event.stopPropagation();document.getElementById(\'pp-filtre-durum\').value=\'\';document.getElementById(\'pp-filtre-oncelik\').value=\'\';var _k=document.getElementById(\'pp-filtre-kisi\');if(_k)_k.value=\'\';window._ppModRender?.()" style="font-size:10px;padding:4px 9px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">✕ Temizle</button>'
+      + '<button onclick="event.stopPropagation();window._ppFiltreDurum=\'\';window._ppFiltreOncelik=\'\';window._ppGecikFiltre=false;var _k=document.getElementById(\'pp-filtre-kisi\');if(_k)_k.value=\'\';window._ppModRender?.()" style="font-size:10px;padding:4px 9px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">✕ Temizle</button>'
+      + '</div>'
+      /* PUSULA-HIZLI-001: liste üstünde hızlı ekle satırı */
+      + '<div style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">'
+      + '<input id="pp-quick-top" placeholder="＋ Hızlı görev ekle — Enter..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\'){window._ppHizliEkle(this);}" style="flex:1;font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);font-family:inherit;color:var(--t);outline:none">'
+      + '<select id="pp-quick-oncelik" onclick="event.stopPropagation()" onchange="event.stopPropagation()" style="font-size:10px;padding:5px 7px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t2);font-family:inherit">'
+      + '<option value="normal">🟢 Normal</option><option value="yuksek">🟡 Yüksek</option><option value="kritik">🔴 Kritik</option><option value="dusuk">⚪ Düşük</option>'
+      + '</select>'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
       + '<div style="padding:10px 14px 0"><input id="pp-calisma-ara" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppCalismaFiltre(this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;margin-bottom:10px"></div>'
@@ -399,6 +438,16 @@ window._ppModRender = function() {
             + '<button onclick="event.stopPropagation();window._ppTopluDurum()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Durum Değiştir</button>'
             + '<button onclick="event.stopPropagation();window._ppTopluSil()" style="font-size:10px;padding:3px 10px;border:0.5px solid #A32D2D;border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:#A32D2D">Sil</button>'
             + '<button onclick="event.stopPropagation();window._ppSeciliGorevler={};window._ppModRender()" style="font-size:10px;padding:3px 8px;border:none;border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕ İptal</button>'
+            + '</div>';
+        })()
+      + (function(){
+          /* PUSULA-GECIK-001: gecikmiş görev banner — bugün öncesi bitTarih, tamamlanmamış */
+          var _bugun = _ppToday();
+          var _gecikSayisi = tasks.filter(function(t){ return t.bitTarih && t.bitTarih < _bugun && t.durum !== 'tamamlandi'; }).length;
+          if (_gecikSayisi === 0) return '';
+          return '<div id="pp-gecik-banner" style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:#FCEBEB;border-bottom:0.5px solid #F7C1C1;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();window._ppFiltreDurum=\'\';window._ppFiltreOncelik=\'\';document.querySelectorAll(\'[data-pp-filtre-durum]\').forEach(function(b){b.style.background=b.dataset.val===\'gecikti\'?\'var(--t)\':\' transparent\';b.style.color=b.dataset.val===\'gecikti\'?\'var(--sf)\':\' var(--t2)\';});window._ppGecikFiltre=true;window._ppModRender?.();">'
+            + '<span style="font-size:10px;font-weight:500;color:#A32D2D">⚠ ' + _gecikSayisi + ' görev gecikmiş</span>'
+            + '<span style="font-size:10px;color:#A32D2D;margin-left:auto">Göster →</span>'
             + '</div>';
         })()
       + _grup('KRİTİK', 'background:#FCEBEB;color:#A32D2D', kritik)
@@ -742,7 +791,10 @@ window._ppSkorGuncelle = function() {
 /* ── PP-003: Çalışma Modu Yardımcıları ──────────────────────── */
 window._ppHizliEkle = function(inp) {
   if (!inp || !inp.value.trim()) return;
-  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: 'normal', durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _ppCu()?.displayName || _ppCu()?.email || '' };
+  /* PUSULA-HIZLI-001: öncelik seçicisini oku (yoksa normal) */
+  var _oncelikSel = document.getElementById('pp-quick-oncelik');
+  var _oncelik = (_oncelikSel && _oncelikSel.value) ? _oncelikSel.value : 'normal';
+  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _ppCu()?.displayName || _ppCu()?.email || '' };
   var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
   inp.value = '';
   window.toast?.('Görev eklendi', 'ok');
