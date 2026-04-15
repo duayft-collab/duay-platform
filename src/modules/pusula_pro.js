@@ -45,6 +45,40 @@ var _ppId = function() { return typeof window.generateId==='function' ? window.g
 var _ppCu = function() { return window.Auth?.getCU?.() || window.CU?.(); };
 var _ppIsAdmin = function() { var r=_ppCu()?.role; return r==='admin'||r==='manager'; };
 
+/* PUSULA-FORM-V2-001: Öncelik pill + Etiket helper */
+window._ppOncelikSec = function(btn, val) {
+  var renk = {kritik:'#A32D2D',yuksek:'#BA7517',normal:'#185FA5',dusuk:''};
+  document.querySelectorAll('#ppf-oncelik-pills button').forEach(function(b) {
+    var bv = b.dataset.val;
+    var r = renk[bv] || 'var(--b)';
+    b.style.background = 'transparent'; b.style.color = r; b.style.borderColor = r;
+  });
+  var r2 = renk[val] || 'var(--b)';
+  btn.style.background = r2 || 'var(--s2)'; btn.style.color = r2 ? '#fff' : 'var(--t)';
+  var inp = document.getElementById('ppf-oncelik');
+  if (inp) inp.value = val;
+};
+
+/* PUSULA-FORM-V2-001: Etiket ekle/kaldır */
+window._ppEtiketEkle = function() {
+  var inp = document.getElementById('ppf-etiket-inp');
+  if (!inp || !inp.value.trim()) return;
+  var list = document.getElementById('ppf-etiket-list');
+  if (!list) return;
+  var val = inp.value.trim();
+  var tag = document.createElement('span');
+  tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:12px;background:var(--s2);border:0.5px solid var(--b);color:var(--t)';
+  tag.dataset.val = val;
+  tag.innerHTML = _ppEsc(val) + '<span onclick="event.stopPropagation();this.parentElement.remove()" style="cursor:pointer;color:var(--t3);font-size:12px;line-height:1">×</span>';
+  list.appendChild(tag);
+  inp.value = '';
+};
+window._ppEtiketleriAl = function() {
+  var list = document.getElementById('ppf-etiket-list');
+  if (!list) return [];
+  return Array.from(list.querySelectorAll('[data-val]')).map(function(t){ return t.dataset.val; });
+};
+
 /**
  * PUSULA-IZOLASYON-001: Merkezi görev izolasyon filtresi.
  * Admin/manager: tüm görevleri görür.
@@ -860,7 +894,14 @@ window._ppYeniGorev = function() {
     +_sel('departman','DEPARTMAN','<option>Satış</option><option>Satınalma</option><option>Operasyon</option><option>Finans</option><option>İK</option>')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
-    +_sel('oncelik','ÖNCELİK','<option value="kritik">Kritik</option><option value="yuksek">Yüksek</option><option value="normal" selected>Normal</option><option value="dusuk">Düşük</option>','var(--s2)')
+    /* PUSULA-FORM-V2-001: öncelik görsel pill seçici */
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:7px;font-weight:500">ÖNCELİK</div>'
+    +'<div id="ppf-oncelik-pills" style="display:flex;gap:5px">'
+    +'<button type="button" data-val="kritik" onclick="event.stopPropagation();window._ppOncelikSec(this,\'kritik\')" style="flex:1;padding:6px 0;border-radius:6px;border:1.5px solid #A32D2D;background:transparent;color:#A32D2D;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Kritik</button>'
+    +'<button type="button" data-val="yuksek" onclick="event.stopPropagation();window._ppOncelikSec(this,\'yuksek\')" style="flex:1;padding:6px 0;border-radius:6px;border:1.5px solid #BA7517;background:transparent;color:#BA7517;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Yüksek</button>'
+    +'<button type="button" data-val="normal" onclick="event.stopPropagation();window._ppOncelikSec(this,\'normal\')" style="flex:1;padding:6px 0;border-radius:6px;border:1.5px solid #185FA5;background:#185FA5;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Normal</button>'
+    +'<button type="button" data-val="dusuk" onclick="event.stopPropagation();window._ppOncelikSec(this,\'dusuk\')" style="flex:1;padding:6px 0;border-radius:6px;border:1.5px solid var(--b);background:transparent;color:var(--t2);font-size:11px;cursor:pointer;font-family:inherit">Düşük</button>'
+    +'</div><input type="hidden" id="ppf-oncelik" value="normal"></div>'
     +_sel('durum','DURUM','<option value="plan" selected>Plan</option><option value="devam">Devam</option><option value="bekliyor">Bekliyor</option>')
     +_sel('kpi','KPI BAĞLA',kpiler.map(function(k){return '<option>'+k+'</option>';}).join(''))
     +'</div>'
@@ -906,6 +947,10 @@ window._ppYeniGorev = function() {
     +'</div>'
     +'<div id="ppf-aciklama" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:80px;padding:10px;border:0.5px solid var(--b);border-radius:0 0 6px 6px;background:var(--s2);font-size:12px;color:var(--t);line-height:1.6;outline:none;font-family:inherit"></div>'
     +'</div>'
+    /* PUSULA-FORM-V2-001: Etiket sistemi */
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:7px;font-weight:500">ETİKETLER</div>'
+    +'<div id="ppf-etiket-list" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>'
+    +'<div style="display:flex;gap:5px"><input id="ppf-etiket-inp" placeholder="Etiket ekle, Enter ile onayla..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\'){event.preventDefault();window._ppEtiketEkle()}" style="flex:1;font-size:11px;padding:5px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)"><button onclick="event.stopPropagation();window._ppEtiketEkle()" style="font-size:10px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">Ekle</button></div></div>'
     +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">ALT GÖREVLER</div>'
     +'<div id="ppf-altGorevList" style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;background:var(--s2)"></div>'
     +'<div style="display:flex;gap:6px;margin-top:6px"><input id="ppf-altYeni" placeholder="+ Alt görev ekle..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\'){event.preventDefault();window._ppAltGorevEkle()}" style="flex:1;font-size:12px;padding:5px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
@@ -1068,6 +1113,8 @@ window._ppGorevKaydet = function() {
     paylasilanlar: (window._ppPaylasimSecili || []).slice(),
     /* PUSULA-GOREV-GIZLILIK-MANTIK-FIX-001: sahip field — filter için gerekli */
     olusturanId: _ppCu()?.uid || '',
+    /* PUSULA-FORM-V2-001: etiketler kaydedildi */
+    etiketler: (typeof window._ppEtiketleriAl === 'function') ? window._ppEtiketleriAl() : [],
     enerji: document.getElementById('ppf-enerji')?.value||'',
     aciklama: document.getElementById('ppf-aciklama')?.innerHTML||'',
     altGorevler: window._ppAltGorevler||[],
