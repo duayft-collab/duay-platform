@@ -25,7 +25,8 @@
 var PP_KEY        = 'ak_pusula_pro_v1';
 var PP_TASK_KEY   = 'ak_tk2';
 var PP_MOD        = 'akis';
-var PP_MODS       = ['akis','calisma','takvim','odak','degerlendirme','ceo'];
+/* PUSULA-CEO-REMOVE-001: CEO sekmesi kaldırıldı */
+var PP_MODS       = ['akis','calisma','takvim','odak','degerlendirme'];
 // PUSULA-TOPLU-001: global toplu seçim state
 window._ppSeciliGorevler = window._ppSeciliGorevler || {};
 
@@ -60,9 +61,13 @@ var _ppIzolasyonFiltre = function(tasks) {
     || '';
   if (!_uid) return [];
   return tasks.filter(function(t) {
+    /* PUSULA-GORUNUM-FIX-001: sahip, sorumlu, gözlemci veya paylaşılan */
     var _sahip = t.olusturanId || t.createdBy || '';
-    if (!_sahip) return false;
     if (_sahip === _uid) return true;
+    var sorumluArr = Array.isArray(t.sorumlu) ? t.sorumlu : (t.sorumlu ? [t.sorumlu] : []);
+    if (sorumluArr.some(function(s){ return (s && (s.uid || s)) === _uid; })) return true;
+    var gozlemciArr = Array.isArray(t.gozlemci) ? t.gozlemci : (t.gozlemci ? [t.gozlemci] : []);
+    if (gozlemciArr.some(function(g){ return (g && (g.uid || g)) === _uid; })) return true;
     var paylasilan = Array.isArray(t.paylasilanlar) ? t.paylasilanlar : [];
     return paylasilan.indexOf(_uid) !== -1;
   });
@@ -121,7 +126,7 @@ window._ppRender = function() {
   if (panel.dataset.injected) { window._ppModRender(); return; }
   panel.dataset.injected = '1';
   var _modBtns = PP_MODS.map(function(m) {
-    var lbl = {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[m];
+    var lbl = {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme'}[m];
     // PUSULA-SEKME-FIX-001: inline onclick kaldırıldı, aşağıda addEventListener ile bağlanır (Safari propagation fix)
     return '<button id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
   }).join('');
@@ -618,44 +623,13 @@ window._ppModRender = function() {
     setTimeout(function() { window._ppRevYukle?.(); }, 50);
     return;
   }
-  if (mod === 'ceo') {
-    var tasks = _ppLoad().filter(function(t){ return !t.isDeleted && t.durum!=='tamamlandi'; });
-    var kritik = tasks.filter(function(t){ return t.oncelik==='kritik'; });
-    var depMap = {};
-    tasks.forEach(function(t){ var d=t.departman||'Diğer'; if(!depMap[d]) depMap[d]=0; depMap[d]++; });
-    var takUyari = window._ppTakvimHatirlatmaKontrol?.() || [];
-    var skor = window._ppSkorOku?.() || {bugun:0,hafta:0};
-    body.innerHTML = '<div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px">'
-      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.1em">ŞİRKET NABZI</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
-      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:5px">AKTİF GÖREV</div><div style="font-size:26px;font-weight:500">'+tasks.length+'</div></div>'
-      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:#FCEBEB"><div style="font-size:8px;color:#A32D2D;font-weight:500;letter-spacing:.07em;margin-bottom:5px">KRİTİK</div><div style="font-size:26px;font-weight:500;color:#A32D2D">'+kritik.length+'</div></div>'
-      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:5px">TAKVİM UYARI</div><div style="font-size:26px;font-weight:500;color:'+(takUyari.length>0?'#854F0B':'var(--t)')+'">'+takUyari.length+'</div></div>'
-      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px;background:var(--sf)"><div style="font-size:8px;color:var(--t3);font-weight:500;letter-spacing:.07em;margin-bottom:5px">HAFTA SKORU</div><div style="font-size:26px;font-weight:500;color:#1D9E75">'+skor.hafta+'</div></div>'
-      +'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
-      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px;background:var(--sf)">'
-      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">DEPARTMAN BAZLI</div>'
-      +Object.keys(depMap).map(function(dep){ var sayi=depMap[dep]; var pct=tasks.length?Math.round(sayi/tasks.length*100):0; return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>'+_ppEsc(dep)+'</span><span style="color:var(--t3)">'+sayi+' görev</span></div><div style="height:3px;background:var(--b);border-radius:2px"><div style="height:3px;background:var(--t);border-radius:2px;width:'+pct+'%"></div></div></div>'; }).join('')
-      +'</div>'
-      +'<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px;background:var(--sf)">'
-      +'<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:10px">KRİTİK BEKLEYENLER</div>'
-      +(kritik.length ? kritik.slice(0,6).map(function(t){ return '<div style="padding:6px 0;border-bottom:0.5px solid var(--b);font-size:11px;display:flex;align-items:center;gap:8px"><div style="width:5px;height:5px;border-radius:50%;background:#A32D2D;flex-shrink:0"></div><span style="flex:1">'+_ppEsc(t.baslik||t.title||'')+'</span><span style="font-size:9px;color:var(--t3)">'+(t.bitTarih||'—')+'</span></div>'; }).join('') : '<div style="font-size:12px;color:var(--t3);padding:10px 0">Kritik görev yok</div>')
-      +'</div></div>'
-      +(takUyari.length ? '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px;background:#FAEEDA">'
-        +'<div style="font-size:9px;font-weight:500;color:#854F0B;letter-spacing:.08em;margin-bottom:10px">TAKVİM UYARILARI</div>'
-        +takUyari.map(function(u){ return '<div style="padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,.06);font-size:11px;display:flex;align-items:center;gap:8px"><div style="font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(133,79,11,.15);color:#854F0B;font-weight:500;white-space:nowrap">'+(u.kalan===0?'Bugün':u.kalan+' gün')+'</div><span style="flex:1;color:#633806">'+_ppEsc(u.olay.baslik)+'</span></div>'; }).join('')
-        +'</div>' : '')
-      +'</div>';
-    return;
-  } else {
-    body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t3);font-size:13px">'
-      + window._ppModLabel(mod) + ' modu yakında aktif olacak...</div>';
-  }
+  /* PUSULA-CEO-REMOVE-001: CEO bloğu kaldırıldı, bilinmeyen mod fallback korundu */
+  body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t3);font-size:13px">'
+    + window._ppModLabel(mod) + ' modu yakında aktif olacak...</div>';
 };
 
 window._ppModLabel = function(mod) {
-  return {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme',ceo:'CEO'}[mod] || mod;
+  return {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme'}[mod] || mod;
 };
 
 /* ── Global Export ──────────────────────────────────────────── */
@@ -3395,7 +3369,15 @@ window._ppGorevMesajLoad = function(taskId) {
 };
 
 window._ppGorevMesajSave = function(taskId, mesajlar) {
+  /* PUSULA-MESAJ-FIX-001: localStorage + Firestore eş zamanlı yaz */
   try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(mesajlar)); } catch(e) {}
+  try {
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+      var _fsChat = {};
+      _fsChat['chat_' + taskId] = mesajlar;
+      firebase.firestore().collection('platform').doc('taskChats').set(_fsChat, { merge: true });
+    }
+  } catch(_fe) { console.warn('[PP-MESAJ] Firestore yazma hata:', _fe.message); }
   /* PP-MESAJ-FIRESTORE-001: paralel Firestore write — platform/taskChats.chat_<taskId> merge */
   try {
     if (typeof firebase !== 'undefined' && firebase.firestore) {
@@ -3406,8 +3388,21 @@ window._ppGorevMesajSave = function(taskId, mesajlar) {
 };
 
 window._ppGorevMesajGonder = function(taskId, text, dosyaAd) {
+  /* PUSULA-MESAJ-FIX-001: sadece göreve erişimi olanlar mesaj gönderebilir */
+  var _tasks = window._ppLoad ? window._ppLoad() : [];
+  var _t = _tasks.find(function(x){ return String(x.id)===String(taskId); });
+  if (!_t) { window.toast?.('Görev bulunamadı','warn'); return; }
+  var _cu = (typeof _ppCu === 'function') ? _ppCu() : null;
+  var _uid = _cu?.uid || _cu?.email || '';
+  if (!_ppIsAdmin() && _uid) {
+    var _izinli = (_t.olusturanId||_t.createdBy||'')=== _uid
+      || (Array.isArray(_t.sorumlu)?_t.sorumlu:[_t.sorumlu||'']).some(function(s){return(s&&(s.uid||s))===_uid;})
+      || (Array.isArray(_t.gozlemci)?_t.gozlemci:[_t.gozlemci||'']).some(function(g){return(g&&(g.uid||g))===_uid;})
+      || (Array.isArray(_t.paylasilanlar)?_t.paylasilanlar:[]).indexOf(_uid)!==-1;
+    if (!_izinli) { window.toast?.('Bu göreve mesaj gönderme yetkiniz yok','warn'); return; }
+  }
   var mesajlar = window._ppGorevMesajLoad(taskId);
-  var cu = (typeof _ppCu === 'function') ? _ppCu() : null;
+  var cu = _cu;
   mesajlar.push({
     id: Date.now().toString(36),
     text: text || '',
