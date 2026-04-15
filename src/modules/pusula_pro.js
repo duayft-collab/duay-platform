@@ -160,6 +160,12 @@ window._ppModRender = function() {
   var mod = window.PP_MOD || window._ppAktifMod || 'akis';
   if (mod === 'calisma') {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
+    /* PUSULA-GOREV-GIZLILIK-001: paylasilanlar listesi boş/kendini içeriyorsa görünür */
+    var _mevcutUid = window.Auth?.getCU?.()?.uid || window.CU?.()?.uid || window._kullanici?.uid || window._kullanici?.email || '';
+    tasks = tasks.filter(function(t) {
+      if (!t.paylasilanlar || !t.paylasilanlar.length) return true;
+      return t.paylasilanlar.indexOf(_mevcutUid) !== -1;
+    });
     /* PUSULA-UX-BUNDLE-001 #1: arama filtresi — _ppSearchQ global state bazlı */
     var _aramaQ = (window._ppSearchQ || '').toLowerCase().trim();
     if (_aramaQ) {
@@ -253,7 +259,9 @@ window._ppModRender = function() {
         h2 += '<div>';
         /* PUSULA-UX-BUNDLE-001 #2: öncelik bayrak emoji (title prefix) */
         var _bayrak = t.oncelik==='kritik' ? '\ud83d\udd34' : t.oncelik==='yuksek' ? '\ud83d\udfe1' : t.oncelik==='normal' ? '\ud83d\udfe2' : '\u26aa';
-        h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:11px">'+_bayrak+'</span>' + hl(t.baslik||t.title||'') + '</div>';
+        /* PUSULA-GOREV-GIZLILIK-001: kısıtlı görevde kilit ikon */
+        var _gizliIkon = (t.paylasilanlar && t.paylasilanlar.length) ? '<span title="Kısıtlı görev" style="margin-right:3px">\ud83d\udd12</span>' : '';
+        h2 += '<div style="font-size:11px;font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:11px">'+_bayrak+'</span>' + _gizliIkon + hl(t.baslik||t.title||'') + '</div>';
         h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">';
         // PUSULA-JOB-BAGLANTI-001: jobId tiklanabilir → openJobIdHub aç
         if (jobId) h2 += '<span onclick="event.stopPropagation();window.openJobIdHub?.(\''+_ppEsc(jobId)+'\')" title="Job Hub aç" style="font-size:8px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500;cursor:pointer;text-decoration:underline">'+_ppEsc(jobId)+'</span>';
