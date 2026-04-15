@@ -739,22 +739,20 @@ window._mvBirlesikCariExcelIndir = function() {
     var m = s.match(/HVL-([^-]+)-/) || s.match(/([A-ZÇĞİÖŞÜa-zçğışöü\s\.]{4,}(?:A\.Ş\.|LTD\.|A\.S\.))/);
     return m ? m[1].trim() : '';
   };
-  /* MUAVIN-EXCEL-FIX-001: Excel serial date → dd.mm.yyyy + ISO → dd.mm.yyyy + string fallback */
+  /* MUAVIN-EXCEL-ISO-PRECHECK-001: ISO/dd.mm kontrolü serial'den ÖNCE — parseFloat("2025-09-09")=2025 bug fix */
   var _fmtTarih = function(t) {
     if (!t && t !== 0) return '';
-    var n = parseFloat(t);
+    var s = String(t).trim();
+    if (s.match(/^\d{4}-\d{2}-\d{2}/)) { var p=s.slice(0,10).split('-'); return p[2]+'.'+p[1]+'.'+p[0]; }
+    if (s.match(/^\d{2}\.\d{2}\.\d{4}$/)) return s;
+    var n = parseFloat(s);
     if (!isNaN(n) && n > 1000 && n < 100000) {
       var d = new Date(Math.round((n - 25569) * 86400 * 1000));
-      if (!isNaN(d.getTime())) return ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear();
-    }
-    var s = String(t).trim();
-    if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
-      var p = s.slice(0, 10).split('-');
-      return p[2] + '.' + p[1] + '.' + p[0];
+      if (!isNaN(d.getTime())) return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
     }
     if (s.indexOf('.') !== -1 && s.length <= 10) return s;
     var d2 = new Date(s);
-    if (!isNaN(d2.getTime())) return ('0' + d2.getDate()).slice(-2) + '.' + ('0' + (d2.getMonth() + 1)).slice(-2) + '.' + d2.getFullYear();
+    if (!isNaN(d2.getTime())) return ('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear();
     return s;
   };
   var satirlar = [];
