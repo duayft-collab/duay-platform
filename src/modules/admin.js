@@ -3520,6 +3520,8 @@ if (typeof module !== 'undefined' && module.exports) {
   window.editUser            = editUser;
   window.openNewUser         = openNewUser;
   window.saveUser            = saveAdminUser;   // modals.js onclick="saveUser()" için
+  /* ADMIN-SAVEPERMISSIONS-EXPOSE-001: izin kaydetme butonunun onclick'i bu globale bağlanır */
+  window.savePermissions     = savePermissions;
   window.autoSetRolePerms    = autoSetRolePerms; // modals.js onclick="autoSetRolePerms()" için
   window.setAllPerms         = setAllPerms;      // modals.js onclick="setAllPerms()" için
   window.toggleUser          = toggleUser;
