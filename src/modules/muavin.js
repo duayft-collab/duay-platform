@@ -123,6 +123,8 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
   var sekmeler = [
     { id: 'karsilastirma', lbl: 'Karşılaştırma', badge: (kpi.farkVar + kpi.sadeceMuhasebe + kpi.sadeceBaran) || null, badgeRenk: 'warn' },
     { id: 'muhasebeci', lbl: 'Muhasebeci Excel', badge: kpi.mSay || null, badgeRenk: 'ok' },
+    /* MUAVIN-ORTAK-EXCEL-SEKME-001: birleşik export kısayol sekmesi */
+    { id: 'ortak-excel', lbl: 'Ortak Excel', badge: null, badgeRenk: 'ok' },
     { id: 'baran', lbl: 'Baran Ekstresi', badge: kpi.bSay || null, badgeRenk: 'info' },
     { id: 'cari', lbl: 'Cari Özet', badge: null },
     { id: 'donem', lbl: 'Dönem Karş.', badge: null },
@@ -443,7 +445,7 @@ window.renderMuavin = function() {
   /* Sağ içerik */
   var sagIcerik = '';
   /* Sağ üst başlık */
-  var sekmeAdlari = { karsilastirma: 'Kar\u015f\u0131la\u015ft\u0131rma', muhasebeci: 'Muhasebeci Excel', baran: 'Baran Ekstresi', cari: 'Cari \u00d6zet', donem: 'D\u00f6nem Kar\u015f\u0131la\u015ft\u0131rma', 'firma-firma': 'Firma Firma', 'toplu-karsilastir': 'Toplu Kar\u015f.', 'cari-bakiye': 'Cari Bakiye', 'hata-analiz': 'Hata Analizi', notlar: 'Notlar' };
+  var sekmeAdlari = { karsilastirma: 'Kar\u015f\u0131la\u015ft\u0131rma', muhasebeci: 'Muhasebeci Excel', 'ortak-excel': 'Ortak Excel', baran: 'Baran Ekstresi', cari: 'Cari \u00d6zet', donem: 'D\u00f6nem Kar\u015f\u0131la\u015ft\u0131rma', 'firma-firma': 'Firma Firma', 'toplu-karsilastir': 'Toplu Kar\u015f.', 'cari-bakiye': 'Cari Bakiye', 'hata-analiz': 'Hata Analizi', notlar: 'Notlar' };
   sagIcerik += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--b)">';
   sagIcerik += '<div>';
   sagIcerik += '<div style="font-size:13px;font-weight:500;color:var(--t)">' + (sekmeAdlari[aktifTab] || aktifTab) + '</div>';
@@ -464,6 +466,19 @@ window.renderMuavin = function() {
   /* Sekme içeriği */
   if (aktifTab === 'karsilastirma') sagIcerik += _mvKarsilastirmaIcerikHTML(kpi, meta, donem);
   else if (aktifTab === 'muhasebeci') sagIcerik += _mvMuhasebeIcerikHTML(islemlerM);
+  /* MUAVIN-ORTAK-EXCEL-SEKME-001: birleşik export içerik — _mvBirlesikCariExcelIndir'ı tetikler */
+  else if (aktifTab === 'ortak-excel') {
+    var _mArr = (meta[donem] || {}).muhasebeci?.normalArr || window._mvSonIslemler || [];
+    var _bArr = (meta[donem] || {}).baran?.normalArr || window._mvSonIslemlerB || [];
+    var _toplam = _mArr.length + _bArr.length;
+    sagIcerik += '<div style="padding:32px;text-align:center">'
+      + '<div style="font-size:13px;font-weight:500;color:var(--t);margin-bottom:8px">Ortak Excel (Birleştirilmiş)</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">'
+      + (_toplam > 0 ? 'Muhasebeci: ' + _mArr.length + ' satır · Baran: ' + _bArr.length + ' satır' : 'Önce Muhasebeci Excel veya Baran Ekstresi yükleyin')
+      + '</div>'
+      + (_toplam > 0 ? '<button onclick="event.stopPropagation();window._mvBirlesikCariExcelIndir?.()" style="padding:10px 24px;border:none;border-radius:6px;background:#111;color:#fff;font-size:12px;cursor:pointer;font-family:inherit">↓ Ortak Excel İndir (' + _toplam + ' satır)</button>' : '')
+      + '</div>';
+  }
   else if (aktifTab === 'baran') sagIcerik += _mvBaranIcerikHTML(islemlerB);
   else if (aktifTab === 'cari') sagIcerik += (window._mvCariOzetHTML ? window._mvCariOzetHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">Önce Excel yükleyin</div>');
   else if (aktifTab === 'donem') sagIcerik += (window._mvDonemKarsilastirHTML ? window._mvDonemKarsilastirHTML() : '<div style="padding:40px;text-align:center;color:var(--t3)">D\u00f6nem verisi yok</div>');
