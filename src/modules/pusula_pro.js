@@ -1567,15 +1567,27 @@ window._ppDosyaEkle = function(inp) {
 
 window._ppDosyaListGuncelle = function() {
   var list = document.getElementById('ppf-dosya-list'); if(!list) return;
+  /* PUSULA-DOSYA-THUMB-001: 56x56 card view — resim thumbnail + ext ikonu + overlay isim */
   list.innerHTML = window._ppDosyaEkleri.map(function(d,i) {
-    var ikon = d.tip.indexOf('pdf')!==-1 ? '📄' : d.tip.indexOf('image')!==-1 ? '🖼' : '📊';
+    var isImg = d.tip.indexOf('image') !== -1;
     var kb = Math.round(d.boyut/1024);
-    return '<div style="display:flex;align-items:center;gap:5px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);font-size:10px">'
-      +'<span style="font-size:12px">'+ikon+'</span>'
-      +'<span style="color:var(--t);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(d.ad)+'</span>'
-      +'<span style="color:var(--t3)">'+kb+'KB</span>'
-      +'<button onclick="event.stopPropagation();window._ppDosyaSil('+i+')" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:12px;line-height:1;padding:0">×</button>'
-      +'</div>';
+    var adEsc = _ppEsc(d.ad);
+    var body;
+    if (isImg && d.data) {
+      body = '<img src="'+d.data+'" style="width:56px;height:56px;object-fit:cover;display:block">';
+    } else {
+      var ext = (d.ad.split('.').pop()||'').toUpperCase().slice(0,4);
+      var ikon = d.tip.indexOf('pdf') !== -1 ? '📄' : '📊';
+      body = '<div style="width:56px;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--s2)">'
+        +'<span style="font-size:18px;line-height:1">'+ikon+'</span>'
+        +'<span style="font-size:8px;font-weight:600;color:var(--t)">'+ext+'</span>'
+        +'</div>';
+    }
+    return '<div style="position:relative;width:56px;height:56px;border:0.5px solid var(--b);border-radius:6px;overflow:hidden;background:var(--s2);flex-shrink:0" title="'+adEsc+' · '+kb+'KB">'
+      + body
+      + '<div style="position:absolute;bottom:0;left:0;right:0;padding:2px 3px;background:rgba(0,0,0,.55)"><span style="font-size:8px;color:#fff;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+adEsc+'</span></div>'
+      + '<button onclick="event.stopPropagation();window._ppDosyaSil('+i+')" style="position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;padding:0">×</button>'
+      + '</div>';
   }).join('');
 };
 
