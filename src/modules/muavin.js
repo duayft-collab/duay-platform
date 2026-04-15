@@ -759,10 +759,11 @@ window._mvBirlesikCariExcelIndir = function() {
   /* MUAVIN-EXCEL-FIX-001: 13 kolon — C=Normalize, DÖVİZ TUTAR + TCMB SATIŞ eklendi */
   satirlar.push(['CARİ ADI', 'KAYNAK', 'CARİ ADI (Normalize)', 'TARİH', 'TİP', 'EŞLEŞME NO', 'AÇIKLAMA', 'TL BORÇ', 'TL ALACAK', 'DÖVİZ CİNS', 'DÖVİZ TUTAR', 'TCMB ALIŞ', 'TCMB SATIŞ']);
   muhArr.forEach(function(i) {
+    /* MUAVIN-EXCEL-CARIAD-STRICT-001: C kolonu sadece i.cariAd (ham fallback kaldırıldı) */
     satirlar.push([
       i.firma || i.cariAd || '—',
       'Muhasebeci',
-      i.cariAd || i.firma || _cariCikarAciklama(i.aciklama) || _mFirmaAdi || '—',
+      i.cariAd || '—',
       _fmtTarih(i.tarih),
       i.tip || '',
       i.snNo || i.faturaNo || i.fisNo || '',
@@ -776,10 +777,11 @@ window._mvBirlesikCariExcelIndir = function() {
     ]);
   });
   barArr.forEach(function(i) {
+    /* MUAVIN-EXCEL-CARIAD-STRICT-001: Baran C = açıklamadan karşı taraf (firmaAdiAyikla öncelikli) */
     satirlar.push([
       i.firma || i.firmaAdi || i.cariAd || '—',
       'Baran Ekstresi',
-      i.cariAd || i.firma || i.firmaAdi || _cariCikarAciklama(i.aciklama) || _bFirmaAdi || '—',
+      (function(){ var _c = window._mvNormalize?.firmaAdiAyikla?.(i.aciklama||''); return _c || i._firmaAdi || i.firmaAdi || i.firma || '—'; })(),
       _fmtTarih(i.tarih),
       i.islemTuru || i.tip || '',
       i.snNo || i.faturaNo || (i.faturaSeri && i.faturaSira ? i.faturaSeri + i.faturaSira : '') || '',
