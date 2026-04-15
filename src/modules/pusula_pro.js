@@ -161,10 +161,13 @@ window._ppModRender = function() {
   var mod = window.PP_MOD || window._ppAktifMod || 'akis';
   if (mod === 'calisma') {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
-    /* PUSULA-GOREV-GIZLILIK-001: paylasilanlar listesi boş/kendini içeriyorsa görünür */
+    /* PUSULA-GOREV-GIZLILIK-MANTIK-FIX-001: boş paylasilanlar = SADECE SAHİP GÖRÜR (eski: herkes görür) */
     var _mevcutUid = window.Auth?.getCU?.()?.uid || window.CU?.()?.uid || window._kullanici?.uid || window._kullanici?.email || '';
     tasks = tasks.filter(function(t) {
-      if (!t.paylasilanlar || !t.paylasilanlar.length) return true;
+      var _sahip = t.olusturanId || t.createdBy || '';
+      if (!t.paylasilanlar || !t.paylasilanlar.length) {
+        return _mevcutUid === _sahip || _sahip === '';
+      }
       return t.paylasilanlar.indexOf(_mevcutUid) !== -1;
     });
     /* PUSULA-UX-BUNDLE-001 #1: arama filtresi — _ppSearchQ global state bazlı */
@@ -849,19 +852,13 @@ window._ppYeniGorev = function() {
     +'</div>'
     +_sel('enerji','ENERJİ','<option value="yuksek">Yüksek</option><option value="orta" selected>Orta</option><option value="dusuk">Düşük</option>')
     +'</div>'
-    /* PUSULA-GOREV-GIZLILIK-FORM-001: paylaşım kişi seçimi (boşsa herkes görür) */
-    +(function() {
-      var _kulList = typeof window._ppKullanicilar === 'function' ? window._ppKullanicilar() : [];
-      if (!_kulList.length) return '';
-      return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">PAYLAŞIM <span style="font-weight:400;font-size:9px">(boş bırakılırsa herkes görür)</span></div>'
-        + '<div style="max-height:120px;overflow-y:auto;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);padding:8px 10px">'
-        + _kulList.map(function(k) {
-          var uid = k.uid || k.email || k.id || '';
-          var lbl = k.displayName || k.name || k.ad || k.email || '—';
-          return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 0;cursor:pointer;color:var(--t)"><input type="checkbox" class="pp-paylasim-chk" value="' + _ppEsc(uid) + '" onclick="event.stopPropagation()" style="width:12px;height:12px;cursor:pointer">' + _ppEsc(lbl) + '</label>';
-        }).join('')
-        + '</div></div>';
-    })()
+    /* PUSULA-GOREV-GIZLILIK-COMBO-001: aranabilir combobox (eski checkbox listesi yerine) */
+    +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">PAYLAŞIM <span style="font-weight:400;font-size:9px">(boş = sadece sen görürsün)</span></div>'
+    +'<div style="position:relative">'
+    +'<input id="pp-paylasim-ara" placeholder="Kişi ara..." onclick="event.stopPropagation()" oninput="event.stopPropagation();window._ppPaylasimFiltre(this.value)" onfocus="event.stopPropagation();window._ppPaylasimFiltre(this.value)" onkeydown="event.stopPropagation()" style="width:100%;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px 6px 0 0;font-size:11px;font-family:inherit;background:var(--s2);color:var(--t);box-sizing:border-box">'
+    +'<div id="pp-paylasim-liste" style="max-height:120px;overflow-y:auto;border:0.5px solid var(--b);border-top:none;border-radius:0 0 6px 6px;background:var(--sf)"></div>'
+    +'<div id="pp-paylasim-secili" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"></div>'
+    +'</div></div>'
     +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">AÇIKLAMA / ARAŞTIRMA NOTU</div>'
     +'<div style="display:flex;gap:2px;padding:5px 8px;border:0.5px solid var(--b);border-radius:6px 6px 0 0;background:var(--s2);border-bottom:none">'
     +'<button type="button" onclick="event.stopPropagation();document.execCommand(\'bold\')" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);cursor:pointer;font-weight:700;font-family:inherit">B</button>'
@@ -892,18 +889,17 @@ window._ppYeniGorev = function() {
   document.body.appendChild(mo);
   setTimeout(function() {
     document.getElementById('ppf-baslik')?.focus();
-    /* PUSULA-GOREV-GIZLILIK-FORM-EDIT-001: düzenleme modunda paylasilanlar checkbox restore */
+    /* PUSULA-GOREV-GIZLILIK-COMBO-001: düzenleme restore + combobox ilk render */
+    window._ppPaylasimSecili = [];
     if (window._ppDuzenleHedef) {
       try {
         var _mev = _ppLoad().find(function(t) { return String(t.id) === String(window._ppDuzenleHedef); });
         if (_mev && Array.isArray(_mev.paylasilanlar) && _mev.paylasilanlar.length) {
-          _mev.paylasilanlar.forEach(function(uid) {
-            var chk = document.querySelector('.pp-paylasim-chk[value="' + String(uid).replace(/"/g, '\\"') + '"]');
-            if (chk) chk.checked = true;
-          });
+          window._ppPaylasimSecili = _mev.paylasilanlar.slice();
         }
       } catch (e) { console.warn('[PUSULA-GIZLILIK-EDIT]', e.message); }
     }
+    window._ppPaylasimFiltre?.('');
   }, 100);
   var jobSel = document.getElementById('ppf-job_id');
   if(jobSel) jobSel.onchange = function(e){
@@ -920,6 +916,52 @@ window._ppYeniGorev = function() {
   };
   window._ppAltGorevler=[];
   window._ppDosyaEkleri=[];
+};
+
+/* PUSULA-GOREV-GIZLILIK-COMBO-001: paylaşım combobox state + filtre + toggle */
+window._ppPaylasimSecili = window._ppPaylasimSecili || [];
+
+window._ppPaylasimFiltre = function(q) {
+  var liste = document.getElementById('pp-paylasim-liste');
+  if (!liste) return;
+  var kl = typeof window._ppKullanicilar === 'function' ? window._ppKullanicilar() : [];
+  var qLow = (q || '').toLowerCase();
+  var fil = kl.filter(function(k) {
+    var n = k.displayName || k.name || k.email || '';
+    return n.toLowerCase().indexOf(qLow) !== -1;
+  });
+  if (!fil.length) {
+    liste.innerHTML = '<div style="padding:6px 10px;font-size:10px;color:var(--t3)">Kişi yok</div>';
+  } else {
+    liste.innerHTML = fil.slice(0, 20).map(function(k) {
+      var n = k.displayName || k.name || k.email || '—';
+      var uid = k.uid || k.email || '';
+      var secili = window._ppPaylasimSecili.indexOf(uid) !== -1;
+      return '<div onclick="event.stopPropagation();window._ppPaylasimToggle(\'' + String(uid).replace(/'/g, '\\\'') + '\')" style="padding:5px 10px;font-size:10px;cursor:pointer;color:var(--t);background:' + (secili ? 'var(--s2)' : 'transparent') + '" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'' + (secili ? 'var(--s2)' : 'transparent') + '\'">' + (secili ? '✓ ' : '') + _ppEsc(n) + '</div>';
+    }).join('');
+  }
+  /* Seçili chip'leri yeniden render */
+  var sec = document.getElementById('pp-paylasim-secili');
+  if (sec) {
+    if (!window._ppPaylasimSecili.length) {
+      sec.innerHTML = '';
+    } else {
+      sec.innerHTML = window._ppPaylasimSecili.map(function(u) {
+        var k = (typeof window._ppKullanicilar === 'function' ? window._ppKullanicilar() : [])
+          .find(function(x) { return (x.uid || x.email) === u; });
+        var n = k ? (k.displayName || k.name || k.email || u) : u;
+        return '<span onclick="event.stopPropagation();window._ppPaylasimToggle(\'' + String(u).replace(/'/g, '\\\'') + '\')" title="Kaldır" style="font-size:9px;padding:3px 8px;background:var(--s2);border:0.5px solid var(--b);border-radius:99px;cursor:pointer;color:var(--t)">' + _ppEsc(n) + ' ×</span>';
+      }).join('');
+    }
+  }
+};
+
+window._ppPaylasimToggle = function(uid) {
+  window._ppPaylasimSecili = window._ppPaylasimSecili || [];
+  var idx = window._ppPaylasimSecili.indexOf(uid);
+  if (idx >= 0) window._ppPaylasimSecili.splice(idx, 1);
+  else window._ppPaylasimSecili.push(uid);
+  window._ppPaylasimFiltre(document.getElementById('pp-paylasim-ara')?.value || '');
 };
 
 window._ppAltGorevler = [];
@@ -985,8 +1027,10 @@ window._ppGorevKaydet = function() {
     assignedTo: (window._ppUserTaglerAl('ppf-sorumlu')[0]?.uid) || '',
     assignedToAd: (window._ppUserTaglerAl('ppf-sorumlu')[0]?.ad) || '',
     gozlemci: window._ppUserTaglerAl('ppf-gozlemci'),
-    /* PUSULA-GOREV-GIZLILIK-FORM-001: paylaşım checkbox'larından uid listesi */
-    paylasilanlar: Array.from(document.querySelectorAll('.pp-paylasim-chk:checked')).map(function(c) { return c.value; }),
+    /* PUSULA-GOREV-GIZLILIK-COMBO-001: combobox secili state'inden uid listesi */
+    paylasilanlar: (window._ppPaylasimSecili || []).slice(),
+    /* PUSULA-GOREV-GIZLILIK-MANTIK-FIX-001: sahip field — filter için gerekli */
+    olusturanId: _ppCu()?.uid || '',
     enerji: document.getElementById('ppf-enerji')?.value||'',
     aciklama: document.getElementById('ppf-aciklama')?.innerHTML||'',
     altGorevler: window._ppAltGorevler||[],
