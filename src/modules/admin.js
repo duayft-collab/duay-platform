@@ -1138,6 +1138,17 @@ function savePermissions() {
     const val = sel.value;
     if (mod && val) _newPermissions[mod] = val;
   });
+  /* ADMIN-PERM-SYNC-FIX-001: permissions seviyesi 'none' olmayan modüller
+     otomatik olarak modules listesine eklenir — iki sistem senkronize */
+  if (!allChecked && _newModules) {
+    Object.keys(_newPermissions).forEach(function(mid) {
+      if (_newPermissions[mid] && _newPermissions[mid] !== 'none') {
+        if (!_newModules.includes(mid)) _newModules.push(mid);
+      } else if (_newPermissions[mid] === 'none') {
+        _newModules = _newModules.filter(function(m){ return m !== mid; });
+      }
+    });
+  }
   var _newRule12h = !!g('perm-rule12h')?.checked;
 
   // Değişiklik var mı kontrol et
