@@ -271,7 +271,8 @@ window._ppModRender = function() {
           h2 += '<span style="font-size:8px;color:var(--t3);font-family:inherit" title="Son durum değişikliği">'+_ppEsc(_sonLog.kim || '?')+' → '+_ppEsc(_sonLog.e || '?')+(_saat ? ' · '+_saat : '')+'</span>';
         }
         h2 += '</div></div>';
-        h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:9px;color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span></div>';
+        /* PP-SORUMLU-DEGISTIR-001: sorumlu yanında ↻ buton (kullanıcı listesinden seçim) */
+        h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:9px;color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span><button onclick="event.stopPropagation();window._ppSorumluDegistir(\''+t.id+'\')" title="Sorumluyu değiştir" style="font-size:8px;padding:1px 4px;border:0.5px solid var(--b);border-radius:3px;cursor:pointer;background:transparent;color:var(--t3);font-family:inherit">↻</button></div>';
         h2 += '<div style="font-size:9px;color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+(t.createdAt?'<div style="font-size:8px;color:var(--t3);margin-top:1px" title="Oluşturulma: '+_ppEsc(t.createdAt)+'">🕐 '+(function(ts){try{var d=new Date((ts||'').replace(' ','T'));return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.createdAt)+'</div>':'')+'</div>';
         h2 += '<div style="font-size:9px;color:'+(tarihGec?'#A32D2D':'var(--t3)')+(tarihGec?';font-weight:500':'')+'">'+(t.bitTarih?t.bitTarih.slice(0,10):'—')+'</div>';
         h2 += '<span style="font-size:8px;padding:2px 5px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span>';
@@ -3295,4 +3296,29 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
   setTimeout(function(){
     document.addEventListener('click', function _gmc(e){ if(!mo.contains(e.target)){ mo.remove(); document.removeEventListener('click',_gmc); } });
   }, 50);
+};
+
+/* PP-SORUMLU-DEGISTIR-001: prompt picker ile sorumlu değiştirme */
+window._ppSorumluDegistir = function(taskId) {
+  var tasks = window._ppLoad ? window._ppLoad() : [];
+  var t = tasks.find(function(x){ return String(x.id) === String(taskId); });
+  if (!t) { window.toast?.('Görev bulunamadı','warn'); return; }
+  var kullList = (typeof window._ppKullanicilar === 'function') ? window._ppKullanicilar() : (Array.isArray(window._ppKullanicilar) ? window._ppKullanicilar : []);
+  if (!kullList.length) { window.toast?.('Kullanıcı listesi boş','warn'); return; }
+  var isimler = kullList.map(function(k,i){ return (i+1)+'. '+(k.displayName||k.name||k.email||k.uid||'—'); });
+  var secim = window.prompt('Yeni sorumlu seç (numara):\n'+isimler.join('\n'));
+  if (!secim) return;
+  var idx = parseInt(secim,10)-1;
+  var yeni = kullList[idx];
+  if (!yeni) { window.toast?.('Geçersiz seçim','warn'); return; }
+  var yeniAd = yeni.displayName || yeni.name || yeni.email || '';
+  var yeniId = yeni.uid || yeni.id || yeni.email || '';
+  /* Defensive: hem sorumluId/sorumluAd hem sorumlu objesi/string alanlarını güncelle */
+  t.sorumluId = yeniId;
+  t.sorumluAd = yeniAd;
+  t.sorumlu = { ad: yeniAd, id: yeniId, uid: yeniId, email: yeni.email || '', displayName: yeniAd };
+  t.updatedAt = new Date().toISOString();
+  window._ppStore?.(tasks);
+  window.toast?.('Sorumlu: '+yeniAd,'ok');
+  window._ppModRender?.();
 };
