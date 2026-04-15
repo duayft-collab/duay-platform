@@ -184,7 +184,12 @@ window._mvDosyaOku = function(inp, taraf) {
         _meta[_don].muhasebeci.firmaAdi = firmaAdi;
       } else if (taraf === 'baran' && typeof window._mvNormalize?.sirkettenNormalize === 'function') {
         _meta[_don].baran = _meta[_don].baran || {};
-        /* MUAVIN-BARAN-FIRMAADI-001: firmaAdi her Baran satırına eklenir — C kolonu için */
+        /* MUAVIN-BARAN-FIRMAADI-INPUT-ZORUNLU-001: regex yok, sadece input — boşsa yüklemeyi iptal et */
+        var firmaAdi = document.getElementById('mv-firma-adi')?.value?.trim() || '';
+        if (!firmaAdi) {
+          window.toast?.('Firma Adı alanını doldurun — Baran ekstresi yüklenmedi', 'warn');
+          return;
+        }
         islemler.forEach(function(r){ r._firmaAdi = firmaAdi; });
         _meta[_don].baran.normalArr = window._mvNormalize.sirkettenNormalize(islemler, null);
         _meta[_don].baran.firmaAdi = firmaAdi;
@@ -744,25 +749,49 @@ window._mvNormalize = {
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
       /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
       /* MUAVIN-CARIAD-NORMALIZE-001: firmaAdiAyikla öncelikli + s.firmaAdi/firma fallback */
-      /* MUAVIN-BARAN-FIRMAADI-001: s._firmaAdi fallback chain'e eklendi (Baran Excel C kolonu) */
-      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama) || s._firmaAdi || s.firmaAdi || s.firma || '', cariAd: self.firmaAdiAyikla(s.aciklama) || s._firmaAdi || s.firmaAdi || s.firma || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-BARAN-FIRMAADI-INPUT-ZORUNLU-001: cariAd/firma = s._firmaAdi direkt (regex devre dışı) */
+      return { kaynak: 'sirket', firma: s._firmaAdi || '', cariAd: s._firmaAdi || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
     });
   },
+  /* MUAVIN-CARIAD-REGEX-V2-001: Türk banka ekstresi — DURDUR kelime listesi + isim doğrulama + 6 pattern */
   firmaAdiAyikla: function(aciklama) {
     if (!aciklama) return '';
-    var s = String(aciklama);
-    /* MUAVIN-CARIAD-REGEX-ODEME-001: EFT/HAVALE/ÖDEME/SWIFT/ALICI pattern'leri eklendi */
-    var patterns = [
-      /HVL-([^-]+)-/,
-      /* MUAVIN-SN-ACIKLAMA-TERMINATOR-001: Açk/Gön/Ref terminatörleri eklendi */
-      /SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]+?)(?:\s+(?:V\.NO|TCKN|VKN|A\.\u015e|LTD|A[\u00e7c]k|G[\u00f6o]n|Ref|A[\u00e7c]k:))/i,
-      /([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc\s]{5,}(?:A\.\u015e\.|LTD\.|A\.S\.|SAN\.|T\u0130C\.|TIC\.))/,
-      /(?:EFT|HAVALE|ODEME|\u00d6DEME|TRF|TRANSFER)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d|\s+VKN|\s+IBAN|\s+TR\d)/i,
-      /(?:ALICI|GONDERICI|G\u00d6NDER\u0130C\u0130|BOR\u00c7LU|ALACAKLI)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d|\s+VKN|\s+IBAN)/i,
-      /(?:SWIFT|BIC)[:\s\-]+\S+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d)/i,
-      /^([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{3,}?)\s+(?:VKN|TCKN|IBAN|TR\d{2})/
-    ];
-    for (var i = 0; i < patterns.length; i++) { var m = s.match(patterns[i]); if (m && m[1]) return m[1].trim(); }
+    var s = String(aciklama).trim();
+    var DURDUR = /\b(için|araç|dönem|maaş|kira|fatura|ödeme|tahsilat|iade|masraf|komisyon|vergi|sigorta|aidat|avans|prim|açk|açıklama|gönderen|alıcı|ref|no|passat|renault|toyota|ford|honda|yıl|ay|tarih|tutar|adet|arac|maas|kira)\b/i;
+    var temizle = function(s) { return s.replace(/\s+/g, ' ').trim(); };
+    var isimMi = function(s) {
+      if (s.length < 3) return false;
+      if (/^\d/.test(s)) return false;
+      if (DURDUR.test(s.split(/\s+/)[0])) return false;
+      return true;
+    };
+
+    var m, isim;
+
+    /* 1. HVL-XXX- */
+    m = s.match(/HVL-([^-\s][^-]+?)-/);
+    if (m) { isim = temizle(m[1]); if (isimMi(isim)) return isim; }
+
+    /* 2. SN:XXX İSİM (Ref No: öneki olsa da) */
+    m = s.match(/SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s]{2,40}?)(?=\s+(?:A[\u00e7c]k|A[\u00e7c]klama|VKN|TCKN|IBAN|i[\u00e7c]in|ara[\u00e7c]|G[\u00f6o]n|Ref|\d{4,}|$))/i);
+    if (m) { isim = temizle(m[1]); if (isimMi(isim)) return isim; }
+
+    /* 3. EFT/HAVALE/TRANSFER: İSİM */
+    m = s.match(/(?:EFT|HAVALE|ODEME|\u00d6DEME|TRF|TRANSFER)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{3,35}?)(?=\s*[-:\d]|$)/i);
+    if (m) { isim = temizle(m[1]); if (isimMi(isim)) return isim; }
+
+    /* 4. ALICI/GÖNDERICI: İSİM */
+    m = s.match(/(?:ALICI|GONDERICI|G\u00d6NDER\u0130C\u0130|BOR\u00c7LU|ALACAKLI)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{3,35}?)(?=\s*[-:\d]|$)/i);
+    if (m) { isim = temizle(m[1]); if (isimMi(isim)) return isim; }
+
+    /* 5. Satır başı büyük harf isim + VKN/IBAN ile biten */
+    m = s.match(/^([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{3,40}?)\s+(?:VKN|TCKN|IBAN|TR\d{2}|\d{10,})/);
+    if (m) { isim = temizle(m[1]); if (isimMi(isim)) return isim; }
+
+    /* 6. XXX A.Ş. / LTD. / SAN. / TİC. */
+    m = s.match(/([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc0-9\s\.\-&]{3,40}?(?:A\.\u015e\.|LTD\.|A\.S\.|SAN\.|T\u0130C\.|TIC\.))/);
+    if (m) { isim = temizle(m[1]); if (isimMi(isim)) return isim; }
+
     return '';
   },
   karsilastir: function(muhasebeci, sirket, esikTL) {
