@@ -730,6 +730,15 @@ window._mvBirlesikCariExcelIndir = function() {
     window.toast?.('Önce dosya yükleyin', 'warn');
     return;
   }
+  /* MUAVIN-EXCEL-CARIAD-FALLBACK-001: firmaAdi meta fallback + açıklama regex çıkarımı */
+  var _mFirmaAdi = (d.muhasebeci||{}).firmaAdi || '';
+  var _bFirmaAdi = (d.baran||{}).firmaAdi || '';
+  var _cariCikarAciklama = function(aciklama) {
+    if (!aciklama) return '';
+    var s = String(aciklama);
+    var m = s.match(/HVL-([^-]+)-/) || s.match(/([A-ZÇĞİÖŞÜa-zçğışöü\s\.]{4,}(?:A\.Ş\.|LTD\.|A\.S\.))/);
+    return m ? m[1].trim() : '';
+  };
   /* MUAVIN-EXCEL-FIX-001: Excel serial date → dd.mm.yyyy + ISO → dd.mm.yyyy + string fallback */
   var _fmtTarih = function(t) {
     if (!t && t !== 0) return '';
@@ -755,7 +764,7 @@ window._mvBirlesikCariExcelIndir = function() {
     satirlar.push([
       i.firma || i.cariAd || '—',
       'Muhasebeci',
-      i.cariAd || i.firma || '—',
+      i.cariAd || i.firma || _cariCikarAciklama(i.aciklama) || _mFirmaAdi || '—',
       _fmtTarih(i.tarih),
       i.tip || '',
       i.snNo || i.faturaNo || i.fisNo || '',
@@ -772,7 +781,7 @@ window._mvBirlesikCariExcelIndir = function() {
     satirlar.push([
       i.firma || i.firmaAdi || i.cariAd || '—',
       'Baran Ekstresi',
-      i.cariAd || i.firmaAdi || i.firma || '—',
+      i.cariAd || i.firma || i.firmaAdi || _cariCikarAciklama(i.aciklama) || _bFirmaAdi || '—',
       _fmtTarih(i.tarih),
       i.islemTuru || i.tip || '',
       i.snNo || i.faturaNo || (i.faturaSeri && i.faturaSira ? i.faturaSeri + i.faturaSira : '') || '',
