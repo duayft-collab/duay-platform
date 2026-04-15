@@ -209,9 +209,11 @@ function _mvUstDosyaBarHTML(meta, donem) {
     h += '<label style="font-size:11px;padding:5px 12px;border:0.5px solid var(--b);border-radius:5px;cursor:pointer;color:var(--t);font-family:inherit;background:var(--s2);white-space:nowrap;flex-shrink:0">+ Baran Yükle<input type="file" accept=".xlsx,.xlsm,.csv,.txt" onchange="window._mvDosyaOku(this,\'baran\')" style="display:none"></label>';
   }
   h += '</div>';
+  /* MUAVIN-FIRMAADI-ZORUNLU-001: Zorunlu etiketi + boşsa kırmızı border görsel vurgu */
   h += '<div style="padding:6px 14px;border-top:0.5px solid var(--b);display:flex;align-items:center;gap:8px">';
-  h += '<div style="font-size:9px;color:var(--t3);white-space:nowrap">Firma Ad\u0131</div>';
-  h += '<input id="mv-firma-adi" value="' + window._esc(bMeta.firmaAdi || '') + '" placeholder="Dosya ad\u0131ndan otomatik al\u0131n\u0131r..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">';
+  h += '<div style="font-size:9px;color:var(--t3);white-space:nowrap">Firma Ad\u0131 (zorunlu) *</div>';
+  var _firmaBosMu = !(bMeta.firmaAdi || '').trim();
+  h += '<input id="mv-firma-adi" value="' + window._esc(bMeta.firmaAdi || '') + '" placeholder="Baran exceline ait firma ad\u0131n\u0131 yaz\u0131n \u2014 zorunlu" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 8px;border:0.5px solid ' + (_firmaBosMu ? '#DC2626' : 'var(--b)') + ';border-radius:4px;background:' + (_firmaBosMu ? '#FCEBEB' : 'var(--s2)') + ';color:var(--t);font-family:inherit">';
   h += '</div>';
 
   h += '</div>';
