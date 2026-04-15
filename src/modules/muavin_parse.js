@@ -751,7 +751,16 @@ window._mvNormalize = {
   firmaAdiAyikla: function(aciklama) {
     if (!aciklama) return '';
     var s = String(aciklama);
-    var patterns = [/HVL-([^-]+)-/, /SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]+?)(?:\s+(?:V\.NO|TCKN|VKN|A\.\u015e|LTD))/i, /([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc\s]{5,}(?:A\.\u015e\.|LTD\.|A\.S\.))/];
+    /* MUAVIN-CARIAD-REGEX-ODEME-001: EFT/HAVALE/ÖDEME/SWIFT/ALICI pattern'leri eklendi */
+    var patterns = [
+      /HVL-([^-]+)-/,
+      /SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]+?)(?:\s+(?:V\.NO|TCKN|VKN|A\.\u015e|LTD))/i,
+      /([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc\s]{5,}(?:A\.\u015e\.|LTD\.|A\.S\.|SAN\.|T\u0130C\.|TIC\.))/,
+      /(?:EFT|HAVALE|ODEME|\u00d6DEME|TRF|TRANSFER)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d|\s+VKN|\s+IBAN|\s+TR\d)/i,
+      /(?:ALICI|GONDERICI|G\u00d6NDER\u0130C\u0130|BOR\u00c7LU|ALACAKLI)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d|\s+VKN|\s+IBAN)/i,
+      /(?:SWIFT|BIC)[:\s\-]+\S+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d)/i,
+      /^([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc][A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{3,}?)\s+(?:VKN|TCKN|IBAN|TR\d{2})/
+    ];
     for (var i = 0; i < patterns.length; i++) { var m = s.match(patterns[i]); if (m && m[1]) return m[1].trim(); }
     return '';
   },
