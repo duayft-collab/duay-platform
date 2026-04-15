@@ -771,3 +771,30 @@ if (typeof module !== 'undefined' && module.exports) {
     }, 300);
   } catch(e) { console.warn('[ADMIN-DAVET-URL-001]', e); }
 })();
+
+/* ADMIN-SESSION-TIMEOUT-001: 8 saat inaktiflik → auto logout */
+(function _sessionTimeoutGuard() {
+  var SESSION_MS = 8 * 60 * 60 * 1000;
+  /* Load-time kontrol — önceki oturum inaktiflik süresi aşıldıysa çıkış */
+  try {
+    var last = parseInt(localStorage.getItem('_lastActivity') || '0', 10);
+    if (last > 0 && (Date.now() - last) > SESSION_MS) {
+      window.toast?.('Oturum zaman aşımına uğradı', 'warn');
+      if (typeof logout === 'function') { logout(); }
+      else if (window.Auth?.logout) { window.Auth.logout(); }
+      localStorage.removeItem('_lastActivity');
+    }
+  } catch(e) {}
+  /* Kullanıcı etkileşiminde son aktivite zamanını güncelle (throttle: 30sn) */
+  var _lastWrite = 0;
+  var _touch = function() {
+    var now = Date.now();
+    if (now - _lastWrite < 30000) return;
+    _lastWrite = now;
+    try { localStorage.setItem('_lastActivity', String(now)); } catch(e) {}
+  };
+  document.addEventListener('click', _touch, { passive: true });
+  document.addEventListener('keydown', _touch, { passive: true });
+  /* İlk yüklemede bir kez işaretle */
+  _touch();
+})();
