@@ -409,7 +409,8 @@ window._ppModRender = function() {
     return;
   }
   if (mod === 'odak') {
-    body.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;background:var(--sf)">'
+    body.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;background:var(--sf);overflow-y:auto">'
+      + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">'
       + '<div style="font-size:11px;color:var(--t3);letter-spacing:.1em;margin-bottom:16px">ODAK MODU</div>'
       + '<div id="pp-odak-frog" style="font-size:18px;font-weight:500;color:var(--t);max-width:500px;line-height:1.4;margin-bottom:24px">Frog seçilmedi</div>'
       + '<div style="font-size:48px;font-weight:300;letter-spacing:.04em;color:var(--t);margin-bottom:8px" id="pp-odak-timer">00:00:00</div>'
@@ -417,7 +418,12 @@ window._ppModRender = function() {
       + '<div style="display:flex;gap:8px">'
       + '<button onclick="event.stopPropagation();window._ppDwBasla?.()" style="font-size:12px;padding:10px 28px;background:var(--t);color:var(--sf);border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500">Başla</button>'
       + '<button onclick="event.stopPropagation();window._ppSetMod(\'calisma\')" style="font-size:12px;padding:10px 20px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Çık</button>'
-      + '</div></div>';
+      + '</div></div>'
+      /* PP-ONCELIK-ZAMAN-001: 5 zaman dilimi × 3 öncelik grid */
+      + '<div style="border-top:0.5px solid var(--b);margin-top:20px"><div style="font-size:9px;color:var(--t3);letter-spacing:.1em;padding:12px 20px 0;text-align:center">ÖNCELİKLER — ZAMAN DİLİMLERİ</div></div>'
+      + '<div id="pp-oncelik-panel"></div>'
+      + '</div>';
+    window._ppOncelikRender?.();
   } else if (mod === 'takvim') {
     if (typeof window._ppTakvimPanelRender === 'function') { window._ppTakvimPanelRender(body); }
     else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
@@ -3141,4 +3147,87 @@ window._ppJSONImport = function(input) {
     } catch(err){ window.toast?.('JSON hatası: '+err.message,'err'); }
   };
   reader.readAsText(file);
+};
+
+/* ── PP-ONCELIK-ZAMAN-001: Zaman dilimi bazlı öncelik sistemi ──────────
+   5 dilim (gün/hafta/ay/çeyrek/yıl) × 3 öncelik, localStorage persist */
+window._ppOncelikLoad = function() {
+  try { return JSON.parse(localStorage.getItem('ak_pp_oncelikler_v1') || '{}'); }
+  catch (e) { return {}; }
+};
+
+window._ppOncelikSave = function(data) {
+  try { localStorage.setItem('ak_pp_oncelikler_v1', JSON.stringify(data)); }
+  catch (e) {}
+};
+
+window._ppOncelikEkle = function(zaman, text) {
+  var d = window._ppOncelikLoad();
+  if (!d[zaman]) d[zaman] = [];
+  if (d[zaman].length >= 3) {
+    window.toast?.('Bu dilimde max 3 öncelik var', 'warn');
+    return;
+  }
+  d[zaman].push({
+    id: Date.now().toString(36),
+    text: text,
+    tamam: false,
+    createdAt: new Date().toISOString()
+  });
+  window._ppOncelikSave(d);
+  window._ppOncelikRender?.();
+};
+
+window._ppOncelikToggle = function(zaman, id) {
+  var d = window._ppOncelikLoad();
+  var item = (d[zaman] || []).find(function(x) { return x.id === id; });
+  if (item) item.tamam = !item.tamam;
+  window._ppOncelikSave(d);
+  window._ppOncelikRender?.();
+};
+
+window._ppOncelikSil = function(zaman, id) {
+  var d = window._ppOncelikLoad();
+  if (d[zaman]) d[zaman] = d[zaman].filter(function(x) { return x.id !== id; });
+  window._ppOncelikSave(d);
+  window._ppOncelikRender?.();
+};
+
+window._ppOncelikRender = function() {
+  var cont = document.getElementById('pp-oncelik-panel');
+  if (!cont) return;
+  var d = window._ppOncelikLoad();
+  var esc = window._ppEsc || function(s) { return String(s || '').replace(/[<>&"]/g, function(c) { return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); };
+  var ZAMAN = [
+    { key: 'gun',    label: 'BUGÜN' },
+    { key: 'hafta',  label: 'BU HAFTA' },
+    { key: 'ay',     label: 'BU AY' },
+    { key: 'ceyrek', label: 'BU ÇEYREK' },
+    { key: 'yil',    label: 'BU YIL' }
+  ];
+  var html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:16px 20px">';
+  ZAMAN.forEach(function(z) {
+    var items = d[z.key] || [];
+    var tamamSay = items.filter(function(x) { return x.tamam; }).length;
+    html += '<div style="border:0.5px solid var(--b);border-radius:8px;overflow:hidden;background:var(--sf)">';
+    html += '<div style="padding:8px 12px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
+    html += '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.05em">' + z.label + '</div>';
+    html += '<div style="font-size:10px;color:var(--t2);margin-top:2px">' + tamamSay + '/3 tamamlandı</div>';
+    html += '</div><div style="padding:8px 10px">';
+    for (var i = 0; i < 3; i++) {
+      var item = items[i];
+      if (item) {
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:0.5px solid var(--b)">';
+        html += '<span onclick="event.stopPropagation();window._ppOncelikToggle(\'' + z.key + '\',\'' + item.id + '\')" style="font-size:14px;cursor:pointer;flex-shrink:0;line-height:1">' + (item.tamam ? '✅' : '⬜') + '</span>';
+        html += '<span style="font-size:10px;color:var(--t);flex:1;min-width:0;word-break:break-word;' + (item.tamam ? 'text-decoration:line-through;opacity:.5' : '') + '">' + esc(item.text) + '</span>';
+        html += '<span onclick="event.stopPropagation();window._ppOncelikSil(\'' + z.key + '\',\'' + item.id + '\')" title="Sil" style="font-size:12px;color:var(--t3);cursor:pointer;padding:1px 4px;flex-shrink:0">×</span>';
+        html += '</div>';
+      } else {
+        html += '<div onclick="event.stopPropagation();var t=window.prompt(\'' + z.label + ' için öncelik:\');if(t&&t.trim())window._ppOncelikEkle(\'' + z.key + '\',t.trim())" style="padding:5px 0;font-size:9px;color:var(--t3);cursor:pointer;border-bottom:0.5px dashed var(--b)">+ ' + (i + 1) + '. öncelik ekle</div>';
+      }
+    }
+    html += '</div></div>';
+  });
+  html += '</div>';
+  cont.innerHTML = html;
 };
