@@ -98,6 +98,16 @@ window._yetkiKontrol = function(islem) {
     'fason':               () => { window.renderFason?.(); },
     /* PLATFORM-STANDARTLARI-001: Platform standartları modül routing */
     'platform-standartlari':() => { window.renderPlatformStandartlari?.(); },
+    /* LOJISTIK-ROUTE-STUB-001: renderLojistik varsa çağır, yoksa placeholder göster */
+    'lojistik': function() {
+      var p = document.getElementById('panel-lojistik'); if(!p) return;
+      if(typeof window.renderLojistik === 'function') { window.renderLojistik(); return; }
+      p.innerHTML = '<div style="padding:60px;text-align:center;color:var(--t3)">'
+        +'<div style="font-size:32px;margin-bottom:12px">🚢</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--t)">Lojistik</div>'
+        +'<div style="font-size:11px;margin-top:8px">Kargo takip ve lojistik işlemleri</div>'
+        +'</div>';
+    },
   };
 
   // App.nav wrap — yeni paneller için ekstra render çağrısı
