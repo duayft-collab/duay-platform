@@ -754,7 +754,8 @@ window._mvNormalize = {
     /* MUAVIN-CARIAD-REGEX-ODEME-001: EFT/HAVALE/ÖDEME/SWIFT/ALICI pattern'leri eklendi */
     var patterns = [
       /HVL-([^-]+)-/,
-      /SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]+?)(?:\s+(?:V\.NO|TCKN|VKN|A\.\u015e|LTD))/i,
+      /* MUAVIN-SN-ACIKLAMA-TERMINATOR-001: Açk/Gön/Ref terminatörleri eklendi */
+      /SN:\d+\s+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]+?)(?:\s+(?:V\.NO|TCKN|VKN|A\.\u015e|LTD|A[\u00e7c]k|G[\u00f6o]n|Ref|A[\u00e7c]k:))/i,
       /([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dc\s]{5,}(?:A\.\u015e\.|LTD\.|A\.S\.|SAN\.|T\u0130C\.|TIC\.))/,
       /(?:EFT|HAVALE|ODEME|\u00d6DEME|TRF|TRANSFER)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d|\s+VKN|\s+IBAN|\s+TR\d)/i,
       /(?:ALICI|GONDERICI|G\u00d6NDER\u0130C\u0130|BOR\u00c7LU|ALACAKLI)[:\s]+([A-Z\u00c7\u011e\u0130\u00d6\u015e\u00dca-z\u00e7\u011f\u0131\u015f\u00f6\u00fc\s\.]{4,}?)(?:\s*$|\s+\d|\s+VKN|\s+IBAN)/i,
