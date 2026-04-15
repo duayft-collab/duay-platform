@@ -554,22 +554,29 @@ window.qs  = window.qs  || ((sel, ctx) => (ctx||document).querySelector(sel));
 window.qsa = window.qsa || ((sel, ctx) => [...(ctx||document).querySelectorAll(sel)]);
 
 // ════════════════════════════════════════════════════════════════
-// KULLANICI YETKİ SEVİYELERİ
-// ════════════════════════════════════════════════════════════════
+// KULLANICI YETKİ SİSTEMİ — TEK MERKEZ v2.0
+// PERM-UNIFY-001
+//
+// Öncelik: USER OVERRIDE > ROLE
+//   1. Kullanıcıya özel yetki varsa → o kullanılır (rol yok sayılır)
+//   2. Kullanıcıya özel yetki yoksa → rol varsayılanı kullanılır
 //
 // Seviyeler:
 //   'full'   — Tam yetki (admin varsayılanı)
 //   'manage' — Düzenleyebilir ama silme onaya düşer
 //   'view'   — Sadece okuma, hiçbir değişiklik yapamaz
 //   'count'  — Sadece kayıt sayısını görür, içeriği göremez
+//   'none'   — Erişim yok → 'count' olarak işlenir
 //
-// Kullanıcı objesi: user.permissions = { pusula:'view', odemeler:'count', ... }
-// Tanımsız modül → role varsayılanı kullanılır
+// Güvenlik kuralları:
+//   - Double permission uygulanamaz (tek karar noktası)
+//   - Undefined/null permission execution engellenir
+//   - Geçersiz değer → role default'a düşer + console.warn
+//   - Her kontrol loglanır: userId / permission / source
 //
 // 12 Saat Kuralı:
-//   Bir kayıt oluşturulduktan 12 saat sonra güncelleme yapılmak istenirse
-//   güncelleme onaya düşer. Admin'ler bu kuraldan muaftır.
-//   Kullanıcı bazında etkinleştirilebilir: user.rule12h = true
+//   Kayıt oluşturulduktan 12 saat sonra güncelleme onay gerektirir.
+//   Admin'ler muaf. user.rule12h = true ile etkinleştirilir.
 // ════════════════════════════════════════════════════════════════
 
 const PERM_LEVELS = { full: 4, manage: 3, view: 2, count: 1 };
@@ -579,19 +586,80 @@ const ROLE_PERM_DEFAULTS = {
   lead:    'view',
   staff:   'view',
 };
+const _VALID_PERM_VALUES = new Set(['full', 'manage', 'view', 'count', 'none']);
+
+/** @private — yetki kontrol log kuyruğu (max 200 kayıt, bellek-güvenli) */
+const _PERM_LOG = [];
 
 /**
- * Kullanıcının belirli modüldeki yetki seviyesini döndürür.
+ * @private — Her yetki kontrolünü loglar.
+ * @param {string} userId
+ * @param {string} moduleId
+ * @param {string} resolvedLevel — Sonuç seviyesi
+ * @param {'USER'|'ROLE'} source — Kararın kaynağı
+ */
+function _logPermCheck(userId, moduleId, resolvedLevel, source) {
+  _PERM_LOG.push({
+    ts:         new Date().toISOString(),
+    userId:     userId,
+    permission: moduleId,
+    level:      resolvedLevel,
+    source:     source,
+  });
+  if (_PERM_LOG.length > 200) _PERM_LOG.shift();
+}
+
+/**
+ * TEK YETKİ KONTROL MERKEZİ — Öncelik: USER OVERRIDE > ROLE
+ *
+ * Tüm modüller bu fonksiyonu kullanır; başka yerden yetki kararı alınamaz.
+ *
  * @param {string} moduleId — Modül adı (pusula, odemeler, crm vb.)
  * @returns {'full'|'manage'|'view'|'count'}
  */
 function getPermLevel(moduleId) {
+  // GUARD: moduleId zorunlu ve string olmalı
+  if (!moduleId || typeof moduleId !== 'string') {
+    console.warn('[Perm] getPermLevel: geçersiz moduleId →', moduleId);
+    return 'count';
+  }
+
   const cu = window.Auth?.getCU?.();
-  if (!cu) return 'count';
-  if (cu.role === 'admin') return 'full';
-  const perms = cu.permissions || {};
-  if (perms[moduleId]) return perms[moduleId];
-  return ROLE_PERM_DEFAULTS[cu.role] || 'view';
+
+  // GUARD: oturum yok → en kısıtlı seviye
+  if (!cu || !cu.id) return 'count';
+
+  // Admin her zaman full (role check'e gerek yok)
+  if (cu.role === 'admin') {
+    _logPermCheck(cu.id, moduleId, 'full', 'ROLE');
+    return 'full';
+  }
+
+  // ── USER OVERRIDE ────────────────────────────────────────────
+  // Kullanıcıya özel yetki varsa → rol YOK SAYILIR
+  const userPerms = cu.permissions;
+  if (userPerms !== null && userPerms !== undefined && typeof userPerms === 'object') {
+    const rawLevel = userPerms[moduleId];
+    if (rawLevel !== undefined && rawLevel !== null) {
+      // GUARD: geçerli bir değer mi?
+      if (!_VALID_PERM_VALUES.has(rawLevel)) {
+        console.warn('[Perm] Geçersiz user permission değeri "' + rawLevel + '" (modül: ' + moduleId + ') — role default kullanılıyor');
+      } else {
+        // 'none' → erişim yok → 'count' olarak döndür
+        const resolved = rawLevel === 'none' ? 'count' : rawLevel;
+        _logPermCheck(cu.id, moduleId, resolved, 'USER');
+        return resolved;
+      }
+    }
+  }
+
+  // ── ROLE DEFAULT ─────────────────────────────────────────────
+  // Kullanıcıya özel yetki yok → rol varsayılanı
+  const roleLevel = ROLE_PERM_DEFAULTS[cu.role] || 'view';
+  // GUARD: role seviyesi PERM_LEVELS'de tanımlı olmalı
+  const safeLevel = PERM_LEVELS[roleLevel] ? roleLevel : 'view';
+  _logPermCheck(cu.id, moduleId, safeLevel, 'ROLE');
+  return safeLevel;
 }
 
 /**
@@ -601,13 +669,15 @@ function getPermLevel(moduleId) {
  * @returns {boolean}
  */
 function canAction(moduleId, action) {
+  // GUARD: action zorunlu
+  if (!action) return false;
   const level = getPermLevel(moduleId);
   const lvl   = PERM_LEVELS[level] || 0;
   switch (action) {
     case 'count':  return lvl >= 1;
     case 'read':   return lvl >= 2;
     case 'edit':   return lvl >= 3;
-    case 'delete': return lvl >= 4; // full — manage'de silme onaya düşer
+    case 'delete': return lvl >= 4;
     default:       return lvl >= 2;
   }
 }
@@ -648,12 +718,19 @@ function requireAction(moduleId, action) {
   return false;
 }
 
+/**
+ * Yetki kontrol log geçmişini döndürür (Sistem → Sağlık Monitörü / debug).
+ * @returns {Array<{ts, userId, permission, level, source}>}
+ */
+function getPermLog() { return _PERM_LOG.slice(); }
+
 window.PERM_LEVELS        = PERM_LEVELS;
 window.ROLE_PERM_DEFAULTS = ROLE_PERM_DEFAULTS;
 window.getPermLevel       = getPermLevel;
 window.canAction          = canAction;
 window.check12hRule       = check12hRule;
 window.requireAction      = requireAction;
+window.getPermLog         = getPermLog;
 
 window._skeletonRows = function(n, kolonSayisi) {
   var cols = kolonSayisi || 4;
