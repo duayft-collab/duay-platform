@@ -14,7 +14,8 @@ function _saV2UrunSayisi(t) { return (t.urunler && t.urunler.length) ? t.urunler
 
 /* ── Ana render ─────────────────────────────────────────────── */
 /* SAV2-RENDER-MERGE-001: gelişmiş render yüklendi bayrağı + _saV2RenderMain alias */
-window._saV2RenderLoaded = true;
+/* SATINALMA-C-DESIGN-ACTIVE-001: render.js devre dışı — liste.js C tasarımı (KPI + filtreli) aktif */
+window._saV2RenderLoaded = false;
 window._saV2RenderMain = function() {
   window._saV2HatirlatmaKontrol?.();
   var panel = document.getElementById('panel-satin-alma');
