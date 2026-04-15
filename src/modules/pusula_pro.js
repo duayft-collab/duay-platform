@@ -137,7 +137,7 @@ window._ppRender = function() {
     + '<div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A"></div>Pusula OS</div>'
     + '<div style="display:flex;gap:3px" id="pp-modes">' + _modBtns + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
-    + '<div id="pp-score-pill" style="font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;background:var(--s2);color:var(--t);border:0.5px solid var(--b)">Bugün <span style="color:#1D9E75">0 pt</span></div>'
+    /* PUSULA-TEMIZLIK-001: skor pill kaldırıldı */
     + '<div id="pp-msg-btn" onclick="event.stopPropagation();window._ppMesajPanelAc()" style="width:30px;height:30px;border:0.5px solid var(--b);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative" title="Mesajlar">'
     + '<svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M2 2h10a1 1 0 011 1v6a1 1 0 01-1 1H8l-3 2V10H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/></svg>'
     + '<div id="pp-msg-dot" style="width:6px;height:6px;border-radius:50%;background:#E24B4A;position:absolute;top:4px;right:4px;display:none"></div>'
@@ -580,22 +580,13 @@ window._ppModRender = function() {
     h += '</div>';
     body.innerHTML = h;
   } else if (mod === 'degerlendirme') {
-    var skor = window._ppSkorOku?.() || { bugun: 0, hafta: 0, toplam: 0 };
+    /* PUSULA-TEMIZLIK-001: skor/habit/challenge kaldırıldı, sadeleştirildi */
+    var skor = { bugun: 0, hafta: 0, toplam: 0 };
     var degTasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
     var tamamlanan = degTasks.filter(function(t) { return t.durum === 'tamamlandi'; });
     var bekleyen = degTasks.filter(function(t) { return t.durum !== 'tamamlandi'; });
-    var habits = window._ppHabitLoad?.() || [];
+    /* PUSULA-TEMIZLIK-001: habit render bloğu tamamen silindi */
     var habitH = '';
-    if (habits.length) {
-      habitH = '<div style="border:0.5px solid var(--b);border-radius:8px;padding:16px;margin-bottom:14px;background:var(--sf)"><div style="font-size:10px;font-weight:500;color:var(--t);margin-bottom:10px">Alışkanlık durumu</div>';
-      habits.forEach(function(h2) {
-        var s2 = h2.streak || 0;
-        var dots = '';
-        for (var di = 0; di < 7; di++) { dots += '<div style="width:8px;height:8px;border-radius:50%;background:' + (di < s2 % 7 ? 'var(--t)' : 'var(--b)') + '"></div>'; }
-        habitH += '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--b)"><span style="font-size:11px;flex:1">' + _ppEsc(h2.baslik || '') + '</span><div style="display:flex;gap:3px">' + dots + '</div><span style="font-size:9px;color:var(--t3);min-width:28px;text-align:right">' + s2 + ' gün</span></div>';
-      });
-      habitH += '</div>';
-    }
     body.innerHTML = '<div style="flex:1;overflow-y:auto;padding:24px;max-width:700px;margin:0 auto;width:100%">'
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.1em;margin-bottom:16px">HAFTALIK DEĞERLENDİRME</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">'
@@ -1348,7 +1339,8 @@ window._ppMesajPanelAc = function() {
       + '</div>';
   };
   panel.innerHTML = '<div style="display:flex;border-bottom:0.5px solid var(--b)">'
-    + ['kisisel','sirket','hayat'].map(function(t,i){ var lbl={kisisel:'Kişisel',sirket:'Şirket',hayat:'Hayat'}[t]; return '<div onclick="event.stopPropagation();window._ppMsgTab(\''+t+'\')" id="pp-msg-tab-'+t+'" style="flex:1;padding:8px;text-align:center;font-size:10px;cursor:pointer;'+(i===0?'border-bottom:2px solid var(--t);font-weight:500':'color:var(--t3)')+'">'+lbl+'</div>'; }).join('')
+    /* PUSULA-TEMIZLIK-001: hayat sekmesi kaldırıldı */
+    + ['kisisel','sirket'].map(function(t,i){ var lbl={kisisel:'Kişisel',sirket:'Şirket'}[t]; return '<div onclick="event.stopPropagation();window._ppMsgTab(\''+t+'\')" id="pp-msg-tab-'+t+'" style="flex:1;padding:8px;text-align:center;font-size:10px;cursor:pointer;'+(i===0?'border-bottom:2px solid var(--t);font-weight:500':'color:var(--t3)')+'">'+lbl+'</div>'; }).join('')
     + '</div>'
     + '<div id="pp-msg-list" style="flex:1;overflow-y:auto;max-height:350px">'
     + (msgs.length ? msgs.map(_msgRow).join('') : '<div style="padding:30px;text-align:center;color:var(--t3);font-size:12px">Mesaj yok</div>')
@@ -1366,7 +1358,8 @@ window._ppMesajPanelAc = function() {
 };
 
 window._ppMsgTab = function(tip) {
-  var msgs = tip === 'hayat' ? (window._ppHayatKartlariOku ? window._ppHayatKartlariOku() : []) : window._ppMesajlariOku(tip);
+  /* PUSULA-TEMIZLIK-001: hayat dalı kaldırıldı */
+  var msgs = window._ppMesajlariOku(tip);
   var list = document.getElementById('pp-msg-list');
   if (!list) return;
   document.querySelectorAll('[id^="pp-msg-tab-"]').forEach(function(el){ el.style.borderBottom='none'; el.style.fontWeight=''; el.style.color='var(--t3)'; });
