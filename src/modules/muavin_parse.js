@@ -711,10 +711,14 @@ window._mvNormalize = {
     if (m) { var g = m[1].padStart(2, '0'), ay = m[2].padStart(2, '0'), y = m[3].length === 2 ? '20' + m[3] : m[3]; return y + '-' + ay + '-' + g; }
     return null;
   },
-  /* MUAVIN-TUTAR-PARSE-001: binlik nokta /\./g ile silinir, sonra virgül→nokta */
+  /* MUAVIN-TUTAR-PARSE-002: number input ondalık noktayı silmesin, sadece virgül varsa Türkçe format uygula */
   tutarNormalize: function(v) {
     if (v === null || v === undefined || v === '') return 0;
-    var s = String(v).replace(/[^\d\.,\-]/g, '').replace(/\./g, '').replace(',', '.');
+    if (typeof v === 'number') return v;
+    var s = String(v).replace(/[^\d\.,\-]/g, '');
+    if (s.includes(',')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    }
     return parseFloat(s) || 0;
   },
   /* MUAVIN-KUR-CEK-001: TCMB tarihe özel kur → localStorage cache + fallback exchangerate */
