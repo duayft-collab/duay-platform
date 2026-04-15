@@ -17,10 +17,12 @@ window._mvXLSMExport = function() {
   var islemler = window._mvSonIslemler||[];
   if(!islemler.length){window.toast?.('Önce Excel yükleyin','warn');return;}
   if(typeof XLSX==='undefined'){window.toast?.('SheetJS yüklenmedi','err');return;}
-  var baslik = ['TARİH','TİP','FİŞ NO','AÇIKLAMA','BORÇ','ALACAK','BAKİYE','B/A','BORÇ(DÖV)','ALACAK(DÖV)','BAKİYE(DÖV)','B/A(DÖV)','CARİ ADI'];
+  /* MUAVIN-DOSYAADI-001: KAYNAK DOSYA sütunu eklendi */
+  var baslik = ['TARİH','TİP','FİŞ NO','AÇIKLAMA','BORÇ','ALACAK','BAKİYE','B/A','BORÇ(DÖV)','ALACAK(DÖV)','BAKİYE(DÖV)','B/A(DÖV)','CARİ ADI','KAYNAK DOSYA'];
   var satirlar = [baslik];
   islemler.forEach(function(i){
-    satirlar.push([i.tarih,i.tip,i.fisNo,i.aciklama.replace(/&lt;/g,'<').replace(/&gt;/g,'>'),i.borc||'',i.alacak||'',i.bakiye||'',i.ba,i.borcDov||'',i.alacakDov||'',i.bakiyeDov||'',i.baDov,i.cari]);
+    /* MUAVIN-DOSYAADI-001: satıra _dosyaAdi eklendi */
+    satirlar.push([i.tarih,i.tip,i.fisNo,i.aciklama.replace(/&lt;/g,'<').replace(/&gt;/g,'>'),i.borc||'',i.alacak||'',i.bakiye||'',i.ba,i.borcDov||'',i.alacakDov||'',i.bakiyeDov||'',i.baDov,i.cari,i._dosyaAdi||'']);
   });
   var ws = XLSX.utils.aoa_to_sheet(satirlar);
   ws['!cols'] = [{wch:12},{wch:8},{wch:10},{wch:60},{wch:14},{wch:14},{wch:14},{wch:5},{wch:14},{wch:14},{wch:14},{wch:5},{wch:40}];
@@ -853,15 +855,17 @@ window._mvBirlesikExcelIndir = function() {
   var firmalar = typeof window._mvFirmaListesi === 'function' ? window._mvFirmaListesi() : [];
   if (!firmalar.length) { window.toast?.('\u00d6nce dosya y\u00fckleyin', 'warn'); return; }
   var satirlar = [];
-  satirlar.push(['Tarih', 'Fatura No', 'Bor\u00e7 TL', 'Alacak TL', 'Firma Ad\u0131', 'Kaynak', 'Durum', 'A\u00e7\u0131klama']);
+  /* MUAVIN-DOSYAADI-001: Baran dosya adı sütunu eklendi */
+  satirlar.push(['Tarih', 'Fatura No', 'Bor\u00e7 TL', 'Alacak TL', 'Firma Ad\u0131', 'Kaynak', 'Durum', 'A\u00e7\u0131klama', 'Baran Dosya']);
   firmalar.forEach(function(f) {
     (f.sonuc || []).forEach(function(r) {
       var m = r.muhasebeci, s = r.sirket;
       if (m) {
-        satirlar.push([m.tarih || '', m.faturaNo || '', m.tip === 'borc' ? m.tutarTL.toFixed(2) : '0.00', m.tip === 'alacak' ? m.tutarTL.toFixed(2) : '0.00', m.firma || f.ad || '', 'Muhasebeci', r.durum, m.aciklama || '']);
+        /* MUAVIN-DOSYAADI-001: muhasebeci satırında boş placeholder (sütun hizalama) */
+        satirlar.push([m.tarih || '', m.faturaNo || '', m.tip === 'borc' ? m.tutarTL.toFixed(2) : '0.00', m.tip === 'alacak' ? m.tutarTL.toFixed(2) : '0.00', m.firma || f.ad || '', 'Muhasebeci', r.durum, m.aciklama || '', '']);
       }
       if (s) {
-        satirlar.push([s.tarih || '', s.faturaNo || '', s.tip === 'borc' ? s.tutarTL.toFixed(2) : '0.00', s.tip === 'alacak' ? s.tutarTL.toFixed(2) : '0.00', s.firma || f.ad || '', '\u015eirket', r.durum, s.aciklama || '']);
+        satirlar.push([s.tarih || '', s.faturaNo || '', s.tip === 'borc' ? s.tutarTL.toFixed(2) : '0.00', s.tip === 'alacak' ? s.tutarTL.toFixed(2) : '0.00', s.firma || f.ad || '', '\u015eirket', r.durum, s.aciklama || '', s._dosyaAdi || '']);
       }
     });
   });

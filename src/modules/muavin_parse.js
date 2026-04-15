@@ -155,7 +155,9 @@ function _mvParseBaran(tsv) {
       alacakMeblagh: parseFloat((k[km.alacakMeblagh]||'').replace(/\./g,'').replace(',','.'))||0,
       alacakDoviz: k[km.alacakDoviz]||'',
       tlBakiye: parseFloat((k[km.tlBakiye]||'').replace(/\./g,'').replace(',','.'))||0,
-      _taraf:'baran'
+      _taraf:'baran',
+      /* MUAVIN-DOSYAADI-001: kaynak dosya adı — hangi Excel'den geldiği izlenebilsin */
+      _dosyaAdi: ''
     });
   });
   return islemler;
@@ -182,7 +184,11 @@ window._mvDosyaOku = function(inp, taraf) {
     }
     _mvMetaKaydet(taraf, f.name, islemler.length, boyutStr);
     if (taraf === 'muhasebeci') { window._mvSonIslemler = islemler; window._mvSonHesaplar = {}; }
-    else { window._mvSonIslemlerB = islemler; }
+    else {
+      /* MUAVIN-DOSYAADI-001: dosya adını her Baran işlemine yaz */
+      islemler.forEach(function(r){ r._dosyaAdi = f.name; });
+      window._mvSonIslemlerB = islemler;
+    }
     window._mvEslesmeSonucu = null;
     /* Normalize engine \u2014 firma ay\u0131r\u0131\u015ft\u0131rma */
     try {
