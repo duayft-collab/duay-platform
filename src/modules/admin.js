@@ -2148,6 +2148,20 @@ function editUser(id){
   const users=loadUsers();const u=users.find(x=>x.id===id);if(!u)return;
   st('mo-u-title','✏️ '+u.name);
   g('f-name').value=u.name;g('f-email').value=u.email;g('f-pw').value='';g('f-pw').placeholder='(değiştirmek için doldurun)';
+  /* ADMIN-EMAIL-READONLY-001: düzenleme modunda e-posta kilitli (Firebase Auth sync) */
+  const _emailEl = g('f-email');
+  if (_emailEl) {
+    _emailEl.readOnly = true;
+    _emailEl.style.background = 'var(--s2)';
+    _emailEl.style.cursor = 'not-allowed';
+    if (!document.getElementById('f-email-warn')) {
+      const _w = document.createElement('small');
+      _w.id = 'f-email-warn';
+      _w.style.cssText = 'color:#D97706;display:block;margin-top:2px;font-size:10px';
+      _w.textContent = '⚠ E-posta Firebase Auth ile bağlı — değiştirilemez.';
+      _emailEl.parentNode?.appendChild(_w);
+    }
+  }
   g('f-role').value=u.role;g('f-st').value=u.status;g('f-edit-id').value=id;
   const M={ik:'İK',fn:'Finans',op:'Operasyon',tk:'Teknik',ms:'Maaş',ss:'Sistem'};
   Object.keys(M).forEach(k=>g('pa-'+k).checked=(u.access||[]).includes(M[k]));
@@ -2161,6 +2175,14 @@ function openNewUser(){
   st('mo-u-title','+ Yeni Kullanıcı');
   ['f-name','f-email','f-pw'].forEach(id=>g(id).value='');
   g('f-pw').placeholder='Min 6 karakter';g('f-role').value='staff';g('f-st').value='active';g('f-edit-id').value='';
+  /* ADMIN-EMAIL-READONLY-001: yeni kullanıcıda e-posta düzenlenebilir — readonly reset */
+  const _emailEl2 = g('f-email');
+  if (_emailEl2) {
+    _emailEl2.readOnly = false;
+    _emailEl2.style.background = '';
+    _emailEl2.style.cursor = '';
+  }
+  document.getElementById('f-email-warn')?.remove();
   ['pa-ik','pa-fn','pa-op','pa-tk','pa-ms','pa-ss'].forEach((id,i)=>g(id).checked=[true,false,true,false,false,false][i]);
   // Default staff modules
   ALL_MODULES.forEach(m=>{const cb=g('pm-'+m.id);if(cb)cb.checked=ROLE_DEFAULT_MODULES.staff.includes(m.id);});
