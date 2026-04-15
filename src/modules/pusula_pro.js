@@ -44,6 +44,30 @@ var _ppId = function() { return typeof window.generateId==='function' ? window.g
 var _ppCu = function() { return window.Auth?.getCU?.() || window.CU?.(); };
 var _ppIsAdmin = function() { var r=_ppCu()?.role; return r==='admin'||r==='manager'; };
 
+/**
+ * PUSULA-IZOLASYON-001: Merkezi görev izolasyon filtresi.
+ * Admin/manager: tüm görevleri görür.
+ * Diğer roller: yalnızca sahip olduğu veya paylaşılan görevleri görür.
+ * @param {Array} tasks
+ * @returns {Array}
+ */
+var _ppIzolasyonFiltre = function(tasks) {
+  if (_ppIsAdmin()) return tasks;
+  var _uid = window.Auth?.getCU?.()?.uid
+    || window.CU?.()?.uid
+    || window._kullanici?.uid
+    || window._kullanici?.email
+    || '';
+  if (!_uid) return [];
+  return tasks.filter(function(t) {
+    var _sahip = t.olusturanId || t.createdBy || '';
+    if (!_sahip) return false;
+    if (_sahip === _uid) return true;
+    var paylasilan = Array.isArray(t.paylasilanlar) ? t.paylasilanlar : [];
+    return paylasilan.indexOf(_uid) !== -1;
+  });
+};
+
 /* ── Veri ───────────────────────────────────────────────────── */
 function _ppLoad() {
   try {
@@ -172,15 +196,8 @@ window._ppModRender = function() {
   var mod = window.PP_MOD || window._ppAktifMod || 'akis';
   if (mod === 'calisma') {
     var tasks = _ppLoad().filter(function(t) { return !t.isDeleted; });
-    /* PUSULA-GOREV-GIZLILIK-MANTIK-FIX-001: boş paylasilanlar = SADECE SAHİP GÖRÜR (eski: herkes görür) */
-    var _mevcutUid = window.Auth?.getCU?.()?.uid || window.CU?.()?.uid || window._kullanici?.uid || window._kullanici?.email || '';
-    tasks = tasks.filter(function(t) {
-      var _sahip = t.olusturanId || t.createdBy || '';
-      if (!t.paylasilanlar || !t.paylasilanlar.length) {
-        return _mevcutUid === _sahip || _sahip === '';
-      }
-      return t.paylasilanlar.indexOf(_mevcutUid) !== -1;
-    });
+    /* PUSULA-IZOLASYON-001: merkezi filtre — calisma modu */
+    tasks = _ppIzolasyonFiltre(tasks);
     /* PUSULA-UX-BUNDLE-001 #1: arama filtresi — _ppSearchQ global state bazlı */
     var _aramaQ = (window._ppSearchQ || '').toLowerCase().trim();
     if (_aramaQ) {
@@ -492,7 +509,8 @@ window._ppModRender = function() {
     else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
     return;
   } else if (mod === 'akis') {
-    var tasks = _ppLoad().filter(function(t){ return !t.isDeleted; });
+    /* PUSULA-IZOLASYON-001: akis modu — izolasyon uygulandı (admin/manager hariç) */
+    var tasks = _ppIzolasyonFiltre(_ppLoad().filter(function(t){ return !t.isDeleted; }));
     var bugun = _ppToday();
     var kritik = tasks.filter(function(t){ return t.oncelik==='kritik' && t.durum!=='tamamlandi'; });
     var devam = tasks.filter(function(t){ return t.durum==='devam'; });
@@ -794,7 +812,9 @@ window._ppHizliEkle = function(inp) {
   /* PUSULA-HIZLI-001: öncelik seçicisini oku (yoksa normal) */
   var _oncelikSel = document.getElementById('pp-quick-oncelik');
   var _oncelik = (_oncelikSel && _oncelikSel.value) ? _oncelikSel.value : 'normal';
-  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _ppCu()?.displayName || _ppCu()?.email || '' };
+  /* PUSULA-IZOLASYON-001: hızlı ekle — sahip kaydedilmeden görev tüm kullanıcılara görünüyordu */
+  var _cuNow = _ppCu();
+  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _cuNow?.displayName || _cuNow?.email || '', olusturanId: _cuNow?.uid || _cuNow?.email || '', _ppSource: 'pro' };
   var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
   inp.value = '';
   window.toast?.('Görev eklendi', 'ok');
