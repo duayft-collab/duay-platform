@@ -274,15 +274,19 @@ window._deleteUrun = function(id) {
     onConfirm: function() {
       var data = loadUrunDB();
       var item = data.find(function(x) { return String(x.id) === String(id); });
+      /* URUN-DELETE-FIX-001: sessiz başarısızlığı engelle — bulunamayan için else uyarı */
       if (item) {
         item.isDeleted = true;
         item.deletedAt = new Date().toISOString();
         item.deletedBy = window.Auth?.getCU?.()?.id || '';
         storeUrunDB(data);
         window.logActivity?.('urun_db', 'Urun silindi: ' + (item.duayName || item.duayCode || id));
+        renderUrunDB();
+        window.toast?.('Silindi', 'ok');
+      } else {
+        window.toast?.('Ürün bulunamadı', 'warn');
+        renderUrunDB();
       }
-      renderUrunDB();
-      window.toast?.('Silindi', 'ok');
     }
   });
 };
