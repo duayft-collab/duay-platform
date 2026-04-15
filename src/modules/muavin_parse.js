@@ -717,7 +717,8 @@ window._mvNormalize = {
       var tutar = self.tutarNormalize(s.borc || 0) - self.tutarNormalize(s.alacak || 0);
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
       /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
-      return { kaynak: 'muhasebeci', firma: firmaAdi || s.firma || '', snNo: (fatNo && fatNo.indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && fatNo.indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', dovizCinsi: 'TRY', dovizBorc: tutar > 0 ? Math.abs(tutar) : 0, dovizAlacak: tutar < 0 ? Math.abs(tutar) : 0, kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-CARIAD-NORMALIZE-001: s.cariAd ham satırdan — firma + cariAd alanları Excel C kolonu için */
+      return { kaynak: 'muhasebeci', firma: s.cariAd || firmaAdi || s.firma || '', cariAd: s.cariAd || firmaAdi || s.firma || '', snNo: (fatNo && fatNo.indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && fatNo.indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(tutar), tutarUSD: 0, tip: tutar > 0 ? 'borc' : 'alacak', aciklama: s.aciklama || '', fisNo: s.fisNo || '', dovizCinsi: 'TRY', dovizBorc: tutar > 0 ? Math.abs(tutar) : 0, dovizAlacak: tutar < 0 ? Math.abs(tutar) : 0, kurAlis: null, kurSatis: null, ham: s };
     });
   },
   sirkettenNormalize: function(satirlar, kurTablosu) {
@@ -737,7 +738,8 @@ window._mvNormalize = {
       var netTL = borcTL - alacakTL + (netUSD * kur);
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */
       /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
-      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama), snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-CARIAD-NORMALIZE-001: firmaAdiAyikla öncelikli + s.firmaAdi/firma fallback */
+      return { kaynak: 'sirket', firma: self.firmaAdiAyikla(s.aciklama) || s.firmaAdi || s.firma || '', cariAd: self.firmaAdiAyikla(s.aciklama) || s.firmaAdi || s.firma || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
     });
   },
   firmaAdiAyikla: function(aciklama) {
