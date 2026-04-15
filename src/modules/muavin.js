@@ -755,11 +755,31 @@ window._mvBirlesikCariExcelIndir = function() {
     if (!isNaN(d2.getTime())) return ('0'+d2.getDate()).slice(-2)+'.'+('0'+(d2.getMonth()+1)).slice(-2)+'.'+d2.getFullYear();
     return s;
   };
+  /* MUAVIN-EXCEL-TAM-FIX-001: Türkçe binlik ayraç parse helper */
+  var _fmtSayi = function(v) {
+    if (!v && v !== 0) return '';
+    var s = String(v).trim();
+    if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else if (s.indexOf(',') !== -1) {
+      s = s.replace(',', '.');
+    }
+    var n = parseFloat(s);
+    return isNaN(n) ? '' : n;
+  };
+  /* MUAVIN-EXCEL-TAM-FIX-001: kurTip state (MB Alış / MB Satış toggle) */
+  var _kurTip = window._mvOrtakKurTip || 'alis';
   var satirlar = [];
-  /* MUAVIN-EXCEL-FIX-001: 13 kolon — C=Normalize, DÖVİZ TUTAR + TCMB SATIŞ eklendi */
-  satirlar.push(['CARİ ADI', 'KAYNAK', 'CARİ ADI (Normalize)', 'TARİH', 'TİP', 'EŞLEŞME NO', 'AÇIKLAMA', 'TL BORÇ', 'TL ALACAK', 'DÖVİZ CİNS', 'DÖVİZ TUTAR', 'TCMB ALIŞ', 'TCMB SATIŞ']);
+  /* MUAVIN-EXCEL-TAM-FIX-001: 15 kolon — TL+DÖVİZ ayrı borç/alacak/bakiye + MB kur */
+  satirlar.push(['CARİ ADI', 'KAYNAK', 'CARİ ADI (Normalize)', 'TARİH', 'TİP', 'EŞLEŞME NO', 'AÇIKLAMA', 'TL BORÇ', 'TL ALACAK', 'TL BAKİYE', 'DÖVİZ CİNS', 'DÖVİZ BORÇ', 'DÖVİZ ALACAK', 'DÖVİZ BAKİYE', 'MB KUR']);
+  var _muhTLBak = 0;
   muhArr.forEach(function(i) {
-    /* MUAVIN-EXCEL-CARIAD-STRICT-001: C kolonu sadece i.cariAd (ham fallback kaldırıldı) */
+    var _borc = _fmtSayi(i.borc || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || 0;
+    var _alacak = _fmtSayi(i.alacak || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || 0;
+    var _dovBorc = _fmtSayi(i.dovizBorc || 0) || 0;
+    var _dovAlacak = _fmtSayi(i.dovizAlacak || 0) || 0;
+    _muhTLBak += _alacak - _borc;
+    var _kur = _kurTip === 'alis' ? (_fmtSayi(i.kurAlis) || 0) : (_fmtSayi(i.kurSatis) || 0);
     satirlar.push([
       i.firma || i.cariAd || '—',
       'Muhasebeci',
@@ -768,36 +788,47 @@ window._mvBirlesikCariExcelIndir = function() {
       i.tip || '',
       i.snNo || i.faturaNo || i.fisNo || '',
       i.aciklama || '',
-      parseFloat(i.borc || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || '',
-      parseFloat(i.alacak || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || '',
+      _borc || '',
+      _alacak || '',
+      Math.round(_muhTLBak * 100) / 100,
       i.dovizCinsi || 'TRY',
-      parseFloat(i.tutarDoviz || i.dovizTutar || 0) || '',
-      i.kurAlis || '',
-      i.kurSatis || ''
+      _dovBorc || '',
+      _dovAlacak || '',
+      Math.round((_dovAlacak - _dovBorc) * 100) / 100,
+      _kur || ''
     ]);
   });
+  var _barTLBak = 0;
   barArr.forEach(function(i) {
-    /* MUAVIN-EXCEL-CARIAD-STRICT-001: Baran C = açıklamadan karşı taraf (firmaAdiAyikla öncelikli) */
+    var _borc = _fmtSayi(i.borcMeblagh || i.borcMeblag || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || 0;
+    var _alacak = _fmtSayi(i.alacakMeblagh || i.alacakMeblag || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || 0;
+    var _dovBorc = _fmtSayi(i.borcMeblagh || 0) || 0;
+    var _dovAlacak = _fmtSayi(i.alacakMeblagh || 0) || 0;
+    var _dc = i.dovizCinsi || i.borcDoviz || i.alacakDoviz || 'TRL';
+    _barTLBak += _alacak - _borc;
+    var _kur = _kurTip === 'alis' ? (_fmtSayi(i.kurAlis) || 0) : (_fmtSayi(i.kurSatis) || 0);
     satirlar.push([
       i.firma || i.firmaAdi || i.cariAd || '—',
       'Baran Ekstresi',
-      (function(){ var _c = window._mvNormalize?.firmaAdiAyikla?.(i.aciklama||''); return _c || i._firmaAdi || i.firmaAdi || i.firma || '—'; })(),
+      (window._mvNormalize?.firmaAdiAyikla?.(i.aciklama || '') || i._firmaAdi || i.firmaAdi || i.firma || '—'),
       _fmtTarih(i.tarih),
       i.islemTuru || i.tip || '',
       i.snNo || i.faturaNo || (i.faturaSeri && i.faturaSira ? i.faturaSeri + i.faturaSira : '') || '',
       i.aciklama || '',
-      parseFloat(i.borcMeblagh || i.borcMeblag || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || '',
-      parseFloat(i.alacakMeblagh || i.alacakMeblag || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || '',
-      i.dovizCinsi || i.borcDoviz || i.alacakDoviz || 'TRL',
-      parseFloat(i.borcMeblagh || i.alacakMeblagh || i.tutarDoviz || 0) || '',
-      i.kurAlis || '',
-      i.kurSatis || ''
+      _borc || '',
+      _alacak || '',
+      Math.round(_barTLBak * 100) / 100,
+      _dc,
+      _dovBorc || '',
+      _dovAlacak || '',
+      Math.round((_dovAlacak - _dovBorc) * 100) / 100,
+      _kur || ''
     ]);
   });
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(satirlar);
-  /* MUAVIN-EXCEL-FIX-001: 13 kolon genişlikleri */
-  ws['!cols'] = [{wch:25},{wch:14},{wch:25},{wch:12},{wch:10},{wch:16},{wch:45},{wch:14},{wch:14},{wch:8},{wch:12},{wch:10},{wch:10}];
+  /* MUAVIN-EXCEL-TAM-FIX-001: 15 kolon genişlikleri */
+  ws['!cols'] = [{wch:25},{wch:14},{wch:25},{wch:12},{wch:10},{wch:16},{wch:40},{wch:14},{wch:14},{wch:14},{wch:8},{wch:14},{wch:14},{wch:14},{wch:10}];
   XLSX.utils.book_append_sheet(wb, ws, 'Birlesik');
   XLSX.writeFile(wb, 'muavin-birlesik-' + (donem || 'gecerli') + '-' + new Date().toISOString().slice(0, 10) + '.xlsx');
   window.toast?.('Excel indirildi ✓ (' + (muhArr.length + barArr.length) + ' satır)', 'ok');
