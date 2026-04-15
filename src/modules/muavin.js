@@ -466,17 +466,95 @@ window.renderMuavin = function() {
   /* Sekme içeriği */
   if (aktifTab === 'karsilastirma') sagIcerik += _mvKarsilastirmaIcerikHTML(kpi, meta, donem);
   else if (aktifTab === 'muhasebeci') sagIcerik += _mvMuhasebeIcerikHTML(islemlerM);
-  /* MUAVIN-ORTAK-EXCEL-SEKME-001: birleşik export içerik — _mvBirlesikCariExcelIndir'ı tetikler */
+  /* MUAVIN-ORTAK-EXCEL-VIEW-001: cari filtre + TL/Döviz KPI + işlem tablosu + MB alış/satış */
   else if (aktifTab === 'ortak-excel') {
-    var _mArr = (meta[donem] || {}).muhasebeci?.normalArr || window._mvSonIslemler || [];
-    var _bArr = (meta[donem] || {}).baran?.normalArr || window._mvSonIslemlerB || [];
-    var _toplam = _mArr.length + _bArr.length;
-    sagIcerik += '<div style="padding:32px;text-align:center">'
-      + '<div style="font-size:13px;font-weight:500;color:var(--t);margin-bottom:8px">Ortak Excel (Birleştirilmiş)</div>'
-      + '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">'
-      + (_toplam > 0 ? 'Muhasebeci: ' + _mArr.length + ' satır · Baran: ' + _bArr.length + ' satır' : 'Önce Muhasebeci Excel veya Baran Ekstresi yükleyin')
+    var _d = meta[donem] || {};
+    var _muhArr = (_d.muhasebeci || {}).normalArr || window._mvSonIslemler || [];
+    var _barArr = (_d.baran || {}).normalArr || window._mvSonIslemlerB || [];
+    var _tumArr = _muhArr.map(function(i){ return Object.assign({}, i, {_kaynak:'Muhasebeci'}); })
+      .concat(_barArr.map(function(i){ return Object.assign({}, i, {_kaynak:'Baran'}); }));
+    /* Cari listesi — count map */
+    var _cariSet = {};
+    _tumArr.forEach(function(i){ var c = i.firma || i.cariAd || i.firmaAdi || '—'; _cariSet[c] = (_cariSet[c] || 0) + 1; });
+    var _cariList = Object.keys(_cariSet).sort();
+    /* Filtre state */
+    var _aktifCari = window._mvOrtakCariFiltre || '';
+    var _kurTip = window._mvOrtakKurTip || 'alis';
+    var _filtreArr = _aktifCari ? _tumArr.filter(function(i){ return (i.firma || i.cariAd || i.firmaAdi || '—') === _aktifCari; }) : _tumArr;
+    /* Toplamlar */
+    var _tlBorc = 0, _tlAlacak = 0, _dovizMap = {};
+    _filtreArr.forEach(function(i) {
+      _tlBorc += parseFloat(i.borc || i.borcMeblagh || i.borcMeblag || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || 0;
+      _tlAlacak += parseFloat(i.alacak || i.alacakMeblagh || i.alacakMeblag || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || 0;
+      var dc = i.dovizCinsi || i.borcDoviz || 'TRY';
+      if (dc && dc !== 'TRY' && dc !== 'TRL') {
+        if (!_dovizMap[dc]) _dovizMap[dc] = { borc: 0, alacak: 0, kur: 0 };
+        _dovizMap[dc].borc += parseFloat(i.borcMeblagh || i.borcMeblag || 0) || 0;
+        _dovizMap[dc].alacak += parseFloat(i.alacakMeblagh || i.alacakMeblag || 0) || 0;
+        _dovizMap[dc].kur = parseFloat(_kurTip === 'alis' ? (i.kurAlis || 0) : (i.kurSatis || 0)) || 0;
+      }
+    });
+    var _tlNet = _tlAlacak - _tlBorc;
+    var _esc = window._esc || function(s) { return String(s || ''); };
+
+    sagIcerik += '<div style="padding:0">'
+      /* Filtre bar */
+      + '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:0.5px solid var(--b);flex-wrap:wrap">'
+      + '<select onchange="event.stopPropagation();window._mvOrtakCariFiltre=this.value;window.renderMuavin()" onclick="event.stopPropagation()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-size:11px;font-family:inherit;min-width:180px">'
+      + '<option value="">Tüm Cariler (' + _cariList.length + ')</option>'
+      + _cariList.map(function(c) { return '<option value="' + _esc(c) + '"' + (c === _aktifCari ? ' selected' : '') + '>' + _esc(c) + ' (' + _cariSet[c] + ')</option>'; }).join('')
+      + '</select>'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-left:auto">'
+      + '<span style="font-size:10px;color:var(--t3)">Kur:</span>'
+      + '<button onclick="event.stopPropagation();window._mvOrtakKurTip=\'alis\';window.renderMuavin()" style="padding:4px 10px;border-radius:5px;border:0.5px solid var(--b);font-size:10px;cursor:pointer;font-family:inherit;background:' + (_kurTip === 'alis' ? 'var(--t)' : 'transparent') + ';color:' + (_kurTip === 'alis' ? 'var(--sf)' : 'var(--t2)') + '">MB Alış</button>'
+      + '<button onclick="event.stopPropagation();window._mvOrtakKurTip=\'satis\';window.renderMuavin()" style="padding:4px 10px;border-radius:5px;border:0.5px solid var(--b);font-size:10px;cursor:pointer;font-family:inherit;background:' + (_kurTip === 'satis' ? 'var(--t)' : 'transparent') + ';color:' + (_kurTip === 'satis' ? 'var(--sf)' : 'var(--t2)') + '">MB Satış</button>'
+      + '<button onclick="event.stopPropagation();window._mvBirlesikCariExcelIndir?.()" style="padding:4px 12px;border-radius:5px;border:none;background:#111;color:#fff;font-size:10px;cursor:pointer;font-family:inherit">↓ Excel</button>'
+      + '</div></div>'
+      /* KPI bar */
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0;border-bottom:0.5px solid var(--b)">'
+      + '<div style="padding:10px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">TL BORÇ</div><div style="font-size:16px;font-weight:500;color:#A32D2D;font-family:monospace">' + _tlBorc.toLocaleString('tr-TR', {maximumFractionDigits: 2}) + '</div></div>'
+      + '<div style="padding:10px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">TL ALACAK</div><div style="font-size:16px;font-weight:500;color:#27500A;font-family:monospace">' + _tlAlacak.toLocaleString('tr-TR', {maximumFractionDigits: 2}) + '</div></div>'
+      + '<div style="padding:10px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">NET BAKİYE</div><div style="font-size:16px;font-weight:500;color:' + (_tlNet >= 0 ? '#27500A' : '#A32D2D') + ';font-family:monospace">' + (_tlNet >= 0 ? '+' : '') + _tlNet.toLocaleString('tr-TR', {maximumFractionDigits: 2}) + '</div></div>'
+      + Object.keys(_dovizMap).map(function(cur) {
+          var v = _dovizMap[cur];
+          var net = v.alacak - v.borc;
+          return '<div style="padding:10px 16px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3)">' + _esc(cur) + ' NET' + (v.kur ? ' (₺' + v.kur + ')' : '') + '</div><div style="font-size:16px;font-weight:500;color:' + (net >= 0 ? '#27500A' : '#A32D2D') + ';font-family:monospace">' + (net >= 0 ? '+' : '') + net.toLocaleString('tr-TR', {maximumFractionDigits: 2}) + '</div></div>';
+        }).join('')
+      + '<div style="padding:10px 16px"><div style="font-size:9px;color:var(--t3)">KAYIT</div><div style="font-size:16px;font-weight:500;color:var(--t)">' + _filtreArr.length + '</div></div>'
       + '</div>'
-      + (_toplam > 0 ? '<button onclick="event.stopPropagation();window._mvBirlesikCariExcelIndir?.()" style="padding:10px 24px;border:none;border-radius:6px;background:#111;color:#fff;font-size:12px;cursor:pointer;font-family:inherit">↓ Ortak Excel İndir (' + _toplam + ' satır)</button>' : '')
+      /* İşlem listesi */
+      + '<div style="overflow:auto;max-height:400px">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
+      + '<thead style="position:sticky;top:0;background:var(--s2)"><tr style="border-bottom:0.5px solid var(--b)">'
+      + '<th style="padding:7px 12px;text-align:left;font-weight:500;color:var(--t3)">Cari</th>'
+      + '<th style="padding:7px 8px;text-align:left;font-weight:500;color:var(--t3)">Kaynak</th>'
+      + '<th style="padding:7px 8px;text-align:left;font-weight:500;color:var(--t3)">Tarih</th>'
+      + '<th style="padding:7px 8px;text-align:left;font-weight:500;color:var(--t3)">Tip</th>'
+      + '<th style="padding:7px 8px;text-align:left;font-weight:500;color:var(--t3)">Açıklama</th>'
+      + '<th style="padding:7px 8px;text-align:right;font-weight:500;color:var(--t3)">TL Borç</th>'
+      + '<th style="padding:7px 8px;text-align:right;font-weight:500;color:var(--t3)">TL Alacak</th>'
+      + '<th style="padding:7px 8px;text-align:right;font-weight:500;color:var(--t3)">Döviz</th>'
+      + '</tr></thead><tbody>'
+      + _filtreArr.slice(0, 500).map(function(i) {
+          var cari = i.firma || i.cariAd || i.firmaAdi || '—';
+          var borc = parseFloat(i.borc || i.borcMeblagh || i.borcMeblag || (i.tip === 'borc' ? i.tutarTL : 0) || 0) || 0;
+          var alacak = parseFloat(i.alacak || i.alacakMeblagh || i.alacakMeblag || (i.tip === 'alacak' ? i.tutarTL : 0) || 0) || 0;
+          var dc = i.dovizCinsi || i.borcDoviz || '';
+          var dv = parseFloat(i.borcMeblagh || i.alacakMeblagh || i.tutarDoviz || 0) || 0;
+          var kSrc = i._kaynak === 'Muhasebeci';
+          return '<tr style="border-bottom:0.5px solid var(--b)">'
+            + '<td style="padding:6px 12px;color:var(--t);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(cari) + '</td>'
+            + '<td style="padding:6px 8px"><span style="font-size:9px;padding:2px 6px;border-radius:3px;background:' + (kSrc ? '#E6F1FB' : '#EAF3DE') + ';color:' + (kSrc ? '#0C447C' : '#27500A') + '">' + _esc(i._kaynak) + '</span></td>'
+            + '<td style="padding:6px 8px;color:var(--t2);white-space:nowrap">' + _esc(i.tarih || '') + '</td>'
+            + '<td style="padding:6px 8px;color:var(--t3)">' + _esc(i.islemTuru || i.tip || '') + '</td>'
+            + '<td style="padding:6px 8px;color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _esc(i.aciklama || '') + '">' + _esc((i.aciklama || '').slice(0, 40)) + '</td>'
+            + '<td style="padding:6px 8px;text-align:right;color:#A32D2D;font-family:monospace">' + (borc ? borc.toLocaleString('tr-TR', {maximumFractionDigits: 2}) : '') + '</td>'
+            + '<td style="padding:6px 8px;text-align:right;color:#27500A;font-family:monospace">' + (alacak ? alacak.toLocaleString('tr-TR', {maximumFractionDigits: 2}) : '') + '</td>'
+            + '<td style="padding:6px 8px;text-align:right;color:var(--t2);font-family:monospace">' + (dc && dc !== 'TRY' && dv ? dv.toLocaleString('tr-TR', {maximumFractionDigits: 2}) + ' ' + _esc(dc) : '') + '</td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table></div>'
+      + (_filtreArr.length > 500 ? '<div style="padding:8px 16px;font-size:10px;color:var(--t3);text-align:center">İlk 500 kayıt gösteriliyor. Excel\'e aktararak tümünü görün.</div>' : '')
       + '</div>';
   }
   else if (aktifTab === 'baran') sagIcerik += _mvBaranIcerikHTML(islemlerB);
