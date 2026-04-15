@@ -84,7 +84,12 @@ window._saV2Kpi = function() {
         return acc + ((s - a) / a * 100);
       }, 0) / karlilar.length)
     : 0;
-  var toplam    = buAyListe.reduce(function(a,t){ return a+(parseFloat(t.toplamTl)||0); },0);
+  /* SATINALMA-V2-KPI-TOPLAM-FIX-001: toplamTl alanı yok — toplamTutar × kur (TRY) fallback */
+  var toplam = buAyListe.reduce(function(a,t){
+    var kur = (window._saKur && window._saKur[t.toplamPara || t.para || 'USD']) || 44.55;
+    var tl = parseFloat(t.toplamTl) || (parseFloat(t.toplamTutar || 0) * kur);
+    return a + tl;
+  }, 0);
   return { buAy:buAyListe.length, bekleyen:bekleyen.length, ortMarj:ortMarj, toplam:toplam };
 };
 
