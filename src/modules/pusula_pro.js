@@ -849,6 +849,19 @@ window._ppYeniGorev = function() {
     +'</div>'
     +_sel('enerji','ENERJİ','<option value="yuksek">Yüksek</option><option value="orta" selected>Orta</option><option value="dusuk">Düşük</option>')
     +'</div>'
+    /* PUSULA-GOREV-GIZLILIK-FORM-001: paylaşım kişi seçimi (boşsa herkes görür) */
+    +(function() {
+      var _kulList = typeof window._ppKullanicilar === 'function' ? window._ppKullanicilar() : [];
+      if (!_kulList.length) return '';
+      return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">PAYLAŞIM <span style="font-weight:400;font-size:9px">(boş bırakılırsa herkes görür)</span></div>'
+        + '<div style="max-height:120px;overflow-y:auto;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);padding:8px 10px">'
+        + _kulList.map(function(k) {
+          var uid = k.uid || k.email || k.id || '';
+          var lbl = k.displayName || k.name || k.ad || k.email || '—';
+          return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 0;cursor:pointer;color:var(--t)"><input type="checkbox" class="pp-paylasim-chk" value="' + _ppEsc(uid) + '" onclick="event.stopPropagation()" style="width:12px;height:12px;cursor:pointer">' + _ppEsc(lbl) + '</label>';
+        }).join('')
+        + '</div></div>';
+    })()
     +'<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">AÇIKLAMA / ARAŞTIRMA NOTU</div>'
     +'<div style="display:flex;gap:2px;padding:5px 8px;border:0.5px solid var(--b);border-radius:6px 6px 0 0;background:var(--s2);border-bottom:none">'
     +'<button type="button" onclick="event.stopPropagation();document.execCommand(\'bold\')" style="font-size:11px;padding:3px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);cursor:pointer;font-weight:700;font-family:inherit">B</button>'
@@ -958,6 +971,8 @@ window._ppGorevKaydet = function() {
     assignedTo: (window._ppUserTaglerAl('ppf-sorumlu')[0]?.uid) || '',
     assignedToAd: (window._ppUserTaglerAl('ppf-sorumlu')[0]?.ad) || '',
     gozlemci: window._ppUserTaglerAl('ppf-gozlemci'),
+    /* PUSULA-GOREV-GIZLILIK-FORM-001: paylaşım checkbox'larından uid listesi */
+    paylasilanlar: Array.from(document.querySelectorAll('.pp-paylasim-chk:checked')).map(function(c) { return c.value; }),
     enerji: document.getElementById('ppf-enerji')?.value||'',
     aciklama: document.getElementById('ppf-aciklama')?.innerHTML||'',
     altGorevler: window._ppAltGorevler||[],
