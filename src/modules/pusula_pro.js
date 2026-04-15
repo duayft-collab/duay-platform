@@ -3299,6 +3299,8 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     +'<textarea id="pp-gorev-mesaj-input" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:6px;padding:6px 8px;font-size:11px;font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
     +'<div style="display:flex;gap:6px">'
     +'<button onclick="event.stopPropagation();var t=document.getElementById(\'pp-gorev-mesaj-input\');if(t.value.trim()){window._ppGorevMesajGonder(\''+taskId+'\',t.value.trim());t.value=\'\'}" style="flex:1;padding:5px;border:none;background:#111;color:#fff;border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit">Gönder</button>'
+    /* PP-GOREV-MESAJ-STT-001: SpeechRecognition tr-TR — sesli mesaj texte dönüşerek gönderilir */
+    +'<button id="pp-stt-btn" onclick="event.stopPropagation();window._ppSttBaslat(\''+taskId+'\')" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:12px;cursor:pointer;background:transparent;color:var(--t2)" title="Sesli mesaj">🎤</button>'
     +'<label style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:10px;cursor:pointer;color:var(--t2)">📎<input type="file" style="display:none" onchange="event.stopPropagation();if(this.files[0])window._ppGorevMesajGonder(\''+taskId+'\',\'\',this.files[0].name)"></label>'
     +'</div></div>';
   document.body.appendChild(mo);
@@ -3345,4 +3347,26 @@ window._ppSorumluDegistir = function(taskId) {
   window._ppStore?.(tasks);
   window.toast?.('Sorumlu: '+yeniAd,'ok');
   window._ppModRender?.();
+};
+
+/* PP-GOREV-MESAJ-STT-001: Sesli mesaj — SpeechRecognition tr-TR → text → _ppGorevMesajGonder */
+window._ppSttBaslat = function(taskId) {
+  var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Rec) { window.toast?.('Tarayıcınız sesli mesajı desteklemiyor','warn'); return; }
+  var btn = document.getElementById('pp-stt-btn');
+  if (btn) { btn.textContent = '⏹'; btn.style.color = '#DC2626'; }
+  var rec = new Rec();
+  rec.lang = 'tr-TR';
+  rec.interimResults = false;
+  rec.onresult = function(e) {
+    var text = e.results[0][0].transcript;
+    window._ppGorevMesajGonder(taskId, '🎤 ' + text);
+    if (btn) { btn.textContent = '🎤'; btn.style.color = ''; }
+  };
+  rec.onerror = function() {
+    window.toast?.('Ses algılanamadı','warn');
+    if (btn) { btn.textContent = '🎤'; btn.style.color = ''; }
+  };
+  rec.onend = function() { if (btn) { btn.textContent = '🎤'; btn.style.color = ''; } };
+  try { rec.start(); } catch(e) { window.toast?.('Mikrofon başlatılamadı','err'); if(btn){btn.textContent='🎤';btn.style.color='';} }
 };
