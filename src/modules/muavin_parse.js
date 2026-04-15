@@ -42,7 +42,21 @@ function _mvParseTarih(s) {
     return isNaN(d.getTime())?null:d;
   }
   var d2=new Date(s);
-  return isNaN(d2.getTime())?null:d2;
+  if(isNaN(d2.getTime())) return null;
+  /* MUAVIN-TARIH-PARSE-001: YYYY > 2100 → Excel serial yeniden yorumlama
+     "4590-01-01" gibi hatalı tarihler → digits(45900101) → substring(0,5)=45900 → serial */
+  if (d2.getFullYear() > 2100) {
+    var digits = str.replace(/-/g, '').replace(/\s+/g, '');
+    var serial = parseInt(digits.substring(0, 5), 10);
+    if (!isNaN(serial) && serial > 25569 && serial < 100000) {
+      var d3 = new Date(Math.round((serial - 25569) * 86400000));
+      if (!isNaN(d3.getTime()) && d3.getFullYear() >= 2000 && d3.getFullYear() <= 2100) {
+        return d3;
+      }
+    }
+    return null;
+  }
+  return d2;
 }
 
 function _mvMetaKaydet(taraf, ad, satir, boyutStr) {
