@@ -43,10 +43,12 @@ window._saV2RenderMain = function() {
 
   /* --- KPI --- */
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid '+window._b+';flex-shrink:0">';
+  /* SATINALMA-V2-KPI-TEDARIKCI-001: ORT. KAR MARJI anlamsız → TEDARİKÇİ SAYISI */
+  var _tedSay = new Set(liste.filter(function(t){ return t.tedarikci; }).map(function(t){ return t.tedarikci; })).size;
   var kpiItems = [
     {l:'BU AY TEKLİF',v:kpi.buAy,s:'Geçen ay ile karşılaştır',renk:window._t,bar:'#185FA5',pct:80},
     {l:'BEKLEYEN ONAY',v:kpi.bekleyen,s:kpi.bekleyen>0?'Onay bekliyor':'Bekleyen yok',renk:'#854F0B',bar:'#854F0B',pct:Math.min(kpi.bekleyen*10,100)},
-    {l:'ORT. KAR MARJI',v:'%'+kpi.ortMarj,s:'Hedef %28',renk:'#0F6E56',bar:'#1D9E75',pct:parseFloat(kpi.ortMarj)/60*100},
+    {l:'TEDARİKÇİ',v:_tedSay+' firma',s:'aktif tedarikçi',renk:'#185FA5',bar:'#378ADD',pct:Math.min(_tedSay*10,100)},
     {l:'AYLIK ALİŞ',v:'₺'+Math.round(kpi.toplam/1000)+'K',s:'TL karşılığı',renk:window._t,bar:'#185FA5',pct:72}
   ];
   kpiItems.forEach(function(k,i){
