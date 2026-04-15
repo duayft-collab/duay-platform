@@ -3324,6 +3324,13 @@ window._ppGorevMesajLoad = function(taskId) {
 
 window._ppGorevMesajSave = function(taskId, mesajlar) {
   try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(mesajlar)); } catch(e) {}
+  /* PP-MESAJ-FIRESTORE-001: paralel Firestore write — platform/taskChats.chat_<taskId> merge */
+  try {
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+      var _payload = {}; _payload['chat_' + taskId] = mesajlar;
+      firebase.firestore().collection('platform').doc('taskChats').set(_payload, { merge: true }).catch(function(){});
+    }
+  } catch(e) {}
 };
 
 window._ppGorevMesajGonder = function(taskId, text, dosyaAd) {
@@ -3350,7 +3357,7 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
   mo.innerHTML = '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">'
     +'<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">💬 Mesajlar</div>'
     +'<div style="font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_ppEsc(taskAd||taskId)+'</div></div>'
-    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-mesaj-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3);flex-shrink:0">×</button>'
+    +'<button onclick="event.stopPropagation();try{window._ppChatListener&&window._ppChatListener()}catch(e){};window._ppChatListener=null;document.getElementById(\'pp-gorev-mesaj-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3);flex-shrink:0">×</button>'
     +'</div>'
     /* PP-GOREV-MESAJ-EKLER-001: Mesajlar / Ekler tab bar */
     +'<div style="display:flex;border-bottom:0.5px solid var(--b);flex-shrink:0">'
@@ -3397,8 +3404,25 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     }
   };
   window._ppGorevMesajPanelRender(taskId);
+  /* PP-MESAJ-FIRESTORE-001: Realtime listener — platform/taskChats.chat_<taskId> */
+  try {
+    if (window._ppChatListener) { try { window._ppChatListener(); } catch(e){} window._ppChatListener = null; }
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+      window._ppChatListener = firebase.firestore().collection('platform').doc('taskChats').onSnapshot(function(snap){
+        var msgs = (snap && snap.data && snap.data()) ? (snap.data()['chat_' + taskId] || []) : [];
+        try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(msgs)); } catch(e) {}
+        window._ppGorevMesajPanelRender && window._ppGorevMesajPanelRender(taskId);
+      }, function(){});
+    }
+  } catch(e) {}
   setTimeout(function(){
-    document.addEventListener('click', function _gmc(e){ if(!mo.contains(e.target)){ mo.remove(); document.removeEventListener('click',_gmc); } });
+    document.addEventListener('click', function _gmc(e){
+      if(!mo.contains(e.target)){
+        try{ window._ppChatListener && window._ppChatListener(); }catch(e){} window._ppChatListener=null;
+        mo.remove();
+        document.removeEventListener('click',_gmc);
+      }
+    });
   }, 50);
 };
 
