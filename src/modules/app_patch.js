@@ -637,6 +637,15 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'alis-teklifleri', label:'Tedarik Teklifleri' },
     { id:'satis-teklifleri',label:'Proforma Teklifler'},
     { id:'cari',      label:'Cari Yönetimi'        },
+    /* ADMIN-MOD-COMPLETE-001: ALL_MODULES'ta eksik olan 8 nav modülü */
+    { id:'nakit-akisi',     label:'Nakit Akışı'            },
+    { id:'pusula-pro',      label:'Pusula Pro'             },
+    { id:'navlun',          label:'Navlun Hesaplama'       },
+    { id:'ihracat',         label:'İhracat Operasyonları'  },
+    { id:'ihracat-ops',     label:'İhracat Ops (Detay)'    },
+    { id:'ihracat-listesi', label:'İhracat Listesi'        },
+    { id:'ihracat-formlar', label:'İhracat Formları'       },
+    { id:'ihracat-belgeler',label:'İhracat Belgeleri'      },
   ];
 
   const existing = new Set(window.ALL_MODULES.map(m => m.id));
@@ -657,10 +666,14 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
 
   // Manager rolüne uygun olanları ekle
   /* FASON-OVERRIDE-FIX-001: fason satinalma altgrubu, manager izin */
+  /* ADMIN-MOD-COMPLETE-001: managerExtras 8 modülle genişletildi */
   const managerExtras = ['docs','formlar','gorusme','hesap','finans',
                          'arsiv','tebligat','evrak','resmi','temizlik',
                          'rehber','numune','etkinlik','links',
-                         'satinalma','cari','fason'];
+                         'satinalma','cari','fason',
+                         'nakit-akisi','pusula-pro','navlun',
+                         'ihracat','ihracat-ops','ihracat-listesi',
+                         'ihracat-formlar','ihracat-belgeler'];
   if (window.ROLE_DEFAULT_MODULES?.manager) {
     managerExtras.forEach(id => {
       if (!window.ROLE_DEFAULT_MODULES.manager.includes(id)) {

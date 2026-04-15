@@ -816,11 +816,8 @@ function openPermModal(id) {
   var allowed     = u.modules;
   var perms       = u.permissions || {};
   var modMap      = {};
-  ALL_MODULES.forEach(function(m) { modMap[m.id] = m; });
-  if (!modMap['satinalma']) modMap['satinalma'] = { id: 'satinalma', label: 'Satın Alma' };
-  if (!modMap['lojistik']) modMap['lojistik'] = { id: 'lojistik', label: 'Lojistik Merkezi' };
-  if (!modMap['satis-teklifleri']) modMap['satis-teklifleri'] = { id: 'satis-teklifleri', label: 'Satış Teklifleri' };
-  if (!modMap['alis-teklifleri']) modMap['alis-teklifleri'] = { id: 'alis-teklifleri', label: 'Alış Teklifleri' };
+  /* ADMIN-MOD-COMPLETE-001: app_patch tüm modülleri window.ALL_MODULES'a push ediyor — manual fallback gereksiz */
+  (window.ALL_MODULES || ALL_MODULES).forEach(function(m) { modMap[m.id] = m; });
 
   // Orijinal yetkileri kaydet (değişiklik takibi için)
   _permOriginal = {};
@@ -1218,6 +1215,15 @@ function savePermissions() {
   }
 
   saveUsers(users);
+  /* ADMIN-MOD-COMPLETE-001: aktif kullanıcı kendisiyse CU'yu anlık güncelle — sayfa yenilemesi gerekmez */
+  var _cu = (typeof _getCU === 'function' ? _getCU() : null) || window.Auth?.getCU?.();
+  if (_cu && _cu.id === u.id) {
+    Object.assign(_cu, {
+      modules:     u.modules,
+      permissions: u.permissions,
+      rule12h:     u.rule12h,
+    });
+  }
   window.closeMo?.('mo-perm');
   renderAdmin();
   logActivity('user', 'Yetki seviyeleri güncellendi: "' + u.name + '" (12h kuralı: ' + (u.rule12h ? 'aktif' : 'kapalı') + ')');
