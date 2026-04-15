@@ -421,9 +421,10 @@ window._ppModRender = function() {
       + '</div></div>'
       /* PP-ONCELIK-ZAMAN-001: 5 zaman dilimi × 3 öncelik grid */
       + '<div style="border-top:0.5px solid var(--b);margin-top:20px"><div style="font-size:9px;color:var(--t3);letter-spacing:.1em;padding:12px 20px 0;text-align:center">ÖNCELİKLER — ZAMAN DİLİMLERİ</div></div>'
-      + '<div id="pp-oncelik-panel"></div>'
+      + '<div id="pp-oncelik-panel" style="margin-top:8px"></div>'
       + '</div>';
-    window._ppOncelikRender?.();
+    /* PP-ONCELIK-RENDER-FIX-001: setTimeout ile DOM mount sonrası render (defensive timing) */
+    setTimeout(function() { window._ppOncelikRender?.(); }, 50);
   } else if (mod === 'takvim') {
     if (typeof window._ppTakvimPanelRender === 'function') { window._ppTakvimPanelRender(body); }
     else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
@@ -2398,13 +2399,12 @@ window._ppGorevPeek = function(id) {
   document.body.appendChild(p);
 };
 
+/* PP-GOREV-MESAJ-001: per-task mesajlaşma paneli — task-bazlı LS key, dosya paylaşımı, mesaj geçmişi */
 window._ppGorevMesaj = function(id) {
   var tasks = _ppLoad();
   var t = tasks.find(function(x){ return String(x.id)===String(id); });
   if (!t) return;
-  window._ppMesajGonder?.('Görev: '+_ppEsc(t.baslik||t.title||''), 'kisisel', '');
-  window._ppMesajPanelAc?.();
-  window.toast?.('Görev mesajına geçildi','info');
+  window._ppGorevMesajPanelAc(id, t.baslik || t.title || '');
 };
 
 /* ── PP-TAK-V2-001: CSV Import ──────────────────────────────── */
@@ -3230,4 +3230,69 @@ window._ppOncelikRender = function() {
   });
   html += '</div>';
   cont.innerHTML = html;
+};
+
+/* ── PP-GOREV-MESAJ-001: per-task mesajlaşma sistemi ───────── */
+/* Namespace: _ppGorevMesaj* (global _ppMesaj* ile çakışmaz) */
+
+window._ppGorevMesajLoad = function(taskId) {
+  try { return JSON.parse(localStorage.getItem('ak_pp_gorev_mesaj_'+taskId)||'[]'); } catch(e) { return []; }
+};
+
+window._ppGorevMesajSave = function(taskId, mesajlar) {
+  try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(mesajlar)); } catch(e) {}
+};
+
+window._ppGorevMesajGonder = function(taskId, text, dosyaAd) {
+  var mesajlar = window._ppGorevMesajLoad(taskId);
+  var cu = (typeof _ppCu === 'function') ? _ppCu() : null;
+  mesajlar.push({
+    id: Date.now().toString(36),
+    text: text || '',
+    dosya: dosyaAd || null,
+    gonderen: (cu && (cu.displayName || cu.email)) || (window._kullanici && (window._kullanici.displayName || window._kullanici.email)) || 'Ben',
+    tarih: new Date().toISOString(),
+    tur: dosyaAd ? 'dosya' : 'metin'
+  });
+  window._ppGorevMesajSave(taskId, mesajlar);
+  window._ppGorevMesajPanelRender && window._ppGorevMesajPanelRender(taskId);
+};
+
+window._ppGorevMesajPanelAc = function(taskId, taskAd) {
+  var mevcut = document.getElementById('pp-gorev-mesaj-panel'); if(mevcut) mevcut.remove();
+  var mo = document.createElement('div');
+  mo.id = 'pp-gorev-mesaj-panel';
+  mo.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--sf,#fff);border-left:0.5px solid var(--b);z-index:9500;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.08)';
+  mo.onclick = function(e){ e.stopPropagation(); };
+  mo.innerHTML = '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">'
+    +'<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">💬 Mesajlar</div>'
+    +'<div style="font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_ppEsc(taskAd||taskId)+'</div></div>'
+    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-mesaj-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3);flex-shrink:0">×</button>'
+    +'</div>'
+    +'<div id="pp-gorev-mesaj-liste" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>'
+    +'<div style="padding:10px 12px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:6px">'
+    +'<textarea id="pp-gorev-mesaj-input" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:6px;padding:6px 8px;font-size:11px;font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button onclick="event.stopPropagation();var t=document.getElementById(\'pp-gorev-mesaj-input\');if(t.value.trim()){window._ppGorevMesajGonder(\''+taskId+'\',t.value.trim());t.value=\'\'}" style="flex:1;padding:5px;border:none;background:#111;color:#fff;border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit">Gönder</button>'
+    +'<label style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:10px;cursor:pointer;color:var(--t2)">📎<input type="file" style="display:none" onchange="event.stopPropagation();if(this.files[0])window._ppGorevMesajGonder(\''+taskId+'\',\'\',this.files[0].name)"></label>'
+    +'</div></div>';
+  document.body.appendChild(mo);
+  window._ppGorevMesajPanelRender = function(tid) {
+    var liste = document.getElementById('pp-gorev-mesaj-liste'); if(!liste) return;
+    var mesajlar = window._ppGorevMesajLoad(tid||taskId);
+    liste.innerHTML = mesajlar.length ? mesajlar.map(function(m){
+      return '<div style="padding:8px 10px;background:var(--s2);border-radius:8px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+        +'<span style="font-size:9px;font-weight:500;color:var(--t2)">'+_ppEsc(m.gonderen)+'</span>'
+        +'<span style="font-size:9px;color:var(--t3)">'+new Date(m.tarih).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})+'</span></div>'
+        +(m.dosya?'<div style="font-size:10px;color:#185FA5">📎 '+_ppEsc(m.dosya)+'</div>':'')
+        +(m.text?'<div style="font-size:11px;color:var(--t)">'+_ppEsc(m.text)+'</div>':'')
+        +'</div>';
+    }).join('') : '<div style="text-align:center;color:var(--t3);font-size:11px;padding:20px">Henüz mesaj yok</div>';
+    liste.scrollTop = liste.scrollHeight;
+  };
+  window._ppGorevMesajPanelRender(taskId);
+  setTimeout(function(){
+    document.addEventListener('click', function _gmc(e){ if(!mo.contains(e.target)){ mo.remove(); document.removeEventListener('click',_gmc); } });
+  }, 50);
 };
