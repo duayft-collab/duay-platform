@@ -73,8 +73,8 @@ function _mvParseMuhasebeci(tsv) {
       if (m) { mevcutHesapKodu = m[1]; mevcutCari = m[2].trim(); }
       return;
     }
-    var borc = parseFloat((kolonlar[4]||'').replace(',','.'))||0;
-    var alacak = parseFloat((kolonlar[5]||'').replace(',','.'))||0;
+    var borc = parseFloat((kolonlar[4]||'').replace(/\./g,'').replace(',','.'))||0;
+    var alacak = parseFloat((kolonlar[5]||'').replace(/\./g,'').replace(',','.'))||0;
     var tip = (kolonlar[1]||'').trim();
     var fisNo = (kolonlar[2]||'').trim();
     var aciklama = (kolonlar[3]||'').trim();
@@ -85,7 +85,7 @@ function _mvParseMuhasebeci(tsv) {
       tip: tip, fisNo: fisNo, faturaNo: faturaNo,
       aciklama: aciklama,
       borc: borc, alacak: alacak,
-      bakiye: parseFloat((kolonlar[6]||'').replace(',','.'))||0,
+      bakiye: parseFloat((kolonlar[6]||'').replace(/\./g,'').replace(',','.'))||0,
       ba: (kolonlar[7]||'').trim(),
       cariAd: mevcutCari, hesapKodu: mevcutHesapKodu,
       _taraf: 'muhasebeci'
@@ -131,11 +131,11 @@ function _mvParseBaran(tsv) {
       aciklama: k[km.aciklama]||'',
       faturaSeri: k[km.faturaSeri]||'',
       faturaSira: k[km.faturaSira]||'',
-      borcMeblagh: parseFloat((k[km.borcMeblagh]||'').replace(',','.'))||0,
+      borcMeblagh: parseFloat((k[km.borcMeblagh]||'').replace(/\./g,'').replace(',','.'))||0,
       borcDoviz: k[km.borcDoviz]||'',
-      alacakMeblagh: parseFloat((k[km.alacakMeblagh]||'').replace(',','.'))||0,
+      alacakMeblagh: parseFloat((k[km.alacakMeblagh]||'').replace(/\./g,'').replace(',','.'))||0,
       alacakDoviz: k[km.alacakDoviz]||'',
-      tlBakiye: parseFloat((k[km.tlBakiye]||'').replace(',','.'))||0,
+      tlBakiye: parseFloat((k[km.tlBakiye]||'').replace(/\./g,'').replace(',','.'))||0,
       _taraf:'baran'
     });
   });
@@ -697,9 +697,10 @@ window._mvNormalize = {
     if (m) { var g = m[1].padStart(2, '0'), ay = m[2].padStart(2, '0'), y = m[3].length === 2 ? '20' + m[3] : m[3]; return y + '-' + ay + '-' + g; }
     return null;
   },
+  /* MUAVIN-TUTAR-PARSE-001: binlik nokta /\./g ile silinir, sonra virgül→nokta */
   tutarNormalize: function(v) {
     if (v === null || v === undefined || v === '') return 0;
-    var s = String(v).replace(/[^\d\.,\-]/g, '').replace(',', '.');
+    var s = String(v).replace(/[^\d\.,\-]/g, '').replace(/\./g, '').replace(',', '.');
     return parseFloat(s) || 0;
   },
   /* MUAVIN-KUR-CEK-001: TCMB tarihe özel kur → localStorage cache + fallback exchangerate */
