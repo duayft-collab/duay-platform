@@ -172,8 +172,15 @@ window._mvDosyaOku = function(inp, taraf) {
       if (!_meta[_don]) _meta[_don] = {};
       var _genericSheets = ['Sheet1','Sayfa1','Sheet','Sayfa','Data','Veri','1','-',''];
       var _dosyaAdi = f.name.replace(/\.(xlsx?|csv|txt|ods)$/i, '').trim();
-      /* Dosya ad\u0131ndan firma ad\u0131 temizle: tarih, say\u0131, Ekstre gibi g\u00fcr\u00fclt\u00fc kald\u0131r */
-      var _temizDosyaAdi = _dosyaAdi.replace(/[-_]/g, ' ').replace(/\b\d{1,4}\b/g, '').replace(/\b(ekstre|ekstresi|hesap|hareket|rapor|liste|mutabakat|cari|detay)\b/gi, '').replace(/\s+/g, ' ').trim();
+      /* MUAVIN-TEMIZ-DOSYAADI-001: "Hesap Ekstresi" tam ifadesi → ekstre\w* → kalan noise kelimeler */
+      var _temizDosyaAdi = _dosyaAdi
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\d{1,4}\b/g, '')
+        .replace(/hesap\s*ekstresi/gi, '')
+        .replace(/\bekstre\w*/gi, '')
+        .replace(/\b(hesap|hareket|rapor|liste|mutabakat|cari|detay)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
       /* MUAVIN-FIRMAADI-STRICT-001: "Hesap Ekstresi" gibi anlamsız dosya adı yazmasın — _dosyaAdi fallback kaldırıldı */
       var _mvInput = document.getElementById('mv-firma-adi')?.value?.trim();
       var _temizOk = _temizDosyaAdi.length > 2;
@@ -185,7 +192,8 @@ window._mvDosyaOku = function(inp, taraf) {
       } else if (taraf === 'baran' && typeof window._mvNormalize?.sirkettenNormalize === 'function') {
         _meta[_don].baran = _meta[_don].baran || {};
         /* MUAVIN-CARIAD-DOSYAADI-001: outer firmaAdi (dosya adı/sheet/input chain'i) birincil kaynak — prompt sadece boş/kısa kalırsa */
-        if (!firmaAdi || firmaAdi.length < 2) {
+        /* MUAVIN-TEMIZ-DOSYAADI-001: anlamsız tek-kelime kalıntı da prompt'a düşsün */
+        if (!firmaAdi || firmaAdi.length < 2 || /^(hesap|ekstre|bakiye|tarih|liste)\s*$/i.test(firmaAdi)) {
           var _inputEl = document.getElementById('mv-firma-adi');
           firmaAdi = (localStorage.getItem('ak_mv_son_firma')||'').trim();
           if (!firmaAdi) {
