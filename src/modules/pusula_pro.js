@@ -3352,7 +3352,13 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     +'<div style="font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_ppEsc(taskAd||taskId)+'</div></div>'
     +'<button onclick="event.stopPropagation();document.getElementById(\'pp-gorev-mesaj-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3);flex-shrink:0">×</button>'
     +'</div>'
+    /* PP-GOREV-MESAJ-EKLER-001: Mesajlar / Ekler tab bar */
+    +'<div style="display:flex;border-bottom:0.5px solid var(--b);flex-shrink:0">'
+    +'<div id="pp-mesaj-tab-msg" onclick="event.stopPropagation();window._ppMesajTabSec(\'msg\')" style="padding:8px 16px;font-size:10px;font-weight:500;cursor:pointer;border-bottom:2px solid #185FA5;color:#185FA5">Mesajlar</div>'
+    +'<div id="pp-mesaj-tab-ek" onclick="event.stopPropagation();window._ppMesajTabSec(\'ek\')" style="padding:8px 16px;font-size:10px;cursor:pointer;color:var(--t3)">Ekler</div>'
+    +'</div>'
     +'<div id="pp-gorev-mesaj-liste" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>'
+    +'<div id="pp-gorev-ek-liste" style="display:none;flex:1;overflow-y:auto;padding:12px 16px"></div>'
     +'<div style="padding:10px 12px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:6px">'
     +'<textarea id="pp-gorev-mesaj-input" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:6px;padding:6px 8px;font-size:11px;font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
     +'<div style="display:flex;gap:6px">'
@@ -3375,6 +3381,20 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
         +'</div>';
     }).join('') : '<div style="text-align:center;color:var(--t3);font-size:11px;padding:20px">Henüz mesaj yok</div>';
     liste.scrollTop = liste.scrollHeight;
+    /* PP-GOREV-MESAJ-EKLER-001: Ekler sekmesi render */
+    var eklerDiv = document.getElementById('pp-gorev-ek-liste');
+    if (eklerDiv) {
+      var dosyalar = mesajlar.filter(function(m){ return m.dosya; });
+      eklerDiv.innerHTML = dosyalar.length
+        ? dosyalar.map(function(m){
+            return '<div style="display:flex;align-items:center;gap:8px;padding:8px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px">'
+              +'<span style="font-size:16px">📎</span>'
+              +'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(m.dosya)+'</div>'
+              +'<div style="font-size:9px;color:var(--t3)">'+_ppEsc(m.gonderen)+' · '+new Date(m.tarih).toLocaleDateString('tr-TR')+'</div></div>'
+              +'</div>';
+          }).join('')
+        : '<div style="text-align:center;color:var(--t3);font-size:11px;padding:20px">Henüz ek yok</div>';
+    }
   };
   window._ppGorevMesajPanelRender(taskId);
   setTimeout(function(){
@@ -3427,4 +3447,25 @@ window._ppSttBaslat = function(taskId) {
   };
   rec.onend = function() { if (btn) { btn.textContent = '🎤'; btn.style.color = ''; } };
   try { rec.start(); } catch(e) { window.toast?.('Mikrofon başlatılamadı','err'); if(btn){btn.textContent='🎤';btn.style.color='';} }
+};
+
+/* PP-GOREV-MESAJ-EKLER-001: Mesajlar / Ekler tab geçişi */
+window._ppMesajTabSec = function(tab) {
+  ['msg','ek'].forEach(function(t){
+    var el = document.getElementById('pp-mesaj-tab-'+t);
+    if (el) {
+      el.style.borderBottom = (t === tab) ? '2px solid #185FA5' : 'none';
+      el.style.color = (t === tab) ? '#185FA5' : 'var(--t3)';
+      el.style.fontWeight = (t === tab) ? '500' : '';
+    }
+  });
+  var liste = document.getElementById('pp-gorev-mesaj-liste');
+  var eklerDiv = document.getElementById('pp-gorev-ek-liste');
+  if (tab === 'msg') {
+    if (liste) liste.style.display = 'flex';
+    if (eklerDiv) eklerDiv.style.display = 'none';
+  } else {
+    if (liste) liste.style.display = 'none';
+    if (eklerDiv) eklerDiv.style.display = 'block';
+  }
 };
