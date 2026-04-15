@@ -75,12 +75,15 @@ function _mvParseMuhasebeci(tsv) {
   var islemler = [];
   var mevcutCari = '';
   var mevcutHesapKodu = '';
+  /* MUAVIN-PARSE-DETAY-001: skip ve sıfır tutar sayaçları */
+  var _atildi = 0;
+  var _sifirTutar = 0;
   satirlar.forEach(function(satir) {
     var kolonlar = satir.split('\t');
     var ilk = (kolonlar[0]||'').trim();
     if (!ilk) return;
     var skipler = ['nakli','genel','tarih','tip','fiş','borç','alacak','bakiye','hesap','dönem','tl','b/a'];
-    if (skipler.some(function(k){return ilk.toLowerCase().indexOf(k)!==-1;})) return;
+    if (skipler.some(function(k){return ilk.toLowerCase().indexOf(k)!==-1;})) { _atildi++; return; }
     var tarihObj = _mvParseTarih(kolonlar[0]);
     if (!tarihObj) {
       var m = ilk.match(/^(\d{2,3}[\.\w]+)\s+(.+)$/);
@@ -93,7 +96,7 @@ function _mvParseMuhasebeci(tsv) {
     var fisNo = (kolonlar[2]||'').trim();
     var aciklama = (kolonlar[3]||'').trim();
     var faturaNo = (typeof window._mvNormalize?.faturaNoAyikla === 'function' ? (window._mvNormalize.faturaNoAyikla(aciklama) || window._mvNormalize.faturaNoAyikla(fisNo)) : null) || fisNo;
-    if (!tip && !fisNo && borc===0 && alacak===0) return;
+    if (!tip && !fisNo && borc===0 && alacak===0) { _sifirTutar++; return; }
     islemler.push({
       tarih: tarihObj.toLocaleDateString('tr-TR'),
       tip: tip, fisNo: fisNo, faturaNo: faturaNo,
@@ -105,6 +108,8 @@ function _mvParseMuhasebeci(tsv) {
       _taraf: 'muhasebeci'
     });
   });
+  islemler._atildi = _atildi;
+  islemler._sifirTutar = _sifirTutar;
   return islemler;
 }
 
@@ -228,7 +233,11 @@ window._mvDosyaOku = function(inp, taraf) {
       localStorage.setItem('ak_muavin_meta_v1', JSON.stringify(_meta));
       window._mvMeta = _meta;
     } catch (normErr) { console.warn('[MUAVIN] normalize hata:', normErr); }
-    window.toast?.( f.name + ' y\u00fcklendi \u2014 ' + islemler.length + ' i\u015flem', 'ok');
+    /* MUAVIN-PARSE-DETAY-001: detayl\u0131 \u00f6zet toast */
+    var _toastMsg = f.name + ' y\u00fcklendi \u2014 ' + islemler.length + ' i\u015flem';
+    if (islemler._atildi) _toastMsg += ' \u00b7 ' + islemler._atildi + ' sat\u0131r atland\u0131';
+    if (islemler._sifirTutar) _toastMsg += ' \u00b7 ' + islemler._sifirTutar + ' s\u0131f\u0131r tutar';
+    window.toast?.(_toastMsg, 'ok');
     window._mvAktifTab = 'karsilastirma';
     window.renderMuavin?.();
     /* MUAVIN-KUR-AUTO-001: Dosya yüklenince döviz işlem varsa TCMB kurları otomatik çekilir */

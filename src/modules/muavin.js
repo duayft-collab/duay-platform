@@ -106,7 +106,13 @@ function _mvSolNavHTML(donem, aktifTab, meta, islemlerM, islemlerB) {
   _mvDonemListesi().forEach(function(d) {
     var ak = d === donem;
     var dMeta = meta[d] || {};
-    var onayBadge = dMeta.onay === 'onaylandi' ? ' ✓' : '';
+    /* MUAVIN-ONAY-NOT-001: onay badge — tooltip ile kim/ne zaman/not */
+    var _onayTitle = '';
+    if (dMeta.onay === 'onaylandi') {
+      _onayTitle = (dMeta.onayKisi || 'Bilinmiyor') + ' · ' + (dMeta.onayTarih ? dMeta.onayTarih.slice(0,10) : '');
+      if (dMeta.onayNotu) _onayTitle += ' · ' + dMeta.onayNotu;
+    }
+    var onayBadge = dMeta.onay === 'onaylandi' ? ' <span title="' + _onayTitle + '" style="cursor:help">✓</span>' : '';
     /* MUAVIN-DONEM-BADGE-001: yüklü dönem badge (yeşil onaylı / mavi 2 dosya / turuncu 1 dosya / boş) */
     var muhVar = !!(dMeta.muhasebeci && dMeta.muhasebeci.ad);
     var barVar = !!(dMeta.baran && dMeta.baran.ad);
@@ -276,8 +282,11 @@ function _mvKarsilastirmaIcerikHTML(kpi, meta, donem) {
     var toplamSay = farkSay + eslesenSay;
     var farkTL = (eslesen.farkVar||[]).reduce(function(s,r){ return s+Math.abs((r.muhasebeci?r.muhasebeci.tutarTL:0)-(r.sirket?r.sirket.tutarTL:0)); }, 0);
     var oran = toplamSay ? Math.round(eslesenSay/toplamSay*100) : 0;
-    var bannerRenk = farkSay===0 ? '#EAF3DE' : farkSay<=3 ? '#FAEEDA' : '#FCEBEB';
-    var textRenk = farkSay===0 ? '#3B6D11' : farkSay<=3 ? '#854F0B' : '#A32D2D';
+    /* MUAVIN-FARK-ESIK-001: TL bazlı renk eşiği — 10.000₺+ = kırmızı alarm, 1.000₺+ = sarı uyarı */
+    var _buyukFark = farkTL >= 10000;
+    var _ortaFark  = farkTL >= 1000 && farkTL < 10000;
+    var bannerRenk = farkSay===0 ? '#EAF3DE' : (_buyukFark || farkSay>3) ? '#FCEBEB' : (_ortaFark || farkSay<=3) ? '#FAEEDA' : '#FAEEDA';
+    var textRenk   = farkSay===0 ? '#3B6D11' : (_buyukFark || farkSay>3) ? '#A32D2D' : '#854F0B';
     h += '<div style="margin:12px;padding:14px 18px;background:'+bannerRenk+';border-radius:8px;border:0.5px solid '+textRenk+'40">'
       + '<div style="display:flex;align-items:center;justify-content:space-between">'
       + '<div>'
@@ -286,7 +295,7 @@ function _mvKarsilastirmaIcerikHTML(kpi, meta, donem) {
       + '</div>'
       + '<div style="font-size:11px;color:'+textRenk+';margin-top:3px;opacity:.8">'
       + eslesenSay+'/'+toplamSay+' işlem eşleşti (%'+oran+')'
-      + (farkTL>0 ? ' · '+Math.round(farkTL).toLocaleString('tr-TR')+' ₺ açıklanamayan fark' : '')
+      + (farkTL>0 ? ' · <strong>'+Math.round(farkTL).toLocaleString('tr-TR')+' ₺</strong> açıklanamayan fark' + (_buyukFark ? ' ⚠' : '') : '')
       + '</div>'
       + '</div>'
       + '<div style="font-size:28px;font-weight:700;color:'+textRenk+'">%'+oran+'</div>'
@@ -652,14 +661,19 @@ window._mvDosyaKaldir = function(taraf, e) {
 /* ── Dönem onayla ── */
 window._mvDonemiOnayla = function() {
   var donem = _mvAktifDonem();
-  window.confirmModal?.(donem + ' d\u00f6nemi i\u00e7in mutabakat onaylanacak. Bu i\u015flem kaydedilecek.', {
+  /* MUAVIN-ONAY-NOT-001: onay not alan\u0131 ile modal */
+  var _notEl = document.createElement('div');
+  _notEl.innerHTML = '<div style="margin-top:10px"><label style="font-size:11px;color:var(--t2)">Onay notu (iste\u011fe ba\u011fl\u0131):</label><input id="mv-onay-not" placeholder="\u00d6rn: muhasebeci ile g\u00f6r\u00fc\u015f\u00fcld\u00fc, farklar kabul edildi" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="margin-top:4px;width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
+  window.confirmModal?.(donem + ' d\u00f6nemi i\u00e7in mutabakat onaylanacak.', {
     title: 'D\u00f6nemi Onayla', confirmText: 'Onayla',
+    extraEl: _notEl,
     onConfirm: function() {
       var meta = _mvMetaLoad();
       if (!meta[donem]) meta[donem] = {};
       meta[donem].onay = 'onaylandi';
       meta[donem].onayTarih = new Date().toISOString();
       meta[donem].onayKisi = window.CU?.() ? (window.CU().name || window.CU().email || '') : '';
+      meta[donem].onayNotu = (document.getElementById('mv-onay-not')?.value || '').trim();
       _mvMetaStore(meta);
       window.toast?.(donem + ' onayland\u0131 \u2713', 'ok');
       window.renderMuavin();
