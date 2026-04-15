@@ -184,10 +184,9 @@ window._mvDosyaOku = function(inp, taraf) {
         _meta[_don].muhasebeci.firmaAdi = firmaAdi;
       } else if (taraf === 'baran' && typeof window._mvNormalize?.sirkettenNormalize === 'function') {
         _meta[_don].baran = _meta[_don].baran || {};
-        /* MUAVIN-BARAN-FIRMAADI-PROMPT-001: input → LS → prompt fallback chain, bir kez yazılır */
-        var _inputEl = document.getElementById('mv-firma-adi');
-        var firmaAdi = (_inputEl?.value||'').trim();
-        if (!firmaAdi) {
+        /* MUAVIN-CARIAD-DOSYAADI-001: outer firmaAdi (dosya adı/sheet/input chain'i) birincil kaynak — prompt sadece boş/kısa kalırsa */
+        if (!firmaAdi || firmaAdi.length < 2) {
+          var _inputEl = document.getElementById('mv-firma-adi');
           firmaAdi = (localStorage.getItem('ak_mv_son_firma')||'').trim();
           if (!firmaAdi) {
             firmaAdi = (window.prompt('Bu Baran ekstresinin cari adını yazın:','') || '').trim();
@@ -197,6 +196,7 @@ window._mvDosyaOku = function(inp, taraf) {
             return;
           }
           localStorage.setItem('ak_mv_son_firma', firmaAdi);
+          islemler.forEach(function(s) { s._firmaAdi = firmaAdi; });
           if (_inputEl) _inputEl.value = firmaAdi;
         }
         islemler.forEach(function(r){ r._firmaAdi = firmaAdi; });
