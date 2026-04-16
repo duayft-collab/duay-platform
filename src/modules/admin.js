@@ -1176,11 +1176,14 @@ function savePermissions() {
   } else {
     _newModules = [...document.querySelectorAll('.perm-cb:checked')].map(cb => cb.value);
   }
+  /* ADMIN-PERM-SAVE-FIX-001: _permCurrent state'inden oku (hidden select tek option bug fix)
+     Eski: .perm-level select'lerden oku — ama select tek <option> içeriyor, sel.value
+     set edildiğinde match etmediği için sel.value '' olur, savePermissions boş kaydeder.
+     Yeni: _permCurrent (modül-local state) _permSetLevel2 her tıklamada doğru güncelleniyor,
+     DOM yerine state oku. */
   const _newPermissions = {};
-  document.querySelectorAll('.perm-level').forEach(sel => {
-    const mod = sel.dataset.mod;
-    const val = sel.value;
-    if (mod && val) _newPermissions[mod] = val;
+  Object.keys(_permCurrent).forEach(function(mid) {
+    if (_permCurrent[mid]) _newPermissions[mid] = _permCurrent[mid];
   });
   /* ADMIN-PERM-SYNC-FIX-001: permissions seviyesi 'none' olmayan modüller
      otomatik olarak modules listesine eklenir — iki sistem senkronize */
