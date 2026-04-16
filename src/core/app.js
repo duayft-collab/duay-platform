@@ -3548,12 +3548,9 @@ var _TN2_GROUPS = {
   ]},
   satinalma: { label:'Satın Alma', mods: [
     { id:'satinalma',       label:'İş Takibi'       },
-    { id:'alis-teklifleri', label:'Tedarik Teklifleri', _kullanilamaz:true },
     { id:'siparisler',      label:'Siparişler'       },
     { id:'ihracat-ops',     label:'İhracat Ops'     },
     { id:'urunler',         label:'Ürün Kataloğu'   },
-    { id:'sa-urun-liste',  label:'Ürün Fiyat Listesi', _kullanilamaz:true, fn: function() { window._saUrunListeAc?.(); } },
-    { id:'numune',          label:'Numune Takibi', _kullanilamaz:true },
   ]},
   lojistik: { label:'Lojistik', mods: [
     { id:'kargo',           label:'Kargo Takibi'    },
