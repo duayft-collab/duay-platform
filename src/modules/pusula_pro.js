@@ -1381,9 +1381,10 @@ window._ppMesajGonder = function(icerik, tip, hedef) {
     id: _ppId(),
     icerik: icerik.trim(),
     tip: tip || 'kisisel',
-    hedef: hedef || cu?.uid || '',
+    /* PUSULA-MESAJ-UID-FIX-001: uid yoksa id/email fallback */
+    hedef: hedef || cu?.uid || String(cu?.id||'') || cu?.email || '',
     gonderen: cu?.displayName || cu?.email || 'Ben',
-    gonderenId: cu?.uid || '',
+    gonderenId: cu?.uid || String(cu?.id||'') || cu?.email || '',
     tarih: _ppNow(),
     okundu: false
   };
@@ -1400,10 +1401,12 @@ window._ppMesajGonder = function(icerik, tip, hedef) {
 
 window._ppMesajlariOku = function(tip) {
   var cu = _ppCu();
+  /* PUSULA-MESAJ-UID-FIX-001: uid yoksa id/email fallback */
+  var _cuId = cu?.uid || String(cu?.id||'') || cu?.email || '';
   var msgs = _ppMsgLoad();
   return msgs.filter(function(m) {
     if (tip === 'sirket') return m.tip === 'sirket';
-    if (tip === 'kisisel') return m.tip === 'kisisel' && (m.hedef===cu?.uid || m.gonderenId===cu?.uid);
+    if (tip === 'kisisel') return m.tip === 'kisisel' && (m.hedef===_cuId || m.gonderenId===_cuId || (!m.hedef && !m.gonderenId));
     if (tip === 'hayat') return m.tip === 'hayat';
     return true;
   });
