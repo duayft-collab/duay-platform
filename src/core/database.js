@@ -249,6 +249,7 @@ const KEYS = {
   alarmLog      : 'ak_alarm_log1',
   sozler        : 'ak_sozler1',
   pusula        : 'ak_pusula_pro_v1',
+  ppMesaj       : 'ak_pp_mesaj_v1',     /* KUYRUK-PP-MESAJ-DB-001: pusula mesajları */
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -1043,6 +1044,17 @@ function loadTasks()       { var d = _read(KEYS.tasks); var arr = Array.isArray(
 /** @param {Array<Object>} d */
 function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); if (d.length > 500) { var _active = d.filter(function(t) { return !t.isDeleted && t.status !== 'done'; }); var _done = d.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100); var _del = d.filter(function(t) { return t.isDeleted; }).slice(-50); d = _active.concat(_done, _del); } _write(KEYS.tasks, d);
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
+}
+
+/* KUYRUK-PP-MESAJ-DB-001: Pusula mesajları — Firestore senkron */
+/** @returns {Array<Object>} */
+function loadPpMesajlar() { var d = _read(KEYS.ppMesaj); return Array.isArray(d) ? d : []; }
+/** @param {Array<Object>} d */
+function savePpMesajlar(d) {
+  if (!Array.isArray(d)) d = [];
+  if (d.length > 500) d = d.slice(0, 500);
+  _write(KEYS.ppMesaj, d);
+  var _fp_ppmsg = _fsPath('pp_mesajlar'); if (_fp_ppmsg) _syncFirestore(_fp_ppmsg, d);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3296,6 +3308,8 @@ const DB = {
   loadPuan, savePuan,
   // Görevler
   loadTasks, saveTasks,
+  // Pusula Mesajlar
+  loadPpMesajlar, savePpMesajlar,
   // Takvim
   loadCal, saveCal, setCalInvalidator, mergeCompanyCalendar,
   // Öneri & Duyuru & Not & Link
@@ -3411,7 +3425,7 @@ if (typeof module !== 'undefined' && module.exports) {
   // Geriye uyumluluk — eski HTML inline onclick'ler ve diğer modüller
   // doğrudan window.loadUsers() gibi çağırabilir
   const fns = [
-    'loadUsers','saveUsers','loadPuan','savePuan','loadTasks','saveTasks',
+    'loadUsers','saveUsers','loadPuan','savePuan','loadTasks','saveTasks','loadPpMesajlar','savePpMesajlar',
     'loadCal','saveCal','mergeCompanyCalendar','loadSugg','storeSugg','loadAnn','storeAnn',
     '_fsPath','_getPaths','_getTid','startRealtimeSync','stopRealtimeSync','manualUploadToFirestore',
     'loadLinks','saveLinks','loadNotes','saveNotes','loadAct','saveAct',
