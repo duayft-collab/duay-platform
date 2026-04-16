@@ -47,11 +47,12 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
       + '<select id="sav2f-' + id + '" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">' + opts + '</select></div>';
   };
-  modal.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:660px;overflow:hidden">'
+  modal.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:min(760px,95vw);overflow:hidden">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
     + '<div>'
     + '<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Alış Teklifi</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace" id="sav2f-id-goster">ID: ' + teklifId + '</div>'
+    + '<div style="font-size:10px;color:#7C3AED;margin-top:3px">Kaydedilince Araştırma aşaması başlar · 72 saat timer</div>'
     + '</div>'
     + '<button onclick="event.stopPropagation();window._sav2DraftSil?.();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>'
     + '</div>'
@@ -302,7 +303,8 @@ window._saV2FormKaydet = function() {
     urunler: urunler, urunSayisi: urunler.length,
     toplamTutar: toplamTutar.toFixed(2), toplamPara: urunler[0]?.para || 'USD',
     icNotlar: notDiv ? notDiv.innerHTML : '', teslimatKosul: kosulDiv ? kosulDiv.innerHTML : '',
-    gorsel: window._saV2FormGorselData || '', durum: 'bekleyen',
+    /* SA-FORM-PIPELINE-001: yeni teklif araştırma aşamasıyla başlar + 72h timer */
+      gorsel: window._saV2FormGorselData || '', durum: 'arastirma', pipelineTimerBaslangic: new Date().toISOString(), pipelineTimerSaat: 72, pipelineAdimlari: [{ durum: 'arastirma', yeniDurum: 'arastirma', tarih: new Date().toISOString(), kim: window.CU?.()?.displayName || window.CU?.()?.name || '' }],
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     createdBy: window.CU?.()?.displayName || '', createdById: window.CU?.()?.uid || ''
   };
