@@ -88,10 +88,11 @@ window._ppEtiketleriAl = function() {
  */
 var _ppIzolasyonFiltre = function(tasks) {
   if (_ppIsAdmin()) return tasks;
-  var _uid = window.Auth?.getCU?.()?.uid
-    || window.CU?.()?.uid
-    || window._kullanici?.uid
-    || window._kullanici?.email
+  /* PUSULA-UID-IZOLASYON-FIX-001: cu nesnesi + id/email fallback — uid alanı yoksa id veya email kullan */
+  var cu = _ppCu();
+  var _uid = cu?.uid
+    || String(cu?.id || '')
+    || cu?.email
     || '';
   if (!_uid) return [];
   return tasks.filter(function(t) {
@@ -108,7 +109,7 @@ var _ppIzolasyonFiltre = function(tasks) {
       var sUid = typeof s === 'object' ? (s.uid || s.id || '') : '';
       var sAd = typeof s === 'object' ? (s.ad || s.name || s.displayName || s.email || '') : String(s);
       return sUid === _uid || sUid === (cu?.email||'') ||
-             sAd === (cu?.displayName||'') || sAd === (cu?.email||'') ||
+             sAd === (cu?.displayName || cu?.name || '') || sAd === (cu?.email||'') ||
              String(s) === _uid;
     })) return true;
     var gozlemciArr = Array.isArray(t.gozlemci) ? t.gozlemci : (t.gozlemci ? [t.gozlemci] : []);
@@ -829,7 +830,7 @@ window._ppHizliEkle = function(inp) {
   var _oncelik = (_oncelikSel && _oncelikSel.value) ? _oncelikSel.value : 'normal';
   /* PUSULA-IZOLASYON-001: hızlı ekle — sahip kaydedilmeden görev tüm kullanıcılara görünüyordu */
   var _cuNow = _ppCu();
-  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _cuNow?.displayName || _cuNow?.email || '', olusturanId: _cuNow?.uid || _cuNow?.email || '', _ppSource: 'pro' };
+  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _cuNow?.displayName || _cuNow?.email || '', olusturanId: _cuNow?.uid || String(_cuNow?.id||'') || _cuNow?.email || '', _ppSource: 'pro' };
   var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
   inp.value = '';
   window.toast?.('Görev eklendi', 'ok');
@@ -1149,7 +1150,7 @@ window._ppGorevKaydet = function() {
     /* PUSULA-GOREV-GIZLILIK-COMBO-001: combobox secili state'inden uid listesi */
     paylasilanlar: (window._ppPaylasimSecili || []).slice(),
     /* PUSULA-GOREV-GIZLILIK-MANTIK-FIX-001: sahip field — filter için gerekli */
-    olusturanId: _ppCu()?.uid || '',
+    olusturanId: _ppCu()?.uid || String(_ppCu()?.id || '') || '',
     /* PUSULA-FORM-V2-001: etiketler kaydedildi */
     etiketler: (typeof window._ppEtiketleriAl === 'function') ? window._ppEtiketleriAl() : [],
     enerji: document.getElementById('ppf-enerji')?.value||'',
@@ -1163,7 +1164,7 @@ window._ppGorevKaydet = function() {
     _ppSource: 'pro',
     createdAt: _ppNow(),
     updatedAt: _ppNow(),
-    sorumluId: _ppCu()?.uid||''
+    sorumluId: _ppCu()?.uid || String(_ppCu()?.id || '') || ''
   };
   var tasks=_ppLoad();
   if (window._ppDuzenleHedef) {
