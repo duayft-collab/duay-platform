@@ -1226,7 +1226,8 @@ function savePermissions() {
       /* ADMIN-SAFARI-PERMMODAL-001: addEventListener → inline onclick (Safari DOM timing fix) */
       + '<div style="padding:12px 24px 20px;display:flex;gap:8px;justify-content:center">'
         + '<button id="perm-confirm-cancel" onclick="document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btns" style="padding:10px 24px;border-radius:10px;font-size:13px">İptal</button>'
-        + '<button id="perm-confirm-ok" onclick="event.stopPropagation();window._permConfirmed=true;savePermissions();document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btnp" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
+        /* ADMIN-ONAYLA-FIX-001: inline onclick scope — savePermissions → window.savePermissions?.() */
+        + '<button id="perm-confirm-ok" onclick="event.stopPropagation();window._permConfirmed=true;window.savePermissions?.();document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btnp" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
       + '</div>'
     + '</div>';
     document.body.appendChild(_confirmEl);
