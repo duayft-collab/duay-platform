@@ -1261,7 +1261,10 @@ function savePermissions() {
     }
   }
 
+  /* ADMIN-PERM-ADMINSAVING-001: Firebase ezilmesini önle — _adminSaving aktifken DB-USERS-PROTECT-001 guard devreye girer */
+  window._adminSaving = true;
   saveUsers(users);
+  setTimeout(function(){ window._adminSaving = false; }, 8000);
   /* ADMIN-MOD-COMPLETE-001: aktif kullanıcı kendisiyse CU'yu anlık güncelle — sayfa yenilemesi gerekmez */
   var _cu = (typeof _getCU === 'function' ? _getCU() : null) || window.Auth?.getCU?.();
   if (_cu && _cu.id === u.id) {
