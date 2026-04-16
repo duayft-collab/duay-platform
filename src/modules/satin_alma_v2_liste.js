@@ -176,7 +176,8 @@ window.renderSatinAlmaV2 = function() {
     h+='<div style="text-align:right"><div style="font-size:10px;color:var(--color-text-tertiary)">'+(_kurN?_kurN.toLocaleString('tr-TR')+'₺':'—')+'</div>'+_trendHTML+'</div>';
     // Kolon 5: durum badge + geçerlilik badge (mevcut _bittiBadge/_uyariIkon mantığı korunsun)
     /* SA-PIPELINE-001b: badge renk/label SA_PIPELINE_STAGES'tan, fallback eski renkler */
-    var _stageInfo = window.SA_PIPELINE_STAGES?.[durum] || null;
+    /* SA-DURUM-MIGRATE-001: eski durum değerleri için SA_DURUM_MAP fallback */
+    var _stageInfo = window.SA_PIPELINE_STAGES?.[durum] || window.SA_DURUM_MAP?.[durum] || null;
     var _bgColor = _stageInfo ? _stageInfo.renk + '22' : (durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA');
     var _fgColor = _stageInfo ? _stageInfo.renk : (durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806');
     var _stLbl = _stageInfo ? _stageInfo.label : durum;

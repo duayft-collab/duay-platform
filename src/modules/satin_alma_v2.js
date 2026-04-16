@@ -43,8 +43,10 @@ function _saV2Load() {
     var r = localStorage.getItem(SAV2_KEY);
     if (!r) return [];
     if (r.startsWith('_LZ_') && typeof LZString!=='undefined')
-      return JSON.parse(LZString.decompressFromUTF16(r.slice(4))||'[]');
-    return JSON.parse(r);
+    { var _d = JSON.parse(LZString.decompressFromUTF16(r.slice(4))||'[]');
+      return typeof window._saNormalizeDurum === 'function' ? window._saNormalizeDurum(_d) : _d; }
+    var _d2 = JSON.parse(r);
+    return typeof window._saNormalizeDurum === 'function' ? window._saNormalizeDurum(_d2) : _d2;
   } catch(e) { return []; }
 }
 function _saV2Store(d) {
@@ -121,6 +123,18 @@ window._saKurCek = function() {
     });
 };
 window._saKurCek();
+
+/* ── Durum Map (SA-DURUM-MIGRATE-001) ───────────────────────
+   Eski durum değerlerini (onay_bekliyor/onay-hazir/kabul vs.)
+   görsel label+renk'e çevirir. Veri değişmez, sadece render katmanı. */
+window.SA_DURUM_MAP = {
+  'bekleyen'      : { label: 'Beklemede',     renk: '#854F0B' },
+  'onay_bekliyor' : { label: 'Onay Bekliyor', renk: '#B45309' },
+  'onay-hazir'    : { label: 'Onaya Hazır',   renk: '#B45309' },
+  'onaylandi'     : { label: 'Onaylandı',     renk: '#0F6E56' },
+  'kabul'         : { label: 'Kabul',         renk: '#0F6E56' },
+  'reddedildi'    : { label: 'Reddedildi',    renk: '#A32D2D' }
+};
 
 /* ── Pipeline Aşamaları (SA-PIPELINE-001a) ─────────────────── */
 window.SA_PIPELINE_STAGES = {
@@ -224,6 +238,13 @@ window._saMalTeslimAl = function(id) {
   try { window.addNotif?.('📦', 'Mal teslim alındı — prim tetiklendi', 'ok', 'satinalma', null); } catch(e){}
   try { window.logActivity?.('satinalma_teslim', 'info', { teklifId: id, durum: 'teslim-alindi' }); } catch(e){}
   if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
+};
+
+/* SA-DURUM-MIGRATE-001: eski durum değerlerini normalize etmek için hook noktası.
+   Şu an pass-through — veri değişmiyor. Gelecekte gerçek normalize burada. */
+window._saNormalizeDurum = function(liste) {
+  if (!Array.isArray(liste)) return liste;
+  return liste;
 };
 
 /* ── Global export ──────────────────────────────────────────── */
