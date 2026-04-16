@@ -52,13 +52,12 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div>'
     + '<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Alış Teklifi</div>'
     + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace" id="sav2f-id-goster">ID: ' + teklifId + '</div>'
-    + '<div style="font-size:10px;color:#7C3AED;margin-top:3px">Kaydedilince Araştırma aşaması başlar · 72 saat timer</div>'
     + '</div>'
     + '<button onclick="event.stopPropagation();window._sav2DraftSil?.();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>'
     + '</div>'
     + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">'
     + _draftBanner
-    + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b)">TEKLİF BAŞLIĞI</div>'
+    + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;padding-bottom:7px;border-bottom:0.5px solid var(--b);margin-bottom:4px">Tedarikçi & İş Bilgisi</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEDAR\u0130K\u00c7\u0130</div>'
     + '<input id="sav2f-tedarikci" list="sav2f-ted-list" placeholder="Tedarik\u00e7i ad\u0131" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
@@ -112,12 +111,12 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<input type="hidden" id="sav2f-teslimatKosul">'
     + '</div></div>'
     + '</div>'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
-    + '<div style="font-size:9px;color:var(--t3)">* Duay kodu girilince katalogdan otomatik dolar</div>'
-    + '<div style="display:flex;gap:8px">'
+    /* SA-FORM-REDESIGN-001: footer sadeleşti — tek satır, Kaydet mavi CTA */
+    + '<div style="display:flex;align-items:center;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2);gap:8px">'
+    + '<span style="font-size:9px;color:var(--t3);margin-right:auto">* Zorunlu alanlar · Duay kodu girilince katalogdan otomatik dolar</span>'
     + '<button onclick="event.stopPropagation();window._sav2DraftSil?.();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
-    + '<button onclick="event.stopPropagation();window._saV2FormKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
-    + '</div></div>'
+    + '<button onclick="event.stopPropagation();window._saV2FormKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
+    + '</div>'
     + '</div>';
   document.body.appendChild(modal);
   _draftTimer = setInterval(_draftKaydet, 10000);
@@ -520,7 +519,7 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
       /* SATIS-FORM-PARITE-001: Birim + Menşei inline seçimler */
       + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunBirim(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">'
-      + ['Adet','Kg','m²','m','Litre','Koli','Ton'].map(function(b) { return '<option value="' + b + '"' + ((u.birim || 'Adet') === b ? ' selected' : '') + '>' + b + '</option>'; }).join('')
+      + ['Adet','Kg','Ton','Mt','m²','m³','Lt','Koli','Çift','Paket','Set','Rulo','Takım'].map(function(b) { return '<option value="' + b + '"' + ((u.birim || 'Adet') === b ? ' selected' : '') + '>' + b + '</option>'; }).join('')
       + '</select></td>'
       + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">—</option>'
       + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
@@ -714,7 +713,7 @@ window._saV2UrunSatirEkle = function() {
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">'
     + _uf('miktar', 'M\u0130KTAR', '200')
     + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">B\u0130R\u0130M</div>'
-    + '<select id="' + pre + 'birim" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option>Adet</option><option>Kg</option><option>Ton</option><option>m\u00b2</option><option>Lt</option><option>Koli</option></select></div>'
+    + '<select id="' + pre + 'birim" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="Adet">Adet</option><option value="Kg">Kg</option><option value="Ton">Ton</option><option value="Mt">Mt (Metre)</option><option value="m²">M² (Metrekare)</option><option value="m³">M³ (Metreküp)</option><option value="Lt">Lt (Litre)</option><option value="Koli">Koli</option><option value="Çift">Çift</option><option value="Paket">Paket</option><option value="Set">Set</option><option value="Rulo">Rulo</option><option value="Takım">Takım</option></select></div>'
     + _uf('alisF', 'B\u0130R\u0130M F\u0130YAT', '2.40')
     + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">PARA</div>'
     + '<select id="' + pre + 'para" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select></div>'
