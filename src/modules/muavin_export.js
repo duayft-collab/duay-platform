@@ -856,22 +856,26 @@ window._mvBirlesikExcelIndir = function() {
   if (!firmalar.length) { window.toast?.('\u00d6nce dosya y\u00fckleyin', 'warn'); return; }
   var satirlar = [];
   /* MUAVIN-DOSYAADI-001: Baran dosya adı sütunu eklendi */
-  satirlar.push(['Tarih', 'Fatura No', 'Bor\u00e7 TL', 'Alacak TL', 'Firma Ad\u0131', 'Kaynak', 'Durum', 'A\u00e7\u0131klama', 'Baran Dosya']);
+  /* MUAVIN-DOSYAADI-002: Kolon C = Baran Dosya — taleple uyumlu yeni sıra */
+  satirlar.push(['Tarih', 'Fatura No', 'Baran Dosya', 'Firma Ad\u0131', 'Bor\u00e7 TL', 'Alacak TL', 'Kaynak', 'Durum', 'A\u00e7\u0131klama']);
   firmalar.forEach(function(f) {
     (f.sonuc || []).forEach(function(r) {
       var m = r.muhasebeci, s = r.sirket;
       if (m) {
         /* MUAVIN-DOSYAADI-001: muhasebeci satırında boş placeholder (sütun hizalama) */
-        satirlar.push([m.tarih || '', m.faturaNo || '', m.tip === 'borc' ? m.tutarTL.toFixed(2) : '0.00', m.tip === 'alacak' ? m.tutarTL.toFixed(2) : '0.00', m.firma || f.ad || '', 'Muhasebeci', r.durum, m.aciklama || '', '']);
+        /* MUAVIN-DOSYAADI-002: yeni kolon sırası — C = Baran Dosya (muhasebeci için boş) */
+        satirlar.push([m.tarih || '', m.faturaNo || '', '', m.firma || f.ad || '', m.tip === 'borc' ? m.tutarTL.toFixed(2) : '0.00', m.tip === 'alacak' ? m.tutarTL.toFixed(2) : '0.00', 'Muhasebeci', r.durum, m.aciklama || '']);
       }
       if (s) {
-        satirlar.push([s.tarih || '', s.faturaNo || '', s.tip === 'borc' ? s.tutarTL.toFixed(2) : '0.00', s.tip === 'alacak' ? s.tutarTL.toFixed(2) : '0.00', s.firma || f.ad || '', '\u015eirket', r.durum, s.aciklama || '', s._dosyaAdi || '']);
+        /* MUAVIN-DOSYAADI-002: Kolon C = dosyaAdi (normalArr'dan geliyor) */
+        satirlar.push([s.tarih || '', s.faturaNo || '', s.dosyaAdi || s.ham?._dosyaAdi || '', s.firma || f.ad || '', s.tip === 'borc' ? s.tutarTL.toFixed(2) : '0.00', s.tip === 'alacak' ? s.tutarTL.toFixed(2) : '0.00', '\u015eirket', r.durum, s.aciklama || '']);
       }
     });
   });
   if (typeof XLSX === 'undefined') { window.toast?.('SheetJS y\u00fcklenmedi', 'err'); return; }
   var ws = XLSX.utils.aoa_to_sheet(satirlar);
-  ws['!cols'] = [12, 20, 14, 14, 30, 12, 14, 40].map(function(w) { return { wch: w }; });
+  /* MUAVIN-DOSYAADI-002: [Tarih, FatNo, BaranDosya, FirmaAdı, BorçTL, AlacakTL, Kaynak, Durum, Açıklama] */
+  ws['!cols'] = [12, 16, 28, 30, 14, 14, 12, 12, 40].map(function(w) { return { wch: w }; });
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Mutabakat');
   var donem = typeof window._mvAktifDonem === 'function' ? window._mvAktifDonem() : '';

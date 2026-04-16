@@ -801,7 +801,8 @@ window._mvNormalize = {
       /* MUAVIN-SN-REGEX-001: SN öncelikli, diğerleri faturaNo */
       /* MUAVIN-CARIAD-NORMALIZE-001: firmaAdiAyikla öncelikli + s.firmaAdi/firma fallback */
       /* MUAVIN-BARAN-FIRMAADI-INPUT-ZORUNLU-001: cariAd/firma = s._firmaAdi direkt (regex devre dışı) */
-      return { kaynak: 'sirket', firma: s._firmaAdi || '', cariAd: s._firmaAdi || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, ham: s };
+      /* MUAVIN-DOSYAADI-002: _dosyaAdi normalize çıktısına taşındı */
+      return { kaynak: 'sirket', firma: s._firmaAdi || '', cariAd: s._firmaAdi || '', snNo: (fatNo && String(fatNo).indexOf('SN') === 0) ? fatNo : null, faturaNo: (fatNo && String(fatNo).indexOf('SN') !== 0) ? fatNo : null, tarih: self.tarihNormalize(s.tarih), tutarTL: Math.abs(netTL), tutarUSD: Math.abs(netUSD), tip: netTL < 0 ? 'alacak' : 'borc', aciklama: s.aciklama || '', islemTuru: s.islemTuru || '', kur: kur, dovizCinsi: _bDov || _aDov || 'TRY', dovizBorc: self.tutarNormalize(_bMeb), dovizAlacak: self.tutarNormalize(_aMeb), kurAlis: null, kurSatis: null, dosyaAdi: s._dosyaAdi || '', ham: s };
     });
   },
   /* MUAVIN-CARIAD-REGEX-V2-001: Türk banka ekstresi — DURDUR kelime listesi + isim doğrulama + 6 pattern */
