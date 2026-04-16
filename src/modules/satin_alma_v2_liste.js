@@ -140,7 +140,7 @@ window.renderSatinAlmaV2 = function() {
     /* ALIS-LISTE-UX-PACK-001: süre dolumu satır rengi (2 gün=kırmızı, 7 gün=sarı) */
     var _gunKalan = _gecerlilik ? Math.floor((new Date(_gecerlilik) - new Date()) / 86400000) : 999;
     var _satirBg = aktif ? '#E6F1FB' : secili ? '#FFFCF5' : (_gunKalan <= 2 ? '#FCEBEB' : _gunKalan <= 7 ? '#FAEEDA' : 'var(--color-background-primary)');
-    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(180px,1fr) 88px 110px 80px 120px 72px 52px;padding:8px 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
+    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(180px,1fr) 88px 110px 80px 120px 72px 52px;height:48px;overflow:hidden;padding:0 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
     // Kolon 1: checkbox
     h+='<input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:11px;height:11px;cursor:pointer">';
     // Kolon 2: ürün/tedarikçi adı + jobId + PI rozet alt satır
@@ -173,7 +173,8 @@ window.renderSatinAlmaV2 = function() {
     var _trendHTML='';
     if(_oncFiyat>0&&_alisFN>0){var _trendPct=Math.round(((_alisFN-_oncFiyat)/_oncFiyat)*100);var _trendRenk=_trendPct<0?'#0F6E56':_trendPct>0?'#A32D2D':'var(--color-text-tertiary)';_trendHTML='<div style="font-size:9px;font-weight:500;color:'+_trendRenk+'">'+(_trendPct<=0?'↓':'↑')+Math.abs(_trendPct)+'%</div>';}
     h+='<div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap">'+((window._saV2AlisF?.(t)||parseFloat(t.toplamTutar)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}))+' <span style="font-size:9px;color:var(--color-text-tertiary);font-weight:400">'+(window._saV2Para?.(t)||t.toplamPara||'USD')+'</span></div>';
-    h+='<div style="text-align:right"><div style="font-size:10px;color:var(--color-text-tertiary)">'+(_kurN?_kurN.toLocaleString('tr-TR')+'₺':'—')+'</div>'+_trendHTML+'</div>';
+    /* SA-LISTE-ROW-FIX-001: KUR + trend wrapper nowrap — 2 satıra kayma önlendi */
+    h+='<div style="text-align:right;white-space:nowrap"><div style="font-size:10px;color:var(--color-text-tertiary)">'+(_kurN?_kurN.toLocaleString('tr-TR')+'₺':'—')+'</div>'+_trendHTML+'</div>';
     // Kolon 5: durum badge + geçerlilik badge (mevcut _bittiBadge/_uyariIkon mantığı korunsun)
     /* SA-PIPELINE-001b: badge renk/label SA_PIPELINE_STAGES'tan, fallback eski renkler */
     /* SA-DURUM-MIGRATE-001: eski durum değerleri için SA_DURUM_MAP fallback */
@@ -189,7 +190,8 @@ window.renderSatinAlmaV2 = function() {
       ? '<div style="font-size:9px;color:var(--color-text-tertiary)">⏱ '+Math.ceil(_pipelineKalan)+'h kaldı</div>'
       : '<div style="font-size:9px;padding:2px 5px;border-radius:6px;background:#FCEBEB;color:#A32D2D;font-weight:600;display:inline-block">⚠ Süre doldu</div>';
     /* SA-LISTE-REDESIGN-001: AŞAMA pill büyük, tek div */
-    h+='<div><span style="font-size:9px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500;background:'+_bgColor+';color:'+_fgColor+'">'+_stLbl+'</span>'+(_bittiBadge||'')+'</div>';
+    /* SA-LISTE-ROW-FIX-001: AŞAMA hücresi overflow — ekstra badge taşmasın */
+    h+='<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="font-size:9px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500;background:'+_bgColor+';color:'+_fgColor+'">'+_stLbl+'</span>'+(_bittiBadge||'')+'</div>';
     // Kolon 5: GEÇERLİLİK — satisMusteriOnay ise kalan saat (renk kademeli), yoksa tarih
     /* SA-LISTE-REDESIGN-001: SÜRE hücresi — pipeline timer */
     var _pKalan=typeof window._saPipelineTimerKalan==='function'?window._saPipelineTimerKalan(t):null;
