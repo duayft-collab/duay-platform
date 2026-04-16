@@ -736,12 +736,48 @@ function deleteUser(id) {
 
 // ── RBAC: Modül Yetki Modalı ──────────────────────────────────────
 // Modül kategorileri
+/* ADMIN-PERM-CAT-001: tüm modüller nav menüsüyle eşleşen kategorilerde */
 var _PERM_CATEGORIES = {
-  finans:     { label: 'Finans & Ticaret',      icon: '💰', mods: ['odemeler','satis-teklifleri','alis-teklifleri','pirim','hedefler'] },
-  operasyon:  { label: 'Operasyon & Lojistik',  icon: '📦', mods: ['pusula','kargo','satinalma','stok','numune','lojistik'] },
-  musteri:    { label: 'Müşteri & Satış',       icon: '📈', mods: ['crm','etkinlik','rehber'] },
-  ik:         { label: 'İnsan Kaynakları',      icon: '👥', mods: ['ik','izin','puantaj','evrak','kpi','temizlik'] },
-  yonetim:    { label: 'Sistem & Yönetim',      icon: '⚙️', mods: ['admin','settings','arsiv','tebligat','resmi'] },
+  satis: {
+    label: 'Satış',
+    icon: '📈',
+    mods: ['crm','satis-teklifleri','satis-rapor','siparisler','etkinlik','rehber']
+  },
+  satinalma: {
+    label: 'Satınalma',
+    icon: '🛒',
+    mods: ['satinalma','urunler','alis-teklifleri','numune','numune-arsivi','fason','stok']
+  },
+  lojistik: {
+    label: 'Lojistik',
+    icon: '🚚',
+    mods: ['kargo','lojistik','teslimat-takip','navlun']
+  },
+  finans: {
+    label: 'Muhasebe & Finans',
+    icon: '💰',
+    mods: ['finans','odemeler','nakit-akisi','cari','cari-karsilastirma','donem-ozeti','pirim','kpi','kpi-panel']
+  },
+  ihracat: {
+    label: 'İhracat',
+    icon: '🌍',
+    mods: ['ihracat','ihracat-ops','ihracat-listesi','ihracat-formlar','ihracat-belgeler']
+  },
+  ik: {
+    label: 'İnsan Kaynakları',
+    icon: '👥',
+    mods: ['ik','ik-hub','izin','puantaj','evrak','temizlik']
+  },
+  operasyon: {
+    label: 'Operasyon & Araçlar',
+    icon: '⚙️',
+    mods: ['pusula-pro','hedefler','hesap','gorusme','docs','formlar','links','announce','tebligat']
+  },
+  yonetim: {
+    label: 'Sistem & Yönetim',
+    icon: '🔐',
+    mods: ['admin','settings','arsiv','arsiv-hub','resmi','users','activity','trash']
+  },
 };
 
 var _PERM_LEVELS = [
