@@ -101,7 +101,16 @@ var _ppIzolasyonFiltre = function(tasks) {
     if (!_sahip) return true;
     if (_sahip === _uid) return true;
     var sorumluArr = Array.isArray(t.sorumlu) ? t.sorumlu : (t.sorumlu ? [t.sorumlu] : []);
-    if (sorumluArr.some(function(s){ return (s && (s.uid || s)) === _uid; })) return true;
+    /* KUYRUK-IZOLASYON-FIX-002: string sorumlu (displayName/email) ve uid karşılaştırması */
+    var cu = _ppCu();
+    if (sorumluArr.some(function(s) {
+      if (!s) return false;
+      var sUid = typeof s === 'object' ? (s.uid || s.id || '') : '';
+      var sAd = typeof s === 'object' ? (s.ad || s.name || s.displayName || s.email || '') : String(s);
+      return sUid === _uid || sUid === (cu?.email||'') ||
+             sAd === (cu?.displayName||'') || sAd === (cu?.email||'') ||
+             String(s) === _uid;
+    })) return true;
     var gozlemciArr = Array.isArray(t.gozlemci) ? t.gozlemci : (t.gozlemci ? [t.gozlemci] : []);
     if (gozlemciArr.some(function(g){ return (g && (g.uid || g)) === _uid; })) return true;
     var paylasilan = Array.isArray(t.paylasilanlar) ? t.paylasilanlar : [];
