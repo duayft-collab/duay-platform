@@ -1381,6 +1381,9 @@ window._ppMesajGonder = function(icerik, tip, hedef) {
   msgs.unshift(msg);
   if (msgs.length > 500) msgs = msgs.slice(0,500);
   _ppMsgStore(msgs);
+  /* KUYRUK-PP-MESAJ-001: Firestore'a yaz — tüm kullanıcılar görsün */
+  try { if (typeof window.savePpMesajlar === 'function') window.savePpMesajlar(msgs); }
+  catch(_me) { console.warn('[PP-MESAJ-FIRE]', _me); }
   window._ppBildirimGuncelle();
   return msg;
 };
@@ -1411,6 +1414,13 @@ window._ppMesajPanelAc = function() {
     window.toast?.('Odak modunda mesajlar kuyruğa alındı — blok bitince okunur','info');
     return;
   }
+  /* KUYRUK-PP-MESAJ-001: panel açılınca Firestore'dan güncel mesajları çek */
+  try {
+    if (typeof window.loadPpMesajlar === 'function') {
+      var _fireMsgs = window.loadPpMesajlar();
+      if (Array.isArray(_fireMsgs) && _fireMsgs.length) _ppMsgStore(_fireMsgs.slice(0, 500));
+    }
+  } catch(_re) {}
   var msgs = window._ppMesajlariOku('kisisel');
   var mevcut = document.getElementById('pp-msg-panel');
   if (mevcut) { mevcut.remove(); return; }
