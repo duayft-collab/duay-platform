@@ -297,7 +297,8 @@ window._saV2RenderMain = function() {
   }
 };
 /* SAV2-RENDER-MERGE-001: render.js yüklendiğinde renderSatinAlmaV2 direkt _saV2RenderMain'e bağlanır */
-window.renderSatinAlmaV2 = window._saV2RenderMain;
+/* SA-RENDER-BYPASS-001: liste.js aktifken render.js override etmesin */
+if (!window._saV2ListeC) window.renderSatinAlmaV2 = window._saV2RenderMain;
 
 /* ── Filtre uygulayıcı ──────────────────────────────────────── */
 window._saV2FiltreLi = function(liste) {
