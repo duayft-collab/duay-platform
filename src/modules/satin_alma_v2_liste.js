@@ -66,7 +66,9 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
   h+='<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="padding:5px 12px;border:none;border-radius:5px;background:var(--color-text-primary);color:#ffffff;cursor:pointer;font-size:10px;font-weight:500;font-family:inherit;flex-shrink:0">+ Yeni Teklif</button>';
   h+='<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Ara..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;width:140px;flex-shrink:0;font-family:inherit;color:var(--color-text-primary)">';
-  h+='<select id="sav2-durum" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm durumlar</option><option value="bekleyen">Bekleyen</option><option value="onaylandi">Onaylı</option><option value="reddedildi">Reddedildi</option></select>';
+  /* SA-PIPELINE-001b: dropdown tüm aşamalar — SA_PIPELINE_STAGES'tan üret */
+  var _durumOpts = '<option value="">Tüm durumlar</option>' + Object.entries(window.SA_PIPELINE_STAGES || {}).sort(function(a,b){ return a[1].sira - b[1].sira; }).map(function(e){ return '<option value="'+e[0]+'">'+e[1].label+'</option>'; }).join('');
+  h+='<select id="sav2-durum" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)">'+_durumOpts+'</select>';
   h+='<select id="sav2-ted" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm tedarikçiler</option></select>';
   h+='<select id="sav2-para" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm para birimleri</option><option value="USD"'+(paraF==='USD'?' selected':'')+'>USD</option><option value="EUR"'+(paraF==='EUR'?' selected':'')+'>EUR</option><option value="TRY"'+(paraF==='TRY'?' selected':'')+'>TRY</option></select>';
   h+='<select id="sav2-tarih" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tarihe göre</option><option value="bu-ay"'+(tarihF==='bu-ay'?' selected':'')+'>Bu ay</option><option value="hafta"'+(tarihF==='hafta'?' selected':'')+'>Bu hafta</option></select>';
@@ -165,11 +167,19 @@ window.renderSatinAlmaV2 = function() {
       : '<div style="font-size:9px;color:var(--color-text-tertiary)">—</div>';
     h+='<div>'+_marjHTML+'</div>';
     // Kolon 5: durum badge + geçerlilik badge (mevcut _bittiBadge/_uyariIkon mantığı korunsun)
-    var _bgColor=durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA';
-    var _fgColor=durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806';
+    /* SA-PIPELINE-001b: badge renk/label SA_PIPELINE_STAGES'tan, fallback eski renkler */
+    var _stageInfo = window.SA_PIPELINE_STAGES?.[durum] || null;
+    var _bgColor = _stageInfo ? _stageInfo.renk + '22' : (durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA');
+    var _fgColor = _stageInfo ? _stageInfo.renk : (durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806');
+    var _stLbl = _stageInfo ? _stageInfo.label : durum;
     var _bittiBadge=_sureBitti?' <span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: '+_gecerlilik+'">Süresi Doldu</span>':'';
     var _uyariIkon=_sureUyari?' <span title="Gecerlilik 7 gun icinde dolacak: '+_gecerlilik+'" style="color:#D97706;font-size:10px;cursor:help">⚠</span>':'';
-    h+='<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span style="font-size:8px;padding:2px 6px;border-radius:8px;white-space:nowrap;background:'+_bgColor+';color:'+_fgColor+'">'+durum+'</span>'+_bittiBadge+_uyariIkon+'</div>';
+    /* SA-PIPELINE-001b: pipeline timer göstergesi */
+    var _pipelineKalan = (typeof window._saPipelineTimerKalan === 'function') ? window._saPipelineTimerKalan(t) : null;
+    var _timerHTML = _pipelineKalan === null ? '' : _pipelineKalan > 0
+      ? '<div style="font-size:9px;color:var(--color-text-tertiary)">⏱ '+Math.ceil(_pipelineKalan)+'h kaldı</div>'
+      : '<div style="font-size:9px;padding:2px 5px;border-radius:6px;background:#FCEBEB;color:#A32D2D;font-weight:600;display:inline-block">⚠ Süre doldu</div>';
+    h+='<div style="display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span style="font-size:8px;padding:2px 6px;border-radius:8px;white-space:nowrap;background:'+_bgColor+';color:'+_fgColor+'">'+_stLbl+'</span>'+_bittiBadge+_uyariIkon+'</div>'+_timerHTML+'</div>';
     // Kolon 5: GEÇERLİLİK — satisMusteriOnay ise kalan saat (renk kademeli), yoksa tarih
     if (t.satisMusteriOnay === true && t.acilGorevBitis) {
       var _kalan = Math.round((new Date(t.acilGorevBitis) - new Date()) / 3600000);
