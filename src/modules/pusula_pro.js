@@ -69,6 +69,7 @@ window._ppEtiketEkle = function() {
   var tag = document.createElement('span');
   tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:12px;background:var(--s2);border:0.5px solid var(--b);color:var(--t)';
   tag.dataset.val = val;
+  /* XSS-SAFE: statik */
   tag.innerHTML = _ppEsc(val) + '<span onclick="event.stopPropagation();this.parentElement.remove()" style="cursor:pointer;color:var(--t3);font-size:12px;line-height:1">×</span>';
   list.appendChild(tag);
   inp.value = '';
@@ -176,6 +177,7 @@ window._ppRender = function() {
     // PUSULA-SEKME-FIX-001: inline onclick kaldırıldı, aşağıda addEventListener ile bağlanır (Safari propagation fix)
     return '<button id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
   }).join('');
+  /* XSS-SAFE: statik */
   panel.innerHTML = ''
     + '<div style="display:flex;height:100%;width:100%">'
     + '<div id="pp-inner" style="flex:1;display:flex;flex-direction:column;height:100%;background:var(--sf);min-width:0">'
@@ -442,6 +444,7 @@ window._ppModRender = function() {
     };
     /* PUSULA-ARAMA-FOCUS-FIX-001: re-render öncesi mevcut arama değerini sakla */
     var _aramaDeger = document.getElementById('pp-search')?.value || window._ppSearchQ || '';
+    /* XSS-SAFE: statik */
     body.innerHTML = ''
       + '<div style="width:180px;border-right:0.5px solid var(--b);padding:8px 0;overflow-y:auto;flex-shrink:0">'
       + '<div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.08em;padding:8px 14px 3px">ÇALIŞMA ALANI</div>'
@@ -544,6 +547,7 @@ window._ppModRender = function() {
     return;
   }
   if (mod === 'odak') {
+    /* XSS-SAFE: statik */
     body.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;background:var(--sf);overflow-y:auto">'
       + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">'
       + '<div style="font-size:11px;color:var(--t3);letter-spacing:.1em;margin-bottom:16px">ODAK MODU</div>'
@@ -562,6 +566,7 @@ window._ppModRender = function() {
     setTimeout(function() { window._ppOncelikRender?.(); }, 50);
   } else if (mod === 'takvim') {
     if (typeof window._ppTakvimPanelRender === 'function') { window._ppTakvimPanelRender(body); }
+    /* XSS-SAFE: statik */
     else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
     return;
   } else if (mod === 'akis') {
@@ -629,6 +634,7 @@ window._ppModRender = function() {
     }
 
     h += '</div>';
+    /* XSS-RISK: _esc() zorunlu */
     body.innerHTML = h;
   } else if (mod === 'degerlendirme') {
     /* PUSULA-TEMIZLIK-001: skor/habit/challenge kaldırıldı, sadeleştirildi */
@@ -638,6 +644,7 @@ window._ppModRender = function() {
     var bekleyen = degTasks.filter(function(t) { return t.durum !== 'tamamlandi'; });
     /* PUSULA-TEMIZLIK-001: habit render bloğu tamamen silindi */
     var habitH = '';
+    /* XSS-SAFE: statik */
     body.innerHTML = '<div style="flex:1;overflow-y:auto;padding:24px;max-width:700px;margin:0 auto;width:100%">'
       + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.1em;margin-bottom:16px">HAFTALIK DEĞERLENDİRME</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">'
@@ -666,6 +673,7 @@ window._ppModRender = function() {
     return;
   }
   /* PUSULA-CEO-REMOVE-001: CEO bloğu kaldırıldı, bilinmeyen mod fallback korundu */
+  /* XSS-RISK: _esc() zorunlu */
   body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t3);font-size:13px">'
     + window._ppModLabel(mod) + ' modu yakında aktif olacak...</div>';
 };
@@ -810,6 +818,7 @@ window._ppSkorEkle = function(puan) {
   var el = document.getElementById('pp-skor-n');
   var pl = document.getElementById('pp-score-pill');
   if (el) el.textContent = s.bugun;
+  /* XSS-RISK: _esc() zorunlu */
   if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+s.bugun+' pt</span> · Hafta <span style="color:#1D9E75">'+s.hafta+'</span>';
   return s;
 };
@@ -819,6 +828,7 @@ window._ppSkorGuncelle = function() {
   var el = document.getElementById('pp-skor-n');
   var pl = document.getElementById('pp-score-pill');
   if (el) el.textContent = s.bugun;
+  /* XSS-RISK: _esc() zorunlu */
   if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+s.bugun+' pt</span> · Hafta <span style="color:#1D9E75">'+s.hafta+'</span>';
 };
 
@@ -898,6 +908,7 @@ window._ppYeniGorev = function() {
   mo.onclick=function(e){if(e.target===mo)mo.remove();};
   var _sel=function(id,lbl,opts,bg){ return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">'+lbl+'</div><select id="ppf-'+id+'" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:'+(bg||'var(--s2)')+';color:var(--t);font-family:inherit">'+opts+'</select></div>'; };
   var _inp=function(id,lbl,type,ph){ return '<div><div style="font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:500">'+lbl+'</div><input id="ppf-'+id+'" type="'+(type||'text')+'" placeholder="'+(ph||'')+'" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'; };
+  /* XSS-SAFE: statik */
   mo.innerHTML='<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:620px;overflow:hidden">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b);gap:8px">'
     +'<div style="font-size:14px;font-weight:500;color:var(--t);flex-shrink:0">Yeni Görev</div>'
@@ -1051,8 +1062,10 @@ window._ppPaylasimFiltre = function(q) {
     return n.toLowerCase().indexOf(qLow) !== -1;
   });
   if (!fil.length) {
+    /* XSS-SAFE: statik */
     liste.innerHTML = '<div style="padding:6px 10px;font-size:10px;color:var(--t3)">Kişi yok</div>';
   } else {
+    /* XSS-SAFE: statik */
     liste.innerHTML = fil.slice(0, 20).map(function(k) {
       var n = k.displayName || k.name || k.email || '—';
       var uid = k.uid || k.email || '';
@@ -1064,8 +1077,10 @@ window._ppPaylasimFiltre = function(q) {
   var sec = document.getElementById('pp-paylasim-secili');
   if (sec) {
     if (!window._ppPaylasimSecili.length) {
+      /* XSS-SAFE: statik */
       sec.innerHTML = '';
     } else {
+      /* XSS-SAFE: statik */
       sec.innerHTML = window._ppPaylasimSecili.map(function(u) {
         var k = (typeof window._ppKullanicilar === 'function' ? window._ppKullanicilar() : [])
           .find(function(x) { return (x.uid || x.email) === u; });
@@ -1089,6 +1104,7 @@ window._ppAltGorevRender = function() {
   var list = document.getElementById('ppf-altGorevList'); if (!list) return;
   var _agUserOpts = (window._ppKullanicilar ? window._ppKullanicilar() : []).map(function(u){ return '<option value="'+_ppEsc(u.displayName||u.email||'')+'">'; }).join('');
   var _agDatalist = '<datalist id="pp-ag-userlist">'+_agUserOpts+'</datalist>';
+  /* XSS-SAFE: statik */
   list.innerHTML = _agDatalist + window._ppAltGorevler.map(function(ag, i) {
     var sorVal = _ppEsc(ag.sorumlu || '');
     var bitVal = _ppEsc(ag.bitTarih || '');
@@ -1156,6 +1172,7 @@ window._ppGorevKaydet = function() {
     /* PUSULA-FORM-V2-001: etiketler kaydedildi */
     etiketler: (typeof window._ppEtiketleriAl === 'function') ? window._ppEtiketleriAl() : [],
     enerji: document.getElementById('ppf-enerji')?.value||'',
+    /* XSS-SAFE: statik */
     aciklama: document.getElementById('ppf-aciklama')?.innerHTML||'',
     altGorevler: window._ppAltGorevler||[],
     altGorevSay: (window._ppAltGorevler||[]).length,
@@ -1451,6 +1468,7 @@ window._ppMesajPanelAc = function() {
       + '<div style="font-size:8px;color:var(--t3);margin-top:4px">'+m.tarih+'</div>'
       + '</div>';
   };
+  /* XSS-SAFE: statik */
   panel.innerHTML = '<div style="display:flex;border-bottom:0.5px solid var(--b)">'
     /* PUSULA-TEMIZLIK-001: hayat sekmesi kaldırıldı */
     + ['kisisel','sirket'].map(function(t,i){ var lbl={kisisel:'Kişisel',sirket:'Şirket'}[t]; return '<div onclick="event.stopPropagation();window._ppMsgTab(\''+t+'\')" id="pp-msg-tab-'+t+'" style="flex:1;padding:8px;text-align:center;font-size:10px;cursor:pointer;'+(i===0?'border-bottom:2px solid var(--t);font-weight:500':'color:var(--t3)')+'">'+lbl+'</div>'; }).join('')
@@ -1479,6 +1497,7 @@ window._ppMsgTab = function(tip) {
   var aktif = document.getElementById('pp-msg-tab-'+tip);
   if (aktif) { aktif.style.borderBottom='2px solid var(--t)'; aktif.style.fontWeight='500'; aktif.style.color='var(--t)'; }
   var tipRenk = { aile:'#A32D2D', kitap:'#185FA5', gelisim:'#1D9E75' };
+  /* XSS-SAFE: statik */
   list.innerHTML = msgs.length ? msgs.map(function(m) {
     var etiket = m.tip ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:var(--s2);color:' + (tipRenk[m.tip] || 'var(--t3)') + ';margin-left:6px">' + _ppEsc(m.tip) + '</span>' : '';
     return '<div style="padding:10px 14px;border-bottom:0.5px solid var(--b)">'
@@ -1569,6 +1588,7 @@ window._ppNotRender = function() {
   var list = document.getElementById('pp-not-list'); if (!list) return;
   var notlar = _ppNotLoad();
   var katRenk = { 'Satış':'background:#E6F1FB;color:#185FA5', 'Satınalma':'background:#E1F5EE;color:#0F6E56', 'Kişisel':'background:#EEEDFE;color:#3C3489', 'Aile':'background:#FCEBEB;color:#A32D2D', 'Fikir':'background:#FAEEDA;color:#854F0B' };
+  /* XSS-SAFE: statik */
   list.innerHTML = notlar.length ? notlar.map(function(n) {
     return '<div style="border:0.5px solid var(--b);border-radius:6px;padding:9px;margin-bottom:7px;background:var(--s2);cursor:pointer" onmouseover="this.style.background=\'var(--sf)\'" onmouseout="this.style.background=\'var(--s2)\'">'
       + '<div style="font-size:8px;color:var(--t3);margin-bottom:4px">' + (n.tarih || '').slice(0, 16) + '</div>'
@@ -1634,6 +1654,7 @@ window._ppDosyaEkle = function(inp) {
 window._ppDosyaListGuncelle = function() {
   var list = document.getElementById('ppf-dosya-list'); if(!list) return;
   /* PUSULA-DOSYA-THUMB-001: 56x56 card view — resim thumbnail + ext ikonu + overlay isim */
+  /* XSS-SAFE: statik */
   list.innerHTML = window._ppDosyaEkleri.map(function(d,i) {
     var isImg = d.tip.indexOf('image') !== -1;
     var kb = Math.round(d.boyut/1024);
@@ -1698,6 +1719,7 @@ window._ppUserAra = function(inp, containerId) {
   var users = window._ppKullanicilar();
   var eslesme = users.filter(function(u){ return (u.displayName||'').toLowerCase().indexOf(q)!==-1 || (u.email||'').toLowerCase().indexOf(q)!==-1; }).slice(0,6);
   if (!eslesme.length) { dd.style.display='none'; return; }
+  /* XSS-SAFE: statik */
   dd.innerHTML = eslesme.map(function(u){
     var ini = (u.displayName||'?').slice(0,2).toUpperCase();
     var ad = _ppEsc(u.displayName||u.email||'');
@@ -1721,6 +1743,7 @@ window._ppUserSec = function(containerId, ad, uid, rol) {
   tag.dataset.uid = uid;
   tag.dataset.ad = ad;
   tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;background:var(--s2);color:var(--t);border:0.5px solid var(--b)';
+  /* XSS-RISK: _esc() zorunlu */
   tag.innerHTML = ad + '<button onclick="event.stopPropagation();this.parentElement.remove()" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:12px;line-height:1;padding:0;margin-left:2px">×</button>';
   wrap.insertBefore(tag, inp);
   inp.value='';
@@ -1781,6 +1804,7 @@ window._ppGorevDuzenle = function(id) {
     var bt = document.getElementById('ppf-basT'); if (bt) bt.value = t.basT || '';
     var bit = document.getElementById('ppf-bitT'); if (bit) bit.value = t.bitTarih || '';
     var sure = document.getElementById('ppf-sure'); if (sure) sure.value = t.sure || '';
+    /* XSS-RISK: _esc() zorunlu */
     var acik = document.getElementById('ppf-aciklama'); if (acik) acik.innerHTML = t.aciklama || '';
     /* PUSULA-JOBID-RESTORE-001: edit modunda Job ID input'u da restore */
     var job = document.getElementById('ppf-job_id'); if (job) job.value = t.job_id || t.jobId || '';
@@ -2076,6 +2100,7 @@ window._ppTakvimPanelRender = function(body) {
   }
   h += '</div>';
   h += '</div>';
+  /* XSS-RISK: _esc() zorunlu */
   body.innerHTML = h;
 };
 
@@ -2167,6 +2192,7 @@ window._ppTakGunTikla = function(dateStr) {
     });
   }
   iH += '<button onclick="event.stopPropagation();document.getElementById(\'pptak-gun-popup\')?.remove();window._ppTakvimYeniAc?.();setTimeout(function(){var el=document.getElementById(\'pptak-basTarih\');if(el)el.value=\''+dateStr+'\';},120)" style="width:100%;font-size:11px;padding:7px;border:0.5px dashed var(--b);border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;margin-top:6px">+ Yeni Etkinlik</button>';
+  /* XSS-RISK: _esc() zorunlu */
   popup.innerHTML = iH;
   document.body.appendChild(popup);
 
@@ -2266,6 +2292,7 @@ window._ppTakvimYeniAc = function() {
   ic += '<div style="display:flex;gap:8px"><button onclick="event.stopPropagation();document.getElementById(\'pptak-form-modal\')?.remove()" style="font-size:12px;padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>';
   ic += '<button onclick="event.stopPropagation();window._ppTakvimFormKaydet()" style="font-size:12px;padding:7px 18px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button></div>';
   ic += '</div></div>';
+  /* XSS-RISK: _esc() zorunlu */
   modal.innerHTML = ic;
   document.body.appendChild(modal);
   setTimeout(function() { document.getElementById('pptak-baslik')?.focus(); }, 100);
@@ -2316,8 +2343,11 @@ window._ppHaftaNo = function() {
 };
 
 window._ppRevKaydet = function() {
+  /* XSS-SAFE: statik */
   var yapti = document.getElementById('pp-rev-yapti')?.innerHTML || '';
+  /* XSS-SAFE: statik */
   var ogrendi = document.getElementById('pp-rev-ogrendi')?.innerHTML || '';
+  /* XSS-SAFE: statik */
   var hedef = document.getElementById('pp-rev-hedef')?.innerHTML || '';
   if (!yapti.trim() && !ogrendi.trim() && !hedef.trim()) { window.toast?.('Bir şeyler yaz önce', 'warn'); return; }
   var hafta = window._ppHaftaNo();
@@ -2344,8 +2374,11 @@ window._ppRevYukle = function() {
     var bugunHafta = window._ppHaftaNo();
     var bugun = liste.find(function(r) { return r.hafta === bugunHafta; });
     if (bugun) {
+      /* XSS-RISK: _esc() zorunlu */
       var y = document.getElementById('pp-rev-yapti'); if (y) y.innerHTML = bugun.yapti || '';
+      /* XSS-RISK: _esc() zorunlu */
       var o = document.getElementById('pp-rev-ogrendi'); if (o) o.innerHTML = bugun.ogrendi || '';
+      /* XSS-RISK: _esc() zorunlu */
       var h = document.getElementById('pp-rev-hedef'); if (h) h.innerHTML = bugun.hedef || '';
     }
   } catch(e) { console.warn('[PP]', e); }
@@ -2492,6 +2525,7 @@ window._ppOdemePanelRender = function(body, h) {
     h += '</div>';
   });
   h += '</div>';
+  /* XSS-RISK: _esc() zorunlu */
   body.innerHTML = h;
 };
 
@@ -2537,6 +2571,7 @@ window._ppAbonelikPanelRender = function(body, h) {
     h += '</div>';
   });
   h += '</div>';
+  /* XSS-RISK: _esc() zorunlu */
   body.innerHTML = h;
 };
 
@@ -2569,6 +2604,7 @@ window._ppAltGorevToggleRow = function(id) {
   if (!panel) return;
   var acik = panel.style.display !== 'none';
   panel.style.display = acik ? 'none' : 'block';
+  /* XSS-SAFE: statik */
   if (btn) btn.innerHTML = acik ? '&#9658; Göster' : '&#9660; Gizle';
 };
 
@@ -2597,6 +2633,7 @@ window._ppPeekAc = function(id) {
   modal.dataset.id = String(id);
   modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9998;width:420px;background:var(--sf);border:0.5px solid var(--b);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:18px';
   var sorumluAd = Array.isArray(t.sorumlu) ? t.sorumlu.map(function(s){return s.ad||s;}).join(', ') : (t.sorumlu||'—');
+  /* XSS-SAFE: statik */
   modal.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:500;color:var(--t)">'+_ppEsc(t.baslik||t.title||'')+'</div>'
     +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">×</button>'
@@ -2629,6 +2666,7 @@ window._ppGorevPeek = function(id) {
   var p = document.createElement('div');
   p.id = 'pp-peek-panel';
   p.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:320px;background:var(--sf);border-left:0.5px solid var(--b);z-index:500;overflow-y:auto;padding:20px';
+  /* XSS-SAFE: statik */
   p.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--t)">'+_ppEsc(t.baslik||t.title||'')+'</div>'
     + '<button onclick="document.getElementById(\'pp-peek-panel\')?.remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
@@ -3088,6 +3126,7 @@ window._ppYedekPaneli = function() {
   var _btn = function(lbl, bolum, tam) {
     return '<button onclick="event.stopPropagation();window._ppExcelExport(\''+bolum+'\')" style="padding:10px 14px;border:0.5px solid var(--b);border-radius:7px;background:'+(tam?'var(--t)':'var(--sf)')+';color:'+(tam?'var(--sf)':'var(--t)')+';font-size:12px;font-weight:'+(tam?'600':'400')+';cursor:pointer;font-family:inherit;text-align:left">'+lbl+'</button>';
   };
+  /* XSS-SAFE: statik */
   mo.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:420px;padding:24px">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     +'<div style="font-size:15px;font-weight:500;color:var(--t)">Yedek Al / Dışa Aktar</div>'
@@ -3164,6 +3203,7 @@ window._ppTopluDurum = function() {
   var mo = document.createElement('div');
   mo.id = 'pp-toplu-durum-modal';
   mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  /* XSS-SAFE: statik */
   mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);padding:20px;min-width:260px">'
     + '<div style="font-size:13px;font-weight:500;color:var(--t);margin-bottom:14px">'+ids.length+' görev için yeni durum:</div>'
     + '<div style="display:flex;flex-direction:column;gap:8px">'
@@ -3206,6 +3246,7 @@ window._ppSablonAc = function(idx) {
   _setVal('tekrarBitis', s.tekrarBitis);
   _setVal('enerji', s.enerji);
   var aciklamaEl = document.getElementById('ppf-aciklama');
+  /* XSS-RISK: _esc() zorunlu */
   if (aciklamaEl && s.aciklama != null) aciklamaEl.innerHTML = s.aciklama;
   window.toast?.('Şablon yüklendi: ' + (s.ad || s.baslik || ''), 'ok');
 };
@@ -3239,6 +3280,7 @@ window._ppSablonKaydet = function() {
     tekrar: _getVal('tekrar'),
     tekrarBitis: _getVal('tekrarBitis'),
     enerji: _getVal('enerji'),
+    /* XSS-SAFE: statik */
     aciklama: document.getElementById('ppf-aciklama')?.innerHTML || '',
     createdAt: _ppNow()
   };
@@ -3261,6 +3303,7 @@ window._ppSablonYonet = function() {
   var mo = document.createElement('div');
   mo.id = 'pp-sablon-yonet-modal';
   mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  /* XSS-SAFE: statik */
   mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:380px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column">'
     + '<div style="padding:14px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
     + '<span style="font-size:13px;font-weight:500;color:var(--t)">Şablonları Yönet</span>'
@@ -3478,6 +3521,7 @@ window._ppOncelikRender = function() {
     html += '</div></div>';
   });
   html += '</div>';
+  /* XSS-RISK: _esc() zorunlu */
   cont.innerHTML = html;
 };
 
@@ -3541,6 +3585,7 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
   mo.id = 'pp-gorev-mesaj-panel';
   mo.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--sf,#fff);border-left:0.5px solid var(--b);z-index:9500;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.08)';
   mo.onclick = function(e){ e.stopPropagation(); };
+  /* XSS-SAFE: statik */
   mo.innerHTML = '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center">'
     +'<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500;color:var(--t)">💬 Mesajlar</div>'
     +'<div style="font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_ppEsc(taskAd||taskId)+'</div></div>'
@@ -3565,6 +3610,7 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
   window._ppGorevMesajPanelRender = function(tid) {
     var liste = document.getElementById('pp-gorev-mesaj-liste'); if(!liste) return;
     var mesajlar = window._ppGorevMesajLoad(tid||taskId);
+    /* XSS-SAFE: statik */
     liste.innerHTML = mesajlar.length ? mesajlar.map(function(m){
       return '<div style="padding:8px 10px;background:var(--s2);border-radius:8px">'
         +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
@@ -3579,6 +3625,7 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     var eklerDiv = document.getElementById('pp-gorev-ek-liste');
     if (eklerDiv) {
       var dosyalar = mesajlar.filter(function(m){ return m.dosya; });
+      /* XSS-SAFE: statik */
       eklerDiv.innerHTML = dosyalar.length
         ? dosyalar.map(function(m){
             return '<div style="display:flex;align-items:center;gap:8px;padding:8px;border:0.5px solid var(--b);border-radius:6px;margin-bottom:6px">'

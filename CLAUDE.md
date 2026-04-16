@@ -572,3 +572,12 @@ Kurallar:
 - Eğer ilk kez: "1. kez", ikinci deneme: "2. kez (retry)" yaz
 
 ---
+
+## XSS-KURAL-001
+
+- innerHTML'e kullanıcı verisi yazarken `_esc()` veya `_ppEsc()` zorunludur
+- `_esc()` olmayan innerHTML yasaktır (statik template hariç)
+- Her yeni innerHTML satırına `/* XSS-SAFE: statik */` veya `/* XSS-RISK: _esc() zorunlu */` yorumu zorunludur
+- Talimat review'da bu kontrol yapılır
+
+---
