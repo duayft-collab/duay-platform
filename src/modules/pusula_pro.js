@@ -892,7 +892,7 @@ window._ppYeniGorev = function() {
     } else {
       jobOpts += '<option value="" disabled>Henüz Job kaydı yok</option>';
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[PP]', e); }
   var mo = document.createElement('div'); mo.id='pp-gorev-modal';
   mo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 0;overflow-y:auto';
   mo.onclick=function(e){if(e.target===mo)mo.remove();};
@@ -1371,7 +1371,7 @@ function _ppMsgLoad() {
   try { var r=localStorage.getItem(PP_MSG_KEY); return r?JSON.parse(r):[]; } catch(e) { return []; }
 }
 function _ppMsgStore(d) {
-  try { localStorage.setItem(PP_MSG_KEY,JSON.stringify(d)); } catch(e) {}
+  try { localStorage.setItem(PP_MSG_KEY,JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); }
 }
 
 window._ppMesajGonder = function(icerik, tip, hedef) {
@@ -1433,7 +1433,7 @@ window._ppMesajPanelAc = function() {
       var _fireMsgs = window.loadPpMesajlar();
       if (Array.isArray(_fireMsgs) && _fireMsgs.length) _ppMsgStore(_fireMsgs.slice(0, 500));
     }
-  } catch(_re) {}
+  } catch(_re) { console.warn('[PP]', _re); }
   var msgs = window._ppMesajlariOku('kisisel');
   var mevcut = document.getElementById('pp-msg-panel');
   if (mevcut) { mevcut.remove(); return; }
@@ -1501,13 +1501,13 @@ var PP_HABIT_KEY     = 'ak_pp_habit_v1';
 var PP_GOAL_KEY      = 'ak_pp_goal_v1';
 
 function _ppChallengeLoad() { try { var r = localStorage.getItem(PP_CHALLENGE_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
-function _ppChallengeStore(d) { try { localStorage.setItem(PP_CHALLENGE_KEY, JSON.stringify(d)); } catch(e) {} }
+function _ppChallengeStore(d) { try { localStorage.setItem(PP_CHALLENGE_KEY, JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); } }
 
 function _ppHabitLoad() { try { var r = localStorage.getItem(PP_HABIT_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
-function _ppHabitStore(d) { try { localStorage.setItem(PP_HABIT_KEY, JSON.stringify(d)); } catch(e) {} }
+function _ppHabitStore(d) { try { localStorage.setItem(PP_HABIT_KEY, JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); } }
 
 function _ppGoalLoad() { try { var r = localStorage.getItem(PP_GOAL_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
-function _ppGoalStore(d) { try { localStorage.setItem(PP_GOAL_KEY, JSON.stringify(d)); } catch(e) {} }
+function _ppGoalStore(d) { try { localStorage.setItem(PP_GOAL_KEY, JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); } }
 
 window._ppChallengeLoad = _ppChallengeLoad;
 window._ppHabitLoad = _ppHabitLoad;
@@ -1548,7 +1548,7 @@ window._ppHabitEkle = function() {
 /* ── Notlar Sistemi ─────────────────────────────────────────── */
 var PP_NOT_KEY = 'ak_pp_notlar_v1';
 function _ppNotLoad() { try { var r = localStorage.getItem(PP_NOT_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
-function _ppNotStore(d) { try { localStorage.setItem(PP_NOT_KEY, JSON.stringify(d)); } catch(e) {} }
+function _ppNotStore(d) { try { localStorage.setItem(PP_NOT_KEY, JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); } }
 
 window._ppNotEkle = function() {
   var ta = document.getElementById('pp-not-input');
@@ -1756,7 +1756,7 @@ window._ppGorevSilYap = function(id) {
     if (!Array.isArray(trash)) trash = [];
     trash.push(Object.assign({}, gorev, { _trashKaynak: 'pusula', _trashTarih: now }));
     localStorage.setItem('ak_trash1', JSON.stringify(trash));
-  } catch(e) {}
+  } catch(e) { console.warn('[PP]', e); }
   window.toast?.('G\u00f6rev silindi', 'ok');
   window._ppModRender();
 };
@@ -1840,7 +1840,7 @@ window._ppTakvimSonrakiHesapla = function(olay) {
     if (periyot==='yıllık'||periyot==='yillik') {
       var d5=new Date(); d5.setFullYear(d5.getFullYear()+1); d5.setMonth(0,15); d5.setHours(9,0,0,0); return d5.toISOString().slice(0,10);
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[PP]', e); }
   return null;
 };
 
@@ -2316,7 +2316,7 @@ window._ppRevKaydet = function() {
   if (!yapti.trim() && !ogrendi.trim() && !hedef.trim()) { window.toast?.('Bir şeyler yaz önce', 'warn'); return; }
   var hafta = window._ppHaftaNo();
   var liste = [];
-  try { liste = JSON.parse(localStorage.getItem(PP_REV_KEY) || '[]'); } catch(e) {}
+  try { liste = JSON.parse(localStorage.getItem(PP_REV_KEY) || '[]'); } catch(e) { console.warn('[PP]', e); }
   var idx = liste.findIndex(function(r) { return r.hafta === hafta; });
   var kayit = { id: _ppId(), tarih: _ppToday(), hafta: hafta, yapti: yapti, ogrendi: ogrendi, hedef: hedef, updatedAt: _ppNow() };
   if (idx !== -1) {
@@ -2328,7 +2328,7 @@ window._ppRevKaydet = function() {
     liste.unshift(kayit);
     if (liste.length > 52) liste = liste.slice(0, 52);
   }
-  try { localStorage.setItem(PP_REV_KEY, JSON.stringify(liste)); } catch(e) {}
+  try { localStorage.setItem(PP_REV_KEY, JSON.stringify(liste)); } catch(e) { console.warn('[PP]', e); }
   window.toast?.('Değerlendirme kaydedildi ✓', 'ok');
 };
 
@@ -2342,7 +2342,7 @@ window._ppRevYukle = function() {
       var o = document.getElementById('pp-rev-ogrendi'); if (o) o.innerHTML = bugun.ogrendi || '';
       var h = document.getElementById('pp-rev-hedef'); if (h) h.innerHTML = bugun.hedef || '';
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[PP]', e); }
 };
 
 /* ── PP-ALT-GOREV-001: Alt Görev Detay Toggle ──────────────── */
@@ -2383,7 +2383,7 @@ window.PusulaPro = {
 /* ── Hayat Kartları ─────────────────────────────────────────── */
 var PP_HAYAT_KEY = 'ak_pp_hayat_v1';
 function _ppHayatLoad() { try { var r = localStorage.getItem(PP_HAYAT_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
-function _ppHayatStore(d) { try { localStorage.setItem(PP_HAYAT_KEY, JSON.stringify(d)); } catch(e) {} }
+function _ppHayatStore(d) { try { localStorage.setItem(PP_HAYAT_KEY, JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); } }
 
 var _ppHayatHavuz = [
   { tip:'aile', icerik:'3 kızınla bu hafta sonu masa oyunu oynayabilirsin. Catan veya Codenames 8 yaş üstü için ideal.' },
@@ -3180,7 +3180,7 @@ window._ppTopluDurum = function() {
 window._ppSablonAc = function(idx) {
   if (idx === '' || idx == null) return;
   var sablonlar = [];
-  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) {}
+  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) { console.warn('[PP]', e); }
   var s = sablonlar[parseInt(idx)];
   if (!s) { window.toast?.('Şablon bulunamadı', 'err'); return; }
   var _setVal = function(id, val) {
@@ -3237,7 +3237,7 @@ window._ppSablonKaydet = function() {
     createdAt: _ppNow()
   };
   var sablonlar = [];
-  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) {}
+  try { sablonlar = JSON.parse(localStorage.getItem('pp_sablonlar') || '[]'); } catch(e) { console.warn('[PP]', e); }
   sablonlar.push(sablon);
   try {
     localStorage.setItem('pp_sablonlar', JSON.stringify(sablonlar));
@@ -3484,7 +3484,7 @@ window._ppGorevMesajLoad = function(taskId) {
 
 window._ppGorevMesajSave = function(taskId, mesajlar) {
   /* PUSULA-MESAJ-FIX-001: localStorage + Firestore eş zamanlı yaz */
-  try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(mesajlar)); } catch(e) {}
+  try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(mesajlar)); } catch(e) { console.warn('[PP]', e); }
   try {
     if (typeof firebase !== 'undefined' && firebase.firestore) {
       var _fsChat = {};
@@ -3498,7 +3498,7 @@ window._ppGorevMesajSave = function(taskId, mesajlar) {
       var _payload = {}; _payload['chat_' + taskId] = mesajlar;
       firebase.firestore().collection('platform').doc('taskChats').set(_payload, { merge: true }).catch(function(){});
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[PP]', e); }
 };
 
 window._ppGorevMesajGonder = function(taskId, text, dosyaAd) {
@@ -3591,11 +3591,11 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     if (typeof firebase !== 'undefined' && firebase.firestore) {
       window._ppChatListener = firebase.firestore().collection('platform').doc('taskChats').onSnapshot(function(snap){
         var msgs = (snap && snap.data && snap.data()) ? (snap.data()['chat_' + taskId] || []) : [];
-        try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(msgs)); } catch(e) {}
+        try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(msgs)); } catch(e) { console.warn('[PP]', e); }
         window._ppGorevMesajPanelRender && window._ppGorevMesajPanelRender(taskId);
       }, function(){});
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[PP]', e); }
   setTimeout(function(){
     document.addEventListener('click', function _gmc(e){
       if(!mo.contains(e.target)){
