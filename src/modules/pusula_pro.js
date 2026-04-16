@@ -1127,6 +1127,8 @@ window._ppAltGorevSil = function(i) {
 };
 
 window._ppGorevKaydet = function() {
+  /* PP-BTNGUARD-001: double-click koruması */
+  if (window._ppIslem) return; window._ppIslem = true; setTimeout(function(){ window._ppIslem = false; }, 1500);
   var baslik = document.getElementById('ppf-baslik')?.value.trim();
   if(!baslik){window.toast?.('Görev başlığı zorunlu','warn');return;}
   var yeni = {
@@ -1375,6 +1377,8 @@ function _ppMsgStore(d) {
 }
 
 window._ppMesajGonder = function(icerik, tip, hedef) {
+  /* PP-BTNGUARD-001: double-click koruması */
+  if (window._ppIslem) return; window._ppIslem = true; setTimeout(function(){ window._ppIslem = false; }, 1500);
   if (!icerik || !icerik.trim()) return;
   var cu = _ppCu();
   var msg = {
@@ -1740,6 +1744,8 @@ window._ppGorevSil = function(id) {
 };
 
 window._ppGorevSilYap = function(id) {
+  /* PP-BTNGUARD-001: double-click koruması */
+  if (window._ppIslem) return; window._ppIslem = true; setTimeout(function(){ window._ppIslem = false; }, 1500);
   var tasks = _ppLoad();
   var i = tasks.findIndex(function(t) { return String(t.id) === String(id); });
   if (i === -1) return;
