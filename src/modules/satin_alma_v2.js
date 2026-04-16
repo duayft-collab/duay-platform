@@ -122,6 +122,110 @@ window._saKurCek = function() {
 };
 window._saKurCek();
 
+/* ── Pipeline Aşamaları (SA-PIPELINE-001a) ─────────────────── */
+window.SA_PIPELINE_STAGES = {
+  'arastirma'        : { label: 'Araştırma',         renk: '#7C3AED', timerSaat: 72,   sira: 0,  sonraki: 'teklif-bekleniyor' },
+  'teklif-bekleniyor': { label: 'Teklif Bekleniyor', renk: '#D97706', timerSaat: 24,   sira: 1,  sonraki: 'teklif-alindi' },
+  'teklif-alindi'    : { label: 'Teklif Alındı',     renk: '#2563EB', timerSaat: 72,   sira: 2,  sonraki: 'takip-1' },
+  'takip-1'          : { label: 'İlk Takip',         renk: '#0284C7', timerSaat: 168,  sira: 3,  sonraki: 'bekleyen' },
+  'bekleyen'         : { label: 'Beklemede',         renk: '#6B7280', timerSaat: null, sira: 4,  sonraki: 'satis-hazir' },
+  'satis-hazir'      : { label: 'Satış Hazır',       renk: '#059669', timerSaat: null, sira: 5,  sonraki: 'onay-hazir' },
+  'onay-hazir'       : { label: 'Onay Bekliyor',     renk: '#B45309', timerSaat: null, sira: 6,  sonraki: 'onaylandi' },
+  'onaylandi'        : { label: 'Onaylandı',         renk: '#065F46', timerSaat: null, sira: 7,  sonraki: 'siparis' },
+  'siparis'          : { label: 'Sipariş',           renk: '#1D4ED8', timerSaat: null, sira: 8,  sonraki: 'teslim-alindi' },
+  'teslim-alindi'    : { label: 'Teslim Alındı',     renk: '#047857', timerSaat: null, sira: 9,  sonraki: 'tamamlandi' },
+  'tamamlandi'       : { label: 'Tamamlandı',        renk: '#064E3B', timerSaat: null, sira: 10, sonraki: null },
+  'reddedildi'       : { label: 'Reddedildi',        renk: '#991B1B', timerSaat: null, sira: 11, sonraki: null }
+};
+
+/* Sonraki aşamaya ilerle */
+window._saPipelineIlerle = function(id) {
+  var liste = _saV2Load();
+  var t = liste.find(function(x){ return String(x.id) === String(id); });
+  if (!t) return;
+  var mevcut = window.SA_PIPELINE_STAGES[t.durum];
+  if (!mevcut || !mevcut.sonraki) { window.toast?.('İlerlenecek aşama yok','err'); return; }
+  var eskiDurum = t.durum;
+  var yeniDurum = mevcut.sonraki;
+  var yeniInfo = window.SA_PIPELINE_STAGES[yeniDurum];
+  var cu = _saCu();
+  t.durum = yeniDurum;
+  t.pipelineAdimlari = Array.isArray(t.pipelineAdimlari) ? t.pipelineAdimlari : [];
+  t.pipelineAdimlari.push({ durum: eskiDurum, yeniDurum: yeniDurum, tarih: _saNow(), kim: cu?.displayName || cu?.email || '' });
+  if (yeniInfo && yeniInfo.timerSaat) {
+    t.pipelineTimerBaslangic = _saNow();
+    t.pipelineTimerSaat = yeniInfo.timerSaat;
+  } else {
+    t.pipelineTimerBaslangic = null;
+    t.pipelineTimerSaat = null;
+  }
+  t.updatedAt = _saNow();
+  _saV2Store(liste);
+  if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
+  window.toast?.('Aşama güncellendi → ' + (yeniInfo?.label || yeniDurum), 'ok');
+};
+
+/* Timer kalan saat (sayı veya null) */
+window._saPipelineTimerKalan = function(t) {
+  if (!t || !t.pipelineTimerBaslangic || !t.pipelineTimerSaat) return null;
+  var baslangic = new Date(t.pipelineTimerBaslangic).getTime();
+  if (isNaN(baslangic)) return null;
+  var gecenSaat = (Date.now() - baslangic) / 3600000;
+  return Math.max(0, t.pipelineTimerSaat - gecenSaat);
+};
+
+/* Satış hazır — satış modülüne bildirim */
+window._saSatisHazir = function(id) {
+  var liste = _saV2Load();
+  var t = liste.find(function(x){ return String(x.id) === String(id); });
+  if (!t) return;
+  var cu = _saCu();
+  var eskiDurum = t.durum;
+  t.durum = 'satis-hazir';
+  t.satisHazirTarih = _saNow();
+  t.pipelineAdimlari = Array.isArray(t.pipelineAdimlari) ? t.pipelineAdimlari : [];
+  t.pipelineAdimlari.push({ durum: eskiDurum, yeniDurum: 'satis-hazir', tarih: _saNow(), kim: cu?.displayName || cu?.email || '' });
+  t.updatedAt = _saNow();
+  _saV2Store(liste);
+  try { window.addNotif?.('🛒', 'Satınalma: Satış hazır — ' + (t.baslik || t.id), 'ok', 'satinalma', null); } catch(e){}
+  if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
+  window.toast?.('Satış hazır olarak işaretlendi','ok');
+};
+
+/* Avans al — prim tetikle */
+window._saAvansAl = function(id) {
+  var liste = _saV2Load();
+  var t = liste.find(function(x){ return String(x.id) === String(id); });
+  if (!t) return;
+  t.avansAlindi = true;
+  t.avansTarih = _saNow();
+  t.updatedAt = _saNow();
+  _saV2Store(liste);
+  try { window._pirimTetikle?.('satinalma_avans', { teklifId: id, tutar: t.toplamTutar, para: t.toplamPara, kim: t.createdBy }); } catch(e){}
+  try { window.addNotif?.('💰', 'Avans alındı — prim tetiklendi', 'ok', 'satinalma', null); } catch(e){}
+  if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
+};
+
+/* Mal teslim al — prim tetikle + durum güncelle */
+window._saMalTeslimAl = function(id) {
+  var liste = _saV2Load();
+  var t = liste.find(function(x){ return String(x.id) === String(id); });
+  if (!t) return;
+  var cu = _saCu();
+  var eskiDurum = t.durum;
+  t.malTeslimAlindi = true;
+  t.malTeslimTarih = _saNow();
+  t.durum = 'teslim-alindi';
+  t.pipelineAdimlari = Array.isArray(t.pipelineAdimlari) ? t.pipelineAdimlari : [];
+  t.pipelineAdimlari.push({ durum: eskiDurum, yeniDurum: 'teslim-alindi', tarih: _saNow(), kim: cu?.displayName || cu?.email || '' });
+  t.updatedAt = _saNow();
+  _saV2Store(liste);
+  try { window._pirimTetikle?.('satinalma_teslim', { teklifId: id, tutar: t.toplamTutar, para: t.toplamPara, kim: t.createdBy }); } catch(e){}
+  try { window.addNotif?.('📦', 'Mal teslim alındı — prim tetiklendi', 'ok', 'satinalma', null); } catch(e){}
+  try { window.logActivity?.('satinalma_teslim', 'info', { teklifId: id, durum: 'teslim-alindi' }); } catch(e){}
+  if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
+};
+
 /* ── Global export ──────────────────────────────────────────── */
 window._saV2Load    = _saV2Load;
 window._saV2Store   = _saV2Store;
