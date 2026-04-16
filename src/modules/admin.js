@@ -959,25 +959,35 @@ function openPermModal(id) {
   var rm = ROLE_META[u.role] || ROLE_META.staff;
 
   /* ADMIN-PERM-SADE-UI-001: Sade 3-buton (Erişemez/Görebilir/Tam Yetki) + kategorili + şablon */
+  /* ADMIN-KATMAN-001: nav menüsüyle birebir 8 kategori, tüm modüller */
   var KATMAN = [
-    { lbl: 'Muhasebe & Finans',    mods: ['muavin','nakit-akisi','finans','odemeler','hesap-ozeti','kdv-iadesi','evrak-paketi','muhasebe-excel','periyodik-kontrol'] },
-    { lbl: 'Satış & Satınalma',    mods: ['satis','satin-alma','urunler','satis-teklifleri','alis-teklifleri','siparisler','kpi-panel','kar-analiz'] },
-    { lbl: 'Operasyon & Lojistik', mods: ['fason','kargo','lojistik','numune','navlun'] },
-    { lbl: 'İnsan Kaynakları',     mods: ['ik','puantaj','pirim'] },
-    { lbl: 'Sistem & Yönetim',     mods: ['dashboard','admin','users','pusula-pro','crm','platform-standartlari'] },
+    { lbl: 'Muhasebe & Finans',    mods: ['finans','odemeler','nakit-akisi','cari','cari-karsilastirma','donem-ozeti','pirim','kpi','kpi-panel'] },
+    { lbl: 'Satış',                mods: ['crm','satis-teklifleri','satis-rapor','siparisler','etkinlik','rehber'] },
+    { lbl: 'Satınalma',            mods: ['satinalma','urunler','alis-teklifleri','numune','numune-arsivi','fason','stok'] },
+    { lbl: 'Lojistik',             mods: ['kargo','lojistik','teslimat-takip','navlun'] },
+    { lbl: 'İhracat',              mods: ['ihracat','ihracat-ops','ihracat-listesi','ihracat-formlar','ihracat-belgeler'] },
+    { lbl: 'İnsan Kaynakları',     mods: ['ik','ik-hub','izin','puantaj','evrak','temizlik'] },
+    { lbl: 'Operasyon & Araçlar',  mods: ['pusula-pro','hedefler','hesap','gorusme','docs','formlar','links','announce','tebligat'] },
+    { lbl: 'Sistem & Yönetim',     mods: ['dashboard','admin','settings','arsiv','arsiv-hub','resmi','users','activity','trash'] },
   ];
   var MODUL_LABEL = {
-    'muavin':'Muavin Defteri','nakit-akisi':'Nakit Akışı','finans':'Finans',
-    'odemeler':'Ödemeler','hesap-ozeti':'Hesap Özeti','kdv-iadesi':'KDV & Raporlar',
-    'evrak-paketi':'Evrak Paketi','periyodik-kontrol':'Periyodik Kontrol','muhasebe-excel':'Muhasebe Excel',
-    'satis':'Satış Teklifleri','satin-alma':'Alış Teklifleri V2',
-    'urunler':'Ürün Kataloğu','satis-teklifleri':'Satış Teklifleri','alis-teklifleri':'Alış Teklifleri',
-    'siparisler':'Siparişler','kpi-panel':'KPI Panel','kar-analiz':'Kâr Analiz',
-    'fason':'Fason Üretim','kargo':'Kargo','lojistik':'Lojistik',
-    'numune':'Numune Arşivi','navlun':'Navlun',
-    'ik':'İK Yönetimi','puantaj':'Puantaj','pirim':'Prim',
-    'dashboard':'Dashboard','admin':'Admin','users':'Kullanıcı Yönetimi',
-    'pusula-pro':'Pusula OS','crm':'CRM','platform-standartlari':'Platform Standartları',
+    'finans':'Finans Paneli','odemeler':'Ödemeler','nakit-akisi':'Nakit Akışı',
+    'cari':'Cari Yönetimi','cari-karsilastirma':'Cari Karşılaştırma','donem-ozeti':'Dönem Özeti',
+    'pirim':'Prim Yönetimi','kpi':'KPI & Performans','kpi-panel':'KPI Özet',
+    'crm':'CRM / Müşteriler','satis-teklifleri':'Satış Teklifleri','satis-rapor':'Satış Raporu',
+    'siparisler':'Siparişler','etkinlik':'Etkinlik / Fuar','rehber':'Acil Rehber',
+    'satinalma':'Satın Alma','urunler':'Ürün Kataloğu','alis-teklifleri':'Alış Teklifleri',
+    'numune':'Numune Arşivi','numune-arsivi':'Numune Arşivi (Detay)','fason':'Fason Üretim','stok':'Stok',
+    'kargo':'Kargo','lojistik':'Lojistik Merkezi','teslimat-takip':'Teslimat Takibi','navlun':'Navlun',
+    'ihracat':'İhracat Operasyonları','ihracat-ops':'İhracat Ops','ihracat-listesi':'İhracat Listesi',
+    'ihracat-formlar':'İhracat Formları','ihracat-belgeler':'İhracat Belgeleri',
+    'ik':'İK Yönetimi','ik-hub':'İK Merkezi','izin':'İzin Yönetimi','puantaj':'Puantaj','evrak':'Personel Evrak','temizlik':'Temizlik Kontrol',
+    'pusula-pro':'Pusula Pro','hedefler':'Hedefler','hesap':'Hesap Makinesi',
+    'gorusme':'Görüşme / Randevu','docs':'Döküman Yönetimi','formlar':'Kurumsal Formlar',
+    'links':'Hızlı Linkler','announce':'Duyurular','tebligat':'Tebligat Takibi',
+    'dashboard':'Dashboard','admin':'Kullanıcı Yönetimi','settings':'Ayarlar',
+    'arsiv':'Şirket Arşivi','arsiv-hub':'Arşiv & Belgeler','resmi':'Resmi Evrak',
+    'users':'Kullanıcılar','activity':'Aktivite Logu','trash':'Çöp Kutusu',
   };
   /* Mevcut _PERM_PRESETS key'lerine görsel label map */
   var PRESET_BTN = [
