@@ -1965,6 +1965,11 @@ function _listenCollection(collection, localKey, onUpdate) {
       // notifications, activity, taskChats → append-only merge (ezilme önleme)
       var _rtNoMerge = ['trash'];
       var _rtAppendOnly = ['notifications', 'activity', 'taskChats'];
+      /* DB-USERS-PROTECT-001: admin kayıt sırasında users onSnapshot'ı localStorage'ı ezmesin */
+      if (collection === 'users' && window._adminSaving) {
+        console.info('[DB] users onSnapshot admin kayıt sırasında atlandı (_adminSaving aktif)');
+        return;
+      }
       var merged;
       if (_rtNoMerge.indexOf(collection) !== -1) {
         merged = Array.isArray(fsData) ? fsData : fsData;
