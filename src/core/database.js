@@ -489,6 +489,15 @@ function _mergeDataSets(localKey, fsData, collection) {
       if (fsTs > localTs) {
         mergedMap[key] = item;
       }
+      /* PERM-MERGE-PROTECT-001: permissions/modules alanı için permUpdatedAt koruması */
+      if (collection === 'users' && existing && item) {
+        var _existPermTs = existing.permUpdatedAt || '';
+        var _itemPermTs  = item.permUpdatedAt || '';
+        var _permWinner  = (_existPermTs > _itemPermTs) ? existing : item;
+        mergedMap[key].permissions  = _permWinner.permissions;
+        mergedMap[key].modules      = _permWinner.modules;
+        mergedMap[key].permUpdatedAt = _permWinner.permUpdatedAt;
+      }
       // isDeleted propagation: tombstone immutable — herhangi bir taraf silinmisse merged sonuc da silinmis kalir
       if (item.isDeleted || existing.isDeleted) { var _winner = (fsTs >= localTs) ? item : existing; _winner.isDeleted = true; _winner.deletedAt = item.deletedAt || existing.deletedAt || null; mergedMap[key] = _winner; }
     }

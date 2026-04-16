@@ -1262,6 +1262,13 @@ function savePermissions() {
   }
 
   /* ADMIN-PERM-ADMINSAVING-001: Firebase ezilmesini önle — _adminSaving aktifken DB-USERS-PROTECT-001 guard devreye girer */
+  /* PERM-MERGE-PROTECT-001: her kullanıcıya permUpdatedAt timestamp yaz — merge koruması */
+  users = users.map(function(u) {
+    if (_newModules !== undefined || Object.keys(_newPermissions).length) {
+      u.permUpdatedAt = new Date().toISOString();
+    }
+    return u;
+  });
   window._adminSaving = true;
   saveUsers(users);
   setTimeout(function(){ window._adminSaving = false; }, 8000);
