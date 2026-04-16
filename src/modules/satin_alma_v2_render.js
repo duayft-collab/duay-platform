@@ -221,8 +221,12 @@ window._saV2RenderMain = function() {
     h += '<div style="width:52px;font-size:9px;font-family:monospace;color:'+window._t3+'">'+_saEsc(_u0.gtip||t.gtip||'\u2014')+'</div>';
     h += '<div style="width:65px;font-size:11px;font-weight:500;color:'+kenar+'">'+_saEsc(_saV2AlisF(t)||'\u2014')+' '+_saEsc(_saV2Para(t))+'</div>';
     h += '<div style="width:50px;font-size:9px;color:#0C447C;font-family:monospace">'+_saEsc(t.jobId||'—')+'</div>';
-    var stRenk = {bekleyen:'background:#FAEEDA;color:#854F0B',onaylandi:'background:#E1F5EE;color:#0F6E56',reddedildi:'background:#FCEBEB;color:#A32D2D'}[t.durum]||'background:'+window._s2+';color:'+window._t3;
-    var stLbl  = {bekleyen:'Bekliyor',onaylandi:'Onaylı',reddedildi:'Reddedildi'}[t.durum]||t.durum||'Taslak';
+    /* SA-PIPELINE-001c: badge SA_PIPELINE_STAGES'tan, fallback eski ternary */
+    var _stageInfo = window.SA_PIPELINE_STAGES?.[t.durum] || null;
+    var stRenk = _stageInfo ? 'background:'+_stageInfo.renk+'22;color:'+_stageInfo.renk
+      : ({bekleyen:'background:#FAEEDA;color:#854F0B',onaylandi:'background:#E1F5EE;color:#0F6E56',reddedildi:'background:#FCEBEB;color:#A32D2D'}[t.durum]||'background:'+window._s2+';color:'+window._t3);
+    var stLbl  = _stageInfo ? _stageInfo.label
+      : ({bekleyen:'Bekliyor',onaylandi:'Onaylı',reddedildi:'Reddedildi'}[t.durum]||t.durum||'Taslak');
     h += '<div style="width:52px"><span style="font-size:8px;padding:2px 5px;border-radius:3px;font-weight:500;'+stRenk+'">'+stLbl+'</span>';
     if(typeof window._steklifOzetHTML==='function') h += window._steklifOzetHTML(t);
     h += '</div>';
@@ -391,6 +395,10 @@ window._saV2PeekHTML = function(t) {
     }
   }
   h += '<div style="display:flex;flex-direction:column;gap:5px">';
+  /* SA-PIPELINE-001c: sonraki aşamaya ilerle butonu */
+  var _sonraki = window.SA_PIPELINE_STAGES?.[t.durum]?.sonraki;
+  var _ilerleBtn = _sonraki ? '<button onclick="event.stopPropagation();window._saPipelineIlerle(\''+t.id+'\')" style="font-size:10px;padding:5px 12px;border:0.5px solid '+window._b+';border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:'+window._t2+'">→ '+window.SA_PIPELINE_STAGES[_sonraki].label+'</button>' : '';
+  if (_ilerleBtn) h += _ilerleBtn;
   if (t.durum==='bekleyen' || t.durum==='onaylandi') {
     if(_canSatisTeklif) h += '<button onclick="event.stopPropagation();window._saV2TeklifOlustur(\''+t.id+'\')" style="font-size:10px;padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit">Sat\u0131\u015f Teklifi Olu\u015ftur</button>';
   }
