@@ -837,6 +837,8 @@ var MOD_ICONS = {
 // Yetki değişiklik takibi — orijinal ve güncel ayrı saklanır
 var _permOriginal = {};  // { modId: level }
 var _permCurrent  = {};  // { modId: level }
+/* ADMIN-PERM-ONAYLA-FIX-001: onaya bekleyen kayıt snapshot'ı */
+var _pendingPermSave = null;
 
 function openPermModal(id) {
   if (!isAdmin()) return;
@@ -1206,7 +1208,9 @@ function savePermissions() {
   var hasChange = oldPerms !== newPerms || oldModules !== newModulesStr || u.rule12h !== _newRule12h;
 
   // Onay modalı — değişiklik varsa sor
-  if (hasChange && !window._permConfirmed) {
+  if (hasChange) {
+    /* ADMIN-PERM-ONAYLA-FIX-001: snapshot'ı sakla, Onayla butonu _applyPermSave ile direkt uygular */
+    _pendingPermSave = { users: users, u: u, _newModules: _newModules, _newPermissions: _newPermissions, _newRule12h: _newRule12h, hasChange: hasChange, oldPerms: oldPerms, oldModules: oldModules };
     var _changeDesc = [];
     if (oldModules !== newModulesStr) _changeDesc.push('modül erişimi');
     if (oldPerms !== newPerms) _changeDesc.push('yetki seviyeleri');
@@ -1230,7 +1234,8 @@ function savePermissions() {
       + '<div style="padding:12px 24px 20px;display:flex;gap:8px;justify-content:center">'
         + '<button id="perm-confirm-cancel" onclick="document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btns" style="padding:10px 24px;border-radius:10px;font-size:13px">İptal</button>'
         /* ADMIN-ONAYLA-FIX-001: inline onclick scope — savePermissions → window.savePermissions?.() */
-        + '<button id="perm-confirm-ok" onclick="event.stopPropagation();window._permConfirmed=true;window.savePermissions?.();document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btnp" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
+        /* ADMIN-PERM-ONAYLA-FIX-001: Onayla → _applyPermSave (ikinci savePermissions çağrısı atlanır) */
+        + '<button id="perm-confirm-ok" onclick="event.stopPropagation();window._applyPermSave?.();document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btnp" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
       + '</div>'
     + '</div>';
     document.body.appendChild(_confirmEl);
@@ -1238,7 +1243,7 @@ function savePermissions() {
     _confirmEl.addEventListener('click', function(e) { if (e.target === _confirmEl) _confirmEl.remove(); });
     return;
   }
-  window._permConfirmed = false;
+  /* ADMIN-PERM-ONAYLA-FIX-001: _permConfirmed bayrağı artık kullanılmıyor (Onayla _applyPermSave çağırıyor) */
 
   // Yetkileri uygula
   u.modules = _newModules;
@@ -1290,6 +1295,27 @@ function savePermissions() {
   logActivity('user', 'Yetki seviyeleri güncellendi: "' + u.name + '" (12h kuralı: ' + (u.rule12h ? 'aktif' : 'kapalı') + ')');
   window.toast?.(u.name + ' yetkileri güncellendi ✓', 'ok');
 }
+
+/* ADMIN-PERM-ONAYLA-FIX-001: snapshot'tan direkt kaydet (ikinci DOM okuma yok) */
+window._applyPermSave = function() {
+  if (!_pendingPermSave) return;
+  var save = _pendingPermSave;
+  _pendingPermSave = null;
+  save.u.modules = save._newModules;
+  save.u.permissions = save._newPermissions;
+  save.u.rule12h = save._newRule12h;
+  if (save.hasChange) {
+    if (!Array.isArray(save.u.permissionLog)) save.u.permissionLog = [];
+    save.u.permissionLog.push({ ts: nowTs(), changedBy: _getCU?.()?.id, changedByName: _getCU?.()?.name || '', oldModules: JSON.parse(save.oldModules), newModules: save.u.modules, oldPermissions: JSON.parse(save.oldPerms), newPermissions: save._newPermissions });
+    if (_getCU?.()?.id !== save.u.id) { window.addNotif?.('🔐', 'Yetkiniz güncellendi', 'warn', 'admin', save.u.id); save.u.permUpdatedAt = nowTs(); }
+  }
+  window._adminSaving = true;
+  saveUsers(save.users);
+  setTimeout(function(){ window._adminSaving = false; }, 8000);
+  window.closeMo?.('mo-perm');
+  renderAdmin();
+  window.toast?.(save.u.name + ' yetkileri güncellendi ✓', 'ok');
+};
 
 // ── Aktivite Log Render ───────────────────────────────────────────
 function renderActivityLog() {
