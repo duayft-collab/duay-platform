@@ -2086,6 +2086,13 @@ function _refreshCU(usersData) {
     try { localStorage.setItem('ak_session', JSON.stringify({ uid: cu.id, email: cu.email, tenantId: window.DEFAULT_TENANT_ID || 'tenant_default', ts: Date.now() })); } catch(e) {}
     // Tüm modüllere bildir
     try { window.dispatchEvent(new CustomEvent('auth-changed', { detail: cu })); } catch(e) {}
+    /* PERM-REFRESH-001: izin değişince nav + aktif panel yenile */
+    setTimeout(function() {
+      try {
+        window.App?.nav?.(window.App?.aktifPanel || 'dashboard');
+        window.renderTopNav?.();
+      } catch(_e) {}
+    }, 300);
     // UI güncelle
     const navName = document.getElementById('nav-name');
     if (navName) navName.textContent = cu.name;
