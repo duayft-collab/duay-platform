@@ -408,8 +408,13 @@ window._ppModRender = function() {
                 _agSorAd = ag.sorumlu.ad || ag.sorumlu.name || '';
               }
             }
-            h2 += '<span style="font-size:9px;color:var(--t3);margin-left:8px">'
-              + (_agSorAd ? '\ud83d\udc64 '+_ppEsc(_agSorAd) : '')
+            /* PUSULA-BUG-FIX-001: alt görev sorumlusu avatar + baş harfler */
+            var _agIni = _agSorAd ? _agSorAd.split(' ').map(function(s){return s[0]||'';}).join('').slice(0,2).toUpperCase() : '';
+            if (_agSorAd) {
+              h2 += '<div style="width:18px;height:18px;border-radius:50%;background:#185FA5;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:600;color:#fff;flex-shrink:0;margin-left:6px" title="'+_ppEsc(_agSorAd)+'">'+_ppEsc(_agIni)+'</div>';
+            }
+            h2 += '<span style="font-size:9px;color:var(--t3);margin-left:2px">'
+              + (_agSorAd ? _ppEsc(_agSorAd) : '')
               + (ag.basT ? ' \u00b7 \ud83d\udcc5 '+_ppEsc(ag.basT) : '')
               + (ag.bitTarih ? ' \u2192 '+_ppEsc(ag.bitTarih) : '')
               + '</span>';
@@ -821,21 +826,26 @@ window._ppHizliEkle = function(inp) {
 };
 
 window._ppTamamla = function(id) {
+  /* PUSULA-BUG-FIX-001: toggle — tamamlandi ise plan'a geri al */
+  var tasks = _ppLoad(); var t = tasks.find(function(x) { return x.id === id; });
+  if (!t) return;
+  if (t.durum === 'tamamlandi') {
+    t.durumLog = t.durumLog || [];
+    t.durumLog.push({ den: 'tamamlandi', e: 'plan', kim: (_ppCu()?.displayName || _ppCu()?.email || '?'), zaman: _ppNow() });
+    t.durum = 'plan'; t.updatedAt = _ppNow(); _ppStore(tasks);
+    window.toast?.('Tamamlama geri alındı', 'warn');
+    setTimeout(function() { window._ppModRender(); }, 200);
+    return;
+  }
   var bagKontrol = window._ppBagimlilikKontrol?.(id);
   if (bagKontrol && !bagKontrol.gecerli) {
     window.toast?.('Önce tamamlanması gereken: ' + bagKontrol.eksikler.join(', '), 'warn');
     return;
   }
-  var tasks = _ppLoad(); var t = tasks.find(function(x) { return x.id === id; });
-  if (t) {
-    // PUSULA-DURUM-LOG-001: durum değişikliğini logla (kim, ne zaman, eski→yeni)
-    t.durumLog = t.durumLog || [];
-    t.durumLog.push({ den: t.durum, e: 'tamamlandi', kim: (_ppCu()?.displayName || _ppCu()?.email || '?'), zaman: _ppNow() });
-    t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); _ppStore(tasks);
-    var puan = t.oncelik==='kritik'?120:t.oncelik==='yuksek'?80:t.oncelik==='dusuk'?20:40;
-    window._ppSkorEkle?.(puan);
-  }
-  window.toast?.('Tamamlandı', 'ok');
+  t.durumLog = t.durumLog || [];
+  t.durumLog.push({ den: t.durum, e: 'tamamlandi', kim: (_ppCu()?.displayName || _ppCu()?.email || '?'), zaman: _ppNow() });
+  t.durum = 'tamamlandi'; t.updatedAt = _ppNow(); _ppStore(tasks);
+  window.toast?.('Tamamlandı ✓', 'ok');
   setTimeout(function() { window._ppModRender(); }, 400);
 };
 
@@ -998,6 +1008,22 @@ window._ppYeniGorev = function() {
   };
   window._ppAltGorevler=[];
   window._ppDosyaEkleri=[];
+  /* PUSULA-BUG-FIX-001: düzenleme modunda mevcut dosyaları form'a yükle */
+  if (window._ppDuzenleHedef) {
+    setTimeout(function() {
+      try {
+        var _mevD = _ppLoad().find(function(t){ return String(t.id)===String(window._ppDuzenleHedef); });
+        if (_mevD && Array.isArray(_mevD.dosyalar) && _mevD.dosyalar.length) {
+          window._ppDosyaEkleri = _mevD.dosyalar.slice();
+          window._ppDosyaListGuncelle?.();
+        }
+        if (_mevD && Array.isArray(_mevD.altGorevler) && _mevD.altGorevler.length) {
+          window._ppAltGorevler = _mevD.altGorevler.map(function(ag){ return Object.assign({}, ag); });
+          window._ppAltGorevListGuncelle?.();
+        }
+      } catch(e) { console.warn('[PP-RESTORE]', e.message); }
+    }, 150);
+  }
 };
 
 /* PUSULA-GOREV-GIZLILIK-COMBO-001: paylaşım combobox state + filtre + toggle */
@@ -1156,6 +1182,17 @@ window._ppGorevKaydet = function() {
     window._ppDuzenleHedef = null;
   }
   tasks.unshift(yeni); _ppStore(tasks);
+  /* PUSULA-BUG-FIX-001: görev atanan kişiye bildirim gönder */
+  try {
+    var _sorumlular = Array.isArray(yeni.sorumlu) ? yeni.sorumlu : (yeni.sorumlu ? [yeni.sorumlu] : []);
+    var _atayan = _ppCu()?.displayName || _ppCu()?.email || 'Biri';
+    _sorumlular.forEach(function(s) {
+      var _sUid = (s && typeof s === 'object') ? (s.uid || s.id || '') : String(s || '');
+      if (_sUid && _sUid !== (_ppCu()?.uid || '')) {
+        window.addNotif?.('\ud83d\udccb', '"' + _ppEsc(yeni.baslik || '') + '" görevi sana atandı — ' + _atayan, 'info', 'pusula', _sUid, yeni.id);
+      }
+    });
+  } catch(_ne) { console.warn('[PP-NOTIF]', _ne.message); }
   // PUSULA-TEKRAR-001: tekrar varsa bir sonraki tarihli klon yarat
   if(yeni.tekrar && yeni.bitTarih) {
     var _sonrakiTarih = function(tarih, tekrar) {
