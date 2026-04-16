@@ -18,7 +18,8 @@ window.renderSatinAlmaV2 = function() {
   if(!cont) return;
   var liste = typeof window._saV2Load==='function'?window._saV2Load():[];
   var srch = (window._sav2SrchVal||'').toLowerCase();
-  var durumF = document.getElementById('sav2-durum')?.value||'';
+  /* SA-FILTRE-PILL-001: durum filtresi pill bar'dan okunuyor */
+  var durumF = window._sav2FiltreDurum||'';
   var tedF = document.getElementById('sav2-ted')?.value||'';
   var tarihF = document.getElementById('sav2-tarih')?.value||'';
   // ALIS-LISTE-C-001: para birimi filtresi
@@ -66,9 +67,7 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
   h+='<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="padding:5px 12px;border:none;border-radius:5px;background:var(--color-text-primary);color:#ffffff;cursor:pointer;font-size:10px;font-weight:500;font-family:inherit;flex-shrink:0">+ Yeni Teklif</button>';
   h+='<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Ara..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;width:140px;flex-shrink:0;font-family:inherit;color:var(--color-text-primary)">';
-  /* SA-PIPELINE-001b: dropdown tüm aşamalar — SA_PIPELINE_STAGES'tan üret */
-  var _durumOpts = '<option value="">Tüm durumlar</option>' + Object.entries(window.SA_PIPELINE_STAGES || {}).sort(function(a,b){ return a[1].sira - b[1].sira; }).map(function(e){ return '<option value="'+e[0]+'">'+e[1].label+'</option>'; }).join('');
-  h+='<select id="sav2-durum" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)">'+_durumOpts+'</select>';
+  /* SA-FILTRE-PILL-001: dropdown silindi — pill bar aşağıda ayrı satırda */
   h+='<select id="sav2-ted" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm tedarikçiler</option></select>';
   h+='<select id="sav2-para" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm para birimleri</option><option value="USD"'+(paraF==='USD'?' selected':'')+'>USD</option><option value="EUR"'+(paraF==='EUR'?' selected':'')+'>EUR</option><option value="TRY"'+(paraF==='TRY'?' selected':'')+'>TRY</option></select>';
   h+='<select id="sav2-tarih" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tarihe göre</option><option value="bu-ay"'+(tarihF==='bu-ay'?' selected':'')+'>Bu ay</option><option value="hafta"'+(tarihF==='hafta'?' selected':'')+'>Bu hafta</option></select>';
@@ -78,6 +77,11 @@ window.renderSatinAlmaV2 = function() {
   h+='<button onclick="event.stopPropagation();window._saV2TedarikciKarsilastir()" style="padding:4px 10px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)">Tedarikçi Karşılaştır</button>';
   /* ALIS-LISTE-UX-PACK-001: Tedarikçi gruplama toggle butonu */
   h+='<button onclick="event.stopPropagation();window._saV2GruplaToggle?.()" id="sav2-grupla-btn" style="padding:4px 10px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:'+(window._saV2GruplaAktif?'var(--color-text-primary)':'transparent')+';cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:'+(window._saV2GruplaAktif?'#fff':'var(--color-text-secondary)')+'">Tedarikçi Grupla</button>';
+  h+='</div>';
+  /* SA-FILTRE-PILL-001: pipeline pill bar — tek tık aşama filtresi */
+  h+='<div style="display:flex;align-items:center;gap:5px;padding:7px 16px;border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap;flex-shrink:0">';
+  var _pills=[{v:'',l:'Tümü'}].concat(Object.entries(window.SA_PIPELINE_STAGES||{}).sort(function(a,b){return a[1].sira-b[1].sira;}).map(function(e){return {v:e[0],l:e[1].label};}));
+  _pills.forEach(function(p){var on=durumF===p.v;h+='<button onclick="event.stopPropagation();window._sav2FiltreDurum=\''+p.v+'\';window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" style="padding:3px 10px;border:0.5px solid '+(on?'var(--color-text-primary)':_b)+';border-radius:20px;font-size:10px;cursor:pointer;background:'+(on?'var(--color-text-primary)':'transparent')+';color:'+(on?'var(--color-background-primary)':'var(--color-text-secondary)')+';font-family:inherit;flex-shrink:0;white-space:nowrap">'+p.l+'</button>';});
   h+='</div>';
   if(seciliSay>0){
     h+='<div style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:#FAEEDA;border-bottom:0.5px solid #854F0B">';
