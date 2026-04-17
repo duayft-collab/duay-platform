@@ -1918,7 +1918,7 @@ function renderUsers(filter=''){
   };
   sv('u-stat-total',   users.length);
   sv('u-stat-active',  users.filter(x=>x.status==='active').length);
-  sv('u-stat-managers',users.filter(x=>x.role==='admin'||x.role==='manager').length);
+  sv('u-stat-managers',users.filter(x=>['admin','manager','asistan'].includes(x.role)).length);
   sv('u-stat-inactive',users.filter(x=>x.status!=='active').length);
   st('sv-u',users.filter(x=>x.status==='active').length);
   const countEl=g('u-count-label');
