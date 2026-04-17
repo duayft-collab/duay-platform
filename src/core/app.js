@@ -152,6 +152,7 @@ const ALL_MODULES = [
   { id:'teslimat-takip',      label:'Teslimat Takibi'      },
   { id:'cari-karsilastirma',  label:'Cari Karşılaştırma'   },
   { id:'donem-ozeti',         label:'Dönem Özeti'          },
+  { id:'hesap-mutabakati',    label:'Hesap Mütabakatı'     },
   { id:'temizlik',   label:'Temizlik Kontrol'     },
   { id:'resmi',      label:'Resmi Evrak'          },
   { id:'etkinlik',   label:'Etkinlik / Fuar'      },
@@ -167,6 +168,7 @@ const ROLE_DEFAULT_MODULES = {
   manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','numune-arsivi','teslimat-takip','cari-karsilastirma','donem-ozeti'],
   lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma','siparisler'],
   staff:   ['dashboard','announce','pusula','pusula-pro','takvim','links','izin','pirim','siparisler'],
+  asistan: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','teslimat-takip'],
 };
 
 /** Admin-only paneller */
@@ -898,7 +900,7 @@ function _initApp(user) {
  * @returns {string}
  */
 function _roleLabel(role) {
-  return { admin:'👑 Yönetici', manager:'🏛️ Müdür', lead:'⭐ Takım Lideri', staff:'👤 Personel' }[role] || role;
+  return { admin:'👑 Yönetici', manager:'🏛️ Müdür', lead:'⭐ Takım Lideri', staff:'👤 Personel', asistan:'🤝 Yönetici Asistanı' }[role] || role;
 }
 
 /**
@@ -3781,7 +3783,7 @@ function _applyRoleUI(user) {
   if (btnAnaliz) btnAnaliz.style.display = isAdm || isLead ? '' : 'none';
 
   // Body'e role class'ı ekle — CSS hook için
-  document.body.classList.remove('role-admin','role-manager','role-lead','role-staff');
+  document.body.classList.remove('role-admin','role-manager','role-lead','role-staff','role-asistan');
   document.body.classList.add('role-' + (user.role || 'staff'));
 
   // User için kişisel dashboard badge'leri güncelle
