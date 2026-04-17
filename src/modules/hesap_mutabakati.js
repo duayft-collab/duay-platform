@@ -312,27 +312,34 @@ window._hmParseVeKarsilastir = function(id) {
     var icData = XLSX.utils.sheet_to_json(icSheet, {header:1, defval:''});
     var karsiData = XLSX.utils.sheet_to_json(karsiSheet, {header:1, defval:''});
 
-    var _parseRows = function(data) {
+    var _parseRows = function(data, km) {
+      /* HM-MAP-001b: kolonMap parametrik, borç/alacak ayrımı */
+      var map = km || {tarih:0, aciklama:1, borc:2, alacak:-1, refNo:3};
       var rows = [];
       for (var i=1; i<data.length; i++) {
         var row = data[i];
         if (!row || !row.length) continue;
-        var tarih = String(row[0]||'').trim();
-        var aciklama = String(row[1]||'').trim();
-        var tutar = parseFloat(String(row[2]||'0').replace(/[^\d.-]/g,'')) || 0;
-        var refNo = String(row[3]||'').trim();
-        if (!tarih && !tutar) continue;
-        rows.push({tarih:tarih, aciklama:aciklama, tutar:tutar, refNo:refNo, eslesti:false});
+        var _v = function(k) { return map[k]>=0 ? String(row[map[k]]||'').trim() : ''; };
+        var tarih    = _v('tarih');
+        var aciklama = _v('aciklama');
+        var borc     = parseFloat(String(row[map.borc]||'0').replace(/[^\d.-]/g,'')) || 0;
+        var alacak   = map.alacak>=0 ? parseFloat(String(row[map.alacak]||'0').replace(/[^\d.-]/g,'')) || 0 : 0;
+        var netTutar = borc - alacak;
+        var refNo    = _v('refNo');
+        if (!tarih && !borc && !alacak) continue;
+        rows.push({tarih:tarih, aciklama:aciklama, borc:borc, alacak:alacak, tutar:netTutar, refNo:refNo, eslesti:false});
       }
       return rows;
     };
 
-    var icRows = _parseRows(icData);
-    var karsiRows = _parseRows(karsiData);
+    var icRows    = _parseRows(icData,    m.icKolonMap);
+    var karsiRows = _parseRows(karsiData, m.karsiKolonMap);
 
-    var icToplam = icRows.reduce(function(s,r){return s+r.tutar;},0);
-    var karsiToplam = karsiRows.reduce(function(s,r){return s+r.tutar;},0);
-    var fark = icToplam - karsiToplam;
+    var icToplam    = icRows.reduce(function(s,r){return s+r.borc;},0);
+    var icAlacak    = icRows.reduce(function(s,r){return s+r.alacak;},0);
+    var karsiToplam = karsiRows.reduce(function(s,r){return s+r.borc;},0);
+    var karsiAlacak = karsiRows.reduce(function(s,r){return s+r.alacak;},0);
+    var fark = (icToplam - icAlacak) - (karsiToplam - karsiAlacak);
 
     var eslesmeyenIc = [], eslesmeyenKarsi = [];
     var karsiKopya = karsiRows.map(function(r){return Object.assign({},r);});
@@ -347,7 +354,8 @@ window._hmParseVeKarsilastir = function(id) {
     karsiKopya.forEach(function(kr){ if (!kr.eslesti) eslesmeyenKarsi.push(kr); });
 
     liste[idx].rapor = {
-      icToplam: icToplam, karsiToplam: karsiToplam, fark: fark,
+      icToplam: icToplam, icAlacak: icAlacak,
+      karsiToplam: karsiToplam, karsiAlacak: karsiAlacak, fark: fark,
       icSatirSayisi: icRows.length, karsiSatirSayisi: karsiRows.length,
       eslesmeyenIc: eslesmeyenIc, eslesmeyenKarsi: eslesmeyenKarsi,
       tarih: new Date().toISOString()
