@@ -841,7 +841,8 @@ window._ppHizliEkle = function(inp) {
   var _oncelik = (_oncelikSel && _oncelikSel.value) ? _oncelikSel.value : 'normal';
   /* PUSULA-IZOLASYON-001: hızlı ekle — sahip kaydedilmeden görev tüm kullanıcılara görünüyordu */
   var _cuNow = _ppCu();
-  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: _cuNow?.displayName || _cuNow?.email || '', olusturanId: _cuNow?.uid || String(_cuNow?.id||'') || _cuNow?.email || '', _ppSource: 'pro' };
+  /* PP-GOREV-ATAMA-FIX-001: sorumlu obje dizisi — uid/id/ad ile izolasyon eşleşir */
+  var yeni = { id: _ppId(), baslik: inp.value.trim(), oncelik: _oncelik, durum: 'plan', createdAt: _ppNow(), updatedAt: _ppNow(), sorumlu: [{ uid: _cuNow?.uid || _cuNow?.id || _cuNow?.email || '', ad: _cuNow?.displayName || _cuNow?.name || _cuNow?.email || '' }], olusturanId: _cuNow?.uid || String(_cuNow?.id||'') || _cuNow?.email || '', _ppSource: 'pro' };
   var tasks = _ppLoad(); tasks.unshift(yeni); _ppStore(tasks);
   inp.value = '';
   window.toast?.('Görev eklendi', 'ok');
