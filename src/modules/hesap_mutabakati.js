@@ -1,5 +1,6 @@
 /* HESAP-MUTABAKATI-001: Hesap Mütabakatı Modülü */
 var HM_KEY = 'duay_hesap_mutabakat';
+var _hmEsc = window._esc || function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
 var HM_VER = '1.0.0';
 
 window._hmLoad = function() {
@@ -63,9 +64,9 @@ window.renderHesapMutabakati = function() {
       var farkStr = farkVal===null ? '—' : farkVal===0 ? '✓ Eşit' : farkVal.toLocaleString('tr-TR',{minimumFractionDigits:2});
       var farkRenk = farkVal===null ? _t3 : farkVal===0 ? '#0F6E56' : '#A32D2D';
       h += '<div style="display:grid;grid-template-columns:1fr 120px 100px 140px 80px 80px;padding:10px 16px;border-bottom:0.5px solid '+_b+';align-items:center;cursor:pointer" onclick="event.stopPropagation();window._hmDetayAc(\''+m.id+'\')" onmouseover="this.style.background=\'var(--color-background-secondary)\'" onmouseout="this.style.background=\'transparent\'">';
-      h += '<div><div style="font-size:12px;font-weight:500;color:'+_t+'">'+(m.cari||'—')+'</div>';
-      h += '<div style="font-size:10px;color:'+_t3+'">'+(m.aciklama||'')+'</div></div>';
-      h += '<div style="font-size:11px;color:'+_t2+'">'+(m.tarih||'—')+'</div>';
+      h += '<div><div style="font-size:12px;font-weight:500;color:'+_t+'">'+_hmEsc(m.cari||'—')+'</div>';
+      h += '<div style="font-size:10px;color:'+_t3+'">'+_hmEsc(m.aciklama||'')+'</div></div>';
+      h += '<div style="font-size:11px;color:'+_t2+'">'+_hmEsc(m.tarih||'—')+'</div>';
       h += '<div><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:'+dBg+';color:'+dRenk+';font-weight:500">'+dLbl+'</span></div>';
       h += '<div style="font-size:11px;font-weight:500;color:'+farkRenk+'">'+farkStr+'</div>';
       h += '<div style="font-size:11px;color:'+_t2+'">'+(m.para||'TRY')+'</div>';
@@ -145,15 +146,15 @@ window._hmDetayAc = function(id) {
   var h = '<div style="padding:20px;max-width:1200px;margin:0 auto">';
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">';
   h += '<button onclick="event.stopPropagation();window.renderHesapMutabakati()" style="font-size:11px;padding:5px 12px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;color:'+_t3+';font-family:inherit">← Geri</button>';
-  h += '<div style="font-size:16px;font-weight:500;color:'+_t+'">'+(m.cari||'—')+'</div>';
+  h += '<div style="font-size:16px;font-weight:500;color:'+_t+'">'+_hmEsc(m.cari||'—')+'</div>';
   h += '<span style="font-size:9px;padding:2px 8px;border-radius:20px;background:'+dBg+';color:'+dRenk+';font-weight:500">'+dLbl+'</span>';
-  h += '<span style="font-size:10px;color:'+_t3+'">'+(m.para||'TRY')+' · '+(m.tarih||'')+'</span>';
+  h += '<span style="font-size:10px;color:'+_t3+'">'+(m.para||'TRY')+' · '+_hmEsc(m.tarih||'')+'</span>';
   h += '</div>';
 
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">';
 
   ['ic','karsi'].forEach(function(tip) {
-    var dosyaAd = tip==='ic' ? m.icDosyaAd : m.karsiDosyaAd;
+    var dosyaAd = tip==='ic' ? _hmEsc(m.icDosyaAd) : _hmEsc(m.karsiDosyaAd);
     var dosyaVar = tip==='ic' ? !!m.icDosya : !!m.karsiDosya;
     var baslik = tip==='ic' ? 'BİZİM FİRMA DOSYASI' : 'KARŞI FİRMA DOSYASI';
     h += '<div style="background:'+_sf+';border:0.5px solid '+_b+';border-radius:10px;padding:20px">';
@@ -339,8 +340,8 @@ window._hmRaporHTML = function(m) {
       h += '<div style="font-size:10px;font-weight:500;color:#A32D2D;margin-bottom:8px">Eşleşmeyen — Bizim Kayıtlar ('+r.eslesmeyenIc.length+')</div>';
       r.eslesmeyenIc.slice(0,5).forEach(function(row) {
         h += '<div style="display:grid;grid-template-columns:100px 1fr 120px;gap:8px;padding:5px 0;border-bottom:0.5px solid '+_b+';font-size:11px">';
-        h += '<div style="color:'+_t3+'">'+row.tarih+'</div>';
-        h += '<div style="color:'+_t+'">'+row.aciklama+'</div>';
+        h += '<div style="color:'+_t3+'">'+_hmEsc(row.tarih)+'</div>';
+        h += '<div style="color:'+_t+'">'+_hmEsc(row.aciklama)+'</div>';
         h += '<div style="color:#A32D2D;font-weight:500;text-align:right">'+row.tutar.toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
         h += '</div>';
       });
@@ -350,8 +351,8 @@ window._hmRaporHTML = function(m) {
       h += '<div style="font-size:10px;font-weight:500;color:#A32D2D;margin-bottom:8px;margin-top:12px">Eşleşmeyen — Karşı Kayıtlar ('+r.eslesmeyenKarsi.length+')</div>';
       r.eslesmeyenKarsi.slice(0,5).forEach(function(row) {
         h += '<div style="display:grid;grid-template-columns:100px 1fr 120px;gap:8px;padding:5px 0;border-bottom:0.5px solid '+_b+';font-size:11px">';
-        h += '<div style="color:'+_t3+'">'+row.tarih+'</div>';
-        h += '<div style="color:'+_t+'">'+row.aciklama+'</div>';
+        h += '<div style="color:'+_t3+'">'+_hmEsc(row.tarih)+'</div>';
+        h += '<div style="color:'+_t+'">'+_hmEsc(row.aciklama)+'</div>';
         h += '<div style="color:#A32D2D;font-weight:500;text-align:right">'+row.tutar.toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
         h += '</div>';
       });
