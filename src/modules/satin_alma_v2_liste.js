@@ -35,6 +35,8 @@ window.renderSatinAlmaV2 = function() {
   var tarihF = document.getElementById('sav2-tarih')?.value||'';
   // ALIS-LISTE-C-001: para birimi filtresi
   var paraF = document.getElementById('sav2-para')?.value||'';
+  // SA-LISTE-GIREN-FIX-001: giren kişi filtresi
+  var girenF = document.getElementById('sav2-giren')?.value||'';
   var bugAy = new Date().toISOString().slice(0,7);
   var buHafta = new Date(Date.now()-7*24*60*60*1000).toISOString().slice(0,10);
   var fl = liste.filter(function(t){
@@ -43,6 +45,7 @@ window.renderSatinAlmaV2 = function() {
     if(durumF&&t.durum!==durumF) return false;
     if(tedF&&t.tedarikci!==tedF) return false;
     if(paraF && (t.para||t.toplamPara||t.doviz||t.paraBirimi||'')!==paraF) return false;
+    if(girenF && String(t.createdById||'')!==girenF) return false;
     if(tarihF==='hafta'&&(t.createdAt||'')<buHafta) return false;
     if(tarihF==='bu-ay'&&!(t.createdAt||'').startsWith(bugAy)) return false;
     return true;
@@ -81,6 +84,8 @@ window.renderSatinAlmaV2 = function() {
   /* SA-FILTRE-PILL-001: dropdown silindi — pill bar aşağıda ayrı satırda */
   h+='<select id="sav2-ted" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm tedarikçiler</option></select>';
   h+='<select id="sav2-para" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm para birimleri</option><option value="USD"'+(paraF==='USD'?' selected':'')+'>USD</option><option value="EUR"'+(paraF==='EUR'?' selected':'')+'>EUR</option><option value="TRY"'+(paraF==='TRY'?' selected':'')+'>TRY</option></select>';
+  /* SA-LISTE-GIREN-FIX-001: giren kişi filtresi */
+  h+='<select id="sav2-giren" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm girenler</option></select>';
   h+='<select id="sav2-tarih" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tarihe göre</option><option value="bu-ay"'+(tarihF==='bu-ay'?' selected':'')+'>Bu ay</option><option value="hafta"'+(tarihF==='hafta'?' selected':'')+'>Bu hafta</option></select>';
   h+='<div style="flex:1"></div>';
   h+='<button onclick="event.stopPropagation();window._saV2ExportCSV()" style="padding:4px 10px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)">↓ CSV</button>';
@@ -247,6 +252,13 @@ window.renderSatinAlmaV2 = function() {
   if(tedSel&&tedSel.options.length<=1){
     var tedler=[...new Set(liste.map(function(t){return t.tedarikci||'';}).filter(Boolean))].sort();
     tedler.forEach(function(ted){var opt=document.createElement('option');opt.value=ted;opt.textContent=ted;if(ted===tedF)opt.selected=true;tedSel.appendChild(opt);});
+  }
+  /* SA-LISTE-GIREN-FIX-001: giren kişi select'i dynamic doldur (fiilen teklif girmiş kullanıcılar) */
+  var girenSel=document.getElementById('sav2-giren');
+  if(girenSel&&girenSel.options.length<=1){
+    var girenMap={};
+    liste.forEach(function(t){ if(t.createdById) girenMap[String(t.createdById)]=t.createdBy||('Kullanıcı '+t.createdById); });
+    Object.keys(girenMap).sort(function(a,b){return girenMap[a].localeCompare(girenMap[b],'tr');}).forEach(function(id){var opt=document.createElement('option');opt.value=id;opt.textContent=girenMap[id];if(id===girenF)opt.selected=true;girenSel.appendChild(opt);});
   }
   var srchEl=document.getElementById('sav2-srch');
   if(srchEl&&document.activeElement!==srchEl&&window._sav2SrchVal){srchEl.focus();srchEl.setSelectionRange(srchEl.value.length,srchEl.value.length);}
