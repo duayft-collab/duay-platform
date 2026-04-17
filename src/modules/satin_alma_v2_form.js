@@ -290,8 +290,8 @@ window._saV2FormKaydet = function() {
       duayKodu: gu('duayKodu'), urunAdi: gu('urunAdi'), turkceAdi: gu('turkceAdi'),
       marka: gu('marka'), miktar: parseFloat(gu('miktar')) || 0, birim: gu('birim') || 'Adet',
       alisF: parseFloat(gu('alisF')) || 0, para: gu('para') || 'USD',
-      mensei: gu('mensei'), gtip: gu('gtip'), saticiKodu: gu('saticiKodu'),
-      netAg: parseFloat(gu('netAg')) || 0, brutAg: parseFloat(gu('brutAg')) || 0
+      mensei: gu('mensei'), saticiKodu: gu('saticiKodu'),
+      netAg: parseFloat(gu('netAg')) || 0
     };
     if (!urun.duayKodu && !urun.urunAdi) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Kod veya ad zorunlu'); return; }
     if (!urun.miktar) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Miktar zorunlu'); return; }
@@ -702,41 +702,20 @@ window._saV2UrunSatirEkle = function() {
   satir.className = 'sav2f-urun-satir';
   satir.setAttribute('data-urun-satir', String(idx));
   satir.style.cssText = 'display:grid;grid-template-columns:44px 80px 1fr 90px 56px 76px 76px 52px 76px 52px 28px 24px;gap:5px;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--b)';
-  satir.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between">'
-    + '<span style="font-size:9px;font-weight:500;color:var(--t2)">Ürün ' + (idx + 1) + '</span>'
-    + '<button onclick="event.stopPropagation();this.closest(\'.sav2f-urun-satir\').remove()" style="font-size:12px;border:none;background:none;cursor:pointer;color:#A32D2D;line-height:1">\u00d7</button>'
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Ürün Kodu (Duay)</div>'
-    + '<div style="display:flex;gap:4px">'
-    + '<input id="' + pre + 'duayKodu" placeholder="11\u00b7XXXX\u00b7XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunKatalogDoldur?.(\'' + pre + '\',this.value)" style="flex:1;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit">'
-    + '<button onclick="event.stopPropagation();window._saV2KatalogAra?.()" style="font-size:9px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">Katalog</button>'
-    + '</div>'
-    + '<div id="' + pre + 'katalog-bilgi" style="font-size:8px;color:var(--t3);margin-top:2px"></div>'
-    + '</div>'
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Ürün Adı (İhracat / İngilizce)</div>'
-    + '<input id="' + pre + 'urunAdi" list="sav2-urun-list" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
-    + _uf('turkceAdi', 'Ürün Adı (Türkçe)', 'Türkçe')
-    + _uf('marka', 'Marka / Üretici', 'Marka')
-    + _uf('saticiKodu', 'Tedarikçi Ürün Kodu', 'MTL-0412')
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">'
-    + _uf('miktar', 'Miktar', '200')
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Ölçü Birimi</div>'
-    + '<select id="' + pre + 'birim" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="Adet">Adet</option><option value="Kg">Kg</option><option value="Ton">Ton</option><option value="Mt">Mt (Metre)</option><option value="m²">M² (Metrekare)</option><option value="m³">M³ (Metreküp)</option><option value="Lt">Lt (Litre)</option><option value="Koli">Koli</option><option value="Çift">Çift</option><option value="Paket">Paket</option><option value="Set">Set</option><option value="Rulo">Rulo</option><option value="Takım">Takım</option></select></div>'
-    + _uf('alisF', 'Birim Fiyatı', '2.40')
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Döviz</div>'
-    + '<select id="' + pre + 'para" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select></div>'
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">'
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Menşe Ülke</div>'
-    + '<select id="' + pre + 'mensei" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Se\u00e7...</option>' + (window.MENSEI || ['T\u00fcrkiye','\u00c7in','Almanya','\u0130talya','Japonya','Hindistan','ABD','Di\u011fer']).map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('') + '</select></div>'
-    + _uf('gtip', 'GTİP / HS Kodu', '8482.10.10')
-    + _uf('netAg', 'Net Ağırlık (kg)', '', 'number')
-    + _uf('brutAg', 'Brüt Ağırlık (kg)', '', 'number')
-    + '</div>';
+  satir.innerHTML =
+    '<div onclick="event.stopPropagation();var _fi=document.createElement(\'input\');_fi.type=\'file\';_fi.accept=\'image/*\';_fi.onchange=function(e){var r=new FileReader();r.onload=function(x){var im=document.getElementById(\'sav2u-img-\'+'+idx+');if(im){im.src=x.target.result;im.style.display=\'block\';im.previousElementSibling&&(im.previousElementSibling.style.display=\'none\')}};r.readAsDataURL(e.target.files[0]);};_fi.click()" style="width:44px;height:44px;border-radius:6px;border:0.5px solid var(--b);background:var(--s2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0"><span style="font-size:18px;color:var(--t3)" id="sav2u-img-ph-'+idx+'">+</span><img id="sav2u-img-'+idx+'" src="" style="width:44px;height:44px;object-fit:cover;display:none" onerror="this.style.display=\'none\'"></div>'
+    + '<div><input id="'+pre+'duayKodu" placeholder="11\u00b7XXX\u00b7XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunKatalogDoldur?.(\'' +pre+ '\',this.value)" style="width:100%;font-size:11px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit"></div>'
+    + '<div><input id="'+pre+'urunAdi" list="sav2-urun-list" placeholder="\u00dcr\u00fcn ad\u0131..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' +pre+ '\',this.value)" style="width:100%;font-size:11px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><div id="'+pre+'katalog-bilgi" style="font-size:8px;color:var(--t3);margin-top:2px"></div></div>'
+    + '<div><input id="'+pre+'marka" placeholder="Marka" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    + '<div><input id="'+pre+'miktar" type="number" placeholder="0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right"></div>'
+    + '<div><select id="'+pre+'birim" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 4px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="Adet">Adet</option><option value="Kg">Kg</option><option value="Ton">Ton</option><option value="Mt">Mt</option><option value="m\u00b2">M\u00b2</option><option value="m\u00b3">M\u00b3</option><option value="Lt">Lt</option><option value="Koli">Koli</option><option value="\u00c7ift">\u00c7ift</option><option value="Paket">Paket</option><option value="Set">Set</option><option value="Rulo">Rulo</option><option value="Tak\u0131m">Tak\u0131m</option></select></div>'
+    + '<div><input id="'+pre+'alisF" type="number" placeholder="0.00" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right"></div>'
+    + '<div><select id="'+pre+'para" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 4px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select></div>'
+    + '<div><select id="'+pre+'mensei" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 4px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Men\u015fe...</option>'+(window.MENSEI||['T\u00fcrkiye','\u00c7in','Almanya','\u0130talya','Japonya','Hindistan','ABD','Di\u011fer']).map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join('')+'</select></div>'
+    + '<div><input id="'+pre+'netAg" type="number" placeholder="0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right"></div>'
+    + '<button onclick="event.stopPropagation();window._saV2HilePanelAc(\''+pre+'\','+idx+')" title="Gizli Kalite Tuza\u011f\u0131 Tespiti" style="font-size:14px;border:none;background:none;cursor:pointer;padding:0;text-align:center">\ud83d\udd75\ufe0f</button>'
+    + '<button onclick="event.stopPropagation();this.closest(\'.sav2f-urun-satir\').remove()" style="font-size:14px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">\u00d7</button>';
+
   con.appendChild(satir);
 };
 
@@ -873,5 +852,101 @@ window._saV2TopluMarjUygula = function() {
   window._saV2SatisOzetGuncelle?.();
   window._saV2PIOnizlemeGuncelle?.();
   window.toast?.('%' + marj + ' marj t\u00fcm \u00fcr\u00fcnlere uyguland\u0131', 'ok');
+};
+
+/* ── SA-FORM-HILE-001: Gizli Kalite Tuzağı Tespiti ─────────────── */
+window._saV2HilePanelAc = function(pre, idx) {
+  var _mevcut = document.getElementById('sav2-hile-modal'); if (_mevcut) _mevcut.remove();
+  var _pre = pre; var _idx = idx;
+  var _veri = window._saV2HileVeri = window._saV2HileVeri || {};
+  var _key = _pre + _idx;
+  var _d = _veri[_key] || { bss10: [{ madde: '', kaynak: '' }], capraz: [{ madde: '', kaynak: '' }] };
+
+  var _satirHTML = function(tip, i, m, k) {
+    return '<div style="display:grid;grid-template-columns:20px 1fr 160px 24px;gap:6px;align-items:start;margin-bottom:6px">'
+      + '<div style="font-size:10px;color:var(--t3);padding-top:6px;text-align:center">' + (i+1) + '</div>'
+      + '<textarea onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" id="sav2-hile-'+tip+'-madde-'+i+'" rows="2" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;resize:none" placeholder="Bulgu veya s\u00f6zle\u015fme maddesi...">' + (m||'') + '</textarea>'
+      + '<div><div style="font-size:7px;color:var(--t3);font-weight:500;margin-bottom:3px">KAYNAK (Firma/Ki\u015fi/Tel)</div><input onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" id="sav2-hile-'+tip+'-kaynak-'+i+'" value="'+(k||'')+'" placeholder="Kaynak zorunlu..." style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+      + '<button onclick="event.stopPropagation();this.closest(\'div[style*=grid]\').remove()" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:15px;padding-top:4px">\u00d7</button>'
+      + '</div>';
+  };
+
+  var _mo = document.createElement('div');
+  _mo.id = 'sav2-hile-modal';
+  _mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto';
+  _mo.onclick = function(e) { if (e.target === _mo) _mo.remove(); };
+
+  _mo.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:min(820px,96vw);overflow:hidden">'
+    + '<div style="padding:14px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:flex-start;justify-content:space-between">'
+      + '<div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udd75\ufe0f</span><div style="font-size:14px;font-weight:500;color:var(--t)">Gizli Kalite Tuza\u011f\u0131 Tespiti</div></div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:3px;padding-left:26px">\u00dcr\u00fcn ' + (_idx+1) + ' \u2014 SAHB-0200-380</div></div>'
+      + '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;padding:3px 8px;border-radius:4px;background:#FCEBEB;color:#791F1F;font-weight:500">\u015e\u0130RKET G\u0130ZL\u0130</span><button onclick="event.stopPropagation();document.getElementById(\'sav2-hile-modal\').remove()" style="font-size:18px;border:none;background:none;cursor:pointer;color:var(--t3)">\u00d7</button></div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+      + '<div style="width:22px;height:22px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">1</div>'
+      + '<div><div style="font-size:11px;font-weight:500;color:var(--t)">BSS-10 \u2014 Fiyat Fark\u0131 Sorgusu</div><div style="font-size:9px;color:var(--t3)">"Fiyat\u0131n\u0131z neden y\u00fcksek?" sorusundan elde edilen bulgular</div></div>'
+    + '</div>'
+    + '<div id="sav2-hile-bss10-cont" style="padding:12px 16px 8px;border-bottom:0.5px solid var(--b)">'
+      + _d.bss10.map(function(r,i){ return _satirHTML('bss10',i,r.madde,r.kaynak); }).join('')
+      + '<button onclick="event.stopPropagation();var c=document.getElementById(\'sav2-hile-bss10-cont\');var i=c.querySelectorAll(\'div[style*=grid]\').length;c.insertAdjacentHTML(\'beforeend\',window._saV2HileSatirHTML(\'bss10\',i,\'\',\'\'))" style="font-size:10px;padding:4px 12px;border:0.5px dashed var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit">+ Madde Ekle</button>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+      + '<div style="width:22px;height:22px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">2</div>'
+      + '<div><div style="font-size:11px;font-weight:500;color:var(--t)">\u00c7apraz Y\u00f6ntem \u2014 En \u0130yi \u00dcr\u00fcn Kar\u015f\u0131la\u015ft\u0131rmas\u0131</div><div style="font-size:9px;color:var(--t3)">"B\u00fct\u00e7e s\u0131k\u0131nt\u0131s\u0131 olmasa en iyi \u00fcr\u00fcn\u00fcn\u00fcz nedir?"</div></div>'
+    + '</div>'
+    + '<div id="sav2-hile-capraz-cont" style="padding:12px 16px 8px;border-bottom:0.5px solid var(--b)">'
+      + _d.capraz.map(function(r,i){ return _satirHTML('capraz',i,r.madde,r.kaynak); }).join('')
+      + '<button onclick="event.stopPropagation();var c=document.getElementById(\'sav2-hile-capraz-cont\');var i=c.querySelectorAll(\'div[style*=grid]\').length;c.insertAdjacentHTML(\'beforeend\',window._saV2HileSatirHTML(\'capraz\',i,\'\',\'\'))" style="font-size:10px;padding:4px 12px;border:0.5px dashed var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit">+ Madde Ekle</button>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
+      + '<div style="width:22px;height:22px;border-radius:50%;background:#E1F5EE;color:#085041;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">3</div>'
+      + '<div style="font-size:11px;font-weight:500;color:var(--t)">S\u00f6zle\u015fmeye Eklenecek Maddeler</div>'
+    + '</div>'
+    + '<div id="sav2-hile-sozlesme" style="padding:12px 16px;border-bottom:0.5px solid var(--b)">'
+      + '<div id="sav2-hile-sozlesme-metin" style="font-size:11px;color:#085041;line-height:1.8;font-family:monospace;padding:10px 12px;background:#E1F5EE;border-radius:6px;border:0.5px solid #5DCAA5;min-height:48px">Maddeler kaydedilince burada g\u00f6r\u00fcn\u00fcr.</div>'
+      + '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="event.stopPropagation();navigator.clipboard?.writeText(document.getElementById(\'sav2-hile-sozlesme-metin\')?.textContent||\'\')" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\ud83d\udccb Kopyala</button></div>'
+    + '</div>'
+    + '<div style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:10px;color:var(--t3)">Kaynak belirtme zorunludur \u00b7 SAHB-0200-380</div>'
+      + '<div style="display:flex;gap:6px">'
+        + '<button onclick="event.stopPropagation();document.getElementById(\'sav2-hile-modal\').remove()" style="font-size:11px;padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t2)">\u0130ptal</button>'
+        + '<button onclick="event.stopPropagation();window._saV2HileKaydet(\''+_key+'\')" style="font-size:11px;padding:6px 16px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-weight:500">Kaydet</button>'
+      + '</div>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(_mo);
+};
+
+window._saV2HileSatirHTML = function(tip, i, m, k) {
+  return '<div style="display:grid;grid-template-columns:20px 1fr 160px 24px;gap:6px;align-items:start;margin-bottom:6px">'
+    + '<div style="font-size:10px;color:var(--t3);padding-top:6px;text-align:center">' + (i+1) + '</div>'
+    + '<textarea onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" id="sav2-hile-'+tip+'-madde-'+i+'" rows="2" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;resize:none" placeholder="Bulgu veya s\u00f6zle\u015fme maddesi...">' + (m||'') + '</textarea>'
+    + '<div><div style="font-size:7px;color:var(--t3);font-weight:500;margin-bottom:3px">KAYNAK (Firma/Ki\u015fi/Tel)</div><input onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" id="sav2-hile-'+tip+'-kaynak-'+i+'" value="'+(k||'')+'" placeholder="Kaynak zorunlu..." style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
+    + '<button onclick="event.stopPropagation();this.closest(\'div[style*=grid]\').remove()" style="border:none;background:none;cursor:pointer;color:var(--t3);font-size:15px;padding-top:4px">\u00d7</button>'
+    + '</div>';
+};
+
+window._saV2HileKaydet = function(key) {
+  var _veri = window._saV2HileVeri = window._saV2HileVeri || {};
+  var _topla = function(tip) {
+    var madde = document.querySelectorAll('[id^="sav2-hile-'+tip+'-madde-"]');
+    var arr = [];
+    madde.forEach(function(el, i) {
+      var m = el.value.trim();
+      var k = document.getElementById('sav2-hile-'+tip+'-kaynak-'+i)?.value.trim() || '';
+      if (m) arr.push({ madde: m, kaynak: k });
+    });
+    return arr;
+  };
+  _veri[key] = { bss10: _topla('bss10'), capraz: _topla('capraz') };
+  var _sozEl = document.getElementById('sav2-hile-sozlesme-metin');
+  if (_sozEl) {
+    var _maddeler = _veri[key].bss10.concat(_veri[key].capraz);
+    _sozEl.innerHTML = _maddeler.length
+      ? _maddeler.map(function(r,i){ return (i+1)+'. '+r.madde+(r.kaynak?' <span style="font-size:9px;color:#0F6E56">('+r.kaynak+')</span>':''); }).join('<br>')
+      : 'Hen\u00fcz madde girilmedi.';
+  }
+  window.toast?.('Gizli Kalite Tuza\u011f\u0131 kaydedildi \u2713', 'ok');
+  document.getElementById('sav2-hile-modal')?.remove();
 };
 
