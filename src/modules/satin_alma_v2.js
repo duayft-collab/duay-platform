@@ -257,28 +257,7 @@ window.PusulaProLoaded_SAV2 = true;
 console.log('[SAV2] v2.0 yüklendi');
 window._saEsc=_saEsc;window._saNow=_saNow;window._saToday=_saToday;window._saId=_saId;window._saCu=_saCu;
 
-/* ── SA-LISTE-FIX-001: Tek teklif soft-delete ─────────────────── */
-if (!window._saV2TekSil) {
-  window._saV2TekSil = function(id) {
-    var _sil = function() {
-      var liste = typeof _saV2Load==='function' ? _saV2Load() : [];
-      var idx = liste.findIndex(function(t){ return String(t.id)===String(id); });
-      if (idx === -1) { window.toast?.('Kay\u0131t bulunamad\u0131','err'); return; }
-      liste[idx].isDeleted = true;
-      liste[idx].deletedAt = new Date().toISOString();
-      liste[idx].deletedBy = (window.CU?.() || window.Auth?.getCU?.())?.displayName || '';
-      if (typeof _saV2Store==='function') _saV2Store(liste);
-      window.toast?.('Teklif silindi','ok');
-      window.renderSatinAlmaV2?.();
-    };
-    if (window.confirmModal) {
-      window.confirmModal('Bu teklif silinecek. Emin misiniz?', { title: 'Teklif Sil', danger: true, confirmText: 'Sil', onConfirm: _sil });
-    } else {
-      if (!confirm('Bu teklif silinecek?')) return;
-      _sil();
-    }
-  };
-}
+/* SA-SIL-FIX-001: v2.js'teki çakışan _saV2TekSil kaldırıldı — render.js'deki kullanılır */
 
 /* ── SA-LISTE-ACTIONS-001: Düzenle + Sil aksiyon menüsü ─────── */
 window._saV2AksiyonMenu = function(id, btn) {

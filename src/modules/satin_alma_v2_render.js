@@ -511,9 +511,12 @@ window._saV2Kopyala = function(id) {
 
 /* ── SAV2-LIST-002: Tek Sil + Toplu Sil ────────────────────── */
 window._saV2TekSil = function(id) {
-  if(!window.confirmModal) { if(!confirm('Bu teklif silinecek. Emin misin?')) return; }
-  else { window.confirmModal('Teklif Sil', 'Bu teklif silinecek. Emin misin?', function(){ window._saV2TekSilYap(id); }); return; }
-  window._saV2TekSilYap(id);
+  /* SA-SIL-FIX-001: confirmModal callback return sorunu düzeltildi */
+  if (window.confirmModal) {
+    window.confirmModal('Teklif Sil', 'Bu teklif silinecek. Emin misin?', function(){ window._saV2TekSilYap(id); });
+  } else {
+    if (confirm('Bu teklif silinecek. Emin misin?')) window._saV2TekSilYap(id);
+  }
 };
 
 window._saV2TekSilYap = function(id) {
