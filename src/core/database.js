@@ -3168,9 +3168,9 @@ function _startBgSyncCheck() {
       }
       if (_lsPct >= 85) {
         var _od1 = JSON.parse(localStorage.getItem(KEYS.odemeler) || '[]');
-        if (_od1.length > 500) { localStorage.setItem(KEYS.odemeler, JSON.stringify(_od1.filter(function(o){return !o.isDeleted;}).slice(-500))); }
+        if (_od1.length > 500) { localStorage.setItem(KEYS.odemeler, JSON.stringify(_od1.filter(function(o){return !o.isDeleted;}).slice(0, 500))); }
         var _th1 = JSON.parse(localStorage.getItem(KEYS.tahsilat) || '[]');
-        if (_th1.length > 500) { localStorage.setItem(KEYS.tahsilat, JSON.stringify(_th1.filter(function(t){return !t.isDeleted;}).slice(-500))); }
+        if (_th1.length > 500) { localStorage.setItem(KEYS.tahsilat, JSON.stringify(_th1.filter(function(t){return !t.isDeleted;}).slice(0, 500))); }
         var _kl1 = JSON.parse(localStorage.getItem(KEYS.kpiLog) || '[]');
         if (_kl1.length > 200) { localStorage.setItem(KEYS.kpiLog, JSON.stringify(_kl1.slice(-200))); }
       }
