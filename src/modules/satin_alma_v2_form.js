@@ -47,7 +47,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
       + '<select id="sav2f-' + id + '" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit">' + opts + '</select></div>';
   };
-  modal.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:min(1368px,98vw);overflow:hidden">'
+  modal.innerHTML = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:min(1780px,99vw);overflow:hidden">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">'
     + '<div>'
     + '<div style="font-size:14px;font-weight:500;color:var(--t)">Yeni Alış Teklifi</div>'
@@ -58,7 +58,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">'
     + _draftBanner
     + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;padding-bottom:7px;border-bottom:0.5px solid var(--b);margin-bottom:4px">Tedarikçi & İş Bilgisi</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEDAR\u0130K\u00c7\u0130</div>'
     + '<input id="sav2f-tedarikci" list="sav2f-ted-list" placeholder="Tedarik\u00e7i ad\u0131" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
     + '<datalist id="sav2f-ted-list"></datalist></div>'
@@ -67,13 +67,13 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<datalist id="sav2f-job-list"></datalist></div>'
     + _f('piNo', 'Proforma Fatura No', 'PI-2026-001')
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
     + _f('piTarih', 'Proforma Tarihi', '', 'date')
     + _f('gecerlilikTarihi', 'Teklif Geçerlilik Tarihi', '', 'date')
     + _f('teslimYeri','Teslim Noktası / Limanı','FOB Shanghai, CIF Mersin')
     + _f('teslimat', 'Üretim & Sevkiyat Süresi (Gün)', '14', 'number')
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TESL\u0130MAT MASRAFI</div>'
     + '<select id="sav2f-teslimMasraf" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
     + '<option value="">Se\u00e7...</option>'
@@ -85,28 +85,29 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '</select></div>'
     + '</div>'
     + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b);margin-top:6px;display:flex;align-items:center;justify-content:space-between">Ürün Kalemleri<button onclick="event.stopPropagation();window._saV2UrunSatirEkle()" style="font-size:9px;padding:3px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Ürün Ekle</button></div>'
-    + '<div style="overflow-x:auto"><div style="display:grid;grid-template-columns:42px 90px 110px 58px 82px 70px 52px 74px 82px 86px 80px 64px 56px 80px 70px 70px 70px 28px 20px;gap:4px;padding:4px 0 6px;border-bottom:0.5px solid var(--b);min-width:1080px;margin-bottom:2px">'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em"></div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">KOD</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">T\u00dcRK\u00c7E ADI</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">M\u0130KTAR</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">\u00d6L\u00c7\u00dc B\u0130R\u0130M\u0130</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">B\u0130R\u0130M F\u0130YAT</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">D\u00d6V\u0130Z</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">KUR (TL)</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">TL/B\u0130R\u0130M</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">TOPLAM TL</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">\u0130NG. ADI *</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">MEN\u015eE</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">GT\u0130P</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">NET A\u011e.</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">TED. KODU</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">NOT M\u00dc\u015e.</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">NOT \u015e\u0130RKET</div>'
-    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">NOT S\u00d6ZL.</div>'
-    + '<div></div><div></div>'
-    + '</div>'
-    + '<div id="sav2f-urunler-container"></div></div>'
+    + '<div style="overflow-x:auto"><div style="display:grid;grid-template-columns:44px 100px 145px 76px 105px 90px 56px 78px 88px 92px 98px 72px 66px 60px 84px 76px 74px 74px 74px 30px 22px;gap:4px;padding:4px 0 6px;border-bottom:0.5px solid var(--b);min-width:1600px;margin-bottom:2px">'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)"></div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">KOD</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">T\u00dcRK\u00c7E ADI</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">M\u0130KTAR</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">\u00d6L\u00c7\u00dc B\u0130R\u0130M\u0130</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">B\u0130R\u0130M F\u0130YAT</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">D\u00d6V\u0130Z</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">KUR (TL)</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">TL/B\u0130R\u0130M</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">TOPLAM TL</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">\u0130NG. ADI *</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">MEN\u015eE</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">GT\u0130P</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">NET A\u011e.</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">TED. KODU</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">TES. S\u00dcRE</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">NOT M\u00dc\u015e.</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">NOT \u015e\u0130R.</div>'
+    +'<div style="font-size:7px;font-weight:500;color:var(--t3)">NOT S\u00d6Z.</div>'
+    +'<div></div><div></div>'
+    +'</div>'
+    +'<div id="sav2f-urunler-container"></div></div>'
     + '<div style="margin-bottom:12px">'
     + '<div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:6px">İÇ NOTLAR <span style="font-size:8px;color:var(--t3)">(Müşteriye gitmez)</span></div>'
     + '<div style="border:0.5px solid var(--b);border-radius:5px;overflow:hidden">'
@@ -709,32 +710,31 @@ window._saV2UrunSatirEkle = function() {
   var satir = document.createElement('div');
   satir.className = 'sav2f-urun-satir';
   satir.setAttribute('data-urun-satir', String(idx));
-  satir.style.cssText = 'display:grid;grid-template-columns:42px 90px 110px 58px 82px 70px 52px 74px 82px 86px 80px 64px 56px 80px 70px 70px 70px 28px 20px;gap:4px;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--b);min-width:1080px';
-  var _kurVal = function(para) { var k = (window._saKur||window.DUAY_KUR||{})[para]; return k ? parseFloat(k) : (para==='USD'?44.55:para==='EUR'?51.70:para==='GBP'?59.30:1); };
-  var _hesaplaKur = 'var _p=document.getElementById(\''+pre+'para\')?.value||\'USD\';var _k=(window._saKur||window.DUAY_KUR||{})[_p];var _kv=_k?parseFloat(_k):(_p===\'USD\'?44.55:_p===\'EUR\'?51.70:1);var _f=parseFloat(document.getElementById(\''+pre+'alisF\')?.value)||0;var _m=parseFloat(document.getElementById(\''+pre+'miktar\')?.value)||0;var _tlb=(_f*_kv);var _top=(_m*_tlb);document.getElementById(\''+pre+'kurTL\').value=_kv.toFixed(2);document.getElementById(\''+pre+'tlBirim\').value=_tlb.toLocaleString(\'tr-TR\',{maximumFractionDigits:2});document.getElementById(\''+pre+'toplamTL\').value=_top.toLocaleString(\'tr-TR\',{maximumFractionDigits:0});';
+  satir.style.cssText = 'display:grid;grid-template-columns:44px 100px 145px 76px 105px 90px 56px 78px 88px 92px 98px 72px 66px 60px 84px 76px 74px 74px 74px 30px 22px;gap:4px;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--b);min-width:1600px';
+  var _hesaplaKur = 'var _p=document.getElementById(\''+pre+'para\')?.value||\'USD\';var _kv=parseFloat((window._saKur||window.DUAY_KUR||{})[_p])||(_p===\'USD\'?44.55:_p===\'EUR\'?51.70:_p===\'GBP\'?59.30:1);var _f=parseFloat(document.getElementById(\''+pre+'alisF\')?.value)||0;var _m=parseFloat(document.getElementById(\''+pre+'miktar\')?.value)||0;var _tlb=_f*_kv;var _top=_m*_tlb;document.getElementById(\''+pre+'kurTL\').value=_kv.toFixed(2);document.getElementById(\''+pre+'tlBirim\').value=_tlb.toLocaleString(\'tr-TR\',{maximumFractionDigits:2});document.getElementById(\''+pre+'toplamTL\').value=_top.toLocaleString(\'tr-TR\',{maximumFractionDigits:0});';
 
   satir.innerHTML =
-    '<div style="width:40px;height:40px;border-radius:6px;background:var(--s2);border:0.5px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0" id="'+pre+'gorsel-wrap"><span id="'+pre+'gorsel-ico">\ud83d\udce6</span><img id="'+pre+'gorsel-img" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:none"></div>'
-    + '<div><input id="'+pre+'duayKodu" placeholder="11\u00b7XXX\u00b7XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunKatalogDoldur?.(\''+pre+'\',this.value);window._saV2UrunAdAra?.(\''+pre+'\',this.value)" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit"><div id="'+pre+'katalog-bilgi" style="font-size:7px;color:var(--t3);margin-top:1px"></div></div>'
+    '<div style="width:42px;height:42px;border-radius:6px;background:var(--s2);border:0.5px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0"><img id="'+pre+'gorsel-img" src="" style="width:42px;height:42px;object-fit:cover;display:none"><span id="'+pre+'gorsel-ico" style="font-size:18px">\ud83d\udce6</span></div>'
+    + '<div style="position:relative"><input id="'+pre+'duayKodu" placeholder="11\u00b7XXXX\u00b7XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunKatalogDoldur?.(\''+pre+'\',this.value);window._saV2UrunAdAra?.(\''+pre+'\',this.value)" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit"><div id="'+pre+'katalog-bilgi" style="font-size:7px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div>'
     + '<input id="'+pre+'turkceAdi" readonly placeholder="Otomatik" onclick="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid #9FE1CB;border-radius:5px;background:#E1F5EE;color:#085041;font-family:inherit">'
     + '<input id="'+pre+'miktar" type="number" placeholder="0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();'+_hesaplaKur+'" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right">'
-    + '<select id="'+pre+'birim" onclick="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 4px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="Adet">Adet</option><option value="Kg">Kg</option><option value="Ton">Ton</option><option value="Mt">Mt (Metre)</option><option value="m\u00b2">M\u00b2 (Metrekare)</option><option value="m\u00b3">M\u00b3 (Metrek\u00fcp)</option><option value="Lt">Lt (Litre)</option><option value="Koli">Koli</option><option value="Set">Set</option><option value="Paket">Paket</option><option value="Rulo">Rulo</option><option value="Tak\u0131m">Tak\u0131m</option><option value="\u00c7ift">\u00c7ift</option><option value="Palet">Palet</option><option value="g">g (Gram)</option><option value="ml">ml (Mililitre)</option><option value="Konteyner">Konteyner</option></select>'
+    + '<select id="'+pre+'birim" onclick="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 3px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="Adet">Adet</option><option value="Kg">Kg</option><option value="Ton">Ton</option><option value="Mt">Mt (Metre)</option><option value="m\u00b2">M\u00b2</option><option value="m\u00b3">M\u00b3</option><option value="Lt">Lt (Litre)</option><option value="Koli">Koli</option><option value="Set">Set</option><option value="Paket">Paket</option><option value="Rulo">Rulo</option><option value="Tak\u0131m">Tak\u0131m</option><option value="\u00c7ift">\u00c7ift</option><option value="Palet">Palet</option><option value="g">g (Gram)</option><option value="ml">ml</option><option value="Konteyner">Konteyner</option></select>'
     + '<input id="'+pre+'alisF" type="number" placeholder="0.00" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();'+_hesaplaKur+'" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right">'
-    + '<select id="'+pre+'para" onclick="event.stopPropagation()" onchange="event.stopPropagation();'+_hesaplaKur+'" style="width:100%;font-size:10px;padding:5px 4px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option><option value="CNY">CNY</option><option value="JPY">JPY</option></select>'
+    + '<select id="'+pre+'para" onclick="event.stopPropagation()" onchange="event.stopPropagation();'+_hesaplaKur+'" style="width:100%;font-size:10px;padding:5px 3px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option><option value="CNY">CNY</option><option value="JPY">JPY</option></select>'
     + '<input id="'+pre+'kurTL" readonly placeholder="\u2014" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid #B5D4F4;border-radius:5px;background:#E6F1FB;color:#0C447C;font-family:monospace;text-align:right">'
     + '<input id="'+pre+'tlBirim" readonly placeholder="\u2014" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid #B5D4F4;border-radius:5px;background:#E6F1FB;color:#0C447C;font-family:monospace;text-align:right">'
     + '<input id="'+pre+'toplamTL" readonly placeholder="\u2014" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid #B5D4F4;border-radius:5px;background:#E6F1FB;color:#185FA5;font-family:monospace;font-weight:600;text-align:right">'
-    + '<div><input id="'+pre+'urunAdi" placeholder="\u0130ng. ad\u0131 * (zorunlu)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\''+pre+'\',this.value)" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>'
-    + '<select id="'+pre+'mensei" onclick="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 4px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Men\u015fe...</option>'+(window.MENSEI||['T\u00fcrkiye','\u00c7in','Almanya','\u0130talya','Japonya','Hindistan','ABD','Di\u011fer']).map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join('')+'</select>'
+    + '<input id="'+pre+'urunAdi" placeholder="\u0130ng. ad\u0131 * (zorunlu)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\''+pre+'\',this.value)" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
+    + '<select id="'+pre+'mensei" onclick="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 3px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Men\u015fe...</option>'+(window.MENSEI||['T\u00fcrkiye','\u00c7in','Almanya','\u0130talya','Japonya','Hindistan','ABD','Di\u011fer']).map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join('')+'</select>'
     + '<input id="'+pre+'gtip" placeholder="8482.10" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
     + '<input id="'+pre+'netAg" type="number" placeholder="0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right">'
     + '<input id="'+pre+'saticiKodu" placeholder="Kod" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">'
-    + '<button onclick="event.stopPropagation();window._saV2NotAc(\''+pre+'\',\'mus\',this)" style="font-size:9px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit;white-space:nowrap" id="'+pre+'notbtn-mus">\ud83d\udcdd \u2014</button>'
-    + '<button onclick="event.stopPropagation();window._saV2NotAc(\''+pre+'\',\'sirket\',this)" style="font-size:9px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit;white-space:nowrap" id="'+pre+'notbtn-sirket">\ud83d\udd12 \u2014</button>'
-    + '<button onclick="event.stopPropagation();window._saV2NotAc(\''+pre+'\',\'sozlesme\',this)" style="font-size:9px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit;white-space:nowrap" id="'+pre+'notbtn-sozlesme">\ud83d\udccb \u2014</button>'
-    + '<button onclick="event.stopPropagation();window._saV2HilePanelAc(\''+pre+'\','+idx+')" style="font-size:13px;border:none;background:none;cursor:pointer;padding:0" title="Gizli Kalite Tuza\u011f\u0131 Tespiti">\ud83d\udd75\ufe0f</button>'
-    + '<button onclick="event.stopPropagation();var s=this.closest(\'.sav2f-urun-satir\');var np=document.getElementById(\''+pre+'not-panel\');if(np)np.remove();s.remove()" style="font-size:14px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">\u00d7</button>';
-
+    + '<input id="'+pre+'urunTeslimat" type="number" placeholder="G\u00fcn" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right">'
+    + '<button onclick="event.stopPropagation();window._saV2NotAc(\''+pre+'\',\'mus\',this)" style="font-size:9px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);white-space:nowrap" id="'+pre+'notbtn-mus">\ud83d\udcdd \u2014</button>'
+    + '<button onclick="event.stopPropagation();window._saV2NotAc(\''+pre+'\',\'sirket\',this)" style="font-size:9px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);white-space:nowrap" id="'+pre+'notbtn-sirket">\ud83d\udd12 \u2014</button>'
+    + '<button onclick="event.stopPropagation();window._saV2NotAc(\''+pre+'\',\'sozlesme\',this)" style="font-size:9px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);white-space:nowrap" id="'+pre+'notbtn-sozlesme">\ud83d\udccb \u2014</button>'
+    + '<button onclick="event.stopPropagation();window._saV2HilePanelAc(\''+pre+'\','+idx+')" style="font-size:13px;border:none;background:none;cursor:pointer;padding:0" title="Gizli Kalite Tuza\u011f\u0131">\ud83d\udd75\ufe0f</button>'
+    + '<button onclick="event.stopPropagation();var s=this.closest(\'.sav2f-urun-satir\');var np=document.getElementById(\''+pre+'not-panel-mus\');if(np)np.remove();var np2=document.getElementById(\''+pre+'not-panel-sirket\');if(np2)np2.remove();var np3=document.getElementById(\''+pre+'not-panel-sozlesme\');if(np3)np3.remove();s.remove()" style="font-size:14px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">\u00d7</button>';
 
   con.appendChild(satir);
 };
@@ -751,6 +751,8 @@ window._saV2UrunKatalogDoldur = function(pre, kod) {
   var gorselImg = document.getElementById(pre + 'gorsel-img'); var gorselIco = document.getElementById(pre + 'gorsel-ico');
   if (u && u.gorsel && gorselImg) { gorselImg.src = u.gorsel; gorselImg.style.display = 'block'; if (gorselIco) gorselIco.style.display = 'none'; }
   var turkceEl = document.getElementById(pre + 'turkceAdi'); if (turkceEl && u) { turkceEl.value = u.duayAdi || u.turkceAdi || u.urunAdi || ''; }
+  /* SA-FORM-URUN-V3-001: net ağırlık katalogdan otomatik */
+  var netAgEl = document.getElementById(pre + 'netAg'); if (netAgEl && u && u.netAgirlik) { netAgEl.value = u.netAgirlik; netAgEl.style.background = '#E1F5EE'; netAgEl.style.borderColor = '#9FE1CB'; }
   if (!u) { if (bilgiEl) bilgiEl.innerHTML = '<span style="color:#A32D2D">Katalogda bulunamad\u0131</span>'; return; }
   if (bilgiEl) bilgiEl.innerHTML = '<span style="color:#0F6E56">\u2713 ' + _saEsc(u.duayAdi || u.urunAdi || '') + '</span>';
   var alanlar = { urunAdi: u.standartAdi || u.urunAdi || u.ingAd, turkceAdi: u.duayAdi || u.urunAdi, marka: u.marka, gtip: u.gtip || u.hscKodu, saticiKodu: u.saticiKodu || u.urunKodu, netAg: u.netAgirlik, brutAg: u.brutAgirlik, alisF: u.alisF || u.sonFiyat || u.sonAlisFiyati };
