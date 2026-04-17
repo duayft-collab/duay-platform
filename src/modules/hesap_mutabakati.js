@@ -80,7 +80,7 @@ window.renderHesapMutabakati = function() {
 
 window._hmYeniAc = function() {
   var mevcut = document.getElementById('hm-modal'); if (mevcut) mevcut.remove();
-  var cariler = typeof window.loadCari==='function' ? window.loadCari() : [];
+  var cariler = typeof window.loadCari==='function' ? window.loadCari({tumKullanicilar:true}).filter(function(c){return !c.isDeleted;}) : [];
   var mo = document.createElement('div');
   mo.id = 'hm-modal';
   mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
@@ -99,6 +99,12 @@ window._hmYeniAc = function() {
     +'<select id="hm-para" onclick="event.stopPropagation()" style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit"><option value="TRY">TRY — Türk Lirası</option><option value="USD">USD — Dolar</option><option value="EUR">EUR — Euro</option></select></div>'
     +'<div><div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.06em;margin-bottom:4px">AÇIKLAMA</div>'
     +'<input id="hm-aciklama" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="İsteğe bağlı not..." style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;box-sizing:border-box"></div>'
+    +'<div><div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.06em;margin-bottom:4px">YETKİLİ KİŞİ</div>'
+    +'<input id="hm-yetkili" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Ad Soyad" style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;box-sizing:border-box"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.06em;margin-bottom:4px">CEP NO</div>'
+    +'<input id="hm-cep" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="0532 xxx xx xx" style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;box-sizing:border-box"></div>'
+    +'<div><div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.06em;margin-bottom:4px">E-POSTA</div>'
+    +'<input id="hm-email" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="ornek@firma.com" style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;box-sizing:border-box"></div></div>'
     +'</div>'
     +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:flex-end;gap:8px">'
     +'<button onclick="event.stopPropagation();document.getElementById(\'hm-modal\').remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:transparent;cursor:pointer;color:var(--color-text-secondary)">İptal</button>'
@@ -115,6 +121,9 @@ window._hmYeniKaydet = function() {
   if (!cari) { window.toast?.('Cari hesap seçin','warn'); return; }
   var kayit = {
     id: window._hmId(), cari: cari, para: para, aciklama: aciklama,
+    yetkili: document.getElementById('hm-yetkili')?.value || '',
+    cep: document.getElementById('hm-cep')?.value || '',
+    email: document.getElementById('hm-email')?.value || '',
     durum: 'taslak', fark: null,
     tarih: new Date().toLocaleDateString('tr-TR'),
     createdAt: new Date().toISOString(),
