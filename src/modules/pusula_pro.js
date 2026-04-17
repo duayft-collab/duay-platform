@@ -89,11 +89,12 @@ window._ppEtiketleriAl = function() {
  */
 var _ppIzolasyonFiltre = function(tasks) {
   if (_ppIsAdmin()) return tasks;
-  /* PUSULA-UID-IZOLASYON-FIX-001: cu nesnesi + id/email fallback — uid alanı yoksa id veya email kullan */
+  /* PP-IZOLASYON-REFIX-001: cu.id + email fallback + _kullanici.email son çare */
   var cu = _ppCu();
   var _uid = cu?.uid
     || String(cu?.id || '')
     || cu?.email
+    || window._kullanici?.email
     || '';
   if (!_uid) return [];
   return tasks.filter(function(t) {
