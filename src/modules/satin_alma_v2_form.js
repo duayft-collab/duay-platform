@@ -199,6 +199,26 @@ window._saV2YeniTeklif = function(duzenleKayit) {
         var _icoEl = document.getElementById('sav2u-' + _si + '-gorsel-ico');
         if (_imgEl && u.gorsel) { _imgEl.src = u.gorsel; _imgEl.style.display = 'block'; if (_icoEl) _icoEl.style.display = 'none'; }
       });
+      /* SA-FORM-KUR-FIX-001: düzenleme sonrası kur/TL hesabını tetikle */
+      setTimeout(function() {
+        document.querySelectorAll('.sav2f-urun-satir').forEach(function(satir) {
+          var si = satir.getAttribute('data-urun-satir');
+          if (!si) return;
+          var paraEl = document.getElementById('sav2u-'+si+'-para');
+          var fiyatEl = document.getElementById('sav2u-'+si+'-alisF');
+          var miktarEl = document.getElementById('sav2u-'+si+'-miktar');
+          var _p = paraEl?.value || 'USD';
+          var _kv = parseFloat((window._saKur||window.DUAY_KUR||{})[_p]) || (_p==='USD'?44.55:_p==='EUR'?51.70:_p==='GBP'?59.30:1);
+          var _f = parseFloat(fiyatEl?.value) || 0;
+          var _m = parseFloat(miktarEl?.value) || 0;
+          var kurEl = document.getElementById('sav2u-'+si+'-kurTL');
+          var tlbEl = document.getElementById('sav2u-'+si+'-tlBirim');
+          var topEl = document.getElementById('sav2u-'+si+'-toplamTL');
+          if (kurEl) kurEl.value = _kv.toFixed(2);
+          if (tlbEl) tlbEl.value = (_f*_kv).toLocaleString('tr-TR',{maximumFractionDigits:2});
+          if (topEl) topEl.value = (_m*_f*_kv).toLocaleString('tr-TR',{maximumFractionDigits:0});
+        });
+      }, 100);
     } else {
       window._saV2UrunSatirEkle();
     }
