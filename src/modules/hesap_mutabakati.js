@@ -20,7 +20,7 @@ window._hmId = function() {
 window.renderHesapMutabakati = function() {
   var el = document.getElementById('panel-hesap-mutabakati');
   if (!el) return;
-  var liste = window._hmLoad();
+  var liste = window._hmLoad().filter(function(m){return !m.isDeleted;});
   var _b = 'var(--color-border-tertiary)';
   var _t = 'var(--color-text-primary)';
   var _t2 = 'var(--color-text-secondary)';
@@ -47,7 +47,7 @@ window.renderHesapMutabakati = function() {
   h += '</div>';
 
   h += '<div style="background:'+_sf+';border:0.5px solid '+_b+';border-radius:10px;overflow:hidden">';
-  h += '<div style="display:grid;grid-template-columns:1fr 120px 100px 140px 80px 80px;padding:8px 16px;background:'+_s2+';border-bottom:0.5px solid '+_b+'">';
+  h += '<div style="display:grid;grid-template-columns:1fr 120px 100px 140px 80px 140px;padding:8px 16px;background:'+_s2+';border-bottom:0.5px solid '+_b+'">';
   ['CARİ HESAP','TARİH','DURUM','FARK','PARA',''].forEach(function(l){
     h += '<div style="font-size:9px;font-weight:500;color:'+_t3+';letter-spacing:.05em">'+l+'</div>';
   });
@@ -63,14 +63,19 @@ window.renderHesapMutabakati = function() {
       var farkVal = m.fark ? parseFloat(m.fark) : null;
       var farkStr = farkVal===null ? '—' : farkVal===0 ? '✓ Eşit' : farkVal.toLocaleString('tr-TR',{minimumFractionDigits:2});
       var farkRenk = farkVal===null ? _t3 : farkVal===0 ? '#0F6E56' : '#A32D2D';
-      h += '<div style="display:grid;grid-template-columns:1fr 120px 100px 140px 80px 80px;padding:10px 16px;border-bottom:0.5px solid '+_b+';align-items:center;cursor:pointer" onclick="event.stopPropagation();window._hmDetayAc(\''+m.id+'\')" onmouseover="this.style.background=\'var(--color-background-secondary)\'" onmouseout="this.style.background=\'transparent\'">';
+      h += '<div style="display:grid;grid-template-columns:1fr 120px 100px 140px 80px 140px;padding:10px 16px;border-bottom:0.5px solid '+_b+';align-items:center;cursor:pointer" onclick="event.stopPropagation();window._hmDetayAc(\''+m.id+'\')" onmouseover="this.style.background=\'var(--color-background-secondary)\'" onmouseout="this.style.background=\'transparent\'">';
       h += '<div><div style="font-size:12px;font-weight:500;color:'+_t+'">'+_hmEsc(m.cari||'—')+'</div>';
       h += '<div style="font-size:10px;color:'+_t3+'">'+_hmEsc(m.aciklama||'')+'</div></div>';
       h += '<div style="font-size:11px;color:'+_t2+'">'+_hmEsc(m.tarih||'—')+'</div>';
       h += '<div><span style="font-size:9px;padding:2px 8px;border-radius:20px;background:'+dBg+';color:'+dRenk+';font-weight:500">'+dLbl+'</span></div>';
       h += '<div style="font-size:11px;font-weight:500;color:'+farkRenk+'">'+farkStr+'</div>';
       h += '<div style="font-size:11px;color:'+_t2+'">'+(m.para||'TRY')+'</div>';
-      h += '<div style="text-align:right"><button onclick="event.stopPropagation();window._hmDetayAc(\''+m.id+'\')" style="font-size:10px;padding:4px 10px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;color:'+_t2+';font-family:inherit">Gör</button></div>';
+      h += '<div style="display:flex;gap:4px;justify-content:flex-end">';
+      h += '<button onclick="event.stopPropagation();window._hmDetayAc(\''+m.id+'\')" style="font-size:10px;padding:4px 10px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;color:'+_t2+';font-family:inherit">Gör</button>';
+      if (m.durum !== 'onaylandi' && m.durum !== 'kilitli') {
+        h += '<button onclick="event.stopPropagation();window._hmSil(\''+m.id+'\')" style="font-size:10px;padding:4px 10px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Sil</button>';
+      }
+      h += '</div>';
       h += '</div>';
     });
   }
@@ -262,6 +267,24 @@ window._hmKolonMapKaydet = function(id, tip) {
   document.getElementById('hm-map-modal')?.remove();
   window.toast?.('Kolon eşleştirmesi kaydedildi','ok');
   window._hmDetayAc(id);
+};
+
+window._hmSil = function(id) {
+  window.confirmModal?.('Mütabakatı Sil', 'Bu mütabakat silinecek. Emin misin?', function() {
+    var liste = window._hmLoad();
+    var idx = liste.findIndex(function(x){return x.id===id;});
+    if (idx===-1) return;
+    if (liste[idx].durum==='onaylandi' || liste[idx].durum==='kilitli') {
+      window.toast?.('Onaylı/kilitli kayıt silinemez','warn');
+      return;
+    }
+    liste[idx].isDeleted = true;
+    liste[idx].deletedAt = new Date().toISOString();
+    liste[idx].deletedBy = window.CU?.()?.displayName || '';
+    window._hmStore(liste);
+    window.toast?.('Mütabakat silindi','ok');
+    window.renderHesapMutabakati();
+  });
 };
 
 window._hmDosyaSil = function(id, tip) {
