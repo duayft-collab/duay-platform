@@ -2002,15 +2002,15 @@ function renderUsers(filter=''){
               </div>
               ${u.access?.length?`<div style="grid-column:1/-1">
                 <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Döküman Erişimi</div>
-                <div style="display:flex;flex-wrap:wrap;gap:3px">${(u.access||[]).map(a=>`<span style="padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600;background:var(--al);color:var(--ac)">${a}</span>`).join('')}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:3px">${(u.access||[]).map(a=>`<span style="padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600;background:var(--al);color:var(--ac)">${window._esc(a)}</span>`).join('')}</div>
               </div>`:''}
             </div>
 
             <!-- Action row -->
             <div style="display:flex;gap:6px">
-              <button onclick="event.stopPropagation();editUser(${u.id})" class="btn btnp" style="flex:1;font-size:12px;justify-content:center;padding:8px">✏️ Düzenle</button>
-              <button onclick="event.stopPropagation();toggleUser(${u.id})" class="btn btns" style="font-size:12px;padding:8px 12px;${isActive?'color:#D97706':'color:#16A34A'}" title="${isActive?'Pasife al':'Aktif et'}">${isActive?'⏸':'▶'}</button>
-              ${!isSelf?`<button onclick="deleteUser(${u.id})" class="btn btns" style="font-size:12px;padding:8px 12px;color:#EF4444" title="Kullanıcıyı sil">🗑</button>`:''}
+              <button onclick="event.stopPropagation();editUser(${Number(u.id)||0})" class="btn btnp" style="flex:1;font-size:12px;justify-content:center;padding:8px">✏️ Düzenle</button>
+              <button onclick="event.stopPropagation();toggleUser(${Number(u.id)||0})" class="btn btns" style="font-size:12px;padding:8px 12px;${isActive?'color:#D97706':'color:#16A34A'}" title="${isActive?'Pasife al':'Aktif et'}">${isActive?'⏸':'▶'}</button>
+              ${!isSelf?`<button onclick="deleteUser(${Number(u.id)||0})" class="btn btns" style="font-size:12px;padding:8px 12px;color:#EF4444" title="Kullanıcıyı sil">🗑</button>`:''}
             </div>
           </div>
         </div>`;
@@ -2045,7 +2045,7 @@ function renderUsers(filter=''){
               const isActive = u.status==='active';
               const isSelf = u.id===_getCU()?.id;
               return `<div style="background:var(--sf);border:1.5px solid ${isSelf?'#6366F1':'var(--b)'};border-radius:14px;padding:14px 16px;text-align:center;width:140px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.05)"
-                onclick="event.stopPropagation();editUser(${u.id})"
+                onclick="event.stopPropagation();editUser(${Number(u.id)||0})"
                 onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(0,0,0,.1)'"
                 onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.05)'">
                 <div style="position:relative;display:inline-block;margin-bottom:8px">
@@ -2138,9 +2138,9 @@ function renderUsers(filter=''){
               <td style="padding:12px 16px;text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${(u.failedLogins||0)>=3?'#DC2626':'var(--t3)'}">${(u.failedLogins||0)||'—'}</td>
               <td style="padding:12px 16px">
                 <div style="display:flex;gap:4px;justify-content:flex-end">
-                  <button onclick="event.stopPropagation();editUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px">✏️</button>
-                  <button onclick="event.stopPropagation();toggleUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px;${isActive?'color:#D97706':'color:#16A34A'}" title="${isActive?'Pasife al':'Aktif et'}">${isActive?'⏸':'▶'}</button>
-                  ${!isSelf?`<button onclick="deleteUser(${u.id})" class="btn btns" style="font-size:11px;padding:5px 10px;color:#EF4444">🗑</button>`:''}
+                  <button onclick="event.stopPropagation();editUser(${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 10px">✏️</button>
+                  <button onclick="event.stopPropagation();toggleUser(${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 10px;${isActive?'color:#D97706':'color:#16A34A'}" title="${isActive?'Pasife al':'Aktif et'}">${isActive?'⏸':'▶'}</button>
+                  ${!isSelf?`<button onclick="deleteUser(${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 10px;color:#EF4444">🗑</button>`:''}
                   <button onclick="_toggleUserDetail.call(this,${u.id})" class="btn btns" style="font-size:11px;padding:5px 8px;color:var(--t3)">▾</button>
                 </div>
               </td>
