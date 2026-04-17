@@ -313,8 +313,8 @@ function _read(key, fallback = null) {
 function _emergencyClean() {
   try {
     var _ec = function(k, max) { try { var raw = localStorage.getItem(k); if (!raw) return; var d; if (raw.startsWith('_LZ_') && typeof LZString !== 'undefined') d = JSON.parse(LZString.decompressFromUTF16(raw.slice(4))); else d = JSON.parse(raw); if (Array.isArray(d) && d.length > max) { var trimmed = JSON.stringify(d.slice(0, max)); if (typeof LZString !== 'undefined') localStorage.setItem(k, '_LZ_' + LZString.compressToUTF16(trimmed)); else localStorage.setItem(k, trimmed); } } catch(e) {} };
-    _ec(KEYS.notifications, 15); _ec(KEYS.activity, 20); _ec(KEYS.trash, 15);
-    _ec(KEYS.kpiLog, 50); _ec(KEYS.odemeler, 300); _ec(KEYS.tahsilat, 300);
+    _ec(KEYS.notifications, RETENTION.notifications); _ec(KEYS.activity, RETENTION.activity); _ec(KEYS.trash, RETENTION.trash);
+    _ec(KEYS.kpiLog, RETENTION.kpiLog); _ec(KEYS.odemeler, RETENTION.odemeler); _ec(KEYS.tahsilat, RETENTION.tahsilat);
     try { var tc = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}'); Object.keys(tc).forEach(function(t) { if (Array.isArray(tc[t]) && tc[t].length > 10) tc[t] = tc[t].slice(-10); }); localStorage.setItem(KEYS.taskChats, JSON.stringify(tc)); } catch(e) {}
     try { localStorage.setItem('ak_storage_critical', '1'); } catch(e) {}
   } catch(e) {}
@@ -351,6 +351,17 @@ window._safeSetItem = function(key, val) {
     console.error('[LS] setItem hatası:', key, e);
     return false;
   }
+};
+
+/* LS-RETENTION-CENTRAL-001 — Tüm retention limitleri tek yerden */
+var RETENTION = {
+  activity:      20,
+  notifications: 15,
+  trash:         15,
+  kpiLog:        50,
+  odemeler:      300,
+  tahsilat:      300,
+  taskChats:     20
 };
 
 function _write(key, value) {
