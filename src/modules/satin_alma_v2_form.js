@@ -264,7 +264,7 @@ window._saV2UrunAraDropdown = function(inp, hedefId) {
   var mevcut = document.getElementById('sa-urun-dropdown');
   if (mevcut) mevcut.remove();
   if (val.length < 2) return;
-  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : []).concat(typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : []).filter(function(u) { return !u.isDeleted; });
+  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : []).filter(function(u) { return !u.isDeleted; });
   var eslesen = tumListe.filter(function(u) {
     return (u.duayKodu || '').toLowerCase().includes(val)
       || (u.urunAdi || '').toLowerCase().includes(val)
@@ -305,8 +305,7 @@ window._saV2UrunAraDropdown = function(inp, hedefId) {
 window._saV2KatalogDoldur = function(kod) {
   if (!kod || kod.length < 5) { var be=document.getElementById('sav2f-katalog-bilgi'); if(be) be.textContent=''; return; }
   var urunler = typeof window.loadUrunler==='function' ? window.loadUrunler({tumKullanicilar:true}) : [];
-  var ihrUrunler = typeof window.loadIhracatUrunler==='function' ? window.loadIhracatUrunler() : [];
-  var tumUrunler = urunler.concat(ihrUrunler);
+  var tumUrunler = urunler;
   var u = tumUrunler.find(function(x){ return (x.duayKodu||'').toLowerCase()===kod.toLowerCase(); });
   var bilgiEl = document.getElementById('sav2f-katalog-bilgi');
   if (!u) { if(bilgiEl) bilgiEl.innerHTML='<span style="color:#A32D2D">Katalogda bulunamadı</span>'; return; }
@@ -664,8 +663,7 @@ window._saV2UrunSecModal = function() {
 window._saV2UrunListHTML = function(filtre) {
   var tumListe = (window._saV2Load?.() || []).filter(function(t){return !t.isDeleted;});
   var katalog = typeof window.loadUrunler==='function' ? window.loadUrunler({tumKullanicilar:true}) : [];
-  var ihrUrunler = typeof window.loadIhracatUrunler==='function' ? window.loadIhracatUrunler() : [];
-  var tumKatalog = katalog.concat(ihrUrunler).filter(function(u){return !u.isDeleted;});
+  var tumKatalog = katalog.filter(function(u){return !u.isDeleted;});
   var kaynaklar = tumListe.concat(tumKatalog.map(function(u){
     return {id:u.id||u._id,urunAdi:u.urunAdi||u.ad||u.name||'',duayKodu:u.duayKodu||u.kod||'',tedarikci:u.tedarikci||'',alisF:u.alisF||u.satisFiyati||'',para:'USD',birim:u.birim||'Adet',gorsel:u.gorsel||''};
   }));
@@ -793,8 +791,7 @@ window._saV2UrunSatirEkle = function() {
 window._saV2UrunKatalogDoldur = function(pre, kod) {
   if (!kod || kod.length < 3) return;
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
-  var ihrUrunler = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
-  var tumUrunler = urunler.concat(ihrUrunler);
+  var tumUrunler = urunler;
   var u = tumUrunler.find(function(x) { return (x.duayKodu || '').toLowerCase() === kod.toLowerCase(); });
   var bilgiEl = document.getElementById(pre + 'katalog-bilgi');
   /* SA-FORM-URUN-GRID-V2-001: görsel + türkçe ad otomatik doldur */
@@ -820,8 +817,7 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
   if (!deger || deger.length < 2) { if (dd) dd.remove(); return; }
   var q = deger.toLowerCase();
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
-  var ihrUrunler = typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : [];
-  var tum = urunler.concat(ihrUrunler);
+  var tum = urunler;
   var sonuc = tum.filter(function(u) {
     return (u.urunAdi || '').toLowerCase().includes(q) || (u.standartAdi || '').toLowerCase().includes(q) || (u.duayAdi || '').toLowerCase().includes(q) || (u.duayKodu || '').toLowerCase().includes(q);
   }).slice(0, 8);
