@@ -279,6 +279,18 @@ window._hmKolonMapKaydet = function(id, tip) {
       window._hmStoreMut(liste);
     } catch(e) {}
   }
+  /* HM-SABLON-KARSI-001: karsiKolonMap şablon olarak kaydet */
+  if (tip === 'karsi') {
+    try {
+      localStorage.setItem('hm_sablon_karsi_' + liste[idx].cari, JSON.stringify({
+        kolonMap: map,
+        tarih: new Date().toLocaleDateString('tr-TR'),
+        cari: liste[idx].cari
+      }));
+      liste[idx].karsiSablonTarih = new Date().toLocaleDateString('tr-TR');
+      window._hmStoreMut(liste);
+    } catch(e) {}
+  }
   document.getElementById('hm-map-modal')?.remove();
   window.toast?.('Kolon eşleştirmesi kaydedildi','ok');
   window._hmDetayAc(id);
@@ -376,6 +388,22 @@ window._hmDosyaYukle = function(id, tip, input) {
           window._hmDetayAc(id);
           return;
         } catch(e3) {}
+      }
+    }
+    /* HM-SABLON-KARSI-001: karsi şablon varsa otomatik uygula */
+    if (tip === 'karsi') {
+      var sKarsiKey = 'hm_sablon_karsi_' + liste[idx].cari;
+      var sKarsiRaw = localStorage.getItem(sKarsiKey);
+      if (sKarsiRaw) {
+        try {
+          var sKarsi = JSON.parse(sKarsiRaw);
+          liste[idx].karsiKolonMap = sKarsi.kolonMap;
+          liste[idx].karsiSablonTarih = sKarsi.tarih;
+          window._hmStoreMut(liste);
+          window.toast?.('Karşı firma şablonu yüklendi (' + sKarsi.tarih + ')', 'ok');
+          window._hmDetayAc(id);
+          return;
+        } catch(e4) {}
       }
     }
     window._hmKolonMapAc(id, tip);
