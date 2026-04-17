@@ -74,11 +74,11 @@ const APP_BUILD = '2026-04-02';
 // ── Şirket logosu yönetimi ────────────────────────────────────
 window._setCompanyLogo = function(type) {
   fetch('assets/logo_' + type + '.png').then(function(r) { return r.blob(); }).then(function(blob) {
-    var reader = new FileReader(); reader.onload = function(ev) { localStorage.setItem('ak_company_logo', ev.target.result); window._dcaRefreshLogoPreview?.(); window.toast?.('Logo kaydedildi', 'ok'); }; reader.readAsDataURL(blob);
+    var reader = new FileReader(); reader.onload = function(ev) { window._safeSetItem('ak_company_logo', ev.target.result); window._dcaRefreshLogoPreview?.(); window.toast?.('Logo kaydedildi', 'ok'); }; reader.readAsDataURL(blob);
   }).catch(function() { window.toast?.('Logo dosyası bulunamadı — Özel Yükle kullanın', 'err'); });
 };
 window._setCompanyLogoCustom = function(inp) {
-  if (!inp.files?.[0]) return; var reader = new FileReader(); reader.onload = function(ev) { localStorage.setItem('ak_company_logo', ev.target.result); window._dcaRefreshLogoPreview?.(); window.toast?.('Logo kaydedildi', 'ok'); }; reader.readAsDataURL(inp.files[0]);
+  if (!inp.files?.[0]) return; var reader = new FileReader(); reader.onload = function(ev) { window._safeSetItem('ak_company_logo', ev.target.result); window._dcaRefreshLogoPreview?.(); window.toast?.('Logo kaydedildi', 'ok'); }; reader.readAsDataURL(inp.files[0]);
 };
 window._dcaRefreshLogoPreview = function() {
   var saved = localStorage.getItem('ak_company_logo'); var area = document.getElementById('logo-preview-area'); if (!area) return;

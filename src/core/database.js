@@ -326,6 +326,33 @@ function _emergencyClean() {
  * @param {*}      value
  * @returns {boolean} Başarılı mı?
  */
+/* LS-SAFE-SET-001 — Merkezi localStorage yazma koruması */
+window._safeSetItem = function(key, val) {
+  try {
+    localStorage.setItem(key, val);
+    return true;
+  } catch(e) {
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+      console.warn('[LS] Quota aşıldı:', key, '— acil temizlik başlatılıyor');
+      try {
+        ['ak_act1','ak_tahsilat1','ak_odm1'].forEach(function(k){
+          var arr = JSON.parse(localStorage.getItem(k)||'[]');
+          if(arr.length > 50) localStorage.setItem(k, JSON.stringify(arr.slice(0,50)));
+        });
+        localStorage.setItem(key, val);
+        window.toast?.('Depolama alanı temizlendi, tekrar deneniyor…','warn');
+        return true;
+      } catch(e2) {
+        window.toast?.('Depolama alanı dolu — lütfen sayfayı yenileyin.','err');
+        console.error('[LS] Kritik quota hatası:', key);
+        return false;
+      }
+    }
+    console.error('[LS] setItem hatası:', key, e);
+    return false;
+  }
+};
+
 function _write(key, value) {
   var now = new Date().toISOString();
   // taskChats base64 engeli — Firestore sync dahil tüm yazmalardan önce

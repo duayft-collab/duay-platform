@@ -5481,10 +5481,10 @@ window._saveEmailJSKeys = function() {
   var tplUp = (document.getElementById('set-ej-tpl-up')?.value || '').trim();
   var tplAdm = (document.getElementById('set-ej-tpl-adm')?.value || '').trim();
   if (!pub || !svc) { window.toast?.('Public Key ve Service ID zorunlu', 'err'); return; }
-  localStorage.setItem('ak_emailjs_public', btoa(pub));
-  localStorage.setItem('ak_emailjs_service', btoa(svc));
-  if (tplUp) localStorage.setItem('ak_emailjs_template_up', btoa(tplUp));
-  if (tplAdm) localStorage.setItem('ak_emailjs_template_admin', btoa(tplAdm));
+  window._safeSetItem('ak_emailjs_public', btoa(pub));
+  window._safeSetItem('ak_emailjs_service', btoa(svc));
+  if (tplUp) window._safeSetItem('ak_emailjs_template_up', btoa(tplUp));
+  if (tplAdm) window._safeSetItem('ak_emailjs_template_admin', btoa(tplAdm));
   window.toast?.('EmailJS ayarlari kaydedildi', 'ok');
   window._renderEntegrasyonlar?.();
 };
