@@ -657,7 +657,7 @@ function resetPassword(id) {
   mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
   mo.innerHTML = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:360px;padding:20px">'
     + '<div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:4px">Şifre Sıfırla</div>'
-    + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">' + (window._esc?.(u.name) || u.name) + ' için yeni şifre</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">' + window._esc(u.name) + ' için yeni şifre</div>'
     + '<input id="mo-pwd-input" type="password" placeholder="En az 6 karakter" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;font-size:12px;box-sizing:border-box;margin-bottom:12px">'
     + '<div style="display:flex;gap:8px;justify-content:flex-end">'
     + '<button onclick="document.getElementById(\'mo-pwd-reset\').remove()" style="padding:7px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:12px;color:var(--t2)">İptal</button>'
