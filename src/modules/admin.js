@@ -1432,10 +1432,10 @@ function renderSuggestions() {
                   `<option value="${k}" ${s.status === k ? 'selected' : ''}>${v.l}</option>`
                 ).join('')}
               </select>
-              <button class="btn btns btnd" onclick="Admin.deleteSugg(${s.id})">🗑</button>` : ''}
+              <button class="btn btns btnd" onclick="Admin.deleteSugg(${Number(s.id)||0})">🗑</button>` : ''}
           </div>
         </div>
-        <div style="font-size:13px;line-height:1.6;color:var(--t)">${s.text}</div>
+        <div style="font-size:13px;line-height:1.6;color:var(--t)">${window._esc(s.text)}</div>
         <div style="font-size:10px;color:var(--t3);margin-top:4px;font-family:'DM Mono',monospace">${s.ts}</div>
       </div>
     </div>`;
