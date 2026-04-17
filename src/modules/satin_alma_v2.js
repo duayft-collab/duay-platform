@@ -256,3 +256,19 @@ window.SAV2_KEY     = SAV2_KEY;
 window.PusulaProLoaded_SAV2 = true;
 console.log('[SAV2] v2.0 yüklendi');
 window._saEsc=_saEsc;window._saNow=_saNow;window._saToday=_saToday;window._saId=_saId;window._saCu=_saCu;
+
+/* ── SA-LISTE-ACTIONS-001: Düzenle + Sil aksiyon menüsü ─────── */
+window._saV2AksiyonMenu = function(id, btn) {
+  var mevcut = document.getElementById('sav2-aksiyon-menu');
+  if (mevcut) { mevcut.remove(); if (mevcut.dataset.id === String(id)) return; }
+  var menu = document.createElement('div');
+  menu.id = 'sav2-aksiyon-menu';
+  menu.dataset.id = String(id);
+  var rect = btn.getBoundingClientRect();
+  menu.style.cssText = 'position:fixed;top:'+(rect.bottom+4)+'px;left:'+(rect.left-80)+'px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:9999;min-width:120px;overflow:hidden';
+  menu.innerHTML = '<button onclick="event.stopPropagation();document.getElementById(\'sav2-aksiyon-menu\')?.remove();window._saV2Duzenle?.(\''+id+'\')||window._saV2DuzenleForm?.(\''+id+'\')" style="width:100%;padding:9px 14px;border:none;background:transparent;cursor:pointer;font-size:12px;text-align:left;color:var(--color-text-primary);font-family:inherit;display:block">\u270f D\u00fczelt</button>'
+    + '<button onclick="event.stopPropagation();document.getElementById(\'sav2-aksiyon-menu\')?.remove();window._saV2TekSil?.(\''+id+'\')" style="width:100%;padding:9px 14px;border:none;background:transparent;cursor:pointer;font-size:12px;text-align:left;color:#A32D2D;font-family:inherit;display:block;border-top:0.5px solid var(--color-border-tertiary)">\ud83d\uddd1 Sil</button>';
+  document.body.appendChild(menu);
+  var _kapat = function(e) { if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', _kapat); } };
+  setTimeout(function() { document.addEventListener('click', _kapat); }, 10);
+};

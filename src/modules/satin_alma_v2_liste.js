@@ -205,7 +205,7 @@ window.renderSatinAlmaV2 = function() {
     var _msgM=[(window._saV2UrunAdi?.(t)||'Ürün'),(t.tedarikci||'—'),(_alisFN.toLocaleString('tr-TR')+' '+_paraN),('Teslimat: '+(t.teslimYeri||'—'))].join(' | ').replace(/[\u0027\u0060]/g,'');
     h+='<div style="display:flex;gap:2px;justify-content:flex-end">';
     if(t.satisMusteriOnay===true){h+='<button onclick="event.stopPropagation();window._saV2OnayaSun?.(\''+t.id+'\')" style="font-size:9px;padding:3px 8px;border:none;border-radius:5px;background:#D97706;color:#fff;font-weight:600;cursor:pointer;font-family:inherit">Sun</button>';}
-    h+='<button onclick="event.stopPropagation();window._saV2PeekPanel(\''+t.id+'\')" style="font-size:10px;padding:3px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;color:var(--color-text-secondary);font-family:inherit">···</button>';
+    h+='<div style="position:relative;display:inline-block"><button onclick="event.stopPropagation();window._saV2AksiyonMenu(\''+t.id+'\',this)" style="font-size:10px;padding:3px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;color:var(--color-text-secondary);font-family:inherit">···</button></div>';
     h+='<button onclick="event.stopPropagation();navigator.clipboard?.writeText(\''+_msgM+'\');window.toast?.(\'Kopyalandı\',\'ok\')" title="Tedarikçi mesajı kopyala" style="font-size:10px;padding:3px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;cursor:pointer;color:var(--color-text-tertiary);font-family:inherit">✉</button>';
     h+='</div>';
     h+='</div>';
