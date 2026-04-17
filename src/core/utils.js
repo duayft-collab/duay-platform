@@ -42,9 +42,16 @@ const isManager = () => ['admin','manager'].includes(window.Auth?.getCU?.()?.rol
 // ── Zaman Yardımcıları ────────────────────────────────────────────
 // CORE-NOWTS-ISO-001: ISO 8601 UTC format (Safari parse uyumlu)
 // Eski boşluklu kayıtlar odemeler.js replace(' ','T') fix'i ile okunur.
+const _p = n => String(n).padStart(2, '0');
+/* SAAT-FIX-001: UTC → İstanbul (+3) merkezi fonksiyon */
+const _istNow = () => {
+  const d = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  return d.getUTCFullYear() + '-' + _p(d.getUTCMonth()+1) + '-' + _p(d.getUTCDate())
+    + ' ' + _p(d.getUTCHours()) + ':' + _p(d.getUTCMinutes()) + ':' + _p(d.getUTCSeconds());
+};
 const _nowTs = () => new Date().toISOString().slice(0, 19) + 'Z';
 const nowTs = _nowTs;
-const _p = n => String(n).padStart(2, '0');
+window._istNow = _istNow;
 
 /**
  * @param {string} ts ISO / 'YYYY-MM-DD HH:MM:SS'

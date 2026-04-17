@@ -39,7 +39,8 @@ var PP_PRIORITIES = {
 
 /* ── Yardımcılar ────────────────────────────────────────────── */
 var _ppEsc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
-var _ppNow = function() { return new Date().toISOString().slice(0,19).replace('T',' '); };
+/* SAAT-FIX-001: İstanbul saati */
+var _ppNow = function() { return window._istNow ? window._istNow() : new Date().toISOString().slice(0,19).replace('T',' '); };
 var _ppToday = function() { return new Date().toISOString().slice(0,10); };
 var _ppId = function() { return typeof window.generateId==='function' ? window.generateId() : Date.now()+Math.random().toString(36).slice(2,8); };
 var _ppCu = function() { return window.Auth?.getCU?.() || window.CU?.(); };
