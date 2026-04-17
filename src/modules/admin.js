@@ -286,7 +286,7 @@ function _renderDetail(uid) {
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-          <button class="btn btnp" onclick="window._openUserManageModal?.(${u.id})" style="font-size:12px">⚙️ Yönet</button>
+          <button class="btn btnp" onclick="window._openUserManageModal?.(${Number(u.id)||0})" style="font-size:12px">⚙️ Yönet</button>
           <button onclick="window._rolKopyala(${u.id})" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İzinleri Kopyala</button>
         </div>
       </div>
@@ -318,7 +318,7 @@ function _renderDetail(uid) {
       <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:11px;padding:6px 12px;border-radius:8px">Audit Log</button>
       ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#DC2626;border-color:#DC2626">Askiya Al</button>`:''}
       ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#16A34A;border-color:#16A34A">Aktif Et</button>`:''}
-      <button class="btn btnp" onclick="window._openUserManageModal?.(${u.id})" style="font-size:11px;padding:6px 14px;border-radius:8px;margin-left:auto">Yonet</button>
+      <button class="btn btnp" onclick="window._openUserManageModal?.(${Number(u.id)||0})" style="font-size:11px;padding:6px 14px;border-radius:8px;margin-left:auto">Yönet</button>
     </div>
 
     <!-- Sekmeler -->
@@ -3463,7 +3463,7 @@ window._openUserManageModal = function(uid) {
                       + '<span>' + (isCur ? '🟢' : '⚪') + '</span>'
                       + '<span style="flex:1;color:#1C1C1E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (s2.device || '?').slice(0, 30) + '</span>'
                       + '<span style="color:#8E8E93">' + (ago < 60 ? ago + 'dk' : Math.round(ago / 60) + 'sa') + '</span>'
-                      + (!isCur ? '<button onclick="window._endSession?.(\'' + s2.sessionId + '\');window._openUserManageModal?.(' + u.id + ')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#DC2626">✕</button>' : '')
+                      + (!isCur ? '<button onclick="window._endSession?.(\'' + s2.sessionId + '\');window._openUserManageModal?.(' + (Number(u.id)||0) + ')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#DC2626">✕</button>' : '')
                     + '</div>';
                   }).join('');
                 })()
