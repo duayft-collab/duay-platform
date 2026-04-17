@@ -165,10 +165,10 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','numune-arsivi','teslimat-takip','cari-karsilastirma','donem-ozeti'],
-  lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma','siparisler'],
+  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','alis-teklifleri','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','numune-arsivi','teslimat-takip','cari-karsilastirma','donem-ozeti'],
+  lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma','alis-teklifleri','siparisler'],
   staff:   ['dashboard','announce','pusula','pusula-pro','takvim','links','izin','pirim','siparisler'],
-  asistan: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','teslimat-takip'],
+  asistan: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','alis-teklifleri','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','teslimat-takip'],
 };
 
 /** Admin-only paneller */
