@@ -18,7 +18,7 @@ window._hmId = function() {
 };
 
 window.renderHesapMutabakati = function() {
-  var el = document.getElementById('main-content') || document.getElementById('icerik') || document.querySelector('[data-panel]');
+  var el = document.getElementById('panel-hesap-mutabakati');
   if (!el) return;
   var liste = window._hmLoad();
   var _b = 'var(--color-border-tertiary)';
@@ -132,7 +132,7 @@ window._hmDetayAc = function(id) {
   var liste = window._hmLoad();
   var m = liste.find(function(x){return x.id===id;});
   if (!m) return;
-  var el = document.getElementById('main-content') || document.getElementById('icerik') || document.querySelector('[data-panel]');
+  var el = document.getElementById('panel-hesap-mutabakati');
   if (!el) return;
   var _b = 'var(--color-border-tertiary)';
   var _t = 'var(--color-text-primary)';
