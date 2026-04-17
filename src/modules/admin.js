@@ -3786,7 +3786,20 @@ window._ihrSartliKuralYonet = function() {
 
   window._ihrSartliToggle = function(idx) { var d = _load(); if (d[idx]) { d[idx].aktif = !d[idx].aktif; _store(d); } _render(); };
   window._ihrSartliSil = function(idx) {
-    window.confirmModal?.('Bu kuralı silmek istediğinizden emin misiniz?', function() { var d = _load(); d.splice(idx, 1); _store(d); _render(); window.toast?.('Kural silindi', 'ok'); });
+    window.confirmModal?.('Bu kuralı silmek istediğinizden emin misiniz?', {
+      title: 'Kuralı Sil', danger: true, confirmText: 'Sil',
+      onConfirm: function() {
+        var d = _load();
+        if (d[idx]) {
+          d[idx].isDeleted = true;
+          d[idx].deletedAt = new Date().toISOString();
+          d[idx].deletedBy = window.CU?.()?.uid || '';
+        }
+        _store(d);
+        _render();
+        window.toast?.('Kural silindi', 'ok');
+      }
+    });
   };
   window._ihrSartliKuralEkle = function() {
     var genId = typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now();
