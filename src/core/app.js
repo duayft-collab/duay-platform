@@ -164,7 +164,7 @@ const ALL_MODULES = [
 /** Rol bazlı varsayılan modül erişimleri */
 const ROLE_DEFAULT_MODULES = {
   admin:   ALL_MODULES.map(m => m.id),
-  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin','satis-rapor','numune-arsivi','teslimat-takip','cari-karsilastirma','donem-ozeti'],
+  manager: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','numune-arsivi','teslimat-takip','cari-karsilastirma','donem-ozeti'],
   lead:    ['dashboard','announce','pusula-pro','puantaj','links','hedefler','kargo','stok','ik','izin','evrak','numune','etkinlik','pirim','rehber','ihracat-ops','satinalma','siparisler'],
   staff:   ['dashboard','announce','pusula','pusula-pro','takvim','links','izin','pirim','siparisler'],
 };
@@ -1081,7 +1081,7 @@ function _renderPanel(id) {
       'ik-hub':    () => safe(() => window.IkHub?.render?.()),
       'crm-hub':   () => safe(() => window.CrmHub?.render?.()),
       gorevler:    () => safe(() => window.Pusula?.render?.()),
-      'muavin': () => safe(() => window.renderMuavin?.()), 'kpi-panel': () => safe(() => window.renderKpiPanel?.() || window.KPI?.render?.()),
+      'muavin': () => safe(() => window.renderMuavin?.()), 'hesap-mutabakati': () => safe(() => window.renderHesapMutabakati?.()), 'kpi-panel': () => safe(() => window.renderKpiPanel?.() || window.KPI?.render?.()),
     };
     if (hubRenders[id]) hubRenders[id]();
     else window._patchRender?.(id);
@@ -3567,6 +3567,7 @@ var _TN2_GROUPS = {
     { id:'finans',       label:'Finansal Göstergeler' },
     { id:'pirim',        label:'Prim'          },
     { id:'kpi-panel',    label:'KPI'           },    { id:'muavin',       label:'Muavin Defteri' },
+    { id:'hesap-mutabakati', label:'Hesap Mütabakatı' },
   ]},
   ik: { label:'İnsan Kaynakları', mods: [
     { id:'ik-hub',  label:'Personel Yönetimi' },
