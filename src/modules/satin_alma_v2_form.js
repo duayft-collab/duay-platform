@@ -156,7 +156,8 @@ window._saV2YeniTeklif = function(duzenleKayit) {
   };
   window._saV2FormGorselData = null;
   window._saV2UrunSayac = 0;
-  window._saV2UrunSatirEkle();
+  /* SA-FORM-DUZENLE-FIX-002: ilk boş satır sadece yeni teklifte, düzenlemede urunler döngüsü ekler */
+  if (!_isDuzenle) window._saV2UrunSatirEkle();
   window._saV2DatalistDoldur?.();
   /* Düzenleme modu: mevcut veriyle formu doldur */
   if (_isDuzenle && duzenleKayit) {
@@ -326,7 +327,10 @@ window._saV2FormKaydet = function() {
       marka: gu('marka'), miktar: parseFloat(gu('miktar')) || 0, birim: gu('birim') || 'Adet',
       alisF: parseFloat(gu('alisF')) || 0, para: gu('para') || 'USD',
       mensei: gu('mensei'), saticiKodu: gu('saticiKodu'),
-      netAg: parseFloat(gu('netAg')) || 0
+      netAg: parseFloat(gu('netAg')) || 0,
+      /* SA-FORM-DUZENLE-FIX-002: eksik alanlar eklendi */
+      gtip: gu('gtip'),
+      urunTeslimat: parseFloat(gu('urunTeslimat')) || 0
     };
     if (!urun.duayKodu && !urun.urunAdi) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Kod veya ad zorunlu'); return; }
     if (!urun.miktar) { hatalar.push('\u00dcr\u00fcn ' + (parseInt(idx) + 1) + ': Miktar zorunlu'); return; }
@@ -822,9 +826,8 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
 };
 
 window._saV2UrunSecimDoldur = function(pre, duayKodu) {
-  var ddId = 'sa-urun-ad-dd-' + pre.replace(/[^a-z0-9]/gi, '');
-  var dd = document.getElementById(ddId);
-  if (dd) dd.remove();
+  /* SA-FORM-DUZENLE-FIX-002: tüm açık dropdown'ları kapat */
+  document.querySelectorAll('[id^="sa-urun-ad-dd-"]').forEach(function(el){el.remove();});
   window._saV2UrunKatalogDoldur(pre, duayKodu);
   var kodEl = document.getElementById(pre + 'duayKodu');
   if (kodEl) kodEl.value = duayKodu;
