@@ -363,6 +363,7 @@ var RETENTION = {
   tahsilat:      300,
   taskChats:     20
 };
+window.RETENTION = RETENTION;
 
 function _write(key, value) {
   var now = new Date().toISOString();
