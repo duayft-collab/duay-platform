@@ -431,9 +431,9 @@ window._stCheckPrevTeklif = function() {
 
 function _stItemRowHTML(item, idx) {
   // Ürün dropdown from urun_db
-  var urunList = typeof loadUrunDB === 'function' ? loadUrunDB() : [];
-  var esc = window._esc;
-  var urunOpts = '<option value="">— Ürün Seçin —</option>' + urunList.map(function(u) { return '<option value="' + esc(u.duayCode) + '">' + esc(u.duayCode + ' — ' + u.duayName) + '</option>'; }).join('');
+  var urunList = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}).filter(function(u){ return !u.isDeleted && (u.duayKodu||u.urunAdi); }) : [];
+  var esc = window._esc || function(s){ return String(s||''); };
+  var urunOpts = '<option value="">— Ürün Seçin —</option>' + urunList.map(function(u) { return '<option value="' + esc(u.duayKodu||'') + '">' + esc((u.duayKodu||'') + ' — ' + (u.urunAdi||u.duayAdi||u.ingAd||'')) + '</option>'; }).join('');
 
   return '<div class="st-item-row" style="display:grid;grid-template-columns:30px 1fr 1fr 70px 60px 80px 80px 30px;gap:6px;margin-bottom:6px;align-items:center;font-size:11px">'
     + '<div style="color:var(--t3);text-align:center">' + (idx + 1) + '</div>'
@@ -457,15 +457,15 @@ window._stAddItem = function() {
 window._stItemSelected = function(sel) {
   var code = sel.value;
   if (!code) return;
-  var urunList = typeof loadUrunDB === 'function' ? loadUrunDB() : [];
-  var u = urunList.find(function(x) { return x.duayCode === code; });
+  var urunList = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
+  var u = urunList.find(function(x) { return x.duayKodu === code; });
   if (!u) return;
   var row = sel.closest('.st-item-row');
   if (!row) return;
   var desc = row.querySelector('.st-item-desc');
   var unit = row.querySelector('.st-item-unit');
-  if (desc && !desc.value) desc.value = u.duayName || u.origName || '';
-  if (unit) unit.value = u.unit || 'Adet';
+  if (desc && !desc.value) desc.value = u.urunAdi || u.duayAdi || u.ingAd || '';
+  if (unit) unit.value = u.birim || 'Adet';
 };
 
 window._stCalcRow = function(inp) {
