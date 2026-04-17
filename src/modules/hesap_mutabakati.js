@@ -3,12 +3,12 @@ var HM_KEY = 'duay_hesap_mutabakat';
 var _hmEsc = window._esc || function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
 var HM_VER = '1.0.0';
 
-window._hmLoad = function() {
+window._hmLoadMut = function() {
   try { var r = localStorage.getItem(HM_KEY); return r ? JSON.parse(r) : []; }
   catch(e) { console.warn('[HM]', e); return []; }
 };
 
-window._hmStore = function(d) {
+window._hmStoreMut = function(d) {
   try { localStorage.setItem(HM_KEY, JSON.stringify(d)); }
   catch(e) { console.warn('[HM]', e); }
 };
@@ -20,7 +20,7 @@ window._hmId = function() {
 window.renderHesapMutabakati = function() {
   var el = document.getElementById('panel-hesap-mutabakati');
   if (!el) return;
-  var liste = window._hmLoad().filter(function(m){return !m.isDeleted;});
+  var liste = window._hmLoadMut().filter(function(m){return !m.isDeleted;});
   var _b = 'var(--color-border-tertiary)';
   var _t = 'var(--color-text-primary)';
   var _t2 = 'var(--color-text-secondary)';
@@ -134,16 +134,16 @@ window._hmYeniKaydet = function() {
     createdAt: new Date().toISOString(),
     createdBy: window.CU?.()?.displayName || ''
   };
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   liste.unshift(kayit);
-  window._hmStore(liste);
+  window._hmStoreMut(liste);
   document.getElementById('hm-modal')?.remove();
   window.toast?.('Mütabakat oluşturuldu','ok');
   window._hmDetayAc(kayit.id);
 };
 
 window._hmDetayAc = function(id) {
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   var m = liste.find(function(x){return x.id===id;});
   if (!m) return;
   var el = document.getElementById('panel-hesap-mutabakati');
@@ -217,7 +217,7 @@ window._hmDetayAc = function(id) {
 };
 
 window._hmKolonMapAc = function(id, tip) {
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   var m = liste.find(function(x){return x.id===id;});
   if (!m) return;
   var dosya = tip==='ic' ? m.icDosya : m.karsiDosya;
@@ -258,12 +258,12 @@ window._hmKolonMapKaydet = function(id, tip) {
   var _g = function(alan) { return parseInt(document.getElementById('hm-map-'+alan)?.value ?? -1); };
   var map = { tarih:_g('tarih'), aciklama:_g('aciklama'), borc:_g('borc'), alacak:_g('alacak'), refNo:_g('refNo') };
   if (map.tarih===-1 || map.borc===-1) { window.toast?.('Tarih ve Borç kolonları zorunlu','warn'); return; }
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   var idx = liste.findIndex(function(x){return x.id===id;});
   if (idx===-1) return;
   if (tip==='ic') liste[idx].icKolonMap = map;
   else liste[idx].karsiKolonMap = map;
-  window._hmStore(liste);
+  window._hmStoreMut(liste);
   document.getElementById('hm-map-modal')?.remove();
   window.toast?.('Kolon eşleştirmesi kaydedildi','ok');
   window._hmDetayAc(id);
@@ -272,7 +272,7 @@ window._hmKolonMapKaydet = function(id, tip) {
 window._hmSil = function(id) {
   /* HM-MODAL-FIX-001: confirmModal (message, opts) imza uyumu */
   window.confirmModal?.('Bu mütabakat silinecek. Emin misin?', { title: 'Mütabakatı Sil', danger: true, confirmText: 'Sil', onConfirm: function() {
-    var liste = window._hmLoad();
+    var liste = window._hmLoadMut();
     var idx = liste.findIndex(function(x){return x.id===id;});
     if (idx===-1) return;
     if (liste[idx].durum==='onaylandi' || liste[idx].durum==='kilitli') {
@@ -282,7 +282,7 @@ window._hmSil = function(id) {
     liste[idx].isDeleted = true;
     liste[idx].deletedAt = new Date().toISOString();
     liste[idx].deletedBy = window.CU?.()?.displayName || '';
-    window._hmStore(liste);
+    window._hmStoreMut(liste);
     window.toast?.('Mütabakat silindi','ok');
     window.renderHesapMutabakati();
   } });
@@ -291,13 +291,13 @@ window._hmSil = function(id) {
 window._hmDosyaSil = function(id, tip) {
   /* HM-MODAL-FIX-001: confirmModal (message, opts) imza uyumu */
   window.confirmModal?.('Bu dosya kaldırılacak. Emin misin?', { title: 'Dosyayı Kaldır', danger: true, confirmText: 'Kaldır', onConfirm: function() {
-    var liste = window._hmLoad();
+    var liste = window._hmLoadMut();
     var idx = liste.findIndex(function(x){return x.id===id;});
     if (idx===-1) return;
     if (tip==='ic') { liste[idx].icDosya=null; liste[idx].icDosyaAd=null; }
     else { liste[idx].karsiDosya=null; liste[idx].karsiDosyaAd=null; }
     liste[idx].rapor = null; liste[idx].fark = null;
-    window._hmStore(liste);
+    window._hmStoreMut(liste);
     window.toast?.('Dosya kaldırıldı','ok');
     window._hmDetayAc(id);
   } });
@@ -310,13 +310,13 @@ window._hmDosyaYukle = function(id, tip, input) {
   window.toast?.('Dosya okunuyor...','info');
   var reader = new FileReader();
   reader.onload = function(e) {
-    var liste = window._hmLoad();
+    var liste = window._hmLoadMut();
     var idx = liste.findIndex(function(x){return x.id===id;});
     if (idx===-1) return;
     var data = Array.from(new Uint8Array(e.target.result));
     if (tip==='ic') { liste[idx].icDosya=data; liste[idx].icDosyaAd=file.name; }
     else { liste[idx].karsiDosya=data; liste[idx].karsiDosyaAd=file.name; }
-    window._hmStore(liste);
+    window._hmStoreMut(liste);
     window.toast?.(file.name+' yüklendi','ok');
     window._hmKolonMapAc(id, tip);
   };
@@ -325,13 +325,13 @@ window._hmDosyaYukle = function(id, tip, input) {
 };
 
 window._hmKarsilastir = function(id) {
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   var idx = liste.findIndex(function(x){return x.id===id;});
   if (idx===-1) return;
   var m = liste[idx];
   if (!m.icDosya || !m.karsiDosya) { window.toast?.('Her iki dosya da yüklenmeli','warn'); return; }
   liste[idx].durum = 'islemde';
-  window._hmStore(liste);
+  window._hmStoreMut(liste);
   window._hmDetayAc(id);
   window.toast?.('Karşılaştırma yapılıyor...','info');
   setTimeout(function() {
@@ -340,7 +340,7 @@ window._hmKarsilastir = function(id) {
 };
 
 window._hmParseVeKarsilastir = function(id) {
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   var idx = liste.findIndex(function(x){return x.id===id;});
   if (idx===-1) return;
   var m = liste[idx];
@@ -403,14 +403,14 @@ window._hmParseVeKarsilastir = function(id) {
     };
     liste[idx].fark = fark;
     liste[idx].durum = 'taslak';
-    window._hmStore(liste);
+    window._hmStoreMut(liste);
     window.toast?.(fark===0 ? 'Hesaplar eşleşiyor ✓' : 'Fark bulundu: '+fark.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, fark===0?'ok':'warn');
     window._hmDetayAc(id);
   } catch(e) {
     console.warn('[HM]', e);
     window.toast?.('Parse hatası: '+e.message,'err');
     liste[idx].durum = 'taslak';
-    window._hmStore(liste);
+    window._hmStoreMut(liste);
     window._hmDetayAc(id);
   }
 };
@@ -495,7 +495,7 @@ window._hmOnayla = function(id) {
   if (!cu) { window.toast?.('Oturum açık değil','err'); return; }
   var rol = cu.rol || cu.role || '';
   if (rol !== 'admin' && rol !== 'manager') { window.toast?.('Sadece yönetici onaylayabilir','err'); return; }
-  var liste = window._hmLoad();
+  var liste = window._hmLoadMut();
   var idx = liste.findIndex(function(x){return x.id===id;});
   if (idx===-1) return;
   if (liste[idx].durum === 'islemde') { window.toast?.('Karşılaştırma devam ediyor, bekleyin','warn'); return; }
@@ -508,7 +508,7 @@ window._hmOnayla = function(id) {
       liste[idx].onayTarih = new Date().toISOString();
       liste[idx].onaylayanAd = cu.displayName || cu.email || '';
       liste[idx].onaylayanUid = cu.uid || '';
-      window._hmStore(liste);
+      window._hmStoreMut(liste);
       window.toast?.('Mütabakat onaylandı','ok');
       window._hmDetayAc(id);
     }
@@ -526,13 +526,13 @@ window._hmKilitle = function(id) {
     danger: true,
     confirmText: 'Kilitle',
     onConfirm: function() {
-      var liste = window._hmLoad();
+      var liste = window._hmLoadMut();
       var idx = liste.findIndex(function(x){return x.id===id;});
       if (idx===-1) return;
       liste[idx].durum = 'kilitli';
       liste[idx].kilitTarih = new Date().toISOString();
       liste[idx].kilitleyen = cu.displayName || cu.email || '';
-      window._hmStore(liste);
+      window._hmStoreMut(liste);
       window.toast?.('Mütabakat kilitlendi','ok');
       window._hmDetayAc(id);
     }
