@@ -58,7 +58,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">'
     + _draftBanner
     + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;padding-bottom:7px;border-bottom:0.5px solid var(--b);margin-bottom:4px">Tedarikçi & İş Bilgisi</div>'
-    + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEDAR\u0130K\u00c7\u0130</div>'
     + '<input id="sav2f-tedarikci" list="sav2f-ted-list" placeholder="Tedarik\u00e7i ad\u0131" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
     + '<datalist id="sav2f-ted-list"></datalist></div>'
@@ -67,9 +67,9 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<datalist id="sav2f-job-list"></datalist></div>'
     + _f('piNo', 'Proforma Fatura No', 'PI-2026-001')
     + _f('piTarih', 'Proforma Tarihi', '', 'date')
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
     + _f('gecerlilikTarihi', 'Teklif Geçerlilik Tarihi', '', 'date')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px">'
     + _f('teslimYeri','Teslim Noktası / Limanı','FOB Shanghai, CIF Mersin')
     + _f('teslimat', '\u00dcretim & Sevkiyat S\u00fcresi (G\u00fcn)', '14', 'number')
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESL\u0130MAT MASRAFI</div>'
