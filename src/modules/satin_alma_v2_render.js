@@ -513,7 +513,7 @@ window._saV2Kopyala = function(id) {
 window._saV2TekSil = function(id) {
   /* SA-SIL-FIX-001: confirmModal callback return sorunu düzeltildi */
   if (window.confirmModal) {
-    window.confirmModal('Teklif Sil', 'Bu teklif silinecek. Emin misin?', function(){ window._saV2TekSilYap(id); });
+    window.confirmModal('Bu teklif silinecek. Emin misin?', { title: 'Teklif Sil', danger: true, confirmText: 'Sil', onConfirm: function(){ window._saV2TekSilYap(id); } });
   } else {
     if (confirm('Bu teklif silinecek. Emin misin?')) window._saV2TekSilYap(id);
   }
@@ -536,7 +536,7 @@ window._saV2TopluSil = function() {
   if(!secili.length){window.toast?.('Hiç teklif seçilmedi','warn');return;}
   var msg = secili.length+' teklif silinecek. Emin misin?';
   if(!window.confirmModal) { if(!confirm(msg)) return; window._saV2TopluSilYap(secili); }
-  else { window.confirmModal('Toplu Sil', msg, function(){ window._saV2TopluSilYap(secili); }); }
+  else { window.confirmModal(msg, { title: 'Toplu Sil', danger: true, confirmText: 'Sil', onConfirm: function(){ window._saV2TopluSilYap(secili); } }); }
 };
 
 window._saV2TopluSilYap = function(secili) {
@@ -710,7 +710,7 @@ window._saV2BulkSatisEkle = function() {
     }
   };
   if(!window.confirmModal) { if(!confirm(msg)) return; doIt(); }
-  else { window.confirmModal('Satış Teklifine Ekle', msg, doIt); }
+  else { window.confirmModal(msg, { title: 'Satış Teklifine Ekle', confirmText: 'Ekle', onConfirm: doIt }); }
 };
 
 /* ── SAV2-KARSILASTIR-001: Tedarikçi Karşılaştırma ─────────── */
