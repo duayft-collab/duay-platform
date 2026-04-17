@@ -177,10 +177,14 @@ window._hmDetayAc = function(id) {
   });
   h += '</div>';
 
-  if (m.icDosya && m.karsiDosya && m.durum === 'taslak') {
+  if (m.icDosya && m.karsiDosya && m.icKolonMap && m.karsiKolonMap && m.durum === 'taslak') {
     h += '<div style="text-align:center;padding:20px 0">';
     h += '<button onclick="event.stopPropagation();window._hmKarsilastir(\''+id+'\')" style="padding:12px 36px;border:none;border-radius:8px;background:#185FA5;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">⚡ Karşılaştırmayı Başlat</button>';
     h += '</div>';
+  }
+
+  if (m.icDosya && m.karsiDosya && (!m.icKolonMap || !m.karsiKolonMap) && m.durum === 'taslak') {
+    h += '<div style="text-align:center;padding:12px;font-size:11px;color:#854F0B;background:#FAEEDA;border-radius:8px;margin-bottom:16px">Her iki dosyanın kolon eşleştirmesi tamamlanmalı</div>';
   }
 
   if (m.rapor) {
@@ -189,6 +193,59 @@ window._hmDetayAc = function(id) {
 
   h += '</div>';
   el.innerHTML = h;
+};
+
+window._hmKolonMapAc = function(id, tip) {
+  var liste = window._hmLoad();
+  var m = liste.find(function(x){return x.id===id;});
+  if (!m) return;
+  var dosya = tip==='ic' ? m.icDosya : m.karsiDosya;
+  if (!dosya || typeof XLSX==='undefined') { window._hmDetayAc(id); return; }
+  try {
+    var wb = XLSX.read(new Uint8Array(dosya), {type:'array'});
+    var sheet = wb.Sheets[wb.SheetNames[0]];
+    var data = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+    var baslik = data[0] || [];
+    var harfler = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, baslik.length);
+    var secenek = harfler.map(function(h,i){ return '<option value="'+i+'">'+h+' — '+(baslik[i]||'(boş)')+'</option>'; }).join('');
+    var mo = document.createElement('div');
+    mo.id = 'hm-map-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center';
+    var baslikStr = tip==='ic' ? 'Bizim Firma' : 'Karşı Firma';
+    mo.innerHTML = '<div style="background:var(--color-background-primary);border-radius:12px;border:0.5px solid var(--color-border-tertiary);width:min(500px,95vw);overflow:hidden">'
+      +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:14px;font-weight:500;color:var(--color-text-primary)">Kolon Eşleştirme — '+baslikStr+'</div>'
+      +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+      +'<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px">Excel dosyasında hangi sütun hangi bilgiyi içeriyor?</div>'
+      +['tarih','aciklama','borc','alacak','refNo'].map(function(alan){
+        var lbl = {tarih:'Tarih *',aciklama:'Açıklama',borc:'Borç Tutarı *',alacak:'Alacak Tutarı',refNo:'Referans No'}[alan];
+        var def = {tarih:0,aciklama:1,borc:2,alacak:3,refNo:4}[alan];
+        return '<div style="display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center">'
+          +'<div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">'+lbl+'</div>'
+          +'<select id="hm-map-'+alan+'" style="font-size:11px;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:5px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit">'
+          +'<option value="-1">— Yok —</option>'+secenek+'</select></div>';
+      }).join('')
+      +'</div>'
+      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:flex-end;gap:8px">'
+      +'<button onclick="event.stopPropagation();document.getElementById(\'hm-map-modal\').remove();window._hmDetayAc(\''+id+'\')" style="font-size:12px;padding:7px 14px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:transparent;cursor:pointer;color:var(--color-text-secondary)">İptal</button>'
+      +'<button onclick="event.stopPropagation();window._hmKolonMapKaydet(\''+id+'\',\''+tip+'\')" style="font-size:12px;padding:7px 16px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-weight:500">Kaydet</button>'
+      +'</div></div>';
+    document.body.appendChild(mo);
+  } catch(e) { console.warn('[HM]',e); window._hmDetayAc(id); }
+};
+
+window._hmKolonMapKaydet = function(id, tip) {
+  var _g = function(alan) { return parseInt(document.getElementById('hm-map-'+alan)?.value ?? -1); };
+  var map = { tarih:_g('tarih'), aciklama:_g('aciklama'), borc:_g('borc'), alacak:_g('alacak'), refNo:_g('refNo') };
+  if (map.tarih===-1 || map.borc===-1) { window.toast?.('Tarih ve Borç kolonları zorunlu','warn'); return; }
+  var liste = window._hmLoad();
+  var idx = liste.findIndex(function(x){return x.id===id;});
+  if (idx===-1) return;
+  if (tip==='ic') liste[idx].icKolonMap = map;
+  else liste[idx].karsiKolonMap = map;
+  window._hmStore(liste);
+  document.getElementById('hm-map-modal')?.remove();
+  window.toast?.('Kolon eşleştirmesi kaydedildi','ok');
+  window._hmDetayAc(id);
 };
 
 window._hmDosyaSil = function(id, tip) {
@@ -220,7 +277,7 @@ window._hmDosyaYukle = function(id, tip, input) {
     else { liste[idx].karsiDosya=data; liste[idx].karsiDosyaAd=file.name; }
     window._hmStore(liste);
     window.toast?.(file.name+' yüklendi','ok');
-    window._hmDetayAc(id);
+    window._hmKolonMapAc(id, tip);
   };
   reader.onerror = function() { window.toast?.('Dosya okunamadı','err'); };
   reader.readAsArrayBuffer(file);
