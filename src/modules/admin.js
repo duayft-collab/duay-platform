@@ -21,7 +21,7 @@ function _getCU() {
     if (typeof window.Auth?.getCU === 'function') return window.Auth.getCU();
     if (typeof CU === 'function') return CU();
     if (CU && typeof CU === 'object') return CU;
-  } catch(e) {}
+  } catch(e) { console.warn('[Admin]', e); }
   return null;
 }
 
@@ -155,11 +155,8 @@ window._adminReddet = function(id) {
     window.toast?.('Reddedildi','warn');
     renderAdmin();
   };
-  if (window.confirmModal) {
-    window.confirmModal('Bu alış teklifini reddetmek istediğinizden emin misiniz?', { title:'Reddet', danger:true, confirmText:'Evet, Reddet', onConfirm: doIt });
-  } else {
-    if (confirm('Bu alış teklifini reddetmek istiyor musunuz?')) doIt();
-  }
+  /* ADMIN-FIX-001: native confirm kaldırıldı — her zaman confirmModal */
+  window.confirmModal('Bu alış teklifini reddetmek istediğinizden emin misiniz?', { title:'Reddet', danger:true, confirmText:'Evet, Reddet', onConfirm: doIt });
 };
 
 function renderAdmin() {
@@ -725,7 +722,7 @@ function deleteUser(id) {
           // Ama sign-in methods'u kontrol edip log bırakabiliriz
           console.info('[Admin] Kullanıcı pasifleştirildi:', u.email, '— Firebase Auth silme Admin SDK gerektirir');
         }
-      } catch(e) {}
+      } catch(e) { console.warn('[Admin]', e); }
 
       renderAdmin();
       logActivity('user', `Kullanıcı silindi: "${u.name}" (${u.email})`);
@@ -3412,7 +3409,7 @@ window._openUserManageModal = function(uid) {
 
   // Departman listesi
   var depts = [];
-  try { depts = JSON.parse(localStorage.getItem('ak_departments') || '[]'); } catch(e) {}
+  try { depts = JSON.parse(localStorage.getItem('ak_departments') || '[]'); } catch(e) { console.warn('[Admin]', e); }
   if (!depts.length) depts = ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe'];
   var deptOpts = '<option value="">—</option>' + depts.map(function(d) { return '<option value="' + esc(d) + '"' + (u.dept === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('');
   var roleOpts = ['admin','manager','lead','staff'].map(function(r) { var m = ROLE_META[r]||{}; return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + (m.icon||'') + ' ' + (m.label||r) + '</option>'; }).join('');
@@ -3758,7 +3755,7 @@ window._ihrSartliKuralYonet = function() {
   if (!window.isAdmin?.()) return;
   var _SK = 'ak_ihr_sartli_v1';
   var _load = function() { try { return JSON.parse(localStorage.getItem(_SK) || '[]'); } catch(e) { return []; } };
-  var _store = function(d) { try { localStorage.setItem(_SK, JSON.stringify(d)); } catch(e) {} };
+  var _store = function(d) { try { localStorage.setItem(_SK, JSON.stringify(d)); } catch(e) { console.warn('[Admin]', e); } };
   var kurallar = _load();
   var old = document.getElementById('mo-sartli-kural'); if (old) old.remove();
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sartli-kural';
