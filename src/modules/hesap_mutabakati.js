@@ -158,6 +158,13 @@ window._hmDetayAc = function(id) {
   h += '<div style="font-size:16px;font-weight:500;color:'+_t+'">'+_hmEsc(m.cari||'—')+'</div>';
   h += '<span style="font-size:9px;padding:2px 8px;border-radius:20px;background:'+dBg+';color:'+dRenk+';font-weight:500">'+dLbl+'</span>';
   h += '<span style="font-size:10px;color:'+_t3+'">'+(m.para||'TRY')+' · '+_hmEsc(m.tarih||'')+'</span>';
+  if (m.yetkili || m.cep || m.email) {
+    h += '<div style="font-size:11px;color:'+_t3+';margin-top:4px;display:flex;align-items:center;gap:12px">';
+    if (m.yetkili) h += '<span>👤 '+_hmEsc(m.yetkili)+'</span>';
+    if (m.cep) h += '<span>📞 '+_hmEsc(m.cep)+'</span>';
+    if (m.email) h += '<span>✉ '+_hmEsc(m.email)+'</span>';
+    h += '</div>';
+  }
   h += '</div>';
 
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">';
