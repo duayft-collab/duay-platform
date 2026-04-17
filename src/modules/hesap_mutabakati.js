@@ -439,7 +439,38 @@ window._hmRaporHTML = function(m) {
   var _s2 = 'var(--color-background-secondary)';
   var farkRenk = r.fark===0 ? '#0F6E56' : '#A32D2D';
 
-  var h = '<div style="background:'+_sf+';border:0.5px solid '+_b+';border-radius:10px;overflow:hidden;margin-bottom:16px">';
+  /* HM-RAPOR-OZET-001: 3 özet kartı (Bizim Kayıtlar / Karşı Kayıtlar / Net Fark) */
+  var icBorc = r.icToplam || 0;
+  var icAlacak = r.icAlacak || 0;
+  var karsiBorc = r.karsiToplam || 0;
+  var karsiAlacak = r.karsiAlacak || 0;
+  var icIslem = r.icSatirSayisi || 0;
+  var karsiIslem = r.karsiSatirSayisi || 0;
+  var netFark = Math.abs(r.fark || 0);
+  var fmt = function(n){ return n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+  var ozet = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">'
+    + '<div style="background:'+_s2+';border-radius:8px;padding:14px">'
+    + '<div style="font-size:11px;color:'+_t2+';margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Bizim Kayıtlar</div>'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:'+_t2+'">Alacak</span><span style="font-size:13px;font-weight:500;color:#0F6E56">'+fmt(icAlacak)+'</span></div>'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:'+_t2+'">Borç</span><span style="font-size:13px;font-weight:500;color:#A32D2D">'+fmt(icBorc)+'</span></div>'
+    + '<div style="border-top:.5px solid '+_b+';margin-top:6px;padding-top:6px;display:flex;justify-content:space-between"><span style="font-size:12px;color:'+_t2+'">Bakiye</span><span style="font-size:13px;font-weight:500;color:'+_t+'">'+fmt(icAlacak-icBorc)+'</span></div>'
+    + '<div style="border-top:.5px solid '+_b+';margin-top:6px;padding-top:6px;font-size:11px;color:'+_t3+'">İşlem adedi: '+icIslem+'</div>'
+    + '</div>'
+    + '<div style="background:'+_s2+';border-radius:8px;padding:14px">'
+    + '<div style="font-size:11px;color:'+_t2+';margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Karşı Kayıtlar</div>'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:'+_t2+'">Alacak</span><span style="font-size:13px;font-weight:500;color:#0F6E56">'+fmt(karsiAlacak)+'</span></div>'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:'+_t2+'">Borç</span><span style="font-size:13px;font-weight:500;color:#A32D2D">'+fmt(karsiBorc)+'</span></div>'
+    + '<div style="border-top:.5px solid '+_b+';margin-top:6px;padding-top:6px;display:flex;justify-content:space-between"><span style="font-size:12px;color:'+_t2+'">Bakiye</span><span style="font-size:13px;font-weight:500;color:'+_t+'">'+fmt(karsiAlacak-karsiBorc)+'</span></div>'
+    + '<div style="border-top:.5px solid '+_b+';margin-top:6px;padding-top:6px;font-size:11px;color:'+_t3+'">İşlem adedi: '+karsiIslem+'</div>'
+    + '</div>'
+    + '<div style="background:#FBECEC;border:.5px solid #A32D2D;border-radius:8px;padding:14px">'
+    + '<div style="font-size:11px;color:#A32D2D;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Net Fark</div>'
+    + '<div style="font-size:22px;font-weight:500;color:#A32D2D">'+fmt(netFark)+'</div>'
+    + '<div style="font-size:11px;color:#A32D2D;margin-top:2px">'+_hmEsc(m.para||'USD')+'</div>'
+    + '</div>'
+    + '</div>';
+
+  var h = ozet + '<div style="background:'+_sf+';border:0.5px solid '+_b+';border-radius:10px;overflow:hidden;margin-bottom:16px">';
   h += '<div style="padding:12px 16px;background:'+_s2+';border-bottom:0.5px solid '+_b+';font-size:10px;font-weight:500;color:'+_t3+';letter-spacing:.06em">KARŞILAŞTIRMA RAPORU</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:0.5px solid '+_b+'">';
   [
