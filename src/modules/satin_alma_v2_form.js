@@ -65,14 +65,13 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">JOB ID</div>'
     + '<input id="sav2f-jobId" list="sav2f-job-list" placeholder="0041" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2JobIdAra?.(this)" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
     + '<datalist id="sav2f-job-list"></datalist></div>'
-    + _f('piNo', 'SATICI PI NO', 'PI-2026-001')
+    + _f('piNo', 'Proforma Fatura No', 'PI-2026-001')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
-    + _f('piTarih', 'PI TAR\u0130H\u0130', '', 'date')
-    // SATINALMA-GECERLILIK-001: geçerlilik tarihi (KPI Süresi Yaklaşan için zorunlu)
-    + _f('gecerlilikTarihi', 'GE\u00c7ERL\u0130L\u0130K TAR\u0130H\u0130', '', 'date')
-    + _f('teslimYeri','TESL\u0130M YER\u0130','FOB Shanghai, CIF Mersin')
-    + _f('teslimat', 'TESL\u0130M S\u00dcRES\u0130 (G\u00fcn)', '14', 'number')
+    + _f('piTarih', 'Proforma Tarihi', '', 'date')
+    + _f('gecerlilikTarihi', 'Teklif Geçerlilik Tarihi', '', 'date')
+    + _f('teslimYeri','Teslim Noktası / Limanı','FOB Shanghai, CIF Mersin')
+    + _f('teslimat', 'Üretim & Sevkiyat Süresi (Gün)', '14', 'number')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">TESL\u0130MAT MASRAFI</div>'
@@ -85,7 +84,20 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<option value="DAP">DAP \u2014 Var\u0131\u015f Yerinde Teslim</option>'
     + '</select></div>'
     + '</div>'
-    + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b);margin-top:6px;display:flex;align-items:center;justify-content:space-between">ÜRÜNLER<button onclick="event.stopPropagation();window._saV2UrunSatirEkle()" style="font-size:9px;padding:3px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Ürün Ekle</button></div>'
+    + '<div style="font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;padding-bottom:4px;border-bottom:0.5px solid var(--b);margin-top:6px;display:flex;align-items:center;justify-content:space-between">Ürün Kalemleri<button onclick="event.stopPropagation();window._saV2UrunSatirEkle()" style="font-size:9px;padding:3px 10px;border:none;border-radius:4px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Ürün Ekle</button></div>'
+    + '<div style="display:grid;grid-template-columns:44px 80px 1fr 90px 56px 76px 76px 52px 76px 52px 28px 24px;gap:5px;padding:4px 0 6px;border-bottom:0.5px solid var(--b);margin-bottom:4px">'
+    + '<div></div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">ÜRÜN KODU</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">ÜRÜN ADI (İHRACAT)</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">MARKA/ÜRETİCİ</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">MİKTAR</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">ÖLÇÜ BİRİMİ</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">BİRİM FİYATI</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">DÖVİZ</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">MENŞE ÜLKE</div>'
+    + '<div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.04em">NET AĞ.</div>'
+    + '<div></div><div></div>'
+    + '</div>'
     + '<div id="sav2f-urunler-container"></div>'
     + '<div style="margin-bottom:12px">'
     + '<div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:6px">İÇ NOTLAR <span style="font-size:8px;color:var(--t3)">(Müşteriye gitmez)</span></div>'
@@ -100,7 +112,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div id="sav2f-not-div" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:60px;max-height:150px;overflow-y:auto;padding:8px 10px;font-size:12px;color:var(--t);font-family:inherit;outline:none;line-height:1.5"></div>'
     + '<input type="hidden" id="sav2f-not">'
     + '</div>'
-    + '<div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:6px;margin-top:10px">TESLİMAT KOŞULLARI <span style="font-size:8px;color:var(--t3)">(PI\'ye gider)</span></div>'
+    + '<div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:6px;margin-top:10px">Sözleşme Koşulları <span style="font-size:8px;color:var(--t3)">(Proforma\'ya eklenir)</span></div>'
     + '<div style="border:0.5px solid var(--b);border-radius:5px;overflow:hidden">'
     + '<div style="display:flex;gap:2px;padding:4px 6px;border-bottom:0.5px solid var(--b);background:var(--s2)">'
     + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'bold\')" style="font-size:11px;font-weight:700;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">B</button>'
@@ -689,41 +701,41 @@ window._saV2UrunSatirEkle = function() {
   var satir = document.createElement('div');
   satir.className = 'sav2f-urun-satir';
   satir.setAttribute('data-urun-satir', String(idx));
-  satir.style.cssText = 'border:0.5px solid var(--b);border-radius:8px;padding:10px 12px;background:var(--s2);display:flex;flex-direction:column;gap:8px;margin-bottom:8px';
+  satir.style.cssText = 'display:grid;grid-template-columns:44px 80px 1fr 90px 56px 76px 76px 52px 76px 52px 28px 24px;gap:5px;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--b)';
   satir.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between">'
     + '<span style="font-size:9px;font-weight:500;color:var(--t2)">Ürün ' + (idx + 1) + '</span>'
     + '<button onclick="event.stopPropagation();this.closest(\'.sav2f-urun-satir\').remove()" style="font-size:12px;border:none;background:none;cursor:pointer;color:#A32D2D;line-height:1">\u00d7</button>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">DUAY KODU</div>'
+    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Ürün Kodu (Duay)</div>'
     + '<div style="display:flex;gap:4px">'
     + '<input id="' + pre + 'duayKodu" placeholder="11\u00b7XXXX\u00b7XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunKatalogDoldur?.(\'' + pre + '\',this.value)" style="flex:1;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit">'
     + '<button onclick="event.stopPropagation();window._saV2KatalogAra?.()" style="font-size:9px;padding:4px 8px;border:0.5px solid var(--b);border-radius:5px;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">Katalog</button>'
     + '</div>'
     + '<div id="' + pre + 'katalog-bilgi" style="font-size:8px;color:var(--t3);margin-top:2px"></div>'
     + '</div>'
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">\u00dcR\u00dcN ADI (\u0130ngilizce)</div>'
+    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Ürün Adı (İhracat / İngilizce)</div>'
     + '<input id="' + pre + 'urunAdi" list="sav2-urun-list" placeholder="Standart ad" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunAdAra?.(\'' + pre + '\',this.value)" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
-    + _uf('turkceAdi', 'T\u00dcRK\u00c7E ADI', 'T\u00fcrk\u00e7e')
-    + _uf('marka', 'MARKA', 'Marka')
-    + _uf('saticiKodu', 'SATICI KODU', 'MTL-0412')
+    + _uf('turkceAdi', 'Ürün Adı (Türkçe)', 'Türkçe')
+    + _uf('marka', 'Marka / Üretici', 'Marka')
+    + _uf('saticiKodu', 'Tedarikçi Ürün Kodu', 'MTL-0412')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">'
-    + _uf('miktar', 'M\u0130KTAR', '200')
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">B\u0130R\u0130M</div>'
+    + _uf('miktar', 'Miktar', '200')
+    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Ölçü Birimi</div>'
     + '<select id="' + pre + 'birim" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="Adet">Adet</option><option value="Kg">Kg</option><option value="Ton">Ton</option><option value="Mt">Mt (Metre)</option><option value="m²">M² (Metrekare)</option><option value="m³">M³ (Metreküp)</option><option value="Lt">Lt (Litre)</option><option value="Koli">Koli</option><option value="Çift">Çift</option><option value="Paket">Paket</option><option value="Set">Set</option><option value="Rulo">Rulo</option><option value="Takım">Takım</option></select></div>'
-    + _uf('alisF', 'B\u0130R\u0130M F\u0130YAT', '2.40')
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">PARA</div>'
+    + _uf('alisF', 'Birim Fiyatı', '2.40')
+    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Döviz</div>'
     + '<select id="' + pre + 'para" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option><option value="GBP">GBP</option></select></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">'
-    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">MEN\u015eE\u0130</div>'
+    + '<div><div style="font-size:7px;font-weight:500;color:var(--t3);letter-spacing:.05em;margin-bottom:3px">Menşe Ülke</div>'
     + '<select id="' + pre + 'mensei" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Se\u00e7...</option>' + (window.MENSEI || ['T\u00fcrkiye','\u00c7in','Almanya','\u0130talya','Japonya','Hindistan','ABD','Di\u011fer']).map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('') + '</select></div>'
-    + _uf('gtip', 'GT\u0130P', '8482.10.10')
-    + _uf('netAg', 'NET A\u011e. (kg)', '', 'number')
-    + _uf('brutAg', 'BR\u00dcT A\u011e. (kg)', '', 'number')
+    + _uf('gtip', 'GTİP / HS Kodu', '8482.10.10')
+    + _uf('netAg', 'Net Ağırlık (kg)', '', 'number')
+    + _uf('brutAg', 'Brüt Ağırlık (kg)', '', 'number')
     + '</div>';
   con.appendChild(satir);
 };
