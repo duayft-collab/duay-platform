@@ -70,7 +70,7 @@ window.renderSatinAlmaV2 = function() {
   var _b='var(--color-border-tertiary)';
   var h='<div style="display:flex;flex-direction:column;height:100%">';
   // ALIS-LISTE-C-001: 5 KPI kart, 5. SÜRESI YAKLAŞAN (gecerlilik 0-7 gun)
-  h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 12px;position:sticky;top:0;z-index:12;background:var(--sf);border-bottom:0.5px solid var(--b);border-bottom:0.5px solid '+_b+'">';
+  h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 12px;position:sticky;top:0;z-index:12;background:var(--sf,#fff);background:#fff!important;border-bottom:0.5px solid var(--b);border-bottom:0.5px solid '+_b+'">';
   h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">BU AY TEKLİF</div><div style="font-size:18px;font-weight:500;color:var(--color-text-primary)">'+fl.length+'</div></div>';
   h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">BEKLEYEN</div><div style="font-size:18px;font-weight:500;color:#854F0B">'+fl.filter(function(t){return t.durum==='bekleyen';}).length+'</div></div>';
   h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">ONAYLI</div><div style="font-size:18px;font-weight:500;color:#0F6E56">'+fl.filter(function(t){return t.durum==='onaylandi';}).length+'</div></div>';
@@ -78,7 +78,7 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">SÜRESI YAKLAŞAN</div><div style="font-size:18px;font-weight:500;color:#DC2626">'+fl.filter(function(t){var g=t.gecerlilikTarihi||t.validUntil;if(!g)return false;var d=(new Date(g)-new Date())/86400000;return d>=0&&d<=7;}).length+'</div></div>';
   h+='</div>';
   // ALIS-LISTE-C-001: tek satır filtre, flex-wrap:nowrap + overflow-x:auto, 2 yeni select (para, tarih)
-  h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;position:sticky;top:56px;z-index:11;background:var(--sf);border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
+  h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;position:sticky;top:56px;z-index:11;background:var(--sf,#fff);background:#fff!important;border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
   h+='<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#ffffff;cursor:pointer;font-size:10px;font-weight:500;font-family:inherit;flex-shrink:0">+ Yeni Teklif</button>';
   h+='<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Ara..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;width:140px;flex-shrink:0;font-family:inherit;color:var(--color-text-primary)">';
   /* SA-FILTRE-PILL-001: dropdown silindi — pill bar aşağıda ayrı satırda */
@@ -95,7 +95,7 @@ window.renderSatinAlmaV2 = function() {
   h+='<button onclick="event.stopPropagation();window._saV2GruplaToggle?.()" id="sav2-grupla-btn" style="padding:4px 10px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:'+(window._saV2GruplaAktif?'var(--color-text-primary)':'transparent')+';cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:'+(window._saV2GruplaAktif?'#fff':'var(--color-text-secondary)')+'">Tedarikçi Grupla</button>';
   h+='</div>';
   /* SA-FILTRE-PILL-001: pipeline pill bar — tek tık aşama filtresi */
-  h+='<div style="display:flex;align-items:center;gap:5px;padding:7px 16px;position:sticky;top:108px;z-index:10;background:var(--sf);border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap;flex-shrink:0">';
+  h+='<div style="display:flex;align-items:center;gap:5px;padding:7px 16px;position:sticky;top:108px;z-index:10;background:var(--sf,#fff);background:#fff!important;border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap;flex-shrink:0">';
   var _pills=[{v:'',l:'Tümü'}].concat(Object.entries(window.SA_PIPELINE_STAGES||{}).sort(function(a,b){return a[1].sira-b[1].sira;}).map(function(e){return {v:e[0],l:e[1].label};}));
   _pills.forEach(function(p){var on=durumF===p.v;h+='<button onclick="event.stopPropagation();window._sav2FiltreDurum=\''+p.v+'\';window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" style="padding:3px 10px;border:0.5px solid '+(on?'var(--color-text-primary)':_b)+';border-radius:20px;font-size:10px;cursor:pointer;background:'+(on?'var(--color-text-primary)':'transparent')+';color:'+(on?'var(--color-background-primary)':'var(--color-text-secondary)')+';font-family:inherit;flex-shrink:0;white-space:nowrap">'+p.l+'</button>';});
   h+='</div>';
@@ -114,7 +114,7 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;flex:1;min-width:0;min-height:0;overflow:hidden">';
   h+='<div style="flex:1;min-width:0;overflow-y:auto">';
   /* ALIS-LISTE-UX-PACK-001: 7 sütun grid (KAR % eklendi: TUTAR ↔ DURUM arası) */
-  h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:148px;z-index:9;height:36px;overflow:hidden">';
+  h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:150px;z-index:9;background:var(--sf,#fff);background:#fff!important;height:36px;overflow:hidden">';
   var _th=function(label,alan){
     var aktif=sir.alan===alan;
     var yon=aktif?(sir.yon==='asc'?'↑':'↓'):'↕';
@@ -447,7 +447,7 @@ window._saV2PeekPanel = function(id) {
   var mevcut = document.getElementById('sav2-peek-panel'); if(mevcut) mevcut.remove();
   var mo = document.createElement('div');
   mo.id = 'sav2-peek-panel';
-  mo.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:380px;background:var(--sf);border-left:0.5px solid var(--b);z-index:9000;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.08)';
+  mo.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:380px;background:var(--sf,#fff);border-left:0.5px solid var(--b);z-index:9000;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.08)';
   mo.onclick = function(e){ e.stopPropagation(); };
   var urunler = t.urunler || t.urun || [];
   var toplam = t.toplamTutar || t.genelToplam || t.toplam || 0;
