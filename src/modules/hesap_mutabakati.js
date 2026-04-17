@@ -270,7 +270,8 @@ window._hmKolonMapKaydet = function(id, tip) {
 };
 
 window._hmSil = function(id) {
-  window.confirmModal?.('Mütabakatı Sil', 'Bu mütabakat silinecek. Emin misin?', function() {
+  /* HM-MODAL-FIX-001: confirmModal (message, opts) imza uyumu */
+  window.confirmModal?.('Bu mütabakat silinecek. Emin misin?', { title: 'Mütabakatı Sil', danger: true, confirmText: 'Sil', onConfirm: function() {
     var liste = window._hmLoad();
     var idx = liste.findIndex(function(x){return x.id===id;});
     if (idx===-1) return;
@@ -284,11 +285,12 @@ window._hmSil = function(id) {
     window._hmStore(liste);
     window.toast?.('Mütabakat silindi','ok');
     window.renderHesapMutabakati();
-  });
+  } });
 };
 
 window._hmDosyaSil = function(id, tip) {
-  window.confirmModal?.('Dosyayı Kaldır', 'Bu dosya kaldırılacak. Emin misin?', function() {
+  /* HM-MODAL-FIX-001: confirmModal (message, opts) imza uyumu */
+  window.confirmModal?.('Bu dosya kaldırılacak. Emin misin?', { title: 'Dosyayı Kaldır', danger: true, confirmText: 'Kaldır', onConfirm: function() {
     var liste = window._hmLoad();
     var idx = liste.findIndex(function(x){return x.id===id;});
     if (idx===-1) return;
@@ -298,7 +300,7 @@ window._hmDosyaSil = function(id, tip) {
     window._hmStore(liste);
     window.toast?.('Dosya kaldırıldı','ok');
     window._hmDetayAc(id);
-  });
+  } });
 };
 
 window._hmDosyaYukle = function(id, tip, input) {
@@ -477,6 +479,10 @@ window._hmRaporHTML = function(m) {
   if (m.durum !== 'onaylandi' && m.durum !== 'kilitli') {
     h += '<button onclick="event.stopPropagation();window._hmOnayla(\''+m.id+'\')" style="padding:7px 16px;border:none;border-radius:6px;background:#0F6E56;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">✓ Onayla</button>';
   }
+  /* HM-ONAY-FIX-001: onaylandı durumunda kilitle butonu */
+  if (m.durum === 'onaylandi') {
+    h += '<button onclick="event.stopPropagation();window._hmKilitle(\''+m.id+'\')" style="padding:7px 16px;border:none;border-radius:6px;background:#3C3489;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">🔒 Kilitle</button>';
+  }
   h += '<button onclick="event.stopPropagation();window._hmExcel(\''+m.id+'\')" style="padding:7px 16px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;font-family:inherit;color:var(--color-text-secondary)">↓ Excel</button>';
   h += '</div>';
   h += '</div>';
@@ -484,16 +490,52 @@ window._hmRaporHTML = function(m) {
 };
 
 window._hmOnayla = function(id) {
-  window.confirmModal?.('Mütabakatı Onayla', 'Bu işlem geri alınamaz. Onaylıyor musunuz?', function() {
-    var liste = window._hmLoad();
-    var idx = liste.findIndex(function(x){return x.id===id;});
-    if (idx===-1) return;
-    liste[idx].durum = 'onaylandi';
-    liste[idx].onayTarih = new Date().toISOString();
-    liste[idx].onaylayanId = window.CU?.()?.displayName || '';
-    window._hmStore(liste);
-    window.toast?.('Mütabakat onaylandı','ok');
-    window._hmDetayAc(id);
+  /* HM-ONAY-FIX-001: RBAC + uid + islemde guard */
+  var cu = window.CU?.();
+  if (!cu) { window.toast?.('Oturum açık değil','err'); return; }
+  var rol = cu.rol || cu.role || '';
+  if (rol !== 'admin' && rol !== 'manager') { window.toast?.('Sadece yönetici onaylayabilir','err'); return; }
+  var liste = window._hmLoad();
+  var idx = liste.findIndex(function(x){return x.id===id;});
+  if (idx===-1) return;
+  if (liste[idx].durum === 'islemde') { window.toast?.('Karşılaştırma devam ediyor, bekleyin','warn'); return; }
+  window.confirmModal?.('Bu işlem geri alınamaz. Onaylıyor musunuz?', {
+    title: 'Mütabakatı Onayla',
+    danger: true,
+    confirmText: 'Onayla',
+    onConfirm: function() {
+      liste[idx].durum = 'onaylandi';
+      liste[idx].onayTarih = new Date().toISOString();
+      liste[idx].onaylayanAd = cu.displayName || cu.email || '';
+      liste[idx].onaylayanUid = cu.uid || '';
+      window._hmStore(liste);
+      window.toast?.('Mütabakat onaylandı','ok');
+      window._hmDetayAc(id);
+    }
+  });
+};
+
+window._hmKilitle = function(id) {
+  /* HM-ONAY-FIX-001: kilitli state aktif */
+  var cu = window.CU?.();
+  if (!cu) { window.toast?.('Oturum açık değil','err'); return; }
+  var rol = cu.rol || cu.role || '';
+  if (rol !== 'admin') { window.toast?.('Sadece admin kilitleyebilir','err'); return; }
+  window.confirmModal?.('Bu mütabakat kilitlenecek. Hiçbir değişiklik yapılamayacak.', {
+    title: 'Mütabakatı Kilitle',
+    danger: true,
+    confirmText: 'Kilitle',
+    onConfirm: function() {
+      var liste = window._hmLoad();
+      var idx = liste.findIndex(function(x){return x.id===id;});
+      if (idx===-1) return;
+      liste[idx].durum = 'kilitli';
+      liste[idx].kilitTarih = new Date().toISOString();
+      liste[idx].kilitleyen = cu.displayName || cu.email || '';
+      window._hmStore(liste);
+      window.toast?.('Mütabakat kilitlendi','ok');
+      window._hmDetayAc(id);
+    }
   });
 };
 
