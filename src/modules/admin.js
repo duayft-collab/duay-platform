@@ -1844,6 +1844,7 @@ function _injectUsersPanel() {
         '<option value="manager">👔 Yönetici</option>',
         '<option value="lead">⭐ Takım Lideri</option>',
         '<option value="staff">👤 Personel</option>',
+        '<option value="asistan">🤝 Yönetici Asistanı</option>',
       '</select>',
       '<select class="fi" id="u-status-filter" onchange="renderUsers()" style="border-radius:8px;min-width:110px">',
         '<option value="">Tüm Durumlar</option>',
@@ -2197,6 +2198,7 @@ window._renderUserDetail = function(uid) {
     +     '<option value="manager"' + (u.role==='manager'?' selected':'') + '>👔 Yönetici</option>'
     +     '<option value="lead"' + (u.role==='lead'?' selected':'') + '>⭐ Takım Lideri</option>'
     +     '<option value="staff"' + (u.role==='staff'?' selected':'') + '>👤 Personel</option>'
+    +     '<option value="asistan"' + (u.role==='asistan'?' selected':'') + '>🤝 Yönetici Asistanı</option>'
     +   '</select>'
     + '</div>'
     + '<div style="margin-bottom:12px">'
@@ -2545,6 +2547,7 @@ function openInviteModal() {
         <div class="fg"><div class="fl">ROL</div>
           <select class="fi" id="inv-role">
             <option value="staff">👤 Personel</option>
+            <option value="asistan">🤝 Yönetici Asistanı</option>
             <option value="lead">⭐ Takım Lideri</option>
             <option value="manager">👔 Yönetici</option>
           </select></div>
@@ -2912,7 +2915,7 @@ function openBulkRoleChange() {
   mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Toplu Rol Degistir</div></div>'
     + '<div style="padding:16px 20px">'
-      + '<div class="fg"><div class="fl">HEDEF ROL</div><select class="fi" id="br-role"><option value="staff">Personel</option><option value="lead">Takim Lideri</option><option value="manager">Yonetici</option></select></div>'
+      + '<div class="fg"><div class="fl">HEDEF ROL</div><select class="fi" id="br-role"><option value="staff">Personel</option><option value="asistan">Yonetici Asistani</option><option value="lead">Takim Lideri</option><option value="manager">Yonetici</option></select></div>'
       + '<div class="fg" style="margin-top:8px"><div class="fl">KULLANICILAR</div>'
         + '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">'
           + users.map(u => '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px"><input type="checkbox" class="br-cb" value="' + u.id + '" style="accent-color:var(--ac)"><span style="flex:1">' + window._esc(u.name) + '</span><span style="font-size:10px;color:var(--t3)">' + (ROLE_META[u.role]?.label||u.role) + '</span></label>').join('')

@@ -37,7 +37,7 @@ const $qa = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 /** @returns {boolean} */
 window.isAdmin = () => window.Auth?.getCU?.()?.role === 'admin';
 /** @returns {boolean} */
-const isManager = () => ['admin','manager'].includes(window.Auth?.getCU?.()?.role);
+const isManager = () => ['admin','manager','asistan'].includes(window.Auth?.getCU?.()?.role);
 
 // ── Zaman Yardımcıları ────────────────────────────────────────────
 // CORE-NOWTS-ISO-001: ISO 8601 UTC format (Safari parse uyumlu)
