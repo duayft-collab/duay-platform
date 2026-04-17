@@ -385,7 +385,7 @@ window._hmParseVeKarsilastir = function(id) {
 
     icRows.forEach(function(ir) {
       var bulunan = karsiKopya.findIndex(function(kr){
-        return !kr.eslesti && Math.abs(kr.tutar - ir.tutar) < 0.01;
+        return !kr.eslesti && Math.abs((kr.borc||kr.tutar||0) - (ir.borc||ir.tutar||0)) < 0.01 && Math.abs((kr.alacak||0) - (ir.alacak||0)) < 0.01;
       });
       if (bulunan !== -1) { karsiKopya[bulunan].eslesti = true; ir.eslesti = true; }
       else { eslesmeyenIc.push(ir); }
@@ -414,9 +414,11 @@ window._hmParseVeKarsilastir = function(id) {
 };
 
 window._hmRaporHTML = function(m) {
+  /* HM-RAPOR-BA-001: borç/alacak ayrı kolonlar */
   var r = m.rapor;
   var _b = 'var(--color-border-tertiary)';
   var _t = 'var(--color-text-primary)';
+  var _t2 = 'var(--color-text-secondary)';
   var _t3 = 'var(--color-text-tertiary)';
   var _sf = 'var(--color-background-primary)';
   var _s2 = 'var(--color-background-secondary)';
@@ -424,14 +426,16 @@ window._hmRaporHTML = function(m) {
 
   var h = '<div style="background:'+_sf+';border:0.5px solid '+_b+';border-radius:10px;overflow:hidden;margin-bottom:16px">';
   h += '<div style="padding:12px 16px;background:'+_s2+';border-bottom:0.5px solid '+_b+';font-size:10px;font-weight:500;color:'+_t3+';letter-spacing:.06em">KARŞILAŞTIRMA RAPORU</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid '+_b+'">';
+  h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:0.5px solid '+_b+'">';
   [
-    ['İç Toplam', r.icToplam.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, _t],
-    ['Karşı Toplam', r.karsiToplam.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, _t],
-    ['FARK', (r.fark===0?'✓ Eşit':r.fark.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para), farkRenk],
+    ['İç Borç', r.icToplam.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, _t],
+    ['İç Alacak', (r.icAlacak||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, _t],
+    ['Karşı Borç', r.karsiToplam.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, _t],
+    ['Karşı Alacak', (r.karsiAlacak||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para, _t],
+    ['NET FARK', (r.fark===0?'✓ Eşit':r.fark.toLocaleString('tr-TR',{minimumFractionDigits:2})+' '+m.para), farkRenk],
     ['Durum', r.fark===0?'Mütabık':'Mütabık Değil', farkRenk]
   ].forEach(function(item,i) {
-    h += '<div style="padding:16px;'+(i<3?'border-right:0.5px solid '+_b+';':'')+'">';
+    h += '<div style="padding:16px;'+(i<5?'border-right:0.5px solid '+_b+';':'')+'">';
     h += '<div style="font-size:9px;color:'+_t3+';margin-bottom:4px">'+item[0]+'</div>';
     h += '<div style="font-size:14px;font-weight:500;color:'+item[2]+'">'+item[1]+'</div>';
     h += '</div>';
@@ -443,10 +447,12 @@ window._hmRaporHTML = function(m) {
     if (r.eslesmeyenIc.length) {
       h += '<div style="font-size:10px;font-weight:500;color:#A32D2D;margin-bottom:8px">Eşleşmeyen — Bizim Kayıtlar ('+r.eslesmeyenIc.length+')</div>';
       r.eslesmeyenIc.slice(0,5).forEach(function(row) {
-        h += '<div style="display:grid;grid-template-columns:100px 1fr 120px;gap:8px;padding:5px 0;border-bottom:0.5px solid '+_b+';font-size:11px">';
+        h += '<div style="display:grid;grid-template-columns:100px 1fr 80px 80px 90px;gap:6px;padding:5px 0;border-bottom:0.5px solid '+_b+';font-size:11px">';
         h += '<div style="color:'+_t3+'">'+_hmEsc(row.tarih)+'</div>';
         h += '<div style="color:'+_t+'">'+_hmEsc(row.aciklama)+'</div>';
-        h += '<div style="color:#A32D2D;font-weight:500;text-align:right">'+row.tutar.toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
+        h += '<div style="color:'+_t2+';text-align:right">'+(row.borc||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
+        h += '<div style="color:'+_t2+';text-align:right">'+(row.alacak||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
+        h += '<div style="color:#A32D2D;font-weight:500;text-align:right">'+(row.tutar||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
         h += '</div>';
       });
       if (r.eslesmeyenIc.length > 5) h += '<div style="font-size:10px;color:'+_t3+';padding-top:4px">+ '+(r.eslesmeyenIc.length-5)+' kayıt daha</div>';
@@ -454,10 +460,12 @@ window._hmRaporHTML = function(m) {
     if (r.eslesmeyenKarsi.length) {
       h += '<div style="font-size:10px;font-weight:500;color:#A32D2D;margin-bottom:8px;margin-top:12px">Eşleşmeyen — Karşı Kayıtlar ('+r.eslesmeyenKarsi.length+')</div>';
       r.eslesmeyenKarsi.slice(0,5).forEach(function(row) {
-        h += '<div style="display:grid;grid-template-columns:100px 1fr 120px;gap:8px;padding:5px 0;border-bottom:0.5px solid '+_b+';font-size:11px">';
+        h += '<div style="display:grid;grid-template-columns:100px 1fr 80px 80px 90px;gap:6px;padding:5px 0;border-bottom:0.5px solid '+_b+';font-size:11px">';
         h += '<div style="color:'+_t3+'">'+_hmEsc(row.tarih)+'</div>';
         h += '<div style="color:'+_t+'">'+_hmEsc(row.aciklama)+'</div>';
-        h += '<div style="color:#A32D2D;font-weight:500;text-align:right">'+row.tutar.toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
+        h += '<div style="color:'+_t2+';text-align:right">'+(row.borc||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
+        h += '<div style="color:'+_t2+';text-align:right">'+(row.alacak||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
+        h += '<div style="color:#A32D2D;font-weight:500;text-align:right">'+(row.tutar||0).toLocaleString('tr-TR',{minimumFractionDigits:2})+'</div>';
         h += '</div>';
       });
       if (r.eslesmeyenKarsi.length > 5) h += '<div style="font-size:10px;color:'+_t3+';padding-top:4px">+ '+(r.eslesmeyenKarsi.length-5)+' kayıt daha</div>';
