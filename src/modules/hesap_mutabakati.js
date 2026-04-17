@@ -185,6 +185,10 @@ window._hmDetayAc = function(id) {
       h += '<span style="font-size:20px">📊</span>';
       h += '<div><div style="font-size:11px;font-weight:500;color:#0F6E56">'+dosyaAd+'</div>';
       h += '<div style="font-size:9px;color:'+_t3+'">Yüklendi ✓</div></div></div>';
+      /* HM-SABLON-001: şablon bilgisi (sadece ic) */
+      if (tip === 'ic' && m.icSablonTarih) {
+        h += '<div style="font-size:11px;color:#0F6E56;margin-bottom:6px">Şablon: '+_hmEsc(m.icSablonTarih)+' <button onclick="event.stopPropagation();window._hmSablonSifirla(\''+m.id+'\')" style="font-size:11px;color:'+_t3+';background:none;border:none;cursor:pointer;padding:0;margin-left:6px;text-decoration:underline">Yeni Şablon</button></div>';
+      }
       h += '<button onclick="event.stopPropagation();window._hmDosyaSil(\''+id+'\',\''+tip+'\')" style="font-size:10px;padding:4px 10px;border:0.5px solid #A32D2D;border-radius:5px;background:transparent;cursor:pointer;color:#A32D2D;font-family:inherit">Değiştir</button>';
     } else {
       h += '<label style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;border:1.5px dashed '+_b+';border-radius:8px;cursor:pointer;gap:8px">';
@@ -263,9 +267,33 @@ window._hmKolonMapKaydet = function(id, tip) {
   if (tip==='ic') liste[idx].icKolonMap = map;
   else liste[idx].karsiKolonMap = map;
   window._hmStoreMut(liste);
+  /* HM-SABLON-001: icKolonMap şablon olarak kaydet */
+  if (tip === 'ic') {
+    try {
+      localStorage.setItem('hm_sablon_ic_' + liste[idx].cari, JSON.stringify({
+        kolonMap: map,
+        tarih: new Date().toLocaleDateString('tr-TR'),
+        cari: liste[idx].cari
+      }));
+      liste[idx].icSablonTarih = new Date().toLocaleDateString('tr-TR');
+      window._hmStoreMut(liste);
+    } catch(e) {}
+  }
   document.getElementById('hm-map-modal')?.remove();
   window.toast?.('Kolon eşleştirmesi kaydedildi','ok');
   window._hmDetayAc(id);
+};
+
+window._hmSablonSifirla = function(id) {
+  /* HM-SABLON-001: şablon sıfırla + kolon mapping modalını tekrar aç */
+  var liste = window._hmLoadMut();
+  var idx = liste.findIndex(function(x){ return x.id === id; });
+  if (idx === -1) return;
+  delete liste[idx].icKolonMap;
+  delete liste[idx].icSablonTarih;
+  window._hmStoreMut(liste);
+  window.toast?.('Şablon sıfırlandı — yeni eşleştirme yapın','warn');
+  window._hmKolonMapAc(id, 'ic');
 };
 
 window._hmSil = function(id) {
@@ -334,6 +362,22 @@ window._hmDosyaYukle = function(id, tip, input) {
     }
     window._hmStoreMut(liste);
     window.toast?.(file.name+' yüklendi','ok');
+    /* HM-SABLON-001: ic şablon varsa otomatik uygula */
+    if (tip === 'ic') {
+      var sablonKey = 'hm_sablon_ic_' + liste[idx].cari;
+      var sablonRaw = localStorage.getItem(sablonKey);
+      if (sablonRaw) {
+        try {
+          var sablon = JSON.parse(sablonRaw);
+          liste[idx].icKolonMap = sablon.kolonMap;
+          liste[idx].icSablonTarih = sablon.tarih;
+          window._hmStoreMut(liste);
+          window.toast?.('Şablon otomatik yüklendi (' + sablon.tarih + ')', 'ok');
+          window._hmDetayAc(id);
+          return;
+        } catch(e3) {}
+      }
+    }
     window._hmKolonMapAc(id, tip);
   };
   reader.onerror = function() { window.toast?.('Dosya okunamadı','err'); };
