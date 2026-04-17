@@ -571,6 +571,8 @@ window._hmRaporHTML = function(m) {
   if (m.durum === 'onaylandi') {
     h += '<button onclick="event.stopPropagation();window._hmKilitle(\''+m.id+'\')" style="padding:7px 16px;border:none;border-radius:6px;background:#3C3489;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">🔒 Kilitle</button>';
   }
+  /* HM-RAPOR-PDF-001: PDF indir butonu */
+  h += '<button onclick="event.stopPropagation();window._hmPdfIndir(\''+m.id+'\')" style="padding:7px 16px;border:none;border-radius:6px;background:#dc2626;color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;margin-right:4px">↓ PDF</button>';
   h += '<button onclick="event.stopPropagation();window._hmExcel(\''+m.id+'\')" style="padding:7px 16px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;font-family:inherit;color:var(--color-text-secondary)">↓ Excel</button>';
   h += '</div>';
   h += '</div>';
@@ -629,6 +631,43 @@ window._hmKilitle = function(id) {
 
 window._hmExcel = function(id) {
   window.toast?.('Excel indirme — yakında','info');
+};
+
+/* HM-RAPOR-PDF-001: karşılaştırma raporu PDF indirme */
+window._hmPdfIndir = function(id) {
+  var liste = window._hmLoadMut();
+  var m = liste.find(function(x){ return x.id === id; });
+  if (!m || !m.rapor) { window.toast?.('Önce karşılaştırma çalıştırın','err'); return; }
+  var r = m.rapor;
+  var fmt = function(n){ return (parseFloat(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+  var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var mutabikMi = r.fark === 0;
+  var eslesmeyen = [].concat(
+    (r.eslesmeyenIc||[]).map(function(e){ return Object.assign({}, e, {kaynak:'Bizim'}); }),
+    (r.eslesmeyenKarsi||[]).map(function(e){ return Object.assign({}, e, {kaynak:'Karşı'}); })
+  );
+  var eslesmeyenHtml = eslesmeyen.map(function(e){
+    return '<tr><td>'+esc(e.tarih||'')+'</td><td>'+esc(e.aciklama||'')+'</td><td style="text-align:right">'+fmt(e.borc||0)+'</td><td style="text-align:right">'+fmt(e.alacak||0)+'</td><td>'+esc(e.kaynak||'')+'</td></tr>';
+  }).join('');
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hesap Mütabakatı — '+esc(m.cari)+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}h1{font-size:16px;margin-bottom:4px}h2{font-size:13px;color:#555;margin:16px 0 8px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#f3f4f6;text-align:left;padding:6px 8px;border:1px solid #ddd;font-size:11px}td{padding:5px 8px;border:1px solid #eee;font-size:11px}.ozet{display:flex;gap:20px;margin:12px 0;flex-wrap:wrap}.kart{border:1px solid #ddd;border-radius:6px;padding:10px 14px;min-width:160px}.kart-baslik{font-size:10px;color:#888;margin-bottom:4px;text-transform:uppercase}.kart-deger{font-size:15px;font-weight:bold}.kart-deger.red{color:#dc2626}.durum-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;background:'+(mutabikMi?'#dcfce7;color:#166534':'#fee2e2;color:#991b1b')+'}@media print{body{margin:10px}button{display:none}}</style></head><body>'
+    + '<h1>Hesap Mütabakatı Raporu</h1>'
+    + '<p style="color:#555;margin:0">'+esc(m.cari)+' · '+esc(m.para||'')+'&nbsp;&nbsp;<span class="durum-badge">'+(mutabikMi?'Mütabık':'Mütabık Değil')+'</span></p>'
+    + '<p style="font-size:11px;color:#888;margin-top:4px">Tarih: '+esc(m.tarih||'')+'&nbsp;&nbsp;Rapor: '+new Date().toLocaleDateString('tr-TR')+'</p>'
+    + '<div class="ozet">'
+    + '<div class="kart"><div class="kart-baslik">İç Borç</div><div class="kart-deger">'+fmt(r.icToplam||0)+'</div></div>'
+    + '<div class="kart"><div class="kart-baslik">İç Alacak</div><div class="kart-deger">'+fmt(r.icAlacak||0)+'</div></div>'
+    + '<div class="kart"><div class="kart-baslik">Karşı Borç</div><div class="kart-deger">'+fmt(r.karsiToplam||0)+'</div></div>'
+    + '<div class="kart"><div class="kart-baslik">Karşı Alacak</div><div class="kart-deger">'+fmt(r.karsiAlacak||0)+'</div></div>'
+    + '<div class="kart"><div class="kart-baslik">Net Fark</div><div class="kart-deger red">'+fmt(r.fark||0)+'</div></div>'
+    + '</div>'
+    + '<h2>Eşleşmeyen Kayıtlar ('+eslesmeyen.length+' adet)</h2>'
+    + '<table><thead><tr><th>Tarih</th><th>Açıklama</th><th>Borç</th><th>Alacak</th><th>Kaynak</th></tr></thead><tbody>'+eslesmeyenHtml+'</tbody></table>'
+    + '</body></html>';
+  var w = window.open('','_blank','width=900,height=700');
+  if (!w) { window.toast?.('Pop-up engellendi — tarayıcı ayarından izin verin','err'); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
 };
 
 console.log('[HM] Hesap Mütabakatı v'+HM_VER+' yüklendi');
