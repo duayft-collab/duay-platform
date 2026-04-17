@@ -103,7 +103,7 @@ function openUrunModal(id) {
       + '<div><div class="fl">TEKNİK AÇIKLAMA</div><textarea class="fi" id="ud-techDesc" rows="2" style="resize:none">' + esc(u?.techDesc || '') + '</textarea></div>'
       + '<div><div class="fl">DUAY ÖZEL NOT</div><textarea class="fi" id="ud-note" rows="2" style="resize:none">' + esc(u?.note || '') + '</textarea></div>'
       // Görsel
-      + '<div><div class="fl">ÜRÜN GÖRSELİ</div><input type="file" id="ud-img" accept=".jpg,.jpeg,.png,.webp" style="font-size:11px">' + (u?.image ? '<div style="margin-top:4px;font-size:10px;color:var(--ac)">📎 Görsel mevcut</div>' : '') + '</div>'
+      + '<div><div class="fl">ÜRÜN GÖRSELİ</div><input type="file" id="ud-img" accept=".jpg,.jpeg,.png,.webp" style="font-size:11px">' + ((u?.image || u?._hasImage) ? '<div style="margin-top:4px;font-size:10px;color:var(--ac)">📎 Görsel mevcut</div>' : '') + '</div>'
       + '<input type="hidden" id="ud-eid" value="' + esc(u?.id || '') + '">'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
