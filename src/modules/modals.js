@@ -845,6 +845,7 @@ function injectAllModals() {
           <select class="fi" id="f-role" onchange="autoSetRolePerms()">
             <option value="staff">👤 Personel</option>
             <option value="lead">⭐ Takım Lideri</option>
+            <option value="asistan">🤝 Yönetici Asistanı</option>
             <option value="manager">👔 Yönetici</option>
             <option value="admin">🔑 Admin</option>
           </select>
