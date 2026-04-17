@@ -223,10 +223,9 @@ window._hmKolonMapAc = function(id, tip) {
   var dosya = tip==='ic' ? m.icDosya : m.karsiDosya;
   if (!dosya || typeof XLSX==='undefined') { window._hmDetayAc(id); return; }
   try {
-    var wb = XLSX.read(new Uint8Array(dosya), {type:'array'});
-    var sheet = wb.Sheets[wb.SheetNames[0]];
-    var data = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
-    var baslik = data[0] || [];
+    /* HM-FILE-PARSE-001: binary yok, baslik direkt kayıtta */
+    var baslik = tip==='ic' ? (m.icBaslik||[]) : (m.karsiBaslik||[]);
+    if (!baslik.length) { window._hmDetayAc(id); return; }
     var harfler = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, baslik.length);
     var secenek = harfler.map(function(h,i){ return '<option value="'+i+'">'+h+' — '+(baslik[i]||'(boş)')+'</option>'; }).join('');
     var mo = document.createElement('div');
@@ -313,9 +312,26 @@ window._hmDosyaYukle = function(id, tip, input) {
     var liste = window._hmLoadMut();
     var idx = liste.findIndex(function(x){return x.id===id;});
     if (idx===-1) return;
-    var data = Array.from(new Uint8Array(e.target.result));
-    if (tip==='ic') { liste[idx].icDosya=data; liste[idx].icDosyaAd=file.name; }
-    else { liste[idx].karsiDosya=data; liste[idx].karsiDosyaAd=file.name; }
+    /* HM-FILE-PARSE-001: binary değil parse edilmiş satır verisi sakla */
+    try {
+      var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      var baslik = rows[0] || [];
+      if (tip==='ic') {
+        liste[idx].icDosya = true;
+        liste[idx].icDosyaAd = file.name;
+        liste[idx].icRows = rows;
+        liste[idx].icBaslik = baslik;
+      } else {
+        liste[idx].karsiDosya = true;
+        liste[idx].karsiDosyaAd = file.name;
+        liste[idx].karsiRows = rows;
+        liste[idx].karsiBaslik = baslik;
+      }
+    } catch(e2) {
+      window.toast?.('Excel parse hatası: '+e2.message,'err'); return;
+    }
     window._hmStoreMut(liste);
     window.toast?.(file.name+' yüklendi','ok');
     window._hmKolonMapAc(id, tip);
@@ -346,12 +362,9 @@ window._hmParseVeKarsilastir = function(id) {
   var m = liste[idx];
   try {
     if (typeof XLSX === 'undefined') { window.toast?.('Excel kütüphanesi yüklenmedi','err'); return; }
-    var icWb = XLSX.read(new Uint8Array(m.icDosya), {type:'array'});
-    var karsiWb = XLSX.read(new Uint8Array(m.karsiDosya), {type:'array'});
-    var icSheet = icWb.Sheets[icWb.SheetNames[0]];
-    var karsiSheet = karsiWb.Sheets[karsiWb.SheetNames[0]];
-    var icData = XLSX.utils.sheet_to_json(icSheet, {header:1, defval:''});
-    var karsiData = XLSX.utils.sheet_to_json(karsiSheet, {header:1, defval:''});
+    /* HM-FILE-PARSE-001: rows direkt kayıtta */
+    var icData = m.icRows || [];
+    var karsiData = m.karsiRows || [];
 
     var _parseRows = function(data, km) {
       /* HM-MAP-001b: kolonMap parametrik, borç/alacak ayrımı */
