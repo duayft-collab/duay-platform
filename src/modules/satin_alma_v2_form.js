@@ -69,7 +69,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + _f('piTarih', 'Proforma Tarihi', '', 'date')
     + _f('gecerlilikTarihi', 'Teklif Geçerlilik Tarihi', '', 'date')
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px">'
+    + '<div style="display:grid;grid-template-columns:1fr 140px 220px;gap:10px">'
     + _f('teslimYeri','Teslim Noktası / Limanı','FOB Shanghai, CIF Mersin')
     + _f('teslimat', '\u00dcretim & Sevkiyat S\u00fcresi (G\u00fcn)', '14', 'number')
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESL\u0130MAT MASRAFI</div>'
