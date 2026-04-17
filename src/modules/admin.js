@@ -38,6 +38,7 @@ const ROLE_META={
   manager:{label:'Yönetici',icon:'👔',color:'#0369A1',bg:'rgba(3,105,161,.1)',border:'rgba(3,105,161,.2)'},
   lead:{label:'Takım Lideri',icon:'⭐',color:'#D97706',bg:'rgba(217,119,6,.1)',border:'rgba(217,119,6,.2)'},
   staff:{label:'Personel',icon:'👤',color:'#475569',bg:'rgba(71,85,105,.08)',border:'rgba(71,85,105,.15)'},
+  asistan:{label:'Yönetici Asistanı',icon:'🤝',color:'#0891B2',bg:'rgba(8,145,178,.1)',border:'rgba(8,145,178,.2)'},
 };
 let USERS_VIEW='table'; // 'card' | 'table' | 'org'
 let USERS_SORT = { col: '', dir: 1 }; // G7: sıralama state
@@ -3415,7 +3416,7 @@ window._openUserManageModal = function(uid) {
   try { depts = JSON.parse(localStorage.getItem('ak_departments') || '[]'); } catch(e) { console.warn('[Admin]', e); }
   if (!depts.length) depts = ['IK','Finans','Operasyon','Satis','Lojistik','Teknik','Muhasebe'];
   var deptOpts = '<option value="">—</option>' + depts.map(function(d) { return '<option value="' + esc(d) + '"' + (u.dept === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('');
-  var roleOpts = ['admin','manager','lead','staff'].map(function(r) { var m = ROLE_META[r]||{}; return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + (m.icon||'') + ' ' + (m.label||r) + '</option>'; }).join('');
+  var roleOpts = ['admin','manager','asistan','lead','staff'].map(function(r) { var m = ROLE_META[r]||{}; return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + (m.icon||'') + ' ' + (m.label||r) + '</option>'; }).join('');
 
   // Aktivite log
   var acts = typeof loadAct === 'function' ? loadAct() : [];
