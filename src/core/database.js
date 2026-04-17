@@ -312,7 +312,7 @@ function _read(key, fallback = null) {
  */
 function _emergencyClean() {
   try {
-    var _ec = function(k, max) { try { var raw = localStorage.getItem(k); if (!raw) return; var d; if (raw.startsWith('_LZ_') && typeof LZString !== 'undefined') d = JSON.parse(LZString.decompressFromUTF16(raw.slice(4))); else d = JSON.parse(raw); if (Array.isArray(d) && d.length > max) { var trimmed = JSON.stringify(d.slice(-max)); if (typeof LZString !== 'undefined') localStorage.setItem(k, '_LZ_' + LZString.compressToUTF16(trimmed)); else localStorage.setItem(k, trimmed); } } catch(e) {} };
+    var _ec = function(k, max) { try { var raw = localStorage.getItem(k); if (!raw) return; var d; if (raw.startsWith('_LZ_') && typeof LZString !== 'undefined') d = JSON.parse(LZString.decompressFromUTF16(raw.slice(4))); else d = JSON.parse(raw); if (Array.isArray(d) && d.length > max) { var trimmed = JSON.stringify(d.slice(0, max)); if (typeof LZString !== 'undefined') localStorage.setItem(k, '_LZ_' + LZString.compressToUTF16(trimmed)); else localStorage.setItem(k, trimmed); } } catch(e) {} };
     _ec(KEYS.notifications, 15); _ec(KEYS.activity, 20); _ec(KEYS.trash, 15);
     _ec(KEYS.kpiLog, 50); _ec(KEYS.odemeler, 300); _ec(KEYS.tahsilat, 300);
     try { var tc = JSON.parse(localStorage.getItem(KEYS.taskChats) || '{}'); Object.keys(tc).forEach(function(t) { if (Array.isArray(tc[t]) && tc[t].length > 10) tc[t] = tc[t].slice(-10); }); localStorage.setItem(KEYS.taskChats, JSON.stringify(tc)); } catch(e) {}
@@ -1294,8 +1294,8 @@ const DEFAULT_NOTES = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadAct()     { const d = _read(KEYS.activity); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 100 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 100));
-  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 100));
+/** @param {Array<Object>} d Son 100 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 20));
+  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 20));
 }
 
 /**
