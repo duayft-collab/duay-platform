@@ -4,6 +4,17 @@
 /* ── C Tasarımı Split Panel ──────────────────────────────── */
 
 window._saV2ListeC = true;
+/* SA-LISTE-FIX-001: UTC → Istanbul (+3) saat düzeltmesi */
+window._saV2TarihStr = function(iso) {
+  if (!iso) return '\u2014';
+  var d = new Date(iso);
+  var ist = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  var gun = ist.getUTCDate();
+  var ay = ['Oca','\u015eub','Mar','Nis','May','Haz','Tem','A\u011fu','Eyl','Eki','Kas','Ara'][ist.getUTCMonth()];
+  var ss = String(ist.getUTCHours()).padStart(2,'0');
+  var dk = String(ist.getUTCMinutes()).padStart(2,'0');
+  return gun+' '+ay+'<br>'+ss+':'+dk;
+};
 window._saV2ListeSirala = window._saV2ListeSirala || {alan:'createdAt',yon:'desc'};
 window._saV2ListeSecili = window._saV2ListeSecili || {};
 window._saV2AktifId = window._saV2AktifId || null;
@@ -65,7 +76,7 @@ window.renderSatinAlmaV2 = function() {
   h+='</div>';
   // ALIS-LISTE-C-001: tek satır filtre, flex-wrap:nowrap + overflow-x:auto, 2 yeni select (para, tarih)
   h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
-  h+='<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="padding:5px 12px;border:none;border-radius:5px;background:var(--color-text-primary);color:#ffffff;cursor:pointer;font-size:10px;font-weight:500;font-family:inherit;flex-shrink:0">+ Yeni Teklif</button>';
+  h+='<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#ffffff;cursor:pointer;font-size:10px;font-weight:500;font-family:inherit;flex-shrink:0">+ Yeni Teklif</button>';
   h+='<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Ara..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;width:140px;flex-shrink:0;font-family:inherit;color:var(--color-text-primary)">';
   /* SA-FILTRE-PILL-001: dropdown silindi — pill bar aşağıda ayrı satırda */
   h+='<select id="sav2-ted" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm tedarikçiler</option></select>';
@@ -98,7 +109,7 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;flex:1;min-width:0;min-height:0;overflow:hidden">';
   h+='<div style="flex:1;min-width:0;overflow-y:auto">';
   /* ALIS-LISTE-UX-PACK-001: 7 sütun grid (KAR % eklendi: TUTAR ↔ DURUM arası) */
-  h+='<div style="display:grid;grid-template-columns:20px minmax(180px,1fr) 88px 110px 80px 120px 72px 52px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0;z-index:1">';
+  h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0;z-index:1">';
   var _th=function(label,alan){
     var aktif=sir.alan===alan;
     var yon=aktif?(sir.yon==='asc'?'↑':'↓'):'↕';
@@ -144,7 +155,7 @@ window.renderSatinAlmaV2 = function() {
     /* ALIS-LISTE-UX-PACK-001: süre dolumu satır rengi (2 gün=kırmızı, 7 gün=sarı) */
     var _gunKalan = _gecerlilik ? Math.floor((new Date(_gecerlilik) - new Date()) / 86400000) : 999;
     var _satirBg = aktif ? '#E6F1FB' : secili ? '#FFFCF5' : (_gunKalan <= 2 ? '#FCEBEB' : _gunKalan <= 7 ? '#FAEEDA' : 'var(--color-background-primary)');
-    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(180px,1fr) 88px 110px 80px 120px 72px 52px;height:48px;overflow:hidden;padding:0 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
+    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;height:48px;overflow:hidden;padding:0 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
     // Kolon 1: checkbox
     h+='<input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:11px;height:11px;cursor:pointer">';
     // Kolon 2: ürün/tedarikçi adı + jobId + PI rozet alt satır
@@ -162,10 +173,9 @@ window.renderSatinAlmaV2 = function() {
     h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+' · '+_jobHTML+'</div></div>';
     // Kolon 3: tutar + para birimi soluk
     /* SA-LISTE-REDESIGN-001: Açılış hücresi (tarih+saat) */
+    /* SA-LISTE-FIX-001: Istanbul +3 saat */
     var _acT=t.createdAt||t.teklifTarih||'';
-    var _acGun=_acT?new Date(_acT).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'}):'—';
-    var _acSaat=_acT?(_acT.length>10?_acT.slice(11,16):''):'';
-    h+='<div style="text-align:center"><div style="font-size:11px;color:var(--color-text-secondary)">'+_acGun+'</div><div style="font-size:10px;color:var(--color-text-tertiary)">'+_acSaat+'</div></div>';
+    h+='<div style="text-align:center;font-size:10px;color:var(--color-text-secondary);line-height:1.4">'+(window._saV2TarihStr?.(_acT)||'\u2014')+'</div>';
     /* SA-LISTE-REDESIGN-001: TUTAR + KUR (TRY) hesabı + fiyat trend (KUR cell'e gömülür) */
     var _alisFN=parseFloat(window._saV2AlisF?.(t))||0;
     var _paraN=window._saV2Para?.(t)||'TRY';
@@ -212,7 +222,7 @@ window.renderSatinAlmaV2 = function() {
     if(t.urunler&&t.urunler.length>1){
       t.urunler.forEach(function(u,idx){
         /* ALIS-LISTE-UX-PACK-001: child row 7-col grid (KAR % boş hücre) */
-        h+='<div style="display:grid;grid-template-columns:20px minmax(180px,1fr) 88px 110px 80px 120px 72px 52px;padding:3px 16px 3px 28px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
+        h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:3px 16px 3px 28px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
         // SAV2-GRUP-CB-001: grup ürün satırına checkbox — parent t.id state'ine bind
         h+='<div style="font-size:9px;display:flex;align-items:center;gap:2px"><input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:10px;height:10px;cursor:pointer;flex-shrink:0"><span style="color:var(--color-text-tertiary)">'+(idx+1)+'.</span></div>';
         // SATINALMA-LISTE-XSS-002: ürün alt satırında window._esc sarmalama
