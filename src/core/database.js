@@ -437,7 +437,7 @@ function _write(key, value) {
   var _lz = typeof LZString !== 'undefined' ? LZString : (typeof window !== 'undefined' ? window.LZString : null);
   var _jsonStr = JSON.stringify(value);
   try {
-    if (_lz && key.startsWith('ak_') && _jsonStr.length > 500) {
+    if (_lz && (key.startsWith('ak_') || key.startsWith('pp_') || key.startsWith('odm_') || key.startsWith('duay_') || key.startsWith('ik_')) && _jsonStr.length > 500) {
       localStorage.setItem(key, '_LZ_' + _lz.compressToUTF16(_jsonStr));
     } else {
       localStorage.setItem(key, _jsonStr);
@@ -473,7 +473,7 @@ function _write(key, value) {
     } catch (e2) {}
     // Retry
     try {
-      if (_lz && key.startsWith('ak_')) {
+      if (_lz && (key.startsWith('ak_') || key.startsWith('pp_') || key.startsWith('odm_') || key.startsWith('duay_') || key.startsWith('ik_'))) {
         localStorage.setItem(key, '_LZ_' + _lz.compressToUTF16(_jsonStr));
       } else {
         localStorage.setItem(key, _jsonStr);
