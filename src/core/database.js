@@ -444,11 +444,32 @@ function _write(key, value) {
     }
     return true;
   } catch (e) {
-    // Emergency: büyük koleksiyonları küçült
+    // LS-EMERGENCY-DYNAMIC-001: dinamik cleanup — en büyük 3 array key'i kırp
     try {
-      var _ec2 = function(k2, mx) { try { var raw2 = localStorage.getItem(k2); if (!raw2) return; var d2 = raw2.startsWith('_LZ_') && _lz ? JSON.parse(_lz.decompressFromUTF16(raw2.slice(4))) : JSON.parse(raw2); if (Array.isArray(d2) && d2.length > mx) { var trimmed = JSON.stringify(d2.slice(-mx)); localStorage.setItem(k2, _lz ? '_LZ_' + _lz.compressToUTF16(trimmed) : trimmed); } } catch(e5) {} };
-      _ec2(KEYS.notifications, 15); _ec2(KEYS.activity, 20); _ec2(KEYS.trash, 15);
-      _ec2(KEYS.kpiLog, 50); _ec2(KEYS.taskChats, '{}');
+      var _dynClean = function() {
+        var sizes = [];
+        for (var _k in localStorage) {
+          if (!localStorage.hasOwnProperty(_k)) continue;
+          var _raw = localStorage.getItem(_k);
+          if (!_raw || _raw.length < 1000) continue;
+          sizes.push({ k: _k, len: _raw.length });
+        }
+        sizes.sort(function(a, b) { return b.len - a.len; });
+        var top3 = sizes.slice(0, 3);
+        top3.forEach(function(item) {
+          try {
+            var _r = localStorage.getItem(item.k);
+            var _d = _r && _r.startsWith('_LZ_') && _lz ? JSON.parse(_lz.decompressFromUTF16(_r.slice(4))) : JSON.parse(_r);
+            if (Array.isArray(_d) && _d.length > 20) {
+              var _half = Math.floor(_d.length * 0.5);
+              var _trimmed = JSON.stringify(_d.slice(-_half));
+              localStorage.setItem(item.k, _lz ? '_LZ_' + _lz.compressToUTF16(_trimmed) : _trimmed);
+              console.warn('[_write] dynClean:', item.k, _d.length, '→', _half);
+            }
+          } catch(_e5) {}
+        });
+      };
+      _dynClean();
     } catch (e2) {}
     // Retry
     try {
