@@ -177,23 +177,45 @@ function openUrunModal(id) {
   };
 
   window._udbGorselSec = function(n) {
-    window.toast?.('Görsel seçmeden önce lütfen görsel kalite kurallarını okuyun.', 'info');
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.jpg,.jpeg,.png,.webp';
-    input.onchange = function(e) {
-      var file = e.target.files[0];
-      if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { window.toast?.('Görsel max 5MB olabilir', 'err'); return; }
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
-        if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px">';
-        window['_udbImg' + n] = ev.target.result;
+    /* URUN-FORM-EXCEL-003: görsel kalite uyarı popup */
+    var uyariMo = document.createElement('div');
+    uyariMo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    uyariMo.innerHTML = '<div style="background:var(--sf,#fff);border-radius:12px;padding:24px 28px;max-width:480px;width:90%">'
+      + '<div style="font-size:14px;font-weight:600;color:#A32D2D;margin-bottom:12px">Bu görsel müşteriye sunulacak teklifte kullanılır — profesyonel olması zorunludur.</div>'
+      + '<div style="font-size:13px;color:#333;line-height:1.8;margin-bottom:12px">'
+      + '<b>Kabul edilen türler:</b><br>'
+      + '1. Beyaz/düz arka plan — ürün ortalanmış, gölgesiz<br>'
+      + '2. Stüdyo çekimi — profesyonel ışık, temiz arka plan<br>'
+      + '3. Teknik çizim — ölçülü, vektörel<br>'
+      + '4. Ambalaj görseli — kutu/paket, marka logosu görünür<br>'
+      + '5. Gerçek kullanım — ürün yerinde, bağlam anlaşılır'
+      + '</div>'
+      + '<div style="font-size:13px;color:#A32D2D;margin-bottom:20px"><b>Kabul edilmez:</b> Bulanık · Filigran · Karmaşık arka plan · Ekran fotoğrafı</div>'
+      + '<div style="display:flex;gap:10px;justify-content:flex-end">'
+      + '<button id="udb-gorsel-iptal" style="padding:10px 20px;font-size:13px;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;background:transparent">İptal</button>'
+      + '<button id="udb-gorsel-devam" style="padding:10px 20px;font-size:13px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer">Anladım, Görsel Seç →</button>'
+      + '</div></div>';
+    document.body.appendChild(uyariMo);
+    document.getElementById('udb-gorsel-iptal').onclick = function() { uyariMo.remove(); };
+    document.getElementById('udb-gorsel-devam').onclick = function() {
+      uyariMo.remove();
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.jpg,.jpeg,.png,.webp';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { window.toast?.('Görsel max 5MB olabilir', 'err'); return; }
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
+          if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px">';
+          window['_udbImg' + n] = ev.target.result;
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
+      input.click();
     };
-    input.click();
   };
 
   function _udbSatirHTML(n, u) {
