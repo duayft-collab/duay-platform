@@ -1426,10 +1426,10 @@ function storeIhracatEvraklar(d){ var _now2=new Date().toISOString(); d=Array.is
 function loadIhracatUrunler()   { var d = _read(KEYS.ihracatUrunler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 function storeIhracatUrunler(d) {
   var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d;
-  var yazilacak = d.map(function(u) {
+  var yazilacak = Array.isArray(d) ? d.map(function(u) {
     if (!u.isDeleted) return u;
     return { id: u.id, isDeleted: true, deletedAt: u.deletedAt || null, dosya_id: u.dosya_id || null, updatedAt: new Date().toISOString() };
-  });
+  }) : [];
   _write(KEYS.ihracatUrunler, yazilacak.slice(0, 1000));
   var fp = _fsPath('ihracatUrunler'); if (fp) _syncFirestore(fp, yazilacak);
 }
