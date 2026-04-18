@@ -2916,7 +2916,7 @@ function openBulkRoleChange() {
   mo.innerHTML = '<div class="moc" style="max-width:480px;padding:0;border-radius:12px;overflow:hidden">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b)"><div style="font-size:15px;font-weight:700;color:var(--t)">Toplu Rol Degistir</div></div>'
     + '<div style="padding:16px 20px">'
-      + '<div class="fg"><div class="fl">HEDEF ROL</div><select class="fi" id="br-role"><option value="staff">Personel</option><option value="asistan">Yonetici Asistani</option><option value="lead">Takim Lideri</option><option value="manager">Yonetici</option></select></div>'
+      + '<div class="fg"><div class="fl">HEDEF ROL</div><select class="fi" id="br-role"><option value="staff">Personel</option><option value="asistan">Yönetici Asistanı</option><option value="lead">Takim Lideri</option><option value="manager">Yonetici</option></select></div>'
       + '<div class="fg" style="margin-top:8px"><div class="fl">KULLANICILAR</div>'
         + '<div style="max-height:250px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">'
           + users.map(u => '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);cursor:pointer;font-size:12px"><input type="checkbox" class="br-cb" value="' + u.id + '" style="accent-color:var(--ac)"><span style="flex:1">' + window._esc(u.name) + '</span><span style="font-size:10px;color:var(--t3)">' + (ROLE_META[u.role]?.label||u.role) + '</span></label>').join('')
@@ -3738,7 +3738,7 @@ window._unlockUser = function(uid) {
 
 window._bulkRoleChange = function() {
   var ids = _getSelectedIds(); if (!ids.length) return;
-  var opts = ['admin', 'manager', 'lead', 'staff'].map(function(r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+  var opts = ['admin', 'manager', 'asistan', 'lead', 'staff'].map(function(r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
   var mo = document.createElement('div'); mo.className = 'mo';
   mo.innerHTML = '<div class="moc" style="max-width:360px;padding:20px"><div style="font-size:14px;font-weight:500;margin-bottom:14px">' + ids.length + ' kullanıcı için rol seç</div><select id="bulk-role-sel" class="fi">' + opts + '</select><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn btns" onclick="this.closest(\'.mo\').remove()">İptal</button><button class="btn btnp" onclick="_doBulkRole()">Uygula</button></div></div>';
   document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
