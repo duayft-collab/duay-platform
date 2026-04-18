@@ -868,7 +868,7 @@ function _syncFirestore(path, data, mode = 'set') {
               var _lzM2 = typeof LZString !== 'undefined' ? LZString : null;
               var _lsKey2 = KEYS[collection] || ('ak_' + collection);
               var _jsonM2 = JSON.stringify(finalData);
-              if (_lzM2 && _lsKey2.startsWith('ak_') && _jsonM2.length > 500) {
+              if (_lzM2 && (_lsKey2.startsWith('ak_')||_lsKey2.startsWith('pp_')||_lsKey2.startsWith('odm_')||_lsKey2.startsWith('duay_')||_lsKey2.startsWith('ik_')) && _jsonM2.length > 500) {
                 localStorage.setItem(_lsKey2, '_LZ_' + _lzM2.compressToUTF16(_jsonM2));
               } else {
                 localStorage.setItem(_lsKey2, _jsonM2);
@@ -1963,7 +1963,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       try {
         var _lzInit = typeof LZString !== 'undefined' ? LZString : null;
         var _jsonInit = JSON.stringify(merged);
-        if (_lzInit && localKey.startsWith('ak_') && _jsonInit.length > 500) {
+        if (_lzInit && (localKey.startsWith('ak_')||localKey.startsWith('pp_')||localKey.startsWith('odm_')||localKey.startsWith('duay_')||localKey.startsWith('ik_')) && _jsonInit.length > 500) {
           localStorage.setItem(localKey, '_LZ_' + _lzInit.compressToUTF16(_jsonInit));
         } else {
           localStorage.setItem(localKey, _jsonInit);
@@ -2069,7 +2069,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       try {
         var _lzRT = typeof LZString !== 'undefined' ? LZString : null;
         var _jsonRT = JSON.stringify(merged);
-        if (_lzRT && localKey.startsWith('ak_') && _jsonRT.length > 500) {
+        if (_lzRT && (localKey.startsWith('ak_')||localKey.startsWith('pp_')||localKey.startsWith('odm_')||localKey.startsWith('duay_')||localKey.startsWith('ik_')) && _jsonRT.length > 500) {
           localStorage.setItem(localKey, '_LZ_' + _lzRT.compressToUTF16(_jsonRT));
         } else {
           localStorage.setItem(localKey, _jsonRT);
