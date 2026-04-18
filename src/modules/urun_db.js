@@ -105,6 +105,7 @@ function openUrunModal(id) {
       + '<button class="btn btnp" onclick="window._saveUrunDB?.()">Tümünü Kaydet →</button>'
     + '</div></div>';
   document.body.appendChild(mo);
+  requestAnimationFrame(function(){ mo.classList.add('open'); });
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
 
   // Duay kodu otomatik üret
