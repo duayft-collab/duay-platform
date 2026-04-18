@@ -1634,7 +1634,7 @@ function _renderMatrix(users) {
                 <div style="display:flex;align-items:center;gap:8px">
                   <div style="width:28px;height:28px;border-radius:8px;background:${AV_COLORS[users.indexOf(u)%AV_COLORS.length]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0">${window._esc(initials(u.name))}</div>
                   <div>
-                    <div style="font-size:12px;font-weight:600">${u.name}</div>
+                    <div style="font-size:12px;font-weight:600">${window._esc(u.name)}</div>
                     <div style="font-size:10px;color:var(--t3)">${rm.icon} ${rm.label}</div>
                   </div>
                 </div>
@@ -1643,7 +1643,7 @@ function _renderMatrix(users) {
                 const has = _hasMod(u, c.id);
                 return `<td>
                   <span class="mx-cb ${has?'on':''}"
-                    onclick="${isAdm?'':"_toggleMx("+u.id+",'"+c.id+"',this)"}"
+                    onclick="${isAdm?'':"_toggleMx("+(Number(u.id)||0)+",'"+c.id+"',this)"}"
                     title="${isAdm?'Admin — tüm erişim':''}"
                     style="${isAdm?'opacity:.4;cursor:default':''}"
                   >${has?'✓':''}</span>
