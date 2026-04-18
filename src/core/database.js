@@ -98,7 +98,7 @@
           var c = {};
           Object.keys(item).forEach(function(f) {
             var v = item[f];
-            if (v === null || v === undefined || v === '' || v === 0) return;
+            if (v === null || v === undefined || v === '') return;
             if (Array.isArray(v) && v.length === 0) return;
             c[f] = v;
           });
