@@ -9,20 +9,13 @@
 
 var URUN_DB_KEY = 'ak_urun_db1';
 
-function loadUrunDB() { try { var raw = localStorage.getItem(URUN_DB_KEY); if (!raw) return []; if (raw.startsWith('_LZ_') && typeof LZString !== 'undefined') return JSON.parse(LZString.decompressFromUTF16(raw.slice(4))) || []; return JSON.parse(raw) || []; } catch(e) { return []; } }
+function loadUrunDB(opts) {
+  /* URUN-STORE-FIX-001: platform loadUrunler'a delegate */
+  return window.loadUrunler?.(opts||{tumKullanicilar:true,_dahilSilinenler:true}) || [];
+}
 function storeUrunDB(d) {
-  try {
-    var json = JSON.stringify(d);
-    if (typeof LZString !== 'undefined' && json.length > 500) localStorage.setItem(URUN_DB_KEY, '_LZ_' + LZString.compressToUTF16(json));
-    else localStorage.setItem(URUN_DB_KEY, json);
-  } catch(e) { localStorage.setItem(URUN_DB_KEY, JSON.stringify(d)); }
-  // Firestore sync
-  try {
-    var tid = window.DEFAULT_TENANT_ID || localStorage.getItem('tenantId') || 'tenant_default';
-    var base = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
-    var FB_DB = window.Auth?.getFBDB?.();
-    if (FB_DB) FB_DB.collection(base).doc('urun_db').set({ data: d, syncedAt: new Date().toISOString() }, { merge: true }).catch(function(e) { console.warn('[UrunDB] sync hata:', e.message); });
-  } catch(e) {}
+  /* URUN-STORE-FIX-001: platform storeUrunler'a delegate */
+  return window.storeUrunler?.(d);
 }
 
 /**
@@ -315,6 +308,20 @@ window._saveUrunDB = function() {
  * Ürün listesi render.
  */
 function renderUrunDB() {
+  /* URUN-STORE-FIX-001: tek seferlik ak_urun_db1 → ak_urunler1 migration */
+  (function _migrateUrunDB(){
+    try {
+      var old = localStorage.getItem('ak_urun_db1');
+      if(!old) return;
+      var lz = window.LZString;
+      var data = old.startsWith('_LZ_')&&lz ? JSON.parse(lz.decompressFromUTF16(old.slice(4))) : JSON.parse(old);
+      if(!Array.isArray(data)||!data.length) { localStorage.removeItem('ak_urun_db1'); return; }
+      var existing = window.loadUrunler?.({tumKullanicilar:true,_dahilSilinenler:true})||[];
+      var merged = existing.concat(data.filter(function(n){return !existing.find(function(e){return String(e.id)===String(n.id);});}));
+      window.storeUrunler?.(merged);
+      localStorage.removeItem('ak_urun_db1');
+    } catch(e){}
+  })();
   var panel = document.getElementById('panel-urun-db');
   if (!panel) return;
   if (!panel.dataset.injected) {
