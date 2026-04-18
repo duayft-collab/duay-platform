@@ -72,7 +72,7 @@ window._yetkiKontrol = function(islem) {
     'urun-fiyat': () => { window._saUrunListeAc?.(); },
     'satin-alma': () => { window.renderSatinAlmaV2?.(); },
     'alindi-teklifler': () => { window.renderIhracatListesi?.(); },
-    'alis-teklifleri': () => { window.renderAlisTeklifleri?.(); },
+    'alis-teklifleri': () => { window.renderSatinAlmaV2?.(); },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
     'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
@@ -1481,7 +1481,7 @@ window._copyAlisTeklif = function(id) {
   d.unshift(yeni);
   if (typeof storeAlisTeklifleri === 'function') storeAlisTeklifleri(d);
   window.toast?.('Teklif kopyalandı: ' + yeni.teklifNo + ' ✓', 'ok');
-  window.renderAlisTeklifleri?.();
+  window.renderSatinAlmaV2?.();
 };
 
 /** FIX 4: Karşılaştırma — checkbox kontrol */
@@ -1985,7 +1985,7 @@ window._saveAlisTeklif = function() {
   document.getElementById('alis-inline-form')?.remove();
   window._atRowCounter = 0;
   window.toast?.('Alış teklifi eklendi ✓','ok');
-  window.renderAlisTeklifleri?.();
+  window.renderSatinAlmaV2?.();
 };
 
 // ════════════════════════════════════════════════════════════════
