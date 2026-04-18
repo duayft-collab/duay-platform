@@ -887,8 +887,8 @@ function openPermModal(id) {
     } else {
       el.innerHTML = ch.map(function(c) {
         return '<div class="perm-change-card"><b>' + window._esc(c.label) + '</b><br>'
-          + '<span style="color:' + c.oldLevel.color + '">' + c.oldLevel.full + '</span> → '
-          + '<span style="color:' + c.newLevel.color + '">' + c.newLevel.full + '</span></div>';
+          + '<span style="color:' + c.oldLevel.color + '">' + c.oldLevel.full + '</span> → ' /* XSS-SAFE: _PERM_LEVELS statik */
+          + '<span style="color:' + c.newLevel.color + '">' + c.newLevel.full + '</span></div>'; /* XSS-SAFE: _PERM_LEVELS statik */
       }).join('');
     }
     var badge = document.getElementById('perm-change-count');
@@ -1533,8 +1533,8 @@ function showPanelUpdateBanner(panelId) {
     banner.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">🆕</span>
-        <span style="font-size:13px;color:var(--blt)">${update.msg}</span>
-        <span style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace">${update.ver}</span>
+        <span style="font-size:13px;color:var(--blt)">${window._esc(update.msg)}</span>
+        <span style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace">${window._esc(update.ver)}</span>
       </div>
       <button onclick="this.parentElement.remove()"
         style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;padding:0 4px">×</button>`;
