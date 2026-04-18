@@ -70,8 +70,9 @@ window._yetkiKontrol = function(islem) {
     'docs': () => { window.renderDocs?.(); },
     'urunler': () => { window.renderUrunler?.(); },
     'urun-fiyat': () => { window._saUrunListeAc?.(); },
+    'satin-alma': () => { window.renderSatinAlmaV2?.(); },
     'alindi-teklifler': () => { window.renderIhracatListesi?.(); },
-    'alis-teklifleri': () => { window.renderSatinAlmaV2?.(); },
+    'alis-teklifleri': () => { window.renderAlisTeklifleri?.(); },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
     'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
@@ -5618,7 +5619,7 @@ window._renderFirmaKpi = function() {
   /* FASON-OVERRIDE-FIX-001: fason L4930 push'u burada silinmesin, hardcoded array'e de eklendi */
   if (G.satinalma) {
     G.satinalma.mods = [
-      { id: 'alis-teklifleri',   label: 'Al\u0131\u015f Teklifleri' },
+      { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
