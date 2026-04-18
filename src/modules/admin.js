@@ -2105,7 +2105,7 @@ function renderUsers(filter=''){
             const avBg=AV_COLORS[idx%AV_COLORS.length];
             const _rowSel = _selectedUserId === u.id;
             const _rowBg = _rowSel ? 'var(--al)' : (rowIdx%2===0?'var(--sf)':'var(--s2)');
-            return`<tr onclick="if(!event.target.closest('button,input')){window._selectUserForDetail(${u.id})}" style="border-bottom:1px solid var(--b);background:${_rowBg};opacity:${isActive?1:.6};transition:background .1s;cursor:pointer${_rowSel?';box-shadow:inset 3px 0 0 var(--ac)':''}" onmouseenter="this.style.background='var(--al)'" onmouseleave="this.style.background='${_rowBg}'">
+            return`<tr onclick="if(!event.target.closest('button,input')){window._selectUserForDetail(${Number(u.id)||0})}" style="border-bottom:1px solid var(--b);background:${_rowBg};opacity:${isActive?1:.6};transition:background .1s;cursor:pointer${_rowSel?';box-shadow:inset 3px 0 0 var(--ac)':''}" onmouseenter="this.style.background='var(--al)'" onmouseleave="this.style.background='${_rowBg}'">
               <td style="padding:12px 16px;width:36px">
                 ${!isSelf?`<input type="checkbox" class="u-bulk-cb" data-uid="${u.id}" onchange="_onBulkCb()" style="accent-color:var(--ac);cursor:pointer">`:
                   `<span style="font-size:10px;color:var(--t3)">—</span>`}
