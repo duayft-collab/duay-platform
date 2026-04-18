@@ -634,7 +634,7 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     /* FASON-MODUL-001: Fason üretim modülü */
     { id:'fason',     label:'Fason Üretim'         },
     { id:'urunler',   label:'Ürün Kataloğu'        },
-    { id:'alis-teklifleri', label:'Tedarik Teklifleri' },
+    { id:'alis-teklifleri', label:'Alış Teklifleri' },
     { id:'satis-teklifleri',label:'Proforma Teklifler'},
     { id:'cari',      label:'Cari Yönetimi'        },
     /* ADMIN-MOD-COMPLETE-001: ALL_MODULES'ta eksik olan 8 nav modülü */
