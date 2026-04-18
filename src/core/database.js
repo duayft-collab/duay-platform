@@ -359,8 +359,8 @@ var RETENTION = {
   notifications: 15,
   trash:         15,
   kpiLog:        50,
-  odemeler:      300,
-  tahsilat:      300,
+  odemeler:      100,
+  tahsilat:      100,
   taskChats:     20
 };
 window.RETENTION = Object.freeze(RETENTION);
