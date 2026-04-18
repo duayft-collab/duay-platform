@@ -46,8 +46,8 @@ function openUrunModal(id) {
   var esc = window._esc;
 
   // Cari listesi (satıcılar)
-  var cariList = typeof loadCari === 'function' ? loadCari() : [];
-  var cariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc(c.name) + '"' + (u?.vendorName === c.name ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+  var cariList = typeof loadCari === 'function' ? (loadCari({tumKullanicilar:true})||[]).filter(function(c){return !c.isDeleted;}) : [];
+  var cariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u?.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
   var countryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u?.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
 
   var mo = document.createElement('div');
@@ -219,7 +219,7 @@ function openUrunModal(id) {
   };
 
   function _udbSatirHTML(n, u) {
-    var rowCariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc(c.name) + '"' + (u && u.vendorName === c.name ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+    var rowCariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u && u.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
     var rowCountryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u && u.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
     return '<td style="padding:4px 4px;text-align:center;vertical-align:middle;font-size:11px;color:var(--t2)">'+n+'<br><button onclick="event.stopPropagation();window._udbDetay?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
       + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" onclick="event.stopPropagation();window._udbGorselSec?.('+n+')" style="width:48px;height:48px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto">'+(u && (u.image || u._hasImage) ? '📷' : '+')+'</div></td>'
