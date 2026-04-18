@@ -359,17 +359,17 @@ function renderUrunDB() {
   }
 
   var html = bulkBar;
-  html += '<div style="display:grid;grid-template-columns:30px 60px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;min-width:850px">'
+  html += '<div style="display:grid;grid-template-columns:24px 24px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;min-width:850px">'
     + '<div></div><div>Gorsel</div><div>Duay Kodu</div><div>Satici Kodu</div><div>Urun Adi</div><div>Kategori</div><div>Mensei</div><div>GTIP</div><div>Islem</div></div>';
 
   fl.forEach(function(u) {
     var uid = String(u.id);
-    html += '<div style="display:grid;grid-template-columns:30px 60px 100px 120px 1fr 80px 80px 80px 90px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+    html += '<div style="display:grid;grid-template-columns:24px 24px 100px 120px 1fr 80px 80px 80px 90px;padding:4px 12px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div><input type="checkbox" class="udb-bulk-chk" data-id="' + esc(uid) + '" onclick="event.stopPropagation();window._urunDBBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)"></div>'
-      + '<div>' + (u.image ? '<img src="' + u.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">' : u._hasImage ? '<div style="width:40px;height:40px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:40px;height:40px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
+      + '<div>' + (u.image ? '<img src="' + u.image + '" style="width:24px;height:24px;object-fit:cover;border-radius:6px">' : u._hasImage ? '<div style="width:24px;height:24px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:24px;height:24px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || '\u2014') + '</div>'
       + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || '\u2014') + '</div>'
-      + '<div style="font-weight:500">' + esc(u.duayName || '\u2014') + '<div style="font-size:9px;color:var(--t3)">' + esc(u.vendorName || '') + '</div></div>'
+      + '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(u.duayName || '\u2014') + ' · <span style="font-size:11px;color:var(--t3);font-weight:400">' + esc(u.vendorName || '') + '</span></div>'
       + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || '\u2014') + '</div>'
       + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || '\u2014') + '</div>'
       + '<div style="font-size:10px;font-family:monospace;color:var(--t3)">' + esc(u.gtip || '\u2014') + '</div>'
