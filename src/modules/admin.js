@@ -1427,7 +1427,7 @@ function renderSuggestions() {
           <div style="display:flex;gap:6px;align-items:center">
             <span class="badge ${st.c}">${st.l}</span>
             ${isAdmin() ? `
-              <select class="si" style="font-size:11px;padding:2px 6px" onchange="Admin.updateSuggStatus(${s.id}, this.value)">
+              <select class="si" style="font-size:11px;padding:2px 6px" onchange="Admin.updateSuggStatus(${Number(s.id)||0}, this.value)">
                 ${Object.entries(STATUS).map(([k, v]) =>
                   `<option value="${k}" ${s.status === k ? 'selected' : ''}>${v.l}</option>`
                 ).join('')}
