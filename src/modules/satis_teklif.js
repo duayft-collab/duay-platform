@@ -766,7 +766,7 @@ window._deleteST = function(id) {
       var liste = _loadST();
       var x = liste.find(function(s) { return String(s.id) === String(id); });
       if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); }
-      _storeST(liste);
+      window.storeSatisTeklifleri?.(liste) || _storeST(liste);
       renderSatisTeklif();
       window.toast?.('Silindi', 'ok');
     }
