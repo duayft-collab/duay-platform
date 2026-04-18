@@ -100,7 +100,7 @@ function openUrunModal(id) {
           + '<tbody id="udb-tbody">'
             + '<tr id="udb-row-1">'
               + '<td style="padding:4px 4px;text-align:center;font-size:11px;color:var(--t2);vertical-align:middle">1<br><button onclick="event.stopPropagation();window._udbDetay?.(1)" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
-              + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div style="width:48px;height:48px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto" onclick="event.stopPropagation();window._udbGorselSec?.(1)">+</div></td>'
+              + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" style="width:48px;height:48px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto" onclick="event.stopPropagation();window._udbGorselSec?.(1)">+</div></td>'
               + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-vendor-1">' + cariOpts + '</select></td>'
               + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-1" placeholder="Türkçe ad"></td>'
               + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-1" placeholder="English name"></td>'
@@ -140,6 +140,80 @@ function openUrunModal(id) {
     };
     document.getElementById('ud-vendor')?.addEventListener('change', _autoCode);
     document.getElementById('ud-vendorCode')?.addEventListener('input', _autoCode);
+  }
+
+  // URUN-FORM-EXCEL-002: satır ekle/sil/detay/görsel fonksiyonları
+  window._udbRowCounter = 1;
+
+  window._udbSatirEkle = function() {
+    window._udbRowCounter++;
+    var n = window._udbRowCounter;
+    var tbody = document.getElementById('udb-tbody');
+    if (!tbody) return;
+    var tr = document.createElement('tr');
+    tr.id = 'udb-row-' + n;
+    tr.style.borderBottom = '0.5px solid var(--b)';
+    tr.style.background = (n % 2 === 0) ? 'var(--s2)' : 'var(--sf)';
+    tr.innerHTML = _udbSatirHTML(n, null);
+    tbody.appendChild(tr);
+  };
+
+  window._udbSil = function(n) {
+    var tr = document.getElementById('udb-row-' + n);
+    if (tr) tr.remove();
+    var detay = document.getElementById('udb-detay-' + n);
+    if (detay) detay.remove();
+  };
+
+  window._udbDetay = function(n) {
+    var mevcut = document.getElementById('udb-detay-' + n);
+    if (mevcut) { mevcut.remove(); return; }
+    var tr = document.getElementById('udb-row-' + n);
+    if (!tr) return;
+    var detayTr = document.createElement('tr');
+    detayTr.id = 'udb-detay-' + n;
+    detayTr.innerHTML = '<td colspan="15" style="padding:0"><div style="background:#E6F1FB;border-top:0.5px solid #B5D4F4;border-bottom:1.5px solid #185FA5;padding:12px 20px"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:12px"><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:4px">ÖNEMLİ NOT</div><textarea id="udb-note-'+n+'" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;resize:none"></textarea></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:4px">SÖZLEŞME NOTLARI</div><textarea id="udb-sozlesme-'+n+'" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;resize:none" placeholder="Her alımda sözleşmeye otomatik gider..."></textarea></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:4px">ÜRETİM & TESLİMAT KONTROLÜ</div><textarea id="udb-uretim-'+n+'" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;resize:none" placeholder="Her satın almada güncellenir..."></textarea></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px"><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:6px">GİZLİ HİLE</div><div style="display:flex;align-items:center;gap:8px;padding:8px;background:#FAEEDA;border:0.5px solid #EF9F27;border-radius:6px;margin-bottom:6px"><input type="checkbox" id="udb-hile-'+n+'" style="width:14px;height:14px"><label style="font-size:12px;color:#633806">Bu üründe gizli hile var</label></div><textarea id="udb-hile-not-'+n+'" rows="2" style="width:100%;box-sizing:border-box;font-size:12px;resize:none" placeholder="Gizli hile detayları..."></textarea></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:6px">BELGELER</div><div style="display:flex;flex-direction:column;gap:5px"><button style="padding:6px;font-size:12px;text-align:left">+ Datasheet (PDF)</button><button style="padding:6px;font-size:12px;text-align:left">+ Ürün Kataloğu</button><button style="padding:6px;font-size:12px;text-align:left">+ Diğer Belgeler</button></div></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:6px">NUMUNE & MARKA</div><div style="display:flex;flex-direction:column;gap:5px"><button style="padding:6px;font-size:12px;text-align:left">+ Numune Ekle</button></div><div style="margin-top:8px"><div style="font-size:10px;color:#0C447C;margin-bottom:4px">MARKA</div><input type="text" id="udb-marka-'+n+'" placeholder="Marka adı" style="width:100%;box-sizing:border-box;font-size:12px"></div></div></div></div></td>';
+    tr.insertAdjacentElement('afterend', detayTr);
+  };
+
+  window._udbGorselSec = function(n) {
+    window.toast?.('Görsel seçmeden önce lütfen görsel kalite kurallarını okuyun.', 'info');
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.jpg,.jpeg,.png,.webp';
+    input.onchange = function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { window.toast?.('Görsel max 5MB olabilir', 'err'); return; }
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
+        if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px">';
+        window['_udbImg' + n] = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  function _udbSatirHTML(n, u) {
+    var rowCariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc(c.name) + '"' + (u && u.vendorName === c.name ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+    var rowCountryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u && u.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
+    return '<td style="padding:4px 4px;text-align:center;vertical-align:middle;font-size:11px;color:var(--t2)">'+n+'<br><button onclick="event.stopPropagation();window._udbDetay?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
+      + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" onclick="event.stopPropagation();window._udbGorselSec?.('+n+')" style="width:48px;height:48px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto">'+(u && (u.image || u._hasImage) ? '📷' : '+')+'</div></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-vendor-'+n+'">' + rowCariOpts + '</select></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-'+n+'" value="'+esc(u?.duayName||'')+'" placeholder="Türkçe ad"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-'+n+'" value="'+esc(u?.origName||'')+'" placeholder="English name"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-category-'+n+'" value="'+esc(u?.category||'')+'" placeholder="Kategori"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-vendorCode-'+n+'" value="'+esc(u?.vendorCode||'')+'" placeholder="ABC-123"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-origin-'+n+'">' + rowCountryOpts + '</select></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-unit-'+n+'" value="'+esc(u?.unit||'Adet')+'"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-teslim-'+n+'" value="'+esc(u?.deliveryDays||'')+'" placeholder="G"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-raf-'+n+'" value="'+esc(u?.shelfLife||'')+'" placeholder="G"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-netW-'+n+'" value="'+esc(u?.netWeight||'')+'" placeholder="kg" step="0.01"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-grossW-'+n+'" value="'+esc(u?.grossWeight||'')+'" placeholder="kg" step="0.01"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><textarea class="fi" id="udb-techDesc-'+n+'" rows="1" placeholder="Açıklama" style="resize:vertical;min-height:32px">'+esc(u?.techDesc||'')+'</textarea></td>'
+      + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><button onclick="event.stopPropagation();window._udbSil?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:18px;color:#E24B4A;padding:0">×</button></td>';
   }
 }
 
