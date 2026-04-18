@@ -3047,7 +3047,7 @@ async function firebaseSync() {
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s2);border-radius:8px;margin-bottom:4px;font-size:12px">
             <span style="font-weight:600;color:var(--t)">${escH(u.name)}</span>
             <span style="color:var(--t3)">${escH(u.email)}</span>
-            <span style="margin-left:auto;font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(34,197,94,.1);color:#16A34A">${u.role}</span>
+            <span style="margin-left:auto;font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(34,197,94,.1);color:#16A34A">${escH(u.role || '')}</span>
           </div>
         `).join('') : '<div style="font-size:12px;color:var(--t3);padding:6px">—</div>'}
       </div>
@@ -3061,9 +3061,9 @@ async function firebaseSync() {
               <input type="checkbox" class="fb-sync-cb" value="${Number(u.id)||0}" checked style="accent-color:#DC2626;flex-shrink:0">
               <div style="flex:1;min-width:0">
                 <div style="font-weight:600;color:var(--t)">${escH(u.name)}</div>
-                <div style="font-size:10px;color:var(--t3)">${escH(u.email || '—')} · ${u.reason || ''}</div>
+                <div style="font-size:10px;color:var(--t3)">${escH(u.email || '—')} · ${escH(u.reason || '')}</div>
               </div>
-              <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,.1);color:#DC2626">${u.role}</span>
+              <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,.1);color:#DC2626">${escH(u.role || '')}</span>
             </div>
           `).join('')}
         </div>
