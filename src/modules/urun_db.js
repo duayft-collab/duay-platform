@@ -98,27 +98,11 @@ function openUrunModal(id) {
             + '</tr>'
           + '</thead>'
           + '<tbody id="udb-tbody">'
-            + '<tr id="udb-row-1">'
-              + '<td style="padding:4px 4px;text-align:center;font-size:11px;color:var(--t2);vertical-align:middle">1<br><button onclick="event.stopPropagation();window._udbDetay?.(1)" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
-              + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" style="width:48px;height:48px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto" onclick="event.stopPropagation();window._udbGorselSec?.(1)">+</div></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-vendor-1">' + cariOpts + '</select></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-1" placeholder="Türkçe ad"></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-1" placeholder="English name"></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-category-1" placeholder="Kategori"></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-vendorCode-1" placeholder="ABC-123"></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-origin-1">' + countryOpts + '</select></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-unit-1" value="Adet"></td>'
-              + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-teslim-1" placeholder="G"></td>'
-              + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-raf-1" placeholder="G"></td>'
-              + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-netW-1" placeholder="kg" step="0.01"></td>'
-              + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-grossW-1" placeholder="kg" step="0.01"></td>'
-              + '<td style="padding:4px 6px;vertical-align:middle"><textarea class="fi" id="udb-techDesc-1" rows="1" placeholder="Açıklama" style="resize:vertical;min-height:32px"></textarea></td>'
-              + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><button onclick="event.stopPropagation();window._udbSil?.(1)" style="background:none;border:none;cursor:pointer;font-size:18px;color:#E24B4A;padding:0">×</button></td>'
-            + '</tr>'
+            + '<tr id="udb-row-1">' + _udbSatirHTML(1, u) + '</tr>'
           + '</tbody>'
         + '</table>'
       + '</div>'
-      + '<div style="padding:8px 16px">'
+      + '<div style="padding:8px 16px;display:' + (u ? 'none' : 'block') + '">'
         + '<button onclick="event.stopPropagation();window._udbSatirEkle?.()" style="font-size:13px;color:var(--ac);background:none;border:none;cursor:pointer">+ Ürün satırı ekle</button>'
       + '</div>'
       + '<input type="hidden" id="ud-eid" value="' + esc(u?.id || '') + '">'
@@ -306,7 +290,17 @@ window._saveUrunDB = function() {
   if (hatalar.length) { window.toast?.(hatalar[0], 'err'); return; }
   if (!yeniKayitlar.length) { window.toast?.('Kaydedilecek ürün yok', 'err'); return; }
 
-  yeniKayitlar.forEach(function(k){ data.push(k); });
+  yeniKayitlar.forEach(function(k){
+    /* URUN-EDIT-MODE-001: edit mode update, yeni mode push */
+    var eid = document.getElementById('ud-eid')?.value||'';
+    if (eid) {
+      var idx = data.findIndex(function(d){ return String(d.id) === String(eid); });
+      if (idx > -1) { data[idx] = Object.assign(data[idx], k, {id: data[idx].id, createdAt: data[idx].createdAt}); }
+      else { data.push(k); }
+    } else {
+      data.push(k);
+    }
+  });
   storeUrunDB(data);
 
   Object.keys(window).filter(function(k){return k.startsWith('_udbImg');}).forEach(function(k){delete window[k];});
