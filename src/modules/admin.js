@@ -1622,7 +1622,7 @@ function _renderMatrix(users) {
         <thead>
           <tr>
             <th class="u-col">Kullanıcı</th>
-            ${COLS.map(c=>`<th title="${c.id}">${c.label}</th>`).join('')}
+            ${COLS.map(c=>/* XSS-SAFE: COLS statik */`<th title="${c.id}">${c.label}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -1632,7 +1632,7 @@ function _renderMatrix(users) {
             return `<tr>
               <td class="u-col">
                 <div style="display:flex;align-items:center;gap:8px">
-                  <div style="width:28px;height:28px;border-radius:8px;background:${AV_COLORS[users.indexOf(u)%AV_COLORS.length]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name)}</div>
+                  <div style="width:28px;height:28px;border-radius:8px;background:${AV_COLORS[users.indexOf(u)%AV_COLORS.length]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0">${window._esc(initials(u.name))}</div>
                   <div>
                     <div style="font-size:12px;font-weight:600">${u.name}</div>
                     <div style="font-size:10px;color:var(--t3)">${rm.icon} ${rm.label}</div>
@@ -1970,7 +1970,7 @@ function renderUsers(filter=''){
             <!-- Top row: avatar + name + self badge -->
             <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
               <div style="position:relative;flex-shrink:0">
-                <div style="width:52px;height:52px;border-radius:16px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.5px">${initials(u.name)}</div>
+                <div style="width:52px;height:52px;border-radius:16px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.5px">${window._esc(initials(u.name))}</div>
                 ${loginRecently?`<div style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;background:#22C55E;border:2.5px solid var(--sf);border-radius:50%"></div>`:!isActive?`<div style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;background:#EF4444;border:2.5px solid var(--sf);border-radius:50%"></div>`:''}
               </div>
               <div style="flex:1;min-width:0">
@@ -2049,7 +2049,7 @@ function renderUsers(filter=''){
                 onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(0,0,0,.1)'"
                 onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.05)'">
                 <div style="position:relative;display:inline-block;margin-bottom:8px">
-                  <div style="width:44px;height:44px;border-radius:50%;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;margin:0 auto">${initials(u.name)}</div>
+                  <div style="width:44px;height:44px;border-radius:50%;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;margin:0 auto">${window._esc(initials(u.name))}</div>
                   <div style="position:absolute;bottom:0;right:-1px;width:12px;height:12px;border-radius:50%;background:${isActive?'#22C55E':'#EF4444'};border:2px solid var(--sf)"></div>
                 </div>
                 <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window._esc(u.name.split(' ')[0])}</div>
@@ -2112,7 +2112,7 @@ function renderUsers(filter=''){
               </td>
               <td style="padding:12px 16px">
                 <div style="display:flex;align-items:center;gap:10px">
-                  <div style="width:34px;height:34px;border-radius:10px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name)}</div>
+                  <div style="width:34px;height:34px;border-radius:10px;background:${avBg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${window._esc(initials(u.name))}</div>
                   <div>
                     <div style="font-size:13px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:5px">
                       ${window._esc(u.name)}
