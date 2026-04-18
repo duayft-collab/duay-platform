@@ -1571,7 +1571,7 @@ function loadOdm() {
   });
   return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }));
 }
-/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(0, 1000);} _write(KEYS.odemeler, d);
+/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d)&&d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(0, 1000);} _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
 /** @returns {Array<Object>} */
