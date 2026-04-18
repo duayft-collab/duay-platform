@@ -1646,7 +1646,7 @@ function storeTahsilat(d) {
 window.loadNavlunSatis = loadNavlunSatis;
 function loadNavlunSatis() { return _read(KEYS.navlunSatis) || []; }
 window.storeNavlunSatis = storeNavlunSatis;
-function storeNavlunSatis(d) { _write(KEYS.navlunSatis, d); var _fp = _fsPath('navlunSatis'); if(_fp) _syncFirestore(_fp, d); }
+function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.navlunSatis, d); var _fp = _fsPath('navlunSatis'); if(_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16D — ÜRÜNLER / ALIŞ TEKLİF / SATIŞ TEKLİF
