@@ -303,7 +303,7 @@ function _renderDetail(uid) {
         </div>
         <div style="padding:14px;border-right:1px solid var(--b)">
           <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Son Giris</div>
-          <div style="font-size:13px;color:${daysSince!==null&&daysSince>14?'var(--rdt)':'var(--t)'};font-weight:500">${u.lastLogin?u.lastLogin.slice(0,10):'Hic'}</div>
+          <div style="font-size:13px;color:${daysSince!==null&&daysSince>14?'var(--rdt)':'var(--t)'};font-weight:500">${window._esc(u.lastLogin?u.lastLogin.slice(0,10):'Hic')}</div>
         </div>
         <div style="padding:14px">
           <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px">Yetki</div>
