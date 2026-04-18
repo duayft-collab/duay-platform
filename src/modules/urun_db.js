@@ -31,7 +31,7 @@ function storeUrunDB(d) {
 function _generateDuayCode(vendorName, vendorCode) {
   var prefix = (vendorName || 'XX').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
   var code = (vendorCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
-  return 'DY-' + prefix + '-' + (code || (typeof window.generateId === 'function' ? window.generateId() : String(Date.now())).slice(-6));
+  return 'DY-' + prefix + '-' + (code || '') + '-' + Date.now().toString(36).slice(-6);
 }
 
 var URUN_COUNTRIES = ['Türkiye','Çin','Almanya','ABD','İtalya','Fransa','İngiltere','Japonya','Güney Kore','Hindistan','Brezilya','Rusya','İspanya','Hollanda','Belçika','İsviçre','Avusturya','Polonya','Çekya','Macaristan','Romanya','Bulgaristan','Yunanistan','Mısır','BAE','Suudi Arabistan','İran','Tayland','Vietnam','Endonezya','Malezya','Singapur','Tayvan','Pakistan','Bangladeş','Sri Lanka','Arjantin','Kolombiya','Peru','Şili','Meksika','Kanada','Avustralya','Güney Afrika','Nijerya','Kenya','Fas','Cezayir','Tunus'];
