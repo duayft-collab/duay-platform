@@ -336,7 +336,7 @@ window._openSTModal = function(id) {
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-satis-teklif'; mo.style.zIndex = '2100';
-  mo.innerHTML = '<div class="moc" style="max-width:850px;padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
+  mo.innerHTML = '<div class="moc" style="max-width:1100px;padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">' + (t ? '✏️ Teklif Düzenle' : '+ Yeni Satış Teklifi') + '</div>'
       + '<button onclick="document.getElementById(\'mo-satis-teklif\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
