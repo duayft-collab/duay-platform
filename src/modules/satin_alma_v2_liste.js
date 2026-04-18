@@ -114,7 +114,7 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;flex:1;min-width:0;min-height:0;overflow:hidden">';
   h+='<div style="flex:1;min-width:0;overflow-y:auto">';
   /* ALIS-LISTE-UX-PACK-001: 7 sütun grid (KAR % eklendi: TUTAR ↔ DURUM arası) */
-  h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:132px;z-index:9;background:var(--sf,#fff);height:36px;overflow:hidden">';
+  h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0px;z-index:9;background:var(--sf,#fff);height:36px;overflow:hidden">';
   var _th=function(label,alan){
     var aktif=sir.alan===alan;
     var yon=aktif?(sir.yon==='asc'?'↑':'↓'):'↕';
