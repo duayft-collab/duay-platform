@@ -159,7 +159,7 @@ window.renderSatinAlmaV2 = function() {
     var _solBorder = (t.satisMusteriOnay === true) ? '3px solid #D97706' : (_sureBitti ? '3px solid #A32D2D' : '3px solid transparent');
     /* ALIS-LISTE-UX-PACK-001: süre dolumu satır rengi (2 gün=kırmızı, 7 gün=sarı) */
     var _gunKalan = _gecerlilik ? Math.floor((new Date(_gecerlilik) - new Date()) / 86400000) : 999;
-    var _satirBg = aktif ? '#E6F1FB' : secili ? '#FFFCF5' : (_gunKalan <= 2 ? '#FCEBEB' : _gunKalan <= 7 ? '#FAEEDA' : 'var(--color-background-primary)');
+    var _satirBg = 'var(--color-background-primary)';
     h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;height:48px;overflow:hidden;padding:0 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
     // Kolon 1: checkbox
     h+='<input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:11px;height:11px;cursor:pointer">';
