@@ -243,76 +243,78 @@ function openUrunModal(id) {
  * Ürün kaydet.
  */
 window._saveUrunDB = function() {
-  var duayName = (document.getElementById('ud-duayName')?.value || '').trim();
-  var vendorCode = (document.getElementById('ud-vendorCode')?.value || '').trim();
-  var vendor = document.getElementById('ud-vendor')?.value || '';
-  if (!duayName) { window.toast?.('Ürün adı zorunlu', 'err'); return; }
-  if (!vendorCode) { window.toast?.('Satıcı ürün kodu zorunlu', 'err'); return; }
-
-  var eid = parseInt(document.getElementById('ud-eid')?.value || '0');
-  var duayCode = document.getElementById('ud-duayCode')?.value || _generateDuayCode(vendor, vendorCode);
-
-  // Unique kontrol
+  /* URUN-FORM-EXCEL-004: multi-row batch save
+     Düzeltmeler: loadUrunDB/storeUrunDB (doğru store),
+     Auth.getCU (dosya standardı), edit/duplicate scope dışı. */
+  var satirlar = document.querySelectorAll('#udb-tbody > tr[id^="udb-row-"]');
+  if (!satirlar.length) { window.toast?.('En az 1 ürün girin', 'err'); return; }
   var data = loadUrunDB();
-  var dup = data.find(function(x) { return x.duayCode === duayCode && x.id !== eid; });
-  if (dup) { window.toast?.('Bu Duay kodu zaten var: ' + duayCode, 'err'); return; }
+  var hatalar = [];
+  var yeniKayitlar = [];
 
-  var entry = {
-    vendorName: vendor, vendorClass: document.getElementById('ud-vendorClass')?.value || '',
-    vendorCode: vendorCode, duayCode: duayCode,
-    duayName: duayName, origName: document.getElementById('ud-origName')?.value || '',
-    stdName: document.getElementById('ud-stdName')?.value || '',
-    invoiceName: document.getElementById('ud-invoiceName')?.value || '',
-    customsDesc: document.getElementById('ud-customsDesc')?.value || '',
-    techDesc: document.getElementById('ud-techDesc')?.value || '',
-    category: document.getElementById('ud-category')?.value || '',
-    brand: document.getElementById('ud-brand')?.value || '',
-    color: document.getElementById('ud-color')?.value || '',
-    origin: document.getElementById('ud-origin')?.value || '',
-    gtip: document.getElementById('ud-gtip')?.value || '',
-    taxRate: parseFloat(document.getElementById('ud-taxRate')?.value || '0') || 0,
-    unit: document.getElementById('ud-unit')?.value || 'Adet',
-    dib: document.getElementById('ud-dib')?.value || 'H',
-    imo: document.getElementById('ud-imo')?.value || 'H',
-    netWeight: parseFloat(document.getElementById('ud-netW')?.value || '0') || 0,
-    grossWeight: parseFloat(document.getElementById('ud-grossW')?.value || '0') || 0,
-    pkgWidth: parseFloat(document.getElementById('ud-pkgW')?.value || '0') || 0,
-    pkgLength: parseFloat(document.getElementById('ud-pkgL')?.value || '0') || 0,
-    pkgHeight: parseFloat(document.getElementById('ud-pkgH')?.value || '0') || 0,
-    note: document.getElementById('ud-note')?.value || '',
-    updatedAt: new Date().toISOString(),
-  };
+  satirlar.forEach(function(tr) {
+    var n = tr.id.replace('udb-row-', '');
+    var duayName = (document.getElementById('udb-duayName-'+n)?.value||'').trim();
+    var origName = (document.getElementById('udb-origName-'+n)?.value||'').trim();
+    var vendorId = document.getElementById('udb-vendor-'+n)?.value||'';
+    var vendorCode = (document.getElementById('udb-vendorCode-'+n)?.value||'').trim();
+    var category = (document.getElementById('udb-category-'+n)?.value||'').trim();
+    var origin = (document.getElementById('udb-origin-'+n)?.value||'').trim();
+    var unit = (document.getElementById('udb-unit-'+n)?.value||'').trim();
+    var techDesc = (document.getElementById('udb-techDesc-'+n)?.value||'').trim();
+    var teslim = document.getElementById('udb-teslim-'+n)?.value||'';
+    var raf = document.getElementById('udb-raf-'+n)?.value||'';
+    var netW = document.getElementById('udb-netW-'+n)?.value||'';
+    var grossW = document.getElementById('udb-grossW-'+n)?.value||'';
+    var note = (document.getElementById('udb-note-'+n)?.value||'').trim();
+    var sozlesme = (document.getElementById('udb-sozlesme-'+n)?.value||'').trim();
+    var marka = (document.getElementById('udb-marka-'+n)?.value||'').trim();
+    var image = window['_udbImg'+n]||null;
 
-  if (eid) {
-    var existing = data.find(function(x) { return String(x.id) === String(eid); });
-    if (existing) { entry.changeLog = (existing.changeLog || []).concat([{ ts: new Date().toISOString(), by: window.Auth?.getCU?.()?.name }]); Object.assign(existing, entry); }
-  } else {
-    entry.id = typeof generateNumericId === 'function' ? generateNumericId() : Date.now();
-    entry.createdAt = new Date().toISOString();
-    entry.createdBy = window.Auth?.getCU?.()?.id;
-    entry.changeLog = [];
-    data.unshift(entry);
-  }
+    if (!duayName) { hatalar.push('Satır '+n+': Ürün adı (TR) zorunlu'); return; }
+    if (!vendorId) { hatalar.push('Satır '+n+': Tedarikçi zorunlu'); return; }
+    if (!techDesc) { hatalar.push('Satır '+n+': Teknik açıklama zorunlu'); return; }
 
-  // Görsel
-  var imgFile = document.getElementById('ud-img');
-  if (imgFile?.files?.[0]) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var item = data.find(function(x) { return x.duayCode === duayCode; });
-      if (item) item.image = e.target.result;
-      storeUrunDB(data);
-      document.getElementById('mo-urun-db')?.remove();
-      window.renderUrunDB?.();
-      window.toast?.('Ürün kaydedildi ✓', 'ok');
+    var kayit = {
+      id: _generateDuayCode(vendorId, vendorCode) || Date.now(),
+      duayName: duayName,
+      origName: origName,
+      vendorId: vendorId,
+      vendorName: vendorId,
+      vendorCode: vendorCode,
+      category: category,
+      origin: origin,
+      unit: unit || 'Adet',
+      techDesc: techDesc,
+      deliveryDays: teslim ? Number(teslim) : null,
+      shelfLife: raf ? Number(raf) : null,
+      netWeight: netW ? Number(netW) : null,
+      grossWeight: grossW ? Number(grossW) : null,
+      note: note,
+      sozlesmeNotu: sozlesme,
+      marka: marka,
+      image: image||null,
+      _hasImage: !!image,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      yukleyen_id: window.Auth?.getCU?.()?.id||null
     };
-    reader.readAsDataURL(imgFile.files[0]);
-  } else {
-    storeUrunDB(data);
-    document.getElementById('mo-urun-db')?.remove();
-    window.renderUrunDB?.();
-    window.toast?.('Ürün kaydedildi ✓', 'ok');
-  }
+    yeniKayitlar.push(kayit);
+  });
+
+  if (hatalar.length) { window.toast?.(hatalar[0], 'err'); return; }
+  if (!yeniKayitlar.length) { window.toast?.('Kaydedilecek ürün yok', 'err'); return; }
+
+  yeniKayitlar.forEach(function(k){ data.push(k); });
+  storeUrunDB(data);
+
+  Object.keys(window).filter(function(k){return k.startsWith('_udbImg');}).forEach(function(k){delete window[k];});
+
+  var mo = document.getElementById('mo-urun-db');
+  if (mo) mo.remove();
+  window.toast?.(yeniKayitlar.length + ' ürün kaydedildi', 'ok');
+  window.renderUrunDB?.();
 };
 
 /**
