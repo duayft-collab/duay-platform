@@ -1600,7 +1600,7 @@ function loadTahsilat() {
 }
 /** @param {Array<Object>} d */
 function storeTahsilat(d) {
-  var _now2=new Date().toISOString(); d=d.map(function(t){t.updatedAt=_now2;return t;}); if(d.length>1000){d=d.filter(function(t){return !t.isDeleted;}).slice(0, 1000);} _write(KEYS.tahsilat, d);
+  var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d)&&d.length>1000){d=d.filter(function(t){return !t.isDeleted;}).slice(0, 1000);} _write(KEYS.tahsilat, d);
   var _fp_tahsilat = _fsPath('tahsilat');
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
