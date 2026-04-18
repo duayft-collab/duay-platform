@@ -693,7 +693,7 @@ window.setKtnLayout = function(mode) {
 
 const SATIS_KEY = 'ak_navlun_satis1';
 function _loadSatis() { try { return JSON.parse(localStorage.getItem(SATIS_KEY)||'[]'); } catch { return []; } }
-function _storeSatis(d) { localStorage.setItem(SATIS_KEY, JSON.stringify(d.slice(0,300))); }
+function _storeSatis(d) { if(window.storeNavlunSatis) { window.storeNavlunSatis(d); } else { localStorage.setItem(SATIS_KEY, JSON.stringify(d.slice(0,300))); } }
 
 function openSatisTeklif(alisId) {
   const alis = loadNavlun().find(x=>x.id===alisId);

@@ -220,6 +220,7 @@ const KEYS = {
   taskChats     : 'ak_task_chat1',
   bankalar      : 'ak_bankalar1',
   navlun        : 'ak_navlun1',
+  navlunSatis   : 'ak_navlun_satis1',
   urunler       : 'ak_urunler1',
   ihracatListesi: 'ak_ihracat_listesi1',
   teklifSartlar : 'ak_teklif_sartlar1',
@@ -1641,6 +1642,11 @@ function storeTahsilat(d) {
 /** @param {Array<Object>} d */ function storeNavlun(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.navlun, d);
   var _fp = _fsPath('navlun'); if (_fp) _syncFirestore(_fp, d);
 }
+
+window.loadNavlunSatis = loadNavlunSatis;
+function loadNavlunSatis() { return _read(KEYS.navlunSatis) || []; }
+window.storeNavlunSatis = storeNavlunSatis;
+function storeNavlunSatis(d) { _write(KEYS.navlunSatis, d); var _fp = _fsPath('navlunSatis'); if(_fp) _syncFirestore(_fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16D — ÜRÜNLER / ALIŞ TEKLİF / SATIŞ TEKLİF
