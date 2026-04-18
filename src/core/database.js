@@ -438,7 +438,7 @@ function _write(key, value) {
       var clean = {};
       Object.keys(item).forEach(function(k) {
         var v = item[k];
-        if (v === null || v === undefined || v === '' || v === 0) return; // boşları atla
+        if (v === null || v === undefined || v === '') return; // boşları atla
         if (Array.isArray(v) && v.length === 0) return; // boş dizileri atla
         clean[k] = v;
       });
