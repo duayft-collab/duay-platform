@@ -192,6 +192,24 @@ window._stDurumGuncelle = function(id, yeniDurum) {
   t.updatedAt = new Date().toISOString();
   _storeST(data);
   window.toast?.('Durum güncellendi: ' + yeniDurum, 'ok');
+  // SATIS-NOTIF-CRM-001: gönderildi durumunda bildirim + CRM follow-up
+  if (yeniDurum === 'gonderildi') {
+    var _teklifNo = t.teklifNo || ('#' + t.id);
+    var _musteri = t.customerName || '';
+    window.addNotif?.('📤', 'Satış teklifi müşteriye iletildi: ' + _musteri, 'ok', 'satis');
+    window.logActivity?.('satis', 'Satış teklifi gönderildi: ' + _teklifNo);
+    if (typeof window.addCRMTask === 'function') {
+      var _crm3gun = new Date(); _crm3gun.setDate(_crm3gun.getDate() + 3);
+      window.addCRMTask({
+        baslik: 'Teklif takibi: ' + _musteri,
+        musteriId: t.cariId || '',
+        tarih: _crm3gun.toISOString().slice(0, 10),
+        not: 'Satış teklifi ' + _teklifNo + ' gönderildi. 3 gün sonra takip.',
+        kaynak: 'satis-teklif',
+        kaynakId: t.id || ''
+      });
+    }
+  }
   // SATIS-KABUL-TAHSILAT-001: kabul durumunda otomatik tahsilat kaydı oluştur
   if (yeniDurum === 'kabul') {
     window.toast?.('✅ Kabul edildi — Tahsilat oluşturmayı unutmayın!', 'ok');
