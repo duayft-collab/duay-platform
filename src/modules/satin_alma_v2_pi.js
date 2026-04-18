@@ -79,6 +79,11 @@ window._piOlustur = function(teklif, tasarim, katman) {
         teklifler[idx].pdfTasarim = tasarim||'A';
         window._saTeklifStore?.(teklifler);
         window.toast?.('Teklif "Gönderildi" olarak işaretlendi','ok');
+        // SATIS-NOTIF-001: gönderildi durumuna geçiş bildirimi
+        var _teklifNo = teklif.teklifId || ('#' + teklif.id);
+        var _musteri = teklif.musteriAd || teklifler[idx].musteriAd || '';
+        window.addNotif?.('📤', 'Satış teklifi müşteriye iletildi: ' + _musteri, 'ok', 'satis');
+        window.logActivity?.('satis', 'Satış teklifi gönderildi: ' + _teklifNo);
       }
     }
   }
