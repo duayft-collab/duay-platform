@@ -287,7 +287,7 @@ function _renderDetail(uid) {
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button class="btn btnp" onclick="window._openUserManageModal?.(${Number(u.id)||0})" style="font-size:12px">⚙️ Yönet</button>
-          <button onclick="window._rolKopyala(${u.id})" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İzinleri Kopyala</button>
+          <button onclick="window._rolKopyala(${Number(u.id)||0})" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İzinleri Kopyala</button>
         </div>
       </div>
 
@@ -314,10 +314,10 @@ function _renderDetail(uid) {
 
     <!-- Üst Butonlar -->
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
-      <button class="btn btns" onclick="Admin.resetPassword(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px">Sifre Sifirla</button>
+      <button class="btn btns" onclick="Admin.resetPassword(${Number(u.id)||0})" style="font-size:11px;padding:6px 12px;border-radius:8px">Sifre Sifirla</button>
       <button class="btn btns" onclick="Admin.openAuditLog()" style="font-size:11px;padding:6px 12px;border-radius:8px">Audit Log</button>
-      ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#DC2626;border-color:#DC2626">Askiya Al</button>`:''}
-      ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#16A34A;border-color:#16A34A">Aktif Et</button>`:''}
+      ${u.status==='active'&&!isSelf?`<button class="btn btns" onclick="Admin.suspend(${Number(u.id)||0})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#DC2626;border-color:#DC2626">Askiya Al</button>`:''}
+      ${u.status!=='active'?`<button class="btn btns" onclick="Admin.activate(${Number(u.id)||0})" style="font-size:11px;padding:6px 12px;border-radius:8px;color:#16A34A;border-color:#16A34A">Aktif Et</button>`:''}
       <button class="btn btnp" onclick="window._openUserManageModal?.(${Number(u.id)||0})" style="font-size:11px;padding:6px 14px;border-radius:8px;margin-left:auto">Yönet</button>
     </div>
 
@@ -332,8 +332,8 @@ function _renderDetail(uid) {
     <div id="adm-tab-content">
     <!-- Yetkiler sekmesi: Modüller butonu -->
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btnp" onclick="Admin.openPermModal(${u.id})" style="font-size:12px;padding:8px 16px;border-radius:8px">Modul Yetkileri</button>
-      ${!isSelf?`<button class="btn btns" onclick="window._cloneUserPerms(${u.id})" style="font-size:11px;padding:6px 12px;border-radius:8px">Yetki Klonla</button>`:''}
+      <button class="btn btnp" onclick="Admin.openPermModal(${Number(u.id)||0})" style="font-size:12px;padding:8px 16px;border-radius:8px">Modul Yetkileri</button>
+      ${!isSelf?`<button class="btn btns" onclick="window._cloneUserPerms(${Number(u.id)||0})" style="font-size:11px;padding:6px 12px;border-radius:8px">Yetki Klonla</button>`:''}
       <button class="btn btns" onclick="Admin.openDeptModal()" style="font-size:11px;padding:6px 12px;border-radius:8px">Departmanlar</button>
       <button class="btn btns" onclick="Admin.openBulkRoleChange()" style="font-size:11px;padding:6px 12px;border-radius:8px">Toplu Rol</button>
     </div>
@@ -363,11 +363,11 @@ function _renderDetail(uid) {
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:14px 16px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <span style="font-size:13px;font-weight:600;color:var(--t)">🔐 Oturum Politikası</span>
-        ${!isSelf ? '<button class="btn btns" onclick="window._saveMaxSessions(' + u.id + ')" style="font-size:11px;padding:3px 10px">Kaydet</button>' : ''}
+        ${!isSelf ? '<button class="btn btns" onclick="window._saveMaxSessions(' + (Number(u.id)||0) + ')" style="font-size:11px;padding:3px 10px">Kaydet</button>' : ''}
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <span style="font-size:12px;color:var(--t2)">Eş zamanlı oturum limiti:</span>
-        <select id="adm-max-sessions-${u.id}" style="font-size:12px;padding:4px 8px;border:1px solid var(--b);border-radius:6px;background:var(--s);color:var(--t)" ${isSelf ? 'disabled' : ''}>
+        <select id="adm-max-sessions-${Number(u.id)||0}" style="font-size:12px;padding:4px 8px;border:1px solid var(--b);border-radius:6px;background:var(--s);color:var(--t)" ${isSelf ? 'disabled' : ''}>
           <option value="0" ${(u.maxSessions||0)===0?'selected':''}>Sınırsız</option>
           <option value="1" ${u.maxSessions===1?'selected':''}>1 Oturum</option>
           <option value="2" ${u.maxSessions===2?'selected':''}>2 Oturum</option>
@@ -446,10 +446,10 @@ function _renderDetail(uid) {
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <span style="font-size:13px;font-weight:600;color:var(--t)">Hizli Yetki Sablonu</span>
-        <button class="btn btns" onclick="window._openTempPerm(${u.id})" style="font-size:10px">Gecici Yetki</button>
+        <button class="btn btns" onclick="window._openTempPerm(${Number(u.id)||0})" style="font-size:10px">Gecici Yetki</button>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${Object.entries(PERM_TEMPLATES).map(([k,v]) => `<button class="btn btns" onclick="applyPermTemplate(${u.id},'${k}')" style="font-size:11px">${window._esc(v.label)}</button>`).join('')}
+        ${Object.entries(PERM_TEMPLATES).map(([k,v]) => `<button class="btn btns" onclick="applyPermTemplate(${Number(u.id)||0},'${k}')" style="font-size:11px">${window._esc(v.label)}</button>`).join('')}
       </div>
     </div>
 
@@ -2107,7 +2107,7 @@ function renderUsers(filter=''){
             const _rowBg = _rowSel ? 'var(--al)' : (rowIdx%2===0?'var(--sf)':'var(--s2)');
             return`<tr onclick="if(!event.target.closest('button,input')){window._selectUserForDetail(${Number(u.id)||0})}" style="border-bottom:1px solid var(--b);background:${_rowBg};opacity:${isActive?1:.6};transition:background .1s;cursor:pointer${_rowSel?';box-shadow:inset 3px 0 0 var(--ac)':''}" onmouseenter="this.style.background='var(--al)'" onmouseleave="this.style.background='${_rowBg}'">
               <td style="padding:12px 16px;width:36px">
-                ${!isSelf?`<input type="checkbox" class="u-bulk-cb" data-uid="${u.id}" onchange="_onBulkCb()" style="accent-color:var(--ac);cursor:pointer">`:
+                ${!isSelf?`<input type="checkbox" class="u-bulk-cb" data-uid="${Number(u.id)||0}" onchange="_onBulkCb()" style="accent-color:var(--ac);cursor:pointer">`:
                   `<span style="font-size:10px;color:var(--t3)">—</span>`}
               </td>
               <td style="padding:12px 16px">
@@ -2141,7 +2141,7 @@ function renderUsers(filter=''){
                   <button onclick="event.stopPropagation();editUser(${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 10px">✏️</button>
                   <button onclick="event.stopPropagation();toggleUser(${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 10px;${isActive?'color:#D97706':'color:#16A34A'}" title="${isActive?'Pasife al':'Aktif et'}">${isActive?'⏸':'▶'}</button>
                   ${!isSelf?`<button onclick="deleteUser(${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 10px;color:#EF4444">🗑</button>`:''}
-                  <button onclick="_toggleUserDetail.call(this,${u.id})" class="btn btns" style="font-size:11px;padding:5px 8px;color:var(--t3)">▾</button>
+                  <button onclick="_toggleUserDetail.call(this,${Number(u.id)||0})" class="btn btns" style="font-size:11px;padding:5px 8px;color:var(--t3)">▾</button>
                 </div>
               </td>
             </tr>`;
@@ -3057,8 +3057,8 @@ async function firebaseSync() {
         <div style="margin-bottom:14px">
           <div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:6px">⚠️ Sadece Platformda — Firebase'de Yok (${onlyInLocal.length})</div>
           ${onlyInLocal.map(u => `
-            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;margin-bottom:4px;font-size:12px" id="fb-sync-row-${u.id}">
-              <input type="checkbox" class="fb-sync-cb" value="${u.id}" checked style="accent-color:#DC2626;flex-shrink:0">
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;margin-bottom:4px;font-size:12px" id="fb-sync-row-${Number(u.id)||0}">
+              <input type="checkbox" class="fb-sync-cb" value="${Number(u.id)||0}" checked style="accent-color:#DC2626;flex-shrink:0">
               <div style="flex:1;min-width:0">
                 <div style="font-weight:600;color:var(--t)">${escH(u.name)}</div>
                 <div style="font-size:10px;color:var(--t3)">${escH(u.email || '—')} · ${u.reason || ''}</div>
