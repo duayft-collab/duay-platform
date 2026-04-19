@@ -1038,6 +1038,8 @@ window.renderUrunler = function() {
   if (window._urunTedFiltre) fl = fl.filter(function(u) { return u.tedarikci === window._urunTedFiltre; });
   /* GIZLILIK-002: Seviye bazlı filtre */
   if (typeof window.canSee === 'function') fl = fl.filter(function(u) { return window.canSee(u.gizlilik || 1); });
+  /* URUN-FILTRE-USER-ORDER-001: admin user filter pagination öncesine alındı */
+  if (window.isAdmin?.() && window._urunUserFiltre) fl = fl.filter(function(u){ return (u.createdBy||'') === window._urunUserFiltre; });
 
   /* Sayfalama (STANDART-FIX-013) */
   if (!window._urunSayfa) window._urunSayfa = 1;
@@ -1071,7 +1073,6 @@ window.renderUrunler = function() {
     kullanicilar.forEach(function(k){ filtreH += '<option value="'+esc(k)+'"'+(aktifUser===k?' selected':'')+'>'+esc(k)+'</option>'; });
     filtreH += '</select>';
   }
-  if(isAdmin && aktifUser) fl = fl.filter(function(u){ return (u.createdBy||'')===aktifUser; });
   filtreH += '</div>';
 
   /* URUN-LIST-002: Tedarikçi pill butonları */
