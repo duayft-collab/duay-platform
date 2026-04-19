@@ -1053,6 +1053,8 @@ window.renderUrunler = function() {
   else if (window._urunFiltre === 'eksik') fl = fl.filter(function(u) { return !u.urunAdi || !u.tedarikci || !u.kategori || !u.gorsel; });
   /* URUN-LIST-002: Tedarikçi filtresi */
   if (window._urunTedFiltre) fl = fl.filter(function(u) { return u.tedarikci === window._urunTedFiltre; });
+  /* URUN-FILTRE-KATEGORI-001: Kategori filtresi */
+  if (window._urunKatFiltre) fl = fl.filter(function(u) { return u.kategori === window._urunKatFiltre; });
   /* GIZLILIK-002: Seviye bazlı filtre */
   if (typeof window.canSee === 'function') fl = fl.filter(function(u) { return window.canSee(u.gizlilik || 1); });
   /* URUN-FILTRE-USER-ORDER-001: admin user filter pagination öncesine alındı */
@@ -1062,7 +1064,7 @@ window.renderUrunler = function() {
   if (!window._urunSayfa) window._urunSayfa = 1;
   if (q) window._urunSayfa = 1;
   /* URUN-FILTRE-PAGE-RESET-001: filtre değişiminde sayfa 1'e dön */
-  var _snap = (window._urunFiltre || '') + '|' + (window._urunTedFiltre || '') + '|' + (window._urunUserFiltre || '');
+  var _snap = (window._urunFiltre || '') + '|' + (window._urunTedFiltre || '') + '|' + (window._urunUserFiltre || '') + '|' + (window._urunKatFiltre || '');
   if (window._urunFilterSnap !== _snap) { window._urunSayfa = 1; window._urunFilterSnap = _snap; }
   var _URUN_SAYFA_BOY = 50;
   var _urunToplamS = Math.max(1, Math.ceil(fl.length / _URUN_SAYFA_BOY));
@@ -1091,7 +1093,7 @@ window.renderUrunler = function() {
     filtreH += '</select>';
   }
   /* URUN-FILTRE-TEMIZLE-001: × Temizle butonu */
-  filtreH += '<button onclick="event.stopPropagation();window._urunFiltre=\'tumu\';window._urunTedFiltre=\'\';window._urunUserFiltre=\'\';window._urunSayfa=1;var s=document.getElementById(\'urun-search\');if(s)s.value=\'\';window.renderUrunler?.()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:20px;background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;margin-left:8px">× Temizle</button>';
+  filtreH += '<button onclick="event.stopPropagation();window._urunFiltre=\'tumu\';window._urunTedFiltre=\'\';window._urunUserFiltre=\'\';window._urunKatFiltre=\'\';window._urunSayfa=1;var s=document.getElementById(\'urun-search\');if(s)s.value=\'\';window.renderUrunler?.()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:20px;background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;margin-left:8px">× Temizle</button>';
   filtreH += '</div>';
 
   /* URUN-LIST-002: Tedarikçi pill butonları */
@@ -1109,6 +1111,22 @@ window.renderUrunler = function() {
     tedList.forEach(function(t) {
       var ak = aktifTed === t;
       tedH += '<button onclick="event.stopPropagation();window._urunTedFiltre=\'' + t.replace(/'/g, "\\'") + '\';window.renderUrunler()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:20px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit;white-space:nowrap">' + t + '</button>';
+    });
+    tedH += '</div>';
+  }
+  /* URUN-FILTRE-KATEGORI-001: Kategori pill listesi */
+  var katList = []; var _katSet = {};
+  d.filter(function(u){return !u.isDeleted;}).forEach(function(u) { var k = u.kategori || ''; if (k && !_katSet[k]) { _katSet[k] = true; katList.push(k); } });
+  katList.sort();
+  var aktifKat = window._urunKatFiltre || '';
+  if (aktifKat && katList.indexOf(aktifKat) === -1) { window._urunKatFiltre = ''; aktifKat = ''; }
+  if (katList.length > 1) {
+    tedH += '<div style="padding:4px 16px 6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">';
+    tedH += '<span style="font-size:9px;color:var(--t3);font-weight:500">KATEGORİ:</span>';
+    tedH += '<button onclick="event.stopPropagation();window._urunKatFiltre=\'\';window.renderUrunler()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:20px;background:' + (aktifKat === '' ? 'var(--t)' : 'transparent') + ';color:' + (aktifKat === '' ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit">Tümü</button>';
+    katList.forEach(function(k) {
+      var ak = aktifKat === k;
+      tedH += '<button onclick="event.stopPropagation();window._urunKatFiltre=\'' + k.replace(/'/g, "\\'") + '\';window.renderUrunler()" style="font-size:10px;padding:2px 8px;border:0.5px solid var(--b);border-radius:20px;background:' + (ak ? 'var(--t)' : 'transparent') + ';color:' + (ak ? 'var(--sf)' : 'var(--t2)') + ';cursor:pointer;font-family:inherit;white-space:nowrap">' + k + '</button>';
     });
     tedH += '</div>';
   }
