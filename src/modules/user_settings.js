@@ -205,4 +205,32 @@
     window.toast?.('Profil güncellendi', 'success');
     _close();
   };
+
+  /* USER-SETTINGS-MENU-TRIGGER-001: sağ üst kullanıcı adı/rol bloğu tıklanır hale getir */
+  function _usInitTrigger() {
+    var nameEl = document.getElementById('tn2-name');
+    if (!nameEl) { setTimeout(_usInitTrigger, 500); return; }
+    var parent = nameEl.parentElement;
+    if (!parent || parent._usBound) return;
+    parent._usBound = true;
+    parent.style.cursor = 'pointer';
+    parent.style.transition = 'background-color .12s';
+    parent.title = 'Ayarlar';
+    parent.addEventListener('mouseenter', function() {
+      parent.style.background = 'rgba(0,0,0,0.04)';
+    });
+    parent.addEventListener('mouseleave', function() {
+      parent.style.background = 'transparent';
+    });
+    parent.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof window._openUserSettings === 'function') window._openUserSettings();
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _usInitTrigger);
+  } else {
+    _usInitTrigger();
+  }
 })();
