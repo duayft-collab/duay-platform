@@ -1045,7 +1045,7 @@ window.renderUrunler = function() {
     + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kategori</div><div style="font-size:22px;font-weight:600">' + new Set(d.map(function(u){return u.kategori||'';})).size + '</div></div>';
   // List
   var q = (document.getElementById('urun-search')?.value || '').toLowerCase();
-  var fl = q ? d.filter(function(u) { return (u.urunAdi||'').toLowerCase().includes(q) || (u.urunKodu||'').toLowerCase().includes(q) || (u.tedarikci||'').toLowerCase().includes(q) || (u.kategori||'').toLowerCase().includes(q) || (u.gtip||'').toLowerCase().includes(q); }) : d;
+  var fl = q ? d.filter(function(u) { return (u.urunAdi||'').toLowerCase().includes(q) || (u.urunKodu||'').toLowerCase().includes(q) || (u.tedarikci||'').toLowerCase().includes(q) || (u.kategori||'').toLowerCase().includes(q) || (u.gtip||'').toLowerCase().includes(q) || (u.duayKodu||'').toLowerCase().includes(q) || (u.marka||'').toLowerCase().includes(q) || (u.aciklama||'').toLowerCase().includes(q); }) : d;
   /* URUN-LIST-001: Görsel/Tamamlanma filtreleri */
   if (window._urunFiltre === 'gorselli') fl = fl.filter(function(u) { return u.gorsel; });
   else if (window._urunFiltre === 'gorselsiz') fl = fl.filter(function(u) { return !u.gorsel; });
