@@ -1813,6 +1813,7 @@ function _injectUsersPanel() {
         '</div>',
         '<button class="btn btnp" onclick="openNewUser()" style="border-radius:9px">+ Kullanıcı Ekle</button>',
         '<button class="btn btns" onclick="exportUsersXlsx()" title="Excel İndir" style="border-radius:9px">⬇️ Excel</button>',
+        '<button class="btn btns" onclick="window.asistanModulOnarim?.()" title="Yönetici Asistanı rolündeki kullanıcıların eksik modüllerini onar" style="border-radius:9px">🛠️ Asistan Onarım</button>',
       '</div>',
     '</div>',
     '<div style="background:var(--al);border:1px solid var(--ac)33;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--t2);line-height:1.7">',
@@ -3612,7 +3613,48 @@ if (typeof module !== 'undefined' && module.exports) {
   /* ADMIN-USERS-VIEW-INIT-FIX-001: Init tek seferlik — renderUsers atanmadan önce çalışsın ki her render'da reset olmasın */
   if (!window._usersViewInitialized) { USERS_VIEW = 'table'; window._usersViewInitialized = true; }
   window._adminRenderUsers = renderUsers; // panel_stubs.js tarafından çağrılır
-  window.renderUsers = function(...args) {
+  /**
+ * ASISTAN-MODULES-REPAIR-001: Yönetici Asistanı rolünde olan ama modules
+ * alanı eksik/bozuk kullanıcıları tek tıkla default asistan modül setiyle onarır.
+ */
+window.asistanModulOnarim = function() {
+  try {
+    var users = (typeof loadUsers === 'function') ? loadUsers() : [];
+    var defMods = (window.ROLE_DEFAULT_MODULES && window.ROLE_DEFAULT_MODULES.asistan) || [];
+    if (!defMods.length) { window.toast?.('ROLE_DEFAULT_MODULES.asistan tanımlı değil', 'err'); return; }
+    var minCoverage = Math.ceil(defMods.length * 0.5);
+    var adaylar = users.filter(function(u) {
+      if (!u || u.role !== 'asistan') return false;
+      if (!Array.isArray(u.modules)) return true;
+      return u.modules.length < minCoverage;
+    });
+    if (!adaylar.length) { window.toast?.('Tüm asistan kullanıcılar sağlıklı ✓', 'ok'); return; }
+    var msg = adaylar.length + ' asistan kullanıcıda eksik/bozuk modül bulundu. Default modül setiyle onarılsın mı?\n\n' +
+              adaylar.map(function(u){ return '• ' + (u.name || u.email || u.id) + ' (mevcut: ' + (Array.isArray(u.modules) ? u.modules.length : 'null') + ')'; }).join('\n');
+    var _onOnay = function() {
+      var now = new Date().toISOString();
+      adaylar.forEach(function(u) {
+        u.modules = defMods.slice();
+        u.permUpdatedAt = now;
+        u.updatedAt = now;
+      });
+      if (typeof saveUsers === 'function') saveUsers(users);
+      if (typeof window.logActivity === 'function') window.logActivity('user', adaylar.length + ' asistan kullanıcı modülleri onarıldı');
+      window.toast?.(adaylar.length + ' asistan kullanıcı onarıldı ✓', 'ok');
+      window.renderUsers?.();
+    };
+    if (typeof window.confirmModal === 'function') {
+      window.confirmModal(msg, { title: '🛠️ Asistan Modül Onarımı', confirmText: 'Evet Onar', onConfirm: _onOnay });
+    } else {
+      if (confirm(msg)) _onOnay();
+    }
+  } catch(e) {
+    console.error('[asistanModulOnarim]', e);
+    window.toast?.('Onarım sırasında hata: ' + e.message, 'err');
+  }
+};
+
+window.renderUsers = function(...args) {
   if (window._adminSaving) return; // Kayıt sırasında form ezilmesin
   try {
     return renderUsers(...args);
