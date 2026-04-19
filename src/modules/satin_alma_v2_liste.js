@@ -216,13 +216,13 @@ window.renderSatinAlmaV2 = function() {
     var _bgColor = _stageInfo ? _stageInfo.renk + '22' : (durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA');
     var _fgColor = _stageInfo ? _stageInfo.renk : (durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806');
     var _stLbl = _stageInfo ? _stageInfo.label : durum;
-    var _bittiBadge=_sureBitti?' <span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: '+_gecerlilik+'">Süresi Doldu</span>':'';
+    var _bittiBadge=_sureBitti?' '+window._statusBadge?.('Süresi Doldu','danger') || ' ':'';/* SA-STATUS-BADGE-MIGRATE-001 */
     var _uyariIkon=_sureUyari?' <span title="Gecerlilik 7 gun icinde dolacak: '+_gecerlilik+'" style="color:#D97706;font-size:10px;cursor:help">⚠</span>':'';
     /* SA-PIPELINE-001b: pipeline timer göstergesi */
     var _pipelineKalan = (typeof window._saPipelineTimerKalan === 'function') ? window._saPipelineTimerKalan(t) : null;
     var _timerHTML = _pipelineKalan === null ? '' : _pipelineKalan > 0
       ? '<div style="font-size:9px;color:var(--color-text-tertiary)">⏱ '+Math.ceil(_pipelineKalan)+'h kaldı</div>'
-      : '<div style="font-size:9px;padding:2px 5px;border-radius:6px;background:#FCEBEB;color:#A32D2D;font-weight:600;display:inline-block">⚠ Süre doldu</div>';
+      : (window._statusBadge?.('⚠ Süre doldu','danger')||'');/* SA-STATUS-BADGE-MIGRATE-001 */
     /* SA-LISTE-REDESIGN-001: AŞAMA pill büyük, tek div */
     /* SA-LISTE-ROW-FIX-001: AŞAMA hücresi overflow — ekstra badge taşmasın */
     h+='<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="font-size:9px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500;background:'+_bgColor+';color:'+_fgColor+'">'+_stLbl+'</span>'+(_bittiBadge||'')+'</div>';
@@ -306,7 +306,7 @@ window._saV2DetayHTML = function(t) {
   // SAV2-GECERLILIK-002: durum badge yanina ayri "Süresi Doldu" badge ve 7-gun ⚠ uyari ikonu (liste view ile ayni pattern)
   var _bgColor=durum==='onaylandi'?'#E1F5EE':durum==='reddedildi'?'#FCEBEB':'#FAEEDA';
   var _fgColor=durum==='onaylandi'?'#085041':durum==='reddedildi'?'#791F1F':'#633806';
-  var _bittiBadge=_sureBitti?' <span style="font-size:8px;padding:2px 6px;border-radius:8px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: '+_gecerlilik+'">Süresi Doldu</span>':'';
+  var _bittiBadge=_sureBitti?' '+window._statusBadge?.('Süresi Doldu','danger') || ' ':'';/* SA-STATUS-BADGE-MIGRATE-001 */
   var _uyariIkon=_sureUyari?' <span title="Gecerlilik 7 gun icinde dolacak: '+_gecerlilik+'" style="color:#D97706;font-size:10px;cursor:help">⚠</span>':'';
   h+='<div style="margin-top:6px;display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span style="font-size:8px;padding:2px 6px;border-radius:8px;background:'+_bgColor+';color:'+_fgColor+'">'+durum+'</span>'+_bittiBadge+_uyariIkon+'</div>';
   h+='<div style="clear:both"></div>';
@@ -338,7 +338,7 @@ window._saV2DetayHTML = function(t) {
   if(_canSatis && !t.hazirlanmaTarihi) {
     h += '<button onclick="event.stopPropagation();window._saV2DosyaHazir(\''+t.id+'\')" style="padding:7px;border:none;border-radius:5px;background:#0F6E56;color:#fff;font-size:10px;cursor:pointer;font-weight:500;font-family:inherit;width:100%;margin-top:4px">\u2713 Dosya Sat\u0131\u015fa Haz\u0131r</button>';
   } else if(t.hazirlanmaTarihi) {
-    h += '<div style="padding:6px;background:#E1F5EE;border-radius:5px;font-size:9px;color:#085041;text-align:center;margin-top:4px">\u2713 Haz\u0131r \u00b7 '+(t.hazirlanmaTarihi||'').slice(0,16).replace('T',' ')+'</div>';
+    h += '<div style="text-align:center;margin-top:4px">'+(window._statusBadge?.('\u2713 Haz\u0131r \u00b7 '+(t.hazirlanmaTarihi||'').slice(0,16).replace('T',' '),'success')||'')+'</div>';/* SA-STATUS-BADGE-MIGRATE-001 */
   }
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">';
   h+='<button ondblclick="event.stopPropagation();window._saV2DuzenleForm?.(\''+t.id+'\')" onclick="event.stopPropagation();window._saV2DuzenleForm?.(\''+t.id+'\')" style="padding:6px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:transparent;font-size:10px;cursor:pointer;font-family:inherit;color:var(--color-text-secondary)">✏ Düzenle</button>';
