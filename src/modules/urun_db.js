@@ -75,7 +75,7 @@ function openUrunModal(id) {
       /* URUN-FORM-KART-LAYOUT-001-ADIM-A: table/thead/tbody → udb-kartlar container + udb-card (per-card table wrapper ADIM-B'ye kadar korunur) */
       + '<div id="udb-tablo-wrap" style="overflow-x:auto">'
         + '<div id="udb-kartlar">'
-          + '<div class="udb-card" id="udb-row-1"><table style="width:100%;border-collapse:collapse"><tbody><tr>' + _udbSatirHTML(1, u) + '</tr></tbody></table></div>'
+          + '<div class="udb-card" id="udb-row-1" style="border:0.5px solid var(--b,#e0e0e0);border-radius:12px;padding:18px;margin-bottom:14px;background:var(--sf,#fff)">' + _udbCardHTML(1, u) + '</div>'
         + '</div>'
       + '</div>'
       + '<div style="padding:8px 16px;display:' + (u ? 'none' : 'block') + '">'
@@ -115,9 +115,9 @@ function openUrunModal(id) {
     var kart = document.createElement('div');
     kart.id = 'udb-row-' + n;
     kart.className = 'udb-card';
-    kart.style.borderBottom = '0.5px solid var(--b)';
-    kart.style.background = (n % 2 === 0) ? 'var(--s2)' : 'var(--sf)';
-    kart.innerHTML = '<table style="width:100%;border-collapse:collapse"><tbody><tr>' + _udbSatirHTML(n, null) + '</tr></tbody></table>';
+    /* URUN-FORM-KART-LAYOUT-001-ADIM-B: _udbSatirHTML → _udbCardHTML + kart padding */
+    kart.style.cssText = 'border:0.5px solid var(--b,#e0e0e0);border-radius:12px;padding:18px;margin-bottom:14px;background:var(--sf,#fff)';
+    kart.innerHTML = _udbCardHTML(n, null);
     kartlar.appendChild(kart);
   };
 
@@ -198,6 +198,109 @@ function openUrunModal(id) {
       input.click();
     };
   };
+
+  /* URUN-FORM-KART-LAYOUT-001-ADIM-B: _fld helper + _udbCardHTML kart template */
+  function _fld(id, label, type, listId, required, placeholder, value) {
+    var esc = window._esc || function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+    var reqStar = required ? '<span style="color:#E0574F">*</span>' : '';
+    var lbl = '<label for="' + id + '" style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">' + esc(label) + ' ' + reqStar + '</label>';
+    var baseStyle = 'padding:8px 10px;border:0.5px solid var(--b,#e0e0e0);border-radius:8px;background:var(--sf,#fff);color:var(--t,#1c1c1e);font-size:12px;font-family:inherit;width:100%;box-sizing:border-box;outline:none;transition:border-color .12s';
+    var focusHandlers = 'onfocus="this.style.borderColor=\'var(--ac,#007aff)\'" onblur="this.style.borderColor=\'var(--b,#e0e0e0)\'"';
+    var v = esc(value || '');
+    var ph = esc(placeholder || '');
+    var input = '';
+    if (type === 'textarea') {
+      input = '<textarea id="' + id + '" placeholder="' + ph + '" style="' + baseStyle + ';min-height:68px;resize:vertical" ' + focusHandlers + '>' + v + '</textarea>';
+    } else if (type === 'select-vendor') {
+      var carilar = [];
+      try { carilar = (typeof loadCari === 'function' ? loadCari({tumKullanicilar:true}) : []) || []; } catch(e) {}
+      var opts = '<option value="">— Seçin —</option>' + carilar.map(function(c){ var nm = c.unvan||c.ad||c.name||''; var sel = (v === esc(nm)) ? ' selected' : ''; return '<option value="' + esc(nm) + '"' + sel + '>' + esc(nm) + '</option>'; }).join('');
+      input = '<select id="' + id + '" style="' + baseStyle + '" ' + focusHandlers + '>' + opts + '</select>';
+    } else if (type === 'select-country') {
+      var countries = (typeof URUN_COUNTRIES !== 'undefined' ? URUN_COUNTRIES : (window.URUN_COUNTRIES || []));
+      var opts = '<option value="">—</option>' + countries.map(function(c){ var sel = (v === esc(c)) ? ' selected' : ''; return '<option value="' + esc(c) + '"' + sel + '>' + esc(c) + '</option>'; }).join('');
+      input = '<select id="' + id + '" style="' + baseStyle + '" ' + focusHandlers + '>' + opts + '</select>';
+    } else if (type === 'select-unit') {
+      var birimler = ['Adet','Kg','Gr','Ton','Metre','m²','m³','Litre','Paket','Koli','Kutu','Rulo','Set','Çift'];
+      var opts = '<option value="">—</option>' + birimler.map(function(b){ var sel = (v === b) ? ' selected' : ''; return '<option value="' + b + '"' + sel + '>' + b + '</option>'; }).join('');
+      input = '<select id="' + id + '" style="' + baseStyle + '" ' + focusHandlers + '>' + opts + '</select>';
+    } else if (type === 'text-list') {
+      input = '<input type="text" id="' + id + '" list="' + listId + '" value="' + v + '" placeholder="' + ph + '" style="' + baseStyle + '" ' + focusHandlers + '>';
+    } else if (type === 'checkbox') {
+      var checked = value ? ' checked' : '';
+      return '<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t2,#4a4a4a);cursor:pointer;padding:8px 0"><input type="checkbox" id="' + id + '"' + checked + ' style="width:14px;height:14px"> <span>' + esc(placeholder || label) + '</span></label>';
+    } else {
+      input = '<input type="' + type + '" id="' + id + '" value="' + v + '" placeholder="' + ph + '" style="' + baseStyle + '" ' + focusHandlers + '>';
+    }
+    return '<div>' + lbl + input + '</div>';
+  }
+
+  function _udbCardHTML(n, u) {
+    u = u || {};
+    var esc = window._esc || function(s){ return String(s == null ? '' : s); };
+    /* Kategori datalist enjection (URUN-KATEGORI-BIRIM-COMBOBOX-001 ile uyumlu) */
+    if (!document.getElementById('udb-kat-datalist')) {
+      var _mevcut = (typeof loadUrunDB === 'function' ? loadUrunDB() : []) || [];
+      var _defKat = ['Elektronik','Makine','Kimya','Tekstil','Gıda','Ambalaj','Kırtasiye','Mobilya','İnşaat','Yedek Parça','Diğer'];
+      var _setKat = {}; _defKat.forEach(function(k){ _setKat[k]=true; }); _mevcut.forEach(function(x){ if(x && (x.category||x.kategori)) _setKat[x.category||x.kategori]=true; });
+      var _dl = document.createElement('datalist'); _dl.id = 'udb-kat-datalist';
+      _dl.innerHTML = Object.keys(_setKat).sort().map(function(k){ return '<option value="'+esc(k)+'">'; }).join('');
+      document.body.appendChild(_dl);
+    }
+    var imgData = u.image || u.gorsel || '';
+    var imgPreview = imgData
+      ? '<img src="' + esc(imgData) + '" style="width:100%;height:100%;object-fit:cover" alt="">'
+      : '<span style="font-size:11px;color:var(--t3,#8a8a8a);text-align:center;line-height:1.3">📷<br>Görsel<br>Ekle</span>';
+    var mevcutKod = u.duayCode || u.duayKodu || '';
+    var kodRozeti = mevcutKod
+      ? '<span style="margin-left:8px;font-size:10px;padding:3px 8px;border-radius:6px;background:#E1F5EE;color:#1A8D6F;font-weight:600;letter-spacing:.03em">' + esc(mevcutKod) + '</span>'
+      : '<span style="margin-left:8px;font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,0.04);color:var(--t3,#8a8a8a);font-weight:500">Kod: kayıt sırasında otomatik</span>';
+    return ''
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 12px 0;border-bottom:0.5px solid var(--b,#e0e0e0);margin-bottom:16px">'
+        + '<div style="display:flex;align-items:center"><span style="font-size:13px;font-weight:600;color:var(--t,#1c1c1e)">📦 Ürün ' + n + '</span>' + kodRozeti + '</div>'
+        + '<button type="button" onclick="window._udbSil?.(' + n + ')" style="background:transparent;border:0.5px solid #E0574F;color:#E0574F;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">× Kaldır</button>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">'
+        + '<div>'
+          + '<label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Görsel <span style="color:#E0574F">*</span></label>'
+          + '<div id="udb-img-preview-' + n + '" onclick="document.getElementById(\'udb-img-file-' + n + '\').click()" style="width:100px;height:100px;border:0.5px dashed var(--b,#e0e0e0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3,#8a8a8a);cursor:pointer;overflow:hidden;background:var(--s2,rgba(0,0,0,0.02));transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac,#007aff)\'" onmouseleave="this.style.borderColor=\'var(--b,#e0e0e0)\'">'
+            + imgPreview
+          + '</div>'
+          + '<input type="file" id="udb-img-file-' + n + '" accept="image/*" style="display:none" onchange="window._udbGorselYukle?.(this, ' + n + ')">'
+        + '</div>'
+        + _fld('udb-duayName-' + n, 'Ürün Adı (TR)', 'text', '', true, 'örn: Mesh Ofis Koltuğu', u.duayName || u.urunAdi)
+        + _fld('udb-origName-' + n, 'Ürün Adı (EN)', 'text', '', true, 'örn: Mesh Office Chair', u.origName || u.ingAd)
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">'
+        + _fld('udb-vendor-' + n, 'Tedarikçi', 'select-vendor', '', true, '', u.vendorName || u.tedarikci)
+        + _fld('udb-vendorCode-' + n, 'Tedarikçi Kodu', 'text', '', true, 'örn: 3121312', u.vendorCode || u.saticiKodu)
+        + _fld('udb-category-' + n, 'Kategori', 'text-list', 'udb-kat-datalist', false, 'Mobilya, Ofis...', u.category || u.kategori)
+        + _fld('udb-origin-' + n, 'Menşei', 'select-country', '', true, '', u.origin || u.mensei)
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">'
+        + _fld('udb-unit-' + n, 'Birim', 'select-unit', '', true, '', u.unit || u.birim)
+        + _fld('udb-teslim-' + n, 'Teslim (gün)', 'number', '', false, 'örn: 15', u.deliveryDays)
+        + _fld('udb-netW-' + n, 'Net Ağırlık (kg)', 'number', '', false, 'örn: 2.5', u.netWeight || u.netAgirlik)
+        + _fld('udb-grossW-' + n, 'Brüt Ağırlık (kg)', 'number', '', false, 'örn: 3.0', u.grossWeight || u.brutAgirlik)
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">'
+        + _fld('udb-marka-' + n, 'Marka', 'text', '', false, 'örn: IKEA, Bosch', u.marka)
+        + _fld('udb-uretim-' + n, 'Üretim/Kontrol', 'text', '', false, 'örn: TS EN 1021', u.uretimKontrol)
+        + _fld('udb-raf-' + n, 'Raf Ömrü (gün)', 'number', '', false, 'örn: 365', u.shelfLife)
+      + '</div>'
+      + '<div style="margin-bottom:6px">'
+        + _fld('udb-techDesc-' + n, 'Teknik Açıklama', 'textarea', '', true, 'Ürünün teknik özellikleri, boyutlar, malzeme, standartlar...', u.techDesc || u.teknikAciklama)
+      + '</div>'
+      + '<details style="border-top:0.5px solid var(--b,#e0e0e0);padding-top:10px;margin-top:4px">'
+        + '<summary style="font-size:11px;color:var(--t3,#8a8a8a);cursor:pointer;padding:4px 0;user-select:none">📝 Ek Notlar & Gizlilik</summary>'
+        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'
+          + _fld('udb-sozlesme-' + n, 'Sözleşme Notu', 'textarea', '', false, 'Bu ürün için sözleşmedeki özel madde', u.sozlesmeNotu)
+          + _fld('udb-note-' + n, 'Özel Not', 'textarea', '', false, 'İç not — alım kararına dair', u.note)
+          + _fld('udb-hile-' + n, 'Gizli Hile var', 'checkbox', '', false, '🔒 Gizli Hile / Maliyet Farkı var', u.gizliHile)
+          + _fld('udb-hile-not-' + n, 'Gizli Hile Notu', 'textarea', '', false, 'Sadece yöneticiler görür', u.gizliHileNot)
+        + '</div>'
+      + '</details>';
+  }
 
   function _udbSatirHTML(n, u) {
     /* URUN-KATEGORI-BIRIM-COMBOBOX-001: unique kategori/birim listesi + datalist enjekte */
@@ -588,6 +691,39 @@ window._udbKopyala = function(id) {
   window.toast?.('✓ Ürün kopyalandı','success');
   if (typeof renderUrunDB === 'function') renderUrunDB();
 };
+
+/* URUN-FORM-KART-LAYOUT-001-ADIM-B: Görsel yükleme + preview (Canvas compress URUN-GORSEL-COMPRESS-001 ile uyumlu) */
+if (typeof window._udbGorselYukle !== 'function') {
+  window._udbGorselYukle = function(input, n) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { window.toast?.('Görsel max 5MB olabilir', 'err'); input.value = ''; return; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var img = new Image();
+      img.onload = function() {
+        var maxDim = 200;
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var compressed = canvas.toDataURL('image/jpeg', 0.7);
+        window['_udbImg' + n] = compressed;
+        var preview = document.getElementById('udb-img-preview-' + n);
+        if (preview) preview.innerHTML = '<img src="' + compressed + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+      };
+      img.onerror = function() {
+        window['_udbImg' + n] = ev.target.result;
+        var preview = document.getElementById('udb-img-preview-' + n);
+        if (preview) preview.innerHTML = '<img src="' + ev.target.result + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+}
 
 // Exports
 window.loadUrunDB    = loadUrunDB;
