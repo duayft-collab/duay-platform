@@ -400,7 +400,7 @@ window._openSTModal = function(id) {
         + '<div><div class="fl" data-stk="validity">' + _stT('validity', lang) + '</div><input type="date" class="fi" id="st-validity" value="' + (t?.validity || '') + '"></div>'
         + '<div><div class="fl" data-stk="deliveryTime">' + _stT('deliveryTime', lang) + '</div><input class="fi" id="st-delivery" value="' + (t?.deliveryTime || '') + '" placeholder="30"></div>'
         + '<div><div class="fl" data-stk="incoterm">' + _stT('incoterm', lang) + '</div><select class="fi" id="st-incoterm">' + incoOpts + '</select></div>'
-        + '<div><div class="fl" data-stk="currency">' + _stT('currency', lang) + '</div><select class="fi" id="st-currency">' + curOpts + '</select></div>'
+        + '<div><div class="fl" data-stk="currency">' + _stT('currency', lang) + '</div><select class="fi" id="st-currency" data-prev="' + (t?.currency || 'USD') + '" onchange="window._stCurrencyChange?.(this)">' + curOpts + '</select></div>'
         + '<div><div class="fl" data-stk="lang">' + _stT('lang', lang) + '</div><select class="fi" id="st-lang" onchange="window._stChangeLang?.(this.value)">' + langOpts + '</select></div>'
       + '</div>'
       // Ürün satırları
@@ -826,6 +826,38 @@ window._exportSTXlsx = function() {
 };
 
 // Exports
+/**
+ * SATIS-CURRENCY-RECALC-001: Para birimi değişince satır fiyatları dönüştürülür.
+ * _saKur TRY tabanlı — çapraz kur: yeni = eski × (saKur[eski] / saKur[yeni])
+ */
+window._stCurrencyChange = function(el) {
+  if (!el) return;
+  var eski = el.getAttribute('data-prev') || 'USD';
+  var yeni = el.value;
+  if (eski === yeni) return;
+  var kur = window._saKur || window.DUAY_KUR;
+  if (!kur || !kur[eski] || !kur[yeni]) {
+    el.setAttribute('data-prev', yeni);
+    if (typeof window.toast === 'function') window.toast('Kur verisi eksik, dönüşüm atlandı', 'warn');
+    return;
+  }
+  var oran = kur[eski] / kur[yeni];
+  var rows = document.querySelectorAll('.st-item-price');
+  var count = 0;
+  rows.forEach(function(inp) {
+    var v = parseFloat(inp.value || '0');
+    if (v > 0) {
+      inp.value = (v * oran).toFixed(2);
+      count++;
+      if (typeof window._stCalcRow === 'function') window._stCalcRow(inp);
+    }
+  });
+  el.setAttribute('data-prev', yeni);
+  if (typeof window.toast === 'function' && count > 0) {
+    window.toast(count + ' satır ' + eski + '→' + yeni + ' kuruna dönüştürüldü (×' + oran.toFixed(4) + ')', 'success');
+  }
+};
+
 window.renderSatisTeklif = renderSatisTeklif;
 /* SATIS-TEKLIF-ROUTING-001: app_patch.js nav routing bu ismi çağırır */
 window.renderSatisTeklifleri = renderSatisTeklif;
