@@ -136,5 +136,82 @@
     });
   }, 8000);
 
+  /* STORAGE-PROXY-PERSIST-001: Transparent localStorage → IDB proxy */
+  var MIGRATE_KEYS = {
+    'ak_urunler1': 'urunler', 'ak_urun_db1': 'urunler',
+    'ak_satinalma1': 'satinalma', 'ak_satinalma_v2': 'satinalma', 'ak_alis_teklif1': 'satinalma',
+    'ak_satis_teklif1': 'satisTeklifleri', 'ak_cmp_teklif1': 'satisTeklifleri', 'ak_crm_teklif1': 'satisTeklifleri',
+    'ak_odm1': 'odemeler', 'ak_tahsilat1': 'tahsilat',
+    'ak_cari1': 'cari', 'ak_tasks': 'tasks', 'ak_task_chat1': 'tasks',
+    'ak_pusula_pro_v1': 'pusulaPro',
+    'ak_notif1': 'notif', 'ak_ann1': 'notif',
+    'ak_act1': 'activity', 'ak_activity1': 'activity',
+    'ak_ihr_urun1': 'misc', 'ak_ihr_evrak1': 'misc',
+    'ak_teklif_sartlar1': 'misc', 'ak_kpi1': 'misc',
+    'ak_cal2': 'misc', 'ak_pn2': 'misc', 'ak_bankalar1': 'misc',
+    'ak_alarms1': 'misc', 'ak_tk2': 'misc'
+  };
+
+  window._lsProxyCache = {};
+  window._lsProxyReady = false;
+
+  /* Preload — IDB'den RAM'e yükle (app load'da tek sefer) */
+  async function _proxyPreload() {
+    var keys = Object.keys(MIGRATE_KEYS);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var store = MIGRATE_KEYS[k];
+      try {
+        var val = await window.idbGet(k, store);
+        if (val !== null && val !== undefined) {
+          window._lsProxyCache[k] = (typeof val === 'string') ? val : JSON.stringify(val);
+        }
+      } catch(e) {}
+    }
+    window._lsProxyReady = true;
+    console.log('[STORAGE-PROXY-PERSIST-001] Preload tamam:', Object.keys(window._lsProxyCache).length, 'key yüklendi');
+  }
+  _proxyPreload();
+
+  /* Orijinal metodları sakla (ilk kez) */
+  if (!Storage.prototype.__origGetItem) {
+    Storage.prototype.__origGetItem = Storage.prototype.getItem;
+    Storage.prototype.__origSetItem = Storage.prototype.setItem;
+    Storage.prototype.__origRemoveItem = Storage.prototype.removeItem;
+  }
+
+  /* getItem override — migrate key'ler için RAM cache döndür */
+  Storage.prototype.getItem = function(key) {
+    if (this === localStorage && MIGRATE_KEYS[key]) {
+      return window._lsProxyCache[key] || null;
+    }
+    return Storage.prototype.__origGetItem.call(this, key);
+  };
+
+  /* setItem override — RAM'e yaz, IDB'ye fire-and-forget, LS'i kirletme */
+  Storage.prototype.setItem = function(key, value) {
+    if (this === localStorage && MIGRATE_KEYS[key]) {
+      window._lsProxyCache[key] = value;
+      try {
+        var parsed = JSON.parse(value);
+        window.idbSet(key, parsed, MIGRATE_KEYS[key]).catch(function(){});
+      } catch(e) {
+        window.idbSet(key, value, MIGRATE_KEYS[key]).catch(function(){});
+      }
+      return; /* LS'e YAZMIYORUZ */
+    }
+    return Storage.prototype.__origSetItem.call(this, key, value);
+  };
+
+  /* removeItem override */
+  Storage.prototype.removeItem = function(key) {
+    if (this === localStorage && MIGRATE_KEYS[key]) {
+      delete window._lsProxyCache[key];
+      window.idbDelete(key, MIGRATE_KEYS[key]).catch(function(){});
+      return;
+    }
+    return Storage.prototype.__origRemoveItem.call(this, key);
+  };
+
   console.log('[SMART-STORAGE-001] hazır, threshold:', THRESHOLD_BYTES, 'bytes');
 })();
