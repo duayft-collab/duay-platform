@@ -282,7 +282,7 @@ window._saveUrunDB = function() {
       id: _generateDuayCode(vendorId, vendorCode) || (typeof window.generateId==='function' ? window.generateId() : Date.now()),
       duayName: duayName,
       origName: origName,
-      vendorId: vendorId,
+      vendorId: (function(){ var c = (typeof loadCari === 'function' ? (loadCari({tumKullanicilar:true})||[]) : []).find(function(x){ return (x.ad||x.unvan||x.name||'') === vendorId; }); return c ? String(c.id||c.uid||'') : ''; })(),
       vendorName: vendorId,
       vendorCode: vendorCode,
       category: category,
@@ -329,6 +329,7 @@ window._saveUrunDB = function() {
 
   var mo = document.getElementById('mo-urun-db');
   if (mo) mo.remove();
+  window.logActivity?.('urun_db', yeniKayitlar.length + ' ürün kaydedildi (+Yeni Ürün formu)');
   window.toast?.(yeniKayitlar.length + ' ürün kaydedildi', 'ok');
   window.renderUrunDB?.();
 };
