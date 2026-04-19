@@ -39,6 +39,24 @@ window._saV2YeniTeklif = function(duzenleKayit) {
   var _draftBanner = _eskiDraft ? '<div id="sav2-draft-banner" style="background:#FAEEDA;border:0.5px solid #854F0B;border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;color:#633806">Kaydedilmemi\u015f taslak bulundu \u2014 '+_eskiDraft.ts.slice(0,16).replace('T',' ')+'</span><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();window._sav2DraftYukle()" style="font-size:10px;padding:4px 10px;border:none;border-radius:4px;background:#854F0B;color:#fff;cursor:pointer;font-family:inherit">Devam Et</button><button onclick="event.stopPropagation();window._sav2DraftSil()" style="font-size:10px;padding:4px 10px;border:0.5px solid #854F0B;border-radius:4px;background:transparent;color:#854F0B;cursor:pointer;font-family:inherit">Sil</button></div></div>' : '';
   modal.onclick = function(e) { if (e.target === modal) { _draftSil(); modal.remove(); } };
   var teklifId = window._saTeklifId?.('0000') || ('0000-' + Date.now());
+  /* SAV2-FORM-SON-TEDARIKCI-001: son 5 tedarikçi hızlı seçim */
+  var _sonTed = (function() {
+    var _liste = typeof window._saV2Load === 'function' ? window._saV2Load().filter(function(s){return !s.isDeleted && s.tedarikci;}) : [];
+    _liste.sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
+    var _seen = {}, _result = [];
+    for (var i = 0; i < _liste.length && _result.length < 5; i++) {
+      var _t = _liste[i].tedarikci;
+      if (!_seen[_t]) { _seen[_t] = true; _result.push(_t); }
+    }
+    return _result;
+  })();
+  var _tedChipHtml = '';
+  if (_sonTed.length) {
+    _tedChipHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 8px 0;align-items:center">'
+      + '<span style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-right:4px">Son kullanılan</span>'
+      + _sonTed.map(function(t){ return '<button type="button" onclick="(function(){var el=document.getElementById(\'sav2f-tedarikci\');if(el){el.value=' + JSON.stringify(t) + ';el.dispatchEvent(new Event(\'input\',{bubbles:true}));el.dispatchEvent(new Event(\'change\',{bubbles:true}));}})()" style="padding:3px 10px;border-radius:14px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseenter="this.style.background=\'var(--s2)\';this.style.borderColor=\'var(--ac)\'" onmouseleave="this.style.background=\'var(--sf)\';this.style.borderColor=\'var(--b)\'">' + (window._esc?window._esc(t):t) + '</button>'; }).join('')
+      + '</div>';
+  }
   var _f = function(id, lbl, ph, tip) {
     return '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
       + '<input id="sav2f-' + id + '" type="' + (tip || 'text') + '" placeholder="' + (ph || '') + '" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
@@ -58,6 +76,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div style="padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">'
     + _draftBanner
     + '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;padding-bottom:7px;border-bottom:0.5px solid var(--b);margin-bottom:4px">Tedarikçi & İş Bilgisi</div>'
+    + _tedChipHtml
     + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:10px">'
     + '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TEDAR\u0130K\u00c7\u0130</div>'
     + '<input id="sav2f-tedarikci" list="sav2f-ted-list" placeholder="Tedarik\u00e7i ad\u0131" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:12px;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">'
