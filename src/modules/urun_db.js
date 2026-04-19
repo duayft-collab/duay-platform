@@ -241,13 +241,13 @@ function openUrunModal(id) {
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-'+n+'" value="'+esc(u?.duayName||'')+'" placeholder="Türkçe ad"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-'+n+'" value="'+esc(u?.origName||'')+'" placeholder="English name"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" list="udb-kat-datalist" id="udb-category-'+n+'" value="'+esc(u?.category||'')+'" placeholder="Kategori seç/yaz"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-vendorCode-'+n+'" value="'+esc(u?.vendorCode||'')+'" placeholder="ABC-123"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-vendorCode-'+n+'" value="'+esc(u?.vendorCode||'')+'" placeholder="Tedarikçinin ürün kodu"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-origin-'+n+'">' + rowCountryOpts + '</select></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" list="udb-birim-datalist" id="udb-unit-'+n+'" value="'+esc(u?.unit||'Adet')+'" placeholder="Birim"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-teslim-'+n+'" value="'+esc(u?.deliveryDays||'')+'" placeholder="G"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-raf-'+n+'" value="'+esc(u?.shelfLife||'')+'" placeholder="G"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-netW-'+n+'" value="'+esc(u?.netWeight||'')+'" placeholder="kg" step="0.01"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-grossW-'+n+'" value="'+esc(u?.grossWeight||'')+'" placeholder="kg" step="0.01"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-teslim-'+n+'" value="'+esc(u?.deliveryDays||'')+'" placeholder="örn 15"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-raf-'+n+'" value="'+esc(u?.shelfLife||'')+'" placeholder="örn 365"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-netW-'+n+'" value="'+esc(u?.netWeight||'')+'" placeholder="örn 2.5" step="0.01"></td>'
+      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-grossW-'+n+'" value="'+esc(u?.grossWeight||'')+'" placeholder="örn 3.0" step="0.01"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><textarea class="fi" id="udb-techDesc-'+n+'" rows="1" placeholder="Açıklama" style="resize:vertical;min-height:32px">'+esc(u?.techDesc||'')+'</textarea></td>'
       + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><button onclick="event.stopPropagation();window._udbSil?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:18px;color:#E24B4A;padding:0">×</button></td>';
   }
