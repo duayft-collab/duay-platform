@@ -376,6 +376,43 @@ function _write(key, value) {
   if ((key === KEYS.tasks || key === 'ak_tk2') && Array.isArray(value)) {
     try { value.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; } return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (!t[f]) return; if (typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; } else if (typeof t[f] === 'object' && t[f].data && typeof t[f].data === 'string' && t[f].data.startsWith('data:')) { t[f] = { name: t[f].name || 'dosya', size: t[f].data.length, _stripped: true }; } }); }); } catch (e) {}
   }
+  /* LS-BASE64-STRIP-EXTENDED-001: odemeler/tahsilat/satisTek/alisTek/satinalma için aynı base64 strip */
+  if ([KEYS.odemeler, KEYS.tahsilat, KEYS.satisTeklifleri, KEYS.alisTeklifleri, KEYS.satinalma, 'ak_odm1', 'ak_tahsilat1', 'ak_satis_teklif1', 'ak_alis_teklif1', 'ak_satinalma1'].indexOf(key) >= 0 && Array.isArray(value)) {
+    try {
+      value.forEach(function(r) {
+        if (!r || typeof r !== 'object') return;
+        /* Array-tipi alanlar: ekler, belgeler, gorseller */
+        ['attachments', 'ekler', 'belgeler', 'docs', 'files', 'gorseller', 'urunler'].forEach(function(f) {
+          if (Array.isArray(r[f])) {
+            r[f] = r[f].map(function(d) {
+              if (d && typeof d === 'object') {
+                if (d.data && typeof d.data === 'string' && d.data.startsWith('data:')) {
+                  return { name: d.name || 'dosya', url: d.url || null, size: d.data.length, _stripped: true };
+                }
+                if (d.image && typeof d.image === 'string' && d.image.startsWith('data:')) {
+                  return Object.assign({}, d, { image: null, _hasImage: true, _imageStripped: true });
+                }
+                if (d.gorsel && typeof d.gorsel === 'string' && d.gorsel.startsWith('data:')) {
+                  return Object.assign({}, d, { gorsel: null, _hasImage: true, _imageStripped: true });
+                }
+              }
+              return d;
+            });
+          }
+        });
+        /* Scalar alanlar: receipt, img, image, gorsel, makbuz */
+        ['receipt', 'img', 'image', 'gorsel', 'makbuz', 'file', 'dosya'].forEach(function(f) {
+          if (!r[f]) return;
+          if (typeof r[f] === 'string' && r[f].startsWith('data:')) {
+            r[f] = null;
+            r['_' + f + 'Stripped'] = true;
+          } else if (typeof r[f] === 'object' && r[f].data && typeof r[f].data === 'string' && r[f].data.startsWith('data:')) {
+            r[f] = { name: r[f].name || 'dosya', size: r[f].data.length, _stripped: true };
+          }
+        });
+      });
+    } catch (e) {}
+  }
   // trash: originalData icindeki base64'leri temizle
   if (key === KEYS.trash && Array.isArray(value)) {
     try { value = value.map(function(item) {
