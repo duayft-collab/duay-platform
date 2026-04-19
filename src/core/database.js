@@ -522,18 +522,29 @@ function _mergeDataSets(localKey, fsData, collection) {
   if (!Array.isArray(localData) || localData.length === 0) return fsData;
   if (fsData.length === 0) return localData;
 
+  // ID-NORMALIZE-001: tüm id'ler String olarak normalize edilsin (merge scope'u)
+  var _normId = function(x) { if (!x || typeof x !== 'object') return null; if (x.id !== undefined) { x.id = String(x.id); return x.id; } if (x._id !== undefined) { x._id = String(x._id); return x._id; } return null; };
+
+  // Timestamp normalize helper (paylaşılan)
+  var _ft = function(s){ if(!s) return ''; if(typeof s!=='string') return String(s); var m=s.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})\s*(.*)$/); if(m){var y=parseInt(m[3]);if(y<100)y+=2000;return y+'-'+(m[2].length<2?'0':'')+m[2]+'-'+(m[1].length<2?'0':'')+m[1]+(m[4]?' '+m[4]:'');} return s; };
+
   // ID bazında index oluştur
   var mergedMap = {};
-  // Önce localStorage verilerini ekle
+
+  // Önce localStorage verilerini ekle (ID normalize)
   localData.forEach(function(item) {
-    var key = item.id || item._id;
-    if (key) mergedMap[key] = item;
+    var key = _normId(item);
+    if (!key) { console.warn('[merge] local id yok, atlandı:', collection, item); return; }
+    mergedMap[key] = item;
   });
-  // Sonra Firestore verilerini ekle — aynı ID varsa ts karşılaştır
+
+  // Sonra Firestore verilerini ekle — aynı ID varsa tombstone/ts karşılaştır
   fsData.forEach(function(item) {
-    var key = item.id || item._id;
-    if (!key) { // ID'siz kayıt — stabil key ile dedupe
-      var dupCheck = localData.find(function(l) { return l.name === item.name && l.ts === item.ts; });
+    var key = _normId(item);
+    if (!key) {
+      // ID'siz kayıt — stabil key ile dedupe (legacy destek)
+      console.warn('[merge] fs id yok, stabil key ile dedupe:', collection, item && (item.name || item.ts));
+      var dupCheck = localData.find(function(l) { return l && l.name === item.name && l.ts === item.ts; });
       if (!dupCheck) {
         var noIdKey = '_noId_' + (item.name||'').replace(/\s+/g,'_').slice(0,20) + '_' + (item.ts||item.syncedAt||'').slice(0,10);
         mergedMap[noIdKey] = item;
@@ -543,25 +554,36 @@ function _mergeDataSets(localKey, fsData, collection) {
     var existing = mergedMap[key];
     if (!existing) {
       mergedMap[key] = item;
-    } else {
-      // Daha güncel olanı seç (updatedAt > ts > syncedAt karşılaştır)
-      var _ft = function(s){ if(!s) return ''; if(typeof s!=='string') return String(s); var m=s.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})\s*(.*)$/); if(m){var y=parseInt(m[3]);if(y<100)y+=2000;return y+'-'+(m[2].length<2?'0':'')+m[2]+'-'+(m[1].length<2?'0':'')+m[1]+(m[4]?' '+m[4]:'');} return s; };
-      var fsTs = _ft(item.updatedAt || item.ts || item.syncedAt || '');
-      var localTs = _ft(existing.updatedAt || existing.ts || existing.syncedAt || '');
-      if (fsTs > localTs) {
-        mergedMap[key] = item;
-      }
-      /* PERM-MERGE-PROTECT-001: permissions/modules alanı için permUpdatedAt koruması */
-      if (collection === 'users' && existing && item) {
-        var _existPermTs = existing.permUpdatedAt || '';
-        var _itemPermTs  = item.permUpdatedAt || '';
-        var _permWinner  = (_existPermTs > _itemPermTs) ? existing : item;
-        mergedMap[key].permissions  = _permWinner.permissions;
-        mergedMap[key].modules      = _permWinner.modules;
-        mergedMap[key].permUpdatedAt = _permWinner.permUpdatedAt;
-      }
-      // isDeleted propagation: tombstone immutable — herhangi bir taraf silinmisse merged sonuc da silinmis kalir
-      if (item.isDeleted || existing.isDeleted) { var _winner = (fsTs >= localTs) ? item : existing; _winner.isDeleted = true; _winner.deletedAt = item.deletedAt || existing.deletedAt || null; mergedMap[key] = _winner; }
+      return;
+    }
+    var fsTs = _ft(item.updatedAt || item.ts || item.syncedAt || '');
+    var localTs = _ft(existing.updatedAt || existing.ts || existing.syncedAt || '');
+
+    /* TOMBSTONE-PRIORITY-001: isDeleted her zaman öncelikli — geri gelmez */
+    if (item.isDeleted || existing.isDeleted) {
+      var _tombBase = (fsTs >= localTs) ? item : existing;
+      var _tombOther = (_tombBase === item) ? existing : item;
+      var _merged = Object.assign({}, _tombBase);
+      _merged.isDeleted = true;
+      _merged.deletedAt = _tombBase.deletedAt || _tombOther.deletedAt || new Date().toISOString();
+      _merged.deletedBy = _tombBase.deletedBy || _tombOther.deletedBy || null;
+      mergedMap[key] = _merged;
+      return; // erken çık — updatedAt/permissions karşılaştırması atlanır
+    }
+
+    /* UPDATED-AT: sadece silinmemiş kayıtlar; eşitlikte Firestore kazanır (Single Source of Truth) */
+    if (fsTs >= localTs) {
+      mergedMap[key] = item;
+    }
+
+    /* PERM-MERGE-PROTECT-001: permissions/modules — sadece silinmemiş durumda */
+    if (collection === 'users' && existing && item) {
+      var _existPermTs = existing.permUpdatedAt || '';
+      var _itemPermTs  = item.permUpdatedAt || '';
+      var _permWinner  = (_existPermTs > _itemPermTs) ? existing : item;
+      mergedMap[key].permissions  = _permWinner.permissions;
+      mergedMap[key].modules      = _permWinner.modules;
+      mergedMap[key].permUpdatedAt = _permWinner.permUpdatedAt;
     }
   });
 
@@ -570,7 +592,8 @@ function _mergeDataSets(localKey, fsData, collection) {
   result.sort(function(a, b) { return (b.ts || b.createdAt || '').localeCompare(a.ts || a.createdAt || ''); });
 
   if (result.length !== fsData.length || result.length !== localData.length) {
-    console.info('[DB:merge]', collection, '→ FS:', fsData.length, '+ Local:', localData.length, '= Merged:', result.length);
+    var _tombCount = result.filter(function(r){ return r && r.isDeleted; }).length;
+    console.info('[DB:merge]', collection, '→ FS:', fsData.length, '+ Local:', localData.length, '= Merged:', result.length, '(tombstone:', _tombCount, ')');
   }
   return result;
 }
