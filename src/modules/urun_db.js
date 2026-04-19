@@ -186,9 +186,27 @@ function openUrunModal(id) {
         if (file.size > 5 * 1024 * 1024) { window.toast?.('Görsel max 5MB olabilir', 'err'); return; }
         var reader = new FileReader();
         reader.onload = function(ev) {
-          var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
-          if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">';
-          window['_udbImg' + n] = ev.target.result;
+          /* URUN-GORSEL-COMPRESS-001: Canvas 200px JPEG70 compress */
+          var img = new Image();
+          img.onload = function() {
+            var maxDim = 200;
+            var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+            var w = Math.round(img.width * scale);
+            var h = Math.round(img.height * scale);
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            var compressed = canvas.toDataURL('image/jpeg', 0.7);
+            var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
+            if (cell) cell.innerHTML = '<img src="' + compressed + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">';
+            window['_udbImg' + n] = compressed;
+          };
+          img.onerror = function() {
+            var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
+            if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">';
+            window['_udbImg' + n] = ev.target.result;
+          };
+          img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
       };

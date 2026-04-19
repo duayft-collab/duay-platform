@@ -2298,7 +2298,7 @@ function _stripBase64BeforeWrite(key, data) {
       Object.keys(data).forEach(function(k) { (data[k] || []).forEach(function(m) { if (m.file && m.file.data && typeof m.file.data === 'string' && m.file.data.startsWith('data:')) { m.file = { name: m.file.name || 'dosya', _stripped: true }; } Object.keys(m).forEach(function(f) { if (m[f] && typeof m[f] === 'string' && m[f].startsWith('data:') && m[f].length > 1000) m[f] = '[stripped]'; }); }); });
     }
     if ((key === KEYS.tasks || key === 'ak_tk2') && Array.isArray(data)) {
-      data.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (t[f] && typeof t[f] === 'string' && t[f].startsWith('data:')) t[f] = null; }); });
+      data.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (t[f] && typeof t[f] === 'string' && t[f].startsWith('data:') && t[f].length > 200000) t[f] = null; }); });
     }
   } catch (e) {}
 }
