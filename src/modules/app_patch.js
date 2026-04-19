@@ -3439,6 +3439,11 @@ window._addSart = function() {
   var text = (document.getElementById('sart-yeni')?.value||'').trim();
   if (!text) return;
   var d = typeof loadTeklifSartlar==='function'?loadTeklifSartlar():[];
+  /* SARTLAR-MAX-10-001: max 10 madde limiti */
+  if (Array.isArray(d) && d.length >= 10) {
+    if (typeof window.toast === 'function') window.toast('Maksimum 10 şart tanımlanabilir. Önce mevcut bir şartı silin veya düzenleyin.', 'warn');
+    return;
+  }
   d.push({id:Date.now(),text:text,sabit:true,ts:new Date().toISOString()});
   if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
   window.openTeklifSartlarPanel();
