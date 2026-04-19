@@ -7146,3 +7146,22 @@ window._musteriGeribildirimKaydet = function(cariId) {
   document.getElementById('mo-feedback')?.remove();
   window.toast?.('Geri bildirim kaydedildi ✓ (' + puan + ' yıldız)', 'ok');
 };
+
+/**
+ * STATUS-WALLET-CSS-001: Apple Wallet tonu status badge helper
+ * @param {string} label - Badge metni
+ * @param {string} tone - success | warning | danger | info | neutral
+ * @returns {string} HTML string
+ */
+window._statusBadge = function(label, tone) {
+  var palette = {
+    success:  { bg: '#E1F5EE', fg: '#1A8D6F' },
+    warning:  { bg: '#FAEEDA', fg: '#B4730F' },
+    danger:   { bg: '#FCEBEB', fg: '#E0574F' },
+    info:     { bg: '#E8F0FD', fg: '#4778D2' },
+    neutral:  { bg: 'rgba(0,0,0,0.04)', fg: 'var(--t2)' }
+  };
+  var p = palette[tone] || palette.neutral;
+  var esc = window._esc || function(x){ return x; };
+  return '<span style="display:inline-flex;align-items:center;font-size:9px;font-weight:600;padding:3px 8px;border-radius:6px;background:' + p.bg + ';color:' + p.fg + ';text-transform:uppercase;letter-spacing:.05em;font-family:inherit">' + esc(label || '') + '</span>';
+};
