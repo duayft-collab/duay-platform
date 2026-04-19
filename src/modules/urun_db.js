@@ -460,7 +460,7 @@ function renderUrunDB() {
 
   fl.forEach(function(u) {
     var uid = String(u.id);
-    html += '<div style="display:grid;grid-template-columns:24px 24px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 14px;border-bottom:0.5px solid var(--b);align-items:center;font-size:11.5px;line-height:1.3;min-height:32px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'rgba(0,0,0,0.02)\'" onmouseleave="this.style.background=\'\'">'
+    html += '<div style="display:grid;grid-template-columns:24px 24px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 14px;border-bottom:0.5px solid var(--b);align-items:center;font-size:11.5px;line-height:1.3;min-height:32px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'rgba(0,0,0,0.02)\';var _a=this.querySelector(\'.udb-row-actions\');if(_a){_a.style.opacity=\'1\';_a.style.pointerEvents=\'auto\'}" onmouseleave="this.style.background=\'\';var _a=this.querySelector(\'.udb-row-actions\');if(_a){_a.style.opacity=\'0\';_a.style.pointerEvents=\'none\'}">'
       + '<div><input type="checkbox" class="udb-bulk-chk" data-id="' + esc(uid) + '" onclick="event.stopPropagation();window._urunDBBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)"></div>'
       + '<div>' + ((u.image || u.gorsel) ? '<img src="' + (u.image || u.gorsel) + '" style="width:28px;height:28px;object-fit:cover;border-radius:4px">' : u._hasImage ? '<div style="width:28px;height:28px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:28px;height:28px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || u.duayKodu || '\u2014') + '</div>'
@@ -469,7 +469,13 @@ function renderUrunDB() {
       + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || u.kategori || '\u2014') + '</div>'
       + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || u.mensei || '\u2014') + '</div>'
       + '<div style="font-size:10px;font-family:monospace;color:var(--t3)">' + esc(u.gtip || '\u2014') + '</div>'
-      + '<div style="display:flex;gap:3px"><button onclick="event.stopPropagation();openUrunModal(\'' + esc(uid) + '\')" class="btn btns" style="font-size:10px;padding:2px 6px">\u270f\ufe0f</button><button onclick="event.stopPropagation();window._deleteUrun?.(\'' + esc(uid) + '\')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">\ud83d\uddd1</button></div>'
+      /* URUN-LISTE-QUICKACT-001: Apple Mail tarzı contextual actions (hover reveal) */
+      + '<div class="udb-row-actions" style="display:flex;gap:3px;opacity:0;pointer-events:none;transition:opacity .15s">'
+        + '<button onclick="event.stopPropagation();window._udbPeek?.(\'' + esc(uid) + '\')" title="Önizle" class="btn btns" style="font-size:10px;padding:2px 6px;color:var(--t2)">\ud83d\udc41</button>'
+        + '<button onclick="event.stopPropagation();window._udbKopyala?.(\'' + esc(uid) + '\')" title="Kopyala" class="btn btns" style="font-size:10px;padding:2px 6px;color:var(--t2)">\ud83d\udccb</button>'
+        + '<button onclick="event.stopPropagation();openUrunModal(\'' + esc(uid) + '\')" title="Düzenle" class="btn btns" style="font-size:10px;padding:2px 6px">\u270f\ufe0f</button>'
+        + '<button onclick="event.stopPropagation();window._deleteUrun?.(\'' + esc(uid) + '\')" title="Sil" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">\ud83d\uddd1</button>'
+      + '</div>'
     + '</div>';
   });
   cont.innerHTML = html;
@@ -582,6 +588,39 @@ window._importUrunXlsx = function() {
     reader.readAsBinaryString(file);
   };
   inp.click();
+};
+
+/* URUN-LISTE-QUICKACT-001: Peek — küçük toast ile ürün önizleme */
+window._udbPeek = function(id) {
+  var u = (loadUrunDB() || []).find(function(x){ return String(x.id) === String(id); });
+  if (!u) { window.toast?.('Ürün bulunamadı','err'); return; }
+  var nm = u.duayName || u.urunAdi || '—';
+  var cat = u.category || u.kategori || '—';
+  var ted = u.vendorName || u.tedarikci || '—';
+  var kod = u.duayCode || u.duayKodu || '—';
+  window.toast?.('📦 ' + nm + ' · ' + cat + ' · ' + ted + ' · Kod: ' + kod, 'info', 4000);
+};
+
+/* URUN-LISTE-QUICKACT-001: Kopyala — ürünü duplicate kaydet */
+window._udbKopyala = function(id) {
+  var data = loadUrunDB() || [];
+  var u = data.find(function(x){ return String(x.id) === String(id); });
+  if (!u) { window.toast?.('Ürün bulunamadı','err'); return; }
+  if (!confirm('Bu ürünü kopyalamak istediğinize emin misiniz?\n\n"' + (u.duayName || u.urunAdi || '—') + '" yeni bir kayıt olarak eklenecek.')) return;
+  var kopya = Object.assign({}, u, {
+    id: (typeof _genDuayKodu === 'function' ? 'DY-' + Date.now().toString(36) : Date.now()),
+    duayCode: (typeof _genDuayKodu === 'function' ? _genDuayKodu(data.map(function(d){ return d.duayCode || d.duayKodu; })) : null),
+    duayKodu: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    yukleyen_id: window.Auth?.getCU?.()?.id || null
+  });
+  delete kopya.deletedAt;
+  kopya.isDeleted = false;
+  data.push(kopya);
+  storeUrunDB(data);
+  window.toast?.('✓ Ürün kopyalandı','success');
+  if (typeof renderUrunDB === 'function') renderUrunDB();
 };
 
 // Exports
