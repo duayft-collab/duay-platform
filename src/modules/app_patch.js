@@ -1042,6 +1042,9 @@ window.renderUrunler = function() {
   /* Sayfalama (STANDART-FIX-013) */
   if (!window._urunSayfa) window._urunSayfa = 1;
   if (q) window._urunSayfa = 1;
+  /* URUN-FILTRE-PAGE-RESET-001: filtre değişiminde sayfa 1'e dön */
+  var _snap = (window._urunFiltre || '') + '|' + (window._urunTedFiltre || '') + '|' + (window._urunUserFiltre || '');
+  if (window._urunFilterSnap !== _snap) { window._urunSayfa = 1; window._urunFilterSnap = _snap; }
   var _URUN_SAYFA_BOY = 50;
   var _urunToplamS = Math.max(1, Math.ceil(fl.length / _URUN_SAYFA_BOY));
   if (window._urunSayfa > _urunToplamS) window._urunSayfa = _urunToplamS;
