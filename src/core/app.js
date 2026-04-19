@@ -171,6 +171,16 @@ const ROLE_DEFAULT_MODULES = {
   asistan: ['dashboard','announce','pusula-pro','puantaj','links','hedefler','odemeler','kargo','stok','ik','izin','tebligat','evrak','arsiv','crm','numune','resmi','etkinlik','pirim','rehber','settings','ihracat-ops','satinalma','alis-teklifleri','siparisler','hesap-ozeti','muavin','hesap-mutabakati','satis-rapor','teslimat-takip'],
 };
 
+/**
+ * ROLE-LABEL-HELPER-001: Rozet/footer için kısa etiket (emoji'siz).
+ * L912'deki emoji'li `_roleLabel` ile çakışmaz — ayrı isim.
+ * ROLE_META'dan çeker, yoksa fallback ternary.
+ */
+window._ftRoleLabel = function(role) {
+  if (window.ROLE_META && window.ROLE_META[role] && window.ROLE_META[role].label) return window.ROLE_META[role].label;
+  return role === 'admin' ? 'Admin' : role === 'manager' ? 'Yönetici' : role === 'asistan' ? 'Yönetici Asistanı' : role === 'lead' ? 'Takım Lideri' : 'Personel';
+};
+
 /** Admin-only paneller */
 const ADMIN_ONLY_PANELS = ['admin','activity','ceo','kpi-panel','trash'];
 
@@ -244,8 +254,8 @@ function tickClock() {
     var _ftUser = _g('ft-user-name');
     if (_ftUser && _cu2?.name) _ftUser.textContent = _cu2.name;
     var _ftRole = _g('ft-user-role');
-    /* ASISTAN-ROL-MENU-FIX-001: ROLE_META.label öncelik — asistan/lead doğru gösterilsin */
-    if (_ftRole && _cu2?.role) _ftRole.textContent = (window.ROLE_META && window.ROLE_META[_cu2.role] && window.ROLE_META[_cu2.role].label) || (_cu2.role === 'admin' ? 'Admin' : _cu2.role === 'manager' ? 'Yönetici' : 'Personel');
+    /* ROLE-LABEL-HELPER-001: _ftRoleLabel helper (emoji'siz, ROLE_META.label bazlı) */
+    if (_ftRole && _cu2?.role) _ftRole.textContent = window._ftRoleLabel?.(_cu2.role) || '';
     // Bağlantı + Auth durumu
     var _ftConn = _g('ft-conn');
     if (_ftConn) _ftConn.textContent = navigator.onLine ? 'Online' : 'Offline';
@@ -1400,8 +1410,8 @@ function _renderDashboard() {
     var ini = (u2.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
     var ac = AVC_DB[i % AVC_DB.length];
     var ago = u2.lastLogin ? (function(){ var d = Date.now() - new Date(u2.lastLogin.replace(' ','T')).getTime(); if(d<3600000) return 'Şu an aktif'; if(d<86400000) return Math.floor(d/3600000)+' saat önce'; return Math.floor(d/86400000)+' gün önce'; })() : 'Hiç';
-    /* ASISTAN-ROL-MENU-FIX-001: ROLE_META.label öncelik */
-    var rolL = (window.ROLE_META && window.ROLE_META[u2.role] && window.ROLE_META[u2.role].label) || (u2.role==='admin'?'Yönetici':u2.role==='manager'?'Takım Lideri':'Personel');
+    /* ROLE-LABEL-HELPER-001: _ftRoleLabel helper */
+    var rolL = window._ftRoleLabel?.(u2.role) || '';
     h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:0.5px solid var(--b)">'
       + '<div style="position:relative;flex-shrink:0"><div style="width:32px;height:32px;border-radius:8px;background:'+ac[0]+';color:'+ac[1]+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+ini+'</div>'
       + '<div style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--sf);background:'+(isOn?'#16a34a':'#9CA3AF')+'"></div></div>'
@@ -3645,8 +3655,8 @@ window._tn2Restore = function() {
   var rlEl = document.getElementById('tn2-role');
   if (avEl) avEl.textContent = (cu.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
   if (nmEl) nmEl.textContent = cu.name || '';
-  /* ASISTAN-ROL-MENU-FIX-001: ROLE_META.label öncelik */
-  if (rlEl) rlEl.textContent = (window.ROLE_META && window.ROLE_META[cu.role] && window.ROLE_META[cu.role].label) || (cu.role === 'admin' ? 'Admin' : cu.role === 'manager' ? 'Yonetici' : 'Personel');
+  /* ROLE-LABEL-HELPER-001: _ftRoleLabel helper */
+  if (rlEl) rlEl.textContent = window._ftRoleLabel?.(cu.role) || '';
   // Bildirim dot
   var notifs = typeof loadNotifs === 'function' ? loadNotifs().filter(function(n) { return !n.read && (!n.targetUid || n.targetUid === cu.id); }) : [];
   var dot = document.getElementById('tn2-notif-dot');
