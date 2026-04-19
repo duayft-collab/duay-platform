@@ -1090,6 +1090,8 @@ window.renderUrunler = function() {
     kullanicilar.forEach(function(k){ filtreH += '<option value="'+esc(k)+'"'+(aktifUser===k?' selected':'')+'>'+esc(k)+'</option>'; });
     filtreH += '</select>';
   }
+  /* URUN-FILTRE-TEMIZLE-001: × Temizle butonu */
+  filtreH += '<button onclick="event.stopPropagation();window._urunFiltre=\'tumu\';window._urunTedFiltre=\'\';window._urunUserFiltre=\'\';window._urunSayfa=1;var s=document.getElementById(\'urun-search\');if(s)s.value=\'\';window.renderUrunler?.()" style="font-size:10px;padding:3px 10px;border:0.5px solid var(--b);border-radius:20px;background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;margin-left:8px">× Temizle</button>';
   filtreH += '</div>';
 
   /* URUN-LIST-002: Tedarikçi pill butonları */
