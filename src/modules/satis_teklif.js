@@ -40,8 +40,34 @@ window._stChangeLang = function(newLang) {
   });
 };
 
-function _loadST() { try { return JSON.parse(localStorage.getItem(ST_KEY) || '[]'); } catch(e) { return []; } }
-function _storeST(d) { localStorage.setItem(ST_KEY, JSON.stringify(d)); }
+function _loadST() {
+  // SINGLE-SOURCE-OF-TRUTH: Firestore sync'li platform fonksiyonu birincil
+  if (typeof window.loadSatisTeklifleri === 'function') {
+    try { return window.loadSatisTeklifleri() || []; } catch(e) { console.warn('[_loadST platform]', e); }
+  }
+  try { return JSON.parse(localStorage.getItem(ST_KEY) || '[]'); } catch(e) { return []; }
+}
+function _storeST(d) {
+  // DUAL-WRITE: localStorage + Firestore birlikte (platform delegate)
+  if (typeof window.storeSatisTeklifleri === 'function') {
+    try {
+      var _r = window.storeSatisTeklifleri(d);
+      // EK-A: Platform Promise dönerse async güvenli handle et
+      if (_r && typeof _r.then === 'function') {
+        _r.then(function(){ /* ok */ }).catch(function(e){ console.error('[_storeST platform async]', e); });
+      }
+      return _r;
+    } catch(e) { console.warn('[_storeST platform]', e); }
+  }
+  // Fallback: lokal + explicit Firestore
+  try { localStorage.setItem(ST_KEY, JSON.stringify(d)); } catch(e) { console.error('[_storeST local]', e); }
+  try {
+    if (typeof window._syncFirestore === 'function' && typeof window._fsPath === 'function') {
+      var _fp = window._fsPath('satisTeklifleri');
+      if (_fp) window._syncFirestore(_fp, d);
+    }
+  } catch(e) { console.error('[_storeST firestore]', e); }
+}
 
 function _generateTeklifNo() {
   var year = new Date().getFullYear();
