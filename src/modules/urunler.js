@@ -791,6 +791,7 @@ window._uf2TaslakKaydet = function() {
   _storeU(data);
   const s = _getSekmeler(); const sk = s.find(x=>x.id===_aktifSekme);
   if (sk) { sk.baslik = vals.duayAdi || vals.stdAdi || 'Ürün'; sk.durum = 'devam'; sk.duayKodu = vals.duayKod || ''; _setSekmeler(s); }
+  window.logActivity?.('urun', 'Ürün taslağı kaydedildi: ' + (vals.duayAdi || vals.urunAdi || 'İsimsiz'));
   if (typeof window.toast === 'function') window.toast('Taslak kaydedildi', 'success');
   _renderForm();
 };
@@ -851,6 +852,7 @@ window._uf2KaydetYeni = function() {
     data.push(yeni);
   }
   _storeU(data);
+  window.logActivity?.('urun', (existing ? 'Ürün güncellendi: ' : 'Ürün eklendi: ') + g('urunAdi'));
   window.toast?.('Ürün kaydedildi: ' + g('urunAdi'), 'ok');
   document.getElementById('urun-form-modal')?.remove();
   window.renderUrunler?.();
