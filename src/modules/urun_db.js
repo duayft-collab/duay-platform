@@ -247,6 +247,9 @@ window._saveUrunDB = function() {
     var note = (document.getElementById('udb-note-'+n)?.value||'').trim();
     var sozlesme = (document.getElementById('udb-sozlesme-'+n)?.value||'').trim();
     var marka = (document.getElementById('udb-marka-'+n)?.value||'').trim();
+    var uretimKontrol = (document.getElementById('udb-uretim-'+n)?.value||'').trim();
+    var gizliHile = !!(document.getElementById('udb-hile-'+n)?.checked);
+    var gizliHileNot = (document.getElementById('udb-hile-not-'+n)?.value||'').trim();
     var image = window['_udbImg'+n]||null;
 
     if (!duayName) { hatalar.push('Satır '+n+': Ürün adı (TR) zorunlu'); return; }
@@ -254,7 +257,7 @@ window._saveUrunDB = function() {
     if (!techDesc) { hatalar.push('Satır '+n+': Teknik açıklama zorunlu'); return; }
 
     var kayit = {
-      id: _generateDuayCode(vendorId, vendorCode) || Date.now(),
+      id: _generateDuayCode(vendorId, vendorCode) || (typeof window.generateId==='function' ? window.generateId() : Date.now()),
       duayName: duayName,
       origName: origName,
       vendorId: vendorId,
@@ -271,6 +274,9 @@ window._saveUrunDB = function() {
       note: note,
       sozlesmeNotu: sozlesme,
       marka: marka,
+      uretimKontrol: uretimKontrol,
+      gizliHile: gizliHile,
+      gizliHileNot: gizliHileNot,
       image: image||null,
       _hasImage: !!image,
       isDeleted: false,
