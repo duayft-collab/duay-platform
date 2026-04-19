@@ -124,7 +124,7 @@ function renderSatisTeklif() {
     if (musteriFiltre && t.customerName !== musteriFiltre) return false;
     if (durumFiltre && (t.status || t.durum || '') !== durumFiltre) return false;
     if (!search) return true;
-    return (t.teklifNo || '').toLowerCase().includes(search) || (t.customerName || '').toLowerCase().includes(search) || (t.jobId || '').toLowerCase().includes(search) || (t.currency || '').toLowerCase().includes(search) || (t.incoterm || '').toLowerCase().includes(search);
+    return (t.teklifNo || '').toLowerCase().includes(search) || (t.piNo || '').toLowerCase().includes(search) || (t.customerName || '').toLowerCase().includes(search) || (t.jobId || '').toLowerCase().includes(search) || (t.currency || '').toLowerCase().includes(search) || (t.incoterm || '').toLowerCase().includes(search);
   }).sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
 
   var cont = document.getElementById('st-list');
@@ -152,8 +152,8 @@ function renderSatisTeklif() {
     reddedildi: { bg:'#DC262618', color:'#DC2626', label:'Reddedildi' },
     revizyon:   { bg:'#D9770618', color:'#D97706', label:'Revizyon' }
   };
-  var html = '<div style="display:grid;grid-template-columns:28px 110px 1fr 140px 100px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;z-index:2">'
-    + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>Müşteri</div><div>Tutar</div><div>Durum</div><div>Tarih</div><div>İşlem</div></div>';
+  var html = '<div style="display:grid;grid-template-columns:28px 110px 130px 1fr 140px 100px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;z-index:2">'
+    + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>PI No</div><div>Müşteri</div><div>Tutar</div><div>Durum</div><div>Tarih</div><div>İşlem</div></div>';
 
   sayfaListe.forEach(function(t) {
     var total = (t.items || []).reduce(function(a, i) { return a + (parseFloat(i.total) || 0); }, 0);
@@ -165,9 +165,10 @@ function renderSatisTeklif() {
       +(karInfo.oran>=20?'#EAF3DE':'#FCEBEB')+';color:'+(karInfo.oran>=20?'#3B6D11':'#A32D2D')+';font-weight:600" title="Kar oranı">'
       +karInfo.oran+'%</span>'
     ) : '';
-    html += '<div style="display:grid;grid-template-columns:28px 110px 1fr 140px 100px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onclick="event.stopPropagation();window._stPeek?.(' + t.id + ')" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
+    html += '<div style="display:grid;grid-template-columns:28px 110px 130px 1fr 140px 100px 90px 120px;padding:8px 16px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;cursor:pointer;transition:background .1s" onclick="event.stopPropagation();window._stPeek?.(' + t.id + ')" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div onclick="event.stopPropagation()"><input type="checkbox" class="stek-row-chk" data-id="' + t.id + '" onchange="event.stopPropagation();window._stekChkGuncelle()"></div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(t.teklifNo || '—') + '</div>'
+      + '<div style="font-family:monospace;font-size:11px;color:' + (t.piNo ? 'var(--t2)' : 'var(--t3)') + '">' + esc(t.piNo || '—') + '</div>'
       + '<div style="font-weight:500">' + esc(t.customerName || '—') + '</div>'
       + '<div style="font-weight:700">' + total.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(t.currency || 'USD') + '</span>' + karBadge + '</div>'
       + '<div><span style="font-size:9px;padding:3px 10px;border-radius:99px;background:' + st.bg + ';color:' + st.color + ';font-weight:700;white-space:nowrap">' + st.label + '</span></div>'
