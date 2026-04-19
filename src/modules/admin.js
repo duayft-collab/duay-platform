@@ -843,6 +843,24 @@ function openPermModal(id) {
   var u = loadUsers().find(function(x) { return x.id === id; });
   if (!u) return;
 
+  /* ADMIN-PERM-MODAL-FIX-001: mo-perm modal DOM'da yoksa yarat — eski bug'da element aranıyordu ama hiç yaratılmıyordu */
+  var _mo = document.getElementById('mo-perm');
+  if (!_mo) {
+    _mo = document.createElement('div');
+    _mo.className = 'mo';
+    _mo.id = 'mo-perm';
+    _mo.innerHTML = '<div class="moc" style="min-width:min(92vw,880px);max-width:880px;max-height:88vh;padding:20px;border-radius:14px;overflow:auto;display:flex;flex-direction:column;gap:10px;background:#fff">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:1px solid var(--b)">'
+      + '<div><div style="font-size:15px;font-weight:600;color:var(--t)">🔑 Modül Yetkileri</div>'
+      + '<div id="perm-uname" style="font-size:12px;color:var(--t3);margin-top:3px"></div></div>'
+      + '<button onclick="event.stopPropagation();document.getElementById(\'mo-perm\')?.classList.remove(\'open\')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3);line-height:1;padding:0;width:28px;height:28px">×</button>'
+      + '</div>'
+      + '<input type="hidden" id="perm-uid">'
+      + '<div id="perm-modules-cont"></div>'
+      + '</div>';
+    document.body.appendChild(_mo);
+  }
+
   var cont = g('perm-modules-cont');
   if (!cont) return;
 
