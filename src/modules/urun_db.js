@@ -72,48 +72,11 @@ function openUrunModal(id) {
     + '</div>'
     + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:10px">'
       // URUN-FORM-EXCEL-001: Excel tarzı çok satırlı tablo
+      /* URUN-FORM-KART-LAYOUT-001-ADIM-A: table/thead/tbody → udb-kartlar container + udb-card (per-card table wrapper ADIM-B'ye kadar korunur) */
       + '<div id="udb-tablo-wrap" style="overflow-x:auto">'
-        + '<table id="udb-tablo" style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:1320px">'
-          + '<colgroup>'
-            + '<col style="width:32px">'
-            + '<col style="width:48px">'
-            + '<col style="width:145px">'
-            + '<col style="width:145px">'
-            + '<col style="width:145px">'
-            + '<col style="width:115px">'
-            + '<col style="width:105px">'
-            + '<col style="width:80px">'
-            + '<col style="width:78px">'
-            + '<col style="width:85px">'
-            + '<col style="width:81px">'
-            + '<col style="width:85px">'
-            + '<col style="width:85px">'
-            + '<col style="width:1fr">'
-            + '<col style="width:32px">'
-          + '</colgroup>'
-          + '<thead id="udb-thead">'
-            + '<tr style="background:var(--s2);border-bottom:0.5px solid var(--b)">'
-              + '<th style="padding:8px 4px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:center">#</th>'
-              + '<th style="padding:8px 4px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:center">GÖRSEL *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">TEDARİKÇİ *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">ÜRÜN ADI (TR) *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">ÜRÜN ADI (EN) *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">KATEGORİ *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">TED. KODU *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">MENŞEİ *</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">BİRİM *</th>'
-              + '<th title="Teslim süresi (gün) — tedarikçi kaç günde teslim eder" style="padding:8px 4px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:center;cursor:help">TSL(G)</th>'
-              + '<th title="Raf ömrü (gün) — ürünün depoda bozulmadan kalabileceği süre" style="padding:8px 4px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:center;cursor:help">RAF(G)</th>'
-              + '<th title="Net ağırlık (kg) — ambalajsız ürün ağırlığı" style="padding:8px 4px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:center;cursor:help">NET KG</th>'
-              + '<th title="Brüt ağırlık (kg) — ambalaj dahil toplam ağırlık" style="padding:8px 4px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:center;cursor:help">BRÜT KG</th>'
-              + '<th style="padding:8px 6px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;text-align:left">TEK. AÇIKLAMA *</th>'
-              + '<th style="padding:8px 4px"></th>'
-            + '</tr>'
-          + '</thead>'
-          + '<tbody id="udb-tbody">'
-            + '<tr id="udb-row-1">' + _udbSatirHTML(1, u) + '</tr>'
-          + '</tbody>'
-        + '</table>'
+        + '<div id="udb-kartlar">'
+          + '<div class="udb-card" id="udb-row-1"><table style="width:100%;border-collapse:collapse"><tbody><tr>' + _udbSatirHTML(1, u) + '</tr></tbody></table></div>'
+        + '</div>'
       + '</div>'
       + '<div style="padding:8px 16px;display:' + (u ? 'none' : 'block') + '">'
         + '<button onclick="event.stopPropagation();window._udbSatirEkle?.()" style="font-size:13px;color:var(--ac);background:none;border:none;cursor:pointer">+ Ürün satırı ekle</button>'
@@ -146,14 +109,16 @@ function openUrunModal(id) {
   window._udbSatirEkle = function() {
     window._udbRowCounter++;
     var n = window._udbRowCounter;
-    var tbody = document.getElementById('udb-tbody');
-    if (!tbody) return;
-    var tr = document.createElement('tr');
-    tr.id = 'udb-row-' + n;
-    tr.style.borderBottom = '0.5px solid var(--b)';
-    tr.style.background = (n % 2 === 0) ? 'var(--s2)' : 'var(--sf)';
-    tr.innerHTML = _udbSatirHTML(n, null);
-    tbody.appendChild(tr);
+    /* URUN-FORM-KART-LAYOUT-001-ADIM-A: tbody → udb-kartlar div wrapper */
+    var kartlar = document.getElementById('udb-kartlar');
+    if (!kartlar) return;
+    var kart = document.createElement('div');
+    kart.id = 'udb-row-' + n;
+    kart.className = 'udb-card';
+    kart.style.borderBottom = '0.5px solid var(--b)';
+    kart.style.background = (n % 2 === 0) ? 'var(--s2)' : 'var(--sf)';
+    kart.innerHTML = '<table style="width:100%;border-collapse:collapse"><tbody><tr>' + _udbSatirHTML(n, null) + '</tr></tbody></table>';
+    kartlar.appendChild(kart);
   };
 
   window._udbSil = function(n) {
@@ -280,7 +245,8 @@ window._saveUrunDB = function() {
   /* URUN-FORM-EXCEL-004: multi-row batch save
      Düzeltmeler: loadUrunDB/storeUrunDB (doğru store),
      Auth.getCU (dosya standardı), edit/duplicate scope dışı. */
-  var satirlar = document.querySelectorAll('#udb-tbody > tr[id^="udb-row-"]');
+  /* URUN-FORM-KART-LAYOUT-001-ADIM-A: #udb-tbody → #udb-kartlar, tr → .udb-card */
+  var satirlar = document.querySelectorAll('#udb-kartlar > .udb-card[id^="udb-row-"]');
   if (!satirlar.length) { window.toast?.('En az 1 ürün girin', 'err'); return; }
   var data = loadUrunDB();
   var hatalar = [];
