@@ -3686,6 +3686,60 @@ if (typeof module !== 'undefined' && module.exports) {
     return sonuclar;
   };
 
+  /**
+   * LS-SETITEM-GUARD-001: localStorage.setItem koruma katmanı.
+   * - 10KB üstü tek değer writes engellenir (warn + return)
+   * - Quota %70 üstündeyse yazım öncesi _lsAutoTrim çalışır
+   * - QuotaExceededError yakalanır, emergency cleanup tetiklenir
+   */
+  (function() {
+    try {
+      var _origSetItem = localStorage.setItem.bind(localStorage);
+      var _MAX_TEK_YAZIM_KB = 10;
+      var _TRIM_ESIGI_PCT = 70;
+      var _sonTrimMs = 0;
+      var _trimCooldownMs = 30000; /* 30sn içinde 1 kez */
+
+      localStorage.setItem = function(key, value) {
+        try {
+          var vStr = String(value || '');
+          var kb = (vStr.length * 2) / 1024;
+          if (kb > _MAX_TEK_YAZIM_KB) {
+            console.warn('[LS-GUARD] ' + key + ' yazımı engellendi (' + kb.toFixed(1) + ' KB > ' + _MAX_TEK_YAZIM_KB + ' KB). Büyük veri için IndexedDB kullanılmalı.');
+            return;
+          }
+          /* Quota %70 kontrolü — async estimate'i cache'le, sürekli sorma */
+          var now = Date.now();
+          if (now - _sonTrimMs > _trimCooldownMs) {
+            _sonTrimMs = now;
+            if (navigator.storage && navigator.storage.estimate) {
+              navigator.storage.estimate().then(function(e) {
+                var pct = e.quota ? (e.usage / e.quota) * 100 : 0;
+                if (pct > _TRIM_ESIGI_PCT && typeof window._lsAutoTrim === 'function') {
+                  console.info('[LS-GUARD] Quota %' + pct.toFixed(1) + ' → autotrim tetiklendi');
+                  window._lsAutoTrim();
+                }
+              }).catch(function() {});
+            }
+          }
+          return _origSetItem(key, vStr);
+        } catch(err) {
+          if (err && err.name === 'QuotaExceededError') {
+            console.error('[LS-GUARD] Quota patladı, emergency cleanup tetikleniyor');
+            try {
+              if (typeof window._lsAutoTrim === 'function') window._lsAutoTrim();
+              if (typeof window.toast === 'function') window.toast('Depolama dolmuştu, otomatik temizlik yapıldı. Sayfayı yenileyin.', 'warn');
+              /* Retry sonrası — tek seferlik */
+              return _origSetItem(key, String(value || ''));
+            } catch(_) { throw err; }
+          }
+          throw err;
+        }
+      };
+      console.info('[LS-GUARD] setItem override aktif (max ' + _MAX_TEK_YAZIM_KB + ' KB, trim esigi %' + _TRIM_ESIGI_PCT + ')');
+    } catch(e) { console.warn('[LS-GUARD] override kurulamadı:', e); }
+  })();
+
   /* Sayfa yüklemede otomatik çalıştır — 2 sn gecikme ile (diğer init'lerden sonra) */
   setTimeout(function() {
     try { if (typeof window._lsAutoTrim === 'function') window._lsAutoTrim(); } catch(e) {}
