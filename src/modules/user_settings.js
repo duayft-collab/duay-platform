@@ -10,7 +10,7 @@
   /* Sekme tanımları — sonraki adımlarda 'aktif:true' eklenecek */
   var SEKMELER = [
     { id: 'profil',      label: 'Profil',       ikon: '👤', aktif: true  },
-    { id: 'gorunum',     label: 'Görünüm',      ikon: '🎨', aktif: false },
+    { id: 'gorunum',     label: 'Görünüm',      ikon: '🎨', aktif: true  },
     { id: 'bildirim',    label: 'Bildirimler',  ikon: '🔔', aktif: false },
     { id: 'guvenlik',    label: 'Güvenlik',     ikon: '🔒', aktif: false }
   ];
@@ -77,6 +77,7 @@
 
   function _renderIcerik(cu, esc) {
     if (aktifSekme === 'profil') return _renderProfil(cu, esc);
+    if (aktifSekme === 'gorunum') return _renderGorunum(cu, esc);
     return '<div style="color:var(--t3);font-size:11px">Yakında…</div>';
   }
 
@@ -102,6 +103,57 @@
       + '</div>'
       + '</div>';
   }
+
+  function _renderGorunum(cu, esc) {
+    var mevcutTheme = localStorage.getItem('ak_theme') || 'system';
+    var mevcutLang = localStorage.getItem('ak_lang') || 'tr';
+    var _seg = function(label, aciklama, aktifDeger, secenekler, onclickHandler) {
+      var segHtml = secenekler.map(function(s) {
+        var seciliMi = (s.id === aktifDeger);
+        return '<button type="button" onclick="' + onclickHandler + '(\'' + s.id + '\')" style="flex:1;padding:7px 10px;border:none;background:' + (seciliMi ? 'var(--sf,#fff)' : 'transparent') + ';color:' + (seciliMi ? 'var(--t)' : 'var(--t3)') + ';font-size:11.5px;font-weight:' + (seciliMi ? '600' : '500') + ';font-family:inherit;cursor:pointer;border-radius:6px;box-shadow:' + (seciliMi ? '0 1px 2px rgba(0,0,0,0.04)' : 'none') + ';transition:all .12s">' + s.ikon + ' ' + s.label + '</button>';
+      }).join('');
+      return '<div style="margin-bottom:20px"><label style="display:block;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:6px">' + label + '</label><div style="font-size:11px;color:var(--t3);margin-bottom:8px">' + aciklama + '</div><div style="display:flex;gap:2px;padding:3px;background:var(--s2);border:0.5px solid var(--b);border-radius:8px">' + segHtml + '</div></div>';
+    };
+    return '<div style="max-width:420px">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px">Görünüm</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-bottom:20px">Tema ve dil tercihleriniz</div>'
+      + _seg('Tema', 'Arayüz rengi', mevcutTheme, [
+          { id: 'system', label: 'Sistem', ikon: '⚙️' },
+          { id: 'light',  label: 'Açık',   ikon: '☀️' },
+          { id: 'dark',   label: 'Koyu',   ikon: '🌙' }
+        ], 'window._usTemaSec')
+      + _seg('Dil', 'Arayüz dili', mevcutLang, [
+          { id: 'tr', label: 'Türkçe',  ikon: '🇹🇷' },
+          { id: 'en', label: 'English', ikon: '🇬🇧' }
+        ], 'window._usDilSec')
+      + '</div>';
+  }
+
+  /* Tema seçimi — USER-SETTINGS-GORUNUM-001 */
+  window._usTemaSec = function(tema) {
+    try {
+      if (typeof window.setTheme === 'function') window.setTheme(tema);
+      else localStorage.setItem('ak_theme', tema);
+      if (typeof window.applyTheme === 'function') window.applyTheme(tema);
+      window.toast?.('Tema: ' + tema, 'success');
+      /* Segmented control'ü yenile */
+      var icerikEl = document.getElementById('us-icerik');
+      var cu = window.Auth?.getCU?.();
+      if (icerikEl && cu) icerikEl.innerHTML = _renderIcerik(cu, window._esc || function(x){ return x; });
+    } catch(e) { console.warn('[user_settings] tema hata:', e); }
+  };
+
+  /* Dil seçimi — USER-SETTINGS-GORUNUM-001 */
+  window._usDilSec = function(lang) {
+    try {
+      if (typeof window.setLang === 'function') window.setLang(lang);
+      else localStorage.setItem('ak_lang', lang);
+      window.toast?.('Dil: ' + (lang === 'tr' ? 'Türkçe' : 'English'), 'success');
+      var icerikEl = document.getElementById('us-icerik');
+      var cu = window.Auth?.getCU?.();
+      if (icerikEl && cu) icerikEl.innerHTML = _renderIcerik(cu, window._esc || function(x){ return x; });
+    } catch(e) { console.warn('[user_settings] dil hata:', e); }
+  };
 
   /* Sekme geçişi — USER-SETTINGS-SEKMEGEC-FIX-001
      Overlay yeniden render etme (panel ekran dışına kayıyordu). Sadece içerik + sol rail aktif state güncellensin. */
