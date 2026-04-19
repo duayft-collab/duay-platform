@@ -381,12 +381,28 @@ function renderUrunDB() {
     + '<div style="padding:8px 16px;border-bottom:1px solid var(--b);display:flex;gap:8px;background:var(--s2)">'
       + '<input class="fi" id="udb-search" placeholder="🔍 Ürün adı, kod, kategori..." oninput="renderUrunDB()" style="font-size:11px;flex:1">'
     + '</div>'
+    + '<div id="udb-kat-chips" style="padding:8px 16px;border-bottom:0.5px solid var(--b);display:flex;gap:6px;flex-wrap:wrap;background:var(--sf)"></div>'
     + '<div id="udb-list" style="overflow-x:auto"></div>';
   }
 
   var data = loadUrunDB().filter(function(u) { return !u.isDeleted; });
   var search = (document.getElementById('udb-search')?.value || '').toLowerCase();
+  /* URUN-KATALOG-KAT-CHIP-001: kategori filter state + chip render */
+  var aktifKat = window._udbKatFilter || '';
+  var benzersizKats = {};
+  data.forEach(function(u){ if (u && u.category) benzersizKats[u.category] = (benzersizKats[u.category]||0) + 1; });
+  var katListe = Object.keys(benzersizKats).sort();
+  var chipsDiv = document.getElementById('udb-kat-chips');
+  if (chipsDiv) {
+    var chipHtml = '<button onclick="window._udbKatFilter=\'\';renderUrunDB()" style="padding:4px 12px;border-radius:14px;border:0.5px solid ' + (!aktifKat?'var(--ac)':'var(--b)') + ';background:' + (!aktifKat?'var(--ac)':'transparent') + ';color:' + (!aktifKat?'#fff':'var(--t2)') + ';font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s">Tümü <span style="opacity:.7">·' + data.length + '</span></button>';
+    katListe.forEach(function(k){
+      var on = aktifKat === k;
+      chipHtml += '<button onclick="window._udbKatFilter=' + JSON.stringify(k) + ';renderUrunDB()" style="padding:4px 12px;border-radius:14px;border:0.5px solid ' + (on?'var(--ac)':'var(--b)') + ';background:' + (on?'var(--ac)':'transparent') + ';color:' + (on?'#fff':'var(--t2)') + ';font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s">' + window._esc(k) + ' <span style="opacity:.7">·' + benzersizKats[k] + '</span></button>';
+    });
+    chipsDiv.innerHTML = chipHtml;
+  }
   var fl = data.filter(function(u) {
+    if (aktifKat && (u.category || '') !== aktifKat) return false;
     if (!search) return true;
     return (u.duayName || '').toLowerCase().includes(search) || (u.duayCode || '').toLowerCase().includes(search) || (u.vendorCode || '').toLowerCase().includes(search) || (u.category || '').toLowerCase().includes(search) || (u.vendorName || '').toLowerCase().includes(search);
   });
