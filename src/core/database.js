@@ -3780,6 +3780,58 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 
   /**
+   * LS-HARD-DELETE-OLD-001
+   * 30 günden eski isDeleted:true kayıtları fiziksel siler.
+   * Etkilenen store'lar: urunler, cari, odemeler, tahsilat, satinalma, satisTeklifleri, alisTeklifleri
+   * @returns {Object} { key: { once: N, sonra: N, silindi: N } }
+   */
+  window._lsHardDeleteOld = function (gunEski) {
+    var GUN_MS = 24 * 60 * 60 * 1000;
+    var esik = Date.now() - ((gunEski || 30) * GUN_MS);
+    var hedefKeyler = [
+      'ak_urunler1', 'ak_cari1', 'ak_odm1', 'ak_tahsilat1',
+      'ak_satinalma1', 'ak_satis_teklif1', 'ak_alis_teklif1',
+      'ak_ihr_evrak1', 'ak_ihr_urun1', 'ak_kargo1', 'ak_navlun1'
+    ];
+    var rapor = {};
+    for (var i = 0; i < hedefKeyler.length; i++) {
+      var k = hedefKeyler[i];
+      try {
+        var raw = localStorage.getItem(k);
+        if (!raw) continue;
+        var veri;
+        if (raw.indexOf('_LZ_') === 0) {
+          if (typeof LZString === 'undefined') continue;
+          veri = JSON.parse(LZString.decompressFromUTF16(raw.slice(4)));
+        } else {
+          veri = JSON.parse(raw);
+        }
+        if (!Array.isArray(veri)) continue;
+        var once = veri.length;
+        var korunan = veri.filter(function (r) {
+          if (!r || !r.isDeleted) return true; /* aktif, kalsın */
+          var dt = r.deletedAt || r.updatedAt;
+          if (!dt) return true; /* tarih yoksa riske atma, koru */
+          var ts = new Date(dt).getTime();
+          if (isNaN(ts)) return true;
+          return ts > esik; /* 30 gün içinde silinmiş, koru */
+        });
+        var silindi = once - korunan.length;
+        if (silindi > 0 && typeof _write === 'function') {
+          _write(k, korunan);
+          rapor[k] = { once: once, sonra: korunan.length, silindi: silindi };
+        }
+      } catch (e) {
+        /* sessiz geç */
+      }
+    }
+    if (typeof console !== 'undefined' && console.log) {
+      console.log('[LS-HARD-DELETE]', rapor);
+    }
+    return rapor;
+  };
+
+  /**
    * LS-SETITEM-GUARD-001: localStorage.setItem koruma katmanı.
    * - 10KB üstü tek değer writes engellenir (warn + return)
    * - Quota %70 üstündeyse yazım öncesi _lsAutoTrim çalışır
@@ -3844,6 +3896,10 @@ if (typeof module !== 'undefined' && module.exports) {
   setTimeout(function() {
     try { if (typeof window._lsForceLZAll === 'function') window._lsForceLZAll(); } catch(e) {}
   }, 4000);
+  /* LS-HARD-DELETE-OLD-001: 30+ gün isDeleted kayıtları fiziksel silme — 6 sn gecikme */
+  setTimeout(function() {
+    try { if (typeof window._lsHardDeleteOld === 'function') window._lsHardDeleteOld(30); } catch(e) {}
+  }, 6000);
 
   window._syncFirestore = _syncFirestore;
   window._fsPath = _fsPath;
