@@ -215,6 +215,24 @@ function openUrunModal(id) {
   };
 
   function _udbSatirHTML(n, u) {
+    /* URUN-KATEGORI-BIRIM-COMBOBOX-001: unique kategori/birim listesi + datalist enjekte */
+    var _mevcutUrunler = (typeof loadUrunDB === 'function' ? loadUrunDB() : []) || [];
+    var _defKat = ['Elektronik','Makine','Kimya','Tekstil','Gıda','Ambalaj','Kırtasiye','Mobilya','İnşaat','Yedek Parça','Diğer'];
+    var _defBirim = ['Adet','Kg','Gr','Ton','Metre','m²','m³','Litre','Paket','Koli','Kutu','Rulo','Set'];
+    var _setKat = {}; _defKat.forEach(function(k){ _setKat[k]=true; }); _mevcutUrunler.forEach(function(x){ if(x && x.category) _setKat[x.category]=true; });
+    var _setBirim = {}; _defBirim.forEach(function(b){ _setBirim[b]=true; }); _mevcutUrunler.forEach(function(x){ if(x && x.unit) _setBirim[x.unit]=true; });
+    var _katList = Object.keys(_setKat).sort();
+    var _birimList = Object.keys(_setBirim).sort();
+    if (!document.getElementById('udb-kat-datalist')) {
+      var _dl1 = document.createElement('datalist'); _dl1.id = 'udb-kat-datalist';
+      _dl1.innerHTML = _katList.map(function(k){ return '<option value="'+esc(k)+'">'; }).join('');
+      document.body.appendChild(_dl1);
+    }
+    if (!document.getElementById('udb-birim-datalist')) {
+      var _dl2 = document.createElement('datalist'); _dl2.id = 'udb-birim-datalist';
+      _dl2.innerHTML = _birimList.map(function(b){ return '<option value="'+esc(b)+'">'; }).join('');
+      document.body.appendChild(_dl2);
+    }
     var rowCariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u && u.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
     var rowCountryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u && u.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
     return '<td style="padding:4px 4px;text-align:center;vertical-align:middle;font-size:11px;color:var(--t2)">'+n+'<br><button onclick="event.stopPropagation();window._udbDetay?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
@@ -222,10 +240,10 @@ function openUrunModal(id) {
       + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-vendor-'+n+'">' + rowCariOpts + '</select></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-'+n+'" value="'+esc(u?.duayName||'')+'" placeholder="Türkçe ad"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-'+n+'" value="'+esc(u?.origName||'')+'" placeholder="English name"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-category-'+n+'" value="'+esc(u?.category||'')+'" placeholder="Kategori"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" list="udb-kat-datalist" id="udb-category-'+n+'" value="'+esc(u?.category||'')+'" placeholder="Kategori seç/yaz"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-vendorCode-'+n+'" value="'+esc(u?.vendorCode||'')+'" placeholder="ABC-123"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-origin-'+n+'">' + rowCountryOpts + '</select></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-unit-'+n+'" value="'+esc(u?.unit||'Adet')+'"></td>'
+      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" list="udb-birim-datalist" id="udb-unit-'+n+'" value="'+esc(u?.unit||'Adet')+'" placeholder="Birim"></td>'
       + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-teslim-'+n+'" value="'+esc(u?.deliveryDays||'')+'" placeholder="G"></td>'
       + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-raf-'+n+'" value="'+esc(u?.shelfLife||'')+'" placeholder="G"></td>'
       + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-netW-'+n+'" value="'+esc(u?.netWeight||'')+'" placeholder="kg" step="0.01"></td>'
