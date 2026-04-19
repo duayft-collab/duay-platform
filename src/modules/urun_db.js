@@ -253,20 +253,31 @@ function openUrunModal(id) {
       : '<span style="font-size:11px;color:var(--t3,#8a8a8a);text-align:center;line-height:1.3">📷<br>Görsel<br>Ekle</span>';
     var mevcutKod = u.duayCode || u.duayKodu || '';
     var kodRozeti = mevcutKod
-      ? '<span style="margin-left:8px;font-size:10px;padding:3px 8px;border-radius:6px;background:#E1F5EE;color:#1A8D6F;font-weight:600;letter-spacing:.03em">' + esc(mevcutKod) + '</span>'
-      : '<span style="margin-left:8px;font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,0.04);color:var(--t3,#8a8a8a);font-weight:500">Kod: kayıt sırasında otomatik</span>';
+      ? '<span style="margin-left:10px;font-size:10px;padding:3px 8px;border-radius:6px;background:#E1F5EE;color:#1A8D6F;font-weight:600;letter-spacing:.03em">' + esc(mevcutKod) + '</span>'
+      : '<span style="margin-left:10px;font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,0.04);color:var(--t3,#8a8a8a);font-weight:500">Kod otomatik</span>';
+    /* URUN-FORM-KART-LAYOUT-001-ADIM-B: Kayıt zaman damgası */
+    var zamanDamgasi;
+    if (u.createdAt || u.updatedAt) {
+      var _ts = u.updatedAt || u.createdAt;
+      var _d = new Date(_ts);
+      var _tsStr = isNaN(_d) ? String(_ts) : _d.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+      var _edLbl = (u.updatedAt && u.createdAt && u.updatedAt !== u.createdAt) ? 'Son güncelleme' : 'Kayıt';
+      zamanDamgasi = '<span style="margin-left:10px;font-size:10px;color:var(--t3,#8a8a8a)">⏱ ' + _edLbl + ': ' + esc(_tsStr) + '</span>';
+    } else {
+      zamanDamgasi = '<span style="margin-left:10px;font-size:10px;color:var(--t3,#8a8a8a)">⏱ Yeni — kaydedildiğinde oluşacak</span>';
+    }
     return ''
-      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 12px 0;border-bottom:0.5px solid var(--b,#e0e0e0);margin-bottom:16px">'
-        + '<div style="display:flex;align-items:center"><span style="font-size:13px;font-weight:600;color:var(--t,#1c1c1e)">📦 Ürün ' + n + '</span>' + kodRozeti + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 12px 0;border-bottom:0.5px solid var(--b,#e0e0e0);margin-bottom:16px;flex-wrap:wrap;gap:6px">'
+        + '<div style="display:flex;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:600;color:var(--t,#1c1c1e)">📦 Ürün ' + n + '</span>' + kodRozeti + zamanDamgasi + '</div>'
         + '<button type="button" onclick="window._udbSil?.(' + n + ')" style="background:transparent;border:0.5px solid #E0574F;color:#E0574F;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">× Kaldır</button>'
       + '</div>'
       + '<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">'
         + '<div>'
           + '<label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Görsel <span style="color:#E0574F">*</span></label>'
-          + '<div id="udb-img-preview-' + n + '" onclick="document.getElementById(\'udb-img-file-' + n + '\').click()" style="width:100px;height:100px;border:0.5px dashed var(--b,#e0e0e0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3,#8a8a8a);cursor:pointer;overflow:hidden;background:var(--s2,rgba(0,0,0,0.02));transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac,#007aff)\'" onmouseleave="this.style.borderColor=\'var(--b,#e0e0e0)\'">'
+          + '<div id="udb-img-preview-' + n + '" onclick="document.getElementById(\'udb-img-' + n + '\').click()" style="width:100px;height:100px;border:0.5px dashed var(--b,#e0e0e0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3,#8a8a8a);cursor:pointer;overflow:hidden;background:var(--s2,rgba(0,0,0,0.02));transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac,#007aff)\'" onmouseleave="this.style.borderColor=\'var(--b,#e0e0e0)\'">'
             + imgPreview
           + '</div>'
-          + '<input type="file" id="udb-img-file-' + n + '" accept="image/*" style="display:none" onchange="window._udbGorselYukle?.(this, ' + n + ')">'
+          + '<input type="file" id="udb-img-' + n + '" accept="image/*" style="display:none" onchange="window._udbGorselYukle?.(this, ' + n + ')">'
         + '</div>'
         + _fld('udb-duayName-' + n, 'Ürün Adı (TR)', 'text', '', true, 'örn: Mesh Ofis Koltuğu', u.duayName || u.urunAdi)
         + _fld('udb-origName-' + n, 'Ürün Adı (EN)', 'text', '', true, 'örn: Mesh Office Chair', u.origName || u.ingAd)
