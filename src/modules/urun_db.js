@@ -27,6 +27,26 @@ function _generateDuayCode(vendorName, vendorCode) {
   return 'DY-' + prefix + '-' + (code || '') + '-' + Date.now().toString(36).slice(-6);
 }
 
+/**
+ * URUN-DUAY-KODU-AUTO-001: 11 başlayan unique duay kodu üretir.
+ * Format: '11.XXXXXX' (6 hane timestamp sonu + collision counter varsa suffix)
+ * Mevcut kayıtlardaki duayCode + duayKodu field'larına karşı unique garantili.
+ * @param {Array<string>} mevcutKodlar - existing duayCode + duayKodu listesi
+ * @returns {string} örnek: "11.683453" veya "11.6834531" (collision varsa)
+ */
+function _genDuayKodu(mevcutKodlar) {
+  var mevcut = {};
+  (mevcutKodlar || []).forEach(function(k) { if (k) mevcut[String(k)] = true; });
+  var tsBase = Date.now().toString().slice(-6);
+  var kod = '11.' + tsBase;
+  var sayac = 0;
+  while (mevcut[kod] && sayac < 1000) {
+    sayac++;
+    kod = '11.' + tsBase + sayac;
+  }
+  return kod;
+}
+
 var URUN_COUNTRIES = ['Türkiye','Çin','Almanya','ABD','İtalya','Fransa','İngiltere','Japonya','Güney Kore','Hindistan','Brezilya','Rusya','İspanya','Hollanda','Belçika','İsviçre','Avusturya','Polonya','Çekya','Macaristan','Romanya','Bulgaristan','Yunanistan','Mısır','BAE','Suudi Arabistan','İran','Tayland','Vietnam','Endonezya','Malezya','Singapur','Tayvan','Pakistan','Bangladeş','Sri Lanka','Arjantin','Kolombiya','Peru','Şili','Meksika','Kanada','Avustralya','Güney Afrika','Nijerya','Kenya','Fas','Cezayir','Tunus'];
 
 /**
@@ -265,6 +285,8 @@ window._saveUrunDB = function() {
   var data = loadUrunDB();
   var hatalar = [];
   var yeniKayitlar = [];
+  /* URUN-DUAY-KODU-AUTO-001: mevcut kodlarla collision kontrolü için toplama */
+  var _mevcutKodlar = data.map(function(d) { return d.duayCode || d.duayKodu; }).filter(Boolean);
 
   satirlar.forEach(function(tr) {
     var n = tr.id.replace('udb-row-', '');
@@ -296,8 +318,12 @@ window._saveUrunDB = function() {
     if (!unit) { hatalar.push('Satır '+n+': Birim zorunlu'); return; }
     if (!image) { hatalar.push('Satır '+n+': Görsel zorunlu'); return; }
 
+    /* URUN-DUAY-KODU-AUTO-001: 11. prefix unique duay kodu */
+    var _yeniDuayKodu = _genDuayKodu(_mevcutKodlar);
+    _mevcutKodlar.push(_yeniDuayKodu);
     var kayit = {
       id: _generateDuayCode(vendorId, vendorCode) || (typeof window.generateId==='function' ? window.generateId() : Date.now()),
+      duayCode: _yeniDuayKodu,
       duayName: duayName,
       origName: origName,
       vendorId: (function(){ var c = (typeof loadCari === 'function' ? (loadCari({tumKullanicilar:true})||[]) : []).find(function(x){ return (x.ad||x.unvan||x.name||'') === vendorId; }); return c ? String(c.id||c.uid||'') : ''; })(),
@@ -335,7 +361,11 @@ window._saveUrunDB = function() {
     var eid = document.getElementById('ud-eid')?.value||'';
     if (eid) {
       var idx = data.findIndex(function(d){ return String(d.id) === String(eid); });
-      if (idx > -1) { data[idx] = Object.assign(data[idx], k, {id: data[idx].id, createdAt: data[idx].createdAt}); }
+      if (idx > -1) {
+        /* URUN-DUAY-KODU-AUTO-001: edit'te mevcut duayCode/duayKodu korunur, yeni kod atlanır */
+        var _koruDuayKodu = data[idx].duayCode || data[idx].duayKodu;
+        data[idx] = Object.assign(data[idx], k, { id: data[idx].id, createdAt: data[idx].createdAt, duayCode: _koruDuayKodu || k.duayCode });
+      }
       else { data.push(k); }
     } else {
       data.push(k);
