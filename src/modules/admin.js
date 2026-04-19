@@ -248,7 +248,7 @@ function _renderDetail(uid) {
   const cont = g('adm-detail');
   if (!cont) return;
   const users = loadUsers();
-  const u = users.find(x => x.id === uid);
+  const u = users.find(x => String(x.id) === String(uid));
   if (!u) { cont.innerHTML = ''; return; }
 
   // Çakışma uyarısı — başka admin aynı kullanıcıyı düzenliyorsa
@@ -485,7 +485,7 @@ function openAdminModal(id) {
   document.querySelectorAll('[id^="pm-"],[id^="pa-"]').forEach(cb => { if (cb.type==='checkbox') cb.checked = false; });
 
   if (id) {
-    const u = loadUsers().find(x => x.id === id);
+    const u = loadUsers().find(x => String(x.id) === String(id));
     if (!u) return;
     if (g('f-name'))    g('f-name').value    = u.name  || '';
     if (g('f-email'))   g('f-email').value   = u.email || '';
@@ -609,7 +609,7 @@ function suspendUser(id) {
   if (!isAdmin()) return;
   if (id === _getCU()?.id) { window.toast?.('Kendinizi askıya alamazsınız', 'err'); return; }
   const users = loadUsers();
-  const u     = users.find(x => x.id === id);
+  const u     = users.find(x => String(x.id) === String(id));
   if (!u) return;
   const msg = window.t ? t('confirm.suspend', undefined, { name: u.name }) : `"${u.name}" askıya alınsın mı?`;
   window.confirmModal(msg, {
@@ -631,7 +631,7 @@ function suspendUser(id) {
 function activateUser(id) {
   if (!isAdmin()) return;
   const users = loadUsers();
-  const u     = users.find(x => x.id === id);
+  const u     = users.find(x => String(x.id) === String(id));
   if (!u) return;
   u.status      = 'active';
   u.activatedBy = _getCU()?.id;
@@ -647,7 +647,7 @@ function activateUser(id) {
 function resetPassword(id) {
   if (!isAdmin()) return;
   const users = loadUsers();
-  const u     = users.find(x => x.id === id);
+  const u     = users.find(x => String(x.id) === String(id));
   if (!u) return;
 
   var existMo = document.getElementById('mo-pwd-reset');
@@ -692,7 +692,7 @@ function deleteUser(id) {
   if (!isAdmin()) return;
   if (id === _getCU()?.id) { window.toast?.('Kendinizi silemezsiniz', 'err'); return; }
   const users = loadUsers();
-  const u     = users.find(x => x.id === id);
+  const u     = users.find(x => String(x.id) === String(id));
   if (!u) return;
   const msg = window.t
     ? t('confirm.delete', undefined, { label: u.name })
@@ -840,7 +840,7 @@ var _pendingPermSave = null;
 
 function openPermModal(id) {
   if (!isAdmin()) return;
-  var u = loadUsers().find(function(x) { return x.id === id; });
+  var u = loadUsers().find(function(x) { return String(x.id) === String(id); });
   if (!u) return;
 
   /* ADMIN-PERM-MODAL-FIX-001: mo-perm modal DOM'da yoksa yarat — eski bug'da element aranıyordu ama hiç yaratılmıyordu */
@@ -1183,7 +1183,7 @@ function savePermissions() {
   if (!isAdmin()) return;
   const uid     = parseInt(g('perm-uid')?.value || '0');
   const users   = loadUsers();
-  const u       = users.find(x => x.id === uid);
+  const u       = users.find(x => String(x.id) === String(uid));
   if (!u) return;
 
   // Yeni yetki değerlerini topla
@@ -1486,7 +1486,7 @@ function submitSuggestion() {
 function updateSuggStatus(id, status) {
   if (!isAdmin()) return;
   const suggs = loadSugg();
-  const s     = suggs.find(x => x.id === id);
+  const s     = suggs.find(x => String(x.id) === String(id));
   if (!s) return;
   s.status     = status;
   s.reviewedBy = _getCU()?.id;
@@ -2187,7 +2187,7 @@ window._renderUserDetail = function(uid) {
   var cont = g('u-detail');
   if (!cont) return;
   var users = loadUsers().filter(function(x){ return !x.isDeleted; });
-  var u = users.find(function(x){ return x.id === uid; });
+  var u = users.find(function(x){ return String(x.id) === String(uid); });
   if (!u) {
     cont.style.textAlign = 'center';
     cont.innerHTML = '<div style="font-size:36px;margin-bottom:10px">👤</div>'
@@ -2243,7 +2243,7 @@ window._renderUserDetail = function(uid) {
 window._usersRolDegistir = function(uid, yeniRol) {
   if (!isAdmin()) { window.toast?.('Yetkiniz yok','err'); return; }
   var users = loadUsers();
-  var u = users.find(function(x){ return x.id === uid; });
+  var u = users.find(function(x){ return String(x.id) === String(uid); });
   if (!u) return;
   var eskiRol = u.role;
   if (eskiRol === yeniRol) return;
@@ -2335,7 +2335,7 @@ function renderSettingsAdmin(){
 
 function showUserActivity(uid) {
   const users = loadUsers();
-  const u = users.find(x => x.id === uid); if (!u) return;
+  const u = users.find(x => String(x.id) === String(uid)); if (!u) return;
   const acts = (typeof loadAct === 'function' ? loadAct() : []).filter(a => a.uid === uid).slice(0, 20);
   const daysSince = u.lastLogin ? Math.floor((Date.now() - new Date(u.lastLogin.replace(' ','T')).getTime()) / 86400000) : null;
   const isOnline = daysSince !== null && daysSince < 1;
@@ -2433,7 +2433,7 @@ function _terminateSession(uid) {
   _storeSessions(sessions);
   // Kullanıcıyı askıya al (zorunlu çıkış)
   const users = loadUsers();
-  const u = users.find(x => x.id === uid);
+  const u = users.find(x => String(x.id) === String(uid));
   if (u) { u.forceLogout = Date.now(); saveUsers(users); }
   window.toast?.('Oturum sonlandırıldı', 'ok');
   document.getElementById('mo-sessions')?.remove();
@@ -2652,7 +2652,7 @@ function applyPermTemplate(uid, templateId) {
   if (!isAdmin()) return;
   const tpl = PERM_TEMPLATES[templateId]; if (!tpl) return;
   const users = loadUsers();
-  const u = users.find(x => x.id === uid); if (!u) return;
+  const u = users.find(x => String(x.id) === String(uid)); if (!u) return;
   u.modules = [...tpl.modules];
   u.permissions = { ...tpl.permissions };
   saveUsers(users);
@@ -2812,7 +2812,7 @@ let _impersonating = null;
 function startImpersonation(uid) {
   if (!isAdmin()) return;
   const users = loadUsers();
-  const target = users.find(x => x.id === uid); if (!target) return;
+  const target = users.find(x => String(x.id) === String(uid)); if (!target) return;
   _impersonating = window.Auth?.getCU?.(); // gerçek admin'i sakla
   // CU'yu hedef kullanıcıya geçir
   const cu = window.Auth?.getCU?.();
@@ -2854,7 +2854,7 @@ function stopImpersonation() {
 function setPermExpiry(uid, moduleId, expiryDate) {
   if (!isAdmin()) return;
   const users = loadUsers();
-  const u = users.find(x => x.id === uid); if (!u) return;
+  const u = users.find(x => String(x.id) === String(uid)); if (!u) return;
   if (!u.permExpiry) u.permExpiry = {};
   u.permExpiry[moduleId] = expiryDate; // 'YYYY-MM-DD' formatında
   saveUsers(users);
@@ -2889,7 +2889,7 @@ window._saveTempPerm = function(uid) {
   setPermExpiry(uid, mod, date);
   // Modülü ekle (yoksa)
   const users = loadUsers();
-  const u = users.find(x => x.id === uid);
+  const u = users.find(x => String(x.id) === String(uid));
   if (u) {
     if (Array.isArray(u.modules) && !u.modules.includes(mod)) { u.modules.push(mod); saveUsers(users); }
   }
@@ -2954,7 +2954,7 @@ window._doBulkRole = function() {
   const ids = [...document.querySelectorAll('.br-cb:checked')].map(cb => parseInt(cb.value));
   if (!ids.length) { window.toast?.('Kullanici secin', 'err'); return; }
   const users = loadUsers();
-  ids.forEach(id => { const u = users.find(x => x.id === id); if (u) { u.role = role; } });
+  ids.forEach(id => { const u = users.find(x => String(x.id) === String(id)); if (u) { u.role = role; } });
   saveUsers(users);
   document.getElementById('mo-bulk-role')?.remove();
   _auditLog('bulk_role', 0, ids.length + ' kullanicinin rolu degistirildi: ' + role);
@@ -3142,7 +3142,7 @@ window._fbSyncDeleteSelected = function() {
   const deletedNames = [];
 
   idsToDelete.forEach(id => {
-    const u = users.find(x => x.id === id);
+    const u = users.find(x => String(x.id) === String(id));
     if (!u) return;
     // Soft-delete → çöp kutusuna
     trash.unshift({
@@ -3232,7 +3232,7 @@ window._saveMaxSessions = function(uid) {
   if (!sel) return;
   var val = parseInt(sel.value || '0');
   var users = loadUsers();
-  var u = users.find(function(x) { return x.id === uid; });
+  var u = users.find(function(x) { return String(x.id) === String(uid); });
   if (!u) return;
   u.maxSessions = val;
   saveUsers(users);
@@ -3340,7 +3340,7 @@ window._admSwitchTab = function(tab, el) {
   var cont = document.getElementById('adm-tab-content');
   if (!cont) return;
   var uid = _selectedUserId;
-  var u = loadUsers().find(function(x) { return x.id === uid; });
+  var u = loadUsers().find(function(x) { return String(x.id) === String(uid); });
   if (!u) return;
   var isSelf = u.id === _getCU()?.id;
 
@@ -3420,7 +3420,7 @@ window._rolKopyalaKaydet = function(fromId) {
 window._openUserManageModal = function(uid) {
   if (!isAdmin()) return;
   var users = loadUsers();
-  var u = users.find(function(x) { return x.id === uid; });
+  var u = users.find(function(x) { return String(x.id) === String(uid); });
   if (!u) return;
   var rm = ROLE_META[u.role] || ROLE_META.staff;
   var av = initials(u.name);
@@ -3547,7 +3547,7 @@ window._umSwitchTab = function(tab) {
  */
 window._umSaveAll = function(uid) {
   var users = loadUsers();
-  var u = users.find(function(x) { return x.id === uid; });
+  var u = users.find(function(x) { return String(x.id) === String(uid); });
   if (!u) return;
 
   var name = (document.getElementById('um-name')?.value || '').trim();
@@ -3771,7 +3771,7 @@ window._toggleUserDetail = function(uid) {
   var existing = document.getElementById(detailId);
   if (existing) { existing.remove(); return; }
   document.querySelectorAll('[id^="u-detail-"]').forEach(function(el) { el.remove(); });
-  var users = loadUsers(); var u = users.find(function(x) { return x.id === uid; }); if (!u) return;
+  var users = loadUsers(); var u = users.find(function(x) { return String(x.id) === String(uid); }); if (!u) return;
   var tr2 = document.createElement('tr'); tr2.id = detailId; tr2.style.cssText = 'background:#E6F1FB18';
   tr2.innerHTML = '<td colspan="8" style="padding:0 16px 12px 52px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-top:10px">'
     + '<div style="background:var(--s2);border-radius:8px;padding:10px"><div style="font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;margin-bottom:6px;border-bottom:0.5px solid var(--b);padding-bottom:4px">Modüller</div><div style="display:flex;flex-wrap:wrap;gap:3px">' + (u.modules || []).slice(0, 8).map(function(m) { return '<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C">' + m + '</span>'; }).join('') + ((u.modules || []).length > 8 ? '<span style="font-size:9px;color:var(--t3)">+' + ((u.modules || []).length - 8) + '</span>' : '') + '</div></div>'
@@ -3784,14 +3784,14 @@ window._toggleUserDetail = function(uid) {
 
 window._forceLogout = function(uid) {
   window.confirmModal('Bu kullanıcının aktif oturumu kapatılacak.', { title: 'Oturumu Kapat', danger: true, confirmText: 'Kapat', onConfirm: function() {
-    var users = loadUsers(); var u = users.find(function(x) { return x.id === uid; }); if (!u) return;
+    var users = loadUsers(); var u = users.find(function(x) { return String(x.id) === String(uid); }); if (!u) return;
     u.lastLogout = new Date().toISOString(); u.forcedLogout = true; saveUsers(users);
     window.toast?.('Oturum kapatıldı ✓', 'ok'); window.logActivity?.('user', u.name + ' oturumu zorla kapatıldı');
   }});
 };
 
 window._unlockUser = function(uid) {
-  var users = loadUsers(); var u = users.find(function(x) { return x.id === uid; }); if (!u) return;
+  var users = loadUsers(); var u = users.find(function(x) { return String(x.id) === String(uid); }); if (!u) return;
   u.autoLocked = false; u.failedLogins = 0; saveUsers(users); renderUsers();
   window.toast?.('Hesap kilidi kaldırıldı ✓', 'ok'); window.logActivity?.('user', u.name + ' hesap kilidi kaldırıldı');
 };
