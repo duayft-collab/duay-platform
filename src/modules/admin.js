@@ -1233,7 +1233,7 @@ function savePermissions() {
         + '<button id="perm-confirm-cancel" onclick="document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btns" style="padding:10px 24px;border-radius:10px;font-size:13px">İptal</button>'
         /* ADMIN-ONAYLA-FIX-001: inline onclick scope — savePermissions → window.savePermissions?.() */
         /* ADMIN-PERM-ONAYLA-FIX-001: Onayla → _applyPermSave (ikinci savePermissions çağrısı atlanır) */
-        + '<button id="perm-confirm-ok" onclick="event.stopPropagation();window._applyPermSave?.();document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btnp" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
+        + '<button id="perm-confirm-ok" onclick="window._applyPermSave?.();document.getElementById(\'perm-confirm-modal\')?.remove()" class="btn btnp" style="padding:10px 24px;border-radius:10px;font-size:13px;background:#dc2626">Onayla</button>'
       + '</div>'
     + '</div>';
     document.body.appendChild(_confirmEl);
