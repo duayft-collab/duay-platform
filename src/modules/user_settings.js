@@ -103,18 +103,29 @@
       + '</div>';
   }
 
-  /* Sekme geçişi */
+  /* Sekme geçişi — USER-SETTINGS-SEKMEGEC-FIX-001
+     Overlay yeniden render etme (panel ekran dışına kayıyordu). Sadece içerik + sol rail aktif state güncellensin. */
   window._usSekmeGec = function(sekme) {
     aktifSekme = sekme;
     var cu = window.Auth?.getCU?.();
+    if (!cu) return;
+    /* 1) İçerik paneli güncelle */
     var icerikEl = document.getElementById('us-icerik');
-    if (icerikEl && cu) icerikEl.innerHTML = _renderIcerik(cu, window._esc || function(x){ return x; });
-    /* Sekme aktif stilini yenile */
+    if (icerikEl) icerikEl.innerHTML = _renderIcerik(cu, window._esc || function(x){ return x; });
+    /* 2) Sol rail'deki sekme butonlarının aktif/pasif stilini güncelle */
     var overlay = document.getElementById(PANEL_ID);
-    if (overlay) {
-      var cu2 = window.Auth?.getCU?.();
-      if (cu2) overlay.innerHTML = _renderPanel(cu2, window._esc || function(x){ return x; });
-    }
+    if (!overlay) return;
+    var railButtons = overlay.querySelectorAll('.us-panel > div:nth-child(2) > div:first-child button');
+    railButtons.forEach(function(btn) {
+      var onclickAttr = btn.getAttribute('onclick') || '';
+      var match = onclickAttr.match(/_usSekmeGec\(['"]([^'"]+)['"]\)/);
+      var btnId = match ? match[1] : null;
+      if (!btnId) return;
+      var aktif = (btnId === sekme);
+      btn.style.background = aktif ? 'var(--s2)' : 'transparent';
+      btn.style.color = aktif ? 'var(--ac)' : 'var(--t)';
+      btn.style.fontWeight = aktif ? '600' : '500';
+    });
   };
 
   /* Profil kaydet */
