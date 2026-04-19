@@ -581,3 +581,114 @@ Kurallar:
 - Talimat review'da bu kontrol yapılır
 
 ---
+
+## PARALEL-TERMINAL-KURAL-001 — Aynı Dosyada İki Terminal Yasak
+
+**Kural:** İki terminal aynı dosyaya aynı anda commit atamaz. Attribution karışır, git blame güvenilmez hale gelir, hata kaynağı tespiti imkânsızlaşır.
+
+**Planlama:**
+- 3 terminal çalışıyorsa 3 farklı dosya
+- Aynı modülde iki iş varsa: sıralı, tek terminal
+- `app_patch.js` gibi büyük dosyada bu kural **KRİTİK** — modül birden fazla iş almış gibi görünse de tek terminal sırayla yapar
+
+**Yanlış davranış:** T01 SAVE-001 yazarken T03 SAVE-MISSING-001'i aynı dosyada paralel başlatmak → çakışma.
+
+**Doğru davranış:** Baran "T03 burada T01 bitirene kadar başka işe geç" der, sıra koruyarak ilerler.
+
+**Örnek ihlal:** 2026-04-19 02:30 — T01 SAVE-001, T03 SAVE-MISSING-001 aynı dosyada paralel → çakışma, bir terminalin işi diğerinin commit'iyle ezildi.
+
+---
+
+## WIP-ALGI-KURAL-001 — Başka Terminal Değişikliği Tespit Protokolü
+
+**ADIM 0 öncesi kontrol sırası:**
+
+1. `git status` temiz değilse: **DUR**
+2. `git log --oneline -5` — aynı konu başka commit'te mi var? → **DUR**
+3. ADIM 0'da grep sonucu talimat hedef metnini bulamıyorsa: başka terminal uygulamış demektir → **DUR**
+
+**DUR durumunda davranış:**
+
+Baran'a bildirim:
+> "Hash X, dosyada Z değişikliği var, benim edit'im çakışır. Seçenekler: (A) İptal, (B) Farklı scope, (C) Başka işe geç"
+
+**Asla yapılmaz:**
+- Bulamadığım metin için kendi kafamdan benzer bir metin bulup değiştirmek
+- "Muhtemelen yapıldı" deyip empty commit atmak
+- Paralel terminalin yaptığı işi "zaten yapılmış" diye atlayıp kendime ait gibi commit yazmak
+
+**Örnek doğru davranış:** 2026-04-19 00:03 T03'ün reddi — talimat hedef metni bulunamayınca T03 durdu, Baran'a bildirdi, yeni talimat bekledi.
+
+---
+
+## KAYNAK-GUVENILIRLIK-001 — Hangi Kaynak Ground Truth?
+
+| Kaynak | Güvenilirlik | Kullanım |
+|---|---|---|
+| Claude Code `grep -n` çıktısı | **Ground truth** | Her ADIM 0'da zorunlu |
+| Claude Code `sed -n` / `view` / `Read` | **Ground truth** | Bağlamı anlama |
+| GitHub raw (`raw.githubusercontent.com/...`) | Güvenilir | Canlı dosya teyidi |
+| Yerel zip (duay35, duay22…) | Stale olabilir | Sadece ön inceleme |
+| Claude Code "tamamlandı" / "commit edildi" mesajı | ❌ Doğrulanmadan güvenme | Mutlaka `grep` ile kanıtla |
+| Git commit mesajı | ❌ İsim ≠ içerik | `git show HASH` ile diff bak |
+| Kullanıcı hafızası / memory | Stale olabilir | `grep` ile teyit edilmeli |
+
+**Kural:** Bir kaynak "ground truth" değilse, karar almadan önce ground truth ile doğrula.
+
+---
+
+## GIT-YASAK-001 — Kesinlikle Kullanılmayan Flag'ler
+
+Hiçbir koşulda kullanılmaz:
+
+- `git push --force` / `git push -f`
+- `git commit --no-verify`
+- `git commit --allow-empty` (Baran açıkça "tutanak commit'i at" demediği sürece)
+- `git reset --hard` (uncommitted çalışma varken)
+- `git push origin main` — Baran "commit at" veya "push et" demeden
+
+**İhlal sonucu:** Hesap verilebilirlik kaybı, veri kaybı riski, diğer terminallerin işinin üstüne yazma.
+
+**İstisna durumu:** Sadece Baran'ın açık talimatı ile (ör. "acil rollback için force push yap") kullanılabilir — ve bu talimat commit mesajında ayrıca yazılır.
+
+---
+
+## CACHE-BUMP-KURAL-001 — Tek Terminal, En Son
+
+**Kural:** Cache bump'lar ayrı talimat, ayrı commit, **tek terminal**.
+
+**Yanlış davranış:** 3 paralel commit (T01, T02, T03) → her terminal kendi cache bump'ını atar → 3 ardışık bump commit'i → gereksiz deploy gecikmesi + git history kirlenir.
+
+**Doğru davranış:** 3 paralel commit hepsi push edildikten sonra tek bir terminal (Baran'ın belirlediği) bump atar — örn. LL'den MM'ye.
+
+**Teyit:** Bump atan terminal **tüm pending commit'lerin push'a girdiğini** `git log` ile doğrular, sonra bump atar.
+
+**Format:** `chore: CACHE-YYYYMMDD<PREFIX>-001` (örn. `CACHE-20260419AA-001`)
+
+**Prefix kapsamı:** 2 harf (AA-ZZ) günlük. Günde ortalama 10-15 bump yetiyor. Prefix tükenirse ertesi güne geçilir veya numerik şemaya evrilir.
+
+---
+
+## TASARIM-ONAY-001 — Widget Mockup → Seçim → Talimat Akışı
+
+**Yeni ekran / layout / akış değişikliklerinde zorunlu sıra:**
+
+1. Claude → interactive widget mockup (2-3 seçenek A/B/C) sunar
+2. Baran seçer, gerekçe ister ("sence hangisi neden?")
+3. Claude seçimin avantajları/dezavantajlarını sıralar, öneri verir
+4. Baran onay ("A", "B git", vs.)
+5. Claude formal talimat yazar (standart şablon)
+6. Claude Code implement eder
+7. Baran **Safari'de** canlı test eder
+8. Onay → bir sonraki iş
+
+**Atlama yasak:**
+- Mockup sunmadan doğrudan implement etmek
+- Baran'ın "hangisi" seçmesi gerekirken varsayılan seçimle devam etmek
+- Safari testi yapmadan "çalışıyor" demek
+
+**İstisna:** Baran açıkça "design yapma, direkt implement et" derse — bu durumda bile mini onay sorulur ("X uygulanacak, OK?").
+
+**Örnek ihlal:** Son 2 oturumda tasarım onayı atlanıp doğrudan implement edilen 2 vaka → kullanıcı sonra "bunu hiç istememiştim" dedi, rollback gerekti.
+
+---
