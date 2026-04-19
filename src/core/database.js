@@ -376,8 +376,10 @@ function _write(key, value) {
   if ((key === KEYS.tasks || key === 'ak_tk2') && Array.isArray(value)) {
     try { value.forEach(function(t) { ['docs', 'attachments', 'files'].forEach(function(f) { if (Array.isArray(t[f])) { t[f] = t[f].map(function(d) { if (d && d.data && typeof d.data === 'string' && d.data.startsWith('data:')) { return { name: d.name || 'dosya', url: d.url || null, _stripped: true }; } return d; }); } }); ['receipt', 'img', 'image', 'file'].forEach(function(f) { if (!t[f]) return; if (typeof t[f] === 'string' && t[f].startsWith('data:')) { t[f] = null; } else if (typeof t[f] === 'object' && t[f].data && typeof t[f].data === 'string' && t[f].data.startsWith('data:')) { t[f] = { name: t[f].name || 'dosya', size: t[f].data.length, _stripped: true }; } }); }); } catch (e) {}
   }
-  /* LS-BASE64-STRIP-EXTENDED-001: odemeler/tahsilat/satisTek/alisTek/satinalma için aynı base64 strip */
+  /* LS-BASE64-STRIP-EXTENDED-001 + DEEPCLONE-FIX: Strip sadece localStorage için; Firestore'a tam veri gider */
   if ([KEYS.odemeler, KEYS.tahsilat, KEYS.satisTeklifleri, KEYS.alisTeklifleri, KEYS.satinalma, 'ak_odm1', 'ak_tahsilat1', 'ak_satis_teklif1', 'ak_alis_teklif1', 'ak_satinalma1'].indexOf(key) >= 0 && Array.isArray(value)) {
+    /* Deep clone — orijinal value mutate edilmesin, Firestore'a tam veri gitsin */
+    try { value = JSON.parse(JSON.stringify(value)); } catch(_ce) { /* clone başarısız — şu an stripsiz devam güvenli */ }
     try {
       value.forEach(function(r) {
         if (!r || typeof r !== 'object') return;
