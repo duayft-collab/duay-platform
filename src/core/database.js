@@ -1629,8 +1629,31 @@ function storeTahsilat(d) {
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
 /** @returns {Array<Object>} */ function loadSatinalma() { const d = _read(KEYS.satinalma); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr); }
-/** @param {Array<Object>} d */ function storeSatinalma(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.satinalma, d);
-  var _fp = _fsPath('satinalma'); if (_fp) _syncFirestore(_fp, d);
+/** @param {Array<Object>} d */ function storeSatinalma(d) {
+  /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
+  if (Array.isArray(d)) {
+    try {
+      var _existing = _read(KEYS.satinalma);
+      if (Array.isArray(_existing)) {
+        var _inIds = {};
+        d.forEach(function(x){ if (x && x.id !== undefined) _inIds[String(x.id)] = true; });
+        var _tombs = _existing.filter(function(x){ return x && x.isDeleted && x.id !== undefined && !_inIds[String(x.id)]; });
+        if (_tombs.length) { d = d.concat(_tombs); console.info('[store:satinalma] tombstone korundu:', _tombs.length); }
+      }
+    } catch(e) { console.warn('[storeSatinalma tombstone]', e); }
+  }
+  var _now2 = new Date().toISOString();
+  d = Array.isArray(d) ? d.map(function(t){
+    if (t && typeof t === 'object') {
+      if (t.id !== undefined) t.id = String(t.id);
+      if (!t.isDeleted) t.updatedAt = _now2;
+    }
+    return t;
+  }) : d;
+  _write(KEYS.satinalma, d);
+  try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('satinalma'); } catch(e) {}
+  var _fp = _fsPath('satinalma');
+  if (_fp) _syncFirestore(_fp, d);
 }
 /** @returns {Array<Object>} @param {Object} [opts] tumKullanicilar */ function loadCari(opts) { var d = _read(KEYS.cari); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
 /** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d;
@@ -1679,9 +1702,62 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array} d */ function storeAlisTeklifleri(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.alisTeklifleri, d); var _fp = _fsPath('alisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeAlisTeklifleri(d) {
+  /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
+  if (Array.isArray(d)) {
+    try {
+      var _existing = _read(KEYS.alisTeklifleri);
+      if (Array.isArray(_existing)) {
+        var _inIds = {};
+        d.forEach(function(x){ if (x && x.id !== undefined) _inIds[String(x.id)] = true; });
+        var _tombs = _existing.filter(function(x){ return x && x.isDeleted && x.id !== undefined && !_inIds[String(x.id)]; });
+        if (_tombs.length) { d = d.concat(_tombs); console.info('[store:alisTeklifleri] tombstone korundu:', _tombs.length); }
+      }
+    } catch(e) { console.warn('[storeAlisTeklifleri tombstone]', e); }
+  }
+  var _now2 = new Date().toISOString();
+  d = Array.isArray(d) ? d.map(function(t){
+    if (t && typeof t === 'object') {
+      if (t.id !== undefined) t.id = String(t.id);
+      if (!t.isDeleted) t.updatedAt = _now2;
+    }
+    return t;
+  }) : d;
+  _write(KEYS.alisTeklifleri, d);
+  try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('alisTeklifleri'); } catch(e) {}
+  var _fp = _fsPath('alisTeklifleri');
+  if (_fp) _syncFirestore(_fp, d);
+}
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array} d */ function storeSatisTeklifleri(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.satisTeklifleri, d); var _fp = _fsPath('satisTeklifleri'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ function storeSatisTeklifleri(d) {
+  /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
+  if (Array.isArray(d)) {
+    try {
+      var _existing = _read(KEYS.satisTeklifleri);
+      if (Array.isArray(_existing)) {
+        var _inIds = {};
+        d.forEach(function(x){ if (x && x.id !== undefined) _inIds[String(x.id)] = true; });
+        var _tombs = _existing.filter(function(x){ return x && x.isDeleted && x.id !== undefined && !_inIds[String(x.id)]; });
+        if (_tombs.length) { d = d.concat(_tombs); console.info('[store:satisTeklifleri] tombstone korundu:', _tombs.length); }
+      }
+    } catch(e) { console.warn('[storeSatisTeklifleri tombstone]', e); }
+  }
+  var _now2 = new Date().toISOString();
+  d = Array.isArray(d) ? d.map(function(t){
+    if (t && typeof t === 'object') {
+      /* ID-NORMALIZE-001 */
+      if (t.id !== undefined) t.id = String(t.id);
+      /* UPDATED-AT: sadece silinmemiş kayıtlar damgalansın */
+      if (!t.isDeleted) t.updatedAt = _now2;
+    }
+    return t;
+  }) : d;
+  _write(KEYS.satisTeklifleri, d);
+  /* CACHE-INVALIDATE-001 */
+  try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('satisTeklifleri'); } catch(e) {}
+  var _fp = _fsPath('satisTeklifleri');
+  if (_fp) _syncFirestore(_fp, d);
+}
 
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
 /** @param {Array} d */ function storeFikirler(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.fikirler, d); var _fp = _fsPath('fikirler'); if (_fp) _syncFirestore(_fp, d); }
