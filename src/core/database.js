@@ -3730,6 +3730,56 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 
   /**
+   * LS-AUTOLZ-BUYUK-KEYLER-001
+   * ak_ ile başlayan, 50 KB üstü, LZ'siz key'leri _write ile yeniden yazar → LZ sıkıştırması tetiklenir.
+   * wrapper fonksiyonları (storeSatisTeklifleri vb.) bypass oluyorsa _write direkt kullanılır.
+   * @returns {Object} { buyuk: number, donusturuldu: number, hataliKey: string[], kazancKB: number }
+   */
+  window._lsForceLZAll = function () {
+    var sonuc = { buyuk: 0, donusturuldu: 0, hataliKey: [], kazancKB: 0 };
+    try {
+      var tumKeys = Object.keys(localStorage);
+      for (var i = 0; i < tumKeys.length; i++) {
+        var k = tumKeys[i];
+        if (!k || typeof k !== 'string') continue;
+        if (!k.startsWith('ak_')) continue;
+        var raw = localStorage.getItem(k) || '';
+        if (raw.length < 50 * 1024) continue; /* < 50 KB skip */
+        if (raw.startsWith('_LZ_')) continue; /* zaten LZ */
+        sonuc.buyuk++;
+        var parsed = null;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (_pe) {
+          sonuc.hataliKey.push(k + ' (JSON parse fail)');
+          continue;
+        }
+        var oncesi = raw.length * 2;
+        try {
+          /* _write içinde LZ + strip + retention hepsi otomatik tetiklenir */
+          if (typeof _write === 'function') {
+            _write(k, parsed);
+            var sonra = (localStorage.getItem(k) || '').length * 2;
+            if (sonra < oncesi) {
+              sonuc.donusturuldu++;
+              sonuc.kazancKB += (oncesi - sonra) / 1024;
+            }
+          }
+        } catch (_we) {
+          sonuc.hataliKey.push(k + ' (_write fail: ' + _we.message + ')');
+        }
+      }
+      sonuc.kazancKB = Math.round(sonuc.kazancKB);
+    } catch (e) {
+      sonuc.genel_hata = e.message;
+    }
+    if (typeof console !== 'undefined' && console.log) {
+      console.log('[LS-AUTOLZ]', sonuc);
+    }
+    return sonuc;
+  };
+
+  /**
    * LS-SETITEM-GUARD-001: localStorage.setItem koruma katmanı.
    * - 10KB üstü tek değer writes engellenir (warn + return)
    * - Quota %70 üstündeyse yazım öncesi _lsAutoTrim çalışır
@@ -3787,6 +3837,10 @@ if (typeof module !== 'undefined' && module.exports) {
   setTimeout(function() {
     try { if (typeof window._lsAutoTrim === 'function') window._lsAutoTrim(); } catch(e) {}
   }, 2000);
+  /* LS-AUTOLZ-BUYUK-KEYLER-001: autotrim'den sonra forced LZ — 4 sn gecikme */
+  setTimeout(function() {
+    try { if (typeof window._lsForceLZAll === 'function') window._lsForceLZAll(); } catch(e) {}
+  }, 4000);
 
   window._syncFirestore = _syncFirestore;
   window._fsPath = _fsPath;
