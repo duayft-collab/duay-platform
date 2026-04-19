@@ -273,6 +273,10 @@ window._saveUrunDB = function() {
     if (!duayName) { hatalar.push('Satır '+n+': Ürün adı (TR) zorunlu'); return; }
     if (!vendorId) { hatalar.push('Satır '+n+': Tedarikçi zorunlu'); return; }
     if (!techDesc) { hatalar.push('Satır '+n+': Teknik açıklama zorunlu'); return; }
+    if (!origName) { hatalar.push('Satır '+n+': Ürün adı (EN) zorunlu'); return; }
+    if (!origin) { hatalar.push('Satır '+n+': Menşei zorunlu'); return; }
+    if (!unit) { hatalar.push('Satır '+n+': Birim zorunlu'); return; }
+    if (!image) { hatalar.push('Satır '+n+': Görsel zorunlu'); return; }
 
     var kayit = {
       id: _generateDuayCode(vendorId, vendorCode) || (typeof window.generateId==='function' ? window.generateId() : Date.now()),
