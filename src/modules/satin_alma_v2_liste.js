@@ -99,10 +99,12 @@ window.renderSatinAlmaV2 = function() {
   h+='<button onclick="event.stopPropagation();window._saV2GruplaToggle?.()" id="sav2-grupla-btn" style="padding:4px 10px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:'+(window._saV2GruplaAktif?'var(--color-text-primary)':'transparent')+';cursor:pointer;font-size:10px;flex-shrink:0;font-family:inherit;color:'+(window._saV2GruplaAktif?'#fff':'var(--color-text-secondary)')+'">Tedarikçi Grupla</button>';
   h+='</div>';
   /* SA-FILTRE-PILL-001: pipeline pill bar — tek tık aşama filtresi */
-  h+='<div style="display:flex;align-items:center;gap:5px;padding:7px 16px;position:sticky;top:98px;z-index:10;background:var(--sf,#fff);border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap;flex-shrink:0">';
+  /* SATINALMA-PILL-APPLE-SEGMENT-001: Apple iOS segmented control tonu */
+  h+='<div style="padding:8px 16px;position:sticky;top:98px;z-index:10;background:var(--sf,#fff);border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-shrink:0">';
+  h+='<div style="display:inline-flex;gap:2px;padding:2px;background:var(--s2);border:0.5px solid '+_b+';border-radius:8px;white-space:nowrap">';
   var _pills=[{v:'',l:'Tümü'}].concat(Object.entries(window.SA_PIPELINE_STAGES||{}).sort(function(a,b){return a[1].sira-b[1].sira;}).map(function(e){return {v:e[0],l:e[1].label};}));
-  _pills.forEach(function(p){var on=durumF===p.v;h+='<button onclick="event.stopPropagation();window._sav2FiltreDurum=\''+p.v+'\';window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" style="padding:3px 10px;border:0.5px solid '+(on?'var(--color-text-primary)':_b)+';border-radius:20px;font-size:10px;cursor:pointer;background:'+(on?'var(--color-text-primary)':'transparent')+';color:'+(on?'var(--color-background-primary)':'var(--color-text-secondary)')+';font-family:inherit;flex-shrink:0;white-space:nowrap">'+p.l+'</button>';});
-  h+='</div>';
+  _pills.forEach(function(p){var on=durumF===p.v;h+='<button onclick="event.stopPropagation();window._sav2FiltreDurum=\''+p.v+'\';window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" style="padding:5px 12px;border:none;border-radius:6px;font-size:11px;cursor:pointer;background:'+(on?'var(--sf,#fff)':'transparent')+';color:'+(on?'var(--color-text-primary)':'var(--color-text-tertiary)')+';font-weight:'+(on?'600':'500')+';font-family:inherit;flex-shrink:0;white-space:nowrap;box-shadow:'+(on?'0 1px 2px rgba(0,0,0,0.04)':'none')+';transition:all .12s">'+p.l+'</button>';});
+  h+='</div></div>';
   if(seciliSay>0){
     h+='<div style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:#FAEEDA;border-bottom:0.5px solid #854F0B">';
     h+='<span style="font-size:10px;color:#633806;font-weight:500">'+seciliSay+' seçildi</span>';
