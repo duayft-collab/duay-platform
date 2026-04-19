@@ -3665,7 +3665,11 @@ if (typeof module !== 'undefined' && module.exports) {
       { key: KEYS.cari, max: 500, tomb: 100, label: 'cari' },
       { key: KEYS.satisTeklifleri, max: 300, tomb: 100, label: 'satisTeklifleri' },
       { key: KEYS.alisTeklifleri, max: 300, tomb: 100, label: 'alisTeklifleri' },
-      { key: KEYS.notifications, max: 50, tomb: 0, label: 'notifications' }
+      { key: KEYS.notifications, max: 50, tomb: 0, label: 'notifications' },
+      /* LS-AUTOTRIM-GENISLET-001: 3 yeni key eklendi */
+      { key: KEYS.urunler, max: 800, tomb: 100, label: 'urunler' },
+      { key: KEYS.activity, max: 50, tomb: 0, label: 'activity' },
+      { key: KEYS.teklifSartlar, max: 10, tomb: 0, label: 'teklifSartlar' }
     ];
     var sonuclar = [];
     items.forEach(function(it) {
