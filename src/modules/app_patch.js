@@ -998,6 +998,23 @@ var URUN_ULKELER = window.MENSEI || ['Türkiye','Çin','Hindistan','Almanya','AB
 window.renderUrunler = function() {
   var panel = document.getElementById('panel-urunler'); if (!panel) return;
   var d = typeof loadUrunler === 'function' ? loadUrunler() : [];
+  /* URUN-SCHEMA-READ-ALIAS-001: +Yeni Ürün formu farklı alan isimleri yazıyor, normalize et */
+  d = d.map(function(u) {
+    if (!u || typeof u !== 'object') return u;
+    if (u.urunAdi || !u.duayName) return u;
+    return Object.assign({}, u, {
+      urunAdi: u.urunAdi || u.duayName || '',
+      urunKodu: u.urunKodu || u.vendorCode || '',
+      duayKodu: u.duayKodu || String(u.id || ''),
+      tedarikci: u.tedarikci || u.vendorName || '',
+      kategori: u.kategori || u.category || '',
+      gorsel: u.gorsel || u.image || '',
+      aciklama: u.aciklama || u.techDesc || '',
+      menseiUlke: u.menseiUlke || u.origin || '',
+      birim: u.birim || u.unit || 'Adet',
+      createdBy: u.createdBy || u.yukleyen_id || ''
+    });
+  });
   var esc = window._esc;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
