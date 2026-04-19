@@ -3625,6 +3625,52 @@ if (typeof module !== 'undefined' && module.exports) {
   window._write = _write;
   window._syncFirestore = _syncFirestore;
   window._fsPath = _fsPath;
+
+  /**
+   * LS-ANALIZ-TOOL-001: localStorage teşhis aracı.
+   * Tüm key'lerin byte boyutu, top 10 en büyük key, toplam kullanım, browser quota.
+   * Kullanım: window._lsAnaliz()
+   */
+  window._lsAnaliz = async function() {
+    var keys = Object.keys(localStorage);
+    var items = keys.map(function(k) {
+      var v = localStorage.getItem(k) || '';
+      var bytes = v.length * 2; // UTF-16 yaklaşık 2 byte/char
+      return { key: k, bytes: bytes, kb: (bytes / 1024).toFixed(2), compressed: v.startsWith('_LZ_') };
+    });
+    items.sort(function(a, b) { return b.bytes - a.bytes; });
+    var toplamByte = items.reduce(function(s, x) { return s + x.bytes; }, 0);
+    var toplamKB = (toplamByte / 1024).toFixed(2);
+    var toplamMB = (toplamByte / 1024 / 1024).toFixed(2);
+    var quotaInfo = null;
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        var e = await navigator.storage.estimate();
+        quotaInfo = {
+          usedMB: ((e.usage || 0) / 1024 / 1024).toFixed(2),
+          quotaMB: ((e.quota || 0) / 1024 / 1024).toFixed(2),
+          percent: e.quota ? ((e.usage / e.quota) * 100).toFixed(1) : 'N/A'
+        };
+      }
+    } catch(err) {}
+    console.group('📊 localStorage Analiz — ' + new Date().toLocaleString('tr-TR'));
+    console.log('Toplam key sayısı:', items.length);
+    console.log('Toplam localStorage: ~' + toplamKB + ' KB (' + toplamMB + ' MB)');
+    if (quotaInfo) console.log('Browser quota: %' + quotaInfo.percent + ' dolu (' + quotaInfo.usedMB + ' MB / ' + quotaInfo.quotaMB + ' MB)');
+    console.log('Top 10 en büyük key:');
+    if (console.table) {
+      console.table(items.slice(0, 10).map(function(x, i) { return { '#': i + 1, key: x.key, KB: x.kb, 'LZ': x.compressed ? '✓' : '' }; }));
+    } else {
+      items.slice(0, 10).forEach(function(x, i) { console.log((i + 1) + '. ' + x.key + ' = ' + x.kb + ' KB' + (x.compressed ? ' [LZ]' : '')); });
+    }
+    console.groupEnd();
+    if (typeof window.toast === 'function') {
+      var msg = '~' + toplamKB + ' KB · ' + items.length + ' key';
+      if (quotaInfo) msg += ' · %' + quotaInfo.percent;
+      window.toast('📊 LS Analiz: ' + msg, 'info');
+    }
+    return { total: items.length, totalKB: toplamKB, totalMB: toplamMB, quota: quotaInfo, top10: items.slice(0, 10), all: items };
+  };
   window.KEYS = KEYS;
 }
 
