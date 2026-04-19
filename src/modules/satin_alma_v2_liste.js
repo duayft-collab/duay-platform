@@ -70,12 +70,16 @@ window.renderSatinAlmaV2 = function() {
   var _b='var(--color-border-tertiary)';
   var h='<div style="display:flex;flex-direction:column;height:100%">';
   // ALIS-LISTE-C-001: 5 KPI kart, 5. SÜRESI YAKLAŞAN (gecerlilik 0-7 gun)
-  h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 12px;position:sticky;top:0;z-index:12;background:var(--sf,#fff);border-bottom:0.5px solid var(--b);border-bottom:0.5px solid '+_b+'">';
-  h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">BU AY TEKLİF</div><div style="font-size:18px;font-weight:500;color:var(--color-text-primary)">'+fl.length+'</div></div>';
-  h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">BEKLEYEN</div><div style="font-size:18px;font-weight:500;color:#854F0B">'+fl.filter(function(t){return t.durum==='bekleyen';}).length+'</div></div>';
-  h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">ONAYLI</div><div style="font-size:18px;font-weight:500;color:#0F6E56">'+fl.filter(function(t){return t.durum==='onaylandi';}).length+'</div></div>';
-  h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">TOPLAM</div><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">'+kpiToplam.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>';
-  h+='<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px 10px"><div style="font-size:9px;color:var(--color-text-tertiary)">SÜRESI YAKLAŞAN</div><div style="font-size:18px;font-weight:500;color:#DC2626">'+fl.filter(function(t){var g=t.gecerlilikTarihi||t.validUntil;if(!g)return false;var d=(new Date(g)-new Date())/86400000;return d>=0&&d<=7;}).length+'</div></div>';
+  /* SAV2-KPI-APPLE-RESTYLE-001: Apple minimalist — hairline border, bol boşluk, tabular-nums, soft renkler */
+  var _kpiCard = 'background:transparent;border:0.5px solid '+_b+';border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px';
+  var _kpiLabel = 'font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;font-weight:500';
+  var _kpiValue = 'font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1';
+  h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 12px;position:sticky;top:0;z-index:12;background:var(--sf,#fff);border-bottom:0.5px solid '+_b+'">';
+  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">BU AY TEKLİF</div><div style="'+_kpiValue+';color:var(--color-text-primary)">'+fl.length+'</div></div>';
+  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">BEKLEYEN</div><div style="'+_kpiValue+';color:#B4730F">'+fl.filter(function(t){return t.durum==='bekleyen';}).length+'</div></div>';
+  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">ONAYLI</div><div style="'+_kpiValue+';color:#1A8D6F">'+fl.filter(function(t){return t.durum==='onaylandi';}).length+'</div></div>';
+  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">TOPLAM</div><div style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--color-text-primary)">'+kpiToplam.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>';
+  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">SÜRESİ YAKLAŞAN</div><div style="'+_kpiValue+';color:#E0574F">'+fl.filter(function(t){var g=t.gecerlilikTarihi||t.validUntil;if(!g)return false;var d=(new Date(g)-new Date())/86400000;return d>=0&&d<=7;}).length+'</div></div>';
   h+='</div>';
   // ALIS-LISTE-C-001: tek satır filtre, flex-wrap:nowrap + overflow-x:auto, 2 yeni select (para, tarih)
   h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;position:sticky;top:60px;z-index:11;background:var(--sf,#fff);border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
