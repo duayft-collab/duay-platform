@@ -1365,7 +1365,7 @@ function logActivity(type, detail) {
 
 /** @returns {Array<Object>} */ function loadNotifs()    { const d = _read(KEYS.notifications); return Array.isArray(d) ? d : []; }
 /** @param {Array<Object>} d Son 50 kayıt */ function storeNotifs(d) {
-  var sliced = d.slice(0, 50);
+  var sliced = (typeof window._lsRetention === 'function') ? window._lsRetention(d, 'notifications', 50, 0) : d.slice(0, 50);
   _write(KEYS.notifications, sliced);
   // Notifications sync — debounced (500ms) to prevent rapid-fire writes
   clearTimeout(storeNotifs._timer);
@@ -1595,7 +1595,7 @@ function loadOdm() {
   });
   return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }));
 }
-/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d)&&d.length>1000){d=d.filter(function(o){return !o.isDeleted;}).slice(0, 1000);} _write(KEYS.odemeler, d);
+/** @param {Array<Object>} d */ function storeOdm(d)   { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'odemeler', 500, 100); _write(KEYS.odemeler, d);
   const _fp_odemeler = _fsPath('odemeler'); if (_fp_odemeler) _syncFirestore(_fp_odemeler, d);
 }
 /** @returns {Array<Object>} */
@@ -1624,7 +1624,7 @@ function loadTahsilat() {
 }
 /** @param {Array<Object>} d */
 function storeTahsilat(d) {
-  var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d)&&d.length>1000){d=d.filter(function(t){return !t.isDeleted;}).slice(0, 1000);} _write(KEYS.tahsilat, d);
+  var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'tahsilat', 500, 100); _write(KEYS.tahsilat, d);
   var _fp_tahsilat = _fsPath('tahsilat');
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
@@ -1667,6 +1667,7 @@ function storeTahsilat(d) {
     });
     if (mukerrer) window.toast?.('Uyar\u0131: Bu kay\u0131t sistemde ba\u015fka bir kullan\u0131c\u0131da mevcut', 'warn');
   });
+  if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'cari', 500, 100);
   _write(KEYS.cari, d);
   var _fp = _fsPath('cari'); if (_fp) _syncFirestore(_fp, d);
 }
@@ -1723,6 +1724,7 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
     }
     return t;
   }) : d;
+  if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'alisTeklifleri', 300, 100);
   _write(KEYS.alisTeklifleri, d);
   try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('alisTeklifleri'); } catch(e) {}
   var _fp = _fsPath('alisTeklifleri');
@@ -1752,6 +1754,7 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
     }
     return t;
   }) : d;
+  if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'satisTeklifleri', 300, 100);
   _write(KEYS.satisTeklifleri, d);
   /* CACHE-INVALIDATE-001 */
   try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('satisTeklifleri'); } catch(e) {}
@@ -3623,6 +3626,33 @@ if (typeof module !== 'undefined' && module.exports) {
   fns.forEach(name => { if (DB[name]) window[name] = DB[name]; });
   // PUSULA-SYNC-001: Pusula sync için low-level API expose
   window._write = _write;
+  /**
+   * LS-RETENTION-CRITICAL-001: Aktif+tombstone hibrit retention.
+   * Verilen listeyi maxAktif sınırına kırpar, son maxTomb tombstone'u korur.
+   * @param {Array} d - store'a gidecek liste
+   * @param {string} label - log için key adı
+   * @param {number} [maxAktif=500] - aktif kayıt üst sınırı
+   * @param {number} [maxTomb=100] - tombstone üst sınırı
+   * @returns {Array} kırpılmış liste
+   */
+  window._lsRetention = function(d, label, maxAktif, maxTomb) {
+    if (!Array.isArray(d)) return d;
+    maxAktif = maxAktif || 500;
+    maxTomb = maxTomb || 100;
+    if (d.length <= (maxAktif + maxTomb)) return d;
+    var _aktif = d.filter(function(r){ return r && !r.isDeleted; });
+    var _tomb = d.filter(function(r){ return r && r.isDeleted; })
+      .sort(function(a,b){ return (b.deletedAt||'').localeCompare(a.deletedAt||''); })
+      .slice(0, maxTomb);
+    if (_aktif.length > maxAktif) {
+      _aktif = _aktif.sort(function(a,b){ return (b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''); }).slice(0, maxAktif);
+    }
+    var _sonuc = _aktif.concat(_tomb);
+    if (_sonuc.length !== d.length) {
+      console.info('[retention] ' + label + ': ' + d.length + ' → ' + _sonuc.length + ' (aktif=' + _aktif.length + ', tombstone=' + _tomb.length + ')');
+    }
+    return _sonuc;
+  };
   window._syncFirestore = _syncFirestore;
   window._fsPath = _fsPath;
 
