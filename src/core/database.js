@@ -3653,6 +3653,44 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     return _sonuc;
   };
+
+  /**
+   * LS-AUTOTRIM-ON-LOAD-001: Sayfa yüklenince mevcut 6 kritik key'i
+   * load→retention→store döngüsüne sokar. Mevcut şişik veriyi tek seferde temizler.
+   */
+  window._lsAutoTrim = function() {
+    var items = [
+      { key: KEYS.odemeler, max: 500, tomb: 100, label: 'odemeler' },
+      { key: KEYS.tahsilat, max: 500, tomb: 100, label: 'tahsilat' },
+      { key: KEYS.cari, max: 500, tomb: 100, label: 'cari' },
+      { key: KEYS.satisTeklifleri, max: 300, tomb: 100, label: 'satisTeklifleri' },
+      { key: KEYS.alisTeklifleri, max: 300, tomb: 100, label: 'alisTeklifleri' },
+      { key: KEYS.notifications, max: 50, tomb: 0, label: 'notifications' }
+    ];
+    var sonuclar = [];
+    items.forEach(function(it) {
+      try {
+        var d = _read(it.key);
+        if (!Array.isArray(d) || d.length === 0) return;
+        var oncesi = d.length;
+        var yeni = window._lsRetention(d, it.label, it.max, it.tomb);
+        if (yeni.length !== oncesi) {
+          _write(it.key, yeni);
+          sonuclar.push({ key: it.label, oncesi: oncesi, sonrasi: yeni.length });
+        }
+      } catch(e) { console.warn('[autoTrim] ' + it.label + ' hata:', e); }
+    });
+    if (sonuclar.length) {
+      console.info('[autoTrim] Temizlik tamamlandı:', sonuclar);
+    }
+    return sonuclar;
+  };
+
+  /* Sayfa yüklemede otomatik çalıştır — 2 sn gecikme ile (diğer init'lerden sonra) */
+  setTimeout(function() {
+    try { if (typeof window._lsAutoTrim === 'function') window._lsAutoTrim(); } catch(e) {}
+  }, 2000);
+
   window._syncFirestore = _syncFirestore;
   window._fsPath = _fsPath;
 
