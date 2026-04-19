@@ -63,6 +63,14 @@ function openUrunModal(id) {
   var cariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u?.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
   var countryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u?.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
 
+  /* URUN-FORM-GORSEL-PERSIST-001: edit mode'da kaynak u objesi persist (save logic fallback) */
+  if (u) {
+    window._udbEditSource = window._udbEditSource || [];
+    u._udbFormN = 1;
+    window._udbEditSource = window._udbEditSource.filter(function(x){ return String(x._udbFormN) !== '1'; });
+    window._udbEditSource.push(u);
+  }
+
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-urun-db'; mo.style.zIndex = '2100';
   mo.innerHTML = '<div class="moc" style="max-width:1600px;width:96vw;padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
@@ -385,7 +393,12 @@ window._saveUrunDB = function() {
     /* URUN-FORM-2SATIR-001: uretimKontrol alanı kaldırıldı */
     var gizliHile = !!(document.getElementById('udb-hile-'+n)?.checked);
     var gizliHileNot = (document.getElementById('udb-hile-not-'+n)?.value||'').trim();
-    var image = window['_udbImg'+n]||null;
+    /* URUN-FORM-GORSEL-PERSIST-001: Edit mode'da cache boşsa _udbEditSource'tan mevcut görseli koru */
+    var _uSrc = null;
+    if (window._udbEditSource && Array.isArray(window._udbEditSource)) {
+      _uSrc = window._udbEditSource.find(function(x){ return String(x._udbFormN) === String(n); });
+    }
+    var image = window['_udbImg' + n] || (_uSrc && (_uSrc.image || _uSrc.gorsel)) || null;
 
     if (!duayName) { hatalar.push('Satır '+n+': Ürün adı (TR) zorunlu'); return; }
     if (!vendorId) { hatalar.push('Satır '+n+': Tedarikçi zorunlu'); return; }
@@ -422,6 +435,7 @@ window._saveUrunDB = function() {
       gizliHileNot: gizliHileNot,
       image: image||null,
       _hasImage: !!image,
+      _imageUploaded: image ? new Date().toISOString() : null,
       isDeleted: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -451,6 +465,8 @@ window._saveUrunDB = function() {
   storeUrunDB(data);
 
   Object.keys(window).filter(function(k){return k.startsWith('_udbImg');}).forEach(function(k){delete window[k];});
+  /* URUN-FORM-GORSEL-PERSIST-001: edit source cache temizliği */
+  window._udbEditSource = [];
 
   var mo = document.getElementById('mo-urun-db');
   if (mo) mo.remove();
