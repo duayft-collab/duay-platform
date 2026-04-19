@@ -149,8 +149,12 @@ window._dbKullaniciFiltreUygula = function(liste) {
   var uid = cu.uid || cu.id || '';
   if (!uid) return liste;
   return liste.filter(function(k) {
-    if (!k.createdById && !k.createdBy) return true;
-    return (k.createdById === uid) || (k.createdBy === uid);
+    /* URUN-IZOLASYON-FIX-001: createdBy/createdById yoksa FALLBACK GİZLİ
+       (eski veri için admin'e göster, user'a gizle) */
+    if (!k.createdById && !k.createdBy) return false;
+    if (k.createdById && String(k.createdById) === String(uid)) return true;
+    if (k.createdBy && String(k.createdBy) === String(uid)) return true;
+    return false;
   });
 };
 
