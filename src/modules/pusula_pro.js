@@ -1171,7 +1171,7 @@ window._ppGorevKaydet = function() {
     /* PUSULA-GOREV-GIZLILIK-COMBO-001: combobox secili state'inden uid listesi */
     paylasilanlar: (window._ppPaylasimSecili || []).slice(),
     /* PUSULA-GOREV-GIZLILIK-MANTIK-FIX-001: sahip field — filter için gerekli */
-    olusturanId: _ppCu()?.uid || String(_ppCu()?.id || '') || '',
+    olusturanId: _ppCu()?.uid || String(_ppCu()?.id || '') || _ppCu()?.email || window._kullanici?.email || '',
     /* PUSULA-FORM-V2-001: etiketler kaydedildi */
     etiketler: (typeof window._ppEtiketleriAl === 'function') ? window._ppEtiketleriAl() : [],
     enerji: document.getElementById('ppf-enerji')?.value||'',
@@ -1186,7 +1186,7 @@ window._ppGorevKaydet = function() {
     _ppSource: 'pro',
     createdAt: _ppNow(),
     updatedAt: _ppNow(),
-    sorumluId: _ppCu()?.uid || String(_ppCu()?.id || '') || ''
+    sorumluId: _ppCu()?.uid || String(_ppCu()?.id || '') || _ppCu()?.email || window._kullanici?.email || ''
   };
   var tasks=_ppLoad();
   if (window._ppDuzenleHedef) {
