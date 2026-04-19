@@ -884,7 +884,8 @@ window._applyRoleUI = _applyRoleUI;
 /* GK-08: Muhasebe + Sistem menü text-based hard guard — non-admin/manager için defense-in-depth */
 window._gk08MenuGizle = function() {
   var rol = window.CU?.()?.role || window.Auth?.getCU?.()?.role || '';
-  var isAdmin = rol==='admin' || rol==='manager';
+  /* ASISTAN-ROL-MENU-FIX-001: asistan da manager seviyesinde — Muhasebe/Sistem görür */
+  var isAdmin = rol==='admin' || rol==='manager' || rol==='asistan';
   if (!isAdmin) {
     document.querySelectorAll('.nb').forEach(function(btn){
       var txt = btn.textContent.trim();
