@@ -390,7 +390,7 @@ function renderUrunDB() {
   /* URUN-KATALOG-KAT-CHIP-001: kategori filter state + chip render */
   var aktifKat = window._udbKatFilter || '';
   var benzersizKats = {};
-  data.forEach(function(u){ if (u && u.category) benzersizKats[u.category] = (benzersizKats[u.category]||0) + 1; });
+  data.forEach(function(u){ var _k = u && (u.category || u.kategori); if (_k) benzersizKats[_k] = (benzersizKats[_k]||0) + 1; });
   var katListe = Object.keys(benzersizKats).sort();
   var chipsDiv = document.getElementById('udb-kat-chips');
   if (chipsDiv) {
@@ -402,9 +402,9 @@ function renderUrunDB() {
     chipsDiv.innerHTML = chipHtml;
   }
   var fl = data.filter(function(u) {
-    if (aktifKat && (u.category || '') !== aktifKat) return false;
+    if (aktifKat && (u.category || u.kategori || '') !== aktifKat) return false;
     if (!search) return true;
-    return (u.duayName || '').toLowerCase().includes(search) || (u.duayCode || '').toLowerCase().includes(search) || (u.vendorCode || '').toLowerCase().includes(search) || (u.category || '').toLowerCase().includes(search) || (u.vendorName || '').toLowerCase().includes(search);
+    return (u.duayName || u.urunAdi || u.standartAdi || '').toLowerCase().includes(search) || (u.duayCode || u.duayKodu || '').toLowerCase().includes(search) || (u.vendorCode || u.saticiKodu || '').toLowerCase().includes(search) || (u.category || u.kategori || '').toLowerCase().includes(search) || (u.vendorName || u.tedarikci || '').toLowerCase().includes(search);
   });
 
   var cont = document.getElementById('udb-list');
@@ -431,12 +431,12 @@ function renderUrunDB() {
     var uid = String(u.id);
     html += '<div style="display:grid;grid-template-columns:24px 24px 100px 120px 1fr 80px 80px 80px 90px;padding:4px 12px;border-bottom:1px solid var(--b);align-items:center;font-size:11px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'var(--s2)\'" onmouseleave="this.style.background=\'\'">'
       + '<div><input type="checkbox" class="udb-bulk-chk" data-id="' + esc(uid) + '" onclick="event.stopPropagation();window._urunDBBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)"></div>'
-      + '<div>' + (u.image ? '<img src="' + u.image + '" style="width:24px;height:24px;object-fit:cover;border-radius:6px">' : u._hasImage ? '<div style="width:24px;height:24px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:24px;height:24px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
-      + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || '\u2014') + '</div>'
-      + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || '\u2014') + '</div>'
-      + '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(u.duayName || '\u2014') + ((function(){var t=u.createdAt||u.ts||u.yuklemeTarihi;if(!t)return '';var ms=new Date()-new Date(t);if(ms>=0&&ms<86400000)return ' <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:#E6F1FB;color:#185FA5;font-weight:500;letter-spacing:.02em">Yeni</span>';return '';})()) + ' · <span style="font-size:11px;color:var(--t3);font-weight:400">' + esc(u.vendorName || '') + '</span></div>'
-      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || '\u2014') + '</div>'
-      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || '\u2014') + '</div>'
+      + '<div>' + ((u.image || u.gorsel) ? '<img src="' + (u.image || u.gorsel) + '" style="width:24px;height:24px;object-fit:cover;border-radius:6px">' : u._hasImage ? '<div style="width:24px;height:24px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:24px;height:24px;background:var(--s2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
+      + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || u.duayKodu || '\u2014') + '</div>'
+      + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || u.saticiKodu || '\u2014') + '</div>'
+      + '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(u.duayName || u.urunAdi || u.standartAdi || '\u2014') + ((function(){var t=u.createdAt||u.ts||u.yuklemeTarihi;if(!t)return '';var ms=new Date()-new Date(t);if(ms>=0&&ms<86400000)return ' <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:#E6F1FB;color:#185FA5;font-weight:500;letter-spacing:.02em">Yeni</span>';return '';})()) + ' · <span style="font-size:11px;color:var(--t3);font-weight:400">' + esc(u.vendorName || u.tedarikci || '') + '</span></div>'
+      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || u.kategori || '\u2014') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || u.mensei || '\u2014') + '</div>'
       + '<div style="font-size:10px;font-family:monospace;color:var(--t3)">' + esc(u.gtip || '\u2014') + '</div>'
       + '<div style="display:flex;gap:3px"><button onclick="event.stopPropagation();openUrunModal(\'' + esc(uid) + '\')" class="btn btns" style="font-size:10px;padding:2px 6px">\u270f\ufe0f</button><button onclick="event.stopPropagation();window._deleteUrun?.(\'' + esc(uid) + '\')" class="btn btns" style="font-size:10px;padding:2px 6px;color:#DC2626">\ud83d\uddd1</button></div>'
     + '</div>';
