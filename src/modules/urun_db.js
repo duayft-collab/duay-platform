@@ -47,18 +47,18 @@ function openUrunModal(id) {
   mo.className = 'mo'; mo.id = 'mo-urun-db'; mo.style.zIndex = '2100';
   mo.innerHTML = '<div class="moc" style="max-width:1600px;width:96vw;padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="font-size:15px;font-weight:700;color:var(--t)">' + 'Ürün Kataloğu — ' + (u ? '✏️ Düzenle' : 'Toplu Kayıt') + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--t)">' + 'Ürün Kataloğu — ' + (u ? '✏️ Düzenle' : 'Toplu Kayıt') + '</div>'
       + '<button onclick="document.getElementById(\'mo-urun-db\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
     + '</div>'
     + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:10px">'
       // URUN-FORM-EXCEL-001: Excel tarzı çok satırlı tablo
       + '<div id="udb-tablo-wrap" style="overflow-x:auto">'
-        + '<table id="udb-tablo" style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:1500px">'
+        + '<table id="udb-tablo" style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:1320px">'
           + '<colgroup>'
             + '<col style="width:32px">'
-            + '<col style="width:58px">'
-            + '<col style="width:165px">'
-            + '<col style="width:165px">'
+            + '<col style="width:48px">'
+            + '<col style="width:145px">'
+            + '<col style="width:145px">'
             + '<col style="width:145px">'
             + '<col style="width:115px">'
             + '<col style="width:105px">'
@@ -187,7 +187,7 @@ function openUrunModal(id) {
         var reader = new FileReader();
         reader.onload = function(ev) {
           var cell = document.querySelector('#udb-row-' + n + ' .udb-gorsel-cell');
-          if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px">';
+          if (cell) cell.innerHTML = '<img src="' + ev.target.result + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px">';
           window['_udbImg' + n] = ev.target.result;
         };
         reader.readAsDataURL(file);
@@ -200,7 +200,7 @@ function openUrunModal(id) {
     var rowCariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u && u.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
     var rowCountryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u && u.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
     return '<td style="padding:4px 4px;text-align:center;vertical-align:middle;font-size:11px;color:var(--t2)">'+n+'<br><button onclick="event.stopPropagation();window._udbDetay?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
-      + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" onclick="event.stopPropagation();window._udbGorselSec?.('+n+')" style="width:48px;height:48px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto">'+(u && (u.image || u._hasImage) ? '📷' : '+')+'</div></td>'
+      + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" onclick="event.stopPropagation();window._udbGorselSec?.('+n+')" style="width:40px;height:40px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto">'+(u && (u.image || u._hasImage) ? '📷' : '+')+'</div></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-vendor-'+n+'">' + rowCariOpts + '</select></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-'+n+'" value="'+esc(u?.duayName||'')+'" placeholder="Türkçe ad"></td>'
       + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-'+n+'" value="'+esc(u?.origName||'')+'" placeholder="English name"></td>'
