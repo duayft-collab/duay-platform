@@ -3534,20 +3534,9 @@ window._initNsecHover = function() {
 
 /* GK-19-ALL-001: TOP NAV v2 grup hover davranisi */
 window._initTn2Hover = function() {
-  var grps = document.querySelectorAll('.tn2-grp');
-  if (!grps.length) return;
-  grps.forEach(function(g) {
-    if (g.dataset.hoverInit === '1') return;
-    g.dataset.hoverInit = '1';
-    g.addEventListener('mouseenter', function() {
-      var grpId = g.dataset.grp;
-      if (!grpId || grpId === 'pusula-pro') return;
-      if (g.classList.contains('on')) return;
-      if (typeof window._tn2SelectGrp === 'function') {
-        window._tn2SelectGrp(grpId, g);
-      }
-    });
-  });
+  /* MENU-HOVER-TO-CLICK-001: hover mekanizması devre dışı — sadece onclick açar.
+     Eski davranışı geri almak için git revert <commit> yeterli.
+     Çağrı noktası app.js L846 korundu (no-op olur). */
 };
 
 // ── TOP NAV v2 — Grup/Modül routing ─────────────────────────
@@ -3693,31 +3682,8 @@ window._tn2Restore = function() {
  * Bar mouseenter → timer cancel (user engaged). Idempotent (dataset.hoverBound).
  */
 window._tn2HoverInit = function() {
-  var shared = document.getElementById('tn2-modules');
-  if (!shared) return;
-  var timer;
-  document.querySelectorAll('.tn2-grp').forEach(function(grp) {
-    if (grp.dataset.hoverBound === '1') return;
-    grp.dataset.hoverBound = '1';
-    grp.addEventListener('mouseenter', function() {
-      clearTimeout(timer);
-      var grpId = grp.dataset.grp;
-      if (!grpId || grpId === 'dashboard' || grp.style.display === 'none') return;
-      if (typeof window._tn2SelectGrp === 'function') {
-        window._tn2SelectGrp(grpId, grp);
-      }
-    });
-    grp.addEventListener('mouseleave', function() {
-      timer = setTimeout(function() { shared.style.display = 'none'; }, 200);
-    });
-  });
-  if (shared.dataset.hoverBound !== '1') {
-    shared.dataset.hoverBound = '1';
-    shared.addEventListener('mouseenter', function() { clearTimeout(timer); });
-    shared.addEventListener('mouseleave', function() {
-      timer = setTimeout(function() { shared.style.display = 'none'; }, 200);
-    });
-  }
+  /* MENU-HOVER-TO-CLICK-001: hover mekanizması devre dışı — sadece onclick açar.
+     _initTn2Hover ile birlikte iki noktalı fix, birlikte revert edilmeli. */
 };
 
 window._initNsecState   = _initNsecState;
