@@ -781,7 +781,7 @@ window._saV2UrunSatirEkle = function() {
   var _hesaplaKur = 'var _p=document.getElementById(\''+pre+'para\')?.value||\'USD\';var _kv=parseFloat((window._saKur||window.DUAY_KUR||{})[_p])||(_p===\'USD\'?44.55:_p===\'EUR\'?51.70:_p===\'GBP\'?59.30:1);var _f=parseFloat(document.getElementById(\''+pre+'alisF\')?.value)||0;var _m=parseFloat(document.getElementById(\''+pre+'miktar\')?.value)||0;var _tlb=_f*_kv;var _top=_m*_tlb;document.getElementById(\''+pre+'kurTL\').value=_kv.toFixed(2);document.getElementById(\''+pre+'tlBirim\').value=_tlb.toLocaleString(\'tr-TR\',{maximumFractionDigits:2});document.getElementById(\''+pre+'toplamTL\').value=_top.toLocaleString(\'tr-TR\',{maximumFractionDigits:0});';
 
   satir.innerHTML =
-    '<div style="width:42px;height:42px;border-radius:6px;background:var(--s2);border:0.5px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0"><img id="'+pre+'gorsel-img" src="" style="width:42px;height:42px;object-fit:cover;display:none"><span id="'+pre+'gorsel-ico" style="font-size:18px">\ud83d\udce6</span></div>'
+    '<div onclick="event.stopPropagation();window._saV2UrunGorselAc?.(\''+pre+'\')" style="width:42px;height:42px;border-radius:6px;background:var(--s2);border:0.5px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0;cursor:pointer;transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac)\'" onmouseleave="this.style.borderColor=\'var(--b)\'" title="Görseli büyüt"><img id="'+pre+'gorsel-img" src="" style="width:42px;height:42px;object-fit:cover;display:none"><span id="'+pre+'gorsel-ico" style="font-size:18px">\ud83d\udce6</span></div>'
     + '<div style="position:relative"><input id="'+pre+'duayKodu" placeholder="11\u00b7XXXX\u00b7XXX" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._saV2UrunKatalogDoldur?.(\''+pre+'\',this.value);window._saV2UrunAdAra?.(\''+pre+'\',this.value,\''+pre+'duayKodu\')" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit"><div id="'+pre+'katalog-bilgi" style="font-size:7px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div>'
     + '<input id="'+pre+'turkceAdi" readonly placeholder="Otomatik" onclick="event.stopPropagation()" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid #9FE1CB;border-radius:5px;background:#E1F5EE;color:#085041;font-family:inherit">'
     + '<input id="'+pre+'miktar" type="number" placeholder="0" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();'+_hesaplaKur+'" style="width:100%;font-size:10px;padding:5px 6px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;text-align:right">'
@@ -1060,3 +1060,17 @@ window._saV2HileKaydet = function(key) {
   document.getElementById('sav2-hile-modal')?.remove();
 };
 
+/* SA-URUN-GORSEL-ZOOM-001: thumbnail click → tam ekran zoom */
+window._saV2UrunGorselAc = function(pre) {
+  var img = document.getElementById(pre + 'gorsel-img');
+  if (!img || !img.src || img.src === window.location.href || img.style.display === 'none') {
+    window.toast?.('Görsel yok', 'info');
+    return;
+  }
+  var src = img.src;
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  ov.onclick = function() { ov.remove(); };
+  ov.innerHTML = '<img src="' + src + '" style="max-width:80vw;max-height:80vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.3)" alt="">';
+  document.body.appendChild(ov);
+};
