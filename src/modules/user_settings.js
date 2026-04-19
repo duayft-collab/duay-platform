@@ -11,7 +11,7 @@
   var SEKMELER = [
     { id: 'profil',      label: 'Profil',       ikon: '👤', aktif: true  },
     { id: 'gorunum',     label: 'Görünüm',      ikon: '🎨', aktif: true  },
-    { id: 'bildirim',    label: 'Bildirimler',  ikon: '🔔', aktif: false },
+    { id: 'bildirim',    label: 'Bildirimler',  ikon: '🔔', aktif: true  },
     { id: 'guvenlik',    label: 'Güvenlik',     ikon: '🔒', aktif: false }
   ];
 
@@ -78,6 +78,7 @@
   function _renderIcerik(cu, esc) {
     if (aktifSekme === 'profil') return _renderProfil(cu, esc);
     if (aktifSekme === 'gorunum') return _renderGorunum(cu, esc);
+    if (aktifSekme === 'bildirim') return _renderBildirim(cu, esc);
     return '<div style="color:var(--t3);font-size:11px">Yakında…</div>';
   }
 
@@ -153,6 +154,93 @@
       var cu = window.Auth?.getCU?.();
       if (icerikEl && cu) icerikEl.innerHTML = _renderIcerik(cu, window._esc || function(x){ return x; });
     } catch(e) { console.warn('[user_settings] dil hata:', e); }
+  };
+
+  function _renderBildirim(cu, esc) {
+    /* USER-SETTINGS-BILDIRIM-001: kullanıcı tercihlerini yükle */
+    var prefKey = 'ak_user_notif_pref';
+    var tumPref = {};
+    try { tumPref = JSON.parse(localStorage.getItem(prefKey) || '{}'); } catch(e) {}
+    var userPref = tumPref[cu.id] || { severity: 'important', modules: {} };
+
+    var _sevSeg = function() {
+      var secenekler = [
+        { id: 'all',       label: 'Hepsi',    ikon: '🔔' },
+        { id: 'important', label: 'Önemli',   ikon: '⭐' },
+        { id: 'none',      label: 'Hiç',      ikon: '🔕' }
+      ];
+      var segHtml = secenekler.map(function(s) {
+        var on = (s.id === (userPref.severity || 'important'));
+        return '<button type="button" onclick="window._usBildirimSevSec(\'' + s.id + '\')" style="flex:1;padding:7px 10px;border:none;background:' + (on ? 'var(--sf,#fff)' : 'transparent') + ';color:' + (on ? 'var(--t)' : 'var(--t3)') + ';font-size:11.5px;font-weight:' + (on ? '600' : '500') + ';font-family:inherit;cursor:pointer;border-radius:6px;box-shadow:' + (on ? '0 1px 2px rgba(0,0,0,0.04)' : 'none') + ';transition:all .12s">' + s.ikon + ' ' + s.label + '</button>';
+      }).join('');
+      return '<div style="margin-bottom:22px"><label style="display:block;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:6px">Genel Seviye</label><div style="font-size:11px;color:var(--t3);margin-bottom:8px">Gelecek bildirimler için varsayılan filtre</div><div style="display:flex;gap:2px;padding:3px;background:var(--s2);border:0.5px solid var(--b);border-radius:8px">' + segHtml + '</div></div>';
+    };
+
+    var moduller = [
+      { id: 'finans',    label: 'Finans',         ikon: '💰' },
+      { id: 'satis',     label: 'Satış',          ikon: '🤝' },
+      { id: 'satinalma', label: 'Satınalma',      ikon: '📦' },
+      { id: 'lojistik', label: 'Lojistik',        ikon: '🚚' },
+      { id: 'ik',        label: 'İK',             ikon: '👥' },
+      { id: 'crm',       label: 'CRM',            ikon: '📇' },
+      { id: 'gorev',     label: 'Görev & Takvim', ikon: '📅' },
+      { id: 'admin',     label: 'Sistem',         ikon: '⚙️' }
+    ];
+
+    var _chk = function(aktif) {
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:20px;border-radius:12px;background:' + (aktif ? 'var(--ac)' : 'var(--s2)') + ';border:0.5px solid ' + (aktif ? 'var(--ac)' : 'var(--b)') + ';position:relative;transition:all .15s;cursor:pointer"><span style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (aktif ? '19px' : '3px') + ';transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,0.15)"></span></span>';
+    };
+
+    var modulRows = moduller.map(function(m) {
+      var pref = userPref.modules[m.id] || { push: true, email: false };
+      return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--b)">'
+        + '<span style="font-size:16px;width:24px;text-align:center">' + m.ikon + '</span>'
+        + '<span style="flex:1;font-size:12px;color:var(--t)">' + esc(m.label) + '</span>'
+        + '<span onclick="window._usBildirimToggle(\'' + m.id + '\',\'push\')" title="Uygulama içi" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--t3)">🔔 ' + _chk(pref.push) + '</span>'
+        + '<span onclick="window._usBildirimToggle(\'' + m.id + '\',\'email\')" title="E-posta" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--t3)">✉️ ' + _chk(pref.email) + '</span>'
+        + '</div>';
+    }).join('');
+
+    return '<div style="max-width:440px">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px">Bildirimler</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-bottom:20px">Hangi modüllerden, hangi kanaldan bildirim almak istediğinizi seçin</div>'
+      + _sevSeg()
+      + '<label style="display:block;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:10px">Modül Bazlı Tercihler</label>'
+      + modulRows
+      + '</div>';
+  }
+
+  /* USER-SETTINGS-BILDIRIM-001: bildirim tercih ctx yardımcıları */
+  function _usBildirimSaveGet() {
+    var cu = window.Auth?.getCU?.();
+    if (!cu) return null;
+    var key = 'ak_user_notif_pref';
+    var all = {};
+    try { all = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) {}
+    if (!all[cu.id]) all[cu.id] = { severity: 'important', modules: {} };
+    return { cu: cu, key: key, all: all, pref: all[cu.id] };
+  }
+  function _usBildirimSaveCommit(ctx) {
+    try { localStorage.setItem(ctx.key, JSON.stringify(ctx.all)); } catch(e) { console.warn('[user_settings] bildirim kaydet hata:', e); }
+  }
+
+  window._usBildirimSevSec = function(sev) {
+    var ctx = _usBildirimSaveGet();
+    if (!ctx) return;
+    ctx.pref.severity = sev;
+    _usBildirimSaveCommit(ctx);
+    var icerikEl = document.getElementById('us-icerik');
+    if (icerikEl) icerikEl.innerHTML = _renderIcerik(ctx.cu, window._esc || function(x){ return x; });
+  };
+
+  window._usBildirimToggle = function(modulId, kanal) {
+    var ctx = _usBildirimSaveGet();
+    if (!ctx) return;
+    if (!ctx.pref.modules[modulId]) ctx.pref.modules[modulId] = { push: true, email: false };
+    ctx.pref.modules[modulId][kanal] = !ctx.pref.modules[modulId][kanal];
+    _usBildirimSaveCommit(ctx);
+    var icerikEl = document.getElementById('us-icerik');
+    if (icerikEl) icerikEl.innerHTML = _renderIcerik(ctx.cu, window._esc || function(x){ return x; });
   };
 
   /* Sekme geçişi — USER-SETTINGS-SEKMEGEC-FIX-001
