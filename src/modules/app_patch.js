@@ -1077,9 +1077,11 @@ window.renderUrunler = function() {
 
   /* URUN-LIST-002: Tedarikçi pill butonları */
   var tedList = []; var _tedSet = {};
-  fl.forEach(function(u) { var t = u.tedarikci || ''; if (t && !_tedSet[t]) { _tedSet[t] = true; tedList.push(t); } });
+  d.filter(function(u){return !u.isDeleted;}).forEach(function(u) { var t = u.tedarikci || ''; if (t && !_tedSet[t]) { _tedSet[t] = true; tedList.push(t); } });
   tedList.sort();
   var aktifTed = window._urunTedFiltre || '';
+  /* URUN-FILTRE-PILL-SRC-001: seçili tedarikçi artık listede yoksa state temizle */
+  if (aktifTed && tedList.indexOf(aktifTed) === -1) { window._urunTedFiltre = ''; aktifTed = ''; }
   var tedH = '';
   if (tedList.length > 1) {
     tedH = '<div style="padding:4px 16px 6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">';
