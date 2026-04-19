@@ -271,7 +271,9 @@ function openUrunModal(id) {
         + '<div style="display:flex;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:600;color:var(--t,#1c1c1e)">📦 Ürün ' + n + '</span>' + kodRozeti + zamanDamgasi + '</div>'
         + '<button type="button" onclick="window._udbSil?.(' + n + ')" style="background:transparent;border:0.5px solid #E0574F;color:#E0574F;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">× Kaldır</button>'
       + '</div>'
-      + '<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">'
+      /* URUN-FORM-2SATIR-001: 4 grid → 2 grid, Teslim + Üretim/Kontrol kaldırıldı (Baran isteği) */
+      /* SATIR A — 6 kolon: Görsel + geniş metin alanları */
+      + '<div style="display:grid;grid-template-columns:110px 1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:start">'
         + '<div>'
           + '<label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Görsel <span style="color:#E0574F">*</span></label>'
           + '<div id="udb-img-preview-' + n + '" onclick="document.getElementById(\'udb-img-' + n + '\').click()" style="width:100px;height:100px;border:0.5px dashed var(--b,#e0e0e0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3,#8a8a8a);cursor:pointer;overflow:hidden;background:var(--s2,rgba(0,0,0,0.02));transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac,#007aff)\'" onmouseleave="this.style.borderColor=\'var(--b,#e0e0e0)\'">'
@@ -281,22 +283,17 @@ function openUrunModal(id) {
         + '</div>'
         + _fld('udb-duayName-' + n, 'Ürün Adı (TR)', 'text', '', true, 'örn: Mesh Ofis Koltuğu', u.duayName || u.urunAdi)
         + _fld('udb-origName-' + n, 'Ürün Adı (EN)', 'text', '', true, 'örn: Mesh Office Chair', u.origName || u.ingAd)
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">'
         + _fld('udb-vendor-' + n, 'Tedarikçi', 'select-vendor', '', true, '', u.vendorName || u.tedarikci)
         + _fld('udb-vendorCode-' + n, 'Tedarikçi Kodu', 'text', '', true, 'örn: 3121312', u.vendorCode || u.saticiKodu)
         + _fld('udb-category-' + n, 'Kategori', 'text-list', 'udb-kat-datalist', false, 'Mobilya, Ofis...', u.category || u.kategori)
-        + _fld('udb-origin-' + n, 'Menşei', 'select-country', '', true, '', u.origin || u.mensei)
       + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">'
+      /* SATIR B — 6 kolon: Dropdown + sayısal alanlar */
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">'
+        + _fld('udb-origin-' + n, 'Menşei', 'select-country', '', true, '', u.origin || u.mensei)
         + _fld('udb-unit-' + n, 'Birim', 'select-unit', '', true, '', u.unit || u.birim)
-        + _fld('udb-teslim-' + n, 'Teslim (gün)', 'number', '', false, 'örn: 15', u.deliveryDays)
         + _fld('udb-netW-' + n, 'Net Ağırlık (kg)', 'number', '', false, 'örn: 2.5', u.netWeight || u.netAgirlik)
         + _fld('udb-grossW-' + n, 'Brüt Ağırlık (kg)', 'number', '', false, 'örn: 3.0', u.grossWeight || u.brutAgirlik)
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">'
         + _fld('udb-marka-' + n, 'Marka', 'text', '', false, 'örn: IKEA, Bosch', u.marka)
-        + _fld('udb-uretim-' + n, 'Üretim/Kontrol', 'text', '', false, 'örn: TS EN 1021', u.uretimKontrol)
         + _fld('udb-raf-' + n, 'Raf Ömrü (gün)', 'number', '', false, 'örn: 365', u.shelfLife)
       + '</div>'
       + '<div style="margin-bottom:6px">'
@@ -378,14 +375,14 @@ window._saveUrunDB = function() {
     var origin = (document.getElementById('udb-origin-'+n)?.value||'').trim();
     var unit = (document.getElementById('udb-unit-'+n)?.value||'').trim();
     var techDesc = (document.getElementById('udb-techDesc-'+n)?.value||'').trim();
-    var teslim = document.getElementById('udb-teslim-'+n)?.value||'';
+    /* URUN-FORM-2SATIR-001: teslim alanı kaldırıldı */
     var raf = document.getElementById('udb-raf-'+n)?.value||'';
     var netW = document.getElementById('udb-netW-'+n)?.value||'';
     var grossW = document.getElementById('udb-grossW-'+n)?.value||'';
     var note = (document.getElementById('udb-note-'+n)?.value||'').trim();
     var sozlesme = (document.getElementById('udb-sozlesme-'+n)?.value||'').trim();
     var marka = (document.getElementById('udb-marka-'+n)?.value||'').trim();
-    var uretimKontrol = (document.getElementById('udb-uretim-'+n)?.value||'').trim();
+    /* URUN-FORM-2SATIR-001: uretimKontrol alanı kaldırıldı */
     var gizliHile = !!(document.getElementById('udb-hile-'+n)?.checked);
     var gizliHileNot = (document.getElementById('udb-hile-not-'+n)?.value||'').trim();
     var image = window['_udbImg'+n]||null;
@@ -413,14 +410,14 @@ window._saveUrunDB = function() {
       origin: origin,
       unit: unit || 'Adet',
       techDesc: techDesc,
-      deliveryDays: teslim ? Number(teslim) : null,
+      /* URUN-FORM-2SATIR-001: deliveryDays alanı kaldırıldı (edit mode'da eski değer Object.assign ile korunur) */
       shelfLife: raf ? Number(raf) : null,
       netWeight: netW ? Number(netW) : null,
       grossWeight: grossW ? Number(grossW) : null,
       note: note,
       sozlesmeNotu: sozlesme,
       marka: marka,
-      uretimKontrol: uretimKontrol,
+      /* URUN-FORM-2SATIR-001: uretimKontrol kaldırıldı (edit mode Object.assign ile korunur) */
       gizliHile: gizliHile,
       gizliHileNot: gizliHileNot,
       image: image||null,
