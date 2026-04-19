@@ -3797,8 +3797,11 @@ if (typeof module !== 'undefined' && module.exports) {
         try {
           var vStr = String(value || '');
           var kb = (vStr.length * 2) / 1024;
-          if (kb > _MAX_TEK_YAZIM_KB) {
-            console.warn('[LS-GUARD] ' + key + ' yazımı engellendi (' + kb.toFixed(1) + ' KB > ' + _MAX_TEK_YAZIM_KB + ' KB). Büyük veri için IndexedDB kullanılmalı.');
+          /* LS-GUARD-LZ-ISTISNA-001: LZ-compressed yazımlar 1 MB'a kadar geçer */
+          var _isLZ = vStr.indexOf('_LZ_') === 0;
+          var _maxBytes = _isLZ ? (1024 * 1024) : (_MAX_TEK_YAZIM_KB * 1024);
+          if ((kb * 1024) > _maxBytes) {
+            console.warn('[LS-GUARD] ' + key + ' yazımı engellendi (' + kb.toFixed(1) + ' KB > ' + (_maxBytes / 1024) + ' KB ' + (_isLZ ? 'LZ' : 'raw') + ')');
             return;
           }
           /* Quota %70 kontrolü — async estimate'i cache'le, sürekli sorma */
