@@ -12,7 +12,7 @@
     { id: 'profil',      label: 'Profil',       ikon: '👤', aktif: true  },
     { id: 'gorunum',     label: 'Görünüm',      ikon: '🎨', aktif: true  },
     { id: 'bildirim',    label: 'Bildirimler',  ikon: '🔔', aktif: true  },
-    { id: 'guvenlik',    label: 'Güvenlik',     ikon: '🔒', aktif: false }
+    { id: 'guvenlik',    label: 'Güvenlik',     ikon: '🔒', aktif: true  }
   ];
 
   /* Ana panel açıcı */
@@ -79,6 +79,7 @@
     if (aktifSekme === 'profil') return _renderProfil(cu, esc);
     if (aktifSekme === 'gorunum') return _renderGorunum(cu, esc);
     if (aktifSekme === 'bildirim') return _renderBildirim(cu, esc);
+    if (aktifSekme === 'guvenlik') return _renderGuvenlik(cu, esc);
     return '<div style="color:var(--t3);font-size:11px">Yakında…</div>';
   }
 
@@ -209,6 +210,101 @@
       + modulRows
       + '</div>';
   }
+
+  function _renderGuvenlik(cu, esc) {
+    /* USER-SETTINGS-GUVENLIK-001: session bilgisi + şifre + logout */
+    var sessionData = {};
+    try { sessionData = JSON.parse(localStorage.getItem('ak_session') || '{}'); } catch(e) {}
+    var loginTs = localStorage.getItem('ak_session_entry_ms');
+    var loginStr = '—';
+    if (loginTs) {
+      try {
+        var d = new Date(parseInt(loginTs));
+        loginStr = d.toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+      } catch(e) {}
+    }
+    var ua = navigator.userAgent || '';
+    var tarayici = 'Bilinmiyor';
+    if (ua.indexOf('Safari') >= 0 && ua.indexOf('Chrome') < 0) tarayici = 'Safari';
+    else if (ua.indexOf('Chrome') >= 0) tarayici = 'Chrome';
+    else if (ua.indexOf('Firefox') >= 0) tarayici = 'Firefox';
+    else if (ua.indexOf('Edge') >= 0) tarayici = 'Edge';
+    var platform = /Mac/.test(ua) ? 'Mac' : /Win/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : 'Bilinmiyor';
+
+    return '<div style="max-width:420px">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px">Güvenlik</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-bottom:22px">Şifre ve oturum yönetimi</div>'
+      + '<div style="margin-bottom:28px">'
+      + '<label style="display:block;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:10px">🔑 Şifre Değiştir</label>'
+      + '<div style="margin-bottom:10px"><label style="display:block;font-size:10px;color:var(--t3);margin-bottom:4px">Mevcut şifre</label>'
+      + '<input type="password" id="us-pw-eski" style="padding:9px 12px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf);color:var(--t);font-size:12px;font-family:inherit;width:100%;outline:none;transition:border-color .12s" onfocus="this.style.borderColor=\'var(--ac)\'" onblur="this.style.borderColor=\'var(--b)\'" placeholder="••••••••"></div>'
+      + '<div style="margin-bottom:10px"><label style="display:block;font-size:10px;color:var(--t3);margin-bottom:4px">Yeni şifre (en az 6 karakter)</label>'
+      + '<input type="password" id="us-pw-yeni" style="padding:9px 12px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf);color:var(--t);font-size:12px;font-family:inherit;width:100%;outline:none;transition:border-color .12s" onfocus="this.style.borderColor=\'var(--ac)\'" onblur="this.style.borderColor=\'var(--b)\'" placeholder="••••••••"></div>'
+      + '<div style="margin-bottom:12px"><label style="display:block;font-size:10px;color:var(--t3);margin-bottom:4px">Yeni şifre (tekrar)</label>'
+      + '<input type="password" id="us-pw-yeni2" style="padding:9px 12px;border:0.5px solid var(--b);border-radius:8px;background:var(--sf);color:var(--t);font-size:12px;font-family:inherit;width:100%;outline:none;transition:border-color .12s" onfocus="this.style.borderColor=\'var(--ac)\'" onblur="this.style.borderColor=\'var(--b)\'" placeholder="••••••••"></div>'
+      + '<button type="button" onclick="window._usSifreDegistir()" style="padding:8px 18px;border:none;border-radius:8px;background:var(--ac);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">Şifreyi Güncelle</button>'
+      + '</div>'
+      + '<div style="margin-bottom:24px">'
+      + '<label style="display:block;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:10px">🖥️ Aktif Oturum</label>'
+      + '<div style="padding:14px 16px;background:var(--s2);border:0.5px solid var(--b);border-radius:10px;display:flex;align-items:center;gap:12px">'
+      + '<span style="font-size:22px">' + (platform === 'iPhone' || platform === 'Android' ? '📱' : '💻') + '</span>'
+      + '<div style="flex:1">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--t)">' + esc(tarayici) + ' · ' + esc(platform) + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:3px">Giriş: ' + esc(loginStr) + '</div>'
+      + '</div>'
+      + '<span style="font-size:9px;padding:3px 8px;border-radius:6px;background:#E1F5EE;color:#1A8D6F;font-weight:600">BU CİHAZ</span>'
+      + '</div>'
+      + '</div>'
+      + '<button type="button" onclick="window._usOturumuKapat()" style="padding:8px 18px;border:0.5px solid #E0574F;border-radius:8px;background:transparent;color:#E0574F;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">Oturumu Kapat</button>'
+      + '</div>';
+  }
+
+  window._usSifreDegistir = function() {
+    var cu = window.Auth?.getCU?.();
+    if (!cu) { window.toast?.('Giriş yapmanız gerekiyor', 'err'); return; }
+    var eskiEl = document.getElementById('us-pw-eski');
+    var yeniEl = document.getElementById('us-pw-yeni');
+    var yeni2El = document.getElementById('us-pw-yeni2');
+    if (!eskiEl || !yeniEl || !yeni2El) return;
+    var eski = eskiEl.value;
+    var yeni = yeniEl.value;
+    var yeni2 = yeni2El.value;
+    if (!eski || !yeni) { window.toast?.('Tüm alanları doldurun', 'err'); return; }
+    if (yeni.length < 6) { window.toast?.('Yeni şifre en az 6 karakter', 'err'); return; }
+    if (yeni !== yeni2) { window.toast?.('Yeni şifreler eşleşmiyor', 'err'); return; }
+    if (eski === yeni) { window.toast?.('Yeni şifre eskisiyle aynı olamaz', 'err'); return; }
+    try {
+      if (typeof window.changePassword === 'function') {
+        var r = window.changePassword(cu.id, eski, yeni);
+        if (r === false || (r && r.success === false)) {
+          window.toast?.('Şifre değiştirilemedi (mevcut şifre hatalı olabilir)', 'err');
+          return;
+        }
+      } else {
+        var users = loadUsers();
+        var idx = users.findIndex(function(u){ return u.id === cu.id; });
+        if (idx < 0) { window.toast?.('Kullanıcı bulunamadı', 'err'); return; }
+        if (users[idx].pw && users[idx].pw !== eski) { window.toast?.('Mevcut şifre hatalı', 'err'); return; }
+        users[idx].pw = yeni;
+        users[idx].lastPasswordChange = new Date().toISOString();
+        storeUsers(users);
+      }
+      window.toast?.('Şifre başarıyla güncellendi', 'success');
+      eskiEl.value = yeniEl.value = yeni2El.value = '';
+    } catch(e) {
+      console.warn('[user_settings] şifre değiştirme hata:', e);
+      window.toast?.('Şifre değiştirilirken hata oluştu', 'err');
+    }
+  };
+
+  window._usOturumuKapat = function() {
+    if (!confirm('Oturumu kapatmak istediğinize emin misiniz?')) return;
+    try {
+      if (typeof window.logout === 'function') window.logout();
+      else if (typeof window.Auth?.logout === 'function') window.Auth.logout();
+      else { localStorage.removeItem('ak_session'); location.reload(); }
+    } catch(e) { console.warn('[user_settings] logout hata:', e); }
+  };
 
   /* USER-SETTINGS-BILDIRIM-001: bildirim tercih ctx yardımcıları */
   function _usBildirimSaveGet() {
