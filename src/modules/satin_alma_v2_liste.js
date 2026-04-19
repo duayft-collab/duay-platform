@@ -137,6 +137,15 @@ window.renderSatinAlmaV2 = function() {
   h+='</div>';
   /* ALIS-LISTE-UX-PACK-001: Gruplama aktifse tedarikçi başlık satırları */
   var _grpOnceki = '';
+  /* SA-EMPTY-STATE-POLISH-001: boş liste için Apple Notes tarzı empty state (filtered vs first-run ayrımı) */
+  if (goster.length === 0) {
+    var _arananMi = !!(srch || durumF || tedF || paraF || girenF || tarihF);
+    if (_arananMi) {
+      h += '<div style="padding:48px;text-align:center;color:var(--color-text-tertiary);font-size:12px"><div style="font-size:24px;margin-bottom:8px">🔍</div>Arama kriterinize uyan teklif yok<br><button onclick="event.stopPropagation();window._sav2SrchVal=\'\';window._sav2FiltreDurum=\'\';[\'sav2-ted\',\'sav2-para\',\'sav2-giren\',\'sav2-tarih\'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=\'\';});window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" style="margin-top:12px;padding:6px 14px;border:0.5px solid '+_b+';border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-family:inherit">Filtreyi Temizle</button></div>';
+    } else {
+      h += '<div style="padding:72px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px"><div style="width:72px;height:72px;border-radius:18px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:34px;opacity:.8">📦</div><div><div style="font-size:17px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px">Henüz alış teklifi yok</div><div style="font-size:12px;color:var(--color-text-tertiary);max-width:340px;margin:0 auto;line-height:1.5">Yeni bir alış teklifi oluşturarak başlayın. Tedarikçilerden fiyat alabilir, karşılaştırabilirsiniz.</div></div><button type="button" onclick="event.stopPropagation();window._saV2YeniTeklif?.()" style="margin-top:8px;padding:9px 18px;border:none;border-radius:8px;background:var(--color-text-primary);color:var(--color-background-primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">+ İlk Teklifi Oluştur</button></div>';
+    }
+  }
   goster.forEach(function(t){
     if (window._saV2GruplaAktif) {
       var _grpAd = t.tedarikci || 'Diğer';
