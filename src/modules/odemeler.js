@@ -6370,6 +6370,15 @@ function saveCari(entry) {
     } catch(_rfe) { console.warn('[CARI-REQ-FIELDS]', _rfe.message); }
   }
 
+  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 1: supplierEvaluation + adminEvaluation shape koruma.
+     PARÇA 2/3 UI modalleri bu field'ları doldurur — şimdi sadece mevcutsa object shape garantisi. */
+  if (entry.supplierEvaluation != null && typeof entry.supplierEvaluation !== 'object') {
+    delete entry.supplierEvaluation;
+  }
+  if (entry.adminEvaluation != null && typeof entry.adminEvaluation !== 'object') {
+    delete entry.adminEvaluation;
+  }
+
   // VKN format kontrolü (boş kabul edilir, doluysa 10 hane sayı zorunlu)
   if (entry.vkn && entry.vkn.trim()) {
     var vknClean = entry.vkn.replace(/\s/g, '');
@@ -6492,6 +6501,14 @@ function _approveCari(id) {
   var d = loadCari();
   var c = d.find(function(x) { return x.id === id; });
   if (!c) return;
+  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 1: Onay kapısı — supplier + admin değerlendirme şart */
+  if (!window._cariCanApprove(c)) {
+    var _eksik = [];
+    if (!window._cariIsSupplierEvalComplete(c)) _eksik.push('Personel değerlendirmesi');
+    if (!window._cariIsAdminEvalComplete(c)) _eksik.push('Yönetici değerlendirmesi');
+    window.toast?.('Onay için eksik: ' + _eksik.join(', '), 'err');
+    return;
+  }
   c.status = 'active';
   c.approvedBy = _CUo()?.id;
   c.approvedAt = _nowTso();
@@ -6500,6 +6517,44 @@ function _approveCari(id) {
   window.addNotif?.('✅', 'Cari onaylandı: ' + c.name, 'ok', 'cari', c.createdBy);
   if (typeof renderCari === 'function') renderCari();
 }
+
+/* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 1: 4 validasyon helper (PARÇA 2/3 UI'ları kullanır) */
+window._cariIsSupplierEvalComplete = function(cari) {
+  var e = cari && cari.supplierEvaluation;
+  if (!e || typeof e !== 'object') return false;
+  if (!e.davranisNotu || String(e.davranisNotu).trim().length < 100) return false;
+  if (typeof e.guvenliMi !== 'boolean') return false;
+  if (!e.guvenliAciklama || String(e.guvenliAciklama).trim().length < 50) return false;
+  if (typeof e.uzunVadeMi !== 'boolean') return false;
+  if (!e.uzunVadeAciklama || String(e.uzunVadeAciklama).trim().length < 50) return false;
+  return true;
+};
+
+window._cariIsAdminEvalComplete = function(cari) {
+  var e = cari && cari.adminEvaluation;
+  if (!e || typeof e !== 'object') return false;
+  if (['yuksek','normal','dusuk'].indexOf(e.fiyatSeviyesi) < 0) return false;
+  if (['dusuk','orta','yuksek'].indexOf(e.riskSeviyesi) < 0) return false;
+  if (['kucuk','orta','buyuk'].indexOf(e.firmaOlcegi) < 0) return false;
+  if (!e.piyasaArastirmaNotu || String(e.piyasaArastirmaNotu).trim().length < 100) return false;
+  if (!e.kararNotu || String(e.kararNotu).trim().length < 50) return false;
+  return true;
+};
+
+window._cariCanApprove = function(cari) {
+  if (!cari) return false;
+  if (!window._cariIsSupplierEvalComplete(cari)) return false;
+  if (!window._cariIsAdminEvalComplete(cari)) return false;
+  return true;
+};
+
+window._cariIsHighRisk = function(cari) {
+  var s = cari && cari.supplierEvaluation;
+  var a = cari && cari.adminEvaluation;
+  if (s && s.guvenliMi === false) return true;
+  if (a && a.riskSeviyesi === 'yuksek') return true;
+  return false;
+};
 
 /**
  * Cari reddetme.
