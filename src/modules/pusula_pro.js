@@ -572,7 +572,8 @@ window._ppModRender = function() {
       + '</div>'
       + '<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">'
       + '<div style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0">'
-      + '<button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:var(--pp-meta);padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Görev</button>'
+      /* PUSULA-PAYLASIM-002: '+ Görev' butonu sadece admin'e görünür */
+      + ((function(){ var _r = _ppCu()?.role; return (_r === 'admin' || _ppCu()?.rol === 'admin'); })() ? '<button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:var(--pp-meta);padding:4px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">+ Görev</button>' : '')
       + '<input id="pp-search" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppAra(this.value)" onclick="event.stopPropagation()" style="flex:1;max-width:200px;font-size:var(--pp-body);padding:4px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
       + '<select id="pp-sirala" onchange="event.stopPropagation();window._ppSiralaGorevler(this.value)" onclick="event.stopPropagation()" style="font-size:var(--pp-body);padding:4px 8px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:var(--s2);color:var(--t);font-family:inherit">'
         + '<option value="tarih"'  +(_ppSK==='tarih'?' selected':'')+  '>Son Tarihe Göre</option>'
@@ -1261,6 +1262,12 @@ window._ppAltGorevSil = function(i) {
 };
 
 window._ppGorevKaydet = function() {
+  /* PUSULA-PAYLASIM-002: Sadece admin görev açar/düzenler (Baran kuralı #1+#4) */
+  var _me = _ppCu();
+  if (!_me || (_me.role !== 'admin' && _me.rol !== 'admin')) {
+    window.toast?.('Sadece yönetici görev oluşturabilir veya düzenleyebilir', 'err');
+    return;
+  }
   /* PP-BTNGUARD-001: double-click koruması */
   if (window._ppIslem) return; window._ppIslem = true; setTimeout(function(){ window._ppIslem = false; }, 1500);
   var baslik = document.getElementById('ppf-baslik')?.value.trim();
@@ -1903,6 +1910,12 @@ window._ppGorevSil = function(id) {
 };
 
 window._ppGorevSilYap = function(id) {
+  /* PUSULA-PAYLASIM-002: Sadece admin görev siler */
+  var _me = _ppCu();
+  if (!_me || (_me.role !== 'admin' && _me.rol !== 'admin')) {
+    window.toast?.('Sadece yönetici görev silebilir', 'err');
+    return;
+  }
   /* PP-BTNGUARD-001: double-click koruması */
   if (window._ppIslem) return; window._ppIslem = true; setTimeout(function(){ window._ppIslem = false; }, 1500);
   var tasks = _ppLoad();
