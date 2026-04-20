@@ -411,6 +411,8 @@ window._saV2YoneticiOnayla = function(id) {
   var t = liste.find(function(x) { return x.id === id; });
   if (!t) return;
   t.durum = 'onaylandi';
+  /* LOJISTIK-SA-ENTEGRE-001: Onaylanan SA V2 otomatik kargo kaydı oluştur */
+  try { window._saOnayliKargoOlustur && window._saOnayliKargoOlustur(t); } catch(e) { console.warn('[LOJISTIK-SA-ENTEGRE-001] kargo fail:', e); }
   /* SIPARISLER-AUTO-ONAY-001: onay anında sipariş hazırlık kaydı */
   if (!t.siparisDurumu) t.siparisDurumu = 'hazirlaniyor';
   t.siparisBaslangicTarihi = new Date().toISOString();
@@ -1073,4 +1075,50 @@ window._saV2UrunGorselAc = function(pre) {
   ov.onclick = function() { ov.remove(); };
   ov.innerHTML = '<img src="' + src + '" style="max-width:80vw;max-height:80vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.3)" alt="">';
   document.body.appendChild(ov);
+};
+
+/* LOJISTIK-SA-ENTEGRE-001: SA V2 onaylanan teklif → kargo kaydı helper */
+window._saOnayliKargoOlustur = function(saTeklif) {
+  if (!saTeklif || !saTeklif.id) return null;
+  var raw;
+  try { raw = JSON.parse(localStorage.getItem('ak_kargo2') || '[]'); } catch(e) { raw = []; }
+  if (!Array.isArray(raw)) raw = [];
+  /* Dupe kontrolü — aynı SA id için kargo zaten varsa dokunma */
+  var mevcut = raw.find(function(k){ return k && k.saKaynakId === saTeklif.id && !k.isDeleted; });
+  if (mevcut) return mevcut;
+  var _now = new Date().toISOString();
+  var _refNo = 'KRG-' + Date.now().toString().slice(-6);
+  var kargo = {
+    id: _refNo + '_' + Math.random().toString(36).slice(2, 7),
+    ref_no: _refNo,
+    /* SA V2 entegre alanları (kargo şeması üstüne extension) */
+    saKaynakId: saTeklif.id,
+    piNo: saTeklif.piNo || '',
+    tedarikci: saTeklif.tedarikci || '',
+    urunler: (saTeklif.urunler || []).map(function(u){
+      return { ad: u.urunAdi || u.ad || '', miktar: u.miktar || 0, birim: u.birim || 'adet' };
+    }),
+    tutar: saTeklif.toplamTutar || 0,
+    para: saTeklif.paraBirim || 'USD',
+    /* Mevcut kargo.js şeması */
+    tip: 'deniz', tur: 'FCL', firma: '',
+    gonderen: saTeklif.tedarikci || '',
+    alici: 'Duay Global LLC',
+    pol: '', pod: '',
+    yukleme_tarihi: '', eta: '',
+    brut_kg: 0, hacim_m3: 0,
+    takip_no: saTeklif.piNo || '',
+    navlun_usd: 0,
+    durum: 'hazirlaniyor',
+    notlar: 'SA V2 teklif onayı ile otomatik oluşturuldu',
+    belgeler: [],
+    timeline: [{ tarih: _now.slice(0,10), lokasyon: '', aciklama: 'SA V2 onayı — kargo kaydı oluşturuldu', durum: 'tamamlandi' }],
+    olusturma: _now,
+    isDeleted: false
+  };
+  raw.push(kargo);
+  if (window.storeKargo) window.storeKargo(raw);
+  else localStorage.setItem('ak_kargo2', JSON.stringify(raw));
+  window.toast && window.toast('Lojistik/Kargo takibine eklendi: ' + (kargo.piNo || kargo.ref_no), 'ok');
+  return kargo;
 };
