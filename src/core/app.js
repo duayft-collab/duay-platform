@@ -2130,16 +2130,54 @@ function markAllNotifRead() {
   toast('Tümü okundu işaretlendi ✓', 'ok');
 }
 
+/**
+ * NOTIF-CLEAR-FIRESTORE-AWARE-001
+ * ADIM 0 kök neden: _syncFirestore mode='set' Array pathway'inde FS'deki mevcut
+ * kayıtları "veri kaybı önleme" gerekçesiyle local boş array'e merge ediyor →
+ * storeNotifs([]) çağrısı Firestore'a 7595 kayıt geri yazıyordu.
+ * Fix: direkt FB_DB.doc(path).set({data:[]}) ile merge bypass (trash gibi).
+ */
 function clearAllNotifs() {
   window.confirmModal('Tüm bildirimler silinsin mi?', {
     title: 'Bildirimleri Temizle',
     danger: true,
     confirmText: 'Evet, Temizle',
-    onConfirm: () => {
-      storeNotifs([]);
-      updateNotifBadge();
-      _renderNotifPanel();
-      toast('Bildirimler temizlendi ✓', 'ok');
+    onConfirm: async () => {
+      try {
+        /* 1. localStorage sil */
+        try { localStorage.removeItem('ak_notif1'); } catch(e) {}
+        try { localStorage.removeItem('notifications_ts'); } catch(e) {}
+        /* 2. In-memory cache invalidate */
+        try { window.invalidateCacheKey?.('notifs'); } catch(e) {}
+        try { if (window.DB && window.DB._cache) delete window.DB._cache.notifs; } catch(e) {}
+        /* 3. Firestore DIREKT set (merge bypass — _syncFirestore pathway FS mevcut'u merge eder) */
+        try {
+          const fbDb = window.Auth?.getFBDB?.();
+          if (fbDb) {
+            const path = (typeof window._fsPath === 'function' ? window._fsPath('notifications') : null) || 'duay_tenant_default/notifications';
+            const parts = path.split('/');
+            const col = parts[0];
+            const docName = parts[1] || 'notifications';
+            await fbDb.collection(col).doc(docName).set({
+              data: [],
+              syncedAt: new Date().toISOString(),
+              cleanedAt: new Date().toISOString()
+            });
+            console.info('[CLEAR-ALL-NOTIFS] Firestore set:', col + '/' + docName, '→ data:[]');
+          }
+        } catch(fsErr) {
+          console.error('[CLEAR-ALL-FIRESTORE]', fsErr);
+          toast('Firestore temizlik hatası: ' + fsErr.message + ' — Firebase Console manuel sil', 'err');
+          return;
+        }
+        /* 4. UI refresh */
+        try { updateNotifBadge(); } catch(e) {}
+        try { _renderNotifPanel(); } catch(e) {}
+        toast('Bildirimler kalıcı temizlendi ✓', 'ok');
+      } catch(e) {
+        console.error('[CLEAR-ALL-NOTIFS]', e);
+        toast('Temizleme hatası: ' + e.message, 'err');
+      }
     }
   });
 }
