@@ -217,8 +217,8 @@ var _ppIzolasyonFiltre = function(tasks) {
   return tasks.filter(function(t) {
     /* PUSULA-GORUNUM-FIX-001: sahip, sorumlu, gözlemci veya paylaşılan */
     var _sahip = t.olusturanId || t.createdBy || '';
-    /* KUYRUK-IZOLASYON-FIX-001: sahip boşsa eski veri — herkese göster */
-    if (!_sahip) return _ppIsAdmin();
+    /* PUSULA-PRO-ASSIGNMENT-FIX-001: sahip boşsa non-admin'i erken reject etme — altındaki sorumlu/gozlemci/paylasilan match'e fallthrough */
+    if (!_sahip && _ppIsAdmin()) return true;
     if (_sahip === _uid) return true;
     var sorumluArr = Array.isArray(t.sorumlu) ? t.sorumlu : (t.sorumlu ? [t.sorumlu] : []);
     /* KUYRUK-IZOLASYON-FIX-002: string sorumlu (displayName/email) ve uid karşılaştırması */
