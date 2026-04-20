@@ -879,6 +879,10 @@ function _dashMiniKpi(label, val, link) {
 }
 
 function renderDashboard() {
+  /* DASHBOARD-IIFE-LOCAL-HIJACK-001: IIFE-local renderDashboard → yeni _dashYeniRender */
+  if (window._dashYeniRender && window._dashYeniRender !== renderDashboard) {
+    try { return window._dashYeniRender(); } catch(e) {}
+  }
   const panel = _g('panel-dashboard');
   if (!panel) return;
   const cu = _cu();
@@ -996,6 +1000,9 @@ if (typeof module !== 'undefined' && module.exports) {
   window.renderDashboard = renderDashboard;
   /* DASHBOARD-REDESIGN-001 PARÇA A: yeni render'ı son atama — eski intact kalır, ileride ayrı rota */
   window.renderDashboard = _dashYeniRender;
+  /* DASHBOARD-IIFE-LOCAL-HIJACK-001: IIFE-local iç çağrılar + Dashboard.render objesi */
+  window._dashYeniRender = _dashYeniRender;
+  if (window.Dashboard) window.Dashboard.render = _dashYeniRender;
 }
 
 })();
