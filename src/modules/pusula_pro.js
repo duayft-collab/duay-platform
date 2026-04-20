@@ -118,18 +118,23 @@ if (!window._ppCleanupBound) {
   document.head.appendChild(_style);
 })();
 
-/* PUSULA-PRO-REDESIGN-001 PARÇA 3: Radius + Spacing + Soft shadow + hairline border */
+/* PUSULA-PRO-REDESIGN-001 PARÇA 3B: Radius + Spacing + Soft shadow + hairline border (try/catch hardened) */
 (function _ppInjectSpacingCss() {
-  if (document.getElementById('pp-spacing-css')) return;
-  var _style = document.createElement('style');
-  _style.id = 'pp-spacing-css';
-  _style.textContent = ':root{'
-    + '--pp-r-sm:6px;--pp-r-md:8px;--pp-r-lg:12px;--pp-r-xl:16px;'
-    + '--pp-s-1:4px;--pp-s-2:8px;--pp-s-3:12px;--pp-s-4:16px;--pp-s-6:24px;--pp-s-8:32px;'
-    + '--pp-shadow:0 1px 2px rgba(0,0,0,.04);--pp-shadow-lg:0 2px 8px rgba(0,0,0,.06);'
-    + '--pp-border:0.5px solid var(--b,#e0e0e0);}'
-    + '.pp-card{background:var(--sf,#fff);border:var(--pp-border);border-radius:var(--pp-r-lg);box-shadow:var(--pp-shadow);padding:var(--pp-s-4)}';
-  document.head.appendChild(_style);
+  try {
+    if (document.getElementById('pp-spacing-css')) return;
+    var _style = document.createElement('style');
+    _style.id = 'pp-spacing-css';
+    _style.textContent = ':root{'
+      + '--pp-r-sm:6px;--pp-r-md:8px;--pp-r-lg:12px;--pp-r-xl:16px;'
+      + '--pp-s-1:4px;--pp-s-2:8px;--pp-s-3:12px;--pp-s-4:16px;--pp-s-6:24px;--pp-s-8:32px;'
+      + '--pp-shadow:0 1px 2px rgba(0,0,0,.04);--pp-shadow-lg:0 2px 8px rgba(0,0,0,.06);'
+      + '--pp-border:0.5px solid var(--b,#e0e0e0);}'
+      + '.pp-card{background:var(--sf,#fff);border:var(--pp-border);border-radius:var(--pp-r-lg);box-shadow:var(--pp-shadow);padding:var(--pp-s-4)}';
+    document.head.appendChild(_style);
+    console.log('[Pusula] PARÇA 3 spacing CSS inject OK');
+  } catch(e) {
+    console.error('[Pusula] PARÇA 3 spacing CSS inject FAIL:', e && e.message ? e.message : e);
+  }
 })();
 
 /* ── Sabitler ───────────────────────────────────────────────── */
