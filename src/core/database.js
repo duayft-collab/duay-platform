@@ -628,10 +628,21 @@ function _mergeDataSets(localKey, fsData, collection) {
       mergedMap[key].permissions  = _permWinner.permissions;
       mergedMap[key].modules      = _permWinner.modules;
       mergedMap[key].permUpdatedAt = _permWinner.permUpdatedAt;
-      /* USER-SEED-NAME-ROLE-PROTECT-001: name + role kullanıcı düzenleme timestamp'iyle winner */
+      /* USER-SEED-REGRESYON-001: name + role için ts-yoksa-existing-galip. Önceki PROTECT-001'de
+         eski kayıtta updatedAt yoksa ('' > '') false → item (seed/Firestore) galip oluyordu
+         (muhasebe@duaycor.com asistan→staff regresyonu). Fix: ts boşsa yerel korunur. */
       var _existTs = existing.updatedAt || existing.ts || '';
       var _itemTs  = item.updatedAt || item.ts || '';
-      var _nameRoleWinner = (_existTs > _itemTs) ? existing : item;
+      var _nameRoleWinner;
+      if (_existTs && _itemTs) {
+        _nameRoleWinner = (_existTs >= _itemTs) ? existing : item;
+      } else if (_existTs) {
+        _nameRoleWinner = existing;
+      } else if (_itemTs) {
+        _nameRoleWinner = item;
+      } else {
+        _nameRoleWinner = existing;
+      }
       if (_nameRoleWinner.name) mergedMap[key].name = _nameRoleWinner.name;
       if (_nameRoleWinner.role) mergedMap[key].role = _nameRoleWinner.role;
     }
