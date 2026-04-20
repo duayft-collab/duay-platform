@@ -255,10 +255,11 @@ function openUrunModal(id) {
   };
 
   /* URUN-FORM-KART-LAYOUT-001-ADIM-B: _fld helper + _udbCardHTML kart template */
-  function _fld(id, label, type, listId, required, placeholder, value) {
+  function _fld(id, label, type, listId, required, placeholder, value, hint) {
     var esc = window._esc || function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
     var reqStar = required ? '<span style="color:#E0574F">*</span>' : '';
-    var lbl = '<label for="' + id + '" style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">' + esc(label) + ' ' + reqStar + '</label>';
+    var _titleAttr = hint ? ' title="' + esc(hint) + '"' : '';
+    var lbl = '<label for="' + id + '"' + _titleAttr + ' style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px;cursor:' + (hint ? 'help' : 'default') + '">' + esc(label) + ' ' + reqStar + (hint ? ' <span style="opacity:.5">ⓘ</span>' : '') + '</label>';
     var baseStyle = 'padding:8px 10px;border:0.5px solid var(--b,#e0e0e0);border-radius:8px;background:var(--sf,#fff);color:var(--t,#1c1c1e);font-size:12px;font-family:inherit;width:100%;box-sizing:border-box;outline:none;transition:border-color .12s';
     var focusHandlers = 'onfocus="this.style.borderColor=\'var(--ac,#007aff)\'" onblur="this.style.borderColor=\'var(--b,#e0e0e0)\'"';
     var v = esc(value || '');
@@ -348,14 +349,14 @@ function openUrunModal(id) {
         + _fld('udb-category-' + n, 'Kategori', 'text-list', 'udb-kat-datalist', false, 'Mobilya, Ofis...', u.category || u.kategori)
         + _fld('udb-vendor-' + n, 'Tedarikçi', 'select-vendor', '', true, '', u.vendorName || u.tedarikci)
         + _fld('udb-vendorCode-' + n, 'Tedarikçi Kodu', 'text', '', true, 'örn: 3121312', u.vendorCode || u.saticiKodu)
-        + _fld('udb-origin-' + n, 'Menşei', 'select-country', '', true, '', u.origin || u.mensei)
+        + _fld('udb-origin-' + n, 'Menşei', 'select-country', '', true, '', u.origin || u.mensei, 'Ürünün menşe ülkesi — nereden ithal edildiği (örn. Türkiye, Çin, Almanya)')
         + '<div><label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Kod</label><div style="height:32px;display:flex;align-items:center">' + kodRozeti + '</div></div>'
         /* Satır 2 — 5 input + 2 boş hücre: Birim + NetA + BrutA + Marka + Raf */
         + _fld('udb-unit-' + n, 'Birim', 'select-unit', '', true, '', u.unit || u.birim)
-        + _fld('udb-netW-' + n, 'Net Ağırlık (kg)', 'number', '', false, 'örn: 2.5', u.netWeight || u.netAgirlik)
-        + _fld('udb-grossW-' + n, 'Brüt Ağırlık (kg)', 'number', '', false, 'örn: 3.0', u.grossWeight || u.brutAgirlik)
+        + _fld('udb-netW-' + n, 'Net Ağırlık (kg)', 'number', '', false, 'örn: 2.5', u.netWeight || u.netAgirlik, 'Net ağırlık — ambalaj hariç sadece ürünün ağırlığı (kg)')
+        + _fld('udb-grossW-' + n, 'Brüt Ağırlık (kg)', 'number', '', false, 'örn: 3.0', u.grossWeight || u.brutAgirlik, 'Brüt ağırlık — ambalaj dahil toplam ağırlık (kg) — kargo/navlun hesabı için')
         + _fld('udb-marka-' + n, 'Marka', 'text', '', false, 'örn: IKEA, Bosch', u.marka)
-        + _fld('udb-raf-' + n, 'Raf Ömrü (gün)', 'number', '', false, 'örn: 365', u.shelfLife)
+        + _fld('udb-raf-' + n, 'Raf Ömrü (gün)', 'number', '', false, 'örn: 365', u.shelfLife, 'Raf ömrü — ürünün üretim tarihinden itibaren kaç gün geçerli (bozulabilir ürünler için)')
         + '<div></div><div></div>'
       + '</div>'
       /* Hidden inputs — save logic intact (Teknik Açıklama + Ek Notlar modal'a taşınacak, PARÇA B-D'de) */
