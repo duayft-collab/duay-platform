@@ -888,10 +888,14 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
   var _seciliTedN = _norm(_seciliTed);
   var q = _norm(deger);
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
-  /* SATINALMA-UX-003: vendorName + vendor fallback (batch form u.vendorName, eski u.tedarikci, nadir u.vendor) + yeni name field'ları (origName/duayName/duayCode) search'e eklendi */
+  /* SATINALMA-UX-003: vendorName + vendor fallback (batch form u.vendorName, eski u.tedarikci, nadir u.vendor).
+     SATINALMA-UX-004: strict '===' yerine 2-yönlü includes — ufak yazım/boşluk farklarına karşı toleranslı
+     ('Weltew' seçimi 'Weltew Mobilya' ürününe eşleşir + tam eşleşme de geçerli). */
   var tum = urunler.filter(function(u){
     if (u.isDeleted) return false;
-    return _norm(u.tedarikci || u.vendorName || u.vendor || '') === _seciliTedN;
+    var uTedN = _norm(u.tedarikci || u.vendorName || u.vendor || '');
+    if (!uTedN) return false;
+    return uTedN === _seciliTedN || uTedN.includes(_seciliTedN) || _seciliTedN.includes(uTedN);
   });
   var sonuc = tum.filter(function(u) {
     return _norm(u.urunAdi).includes(q)
