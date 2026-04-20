@@ -6509,12 +6509,17 @@ function _approveCari(id) {
   var d = loadCari();
   var c = d.find(function(x) { return x.id === id; });
   if (!c) return;
-  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 1: Onay kapısı — supplier + admin değerlendirme şart */
-  if (!window._cariCanApprove(c)) {
-    var _eksik = [];
-    if (!window._cariIsSupplierEvalComplete(c)) _eksik.push('Personel değerlendirmesi');
-    if (!window._cariIsAdminEvalComplete(c)) _eksik.push('Yönetici değerlendirmesi');
-    window.toast?.('Onay için eksik: ' + _eksik.join(', '), 'err');
+  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 3: Supplier yoksa dur, admin yoksa modal aç */
+  if (!window._cariIsSupplierEvalComplete(c)) {
+    window.toast?.('Personel değerlendirmesi eksik — kullanıcı önce onaya göndermeli', 'err');
+    return;
+  }
+  if (!window._cariIsAdminEvalComplete(c)) {
+    if (typeof window._cariAdminEvalModalAc === 'function') {
+      window._cariAdminEvalModalAc(c, function() { _approveCari(id); });
+    } else {
+      window.toast?.('Yönetici değerlendirme modali yüklenmedi', 'err');
+    }
     return;
   }
   c.status = 'active';
@@ -6562,6 +6567,99 @@ window._cariIsHighRisk = function(cari) {
   if (s && s.guvenliMi === false) return true;
   if (a && a.riskSeviyesi === 'yuksek') return true;
   return false;
+};
+
+/* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 3: Admin değerlendirme modal UI */
+window._cariAdminEvalModalAc = function(cari, onComplete) {
+  var _s = function(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var ex = document.getElementById('cari-admin-eval-modal'); if (ex) ex.remove();
+  var html =
+    '<div id="cari-admin-eval-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center">' +
+    '<div style="background:var(--sf,#fff);color:var(--t,#111);width:620px;max-width:92vw;max-height:92vh;overflow-y:auto;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.15);padding:24px;font-family:inherit">' +
+      '<div style="font-size:15px;font-weight:600;margin-bottom:4px">Yönetici Değerlendirmesi</div>' +
+      '<div style="font-size:11px;color:var(--t3,#666);margin-bottom:20px;letter-spacing:.03em">Firma: <b>' + _s(cari.name || '') + '</b> — onay vermeden önce zorunlu</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">' +
+        '<div>' +
+          '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block;margin-bottom:6px">Fiyat Seviyesi <span style="color:#E0574F">*</span></label>' +
+          '<select id="caev-fiyat" style="width:100%;padding:8px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;background:var(--sf,#fff);color:var(--t,#111);font-family:inherit"><option value="">Seçin</option><option value="yuksek">Yüksek</option><option value="normal">Normal</option><option value="dusuk">Düşük</option></select>' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block;margin-bottom:6px">Risk Seviyesi <span style="color:#E0574F">*</span></label>' +
+          '<select id="caev-risk" style="width:100%;padding:8px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;background:var(--sf,#fff);color:var(--t,#111);font-family:inherit"><option value="">Seçin</option><option value="dusuk">Düşük</option><option value="orta">Orta</option><option value="yuksek">Yüksek</option></select>' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block;margin-bottom:6px">Firma Ölçeği <span style="color:#E0574F">*</span></label>' +
+          '<select id="caev-olcek" style="width:100%;padding:8px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;background:var(--sf,#fff);color:var(--t,#111);font-family:inherit"><option value="">Seçin</option><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select>' +
+        '</div>' +
+      '</div>' +
+      '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block">Piyasa Araştırması <span style="color:#E0574F">*</span></label>' +
+      '<textarea id="caev-arastirma" rows="4" maxlength="2000" placeholder="Firma hakkında araştırma, referanslar, sektördeki yeri, güvenilirlik izlenimi... (min 100 karakter)" style="width:100%;box-sizing:border-box;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin:6px 0 4px;resize:vertical;font-family:inherit;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
+      '<div id="caev-arastirma-count" style="font-size:10px;color:#999;text-align:right;margin-bottom:16px">0 / 100</div>' +
+      '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block">Karar Notu <span style="color:#E0574F">*</span></label>' +
+      '<textarea id="caev-karar" rows="3" maxlength="1000" placeholder="Neden onaylandı / reddedildi (min 50 karakter)" style="width:100%;box-sizing:border-box;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin:6px 0 4px;resize:vertical;font-family:inherit;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
+      '<div id="caev-karar-count" style="font-size:10px;color:#999;text-align:right;margin-bottom:20px">0 / 50</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button id="caev-cancel" style="padding:9px 18px;border:0.5px solid var(--b,#CBD5E1);background:transparent;color:var(--t2,#333);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">İptal</button>' +
+        '<button id="caev-submit" style="padding:9px 18px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:inherit">Onayla</button>' +
+      '</div>' +
+    '</div></div>';
+  var wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap.firstChild);
+
+  var _updCount = function(taId, countId, min) {
+    var ta = document.getElementById(taId);
+    var cnt = document.getElementById(countId);
+    if (!ta || !cnt) return;
+    var upd = function() {
+      cnt.textContent = ta.value.length + ' / ' + min;
+      cnt.style.color = ta.value.trim().length >= min ? '#1A8D6F' : '#999';
+    };
+    ta.addEventListener('input', upd);
+    upd();
+  };
+  _updCount('caev-arastirma', 'caev-arastirma-count', 100);
+  _updCount('caev-karar', 'caev-karar-count', 50);
+
+  document.getElementById('caev-cancel').onclick = function() { document.getElementById('cari-admin-eval-modal').remove(); };
+  document.getElementById('caev-submit').onclick = function() {
+    var fiyat = document.getElementById('caev-fiyat').value;
+    var risk = document.getElementById('caev-risk').value;
+    var olcek = document.getElementById('caev-olcek').value;
+    var arastirma = (document.getElementById('caev-arastirma').value || '').trim();
+    var karar = (document.getElementById('caev-karar').value || '').trim();
+
+    var eksikler = [];
+    if (['yuksek','normal','dusuk'].indexOf(fiyat) < 0) eksikler.push('Fiyat seviyesi');
+    if (['dusuk','orta','yuksek'].indexOf(risk) < 0) eksikler.push('Risk seviyesi');
+    if (['kucuk','orta','buyuk'].indexOf(olcek) < 0) eksikler.push('Firma ölçeği');
+    if (arastirma.length < 100) eksikler.push('Piyasa araştırması (min 100, şu an ' + arastirma.length + ')');
+    if (karar.length < 50) eksikler.push('Karar notu (min 50, şu an ' + karar.length + ')');
+
+    if (eksikler.length > 0) { window.toast?.(eksikler.join(' | '), 'err'); return; }
+
+    var cu = (window._CUo && window._CUo()) || (window.CU && window.CU()) || {};
+    var allCariler = (typeof window.loadCari === 'function' ? window.loadCari() : []) || [];
+    var idx = -1;
+    for (var i = 0; i < allCariler.length; i++) { if (allCariler[i].id === cari.id) { idx = i; break; } }
+    if (idx === -1) { window.toast?.('Cari bulunamadı', 'err'); return; }
+
+    allCariler[idx].adminEvaluation = {
+      fiyatSeviyesi: fiyat,
+      riskSeviyesi: risk,
+      firmaOlcegi: olcek,
+      piyasaArastirmaNotu: arastirma,
+      kararNotu: karar,
+      adminId: cu.id || cu.uid || 'bilinmiyor',
+      adminName: cu.name || cu.displayName || cu.email || 'bilinmiyor',
+      timestamp: new Date().toISOString()
+    };
+    if (typeof window.storeCari === 'function') window.storeCari(allCariler);
+
+    document.getElementById('cari-admin-eval-modal').remove();
+    window.toast?.('Yönetici değerlendirmesi kaydedildi', 'ok');
+    if (typeof onComplete === 'function') onComplete();
+  };
 };
 
 /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 2: Personel değerlendirme modal UI (live counter + csev-* ID convention) */
