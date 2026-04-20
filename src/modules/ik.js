@@ -345,7 +345,8 @@ function printIzinDilekce(){
   const ti=IZIN_TYPES[type]||IZIN_TYPES.diger;
   const win=window.open('','_blank','width=600,height=700');
   if(!win){window.toast?.('Popup engellendi','err');return;}
-  win.document.write(`<!DOCTYPE html><html><head><title>İzin Dilekçesi</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:560px;margin:0 auto;font-size:13px;line-height:1.7}h2{text-align:center;font-size:16px}.body{white-space:pre-wrap;margin-top:20px}.sign{margin-top:60px;display:flex;justify-content:flex-end}.sign div{text-align:center;width:200px;border-top:1px solid #333;padding-top:8px;font-size:11px}</style></head><body><h2>İzin Dilekçesi — ${ti.l}</h2><div class="body">${text}</div><div class="sign"><div>İmza<br><br></div></div><script>window.print();<\/script></body></html>`);
+  /* XSS-FIX-IK-PRINT-001: user input (text) sanitize */
+  win.document.write(`<!DOCTYPE html><html><head><title>İzin Dilekçesi</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:560px;margin:0 auto;font-size:13px;line-height:1.7}h2{text-align:center;font-size:16px}.body{white-space:pre-wrap;margin-top:20px}.sign{margin-top:60px;display:flex;justify-content:flex-end}.sign div{text-align:center;width:200px;border-top:1px solid #333;padding-top:8px;font-size:11px}</style></head><body><h2>İzin Dilekçesi — ${window._esc?.(ti.l)||ti.l}</h2><div class="body">${window._esc?.(text)||""}</div><div class="sign"><div>İmza<br><br></div></div><script>window.print();<\/script></body></html>`);
 }
 
 function openIzinModal(id){
@@ -904,7 +905,9 @@ function savePuantajYetki(uid){
 function puanExportPdf(){
   const users=loadUsers();const d=visPuan();
   const win=window.open('','_blank','width=900,height=700');
-  win.document.write(`<!DOCTYPE html><html><head><title>Puantaj Raporu</title><style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:5px}th{background:#f5f5f5;font-size:10px}h2{font-size:16px;margin-bottom:4px}.ok{color:green}.nd{color:red}</style></head><body><h2>Duay Global LLC — Puantaj Raporu</h2><p>Oluşturulma: ${nowTs()} · ${CU?.name}</p><table><thead><tr><th>Personel</th><th>Tarih</th><th>Plan.Giriş</th><th>Giriş</th><th>Çıkış</th><th>Gecikme</th><th>Net</th><th>Onay</th></tr></thead><tbody>${d.map(r=>{const u=users.find(x=>x.id===r.uid)||{name:'?'};const s=calcPuan(r);return`<tr><td>${u.name}</td><td>${r.date}</td><td>${r.pI}</td><td>${r.aI||'—'}</td><td>${r.aO||'—'}</td><td class="${s.late>0?'nd':''}">${s.late?'+'+s.late+'dk':'—'}</td><td>${s.abs?'Devamsız':fmMin(s.total)}</td><td class="${r.ok?'ok':'nd'}">${r.ok?'✓ Onaylı':'Bekliyor'}</td></tr>`;}).join('')}</tbody></table><script>window.print();<\/script></body></html>`);
+  /* XSS-FIX-IK-PRINT-001: user input (CU?.name, u.name, r.date, r.pI, r.aI, r.aO) sanitize */
+  const _esc = window._esc || function(x){return x==null?"":String(x);};
+  win.document.write(`<!DOCTYPE html><html><head><title>Puantaj Raporu</title><style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:5px}th{background:#f5f5f5;font-size:10px}h2{font-size:16px;margin-bottom:4px}.ok{color:green}.nd{color:red}</style></head><body><h2>Duay Global LLC — Puantaj Raporu</h2><p>Oluşturulma: ${nowTs()} · ${_esc(CU?.name)}</p><table><thead><tr><th>Personel</th><th>Tarih</th><th>Plan.Giriş</th><th>Giriş</th><th>Çıkış</th><th>Gecikme</th><th>Net</th><th>Onay</th></tr></thead><tbody>${d.map(r=>{const u=users.find(x=>x.id===r.uid)||{name:'?'};const s=calcPuan(r);return`<tr><td>${_esc(u.name)}</td><td>${_esc(r.date)}</td><td>${_esc(r.pI)}</td><td>${_esc(r.aI||'—')}</td><td>${_esc(r.aO||'—')}</td><td class="${s.late>0?'nd':''}">${s.late?'+'+s.late+'dk':'—'}</td><td>${s.abs?'Devamsız':fmMin(s.total)}</td><td class="${r.ok?'ok':'nd'}">${r.ok?'✓ Onaylı':'Bekliyor'}</td></tr>`;}).join('')}</tbody></table><script>window.print();<\/script></body></html>`);
 }
 
 function openMyPuantajEntry(){
@@ -930,7 +933,9 @@ function openIzinApproval(id){
 function printIzinReport(){
   const users=loadUsers();const d=loadIzin();
   const win=window.open('','_blank','width=900,height=700');
-  const rows=d.map(iz=>{const u=users.find(x=>x.id===iz.uid)||{name:'?'};const ti=IZIN_TYPES[iz.type]||IZIN_TYPES.diger;return`<tr><td>${u.name}</td><td>${ti.l}</td><td>${iz.start}</td><td>${iz.end}</td><td>${iz.days}</td><td>${{pending:'Bekliyor',approved:'Onaylı',rejected:'Reddedildi'}[iz.status]||iz.status}</td></tr>`;}).join('');
+  /* XSS-FIX-IK-PRINT-001: user input (u.name, iz.start/end/days, iz.status fallback) sanitize */
+  const _ike = window._esc || function(x){return x==null?'':String(x);};
+  const rows=d.map(iz=>{const u=users.find(x=>x.id===iz.uid)||{name:'?'};const ti=IZIN_TYPES[iz.type]||IZIN_TYPES.diger;return`<tr><td>${_ike(u.name)}</td><td>${_ike(ti.l)}</td><td>${_ike(iz.start)}</td><td>${_ike(iz.end)}</td><td>${_ike(iz.days)}</td><td>${_ike({pending:'Bekliyor',approved:'Onaylı',rejected:'Reddedildi'}[iz.status]||iz.status)}</td></tr>`;}).join('');
   win.document.write(`<!DOCTYPE html><html><head><title>İzin Raporu</title><style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px}th{background:#f5f5f5}</style></head><body><h2>İzin Raporu — ${new Date().toLocaleDateString('tr-TR')}</h2><table><thead><tr><th>Personel</th><th>Tür</th><th>Başlangıç</th><th>Bitiş</th><th>Gün</th><th>Durum</th></tr></thead><tbody>${rows}</tbody></table><script>window.print();<\/script></body></html>`);
 }
 
