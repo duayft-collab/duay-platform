@@ -5679,14 +5679,13 @@ window._renderFirmaKpi = function() {
   /* Satınalma menüsü — tam yeniden yapılandır */
   /* FASON-OVERRIDE-FIX-001: fason L4930 push'u burada silinmesin, hardcoded array'e de eklendi */
   if (G.satinalma) {
-    /* ALIS-TEKLIFLERI-GUNCEL-001: SA V2 güncel, eski renderAlisTeklifleri "Eski" olarak yedekte */
+    /* ALIS-ESKI-KALDIR-001: 'Alış Teklifleri - Eski' menüden kaldırıldı (fonksiyon+panel kodda kalır yedek olarak) */
     G.satinalma.mods = [
       { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
       { id: 'fason',             label: 'Fason \u00dcretim' },
-      { id: 'alis-teklifleri',   label: 'Al\u0131\u015f Teklifleri - Eski' },
     ];
   }
   /* Muhasebe men\u00fcs\u00fcne 3 yeni mod\u00fcl */
@@ -7179,3 +7178,27 @@ window._statusBadge = function(label, tone) {
   var esc = window._esc || function(x){ return x; };
   return '<span style="display:inline-flex;align-items:center;font-size:9px;font-weight:600;padding:3px 8px;border-radius:6px;background:' + p.bg + ';color:' + p.fg + ';text-transform:uppercase;letter-spacing:.05em;font-family:inherit">' + esc(label || '') + '</span>';
 };
+
+/* ALIS-ESKI-KALDIR-001: Mevcut user modules listesine satin-alma ekle (migration) */
+(function _migrateSatinAlmaModul() {
+  try {
+    var users = typeof loadUsers === 'function' ? loadUsers() : [];
+    var degisti = false;
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      if (!Array.isArray(u.modules)) continue;
+      if (u.modules.indexOf('alis-teklifleri') >= 0 && u.modules.indexOf('satin-alma') < 0) {
+        u.modules.push('satin-alma');
+        if (!u.permissions) u.permissions = {};
+        if (!u.permissions['satin-alma']) {
+          u.permissions['satin-alma'] = u.permissions['alis-teklifleri'] || 'view';
+        }
+        degisti = true;
+      }
+    }
+    if (degisti && typeof saveUsers === 'function') {
+      saveUsers(users);
+      console.log('[ALIS-ESKI-KALDIR-001] User modules migrate: satin-alma eklendi');
+    }
+  } catch(e) { console.warn('[ALIS-ESKI-KALDIR-001] migrate fail:', e); }
+})();
