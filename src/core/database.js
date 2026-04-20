@@ -255,6 +255,7 @@ const KEYS = {
   sozler        : 'ak_sozler1',
   pusula        : 'ak_pusula_pro_v1',
   ppMesaj       : 'ak_pp_mesaj_v1',     /* KUYRUK-PP-MESAJ-DB-001: pusula mesajları */
+  expectedDeliveries: 'ak_expected_deliveries1',  /* EXPECTED-DELIVERIES-FLOW-002 PARÇA 1 */
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -1779,6 +1780,25 @@ function storeTahsilat(d) {
   _write(KEYS.cari, d);
   var _fp = _fsPath('cari'); if (_fp) _syncFirestore(_fp, d);
 }
+
+// ════════════════════════════════════════════════════════════════
+// EXPECTED-DELIVERIES-FLOW-002 PARÇA 1 — Teslimat Takip
+// ════════════════════════════════════════════════════════════════
+/** @param {Object} [opts] raw, tumKullanicilar */
+function loadExpectedDeliveries(opts) {
+  var d = _read(KEYS.expectedDeliveries);
+  var arr = Array.isArray(d) ? d : [];
+  if (opts && opts.raw) return arr;
+  return arr.filter(function(ed) { return !ed.isDeleted; });
+}
+/** @param {Array<Object>} d */
+function storeExpectedDeliveries(d) {
+  if (!Array.isArray(d)) d = [];
+  _write(KEYS.expectedDeliveries, d);
+  try { var _fp = _fsPath('expectedDeliveries'); if (_fp) _syncFirestore(_fp, d); } catch(e) {}
+}
+window.loadExpectedDeliveries = loadExpectedDeliveries;
+window.storeExpectedDeliveries = storeExpectedDeliveries;
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 16B — BANKA/IBAN YÖNETİMİ
