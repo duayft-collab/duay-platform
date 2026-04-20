@@ -1435,10 +1435,46 @@ function logActivity(type, detail) {
  * @param {number|null} [taskId=null] İlişkili görev ID — tıklanınca direkt görev açılır
  */
 function addNotif(icon, msg, type = 'info', link = '', targetUid = null, taskId = null) {
-  const d = loadNotifs();
-  d.unshift({ id: generateNumericId(), icon, msg, type, link, ts: nowTs(), read: false, targetUid: targetUid || null, taskId: taskId || null });
-  storeNotifs(d);
-  if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
+  /* NOTIF-DUPLICATE-GUARD-001: 3 katmanlı spam koruması (TTL 30 gün + 24s duplicate + hard limit 500) */
+  try {
+    var d = loadNotifs() || [];
+    var now = Date.now();
+    /* KATMAN 1: TTL — 30 günden eski bildirimleri temizle */
+    var thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+    d = d.filter(function(n) {
+      try { return new Date(String(n.ts).replace(' ', 'T')).getTime() >= thirtyDaysAgo; }
+      catch(e) { return true; }
+    });
+    /* KATMAN 2: Duplicate guard — 24 saat içinde aynı msg+link+targetUid+taskId varsa skip */
+    var twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
+    var dup = d.find(function(n) {
+      if (n.msg !== msg) return false;
+      if ((n.link || '') !== (link || '')) return false;
+      if (String(n.targetUid || '') !== String(targetUid || '')) return false;
+      if (String(n.taskId || '') !== String(taskId || '')) return false;
+      try { return new Date(String(n.ts).replace(' ', 'T')).getTime() >= twentyFourHoursAgo; }
+      catch(e) { return false; }
+    });
+    if (dup) {
+      /* Skip — TTL'li temizlenmiş versiyonu yine kaydet */
+      storeNotifs(d);
+      return;
+    }
+    /* KATMAN 3: Yeni bildirim ekle + hard limit 500 FIFO */
+    d.unshift({ id: generateNumericId(), icon: icon, msg: msg, type: type, link: link, ts: nowTs(), read: false, targetUid: targetUid || null, taskId: taskId || null });
+    if (d.length > 500) d = d.slice(0, 500);
+    storeNotifs(d);
+    if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
+  } catch(e) {
+    console.warn('[NOTIF-DUP-GUARD]', e && e.message);
+    /* Fallback: eski davranış */
+    try {
+      var _d = loadNotifs();
+      _d.unshift({ id: generateNumericId(), icon: icon, msg: msg, type: type, link: link, ts: nowTs(), read: false, targetUid: targetUid || null, taskId: taskId || null });
+      storeNotifs(_d);
+      if (typeof window.updateNotifBadge === 'function') window.updateNotifBadge();
+    } catch(_e) {}
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
