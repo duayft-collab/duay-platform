@@ -79,8 +79,8 @@ window._yetkiKontrol = function(islem) {
         window.renderAlisTeklifleri();
       }
     },
-    'satin-alma-v2': () => {
-      /* Güncel SA V2 — panel-satin-alma */
+    /* ALIS-TEKLIFLERI-PANEL-FIX-001: mod ID = panel ID (panel-satin-alma mevcut) */
+    'satin-alma': () => {
       window.renderSatinAlmaV2?.();
     },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
@@ -645,8 +645,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'fason',     label:'Fason Üretim'         },
     { id:'urunler',   label:'Ürün Kataloğu'        },
     { id:'alis-teklifleri', label:'Alış Teklifleri' },
-    /* ALIS-TEKLIFLERI-GUNCEL-001 */
-    { id:'satin-alma-v2', label:'Alış Teklifleri (SA V2)' },
+    /* ALIS-TEKLIFLERI-PANEL-FIX-001: id satin-alma-v2 → satin-alma (panel eşleşmesi) */
+    { id:'satin-alma', label:'Alış Teklifleri (SA V2)' },
     { id:'satis-teklifleri',label:'Proforma Teklifler'},
     { id:'cari',      label:'Cari Yönetimi'        },
     /* ADMIN-MOD-COMPLETE-001: ALL_MODULES'ta eksik olan 8 nav modülü */
@@ -5681,7 +5681,7 @@ window._renderFirmaKpi = function() {
   if (G.satinalma) {
     /* ALIS-TEKLIFLERI-GUNCEL-001: SA V2 güncel, eski renderAlisTeklifleri "Eski" olarak yedekte */
     G.satinalma.mods = [
-      { id: 'satin-alma-v2',     label: 'Al\u0131\u015f Teklifleri' },
+      { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
