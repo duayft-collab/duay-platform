@@ -1119,6 +1119,10 @@ function goTo(id) {
 function _renderDashboard() {
   var cu = window.Auth?.getCU?.();
   if (!cu) return;
+  /* DASHBOARD-HIJACK-ENTRYPOINT-001: yeni render override aktifse onu çağır (L903/L2737/L3439 tüm callsite'ları kapsar) */
+  if (window.renderDashboard && window.renderDashboard !== _renderDashboard && window.renderDashboard.name !== '_renderDashboard') {
+    try { return window.renderDashboard(); } catch(e) {}
+  }
   var isAdm = cu.role === 'admin' || cu.role === 'manager';
   var n = new Date();
   var esc = typeof escapeHtml === 'function' ? escapeHtml : function(s) { return s; };
