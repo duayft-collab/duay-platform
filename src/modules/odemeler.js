@@ -4430,20 +4430,29 @@ function fetchKurRates() {
 }
 
 /**
- * %2 üzerinde kur değişimi varsa yöneticiye bildirim gönderir.
- * @returns {void}
+ * DOVIZ-ALARM-THRESHOLD-001: %10+ kur değişiminde bildirim. LS persist baseline
+ * (sayfa load'da hardcoded _tickerRates.BTC=83000 → ilk API 74K düşüş = false alarm önlendi).
+ * İlk çağrı: baseline boş, sessiz kayıt. Sonraki: LS'den kıyas, %10+ alarm + baseline update.
+ * %10 altında baseline KORUNUR (eşik geçmeden alarm atmaz, değer drift etmesin).
  */
 function _checkKurAlarm() {
   if (!_isManagerO()) return;
-  var THRESHOLD = 2; // %2
-
+  var THRESHOLD = 10; /* %10, eski %2 spam yapıyordu */
   var labels = { USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', ALTIN: 'Altın', GUMUS: 'Gümüş', BTC: 'Bitcoin' };
+  var BASELINE_KEY = 'ak_kur_baseline_v1';
+  var baseline = {};
+  try { baseline = JSON.parse(localStorage.getItem(BASELINE_KEY) || '{}'); } catch(e) {}
+  var guncelBaseline = Object.assign({}, baseline);
 
   Object.keys(_tickerRates).forEach(function(key) {
-    var cur  = _tickerRates[key] || 0;
-    var prev = _tickerRatesPrev[key] || 0;
-    if (prev <= 0 || cur <= 0) return;
-
+    var cur = _tickerRates[key] || 0;
+    if (cur <= 0) return;
+    var prev = baseline[key] || 0;
+    if (!prev) {
+      /* İlk kayıt — bildirim yok, baseline init */
+      guncelBaseline[key] = cur;
+      return;
+    }
     var pct = Math.abs((cur - prev) / prev * 100);
     if (pct >= THRESHOLD) {
       var direction = cur > prev ? '📈 yükseldi' : '📉 düştü';
@@ -4452,8 +4461,13 @@ function _checkKurAlarm() {
         + ' (%' + pct.toFixed(1) + ')';
       window.addNotif?.('🚨', msg, 'warn', 'odemeler');
       window.logActivity?.('finans', 'Kur alarmı: ' + msg);
+      /* Bildirim atıldı → baseline update (sonraki %10 yeni değerden kıyaslansın) */
+      guncelBaseline[key] = cur;
     }
+    /* %10 altında baseline DOKUNULMAZ — birikmiş değişim alarm için kümüle */
   });
+
+  try { localStorage.setItem(BASELINE_KEY, JSON.stringify(guncelBaseline)); } catch(e) {}
 }
 
 /**
