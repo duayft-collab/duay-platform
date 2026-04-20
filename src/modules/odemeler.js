@@ -6342,6 +6342,34 @@ function saveCari(entry) {
     } catch(_dge) { console.warn('[CARI-DUP-GUARD]', _dge.message); }
   }
 
+  /* CARI-REQUIRED-FIELDS-001: Type-based zorunlu alan check (sadece yeni kayıt) */
+  if (isNew) {
+    try {
+      var _cariType = entry.cariType || 'potansiyel';
+      var _type = entry.type || 'musteri';
+      var _eksikler = [];
+      if (!entry.name || (entry.name + '').trim().length < 2) {
+        _eksikler.push('Firma Adı');
+      }
+      if (_cariType === 'potansiyel') {
+        if (!entry.email && !entry.phone) {
+          _eksikler.push('E-posta veya Telefon (en az biri)');
+        }
+      } else if (_cariType === 'aktif' && _type === 'musteri') {
+        if (!entry.vkn && !entry.tckn) _eksikler.push('VKN veya TCKN');
+        if (!entry.country) _eksikler.push('Ülke');
+        if (!entry.city) _eksikler.push('Şehir');
+      } else if (_cariType === 'aktif' && _type === 'tedarikci') {
+        if (!entry.email) _eksikler.push('E-posta');
+        if (!entry.phone) _eksikler.push('Telefon');
+      }
+      if (_eksikler.length > 0) {
+        window.toast?.('Zorunlu alanlar eksik: ' + _eksikler.join(', '), 'err');
+        return null;
+      }
+    } catch(_rfe) { console.warn('[CARI-REQ-FIELDS]', _rfe.message); }
+  }
+
   // VKN format kontrolü (boş kabul edilir, doluysa 10 hane sayı zorunlu)
   if (entry.vkn && entry.vkn.trim()) {
     var vknClean = entry.vkn.replace(/\s/g, '');
