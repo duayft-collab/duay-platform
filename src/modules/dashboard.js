@@ -788,6 +788,45 @@ function _renderPirimimWidget() {
     + '</div>';
 }
 
+/* DASHBOARD-REDESIGN-001 PARÇA A: Yeni orchestrator + BLOK 1 (Greeting + 3 mini KPI) */
+function _dashYeniRender() {
+  var panel = document.getElementById('panel-dashboard');
+  if (!panel) return;
+  var cu = (typeof window.CU === 'function' ? window.CU() : null) || _cu();
+  var saat = new Date().getHours();
+  var greet = saat < 6 ? 'İyi geceler' : saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+
+  var pending = ((typeof window.loadTasks === 'function' ? window.loadTasks() : []) || [])
+    .filter(function(t){ return t && !t.isDeleted && !t.completed; }).length;
+  var acikSA = ((typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : []) || [])
+    .filter(function(t){ return t && !t.isDeleted && t.durum !== 'tamamlandi' && t.durum !== 'iptal'; }).length;
+  var gecikmis = ((typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [])
+    .filter(function(t){ return t && !t.isDeleted && t.durum !== 'tahsil_edildi' && t.vade && new Date(t.vade).getTime() < Date.now(); }).length;
+
+  var h = '<div style="padding:24px 32px;max-width:1400px;margin:0 auto">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:16px">';
+  h += '<div>';
+  h += '<div style="font-size:22px;font-weight:500">' + greet + ', ' + ((cu && (cu.name || cu.displayName)) || 'Misafir') + '</div>';
+  h += '<div style="font-size:11px;color:var(--t3);margin-top:3px">' + new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + '</div>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:10px">';
+  h += _dashMiniKpi('Görev', pending, 'pusula-pro');
+  h += _dashMiniKpi('Teklif', acikSA, 'satin-alma');
+  h += _dashMiniKpi('Gecikmiş', gecikmis, 'tahsilat');
+  h += '</div></div>';
+
+  /* TODO PARÇA B: Alert strip  /  PARÇA C: KPI grid + Timeline  /  PARÇA D: Quick action + legacy → Detay */
+  h += '<div style="padding:40px;text-align:center;color:var(--t3);font-size:11px">Yeni dashboard yapımı devam ediyor (PARÇA B-D sonra). Eski görünüm için "Detay Görünüm →" butonunu kullan.</div>';
+  h += '<div style="display:flex;justify-content:flex-end;margin-top:8px"><button onclick="window.App?.nav?.(\'dashboardDetay\')" style="font-size:10px;padding:4px 12px;border-radius:12px;background:var(--sf);border:0.5px solid var(--b);color:var(--t2);cursor:pointer;font-family:inherit">Detay Görünüm →</button></div>';
+
+  h += '</div>';
+  panel.innerHTML = h;
+}
+
+function _dashMiniKpi(label, val, link) {
+  return '<div onclick="window.App && window.App.nav && window.App.nav(\'' + link + '\')" style="padding:6px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:8px;cursor:pointer;text-align:center;min-width:72px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">' + label + '</div><div style="font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:2px">' + (val||0) + '</div></div>';
+}
+
 function renderDashboard() {
   const panel = _g('panel-dashboard');
   if (!panel) return;
@@ -904,6 +943,8 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
   window.Dashboard = Dashboard;
   window.renderDashboard = renderDashboard;
+  /* DASHBOARD-REDESIGN-001 PARÇA A: yeni render'ı son atama — eski intact kalır, ileride ayrı rota */
+  window.renderDashboard = _dashYeniRender;
 }
 
 })();
