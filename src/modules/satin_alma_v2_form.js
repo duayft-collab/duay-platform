@@ -826,21 +826,45 @@ window._saV2UrunKatalogDoldur = function(pre, kod) {
   if (!kod || kod.length < 3) return;
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
   var tumUrunler = urunler;
-  var u = tumUrunler.find(function(x) { return (x.duayKodu || '').toLowerCase() === kod.toLowerCase(); });
+  /* SATINALMA-UX-002: lookup hem eski (duayKodu) hem yeni (duayCode) field adlarıyla */
+  var _kodLower = kod.toLowerCase();
+  var u = tumUrunler.find(function(x) {
+    return (x.duayKodu || x.duayCode || '').toLowerCase() === _kodLower;
+  });
   var bilgiEl = document.getElementById(pre + 'katalog-bilgi');
   /* SA-FORM-URUN-GRID-V2-001: görsel + türkçe ad otomatik doldur */
   var gorselImg = document.getElementById(pre + 'gorsel-img'); var gorselIco = document.getElementById(pre + 'gorsel-ico');
-  if (u && u.gorsel && gorselImg) { gorselImg.src = u.gorsel; gorselImg.style.display = 'block'; if (gorselIco) gorselIco.style.display = 'none'; }
-  var turkceEl = document.getElementById(pre + 'turkceAdi'); if (turkceEl && u) { turkceEl.value = u.duayAdi || u.turkceAdi || u.urunAdi || ''; }
-  /* SA-FORM-URUN-V3-001: net ağırlık katalogdan otomatik */
-  var netAgEl = document.getElementById(pre + 'netAg'); if (netAgEl && u && u.netAgirlik) { netAgEl.value = u.netAgirlik; netAgEl.style.background = '#E1F5EE'; netAgEl.style.borderColor = '#9FE1CB'; }
+  var _gorsel = u && (u.gorsel || u.image);
+  if (u && _gorsel && gorselImg) { gorselImg.src = _gorsel; gorselImg.style.display = 'block'; if (gorselIco) gorselIco.style.display = 'none'; }
+  var turkceEl = document.getElementById(pre + 'turkceAdi'); if (turkceEl && u) { turkceEl.value = u.duayAdi || u.duayName || u.turkceAdi || u.urunAdi || ''; }
+  /* SA-FORM-URUN-V3-001: net ağırlık katalogdan otomatik (SATINALMA-UX-002: netW/netWeight fallback) */
+  var netAgEl = document.getElementById(pre + 'netAg');
+  var _netAg = u && (u.netAgirlik || u.netW || u.netWeight);
+  if (netAgEl && _netAg) { netAgEl.value = _netAg; netAgEl.style.background = '#E1F5EE'; netAgEl.style.borderColor = '#9FE1CB'; }
   if (!u) { if (bilgiEl) bilgiEl.innerHTML = '<span style="color:#A32D2D">Katalogda bulunamad\u0131</span>'; return; }
-  if (bilgiEl) bilgiEl.innerHTML = '<span style="color:#0F6E56">\u2713 ' + _saEsc(u.duayAdi || u.urunAdi || '') + '</span>';
-  var alanlar = { urunAdi: u.standartAdi || u.urunAdi || u.ingAd, turkceAdi: u.duayAdi || u.urunAdi, marka: u.marka, gtip: u.gtip || u.hscKodu, saticiKodu: u.saticiKodu || u.urunKodu, netAg: u.netAgirlik, brutAg: u.brutAgirlik, alisF: u.alisF || u.sonFiyat || u.sonAlisFiyati };
+  if (bilgiEl) bilgiEl.innerHTML = '<span style="color:#0F6E56">\u2713 ' + _saEsc(u.duayAdi || u.duayName || u.urunAdi || '') + '</span>';
+  /* SATINALMA-UX-002: yeni katalog field adları (origName/origin/unit/netW/grossW/vendorCode) fallback */
+  var alanlar = {
+    urunAdi: u.standartAdi || u.ingAd || u.origName || u.urunAdi,
+    turkceAdi: u.duayAdi || u.duayName || u.turkceAdi || u.urunAdi,
+    marka: u.marka,
+    gtip: u.gtip || u.hscKodu,
+    saticiKodu: u.saticiKodu || u.urunKodu || u.vendorCode,
+    netAg: u.netAgirlik || u.netW || u.netWeight,
+    brutAg: u.brutAgirlik || u.grossW || u.grossWeight,
+    alisF: u.alisF || u.sonFiyat || u.sonAlisFiyati
+  };
   Object.keys(alanlar).forEach(function(k) { var el = document.getElementById(pre + k); if (el && alanlar[k]) el.value = alanlar[k]; });
-  var birimEl = document.getElementById(pre + 'birim'); if (birimEl && u.birim) { Array.from(birimEl.options).forEach(function(o) { if (o.value === u.birim) o.selected = true; }); }
-  var menEl = document.getElementById(pre + 'mensei'); if (menEl && u.mensei) { Array.from(menEl.options).forEach(function(o) { if (o.value === u.mensei || o.textContent === u.mensei) o.selected = true; }); }
-  var paraEl = document.getElementById(pre + 'para'); if (paraEl && u.para) { Array.from(paraEl.options).forEach(function(o) { if (o.value === (u.para || u.paraBirimi)) o.selected = true; }); }
+  /* SELECT'ler — yeni + eski field adları */
+  var _birim = u.birim || u.unit;
+  var birimEl = document.getElementById(pre + 'birim');
+  if (birimEl && _birim) { Array.from(birimEl.options).forEach(function(o) { if (o.value === _birim || o.textContent === _birim) o.selected = true; }); }
+  var _mensei = u.mensei || u.origin;
+  var menEl = document.getElementById(pre + 'mensei');
+  if (menEl && _mensei) { Array.from(menEl.options).forEach(function(o) { if (o.value === _mensei || o.textContent === _mensei) o.selected = true; }); }
+  var _para = u.para || u.paraBirimi;
+  var paraEl = document.getElementById(pre + 'para');
+  if (paraEl && _para) { Array.from(paraEl.options).forEach(function(o) { if (o.value === _para) o.selected = true; }); }
 };
 
 /** Ürün adına göre arama dropdown (body append + fixed) */
