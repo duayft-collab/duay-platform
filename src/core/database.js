@@ -627,6 +627,12 @@ function _mergeDataSets(localKey, fsData, collection) {
       mergedMap[key].permissions  = _permWinner.permissions;
       mergedMap[key].modules      = _permWinner.modules;
       mergedMap[key].permUpdatedAt = _permWinner.permUpdatedAt;
+      /* USER-SEED-NAME-ROLE-PROTECT-001: name + role kullanıcı düzenleme timestamp'iyle winner */
+      var _existTs = existing.updatedAt || existing.ts || '';
+      var _itemTs  = item.updatedAt || item.ts || '';
+      var _nameRoleWinner = (_existTs > _itemTs) ? existing : item;
+      if (_nameRoleWinner.name) mergedMap[key].name = _nameRoleWinner.name;
+      if (_nameRoleWinner.role) mergedMap[key].role = _nameRoleWinner.role;
     }
   });
 

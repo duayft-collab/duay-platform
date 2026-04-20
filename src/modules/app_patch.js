@@ -7201,3 +7201,22 @@ window._statusBadge = function(label, tone) {
     }
   } catch(e) { console.warn('[ALIS-ESKI-KALDIR-001] migrate fail:', e); }
 })();
+
+/* USER-SEED-NAME-ROLE-PROTECT-001: muhasebe@ için one-shot düzeltme */
+(function _fixMuhasebeUserOnce() {
+  try {
+    var users = typeof loadUsers === 'function' ? loadUsers() : [];
+    var idx = users.findIndex(function(u) { return u.email === 'muhasebe@duaycor.com'; });
+    if (idx < 0) return;
+    var u = users[idx];
+    var degisti = false;
+    if (u.name === 'Muhasebe') { u.name = 'Yönetici Asistanı'; degisti = true; }
+    if (u.role === 'staff') { u.role = 'asistan'; degisti = true; }
+    if (degisti) {
+      u.updatedAt = new Date().toISOString();
+      users[idx] = u;
+      if (typeof storeUsers === 'function') storeUsers(users);
+      console.log('[USER-SEED-NAME-ROLE-PROTECT-001] Muhasebe user geri yüklendi');
+    }
+  } catch(e) {}
+})();
