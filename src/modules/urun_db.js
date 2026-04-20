@@ -136,16 +136,7 @@ function openUrunModal(id) {
     if (detay) detay.remove();
   };
 
-  window._udbDetay = function(n) {
-    var mevcut = document.getElementById('udb-detay-' + n);
-    if (mevcut) { mevcut.remove(); return; }
-    var tr = document.getElementById('udb-row-' + n);
-    if (!tr) return;
-    var detayTr = document.createElement('tr');
-    detayTr.id = 'udb-detay-' + n;
-    detayTr.innerHTML = '<td colspan="15" style="padding:0"><div style="background:#E6F1FB;border-top:0.5px solid #B5D4F4;border-bottom:1.5px solid #185FA5;padding:12px 20px"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:12px"><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:4px">ÖNEMLİ NOT</div><textarea id="udb-note-'+n+'" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;resize:none"></textarea></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:4px">SÖZLEŞME NOTLARI</div><textarea id="udb-sozlesme-'+n+'" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;resize:none" placeholder="Her alımda sözleşmeye otomatik gider..."></textarea></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:4px">ÜRETİM & TESLİMAT KONTROLÜ</div><textarea id="udb-uretim-'+n+'" rows="3" style="width:100%;box-sizing:border-box;font-size:12px;resize:none" placeholder="Her satın almada güncellenir..."></textarea></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px"><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:6px">GİZLİ HİLE</div><div style="display:flex;align-items:center;gap:8px;padding:8px;background:#FAEEDA;border:0.5px solid #EF9F27;border-radius:6px;margin-bottom:6px"><input type="checkbox" id="udb-hile-'+n+'" style="width:14px;height:14px"><label style="font-size:12px;color:#633806">Bu üründe gizli hile var</label></div><textarea id="udb-hile-not-'+n+'" rows="2" style="width:100%;box-sizing:border-box;font-size:12px;resize:none" placeholder="Gizli hile detayları..."></textarea></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:6px">BELGELER</div><div style="display:flex;flex-direction:column;gap:5px"><button style="padding:6px;font-size:12px;text-align:left">+ Datasheet (PDF)</button><button style="padding:6px;font-size:12px;text-align:left">+ Ürün Kataloğu</button><button style="padding:6px;font-size:12px;text-align:left">+ Diğer Belgeler</button></div></div><div><div style="font-size:10px;font-weight:500;color:#0C447C;margin-bottom:6px">NUMUNE & MARKA</div><div style="display:flex;flex-direction:column;gap:5px"><button style="padding:6px;font-size:12px;text-align:left">+ Numune Ekle</button></div><div style="margin-top:8px"><div style="font-size:10px;color:#0C447C;margin-bottom:4px">MARKA</div><input type="text" id="udb-marka-'+n+'" placeholder="Marka adı" style="width:100%;box-sizing:border-box;font-size:12px"></div></div></div></div></td>';
-    tr.insertAdjacentElement('afterend', detayTr);
-  };
+  /* URUN-FORM-KART-LAYOUT-001-ADIM-C: _udbDetay kaldırıldı — eski tr/insertAdjacentElement pattern ADIM-A sonrası çalışmıyordu; yeni _udbCardHTML'de detail bilgileri collapsible details olarak entegre */
 
   window._udbGorselSec = function(n) {
     /* URUN-FORM-EXCEL-003: görsel kalite uyarı popup */
@@ -318,43 +309,7 @@ function openUrunModal(id) {
       + '</details>';
   }
 
-  function _udbSatirHTML(n, u) {
-    /* URUN-KATEGORI-BIRIM-COMBOBOX-001: unique kategori/birim listesi + datalist enjekte */
-    var _mevcutUrunler = (typeof loadUrunDB === 'function' ? loadUrunDB() : []) || [];
-    var _defKat = ['Elektronik','Makine','Kimya','Tekstil','Gıda','Ambalaj','Kırtasiye','Mobilya','İnşaat','Yedek Parça','Diğer'];
-    var _defBirim = ['Adet','Kg','Gr','Ton','Metre','m²','m³','Litre','Paket','Koli','Kutu','Rulo','Set'];
-    var _setKat = {}; _defKat.forEach(function(k){ _setKat[k]=true; }); _mevcutUrunler.forEach(function(x){ if(x && x.category) _setKat[x.category]=true; });
-    var _setBirim = {}; _defBirim.forEach(function(b){ _setBirim[b]=true; }); _mevcutUrunler.forEach(function(x){ if(x && x.unit) _setBirim[x.unit]=true; });
-    var _katList = Object.keys(_setKat).sort();
-    var _birimList = Object.keys(_setBirim).sort();
-    if (!document.getElementById('udb-kat-datalist')) {
-      var _dl1 = document.createElement('datalist'); _dl1.id = 'udb-kat-datalist';
-      _dl1.innerHTML = _katList.map(function(k){ return '<option value="'+esc(k)+'">'; }).join('');
-      document.body.appendChild(_dl1);
-    }
-    if (!document.getElementById('udb-birim-datalist')) {
-      var _dl2 = document.createElement('datalist'); _dl2.id = 'udb-birim-datalist';
-      _dl2.innerHTML = _birimList.map(function(b){ return '<option value="'+esc(b)+'">'; }).join('');
-      document.body.appendChild(_dl2);
-    }
-    var rowCariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u && u.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
-    var rowCountryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u && u.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
-    return '<td style="padding:4px 4px;text-align:center;vertical-align:middle;font-size:11px;color:var(--t2)">'+n+'<br><button onclick="event.stopPropagation();window._udbDetay?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ac);padding:0">⋯</button></td>'
-      + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><div class="udb-gorsel-cell" onclick="event.stopPropagation();window._udbGorselSec?.('+n+')" style="width:40px;height:40px;border:1.5px dashed var(--b);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--t3);margin:0 auto">'+(u && (u.image || u._hasImage) ? '📷' : '+')+'</div></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-vendor-'+n+'">' + rowCariOpts + '</select></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-duayName-'+n+'" value="'+esc(u?.duayName||'')+'" placeholder="Türkçe ad"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-origName-'+n+'" value="'+esc(u?.origName||'')+'" placeholder="English name"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" list="udb-kat-datalist" id="udb-category-'+n+'" value="'+esc(u?.category||'')+'" placeholder="Kategori seç/yaz"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" id="udb-vendorCode-'+n+'" value="'+esc(u?.vendorCode||'')+'" placeholder="Tedarikçinin ürün kodu"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><select class="fi" id="udb-origin-'+n+'">' + rowCountryOpts + '</select></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><input class="fi" list="udb-birim-datalist" id="udb-unit-'+n+'" value="'+esc(u?.unit||'Adet')+'" placeholder="Birim"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-teslim-'+n+'" value="'+esc(u?.deliveryDays||'')+'" placeholder="örn 15"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-raf-'+n+'" value="'+esc(u?.shelfLife||'')+'" placeholder="örn 365"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-netW-'+n+'" value="'+esc(u?.netWeight||'')+'" placeholder="örn 2.5" step="0.01"></td>'
-      + '<td style="padding:4px 4px;vertical-align:middle"><input class="fi" type="number" id="udb-grossW-'+n+'" value="'+esc(u?.grossWeight||'')+'" placeholder="örn 3.0" step="0.01"></td>'
-      + '<td style="padding:4px 6px;vertical-align:middle"><textarea class="fi" id="udb-techDesc-'+n+'" rows="1" placeholder="Açıklama" style="resize:vertical;min-height:32px">'+esc(u?.techDesc||'')+'</textarea></td>'
-      + '<td style="padding:4px 4px;text-align:center;vertical-align:middle"><button onclick="event.stopPropagation();window._udbSil?.('+n+')" style="background:none;border:none;cursor:pointer;font-size:18px;color:#E24B4A;padding:0">×</button></td>';
-  }
+  /* URUN-FORM-KART-LAYOUT-001-ADIM-C: Eski _udbSatirHTML dead code silindi — _udbCardHTML tek aktif template */
 }
 
 /**
