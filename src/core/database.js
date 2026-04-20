@@ -1413,14 +1413,35 @@ function logActivity(type, detail) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadNotifs()    { const d = _read(KEYS.notifications); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 50 kayıt */ function storeNotifs(d) {
+/** @param {Array<Object>} d Son 500 kayıt (TTL 30 gün + dedup) */ function storeNotifs(d) {
+  /* NOTIF-CLEANUP-V2-001: her storeNotifs çağrısında TTL + dedup + 500 FIFO — Firestore kalıcı temizlik */
+  try {
+    if (!Array.isArray(d)) d = [];
+    var now = Date.now();
+    /* 1. TTL 30 gün */
+    var thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+    d = d.filter(function(n) {
+      try { return new Date(String(n.ts).replace(' ', 'T')).getTime() >= thirtyDaysAgo; }
+      catch(e) { return false; }
+    });
+    /* 2. Duplicate dedup — kronolojik sırada ilk görülen kalır (unshift sırası = yeni önde) */
+    var seen = {};
+    var deduped = [];
+    for (var i = 0; i < d.length; i++) {
+      var _n = d[i];
+      var key = (_n.msg || '') + '|' + (_n.link || '') + '|' + (_n.targetUid || '') + '|' + (_n.taskId || '');
+      if (!seen[key]) { seen[key] = true; deduped.push(_n); }
+    }
+    /* 3. 500 FIFO */
+    d = deduped.slice(0, 500);
+  } catch(e) { console.warn('[NOTIF-CLEANUP-V2]', e && e.message); }
   var sliced = (typeof window._lsRetention === 'function') ? window._lsRetention(d, 'notifications', 50, 0) : d.slice(0, 50);
   _write(KEYS.notifications, sliced);
-  // Notifications sync — debounced (500ms) to prevent rapid-fire writes
+  /* Firestore sync: cleanup'lı TAM listeyi gönder (500'e kadar), LS sadece 50 */
   clearTimeout(storeNotifs._timer);
   storeNotifs._timer = setTimeout(function() {
     if (window.Auth?.getFBAuth?.()?.currentUser) {
-      var _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, sliced);
+      var _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, d);
     }
   }, 500);
 }
