@@ -742,6 +742,8 @@
         + '<div style="display:flex;gap:4px">'
           + '<button onclick="window._edOpenDetail && window._edOpenDetail(\'' + _uiEsc(ed.id) + '\')" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b,#CBD5E1);background:transparent;border-radius:6px;cursor:pointer;font-family:inherit;color:var(--t2,#374151)">Detay</button>'
           + (ed.status !== 'TESLIM_ALINDI' ? '<button onclick="window._edAddDeliveryPrompt && window._edAddDeliveryPrompt(\'' + _uiEsc(ed.id) + '\')" style="font-size:10px;padding:4px 10px;border:none;background:#1A8D6F;color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500">+ Teslimat</button>' : '')
+          /* PARÇA 8: aksiyon menüsü ⋯ */
+          + '<button onclick="window._edAksiyonMenu && window._edAksiyonMenu(\'' + _uiEsc(ed.id) + '\')" title="Aksiyonlar" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b,#CBD5E1);background:transparent;border-radius:6px;cursor:pointer;font-family:inherit;color:var(--t2,#374151)">⋯</button>'
         + '</div>'
       + '</div>'
     + '</div>';
@@ -930,6 +932,8 @@
           + '<div style="font-size:16px;font-weight:600;color:var(--t,#111);display:flex;align-items:center;gap:10px">🚚 Teslimat Takibi <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + modeColor + '22;color:' + modeColor + ';font-weight:500;letter-spacing:.04em">' + mode.replace('_', ' ') + '</span></div>'
           + '<div style="font-size:11px;color:var(--t3,#6B7280);margin-top:3px">Toplam: <b>' + counts.total + '</b> · Yaklaşan: <b style="color:#F59E0B">' + counts.upcoming + '</b> · Gecikmiş: <b style="color:#E0574F">' + counts.overdue + '</b> · Kritik: <b style="color:#E0574F">' + counts.critical + '</b></div>'
         + '</div>'
+        /* PARÇA 8: + Yeni Teslimat butonu */
+        + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:8px 16px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">+ Yeni Teslimat</button>'
       + '</div>'
       + '<div style="padding:14px 24px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;gap:4px;flex-wrap:wrap;background:var(--s2,#F1F5F9)">'
         + filterBtn('upcoming', 'Yaklaşan', counts.upcoming)
@@ -947,5 +951,311 @@
 
     /* PARÇA 7: Event delegation hotfix — inline onclick fail edilirse yedek */
     _edEnsureFilterDelegation();
+  };
+
+  /* ─── PARÇA 8: YENİ TESLIMAT WIZARD + AKSİYON MENÜ ────────── */
+  var _edWizardState = null;
+
+  function _edSupplierOpts(sel) {
+    var list = (typeof window.loadCari === 'function' ? window.loadCari({ tumKullanicilar: true }) : []) || [];
+    list = list.filter(function(c) { return !c.isDeleted && (c.type === 'tedarikci' || c.tip === 'tedarikci' || c.cariType === 'onayli'); });
+    if (list.length === 0) list = (typeof window.loadCari === 'function' ? window.loadCari({ tumKullanicilar: true }) : []).filter(function(c) { return !c.isDeleted; });
+    return '<option value="">— Tedarikçi Seçin —</option>' + list.map(function(c) {
+      var id = c.id;
+      var ad = c.name || c.ad || c.unvan || '—';
+      return '<option value="' + _uiEsc(id) + '"' + (sel === id ? ' selected' : '') + '>' + _uiEsc(ad) + '</option>';
+    }).join('');
+  }
+
+  function _edUserOpts(sel) {
+    var list = (typeof window.loadUsers === 'function' ? window.loadUsers() : []) || [];
+    list = list.filter(function(u) { return (u.status || 'active') === 'active'; });
+    return '<option value="">— Sorumlu Seçin —</option>' + list.map(function(u) {
+      var uid = u.id || u.uid;
+      var ad = u.name || u.displayName || u.email || '—';
+      var rol = u.role || u.rol || 'staff';
+      return '<option value="' + _uiEsc(uid) + '" data-role="' + _uiEsc(rol) + '"' + (sel === uid ? ' selected' : '') + '>' + _uiEsc(ad) + ' (' + _uiEsc(rol) + ')</option>';
+    }).join('');
+  }
+
+  var _edWizardLabel = function(txt) { return '<div style="font-size:10px;color:var(--t3,#6B7280);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">' + txt + '</div>'; };
+  var _edWizardInput = 'width:100%;padding:9px 11px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;font-family:inherit;background:var(--sf,#fff);color:var(--t,#111);box-sizing:border-box';
+
+  function _edWizardRender() {
+    var s = _edWizardState;
+    if (!s) return;
+    var mo = document.getElementById('ed-wizard-modal');
+    if (!mo) return;
+    var body = mo.querySelector('[data-wizard-body]');
+    if (!body) return;
+
+    var progress = '<div style="display:flex;gap:4px;margin-bottom:20px">'
+      + [1,2,3,4].map(function(n) {
+          var active = s.step === n;
+          var done = s.step > n;
+          return '<div style="flex:1;height:3px;border-radius:2px;background:' + (active || done ? '#1A8D6F' : 'var(--b,#E5E7EB)') + '"></div>';
+        }).join('')
+    + '</div>';
+
+    var content = '';
+    if (s.step === 1) {
+      content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 1 / 4 — Ürün & Tedarikçi</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+          + '<div style="grid-column:span 2">' + _edWizardLabel('Ürün Adı *') + '<input id="edw-productName" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.productName || '') + '" placeholder="Mesh Ofis Koltuğu"></div>'
+          + '<div style="grid-column:span 2">' + _edWizardLabel('Tedarikçi *') + '<select id="edw-supplierId" style="' + _edWizardInput + '">' + _edSupplierOpts(s.data.supplierId) + '</select></div>'
+          + '<div>' + _edWizardLabel('Miktar *') + '<input id="edw-quantityTotal" type="number" min="1" step="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums;text-align:right" value="' + (s.data.quantityTotal || '') + '"></div>'
+          + '<div>' + _edWizardLabel('Birim') + '<select id="edw-unit" style="' + _edWizardInput + '">'
+              + ['adet','kg','palet','ton','m³','lt','kutu'].map(function(u) { return '<option value="' + u + '"' + (s.data.unit === u ? ' selected' : '') + '>' + u + '</option>'; }).join('')
+            + '</select></div>'
+        + '</div>';
+    } else if (s.step === 2) {
+      content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 2 / 4 — Tarihler & Termin</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+          + '<div>' + _edWizardLabel('Proforma Tarihi') + '<input id="edw-proformaDate" type="date" style="' + _edWizardInput + '" value="' + (s.data.proformaDate || '') + '"></div>'
+          + '<div>' + _edWizardLabel('Tahmini Teslim *') + '<input id="edw-estimatedDeliveryDate" type="date" style="' + _edWizardInput + '" value="' + (s.data.estimatedDeliveryDate || '') + '"></div>'
+          + '<div>' + _edWizardLabel('Termin (gün)') + '<input id="edw-deliveryTermDays" type="number" min="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (s.data.deliveryTermDays || 45) + '"></div>'
+          + '<div>' + _edWizardLabel('Tolerans (gün)') + '<input id="edw-toleranceDays" type="number" min="0" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (s.data.toleranceDays || 3) + '"></div>'
+        + '</div>';
+    } else if (s.step === 3) {
+      content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 3 / 4 — Sorumluluk & Öncelik</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+          + '<div style="grid-column:span 2">' + _edWizardLabel('Sorumlu Kullanıcı *') + '<select id="edw-responsibleUserId" style="' + _edWizardInput + '">' + _edUserOpts(s.data.responsibleUserId) + '</select></div>'
+          + '<div>' + _edWizardLabel('Öncelik') + '<select id="edw-priority" style="' + _edWizardInput + '">'
+              + [['LOW','Düşük'],['NORMAL','Normal'],['CRITICAL','Kritik']].map(function(p) { return '<option value="' + p[0] + '"' + (s.data.priority === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('')
+            + '</select></div>'
+          + '<div>' + _edWizardLabel('Başlangıç Durumu') + '<select id="edw-status" style="' + _edWizardInput + '">'
+              + [['TEDARIK_ASAMASINDA','Tedarik'],['URETIMDE','Üretimde'],['YUKLEME_BEKLIYOR','Yükleme']].map(function(st) { return '<option value="' + st[0] + '"' + (s.data.status === st[0] ? ' selected' : '') + '>' + st[1] + '</option>'; }).join('')
+            + '</select></div>'
+        + '</div>';
+    } else if (s.step === 4) {
+      var supAd = '—';
+      try {
+        var cari = (typeof window.loadCari === 'function' ? window.loadCari({ tumKullanicilar: true }) : []).find(function(c) { return c.id === s.data.supplierId; });
+        if (cari) supAd = cari.name || cari.ad || cari.unvan || '—';
+      } catch(e) {}
+      var sorumlu = _edUserAd(s.data.responsibleUserId);
+      var priLbl = ({ LOW: 'Düşük', NORMAL: 'Normal', CRITICAL: 'Kritik' })[s.data.priority] || s.data.priority;
+      content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 4 / 4 — Özet</div>'
+        + '<div style="background:var(--s2,#F1F5F9);border:0.5px solid var(--b,#CBD5E1);border-radius:10px;padding:16px">'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px">'
+            + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Ürün</div><div style="font-weight:500;margin-top:2px">' + _uiEsc(s.data.productName || '—') + '</div></div>'
+            + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Tedarikçi</div><div style="font-weight:500;margin-top:2px">' + _uiEsc(supAd) + '</div></div>'
+            + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Miktar</div><div style="font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums">' + (s.data.quantityTotal || 0) + ' ' + _uiEsc(s.data.unit || '') + '</div></div>'
+            + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Tahmini Teslim</div><div style="font-weight:500;margin-top:2px">' + (s.data.estimatedDeliveryDate || '—') + '</div></div>'
+            + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Sorumlu</div><div style="font-weight:500;margin-top:2px">' + _uiEsc(sorumlu) + '</div></div>'
+            + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Öncelik</div><div style="font-weight:500;margin-top:2px;color:' + (s.data.priority === 'CRITICAL' ? '#E0574F' : 'var(--t)') + '">' + _uiEsc(priLbl) + '</div></div>'
+          + '</div>'
+        + '</div>';
+    }
+
+    body.innerHTML = content;
+
+    var btnBar = mo.querySelector('[data-wizard-buttons]');
+    if (btnBar) {
+      btnBar.innerHTML = ''
+        + '<button onclick="document.getElementById(\'ed-wizard-modal\').remove()" style="padding:9px 16px;border:0.5px solid var(--b,#CBD5E1);background:transparent;color:var(--t2);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">İptal</button>'
+        + (s.step > 1 ? '<button onclick="window._edWizardGeri && window._edWizardGeri()" style="padding:9px 16px;border:0.5px solid var(--b,#CBD5E1);background:transparent;color:var(--t2);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">← Geri</button>' : '')
+        + (s.step < 4 ? '<button onclick="window._edWizardIleri && window._edWizardIleri()" style="padding:9px 16px;border:none;background:var(--t,#111);color:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:500">İleri →</button>'
+                      : '<button onclick="window._edWizardKaydet && window._edWizardKaydet()" style="padding:9px 18px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:500">✓ Kaydet</button>');
+    }
+  }
+
+  function _edWizardTopla() {
+    var s = _edWizardState;
+    if (!s) return;
+    var g = function(id) { var el = document.getElementById(id); return el ? el.value : ''; };
+    if (s.step === 1) {
+      s.data.productName = g('edw-productName').trim();
+      s.data.supplierId = g('edw-supplierId');
+      s.data.quantityTotal = parseFloat(g('edw-quantityTotal')) || 0;
+      s.data.unit = g('edw-unit') || 'adet';
+    } else if (s.step === 2) {
+      s.data.proformaDate = g('edw-proformaDate');
+      s.data.estimatedDeliveryDate = g('edw-estimatedDeliveryDate');
+      s.data.deliveryTermDays = parseInt(g('edw-deliveryTermDays'), 10) || 45;
+      s.data.toleranceDays = parseInt(g('edw-toleranceDays'), 10) || 3;
+    } else if (s.step === 3) {
+      var userSel = document.getElementById('edw-responsibleUserId');
+      s.data.responsibleUserId = userSel ? userSel.value : '';
+      var opt = userSel && userSel.selectedOptions && userSel.selectedOptions[0];
+      s.data.responsibleRole = (opt && opt.getAttribute('data-role')) || 'staff';
+      s.data.priority = g('edw-priority') || 'NORMAL';
+      s.data.status = g('edw-status') || 'TEDARIK_ASAMASINDA';
+    }
+  }
+
+  function _edWizardValidate(step) {
+    var s = _edWizardState;
+    if (!s) return 'State yok';
+    var d = s.data;
+    if (step === 1) {
+      if (!d.productName) return 'Ürün adı zorunlu';
+      if (!d.supplierId) return 'Tedarikçi zorunlu';
+      if (!d.quantityTotal || d.quantityTotal <= 0) return 'Miktar > 0 olmalı';
+    }
+    if (step === 2) {
+      if (!d.estimatedDeliveryDate) return 'Tahmini teslim tarihi zorunlu';
+      if (d.proformaDate && new Date(d.proformaDate) > new Date(d.estimatedDeliveryDate)) return 'Proforma tarihi teslim tarihinden sonra olamaz';
+    }
+    if (step === 3) {
+      if (!d.responsibleUserId) return 'Sorumlu kullanıcı zorunlu';
+    }
+    return null;
+  }
+
+  window._edWizardIleri = function() {
+    _edWizardTopla();
+    var err = _edWizardValidate(_edWizardState.step);
+    if (err) { if (window.toast) window.toast(err, 'err'); return; }
+    _edWizardState.step = Math.min(4, _edWizardState.step + 1);
+    _edWizardRender();
+  };
+
+  window._edWizardGeri = function() {
+    _edWizardTopla();
+    _edWizardState.step = Math.max(1, _edWizardState.step - 1);
+    _edWizardRender();
+  };
+
+  window._edWizardKaydet = function() {
+    _edWizardTopla();
+    var d = _edWizardState.data;
+    var r = window._edCreate(d);
+    if (r && r.success) {
+      var mo = document.getElementById('ed-wizard-modal'); if (mo) mo.remove();
+      if (window.toast) window.toast('Yeni teslimat oluşturuldu', 'ok');
+      _edWizardState = null;
+      window._edRenderPanel();
+    } else {
+      var msg = (r && r.errors && r.errors.join(', ')) || (r && r.error) || 'Oluşturma hatası';
+      if (window.toast) window.toast(msg, 'err');
+    }
+  };
+
+  window._edWizardAc = function() {
+    var ex = document.getElementById('ed-wizard-modal'); if (ex) ex.remove();
+    _edWizardState = {
+      step: 1,
+      data: {
+        productName: '', supplierId: '', quantityTotal: '', unit: 'adet',
+        proformaDate: new Date().toISOString().slice(0, 10),
+        estimatedDeliveryDate: new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10),
+        deliveryTermDays: 45, toleranceDays: 3,
+        responsibleUserId: '', responsibleRole: 'staff',
+        priority: 'NORMAL', status: 'TEDARIK_ASAMASINDA'
+      }
+    };
+    var mo = document.createElement('div');
+    mo.id = 'ed-wizard-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t,#111);width:560px;max-width:92vw;max-height:90vh;overflow-y:auto;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit">'
+      + '<div style="font-size:15px;font-weight:600;margin-bottom:4px">+ Yeni Teslimat Takibi</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Manuel olarak yeni bir tedarikçi teslimat kaydı oluştur</div>'
+      + '<div data-wizard-body style="min-height:240px"></div>'
+      + '<div data-wizard-buttons style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px"></div>'
+    + '</div>';
+    document.body.appendChild(mo);
+    _edWizardRender();
+  };
+
+  /* ─── AKSİYON MENÜ (Sorumlu Değiştir / Öncelik / Gecikme) ─ */
+  window._edPriorityMenu = function(edId) {
+    var pri = window.prompt('Öncelik seç (LOW / NORMAL / CRITICAL):', 'NORMAL');
+    if (!pri) return;
+    pri = pri.trim().toUpperCase();
+    var r = window._edUpdatePriority(edId, pri);
+    if (r && r.success) { if (window.toast) window.toast('Öncelik güncellendi', 'ok'); window._edRenderPanel(); }
+    else { if (window.toast) window.toast((r && r.error) || 'Hata', 'err'); }
+  };
+
+  window._edChangeResponsibleModal = function(edId) {
+    var ex = document.getElementById('ed-change-resp-modal'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.id = 'ed-change-resp-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);width:420px;max-width:92vw;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit">'
+      + '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Sorumlu Değiştir</div>'
+      + _edWizardLabel('Yeni Sorumlu *')
+      + '<select id="edcr-user" style="' + _edWizardInput + ';margin-bottom:12px">' + _edUserOpts('') + '</select>'
+      + _edWizardLabel('Devir Sebebi (opsiyonel)')
+      + '<textarea id="edcr-reason" rows="3" placeholder="Tatile çıktı, görev değişti..." style="' + _edWizardInput + ';resize:vertical;margin-bottom:16px"></textarea>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+        + '<button onclick="document.getElementById(\'ed-change-resp-modal\').remove()" style="padding:8px 14px;border:0.5px solid var(--b);background:transparent;color:var(--t2);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">İptal</button>'
+        + '<button onclick="window._edChangeRespSubmit && window._edChangeRespSubmit(\'' + _uiEsc(edId) + '\')" style="padding:8px 16px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:500">Devret</button>'
+      + '</div>'
+    + '</div>';
+    document.body.appendChild(mo);
+  };
+
+  window._edChangeRespSubmit = function(edId) {
+    var userSel = document.getElementById('edcr-user');
+    var reason = (document.getElementById('edcr-reason') || {}).value || '';
+    if (!userSel || !userSel.value) { if (window.toast) window.toast('Yeni sorumlu seçin', 'err'); return; }
+    var opt = userSel.selectedOptions && userSel.selectedOptions[0];
+    var role = (opt && opt.getAttribute('data-role')) || 'staff';
+    var r = window._edChangeResponsible(edId, userSel.value, role, reason.trim());
+    if (r && r.success) {
+      document.getElementById('ed-change-resp-modal').remove();
+      if (window.toast) window.toast('Sorumlu değiştirildi', 'ok');
+      window._edRenderPanel();
+    } else {
+      if (window.toast) window.toast((r && r.error) || 'Hata', 'err');
+    }
+  };
+
+  window._edDelayReasonModal = function(edId) {
+    var ex = document.getElementById('ed-delay-modal'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.id = 'ed-delay-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);width:420px;max-width:92vw;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit">'
+      + '<div style="font-size:15px;font-weight:600;margin-bottom:16px">Gecikme Sebebi</div>'
+      + _edWizardLabel('Sorumlu *')
+      + '<select id="eddl-owner" style="' + _edWizardInput + ';margin-bottom:12px">'
+        + '<option value="">— Seçin —</option><option value="supplier">Tedarikçi</option><option value="logistics">Lojistik</option><option value="internal">Dahili</option>'
+      + '</select>'
+      + _edWizardLabel('Sebep Açıklaması (min 10 karakter) *')
+      + '<textarea id="eddl-reason" rows="4" maxlength="1000" placeholder="Üretim hattında arıza..." style="' + _edWizardInput + ';resize:vertical;margin-bottom:16px"></textarea>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+        + '<button onclick="document.getElementById(\'ed-delay-modal\').remove()" style="padding:8px 14px;border:0.5px solid var(--b);background:transparent;color:var(--t2);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">İptal</button>'
+        + '<button onclick="window._edDelayReasonSubmit && window._edDelayReasonSubmit(\'' + _uiEsc(edId) + '\')" style="padding:8px 16px;border:none;background:#E0574F;color:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
+      + '</div>'
+    + '</div>';
+    document.body.appendChild(mo);
+  };
+
+  window._edDelayReasonSubmit = function(edId) {
+    var owner = (document.getElementById('eddl-owner') || {}).value || '';
+    var reason = ((document.getElementById('eddl-reason') || {}).value || '').trim();
+    var r = window._edSetDelayOwner(edId, owner, reason);
+    if (r && r.success) {
+      document.getElementById('ed-delay-modal').remove();
+      if (window.toast) window.toast('Gecikme bilgisi kaydedildi', 'ok');
+      window._edRenderPanel();
+    } else {
+      if (window.toast) window.toast((r && r.error) || 'Hata', 'err');
+    }
+  };
+
+  window._edAksiyonMenu = function(edId) {
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var ed = all.find(function(e) { return e.id === edId; });
+    if (!ed) return;
+    var isOverdue = window._edIsOverdue && window._edIsOverdue(ed) && ed.status !== 'TESLIM_ALINDI';
+    var ex = document.getElementById('ed-aksiyon-menu'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.id = 'ed-aksiyon-menu';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:10000;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);min-width:240px;max-width:92vw;border-radius:12px;padding:8px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit">'
+      + '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:10px 12px 6px">Aksiyon</div>'
+      + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edChangeResponsibleModal && window._edChangeResponsibleModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">👤 Sorumlu Değiştir</button>'
+      + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edPriorityMenu && window._edPriorityMenu(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">⭐ Öncelik Değiştir</button>'
+      + (isOverdue ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDelayReasonModal && window._edDelayReasonModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">⚠️ Gecikme Sebebi</button>' : '')
+    + '</div>';
+    document.body.appendChild(mo);
   };
 })();
