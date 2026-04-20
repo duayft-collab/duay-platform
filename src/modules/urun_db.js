@@ -593,8 +593,18 @@ function renderUrunDB() {
       + '<div>' + ((u.image || u.gorsel) ? '<img src="' + (u.image || u.gorsel) + '" style="width:28px;height:28px;object-fit:cover;border-radius:4px">' : u._hasImage ? '<div style="width:28px;height:28px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:28px;height:28px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
       + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || u.duayKodu || '\u2014') + '</div>'
       + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || u.saticiKodu || '\u2014') + '</div>'
-      /* URUN-LISTE-META-TESHIS-001: alt-meta inline olarak meta zincirine eklendi (block-level alt satır görünmüyordu, align-items:center + min-height:32px ile kırpılıyordu) */
-      + '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(u.duayName || u.urunAdi || u.standartAdi || '\u2014') + ((function(){var t=u.createdAt||u.ts||u.yuklemeTarihi;if(!t)return '';var ms=new Date()-new Date(t);if(ms>=0&&ms<86400000)return ' <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:#E6F1FB;color:#185FA5;font-weight:500;letter-spacing:.02em">Yeni</span>';return '';})()) + ' · <span style="font-size:11px;color:var(--t3);font-weight:400">' + esc(u.vendorName || u.tedarikci || '') + '</span> · <span title="' + esc(_udbTamTarih(u.updatedAt || u.createdAt)) + '" style="font-size:10px;color:var(--t3);font-weight:400">' + _udbRelativeTime(u.updatedAt || u.createdAt) + '</span> · <span style="font-size:10px;color:var(--t3);font-weight:400">' + esc(u.updatedByName || u.createdByName || '—') + '</span></div>'
+      /* URUN-LISTE-META-FIX3-001: TESHIS-001 inline ellipsis ile meta kırpılıyordu — ayrı block-level alt satıra taşındı (clipping yok) */
+      + '<div style="min-width:0">'
+        + '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+          + esc(u.duayName || u.urunAdi || u.standartAdi || '\u2014')
+          + ((function(){var t=u.createdAt||u.ts||u.yuklemeTarihi;if(!t)return '';var ms=new Date()-new Date(t);if(ms>=0&&ms<86400000)return ' <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:#E6F1FB;color:#185FA5;font-weight:500;letter-spacing:.02em">Yeni</span>';return '';})())
+          + ' · <span style="font-size:11px;color:var(--t3);font-weight:400">' + esc(u.vendorName || u.tedarikci || '') + '</span>'
+        + '</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400">'
+          + '<span title="' + esc(_udbTamTarih(u.updatedAt || u.createdAt)) + '">' + _udbRelativeTime(u.updatedAt || u.createdAt) + '</span>'
+          + ' · <span>' + esc(u.updatedByName || u.createdByName || '—') + '</span>'
+        + '</div>'
+      + '</div>'
       + '<div style="font-size:10px;color:var(--t3)">' + esc(u.category || u.kategori || '\u2014') + '</div>'
       + '<div style="font-size:10px;color:var(--t3)">' + esc(u.origin || u.mensei || '\u2014') + '</div>'
       + '<div style="font-size:10px;font-family:monospace;color:var(--t3)">' + esc(u.gtip || '\u2014') + '</div>'
