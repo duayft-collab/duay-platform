@@ -6310,6 +6310,38 @@ function saveCari(entry) {
   var isNew = !entry.id;
   var editId = entry.id || 0;
 
+  /* CARI-DUPLICATE-GUARD-001: VKN/TCKN strict + ad+email soft duplicate check (sadece yeni kayıt için) */
+  if (isNew) {
+    try {
+      var _tumCariler = (d || []).filter(function(c){ return !c.isDeleted; });
+      var _vknRaw = ((entry.vkn || entry.tckn || '') + '').trim();
+      if (_vknRaw.length >= 10) {
+        var _vknDup = _tumCariler.find(function(c){
+          var _cVkn = ((c.vkn || c.tckn || '') + '').trim();
+          return _cVkn && _cVkn === _vknRaw;
+        });
+        if (_vknDup) {
+          window.toast?.('VKN/TCKN ile zaten kayıtlı: ' + (_vknDup.name || '—') + (_vknDup.kod ? ' (' + _vknDup.kod + ')' : ''), 'err');
+          return null;
+        }
+      }
+      var _adNorm = ((entry.name || '') + '').trim().toLowerCase();
+      var _emailNorm = ((entry.email || '') + '').trim().toLowerCase();
+      if (_adNorm.length > 2) {
+        var _similar = _tumCariler.find(function(c){
+          var _cAd = ((c.name || '') + '').trim().toLowerCase();
+          var _cEmail = ((c.email || '') + '').trim().toLowerCase();
+          return _cAd === _adNorm && (!_emailNorm || _cEmail === _emailNorm);
+        });
+        if (_similar) {
+          if (!confirm('Benzer cari zaten var:\n"' + (_similar.name || '—') + '"' + (_similar.kod ? ' (' + _similar.kod + ')' : '') + '\n\nYine de kaydedilsin mi?')) {
+            return null;
+          }
+        }
+      }
+    } catch(_dge) { console.warn('[CARI-DUP-GUARD]', _dge.message); }
+  }
+
   // VKN format kontrolü (boş kabul edilir, doluysa 10 hane sayı zorunlu)
   if (entry.vkn && entry.vkn.trim()) {
     var vknClean = entry.vkn.replace(/\s/g, '');
