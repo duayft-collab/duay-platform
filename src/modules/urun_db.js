@@ -369,22 +369,22 @@ function openUrunModal(id) {
       + '<div style="margin-top:12px;background:var(--sf2,rgba(0,0,0,0.02));border:0.5px solid var(--b,#e0e0e0);border-radius:8px;padding:12px">'
         + '<div style="font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">BELGELER</div>'
         + '<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px">'
-          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%"></div>'
-          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Üretim Tarihi</label><input type="date" id="udb-uretimTarihi-' + n + '" value="' + esc(u.uretimTarihi || '') + '" class="fi" style="font-size:11px;width:100%"></div>'
-          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%"></div>'
-          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Bakım Yılı</label><input type="number" id="udb-bakimYili-' + n + '" value="' + esc(u.bakimYili || '') + '" placeholder="örn: 2024" class="fi" style="font-size:11px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Üretim Tarihi</label><input type="date" id="udb-uretimTarihi-' + n + '" value="' + esc(u.uretimTarihi || '') + '" class="fi" style="font-size:11px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Bakım Yılı</label><input type="number" id="udb-bakimYili-' + n + '" value="' + esc(u.bakimYili || '') + '" placeholder="örn: 2024" class="fi" style="font-size:11px;width:100%"></div>'
         + '</div>'
         + '<button type="button" style="margin-top:10px;width:100%;padding:8px;border:0.5px dashed var(--b,#e0e0e0);border-radius:6px;background:transparent;color:var(--t3,#8a8a8a);font-size:11px;cursor:pointer;font-family:inherit">+ Diğer Teknik Dökümanlar Ekle</button>'
       + '</div>'
-      /* URUN-FORM-BASIT-001 PARÇA E: TEK BUTON Notlar & Gizli Hile (modal tetikleyici) */
+      /* URUN-FORM-BASIT-001 PARÇA E: TEK BUTON Notlar & Gizli Notlar (modal tetikleyici) */
       + (function(){
           var _doluMu = !!(u.techDesc || u.teknikAciklama || u.sozlesmeNotu || u.note || u.gizliHile || u.gizliHileNot || u.gizliKaynak);
           var _butonLabel = _doluMu ? '✓ Kayıtlı · Düzenle' : '▸ Doldur';
           var _butonBg = _doluMu ? '#0F6E56' : '#854F0B';
           return '<div style="margin-top:12px;border:0.5px solid #EF9F27;background:#FAEEDA;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px">'
             + '<div>'
-              + '<div style="font-size:12px;font-weight:500;color:#633806">📝 Notlar & Gizli Hile</div>'
-              + '<div style="font-size:10px;color:#854F0B;margin-top:2px">Teknik açıklama, sözleşme notu, özel not, gizli hile formu</div>'
+              + '<div style="font-size:12px;font-weight:500;color:#633806">📝 Notlar & Gizli Notlar</div>'
+              + '<div style="font-size:10px;color:#854F0B;margin-top:2px">Teknik açıklama, sözleşme notu, özel not, gizli notlar</div>'
             + '</div>'
             + '<button type="button" class="udb-notlar-btn" onclick="window._udbNotlarModalAc && window._udbNotlarModalAc(' + n + ')" style="padding:8px 16px;border:none;border-radius:6px;background:' + _butonBg + ';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">' + _butonLabel + '</button>'
           + '</div>';
@@ -655,7 +655,7 @@ function renderUrunDB() {
       + '<div style="min-width:0">'
         + '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
           + esc(u.duayName || u.urunAdi || u.standartAdi || '\u2014')
-          + ((function(){var t=u.createdAt||u.ts||u.yuklemeTarihi;if(!t)return '';var ms=new Date()-new Date(t);if(ms>=0&&ms<86400000)return ' <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:#E6F1FB;color:#185FA5;font-weight:500;letter-spacing:.02em">Yeni</span>';return '';})())
+          + ((function(){var t=u.createdAt||u.ts||u.yuklemeTarihi;if(!t)return '';var ms=new Date()-new Date(t);if(ms>=0&&ms<86400000)return ' <span style="font-size:11px;padding:1px 6px;border-radius:6px;background:#E6F1FB;color:#185FA5;font-weight:500;letter-spacing:.02em">Yeni</span>';return '';})())
           + ' · <span style="font-size:11px;color:var(--t3);font-weight:400">' + esc(u.vendorName || u.tedarikci || '') + '</span>'
         + '</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400">'
@@ -853,7 +853,7 @@ if (typeof window._udbGorselYukle !== 'function') {
   };
 }
 
-/* URUN-FORM-BASIT-001 PARÇA D: Notlar & Gizli Hile tek sayfa modal */
+/* URUN-FORM-BASIT-001 PARÇA D: Notlar & Gizli Notlar tek sayfa modal */
 window._udbNotlarModalAc = function(urunIdx) {
   var mevcut = document.getElementById('udb-notlar-modal');
   if (mevcut) mevcut.remove();
@@ -874,7 +874,7 @@ window._udbNotlarModalAc = function(urunIdx) {
 
   var h = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:760px;max-width:100%;overflow:hidden" onclick="event.stopPropagation()">'
     + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
-      + '<div><div style="font-size:14px;font-weight:500;color:var(--t)">\u{1F4DD} Notlar & Gizli Hile</div>'
+      + '<div><div style="font-size:14px;font-weight:500;color:var(--t)">\u{1F4DD} Notlar & Gizli Notlar</div>'
       + '<div style="font-size:10px;color:var(--t3);margin-top:2px">T\u00fcm alanlar\u0131 tek sayfada doldur, Kaydet bas, kapat</div></div>'
       + '<button onclick="document.getElementById(\'udb-notlar-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--t3)">\u00d7</button>'
     + '</div>'
@@ -889,7 +889,7 @@ window._udbNotlarModalAc = function(urunIdx) {
     + '<div style="border-top:0.5px solid var(--b);padding:16px 20px;background:#FAEEDA">'
       + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">'
         + '<input type="checkbox" id="unm-gizli-check" ' + (gizliVar ? 'checked' : '') + ' onchange="document.getElementById(\'unm-gizli-box\').style.display=this.checked?\'block\':\'none\'">'
-        + '<span style="font-size:12px;font-weight:500;color:#854F0B">\u{1F512} Gizli Hile / Maliyet Fark\u0131 var</span>'
+        + '<span style="font-size:12px;font-weight:500;color:#854F0B">\u{1F512} Gizli Notlar / Maliyet Fark\u0131 var</span>'
         + '<a href="https://duayft-collab.github.io/duay-platform/docs/SAHB-0200-380.pdf" target="_blank" style="font-size:10px;color:#854F0B;margin-left:auto;text-decoration:underline" onclick="event.stopPropagation()">SAHB-0200-380 referans</a>'
       + '</label>'
       + '<div id="unm-gizli-box" style="display:' + (gizliVar ? 'block' : 'none') + '">'
