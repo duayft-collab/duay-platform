@@ -7528,7 +7528,56 @@ function _renderCariDetail(id) {
     + '<button class="csd-tab" data-panel="teklifler" onclick="event.stopPropagation();window._csdTab(this,\'teklifler\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Teklifler</button>'
     + '<button class="csd-tab" data-panel="urunler" onclick="event.stopPropagation();window._csdTab(this,\'urunler\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Ürünler</button>'
     + '<button class="csd-tab" data-panel="feedback" onclick="event.stopPropagation();window._csdTab(this,\'feedback\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Feedback</button>'
+    /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 4: 2 yeni sekme */
+    + '<button class="csd-tab" data-panel="supplier-eval" onclick="event.stopPropagation();window._csdTab(this,\'supplier-eval\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Personel Değerlendirmesi</button>'
+    + '<button class="csd-tab" data-panel="admin-eval" onclick="event.stopPropagation();window._csdTab(this,\'admin-eval\')" style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--t3);border-bottom:2px solid transparent;font-family:inherit">Yönetici Değerlendirmesi</button>'
     + '</div>';
+
+  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 4: eval panel içerikleri */
+  var _evalEscFn = window._esc || function(x){ return String(x == null ? '' : x); };
+  var _supplierEvalHTML = (function() {
+    var s = c.supplierEvaluation;
+    if (!s || typeof s !== 'object') return '<div style="padding:32px;text-align:center;color:var(--t3);font-size:13px">Personel değerlendirmesi henüz yapılmamış</div>';
+    var _ts = s.timestamp ? new Date(s.timestamp).toLocaleString('tr-TR') : '—';
+    return '<div style="padding:16px;background:var(--sf);border:1px solid var(--b);border-radius:10px;margin-top:12px">'
+      + '<div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Davranış & Güvenilirlik</div>'
+      + '<div style="font-size:13px;margin-bottom:16px;white-space:pre-wrap;line-height:1.5">' + _evalEscFn(s.davranisNotu || '—') + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+        + '<div>'
+          + '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Güvenli mi?</div>'
+          + '<div style="font-size:13px;font-weight:500;color:' + (s.guvenliMi ? '#1A8D6F' : '#E0574F') + ';margin-top:2px">' + (s.guvenliMi ? '✓ Evet' : '✗ Hayır') + '</div>'
+          + '<div style="font-size:12px;color:var(--t3);white-space:pre-wrap;margin-top:4px;line-height:1.4">' + _evalEscFn(s.guvenliAciklama || '') + '</div>'
+        + '</div>'
+        + '<div>'
+          + '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Uzun vadeli?</div>'
+          + '<div style="font-size:13px;font-weight:500;color:' + (s.uzunVadeMi ? '#1A8D6F' : '#E0574F') + ';margin-top:2px">' + (s.uzunVadeMi ? '✓ Evet' : '✗ Hayır') + '</div>'
+          + '<div style="font-size:12px;color:var(--t3);white-space:pre-wrap;margin-top:4px;line-height:1.4">' + _evalEscFn(s.uzunVadeAciklama || '') + '</div>'
+        + '</div>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:16px;border-top:0.5px solid var(--b);padding-top:8px">Değerlendiren: <b>' + _evalEscFn(s.userName || '—') + '</b> · ' + _ts + '</div>'
+      + '</div>';
+  })();
+  var _adminEvalHTML = (function() {
+    var a = c.adminEvaluation;
+    if (!a || typeof a !== 'object') return '<div style="padding:32px;text-align:center;color:var(--t3);font-size:13px">Yönetici değerlendirmesi henüz yapılmamış</div>';
+    var _ts = a.timestamp ? new Date(a.timestamp).toLocaleString('tr-TR') : '—';
+    var _fiyatLbl = {yuksek:'Yüksek',normal:'Normal',dusuk:'Düşük'}[a.fiyatSeviyesi] || a.fiyatSeviyesi || '—';
+    var _riskLbl = {dusuk:'Düşük',orta:'Orta',yuksek:'Yüksek'}[a.riskSeviyesi] || a.riskSeviyesi || '—';
+    var _olcekLbl = {kucuk:'Küçük',orta:'Orta',buyuk:'Büyük'}[a.firmaOlcegi] || a.firmaOlcegi || '—';
+    var _riskRenk = a.riskSeviyesi === 'yuksek' ? '#E0574F' : a.riskSeviyesi === 'orta' ? '#B4730F' : '#1A8D6F';
+    return '<div style="padding:16px;background:var(--sf);border:1px solid var(--b);border-radius:10px;margin-top:12px">'
+      + '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+        + '<div style="padding:4px 10px;background:var(--s2);border-radius:6px;font-size:11px"><b>Fiyat:</b> ' + _evalEscFn(_fiyatLbl) + '</div>'
+        + '<div style="padding:4px 10px;background:' + _riskRenk + '22;color:' + _riskRenk + ';border-radius:6px;font-size:11px;font-weight:500"><b>Risk:</b> ' + _evalEscFn(_riskLbl) + '</div>'
+        + '<div style="padding:4px 10px;background:var(--s2);border-radius:6px;font-size:11px"><b>Ölçek:</b> ' + _evalEscFn(_olcekLbl) + '</div>'
+      + '</div>'
+      + '<div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Piyasa Araştırması</div>'
+      + '<div style="font-size:13px;margin-bottom:16px;white-space:pre-wrap;line-height:1.5">' + _evalEscFn(a.piyasaArastirmaNotu || '—') + '</div>'
+      + '<div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Karar Notu</div>'
+      + '<div style="font-size:13px;margin-bottom:16px;white-space:pre-wrap;line-height:1.5">' + _evalEscFn(a.kararNotu || '—') + '</div>'
+      + '<div style="font-size:10px;color:var(--t3);border-top:0.5px solid var(--b);padding-top:8px">Yönetici: <b>' + _evalEscFn(a.adminName || '—') + '</b> · ' + _ts + '</div>'
+      + '</div>';
+  })();
 
   /* CARI-DETAY-HEADER-001: avatar (firma baş harfleri) + büyük risk skoru */
   var _inits = (c.name || '?').split(' ').slice(0, 2).map(function(s) { return s[0] || ''; }).join('').toUpperCase();
@@ -7547,8 +7596,10 @@ function _renderCariDetail(id) {
       + '<div>'
         // CARI-OZET-EKSIK-001: başlık yanına müşteri kodu rozeti
         /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
-        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px">' + window._esc(c.name || 'İsimsiz Cari')
+        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + window._esc(c.name || 'İsimsiz Cari')
           + '<span style="font-size:10px;color:var(--t3);font-weight:500;font-family:monospace;padding:2px 8px;background:var(--s2);border-radius:10px" title="Müşteri kodu">' + window._esc(c.kod || c.musKod || '—') + '</span>'
+          /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 4: yüksek risk rozet */
+          + (window._cariIsHighRisk && window._cariIsHighRisk(c) ? '<span style="display:inline-block;padding:2px 8px;background:#FEE2E2;color:#E0574F;border-radius:10px;font-size:10px;font-weight:500;letter-spacing:.03em" title="guvenliMi=false veya riskSeviyesi=yuksek">⚠ YÜKSEK RİSK</span>' : '')
         + '</div>'
         + '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + (c.type === 'musteri' ? '🟢 Müşteri' : c.type === 'tedarikci' ? '🔵 Tedarikçi' : '⚪ Diğer') + (c.phone ? ' · ' + window._esc(c.phone) : '') + (c.email ? ' · ' + window._esc(c.email) : '') + _rBigHTML + '</div>'
         + (c.iban ? '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">IBAN: ' + window._esc(c.iban) + '</div>' : '')
@@ -7681,6 +7732,9 @@ function _renderCariDetail(id) {
     + '<div class="csd-panel csd-panel-teklifler" style="display:none">' + stHTML + '</div>'
     + '<div class="csd-panel csd-panel-urunler" style="display:none">' + _urunPanelHTML + '</div>'
     + '<div class="csd-panel csd-panel-feedback" style="display:none">' + fbHTML + '</div>'
+    /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 4: 2 yeni panel */
+    + '<div class="csd-panel csd-panel-supplier-eval" style="display:none">' + _supplierEvalHTML + '</div>'
+    + '<div class="csd-panel csd-panel-admin-eval" style="display:none">' + _adminEvalHTML + '</div>'
   + '</div>';
 }
 
