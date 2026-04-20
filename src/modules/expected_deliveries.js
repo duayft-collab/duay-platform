@@ -293,4 +293,155 @@
       return rem !== null && rem >= 0 && rem <= d && e.status !== 'TESLIM_ALINDI';
     });
   };
+
+  /* ─── PARÇA 3: SORUMLULUK + CRITICAL BİLDİRİM ────────────── */
+  window._edAssignResponsible = function(edId, userId, role) {
+    if (!userId || !role) return { success: false, error: 'userId ve role zorunlu' };
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    var ed = f.list[f.idx];
+
+    if (!Array.isArray(ed.responsibleHistory)) ed.responsibleHistory = [];
+    if (ed.responsibleUserId && ed.responsibleUserId !== userId) {
+      ed.responsibleHistory.push({
+        userId: ed.responsibleUserId,
+        role: ed.responsibleRole,
+        assignedAt: ed.responsibleAssignedAt || ed.createdAt,
+        removedAt: new Date().toISOString()
+      });
+    }
+    ed.responsibleUserId = userId;
+    ed.responsibleRole = role;
+    ed.responsibleAssignedAt = new Date().toISOString();
+    ed.updatedAt = new Date().toISOString();
+
+    f.list[f.idx] = ed;
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f.list);
+
+    try { if (typeof window._edNotifyResponsible === 'function') window._edNotifyResponsible(ed, 'assigned'); } catch(e) {}
+    try { if (typeof window.logActivity === 'function') window.logActivity('ed_responsible_assigned', { edId: edId, userId: userId, role: role }); } catch(e) {}
+    return { success: true, ed: ed };
+  };
+
+  window._edChangeResponsible = function(edId, newUserId, newRole, reason) {
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    var ed = f.list[f.idx];
+    var oldUserId = ed.responsibleUserId;
+    var oldRole = ed.responsibleRole;
+    if (oldUserId === newUserId) return { success: false, error: 'Aynı kullanıcıya zaten atanmış' };
+
+    var result = window._edAssignResponsible(edId, newUserId, newRole);
+    if (!result.success) return result;
+
+    try {
+      if (oldUserId && typeof window.addNotif === 'function') {
+        var _cu = (window.CU && window.CU()) || {};
+        if (oldUserId !== (_cu.id || _cu.uid)) {
+          window.addNotif(
+            'ℹ️',
+            'Teslimat sorumluluğu devredildi: ' + (ed.productName || '') + (reason ? ' — ' + reason : ''),
+            'info',
+            'expected-deliveries',
+            oldUserId,
+            edId
+          );
+        }
+      }
+    } catch(e) {}
+
+    if (reason && String(reason).trim()) {
+      var f2 = _edFindRaw(edId);
+      if (f2.idx !== -1) {
+        if (!Array.isArray(f2.list[f2.idx].responsibleChanges)) f2.list[f2.idx].responsibleChanges = [];
+        f2.list[f2.idx].responsibleChanges.push({
+          from: { userId: oldUserId, role: oldRole },
+          to: { userId: newUserId, role: newRole },
+          reason: String(reason).trim(),
+          changedAt: new Date().toISOString(),
+          changedBy: ((window.CU && window.CU() && (window.CU().id || window.CU().uid)) || 'bilinmiyor')
+        });
+        if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f2.list);
+      }
+    }
+    return { success: true, ed: result.ed };
+  };
+
+  var ED_NOTIF_MESSAGES = {
+    assigned: { icon: '📦', type: 'info', text: function(ed) { return 'Teslimat sorumluluğu size atandı: ' + (ed.productName || ''); } },
+    critical: { icon: '🔴', type: 'err',  text: function(ed) { return 'KRİTİK: ' + (ed.productName || '') + ' teslimatı acil takip'; } },
+    overdue:  { icon: '⚠️', type: 'warn', text: function(ed) { return 'Teslimat GECİKTİ: ' + (ed.productName || ''); } },
+    reminder: { icon: '⏰', type: 'warn', text: function(ed) { return 'Teslimat yaklaşıyor: ' + (ed.productName || ''); } }
+  };
+
+  window._edNotifyResponsible = function(ed, eventType) {
+    if (!ed || !ed.responsibleUserId || typeof window.addNotif !== 'function') return;
+    var _cu = (window.CU && window.CU()) || {};
+    var _cuId = _cu.id || _cu.uid;
+    if (ed.responsibleUserId === _cuId) return;
+
+    var _bugun = new Date().toISOString().slice(0, 10);
+    var _dedupKey = 'ed_notif_' + ed.id + '_' + ed.responsibleUserId + '_' + eventType + '_' + _bugun;
+    try {
+      if (localStorage.getItem(_dedupKey)) return;
+      localStorage.setItem(_dedupKey, '1');
+    } catch(e) {}
+
+    var m = ED_NOTIF_MESSAGES[eventType] || ED_NOTIF_MESSAGES.reminder;
+    window.addNotif(m.icon, m.text(ed), m.type, 'expected-deliveries', ed.responsibleUserId, ed.id);
+
+    if (ed.priority === 'CRITICAL' && eventType !== 'critical') {
+      try {
+        var users = (typeof window.loadUsers === 'function' ? window.loadUsers() : []) || [];
+        users.forEach(function(u) {
+          if ((u.role || u.rol) !== 'admin') return;
+          var _aUid = u.id || u.uid;
+          if (!_aUid || _aUid === _cuId) return;
+          var _aDedup = 'ed_critical_' + ed.id + '_' + _aUid + '_' + _bugun;
+          if (localStorage.getItem(_aDedup)) return;
+          localStorage.setItem(_aDedup, '1');
+          window.addNotif('🔴', 'KRİTİK teslimat: ' + (ed.productName || ''), 'err', 'expected-deliveries', _aUid, ed.id);
+        });
+      } catch(e) {}
+    }
+  };
+
+  window._edGetResponsibleList = function(edId) {
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var ed = all.find(function(e) { return e.id === edId; });
+    if (!ed) return [];
+    var out = [];
+    if (ed.responsibleUserId) {
+      out.push({
+        userId: ed.responsibleUserId,
+        role: ed.responsibleRole,
+        assignedAt: ed.responsibleAssignedAt || ed.createdAt,
+        removedAt: null,
+        current: true
+      });
+    }
+    if (Array.isArray(ed.responsibleHistory)) {
+      ed.responsibleHistory.forEach(function(h) { out.push(Object.assign({}, h, { current: false })); });
+    }
+    return out;
+  };
+
+  /* _edUpdatePriority override — CRITICAL'a geçişte notify */
+  var _origUpdatePriority = window._edUpdatePriority;
+  window._edUpdatePriority = function(edId, priority) {
+    var result = _origUpdatePriority ? _origUpdatePriority(edId, priority) : { success: false };
+    if (result && result.success && priority === 'CRITICAL') {
+      try { if (typeof window._edNotifyResponsible === 'function') window._edNotifyResponsible(result.ed, 'critical'); } catch(e) {}
+    }
+    return result;
+  };
+
+  /* Manuel cron — PARÇA 5'te otomatik interval */
+  window._edCheckOverdueAndNotify = function() {
+    var overdueList = (typeof window._edFilterOverdue === 'function' ? window._edFilterOverdue() : []) || [];
+    overdueList.forEach(function(ed) {
+      try { if (typeof window._edNotifyResponsible === 'function') window._edNotifyResponsible(ed, 'overdue'); } catch(e) {}
+    });
+    return { count: overdueList.length };
+  };
 })();
