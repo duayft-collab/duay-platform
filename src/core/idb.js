@@ -101,7 +101,9 @@
   window._idbDbName = DB_NAME;
 
   /* Pre-open DB (uygulama başlarken) */
-  _openDB().then(function() {
+  _openDB().then(function(db) {
+    /* STORAGE-LONGTERM-001 ADIM 1: appDB global expose — module_async_helpers dbGet/dbSet için */
+    window.appDB = db;
     console.log('[IDB-CORE-001] appDB hazır:', STORES.length, 'store');
   }).catch(function(e) {
     console.error('[IDB-CORE-001] DB açılamadı:', e);

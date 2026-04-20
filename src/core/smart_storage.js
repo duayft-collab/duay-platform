@@ -152,6 +152,9 @@
     'ak_alarms1': 'misc', 'ak_tk2': 'misc'
   };
 
+  /* STORAGE-LONGTERM-001 ADIM 1: Helper'lar (module_async_helpers) erişsin */
+  window._STORAGE_STORE_MAP = MIGRATE_KEYS;
+
   window._lsProxyCache = {};
   window._lsProxyReady = false;
 
