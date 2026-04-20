@@ -40,6 +40,7 @@ window.__ENV__ = {
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <!-- ── Stil ── -->
   <link rel="stylesheet" href="assets/css/styles.css">
@@ -1447,11 +1448,14 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/core/smart_storage.js?v=20260420AN"></script>
 <!-- STORAGE-LONGTERM-001 ADIM 1: Module async helpers (dbGet/dbSet/Guarantor) -->
 <script src="src/core/module_async_helpers.js?v=20260420AN"></script>
+<!-- ENTERPRISE-FLOW-NETWORK-001 PARÇA 1: Event Bus Core (pub-sub) -->
+<script src="src/core/event_bus.js?v=20260420AN"></script>
 <script src="src/core/database.js?v=20260420AN"></script>
 <script src="src/core/aux_sync.js?v=20260420AN"></script>
 <script src="src/core/cache.js?v=20260420AN"></script>
 <script src="src/core/utils.js?v=20260420AN"></script>
 <script src="src/core/auth.js?v=20260420AN"></script>
+<script src="src/core/storage_helpers.js?v=20260420AN"></script>
 <script src="src/core/gdrive.js?v=20260420AN"></script>
 
 <!-- CARI-NORMALIZE-001: merkezi cari helper (diğer modüllerden önce) -->
