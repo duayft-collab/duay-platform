@@ -815,7 +815,58 @@ function _dashYeniRender() {
   h += _dashMiniKpi('Gecikmiş', gecikmis, 'tahsilat');
   h += '</div></div>';
 
-  /* TODO PARÇA B: Alert strip  /  PARÇA C: KPI grid + Timeline  /  PARÇA D: Quick action + legacy → Detay */
+  /* DASHBOARD-REDESIGN-001 PARÇA B: BLOK 2 Alert strip */
+  var alerts = [];
+  var _now = Date.now();
+  try {
+    var _tah = (typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [];
+    _tah.forEach(function(t) {
+      if (t && !t.isDeleted && t.durum !== 'tahsil_edildi' && t.vade && new Date(t.vade).getTime() < _now) {
+        alerts.push({ tip: 'kirmizi', ikon: '🚨', msg: 'Gecikmiş tahsilat: ' + (t.musteriAd || '—') + ' · ' + (Number(t.tutar)||0).toLocaleString('tr-TR') + ' ' + (t.para || ''), link: 'tahsilat' });
+      }
+    });
+  } catch(e) {}
+  try {
+    var _sa = (typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : []) || [];
+    _sa.forEach(function(t) {
+      if (!t || t.isDeleted) return;
+      if (t.durum !== 'bekleyen') return;
+      var _olu = new Date(t.createdAt || t.olusturmaT || t.ts || 0).getTime();
+      if (!_olu) return;
+      var _gun = (_now - _olu) / 86400000;
+      if (_gun > 7) alerts.push({ tip: 'turuncu', ikon: '⏳', msg: 'Onay bekliyor ' + Math.floor(_gun) + ' gündür: ' + (t.piNo || t.tedarikci || '—'), link: 'satin-alma' });
+    });
+  } catch(e) {}
+  try {
+    if (localStorage.getItem('ak_storage_critical') === '1') {
+      alerts.push({ tip: 'kirmizi', ikon: '💾', msg: 'Depolama dolu — veri kaydedilemiyor', link: 'admin' });
+    }
+  } catch(e) {}
+  try {
+    if (typeof window._getDbHealth === 'function') {
+      var _dbH = window._getDbHealth();
+      if (_dbH && (_dbH.hasRed || _dbH.hasAmber)) {
+        var _msg = (_dbH.alerts && _dbH.alerts[0] && _dbH.alerts[0].msg) || 'Veritabanı anormalliği';
+        alerts.push({ tip: _dbH.hasRed ? 'kirmizi' : 'turuncu', ikon: _dbH.hasRed ? '🔴' : '🟡', msg: _msg, link: 'admin' });
+      }
+    }
+  } catch(e) {}
+
+  if (alerts.length) {
+    h += '<div style="margin-bottom:20px">';
+    alerts.slice(0, 3).forEach(function(a) {
+      var bg = a.tip === 'kirmizi' ? '#FCEBEB' : a.tip === 'turuncu' ? '#FAEEDA' : '#FAECE7';
+      var fg = a.tip === 'kirmizi' ? '#791F1F' : a.tip === 'turuncu' ? '#854F0B' : '#712B13';
+      var _m = window._esc ? window._esc(a.msg) : a.msg;
+      h += '<div onclick="window.App && window.App.nav && window.App.nav(\'' + a.link + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:' + bg + ';border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:12px;color:' + fg + '"><span>' + a.ikon + '</span><span style="flex:1">' + _m + '</span><span style="opacity:.6">→</span></div>';
+    });
+    if (alerts.length > 3) {
+      h += '<div style="font-size:10px;color:var(--t3);text-align:center;margin-top:4px">+ ' + (alerts.length - 3) + ' uyarı daha</div>';
+    }
+    h += '</div>';
+  }
+
+  /* TODO PARÇA C: KPI grid + Timeline  /  PARÇA D: Quick action + legacy → Detay */
   h += '<div style="padding:40px;text-align:center;color:var(--t3);font-size:11px">Yeni dashboard yapımı devam ediyor (PARÇA B-D sonra). Eski görünüm için "Detay Görünüm →" butonunu kullan.</div>';
   h += '<div style="display:flex;justify-content:flex-end;margin-top:8px"><button onclick="window.App?.nav?.(\'dashboardDetay\')" style="font-size:10px;padding:4px 12px;border-radius:12px;background:var(--sf);border:0.5px solid var(--b);color:var(--t2);cursor:pointer;font-family:inherit">Detay Görünüm →</button></div>';
 
