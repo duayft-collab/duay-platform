@@ -394,6 +394,10 @@ window._saveUrunDB = function() {
       /* URUN-FORM-2SATIR-001: uretimKontrol kaldırıldı (edit mode Object.assign ile korunur) */
       gizliHile: gizliHile,
       gizliHileNot: gizliHileNot,
+      /* URUN-FORM-BASIT-001 PARÇA C: yeni alanlar */
+      gizliKaynak: gizliKaynak,
+      uretimTarihi: uretimTarihi || null,
+      bakimYili: bakimYili ? Number(bakimYili) : null,
       image: image||null,
       _hasImage: !!image,
       _imageUploaded: image ? new Date().toISOString() : null,
