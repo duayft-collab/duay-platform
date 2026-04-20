@@ -888,12 +888,19 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
   var _seciliTedN = _norm(_seciliTed);
   var q = _norm(deger);
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
+  /* SATINALMA-UX-003: vendorName + vendor fallback (batch form u.vendorName, eski u.tedarikci, nadir u.vendor) + yeni name field'ları (origName/duayName/duayCode) search'e eklendi */
   var tum = urunler.filter(function(u){
     if (u.isDeleted) return false;
-    return _norm(u.tedarikci || u.vendorName || '') === _seciliTedN;
+    return _norm(u.tedarikci || u.vendorName || u.vendor || '') === _seciliTedN;
   });
   var sonuc = tum.filter(function(u) {
-    return _norm(u.urunAdi).includes(q) || _norm(u.standartAdi).includes(q) || _norm(u.duayAdi).includes(q) || _norm(u.duayKodu).includes(q);
+    return _norm(u.urunAdi).includes(q)
+      || _norm(u.standartAdi).includes(q)
+      || _norm(u.origName).includes(q)
+      || _norm(u.duayAdi).includes(q)
+      || _norm(u.duayName).includes(q)
+      || _norm(u.duayKodu).includes(q)
+      || _norm(u.duayCode).includes(q);
   }).slice(0, 8);
   if (!sonuc.length) { if (dd) dd.remove(); return; }
   if (!dd) {
