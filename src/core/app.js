@@ -1054,7 +1054,8 @@ function _renderPanel(id) {
   const safe = fn => { try { fn(); } catch (e) { console.warn('[App.nav] render hatası:', id, e); } };
 
   const RENDERS = {
-    dashboard:  () => safe(_renderDashboard),
+    /* DASHBOARD-NAV-HIJACK-001: dashboard.js override'ı önceler, yoksa eski _renderDashboard */
+    dashboard:  () => safe(window.renderDashboard || _renderDashboard),
     kargo:      () => safe(() => { window.Kargo?.render?.(); window.Kargo?.renderKonteyn?.(); }),
     lojistik:   () => safe(() => { window.renderLojistik?.(); }),
     pirim:      () => safe(() => window.Pirim?.render?.()),
