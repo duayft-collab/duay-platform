@@ -72,13 +72,16 @@ window._yetkiKontrol = function(islem) {
     'urun-fiyat': () => { window._saUrunListeAc?.(); },
     'satin-alma': () => { window.renderSatinAlmaV2?.(); },
     'alindi-teklifler': () => { window.renderIhracatListesi?.(); },
+    /* ALIS-TEKLIFLERI-GUNCEL-001: iki versiyon ayrıştı */
     'alis-teklifleri': () => {
-      /* SATINALMA-MENU-CLEANUP-001: panel-alis-teklifleri'ye özel render, SatinAlmaV2 değil */
+      /* Eski versiyon — panel-alis-teklifleri */
       if (typeof window.renderAlisTeklifleri === 'function') {
         window.renderAlisTeklifleri();
-      } else {
-        window.renderSatinAlmaV2?.();
       }
+    },
+    'satin-alma-v2': () => {
+      /* Güncel SA V2 — panel-satin-alma */
+      window.renderSatinAlmaV2?.();
     },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
     'formlar': () => { /* kurumsal formlar */ },
@@ -642,6 +645,8 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'fason',     label:'Fason Üretim'         },
     { id:'urunler',   label:'Ürün Kataloğu'        },
     { id:'alis-teklifleri', label:'Alış Teklifleri' },
+    /* ALIS-TEKLIFLERI-GUNCEL-001 */
+    { id:'satin-alma-v2', label:'Alış Teklifleri (SA V2)' },
     { id:'satis-teklifleri',label:'Proforma Teklifler'},
     { id:'cari',      label:'Cari Yönetimi'        },
     /* ADMIN-MOD-COMPLETE-001: ALL_MODULES'ta eksik olan 8 nav modülü */
@@ -5674,13 +5679,14 @@ window._renderFirmaKpi = function() {
   /* Satınalma menüsü — tam yeniden yapılandır */
   /* FASON-OVERRIDE-FIX-001: fason L4930 push'u burada silinmesin, hardcoded array'e de eklendi */
   if (G.satinalma) {
-    /* SATINALMA-MENU-CLEANUP-001: satis-teklifleri+cari duplicate idi (Satış grubunda zaten var), çıkarıldı. alis-teklifleri doğru id ile kaldı. */
+    /* ALIS-TEKLIFLERI-GUNCEL-001: SA V2 güncel, eski renderAlisTeklifleri "Eski" olarak yedekte */
     G.satinalma.mods = [
-      { id: 'alis-teklifleri',   label: 'Al\u0131\u015f Teklifleri' },
+      { id: 'satin-alma-v2',     label: 'Al\u0131\u015f Teklifleri' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
       { id: 'fason',             label: 'Fason \u00dcretim' },
+      { id: 'alis-teklifleri',   label: 'Al\u0131\u015f Teklifleri - Eski' },
     ];
   }
   /* Muhasebe men\u00fcs\u00fcne 3 yeni mod\u00fcl */
