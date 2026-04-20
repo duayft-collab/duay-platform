@@ -1380,8 +1380,8 @@ const DEFAULT_NOTES = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadAct()     { const d = _read(KEYS.activity); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 100 kayıt saklanır */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 20));
-  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 20));
+/** @param {Array<Object>} d Son 1000 kayıt saklanır (ACTIVITY-LOG-CLEANUP-001) */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 1000));
+  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 1000));
 }
 
 /**
@@ -1392,7 +1392,31 @@ const DEFAULT_NOTES = [
 function logActivity(type, detail) {
   const CU = window.Auth?.getCU?.();
   if (!CU) return;
-  const acts = loadAct();
+  var acts = loadAct();
+  /* ACTIVITY-LOG-CLEANUP-001: TTL 30 gün + 1 saat dedup */
+  try {
+    var _now = Date.now();
+    var _thirtyDaysAgo = _now - (30 * 24 * 60 * 60 * 1000);
+    acts = acts.filter(function(a) {
+      try {
+        var _t = new Date(String(a.ts || '').replace(' ', 'T')).getTime();
+        return !isNaN(_t) && _t >= _thirtyDaysAgo;
+      } catch(e) { return false; }
+    });
+    var _oneHourAgo = _now - (60 * 60 * 1000);
+    var _detailKey = String(detail || '').slice(0, 100);
+    var _uid = CU.id || CU.uid || '';
+    var _dup = acts.find(function(a) {
+      if (String(a.type) !== String(type)) return false;
+      if (String(a.uid || '') !== String(_uid)) return false;
+      try {
+        var _t = new Date(String(a.ts || '').replace(' ', 'T')).getTime();
+        if (isNaN(_t) || _t < _oneHourAgo) return false;
+      } catch(e) { return false; }
+      return String(a.detail || '').slice(0, 100) === _detailKey;
+    });
+    if (_dup) return; /* 1 saat içinde aynı event tekrarı — atla */
+  } catch(_ae) { console.warn('[ACTIVITY-LOG-CLEANUP]', _ae && _ae.message); }
   const entry = { id: generateNumericId(), uid: CU.id, uname: CU.name, type, detail, ts: nowTs() };
   acts.unshift(entry);
   saveAct(acts);
