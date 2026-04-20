@@ -3742,6 +3742,25 @@ window._ppGorevMesajGonder = function(taskId, text, dosyaAd) {
 
 window._ppGorevMesajPanelAc = function(taskId, taskAd) {
   var mevcut = document.getElementById('pp-gorev-mesaj-panel'); if(mevcut) mevcut.remove();
+  /* PUSULA-PAYLASIM-003: Rol tespiti — admin/sorumlu/etkiliGozlemci yazar, seyirci okur */
+  var _me = _ppCu();
+  var _uid = _me?.uid || String(_me?.id || '') || _me?.email || '';
+  var _isAdmin = _ppIsAdmin();
+  var _task = null;
+  try { _task = (_ppLoad() || []).find(function(t){ return String(t.id) === String(taskId); }); } catch(e){}
+  var _yazabilir = _isAdmin;
+  if (!_yazabilir && _task) {
+    var _sorumluArr = Array.isArray(_task.sorumlu) ? _task.sorumlu : (_task.sorumlu ? [_task.sorumlu] : []);
+    var _sorumluMatch = _sorumluArr.some(function(s){
+      if (!s) return false;
+      var sUid = typeof s === 'object' ? (s.uid || s.id || '') : '';
+      var sAd = typeof s === 'object' ? (s.ad || s.name || s.displayName || s.email || '') : String(s);
+      return sUid === _uid || sUid === (_me?.email||'') || sAd === (_me?.displayName || _me?.name || '') || sAd === (_me?.email||'') || String(s) === _uid;
+    });
+    var _gozlemciArr = Array.isArray(_task.gozlemci) ? _task.gozlemci : (Array.isArray(_task.etkiliGozlemci) ? _task.etkiliGozlemci : []);
+    var _gozlemciMatch = _gozlemciArr.some(function(g){ return (g && (g.uid || g)) === _uid; });
+    _yazabilir = _sorumluMatch || _gozlemciMatch;
+  }
   var mo = document.createElement('div');
   mo.id = 'pp-gorev-mesaj-panel';
   mo.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--sf,#fff);border-left:0.5px solid var(--b);z-index:9500;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.08)';
@@ -3759,14 +3778,18 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     +'</div>'
     +'<div id="pp-gorev-mesaj-liste" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>'
     +'<div id="pp-gorev-ek-liste" style="display:none;flex:1;overflow-y:auto;padding:12px 16px"></div>'
-    +'<div style="padding:10px 12px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:6px">'
-    +'<textarea id="pp-gorev-mesaj-input" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);padding:6px 8px;font-size:var(--pp-body);font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
-    +'<div style="display:flex;gap:6px">'
-    +'<button onclick="event.stopPropagation();var t=document.getElementById(\'pp-gorev-mesaj-input\');if(t.value.trim()){window._ppGorevMesajGonder(\''+taskId+'\',t.value.trim());t.value=\'\'}" style="flex:1;padding:5px;border:none;background:#111;color:#fff;border-radius:5px;font-size:var(--pp-meta);cursor:pointer;font-family:inherit">Gönder</button>'
-    /* PP-GOREV-MESAJ-STT-001: SpeechRecognition tr-TR — sesli mesaj texte dönüşerek gönderilir */
-    +'<button id="pp-stt-btn" onclick="event.stopPropagation();window._ppSttBaslat(\''+taskId+'\')" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:var(--pp-body);cursor:pointer;background:transparent;color:var(--t2)" title="Sesli mesaj">🎤</button>'
-    +'<label style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:var(--pp-meta);cursor:pointer;color:var(--t2)">📎<input type="file" style="display:none" onchange="event.stopPropagation();if(this.files[0])window._ppGorevMesajGonder(\''+taskId+'\',\'\',this.files[0].name)"></label>'
-    +'</div></div>';
+    /* PUSULA-PAYLASIM-003: Seyirci ise input/upload yerine readonly banner */
+    + (_yazabilir
+        ? '<div style="padding:10px 12px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:6px">'
+          +'<textarea id="pp-gorev-mesaj-input" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);padding:6px 8px;font-size:var(--pp-body);font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
+          +'<div style="display:flex;gap:6px">'
+          +'<button onclick="event.stopPropagation();var t=document.getElementById(\'pp-gorev-mesaj-input\');if(t.value.trim()){window._ppGorevMesajGonder(\''+taskId+'\',t.value.trim());t.value=\'\'}" style="flex:1;padding:5px;border:none;background:#111;color:#fff;border-radius:5px;font-size:var(--pp-meta);cursor:pointer;font-family:inherit">Gönder</button>'
+          /* PP-GOREV-MESAJ-STT-001: SpeechRecognition tr-TR */
+          +'<button id="pp-stt-btn" onclick="event.stopPropagation();window._ppSttBaslat(\''+taskId+'\')" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:var(--pp-body);cursor:pointer;background:transparent;color:var(--t2)" title="Sesli mesaj">🎤</button>'
+          +'<label style="padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;font-size:var(--pp-meta);cursor:pointer;color:var(--t2)">📎<input type="file" style="display:none" onchange="event.stopPropagation();if(this.files[0])window._ppGorevMesajGonder(\''+taskId+'\',\'\',this.files[0].name)"></label>'
+          +'</div></div>'
+        : '<div style="padding:12px 14px;margin:10px 12px;background:#F3F4F6;border:0.5px dashed #CBD5E1;border-radius:var(--pp-r-md);text-align:center;color:#64748B;font-size:var(--pp-meta)">\u{1F441} Seyirci modundas\u0131n \u2014 mesajlar\u0131 okuyabilirsin, yazamazs\u0131n</div>'
+      );
   document.body.appendChild(mo);
   window._ppGorevMesajPanelRender = function(tid) {
     var liste = document.getElementById('pp-gorev-mesaj-liste'); if(!liste) return;
