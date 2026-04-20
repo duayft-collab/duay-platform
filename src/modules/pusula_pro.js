@@ -56,6 +56,27 @@ window._ppDebug = window._ppDebug || function() {
   document.head.appendChild(_style);
 })();
 
+/* PUSULA-PRO-REDESIGN-001 PARÇA 5: _ppEmptyState helper + segmented control CSS */
+window._ppEmptyState = function(mod, ikonChar, baslik, altmetin, ctaLabel, ctaHandler) {
+  var _e = window._esc || function(s){return String(s==null?'':s);};
+  return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center;min-height:280px">'
+    + '<div style="font-size:40px;margin-bottom:12px;opacity:.4">' + ikonChar + '</div>'
+    + '<div style="font-size:15px;font-weight:500;color:var(--t);margin-bottom:6px">' + _e(baslik) + '</div>'
+    + '<div style="font-size:12px;color:var(--t3);max-width:320px;line-height:1.5;margin-bottom:20px">' + _e(altmetin) + '</div>'
+    + (ctaLabel ? '<button onclick="' + ctaHandler + '" style="padding:8px 16px;background:var(--pp-info);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">' + _e(ctaLabel) + '</button>' : '')
+    + '</div>';
+};
+(function _ppInjectSegmentedCss() {
+  if (document.getElementById('pp-segmented-css')) return;
+  var _style = document.createElement('style');
+  _style.id = 'pp-segmented-css';
+  _style.textContent = '.pp-tabs{display:inline-flex;padding:3px;background:var(--s2,rgba(0,0,0,0.04));border-radius:8px;gap:2px}'
+    + '.pp-tabs .pp-tab{padding:6px 14px;border:none;background:transparent;color:var(--t3);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer;transition:all .15s;font-family:inherit}'
+    + '.pp-tabs .pp-tab.on{background:var(--sf,#fff);color:var(--t);box-shadow:0 1px 2px rgba(0,0,0,.05)}'
+    + '.pp-tabs .pp-tab:hover:not(.on){color:var(--t2)}';
+  document.head.appendChild(_style);
+})();
+
 /* ── Sabitler ───────────────────────────────────────────────── */
 var PP_KEY        = 'ak_pusula_pro_v1';
 var PP_TASK_KEY   = 'ak_tk2';
@@ -212,7 +233,7 @@ window._ppRender = function() {
   var _modBtns = PP_MODS.map(function(m) {
     var lbl = {akis:'Akış',calisma:'Çalışma',takvim:'Takvim',odak:'Odak',degerlendirme:'Değerlendirme'}[m];
     // PUSULA-SEKME-FIX-001: inline onclick kaldırıldı, aşağıda addEventListener ile bağlanır (Safari propagation fix)
-    return '<button id="pp-mod-' + m + '" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:20px;cursor:pointer;font-family:inherit;background:transparent;color:var(--t2)">' + lbl + '</button>';
+    return '<button id="pp-mod-' + m + '" class="pp-tab">' + lbl + '</button>';
   }).join('');
   /* XSS-SAFE: statik */
   panel.innerHTML = ''
@@ -220,7 +241,7 @@ window._ppRender = function() {
     + '<div id="pp-inner" style="flex:1;display:flex;flex-direction:column;height:100%;background:var(--sf);min-width:0">'
     + '<div id="pp-head" style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:40px;border-bottom:0.5px solid var(--b);flex-shrink:0">'
     + '<div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px"><div style="width:6px;height:6px;border-radius:50%;background:#E24B4A"></div>Pusula OS</div>'
-    + '<div style="display:flex;gap:3px" id="pp-modes">' + _modBtns + '</div>'
+    + '<div class="pp-tabs" id="pp-modes">' + _modBtns + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
     /* PUSULA-TEMIZLIK-001: skor pill kaldırıldı */
     + '<div id="pp-msg-btn" onclick="event.stopPropagation();window._ppMesajPanelAc()" style="width:30px;height:30px;border:0.5px solid var(--b);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative" title="Mesajlar">'
@@ -566,7 +587,7 @@ window._ppModRender = function() {
       + _grup('KRİTİK', 'background:#FCEBEB;color:var(--pp-err)', kritik)
       + _grup('DEVAM EDİYOR', 'background:#E1F5EE;color:#0F6E56', devam)
       + _grup('PLANLANDI', 'background:#E6F1FB;color:var(--pp-info)', plan)
-      + (tasks.length === 0 ? '<div style="padding:40px;text-align:center;color:var(--t3);font-size:13px">Henüz görev yok<br><br><button onclick="event.stopPropagation();window._ppYeniGorev()" style="font-size:11px;padding:6px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit">+ İlk Görevi Ekle</button></div>' : '')
+      + (tasks.length === 0 ? window._ppEmptyState('calisma', '\u{1F3AF}', 'Aktif görev yok', 'Bugün için planladığın işleri buraya ekle', '+ Yeni görev', 'event.stopPropagation();window._ppYeniGorev()') : '')
       + '</div>'
       + '<div style="border-top:0.5px solid var(--b);padding:8px 14px;display:flex;gap:6px;flex-shrink:0">'
       + '<input id="pp-quick" placeholder="Hızlı görev ekle — Enter..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ppHizliEkle(this)" style="flex:1;font-size:11px;padding:6px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;font-family:inherit;color:var(--t)">'
@@ -665,9 +686,8 @@ window._ppModRender = function() {
     }
 
     if (!tasks.length) {
-      h += '<div style="text-align:center;padding:32px;color:var(--t3);font-size:13px">Henüz görev yok — Çalışma modundan ekle'
-        + '<div><button onclick="event.stopPropagation();window.PP_MOD=\'calisma\';window._ppModRender?.()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--ac);margin-top:8px">→ Çalışma Moduna Geç</button></div>'
-        + '</div>';
+      /* PUSULA-PRO-REDESIGN-001 PARÇA 5: odak empty state */
+      h += window._ppEmptyState('odak', '\u23F1', 'Odak seansı için görev yok', 'Çalışma modundan görev ekle, sonra odak başlat (25 dk pomodoro)', '→ Çalışma Moduna Geç', 'event.stopPropagation();window.PP_MOD=\'calisma\';window._ppModRender?.()');
     }
 
     h += '</div>';
