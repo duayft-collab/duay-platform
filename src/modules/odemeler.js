@@ -6528,6 +6528,17 @@ function _approveCari(id) {
   storeCari(d);
   window.toast?.('Cari onaylandı ✓', 'ok');
   window.addNotif?.('✅', 'Cari onaylandı: ' + c.name, 'ok', 'cari', c.createdBy);
+  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 5: CARI_ONAYLANDI event */
+  try {
+    window.dispatchEvent(new CustomEvent('CARI_ONAYLANDI', {
+      detail: {
+        cariId: c.id,
+        name: c.name,
+        supplierEvaluation: c.supplierEvaluation,
+        adminEvaluation: c.adminEvaluation
+      }
+    }));
+  } catch(e) { console.warn('[CARI-EVENT-EMIT]', e.message); }
   if (typeof renderCari === 'function') renderCari();
 }
 
@@ -6739,6 +6750,17 @@ window._cariSupplierEvalModalAc = function(entry, onComplete) {
 
     document.getElementById('cari-supplier-eval-modal').remove();
     window.toast?.('Personel değerlendirmesi kaydedildi', 'ok');
+    /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 5: CARI_ONAYA_GONDERILDI event */
+    try {
+      window.dispatchEvent(new CustomEvent('CARI_ONAYA_GONDERILDI', {
+        detail: {
+          cariId: entry.id,
+          name: entry.name,
+          supplierEvaluation: entry.supplierEvaluation,
+          userId: cu.id || cu.uid
+        }
+      }));
+    } catch(e) { console.warn('[CARI-EVENT-EMIT]', e.message); }
     if (typeof onComplete === 'function') onComplete(entry);
   };
 };
