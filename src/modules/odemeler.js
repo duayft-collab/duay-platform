@@ -1616,13 +1616,19 @@ function uploadOdmSozlesme() {
 }
 
 function viewOdmSozlesme(id) {
+  /* XSS-FIX-ODM-SOZLESME-001: protokol allow-list + iframe sandbox + _esc attribute breakout koruması */
   const o = (window.loadOdm ? loadOdm() : []).find(x => x.id === id);
   if (!o || !o.sozlesme) return;
+  const s = String(o.sozlesme);
+  const allowed = /^(data:image\/|data:application\/pdf|https?:\/\/|\/|\.\/)/i.test(s);
+  if (!allowed) { window.toast?.('Sözleşme biçimi güvensiz, gösterilemedi', 'err'); return; }
+  const esc = window._esc || function(x){return String(x).replace(/[<>"'&]/g,'');};
+  const safeSrc = esc(s);
   const win = window.open('', '_blank');
   win.document.write('<html><body style="margin:0">'
-    + (o.sozlesme.startsWith('data:image')
-      ? '<img src="' + o.sozlesme + '" style="max-width:100%">'
-      : '<iframe src="' + o.sozlesme + '" style="width:100vw;height:100vh;border:none"></iframe>')
+    + (s.startsWith('data:image')
+      ? '<img src="' + safeSrc + '" style="max-width:100%">'
+      : '<iframe src="' + safeSrc + '" style="width:100vw;height:100vh;border:none" sandbox></iframe>')
     + '</body></html>');
 }
 window.viewOdmSozlesme   = viewOdmSozlesme;
