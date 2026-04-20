@@ -2035,6 +2035,24 @@ function markOdmPaid(id) {
   localStorage.removeItem('odm_alarm_late_' + id);
   window.toast?.('Ödendi olarak işaretlendi', 'ok');
 
+  /* EXPECTED-DELIVERIES-FLOW-002 PARÇA 4: AVANS ödemesi → event emit */
+  try {
+    if (o.source === 'satinalma' && /avans/i.test(o.note || '')) {
+      window.dispatchEvent(new CustomEvent('AVANS_ODENDI', {
+        detail: {
+          odemeId: o.id,
+          satinalmaId: o.purchaseId || null,
+          supplierId: o.cariId || null,
+          productName: o.name,
+          quantity: o.quantity || 1,
+          unit: o.unit || 'adet',
+          paymentDate: o.paidTs,
+          priority: o.priority || 'NORMAL'
+        }
+      }));
+    }
+  } catch(_edAvEmitErr) { console.warn('[AVANS-EVENT-EMIT]', _edAvEmitErr && _edAvEmitErr.message); }
+
   // Dekont uyarısı
   setTimeout(() => {
     window.toast?.('Lütfen dekontu yüklemeyi unutmayın', 'warn');
