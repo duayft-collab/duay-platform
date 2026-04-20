@@ -54,6 +54,14 @@ var URUN_COUNTRIES = ['Türkiye','Çin','Almanya','ABD','İtalya','Fransa','İng
  */
 function openUrunModal(id) {
   var old = document.getElementById('mo-urun-db'); if (old) old.remove();
+  /* DRAFT-URUN-EKLE-001: taslak yükle, banner hazırla */
+  var _udbDraft = null, _udbDraftBanner = '';
+  try {
+    _udbDraft = window.DraftManager && window.DraftManager.load('urun-ekle-batch');
+    if (_udbDraft && _udbDraft.data && _udbDraft.data.urunler && _udbDraft.data.urunler.length) {
+      _udbDraftBanner = window.DraftManager.bannerHtml('urun-ekle-batch') || '';
+    }
+  } catch(e) { console.warn('[DRAFT-URUN]', e && e.message); }
   var data = loadUrunDB();
   var u = id ? data.find(function(x) { return String(x.id) === String(id); }) : null;
   var esc = window._esc;
@@ -79,6 +87,7 @@ function openUrunModal(id) {
       + '<button onclick="document.getElementById(\'mo-urun-db\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3)">×</button>'
     + '</div>'
     + '<div style="flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:10px">'
+      + _udbDraftBanner  /* DRAFT-URUN-EKLE-001 */
       // URUN-FORM-EXCEL-001: Excel tarzı çok satırlı tablo
       /* URUN-FORM-KART-LAYOUT-001-ADIM-A: table/thead/tbody → udb-kartlar container + udb-card (per-card table wrapper ADIM-B'ye kadar korunur) */
       + '<div id="udb-tablo-wrap" style="overflow-x:auto">'
@@ -97,6 +106,54 @@ function openUrunModal(id) {
     + '</div></div>';
   document.body.appendChild(mo);
   requestAnimationFrame(function(){ mo.classList.add('open'); });
+  /* DRAFT-URUN-EKLE-001: banner callback + input listener */
+  if (window.DraftManager) {
+    window.DraftManager.attachBanner('urun-ekle-batch',
+      function _onContinue(_d) {
+        /* Restore yapısı PARÇA 2'de — şimdilik sadece console.log */
+        console.log('[DRAFT-URUN] Devam Et — taslak data hazır:', _d);
+        if (window.toast) window.toast('Taslak bilgisi console\'a yazıldı (restore PARÇA 2)', 'info');
+      },
+      function _onDiscard() {
+        if (window.toast) window.toast('Taslak silindi', 'ok');
+      }
+    );
+    /* Input listener — 2sn debounce ile save */
+    mo.addEventListener('input', function(e) {
+      if (!e.target || !e.target.id || e.target.id.indexOf('udb-') !== 0) return;
+      try {
+        var urunler = [];
+        mo.querySelectorAll('.udb-card[id^="udb-row-"]').forEach(function(kart) {
+          var n = kart.id.replace('udb-row-', '');
+          urunler.push({
+            n: n,
+            duayName: (document.getElementById('udb-duayName-' + n) || {}).value || '',
+            origName: (document.getElementById('udb-origName-' + n) || {}).value || '',
+            vendor: (document.getElementById('udb-vendor-' + n) || {}).value || '',
+            vendorCode: (document.getElementById('udb-vendorCode-' + n) || {}).value || '',
+            category: (document.getElementById('udb-category-' + n) || {}).value || '',
+            origin: (document.getElementById('udb-origin-' + n) || {}).value || '',
+            unit: (document.getElementById('udb-unit-' + n) || {}).value || '',
+            netW: (document.getElementById('udb-netW-' + n) || {}).value || '',
+            grossW: (document.getElementById('udb-grossW-' + n) || {}).value || '',
+            marka: (document.getElementById('udb-marka-' + n) || {}).value || '',
+            raf: (document.getElementById('udb-raf-' + n) || {}).value || '',
+            techDesc: (document.getElementById('udb-techDesc-' + n) || {}).value || '',
+            sozlesme: (document.getElementById('udb-sozlesme-' + n) || {}).value || '',
+            note: (document.getElementById('udb-note-' + n) || {}).value || '',
+            hile: !!(document.getElementById('udb-hile-' + n) || {}).checked,
+            hileNot: (document.getElementById('udb-hile-not-' + n) || {}).value || '',
+            gizliKaynak: (document.getElementById('udb-gizliKaynak-' + n) || {}).value || '',
+            uretimTarihi: (document.getElementById('udb-uretimTarihi-' + n) || {}).value || '',
+            bakimYili: (document.getElementById('udb-bakimYili-' + n) || {}).value || ''
+          });
+        });
+        /* En az 1 alan dolu mu kontrol et, boş form save etme */
+        var _dolu = urunler.some(function(u){ return u.duayName || u.origName || u.vendor || u.category; });
+        if (_dolu) window.DraftManager.save('urun-ekle-batch', { urunler: urunler });
+      } catch(err) { console.warn('[DRAFT-URUN-EKLE]', err && err.message); }
+    });
+  }
   mo.addEventListener('click', function(e) { if (e.target === mo) mo.remove(); });
 
   // Duay kodu otomatik üret
@@ -464,6 +521,8 @@ window._saveUrunDB = function() {
     }
   });
   storeUrunDB(data);
+  /* DRAFT-URUN-EKLE-001: başarılı kayıt sonrası taslağı temizle */
+  try { if (window.DraftManager) { window.DraftManager.markSaving('urun-ekle-batch'); window.DraftManager.clear('urun-ekle-batch'); } } catch(e) {}
 
   Object.keys(window).filter(function(k){return k.startsWith('_udbImg');}).forEach(function(k){delete window[k];});
   /* URUN-FORM-GORSEL-PERSIST-001: edit source cache temizliği */
