@@ -518,8 +518,11 @@ window._ppModRender = function() {
         h2 += '<div style="display:flex;align-items:center;gap:2px" onclick="event.stopPropagation()">';
         h2 += '<button onclick="event.stopPropagation();window._ppPeekAc(\''+t.id+'\')" title="Hızlı göz at" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="6" cy="6" r="3"/><path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z"/></svg></button>';
         h2 += '<button onclick="event.stopPropagation();window._ppGorevMesaj(\''+t.id+'\')" title="Mesajlaş" style="width:22px;height:22px;border:0.5px solid #B5D4F4;border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-info);display:flex;align-items:center;justify-content:center;position:relative"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1h10a1 1 0 011 1v5a1 1 0 01-1 1H7L4.5 11V8H1a1 1 0 01-1-1V2a1 1 0 011-1z"/></svg></button>';
-        h2 += '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\''+t.id+'\')" title="Düzenle" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 2l2 2-6 6H2V8l6-6z"/></svg></button>';
-        h2 += '<button onclick="event.stopPropagation();window._ppGorevSil(\''+t.id+'\')" title="Sil" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3H4z"/></svg></button>';
+        /* PUSULA-PAYLASIM-002b: row Düzenle/Sil butonları sadece admin'e görünür */
+        if (_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') {
+          h2 += '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\''+t.id+'\')" title="Düzenle" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 2l2 2-6 6H2V8l6-6z"/></svg></button>';
+          h2 += '<button onclick="event.stopPropagation();window._ppGorevSil(\''+t.id+'\')" title="Sil" style="width:22px;height:22px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3H4z"/></svg></button>';
+        }
         h2 += '</div></div>';
         h2 += '<div id="pp-ag-panel-'+t.id+'" style="display:none;background:var(--s2);border-top:0.5px solid var(--b);padding:6px 10px 6px 46px">';
         if (agSay && t.altGorevler && t.altGorevler.length) {
@@ -648,7 +651,8 @@ window._ppModRender = function() {
       + _grup('KRİTİK', 'background:#FCEBEB;color:var(--pp-err)', kritik)
       + _grup('DEVAM EDİYOR', 'background:#E1F5EE;color:#0F6E56', devam)
       + _grup('PLANLANDI', 'background:#E6F1FB;color:var(--pp-info)', plan)
-      + (tasks.length === 0 ? window._ppEmptyState('calisma', '\u{1F3AF}', 'Aktif görev yok', 'Bugün için planladığın işleri buraya ekle', '+ Yeni görev', 'event.stopPropagation();window._ppYeniGorev()') : '')
+      /* PUSULA-PAYLASIM-002b: empty state CTA ('+ Yeni görev') sadece admin'e */
+      + (tasks.length === 0 ? window._ppEmptyState('calisma', '\u{1F3AF}', 'Aktif görev yok', 'Bugün için planladığın işleri buraya ekle', (_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? '+ Yeni görev' : '', (_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? 'event.stopPropagation();window._ppYeniGorev()' : '') : '')
       + '</div>'
       + '<div style="border-top:0.5px solid var(--b);padding:8px 14px;display:flex;gap:6px;flex-shrink:0">'
       + '<input id="pp-quick" placeholder="Hızlı görev ekle — Enter..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ppHizliEkle(this)" style="flex:1;font-size:var(--pp-body);padding:6px 10px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:transparent;font-family:inherit;color:var(--t)">'
@@ -1940,6 +1944,12 @@ window._ppGorevSilYap = function(id) {
 };
 
 window._ppGorevDuzenle = function(id) {
+  /* PUSULA-PAYLASIM-002b: admin değilse form bile açılmasın (late feedback önlenir) */
+  var _me = _ppCu();
+  if (!_me || (_me.role !== 'admin' && _me.rol !== 'admin')) {
+    window.toast?.('Sadece yönetici görev düzenleyebilir', 'err');
+    return;
+  }
   var tasks = _ppLoad();
   var t = tasks.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
@@ -2798,7 +2808,8 @@ window._ppPeekAc = function(id) {
     +(typeof window._ppZamanPanelHTML === 'function' ? window._ppZamanPanelHTML(t) : '')
     +(typeof window._ppOnayPanelHTML === 'function' ? window._ppOnayPanelHTML(t) : '')
     +'<div style="display:flex;gap:6px;justify-content:flex-end">'
-    +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove();window._ppGorevDuzenle(\''+id+'\')" style="font-size:var(--pp-body);padding:6px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Düzenle</button>'
+    /* PUSULA-PAYLASIM-002b: modal Düzenle sadece admin'e */
+    +((_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? '<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove();window._ppGorevDuzenle(\''+id+'\')" style="font-size:var(--pp-body);padding:6px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Düzenle</button>' : '')
     +'<button onclick="event.stopPropagation();document.getElementById(\'pp-peek-modal\')?.remove()" style="font-size:var(--pp-body);padding:6px 14px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Kapat</button>'
     +'</div>';
   document.body.appendChild(modal);
@@ -2829,8 +2840,9 @@ window._ppGorevPeek = function(id) {
     + (t.aciklama ? '<div style="margin-top:8px;padding:10px;background:var(--s2);border-radius:var(--pp-r-sm);color:var(--t2);font-size:var(--pp-body)">'+t.aciklama+'</div>' : '')
     + '</div>'
     + '<div style="margin-top:16px;display:flex;gap:8px">'
-    + '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\''+id+'\');document.getElementById(\'pp-peek-panel\')?.remove()" style="flex:1;padding:7px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:transparent;cursor:pointer;font-family:inherit;font-size:var(--pp-body);color:var(--t2)">Düzenle</button>'
-    + '<button onclick="event.stopPropagation();window._ppGorevSil(\''+id+'\');document.getElementById(\'pp-peek-panel\')?.remove()" style="padding:7px 12px;border:0.5px solid #DC2626;border-radius:var(--pp-r-sm);background:transparent;cursor:pointer;font-family:inherit;font-size:var(--pp-body);color:#DC2626">Sil</button>'
+    /* PUSULA-PAYLASIM-002b: peek panel Düzenle/Sil sadece admin'e */
+    + ((_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? '<button onclick="event.stopPropagation();window._ppGorevDuzenle(\''+id+'\');document.getElementById(\'pp-peek-panel\')?.remove()" style="flex:1;padding:7px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:transparent;cursor:pointer;font-family:inherit;font-size:var(--pp-body);color:var(--t2)">Düzenle</button>' : '')
+    + ((_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? '<button onclick="event.stopPropagation();window._ppGorevSil(\''+id+'\');document.getElementById(\'pp-peek-panel\')?.remove()" style="padding:7px 12px;border:0.5px solid #DC2626;border-radius:var(--pp-r-sm);background:transparent;cursor:pointer;font-family:inherit;font-size:var(--pp-body);color:#DC2626">Sil</button>' : '')
     + '</div>';
   document.body.appendChild(p);
 };
