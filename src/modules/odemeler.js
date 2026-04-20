@@ -6379,6 +6379,14 @@ function saveCari(entry) {
     delete entry.adminEvaluation;
   }
 
+  /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 2: Non-admin yeni cari → zorunlu personel değerlendirme modal */
+  try {
+    if (isNew && !_isAdminO() && !window._cariIsSupplierEvalComplete(entry)) {
+      window._cariSupplierEvalModalAc(entry, function(filledEntry) { saveCari(filledEntry); });
+      return null;
+    }
+  } catch(_seme) { console.warn('[CARI-SUPPLIER-EVAL]', _seme.message); }
+
   // VKN format kontrolü (boş kabul edilir, doluysa 10 hane sayı zorunlu)
   if (entry.vkn && entry.vkn.trim()) {
     var vknClean = entry.vkn.replace(/\s/g, '');
@@ -6554,6 +6562,67 @@ window._cariIsHighRisk = function(cari) {
   if (s && s.guvenliMi === false) return true;
   if (a && a.riskSeviyesi === 'yuksek') return true;
   return false;
+};
+
+/* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 2: Personel değerlendirme modal UI */
+window._cariSupplierEvalModalAc = function(entry, onComplete) {
+  var esc = window._esc || function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var ex = document.getElementById('cari-eval-modal'); if (ex) ex.remove();
+  var html =
+    '<div id="cari-eval-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center">' +
+    '<div style="background:var(--sf,#fff);color:var(--t,#111);width:560px;max-width:92vw;max-height:90vh;overflow-y:auto;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.15);padding:24px;font-family:inherit">' +
+      '<div style="font-size:14px;font-weight:600;margin-bottom:4px">Personel Değerlendirmesi</div>' +
+      '<div style="font-size:11px;color:var(--t3,#666);margin-bottom:20px;letter-spacing:.03em">Firma: <b>' + esc(entry.name || '') + '</b> — onaya göndermeden önce zorunlu</div>' +
+      '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase">Davranış & Güvenilirlik Notu <span style="color:#E0574F">*</span></label>' +
+      '<textarea id="cev-davranis" rows="4" maxlength="1000" placeholder="Satıcının yaklaşımı, iletişim kalitesi, güven hissi, pazarlık tarzı... (min 100 karakter)" style="width:100%;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin:6px 0 16px;resize:vertical;font-family:inherit;box-sizing:border-box;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
+      '<div style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;margin-bottom:6px">Bu firma ile çalışmak güvenli mi? <span style="color:#E0574F">*</span></div>' +
+      '<div style="display:flex;gap:16px;margin-bottom:6px"><label style="font-size:13px;cursor:pointer"><input type="radio" name="cev-guvenli" value="yes"> Evet</label><label style="font-size:13px;cursor:pointer"><input type="radio" name="cev-guvenli" value="no"> Hayır</label></div>' +
+      '<textarea id="cev-guvenli-acik" rows="2" maxlength="500" placeholder="Açıklama (min 50 karakter)" style="width:100%;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin-bottom:16px;resize:vertical;font-family:inherit;box-sizing:border-box;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
+      '<div style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;margin-bottom:6px">Bu firma ile uzun vadeli çalışır mısın? <span style="color:#E0574F">*</span></div>' +
+      '<div style="display:flex;gap:16px;margin-bottom:6px"><label style="font-size:13px;cursor:pointer"><input type="radio" name="cev-uzunvade" value="yes"> Evet</label><label style="font-size:13px;cursor:pointer"><input type="radio" name="cev-uzunvade" value="no"> Hayır</label></div>' +
+      '<textarea id="cev-uzunvade-acik" rows="2" maxlength="500" placeholder="Açıklama (min 50 karakter)" style="width:100%;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin-bottom:20px;resize:vertical;font-family:inherit;box-sizing:border-box;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button id="cev-cancel" style="padding:8px 16px;border:0.5px solid var(--b,#CBD5E1);background:transparent;color:var(--t2,#333);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">İptal</button>' +
+        '<button id="cev-submit" style="padding:8px 16px;border:none;background:#111;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:inherit">Onaya Gönder</button>' +
+      '</div>' +
+    '</div></div>';
+  var wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap.firstChild);
+
+  document.getElementById('cev-cancel').onclick = function() { document.getElementById('cari-eval-modal').remove(); };
+  document.getElementById('cev-submit').onclick = function() {
+    var davranis = (document.getElementById('cev-davranis').value || '').trim();
+    var guvenliRadio = (document.querySelector('input[name="cev-guvenli"]:checked') || {}).value;
+    var guvenliAcik = (document.getElementById('cev-guvenli-acik').value || '').trim();
+    var uzunRadio = (document.querySelector('input[name="cev-uzunvade"]:checked') || {}).value;
+    var uzunAcik = (document.getElementById('cev-uzunvade-acik').value || '').trim();
+
+    var eksikler = [];
+    if (davranis.length < 100) eksikler.push('Davranış notu (min 100ch, şu an ' + davranis.length + ')');
+    if (!guvenliRadio) eksikler.push('Güvenlik sorusu seçim');
+    if (guvenliAcik.length < 50) eksikler.push('Güvenlik açıklaması (min 50, şu an ' + guvenliAcik.length + ')');
+    if (!uzunRadio) eksikler.push('Uzun vade sorusu seçim');
+    if (uzunAcik.length < 50) eksikler.push('Uzun vade açıklaması (min 50, şu an ' + uzunAcik.length + ')');
+
+    if (eksikler.length > 0) { window.toast?.(eksikler.join(', '), 'err'); return; }
+
+    var cu = (window._CUo && window._CUo()) || (window.CU && window.CU()) || null;
+    entry.supplierEvaluation = {
+      davranisNotu: davranis,
+      guvenliMi: guvenliRadio === 'yes',
+      guvenliAciklama: guvenliAcik,
+      uzunVadeMi: uzunRadio === 'yes',
+      uzunVadeAciklama: uzunAcik,
+      userId: (cu && (cu.id || cu.uid)) || 'bilinmiyor',
+      userName: (cu && (cu.name || cu.displayName || cu.email)) || 'bilinmiyor',
+      timestamp: new Date().toISOString()
+    };
+
+    document.getElementById('cari-eval-modal').remove();
+    window.toast?.('Personel değerlendirmesi kaydedildi, cari onaya gidiyor', 'ok');
+    if (typeof onComplete === 'function') onComplete(entry);
+  };
 };
 
 /**
