@@ -350,6 +350,10 @@ window._saveUrunDB = function() {
     /* URUN-FORM-2SATIR-001: uretimKontrol alanı kaldırıldı */
     var gizliHile = !!(document.getElementById('udb-hile-'+n)?.checked);
     var gizliHileNot = (document.getElementById('udb-hile-not-'+n)?.value||'').trim();
+    /* URUN-FORM-BASIT-001 PARÇA B: yeni hidden input'ları oku */
+    var gizliKaynak = (document.getElementById('udb-gizliKaynak-'+n)?.value||'').trim();
+    var uretimTarihi = (document.getElementById('udb-uretimTarihi-'+n)?.value||'').trim();
+    var bakimYili = (document.getElementById('udb-bakimYili-'+n)?.value||'').trim();
     /* URUN-FORM-GORSEL-PERSIST-001: Edit mode'da cache boşsa _udbEditSource'tan mevcut görseli koru */
     var _uSrc = null;
     if (window._udbEditSource && Array.isArray(window._udbEditSource)) {
