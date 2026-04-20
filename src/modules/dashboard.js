@@ -879,10 +879,11 @@ function _dashMiniKpi(label, val, link) {
 }
 
 function renderDashboard() {
-  /* DASHBOARD-DEFAULT-DETAY-001: admin direkt dashboardDetay'a (2 tık yerine 0 tık) */
+  /* DASHBOARD-DEFAULT-DETAY-001 + HOTFIX-001: admin direkt dashboardDetay'a (CU önce, _CUo fallback; role+rol iki field) */
   try {
-    var _cuDash = window._CUo?.() || window.CU?.() || {};
-    if (_cuDash.role === 'admin' && window.App?.nav) {
+    var _cuDash = window.CU?.() || window._CUo?.() || {};
+    var _roleDash = _cuDash.role || _cuDash.rol || '';
+    if (_roleDash === 'admin' && window.App?.nav) {
       window.App.nav('dashboardDetay');
       return;
     }
