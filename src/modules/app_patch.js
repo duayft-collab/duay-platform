@@ -5667,9 +5667,12 @@ window._renderFirmaKpi = function() {
   /* Satınalma menüsü — tam yeniden yapılandır */
   /* FASON-OVERRIDE-FIX-001: fason L4930 push'u burada silinmesin, hardcoded array'e de eklendi */
   if (G.satinalma) {
+    /* SATINALMA-MENU-MISSING-001: 'satin-alma' yanlış ID idi → 'alis-teklifleri'. satis-teklifleri + cari eklendi. */
     G.satinalma.mods = [
-      { id: 'satin-alma',        label: 'Al\u0131\u015f Teklifleri' },
+      { id: 'alis-teklifleri',   label: 'Al\u0131\u015f Teklifleri' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
+      { id: 'satis-teklifleri',  label: 'Proforma Teklifler' },
+      { id: 'cari',              label: 'Cari Y\u00f6netimi' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
       { id: 'fason',             label: 'Fason \u00dcretim' },
