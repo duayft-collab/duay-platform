@@ -408,6 +408,15 @@ window._openSTModal = function(id) {
   } catch (e) {}
   _cariAdlar = _cariAdlar.filter(function(m, i, a) { return a.indexOf(m) === i; }).sort(function(a, b) { return a.localeCompare(b, 'tr'); });
   var custOpts = _cariAdlar.map(function(n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
+  /* SATIS-PDF-CARI-PERSIST-001: edit modunda müşteri field fallback — legacy kayıtlar customerName yerine musteri/musteriAd/cariId kullanıyor */
+  var _stCustVal = (t && (t.customerName || t.musteri || t.musteriAd)) || '';
+  if (!_stCustVal && t && t.cariId) {
+    try {
+      var _stAllCari = typeof loadCari === 'function' ? loadCari({tumKullanicilar:true}) : [];
+      var _stCariMatch = _stAllCari.find(function(c) { return String(c.id) === String(t.cariId) && !c.isDeleted; });
+      if (_stCariMatch) _stCustVal = _stCariMatch.name || _stCariMatch.ad || _stCariMatch.title || _stCariMatch.unvan || '';
+    } catch(e) {}
+  }
   var curOpts = ST_CURRENCIES.map(function(c) { return '<option value="' + c + '"' + (t?.currency === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
   var incoOpts = ST_INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (t?.incoterm === i ? ' selected' : '') + '>' + i + '</option>'; }).join('');
   // SAT-LANG-001: dil seçici varsayilan EN (mevcut sablon ingilizce), kullanici degistirebilir
@@ -426,7 +435,7 @@ window._openSTModal = function(id) {
       + '<div id="st-prev-warn" style="display:none"></div>'
       // Satır 1: Müşteri + Teklif No + Tarih
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl"><span data-stk="customer">' + _stT('customer', lang) + '</span> *</div><input list="st-customer-list" class="fi" id="st-customer" value="' + esc(t?.customerName || '') + '" placeholder="Müşteri adı..." onchange="window._stCheckPrevTeklif?.()" autocomplete="off"><datalist id="st-customer-list">' + custOpts + '</datalist></div>'
+        + '<div><div class="fl"><span data-stk="customer">' + _stT('customer', lang) + '</span> *</div><input list="st-customer-list" class="fi" id="st-customer" value="' + esc(_stCustVal) + '" placeholder="Müşteri adı..." onchange="window._stCheckPrevTeklif?.()" autocomplete="off"><datalist id="st-customer-list">' + custOpts + '</datalist></div>'
         + '<div><div class="fl" data-stk="quoteNo">' + _stT('quoteNo', lang) + '</div><input class="fi" id="st-no" value="' + (t?.teklifNo || _generateTeklifNo()) + '" readonly style="background:var(--s2);font-family:monospace"></div>'
         + '<div><div class="fl" data-stk="date">' + _stT('date', lang) + '</div><input type="date" class="fi" id="st-date" value="' + (t?.date || new Date().toISOString().slice(0, 10)) + '"></div>'
       + '</div>'
