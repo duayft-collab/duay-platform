@@ -1008,6 +1008,16 @@ console.log('[app_patch] Yetki sistemi yüklendi');
 var URUN_BIRIMLER = ['Adet','Kg','Metre','Lt','Ton','M²','M³','Paket','Kutu','Palet'];
 var URUN_ULKELER = window.MENSEI || ['Türkiye','Çin','Hindistan','Almanya','ABD','İtalya','Fransa','İngiltere','Japonya','Güney Kore','Brezilya','Mısır','Fas','İran','Pakistan','Diğer'];
 
+/* URUN-ARAMA-FUZZY-001: Türkçe normalize — diakritik strip + tr-TR lowercase (ı/I doğru dönüşümü için locale'e dikkat) */
+function _urunAramaNormalize(s) {
+  if (!s) return '';
+  return String(s)
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i')
+    .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+    .trim();
+}
+
 window.renderUrunler = function() {
   var panel = document.getElementById('panel-urunler'); if (!panel) return;
   var d = typeof loadUrunler === 'function' ? loadUrunler() : [];
@@ -1056,8 +1066,9 @@ window.renderUrunler = function() {
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Tedarikçi</div><div style="font-size:22px;font-weight:600;color:var(--ac)">' + new Set(d.map(function(u){return u.tedarikci||'';})).size + '</div></div>'
     + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kategori</div><div style="font-size:22px;font-weight:600">' + new Set(d.map(function(u){return u.kategori||'';})).size + '</div></div>';
   // List
-  var q = (document.getElementById('urun-search')?.value || '').toLowerCase();
-  var fl = q ? d.filter(function(u) { return (u.urunAdi||'').toLowerCase().includes(q) || (u.urunKodu||'').toLowerCase().includes(q) || (u.tedarikci||'').toLowerCase().includes(q) || (u.kategori||'').toLowerCase().includes(q) || (u.gtip||'').toLowerCase().includes(q) || (u.duayKodu||'').toLowerCase().includes(q) || (u.marka||'').toLowerCase().includes(q) || (u.aciklama||'').toLowerCase().includes(q); }) : d;
+  /* URUN-ARAMA-FUZZY-001: Türkçe normalize hem user input'ta hem 8 field'da */
+  var q = _urunAramaNormalize(document.getElementById('urun-search')?.value || '');
+  var fl = q ? d.filter(function(u) { return _urunAramaNormalize(u.urunAdi).includes(q) || _urunAramaNormalize(u.urunKodu).includes(q) || _urunAramaNormalize(u.tedarikci).includes(q) || _urunAramaNormalize(u.kategori).includes(q) || _urunAramaNormalize(u.gtip).includes(q) || _urunAramaNormalize(u.duayKodu).includes(q) || _urunAramaNormalize(u.marka).includes(q) || _urunAramaNormalize(u.aciklama).includes(q); }) : d;
   /* URUN-LIST-001: Görsel/Tamamlanma filtreleri */
   if (window._urunFiltre === 'gorselli') fl = fl.filter(function(u) { return u.gorsel; });
   else if (window._urunFiltre === 'gorselsiz') fl = fl.filter(function(u) { return !u.gorsel; });
