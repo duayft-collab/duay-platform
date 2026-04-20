@@ -1309,6 +1309,12 @@ window._ppGorevKaydet = function() {
     if (idx !== -1) {
       /* PUSULA-GUNCELLE-FIX-001: silinmemesi gereken alanları mevcut kayıttan koru */
       var _mevcutGorev = tasks[idx];
+      /* PUSULA-PAYLASIM-001: Object.assign ÖNCESI eski sorumlu uid snapshot (diff-based bildirim için) */
+      var _eskiSorumluUidSet = {};
+      (Array.isArray(_mevcutGorev.sorumlu) ? _mevcutGorev.sorumlu : []).forEach(function(s) {
+        var u = (s && typeof s === 'object') ? (s.uid || s.id || '') : String(s || '');
+        if (u) _eskiSorumluUidSet[u] = true;
+      });
       yeni.createdAt = _mevcutGorev.createdAt || yeni.createdAt;
       yeni.sorumluId = _mevcutGorev.sorumluId || yeni.sorumluId;
       if (!window._ppDosyaEkleri || !window._ppDosyaEkleri.length) {
@@ -1321,6 +1327,18 @@ window._ppGorevKaydet = function() {
       tasks[idx].id = window._ppDuzenleHedef;
       tasks[idx].updatedAt = _ppNow();
       _ppStore(tasks);
+      /* PUSULA-PAYLASIM-001: UPDATE'te yeni atananlara bildirim (eski set'te olmayan = yeni atanan) */
+      try {
+        var _yeniSorumlular = Array.isArray(yeni.sorumlu) ? yeni.sorumlu : (yeni.sorumlu ? [yeni.sorumlu] : []);
+        var _atayan = _ppCu()?.displayName || _ppCu()?.email || 'Biri';
+        var _benimUid = _ppCu()?.uid || '';
+        _yeniSorumlular.forEach(function(s) {
+          var _sUid = (s && typeof s === 'object') ? (s.uid || s.id || '') : String(s || '');
+          if (_sUid && _sUid !== _benimUid && !_eskiSorumluUidSet[_sUid]) {
+            window.addNotif?.('\ud83d\udccb', '"' + _ppEsc(yeni.baslik || '') + '" görevi sana atandı — ' + _atayan, 'info', 'pusula', _sUid, yeni.id);
+          }
+        });
+      } catch(_ne) { console.warn('[PP-PAYLASIM-UPDATE]', _ne.message); }
       window._ppDuzenleHedef = null;
       document.getElementById('pp-gorev-modal')?.remove();
       window.toast?.('Görev güncellendi', 'ok');
