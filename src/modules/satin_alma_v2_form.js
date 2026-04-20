@@ -285,7 +285,18 @@ window._saV2UrunAraDropdown = function(inp, hedefId) {
   var mevcut = document.getElementById('sa-urun-dropdown');
   if (mevcut) mevcut.remove();
   if (val.length < 2) return;
-  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : []).filter(function(u) { return !u.isDeleted; });
+  /* SATINALMA-FORM-VENDOR-FILTER-001: Sadece seçili tedarikçinin ürünleri — #sav2f-tedarikci input (datalist) */
+  var _seciliTed = (document.getElementById('sav2f-tedarikci')?.value || '').trim();
+  if (!_seciliTed) {
+    if (window.toast) window.toast('Önce tedarikçi seçin', 'warn');
+    return;
+  }
+  var _seciliTedN = _norm(_seciliTed);
+  var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : []).filter(function(u) {
+    if (u.isDeleted) return false;
+    var uTed = _norm(u.tedarikci || u.vendorName || '');
+    return uTed === _seciliTedN;
+  });
   var eslesen = tumListe.filter(function(u) {
     return _norm(u.duayKodu).includes(val)
       || _norm(u.urunAdi).includes(val)
