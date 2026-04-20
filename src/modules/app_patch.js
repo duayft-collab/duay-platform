@@ -6850,8 +6850,12 @@ window._renderNumuneArsivi = function() {
     +'</div>';
 };
 
-// TESLIMAT-TAKIP-V1-001: stub → sipariş+kargo zinciri liste + KPI
+// TESLIMAT-TAKIP-V1-001: stub → EXPECTED-DELIVERIES-FLOW-002 PARÇA 6 UI override
 window._renderTeslimatTakip = function() {
+  /* EXPECTED-DELIVERIES-FLOW-002 PARÇA 6: ED modülü yüklüyse yeni UI kullan */
+  if (typeof window._edRenderPanel === 'function') {
+    try { window._edRenderPanel(); return; } catch(e) { console.warn('[ED UI] render fail, stub fallback:', e && e.message); }
+  }
   var p = document.getElementById('panel-teslimat-takip'); if (!p) return;
   var siparisler = (typeof loadAlisTeklifleri === 'function' ? loadAlisTeklifleri() : [])
     .filter(function(t) { return !t.isDeleted && t.siparisDurumu; });

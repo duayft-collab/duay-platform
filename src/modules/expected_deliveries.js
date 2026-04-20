@@ -652,4 +652,196 @@
 
   /* Auto-start */
   window._edHatirlatmaBaslat();
+
+  /* ─── PARÇA 6: UI LİSTE + 4 FİLTRE (Apple minimal) ─────── */
+  var _uiEsc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+
+  var STATUS_LABELS = {
+    TEDARIK_ASAMASINDA: 'Tedarik',
+    URETIMDE: 'Üretimde',
+    YUKLEME_BEKLIYOR: 'Yükleme',
+    YOLDA: 'Yolda',
+    GUMRUKTE: 'Gümrükte',
+    TESLIM_ALINDI: 'Teslim',
+    GECIKTI: 'Gecikti'
+  };
+  var STATUS_COLORS = {
+    TEDARIK_ASAMASINDA: '#888780',
+    URETIMDE: '#D97706',
+    YUKLEME_BEKLIYOR: '#854F0B',
+    YOLDA: '#185FA5',
+    GUMRUKTE: '#7C3AED',
+    TESLIM_ALINDI: '#16A34A',
+    GECIKTI: '#E0574F'
+  };
+  var PRI_LABELS = { LOW: 'Düşük', NORMAL: 'Normal', CRITICAL: 'Kritik' };
+  var PRI_COLORS = { LOW: '#6B7280', NORMAL: '#374151', CRITICAL: '#E0574F' };
+
+  function _edColorByDays(rem) {
+    if (rem === null || rem === undefined) return '#9CA3AF';
+    if (rem > 15) return '#9CA3AF';
+    if (rem >= 7) return '#F59E0B';
+    if (rem >= 4) return '#F97316';
+    return '#E0574F';
+  }
+
+  function _edUserAd(uid) {
+    try {
+      var users = (typeof window.loadUsers === 'function' ? window.loadUsers() : []) || [];
+      var u = users.find(function(x) { return (x.id || x.uid) === uid; });
+      return u ? (u.name || u.displayName || u.email || '—') : (uid || '—');
+    } catch(e) { return uid || '—'; }
+  }
+
+  window._edCurrentFilter = window._edCurrentFilter || 'upcoming';
+
+  window._edSetFilter = function(f) {
+    window._edCurrentFilter = f;
+    window._edRenderPanel();
+  };
+
+  window._edRenderCard = function(ed) {
+    var rem = window._edCalculateRemainingDays(ed);
+    var remColor = _edColorByDays(rem);
+    var remText = rem === null ? 'Tarih yok' : (rem < 0 ? (Math.abs(rem) + ' gün geçti') : (rem === 0 ? 'Bugün' : (rem + ' gün kaldı')));
+    var st = ed.status || 'TEDARIK_ASAMASINDA';
+    var stColor = STATUS_COLORS[st] || '#888780';
+    var stLabel = STATUS_LABELS[st] || st;
+    var pri = ed.priority || 'NORMAL';
+    var priColor = PRI_COLORS[pri] || '#374151';
+    var priLabel = PRI_LABELS[pri] || pri;
+    var delivered = ed.quantityDelivered || 0;
+    var total = ed.quantityTotal || 0;
+    var pct = total > 0 ? Math.min(100, Math.round((delivered / total) * 100)) : 0;
+    var etaStr = ed.estimatedDeliveryDate ? new Date(ed.estimatedDeliveryDate).toLocaleDateString('tr-TR') : '—';
+    var sorumlu = ed.responsibleUserId ? _edUserAd(ed.responsibleUserId) : '—';
+
+    return '<div style="background:var(--sf,#fff);border:0.5px solid var(--b,#CBD5E1);border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px">'
+        + '<div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">'
+          + '<span style="font-size:14px">📦</span>'
+          + '<div style="min-width:0;flex:1">'
+            + '<div style="font-size:13px;font-weight:500;color:var(--t,#111);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _uiEsc(ed.productName || '—') + '</div>'
+            + '<div style="font-size:10px;color:var(--t3,#6B7280);letter-spacing:.02em;margin-top:2px">' + _uiEsc(ed.supplierId || '—') + '</div>'
+          + '</div>'
+        + '</div>'
+        + '<div style="display:flex;gap:4px;flex-shrink:0">'
+          + '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + stColor + '22;color:' + stColor + ';font-weight:500;letter-spacing:.04em">' + _uiEsc(stLabel).toUpperCase() + '</span>'
+          + (pri === 'CRITICAL' ? '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + priColor + '22;color:' + priColor + ';font-weight:600;letter-spacing:.04em">⚠ ' + _uiEsc(priLabel).toUpperCase() + '</span>' : '')
+        + '</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap">'
+        + '<div style="font-size:11px;color:' + remColor + ';font-weight:500">' + remText + '</div>'
+        + '<div style="font-size:10px;color:var(--t3,#6B7280);font-variant-numeric:tabular-nums">' + delivered + '/' + total + ' ' + _uiEsc(ed.unit || '') + '</div>'
+      + '</div>'
+      + '<div style="height:4px;background:var(--s2,#F1F5F9);border-radius:2px;overflow:hidden;margin-bottom:10px">'
+        + '<div style="height:100%;width:' + pct + '%;background:' + stColor + ';transition:width .3s"></div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
+        + '<div style="font-size:10px;color:var(--t3,#6B7280)">🗓 ' + etaStr + ' · 👤 ' + _uiEsc(sorumlu) + '</div>'
+        + '<div style="display:flex;gap:4px">'
+          + '<button onclick="window._edOpenDetail && window._edOpenDetail(\'' + _uiEsc(ed.id) + '\')" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b,#CBD5E1);background:transparent;border-radius:6px;cursor:pointer;font-family:inherit;color:var(--t2,#374151)">Detay</button>'
+          + (ed.status !== 'TESLIM_ALINDI' ? '<button onclick="window._edAddDeliveryPrompt && window._edAddDeliveryPrompt(\'' + _uiEsc(ed.id) + '\')" style="font-size:10px;padding:4px 10px;border:none;background:#1A8D6F;color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500">+ Teslimat</button>' : '')
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  };
+
+  window._edAddDeliveryPrompt = function(edId) {
+    var qtyStr = window.prompt('Eklenecek teslim miktarı:', '');
+    if (qtyStr === null) return;
+    var qty = parseFloat(qtyStr);
+    if (isNaN(qty) || qty <= 0) { if (window.toast) window.toast('Geçersiz miktar', 'err'); return; }
+    var r = window._edAddDelivery(edId, { qty: qty, deliveryDate: new Date().toISOString(), status: 'delivered' });
+    if (r && r.success) {
+      if (window.toast) window.toast('Teslimat eklendi', 'ok');
+      window._edRenderPanel();
+    } else {
+      if (window.toast) window.toast((r && r.error) || 'Ekleme hatası', 'err');
+    }
+  };
+
+  window._edOpenDetail = function(edId) {
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var ed = all.find(function(e) { return e.id === edId; });
+    if (!ed) { if (window.toast) window.toast('Kayıt bulunamadı', 'err'); return; }
+    var deliveries = (ed.deliveries || []).map(function(d, i) {
+      return '<tr style="border-bottom:0.5px solid var(--b)"><td style="padding:6px 8px;font-size:11px">' + (i + 1) + '</td><td style="padding:6px 8px;font-size:11px;font-variant-numeric:tabular-nums">' + (d.qty || 0) + '</td><td style="padding:6px 8px;font-size:11px">' + (d.shipmentDate ? new Date(d.shipmentDate).toLocaleDateString('tr-TR') : '—') + '</td><td style="padding:6px 8px;font-size:11px">' + (d.deliveryDate ? new Date(d.deliveryDate).toLocaleDateString('tr-TR') : '—') + '</td><td style="padding:6px 8px;font-size:10px;color:var(--t3)">' + _uiEsc(d.status || '—') + '</td></tr>';
+    }).join('') || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3);font-size:11px">Teslimat kaydı yok</td></tr>';
+    var ex = document.getElementById('ed-detail-modal'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.id = 'ed-detail-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t,#111);width:640px;max-width:92vw;max-height:90vh;overflow-y:auto;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:15px;font-weight:600">📦 ' + _uiEsc(ed.productName || '—') + '</div><button onclick="document.getElementById(\'ed-detail-modal\').remove()" style="background:none;border:none;font-size:18px;color:var(--t3);cursor:pointer">×</button></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Tedarikçi</div><div style="font-size:12px;margin-top:2px">' + _uiEsc(ed.supplierId || '—') + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Sorumlu</div><div style="font-size:12px;margin-top:2px">' + _uiEsc(_edUserAd(ed.responsibleUserId)) + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Durum</div><div style="font-size:12px;margin-top:2px;color:' + (STATUS_COLORS[ed.status] || '#888780') + ';font-weight:500">' + _uiEsc(STATUS_LABELS[ed.status] || ed.status || '—') + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Toplam</div><div style="font-size:12px;margin-top:2px;font-variant-numeric:tabular-nums">' + (ed.quantityTotal || 0) + ' ' + _uiEsc(ed.unit || '') + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Teslim</div><div style="font-size:12px;margin-top:2px;font-variant-numeric:tabular-nums">' + (ed.quantityDelivered || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Kalan</div><div style="font-size:12px;margin-top:2px;font-variant-numeric:tabular-nums">' + (ed.quantityRemaining || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Tahmini Teslim</div><div style="font-size:12px;margin-top:2px">' + (ed.estimatedDeliveryDate ? new Date(ed.estimatedDeliveryDate).toLocaleDateString('tr-TR') : '—') + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Öncelik</div><div style="font-size:12px;margin-top:2px;color:' + (PRI_COLORS[ed.priority] || '#374151') + ';font-weight:500">' + _uiEsc(PRI_LABELS[ed.priority] || ed.priority || '—') + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Tolerans</div><div style="font-size:12px;margin-top:2px">' + (ed.toleranceDays || 0) + ' gün</div></div>'
+      + '</div>'
+      + (ed.delayReason ? '<div style="margin-bottom:16px;padding:10px;background:#FEF2F2;border:0.5px solid #FECACA;border-radius:8px;font-size:11px;color:#991B1B">⚠ <b>Gecikme:</b> ' + _uiEsc(ed.delayOwner || '—') + ' — ' + _uiEsc(ed.delayReason) + '</div>' : '')
+      + '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Teslimat Geçmişi</div>'
+      + '<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:var(--s2,#F1F5F9);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em"><th style="padding:6px 8px;text-align:left">#</th><th style="padding:6px 8px;text-align:left">Miktar</th><th style="padding:6px 8px;text-align:left">Sevk</th><th style="padding:6px 8px;text-align:left">Teslim</th><th style="padding:6px 8px;text-align:left">Durum</th></tr></thead><tbody>' + deliveries + '</tbody></table>'
+      + (ed.autoGenerated ? '<div style="font-size:9px;color:var(--t3);text-align:center;padding-top:8px;border-top:0.5px solid var(--b)">🤖 Otomatik oluşturuldu · ' + (ed.createdAt ? new Date(ed.createdAt).toLocaleDateString('tr-TR') : '—') + '</div>' : '')
+    + '</div>';
+    document.body.appendChild(mo);
+  };
+
+  window._edRenderPanel = function() {
+    var p = document.getElementById('panel-teslimat-takip');
+    if (!p) return;
+
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    var counts = {
+      total: all.length,
+      upcoming: (typeof window._edFilterUpcoming === 'function' ? window._edFilterUpcoming(7) : []).length,
+      overdue: (typeof window._edFilterOverdue === 'function' ? window._edFilterOverdue() : []).length,
+      critical: (typeof window._edFilterCritical === 'function' ? window._edFilterCritical() : []).length,
+      done: all.filter(function(e) { return e.status === 'TESLIM_ALINDI'; }).length
+    };
+
+    var filter = window._edCurrentFilter || 'upcoming';
+    var shown = [];
+    if (filter === 'upcoming') shown = (typeof window._edFilterUpcoming === 'function' ? window._edFilterUpcoming(7) : []);
+    else if (filter === 'overdue') shown = (typeof window._edFilterOverdue === 'function' ? window._edFilterOverdue() : []);
+    else if (filter === 'critical') shown = (typeof window._edFilterCritical === 'function' ? window._edFilterCritical() : []);
+    else if (filter === 'done') shown = all.filter(function(e) { return e.status === 'TESLIM_ALINDI'; });
+    else shown = all;
+
+    var mode = window.EXPECTED_DELIVERIES_MODE || 'MANUAL_MODE';
+    var modeColor = mode === 'AUTO_MODE' ? '#185FA5' : '#6B7280';
+
+    var filterBtn = function(key, label, count) {
+      var active = filter === key;
+      return '<button onclick="window._edSetFilter(\'' + key + '\')" style="padding:7px 14px;border:none;background:' + (active ? 'var(--t,#111)' : 'transparent') + ';color:' + (active ? '#fff' : 'var(--t2,#374151)') + ';border-radius:8px;font-size:11px;font-weight:' + (active ? '500' : '400') + ';cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:all .15s">' + label + ' <span style="font-variant-numeric:tabular-nums;opacity:.7">' + count + '</span></button>';
+    };
+
+    p.innerHTML = '<div style="padding:0;font-family:inherit">'
+      + '<div style="padding:18px 24px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'
+        + '<div>'
+          + '<div style="font-size:16px;font-weight:600;color:var(--t,#111);display:flex;align-items:center;gap:10px">🚚 Teslimat Takibi <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + modeColor + '22;color:' + modeColor + ';font-weight:500;letter-spacing:.04em">' + mode.replace('_', ' ') + '</span></div>'
+          + '<div style="font-size:11px;color:var(--t3,#6B7280);margin-top:3px">Toplam: <b>' + counts.total + '</b> · Yaklaşan: <b style="color:#F59E0B">' + counts.upcoming + '</b> · Gecikmiş: <b style="color:#E0574F">' + counts.overdue + '</b> · Kritik: <b style="color:#E0574F">' + counts.critical + '</b></div>'
+        + '</div>'
+      + '</div>'
+      + '<div style="padding:14px 24px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;gap:4px;flex-wrap:wrap;background:var(--s2,#F1F5F9)">'
+        + filterBtn('upcoming', 'Yaklaşan', counts.upcoming)
+        + filterBtn('overdue', 'Gecikenler', counts.overdue)
+        + filterBtn('critical', 'Kritik', counts.critical)
+        + filterBtn('done', 'Tamamlanan', counts.done)
+        + filterBtn('all', 'Tümü', counts.total)
+      + '</div>'
+      + '<div style="padding:16px 24px">'
+        + (shown.length
+            ? shown.map(function(ed) { return window._edRenderCard(ed); }).join('')
+            : '<div style="padding:40px 20px;text-align:center;color:var(--t3,#9CA3AF);font-size:13px">Bu filtrede kayıt yok</div>')
+      + '</div>'
+    + '</div>';
+  };
 })();
