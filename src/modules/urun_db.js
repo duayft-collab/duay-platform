@@ -714,6 +714,94 @@ if (typeof window._udbGorselYukle !== 'function') {
   };
 }
 
+/* URUN-FORM-BASIT-001 PARÇA D: Notlar & Gizli Hile tek sayfa modal */
+window._udbNotlarModalAc = function(urunIdx) {
+  var mevcut = document.getElementById('udb-notlar-modal');
+  if (mevcut) mevcut.remove();
+  var esc = window._esc || function(s){return String(s==null?'':s);};
+
+  var teknikAcik = (document.getElementById('udb-techDesc-' + urunIdx) || {}).value || '';
+  var sozlesme = (document.getElementById('udb-sozlesme-' + urunIdx) || {}).value || '';
+  var ozelNot = (document.getElementById('udb-note-' + urunIdx) || {}).value || '';
+  var hileCb = document.getElementById('udb-hile-' + urunIdx);
+  var gizliVar = hileCb ? hileCb.checked : false;
+  var gizliNot = (document.getElementById('udb-hile-not-' + urunIdx) || {}).value || '';
+  var gizliKaynak = (document.getElementById('udb-gizliKaynak-' + urunIdx) || {}).value || '';
+
+  var mo = document.createElement('div');
+  mo.id = 'udb-notlar-modal';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto';
+  mo.addEventListener('click', function(e){ if (e.target === mo) mo.remove(); });
+
+  var h = '<div style="background:var(--sf);border-radius:12px;border:0.5px solid var(--b);width:760px;max-width:100%;overflow:hidden" onclick="event.stopPropagation()">'
+    + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
+      + '<div><div style="font-size:14px;font-weight:500;color:var(--t)">\u{1F4DD} Notlar & Gizli Hile</div>'
+      + '<div style="font-size:10px;color:var(--t3);margin-top:2px">T\u00fcm alanlar\u0131 tek sayfada doldur, Kaydet bas, kapat</div></div>'
+      + '<button onclick="document.getElementById(\'udb-notlar-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--t3)">\u00d7</button>'
+    + '</div>'
+    + '<div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+      + '<div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">TEKN\u0130K A\u00c7IKLAMA</div>'
+      + '<textarea id="unm-teknik" rows="5" class="fi" style="width:100%;resize:vertical">' + esc(teknikAcik) + '</textarea></div>'
+      + '<div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">S\u00d6ZLE\u015eME NOTU</div>'
+      + '<textarea id="unm-sozlesme" rows="5" class="fi" placeholder="Proformaya eklenecek \u00f6zel madde..." style="width:100%;resize:vertical">' + esc(sozlesme) + '</textarea></div>'
+      + '<div style="grid-column:span 2"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">\u00d6ZEL NOT</div>'
+      + '<textarea id="unm-ozel" rows="3" class="fi" placeholder="\u0130\u00e7 not \u2014 al\u0131m karar\u0131na dair..." style="width:100%;resize:vertical">' + esc(ozelNot) + '</textarea></div>'
+    + '</div>'
+    + '<div style="border-top:0.5px solid var(--b);padding:16px 20px;background:#FAEEDA">'
+      + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">'
+        + '<input type="checkbox" id="unm-gizli-check" ' + (gizliVar ? 'checked' : '') + ' onchange="document.getElementById(\'unm-gizli-box\').style.display=this.checked?\'block\':\'none\'">'
+        + '<span style="font-size:12px;font-weight:500;color:#854F0B">\u{1F512} Gizli Hile / Maliyet Fark\u0131 var</span>'
+        + '<a href="https://duayft-collab.github.io/duay-platform/docs/SAHB-0200-380.pdf" target="_blank" style="font-size:10px;color:#854F0B;margin-left:auto;text-decoration:underline" onclick="event.stopPropagation()">SAHB-0200-380 referans</a>'
+      + '</label>'
+      + '<div id="unm-gizli-box" style="display:' + (gizliVar ? 'block' : 'none') + '">'
+        + '<div style="font-size:10px;color:#854F0B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">G\u0130ZL\u0130 H\u0130LE NOTU (sadece y\u00f6neticiler g\u00f6r\u00fcr)</div>'
+        + '<textarea id="unm-gizli-not" rows="4" class="fi" placeholder="Tedarik\u00e7i yan\u0131tlar\u0131ndan \u00e7\u0131kan gizli \u00f6zellik / hile / maliyet fark\u0131..." style="width:100%;resize:vertical;margin-bottom:10px">' + esc(gizliNot) + '</textarea>'
+        + '<div style="font-size:10px;color:#854F0B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">KAYNAK \u2014 F\u0130RMA / K\u0130\u015e\u0130 / TELEFON</div>'
+        + '<input id="unm-gizli-kaynak" class="fi" placeholder="\u00f6rn: Do\u011fan A\u015f / Ahmet Bey / 0532..." value="' + esc(gizliKaynak) + '" style="width:100%">'
+      + '</div>'
+    + '</div>'
+    + '<div style="padding:14px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end;gap:8px">'
+      + '<button onclick="document.getElementById(\'udb-notlar-modal\').remove()" class="btn btns" style="font-size:12px">\u0130ptal</button>'
+      + '<button onclick="window._udbNotlarKaydet(' + urunIdx + ')" class="btn btnp" style="font-size:12px">Kaydet & Kapat</button>'
+    + '</div>'
+  + '</div>';
+
+  mo.innerHTML = h;
+  document.body.appendChild(mo);
+};
+
+window._udbNotlarKaydet = function(urunIdx) {
+  var teknikAcik = (document.getElementById('unm-teknik') || {}).value || '';
+  var sozlesme = (document.getElementById('unm-sozlesme') || {}).value || '';
+  var ozel = (document.getElementById('unm-ozel') || {}).value || '';
+  var gizliVar = (document.getElementById('unm-gizli-check') || {}).checked || false;
+  var gizliNot = (document.getElementById('unm-gizli-not') || {}).value || '';
+  var gizliKaynak = (document.getElementById('unm-gizli-kaynak') || {}).value || '';
+
+  var setVal = function(id, v) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!v;
+    else el.value = v;
+  };
+  setVal('udb-techDesc-' + urunIdx, teknikAcik);
+  setVal('udb-sozlesme-' + urunIdx, sozlesme);
+  setVal('udb-note-' + urunIdx, ozel);
+  setVal('udb-hile-' + urunIdx, gizliVar);
+  setVal('udb-hile-not-' + urunIdx, gizliNot);
+  setVal('udb-gizliKaynak-' + urunIdx, gizliKaynak);
+
+  var btn = document.querySelector('[data-udb-idx="' + urunIdx + '"] .udb-notlar-btn, #udb-row-' + urunIdx + ' .udb-notlar-btn');
+  if (btn) {
+    var dolu = !!(teknikAcik || sozlesme || ozel || gizliVar || gizliKaynak);
+    btn.innerHTML = dolu ? '\u2713 Kay\u0131tl\u0131 \u00b7 D\u00fczenle' : '\u25b8 Doldur';
+    btn.style.background = dolu ? '#0F6E56' : '#854F0B';
+  }
+  var modal = document.getElementById('udb-notlar-modal');
+  if (modal) modal.remove();
+  if (window.toast) window.toast('Notlar kaydedildi', 'ok');
+};
+
 // Exports
 window.loadUrunDB    = loadUrunDB;
 window.storeUrunDB   = storeUrunDB;
