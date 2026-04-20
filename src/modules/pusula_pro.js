@@ -77,6 +77,38 @@ window._ppEmptyState = function(mod, ikonChar, baslik, altmetin, ctaLabel, ctaHa
   document.head.appendChild(_style);
 })();
 
+/* PUSULA-PRO-REDESIGN-001 PARÇA 4: Merkezi timer registry (zombie task + memory leak fix) */
+window._ppTimers = window._ppTimers || { intervals: [], timeouts: [] };
+window._ppSetInterval = window._ppSetInterval || function(fn, ms, label) {
+  var id = setInterval(fn, ms);
+  window._ppTimers.intervals.push({ id: id, label: label || 'unnamed', ms: ms, started: Date.now() });
+  return id;
+};
+window._ppSetTimeout = window._ppSetTimeout || function(fn, ms, label) {
+  var id = setTimeout(function() {
+    window._ppTimers.timeouts = window._ppTimers.timeouts.filter(function(t) { return t.id !== id; });
+    fn();
+  }, ms);
+  window._ppTimers.timeouts.push({ id: id, label: label || 'unnamed', ms: ms, started: Date.now() });
+  return id;
+};
+window._ppCleanup = window._ppCleanup || function(reason) {
+  var sayi = { intervals: 0, timeouts: 0 };
+  window._ppTimers.intervals.forEach(function(t) { try { clearInterval(t.id); sayi.intervals++; } catch(e) {} });
+  window._ppTimers.timeouts.forEach(function(t) { try { clearTimeout(t.id); sayi.timeouts++; } catch(e) {} });
+  window._ppTimers.intervals = [];
+  window._ppTimers.timeouts = [];
+  if (window._ppDebug) window._ppDebug('[PP Cleanup]', reason || '-', sayi);
+  return sayi;
+};
+/* beforeunload cleanup hook (idempotent) */
+if (!window._ppCleanupBound) {
+  window._ppCleanupBound = true;
+  window.addEventListener('beforeunload', function() {
+    if (window._ppCleanup) window._ppCleanup('beforeunload');
+  });
+}
+
 /* ── Sabitler ───────────────────────────────────────────────── */
 var PP_KEY        = 'ak_pusula_pro_v1';
 var PP_TASK_KEY   = 'ak_tk2';
@@ -285,7 +317,7 @@ window._ppRender = function() {
   window._ppSetMod('akis');
   setTimeout(function() { window._ppAktifFrog = null; window._ppFrogBelirle?.(); window._ppSkorGuncelle?.(); }, 100);
   // PUSULA-TAKVIM-BILDIRIM-001: sayfa açılınca 2 saniye sonra takvim hatırlatıcı kontrolü
-  setTimeout(window._ppTakvimHatirlaticiKontrol, 2000);
+  window._ppSetTimeout(window._ppTakvimHatirlaticiKontrol, 2000, 'takvim-hatirla');
 };
 
 window._ppSetMod = function(mod) {
@@ -819,7 +851,7 @@ window._ppDwBasla = function() {
   window.toast?.('Deep Work başladı — 90 dk','ok');
   // PUSULA-SURE-TAKIP-001: timer başlangıç zamanını kaydet (pause'da süre hesabı için)
   window._ppTimerBaslangic = Date.now();
-  _ppDwInterval = setInterval(function() {
+  _ppDwInterval = window._ppSetInterval(function() {
     _ppDwSaniye++;
     var pct = Math.min((_ppDwSaniye/_ppDwHedef)*100, 100);
     var s = _ppDwSaniye;
@@ -2525,7 +2557,7 @@ window._ppHayatBaslat = function() {
 };
 
 window._ppHayatLoad = _ppHayatLoad;
-setTimeout(function() { window._ppHayatBaslat?.(); }, 1200);
+window._ppSetTimeout(function() { window._ppHayatBaslat?.(); }, 1200, 'hayat-boot');
 
 /* ── Rutin Ödemeler + Abonelik Takibi ──────────────────────── */
 var PP_ODEME_KEY = 'ak_pp_odemeler_v1';
@@ -2558,7 +2590,7 @@ window._ppAbonelikBaslat = function() {
   _ppAbonelikStore(abonelikler);
 };
 
-setTimeout(function(){ window._ppOdemeBaslat?.(); window._ppAbonelikBaslat?.(); }, 1500);
+window._ppSetTimeout(function(){ window._ppOdemeBaslat?.(); window._ppAbonelikBaslat?.(); }, 1500, 'odeme-abonelik-boot');
 
 window._ppOdemePanelRender = function(body, h) {
   var odemeler = _ppOdemeLoad().filter(function(o){ return !o.isDeleted; });
@@ -2978,7 +3010,7 @@ window._ppZamanUIGuncelle = function() {
   var gecen = Math.floor((Date.now() - _ppZamanBaslangic) / 1000);
   var dk = Math.floor(gecen / 60); var sn = gecen % 60;
   el.textContent = dk + 'dk ' + String(sn).padStart(2, '0') + 'sn';
-  setTimeout(window._ppZamanUIGuncelle, 1000);
+  window._ppSetTimeout(window._ppZamanUIGuncelle, 1000, 'zaman-ui');
 };
 
 window._ppZamanFormatla = function(saniye) {
