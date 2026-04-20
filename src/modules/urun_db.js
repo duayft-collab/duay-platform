@@ -308,7 +308,31 @@ function openUrunModal(id) {
       + '<input type="hidden" id="udb-note-' + n + '" value="' + esc(u.note || '') + '">'
       + '<input type="checkbox" id="udb-hile-' + n + '" style="display:none"' + (u.gizliHile ? ' checked' : '') + '>'
       + '<input type="hidden" id="udb-hile-not-' + n + '" value="' + esc(u.gizliHileNot || '') + '">'
-      + '<input type="hidden" id="udb-gizliKaynak-' + n + '" value="' + esc(u.gizliKaynak || '') + '">';
+      + '<input type="hidden" id="udb-gizliKaynak-' + n + '" value="' + esc(u.gizliKaynak || '') + '">'
+      /* URUN-FORM-BASIT-001 PARÇA E: Belgeler bloku */
+      + '<div style="margin-top:12px;background:var(--sf2,rgba(0,0,0,0.02));border:0.5px solid var(--b,#e0e0e0);border-radius:8px;padding:12px">'
+        + '<div style="font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">BELGELER</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px">'
+          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Üretim Tarihi</label><input type="date" id="udb-uretimTarihi-' + n + '" value="' + esc(u.uretimTarihi || '') + '" class="fi" style="font-size:11px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:9px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Bakım Yılı</label><input type="number" id="udb-bakimYili-' + n + '" value="' + esc(u.bakimYili || '') + '" placeholder="örn: 2024" class="fi" style="font-size:11px;width:100%"></div>'
+        + '</div>'
+        + '<button type="button" style="margin-top:10px;width:100%;padding:8px;border:0.5px dashed var(--b,#e0e0e0);border-radius:6px;background:transparent;color:var(--t3,#8a8a8a);font-size:11px;cursor:pointer;font-family:inherit">+ Diğer Teknik Dökümanlar Ekle</button>'
+      + '</div>'
+      /* URUN-FORM-BASIT-001 PARÇA E: TEK BUTON Notlar & Gizli Hile (modal tetikleyici) */
+      + (function(){
+          var _doluMu = !!(u.techDesc || u.teknikAciklama || u.sozlesmeNotu || u.note || u.gizliHile || u.gizliHileNot || u.gizliKaynak);
+          var _butonLabel = _doluMu ? '✓ Kayıtlı · Düzenle' : '▸ Doldur';
+          var _butonBg = _doluMu ? '#0F6E56' : '#854F0B';
+          return '<div style="margin-top:12px;border:0.5px solid #EF9F27;background:#FAEEDA;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px">'
+            + '<div>'
+              + '<div style="font-size:12px;font-weight:500;color:#633806">📝 Notlar & Gizli Hile</div>'
+              + '<div style="font-size:10px;color:#854F0B;margin-top:2px">Teknik açıklama, sözleşme notu, özel not, gizli hile formu</div>'
+            + '</div>'
+            + '<button type="button" class="udb-notlar-btn" onclick="window._udbNotlarModalAc && window._udbNotlarModalAc(' + n + ')" style="padding:8px 16px;border:none;border-radius:6px;background:' + _butonBg + ';color:#fff;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">' + _butonLabel + '</button>'
+          + '</div>';
+        })();
   }
 
   /* URUN-FORM-KART-LAYOUT-001-ADIM-C: Eski _udbSatirHTML dead code silindi — _udbCardHTML tek aktif template */
