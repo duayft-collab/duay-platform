@@ -549,6 +549,8 @@ function renderDashboardDetay() {
   h += _renderMetrikler(grup);
   h += _renderGrafik(grup);
   h += _renderIkili(grup);
+  /* EXPECTED-DELIVERIES-FLOW-002 PARÇA 7: Teslimat performans widget */
+  try { if (typeof window._dashEDWidget === 'function') h += window._dashEDWidget(); } catch(e) {}
   h += _renderEmythQ2(grup);
   h += '</div>';
 

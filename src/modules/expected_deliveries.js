@@ -794,6 +794,106 @@
     document.body.appendChild(mo);
   };
 
+  /* ─── PARÇA 7: Dashboard performans metrikleri + widget ─── */
+  window._edGetPerformanceMetrics = function() {
+    var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    var delivered = list.filter(function(e) { return e.status === 'TESLIM_ALINDI'; });
+    var active = list.filter(function(e) { return e.status !== 'TESLIM_ALINDI'; });
+    var overdue = list.filter(function(e) { return window._edIsOverdue(e) && e.status !== 'TESLIM_ALINDI'; });
+    var critical = list.filter(function(e) { return e.priority === 'CRITICAL'; });
+
+    var onTime = delivered.filter(function(e) {
+      if (!e.actualDeliveryDate || !e.estimatedDeliveryDate) return false;
+      return new Date(e.actualDeliveryDate) <= new Date(e.estimatedDeliveryDate);
+    });
+    var onTimeRate = delivered.length > 0 ? Math.round((onTime.length / delivered.length) * 100) : 0;
+
+    var delays = [];
+    delivered.forEach(function(e) {
+      if (e.actualDeliveryDate && e.estimatedDeliveryDate) {
+        var diff = Math.floor((new Date(e.actualDeliveryDate) - new Date(e.estimatedDeliveryDate)) / 86400000);
+        delays.push(Math.max(0, diff));
+      }
+    });
+    var avgDelay = delays.length > 0 ? Math.round(delays.reduce(function(a,b){return a+b;}, 0) / delays.length) : 0;
+
+    var bySupplier = {};
+    list.forEach(function(e) {
+      var sid = e.supplierId || 'bilinmiyor';
+      if (!bySupplier[sid]) bySupplier[sid] = { total: 0, onTime: 0, delayed: 0, totalDelay: 0 };
+      bySupplier[sid].total++;
+      if (e.status === 'TESLIM_ALINDI' && e.actualDeliveryDate && e.estimatedDeliveryDate) {
+        var d = Math.floor((new Date(e.actualDeliveryDate) - new Date(e.estimatedDeliveryDate)) / 86400000);
+        if (d <= 0) bySupplier[sid].onTime++;
+        else { bySupplier[sid].delayed++; bySupplier[sid].totalDelay += d; }
+      }
+    });
+    var supplierList = Object.keys(bySupplier).map(function(sid) {
+      var s = bySupplier[sid];
+      return {
+        supplierId: sid,
+        total: s.total,
+        rate: s.total > 0 ? Math.round((s.onTime / s.total) * 100) : 0,
+        avgDelay: s.delayed > 0 ? Math.round(s.totalDelay / s.delayed) : 0
+      };
+    });
+
+    return {
+      total: list.length,
+      active: active.length,
+      overdue: overdue.length,
+      critical: critical.length,
+      delivered: delivered.length,
+      onTimeRate: onTimeRate,
+      avgDelay: avgDelay,
+      topPerformers: supplierList.filter(function(s){return s.total >= 2;}).sort(function(a,b){return b.rate - a.rate;}).slice(0, 5),
+      worstPerformers: supplierList.filter(function(s){return s.delayed > 0;}).sort(function(a,b){return b.avgDelay - a.avgDelay;}).slice(0, 5)
+    };
+  };
+
+  window._dashEDWidget = function() {
+    var m = window._edGetPerformanceMetrics ? window._edGetPerformanceMetrics() : {};
+    return '<div style="border:0.5px solid var(--b,#CBD5E1);border-radius:12px;padding:16px;background:var(--sf,#fff);margin-bottom:10px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+        + '<div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3,#6B7280)">📦 Teslimat Takibi</div>'
+        + '<span onclick="window.App&&window.App.nav&&window.App.nav(\'teslimat-takip\')" style="font-size:10px;color:#1A8D6F;cursor:pointer">Detay →</span>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">'
+        + '<div><div style="font-size:9px;color:var(--t3,#6B7280);text-transform:uppercase;letter-spacing:.05em">Toplam</div><div style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px">' + (m.total || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3,#6B7280);text-transform:uppercase;letter-spacing:.05em">Aktif</div><div style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px">' + (m.active || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:#E0574F;text-transform:uppercase;letter-spacing:.05em">Geciken</div><div style="font-size:18px;font-weight:600;color:#E0574F;font-variant-numeric:tabular-nums;margin-top:2px">' + (m.overdue || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:#E0574F;text-transform:uppercase;letter-spacing:.05em">Kritik</div><div style="font-size:18px;font-weight:600;color:#E0574F;font-variant-numeric:tabular-nums;margin-top:2px">' + (m.critical || 0) + '</div></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px;border-top:0.5px solid var(--b,#E5E7EB)">'
+        + '<div><div style="font-size:9px;color:var(--t3,#6B7280);text-transform:uppercase;letter-spacing:.05em">Zamanında %</div><div style="font-size:20px;font-weight:600;color:#1A8D6F;font-variant-numeric:tabular-nums;margin-top:2px">' + (m.onTimeRate || 0) + '%</div></div>'
+        + '<div><div style="font-size:9px;color:var(--t3,#6B7280);text-transform:uppercase;letter-spacing:.05em">Ort. Gecikme</div><div style="font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px">' + (m.avgDelay || 0) + ' <span style="font-size:11px;font-weight:400;color:var(--t3)">gün</span></div></div>'
+      + '</div>'
+      + ((m.worstPerformers || []).length > 0
+          ? '<div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--b,#E5E7EB)"><div style="font-size:9px;color:var(--t3,#6B7280);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">En Çok Geciktirenler</div>'
+            + m.worstPerformers.slice(0, 3).map(function(s) {
+                return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span>' + _uiEsc(s.supplierId) + '</span><span style="color:#E0574F;font-variant-numeric:tabular-nums">' + s.avgDelay + ' gün ort.</span></div>';
+              }).join('')
+          + '</div>'
+          : '')
+    + '</div>';
+  };
+
+  /* ─── PARÇA 7: Filter click hotfix (event delegation backup) ─ */
+  window._edFilterDelegationReady = window._edFilterDelegationReady || false;
+  function _edEnsureFilterDelegation() {
+    if (window._edFilterDelegationReady) return;
+    var panel = document.getElementById('panel-teslimat-takip');
+    if (!panel) return;
+    panel.addEventListener('click', function(ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-ed-filter]') : null;
+      if (btn) {
+        var f = btn.getAttribute('data-ed-filter');
+        if (f) window._edSetFilter(f);
+      }
+    });
+    window._edFilterDelegationReady = true;
+  }
+
   window._edRenderPanel = function() {
     var p = document.getElementById('panel-teslimat-takip');
     if (!p) return;
@@ -820,7 +920,8 @@
 
     var filterBtn = function(key, label, count) {
       var active = filter === key;
-      return '<button onclick="window._edSetFilter(\'' + key + '\')" style="padding:7px 14px;border:none;background:' + (active ? 'var(--t,#111)' : 'transparent') + ';color:' + (active ? '#fff' : 'var(--t2,#374151)') + ';border-radius:8px;font-size:11px;font-weight:' + (active ? '500' : '400') + ';cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:all .15s">' + label + ' <span style="font-variant-numeric:tabular-nums;opacity:.7">' + count + '</span></button>';
+      /* PARÇA 7: inline onclick + data-ed-filter (event delegation backup) */
+      return '<button data-ed-filter="' + key + '" onclick="window._edSetFilter && window._edSetFilter(\'' + key + '\')" style="padding:7px 14px;border:none;background:' + (active ? 'var(--t,#111)' : 'transparent') + ';color:' + (active ? '#fff' : 'var(--t2,#374151)') + ';border-radius:8px;font-size:11px;font-weight:' + (active ? '500' : '400') + ';cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:all .15s">' + label + ' <span style="font-variant-numeric:tabular-nums;opacity:.7">' + count + '</span></button>';
     };
 
     p.innerHTML = '<div style="padding:0;font-family:inherit">'
@@ -843,5 +944,8 @@
             : '<div style="padding:40px 20px;text-align:center;color:var(--t3,#9CA3AF);font-size:13px">Bu filtrede kayıt yok</div>')
       + '</div>'
     + '</div>';
+
+    /* PARÇA 7: Event delegation hotfix — inline onclick fail edilirse yedek */
+    _edEnsureFilterDelegation();
   };
 })();
