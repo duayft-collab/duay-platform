@@ -920,9 +920,14 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
     dd.style.top = (rect.bottom + 2) + 'px';
     dd.style.width = Math.max(rect.width, 300) + 'px';
   }
+  /* SATINALMA-UX-005: Dropdown item render — eski + yeni format fallback chain (urunAdi→duayName→origName, duayKodu→duayCode, tedarikci→vendorName→vendor). Önceden sadece eski field okuyordu → BERJER gibi yeni ürünler render empty çıkıyordu. */
   dd.innerHTML = sonuc.map(function(u) {
-    return '<div onclick="event.stopPropagation();window._saV2UrunSecimDoldur?.(\'' + pre + '\',\'' + _saEsc(u.duayKodu || '') + '\')" style="padding:6px 10px;font-size:10px;cursor:pointer;border-bottom:0.5px solid var(--b);color:var(--t)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">'
-      + '<span style="font-weight:500;color:#0C447C">' + _saEsc(u.duayKodu || '') + '</span> ' + _saEsc(u.urunAdi || u.standartAdi || '') + ' <span style="color:var(--t3);font-size:9px">' + _saEsc(u.tedarikci || '') + '</span></div>';
+    var _kod = u.duayKodu || u.duayCode || '';
+    var _ad = u.duayName || u.duayAdi || u.urunAdi || u.standartAdi || u.origName || '—';
+    var _vendor = u.tedarikci || u.vendorName || u.vendor || '';
+    var _kodEsc = (_kod + '').replace(/'/g, "\\'");
+    return '<div onclick="event.stopPropagation();window._saV2UrunSecimDoldur?.(\'' + pre + '\',\'' + _kodEsc + '\')" style="padding:6px 10px;font-size:10px;cursor:pointer;border-bottom:0.5px solid var(--b);color:var(--t)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">'
+      + '<span style="font-weight:500;color:#0C447C">' + _saEsc(_kod) + '</span> ' + _saEsc(_ad) + ' <span style="color:var(--t3);font-size:9px">' + _saEsc(_vendor) + '</span></div>';
   }).join('');
 };
 
