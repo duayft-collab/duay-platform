@@ -12,6 +12,41 @@ var ST_CURRENCIES = ['TRY','USD','EUR','GBP','JPY','CNY','AED','XAU','BTC'];
 var ST_INCOTERMS = ['EXW','FOB','CFR','CIF','DDP','FCA','CPT','CIP','DAP','DPU'];
 var ST_LANGS = ['TR','EN','CN','AR','RU'];
 
+/* BANK-IBAN-PI-001: Duay Uluslararası Ticaret Ltd. Şti. — 3 banka × TRY/USD/EUR */
+var BANK_ACCOUNTS = {
+  albaraka: {
+    name: 'Albaraka Türk Katılım Bankası A.Ş.',
+    branch: 'Alibeyköy / 117',
+    swift: 'BKTKTRIS',
+    accounts: {
+      TRY: 'TR54 0020 3000 0889 5310 0000 05',
+      USD: 'TR27 0020 3000 0889 5310 0000 06',
+      EUR: 'TR97 0020 3000 0889 5310 0000 07'
+    }
+  },
+  garanti: {
+    name: 'T. Garanti Bankası A.Ş.',
+    branch: 'Yeşilpınar / 1181',
+    swift: 'TGBATRIS',
+    accounts: {
+      TRY: 'TR24 0006 2001 1810 0006 2960 86',
+      USD: 'TR39 0006 2001 1810 0009 0812 68',
+      EUR: 'TR66 0006 2001 1810 0009 0812 67'
+    }
+  },
+  kuveytturk: {
+    name: 'Kuveyt Türk Katılım Bankası A.Ş.',
+    branch: 'Yeşilpınar / 267',
+    swift: 'KTEFTRIS',
+    accounts: {
+      TRY: 'TR06 0020 5000 0956 8147 5000 01',
+      USD: 'TR22 0020 5000 0956 8147 5001 01',
+      EUR: 'TR92 0020 5000 0956 8147 5001 02'
+    }
+  }
+};
+var BANK_ORDER = ['albaraka','garanti','kuveytturk'];
+
 /**
  * Çok dilli teklif çeviri tablosu — form etiketleri + PDF başlıkları.
  * Yeni anahtar eklerken her dile karşılığını eklemek zorunlu.
@@ -418,7 +453,27 @@ window._openSTModal = function(id) {
       + '</div>'
       // Şartlar + Banka + Not
       + '<div><div class="fl" data-stk="terms">' + _stT('terms', lang) + '</div><textarea class="fi" id="st-terms" rows="3" style="resize:none">' + (t?.terms || 'Payment: 30% advance, 70% before shipment\nDelivery: Within 30 days after order confirmation\nValidity: 15 days') + '</textarea></div>'
-      + '<div><div class="fl" data-stk="bank">' + _stT('bank', lang) + '</div><textarea class="fi" id="st-bank" rows="2" style="resize:none">' + (t?.bankInfo || 'Bank: ...\nIBAN: ...\nSWIFT: ...') + '</textarea></div>'
+      + (function(){
+          /* BANK-IBAN-PI-001: banka dropdown + currency-bound IBAN + 'Diğer' serbest textarea */
+          var b = t && t.bankInfo;
+          var isObj = b && typeof b === 'object' && b.selectedBank;
+          var isStr = typeof b === 'string' && b.trim();
+          var initSel = isObj ? b.selectedBank : (isStr ? 'custom' : 'albaraka');
+          var initText = isStr ? b : '';
+          var escFn = window._esc || function(s){ return s; };
+          var opts = '';
+          BANK_ORDER.forEach(function(k){
+            opts += '<option value="' + k + '"' + (initSel===k?' selected':'') + '>' + escFn(BANK_ACCOUNTS[k].name) + '</option>';
+          });
+          opts += '<option value="custom"' + (initSel==='custom'?' selected':'') + '>Diğer (serbest metin)</option>';
+          var taShow = initSel === 'custom' ? '' : 'display:none;';
+          var ibanShow = initSel === 'custom' ? 'display:none;' : '';
+          return '<div><div class="fl" data-stk="bank">' + _stT('bank', lang) + '</div>'
+            + '<select class="fi" id="st-bank-sel" onchange="window._stBankChange && window._stBankChange()" style="margin-bottom:6px">' + opts + '</select>'
+            + '<div id="st-bank-iban" style="' + ibanShow + 'font-family:monospace;font-size:11px;padding:8px;background:var(--s2);border-radius:6px;margin-bottom:6px;line-height:1.5"></div>'
+            + '<textarea class="fi" id="st-bank" rows="3" style="resize:none;' + taShow + '">' + escFn(initText) + '</textarea>'
+            + '</div>';
+        })()
       + '<div><div class="fl" data-stk="notes">' + _stT('notes', lang) + '</div><textarea class="fi" id="st-notes" rows="2" style="resize:none">' + (t?.notes || '') + '</textarea></div>'
       + '<input type="hidden" id="st-eid" value="' + (t?.id || '') + '">'
     + '</div>'
@@ -437,6 +492,8 @@ window._openSTModal = function(id) {
     _stCalcTotal();
     // MUSTERI-ONCEKI-SATIS-001: form açıldığında önceki teklif kontrolü
     if (typeof window._stCheckPrevTeklif === 'function') window._stCheckPrevTeklif();
+    /* BANK-IBAN-PI-001: IBAN preview'u ilk açılışta doldur */
+    if (typeof window._stBankChange === 'function') window._stBankChange();
   }, 50);
 };
 
@@ -566,7 +623,17 @@ window._saveST = function() {
     lang: document.getElementById('st-lang')?.value || 'EN',
     items: items,
     terms: document.getElementById('st-terms')?.value || '',
-    bankInfo: document.getElementById('st-bank')?.value || '',
+    bankInfo: (function(){
+      /* BANK-IBAN-PI-001: structured bankInfo (veya custom → plain string, geri uyumlu) */
+      var selEl = document.getElementById('st-bank-sel');
+      var sel = (selEl && selEl.value) || 'albaraka';
+      if (sel === 'custom') return document.getElementById('st-bank')?.value || '';
+      var bank = BANK_ACCOUNTS[sel];
+      if (!bank) return '';
+      var cur = document.getElementById('st-currency')?.value || 'USD';
+      if (!bank.accounts[cur]) cur = 'USD';
+      return { selectedBank: sel, bankName: bank.name, branch: bank.branch, swift: bank.swift, currency: cur, iban: bank.accounts[cur] };
+    })(),
     notes: document.getElementById('st-notes')?.value || '',
     updatedAt: new Date().toISOString(),
   };
@@ -623,7 +690,26 @@ window._stPreview = function(id) {
     + (t.items || []).map(function(i) { return '<tr><td>' + i.no + '</td><td>' + esc(i.desc || i.code) + '</td><td>' + (i.qty || 0) + '</td><td>' + (i.unit || '') + '</td><td>' + (i.price || 0).toLocaleString('tr-TR') + '</td><td>' + (i.total || 0).toLocaleString('tr-TR') + '</td></tr>'; }).join('')
     + '<tr class="total-row"><td colspan="5" style="text-align:right">' + L('total').toUpperCase() + '</td><td>' + (t.currency || '$') + ' ' + total.toLocaleString('tr-TR') + '</td></tr></table>'
     + (t.terms ? '<div class="section"><div class="section-title">' + L('termsTitle') + '</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.terms) + '</pre></div>' : '')
-    + (t.bankInfo ? '<div class="section"><div class="section-title">' + L('bankTitle') + '</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(t.bankInfo) + '</pre></div>' : '')
+    + (function(){
+        /* BANK-IBAN-PI-001: structured bankInfo → HYBRID blok (ana banka + 2 alternatif), string → legacy */
+        var bi = t.bankInfo;
+        if (!bi) return '';
+        if (typeof bi === 'string') return '<div class="section"><div class="section-title">' + L('bankTitle') + '</div><pre style="white-space:pre-wrap;font-family:inherit">' + esc(bi) + '</pre></div>';
+        var main = '<div style="font-weight:700;font-size:12px;color:#1e1b4b">' + esc(bi.bankName || '') + (bi.branch ? ' · <span style="font-weight:400;color:#6b7280">' + esc(bi.branch) + '</span>' : '') + '</div>'
+          + '<div style="font-family:monospace;font-size:11px;margin-top:4px">IBAN (' + esc(bi.currency || '') + '): <b>' + esc(bi.iban || '') + '</b></div>'
+          + (bi.swift ? '<div style="font-family:monospace;font-size:11px">SWIFT: <b>' + esc(bi.swift) + '</b></div>' : '');
+        var altRows = '';
+        try {
+          BANK_ORDER.filter(function(k){ return k !== bi.selectedBank; }).forEach(function(k){
+            var b = BANK_ACCOUNTS[k];
+            var iban = b.accounts[bi.currency];
+            if (!iban) return;
+            altRows += '<div style="font-size:10px;color:#6b7280;margin-top:3px">' + esc(b.name) + ' · <span style="font-family:monospace">' + esc(iban) + '</span> · SWIFT ' + esc(b.swift) + '</div>';
+          });
+        } catch(e) {}
+        var alt = altRows ? '<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #ddd"><div style="font-size:9px;text-transform:uppercase;color:#9ca3af;letter-spacing:.05em;margin-bottom:3px">Alternative Accounts</div>' + altRows + '</div>' : '';
+        return '<div class="section"><div class="section-title">' + L('bankTitle') + '</div>' + main + alt + '</div>';
+      })()
     + '<div style="margin-top:30px;text-align:center;font-size:10px;color:#9ca3af">' + L('footer') + ' · Duay Global LLC · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
     + '<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1e1b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">' + L('print') + '</button></div>'
     + '</body></html>');
@@ -856,6 +942,34 @@ window._stCurrencyChange = function(el) {
   if (typeof window.toast === 'function' && count > 0) {
     window.toast(count + ' satır ' + eski + '→' + yeni + ' kuruna dönüştürüldü (×' + oran.toFixed(4) + ')', 'success');
   }
+  /* BANK-IBAN-PI-001: currency değişince IBAN preview'u da yenile */
+  if (typeof window._stBankChange === 'function') window._stBankChange();
+};
+
+/* BANK-IBAN-PI-001: banka dropdown / currency değişimine bağlı IBAN preview güncelleme */
+window._stBankChange = function() {
+  var selEl = document.getElementById('st-bank-sel');
+  var ibanDiv = document.getElementById('st-bank-iban');
+  var ta = document.getElementById('st-bank');
+  if (!selEl) return;
+  var v = selEl.value;
+  if (v === 'custom') {
+    if (ibanDiv) ibanDiv.style.display = 'none';
+    if (ta) ta.style.display = '';
+    return;
+  }
+  if (ta) ta.style.display = 'none';
+  if (!ibanDiv) return;
+  ibanDiv.style.display = '';
+  var bank = BANK_ACCOUNTS[v];
+  if (!bank) { ibanDiv.innerHTML = ''; return; }
+  var cur = document.getElementById('st-currency')?.value || 'USD';
+  if (!bank.accounts[cur]) cur = 'USD';
+  var esc = window._esc || function(s){ return s; };
+  ibanDiv.innerHTML = '<div style="font-weight:600">' + esc(bank.name) + '</div>'
+    + '<div style="color:var(--t3);font-size:10px;margin-top:2px">Şube: ' + esc(bank.branch) + '</div>'
+    + '<div style="margin-top:6px">IBAN (' + cur + '): <b>' + esc(bank.accounts[cur]) + '</b></div>'
+    + '<div>SWIFT: <b>' + esc(bank.swift) + '</b></div>';
 };
 
 window.renderSatisTeklif = renderSatisTeklif;
