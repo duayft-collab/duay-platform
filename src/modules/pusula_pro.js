@@ -198,6 +198,38 @@ window._ppEtiketleriAl = function() {
 };
 
 /**
+ * PUSULA-PAYLASIM-004: Merkezi rol tespit helper.
+ * 4 rol: admin | sorumlu | etkiliGozlemci | seyirci | null
+ * @param {Object} task
+ * @returns {string|null}
+ */
+function _ppKullaniciRolu(task) {
+  if (!task) return null;
+  var _me = _ppCu();
+  if (!_me) return null;
+  if (_ppIsAdmin()) return 'admin';
+  var _uid = _me.uid || String(_me.id || '') || _me.email || '';
+  var _email = _me.email || '';
+  function _matchUser(arr) {
+    if (!Array.isArray(arr)) return false;
+    return arr.some(function(s){
+      if (!s) return false;
+      if (typeof s === 'object') {
+        var sUid = s.uid || s.id || '';
+        var sAd = s.ad || s.name || s.displayName || s.email || '';
+        return sUid === _uid || sUid === _email || sAd === _email || sAd === (_me.displayName || _me.name || '');
+      }
+      return s === _uid || s === _email;
+    });
+  }
+  if (_matchUser(task.sorumlu)) return 'sorumlu';
+  if (_matchUser(task.etkiliGozlemci) || _matchUser(task.gozlemci)) return 'etkiliGozlemci';
+  if (_matchUser(task.seyirci) || _matchUser(task.paylasilanlar)) return 'seyirci';
+  return null;
+}
+window._ppKullaniciRolu = _ppKullaniciRolu;
+
+/**
  * PUSULA-IZOLASYON-001: Merkezi görev izolasyon filtresi.
  * Admin/manager: tüm görevleri görür.
  * Diğer roller: yalnızca sahip olduğu veya paylaşılan görevleri görür.
@@ -477,7 +509,8 @@ window._ppModRender = function() {
         var _tbadge = _ppTarihBadge(t.bitTarih);
         h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
         h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
-        h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();window._ppTamamla(\''+t.id+'\')" style="width:13px;height:13px;cursor:pointer">';
+        /* PUSULA-PAYLASIM-004: non-admin tamamla checkbox disabled */
+        h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+(_ppIsAdmin()?'':' disabled')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="'+(_ppIsAdmin()?'Tamamla':'Sadece yönetici tamamlayabilir')+'" style="width:13px;height:13px;cursor:'+(_ppIsAdmin()?'pointer':'not-allowed')+'">';
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
         h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:var(--pp-info);cursor:pointer" title="Toplu işlem için seç">';
         h2 += '<div>';
@@ -509,7 +542,9 @@ window._ppModRender = function() {
         h2 += '<div style="font-size:var(--pp-meta);color:'+_tbadge.renk+(';font-weight:')+(_tbadge.bold?'600':'400')+'">'+(_tbadge.etiket)+'</div>';
         h2 += '<span style="font-size:var(--pp-meta);padding:2px 5px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span>';
         // PUSULA-UX-BUNDLE-003 #2: inline öncelik değiştirme dropdown
-        h2 += '<select onchange="event.stopPropagation();window._ppOncelikDegistir?.(\''+String(t.id)+'\',this.value)" onclick="event.stopPropagation()" style="font-size:var(--pp-meta);border:none;background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;margin-left:2px" title="Önceliği değiştir">'
+        /* PUSULA-PAYLASIM-004: non-admin için öncelik select disabled */
+        var _canEditProps = _ppIsAdmin();
+        h2 += '<select ' + (_canEditProps ? 'onchange="event.stopPropagation();window._ppOncelikDegistir?.(\''+String(t.id)+'\',this.value)" onclick="event.stopPropagation()"' : 'disabled') + ' style="font-size:var(--pp-meta);border:none;background:transparent;color:var(--t3);cursor:' + (_canEditProps ? 'pointer' : 'not-allowed') + ';font-family:inherit;margin-left:2px" title="' + (_canEditProps ? 'Önceliği değiştir' : 'Sadece yönetici değiştirebilir') + '">'
           + '<option value="kritik"'+(t.oncelik==='kritik'?' selected':'')+'>🔴</option>'
           + '<option value="yuksek"'+(t.oncelik==='yuksek'?' selected':'')+'>🟡</option>'
           + '<option value="normal"'+(t.oncelik==='normal'?' selected':'')+'>🟢</option>'
@@ -974,6 +1009,8 @@ window._ppTamamla = function(id) {
   /* PUSULA-BUG-FIX-001: toggle — tamamlandi ise plan'a geri al */
   var tasks = _ppLoad(); var t = tasks.find(function(x) { return x.id === id; });
   if (!t) return;
+  /* PUSULA-PAYLASIM-004: sadece admin durum değiştirebilir */
+  if (!_ppIsAdmin()) { window.toast?.('Sadece yönetici durum değiştirebilir', 'err'); return; }
   if (t.durum === 'tamamlandi') {
     t.durumLog = t.durumLog || [];
     t.durumLog.push({ den: 'tamamlandi', e: 'plan', kim: (_ppCu()?.displayName || _ppCu()?.email || '?'), zaman: _ppNow() });
@@ -1421,6 +1458,8 @@ window._ppSiralaGorevler = function(kriter) {
 
 /* PUSULA-UX-BUNDLE-003 #2: inline öncelik değiştirme handler */
 window._ppOncelikDegistir = function(id, yeniOncelik) {
+  /* PUSULA-PAYLASIM-004: sadece admin öncelik değiştirebilir */
+  if (!_ppIsAdmin()) { window.toast?.('Sadece yönetici öncelik değiştirebilir', 'err'); return; }
   var tasks = _ppLoad();
   var t = tasks.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
