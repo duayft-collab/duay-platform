@@ -1344,7 +1344,7 @@ function _renderDashboard() {
   h += '<div style="'+C+'">'
     + '<div style="padding:12px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<span style="font-size:10px;font-weight:700;color:var(--t);text-transform:uppercase;letter-spacing:.06em">Operasyon</span>'
-      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'pusula\')">Pusula →</span></div>'
+      + '<span style="font-size:10px;color:#0C447C;cursor:pointer" onclick="App.nav(\'pusula-pro\')">Pusula →</span></div>'
     // WIP bar
     + '<div style="padding:10px 16px;background:var(--s2)">'
       + '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span style="color:var(--t2)">Kanban WIP — Devam Sütunu</span><span style="color:'+wipColor+';font-weight:600">'+wipCount+'/5'+(wipCount>5?' ⚠ Aşıldı':'')+'</span></div>'
@@ -1533,7 +1533,7 @@ function _renderDashboard() {
     + '<div style="font-size:11px;display:flex;flex-direction:column;gap:3px">'
     + '<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Ödeme</span><b style="color:#DC2626;cursor:pointer" onclick="App.nav(\'odemeler\')">'+bugunOdm.length+'</b></div>'
     + '<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Tahsilat</span><b style="color:#16A34A">'+bugunTah.length+'</b></div>'
-    + '<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Görev</span><b style="cursor:pointer" onclick="App.nav(\'pusula\')">'+bugunTask.length+'</b></div></div></div>';
+    + '<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Görev</span><b style="cursor:pointer" onclick="App.nav(\'pusula-pro\')">'+bugunTask.length+'</b></div></div></div>';
   h += '<div style="'+C+';padding:10px 14px"><div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:6px">Bu Hafta</div>'
     + '<div style="font-size:11px;display:flex;flex-direction:column;gap:3px">'
     + '<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Ödeme</span><b style="color:#DC2626">₺'+Math.round(haftaOdm).toLocaleString('tr-TR')+'</b></div>'
@@ -1544,7 +1544,7 @@ function _renderDashboard() {
   // ── B5: Operasyonel (kompakt 60px)
   h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
   var ops = [
-    {l:'Görevler',v:acikGorev,u:'açık',sub:gecikTask.length+' gecikmiş',c:gecikTask.length?'#DC2626':'#16A34A',nav:'pusula'},
+    {l:'Görevler',v:acikGorev,u:'açık',sub:gecikTask.length+' gecikmiş',c:gecikTask.length?'#DC2626':'#16A34A',nav:'pusula-pro'},
     {l:'Satın Alma',v:sa.length,u:'kayıt',sub:bekleyenSA+' onay',c:bekleyenSA?'#D97706':'#16A34A',nav:'satinalma'},
     {l:'Kargo',v:aktifKargo,u:'aktif',sub:konts.length+' kont.',c:'var(--t)',nav:'kargo'},
     {l:'Nakit',v:gecikOdm.length,u:'gecikmiş',sub:'₺'+Math.round(haftaOdm).toLocaleString('tr-TR'),c:gecikOdm.length?'#DC2626':'#16A34A',nav:'odemeler'},
@@ -2194,7 +2194,7 @@ function _showTaskAssignPopup(pending, idx) {
     setTimeout(function(){ _showTaskAssignPopup(pending, idx+1); }, 400);
   };
   document.getElementById('tapop-ok').addEventListener('click', _ack);
-  document.getElementById('tapop-go').addEventListener('click', function(){ _ack(); if(typeof nav==='function') nav('pusula',null); });
+  document.getElementById('tapop-go').addEventListener('click', function(){ _ack(); if(typeof nav==='function') nav('pusula-pro',null); });
   pop.addEventListener('click', function(e){ if(e.target===pop) _ack(); });
 }
 
