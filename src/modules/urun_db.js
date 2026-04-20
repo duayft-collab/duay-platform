@@ -277,49 +277,38 @@ function openUrunModal(id) {
         + '<div style="display:flex;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:600;color:var(--t,#1c1c1e)">📦 Ürün ' + n + '</span>' + kodRozeti + zamanDamgasi + '</div>'
         + '<button type="button" onclick="window._udbSil?.(' + n + ')" style="background:transparent;border:0.5px solid #E0574F;color:#E0574F;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">× Kaldır</button>'
       + '</div>'
-      /* URUN-FORM-EXCEL-001: Excel-tarzı 2 satır yerleşim — Satır1 görsel+7 input (8 hücre), Satır2 6 hücre, techDesc collapsible */
-      /* SATIR 1 — 8 hücre: Görsel + Ürün Adı TR + Ürün Adı EN + Kod + Tedarikçi + Tedarikçi Kodu + Kategori + Menşei */
-      + '<div style="display:grid;grid-template-columns:100px repeat(7, minmax(0, 1fr));gap:8px;align-items:end;margin-bottom:8px">'
-        + '<div>'
+      /* URUN-FORM-BASIT-001 PARÇA A: BLOK 1 — 2 satır grid (Görsel 2-row span + 12 input), hidden inputs save logic intact */
+      + '<div style="display:grid;grid-template-columns:120px repeat(7, minmax(0, 1fr));gap:10px;align-items:end">'
+        + '<div style="grid-row:1/span 2">'
           + '<label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Görsel <span style="color:#E0574F">*</span></label>'
-          + '<div id="udb-img-preview-' + n + '" onclick="document.getElementById(\'udb-img-' + n + '\').click()" style="width:100px;height:100px;border:0.5px dashed var(--b,#e0e0e0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3,#8a8a8a);cursor:pointer;overflow:hidden;background:var(--s2,rgba(0,0,0,0.02));transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac,#007aff)\'" onmouseleave="this.style.borderColor=\'var(--b,#e0e0e0)\'">'
+          + '<div id="udb-img-preview-' + n + '" onclick="document.getElementById(\'udb-img-' + n + '\').click()" style="width:120px;height:120px;border:0.5px dashed var(--b,#e0e0e0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3,#8a8a8a);cursor:pointer;overflow:hidden;background:var(--s2,rgba(0,0,0,0.02));transition:border-color .12s" onmouseenter="this.style.borderColor=\'var(--ac,#007aff)\'" onmouseleave="this.style.borderColor=\'var(--b,#e0e0e0)\'">'
             + imgPreview
           + '</div>'
           + '<input type="file" id="udb-img-' + n + '" accept="image/*" style="display:none" onchange="window._udbGorselYukle?.(this, ' + n + ')">'
         + '</div>'
+        /* Satır 1 — 7 input: TR + EN + Kategori + Tedarikçi + Tedarikçi Kodu + Menşei + Kod */
         + _fld('udb-duayName-' + n, 'Ürün Adı (TR)', 'text', '', true, 'örn: Mesh Ofis Koltuğu', u.duayName || u.urunAdi)
         + _fld('udb-origName-' + n, 'Ürün Adı (EN)', 'text', '', true, 'örn: Mesh Office Chair', u.origName || u.ingAd)
-        + '<div><label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Kod</label><div style="height:32px;display:flex;align-items:center">' + kodRozeti + '</div></div>'
+        + _fld('udb-category-' + n, 'Kategori', 'text-list', 'udb-kat-datalist', false, 'Mobilya, Ofis...', u.category || u.kategori)
         + _fld('udb-vendor-' + n, 'Tedarikçi', 'select-vendor', '', true, '', u.vendorName || u.tedarikci)
         + _fld('udb-vendorCode-' + n, 'Tedarikçi Kodu', 'text', '', true, 'örn: 3121312', u.vendorCode || u.saticiKodu)
-        + _fld('udb-category-' + n, 'Kategori', 'text-list', 'udb-kat-datalist', false, 'Mobilya, Ofis...', u.category || u.kategori)
         + _fld('udb-origin-' + n, 'Menşei', 'select-country', '', true, '', u.origin || u.mensei)
-      + '</div>'
-      /* SATIR 2 — 6 hücre: Birim + Net Ağırlık + Brüt Ağırlık + Marka + Raf Ömrü + — */
-      + '<div style="display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:8px;align-items:end;margin-bottom:12px">'
+        + '<div><label style="display:block;font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px">Kod</label><div style="height:32px;display:flex;align-items:center">' + kodRozeti + '</div></div>'
+        /* Satır 2 — 5 input + 2 boş hücre: Birim + NetA + BrutA + Marka + Raf */
         + _fld('udb-unit-' + n, 'Birim', 'select-unit', '', true, '', u.unit || u.birim)
         + _fld('udb-netW-' + n, 'Net Ağırlık (kg)', 'number', '', false, 'örn: 2.5', u.netWeight || u.netAgirlik)
         + _fld('udb-grossW-' + n, 'Brüt Ağırlık (kg)', 'number', '', false, 'örn: 3.0', u.grossWeight || u.brutAgirlik)
         + _fld('udb-marka-' + n, 'Marka', 'text', '', false, 'örn: IKEA, Bosch', u.marka)
         + _fld('udb-raf-' + n, 'Raf Ömrü (gün)', 'number', '', false, 'örn: 365', u.shelfLife)
-        + '<div></div>'
+        + '<div></div><div></div>'
       + '</div>'
-      /* Teknik Açıklama — collapsible details (başta kapalı) */
-      + '<details style="margin-top:8px;border:0.5px solid var(--b,#e0e0e0);border-radius:8px;overflow:hidden">'
-        + '<summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);list-style:none;user-select:none;background:var(--sf)">▸ Teknik Açıklama</summary>'
-        + '<div style="padding:12px 14px;border-top:0.5px solid var(--b,#e0e0e0)">'
-          + _fld('udb-techDesc-' + n, '', 'textarea', '', true, 'Ürünün teknik özellikleri, boyutlar, malzeme, standartlar...', u.techDesc || u.teknikAciklama)
-        + '</div>'
-      + '</details>'
-      + '<details style="border-top:0.5px solid var(--b,#e0e0e0);padding-top:10px;margin-top:4px">'
-        + '<summary style="font-size:11px;color:var(--t3,#8a8a8a);cursor:pointer;padding:4px 0;user-select:none">📝 Ek Notlar & Gizlilik</summary>'
-        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'
-          + _fld('udb-sozlesme-' + n, 'Sözleşme Notu', 'textarea', '', false, 'Bu ürün için sözleşmedeki özel madde', u.sozlesmeNotu)
-          + _fld('udb-note-' + n, 'Özel Not', 'textarea', '', false, 'İç not — alım kararına dair', u.note)
-          + _fld('udb-hile-' + n, 'Gizli Hile var', 'checkbox', '', false, '🔒 Gizli Hile / Maliyet Farkı var', u.gizliHile)
-          + _fld('udb-hile-not-' + n, 'Gizli Hile Notu', 'textarea', '', false, 'Sadece yöneticiler görür', u.gizliHileNot)
-        + '</div>'
-      + '</details>';
+      /* Hidden inputs — save logic intact (Teknik Açıklama + Ek Notlar modal'a taşınacak, PARÇA B-D'de) */
+      + '<input type="hidden" id="udb-techDesc-' + n + '" value="' + esc(u.techDesc || u.teknikAciklama || '') + '">'
+      + '<input type="hidden" id="udb-sozlesme-' + n + '" value="' + esc(u.sozlesmeNotu || '') + '">'
+      + '<input type="hidden" id="udb-note-' + n + '" value="' + esc(u.note || '') + '">'
+      + '<input type="checkbox" id="udb-hile-' + n + '" style="display:none"' + (u.gizliHile ? ' checked' : '') + '>'
+      + '<input type="hidden" id="udb-hile-not-' + n + '" value="' + esc(u.gizliHileNot || '') + '">'
+      + '<input type="hidden" id="udb-gizliKaynak-' + n + '" value="' + esc(u.gizliKaynak || '') + '">';
   }
 
   /* URUN-FORM-KART-LAYOUT-001-ADIM-C: Eski _udbSatirHTML dead code silindi — _udbCardHTML tek aktif template */
