@@ -72,7 +72,14 @@ window._yetkiKontrol = function(islem) {
     'urun-fiyat': () => { window._saUrunListeAc?.(); },
     'satin-alma': () => { window.renderSatinAlmaV2?.(); },
     'alindi-teklifler': () => { window.renderIhracatListesi?.(); },
-    'alis-teklifleri': () => { window.renderSatinAlmaV2?.(); },
+    'alis-teklifleri': () => {
+      /* SATINALMA-MENU-CLEANUP-001: panel-alis-teklifleri'ye özel render, SatinAlmaV2 değil */
+      if (typeof window.renderAlisTeklifleri === 'function') {
+        window.renderAlisTeklifleri();
+      } else {
+        window.renderSatinAlmaV2?.();
+      }
+    },
     'satis-teklifleri': () => { window.renderSatisTeklifleri?.(); },
     'formlar': () => { /* kurumsal formlar */ },
     'arsiv-hub': () => { window._renderArsivHub?.(); },
@@ -5667,12 +5674,10 @@ window._renderFirmaKpi = function() {
   /* Satınalma menüsü — tam yeniden yapılandır */
   /* FASON-OVERRIDE-FIX-001: fason L4930 push'u burada silinmesin, hardcoded array'e de eklendi */
   if (G.satinalma) {
-    /* SATINALMA-MENU-MISSING-001: 'satin-alma' yanlış ID idi → 'alis-teklifleri'. satis-teklifleri + cari eklendi. */
+    /* SATINALMA-MENU-CLEANUP-001: satis-teklifleri+cari duplicate idi (Satış grubunda zaten var), çıkarıldı. alis-teklifleri doğru id ile kaldı. */
     G.satinalma.mods = [
       { id: 'alis-teklifleri',   label: 'Al\u0131\u015f Teklifleri' },
       { id: 'urunler',           label: '\u00dcr\u00fcn Katalo\u011fu' },
-      { id: 'satis-teklifleri',  label: 'Proforma Teklifler' },
-      { id: 'cari',              label: 'Cari Y\u00f6netimi' },
       { id: 'siparisler',        label: 'Sipari\u015fler' },
       { id: 'numune',            label: 'Numune Ar\u015fivi' },
       { id: 'fason',             label: 'Fason \u00dcretim' },
