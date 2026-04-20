@@ -1437,6 +1437,8 @@ function logActivity(type, detail) {
   } catch(e) { console.warn('[NOTIF-CLEANUP-V2]', e && e.message); }
   var sliced = (typeof window._lsRetention === 'function') ? window._lsRetention(d, 'notifications', 50, 0) : d.slice(0, 50);
   _write(KEYS.notifications, sliced);
+  /* NOTIF-CLEANUP-V2-HOTFIX-001: cache.js _wrap cleanup'sız data'yı _cache'e yazıyor — temizlenmiş data için cache invalidate */
+  try { if (typeof window.invalidateCacheKey === 'function') window.invalidateCacheKey('notifs'); } catch(_ce) {}
   /* Firestore sync: cleanup'lı TAM listeyi gönder (500'e kadar), LS sadece 50 */
   clearTimeout(storeNotifs._timer);
   storeNotifs._timer = setTimeout(function() {
