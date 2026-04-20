@@ -3170,7 +3170,19 @@ window._ppOnayGonder = function(gorevId) {
   window.toast?.('Onay talebi gönderildi', 'ok');
   if (typeof window.addNotif === 'function') {
     var admins = (typeof window.loadUsers === 'function' ? window.loadUsers() : []).filter(function(u) { return u.rol === 'admin' || u.rol === 'manager' || u.role === 'admin' || u.role === 'manager'; });
-    admins.forEach(function(a) { window.addNotif('✅', 'Görev onay bekliyor: ' + _ppEsc(t.baslik || ''), 'warn', 'pusula', a.uid || a.id, gorevId); });
+    admins.forEach(function(a) {
+      /* PUSULA-NOTIF-AZALT-001: self-notif skip + günlük görev-bazlı dedup */
+      var _adminUid = a.uid || a.id;
+      var _cuNotif = (typeof _ppCu === 'function') ? (_ppCu() || {}) : (window.CU?.() || {});
+      if (_adminUid === (_cuNotif.uid || _cuNotif.id || '')) return;
+      var _bugunStr = new Date().toISOString().slice(0, 10);
+      var _dedupKey = 'pp_onay_notif_' + gorevId + '_' + _adminUid + '_' + _bugunStr;
+      try {
+        if (localStorage.getItem(_dedupKey)) return;
+        localStorage.setItem(_dedupKey, '1');
+      } catch(_dne) {}
+      window.addNotif('✅', 'Görev onay bekliyor: ' + _ppEsc(t.baslik || ''), 'warn', 'pusula', _adminUid, gorevId);
+    });
   }
   window._ppModRender?.();
 };
