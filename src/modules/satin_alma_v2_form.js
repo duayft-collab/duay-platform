@@ -849,11 +849,27 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
   var dd = document.getElementById(ddId);
   var inp = document.getElementById(hedefId || (pre + 'urunAdi'));
   if (!deger || deger.length < 2) { if (dd) dd.remove(); return; }
-  var q = deger.toLowerCase();
+  /* SATINALMA-UX-001: Türkçe normalize + vendor filter + spam-guarded toast (önceki commit'ler dead _saV2UrunAraDropdown'a gitmişti, gerçek fn bu) */
+  var _norm = function(s) { return !s ? '' : String(s).toLocaleLowerCase('tr-TR').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u').trim(); };
+  var _seciliTed = (document.getElementById('sav2f-tedarikci')?.value || '').trim();
+  if (!_seciliTed) {
+    if (dd) dd.remove();
+    if (!window._sav2TedToastAktif) {
+      if (window.toast) window.toast('Önce tedarikçi seçin', 'warn');
+      window._sav2TedToastAktif = true;
+      setTimeout(function(){ window._sav2TedToastAktif = false; }, 5000);
+    }
+    return;
+  }
+  var _seciliTedN = _norm(_seciliTed);
+  var q = _norm(deger);
   var urunler = typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : [];
-  var tum = urunler;
+  var tum = urunler.filter(function(u){
+    if (u.isDeleted) return false;
+    return _norm(u.tedarikci || u.vendorName || '') === _seciliTedN;
+  });
   var sonuc = tum.filter(function(u) {
-    return (u.urunAdi || '').toLowerCase().includes(q) || (u.standartAdi || '').toLowerCase().includes(q) || (u.duayAdi || '').toLowerCase().includes(q) || (u.duayKodu || '').toLowerCase().includes(q);
+    return _norm(u.urunAdi).includes(q) || _norm(u.standartAdi).includes(q) || _norm(u.duayAdi).includes(q) || _norm(u.duayKodu).includes(q);
   }).slice(0, 8);
   if (!sonuc.length) { if (dd) dd.remove(); return; }
   if (!dd) {
