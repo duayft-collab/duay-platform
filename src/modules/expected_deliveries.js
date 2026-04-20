@@ -172,4 +172,125 @@
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     return true;
   };
+
+  /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
+  var _edFindRaw = function(edId) {
+    var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    for (var i = 0; i < list.length; i++) { if (list[i].id === edId) return { list: list, idx: i }; }
+    return { list: list, idx: -1 };
+  };
+
+  window._edAddDelivery = function(edId, delivery) {
+    if (!delivery || typeof delivery.qty !== 'number' || delivery.qty <= 0) {
+      return { success: false, error: 'Geçersiz miktar (qty > 0 olmalı)' };
+    }
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    var ed = f.list[f.idx];
+    if (!Array.isArray(ed.deliveries)) ed.deliveries = [];
+
+    var delivered = window._edCalculateDelivered(ed);
+    var remaining = (parseFloat(ed.quantityTotal) || 0) - delivered;
+    if (delivery.qty > remaining) {
+      return { success: false, error: 'Miktar kalan sınırını aşıyor (kalan: ' + remaining + ', eklenen: ' + delivery.qty + ')' };
+    }
+
+    delivery.status = delivery.status || 'shipped';
+    delivery.shipmentDate = delivery.shipmentDate || new Date().toISOString();
+    delivery.addedAt = new Date().toISOString();
+
+    ed.deliveries.push(delivery);
+    ed.updatedAt = new Date().toISOString();
+
+    if (!ed.actualShipmentDate && delivery.shipmentDate) {
+      ed.actualShipmentDate = delivery.shipmentDate;
+      if (ed.status === 'TEDARIK_ASAMASINDA' || ed.status === 'URETIMDE') ed.status = 'YOLDA';
+    }
+
+    window._edEnrich(ed);
+    f.list[f.idx] = ed;
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f.list);
+
+    try { if (typeof window.logActivity === 'function') window.logActivity('expected_delivery_partial_added', { edId: edId, qty: delivery.qty }); } catch(e) {}
+    return { success: true, ed: ed };
+  };
+
+  window._edMarkDelivered = function(edId, deliveryIdx) {
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    var ed = f.list[f.idx];
+    if (!Array.isArray(ed.deliveries) || !ed.deliveries[deliveryIdx]) return { success: false, error: 'invalid_delivery_idx' };
+
+    ed.deliveries[deliveryIdx].status = 'delivered';
+    ed.deliveries[deliveryIdx].deliveryDate = ed.deliveries[deliveryIdx].deliveryDate || new Date().toISOString();
+    ed.updatedAt = new Date().toISOString();
+
+    if (!ed.actualDeliveryDate) ed.actualDeliveryDate = ed.deliveries[deliveryIdx].deliveryDate;
+
+    window._edEnrich(ed);
+    if (ed.quantityRemaining === 0) ed.status = 'TESLIM_ALINDI';
+
+    f.list[f.idx] = ed;
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f.list);
+    return { success: true, ed: ed };
+  };
+
+  window._edMarkShipped = function(edId, deliveryIdx) {
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    var ed = f.list[f.idx];
+    if (!Array.isArray(ed.deliveries) || !ed.deliveries[deliveryIdx]) return { success: false, error: 'invalid_delivery_idx' };
+    ed.deliveries[deliveryIdx].status = 'in-transit';
+    ed.updatedAt = new Date().toISOString();
+    f.list[f.idx] = ed;
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f.list);
+    return { success: true, ed: ed };
+  };
+
+  window._edSetDelayOwner = function(edId, owner, reason) {
+    if (DELAY_OWNERS.indexOf(owner) === -1) return { success: false, error: 'Geçersiz owner (supplier/logistics/internal)' };
+    if (!reason || String(reason).trim().length < 10) return { success: false, error: 'Gecikme sebebi minimum 10 karakter' };
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    f.list[f.idx].delayOwner = owner;
+    f.list[f.idx].delayReason = String(reason).trim();
+    f.list[f.idx].updatedAt = new Date().toISOString();
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f.list);
+    return { success: true, ed: f.list[f.idx] };
+  };
+
+  window._edUpdatePriority = function(edId, priority) {
+    if (PRIORITIES.indexOf(priority) === -1) return { success: false, error: 'Geçersiz öncelik' };
+    var f = _edFindRaw(edId);
+    if (f.idx === -1) return { success: false, error: 'not_found' };
+    f.list[f.idx].priority = priority;
+    f.list[f.idx].updatedAt = new Date().toISOString();
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(f.list);
+    return { success: true, ed: f.list[f.idx] };
+  };
+
+  /* ─── PARÇA 2: QUERY HELPERS (PARÇA 6 UI için temel) ────── */
+  window._edFilterByStatus = function(status) {
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    return all.filter(function(e) { return e.status === status; });
+  };
+
+  window._edFilterOverdue = function() {
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    return all.filter(function(e) { return window._edIsOverdue(e) && e.status !== 'TESLIM_ALINDI'; });
+  };
+
+  window._edFilterCritical = function() {
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    return all.filter(function(e) { return e.priority === 'CRITICAL'; });
+  };
+
+  window._edFilterUpcoming = function(days) {
+    var d = parseInt(days, 10) || 7;
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    return all.filter(function(e) {
+      var rem = window._edCalculateRemainingDays(e);
+      return rem !== null && rem >= 0 && rem <= d && e.status !== 'TESLIM_ALINDI';
+    });
+  };
 })();
