@@ -1302,6 +1302,8 @@ window._openUrunModal = function(editId) {
   mo.innerHTML = '<div class="moc" style="max-width:680px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">' + (u ? '✏️ Ürün Düzenle' : '+ Ürün Ekle') + (u?.duayKodu ? ' <span style="font-size:11px;color:var(--t3);font-weight:400;font-family:monospace">' + esc(u.duayKodu) + '</span>' : '') + '</div>'
     + '<div style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px">'
+    /* URUN-FORMU-PROGRESS-BAR-001: doluluk göstergesi — 14 alan + zorunlu check */
+    + '<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Form Doluluğu</div><div id="ur-progress-text" style="font-size:10px;color:var(--t3);font-variant-numeric:tabular-nums">0/14 alan · %0</div></div><div style="height:3px;background:var(--b);border-radius:2px;overflow:hidden"><div id="ur-progress-bar" style="height:100%;width:0%;background:#1A8D6F;transition:width .2s"></div></div></div>'
     // Zorunlu alanlar (siyah)
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div><div class="fl" style="color:#000">Orijinal Ürün Adı *</div><input class="fi" id="ur-ad" value="' + esc(u?.orijinalAdi||u?.urunAdi||'') + '"></div>'
@@ -1349,10 +1351,37 @@ window._openUrunModal = function(editId) {
     + '</div>'
     + '<div style="padding:10px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:6px">'
     + '<button class="btn" onclick="document.getElementById(\'mo-urun\')?.remove()">İptal</button>'
-    + '<button class="btn btnp" onclick="window._saveUrun()">Kaydet</button></div></div>';
+    + '<button class="btn btnp" id="ur-save-btn" onclick="window._saveUrun()">Kaydet</button></div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
-  setTimeout(function(){mo.classList.add('open');},10);
+  /* URUN-FORMU-PROGRESS-BAR-001: input event delegation + ilk hesap */
+  mo.addEventListener('input', function(){ if (typeof window._urunFormProgressUpdate === 'function') window._urunFormProgressUpdate(); });
+  mo.addEventListener('change', function(){ if (typeof window._urunFormProgressUpdate === 'function') window._urunFormProgressUpdate(); });
+  setTimeout(function(){ mo.classList.add('open'); if (typeof window._urunFormProgressUpdate === 'function') window._urunFormProgressUpdate(); },10);
+};
+
+/* URUN-FORMU-PROGRESS-BAR-001: 14 alan doluluk + 3 zorunlu Kaydet disable */
+window._urunFormProgressUpdate = function() {
+  var fields = ['ur-ad','ur-tedarikci','ur-kat','ur-std','ur-gtip','ur-mensei','ur-marka','ur-net','ur-brut','ur-en','ur-boy','ur-teknik','ur-renk','ur-satici-kodu'];
+  var dolu = 0;
+  fields.forEach(function(id){ var el = document.getElementById(id); if (el && String(el.value||'').trim()) dolu++; });
+  var pct = Math.round(dolu / fields.length * 100);
+  var bar = document.getElementById('ur-progress-bar');
+  var text = document.getElementById('ur-progress-text');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.style.background = pct < 40 ? '#DC2626' : pct < 70 ? '#D97706' : '#1A8D6F';
+  }
+  if (text) text.textContent = dolu + '/' + fields.length + ' alan · %' + pct;
+  var zorunlu = [['ur-ad','Ürün Adı'],['ur-tedarikci','Tedarikçi'],['ur-kat','Kategori']];
+  var eksik = zorunlu.filter(function(z){ var el = document.getElementById(z[0]); return !el || !String(el.value||'').trim(); });
+  var btn = document.getElementById('ur-save-btn');
+  if (btn) {
+    btn.disabled = eksik.length > 0;
+    btn.title = eksik.length > 0 ? 'Eksik zorunlu: ' + eksik.map(function(z){return z[1];}).join(', ') : 'Kaydet';
+    btn.style.opacity = eksik.length > 0 ? '0.5' : '1';
+    btn.style.cursor = eksik.length > 0 ? 'not-allowed' : 'pointer';
+  }
 };
 
 window._saveUrun = function() {
