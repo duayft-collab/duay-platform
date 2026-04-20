@@ -279,18 +279,20 @@ window._saV2FormGorsel = function(inp) {
 
 /* ── URUN-ARA-001: Anlık Ürün Arama Dropdown ──────────────── */
 window._saV2UrunAraDropdown = function(inp, hedefId) {
-  var val = inp.value.trim().toLowerCase();
+  /* SATINALMA-FORM-URUN-ARAMA-001: Türkçe normalize (ç/ğ/ı/ö/ş/ü → c/g/i/o/s/u) — cross-file coupling önlendi, self-contained */
+  var _norm = function(s) { return !s ? '' : String(s).toLocaleLowerCase('tr-TR').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u').trim(); };
+  var val = _norm(inp.value);
   var mevcut = document.getElementById('sa-urun-dropdown');
   if (mevcut) mevcut.remove();
   if (val.length < 2) return;
   var tumListe = (typeof window.loadUrunler === 'function' ? window.loadUrunler({tumKullanicilar:true}) : []).filter(function(u) { return !u.isDeleted; });
   var eslesen = tumListe.filter(function(u) {
-    return (u.duayKodu || '').toLowerCase().includes(val)
-      || (u.urunAdi || '').toLowerCase().includes(val)
-      || (u.ingAd || u.standartAdi || '').toLowerCase().includes(val)
-      || (u.tedarikci || '').toLowerCase().includes(val)
-      || (u.marka || '').toLowerCase().includes(val)
-      || (u.saticiKodu || '').toLowerCase().includes(val);
+    return _norm(u.duayKodu).includes(val)
+      || _norm(u.urunAdi).includes(val)
+      || _norm(u.ingAd || u.standartAdi).includes(val)
+      || _norm(u.tedarikci).includes(val)
+      || _norm(u.marka).includes(val)
+      || _norm(u.saticiKodu).includes(val);
   }).slice(0, 8);
   if (!eslesen.length) return;
   var rect = inp.getBoundingClientRect();
