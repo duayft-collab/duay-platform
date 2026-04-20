@@ -110,9 +110,8 @@ function openUrunModal(id) {
   if (window.DraftManager) {
     window.DraftManager.attachBanner('urun-ekle-batch',
       function _onContinue(_d) {
-        /* Restore yapısı PARÇA 2'de — şimdilik sadece console.log */
-        console.log('[DRAFT-URUN] Devam Et — taslak data hazır:', _d);
-        if (window.toast) window.toast('Taslak bilgisi console\'a yazıldı (restore PARÇA 2)', 'info');
+        /* DRAFT-URUN-EKLE-001 PARÇA 2: restore */
+        if (typeof window._udbDraftRestore === 'function') window._udbDraftRestore(_d);
       },
       function _onDiscard() {
         if (window.toast) window.toast('Taslak silindi', 'ok');
@@ -940,6 +939,64 @@ window._udbNotlarKaydet = function(urunIdx) {
   var modal = document.getElementById('udb-notlar-modal');
   if (modal) modal.remove();
   if (window.toast) window.toast('Notlar kaydedildi', 'ok');
+};
+
+/* DRAFT-URUN-EKLE-001 PARÇA 2: Taslaktan forma restore */
+window._udbDraftRestore = function(draftData) {
+  if (!draftData || !draftData.urunler || draftData.urunler.length === 0) {
+    if (window.toast) window.toast('Taslak boş', 'warn');
+    return;
+  }
+  var mevcut = document.querySelectorAll('[id^="udb-duayName-"]').length;
+  var eksik = draftData.urunler.length - mevcut;
+  for (var i = 0; i < eksik; i++) {
+    if (typeof window._udbSatirEkle === 'function') window._udbSatirEkle();
+  }
+  setTimeout(function(){
+    draftData.urunler.forEach(function(urun, idx){
+      var n = idx + 1;
+      var map = {
+        duayName: urun.duayName,
+        origName: urun.origName,
+        category: urun.category,
+        vendor: urun.vendor,
+        vendorCode: urun.vendorCode,
+        origin: urun.origin,
+        unit: urun.unit,
+        netW: urun.netW,
+        grossW: urun.grossW,
+        marka: urun.marka,
+        raf: urun.raf,
+        uretimTarihi: urun.uretimTarihi,
+        bakimYili: urun.bakimYili,
+        techDesc: urun.techDesc,
+        sozlesme: urun.sozlesme,
+        note: urun.note,
+        'hile-not': urun.hileNot,
+        gizliKaynak: urun.gizliKaynak
+      };
+      Object.keys(map).forEach(function(field){
+        var el = document.getElementById('udb-' + field + '-' + n);
+        if (el && map[field] !== undefined && map[field] !== null && map[field] !== '') {
+          el.value = map[field];
+        }
+      });
+      /* gizli hile checkbox — ayrı */
+      var hileEl = document.getElementById('udb-hile-' + n);
+      if (hileEl) hileEl.checked = !!urun.hile;
+      /* Notlar butonunun rozet durumu güncelle */
+      var kart = document.getElementById('udb-row-' + n);
+      if (kart) {
+        var btn = kart.querySelector('.udb-notlar-btn');
+        if (btn) {
+          var dolu = !!(urun.techDesc || urun.sozlesme || urun.note || urun.hile || urun.gizliKaynak);
+          btn.innerHTML = dolu ? '✓ Kayıtlı · Düzenle' : '▸ Doldur';
+          btn.style.background = dolu ? '#0F6E56' : '#854F0B';
+        }
+      }
+    });
+    if (window.toast) window.toast(draftData.urunler.length + ' ürün geri yüklendi', 'ok');
+  }, 100);
 };
 
 // Exports
