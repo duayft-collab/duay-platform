@@ -1,3 +1,4 @@
+/* PUSULA-ESKI-KAPAT-003: goTo/nav direkt pusula-pro'ya baglandi (shim bypass) */
 /**
  * ════════════════════════════════════════
  * LOCALSTORAGE POLİTİKASI — v2.0
@@ -1944,7 +1945,23 @@ function storeTahsilat(d) {
   var _fp = _fsPath('satinalma');
   if (_fp) _syncFirestore(_fp, d);
 }
-/** @returns {Array<Object>} @param {Object} [opts] tumKullanicilar */ function loadCari(opts) { var d = _read(KEYS.cari); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
+/** @returns {Array<Object>} @param {Object} [opts] tumKullanicilar */
+function loadCari(opts) {
+  /* CARI-PAYLASIM-KURALI-001-FAZ1: hiddenFrom post-filter — admin bypass + field yoksayımı geriye uyum */
+  var d = _read(KEYS.cari);
+  var arr = Array.isArray(d) ? d : [];
+  var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; });
+  if (opts && opts.tumKullanicilar) return filtreli;
+  var kullaniciFiltered = window._dbKullaniciFiltreUygula(filtreli);
+  var cu = window.CU?.();
+  if (!cu || cu.role === 'admin' || cu.rol === 'admin') return kullaniciFiltered;
+  var uid = String(cu.uid || cu.id || '');
+  if (!uid) return kullaniciFiltered;
+  return kullaniciFiltered.filter(function(c) {
+    if (!Array.isArray(c.hiddenFrom)) return true;
+    return !c.hiddenFrom.map(String).includes(uid);
+  });
+}
 /** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d;
   var tumCari = _read(KEYS.cari) || [];
   d.forEach(function(yeni) {
@@ -2636,8 +2653,8 @@ window._goToTask = function(tid) {
   if (mo) mo.remove();
 
   // goTo → hem nav butonu seçimi hem panel açılışı
-  if (typeof window.goTo === 'function') window.goTo('pusula');
-  else if (typeof window.nav === 'function') window.nav('pusula');
+  if (typeof window.goTo === 'function') window.goTo('pusula-pro');
+  else if (typeof window.nav === 'function') window.nav('pusula-pro');
 
   var attempts = 0;
   var interval = setInterval(function() {
