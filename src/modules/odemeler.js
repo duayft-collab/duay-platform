@@ -7189,7 +7189,7 @@ function renderCari() {
           + '<div id="cari-list" style="flex:1;overflow-y:auto"></div>'
         + '</div>'
         // Sağ panel — detay
-        + '<div id="cari-detail" style="flex:1;overflow-y:auto;background:var(--s2)"></div>'
+        + '<div id="cari-detail" style="flex:1;overflow-y:auto;background:var(--s2);transition:opacity .15s ease"></div>'
       + '</div>';
   }
 
@@ -7444,7 +7444,17 @@ function renderCari() {
   if (_cariSelectedId) _renderCariDetail(_cariSelectedId);
 }
 
-window._selectCari = function(id) { _cariSelectedId = id; renderCari(); };
+/* CARI-DETAY-STICKY-001: fade wrapper — flicker yerine smooth geçiş */
+window._selectCari = function(id) {
+  var _cont = document.getElementById('cari-detail');
+  if (_cont) _cont.style.opacity = '0.5';
+  _cariSelectedId = id;
+  renderCari();
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    var _c2 = document.getElementById('cari-detail');
+    if (_c2) _c2.style.opacity = '1';
+  }); });
+};
 
 /**
  * CARI-OZET-EKSIK-001
