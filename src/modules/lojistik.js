@@ -181,6 +181,8 @@ function renderLojistik() {
       </div>
     </div>`,
 
+    (typeof window.renderEdList === 'function' ? window.renderEdList() : ''),
+
   ].join('');
 }
 

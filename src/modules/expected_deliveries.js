@@ -1274,4 +1274,93 @@
     + '</div>';
     document.body.appendChild(mo);
   };
+
+  /* LOJ-ED-LIST-001 — Beklenen Teslimatlar liste render (Sevkiyat Merkezi için) */
+  window.renderEdList = function(){
+    var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries() : []) || [];
+    var cu = typeof window.CU === 'function' ? window.CU() : null;
+    var list = all;
+    // User isolation — non-admin sadece kendi sorumlu/createdBy
+    if (cu && (cu.role || cu.rol) !== 'admin') {
+      var uid = String(cu.id || cu.uid || '');
+      if (uid) {
+        list = all.filter(function(ed){
+          return String(ed.responsibleUserId || '') === uid || String(ed.createdBy || '') === uid || String(ed.createdById || '') === uid;
+        });
+      }
+    }
+    // Enrich
+    list = list.map(function(ed){ return typeof window._edEnrich === 'function' ? window._edEnrich(Object.assign({}, ed)) : ed; });
+    // Sort: overdue önce, sonra ETA yakın
+    list.sort(function(a,b){
+      var ao = typeof window._edIsOverdue === 'function' && window._edIsOverdue(a) ? 1 : 0;
+      var bo = typeof window._edIsOverdue === 'function' && window._edIsOverdue(b) ? 1 : 0;
+      if (ao !== bo) return bo - ao;
+      var at = new Date(a.estimatedDeliveryDate || '9999-12-31').getTime();
+      var bt = new Date(b.estimatedDeliveryDate || '9999-12-31').getTime();
+      return at - bt;
+    });
+
+    var STATUS = {
+      'TEDARIK_ASAMASINDA':{t:'Tedarik',c:'#6B7280',bg:'#F3F4F6'},
+      'URETIMDE':{t:'Üretimde',c:'#2563EB',bg:'#EFF6FF'},
+      'YUKLEME_BEKLIYOR':{t:'Yükleme',c:'#CA8A04',bg:'#FEF9C3'},
+      'YOLDA':{t:'Yolda',c:'#EA580C',bg:'#FFEDD5'},
+      'GUMRUKTE':{t:'Gümrükte',c:'#7C3AED',bg:'#F3E8FF'},
+      'TESLIM_ALINDI':{t:'Teslim',c:'#0F6E56',bg:'#D1FAE5'},
+      'GECIKTI':{t:'Gecikmiş',c:'#DC2626',bg:'#FEE2E2'}
+    };
+    var card = 'background:var(--sf);border-radius:12px;border:0.5px solid var(--b);overflow:hidden;margin-top:12px';
+    var hdr = 'padding:11px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between';
+    var esc = window._esc || function(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+
+    if (list.length === 0) {
+      return '<div style="'+card+'">'
+        + '<div style="'+hdr+'"><span style="font-size:13px;font-weight:500">Beklenen Teslimatlar</span>'
+        + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button></div>'
+        + '<div style="padding:32px 16px;text-align:center;color:var(--t3);font-size:12px">Henüz teslimat takibi yok. Yukarıdan "+ Yeni Teslimat Takibi" ile ekleyebilirsin.</div>'
+        + '</div>';
+    }
+
+    // Cari lookup
+    var cariMap = {};
+    try { (typeof window.loadCari === 'function' ? window.loadCari() : []).forEach(function(c){ cariMap[String(c.id)] = c.ad || c.firmaAdi || ''; }); } catch(e){}
+
+    var rows = list.slice(0,20).map(function(ed){
+      var st = STATUS[ed.status] || {t: ed.status || '-', c:'#6B7280', bg:'#F3F4F6'};
+      var tedAd = cariMap[String(ed.supplierId)] || ed.tedarikci || '—';
+      var eta = ed.estimatedDeliveryDate ? new Date(ed.estimatedDeliveryDate).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'}) : '—';
+      var rd = typeof ed.remainingDays === 'number' ? ed.remainingDays : null;
+      var daysHtml = '';
+      if (rd !== null) {
+        if (rd < 0) daysHtml = '<span style="color:#DC2626;font-weight:500">'+Math.abs(rd)+' gün geç</span>';
+        else if (rd === 0) daysHtml = '<span style="color:#EA580C;font-weight:500">Bugün</span>';
+        else if (rd < 7) daysHtml = '<span style="color:#CA8A04">'+rd+' gün</span>';
+        else daysHtml = '<span style="color:var(--t3)">'+rd+' gün</span>';
+      }
+      var qd = ed.quantityDelivered || 0, qt = ed.quantityTotal || 0;
+      var pct = qt > 0 ? Math.round(qd/qt*100) : 0;
+      return '<div style="display:grid;grid-template-columns:2fr 1.3fr 1.1fr 0.9fr 0.9fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px">'
+        + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
+        + '<div><span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:'+st.c+';background:'+st.bg+'">'+esc(st.t)+'</span></div>'
+        + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
+        + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
+        + '<div style="font-size:11px">'+daysHtml+'</div>'
+        + '<button onclick="event.stopPropagation();window._edAksiyonMenu && window._edAksiyonMenu(\''+esc(ed.id)+'\')" style="padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t3);font-size:14px;font-family:inherit;line-height:1">⋮</button>'
+        + '</div>';
+    }).join('');
+
+    var hdrRow = '<div style="display:grid;grid-template-columns:2fr 1.3fr 1.1fr 0.9fr 0.9fr auto;gap:12px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Kalan</div><div></div></div>';
+
+    return '<div style="'+card+'">'
+      + '<div style="'+hdr+'">'
+      + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
+      + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
+      + '</div>'
+      + hdrRow + rows
+      + (list.length > 20 ? '<div style="padding:8px 16px;text-align:center;font-size:10px;color:var(--t3)">+'+(list.length-20)+' kayıt daha</div>' : '')
+      + '</div>';
+  };
 })();
