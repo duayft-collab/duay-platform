@@ -21,7 +21,21 @@ var ALARM_LOG_KEY = 'ak_alarm_log1';
 function _loadAlarms() { try { return JSON.parse(localStorage.getItem(ALARM_KEY) || '[]'); } catch (e) { return []; } }
 function _storeAlarms(d) { try { localStorage.setItem(ALARM_KEY, JSON.stringify(d.slice(0, 200))); } catch (e) { console.warn('[alarm] hata:', e); } }
 function _loadLog() { try { return JSON.parse(localStorage.getItem(ALARM_LOG_KEY) || '[]'); } catch (e) { return []; } }
-function _storeLog(d) { try { localStorage.setItem(ALARM_LOG_KEY, JSON.stringify(d.slice(0, 200))); } catch (e) { console.warn('[alarm] hata:', e); } }
+function _storeLog(d) {
+  /* LS-SYNC-002: 90 gün TTL + mevcut 200 FIFO korundu */
+  try {
+    if (Array.isArray(d)) {
+      var _ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+      d = d.filter(function(l) {
+        try {
+          var _t = new Date(String((l && l.ts) || '').replace(' ', 'T')).getTime();
+          return isNaN(_t) || _t >= _ninetyDaysAgo;
+        } catch(_e) { return true; }
+      });
+    }
+  } catch(_ae) { console.warn('[LS-SYNC-002]', _ae && _ae.message); }
+  try { localStorage.setItem(ALARM_LOG_KEY, JSON.stringify(d.slice(0, 200))); } catch (e) { console.warn('[alarm] hata:', e); }
+}
 
 var ALARM_TYPES = {
   vade:     { l: 'Vade',      c: '#DC2626', bg: 'rgba(220,38,38,.1)' },
