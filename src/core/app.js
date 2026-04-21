@@ -3676,7 +3676,10 @@ var _tn2ActiveGrp = localStorage.getItem('ak_nav_grup') || 'dashboard';
 if (_tn2ActiveGrp === 'ekip') _tn2ActiveGrp = 'sistem';
 if (_tn2ActiveGrp === 'finans') _tn2ActiveGrp = 'muhasebe';
 if (_tn2ActiveGrp === 'katalog') _tn2ActiveGrp = 'satinalma';
-var _tn2ActiveMod = localStorage.getItem('ak_nav_modul') || 'dashboard';
+/* PUSULA-REDIRECT-MIGRATION-002: eski 'pusula' LS degerini 'pusula-pro' yap (persistent + runtime coalesce) */
+var _pm = localStorage.getItem('ak_nav_modul');
+if (_pm === 'pusula') { localStorage.setItem('ak_nav_modul', 'pusula-pro'); _pm = 'pusula-pro'; }
+var _tn2ActiveMod = _pm || 'dashboard';
 
 window._tn2SelectGrp = function(grp, el) {
   _tn2ActiveGrp = grp;
