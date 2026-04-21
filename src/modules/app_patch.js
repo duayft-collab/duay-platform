@@ -2382,7 +2382,10 @@ window._saV2TeklifKopya = function(id) {
   if (!t) { window.toast?.('Teklif bulunamad\u0131', 'err'); return; }
   var kopya = JSON.parse(JSON.stringify(t));
   kopya.id = (typeof window.generateId === 'function') ? window.generateId() : ('k' + Date.now());
-  kopya.teklifNo = 'KOPYA-' + (t.teklifNo || '');
+  /* SATIS-TEKLIF-KOPYA-FIX-001: undefined-string guard + fallback yeni teklifNo üret */
+  var _origNo = t.teklifNo;
+  var _validOrig = _origNo && _origNo !== 'undefined' && String(_origNo).indexOf('undefined') < 0;
+  kopya.teklifNo = _validOrig ? ('KOPYA-' + _origNo) : ((typeof window._generateTeklifNo === 'function') ? window._generateTeklifNo() : 'KOPYA-' + Date.now());
   kopya.durum = 'taslak';
   kopya.createdAt = new Date().toISOString();
   kopya.updatedAt = new Date().toISOString();
@@ -3399,7 +3402,11 @@ window._reviseSatisTeklif = function(id) {
   var yeniId = typeof generateNumericId==='function'?generateNumericId():Date.now();
   var yeni = JSON.parse(JSON.stringify(orig));
   yeni.id = yeniId;
-  yeni.teklifNo = orig.teklifNo + '/Rev' + revNo;
+  /* SATIS-TEKLIF-KOPYA-FIX-001: orig.teklifNo undefined-guard */
+  var _origRevNo = orig.teklifNo;
+  var _validOrigRev = _origRevNo && _origRevNo !== 'undefined' && String(_origRevNo).indexOf('undefined') < 0;
+  var _baseNo = _validOrigRev ? _origRevNo : ((typeof window._generateTeklifNo === 'function') ? window._generateTeklifNo() : 'TKF-' + Date.now());
+  yeni.teklifNo = _baseNo + '/Rev' + revNo;
   yeni.revizyon = revNo;
   yeni.orijinalId = orig.orijinalId || orig.id;
   yeni.durum = 'taslak';
