@@ -5648,6 +5648,16 @@ window._ihrLog = function(dosyaId, aksiyon, hedef, evrakTur) {
     kim: _cu()?.name || 'Duay Admin',
     tarih: _now()
   });
+  /* LS-SYNC-004: 90 gün TTL + mevcut 200 FIFO (ak_ihr_log_* per-dosya birikimi) */
+  try {
+    var _ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+    loglar = loglar.filter(function(l) {
+      try {
+        var _t = new Date(String((l && l.tarih) || '').replace(' ', 'T')).getTime();
+        return isNaN(_t) || _t >= _ninetyDaysAgo;
+      } catch(_e) { return true; }
+    });
+  } catch(_ae) { console.warn('[LS-SYNC-004]', _ae && _ae.message); }
   if (loglar.length > 200) loglar = loglar.slice(0, 200);
   try { localStorage.setItem(logKey, JSON.stringify(loglar)); } catch(e) {}
 };
