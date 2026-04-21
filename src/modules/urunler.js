@@ -23,7 +23,25 @@ const _lsj = (k, d) => { try { return JSON.parse(_ls(k)) || d; } catch { return 
 const _lss = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 const _loadU = () => typeof window.loadUrunler === 'function' ? window.loadUrunler() : [];
 const _storeU = d => { if (typeof window.storeUrunler === 'function') window.storeUrunler(d); };
-const _loadCari = () => typeof window.loadCari === 'function' ? window.loadCari().filter(c => !c.isDeleted) : [];
+/* CARI-DROPDOWN-ISOLATION-002A: Tedarikçi dropdown'ı kullanıcı bazında izole.
+   Admin hepsini görür. Non-admin sadece kendi cari + sahipsiz eski veri. */
+const _loadCari = () => {
+  if (typeof window.loadCari !== 'function') return [];
+  var all = window.loadCari().filter(function(c){ return !c.isDeleted; });
+  var cu = typeof window.CU === 'function' ? window.CU() : null;
+  if (!cu) return all; // guest fallback
+  var rol = cu.role || cu.rol || '';
+  if (rol === 'admin') return all; // admin hepsini görür
+  var uid = String(cu.id || cu.uid || '');
+  if (!uid) return all;
+  return all.filter(function(c){
+    var owner = (c.createdBy !== undefined && c.createdBy !== null) ? c.createdBy
+              : (c.createdById !== undefined && c.createdById !== null) ? c.createdById
+              : null;
+    // Sahipsiz kayıt (eski veri) veya kendi kaydı
+    return owner === null || owner === '' || String(owner) === uid;
+  });
+};
 
 /* ── Renkler & Stiller ──────────────────────────────────────── */
 const BG1='var(--sf)',BG2='var(--s2)',BD='var(--b)',BDM='var(--bm)',T1='var(--t)',T2='var(--t2)',T3='var(--t3)';
