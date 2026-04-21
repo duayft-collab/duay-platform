@@ -6875,32 +6875,77 @@ window._mergeCari    = _mergeCari;
  * Cari sil.
  */
 function deleteCari(id) {
-  var raw = JSON.parse(localStorage.getItem('ak_cari1') || '[]');
-  var c = raw.find(function(x) { return String(x.id) === String(id); });
-  if (!c) return;
+  /* CARI-SIL-YETKI-FIX-001 — dünya standardı cari silme:
+     Admin: hareket varsa confirm ile arşivle, yoksa direkt sil
+     Non-admin: sadece kendi cari + hareket yoksa silebilir
+     Tüm hareketler kontrol: odm + tahsilat + satinalma  */
+  var all = typeof loadCari === 'function' ? loadCari({tumKullanicilar:true}) : [];
+  var c = all.find(function(x) { return String(x.id) === String(id); });
+  if (!c) { window.toast?.('Cari bulunamadı', 'err'); return; }
 
-  // Bağlı satınalma kayıtlarını kontrol et (STANDART-FIX-003)
-  var cariAd = c.name || '';
-  var satAll = typeof loadSatinalma === 'function' ? loadSatinalma() : (window.loadSatinalma?.() || []);
-  var bagliKayitlar = satAll.filter(function(s) {
-    return !s.isDeleted && ((s.supplier || '') === cariAd || (s.piNo || '') === cariAd);
-  });
+  var cu = typeof window.CU === 'function' ? window.CU() : null;
+  var isAdmin = cu && (cu.role === 'admin' || cu.rol === 'admin');
+  var isOwner = cu && (String(c.createdBy || '') === String(cu.id || '') || String(c.createdById || '') === String(cu.id || ''));
+
+  // Yetki ön-kontrol
+  if (!isAdmin && !isOwner) {
+    if (typeof window.confirmModal === 'function') {
+      window.confirmModal('Bu cari sana ait değil. Silme yetkisi yönetici veya cari sahibine aittir.', { title: 'Yetki Yok', info: true, confirmText: 'Tamam' });
+    } else {
+      window.toast?.('Yetki yok — bu cari sana ait değil', 'err');
+    }
+    return;
+  }
+
+  // Tüm bağlı hareketleri kontrol et
+  var cariAd = c.name || c.firmaAdi || c.unvan || '';
+  var cariId = String(c.id);
+  var odm = typeof loadOdm === 'function' ? loadOdm({tumKullanicilar:true}) : [];
+  var tah = typeof loadTahsilat === 'function' ? loadTahsilat({tumKullanicilar:true}) : [];
+  var sat = typeof loadSatinalma === 'function' ? loadSatinalma() : (window.loadSatinalma?.() || []);
+  var odmBagli = odm.filter(function(o){ return !o.isDeleted && (String(o.cariId||'') === cariId || (o.supplier||'') === cariAd); }).length;
+  var tahBagli = tah.filter(function(t){ return !t.isDeleted && (String(t.cariId||'') === cariId || (t.cariName||'') === cariAd); }).length;
+  var satBagli = sat.filter(function(s){ return !s.isDeleted && ((s.supplier||'') === cariAd || (s.piNo||'') === cariAd); }).length;
+  var toplamHareket = odmBagli + tahBagli + satBagli;
 
   var silFunc = function() {
-    // SISTEM-TEMIZLIK-001: ak_satinalma1 (V1) artık kullanılmıyor — dead write kaldırıldı
     c.isDeleted = true;
     c.deletedAt = new Date().toISOString();
-    storeCari(raw);
+    c.deletedBy = cu ? String(cu.id || '') : '';
+    storeCari(all);
+    window.toast?.('Cari silindi ✓', 'ok');
+    if (typeof renderCari === 'function') renderCari();
   };
 
-  if (bagliKayitlar.length > 0) {
-    var msg = 'Bu tedarikçiye bağlı ' + bagliKayitlar.length + ' satınalma kaydı var. Silindiğinde bu kayıtlar "Silinmiş Tedarikçi" olarak işaretlenecek. Devam edilsin mi?';
+  if (toplamHareket === 0) {
+    // Hareket yok — direkt sil confirm'le
+    var msg1 = '"' + cariAd + '" cari kaydını silmek istediğinden emin misin?';
     if (typeof window.confirmModal === 'function') {
-      window.confirmModal(msg, { title: 'Cari Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: silFunc });
-    } else if (confirm(msg)) { silFunc(); }
-  } else {
-    silFunc();
+      window.confirmModal(msg1, { title: 'Cari Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: silFunc });
+    } else if (confirm(msg1)) { silFunc(); }
+    return;
   }
+
+  // Hareket var
+  if (!isAdmin) {
+    // Non-admin: hareket varsa engelle
+    if (typeof window.confirmModal === 'function') {
+      window.confirmModal('"' + cariAd + '" cari kaydına bağlı ' + toplamHareket + ' hareket var (ödeme/tahsilat/satınalma). Silme yetkisi yönetici onayı gerektirir.', { title: 'Silme Engellendi', info: true, confirmText: 'Tamam' });
+    } else {
+      window.toast?.('Bağlı hareket var — yönetici onayı gerekli', 'err');
+    }
+    return;
+  }
+
+  // Admin + hareket var → danger-modal ile arşivle
+  var msg2 = '"' + cariAd + '" cariye bağlı ' + toplamHareket + ' hareket var';
+  if (odmBagli) msg2 += ' (' + odmBagli + ' ödeme';
+  if (tahBagli) msg2 += (odmBagli ? ', ' : ' (') + tahBagli + ' tahsilat';
+  if (satBagli) msg2 += ((odmBagli || tahBagli) ? ', ' : ' (') + satBagli + ' satınalma';
+  msg2 += '). Silindiğinde bu kayıtlar "Silinmiş Cari" olarak işaretlenecek. Devam edilsin mi?';
+  if (typeof window.confirmModal === 'function') {
+    window.confirmModal(msg2, { title: 'Cari Sil (Hareketli)', danger: true, confirmText: 'Evet, Arşivle', onConfirm: silFunc });
+  } else if (confirm(msg2)) { silFunc(); }
 }
 
 /**
