@@ -6,6 +6,8 @@
  */
 (function() {
   'use strict';
+/* LOJ-WIZARD-SUPPLIER-FIX-001: loadCari izolasyon — admin disinda kendi cari'leri */
+
 
   /* ─── MODE GUARD ──────────────────────────────────────────── */
   window.EXPECTED_DELIVERIES_MODE = window.EXPECTED_DELIVERIES_MODE || 'MANUAL_MODE';
@@ -973,9 +975,9 @@
   var _edWizardState = null;
 
   function _edSupplierOpts(sel) {
-    var list = (typeof window.loadCari === 'function' ? window.loadCari({ tumKullanicilar: true }) : []) || [];
+    var list = (typeof window.loadCari === 'function' ? window.loadCari() : []) || [];
     list = list.filter(function(c) { return !c.isDeleted && (c.type === 'tedarikci' || c.tip === 'tedarikci' || c.cariType === 'onayli'); });
-    if (list.length === 0) list = (typeof window.loadCari === 'function' ? window.loadCari({ tumKullanicilar: true }) : []).filter(function(c) { return !c.isDeleted; });
+    if (list.length === 0) list = (typeof window.loadCari === 'function' ? window.loadCari() : []).filter(function(c) { return !c.isDeleted; });
     return '<option value="">— Tedarikçi Seçin —</option>' + list.map(function(c) {
       var id = c.id;
       var ad = c.name || c.ad || c.unvan || '—';
@@ -1046,7 +1048,7 @@
     } else if (s.step === 4) {
       var supAd = '—';
       try {
-        var cari = (typeof window.loadCari === 'function' ? window.loadCari({ tumKullanicilar: true }) : []).find(function(c) { return c.id === s.data.supplierId; });
+        var cari = (typeof window.loadCari === 'function' ? window.loadCari() : []).find(function(c) { return c.id === s.data.supplierId; });
         if (cari) supAd = cari.name || cari.ad || cari.unvan || '—';
       } catch(e) {}
       var sorumlu = _edUserAd(s.data.responsibleUserId);
