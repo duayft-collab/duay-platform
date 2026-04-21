@@ -475,7 +475,7 @@ window._removeKtnViewer = function(ktnId, uid) {
 
 // exportTasksXlsx — Pusula'dan alias
 window.exportTasksXlsx = window.exportTasksXlsx || function() {
-  window.Pusula?.exportXlsx?.();
+  window.PusulaPro?.exportXlsx?.();
 };
 
 // openEvModal — Takvim etkinlik modal
@@ -606,7 +606,7 @@ window.installPWA = window.installPWA || function() {};
 
 // setPusView v8 → setPusView alias
 window.setPusView = window.setPusView || function(v, btn) {
-  window.Pusula?.setView?.(v, btn);
+  window.PusulaPro?.setView?.(v, btn);
 };
 
 console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
@@ -6005,25 +6005,7 @@ window._pkDurumDegistir = function(kuralId) {
   }
 })();
 
-/* SYNC-008: window.Pusula alias — app.js compat */
-(function() {
-  'use strict';
-  if (!window.Pusula && window.PusulaPro) {
-    window.Pusula = {
-      render: function() { window.renderPusulaPro?.(); },
-      updateBadge: function() { window.PusulaPro?.updateBadge?.(); },
-      visTasks: function() { return window.PusulaPro?.visTasks?.(); },
-      openDetail: function(id) { window.PusulaPro?.openDetail?.(id); },
-      setView: function(v, btn) { window.PusulaPro?.setView?.(v, btn); },
-      exportXlsx: function() { window.PusulaPro?.exportXlsx?.(); }
-    };
-  }
-  setTimeout(function() {
-    if (!window.Pusula && window.PusulaPro) {
-      window.Pusula = window.PusulaPro;
-    }
-  }, 2000);
-})();
+/* PUSULA-REDIRECT-CLEANUP-001: SYNC-008 alias kaldırıldı — app.js doğrudan PusulaPro çağırıyor */
 
 /* SATIN-ALMA-V1-DELETE-001: renderSatinAlmaSiparis kaldirildi (panel-satinalma-siparis div'i ile birlikte). Satinalma v2 tek kaynak. */
 
