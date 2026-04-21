@@ -1,3 +1,4 @@
+/* PUSULA-ESKI-KAPAT-004: window.Pusula → window.PusulaPro (app.js callsite'lar) */
 /**
  * ═══════════════════════════════════════════════════════════════
  * src/core/app.js  —  v8.0.0
@@ -1135,7 +1136,7 @@ function _renderPanel(id) {
     const hubRenders = {
       'ik-hub':    () => safe(() => window.IkHub?.render?.()),
       'crm-hub':   () => safe(() => window.CrmHub?.render?.()),
-      gorevler:    () => safe(() => window.Pusula?.render?.()),
+      gorevler:    () => safe(() => window.PusulaPro?.render?.()),
       'muavin': () => safe(() => window.renderMuavin?.()), 'hesap-mutabakati': () => safe(() => window.renderHesapMutabakati?.()), 'kpi-panel': () => safe(() => window.renderKpiPanel?.() || window.KPI?.render?.()),
     };
     if (hubRenders[id]) hubRenders[id]();
@@ -2760,7 +2761,7 @@ function updateAllBadges() {
   // Duyuru
   safe(() => window.updateAnnBadge?.());
   // Görev
-  safe(() => window.Pusula?.updateBadge?.());
+  safe(() => window.PusulaPro?.updateBadge?.());
   // Puantaj
   safe(() => window.updatePuanBadge?.());
   // Bildirim noktası
@@ -2855,7 +2856,7 @@ function printModuleReport(modId) {
 
   if (modId === 'pusula-pro') {
     const users = loadUsers();
-    const tasks = window.Pusula?.visTasks?.() || loadTasks();
+    const tasks = window.PusulaPro?.visTasks?.() || loadTasks();
     body = `<table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px">
       <thead style="background:#f5f5f5"><tr><th>Görev</th><th>Sorumlu</th><th>Öncelik</th><th>Son Tarih</th><th>Durum</th></tr></thead>
       <tbody>${tasks.map(t => { const u = users.find(x => x.id === t.uid) || { name:'?' }; return `<tr><td>${t.title}</td><td>${u.name}</td><td>${{1:'Kritik',2:'Önemli',3:'Normal',4:'Düşük'}[t.pri]||'?'}</td><td>${t.due||'—'}</td><td>${t.done?'Tamamlandı':'Devam'}</td></tr>`; }).join('')}</tbody>
