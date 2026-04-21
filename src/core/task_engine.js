@@ -49,9 +49,20 @@
       window.PP_TASKS.push(task);
     } else {
       /* Fallback: localStorage (hiçbir task API'si yoksa) */
-      var existing = JSON.parse(localStorage.getItem('ak_auto_tasks_v1') || '[]');
+      /* LS-SYNC-003: 30 gün TTL + 200 FIFO (mevcut 500'den düşürüldü — ak_auto_tasks_v1 birikimi) */
+      var existing = [];
+      try { existing = JSON.parse(localStorage.getItem('ak_auto_tasks_v1') || '[]'); } catch(_re) {}
       existing.push(task);
-      localStorage.setItem('ak_auto_tasks_v1', JSON.stringify(existing.slice(-500)));
+      try {
+        var _thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        existing = existing.filter(function(t) {
+          try {
+            var _t = new Date(String((t && t.createdAt) || '').replace(' ', 'T')).getTime();
+            return isNaN(_t) || _t >= _thirtyDaysAgo;
+          } catch(_e) { return true; }
+        });
+      } catch(_ae) {}
+      try { localStorage.setItem('ak_auto_tasks_v1', JSON.stringify(existing.slice(-200))); } catch(_se) {}
     }
 
     _created++;
