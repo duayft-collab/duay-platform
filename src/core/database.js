@@ -388,10 +388,13 @@ try { Object.values(KEYS).forEach(function(v){ window._KEYS_SET[v] = true; }); }
 
 /* Telemetri — konsoldan çağırılır, otomatik log değil */
 window._storageStats = function(){
-  var lsKB = 0;
-  for (var k in localStorage) { if (localStorage.hasOwnProperty(k)) lsKB += (k.length + (localStorage[k]||'').length) * 2; }
+  /* STORAGE-STATS-FIX-001: Object.keys — Safari for-in prototype chain bug */
+  var lsBytes = 0;
+  Object.keys(localStorage).forEach(function(k){
+    lsBytes += (k.length + (localStorage[k]||'').length) * 2;
+  });
   return {
-    lsKB: (lsKB/1024).toFixed(1),
+    lsKB: (lsBytes/1024).toFixed(1),
     memCacheKeys: Object.keys(window._memCache).length,
     bigKeysTracked: Object.keys(window._KEYS_SET).length,
     idbAvailable: typeof window.idbGet === 'function',
