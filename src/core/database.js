@@ -1328,7 +1328,8 @@ const DEFAULT_TASKS = [
 ];
 
 /** @returns {Array<Object>} */
-function loadTasks()       { var d = _read(KEYS.tasks); var arr = Array.isArray(d) ? d : DEFAULT_TASKS; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); var cu = window.CU?.(); if (!cu || cu.role === 'admin' || cu.rol === 'admin') return filtreli; var uid = cu.uid || cu.id || ''; if (!uid) return filtreli; return filtreli.filter(function(k) { return (k.assignedTo === uid) || (k.createdById === uid) || (k.createdBy === uid) || (!k.assignedTo && !k.createdById && !k.createdBy); }); }
+function loadTasks()       { var d = _read(KEYS.tasks); var arr = Array.isArray(d) ? d : DEFAULT_TASKS; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); var cu = window.CU?.(); if (!cu || cu.role === 'admin' || cu.rol === 'admin') return filtreli; var uid = cu.uid || cu.id || ''; if (!uid) return filtreli; /* PUSULA-TASK-ISOLATION-001: sahipsiz task'ları non-admin'e gösterme (DEFAULT_TASKS sızıntısı fix) */
+return filtreli.filter(function(k) { return (k.assignedTo === uid) || (k.createdById === uid) || (k.createdBy === uid); }); }
 /** @param {Array<Object>} d */
 function saveTasks(d)      { var _now2 = new Date().toISOString(); d = d.map(function(t) { if (!t.updatedAt) t.updatedAt = _now2; return t; }); if (d.length > 500) { var _active = d.filter(function(t) { return !t.isDeleted && t.status !== 'done'; }); var _done = d.filter(function(t) { return t.status === 'done' && !t.isDeleted; }).slice(-100); var _del = d.filter(function(t) { return t.isDeleted; }).slice(-50); d = _active.concat(_done, _del); } _write(KEYS.tasks, d);
   const _fp_tasks = _fsPath('tasks'); if (_fp_tasks) _syncFirestore(_fp_tasks, d);
