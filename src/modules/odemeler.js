@@ -7351,7 +7351,7 @@ function renderCari() {
     /* CARI-RISK-SKOR-001: otomatik risk/güven skoru 0-100 */
     var _riskSkor = window._cariRiskSkor ? window._cariRiskSkor(c) : 0;
     var _riskRenk = _riskSkor >= 70 ? '#16A34A' : _riskSkor >= 40 ? '#D97706' : '#DC2626';
-    var _riskHTML = ' <span title="Risk/güven skoru" style="font-size:8px;padding:1px 5px;border-radius:4px;background:' + _riskRenk + '22;color:' + _riskRenk + ';font-weight:600;vertical-align:middle">' + _riskSkor + '</span>';
+    var _riskHTML = ' <span title="Risk/güven skoru" style="font-size:8px;padding:1px 5px;border-radius:4px;background:' + _riskRenk + '22;color:' + _riskRenk + ';font-weight:600;vertical-align:middle;font-variant-numeric:tabular-nums">' + _riskSkor + '</span>';
     /* CARI-TEKLIF-UYARI-001: son teklif hatırlatma rozeti — sadece musteri tipi */
     var hatirHTML = '';
     if (c.type === 'musteri') {
@@ -7365,9 +7365,9 @@ function renderCari() {
       if (sonTeklifGun > 90) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#DC2626">⚠ ' + sonTeklifGun + 'g</span>';
       else if (sonTeklifGun > 30) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#D97706">⏰ ' + sonTeklifGun + 'g</span>';
     }
-    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .1s" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
+    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .15s ease" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
-      + '<span style="font-size:14px" title="' + sc.label + '">' + sc.icon + '</span>'
+      + '<span title="' + sc.label + '" style="width:8px;height:8px;border-radius:50%;background:' + sc.color + ';border:0.5px solid rgba(0,0,0,.08);flex-shrink:0;display:inline-block"></span>'
       /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
       + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name || 'İsimsiz Cari') + statusBadge
         + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t3);padding:1px 5px;background:var(--s2);border-radius:4px;vertical-align:middle" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
