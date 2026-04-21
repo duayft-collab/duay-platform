@@ -509,8 +509,8 @@ window._ppModRender = function() {
         var _tbadge = _ppTarihBadge(t.bitTarih);
         h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
         h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
-        /* PUSULA-PAYLASIM-004: non-admin tamamla checkbox disabled */
-        h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+(_ppIsAdmin()?'':' disabled')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="'+(_ppIsAdmin()?'Tamamla':'Sadece yönetici tamamlayabilir')+'" style="width:13px;height:13px;cursor:'+(_ppIsAdmin()?'pointer':'not-allowed')+'">';
+        /* PP-BTN-HIDE-001: non-admin tamamla checkbox tamamen gizli */
+        h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="Tamamla" style="width:13px;height:13px;cursor:pointer;display:'+(_ppIsAdmin()?'inline-block':'none')+'">';
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
         h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:var(--pp-info);cursor:pointer" title="Toplu işlem için seç">';
         h2 += '<div>';
@@ -561,10 +561,10 @@ window._ppModRender = function() {
         h2 += '</div></div>';
         h2 += '<div id="pp-ag-panel-'+t.id+'" style="display:none;background:var(--s2);border-top:0.5px solid var(--b);padding:6px 10px 6px 46px">';
         if (agSay && t.altGorevler && t.altGorevler.length) {
-          h2 += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em">ALT GÖREVLER</span><div style="display:flex;gap:4px"><button onclick="event.stopPropagation();window._ppAltGorevTopluTamamla(\''+t.id+'\')" style="font-size:var(--pp-meta);padding:1px 6px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">Toplu tamamla</button></div></div>';
+          h2 += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em">ALT GÖREVLER</span><div style="display:flex;gap:4px">' + (_ppIsAdmin() ? '<button onclick="event.stopPropagation();window._ppAltGorevTopluTamamla(\''+t.id+'\')" style="font-size:var(--pp-meta);padding:1px 6px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">Toplu tamamla</button>' : '') + '</div></div>';
           t.altGorevler.forEach(function(ag,i){
             h2 += '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:0.5px solid var(--b)">';
-            h2 += '<input type="checkbox" '+(ag.tamamlandi?'checked':'')+' style="width:11px;height:11px">';
+            h2 += '<input type="checkbox" '+(ag.tamamlandi?'checked':'')+(_ppIsAdmin()?'':' disabled')+' style="width:11px;height:11px;cursor:'+(_ppIsAdmin()?'pointer':'not-allowed')+'">';
             h2 += '<span style="font-size:var(--pp-body);flex:1;color:'+(ag.tamamlandi?'var(--t3)':'var(--t)')+(ag.tamamlandi?';text-decoration:line-through':'')+'">' + _ppEsc(ag.baslik) + '</span>';
             /* PUSULA-UX-BUNDLE-001 #3: alt görev detay satırı (sorumlu + tarihler) */
             var _agSorAd = '';
@@ -643,7 +643,7 @@ window._ppModRender = function() {
       + '<button onclick="event.stopPropagation();window._ppFiltreDurum=\'\';window._ppFiltreOncelik=\'\';window._ppGecikFiltre=false;var _k=document.getElementById(\'pp-filtre-kisi\');if(_k)_k.value=\'\';window._ppModRender?.()" style="font-size:var(--pp-meta);padding:4px 9px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:transparent;cursor:pointer;font-family:inherit;color:var(--t3)">✕ Temizle</button>'
       + '</div>'
       /* PUSULA-HIZLI-001: liste üstünde hızlı ekle satırı */
-      + '<div style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">'
+      + '<div style="display:' + (_ppIsAdmin() ? 'flex' : 'none') + ';align-items:center;gap:6px;padding:6px 14px;border-bottom:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">'
       + '<input id="pp-quick-top" placeholder="＋ Hızlı görev ekle — Enter..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\'){window._ppHizliEkle(this);}" style="flex:1;font-size:var(--pp-body);padding:5px 10px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:var(--s2);font-family:inherit;color:var(--t);outline:none">'
       + '<select id="pp-quick-oncelik" onclick="event.stopPropagation()" onchange="event.stopPropagation()" style="font-size:var(--pp-meta);padding:5px 7px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:var(--s2);color:var(--t2);font-family:inherit">'
       + '<option value="normal">🟢 Normal</option><option value="yuksek">🟡 Yüksek</option><option value="kritik">🔴 Kritik</option><option value="dusuk">⚪ Düşük</option>'
@@ -667,7 +667,7 @@ window._ppModRender = function() {
           if (_secSay === 0) return '';
           return '<div id="pp-toplu-bar" style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:#E6F1FB;border-bottom:0.5px solid var(--pp-info);position:sticky;top:32px;z-index:2">'
             + '<span style="font-size:var(--pp-body);font-weight:500;color:#0C447C">' + _secSay + ' görev seçildi</span>'
-            + '<button onclick="event.stopPropagation();window._ppTopluTamamla()" style="font-size:var(--pp-meta);padding:3px 10px;border:none;border-radius:4px;background:#15803D;color:#fff;cursor:pointer;font-family:inherit">✓ Tamamla</button>'
+            + (_ppIsAdmin() ? '<button onclick="event.stopPropagation();window._ppTopluTamamla()" style="font-size:var(--pp-meta);padding:3px 10px;border:none;border-radius:4px;background:#15803D;color:#fff;cursor:pointer;font-family:inherit">✓ Tamamla</button>' : '')
             + '<button onclick="event.stopPropagation();window._ppTopluDurum()" style="font-size:var(--pp-meta);padding:3px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Durum Değiştir</button>'
             + '<button onclick="event.stopPropagation();window._ppTopluSil()" style="font-size:var(--pp-meta);padding:3px 10px;border:0.5px solid var(--pp-err);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--pp-err)">Sil</button>'
             + '<button onclick="event.stopPropagation();window._ppSeciliGorevler={};window._ppModRender()" style="font-size:var(--pp-meta);padding:3px 8px;border:none;border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕ İptal</button>'
@@ -689,7 +689,7 @@ window._ppModRender = function() {
       /* PUSULA-PAYLASIM-002b: empty state CTA ('+ Yeni görev') sadece admin'e */
       + (tasks.length === 0 ? window._ppEmptyState('calisma', '\u{1F3AF}', 'Aktif görev yok', 'Bugün için planladığın işleri buraya ekle', (_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? '+ Yeni görev' : '', (_ppCu()?.role === 'admin' || _ppCu()?.rol === 'admin') ? 'event.stopPropagation();window._ppYeniGorev()' : '') : '')
       + '</div>'
-      + '<div style="border-top:0.5px solid var(--b);padding:8px 14px;display:flex;gap:6px;flex-shrink:0">'
+      + '<div style="border-top:0.5px solid var(--b);padding:8px 14px;display:' + (_ppIsAdmin() ? 'flex' : 'none') + ';gap:6px;flex-shrink:0">'
       + '<input id="pp-quick" placeholder="Hızlı görev ekle — Enter..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ppHizliEkle(this)" style="flex:1;font-size:var(--pp-body);padding:6px 10px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:transparent;font-family:inherit;color:var(--t)">'
       + '<button onclick="event.stopPropagation();var i=document.getElementById(\'pp-quick\');window._ppHizliEkle(i)" style="font-size:var(--pp-meta);padding:6px 12px;border:none;border-radius:var(--pp-r-sm);background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">+ Ekle</button>'
       + '</div></div>'
