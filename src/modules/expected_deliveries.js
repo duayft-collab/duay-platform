@@ -880,17 +880,32 @@
     + '</div>';
   };
 
-  /* ─── PARÇA 7: Filter click hotfix (event delegation backup) ─ */
+  /* ─── PARÇA 7 + ED-HOTFIX-BUNDLE-001 fix2: Filter click event delegation (2 yöntem) */
   window._edFilterDelegationReady = window._edFilterDelegationReady || false;
   function _edEnsureFilterDelegation() {
     if (window._edFilterDelegationReady) return;
     var panel = document.getElementById('panel-teslimat-takip');
     if (!panel) return;
     panel.addEventListener('click', function(ev) {
-      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-ed-filter]') : null;
+      if (!ev.target || !ev.target.closest) return;
+      /* Yol 1: data-ed-filter attribute */
+      var btn = ev.target.closest('[data-ed-filter]');
       if (btn) {
         var f = btn.getAttribute('data-ed-filter');
-        if (f) window._edSetFilter(f);
+        if (f && typeof window._edSetFilter === 'function') {
+          ev.preventDefault();
+          window._edSetFilter(f);
+          return;
+        }
+      }
+      /* Yol 2: onclick attr regex parse (HTML onclick fail edilirse backup) */
+      var btn2 = ev.target.closest('[onclick*="_edSetFilter"]');
+      if (btn2) {
+        var m = (btn2.getAttribute('onclick') || '').match(/_edSetFilter\s*\(\s*['"]([^'"]+)['"]/);
+        if (m && typeof window._edSetFilter === 'function') {
+          ev.preventDefault();
+          window._edSetFilter(m[1]);
+        }
       }
     });
     window._edFilterDelegationReady = true;
@@ -926,14 +941,15 @@
       return '<button data-ed-filter="' + key + '" onclick="window._edSetFilter && window._edSetFilter(\'' + key + '\')" style="padding:7px 14px;border:none;background:' + (active ? 'var(--t,#111)' : 'transparent') + ';color:' + (active ? '#fff' : 'var(--t2,#374151)') + ';border-radius:8px;font-size:11px;font-weight:' + (active ? '500' : '400') + ';cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:all .15s">' + label + ' <span style="font-variant-numeric:tabular-nums;opacity:.7">' + count + '</span></button>';
     };
 
-    p.innerHTML = '<div style="padding:0;font-family:inherit">'
-      + '<div style="padding:18px 24px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'
-        + '<div>'
-          + '<div style="font-size:16px;font-weight:600;color:var(--t,#111);display:flex;align-items:center;gap:10px">🚚 Teslimat Takibi <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + modeColor + '22;color:' + modeColor + ';font-weight:500;letter-spacing:.04em">' + mode.replace('_', ' ') + '</span></div>'
+    p.innerHTML = '<div style="padding:0;font-family:inherit;max-width:100%;box-sizing:border-box">'
+      /* ED-HOTFIX-BUNDLE-001 fix1: Header responsive — flex-wrap + max-width:100% + min-width:0 child; buton bar ayrıca */
+      + '<div style="padding:18px 24px 10px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;max-width:100%">'
+        + '<div style="min-width:0;flex:1 1 260px">'
+          + '<div style="font-size:16px;font-weight:600;color:var(--t,#111);display:flex;align-items:center;gap:10px;flex-wrap:wrap">🚚 Teslimat Takibi <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + modeColor + '22;color:' + modeColor + ';font-weight:500;letter-spacing:.04em">' + mode.replace('_', ' ') + '</span></div>'
           + '<div style="font-size:11px;color:var(--t3,#6B7280);margin-top:3px">Toplam: <b>' + counts.total + '</b> · Yaklaşan: <b style="color:#F59E0B">' + counts.upcoming + '</b> · Gecikmiş: <b style="color:#E0574F">' + counts.overdue + '</b> · Kritik: <b style="color:#E0574F">' + counts.critical + '</b></div>'
         + '</div>'
-        /* PARÇA 8: + Yeni Teslimat butonu */
-        + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:8px 16px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">+ Yeni Teslimat</button>'
+        /* ED-HOTFIX-BUNDLE-001: Yeni Teslimat butonu flex-shrink:0 — asla viewport dışına düşmez */
+        + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:8px 16px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;flex-shrink:0">+ Yeni Teslimat</button>'
       + '</div>'
       + '<div style="padding:14px 24px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;gap:4px;flex-wrap:wrap;background:var(--s2,#F1F5F9)">'
         + filterBtn('upcoming', 'Yaklaşan', counts.upcoming)
