@@ -289,6 +289,10 @@ function GlobalErrorHandler(context, err, level = 'warn') {
  * @returns {*}
  */
 function _read(key, fallback = null) {
+  // STORAGE-IDB-ROOT-001: memory cache öncelikli
+  if (window._memCache && Object.prototype.hasOwnProperty.call(window._memCache, key)) {
+    return window._memCache[key];
+  }
   try {
     const raw = localStorage.getItem(key);
     if (raw === null || raw === undefined) {
@@ -303,10 +307,12 @@ function _read(key, fallback = null) {
     // LZ-String sıkıştırılmış veri kontrolü
     if (raw.startsWith('_LZ_')) {
       var _lz = typeof LZString !== 'undefined' ? LZString : (typeof window !== 'undefined' ? window.LZString : null);
-      if (_lz) return JSON.parse(_lz.decompressFromUTF16(raw.slice(4)));
-      return fallback; // LZ kütüphanesi yüklenmemiş
+      if (_lz) { var _v1 = JSON.parse(_lz.decompressFromUTF16(raw.slice(4))); if (window._memCache) window._memCache[key] = _v1; return _v1; }
+      return fallback;
     }
-    return JSON.parse(raw);
+    var _v2 = JSON.parse(raw);
+    if (window._memCache) window._memCache[key] = _v2;
+    return _v2;
   } catch (e) {
     GlobalErrorHandler('_read:' + key, e, 'warn');
     return fallback;
@@ -370,6 +376,98 @@ var RETENTION = {
   taskChats:     20
 };
 window.RETENTION = Object.freeze(RETENTION);
+
+// ═══════════════════════════════════════════════════════════════
+// STORAGE-IDB-ROOT-001 — memory cache + IndexedDB engine (hardened)
+// ═══════════════════════════════════════════════════════════════
+window._memCache = window._memCache || {};
+window._KEYS_SET = {};
+window._storageReady = false;
+window._idbFailed = false;
+try { Object.values(KEYS).forEach(function(v){ window._KEYS_SET[v] = true; }); } catch(e) {}
+
+/* Telemetri — konsoldan çağırılır, otomatik log değil */
+window._storageStats = function(){
+  var lsKB = 0;
+  for (var k in localStorage) { if (localStorage.hasOwnProperty(k)) lsKB += (k.length + (localStorage[k]||'').length) * 2; }
+  return {
+    lsKB: (lsKB/1024).toFixed(1),
+    memCacheKeys: Object.keys(window._memCache).length,
+    bigKeysTracked: Object.keys(window._KEYS_SET).length,
+    idbAvailable: typeof window.idbGet === 'function',
+    idbFailed: window._idbFailed,
+    storageReady: window._storageReady
+  };
+};
+
+/* Bootstrap — FAZ 1 senkron LS→cache, FAZ 2 async IDB→cache + migration */
+window._bootStorage = function(){
+  // FAZ 1 — LS senkron (flicker engelleme, sayfa hemen render eder)
+  try {
+    Object.keys(window._KEYS_SET).forEach(function(k){
+      try {
+        var raw = localStorage.getItem(k);
+        if (raw === null || raw === undefined) return;
+        var _lz = typeof LZString !== 'undefined' ? LZString : null;
+        var v;
+        if (raw.startsWith('_LZ_') && _lz) v = JSON.parse(_lz.decompressFromUTF16(raw.slice(4)));
+        else v = JSON.parse(raw);
+        window._memCache[k] = v;
+      } catch(_e) {}
+    });
+  } catch(e) { console.warn('[bootStorage] LS phase:', e && e.message); }
+
+  // FAZ 2 — IDB async
+  if (typeof window.idbGet !== 'function') {
+    window._storageReady = true;
+    window.dispatchEvent(new CustomEvent('storage-hydrated'));
+    return;
+  }
+  var keys = Object.keys(window._KEYS_SET);
+  if (keys.length === 0) {
+    window._storageReady = true;
+    window.dispatchEvent(new CustomEvent('storage-hydrated'));
+    return;
+  }
+  var done = 0, total = keys.length;
+  var complete = function(){
+    done++;
+    if (done === total) {
+      window._storageReady = true;
+      window.dispatchEvent(new CustomEvent('storage-hydrated'));
+      console.info('[STORAGE-IDB] hydrated', total, 'keys — cache:', Object.keys(window._memCache).length, 'LS:', ((JSON.stringify(localStorage).length/1024)|0)+'KB');
+    }
+  };
+  keys.forEach(function(k){
+    window.idbGet(k, 'misc').then(function(idbVal){
+      if (idbVal !== null && idbVal !== undefined) {
+        window._memCache[k] = idbVal;
+        try { localStorage.removeItem(k); } catch(_e){}
+      } else if (window._memCache[k] !== undefined) {
+        window.idbSet(k, window._memCache[k], 'misc').then(function(){
+          try { localStorage.removeItem(k); } catch(_e){}
+        }).catch(function(e){
+          console.error('[migrate FAIL]', k, e && e.message);
+          window._idbFailed = true;
+        });
+      }
+    }).catch(function(e){
+      console.error('[bootStorage] idbGet FAIL, LS fallback:', k, e && e.message);
+      window._idbFailed = true;
+    }).finally(complete);
+  });
+};
+
+/* idb.js yüklüyse hemen başlat, yüklenmemişse 150ms sonra dene */
+if (typeof window.idbGet === 'function') {
+  window._bootStorage();
+} else {
+  setTimeout(function(){
+    if (typeof window._bootStorage === 'function') window._bootStorage();
+    else { window._storageReady = true; }
+  }, 150);
+}
+
 
 function _write(key, value) {
   var now = new Date().toISOString();
@@ -490,7 +588,48 @@ function _write(key, value) {
       return clean;
     });
   }
-  // LZ-String sıkıştırma (%60-80 tasarruf)
+  // STORAGE-IDB-ROOT-001: generic base64 strip + IDB route
+  if (Array.isArray(value)) {
+    try {
+      var B64_FIELDS = ['gorsel','image','img','photo','file','receipt','attachment','makbuz','dosya'];
+      value.forEach(function(it){
+        if (!it || typeof it !== 'object') return;
+        B64_FIELDS.forEach(function(f){
+          var v = it[f];
+          if (typeof v === 'string' && v.indexOf('data:') === 0 && v.length > 500) {
+            it[f] = { _stripped: true, name: (it[f+'Name']||'dosya'), size: v.length };
+          } else if (v && typeof v === 'object' && typeof v.data === 'string' && v.data.indexOf('data:') === 0) {
+            it[f] = { _stripped: true, name: v.name || 'dosya', size: v.data.length };
+          }
+        });
+      });
+    } catch(_bse){}
+    // 50KB per-item guard — uyarı
+    try {
+      value.forEach(function(it, idx){
+        if (!it) return;
+        var sz = JSON.stringify(it).length;
+        if (sz > 50000) console.warn('[STORAGE GUARD] büyük kayıt', key, '#', idx, ((sz/1024)|0) + 'KB');
+      });
+    } catch(_ge){}
+  }
+  // memory cache + IDB (büyük koleksiyonlar)
+  if (!window._memCache) window._memCache = {};
+  window._memCache[key] = value;
+  var _isBigKey = window._KEYS_SET && window._KEYS_SET[key];
+  if (_isBigKey && typeof window.idbSet === 'function' && !window._idbFailed) {
+    try {
+      window.idbSet(key, value, 'misc').catch(function(e){
+        console.error('[IDB] set hata, LS fallback:', key, e && e.message);
+        window._idbFailed = true;
+      });
+      try { localStorage.removeItem(key); } catch(_le){}
+      return true;
+    } catch(_ie){
+      window._idbFailed = true;
+    }
+  }
+  // Küçük key veya IDB hata → LS (eski yol)
   var _lz = typeof LZString !== 'undefined' ? LZString : (typeof window !== 'undefined' ? window.LZString : null);
   var _jsonStr = JSON.stringify(value);
   try {
