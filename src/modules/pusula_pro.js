@@ -1578,6 +1578,8 @@ function _ppMsgLoad() {
   try { var r=localStorage.getItem(PP_MSG_KEY); return r?JSON.parse(r):[]; } catch(e) { return []; }
 }
 function _ppMsgStore(d) {
+  /* PP-MSG-LIMITS-001: 500 FIFO store-level (LS sızıntısı durur) */
+  if (Array.isArray(d) && d.length > 500) d = d.slice(-500);
   try { localStorage.setItem(PP_MSG_KEY,JSON.stringify(d)); } catch(e) { console.warn('[PP]', e); }
 }
 
@@ -1665,7 +1667,7 @@ window._ppMesajPanelAc = function() {
     + (msgs.length ? msgs.map(_msgRow).join('') : '<div style="padding:30px;text-align:center;color:var(--t3);font-size:var(--pp-body)">Mesaj yok</div>')
     + '</div>'
     + '<div style="padding:8px;border-top:0.5px solid var(--b);display:flex;gap:5px">'
-    + '<input id="pp-msg-input" placeholder="Mesaj yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ppMsgGonderForm()" style="flex:1;font-size:var(--pp-body);padding:5px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
+    + '<input id="pp-msg-input" maxlength="500" placeholder="Mesaj yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation();if(event.key===\'Enter\')window._ppMsgGonderForm()" style="flex:1;font-size:var(--pp-body);padding:5px 9px;border:0.5px solid var(--b);border-radius:5px;background:transparent;font-family:inherit;color:var(--t)">'
     + '<button onclick="event.stopPropagation();window._ppMsgGonderForm()" style="font-size:var(--pp-meta);padding:5px 10px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit">Gönder</button>'
     + '</div>';
   document.body.appendChild(panel);
@@ -1803,7 +1805,7 @@ window._ppNotPanelHTML = function() {
   }).join('') : '<div style="font-size:var(--pp-body);color:var(--t3);text-align:center;padding:20px">Henüz not yok</div>';
   h += '</div>';
   h += '<div style="border-top:0.5px solid var(--b);padding:8px;flex-shrink:0">';
-  h += '<textarea id="pp-not-input" placeholder="Not yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:var(--pp-body);padding:7px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:none;height:60px;font-family:inherit;box-sizing:border-box"></textarea>';
+  h += '<textarea id="pp-not-input" maxlength="2000" placeholder="Not yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:var(--pp-body);padding:7px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);resize:none;height:60px;font-family:inherit;box-sizing:border-box"></textarea>';
   h += '<div style="display:flex;gap:4px;margin-top:5px">';
   h += '<select id="pp-not-cat" onclick="event.stopPropagation()" style="flex:1;font-size:var(--pp-meta);padding:4px;border:0.5px solid var(--b);border-radius:4px;background:transparent;color:var(--t2);font-family:inherit">';
   h += '<option>Kişisel</option><option>Satış</option><option>Satınalma</option><option>Aile</option><option>Fikir</option>';
@@ -3834,7 +3836,7 @@ window._ppGorevMesajPanelAc = function(taskId, taskAd) {
     /* PUSULA-PAYLASIM-003: Seyirci ise input/upload yerine readonly banner */
     + (_yazabilir
         ? '<div style="padding:10px 12px;border-top:0.5px solid var(--b);display:flex;flex-direction:column;gap:6px">'
-          +'<textarea id="pp-gorev-mesaj-input" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);padding:6px 8px;font-size:var(--pp-body);font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
+          +'<textarea id="pp-gorev-mesaj-input" maxlength="2000" placeholder="Mesaj yaz..." rows="2" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);padding:6px 8px;font-size:var(--pp-body);font-family:inherit;resize:none;background:var(--s2);color:var(--t);box-sizing:border-box"></textarea>'
           +'<div style="display:flex;gap:6px">'
           +'<button onclick="event.stopPropagation();var t=document.getElementById(\'pp-gorev-mesaj-input\');if(t.value.trim()){window._ppGorevMesajGonder(\''+taskId+'\',t.value.trim());t.value=\'\'}" style="flex:1;padding:5px;border:none;background:#111;color:#fff;border-radius:5px;font-size:var(--pp-meta);cursor:pointer;font-family:inherit">Gönder</button>'
           /* PP-GOREV-MESAJ-STT-001: SpeechRecognition tr-TR */
