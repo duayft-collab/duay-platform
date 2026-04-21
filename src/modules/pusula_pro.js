@@ -480,6 +480,12 @@ window._ppModRender = function() {
           sorumluAd = sorumluRaw.ad || sorumluRaw.name || sorumluRaw.displayName || '—';
         } else if (typeof sorumluRaw === 'string' && sorumluRaw.trim()) {
           sorumluAd = sorumluRaw.trim();
+          /* PUSULA-GOREV-SORUMLU-DISPLAY-001: email ise user lookup + @ öncesi fallback */
+          if (sorumluAd.indexOf('@') >= 0) {
+            var _uList = (typeof loadUsers === 'function' ? loadUsers() : (window.loadUsers ? window.loadUsers() : []));
+            var _match = _uList.find(function(u){ return (u.email || '').toLowerCase() === sorumluAd.toLowerCase() || String(u.id) === sorumluAd || String(u.uid) === sorumluAd; });
+            sorumluAd = _match ? (_match.name || _match.ad || sorumluAd.split('@')[0]) : sorumluAd.split('@')[0];
+          }
         }
         var sorumluIni = sorumluAd !== '—' ? sorumluAd.split(' ').map(function(s) { return s[0] || ''; }).join('').slice(0, 2).toUpperCase() : '?';
         var kenarRenk = t.oncelik==='kritik'?'var(--pp-err)':t.oncelik==='yuksek'?'var(--pp-warn)':'#1D9E75';
@@ -508,7 +514,7 @@ window._ppModRender = function() {
         };
         var _tbadge = _ppTarihBadge(t.bitTarih);
         h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
-        h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
+        h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 120px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
         /* PP-BTN-HIDE-001: non-admin tamamla checkbox tamamen gizli */
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="Tamamla" style="width:13px;height:13px;cursor:pointer;display:'+(_ppIsAdmin()?'inline-block':'none')+'">';
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
@@ -537,7 +543,7 @@ window._ppModRender = function() {
         }
         h2 += '</div></div>';
         /* PP-SORUMLU-DEGISTIR-001: sorumlu yanında ↻ buton (kullanıcı listesinden seçim) */
-        h2 += '<div style="display:flex;align-items:center;gap:4px"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:var(--pp-meta);color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span><button onclick="event.stopPropagation();window._ppSorumluDegistir(\''+t.id+'\')" title="Sorumluyu değiştir" style="font-size:var(--pp-meta);padding:1px 4px;border:0.5px solid var(--b);border-radius:3px;cursor:pointer;background:transparent;color:var(--t3);font-family:inherit">↻</button></div>';
+        h2 += '<div style="display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden"><div style="width:20px;height:20px;border-radius:50%;background:'+kenarRenk+';display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0">'+sorumluIni+'</div><span style="font-size:var(--pp-meta);color:'+(t.oncelik==='kritik'?'#791F1F':t.oncelik==='yuksek'?'#633806':'var(--t2)')+';font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_ppEsc(sorumluAd)+'</span><button onclick="event.stopPropagation();window._ppSorumluDegistir(\''+t.id+'\')" title="Sorumluyu değiştir" style="font-size:var(--pp-meta);padding:1px 4px;border:0.5px solid var(--b);border-radius:3px;cursor:pointer;background:transparent;color:var(--t3);font-family:inherit">↻</button></div>';
         h2 += '<div style="font-size:var(--pp-meta);color:var(--t3)">'+(t.basT?t.basT.slice(0,10):'—')+(t.createdAt?'<div style="font-size:var(--pp-meta);color:var(--t3);margin-top:1px" title="Oluşturulma: '+_ppEsc(t.createdAt)+'">🕐 '+(function(ts){try{var d=new Date((ts||'').replace(' ','T'));return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}})(t.createdAt)+'</div>':'')+'</div>';
         h2 += '<div style="font-size:var(--pp-meta);color:'+_tbadge.renk+(';font-weight:')+(_tbadge.bold?'600':'400')+'">'+(_tbadge.etiket)+'</div>';
         h2 += '<span style="font-size:var(--pp-meta);padding:2px 5px;border-radius:3px;background:'+pr.bg+';color:'+pr.c+';font-weight:500">'+pr.l+'</span>';
@@ -651,7 +657,7 @@ window._ppModRender = function() {
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
       + '<div style="padding:10px 14px 0"><input id="pp-calisma-ara" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppCalismaFiltre(this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:var(--pp-body);padding:7px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;margin-bottom:10px"></div>'
-      + '<div style="display:grid;grid-template-columns:22px 22px 1fr 90px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
+      + '<div style="display:grid;grid-template-columns:22px 22px 1fr 120px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
       + '<div></div>'
       + '<div></div>'
       + '<div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em">GÖREV / JOB ID</div>'
