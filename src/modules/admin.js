@@ -1,3 +1,4 @@
+/* PUSULA-ESKI-KAPAT-005: ALL_MODULES + 3 rol RBAC pusula-pro'ya bağlandı */
 /**
  * ═══════════════════════════════════════════════════════════════
  * src/modules/admin.js
@@ -1584,7 +1585,7 @@ function _renderMatrix(users) {
     {id:'crm',      label:'CRM'},
     {id:'ik',       label:'İK'},
     {id:'pirim',    label:'Pirim'},
-    {id:'pusula',   label:'Görevler'},
+    {id:'pusula-pro',   label:'Görevler'},
     {id:'kargo',    label:'Kargo'},
     {id:'docs',     label:'Döküman'},
     {id:'odemeler', label:'Ödemeler'},
@@ -2640,11 +2641,11 @@ window._copyInviteCode = _copyInviteCode;
 
 const PERM_TEMPLATES = {
   muhasebe: { label:'Muhasebe', modules:['dashboard','odemeler','pirim','kpi','settings'], permissions:{odemeler:'manage',pirim:'view',kpi:'view'} },
-  satinalma:{ label:'Satin Alma', modules:['dashboard','pusula','kargo','stok','crm','navlun','pirim','settings'], permissions:{pusula:'manage',kargo:'manage',stok:'manage',crm:'manage',pirim:'manage'} },
+  satinalma:{ label:'Satin Alma', modules:['dashboard','pusula-pro','kargo','stok','crm','navlun','pirim','settings'], permissions:{'pusula-pro':'manage',kargo:'manage',stok:'manage',crm:'manage',pirim:'manage'} },
   lojistik: { label:'Lojistik', modules:['dashboard','kargo','stok','navlun','lojistik','settings'], permissions:{kargo:'full',stok:'manage'} },
-  satis:    { label:'Satis', modules:['dashboard','pusula','crm','pirim','settings'], permissions:{pusula:'manage',crm:'full',pirim:'view'} },
+  satis:    { label:'Satis', modules:['dashboard','pusula-pro','crm','pirim','settings'], permissions:{'pusula-pro':'manage',crm:'full',pirim:'view'} },
   ik:       { label:'IK', modules:['dashboard','ik','izin','puantaj','pirim','settings'], permissions:{ik:'full',izin:'manage',puantaj:'manage'} },
-  stajyer:  { label:'Stajyer', modules:['dashboard','pusula','takvim','notes','announce'], permissions:{pusula:'view',takvim:'view',notes:'view',announce:'view'} },
+  stajyer:  { label:'Stajyer', modules:['dashboard','pusula-pro','takvim','notes','announce'], permissions:{'pusula-pro':'view',takvim:'view',notes:'view',announce:'view'} },
   finans:   { label:'Finans', modules:['dashboard','odemeler','pirim','kargo','kpi','crm','settings'], permissions:{odemeler:'full',pirim:'full',kargo:'manage',kpi:'manage',crm:'view'} },
 };
 
