@@ -275,7 +275,19 @@ function saveFormRecord() {
   const cu = _CUfm();
   const recs = JSON.parse((()=>{try{return JSON.parse(localStorage.getItem('ak_form_recs'))||[];}catch{return [];}})() || '[]');
   recs.unshift({ id: generateNumericId(), formId: ACTIVE_FORM.id, formTitle: ACTIVE_FORM.title, uid: cu?.id, uname: cu?.name, ts: window.DB?.nowTs?.() || new Date().toISOString().slice(0,19).replace('T',' '), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isDeleted: false, yukleyen_id: cu?.id || null, values });
-  localStorage.setItem('ak_form_recs', JSON.stringify(recs.slice(0, 500)));
+  /* LS-SYNC-006: 90 gün TTL (mevcut 500 FIFO korundu) */
+  try {
+    const _ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+    const filtered = recs.filter(r => {
+      try {
+        const t = new Date(String(r.createdAt || r.ts || '').replace(' ', 'T')).getTime();
+        return isNaN(t) || t >= _ninetyDaysAgo;
+      } catch(_e) { return true; }
+    });
+    localStorage.setItem('ak_form_recs', JSON.stringify(filtered.slice(0, 500)));
+  } catch(_ae) {
+    localStorage.setItem('ak_form_recs', JSON.stringify(recs.slice(0, 500)));
+  }
   window.toast?.(ACTIVE_FORM.title + ' kaydedildi ✓', 'ok');
   window.logActivity?.('view', `"${ACTIVE_FORM.title}" formunu doldurdu`);
   const mo = _gfm('mo-form'); if (mo) mo.classList.remove('open');
