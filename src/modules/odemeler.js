@@ -7444,16 +7444,16 @@ function renderCari() {
   if (_cariSelectedId) _renderCariDetail(_cariSelectedId);
 }
 
-/* CARI-DETAY-STICKY-001: fade wrapper — flicker yerine smooth geçiş */
+/* CARI-DETAY-STICKY-002: fade wrapper — setTimeout ile transition tetiklensin (rAF × 2 opacity'de browser transition tetiklemiyor) */
 window._selectCari = function(id) {
   var _cont = document.getElementById('cari-detail');
   if (_cont) _cont.style.opacity = '0.5';
   _cariSelectedId = id;
   renderCari();
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+  setTimeout(function(){
     var _c2 = document.getElementById('cari-detail');
     if (_c2) _c2.style.opacity = '1';
-  }); });
+  }, 20);
 };
 
 /**
