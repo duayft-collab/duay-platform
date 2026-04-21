@@ -459,7 +459,8 @@ window._saveUrunDB = function() {
       duayCode: _yeniDuayKodu,
       duayName: duayName,
       origName: origName,
-      vendorId: (function(){ var c = (typeof loadCari === 'function' ? (loadCari({tumKullanicilar:true})||[]) : []).find(function(x){ return (x.ad||x.unvan||x.name||'') === vendorId; }); return c ? String(c.id||c.uid||'') : ''; })(),
+      /* URUN-DB-VENDOR-LOOKUP-FIX-001: izolasyonlu loadCari */
+      vendorId: (function(){ var c = (typeof loadCari === 'function' ? (loadCari()||[]) : []).find(function(x){ return (x.ad||x.unvan||x.name||'') === vendorId; }); return c ? String(c.id||c.uid||'') : ''; })(),
       vendorName: vendorId,
       vendorCode: vendorCode,
       category: category,
