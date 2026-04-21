@@ -3756,6 +3756,19 @@ window._ppGorevMesajLoad = function(taskId) {
 
 window._ppGorevMesajSave = function(taskId, mesajlar) {
   /* PUSULA-MESAJ-FIX-001: localStorage + Firestore eş zamanlı yaz */
+  /* LS-SYNC-001: per-task 100 FIFO + 30 gün TTL (ak_pp_gorev_mesaj_* sınırsız büyüme engeli) */
+  try {
+    if (Array.isArray(mesajlar)) {
+      var _thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+      mesajlar = mesajlar.filter(function(m) {
+        try {
+          var _t = new Date(String((m && m.ts) || '').replace(' ', 'T')).getTime();
+          return isNaN(_t) || _t >= _thirtyDaysAgo;
+        } catch(_e) { return true; }
+      });
+      if (mesajlar.length > 100) mesajlar = mesajlar.slice(-100);
+    }
+  } catch(_ae) { console.warn('[LS-SYNC-001]', _ae && _ae.message); }
   try { localStorage.setItem('ak_pp_gorev_mesaj_'+taskId, JSON.stringify(mesajlar)); } catch(e) { console.warn('[PP]', e); }
   try {
     if (typeof firebase !== 'undefined' && firebase.firestore) {
