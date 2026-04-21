@@ -6614,73 +6614,90 @@ window._cariIsHighRisk = function(cari) {
 
 /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 3: Admin değerlendirme modal UI */
 window._cariAdminEvalModalAc = function(cari, onComplete) {
+  /* CARI-ONAY-AKIS-002: Apple minimalist redesign — readonly supplierEval + pill selector + opsiyonel not + Reddet */
   var _s = function(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
   var ex = document.getElementById('cari-admin-eval-modal'); if (ex) ex.remove();
+
+  var se = cari.supplierEvaluation || {};
+  var ae = cari.adminEvaluation || {};
+  var seDate = se.timestamp ? new Date(se.timestamp).toLocaleString('tr-TR', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+
+  var _pillBtn = function(id, val, lbl, sel) {
+    return '<button type="button" data-pill="'+id+'" data-val="'+val+'" style="flex:1;padding:8px 0;border:none;border-right:0.5px solid #D2D2D7;background:'+(sel?'#1A8D6F':'transparent')+';color:'+(sel?'#fff':'#1D1D1F')+';font-size:13px;font-weight:'+(sel?'500':'400')+';cursor:pointer;font-family:inherit;transition:background 0.15s">'+lbl+'</button>';
+  };
+  var _pillGroup = function(id, label, options, current) {
+    var btns = options.map(function(o){ return _pillBtn(id, o.val, o.lbl, current === o.val); }).join('');
+    return '<div style="margin-bottom:14px"><div style="font-size:11px;letter-spacing:.06em;color:#6E6E73;text-transform:uppercase;margin-bottom:6px;font-weight:500">'+label+' <span style="color:#E0574F">*</span></div><div style="display:flex;border-radius:8px;overflow:hidden;border:0.5px solid #D2D2D7">'+btns+'</div></div>';
+  };
+
   var html =
     '<div id="cari-admin-eval-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center">' +
-    '<div style="background:var(--sf,#fff);color:var(--t,#111);width:620px;max-width:92vw;max-height:92vh;overflow-y:auto;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.15);padding:24px;font-family:inherit">' +
-      '<div style="font-size:15px;font-weight:600;margin-bottom:4px">Yönetici Değerlendirmesi</div>' +
-      '<div style="font-size:11px;color:var(--t3,#666);margin-bottom:20px;letter-spacing:.03em">Firma: <b>' + _s(cari.name || '') + '</b> — onay vermeden önce zorunlu</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">' +
+    '<div style="background:#fff;color:#1D1D1F;width:580px;max-width:92vw;max-height:92vh;overflow-y:auto;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.18);padding:24px;font-family:-apple-system,SF Pro Display,system-ui,sans-serif">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">' +
         '<div>' +
-          '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block;margin-bottom:6px">Fiyat Seviyesi <span style="color:#E0574F">*</span></label>' +
-          '<select id="caev-fiyat" style="width:100%;padding:8px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;background:var(--sf,#fff);color:var(--t,#111);font-family:inherit"><option value="">Seçin</option><option value="yuksek">Yüksek</option><option value="normal">Normal</option><option value="dusuk">Düşük</option></select>' +
+          '<div style="font-size:15px;font-weight:600">Yönetici Değerlendirmesi</div>' +
+          '<div style="font-size:12px;color:#86868B;margin-top:3px">Firma: <b style="color:#1D1D1F">' + _s(cari.name || '') + '</b></div>' +
         '</div>' +
-        '<div>' +
-          '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block;margin-bottom:6px">Risk Seviyesi <span style="color:#E0574F">*</span></label>' +
-          '<select id="caev-risk" style="width:100%;padding:8px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;background:var(--sf,#fff);color:var(--t,#111);font-family:inherit"><option value="">Seçin</option><option value="dusuk">Düşük</option><option value="orta">Orta</option><option value="yuksek">Yüksek</option></select>' +
+        '<button id="caev-close-x" style="background:none;border:none;font-size:22px;color:#86868B;cursor:pointer;line-height:1;padding:0 6px">×</button>' +
+      '</div>' +
+      '<div style="font-size:11px;letter-spacing:.06em;color:#6E6E73;text-transform:uppercase;margin-bottom:8px;font-weight:500">Personel Değerlendirmesi</div>' +
+      '<div style="background:#F5F5F7;border:0.5px solid rgba(60,60,67,0.12);border-radius:10px;padding:14px;margin-bottom:20px">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:10px">' +
+          '<span style="font-size:12px;color:#1D1D1F;font-weight:500">' + _s(se.userName || 'Bilinmeyen') + '</span>' +
+          '<span style="font-size:11px;color:#86868B">' + seDate + '</span>' +
         '</div>' +
-        '<div>' +
-          '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block;margin-bottom:6px">Firma Ölçeği <span style="color:#E0574F">*</span></label>' +
-          '<select id="caev-olcek" style="width:100%;padding:8px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;background:var(--sf,#fff);color:var(--t,#111);font-family:inherit"><option value="">Seçin</option><option value="kucuk">Küçük</option><option value="orta">Orta</option><option value="buyuk">Büyük</option></select>' +
+        '<div style="font-size:12px;color:#1D1D1F;line-height:1.5;margin-bottom:10px">' + _s(se.davranisNotu || '—') + '</div>' +
+        '<div style="display:flex;gap:12px;margin-top:8px;font-size:11px">' +
+          '<div style="flex:1"><span style="color:'+(se.guvenliMi?'#1A8D6F':'#E0574F')+';font-weight:500">'+(se.guvenliMi?'✓':'✗')+' Güvenli</span><div style="color:#6E6E73;margin-top:2px;line-height:1.4">' + _s(se.guvenliAciklama || '—') + '</div></div>' +
+          '<div style="flex:1"><span style="color:'+(se.uzunVadeMi?'#1A8D6F':'#E0574F')+';font-weight:500">'+(se.uzunVadeMi?'✓':'✗')+' Uzun Vade</span><div style="color:#6E6E73;margin-top:2px;line-height:1.4">' + _s(se.uzunVadeAciklama || '—') + '</div></div>' +
         '</div>' +
       '</div>' +
-      '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block">Piyasa Araştırması <span style="color:#E0574F">*</span></label>' +
-      '<textarea id="caev-arastirma" rows="4" maxlength="2000" placeholder="Firma hakkında araştırma, referanslar, sektördeki yeri, güvenilirlik izlenimi... (min 100 karakter)" style="width:100%;box-sizing:border-box;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin:6px 0 4px;resize:vertical;font-family:inherit;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
-      '<div id="caev-arastirma-count" style="font-size:10px;color:#999;text-align:right;margin-bottom:16px">0 / 100</div>' +
-      '<label style="font-size:11px;letter-spacing:.05em;color:var(--t2,#333);text-transform:uppercase;display:block">Karar Notu <span style="color:#E0574F">*</span></label>' +
-      '<textarea id="caev-karar" rows="3" maxlength="1000" placeholder="Neden onaylandı / reddedildi (min 50 karakter)" style="width:100%;box-sizing:border-box;padding:10px;border:0.5px solid var(--b,#CBD5E1);border-radius:8px;font-size:13px;margin:6px 0 4px;resize:vertical;font-family:inherit;background:var(--sf,#fff);color:var(--t,#111)"></textarea>' +
-      '<div id="caev-karar-count" style="font-size:10px;color:#999;text-align:right;margin-bottom:20px">0 / 50</div>' +
-      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-        '<button id="caev-cancel" style="padding:9px 18px;border:0.5px solid var(--b,#CBD5E1);background:transparent;color:var(--t2,#333);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">İptal</button>' +
-        '<button id="caev-submit" style="padding:9px 18px;border:none;background:#1A8D6F;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:inherit">Onayla</button>' +
+      '<div style="font-size:11px;letter-spacing:.06em;color:#6E6E73;text-transform:uppercase;margin-bottom:10px;font-weight:500">Risk Değerlendirmesi</div>' +
+      _pillGroup('fiyat', 'Fiyat Seviyesi', [{val:'dusuk',lbl:'Düşük'},{val:'normal',lbl:'Normal'},{val:'yuksek',lbl:'Yüksek'}], ae.fiyatSeviyesi || '') +
+      _pillGroup('risk', 'Risk Seviyesi', [{val:'dusuk',lbl:'Düşük'},{val:'orta',lbl:'Orta'},{val:'yuksek',lbl:'Yüksek'}], ae.riskSeviyesi || '') +
+      _pillGroup('olcek', 'Firma Ölçeği', [{val:'kucuk',lbl:'Küçük'},{val:'orta',lbl:'Orta'},{val:'buyuk',lbl:'Büyük'}], ae.firmaOlcegi || '') +
+      '<div style="font-size:11px;letter-spacing:.06em;color:#6E6E73;text-transform:uppercase;margin:18px 0 6px;font-weight:500">Yönetici Notu <span style="color:#86868B;text-transform:none;letter-spacing:0;font-weight:400">(opsiyonel)</span></div>' +
+      '<textarea id="caev-not" rows="3" maxlength="500" placeholder="Ekstra değerlendirme, not..." style="width:100%;box-sizing:border-box;padding:10px 12px;border:0.5px solid #D2D2D7;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;background:#fff;color:#1D1D1F;outline:none">' + _s(ae.yoneticiNotu || ae.kararNotu || '') + '</textarea>' +
+      '<div style="display:flex;gap:8px;justify-content:space-between;margin-top:20px">' +
+        '<button id="caev-reject" style="padding:10px 18px;border:0.5px solid #E0574F;background:transparent;color:#E0574F;border-radius:9px;font-size:13px;cursor:pointer;font-weight:500;font-family:inherit">Reddet</button>' +
+        '<button id="caev-submit" style="padding:10px 22px;border:none;background:#1A8D6F;color:#fff;border-radius:9px;font-size:13px;cursor:pointer;font-weight:500;font-family:inherit">Onayla ✓</button>' +
       '</div>' +
     '</div></div>';
+
   var wrap = document.createElement('div');
   wrap.innerHTML = html;
   document.body.appendChild(wrap.firstChild);
 
-  var _updCount = function(taId, countId, min) {
-    var ta = document.getElementById(taId);
-    var cnt = document.getElementById(countId);
-    if (!ta || !cnt) return;
-    var upd = function() {
-      cnt.textContent = ta.value.length + ' / ' + min;
-      cnt.style.color = ta.value.trim().length >= min ? '#1A8D6F' : '#999';
-    };
-    ta.addEventListener('input', upd);
-    upd();
+  var _selected = {
+    fiyat: ae.fiyatSeviyesi || '',
+    risk: ae.riskSeviyesi || '',
+    olcek: ae.firmaOlcegi || ''
   };
-  _updCount('caev-arastirma', 'caev-arastirma-count', 100);
-  _updCount('caev-karar', 'caev-karar-count', 50);
+  document.querySelectorAll('[data-pill]').forEach(function(btn) {
+    btn.addEventListener('click', function(){
+      var pill = this.getAttribute('data-pill');
+      var val = this.getAttribute('data-val');
+      _selected[pill] = val;
+      document.querySelectorAll('[data-pill="'+pill+'"]').forEach(function(b){
+        var sel = b.getAttribute('data-val') === val;
+        b.style.background = sel ? '#1A8D6F' : 'transparent';
+        b.style.color = sel ? '#fff' : '#1D1D1F';
+        b.style.fontWeight = sel ? '500' : '400';
+      });
+    });
+  });
 
-  document.getElementById('caev-cancel').onclick = function() { document.getElementById('cari-admin-eval-modal').remove(); };
+  var _close = function(){ var m = document.getElementById('cari-admin-eval-modal'); if (m) m.remove(); };
+  document.getElementById('caev-close-x').onclick = _close;
+
   document.getElementById('caev-submit').onclick = function() {
-    var fiyat = document.getElementById('caev-fiyat').value;
-    var risk = document.getElementById('caev-risk').value;
-    var olcek = document.getElementById('caev-olcek').value;
-    var arastirma = (document.getElementById('caev-arastirma').value || '').trim();
-    var karar = (document.getElementById('caev-karar').value || '').trim();
-
     var eksikler = [];
-    if (['yuksek','normal','dusuk'].indexOf(fiyat) < 0) eksikler.push('Fiyat seviyesi');
-    if (['dusuk','orta','yuksek'].indexOf(risk) < 0) eksikler.push('Risk seviyesi');
-    if (['kucuk','orta','buyuk'].indexOf(olcek) < 0) eksikler.push('Firma ölçeği');
-    if (arastirma.length < 100) eksikler.push('Piyasa araştırması (min 100, şu an ' + arastirma.length + ')');
-    if (karar.length < 50) eksikler.push('Karar notu (min 50, şu an ' + karar.length + ')');
+    if (['dusuk','normal','yuksek'].indexOf(_selected.fiyat) < 0) eksikler.push('Fiyat');
+    if (['dusuk','orta','yuksek'].indexOf(_selected.risk) < 0) eksikler.push('Risk');
+    if (['kucuk','orta','buyuk'].indexOf(_selected.olcek) < 0) eksikler.push('Ölçek');
+    if (eksikler.length > 0) { window.toast?.('Eksik: ' + eksikler.join(', '), 'err'); return; }
 
-    if (eksikler.length > 0) { window.toast?.(eksikler.join(' | '), 'err'); return; }
-
+    var not = (document.getElementById('caev-not').value || '').trim();
     var cu = (window._CUo && window._CUo()) || (window.CU && window.CU()) || {};
     var allCariler = (typeof window.loadCari === 'function' ? window.loadCari() : []) || [];
     var idx = -1;
@@ -6688,23 +6705,43 @@ window._cariAdminEvalModalAc = function(cari, onComplete) {
     if (idx === -1) { window.toast?.('Cari bulunamadı', 'err'); return; }
 
     allCariler[idx].adminEvaluation = {
-      fiyatSeviyesi: fiyat,
-      riskSeviyesi: risk,
-      firmaOlcegi: olcek,
-      piyasaArastirmaNotu: arastirma,
-      kararNotu: karar,
+      fiyatSeviyesi: _selected.fiyat,
+      riskSeviyesi: _selected.risk,
+      firmaOlcegi: _selected.olcek,
+      yoneticiNotu: not,
       adminId: cu.id || cu.uid || 'bilinmiyor',
       adminName: cu.name || cu.displayName || cu.email || 'bilinmiyor',
       timestamp: new Date().toISOString()
     };
     if (typeof window.storeCari === 'function') window.storeCari(allCariler);
 
-    document.getElementById('cari-admin-eval-modal').remove();
-    window.toast?.('Yönetici değerlendirmesi kaydedildi', 'ok');
+    _close();
+    window.toast?.('Değerlendirme kaydedildi', 'ok');
     if (typeof onComplete === 'function') onComplete();
+  };
+
+  document.getElementById('caev-reject').onclick = function() {
+    var not = (document.getElementById('caev-not').value || '').trim();
+    var cu = (window._CUo && window._CUo()) || (window.CU && window.CU()) || {};
+    var allCariler = (typeof window.loadCari === 'function' ? window.loadCari() : []) || [];
+    var idx = -1;
+    for (var i = 0; i < allCariler.length; i++) { if (allCariler[i].id === cari.id) { idx = i; break; } }
+    if (idx === -1) { window.toast?.('Cari bulunamadı', 'err'); return; }
+
+    allCariler[idx].status = 'rejected';
+    allCariler[idx].rejectedBy = cu.id || cu.uid;
+    allCariler[idx].rejectedAt = new Date().toISOString();
+    allCariler[idx].rejectionNote = not || null;
+    if (typeof window.storeCari === 'function') window.storeCari(allCariler);
+
+    _close();
+    window.toast?.('Cari reddedildi', 'ok');
+    window.addNotif?.('❌', 'Cari reddedildi: ' + cari.name, 'err', 'cari', cari.createdBy);
+    if (typeof window.renderCari === 'function') window.renderCari();
   };
 };
 
+/* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 2: Personel değerlendirme modal UI
 /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 2: Personel değerlendirme modal UI (live counter + csev-* ID convention) */
 window._cariSupplierEvalModalAc = function(entry, onComplete) {
   var _s = function(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
