@@ -6588,13 +6588,12 @@ window._cariIsSupplierEvalComplete = function(cari) {
 };
 
 window._cariIsAdminEvalComplete = function(cari) {
+  /* CARI-ONAY-AKIS-002: sadece 3 pill zorunlu; supplierEvaluation piyasa araştırmasını karşılıyor */
   var e = cari && cari.adminEvaluation;
   if (!e || typeof e !== 'object') return false;
   if (['yuksek','normal','dusuk'].indexOf(e.fiyatSeviyesi) < 0) return false;
   if (['dusuk','orta','yuksek'].indexOf(e.riskSeviyesi) < 0) return false;
   if (['kucuk','orta','buyuk'].indexOf(e.firmaOlcegi) < 0) return false;
-  if (!e.piyasaArastirmaNotu || String(e.piyasaArastirmaNotu).trim().length < 100) return false;
-  if (!e.kararNotu || String(e.kararNotu).trim().length < 50) return false;
   return true;
 };
 
