@@ -166,6 +166,7 @@ function renderLojistik() {
       <div style="padding:11px 16px;${Bh}"><span style="font-size:13px;font-weight:500">Hızlı İşlemler</span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr)">
         ${[
+          {l:'+ Yeni Teslimat Takibi', fn:'window._edWizardAc()'},
           {l:'Gelen Kargo Ekle', fn:"openKargoModal('gelen')"},
           {l:'Giden Kargo Ekle', fn:"openKargoModal('giden')"},
           {l:'Konteyner Ekle',   fn:'window.openKonteynModal(null)'},
