@@ -6539,7 +6539,8 @@ function saveCari(entry) {
 function _approveCari(id) {
   if (!_isManagerO()) { window.toast?.('Yetki yok', 'err'); return; }
   var d = loadCari();
-  var c = d.find(function(x) { return x.id === id; });
+  /* CARI-ONAY-ID-TYPE-FIX-001: id string vs number mismatch — normalize */
+  var c = d.find(function(x) { return String(x.id) === String(id); });
   if (!c) return;
   /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 3: Supplier yoksa dur, admin yoksa modal aç */
   if (!window._cariIsSupplierEvalComplete(c)) {
@@ -6803,7 +6804,8 @@ window._cariSupplierEvalModalAc = function(entry, onComplete) {
 function _rejectCari(id) {
   if (!_isManagerO()) { window.toast?.('Yetki yok', 'err'); return; }
   var d = loadCari();
-  var c = d.find(function(x) { return x.id === id; });
+  /* CARI-ONAY-ID-TYPE-FIX-001: id string vs number mismatch — normalize */
+  var c = d.find(function(x) { return String(x.id) === String(id); });
   if (!c) return;
   c.status = 'rejected';
   c.rejectedBy = _CUo()?.id;
