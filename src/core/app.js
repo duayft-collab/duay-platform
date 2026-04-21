@@ -991,6 +991,46 @@ function init() {
       if (ov) ov.classList.remove('show');
     }
   });
+
+  /* ACTIVITY-LS-ONE-TIME-CLEANUP-001: App init'te birikmiş activity birikimi temizliği.
+     ACTIVITY-LOG-CLEANUP-001 (7de16f2) yeni saveAct 1000 FIFO uyguluyor ama canlıda 8565 mevcut kayıt var.
+     NOTIF-CLEAR-FIRESTORE-AWARE trash pattern: LS saveAct re-call + Firestore direkt set (merge bypass).
+     Idempotent: ≤1000 ise no-op. Auth listener tamamlansın diye 3sn gecikme. */
+  setTimeout(function _activityOneTimeCleanup() {
+    try {
+      var list = (window.loadAct && window.loadAct()) || [];
+      if (list.length > 1000 && typeof window.saveAct === 'function') {
+        window.saveAct(list); // saveAct içi slice(0,1000) tetikler + Firestore sync
+        console.log('[ACTIVITY-CLEANUP] LS', list.length, '→ 1000 (saveAct FIFO)');
+      }
+      /* Firestore de TTL + 1000 FIFO ile direkt yaz (merge bypass) */
+      var fbDb = window.Auth && window.Auth.getFBDB && window.Auth.getFBDB();
+      var path = (typeof window._fsPath === 'function') ? window._fsPath('activity') : null;
+      if (!fbDb || !path) return;
+      var parts = path.split('/');
+      if (parts.length !== 2) return;
+      fbDb.collection(parts[0]).doc(parts[1]).get().then(function(snap) {
+        var fsData = (snap && snap.data && snap.data() && snap.data().data) || [];
+        if (!Array.isArray(fsData) || fsData.length <= 1000) return;
+        var now = Date.now();
+        var thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+        var cleaned = fsData.filter(function(a) {
+          try { return new Date(String(a.ts || '').replace(' ', 'T')).getTime() >= thirtyDaysAgo; }
+          catch(e) { return false; }
+        }).slice(0, 1000);
+        fbDb.collection(parts[0]).doc(parts[1]).set({
+          data: cleaned,
+          mergedAt: new Date().toISOString(),
+          syncedAt: new Date().toISOString(),
+          cleanedAt: new Date().toISOString(),
+          cleanedBy: 'activity-one-time-cleanup'
+        }).then(function() {
+          console.log('[ACTIVITY-FS-CLEANUP] Firestore', fsData.length, '→', cleaned.length);
+          try { window.invalidateCacheKey && window.invalidateCacheKey('activity'); } catch(e) {}
+        }).catch(function(err) { console.warn('[ACTIVITY-FS-CLEANUP] set hata:', err && err.message); });
+      }).catch(function(err) { console.warn('[ACTIVITY-FS-CLEANUP] get hata:', err && err.message); });
+    } catch(e) { console.warn('[ACTIVITY-CLEANUP]', e && e.message); }
+  }, 3000);
 }
 
 // ════════════════════════════════════════════════════════════════
