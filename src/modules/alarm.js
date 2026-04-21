@@ -200,7 +200,7 @@ var _TALIMAT_SEED = [
   { sid:'t37', ad:'Süreç & SOP Gözden Geçirme Q1',      tur:'strateji', tekrar:1440, kosul:'16 Mart — E-Myth', seviye:'bilgi', kategori:'strateji' },
   { sid:'t38', ad:'Süreç & SOP Gözden Geçirme Q3',      tur:'strateji', tekrar:1440, kosul:'Eylül', seviye:'bilgi', kategori:'strateji' },
   // E — OTOMATİK SİSTEM İŞLEMLERİ
-  { sid:'t39', ad:'Gecikmiş görev kontrolü + bildirim',   tur:'sistem', tekrar:5,    kosul:'Her 5dk — pusula_core.js', seviye:'bilgi', kategori:'sistem' },
+  { sid:'t39', ad:'Gecikmiş görev kontrolü + bildirim',   tur:'sistem', tekrar:5,    kosul:'Her 5dk — pusula_pro.js', seviye:'bilgi', kategori:'sistem' },
   { sid:'t40', ad:'Tekrarlayan görev oluşturma',          tur:'sistem', tekrar:1440, kosul:'Günlük 1x — pusula.js', seviye:'bilgi', kategori:'sistem' },
   { sid:'t41', ad:'TCMB döviz kuru çekme',               tur:'sistem', tekrar:1440, kosul:'Günlük 1x — odemeler.js', seviye:'bilgi', kategori:'sistem' },
   { sid:'t42', ad:'Canlı kur güncelleme (USD/EUR/GBP)',   tur:'sistem', tekrar:1,    kosul:'Her 1dk — odemeler.js', seviye:'bilgi', kategori:'sistem' },

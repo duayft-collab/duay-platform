@@ -2456,7 +2456,7 @@ function doGSearch(q) {
       .slice(0, 3).forEach(t => results.push({
         icon: '🧭', title: t.title, sub: `Görev · ${t.done ? 'Tamamlandı' : 'Devam ediyor'}`,
         module: 'pusula',
-        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('pusula'); setTimeout(() => window._ppGorevDetay?.(t.id), 300); }
+        action: () => { _g('gsearch-overlay').classList.remove('open'); goTo('pusula-pro'); setTimeout(() => window._ppGorevDetay?.(t.id), 300); }
       }));
   } catch (e) {}
 
@@ -2853,7 +2853,7 @@ function printModuleReport(modId) {
   if (!win) { toast('Popup engellendi. Tarayıcı ayarlarını kontrol edin.', 'err'); return; }
   let body = '';
 
-  if (modId === 'pusula') {
+  if (modId === 'pusula-pro') {
     const users = loadUsers();
     const tasks = window.Pusula?.visTasks?.() || loadTasks();
     body = `<table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px">
