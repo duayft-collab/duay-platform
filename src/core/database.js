@@ -1618,6 +1618,8 @@ function logActivity(type, detail) {
     d = deduped.slice(0, 500);
   } catch(e) { console.warn('[NOTIF-CLEANUP-V2]', e && e.message); }
   var sliced = (typeof window._lsRetention === 'function') ? window._lsRetention(d, 'notifications', 50, 0) : d.slice(0, 50);
+  /* LS-SYNC-007: hard guard — _lsRetention sort bazen 50+ döndürebiliyor (ts sort key tam çalışmayabilir), bypass path'leri de engelle */
+  if (Array.isArray(sliced) && sliced.length > 50) sliced = sliced.slice(0, 50);
   _write(KEYS.notifications, sliced);
   /* NOTIF-CLEANUP-V2-HOTFIX-001: cache.js _wrap cleanup'sız data'yı _cache'e yazıyor — temizlenmiş data için cache invalidate */
   try { if (typeof window.invalidateCacheKey === 'function') window.invalidateCacheKey('notifs'); } catch(_ce) {}
