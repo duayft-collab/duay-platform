@@ -793,6 +793,8 @@ window._ppModRender = function() {
     h += '</div>';
     /* XSS-RISK: _esc() zorunlu */
     body.innerHTML = h;
+    /* PUSULA-AKIS-AKTIF-001: return eklendi — fallback overwrite engellendi */
+    return;
   } else if (mod === 'degerlendirme') {
     /* PUSULA-TEMIZLIK-001: skor/habit/challenge kaldırıldı, sadeleştirildi */
     var skor = { bugun: 0, hafta: 0, toplam: 0 };
