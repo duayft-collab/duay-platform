@@ -1183,7 +1183,8 @@ const DEFAULT_USERS = [
   // Firebase Auth: duayft@gmail.com — Admin
   { id: 1, name: 'Duay Admin',    email: 'duayft@gmail.com',         pw: '', role: 'admin',   access: ['İK','Finans','Operasyon','Teknik','Maaş','Sistem'], modules: null, status: 'active', lastLogin: null },
   // Firebase Auth: muhasebe@duaycor.com — Muhasebe personeli
-  { id: 2, name: 'Muhasebe',      email: 'muhasebe@duaycor.com',      pw: '', role: 'staff',   access: ['Finans','Operasyon'], modules: null, status: 'active', lastLogin: null },
+  /* USER-SEED-REGRESYON-001: muhasebe@duaycor.com → Yönetici Asistanı / asistan (önceki seed değerleri restore) */
+  { id: 2, name: 'Yönetici Asistanı', email: 'muhasebe@duaycor.com', pw: '', role: 'asistan', access: ['Finans','Operasyon'], modules: null, status: 'active', lastLogin: null },
   // Firebase Auth: duaymuhasebe@gmail.com — Muhasebe (Gmail)
   { id: 3, name: 'Duay Muhasebe', email: 'duaymuhasebe@gmail.com',    pw: '', role: 'staff',   access: ['Finans'], modules: null, status: 'active', lastLogin: null },
 ];
