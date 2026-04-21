@@ -67,7 +67,8 @@ function openUrunModal(id) {
   var esc = window._esc;
 
   // Cari listesi (satıcılar)
-  var cariList = typeof loadCari === 'function' ? (loadCari({tumKullanicilar:true})||[]).filter(function(c){return !c.isDeleted;}) : [];
+  /* CARI-BYPASS-FIX-003: izolasyon uygulansın, dropdown sadece kullanıcı carileri */
+  var cariList = typeof loadCari === 'function' ? (loadCari()||[]).filter(function(c){return !c.isDeleted;}) : [];
   var cariOpts = '<option value="">— Satıcı Seçin —</option>' + cariList.map(function(c) { return '<option value="' + esc((c.ad || c.unvan || c.name || '')) + '"' + (u?.vendorName === (c.ad || c.unvan || c.name || '') ? ' selected' : '') + '>' + esc((c.ad || c.unvan || c.name || '')) + '</option>'; }).join('');
   var countryOpts = '<option value="">—</option>' + URUN_COUNTRIES.map(function(c) { return '<option value="' + c + '"' + (u?.origin === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
 
@@ -269,7 +270,7 @@ function openUrunModal(id) {
       input = '<textarea id="' + id + '" placeholder="' + ph + '" style="' + baseStyle + ';min-height:68px;resize:vertical" ' + focusHandlers + '>' + v + '</textarea>';
     } else if (type === 'select-vendor') {
       var carilar = [];
-      try { carilar = (typeof loadCari === 'function' ? loadCari({tumKullanicilar:true}) : []) || []; } catch(e) {}
+      /* CARI-BYPASS-FIX-003 */ try { carilar = (typeof loadCari === 'function' ? loadCari() : []) || []; } catch(e) {}
       var opts = '<option value="">— Seçin —</option>' + carilar.map(function(c){ var nm = c.unvan||c.ad||c.name||''; var sel = (v === esc(nm)) ? ' selected' : ''; return '<option value="' + esc(nm) + '"' + sel + '>' + esc(nm) + '</option>'; }).join('');
       input = '<select id="' + id + '" style="' + baseStyle + '" ' + focusHandlers + '>' + opts + '</select>';
     } else if (type === 'select-country') {
