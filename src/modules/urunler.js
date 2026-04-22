@@ -874,6 +874,7 @@ window._uf2KaydetYeni = function() {
   window.toast?.('Ürün kaydedildi: ' + g('urunAdi'), 'ok');
   document.getElementById('urun-form-modal')?.remove();
   window.renderUrunler?.();
+  window.renderUrunDB?.(); // [URUN-LIST-REFRESH-FIX-001] Urun Katalogu paneli de tetikle
 };
 
 /* ════════════════════════════════════════════════════════════════
