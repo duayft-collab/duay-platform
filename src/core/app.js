@@ -711,11 +711,14 @@ function _finishLogin(user) {
         var _safeRule12h = fresh.rule12h !== undefined ? fresh.rule12h : (cu ? cu.rule12h : undefined);
         var _safeStatus = fresh.status !== undefined ? fresh.status : (cu ? cu.status : undefined);
         // [MENU-PERM-PROTECT-001 END]
-        if (cu && (JSON.stringify(cu.modules) !== JSON.stringify(_safeModules) || JSON.stringify(cu.permissions) !== JSON.stringify(_safePermissions) || cu.role !== _safeRole)) {
+        // [MENU-PERM-PROTECT-002 START] auth-changed her zaman dispatch (re-render garanti), log sadece gerçek değişimde
+        if (cu) {
+          var _permChanged = (JSON.stringify(cu.modules) !== JSON.stringify(_safeModules) || JSON.stringify(cu.permissions) !== JSON.stringify(_safePermissions) || cu.role !== _safeRole);
           Object.assign(cu, { role: _safeRole, modules: _safeModules, permissions: _safePermissions, access: _safeAccess, dept: _safeDept, rule12h: _safeRule12h, status: _safeStatus });
-          console.info('[LOGIN] CU yetkileri Firestore\'dan güncellendi');
+          if (_permChanged) console.info('[LOGIN] CU yetkileri Firestore\'dan güncellendi');
           try { window.dispatchEvent(new CustomEvent('auth-changed', { detail: cu })); } catch(e) {}
         }
+        // [MENU-PERM-PROTECT-002 END]
         // localStorage'ı da güncelle
         try { localStorage.setItem(window.DB?.KEYS?.users || 'ak_u3', JSON.stringify(fsUsers)); } catch(e) {}
       }).catch(function(e) { console.warn('[LOGIN] Firestore kullanıcı çekme hatası:', e.message); });
