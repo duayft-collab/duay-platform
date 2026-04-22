@@ -1964,7 +1964,7 @@ function loadCari(opts) {
     return !c.hiddenFrom.map(String).includes(uid);
   });
 }
-/** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d;
+/** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2; if(!t.status&&!t.isDeleted)t.status='active';/* CARI-STATUS-MIGRATION-001: legacy status eksik kayitlara active ata */}return t;}):d;
   var tumCari = _read(KEYS.cari) || [];
   d.forEach(function(yeni) {
     if (!yeni.id || yeni._mukerrerKontrolAtla) return;
