@@ -181,11 +181,16 @@ function renderSatisTeklif() {
   }
 
   // SATIS-LISTE-UX-001: Durum badge renk haritasi
+  /* SATIS-DURUM-INLINE-001-A: 4 -> 8 anahtar (dropdown ile eksiksiz eşleşme + legacy alias korundu, Apple renk paleti) */
   var ST_DURUM = {
-    taslak:     { bg:'#9CA3AF18', color:'#6B7280', label:'Taslak' },
-    onaylandi:  { bg:'#16A34A18', color:'#16A34A', label:'Onaylandı' },
-    reddedildi: { bg:'#DC262618', color:'#DC2626', label:'Reddedildi' },
-    revizyon:   { bg:'#D9770618', color:'#D97706', label:'Revizyon' }
+    taslak:     { bg:'#F5F5F7',   color:'#6E6E73', label:'Taslak' },
+    gonderildi: { bg:'#2563EB18', color:'#2563EB', label:'Gönderildi' },
+    onay:       { bg:'#D9770618', color:'#B4730F', label:'Onay Bekliyor' },
+    kabul:      { bg:'#1A8D6F18', color:'#1A8D6F', label:'Kabul' },
+    red:        { bg:'#E0574F18', color:'#E0574F', label:'Reddedildi' },
+    onaylandi:  { bg:'#1A8D6F18', color:'#1A8D6F', label:'Kabul' },
+    reddedildi: { bg:'#E0574F18', color:'#E0574F', label:'Reddedildi' },
+    revizyon:   { bg:'#B4730F18', color:'#B4730F', label:'Revizyon' }
   };
   var html = '<div style="display:grid;grid-template-columns:28px 110px 130px 1fr 140px 100px 90px 120px;padding:6px 16px;background:var(--s2);border-bottom:1px solid var(--b);font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;z-index:2">'
     + '<div><input type="checkbox" onchange="event.stopPropagation();window._stekTopluChk(this.checked)"></div><div>Teklif No</div><div>PI No</div><div>Müşteri</div><div>Tutar</div><div>Durum</div><div>Tarih</div><div>İşlem</div></div>';
