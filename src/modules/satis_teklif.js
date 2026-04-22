@@ -625,9 +625,16 @@ window._saveST = function() {
     });
   });
 
-  var eid = parseInt(document.getElementById('st-eid')?.value || '0');
+  /* SATIS-EDIT-PERSIST-001: edit mode id string/number mismatch + teklifNo reset bug fix */
+  var eidRaw = document.getElementById('st-eid')?.value || '';
+  var _existingForNo = null;
+  if (eidRaw) {
+    var _dataPeek = _loadST();
+    _existingForNo = _dataPeek.find(function(x) { return String(x.id) === String(eidRaw); });
+  }
   var entry = {
-    teklifNo: document.getElementById('st-no')?.value || _generateTeklifNo(),
+    teklifNo: (_existingForNo && _existingForNo.teklifNo) || document.getElementById('st-no')?.value || _generateTeklifNo(),
+    piNo: (_existingForNo && _existingForNo.piNo) || '',
     customerName: customer,
     date: document.getElementById('st-date')?.value || '',
     validity: document.getElementById('st-validity')?.value || '',
@@ -652,10 +659,24 @@ window._saveST = function() {
     updatedAt: new Date().toISOString(),
   };
 
+  /* SATIS-EDIT-PERSIST-001: eid raw + String() comparison (id tip uyusmazligi fix) */
   var data = _loadST();
-  if (eid) {
-    var existing = data.find(function(x) { return x.id === eid; });
-    if (existing) Object.assign(existing, entry);
+  if (eidRaw) {
+    var existing = data.find(function(x) { return String(x.id) === String(eidRaw); });
+    if (existing) {
+      /* createdAt, createdBy, id KORUMA — entry'den override edilmesin */
+      entry.id = existing.id;
+      entry.createdAt = existing.createdAt;
+      entry.createdBy = existing.createdBy;
+      Object.assign(existing, entry);
+    } else {
+      /* eid verildi ama kayit bulunamadi — loglayip yeni olustur (data loss onle) */
+      console.warn('[SATIS-EDIT-PERSIST-001] eid=' + eidRaw + ' bulunamadi, yeni kayit olarak eklenecek');
+      entry.id = typeof generateNumericId === 'function' ? generateNumericId() : Date.now();
+      entry.createdAt = new Date().toISOString();
+      entry.createdBy = window.Auth?.getCU?.()?.id;
+      data.unshift(entry);
+    }
   } else {
     entry.id = typeof generateNumericId === 'function' ? generateNumericId() : Date.now();
     entry.createdAt = new Date().toISOString();
