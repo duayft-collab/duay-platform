@@ -849,6 +849,42 @@ window._ppModLabel = function(mod) {
 
 /* ── Global Export ──────────────────────────────────────────── */
 window._ppLoad   = _ppLoad;
+
+/* LS-SYNC-008: orphan mesaj key cleanup — silinmis task'larin ak_pp_gorev_mesaj_* keylerini temizler */
+function _ppOrphanMesajSweep() {
+  try {
+    var tasks = _ppLoad() || [];
+    var validIds = {};
+    tasks.forEach(function(t) {
+      if (t && t.id != null) validIds[String(t.id)] = true;
+    });
+    var removed = 0;
+    var totalBytes = 0;
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      var k = localStorage.key(i);
+      if (!k || k.indexOf('ak_pp_gorev_mesaj_') !== 0) continue;
+      var taskId = k.replace('ak_pp_gorev_mesaj_', '');
+      if (!validIds[taskId]) {
+        var val = localStorage.getItem(k) || '';
+        totalBytes += new Blob([val]).size;
+        localStorage.removeItem(k);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      console.log('[LS-SYNC-008] ' + removed + ' orphan mesaj key temizlendi (~' + (totalBytes/1024).toFixed(1) + ' KB)');
+    }
+    return { removed: removed, bytes: totalBytes };
+  } catch(e) {
+    console.warn('[LS-SYNC-008]', e && e.message);
+    return { removed: 0, bytes: 0, err: e.message };
+  }
+}
+window._ppOrphanMesajSweep = _ppOrphanMesajSweep;
+
+/* LS-SYNC-008: init'te 1 kez, sonra 1 saatte bir sweep (sürekli çalıştır'ma yük olur) */
+setTimeout(function(){ _ppOrphanMesajSweep(); }, 5000);
+setInterval(function(){ _ppOrphanMesajSweep(); }, 60 * 60 * 1000);
 window._ppStore  = _ppStore;
 window._ppExport = window._ppExport;
 window.renderPusulaPro = window._ppRender;
