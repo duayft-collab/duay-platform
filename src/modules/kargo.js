@@ -299,4 +299,11 @@ window.renderKargo = renderKargo;
 window.loadKargo = _loadK;
 window.storeKargo = _storeK;
 
+// [DANGLING-KARGO-ALIAS-001 START]
+// UI eski isimlerini modulun gercek fonksiyonlarina yonlendir - isim mismatch duzeltmesi
+window.openKargoModal  = window._kargoYeniModal;
+window.saveKargo       = window._kargoKaydet;
+window.exportKargoXlsx = window._kargoXlsx;
+// [DANGLING-KARGO-ALIAS-001 END]
+
 })();
