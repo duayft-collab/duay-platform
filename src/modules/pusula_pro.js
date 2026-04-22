@@ -517,8 +517,13 @@ window._ppModRender = function() {
         var _tbadge = _ppTarihBadge(t.bitTarih);
         h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
         h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px minmax(0,1fr) 120px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
-        /* PP-BTN-HIDE-001: non-admin tamamla checkbox tamamen gizli */
-        h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="Tamamla" style="width:13px;height:13px;cursor:pointer;display:'+(_ppIsAdmin()?'inline-block':'none')+'">';
+        /* PUSULA-LAYOUT-FIX-002: admin değilse checkbox DOM'da yok (grid kolonu kaplar display:none olsa bile) */
+        if (_ppIsAdmin()) {
+          h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="Tamamla" style="width:13px;height:13px;cursor:pointer">';
+        } else {
+          /* Grid hizasını koru: non-admin'de yerine boş span */
+          h2 += '<span></span>';
+        }
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
         h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:var(--pp-info);cursor:pointer" title="Toplu işlem için seç">';
         h2 += '<div style="min-width:0;overflow:hidden">';  /* PUSULA-LAYOUT-FIX-001: kolon overflow */
