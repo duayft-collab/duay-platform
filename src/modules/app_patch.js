@@ -936,7 +936,8 @@ window._sidebarYetkiUygula = function() {
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(run, 700));
   else setTimeout(run, 700);
-  window.addEventListener('auth-changed', () => setTimeout(function(){ _applyRoleUI(window.Auth?.getCU?.()); setTimeout(_postAuth, 500); }, 200));
+  /* [TN2-AUTH-REFRESH-001] auth-changed → ust menu de yeniden ciz (Urun Katalogu/Cari race fix) */
+  window.addEventListener('auth-changed', () => setTimeout(function(){ _applyRoleUI(window.Auth?.getCU?.()); window._tn2Restore?.(); setTimeout(_postAuth, 500); }, 200));
 })();
 
 console.log('[app_patch] Yetki sistemi yüklendi');
