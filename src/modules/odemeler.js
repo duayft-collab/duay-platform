@@ -7473,18 +7473,18 @@ function renderCari() {
       if (sonTeklifGun > 90) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#DC2626">⚠ ' + sonTeklifGun + 'g</span>';
       else if (sonTeklifGun > 30) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#D97706">⏰ ' + sonTeklifGun + 'g</span>';
     }
-    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .15s ease" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\'" onmouseleave="if(!' + isSel + ')this.style.background=\'\'">'
+    return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .15s ease" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\';this.querySelector(\'.cari-row-action\')?.style.setProperty(\'opacity\',\'1\')" onmouseleave="if(!' + isSel + ')this.style.background=\'\';this.querySelector(\'.cari-row-action\')?.style.setProperty(\'opacity\',\'0\')">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span title="' + sc.label + '" style="width:8px;height:8px;border-radius:50%;background:' + sc.color + ';border:0.5px solid rgba(0,0,0,.08);flex-shrink:0;display:inline-block"></span>'
       /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
       + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name || 'İsimsiz Cari') + statusBadge
-        + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t3);padding:1px 5px;background:var(--s2);border-radius:4px;vertical-align:middle" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
-        + _riskHTML
+        + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t2);padding:2px 6px;background:rgba(0,0,0,0.04);border-radius:4px;vertical-align:middle;font-variant-numeric:tabular-nums" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
+        /* [CARI-UI-LISTE-001] Risk rozet kaldirildi — sol dot zaten gosteriyor */
         + hatirHTML
         + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
       /* CARI-HIZLI-TEKLIF-001: cari satırından direkt satış teklifi aç */
-      + ((c.type === 'musteri' || !c.type) ? '<button onclick="event.stopPropagation();window._stYeniMusteri?.(\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" class="btn btns" style="font-size:9px;padding:2px 7px;flex-shrink:0" title="Bu müşteriye yeni satış teklifi">+ Teklif</button>' : '')
+      + ((c.type === 'musteri' || !c.type) ? '<button onclick="event.stopPropagation();window._stYeniMusteri?.(\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" class="btn btns cari-row-action" style="font-size:9px;padding:2px 7px;flex-shrink:0;opacity:0;transition:opacity .15s" title="Bu müşteriye yeni satış teklifi">+ Teklif</button>' : '')
     + '</div>';
   }).join('');
 
