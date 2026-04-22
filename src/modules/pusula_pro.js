@@ -340,8 +340,10 @@ window._ppRender = function() {
     + '<svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M2 2h10a1 1 0 011 1v6a1 1 0 01-1 1H8l-3 2V10H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/></svg>'
     + '<div id="pp-msg-dot" style="width:6px;height:6px;border-radius:50%;background:#E24B4A;position:absolute;top:4px;right:4px;display:none"></div>'
     + '</div>'
-    + '<button onclick="event.stopPropagation();window._ppExport?.()" style="font-size:var(--pp-meta);padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Yedek Al</button>'
-    + '<button onclick="event.stopPropagation();window._ppYedekPaneli()" style="font-size:var(--pp-meta);padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);flex-shrink:0">↓ Yedek</button>'
+      /* PUSULA-YEDEK-GIZLEME-001: admin only */
+      + (window.isAdmin?.() ? ('<button onclick="event.stopPropagation();window._ppExport?.()" style="font-size:var(--pp-meta);padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Yedek Al</button>') : '')
+      /* PUSULA-YEDEK-GIZLEME-001: admin only */
+      + (window.isAdmin?.() ? ('<button onclick="event.stopPropagation();window._ppYedekPaneli()" style="font-size:var(--pp-meta);padding:4px 10px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);flex-shrink:0">↓ Yedek</button>') : '')
     + '</div></div>'
     /* PUSULA-FROG-001: frog bar — sadece frog varsa kırmızı, yoksa sade collapse */
     + (function(){
@@ -734,6 +736,14 @@ window._ppModRender = function() {
     else { body.innerHTML = '<div style="flex:1;padding:20px"><div style="font-size:13px;color:var(--t3)">Takvim yükleniyor...</div></div>'; }
     return;
   } else if (mod === 'akis') {
+    /* PUSULA-AKIS-EMPTY-STATE-001: user'a görev atanmamışsa empty state */
+    try {
+      var _akisTasks = (_ppIzolasyonFiltre ? _ppIzolasyonFiltre(_ppLoad().filter(function(x){return !x.isDeleted;})) : []);
+      if (!_akisTasks.length && typeof window._ppEmptyState === 'function') {
+        body.innerHTML = window._ppEmptyState('akis', '🎯', 'Henüz görev yok', 'Yönetici sana görev atadığında burada görünür.', '', '');
+        return;
+      }
+    } catch(e) {}
     /* PUSULA-IZOLASYON-001: akis modu — izolasyon uygulandı (admin/manager hariç) */
     var tasks = _ppIzolasyonFiltre(_ppLoad().filter(function(t){ return !t.isDeleted; }));
     var bugun = _ppToday();

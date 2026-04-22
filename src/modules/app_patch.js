@@ -5992,15 +5992,7 @@ window._pkDurumDegistir = function(kuralId) {
   window.renderPlatformKurallari?.();
 };
 
-/* ── PUSULA-REDIRECT: eski 'pusula' → 'pusula-pro' ─────────── */
-(function() {
-  var _origNav = window.App && window.App.nav;
-  if(!_origNav) return;
-  window.App.nav = function(mod, sub, opts) {
-    if(mod === 'pusula') mod = 'pusula-pro';
-    return _origNav.call(this, mod, sub, opts);
-  };
-})();
+/* PUSULA-ESKI-KAPAT-007: Eski PUSULA-REDIRECT bloğu kaldırıldı (MIGRATION-002 tamamlandı) */
 
 /* ── SIDEBAR: Pusula Pro'yu operasyon grubuna ekle ──────────── */
 (function() {
