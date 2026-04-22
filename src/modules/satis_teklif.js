@@ -113,6 +113,21 @@ function _generateTeklifNo() {
   return prefix + String(maxNum + 1).padStart(6, '0');
 }
 
+/* SATIS-PI-NO-GEN-001: PI No formatı XXXX-YYMMDDHHMI (Baran kuralı) — PDF üretiminde otomatik atanır */
+function _generatePiNo() {
+  var d = new Date();
+  var pad = function(n){ return String(n).padStart(2, '0'); };
+  var yy = String(d.getFullYear()).slice(-2);
+  var mm = pad(d.getMonth() + 1);
+  var dd = pad(d.getDate());
+  var hh = pad(d.getHours());
+  var mi = pad(d.getMinutes());
+  /* Sıra numarası — aynı dakikada 2+ PI varsa ayır */
+  var suffix = pad(d.getSeconds()).slice(0, 2);
+  return suffix + yy + '-' + yy + mm + dd + hh + mi;
+}
+window._generatePiNo = _generatePiNo;
+
 /**
  * Teklif listesi render.
  */
@@ -693,9 +708,16 @@ window._saveST = function() {
  * PDF preview — Duay Standard Format.
  */
 window._stPreview = function(id) {
+  /* SATIS-PI-NO-GEN-001: String() comparison + PI No otomatik atama */
   var data = _loadST();
-  var t = data.find(function(x) { return x.id === id; });
-  if (!t) return;
+  var t = data.find(function(x) { return String(x.id) === String(id); });
+  if (!t) { window.toast?.('Teklif bulunamadı (id=' + id + ')', 'err'); return; }
+  /* PI No yoksa ilk PDF açılışında otomatik üret + kaydet */
+  if (!t.piNo) {
+    t.piNo = _generatePiNo();
+    t.updatedAt = new Date().toISOString();
+    try { _storeST(data); } catch(e) { console.warn('[SATIS-PI-NO-GEN-001]', e && e.message); }
+  }
   var esc = window._esc;
   var total = (t.items || []).reduce(function(a, i) { return a + (i.total || 0); }, 0);
   // SAT-LANG-001: PDF cikti dil destegi (TR/EN/CN/AR/RU)
@@ -704,7 +726,7 @@ window._stPreview = function(id) {
   var dir = lang === 'AR' ? 'rtl' : 'ltr';
 
   var w = window.open('', '_blank', 'width=800,height=1000');
-  w.document.write('<!DOCTYPE html><html dir="' + dir + '" lang="' + lang.toLowerCase() + '"><head><meta charset="UTF-8"><title>' + L('proforma') + ' — ' + esc(t.teklifNo) + '</title>'
+  w.document.write('<!DOCTYPE html><html dir="' + dir + '" lang="' + lang.toLowerCase() + '"><head><meta charset="UTF-8"><title>' + L('proforma') + ' — ' + esc(t.piNo || t.teklifNo) + '</title>'
     + '<style>body{font-family:"Segoe UI",sans-serif;padding:40px;color:#1a1a2e;max-width:750px;margin:0 auto}'
     + '.hdr{border-bottom:3px solid #1e1b4b;padding-bottom:16px;margin-bottom:20px}'
     + 'table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#1e1b4b;color:#fff;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase}'
@@ -715,7 +737,7 @@ window._stPreview = function(id) {
     + '@media print{button{display:none!important}}</style></head><body>'
     + '<div class="hdr"><div style="display:flex;justify-content:space-between;align-items:flex-start">'
       + '<div><div style="font-size:22px;font-weight:800;color:#1e1b4b">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#6b7280;margin-top:4px">International Trade & Consulting</div></div>'
-      + '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1e1b4b">' + L('proforma') + '</div><div style="font-size:12px;color:#6b7280;margin-top:4px">' + L('ref') + ': ' + esc(t.teklifNo) + '</div><div style="font-size:11px;color:#6b7280">' + L('date') + ': ' + (t.date || '—') + '</div></div>'
+      + '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1e1b4b">' + L('proforma') + '</div>' + (t.piNo ? '<div style="font-size:13px;font-weight:700;color:#1e1b4b;margin-top:4px;font-family:monospace">PI: ' + esc(t.piNo) + '</div>' : '') + '<div style="font-size:12px;color:#6b7280;margin-top:4px">' + L('ref') + ': ' + esc(t.teklifNo) + '</div><div style="font-size:11px;color:#6b7280">' + L('date') + ': ' + (t.date || '—') + '</div></div>'
     + '</div></div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">'
       + '<div><div class="section-title">' + L('to') + '</div><div style="font-size:13px;font-weight:600">' + esc(t.customerName) + '</div></div>'
