@@ -2845,7 +2845,7 @@ function startRealtimeSync() {
   }
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   /* LS-SYNC-009 FAZ-1: Lazy Listener — 55 listener → 7 (memory pressure fix) */
-  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash'];
+  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash','pusula','notifications'];  /* LS-SYNC-009-FIX-002: pusula + notifications CRITICAL'a eklendi (görevler eksikti) */
 
   const MODULE_COLLECTIONS = {
     /* LS-SYNC-009-FIX-001: GERÇEK nav ID'leri (Chrome'dan tespit edildi) */
@@ -2862,7 +2862,7 @@ function startRealtimeSync() {
     'nakit-akisi':          ['odemeler','tahsilat','bankalar'],
     'donem-ozeti':          ['odemeler','tahsilat','kpi'],
     'hesap':                ['odemeler','tahsilat','bankalar','cari'],
-    'pusula-pro':           ['calendar','hedefler','fikirler','iddialar','suggestions','kararlar','smartGoals','notes'],
+    'pusula-pro':           ['pusula','calendar','hedefler','fikirler','iddialar','suggestions','kararlar','smartGoals','notes'],  /* LS-SYNC-009-FIX-002: pusula ana key eklendi */
     'hedefler':             ['hedefler','kpi','smartGoals'],
     'ik-hub':               ['ik','izin','puan','pirim','greetings'],
     'pirim':                ['pirim','puan'],
