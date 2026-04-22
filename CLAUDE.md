@@ -692,3 +692,38 @@ Hiçbir koşulda kullanılmaz:
 **Örnek ihlal:** Son 2 oturumda tasarım onayı atlanıp doğrudan implement edilen 2 vaka → kullanıcı sonra "bunu hiç istememiştim" dedi, rollback gerekti.
 
 ---
+
+## PROCESS RULES v1
+
+### 1.1 — Marker Kuralı
+
+- Her yeni değişiklik `// [MARKER-ID START]` ve `// [MARKER-ID END]` satırları arasında olur
+- Marker-ID format: `[MODUL]-[ISLEM]-[NNN]` (örn: SATIS-SCHEMA-UNIFY-001)
+- Tek talimat = tek marker bloğu
+- Geriye dönük eski koda marker eklenmez — sadece yeni değişiklikler için
+- str_replace öncesi kural: marker + etrafındaki içerik tek seferde eşleşmeli
+
+### 1.2 — Verify Betiği
+
+- `scripts/verify.sh` her commit öncesi çalıştırılır (manuel veya hook ile)
+- Script içeriği: syntax + marker bütünlüğü + duplicate window.X + dangling onclick + innerHTML+= sayımı
+- `verify.sh` exit 1 → commit yasak
+- Exit 0 ama STDERR uyarısı → commit yapılabilir ama talimat raporuna yazılır
+
+### 1.3 — Talimat Rapor Şablonu
+
+Her talimat sonu Claude Code şu 5 satırı yazar:
+- Etkilenen dosyalar: [liste]
+- Satır değişimi: +N / -M (git diff --stat'tan)
+- Marker: +P eklendi, -Q kaldırıldı
+- verify.sh: PASS / FAIL / WARN
+- Canlı test: BEKLİYOR (Baran teyit edecek)
+
+### 1.4 — Commit Onay Formalizasyonu
+
+- Baran açıkça "commit at" demeden `git commit` yasak
+- Baran açıkça "push et" demeden `git push` yasak
+- Claude Code "tamamlandı — commit edeyim mi?" diye sorar, yazılı onay bekler
+- Onaysız atılan commit → `git reset --soft HEAD~1` ile geri alınır ve rapor edilir
+
+---

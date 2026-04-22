@@ -1,0 +1,6 @@
+# Browser built-ins — dangling sayımından düş
+alert
+confirm
+btoa
+Event
+sendPasswordResetEmail
