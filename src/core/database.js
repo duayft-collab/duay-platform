@@ -2845,7 +2845,7 @@ function startRealtimeSync() {
   }
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   /* LS-SYNC-009 FAZ-1: Lazy Listener — 55 listener → 7 (memory pressure fix) */
-  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash','pusula','notifications'];  /* LS-SYNC-009-FIX-002: pusula + notifications CRITICAL'a eklendi (görevler eksikti) */
+  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash','pusula','notifications','urunler']; /* [CRITICAL-COLS-URUNLER-ADD-001] urunler live sync — race condition fix */  /* LS-SYNC-009-FIX-002: pusula + notifications CRITICAL'a eklendi (görevler eksikti) */
 
   const MODULE_COLLECTIONS = {
     /* LS-SYNC-009-FIX-001: GERÇEK nav ID'leri (Chrome'dan tespit edildi) */
