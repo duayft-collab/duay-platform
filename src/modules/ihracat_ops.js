@@ -67,7 +67,7 @@ var _cu  = function() { return window.CU?.() || window.Auth?.getCU?.(); };
 var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin'); };
 var _isManager = function() { return _isAdmin() || (_cu()?.role === 'manager'); };
 var _genId = function() { return typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now(); };
-var _now = function() { return new Date().toISOString().slice(0, 19).replace('T', ' '); };
+var _now = function() { return window._istNow ? window._istNow() : new Date().toISOString().slice(0, 19).replace('T', ' '); }; /* [SAAT-FIX-TZ-001] Istanbul saati */
 var _today = function() { return new Date().toISOString().slice(0, 10); };
 
 var _loadD = function() { return typeof window.loadIhracatDosyalar === 'function' ? window.loadIhracatDosyalar() : []; };
@@ -3398,7 +3398,7 @@ var _g = function(id) { return document.getElementById(id); };
 var _esc = window._esc;
 var _cu = function() { return window.CU?.() || window.Auth?.getCU?.(); };
 var _genId = function() { return typeof window.generateNumericId === 'function' ? window.generateNumericId() : Date.now(); };
-var _now = function() { return new Date().toISOString().slice(0, 19).replace('T', ' '); };
+var _now = function() { return window._istNow ? window._istNow() : new Date().toISOString().slice(0, 19).replace('T', ' '); }; /* [SAAT-FIX-TZ-001] Istanbul saati */
 var _today = function() { return new Date().toISOString().slice(0, 10); };
 var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin'); };
 var _isManager = function() { return _isAdmin() || (_cu()?.role === 'manager'); };

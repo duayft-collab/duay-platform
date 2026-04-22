@@ -31,7 +31,7 @@ function _tarih(d) { if (!d) return '—'; return d.slice(0, 10); }
 function _gun(d1, d2) { try { return Math.ceil((new Date(d2) - new Date(d1)) / 86400000); } catch(e) { return 0; } }
 function _kalanGun(d) { if (!d) return null; return _gun(new Date().toISOString().slice(0, 10), d); }
 function _uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-function _now() { return new Date().toISOString().slice(0, 19).replace('T', ' '); }
+function _now() { return window._istNow ? window._istNow() : new Date().toISOString().slice(0, 19).replace('T', ' '); } /* [SAAT-FIX-TZ-001] Istanbul saati */
 
 function _durumBadge(d) {
   var map = { hazirlaniyor: ['#EEEDFE', '#26215C', 'Hazırlanıyor'], yolda: ['#E6F1FB', '#0C447C', 'Yolda'], gumrukte: ['#FAEEDA', '#633806', 'Gümrükte'], teslim: ['#EAF3DE', '#27500A', 'Teslim'], iade: ['#FCEBEB', '#791F1F', 'İade'], gecikti: ['#FCEBEB', '#791F1F', 'Gecikti'] };
