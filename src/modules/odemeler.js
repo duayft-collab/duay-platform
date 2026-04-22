@@ -7194,9 +7194,32 @@ window._saveQuickCari = function() {
  */
 var _cariSelectedId = null;
 
+/* [CARI-REFRESH-BUGFIX-001] E5: Filtre state LS helper'ları */
+window._cariSaveFilterState = function() {
+  try {
+    var st = {
+      type:  document.getElementById('cari-type-f')?.value || '',
+      stage: document.getElementById('cari-stage-f')?.value || ''
+    };
+    localStorage.setItem('ak_cari_ui', JSON.stringify(st));
+  } catch(e) {}
+};
+window._cariRestoreFilterState = function() {
+  try {
+    var raw = localStorage.getItem('ak_cari_ui');
+    if (!raw) return;
+    var st = JSON.parse(raw);
+    var tf = document.getElementById('cari-type-f');
+    var sf = document.getElementById('cari-stage-f');
+    if (tf && st.type !== undefined) tf.value = st.type;
+    if (sf && st.stage !== undefined) sf.value = st.stage;
+  } catch(e) {}
+};
+
 function renderCari() {
   var panel = document.getElementById('panel-cari');
   if (!panel) return;
+  var _wasInjected = !!panel.dataset.injected;
   if (!panel.dataset.injected) {
     panel.dataset.injected = '1';
     panel.innerHTML = ''
@@ -7219,14 +7242,18 @@ function renderCari() {
         + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
           + '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);display:flex;gap:6px">'
             + '<input class="fi" id="cari-search" placeholder="Ara..." oninput="clearTimeout(window._cariSearchTimer);window._cariSearchTimer=setTimeout(renderCari,220)" style="font-size:11px;flex:1;border:0.5px solid var(--b);border-radius:7px">'
-            + '<select class="fi" id="cari-type-f" onchange="renderCari()" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
-            + '<select class="fi" id="cari-stage-f" onchange="renderCari()" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
+            + '<select class="fi" id="cari-type-f" onchange="window._cariSaveFilterState();renderCari()" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
+            + '<select class="fi" id="cari-stage-f" onchange="window._cariSaveFilterState();renderCari()" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
           + '</div>'
           + '<div id="cari-list" style="flex:1;overflow-y:auto"></div>'
         + '</div>'
         // Sağ panel — detay
         + '<div id="cari-detail" style="flex:1;overflow-y:auto;background:var(--s2);transition:opacity .15s ease"></div>'
       + '</div>';
+    /* [CARI-REFRESH-BUGFIX-001] E5: İlk injection'da filter state restore */
+    if (!_wasInjected && window._cariRestoreFilterState) {
+      window._cariRestoreFilterState();
+    }
   }
 
   var all = loadCari().filter(function(c) { return !c.isDeleted; });
@@ -7474,8 +7501,14 @@ function renderCari() {
   cont.innerHTML = html;
 
   // İlk cariyi seç — pending varsa ilk pending'i, yoksa ilk aktifi
-  if (!_cariSelectedId && fl.length) {
+  /* [CARI-REFRESH-BUGFIX-001] E3: Seçili cari silindiyse geçerli bir cariye düş */
+  var _selStillValid = _cariSelectedId && fl.some(function(c){ return c.id === _cariSelectedId; });
+  if (!_selStillValid && fl.length) {
     _cariSelectedId = pendingCari.length ? pendingCari[0].id : fl[0].id;
+  } else if (!fl.length) {
+    _cariSelectedId = null;
+    var _empty = document.getElementById('cari-detail');
+    if (_empty) _empty.innerHTML = '';
   }
   if (_cariSelectedId) _renderCariDetail(_cariSelectedId);
 }
