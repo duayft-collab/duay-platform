@@ -104,6 +104,29 @@ function _storeST(d) {
   } catch(e) { console.error('[_storeST firestore]', e); }
 }
 
+/* SATIS-SCHEMA-UNIFY-001: TR (SatinAlma V2) + EN (Satis) schema bidirectional helper */
+function _stMapItemsFromTR(t) {
+  if (!t) return [];
+  if (Array.isArray(t.items) && t.items.length > 0) return t.items;
+  if (Array.isArray(t.urunler) && t.urunler.length > 0) {
+    return t.urunler.map(function(u, i) {
+      var qty = parseFloat(u.miktar || u.qty || 1) || 1;
+      var price = parseFloat(u.satisFiyat || u.price || 0) || 0;
+      return {
+        no: i + 1,
+        code: u.duayKodu || u.kod || u.code || '',
+        desc: u.urunAdi || u.aciklama || u.desc || '',
+        qty: qty,
+        unit: u.birim || u.unit || 'Adet',
+        price: price,
+        total: qty * price
+      };
+    });
+  }
+  return [];
+}
+window._stMapItemsFromTR = _stMapItemsFromTR;
+
 function _generateTeklifNo() {
   var year = new Date().getFullYear();
   var prefix = 'TKF-' + year + '-';
@@ -437,8 +460,16 @@ window._openSTModal = function(id) {
       if (_stCariMatch) _stCustVal = _stCariMatch.name || _stCariMatch.ad || _stCariMatch.title || _stCariMatch.unvan || '';
     } catch(e) {}
   }
-  var curOpts = ST_CURRENCIES.map(function(c) { return '<option value="' + c + '"' + (t?.currency === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
-  var incoOpts = ST_INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (t?.incoterm === i ? ' selected' : '') + '>' + i + '</option>'; }).join('');
+  /* SATIS-SCHEMA-UNIFY-001: TR field fallback */
+  var _stCurrencyVal = (t && (t.currency || t.paraBirimi)) || 'USD';
+  var _stIncotermVal = (t && (t.incoterm || t.teslim)) || 'FOB';
+  var _stValidityVal = (t && (t.validity || t.gecerlilik)) || '';
+  var _stDeliveryVal = (t && (t.deliveryTime || t.teslimSuresi)) || '';
+  var _stTermsVal    = (t && (t.terms || t.odeme)) || 'Payment: 30% advance, 70% before shipment\nDelivery: Within 30 days after order confirmation\nValidity: 15 days';
+  var _stNotesVal    = (t && (t.notes || t.not)) || '';
+  var _stDateVal     = (t && (t.date || t.tarih)) || new Date().toISOString().slice(0, 10);
+  var curOpts = ST_CURRENCIES.map(function(c) { return '<option value="' + c + '"' + (_stCurrencyVal === c ? ' selected' : '') + '>' + c + '</option>'; }).join('');
+  var incoOpts = ST_INCOTERMS.map(function(i) { return '<option value="' + i + '"' + (_stIncotermVal === i ? ' selected' : '') + '>' + i + '</option>'; }).join('');
   // SAT-LANG-001: dil seçici varsayilan EN (mevcut sablon ingilizce), kullanici degistirebilir
   var lang = t?.lang || 'EN';
   var langOpts = ST_LANGS.map(function(L) { return '<option value="' + L + '"' + (lang === L ? ' selected' : '') + '>' + L + '</option>'; }).join('');
@@ -457,14 +488,14 @@ window._openSTModal = function(id) {
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
         + '<div><div class="fl"><span data-stk="customer">' + _stT('customer', lang) + '</span> *</div><input list="st-customer-list" class="fi" id="st-customer" value="' + esc(_stCustVal) + '" placeholder="Müşteri adı..." onchange="window._stCheckPrevTeklif?.()" autocomplete="off"><datalist id="st-customer-list">' + custOpts + '</datalist></div>'
         + '<div><div class="fl" data-stk="quoteNo">' + _stT('quoteNo', lang) + '</div><input class="fi" id="st-no" value="' + (t?.teklifNo || _generateTeklifNo()) + '" readonly style="background:var(--s2);font-family:monospace"></div>'
-        + '<div><div class="fl" data-stk="date">' + _stT('date', lang) + '</div><input type="date" class="fi" id="st-date" value="' + (t?.date || new Date().toISOString().slice(0, 10)) + '"></div>'
+        + '<div><div class="fl" data-stk="date">' + _stT('date', lang) + '</div><input type="date" class="fi" id="st-date" value="' + _stDateVal + '"></div>'
       + '</div>'
       // Satır 2: Geçerlilik + Teslim + İncoterm + Döviz + Dil
       + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
-        + '<div><div class="fl" data-stk="validity">' + _stT('validity', lang) + '</div><input type="date" class="fi" id="st-validity" value="' + (t?.validity || '') + '"></div>'
-        + '<div><div class="fl" data-stk="deliveryTime">' + _stT('deliveryTime', lang) + '</div><input class="fi" id="st-delivery" value="' + (t?.deliveryTime || '') + '" placeholder="30"></div>'
+        + '<div><div class="fl" data-stk="validity">' + _stT('validity', lang) + '</div><input type="date" class="fi" id="st-validity" value="' + _stValidityVal + '"></div>'
+        + '<div><div class="fl" data-stk="deliveryTime">' + _stT('deliveryTime', lang) + '</div><input class="fi" id="st-delivery" value="' + _stDeliveryVal + '" placeholder="30"></div>'
         + '<div><div class="fl" data-stk="incoterm">' + _stT('incoterm', lang) + '</div><select class="fi" id="st-incoterm">' + incoOpts + '</select></div>'
-        + '<div><div class="fl" data-stk="currency">' + _stT('currency', lang) + '</div><select class="fi" id="st-currency" data-prev="' + (t?.currency || 'USD') + '" onchange="window._stCurrencyChange?.(this)">' + curOpts + '</select></div>'
+        + '<div><div class="fl" data-stk="currency">' + _stT('currency', lang) + '</div><select class="fi" id="st-currency" data-prev="' + _stCurrencyVal + '" onchange="window._stCurrencyChange?.(this)">' + curOpts + '</select></div>'
         + '<div><div class="fl" data-stk="lang">' + _stT('lang', lang) + '</div><select class="fi" id="st-lang" onchange="window._stChangeLang?.(this.value)">' + langOpts + '</select></div>'
       + '</div>'
       // Ürün satırları
@@ -474,14 +505,16 @@ window._openSTModal = function(id) {
           + '<button onclick="window._stAddItem?.()" class="btn btns" style="font-size:10px;padding:3px 10px" data-stk="addItem">' + _stT('addItem', lang) + '</button>'
         + '</div>'
         + '<div id="st-items">' + (function() {
-            var items = t?.items || [{ no: 1, code: '', desc: '', qty: 1, unit: 'Adet', price: 0, total: 0 }];
+            /* SATIS-SCHEMA-UNIFY-001: TR urunler mapping */
+            var items = _stMapItemsFromTR(t);
+            if (!items.length) items = [{ no: 1, code: '', desc: '', qty: 1, unit: 'Adet', price: 0, total: 0 }];
             return items.map(function(item, idx) { return window._stItemRow ? window._stItemRow(item, idx) : ''; }).join('') || '<div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">Ürün ekleyin</div>';
           })()
         + '</div>'
         + '<div style="display:flex;justify-content:flex-end;margin-top:10px;font-size:14px;font-weight:700;color:var(--t)"><span data-stk="total">' + _stT('total', lang) + '</span>: <span id="st-total" style="margin-left:8px;color:var(--ac)">0</span></div>'
       + '</div>'
       // Şartlar + Banka + Not
-      + '<div><div class="fl" data-stk="terms">' + _stT('terms', lang) + '</div><textarea class="fi" id="st-terms" rows="3" style="resize:none">' + (t?.terms || 'Payment: 30% advance, 70% before shipment\nDelivery: Within 30 days after order confirmation\nValidity: 15 days') + '</textarea></div>'
+      + '<div><div class="fl" data-stk="terms">' + _stT('terms', lang) + '</div><textarea class="fi" id="st-terms" rows="3" style="resize:none">' + _stTermsVal + '</textarea></div>'
       + (function(){
           /* BANK-IBAN-PI-001: banka dropdown + currency-bound IBAN + 'Diğer' serbest textarea */
           var b = t && t.bankInfo;
@@ -503,7 +536,7 @@ window._openSTModal = function(id) {
             + '<textarea class="fi" id="st-bank" rows="3" style="resize:none;' + taShow + '">' + escFn(initText) + '</textarea>'
             + '</div>';
         })()
-      + '<div><div class="fl" data-stk="notes">' + _stT('notes', lang) + '</div><textarea class="fi" id="st-notes" rows="2" style="resize:none">' + (t?.notes || '') + '</textarea></div>'
+      + '<div><div class="fl" data-stk="notes">' + _stT('notes', lang) + '</div><textarea class="fi" id="st-notes" rows="2" style="resize:none">' + _stNotesVal + '</textarea></div>'
       + '<input type="hidden" id="st-eid" value="' + (t?.id || '') + '">'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
@@ -515,7 +548,9 @@ window._openSTModal = function(id) {
 
   // Ürün satırlarını render et
   setTimeout(function() {
-    var items = t?.items || [{ no: 1, code: '', desc: '', qty: 1, unit: 'Adet', price: 0, total: 0 }];
+    /* SATIS-SCHEMA-UNIFY-001: setTimeout mapping */
+    var items = _stMapItemsFromTR(t);
+    if (!items.length) items = [{ no: 1, code: '', desc: '', qty: 1, unit: 'Adet', price: 0, total: 0 }];
     var cont = document.getElementById('st-items');
     if (cont) cont.innerHTML = items.map(function(item, idx) { return _stItemRowHTML(item, idx); }).join('');
     _stCalcTotal();
@@ -673,6 +708,26 @@ window._saveST = function() {
     notes: document.getElementById('st-notes')?.value || '',
     updatedAt: new Date().toISOString(),
   };
+  /* SATIS-SCHEMA-UNIFY-001: TR mirror dual-write */
+  entry.musteriAd    = entry.customerName;
+  entry.gecerlilik   = entry.validity;
+  entry.teslim       = entry.incoterm;
+  entry.paraBirimi   = entry.currency;
+  entry.teslimSuresi = entry.deliveryTime;
+  entry.odeme        = entry.terms;
+  entry.tarih        = entry.date;
+  entry.not          = entry.notes;
+  entry.urunler      = (entry.items || []).map(function(it) {
+    return {
+      duayKodu:   it.code,
+      urunAdi:    it.desc,
+      miktar:     it.qty,
+      birim:      it.unit,
+      satisFiyat: it.price,
+      toplam:     it.total,
+      paraBirimi: entry.currency
+    };
+  });
 
   /* SATIS-EDIT-PERSIST-001: eid raw + String() comparison (id tip uyusmazligi fix) */
   var data = _loadST();
