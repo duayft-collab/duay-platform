@@ -596,15 +596,10 @@ function _doLogin() {
               <div class="pus-tools-menu" id="pus-tools-menu" style="display:none">
                 <div class="ptm-section-label">📊 Veri</div>
                 <button class="ptm-item" onclick="exportTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬇️</span><div><div class="ptm-title">Excel İndir</div><div class="ptm-desc">Görev listesini xlsx olarak indir</div></div></button>
-                <button class="ptm-item" onclick="exportPusulaJSON();window._closeToolsMenu?.()"><span class="ptm-icon">💾</span><div><div class="ptm-title">JSON Yedek Al</div><div class="ptm-desc">Tüm görevleri yedekle — geri yüklenebilir</div></div></button>
-                <button class="ptm-item" onclick="importPusulaJSON();window._closeToolsMenu?.()"><span class="ptm-icon">📂</span><div><div class="ptm-title">JSON Yedek Yükle</div><div class="ptm-desc">Önceki yedeği geri yükle</div></div></button>
-                <button class="ptm-item" onclick="importTasksXlsx();window._closeToolsMenu?.()"><span class="ptm-icon">⬆️</span><div><div class="ptm-title">Excel Yükle</div><div class="ptm-desc">xlsx dosyasından görev içe aktar</div></div></button>
-                <button class="ptm-item" onclick="downloadTaskTemplate();window._closeToolsMenu?.()"><span class="ptm-icon">📋</span><div><div class="ptm-title">Şablon İndir</div><div class="ptm-desc">Boş import şablonu indir</div></div></button>
                 <div class="ptm-divider"></div>
                 <div class="ptm-section-label">⚡ Araçlar</div>
                 <button class="ptm-item" id="ptm-focus" onclick="openFocusMode(null);window._closeToolsMenu?.()"><span class="ptm-icon">🎯</span><div><div class="ptm-title">Odak Modu</div><div class="ptm-desc">Pomodoro zamanlayıcısı başlat</div></div></button>
                 <button class="ptm-item" id="ptm-sticky" onclick="window._toggleStickyBoard?.(null);window._closeToolsMenu?.()"><span class="ptm-icon">📌</span><div><div class="ptm-title">Yapışkan Notlar</div><div class="ptm-desc">Hızlı not al, göreve dönüştür</div></div></button>
-                <button class="ptm-item" id="ptm-tpl" onclick="openTaskTemplateLibrary();window._closeToolsMenu?.()"><span class="ptm-icon">🔁</span><div><div class="ptm-title">Şablon Kütüphanesi</div><div class="ptm-desc">Hazır şablonla görev oluştur</div></div></button>
                 <button class="ptm-item" id="ptm-matrix" onclick="window._renderEisenhower?.() || setPusView('matrix',null);window._closeToolsMenu?.()"><span class="ptm-icon">📐</span><div><div class="ptm-title">Eisenhower Matrix</div><div class="ptm-desc">Görevi 4 kadranda önceliklendir</div></div></button>
                 <div class="ptm-divider"></div>
                 <div class="ptm-section-label">📈 Analiz</div>
@@ -615,37 +610,12 @@ function _doLogin() {
                 <button class="ptm-item admin-only" onclick="window._openStatusManager?.();window._closeToolsMenu?.()"><span class="ptm-icon">📊</span><div><div class="ptm-title">Durum Yönetimi</div><div class="ptm-desc">Görev durumlarını özelleştir</div></div></button>
               </div>
             </div>
-            <button class="pus-add-btn" onclick="openAddTask()">
-              <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              Görev Ekle
-            </button>
           </div>
         </div>
 
         <!-- Motivasyon sözü -->
         <div id="pus-motivation" style="padding:6px 20px;font-size:12px;border-bottom:1px solid var(--b);background:var(--s2);min-height:20px"></div>
 
-        <!-- ── SEKME FİLTRELER (Tablo sekmesi gibi) ── -->
-        <div class="pus-tabs-row">
-          <div class="pus-tab active" id="psf-all" onclick="setPusQuickFilter('all',this)">
-            Tümü <span class="pus-tab-count" id="pv-tot">0</span>
-          </div>
-          <div class="pus-tab" id="psf-todo" onclick="setPusQuickFilter('todo',this)">
-            Yapılacak <span class="pus-tab-count" id="psf-todo-n">0</span>
-          </div>
-          <div class="pus-tab" id="psf-ip" onclick="setPusQuickFilter('inprogress',this)">
-            Devam <span class="pus-tab-count" id="psf-ip-n">0</span>
-          </div>
-          <div class="pus-tab" id="psf-rv" onclick="setPusQuickFilter('review',this)">
-            İnceleme <span class="pus-tab-count" id="psf-rv-n">0</span>
-          </div>
-          <div class="pus-tab" id="psf-done" onclick="setPusQuickFilter('done',this)">
-            Tamamlandı <span class="pus-tab-count" id="psf-done-n">0</span>
-          </div>
-          <div class="pus-tab pus-tab-danger" id="psf-ov" onclick="setPusQuickFilter('overdue',this)">
-            Gecikmiş <span class="pus-tab-count" id="pv-ov">0</span>
-          </div>
-        </div>
 
         </div><!-- /sticky wrapper -->
         <!-- ── ANA LAYOUT: Sol Sidebar + Sağ İçerik ── -->
@@ -703,7 +673,6 @@ function _doLogin() {
                   <option value="oldest">En eski</option>
                   <option value="az">A→Z</option>
                 </select>
-                <button class="pus-clear-btn" onclick="clearPusFilters()">✕ Temizle</button>
               </div>
             </div>
 
@@ -715,20 +684,6 @@ function _doLogin() {
           </div>
         </div>
 
-        <!-- Slide-in detail panel -->
-        <div id="pus-detail-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:440px;max-width:95vw;z-index:500;flex-direction:column;overflow:hidden">
-          <div class="pdp-header">
-            <div style="flex:1;min-width:0">
-              <div class="pdp-title" id="pdp-title"></div>
-              <div class="pdp-meta-row" id="pdp-meta"></div>
-            </div>
-            <div style="display:flex;gap:8px;flex-shrink:0">
-              <button onclick="editTask(PUS_DETAIL_ID)" style="background:rgba(0,122,255,.1);color:#007AFF;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Düzenle</button>
-              <button class="pdp-close-btn" onclick="closePusDetail()">×</button>
-            </div>
-          </div>
-          <div id="pus-detail-body" style="flex:1;overflow-y:auto;padding:20px;background:var(--s2)"></div>
-        </div>
 
         <!-- Eski pus-hero-sub gizli tutuyoruz (JS referansları için) -->
         <span id="ph-pus-s" style="display:none">Görev yönetim merkezi</span>
@@ -1440,116 +1395,116 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 };
 </script>
 
-<script src="config/firebase.js?v=20260421AX"></script>
+<script src="config/firebase.js?v=20260422AY"></script>
 
 <!-- 2. CORE -->
-<script src="src/i18n/translations.js?v=20260421AX"></script>
-<script src="src/core/idb.js?v=20260421AX"></script>
-<script src="src/core/smart_storage.js?v=20260421AX"></script>
+<script src="src/i18n/translations.js?v=20260422AY"></script>
+<script src="src/core/idb.js?v=20260422AY"></script>
+<script src="src/core/smart_storage.js?v=20260422AY"></script>
 <!-- STORAGE-LONGTERM-001 ADIM 1: Module async helpers (dbGet/dbSet/Guarantor) -->
-<script src="src/core/module_async_helpers.js?v=20260421AX"></script>
+<script src="src/core/module_async_helpers.js?v=20260422AY"></script>
 <!-- ENTERPRISE-FLOW-NETWORK-001 PARÇA 1: Event Bus Core (pub-sub) -->
-<script src="src/core/event_bus.js?v=20260421AX"></script>
+<script src="src/core/event_bus.js?v=20260422AY"></script>
 <!-- ENTERPRISE-FLOW-NETWORK-001 PARÇA 2: Events Katalog (window.EV) -->
-<script src="src/core/events.js?v=20260421AX"></script>
+<script src="src/core/events.js?v=20260422AY"></script>
 <!-- ENTERPRISE-FLOW-NETWORK-001 PARÇA 3: State Machine Engine (window.stateMachine) -->
-<script src="src/core/state_machine.js?v=20260421AX"></script>
+<script src="src/core/state_machine.js?v=20260422AY"></script>
 <!-- ENTERPRISE-FLOW-NETWORK-001 PARÇA 4: Task Engine (window.taskEngine) -->
-<script src="src/core/task_engine.js?v=20260421AX"></script>
-<script src="src/core/database.js?v=20260421AX"></script>
-<script src="src/modules/storage_monitor.js?v=20260421AX"></script>
-<script src="src/modules/form_draft_engine.js?v=20260421AX"></script>
-<script src="src/core/aux_sync.js?v=20260421AX"></script>
-<script src="src/core/cache.js?v=20260421AX"></script>
-<script src="src/core/utils.js?v=20260421AX"></script>
-<script src="src/core/auth.js?v=20260421AX"></script>
-<script src="src/core/storage_helpers.js?v=20260421AX"></script>
-<script src="src/core/gdrive.js?v=20260421AX"></script>
+<script src="src/core/task_engine.js?v=20260422AY"></script>
+<script src="src/core/database.js?v=20260422AY"></script>
+<script src="src/modules/storage_monitor.js?v=20260422AY"></script>
+<script src="src/modules/form_draft_engine.js?v=20260422AY"></script>
+<script src="src/core/aux_sync.js?v=20260422AY"></script>
+<script src="src/core/cache.js?v=20260422AY"></script>
+<script src="src/core/utils.js?v=20260422AY"></script>
+<script src="src/core/auth.js?v=20260422AY"></script>
+<script src="src/core/storage_helpers.js?v=20260422AY"></script>
+<script src="src/core/gdrive.js?v=20260422AY"></script>
 
 <!-- CARI-NORMALIZE-001: merkezi cari helper (diğer modüllerden önce) -->
-<script src="src/modules/cari_utils.js?v=20260421AX"></script>
+<script src="src/modules/cari_utils.js?v=20260422AY"></script>
 
 <!-- 3. MODÜLLER -->
-<script src="src/modules/panel_stubs.js?v=20260421AX"></script>
-<script src="src/modules/admin.js?v=20260421AX"></script>
-<script src="src/modules/user_settings.js?v=20260421AX"></script>
-<script src="src/modules/kargo.js?v=20260421AX"></script>
-<script src="src/modules/navlun.js?v=20260421AX"></script>
-<script src="src/modules/loj_features.js?v=20260421AX"></script>
-<script src="src/modules/pirim.js?v=20260421AX"></script>
+<script src="src/modules/panel_stubs.js?v=20260422AY"></script>
+<script src="src/modules/admin.js?v=20260422AY"></script>
+<script src="src/modules/user_settings.js?v=20260422AY"></script>
+<script src="src/modules/kargo.js?v=20260422AY"></script>
+<script src="src/modules/navlun.js?v=20260422AY"></script>
+<script src="src/modules/loj_features.js?v=20260422AY"></script>
+<script src="src/modules/pirim.js?v=20260422AY"></script>
 <!-- PUSULA v3.0 — 8 modül -->
-<script src="src/modules/pusula_pro.js?v=20260421AX"></script>
-<script src="src/modules/ik.js?v=20260421AX"></script>
-<script src="src/modules/crm.js?v=20260421AX"></script>
-<script src="src/modules/stok.js?v=20260421AX"></script>
-<script src="src/modules/urun_db.js?v=20260421AX"></script>
-<script src="src/modules/satis_teklif.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_render.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_liste.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_satis.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_form.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_csv.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_duzenleme.js?v=20260421AX"></script>
-<script src="src/modules/satin_alma_v2_pi.js?v=20260421AX"></script>
+<script src="src/modules/pusula_pro.js?v=20260422AY"></script>
+<script src="src/modules/ik.js?v=20260422AY"></script>
+<script src="src/modules/crm.js?v=20260422AY"></script>
+<script src="src/modules/stok.js?v=20260422AY"></script>
+<script src="src/modules/urun_db.js?v=20260422AY"></script>
+<script src="src/modules/satis_teklif.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_render.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_liste.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_satis.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_form.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_csv.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_duzenleme.js?v=20260422AY"></script>
+<script src="src/modules/satin_alma_v2_pi.js?v=20260422AY"></script>
 <!-- FASON-MODUL-001: Fason üretim modülü -->
-<script src="src/modules/fason.js?v=20260421AX"></script>
+<script src="src/modules/fason.js?v=20260422AY"></script>
 <!-- FASON-CHECKLIST-001: Fason checklist sistemi -->
-<script src="src/modules/fason_checklist.js?v=20260421AX"></script>
+<script src="src/modules/fason_checklist.js?v=20260422AY"></script>
 <!-- PLATFORM-STANDARTLARI-001: IBAN + şartlar + kodlama standartları sayfası -->
-<script src="src/modules/platform_standartlari.js?v=20260421AX"></script>
-<script src="src/modules/hesap_ozeti.js?v=20260421AX"></script>
+<script src="src/modules/platform_standartlari.js?v=20260422AY"></script>
+<script src="src/modules/hesap_ozeti.js?v=20260422AY"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="src/modules/muavin.js?v=20260421AX"></script>
-<script src="src/modules/muavin_parse.js?v=20260421AX"></script>
-<script src="src/modules/hesap_mutabakati.js?v=20260421AX"></script>
-<script src="src/modules/muavin_export.js?v=20260421AX"></script>
-<script src="src/modules/gcb.js?v=20260421AX"></script>
-<script src="src/modules/alarm.js?v=20260421AX"></script>
-<script src="src/modules/excel_import.js?v=20260421AX"></script>
-<script src="src/modules/finans.js?v=20260421AX"></script>
-<script src="src/modules/helpers.js?v=20260421AX"></script>
+<script src="src/modules/muavin.js?v=20260422AY"></script>
+<script src="src/modules/muavin_parse.js?v=20260422AY"></script>
+<script src="src/modules/hesap_mutabakati.js?v=20260422AY"></script>
+<script src="src/modules/muavin_export.js?v=20260422AY"></script>
+<script src="src/modules/gcb.js?v=20260422AY"></script>
+<script src="src/modules/alarm.js?v=20260422AY"></script>
+<script src="src/modules/excel_import.js?v=20260422AY"></script>
+<script src="src/modules/finans.js?v=20260422AY"></script>
+<script src="src/modules/helpers.js?v=20260422AY"></script>
 
 <!-- 3b. Panel HTML Inject + Modals (helpers.js ve ik.js sonrasi) -->
-<script src="src/modules/announce.js?v=20260421AX"></script>
-<script src="src/modules/hedefler.js?v=20260421AX"></script>
-<script src="src/modules/odemeler.js?v=20260421AX"></script>
-<script src="src/modules/nakit_akis.js?v=20260421AX"></script>
-<script src="src/modules/kpi.js?v=20260421AX"></script>
-<script src="src/modules/ik_panel.js?v=20260421AX"></script>
-<script src="src/modules/puantaj.js?v=20260421AX"></script>
-<script src="src/modules/izin.js?v=20260421AX"></script>
-<script src="src/modules/crm_panel.js?v=20260421AX"></script>
-<script src="src/modules/extra_panels.js?v=20260421AX"></script>
-<script src="src/modules/docs.js?v=20260421AX"></script>
-<script src="src/modules/formlar.js?v=20260421AX"></script>
-<script src="src/modules/gorusme.js?v=20260421AX"></script>
-<script src="src/modules/ceo.js?v=20260421AX"></script>
-<script src="src/modules/hesap.js?v=20260421AX"></script>
-<script src="src/modules/hesap_makinesi.js?v=20260421AX"></script>
-<script src="src/core/confirm_modal.js?v=20260421AX"></script>
-<script src="src/modules/modals.js?v=20260421AX"></script>
-<script src="src/modules/dashboard.js?v=20260421AX"></script>
-<script src="src/modules/dashboardDetay.js?v=20260421AX"></script>
-<script src="src/modules/urunler.js?v=20260421AX"></script>
-<script src="src/modules/ihracat_listesi.js?v=20260421AX"></script>
-<script src="src/modules/numuneler.js?v=20260421AX"></script>
-<script src="src/modules/ihracat_ops.js?v=20260421AX"></script>
-<script src="src/modules/ihracat_belgeler.js?v=20260421AX"></script>
+<script src="src/modules/announce.js?v=20260422AY"></script>
+<script src="src/modules/hedefler.js?v=20260422AY"></script>
+<script src="src/modules/odemeler.js?v=20260422AY"></script>
+<script src="src/modules/nakit_akis.js?v=20260422AY"></script>
+<script src="src/modules/kpi.js?v=20260422AY"></script>
+<script src="src/modules/ik_panel.js?v=20260422AY"></script>
+<script src="src/modules/puantaj.js?v=20260422AY"></script>
+<script src="src/modules/izin.js?v=20260422AY"></script>
+<script src="src/modules/crm_panel.js?v=20260422AY"></script>
+<script src="src/modules/extra_panels.js?v=20260422AY"></script>
+<script src="src/modules/docs.js?v=20260422AY"></script>
+<script src="src/modules/formlar.js?v=20260422AY"></script>
+<script src="src/modules/gorusme.js?v=20260422AY"></script>
+<script src="src/modules/ceo.js?v=20260422AY"></script>
+<script src="src/modules/hesap.js?v=20260422AY"></script>
+<script src="src/modules/hesap_makinesi.js?v=20260422AY"></script>
+<script src="src/core/confirm_modal.js?v=20260422AY"></script>
+<script src="src/modules/modals.js?v=20260422AY"></script>
+<script src="src/modules/dashboard.js?v=20260422AY"></script>
+<script src="src/modules/dashboardDetay.js?v=20260422AY"></script>
+<script src="src/modules/urunler.js?v=20260422AY"></script>
+<script src="src/modules/ihracat_listesi.js?v=20260422AY"></script>
+<script src="src/modules/numuneler.js?v=20260422AY"></script>
+<script src="src/modules/ihracat_ops.js?v=20260422AY"></script>
+<script src="src/modules/ihracat_belgeler.js?v=20260422AY"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
-<script src="src/modules/ihracat_formlar.js?v=20260421AX"></script>
-<script src="src/modules/talimatlar.js?v=20260421AX"></script>
-<script src="src/modules/expected_deliveries.js?v=20260421AX"></script>
+<script src="src/modules/ihracat_formlar.js?v=20260422AY"></script>
+<script src="src/modules/talimatlar.js?v=20260422AY"></script>
+<script src="src/modules/expected_deliveries.js?v=20260422AY"></script>
 
 <!-- 4. APP INIT — her zaman en son -->
-<script src="src/core/draft_manager.js?v=20260421AX"></script>
-<script src="src/core/app.js?v=20260421AX"></script>
-<script src="src/modules/app_patch.js?v=20260421AX"></script>
-<script src="src/modules/lojistik.js?v=20260421AX"></script>
-<script src="src/modules/ik_hub.js?v=20260421AX"></script>
-<script src="src/modules/iddia.js?v=20260421AX"></script>
-<script src="src/modules/sozler.js?v=20260421AX"></script>
-<script src="src/modules/crm_hub.js?v=20260421AX"></script>
+<script src="src/core/draft_manager.js?v=20260422AY"></script>
+<script src="src/core/app.js?v=20260422AY"></script>
+<script src="src/modules/app_patch.js?v=20260422AY"></script>
+<script src="src/modules/lojistik.js?v=20260422AY"></script>
+<script src="src/modules/ik_hub.js?v=20260422AY"></script>
+<script src="src/modules/iddia.js?v=20260422AY"></script>
+<script src="src/modules/sozler.js?v=20260422AY"></script>
+<script src="src/modules/crm_hub.js?v=20260422AY"></script>
 
 
   <script>

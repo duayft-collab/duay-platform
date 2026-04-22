@@ -478,11 +478,6 @@ window.exportTasksXlsx = window.exportTasksXlsx || function() {
   window.PusulaPro?.exportXlsx?.();
 };
 
-// openEvModal — Takvim etkinlik modal
-window.openEvModal = window.openEvModal || function() {
-  window.openMo?.('mo-cal');
-};
-
 // calNav — Takvim navigasyon
 window.calNav = window.calNav || function(dir, goToday) {
   if (typeof window.calNav_orig === 'function') window.calNav_orig(dir, goToday);
