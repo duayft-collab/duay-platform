@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# PROC-HOOK-001 — git pre-commit hook
+# Her commit öncesi scripts/verify.sh çalıştırır. FAIL → commit iptal.
+# Kurulum: cp scripts/pre-commit-template .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$ROOT" || exit 0
+
+# verify.sh yoksa eski commit'ler bloklanmasın — sessiz geç
+if [ ! -f scripts/verify.sh ]; then
+  exit 0
+fi
+
+# Çalıştır — FAIL ise commit iptal
+if ! bash scripts/verify.sh; then
+  echo "" >&2
+  echo "[pre-commit] verify.sh FAIL — commit iptal edildi." >&2
+  echo "[pre-commit] Baseline kötüleşmesi varsa önce düzelt, sonra commit dene." >&2
+  echo "[pre-commit] Bypass (son çare, gerekçe commit mesajına yazılır): git commit --no-verify" >&2
+  exit 1
+fi
+
+exit 0
