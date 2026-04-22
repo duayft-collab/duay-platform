@@ -516,18 +516,18 @@ window._ppModRender = function() {
         };
         var _tbadge = _ppTarihBadge(t.bitTarih);
         h2 += '<div id="pp-tr-'+t.id+'" onclick="window._ppGorevPeek(\''+t.id+'\')" style="border-left:3px solid '+_borderRenk+';border-bottom:0.5px solid var(--b);background:var(--sf);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'">';
-        h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px 1fr 120px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
+        h2 += '<div onclick="event.stopPropagation();window._ppGorevPeek(\''+t.id+'\')" style="display:grid;grid-template-columns:22px 22px minmax(0,1fr) 120px 70px 70px 56px 96px;align-items:center;padding:7px 8px 7px 10px;gap:5px;cursor:pointer">';
         /* PP-BTN-HIDE-001: non-admin tamamla checkbox tamamen gizli */
         h2 += '<input type="checkbox" '+(t.durum==='tamamlandi'?'checked':'')+' onclick="event.stopPropagation();if(window._ppIsAdmin&&window._ppIsAdmin())window._ppTamamla(\''+t.id+'\')" title="Tamamla" style="width:13px;height:13px;cursor:pointer;display:'+(_ppIsAdmin()?'inline-block':'none')+'">';
         // PUSULA-TOPLU-001: toplu seçim checkbox'ı (tamamlama checkbox'ının hemen sonrası)
         h2 += '<input type="checkbox" '+(window._ppSeciliGorevler[t.id]?'checked':'')+' onchange="event.stopPropagation();window._ppSeciliGorevler=window._ppSeciliGorevler||{};window._ppSeciliGorevler[\''+t.id+'\']=this.checked;window._ppTopluBarGuncelle()" onclick="event.stopPropagation()" style="width:12px;height:12px;accent-color:var(--pp-info);cursor:pointer" title="Toplu işlem için seç">';
-        h2 += '<div>';
+        h2 += '<div style="min-width:0;overflow:hidden">';  /* PUSULA-LAYOUT-FIX-001: kolon overflow */
         /* PUSULA-UX-BUNDLE-001 #2: öncelik bayrak emoji (title prefix) */
         var _bayrak = t.oncelik==='kritik' ? '\ud83d\udd34' : t.oncelik==='yuksek' ? '\ud83d\udfe1' : t.oncelik==='normal' ? '\ud83d\udfe2' : '\u26aa';
         /* PUSULA-GOREV-GIZLILIK-001: kısıtlı görevde kilit ikon */
         var _gizliIkon = (t.paylasilanlar && t.paylasilanlar.length) ? '<span title="Kısıtlı görev" style="margin-right:3px">\ud83d\udd12</span>' : '';
-        h2 += '<div style="font-size:var(--pp-body);font-weight:500;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:var(--pp-body)">'+_bayrak+'</span>' + _gizliIkon + hl(t.baslik||t.title||'') + '</div>';
-        h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">';
+        h2 += '<div style="font-size:var(--pp-body);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:var(--pp-body)">'+_bayrak+'</span>' + _gizliIkon + hl(t.baslik||t.title||'') + '</div>';
+        h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px;min-width:0;overflow:hidden;white-space:nowrap">';  /* PUSULA-LAYOUT-FIX-001 */
         // PUSULA-JOB-BAGLANTI-001: jobId tiklanabilir → openJobIdHub aç
         if (jobId) h2 += '<span onclick="event.stopPropagation();window.openJobIdHub?.(\''+_ppEsc(jobId)+'\')" title="Job Hub aç" style="font-size:var(--pp-meta);padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500;cursor:pointer;text-decoration:underline">'+_ppEsc(jobId)+'</span>';
         if (agSay) h2 += '<span style="font-size:var(--pp-meta);color:var(--t3)">Alt görev '+agTam+'/'+agSay+'</span>';
@@ -659,7 +659,7 @@ window._ppModRender = function() {
       + '</div>'
       + '<div style="flex:1;overflow-y:auto">'
       + '<div style="padding:10px 14px 0"><input id="pp-calisma-ara" placeholder="Görev ara..." oninput="event.stopPropagation();window._ppCalismaFiltre(this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:var(--pp-body);padding:7px 12px;border:0.5px solid var(--b);border-radius:7px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;margin-bottom:10px"></div>'
-      + '<div style="display:grid;grid-template-columns:22px 22px 1fr 120px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
+      + '<div style="display:grid;grid-template-columns:22px 22px minmax(0,1fr) 120px 70px 70px 56px 96px;align-items:center;padding:5px 10px;background:var(--s2);border-bottom:0.5px solid var(--b);gap:5px;position:sticky;top:0">'
       + '<div></div>'
       + '<div></div>'
       + '<div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em">GÖREV / JOB ID</div>'
