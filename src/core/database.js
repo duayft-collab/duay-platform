@@ -2844,6 +2844,62 @@ function startRealtimeSync() {
     setTimeout(function() { hydrateFromServer(); }, 0);
   }
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
+  /* LS-SYNC-009 FAZ-1: Lazy Listener — 55 listener → 7 (memory pressure fix) */
+  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash'];
+
+  const MODULE_COLLECTIONS = {
+    'dashboard':    ['odemeler','tahsilat','calendar','hedefler'],
+    'satinalma':    ['alisTeklifleri','urunler','kargo','navlun'],
+    'satinalma-v2': ['alisTeklifleri','urunler','kargo','navlun'],
+    'satis':        ['satisTeklifleri','urunler'],
+    'satis-teklif': ['satisTeklifleri','urunler','teklifSartlar'],
+    'muhasebe':     ['odemeler','tahsilat','bankalar'],
+    'pusula-pro':   ['calendar','hedefler','fikirler','iddialar','suggestions','kararlar','smartGoals','notes'],
+    'ik':           ['ik','izin','puan','pirim','greetings'],
+    'kargo':        ['kargo','konteyner','navlun'],
+    'ihracat':      ['ihracatDosyalar','ihracatEvraklar','ihracatUrunler','ihracatGcb','ihracatBl','ihracatTemplate','ihracatOps','gumrukculer','forwarderlar','evrakWorkflow'],
+    'urunler':      ['urunler'],
+    'cari':         ['cari','odemeler','tahsilat','bankalar'],
+    'crm':          ['crm','greetings'],
+    'stok':         ['stok','urunler'],
+    'announcements':['announcements'],
+    'evrak':        ['evrak','resmiEvrak','arsivBelgeler','tebligat','etkinlik','numune'],
+    'kpi':          ['kpi','puan','hedefler'],
+    'kararlar':     ['kararlar','suggestions','fikirler','iddialar','links']
+  };
+
+  const _syncMapLookup = {};
+  const _activeLazyCols = new Set();
+
+  window._lazyListenerManage = function(modId) {
+    try {
+      if (!modId) return;
+      var want = new Set(MODULE_COLLECTIONS[modId] || []);
+      /* Kapa: istenmeyenleri kapat */
+      _activeLazyCols.forEach(function(col){
+        if (!want.has(col) && _syncMapLookup[col]) {
+          try {
+            if (typeof _listeners[col] === 'function') _listeners[col]();
+            delete _listeners[col];
+            _activeLazyCols.delete(col);
+            console.info('[LAZY] kapa:', col);
+          } catch(e) { console.warn('[LAZY] kapa hata', col, e.message); }
+        }
+      });
+      /* Aç: yeni istenenleri aç */
+      want.forEach(function(col){
+        if (_activeLazyCols.has(col)) return;
+        var def = _syncMapLookup[col];
+        if (!def) return;
+        try {
+          _listenCollection(def[0], def[1], def[2]);
+          _activeLazyCols.add(col);
+          console.info('[LAZY] aç:', col);
+        } catch(e) { console.warn('[LAZY] aç hata', col, e.message); }
+      });
+    } catch(e) { console.warn('[LAZY] manage hata', e.message); }
+  };
+
   const SYNC_MAP = [
     // KUR-MERKEZI-001: Döviz kuru — tüm cihazlarda senkronize
     ['kur', KEYS.kur, function(data) { if (data && typeof data === 'object') { window.DUAY_KUR = data; window._saKur = data; } }],
@@ -2924,14 +2980,24 @@ function startRealtimeSync() {
     ['pusula', KEYS.pusula, () => { window._ppModRender?.(); }],
   ];
 
+  /* LS-SYNC-009 FAZ-1: Sadece CRITICAL listen et, LAZY'leri lookup'a kaydet */
   SYNC_MAP.forEach(([col, key, render]) => {
-    if (!_syncStarted[col]) {
-      _syncStarted[col] = true;
-      _listenCollection(col, key, render);
+    _syncMapLookup[col] = [col, key, render];
+    if (CRITICAL_COLS.indexOf(col) >= 0) {
+      if (!_syncStarted[col]) {
+        _syncStarted[col] = true;
+        _listenCollection(col, key, render);
+      }
     }
   });
 
-  console.info('[DB] Realtime sync başlatıldı:', SYNC_MAP.length, 'koleksiyon');
+  /* Aktif modülün lazy'leri de açılsın (page reload sonrası) */
+  try {
+    var _startMod = localStorage.getItem('ak_nav_modul') || 'dashboard';
+    setTimeout(function(){ window._lazyListenerManage?.(_startMod); }, 200);
+  } catch(e) {}
+
+  console.info('[DB] Realtime sync başlatıldı: CRITICAL=' + CRITICAL_COLS.length + ' lazy=' + (SYNC_MAP.length - CRITICAL_COLS.length));
 
   // Sync göstergesini başlat
   _setSyncStatus('ok');

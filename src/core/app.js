@@ -3678,7 +3678,9 @@ if (_tn2ActiveGrp === 'finans') _tn2ActiveGrp = 'muhasebe';
 if (_tn2ActiveGrp === 'katalog') _tn2ActiveGrp = 'satinalma';
 /* PUSULA-REDIRECT-MIGRATION-002: eski 'pusula' LS degerini 'pusula-pro' yap (persistent + runtime coalesce) */
 var _pm = localStorage.getItem('ak_nav_modul');
-if (_pm === 'pusula') { localStorage.setItem('ak_nav_modul', 'pusula-pro'); _pm = 'pusula-pro'; }
+if (_pm === 'pusula') { /* LS-SYNC-009 FAZ-1: lazy listener nav hook */
+    try { window._lazyListenerManage && window._lazyListenerManage(id); } catch(e) {}
+    localStorage.setItem('ak_nav_modul', 'pusula-pro'); _pm = 'pusula-pro'; }
 var _tn2ActiveMod = _pm || 'dashboard';
 
 window._tn2SelectGrp = function(grp, el) {
