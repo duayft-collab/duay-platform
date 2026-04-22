@@ -2281,8 +2281,6 @@ window.renderSatisTeklifleri = function() {
       + '<button onclick="event.stopPropagation();window._stPIGuncelle?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#185FA5;color:#185FA5">PI ↻</button>'
       + '<button onclick="event.stopPropagation();window._saV2TeklifDuzenle?.(\'' + t.id + '\')" style="' + pillS + '">Düzenle</button>'
       + '<button onclick="event.stopPropagation();window._saV2DurumDegistir?.(\'' + t.id + '\')" style="' + pillS + '">Durum</button>'
-      + (t.durum === 'taslak' || t.durum === 'gonderildi' ? '<button onclick="event.stopPropagation();window._musteriOnayladi?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#16A34A;color:#16A34A">✓ Onay</button>' : '')
-      + (t.durum === 'taslak' || t.durum === 'gonderildi' ? '<button onclick="event.stopPropagation();window._musteriReddetti?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#DC2626;color:#DC2626">✗ Red</button>' : '')
       + (t.durum !== 'taslak' ? '<button onclick="event.stopPropagation();window._reviseSatisTeklif?.(\'' + t.id + '\')" style="' + pillS + 'border-color:var(--ac);color:var(--ac)">Rev</button>' : '')
       + (t.durum === 'kabul' ? '<button onclick="event.stopPropagation();window._createPR?.(\'' + t.id + '\')" style="' + pillS + 'border-color:#D97706;color:#D97706">PR</button>' : '')
       + '<button onclick="event.stopPropagation();window._saV2TeklifKopya?.(\'' + t.id + '\')" style="' + pillS + '">Kopyala</button>'

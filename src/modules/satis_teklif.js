@@ -259,7 +259,7 @@ function renderSatisTeklif() {
           + '<option value="kabul"' + (t.status === 'kabul' ? ' selected' : '') + '>Kabul</option>'
           + '<option value="red"' + (t.status === 'red' ? ' selected' : '') + '>Reddedildi</option>'
         + '</select>'
-        + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:10px;padding:2px 6px" title="Standard PDF">📄</button>'
+        + '<button onclick="event.stopPropagation();window._stPdfMenu?.(event,' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="PDF (3 format)">📄</button>'
         + '<button onclick="event.stopPropagation();window._stKarAnaliz?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="Kar Analizi">📊</button>'
         + '<button onclick="event.stopPropagation();window._openSTModal?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px">✏️</button>'
         + '<button onclick="event.stopPropagation();window._stUpdatePI?.(' + t.id + ')" class="btn btns" style="font-size:10px;padding:2px 6px" title="PI Güncelle">🔄</button>'
@@ -412,7 +412,7 @@ window._stPeek = function(id) {
       + '<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Durum</div><div style="font-size:12px"><span style="display:inline-block;padding:3px 12px;border-radius:99px;background:var(--al);color:var(--ac);font-weight:600;font-size:11px">' + esc(status) + '</span></div></div>'
       + '<div style="display:flex;gap:6px;margin-top:18px;padding-top:14px;border-top:1px solid var(--b)">'
         + '<button onclick="event.stopPropagation();window._openSTModal?.(' + t.id + ');document.getElementById(\'mo-st-peek\')?.remove()" class="btn btnp" style="flex:1;font-size:11px">✏️ Düzenle</button>'
-        + '<button onclick="event.stopPropagation();window._stPreview?.(' + t.id + ',1)" class="btn btns" style="font-size:11px">📄 PDF</button>'
+        + '<button onclick="event.stopPropagation();window._stPdfMenu?.(event,' + t.id + ')" class="btn btns" style="font-size:11px">📄 PDF ▾</button>'
       + '</div>'
     + '</div>';
 
@@ -433,10 +433,17 @@ window._openSTModal = function(id) {
   // Müşteri listesi — SATIS-MUSTERI-DATALIST-001: cari + geçmiş teklif müşterileri birleşik
   /* SATIS-MUSTERI-MULTIUSER-FIX-001: loadCari({tumKullanicilar:true}) — multi-user ortamda başka kullanıcıların cari kayıtları da görünsün */
   /* SATIS-MUSTERI-FIELD-FIX-001: exhaustive müşteri filtresi — type/tip/cariType alan varyasyonları */
+  /* SATIS-COKLU-FIX-001 #5: Tek kural — tedarikci ele, onayli musteri + gecmis alici */
+  var _stGecmisAliciSet = {};
+  try { (_loadST() || []).forEach(function(tk){ if (tk.customerName) _stGecmisAliciSet[tk.customerName]=true; if (tk.musteriAd) _stGecmisAliciSet[tk.musteriAd]=true; }); } catch(e) {}
   var cariList = typeof loadCari === 'function' ? loadCari({tumKullanicilar:true}).filter(function(c) {
-    return !c.isDeleted && (
-      c.type === 'musteri' || c.type === 'Müşteri' || c.tip === 'musteri' || c.cariType === 'onayli' || !c.type
-    );
+    if (c.isDeleted) return false;
+    var _ad = c.name || c.ad || c.firmaAdi || c.title || c.unvan || '';
+    var _isMusteri = c.type === 'musteri' || c.type === 'Müşteri' || c.tip === 'musteri';
+    var _isGecmisAlici = !!_stGecmisAliciSet[_ad];
+    var _isTedarikci = c.type === 'tedarikci' || c.type === 'Tedarikçi' || c.tip === 'tedarikci';
+    if (_isTedarikci) return false;
+    return _isMusteri || _isGecmisAlici;
   }) : [];
   /* SATIS-MUSTERI-FALLBACK-001: filtre sonrası boşsa tüm non-deleted cari'leri göster (tüm kullanıcılar) */
   if (cariList.length === 0 && typeof loadCari === 'function') {
@@ -476,6 +483,14 @@ window._openSTModal = function(id) {
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-satis-teklif'; mo.style.zIndex = '2100';
+  /* SATIS-COKLU-FIX-001 #6: Pusula gorev dropdown (jobId link) */
+  var _stPpTasks = [];
+  try { _stPpTasks = (window._ppLoad ? window._ppLoad() : []).filter(function(tk){ return tk && !tk.isDeleted; }); } catch(e) {}
+  var _stJobOpts = '<option value="">-- Gorev sec (ops.) --</option>' + _stPpTasks.slice(0, 200).map(function(tk){
+    var _sel = (t && t.jobId && String(t.jobId) === String(tk.id)) ? ' selected' : '';
+    var _lbl = (tk.baslik || tk.title || tk.id || '').toString().substring(0, 80);
+    return '<option value="' + esc(tk.id) + '"' + _sel + '>' + esc(_lbl) + '</option>';
+  }).join('');
   mo.innerHTML = '<div class="moc" style="max-width:1100px;padding:0;border-radius:14px;overflow:hidden;max-height:94vh;display:flex;flex-direction:column">'
     + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:15px;font-weight:700;color:var(--t)">' + (t ? '✏️ Teklif Düzenle' : '+ Yeni Satış Teklifi') + '</div>'
@@ -538,6 +553,7 @@ window._openSTModal = function(id) {
         })()
       + '<div><div class="fl" data-stk="notes">' + _stT('notes', lang) + '</div><textarea class="fi" id="st-notes" rows="2" style="resize:none">' + _stNotesVal + '</textarea></div>'
       + '<input type="hidden" id="st-eid" value="' + (t?.id || '') + '">'
+      + '<div style="padding:10px 16px;background:#FBFBFD;border-top:1px solid var(--b)"><div class="fl">Pusula Gorev (opsiyonel)</div><select class="fi" id="st-jobid">' + _stJobOpts + '</select></div>'
     + '</div>'
     + '<div style="padding:12px 20px;border-top:1px solid var(--b);background:var(--s2);display:flex;justify-content:flex-end;gap:8px">'
       + '<button class="btn" onclick="document.getElementById(\'mo-satis-teklif\').remove()" data-stk="cancel">' + _stT('cancel', lang) + '</button>'
@@ -706,6 +722,7 @@ window._saveST = function() {
       return { selectedBank: sel, bankName: bank.name, branch: bank.branch, swift: bank.swift, currency: cur, iban: bank.accounts[cur] };
     })(),
     notes: document.getElementById('st-notes')?.value || '',
+    jobId: document.getElementById('st-jobid')?.value || '',
     updatedAt: new Date().toISOString(),
   };
   /* SATIS-SCHEMA-UNIFY-001: TR mirror dual-write */
@@ -1092,3 +1109,49 @@ window._stekChkGuncelle = function() { var n = document.querySelectorAll('.stek-
 window._stekTopluSil = function() { if (!window._yetkiKontrol?.('toplu_sil')) return; var ids = []; document.querySelectorAll('.stek-row-chk:checked').forEach(function(c) { ids.push(c.dataset.id); }); if (!ids.length) return; window.confirmModal?.(ids.length + ' teklif silinecek?', { danger: true, confirmText: 'Evet Sil', onConfirm: function() { var list = _loadST(); ids.forEach(function(id) { var x = list.find(function(s) { return String(s.id) === String(id); }); if (x) { x.isDeleted = true; x.deletedAt = new Date().toISOString(); } }); _storeST(list); window.toast?.(ids.length + ' teklif silindi', 'ok'); renderSatisTeklif(); } }); };
 window._openSTModal = window._openSTModal;
 window._stItemRow = _stItemRowHTML;
+
+
+/* SATIS-COKLU-FIX-001 #4: _stDurumChange */
+window._stDurumChange = function(id, yeniDurum) {
+  try {
+    var data = _loadST();
+    var t = data.find(function(x){ return String(x.id) === String(id); });
+    if (!t) { window.toast && window.toast('Teklif bulunamadi', 'err'); return; }
+    var eski = t.durum || t.status || 'taslak';
+    if (eski === yeniDurum) return;
+    t.durum = yeniDurum; t.status = yeniDurum;
+    t.updatedAt = new Date().toISOString();
+    t['durum_' + yeniDurum + 'Tarih'] = t.updatedAt;
+    _storeST(data);
+    var lbl = {taslak:'Taslak',gonderildi:'Gonderildi',onay:'Onay',kabul:'Kabul',red:'Red',onaylandi:'Kabul',reddedildi:'Red',revizyon:'Revizyon'}[yeniDurum] || yeniDurum;
+    try { window.logActivity && window.logActivity('satis-durum', 'Satis teklifi durum: ' + (t.teklifNo || id) + ' -> ' + lbl); } catch(e) {}
+    try { if ((yeniDurum === 'kabul' || yeniDurum === 'onaylandi') && typeof window.addNotif === 'function') window.addNotif({title:'Teklif kabul edildi', message:(t.teklifNo||id) + ' - ' + (t.customerName||t.musteriAd||''), type:'success'}); } catch(e) {}
+    try { if (typeof window.renderSatisTeklif === 'function') window.renderSatisTeklif(); else if (typeof window.renderSatisTeklifleri === 'function') window.renderSatisTeklifleri(); } catch(e) {}
+    window.toast && window.toast('Durum: ' + lbl, 'ok');
+  } catch(e) { console.error('[_stDurumChange]', e); window.toast && window.toast('Durum degisim hatasi', 'err'); }
+};
+
+/* SATIS-COKLU-FIX-001 #2: _stPdfMenu — 3 format popover */
+window._stPdfMenu = function(evt, id) {
+  try {
+    if (evt && evt.stopPropagation) evt.stopPropagation();
+    document.querySelectorAll('.st-pdf-menu-pop').forEach(function(e){ e.remove(); });
+    var btn = evt.currentTarget || evt.target;
+    var r = btn.getBoundingClientRect();
+    var pop = document.createElement('div');
+    pop.className = 'st-pdf-menu-pop';
+    pop.style.cssText = 'position:fixed;top:' + (r.bottom + 4) + 'px;left:' + r.left + 'px;background:#fff;border:0.5px solid rgba(0,0,0,0.15);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.08);z-index:9999;min-width:180px;padding:4px;font-family:-apple-system,system-ui,sans-serif';
+    var opts = [{fmt:1,label:'Standart',sub:'Ana proforma'},{fmt:2,label:'Detayli',sub:'Urun + marj'},{fmt:3,label:'Ozet',sub:'Tek sayfa'}];
+    opts.forEach(function(o){
+      var d = document.createElement('div');
+      d.style.cssText = 'padding:8px 12px;cursor:pointer;border-radius:6px';
+      d.innerHTML = '<div style="font-size:13px;font-weight:500;color:#1d1d1f">' + o.label + '</div><div style="font-size:11px;color:#86868b">' + o.sub + '</div>';
+      d.addEventListener('mouseenter', function(){ this.style.background = '#F5F5F7'; });
+      d.addEventListener('mouseleave', function(){ this.style.background = ''; });
+      d.addEventListener('click', function(){ pop.remove(); window._stPreview && window._stPreview(id, o.fmt); });
+      pop.appendChild(d);
+    });
+    document.body.appendChild(pop);
+    setTimeout(function(){ var close = function(e){ if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('click', close); } }; document.addEventListener('click', close); }, 50);
+  } catch(e) { console.error('[_stPdfMenu]', e); window._stPreview && window._stPreview(id, 1); }
+};
