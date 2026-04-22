@@ -702,8 +702,17 @@ function _finishLogin(user) {
         if (!fresh) return;
         // CU'yu güncel Firestore verisiyle güncelle
         var cu = window.Auth?.getCU?.();
-        if (cu && (JSON.stringify(cu.modules) !== JSON.stringify(fresh.modules) || JSON.stringify(cu.permissions) !== JSON.stringify(fresh.permissions) || cu.role !== fresh.role)) {
-          Object.assign(cu, { role: fresh.role, modules: fresh.modules, permissions: fresh.permissions, access: fresh.access, dept: fresh.dept, rule12h: fresh.rule12h, status: fresh.status });
+        // [MENU-PERM-PROTECT-001 START] fresh.X undefined gelirse cu'yu koru — permission flicker fix
+        var _safeModules = fresh.modules !== undefined ? fresh.modules : (cu ? cu.modules : undefined);
+        var _safePermissions = fresh.permissions !== undefined ? fresh.permissions : (cu ? cu.permissions : undefined);
+        var _safeRole = fresh.role !== undefined ? fresh.role : (cu ? cu.role : undefined);
+        var _safeAccess = fresh.access !== undefined ? fresh.access : (cu ? cu.access : undefined);
+        var _safeDept = fresh.dept !== undefined ? fresh.dept : (cu ? cu.dept : undefined);
+        var _safeRule12h = fresh.rule12h !== undefined ? fresh.rule12h : (cu ? cu.rule12h : undefined);
+        var _safeStatus = fresh.status !== undefined ? fresh.status : (cu ? cu.status : undefined);
+        // [MENU-PERM-PROTECT-001 END]
+        if (cu && (JSON.stringify(cu.modules) !== JSON.stringify(_safeModules) || JSON.stringify(cu.permissions) !== JSON.stringify(_safePermissions) || cu.role !== _safeRole)) {
+          Object.assign(cu, { role: _safeRole, modules: _safeModules, permissions: _safePermissions, access: _safeAccess, dept: _safeDept, rule12h: _safeRule12h, status: _safeStatus });
           console.info('[LOGIN] CU yetkileri Firestore\'dan güncellendi');
           try { window.dispatchEvent(new CustomEvent('auth-changed', { detail: cu })); } catch(e) {}
         }
