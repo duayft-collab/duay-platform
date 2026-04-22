@@ -368,13 +368,14 @@ window._safeSetItem = function(key, val) {
 
 /* LS-RETENTION-CENTRAL-001 — Tüm retention limitleri tek yerden */
 var RETENTION = {
-  activity:      20,
-  notifications: 15,
+  activity:      200, /* [SYNC-CRITICAL-EXPAND-001] 20 → 200 */
+  notifications: 50,  /* [SYNC-CRITICAL-EXPAND-001] 15 → 50 */
   trash:         15,
   kpiLog:        50,
   odemeler:      100,
   tahsilat:      100,
-  taskChats:     20
+  taskChats:     20,
+  sessions:      20   /* [SYNC-CRITICAL-EXPAND-001] YENI — ak_sessions sinirsiz buyuyordu */
 };
 window.RETENTION = Object.freeze(RETENTION);
 
@@ -2845,7 +2846,7 @@ function startRealtimeSync() {
   }
   // Koleksiyon adı → [localStorage key, UI render fonksiyonu adı]
   /* LS-SYNC-009 FAZ-1: Lazy Listener — 55 listener → 7 (memory pressure fix) */
-  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash','pusula','notifications','urunler']; /* [CRITICAL-COLS-URUNLER-ADD-001] urunler live sync — race condition fix */  /* LS-SYNC-009-FIX-002: pusula + notifications CRITICAL'a eklendi (görevler eksikti) */
+  const CRITICAL_COLS = ['kur','users','tasks','cari','activity','updateLog','trash','pusula','notifications','urunler','bankalar']; /* [SYNC-CRITICAL-EXPAND-001] cari zaten vardi; bankalar eklendi */  /* LS-SYNC-009-FIX-002: pusula + notifications CRITICAL'a eklendi (görevler eksikti) */
 
   const MODULE_COLLECTIONS = {
     /* LS-SYNC-009-FIX-001: GERÇEK nav ID'leri (Chrome'dan tespit edildi) */
