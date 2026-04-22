@@ -1,3 +1,3 @@
 duplicates=28
-dangling=39
+dangling=25
 innerHTML_plus=8

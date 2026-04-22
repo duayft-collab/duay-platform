@@ -108,6 +108,15 @@ grep -rhE "^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*:[[:space:]]*(async[[:
 grep -rhE "^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*:[[:space:]]*_?[a-zA-Z_]" src/ 2>/dev/null \
   | grep -vE ":[[:space:]]*(async[[:space:]]+)?function" \
   | sed -E "s/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*:.*/\1/" | sort -u >> "$TMPDIR_V/defined.txt"
+
+# Pattern A: index.html inline <script> — "function X(" ve "async function X(" (indent-tolerant)
+grep -hE "^[[:space:]]*(async[[:space:]]+)?function[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(" index.html 2>/dev/null \
+  | sed -E "s/^[[:space:]]*(async[[:space:]]+)?function[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*).*/\2/" | sort -u >> "$TMPDIR_V/defined.txt"
+
+# Pattern B: const/var/let X = ... (src + index.html, arrow fn dahil)
+grep -rhE "^[[:space:]]*(const|var|let)[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*=" src/ index.html 2>/dev/null \
+  | sed -E "s/^[[:space:]]*(const|var|let)[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*).*/\2/" | sort -u >> "$TMPDIR_V/defined.txt"
+
 sort -u "$TMPDIR_V/defined.txt" -o "$TMPDIR_V/defined.txt"
 
 DNG_CURR=0
