@@ -7517,11 +7517,22 @@ function renderCari() {
 window._selectCari = function(id) {
   var _cont = document.getElementById('cari-detail');
   if (_cont) _cont.style.opacity = '0.5';
+  /* [CARI-LIST-SELECT-FIX-001] scroll pozisyonunu koru — renderCari tum DOM'u
+     yeniden olusturur ve scroll resetlenir. Kullanici tikladigi cariyi gormek
+     ister, sidebar'in tepeye atlamasini istemez. */
+  var _cListEl = document.getElementById('cari-list');
+  var _savedScroll = _cListEl ? _cListEl.scrollTop : 0;
   _cariSelectedId = id;
   renderCari();
+  /* Scroll'u geri yukle — renderCari yeni DOM olusturur, scrollTop=0 olur */
+  var _cListEl2 = document.getElementById('cari-list');
+  if (_cListEl2 && _savedScroll > 0) _cListEl2.scrollTop = _savedScroll;
   setTimeout(function(){
     var _c2 = document.getElementById('cari-detail');
     if (_c2) _c2.style.opacity = '1';
+    /* Guvence: async render sonrasi da scroll korunsun */
+    var _cListEl3 = document.getElementById('cari-list');
+    if (_cListEl3 && _savedScroll > 0 && _cListEl3.scrollTop === 0) _cListEl3.scrollTop = _savedScroll;
   }, 20);
 };
 
