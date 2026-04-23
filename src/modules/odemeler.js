@@ -7543,7 +7543,7 @@ window._selectCari = function(id) {
  * @param {number} id Cari id
  */
 window._cariTeklifVer = function(id) {
-  var c = (typeof loadCari === 'function' ? loadCari() : []).find(function(x) { return x.id === id; });
+  var c = (typeof loadCari === 'function' ? loadCari() : []).find(function(x) { return String(x.id) === String(id); });
   if (!c) { window.toast?.('Cari bulunamadı', 'err'); return; }
   if (typeof window._openSTModal !== 'function') { window.toast?.('Satış Teklifleri modülü yüklenemedi', 'err'); return; }
   window._openSTModal(null); // yeni teklif modal
@@ -8332,7 +8332,7 @@ window._permanentDeleteItem = _permanentDeleteItem;
 function _buildCariStatement(cariId, opts) {
   opts = opts || {};
   var cariAll = typeof loadCari === 'function' ? loadCari() : [];
-  var c = cariAll.find(function(x) { return x.id === cariId; });
+  var c = cariAll.find(function(x) { return String(x.id) === String(cariId); });
   if (!c) return null;
   var odm = (typeof loadOdm === 'function' ? loadOdm() : []).filter(function(o) { return !o.isDeleted && (o.cariName === c.name || o.cariId === cariId); });
   var tah = (typeof loadTahsilat === 'function' ? loadTahsilat() : []).filter(function(t) { return !t.isDeleted && (t.cariName === c.name || t.cariId === cariId); });
@@ -9008,7 +9008,7 @@ window._cariBulkDelete = function() {
     onConfirm: function() {
       var d = loadCari();
       ids.forEach(function(id) {
-        var c = d.find(function(x) { return x.id === id; });
+        var c = d.find(function(x) { return String(x.id) === String(id); });
         if (c) { c.isDeleted = true; c.deletedAt = _nowTso(); c.deletedBy = _CUo()?.id; }
       });
       storeCari(d);
@@ -9023,7 +9023,7 @@ window._cariBulkDelete = function() {
 window._assignCariReview = function(cariId) {
   if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
   var users = typeof loadUsers === 'function' ? loadUsers().filter(function(u) { return u.status === 'active'; }) : [];
-  var c = loadCari().find(function(x) { return x.id === cariId; });
+  var c = loadCari().find(function(x) { return String(x.id) === String(cariId); });
   if (!c) return;
 
   var ex = document.getElementById('mo-cari-review'); if (ex) ex.remove();
@@ -9051,7 +9051,7 @@ window._sendCariReview = function(cariId) {
   var note = (document.getElementById('cr-note')?.value || '').trim();
   if (!uid) { window.toast?.('Kişi seçin', 'err'); return; }
   var d = loadCari();
-  var c = d.find(function(x) { return x.id === cariId; });
+  var c = d.find(function(x) { return String(x.id) === String(cariId); });
   if (!c) return;
   c.reviewAssignedTo = uid;
   c.reviewAssignedAt = _nowTso();
@@ -9103,7 +9103,7 @@ window._qcUploadDoc = function(docType) {
 /** Potansiyel → Aktif Cari'ye yükselt */
 window._upgradeCariToActive = function(cariId) {
   var d = loadCari();
-  var c = d.find(function(x) { return x.id === cariId; });
+  var c = d.find(function(x) { return String(x.id) === String(cariId); });
   if (!c) return;
   // Evrak kontrolü
   if (!c.vergiLevhasi) { window.toast?.('Vergi Levhası yüklenmeli', 'err'); return; }
@@ -9134,7 +9134,7 @@ window._upgradeCariToActive = function(cariId) {
 window._approveCariUpgrade = function(cariId) {
   if (!_isManagerO()) { window.toast?.('Yönetici yetkisi gerekli', 'err'); return; }
   var d = loadCari();
-  var c = d.find(function(x) { return x.id === cariId; });
+  var c = d.find(function(x) { return String(x.id) === String(cariId); });
   if (!c) return;
   c.cariType = 'onayli';
   c.status = 'active';
