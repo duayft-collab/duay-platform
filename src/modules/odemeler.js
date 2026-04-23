@@ -7502,7 +7502,7 @@ function renderCari() {
 
   // İlk cariyi seç — pending varsa ilk pending'i, yoksa ilk aktifi
   /* [CARI-REFRESH-BUGFIX-001] E3: Seçili cari silindiyse geçerli bir cariye düş */
-  var _selStillValid = _cariSelectedId && fl.some(function(c){ return c.id === _cariSelectedId; });
+  var _selStillValid = _cariSelectedId && fl.some(function(c){ return String(c.id) === String(_cariSelectedId); });
   if (!_selStillValid && fl.length) {
     _cariSelectedId = pendingCari.length ? pendingCari[0].id : fl[0].id;
   } else if (!fl.length) {
