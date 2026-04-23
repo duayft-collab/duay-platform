@@ -527,7 +527,7 @@ window._saV2SatisUrunEkle = function(t) {
   var orjF = parseFloat(t.alisF) || 0;
   var kur = (window._saKur||{})[orjPara] || 44.55;
   var alisTl = parseFloat((orjF*kur).toFixed(2));
-  window._saV2SatisUrunler.push({ id:t.id, duayKodu:t.duayKodu||'', urunAdi:t.urunAdi||'', gorsel:t.gorsel||'', alisOrjF:orjF, alisOrjPara:orjPara, alisTl:alisTl, miktar:1, marj:33 });
+  window._saV2SatisUrunler.push({ id:t.id, duayKodu:t.duayKodu||'', urunAdi:t.urunAdi||'', gorsel:t.gorsel||'', alisOrjF:orjF, alisOrjPara:orjPara, alisTl:alisTl, miktar:1, marj:33, birim: t.birim || 'Adet', mensei: t.mensei || '' });
   window._saV2SatisTabloyuGuncelle();
 };
 
@@ -632,10 +632,10 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:3px 4px;color:#16A34A;font-weight:600"><input type="number" min="0" step="0.01" value="' + (u.satisFiyat || 0).toFixed(2) + '" onchange="event.stopPropagation();window._saV2UrunSatisFiyat(\'' + (u.id || gIdx) + '\', parseFloat(this.value)||0)" oninput="event.stopPropagation()" style="width:100%;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:#E1F5EE;color:#16A34A;font-family:inherit;font-weight:600;box-sizing:border-box"></td>'
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
       /* SATIS-FORM-PARITE-001: Birim + Menşei inline seçimler */
-      + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunBirim(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">'
+      + '<td style="padding:4px 6px"><select disabled onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunBirim(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t2);cursor:not-allowed;opacity:0.85;font-family:inherit">'
       + ['Adet','Kg','Ton','Mt','m²','m³','Lt','Koli','Çift','Paket','Set','Rulo','Takım'].map(function(b) { return '<option value="' + b + '"' + ((u.birim || 'Adet') === b ? ' selected' : '') + '>' + b + '</option>'; }).join('')
       + '</select></td>'
-      + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">—</option>'
+      + '<td style="padding:4px 6px"><select disabled onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t2);cursor:not-allowed;opacity:0.85;font-family:inherit"><option value="">—</option>'
       + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></td>'
       + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + u.id + '\')" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Kald\u0131r</button></td>'
@@ -719,7 +719,7 @@ window._saV2UrunListHTML = function(filtre) {
   }
   if (!kaynaklar.length) return '<div style="padding:30px;text-align:center;color:var(--t3);font-size:12px">Ürün bulunamadı</div>';
   return kaynaklar.map(function(t){
-    var payload = JSON.stringify({id:t.id||t._id,duayKodu:t.duayKodu,urunAdi:t.urunAdi,alisF:t.alisF,para:t.para||'USD',miktar:1,birim:t.birim,gorsel:t.gorsel||''}).replace(/"/g,'&quot;');
+    var payload = JSON.stringify({id:t.id||t._id,duayKodu:t.duayKodu,urunAdi:t.urunAdi,alisF:t.alisF,para:t.para||'USD',miktar:1,birim:t.birim||t.unit||'Adet',mensei:t.mensei||t.origin||'',gorsel:t.gorsel||''}).replace(/"/g,'&quot;');
     var gorselSrc = t.gorsel || '';
     return '<div onclick="event.stopPropagation();window._saV2SatisUrunEkle(JSON.parse(this.dataset.p));document.getElementById(\'sav2-urun-sec-modal\')?.remove()" data-p="'+payload+'" style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       +(gorselSrc ? '<img src="'+gorselSrc+'" style="width:32px;height:32px;border-radius:4px;object-fit:cover">' : '<div style="width:32px;height:32px;border-radius:4px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:14px">📦</div>')
