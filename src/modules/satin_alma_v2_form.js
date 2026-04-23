@@ -638,7 +638,7 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:4px 6px"><select disabled onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t2);cursor:not-allowed;opacity:0.85;font-family:inherit"><option value="">—</option>'
       + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></td>'
-      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + u.id + '\')" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Kald\u0131r</button></td>'
+      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + u.id + '\')" title="Kald\u0131r" style="padding:2px 6px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:14px;cursor:pointer;font-family:inherit">🗑</button></td>'
       + '</tr>';
   }).join('');
   /* Sayfalama */
