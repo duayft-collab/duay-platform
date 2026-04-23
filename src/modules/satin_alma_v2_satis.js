@@ -1,7 +1,10 @@
 var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 /* ── Placeholder fonksiyonlar ───────────────────────────────── */
 window._saV2TeklifOlustur = function(id) {
-  if (!id) {
+  /* BUG-04: Edit mode alg\u0131lama \u2014 _saV2AktifDuzenlemeTeklif set ise
+     o kayd\u0131 source of truth yap, bo\u015f bos olu\u015fturma. */
+  var duzenleme = window._saV2AktifDuzenlemeTeklif || null;
+  if (!id && !duzenleme) {
     var bos = { id: typeof window.generateId === 'function' ? window.generateId() : ('tmp-' + Date.now()), urunler: [], tedarikci: '', jobId: '', teslimYeri: '', teslimMasraf: '', toplamTutar: 0, toplamPara: 'USD', durum: 'taslak' };
     id = bos.id;
     var _eskiLoad = window._saV2Load;
@@ -9,13 +12,14 @@ window._saV2TeklifOlustur = function(id) {
     setTimeout(function() { window._saV2Load = _eskiLoad; }, 5000);
   }
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return String(x.id) === String(id); });
+  var t = duzenleme || liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) { window.toast?.('Teklif bulunamad\u0131', 'warn'); return; }
   var mevcut = document.getElementById('sav2-satis-modal'); if(mevcut) mevcut.remove();
   var modal = document.createElement('div');
   modal.id = 'sav2-satis-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
-  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  /* BUG-04: backdrop kapanışında edit mode global'ini temizle */
+  modal.onclick = function(e){ if(e.target===modal) { modal.remove(); window._saV2AktifDuzenlemeTeklif = null; } };
   var _u0 = (t.urunler && t.urunler.length) ? t.urunler[0] : t;
   var _para = t.toplamPara || _u0.para || t.para || 'USD';
   var kur = (window._saKur||{})[_para]||44.55;
@@ -48,7 +52,7 @@ window._saV2TeklifOlustur = function(id) {
     var ak=(window._saV2AktifPIDil||'EN')===d;
     ic += '<button onclick="event.stopPropagation();window._saV2AktifPIDil=\''+d+'\';window._saV2PIOnizlemeGuncelle()" class="pi-dil-btn" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:'+(ak?'var(--bm)':'transparent')+';cursor:pointer;font-family:inherit">'+d+'</button>';
   });
-  ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove()" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;margin-left:4px">×</button>';
+  ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove();window._saV2AktifDuzenlemeTeklif=null" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;margin-left:4px">×</button>';
   ic += '</div></div>';
 
   ic += '<div style="display:flex;flex:1;min-height:0;overflow:hidden">';
@@ -182,7 +186,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<button onclick="event.stopPropagation();window._saV2SartManuelEkle()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Ekle</button></div></div>';
 
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">';
-  ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove()" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u0130ptal</button>';
+  ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove();window._saV2AktifDuzenlemeTeklif=null" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u0130ptal</button>';
   ic += '<div style="display:flex;gap:6px">';
   ic += '<button onclick="event.stopPropagation();window._saV2TamOnIzle()" style="font-size:11px;padding:7px 14px;border:0.5px solid #185FA5;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#185FA5;font-weight:500">\u{1F441} Tam \u00d6n \u0130zle</button>';
   ic += '<button onclick="event.stopPropagation();window._saV2SatisKaydet(\''+t.id+'\')" style="font-size:11px;padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Taslak Kaydet</button>';
@@ -192,9 +196,15 @@ window._saV2TeklifOlustur = function(id) {
   document.body.appendChild(modal);
   window._saV2AktifPITasarim = window._saV2AktifPITasarim || 'A';
   window._saV2AktifPIDil = window._saV2AktifPIDil || 'EN';
-  window._saV2SatisUrunler = [];
-  window._saV2SatisUrunEkle(t);
-  window._stSartlar = (window._saV2Sartlar?.() || []).slice(0, 5);
+  /* BUG-04: create mode'da ürün state'i sıfırla; edit mode'da _saV2TeklifDuzenle zaten doldurdu */
+  if (!duzenleme) {
+    window._saV2SatisUrunler = [];
+    window._saV2SatisUrunEkle(t);
+  }
+  /* BUG-04: edit mode'da kayıttaki şartları kullan, yoksa default 5 */
+  window._stSartlar = (duzenleme && duzenleme.sartlar && duzenleme.sartlar.length)
+    ? duzenleme.sartlar.slice()
+    : (window._saV2Sartlar?.() || []).slice(0, 5);
   setTimeout(function() { window._saV2SartListeGuncelle(); }, 100);
   setTimeout(function(){ window._saV2PIOnizlemeGuncelle?.(); }, 50);
   // MUSTERI-ONCEKI-SATIS-002: form açıldığında önceki teklif kontrolü
@@ -205,6 +215,37 @@ window._saV2TeklifOlustur = function(id) {
     var defaultPara = (paraEl && paraEl.value) || 'USD';
     window._saV2BankaGuncelle && window._saV2BankaGuncelle(defaultPara);
   }, 150);
+  if (duzenleme) {
+    setTimeout(function(){
+      /* BUG-04: Edit mode — form input'larını kayıttan geri yükle */
+      var mAd = duzenleme.musteri || duzenleme.musteriAd || '';
+      var mKod = duzenleme.musteriKod || '';
+      var mAdEl = document.getElementById('st-musteri-ad');
+      var mKodEl = document.getElementById('st-musteri-kod');
+      var mSel = document.getElementById('st-musteri-sec');
+      if (mAdEl) mAdEl.value = mAd;
+      if (mKodEl) mKodEl.value = mKod;
+      if (mSel) {
+        Array.from(mSel.options).forEach(function(o){
+          if (o.text === mAd || o.dataset.kod === mKod) o.selected = true;
+        });
+      }
+      var setVal = function(id, val){
+        var el = document.getElementById(id);
+        if (el && val != null) el.value = val;
+      };
+      setVal('st-gecerlilik', duzenleme.gecerlilik || '');
+      setVal('st-teslim-yeri', duzenleme.teslim || duzenleme.teslimYeri || '');
+      setVal('st-para-birimi', duzenleme.paraBirimi || duzenleme.para || 'USD');
+      setVal('st-odeme', duzenleme.odeme || '');
+      setVal('st-incoterm', duzenleme.incoterm || 'EXW');
+      setVal('st-job-id', duzenleme.jobId || '');
+      window._saV2SatisTabloyuGuncelle?.();
+      window._saV2PIOnizlemeGuncelle?.();
+      window._saV2BankaGuncelle?.(duzenleme.paraBirimi || duzenleme.para || 'USD');
+      window._saV2SatisValidate?.();
+    }, 120);
+  }
 };
 
 /**
@@ -298,6 +339,8 @@ window._saV2SatisKaydet = function(alisId) {
   teklifler.unshift(kayit);
   if (typeof window.storeSatisTeklifleri === 'function') window.storeSatisTeklifleri(teklifler);
   document.getElementById('sav2-satis-modal')?.remove();
+  /* BUG-04: kaydet sonrası edit mode global'ini temizle */
+  window._saV2AktifDuzenlemeTeklif = null;
   window._saV2TakipGorevOlustur(kayit);
   window.renderSatisTeklifleri?.();
   window.toast?.('Sat\u0131\u015f teklifi kaydedildi: ' + teklifId, 'ok');
