@@ -15,7 +15,7 @@ window._saV2DuzenleForm = function(id) {
 window._saV2DuzenleKaydet = function(id) {
   var _v = function(fid) { return document.getElementById('sav2dz-' + fid)?.value?.trim() || ''; };
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   t.urunAdi = _v('urunAdi');
   t.duayKodu = _v('duayKodu');
@@ -50,7 +50,7 @@ window._saV2DuzenleKaydet = function(id) {
 window._saV2GuncellemeTalep = function(id) {
   var mevcut = document.getElementById('sav2-guncelleme-modal'); if (mevcut) mevcut.remove();
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   var modal = document.createElement('div');
   modal.id = 'sav2-guncelleme-modal';
@@ -82,7 +82,7 @@ window._saV2GuncellemeGonder = function(id) {
   var yeniFiyat = document.getElementById('sav2-gun-fiyat')?.value?.trim() || '';
   if (!neden) { window.toast?.('Neden alanı zorunlu', 'warn'); return; }
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   t.guncellemeTalep = {
     neden: neden,
@@ -103,7 +103,7 @@ window._saV2GuncellemeGonder = function(id) {
 
 window._saV2YoneticiGuncellemeOnayla = function(id) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t || !t.guncellemeTalep) return;
   var yf = t.guncellemeTalep.yeniFiyat;
   if (yf) t.alisF = yf;
@@ -117,7 +117,7 @@ window._saV2YoneticiGuncellemeOnayla = function(id) {
 
 window._saV2YoneticiGuncellemeReddet = function(id, aciklama) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t || !t.guncellemeTalep) return;
   t.durum = 'onaylandi';
   t.guncellemeTalep.durum = 'reddedildi';

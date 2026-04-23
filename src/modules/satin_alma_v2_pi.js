@@ -248,7 +248,7 @@ var ST_DURUM_RENK = {taslak:'#888780',gonderildi:'#185FA5',inceliyor:'#854F0B',k
 
 window._steklifDurumGuncelle = function(id, yeniDurum) {
   var teklifler = window._saTeklifLoad?.() || [];
-  var t = teklifler.find(function(x){return x.id===id;});
+  var t = teklifler.find(function(x){return String(x.id)===String(id);});
   if (!t) { window.toast?.('Teklif bulunamadı','warn'); return; }
   var eskiDurum = t.durum;
   t.durum = yeniDurum;
@@ -296,7 +296,7 @@ window._steklifOzetHTML = function(t) {
 /* ── SA-V2-REVIZYON-001: Rev Numarası Increment + Geçmiş ──── */
 window._steklifRevNo = function(id) {
   var teklifler = window._saTeklifLoad?.() || [];
-  var t = teklifler.find(function(x) { return x.id === id; });
+  var t = teklifler.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   var mevcutRev = parseInt(t.revNo || '01', 10);
   var yeniRev = String(mevcutRev + 1).padStart(2, '0');

@@ -1,7 +1,7 @@
 var _saEsc=window._saEsc, _saNow=window._saNow, _saToday=window._saToday, _saId=window._saId, _saCu=window._saCu;
 window._saV2Duzenle = function(id) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   if (t.durum === 'onaylandi') {
     window._saV2GuncellemeTalep(id);
@@ -421,7 +421,7 @@ window._saV2FormKaydet = function() {
 /* ── Onay Akışı ─────────────────────────────────────────────── */
 window._saV2YoneticiOnayla = function(id) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   t.durum = 'onaylandi';
   /* LOJISTIK-SA-ENTEGRE-001: Onaylanan SA V2 otomatik kargo kaydı oluştur */
@@ -441,7 +441,7 @@ window._saV2YoneticiOnayla = function(id) {
 
 window._saV2YoneticiReddet = function(id, neden) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
   t.durum = 'reddedildi';
   t.redNedeni = neden || '';

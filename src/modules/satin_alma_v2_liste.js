@@ -457,7 +457,7 @@ window._saV2PIGuncelle = function(id) {
 /* SATIS-LISTE-PEEK-001: hızlı bakış peek panel — sağdan açılan ürün listesi + toplam */
 window._saV2PeekPanel = function(id) {
   var liste = window._saV2Load ? window._saV2Load() : [];
-  var t = liste.find(function(x){ return x.id===id; });
+  var t = liste.find(function(x){ return String(x.id)===String(id); });
   if(!t) return;
   var mevcut = document.getElementById('sav2-peek-panel'); if(mevcut) mevcut.remove();
   var mo = document.createElement('div');

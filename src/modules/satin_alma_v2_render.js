@@ -433,7 +433,7 @@ window._saV2OnayaGonder = function() {
   if (!secili.length) { window.toast?.('Önce seçim yapın','warn'); return; }
   var liste = _saV2Load();
   secili.forEach(function(id){
-    var t = liste.find(function(x){return x.id===id;});
+    var t = liste.find(function(x){return String(x.id)===String(id);});
     if (t) { t.durum='onay_bekliyor'; t.updatedAt=_saNow(); }
   });
   _saV2Store(liste);
@@ -443,7 +443,7 @@ window._saV2OnayaGonder = function() {
 };
 window._saV2OnayaGonderTek = function(id) {
   var liste = _saV2Load();
-  var t = liste.find(function(x){return x.id===id;});
+  var t = liste.find(function(x){return String(x.id)===String(id);});
   if (t) { t.durum='onay_bekliyor'; t.updatedAt=_saNow(); _saV2Store(liste); }
   window.toast?.('Onaya gönderildi','ok');
   window.renderSatinAlmaV2();
@@ -459,7 +459,7 @@ window._saV2GoselYukle = function(id) {
     var r = new FileReader();
     r.onload = function(ev) {
       var liste = _saV2Load();
-      var t = liste.find(function(x){return x.id===id;});
+      var t = liste.find(function(x){return String(x.id)===String(id);});
       if (t) { t.gorsel=ev.target.result; t.updatedAt=_saNow(); _saV2Store(liste); }
       window.toast?.('Görsel yüklendi','ok');
       window.renderSatinAlmaV2();
@@ -486,7 +486,7 @@ window._saV2MusteriKodAra = function(kod) {
 /* ── SA-V2-KOPYA-001: Teklif Kopyala ────────────────────────── */
 window._saV2Kopyala = function(id) {
   var liste = window._saV2Load?.() || [];
-  var t = liste.find(function(x) { return x.id === id; });
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) { window.toast?.('Teklif bulunamadı', 'warn'); return; }
   var yeni = JSON.parse(JSON.stringify(t));
   yeni.id = typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now());
