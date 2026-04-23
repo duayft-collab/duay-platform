@@ -511,6 +511,14 @@ window._saV2KurCevir = function(deger, orjPara, hedefPara) {
 };
 
 window._saV2SatisUrunEkle = function(t) {
+  // T03-2: ID garantisi — payload'da id yoksa stabil bir ID üret.
+  // Bug: payload.id undefined ise tüm ürünler aynı id ile push edilirdi
+  // ve _saV2UrunSil filter() hiçbirini silemezdi.
+  if (!t.id) {
+    t.id = (typeof window.generateId === 'function'
+      ? window.generateId()
+      : ('urun-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)));
+  }
   // SATINALMA-V2-URUN-LIMIT-001: max 100 ürün per satış teklifi
   if ((window._saV2SatisUrunler||[]).length >= 100) {
     window.toast?.('Maksimum 100 ürün eklenebilir', 'warn'); return;
@@ -612,6 +620,8 @@ window._saV2SatisTabloyuGuncelle = function() {
   });
   tbody.innerHTML = goster.map(function(u, idx) {
     var gIdx = bas + idx;
+    // T03-2: ID eksikliği artık bug — sessizce gIdx'e düşmüyoruz, loglayalım
+    if (!u.id) console.error('[T03-2] Ürün ID eksik:', u);
     return '<tr style="border-bottom:0.5px solid var(--b)">'
       + '<td style="padding:4px 6px;width:28px">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
       + '<td style="padding:4px 6px;font-size:10px"><div style="font-weight:500">' + _saEsc(u.duayKodu || '') + (u.duayKodu ? ' \u2014 ' : '') + _saEsc(u.urunAdi || '\u2014') + '</div>' + (u.eskiKod ? '<div style="font-size:8px;color:var(--t3)">(' + _saEsc(u.eskiKod) + ')</div>' : '') + '</td>'
@@ -628,7 +638,7 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:4px 6px"><select onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">—</option>'
       + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></td>'
-      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + (u.id || gIdx) + '\')" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Kald\u0131r</button></td>'
+      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + u.id + '\')" style="padding:3px 8px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:10px;cursor:pointer;font-family:inherit">Kald\u0131r</button></td>'
       + '</tr>';
   }).join('');
   /* Sayfalama */
@@ -709,7 +719,7 @@ window._saV2UrunListHTML = function(filtre) {
   }
   if (!kaynaklar.length) return '<div style="padding:30px;text-align:center;color:var(--t3);font-size:12px">Ürün bulunamadı</div>';
   return kaynaklar.map(function(t){
-    var payload = JSON.stringify({duayKodu:t.duayKodu,urunAdi:t.urunAdi,alisF:t.alisF,para:t.para||'USD',miktar:1,birim:t.birim,gorsel:t.gorsel||''}).replace(/"/g,'&quot;');
+    var payload = JSON.stringify({id:t.id||t._id,duayKodu:t.duayKodu,urunAdi:t.urunAdi,alisF:t.alisF,para:t.para||'USD',miktar:1,birim:t.birim,gorsel:t.gorsel||''}).replace(/"/g,'&quot;');
     var gorselSrc = t.gorsel || '';
     return '<div onclick="event.stopPropagation();window._saV2SatisUrunEkle(JSON.parse(this.dataset.p));document.getElementById(\'sav2-urun-sec-modal\')?.remove()" data-p="'+payload+'" style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:0.5px solid var(--b);cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
       +(gorselSrc ? '<img src="'+gorselSrc+'" style="width:32px;height:32px;border-radius:4px;object-fit:cover">' : '<div style="width:32px;height:32px;border-radius:4px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:14px">📦</div>')
