@@ -7560,6 +7560,15 @@ window._cariTeklifVer = function(id) {
 function _renderCariDetail(id) {
   var cont = document.getElementById('cari-detail');
   if (!cont) return;
+  /* [CARI-DETAY-TOGGLE-STICKY-FIX-001] Toggle/re-render sonrasi scroll korunur */
+  var _cdsScroll = cont.scrollTop || 0;
+  if (_cdsScroll > 0) {
+    /* innerHTML = ... senkron cizer, scrollTop=0 olur. setTimeout ile next tick'te geri yukle. */
+    setTimeout(function(){
+      var _cdsCont = document.getElementById('cari-detail');
+      if (_cdsCont && _cdsCont.scrollTop === 0) _cdsCont.scrollTop = _cdsScroll;
+    }, 0);
+  }
   /* CARI-PERF-001: renderCari'nin önbelleğini kullan (her detay tıklamasında loadCari reparse etme) */
   var _cariSrc = window._cariCache || loadCari();
   var c = _cariSrc.find(function(x) { return x.id === id; });
