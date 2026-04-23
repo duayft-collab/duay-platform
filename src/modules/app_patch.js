@@ -2775,7 +2775,9 @@ window._saveSatisTeklif = function() {
 
 window._printSatisTeklif = function(id) {
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
-  var t = d.find(function(x){return String(x.id)===String(id);}); if (!t) return;
+  var t = d.find(function(x){return String(x.id)===String(id);});
+  /* BUG-02/03: silent fail yerine kullanıcıya bilgi ver */
+  if (!t) { window.toast?.('Teklif bulunamadı (id: ' + id + ')', 'warn'); return; }
   var esc = window._esc;
   var cur = t.paraBirimi || 'USD';
   var curSym = cur==='USD'?'$':cur==='EUR'?'€':cur==='TRY'?'₺':cur;
@@ -3014,13 +3016,18 @@ window._openSatisRapor = function() {
 /** Format B — Modern minimalist PDF */
 window._printSatisTeklifB = function(id) {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
-  var t = d.find(function(x){return String(x.id)===String(id);}); if (!t) return;
+  var t = d.find(function(x){return String(x.id)===String(id);});
+  /* BUG-02/03: silent fail yerine kullanıcıya bilgi ver */
+  if (!t) { window.toast?.('Teklif bulunamadı (id: ' + id + ')', 'warn'); return; }
   var esc = window._esc;
   var cur = t.paraBirimi||'USD';
+  /* BUG-02: banka bilgisi B template'ine eklendi (A'dan port) */
+  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
     +'table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#6366F1;color:#fff;padding:8px;font-size:10px;text-transform:uppercase}td{padding:8px;border-bottom:1px solid #eee}'
-    +'.total{background:#f8fafc;font-weight:700;font-size:14px}@media print{button{display:none!important}}</style></head><body>'
+    +'.total{background:#f8fafc;font-weight:700;font-size:14px}.bank{margin-top:16px;padding:12px;border:1px solid #6366F1;border-radius:6px;font-size:11px}.bank h4{color:#6366F1;font-size:11px;margin-bottom:6px}@media print{button{display:none!important}}</style></head><body>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:20px;font-weight:800;color:#6366F1">DUAY GLOBAL</div><div style="font-size:10px;color:#999">Istanbul, Turkey</div></div>'
     +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(t.teklifNo)+'</div><div style="font-size:11px;color:#666">'+(t.ts||'').slice(0,10)+'</div></div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
@@ -3028,6 +3035,13 @@ window._printSatisTeklifB = function(id) {
     +'<table><thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'
     +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+(u.satisFiyat||0).toFixed(2)+' '+cur+'</td><td style="text-align:right">'+((u.satisFiyat||0)*(u.miktar||0)).toFixed(2)+' '+cur+'</td></tr>';}).join('')
     +'<tr class="total"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;font-size:16px">'+(t.genelToplam||0).toFixed(2)+' '+cur+'</td></tr></tbody></table>'
+    +'<div class="bank"><h4>BANKING DETAILS</h4>'
+    +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
+    +'<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
+    +(cur==='USD' ? '<div>USD IBAN: ' + esc(banka.iban||'') + '</div>' : '')
+    +(cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
+    +(cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' : '')
+    +'<div><b>SWIFT:</b> ' + esc(banka.swift||'') + '</div></div>'
     +'<div style="font-size:10px;color:#666;margin-top:16px">Terms: '+(t.teslimSekli||'FOB')+' · Payment: '+(t.odemeKosulu||'Advance')+' · Valid: '+(t.gecerlilikTarihi||'30 days')+'</div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer;border:1px solid #6366F1;border-radius:6px;background:#fff;color:#6366F1;font-weight:600">Print</button></body></html>');
   w.document.close();
@@ -3036,14 +3050,20 @@ window._printSatisTeklifB = function(id) {
 /** Format C — Detaylı teknik (multi-page) */
 window._printSatisTeklifC = function(id) {
   var d = typeof loadSatisTeklifleri==='function'?loadSatisTeklifleri():[];
-  var t = d.find(function(x){return String(x.id)===String(id);}); if (!t) return;
+  var t = d.find(function(x){return String(x.id)===String(id);});
+  /* BUG-02/03: silent fail yerine kullanıcıya bilgi ver */
+  if (!t) { window.toast?.('Teklif bulunamadı (id: ' + id + ')', 'warn'); return; }
   var esc = window._esc;
   var cur = t.paraBirimi||'USD';
+  /* BUG-02: banka bilgisi C template'ine eklendi (A'dan port) */
+  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
+  var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
     +'h1{font-size:24px;color:#1a365d;text-align:center;margin-bottom:4px}h2{font-size:14px;color:#666;text-align:center;margin-bottom:24px}'
     +'.page-break{page-break-before:always;margin-top:40px}'
     +'table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f0f0f0;padding:8px;font-size:10px;border:1px solid #ddd}td{padding:8px;border:1px solid #ddd}'
+    +'.bank{margin-top:20px;padding:14px;border:1px solid #1a365d;border-radius:4px;font-size:11px}.bank h4{color:#1a365d;font-size:11px;margin-bottom:6px}'
     +'@media print{button{display:none!important}}</style></head><body>'
     // Kapak
     +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL LLC</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(t.teklifNo)+'</div>'
@@ -3060,6 +3080,14 @@ window._printSatisTeklifC = function(id) {
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Payment:</b> '+(t.odemeKosulu||'Advance')+'</div>'
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Validity:</b> '+(t.gecerlilikTarihi||'30 days')+'</div>'
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Origin:</b> Turkey</div></div>'
+    /* BUG-02: banka bilgisi C template'inde — Terms grid ile imza arasında */
+    +'<div class="bank"><h4>BANKING DETAILS</h4>'
+    +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
+    +'<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
+    +(cur==='USD' ? '<div>USD IBAN: ' + esc(banka.iban||'') + '</div>' : '')
+    +(cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
+    +(cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' : '')
+    +'<div><b>SWIFT:</b> ' + esc(banka.swift||'') + '</div></div>'
     +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(t.musteri||'Customer')+'</div></div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
   w.document.close();
@@ -3071,12 +3099,14 @@ window._printSatisTeklif = function(id) {
   // Format seçici mini popup
   var ex = document.getElementById('mo-pdf-format'); if (ex) ex.remove();
   var mo = document.createElement('div'); mo.className='mo'; mo.id='mo-pdf-format';
+  /* BUG-03: parseInt(id) NaN/truncate yapıp find başarısız oluyordu — string olarak tırnak içinde escape'li geçir */
+  var _pdfIdEsc = '\'' + String(id).replace(/[\'\\]/g, '\\$&') + '\'';
   mo.innerHTML = '<div class="moc" style="max-width:320px;padding:20px;border-radius:14px;text-align:center">'
     + '<div style="font-size:14px;font-weight:700;margin-bottom:12px">PDF Format Seçin</div>'
     + '<div style="display:flex;gap:8px;justify-content:center">'
-    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifA?.('+parseInt(id)+')" style="padding:12px 20px;border:1px solid #1a365d;border-radius:8px;background:#1a365d;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">A<div style="font-size:9px;font-weight:400;margin-top:2px">Klasik</div></button>'
-    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifB?.('+parseInt(id)+')" style="padding:12px 20px;border:1px solid #6366F1;border-radius:8px;background:#6366F1;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">B<div style="font-size:9px;font-weight:400;margin-top:2px">Modern</div></button>'
-    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifC?.('+parseInt(id)+')" style="padding:12px 20px;border:1px solid #059669;border-radius:8px;background:#059669;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">C<div style="font-size:9px;font-weight:400;margin-top:2px">Detaylı</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifA?.('+_pdfIdEsc+')" style="padding:12px 20px;border:1px solid #1a365d;border-radius:8px;background:#1a365d;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">A<div style="font-size:9px;font-weight:400;margin-top:2px">Klasik</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifB?.('+_pdfIdEsc+')" style="padding:12px 20px;border:1px solid #6366F1;border-radius:8px;background:#6366F1;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">B<div style="font-size:9px;font-weight:400;margin-top:2px">Modern</div></button>'
+    + '<button onclick="document.getElementById(\'mo-pdf-format\')?.remove();window._printSatisTeklifC?.('+_pdfIdEsc+')" style="padding:12px 20px;border:1px solid #059669;border-radius:8px;background:#059669;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">C<div style="font-size:9px;font-weight:400;margin-top:2px">Detaylı</div></button>'
     + '</div></div>';
   document.body.appendChild(mo);
   mo.addEventListener('click',function(e){if(e.target===mo)mo.remove();});
