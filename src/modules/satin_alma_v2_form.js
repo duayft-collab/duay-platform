@@ -710,7 +710,8 @@ window._saV2UrunListHTML = function(filtre) {
   var katalog = typeof window.loadUrunler==='function' ? window.loadUrunler({tumKullanicilar:true}) : [];
   var tumKatalog = katalog.filter(function(u){return !u.isDeleted;});
   var kaynaklar = tumListe.concat(tumKatalog.map(function(u){
-    return {id:u.id||u._id,urunAdi:u.urunAdi||u.ad||u.name||'',duayKodu:u.duayKodu||u.kod||'',tedarikci:u.tedarikci||'',alisF:u.alisF||u.satisFiyati||'',para:'USD',birim:u.birim||'Adet',gorsel:u.gorsel||''};
+    /* T03-3-FIX: eski şema fallback (u.unit, u.origin) + mensei alanı eksikliği düzeltildi */
+    return {id:u.id||u._id,urunAdi:u.urunAdi||u.ad||u.name||'',duayKodu:u.duayKodu||u.kod||'',tedarikci:u.tedarikci||'',alisF:u.alisF||u.satisFiyati||'',para:'USD',birim:u.birim||u.unit||'Adet',mensei:u.mensei||u.origin||'',gorsel:u.gorsel||''};
   }));
   if (filtre && filtre.trim()) {
     var f = filtre.trim().toLowerCase();
