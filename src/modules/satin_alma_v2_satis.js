@@ -81,7 +81,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<select id="st-odeme" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
   ['30% Advance, 70% L/C at sight','50% Advance, 50% L/C at sight','100% Advance before shipment','L/C at sight','T/T 30 days after B/L','T/T 60 days after B/L','D/P at sight','Open Account 30 days'].forEach(function(o){ic += '<option>'+o+'</option>';});
   ic += '</select></div>';
-  ic += '<div id="st-banka-bilgi" style="font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C">USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası</div>';
+  /* T03-8 v2: sol banka div hidden — sağ PI altında yeni görünür div var */
+  ic += '<div id="st-banka-bilgi" style="display:none;font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C">USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası</div>';
   ic += '<div id="st-kur-bilgi" style="font-size:9px;color:var(--t3);padding:4px 10px;background:var(--s2);border-radius:4px;margin-top:4px">';
   ic += '1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
   ic += '1 EUR = '+(window._saKur?.EUR||51.70).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
@@ -144,7 +145,10 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="font-size:8px;color:var(--t3)">No: '+satisId+'</div>';
   ic += '</div>';
   ic += '<div style="font-size:8px;color:var(--t3);font-style:italic;text-align:center;margin-bottom:8px">Product images shown are for illustrative purposes only.</div>';
-  ic += '</div></div>';
+  ic += '</div>';
+  /* T03-8 v2: PI önizleme kardeşi banka div — sağ panel scroll'u içinde alta yerleşir */
+  ic += '<div id="st-banka-bilgi-pi" style="margin-top:10px;font-size:9px;padding:8px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C;line-height:1.4">USD IBAN: Yükleniyor...</div>';
+  ic += '</div>';
   ic += '</div>';
 
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin:0 16px 8px">';
@@ -177,6 +181,12 @@ window._saV2TeklifOlustur = function(id) {
   setTimeout(function(){ window._saV2PIOnizlemeGuncelle?.(); }, 50);
   // MUSTERI-ONCEKI-SATIS-002: form açıldığında önceki teklif kontrolü
   setTimeout(function(){ window._saV2CheckPrevTeklif?.(); }, 60);
+  /* T03-8 v2: banka init — 150ms sonra default para birimine göre doldur (sağ PI banka div'i) */
+  setTimeout(function(){
+    var paraEl = document.getElementById('st-para-birimi');
+    var defaultPara = (paraEl && paraEl.value) || 'USD';
+    window._saV2BankaGuncelle && window._saV2BankaGuncelle(defaultPara);
+  }, 150);
 };
 
 /**
@@ -372,6 +382,9 @@ window._saV2BankaGuncelle = function(para) {
   };
   var el = document.getElementById('st-banka-bilgi');
   if(el) el.textContent = bankalar[para] || bankalar['USD'];
+  /* T03-8 v2: sağ PI paneldeki kardeş banka div'i de senkron güncelle */
+  var elPI = document.getElementById('st-banka-bilgi-pi');
+  if(elPI) elPI.textContent = bankalar[para] || bankalar['USD'];
 };
 
 window._saV2PIOnizlemeGuncelle = function() {
