@@ -1068,7 +1068,7 @@ function _syncFirestore(path, data, mode = 'set') {
     if (mode === 'set') {
       // trash + activity → merge yok, direkt üzerine yaz (retention log benzeri koleksiyonlar)
       // RETENTION-NOMERGE-FIX-001: activity eklendi; yorum metniyle kod arasındaki tutarsızlık giderildi
-      var _noMergeCols = ['trash', 'activity', 'cari'];
+      var _noMergeCols = ['trash', 'activity', 'cari', 'satinalma', 'alisTeklifleri', 'urunler'];
       if (Array.isArray(data) && _noMergeCols.indexOf(collection) !== -1) {
         var _nmPayload = { data: data, syncedAt: syncedAt };
         if (_useCritical && _isSafari) { _verifiedWrite(path, data); }
