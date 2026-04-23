@@ -7571,7 +7571,7 @@ function _renderCariDetail(id) {
   }
   /* CARI-PERF-001: renderCari'nin önbelleğini kullan (her detay tıklamasında loadCari reparse etme) */
   var _cariSrc = window._cariCache || loadCari();
-  var c = _cariSrc.find(function(x) { return x.id === id; });
+  var c = _cariSrc.find(function(x) { return String(x.id) === String(id); });
   if (!c) { cont.innerHTML = ''; return; }
 
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
