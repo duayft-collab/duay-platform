@@ -78,8 +78,9 @@ window.renderPlatformStandartlari = function() {
         /* [VERI-PROTOKOL-EKLE-002] Runtime canli veri + 2 hardcode */
         /* [VERI-PROTOKOL-EKLE-002-HARDCODE] CRITICAL_COLS.length=19, _noMergeCols.length=6 — manuel guncel */
         var totalKeys = (typeof window.KEYS==='object') ? Object.keys(window.KEYS).length : 0;
-        var activeLS = Object.keys(localStorage).length;
-        var totalBytes = Object.keys(localStorage).reduce(function(s,k){ return s + (localStorage.getItem(k)||'').length; }, 0);
+        var keyValues = (typeof window.KEYS==='object') ? Object.values(window.KEYS) : [];
+        var activeLS = keyValues.filter(function(k){ var v=localStorage.getItem(k); return v!==null && v.length>2; }).length;
+        var totalBytes = keyValues.reduce(function(sum,k){ return sum + (localStorage.getItem(k)||'').length; }, 0);
         var ls_kb = Math.round(totalBytes/1024);
         var cacheMatch = Array.from(document.scripts).map(function(sc){return sc.src;}).join(' ').match(/\?v=(\d{8}[A-Z]{2})/);
         var cache = cacheMatch ? cacheMatch[1] : '—';
@@ -101,7 +102,41 @@ window.renderPlatformStandartlari = function() {
                 + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + k.sub + '</div>'
                 + '</div>';
             }).join('')
-          + '</div>';
+          + '</div>'
+          /* [VERI-PROTOKOL-EKLE-003] Ana tablo 26 aktif key */
+          + (function(){
+              var CRITICAL = ['kur','users','tasks','cari','activity','updateLog','trash','pusula','notifications','urunler','bankalar','announcements','satisTeklifleri','alisTeklifleri','teklifSartlar','ihracatDosyalar','crm','kargo','stok'];
+              var NOMERGE = ['trash','activity','cari','satinalma','alisTeklifleri','urunler'];
+              var rows = keyValues.map(function(phys){
+                var logical = Object.keys(window.KEYS||{}).find(function(k){ return window.KEYS[k]===phys; }) || phys;
+                var v = localStorage.getItem(phys);
+                var size = v ? v.length : 0;
+                var lz = v && v.indexOf('_LZ_')===0;
+                var count = 'N/A';
+                if (v && !lz) { try{ var p=JSON.parse(v); count=Array.isArray(p)?p.length:(p?1:0); }catch(e){} }
+                else if (lz && window.LZString) { try{ var d=window.LZString.decompressFromUTF16(v.slice(4)); var p=JSON.parse(d); count=Array.isArray(p)?p.length:(p?1:0); }catch(e){} }
+                return { logical:logical, phys:phys, size:size, lz:lz, count:count, rt:CRITICAL.indexOf(logical)>-1, nm:NOMERGE.indexOf(logical)>-1, active:(v!==null && size>2) };
+              }).filter(function(r){ return r.active; }).sort(function(a,b){ return b.size - a.size; });
+              var tblHtml = '<div style="margin-top:14px;margin-bottom:8px;font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500">Aktif Key Listesi (' + rows.length + ')</div>'
+                + '<div style="border:0.5px solid var(--b);border-radius:8px;overflow:hidden;background:var(--sf)">'
+                + '<div style="display:grid;grid-template-columns:1.5fr 0.7fr 0.7fr 40px 40px 40px;gap:6px;padding:8px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:0.5px solid var(--b);background:rgba(0,0,0,0.02)">'
+                + '<div>Key</div><div style="text-align:right">Kayit</div><div style="text-align:right">Boyut</div><div style="text-align:center">LZ</div><div style="text-align:center">RT</div><div style="text-align:center">NM</div>'
+                + '</div>'
+                + rows.map(function(r,i){
+                    var sizeDisp = r.size<1024 ? r.size+' B' : Math.round(r.size/1024)+' KB';
+                    var bg = i%2 ? 'rgba(0,0,0,0.015)' : 'transparent';
+                    return '<div style="display:grid;grid-template-columns:1.5fr 0.7fr 0.7fr 40px 40px 40px;gap:6px;padding:6px 12px;font-size:11px;border-bottom:0.5px solid var(--b);background:' + bg + '">'
+                      + '<div style="font-weight:500;color:var(--t)">' + r.logical + '</div>'
+                      + '<div style="text-align:right;font-variant-numeric:tabular-nums;color:var(--t2)">' + r.count + '</div>'
+                      + '<div style="text-align:right;font-variant-numeric:tabular-nums;color:var(--t2)">' + sizeDisp + '</div>'
+                      + '<div style="text-align:center;color:' + (r.lz?'#1A8D6F':'var(--t3)') + '">' + (r.lz?'✓':'−') + '</div>'
+                      + '<div style="text-align:center;color:' + (r.rt?'#1A8D6F':'var(--t3)') + '">' + (r.rt?'✓':'−') + '</div>'
+                      + '<div style="text-align:center;color:' + (r.nm?'#B4730F':'var(--t3)') + '">' + (r.nm?'✓':'−') + '</div>'
+                      + '</div>';
+                  }).join('')
+                + '</div>';
+              return tblHtml;
+            })();
       })()
     +'</div>'
     +'</div>';
