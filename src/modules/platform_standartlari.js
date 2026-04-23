@@ -138,6 +138,38 @@ window.renderPlatformStandartlari = function() {
               return tblHtml;
             })();
       })()
+    /* [VERI-PROTOKOL-EKLE-004] Koruma + Sync + Terimler */
+    +'<div style="margin-top:16px;font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:8px">Koruma Mekanizmalari</div>'
+    +'<div style="border:0.5px solid var(--b);border-radius:8px;background:var(--sf);padding:12px 14px;margin-bottom:12px">'
+      +'<div style="display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:11px">'
+        +'<div style="font-weight:500;color:var(--t)">No-Merge</div>'
+        +'<div style="color:var(--t2)">Firestore merge bypass — silme F5 sonra kalici (6 key)</div>'
+        +'<div style="font-weight:500;color:var(--t)">Echo Guard</div>'
+        +'<div style="color:var(--t2)">Kendi yazimi 30s TTL ile skip — loop onler (tum realtime)</div>'
+        +'<div style="font-weight:500;color:var(--t)">Tombstone Preserve</div>'
+        +'<div style="color:var(--t2)">Silinen kayit LS yazimi sirasinda korunur (satinalma, teklifler)</div>'
+        +'<div style="font-weight:500;color:var(--t)">Admin Saving</div>'
+        +'<div style="color:var(--t2)">Admin yazim sirasinda onSnapshot skip (users kayitlari)</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:8px">Sync Protokolu</div>'
+    +'<div style="border:0.5px solid var(--b);border-radius:8px;background:var(--sf);padding:12px 14px;margin-bottom:12px">'
+      +'<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">'
+        +'<div><span style="color:#B4730F;font-weight:500">YAZMA&nbsp;&nbsp;:</span> <span style="color:var(--t2)">UI -> storeX() -> _lsRetention -> _write(LS) -> _syncFirestore(FS)</span></div>'
+        +'<div><span style="color:#1A8D6F;font-weight:500">OKUMA&nbsp;&nbsp;:</span> <span style="color:var(--t2)">loadX() -> _read(LS) -> migrate -> filter -> return</span></div>'
+        +'<div><span style="color:#3478F6;font-weight:500">REALTIME:</span> <span style="color:var(--t2)">Firestore onSnapshot -> LS guncelle -> re-render</span></div>'
+      +'</div>'
+      +'<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--b);font-size:10px;color:var(--t3)">Online: Firestore master, LS cache. Offline: LS + offline queue (auth gelince flush). Conflict: last-write-wins.</div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:8px">Terimler Aciklamasi</div>'
+    +'<div style="border:0.5px solid var(--b);border-radius:8px;background:var(--sf);padding:12px 14px">'
+      +'<div style="display:flex;flex-direction:column;gap:10px;font-size:11px">'
+        +'<div><div style="font-weight:500;color:var(--t);margin-bottom:2px">LZ Compress</div><div style="color:var(--t2);line-height:1.5">500+ byte JSON verileri LZString.compressToUTF16 ile sikistirilir. %60-80 tasarruf. _LZ_ prefix ile isaretlenir.</div></div>'
+        +'<div><div style="font-weight:500;color:var(--t);margin-bottom:2px">No-Merge</div><div style="color:var(--t2);line-height:1.5">Firestore yazarken eski veri okunmaz, direkt .set() uygulanir. Silme isleminin F5 sonra geri gelmesini engeller. Risk: iki cihaz ayni anda yazarsa last-write-wins.</div></div>'
+        +'<div><div style="font-weight:500;color:var(--t);margin-bottom:2px">Realtime</div><div style="color:var(--t2);line-height:1.5">Firestore onSnapshot listener ile surekli dinleme. Baska cihaz degistirdiginde F5 yapmadan anlik yansir. 19 key aktif.</div></div>'
+        +'<div><div style="font-weight:500;color:var(--t);margin-bottom:2px">Master / Slave</div><div style="color:var(--t2);line-height:1.5">Online: Firestore master, LS slave/cache. Offline: LS + offline queue. Auth gelince queue Firestore\'a flush edilir.</div></div>'
+      +'</div>'
+    +'</div>'
     +'</div>'
     +'</div>';
 };
