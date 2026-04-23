@@ -7340,13 +7340,13 @@ function renderCari() {
   var redCount = all.filter(function(c) { return c.status === 'rejected'; }).length;
   var toplamBorc = odm.filter(function(o) { return !o.paid && !o.isDeleted; }).reduce(function(s, o) { return s + _odmToTRY(parseFloat(o.amount||0), o.currency||'TRY', o); }, 0);
   var toplamAlacak = tah.filter(function(t) { return !t.collected && !t.isDeleted; }).reduce(function(s, t) { return s + _odmToTRY(parseFloat(t.amount||0), t.currency||'TRY', t); }, 0);
-  statsEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:8px 12px;border-bottom:1px solid var(--b);background:var(--sf)">'
+  statsEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 12px;border-bottom:1px solid var(--b);background:var(--sf)">'
     + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:var(--t)">' + all.length + '</div><div style="font-size:9px;color:var(--t3)">Toplam</div></div>'
     + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#3B82F6">' + potCount + '</div><div style="font-size:9px;color:var(--t3)">🔵 Potansiyel</div></div>'
     + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#F59E0B">' + aktCount + '</div><div style="font-size:9px;color:var(--t3)">🟡 Aktif</div></div>'
     + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#16A34A">' + onayCount + '</div><div style="font-size:9px;color:var(--t3)">🟢 Onaylı</div></div>'
-    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#DC2626">₺' + Math.round(toplamBorc).toLocaleString('tr-TR') + '</div><div style="font-size:9px;color:var(--t3)">Toplam Borç</div></div>'
-    + '<div style="text-align:center;padding:6px"><div style="font-size:16px;font-weight:700;color:#16A34A">₺' + Math.round(toplamAlacak).toLocaleString('tr-TR') + '</div><div style="font-size:9px;color:var(--t3)">Toplam Alacak</div></div>'
+    + '<div style="text-align:center;padding:6px;grid-column:span 2"><div style="font-size:16px;font-weight:700;color:#DC2626">₺' + Math.round(toplamBorc).toLocaleString('tr-TR') + '</div><div style="font-size:9px;color:var(--t3)">Toplam Borç</div></div>'
+    + '<div style="text-align:center;padding:6px;grid-column:span 2"><div style="font-size:16px;font-weight:700;color:#16A34A">₺' + Math.round(toplamAlacak).toLocaleString('tr-TR') + '</div><div style="font-size:9px;color:var(--t3)">Toplam Alacak</div></div>'
   + '</div>';
 
   // ── Cari durum rengi hesaplama ─────────────────────────────────
