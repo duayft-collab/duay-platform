@@ -310,6 +310,9 @@ window._saV2SatisKaydet = function(alisId) {
     .filter(function(t){ return t.teklifId===teklifId && !t.isDeleted; });
   var _sonRev = _mevcutlar.length > 0 ? Math.max.apply(null, _mevcutlar.map(function(t){ return parseInt(t.revNo)||1; })) : 0;
   var _yeniRevNo = String(_sonRev + 1).padStart(2,'0');
+  /* PARA-BUG: seçilen para birimini oku, toplamSatis (TL) → o para birimine çevir */
+  var _paraSec = document.getElementById('st-para-birimi')?.value || 'USD';
+  var _kur = (window._saKur||{})[_paraSec] || (_paraSec==='TRY' ? 1 : 44.55);
   var kayit = {
     id:window._saId?.(),
     teklifId:teklifId,
@@ -331,8 +334,8 @@ window._saV2SatisKaydet = function(alisId) {
     // SATIS-SCHEMA-FIX-001: renderSatisTeklifleri ile uyumlu alan alias'lari
     teklifNo: teklifId,
     musteri: musteriAd,
-    genelToplam: parseFloat(toplamSatis),
-    paraBirimi: 'TRY',
+    genelToplam: parseFloat((toplamSatis / _kur).toFixed(2)),
+    paraBirimi: _paraSec,
     createdBy: (window.Auth && window.Auth.getCU && window.Auth.getCU()?.name) || (window.CU && window.CU()?.name) || '',
     jobId: document.getElementById('st-job-id')?.value || ''
   };
