@@ -71,6 +71,11 @@ window.renderPlatformStandartlari = function() {
     +'<div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:0.5px solid var(--b)"><span style="color:var(--t3)">Müşteri Kodu</span><code style="font-family:monospace;color:var(--t)">C-YYYY-ABC-NNNN</code></div>'
     +'<div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0"><span style="color:var(--t3)">Duay Kodu</span><code style="font-family:monospace;color:var(--t)">DUAY-XXX-NNN</code></div>'
     +'</div>'
+    /* [VERI-PROTOKOL-EKLE-001] Veri Protokolu bolumu (iskelet) */
+    +'<div style="font-size:12px;font-weight:500;color:var(--t);margin-top:20px;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Veri Protokolu</div>'
+    +'<div id="veri-protokol-container" style="border:0.5px solid var(--b);border-radius:8px;padding:12px 16px;background:var(--sf)">'
+      +'<div style="font-size:11px;color:var(--t3)">Platform veri mimarisi (LS + Firestore) — yukleniyor...</div>'
+    +'</div>'
     +'</div>';
 };
 
