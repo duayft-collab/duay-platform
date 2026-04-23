@@ -81,7 +81,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<select id="st-odeme" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
   ['30% Advance, 70% L/C at sight','50% Advance, 50% L/C at sight','100% Advance before shipment','L/C at sight','T/T 30 days after B/L','T/T 60 days after B/L','D/P at sight','Open Account 30 days'].forEach(function(o){ic += '<option>'+o+'</option>';});
   ic += '</select></div>';
-  /* T03-8: banka div sağ panele taşındı — PI önizleme altında sabit */
+  ic += '<div id="st-banka-bilgi" style="font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C">USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası</div>';
   ic += '<div id="st-kur-bilgi" style="font-size:9px;color:var(--t3);padding:4px 10px;background:var(--s2);border-radius:4px;margin-top:4px">';
   ic += '1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
   ic += '1 EUR = '+(window._saKur?.EUR||51.70).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
@@ -134,10 +134,9 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input type="hidden" id="st-teslim" value="">';
   ic += '</div>';
 
-  /* T03-8: sağ panel flex column + gap — banka altında sabit kalsın */
-  ic += '<div style="width:380px;flex-shrink:0;background:var(--s2);padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden" id="st-pi-onizleme-panel">';
+  ic += '<div style="width:380px;flex-shrink:0;background:var(--s2);overflow-y:auto;padding:12px" id="st-pi-onizleme-panel">';
   ic += '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">CANLI PI ÖNİZLEME</div>';
-  ic += '<div id="st-pi-onizleme" style="background:var(--sf);border:0.5px solid var(--b);border-radius:6px;padding:12px;font-size:9px;flex:1;overflow-y:auto;min-height:0">';
+  ic += '<div id="st-pi-onizleme" style="background:var(--sf);border:0.5px solid var(--b);border-radius:6px;padding:12px;font-size:9px">';
   ic += '<div style="text-align:center;border-bottom:0.5px solid var(--b);padding-bottom:8px;margin-bottom:8px">';
   ic += '<div style="font-size:11px;font-weight:500;color:var(--t)">DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</div>';
   ic += '<div style="font-size:8px;color:var(--t3)">www.duaycor.com · +90 212 625 5 444 · WhatsApp: +90 532 270 5 113</div>';
@@ -145,10 +144,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="font-size:8px;color:var(--t3)">No: '+satisId+'</div>';
   ic += '</div>';
   ic += '<div style="font-size:8px;color:var(--t3);font-style:italic;text-align:center;margin-bottom:8px">Product images shown are for illustrative purposes only.</div>';
-  ic += '</div>';
-  /* T03-8: banka bilgisi PI önizleme altında sabit şerit — döviz bazlı _saV2BankaGuncelle ile doluyor */
-  ic += '<div id="st-banka-bilgi" style="flex-shrink:0;font-size:9px;padding:8px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C;line-height:1.4">T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181</div>';
-  ic += '</div>';
+  ic += '</div></div>';
   ic += '</div>';
 
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin:0 16px 8px">';
@@ -181,12 +177,6 @@ window._saV2TeklifOlustur = function(id) {
   setTimeout(function(){ window._saV2PIOnizlemeGuncelle?.(); }, 50);
   // MUSTERI-ONCEKI-SATIS-002: form açıldığında önceki teklif kontrolü
   setTimeout(function(){ window._saV2CheckPrevTeklif?.(); }, 60);
-  /* T03-8: modal açılışında banka IBAN'ını default para birimine göre doldur (stale placeholder kaybolur) */
-  setTimeout(function(){
-    var paraEl = document.getElementById('st-para-birimi');
-    var defaultPara = (paraEl && paraEl.value) || 'USD';
-    window._saV2BankaGuncelle && window._saV2BankaGuncelle(defaultPara);
-  }, 100);
 };
 
 /**
@@ -433,7 +423,7 @@ window._saV2PIOnizlemeGuncelle = function() {
     h += '<div style="text-align:center;color:var(--t3);padding:16px;font-size:9px">Ürün ekleyince burada görünür</div>';
   }
   h += '<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--b);font-size:7px;color:var(--t3);font-style:italic">Product images are for illustration purposes only.</div>';
-  /* T03-8: duplicate banka metni kaldırıldı — banka bilgisi artık PI altında ayrı sabit div'de */
+  h += '<div style="margin-top:4px;font-size:7px;color:var(--t3)">'+window._saV2BankaMetni(para)+'</div>';
   onizleme.innerHTML = h;
   var ozet = document.getElementById('st-ozet-toplam-satis');
   if(ozet) ozet.textContent = toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para;
