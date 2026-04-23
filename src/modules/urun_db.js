@@ -400,6 +400,7 @@ function openUrunModal(id) {
  * Ürün kaydet.
  */
 window._saveUrunDB = function() {
+  /* URUN-AUTH-GUARD-001 */ if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
   /* URUN-FORM-EXCEL-004: multi-row batch save
      Düzeltmeler: loadUrunDB/storeUrunDB (doğru store),
      Auth.getCU (dosya standardı), edit/duplicate scope dışı. */
@@ -686,6 +687,7 @@ function renderUrunDB() {
  * @param {string|number} id Urun ID
  */
 window._deleteUrun = function(id) {
+  /* URUN-AUTH-GUARD-001 */ if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
   window.confirmModal?.('Bu urunu silmek istediginizden emin misiniz?', {
     title: 'Urun Sil', danger: true, confirmText: 'Evet, Sil',
     onConfirm: function() {
@@ -729,6 +731,7 @@ window._urunDBTumunuSec = function() {
  * Toplu silme — secili urunleri soft delete yapar.
  */
 window._urunDBTopluSil = function() {
+  /* URUN-AUTH-GUARD-001 */ if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
   var checked = document.querySelectorAll('.udb-bulk-chk:checked');
   var ids = Array.from(checked).map(function(cb) { return cb.dataset.id; });
   if (!ids.length) { window.toast?.('Urun secin', 'err'); return; }
