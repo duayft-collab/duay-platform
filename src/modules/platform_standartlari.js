@@ -74,7 +74,35 @@ window.renderPlatformStandartlari = function() {
     /* [VERI-PROTOKOL-EKLE-001] Veri Protokolu bolumu (iskelet) */
     +'<div style="font-size:12px;font-weight:500;color:var(--t);margin-top:20px;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Veri Protokolu</div>'
     +'<div id="veri-protokol-container" style="border:0.5px solid var(--b);border-radius:8px;padding:12px 16px;background:var(--sf)">'
-      +'<div style="font-size:11px;color:var(--t3)">Platform veri mimarisi (LS + Firestore) — yukleniyor...</div>'
+      +(function(){
+        /* [VERI-PROTOKOL-EKLE-002] Runtime canli veri + 2 hardcode */
+        /* [VERI-PROTOKOL-EKLE-002-HARDCODE] CRITICAL_COLS.length=19, _noMergeCols.length=6 — manuel guncel */
+        var totalKeys = (typeof window.KEYS==='object') ? Object.keys(window.KEYS).length : 0;
+        var activeLS = Object.keys(localStorage).length;
+        var totalBytes = Object.keys(localStorage).reduce(function(s,k){ return s + (localStorage.getItem(k)||'').length; }, 0);
+        var ls_kb = Math.round(totalBytes/1024);
+        var cacheMatch = Array.from(document.scripts).map(function(sc){return sc.src;}).join(' ').match(/\?v=(\d{8}[A-Z]{2})/);
+        var cache = cacheMatch ? cacheMatch[1] : '—';
+        var realtimeCount = 19;
+        var noMergeCount = 6;
+        var cards = [
+          {lbl:'Toplam Key', val:totalKeys, sub:'logical keys', c:'var(--t)'},
+          {lbl:'Aktif LS', val:activeLS, sub:'localStorage', c:'var(--t)'},
+          {lbl:'Realtime', val:realtimeCount, sub:'CRITICAL_COLS', c:'#1A8D6F'},
+          {lbl:'No-Merge', val:noMergeCount, sub:'_noMergeCols', c:'#B4730F'},
+          {lbl:'LS Boyut', val:ls_kb+' KB', sub:'~5000 KB limit', c:'var(--t)'},
+          {lbl:'Cache', val:cache, sub:'active version', c:'var(--t3)'}
+        ];
+        return '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
+          + cards.map(function(k){
+              return '<div style="background:var(--sf);border:0.5px solid var(--b);border-radius:8px;padding:10px 12px">'
+                + '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;font-weight:500;letter-spacing:0.05em">' + k.lbl + '</div>'
+                + '<div style="font-size:16px;font-weight:600;color:' + k.c + ';margin-top:3px;font-variant-numeric:tabular-nums">' + k.val + '</div>'
+                + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + k.sub + '</div>'
+                + '</div>';
+            }).join('')
+          + '</div>';
+      })()
     +'</div>'
     +'</div>';
 };
