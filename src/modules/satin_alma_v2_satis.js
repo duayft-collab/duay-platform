@@ -93,7 +93,24 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="display:flex;align-items:end;gap:8px;padding:8px 10px;background:#FFFCF5;border:0.5px solid #F4E4BC;border-radius:5px;margin-top:6px">';
   ic += '<div style="flex:1"><div style="font-size:8px;font-weight:500;color:#854F0B;letter-spacing:.06em;margin-bottom:3px">JOB ID SEÇ (Tedarik Kaynağı)</div>';
   /* JOB-ID-KAYNAK-FIX-001: select → aranabilir input (alış formuyla tutarlı) */
-  ic += '<input id="st-job-id" placeholder="Job ara... (örn: 0041)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="event.stopPropagation();window._stJobIdAra?.(this)" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit">';
+  /* T03-9: input → select (sadece PusulaPro aktif görevler) */
+  ic += '<select id="st-job-id" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle?.()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit">';
+  ic += '<option value="">JOB seç...</option>';
+  ic += (function(){
+    try {
+      var tasks = (window.loadTasks?.() || []).filter(function(t){
+        return !t.isDeleted && t.durum !== 'tamamlandi';
+      });
+      return tasks.map(function(t){
+        var jid = t.job_id || t.jobId || '';
+        if (!jid) return '';
+        var baslik = (t.baslik || t.title || '').substring(0, 40);
+        var label = jid + (baslik ? ' — ' + baslik : '');
+        return '<option value="' + _saEsc(jid) + '">' + _saEsc(label) + '</option>';
+      }).join('');
+    } catch(e){ return ''; }
+  })();
+  ic += '</select>';
   ic += '<datalist id="st-job-list"></datalist>';
   ic += '</div>';
   ic += '<button onclick="event.stopPropagation();window._saV2JobUrunSecModal(document.getElementById(\'st-job-id\').value)" style="font-size:10px;padding:7px 12px;border:none;border-radius:5px;background:#854F0B;color:#fff;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ Tedarikçi Karşılaştır</button>';
