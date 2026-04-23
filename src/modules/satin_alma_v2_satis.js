@@ -33,7 +33,7 @@ window._saV2TeklifOlustur = function(id) {
     ? window._saV2AktifDuzenlemeTeklif.teklifId
     : (window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now()));
   var musteriList = (typeof window.loadCari === 'function' ? window.loadCari({tumKullanicilar:true}) : []).filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='M\u00fc\u015fteri'||c.cariType==='onayli'||c.tip==='musteri');});
-  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:min(1200px,95vw);max-height:92vh;display:flex;flex-direction:column">';
+  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:min(1680px,95vw);max-height:92vh;display:flex;flex-direction:column">';
 
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
   ic += '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Satış Teklifi Oluştur</div>';
