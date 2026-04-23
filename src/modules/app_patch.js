@@ -2453,7 +2453,8 @@ window._stDuzenle = function(id) {
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
   var t = d.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
-  window._saV2TeklifOlustur?.(t.alisTeklifiId || id);
+  /* PEEK-DUZENLE-BUG: alisTeklifiId fallback kaldırıldı + edit path'ine (_saV2TeklifDuzenle) route — BUG-04 globalleri set olsun */
+  window._saV2TeklifDuzenle?.(id);
 };
 
 window._convertToSatisTeklif = function(alisId) {
