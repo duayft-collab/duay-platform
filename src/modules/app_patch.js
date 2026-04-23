@@ -16,6 +16,11 @@
  * @returns {boolean}
  */
 window._yetkiKontrol = function(islem) {
+  /* [YETKI-KONTROL-ADMIN-BYPASS-001] Admin tum islemlere yetkili */
+  try {
+    var _cu = typeof window.CU === 'function' ? window.CU() : null;
+    if (_cu && (_cu.role === 'admin' || _cu.rol === 'admin')) return true;
+  } catch(e) {}
   var seviye = typeof window.getPermLevel === 'function' ? window.getPermLevel() : 'count';
   var izinliSeviyeler = {
     'toplu_sil':      ['full', 'manage'],
