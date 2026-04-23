@@ -622,6 +622,12 @@ window._saV2SatisTabloyuGuncelle = function() {
     var gIdx = bas + idx;
     // T03-2: ID eksikliği artık bug — sessizce gIdx'e düşmüyoruz, loglayalım
     if (!u.id) console.error('[T03-2] Ürün ID eksik:', u);
+    // FEAT-01: Ürün başına kâr = (satış − alış) × miktar
+    var urunKar = (parseFloat(u.satisFiyat) || 0) * (parseFloat(u.miktar) || 0)
+                - (parseFloat(u.alisHedef)  || 0) * (parseFloat(u.miktar) || 0);
+    var karRenk = urunKar > 0 ? '#0F6E56' : (urunKar < 0 ? '#DC2626' : 'var(--t3)');
+    var karFormatted = (urunKar < 0 ? '-' : '') + paraSym
+                     + Math.abs(urunKar).toLocaleString('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
     return '<tr style="border-bottom:0.5px solid var(--b)">'
       + '<td style="padding:4px 6px;width:28px">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
       + '<td style="padding:4px 6px;font-size:10px"><div style="font-weight:500">' + _saEsc(u.duayKodu || '') + (u.duayKodu ? ' \u2014 ' : '') + _saEsc(u.urunAdi || '\u2014') + '</div>' + (u.eskiKod ? '<div style="font-size:8px;color:var(--t3)">(' + _saEsc(u.eskiKod) + ')</div>' : '') + '</td>'
@@ -635,6 +641,8 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:4px 6px"><input type="number" value="' + (u.marj || 33) + '" min="0" max="200" oninput="event.stopPropagation();window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box"></td>'
       + '<td style="padding:3px 4px;color:#16A34A;font-weight:600;text-align:right"><input type="number" min="0" step="0.01" value="' + (u.satisFiyat || 0).toFixed(2) + '" onchange="event.stopPropagation();window._saV2UrunSatisFiyat(\'' + (u.id || gIdx) + '\', parseFloat(this.value)||0)" oninput="event.stopPropagation()" style="width:100%;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:#E1F5EE;color:#16A34A;font-family:inherit;font-weight:600;box-sizing:border-box;text-align:right"></td>'
       + '<td style="padding:4px 6px;font-size:10px;font-weight:500;text-align:right">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + '</td>'
+      /* FEAT-01: KAR kolonu — renkli + bold */
+      + '<td style="padding:4px 6px;font-size:10px;color:' + karRenk + ';font-weight:700;text-align:right">' + karFormatted + '</td>'
       /* SATIS-FORM-PARITE-001: Menşei inline seçim (Birim T03-6 ile yukarı taşındı) */
       + '<td style="padding:4px 6px"><select disabled onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t2);cursor:not-allowed;opacity:0.85;font-family:inherit"><option value="">—</option>'
       + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
