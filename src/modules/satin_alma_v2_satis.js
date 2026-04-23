@@ -94,7 +94,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="flex:1"><div style="font-size:8px;font-weight:500;color:#854F0B;letter-spacing:.06em;margin-bottom:3px">JOB ID SEÇ (Tedarik Kaynağı)</div>';
   /* JOB-ID-KAYNAK-FIX-001: select → aranabilir input (alış formuyla tutarlı) */
   /* T03-9: input → select (sadece PusulaPro aktif görevler) */
-  ic += '<select id="st-job-id" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle?.()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit">';
+  /* T03-10: onchange'e JOB ürün otomatik yükleme eklendi (yükleme önce, PI önizleme sonra) */
+  ic += '<select id="st-job-id" onchange="event.stopPropagation();window._saV2JobUrunYukle?.(this.value);window._saV2PIOnizlemeGuncelle?.()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit">';
   ic += '<option value="">JOB seç...</option>';
   ic += (function(){
     try {
@@ -534,6 +535,93 @@ window._saV2SartManuelEkle = function() {
   window._stSartlar.push(inp.value.trim());
   window._saV2SartListeGuncelle();
   inp.value = '';
+};
+
+/**
+ * T03-10: Bir JOB'a ait tüm alış tekliflerinden, her ürün için
+ * en düşük TL fiyatlı tedarikçi teklifini toplar.
+ * @param {string} jobId
+ * @returns {Array<{duayKodu, urunAdi, alisF, para, miktar, birim, mensei, gorsel, tedarikci}>}
+ */
+window._saV2JobUrunleriTopla = function(jobId) {
+  if (!jobId) return [];
+  var kur = window._saKur || {};
+  var kurF = function(para){ return parseFloat(kur[para]) || 1; };
+
+  var teklifler = (window.loadAlisTeklifleri?.() || []).filter(function(at){
+    return !at.isDeleted && String(at.jobId || '').trim() === String(jobId).trim();
+  });
+
+  var urunMap = {};
+  teklifler.forEach(function(at){
+    var urunler = (at.urunler && at.urunler.length)
+      ? at.urunler
+      : [{duayKodu:at.duayKodu, urunAdi:at.urunAdi, alisF:at.alisF, para:at.para, miktar:at.miktar, birim:at.birim, mensei:at.mensei}];
+
+    urunler.forEach(function(u){
+      var key = u.duayKodu || u.urunAdi || '';
+      if (!key) return;
+      var alisTl = (parseFloat(u.alisF)||0) * kurF(u.para || 'USD');
+      var mevcut = urunMap[key];
+      if (!mevcut || alisTl < mevcut._alisTl) {
+        urunMap[key] = {
+          duayKodu: u.duayKodu || '',
+          urunAdi: u.urunAdi || '',
+          alisF: parseFloat(u.alisF) || 0,
+          para: u.para || 'USD',
+          miktar: parseFloat(u.miktar) || 1,
+          birim: u.birim || 'Adet',
+          mensei: u.mensei || '',
+          gorsel: u.gorsel || at.gorsel || '',
+          tedarikci: at.tedarikci || '',
+          _alisTl: alisTl
+        };
+      }
+    });
+  });
+
+  return Object.keys(urunMap).map(function(k){
+    var x = urunMap[k];
+    delete x._alisTl;
+    return x;
+  });
+};
+
+/**
+ * T03-10: Seçilen JOB'un ürünlerini satış formuna otomatik yükler.
+ * Mevcut 2+ ürün varsa native confirm ile onay sorar.
+ * @param {string} jobId
+ */
+window._saV2JobUrunYukle = function(jobId) {
+  if (!jobId) return;
+  var urunler = window._saV2JobUrunleriTopla(jobId);
+
+  if (!urunler.length) {
+    window.toast?.('Bu JOB için alış teklifi bulunamadı', 'warn');
+    return;
+  }
+
+  var mevcut = window._saV2SatisUrunler || [];
+
+  if (mevcut.length >= 2) {
+    var ok = confirm('Formda ' + mevcut.length + ' ürün var.\nJOB ürünleri üzerine YAZILSIN mı?\n\nTamam = üzerine yaz\nİptal = mevcut kalsın');
+    if (!ok) return;
+  }
+
+  window._saV2SatisUrunler = [];
+  urunler.forEach(function(u){
+    window._saV2SatisUrunEkle && window._saV2SatisUrunEkle(u);
+  });
+  // T03-10 miktar fix: _saV2SatisUrunEkle hardcode miktar:1 ile push
+  // eder — alış teklifindeki gerçek miktarı geri yaz
+  (window._saV2SatisUrunler || []).forEach(function(satis, i){
+    if (urunler[i] && urunler[i].miktar) satis.miktar = urunler[i].miktar;
+  });
+
+  window._saV2SatisTabloyuGuncelle?.();
+  window._saV2PIOnizlemeGuncelle?.();
+
+  window.toast?.(urunler.length + ' ürün JOB\'tan yüklendi', 'ok');
 };
 
 /* SATIS-JOBID-001 + SATIS-FORM-FIX-001: Job ID'ye göre ürün bazlı tedarikçi karşılaştırma modalı */
