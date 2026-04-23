@@ -2773,6 +2773,19 @@ window._saveSatisTeklif = function() {
   }
 };
 
+/* PDF-FORMAT: Türkçe rakam formatlayıcı — A'da sembol önce ($87.501,23), B/C'de kod arkada (87.501,23 USD) */
+window._pdfNum = function(val, cur, useSym) {
+  var num = (Number(val)||0).toLocaleString('tr-TR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  if (useSym) {
+    var sym = cur==='USD'?'$':cur==='EUR'?'€':cur==='TRY'?'₺':cur;
+    return sym + num;
+  }
+  return num + ' ' + cur;
+};
+
 window._printSatisTeklif = function(id) {
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
   var t = d.find(function(x){return String(x.id)===String(id);});
@@ -2781,7 +2794,8 @@ window._printSatisTeklif = function(id) {
   var esc = window._esc;
   var cur = t.paraBirimi || 'USD';
   var curSym = cur==='USD'?'$':cur==='EUR'?'€':cur==='TRY'?'₺':cur;
-  var totalAmt = (t.genelToplam||0).toFixed(2);
+  /* PDF-FORMAT: tr-TR format + sembol önce */
+  var totalAmt = window._pdfNum(t.genelToplam, cur, true);
   // Banka bilgileri
   var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
   var banka = bankalar.length ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
@@ -2816,14 +2830,15 @@ window._printSatisTeklif = function(id) {
     // IMO uyarısı
     + (function(){var hasIMO=(t.urunler||[]).some(function(u){return u.imoMu;});return hasIMO?'<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:6px;padding:10px 14px;margin-bottom:12px;color:#991B1B;font-weight:700;font-size:12px">⚠ ATTENTION: THIS SHIPMENT CONTAINS HAZARDOUS MATERIALS (IMO/DG CARGO)<br><span style="font-weight:400;font-size:10px">MSDS documents available upon request</span></div>':'';})()
     // Tablo — fotoğraflı
-    + '<table><thead><tr><th>NO</th><th style="width:50px">PHOTO</th><th>DESCRIPTION OF GOODS</th><th>QTY</th><th>UNIT PRICE (' + cur + ')</th><th>TOTAL PRICE (' + cur + ')</th></tr></thead><tbody>'
+    + '<table><thead><tr><th>NO</th><th style="width:60px">PHOTO</th><th>DESCRIPTION OF GOODS</th><th>QTY</th><th>UNIT PRICE (' + cur + ')</th><th>TOTAL PRICE (' + cur + ')</th></tr></thead><tbody>'
     + (t.urunler||[]).map(function(u,i){
         var urunData = (typeof loadUrunler==='function'?loadUrunler():[]).find(function(x){return x.id===u.urunId;});
-        var foto = urunData?.gorsel ? '<img src="'+urunData.gorsel+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px">' : '<div style="width:40px;height:40px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">📦</div>';
+        /* PDF-FOTO: foto +%20 — 40px → 48px (img + placeholder) */
+        var foto = urunData?.gorsel ? '<img src="'+urunData.gorsel+'" style="width:48px;height:48px;object-fit:cover;border-radius:4px">' : '<div style="width:48px;height:48px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">📦</div>';
         var imoTag = (u.imoMu||urunData?.imolu==='E') ? '<span style="color:#DC2626;font-weight:700;font-size:9px"> [IMO Class '+(urunData?.imoSinifi||'?')+']</span>' : '';
-        return '<tr><td>' + (i+1) + '</td><td>'+foto+'</td><td><b>' + esc(u.urunAdi||'') + '</b>'+imoTag+'<br><span style="font-size:9px;color:#666">'+ esc(urunData?.teknikAciklama||urunData?.standartAdi||'') +'</span></td><td style="text-align:center">' + (u.miktar||0) + '</td><td style="text-align:right">' + curSym + (u.satisFiyat||0).toFixed(2) + '</td><td style="text-align:right">' + curSym + ((u.satisFiyat||0)*(u.miktar||0)).toFixed(2) + '</td></tr>';
+        return '<tr><td>' + (i+1) + '</td><td>'+foto+'</td><td><b>' + esc(u.urunAdi||'') + '</b>'+imoTag+'<br><span style="font-size:9px;color:#666">'+ esc(urunData?.teknikAciklama||urunData?.standartAdi||'') +'</span></td><td style="text-align:center">' + (u.miktar||0) + '</td><td style="text-align:right">' + window._pdfNum(u.satisFiyat, cur, true) + '</td><td style="text-align:right">' + window._pdfNum((u.satisFiyat||0)*(u.miktar||0), cur, true) + '</td></tr>';
       }).join('')
-    + '<tr class="total-row"><td colspan="5" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;font-size:15px">' + curSym + totalAmt + '</td></tr>'
+    + '<tr class="total-row"><td colspan="5" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;font-size:15px">' + totalAmt + '</td></tr>'
     + '</tbody></table>'
     // Terms — genişletilmiş
     + '<div class="terms"><h4>TERMS & CONDITIONS</h4>'
@@ -3033,8 +3048,9 @@ window._printSatisTeklifB = function(id) {
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
     +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(t.musteri||'')+'</div></div></div>'
     +'<table><thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'
-    +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+(u.satisFiyat||0).toFixed(2)+' '+cur+'</td><td style="text-align:right">'+((u.satisFiyat||0)*(u.miktar||0)).toFixed(2)+' '+cur+'</td></tr>';}).join('')
-    +'<tr class="total"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;font-size:16px">'+(t.genelToplam||0).toFixed(2)+' '+cur+'</td></tr></tbody></table>'
+    /* PDF-FORMAT: tr-TR sayı + kod arkada (B format) */
+    +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+window._pdfNum(u.satisFiyat, cur, false)+'</td><td style="text-align:right">'+window._pdfNum((u.satisFiyat||0)*(u.miktar||0), cur, false)+'</td></tr>';}).join('')
+    +'<tr class="total"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;font-size:16px">'+window._pdfNum(t.genelToplam, cur, false)+'</td></tr></tbody></table>'
     +'<div class="bank"><h4>BANKING DETAILS</h4>'
     +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
     +'<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
@@ -3071,8 +3087,9 @@ window._printSatisTeklifC = function(id) {
     // Sayfa 2: Ürünler
     +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Product Details</h2>'
     +'<table><thead><tr><th>No</th><th>Product</th><th>Technical Specs</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>'
-    +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.urunAdi||'')+'</b></td><td style="font-size:10px;color:#666">'+esc(u.teknikDetay||'—')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+(u.satisFiyat||0).toFixed(2)+' '+cur+'</td><td style="text-align:right;font-weight:600">'+((u.satisFiyat||0)*(u.miktar||0)).toFixed(2)+' '+cur+'</td></tr>';}).join('')
-    +'<tr style="background:#1a365d;color:#fff;font-weight:700"><td colspan="5" style="text-align:right;border:none">GRAND TOTAL</td><td style="text-align:right;border:none;font-size:14px">'+(t.genelToplam||0).toFixed(2)+' '+cur+'</td></tr></tbody></table></div>'
+    /* PDF-FORMAT: tr-TR sayı + kod arkada (C format) */
+    +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.urunAdi||'')+'</b></td><td style="font-size:10px;color:#666">'+esc(u.teknikDetay||'—')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+window._pdfNum(u.satisFiyat, cur, false)+'</td><td style="text-align:right;font-weight:600">'+window._pdfNum((u.satisFiyat||0)*(u.miktar||0), cur, false)+'</td></tr>';}).join('')
+    +'<tr style="background:#1a365d;color:#fff;font-weight:700"><td colspan="5" style="text-align:right;border:none">GRAND TOTAL</td><td style="text-align:right;border:none;font-size:14px">'+window._pdfNum(t.genelToplam, cur, false)+'</td></tr></tbody></table></div>'
     // Sayfa 3: Koşullar + İmza
     +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Terms & Conditions</h2>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">'
