@@ -7612,10 +7612,11 @@ function _renderCariDetail(id) {
       + islemler.slice(0,10).map(function(ism){
         var renk = ism.tip==='alacak'?'#16A34A':'#DC2626';
         return '<div style="display:grid;grid-template-columns:80px 1fr 100px 60px;gap:0;padding:5px 8px;border-bottom:0.5px solid var(--b);font-size:10px;align-items:center">'
-          + '<div style="color:var(--t3)">' + (ism.tarih||'—') + '</div>'
+          /* [CARI-XSS-ISLEM-001] tarih _esc sarmalandı */
+          + '<div style="color:var(--t3)">' + (window._esc?.(ism.tarih)||ism.tarih||'—') + '</div>'
           + '<div>' + (window._esc?.(ism.aciklama)||ism.aciklama||'—') + '</div>'
           + '<div style="font-family:monospace;font-size:9px">' + parseFloat(ism.tutar||0).toLocaleString('tr-TR') + ' ' + (ism.para||'') + '</div>'
-          + '<div style="color:'+renk+';font-weight:600">' + (ism.tip||'—') + '</div>'
+          + '<div style="color:'+renk+';font-weight:600">' + (window._esc?.(ism.tip)||ism.tip||'—') + '</div>'
           + '</div>';
       }).join('')
       + '</div>';
