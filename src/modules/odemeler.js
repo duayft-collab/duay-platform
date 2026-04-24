@@ -7404,18 +7404,7 @@ function renderCari() {
     return { icon: '🟢', color: '#16A34A', label: 'İyi' };
   }
 
-  // ── Toplu işlem toolbar (admin) ────────────────────────────────
-  var bulkBar = document.getElementById('cari-bulk-bar');
-  if (!bulkBar && _isManagerO()) {
-    bulkBar = document.createElement('div');
-    bulkBar.id = 'cari-bulk-bar';
-    bulkBar.style.cssText = 'display:none;padding:6px 12px;background:#FEF2F2;border-bottom:1px solid #FECACA;align-items:center;gap:8px';
-    bulkBar.innerHTML = '<span style="font-size:11px;color:#991B1B;font-weight:600" id="cari-bulk-count">0 seçili</span>'
-      + '<button onclick="window._cariBulkDelete()" class="btn btns" style="font-size:10px;color:#DC2626">🗑 Seçilenleri Sil</button>'
-      + '<button onclick="window._cariBulkClear()" class="btn btns" style="font-size:10px">İptal</button>';
-    var listParent2 = cont.parentElement;
-    if (listParent2) listParent2.insertBefore(bulkBar, cont);
-  }
+  /* [CARI-BULK-SIL-ESKI-BAR-KALDIR-001] Eski bulk bar kaldırıldı — yeni cari-toplu-sil-btn üst toolbar'da yeterli */
 
   if (!fl.length) {
     cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px;margin-bottom:8px">🏢</div><div>Cari bulunamadı</div></div>';
@@ -9024,11 +9013,7 @@ window.openFxPosition = function() {
 /** Toplu seçim sayacı güncelle */
 window._cariUpdateBulkCount = function() {
   var checked = document.querySelectorAll('.cari-bulk-cb:checked');
-  var bar = document.getElementById('cari-bulk-bar');
-  var cnt = document.getElementById('cari-bulk-count');
-  if (bar) bar.style.display = checked.length ? 'flex' : 'none';
-  if (cnt) cnt.textContent = checked.length + ' seçili';
-  /* [CARI-BULK-SELECT-UI-001] Buton ID uyumsuzluğu fix — seçim varken görünür + count */
+  /* [CARI-BULK-SIL-ESKI-BAR-KALDIR-001] Eski bar/count DOM referansları kaldırıldı */
   var btn = document.getElementById('cari-toplu-sil-btn');
   if (btn) {
     btn.style.display = checked.length ? 'inline-block' : 'none';
