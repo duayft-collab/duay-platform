@@ -150,8 +150,9 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div>';
 
   ic += '<div style="background:var(--s2);border-radius:6px;padding:10px 12px;border:0.5px solid var(--b)">';
-  ic += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;color:var(--t3)">Toplam Satış</span><span style="font-size:14px;font-weight:500;color:#0F6E56" id="st-ozet-toplam-satis">0 USD</span></div>';
-  ic += '<div style="display:flex;justify-content:space-between"><span style="font-size:9px;color:var(--t3)">Toplam Kâr</span><span style="font-size:11px;font-weight:500;color:#185FA5" id="st-ozet-toplam-kar">0 USD</span></div>';
+  ic += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;color:var(--t3)">Toplam Satış</span><span style="font-size:14px;font-weight:500;color:#0F6E56;font-variant-numeric:tabular-nums" id="st-ozet-toplam-satis">0 USD</span></div>';
+  /* TASARIM-01: Toplam Kâr vurgu — bold + büyük + yeşil + marj yan yana */
+  ic += '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:10px;color:var(--t3)">Toplam Kâr</span><span style="display:flex;align-items:baseline;gap:6px"><span style="font-size:14px;font-weight:700;color:#0F6E56;font-variant-numeric:tabular-nums" id="st-ozet-toplam-kar">0 USD</span><span style="font-size:11px;color:var(--t3);font-weight:500" id="st-ozet-marj-yan">(%0 marj)</span></span></div>';
   ic += '</div>';
   ic += '<input type="hidden" id="st-musteri-ad" value=""><input type="hidden" id="st-musteri-kod" value="0000">';
   ic += '<input type="hidden" id="st-urun-adi-hidden" value="'+_saEsc(_urunAdi)+'"><input type="hidden" id="st-duay-kodu-hidden" value="'+_saEsc(_duayKodu)+'"><input type="hidden" id="st-alis-tl-hidden" value="'+alisTl+'">';

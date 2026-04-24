@@ -707,11 +707,20 @@ window._saV2SatisOzetGuncelle = function() {
     toplamMiktar += miktar;
   });
   var toplamKar = toplamSatis - toplamAlis;
-  var ortMarj = toplamAlis>0 ? ((toplamKar/toplamAlis)*100).toFixed(1) : 0;
-  var el1 = document.getElementById('st-ozet-toplam-satis'); if(el1) el1.textContent = paraSym+toplamSatis.toFixed(2)+' '+hedefPara;
-  var el2 = document.getElementById('st-ozet-toplam-kar'); if(el2) el2.textContent = paraSym+toplamKar.toFixed(2)+' '+hedefPara;
+  /* TASARIM-01: marj tr-TR (nokta → virgül), kâr tr-TR format, marj yan yana, negatif kırmızı */
+  var ortMarj = toplamAlis>0 ? ((toplamKar/toplamAlis)*100).toFixed(1) : '0';
+  var ortMarjStr = String(ortMarj).replace('.', ',');
+  var el1 = document.getElementById('st-ozet-toplam-satis'); if(el1) el1.textContent = paraSym+toplamSatis.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+' '+hedefPara;
+  var el2 = document.getElementById('st-ozet-toplam-kar');
+  if(el2){
+    el2.textContent = paraSym+toplamKar.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+' '+hedefPara;
+    el2.style.color = toplamKar < 0 ? '#DC2626' : '#0F6E56';
+  }
+  /* Marj yan yana */
+  var elMarj = document.getElementById('st-ozet-marj-yan');
+  if(elMarj) elMarj.textContent = '(%'+ortMarjStr+' marj)';
   /* Eski form ID'leri (geriye uyumluluk) */
-  var el3 = document.getElementById('st-ozet-ort-marj'); if(el3) el3.textContent = '%'+ortMarj;
+  var el3 = document.getElementById('st-ozet-ort-marj'); if(el3) el3.textContent = '%'+ortMarjStr;
   var el4 = document.getElementById('st-ozet-urun-say'); if(el4) el4.textContent = window._saV2SatisUrunler.length+' \u00fcr\u00fcn \u00b7 '+toplamMiktar+' adet';
   var el5 = document.getElementById('st-ozet-eur');
   if(el5){
