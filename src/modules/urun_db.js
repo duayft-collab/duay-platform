@@ -684,11 +684,81 @@ function renderUrunDB() {
 }
 
 /**
+ * İŞ-1: Ürün teklif referans kontrolü — silmeden önce alış+satış tekliflerinde kullanımı tarar.
+ * @param {string} duayKodu
+ * @returns {{alis: Array<{id, piNo}>, satis: Array<{id, teklifNo}>}}
+ */
+window._urunTeklifReferansi = function(duayKodu) {
+  var kodNorm = String(duayKodu || '').trim();
+  if (!kodNorm) return { alis: [], satis: [] };
+
+  var alisEslesen = [];
+  var satisEslesen = [];
+
+  /* Alış teklifleri tara */
+  var alis = window.loadAlisTeklifleri?.() || [];
+  alis.forEach(function(at) {
+    if (at.isDeleted) return;
+    var hasInArray = (at.urunler || []).some(function(u){
+      return String(u.duayKodu || u.duayCode || '').trim() === kodNorm;
+    });
+    var hasLegacy = String(at.duayKodu || at.duayCode || '').trim() === kodNorm;
+    if (hasInArray || hasLegacy) {
+      alisEslesen.push({
+        id: at.id,
+        piNo: at.piNo || at.teklifId || at.id
+      });
+    }
+  });
+
+  /* Satış teklifleri tara */
+  var satis = window.loadSatisTeklifleri?.() || [];
+  satis.forEach(function(st) {
+    if (st.isDeleted) return;
+    var hasMatch = (st.urunler || []).some(function(u){
+      return String(u.duayKodu || u.duayCode || '').trim() === kodNorm;
+    });
+    if (hasMatch) {
+      satisEslesen.push({
+        id: st.id,
+        teklifNo: st.teklifNo || st.teklifId || st.id
+      });
+    }
+  });
+
+  return { alis: alisEslesen, satis: satisEslesen };
+};
+
+/**
  * Tek urun soft delete.
  * @param {string|number} id Urun ID
  */
 window._deleteUrun = function(id) {
   /* URUN-AUTH-GUARD-001 */ if (!window.isAdmin?.()) { window.toast?.('Admin yetkisi gerekli','err'); return; }
+
+  /* İŞ-1: Teklif referans kontrolü — silme öncesi hard-block */
+  var dataPre = loadUrunDB();
+  var itemPre = dataPre.find(function(x) { return String(x.id) === String(id); });
+  if (itemPre) {
+    var kod = itemPre.duayCode || itemPre.duayKodu || '';
+    var ref = window._urunTeklifReferansi(kod);
+    var toplam = ref.alis.length + ref.satis.length;
+    if (toplam > 0) {
+      var msg = 'Silinemez — teklif(ler)de kullanılıyor: ';
+      var parts = [];
+      if (ref.alis.length) {
+        parts.push('Alış ' + ref.alis.slice(0,3).map(function(x){return x.piNo;}).join(', ')
+          + (ref.alis.length > 3 ? ' +' + (ref.alis.length - 3) + ' daha' : ''));
+      }
+      if (ref.satis.length) {
+        parts.push('Satış ' + ref.satis.slice(0,3).map(function(x){return x.teklifNo;}).join(', ')
+          + (ref.satis.length > 3 ? ' +' + (ref.satis.length - 3) + ' daha' : ''));
+      }
+      window.toast?.(msg + parts.join(' | '), 'err');
+      return;
+    }
+  }
+
   window.confirmModal?.('Bu urunu silmek istediginizden emin misiniz?', {
     title: 'Urun Sil', danger: true, confirmText: 'Evet, Sil',
     onConfirm: function() {
@@ -742,17 +812,33 @@ window._urunDBTopluSil = function() {
       var data = loadUrunDB();
       var now = new Date().toISOString();
       var cuId = window.Auth?.getCU?.()?.id || '';
+      /* İŞ-1: Gevşek filtreleme — teklifte kullanılanlar korunur, diğerleri silinir */
+      var silinen = 0;
+      var korunan = 0;
+      var korunanKodlar = [];
       ids.forEach(function(id) {
         var item = data.find(function(x) { return String(x.id) === String(id); });
-        if (item) {
-          item.isDeleted = true;
-          item.deletedAt = now;
-          item.deletedBy = cuId;
+        if (!item) return;
+        var kod = item.duayCode || item.duayKodu || '';
+        var ref = window._urunTeklifReferansi(kod);
+        if (ref.alis.length + ref.satis.length > 0) {
+          korunan++;
+          if (korunanKodlar.length < 3) korunanKodlar.push(kod);
+          return;
         }
+        item.isDeleted = true;
+        item.deletedAt = now;
+        item.deletedBy = cuId;
+        silinen++;
       });
       storeUrunDB(data);
-      window.toast?.(ids.length + ' urun silindi', 'ok');
-      window.logActivity?.('urun_db', 'Toplu silme: ' + ids.length + ' urun');
+      var msg = silinen + ' silindi';
+      if (korunan > 0) {
+        msg += ', ' + korunan + ' korundu (teklifte: ' + korunanKodlar.join(', ')
+             + (korunan > 3 ? '...' : '') + ')';
+      }
+      window.toast?.(msg, silinen > 0 ? 'ok' : 'warn');
+      window.logActivity?.('urun_db', 'Toplu silme: ' + silinen + ' silindi, ' + korunan + ' korundu');
       renderUrunDB();
     }
   });
