@@ -82,8 +82,6 @@ function _injectCrmPanel() {
       </div>
       <div class="fg"><div class="fl">POTANSİYEL (₺)</div><input type="number" class="fi" id="crm-value" placeholder="0"></div>
       <div class="fg"><div class="fl">SORUMLU</div><select class="fi" id="crm-owner"></select></div>
-      <!-- [CARI-PASIF-TOGGLE-001] Operasyonel aktif/pasif — status workflow'dan ayrı -->
-      <div class="fg" style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s2);border:0.5px solid var(--b);border-radius:6px;margin-top:6px"><input type="checkbox" id="crm-aktif" checked style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac);flex-shrink:0"><label for="crm-aktif" style="font-size:12px;color:var(--t);cursor:pointer;font-weight:500">Operasyonel olarak aktif</label><span style="font-size:10px;color:var(--t3);margin-left:auto">Pasif: listede gri rozet</span></div>
     </div>
     <div class="fg"><div class="fl">NOT / İLGİ ALANI</div><textarea class="fi" id="crm-note" rows="2" style="resize:vertical" placeholder="…"></textarea></div>
     <input type="hidden" id="crm-eid">

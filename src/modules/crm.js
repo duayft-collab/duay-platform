@@ -46,8 +46,6 @@ function openCrmModal(id){
     if(_gc('crm-value'))  _gc('crm-value').value   =e.value||0;
     if(_gc('crm-note'))   _gc('crm-note').value    =e.note||'';
     if(osel)              osel.value               =e.owner;
-    /* [CARI-PASIF-TOGGLE-001] undefined = aktif (geriye uyumlu) */
-    if(_gc('crm-aktif'))  _gc('crm-aktif').checked =(e.aktif!==false);
     if(_gc('crm-eid'))    _gc('crm-eid').value     =id;
     _stcLegacy('mo-crm-t','✏️ Müşteri Düzenle');
   }else{
@@ -55,8 +53,6 @@ function openCrmModal(id){
     if(_gc('crm-value')) _gc('crm-value').value='0';
     if(_gc('crm-status'))_gc('crm-status').value='lead';
     if(_gc('crm-eid'))   _gc('crm-eid').value='';
-    /* [CARI-PASIF-TOGGLE-001] yeni kayıt → checkbox default true */
-    if(_gc('crm-aktif')) _gc('crm-aktif').checked=true;
     _stcLegacy('mo-crm-t','+ Müşteri Ekle');
   }
   window.openMo?.('mo-crm');
@@ -79,8 +75,6 @@ function saveCrm(){
     owner:  parseInt(_gc('crm-owner')?.value||_CUcLegacy()?.id),
     ts:     _nowTsc(),
     updatedAt: new Date().toISOString(),
-    /* [CARI-PASIF-TOGGLE-001] undefined eski kayıt → render'da aktif kabul edilir */
-    aktif: (_gc('crm-aktif')?.checked !== false),
   };
   if(eid){const e=d.find(x=>x.id===eid);if(e)Object.assign(e,entry);}
   else d.push({id:generateNumericId(),...entry});
@@ -236,7 +230,7 @@ function _renderCrmList(fl,users,cont){
     tr.innerHTML=`
       <td style="width:30px;text-align:center">${window.isAdmin?.() ? '<input type="checkbox" class="crm-bulk-chk" data-id="' + c.id + '" onclick="event.stopPropagation();_crmBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)">' : ''}</td>
       <td>
-        <div style="font-weight:500;font-size:13px">${window._esc(c.name)}${c.aktif===false?' <span style="font-size:9px;padding:1px 6px;border-radius:3px;background:#E5E5E5;color:#666;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Pasif</span>':''}</div>
+        <div style="font-weight:500;font-size:13px">${window._esc(c.name)}</div>
         <div style="font-size:10px;color:var(--t2)">${window._esc(c.phone||c.email||'')}</div>
       </td>
       <td style="font-size:13px">${window._esc(c.contact||'—')}</td>
@@ -255,7 +249,7 @@ function _renderCrmList(fl,users,cont){
     var peekTr=document.createElement('tr');
     peekTr.id='peek-crm-'+c.id;
     peekTr.style.display='none';
-    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+window._esc(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+window._esc(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+window._esc(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();window._crmSatisTeklif?.('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #0F6E56;background:#E8F5F0;color:#0F6E56;cursor:pointer;font-family:inherit">Satış Teklifi</button><button onclick="event.stopPropagation();window._crmPasifToggle('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid '+(c.aktif===false?'#0F6E56':'#854F0B')+';background:'+(c.aktif===false?'#E8F5F0':'#FAEEDA')+';color:'+(c.aktif===false?'#085041':'#633806')+';cursor:pointer;font-family:inherit">'+(c.aktif===false?'↻ Aktif Et':'⏸ Pasife Al')+'</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
+    peekTr.innerHTML='<td colspan="8" style="padding:10px 16px;background:var(--s2);border-bottom:0.5px solid var(--b)"><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:11px;margin-bottom:8px"><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Firma</div><div style="font-weight:500">'+window._esc(c.name||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">İletişim</div><div style="font-weight:500">'+window._esc(c.contact||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Telefon</div><div style="font-weight:500">'+window._esc(c.phone||'—')+'</div></div><div><div style="color:var(--t3);font-size:9px;text-transform:uppercase;margin-bottom:2px">Durum</div><div style="font-weight:500">'+st2.l+'</div></div></div><div style="display:flex;gap:6px"><button onclick="event.stopPropagation();openCrmModal('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #185FA5;background:#E6F1FB;color:#0C447C;cursor:pointer;font-family:inherit">↗ Düzenle</button><button onclick="event.stopPropagation();window._crmSatisTeklif?.('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #0F6E56;background:#E8F5F0;color:#0F6E56;cursor:pointer;font-family:inherit">Satış Teklifi</button><button onclick="event.stopPropagation();delCrm('+c.id+')" style="padding:4px 10px;border-radius:5px;font-size:10px;border:0.5px solid #E24B4A;background:#FCEBEB;color:#791F1F;cursor:pointer;font-family:inherit">Sil</button></div></td>';
     tbody.appendChild(peekTr);
   });
   table.appendChild(tbody);
@@ -494,20 +488,6 @@ window._crmBulkDelete = function() {
     if (typeof storeCrmData === 'function') storeCrmData(data); if (typeof storeTrash === 'function') storeTrash(trash);
     window._crmBulkClear(); window.renderCrm?.(); window.toast?.(ids.length + ' kayıt silindi', 'ok');
   }});
-};
-
-/** [CARI-PASIF-TOGGLE-001] Cari aktif/pasif durumunu değiştir — fiziksel silme değil, operasyonel rozet */
-window._crmPasifToggle = function(crmId) {
-  var data = typeof loadCrmData === 'function' ? loadCrmData() : [];
-  var c = data.find(function(x) { return x.id === crmId; });
-  if (!c) { window.toast?.('Müşteri bulunamadı', 'err'); return; }
-  var yeniDurum = (c.aktif === false);
-  c.aktif = yeniDurum;
-  c.updatedAt = new Date().toISOString();
-  if (typeof storeCrmData === 'function') storeCrmData(data);
-  window.logActivity?.('view', '"' + c.name + '" ' + (yeniDurum ? 'aktif edildi' : 'pasife alındı'));
-  window.toast?.(c.name + (yeniDurum ? ' aktif edildi' : ' pasife alındı'), 'ok');
-  window.renderCrm?.();
 };
 
 /** @description CRM müşteri kaydından satış teklifi oluştur — satis-teklifleri paneline yönlendir */
