@@ -161,6 +161,8 @@ window._saV2TeklifOlustur = function(id) {
 
   ic += '<div style="width:380px;flex-shrink:0;background:var(--s2);overflow-y:auto;padding:12px" id="st-pi-onizleme-panel">';
   ic += '<div style="font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:8px">CANLI PI ÖNİZLEME</div>';
+  /* TASARIM-03: Müşteri geçmişi istatistik kartı — müşteri seçilince doldurulur */
+  ic += '<div id="st-musteri-gecmis-kutu" style="display:none;background:#EEF4FA;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px"></div>';
   ic += '<div id="st-pi-onizleme" style="background:var(--sf);border:0.5px solid var(--b);border-radius:6px;padding:12px;font-size:9px">';
   ic += '<div style="text-align:center;border-bottom:0.5px solid var(--b);padding-bottom:8px;margin-bottom:8px">';
   ic += '<div style="font-size:11px;font-weight:500;color:var(--t)">DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</div>';
@@ -272,7 +274,10 @@ window._saV2CheckPrevTeklif = function() {
   }
   // Boş veya placeholder seçim
   if (!customerName || customerName === 'Müşteri seçin...') {
-    warn.style.display = 'none'; warn.innerHTML = ''; return;
+    warn.style.display = 'none'; warn.innerHTML = '';
+    /* TASARIM-03: kutu da gizle */
+    var k0 = document.getElementById('st-musteri-gecmis-kutu'); if (k0) k0.style.display = 'none';
+    return;
   }
   // Edit modunda mevcut teklif id'si (varsa) — kendi kendini exclude et
   var currentDbId = window._saV2AktifDuzenlemeTeklif && window._saV2AktifDuzenlemeTeklif.id;
@@ -283,7 +288,12 @@ window._saV2CheckPrevTeklif = function() {
     if (currentDbId != null && String(x.id) === String(currentDbId)) return false;
     return true;
   });
-  if (!prev.length) { warn.style.display = 'none'; warn.innerHTML = ''; return; }
+  if (!prev.length) {
+    warn.style.display = 'none'; warn.innerHTML = '';
+    /* TASARIM-03: kutu da gizle — yeni müşteride eski kart kalmasın (T4) */
+    var k1 = document.getElementById('st-musteri-gecmis-kutu'); if (k1) k1.style.display = 'none';
+    return;
+  }
   // En yeni: createdAt desc sort
   prev.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
   var latest = prev[0];
@@ -296,6 +306,89 @@ window._saV2CheckPrevTeklif = function() {
     + '<span style="flex:1"><strong>' + esc(customerName) + '</strong> müşterisine daha önce <strong>' + prev.length + '</strong> teklif verildi — en son: <strong>' + esc(dateStr) + '</strong> · <strong>' + esc(amt) + '</strong></span>'
     + '<span style="font-size:10px;opacity:.85;flex-shrink:0">Detayı gör →</span>'
   + '</div>';
+
+  /* TASARIM-03: Mavi istatistik kartı — sağ PI panel üstü */
+  var kutu = document.getElementById('st-musteri-gecmis-kutu');
+  if (kutu) {
+    if (!prev || !prev.length) {
+      kutu.style.display = 'none';
+    } else {
+      kutu.style.display = 'block';
+
+      var sonTeklif = prev[0];
+      var sonTarih = (sonTeklif.createdAt || '').slice(0, 10);
+      var sonTutar = (parseFloat(sonTeklif.genelToplam) || 0)
+        .toLocaleString('tr-TR', {maximumFractionDigits: 0});
+      var sonPara = sonTeklif.paraBirimi || 'USD';
+
+      /* Ortalama marj — numeric filtre */
+      var marjlar = prev.map(function(t){ return parseFloat(t.ortMarj); })
+                        .filter(function(m){ return !isNaN(m); });
+      var ortMarj = marjlar.length
+        ? (marjlar.reduce(function(s,m){return s+m;}, 0) / marjlar.length).toFixed(1)
+        : '0';
+      var ortMarjStr = String(ortMarj).replace('.', ',');
+
+      /* Sık ürün — frekans + ilk 2 */
+      var urunSay = {};
+      prev.forEach(function(t){
+        (t.urunler || []).forEach(function(u){
+          var ad = (u.urunAdi || '').trim();
+          if (ad) urunSay[ad] = (urunSay[ad] || 0) + 1;
+        });
+      });
+      var sikUrunler = Object.keys(urunSay).sort(function(a,b){
+        return urunSay[b] - urunSay[a];
+      });
+      var sikUrunStr = sikUrunler.length
+        ? sikUrunler.slice(0, 2).map(function(ad){
+            return ad + ' (×' + urunSay[ad] + ')';
+          }).join(', ')
+        : '—';
+
+      /* Kabul oranı */
+      var kabulSay = prev.filter(function(t){
+        return ['kabul', 'onaylandi', 'onay'].indexOf(t.durum) >= 0;
+      }).length;
+      var kabulOran = prev.length
+        ? Math.round(kabulSay / prev.length * 100)
+        : 0;
+      var kabulRenk = kabulOran >= 50 ? '#16A34A'
+                    : (kabulOran >= 25 ? '#D97706' : '#DC2626');
+
+      /* Render */
+      var musteriAd = _saEsc(sonTeklif.musteri || sonTeklif.musteriAd || '');
+      var sonTeklifIdEsc = _saEsc(String(sonTeklif.id || ''));
+
+      kutu.innerHTML =
+        '<div style="font-size:10px;font-weight:600;color:#0C447C;letter-spacing:.05em;margin-bottom:8px">'
+          + 'MÜŞTERİ GEÇMİŞİ — ' + musteriAd
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:4px">'
+          + '<div onclick="window._stPeekAc?.(\'' + sonTeklifIdEsc + '\')" '
+          + 'style="cursor:pointer;color:var(--t)" '
+          + 'title="Tıkla — son teklifi göster">'
+            + '<span style="color:var(--t3)">Son teklif:</span> '
+            + '<span style="font-weight:500">' + sonTarih + ' · '
+            + sonTutar + ' ' + _saEsc(sonPara) + '</span>'
+          + '</div>'
+          + '<div>'
+            + '<span style="color:var(--t3)">Ort. marj:</span> '
+            + '<span style="font-weight:500;font-variant-numeric:tabular-nums">%'
+            + ortMarjStr + '</span>'
+          + '</div>'
+          + '<div>'
+            + '<span style="color:var(--t3)">Sık ürün:</span> '
+            + '<span style="font-weight:500">' + _saEsc(sikUrunStr) + '</span>'
+          + '</div>'
+          + '<div>'
+            + '<span style="color:var(--t3)">Kabul oranı:</span> '
+            + '<span style="font-weight:500;color:' + kabulRenk + '">%'
+            + kabulOran + ' (' + kabulSay + '/' + prev.length + ')</span>'
+          + '</div>'
+        + '</div>';
+    }
+  }
 };
 
 window._saV2SatisKaydet = function(alisId) {
