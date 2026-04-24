@@ -6907,6 +6907,32 @@ window._cariRiskScore = _cariRiskScore;
 window._cariAgingReport = _cariAgingReport;
 window._mergeCari    = _mergeCari;
 
+/* [CARI-MERGE-UI-001] Birleştirme modal açıcı — mevcut _mergeCari fonksiyonuna UI */
+window._openMergeCariModal = function(cariId) {
+  var all = typeof loadCari === 'function' ? loadCari().filter(function(c){ return !c.isDeleted; }) : [];
+  var aktif = all.find(function(c){ return String(c.id) === String(cariId); });
+  if (!aktif) { window.toast?.('Cari bulunamadı', 'err'); return; }
+  var digerler = all.filter(function(c){ return String(c.id) !== String(cariId); });
+  var _esc = window._esc || function(s){ return String(s||''); };
+  document.getElementById('mo-merge-cari')?.remove();
+  var modal = document.createElement('div');
+  modal.id = 'mo-merge-cari';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = '<div style="background:var(--sf);border-radius:10px;padding:20px 24px;min-width:420px;max-width:500px;box-shadow:0 10px 40px rgba(0,0,0,.2)">'
+    + '<div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:6px">Cariler Birleştir</div>'
+    + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">"<b>' + _esc(aktif.name||'?') + '</b>" hangi cari ile birleştirilsin? İkinci cari\'nin ödemeleri + tahsilatları bu cari\'ye taşınır, ikincil kayıt silinir.</div>'
+    + '<select id="merge-cari-select" style="width:100%;font-size:12px;padding:8px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);color:var(--t);margin-bottom:12px">'
+    + '<option value="">— Birleştirilecek cari seç —</option>'
+    + digerler.map(function(c){ return '<option value="' + c.id + '">' + _esc(c.name||'?') + ' (' + (c.type||'diğer') + ')</option>'; }).join('')
+    + '</select>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button onclick="document.getElementById(\'mo-merge-cari\')?.remove()" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;color:var(--t2);cursor:pointer">İptal</button>'
+    + '<button onclick="var sel=document.getElementById(\'merge-cari-select\').value;if(!sel){window.toast?.(\'Cari seçin\',\'warn\');return;}window.confirmModal(\'Bu işlem geri alınamaz. Birleştirilsin mi?\',{title:\'Birleştirme Onayı\',danger:true,confirmText:\'Evet, Birleştir\',onConfirm:function(){window._mergeCari(' + cariId + ',parseInt(sel));document.getElementById(\'mo-merge-cari\')?.remove();}})" style="font-size:11px;padding:7px 16px;border:none;border-radius:5px;background:#DC2626;color:#fff;cursor:pointer;font-weight:500">🔗 Birleştir</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
+};
+
 /**
  * Cari sil.
  */
@@ -7826,6 +7852,8 @@ function _renderCariDetail(id) {
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
         + (_isManagerO() ? '<button class="btn btns" onclick="window._assignCariReview(' + c.id + ')" style="font-size:11px;color:#6366F1">👁 İncelet</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
+        /* [CARI-MERGE-UI-001] Birleştir butonu — sadece admin/manager için */
+        + (_isManagerO() ? '<button class="btn btns" onclick="window._openMergeCariModal(' + c.id + ')" style="font-size:11px" title="Başka cari ile birleştir">🔗</button>' : '')
         /* [CARI-DELETE-BUTTON-FIX-DUPLICATE-001] ikon-only 🗑 kaldirildi — duplicate, sadece '🗑 Sil' label'li buton kaldi */
         /* MUSTERI-FEEDBACK-001: Müşteri geri bildirim butonu */
         + '<button class="btn btns" onclick="event.stopPropagation();window._musteriGeribildirimAc?.(\'' + c.id + '\',\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" style="font-size:11px">⭐ Feedback</button>'
