@@ -400,8 +400,12 @@ function openUrunModal(id) {
  * Ürün kaydet.
  */
 window._saveUrunDB = function() {
-  /* URUN-AUTH-GUARD-001 + fix: yönetici asistanı ekleyebilsin — isAdmin→isManager (silme hâlâ admin-only) */
-  if (!window.isManager?.()) { window.toast?.('Yönetici yetkisi gerekli','err'); return; }
+  /* URUN-AUTH-GUARD-001 — isManager helper window'a export edilmemiş, inline whitelist (admin + manager + asistan) */
+  var _role = window.Auth?.getCU?.()?.role;
+  if (!['admin','manager','asistan'].includes(_role)) {
+    window.toast?.('Yönetici yetkisi gerekli','err');
+    return;
+  }
   /* URUN-FORM-EXCEL-004: multi-row batch save
      Düzeltmeler: loadUrunDB/storeUrunDB (doğru store),
      Auth.getCU (dosya standardı), edit/duplicate scope dışı. */
