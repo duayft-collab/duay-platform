@@ -852,13 +852,26 @@ window._uf2LinkConfirm = function() {
   if (modal) modal.remove();
   if (!url) return;
 
+  /* XSS Hardening: sadece http/https şeması kabul — javascript:/data:/file: reddedilir */
+  var urlTrim = String(url).trim();
+  if (!/^https?:\/\//i.test(urlTrim)) {
+    /* Başka şema varsa (javascript:, data:, ftp: vs.) reddet */
+    if (/^[a-z]+:/i.test(urlTrim)) {
+      window.toast?.('Sadece http:// veya https:// URL kabul edilir', 'warn');
+      window._uf2LinkRange = null;
+      return;
+    }
+    /* Şema hiç yok — https:// otomatik prepend (kolaylık) */
+    urlTrim = 'https://' + urlTrim;
+  }
+
   /* Range'i restore et ve link ekle */
   if (window._uf2LinkRange) {
     var sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(window._uf2LinkRange);
   }
-  document.execCommand('createLink', false, url);
+  document.execCommand('createLink', false, urlTrim);
   window._uf2LinkRange = null;
 };
 
