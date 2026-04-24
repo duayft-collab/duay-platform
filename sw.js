@@ -114,7 +114,12 @@ self.addEventListener('fetch', event => {
     url.hostname.includes('gstatic') ||
     url.hostname.includes('cloudflare') ||
     url.hostname.includes('exchangerate-api') ||
-    url.hostname.includes('open.er-api')
+    url.hostname.includes('open.er-api') ||
+    /* [SW-EXTERNAL-API-PASSTHROUGH-001] Kur/altın/proxy API'leri eksikti — respondWith null hatası fix */
+    url.hostname.includes('frankfurter') ||
+    url.hostname.includes('goldapi') ||
+    url.hostname.includes('allorigins') ||
+    url.hostname.includes('tcmb.gov.tr')
   ) {
     event.respondWith(
       fetch(request)
