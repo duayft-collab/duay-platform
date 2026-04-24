@@ -117,7 +117,9 @@ window._piUrunSatirlari = function(teklif, katman) {
 
 /* ── Ortak CSS ──────────────────────────────────────────────── */
 window._piCSS = function(tasarim) {
-  return '*{box-sizing:border-box;margin:0;padding:0}'
+  /* FEAT-07d: tarayıcı native header/footer gizle — 6 tasarım (A/B/C/I/L/O) için ortak @page */
+  return '@page { size: A4; margin: 0 }'
+    + '*{box-sizing:border-box;margin:0;padding:0}'
     + 'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;background:#fff;padding:32px}'
     + 'table{width:100%;border-collapse:collapse}'
     + 'th{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:8px;text-align:left;border-bottom:1px solid #111}'
