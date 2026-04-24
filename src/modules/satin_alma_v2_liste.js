@@ -226,7 +226,8 @@ window.renderSatinAlmaV2 = function() {
       : (window._statusBadge?.('⚠ Süre doldu','danger')||'');/* SA-STATUS-BADGE-MIGRATE-001 */
     /* SA-LISTE-REDESIGN-001: AŞAMA pill büyük, tek div */
     /* SA-LISTE-ROW-FIX-001: AŞAMA hücresi overflow — ekstra badge taşmasın */
-    h+='<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="font-size:9px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500;background:'+_bgColor+';color:'+_fgColor+'">'+_stLbl+'</span>'+(_bittiBadge||'')+'</div>';
+    /* [ALIS-LIST-DUPLICATE-SURE-FIX-001] _bittiBadge kaldırıldı — SÜRE kolonunda zaten var, redundan */
+    h+='<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="font-size:9px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500;background:'+_bgColor+';color:'+_fgColor+'">'+_stLbl+'</span></div>';
     // Kolon 5: GEÇERLİLİK — satisMusteriOnay ise kalan saat (renk kademeli), yoksa tarih
     /* SA-LISTE-REDESIGN-001: SÜRE hücresi — pipeline timer */
     var _pKalan=typeof window._saPipelineTimerKalan==='function'?window._saPipelineTimerKalan(t):null;
