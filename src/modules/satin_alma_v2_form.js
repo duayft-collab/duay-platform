@@ -102,6 +102,8 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + _f('piNo', 'Proforma Fatura No', 'PI-2026-001')
     + _f('piTarih', 'Proforma Tarihi', '', 'date')
     + _f('gecerlilikTarihi', 'Teklif Geçerlilik Tarihi', '', 'date')
+    /* [ALIS-FORM-PIPELINE-TIMER-VISIBLE-001] Araştırma süresi görünür input, default 72h */
+    + _f('pipelineTimerSaat', 'Araştırma Süresi (saat)', '72', 'number')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 140px 220px;gap:10px">'
     + _f('teslimYeri','Teslim Noktası / Limanı','FOB Shanghai, CIF Mersin')
@@ -226,6 +228,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     _set('sav2f-piNo', duzenleKayit.piNo);
     _set('sav2f-piTarih', duzenleKayit.piTarih);
     _set('sav2f-gecerlilikTarihi', duzenleKayit.gecerlilikTarihi || duzenleKayit.validUntil);
+    _set('sav2f-pipelineTimerSaat', duzenleKayit.pipelineTimerSaat || 72);
     _set('sav2f-teslimYeri', duzenleKayit.teslimYeri);
     _set('sav2f-teslimat', duzenleKayit.teslimat);
     var teslimMasrafEl = document.getElementById('sav2f-teslimMasraf');
@@ -482,7 +485,7 @@ window._saV2FormKaydet = function() {
     toplamTutar: toplamTutar.toFixed(2), toplamPara: toplamPara, paraBirimleri: _paraSet,
     icNotlar: notDiv ? notDiv.innerHTML : '', teslimatKosul: kosulDiv ? kosulDiv.innerHTML : '',
     /* SA-FORM-PIPELINE-001: yeni teklif araştırma aşamasıyla başlar + 72h timer */
-      gorsel: window._saV2FormGorselData || '', durum: 'arastirma', pipelineTimerBaslangic: new Date().toISOString(), pipelineTimerSaat: 72, pipelineAdimlari: [{ durum: 'arastirma', yeniDurum: 'arastirma', tarih: new Date().toISOString(), kim: window.CU?.()?.displayName || window.CU?.()?.name || '' }],
+      gorsel: window._saV2FormGorselData || '', durum: 'arastirma', pipelineTimerBaslangic: new Date().toISOString(), pipelineTimerSaat: parseFloat(document.getElementById('sav2f-pipelineTimerSaat')?.value) || 72, pipelineAdimlari: [{ durum: 'arastirma', yeniDurum: 'arastirma', tarih: new Date().toISOString(), kim: window.CU?.()?.displayName || window.CU?.()?.name || '' }],
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     /* FIX: createdBy uid (filtre _dbKullaniciFiltreUygula uid bekliyor), displayName ayrı field'da */
     createdBy: String(window.CU?.()?.uid || window.CU?.()?.id || ''),
