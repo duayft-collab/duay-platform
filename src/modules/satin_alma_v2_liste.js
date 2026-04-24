@@ -318,7 +318,8 @@ window._saV2DetayHTML = function(t) {
   h+=_dr('Teslim',t.teslimYeri||t.teslimMasraf||'—');
   h+=_dr('Toplam','<span style="color:#0F6E56;font-weight:500">'+((window._saV2AlisF?.(t)||0).toLocaleString('tr-TR',{maximumFractionDigits:2}))+' '+(window._saV2Para?.(t)||'USD')+'</span>');
   h+=_dr('Tarih',(t.teklifTarih||t.createdAt||'').slice(0,10));
-  h+=_dr('Giren',(t.createdBy||'—')+' · '+(t.createdAt||'').slice(11,16));
+  /* FIX: createdBy artık uid — display için createdByName fallback (eski kayıtlarda hâlâ displayName) */
+  h+=_dr('Giren',(t.createdByName||t.createdBy||'—')+' · '+(t.createdAt||'').slice(11,16));
   if(t.urunler&&t.urunler.length>1){
     h+='<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid '+_b+'">';
     h+='<div style="font-size:9px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:4px">ÜRÜNLER ('+t.urunler.length+')</div>';
