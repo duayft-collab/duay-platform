@@ -321,6 +321,8 @@ window._saV2SatisKaydet = function(alisId) {
     musteriAd:musteriAd,
     musteriKod:document.getElementById('st-musteri-kod')?.value||'',
     urunler:urunler,
+    /* SARTLAR-PERSIST: modal session şartlarını kaydet (yoksa boş array) */
+    sartlar: (window._stSartlar || []).slice(),
     toplamSatis:toplamSatis.toFixed(2),
     toplamEUR: (parseFloat(toplamSatis) / ((window._saKur||{}).EUR||51.70) * ((window._saKur||{}).USD||44.55)).toFixed(2),
     toplamKar:toplamKar,

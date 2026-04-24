@@ -343,7 +343,12 @@ window._steklifRevGoster = function(encodedSnap) {
 window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
   L = L || PI_DILLER.EN;
   var banka = window._saV2BankaMetni?.(t.paraBirimi||'USD')||'';
-  var sartlar = window._saV2Sartlar?.()|| [];
+  /* SARTLAR-PI: öncelik zinciri — kayıt → modal session → global default */
+  var sartlar = (t && t.sartlar && t.sartlar.length)
+    ? t.sartlar
+    : ((window._stSartlar && window._stSartlar.length)
+        ? window._stSartlar
+        : (window._saV2Sartlar?.() || []));
   var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px">';
   h += '<div style="height:5px;background:#185FA5"></div>';
   h += '<div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:0.5px solid #eee">';
@@ -384,7 +389,12 @@ window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
 window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
   L = L || PI_DILLER.EN;
   var banka = window._saV2BankaMetni?.(t.paraBirimi||'USD')||'';
-  var sartlar = window._saV2Sartlar?.()|| [];
+  /* SARTLAR-PI: öncelik zinciri — kayıt → modal session → global default */
+  var sartlar = (t && t.sartlar && t.sartlar.length)
+    ? t.sartlar
+    : ((window._stSartlar && window._stSartlar.length)
+        ? window._stSartlar
+        : (window._saV2Sartlar?.() || []));
   var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px;padding:28px 32px;border:0.5px solid #ddd">';
   h += '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:16px">';
   h += '<div style="font-size:20px;font-weight:300;letter-spacing:.06em">DUAY GLOBAL LLC</div>';
@@ -422,7 +432,12 @@ window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
 window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   L = L || PI_DILLER.EN;
   var banka = window._saV2BankaMetni?.(t.paraBirimi||'USD')||'';
-  var sartlar = window._saV2Sartlar?.()|| [];
+  /* SARTLAR-PI: öncelik zinciri — kayıt → modal session → global default */
+  var sartlar = (t && t.sartlar && t.sartlar.length)
+    ? t.sartlar
+    : ((window._stSartlar && window._stSartlar.length)
+        ? window._stSartlar
+        : (window._saV2Sartlar?.() || []));
   var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px;padding:24px 28px;border:0.5px solid #e5e5e5">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">';
   h += '<div><div style="font-size:16px;font-weight:600">Duay Global LLC</div><div style="font-size:8px;color:#aaa;margin-top:3px">www.duaycor.com · +90 212 625 5 444 · WA: +90 532 270 5 113</div></div>';
