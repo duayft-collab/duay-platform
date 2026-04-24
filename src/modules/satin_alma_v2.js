@@ -31,7 +31,8 @@ window._saTeklifId = function(musteriKod) {
   var d = new Date();
   var pad = function(n,l){ return String(n).padStart(l||2,'0'); };
   var yy = String(d.getFullYear()).slice(-2);
-  var tarih = yy + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+  /* PROFORMA-ID-DDMMYY: gün-ay-yıl2hane-saat-dakika (TR stili tarih) */
+  var tarih = pad(d.getDate()) + pad(d.getMonth()+1) + yy + pad(d.getHours()) + pad(d.getMinutes());
   var kod = String(musteriKod||'0000').slice(-4).padStart(4,'0');
   return kod + '-' + tarih;
 };
