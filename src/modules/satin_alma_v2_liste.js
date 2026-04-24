@@ -224,7 +224,14 @@ window.renderSatinAlmaV2 = function() {
     var _kurN=(_paraN!=='TRY'&&window._saKur&&window._saKur[_paraN])?(_alisFN*parseFloat(window._saKur[_paraN])):null;
     /* SA-LISTE-REDESIGN-001 (fix): trend KUR cell içinde, grid-cell sayısı aligned (8/8) */
     /* SA-TREND-FIX-001: aynı para birimi kıyası — USD/TRY karışımı sahte yüzde üretiyordu */
-    var _oncF=liste.filter(function(x){return x.id!==t.id&&x.jobId&&x.jobId===t.jobId&&!x.isDeleted&&(window._saV2Para?.(x)||'USD')===(window._saV2Para?.(t)||'USD');}).sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'');});
+    /* [ALIS-LIST-BAKIYE-TRENDS-URUN-MATCH-001] Ürün adı eşleşmesi zorunlu — farklı ürün karşılaştırması sahte % üretiyordu */
+    var _mevcutUrun=(window._saV2UrunAdi?.(t)||'').toLowerCase().trim();
+    var _oncF=liste.filter(function(x){
+      if(x.id===t.id||!x.jobId||x.jobId!==t.jobId||x.isDeleted) return false;
+      if((window._saV2Para?.(x)||'USD')!==(window._saV2Para?.(t)||'USD')) return false;
+      var _oncUrun=(window._saV2UrunAdi?.(x)||'').toLowerCase().trim();
+      return _mevcutUrun && _oncUrun && _oncUrun===_mevcutUrun;
+    }).sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'');});
     var _oncFiyat=_oncF.length?parseFloat(window._saV2AlisF?.(_oncF[0]))||0:0;
     var _trendHTML='';
     if(_oncFiyat>0&&_alisFN>0){var _trendPct=Math.round(((_alisFN-_oncFiyat)/_oncFiyat)*100);var _trendRenk=_trendPct<0?'#0F6E56':_trendPct>0?'#A32D2D':'var(--color-text-tertiary)';_trendHTML='<div style="font-size:9px;font-weight:500;color:'+_trendRenk+'">'+(_trendPct<=0?'↓':'↑')+Math.abs(_trendPct)+'%</div>';}
