@@ -101,18 +101,28 @@ window._saV2TeklifOlustur = function(id) {
   /* T03-10: onchange'e JOB ürün otomatik yükleme eklendi (yükleme önce, PI önizleme sonra) */
   ic += '<select id="st-job-id" onchange="event.stopPropagation();window._saV2JobUrunYukle?.(this.value);window._saV2PIOnizlemeGuncelle?.()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid #F4E4BC;border-radius:4px;background:#fff;color:var(--t);font-family:inherit">';
   ic += '<option value="">JOB seç...</option>';
+  /* [SATIS-JOBID-ALIS-KAYNAK-001] Kaynak: Alış Teklifleri (satın alma) — tedarik referansı */
   ic += (function(){
     try {
-      var tasks = (window.loadTasks?.() || []).filter(function(t){
-        return !t.isDeleted && t.durum !== 'tamamlandi';
+      var alisList = (window._saV2Load?.() || window.loadAlisTeklifleri?.() || []).filter(function(t){
+        return !t.isDeleted && (t.jobId || t.job_id);
       });
-      return tasks.map(function(t){
-        var jid = t.job_id || t.jobId || '';
-        if (!jid) return '';
-        var baslik = (t.baslik || t.title || '').substring(0, 40);
-        var label = jid + (baslik ? ' — ' + baslik : '');
-        return '<option value="' + _saEsc(jid) + '">' + _saEsc(label) + '</option>';
-      }).join('');
+      /* En yeni önce */
+      alisList.sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
+      /* Benzersiz JOB ID — ilk görülen (en yeni) kayıt label için kullanılır */
+      var seen = {};
+      var options = [];
+      alisList.forEach(function(t){
+        var jid = t.jobId || t.job_id || '';
+        if (!jid || seen[jid]) return;
+        seen[jid] = true;
+        var parcalar = [];
+        if (t.tedarikci) parcalar.push(t.tedarikci);
+        if (t.piNo) parcalar.push('PI ' + t.piNo);
+        var meta = parcalar.length ? ' — ' + parcalar.join(' · ').substring(0, 50) : '';
+        options.push('<option value="' + _saEsc(jid) + '">' + _saEsc(jid + meta) + '</option>');
+      });
+      return options.join('');
     } catch(e){ return ''; }
   })();
   ic += '</select>';
