@@ -26,12 +26,27 @@ window._saV2YeniTeklif = function(duzenleKayit) {
   }
   function _draftKaydet() {
     var g = function(id){ var el=document.getElementById(id); return el?(el.value||'').trim():''; };
+    /* [ALIS-FORM-DRAFT-COMPLETE-001] ürün satırları + notlar + şartlar dahil */
+    var _urunler = [];
+    document.querySelectorAll('[data-urun-satir]').forEach(function(satir) {
+      var idx = satir.getAttribute('data-urun-satir');
+      var gu = function(k) { var el = document.getElementById('sav2u-' + idx + '-' + k); return el ? (el.value || '').trim() : ''; };
+      var u = { idx: idx, duayKodu: gu('duayKodu'), turkceAdi: gu('turkceAdi'), miktar: gu('miktar'), birim: gu('birim'), alisF: gu('alisF'), para: gu('para'), urunAdi: gu('urunAdi'), mensei: gu('mensei'), gtip: gu('gtip'), netAg: gu('netAg'), saticiKodu: gu('saticiKodu'), urunTeslimat: gu('urunTeslimat') };
+      /* Tamamen boş satırı kaydetme */
+      if (u.duayKodu || u.urunAdi || u.miktar || u.alisF) _urunler.push(u);
+    });
+    var _notDiv = document.getElementById('sav2f-not-div');
+    var _kosulDiv = document.getElementById('sav2f-teslimatKosul-div');
     var draft = {
       ts: new Date().toISOString(),
       tedarikci: g('sav2f-tedarikci'), jobId: g('sav2f-jobId'),
       piNo: g('sav2f-piNo'), piTarih: g('sav2f-piTarih'),
+      gecerlilikTarihi: g('sav2f-gecerlilikTarihi'),
       teslimYeri: g('sav2f-teslimYeri'), teslimMasraf: g('sav2f-teslimMasraf'),
-      teslimat: g('sav2f-teslimat')
+      teslimat: g('sav2f-teslimat'),
+      urunler: _urunler,
+      icNotlar: _notDiv ? _notDiv.innerHTML : '',
+      teslimatKosul: _kosulDiv ? _kosulDiv.innerHTML : ''
     };
     try { localStorage.setItem(_draftKey, JSON.stringify(draft)); } catch(e){}
   }
@@ -164,10 +179,33 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     var s = function(id,v){ var el=document.getElementById(id); if(el) el.value=v; };
     s('sav2f-tedarikci',d.tedarikci||''); s('sav2f-jobId',d.jobId||'');
     s('sav2f-piNo',d.piNo||''); s('sav2f-piTarih',d.piTarih||'');
+    s('sav2f-gecerlilikTarihi',d.gecerlilikTarihi||'');
     s('sav2f-teslimYeri',d.teslimYeri||''); s('sav2f-teslimMasraf',d.teslimMasraf||'');
     s('sav2f-teslimat',d.teslimat||'');
+    /* [ALIS-FORM-DRAFT-COMPLETE-001] \u00fcr\u00fcn sat\u0131rlar\u0131 + not + \u015fart geri y\u00fckle */
+    if (Array.isArray(d.urunler) && d.urunler.length) {
+      /* Mevcut bo\u015f sat\u0131rlar\u0131 temizle, taslaktaki sat\u0131r say\u0131s\u0131 kadar yenisini ekle */
+      var _cont = document.getElementById('sav2f-urunler-container');
+      if (_cont) _cont.innerHTML = '';
+      window._saV2UrunSayac = 0;
+      d.urunler.forEach(function(u) {
+        window._saV2UrunSatirEkle?.();
+        var _yeniIdx = window._saV2UrunSayac - 1;
+        var _set = function(k, v) { var el = document.getElementById('sav2u-' + _yeniIdx + '-' + k); if (el) el.value = v || ''; };
+        _set('duayKodu', u.duayKodu); _set('turkceAdi', u.turkceAdi); _set('miktar', u.miktar);
+        _set('birim', u.birim); _set('alisF', u.alisF); _set('para', u.para);
+        _set('urunAdi', u.urunAdi); _set('mensei', u.mensei); _set('gtip', u.gtip);
+        _set('netAg', u.netAg); _set('saticiKodu', u.saticiKodu); _set('urunTeslimat', u.urunTeslimat);
+      });
+      /* Kur hesaplamas\u0131n\u0131 tetikle */
+      document.querySelectorAll('[id$="-miktar"]').forEach(function(el) { el.dispatchEvent(new Event('input', {bubbles:true})); });
+    }
+    var _notDiv = document.getElementById('sav2f-not-div');
+    if (_notDiv && d.icNotlar) _notDiv.innerHTML = d.icNotlar;
+    var _kosulDiv = document.getElementById('sav2f-teslimatKosul-div');
+    if (_kosulDiv && d.teslimatKosul) _kosulDiv.innerHTML = d.teslimatKosul;
     document.getElementById('sav2-draft-banner')?.remove();
-    window.toast?.('Taslak y\u00fcklendi','ok');
+    window.toast?.('Taslak y\u00fcklendi \u2014 ' + (d.urunler?.length || 0) + ' \u00fcr\u00fcn', 'ok');
   };
   window._sav2DraftSil = function() {
     _draftSil();
