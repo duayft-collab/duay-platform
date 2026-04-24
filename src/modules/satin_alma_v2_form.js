@@ -153,7 +153,8 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     + '<div style="display:flex;align-items:center;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2);gap:8px">'
     + '<span style="font-size:9px;color:var(--t3);margin-right:auto">* Zorunlu alanlar · Duay kodu girilince katalogdan otomatik dolar</span>'
     + '<button onclick="event.stopPropagation();window._sav2DraftSil?.();document.getElementById(\'sav2-form-modal\')?.remove()" style="font-size:12px;padding:7px 16px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>'
-    + '<button onclick="event.stopPropagation();window._saV2FormKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
+    /* [ALIS-FORM-DEFAULTS-GUARD-001] K12 çift tık koruması */
+    + '<button id="sav2f-save-btn" onclick="event.stopPropagation();if(this.disabled)return;this.disabled=true;this.style.opacity=.6;setTimeout(function(){var b=document.getElementById(\'sav2f-save-btn\');if(b){b.disabled=false;b.style.opacity=1;}},2000);window._saV2FormKaydet()" style="font-size:12px;padding:7px 20px;border:none;border-radius:6px;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">Kaydet</button>'
     + '</div>'
     + '</div>';
   document.body.appendChild(modal);
@@ -260,7 +261,14 @@ window._saV2YeniTeklif = function(duzenleKayit) {
   } else {
     window._saV2DuzenleAktifId = null;
   }
-  setTimeout(function() { document.getElementById('sav2u-0-duayKodu')?.focus(); }, 100);
+  setTimeout(function() {
+    document.getElementById('sav2u-0-duayKodu')?.focus();
+    /* [ALIS-FORM-DEFAULTS-GUARD-001] Default tarihler — yalnız boşsa doldur */
+    var _bugun = new Date().toISOString().slice(0,10);
+    var _pi = document.getElementById('sav2f-piTarih'); if (_pi && !_pi.value) _pi.value = _bugun;
+    var _gc = document.getElementById('sav2f-gecerlilikTarihi');
+    if (_gc && !_gc.value) { var _g = new Date(); _g.setDate(_g.getDate()+30); _gc.value = _g.toISOString().slice(0,10); }
+  }, 100);
 };
 
 window._saV2FormGorsel = function(inp) {
