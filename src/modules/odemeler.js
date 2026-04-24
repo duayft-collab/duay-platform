@@ -7258,6 +7258,8 @@ function renderCari() {
           /* [CARI-UI-DEMO-KALDIR-001] Demo butonu kaldirildi */
           /* [CARI-UI-DEMO-KALDIR-001] Demo Temizle butonu kaldirildi */
           + '<button id="cari-toplu-sil-btn" onclick="event.stopPropagation();window._cariBulkDelete()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:rgba(220,38,38,.06);color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit;display:none">Seçilenleri Sil</button>'
+          /* [CARI-ORPHAN-BACKFILL-001] Yetim migration butonu — admin/manager only */
+          + (_isManagerO() ? '<button onclick="event.stopPropagation();window._cariOrphanBackfill()" class="btn btns" title="Yetim ödeme/tahsilatları cariye bağla" style="padding:7px 14px;font-size:11px;border:0.5px solid #B4730F;color:#B4730F;background:transparent;border-radius:7px;margin-right:6px;cursor:pointer;font-family:inherit">🔧 Yetim Tara</button>' : '')
           + '<button onclick="window._openQuickCari?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Cari Ekle</button>'
         + '</div>'
       // [CARI-STICKY-HEADER-001] KPI sticky header'ın İÇİNE taşındı — scroll'da sabit kalır
@@ -9028,6 +9030,33 @@ window._cariBulkClear = function() {
 };
 
 /** Toplu cari silme (soft delete) */
+/* [CARI-ORPHAN-BACKFILL-001] Yetim ödeme/tahsilat migration — cariId boş + note cari adını içeriyorsa eşleştir */
+window._cariOrphanBackfill = function() {
+  if (!confirm('Yetim ödeme/tahsilat kayıtları taranacak. note alanında cari adı geçen ve cariId boş olanlar ilgili cari\'ye bağlanır. Devam edilsin mi?')) return;
+  var cariler = (typeof loadCari === 'function' ? loadCari() : []).filter(function(c){ return !c.isDeleted; });
+  if (!cariler.length) { alert('Hiç cari bulunamadı.'); return; }
+  var isimHarita = {};
+  cariler.forEach(function(c){ if (c.name) isimHarita[c.name.toLowerCase()] = c.id; });
+  var odm = (typeof window.loadOdm === 'function' ? window.loadOdm() : []) || [];
+  var tah = (typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [];
+  var duzelti = 0, belirsiz = 0;
+  var kontrol = function(arr) {
+    arr.forEach(function(r){
+      if (r.cariId || !r.note) return;
+      var note = String(r.note).toLowerCase();
+      var match = null;
+      Object.keys(isimHarita).forEach(function(ad){ if (note.includes(ad) && (!match || ad.length > match.length)) match = ad; });
+      if (match) { r.cariId = isimHarita[match]; r.updatedAt = Date.now(); duzelti++; }
+      else { belirsiz++; }
+    });
+  };
+  kontrol(odm); kontrol(tah);
+  if (typeof window.storeOdm === 'function') window.storeOdm(odm);
+  if (typeof window.storeTahsilat === 'function') window.storeTahsilat(tah);
+  alert('Migration tamamlandı.\n\nDüzeltilen: ' + duzelti + ' kayıt\nBelirsiz: ' + belirsiz + ' kayıt (cari adı note\'ta geçmiyor, el ile kontrol gerekebilir)');
+  if (typeof renderCari === 'function') renderCari();
+};
+
 window._cariBulkDelete = function() {
   if (!window._yetkiKontrol?.('toplu_sil')) return;
   if (!_isManagerO()) return;
