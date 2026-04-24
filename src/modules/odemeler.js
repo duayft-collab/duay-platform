@@ -7274,7 +7274,7 @@ function renderCari() {
             + '<input class="fi" id="cari-search" placeholder="Ara..." oninput="clearTimeout(window._cariSearchTimer);window._cariSearchTimer=setTimeout(renderCari,220)" style="font-size:11px;flex:1;border:0.5px solid var(--b);border-radius:7px">'
             /* [CARI-FILTER-DEBOUNCE-001] 100ms debounce — art arda seçimde tek render */
             + '<select class="fi" id="cari-type-f" onchange="window._cariSaveFilterState();clearTimeout(window._cariFilterTimer);window._cariFilterTimer=setTimeout(renderCari,100)" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
-            + '<select class="fi" id="cari-stage-f" onchange="window._cariSaveFilterState();clearTimeout(window._cariFilterTimer);window._cariFilterTimer=setTimeout(renderCari,100)" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
+            + '<select class="fi" id="cari-stage-f" onchange="window._cariSaveFilterState();clearTimeout(window._cariFilterTimer);window._cariFilterTimer=setTimeout(renderCari,100)" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option><option value="pasif">🔒 Pasif</option></select>'
           + '</div>'
           + '<div id="cari-list" style="flex:1;overflow-y:auto"></div>'
         + '</div>'
@@ -7319,7 +7319,13 @@ function renderCari() {
   var stageF = document.getElementById('cari-stage-f')?.value || '';
   var fl = all.filter(function(c) {
     if (typeF && c.type !== typeF) return false;
-    if (stageF) {
+    /* [CARI-PASIF-TOGGLE-001] Pasif cari gizleme — stage 'pasif' seçildiyse sadece pasifleri göster */
+    if (stageF === 'pasif') {
+      if (c.aktif !== false) return false;
+    } else if (c.aktif === false) {
+      return false; // default: pasif cariler gizli
+    }
+    if (stageF && stageF !== 'pasif') {
       if (stageF === 'rejected' && c.status !== 'rejected') return false;
       if (stageF !== 'rejected' && (c.cariType || 'potansiyel') !== stageF) return false;
     }
@@ -7846,6 +7852,8 @@ function _renderCariDetail(id) {
         /* [CARI-MERGE-UI-001] Birleştir butonu — sadece admin/manager için */
         + (_isManagerO() ? '<button class="btn btns" onclick="window._openMergeCariModal(' + c.id + ')" style="font-size:11px" title="Başka cari ile birleştir">🔗</button>' : '')
         /* [CARI-DELETE-BUTTON-FIX-DUPLICATE-001] ikon-only 🗑 kaldirildi — duplicate, sadece '🗑 Sil' label'li buton kaldi */
+        /* [CARI-PASIF-TOGGLE-001] Pasife Al / Aktifleştir toggle — admin/manager */
+        + (_isManagerO() ? '<button class="btn btns" onclick="event.stopPropagation();window._cariAktiflikToggle(' + c.id + ')" style="font-size:11px;color:' + (c.aktif === false ? '#16A34A' : '#B4730F') + '">' + (c.aktif === false ? '▶ Aktifleştir' : '⏸ Pasife Al') + '</button>' : '')
         /* MUSTERI-FEEDBACK-001: Müşteri geri bildirim butonu */
         + '<button class="btn btns" onclick="event.stopPropagation();window._musteriGeribildirimAc?.(\'' + c.id + '\',\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" style="font-size:11px">⭐ Feedback</button>'
         /* [CARI-DELETE-BUTTON-ADD-001] Sil butonu — detay header */
@@ -9054,6 +9062,22 @@ window._cariOrphanBackfill = function() {
   if (typeof window.storeOdm === 'function') window.storeOdm(odm);
   if (typeof window.storeTahsilat === 'function') window.storeTahsilat(tah);
   alert('Migration tamamlandı.\n\nDüzeltilen: ' + duzelti + ' kayıt\nBelirsiz: ' + belirsiz + ' kayıt (cari adı note\'ta geçmiyor, el ile kontrol gerekebilir)');
+  if (typeof renderCari === 'function') renderCari();
+};
+
+/* [CARI-PASIF-TOGGLE-001] Pasif toggle — operasyonel aktiflik durumu */
+window._cariAktiflikToggle = function(cariId) {
+  var cariler = (typeof loadCari === 'function' ? loadCari() : []);
+  var cari = cariler.find(function(c){ return String(c.id) === String(cariId); });
+  if (!cari) { window.toast?.('Cari bulunamadı', 'err'); return; }
+  var yeni = cari.aktif === false ? true : false;
+  var soru = yeni === true ? 'Bu cariyi tekrar AKTİF yapmak istediğinizden emin misiniz?' : 'Bu cariyi PASİF yapmak istediğinizden emin misiniz?\n\n(Veri silinmez, liste/dropdown\'larda gizlenir)';
+  if (!confirm(soru)) return;
+  cari.aktif = yeni;
+  cari.updatedAt = Date.now();
+  cari.aktiflikTarihi = new Date().toISOString();
+  if (typeof storeCari === 'function') storeCari(cariler);
+  window.toast?.(yeni ? 'Cari aktif edildi' : 'Cari pasif edildi', 'ok');
   if (typeof renderCari === 'function') renderCari();
 };
 
