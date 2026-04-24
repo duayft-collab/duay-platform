@@ -444,8 +444,8 @@ function openUrunForm(editId) {
     + '<option value="">Seç...</option>'
     + (window.MENSEI||['Türkiye','Çin','Hindistan','Almanya','ABD','Diğer']).map(m=>'<option value="'+m+'"'+(u.mensei===m?' selected':'')+'>'+m+'</option>').join('')
     + '</select></div>'
-    + '<div><div style="font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.05em;margin-bottom:4px">SON TÜKETİM TARİHİ</div>'
-    +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'',false,'number','')+'</div>'
+    /* P1.1: Çakışan outer label kaldırıldı, _fi tek label üretiyor */
+    +_fi('tuketimSuresi','TÜKETİM SÜRESİ (Gün)',u.tuketimSuresi||'',false,'number','')
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px">'
     + _fi('teslimSuresi','TESLİM SÜRESİ (Gün)',u.teslimSuresi||'',false,'number','Örn: 30')
@@ -485,7 +485,8 @@ function openUrunForm(editId) {
     + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'underline\')" title="Altı Çizili" style="font-size:11px;text-decoration:underline;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">U</button>'
     + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertUnorderedList\')" title="Liste" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">• —</button>'
     + '<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertOrderedList\')" title="Numaralı Liste" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">1.</button>'
-    + '<button type="button" onclick="event.stopPropagation();var u2=prompt(\'Link URL:\');if(u2)document.execCommand(\'createLink\',false,u2)" title="Link" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">🔗</button>'
+    /* P1.5: prompt() → custom modal (Safari uyum + CLAUDE.md D7/K12) */
+    + '<button type="button" onclick="event.stopPropagation();window._uf2LinkModal()" title="Link" style="font-size:11px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t)">🔗</button>'
     + '<button type="button" onclick="event.stopPropagation();document.getElementById(\'uf2-teknikAciklama-div\').innerHTML=\'\'" title="Temizle" style="font-size:10px;padding:2px 7px;border:0.5px solid var(--b);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3);margin-left:auto">✕</button>'
     + '</div>'
     + '<div id="uf2-teknikAciklama-div" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:80px;max-height:200px;overflow-y:auto;padding:8px 10px;font-size:12px;color:var(--t);font-family:inherit;outline:none;line-height:1.5">' + (u.teknikAciklama||'') + '</div>'
@@ -814,13 +815,65 @@ window._uf2TaslakKaydet = function() {
   _renderForm();
 };
 
+/* P1.5: Rich text link custom modal — prompt() yerine */
+window._uf2LinkModal = function() {
+  /* Seçili metni sakla (range kaybolmasın) */
+  var sel = window.getSelection();
+  var range = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+
+  var mevcut = document.getElementById('uf2-link-modal');
+  if (mevcut) mevcut.remove();
+
+  var m = document.createElement('div');
+  m.id = 'uf2-link-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center';
+  m.innerHTML =
+    '<div style="background:var(--s2);border-radius:8px;padding:20px;min-width:320px;max-width:90%">'
+    + '<div style="font-weight:600;margin-bottom:12px;color:var(--t)">Link URL</div>'
+    + '<input id="uf2-link-url" type="url" placeholder="https://..." style="width:100%;padding:8px;border:1px solid var(--b);border-radius:4px;font-size:13px">'
+    + '<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">'
+    +   '<button onclick="document.getElementById(\'uf2-link-modal\').remove()" style="padding:6px 14px;border:1px solid var(--b);background:transparent;border-radius:4px;cursor:pointer">İptal</button>'
+    +   '<button onclick="window._uf2LinkConfirm()" style="padding:6px 14px;background:#0F6E56;color:white;border:0;border-radius:4px;cursor:pointer">Ekle</button>'
+    + '</div></div>';
+  document.body.appendChild(m);
+
+  window._uf2LinkRange = range;
+  setTimeout(function(){ document.getElementById('uf2-link-url')?.focus(); }, 50);
+
+  /* Enter ile onaylama */
+  document.getElementById('uf2-link-url').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); window._uf2LinkConfirm(); }
+  });
+};
+
+window._uf2LinkConfirm = function() {
+  var url = document.getElementById('uf2-link-url')?.value;
+  var modal = document.getElementById('uf2-link-modal');
+  if (modal) modal.remove();
+  if (!url) return;
+
+  /* Range'i restore et ve link ekle */
+  if (window._uf2LinkRange) {
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(window._uf2LinkRange);
+  }
+  document.execCommand('createLink', false, url);
+  window._uf2LinkRange = null;
+};
+
 /* ── URUN-FORM-001: Floating modal kaydet ──────────────────── */
 window._uf2KaydetYeni = function() {
+  /* P1.4: Double-click guard — hızlı tıklamalarda tek kayıt garantisi */
+  if (window._uf2Saving) return;
+  window._uf2Saving = true;
+  setTimeout(function(){ window._uf2Saving = false; }, 1000);
   const g = id => document.getElementById('uf2-' + id)?.value?.trim() || '';
   var teknikDiv = document.getElementById('uf2-teknikAciklama-div');
   var teknikHidden = document.getElementById('uf2-teknikAciklama');
   if(teknikDiv && teknikHidden) teknikHidden.value = teknikDiv.innerHTML||'';
-  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'teknikAciklama', 'gorselBase64'];
+  /* P1.2: saticiKodu UI'da * var ama validation'da eksikti — eklendi */
+  const zorunlu = ['urunAdi', 'ingAd', 'tedarikci', 'kategori', 'birim', 'mensei', 'saticiKodu', 'teknikAciklama', 'gorselBase64'];
   const eksik = zorunlu.filter(f => {
     if (f === 'gorselBase64') return !document.getElementById('uf2-gorselBase64')?.value;
     return !g(f);
