@@ -7261,16 +7261,21 @@ function renderCari() {
   var all = loadCari().filter(function(c) { return !c.isDeleted; });
   /* CARI-PERF-001: detay aç optimizasyonu — loadCari cache */
   window._cariCache = all;
-  // CARI-KPI-ISLEM-001: islemler bazlı alacak/borç/net bakiye hesabı
+  /* [CARI-KPI-BAKIYE-UNIFY-001] Kaynak değişti: c.islemler → odm+tah (detay panel ile tutarlı) */
   var _kpiEl = document.getElementById('cari-kpi');
   if (_kpiEl) {
     var _topAlacak = 0, _topBorc = 0;
-    all.forEach(function(c) {
-      (c.islemler || []).forEach(function(ism) {
-        var tutar = parseFloat(ism.tutar || 0) || 0;
-        if (ism.tip === 'alacak') _topAlacak += tutar;
-        else if (ism.tip === 'borc' || ism.tip === 'borç') _topBorc += tutar;
-      });
+    var _kpiOdm = typeof loadOdm === 'function' ? loadOdm() : [];
+    var _kpiTah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
+    var _cariIdSet = {};
+    all.forEach(function(c) { _cariIdSet[String(c.id)] = true; });
+    _kpiOdm.forEach(function(o) {
+      if (o.isDeleted) return;
+      if (_cariIdSet[String(o.cariId)]) _topBorc += parseFloat(o.amount) || 0;
+    });
+    _kpiTah.forEach(function(t) {
+      if (t.isDeleted) return;
+      if (_cariIdSet[String(t.cariId)]) _topAlacak += parseFloat(t.amount) || 0;
     });
     var _kpiNet = _topAlacak - _topBorc;
     _kpiEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid var(--b);background:var(--sf)">'
