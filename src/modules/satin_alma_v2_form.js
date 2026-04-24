@@ -234,9 +234,10 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     var teslimMasrafEl = document.getElementById('sav2f-teslimMasraf');
     if (teslimMasrafEl && duzenleKayit.teslimMasraf) { teslimMasrafEl.value = duzenleKayit.teslimMasraf; }
     var notDiv = document.getElementById('sav2f-not-div');
-    if (notDiv && duzenleKayit.icNotlar) notDiv.innerHTML = duzenleKayit.icNotlar;
+    /* [ALIS-FORM-NOTLAR-XSS-ESC-001] Render anında defensive sanitize — eski zehirli kayıt varsa temizle */
+    if (notDiv && duzenleKayit.icNotlar) notDiv.innerHTML = window._saSanitizeHTML(duzenleKayit.icNotlar);
     var kosulDiv = document.getElementById('sav2f-teslimatKosul-div');
-    if (kosulDiv && duzenleKayit.teslimatKosul) kosulDiv.innerHTML = duzenleKayit.teslimatKosul;
+    if (kosulDiv && duzenleKayit.teslimatKosul) kosulDiv.innerHTML = window._saSanitizeHTML(duzenleKayit.teslimatKosul);
     if (duzenleKayit.gorsel) window._saV2FormGorselData = duzenleKayit.gorsel;
     var _urunlerArr = duzenleKayit.urunler || [];
     if (_urunlerArr.length > 0) {
@@ -421,6 +422,28 @@ window._saV2KatalogDoldur = function(kod) {
 
 window._saV2KatalogAra = function() { window.toast?.('Katalog arama — yakında', 'info'); };
 
+/* [ALIS-FORM-NOTLAR-XSS-ESC-001] contenteditable innerHTML sanitize — whitelist-based XSS guard */
+window._saSanitizeHTML = window._saSanitizeHTML || function(html) {
+  if (!html) return '';
+  var tmp = document.createElement('div');
+  tmp.innerHTML = String(html);
+  // Tehlikeli element tiplerini kaldır
+  tmp.querySelectorAll('script, iframe, object, embed, svg, style, link, meta, form, input, button, textarea, select, base, applet').forEach(function(el) { el.remove(); });
+  // Tüm elementlerde on* event handler + tehlikeli attribute'ları sil
+  tmp.querySelectorAll('*').forEach(function(el) {
+    Array.from(el.attributes).forEach(function(attr) {
+      var n = attr.name.toLowerCase();
+      var v = (attr.value || '').trim().toLowerCase();
+      if (n.indexOf('on') === 0) el.removeAttribute(attr.name);
+      else if (n === 'href' && !/^(https?:|mailto:|tel:|#)/.test(v)) el.removeAttribute(attr.name);
+      else if (n === 'src' && !/^https?:/.test(v)) el.removeAttribute(attr.name);
+      else if (n === 'style') el.removeAttribute(attr.name);
+      else if (v.indexOf('javascript:') === 0 || v.indexOf('data:') === 0) el.removeAttribute(attr.name);
+    });
+  });
+  return tmp.innerHTML;
+};
+
 window._saV2FormKaydet = function() {
   var g = function(id) { var el = document.getElementById('sav2f-' + id); return el ? (el.value || '').trim() : ''; };
   var baslik = {
@@ -483,7 +506,8 @@ window._saV2FormKaydet = function() {
     teklifId: baslik.teklifId || '',
     urunler: urunler, urunSayisi: urunler.length,
     toplamTutar: toplamTutar.toFixed(2), toplamPara: toplamPara, paraBirimleri: _paraSet,
-    icNotlar: notDiv ? notDiv.innerHTML : '', teslimatKosul: kosulDiv ? kosulDiv.innerHTML : '',
+    /* [ALIS-FORM-NOTLAR-XSS-ESC-001] Save anında sanitize */
+    icNotlar: notDiv ? window._saSanitizeHTML(notDiv.innerHTML) : '', teslimatKosul: kosulDiv ? window._saSanitizeHTML(kosulDiv.innerHTML) : '',
     /* SA-FORM-PIPELINE-001: yeni teklif araştırma aşamasıyla başlar + 72h timer */
       gorsel: window._saV2FormGorselData || '', durum: 'arastirma', pipelineTimerBaslangic: new Date().toISOString(), pipelineTimerSaat: parseFloat(document.getElementById('sav2f-pipelineTimerSaat')?.value) || 72, pipelineAdimlari: [{ durum: 'arastirma', yeniDurum: 'arastirma', tarih: new Date().toISOString(), kim: window.CU?.()?.displayName || window.CU?.()?.name || '' }],
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
