@@ -2192,7 +2192,7 @@ window.renderSatisTeklifleri = function() {
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Onay Bekleyen</div><div style="font-size:22px;font-weight:600;color:#D97706">' + d.filter(function(t){return t.durum==='onay';}).length + '</div></div>'
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Kabul Edilen</div><div style="font-size:22px;font-weight:600;color:#16A34A">' + d.filter(function(t){return t.durum==='kabul';}).length + '</div></div>'
     + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Toplam Değer</div><div style="font-size:22px;font-weight:600;color:var(--ac)">$' + Math.round(_stToplamDeger).toLocaleString('tr-TR') + '</div></div>'
-    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ort. Marj</div><div style="font-size:22px;font-weight:600;color:' + _stMarjColor + '">%' + _stOrtMarj.toFixed(1) + '</div></div>';
+    + '<div style="padding:14px 20px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ort. Marj</div><div style="font-size:22px;font-weight:600;color:' + _stMarjColor + '">%' + String(_stOrtMarj.toFixed(1)).replace('.', ',') + '</div></div>';
   /* SATIS-LISTE-UX-002: Müşteri dropdown her render'da güncellenir, mevcut seçim korunur. SATIS-SCHEMA-FIX-001 fallback: t.musteri || t.musteriAd */
   var _stMusFiltre = document.getElementById('st-musteri-filtre');
   if (_stMusFiltre) {
@@ -2238,7 +2238,8 @@ window.renderSatisTeklifleri = function() {
     var _leftBorder = _sureBitti ? '3px solid #A32D2D' : '3px solid transparent';
     // SATIS-LISTE-UX-002: Per-row marj hesabı
     var _rowMarj = _stMarjPct(t);
-    var _rowMarjStr = _rowMarj === null ? '—' : '%' + _rowMarj.toFixed(1);
+    /* TASARIM-02: Marj tr-TR (virgül) format */
+    var _rowMarjStr = _rowMarj === null ? '—' : '%' + String(_rowMarj.toFixed(1)).replace('.', ',');
     var _rowMarjColor = _rowMarj === null ? 'var(--t3)' : (_rowMarj >= 25 ? '#16A34A' : _rowMarj >= 10 ? '#D97706' : '#DC2626');
     // SATIS-UX-003: createdAt formatı tarih+saat (toLocaleString)
     var _createdStr = t.createdAt ? new Date(t.createdAt).toLocaleString('tr-TR', {dateStyle:'short', timeStyle:'short'}) : '—';
@@ -2255,12 +2256,15 @@ window.renderSatisTeklifleri = function() {
       // Sol: Müşteri adı büyük + teklif no/ürün sayısı küçük
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + '</div>'
-      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + (t.revNo && t.revNo !== '01' ? ' <span style="font-size:8px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-family:inherit">R' + esc(t.revNo) + '</span>' : '') + ' · ' + (t.urunler || []).length + ' ürün' + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
+      /* TASARIM-02: Alt meta'dan "· N ürün" kaldırıldı (ana satıra badge olarak taşındı) */
+      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + (t.revNo && t.revNo !== '01' ? ' <span style="font-size:8px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-family:inherit">R' + esc(t.revNo) + '</span>' : '') + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
       + '</div>'
-      // Orta: Tutar bold + para birimi soluk
-      + '<div style="text-align:right;flex-shrink:0;min-width:130px"><div style="font-size:14px;font-weight:700;color:var(--t);white-space:nowrap">' + _genelToplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(_paraBirimi) + '</span></div></div>'
-      // Marj
-      + '<div style="text-align:right;flex-shrink:0;min-width:60px"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Marj</div><div style="font-size:13px;font-weight:700;color:' + _rowMarjColor + '">' + _rowMarjStr + '</div></div>'
+      /* TASARIM-02: Ürün sayısı badge — ana satır, tutar yanında */
+      + '<span style="display:inline-block;padding:2px 8px;font-size:10px;background:var(--s2);color:var(--t2);border-radius:10px;font-weight:500;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap">' + (t.urunler||[]).length + ' ürün</span>'
+      // Orta: Tutar bold + para birimi soluk + tabular-nums
+      + '<div style="text-align:right;flex-shrink:0;min-width:130px"><div style="font-size:14px;font-weight:700;color:var(--t);white-space:nowrap;font-variant-numeric:tabular-nums">' + _genelToplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span style="font-size:10px;font-weight:400;color:var(--t3)">' + esc(_paraBirimi) + '</span></div></div>'
+      // Marj + tabular-nums
+      + '<div style="text-align:right;flex-shrink:0;min-width:60px"><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">Marj</div><div style="font-size:13px;font-weight:700;color:' + _rowMarjColor + ';font-variant-numeric:tabular-nums">' + _rowMarjStr + '</div></div>'
       // Durum badge + Süresi Doldu + ⚠
       + '<div style="flex-shrink:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap;max-width:170px"><span style="font-size:9px;padding:3px 10px;border-radius:99px;background:' + bc + '18;color:' + bc + ';font-weight:700;white-space:nowrap">' + (STAT[t.durum] || 'Taslak') + '</span>'
       + (_sureBitti ? '<span style="font-size:9px;padding:2px 8px;border-radius:99px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: ' + esc(_gec) + '">Süresi Doldu</span>' : '')
