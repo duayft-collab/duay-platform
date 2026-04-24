@@ -2753,7 +2753,8 @@ window._saveSatisTeklif = function() {
     odemeKosulu:(document.getElementById('st-odeme')?.value||'').trim(),
     gecerlilikTarihi:document.getElementById('st-gecerlilik')?.value||'',
     ekSart:(document.getElementById('st-ek-sart')?.value||'').trim(),
-    sartlar:typeof loadTeklifSartlar==='function'?loadTeklifSartlar().map(function(s){return s.text;}):[],
+    /* SARTLAR-PERSIST: modal session şartları öncelikli, yoksa global default */
+    sartlar:(window._stSartlar && window._stSartlar.length)?window._stSartlar.slice():(typeof loadTeklifSartlar==='function'?loadTeklifSartlar().map(function(s){return s.text;}):[]),
     saticiNotu:{
       urunKarsilastir:(document.getElementById('st-urun-karsilastir')?.value||'').trim(),
       ozelHusus:(document.getElementById('st-ozel-husus')?.value||'').trim(),
