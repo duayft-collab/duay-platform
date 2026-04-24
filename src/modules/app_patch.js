@@ -2270,9 +2270,13 @@ window.renderSatisTeklifleri = function() {
       + (_sureBitti ? '<span style="font-size:9px;padding:2px 8px;border-radius:99px;background:#FCEBEB;color:#A32D2D;font-weight:600;white-space:nowrap" title="Süresi doldu: ' + esc(_gec) + '">Süresi Doldu</span>' : '')
       + (_sureUyari ? '<span title="Geçerlilik 7 gün içinde dolacak: ' + esc(_gec) + '" style="color:#D97706;font-size:14px;cursor:help">⚠</span>' : '')
       + '</div>'
-      // İki buton: PDF + ···
+      // PDF + 📎 (kayıtlı) + ···
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
       + '<button onclick="event.stopPropagation();window._printSatisTeklif?.(\'' + t.id + '\')" style="font-size:9px;padding:5px 14px;border-radius:5px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>'
+      /* YENİ-1: Kayıtlı PDF linki — son rev (hover tooltip) */
+      + (t.pdfUrls && t.pdfUrls.length
+          ? '<a href="' + esc(t.pdfUrls[t.pdfUrls.length-1].url) + '" target="_blank" onclick="event.stopPropagation()" title="Kayıtlı PDF R' + esc(t.pdfUrls[t.pdfUrls.length-1].revNo) + ' — indir" style="font-size:12px;padding:4px 8px;border-radius:5px;border:0.5px solid var(--b);background:transparent;color:var(--t2);text-decoration:none;line-height:1;cursor:pointer">📎</a>'
+          : '')
       + '<button onclick="event.stopPropagation();window._stToggleExpand?.(\'' + t.id + '\')" title="Detayı aç/kapa" style="font-size:14px;padding:2px 10px;border-radius:5px;border:0.5px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2);line-height:1">···</button>'
       + '</div>'
       + '</div>'
@@ -2791,6 +2795,62 @@ window._pdfNum = function(val, cur, useSym) {
   return num + ' ' + cur;
 };
 
+/* YENİ-1: PDF oluştur + Firebase Storage upload (format A)
+ * Yeni pencere açıldıktan sonra w.document.documentElement.outerHTML ile HTML alınır,
+ * html2pdf ile blob'a dönüştürülür, storageUpload ile Firebase'e yüklenir,
+ * URL kayıt obj'inin pdfUrls[] array'ine push edilir.
+ * Hata durumunda print dialog akışı etkilenmez — sadece toast uyarısı verilir.
+ */
+window._pdfProformaUpload = async function(t, html) {
+  if (!window.html2pdf) {
+    window.toast?.('PDF kütüphanesi yüklenemedi', 'warn');
+    return null;
+  }
+  if (!window.storageReady || !window.storageReady()) {
+    window.toast?.('Storage bağlantısı yok', 'warn');
+    return null;
+  }
+  try {
+    /* HTML → PDF blob */
+    var blob = await window.html2pdf()
+      .set({
+        margin: 0,
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      })
+      .from(html)
+      .outputPdf('blob');
+    /* Dosya adı: Proforma-{teklifNo}-R{revNo}.pdf */
+    var revStr = String(t.revNo || '01').padStart(2, '0');
+    var name = 'Proforma-' + (t.teklifNo || t.teklifId || t.id) + '-R' + revStr + '.pdf';
+    var path = 'proformas/' + (t.musteriKod || '0000') + '/' + name;
+    /* Upload */
+    var result = await window.storageUpload(path, blob);
+    /* Kayıt güncelle */
+    var teklifler = window.loadSatisTeklifleri ? window.loadSatisTeklifleri() : [];
+    var idx = teklifler.findIndex(function(x){ return String(x.id) === String(t.id); });
+    if (idx >= 0) {
+      teklifler[idx].pdfUrls = teklifler[idx].pdfUrls || [];
+      teklifler[idx].pdfUrls.push({
+        revNo: revStr,
+        format: 'A',
+        url: result.url,
+        path: result.path,
+        size: result.size,
+        uploadedAt: result.uploadedAt,
+        uploadedBy: (window.CU && (window.CU().uid || window.CU().id)) || ''
+      });
+      if (window.storeSatisTeklifleri) window.storeSatisTeklifleri(teklifler);
+    }
+    window.toast?.('PDF kaydedildi: ' + name, 'ok');
+    return result.url;
+  } catch (e) {
+    console.error('PDF upload hata:', e);
+    window.toast?.('PDF yüklenemedi: ' + (e.message || 'bilinmeyen hata'), 'err');
+    return null;
+  }
+};
+
 window._printSatisTeklif = function(id) {
   var d = typeof loadSatisTeklifleri === 'function' ? loadSatisTeklifleri() : [];
   var t = d.find(function(x){return String(x.id)===String(id);});
@@ -2873,6 +2933,15 @@ window._printSatisTeklif = function(id) {
     + '<button onclick="window.print()" style="margin-top:15px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:4px;background:#fff;color:#1a365d;font-weight:600">🖨 Print / PDF</button>'
     + '</body></html>');
   w.document.close();
+  /* YENİ-1: Arka planda Firebase Storage'a yükle — pencere render olana kadar bekle */
+  if (window._pdfProformaUpload) {
+    setTimeout(function(){
+      try {
+        var _pdfHtml = w.document.documentElement.outerHTML;
+        window._pdfProformaUpload(t, _pdfHtml);
+      } catch(e) { console.error('[YENİ-1] PDF upload init hata:', e); }
+    }, 100);
+  }
 };
 
 // ════════════════════════════════════════════════════════════════

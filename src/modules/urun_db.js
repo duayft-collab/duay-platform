@@ -688,25 +688,38 @@ function renderUrunDB() {
 }
 
 /**
- * İŞ-1: Ürün teklif referans kontrolü — silmeden önce alış+satış tekliflerinde kullanımı tarar.
- * @param {string} duayKodu
+ * İŞ-1 + FIX: Ürün teklif referans kontrolü — iki şema desteği.
+ * V2 form: at.urunler[].duayKodu
+ * Inline form: at.satirlar[].urunKodu + urunId (numeric katalog ID — en güçlü eşleşme)
+ * @param {string} duayKodu — silinecek ürünün duayKodu/duayCode
+ * @param {string|number} [urunId] — silinecek ürünün katalog ID'si (numeric eşleşme için)
  * @returns {{alis: Array<{id, piNo}>, satis: Array<{id, teklifNo}>}}
  */
-window._urunTeklifReferansi = function(duayKodu) {
+window._urunTeklifReferansi = function(duayKodu, urunId) {
   var kodNorm = String(duayKodu || '').trim();
-  if (!kodNorm) return { alis: [], satis: [] };
+  var idNorm = urunId != null ? String(urunId) : '';
+  if (!kodNorm && !idNorm) return { alis: [], satis: [] };
+
+  /* Eşleştirme helper — urunId önce (en güçlü), sonra duayKodu/duayCode/urunKodu */
+  function _eslesir(u) {
+    if (!u) return false;
+    if (idNorm && u.urunId != null && String(u.urunId) === idNorm) return true;
+    if (!kodNorm) return false;
+    var uKod = String(u.duayKodu || u.duayCode || u.urunKodu || '').trim();
+    return uKod === kodNorm;
+  }
 
   var alisEslesen = [];
   var satisEslesen = [];
 
-  /* Alış teklifleri tara */
+  /* Alış teklifleri tara — V2 urunler + inline satirlar birlikte */
   var alis = window.loadAlisTeklifleri?.() || [];
   alis.forEach(function(at) {
     if (at.isDeleted) return;
-    var hasInArray = (at.urunler || []).some(function(u){
-      return String(u.duayKodu || u.duayCode || '').trim() === kodNorm;
-    });
-    var hasLegacy = String(at.duayKodu || at.duayCode || '').trim() === kodNorm;
+    var urunlerArr = [].concat(at.urunler || [], at.satirlar || []);
+    var hasInArray = urunlerArr.some(_eslesir);
+    /* Legacy top-level duayKodu (eski V1 kayıtları) */
+    var hasLegacy = kodNorm && String(at.duayKodu || at.duayCode || '').trim() === kodNorm;
     if (hasInArray || hasLegacy) {
       alisEslesen.push({
         id: at.id,
@@ -715,13 +728,12 @@ window._urunTeklifReferansi = function(duayKodu) {
     }
   });
 
-  /* Satış teklifleri tara */
+  /* Satış teklifleri tara — aynı pattern (satirlar genelde yok ama zararsız) */
   var satis = window.loadSatisTeklifleri?.() || [];
   satis.forEach(function(st) {
     if (st.isDeleted) return;
-    var hasMatch = (st.urunler || []).some(function(u){
-      return String(u.duayKodu || u.duayCode || '').trim() === kodNorm;
-    });
+    var urunlerArr = [].concat(st.urunler || [], st.satirlar || []);
+    var hasMatch = urunlerArr.some(_eslesir);
     if (hasMatch) {
       satisEslesen.push({
         id: st.id,
@@ -745,7 +757,8 @@ window._deleteUrun = function(id) {
   var itemPre = dataPre.find(function(x) { return String(x.id) === String(id); });
   if (itemPre) {
     var kod = itemPre.duayCode || itemPre.duayKodu || '';
-    var ref = window._urunTeklifReferansi(kod);
+    /* FIX: urunId da geçir — inline form `urunId` field'ı ile eşleşme için */
+    var ref = window._urunTeklifReferansi(kod, itemPre.id);
     var toplam = ref.alis.length + ref.satis.length;
     if (toplam > 0) {
       var msg = 'Silinemez — teklif(ler)de kullanılıyor: ';
@@ -824,7 +837,8 @@ window._urunDBTopluSil = function() {
         var item = data.find(function(x) { return String(x.id) === String(id); });
         if (!item) return;
         var kod = item.duayCode || item.duayKodu || '';
-        var ref = window._urunTeklifReferansi(kod);
+        /* FIX: urunId da geçir — inline form şeması için */
+        var ref = window._urunTeklifReferansi(kod, item.id);
         if (ref.alis.length + ref.satis.length > 0) {
           korunan++;
           if (korunanKodlar.length < 3) korunanKodlar.push(kod);
