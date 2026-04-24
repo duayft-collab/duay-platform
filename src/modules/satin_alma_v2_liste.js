@@ -85,7 +85,8 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;position:sticky;top:60px;z-index:11;background:var(--sf,#fff);border-bottom:0.5px solid '+_b+';overflow-x:auto;flex-wrap:nowrap">';
   h+='<button onclick="event.stopPropagation();window._saV2YeniTeklif()" style="padding:5px 12px;border:none;border-radius:5px;background:#185FA5;color:#ffffff;cursor:pointer;font-size:10px;font-weight:500;font-family:inherit;flex-shrink:0">+ Yeni Teklif</button>';
   /* [ALIS-LIST-SEARCH-DEBOUNCE-001] 250ms debounce — yazma durunca tek render */
-  h+='<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Ara..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;clearTimeout(window._sav2SrchTimer);window._sav2SrchTimer=setTimeout(function(){window.SAV2_SAYFA=1;window.renderSatinAlmaV2();},250)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;width:140px;flex-shrink:0;font-family:inherit;color:var(--color-text-primary)">';
+  /* [ALIS-LIST-ARAMA-CURSOR-FIX-001] cursor pozisyonu saklama — ortada düzeltme kesilmesin */
+  h+='<input id="sav2-srch" value="'+(window._sav2SrchVal||'')+'" placeholder="Ara..." oninput="event.stopPropagation();window._sav2SrchVal=this.value;window._sav2SrchCursor=[this.selectionStart,this.selectionEnd];clearTimeout(window._sav2SrchTimer);window._sav2SrchTimer=setTimeout(function(){window.SAV2_SAYFA=1;window.renderSatinAlmaV2();},250)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;width:140px;flex-shrink:0;font-family:inherit;color:var(--color-text-primary)">';
   /* SA-FILTRE-PILL-001: dropdown silindi — pill bar aşağıda ayrı satırda */
   h+='<select id="sav2-ted" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm tedarikçiler</option></select>';
   h+='<select id="sav2-para" onchange="event.stopPropagation();window.SAV2_SAYFA=1;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="padding:4px 8px;border:0.5px solid '+_b+';border-radius:5px;background:transparent;font-size:10px;flex-shrink:0;font-family:inherit;color:var(--color-text-secondary)"><option value="">Tüm para birimleri</option><option value="USD"'+(paraF==='USD'?' selected':'')+'>USD</option><option value="EUR"'+(paraF==='EUR'?' selected':'')+'>EUR</option><option value="TRY"'+(paraF==='TRY'?' selected':'')+'>TRY</option></select>';
@@ -278,7 +279,13 @@ window.renderSatinAlmaV2 = function() {
     Object.keys(girenMap).sort(function(a,b){return girenMap[a].localeCompare(girenMap[b],'tr');}).forEach(function(id){var opt=document.createElement('option');opt.value=id;opt.textContent=girenMap[id];if(id===girenF)opt.selected=true;girenSel.appendChild(opt);});
   }
   var srchEl=document.getElementById('sav2-srch');
-  if(srchEl&&document.activeElement!==srchEl&&window._sav2SrchVal){srchEl.focus();srchEl.setSelectionRange(srchEl.value.length,srchEl.value.length);}
+  /* [ALIS-LIST-ARAMA-CURSOR-FIX-001] saklanan cursor pozisyonunu restore et, yoksa sona */
+  if(srchEl&&document.activeElement!==srchEl&&window._sav2SrchVal){
+    srchEl.focus();
+    var _cur = window._sav2SrchCursor;
+    if (_cur && _cur.length === 2) { srchEl.setSelectionRange(_cur[0], _cur[1]); }
+    else { srchEl.setSelectionRange(srchEl.value.length, srchEl.value.length); }
+  }
   window._saV2HatirlatmaKontrol?.();
 };
 
