@@ -7523,19 +7523,9 @@ function renderCari() {
     var _riskSkor = window._cariRiskSkor ? window._cariRiskSkor(c) : 0;
     var _riskRenk = _riskSkor >= 70 ? '#16A34A' : _riskSkor >= 40 ? '#D97706' : '#DC2626';
     var _riskHTML = ' <span title="Risk/güven skoru" style="font-size:8px;padding:1px 5px;border-radius:4px;background:' + _riskRenk + '22;color:' + _riskRenk + ';font-weight:600;vertical-align:middle;font-variant-numeric:tabular-nums">' + _riskSkor + '</span>';
-    /* CARI-TEKLIF-UYARI-001: son teklif hatırlatma rozeti — sadece musteri tipi */
+    /* [CARI-TEKLIF-UYARI-KALDIR-001] 999g/Ng rozet kaldırıldı — Baran isteği, görsel kirlilik.
+       Eski CARI-TEKLIF-UYARI-001 mantığı comment-out; gerekirse yeniden açılabilir. */
     var hatirHTML = '';
-    if (c.type === 'musteri') {
-      var _sonTarih = _stLastByName[c.name] || '';
-      var sonTeklifGun;
-      if (!_sonTarih) sonTeklifGun = 999;
-      else {
-        var _ms = Date.now() - new Date(String(_sonTarih).replace(' ', 'T')).getTime();
-        sonTeklifGun = isNaN(_ms) ? 999 : Math.floor(_ms / 86400000);
-      }
-      if (sonTeklifGun > 90) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#DC2626">⚠ ' + sonTeklifGun + 'g</span>';
-      else if (sonTeklifGun > 30) hatirHTML = ' <span title="Son teklif ' + sonTeklifGun + ' gün önce" style="font-size:9px;color:#D97706">⏰ ' + sonTeklifGun + 'g</span>';
-    }
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .15s ease" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\';this.querySelector(\'.cari-row-action\')?.style.setProperty(\'opacity\',\'1\')" onmouseleave="if(!' + isSel + ')this.style.background=\'\';this.querySelector(\'.cari-row-action\')?.style.setProperty(\'opacity\',\'0\')">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span title="' + sc.label + '" style="width:8px;height:8px;border-radius:50%;background:' + sc.color + ';border:0.5px solid rgba(0,0,0,.08);flex-shrink:0;display:inline-block"></span>'
