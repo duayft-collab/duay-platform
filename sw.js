@@ -7,8 +7,8 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'duay-platform-v15';
-const CACHE_VERSION = '15.0.0';
+const CACHE_NAME    = 'duay-platform-v16';
+const CACHE_VERSION = '16.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
