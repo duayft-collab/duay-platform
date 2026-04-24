@@ -9000,6 +9000,12 @@ window._cariUpdateBulkCount = function() {
   var cnt = document.getElementById('cari-bulk-count');
   if (bar) bar.style.display = checked.length ? 'flex' : 'none';
   if (cnt) cnt.textContent = checked.length + ' seçili';
+  /* [CARI-BULK-SELECT-UI-001] Buton ID uyumsuzluğu fix — seçim varken görünür + count */
+  var btn = document.getElementById('cari-toplu-sil-btn');
+  if (btn) {
+    btn.style.display = checked.length ? 'inline-block' : 'none';
+    btn.textContent = checked.length ? '(' + checked.length + ') Seçilenleri Sil' : 'Seçilenleri Sil';
+  }
 };
 
 /** Toplu seçimi temizle */
