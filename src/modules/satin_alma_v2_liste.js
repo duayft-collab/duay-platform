@@ -122,7 +122,8 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="display:flex;flex:1;min-width:0;min-height:0;overflow:hidden">';
   h+='<div style="flex:1;min-width:0;overflow-y:auto">';
   /* ALIS-LISTE-UX-PACK-001: 7 sütun grid (KAR % eklendi: TUTAR ↔ DURUM arası) */
-  h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0px;z-index:9;background:var(--sf,#fff);height:36px;overflow:hidden">';
+  /* [ALIS-LIST-PI-NO-KOLON-001] header grid 8→9 sütun: PI NO eklendi (ürün sonrası, 85px) */
+  h+='<div style="display:grid;grid-template-columns:20px minmax(200px,1fr) 85px 100px 130px 90px 140px 85px 64px;padding:5px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid '+_b+';position:sticky;top:0px;z-index:9;background:var(--sf,#fff);height:36px;overflow:hidden">';
   var _th=function(label,alan){
     var aktif=sir.alan===alan;
     var yon=aktif?(sir.yon==='asc'?'↑':'↓'):'↕';
@@ -130,6 +131,7 @@ window.renderSatinAlmaV2 = function() {
   };
   h+='<div></div>';
   h+=_th('ÜRÜN / TEDARİKÇİ','urunAdi');
+  h+=_th('PI NO','piNo');
   h+=_th('AÇILIŞ','createdAt');
   h+=_th('TUTAR','toplamTutar');
   h+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.04em;text-align:right">KUR (TRY)</div>';
@@ -177,7 +179,7 @@ window.renderSatinAlmaV2 = function() {
     /* ALIS-LISTE-UX-PACK-001: süre dolumu satır rengi (2 gün=kırmızı, 7 gün=sarı) */
     var _gunKalan = _gecerlilik ? Math.floor((new Date(_gecerlilik) - new Date()) / 86400000) : 999;
     var _satirBg = 'var(--color-background-primary)';
-    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;height:48px;overflow:hidden;padding:0 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
+    h+='<div onclick="event.stopPropagation();window._saV2AktifId=\''+t.id+'\';window.renderSatinAlmaV2()" style="display:grid;grid-template-columns:20px minmax(200px,1fr) 85px 100px 130px 90px 140px 85px 64px;height:48px;overflow:hidden;padding:0 16px;border-bottom:0.5px solid '+_b+';border-left:'+_solBorder+';align-items:center;cursor:pointer;background:'+_satirBg+'" onmouseover="if(!'+aktif+')this.style.background=\'var(--color-background-secondary)\'" onmouseout="if(!'+aktif+')this.style.background=\''+_satirBg+'\'">';
     // Kolon 1: checkbox
     h+='<input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:11px;height:11px;cursor:pointer">';
     // Kolon 2: ürün/tedarikçi adı + jobId + PI rozet alt satır
@@ -193,6 +195,8 @@ window.renderSatinAlmaV2 = function() {
       : '<span style="color:var(--color-text-tertiary);font-size:9px">—</span>';
     h+='<div style="min-width:0"><div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(window._saV2UrunAdi?.(t))||window._saV2UrunAdi?.(t)||'—')+(t.urunler&&t.urunler.length>1?' <span style="font-size:8px;background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:6px">+'+( t.urunler.length-1)+'</span>':'')+_piHTMLLst+_revHTML+'</div>';
     h+='<div style="font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(window._esc?.(t.tedarikci)||t.tedarikci||'—')+' · '+_jobHTML+'</div></div>';
+    /* [ALIS-LIST-PI-NO-KOLON-001] Yeni kolon: PI NO — sortlanabilir, monospace */
+    h+='<div style="font-size:10px;color:#185FA5;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(t.piNo||t.pi_no?(window._esc?.(t.piNo||t.pi_no)||t.piNo||t.pi_no):'<span style="color:var(--color-text-tertiary)">—</span>')+'</div>';
     // Kolon 3: tutar + para birimi soluk
     /* SA-LISTE-REDESIGN-001: Açılış hücresi (tarih+saat) */
     /* SA-LISTE-FIX-001: Istanbul +3 saat */
@@ -246,11 +250,13 @@ window.renderSatinAlmaV2 = function() {
     if(t.urunler&&t.urunler.length>1){
       t.urunler.forEach(function(u,idx){
         /* ALIS-LISTE-UX-PACK-001: child row 7-col grid (KAR % boş hücre) */
-        h+='<div style="display:grid;grid-template-columns:20px minmax(220px,1fr) 100px 130px 90px 140px 85px 64px;padding:3px 16px 3px 28px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
+        h+='<div style="display:grid;grid-template-columns:20px minmax(200px,1fr) 85px 100px 130px 90px 140px 85px 64px;padding:3px 16px 3px 28px;border-bottom:0.5px solid '+_b+';background:var(--color-background-secondary);align-items:center">';
         // SAV2-GRUP-CB-001: grup ürün satırına checkbox — parent t.id state'ine bind
         h+='<div style="font-size:9px;display:flex;align-items:center;gap:2px"><input type="checkbox" '+(secili?'checked':'')+' onchange="event.stopPropagation();window._saV2ListeSecili=window._saV2ListeSecili||{};window._saV2ListeSecili[\''+t.id+'\']=this.checked;window.renderSatinAlmaV2()" onclick="event.stopPropagation()" style="width:10px;height:10px;cursor:pointer;flex-shrink:0"><span style="color:var(--color-text-tertiary)">'+(idx+1)+'.</span></div>';
         // SATINALMA-LISTE-XSS-002: ürün alt satırında window._esc sarmalama
         h+='<div style="font-size:9px;color:var(--color-text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(window._esc?.(u.urunAdi||u.turkceAdi||u.duayKodu)||u.urunAdi||u.turkceAdi||u.duayKodu||'—')+'</div>';
+        /* [ALIS-LIST-PI-NO-KOLON-001] child row PI NO boş hücre (grid uyumu) */
+        h+='<div></div>';
         h+='<div style="font-size:9px;color:#0F6E56;white-space:nowrap">'+(u.alisF||'—')+' '+(u.para||'')+'</div>';
         h+='<div></div>';
         h+='<div></div>';
