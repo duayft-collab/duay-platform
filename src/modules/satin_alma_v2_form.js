@@ -306,6 +306,20 @@ window._saV2YeniTeklif = function(duzenleKayit) {
     var _pi = document.getElementById('sav2f-piTarih'); if (_pi && !_pi.value) _pi.value = _bugun;
     var _gc = document.getElementById('sav2f-gecerlilikTarihi');
     if (_gc && !_gc.value) { var _g = new Date(); _g.setDate(_g.getDate()+30); _gc.value = _g.toISOString().slice(0,10); }
+    /* [ALIS-FORM-KUR-OTOMATIK-001] _saKur yoksa canlı kur çek ve tüm satırları güncelle */
+    if (!window._saKur || !window._saKur.USD) {
+      fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,EUR,GBP').then(function(r){return r.ok?r.json():null;}).then(function(d){
+        if (!d || !d.rates) return;
+        window._saKur = window._saKur || {};
+        window._saKur.USD = parseFloat(d.rates.TRY) || 44.55;
+        window._saKur.EUR = (parseFloat(d.rates.TRY) / parseFloat(d.rates.EUR)) || 51.70;
+        window._saKur.GBP = (parseFloat(d.rates.TRY) / parseFloat(d.rates.GBP)) || 59.30;
+        window._saKur.TRY = 1;
+        /* Tüm satırlarda miktar input'una dispatchEvent ile kur hesabı tetiklenir */
+        document.querySelectorAll('[id$="-miktar"]').forEach(function(el){ el.dispatchEvent(new Event('input',{bubbles:true})); });
+        window.toast?.('Canlı kur güncellendi (USD: ' + window._saKur.USD.toFixed(2) + ')', 'ok');
+      }).catch(function(){});
+    }
   }, 100);
 };
 
