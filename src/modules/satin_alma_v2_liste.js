@@ -66,7 +66,16 @@ window.renderSatinAlmaV2 = function() {
   var aktifT=fl.find(function(t){return String(t.id)===String(window._saV2AktifId);})||goster[0]||null;
   if(aktifT) window._saV2AktifId=String(aktifT.id);
   var seciliSay=Object.keys(window._saV2ListeSecili||{}).filter(function(k){return window._saV2ListeSecili[k];}).length;
-  var kpiToplam=fl.reduce(function(s,t){return s+(parseFloat(t.toplamTutar)||parseFloat(window._saV2AlisF?.(t))||0);},0);
+  /* [ALIS-LIST-KPI-TOPLAM-BIRIM-AYRIK-001] Para birimi ayrımı — her birim ayrı toplam */
+  var kpiToplamlar = {};
+  fl.forEach(function(t) {
+    var tutar = parseFloat(t.toplamTutar) || parseFloat(window._saV2AlisF?.(t)) || 0;
+    if (tutar <= 0) return;
+    var para = t.toplamPara || (t.paraBirimleri && t.paraBirimleri[0]) || 'TRY';
+    if (!kpiToplamlar[para]) kpiToplamlar[para] = 0;
+    kpiToplamlar[para] += tutar;
+  });
+  var kpiParaBirimleri = Object.keys(kpiToplamlar);
   var _b='var(--color-border-tertiary)';
   var h='<div style="display:flex;flex-direction:column;height:100%">';
   // ALIS-LISTE-C-001: 5 KPI kart, 5. SÜRESI YAKLAŞAN (gecerlilik 0-7 gun)
@@ -78,7 +87,13 @@ window.renderSatinAlmaV2 = function() {
   h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">BU AY TEKLİF</div><div style="'+_kpiValue+';color:var(--color-text-primary)">'+fl.length+'</div></div>';
   h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">BEKLEYEN</div><div style="'+_kpiValue+';color:#B4730F">'+fl.filter(function(t){return t.durum==='bekleyen';}).length+'</div></div>';
   h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">ONAYLI</div><div style="'+_kpiValue+';color:#1A8D6F">'+fl.filter(function(t){return t.durum==='onaylandi';}).length+'</div></div>';
-  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">TOPLAM</div><div style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--color-text-primary)">'+kpiToplam.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>';
+  /* [ALIS-LIST-KPI-TOPLAM-BIRIM-AYRIK-001] Her para birimi için ayrı satır */
+  var _paraSimge = function(p) { return p==='USD'?'$':p==='EUR'?'€':p==='GBP'?'£':p==='TRY'?'₺':p==='CNY'?'¥':p==='JPY'?'¥':(p+' '); };
+  var _kpiToplamHTML = kpiParaBirimleri.length ? kpiParaBirimleri.map(function(p){
+    var fs = kpiParaBirimleri.length>1?'13px':'18px';
+    return '<div style="font-size:'+fs+';font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;color:var(--color-text-primary)">'+_paraSimge(p)+kpiToplamlar[p].toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div>';
+  }).join('') : '<div style="font-size:18px;color:var(--color-text-tertiary)">—</div>';
+  h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">TOPLAM</div>'+_kpiToplamHTML+'</div>';
   h+='<div style="'+_kpiCard+'"><div style="'+_kpiLabel+'">SÜRESİ YAKLAŞAN</div><div style="'+_kpiValue+';color:#E0574F">'+fl.filter(function(t){var g=t.gecerlilikTarihi||t.validUntil;if(!g)return false;var d=(new Date(g)-new Date())/86400000;return d>=0&&d<=7;}).length+'</div></div>';
   h+='</div>';
   // ALIS-LISTE-C-001: tek satır filtre, flex-wrap:nowrap + overflow-x:auto, 2 yeni select (para, tarih)
