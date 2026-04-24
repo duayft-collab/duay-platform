@@ -2801,7 +2801,8 @@ window._printSatisTeklif = function(id) {
   var banka = bankalar.length ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PI ' + esc(t.teklifNo) + '</title>'
-    + '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:11px;line-height:1.4;max-width:210mm;margin:0 auto;padding:15mm}'
+    /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
+    + '<style>@page { size: A4; margin: 0 }*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:11px;line-height:1.4;max-width:210mm;margin:0 auto;padding:15mm}'
     + '.header{text-align:center;margin-bottom:20px;border-bottom:3px solid #1a365d;padding-bottom:15px}'
     + '.header h1{font-size:22px;color:#1a365d;letter-spacing:3px;margin-bottom:2px}'
     + '.header h2{font-size:10px;color:#666;letter-spacing:5px;margin-bottom:8px}'
@@ -2862,7 +2863,8 @@ window._printSatisTeklif = function(id) {
     // Signature
     + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL LLC</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
     // Footer
-    + '<div class="footer">Duay Global LLC · www.duaycor.com · brn.simsek@gmail.com<br>Karadolap Mh. Neşeli Sk. 1-5 Eyüp İstanbul TÜRKİYE · +90 532 270 5 113 · +90 212 625 5 444</div>'
+    /* FEAT-07d: kişisel email kaldırıldı — sadece kurumsal bilgi */
+    + '<div class="footer">Duay Global LLC · www.duaycor.com<br>Karadolap Mh. Neşeli Sk. 1-5 Eyüp İstanbul TÜRKİYE · +90 532 270 5 113 · +90 212 625 5 444</div>'
     + '<button onclick="window.print()" style="margin-top:15px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:4px;background:#fff;color:#1a365d;font-weight:600">🖨 Print / PDF</button>'
     + '</body></html>');
   w.document.close();
@@ -3040,7 +3042,8 @@ window._printSatisTeklifB = function(id) {
   var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
   var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
+  /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
+  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
     +'table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#6366F1;color:#fff;padding:8px;font-size:10px;text-transform:uppercase}td{padding:8px;border-bottom:1px solid #eee}'
     +'.total{background:#f8fafc;font-weight:700;font-size:14px}.bank{margin-top:16px;padding:12px;border:1px solid #6366F1;border-radius:6px;font-size:11px}.bank h4{color:#6366F1;font-size:11px;margin-bottom:6px}@media print{button{display:none!important}}</style></head><body>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:20px;font-weight:800;color:#6366F1">DUAY GLOBAL</div><div style="font-size:10px;color:#999">Istanbul, Turkey</div></div>'
@@ -3075,7 +3078,8 @@ window._printSatisTeklifC = function(id) {
   var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
   var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
+  /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
+  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
     +'h1{font-size:24px;color:#1a365d;text-align:center;margin-bottom:4px}h2{font-size:14px;color:#666;text-align:center;margin-bottom:24px}'
     +'.page-break{page-break-before:always;margin-top:40px}'
     +'table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f0f0f0;padding:8px;font-size:10px;border:1px solid #ddd}td{padding:8px;border:1px solid #ddd}'
