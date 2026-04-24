@@ -1138,6 +1138,12 @@ function _renderPanel(id) {
     trash:      () => safe(() => window.renderTrashPanel?.()),
     hesap:      () => safe(() => window.renderHesapHistory?.()),
     'pusula-pro': () => safe(() => window.renderPusulaPro?.() || window._ppRender?.()),
+    /* [ALIS-LIST-INIT-RENDER-RACE-001] Satınalma alt-menüleri — DB sync sonrası re-render için */
+    'alis-teklifleri': () => safe(() => window.renderSatinAlmaV2?.()),
+    'urunler': () => safe(() => window.renderUrunKatalogu?.() || window.renderUrunler?.()),
+    'siparisler': () => safe(() => window.renderSiparisler?.()),
+    'numune-arsivi': () => safe(() => window.renderNumuneArsivi?.() || window.renderNumune?.()),
+    'fason-uretim': () => safe(() => window.renderFasonUretim?.()),
   };
 
   // app_patch ve hub modülleri için fallback
