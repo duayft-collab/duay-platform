@@ -407,7 +407,10 @@ window._saV2FormKaydet = function() {
     /* SA-FORM-PIPELINE-001: yeni teklif araştırma aşamasıyla başlar + 72h timer */
       gorsel: window._saV2FormGorselData || '', durum: 'arastirma', pipelineTimerBaslangic: new Date().toISOString(), pipelineTimerSaat: 72, pipelineAdimlari: [{ durum: 'arastirma', yeniDurum: 'arastirma', tarih: new Date().toISOString(), kim: window.CU?.()?.displayName || window.CU?.()?.name || '' }],
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    createdBy: window.CU?.()?.displayName || '', createdById: window.CU?.()?.uid || ''
+    /* FIX: createdBy uid (filtre _dbKullaniciFiltreUygula uid bekliyor), displayName ayrı field'da */
+    createdBy: String(window.CU?.()?.uid || window.CU?.()?.id || ''),
+    createdById: String(window.CU?.()?.uid || window.CU?.()?.id || ''),
+    createdByName: window.CU?.()?.displayName || window.CU?.()?.name || ''
   };
   var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
   liste.unshift(kayit);
