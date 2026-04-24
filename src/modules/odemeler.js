@@ -7237,7 +7237,8 @@ function renderCari() {
       // [CARI-STICKY-HEADER-001] KPI sticky header'ın İÇİNE taşındı — scroll'da sabit kalır
       + '<div id="cari-kpi"></div>'
       + '</div>'
-      + '<div style="display:flex;min-height:calc(100vh - 120px)">'
+      /* [CARI-LISTE-SCROLL-SABIT-001] Dış çerçeve sabit — sol liste ve sağ detay kendi içinde kayar */
+      + '<div style="display:flex;height:calc(100vh - 150px);overflow:hidden">'
         // Sol panel — liste
         + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
           /* [CARI-STICKY-HEADER-001] filtre+arama sol panelde sticky — liste kayarken üstte kalır */
