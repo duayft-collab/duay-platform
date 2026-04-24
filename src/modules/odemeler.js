@@ -7234,13 +7234,14 @@ function renderCari() {
           + '<button id="cari-toplu-sil-btn" onclick="event.stopPropagation();window._cariBulkDelete()" style="padding:6px 12px;border:0.5px solid #DC2626;border-radius:7px;background:rgba(220,38,38,.06);color:#DC2626;font-size:11px;cursor:pointer;font-family:inherit;display:none">Seçilenleri Sil</button>'
           + '<button onclick="window._openQuickCari?.()" style="padding:7px 16px;border:none;border-radius:7px;background:var(--ac);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .12s" onmouseover="this.style.opacity=\'.85\'" onmouseout="this.style.opacity=\'1\'">+ Cari Ekle</button>'
         + '</div>'
-      + '</div>'
-      // CARI-KPI-ISLEM-001: müşteri/alacak/borç/net bakiyesi (islemler kaynağı)
+      // [CARI-STICKY-HEADER-001] KPI sticky header'ın İÇİNE taşındı — scroll'da sabit kalır
       + '<div id="cari-kpi"></div>'
+      + '</div>'
       + '<div style="display:flex;min-height:calc(100vh - 120px)">'
         // Sol panel — liste
         + '<div style="width:320px;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0">'
-          + '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);display:flex;gap:6px">'
+          /* [CARI-STICKY-HEADER-001] filtre+arama sol panelde sticky — liste kayarken üstte kalır */
+          + '<div style="padding:8px 12px;border-bottom:0.5px solid var(--b);display:flex;gap:6px;position:sticky;top:0;z-index:50;background:var(--color-background-primary,var(--sf))">'
             + '<input class="fi" id="cari-search" placeholder="Ara..." oninput="clearTimeout(window._cariSearchTimer);window._cariSearchTimer=setTimeout(renderCari,220)" style="font-size:11px;flex:1;border:0.5px solid var(--b);border-radius:7px">'
             + '<select class="fi" id="cari-type-f" onchange="window._cariSaveFilterState();renderCari()" style="font-size:11px;width:90px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tümü</option><option value="musteri">Müşteri</option><option value="tedarikci">Tedarikçi</option><option value="diger">Diğer</option></select>'
             + '<select class="fi" id="cari-stage-f" onchange="window._cariSaveFilterState();renderCari()" style="font-size:11px;width:95px;border:0.5px solid var(--b);border-radius:7px"><option value="">Tüm Aşama</option><option value="potansiyel">🔵 Potansiyel</option><option value="aktif">🟡 Aktif</option><option value="onayli">🟢 Onaylı</option><option value="rejected">🔴 Reddedildi</option></select>'
